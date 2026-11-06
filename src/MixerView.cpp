@@ -569,7 +569,6 @@ MixerView::MixerView (AppState& s) : state (s)
     layout.setColour (juce::ComboBox::outlineColourId, juce::Colours::transparentBlack);
     addAndMakeVisible (layout);
     closeButton.onClick = [this] { if (onClose) onClose(); };
-    addAndMakeVisible (closeButton);
 
     strips.add (new Strip (Strip::Kind::scale, -1));
     strips.add (new Strip (Strip::Kind::master, 0));
@@ -616,7 +615,7 @@ void MixerView::resized()
     for (auto* b : headerIcons) b->setBounds (header.removeFromLeft (22));
     header.removeFromLeft (4);
     layout.setBounds (header.removeFromLeft (90));
-    closeButton.setBounds (header.removeFromRight (22));
+    header.removeFromRight (yw::captionButtonsWidth);
 
     inspector->setBounds (r.removeFromRight (juce::jmin (Inspector::width, r.getWidth() / 2)));
     viewport.setBounds (r);

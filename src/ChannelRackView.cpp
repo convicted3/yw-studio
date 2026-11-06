@@ -269,7 +269,7 @@ ChannelRackView::ChannelRackView (AppState& s) : state (s)
     };
 
     for (auto* c : std::initializer_list<juce::Component*> { &menuButton, &undoButton, &filter, &swing, &lengthBox,
-                                                            &graphButton, &stepsButton, &closeButton, &addButton })
+                                                            &graphButton, &stepsButton, &addButton })
         addAndMakeVisible (c);
 
     addChannel ("Sampler");
@@ -333,7 +333,7 @@ void ChannelRackView::resized()
     undoButton.setBounds (header.removeFromLeft (22));
     header.removeFromLeft (40);
     filter.setBounds (header.removeFromLeft (80).reduced (0, 1));
-    closeButton.setBounds (header.removeFromRight (22));
+    header.removeFromRight (yw::captionButtonsWidth);
     stepsButton.setBounds (header.removeFromRight (24));
     graphButton.setBounds (header.removeFromRight (24));
     header.removeFromRight (6);

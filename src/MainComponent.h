@@ -8,27 +8,15 @@
 #include "MixerView.h"
 #include "PlaylistView.h"
 #include "PanelWindow.h"
+#include "DockWindow.h"
 #include "PluginManagerWindow.h"
 #include "SettingsWindow.h"
 
-// Thin draggable divider between docked panels.
-class Splitter : public juce::Component
+// Placeholder for the piano roll until the editor exists.
+class PianoRollPlaceholder : public juce::Component
 {
 public:
-    explicit Splitter (bool vertical) : isVertical (vertical)
-    {
-        setMouseCursor (vertical ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::UpDownResizeCursor);
-    }
-    void paint (juce::Graphics& g) override;
-    void mouseDown (const juce::MouseEvent&) override { if (onStart) onStart(); }
-    void mouseDrag (const juce::MouseEvent& e) override
-    {
-        if (onDrag) onDrag (isVertical ? e.getDistanceFromDragStartX() : e.getDistanceFromDragStartY());
-    }
-    std::function<void()> onStart;
-    std::function<void (int)> onDrag;
-private:
-    bool isVertical;
+    void paint (juce::Graphics&) override;
 };
 
 class MainComponent : public juce::Component, public juce::KeyListener
@@ -46,14 +34,18 @@ public:
     void handleCommand (int id);
 
 private:
-    enum Panel { pBrowser, pChannelRack, pMixer, pPlaylist, numPanels };
+    enum Panel { pBrowser, pChannelRack, pMixer, pPlaylist, pPianoRoll, numPanels };
 
     bool isCommandEnabled (int id) const;
     bool isCommandTicked (int id) const;
 
+    DockWindow& window (Panel p) const { return *windows[(size_t) p]; }
     void togglePanel (Panel p);
-    void toggleFloating (PanelWindow& w);
+    void openPanel (Panel p);
     void closeAllWindows();
+    void arrangeDefault();
+    void saveLayout();
+    bool restoreLayout();
     void showPluginManager();
     void showSettings (SettingsWindow::Tab tab);
     void showAbout();
@@ -67,14 +59,11 @@ private:
     ChannelRackView channelRack;
     MixerView mixer;
     PlaylistView playlist;
-    Splitter browserSplit { true }, middleSplit { true }, rackSplit { false };
+    PianoRollPlaceholder pianoRollView;
 
-    juce::Component floatingLayer;   // hosts floating windows (piano roll ...)
-    std::unique_ptr<PanelWindow> pianoRoll;
-
-    std::array<bool, numPanels> visible { true, true, true, true };
-    int browserW = 325, middleW = 500, rackH = 360;
-    int dragStartValue = 0;
+    juce::Component workspace;   // hosts all panel windows
+    std::array<std::unique_ptr<DockWindow>, numPanels> windows;
+    bool layoutDone = false;
 
     std::unique_ptr<PluginManagerWindow> pluginManager;
     std::unique_ptr<SettingsWindow> settingsWindow;

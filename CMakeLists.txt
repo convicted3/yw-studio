@@ -42,6 +42,7 @@ target_sources(YWStudio PRIVATE
     src/ChannelRackView.cpp
     src/MixerView.cpp
     src/PlaylistView.cpp
+    src/DockWindow.cpp
     src/PanelWindow.cpp
     src/PluginManagerWindow.cpp
     src/SettingsWindow.cpp)

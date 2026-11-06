@@ -54,5 +54,8 @@ private:
 // Simple label-like component that shows a hint in the hint bar.
 class HintArea : public juce::Component, public juce::SettableTooltipClient {};
 
+// Width reserved at the right of every panel header for the window buttons (minimise, maximise, close).
+namespace yw { constexpr int captionButtonsWidth = 66; }
+
 // Draws a panel caption bar: background, optional title with icon.
 void drawPanelHeader (juce::Graphics&, juce::Rectangle<int> r, const juce::String& title, icons::Id titleIcon);

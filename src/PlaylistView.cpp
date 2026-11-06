@@ -761,7 +761,7 @@ PlaylistView::PlaylistView (AppState& s) : state (s)
     closeButton.onClick = [this] { if (onClose) onClose(); };
     minButton.onClick   = [this] { if (onClose) onClose(); };
 
-    for (auto* c : std::initializer_list<juce::Component*> { &menuButton, &snapButton, &closeButton, &minButton,
+    for (auto* c : std::initializer_list<juce::Component*> { &menuButton, &snapButton,
                                                             picker.get(), trackList.get(), grid.get(), &vScroll, timeline.get() })
         addAndMakeVisible (c);
 
@@ -865,7 +865,7 @@ void PlaylistView::paint (juce::Graphics& g)
     g.fillAll (theme::panelHeader);
 
     auto bar = getLocalBounds().removeFromTop (toolbarH);
-    auto title = bar.withX (tools.getLast()->getRight() + 16).withRight (minButton.getX() - 8);
+    auto title = bar.withX (tools.getLast()->getRight() + 16).withRight (getWidth() - yw::captionButtonsWidth - 8);
     icons::draw (g, icons::Id::speaker, title.removeFromLeft (20).toFloat().reduced (2.0f), theme::text);
     title.removeFromLeft (6);
     g.setFont (theme::font (18.0f, theme::Weight::medium));
@@ -895,8 +895,7 @@ void PlaylistView::resized()
     snapButton.setBounds (bar.removeFromLeft (24));
     bar.removeFromLeft (8);
     for (auto* t : tools) t->setBounds (bar.removeFromLeft (24));
-    closeButton.setBounds (bar.removeFromRight (20));
-    minButton.setBounds (bar.removeFromRight (20));
+    bar.removeFromRight (yw::captionButtonsWidth);
 
     picker->setBounds (r.removeFromLeft (pickerW));
     vScroll.setBounds (r.removeFromRight (12).withTrimmedTop (topAreaH));
