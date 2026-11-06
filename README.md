@@ -38,10 +38,10 @@
 
 ## Сборка из исходников
 
-Нужны CMake 3.22+ и Visual Studio 2022 (C++).
+Нужны CMake 3.22+ и Visual Studio 2022 или новее (C++).
 
 ```
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake -S . -B build -A x64
 cmake --build build --config Release
 ```
 
