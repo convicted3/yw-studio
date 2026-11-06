@@ -560,6 +560,142 @@ public:
     std::function<void (double, int)> onZoom;
 };
 
+
+//==============================================================================
+// Horizontal scroll bar above the timeline, like the classic playlist:
+// drag the thumb to scroll, drag its ends to zoom, arrows scroll by a bar, wheel scrolls.
+class PlaylistView::TimelineBar : public juce::Component, public juce::TooltipClient
+{
+public:
+    std::function<void (double& start, double& length, double& total)> getRange; // in bars
+    std::function<void (double startBars)> onScroll;
+    std::function<void (double startBars, double lengthBars)> onZoom;
+
+    static constexpr int arrowW = 14, minThumb = 18;
+
+    juce::String getTooltip() override
+    {
+        const auto x = getMouseXYRelative().x;
+        if (x < arrowW || x > getWidth() - arrowW) return "Scroll";
+        return "Drag to scroll - drag the ends to zoom";
+    }
+
+    juce::Rectangle<float> track() const { return getLocalBounds().toFloat().reduced ((float) arrowW, 2.0f); }
+
+    juce::Rectangle<float> thumb() const
+    {
+        double s = 0, l = 1, t = 1;
+        if (getRange) getRange (s, l, t);
+        auto tr = track();
+        const float x0 = tr.getX() + (float) (s / t) * tr.getWidth();
+        const float w  = juce::jmax ((float) minThumb, (float) (l / t) * tr.getWidth());
+        return { juce::jmin (x0, tr.getRight() - w), tr.getY(), w, tr.getHeight() };
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        auto r = getLocalBounds().toFloat();
+        g.setColour (juce::Colour (0xff20272b));
+        g.fillRect (r);
+
+        auto tr = track();
+        g.setColour (juce::Colour (0xff2b3337));
+        g.fillRoundedRectangle (tr, 2.0f);
+
+        auto th = thumb();
+        const bool hot = isMouseOverOrDragging();
+        g.setGradientFill (juce::ColourGradient (juce::Colour (hot ? 0xff4a555b : 0xff414b50), 0, th.getY(),
+                                                 juce::Colour (hot ? 0xff3b454a : 0xff353e43), 0, th.getBottom(), false));
+        g.fillRoundedRectangle (th, 2.0f);
+        g.setColour (juce::Colours::black.withAlpha (0.4f));
+        g.drawRoundedRectangle (th, 2.0f, 1.0f);
+        // grips at both ends (zoom handles)
+        g.setColour (theme::textDim.withAlpha (hot ? 0.8f : 0.45f));
+        for (float gx : { th.getX() + 4.0f, th.getRight() - 6.0f })
+            g.fillRect (gx, th.getY() + 4.0f, 2.0f, th.getHeight() - 8.0f);
+
+        auto arrow = [&] (float cx, bool left)
+        {
+            juce::Path p;
+            const float cy = r.getCentreY();
+            p.startNewSubPath (cx + (left ? 2.0f : -2.0f), cy - 4.5f);
+            p.lineTo (cx + (left ? -2.0f : 2.0f), cy);
+            p.lineTo (cx + (left ? 2.0f : -2.0f), cy + 4.5f);
+            g.setColour (theme::text);
+            g.strokePath (p, juce::PathStrokeType (1.4f));
+        };
+        arrow ((float) arrowW * 0.5f, true);
+        arrow ((float) getWidth() - arrowW * 0.5f, false);
+    }
+
+    enum class Drag { none, move, left, right };
+
+    void mouseDown (const juce::MouseEvent& e) override
+    {
+        double s = 0, l = 1, t = 1;
+        if (getRange) getRange (s, l, t);
+        startS = s; startL = l; total = t;
+        drag = Drag::none;
+
+        if (e.x < arrowW)               { if (onScroll) onScroll (juce::jmax (0.0, s - 1.0)); return; }
+        if (e.x > getWidth() - arrowW)  { if (onScroll) onScroll (s + 1.0); return; }
+
+        auto th = thumb();
+        if (std::abs (e.position.x - th.getX()) < 6.0f)           drag = Drag::left;
+        else if (std::abs (e.position.x - th.getRight()) < 6.0f)  drag = Drag::right;
+        else if (th.contains (e.position))                        drag = Drag::move;
+        else
+        {
+            // click on the track: jump so the thumb centres on the mouse
+            const double centre = (e.position.x - track().getX()) / track().getWidth() * t;
+            if (onScroll) onScroll (juce::jmax (0.0, centre - l * 0.5));
+            drag = Drag::move;
+            if (getRange) getRange (startS, startL, total);
+        }
+    }
+
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        const double barsPerPixel = total / juce::jmax (1.0f, track().getWidth());
+        const double d = e.getDistanceFromDragStartX() * barsPerPixel;
+        switch (drag)
+        {
+            case Drag::move:  if (onScroll) onScroll (juce::jmax (0.0, startS + d)); break;
+            case Drag::left:
+            {
+                const double ns = juce::jlimit (0.0, startS + startL - 0.25, startS + d);
+                if (onZoom) onZoom (ns, startS + startL - ns);
+                break;
+            }
+            case Drag::right:
+                if (onZoom) onZoom (startS, juce::jmax (0.25, startL + d));
+                break;
+            case Drag::none: break;
+        }
+    }
+
+    void mouseMove (const juce::MouseEvent& e) override
+    {
+        auto th = thumb();
+        const bool edge = std::abs (e.position.x - th.getX()) < 6.0f || std::abs (e.position.x - th.getRight()) < 6.0f;
+        setMouseCursor (edge ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::NormalCursor);
+        repaint();
+    }
+    void mouseExit (const juce::MouseEvent&) override { repaint(); }
+    void mouseUp (const juce::MouseEvent&) override { drag = Drag::none; repaint(); }
+
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails& w) override
+    {
+        double s = 0, l = 1, t = 1;
+        if (getRange) getRange (s, l, t);
+        if (onScroll) onScroll (juce::jmax (0.0, s - (w.deltaY + w.deltaX) * l * 0.5));
+    }
+
+private:
+    Drag drag = Drag::none;
+    double startS = 0, startL = 1, total = 1;
+};
+
 //==============================================================================
 PlaylistView::PlaylistView (AppState& s) : state (s)
 {
@@ -568,6 +704,21 @@ PlaylistView::PlaylistView (AppState& s) : state (s)
     picker    = std::make_unique<Picker> (state);
     trackList = std::make_unique<TrackList> (model);
     grid      = std::make_unique<Grid> (state, model);
+    timeline  = std::make_unique<TimelineBar>();
+
+    timeline->getRange = [this] (double& start, double& length, double& total)
+    {
+        start  = model.scrollX / model.barWidth;
+        length = juce::jmax (1, grid->getWidth()) / model.barWidth;
+        total  = juce::jmax (songLengthBars(), start + length);
+    };
+    timeline->onScroll = [this] (double bars) { scrollToX (bars * model.barWidth); };
+    timeline->onZoom = [this] (double startBars, double lengthBars)
+    {
+        const double bw = juce::jlimit (Model::minBarWidth, Model::maxBarWidth, juce::jmax (1, grid->getWidth()) / lengthBars);
+        model.barWidth = model.targetBarWidth = bw;
+        scrollToX (startBars * bw);
+    };
 
     struct T { icons::Id icon; const char* hint; };
     const T t[] = {
@@ -611,25 +762,36 @@ PlaylistView::PlaylistView (AppState& s) : state (s)
     minButton.onClick   = [this] { if (onClose) onClose(); };
 
     for (auto* c : std::initializer_list<juce::Component*> { &menuButton, &snapButton, &closeButton, &minButton,
-                                                            picker.get(), trackList.get(), grid.get(), &vScroll, &hScroll })
+                                                            picker.get(), trackList.get(), grid.get(), &vScroll, timeline.get() })
         addAndMakeVisible (c);
 
     trackList->onScroll  = [this] (float dy) { scrollVertically (dy); };
     trackList->onChanged = [this] { if (! isTimerRunning()) startTimerHz (60); updateScrollBars(); grid->repaint(); trackList->repaint(); };
     grid->onScroll  = [this] (float dy) { scrollVertically (dy); };
-    grid->onScrollX = [this] (float dx) { hScroll.setCurrentRangeStart (hScroll.getCurrentRangeStart() - dx * 300.0); };
+    grid->onScrollX = [this] (float dx) { scrollToX (model.scrollX - dx * 300.0); };
     grid->onZoom    = [this] (double x, int steps) { zoomAt (x, steps); };
 
     vScroll.addListener (this);
-    hScroll.addListener (this);
     vScroll.setAutoHide (false);
-    hScroll.setAutoHide (false);
+}
+
+double PlaylistView::songLengthBars() const
+{
+    double end = 0.0;
+    for (auto& c : model.clips) end = juce::jmax (end, c.start + c.length);
+    return juce::jmax (64.0, end + 16.0);
+}
+
+void PlaylistView::scrollToX (double x)
+{
+    model.scrollX = juce::jlimit (0.0, totalBars * model.barWidth, x);
+    timeline->repaint();
+    grid->repaint();
 }
 
 PlaylistView::~PlaylistView()
 {
     vScroll.removeListener (this);
-    hScroll.removeListener (this);
 }
 
 void PlaylistView::zoomAt (double viewX, int wheelSteps)
@@ -687,16 +849,13 @@ void PlaylistView::updateScrollBars()
     vScroll.setCurrentRange (model.scrollY, viewH);
     model.scrollY = (float) vScroll.getCurrentRangeStart();
 
-    const double viewW = juce::jmax (1, grid->getWidth());
-    hScroll.setRangeLimits (0.0, juce::jmax (totalBars * model.barWidth, model.scrollX + viewW));
-    hScroll.setCurrentRange (model.scrollX, viewW);
+    timeline->repaint();
 }
 
 void PlaylistView::scrollBarMoved (juce::ScrollBar* bar, double start)
 {
     if (updatingScrollBars) return;
     if (bar == &vScroll) model.scrollY = (float) start;
-    else                 model.scrollX = start;
     trackList->repaint();
     grid->repaint();
 }
@@ -740,10 +899,9 @@ void PlaylistView::resized()
     minButton.setBounds (bar.removeFromRight (20));
 
     picker->setBounds (r.removeFromLeft (pickerW));
-    auto bottom = r.removeFromBottom (12);
-    vScroll.setBounds (r.removeFromRight (12));
+    vScroll.setBounds (r.removeFromRight (12).withTrimmedTop (topAreaH));
     trackList->setBounds (r.removeFromLeft (headerW));
-    hScroll.setBounds (bottom.withTrimmedLeft (headerW).withTrimmedRight (12));
+    timeline->setBounds (r.getX(), r.getY() + 2, r.getWidth() + 12, topAreaH - rulerH - 4);
 
     // the grid's ruler sits at the bottom of the header area so rows line up with the track headers
     grid->setBounds (r.withTrimmedTop (topAreaH - rulerH));

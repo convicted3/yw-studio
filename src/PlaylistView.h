@@ -46,6 +46,7 @@ public:
     class Picker;
     class TrackList;
     class Grid;
+    class TimelineBar;
 
 private:
     void scrollBarMoved (juce::ScrollBar*, double newRangeStart) override;
@@ -66,7 +67,11 @@ private:
     std::unique_ptr<Picker> picker;
     std::unique_ptr<TrackList> trackList;
     std::unique_ptr<Grid> grid;
-    juce::ScrollBar vScroll { true }, hScroll { false };
+    juce::ScrollBar vScroll { true };
+    std::unique_ptr<TimelineBar> timeline;
+
+    double songLengthBars() const;
+    void scrollToX (double x);
     int currentTool = 0;
     bool updatingScrollBars = false;
     double zoomAnchorBar = 0.0;
