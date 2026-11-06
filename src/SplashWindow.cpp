@@ -142,41 +142,53 @@ SplashWindow::SplashWindow()
 
 SplashWindow::~SplashWindow() = default;
 
-void SplashWindow::show()
+void SplashWindow::show (std::function<void()> onIntroDone)
 {
+    introCallback = std::move (onIntroDone);
     addToDesktop (0); // no frame, no shadow: only the logo is visible
     centreWithSize (getWidth(), getHeight());
     setAlwaysOnTop (true);
     setVisible (true);
     toFront (false);
 
-    startMs = juce::Time::getMillisecondCounterHiRes();
-    vblank = std::make_unique<juce::VBlankAttachment> (this, [this] { tick(); });
+    animMs = 0.0;
+    lastTickMs = juce::Time::getMillisecondCounterHiRes();
+    startTimerHz (60);
 }
 
 void SplashWindow::finish (std::function<void()> onDone)
 {
     doneCallback = std::move (onDone);
-    // start the exit after the intro has fully played
-    exitStartMs = juce::jmax (elapsedMs(), introLengthMs);
+    exitStartMs = juce::jmax (animMs, introLengthMs);
 }
 
-void SplashWindow::tick()
+void SplashWindow::timerCallback()
 {
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    animMs += juce::jlimit (0.0, 34.0, now - lastTickMs);
+    lastTickMs = now;
     repaint();
-    if (exitStartMs >= 0.0 && elapsedMs() >= exitStartMs + exitLengthMs && doneCallback)
+
+    auto post = [] (std::function<void()> cb)
     {
-        auto cb = std::move (doneCallback);
-        doneCallback = nullptr;
-        vblank.reset();
-        cb();
+        // run outside of any window callback: the receiver may delete this splash
+        if (cb) juce::MessageManager::callAsync (std::move (cb));
+    };
+
+    if (introCallback && animMs >= introLengthMs)
+        post (std::exchange (introCallback, nullptr));
+
+    if (doneCallback && exitStartMs >= 0.0 && animMs >= exitStartMs + exitLengthMs)
+    {
+        stopTimer();
+        setVisible (false);
+        post (std::exchange (doneCallback, nullptr));
     }
 }
 
 void SplashWindow::paint (juce::Graphics& g)
 {
-    const double ms = elapsedMs();
-    renderFrame (g, getLocalBounds().toFloat(), ms, exitStartMs >= 0.0 && ms >= exitStartMs ? ms - exitStartMs : -1.0);
+    renderFrame (g, getLocalBounds().toFloat(), animMs, exitStartMs >= 0.0 && animMs >= exitStartMs ? animMs - exitStartMs : -1.0);
 }
 
 void SplashWindow::renderFrame (juce::Graphics& g, juce::Rectangle<float> area, double ms, double exitMs)

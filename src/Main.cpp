@@ -48,23 +48,31 @@ public:
             return;
         }
 
+        setupLogging();
+        log ("YW Studio " + getApplicationVersion() + " starting on " + juce::SystemStats::getOperatingSystemName());
+
         state = std::make_unique<AppState>();
 
         if (state->getShowSplash())
         {
+            // play the intro first, then do the (blocking) startup work while the logo holds still
             splash = std::make_unique<SplashWindow>();
-            splash->show();
+            splash->show ([this] { runStartupStep (0); });
         }
-
-        runStartupStep (0);
+        else
+        {
+            runStartupStep (0);
+        }
     }
 
     void shutdown() override
     {
+        log ("shutting down");
         mainWindow.reset();
         splash.reset();
         state.reset();
         juce::LookAndFeel::setDefaultLookAndFeel (nullptr);
+        juce::Logger::setCurrentLogger (nullptr);
     }
 
     void systemRequestedQuit() override { quit(); }
@@ -77,23 +85,25 @@ public:
 private:
     void runStartupStep (int step)
     {
-        struct Step { std::function<void()> fn; };
+        struct Step { const char* name; std::function<void()> fn; };
         const Step steps[] = {
-            { [this] { state->loadSettings(); } },
-            { [this] { state->initialiseAudio(); } },
-            { [this] { state->loadPluginDatabase(); } },
-            { [this] { mainWindow = std::make_unique<MainWindow> (*state); } },
+            { "load settings",        [this] { state->loadSettings(); } },
+            { "initialise audio",     [this] { state->initialiseAudio(); } },
+            { "load plugin database", [this] { state->loadPluginDatabase(); } },
+            { "create main window",   [this] { mainWindow = std::make_unique<MainWindow> (*state); } },
         };
 
         if (step >= (int) std::size (steps))
         {
+            log ("startup complete");
             if (splash) splash->finish ([this] { showMainWindow(); });
             else        showMainWindow();
             return;
         }
 
-        juce::MessageManager::callAsync ([this, step, fn = steps[step].fn]
+        juce::MessageManager::callAsync ([this, step, name = juce::String (steps[step].name), fn = steps[step].fn]
         {
+            log ("step: " + name);
             fn();
             juce::MessageManager::callAsync ([this, step] { runStartupStep (step + 1); });
         });
@@ -101,12 +111,41 @@ private:
 
     void showMainWindow()
     {
+        log ("showing main window");
         splash.reset();
         mainWindow->addToDesktop();
         mainWindow->setVisible (true);
         mainWindow->setFullScreen (true); // maximised, like the classic layout
         mainWindow->toFront (true);
+        log ("main window visible");
     }
+
+    //==============================================================================
+    // Log file and crash report in %APPDATA%\\YW Studio, so problems on user machines can be diagnosed.
+    static juce::File appDataFolder()
+    {
+        auto f = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("YW Studio");
+        f.createDirectory();
+        return f;
+    }
+
+    static void crashHandler (void*)
+    {
+        auto report = appDataFolder().getChildFile ("crash.log");
+        report.appendText ("\n=== Crash " + juce::Time::getCurrentTime().toString (true, true) + " ===\n"
+                           + juce::SystemStats::getStackBacktrace() + "\n");
+    }
+
+    void setupLogging()
+    {
+        juce::SystemStats::setApplicationCrashHandler (crashHandler);
+        auto file = appDataFolder().getChildFile ("yw-studio.log");
+        file.deleteFile();
+        logger.reset (new juce::FileLogger (file, "YW Studio log", 0));
+        juce::Logger::setCurrentLogger (logger.get());
+    }
+
+    static void log (const juce::String& s) { juce::Logger::writeToLog (s); }
 
     void dumpSplashFrames (const juce::File& dir)
     {
@@ -132,6 +171,7 @@ private:
     std::unique_ptr<AppState> state;
     std::unique_ptr<SplashWindow> splash;
     std::unique_ptr<MainWindow> mainWindow;
+    std::unique_ptr<juce::FileLogger> logger;
 };
 
 START_JUCE_APPLICATION (YWStudioApplication)
