@@ -35,8 +35,13 @@ target_sources(YWStudio PRIVATE
     src/SplashWindow.cpp
     src/MainComponent.cpp
     src/MenuModel.cpp
-    src/ToolbarPanel.cpp
+    src/Icons.cpp
+    src/Widgets.cpp
+    src/TopBar.cpp
     src/BrowserPanel.cpp
+    src/ChannelRackView.cpp
+    src/MixerView.cpp
+    src/PlaylistView.cpp
     src/PanelWindow.cpp
     src/PluginManagerWindow.cpp
     src/SettingsWindow.cpp)
@@ -45,7 +50,10 @@ target_include_directories(YWStudio PRIVATE src)
 
 juce_add_binary_data(YWStudioData SOURCES
     resources/yw_logo.png
-    resources/yw_icon.png)
+    resources/yw_icon.png
+    resources/fonts/BarlowSemiCondensed-Regular.ttf
+    resources/fonts/BarlowSemiCondensed-Medium.ttf
+    resources/fonts/BarlowSemiCondensed-SemiBold.ttf)
 
 target_compile_definitions(YWStudio PRIVATE
     JUCE_WEB_BROWSER=0

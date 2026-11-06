@@ -28,9 +28,9 @@ namespace
 
         void paint (juce::Graphics& g) override
         {
-            g.fillAll (theme::bg);
+            g.fillAll (theme::panelBody);
             g.setColour (theme::textDim);
-            g.setFont (theme::font (12.0f, true));
+            g.setFont (theme::bold (12.0f));
             g.drawText ("MISCELLANEOUS", 16, 12, 300, 18, juce::Justification::centredLeft);
             g.drawText ("LANGUAGE", 16, 84, 300, 18, juce::Justification::centredLeft);
         }
@@ -51,7 +51,7 @@ namespace
 }
 
 SettingsWindow::SettingsWindow (AppState& s)
-    : juce::DocumentWindow ("Settings", theme::bg, juce::DocumentWindow::closeButton), state (s)
+    : juce::DocumentWindow ("Settings", theme::panelBody, juce::DocumentWindow::closeButton), state (s)
 {
     setUsingNativeTitleBar (true);
 
@@ -65,11 +65,11 @@ SettingsWindow::SettingsWindow (AppState& s)
     auto* midiPage = new juce::AudioDeviceSelectorComponent (s.deviceManager, 0, 0, 0, 0,
                                                              true, true, false, true);
 
-    t->addTab ("MIDI",    theme::bg, midiPage, true);
-    t->addTab ("Audio",   theme::bg, audioPage, true);
-    t->addTab ("General", theme::bg, new GeneralPage (s), true);
-    t->addTab ("File",    theme::bg, new ComingSoonView ("File settings"), true);
-    t->addTab ("Project", theme::bg, new ComingSoonView ("Project settings"), true);
+    t->addTab ("MIDI",    theme::panelBody, midiPage, true);
+    t->addTab ("Audio",   theme::panelBody, audioPage, true);
+    t->addTab ("General", theme::panelBody, new GeneralPage (s), true);
+    t->addTab ("File",    theme::panelBody, new ComingSoonView ("File settings"), true);
+    t->addTab ("Project", theme::panelBody, new ComingSoonView ("Project settings"), true);
 
     t->setSize (640, 560);
     setContentOwned (t, true);

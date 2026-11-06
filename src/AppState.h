@@ -44,6 +44,9 @@ public:
     juce::KnownPluginList         knownPlugins;
     Transport                     transport;
 
+    // Project (message thread only; the project model will replace these)
+    int numPatterns = 1, currentPattern = 1;
+
     static constexpr const char* version = JUCE_APPLICATION_VERSION_STRING;
 
 private:

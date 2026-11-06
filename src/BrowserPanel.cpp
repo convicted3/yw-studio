@@ -5,94 +5,84 @@ using namespace yw;
 
 namespace
 {
-    enum class Kind { folder, file, plugin, info };
-
     class Item : public juce::TreeViewItem
     {
     public:
-        Item (juce::String t, Kind k, juce::File f = {}) : text (std::move (t)), kind (k), file (std::move (f)) {}
+        Item (juce::String t, icons::Id i, juce::File f = {}, bool isFolder = true)
+            : text (std::move (t)), icon (i), file (std::move (f)), folder (isFolder) {}
 
-        bool mightContainSubItems() override
+        bool mightContainSubItems() override { return folder && (getNumSubItems() > 0 || file.isDirectory()); }
+        juce::String getUniqueName() const override { return text; }
+        int getItemHeight() const override { return 23; }
+
+        void itemOpennessChanged (bool open) override
         {
-            if (kind == Kind::folder)
-                return getNumSubItems() > 0 || file.isDirectory();
-            return false;
+            if (open && folder && file.isDirectory() && getNumSubItems() == 0)
+            {
+                auto kids = file.findChildFiles (juce::File::findFilesAndDirectories | juce::File::ignoreHiddenFiles, false);
+                kids.sort();
+                for (auto& k : kids) if (k.isDirectory())   addSubItem (new Item (k.getFileName(), icons::Id::folder, k, true));
+                for (auto& k : kids) if (! k.isDirectory()) addSubItem (new Item (k.getFileName(), iconFor (k), k, false));
+            }
         }
 
-        juce::String getUniqueName() const override { return text; }
-        int getItemHeight() const override { return 22; }
-
-        void itemOpennessChanged (bool isNowOpen) override
+        static icons::Id iconFor (const juce::File& f)
         {
-            // Lazy-load real folders the first time they are opened.
-            if (isNowOpen && kind == Kind::folder && file.isDirectory() && getNumSubItems() == 0)
-            {
-                auto children = file.findChildFiles (juce::File::findFilesAndDirectories | juce::File::ignoreHiddenFiles, false);
-                children.sort();
-                for (auto& c : children)
-                    if (c.isDirectory())
-                        addSubItem (new Item (c.getFileName(), Kind::folder, c));
-                for (auto& c : children)
-                    if (! c.isDirectory())
-                        addSubItem (new Item (c.getFileName(), Kind::file, c));
-            }
+            const auto ext = f.getFileExtension().toLowerCase();
+            if (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac" || ext == ".aif" || ext == ".aiff") return icons::Id::wave;
+            if (ext == ".mid" || ext == ".midi") return icons::Id::pianoRoll;
+            if (ext == ".yws" || ext == ".flp") return icons::Id::project;
+            return icons::Id::file;
         }
 
         void paintItem (juce::Graphics& g, int w, int h) override
         {
-            if (isSelected())
-                g.fillAll (theme::accentSoft);
+            if (isSelected()) { g.setColour (juce::Colour (0xff27333a)); g.fillRect (0, 0, w, h); }
 
-            auto r = juce::Rectangle<int> (0, 0, w, h).reduced (4, 0);
-            auto iconArea = r.removeFromLeft (14).toFloat().withSizeKeepingCentre (10.0f, 10.0f);
-
-            switch (kind)
-            {
-                case Kind::folder: g.setColour (theme::textDim); g.drawRect (iconArea, 1.2f); break;
-                case Kind::file:   g.setColour (theme::textDim); g.fillEllipse (iconArea.reduced (2.5f)); break;
-                case Kind::plugin: g.setColour (theme::accent);  g.fillRoundedRectangle (iconArea.reduced (1.0f), 2.0f); break;
-                case Kind::info:   break;
-            }
-
-            r.removeFromLeft (4);
-            g.setColour (kind == Kind::info ? theme::textDim : theme::text);
-            g.setFont (theme::font (13.0f, kind == Kind::folder && getParentItem() != nullptr
-                                                && getParentItem()->getParentItem() == nullptr));
+            auto r = juce::Rectangle<int> (0, 0, w, h);
+            const bool top = getParentItem() != nullptr && getParentItem()->getParentItem() == nullptr;
+            icons::draw (g, icon, r.removeFromLeft (20).toFloat().reduced (3.0f), top ? juce::Colour (0xffcfd3d5) : theme::textDim);
+            r.removeFromLeft (3);
+            g.setColour (folder ? juce::Colour (0xffd2d5d6) : theme::text);
+            g.setFont (theme::font (17.0f, top ? theme::Weight::medium : theme::Weight::regular));
             g.drawText (text, r, juce::Justification::centredLeft, true);
         }
 
         void itemClicked (const juce::MouseEvent& e) override
         {
-            if (kind == Kind::folder && ! e.mods.isPopupMenu())
-                setOpen (! isOpen());
+            if (folder && ! e.mods.isPopupMenu()) setOpen (! isOpen());
+            if (! e.mods.isPopupMenu() || ! file.exists()) return;
 
-            if (e.mods.isPopupMenu() && file.exists())
+            juce::PopupMenu m;
+            if (folder)
             {
-                juce::PopupMenu m;
-                if (kind == Kind::folder)
-                {
-                    m.addItem (1, "Expand all");
-                    m.addItem (2, "Collapse all");
-                    m.addSeparator();
-                    m.addItem (3, "Open in Explorer");
-                }
-                else
-                {
-                    m.addItem (4, "Send to selected channel", false);
-                    m.addItem (5, "Open in new channel", false);
-                    m.addSeparator();
-                    m.addItem (6, "Open parent folder");
-                    m.addItem (7, "Locate file");
-                }
-                m.showMenuAsync (juce::PopupMenu::Options(), [this] (int r)
-                {
-                    if (r == 1) setOpen (true);
-                    else if (r == 2) setOpen (false);
-                    else if (r == 3) file.startAsProcess();
-                    else if (r == 6) file.getParentDirectory().startAsProcess();
-                    else if (r == 7) file.revealToUser();
-                });
+                m.addItem (1, "Expand all");
+                m.addItem (2, "Collapse all");
+                m.addSeparator();
+                m.addItem (3, "Open in new tab", false);
+                m.addItem (4, "Change color", false);
+                m.addItem (5, "Change icon", false);
+                m.addSeparator();
+                m.addItem (6, "Open");
             }
+            else
+            {
+                m.addItem (10, "Send to selected channel or focused plugin", false);
+                m.addItem (11, "Open in new channel", false);
+                m.addSeparator();
+                juce::PopupMenu sys;
+                sys.addItem (12, "Open parent folder");
+                sys.addItem (13, "Locate file");
+                m.addSubMenu ("System", sys);
+            }
+            m.showMenuAsync (juce::PopupMenu::Options(), [this] (int r)
+            {
+                if (r == 1) setOpen (true);
+                else if (r == 2) setOpen (false);
+                else if (r == 6) file.startAsProcess();
+                else if (r == 12) file.getParentDirectory().startAsProcess();
+                else if (r == 13) file.revealToUser();
+            });
         }
 
         juce::var getDragSourceDescription() override
@@ -101,51 +91,67 @@ namespace
         }
 
         juce::String text;
-        Kind kind;
+        icons::Id icon;
         juce::File file;
+        bool folder;
     };
-
-    Item* folder (Item* parent, const juce::String& name, juce::File f = {})
-    {
-        auto* i = new Item (name, Kind::folder, f);
-        parent->addSubItem (i);
-        return i;
-    }
 }
 
 BrowserPanel::BrowserPanel (AppState& s) : state (s)
 {
-    menuButton.setTooltip ("Browser options");
-    collapseButton.setTooltip ("Collapse all");
-    refreshButton.setTooltip ("Refresh (Ctrl+R)");
-    closeButton.setTooltip ("Close browser (Alt+F8)");
-
-    collapseButton.onClick = [this] { if (root) for (int i = 0; i < root->getNumSubItems(); ++i) root->getSubItem (i)->setOpen (false); };
-    refreshButton.onClick  = [this] { rebuildTree(); };
-    closeButton.onClick    = [this] { if (onClose) onClose(); };
-
-    for (auto* b : { &menuButton, &collapseButton, &refreshButton, &closeButton })
-        addAndMakeVisible (b);
-
-    const char* tabNames[] = { "All", "Project", "Plugins", "Starred" };
-    for (int i = 0; i < 4; ++i)
+    menuButton.onClick = [this]
     {
-        auto* t = tabs.add (new juce::TextButton (tabNames[i]));
-        t->setRadioGroupId (101);
+        juce::PopupMenu m;
+        m.addItem (1, "Search...  Ctrl+F");
+        m.addItem (2, "Refresh  Ctrl+R");
+        m.addItem (3, "Collapse all");
+        m.addSeparator();
+        m.addItem (4, "Close browser  Alt+F8");
+        m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&menuButton), [this] (int r)
+        {
+            if (r == 1) focusSearch();
+            else if (r == 2) rebuildTree();
+            else if (r == 3) upButton.triggerClick();
+            else if (r == 4 && onClose) onClose();
+        });
+    };
+    upButton.onClick   = [this] { if (root) for (int i = 0; i < root->getNumSubItems(); ++i) root->getSubItem (i)->setOpen (false); };
+    backButton.onClick = [this] { rebuildTree(); };
+    for (auto* b : { &menuButton, &upButton, &backButton }) addAndMakeVisible (b);
+
+    struct T { icons::Id icon; const char* hint; };
+    const T defs[] = {
+        { icons::Id::browser, "All" },
+        { icons::Id::project, "Current project" },
+        { icons::Id::speaker, "Plugin database" },
+        { icons::Id::globe,   "YW plugin catalog" },
+        { icons::Id::cloud,   "Online content" },
+        { icons::Id::star,    "Starred" },
+        { icons::Id::folder,  "User folders" } };
+    for (int i = 0; i < (int) std::size (defs); ++i)
+    {
+        auto* t = tabs.add (new ToolButton (defs[i].icon, defs[i].hint, ToolButton::Style::flat));
+        t->setRadioGroupId (77);
         t->setClickingTogglesState (true);
         t->onClick = [this, i] { setTab (i); };
         addAndMakeVisible (t);
     }
     tabs[0]->setToggleState (true, juce::dontSendNotification);
 
+    tagsSearch.onClick = [this] { focusSearch(); };
+    tagsFolder.onClick = [this] { userDataFolder().startAsProcess(); };
+    addAndMakeVisible (tagsFolder);
+    addAndMakeVisible (tagsSearch);
+
     search.setTextToShowWhenEmpty ("Search", theme::textDim);
+    search.setFont (theme::font (16.0f));
     search.onTextChange = [this] { rebuildTree(); };
-    search.onEscapeKey  = [this] { search.clear(); rebuildTree(); };
-    addAndMakeVisible (search);
+    search.onEscapeKey  = [this] { search.clear(); searchVisible = false; resized(); rebuildTree(); };
+    addChildComponent (search);
 
     tree.setRootItemVisible (false);
     tree.setDefaultOpenness (false);
-    tree.setIndentSize (14);
+    tree.setIndentSize (16);
     addAndMakeVisible (tree);
 
     state.knownPlugins.addChangeListener (this);
@@ -158,6 +164,24 @@ BrowserPanel::~BrowserPanel()
     tree.setRootItem (nullptr);
 }
 
+juce::File BrowserPanel::userDataFolder() const
+{
+    return juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("YW Studio");
+}
+
+void BrowserPanel::focusSearch()
+{
+    searchVisible = true;
+    resized();
+    search.grabKeyboardFocus();
+}
+
+void BrowserPanel::showPluginDatabase()
+{
+    tabs[2]->setToggleState (true, juce::dontSendNotification);
+    setTab (2);
+}
+
 void BrowserPanel::setTab (int index)
 {
     currentTab = index;
@@ -167,87 +191,147 @@ void BrowserPanel::setTab (int index)
 void BrowserPanel::rebuildTree()
 {
     tree.setRootItem (nullptr);
-    auto* r = new Item ("root", Kind::folder);
-    root.reset (r);
+    root = std::make_unique<Item> ("root", icons::Id::none);
 
-    const auto query = search.getText().trim().toLowerCase();
-    auto matches = [&query] (const juce::String& s) { return query.isEmpty() || s.toLowerCase().contains (query); };
+    const auto q = search.getText().trim().toLowerCase();
+    auto matches = [&q] (const juce::String& s) { return q.isEmpty() || s.toLowerCase().contains (q); };
+    const auto data = userDataFolder();
 
-    const bool all = currentTab == 0;
-
-    if (all || currentTab == 1)
+    auto add = [this] (juce::TreeViewItem* parent, const juce::String& name, icons::Id icon, juce::File f = {}) -> Item*
     {
-        auto* proj = folder (r, "Current project");
-        for (auto n : { "History", "Patterns", "Generators", "Effects", "Remote control", "Samples" })
-            folder (proj, n);
-        if (! all) proj->setOpen (true);
-    }
+        auto* i = new Item (name, icon, f, true);
+        (parent ? parent : root.get())->addSubItem (i);
+        return i;
+    };
 
-    if (all || currentTab == 2)
+    auto addPluginDatabase = [&] (bool open)
     {
-        auto* lib = folder (r, "Plugin library");
-        auto* gens = folder (lib, "Generators");
-        auto* fx   = folder (lib, "Effects");
-
+        auto* db = add (nullptr, "Plugin database", icons::Id::speaker);
+        auto* inst = add (db, "Installed", icons::Id::folder);
+        auto* gens = add (inst, "Generators", icons::Id::keys);
+        auto* fx   = add (inst, "Effects", icons::Id::wave);
         for (auto& d : state.knownPlugins.getTypes())
             if (matches (d.name) || matches (d.manufacturerName))
-                (d.isInstrument ? gens : fx)->addSubItem (new Item (d.name + "  (" + d.pluginFormatName + ")", Kind::plugin));
-
+                (d.isInstrument ? gens : fx)->addSubItem (new Item (d.name, icons::Id::plug, {}, false));
         if (state.knownPlugins.getNumTypes() == 0)
-            lib->addSubItem (new Item ("No plugins yet: Options > Manage plugins", Kind::info));
+            inst->addSubItem (new Item ("Scan plugins: Options > Manage plugins", icons::Id::none, {}, false));
+        if (open || q.isNotEmpty()) { db->setOpen (true); inst->setOpen (true); gens->setOpen (true); fx->setOpen (true); }
+    };
 
-        if (! all || query.isNotEmpty()) { lib->setOpen (true); gens->setOpen (true); fx->setOpen (true); }
-    }
-
-    if (all)
+    auto addFolder = [&] (const juce::String& name, icons::Id icon)
     {
-        const auto docs  = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
-        const auto music = juce::File::getSpecialLocation (juce::File::userMusicDirectory);
-        const auto data  = docs.getChildFile ("YW Studio");
+        auto f = data.getChildFile (name);
+        f.createDirectory();
+        if (matches (name)) add (nullptr, name, icon, f);
+    };
 
-        for (auto n : { "Channel presets", "Mixer presets", "Plugin presets", "Projects", "Recorded", "Rendered" })
+    switch (currentTab)
+    {
+        case 0: // All
         {
-            auto f = data.getChildFile (n);
-            f.createDirectory();
-            folder (r, n, f);
+            auto* cp = add (nullptr, "Current project", icons::Id::project);
+            for (auto n : { "History", "Patterns", "Effects", "Generators", "Remote control", "Initialized controls", "Samples" })
+                add (cp, n, icons::Id::folder);
+            add (nullptr, "Recent files", icons::Id::undo);
+            addPluginDatabase (false);
+            addFolder ("Plugin presets", icons::Id::speaker);
+            addFolder ("Channel presets", icons::Id::preset);
+            addFolder ("Mixer presets", icons::Id::mixer);
+            addFolder ("Scores", icons::Id::pianoRoll);
+            addFolder ("Backup", icons::Id::undo);
+            for (auto n : { "Clipboard files", "Demo projects", "Envelopes", "Impulses", "Misc", "My projects" })
+                addFolder (n, icons::Id::folder);
+            addFolder ("Packs", icons::Id::sampler);
+            addFolder ("Recorded", icons::Id::wave);
+            addFolder ("Rendered", icons::Id::wave);
+            addFolder ("Sliced audio", icons::Id::slice);
+            addFolder ("Soundfonts", icons::Id::folder);
+            addFolder ("Templates", icons::Id::folder);
+            add (nullptr, "User data", icons::Id::star, data);
+            break;
         }
-        if (music.isDirectory()) folder (r, "Music", music);
-        folder (r, "Documents", docs);
+        case 1:
+        {
+            auto* cp = add (nullptr, "Current project", icons::Id::project);
+            for (auto n : { "History", "Patterns", "Effects", "Generators", "Remote control", "Initialized controls", "Samples" })
+                add (cp, n, icons::Id::folder);
+            cp->setOpen (true);
+            break;
+        }
+        case 2: addPluginDatabase (true); break;
+        case 3: root->addSubItem (new Item ("Plugin catalog - coming soon", icons::Id::globe, {}, false)); break;
+        case 4: root->addSubItem (new Item ("Online content - coming soon", icons::Id::cloud, {}, false)); break;
+        case 5: root->addSubItem (new Item ("Nothing starred yet", icons::Id::star, {}, false)); break;
+        case 6:
+        {
+            add (nullptr, "User data", icons::Id::star, data);
+            const auto music = juce::File::getSpecialLocation (juce::File::userMusicDirectory);
+            if (music.isDirectory()) add (nullptr, "Music", icons::Id::folder, music);
+            add (nullptr, "Documents", icons::Id::folder, juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
+            add (nullptr, "Desktop", icons::Id::folder, juce::File::getSpecialLocation (juce::File::userDesktopDirectory));
+            break;
+        }
+        default: break;
     }
-
-    if (currentTab == 3)
-        r->addSubItem (new Item ("Nothing starred yet", Kind::info));
 
     tree.setRootItem (root.get());
 }
 
 void BrowserPanel::paint (juce::Graphics& g)
 {
-    g.fillAll (theme::bg);
-    g.setColour (theme::bgRaised);
-    g.fillRect (getLocalBounds().removeFromTop (28));
+    auto r = getLocalBounds();
+
+    auto header = r.removeFromTop (22);
+    drawPanelHeader (g, header, {}, icons::Id::none);
+    g.setColour (theme::textDim);
+    g.setFont (theme::font (15.0f));
+    g.drawText ("Browser", header.withTrimmedLeft (64), juce::Justification::centredLeft);
+
+    auto tabRow = r.removeFromTop (30);
+    g.setColour (theme::browserTabs);
+    g.fillRect (tabRow);
+    // selected tab gets a framed highlight
+    for (auto* t : tabs)
+        if (t->getToggleState())
+        {
+            g.setColour (juce::Colour (0xff2c363c));
+            g.fillRoundedRectangle (t->getBounds().toFloat().reduced (1.0f), 3.0f);
+            g.setColour (juce::Colour (0xff5d6a71));
+            g.drawRoundedRectangle (t->getBounds().toFloat().reduced (1.0f), 3.0f, 1.0f);
+        }
+
+    auto tags = r.removeFromBottom (26);
+    g.setColour (theme::tagsBar);
+    g.fillRect (tags);
     g.setColour (theme::text);
-    g.setFont (theme::font (13.0f, true));
-    g.drawText ("Browser", getLocalBounds().removeFromTop (28).withTrimmedLeft (30), juce::Justification::centredLeft);
-    g.setColour (theme::outline);
+    g.setFont (theme::font (14.0f, theme::Weight::semibold));
+    g.drawText ("TAGS", tags.withTrimmedLeft (10), juce::Justification::centredLeft);
+
+    if (searchVisible) r.removeFromTop (28);
+    g.setGradientFill (juce::ColourGradient (theme::browserBg, 0, (float) r.getY(), theme::browserBg2, 0, (float) r.getBottom(), false));
+    g.fillRect (r);
+
+    g.setColour (juce::Colours::black);
     g.drawVerticalLine (getWidth() - 1, 0.0f, (float) getHeight());
 }
 
 void BrowserPanel::resized()
 {
     auto r = getLocalBounds().withTrimmedRight (1);
-    auto header = r.removeFromTop (28).reduced (3);
-    menuButton.setBounds (header.removeFromLeft (22));
-    closeButton.setBounds (header.removeFromRight (22));
-    header.removeFromRight (2);
-    refreshButton.setBounds (header.removeFromRight (22));
-    header.removeFromRight (2);
-    collapseButton.setBounds (header.removeFromRight (22));
+    auto header = r.removeFromTop (22);
+    menuButton.setBounds (header.removeFromLeft (20));
+    upButton.setBounds (header.removeFromLeft (20));
+    backButton.setBounds (header.removeFromLeft (20));
 
-    auto tabRow = r.removeFromTop (26).reduced (3, 2);
+    auto tabRow = r.removeFromTop (30).reduced (4, 2);
     const int w = tabRow.getWidth() / tabs.size();
     for (auto* t : tabs) t->setBounds (tabRow.removeFromLeft (w).reduced (1, 0));
 
-    search.setBounds (r.removeFromTop (28).reduced (4, 3));
-    tree.setBounds (r.reduced (2));
+    auto tags = r.removeFromBottom (26);
+    tagsSearch.setBounds (tags.removeFromRight (24).reduced (2));
+    tagsFolder.setBounds (tags.removeFromRight (24).reduced (2));
+
+    search.setVisible (searchVisible);
+    if (searchVisible) search.setBounds (r.removeFromTop (28).reduced (4, 3));
+    tree.setBounds (r.reduced (4, 4));
 }

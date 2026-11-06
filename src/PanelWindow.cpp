@@ -30,18 +30,18 @@ void PanelWindow::setContent (std::unique_ptr<juce::Component> c)
 void PanelWindow::paint (juce::Graphics& g)
 {
     auto r = getLocalBounds();
-    g.fillAll (theme::bg);
+    g.fillAll (theme::panelBody);
 
     auto header = r.removeFromTop (headerHeight);
-    g.setColour (theme::bgRaised);
+    g.setColour (theme::panelHeader);
     g.fillRect (header);
 
-    g.setColour (theme::accent);
-    g.fillRect (header.removeFromLeft (3));
+    g.setColour (juce::Colours::black.withAlpha (0.35f));
+    g.drawHorizontalLine (header.getBottom() - 1, 0.0f, (float) getWidth());
 
     g.setColour (theme::text);
-    g.setFont (theme::font (13.0f, true));
-    g.drawText (title, header.reduced (8, 0), juce::Justification::centredLeft);
+    g.setFont (theme::font (18.0f, theme::Weight::medium));
+    g.drawText (title, header.reduced (10, 0), juce::Justification::centredLeft);
 
     g.setColour (theme::outline);
     g.drawRect (getLocalBounds(), 1);
@@ -93,14 +93,14 @@ void PanelWindow::parentSizeChanged()
 
 void ComingSoonView::paint (juce::Graphics& g)
 {
-    g.fillAll (theme::bgDeep);
+    g.fillAll (theme::workspace);
 
     // light grid to hint at an editor surface
-    g.setColour (theme::bg);
+    g.setColour (theme::panelBody);
     for (int x = 0; x < getWidth(); x += 24) g.drawVerticalLine (x, 0.0f, (float) getHeight());
     for (int y = 0; y < getHeight(); y += 24) g.drawHorizontalLine (y, 0.0f, (float) getWidth());
 
     g.setColour (theme::textDim);
-    g.setFont (theme::font (14.0f));
+    g.setFont (theme::font (17.0f));
     g.drawText (name + juce::String::fromUTF8 (" \xe2\x80\x94 in development"), getLocalBounds(), juce::Justification::centred);
 }

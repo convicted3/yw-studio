@@ -4,28 +4,29 @@
 #include "SplashWindow.h"
 #include "MainComponent.h"
 
+// Main window without a native title bar: the top toolbar is the caption (drag, double-click, buttons).
 class MainWindow : public juce::DocumentWindow
 {
 public:
     explicit MainWindow (AppState& state)
-        : juce::DocumentWindow ("YW Studio", yw::theme::bgDeep, juce::DocumentWindow::allButtons, false)
+        : juce::DocumentWindow ("YW Studio", yw::theme::workspace, 0, false)
     {
-        setUsingNativeTitleBar (true);
+        setUsingNativeTitleBar (false);
+        setTitleBarHeight (0);
         auto* content = new MainComponent (state);
         setContentOwned (content, true);
         addKeyListener (content);
 
         setResizable (true, false);
-        setResizeLimits (960, 600, 10000, 10000);
+        setResizeLimits (1100, 640, 10000, 10000);
         centreWithSize (getWidth(), getHeight());
         setName ("YW Studio - Untitled");
-        // Not added to the desktop yet: it appears only after the splash closes.
+        // Not added to the desktop yet: it appears only after the splash has finished.
     }
 
-    void closeButtonPressed() override
-    {
-        juce::JUCEApplication::getInstance()->systemRequestedQuit();
-    }
+    juce::BorderSize<int> getBorderThickness() const override { return isFullScreen() ? juce::BorderSize<int> (0) : juce::BorderSize<int> (3); }
+
+    void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
 };
 
 class YWStudioApplication : public juce::JUCEApplication
@@ -35,12 +36,19 @@ public:
     const juce::String getApplicationVersion() override { return JUCE_APPLICATION_VERSION_STRING; }
     bool moreThanOneInstanceAllowed() override          { return false; }
 
-    void initialise (const juce::String&) override
+    void initialise (const juce::String& commandLine) override
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        state = std::make_unique<AppState>();
 
-        startTime = juce::Time::getMillisecondCounter();
+        // Developer tool: render the splash animation to PNG frames and quit.
+        if (commandLine.contains ("--splash-frames"))
+        {
+            dumpSplashFrames (juce::File (commandLine.fromFirstOccurrenceOf ("--splash-frames", false, false).trim().unquoted()));
+            quit();
+            return;
+        }
+
+        state = std::make_unique<AppState>();
 
         if (state->getShowSplash())
         {
@@ -67,28 +75,21 @@ public:
     }
 
 private:
-    // Each startup step runs on its own message-loop iteration so the splash can repaint.
     void runStartupStep (int step)
     {
-        struct Step { const char* status; std::function<void()> fn; };
+        struct Step { std::function<void()> fn; };
         const Step steps[] = {
-            { "Loading settings...",        [this] { state->loadSettings(); } },
-            { "Initializing audio device...", [this] { state->initialiseAudio(); } },
-            { "Loading plugin database...", [this] { state->loadPluginDatabase(); } },
-            { "Building interface...",      [this] { mainWindow = std::make_unique<MainWindow> (*state); } },
+            { [this] { state->loadSettings(); } },
+            { [this] { state->initialiseAudio(); } },
+            { [this] { state->loadPluginDatabase(); } },
+            { [this] { mainWindow = std::make_unique<MainWindow> (*state); } },
         };
-        const int numSteps = (int) std::size (steps);
 
-        if (step >= numSteps)
+        if (step >= (int) std::size (steps))
         {
-            finishStartup();
+            if (splash) splash->finish ([this] { showMainWindow(); });
+            else        showMainWindow();
             return;
-        }
-
-        if (splash)
-        {
-            splash->setStatus (steps[step].status);
-            splash->setProgress ((float) step / (float) numSteps);
         }
 
         juce::MessageManager::callAsync ([this, step, fn = steps[step].fn]
@@ -98,29 +99,39 @@ private:
         });
     }
 
-    void finishStartup()
+    void showMainWindow()
     {
-        if (splash) { splash->setStatus ("Ready"); splash->setProgress (1.0f); }
+        splash.reset();
+        mainWindow->addToDesktop();
+        mainWindow->setVisible (true);
+        mainWindow->setFullScreen (true); // maximised, like the classic layout
+        mainWindow->toFront (true);
+    }
 
-        // Keep the splash visible for at least ~1.2 s so it doesn't just flash.
-        const auto elapsed = (int) (juce::Time::getMillisecondCounter() - startTime);
-        const int wait = splash ? juce::jmax (0, 1200 - elapsed) : 0;
-
-        juce::Timer::callAfterDelay (wait, [this]
+    void dumpSplashFrames (const juce::File& dir)
+    {
+        dir.createDirectory();
+        const int w = 560, h = 420;
+        int index = 0;
+        for (double ms = 0.0; ms <= SplashWindow::introLengthMs + SplashWindow::exitLengthMs + 40.0; ms += 1000.0 / 30.0)
         {
-            splash.reset();
-            mainWindow->addToDesktop();
-            mainWindow->setVisible (true);
-            mainWindow->setFullScreen (true); // maximised, like FL
-            mainWindow->toFront (true);
-        });
+            juce::Image img (juce::Image::ARGB, w, h, true);
+            {
+                juce::Graphics g (img);
+                g.fillAll (juce::Colour (0xff3a6ea5)); // stand-in desktop colour
+                const double exitMs = ms - SplashWindow::introLengthMs;
+                SplashWindow::renderFrame (g, { 0.0f, 0.0f, (float) w, (float) h }, ms, exitMs >= 0.0 ? exitMs : -1.0);
+            }
+            juce::PNGImageFormat png;
+            juce::FileOutputStream out (dir.getChildFile ("frame_" + juce::String (index++).paddedLeft ('0', 3) + ".png"));
+            if (out.openedOk()) { out.setPosition (0); out.truncate(); png.writeImageToStream (img, out); }
+        }
     }
 
     YWLookAndFeel lookAndFeel;
     std::unique_ptr<AppState> state;
     std::unique_ptr<SplashWindow> splash;
     std::unique_ptr<MainWindow> mainWindow;
-    juce::uint32 startTime = 0;
 };
 
 START_JUCE_APPLICATION (YWStudioApplication)

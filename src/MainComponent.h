@@ -2,32 +2,33 @@
 #include <JuceHeader.h>
 #include "AppState.h"
 #include "MenuModel.h"
-#include "ToolbarPanel.h"
+#include "TopBar.h"
 #include "BrowserPanel.h"
+#include "ChannelRackView.h"
+#include "MixerView.h"
+#include "PlaylistView.h"
 #include "PanelWindow.h"
 #include "PluginManagerWindow.h"
 #include "SettingsWindow.h"
 
-// Workspace area that hosts the floating editor windows.
-class Workspace : public juce::Component
+// Thin draggable divider between docked panels.
+class Splitter : public juce::Component
 {
 public:
-    void paint (juce::Graphics&) override;
-};
-
-// Top row: logo, main menu and hint bar.
-class TitleRow : public juce::Component, private juce::Timer
-{
-public:
-    explicit TitleRow (juce::MenuBarModel& model);
-    void paint (juce::Graphics&) override;
-    void resized() override;
-
+    explicit Splitter (bool vertical) : isVertical (vertical)
+    {
+        setMouseCursor (vertical ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::UpDownResizeCursor);
+    }
+    void paint (juce::Graphics& g) override;
+    void mouseDown (const juce::MouseEvent&) override { if (onStart) onStart(); }
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        if (onDrag) onDrag (isVertical ? e.getDistanceFromDragStartX() : e.getDistanceFromDragStartY());
+    }
+    std::function<void()> onStart;
+    std::function<void (int)> onDrag;
 private:
-    void timerCallback() override;
-    juce::MenuBarComponent menuBar;
-    juce::Image logo;
-    juce::String hint;
+    bool isVertical;
 };
 
 class MainComponent : public juce::Component, public juce::KeyListener
@@ -45,30 +46,35 @@ public:
     void handleCommand (int id);
 
 private:
-    enum WindowId { playlist = 0, channelRack, pianoRoll, mixer, numWindows };
+    enum Panel { pBrowser, pChannelRack, pMixer, pPlaylist, numPanels };
 
     bool isCommandEnabled (int id) const;
     bool isCommandTicked (int id) const;
 
-    void toggleWindow (WindowId w);
-    void toggleBrowser();
+    void togglePanel (Panel p);
+    void toggleFloating (PanelWindow& w);
     void closeAllWindows();
-    void arrangeDefault();
     void showPluginManager();
     void showSettings (SettingsWindow::Tab tab);
     void showAbout();
+    void refreshUi();
 
     AppState& state;
     MenuModel menuModel;
 
-    TitleRow titleRow { menuModel };
-    ToolbarPanel toolbar;
+    TopBar topBar;
     BrowserPanel browser;
-    Workspace workspace;
-    std::array<std::unique_ptr<PanelWindow>, numWindows> windows;
+    ChannelRackView channelRack;
+    MixerView mixer;
+    PlaylistView playlist;
+    Splitter browserSplit { true }, middleSplit { true }, rackSplit { false };
 
-    bool browserVisible = true;
-    bool firstLayout = true;
+    juce::Component floatingLayer;   // hosts floating windows (piano roll ...)
+    std::unique_ptr<PanelWindow> pianoRoll;
+
+    std::array<bool, numPanels> visible { true, true, true, true };
+    int browserW = 325, middleW = 500, rackH = 360;
+    int dragStartValue = 0;
 
     std::unique_ptr<PluginManagerWindow> pluginManager;
     std::unique_ptr<SettingsWindow> settingsWindow;

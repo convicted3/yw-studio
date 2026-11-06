@@ -15,19 +15,19 @@ public:
                       "Plugins that crash during a scan are blacklisted automatically.",
                       juce::dontSendNotification);
         info.setColour (juce::Label::textColourId, theme::textDim);
-        info.setFont (theme::font (13.0f));
+        info.setFont (theme::font (16.0f));
         info.setJustificationType (juce::Justification::topLeft);
         addAndMakeVisible (info);
 
         formats.setText ("Formats: " + formatNames(), juce::dontSendNotification);
-        formats.setFont (theme::font (13.0f, true));
+        formats.setFont (theme::bold (13.0f));
         addAndMakeVisible (formats);
 
         addAndMakeVisible (list);
         setSize (820, 560);
     }
 
-    void paint (juce::Graphics& g) override { g.fillAll (theme::bg); }
+    void paint (juce::Graphics& g) override { g.fillAll (theme::panelBody); }
 
     void resized() override
     {
@@ -53,7 +53,7 @@ private:
 };
 
 PluginManagerWindow::PluginManagerWindow (AppState& s)
-    : juce::DocumentWindow ("Plugin Manager", theme::bg, juce::DocumentWindow::closeButton)
+    : juce::DocumentWindow ("Plugin Manager", theme::panelBody, juce::DocumentWindow::closeButton)
 {
     setUsingNativeTitleBar (true);
     setContentOwned (new Content (s), true);
