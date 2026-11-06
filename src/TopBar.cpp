@@ -3,9 +3,13 @@
 #include "MenuModel.h"
 
 #if JUCE_WINDOWS
+ #ifndef NOMINMAX
+  #define NOMINMAX
+ #endif
  #include <windows.h>
  #include <psapi.h>
  #pragma comment (lib, "psapi.lib")
+ #undef small
 #endif
 
 using namespace yw;
@@ -192,13 +196,13 @@ public:
     void paint (juce::Graphics& g) override
     {
         const double ticks = transport.positionTicks;
-        juce::String big, small, unit;
+        juce::String big, smallText, unit;
 
         if (! barsMode)
         {
             const double sec = ticks / Transport::ppq * 60.0 / transport.tempo.load();
             big   = juce::String ((int) (sec / 60.0)) + ":" + juce::String ((int) std::fmod (sec, 60.0)).paddedLeft ('0', 2);
-            small = ":" + juce::String ((int) (std::fmod (sec, 1.0) * 100.0)).paddedLeft ('0', 2);
+            smallText = ":" + juce::String ((int) (std::fmod (sec, 1.0) * 100.0)).paddedLeft ('0', 2);
             unit  = "M:S:CS";
         }
         else
@@ -206,7 +210,7 @@ public:
             const int t = (int) ticks;
             big   = juce::String (t / (Transport::ticksPerStep * Transport::stepsPerBar) + 1) + ":"
                   + juce::String ((t / Transport::ticksPerStep) % Transport::stepsPerBar + 1).paddedLeft ('0', 2);
-            small = ":" + juce::String (t % Transport::ticksPerStep).paddedLeft ('0', 2);
+            smallText = ":" + juce::String (t % Transport::ticksPerStep).paddedLeft ('0', 2);
             unit  = "B:S:T";
         }
 
@@ -216,10 +220,10 @@ public:
         g.drawText (unit, r.withHeight (12), juce::Justification::topRight);
 
         const auto bigF = theme::font (40.0f), smallF = theme::font (26.0f);
-        const float smallW = juce::GlyphArrangement::getStringWidth (smallF, small);
+        const float smallW = juce::GlyphArrangement::getStringWidth (smallF, smallText);
         g.setColour (theme::lcdText);
         g.setFont (smallF);
-        g.drawText (small, r.withTrimmedTop (9), juce::Justification::centredRight);
+        g.drawText (smallText, r.withTrimmedTop (9), juce::Justification::centredRight);
         g.setFont (bigF);
         g.drawText (big, r.withTrimmedRight ((int) smallW).withTrimmedTop (1), juce::Justification::centredRight);
     }
