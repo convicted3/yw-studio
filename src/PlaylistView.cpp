@@ -5,16 +5,45 @@ using namespace yw;
 
 namespace
 {
-    constexpr int toolbarH = 22, topAreaH = 40, rulerH = 16, trackH = 56, numTracks = 100;
+    constexpr int toolbarH = 22, topAreaH = 40, rulerH = 16, numTracks = 100, totalBars = 1000;
     constexpr int pickerW = 158, headerW = 100;
 
-    struct Clip { int track; double start, length; int pattern; };
+    // Grid colours (layered: background, step, beat and bar lines, track separators)
+    const juce::Colour gridBg     { 0xff1e282e };
+    const juce::Colour gridBgAlt  { 0xff1b252b };
+    const juce::Colour stepLine   { 0xff141e24 };
+    const juce::Colour beatLine   { 0xff0c161c };
+    const juce::Colour barLine    { 0xff00040a };
+    const juce::Colour rowEdge    { 0xff141e24 };
+    const juce::Colour rowEdgeMid { 0xff020c12 };
 
     juce::Colour clipColour (int pattern)
     {
         static const juce::uint32 cols[] = { 0xff5d7a6a, 0xff6a6f8f, 0xff8a6b55, 0xff4f7b86, 0xff7d5f78, 0xff7a7a52 };
         return juce::Colour (cols[(pattern - 1) % 6]);
     }
+}
+
+//==============================================================================
+float PlaylistView::Model::yOf (int track) const
+{
+    float y = 0.0f;
+    for (int i = 0; i < track && i < (int) tracks.size(); ++i) y += tracks[(size_t) i].height;
+    return y;
+}
+
+float PlaylistView::Model::totalHeight() const { return yOf ((int) tracks.size()); }
+
+int PlaylistView::Model::trackAt (float contentY) const
+{
+    if (contentY < 0.0f) return -1;
+    float y = 0.0f;
+    for (int i = 0; i < (int) tracks.size(); ++i)
+    {
+        y += tracks[(size_t) i].height;
+        if (contentY < y) return i;
+    }
+    return -1;
 }
 
 //==============================================================================
@@ -39,7 +68,6 @@ public:
     {
         g.fillAll (theme::pickerBg);
         auto r = getLocalBounds().withTrimmedTop (topAreaH);
-
         for (int i = 1; i <= state.numPatterns; ++i)
         {
             auto row = r.removeFromTop (26).reduced (4, 1);
@@ -49,7 +77,8 @@ public:
             if (cur)
             {
                 juce::Path p;
-                p.addTriangle ((float) row.getX() + 2.0f, row.getY() + 6.0f, (float) row.getX() + 2.0f, row.getBottom() - 6.0f, (float) row.getX() + 9.0f, (float) row.getCentreY());
+                p.addTriangle ((float) row.getX() + 2.0f, row.getY() + 6.0f, (float) row.getX() + 2.0f, row.getBottom() - 6.0f,
+                               (float) row.getX() + 9.0f, (float) row.getCentreY());
                 g.setColour (theme::accent);
                 g.fillPath (p);
             }
@@ -59,7 +88,6 @@ public:
             g.setFont (theme::font (17.0f));
             g.drawText ("Pattern " + juce::String (i), row.withTrimmedLeft (20), juce::Justification::centredLeft);
         }
-
         g.setColour (juce::Colours::black.withAlpha (0.5f));
         g.drawVerticalLine (getWidth() - 1, 0.0f, (float) getHeight());
     }
@@ -82,14 +110,61 @@ public:
 };
 
 //==============================================================================
-class PlaylistView::TrackList : public juce::Component
+class PlaylistView::TrackList : public juce::Component, public juce::TooltipClient
 {
 public:
-    TrackList()
+    explicit TrackList (Model& m) : model (m)
     {
         addButton.setIconScale (0.6f);
         addAndMakeVisible (addButton);
-        for (int i = 0; i < numTracks; ++i) muted.push_back (false);
+    }
+
+    enum class Zone { none, body, dots, mute, edge };
+
+    struct Hit { int track = -1; Zone zone = Zone::none; };
+
+    juce::Rectangle<float> rowBounds (int i) const
+    {
+        return { 0.0f, topAreaH + model.yOf (i) - model.scrollY, (float) getWidth(), model.tracks[(size_t) i].height };
+    }
+
+    static juce::Rectangle<float> dotsArea (juce::Rectangle<float> row)  { return { row.getX() + 16.0f, row.getBottom() - 17.0f, 26.0f, 13.0f }; }
+    static juce::Rectangle<float> muteArea (juce::Rectangle<float> row, bool collapsed)
+    {
+        return collapsed ? juce::Rectangle<float> (row.getRight() - 24.0f, row.getY(), 16.0f, row.getHeight())
+                         : juce::Rectangle<float> (row.getRight() - 28.0f, row.getBottom() - 22.0f, 19.0f, 19.0f);
+    }
+
+    Hit hitTestAt (juce::Point<float> p) const
+    {
+        Hit h;
+        if (p.y < topAreaH) return h;
+        h.track = model.trackAt (p.y - topAreaH + model.scrollY);
+        if (h.track < 0) return h;
+
+        const auto row = rowBounds (h.track);
+        // the resize handle straddles the line between two tracks
+        if (p.y < row.getY() + 3.0f && h.track > 0) { h.track -= 1; h.zone = Zone::edge; return h; }
+        const auto& t = model.tracks[(size_t) h.track];
+        if (p.y > row.getBottom() - 5.0f) h.zone = Zone::edge;
+        else if (muteArea (row, t.collapsed).contains (p)) h.zone = Zone::mute;
+        else if (! t.collapsed && dotsArea (row).expanded (2.0f).contains (p)) h.zone = Zone::dots;
+        else h.zone = Zone::body;
+        return h;
+    }
+
+    juce::String getTooltip() override
+    {
+        const auto h = hitTestAt (getMouseXYRelative().toFloat());
+        if (h.track < 0) return {};
+        const auto& t = model.tracks[(size_t) h.track];
+        switch (h.zone)
+        {
+            case Zone::edge: return "Drag to resize the track";
+            case Zone::mute: return t.muted ? "Track muted - click to unmute" : "Track enabled - click to mute";
+            case Zone::dots: return "Double-click to collapse the track";
+            default:         return t.collapsed ? "Click to restore the track" : "Track " + juce::String (h.track + 1);
+        }
     }
 
     void paint (juce::Graphics& g) override
@@ -98,8 +173,6 @@ public:
 
         // top area: + and NOTE / CHAN / PAT focus switches
         auto top = getLocalBounds().removeFromTop (topAreaH);
-        g.setColour (juce::Colour (0xff272e30));
-        g.fillRect (top);
         const char* labels[] = { "NOTE", "CHAN", "PAT" };
         const icons::Id ic[] = { icons::Id::wave, icons::Id::automation, icons::Id::keys };
         auto sw = top.withTrimmedLeft (30).reduced (0, 2);
@@ -116,41 +189,126 @@ public:
 
         juce::Graphics::ScopedSaveState s (g);
         g.reduceClipRegion (getLocalBounds().withTrimmedTop (topAreaH));
-        for (int i = 0; i < numTracks; ++i)
+
+        for (int i = 0; i < (int) model.tracks.size(); ++i)
         {
-            const int y = topAreaH + i * trackH - scrollY;
-            if (y + trackH < topAreaH || y > getHeight()) continue;
-            auto row = juce::Rectangle<int> (0, y, getWidth(), trackH);
+            const auto row = rowBounds (i);
+            if (row.getBottom() < topAreaH || row.getY() > getHeight()) continue;
+            const auto& t = model.tracks[(size_t) i];
+            const bool hoverRow = i == hover.track;
 
-            g.setGradientFill (juce::ColourGradient (juce::Colour (0xff2b3236), 0, (float) row.getY(), juce::Colour (0xff252b2f), 0, (float) row.getBottom(), false));
-            g.fillRect (row.reduced (0, 1).withTrimmedRight (8));
+            auto body = row.withTrimmedRight (8.0f).withTrimmedBottom (2.0f);
+            g.setGradientFill (juce::ColourGradient (juce::Colour (hoverRow ? 0xff2f373b : 0xff2b3236), 0, body.getY(),
+                                                     juce::Colour (hoverRow ? 0xff292f33 : 0xff252b2f), 0, body.getBottom(), false));
+            g.fillRect (body);
             g.setColour (juce::Colour (0xff1a1f22));
-            g.fillRect (row.getRight() - 8, row.getY(), 8, row.getHeight());
-            g.setColour (juce::Colours::black.withAlpha (0.45f));
-            g.drawHorizontalLine (row.getBottom() - 1, 0.0f, (float) getWidth());
+            g.fillRect (row.withLeft (row.getRight() - 8.0f));
+            g.setColour (juce::Colours::black.withAlpha (0.55f));
+            g.fillRect (row.withTop (row.getBottom() - 2.0f));
 
-            g.setColour (muted[(size_t) i] ? theme::textDim.withAlpha (0.5f) : theme::textDim);
-            g.setFont (theme::font (16.0f));
-            g.drawText ("Track " + juce::String (i + 1), row.reduced (5, 3).removeFromTop (18), juce::Justification::centredLeft);
-            g.setFont (theme::font (13.0f));
-            g.drawText ("...", row.reduced (22, 2).removeFromBottom (14), juce::Justification::bottomLeft);
+            const auto nameColour = t.muted ? theme::textDim.withAlpha (0.45f) : theme::textDim;
 
-            auto dot = juce::Rectangle<float> ((float) row.getRight() - 25.0f, (float) row.getBottom() - 19.0f, 13.0f, 13.0f);
+            if (t.collapsed || row.getHeight() < 26.0f)
+            {
+                g.setColour (nameColour);
+                g.setFont (theme::font (juce::jmin (15.0f, row.getHeight() - 2.0f)));
+                g.drawText ("Track " + juce::String (i + 1), body.reduced (5.0f, 0.0f).toNearestInt(), juce::Justification::centredLeft, true);
+            }
+            else
+            {
+                g.setColour (nameColour);
+                g.setFont (theme::font (16.0f));
+                g.drawText ("Track " + juce::String (i + 1), body.reduced (5.0f, 3.0f).removeFromTop (18.0f).toNearestInt(), juce::Justification::centredLeft);
+
+                // "..." collapse handle, highlighted on hover
+                const auto dots = dotsArea (row);
+                const bool hot = hoverRow && hover.zone == Zone::dots;
+                if (hot)
+                {
+                    g.setColour (juce::Colours::white.withAlpha (0.1f));
+                    g.fillRoundedRectangle (dots, 3.0f);
+                }
+                g.setColour (hot ? theme::textBright : theme::textDim.withAlpha (0.8f));
+                for (int d = 0; d < 3; ++d)
+                    g.fillEllipse (dots.getX() + 6.0f + d * 5.5f, dots.getCentreY() + 1.0f, 2.5f, 2.5f);
+            }
+
+            // mute dot
+            const auto mute = muteArea (row, t.collapsed);
+            const float sz = t.collapsed ? juce::jmin (10.0f, row.getHeight() - 6.0f) : 13.0f;
+            auto dot = mute.withSizeKeepingCentre (sz, sz);
             g.setColour (juce::Colour (0xff101315));
             g.fillEllipse (dot.expanded (1.0f));
-            g.setColour (muted[(size_t) i] ? theme::textDim.withAlpha (0.4f) : theme::textBright);
+            g.setColour (t.muted ? theme::textDim.withAlpha (0.4f) : theme::textBright);
             g.drawEllipse (dot, 1.4f);
-            g.fillEllipse (dot.reduced (3.0f));
+            g.fillEllipse (dot.reduced (sz * 0.23f));
         }
     }
 
     void resized() override { addButton.setBounds (4, 10, 22, 22); }
 
+    void mouseMove (const juce::MouseEvent& e) override
+    {
+        const auto h = hitTestAt (e.position);
+        setMouseCursor (h.zone == Zone::edge ? juce::MouseCursor::UpDownResizeCursor : juce::MouseCursor::NormalCursor);
+        if (h.track != hover.track || h.zone != hover.zone) { hover = h; repaint(); }
+    }
+
+    void mouseExit (const juce::MouseEvent&) override { hover = {}; repaint(); }
+
     void mouseDown (const juce::MouseEvent& e) override
     {
-        if (e.y < topAreaH) return;
-        const int i = (e.y - topAreaH + scrollY) / trackH;
-        if (i >= 0 && i < numTracks && e.x > getWidth() - 34) { muted[(size_t) i] = ! muted[(size_t) i]; repaint(); }
+        const auto h = hitTestAt (e.position);
+        resizing = -1;
+        if (h.track < 0) return;
+        auto& t = model.tracks[(size_t) h.track];
+
+        if (h.zone == Zone::edge)
+        {
+            resizing = h.track;
+            resizeStart = t.height;
+            return;
+        }
+        if (h.zone == Zone::mute) { t.muted = ! t.muted; repaint(); if (onChanged) onChanged(); return; }
+
+        if (t.collapsed && ! e.mods.isPopupMenu())
+        {
+            t.collapsed = false;
+            t.target = t.restore;   // animated back to its previous height
+            if (onChanged) onChanged();
+        }
+    }
+
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        if (resizing < 0) return;
+        auto& t = model.tracks[(size_t) resizing];
+        const float h = juce::jlimit (Model::minHeight, Model::maxHeight, resizeStart + (float) e.getDistanceFromDragStartY());
+        t.height = t.target = t.restore = h;
+        t.collapsed = false;
+        if (onChanged) onChanged();
+    }
+
+    void mouseUp (const juce::MouseEvent&) override { resizing = -1; }
+
+    void mouseDoubleClick (const juce::MouseEvent& e) override
+    {
+        const auto h = hitTestAt (e.position);
+        if (h.track < 0) return;
+        auto& t = model.tracks[(size_t) h.track];
+        if (h.zone == Zone::dots && ! t.collapsed)
+        {
+            t.restore = t.target;
+            t.target = Model::collapsedHeight;   // animated
+            t.collapsed = true;
+            if (onChanged) onChanged();
+        }
+        else if (h.zone == Zone::edge)
+        {
+            t.target = t.restore = Model::defaultHeight; // double-click the edge: default size
+            t.collapsed = false;
+            if (onChanged) onChanged();
+        }
     }
 
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails& w) override
@@ -158,104 +316,122 @@ public:
         if (onScroll) onScroll (w.deltaY);
     }
 
-    juce::String getTooltipFor (int) { return {}; }
-
-    int scrollY = 0;
-    std::vector<bool> muted;
+    Model& model;
+    Hit hover;
+    int resizing = -1;
+    float resizeStart = 0.0f;
     ToolButton addButton { icons::Id::plus, "Add playlist track / arrangement", ToolButton::Style::flat };
     std::function<void (float)> onScroll;
+    std::function<void()> onChanged;
 };
 
 //==============================================================================
 class PlaylistView::Grid : public juce::Component, public juce::TooltipClient, private juce::Timer
 {
 public:
-    explicit Grid (AppState& s) : state (s) { startTimerHz (30); }
+    Grid (AppState& s, Model& m) : state (s), model (m) { startTimerHz (30); }
 
-    juce::String getTooltip() override { return "Playlist - click to place the current pattern, right-click to delete, drag to move"; }
+    juce::String getTooltip() override
+    {
+        if (getMouseXYRelative().y < rulerH) return "Timeline - mouse wheel to zoom, click to set the song position";
+        return "Playlist - click to place the current pattern, right-click to delete, drag to move, Ctrl+wheel to zoom";
+    }
 
-    double barWidth = 48.0;
-    int scrollX = 0, scrollY = 0;
-    std::vector<Clip> clips;
-
-    int barsVisible() const { return (int) std::ceil (getWidth() / barWidth) + 1; }
+    float rowTop (int track) const { return (float) rulerH + model.yOf (track) - model.scrollY; }
 
     void paint (juce::Graphics& g) override
     {
         const int w = getWidth(), h = getHeight();
+        const double bw = model.barWidth;
+        const double beatW = bw / 4.0, stepW = bw / 16.0;
+        const int firstBar = juce::jmax (0, (int) (model.scrollX / bw));
+        const int lastBar  = (int) ((model.scrollX + w) / bw) + 1;
+        auto xOf = [&] (double bars) { return (float) (bars * bw - model.scrollX); };
 
-        // ruler
-        auto ruler = juce::Rectangle<int> (0, 0, w, rulerH);
-        g.setColour (theme::ruler);
-        g.fillRect (ruler);
-        const int firstBar = (int) (scrollX / barWidth);
-        g.setFont (theme::font (13.0f, theme::Weight::medium));
-        for (int b = firstBar; b < firstBar + barsVisible(); ++b)
+        // --- body background ------------------------------------------------------
+        g.setColour (gridBg);
+        g.fillRect (0, rulerH, w, h - rulerH);
+        if (bw < 90.0)
+            for (int b = firstBar; b <= lastBar; ++b)
+                if (b % 2 == 1)
+                {
+                    g.setColour (gridBgAlt);
+                    g.fillRect (xOf (b), (float) rulerH, (float) bw, (float) (h - rulerH));
+                }
+
+        // --- vertical lines: steps, beats, bars --------------------------------
+        const int barEvery = bw < 14.0 ? 4 : 1;
+        for (int b = firstBar; b <= lastBar; ++b)
         {
-            const float x = (float) (b * barWidth - scrollX);
-            g.setColour (theme::text);
-            g.drawText (juce::String (b + 1), juce::Rectangle<float> (x + 3.0f, 0.0f, 40.0f, (float) rulerH), juce::Justification::centredLeft);
-            g.setColour (theme::textDim.withAlpha (0.5f));
-            g.fillRect (x, rulerH - 5.0f, 1.0f, 5.0f);
-        }
-
-        // grid
-        juce::Graphics::ScopedSaveState s (g);
-        g.reduceClipRegion (0, rulerH, w, h - rulerH);
-
-        for (int b = firstBar; b < firstBar + barsVisible(); ++b)
-        {
-            const float x = (float) (b * barWidth - scrollX);
-            for (int beat = 0; beat < 4; ++beat)
+            if (stepW >= 7.0)
             {
-                g.setColour (beat % 2 == 0 ? theme::gridA : theme::gridB);
-                g.fillRect (x + (float) (beat * barWidth / 4.0), (float) rulerH, (float) (barWidth / 4.0), (float) h);
+                g.setColour (stepLine);
+                for (int s = 1; s < 16; ++s) if (s % 4 != 0) g.fillRect (xOf (b + s / 16.0), (float) rulerH, 1.0f, (float) h);
+            }
+            if (beatW >= 6.0)
+            {
+                g.setColour (beatLine);
+                for (int q = 1; q < 4; ++q) g.fillRect (xOf (b + q / 4.0), (float) rulerH, 1.0f, (float) h);
+            }
+            if (b % barEvery == 0)
+            {
+                g.setColour (barLine);
+                g.fillRect (xOf (b), (float) rulerH, 1.0f, (float) h);
             }
         }
-        for (int b = firstBar; b < firstBar + barsVisible(); ++b)
+
+        // --- track separators ----------------------------------------------------
         {
-            const float x = (float) (b * barWidth - scrollX);
-            g.setColour (theme::gridBeat);
-            for (int beat = 1; beat < 4; ++beat) g.fillRect (x + (float) (beat * barWidth / 4.0), (float) rulerH, 1.0f, (float) h);
-            g.setColour (juce::Colour (0xff070d10));
-            g.fillRect (x, (float) rulerH, 1.0f, (float) h);
-        }
-        for (int t = 0; t <= numTracks; ++t)
-        {
-            const int y = rulerH + t * trackH - scrollY;
-            if (y < rulerH || y > h) continue;
-            g.setColour (juce::Colour (0xff070d10));
-            g.fillRect (0, y - 1, w, 2);
+            juce::Graphics::ScopedSaveState s (g);
+            g.reduceClipRegion (0, rulerH, w, h - rulerH);
+            for (int t = 0; t < (int) model.tracks.size(); ++t)
+            {
+                const float bottom = rowTop (t) + model.tracks[(size_t) t].height;
+                if (bottom < rulerH - 3 || bottom > h + 3) continue;
+                g.setColour (rowEdge);    g.fillRect (0.0f, bottom - 3.0f, (float) w, 1.0f);
+                g.setColour (rowEdgeMid); g.fillRect (0.0f, bottom - 2.0f, (float) w, 1.0f);
+                g.setColour (rowEdge);    g.fillRect (0.0f, bottom - 1.0f, (float) w, 1.0f);
+            }
+
+            // --- clips --------------------------------------------------------------
+            for (auto& c : model.clips) drawClip (g, c);
         }
 
-        // clips
-        for (auto& c : clips)
+        // --- ruler ---------------------------------------------------------------
+        g.setColour (theme::ruler);
+        g.fillRect (0, 0, w, rulerH);
+        const int labelEvery = bw < 22.0 ? 4 : bw < 34.0 ? 2 : 1;
+        for (int b = firstBar; b <= lastBar; ++b)
         {
-            auto r = clipBounds (c);
-            if (! r.intersects (getLocalBounds().toFloat())) continue;
-            auto col = clipColour (c.pattern);
-            g.setColour (col.darker (0.35f));
-            g.fillRoundedRectangle (r, 2.0f);
-            auto head = r.removeFromTop (14.0f);
-            g.setColour (col.brighter (0.15f));
-            g.fillRoundedRectangle (head, 2.0f);
-            g.setColour (juce::Colours::black.withAlpha (0.8f));
-            g.setFont (theme::font (13.0f, theme::Weight::semibold));
-            g.drawText ("Pattern " + juce::String (c.pattern), head.reduced (3.0f, 0.0f), juce::Justification::centredLeft, true);
-            // note preview bars
-            g.setColour (col.brighter (0.5f).withAlpha (0.8f));
-            for (int i = 0; i < 4; ++i)
-                g.fillRect (r.getX() + 3.0f + i * (r.getWidth() - 6.0f) / 4.0f, r.getBottom() - 10.0f - (float) ((i * 7) % 3) * 6.0f,
-                            juce::jmax (2.0f, (r.getWidth() - 6.0f) / 8.0f), 3.0f);
-            g.setColour (juce::Colours::black.withAlpha (0.6f));
-            g.drawRoundedRectangle (clipBounds (c), 2.0f, 1.0f);
+            const float x = xOf (b);
+            if (b % labelEvery == 0)
+            {
+                g.setColour (theme::text);
+                g.setFont (theme::font (13.0f, theme::Weight::medium));
+                g.drawText (juce::String (b + 1), juce::Rectangle<float> (x + 3.0f, 0.0f, 44.0f, (float) rulerH), juce::Justification::centredLeft);
+                g.setColour (theme::textDim.withAlpha (0.6f));
+                g.fillRect (x, rulerH - 6.0f, 1.0f, 6.0f);
+            }
+            if (beatW >= 34.0)
+                for (int q = 1; q < 4; ++q)
+                {
+                    const float bx = xOf (b + q / 4.0);
+                    g.setColour (theme::textDim.withAlpha (0.35f));
+                    g.fillRect (bx, rulerH - 3.0f, 1.0f, 3.0f);
+                    if (beatW >= 60.0)
+                    {
+                        g.setColour (theme::textDim);
+                        g.setFont (theme::font (11.0f));
+                        g.drawText (juce::String (b + 1) + "." + juce::String (q + 1), juce::Rectangle<float> (bx + 2.0f, 1.0f, 40.0f, (float) rulerH - 2.0f), juce::Justification::centredLeft);
+                    }
+                }
         }
 
-        // playhead
+        // --- playhead --------------------------------------------------------------
         if (state.transport.songMode)
         {
             const double bars = state.transport.positionTicks.load() / (Transport::ticksPerStep * Transport::stepsPerBar);
-            const float x = (float) (bars * barWidth - scrollX);
+            const float x = xOf (bars);
             g.setColour (juce::Colour (0xff8fd36a));
             g.fillRect (x, 0.0f, 1.5f, (float) h);
             juce::Path p;
@@ -266,52 +442,94 @@ public:
 
     juce::Rectangle<float> clipBounds (const Clip& c) const
     {
-        return { (float) (c.start * barWidth - scrollX) + 1.0f, (float) (rulerH + c.track * trackH - scrollY) + 1.0f,
-                 (float) (c.length * barWidth) - 2.0f, (float) trackH - 3.0f };
+        const auto& t = model.tracks[(size_t) c.track];
+        return { (float) (c.start * model.barWidth - model.scrollX) + 1.0f, rowTop (c.track) + 1.0f,
+                 (float) (c.length * model.barWidth) - 2.0f, juce::jmax (6.0f, t.height - 4.0f) };
+    }
+
+    void drawClip (juce::Graphics& g, const Clip& c)
+    {
+        auto r = clipBounds (c);
+        if (! r.intersects (getLocalBounds().toFloat())) return;
+        const auto col = clipColour (c.pattern);
+        const float headH = juce::jmin (15.0f, r.getHeight());
+
+        g.setColour (col.darker (0.35f));
+        g.fillRoundedRectangle (r, 2.0f);
+        auto head = r.withHeight (headH);
+        g.setColour (col.brighter (0.15f));
+        g.fillRoundedRectangle (head, 2.0f);
+
+        if (r.getWidth() > 24.0f)
+        {
+            g.setColour (juce::Colours::black.withAlpha (0.8f));
+            g.setFont (theme::font (juce::jmin (13.0f, headH - 1.0f), theme::Weight::semibold));
+            g.drawText ("Pattern " + juce::String (c.pattern), head.reduced (3.0f, 0.0f), juce::Justification::centredLeft, true);
+        }
+
+        // note preview, scales with the clip
+        auto body = r.withTrimmedTop (headH).reduced (3.0f, 3.0f);
+        if (body.getHeight() > 6.0f)
+        {
+            g.setColour (col.brighter (0.55f).withAlpha (0.85f));
+            const float noteH = juce::jlimit (2.0f, 6.0f, body.getHeight() / 8.0f);
+            for (int i = 0; i < 4; ++i)
+            {
+                const float y = body.getY() + body.getHeight() * (0.25f + 0.25f * (float) ((i * 7) % 3));
+                g.fillRect (body.getX() + i * body.getWidth() / 4.0f, y, juce::jmax (2.0f, body.getWidth() / 8.0f), noteH);
+            }
+        }
+
+        g.setColour (juce::Colours::black.withAlpha (0.6f));
+        g.drawRoundedRectangle (r, 2.0f, 1.0f);
     }
 
     int clipAt (juce::Point<float> p) const
     {
-        for (int i = (int) clips.size(); --i >= 0;)
-            if (clipBounds (clips[(size_t) i]).contains (p)) return i;
+        for (int i = (int) model.clips.size(); --i >= 0;)
+            if (clipBounds (model.clips[(size_t) i]).contains (p)) return i;
         return -1;
     }
+
+    int trackAtY (float y) const { return model.trackAt (y - rulerH + model.scrollY); }
 
     void mouseDown (const juce::MouseEvent& e) override
     {
         if (e.y < rulerH)
         {
-            const double bars = juce::jmax (0.0, (e.x + scrollX) / barWidth);
+            const double bars = juce::jmax (0.0, (e.x + model.scrollX) / model.barWidth);
             state.transport.songMode = true;
-            state.transport.positionTicks = std::floor (bars) * Transport::ticksPerStep * Transport::stepsPerBar;
+            state.transport.positionTicks = std::floor (bars * 4.0) / 4.0 * Transport::ticksPerStep * Transport::stepsPerBar;
+            repaint();
             return;
         }
 
         const int hit = clipAt (e.position);
         if (e.mods.isPopupMenu())
         {
-            if (hit >= 0) { clips.erase (clips.begin() + hit); repaint(); }
+            if (hit >= 0) { model.clips.erase (model.clips.begin() + hit); repaint(); }
             return;
         }
 
-        if (hit >= 0) { dragging = hit; dragOffset = (e.x + scrollX) / barWidth - clips[(size_t) hit].start; return; }
+        if (hit >= 0) { dragging = hit; dragOffset = (e.x + model.scrollX) / model.barWidth - model.clips[(size_t) hit].start; return; }
 
-        const int track = (e.y - rulerH + scrollY) / trackH;
-        if (track < 0 || track >= numTracks) return;
-        const double bar = std::floor ((e.x + scrollX) / barWidth);
-        clips.push_back ({ track, bar, 1.0, state.currentPattern });
-        dragging = (int) clips.size() - 1;
-        dragOffset = (e.x + scrollX) / barWidth - bar;
+        const int track = trackAtY (e.position.y);
+        if (track < 0) return;
+        const double bar = std::floor ((e.x + model.scrollX) / model.barWidth);
+        model.clips.push_back ({ track, bar, 1.0, state.currentPattern });
+        dragging = (int) model.clips.size() - 1;
+        dragOffset = (e.x + model.scrollX) / model.barWidth - bar;
         repaint();
     }
 
     void mouseDrag (const juce::MouseEvent& e) override
     {
         if (dragging < 0 || e.mods.isPopupMenu()) return;
-        auto& c = clips[(size_t) dragging];
-        const double raw = (e.x + scrollX) / barWidth - dragOffset;
+        auto& c = model.clips[(size_t) dragging];
+        const double raw = (e.x + model.scrollX) / model.barWidth - dragOffset;
         c.start = juce::jmax (0.0, e.mods.isAltDown() ? raw : std::round (raw));
-        c.track = juce::jlimit (0, numTracks - 1, (e.y - rulerH + scrollY) / trackH);
+        const int t = trackAtY (e.position.y);
+        if (t >= 0) c.track = t;
         repaint();
     }
 
@@ -319,11 +537,15 @@ public:
 
     void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& w) override
     {
-        if (e.mods.isCtrlDown() || e.mods.isCommandDown())
+        const int steps = w.deltaY > 0 ? 1 : (w.deltaY < 0 ? -1 : 0);
+        if (steps == 0) return;
+        if (e.y < rulerH || e.mods.isCtrlDown() || e.mods.isCommandDown())
         {
-            barWidth = juce::jlimit (12.0, 400.0, barWidth * (w.deltaY > 0 ? 1.15 : 1.0 / 1.15));
-            repaint();
-            if (onZoom) onZoom();
+            if (onZoom) onZoom ((double) e.x, steps);
+        }
+        else if (e.mods.isShiftDown())
+        {
+            if (onScrollX) onScrollX (w.deltaY);
         }
         else if (onScroll) onScroll (w.deltaY);
     }
@@ -331,18 +553,21 @@ public:
     void timerCallback() override { if (state.transport.playing && state.transport.songMode) repaint(); }
 
     AppState& state;
+    Model& model;
     int dragging = -1;
     double dragOffset = 0.0;
-    std::function<void (float)> onScroll;
-    std::function<void()> onZoom;
+    std::function<void (float)> onScroll, onScrollX;
+    std::function<void (double, int)> onZoom;
 };
 
 //==============================================================================
 PlaylistView::PlaylistView (AppState& s) : state (s)
 {
+    model.tracks.resize (numTracks);
+
     picker    = std::make_unique<Picker> (state);
-    trackList = std::make_unique<TrackList>();
-    grid      = std::make_unique<Grid> (state);
+    trackList = std::make_unique<TrackList> (model);
+    grid      = std::make_unique<Grid> (state, model);
 
     struct T { icons::Id icon; const char* hint; };
     const T t[] = {
@@ -361,18 +586,26 @@ PlaylistView::PlaylistView (AppState& s) : state (s)
 
     menuButton.onClick = [this]
     {
-        juce::PopupMenu m;
-        m.addItem (1, "Edit", false);
-        m.addItem (2, "Tools", false);
-        m.addItem (3, "View", false);
-        m.addItem (4, "Snap", false);
-        m.addItem (5, "Select", false);
-        m.addItem (6, "Zoom", false);
-        m.addItem (7, "Time markers", false);
+        juce::PopupMenu m, zoom;
+        zoom.addItem (20, "Zoom in   PgUp");
+        zoom.addItem (21, "Zoom out  PgDn");
+        zoom.addItem (22, "Default zoom");
+        m.addSubMenu ("Zoom", zoom);
+        m.addSeparator();
+        m.addItem (10, "Restore all collapsed tracks");
+        m.addItem (11, "Reset all track sizes");
         m.addSeparator();
         m.addItem (8, "Clear all clips");
         m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&menuButton), [this] (int r)
-        { if (r == 8) { grid->clips.clear(); grid->repaint(); } });
+        {
+            if (r == 8) { model.clips.clear(); grid->repaint(); }
+            if (r == 10) for (auto& tr : model.tracks) if (tr.collapsed) { tr.collapsed = false; tr.target = tr.restore; }
+            if (r == 11) for (auto& tr : model.tracks) { tr.collapsed = false; tr.target = tr.restore = Model::defaultHeight; }
+            if (r == 20) zoomAt (grid->getWidth() * 0.5, 2);
+            if (r == 21) zoomAt (grid->getWidth() * 0.5, -2);
+            if (r == 22) { zoomAnchorBar = (model.scrollX + grid->getWidth() * 0.5) / model.barWidth; model.zoomAnchorX = grid->getWidth() * 0.5; model.targetBarWidth = 48.0; }
+            if (! isTimerRunning()) startTimerHz (60);
+        });
     };
     closeButton.onClick = [this] { if (onClose) onClose(); };
     minButton.onClick   = [this] { if (onClose) onClose(); };
@@ -381,13 +614,11 @@ PlaylistView::PlaylistView (AppState& s) : state (s)
                                                             picker.get(), trackList.get(), grid.get(), &vScroll, &hScroll })
         addAndMakeVisible (c);
 
-    auto scrollBy = [this] (float dy)
-    {
-        vScroll.setCurrentRangeStart (vScroll.getCurrentRangeStart() - dy * 120.0);
-    };
-    trackList->onScroll = scrollBy;
-    grid->onScroll = scrollBy;
-    grid->onZoom = [this] { resized(); };
+    trackList->onScroll  = [this] (float dy) { scrollVertically (dy); };
+    trackList->onChanged = [this] { if (! isTimerRunning()) startTimerHz (60); updateScrollBars(); grid->repaint(); trackList->repaint(); };
+    grid->onScroll  = [this] (float dy) { scrollVertically (dy); };
+    grid->onScrollX = [this] (float dx) { hScroll.setCurrentRangeStart (hScroll.getCurrentRangeStart() - dx * 300.0); };
+    grid->onZoom    = [this] (double x, int steps) { zoomAt (x, steps); };
 
     vScroll.addListener (this);
     hScroll.addListener (this);
@@ -401,10 +632,72 @@ PlaylistView::~PlaylistView()
     hScroll.removeListener (this);
 }
 
+void PlaylistView::zoomAt (double viewX, int wheelSteps)
+{
+    // keep the bar under the mouse fixed while the zoom animates
+    model.zoomAnchorX = viewX;
+    zoomAnchorBar = (model.scrollX + viewX) / model.barWidth;
+    model.targetBarWidth = juce::jlimit (Model::minBarWidth, Model::maxBarWidth,
+                                         model.targetBarWidth * std::pow (1.22, (double) wheelSteps));
+    if (! isTimerRunning()) startTimerHz (60);
+}
+
+void PlaylistView::scrollVertically (float deltaY)
+{
+    vScroll.setCurrentRangeStart (vScroll.getCurrentRangeStart() - deltaY * 140.0);
+}
+
+void PlaylistView::timerCallback()
+{
+    bool active = false;
+
+    // smooth zoom
+    if (std::abs (model.barWidth - model.targetBarWidth) > 0.01)
+    {
+        model.barWidth += (model.targetBarWidth - model.barWidth) * 0.25;
+        if (std::abs (model.barWidth - model.targetBarWidth) < 0.02) model.barWidth = model.targetBarWidth;
+        model.scrollX = juce::jmax (0.0, zoomAnchorBar * model.barWidth - model.zoomAnchorX);
+        active = true;
+    }
+
+    // smooth track resize (collapse / restore)
+    for (auto& t : model.tracks)
+        if (std::abs (t.height - t.target) > 0.05f)
+        {
+            t.height += (t.target - t.height) * 0.3f;
+            if (std::abs (t.height - t.target) < 0.3f) t.height = t.target;
+            active = true;
+        }
+
+    if (active)
+    {
+        updateScrollBars();
+        grid->repaint();
+        trackList->repaint();
+    }
+    else stopTimer();
+}
+
+void PlaylistView::updateScrollBars()
+{
+    const juce::ScopedValueSetter<bool> svs (updatingScrollBars, true);
+
+    const double viewH = juce::jmax (1, grid->getHeight() - rulerH);
+    vScroll.setRangeLimits (0.0, juce::jmax ((double) model.totalHeight(), viewH));
+    vScroll.setCurrentRange (model.scrollY, viewH);
+    model.scrollY = (float) vScroll.getCurrentRangeStart();
+
+    const double viewW = juce::jmax (1, grid->getWidth());
+    hScroll.setRangeLimits (0.0, juce::jmax (totalBars * model.barWidth, model.scrollX + viewW));
+    hScroll.setCurrentRange (model.scrollX, viewW);
+}
+
 void PlaylistView::scrollBarMoved (juce::ScrollBar* bar, double start)
 {
-    if (bar == &vScroll) { trackList->scrollY = grid->scrollY = (int) start; trackList->repaint(); }
-    else                 grid->scrollX = (int) start;
+    if (updatingScrollBars) return;
+    if (bar == &vScroll) model.scrollY = (float) start;
+    else                 model.scrollX = start;
+    trackList->repaint();
     grid->repaint();
 }
 
@@ -412,7 +705,6 @@ void PlaylistView::paint (juce::Graphics& g)
 {
     g.fillAll (theme::panelHeader);
 
-    // title breadcrumb
     auto bar = getLocalBounds().removeFromTop (toolbarH);
     auto title = bar.withX (tools.getLast()->getRight() + 16).withRight (minButton.getX() - 8);
     icons::draw (g, icons::Id::speaker, title.removeFromLeft (20).toFloat().reduced (2.0f), theme::text);
@@ -453,15 +745,7 @@ void PlaylistView::resized()
     trackList->setBounds (r.removeFromLeft (headerW));
     hScroll.setBounds (bottom.withTrimmedLeft (headerW).withTrimmedRight (12));
 
-    // grid starts below the area that holds the NOTE/CHAN/PAT switches, minus the ruler
+    // the grid's ruler sits at the bottom of the header area so rows line up with the track headers
     grid->setBounds (r.withTrimmedTop (topAreaH - rulerH));
-
-    const double contentH = numTracks * trackH;
-    const double viewH = juce::jmax (1, grid->getHeight() - rulerH);
-    vScroll.setRangeLimits (0.0, contentH);
-    vScroll.setCurrentRange (vScroll.getCurrentRangeStart(), viewH);
-
-    const double contentW = 500 * grid->barWidth;
-    hScroll.setRangeLimits (0.0, contentW);
-    hScroll.setCurrentRange (hScroll.getCurrentRangeStart(), (double) grid->getWidth());
+    updateScrollBars();
 }
