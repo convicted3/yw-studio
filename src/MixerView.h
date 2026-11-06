@@ -16,6 +16,16 @@ public:
     std::function<void()> onClose;
 
     class Strip;
+    class Inspector;
+
+    // Per-track effect slots (UI state; audio processing comes with the engine)
+    struct TrackFx
+    {
+        std::array<juce::String, 10> names;
+        std::array<float, 10> mix;
+        std::array<bool, 10> enabled;
+        TrackFx() { mix.fill (1.0f); enabled.fill (true); }
+    };
 
 private:
     AppState& state;
@@ -27,5 +37,9 @@ private:
     juce::Viewport viewport;
     juce::Component stripHolder;
     juce::OwnedArray<Strip> strips;
-    int selected = 0;
+    std::vector<TrackFx> fx;
+    std::unique_ptr<Inspector> inspector;
+    int selected = 1;
+
+    void selectStrip (int index);
 };

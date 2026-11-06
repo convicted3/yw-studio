@@ -3,6 +3,7 @@
 #include "LookAndFeel.h"
 #include "SplashWindow.h"
 #include "MainComponent.h"
+#include "WindowUtils.h"
 
 // Main window without a native title bar: the top toolbar is the caption (drag, double-click, buttons).
 class MainWindow : public juce::DocumentWindow
@@ -24,7 +25,7 @@ public:
         // Not added to the desktop yet: it appears only after the splash has finished.
     }
 
-    juce::BorderSize<int> getBorderThickness() const override { return isFullScreen() ? juce::BorderSize<int> (0) : juce::BorderSize<int> (3); }
+    juce::BorderSize<int> getBorderThickness() const override { return yw::window::isMaximised (*this) ? juce::BorderSize<int> (0) : juce::BorderSize<int> (3); }
 
     void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
 };
@@ -115,7 +116,7 @@ private:
         splash.reset();
         mainWindow->addToDesktop();
         mainWindow->setVisible (true);
-        mainWindow->setFullScreen (true); // maximised, like the classic layout
+        yw::window::setMaximised (*mainWindow, true); // work area: keeps the Windows taskbar visible
         mainWindow->toFront (true);
         log ("main window visible");
     }

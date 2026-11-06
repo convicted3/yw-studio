@@ -1,6 +1,7 @@
 #include "TopBar.h"
 #include "LookAndFeel.h"
 #include "MenuModel.h"
+#include "WindowUtils.h"
 
 #if JUCE_WINDOWS
  #ifndef NOMINMAX
@@ -713,7 +714,7 @@ void TopBar::mouseDown (const juce::MouseEvent& e)
     draggingWindow = false;
     if (auto* w = getTopLevelComponent())
     {
-        if (auto* rw = dynamic_cast<juce::ResizableWindow*> (w); rw != nullptr && rw->isFullScreen()) return;
+        if (yw::window::isMaximised (*w)) return;
         dragger.startDraggingComponent (w, e.getEventRelativeTo (w));
         draggingWindow = true;
     }
@@ -730,6 +731,9 @@ void TopBar::mouseDoubleClick (const juce::MouseEvent&) { maximiseToggle(); }
 
 void TopBar::maximiseToggle()
 {
-    if (auto* w = dynamic_cast<juce::ResizableWindow*> (getTopLevelComponent()))
-        w->setFullScreen (! w->isFullScreen());
+    if (auto* w = getTopLevelComponent())
+    {
+        yw::window::toggleMaximised (*w);
+        maxButton.setTooltip (yw::window::isMaximised (*w) ? "Restore" : "Maximize");
+    }
 }
