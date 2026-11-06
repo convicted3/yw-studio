@@ -48,3 +48,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: YW-Studio-windows-x64.zip
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
