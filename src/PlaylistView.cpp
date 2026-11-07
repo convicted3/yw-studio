@@ -326,7 +326,8 @@ public:
 };
 
 //==============================================================================
-class PlaylistView::Grid : public juce::Component, public juce::TooltipClient, private juce::Timer
+class PlaylistView::Grid : public juce::Component, public juce::TooltipClient, public juce::DragAndDropTarget,
+                           public juce::FileDragAndDropTarget, private juce::Timer
 {
 public:
     Grid (AppState& s, Model& m) : state (s), model (m) { startTimerHz (30); }
@@ -451,7 +452,8 @@ public:
     {
         auto r = clipBounds (c);
         if (! r.intersects (getLocalBounds().toFloat())) return;
-        const auto col = clipColour (c.pattern);
+        const bool isAudio = c.audio != juce::File();
+        const auto col = isAudio ? juce::Colour (0xff6b8f5e) : clipColour (c.pattern);
         const float headH = juce::jmin (15.0f, r.getHeight());
 
         g.setColour (col.darker (0.35f));
@@ -464,7 +466,24 @@ public:
         {
             g.setColour (juce::Colours::black.withAlpha (0.8f));
             g.setFont (theme::font (juce::jmin (13.0f, headH - 1.0f), theme::Weight::semibold));
-            g.drawText ("Pattern " + juce::String (c.pattern), head.reduced (3.0f, 0.0f), juce::Justification::centredLeft, true);
+            g.drawText (isAudio ? c.audio.getFileNameWithoutExtension() : "Pattern " + juce::String (c.pattern),
+                        head.reduced (3.0f, 0.0f), juce::Justification::centredLeft, true);
+        }
+
+        if (isAudio)
+        {
+            auto body = r.withTrimmedTop (headH).reduced (1.0f, 2.0f);
+            if (body.getHeight() > 4.0f)
+            {
+                juce::Graphics::ScopedSaveState ss (g);
+                g.reduceClipRegion (body.toNearestInt());
+                const double secs = state.samples.lengthSeconds (c.audio);
+                const double clipSecs = c.length * 4.0 * 60.0 / state.transport.tempo.load();
+                state.samples.drawWaveform (g, c.audio, body, col.brighter (0.7f), 0.0, juce::jmin (secs, clipSecs));
+            }
+            g.setColour (juce::Colours::black.withAlpha (0.6f));
+            g.drawRoundedRectangle (r, 2.0f, 1.0f);
+            return;
         }
 
         // note preview, scales with the clip
@@ -550,7 +569,81 @@ public:
         else if (onScroll) onScroll (w.deltaY);
     }
 
-    void timerCallback() override { if (state.transport.playing && state.transport.songMode) repaint(); }
+    void timerCallback() override
+    {
+        bool loading = false;
+        for (auto& c : model.clips)
+            if (c.audio != juce::File() && ! state.samples.thumbnail (c.audio).isFullyLoaded()) { loading = true; break; }
+        if (loading || (state.transport.playing && state.transport.songMode)) repaint();
+    }
+
+    //==========================================================================
+    // Dropping samples: from the browser or Explorer, creates audio clips at the drop position
+    double clipLengthBars (const juce::File& f) const
+    {
+        const double secs = state.samples.lengthSeconds (f);
+        return juce::jmax (0.0625, secs * state.transport.tempo.load() / 240.0);
+    }
+
+    void setGhost (const juce::Array<juce::File>& files, juce::Point<int> p)
+    {
+        ghostFiles = files;
+        ghostPos = p;
+        repaint();
+    }
+
+    void dropAt (const juce::Array<juce::File>& files, juce::Point<int> p)
+    {
+        int track = trackAtY ((float) juce::jmax (rulerH, p.y));
+        if (track < 0) track = 0;
+        const double bar = juce::jmax (0.0, std::floor ((p.x + model.scrollX) / model.barWidth * 4.0) / 4.0); // snap to beats
+        for (auto& f : files)
+        {
+            if (track >= (int) model.tracks.size()) break;
+            model.clips.push_back ({ track++, bar, clipLengthBars (f), 0, f });
+        }
+        ghostFiles.clear();
+        repaint();
+    }
+
+    static juce::Array<juce::File> audioFiles (const juce::StringArray& paths)
+    {
+        juce::Array<juce::File> out;
+        for (auto& p : paths) if (SampleLibrary::isAudioFile (juce::File (p))) out.add (juce::File (p));
+        return out;
+    }
+
+    bool isInterestedInDragSource (const SourceDetails& d) override { return SampleLibrary::isAudioFile (juce::File (d.description.toString())); }
+    void itemDragMove (const SourceDetails& d) override { setGhost ({ juce::File (d.description.toString()) }, d.localPosition); }
+    void itemDragExit (const SourceDetails&) override  { ghostFiles.clear(); repaint(); }
+    void itemDropped (const SourceDetails& d) override { dropAt ({ juce::File (d.description.toString()) }, d.localPosition); }
+    bool isInterestedInFileDrag (const juce::StringArray& f) override { return ! audioFiles (f).isEmpty(); }
+    void fileDragMove (const juce::StringArray& f, int x, int y) override { setGhost (audioFiles (f), { x, y }); }
+    void fileDragExit (const juce::StringArray&) override { ghostFiles.clear(); repaint(); }
+    void filesDropped (const juce::StringArray& f, int x, int y) override { dropAt (audioFiles (f), { x, y }); }
+
+    void paintOverChildren (juce::Graphics& g) override
+    {
+        if (ghostFiles.isEmpty()) return;
+        int track = juce::jmax (0, trackAtY ((float) juce::jmax (rulerH, ghostPos.y)));
+        const double bar = juce::jmax (0.0, std::floor ((ghostPos.x + model.scrollX) / model.barWidth * 4.0) / 4.0);
+        for (auto& f : ghostFiles)
+        {
+            if (track >= (int) model.tracks.size()) break;
+            Clip c { track++, bar, clipLengthBars (f), 0, f };
+            auto r = clipBounds (c);
+            g.setColour (theme::accent.withAlpha (0.25f));
+            g.fillRoundedRectangle (r, 2.0f);
+            g.setColour (theme::accent);
+            g.drawRoundedRectangle (r, 2.0f, 1.5f);
+            g.setColour (theme::textBright);
+            g.setFont (theme::font (13.0f, theme::Weight::semibold));
+            g.drawText (f.getFileNameWithoutExtension(), r.reduced (4.0f, 1.0f).withHeight (14.0f), juce::Justification::centredLeft, true);
+        }
+    }
+
+    juce::Array<juce::File> ghostFiles;
+    juce::Point<int> ghostPos;
 
     AppState& state;
     Model& model;

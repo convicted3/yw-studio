@@ -65,23 +65,31 @@ namespace
     class NameButton : public juce::Component, public juce::TooltipClient
     {
     public:
-        explicit NameButton (juce::String n) : name (std::move (n)) {}
-        juce::String getTooltip() override { return name + " - click to open, right-click for options"; }
+        explicit NameButton (ChannelInfo::Ptr i) : info (std::move (i)) {}
+        juce::String getTooltip() override
+        {
+            return info->name + (info->sample.existsAsFile() ? " - " + info->sample.getFullPathName() : juce::String (" - no sample"))
+                   + "  (click to open, right-click for options, drop a sample to replace)";
+        }
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat().reduced (0.5f);
-            const bool over = isMouseOver();
+            const bool over = isMouseOver() || highlighted;
             g.setGradientFill (juce::ColourGradient (juce::Colour (over ? 0xff4a5357 : 0xff424a4e), 0, r.getY(),
                                                      juce::Colour (over ? 0xff353c40 : 0xff30373b), 0, r.getBottom(), false));
             g.fillRoundedRectangle (r, 3.0f);
-            g.setColour (theme::outline);
-            g.drawRoundedRectangle (r, 3.0f, 1.0f);
-            g.setColour (theme::text);
+            g.setColour (highlighted ? theme::accent : theme::outline);
+            g.drawRoundedRectangle (r, 3.0f, highlighted ? 1.5f : 1.0f);
+            g.setColour (info->sample.existsAsFile() || info->name == "Sampler" ? theme::text : theme::textDim);
             g.setFont (theme::font (16.0f));
-            g.drawText (name, getLocalBounds().reduced (6, 0), juce::Justification::centred, true);
+            g.drawText (info->name, getLocalBounds().reduced (6, 0), juce::Justification::centred, true);
         }
         void mouseEnter (const juce::MouseEvent&) override { repaint(); }
         void mouseExit (const juce::MouseEvent&) override  { repaint(); }
+        void mouseUp (const juce::MouseEvent& e) override
+        {
+            if (! e.mods.isPopupMenu() && e.mouseWasClicked() && onOpen) onOpen();
+        }
         void mouseDown (const juce::MouseEvent& e) override
         {
             if (! e.mods.isPopupMenu()) return;
@@ -89,24 +97,26 @@ namespace
             m.addItem (1, "Piano roll", false);
             m.addItem (2, "Graph editor", false);
             m.addSeparator();
-            m.addItem (3, "Rename, color and icon...  F2", false);
-            m.addItem (4, "Load sample...", false);
+            m.addItem (3, "Rename...  F2");
+            m.addItem (4, "Load sample...");
             m.addSeparator();
             m.addItem (5, "Insert", false);
             m.addItem (6, "Replace", false);
-            m.addItem (7, "Clone", false);
-            m.addItem (8, "Delete...", false);
+            m.addItem (7, "Clone");
+            m.addItem (8, "Delete...");
             m.addSeparator();
-            m.addItem (9, "Fill each 2 steps", true);
-            m.addItem (10, "Fill each 4 steps", true);
-            m.addItem (11, "Fill each 8 steps", true);
+            m.addItem (9, "Fill each 2 steps");
+            m.addItem (10, "Fill each 4 steps");
+            m.addItem (11, "Fill each 8 steps");
             m.addSeparator();
-            m.addItem (12, "Rotate left   Shift+Ctrl+Left", true);
-            m.addItem (13, "Rotate right  Shift+Ctrl+Right", true);
+            m.addItem (12, "Rotate left   Shift+Ctrl+Left");
+            m.addItem (13, "Rotate right  Shift+Ctrl+Right");
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this), [this] (int r) { if (onMenu) onMenu (r); });
         }
-        juce::String name;
+        ChannelInfo::Ptr info;
+        bool highlighted = false;
         std::function<void (int)> onMenu;
+        std::function<void()> onOpen;
     };
 
     class Selector : public juce::Component, public juce::TooltipClient
@@ -178,21 +188,25 @@ namespace
 class ChannelRackView::ChannelRow : public juce::Component
 {
 public:
-    explicit ChannelRow (const juce::String& name) : nameButton (name)
+    explicit ChannelRow (ChannelInfo::Ptr i) : info (std::move (i)), nameButton (info)
     {
         for (auto* c : std::initializer_list<juce::Component*> { &led, &pan, &vol, &track, &nameButton, &selector, &strip })
             addAndMakeVisible (c);
 
         vol.setDisplay ([] (float v) { return v <= 0.0001f ? juce::String ("-inf dB")
                                                          : juce::String (juce::Decibels::gainToDecibels (v / 0.78f) - 5.2f, 1) + " dB"; });
-        nameButton.onMenu = [this] (int r)
-        {
-            auto& s = strip.steps;
-            if (r >= 9 && r <= 11) { const int every = r == 9 ? 2 : r == 10 ? 4 : 8; for (size_t i = 0; i < s.size(); ++i) s[i] = i % (size_t) every == 0; }
-            if (r == 12) std::rotate (s.begin(), s.begin() + 1, s.end());
-            if (r == 13) std::rotate (s.rbegin(), s.rbegin() + 1, s.rend());
-            strip.repaint();
-        };
+        vol.onChange = [this] (float v) { info->volume = v; };
+        pan.onChange = [this] (float v) { info->pan = v; };
+        syncFromInfo();
+    }
+
+    void syncFromInfo()
+    {
+        vol.setValue (info->volume, false);
+        pan.setValue (info->pan, false);
+        track.track = info->mixerTrack;
+        nameButton.repaint();
+        track.repaint();
     }
 
     void paint (juce::Graphics& g) override
@@ -212,13 +226,14 @@ public:
         r.removeFromLeft (4);
         track.setBounds (r.removeFromLeft (32).reduced (0, 1));
         r.removeFromLeft (8);
-        nameButton.setBounds (r.removeFromLeft (82).reduced (0, 1));
+        nameButton.setBounds (r.removeFromLeft (100).reduced (0, 1));
         r.removeFromLeft (6);
         selector.setBounds (r.removeFromLeft (12));
         r.removeFromLeft (10);
         strip.setBounds (r.removeFromLeft (juce::jmin (r.getWidth() - 8, 16 * 22)).reduced (0, 1));
     }
 
+    ChannelInfo::Ptr info;
     MuteLed led;
     Knob pan { "Channel panning", 0.5f, true };
     Knob vol { "Channel volume", 0.78f };
@@ -234,17 +249,23 @@ ChannelRackView::ChannelRackView (AppState& s) : state (s)
     menuButton.onClick = [this]
     {
         juce::PopupMenu m;
-        m.addItem (1, "Add one", true);
+        m.addItem (1, "Add one (Sampler)");
+        m.addItem (9, "Load samples...");
         m.addItem (2, "Select unused channels", false);
-        m.addItem (3, "Clone selected  Alt+C", false);
-        m.addItem (4, "Delete selected  Alt+Del", false);
+        m.addItem (3, "Clone selected  Alt+C");
+        m.addItem (4, "Delete selected  Alt+Del");
         m.addSeparator();
         m.addItem (5, "Group selected  Alt+G", false);
         m.addItem (6, "Zip selected  Alt+Z", false);
         m.addSeparator();
         m.addItem (7, "Detached", false);
         m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&menuButton), [this] (int r)
-        { if (r == 1) addChannel ("Sampler"); });
+        {
+            if (r == 1) addChannel (std::make_shared<ChannelInfo>());
+            if (r == 9) loadSampleInto (-1);
+            if (r == 3) for (int i = rows.size(); --i >= 0;) if (rows[i]->selector.selected) cloneChannel (i);
+            if (r == 4) for (int i = rows.size(); --i >= 0;) if (rows[i]->selector.selected) removeChannel (i);
+        });
     };
 
     filter.addItem ("All", 1);
@@ -252,39 +273,222 @@ ChannelRackView::ChannelRackView (AppState& s) : state (s)
     filter.setSelectedId (1, juce::dontSendNotification);
     filter.setTooltip ("Channel display filter");
     lengthBox.setTooltip ("Pattern length (auto)");
-    closeButton.onClick = [this] { if (onClose) onClose(); };
     stepsButton.setToggleState (false, juce::dontSendNotification);
     addButton.setIconScale (0.55f);
     addButton.onClick = [this]
     {
         juce::PopupMenu m;
         m.addItem (1, "Sampler");
+        m.addItem (3, "Sampler from file...");
         m.addSeparator();
         int id = 100;
         for (auto& d : state.knownPlugins.getTypes())
             if (d.isInstrument) m.addItem (id++, d.name, false);
         if (id == 100) m.addItem (2, "More plugins... (Options > Manage plugins)", false);
         m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&addButton), [this] (int r)
-        { if (r == 1) addChannel ("Sampler"); });
+        {
+            if (r == 1) addChannel (std::make_shared<ChannelInfo>());
+            if (r == 3) loadSampleInto (-1);
+        });
     };
 
     for (auto* c : std::initializer_list<juce::Component*> { &menuButton, &undoButton, &filter, &swing, &lengthBox,
-                                                            &graphButton, &stepsButton, &addButton })
+                                                            &graphButton, &stepsButton })
         addAndMakeVisible (c);
 
-    addChannel ("Sampler");
+    rowHolder.addAndMakeVisible (addButton);
+    viewport.setViewedComponent (&rowHolder, false);
+    viewport.setScrollBarsShown (true, false);
+    viewport.setScrollBarThickness (10);
+    addAndMakeVisible (viewport);
+
+    addChannel (std::make_shared<ChannelInfo>());
 }
 
 ChannelRackView::~ChannelRackView() = default;
 
-void ChannelRackView::addChannel (const juce::String& name)
+void ChannelRackView::addChannel (ChannelInfo::Ptr info, int index)
 {
-    juce::String n = name;
-    if (! rows.isEmpty()) n << " #" << (rows.size() + 1);
-    addAndMakeVisible (rows.add (new ChannelRow (n)));
+    auto* row = new ChannelRow (info);
+    if (index < 0 || index > rows.size()) index = rows.size();
+    rows.insert (index, row);
+    rowHolder.addAndMakeVisible (row);
+
+    row->nameButton.onOpen = [this, row] { if (onOpenChannel) onOpenChannel (row->info); };
+    row->nameButton.onMenu = [this, row] (int r)
+    {
+        const int idx = rows.indexOf (row);
+        auto& st = row->strip.steps;
+        if (r == 3) renameChannel (idx);
+        if (r == 4) loadSampleInto (idx);
+        if (r == 7) cloneChannel (idx);
+        if (r == 8) { removeChannel (idx); return; }
+        if (r >= 9 && r <= 11) { const int every = r == 9 ? 2 : r == 10 ? 4 : 8; for (size_t i = 0; i < st.size(); ++i) st[i] = i % (size_t) every == 0; }
+        if (r == 12) std::rotate (st.begin(), st.begin() + 1, st.end());
+        if (r == 13) std::rotate (st.rbegin(), st.rbegin() + 1, st.rend());
+        row->strip.repaint();
+    };
     resized();
+    repaint();
 }
 
+void ChannelRackView::removeChannel (int index)
+{
+    if (! juce::isPositiveAndBelow (index, rows.size())) return;
+    rows.remove (index);
+    resized();
+    repaint();
+}
+
+void ChannelRackView::cloneChannel (int index)
+{
+    if (! juce::isPositiveAndBelow (index, rows.size())) return;
+    auto copy = std::make_shared<ChannelInfo> (*rows[index]->info);
+    copy->name << " #2";
+    addChannel (copy, index + 1);
+    rows[index + 1]->strip.steps = rows[index]->strip.steps;
+}
+
+void ChannelRackView::renameChannel (int index)
+{
+    if (! juce::isPositiveAndBelow (index, rows.size())) return;
+    auto info = rows[index]->info;
+    auto* w = new juce::AlertWindow ("Rename channel", "Name:", juce::MessageBoxIconType::NoIcon, this);
+    w->addTextEditor ("name", info->name);
+    w->addButton ("OK", 1, juce::KeyPress (juce::KeyPress::returnKey));
+    w->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    w->enterModalState (true, juce::ModalCallbackFunction::create ([this, w, info] (int r)
+    {
+        if (r == 1 && w->getTextEditorContents ("name").trim().isNotEmpty())
+        {
+            info->name = w->getTextEditorContents ("name").trim();
+            refreshRows();
+            if (onChannelChanged) onChannelChanged (info);
+        }
+    }), true);
+}
+
+void ChannelRackView::loadSampleInto (int index)
+{
+    chooser = std::make_unique<juce::FileChooser> ("Load sample", juce::File::getSpecialLocation (juce::File::userMusicDirectory),
+                                                   SampleLibrary::audioWildcard());
+    const int flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles
+                      | (index < 0 ? juce::FileBrowserComponent::canSelectMultipleItems : 0);
+    chooser->launchAsync (flags, [this, index] (const juce::FileChooser& fc)
+    {
+        auto files = fc.getResults();
+        if (files.isEmpty()) return;
+        if (juce::isPositiveAndBelow (index, rows.size()))
+        {
+            auto info = rows[index]->info;
+            info->sample = files[0];
+            info->name = files[0].getFileNameWithoutExtension();
+            refreshRows();
+            if (onChannelChanged) onChannelChanged (info);
+        }
+        else addSampleChannels (files);
+    });
+}
+
+void ChannelRackView::addSampleChannels (const juce::Array<juce::File>& files, int insertIndex)
+{
+    for (auto& f : files)
+    {
+        if (! SampleLibrary::isAudioFile (f)) continue;
+        auto info = std::make_shared<ChannelInfo>();
+        info->sample = f;
+        info->name = f.getFileNameWithoutExtension();
+        info->mixerTrack = juce::jmin (125, rows.size() + 1);
+        addChannel (info, insertIndex);
+        if (insertIndex >= 0) ++insertIndex;
+    }
+}
+
+void ChannelRackView::sendToSelected (const juce::File& file)
+{
+    for (auto* row : rows)
+        if (row->selector.selected)
+        {
+            row->info->sample = file;
+            row->info->name = file.getFileNameWithoutExtension();
+            row->syncFromInfo();
+            if (onChannelChanged) onChannelChanged (row->info);
+            return;
+        }
+    addSampleChannels ({ file });
+}
+
+void ChannelRackView::refreshRows()
+{
+    for (auto* r : rows) r->syncFromInfo();
+}
+
+//==============================================================================
+juce::Array<juce::File> ChannelRackView::audioFilesFrom (const juce::StringArray& paths)
+{
+    juce::Array<juce::File> out;
+    for (auto& p : paths)
+        if (SampleLibrary::isAudioFile (juce::File (p))) out.add (juce::File (p));
+    return out;
+}
+
+int ChannelRackView::rowIndexAt (juce::Point<int> p) const
+{
+    for (int i = 0; i < rows.size(); ++i)
+        if (rows[i]->getScreenBounds().contains (localPointToGlobal (p))) return i;
+    return -1;
+}
+
+void ChannelRackView::updateDropTarget (juce::Point<int> p, bool active)
+{
+    const int newRow = active ? rowIndexAt (p) : -1;
+    if (newRow != dropRow || active != dropActive)
+    {
+        if (juce::isPositiveAndBelow (dropRow, rows.size())) { rows[dropRow]->nameButton.highlighted = false; rows[dropRow]->nameButton.repaint(); }
+        dropRow = newRow;
+        dropActive = active;
+        if (juce::isPositiveAndBelow (dropRow, rows.size())) { rows[dropRow]->nameButton.highlighted = true; rows[dropRow]->nameButton.repaint(); }
+        repaint();
+    }
+}
+
+void ChannelRackView::dropFiles (const juce::Array<juce::File>& files, juce::Point<int> p)
+{
+    const int target = rowIndexAt (p);
+    updateDropTarget (p, false);
+    if (files.isEmpty()) return;
+
+    if (target >= 0 && files.size() == 1)
+    {
+        auto info = rows[target]->info;
+        info->sample = files[0];
+        info->name = files[0].getFileNameWithoutExtension();
+        rows[target]->syncFromInfo();
+        if (onChannelChanged) onChannelChanged (info);
+    }
+    else addSampleChannels (files, target >= 0 ? target + 1 : -1);
+}
+
+bool ChannelRackView::isInterestedInDragSource (const SourceDetails& d)
+{
+    return SampleLibrary::isAudioFile (juce::File (d.description.toString()));
+}
+void ChannelRackView::itemDragMove (const SourceDetails& d) { updateDropTarget (d.localPosition, true); }
+void ChannelRackView::itemDragExit (const SourceDetails&)   { updateDropTarget ({}, false); }
+void ChannelRackView::itemDropped (const SourceDetails& d)
+{
+    dropFiles ({ juce::File (d.description.toString()) }, d.localPosition);
+}
+
+bool ChannelRackView::isInterestedInFileDrag (const juce::StringArray& files) { return ! audioFilesFrom (files).isEmpty(); }
+void ChannelRackView::fileDragMove (const juce::StringArray&, int x, int y)  { updateDropTarget ({ x, y }, true); }
+void ChannelRackView::fileDragExit (const juce::StringArray&)                { updateDropTarget ({}, false); }
+void ChannelRackView::filesDropped (const juce::StringArray& files, int x, int y)
+{
+    dropFiles (audioFilesFrom (files), { x, y });
+}
+
+//==============================================================================
 void ChannelRackView::paint (juce::Graphics& g)
 {
     g.fillAll (theme::panelHeader);
@@ -315,14 +519,27 @@ void ChannelRackView::paint (juce::Graphics& g)
     g.setFont (theme::font (14.0f));
     g.drawText (juce::String::fromUTF8 ("\xc2\xb7\xc2\xb7\xc2\xb7"), lb.toNearestInt().withTrimmedRight (8), juce::Justification::centredRight);
 
-    // body
-    auto body = r.reduced (6, 4);
-    const int rowsH = rows.size() * rowHeight + 8;
-    auto rack = body.removeFromTop (rowsH);
+    // rack background behind the rows
+    auto rack = viewport.getBounds().withHeight (juce::jmin (viewport.getHeight(), rows.size() * rowHeight + 8));
     g.setColour (theme::panelBody);
     g.fillRoundedRectangle (rack.toFloat(), 3.0f);
     g.setColour (juce::Colours::black.withAlpha (0.35f));
     g.drawRoundedRectangle (rack.toFloat(), 3.0f, 1.0f);
+}
+
+void ChannelRackView::paintOverChildren (juce::Graphics& g)
+{
+    if (! dropActive) return;
+    if (dropRow < 0)
+    {
+        // new channel: insertion line below the last row
+        const int y = viewport.getY() + juce::jmin (viewport.getHeight() - 4, rows.size() * rowHeight + 4 - viewport.getViewPositionY());
+        g.setColour (theme::accent);
+        g.fillRoundedRectangle ((float) viewport.getX() + 6.0f, (float) y, (float) viewport.getWidth() - 20.0f, 3.0f, 1.5f);
+        g.setColour (theme::textBright);
+        g.setFont (theme::font (15.0f));
+        g.drawText ("Drop to add as new channel(s)", viewport.getX() + 10, y + 6, viewport.getWidth() - 20, 18, juce::Justification::centredLeft);
+    }
 }
 
 void ChannelRackView::resized()
@@ -341,9 +558,11 @@ void ChannelRackView::resized()
     header.removeFromRight (6);
     swing.setBounds (header.removeFromRight (22));
 
-    auto body = r.reduced (6, 4);
-    auto rack = body.removeFromTop (rows.size() * rowHeight + 8).reduced (2, 4);
-    for (auto* row : rows) row->setBounds (rack.removeFromTop (rowHeight));
-
-    addButton.setBounds (body.removeFromTop (28).withSizeKeepingCentre (26, 24).withX (rows.isEmpty() ? 100 : rows[0]->getX() + 150 - 13));
+    viewport.setBounds (r.reduced (6, 4));
+    const int w = viewport.getWidth() - (rows.size() * rowHeight + 40 > viewport.getHeight() ? viewport.getScrollBarThickness() : 0);
+    int y = 4;
+    for (auto* row : rows) { row->setBounds (2, y, w - 4, rowHeight); y += rowHeight; }
+    y += 8;
+    addButton.setBounds (150 - 13 + 2, y, 26, 24);
+    rowHolder.setSize (w, y + 32);
 }

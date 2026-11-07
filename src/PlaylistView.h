@@ -17,7 +17,7 @@ public:
 
     std::function<void()> onClose;
 
-    struct Clip { int track; double start, length; int pattern; };
+    struct Clip { int track; double start, length; int pattern; juce::File audio = {}; }; // audio set = audio clip
 
     struct Model
     {

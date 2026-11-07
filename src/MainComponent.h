@@ -9,6 +9,7 @@
 #include "PlaylistView.h"
 #include "PanelWindow.h"
 #include "DockWindow.h"
+#include "SamplerView.h"
 #include "PluginManagerWindow.h"
 #include "SettingsWindow.h"
 
@@ -19,7 +20,7 @@ public:
     void paint (juce::Graphics&) override;
 };
 
-class MainComponent : public juce::Component, public juce::KeyListener
+class MainComponent : public juce::Component, public juce::KeyListener, public juce::DragAndDropContainer
 {
 public:
     explicit MainComponent (AppState& s);
@@ -34,7 +35,7 @@ public:
     void handleCommand (int id);
 
 private:
-    enum Panel { pBrowser, pChannelRack, pMixer, pPlaylist, pPianoRoll, numPanels };
+    enum Panel { pBrowser, pChannelRack, pMixer, pPlaylist, pPianoRoll, pSampler, numPanels };
 
     bool isCommandEnabled (int id) const;
     bool isCommandTicked (int id) const;
@@ -60,6 +61,7 @@ private:
     MixerView mixer;
     PlaylistView playlist;
     PianoRollPlaceholder pianoRollView;
+    SamplerView samplerView;
 
     juce::Component workspace;   // hosts all panel windows
     std::array<std::unique_ptr<DockWindow>, numPanels> windows;

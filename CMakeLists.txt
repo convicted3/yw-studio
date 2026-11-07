@@ -43,6 +43,8 @@ target_sources(YWStudio PRIVATE
     src/MixerView.cpp
     src/PlaylistView.cpp
     src/DockWindow.cpp
+    src/SampleLibrary.cpp
+    src/SamplerView.cpp
     src/PanelWindow.cpp
     src/PluginManagerWindow.cpp
     src/SettingsWindow.cpp)
@@ -63,7 +65,8 @@ target_compile_definitions(YWStudio PRIVATE
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:YWStudio,JUCE_VERSION>"
     JUCE_PLUGINHOST_VST3=1
     JUCE_PLUGINHOST_LADSPA=0
-    JUCE_PLUGINHOST_LV2=0)
+    JUCE_PLUGINHOST_LV2=0
+    JUCE_USE_MP3AUDIOFORMAT=1)
 
 target_link_libraries(YWStudio
     PRIVATE

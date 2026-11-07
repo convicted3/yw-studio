@@ -1,15 +1,18 @@
 #include "BrowserPanel.h"
 #include "LookAndFeel.h"
+#include "SampleLibrary.h"
 
 using namespace yw;
 
 namespace
 {
+    using BrowserActions = BrowserPanel::Actions;
+
     class Item : public juce::TreeViewItem
     {
     public:
-        Item (juce::String t, icons::Id i, juce::File f = {}, bool isFolder = true)
-            : text (std::move (t)), icon (i), file (std::move (f)), folder (isFolder) {}
+        Item (juce::String t, icons::Id i, juce::File f = {}, bool isFolder = true, BrowserActions* a = nullptr)
+            : text (std::move (t)), icon (i), file (std::move (f)), folder (isFolder), actions (a) {}
 
         bool mightContainSubItems() override { return folder && (getNumSubItems() > 0 || file.isDirectory()); }
         juce::String getUniqueName() const override { return text; }
@@ -21,8 +24,8 @@ namespace
             {
                 auto kids = file.findChildFiles (juce::File::findFilesAndDirectories | juce::File::ignoreHiddenFiles, false);
                 kids.sort();
-                for (auto& k : kids) if (k.isDirectory())   addSubItem (new Item (k.getFileName(), icons::Id::folder, k, true));
-                for (auto& k : kids) if (! k.isDirectory()) addSubItem (new Item (k.getFileName(), iconFor (k), k, false));
+                for (auto& k : kids) if (k.isDirectory())   addSubItem (new Item (k.getFileName(), icons::Id::folder, k, true, actions));
+                for (auto& k : kids) if (! k.isDirectory()) addSubItem (new Item (k.getFileName(), iconFor (k), k, false, actions));
             }
         }
 
@@ -63,12 +66,18 @@ namespace
                 m.addItem (4, "Change color", false);
                 m.addItem (5, "Change icon", false);
                 m.addSeparator();
-                m.addItem (6, "Open");
+                m.addItem (6, "Open in Explorer");
+                if (actions && actions->isUserFolder && actions->isUserFolder (file))
+                {
+                    m.addSeparator();
+                    m.addItem (20, "Remove from browser");
+                }
             }
             else
             {
-                m.addItem (10, "Send to selected channel or focused plugin", false);
-                m.addItem (11, "Open in new channel", false);
+                const bool audio = SampleLibrary::isAudioFile (file);
+                m.addItem (10, "Send to selected channel or focused plugin", audio);
+                m.addItem (11, "Open in new channel", audio);
                 m.addSeparator();
                 juce::PopupMenu sys;
                 sys.addItem (12, "Open parent folder");
@@ -80,6 +89,9 @@ namespace
                 if (r == 1) setOpen (true);
                 else if (r == 2) setOpen (false);
                 else if (r == 6) file.startAsProcess();
+                else if (r == 10 && actions && actions->sendToSelected)   actions->sendToSelected (file);
+                else if (r == 11 && actions && actions->openInNewChannel) actions->openInNewChannel (file);
+                else if (r == 20 && actions && actions->removeFolder)     actions->removeFolder (file);
                 else if (r == 12) file.getParentDirectory().startAsProcess();
                 else if (r == 13) file.revealToUser();
             });
@@ -90,10 +102,17 @@ namespace
             return file.existsAsFile() ? juce::var (file.getFullPathName()) : juce::var();
         }
 
+        void itemDoubleClicked (const juce::MouseEvent&) override
+        {
+            if (! folder && SampleLibrary::isAudioFile (file) && actions && actions->openInNewChannel)
+                actions->openInNewChannel (file);
+        }
+
         juce::String text;
         icons::Id icon;
         juce::File file;
         bool folder;
+        BrowserActions* actions = nullptr;
     };
 }
 
@@ -139,7 +158,7 @@ BrowserPanel::BrowserPanel (AppState& s) : state (s)
     tabs[0]->setToggleState (true, juce::dontSendNotification);
 
     tagsSearch.onClick = [this] { focusSearch(); };
-    tagsFolder.onClick = [this] { userDataFolder().startAsProcess(); };
+    tagsFolder.onClick = [this] { chooseFolderToAdd(); };
     addAndMakeVisible (tagsFolder);
     addAndMakeVisible (tagsSearch);
 
@@ -154,6 +173,14 @@ BrowserPanel::BrowserPanel (AppState& s) : state (s)
     tree.setIndentSize (16);
     addAndMakeVisible (tree);
 
+    actions = std::make_unique<Actions>();
+    actions->openInNewChannel = [this] (const juce::File& f) { if (onOpenInNewChannel) onOpenInNewChannel (f); };
+    actions->sendToSelected   = [this] (const juce::File& f) { if (onSendToSelected) onSendToSelected (f); };
+    actions->removeFolder     = [this] (const juce::File& f) { removeFolder (f); };
+    actions->isUserFolder     = [this] (const juce::File& f) { return state.getBrowserFolders().contains (f.getFullPathName()); };
+
+    tagsFolder.setTooltip ("Add a folder to the browser (or drop folders from Explorer)");
+
     state.knownPlugins.addChangeListener (this);
     rebuildTree();
 }
@@ -162,6 +189,68 @@ BrowserPanel::~BrowserPanel()
 {
     state.knownPlugins.removeChangeListener (this);
     tree.setRootItem (nullptr);
+    root.reset();
+}
+
+void BrowserPanel::addFolders (const juce::StringArray& paths)
+{
+    auto list = state.getBrowserFolders();
+    list.removeEmptyStrings();
+    for (auto& p : paths)
+        if (juce::File (p).isDirectory()) list.addIfNotAlreadyThere (p);
+    state.setBrowserFolders (list);
+    rebuildTree();
+}
+
+void BrowserPanel::removeFolder (const juce::File& f)
+{
+    auto list = state.getBrowserFolders();
+    list.removeString (f.getFullPathName());
+    list.removeEmptyStrings();
+    state.setBrowserFolders (list);
+    rebuildTree();
+}
+
+void BrowserPanel::chooseFolderToAdd()
+{
+    chooser = std::make_unique<juce::FileChooser> ("Add folder to browser",
+                                                   juce::File::getSpecialLocation (juce::File::userMusicDirectory));
+    chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                          [this] (const juce::FileChooser& fc)
+    {
+        juce::StringArray paths;
+        for (auto& r : fc.getResults()) if (r.isDirectory()) paths.add (r.getFullPathName());
+        if (! paths.isEmpty()) addFolders (paths);
+    });
+}
+
+bool BrowserPanel::isInterestedInFileDrag (const juce::StringArray& files)
+{
+    for (auto& f : files) if (juce::File (f).isDirectory()) return true;
+    return false;
+}
+
+void BrowserPanel::fileDragEnter (const juce::StringArray&, int, int) { dropHighlight = true; repaint(); }
+void BrowserPanel::fileDragExit (const juce::StringArray&)            { dropHighlight = false; repaint(); }
+
+void BrowserPanel::filesDropped (const juce::StringArray& files, int, int)
+{
+    dropHighlight = false;
+    juce::StringArray dirs;
+    for (auto& f : files) if (juce::File (f).isDirectory()) dirs.add (f);
+    addFolders (dirs);
+}
+
+void BrowserPanel::paintOverChildren (juce::Graphics& g)
+{
+    if (! dropHighlight) return;
+    g.setColour (theme::accent.withAlpha (0.12f));
+    g.fillRect (getLocalBounds());
+    g.setColour (theme::accent);
+    g.drawRect (getLocalBounds(), 2);
+    g.setColour (theme::textBright);
+    g.setFont (theme::font (18.0f, theme::Weight::medium));
+    g.drawText ("Drop folders to add them to the browser", getLocalBounds().reduced (12), juce::Justification::centred, true);
 }
 
 juce::File BrowserPanel::userDataFolder() const
@@ -199,7 +288,7 @@ void BrowserPanel::rebuildTree()
 
     auto add = [this] (juce::TreeViewItem* parent, const juce::String& name, icons::Id icon, juce::File f = {}) -> Item*
     {
-        auto* i = new Item (name, icon, f, true);
+        auto* i = new Item (name, icon, f, true, actions.get());
         (parent ? parent : root.get())->addSubItem (i);
         return i;
     };
@@ -225,6 +314,19 @@ void BrowserPanel::rebuildTree()
         if (matches (name)) add (nullptr, name, icon, f);
     };
 
+    // folders the user added (packs, drum kits...), sorted like the rest of the tree
+    auto addUserFolders = [&]
+    {
+        auto list = state.getBrowserFolders();
+        list.removeEmptyStrings();
+        list.sortNatural();
+        for (auto& path : list)
+        {
+            juce::File f (path);
+            if (f.isDirectory() && matches (f.getFileName())) add (nullptr, f.getFileName(), icons::Id::folder, f);
+        }
+    };
+
     switch (currentTab)
     {
         case 0: // All
@@ -248,6 +350,7 @@ void BrowserPanel::rebuildTree()
             addFolder ("Soundfonts", icons::Id::folder);
             addFolder ("Templates", icons::Id::folder);
             add (nullptr, "User data", icons::Id::star, data);
+            addUserFolders();
             break;
         }
         case 1:
@@ -264,6 +367,7 @@ void BrowserPanel::rebuildTree()
         case 5: root->addSubItem (new Item ("Nothing starred yet", icons::Id::star, {}, false)); break;
         case 6:
         {
+            addUserFolders();
             add (nullptr, "User data", icons::Id::star, data);
             const auto music = juce::File::getSpecialLocation (juce::File::userMusicDirectory);
             if (music.isDirectory()) add (nullptr, "Music", icons::Id::folder, music);

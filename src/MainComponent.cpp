@@ -39,7 +39,7 @@ void PianoRollPlaceholder::paint (juce::Graphics& g)
 
 //==============================================================================
 MainComponent::MainComponent (AppState& s)
-    : state (s), topBar (s, menuModel), browser (s), channelRack (s), mixer (s), playlist (s)
+    : state (s), topBar (s, menuModel), browser (s), channelRack (s), mixer (s), playlist (s), samplerView (s)
 {
     menuModel.onCommand = [this] (int id) { handleCommand (id); };
     menuModel.isEnabled = [this] (int id) { return isCommandEnabled (id); };
@@ -54,7 +54,8 @@ MainComponent::MainComponent (AppState& s)
         { pChannelRack, "channelRack", &channelRack,   24, { 360, 110 } },
         { pMixer,       "mixer",       &mixer,         24, { 420, 260 } },
         { pPlaylist,    "playlist",    &playlist,      22, { 480, 220 } },
-        { pPianoRoll,   "pianoRoll",   &pianoRollView, 24, { 420, 220 } } };
+        { pPianoRoll,   "pianoRoll",   &pianoRollView, 24, { 420, 220 } },
+        { pSampler,     "sampler",     &samplerView,   24, { 420, 280 } } };
 
     for (auto& d : defs)
     {
@@ -69,6 +70,18 @@ MainComponent::MainComponent (AppState& s)
         workspace.addChildComponent (*w);
         windows[(size_t) d.p] = std::move (w);
     }
+
+    // samples: browser -> channel rack, channel -> sampler window
+    browser.onOpenInNewChannel = [this] (const juce::File& f) { channelRack.addSampleChannels ({ f }); openPanel (pChannelRack); };
+    browser.onSendToSelected   = [this] (const juce::File& f) { channelRack.sendToSelected (f); };
+    channelRack.onOpenChannel = [this] (ChannelInfo::Ptr info)
+    {
+        auto& w = window (pSampler);
+        if (w.isVisible() && samplerView.getChannel() == info) w.close();
+        else { samplerView.setChannel (info); w.open(); }
+    };
+    channelRack.onChannelChanged = [this] (ChannelInfo::Ptr info) { if (samplerView.getChannel() == info) samplerView.setChannel (info); };
+    samplerView.onChanged = [this] (ChannelInfo::Ptr) { channelRack.refreshRows(); };
 
     topBar.onCommand = [this] (int id) { handleCommand (id); };
     topBar.onShortcut = [this] (int i)
@@ -151,6 +164,8 @@ void MainComponent::arrangeDefault()
 
     for (auto p : { pBrowser, pChannelRack, pMixer, pPlaylist }) window (p).setVisible (true);
     window (pPianoRoll).setVisible (false);
+    window (pSampler).setBounds (juce::Rectangle<int> (workspace.getWidth() / 2 - 300, 60, 600, 420).constrainedWithin (workspace.getLocalBounds()));
+    window (pSampler).setVisible (false);
     window (pChannelRack).toFront (false);
 }
 
@@ -334,7 +349,7 @@ void MainComponent::openPanel (Panel p)
 
 void MainComponent::closeAllWindows()
 {
-    for (auto p : { pChannelRack, pMixer, pPianoRoll }) window (p).close();
+    for (auto p : { pChannelRack, pMixer, pPianoRoll, pSampler }) window (p).close();
     refreshUi();
 }
 

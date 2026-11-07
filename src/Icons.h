@@ -6,7 +6,7 @@ namespace icons
 {
     enum class Id
     {
-        none, arrowRight, arrowDown, back, up, undo, play, stop, record,
+        none, arrowRight, arrowLeft, arrowDown, back, up, undo, play, stop, record,
         metronome, waitInput, countdown, blend, loopRecord, eye,
         reset, mic, help, save, saveNew, chat, download,
         minimise, maximise, close,

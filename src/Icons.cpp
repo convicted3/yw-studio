@@ -67,6 +67,7 @@ void draw (juce::Graphics& g, Id id, juce::Rectangle<float> area, juce::Colour c
         case Id::none: break;
 
         case Id::arrowRight: tri (g, u, 0.3f, 0.2f, 0.3f, 0.8f, 0.75f, 0.5f); break;
+        case Id::arrowLeft:  tri (g, u, 0.7f, 0.2f, 0.7f, 0.8f, 0.25f, 0.5f); break;
         case Id::arrowDown:  tri (g, u, 0.2f, 0.32f, 0.8f, 0.32f, 0.5f, 0.75f); break;
         case Id::up:         tri (g, u, 0.2f, 0.7f, 0.8f, 0.7f, 0.5f, 0.25f); line (g, u, 0.5f, 0.5f, 0.5f, 0.9f, t); break;
 

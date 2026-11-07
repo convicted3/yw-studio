@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include "SampleLibrary.h"
 
 // Transport position is advanced on the audio thread and read by the UI.
 struct Transport
@@ -36,6 +37,10 @@ public:
     juce::File getAppDataFolder() const;
     juce::File getDeadMansPedalFile() const     { return getAppDataFolder().getChildFile ("plugin-scan.crashcheck"); }
 
+    // Extra folders shown in the browser (packs, drum kits...)
+    juce::StringArray getBrowserFolders()      { return juce::StringArray::fromLines (settings().getValue ("browserFolders")); }
+    void setBrowserFolders (const juce::StringArray& f) { settings().setValue ("browserFolders", f.joinIntoString ("\n")); saveSettings(); }
+
     bool getShowSplash()                        { return settings().getBoolValue ("showSplash", true); }
     void setShowSplash (bool b)                 { settings().setValue ("showSplash", b); }
 
@@ -43,6 +48,7 @@ public:
     juce::AudioPluginFormatManager formatManager;
     juce::KnownPluginList         knownPlugins;
     Transport                     transport;
+    SampleLibrary                 samples;
 
     // Project (message thread only; the project model will replace these)
     int numPatterns = 1, currentPattern = 1;
