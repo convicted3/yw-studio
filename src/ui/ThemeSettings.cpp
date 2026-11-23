@@ -149,15 +149,14 @@ void apply (const themes::Spec& spec, bool save)
 
 void loadSaved()
 {
-    if (auto spec = loadFile (savedFile()))
-    {
-        state() = *spec;
-        theme::setPalette (themes::adjustedPalette (*spec));
-        applyDrawingDots (*spec);
-        theme::menus::setStyle (spec->menuStyle);
-        if (auto* look = dynamic_cast<theme::LookAndFeel*> (&juce::LookAndFeel::getDefaultLookAndFeel()))
-            look->refreshColours();
-    }
+    // no saved theme (first run) = the default look; Theme.h's static tokens are only the pre-palette fallback
+    const auto spec = loadFile (savedFile()).value_or (themes::Spec {});
+    state() = spec;
+    theme::setPalette (themes::adjustedPalette (spec));
+    applyDrawingDots (spec);
+    theme::menus::setStyle (spec.menuStyle);
+    if (auto* look = dynamic_cast<theme::LookAndFeel*> (&juce::LookAndFeel::getDefaultLookAndFeel()))
+        look->refreshColours();
 }
 
 juce::String toJson (const themes::Spec& spec)
