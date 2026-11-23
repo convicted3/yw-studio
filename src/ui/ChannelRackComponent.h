@@ -19,7 +19,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WrapperMenu.h"
 
-namespace lynx
+namespace yw
 {
 // The menu name of an FL instrument engine (core/NativeEngines.h, round 142, issue #5; the generator menus list them
 // through quickpick::generatorEntries) ("(beta)", "(requires FL Studio)")
@@ -47,10 +47,10 @@ class ChannelRackComponent final : public juce::Component,
                                    private juce::Timer
 {
 public:
-    // LYNX extra (on by default; Options › General "Playhead column in the Channel Rack"): a soft highlight of the
+    // YW extra (on by default; Options › General "Playhead column in the Channel Rack"): a soft highlight of the
     // playing step's column under every row's steps, and the first step of each bar marked on the playing-step strip
     static inline std::atomic<bool> playheadColumn { true };
-    // LYNX extra (on by default; Options › General "Steps use channel colour"): a lit step in its channel's colour
+    // YW extra (on by default; Options › General "Steps use channel colour"): a lit step in its channel's colour
     // (themes::litStepColour); FL's steps stay white / pink ("Colorful channel controls" only colours the insert box)
     static inline std::atomic<bool> stepsChannelColour { true };
     // FL's rack option "Show complete piano roll preview" (feedback 190bm): a row's miniature shows the whole pattern
@@ -109,7 +109,7 @@ public:
     bool isInterestedInFileDrag (const juce::StringArray& files) override;
     void filesDropped (const juce::StringArray& files, int x, int y) override;
 
-    // files dragged from the LYNX browser
+    // files dragged from the YW browser
     bool isInterestedInDragSource (const SourceDetails& details) override;
     void itemDropped (const SourceDetails& details) override;
 
@@ -125,8 +125,8 @@ public:
     void cutSelected();
     void copySelected();
     void pasteSelected();
-    // issue #232 stage 2 (round 190nz, LYNX extra): the selected channels themselves (instrument, plugin state, sample)
-    // copied, also for another LYNX SHARE window, and pasted as new channels below the selection
+    // issue #232 stage 2 (round 190nz, YW extra): the selected channels themselves (instrument, plugin state, sample)
+    // copied, also for another YW Studio window, and pasted as new channels below the selection
     void copyChannels();
     void pasteChannels();
     static bool canPasteChannels();
@@ -227,14 +227,14 @@ public:
     static constexpr int knobWidth = 28;
     static constexpr int routeWidth = 30;
     // FL's Options › "Channel button width" (round 190mk, DE-39; capture 190mk A2.1): 100 / 200 / 300 / 400 %, Custom (a
-    // percentage), Size to fit (0 here). FL's button is 80 px at 100 % and 332 px at 400 % (+84 px per 100 %); LYNX's 150 px
+    // percentage), Size to fit (0 here). FL's button is 80 px at 100 % and 332 px at 400 % (+84 px per 100 %); YW's 150 px
     // button grows in the same proportion. Saved ("rackButtonWidth")
     static inline int nameWidth = 150;
     static inline int buttonWidthPercent = 100;
     static int widthForPercent (int percent) noexcept { return juce::roundToInt (150.0 * (1.0 + 1.05 * (juce::jlimit (100, 400, percent) / 100.0 - 1.0))); }
     void setButtonWidth (int percent); // 0 = size to fit the longest name
     static constexpr int selectWidth = 12;
-    static constexpr int stepWidth = 18; // (round 190io, FM-11: FL's keycap pitch is 16, LYNX 18; was 22)
+    static constexpr int stepWidth = 18; // (round 190io, FM-11: FL's keycap pitch is 16, YW 18; was 22)
     void openChannelPluginWindow (int channel) { openPluginWindow (channel); } // (round 190oa: a project's windows reopened)
 
 private:
@@ -470,4 +470,4 @@ public:
 private:
     ChannelRackComponent& rack;
 };
-} // namespace lynx
+} // namespace yw

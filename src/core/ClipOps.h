@@ -14,7 +14,7 @@
 #include "core/SamplePrecompute.h"
 #include "core/Song.h"
 
-namespace lynx::clipops
+namespace yw::clipops
 {
 // The part of its file an audio clip's channel plays (its Trim; a clip plays the whole region): a clip's offsets count from
 // its first frame, and TIME stretches its length (FL: FUN_00ff9d70, REA round 180d). Pass its `frames` as `fileFrames`
@@ -297,7 +297,7 @@ inline void updateCrossfades (Song& song)
 // stretchBeats == 0: FL's default Resample with no Time set) plays its audio at the file's own speed, so it lasts the
 // same seconds whatever the tempo. FL keeps such a clip's region in milliseconds (the .flp's playlist item start / end
 // offsets, REA_rodada110 §1 and REA_rodada178a §1) and resizes the clip when the project tempo changes: a lower tempo
-// makes it shorter in bars, a higher one longer. LYNX keeps clips in ticks, so a tempo change rescales those clips'
+// makes it shorter in bars, a higher one longer. YW keeps clips in ticks, so a tempo change rescales those clips'
 // length, start offset and fades by new / old tempo (their position stays). Clips whose channel follows the tempo
 // (stretchBeats > 0) keep their length in beats, as in FL. Every arrangement's clips follow. Call it for a change of the
 // project tempo itself (the tempo display, tap tempo, the project settings), not for tempo automation.
@@ -475,7 +475,7 @@ inline int setClipsMuted (Song& song, const std::vector<int>& selection, bool mu
 }
 
 // Issue #249 (round 190oq): whether every clip Alt+M would act on (the selection, else all; those starting in from..to)
-// is muted already — LYNX's "mute keys toggle" extra then unmutes them (FL's Alt+M only ever mutes: EEMuteAction sets
+// is muted already — YW's "mute keys toggle" extra then unmutes them (FL's Alt+M only ever mutes: EEMuteAction sets
 // the mute, REA round 190oq). False when there is none.
 inline bool allClipsMuted (const Song& song, const std::vector<int>& selection, std::int64_t from = 0,
                            std::int64_t to = std::numeric_limits<std::int64_t>::max())
@@ -983,12 +983,12 @@ inline float groupNormalizeGain (const std::vector<float>& peaks) noexcept
 }
 
 // FL's audio clip menu › Automate › Panning / Volume (EEAUAutoPanMenuClick 0x1244900, Tag 0 / 1; round 190dx,
-// /mnt/e/lynx-work/flpl190dx/FL-FACTS.md). FL makes an automation clip of a parameter of the clip's channel and puts it
+// /mnt/e/yw-work/flpl190dx/FL-FACTS.md). FL makes an automation clip of a parameter of the clip's channel and puts it
 // where the audio clip is: same track, same start, same length, a flat line at the parameter's current value from the
 // clip's start to its end. FL's parameters are the channel's Misc › "Levels adjustment" pan offset / volume multiplier
-// (channel parameters 0x10 / 0x11; round 190dz: LYNX's AutomationTargetKind::channelAdjust, the same parameters), so the
+// (channel parameters 0x10 / 0x11; round 190dz: YW's AutomationTargetKind::channelAdjust, the same parameters), so the
 // main Pan / Volume knobs stay free. FL's Volume clip sets its range top to unity (half of the multiplier's 0…200 %
-// travel) and the line at that top; LYNX's clips have no range of their own: the line sits at min(value, 0.5) (round
+// travel) and the line at that top; YW's clips have no range of their own: the line sits at min(value, 0.5) (round
 // 190ey, see automateAudioClip).
 enum class AutomateWhat : std::uint8_t { panning, volume };
 
@@ -1021,7 +1021,7 @@ inline std::string automateName (const Song& song, const AutomationTarget& targe
 // (Live check 190ew PL-1: FL makes the new clip the Playlist's current clip, the UI's part.) Live check 190ew PL-2 (shot
 // PL-2-automate-volume-147pct-clip-editor.png): FL's Volume clip plays unity whatever the Levels VOL is above it (its
 // range top set to unity, the line at that top: a 147 % multiplier is not kept); below unity the line is at the value.
-// LYNX's clips have no range of their own, so the line sits at min(value, unity) = min(value, 0.5) of the 0…200 % travel.
+// YW's clips have no range of their own, so the line sits at min(value, unity) = min(value, 0.5) of the 0…200 % travel.
 
 inline int automateAudioClip (Song& song, int clip, AutomateWhat what, const std::string& name)
 {
@@ -1105,4 +1105,4 @@ inline int crossfadeWith (Song& song, int clip, int other)
     return made.automation;
 }
 
-} // namespace lynx::clipops
+} // namespace yw::clipops

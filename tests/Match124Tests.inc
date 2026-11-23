@@ -1,4 +1,4 @@
-// Round 124: LYNX's substitutes matched to the official trials at her settings (docs/analise/REA_rodada124.md).
+// Round 124: YW's substitutes matched to the official trials at her settings (docs/analise/REA_rodada124.md).
 // Golden values are the REFERENCE's measured outputs (fxmeasure, 48 kHz); the substitute must stay within them.
 
 namespace m124
@@ -8,9 +8,9 @@ struct Stereo
 {
     std::vector<float> l, r;
 };
-inline Stereo run (const lynx::EffectSlot& slot, Stereo x)
+inline Stereo run (const yw::EffectSlot& slot, Stereo x)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (std::size_t off = 0; off < x.l.size(); off += 512)
@@ -42,10 +42,10 @@ inline double gainDb (const std::vector<float>& x, const std::vector<float>& y, 
     }
     return 10.0 * std::log10 ((yr * yr + yi * yi) / (xr * xr + xi * xi));
 }
-inline lynx::EffectSlot substitute (const lynx::ForeignPlugin& fp)
+inline yw::EffectSlot substitute (const yw::ForeignPlugin& fp)
 {
     auto slot = subst113::pluginSlot (fp);
-    CHECK (lynx::substituteEffectSlot (slot, lynx::pluginIdentity (fp)));
+    CHECK (yw::substituteEffectSlot (slot, yw::pluginIdentity (fp)));
     slot.mix = 1.0f;
     return slot;
 }
@@ -53,7 +53,7 @@ inline lynx::EffectSlot substitute (const lynx::ForeignPlugin& fp)
 
 TEST (fresh_air_dynamic_model_matches_the_trial_round124)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin fa;
     fa.format = ForeignPlugin::Format::vst3;
     fa.name = "Fresh Air";
@@ -90,7 +90,7 @@ TEST (fresh_air_dynamic_model_matches_the_trial_round124)
 
 TEST (doubler_her_state_timing_is_sample_exact_round124)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     // her Doubler (1969 slots): voices 78.2 / 100 ms, -1 / 0 cents, feedback 39 %, hard left / right, aligned
     PluginIdentity id;
@@ -146,7 +146,7 @@ TEST (doubler_her_state_timing_is_sample_exact_round124)
 
 TEST (h_delay_hybrid_engine_matches_the_trial_round124)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;

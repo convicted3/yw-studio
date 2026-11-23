@@ -6,11 +6,11 @@
 
 namespace mo167
 {
-using lynx::midiout::pack;
+using yw::midiout::pack;
 
-lynx::midiout::Control cc (int number, int min = 0, int max = 127)
+yw::midiout::Control cc (int number, int min = 0, int max = 127)
 {
-    lynx::midiout::Control c;
+    yw::midiout::Control c;
     c.number = number;
     c.active = true;
     c.min = min;
@@ -18,16 +18,16 @@ lynx::midiout::Control cc (int number, int min = 0, int max = 127)
     return c;
 }
 
-std::vector<std::uint32_t> messages (const lynx::midiout::State& s, int i, int value, int& held)
+std::vector<std::uint32_t> messages (const yw::midiout::State& s, int i, int value, int& held)
 {
     std::array<std::uint32_t, 8> out {};
-    const auto n = lynx::midiout::controlMessages (s, i, value, held, out.data());
+    const auto n = yw::midiout::controlMessages (s, i, value, held, out.data());
     return { out.begin(), out.begin() + n };
 }
 
-std::vector<std::uint32_t> take (lynx::Instrument& in)
+std::vector<std::uint32_t> take (yw::Instrument& in)
 {
-    std::vector<std::uint32_t> out (lynx::midiout::maxResetMessages + 8);
+    std::vector<std::uint32_t> out (yw::midiout::maxResetMessages + 8);
     const auto n = in.takeMidiMessages (out.data(), (int) out.size());
     out.resize ((std::size_t) std::max (0, n));
     return out;
@@ -35,18 +35,18 @@ std::vector<std::uint32_t> take (lynx::Instrument& in)
 
 bool has (const std::vector<std::uint32_t>& m, std::uint32_t x) { return std::find (m.begin(), m.end(), x) != m.end(); }
 
-lynx::ChannelDef channelWith (const lynx::midiout::State& s)
+yw::ChannelDef channelWith (const yw::midiout::State& s)
 {
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::midiOut;
-    c.pluginState = lynx::midiout::write (s);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::midiOut;
+    c.pluginState = yw::midiout::write (s);
     return c;
 }
 } // namespace mo167
 
 TEST (midi_out_state_round_trips_and_reads_old_layouts)
 {
-    using namespace lynx::midiout;
+    using namespace yw::midiout;
     State s;
     s.channel = 3;
     s.bankMsb = 2;
@@ -102,7 +102,7 @@ TEST (midi_out_state_round_trips_and_reads_old_layouts)
 
 TEST (midi_out_reads_every_fl_preset)
 {
-    using namespace lynx::midiout;
+    using namespace yw::midiout;
     const auto dir = std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Generators" / "MIDI Out";
     if (realFlpDir.empty() || ! std::filesystem::is_directory (dir))
         return;
@@ -119,7 +119,7 @@ TEST (midi_out_reads_every_fl_preset)
             continue;
         ++read;
         named += std::any_of (s->controls.begin(), s->controls.end(), [] (const Control& c) { return c.assigned() && ! c.name.empty(); });
-        // LYNX's writer (FL's version 7) keeps everything FL's preset says
+        // YW's writer (FL's version 7) keeps everything FL's preset says
         auto expected = *s;
         expected.version = 7;
         CHECK (parse (write (*s)) == expected);
@@ -131,7 +131,7 @@ TEST (midi_out_reads_every_fl_preset)
 
 TEST (midi_out_import_track_state_is_fls_miditrack_fst)
 {
-    using namespace lynx::midiout;
+    using namespace yw::midiout;
     const auto s = importTrackState();
     CHECK (importParamForCc (1) == 1 && importParamForCc (93) == 6 && importParamForCc (64) == 10 && importParamForCc (69) == 15);
     CHECK (importParamForCc (7) == -1 && importParamForCc (10) == -1 && importParamForCc (74) == -1);
@@ -159,7 +159,7 @@ TEST (midi_out_import_track_state_is_fls_miditrack_fst)
 
 TEST (midi_out_control_messages_are_fls)
 {
-    using namespace lynx::midiout;
+    using namespace yw::midiout;
     State s;
     s.channel = 2;
     int held = -1;
@@ -197,7 +197,7 @@ TEST (midi_out_control_messages_are_fls)
 
 TEST (midi_out_reset_sends_fls_order)
 {
-    using namespace lynx::midiout;
+    using namespace yw::midiout;
     State s;
     s.channel = 0;
     s.bankMsb = 1;
@@ -227,7 +227,7 @@ TEST (midi_out_reset_sends_fls_order)
 
 TEST (midi_out_instrument_sends_knobs_automation_and_reactivates)
 {
-    using namespace lynx::midiout;
+    using namespace yw::midiout;
     State s;
     s.channel = 1;
     s.resetFlags = 0;
@@ -264,11 +264,11 @@ TEST (midi_out_instrument_sends_knobs_automation_and_reactivates)
     CHECK (! reset.empty() && reset[0] == pack (0xB1, 121, 0) && mo167::has (reset, pack (0xB1, 74, 50)));
 
     // Song's automation value: read and set like FL's parameters (a value on a deactivated control activates it)
-    lynx::Song song;
+    yw::Song song;
     s.controls[2] = mo167::cc (10, 0, 100);
     s.controls[2].active = false;
     song.channels.push_back (mo167::channelWith (s));
-    const lynx::AutomationTarget t { lynx::AutomationTargetKind::channelParam, 0, 0, 3 };
+    const yw::AutomationTarget t { yw::AutomationTargetKind::channelParam, 0, 0, 3 };
     CHECK (song.targetValue (t) == 0.0f && song.setTargetValue (t, 0.5f));
     const auto after = stateOf (song.channels[0].pluginState);
     CHECK (after.values[2] == 50 && after.controls[2].active && std::abs (song.targetValue (t) - 0.5f) < 1e-6f);
@@ -276,7 +276,7 @@ TEST (midi_out_instrument_sends_knobs_automation_and_reactivates)
 
 TEST (midi_import_with_midi_out_channels_fills_fls_lanes)
 {
-    using namespace lynx::midiimport;
+    using namespace yw::midiimport;
     ParsedMidi midi;
     midi.trackNames = { "Lead" };
     auto ev = [&] (std::int64_t tick, std::uint8_t status, std::uint8_t d1, std::uint8_t d2) { midi.events.push_back ({ 0, tick, status, d1, d2 }); };
@@ -291,32 +291,32 @@ TEST (midi_import_with_midi_out_channels_fills_fls_lanes)
     ev (96, 0x83, 60, 0);
     Options o;
     o.midiOut = true;
-    lynx::Song song;
+    yw::Song song;
     std::string error;
     CHECK (importInto (song, midi, o, "MIDI", error));
     const auto c = (int) song.channels.size() - 1;
-    CHECK (song.channels[(std::size_t) c].instrument == lynx::InstrumentKind::midiOut);
-    const auto st = lynx::midiout::stateOf (song.channels[(std::size_t) c].pluginState);
+    CHECK (song.channels[(std::size_t) c].instrument == yw::InstrumentKind::midiOut);
+    const auto st = yw::midiout::stateOf (song.channels[(std::size_t) c].pluginState);
     CHECK (st.channel == 3 && st.pageNames[1] == "Boolean controllers");
     const auto& lanes = song.patterns.back().events;
-    auto lane = [&] (lynx::AutomationTargetKind kind, int param) -> const lynx::PatternEvents* {
+    auto lane = [&] (yw::AutomationTargetKind kind, int param) -> const yw::PatternEvents* {
         for (const auto& l : lanes)
-            if (l.target.kind == kind && l.target.index == c && (kind != lynx::AutomationTargetKind::channelParam || l.target.param == param))
+            if (l.target.kind == kind && l.target.index == c && (kind != yw::AutomationTargetKind::channelParam || l.target.param == param))
                 return &l;
         return nullptr;
     };
-    const auto* vol = lane (lynx::AutomationTargetKind::channelVolume, 0);
-    const auto* pan = lane (lynx::AutomationTargetKind::channelPan, 0);
-    const auto* mod = lane (lynx::AutomationTargetKind::channelParam, 1);
-    const auto* damper = lane (lynx::AutomationTargetKind::channelParam, 10);
-    const auto* program = lane (lynx::AutomationTargetKind::channelParam, lynx::midiout::programParam);
-    const auto* bend = lane (lynx::AutomationTargetKind::channelParam, lynx::midictl::pitchBendBase + 3);
+    const auto* vol = lane (yw::AutomationTargetKind::channelVolume, 0);
+    const auto* pan = lane (yw::AutomationTargetKind::channelPan, 0);
+    const auto* mod = lane (yw::AutomationTargetKind::channelParam, 1);
+    const auto* damper = lane (yw::AutomationTargetKind::channelParam, 10);
+    const auto* program = lane (yw::AutomationTargetKind::channelParam, yw::midiout::programParam);
+    const auto* bend = lane (yw::AutomationTargetKind::channelParam, yw::midictl::pitchBendBase + 3);
     CHECK (vol && pan && mod && damper && program && bend);
     if (vol && pan && mod && damper && program && bend)
     {
         CHECK (std::abs (vol->events[0].value - 10000.0f / 12800.0f) < 1e-6f && std::abs (pan->events[0].value - 6400.0f / 12800.0f) < 1e-6f);
         CHECK (std::abs (mod->events[0].value - 90.0f / 127.0f) < 1e-6f && damper->events[0].value == 1.0f);
-        CHECK (lynx::midiout::programFromNormal (program->events[0].value) == 5);
+        CHECK (yw::midiout::programFromNormal (program->events[0].value) == 5);
         CHECK (std::abs (bend->events[0].value - (float) (0x50 << 7) / 16383.0f) < 1e-6f);
     }
     CHECK (lanes.size() == 6); // (CC 74 is not imported)

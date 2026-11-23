@@ -6,18 +6,18 @@
 
 namespace
 {
-std::shared_ptr<lynx::SampleData> tone189l()
+std::shared_ptr<yw::SampleData> tone189l()
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.resize (44100 * 2);
     for (std::size_t i = 0; i < data->left.size(); ++i)
         data->left[i] = (float) (0.4 * std::sin (2.0 * 3.141592653589793 * 330.0 * (double) i / 44100.0) * (0.3 + 0.7 * (double) i / 88200.0));
     return data;
 }
-lynx::Song song189l()
+yw::Song song189l()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     ChannelDef ch;
@@ -36,11 +36,11 @@ lynx::Song song189l()
 // renders the clip, makes it unique (the rendered file on a copied channel, the clip reset) and renders it again
 struct Unique189l
 {
-    lynx::ClipAudio before, after;
+    yw::ClipAudio before, after;
 };
-Unique189l unique189l (const lynx::Song& original)
+Unique189l unique189l (const yw::Song& original)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto tone = tone189l();
     RackState::Factories f;
     Unique189l u;
@@ -72,7 +72,7 @@ float residual189l (const Unique189l& u)
 
 TEST (playlist189l_unique_sample_plain_is_the_clips_part)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto tone = tone189l();
     const auto u = unique189l (song189l());
     CHECK (u.before.left.size() == 22050);
@@ -90,7 +90,7 @@ TEST (playlist189l_unique_sample_plain_is_the_clips_part)
 
 TEST (playlist189l_unique_sample_renders_pitch_stretch_reverse)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = song189l();
     const auto plain = unique189l (song).before;
     song.playlist[0].reversed = true;
@@ -135,7 +135,7 @@ TEST (playlist189l_unique_sample_renders_pitch_stretch_reverse)
 
 TEST (playlist189n_new_audio_clip_channels_take_fl_template_declick)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (ChannelDef{}.sampler.declickMode == 0);
     CHECK (audioClipDeclickMode == 1);
 

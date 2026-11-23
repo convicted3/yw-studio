@@ -4,7 +4,7 @@
 
 TEST (video165_fl_state)
 {
-    using namespace lynx::video;
+    using namespace yw::video;
     // FL 2026's Default.fst (0xD5 payload, 37 bytes): version 3, flags 0x92, time display 0, 3 params (100, 0, 0),
     // no path, the window size 375 x 0
     const std::vector<std::uint8_t> fl = { 0x03, 0, 0, 0, 0x92, 0, 0, 0, 0, 0, 0, 0, 0x03, 0, 0, 0, 0x64, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -16,7 +16,7 @@ TEST (video165_fl_state)
     CHECK (s->keepAspect && s->enableAudio && s->slave && ! s->loop && ! s->ignoreTempo && ! s->dock && s->transport == 0);
     CHECK (s->volume == 100 && ! s->mute && ! s->play && s->path.empty() && s->width == 375 && s->height == 0);
     CHECK (s->timeDisplay == hms && s->delay == 0);
-    // written back: FL's bytes, then LYNX's tail
+    // written back: FL's bytes, then YW's tail
     const auto back = write (*s);
     CHECK (back.size() == fl.size() + 16 && std::equal (fl.begin(), fl.end(), back.begin()));
     CHECK (read (back) == s);
@@ -59,7 +59,7 @@ TEST (video165_fl_state)
 
 TEST (video165_time_display)
 {
-    using namespace lynx::video;
+    using namespace yw::video;
     CHECK (formatTime (0.0, hms, 0.0) == "0:00:00:000");
     CHECK (formatTime (3723.456, hms, 0.0) == "1:02:03:456");
     CHECK (formatTime (-1.25, hms, 0.0) == "-0:00:01:250");
@@ -75,7 +75,7 @@ TEST (video165_time_display)
 
 TEST (video165_clock_and_report)
 {
-    using namespace lynx::video;
+    using namespace yw::video;
     Settings s;
     s.delay = unitsPerSecond;            // starts when the song reaches 1 s
     s.start = 2 * unitsPerSecond;        // from the video's 2 s
@@ -103,7 +103,7 @@ TEST (video165_clock_and_report)
 
 TEST (video165_instrument_plays_the_track)
 {
-    using namespace lynx;
+    using namespace yw;
     // a 2-s ramp-like sound track at 48 kHz (left = sample index, right = minus it)
     auto track = std::make_shared<video::AudioTrack>();
     track->rate = 48000.0;

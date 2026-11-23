@@ -21,7 +21,7 @@
 
 #include "core/RemoteMap.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -51,7 +51,7 @@ std::pair<juce::String, juce::String> describe (AudioEngine& engine, const remot
 juce::String keyText (int key);
 // The label of a mapped element: "1/19" (channel / controller), "1/C3" (channel / key), a computer key's name.
 juce::String assignedText (const remotemap::Assigned& a, remotemap::Mode mode);
-// A value of a target's range as text (a parameter's own units where LYNX knows them, else percent).
+// A value of a target's range as text (a parameter's own units where YW knows them, else percent).
 // A mapping's Min / Max in the parameter's own unit (round 190em), and a typed one back to 0..1.
 juce::String rangeText (AudioEngine& engine, const remotemap::Target& target, float value);
 juce::String listKeyText (int key); // round 190em: the Key column's text, "Key a" as Live
@@ -141,4 +141,4 @@ private:
     float dragStart = 0.0f;
 };
 } // namespace mapmode
-} // namespace lynx
+} // namespace yw

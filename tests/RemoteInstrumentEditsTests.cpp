@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <stdexcept>
 
-using namespace lynx;
+using namespace yw;
 namespace
 {
 void check (bool condition, const char* message)

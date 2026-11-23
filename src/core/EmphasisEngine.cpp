@@ -14,7 +14,7 @@
 // docs/analise/REA_rodada167f.md §1.2. Field names follow the spec; "max0" is the library's clamp x <= 0 ? 0 : x and
 // "f2u64" its float → unsigned 64-bit conversion (truncation; the 2^63 split of the compiler).
 
-namespace lynx::emphasis
+namespace yw::emphasis
 {
 using ildsp::expD_;
 using ildsp::expf_;
@@ -1731,4 +1731,4 @@ void Engine::processBlock (const float* inL, const float* inR, float* outL, floa
         pending = false;
     }
 }
-} // namespace lynx::emphasis
+} // namespace yw::emphasis

@@ -1,5 +1,5 @@
 // Round 190ik (BUILD-LIST 8): Complex Pro (formant-keeping transposition, offline), Texture (granular, Grain Size and Flux)
-// and the pitch-aware Beats detector, fitted black-box on Ableton Live 12.4's renders (/mnt/e/lynx-work/warp190ik,
+// and the pitch-aware Beats detector, fitted black-box on Ableton Live 12.4's renders (/mnt/e/yw-work/warp190ik,
 // docs/analise/REA_rodada190ik.md). Old projects keep the old laws bit for bit (warpLaw / beatsLaw Classic and Measured).
 
 #include "OnsetBank190ik.h"
@@ -11,9 +11,9 @@ namespace warp190ik
 {
 constexpr double twoPi = 2.0 * 3.141592653589793;
 
-inline lynx::SampleData sine (double hz, double seconds, double rate = 44100.0, double level = 0.5)
+inline yw::SampleData sine (double hz, double seconds, double rate = 44100.0, double level = 0.5)
 {
-    lynx::SampleData d;
+    yw::SampleData d;
     d.sampleRate = rate;
     for (long i = 0; i < (long) (seconds * rate); ++i)
         d.left.push_back ((float) (level * std::sin (twoPi * hz * (double) i / rate)));
@@ -22,9 +22,9 @@ inline lynx::SampleData sine (double hz, double seconds, double rate = 44100.0, 
 }
 
 // a sung-like tone at 200 Hz whose spectral envelope has formants at 700 and 1200 Hz
-inline lynx::SampleData vowel (double seconds = 2.0, double rate = 44100.0)
+inline yw::SampleData vowel (double seconds = 2.0, double rate = 44100.0)
 {
-    lynx::SampleData d;
+    yw::SampleData d;
     d.sampleRate = rate;
     const auto envelope = [] (double f) {
         return 1.0 / (1.0 + std::pow ((f - 700.0) / 60.0, 2.0)) + 0.5 / (1.0 + std::pow ((f - 1200.0) / 70.0, 2.0)) + 0.01;
@@ -134,18 +134,18 @@ inline double centroid (const std::vector<float>& x, long from, long n, double f
     return den > 0.0 ? num / den : 0.0;
 }
 
-inline lynx::StretchOptions pro (float formants = 100.0f, float envelope = 128.0f)
+inline yw::StretchOptions pro (float formants = 100.0f, float envelope = 128.0f)
 {
-    lynx::StretchOptions o;
+    yw::StretchOptions o;
     o.modes.complexPro = true;
     o.modes.proFormants = formants;
     o.modes.proEnvelope = envelope;
     return o;
 }
 
-inline lynx::StretchOptions texture (float grain = 65.0f, float flux = 25.0f)
+inline yw::StretchOptions texture (float grain = 65.0f, float flux = 25.0f)
 {
-    lynx::StretchOptions o;
+    yw::StretchOptions o;
     o.modes.textureGrain = grain;
     o.modes.textureFlux = flux;
     return o;
@@ -154,7 +154,7 @@ inline lynx::StretchOptions texture (float grain = 65.0f, float flux = 25.0f)
 
 TEST (warp190ik_complex_pro_length_pitch_and_no_clicks)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     for (const auto rate : { 44100.0, 48000.0 })
         for (const auto ratio : { 0.8, 1.0, 1.5 })
@@ -173,7 +173,7 @@ TEST (warp190ik_complex_pro_length_pitch_and_no_clicks)
 
 TEST (warp190ik_complex_pro_keeps_the_formants_by_the_formants_amount)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     const auto in = vowel();
     const auto rate = in.sampleRate;
@@ -196,7 +196,7 @@ TEST (warp190ik_complex_pro_keeps_the_formants_by_the_formants_amount)
 
 TEST (warp190ik_complex_pro_is_deterministic_and_mapped)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     const auto in = vowel (1.5);
     const auto a = timeStretch (in, 1.3, StretchMethod::complex, 4.0, pro());
@@ -213,7 +213,7 @@ TEST (warp190ik_complex_pro_is_deterministic_and_mapped)
 
 TEST (warp190ik_complex_pro_classic_law_is_complex_with_the_old_real_time_pitch)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     const auto in = vowel (1.0);
     auto classic = pro();
@@ -228,7 +228,7 @@ TEST (warp190ik_complex_pro_classic_law_is_complex_with_the_old_real_time_pitch)
 
 TEST (warp190ik_texture_grains_flux_and_determinism)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     for (const auto rate : { 44100.0, 48000.0 })
     {
@@ -281,7 +281,7 @@ TEST (warp190ik_texture_grains_flux_and_determinism)
 
 TEST (warp190ik_texture_classic_law_is_the_spectral_stretch_as_before)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     const auto in = vowel (1.0);
     auto classic = texture (80.0f, 60.0f);
@@ -299,7 +299,7 @@ TEST (warp190ik_texture_classic_law_is_the_spectral_stretch_as_before)
 
 TEST (warp190ik_pitch_aware_detector_gate_on_the_onset_bank)
 {
-    using namespace lynx;
+    using namespace yw;
     std::map<std::string, std::array<onsetbank190ik::Score, 3>> per;
     for (const auto& c : onsetbank190ik::bank())
         for (int law = 0; law < 3; ++law)
@@ -329,7 +329,7 @@ TEST (warp190ik_pitch_aware_detector_gate_on_the_onset_bank)
 
 TEST (warp190ik_beats_pitch_aware_law_cuts_a_legato_step)
 {
-    using namespace lynx;
+    using namespace yw;
     // one held tone that steps a fifth up at 0.6 s: the Measured law hears no attack there, PitchAware cuts it
     constexpr double rate = 44100.0;
     std::vector<float> x ((std::size_t) (1.2 * rate));
@@ -362,7 +362,7 @@ TEST (warp190ik_beats_pitch_aware_law_cuts_a_legato_step)
 
 TEST (warp190ik_als_complex_pro_transposes_offline_and_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto xml = als175a::richSet(); // (its audio clip: WarpMode 4, PitchCoarse 2)
     const std::string from = "</FileRef></SampleRef></AudioClip>";
     const std::string oldMode = "<WarpMode Value=\"4\" />";
@@ -400,7 +400,7 @@ TEST (warp190ik_als_complex_pro_transposes_offline_and_round_trips)
 
 TEST (warp190ik_clip_view_transposes_complex_pro_offline)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef ch;
     ch.instrument = InstrumentKind::audioClip;
@@ -432,7 +432,7 @@ TEST (warp190ik_clip_view_transposes_complex_pro_offline)
 // offline transposition and a granular Texture channel, stretched through the rack's stretch factory.
 TEST (warp190ik_render_ahead_is_bit_exact_with_complex_pro_and_texture)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (4);
     const auto firstAudio = (int) song.channels.size();
     for (int k = 0; k < 2; ++k)
@@ -506,9 +506,9 @@ TEST (warp190ik_render_ahead_is_bit_exact_with_complex_pro_and_texture)
 namespace warp190ik
 {
 // clicks (3 ms of 3 kHz) at the given seconds of a 4 s file at 44.1 kHz, or a steady 440 Hz tone
-inline std::shared_ptr<const lynx::SampleData> clicks (const std::vector<double>& at)
+inline std::shared_ptr<const yw::SampleData> clicks (const std::vector<double>& at)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     d->left.assign (44100 * 4, 0.0f);
     for (const auto t : at)
@@ -520,9 +520,9 @@ inline std::shared_ptr<const lynx::SampleData> clicks (const std::vector<double>
 
 // a song at 120 BPM: the warped clip of channel "a.wav" over `beats` beats from tick 0, and (ramp) a tempo automation clip
 // from 120 to `endBpm` over the same beats
-inline lynx::Song rampSong (double beats, bool keepPitch, bool ramp, double endBpm = 90.0, const std::vector<lynx::WarpPoint>& warp = {})
+inline yw::Song rampSong (double beats, bool keepPitch, bool ramp, double endBpm = 90.0, const std::vector<yw::WarpPoint>& warp = {})
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.playlist.clear();
     song.mode = PlayMode::song;
@@ -579,9 +579,9 @@ struct Rendered
 };
 
 // the song rendered block by block as the engine plays it (the position moving with the tempo the rack played)
-inline Rendered render (const lynx::Song& song, std::shared_ptr<const lynx::SampleData> data, double seconds)
+inline Rendered render (const yw::Song& song, std::shared_ptr<const yw::SampleData> data, double seconds)
 {
-    using namespace lynx;
+    using namespace yw;
     RackState::Factories factories;
     factories.samples = [data] (const std::string&) { return data; };
     factories.stretchedSamples = [data] (const std::string&, double ratio, StretchMethod method, double semitones, const StretchMap& map,
@@ -632,7 +632,7 @@ inline long clickAt (const std::vector<float>& x, long around)
 
 TEST (issue187_warped_clip_stays_beat_locked_under_a_tempo_ramp)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     // one click per beat of the file's own 120 BPM; the song ramps 120 → 90 BPM over the clip's 8 beats
     std::vector<double> beatsAt;
@@ -659,7 +659,7 @@ TEST (issue187_warped_clip_stays_beat_locked_under_a_tempo_ramp)
 
 TEST (issue187_warp_markers_land_on_the_bar_lines_under_a_tempo_ramp)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     // a file whose tempo drifts: its warp markers put 0 / 0.9 / 2.1 / 3.0 s on beats 0 / 2 / 4 / 6 (bar lines at 0 and 4);
     // clicks sit on the markers. Under a 120 → 90 ramp each marker's click plays on its beat.
@@ -681,7 +681,7 @@ TEST (issue187_warp_markers_land_on_the_bar_lines_under_a_tempo_ramp)
 
 TEST (issue187_a_warped_clip_keeps_its_pitch_under_a_tempo_ramp)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     auto tone = std::make_shared<SampleData>();
     tone->sampleRate = 44100.0;
@@ -700,7 +700,7 @@ TEST (issue187_a_warped_clip_keeps_its_pitch_under_a_tempo_ramp)
 
 TEST (issue187_fixed_tempo_renders_bit_identical_to_the_renderer_without_tempo_following)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace warp190ik;
     // at the song's own fixed tempo the tempo hook changes nothing: the same samples with it on and off (off = the renderer
     // before round 190ik), for a warped clip that keeps its pitch, one that resamples and a warped-marker one

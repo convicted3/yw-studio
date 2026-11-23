@@ -1,4 +1,4 @@
-// Round 190gh (0.1.28 community-complaint slices, /mnt/e/lynx-work/pain190gc/REPORT.md §4):
+// Round 190gh (0.1.28 community-complaint slices, /mnt/e/yw-work/pain190gc/REPORT.md §4):
 // B2 updater "Go back to <previous version>", B7 export parity, B8 MIDI device hot-plug, B23 first-start audio check.
 
 #include "core/AudioCheck.h"
@@ -12,9 +12,9 @@ namespace gh190
 // three sample channels (decaying sines and a click train, made here: deterministic), inserts 1 and 2 sending to a bus
 // (insert 3, a delay: linear) and insert 4 (an EQ) on the Master, insert 4's fader automated over the two bars; the
 // Master without effects, so the parts of the mix add up
-std::shared_ptr<const lynx::SampleData> sample (const std::string& path)
+std::shared_ptr<const yw::SampleData> sample (const std::string& path)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 48000.0;
     d->left.assign (24000, 0.0f);
     const double f = path == "a" ? 220.0 : path == "b" ? 331.0 : 0.0;
@@ -27,9 +27,9 @@ std::shared_ptr<const lynx::SampleData> sample (const std::string& path)
     return d;
 }
 
-lynx::Song song()
+yw::Song song()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (4);
     s.mixer[0].effects.clear();
@@ -85,15 +85,15 @@ lynx::Song song()
 }
 
 // the song played from the start in blocks of `size(k)` samples (as an audio device calls), `total` samples
-std::pair<std::vector<float>, std::vector<float>> render (const lynx::Song& s, const std::function<int (int)>& size, int total)
+std::pair<std::vector<float>, std::vector<float>> render (const yw::Song& s, const std::function<int (int)>& size, int total)
 {
     const double rate = 48000.0;
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (rate, 2048);
     r.setTransportOptions (true, false, 0);
-    auto st = lynx::RackState::build (s, nullptr, rate, sample);
+    auto st = yw::RackState::build (s, nullptr, rate, sample);
     std::vector<float> l ((std::size_t) total), rr ((std::size_t) total);
-    const auto tps = lynx::ticksPerSample (s.bpm, rate);
+    const auto tps = yw::ticksPerSample (s.bpm, rate);
     double tick = 0.0;
     for (int done = 0, k = 0; done < total; ++k)
     {
@@ -127,7 +127,7 @@ float peakOf (const std::vector<float>& a)
 // ====================================================================================================================
 TEST (small190gh_rollback_picks_the_recorded_previous_version_else_the_newest_older_one)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     // the release list of the fixture in Update166bTests.inc: 0.1.23 (draft), 0.1.22, nightly (no version), 0.1.21, 0.1.20
     const auto releases = parseReleases (updateFixture);
     CHECK (releases.size() == 4);
@@ -150,7 +150,7 @@ TEST (small190gh_rollback_picks_the_recorded_previous_version_else_the_newest_ol
 
 TEST (small190gh_rollback_settings_round_trip_and_skip_the_left_version)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     Settings s;
     s.automatic = false;
     s.lastCheckMs = 1761900000000LL;
@@ -182,7 +182,7 @@ TEST (small190gh_rollback_settings_round_trip_and_skip_the_left_version)
 // ====================================================================================================================
 TEST (small190gh_midi_hotplug_simulation_opens_closes_and_reopens_by_name)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     MidiPrefs prefs;
     MidiInputPrefs off;
     off.name = "Pads";
@@ -257,7 +257,7 @@ TEST (small190gh_midi_hotplug_simulation_opens_closes_and_reopens_by_name)
 
 TEST (small190gh_midi_device_list_changes_name_what_was_plugged_in_and_out)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     const std::vector<MidiPort> a { { "in:1", "Keystation 49" }, { "out:1", "Keystation 49" }, { "in:2", "Pads" } };
     CHECK (diffMidiDevices (a, a) == MidiDeviceChange {});
     auto c = diffMidiDevices (a, { { "in:1", "Keystation 49" }, { "out:1", "Keystation 49" } });
@@ -276,7 +276,7 @@ TEST (small190gh_midi_device_list_changes_name_what_was_plugged_in_and_out)
 // ====================================================================================================================
 TEST (small190gh_audio_check_verdict_and_devices_to_try)
 {
-    using namespace lynx::audiocheck;
+    using namespace yw::audiocheck;
     CHECK (verdict (false, 0.5f, true) == Verdict::noDevice);
     CHECK (verdict (true, 0.3f, true) == Verdict::works);
     CHECK (verdict (true, 0.0f, true) == Verdict::works); // (the user's ear wins)
@@ -342,7 +342,7 @@ TEST (small190gh_render_is_the_same_in_any_block_size)
 
 TEST (small190gh_channel_stems_and_top_level_insert_stems_sum_to_the_mix)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = gh190::song();
     constexpr int total = 4 * 48000;
     auto blocks = [] (int) { return 512; };
@@ -381,7 +381,7 @@ TEST (small190gh_channel_stems_and_top_level_insert_stems_sum_to_the_mix)
 
 TEST (small190gh_inserts_fed_only_by_extra_outputs_get_a_stem)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.mixer = Song::defaultMixer (12);
     for (auto& c : s.channels)
@@ -418,7 +418,7 @@ TEST (small190gh_a_song_played_on_past_its_end_keeps_its_automation_as_an_export
 {
     // a real-time bounce (or a linear recording) plays on past the song's end: the automation holds its last values, as
     // the export's tail does (an empty clip after the music), instead of starting over from the song's start
-    using namespace lynx;
+    using namespace yw;
     const auto s = gh190::song();
     auto withTail = s;
     withTail.patterns.emplace_back().name = "(tail)";

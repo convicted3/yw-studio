@@ -1,12 +1,12 @@
 // Round 190hq, slice B13 (community complaint #27 "delay compensation: automation and MIDI out early, sync off"): the
 // side inputs of a slot (side-chain, second side-chain, a hosted effect's Connections) line up with the slot's own input,
 // the automation of faders, pans, route levels and VCA faders follows the audio it acts on (Song::compensateMixerLevels),
-// and render-ahead stays bit-exact with all of it. The clocks LYNX sends / follows, Link and played notes count the
+// and render-ahead stays bit-exact with all of it. The clocks YW sends / follows, Link and played notes count the
 // Master's PDC in the app (engine/AudioEngine.cpp heardLatencyMs; checked by --selftest).
 
 namespace pdc190hq
 {
-using namespace lynx;
+using namespace yw;
 
 // the slot's own input and its side input as they reach it: the first sample index (from the first process) where each
 // is non-silent
@@ -131,7 +131,7 @@ Probe::Seen run (const Song& s)
 
 TEST (pdc190hq_side_inputs_in_the_plan)
 {
-    using namespace lynx;
+    using namespace yw;
     // the kick (insert 1) through a 100-sample limiter, side-chaining the bass's compressor (insert 2): the bass waits for it
     auto s = pdc190hq::impulses (2);
     s.mixer[1].effects.push_back (pdc190hq::plugin ("latent100"));
@@ -184,7 +184,7 @@ TEST (pdc190hq_side_inputs_in_the_plan)
 
 TEST (pdc190hq_side_chain_lines_up_when_rendered)
 {
-    using namespace lynx;
+    using namespace yw;
     // the compressor sees the kick when it sees the bass's own hit: a latent source…
     auto s = pdc190hq::impulses (2);
     s.mixer[1].effects.push_back (pdc190hq::plugin ("latent100"));
@@ -213,7 +213,7 @@ TEST (pdc190hq_side_chain_lines_up_when_rendered)
 
 TEST (pdc190hq_fader_and_route_automation_follow_their_audio)
 {
-    using namespace lynx;
+    using namespace yw;
     // insert 1: a 4800-sample plugin (0.2 beat at 120 BPM / 48 kHz) under a fader ramp over beat 1
     auto s = pdc190hq::impulses (1);
     s.bpm = 120.0;
@@ -258,8 +258,8 @@ TEST (pdc190hq_fader_and_route_automation_follow_their_audio)
 
 TEST (pdc190hq_render_ahead_null_with_side_chains_and_level_automation)
 {
-    using namespace lynx;
-    // LYNX's own latent effects (Emphasizer 2 ms, Transporter 5 ms): a side-chained compressor behind one of them, its
+    using namespace yw;
+    // YW's own latent effects (Emphasizer 2 ms, Transporter 5 ms): a side-chained compressor behind one of them, its
     // source behind the other, an automated fader and route, rendered real-time and rendered ahead
     Song song;
     song.bpm = 128.0;

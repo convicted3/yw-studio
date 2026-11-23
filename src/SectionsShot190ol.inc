@@ -16,7 +16,7 @@
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         sections::patternLaneOn() = false; // (a fresh profile)
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
@@ -286,7 +286,7 @@
     // the boxes of the top bar are found by type
     static bool findTextIn (juce::Component& root, const juce::String& text)
     {
-        if (auto* box = dynamic_cast<lynx::toolbar::SignatureBox*> (&root); box != nullptr && box->isVisible() && box->text() == text)
+        if (auto* box = dynamic_cast<yw::toolbar::SignatureBox*> (&root); box != nullptr && box->isVisible() && box->text() == text)
             return true;
         for (auto* c : root.getChildren())
             if (findTextIn (*c, text))

@@ -16,7 +16,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::hlfx
+namespace yw::hlfx
 {
 namespace
 {
@@ -807,10 +807,10 @@ __attribute__ ((always_inline)) inline void biquadChainN (Biquad* q, const float
     }
 }
 
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
 // round 190kz: the same cascade compiled for AVX2 (picked at run time, src/core/CpuFeatures.h): the same SSE2 operations,
 // VEX-encoded, the same bits; no FMA (the target list has none)
-LYNX_TARGET_AVX2 void biquadChainAvx2 (Biquad* q, int count, const float* inL, const float* inR, float* outL, float* outR, int n) noexcept
+YW_TARGET_AVX2 void biquadChainAvx2 (Biquad* q, int count, const float* inL, const float* inR, float* outL, float* outR, int n) noexcept
 {
     if (count >= 4)
     {
@@ -836,7 +836,7 @@ LYNX_TARGET_AVX2 void biquadChainAvx2 (Biquad* q, int count, const float* inL, c
 
 void biquadChain (Biquad* q, int count, const float* inL, const float* inR, float* outL, float* outR, int n) noexcept
 {
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
     if (cpu::hasAvx2())
     {
         biquadChainAvx2 (q, count, inL, inR, outL, outR, n);
@@ -965,7 +965,7 @@ struct Halfband
 // FUN_00605410 (x87): one-pole on a control signal, c0 while the input is ≥ the state, c1 otherwise. The state stays
 // on the x87 stack (64-bit mantissa) through the block, the coefficients are doubles and only the output samples are
 // rounded to float; between blocks the state is kept as a double, 0 below 2^-24 (REA_rodada40 §2.4). long double is
-// the 80-bit x87 format on the x86-64 GCC/Clang/MinGW targets LYNX is built for.
+// the 80-bit x87 format on the x86-64 GCC/Clang/MinGW targets YW is built for.
 struct Smoother
 {
     double c0 = 0.0, c1 = 0.0, s = 0.0;
@@ -2824,9 +2824,9 @@ void HarmorRack::process (float* left, float* right, const float* fxL, const flo
 }
 void HarmorRack::advance (int n) noexcept { d->advance (n); }
 bool HarmorRack::quiet() const noexcept { return ! d->on || d->quietFor >= d->quietNeeded; }
-} // namespace lynx::hlfx
+} // namespace yw::hlfx
 
-namespace lynx::hlfx
+namespace yw::hlfx
 {
 // =================================================================================================================
 // The engine on its own (mixer Maximus, Soundgoodizer, Vocodex's SG stage; REA_rodada40)
@@ -2991,4 +2991,4 @@ bool kernelsMatchReference (std::uint32_t seed) noexcept
     }
     return true;
 }
-} // namespace lynx::hlfx
+} // namespace yw::hlfx

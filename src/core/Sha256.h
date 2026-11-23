@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 inline std::string sha256Hex (const std::uint8_t* data, std::size_t size)
 {
@@ -63,7 +63,7 @@ inline std::string sha256Hex (const std::uint8_t* data, std::size_t size)
 // SHA-256 of a Windows DLL's image without its Authenticode signature (round 169g, discussion #56): the bytes up to the
 // certificate table, with the PE checksum and the certificate directory entry zeroed. Image-Line ships the same engine
 // DLL signed in one installer and unsigned (or signed again) in another: the whole-file hash then changed although the
-// code and data LYNX reads were identical (FL Slayer's engine in FL Studio 2025 vs 2026). For an unsigned file whose
+// code and data YW reads were identical (FL Slayer's engine in FL Studio 2025 vs 2026). For an unsigned file whose
 // checksum is 0 this equals the whole-file hash, so hashes taken from such files stay valid.
 inline std::string peImageSha256Hex (const std::vector<std::uint8_t>& b)
 {
@@ -158,4 +158,4 @@ private:
     std::size_t fill = 0;
     std::uint64_t total = 0;
 };
-} // namespace lynx
+} // namespace yw

@@ -1,4 +1,4 @@
-// Round 190kw: static REA of the references (docs/analise/REA_rodada190kw.md; lab /mnt/e/lynx-work/rea190kw/).
+// Round 190kw: static REA of the references (docs/analise/REA_rodada190kw.md; lab /mnt/e/yw-work/rea190kw/).
 // - Crest Compressor's revision 1 (hidden `crest::revision`): the reference's own laws for Clean / Classic / Opto (the
 //   reduction smoothed by each style's two-stage follower, its Bézier knee shape, its attack / release scaling) and for
 //   Vocal / Mastering / Bus / Punch / Pumping (the generic gain computer + followers, wired as the reference wires them).
@@ -14,7 +14,7 @@
 
 namespace parity190kw
 {
-namespace cr = lynx::dyn::crest;
+namespace cr = yw::dyn::crest;
 // the gold input (as gold/gold.cpp): a 220 Hz tone + noise in 0.3 s steps of −40 … −5 dBFS, right at 0.8 × left
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 {
@@ -47,17 +47,17 @@ inline std::uint64_t fnv (const std::vector<float>& a, const std::vector<float>&
         }
     return h;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
         fx->process (l.data() + off, r.data() + off, std::min (256, n - off), s.params, 120.0);
 }
-inline lynx::EffectSlot crest (float style, float voicing, float thr, float ratio, float knee, float att, float rel, float rev)
+inline yw::EffectSlot crest (float style, float voicing, float thr, float ratio, float knee, float att, float rel, float rev)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::crestCompressor);
+    auto s = yw::makeEffectSlot (yw::EffectKind::crestCompressor);
     s.params[(std::size_t) cr::style] = style;
     s.params[(std::size_t) cr::voicing] = voicing;
     s.params[(std::size_t) cr::threshold] = thr;
@@ -69,7 +69,7 @@ inline lynx::EffectSlot crest (float style, float voicing, float thr, float rati
     return s;
 }
 // the settled gain (dB) on a square wave (|x| constant, so the detector's level is steady) of `inDb` dBFS
-inline double settledGainDb (lynx::EffectSlot s, double inDb, double seconds = 4.0)
+inline double settledGainDb (yw::EffectSlot s, double inDb, double seconds = 4.0)
 {
     s.params[(std::size_t) cr::autoGain] = 0.0f;
     const double sr = 48000.0;
@@ -89,7 +89,7 @@ inline bool near (double a, double b, double tol) { return std::abs (a - b) <= t
 
 TEST (parity190kw_crest_revision_is_hidden_new_and_translated_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     const auto& info = effectInfo (EffectKind::crestCompressor);
     // hidden: no control, no string (rollup step 8: after 190kt's busLaw and 190ky's fetLaw)
@@ -138,7 +138,7 @@ TEST (parity190kw_crest_fingerprints_old_projects_bit_identical_revision_1_pinne
 
 TEST (parity190kw_crest_v1_and_v2_static_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // threshold −30 dB (0.5), ratio 4, hard knee, range 60, a steady −10 dBFS square: overshoot 20 dB
     const auto r4 = cr::ratioValue (4.0);
@@ -158,7 +158,7 @@ TEST (parity190kw_crest_v1_and_v2_static_laws)
 
 TEST (parity190kw_crest_editor_curve_follows_the_revision)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     const auto r4 = cr::ratioValue (4.0);
     const auto curve = [&] (cr::Style st, float rev, double in) {

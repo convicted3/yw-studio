@@ -2,19 +2,19 @@
 // New instances run it in the six modes it covers; a project or preset saved before keeps the classic engine in every
 // mode (parameter 14, "Law"). What is checked: the parameter and its load rule, that the classic law still renders
 // what it rendered (a fingerprint of four settings taken from the build whose classic renders are byte-identical to
-// the build before the round: /mnt/e/lynx-work/nebula190ca/HANDOFF.md), the cloud law's own laws, its stability at
+// the build before the round: /mnt/e/yw-work/nebula190ca/HANDOFF.md), the cloud law's own laws, its stability at
 // every extreme, its independence of the sample rate, and a change of engine while playing.
 #include "core/EffectPresets.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 
 namespace nebula190ca
 {
-using lynx::EffectKind;
+using yw::EffectKind;
 using verbs100::Stereo;
-constexpr std::size_t law = (std::size_t) lynx::verbs::nebula::law;
+constexpr std::size_t law = (std::size_t) yw::verbs::nebula::law;
 constexpr int cloudModes[] = { 0, 2, 3, 4, 6, 19 };
 
-inline lynx::EffectParams settings (int mode, float lawValue)
+inline yw::EffectParams settings (int mode, float lawValue)
 {
     auto p = verbs100::defaults (EffectKind::nebula);
     p[12] = (float) mode / 21.0f;
@@ -24,9 +24,9 @@ inline lynx::EffectParams settings (int mode, float lawValue)
 
 // `seconds` of the effect's answer to a burst on both channels: noise (a fixed sequence) or a 1 kHz tone under a Hann
 // window, `burstSec` long, peak 0.5
-inline Stereo burst (const lynx::EffectParams& p, double seconds, double burstSec, bool tone, double sr = 48000.0, int block = 512, double bpm = 120.0)
+inline Stereo burst (const yw::EffectParams& p, double seconds, double burstSec, bool tone, double sr = 48000.0, int block = 512, double bpm = 120.0)
 {
-    auto fx = lynx::makeEffect (EffectKind::nebula);
+    auto fx = yw::makeEffect (EffectKind::nebula);
     fx->prepare (sr);
     const auto n = (std::size_t) (seconds * sr), m = (std::size_t) (burstSec * sr);
     Stereo s { std::vector<float> (n, 0.0f), std::vector<float> (n, 0.0f) };
@@ -77,7 +77,7 @@ inline float peak (const Stereo& s, std::size_t from = 0)
 // channel in sixteen 0.25 s windows and eight samples of the left channel.
 constexpr int fingerprintWindows = 16, fingerprintSamples = 8, fingerprintSize = 2 * fingerprintWindows + fingerprintSamples;
 constexpr std::size_t fingerprintAt[fingerprintSamples] = { 6000, 14411, 20001, 33333, 48000, 77777, 120000, 180001 };
-inline lynx::EffectParams classicSetting (int which, double& bpm)
+inline yw::EffectParams classicSetting (int which, double& bpm)
 {
     bpm = 120.0;
     auto p = settings (0, 0.0f);
@@ -133,7 +133,7 @@ constexpr double classicFingerprint[4][fingerprintSize] = {
 
 TEST (nebula190ca_law_parameter_loads_and_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace nebula190ca;
     const auto& info = effectInfo (EffectKind::nebula);
     CHECK (info.params.size() == law + 1 && std::string (info.params[law].name) == "Law" && info.params[law].defaultValue == 1.0f);
@@ -268,7 +268,7 @@ TEST (nebula190ca_cloud_laws)
     {
         auto p = settings (0, 1.0f);
         p[0] = 1.0f, p[6] = density, p[4] = 0.3f;
-        auto fx = lynx::makeEffect (EffectKind::nebula);
+        auto fx = yw::makeEffect (EffectKind::nebula);
         fx->prepare (48000.0);
         Stereo s { std::vector<float> (96000, 0.0f), std::vector<float> (96000, 0.0f) };
         s.l[0] = 0.5f;
@@ -292,7 +292,7 @@ TEST (nebula190ca_cloud_laws)
     {
         auto p = settings (2, 1.0f);
         p[0] = 1.0f, p[3] = 0.1f, p[4] = 0.3f, p[6] = 0.5f, p[5] = 0.8f; // 60 ms lines, spread and mixed: a continuous tail
-        auto fx = lynx::makeEffect (EffectKind::nebula);
+        auto fx = yw::makeEffect (EffectKind::nebula);
         fx->prepare (48000.0);
         std::vector<float> l (512, 0.0f), r (512, 0.0f);
         float tail = 0.0f, after = 0.0f;
@@ -424,7 +424,7 @@ TEST (nebula190ca_cloud_does_not_depend_on_the_sample_rate)
 
 TEST (nebula190ca_engine_change_while_playing)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace nebula190ca;
     // Law and Mode changed under a steady tone (Mix 100 %): the wet signal fades out on the engine that was playing and
     // the next one starts empty — no step in the output, nothing left of the old tail, both ways and between two cloud

@@ -1,4 +1,4 @@
-"""Sets IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20) in a PE file's COFF header (round 176a: LYNX-bridge32.exe; zig's linker has
+"""Sets IMAGE_FILE_LARGE_ADDRESS_AWARE (0x20) in a PE file's COFF header (round 176a: YW-bridge32.exe; zig's linker has
 no flag for it). A 32-bit process on 64-bit Windows then gets 4 GB of address space instead of 2 GB.
 usage: pe_set_laa.py <exe>"""
 import struct, sys

@@ -8,7 +8,7 @@
 #include "ui/ToolWindow.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -304,4 +304,4 @@ std::unique_ptr<juce::Component> makeTempoTapperForSnapshot (AudioEngine& engine
     panel->setTapsForSnapshot (taps, bpm);
     return panel;
 }
-} // namespace lynx
+} // namespace yw

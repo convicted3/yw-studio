@@ -6,7 +6,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace
 {
@@ -203,4 +203,4 @@ void showTempoDetectionDialog (TempoDetectionRequest request)
     if (auto* w = o.launchAsync())
         keepAboveMainWindow (*w);
 }
-} // namespace lynx::ui
+} // namespace yw::ui

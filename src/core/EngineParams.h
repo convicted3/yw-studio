@@ -1,14 +1,14 @@
 #pragma once
 
 // The automatable parameters of an engine that keeps its knobs inside the plugin's saved state (round 168n): the
-// designed editors, the automation clips (AutomationTargetKind::channelParam with `index`) and LYNX's preset banks
+// designed editors, the automation clips (AutomationTargetKind::channelParam with `index`) and YW's preset banks
 // all name a parameter by the engine's own index. The value of an automation clip (0…1) maps linearly to [low, high]
 // (rounded for stepped parameters: switches, menus, counts).
 
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct EngineParam
 {
@@ -64,13 +64,13 @@ inline const EngineParam* findEngineParam (const std::vector<EngineParam>& table
     }
     return lo < table.size() && table[lo].index == index ? &table[lo] : nullptr;
 }
-} // namespace lynx
+} // namespace yw
 
 #include <array>
 #include <atomic>
 #include <utility>
 
-namespace lynx
+namespace yw
 {
 // Parameter changes from the UI thread to the audio thread without rebuilding the engine (a knob turned while notes
 // play keeps them playing, as in FL). One producer (the UI thread's configure), one consumer (the audio thread).
@@ -112,4 +112,4 @@ private:
     std::array<std::pair<int, float>, capacity> items {};
     std::atomic<std::size_t> head { 0 }, tail { 0 };
 };
-} // namespace lynx
+} // namespace yw

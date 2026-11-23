@@ -13,7 +13,7 @@
 
 #include "ui/VisualGlShaders.inc"
 
-namespace lynx
+namespace yw
 {
 using namespace juce::gl;
 namespace vs = visualfx::scene;
@@ -46,8 +46,8 @@ void viewStopped()
 
 bool enabled()
 {
-    // (LYNX_VISUALIZER_GPU=0: the 2D renderer for this run, without changing the saved choice)
-    static const bool forcedOff = juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALIZER_GPU", {}).trim() == "0";
+    // (YW_VISUALIZER_GPU=0: the 2D renderer for this run, without changing the saved choice)
+    static const bool forcedOff = juce::SystemStats::getEnvironmentVariable ("YW_VISUALIZER_GPU", {}).trim() == "0";
     if (forcedOff)
         return false;
     if (setting < 0)
@@ -75,7 +75,7 @@ juce::String failureReason() { return failure; }
 
 void useClassicRendering (juce::Component& topLevel)
 {
-    topLevel.getProperties().set ("lynxGdi", true);
+    topLevel.getProperties().set ("ywGdi", true);
    #if JUCE_WINDOWS
     if (auto* peer = topLevel.getPeer())
         if (const auto engines = peer->getAvailableRenderingEngines(); engines.size() > 1 && peer->getCurrentRenderingEngine() != 0)
@@ -1018,4 +1018,4 @@ void GlFrameExporter::openGLContextClosing()
     if (state.load() == 1)
         state = -1;
 }
-} // namespace lynx
+} // namespace yw

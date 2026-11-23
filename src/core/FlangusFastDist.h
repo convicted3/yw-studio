@@ -1,14 +1,14 @@
 #pragma once
 
-// FL Studio's Fruity Flangus, Fruity Fast Dist and Fruity Flanger as LYNX mixer effects, exact engines rebuilt in
+// FL Studio's Fruity Flangus, Fruity Fast Dist and Fruity Flanger as YW mixer effects, exact engines rebuilt in
 // docs/analise/REA_rodada55.md (clean-room: layouts, formulas and behaviour in our own words; no Image-Line code or
 // data in this repository). Both are stateless apart from what the parameters hold: FL's saved state is only the
-// controls, which become the slot parameters (value = (raw − min) / (max − min)) so the LYNX editor and automation
+// controls, which become the slot parameters (value = (raw − min) / (max − min)) so the YW editor and automation
 // can change them.
 //
 // Fast Dist (EffectKind::fruityFastDist): [0] pre amp 64…192, [1] threshold 1…10, [2] type A/B (0…1),
 //   [3] mix 0…128, [4] post 0…128. The curves are FL's host waveshaper tables (FLEngine), rebuilt from their
-//   formula at run time. While LYNX exports (offlineRendering()) the interpolating kernel FL uses when it renders
+//   formula at run time. While YW exports (offlineRendering()) the interpolating kernel FL uses when it renders
 //   a file is taken; live playback uses FL's live (non-interpolating) kernel.
 // Flangus (EffectKind::fruityFlangus): [0] order 1…9, [1] depth 0…1024, [2] speed 0…1024, [3] delay 0…128,
 //   [4] spread 0…128, [5] cross −128…128, [6] dry −128…128, [7] wet −128…128.
@@ -25,7 +25,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::fastdistfx
+namespace yw::fastdistfx
 {
 constexpr int params = 5;
 struct State
@@ -52,9 +52,9 @@ void hostShaper (float* x, int n, int set, int curveIndex, float dry, float wet,
 // one channel, in place; render = FL's file-render kernel (interpolated)
 void process (float* x, int n, const State& s, bool render) noexcept;
 std::unique_ptr<Effect> make();
-} // namespace lynx::fastdistfx
+} // namespace yw::fastdistfx
 
-namespace lynx::flangusfx
+namespace yw::flangusfx
 {
 constexpr int params = 8;
 constexpr int maxOrder = 9;
@@ -95,9 +95,9 @@ private:
 
 // the mixer effect (the slot parameters carry FL's controls)
 std::unique_ptr<Effect> make();
-} // namespace lynx::flangusfx
+} // namespace yw::flangusfx
 
-namespace lynx::flangerfx
+namespace yw::flangerfx
 {
 constexpr int params = 12;
 using State = std::array<int, params>; // raw controls, all from 0
@@ -129,4 +129,4 @@ private:
 };
 
 std::unique_ptr<Effect> make();
-} // namespace lynx::flangerfx
+} // namespace yw::flangerfx

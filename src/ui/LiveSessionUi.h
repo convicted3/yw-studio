@@ -8,7 +8,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class LiveSessionManager;
@@ -19,7 +19,7 @@ struct Context
 {
     AudioEngine& engine;
     LiveSessionManager& live;
-    juce::File projectFile; // the open project's .lynx (none: not saved yet)
+    juce::File projectFile; // the open project's .yw (none: not saved yet)
     // runs `then` once unsaved changes are saved or let go (MainComponent::confirmDiscard)
     std::function<void (std::function<void()> then)> confirmDiscard;
 };
@@ -30,10 +30,10 @@ void start (Context context);
 void join (Context context);
 void showInvite (Context context);
 void leave (Context context);
-// At start-up (round 169j): the host's LYNX SHARE closed during a live session (a crash, the computer restarted):
+// At start-up (round 169j): the host's YW Studio closed during a live session (a crash, the computer restarted):
 // offer to resume it from its journal (the guests are waiting and reconnect by themselves).
 void offerResume (Context context);
-// Round 190ah: the question a guest gets at start-up when LYNX SHARE closed while it was in someone's session, and the
+// Round 190ah: the question a guest gets at start-up when YW Studio closed while it was in someone's session, and the
 // host's question when a guest reached the limit for audio files (also drawn by --snapshot).
 std::unique_ptr<juce::AlertWindow> makeRejoinDialog (const juce::String& hostName, const juce::String& when);
 std::unique_ptr<juce::AlertWindow> makeMediaLimitDialog (const juce::String& name, juce::int64 used, juce::int64 limit);
@@ -48,4 +48,4 @@ int paintPresence (juce::Graphics& g, juce::Rectangle<int> area, const LiveSessi
 // The display name the person used last time (Online sessions P1 and P2 share it).
 juce::String myName();
 } // namespace liveui
-} // namespace lynx
+} // namespace yw

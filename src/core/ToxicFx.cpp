@@ -20,7 +20,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -569,4 +569,4 @@ void ToxicFxRack::process (float* left, float* right, int n) noexcept
 }
 bool ToxicFxRack::active() const noexcept { return ! (impl->sleeping && impl->mL == 0.0f && impl->mR == 0.0f); }
 float toxicPowf (float x, float y) noexcept { return powfCrt (x, y); }
-} // namespace lynx
+} // namespace yw

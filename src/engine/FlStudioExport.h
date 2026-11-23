@@ -10,7 +10,7 @@
 #include "core/Song.h"
 #include "engine/Exporter.h"
 
-namespace lynx
+namespace yw
 {
 class PluginHost;
 
@@ -24,10 +24,10 @@ struct Written
 };
 
 // The options for this PC: the plugin list's wrapper records (PluginHost::flWrapperRecord) and the sample lengths.
-flpexport::Options optionsFor (PluginHost* host, flpexport::LynxOnly mode);
+flpexport::Options optionsFor (PluginHost* host, flpexport::YwOnly mode);
 // The same with every hosted plugin of `song` looked up now (call on the message thread): the options can then be used
 // on another thread (they no longer touch the plugin list).
-flpexport::Options optionsFor (PluginHost* host, flpexport::LynxOnly mode, const Song& song);
+flpexport::Options optionsFor (PluginHost* host, flpexport::YwOnly mode, const Song& song);
 
 // One render of option A: `song` to `wav` with `settings` (a 32-bit float WAV), `progress` 0..1 (false = cancel).
 using RenderFn = std::function<bool (const Song& song, const ExportSettings& settings, const juce::File& wav,
@@ -45,4 +45,4 @@ juce::String reportText (const Written& written, const std::function<juce::Strin
 // failure (the target is only replaced once complete).
 bool write (const Song& song, flpexport::Options options, const juce::File& target, bool zip, Written& written, juce::String& error);
 } // namespace flstudio
-} // namespace lynx
+} // namespace yw

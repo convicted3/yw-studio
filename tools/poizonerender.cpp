@@ -1,4 +1,4 @@
-// Renders a PoiZone state with LYNX's engine exactly like our round-44 reference model drives it (verification harness,
+// Renders a PoiZone state with YW's engine exactly like our round-44 reference model drives it (verification harness,
 // REA_rodada44 §7): poizonerender <state.bin> <out.f32> <length> <rate> [blk=N] [bpm=X] [maxpoly=N] [panlaw]
 //   [note=start,key,initVol,finalVol,finalPan,pitchCents,release ...]. Writes interleaved stereo float32.
 #include <cstdio>
@@ -24,7 +24,7 @@ int main (int argc, char** argv)
     int blk = 512, maxPoly = 0;
     double bpm = 120.0;
     bool panLaw = false;
-    std::vector<lynx::poizone::RefNote> notes;
+    std::vector<yw::poizone::RefNote> notes;
     for (int i = 5; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -38,14 +38,14 @@ int main (int argc, char** argv)
             panLaw = true;
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::poizone::RefNote n;
+            yw::poizone::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%lf,%d", &n.start, &n.key, &n.initVol, &n.finalVol, &n.finalPan, &n.pitchCents,
                              &n.release)
                 >= 6)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::poizone::renderReference (state, notes, rate, length, blk, bpm, maxPoly, panLaw);
+    const auto out = yw::poizone::renderReference (state, notes, rate, length, blk, bpm, maxPoly, panLaw);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

@@ -4,20 +4,20 @@ namespace rea149
 {
 // a synth channel; a live note played (stopped transport) for `holdSeconds`, rendered for `seconds`: the onsets
 // heard (10 ms RMS windows rising past a quarter of the loudest)
-int liveOnsets (const lynx::ChannelDef& channel, double seconds, double holdSeconds, int key = 60)
+int liveOnsets (const yw::ChannelDef& channel, double seconds, double holdSeconds, int key = 60)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
     auto c = channel;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    auto state = lynx::RackState::build (s, nullptr, 48000.0);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0);
+    yw::RackRenderer r;
     r.prepare (48000.0, 480);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent e;
+    yw::LiveEventQueue live;
+    yw::NoteEvent e;
     e.channel = 0;
     e.key = key;
     e.velocity = 0.8f;
@@ -29,7 +29,7 @@ int liveOnsets (const lynx::ChannelDef& channel, double seconds, double holdSeco
     {
         if (b == (int) (holdSeconds * 100.0))
         {
-            e.type = lynx::NoteEvent::Type::off;
+            e.type = yw::NoteEvent::Type::off;
             live.push (e);
         }
         r.process (state.get(), false, 0.0, 480, l.data(), rr.data(), &live, nullptr);
@@ -54,7 +54,7 @@ int liveOnsets (const lynx::ChannelDef& channel, double seconds, double holdSeco
 
 TEST (rea149_live_notes_play_through_arp_and_echo)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.name = "Synth";
     c.instrument = InstrumentKind::synth;
@@ -76,7 +76,7 @@ TEST (rea149_live_notes_play_through_arp_and_echo)
 
 TEST (rea149_arpeggiator_repeat_zero_plays_the_chord)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's Repeat 0 [EXEC r146b]: each step plays the chord at once; range 2 alternates its octave
     ArpSettings a;
     a.direction = 1;
@@ -95,7 +95,7 @@ TEST (rea149_arpeggiator_repeat_zero_plays_the_chord)
 
 TEST (rea149_wrapper_latency_and_midi_output_port)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (2);
     for (int k = 0; k < 3; ++k)
@@ -121,7 +121,7 @@ TEST (rea149_wrapper_latency_and_midi_output_port)
 
 TEST (rea149_echo_fat_mode_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's fat mode [DECOMP FUN_00d28c90]: a mirrored second series (pan / pitch steps negated), every echo at
     // feedback × the note's level
     EchoSettings s;
@@ -175,7 +175,7 @@ TEST (rea149_echo_fat_mode_like_fl)
 
 TEST (rea149_add_to_key_follows_the_root_note)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's Add to key: an instrument that is not a sampler plays (C5 − root) semitones away (root C4 → an octave up)
     auto crossings = [] (bool addToKey) {
         Song s;
@@ -220,7 +220,7 @@ TEST (rea149_add_to_key_follows_the_root_note)
 
 TEST (rea149_consolidate_keeps_the_tempo_map)
 {
-    using namespace lynx;
+    using namespace yw;
     // a song with a tempo change: the render of a track keeps the tempo clip (cut at the render's start)
     auto song = Song::makeDefault();
     song.playlist.clear();
@@ -257,7 +257,7 @@ TEST (rea149_consolidate_keeps_the_tempo_map)
 
 TEST (rea149_create_group_names_unnamed_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's Create group [DECOMP FUN_012aa200]: the selected tracks without a name take the current track's
     auto song = Song::makeDefault();
     song.mixer.resize (8);

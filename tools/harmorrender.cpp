@@ -1,7 +1,7 @@
-// Renders a Harmor state with LYNX's engine exactly like our round-34 reference model drives it (verification
+// Renders a Harmor state with YW's engine exactly like our round-34 reference model drives it (verification
 // harness, REA_rodada34 §1.25): harmorrender <state.bin> <out.f32> <length> <mt.txt|-> <rate> [blk=N] [bpm=X]
 //   [comp=<Harmor System\Compression\n.fst>] [note=start,key,velocity,finalVol,finalPan,release ...] [p=sample,k,raw ...]. Writes interleaved stereo float32; mt.txt holds the
-// DLL's Mersenne-Twister state (index, then 624 words) or "-" for LYNX's fixed seed.
+// DLL's Mersenne-Twister state (index, then 624 words) or "-" for YW's fixed seed.
 #include <cctype>
 #include <cstdio>
 #include <unistd.h>
@@ -18,7 +18,7 @@
 
 // resynthesis samples (round natives190kj): FL's path variables and Windows drives mapped to this machine's mounts
 // (HR_FLDATA, default /mnt/c/Program Files/Image-Line/FL Studio 2026/Data); non-WAV files decoded with ffmpeg
-static bool loadSample (const std::string& saved, lynx::harmor::SampleData& out)
+static bool loadSample (const std::string& saved, yw::harmor::SampleData& out)
 {
     std::string p = saved;
     const std::string var = "%FLStudioData%", fac = "%FLStudioFactoryData%";
@@ -38,12 +38,12 @@ static bool loadSample (const std::string& saved, lynx::harmor::SampleData& out)
     const auto ext = dot == std::string::npos ? std::string() : p.substr (dot + 1);
     // WAV, FL's Ogg-in-WAV, Ogg Vorbis and WavPack are decoded by the core reader (FL's own Ogg decoding); others by ffmpeg
     if (ext == "wav" || ext == "WAV" || ext == "ogg" || ext == "OGG" || ext == "wv" || ext == "WV")
-        return lynx::harmor::readWavMono (p, out);
+        return yw::harmor::readWavMono (p, out);
     const std::string tmp = "/tmp/claude-1000/hr_dec_" + std::to_string ((long long) getpid()) + ".wav";
     const std::string cmd = "ffmpeg -v quiet -y -i \"" + p + "\" -c:a pcm_f32le \"" + tmp + "\"";
     if (std::system (cmd.c_str()) != 0)
         return false;
-    const bool ok = lynx::harmor::readWavMono (tmp, out);
+    const bool ok = yw::harmor::readWavMono (tmp, out);
     std::remove (tmp.c_str());
     return ok;
 }
@@ -67,11 +67,11 @@ int main (int argc, char** argv)
             mt.push_back ((std::uint32_t) v);
     }
     const double rate = std::atof (argv[5]);
-    lynx::harmor::setSampleLoader (loadSample);
+    yw::harmor::setSampleLoader (loadSample);
     int blk = 512, rev = 1;
     double bpm = 120.0;
-    std::vector<lynx::harmor::RefNote> notes;
-    std::vector<lynx::harmor::RefParam> params; // round 190pr: p=sample,k,raw (FL's parameter k set to raw, as hm.exe's p=)
+    std::vector<yw::harmor::RefNote> notes;
+    std::vector<yw::harmor::RefParam> params; // round 190pr: p=sample,k,raw (FL's parameter k set to raw, as hm.exe's p=)
     std::vector<std::uint8_t> comp;
     for (int i = 6; i < argc; ++i)
     {
@@ -84,21 +84,21 @@ int main (int argc, char** argv)
         {
             std::ifstream f (a.substr (5), std::ios::binary);
             const std::vector<std::uint8_t> fst ((std::istreambuf_iterator<char> (f)), std::istreambuf_iterator<char>());
-            if (auto st = lynx::hlfx::maximusStateFromFst (fst))
+            if (auto st = yw::hlfx::maximusStateFromFst (fst))
                 comp = *st;
         }
         else if (a.rfind ("bpm=", 0) == 0)
             bpm = std::atof (a.c_str() + 4);
-        else if (lynx::harmor::RefParam pr; a.rfind ("p=", 0) == 0 && std::sscanf (a.c_str() + 2, "%d,%d,%d", &pr.at, &pr.k, &pr.raw) == 3)
+        else if (yw::harmor::RefParam pr; a.rfind ("p=", 0) == 0 && std::sscanf (a.c_str() + 2, "%d,%d,%d", &pr.at, &pr.k, &pr.raw) == 3)
             params.push_back (pr);
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::harmor::RefNote n;
+            yw::harmor::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%d", &n.start, &n.key, &n.velocity, &n.finalVol, &n.finalPan, &n.release) >= 5)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::harmor::renderReference (state, notes, rate, length, blk, mt, bpm, comp, rev, params);
+    const auto out = yw::harmor::renderReference (state, notes, rate, length, blk, mt, bpm, comp, rev, params);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");
@@ -109,7 +109,7 @@ int main (int argc, char** argv)
         return 1;
     std::fwrite (out.data(), sizeof (float), out.size(), f);
     std::fclose (f);
-    for (const auto& s : lynx::harmorFallbacks (state))
+    for (const auto& s : yw::harmorFallbacks (state))
         std::printf ("fallback: %s\n", s.c_str());
     return 0;
 }

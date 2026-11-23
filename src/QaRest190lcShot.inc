@@ -10,7 +10,7 @@
     // <folder>/checks.txt lists what was checked. Included in the app class of Main.cpp.
     bool runQaRest190lcShot (const juce::File& folder, const juce::String& setPath)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;

@@ -12,12 +12,12 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::ui::keyfocus
+namespace yw::ui::keyfocus
 {
 // A drop-down (or a part of one, e.g. its text label) or a button: controls that have nothing to do with the keys here.
 bool isMouseOnlyControl (const juce::Component* c);
 
-// True when `focused` is such a control inside `root` or inside a panel window (property "lynxPanel").
+// True when `focused` is such a control inside `root` or inside a panel window (property "ywPanel").
 bool shouldGiveBack (const juce::Component* focused, const juce::Component& root);
 
 // Esc while such a control holds the keyboard: gives it back; true when it did (the Esc is used up).
@@ -29,4 +29,4 @@ void uninstall (juce::Component& root);
 
 // --issues190ng: hands the focus back now (no message-loop turn), as the watch would.
 void giveBackNow (juce::Component& root);
-} // namespace lynx::ui::keyfocus
+} // namespace yw::ui::keyfocus

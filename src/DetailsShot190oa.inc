@@ -4,7 +4,7 @@
     bool runDetailsShot190oa (const juce::String& prefix, const juce::String& project)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -19,7 +19,7 @@
             savePng (c.createComponentSnapshot (area, true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (area, true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
+        using namespace yw;
         if (project.isEmpty())
             return false;
         flsettings::reset();
@@ -125,7 +125,7 @@
                 o.range = exportopts::Range::selection;
                 o.tail = exportopts::TailMode::cut;
                 o.wavBits = 32;
-                const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190oa-mainvol.wav");
+                const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190oa-mainvol.wav");
                 juce::String error;
                 ExportJob job (s, o, file);
                 if (! job.run ([] (double) { return true; }, error))
@@ -331,7 +331,7 @@
             windowplaces::all().clear();
             windowplaces::all()["ch:42"] = { { 300, 200, 640, 420 }, true };
             windowplaces::all()["fx:1:0"] = { { 900, 150, 500, 380 }, false };
-            const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190oa-places.lynx");
+            const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190oa-places.yw");
             juce::String error;
             ProjectFile::WindowLayout layout;
             layout.places = windowplaces::toVar();

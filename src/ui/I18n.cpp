@@ -8,7 +8,7 @@
 #include "ui/I18nEnglish.h"
 #include "ui/I18nLocale.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -168,11 +168,11 @@ void initialise (const juce::StringArray& args)
     if (flag >= 0 && isKnown (args[flag + 1].unquoted()))
         id = args[flag + 1].unquoted();
     else if (! settingsFile().existsAsFile() && ! PluginHost::settingsFolder().getChildFile ("setup-done.txt").existsAsFile()
-             && juce::SystemStats::getEnvironmentVariable ("LYNX_TEST_MODE", {}) != "1"
+             && juce::SystemStats::getEnvironmentVariable ("YW_TEST_MODE", {}) != "1"
              && ! std::any_of (args.begin(), args.end(), [] (const juce::String& a) { return a.startsWith ("--"); }))
     {
         // the very first start of the app (no language chosen, setup wizard never finished): the OS language when
-        // LYNX has it; the wizard's Language box starts there and the choice is kept
+        // YW has it; the wizard's Language box starts there and the choice is kept
         id = osDefault();
         save (id);
     }
@@ -183,4 +183,4 @@ void initialise (const juce::StringArray& args)
     juce::LocalisedStrings::setCurrentMappings (table.isEmpty() ? nullptr : new juce::LocalisedStrings (table, false));
 }
 } // namespace i18n
-} // namespace lynx
+} // namespace yw

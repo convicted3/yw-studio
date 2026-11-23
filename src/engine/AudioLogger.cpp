@@ -1,7 +1,7 @@
 #include "platform/Paths.h"
 #include "engine/AudioLogger.h"
 
-namespace lynx
+namespace yw
 {
 AudioLogger::AudioLogger (AudioCapture& t) : juce::Thread ("YW Studio audio logger"), tap (t) {}
 
@@ -12,7 +12,7 @@ AudioLogger::~AudioLogger()
 
 juce::File AudioLogger::defaultFolder()
 {
-    return lynx::platform::documentsFolder().getChildFile ("YW Studio").getChildFile ("Audio logger");
+    return yw::platform::documentsFolder().getChildFile ("YW Studio").getChildFile ("Audio logger");
 }
 
 bool AudioLogger::start (const juce::File& folder, double sampleRate)
@@ -85,4 +85,4 @@ void AudioLogger::run()
         wait (100);
     }
 }
-} // namespace lynx
+} // namespace yw

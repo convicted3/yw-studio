@@ -9,7 +9,7 @@
 //   right-click a point           the point's menu        Alt+right-click a point   "delete point"
 //   right-click a tension handle  "default tension"       Alt+left on a handle      "default tension"
 //   left-drag a point             "move point"            left-drag a handle        "move tension"
-// "The first point of the envelope can't be removed."; LYNX also keeps the last one (it holds the curve's end at x = 1).
+// "The first point of the envelope can't be removed."; YW also keeps the last one (it holds the curve's end at x = 1).
 // Every edit is written back into the band's envelope in FL's own state layout (core/MaximusFx withCurve).
 
     int mxDragPoint = -1, mxDragTension = -1, mxHoverPoint = -1, mxHoverHandle = -1;
@@ -257,7 +257,7 @@
             if (maximusfx::removeCurvePoint (now, point))
                 mxWrite (now);
         });
-        if (point > 0) // the shape of the segment that ends here: the FL modes LYNX's Maximus engine plays
+        if (point > 0) // the shape of the segment that ends here: the FL modes YW's Maximus engine plays
         {
             menu.addSectionHeader (tr ("Mode"));
             for (const auto& m : flshape::waveShaperModes())

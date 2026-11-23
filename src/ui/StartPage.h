@@ -1,11 +1,11 @@
 #pragma once
 
 // Issue #252 (round 190oq; core/StartPage.h has the what and why): the start page, a card over the dimmed main window as
-// the welcome card (ui/Onboarding.h), in LYNX's dialog frame (ui/DialogFrame.h) with FL's Welcome window's two panels
+// the welcome card (ui/Onboarding.h), in YW's dialog frame (ui/DialogFrame.h) with FL's Welcome window's two panels
 // (shot live190gu/screens-fl/fl-welcome-wizard.png): "Start a new project" — New project... and the templates ("Start
-// from": the demo songs, LYNX's default, the built-in and the user's templates), each a title in the accent and a line —
+// from": the demo songs, YW's default, the built-in and the user's templates), each a title in the accent and a line —
 // and "Recent projects" — "Other projects..." (Open...), then each recent project: its name, "<size>  <date time>
-// (<ago>)" and its folder; missing files dimmed. LYNX adds a search box over the list (the caret in it: typing filters
+// (<ago>)" and its folder; missing files dimmed. YW adds a search box over the list (the caret in it: typing filters
 // at once); Up / Down / Enter / a double click open one. Bottom: "Show the start page when YW Studio starts" and the keys. Esc
 // or × keep the project that is open behind it. Static paints, no timer.
 
@@ -17,7 +17,7 @@
 
 #include "core/StartPage.h"
 
-namespace lynx::startpageui
+namespace yw::startpageui
 {
 struct Host
 {
@@ -47,4 +47,4 @@ int shownRowsForSnapshot (juce::Component& cardOrOverlay);
 void selectRowForSnapshot (juce::Component& cardOrOverlay, int row);
 bool openSelectedForSnapshot (juce::Component& cardOrOverlay); // as Enter
 juce::TextEditor* searchBoxForSnapshot (juce::Component& cardOrOverlay);
-} // namespace lynx::startpageui
+} // namespace yw::startpageui

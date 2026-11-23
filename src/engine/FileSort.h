@@ -1,6 +1,6 @@
 #pragma once
 
-// Sorting files by a time read from the disk (issue #12's crash, LYNX 0.1.18): the times are read once per file and
+// Sorting files by a time read from the disk (issue #12's crash, YW 0.1.18): the times are read once per file and
 // the sort runs on those copies (core/SortOnce.h has the why; a comparator reading getLastAccessTime() on every
 // comparison crashed WaveformCache's disk-cache pruning while the user cycled quickly through samples).
 
@@ -8,7 +8,7 @@
 
 #include <juce_core/juce_core.h>
 
-namespace lynx::filesort
+namespace yw::filesort
 {
 enum class By { accessTime, modificationTime };
 
@@ -23,4 +23,4 @@ inline void byTime (juce::Array<juce::File>& files, By by, bool newestFirst = fa
         [] (const juce::File& a, const juce::File& b) { return a.getFullPathName() < b.getFullPathName(); },
         newestFirst);
 }
-} // namespace lynx::filesort
+} // namespace yw::filesort

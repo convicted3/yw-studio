@@ -6,7 +6,7 @@
 
 #include "core/SimpleTracks.h"
 
-namespace lynx::simplepads
+namespace yw::simplepads
 {
 namespace
 {
@@ -245,4 +245,4 @@ float normalizeGainDb (float peak) noexcept
         return 0.0f;
     return std::clamp (-20.0f * std::log10 (peak), -24.0f, 24.0f);
 }
-} // namespace lynx::simplepads
+} // namespace yw::simplepads

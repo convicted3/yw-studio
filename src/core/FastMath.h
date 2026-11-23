@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190ok (owner decision D3): fast per-sample maths for LYNX's own devices (Ember, Prism, Crest, Echoform), used
+// Round 190ok (owner decision D3): fast per-sample maths for YW's own devices (Ember, Prism, Crest, Echoform), used
 // from EffectSlot::engineRev 2 on (Effect::setEngineRev). The C library's tanhf / exp / log10 / pow are calls that the
 // compiler cannot inline or vectorise (inserts50: tanhf alone was 22 % of the render, Patience: pow / exp / log10 13 %);
 // these are inline, branch-free and close to the C library's own accuracy, so the sound does not move:
@@ -11,8 +11,8 @@
 //   log2 / log10 (double) the atanh series of log ((1 + s) / (1 - s)) on |s| <= 0.1716 to s^17: under 1e-15
 //   pow (double)          exp2 (y * log2 (x)) for x > 0
 //
-// The coefficients are LYNX's own (a numpy fit in this round for tanh; textbook series elsewhere). Rounding to an
-// integer uses the 1.5 * 2^52 (2^23) addition, so the default round-to-nearest mode is assumed (as on every LYNX
+// The coefficients are YW's own (a numpy fit in this round for tanh; textbook series elsewhere). Rounding to an
+// integer uses the 1.5 * 2^52 (2^23) addition, so the default round-to-nearest mode is assumed (as on every YW
 // thread: FTZ / DAZ only). Header-only, no JUCE.
 
 #include <algorithm>
@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace lynx::fastmath
+namespace yw::fastmath
 {
 namespace detail
 {
@@ -187,4 +187,4 @@ inline double pow (double x, double y) noexcept
         return fastmath::exp2 (y * fastmath::log2 (x));
     return std::pow (x, y);
 }
-} // namespace lynx::fastmath
+} // namespace yw::fastmath

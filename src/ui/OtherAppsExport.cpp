@@ -12,7 +12,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -253,7 +253,7 @@ bool write (const Song& original, const juce::String& projectName, const exportb
         done += 1.0;
     }
 
-    // the FL Studio project (what only LYNX has is rendered to audio next to it, as File › Export › FL Studio project's
+    // the FL Studio project (what only YW has is rendered to audio next to it, as File › Export › FL Studio project's
     // default option)
     if (! result.cancelled && keepGoing (done / steps, tr ("FL Studio project")))
     {
@@ -425,7 +425,7 @@ public:
           parent (std::move (parentFolder))
     {
         context.host = &engine.getPluginHost();
-        context.flOptions = flstudio::optionsFor (&engine.getPluginHost(), flpexport::LynxOnly::renderAudio, song);
+        context.flOptions = flstudio::optionsFor (&engine.getPluginHost(), flpexport::YwOnly::renderAudio, song);
         const auto rate = engine.getTransport().sampleRate.load();
         context.sampleRate = rate > 0.0 ? rate : 44100.0;
     }
@@ -650,8 +650,8 @@ private:
     void chooseFolder()
     {
         const auto start = lastFolder.isDirectory() ? lastFolder : suggestedFolder;
-        chooser = lynx::ui::makeFileChooser (tr ("Choose where to put the folder"), start, {});
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+        chooser = yw::ui::makeFileChooser (tr ("Choose where to put the folder"), start, {});
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                                  [safe = juce::Component::SafePointer<OtherAppsPanel> (this)] (const juce::FileChooser& c) {
                                      const auto folder = c.getResult();
                                      if (safe == nullptr || ! folder.isDirectory())
@@ -700,9 +700,9 @@ void exportOneTrack (AudioEngine& engine, int track, bool asMidi, const juce::Fi
     // the original's names: "<song> - <track>.wav", "<track>.mid"
     const auto name = juce::File::createLegalFileName (asMidi ? trackName + ".mid" : (projectName.isNotEmpty() ? projectName : juce::String ("YW Studio")) + " - " + trackName + ".wav");
     static std::unique_ptr<juce::FileChooser> chooser;
-    chooser = lynx::ui::makeFileChooser (asMidi ? tr ("Export the track as MIDI") : tr ("Export the track as audio"), suggestedFolder.getChildFile (name),
+    chooser = yw::ui::makeFileChooser (asMidi ? tr ("Export the track as MIDI") : tr ("Export the track as audio"), suggestedFolder.getChildFile (name),
                                          asMidi ? "*.mid" : "*.wav");
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting,
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting,
                              [&engine, track, asMidi] (const juce::FileChooser& fc) {
                                  auto file = fc.getResult();
                                  if (file == juce::File())
@@ -749,4 +749,4 @@ std::unique_ptr<juce::Component> makeOtherAppsReportPanel (const juce::File& fol
 {
     return std::make_unique<BundleReportPanel> (folder, written, failed);
 }
-} // namespace lynx
+} // namespace yw

@@ -4,14 +4,14 @@
 namespace fpc190q
 {
 // a sample per path: a decaying tone whose pitch, length and stereo come from the path (no files needed)
-inline std::shared_ptr<const lynx::SampleData> sampleFor (const std::string& path)
+inline std::shared_ptr<const yw::SampleData> sampleFor (const std::string& path)
 {
     if (path.empty())
         return nullptr;
     std::uint32_t h = 2166136261u;
     for (const auto ch : path)
         h = (h ^ (std::uint8_t) ch) * 16777619u;
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     const auto frames = (std::size_t) (6000 + h % 30000);
     const auto hz = 90.0 + (double) ((h >> 8) % 900);
@@ -28,13 +28,13 @@ inline std::shared_ptr<const lynx::SampleData> sampleFor (const std::string& pat
     return d;
 }
 
-inline std::u16string wide (const std::string& s) { return lynx::fpc::fromUtf8 (s); }
+inline std::u16string wide (const std::string& s) { return yw::fpc::fromUtf8 (s); }
 
 // A kit on FL's empty one: kick (two velocity layers), snare (panned, tuned, three layers that take turns), closed
 // hat (cuts group 0), open hat (cut by group 0, quieter), a pad that cuts itself, a muted pad
-inline lynx::fpc::Kit testKit()
+inline yw::fpc::Kit testKit()
 {
-    using namespace lynx;
+    using namespace yw;
     auto kit = fpc::emptyKit();
     auto layer = [] (const std::string& path, int volume, int low, int high, int tune = 0) {
         fpc::Layer l;
@@ -88,7 +88,7 @@ inline lynx::fpc::Kit testKit()
 }
 
 // the kit without its cut groups (round 190z: FPC's own choke is one tick, the pad channels' is the channel declicker)
-inline lynx::fpc::Kit withoutChokes (lynx::fpc::Kit kit)
+inline yw::fpc::Kit withoutChokes (yw::fpc::Kit kit)
 {
     for (auto& p : kit.pads)
         p.cut = p.cutBy = -1;
@@ -98,11 +98,11 @@ inline lynx::fpc::Kit withoutChokes (lynx::fpc::Kit kit)
 // whether the pad channels play a kit as FPC does (round 190z): no cut groups, no envelope switched on, no layer pan,
 // every layer scales its volume with the velocity and plays forward, one-at-a-time pads cycle, other pads have no
 // overlapping velocity ranges
-inline bool playsAsPadChannels (const lynx::fpc::Kit& kit)
+inline bool playsAsPadChannels (const yw::fpc::Kit& kit)
 {
     for (const auto& p : kit.pads)
     {
-        if (p.muted() || std::none_of (p.layers.begin(), p.layers.end(), [] (const lynx::fpc::Layer& l) { return ! l.path.empty(); }))
+        if (p.muted() || std::none_of (p.layers.begin(), p.layers.end(), [] (const yw::fpc::Layer& l) { return ! l.path.empty(); }))
             continue;
         if (p.cut >= 0 || p.cutBy >= 0)
             return false;
@@ -124,9 +124,9 @@ inline bool playsAsPadChannels (const lynx::fpc::Kit& kit)
 }
 
 // one channel with the kit and a busy pattern on its keys (also a key without a pad and the muted pad's)
-inline lynx::Song kitSong (const lynx::fpc::Kit& kit)
+inline yw::Song kitSong (const yw::fpc::Kit& kit)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 128.0;
     s.mixer = Song::defaultMixer (5); // Master + 5 inserts, no effects
@@ -189,9 +189,9 @@ inline lynx::Song kitSong (const lynx::fpc::Kit& kit)
 }
 
 // the same song as the import made it before this round: a sampler channel per pad
-inline lynx::Song asPadChannels (lynx::Song s)
+inline yw::Song asPadChannels (yw::Song s)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int c = (int) s.channels.size() - 1; c >= 0; --c)
         if (s.channels[(std::size_t) c].instrument == InstrumentKind::fpc)
         {
@@ -207,9 +207,9 @@ struct Rendered
     std::vector<float> left, right;
 };
 
-inline Rendered render (const lynx::Song& s, double seconds, int block = 256)
+inline Rendered render (const yw::Song& s, double seconds, int block = 256)
 {
-    using namespace lynx;
+    using namespace yw;
     const double rate = 44100.0;
     auto state = RackState::build (s, nullptr, rate, [] (const std::string& path) { return sampleFor (path); });
     RackRenderer r;
@@ -241,15 +241,15 @@ inline float difference (const Rendered& a, const Rendered& b)
     return a.left.size() == b.left.size() ? d : 1.0e9f;
 }
 
-inline lynx::FlpImportOptions flOptions (const std::string& dataDir)
+inline yw::FlpImportOptions flOptions (const std::string& dataDir)
 {
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     const std::filesystem::path data (dataDir);
     options.roots = { data.parent_path().string(), data.string(), "" };
     options.fileExists = [] (const std::string& p) {
         auto q = p;
         std::replace (q.begin(), q.end(), '\\', '/');
-        return ! lynx::existingPathIgnoringCase (q).empty();
+        return ! yw::existingPathIgnoringCase (q).empty();
     };
     return options;
 }
@@ -260,7 +260,7 @@ TEST (fpc190q_one_channel_plays_what_the_pad_channels_play)
     // The null test behind the import's switch: the FPC channel against a sampler channel per pad (the import before
     // this round), same kit, same notes — pad and layer volumes, pad pan and tuning, velocity layers, layers that take
     // turns, cut groups (also two pads of a group on the same sample), a muted pad, a key without a pad
-    using namespace lynx;
+    using namespace yw;
     const auto one = fpc190q::kitSong (fpc190q::withoutChokes (fpc190q::testKit()));
     const auto split = fpc190q::asPadChannels (one);
     CHECK (one.channels.size() == 1 && split.channels.size() == 5);
@@ -293,7 +293,7 @@ TEST (fpc190q_one_channel_plays_what_the_pad_channels_play)
 TEST (fpc190q_pad_outputs_reach_their_inserts)
 {
     // a pad with an output offset plays into the insert that many after the channel's, as its own channel would
-    using namespace lynx;
+    using namespace yw;
     auto kit = fpc190q::withoutChokes (fpc190q::testKit());
     kit.pads[1].output = 1;
     kit.pads[2].output = 3;
@@ -315,7 +315,7 @@ TEST (fpc190q_pad_outputs_reach_their_inserts)
 
 TEST (fpc190q_mute_solo_and_missing_files)
 {
-    using namespace lynx;
+    using namespace yw;
     auto kit = fpc190q::testKit();
     ChannelDef c;
     c.instrument = InstrumentKind::fpc;
@@ -367,10 +367,10 @@ TEST (fpc190q_mute_solo_and_missing_files)
 
 TEST (fpc190q_flp_round_trip_is_byte_exact)
 {
-    // LYNX → .flp → LYNX → .flp: the FPC channel stays one FPC channel, its state the same bytes, the two files equal
-    using namespace lynx;
+    // YW → .flp → YW → .flp: the FPC channel stays one FPC channel, its state the same bytes, the two files equal
+    using namespace yw;
     const auto kit = fpc190q::testKit();
-    // the song as LYNX keeps one: its pattern named, FL's 125 inserts (an .flp always carries FL's whole mixer, and the
+    // the song as YW keeps one: its pattern named, FL's 125 inserts (an .flp always carries FL's whole mixer, and the
     // import names FL's unnamed pattern and inserts as FL shows them)
     auto song = fpc190q::kitSong (kit);
     song.patterns[0].name = "Pattern 1";
@@ -434,7 +434,7 @@ TEST (fpc190q_fl_projects_sound_the_same_and_go_back_byte_exact)
     // Every project of the FL install with an FPC: the import with one FPC channel against the import with a channel
     // per pad, only those channels playing (no effects), from the song's start — and the FPC states an export writes
     // are FL's own bytes
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty() || realFlpDir[0] != '/')
         return;
     auto options = fpc190q::flOptions (realFlpDir);
@@ -522,7 +522,7 @@ TEST (fpc190q_fl_projects_sound_the_same_and_go_back_byte_exact)
 
 TEST (fpc190q_new_channel_and_kit_folders)
 {
-    using namespace lynx;
+    using namespace yw;
     // FPC is one of the engines a project can add; without FL Studio a new one is FL's empty kit (silent, as FL's)
     const auto* engine = natives::instrumentEngine (InstrumentKind::fpc);
     CHECK (engine != nullptr);
@@ -541,7 +541,7 @@ TEST (fpc190q_new_channel_and_kit_folders)
         CHECK (flpexport::flGeneratorName (*made) == "FPC"); // (it goes to FL as an FPC)
     }
 
-    // the kits come from FL's own folder and from the user's (nothing of FL is stored in LYNX)
+    // the kits come from FL's own folder and from the user's (nothing of FL is stored in YW)
     FlPathRoots roots;
     roots.data = "C:/FL/Data";
     roots.userData = "C:/Users/u/Documents/Image-Line/FL Studio";
@@ -558,7 +558,7 @@ TEST (fpc190q_fl_kits_load_onto_a_channel)
 {
     // Every FPC kit of the FL install (.fst): it loads onto an FPC channel — also the "multi out" kits, whose pads play
     // into other inserts —, the state is the file's own bytes, its samples are found in the install
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty() || realFlpDir[0] != '/')
         return;
     const auto fl = natives142::flAccess();

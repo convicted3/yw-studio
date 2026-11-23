@@ -6,12 +6,12 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
-// Editor windows of LYNX's native effects (the engines compatible with FL Studio's plugins). Each one follows the
-// FL plugin's arrangement (core/PluginLayout.h: same controls, sections, captions and places) drawn in LYNX's own
+// Editor windows of YW's native effects (the engines compatible with FL Studio's plugins). Each one follows the
+// FL plugin's arrangement (core/PluginLayout.h: same controls, sections, captions and places) drawn in YW's own
 // style, with a presets bar on top (FL presets of the plugin from the user's installation, previous / next) and
-// LYNX's control contract on every control (drag, Ctrl = fine, wheel, Alt+click / double-click = reset, right-click
+// YW's control contract on every control (drag, Ctrl = fine, wheel, Alt+click / double-click = reset, right-click
 // = type value / automation / MIDI link). Effects without a studied arrangement get a generated grid of knobs.
 namespace NativeEffectWindows
 {
@@ -35,7 +35,7 @@ juce::String stepperSelfTest (AudioEngine& engine, int track, int slot, int page
 // the song, `running` its running instance (live meters); `name` is shown where a mixer editor names its insert.
 std::unique_ptr<juce::Component> makeNodeEffectEditor (AudioEngine& engine, std::function<EffectSlot* (Song&)> locate,
                                                        std::function<std::shared_ptr<Effect>()> running, const juce::String& name, float scale = 1.25f);
-// --plugui: live displays (LYNX Tune's pitch graph) draw a synthetic signal instead of waiting for audio
+// --plugui: live displays (YW Tune's pitch graph) draw a synthetic signal instead of waiting for audio
 void setNativeEditorDemo (bool on);
 // Round 166f (--eq166fshot): one display tick of a native editor without its timer (Parametric EQ 2's spectrum and
 // heatmap read the slot's analyser tap, which this claims); false when `editor` is not a native effect editor.
@@ -61,8 +61,8 @@ bool pauseLimiterForSnapshot (juce::Component& editor, int steps);
 bool transientTraceForSnapshot (juce::Component& editor, bool hovered);
 // round 190ih (--uiperf): Gross Beat editors' paints since the last reset ("" when none): count, area, time
 juce::String grossBeatPaintStats (bool reset);
-// round 190ih (--uiperf A/B): Gross Beat's diagnostic switches at run time (the LYNX_GB_DIAG bits)
+// round 190ih (--uiperf A/B): Gross Beat's diagnostic switches at run time (the YW_GB_DIAG bits)
 void setGrossBeatDiagnostics (int mask);
 // round 170k2: the smallest size its window allows (the header still shows the whole name); {} for another component
 juce::Point<int> nativeEditorMinimumSize (juce::Component& editor);
-} // namespace lynx
+} // namespace yw

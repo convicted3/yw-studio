@@ -12,7 +12,7 @@
 #include "core/VfxScript.h"
 #include "flp/Flp.h"
 
-namespace lynx::vfx
+namespace yw::vfx
 {
 using detail::Handoff;
 using detail::Reader;
@@ -20,7 +20,7 @@ using detail::put;
 
 namespace
 {
-constexpr std::uint32_t lynxMagic = 0x5846564c; // "LVFX"
+constexpr std::uint32_t ywMagic = 0x5846564c; // "LVFX"
 } // namespace
 
 int inputId (int key, int colour) noexcept { return (colour & 15) * 128 + (key & 127); }
@@ -1051,7 +1051,7 @@ std::string outputName (Kind kind, int output)
 std::optional<State> readState (const std::vector<std::uint8_t>& pluginState)
 {
     Reader r { pluginState.data(), pluginState.size() };
-    if (r.u32() != lynxMagic)
+    if (r.u32() != ywMagic)
         return std::nullopt;
     const auto kind = r.u32();
     const auto port = r.i32();
@@ -1069,7 +1069,7 @@ std::optional<State> readState (const std::vector<std::uint8_t>& pluginState)
 std::vector<std::uint8_t> writeState (const State& state)
 {
     std::vector<std::uint8_t> out;
-    put<std::uint32_t> (out, lynxMagic);
+    put<std::uint32_t> (out, ywMagic);
     put<std::uint32_t> (out, (std::uint32_t) state.kind);
     put<std::int32_t> (out, state.port);
     put<std::uint32_t> (out, state.tag);
@@ -1191,7 +1191,7 @@ private:
     Handoff<Settings> settings;
 };
 
-// Notes pass unchanged (a plugin whose behaviour LYNX does not reproduce yet keeps the notes flowing)
+// Notes pass unchanged (a plugin whose behaviour YW does not reproduce yet keeps the notes flowing)
 class ThroughProcessor final : public Processor
 {
 public:
@@ -1401,7 +1401,7 @@ public:
 namespace
 {
 // One voice in, one voice out, its velocity, fine pitch, pan, Mod X / Y and release velocity through the curves.
-// FL re-evaluates the curves every tick from the parent's live levels (round 165c): LYNX re-evaluates a held voice
+// FL re-evaluates the curves every tick from the parent's live levels (round 165c): YW re-evaluates a held voice
 // whenever its levels change on the way here (a VFX before it sends them) and whenever the settings change (the
 // editor, an automation or a Patcher control cable on one of its 36 parameters), and sends what changed. Each voice
 // keeps its six random numbers (FL: R[0…5], fixed per note); the release velocity draws a fresh one.
@@ -1596,7 +1596,7 @@ namespace
 {
 // Each note on every zone whose keyboard × velocity level is above zero, on that zone's output (FL: the level
 // scales the note's volume, or replaces it with Absolute; Random zones play one of them, picked by their keyboard
-// level). LYNX works in velocities: vol = (11^(1.28 v) − 1) / 10 both ways.
+// level). YW works in velocities: vol = (11^(1.28 v) − 1) / 10 both ways.
 class KeyboardSplitter final : public Base<KeyboardSplitterSettings>
 {
 public:
@@ -1697,7 +1697,7 @@ private:
 
 namespace
 {
-// An FL curve as the Envelope Controller's (core/FlSynths.h): accumulated points, LYNX's tension sign on the segment
+// An FL curve as the Envelope Controller's (core/FlSynths.h): accumulated points, YW's tension sign on the segment
 // starting at a point, a hold as a step
 void toArticulator (const MapCurve& m, ControllerArticulator& a, int* loopPoint = nullptr)
 {
@@ -1816,7 +1816,7 @@ struct EnvelopeRuntime
 };
 
 // One note in, the same note out, its volume, fine pitch, pan and Mod X / Y moved by the envelopes and LFOs of every
-// articulator whose note colour and key range it matches (FL re-applies them each tick; LYNX each block).
+// articulator whose note colour and key range it matches (FL re-applies them each tick; YW each block).
 class Envelope final : public Processor
 {
 public:
@@ -2058,4 +2058,4 @@ std::unique_ptr<Processor> makeProcessor (Kind kind, const std::vector<std::uint
     }
     return std::make_unique<ThroughProcessor> (kind);
 }
-} // namespace lynx::vfx
+} // namespace yw::vfx

@@ -10,7 +10,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Audio clip events carry the clip's own "key" (above the MIDI range): the end of a clip stops only the voice that clip
 // started. Two clips of the same channel overlapping (FL's crossfaded vocal comps) both play, as in FL (REA_rodada107 §5).
@@ -113,7 +113,7 @@ private:
 // note's "off" once the note starts: a note deleted, moved or made longer while it sounds, or left behind when the
 // pattern changes, still ends where it was going to (FL 2026 [SHOT] r169d f13–f16: C5 deleted while playing, still
 // sounding at +150 ms and +550 ms, gone after its end; f17–f20: a new pattern added while it sounds, the same).
-// LYNX's schedulers emit each "off" from the notes as they are now, so such a note got none and hung until Stop.
+// YW's schedulers emit each "off" from the notes as they are now, so such a note got none and hung until Stop.
 // Audio thread: process() takes a block's scheduled events (sorted). An "off" the scheduler emits ends the sounding
 // note of its channel and key that ends there; a note whose "off" has not come two samples after its end (the
 // schedulers' rounding) gets one there; any other "off" (a note edited in behind the play head, or made shorter or
@@ -271,7 +271,7 @@ ScheduleIndex makeScheduleIndex (const Song& song);
 
 // Generates the Playlist's events (playing the whole song in a loop). Each pattern clip
 // plays the pattern's notes that fall in [offset, offset + length), the pattern repeating along a clip longer than
-// it when stretchedClipsLoop() (LYNX extra, issue #25; off = FL: once); notes are cut at the end of the clip. With Song::playTruncatedNotes, a note that started before the offset plays from the clip's start. Audio clips trigger the channel's sample at the start and stop at the end.
+// it when stretchedClipsLoop() (YW extra, issue #25; off = FL: once); notes are cut at the end of the clip. With Song::playTruncatedNotes, a note that started before the offset plays from the clip's start. Audio clips trigger the channel's sample at the start and stop at the end.
 // `resume` = playback started or jumped to startTick: audio clips that were already
 // in progress at that point start in the middle, on the first sample of the block.
 void scheduleSong (const Song& song,
@@ -296,4 +296,4 @@ void scheduleSongAround (const Song& song, const TrackMask& taken, const TrackMa
 void scheduleSingleClip (const Song& song, const Clip& clip, std::size_t clipIndex, double startTick, int numSamples, double tps,
                          EventBuffer& out, const ScheduleIndex* index = nullptr) noexcept;
 // (wrap = false: the song plays once and is silent past its end — audio recording without a loop region, round 163)
-} // namespace lynx
+} // namespace yw

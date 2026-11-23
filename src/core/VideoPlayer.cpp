@@ -14,7 +14,7 @@
 #include <atomic>
 #include <deque>
 
-namespace lynx::video
+namespace yw::video
 {
 namespace
 {
@@ -105,7 +105,7 @@ std::vector<char16_t> utf16 (const std::string& s)
     return w;
 }
 
-constexpr char lynxTag[8] = { 'L', 'Y', 'N', 'X', 'v', 'p', '1', 0 };
+constexpr char ywTag[8] = { 'Y', 'W', 'S', 'T', 'v', 'p', '1', 0 };
 
 AudioProvider& provider()
 {
@@ -238,7 +238,7 @@ std::vector<std::uint8_t> write (const Settings& s)
         put<std::int64_t> (out, s.start);
         put<std::int64_t> (out, s.end);
     }
-    out.insert (out.end(), lynxTag, lynxTag + 8);
+    out.insert (out.end(), ywTag, ywTag + 8);
     put<std::int64_t> (out, s.delay);
     return out;
 }
@@ -302,7 +302,7 @@ std::optional<Settings> read (const std::vector<std::uint8_t>& state)
     s.ignoreTempo = (flags & 0x40) != 0;
     s.slave = version < 3 || (flags & 0x80) != 0;
     s.dock = (flags & 0x100) != 0;
-    if (r.p + 16 <= state.size() && std::memcmp (state.data() + r.p, lynxTag, 8) == 0)
+    if (r.p + 16 <= state.size() && std::memcmp (state.data() + r.p, ywTag, 8) == 0)
     {
         r.p += 8;
         s.delay = r.get<std::int64_t>();
@@ -621,4 +621,4 @@ Player* playerOf (Instrument* instrument) noexcept
 {
     return dynamic_cast<VideoInstrument*> (instrument);
 }
-} // namespace lynx::video
+} // namespace yw::video

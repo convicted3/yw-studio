@@ -1,12 +1,12 @@
 // --- Round 147a: Echoform ← EchoBoy's styles / saturation, PrimalTap's Multiply (REA_rodada147a) ------------------
-// The reference numbers below were measured black-box on the official EchoBoy / PrimalTap trials (D:\lynx-work\parity147\a).
+// The reference numbers below were measured black-box on the official EchoBoy / PrimalTap trials (D:\yw-work\parity147\a).
 
 namespace p147a
 {
 // a steady sine through Echoform at 48 kHz (both inputs), the wet left after `skipSeconds`
-inline std::vector<float> echoSine (lynx::EffectParams p, double hz, double peakDb, double seconds = 2.0, double skipSeconds = 1.0)
+inline std::vector<float> echoSine (yw::EffectParams p, double hz, double peakDb, double seconds = 2.0, double skipSeconds = 1.0)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::echoform);
+    auto fx = yw::makeEffect (yw::EffectKind::echoform);
     fx->prepare (48000.0);
     const int n = (int) (48000.0 * seconds);
     std::vector<float> l ((std::size_t) n), r;
@@ -34,9 +34,9 @@ inline double toneAmp (const std::vector<float>& x, double hz)
     return 2.0 * std::sqrt (re * re + im * im) / n;
 }
 
-inline lynx::EffectParams voiced (int voicing, double driveDb, double ms = 250.0)
+inline yw::EffectParams voiced (int voicing, double driveDb, double ms = 250.0)
 {
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     auto p = p135w::cleanEcho (ms, 0.0f);
     p[e::voicing] = e::voicingValue (voicing);
     p[e::drive] = (float) (driveDb / 24.0);
@@ -46,7 +46,7 @@ inline lynx::EffectParams voiced (int voicing, double driveDb, double ms = 250.0
 
 TEST (echoform_voicing_params_round147a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     CHECK ((int) effectInfo (EffectKind::echoform).params.size() == e::paramCount);
     CHECK (e::voicing == e::loopTreble + 1 && e::multiply == e::voicingStereo - 1); // appended after round 144's
@@ -60,7 +60,7 @@ TEST (echoform_voicing_params_round147a)
     for (int k = 0; k <= e::voicingCount; ++k)
         CHECK (e::voicingOf (e::voicingValue (k)) == k);
     CHECK (e::voicingForEchoBoyStyle (1) == 2 && e::voicingForEchoBoyStyle (31) == 0);
-    // the names are LYNX's own (no product or trademark names)
+    // the names are YW's own (no product or trademark names)
     for (int k = 1; k <= e::voicingCount; ++k)
     {
         const std::string name = e::voicingName (k);
@@ -70,7 +70,7 @@ TEST (echoform_voicing_params_round147a)
 
 TEST (echoform_voicing_tones_match_the_trial_round147a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] the first echo's tone (output × loop) at 125 Hz / 1 kHz / 4 kHz, 1/3-octave power ratios on the trial
     struct Ref { int style; double db[3]; };
@@ -91,7 +91,7 @@ TEST (echoform_voicing_tones_match_the_trial_round147a)
 
 TEST (echoform_voicing_saturation_curves_round147a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] the steady 1 kHz echo's gain over −40 … 0 dBFS (output tone at 1 kHz removed): studio tape at Saturation
     // 24 dB (a shaper), the FM-radio style at 12 dB and the limited style at 18 dB (compressors)
@@ -116,7 +116,7 @@ TEST (echoform_voicing_saturation_curves_round147a)
 
 TEST (echoform_voicing_wobble_round147a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] the vibrato style's echo of a steady 1 kHz tone swings ≈ 16.7 cents rms at 5.5 Hz; the digital style is steady
     auto cents = [] (const std::vector<float>& x) {
@@ -142,7 +142,7 @@ TEST (echoform_voicing_wobble_round147a)
 
 TEST (echoform_multiply_round147a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] PrimalTap: Multiply 2x / 4x / 8x = the delay × 2 / 4 / 8, the band ≈ 6.2 / 3.1 / 1.55 kHz
     for (int f : { 1, 2, 4, 8 })
@@ -165,7 +165,7 @@ TEST (echoform_multiply_round147a)
 
 TEST (echoform_saturation_type_without_voicing_round147a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // the Clean mode with a chosen curve: Grit (the fuzzed style's) adds harmonics, Auto keeps the mode's own shaper
     auto p = p135w::cleanEcho (250.0, 0.0f);

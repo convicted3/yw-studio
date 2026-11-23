@@ -2,7 +2,7 @@
 
 #include <cctype>
 
-namespace lynx::search
+namespace yw::search
 {
 namespace
 {
@@ -181,4 +181,4 @@ bool matches (const std::string& query, const std::string& name)
 {
     return matches (parse (query), name);
 }
-} // namespace lynx::search
+} // namespace yw::search

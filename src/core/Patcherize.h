@@ -2,8 +2,8 @@
 
 // FL's Patcherize (round 165m, [DFM] Channel menu › Patcherize "Convert the channel to Patcher with the current plugin
 // loaded", mixer slot menu › Patcherize / Patcherize all): the channel's instrument, or a mixer insert's effect chain,
-// moves into a new Patcher that plays the same sound — the generator cabled From LYNX (notes) → it → To LYNX, the
-// effects in series From LYNX → 1 → 2 → … → To LYNX. The channel keeps its channel settings (volume, pan, insert,
+// moves into a new Patcher that plays the same sound — the generator cabled From YW (notes) → it → To YW, the
+// effects in series From YW → 1 → 2 → … → To YW. The channel keeps its channel settings (volume, pan, insert,
 // arpeggiator, time / echo…) outside; each effect keeps its own on/off and dry/wet inside. Automation and controller
 // links of the moved plugin's parameters follow it: they now drive the Patcher's published parameters.
 
@@ -11,7 +11,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::patcherize
+namespace yw::patcherize
 {
 // Whether the channel's instrument can go into a Patcher (not a Patcher, Layer, audio clip, controller or MIDI Out…).
 bool canPatcherizeChannel (const Song& song, int channel);
@@ -25,4 +25,4 @@ bool canPatcherizeSlot (const Song& song, int track, int slot);
 // Moves slot `slot` (or, with `all`, slotsForAll) into a new Patcher at the first moved slot's place. Returns the new
 // slot's index, or −1 (song untouched).
 int patcherizeSlots (Song& song, int track, int slot, bool all);
-} // namespace lynx::patcherize
+} // namespace yw::patcherize

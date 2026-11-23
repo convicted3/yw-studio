@@ -4,9 +4,9 @@
 // skipping instrument tracks.
 TEST (auto177b_new_automation_clip_place)
 {
-    namespace ap = lynx::autoclipplace;
-    const auto bar = (std::int64_t) lynx::ppq * 4;
-    auto song = lynx::Song::makeDefault();
+    namespace ap = yw::autoclipplace;
+    const auto bar = (std::int64_t) yw::ppq * 4;
+    auto song = yw::Song::makeDefault();
     song.beatsPerBar = 4;
     song.playlist.clear();
     song.loopStart = song.loopEnd = 0;
@@ -16,28 +16,28 @@ TEST (auto177b_new_automation_clip_place)
     CHECK (p.track == 0 && p.start == 0 && p.length == bar);
 
     // FL's live sequence: a clip on track 0 over bar 1; the playhead at 5:02 → track 1, one bar, at the playhead
-    lynx::Clip c;
+    yw::Clip c;
     c.track = 0;
     c.start = 0;
     c.length = bar;
     song.playlist.push_back (c);
-    const auto at52 = bar * 4 + lynx::ppq / 4;
+    const auto at52 = bar * 4 + yw::ppq / 4;
     p = ap::forNewClip (song, true, at52);
     CHECK (p.track == 1 && p.start == at52 && p.length == bar);
-    lynx::Clip c2 = c;
+    yw::Clip c2 = c;
     c2.track = 1;
     c2.start = at52;
     song.playlist.push_back (c2);
     // the playhead past the song (9:02) → track 2, at the playhead
-    const auto at92 = bar * 8 + lynx::ppq / 4;
+    const auto at92 = bar * 8 + yw::ppq / 4;
     p = ap::forNewClip (song, true, at92);
     CHECK (p.track == 2 && p.start == at92 && p.length == bar);
-    lynx::Clip c3 = c;
+    yw::Clip c3 = c;
     c3.track = 2;
     c3.start = at92;
     song.playlist.push_back (c3);
     // the playhead inside the song (3:02) → track 3 (track 0 is free there but not used), up to the song end (10:02)
-    const auto at32 = bar * 2 + lynx::ppq / 4;
+    const auto at32 = bar * 2 + yw::ppq / 4;
     p = ap::forNewClip (song, true, at32);
     CHECK (p.track == 3 && p.start == at32 && p.start + p.length == at92 + bar);
     // the option off: the song start
@@ -46,7 +46,7 @@ TEST (auto177b_new_automation_clip_place)
 
     // an instrument track is skipped
     song.playlistTracks.resize (6);
-    song.playlistTracks[3].mode = lynx::PlaylistTrackMode::instrument;
+    song.playlistTracks[3].mode = yw::PlaylistTrackMode::instrument;
     p = ap::forNewClip (song, true, at32);
     CHECK (p.track == 4);
 

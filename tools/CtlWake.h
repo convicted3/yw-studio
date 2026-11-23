@@ -37,7 +37,7 @@
 #include "core/Morphine.h"
 #include "core/TransistorBass.h"
 
-namespace lynx::ctlwake
+namespace yw::ctlwake
 {
 using ctlaudit::Control;
 using ctlaudit::Pattern;
@@ -123,7 +123,7 @@ inline std::vector<Hint> hintsFor (InstrumentKind kind, const std::vector<Contro
             named ("glissando on with Slayer's wheel up", { { "Glissando", 1.0f }, { "Pitchbend 2", 127.0f } });
             break;
         case InstrumentKind::sawer:
-            // a modulation slot acts with a source LYNX feeds (velocity) and an audible destination (the cutoff)
+            // a modulation slot acts with a source YW feeds (velocity) and an audible destination (the cutoff)
             for (int k = 1; k <= 6; ++k)
             {
                 const auto slot = "Mod " + std::to_string (k);
@@ -1013,4 +1013,4 @@ inline std::vector<Verdict> wake (const ChannelDef& c, const std::vector<Control
         }
     return out;
 }
-} // namespace lynx::ctlwake
+} // namespace yw::ctlwake

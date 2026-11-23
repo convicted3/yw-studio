@@ -56,7 +56,7 @@ inline std::vector<float> superSawDefaults()
     return p;
 }
 
-inline const lynx::Automation* automationOf (const lynx::Song& s, lynx::AutomationTargetKind kind, int index, int param = -1)
+inline const yw::Automation* automationOf (const yw::Song& s, yw::AutomationTargetKind kind, int index, int param = -1)
 {
     for (const auto& a : s.automations)
         if (a.target.kind == kind && a.target.index == index && (param < 0 || a.target.param == param))
@@ -67,7 +67,7 @@ inline const lynx::Automation* automationOf (const lynx::Song& s, lynx::Automati
 
 TEST (flm190de_instrument_wrapper_and_parameter_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     namespace rp = flm::rackparam;
     auto off = t::superSawDefaults();
@@ -124,7 +124,7 @@ TEST (flm190de_instrument_wrapper_and_parameter_lanes)
     for (const auto& c : s->playlist)
         enableClip = enableClip || (c.kind == ClipKind::automation && c.start == 4 * ppq && s->automations[(std::size_t) c.automation].target.kind == AutomationTargetKind::channelVolume);
     CHECK (enableClip);
-    // Pitch Bend: on both children of the Layer, LYNX's bend value as it is; the bend range is SuperSaw's own,
+    // Pitch Bend: on both children of the Layer, YW's bend value as it is; the bend range is SuperSaw's own,
     // int(11·P37 + 1) = 6 semitones at 0.5
     const auto& layer = s->channels[(std::size_t) pairAt];
     CHECK (layer.instrument == InstrumentKind::layer && layer.layer.children.size() == 2);
@@ -153,7 +153,7 @@ TEST (flm190de_instrument_wrapper_and_parameter_lanes)
 // The rack's Pitch Bend plays: a kit pad of one second at +12 semitones (v = 0.75) ends after half a second
 TEST (flm190de_pitch_bend_lane_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     namespace rp = flm::rackparam;
     const auto make = [&] (bool bend) {
@@ -183,7 +183,7 @@ TEST (flm190de_pitch_bend_lane_plays)
 
 TEST (flm190de_kit_sample_stretch_and_pitch)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = flm::samplepad;
     const std::vector<float> d (sp::defaults, sp::defaults + sp::count);
     auto fast = d;
@@ -223,7 +223,7 @@ TEST (flm190de_kit_sample_stretch_and_pitch)
 // An audio clip's EG and Sample Start play as on a pad: −0.125 s of silence first (Sample Start 0.25)
 TEST (flm190de_audio_clip_envelope_and_sample_start)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = flm::samplepad;
     const std::vector<float> d (sp::defaults, sp::defaults + sp::count);
     auto late = d, soft = d;
@@ -302,7 +302,7 @@ inline Bytes dwCustom (std::initializer_list<Bytes> parts)
     return b;
 }
 inline Bytes midiChunk (int range, int smooth) { return chunk ("MIDI", Bytes { (std::uint8_t) range, (std::uint8_t) smooth }); }
-inline std::vector<float> dwDefaults() { return std::vector<float> (lynx::flmdw::defaults, lynx::flmdw::defaults + lynx::flmdw::paramCount); }
+inline std::vector<float> dwDefaults() { return std::vector<float> (yw::flmdw::defaults, yw::flmdw::defaults + yw::flmdw::paramCount); }
 
 // two zones: one with stale text after its path, one with FLM's old integer 63 as its gain; MIDI (range 2, no smoothing)
 inline Bytes twoZones()
@@ -361,7 +361,7 @@ inline Bytes program (std::uint32_t version)
 
 TEST (flm190de_dw_sampler_state_and_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     const auto cstm = t::twoZones();
     const auto c = flmdw::parseCustom ({ cstm.data(), cstm.size() });
@@ -406,7 +406,7 @@ TEST (flm190de_dw_sampler_state_and_laws)
 
 TEST (flm190de_dw_sampler_import_and_sound)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     auto plain = t::dwDefaults();
     plain[flmdw::param::release] = 0.0f;
@@ -441,7 +441,7 @@ TEST (flm190de_dw_sampler_import_and_sound)
     // the Pitch lane: the module's own value 3 on the channel
     const auto* pitch = t::automationOf (*a, AutomationTargetKind::channelParam, (int) (pad - a->channels.data()), flmdw::automationBase + 3);
     CHECK (pitch != nullptr && pitch->points.size() == 1 && std::abs (pitch->points[0].value - 40000.0f / 65535.0f) < 1e-6f);
-    // a module with no zone is silent (FLM: no sample), not LYNX's generic synth
+    // a module with no zone is silent (FLM: no sample), not YW's generic synth
     const auto* none = flm182c::channelNamed (*e, "Pad");
     CHECK (none != nullptr && none->instrument == InstrumentKind::sampler && flmdw::isChannel (*none) && none->zones.empty());
 
@@ -469,15 +469,15 @@ TEST (flm190de_dw_sampler_import_and_sound)
     CHECK (peak (z) == 0.0f);
 }
 
-// --- Pitcher / Pitcher 2 → LYNX Tune (FLM_FORMAT §7.6) and the Slicer (§7.7)
+// --- Pitcher / Pitcher 2 → YW Tune (FLM_FORMAT §7.6) and the Slicer (§7.7)
 #include "core/FlmSlicer.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 
-TEST (flm190de_pitchers_become_lynx_tune)
+TEST (flm190de_pitchers_become_yw_tune)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
-    namespace lt = lynxtune;
+    namespace lt = ywtune;
     // Pitcher: CSTM mask = C D E G A (a pentatonic), Speed 0.5, Pitch +5 (0.71), Mix 0.8, BYP on E
     std::vector<float> p1 (23, 0.0f);
     p1[0] = 1.0f, p1[1] = 0.5f, p1[2] = 0.71f, p1[3] = 0.5f, p1[7] = 0.5f, p1[9] = 0.8f, p1[14] = 1.0f;
@@ -498,7 +498,7 @@ TEST (flm190de_pitchers_become_lynx_tune)
     if (! s)
         return;
     const auto& fx = s->mixer[1].effects;
-    CHECK (fx.size() == 2 && fx[0].kind == EffectKind::lynxTune && fx[1].kind == EffectKind::lynxTune);
+    CHECK (fx.size() == 2 && fx[0].kind == EffectKind::ywTune && fx[1].kind == EffectKind::ywTune);
     if (fx.size() != 2)
         return;
     const auto& a = fx[0].params;
@@ -514,13 +514,13 @@ TEST (flm190de_pitchers_become_lynx_tune)
     CHECK (b[lt::formantPreserve] == 1.0f && std::abs (b[lt::toleranceCents] - 0.55f) < 1e-6f && b[lt::mix] == 1.0f);
     // Speed 0.25: fc = (200^0.25 − 0.9)·2.29896 = 6.576 Hz → (round 190jv, FL's renders: the 90 % time) 2.31 / (2π fc) = 55.9 ms
     CHECK (std::abs (b[lt::retune] - 0.3738f) < 2e-3f);
-    CHECK (report.converted.count ("FL Studio Mobile: Pitcher (LYNX Tune)") == 1 && report.converted.count ("FL Studio Mobile: Pitcher 2 (LYNX Tune)") == 1
+    CHECK (report.converted.count ("FL Studio Mobile: Pitcher (YW Tune)") == 1 && report.converted.count ("FL Studio Mobile: Pitcher 2 (YW Tune)") == 1
            && report.droppedEffects.empty());
 }
 
 TEST (flm190de_slicer_detects_and_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     // four hits of noise (60 ms each, decaying) at 0, 0.25, 0.5, 0.75 s in silence
     SampleData d;
@@ -591,7 +591,7 @@ TEST (flm190de_slicer_detects_and_plays)
 // --- Arpeggiator and Note Echo, baked over the song (FLM_FORMAT §7.8)
 TEST (flm190de_arpeggiator_and_note_echo)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace nf = flmnotefx;
     // the defaults with Arp 1 in a mode: Rate 1/8, Gate 50 %, Range 1, Octave 0, Start 0, Repeats inf, Arp 2 off
     const auto arpParams = [] (int mode) {
@@ -683,10 +683,10 @@ TEST (flm190de_arpeggiator_and_note_echo)
 }
 
 // Coordinator's decision (round 190de): a DW Sampler whose every sample is missing on this PC (FLM's content packs) plays
-// a LYNX stand-in of its category, named in the report; one with some samples missing plays the others
+// a YW stand-in of its category, named in the report; one with some samples missing plays the others
 TEST (flm190de_dw_sampler_missing_samples)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     const auto piano = t::dwCustom ({ t::zoneOf ("DirectWave Samples EXP/Keyboard/Grand Piano/GP C3.wav", 48, 0, 59, 0, 127),
                                       t::zoneOf ("DirectWave Samples EXP/Keyboard/Grand Piano/GP C5.wav", 72, 60, 127, 0, 127), t::midiChunk (2, 0) });
@@ -711,11 +711,11 @@ TEST (flm190de_dw_sampler_missing_samples)
     CHECK (keys != nullptr && padc != nullptr);
     if (keys == nullptr || padc == nullptr)
         return;
-    // every zone missing: a LYNX sound of the keys category (a piano when there is one), the module's Pitch kept
+    // every zone missing: a YW sound of the keys category (a piano when there is one), the module's Pitch kept
     CHECK (! flmdw::isChannel (*keys) && keys->instrument != InstrumentKind::sampler && keys->mixerTrack == 1 && keys->sampler.pitch == 5.0f);
     bool line = false;
     for (const auto& [what, n] : report.partialEffects)
-        line = line || (what.find ("DW Sampler \"Grand Piano\": every sample missing, plays LYNX's") != std::string::npos);
+        line = line || (what.find ("DW Sampler \"Grand Piano\": every sample missing, plays YW's") != std::string::npos);
     CHECK (line && report.missingSamples >= 2);
     // the keys play (not silent)
     const auto sound = flm190bs::rendered (*s, 1.0);

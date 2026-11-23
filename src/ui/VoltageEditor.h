@@ -4,7 +4,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 std::unique_ptr<juce::Component> makeVoltageControllerEditor (AudioEngine& engine, int channel);
 std::unique_ptr<juce::Component> makeVoltageControllerEditor (AudioEngine& engine, std::function<ChannelDef* (Song&)> locate); // (a Patcher node)

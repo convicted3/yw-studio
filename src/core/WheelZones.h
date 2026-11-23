@@ -1,6 +1,6 @@
 #pragma once
 
-// Issue #186 (round 190iu), a LYNX extra: "Wheel: scroll over the track headers, zoom over the arrangement". With it on,
+// Issue #186 (round 190iu), a YW extra: "Wheel: scroll over the track headers, zoom over the arrangement". With it on,
 // the plain mouse wheel scrolls the tracks while the pointer is over the track header column and zooms the time line
 // while it is over the arrangement (the clips, the ruler); Ctrl+wheel does the other one in each place. Shift and Alt
 // keep their meaning (Shift+wheel over a header moves the track, over a clip nudges; Alt+wheel sets the track heights).
@@ -12,7 +12,7 @@
 
 #include <atomic>
 
-namespace lynx::wheelzones
+namespace yw::wheelzones
 {
 inline std::atomic<bool>& enabledFlag() noexcept
 {
@@ -35,4 +35,4 @@ inline bool zooms (bool on, bool overHeaders, bool ctrl, bool vertical = true) n
 }
 // the same with the app setting
 inline bool zoomsHere (bool overHeaders, bool ctrl, bool vertical = true) noexcept { return zooms (enabled(), overHeaders, ctrl, vertical); }
-} // namespace lynx::wheelzones
+} // namespace yw::wheelzones

@@ -5,20 +5,20 @@
 namespace mpe190hy
 {
 inline bool near (float a, float b, float tolerance = 0.01f) { return std::abs (a - b) <= tolerance; }
-inline lynx::NoteCurves curves (std::vector<lynx::NoteCurvePoint> pitch, std::vector<lynx::NoteCurvePoint> timbre = {},
-                                std::vector<lynx::NoteCurvePoint> pressure = {})
+inline yw::NoteCurves curves (std::vector<yw::NoteCurvePoint> pitch, std::vector<yw::NoteCurvePoint> timbre = {},
+                                std::vector<yw::NoteCurvePoint> pressure = {})
 {
-    lynx::NoteCurves c;
-    c.lane (lynx::NoteCurveLane::pitch) = std::move (pitch);
-    c.lane (lynx::NoteCurveLane::timbre) = std::move (timbre);
-    c.lane (lynx::NoteCurveLane::pressure) = std::move (pressure);
+    yw::NoteCurves c;
+    c.lane (yw::NoteCurveLane::pitch) = std::move (pitch);
+    c.lane (yw::NoteCurveLane::timbre) = std::move (timbre);
+    c.lane (yw::NoteCurveLane::pressure) = std::move (pressure);
     return c;
 }
 } // namespace mpe190hy
 
 TEST (mpe190hy_curves_value_and_handle)
 {
-    using namespace lynx;
+    using namespace yw;
     using mpe190hy::near;
     NoteCurves c = mpe190hy::curves ({ { 0.0f, 0.0f }, { 100.0f, 200.0f }, { 300.0f, -100.0f } });
     const auto pitch = NoteCurveLane::pitch;
@@ -50,7 +50,7 @@ TEST (mpe190hy_curves_value_and_handle)
 
 TEST (mpe190hy_curves_slice_scale_thin)
 {
-    using namespace lynx;
+    using namespace yw;
     NoteCurvesRef r;
     r = mpe190hy::curves ({ { 0.0f, 0.0f }, { 100.0f, 100.0f }, { 200.0f, 0.0f } }, { { 0.0f, 0.7f } });
     // the second half of a note cut at 50 ticks: starts at the value there, keeps the points after it, ends where it ended
@@ -77,7 +77,7 @@ TEST (mpe190hy_curves_slice_scale_thin)
 
 TEST (mpe190hy_curve_editing)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto pitch = NoteCurveLane::pitch;
     NoteCurvesRef r;
     // the first point on an empty lane starts it from the note's own value at the note's start
@@ -104,7 +104,7 @@ TEST (mpe190hy_curve_editing)
 
 TEST (mpe190hy_split_and_chop_keep_their_part)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     Note n;
     n.start = 960;
@@ -121,7 +121,7 @@ TEST (mpe190hy_split_and_chop_keep_their_part)
 
 TEST (mpe190hy_join_keeps_both_notes_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     Note a;
     a.start = 0;
@@ -144,7 +144,7 @@ TEST (mpe190hy_join_keeps_both_notes_curves)
 
 TEST (mpe190hy_scheduler_sends_a_notes_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     Note n;
     n.start = 0;
@@ -218,33 +218,33 @@ TEST (mpe190hy_built_in_sampler_plays_a_notes_pitch_curve)
 {
     // a song note whose pitch curve steps up an octave half-way: the Sampler's voice follows it while it sounds
     auto sample = s162::sine (440.0, 4.0);
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "sine.wav";
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::Note n;
+    yw::Note n;
     n.start = 0;
-    n.length = 4 * lynx::ppq; // two seconds
+    n.length = 4 * yw::ppq; // two seconds
     n.key = 60;
     n.curves = mpe190hy::curves ({ { 0.0f, 0.0f }, { 1919.0f, 0.0f }, { 1920.0f, 1200.0f } });
     s.patterns[0].notes.push_back (n);
-    s.patterns[0].lengthTicks = 16 * lynx::ppq;
-    lynx::RackState::Factories f;
-    f.samples = [sample] (const std::string&) { return std::shared_ptr<const lynx::SampleData> (sample); };
-    f.stretchedSamples = [sample] (const std::string&, double ratio, lynx::StretchMethod m, double, const lynx::StretchMap&, const lynx::StretchOptions&) {
-        return std::shared_ptr<const lynx::SampleData> (lynx::timeStretch (*sample, ratio, m));
+    s.patterns[0].lengthTicks = 16 * yw::ppq;
+    yw::RackState::Factories f;
+    f.samples = [sample] (const std::string&) { return std::shared_ptr<const yw::SampleData> (sample); };
+    f.stretchedSamples = [sample] (const std::string&, double ratio, yw::StretchMethod m, double, const yw::StretchMap&, const yw::StretchOptions&) {
+        return std::shared_ptr<const yw::SampleData> (yw::timeStretch (*sample, ratio, m));
     };
     constexpr double rate = 44100.0;
-    auto state = lynx::RackState::build (s, nullptr, rate, f);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, rate, f);
+    yw::RackRenderer r;
     r.prepare (rate, 441);
     std::vector<float> out, l (441), rr (441);
-    const auto tps = lynx::ppq * s.bpm / 60.0 / rate;
+    const auto tps = yw::ppq * s.bpm / 60.0 / rate;
     for (int b = 0; b < 200; ++b)
     {
         r.process (state.get(), true, b * 441 * tps, 441, l.data(), rr.data(), nullptr, nullptr);
@@ -258,7 +258,7 @@ TEST (mpe190hy_built_in_sampler_plays_a_notes_pitch_curve)
 
 TEST (mpe190hy_recorder_takes_an_mpe_notes_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     ChannelDef c;
     s.channels.push_back (c);

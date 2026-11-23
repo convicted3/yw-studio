@@ -3,7 +3,7 @@
 // FL's Options › Audio › "Safe overloads" (FLEngine 2026: SafeOverloadBox in the audio page's output panel, checked by
 // default, hint "No risk of GUI freezing when overloads occur"). TOP25 P24, rounds 190of (measured) and 190ok (built).
 //
-// LYNX's UI never waits for the audio thread (the song reaches it as an immutable snapshot), so a heavy project cannot
+// YW's UI never waits for the audio thread (the song reaches it as an immutable snapshot), so a heavy project cannot
 // freeze the screen through a lock as FL's mixer could. What remains is CPU time: on a PC with no spare core (190of:
 // big200 at 64 samples on 2 CPUs) the audio threads, which run at the system's real-time priorities, kept both CPUs
 // busy through a real overload, and the message thread with the GPU driver's threads it waits on (pinned to their CPUs)
@@ -27,12 +27,12 @@
 #include <cstdlib>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 class OverloadGuard
 {
 public:
-    // the decision's numbers (the tests use them; LYNX_SAFE_OVERLOADS="share=1,min=0.5,max=8,window=100,late=50,
+    // the decision's numbers (the tests use them; YW_SAFE_OVERLOADS="share=1,min=0.5,max=8,window=100,late=50,
     // release=1500" sets them for an A/B, AudioEngine at start)
     struct Params
     {
@@ -255,4 +255,4 @@ private:
     bool wasPlaying = false;
     double stoppedAtMs = -1.0e12;   // the transport's last stop while it stays stopped (-1e12: playing, or never played)
 };
-} // namespace lynx
+} // namespace yw

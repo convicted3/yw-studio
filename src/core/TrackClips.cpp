@@ -5,7 +5,7 @@
 
 #include "core/LayoutStyle.h"
 
-namespace lynx::trackclips
+namespace yw::trackclips
 {
 namespace
 {
@@ -395,4 +395,4 @@ bool isBusTrack (const Song& song, int track) noexcept
 {
     return busSources (song, track) > 0;
 }
-} // namespace lynx::trackclips
+} // namespace yw::trackclips

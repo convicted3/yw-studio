@@ -12,7 +12,7 @@
 
 TEST (sel168t_windows_linux_keep_juce_meaning)
 {
-    using namespace lynx::modmap;
+    using namespace yw::modmap;
     for (auto os : { Os::windows, Os::linuxOs })
     {
         Raw r;
@@ -33,7 +33,7 @@ TEST (sel168t_windows_linux_keep_juce_meaning)
 
 TEST (sel168t_mac_cmd_is_fl_ctrl_and_control_click_is_no_menu)
 {
-    using namespace lynx::modmap;
+    using namespace yw::modmap;
     Raw r;
     r.command = true;
     r.left = true;
@@ -56,7 +56,7 @@ TEST (sel168t_mac_cmd_is_fl_ctrl_and_control_click_is_no_menu)
 
 TEST (sel168t_mac_key_names)
 {
-    using namespace lynx::modmap;
+    using namespace yw::modmap;
     const std::string cmd = "\xe2\x8c\x98", opt = "\xe2\x8c\xa5";
     CHECK (keyNames ("Ctrl+B", Os::windows) == "Ctrl+B");
     CHECK (keyNames ("Ctrl+B", Os::linuxOs) == "Ctrl+B");
@@ -73,9 +73,9 @@ TEST (sel168t_mac_key_names)
 
 namespace
 {
-lynx::ruler::Press rulerPress (bool left, bool right, bool ctrl, bool shift, int clicks = 1)
+yw::ruler::Press rulerPress (bool left, bool right, bool ctrl, bool shift, int clicks = 1)
 {
-    lynx::ruler::Press p;
+    yw::ruler::Press p;
     p.mods.left = left;
     p.mods.right = right;
     p.mods.ctrl = ctrl;
@@ -88,8 +88,8 @@ lynx::ruler::Press rulerPress (bool left, bool right, bool ctrl, bool shift, int
 
 TEST (sel168t_ruler_left_gestures_follow_fl)
 {
-    using namespace lynx::ruler;
-    using lynx::EditTool;
+    using namespace yw::ruler;
+    using yw::EditTool;
     CHECK (press (rulerPress (true, false, false, false)) == Action::seek);
     CHECK (press (rulerPress (true, false, true, false)) == Action::select);           // Ctrl+drag
     CHECK (press (rulerPress (true, false, false, false, 2)) == Action::select);        // double click held
@@ -105,7 +105,7 @@ TEST (sel168t_ruler_left_gestures_follow_fl)
     p.mods.ctrl = true;
     CHECK (press (p) == Action::moveSelection);
     p.insideSelection = true;
-    CHECK (press (p) == Action::moveWithClips); // LYNX's extra: Ctrl+Shift inside moves the clips too
+    CHECK (press (p) == Action::moveWithClips); // YW's extra: Ctrl+Shift inside moves the clips too
     p = rulerPress (true, false, false, false);
     p.onMarkerTag = true;
     CHECK (press (p) == Action::marker);
@@ -115,8 +115,8 @@ TEST (sel168t_ruler_left_gestures_follow_fl)
 
 TEST (sel168t_ruler_right_gestures_follow_fl)
 {
-    using namespace lynx::ruler;
-    using lynx::EditTool;
+    using namespace yw::ruler;
+    using yw::EditTool;
     // right-drag = a time selection (before 168t: always the ruler menu, and on a Mac Ctrl+drag became it too)
     CHECK (press (rulerPress (false, true, false, false)) == Action::select);
     auto p = rulerPress (false, true, false, false);
@@ -136,7 +136,7 @@ TEST (sel168t_ruler_right_gestures_follow_fl)
 TEST (sel168t_ruler_mac_ctrl_drag_makes_a_time_selection)
 {
     // the review's gesture on a Mac, through the whole chain: Control+drag and Cmd+drag on the ruler
-    using namespace lynx;
+    using namespace yw;
     for (auto key : { 0, 1 })
     {
         modmap::Raw r;
@@ -150,7 +150,7 @@ TEST (sel168t_ruler_mac_ctrl_drag_makes_a_time_selection)
 
 TEST (sel168t_ruler_adjust_and_move_maths)
 {
-    using namespace lynx::ruler;
+    using namespace yw::ruler;
     // the nearer edge follows: the farther one is the anchor
     CHECK (adjustAnchor (960, 3840, 1200) == 3840);
     CHECK (adjustAnchor (960, 3840, 3500) == 960);
@@ -165,7 +165,7 @@ TEST (sel168t_ruler_adjust_and_move_maths)
 
 TEST (sel168t_rack_builtin_views)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.channels.resize (5);
     s.channels[1].instrument = InstrumentKind::audioClip;

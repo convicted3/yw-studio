@@ -20,7 +20,7 @@
 #include <array>
 #include <cmath>
 
-namespace lynx::loudness
+namespace yw::loudness
 {
 constexpr double silence = -120.0; // reported while nothing was measured
 
@@ -415,4 +415,4 @@ private:
     double momentaryLufs = silence, shortTermLufs = silence;
     double truePeakMax = 0.0, samplePeakMax = 0.0, blockTruePeak = 0.0, blockSamplePeak = 0.0;
 };
-} // namespace lynx::loudness
+} // namespace yw::loudness

@@ -5,7 +5,7 @@
 
 #include "core/FlCurve.h"
 
-namespace lynx::modexport
+namespace yw::modexport
 {
 namespace
 {
@@ -207,4 +207,4 @@ Result bakeForFl (Song& song)
         }
     return result;
 }
-} // namespace lynx::modexport
+} // namespace yw::modexport

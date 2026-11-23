@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdio>
 
-namespace lynx::midisync
+namespace yw::midisync
 {
 namespace
 {
@@ -309,7 +309,7 @@ double Receiver::ticksAt (double seconds) const noexcept
     if (! running() || last < 0.0 || period <= 0.0)
         return base;
     // (extrapolated up to 0.1 s past the last pulse, at least one pulse: enough for the output latency, and a master
-    // that stops sending without a Stop doesn't run LYNX away)
+    // that stops sending without a Stop doesn't run YW away)
     return base + ticksPerPulse * std::clamp ((seconds - last) / period, 0.0, std::max (1.0, 0.1 / period));
 }
 
@@ -430,4 +430,4 @@ void transportNotesOff (std::array<std::uint8_t, 48>& out) noexcept
         out[(std::size_t) ch * 3 + 2] = 0;
     }
 }
-} // namespace lynx::midisync
+} // namespace yw::midisync

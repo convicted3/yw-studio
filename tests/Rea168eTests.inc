@@ -9,9 +9,9 @@
 
 namespace
 {
-lynx::Clip patternClip (int pattern, int track, std::int64_t start, std::int64_t length)
+yw::Clip patternClip (int pattern, int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = pattern;
     c.track = track;
     c.start = start;
@@ -22,7 +22,7 @@ lynx::Clip patternClip (int pattern, int track, std::int64_t start, std::int64_t
 
 TEST (rea168e_pattern_render_names_and_empty)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (3);
     song.patterns[0].notes.clear();
@@ -56,7 +56,7 @@ TEST (rea168e_pattern_render_names_and_empty)
 
 TEST (rea168e_render_as_clip_and_replace)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (2);
     song.patterns[1].name = "Lead";
@@ -87,7 +87,7 @@ TEST (rea168e_render_as_clip_and_replace)
 
 TEST (rea168e_consolidate_selection_plan)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (3);
     song.patterns[1].name = "Keys";
@@ -138,7 +138,7 @@ TEST (rea168e_consolidate_selection_plan)
 
 TEST (rea168e_consolidate_apply)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (2);
     song.playlist.clear();
@@ -207,7 +207,7 @@ TEST (rea168e_consolidate_apply)
 
 TEST (rea168e_export_tracks_and_groups)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (2);
     song.playlist.clear();
@@ -237,7 +237,7 @@ TEST (rea168e_export_tracks_and_groups)
 
 TEST (rea168e_ticks_for_seconds)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.bpm = 120.0;
     song.playlist.clear();
@@ -246,11 +246,11 @@ TEST (rea168e_ticks_for_seconds)
     CHECK (quickrender::ticksForSeconds (song, 0, 0.0) == 0);
 }
 
-// File › Export › Master... (LYNX's own mastering where FL uses FL Cloud): the loudness reaches the target and the
+// File › Export › Master... (YW's own mastering where FL uses FL Cloud): the loudness reaches the target and the
 // true peak stays under the ceiling; silence is left alone
 TEST (rea168e_mastering_target_and_ceiling)
 {
-    using namespace lynx;
+    using namespace yw;
     const double sr = 48000.0;
     std::vector<float> l ((std::size_t) (sr * 6.0)), r (l.size());
     for (std::size_t i = 0; i < l.size(); ++i)
@@ -283,7 +283,7 @@ TEST (rea168e_mastering_target_and_ceiling)
 // File › Export › "Project bones..." (FUN_011ecca0): the mixer states, their effects and each channel's notes per pattern
 TEST (rea168e_project_bones)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     for (auto& t : song.mixer)
     {
@@ -323,7 +323,7 @@ TEST (rea168e_project_bones)
 // The keys (FL's ShortcutsModule): Ctrl+Alt+C / Ctrl+Shift+Alt+C consolidate, Ctrl+Alt+M masters, from any panel
 TEST (rea168e_keys)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     for (auto focus : { Context::global, Context::playlist, Context::pianoRoll, Context::mixer })

@@ -1,7 +1,7 @@
 // Round 167q (loopwrap): the real-time transport's loop region (AudioEngine::audioDeviceIOCallbackWithContext) split
 // each block where the pass ends with ceil((loopEnd − position) / tps). The position is a double moved by n · tps, so
 // the remaining length of a 192000-sample pass came out as 192000.00000001 and was rounded up: every wrap played one
-// sample more (measured with LYNX.exe --cliplooptest: the passes drifted 0, 1, 2… samples). The transport now uses
+// sample more (measured with YW.exe --cliplooptest: the passes drifted 0, 1, 2… samples). The transport now uses
 // transportSamplesUntil / transportReached (core/MarkerPlan.h), with a tick epsilon on both sides.
 
 namespace loopwrap167q
@@ -10,7 +10,7 @@ namespace loopwrap167q
 // --cliplooptest): the number of samples each of `passes` passes lasted (between two wraps).
 inline std::vector<long> passLengths (double bpm, double rate, int block, double loopStart, double loopEnd, int passes)
 {
-    const auto tps = lynx::ticksPerSample (bpm, rate);
+    const auto tps = yw::ticksPerSample (bpm, rate);
     double position = 0.0; // playback starts at the song's start (the position's rounding error grows on the way)
     long played = 0, passStart = -1;
     std::vector<long> out;
@@ -19,13 +19,13 @@ inline std::vector<long> passLengths (double bpm, double rate, int block, double
         for (int done = 0; done < block;)
         {
             auto n = block - done;
-            if (lynx::transportReached (position, loopEnd))
+            if (yw::transportReached (position, loopEnd))
                 position = loopStart;
-            n = lynx::transportSamplesUntil (position, loopEnd, tps, n);
+            n = yw::transportSamplesUntil (position, loopEnd, tps, n);
             position += n * tps;
             played += n;
             done += n;
-            if (lynx::transportReached (position, loopEnd))
+            if (yw::transportReached (position, loopEnd))
             {
                 position = loopStart;
                 if (passStart >= 0)
@@ -40,7 +40,7 @@ inline std::vector<long> passLengths (double bpm, double rate, int block, double
 
 TEST (loopwrap167q_loop_region_wraps_do_not_drift)
 {
-    const auto ppq = (double) lynx::ppq;
+    const auto ppq = (double) yw::ppq;
     struct Case
     {
         double bpm, rate;
@@ -51,7 +51,7 @@ TEST (loopwrap167q_loop_region_wraps_do_not_drift)
                            Case { 120.0, 44100.0, 441, 0.0, 4 * ppq }, Case { 133.7, 48000.0, 512, 4 * ppq, 12 * ppq },
                            Case { 97.0, 44100.0, 256, 3 * ppq, 7 * ppq }, Case { 174.0, 96000.0, 1024, 0.0, 16 * ppq } })
     {
-        const auto tps = lynx::ticksPerSample (c.bpm, c.rate);
+        const auto tps = yw::ticksPerSample (c.bpm, c.rate);
         const auto exact = (c.end - c.start) / tps; // samples per pass
         auto lengths = loopwrap167q::passLengths (c.bpm, c.rate, c.block, c.start, c.end, 100);
         lengths.resize (100);
@@ -66,7 +66,7 @@ TEST (loopwrap167q_loop_region_wraps_do_not_drift)
             each = each && l == expected;
         }
         const auto drift = (double) (total - 100 * expected);
-        if (std::getenv ("LYNX_PRINT_LOOPWRAP") != nullptr)
+        if (std::getenv ("YW_PRINT_LOOPWRAP") != nullptr)
             std::printf ("loopwrap %.1f BPM %.0f Hz block %d: pass %.4f samples, 100 passes = %ld samples (drift %.0f vs 100 x %ld)\n",
                          c.bpm, c.rate, c.block, exact, total, drift, expected);
         CHECK (lengths.size() == 100 && each && drift == 0.0);
@@ -76,13 +76,13 @@ TEST (loopwrap167q_loop_region_wraps_do_not_drift)
 // The helpers: a point within the epsilon counts as reached; the samples until a point are never one too many.
 TEST (loopwrap167q_transport_helpers)
 {
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    CHECK (lynx::transportReached (1000.0 - 1.0e-9, 1000.0));
-    CHECK (! lynx::transportReached (1000.0 - tps, 1000.0));
-    CHECK (lynx::transportSamplesUntil (1000.0 - 64 * tps, 1000.0, tps, 512) == 64);
-    CHECK (lynx::transportSamplesUntil (1000.0 - 64 * tps + 1.0e-9, 1000.0, tps, 512) == 64);
-    CHECK (lynx::transportSamplesUntil (1000.0 - 64 * tps - 1.0e-9, 1000.0, tps, 512) == 64);
-    CHECK (lynx::transportSamplesUntil (1000.0 - 63.5 * tps, 1000.0, tps, 512) == 64); // a fraction: up to the point
-    CHECK (lynx::transportSamplesUntil (0.0, 1000.0, tps, 512) == 512);
-    CHECK (lynx::transportSamplesUntil (1000.0, 1000.0, tps, 512) == 1);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    CHECK (yw::transportReached (1000.0 - 1.0e-9, 1000.0));
+    CHECK (! yw::transportReached (1000.0 - tps, 1000.0));
+    CHECK (yw::transportSamplesUntil (1000.0 - 64 * tps, 1000.0, tps, 512) == 64);
+    CHECK (yw::transportSamplesUntil (1000.0 - 64 * tps + 1.0e-9, 1000.0, tps, 512) == 64);
+    CHECK (yw::transportSamplesUntil (1000.0 - 64 * tps - 1.0e-9, 1000.0, tps, 512) == 64);
+    CHECK (yw::transportSamplesUntil (1000.0 - 63.5 * tps, 1000.0, tps, 512) == 64); // a fraction: up to the point
+    CHECK (yw::transportSamplesUntil (0.0, 1000.0, tps, 512) == 512);
+    CHECK (yw::transportSamplesUntil (1000.0, 1000.0, tps, 512) == 1);
 }

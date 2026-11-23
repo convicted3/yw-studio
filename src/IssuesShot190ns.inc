@@ -6,7 +6,7 @@
     bool runIssuesShot190ns (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -21,16 +21,16 @@
             savePng (c.createComponentSnapshot (area, true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (area, true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
-        const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-190ns-shots");
+        using namespace yw;
+        const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-190ns-shots");
         folder.createDirectory();
 
         // ================= #231: Project info › Created =================
         {
             AudioEngine offline (false);
             offline.setSong (Song::makeDefault());
-            // a .lynx saved by 0.1.30 from the start-up song: no "created" in it
-            const auto file = folder.getChildFile ("Saved without a date.lynx");
+            // a .yw saved by 0.1.30 from the start-up song: no "created" in it
+            const auto file = folder.getChildFile ("Saved without a date.yw");
             juce::String error;
             auto song = Song::makeDefault();
             song.info.created = 0.0;
@@ -47,11 +47,11 @@
                 check ("opened: no birth time on this file system, Created stays empty", offline.getSong().info.created <= 0.0);
             // a project that has a date keeps it
             const auto kept = offline.getSong().info.created;
-            offline.markCreatedFrom (folder.getChildFile ("missing.lynx"));
+            offline.markCreatedFrom (folder.getChildFile ("missing.yw"));
             offline.markCreatedNow();
             check ("a date already there is kept (markCreatedFrom / markCreatedNow)", kept <= 0.0 || offline.getSong().info.created == kept);
             check ("save marks a project that still has none", offline.getSong().info.created > 0.0);
-            check ("a missing file has no birth time", platform::fileBirthSeconds (folder.getChildFile ("missing.lynx")) == 0.0);
+            check ("a missing file has no birth time", platform::fileBirthSeconds (folder.getChildFile ("missing.yw")) == 0.0);
             auto panel = makeSettingsPanel (offline, SettingsPage::info);
             panel->setSize (juce::jmax (panel->getWidth(), 760), juce::jmax (panel->getHeight(), 560));
             write (*panel, panel->getLocalBounds(), "231-project-info");
@@ -86,7 +86,7 @@
                     check ("the submenu has Open... and Start-up project", items.contains (tr ("Open...")) && items.contains (tr ("Start-up project")));
                 }
             check ("File menu: Open in new window (submenu)", found);
-            check ("tests start no second program (LYNX_TEST_MODE logs it)", ! platform::testMode() || ui.openInNewWindow ({}));
+            check ("tests start no second program (YW_TEST_MODE logs it)", ! platform::testMode() || ui.openInNewWindow ({}));
         }
 
         // ================= #233: the welcome window's update choice =================
@@ -170,7 +170,7 @@
             check ("Playlist track recoloured / renamed: the mixer track follows",
                    offline.getSong().mixer[(std::size_t) mixer].colour == 0xff3fa66b && offline.getSong().mixer[(std::size_t) mixer].name == "Warp");
             offline.editSong ([mixer] (Song& s) { s.mixer[(std::size_t) mixer].colour = 0xff7a4bd1; s.mixer[(std::size_t) mixer].name = "Time Warp Playback"; });
-            // with LYNX's "Link Playlist tracks to mixer tracks" (the reporter's headers), shots of both sides
+            // with YW's "Link Playlist tracks to mixer tracks" (the reporter's headers), shots of both sides
             MainComponent ui (offline, false);
             ui.setSize (1600, 900);
             ui.selectTabForSnapshot (2);

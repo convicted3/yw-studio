@@ -7,7 +7,7 @@
 
 #include "engine/AudioEngine.h"
 
-// LYNX's control contract (docs/WORKFLOW_FL.md, P1 items 7 and 8). Every knob, fader, route box and
+// YW's control contract (docs/WORKFLOW_FL.md, P1 items 7 and 8). Every knob, fader, route box and
 // number display behaves the same way:
 //   - drag up/down to change, Ctrl+drag for fine steps;
 //   - mouse wheel = small step (Ctrl+wheel finer);
@@ -19,7 +19,7 @@
 //
 // The hint strip reads `hintFor()`: a HintSource component describes what is under the mouse, other
 // components use their hint property or tooltip.
-namespace lynx::ui
+namespace yw::ui
 {
 struct ValueSpec
 {
@@ -111,7 +111,7 @@ void showSliderMenu (juce::Slider& slider, AudioEngine* engine, const std::optio
 void setOwnMenu (juce::Slider& slider);
 
 // A context menu's title band in the colour of what it is about (FL tints a mixer track's menu with the track's
-// colour; LYNX draws a band in its own style): `kind` in small caps ("Mixer track"), then `name`. A transparent
+// colour; YW draws a band in its own style): `kind` in small caps ("Mixer track"), then `name`. A transparent
 // colour draws a neutral band.
 // `onDoubleClick` (optional): a double-click on the title closes the menu and calls it (rename, issue #12).
 void addItemHeader (juce::PopupMenu& menu, const juce::String& kind, const juce::String& name, juce::Colour colour,
@@ -124,7 +124,7 @@ void typeValue (juce::Component& target, const ValueSpec& spec, double current, 
 
 // --- value read-out --------------------------------------------------------------------------------
 // A small floating label with the value, shown next to the control while it is dragged (FL shows the
-// value in the hint bar; LYNX also shows it at the control so the eye can stay there).
+// value in the hint bar; YW also shows it at the control so the eye can stay there).
 //   showValueTip: during a drag (stays until hideValueTip, normally on mouse up);
 //   flashValueTip: after a wheel step or a reset click (fades out on its own).
 // `control` is the control's area in `over`'s coordinates; the tip sits above it.
@@ -173,7 +173,7 @@ Hint valueHint (const ValueSpec& spec, double value, const juce::String& gesture
 
 // Gives every juce::Slider in the app the contract (installed once, by the main window): right-click
 // menu, middle-click reset, Ctrl-drag fine, finer Ctrl+wheel. Sliders with the property
-// "lynxOwnContract" set are left alone.
+// "ywOwnContract" set are left alone.
 void installSliderContract();
 void uninstallSliderContract();
-} // namespace lynx::ui
+} // namespace yw::ui

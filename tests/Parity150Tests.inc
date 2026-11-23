@@ -3,10 +3,10 @@
 
 namespace p150
 {
-namespace m = lynx::dyn::prism;
-inline lynx::EffectParams freeBands (std::initializer_list<std::array<double, 5>> bands) // { lo, hi, lo slope, hi slope, level dB }
+namespace m = yw::dyn::prism;
+inline yw::EffectParams freeBands (std::initializer_list<std::array<double, 5>> bands) // { lo, hi, lo slope, hi slope, level dB }
 {
-    auto p = dyn108::defaults (lynx::EffectKind::prismMultiband);
+    auto p = dyn108::defaults (yw::EffectKind::prismMultiband);
     p[m::bandLayout] = 1.0f;
     int b = 0;
     for (const auto& x : bands)
@@ -23,7 +23,7 @@ inline lynx::EffectParams freeBands (std::initializer_list<std::array<double, 5>
     p[m::bandCountParam] = m::bandCountValue (b);
     return p;
 }
-inline double curveDb (const lynx::EffectParams& p, double hz)
+inline double curveDb (const yw::EffectParams& p, double hz)
 {
     double g[m::bands] {};
     for (int b = 0; b < m::bands; ++b)
@@ -34,7 +34,7 @@ inline double curveDb (const lynx::EffectParams& p, double hz)
 
 TEST (prism_slope_laws_and_layout_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // the reference's value law: 0 → 6, 0.25 → 12, 0.5 → 24, 0.75 → 36, 1 → 48 dB/oct
     CHECK (std::abs (m::slopeOfValue (0.0f) - 6.0) < 1e-9 && std::abs (m::slopeOfValue (0.25f) - 12.0) < 1e-6);
@@ -62,7 +62,7 @@ TEST (prism_slope_laws_and_layout_round150)
 
 TEST (prism_dynamic_phase_six_db_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // [EXEC] Pro-MB Dynamic phase, static bands at 48 kHz (magnitude, dB)
     struct Case { std::array<double, 5> band; double hz[5]; double db[5]; double tol; };
@@ -99,7 +99,7 @@ TEST (prism_dynamic_phase_six_db_round150)
 
 TEST (prism_linear_and_minimum_free_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // linear phase: the reference's continuous slopes, 1 / (1 + x^m), m = slope / 6 (9 dB/oct: m = 1.5); round tp172b7:
     // x = f / fc, the analog axis (Pro-MB probes p18b / p19: Linear phase follows it up to Nyquist)
@@ -138,7 +138,7 @@ TEST (prism_linear_and_minimum_free_round150)
 
 TEST (prism_measured_detector_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // [EXEC] the soft range: threshold −30, 4 : 1, knee 0 — 12 dB over: 9 dB unlimited, 8.61 under a 12 dB range,
     // 5.62 under 6; 24 dB over: 18 / 12.0 / 6.0
@@ -188,7 +188,7 @@ TEST (prism_measured_detector_round150)
 
 TEST (prism_band_sidechain_inputs_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // [EXEC] two bands split at 1 kHz, thresholds −20, 4 : 1; band 1 hears the external side chain, band 2 the
     // plug-in: a loud 200 Hz side chain pulls band 1 down (Pro-MB −10.3 dB), band 2's 3 kHz stays (−0.1)
@@ -226,7 +226,7 @@ TEST (prism_band_sidechain_inputs_round150)
 
 TEST (prism_narrow_sidechain_filter_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // [EXEC] the free side-chain filter's narrow ranges boost (detector level of a −20 dB probe, relative):
     // 2 – 2.5 kHz: 1 kHz −23.8, 2 kHz +4.1, 2240 Hz +13.7, 3 kHz −5.0; 2 – 3 kHz: 2.5 kHz +10.6; 1 – 2 kHz: 1.5 kHz +5.7
@@ -253,7 +253,7 @@ TEST (prism_narrow_sidechain_filter_round150)
 
 TEST (prism_promb_free_translation_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // two Pro-MB bands with a gap: 100 – 300 Hz (6 / 36 dB/oct, −6 dB level, side chain external, Expert on) and
     // 1 – 3 kHz (24 / 18 dB/oct); the third band disabled (bypassed), the rest unused
@@ -287,7 +287,7 @@ TEST (prism_promb_free_translation_round150)
 
 TEST (compressor_rcomp_ranges_round150)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] the Renaissance Compressor's own control laws (the trial's value texts): ratio 50 / 10.46 / 2.19 / 1.00 /
     // 0.79 / 0.50 at 0 / 0.25 / 0.5 / 0.625 / 0.75 / 1, attack 0.50 / 15.8 / 500 ms, release 5.00 / 158 / 5000 ms, gain ±30 dB
     const auto t = [] (int prm, float v) { return formatEffectParam (EffectKind::compressor, prm, v, 120.0); };
@@ -295,9 +295,9 @@ TEST (compressor_rcomp_ranges_round150)
     CHECK (t (14, 0.75f) == "0.79:1" && t (14, 1.0f) == "0.50:1");
     CHECK (t (16, 0.0f) == "0.50 ms" && t (16, 0.5f) == "15.8 ms" && t (16, 1.0f) == "500.0 ms");
     CHECK (t (17, 0.0f) == "5.0 ms" && t (17, 0.5f) == "158 ms" && t (17, 1.0f) == "5000 ms");
-    CHECK (t (15, 0.0f) == "-30.0 dB" && t (15, 1.0f) == "+30.0 dB" && t (13, 0.0f) == "LYNX");
+    CHECK (t (15, 0.0f) == "-30.0 dB" && t (15, 1.0f) == "+30.0 dB" && t (13, 0.0f) == "YW");
     auto p = makeEffectSlot (EffectKind::compressor).params;
-    CHECK (p[13] == 0.0f); // older projects and new instances: LYNX's ranges
+    CHECK (p[13] == 0.0f); // older projects and new instances: YW's ranges
     // [EXEC] 1 kHz stairs, threshold −30 dB, Manual: below 1 : 1 the reference expands above the threshold —
     // 0.50 : 1 +7.05 / +13.17 dB at −24 / −18 dBFS, 0.79 : 1 +3.57 / +6.00, 0.90 : 1 +1.78 / +2.91; 10.46 : 1 −6.99 / −11.98
     struct Case { float ratioV; double at24, at18; };
@@ -345,10 +345,10 @@ TEST (compressor_rcomp_ranges_round150)
 
 // round tp172b7 [EXEC] (Pro-MB, pink noise, band 500 Hz – 8 kHz at −12 dB, 24 dB/oct, 48 kHz; mode set by value): Linear
 // phase follows the analog axis above the high edge (12 kHz −1.2, 16 kHz −0.4 dB), Minimum phase the prewarped one
-// (−0.7 / −0.1 dB); both match LYNX's earlier Minimum phase within 0.1 dB, which stays as it was
+// (−0.7 / −0.1 dB); both match YW's earlier Minimum phase within 0.1 dB, which stays as it was
 TEST (prism_linear_phase_on_the_analog_axis_round172b7)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     auto p = p150::freeBands ({ { 500.0, 8000.0, 24, 24, -12 } });
     const double hz[] { 4000.0, 8000.0, 12000.0, 16000.0 };

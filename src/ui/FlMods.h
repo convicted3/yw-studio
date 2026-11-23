@@ -9,7 +9,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::flmods
+namespace yw::flmods
 {
 inline modmap::Raw raw (const juce::ModifierKeys& m) noexcept
 {
@@ -58,4 +58,4 @@ inline juce::String keyNames (const juce::String& text)
         return text;
     return juce::String::fromUTF8 (modmap::keyNames (text.toStdString(), modmap::hostOs()).c_str());
 }
-} // namespace lynx::flmods
+} // namespace yw::flmods

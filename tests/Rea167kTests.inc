@@ -6,7 +6,7 @@
 namespace rea167k
 {
 // counts the transport resets it gets
-struct CountingInstrument final : lynx::Instrument
+struct CountingInstrument final : yw::Instrument
 {
     int resets = 0, panics = 0;
     void prepare (double) noexcept override {}
@@ -23,23 +23,23 @@ TEST (rea167k_truncated_notes_chase_after_a_user_jump_not_the_loop_wrap)
 {
     // FL's set-position (FUN_011e7a10 → FUN_011e78a0 → FUN_011e7470 with the catch-up flag): a note crossing the new
     // position plays after the user moves the position while playing; the loop's wrap is no set-position
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.playlist.clear();
-    song.mode = lynx::PlayMode::pattern;
+    song.mode = yw::PlayMode::pattern;
     REA167K_REQUIRE (song.channels.size() > 4 && ! song.patterns.empty());
     song.patterns[0].notes.clear();
-    lynx::Note n;
+    yw::Note n;
     n.start = 0;
-    n.length = 16 * lynx::ppq;
+    n.length = 16 * yw::ppq;
     n.key = 60;
     n.channel = 4; // the Synth
     song.patterns[0].notes.push_back (n);
     song.currentPattern = 0;
-    const double rate = 48000.0, tps = lynx::ticksPerSample (song.bpm, rate);
+    const double rate = 48000.0, tps = yw::ticksPerSample (song.bpm, rate);
     // plays 4 blocks from 0, jumps to beat 2 (a user jump when `user`), then measures 1.0 … 1.5 s after the jump
     auto tail = [&] (bool truncated, bool user) {
-        auto state = lynx::RackState::build (song, nullptr, rate);
-        lynx::RackRenderer renderer;
+        auto state = yw::RackState::build (song, nullptr, rate);
+        yw::RackRenderer renderer;
         renderer.prepare (rate, 512);
         unsigned jumps = 0;
         renderer.setTransportOptions (truncated, false, jumps);
@@ -47,7 +47,7 @@ TEST (rea167k_truncated_notes_chase_after_a_user_jump_not_the_loop_wrap)
         double tick = 0.0;
         for (int b = 0; b < 4; ++b, tick += 512 * tps)
             renderer.process (state.get(), true, tick, 512, l.data(), r.data());
-        tick = 2.0 * lynx::ppq;
+        tick = 2.0 * yw::ppq;
         if (user)
             renderer.setTransportOptions (truncated, false, ++jumps);
         float m = 0.0f;
@@ -69,17 +69,17 @@ TEST (rea167k_reset_plugins_on_transport_reaches_the_generators)
 {
     // FL resets every plugin it registered (FUN_012b8620 → FUN_012b5210), generators too, when playback starts or the
     // position moves; nothing with the option off
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.playlist.clear();
-    song.mode = lynx::PlayMode::pattern;
+    song.mode = yw::PlayMode::pattern;
     REA167K_REQUIRE (song.channels.size() > 1);
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
     auto counting = std::make_shared<rea167k::CountingInstrument>();
-    const_cast<lynx::RackState&> (*state).instruments[1] = counting; // (the test swaps one generator)
-    lynx::RackRenderer renderer;
+    const_cast<yw::RackState&> (*state).instruments[1] = counting; // (the test swaps one generator)
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 256);
     std::vector<float> l (256), r (256);
-    const auto tps = lynx::ticksPerSample (song.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (song.bpm, 48000.0);
     renderer.setTransportOptions (true, false);
     renderer.process (state.get(), true, 0.0, 256, l.data(), r.data());
     CHECK (counting->resets == 0);
@@ -89,18 +89,18 @@ TEST (rea167k_reset_plugins_on_transport_reaches_the_generators)
     CHECK (counting->resets == 1);
     renderer.process (state.get(), true, 256 * tps, 256, l.data(), r.data()); // plays on
     CHECK (counting->resets == 1);
-    renderer.process (state.get(), true, 4.0 * lynx::ppq, 256, l.data(), r.data()); // jumped
+    renderer.process (state.get(), true, 4.0 * yw::ppq, 256, l.data(), r.data()); // jumped
     CHECK (counting->resets == 2);
 }
 
 TEST (rea167k_triangular_law_reaches_sampler_channels)
 {
     // FL's render of FPC pads with the triangular law (k_gen_tri.flp): pan −0.5 keeps the left at the centre level and
-    // halves the right (circular: 1.3066 / 0.5412); 3x Osc keeps its circular pan (LYNX's rack gains, unchanged)
-    auto data = std::make_shared<lynx::SampleData>();
+    // halves the right (circular: 1.3066 / 0.5412); 3x Osc keeps its circular pan (YW's rack gains, unchanged)
+    auto data = std::make_shared<yw::SampleData>();
     data->left.assign (48000, 0.5f);
     auto level = [&] (bool triangular, float pan, float& left, float& right) {
-        auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         REA167K_REQUIRE (sampler != nullptr);
         sampler->prepare (48000.0);
         sampler->setPanTriangular (triangular);
@@ -126,7 +126,7 @@ TEST (rea167k_triangular_law_reaches_sampler_channels)
 TEST (rea167k_undo_backwards_key)
 {
     // FL's Edit › "Undo backwards" Ctrl+Alt+Z (EditUndoBackwardsAction, shortcut 49242); Ctrl+Z stays "Undo"
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ 'Z', ctrl | alt }, Context::global, false) == "edit.undoBackwards");
@@ -136,41 +136,41 @@ TEST (rea167k_undo_backwards_key)
 namespace rea167k
 {
 // one audio channel with a 2 s ramp (frame i = i / 96000) at 48 kHz: 4 beats at 120 BPM; one clip of 4 beats
-inline lynx::Song rampSong()
+inline yw::Song rampSong()
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0;
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.samplePath = "ramp";
     c.volume = 1.0f;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::audio;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::audio;
     clip.channel = 0;
-    clip.length = 4 * lynx::ppq;
+    clip.length = 4 * yw::ppq;
     s.playlist.push_back (clip);
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     return s;
 }
 
 // the left output at `beats` (from the start, 256-sample blocks)
-inline float rampLevelAt (const lynx::Song& s, double beats)
+inline float rampLevelAt (const yw::Song& s, double beats)
 {
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.resize (96000);
         for (std::size_t i = 0; i < d->left.size(); ++i)
             d->left[i] = (float) i / 96000.0f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256);
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
     const auto blocks = (int) (beats * 24000.0 / 256.0);
     for (int b = 0; b <= blocks; ++b)
         r.process (state.get(), true, (double) b * 256.0 * tps, 256, l.data(), rr.data());
@@ -181,7 +181,7 @@ inline float rampLevelAt (const lynx::Song& s, double beats)
 TEST (rea167k_clip_pitch_and_reverse_keys)
 {
     // FL 2026's keys 7 / 8 / 9 (FUN_00e2d7b0, FUN_00e2db70 → FUN_01065520): the selected audio clips only
-    using namespace lynx;
+    using namespace yw;
     auto s = rea167k::rampSong();
     Clip pattern;
     pattern.length = ppq;
@@ -224,7 +224,7 @@ TEST (rea167k_clip_pitch_and_reverse_keys)
     CHECK (clipops::playsBackwards (ch, Clip { .reversed = true }) && ! clipops::playsBackwards (ch, Clip {}));
 
     // the keys (Playlist focused)
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ '7', none }, Context::playlist, false) == "playlist.pitchClipsDown");
@@ -234,7 +234,7 @@ TEST (rea167k_clip_pitch_and_reverse_keys)
 
 TEST (rea167k_clip_pitch_and_reverse_play)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = rea167k::rampSong();
     const auto forward = rea167k::rampLevelAt (s, 1.0); // reads frame ~24000: 0.25
     REA167K_REQUIRE (forward > 0.0f);
@@ -284,13 +284,13 @@ TEST (rea167k_flp_clip_pitch_and_reverse_import)
     CHECK (a.kind == flp::PlaylistItem::Kind::channelClip && a.pitch == 3.0f && a.reversed);
     CHECK (c.pitch == -5.0f && ! c.reversed);
 
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.fileExists = [] (const std::string&) { return true; };
     o.sampleSeconds = [] (const std::string&) { return 2.0; };
-    const auto song = lynx::importFlp (p, o);
+    const auto song = yw::importFlp (p, o);
     int audio = 0;
     for (const auto& clip : song.playlist)
-        if (clip.kind == lynx::ClipKind::audio)
+        if (clip.kind == yw::ClipKind::audio)
         {
             CHECK ((clip.start == 0 && clip.pitch == 3.0f && clip.reversed) || (clip.start > 0 && clip.pitch == -5.0f && ! clip.reversed));
             ++audio;
@@ -300,10 +300,10 @@ TEST (rea167k_flp_clip_pitch_and_reverse_import)
 
 TEST (rea167k_time_marker_keys)
 {
-    using namespace lynx;
+    using namespace yw;
     // the keys: FL's ShortCut values 32852 / 16468 / 41044 / 8276 (Alt+T, Ctrl+T, Shift+Alt+T, Shift+T), Playlist focused
     {
-        using namespace lynx::keys;
+        using namespace yw::keys;
         KeyMap map;
         CHECK (map.conflicts().empty());
         CHECK (map.find ({ 'T', alt }, Context::playlist, false) == "playlist.markerAdd");
@@ -355,7 +355,7 @@ TEST (rea167k_mixer_menu_keys)
 {
     // FL's mixer track menu (EEMixer DFM ShortCut): F2 rename and color, S solo selected, Alt+R / Shift+Alt+R disk
     // recording renders; the Mixer focused (F2 elsewhere stays the pattern's rename)
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ f2, none }, Context::mixer, false) == "mixer.rename");
@@ -369,7 +369,7 @@ TEST (rea167k_select_time_keys)
 {
     // FL's Playlist › Select › time: Ctrl+Enter around the selection, Ctrl+Left / Ctrl+Right the previous / next time
     // span of the same length (EESelAroundSelAction / EESelPrevAction / EESelNextAction)
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ enter, ctrl }, Context::playlist, false) == "playlist.selectTimeAround");
@@ -381,21 +381,21 @@ namespace rea167k
 {
 // a 2 s 440 Hz sine on an audio clip channel at 48 kHz (4 beats at 120 BPM), one clip of 6 beats: the rendered left
 // channel over 3 s
-inline std::vector<float> renderSine (const lynx::Song& s)
+inline std::vector<float> renderSine (const yw::Song& s)
 {
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.resize (96000);
         for (std::size_t i = 0; i < d->left.size(); ++i)
             d->left[i] = 0.5f * (float) std::sin (2.0 * 3.14159265358979 * 440.0 * (double) i / 48000.0);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256), out;
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
     for (int b = 0; b < 3 * 48000 / 256; ++b)
     {
         r.process (state.get(), true, (double) b * 256.0 * tps, 256, l.data(), rr.data());
@@ -435,7 +435,7 @@ TEST (rea167k_clip_pitch_keeps_the_length)
 {
     // FL 2026 renders (r167k/fl/clip: a 2 s 440 Hz file, channel in Resample): clip pitch +3 → 522.5 Hz, −5 → 329.2 Hz,
     // and the audio still ends at 2 s
-    using namespace lynx;
+    using namespace yw;
     auto s = rea167k::rampSong();
     s.playlist[0].length = 6 * ppq;
     const auto base = rea167k::renderSine (s);
@@ -453,7 +453,7 @@ TEST (rea167k_clip_pitch_keeps_the_length)
 TEST (rea167k_audio_clip_channels_keep_precomputed_effects)
 {
     // FL renders r167k/fl/clip/p_*.flp: an audio clip channel's Reverse (0x46 bit 1), Fade in / out (0x4C / 0x4B),
-    // Normalize and Reverse polarity play in FL; LYNX dropped them for audio clip channels
+    // Normalize and Reverse polarity play in FL; YW dropped them for audio clip channels
     FlpBuilder b (96);
     b.ascii (0xC7, "25.2.5.5319");
     b.u8 (0x40); b.u16 (0);
@@ -466,11 +466,11 @@ TEST (rea167k_audio_clip_channels_keep_precomputed_effects)
     params[0x50] = 1;
     params[0x51] = 1;
     b.data (0xD7, params);
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.fileExists = [] (const std::string&) { return true; };
     o.sampleSeconds = [] (const std::string&) { return 2.0; };
-    const auto song = lynx::importFlp (flp::parseProject (b.bytes), o);
-    REA167K_REQUIRE (! song.channels.empty() && song.channels[0].instrument == lynx::InstrumentKind::audioClip);
+    const auto song = yw::importFlp (flp::parseProject (b.bytes), o);
+    REA167K_REQUIRE (! song.channels.empty() && song.channels[0].instrument == yw::InstrumentKind::audioClip);
     const auto& s = song.channels[0].sampler;
     CHECK (s.reverse && s.precompute.fadeIn == 256 && s.precompute.fadeOut == 128 && s.precompute.normalize && s.precompute.reversePolarity);
 
@@ -492,21 +492,21 @@ TEST (rea167k_sample_end_uses_the_declicking_release)
 {
     // FL's native sampler voice, as an FL project's Sampler channel gets it (the default articulator records, Mod X
     // 256, 96 PPQ)
-    lynx::ChannelDef flDef;
-    flDef.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef flDef;
+    flDef.instrument = yw::InstrumentKind::sampler;
     {
-        const auto defaults = lynx::flvp::defaultSnapshot();
+        const auto defaults = yw::flvp::defaultSnapshot();
         flDef.sampler.flChannel.assign (90, 0);
         for (int k = 0; k < 5; ++k)
             std::memcpy (flDef.sampler.flChannel.data() + 17 * k, defaults.data() + 0x44 * k, 68);
         flDef.sampler.flChannel[85] = 256;
         flDef.sampler.flChannel[88] = 96;
     }
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.assign (13230, 0.5f);
     auto run = [&] (int mode) {
-        auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         sampler->prepare (44100.0);
         auto def = flDef;
         def.sampler.declickMode = mode;

@@ -16,7 +16,7 @@
 #include "ui/Updater.h"
 #include "platform/Paths.h"
 
-namespace lynx
+namespace yw
 {
 using onboarding::Choice;
 
@@ -177,7 +177,7 @@ void MainComponent::showStartPage()
     {
         host.templates.push_back (e.name);
         using Kind = startfrom::Entry::Kind;
-        host.templateDetails.push_back (e.kind == Kind::demo ? tr ("Demo song") : e.kind == Kind::lynxDefault ? tr ("YW Studio's default project")
+        host.templateDetails.push_back (e.kind == Kind::demo ? tr ("Demo song") : e.kind == Kind::ywDefault ? tr ("YW Studio's default project")
                                         : e.kind == Kind::builtIn ? tr ("Template") : tr ("Your template"));
     }
     const auto closeThen = [safe] (std::function<void (MainComponent&)> then) {
@@ -636,9 +636,9 @@ void MainComponent::placeOnboardingCards()
         onboardui::hostOnTop (*tipCard, *this, bounds);
     }
 }
-} // namespace lynx
+} // namespace yw
 
-namespace lynx
+namespace yw
 {
 void MainComponent::checkRecordTip()
 {
@@ -651,4 +651,4 @@ void MainComponent::checkRecordTip()
     if (onboarding::recordNoInputSignal (o.recordAudio, o.recordNotes, layoutStyle == layoutstyle::Style::simple, inputs, ! engine.getArmedInserts().empty()))
         maybeShowTip (onboarding::Tip::recordNoInput, &recordButton);
 }
-} // namespace lynx
+} // namespace yw

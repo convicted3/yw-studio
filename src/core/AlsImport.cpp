@@ -33,7 +33,7 @@
 
 // Evidence tags as in docs/analise/ALS_FORMAT.md: [DATA] the sets Live 12 ships, [BIN] Live 12.4's member-name table.
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -97,7 +97,7 @@ std::string joinPath (const std::string& folder, const std::string& rel)
 // A parameter's automation target id ("AutomationTarget Id" under a parameter element) [DATA]
 std::string targetId (const Element& parameter) { return parameter.path ("AutomationTarget").attr ("Id"); }
 
-// How an automated value maps to LYNX's 0..1 for its target
+// How an automated value maps to YW's 0..1 for its target
 enum class ValueMap { fader, send, pan, tempo, plain };
 
 struct Target
@@ -105,7 +105,7 @@ struct Target
     AutomationTarget target;
     ValueMap map = ValueMap::plain;
     std::string name;
-    // (round 190cf) a parameter of a Live device that became a LYNX effect: Live's own unit → LYNX's 0..1
+    // (round 190cf) a parameter of a Live device that became a YW effect: Live's own unit → YW's 0..1
     std::function<float (double)> law;
 };
 
@@ -128,11 +128,11 @@ struct Ctx
     const AlsImportOptions& options;
     FlpImportReport* report;
     Song song;
-    std::unordered_map<std::string, Target> targets; // AutomationTarget Id → LYNX target
+    std::unordered_map<std::string, Target> targets; // AutomationTarget Id → YW target
     std::map<std::string, int> audioChannels;        // resolved sample path (+ stretch mode) → audioClip channel
     int nextRow = 0;
     std::set<std::string> missingSeen;
-    // round 190bq (Live's own devices → LYNX's): a track's Id → its insert (a compressor's side-chain input), the key
+    // round 190bq (Live's own devices → YW's): a track's Id → its insert (a compressor's side-chain input), the key
     // shift of the instrument just read (a Simpler in Slice mode) and of each channel, and whether the instrument
     // being read sits on a drum pad (a pad keeps the sample, tuning, level and pan only)
     std::map<int, int> insertOfTrack;
@@ -169,7 +169,7 @@ struct Ctx
     // the scale of the first MIDI clip that has Live's clip scale switched on (round 190o)
     std::optional<projectkey::Key> clipKey;
     bool clipKeySeen = false;
-    // round 190fm: the set's GroovePool, a Groove's Id attribute → its id in LYNX's pool
+    // round 190fm: the set's GroovePool, a Groove's Id attribute → its id in YW's pool
     std::map<int, std::uint32_t> grooveIds;
     // round 190gi: the track being read's Clip Gain (MainSequencer/VolumeModulationTarget) and Track Panning modulation
     // (Mixer/Pan/ModulationTarget) ids, the targets of its audio clips' clip envelopes
@@ -449,9 +449,9 @@ void applySimplerEnvelope (const Element& device, SamplerSettings& s)
 bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::vector<DrumPad>* pads, int depth = 0);
 
 // ---------------------------------------------------------------------------------------------------------------
-// Racks (round 183c, docs/analise/REA_rodada183c.md §1–5 [DATA]): Live's Audio Effect / Instrument Racks become LYNX
+// Racks (round 183c, docs/analise/REA_rodada183c.md §1–5 [DATA]): Live's Audio Effect / Instrument Racks become YW
 // racks (a Patcher in rack mode, core/Rack.h) with their chains, zones, chain mixers, macros, variations and the macro
-// mappings onto the devices LYNX keeps (plugins, nested racks, the chains' volume / pan, the chain selector). Live's own
+// mappings onto the devices YW keeps (plugins, nested racks, the chains' volume / pan, the chain selector). Live's own
 // devices inside a chain are dropped and listed, as on a track.
 
 // A macro mapping stored on a parameter: KeyMidi on channel 16, NoteOrController = the macro, MidiControllerRange =
@@ -504,7 +504,7 @@ void pluginMappings (Ctx& ctx, const Element& device, PatcherDoc& doc, int node)
 }
 
 // (round 190ed) The envelopes on a plugin's parameters. Live keeps a VST2 parameter as 0..1 [DATA, model] and its
-// ParameterId is its index [model], which LYNX's plugin parameters use too. (round 190ek) A VST3's ParameterId is the
+// ParameterId is its index [model], which YW's plugin parameters use too. (round 190ek) A VST3's ParameterId is the
 // plugin's own ParamID and its envelope holds the parameter's plain value, between the MidiControllerRange Live saves
 // for it [MEASURED in a Live 12.4 save, round 190ei: kHs Gain's "Gain" ParamID 1, range 0.0316 … 31.62, envelope points
 // 0.2486 … 28.52; "mode" ParamID 414, 0 … 1; 126 unused entries ParameterId −1]. Such a parameter is carried as slot k
@@ -667,9 +667,9 @@ void placeRackAutos (Ctx& ctx, PatcherDoc& doc, const std::vector<RackAuto>& aut
 
 bool rackFrom (Ctx& ctx, const Element& device, PatcherDoc& doc, int depth);
 
-// One of Live's own audio effects as the LYNX effect in its role, settings translated (round 190bq, core/AlsDevices.h).
+// One of Live's own audio effects as the YW effect in its role, settings translated (round 190bq, core/AlsDevices.h).
 // The report lists the pair — under "converted" when the maths is the same, under "kept but approximated" when the
-// pair is fitted — and every setting that is clamped, fitted or has no counterpart. False: not a device LYNX maps (or
+// pair is fitted — and every setting that is clamped, fitted or has no counterpart. False: not a device YW maps (or
 // its element lacks the parameters): the caller drops and lists it as before.
 bool nativeEffectFrom (Ctx& ctx, const Element& d, EffectSlot& slot, std::vector<alsdev::ParamLink>* links = nullptr, std::string* name = nullptr,
                        std::optional<alsdev::Translated::Modulator>* modulator = nullptr)
@@ -848,7 +848,7 @@ int rackDeviceFrom (Ctx& ctx, const Element& d, PatcherDoc& doc, int chain, bool
         ctx.note (&FlpImportReport::notReproduced, deviceName (d));
         return -1;
     }
-    // (round 190bq) Live's own effects LYNX has an engine for: the LYNX effect in the chain
+    // (round 190bq) Live's own effects YW has an engine for: the YW effect in the chain
     std::vector<alsdev::ParamLink> links;
     std::string from;
     if (! isInstrumentDevice (tag) && nativeEffectFrom (ctx, d, node.effect, &links, &from))
@@ -863,8 +863,8 @@ int rackDeviceFrom (Ctx& ctx, const Element& d, PatcherDoc& doc, int chain, bool
                 if (const auto id = targetId (d.path (l.live)); ! id.empty() && ctx.automated.count (id) != 0)
                     ctx.rackAutos->push_back ({ id, {}, n, l.param, l.value, doc.nodes[(std::size_t) n].effect.params[(std::size_t) l.param],
                                                 from + " " + spacedName (pathFileName (l.live)) });
-        // (round 190cf) the rack's macros drive the LYNX effect's parameters over the range the mapping holds, each
-        // end through the parameter's law (between the ends the macro moves LYNX's control in a straight line)
+        // (round 190cf) the rack's macros drive the YW effect's parameters over the range the mapping holds, each
+        // end through the parameter's law (between the ends the macro moves YW's control in a straight line)
         if (n >= 0)
             for (const auto& l : links)
                 if (const auto m = mappingOf (d.path (l.live)))
@@ -928,7 +928,7 @@ void drumReturnsFrom (Ctx& ctx, const Element& device, PatcherDoc& doc, int dept
     for (const auto& branch : device.path ("ReturnBranches").children())
     {
         auto name = branch.value ("Name/UserName");
-        if (name.empty()) // (Live's EffectiveName carries the letter it shows, "a Mix Bus": LYNX adds it itself)
+        if (name.empty()) // (Live's EffectiveName carries the letter it shows, "a Mix Bus": YW adds it itself)
         {
             name = branch.value ("Name/EffectiveName");
             const auto* before = rack::rackOf (doc);
@@ -1008,7 +1008,7 @@ bool rackFrom (Ctx& ctx, const Element& device, PatcherDoc& doc, int depth)
                 std::set<std::string> mappedLinks;
                 if (rackDeviceFrom (ctx, d, doc, c, instrumentRack, depth, &native, &mappedLinks) >= 0 && ! native)
                     continue;
-                // a dropped device's mapped parameters (for the macro names); on a Live device that became a LYNX effect
+                // a dropped device's mapped parameters (for the macro names); on a Live device that became a YW effect
                 // the macros drive the parameters that have a counterpart (round 190cf), the others are listed
                 bool unmapped = false;
                 for (const auto& parameter : d.children())
@@ -1020,7 +1020,7 @@ bool rackFrom (Ctx& ctx, const Element& device, PatcherDoc& doc, int depth)
                 if (native && unmapped)
                     ctx.note (&FlpImportReport::partialEffects, "Macro mapping onto a setting of a converted Live device that has no YW Studio control (not applied)");
             }
-        // macros on the chain's volume / pan (Live's linear gain and −1..1 → LYNX's 0..1 controls)
+        // macros on the chain's volume / pan (Live's linear gain and −1..1 → YW's 0..1 controls)
         if (const auto m = mappingOf (branch.path ("MixerDevice/Volume")))
         {
             RackMapping target;
@@ -1075,7 +1075,7 @@ bool rackFrom (Ctx& ctx, const Element& device, PatcherDoc& doc, int depth)
         m.excludeFromVariations = device.boolean ("ExcludeMacroFromSnapshots." + n, false);
     }
     // Live names a macro that wasn't renamed after its one mapped parameter ("Macro 3" stored, "Formant Shift" shown
-    // [SHOT]); when LYNX drops that device, the macro keeps the name Live showed
+    // [SHOT]); when YW drops that device, the macro keeps the name Live showed
     for (int k = 0; k < rackMacroCount; ++k)
         if (auto& m = r->macros[(std::size_t) k]; m.name.empty() && m.mappings.empty() && droppedTargets[(std::size_t) k].size() == 1)
             m.name = droppedTargets[(std::size_t) k].front();
@@ -1187,11 +1187,11 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
             channel.zones = std::move (zones);
         }
         applySimplerEnvelope (device, channel.sampler);
-        // one-shot (Player/PlaybackMode 1 [DATA name]): the whole sample plays (release 0 = one-shot in LYNX)
+        // one-shot (Player/PlaybackMode 1 [DATA name]): the whole sample plays (release 0 = one-shot in YW)
         if ((int) device.number ("Globals/PlaybackMode", 0) == 1)
             channel.sampler.release = 0.0f;
         // (round 190bq) the rest of a Simpler: transpose, volume, pan, filter, envelopes, LFO, voices, glide, one-shot
-        // fades, slices, region, loop, warp (core/AlsDevices.h); what LYNX's Sampler lacks goes to the report
+        // fades, slices, region, loop, warp (core/AlsDevices.h); what YW's Sampler lacks goes to the report
         if (simpler)
         {
             alsdev::Notes notes;
@@ -1230,7 +1230,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
         ctx.note (&FlpImportReport::converted, tag == "OriginalSimpler" ? "Simpler" : "Sampler");
         return true;
     }
-    if (tag == "DrumGroupDevice" && depth < 8 && ! ctx.options.drumPadsAsChannels) // (round 190ec: a LYNX Drum Rack)
+    if (tag == "DrumGroupDevice" && depth < 8 && ! ctx.options.drumPadsAsChannels) // (round 190ec: a YW Drum Rack)
     {
         auto doc = rack::makeDrumRack();
         if (rackFrom (ctx, device, doc, depth))
@@ -1298,7 +1298,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
         ctx.note (&FlpImportReport::converted, "Drum rack");
         return true;
     }
-    if (tag == "InstrumentGroupDevice" && depth < 8) // (round 183c: a LYNX Instrument Rack)
+    if (tag == "InstrumentGroupDevice" && depth < 8) // (round 183c: a YW Instrument Rack)
     {
         auto doc = rack::makeRack (RackDoc::Kind::instrument);
         // (round 190ed) the envelopes inside the rack and on its macros (the track's own instrument only): the channel's
@@ -1329,7 +1329,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
                     }
         return false;
     }
-    // (round 190hs) Operator: Tetra, LYNX's own FM synth, with Operator's values as they are (core/AlsDevicesFm.cpp)
+    // (round 190hs) Operator: Tetra, YW's own FM synth, with Operator's values as they are (core/AlsDevicesFm.cpp)
     if (tag == "Operator")
     {
         alsdev::Notes notes;
@@ -1345,8 +1345,8 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
             return true;
         }
     }
-    // (round 190ja) Wavetable: Helix, LYNX's own wavetable synth, with Wavetable's values as they are; Live's tables map
-    // onto LYNX's own (core/AlsDevicesWt.cpp)
+    // (round 190ja) Wavetable: Helix, YW's own wavetable synth, with Wavetable's values as they are; Live's tables map
+    // onto YW's own (core/AlsDevicesWt.cpp)
     if (tag == "InstrumentVector")
     {
         alsdev::Notes notes;
@@ -1362,7 +1362,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
             return true;
         }
     }
-    // (round 190ko) Meld: Braid, LYNX's own two-engine macro synth, with Meld's values as they are (core/AlsDevicesLot6.cpp);
+    // (round 190ko) Meld: Braid, YW's own two-engine macro synth, with Meld's values as they are (core/AlsDevicesLot6.cpp);
     // envelopes on its parameters move Braid's (Live's units are Braid's: the 0..1 automation value is (v − low) / span)
     if (tag == "InstrumentMeld")
     {
@@ -1407,7 +1407,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
             return true;
         }
     }
-    // Live's synths: no LYNX equivalent; the channel keeps a built-in synth, as for an unknown FL generator
+    // Live's synths: no YW equivalent; the channel keeps a built-in synth, as for an unknown FL generator
     ctx.note (&FlpImportReport::unsupported, deviceName (device));
     return false;
 }
@@ -1499,7 +1499,7 @@ bool midiRackFrom (Ctx& ctx, const Element& d, ChannelDef& channel, std::vector<
 
 // One of Live's MIDI effects in front of a track's instrument (round 190cf, core/AlsDevices.h): the Arpeggiator becomes
 // the channel's arpeggiator; Pitch, Velocity, Chord and Note Length are written into the notes of the track's clips
-// (LYNX has no live note processor inside a channel for them), in the chain's order. False = no counterpart, or a
+// (YW has no live note processor inside a channel for them), in the chain's order. False = no counterpart, or a
 // setting that cannot be kept: the caller lists the device as unsupported, as before.
 bool midiEffectFrom (Ctx& ctx, const Element& d, ChannelDef& channel, std::vector<alsdev::NoteEffect>& effects)
 {
@@ -1634,7 +1634,7 @@ void finishLinks (Ctx& ctx)
 
 // Audio effects of a track (after its instrument): plugins carried over, the rest listed
 // Issue #193 (round als190ka): a device's on / off switch under an envelope [DATA: Device/On{Manual, AutomationTarget},
-// BoolEvents]. Live's bypass passes the dry signal, which is LYNX's slot mix at 0: the envelope moves the slot's mix
+// BoolEvents]. Live's bypass passes the dry signal, which is YW's slot mix at 0: the envelope moves the slot's mix
 // between 0 (off) and the slot's own mix (on). A device that is off in the set but switched on by its envelope gets its
 // slot switched on (the envelope's first value keeps it silent until then).
 void deviceOnTarget (Ctx& ctx, const Element& d, MixerTrack& insert, int slot)
@@ -1705,7 +1705,7 @@ void effectsFrom (Ctx& ctx, const std::vector<Element>& devices, MixerTrack& ins
             ctx.note (&FlpImportReport::notReproduced, deviceName (d));
             continue;
         }
-        // (round 190bq) Live's own effects LYNX has an engine for: the LYNX effect, settings translated
+        // (round 190bq) Live's own effects YW has an engine for: the YW effect, settings translated
         std::vector<alsdev::ParamLink> links;
         std::string from;
         std::optional<alsdev::Translated::Modulator> modulator;
@@ -1720,7 +1720,7 @@ void effectsFrom (Ctx& ctx, const std::vector<Element>& devices, MixerTrack& ins
             insert.effects.push_back (std::move (slot));
             if (modulator && ! ctx.pendingLinks.empty() && ctx.pendingLinks.back().targetSlot == -1)
                 ctx.pendingLinks.back().targetSlot = (int) insert.effects.size() - 1;
-            // (round 190cf) automation of the device's parameters follows onto the LYNX effect's, by the same laws
+            // (round 190cf) automation of the device's parameters follows onto the YW effect's, by the same laws
             for (auto& l : links)
                 if (const auto id = targetId (d.path (l.live)); ! id.empty())
                     ctx.targets[id] = { AutomationTarget { AutomationTargetKind::effectParam, track, (int) insert.effects.size() - 1, l.param },
@@ -1728,7 +1728,7 @@ void effectsFrom (Ctx& ctx, const std::vector<Element>& devices, MixerTrack& ins
             deviceOnTarget (ctx, d, insert, (int) insert.effects.size() - 1);
             continue;
         }
-        // (round 190cf) a device LYNX could hold, on an insert whose slots are all taken, is named with that reason
+        // (round 190cf) a device YW could hold, on an insert whose slots are all taken, is named with that reason
         if (insert.effects.size() >= (std::size_t) maxEffectSlots && alsdev::effectFromLiveDevice (d).has_value())
             ctx.note (&FlpImportReport::droppedEffects, deviceName (d) + " (no free effect slot: an insert holds " + std::to_string (maxEffectSlots) + ")");
         else
@@ -1807,7 +1807,7 @@ std::optional<projectkey::Key> liveScaleOf (const Element& owner)
 // 8191.5 / 48 per semitone (−1706.5625 = −10 st, 1194.59375 = +7 st), 74 = slide 0…127, −1 = pressure 0…127.
 // The curve controls (Live 12) bend the segment that starts at their event: a cubic Bézier from (0, 0) to (1, 1) in
 // that segment's normalised (time, value) space (2227 of the 5491 first events carry them, only 44 last ones: those
-// shape nothing and are ignored). LYNX's lanes are linear, so a curved segment is flattened into eight steps.
+// shape nothing and are ignored). YW's lanes are linear, so a curved segment is flattened into eight steps.
 std::map<int, NoteCurves> perNoteCurvesOf (const Element& clip)
 {
     std::map<int, NoteCurves> out;
@@ -1935,8 +1935,8 @@ int patternFromMidiClip (Ctx& ctx, const Element& clip, int channel, double leng
     return (int) ctx.song.patterns.size() - 1;
 }
 
-// Live's warp mode → LYNX's warp modes (round 175a, N4): Re-Pitch (3) resamples; Beats (0), Tones (1), Texture (2)
-// map to LYNX's modes of the same names, Complex (4) and Complex Pro (6) to Complex [DATA: WarpMode values]
+// Live's warp mode → YW's warp modes (round 175a, N4): Re-Pitch (3) resamples; Beats (0), Tones (1), Texture (2)
+// map to YW's modes of the same names, Complex (4) and Complex Pro (6) to Complex [DATA: WarpMode values]
 void applyWarpMode (int mode, SamplerSettings& s)
 {
     s.keepPitch = mode != 3;
@@ -1945,7 +1945,7 @@ void applyWarpMode (int mode, SamplerSettings& s)
 }
 
 // A clip's warp-mode settings (round 190fm; ALS_FORMAT §21) [DATA: the members of AudioClip in Live 12.4's schema, the
-// defaults in all 642 clips of the shipped sets]. Out-of-range values are clamped to what LYNX keeps.
+// defaults in all 642 clips of the shipped sets]. Out-of-range values are clamped to what YW keeps.
 WarpModeSettings warpModesOf (const Element& clip)
 {
     WarpModeSettings w;
@@ -2014,7 +2014,7 @@ void clipEnvelopeTargets (Ctx& ctx, const Element& track)
 }
 
 // An audio clip's clip envelopes (round 190gi): the Clip Gain and Track Panning ones as a new entry of the song's
-// table (its index; −1 = none). `contentTicks` maps clip time to LYNX's content ticks. Others are listed.
+// table (its index; −1 = none). `contentTicks` maps clip time to YW's content ticks. Others are listed.
 template <typename ToTicks>
 int clipEnvelopeOf (Ctx& ctx, const Element& clip, const ToTicks& contentTicks)
 {
@@ -2144,9 +2144,9 @@ void addAudioClip (Ctx& ctx, const Element& clip, int row, int mixerTrack, doubl
     auto stretch = warped ? std::clamp (rate * 60.0 / bpm, 0.01, 100.0) : 1.0;
     // a warped clip that keeps its pitch, whose file length the set records [DATA: SampleRef DefaultDuration /
     // DefaultSampleRate]: the channel stretches the whole file offline with the clip's warp mode (round 175a, N4:
-    // LYNX's Beats engine only runs offline), to the file's length in content beats; the clip then plays it as is
+    // YW's Beats engine only runs offline), to the file's length in content beats; the clip then plays it as is
     auto fileFrames = clip.number ("SampleRef/DefaultDuration", 0), fileRate = clip.number ("SampleRef/DefaultSampleRate", 0);
-    // (a set without the file's length, as LYNX writes them: markers that bend the tempo still need it; the file's own)
+    // (a set without the file's length, as YW writes them: markers that bend the tempo still need it; the file's own)
     if (bends && ! (fileFrames > 0 && fileRate > 0) && ctx.options.common.sampleSeconds)
         if (const auto seconds = ctx.options.common.sampleSeconds (path); seconds > 0.0)
         {
@@ -2183,7 +2183,7 @@ void addAudioClip (Ctx& ctx, const Element& clip, int row, int mixerTrack, doubl
     }
     else if (bends && ctx.report != nullptr)
         ++ctx.report->partialEffects["Warp markers (one tempo per clip)"]; // stretched in real time: one rate
-    // content position (beats, or seconds when not warped) → LYNX playback ticks from the sample's start
+    // content position (beats, or seconds when not warped) → YW playback ticks from the sample's start
     const auto contentTicks = [&] (double v) { return warped ? (v - beatAtZero) * ppq : v * bpm / 60.0 * ppq; };
     const auto modes = warpModesOf (clip);
     // (round 190ik: Complex Pro's Formants / Envelope and Texture's Flux play — core/WarpEngines — so nothing is reported)
@@ -2196,7 +2196,7 @@ void addAudioClip (Ctx& ctx, const Element& clip, int row, int mixerTrack, doubl
             *v *= bpm / 60.0;
     const auto passes = passesOf (warped ? loop : unwarpedLoop, length);
     // issue #193 (round als190ka): a video file on an arrangement audio track is one of Live's video clips: the picture
-    // goes onto a LYNX video track with the clip's own trim (where it starts, which second of the file, how long), the
+    // goes onto a YW video track with the clip's own trim (where it starts, which second of the file, how long), the
     // sound stays this audio clip on the track's insert (the sample library decodes a video's sound track). Live shows
     // video from the Arrangement only; a Session clip plays its sound only [Live 12 manual, "Working with Video"].
     if (out == nullptr && ! ctx.inTakeLane && videotrack::isVideoPath (path) && ! passes.empty())
@@ -2239,7 +2239,7 @@ void addAudioClip (Ctx& ctx, const Element& clip, int row, int mixerTrack, doubl
         (out != nullptr ? *out : ctx.song.playlist).push_back (c);
     }
     // round 190gi: Live's clip envelopes on Clip Gain and Track Panning → the clips' own envelopes (clip beats → the same
-    // content ticks as the clips' offsets; Live's values → LYNX's lane values on Live's measured laws). Round 190gx: Live
+    // content ticks as the clips' offsets; Live's values → YW's lane values on Live's measured laws). Round 190gx: Live
     // plays an UNWARPED clip at unity whatever its envelopes say [LIVE 190gu: renders g48 e1–e3 0.00 dB; its Clip View has
     // no Envelopes tab then], so those are left out and listed.
     if (! warped)
@@ -2260,7 +2260,7 @@ void addAudioClip (Ctx& ctx, const Element& clip, int row, int mixerTrack, doubl
 // Grid, QuantizationAmount, TimingAmount, RandomAmount, VelocityAmount, Annotation, Selection, SourceContext},
 // clip GrooveSettings/GrooveId; DATA: the shipped sets, GrooveId = a Groove's Id attribute, −1 none]
 
-// The pool: each Groove → LYNX's pool (core/Groove.h fromGrooveElement: template notes inside its loop → points, Grid →
+// The pool: each Groove → YW's pool (core/Groove.h fromGrooveElement: template notes inside its loop → points, Grid →
 // base, amounts in percent); the main track's GlobalGrooveAmount (percent) → the pool's amount
 void readGroovePool (Ctx& ctx, const Element& set, const Element& mainMixer)
 {
@@ -2275,7 +2275,7 @@ void readGroovePool (Ctx& ctx, const Element& set, const Element& mainMixer)
             continue;
         }
         ctx.grooveIds[intOf (node.attr ("Id"), -1)] = groove::add (ctx.song.grooves, std::move (g));
-        // Live's groove law is not measured: LYNX's own (docs/analise/REA_rodada190bv.md U2) plays the same template
+        // Live's groove law is not measured: YW's own (docs/analise/REA_rodada190bv.md U2) plays the same template
         ctx.note (&FlpImportReport::approximated, "Grooves (YW Studio's groove timing and accents; Live's exact law needs a live check)");
         if (! node.value ("Annotation").empty())
             ctx.note (&FlpImportReport::notReproduced, "Groove info text (Annotation)");
@@ -2287,12 +2287,12 @@ void readGroovePool (Ctx& ctx, const Element& set, const Element& mainMixer)
         if (percent > groove::maxAmount * 100.0 + 1e-6)
             ctx.note (&FlpImportReport::approximated, "Global groove amount above 130 % (kept at 130 %)");
     }
-    // the pool's default groove for new clips: LYNX has none (groove-023)
+    // the pool's default groove for new clips: YW has none (groove-023)
     if (const auto def = intOf (pool.value ("DefaultGrooveId", "-1"), -1); def >= 0 && ctx.grooveIds.count (def) != 0)
         ctx.note (&FlpImportReport::notReproduced, "Default groove for new clips (YW Studio's new clips start without a groove)");
 }
 
-// A clip's GrooveSettings/GrooveId → LYNX's id (0: none, −1 in the set, or not in the pool)
+// A clip's GrooveSettings/GrooveId → YW's id (0: none, −1 in the set, or not in the pool)
 std::uint32_t grooveOfClip (Ctx& ctx, const Element& clip)
 {
     const auto id = intOf (clip.value ("GrooveSettings/GrooveId", "-1"), -1);
@@ -2333,7 +2333,7 @@ ClipFollow followOf (const Element& f)
     c.chanceA = std::clamp ((int) std::lround (f.number ("FollowChanceA", 100)), 0, 100);
     c.chanceB = std::clamp ((int) std::lround (f.number ("FollowChanceB", 0)), 0, 100);
     // the jump target: Live shows the stored number itself, 1-based (5 shows "5", 0 an empty field) [LIVE, 181c];
-    // LYNX's jump row counts from 0. [INFERRED] the number counts scenes from the top, not clips of the group
+    // YW's jump row counts from 0. [INFERRED] the number counts scenes from the top, not clips of the group
     c.jumpA = std::clamp ((int) f.number ("JumpIndexA", 1) - 1, 0, launcher::maxScenes - 1);
     c.jumpB = std::clamp ((int) f.number ("JumpIndexB", 1) - 1, 0, launcher::maxScenes - 1);
     c.linked = f.boolean ("IsLinked", true);
@@ -2424,8 +2424,8 @@ float mapValue (ValueMap m, double v)
 }
 
 // Live moves a parameter in a straight line along its own travel [LIVE 12.4 renders, round als190ka]: for the mixer's
-// volume and sends that is the fader's position (core/LiveFader.h), not the gain the set stores and not LYNX's own fader
-// travel, so each segment is cut into pieces until LYNX's straight pieces stay within 0.1 dB of Live's curve (above
+// volume and sends that is the fader's position (core/LiveFader.h), not the gain the set stores and not YW's own fader
+// travel, so each segment is cut into pieces until YW's straight pieces stay within 0.1 dB of Live's curve (above
 // −60 dB). Other parameters go straight (or along their bend) in the target's own 0…1, as before; a bent one is cut
 // until the pieces stay within 0.3 % of the travel. `valueAt (f)` is the target's value at fraction f of the segment;
 // the pieces' ends after the segment's start go to `add (time, value)` in order, the segment's end included.
@@ -2578,7 +2578,7 @@ void registerMixerTargets (Ctx& ctx, const Element& mixer, int insert, const std
         ctx.targets[id] = { AutomationTarget { AutomationTargetKind::mixerVolume, insert, 0, 0 }, ValueMap::fader, "volume", {} };
     if (const auto id = targetId (mixer.child ("Pan")); ! id.empty())
         ctx.targets[id] = { AutomationTarget { AutomationTargetKind::mixerPan, insert, 0, 0 }, ValueMap::pan, "pan", {} };
-    // (issue #193) the track's on / off switch: LYNX's mixer mute has no automation, so it is named on its own
+    // (issue #193) the track's on / off switch: YW's mixer mute has no automation, so it is named on its own
     if (const auto id = targetId (mixer.child ("Speaker")); ! id.empty() && ctx.automated.count (id) != 0)
     {
         ctx.note (&FlpImportReport::notReproduced, "Track on / off automation (" + name + ": YW Studio's mute is not automated; the track stays as saved)");
@@ -2793,7 +2793,7 @@ std::string alsHexEncode (const std::vector<std::uint8_t>& bytes, std::size_t li
     return out;
 }
 
-// LYNX's own 70-colour approximation of a 14 × 5 hue grid (columns: hues, the last one greys; rows: from light to
+// YW's own 70-colour approximation of a 14 × 5 hue grid (columns: hues, the last one greys; rows: from light to
 // dark). Not Live's colour values: only the hue order, so imported tracks keep their colour families.
 std::uint32_t alsColour (int index) noexcept
 {
@@ -3293,7 +3293,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
             returns.push_back (insertOf[i]);
             // round 190kc: a Live return track (the Session mixer's return strips and Sends rows). Live keeps the
             // return's letter in its EffectiveName ("B-Delay": a return never renamed) and shows "B Delay" [DATA:
-            // Patience, the default set]; LYNX keeps the name without it (the letter follows the return's place)
+            // Patience, the default set]; YW keeps the name without it (the letter follows the return's place)
             auto& r = song.mixer.back();
             r.liveReturn = true;
             if (r.name.size() > 2 && r.name[1] == '-' && r.name[0] >= 'A' && r.name[0] <= 'L' && tracks[i].value ("Name/UserName").empty())
@@ -3305,7 +3305,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
             row.name = song.mixer.back().name;
             row.colour = song.mixer.back().colour;
             row.grouped = tracks[i].value ("TrackGroupId", "-1") != "-1";
-            // round 190jf (B17): a group inside a group keeps its level (LYNX's nested folders; Live lists a group
+            // round 190jf (B17): a group inside a group keeps its level (YW's nested folders; Live lists a group
             // track before its members)
             {
                 const auto parent = groupDepth.find (tracks[i].value ("TrackGroupId", "-1"));
@@ -3324,7 +3324,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
                 song.playlistTracks.back().collapsed = ! tracks[i].boolean ("TrackUnfolded", true);
             }
             // round als190ka (coverage arrangement-0134): Live's take lanes [DATA: TakeLanes/TakeLanes/TakeLane{Name,
-            // ClipAutomation/Events}] → LYNX's take lanes (core/Comping.h): muted tracks folded one level under the
+            // ClipAutomation/Events}] → YW's take lanes (core/Comping.h): muted tracks folded one level under the
             // track, whose own row (Live's main lane, what plays) becomes the comp track. A track inside a group keeps
             // its group; its lanes nest under it (a comp needs a top-level header, so there it is a plain folder).
             else if (const auto lanes = tracks[i].path ("TakeLanes/TakeLanes").children ("TakeLane"); ! lanes.empty())
@@ -3377,7 +3377,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
         else if (out == "AudioOut/None")
             m.toMaster = false;
         else if (out.rfind ("AudioOut/External", 0) == 0)
-            ; // a hardware output: LYNX plays it through the Master (the device's outputs are chosen in LYNX)
+            ; // a hardware output: YW plays it through the Master (the device's outputs are chosen in YW)
         const auto sends = mixer.path ("Sends").children ("TrackSendHolder");
         for (std::size_t k = 0; k < sends.size() && k < returns.size(); ++k)
         {
@@ -3401,7 +3401,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
     }
 
     // Live's Pre / Post toggle of each return (LiveSet/SendsPre, one SendPreBool per return, in order): "Pre" taps every
-    // track's send to that return before the track's mixer, which is LYNX's pre-fader send (round 190aq)
+    // track's send to that return before the track's mixer, which is YW's pre-fader send (round 190aq)
     {
         const auto toggles = set.child ("SendsPre").children ("SendPreBool");
         for (std::size_t k = 0; k < toggles.size() && k < returns.size(); ++k)
@@ -3526,7 +3526,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
             ctx.note (&FlpImportReport::converted, "Take lanes (muted lanes under their track; the main lane plays)");
     }
     // issue #193 (round als190ka): the Main track's own devices (a mixed set's bus chain: EQ, glue, limiter) go onto
-    // LYNX's Master insert with their envelopes; before, they were left out without a word
+    // YW's Master insert with their envelopes; before, they were left out without a word
     effectsFrom (ctx, main.path ("DeviceChain/DeviceChain/Devices").children(), song.mixer[0]);
 
     finishLinks (ctx); // (round 190ed)
@@ -3591,14 +3591,14 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
     else
         sessionToGrid (ctx, set, tracks, rowOf, channelOf, insertOf, scenes);
 
-    // (round 190bq) a Simpler in Slice mode: Live's first slice plays on C1, LYNX's on key 60 — its notes move up
+    // (round 190bq) a Simpler in Slice mode: Live's first slice plays on C1, YW's on key 60 — its notes move up
     for (const auto& [channel, shift] : ctx.keyShift)
         for (auto& pattern : song.patterns)
             for (auto& n : pattern.notes)
                 if (n.channel == channel)
                     n.key = std::clamp (n.key + shift, 0, 127);
 
-    // (round 190cf) Live's MIDI effects that LYNX keeps as notes: each note of the channel through the chain, in order
+    // (round 190cf) Live's MIDI effects that YW keeps as notes: each note of the channel through the chain, in order
     for (const auto& [channel, effects] : ctx.noteEffects)
         for (auto& pattern : song.patterns)
         {
@@ -3649,7 +3649,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
     }
     // the arrangement loop
     // (round 190cg: with the Loop switch off the brace keeps its place [DATA: LoopOn false with LoopStart / LoopLength
-    // in every stored set]; LYNX keeps the range too, switched off)
+    // in every stored set]; YW keeps the range too, switched off)
     if (const auto tr = set.child ("Transport"); tr.number ("LoopLength", 0) > 0)
     {
         song.loopStart = ticksOf (std::max (0.0, tr.number ("LoopStart", 0)));
@@ -3663,8 +3663,8 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
     for (std::size_t i = 0; i < tracks.size(); ++i)
         addAutomation (ctx, tracks[i].child ("AutomationEnvelopes"), song.mixer[(std::size_t) insertOf[i]].name, automationRow);
 
-    // issue #193 (round als190ka): Live's video clips → one LYNX video track per Live track that holds video, each clip
-    // with Live's trim, in song seconds (now that the tempo automation is in place). LYNX's video clips run in real
+    // issue #193 (round als190ka): Live's video clips → one YW video track per Live track that holds video, each clip
+    // with Live's trim, in song seconds (now that the tempo automation is in place). YW's video clips run in real
     // time; a warped video clip at another tempo plays its picture at the file's own speed.
     {
         std::map<int, int> trackOf;
@@ -3711,7 +3711,7 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
     }
     song.currentPattern = 0;
     // Live's Scale Mode → the project key (round 190o): the set's own scale when it is on (Live 12), else the scale of
-    // the first clip that has one on (Live 11 has clip scales only). LYNX has one key per project.
+    // the first clip that has one on (Live 11 has clip scales only). YW has one key per project.
     if (set.boolean ("InKey", false))
         projectkey::set (song, liveScaleOf (set));
     else if (ctx.clipKeySeen)
@@ -3743,4 +3743,4 @@ std::optional<Song> importAlsXml (const xml::Document& doc, const AlsImportOptio
             }
     return std::move (ctx.song);
 }
-} // namespace lynx
+} // namespace yw

@@ -16,7 +16,7 @@
 #include <optional>
 
 #include "core/Simd.h"
-#if LYNX_X86
+#if YW_X86
  #include <cpuid.h>
 #endif
 
@@ -26,7 +26,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::hardcore
+namespace yw::hardcore
 {
 namespace
 {
@@ -897,7 +897,7 @@ std::unique_ptr<PedalFx> makePedal (int type)
 
 // ------------------------------------------------------------------------------------------------ cabinet
 // acc[j] += x·h[j] (a product then a sum, as the plug-in's SSE loop: any vector width gives the same floats)
-#if LYNX_X86
+#if YW_X86
 bool cpuHasAvx()
 {
     static const bool f = [] {
@@ -924,7 +924,7 @@ __attribute__ ((target ("avx"))) void macAvx (float* acc, const float* h, float 
 #endif
 void mac (float* acc, const float* h, float x, std::size_t n) noexcept
 {
-#if LYNX_X86
+#if YW_X86
     if (cpuHasAvx())
     {
         macAvx (acc, h, x, n);
@@ -1426,7 +1426,7 @@ std::string cabinetPath (int cabinet)
     return "Plugins\\Fruity\\Effects\\Hardcore\\Imp\\" + name + ".wav";
 }
 
-// ------------------------------------------------------------------------------------------------ LYNX effect
+// ------------------------------------------------------------------------------------------------ YW effect
 namespace
 {
 // EffectSlot::state of a Hardcore slot: "LXHC", u32 count, then per cabinet file: u32 index, u32 size, bytes
@@ -1564,4 +1564,4 @@ std::optional<EffectSlot> fromFl (const std::vector<std::uint8_t>& state, const 
         slot.state = packCabinets (files);
     return slot;
 }
-} // namespace lynx::hardcore
+} // namespace yw::hardcore

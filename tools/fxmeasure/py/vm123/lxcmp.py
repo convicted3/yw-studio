@@ -1,7 +1,7 @@
-"""run LYNX's substitute (fxlynx, translated from a state) on signals and compare to the real plugin's renders"""
+"""run YW's substitute (fxyw, translated from a state) on signals and compare to the real plugin's renders"""
 import subprocess, os, numpy as np, vm, ana, fit
-FX=os.path.expanduser('~/.claude/jobs/f8789b49/tmp/vm123/fxlynx')
-def lynx(effect, state, inwav, outwav, params=()):
+FX=os.path.expanduser('~/.claude/jobs/f8789b49/tmp/vm123/fxyw')
+def yw(effect, state, inwav, outwav, params=()):
     env=dict(os.environ,FXQ='1')
     if state: env['SUBST_STATE']=vm.W+'/st/%s.bin'%state
     r=subprocess.run([FX,effect,inwav,outwav]+list(params),env=env,capture_output=True,text=True)

@@ -30,13 +30,13 @@
 
 namespace juce
 {
-// cmake/LynxPatchJuce.cmake fix 41 (round 190jx), in juce_Windowing_linux.cpp; weak: without the fix they are null
-extern void (*lynxX11AfterBlitHook) (unsigned long window, const RectangleList<int>& blitted) __attribute__ ((weak));
-void* lynxX11Display() __attribute__ ((weak));
+// cmake/YwPatchJuce.cmake fix 41 (round 190jx), in juce_Windowing_linux.cpp; weak: without the fix they are null
+extern void (*ywX11AfterBlitHook) (unsigned long window, const RectangleList<int>& blitted) __attribute__ ((weak));
+void* ywX11Display() __attribute__ ((weak));
 } // namespace juce
 #endif
 
-namespace lynx::ui
+namespace yw::ui
 {
 std::atomic<int>& MotionOverlay::framesShown()
 {
@@ -56,14 +56,14 @@ std::atomic<int>& MotionOverlay::picturesPainted()
 
 namespace
 {
-// the message-thread time show() takes (LYNX_OVERLAY_STATS), microseconds
+// the message-thread time show() takes (YW_OVERLAY_STATS), microseconds
 std::atomic<long long>& showMicros()
 {
     static std::atomic<long long> us { 0 };
     return us;
 }
 
-// round 190kr: the view of the last show() (LYNX_OVERLAY_STATS; message thread)
+// round 190kr: the view of the last show() (YW_OVERLAY_STATS; message thread)
 juce::Component::SafePointer<juce::Component>& lastOwner()
 {
     static juce::Component::SafePointer<juce::Component> c;
@@ -86,7 +86,7 @@ struct ScopedTime
 bool overlayWanted()
 {
     static const bool on = [] {
-        const auto* v = std::getenv ("LYNX_OVERLAY");
+        const auto* v = std::getenv ("YW_OVERLAY");
         return v == nullptr || juce::String (v).trim() != "0";
     }();
     return on;
@@ -96,20 +96,20 @@ bool overlayWanted()
 // Round 190lv: a live picture (the toolbar's output display) as a layered child window drawn with GDI, instead of a
 // composition swap chain. Measured (Windows, Thief playing, per-thread cycles): each Present of the 190kz swap chain cost
 // the GPU driver's thread about 1 M cycles, about half of that thread's work while the song plays (~140 of ~280 Mc/s);
-// a layered window's new picture is handed to the window manager (UpdateLayeredWindow), with no Direct3D call in LYNX's
+// a layered window's new picture is handed to the window manager (UpdateLayeredWindow), with no Direct3D call in YW's
 // process (FL Studio draws all of its UI with GDI: its driver thread does nothing). The pixels are the same picture,
-// premultiplied as the swap chain took it. LYNX_LIVE_GDI=0: the swap chain, as in round 190kz.
+// premultiplied as the swap chain took it. YW_LIVE_GDI=0: the swap chain, as in round 190kz.
 bool liveGdiWanted()
 {
     static const bool on = [] {
-        const auto* v = std::getenv ("LYNX_LIVE_GDI");
+        const auto* v = std::getenv ("YW_LIVE_GDI");
         return v == nullptr || juce::String (v).trim() != "0";
     }();
     return on;
 }
 
-constexpr const wchar_t* liveGdiClass = L"LynxLivePicture";
-constexpr const wchar_t* liveGdiProp = L"LynxLivePicture";
+constexpr const wchar_t* liveGdiClass = L"YwLivePicture";
+constexpr const wchar_t* liveGdiProp = L"YwLivePicture";
 
 LRESULT CALLBACK liveGdiProc (HWND h, UINT m, WPARAM w, LPARAM l)
 {
@@ -279,7 +279,7 @@ struct LiveGdiWindow
 bool hookInstalled(); // (below: fix 41's hook, which also counts JUCE's blits for the statistics)
 #endif
 
-// why the last show() fell back (LYNX_OVERLAY_STATS; Linux / macOS backend): a short reason, and the component that
+// why the last show() fell back (YW_OVERLAY_STATS; Linux / macOS backend): a short reason, and the component that
 // covered the mark when that was it
 juce::String& lastFallback()
 {
@@ -287,11 +287,11 @@ juce::String& lastFallback()
     return why;
 }
 
-// LYNX_OVERLAY_STATS=<file>: per second, the frames the overlays showed, the show() calls that fell back, the pictures
+// YW_OVERLAY_STATS=<file>: per second, the frames the overlays showed, the show() calls that fell back, the pictures
 // painted (every 2 s while something calls show()); X11: also JUCE's blits to the windows (presents) and their pixels
 void writeStats()
 {
-    static const auto path = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_STATS", {});
+    static const auto path = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_STATS", {});
     if (path.isEmpty())
         return;
     static double since = 0.0;
@@ -393,10 +393,10 @@ struct Devices final
 
     bool make()
     {
-        // (round 190la, A/B switch as JUCE's Direct2D device: cmake/LynxPatchJuce.cmake fix 43; LYNX_D3D_DRIVER_THREADS=0:
+        // (round 190la, A/B switch as JUCE's Direct2D device: cmake/YwPatchJuce.cmake fix 43; YW_D3D_DRIVER_THREADS=0:
         // no driver threads for these frames; default as before)
         const UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT
-                           | (juce::SystemStats::getEnvironmentVariable ("LYNX_D3D_DRIVER_THREADS", {}) == "0" ? (UINT) D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS : 0u);
+                           | (juce::SystemStats::getEnvironmentVariable ("YW_D3D_DRIVER_THREADS", {}) == "0" ? (UINT) D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS : 0u);
         const D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0,
                                              D3D_FEATURE_LEVEL_9_3 };
         Com<ID3D11Device> device;
@@ -522,20 +522,20 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
     // 1/8 px -> 93, at 1/32 px -> 115-125; one picture painted again at each 1/128 px -> 0.7 ms a frame on the message
     // thread (10 % of a core: rejected). So the pictures are cached at 1/8 px and the rest of the way (< 1/8 px) is a
     // translation of the visual that the compositor samples linearly: the mark moves on every frame, nothing is painted.
-    // LYNX_OVERLAY_PHASES=0: painted again at each 1/128 px; 1..64: that many cached phases (A/B).
-    // LYNX_OVERLAY_SUBPIXEL=0: no translation (the cached phases only).
+    // YW_OVERLAY_PHASES=0: painted again at each 1/128 px; 1..64: that many cached phases (A/B).
+    // YW_OVERLAY_SUBPIXEL=0: no translation (the cached phases only).
     static constexpr int maxPhases = 64;
     static constexpr int exactSteps = 128;
     static bool subPixel()
     {
-        static const bool on = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_SUBPIXEL", {}) != "0";
+        static const bool on = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_SUBPIXEL", {}) != "0";
         return on;
     }
 
     static int phases()
     {
         static const int n = [] {
-            const auto v = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_PHASES", {});
+            const auto v = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_PHASES", {});
             return v.isEmpty() ? 8 : juce::jlimit (0, maxPhases, v.getIntValue());
         }();
         return n;
@@ -641,12 +641,12 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
         // The visual is in the topmost target of the view's own window (a docked panel: its native child window). The
         // system composes it with that window, so the sibling windows in front of it (other panels, docked plugin
         // windows, floaters) cover it as they cover the view. Measured (round 190ip): a DirectComposition commit there is
-        // shown at once; a child window's Direct2D frames are not (cmake/LynxPatchJuce.cmake fix 34). The 74 screen
+        // shown at once; a child window's Direct2D frames are not (cmake/YwPatchJuce.cmake fix 34). The 74 screen
         // updates first seen with Thief were the Playlist behind the maximised Channel rack (nothing moves on screen
         // but the toolbar), and the 93 with the Playlist in front were the 1/8-pixel phases (see phases()).
-        // LYNX_OVERLAY_TARGET=root (A/B): the main window's topmost target, shifted to the child's place, with the
+        // YW_OVERLAY_TARGET=root (A/B): the main window's topmost target, shifted to the child's place, with the
         // sibling windows in front of the child checked by hand.
-        static const bool inRoot = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_TARGET", {}) == "root";
+        static const bool inRoot = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_TARGET", {}) == "root";
         auto targetHwnd = hwnd;
         POINT shift { 0, 0 };
         if (inRoot && (GetWindowLongPtr (hwnd, GWL_STYLE) & WS_CHILD) != 0)
@@ -772,11 +772,11 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
         return true;
     }
 
-    // LYNX_OVERLAY_NUDGE=1 (A/B measurements): a docked panel's window is a native child; as for its Direct2D frames
-    // (cmake/LynxPatchJuce.cmake fix 34) the main window also paints the one pixel under the child's corner
+    // YW_OVERLAY_NUDGE=1 (A/B measurements): a docked panel's window is a native child; as for its Direct2D frames
+    // (cmake/YwPatchJuce.cmake fix 34) the main window also paints the one pixel under the child's corner
     static void nudgeTopLevel (HWND hwnd)
     {
-        static const bool nudge = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_NUDGE", {}) == "1";
+        static const bool nudge = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_NUDGE", {}) == "1";
         if (! nudge || (GetWindowLongPtr (hwnd, GWL_STYLE) & WS_CHILD) == 0)
             return;
         const auto root = GetAncestor (hwnd, GA_ROOT);
@@ -800,7 +800,7 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
     Cover covered (juce::Component& top, juce::Rectangle<int> area, HWND hwnd, HWND targetHwnd, double topScale) const
     {
         const auto covers = [&] (const juce::Component& c, const juce::Component& parent) {
-            if (! c.isVisible() || c.getAlpha() <= 0.0f || (bool) c.getProperties().getWithDefault ("lynxOverlayIgnores", false))
+            if (! c.isVisible() || c.getAlpha() <= 0.0f || (bool) c.getProperties().getWithDefault ("ywOverlayIgnores", false))
                 return false;
             return owner.getLocalArea (&parent, c.getBounds()).intersects (area);
         };
@@ -1135,7 +1135,7 @@ bool MotionOverlay::available()
 juce::String MotionOverlay::selfTest()
 {
     if (! overlayWanted())
-        return "OK (off: LYNX_OVERLAY=0)";
+        return "OK (off: YW_OVERLAY=0)";
     if (! prepareNow())
         return "OK (no device: the views paint their marks)";
     auto& dev = Devices::get();
@@ -1211,7 +1211,7 @@ bool MotionOverlay::prepareNow()
 #elif JUCE_LINUX || JUCE_BSD || JUCE_MAC
 
 // Linux / BSD (round 190jx): the X server draws the mark over the view's window and keeps the pixels under it
-// (ui/MotionOverlayX11.h). LYNX runs through XWayland on Wayland desktops, so this is the path there too.
+// (ui/MotionOverlayX11.h). YW runs through XWayland on Wayland desktops, so this is the path there too.
 //
 // Why this way (round 190jx; measured with a stand-alone X client on Xvfb, 1200 frames of an 18 x 800 px mark moving
 // 0.6 px a frame): a native ARGB child window moved with XMoveWindow costs the server about as much, but each whole-pixel
@@ -1219,7 +1219,7 @@ bool MotionOverlay::prepareNow()
 // every step; the save-under above needs no paint and no image at all (the client side: 22-33 ms of CPU for the 1200
 // frames, against 134-227 ms for putting the columns). An OpenGL layer would put the whole view in a GL window.
 // macOS (round 190jx, ui/MotionOverlayMac.h): the same steps with a CALayer over the view's layer; off by default
-// (LYNX_OVERLAY_MAC=1): checked headless on the CI's macOS runner only.
+// (YW_OVERLAY_MAC=1): checked headless on the CI's macOS runner only.
 namespace
 {
 #if JUCE_MAC
@@ -1250,13 +1250,13 @@ void afterBlitHook (unsigned long window, const juce::RectangleList<int>& blitte
 bool hookInstalled()
 {
     static const bool on = [] {
-        if (&juce::lynxX11AfterBlitHook == nullptr || juce::lynxX11Display == nullptr)
+        if (&juce::ywX11AfterBlitHook == nullptr || juce::ywX11Display == nullptr)
             return false;
-        auto* display = juce::lynxX11Display();
+        auto* display = juce::ywX11Display();
         if (display == nullptr)
             return false;
         x11overlay::setDisplay (display);
-        juce::lynxX11AfterBlitHook = afterBlitHook;
+        juce::ywX11AfterBlitHook = afterBlitHook;
         return true;
     }();
     return on;
@@ -1282,13 +1282,13 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
     static constexpr int maxPhases = 64;
     static bool subPixel()
     {
-        static const bool on = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_SUBPIXEL", {}) != "0";
+        static const bool on = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_SUBPIXEL", {}) != "0";
         return on;
     }
     static int phases()
     {
         static const int n = [] {
-            const auto v = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_PHASES", {});
+            const auto v = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_PHASES", {});
             return v.isEmpty() ? 8 : juce::jlimit (1, maxPhases, v.getIntValue());
         }();
         return n;
@@ -1348,8 +1348,8 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
 
     bool place (const Mark& mark)
     {
-        // (the reason only for LYNX_OVERLAY_STATS: no strings made per frame otherwise)
-        static const bool explain = juce::SystemStats::getEnvironmentVariable ("LYNX_OVERLAY_STATS", {}).isNotEmpty();
+        // (the reason only for YW_OVERLAY_STATS: no strings made per frame otherwise)
+        static const bool explain = juce::SystemStats::getEnvironmentVariable ("YW_OVERLAY_STATS", {}).isNotEmpty();
         auto why = [] (const auto& reason) {
             if (explain)
                 lastFallback() = reason();
@@ -1471,7 +1471,7 @@ struct MotionOverlay::Impl final : private juce::Timer, private juce::ComponentL
     Cover coveredByComponents (juce::Component& top, juce::Rectangle<int> area) const
     {
         const auto covers = [&] (const juce::Component& c, const juce::Component& parent) {
-            if (! c.isVisible() || c.getAlpha() <= 0.0f || (bool) c.getProperties().getWithDefault ("lynxOverlayIgnores", false))
+            if (! c.isVisible() || c.getAlpha() <= 0.0f || (bool) c.getProperties().getWithDefault ("ywOverlayIgnores", false))
                 return false;
             return owner.getLocalArea (&parent, c.getBounds()).intersects (area);
         };
@@ -1592,11 +1592,11 @@ juce::String MotionOverlay::selfTest()
     if (overlay.show ({ 100.25f, { -8, 0, 16, 300 }, host.getLocalBounds(), 1 }) || overlay.isShowing())
         return "ERROR shown in a window that is not showing";
     if (! overlayWanted() || ! maclayer::enabled())
-        return "OK (Core Animation layer checked headless; off by default: LYNX_OVERLAY_MAC=1 turns it on)";
-    return "OK (Core Animation layer checked headless; on: LYNX_OVERLAY_MAC=1)";
+        return "OK (Core Animation layer checked headless; off by default: YW_OVERLAY_MAC=1 turns it on)";
+    return "OK (Core Animation layer checked headless; on: YW_OVERLAY_MAC=1)";
 #else
     if (! overlayWanted())
-        return "OK (off: LYNX_OVERLAY=0)";
+        return "OK (off: YW_OVERLAY=0)";
     if (! hookInstalled())
         return "OK (not available: no X display or JUCE without fix 41; the views paint their marks)";
     if (! x11overlay::ready())
@@ -1652,7 +1652,7 @@ juce::String MotionOverlay::selfTest()
 
 namespace
 {
-// LYNX_LOCATOR_PROBE: see MotionOverlay.h
+// YW_LOCATOR_PROBE: see MotionOverlay.h
 class LocatorProbe final : public juce::Component, private juce::Timer
 {
 public:
@@ -1739,7 +1739,7 @@ private:
 
 void openLocatorProbe (std::function<double()> position)
 {
-    openToolWindow (std::make_unique<LocatorProbe> (std::move (position)), "Locator probe", "lynx-locator-probe");
+    openToolWindow (std::make_unique<LocatorProbe> (std::move (position)), "Locator probe", "yw-locator-probe");
 }
 
 MotionOverlay::MotionOverlay (juce::Component& owner, Painter painter, bool overChildren)
@@ -1768,4 +1768,4 @@ void MotionOverlay::setLive (bool on) noexcept
 {
     impl->live = on;
 }
-} // namespace lynx::ui
+} // namespace yw::ui

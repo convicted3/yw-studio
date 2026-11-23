@@ -4,10 +4,10 @@
 
 TEST (issues190mq_paste_layout_rules)
 {
-    using namespace lynx::pasteplace;
-    CHECK (ruleFor (lynx::layoutstyle::Style::pattern) == Rule::flView);
-    CHECK (ruleFor (lynx::layoutstyle::Style::clipLaunch) == Rule::liveInsert);
-    CHECK (ruleFor (lynx::layoutstyle::Style::simple) == Rule::playhead);
+    using namespace yw::pasteplace;
+    CHECK (ruleFor (yw::layoutstyle::Style::pattern) == Rule::flView);
+    CHECK (ruleFor (yw::layoutstyle::Style::clipLaunch) == Rule::liveInsert);
+    CHECK (ruleFor (yw::layoutstyle::Style::simple) == Rule::playhead);
 
     const UniformBars bars { 384 };
     Where w;
@@ -29,7 +29,7 @@ TEST (issues190mq_paste_layout_rules)
 // FL 2026's Ctrl+V (Pattern layout), the cases captured in FL (s/notes.md of round 190mq): 4/4 bars of 3840 ticks
 TEST (issues190mq_fl_paste_rule_matches_the_capture)
 {
-    using namespace lynx::pasteplace;
+    using namespace yw::pasteplace;
     constexpr std::int64_t bar = 3840, beat = 960, step = 240;
     const UniformBars bars { bar };
     Where w;
@@ -84,7 +84,7 @@ TEST (issues190mq_fl_paste_rule_matches_the_capture)
 
 TEST (issues190mq_fl_paste_bar_lines_follow_time_signatures)
 {
-    using namespace lynx::pasteplace;
+    using namespace yw::pasteplace;
     // bars of 3 beats then of 4 (a signature change at tick 2880): the nearest line and the offset in the source's bar
     const auto barAt = [] (std::int64_t t) { return t < 2880 ? Bar { t / 2880 * 2880, 2880 } : Bar { 2880 + (t - 2880) / 3840 * 3840, 3840 }; };
     CHECK (nearestBarLine (2880 + 100, barAt) == 2880);

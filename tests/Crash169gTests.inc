@@ -25,13 +25,13 @@ void writeAll (const fs::path& p, const std::vector<std::uint8_t>& b)
     std::ofstream (p, std::ios::binary).write ((const char*) b.data(), (std::streamsize) b.size());
 }
 
-// FL Studio 2025.1.6's engine DLLs, taken from its installer (not part of the repository): LYNX_FL25_DLLS=<folder>,
-// default /mnt/e/lynx-work/crash169g/fl25 (3392 = Transistor Bass engine_x64, 1542 = Slayer_Engine, 310 =
+// FL Studio 2025.1.6's engine DLLs, taken from its installer (not part of the repository): YW_FL25_DLLS=<folder>,
+// default /mnt/e/yw-work/crash169g/fl25 (3392 = Transistor Bass engine_x64, 1542 = Slayer_Engine, 310 =
 // BooBass_Eng_x64, 2741 = drumsynth_eng_x64); empty = not on this computer
 std::string fl25 (const char* name)
 {
-    const char* env = std::getenv ("LYNX_FL25_DLLS");
-    const auto p = fs::path (env != nullptr && *env != 0 ? env : "/mnt/e/lynx-work/crash169g/fl25") / name;
+    const char* env = std::getenv ("YW_FL25_DLLS");
+    const auto p = fs::path (env != nullptr && *env != 0 ? env : "/mnt/e/yw-work/crash169g/fl25") / name;
     return fs::is_regular_file (p) ? p.string() : std::string();
 }
 
@@ -69,20 +69,20 @@ struct Job
 TEST (crash169g_pe_image_hash_ignores_the_signature)
 {
     using namespace crash169g;
-    // unsigned, checksum 0: the whole-file hash (so the hashes LYNX already had stay valid)
+    // unsigned, checksum 0: the whole-file hash (so the hashes YW already had stay valid)
     const auto plain = fakePe (0, 0, 0x2000);
-    CHECK (lynx::peImageSha256Hex (plain) == lynx::sha256Hex (plain.data(), plain.size()));
+    CHECK (yw::peImageSha256Hex (plain) == yw::sha256Hex (plain.data(), plain.size()));
     // the same image signed (a checksum, a certificate table appended): the same image hash
     auto signedCopy = fakePe (0x1234567, 0x2000, 0x2400);
     std::fill (signedCopy.begin() + 0x2000, signedCopy.end(), (std::uint8_t) 0x99);
-    CHECK (lynx::peImageSha256Hex (signedCopy) == lynx::peImageSha256Hex (plain));
-    CHECK (lynx::sha256Hex (signedCopy.data(), signedCopy.size()) != lynx::sha256Hex (plain.data(), plain.size()));
+    CHECK (yw::peImageSha256Hex (signedCopy) == yw::peImageSha256Hex (plain));
+    CHECK (yw::sha256Hex (signedCopy.data(), signedCopy.size()) != yw::sha256Hex (plain.data(), plain.size()));
     // a different image: a different hash; not a PE: the plain hash
     auto other = plain;
     other[0x1800] ^= 1;
-    CHECK (lynx::peImageSha256Hex (other) != lynx::peImageSha256Hex (plain));
+    CHECK (yw::peImageSha256Hex (other) != yw::peImageSha256Hex (plain));
     const std::vector<std::uint8_t> text { 'h', 'e', 'l', 'l', 'o' };
-    CHECK (lynx::peImageSha256Hex (text) == lynx::sha256Hex (text.data(), text.size()));
+    CHECK (yw::peImageSha256Hex (text) == yw::sha256Hex (text.data(), text.size()));
 }
 
 // discussion #56 ("Transistor Bass is described as implemented but I really can't get it working"): only FL Studio
@@ -94,13 +94,13 @@ TEST (crash169g_transistor_bass_plays_with_other_fl_builds)
     const auto dll26 = flGenerator ("Transistor Bass", "engine_x64.dll");
     if (dll26.empty())
         return; // (no FL installation)
-    CHECK (lynx::transistorBassDllUsable (dll26));
+    CHECK (yw::transistorBassDllUsable (dll26));
     const auto state = tbassPresetState ("Factory programs.fst");
     CHECK (! state.empty());
-    std::vector<lynx::tbass::RefNote> notes (2);
+    std::vector<yw::tbass::RefNote> notes (2);
     notes[0].key = 36, notes[0].release = 30000;
     notes[1].start = 33000, notes[1].key = 43;
-    const auto reference = lynx::tbass::renderReference (state, dll26, notes, 44100.0, 66150);
+    const auto reference = yw::tbass::renderReference (state, dll26, notes, 44100.0, 66150);
     double energy = 0.0;
     for (const auto v : reference)
         energy += (double) v * v;
@@ -109,21 +109,21 @@ TEST (crash169g_transistor_bass_plays_with_other_fl_builds)
     // the same DLL with its data 0x400 bytes further on (another build's layout): found by shape, same sound
     auto bytes = readAll (dll26);
     bytes.insert (bytes.begin() + 0x1000, 0x400, (std::uint8_t) 0);
-    const auto shifted = (fs::temp_directory_path() / ("lynx-crash169g-tbass-shifted-" + processTempTag() + ".dll")).string();
+    const auto shifted = (fs::temp_directory_path() / ("yw-crash169g-tbass-shifted-" + processTempTag() + ".dll")).string();
     writeAll (shifted, bytes);
-    CHECK (lynx::transistorBassDllUsable (shifted));
-    CHECK (lynx::tbass::renderReference (state, shifted, notes, 44100.0, 66150) == reference);
+    CHECK (yw::transistorBassDllUsable (shifted));
+    CHECK (yw::tbass::renderReference (state, shifted, notes, 44100.0, 66150) == reference);
     // no cycles in it (another plugin's DLL, a truncated file): not usable, as before
     bytes.resize (0xF0000);
     writeAll (shifted, bytes);
-    CHECK (! lynx::transistorBassDllUsable (shifted));
+    CHECK (! yw::transistorBassDllUsable (shifted));
     fs::remove (shifted);
 
     // FL Studio 2025.1.6's own engine_x64.dll (when this computer has a copy)
     if (const auto dll25 = fl25 ("3392.dll"); ! dll25.empty())
     {
-        CHECK (lynx::transistorBassDllUsable (dll25));
-        CHECK (lynx::tbass::renderReference (state, dll25, notes, 44100.0, 66150) == reference);
+        CHECK (yw::transistorBassDllUsable (dll25));
+        CHECK (yw::tbass::renderReference (state, dll25, notes, 44100.0, 66150) == reference);
     }
 }
 
@@ -131,11 +131,11 @@ TEST (crash169g_transistor_bass_plays_with_other_fl_builds)
 TEST (crash169g_transistor_bass_from_the_plugin_list_with_fl_2025)
 {
     using namespace crash169g;
-    using namespace lynx;
+    using namespace yw;
     const auto dll25 = fl25 ("3392.dll");
     if (realFlpDir.empty() || dll25.empty())
         return;
-    const auto root = fs::temp_directory_path() / ("lynx-crash169g-fl25-" + processTempTag());
+    const auto root = fs::temp_directory_path() / ("yw-crash169g-fl25-" + processTempTag());
     fs::create_directories (root / "Plugins" / "Fruity" / "Generators" / "Transistor Bass");
     fs::copy_file (dll25, root / "Plugins" / "Fruity" / "Generators" / "Transistor Bass" / "engine_x64.dll", fs::copy_options::overwrite_existing);
     auto fl = natives142::flAccess();
@@ -147,7 +147,7 @@ TEST (crash169g_transistor_bass_from_the_plugin_list_with_fl_2025)
     CHECK (c.has_value());
     if (c)
     {
-        CHECK (c->instrument == InstrumentKind::transistorbass && c->samplePath.find ("lynx-crash169g-fl25") != std::string::npos);
+        CHECK (c->instrument == InstrumentKind::transistorbass && c->samplePath.find ("yw-crash169g-fl25") != std::string::npos);
         CHECK (natives142::renderChannel (*c, fl, 60) > 1.0e-3);
     }
     (void) data;
@@ -159,7 +159,7 @@ TEST (crash169g_transistor_bass_from_the_plugin_list_with_fl_2025)
 TEST (crash169g_other_engine_dlls_of_fl_2025)
 {
     using namespace crash169g;
-    using namespace lynx;
+    using namespace yw;
     if (const auto slayer25 = fl25 ("1542.dll"); ! slayer25.empty())
     {
         CHECK (slayerDllUsable (slayer25));
@@ -227,7 +227,7 @@ TEST (crash169g_message_thread_owned_cancel)
             runQueue();
         });
         std::thread worker ([&] {
-            lynx::MessageThreadOwned<Job> slot (post, [&] { return stop.load(); });
+            yw::MessageThreadOwned<Job> slot (post, [&] { return stop.load(); });
             auto* j = slot.create ([&] { return std::make_unique<Job> (live); });
             CHECK (j != nullptr && live == 1);
             slot.release();
@@ -244,7 +244,7 @@ TEST (crash169g_message_thread_owned_cancel)
     stop = false;
     const auto started = std::chrono::steady_clock::now();
     std::thread worker ([&] {
-        lynx::MessageThreadOwned<Job> slot (post, [&] { return stop.load(); });
+        yw::MessageThreadOwned<Job> slot (post, [&] { return stop.load(); });
         auto* j = slot.create ([&] { return std::make_unique<Job> (live); });
         CHECK (j == nullptr);
     }); // (its destructor queues the deletion and does not wait either)
@@ -260,7 +260,7 @@ TEST (crash169g_message_thread_owned_cancel)
     stop = false;
     std::atomic<bool> made { false };
     std::thread worker2 ([&] {
-        lynx::MessageThreadOwned<Job> slot (post, [&] { return stop.load(); });
+        yw::MessageThreadOwned<Job> slot (post, [&] { return stop.load(); });
         std::thread helper ([&] {
             while (! made)
             {

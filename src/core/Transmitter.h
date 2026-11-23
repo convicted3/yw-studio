@@ -10,7 +10,7 @@
 // through a tilt filter and one section effect (Saturation, Bounce, Diffusion, Blur, Delay or Off), then
 // output = transient · level · on + sustain · level · on.
 //
-// LYNX's parameters (0…1 each) are FL's 42 controls over their ranges: [0…32] raw / 10000, [33…41] the switches and
+// YW's parameters (0…1 each) are FL's 42 controls over their ranges: [0…32] raw / 10000, [33…41] the switches and
 // selectors (raw / their maximum). See controlRange().
 //
 // No JUCE here (tests/FlTrans165Tests.inc).
@@ -25,12 +25,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
-} // namespace lynx
+} // namespace yw
 
-namespace lynx::transmitter
+namespace yw::transmitter
 {
 constexpr int count = 42;
 
@@ -49,8 +49,8 @@ enum Section : int { saturation = 0, bounce, diffusion, blur, delay, off };
 
 struct Range { int lo, hi; };
 Range controlRange (int k);               // FL's raw control range
-int rawFromParam (int k, float v);        // LYNX 0…1 → FL raw (rounded)
-float paramFromRaw (int k, int raw);      // FL raw → LYNX 0…1
+int rawFromParam (int k, float v);        // YW 0…1 → FL raw (rounded)
+float paramFromRaw (int k, int raw);      // FL raw → YW 0…1
 float engineValue (int k, int raw);       // FL's front-end mapping: raw control → the engine's value (ms, dB, …)
 std::array<float, count> defaults();      // FL's Default preset
 std::string paramText (int k, float v);   // FL's value texts
@@ -79,7 +79,7 @@ public:
     void setTempo (double bpm);
     void setRaw (int k, int raw);          // one FL control (raw value)
     void setValue (int k, float value);    // one engine value (FL's engine units: ms, dB, …)
-    void setParams (const float* params);  // LYNX 0…1 parameters (all 42)
+    void setParams (const float* params);  // YW 0…1 parameters (all 42)
     // in-place capable; detection = the input, or with `sidechain` the side input (scL / scR, nullptr = silent)
     void process (const float* inL, const float* inR, float* outL, float* outR, int n, bool sidechain = false,
                   const float* scL = nullptr, const float* scR = nullptr);
@@ -112,4 +112,4 @@ const EnvelopeView* envelopeOf (const Effect* effect); // nullptr: not a running
 
 // `params` (may be null): the slot's parameters, so the look-ahead latency is known before the first block (#113)
 std::unique_ptr<Effect> make (const EffectParams* params = nullptr);
-} // namespace lynx::transmitter
+} // namespace yw::transmitter

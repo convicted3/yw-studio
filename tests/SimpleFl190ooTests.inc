@@ -12,39 +12,39 @@ namespace simplefl190oo
 // An FL-like project: channels 0 KICK and 1 CLAP on insert 2 (shared), 2 SNARE on insert 3, 3 RIDE on the Master (0),
 // 4 TOM on insert 4. Track 0 plays KICK, 1 plays CLAP, 2 plays SNARE, 3 a pattern with SNARE and TOM (two inserts),
 // 4 plays RIDE (the Master), 5 is empty; no track mode anywhere (FL's default tracks).
-inline lynx::Song song()
+inline yw::Song song()
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer();
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer();
     const int routes[] = { 2, 2, 3, 0, 4 };
     s.channels.resize (5);
     for (int c = 0; c < 5; ++c)
     {
-        s.channels[(std::size_t) c].instrument = lynx::InstrumentKind::synth;
+        s.channels[(std::size_t) c].instrument = yw::InstrumentKind::synth;
         s.channels[(std::size_t) c].mixerTrack = routes[c];
     }
     s.playlistTracks.resize (6);
     const auto pattern = [&s] (std::initializer_list<int> channels) {
-        lynx::Pattern p;
+        yw::Pattern p;
         int at = 0;
         for (const auto ch : channels)
         {
-            lynx::Note n;
+            yw::Note n;
             n.channel = ch;
-            n.start = (std::int64_t) (at++) * lynx::ppq;
-            n.length = lynx::ppq / 2;
+            n.start = (std::int64_t) (at++) * yw::ppq;
+            n.length = yw::ppq / 2;
             p.notes.push_back (n);
         }
         s.patterns.push_back (p);
         return (int) s.patterns.size() - 1;
     };
     const auto place = [&s] (int track, int p) {
-        lynx::Clip c;
-        c.kind = lynx::ClipKind::pattern;
+        yw::Clip c;
+        c.kind = yw::ClipKind::pattern;
         c.pattern = p;
         c.track = track;
         c.start = 0;
-        c.length = 4 * lynx::ppq;
+        c.length = 4 * yw::ppq;
         s.playlist.push_back (c);
     };
     place (0, pattern ({ 0 }));
@@ -58,7 +58,7 @@ inline lynx::Song song()
 
 TEST (simplefl190oo_fl_track_gets_the_session_mixer_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = simplefl190oo::song();
     const auto all = simplehdr::headerTargets (s);
     CHECK (all.size() >= 6);
@@ -74,7 +74,7 @@ TEST (simplefl190oo_fl_track_gets_the_session_mixer_insert)
 
 TEST (simplefl190oo_shared_insert_mute_solo_volume)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = simplefl190oo::song();
     const auto kick = simplehdr::headerTarget (s, 0), clap = simplehdr::headerTarget (s, 1);
     // KICK and CLAP play through insert 2: both headers act on it and each names the other
@@ -114,7 +114,7 @@ TEST (simplefl190oo_shared_insert_mute_solo_volume)
 
 TEST (simplefl190oo_two_inserts_and_the_master_keep_only_m)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = simplefl190oo::song();
     // track 3: SNARE (3) and TOM (4) — several inserts: nothing chosen, as the Session mixer
     const auto both = simplehdr::headerTarget (s, 3);
@@ -141,7 +141,7 @@ TEST (simplefl190oo_two_inserts_and_the_master_keep_only_m)
 
 TEST (simplefl190oo_simple_tracks_keep_their_own_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer();
     simpletracks::Request q;

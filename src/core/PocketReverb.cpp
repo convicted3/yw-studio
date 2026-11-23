@@ -27,7 +27,7 @@
 
 #include "core/Denormals.h"
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -795,4 +795,4 @@ std::string reverbParamText (int param, float v)
         default: return percent (v);
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

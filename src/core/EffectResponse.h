@@ -11,7 +11,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::fxresponse
+namespace yw::fxresponse
 {
 // Magnitude (dB) at each frequency of `hz`, from the impulse response of a fresh instance. The engine first runs on
 // silence for `settle` samples so its parameter glides end; the impulse is 0.25 (well inside every engine's linear
@@ -100,4 +100,4 @@ inline std::vector<float> transferCycle (const EffectSlot& slot, int points = 51
         out[(std::size_t) p] = last[(std::size_t) std::min (period - 1, p * period / points)];
     return out;
 }
-} // namespace lynx::fxresponse
+} // namespace yw::fxresponse

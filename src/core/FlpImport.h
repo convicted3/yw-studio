@@ -9,7 +9,7 @@
 #include "core/Song.h"
 #include "flp/Flp.h"
 
-namespace lynx
+namespace yw
 {
 // Folders that the variables FL writes into sample paths point to.
 struct FlPathRoots
@@ -79,12 +79,12 @@ struct FlpImportOptions
 // by name. Patterns are rescaled to our PPQ. Plugins not yet.
 Song importFlp (const flp::Project& project, const FlpImportOptions& options = {});
 
-// Round 190ov: the scale of an imported target link (Automation::Link::scale) for FL's value -> LYNX's `map` (the
+// Round 190ov: the scale of an imported target link (Automation::Link::scale) for FL's value -> YW's `map` (the
 // control's own scale), sampled evenly over 0..1: empty when the map leaves every value alone, else the fewest points
 // (2, 3, 5 ... 1025) whose straight lines give the map within 1e-6 at 1025 sample points.
 std::vector<float> flLinkScale (const std::function<float (float)>& map);
 
-// An FL mixer track preset (.fst, flp::parseMixerPreset) as a LYNX mixer track: its effects (converted as an .flp
+// An FL mixer track preset (.fst, flp::parseMixerPreset) as a YW mixer track: its effects (converted as an .flp
 // import does), level, pan, stereo separation, EQ, phase/swap, name ("" = the preset has none) and colour (0 = none).
 // nullopt if the bytes are not a mixer preset.
 std::optional<MixerTrack> mixerTrackFromFlPreset (std::span<const std::uint8_t> fileBytes, const FlpImportOptions& options = {});
@@ -93,7 +93,7 @@ std::optional<MixerTrack> mixerTrackFromFlPreset (std::span<const std::uint8_t> 
 // in this machine's time zone; 0 for no date / out of range (REA round 167g: event 0xED)
 double flDateTimeToUnix (double days);
 
-// FL Layer channel options (.flp 0x90, REA_rodada164a §1) into LYNX's Layer settings
+// FL Layer channel options (.flp 0x90, REA_rodada164a §1) into YW's Layer settings
 void applyFlLayerFlags (int flags, LayerSettings& layer);
 InstrumentKind guessInstrument (const std::string& channelName, flp::ChannelType type);
 
@@ -152,4 +152,4 @@ std::vector<std::uint8_t> wrappedFruityState (const ForeignPlugin& plugin);
 
 // Our target for an FL controlID (channel/mixer). `channelMap` = FL channel -> ours.
 AutomationTarget automationTargetFor (flp::ControlId id, const std::map<int, int>& channelMap, int mixerTracks);
-} // namespace lynx
+} // namespace yw

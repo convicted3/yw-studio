@@ -1,11 +1,11 @@
 #pragma once
 
-// Audio editor tools (round 165l): LYNX's versions of FL Edison's tool forms — Amp (left / right / panning law /
+// Audio editor tools (round 165l): YW's versions of FL Edison's tool forms — Amp (left / right / panning law /
 // stereo separation), Equalize, Blur, Convolution reverb, Clean up (denoise with a noise profile, declipper,
 // declicker), Vocal denoise, Match spectrum, Claw machine, Drum(loop) stretch, Loop tuner, the noise gating and
 // region batch tools, lossy normalize, noise generation and the point-envelope tools (Scale levels, Decimate,
 // Filter, Smooth up, Create sequence) with the amp envelopes drawn over the audio. The tool set and the parameters
-// follow FL's forms (docs/analise/REA_rodada165l.md); every algorithm here is LYNX's own. JUCE-free; the tools run
+// follow FL's forms (docs/analise/REA_rodada165l.md); every algorithm here is YW's own. JUCE-free; the tools run
 // off the audio thread (the editor runs them on a worker with `Progress`); tests in tests/AudioEditToolsTests.inc.
 
 #include <atomic>
@@ -14,7 +14,7 @@
 
 #include "core/AudioEdit.h"
 
-namespace lynx::audioedit
+namespace yw::audioedit
 {
 // Progress and cancellation of a long tool (written by the tool, read by the UI; `cancel` set by the UI).
 struct Progress
@@ -170,7 +170,7 @@ struct ReverbSettings
     bool useOutside = true;
     double dry = 1.0, wet = 0.25; // 0..1 (FL: 256 = 1, wet default 64)
 };
-// The impulse made from the drawn shape (stereo noise, LYNX's own generator, normalised).
+// The impulse made from the drawn shape (stereo noise, YW's own generator, normalised).
 Audio makeReverbImpulse (const Envelope& shape, double seconds, double sampleRate, std::uint32_t seed = 1);
 void convolutionReverb (Document& doc, Range r, const ReverbSettings& s, Progress* progress = nullptr);
 
@@ -209,7 +209,7 @@ int declick (Audio& audio, Range r, double sensitivity);
 
 // Vocal denoise / isolator: mix -1 (only the noise) .. 0 .. 1 (only the voice).
 void vocalDenoise (Document& doc, Range r, double mix, Progress* progress = nullptr);
-// Deverb (round 167c; LYNX's own DSP, FL's is a downloaded neural module): removes a room's late reverberation.
+// Deverb (round 167c; YW's own DSP, FL's is a downloaded neural module): removes a room's late reverberation.
 // voice: the "Voice" profile (stronger, for speech / singing); blockSize 1..5 (FL's choices: the analysis block, 512 ..
 // 8192 frames at 44.1 kHz); mix as FL's wheel: -1 the original, 0 half and half, 1 only the processed sound (which,
 // as in FL, gets the original's peak level back).
@@ -284,4 +284,4 @@ void tuneLoop (Document& doc, Range r, const LoopTuneSettings& s, Progress* prog
 // --- shared DSP --------------------------------------------------------------------------------------------------
 // In-place complex FFT of a power-of-two length (inverse without the 1/n scale).
 void fftInPlace (std::vector<double>& re, std::vector<double>& im, bool inverse);
-} // namespace lynx::audioedit
+} // namespace yw::audioedit

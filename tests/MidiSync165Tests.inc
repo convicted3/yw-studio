@@ -3,7 +3,7 @@
 
 namespace midisync165
 {
-using namespace lynx::midisync;
+using namespace yw::midisync;
 
 // runs the generator over `blocks` blocks of `n` samples at `bpm`, starting at `startTicks`
 struct Run
@@ -134,7 +134,7 @@ TEST (midisync165_loop_wrap_detected_without_a_flag)
 
 TEST (midisync165_mtc_timecode_labels_drop_frame)
 {
-    using namespace lynx::midisync;
+    using namespace yw::midisync;
     const auto df = mtcRate (SyncType::mtc2997Drop);
     CHECK (df.code == 2 && df.drop && df.nominal == 30);
     // the first minute has every label; minute 1 starts at 00:01:00;02
@@ -212,7 +212,7 @@ TEST (midisync165_mtc_quarter_frames_and_full_frame)
 
 TEST (midisync165_receiver_tempo_from_jittery_clock)
 {
-    using namespace lynx::midisync;
+    using namespace yw::midisync;
     std::mt19937 random (165);
     std::uniform_real_distribution<double> jitter (-0.001, 0.001); // ±1 ms per message (a USB MIDI interface)
     for (const auto bpm : { 60.0, 98.5, 120.0, 174.0, 240.0 })
@@ -260,7 +260,7 @@ TEST (midisync165_receiver_tempo_from_jittery_clock)
 
 TEST (midisync165_receiver_transport_commands_and_position)
 {
-    using namespace lynx::midisync;
+    using namespace yw::midisync;
     Receiver r;
     const std::uint8_t clock = 0xf8, start = 0xfa, stop = 0xfc, resume = 0xfb;
     const std::uint8_t spp[3] { 0xf2, 0x10, 0x01 }; // 16 + 128 = 144 sixteenths = 36 beats
@@ -320,8 +320,8 @@ TEST (midisync165_generator_feeds_receiver_loopback)
 
 TEST (midisync165_settings_round_trip)
 {
-    lynx::prefs::MidiPrefs p;
-    lynx::prefs::MidiOutputPrefs o;
+    yw::prefs::MidiPrefs p;
+    yw::prefs::MidiOutputPrefs o;
     o.name = "Volca | Sample";
     o.masterSync = true;
     o.syncType = "mtc2997drop";
@@ -330,16 +330,16 @@ TEST (midisync165_settings_round_trip)
     p.setOutput (o);
     p.clockInput = "TR-8S";
     p.clockOffsetMs = 7;
-    const auto back = lynx::prefs::MidiPrefs::fromText (p.toText());
+    const auto back = yw::prefs::MidiPrefs::fromText (p.toText());
     CHECK (back == p);
     CHECK (back.output ("Volca | Sample").syncType == "mtc2997drop");
     CHECK (! back.output ("other").masterSync && back.output ("other").syncType == "clock");
     // defaults are not stored
-    lynx::prefs::MidiOutputPrefs plain;
+    yw::prefs::MidiOutputPrefs plain;
     plain.name = "x";
     p.setOutput (plain);
     CHECK (p.outputs.size() == 1);
-    CHECK (lynx::midisync::syncTypeFromKey ("bogus") == lynx::midisync::SyncType::midiClock);
-    for (int t = 0; t < lynx::midisync::syncTypeCount; ++t)
-        CHECK (lynx::midisync::syncTypeFromKey (lynx::midisync::syncTypeKey ((lynx::midisync::SyncType) t)) == (lynx::midisync::SyncType) t);
+    CHECK (yw::midisync::syncTypeFromKey ("bogus") == yw::midisync::SyncType::midiClock);
+    for (int t = 0; t < yw::midisync::syncTypeCount; ++t)
+        CHECK (yw::midisync::syncTypeFromKey (yw::midisync::syncTypeKey ((yw::midisync::SyncType) t)) == (yw::midisync::SyncType) t);
 }

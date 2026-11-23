@@ -17,7 +17,7 @@
 
 #include "core/SearchQuery.h"
 
-namespace lynx::search
+namespace yw::search
 {
 // One folder's direct contents, as the file system reported them.
 struct FolderListing
@@ -136,4 +136,4 @@ private:
     static std::string join (const std::string& folder, const std::string& name, char separator);
     void drop (const std::string& folder, char separator);
 };
-} // namespace lynx::search
+} // namespace yw::search

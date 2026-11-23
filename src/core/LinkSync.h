@@ -1,11 +1,11 @@
 #pragma once
 
-// Ableton Link support (round 190gl): the rules that tie LYNX's transport to a Link session, without Link itself (the
+// Ableton Link support (round 190gl): the rules that tie YW's transport to a Link session, without Link itself (the
 // network part is engine/AbletonLink.cpp, around Ableton's Link library in third_party/link). Pure functions and one
 // small state machine, so the core tests check them; the audio thread runs them (no allocation, no locks).
 //
 // What the session-style DAW does (its manual, "Synchronizing with Link, Tempo Follower and MIDI", Live 12; shots in
-// /mnt/e/lynx-work/link190gl/ev):
+// /mnt/e/yw-work/link190gl/ev):
 //   - the first peer in a session sets its tempo; any peer may change it later and every peer follows;
 //   - beats and phase are aligned to the session over a quantum = the set's global launch quantisation;
 //   - with another peer connected, Play waits until the session reaches the phase the song starts at (the position
@@ -13,14 +13,14 @@
 //   - "Start Stop Sync" shares Play / Stop with the peers that have it on;
 //   - a tempo change made by another peer overrides the set's tempo automation.
 //
-// LYNX's tempo rules (decided in round 190gl; the reference DAW's choice where it states one):
-//   1. while Link is on, LYNX plays the session's tempo;
-//   2. a tempo LYNX sets itself goes to the session: an edit of the project tempo (the tempo field, tap tempo, a scene
-//      tempo, a MIDI-mapped tempo control), or LYNX's own tempo automation / FL tempo events while the song plays;
-//   3. a tempo change made by another peer overrides LYNX's tempo automation until playback starts again (as the
+// YW's tempo rules (decided in round 190gl; the reference DAW's choice where it states one):
+//   1. while Link is on, YW plays the session's tempo;
+//   2. a tempo YW sets itself goes to the session: an edit of the project tempo (the tempo field, tap tempo, a scene
+//      tempo, a MIDI-mapped tempo control), or YW's own tempo automation / FL tempo events while the song plays;
+//   3. a tempo change made by another peer overrides YW's tempo automation until playback starts again (as the
 //      reference DAW: "Tempo changes made by a Link session participant will override tempo automation");
-//   4. an external MIDI clock LYNX follows wins: its tempo goes to the session (the reference DAW does the same with
-//      its external sync), and LYNX does not move its position to the session's phase (the clock owns it).
+//   4. an external MIDI clock YW follows wins: its tempo goes to the session (the reference DAW does the same with
+//      its external sync), and YW does not move its position to the session's phase (the clock owns it).
 
 #include <algorithm>
 #include <cmath>
@@ -28,7 +28,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::linksync
+namespace yw::linksync
 {
 // The Link quantum in beats (quarter notes) for the clip grid's global launch quantisation: one bar = beatsPerBar
 // beats. "None" and quantisations under one beat give 1 beat.
@@ -78,7 +78,7 @@ inline double phase (double beats, double quantum) noexcept
     return p < 0.0 ? p + quantum : (p >= quantum ? 0.0 : p);
 }
 
-// How far LYNX's clock is behind the session (beats; negative = ahead), taken on the phase only and wrapped into
+// How far YW's clock is behind the session (beats; negative = ahead), taken on the phase only and wrapped into
 // (-quantum / 2, quantum / 2]: the shortest way to the session's phase.
 inline double phaseError (double sessionBeats, double localBeats, double quantum) noexcept
 {
@@ -106,7 +106,7 @@ inline double nextBeatWithPhase (double fromBeat, double targetPhase, double qua
     return fromBeat + d;
 }
 
-// How LYNX keeps its running clock on the session while it plays.
+// How YW keeps its running clock on the session while it plays.
 struct FollowLaw
 {
     double deadBand = 0.0005;    // beats: closer than this, the session tempo as it is
@@ -121,7 +121,7 @@ struct Follow
     double jump = 0.0;  // != 0: move the clock by this many beats first (then play at the session tempo)
 };
 
-// `error` = phaseError (session, local): positive = LYNX is behind.
+// `error` = phaseError (session, local): positive = YW is behind.
 inline Follow follow (double sessionBpm, double error, const FollowLaw& law = {}) noexcept
 {
     Follow f;
@@ -148,13 +148,13 @@ inline bool sameTempo (double a, double b) noexcept
     return std::abs (60.0e6 / a - 60.0e6 / b) <= 1.0;
 }
 
-// The tempo as shown and kept by LYNX: to a thousandth of a BPM (109.99991 from the network shows as 110.000).
+// The tempo as shown and kept by YW: to a thousandth of a BPM (109.99991 from the network shows as 110.000).
 inline double displayTempo (double bpm) noexcept
 {
     return std::round (bpm * 1000.0) / 1000.0;
 }
 
-// Tempo arbitration between LYNX's own tempo and the session's (rules 1-4 above). Audio thread, once per block.
+// Tempo arbitration between YW's own tempo and the session's (rules 1-4 above). Audio thread, once per block.
 class TempoArbiter
 {
 public:
@@ -166,12 +166,12 @@ public:
         bool tempoMap = false;      // the song has tempo automation or tempo events
         bool playing = false;
         bool started = false;       // playback started at this block
-        double externalBpm = 0.0;   // > 0: an external MIDI clock LYNX follows (rule 4)
+        double externalBpm = 0.0;   // > 0: an external MIDI clock YW follows (rule 4)
     };
     struct Output
     {
         double propose = 0.0;       // > 0: commit this tempo to the session
-        double play = 120.0;        // the tempo LYNX plays at (before the phase nudge)
+        double play = 120.0;        // the tempo YW plays at (before the phase nudge)
     };
 
     // Link was switched on: the session starts from (or is joined with) these values
@@ -219,7 +219,7 @@ public:
     }
 
     bool automationOverridden() const noexcept { return overridden; }
-    // a peer changed the tempo after LYNX last set it (the project takes that tempo when Link is switched off)
+    // a peer changed the tempo after YW last set it (the project takes that tempo when Link is switched off)
     bool changedByPeer() const noexcept { return remoteChanged; }
 
 private:
@@ -236,4 +236,4 @@ inline std::string toggleText (bool enabled, int peers)
         return "Link";
     return std::to_string (std::max (0, peers)) + (peers == 1 ? " Link" : " Links");
 }
-} // namespace lynx::linksync
+} // namespace yw::linksync

@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-namespace lynx::drumranges
+namespace yw::drumranges
 {
 struct Range
 {
@@ -108,4 +108,4 @@ constexpr Range sakura (int i)
         return ints (0, 9);
     return (i >= 0 && i < 78) || i == 113 ? unit : none;
 }
-} // namespace lynx::drumranges
+} // namespace yw::drumranges

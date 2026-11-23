@@ -10,7 +10,7 @@
 #include <complex>
 #include <cstring>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -443,7 +443,7 @@ bool operatorSpectrum (const Unit& op, std::array<float, SynthSettings::spectrum
             const auto z = pi * h / (cut - 1);
             c *= std::sin (z) / z;
         }
-        // W = Σ A·sin(2π(hθ + φ)): A = 2|X|/N; φ = arg(X)/2π + ¼; LYNX's "spectral" is scaled like the saw (×π/2)
+        // W = Σ A·sin(2π(hθ + φ)): A = 2|X|/N; φ = arg(X)/2π + ¼; YW's "spectral" is scaled like the saw (×π/2)
         amplitude[(std::size_t) h - 1] = (float) (2.0 * std::abs (c) / size * pi / 2.0);
         const auto ph = std::arg (c) / (2.0 * pi) + 0.25;
         phase[(std::size_t) h - 1] = (float) (ph - std::floor (ph));
@@ -847,22 +847,22 @@ bool synthFromSytrus (const std::vector<std::uint8_t>& state, double bpm, SynthS
             continue;
 
         const auto kind = std::clamp (unit.filterKind, 0, 12);
-        int lynxType = 0;
+        int ywType = 0;
         switch (kind)
         {
-            case 1: case 3: case 11: lynxType = 0; break;
-            case 2: case 6: lynxType = 2; break;
-            case 4: lynxType = 1; break;
-            case 5: lynxType = 3; break;
+            case 1: case 3: case 11: ywType = 0; break;
+            case 2: case 6: ywType = 2; break;
+            case 4: ywType = 1; break;
+            case 5: ywType = 3; break;
             case 0:
             {
                 const auto low = unit.p[4], band = unit.p[5], high = unit.p[6];
-                lynxType = low >= band && low >= high ? 0 : band >= high ? 1 : 2;
+                ywType = low >= band && low >= high ? 0 : band >= high ? 1 : 2;
                 break;
             }
-            default: lynxType = -1; break; // all pass, shelf, peak, phaser: no filter
+            default: ywType = -1; break; // all pass, shelf, peak, phaser: no filter
         }
-        if (lynxType < 0)
+        if (ywType < 0)
             break;
 
         const auto c = std::clamp (unit.p[2], 0, 256) / 256.0;
@@ -878,7 +878,7 @@ bool synthFromSytrus (const std::vector<std::uint8_t>& state, double bpm, SynthS
             q = kind <= 2 ? 1.0 + 0.049 * (std::pow (1001.0, r) - 1.0) : 0.1 + 0.02495 * (std::pow (2001.0, r) - 1.0);
             out.resonance = (float) std::clamp ((q - 0.707) / 8.0, 0.0, 0.95);
         }
-        out.filterType = lynxType;
+        out.filterType = ywType;
 
         const auto& cutArt = unit.art[2];
         const auto depth = std::clamp (unit.p[1], 0, 256) / 128.0;
@@ -891,7 +891,7 @@ bool synthFromSytrus (const std::vector<std::uint8_t>& state, double bpm, SynthS
             for (const auto& p : cutArt.env.points)
                 peak = std::max (peak, p.second);
             auto at = [&] (double level) { return cutoffHz (kind, c + depth * (level - 0.5)); };
-            const auto susLevel = adsr.s * peak; // (LYNX starts from `base`: an envelope that closes below its start starts from the bottom)
+            const auto susLevel = adsr.s * peak; // (YW starts from `base`: an envelope that closes below its start starts from the bottom)
             const auto base = at (std::min (start, susLevel));
             const auto top = at (peak);
             const auto susHz = at (susLevel);
@@ -922,7 +922,7 @@ bool synthFromSytrus (const std::vector<std::uint8_t>& state, double bpm, SynthS
             const auto adsr = adsrOf (modVol.env, modVol.knobs, timeScale (modVol.env));
             if (adsr.s < 0.98)
             {
-                out.fmDecay = (float) std::clamp (adsr.d * 2.0, 0.01, 20.0); // (LYNX's decay goes down to −60 dB)
+                out.fmDecay = (float) std::clamp (adsr.d * 2.0, 0.01, 20.0); // (YW's decay goes down to −60 dB)
                 out.fmSustain = (float) adsr.s;
             }
         }
@@ -1239,7 +1239,7 @@ bool synthFromHarmor (const std::vector<std::uint8_t>& state, SynthSettings& syn
     }
 
     // volume envelope (articulator 1). When off, FL applies no envelope at all (constant level,
-    // REA_rodada18 §1.1); the A 2 ms / R 0.1 s below is just LYNX's declick. When on, the level used is the
+    // REA_rodada18 §1.1); the A 2 ms / R 0.1 s below is just YW's declick. When on, the level used is the
     // square of the articulator output: sustain S² (attack/decay keep their times).
     out.attack = 0.002f;
     out.decay = 0.0f;
@@ -1264,26 +1264,26 @@ bool synthFromHarmor (const std::vector<std::uint8_t>& state, SynthSettings& syn
     if (which >= 0)
     {
         const auto type = main.filterType[which];
-        int lynxType = -1;
+        int ywType = -1;
         switch (type)
         {
-            case 0: case 4: case 8: case 9: case 10: case 11: case 12: case 13: lynxType = 0; break;
-            case 1: case 5: case 16: lynxType = 1; break;
-            case 2: case 6: lynxType = 3; break;
-            case 3: case 7: lynxType = 2; break;
+            case 0: case 4: case 8: case 9: case 10: case 11: case 12: case 13: ywType = 0; break;
+            case 1: case 5: case 16: ywType = 1; break;
+            case 2: case 6: ywType = 3; break;
+            case 3: case 7: ywType = 2; break;
             default: break;
         }
-        if (lynxType >= 0)
+        if (ywType >= 0)
         {
             const auto freq = std::clamp (which == 0 ? p[52] : p[64], 0, 8192);
             const auto lo = std::log2 (73.416), hi = std::log2 (17739.7);
-            out.filterType = lynxType;
+            out.filterType = ywType;
             out.cutoff = (float) std::clamp (std::exp2 (lo + freq / 8192.0 * (hi - lo)), 20.0, 20000.0);
             out.keyTrack = (float) std::clamp ((which == 0 ? p[55] : p[67]) / 1000.0, -2.0, 2.0);
 
             // resonance (REA_rodada25): per partial FL multiplies by 2^(r·M(f)·T(pos)), r = p57/1000 (p69), T = the
             // type's table (peak at f_b = fc·2^(p60/1200)), M = the "resonance mask" curve squared over 32.7 Hz…16.7 kHz.
-            // LYNX's SVF gets the same peak over the pass-band: Δ = 6.0206·r·M(f_b)·(T_peak − T_below) dB →
+            // YW's SVF gets the same peak over the pass-band: Δ = 6.0206·r·M(f_b)·(T_peak − T_below) dB →
             // Q = √(G²(1 + √(1 − 1/G²))/2), G = 10^(Δ/20) (approximation: no offset, width p59 or skirts)
             const auto resAmount = std::clamp (which == 0 ? p[57] : p[69], 0, 1000) / 1000.0;
             const auto code = main.resonanceType[which];
@@ -1347,7 +1347,7 @@ bool synthFromHarmor (const std::vector<std::uint8_t>& state, SynthSettings& syn
     }
 
     // unison (REA_rodada24 §3): voice k detune = d_k·s cents (s = (41^(p38/256) − 1)·1.875), linear pan
-    // (2k/(n − 1) − 1)·pan, per-voice gain 1 − (3^(1 − 1/n) − 1)/2. LYNX has up to 3 oscillators: with n ≤ 3 the
+    // (2k/(n − 1) − 1)·pan, per-voice gain 1 − (3^(1 − 1/n) − 1)/2. YW has up to 3 oscillators: with n ≤ 3 the
     // voices are exact; with more, the two outer ones and the middle one, with the gain compensating the energy of the missing ones
     if (const auto order = std::clamp (p[34], 1, 9); order >= 2)
     {
@@ -1416,10 +1416,10 @@ bool synthFromHarmor (const std::vector<std::uint8_t>& state, SynthSettings& syn
 
 namespace
 {
-constexpr std::uint32_t lynxEnvelopeMagic = 0x4345594Cu; // "LYEC"
+constexpr std::uint32_t ywEnvelopeMagic = 0x4345594Cu; // "LYEC"
 
 // an FL point curve (Δx per point) as accumulated points: FL's tension belongs to the segment ending at a point,
-// LYNX's to the segment starting at it (as the automation clips' import); a "hold" segment becomes a step
+// YW's to the segment starting at it (as the automation clips' import); a "hold" segment becomes a step
 ControllerCurve curveFromFl (const Envelope& e, int* decayOut = nullptr)
 {
     ControllerCurve c;
@@ -1484,10 +1484,10 @@ bool readCurve (Reader& r, ControllerCurve& c, int maxX)
     return ! r.failed;
 }
 
-std::optional<EnvelopeControllerData> parseLynxEnvelopeController (const std::vector<std::uint8_t>& state)
+std::optional<EnvelopeControllerData> parseYwEnvelopeController (const std::vector<std::uint8_t>& state)
 {
     Reader r { state.data(), state.size() };
-    if ((std::uint32_t) r.i32() != lynxEnvelopeMagic)
+    if ((std::uint32_t) r.i32() != ywEnvelopeMagic)
         return std::nullopt;
     const auto version = r.i32();
     if (version < 1 || version > 2)
@@ -1646,7 +1646,7 @@ std::vector<std::uint8_t> writeEnvelopeController (const EnvelopeControllerData&
     auto put = [&] (const void* p, std::size_t n) { out.insert (out.end(), (const std::uint8_t*) p, (const std::uint8_t*) p + n); };
     auto i32 = [&] (std::int32_t v) { put (&v, 4); };
     auto f32 = [&] (float v) { put (&v, 4); };
-    i32 ((std::int32_t) lynxEnvelopeMagic);
+    i32 ((std::int32_t) ywEnvelopeMagic);
     i32 (2);
     f32 (data.modX);
     f32 (data.modY);
@@ -1702,7 +1702,7 @@ EnvelopeControllerData defaultEnvelopeController()
 
 std::optional<EnvelopeControllerData> parseEnvelopeController (const std::vector<std::uint8_t>& state)
 {
-    if (auto mine = parseLynxEnvelopeController (state))
+    if (auto mine = parseYwEnvelopeController (state))
         return mine;
     Reader r { state.data(), state.size() };
     auto version = (std::uint32_t) r.i32();
@@ -2107,4 +2107,4 @@ std::optional<LovePhilterState> parseLovePhilter (const std::vector<std::uint8_t
         return std::nullopt;
     return out;
 }
-} // namespace lynx
+} // namespace yw

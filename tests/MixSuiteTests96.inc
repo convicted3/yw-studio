@@ -1,14 +1,14 @@
-// REA_rodada96: LYNX's own mixing suite (core/MixSuite.h) — measurable responses: EQ curves, gain-reduction curves,
+// REA_rodada96: YW's own mixing suite (core/MixSuite.h) — measurable responses: EQ curves, gain-reduction curves,
 // release behaviour, THD and aliasing, latency.
 
 namespace mixsuite96
 {
-using lynx::EffectKind;
-namespace ms = lynx::mixsuite;
+using yw::EffectKind;
+namespace ms = yw::mixsuite;
 
-inline lynx::EffectParams defaults (EffectKind kind)
+inline yw::EffectParams defaults (EffectKind kind)
 {
-    return lynx::makeEffectSlot (kind).params;
+    return yw::makeEffectSlot (kind).params;
 }
 
 inline std::vector<float> sine (double hz, double amp, int n, double sr = 44100.0)
@@ -20,10 +20,10 @@ inline std::vector<float> sine (double hz, double amp, int n, double sr = 44100.
 }
 
 // runs the effect on a dual-mono copy of `in`; returns the left output
-inline std::vector<float> run (EffectKind kind, const lynx::EffectParams& p, std::vector<float> in, double sr = 44100.0, int block = 512,
-                               std::unique_ptr<lynx::Effect>* keep = nullptr)
+inline std::vector<float> run (EffectKind kind, const yw::EffectParams& p, std::vector<float> in, double sr = 44100.0, int block = 512,
+                               std::unique_ptr<yw::Effect>* keep = nullptr)
 {
-    auto fx = lynx::makeEffect (kind);
+    auto fx = yw::makeEffect (kind);
     fx->prepare (sr);
     auto r = in;
     for (std::size_t off = 0; off < in.size(); off += (std::size_t) block)
@@ -89,7 +89,7 @@ TEST (mixsuite96_oversampler_latency_and_identity)
 TEST (mixsuite96_ridge_eq_curves)
 {
     using namespace mixsuite96;
-    using namespace lynx::mixsuite::ridge;
+    using namespace yw::mixsuite::ridge;
     auto p = defaults (EffectKind::ridgeStrip);
     CHECK (std::abs (responseDb (p, 44100.0, 1000.0)) < 0.01);
 
@@ -136,7 +136,7 @@ TEST (mixsuite96_ridge_eq_curves)
 TEST (mixsuite96_ridge_dynamics_curves)
 {
     using namespace mixsuite96;
-    using namespace lynx::mixsuite::ridge;
+    using namespace yw::mixsuite::ridge;
     auto p = defaults (EffectKind::ridgeStrip);
     p[compThreshold] = 0.5f;                         // −20 dBFS
     p[compRatio] = (float) std::sqrt (3.0 / 19.0);   // 4:1
@@ -177,7 +177,7 @@ TEST (mixsuite96_ridge_dynamics_curves)
     p = defaults (EffectKind::ridgeStrip);
     p[compThreshold] = 0.5f;
     p[compRatio] = 1.0f;
-    std::unique_ptr<lynx::Effect> fx;
+    std::unique_ptr<yw::Effect> fx;
     run (EffectKind::ridgeStrip, p, sine (1000.0, 1.0, 22050), 44100.0, 512, &fx);
     std::printf ("  meter: GR %.1f dB\n", fx->controlOutput (0) * 30.0f);
     CHECK (std::abs (fx->controlOutput (0) * 30.0f - 20.0f) < 1.5f);
@@ -186,7 +186,7 @@ TEST (mixsuite96_ridge_dynamics_curves)
 TEST (mixsuite96_glow_leveler)
 {
     using namespace mixsuite96;
-    using namespace lynx::mixsuite::glow;
+    using namespace yw::mixsuite::glow;
     // static curve: compress is gentle (about 2:1 to 3:1 at the top), limit is much firmer
     auto slope = [] (float limit) {
         auto p = defaults (EffectKind::glowLeveler);
@@ -207,7 +207,7 @@ TEST (mixsuite96_glow_leveler)
         auto p = defaults (EffectKind::glowLeveler);
         p[voicing] = 0.0f; p[gain] = 0.0f; p[emphasis] = 0.0f; // the Modern engine (see above)
         p[peakReduction] = 0.7f;
-        auto fx = lynx::makeEffect (EffectKind::glowLeveler);
+        auto fx = yw::makeEffect (EffectKind::glowLeveler);
         fx->prepare (44100.0);
         const int block = 64;
         auto burst = sine (1000.0, 0.7, (int) (burstSeconds * 44100.0));
@@ -245,7 +245,7 @@ TEST (mixsuite96_glow_leveler)
 TEST (mixsuite96_hush_deesser)
 {
     using namespace mixsuite96;
-    using namespace lynx::mixsuite::hush;
+    using namespace yw::mixsuite::hush;
     auto p = defaults (EffectKind::hushDeEsser);
     p[threshold] = (float) (20.0 / 60.0);     // −40 dBFS
     p[range] = 0.5f;                          // 12 dB
@@ -256,7 +256,7 @@ TEST (mixsuite96_hush_deesser)
     for (int i = 0; i < n; ++i)
         mixSig[(std::size_t) i] += ess[(std::size_t) i];
 
-    std::unique_ptr<lynx::Effect> fx;
+    std::unique_ptr<yw::Effect> fx;
     const auto split = run (EffectKind::hushDeEsser, p, mixSig, 44100.0, 512, &fx);
     const auto lat = fx->latencySamples();
     CHECK (lat == (int) std::lround (lookaheadMs() * 44.1));
@@ -293,10 +293,10 @@ TEST (mixsuite96_hush_deesser)
 TEST (mixsuite96_aether_air_and_harmonics)
 {
     using namespace mixsuite96;
-    using namespace lynx::mixsuite::aether;
+    using namespace yw::mixsuite::aether;
     auto p = defaults (EffectKind::aether);
     p[dynamic] = 0.0f; // issue #77: this checks the round-114 shelf + exciter (the dynamic model is the default now)
-    std::unique_ptr<lynx::Effect> fx;
+    std::unique_ptr<yw::Effect> fx;
     // neutral settings: a pure delay of the reported latency
     const auto in = sine (440.0, 0.5, 8192);
     const auto y = run (EffectKind::aether, p, in, 44100.0, 333, &fx);
@@ -339,7 +339,7 @@ TEST (mixsuite96_aether_air_and_harmonics)
 TEST (mixsuite96_ember_thd_and_aliasing)
 {
     using namespace mixsuite96;
-    using namespace lynx::mixsuite::ember;
+    using namespace yw::mixsuite::ember;
     auto thd = [] (float styleValue, float driveValue, double amp, std::array<double, 3>* harmonics = nullptr) {
         auto p = defaults (EffectKind::ember);
         p[style] = styleValue;
@@ -378,7 +378,7 @@ TEST (mixsuite96_ember_thd_and_aliasing)
         auto p = defaults (EffectKind::ember);
         p[style] = 2.0f / 3.0f;
         p[drive] = 2.0f / 3.0f;
-        p[lynx::mixsuite::ember::quality] = quality;
+        p[yw::mixsuite::ember::quality] = quality;
         const auto y = run (EffectKind::ember, p, sine (15000.0, 0.5, 32768));
         const auto f = amplitude (y, 15000.0, 16384, 16384);
         double worst = -300.0;
@@ -398,7 +398,7 @@ TEST (mixsuite96_ember_thd_and_aliasing)
         p[drive] = 1.0f;
         p[mix] = 0.0f;
         p[quality] = q;
-        std::unique_ptr<lynx::Effect> fx;
+        std::unique_ptr<yw::Effect> fx;
         const auto in = sine (440.0, 0.5, 4096);
         const auto y = run (EffectKind::ember, p, in, 48000.0, 256, &fx);
         const auto lat = fx->latencySamples();
@@ -414,8 +414,8 @@ TEST (mixsuite96_registry)
     using namespace mixsuite96;
     for (auto kind : { EffectKind::ridgeStrip, EffectKind::glowLeveler, EffectKind::hushDeEsser, EffectKind::aether, EffectKind::ember })
     {
-        const auto& info = lynx::effectInfo (kind);
-        auto fx = lynx::makeEffect (kind);
+        const auto& info = yw::effectInfo (kind);
+        auto fx = yw::makeEffect (kind);
         CHECK (fx != nullptr);
         fx->prepare (48000.0);
         const auto before = fx->latencySamples(); // known before the first block (REA round 87)
@@ -423,17 +423,17 @@ TEST (mixsuite96_registry)
         std::vector<float> l (300, 0.1f), r (300, 0.1f);
         fx->process (l.data(), r.data(), 300, p, 120.0);
         CHECK (fx->latencySamples() == before);
-        CHECK (! info.params.empty() && info.params.size() <= (std::size_t) lynx::maxEffectParams);
+        CHECK (! info.params.empty() && info.params.size() <= (std::size_t) yw::maxEffectParams);
         for (int i = 0; i < (int) info.params.size(); ++i)
-            CHECK (! lynx::formatEffectParam (kind, i, info.params[(std::size_t) i].defaultValue, 120.0).empty());
+            CHECK (! yw::formatEffectParam (kind, i, info.params[(std::size_t) i].defaultValue, 120.0).empty());
         std::printf ("  %s: %d parameters, latency %d\n", info.name, (int) info.params.size(), before);
     }
 }
 
 TEST (mixsuite_panels_place_every_parameter)
 {
-    using namespace lynx;
-    // LYNX's own panels (not FL arrangements): every parameter has exactly one control, controls stay inside the body
+    using namespace yw;
+    // YW's own panels (not FL arrangements): every parameter has exactly one control, controls stay inside the body
     // and never overlap, and the dynamics effects show their live gain-reduction meter
     CHECK (plugui::ownLayoutKinds().size() == 43); // round 190fk: + Anvil Bus; round trans189d: + Strike Shaper; round tp172c8: + Fret Channel, Shell Channel; round tp172c7: + Kiln Channel; round 168r: + the 14 simple built-ins; the mixing suite, the reverbs of round 100, the delay / modulation suite of round 101, the dynamics of round 108, the voice tools of round 119, Voice Shift and Auto-pan (round 135), the Hardware Insert (round 164d)
     for (const auto kind : plugui::ownLayoutKinds())
@@ -523,7 +523,7 @@ TEST (mixsuite_panels_place_every_parameter)
 
 TEST (mixsuite_stands_in_for_missing_vocal_plugins)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 98's substitution table puts the suite in the role of the vocal-chain plugins of the queue (by name)
     const std::pair<const char*, EffectKind> cases[] = { { "FabFilter Pro-DS", EffectKind::hushDeEsser }, { "Fresh Air", EffectKind::aether },
                                                          { "Decapitator", EffectKind::ember }, { "FabFilter Saturn 2", EffectKind::ember },

@@ -2,7 +2,7 @@
 
 // Piano Roll note tools (docs/WORKFLOW_FL.md P2: strum, arpeggiate, flip, randomise, scale levels, limit,
 // scale snap) and the per-note "levels" shared by the Piano Roll lane and the step sequencer graph lanes.
-// LYNX's own designs of the behaviours the manual describes; pure functions over Pattern, no JUCE.
+// YW's own designs of the behaviours the manual describes; pure functions over Pattern, no JUCE.
 
 #include <cstdint>
 #include <array>
@@ -15,7 +15,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx::notetools
+namespace yw::notetools
 {
 // --- per-note levels, normalised to 0..1 ------------------------------------------------------
 enum class Level
@@ -77,13 +77,13 @@ struct FlReferenceScale
 };
 const std::vector<FlReferenceScale>& flReferenceScales();
 // The scales() index with the same degrees as FL's reference scale `flIndex`; 0 = none (also FL's −1 Default,
-// −2 Black notes, −3 Automatic and the scales LYNX does not list)
+// −2 Black notes, −3 Automatic and the scales YW does not list)
 int scaleForFlReference (int flIndex) noexcept;
 // FL's own index of a reference scale (its menus' order: what .flp 0xF3 and a key marker's 0xA8 hold) for an index of
 // flReferenceScales(), and back (the same swap both ways; anything else unchanged). Rollup 0.1.31 step 3 (round 190ny),
 // measured with FL 2026 saves: FL lists "Other Blues" before "Other Blues Nonatonic" (17, 18), "Other Locrian" before
-// "Other Locrian Super" (27, 28) and "Other Phrygian" before "Other Phrygian Dominant" (32, 33); LYNX's list (and every
-// .lynx, which stores its index) has each pair the other way, so the .flp import / export convert at the file.
+// "Other Locrian Super" (27, 28) and "Other Phrygian" before "Other Phrygian Dominant" (32, 33); YW's list (and every
+// .yw, which stores its index) has each pair the other way, so the .flp import / export convert at the file.
 constexpr int flMenuScaleIndex (int index) noexcept
 {
     switch (index)
@@ -106,7 +106,7 @@ void moveKeysOnScale (Pattern& pattern, const std::vector<int>& indices, const s
 // The keyboard's up / down by one (issue #14): with a scale, a note steps to the next in-scale key in that direction.
 int stepOnScale (int key, int direction, int root, int scale) noexcept;
 
-// The Piano Roll's key rows, top to bottom. "Fold to scale" (round 166d, issue #14 — LYNX's own: FL 2026 only
+// The Piano Roll's key rows, top to bottom. "Fold to scale" (round 166d, issue #14 — YW's own: FL 2026 only
 // highlights the scale, its Piano Roll menus have no fold; like Ableton's Scale fold) keeps only the in-scale keys.
 struct KeyRows
 {
@@ -194,7 +194,7 @@ void scaleLevels (Pattern& pattern, const std::vector<int>& indices, Level level
 double flLevelScale (double x, double center, double multiply, double offset, double tension) noexcept;
 
 // The same tool with FL's Center and Tension; the multiplier still ramps from scaleStart to scaleEnd through time
-// (LYNX's own extra: FL has one Multiply for all notes).
+// (YW's own extra: FL has one Multiply for all notes).
 void scaleLevels (Pattern& pattern, const std::vector<int>& indices, Level level, float scaleStart, float scaleEnd, float offset,
                   float center, float tension);
 
@@ -202,7 +202,7 @@ void scaleLevels (Pattern& pattern, const std::vector<int>& indices, Level level
 struct LimitOptions
 {
     int lowKey = 36, highKey = 84;   // notes outside move by octaves into the range, then are clamped
-    float minVelocity = 0.0f, maxVelocity = 1.0f; // LYNX's own extra (FL's limiter has no velocity range)
+    float minVelocity = 0.0f, maxVelocity = 1.0f; // YW's own extra (FL's limiter has no velocity range)
 
     // FL's "Key / scale restriction" and "Keyboard range / transpose" (round 190bw, FL's limiter / transposer):
     int root = 0;                    // base key, 0 = C ... 11 = B
@@ -236,7 +236,7 @@ int limitRestrictionIndex (const char* name, LimitRestriction::Kind kind) noexce
 // base key and the keys reached by adding the steps one by one, on FL's 132-key range (0…131). Index 0 allows all.
 std::array<bool, 132> limitAllowedKeys (int root, int restriction);
 
-// --- LYNX's own versions of the tools FL ships as piano roll scripts (REA round 143: Tools › Scripts) -----------
+// --- YW's own versions of the tools FL ships as piano roll scripts (REA round 143: Tools › Scripts) -----------
 
 // Euclidean rhythm: `pulses` hits spread as evenly as possible over `steps` steps of `stepTicks` (rotated by
 // `rotation` steps), repeated for `length` ticks from `start`, on `key` of `channel`. True at a step that hits.
@@ -318,4 +318,4 @@ const char* generalMidiDrumName (int key) noexcept;
 
 // Puts the notes into colour group `colour` (0..15).
 void setColour (Pattern& pattern, const std::vector<int>& indices, int colour);
-} // namespace lynx::notetools
+} // namespace yw::notetools

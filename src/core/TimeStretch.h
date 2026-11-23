@@ -2,7 +2,7 @@
 
 // Pitch-preserving time-stretch, done off the audio thread once per (sample, ratio, method), like FL's "offline"
 // modes (docs/analise/REA_rodada3.md §5). Round 160 (docs/analise/REA_rodada160.md) replaced the earlier basic WSOLA
-// with Signalsmith Stretch (MIT, third_party/signalsmith) plus LYNX's own transient handling:
+// with Signalsmith Stretch (MIT, third_party/signalsmith) plus YW's own transient handling:
 //  - ratios within 0.1 % of 1 (e.g. FL's recorded takes, whose stretch time is their own length) are resampled with a
 //    windowed sinc instead — at most 1.7 cents of pitch, no stretch artefacts at all;
 //  - otherwise the spectral stretcher runs, and the attacks it detects are
@@ -21,7 +21,7 @@
 #include "core/Denormals.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // A warp mode's own settings for one stretch (round 190fm): the channel's WarpModeSettings and, for Beats cut on a grid,
 // how many beats the whole source spans (its stretchBeats). Default-constructed = the render before 190fm.
@@ -73,7 +73,7 @@ StretchMap warpStretchMap (const std::vector<WarpPoint>& warp, double frames, do
 double stretchMapOutput (const StretchMap& map, double x) noexcept;
 double stretchMapSource (const StretchMap& map, double y) noexcept;
 
-// FL's stretch mode (channel record 0xD7 +0x6C, REA_rodada3 §5.2) → LYNX's method. 0 (Resample) has no
+// FL's stretch mode (channel record 0xD7 +0x6C, REA_rodada3 §5.2) → YW's method. 0 (Resample) has no
 // pitch-preserving stretch; callers keep resampling for it.
 StretchMethod stretchMethodForFlMode (int flMode) noexcept;
 
@@ -175,10 +175,10 @@ namespace shifterstock
 void topUpAll();
 // the stocks register themselves (weakly) for topUpAll
 void enlist (const std::shared_ptr<ShifterStock>& stock);
-// LYNX_SHIFTER_STRICT=1 (the null tests): even an offline stock never makes one on the audio thread's demand, so a
+// YW_SHIFTER_STRICT=1 (the null tests): even an offline stock never makes one on the audio thread's demand, so a
 // render proves the song analysis gave every voice its shifter (ShifterStock::missed() stays 0)
 bool strict() noexcept;
-// Whether RackState::build plans the shifters by the song (default; LYNX_SHIFTER_STOCK=0 or setPlanned (false): every
+// Whether RackState::build plans the shifters by the song (default; YW_SHIFTER_STOCK=0 or setPlanned (false): every
 // keep-pitch sampler makes its 8 up front, as before round 190gn — the A/B of the null tests)
 bool planned() noexcept;
 void setPlanned (bool on) noexcept;
@@ -188,7 +188,7 @@ namespace stretchdetail
 {
 // Exposed for the tests: attack positions (frames) found in a mono signal, strongest-first filtering already applied.
 std::vector<long> detectAttacks (const float* mono, long frames, double sampleRate, double minRiseDb);
-// Where LYNX's Beats warp mode cuts the audio (round 175a, N4): the attacks, each moved to where it rises fastest.
+// Where YW's Beats warp mode cuts the audio (round 175a, N4): the attacks, each moved to where it rises fastest.
 // `measured` false: the Classic law's cut, the start of the 10 ms window before the steepest rise (round 190gx)
 std::vector<long> beatsCuts (const float* mono, long frames, double sampleRate, bool measured = true);
 // The cuts of a Beats law (round 190ik): Classic and Measured as beatsCuts; PitchAware = Measured's cuts made pitch aware
@@ -228,4 +228,4 @@ inline constexpr double beatsTurnSeconds = 0.020;
 // The spectral stretch with a given preset (no near-unity shortcut).
 std::shared_ptr<SampleData> stretchWith (const SampleData& input, double ratio, const Preset& preset);
 } // namespace stretchdetail
-} // namespace lynx
+} // namespace yw

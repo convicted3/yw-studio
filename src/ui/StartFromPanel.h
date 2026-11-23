@@ -1,8 +1,8 @@
 #pragma once
 
-// "Start from" (round 190ch, LYNX's own): the Simple layout's list of what a new project can start from — LYNX's demo
-// song (core/ShowcaseSong.h) and the templates already there (LYNX's default song, the built-in templates, the user's
-// own .lynx files in Documents/LYNX/Templates). Nothing new is shipped with it: it is a picker with a preview.
+// "Start from" (round 190ch, YW's own): the Simple layout's list of what a new project can start from — YW's demo
+// song (core/ShowcaseSong.h) and the templates already there (YW's default song, the built-in templates, the user's
+// own .yw files in Documents/YW/Templates). Nothing new is shipped with it: it is a picker with a preview.
 //
 // ▶ plays the first bars of an entry (rendered offline in the background, then played through the Browser's preview
 // output) without opening it; Open (or a double click) starts a new, untitled project from it.
@@ -17,7 +17,7 @@
 #include "core/Song.h"
 #include "core/Templates.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -25,7 +25,7 @@ namespace startfrom
 {
 struct Entry
 {
-    enum class Kind { demo, lynxDefault, builtIn, user };
+    enum class Kind { demo, ywDefault, builtIn, user };
     Kind kind = Kind::demo;
     juce::String name;      // shown
     TemplateChoice choice;  // (not for the demo)
@@ -35,7 +35,7 @@ struct Entry
     bool playable = false;  // it has notes or clips: there is something to preview
 };
 
-// Everything the list offers, in order: the demo songs (round 190dv: three), LYNX's default song, the built-in templates, the user's.
+// Everything the list offers, in order: the demo songs (round 190dv: three), YW's default song, the built-in templates, the user's.
 std::vector<Entry> entries();
 // The song of an entry; nullopt when a user's file is gone or unreadable.
 std::optional<Song> songOf (const Entry& entry);
@@ -95,4 +95,4 @@ private:
     int selected = 0, previewing = -1, rendering = -1;
     bool heard = false; // the preview was seen sounding (its end is then its going silent)
 };
-} // namespace lynx
+} // namespace yw

@@ -7,7 +7,7 @@
 // FL's Slicex (Slicex_x64.dll; docs/analise/REA_rodada190h.md): the state codec, the WAV regions, the key map and the
 // parameter laws.
 
-namespace lynx::slicex
+namespace yw::slicex
 {
 namespace
 {
@@ -632,7 +632,7 @@ std::vector<WavRegion> wavRegions (const std::vector<std::uint8_t>& w, std::int6
         {
             // FL's trigger list, a chunk of its own after LIST/adtl (round 190r: a project FL saved after "Assign
             // current region to this key"; a "tlst" inside a LIST is ignored by FL): i32 count, then 24-byte entries
-            // {'cue ', cue id − 1, 1, 0xFF, key, 0x90, 0, 0, 0}. LYNX 0.1.27's Edison wrote {0, cue id} (round 190gk
+            // {'cue ', cue id − 1, 1, 0xFF, key, 0x90, 0, 0, 0}. YW 0.1.27's Edison wrote {0, cue id} (round 190gk
             // fixed it to FL's layout): an entry whose second word is not FL's 1 is read that way.
             const std::size_t n = std::min<std::size_t> (le32 (body), (have - 4) / 24);
             for (std::size_t k = 0; k < n; ++k)
@@ -1040,10 +1040,10 @@ KeyMap keyMap (int deck, const std::vector<WavRegion>& deckA, const std::vector<
     }
     return map;
 }
-} // namespace lynx::slicex
+} // namespace yw::slicex
 
 // ---- the articulator editor's grid, zoom and snap (round 190hz)
-namespace lynx::slicex
+namespace yw::slicex
 {
 namespace
 {
@@ -1126,4 +1126,4 @@ double wheelZoomFactor (double notches, bool fine) noexcept
 {
     return std::exp (-notches * 3.0 * (fine ? 0.01875 : 0.075) * std::log (2.0));
 }
-} // namespace lynx::slicex
+} // namespace yw::slicex

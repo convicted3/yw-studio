@@ -1,22 +1,22 @@
-    // LYNX --automodes190pashot <prefix> (round 190pa, 0.1.32: research190oe P21 automation write modes, P14 range edits on
+    // YW --automodes190pashot <prefix> (round 190pa, 0.1.32: research190oe P21 automation write modes, P14 range edits on
     // chosen tracks) off-screen through the real components, in the three layouts: the Pattern Playlist with the range
     // extra off and on, a range over two tracks (Ctrl+Alt+drag's result), its menu, Delete / Duplicate on it, a range on
     // one automation lane; the record menu's "Automation write mode (YW Studio)" submenu and the armed mode's badge on Record
     // (Pattern, Simple) and on Automation Arm (Clip-launch); the Clip-launch Arrangement with a range (a plain drag on
     // empty space there, Live's time selection: rollup 0.1.31 step 7). <prefix>-checks.txt
-    // lists the checks. Included in the app class of Main.cpp (savePng / saveMenus). @150: LYNX_SHOT_SCALE=1.5
-    // LYNX_SHOT_SUFFIX=@150.
+    // lists the checks. Included in the app class of Main.cpp (savePng / saveMenus). @150: YW_SHOT_SCALE=1.5
+    // YW_SHOT_SUFFIX=@150.
     bool runAutoModesShot190pa (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::StringArray report;
         bool allOk = true;
         const auto check = [&report, &allOk] (const char* name, bool ok, const juce::String& detail = {}) {
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
         const auto bar = (std::int64_t) 4 * ppq;

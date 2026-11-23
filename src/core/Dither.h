@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx
+namespace yw
 {
 class Dither
 {
@@ -56,4 +56,4 @@ private:
     float error1[2] {}, error2[2] {};
     std::uint32_t state = 0x9E3779B9u;
 };
-} // namespace lynx
+} // namespace yw

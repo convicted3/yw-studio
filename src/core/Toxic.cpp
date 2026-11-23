@@ -28,7 +28,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1892,11 +1892,11 @@ bool needsDll (const Patch& p) noexcept
     return false;
 }
 
-// ------------------------------------------------------------------------------------------------------- LYNX front-end
+// ------------------------------------------------------------------------------------------------------- YW front-end
 //
 // Levels, velocity and tempo as the GMS front-end (core/Gms.cpp): FL hands the plugin Final.Vol = channel volume and
-// Final.Pan = note pan + channel pan through ComputeLRVol, so LYNX recovers V and p from its channel gains and does not
-// apply them a second time; Init.Vol = (11^(1.28·vel) − 1)/10 from LYNX's velocity, then the wrapper's MIDI velocity.
+// Final.Pan = note pan + channel pan through ComputeLRVol, so YW recovers V and p from its channel gains and does not
+// apply them a second time; Init.Vol = (11^(1.28·vel) − 1)/10 from YW's velocity, then the wrapper's MIDI velocity.
 // The max-polyphony event is taken as value 0 (→ 32, FL's value not confirmed). The tempo is the song tempo.
 
 struct Setup
@@ -2408,4 +2408,4 @@ float modulatedParam (const std::vector<std::uint8_t>& state, const std::vector<
     return plugin->eng.modded (index, plugin->eng.raw[(std::size_t) index]);
 }
 } // namespace toxic
-} // namespace lynx
+} // namespace yw

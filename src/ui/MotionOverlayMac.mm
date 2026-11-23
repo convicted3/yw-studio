@@ -10,7 +10,7 @@
 #include <cstring>
 #include <vector>
 
-namespace lynx::ui::maclayer
+namespace yw::ui::maclayer
 {
 namespace
 {
@@ -44,7 +44,7 @@ CGImageRef makeImage (const std::uint8_t* pixels, int w, int h, int stride)
 bool enabled()
 {
     static const bool on = [] {
-        const auto* v = std::getenv ("LYNX_OVERLAY_MAC");
+        const auto* v = std::getenv ("YW_OVERLAY_MAC");
         return v != nullptr && std::strcmp (v, "1") == 0;
     }();
     return on;
@@ -254,4 +254,4 @@ const char* selfTest (void* nsView)
     }
     return result;
 }
-} // namespace lynx::ui::maclayer
+} // namespace yw::ui::maclayer

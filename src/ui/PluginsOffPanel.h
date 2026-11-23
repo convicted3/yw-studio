@@ -6,7 +6,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // "Open without third-party plugins" (round 190ap, core/PluginHold.h): the project's hosted plugins, each off or on,
 // with "Switch on" for the chosen one and "Switch all on". Switching a plugin on creates its slots from the settings
@@ -17,4 +17,4 @@ std::unique_ptr<juce::Component> makePluginsOffPanel (AudioEngine& engine);
 // with the plugins off creates none of them, a save made in that state reads back with every plugin's settings
 // identical, switching one on asks only for that one, and the next project ends the mode. "OK" or what failed.
 juce::String pluginsOffSelfTest();
-} // namespace lynx
+} // namespace yw

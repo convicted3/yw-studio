@@ -1,4 +1,4 @@
-// Renders a GMS state with LYNX's engine exactly like our round-39 reference model drives it (verification harness,
+// Renders a GMS state with YW's engine exactly like our round-39 reference model drives it (verification harness,
 // REA_rodada39 §3.1): gmsrender <state.bin> <out.f32> <length> <rate> <wavesDir> [blk=N] [bpm=X] [maxpoly=N]
 //   [songpos=X] [nofx] [note=start,key,initVol,finalVol,finalPan,pitchCents,release ...]. Writes interleaved stereo float32.
 #include <cstdio>
@@ -25,7 +25,7 @@ int main (int argc, char** argv)
     int blk = 512, maxPoly = 0;
     double bpm = 140.0, songPos = -1.0;
     bool fx = true;
-    std::vector<lynx::gms::RefNote> notes;
+    std::vector<yw::gms::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -41,14 +41,14 @@ int main (int argc, char** argv)
             fx = false;
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::gms::RefNote n;
+            yw::gms::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%lf,%d", &n.start, &n.key, &n.initVol, &n.finalVol, &n.finalPan, &n.pitchCents,
                              &n.release)
                 >= 6)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::gms::renderReference (state, notes, rate, length, waves, blk, bpm, maxPoly, songPos, fx);
+    const auto out = yw::gms::renderReference (state, notes, rate, length, waves, blk, bpm, maxPoly, songPos, fx);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

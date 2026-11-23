@@ -22,7 +22,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int harmlessKnobCount = 100;
 constexpr int harmlessComboIndex = 100;        // 7 combos: filter, resonance, phaser, compressor, colour, threaded, quality
@@ -43,6 +43,6 @@ std::unique_ptr<Instrument> makeHarmlessInstrument();
 bool harmlessBankKernelForTest (int path, double* osc0, double* osc1, const double* oscC, const double* T, const double* A,
                                 int top, int m, const double* kpow, double* acc) noexcept;
 
-// modelParams of a new LYNX instance (round 168o): FL's untouched patch (Saw, open filter, no modulation, effects off)
+// modelParams of a new YW instance (round 168o): FL's untouched patch (Saw, open filter, no modulation, effects off)
 std::vector<float> harmlessDefaultModelParams();
-} // namespace lynx
+} // namespace yw

@@ -6,8 +6,8 @@
 
 namespace p190al
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 using namespace dyn108;
 
 // tone (Hz), threshold (dB), ratio, knee (dB), attack (ms) and the gain at −48, −36, −24, −12, −6 and 0 dBFS (release 200 ms)
@@ -19,7 +19,7 @@ struct Row
 
 inline EffectParams twoWay (double thr, double ratio, double knee, double att)
 {
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     auto p = p190v::defaults (EffectKind::crestCompressor);
     p[c::style] = c::styleValue (c::Style::twoWay);
     p[c::threshold] = (float) ((thr + 60.0) / 60.0);
@@ -56,7 +56,7 @@ TEST (p190al_crest_two_way_bands_follow_the_reference)
     {
         std::size_t per = 0;
         const auto x = stair (levels, 0.5, row.hz, per);
-        const auto g = stairGains (x, run (lynx::EffectKind::crestCompressor, p190al::twoWay (row.thr, row.ratio, row.knee, row.att), x), per, levels.size());
+        const auto g = stairGains (x, run (yw::EffectKind::crestCompressor, p190al::twoWay (row.thr, row.ratio, row.knee, row.att), x), per, levels.size());
         for (std::size_t i = 0; i < levels.size(); ++i)
         {
             const auto err = std::abs (g[i] - row.gain[i]);
@@ -73,7 +73,7 @@ TEST (p190al_crest_two_way_bands_follow_the_reference)
 TEST (p190al_crest_two_way_bands_sum_to_the_input_and_the_classic_law_has_none)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // at ratio 1 no band does anything: the three bands add up to the input's level at every frequency (through the
     // splits' all-pass phase), silence stays silence and nothing is delayed
     auto p = p190al::twoWay (-24.0, 1.0, 0.0, 10.0);
@@ -82,19 +82,19 @@ TEST (p190al_crest_two_way_bands_sum_to_the_input_and_the_classic_law_has_none)
         std::size_t per = 0;
         const std::vector<double> levels { -30, -6 };
         const auto x = stair (levels, 0.5, hz, per);
-        const auto g = stairGains (x, run (lynx::EffectKind::crestCompressor, p, x), per, levels.size());
+        const auto g = stairGains (x, run (yw::EffectKind::crestCompressor, p, x), per, levels.size());
         CHECK (std::abs (g[0]) < 0.05 && std::abs (g[1]) < 0.05);
     }
     const std::vector<float> quiet ((std::size_t) sr / 2, 0.0f);
-    for (const auto v : run (lynx::EffectKind::crestCompressor, p190al::twoWay (-24.0, 4.0, 0.0, 10.0), quiet))
+    for (const auto v : run (yw::EffectKind::crestCompressor, p190al::twoWay (-24.0, 4.0, 0.0, 10.0), quiet))
         CHECK (v == 0.0f);
     // the classic law (a project saved before round 190v) is one band: a tone comes out with the phase it went in with
     auto classic = p190al::twoWay (-24.0, 1.0, 0.0, 10.0);
     classic[c::law] = 0.0f;
     std::size_t per = 0;
     const auto x = stair ({ -20 }, 0.5, 88.0, per);
-    const auto yClassic = run (lynx::EffectKind::crestCompressor, classic, x);
-    const auto yBands = run (lynx::EffectKind::crestCompressor, p, x);
+    const auto yClassic = run (yw::EffectKind::crestCompressor, classic, x);
+    const auto yBands = run (yw::EffectKind::crestCompressor, p, x);
     double dClassic = 0.0, dBands = 0.0;
     for (std::size_t i = per / 2; i < per; ++i)
     {
@@ -108,14 +108,14 @@ TEST (p190al_crest_two_way_bands_sum_to_the_input_and_the_classic_law_has_none)
 TEST (p190al_crest_vari_mu_slow_attack_starts_at_once)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // a −40 → −6 dBFS step at threshold −24, ratio 4, knee 0: at attack 100 ms the reference is 2.1 dB down after 15 ms
     // and 4.8 dB after 30 ms, on its way to −7.8; the smoothed level alone did nothing for 45 ms and ended at −6.7.
     // At attack 10 ms nothing changes (the smoothed level is the match there)
     std::vector<float> x ((std::size_t) (2 * sr));
     for (std::size_t i = 0; i < x.size(); ++i)
         x[i] = (float) (std::pow (10.0, (i >= (std::size_t) (0.5 * sr) ? -6.0 : -40.0) / 20.0) * std::sin (2.0 * pi * 1000.0 * (double) i / sr));
-    auto p = p190v::defaults (lynx::EffectKind::crestCompressor);
+    auto p = p190v::defaults (yw::EffectKind::crestCompressor);
     p[c::style] = c::styleValue (c::Style::variMu);
     p[c::threshold] = 0.6f;
     p[c::ratio] = c::ratioValue (4.0);
@@ -123,7 +123,7 @@ TEST (p190al_crest_vari_mu_slow_attack_starts_at_once)
     p[c::attack] = c::attackValue (100.0);
     p[c::release] = c::releaseValue (200.0);
     p[c::autoGain] = 0.0f;
-    const auto y = run (lynx::EffectKind::crestCompressor, p, x);
+    const auto y = run (yw::EffectKind::crestCompressor, p, x);
     const auto gainAt = [&] (double ms) {
         const auto i = (std::size_t) ((0.5 + ms * 0.001) * sr);
         return rmsDb (y, i - 240, i + 240) - rmsDb (x, i - 240, i + 240);

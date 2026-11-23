@@ -21,7 +21,7 @@
 #include "core/Song.h"
 #include "core/WarpEdit.h"
 
-namespace lynx::warpview
+namespace yw::warpview
 {
 // --- beat ↔ file time (binary search; the warpedit versions walk the markers) ----------------------------------------
 inline double beatAt (const std::vector<WarpPoint>& w, double seconds) noexcept
@@ -225,4 +225,4 @@ int columnPeaks (const BeatAxis& axis, double viewStart, double unitsPerPixel, i
     }
     return measured;
 }
-} // namespace lynx::warpview
+} // namespace yw::warpview

@@ -2,7 +2,7 @@
 
 #include "core/WavPack.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -67,4 +67,4 @@ juce::AudioFormatReader* WavPackAudioFormat::createReaderFor (juce::InputStream*
     }
     return new WavPackReader (std::move (audio)); // the stream has been fully read: it can go
 }
-} // namespace lynx
+} // namespace yw

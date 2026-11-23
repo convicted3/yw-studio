@@ -1,4 +1,4 @@
-// Round 190bm: LYNX's demo project (core/ShowcaseSong.h; Demo.lynx in the installers). A 0.1.25 report: "the lead at
+// Round 190bm: YW's demo project (core/ShowcaseSong.h; Demo.yw in the installers). A 0.1.25 report: "the lead at
 // the end is way too loud" and "the bass is two octaves too low". The bass plays in a bass register, and no section of
 // the song is far louder than the drop.
 
@@ -9,14 +9,14 @@ namespace demo190bm
 inline double hzOf (double key) { return 440.0 * std::pow (2.0, (key - 69.0) / 12.0); }
 
 // RMS (dB) of the song's bars [from, to) in a whole-song render
-inline std::vector<double> sectionLevels (const lynx::Song& showcase, const std::vector<std::pair<int, int>>& sections)
+inline std::vector<double> sectionLevels (const yw::Song& showcase, const std::vector<std::pair<int, int>>& sections)
 {
     constexpr int rate = 44100, block = 256;
     std::int64_t songTicks = 0;
-    const auto song = lynx::makeExportSong (showcase, true, 0, songTicks);
-    const auto tps = lynx::ticksPerSample (song.bpm, rate);
-    auto state = lynx::RackState::build (song, nullptr, rate);
-    lynx::RackRenderer renderer;
+    const auto song = yw::makeExportSong (showcase, true, 0, songTicks);
+    const auto tps = yw::ticksPerSample (song.bpm, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
+    yw::RackRenderer renderer;
     renderer.prepare (rate, block);
     const auto total = (std::size_t) ((double) songTicks / tps);
     std::vector<float> l (total), r (total);
@@ -27,7 +27,7 @@ inline std::vector<double> sectionLevels (const lynx::Song& showcase, const std:
         tick += block * tps;
     }
     std::vector<double> levels;
-    const auto bar = (double) lynx::ppq * 4.0;
+    const auto bar = (double) yw::ppq * 4.0;
     for (const auto& [from, to] : sections)
     {
         const auto a = (std::size_t) (from * bar / tps), b = std::min (total, (std::size_t) (to * bar / tps));
@@ -42,7 +42,7 @@ inline std::vector<double> sectionLevels (const lynx::Song& showcase, const std:
 
 TEST (demo190bm_bass_plays_in_a_bass_register)
 {
-    const auto song = lynx::makeShowcaseSong();
+    const auto song = yw::makeShowcaseSong();
     int bass = -1;
     for (std::size_t c = 0; c < song.channels.size(); ++c)
         if (song.channels[c].name == "Reese Bass")
@@ -80,7 +80,7 @@ TEST (demo190bm_bass_plays_in_a_bass_register)
 TEST (demo190bm_no_section_is_far_louder_than_the_drop)
 {
     // bars: the drop's two halves, the breakdown, the final drop (with the lead)
-    const auto levels = demo190bm::sectionLevels (lynx::makeShowcaseSong(), { { 8, 12 }, { 12, 16 }, { 16, 20 }, { 20, 24 } });
+    const auto levels = demo190bm::sectionLevels (yw::makeShowcaseSong(), { { 8, 12 }, { 12, 16 }, { 16, 20 }, { 20, 24 } });
     const auto drop = levels[0];
     CHECK (drop > -20.0 && drop < -8.0);
     for (const auto level : levels)

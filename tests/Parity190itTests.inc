@@ -1,5 +1,5 @@
-// Round 190it: the reverb stand-ins' 0.1.30 revision, measured on refcap030's black-box captures through LYNX's own
-// state translators (/mnt/e/lynx-work/parity190it/HANDOFF.md, docs/PARITY.md "Round 190it"). Epoch Verb, Atrium, Foil Plate
+// Round 190it: the reverb stand-ins' 0.1.30 revision, measured on refcap030's black-box captures through YW's own
+// state translators (/mnt/e/yw-work/parity190it/HANDOFF.md, docs/PARITY.md "Round 190it"). Epoch Verb, Atrium, Foil Plate
 // and Halo get a hidden revision of the Measured law (trims per mode / type, Atrium's and Halo's build-up taps in four
 // groups above 600 Hz, Halo's Dark colour on the output and its level laws), Lattice Mod a revision of its tap network
 // (the longest tap feeds the loop; the type values past the tenth step play the dry signal), LuxeVerb's Space engine a
@@ -13,11 +13,11 @@
 #include "core/Effects.h"
 #include "core/FabFilterStates.h"
 #include "core/LuxeVerb.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 
 namespace parity190it
 {
-// the gold input (as /mnt/e/lynx-work/parity190it/gold/gold.cpp): an impulse, a noise burst, 220 Hz + 1 kHz tones
+// the gold input (as /mnt/e/yw-work/parity190it/gold/gold.cpp): an impulse, a noise burst, 220 Hz + 1 kHz tones
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 {
     unsigned s = 777u;
@@ -34,19 +34,19 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
         r[(std::size_t) i] = (float) (t > 0.3 && t < 0.45 ? 0.7 * v : v);
     }
 }
-inline void render (const lynx::EffectSlot& slot, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& slot, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);
 }
-struct Case { lynx::EffectKind kind; int rev, idx; float val; int idx2; float val2; };
+struct Case { yw::EffectKind kind; int rev, idx; float val; int idx2; float val2; };
 inline std::vector<Case> cases()
 {
-    using lynx::EffectKind;
-    const int lat = (int) lynx::echosuite::lattice::revision, duck = lynx::luxeVerbSpaceDucking;
+    using yw::EffectKind;
+    const int lat = (int) yw::echosuite::lattice::revision, duck = yw::luxeVerbSpaceDucking;
     return { { EffectKind::epochVerb, 18, -1, 0, -1, 0 }, { EffectKind::epochVerb, 18, 16, 0.0476f, 2, 0.1f },
              { EffectKind::epochVerb, 18, 16, 0.2857f, 4, 0.8f }, { EffectKind::epochVerb, 18, 16, 0.6667f, 15, 0.0f },
              { EffectKind::atrium, 23, -1, 0, -1, 0 }, { EffectKind::atrium, 23, 19, 0.0909f, 20, 0.6f },
@@ -57,8 +57,8 @@ inline std::vector<Case> cases()
              { EffectKind::halo, 13, 9, 0.25f, 3, 0.2f }, { EffectKind::halo, 13, 12, 0.0f, 11, 1.0f },
              { EffectKind::latticeMod, lat, -1, 0, -1, 0 }, { EffectKind::latticeMod, lat, 29, 0.35f, 4, 0.5f },
              { EffectKind::latticeMod, lat, 29, 0.6f, 9, 0.8f },
-             { EffectKind::luxeVerb, duck, lynx::luxeVerbSpaceFirst, 1.0f, -1, 0 },
-             { EffectKind::luxeVerb, duck, lynx::luxeVerbSpaceFirst, 1.0f, lynx::luxeVerbSpaceFirst + 2, 0.2f } };
+             { EffectKind::luxeVerb, duck, yw::luxeVerbSpaceFirst, 1.0f, -1, 0 },
+             { EffectKind::luxeVerb, duck, yw::luxeVerbSpaceFirst, 1.0f, yw::luxeVerbSpaceFirst + 2, 0.2f } };
 }
 inline double energy (const std::vector<float>& l, const std::vector<float>& r, std::uint64_t* hash = nullptr)
 {
@@ -79,7 +79,7 @@ inline double energy (const std::vector<float>& l, const std::vector<float>& r, 
 
 TEST (parity190it_revisions_are_hidden_new_instances_run_them_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::pair<EffectKind, int> revs[] = { { EffectKind::epochVerb, verbs::epoch::revision }, { EffectKind::atrium, verbs::atrium::revision },
                                                 { EffectKind::foilPlate, verbs::foil::revision }, { EffectKind::halo, verbs::halo::revision },
                                                 { EffectKind::latticeMod, (int) echosuite::lattice::revision } };
@@ -106,9 +106,9 @@ TEST (parity190it_revisions_are_hidden_new_instances_run_them_old_projects_do_no
 
 TEST (parity190it_revision0_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     // 1.6 s of the gold input at 48 kHz in blocks of 512: FNV-1a of the float bits and the energy. From the base commit's
-    // objects (/mnt/e/lynx-work/parity190it/gold: gold_base.txt, 63 renders at 44.1 / 48 / 96 kHz; the round's objects
+    // objects (/mnt/e/yw-work/parity190it/gold: gold_base.txt, 63 renders at 44.1 / 48 / 96 kHz; the round's objects
     // with every revision / Ducking forced to 0 print the same lines, gold_new.txt)
     struct Gold { int k; std::uint64_t hash; double energy; };
     const Gold gold[] = {
@@ -159,7 +159,7 @@ TEST (parity190it_revision0_renders_as_the_base_commit_did)
 
 TEST (parity190it_lattice_revision1_longest_tap_loop_and_dry_types)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace la = echosuite::lattice;
     const double sr = 48000.0;
     const int n = (int) (1.6 * sr);
@@ -189,7 +189,7 @@ TEST (parity190it_lattice_revision1_longest_tap_loop_and_dry_types)
 
 TEST (parity190it_pro_r2_ducking_is_translated_and_dips_the_tail)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<float> v (136, 0.0f);
     v[0] = 0.5f; v[2] = 0.5f; v[3] = 0.5f; v[5] = 0.3f; v[7] = 0.7f; v[9] = 100.0f; v[16] = 0.0f;
     v[8] = 24.0f; // Ducking 50 % (24 dB)

@@ -27,7 +27,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -56,7 +56,7 @@ VisualTarget slotTarget (AudioEngine& engine, int track, int slot)
 }
 
 // ------------------------------------------------------------------------------------------------------------
-// A knob bound to one of the slot's parameters (LYNX's control contract; automatable on a mixer slot)
+// A knob bound to one of the slot's parameters (YW's control contract; automatable on a mixer slot)
 // ------------------------------------------------------------------------------------------------------------
 class Knob final : public juce::Component
 {
@@ -755,8 +755,8 @@ private:
     {
         const auto start = juce::File::isAbsolutePath (juce::String::fromUTF8 (current().c_str())) ? juce::File (juce::String::fromUTF8 (current().c_str()))
                                                                                                     : juce::File::getSpecialLocation (juce::File::userDocumentsDirectory);
-        chooser = lynx::ui::makeFileChooser (tr ("Choose the .html page to show"), start, "*.html;*.htm");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        chooser = yw::ui::makeFileChooser (tr ("Choose the .html page to show"), start, "*.html;*.htm");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer (this)] (const juce::FileChooser& c) {
                                   if (safe != nullptr && c.getResult() != juce::File())
                                       safe->setAddress (c.getResult().getFullPathName().toStdString());
@@ -880,7 +880,7 @@ private:
     VisualTarget target;
 };
 
-// (a sample dropped on the editor loads onto the platter, from the OS or from LYNX's Browser, so it never falls through
+// (a sample dropped on the editor loads onto the platter, from the OS or from YW's Browser, so it never falls through
 // to the Playlist as an audio clip)
 class ScratcherEditor final : public juce::Component,
                               public juce::FileDragAndDropTarget,
@@ -1126,7 +1126,7 @@ public:
     void fileDragEnter (const juce::StringArray&, int, int) override { setDropHover (true); }
     void fileDragExit (const juce::StringArray&) override { setDropHover (false); }
 
-    // a sample dragged from LYNX's Browser
+    // a sample dragged from YW's Browser
     bool isInterestedInDragSource (const SourceDetails& details) override
     {
         return BrowserComponent::isBrowserDrag (details)
@@ -1227,9 +1227,9 @@ private:
             return;
         const auto* e = target.current();
         const juce::File current (juce::String::fromUTF8 (e != nullptr ? e->samplePath.c_str() : ""));
-        chooser = lynx::ui::makeFileChooser (tr ("Load sample"), current.existsAsFile() ? current : juce::File(),
+        chooser = yw::ui::makeFileChooser (tr ("Load sample"), current.existsAsFile() ? current : juce::File(),
                                                        target.engine->getSampleLibrary().wildcard());
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer<ScratcherEditor> (this)] (const juce::FileChooser& fc) {
                                   if (safe != nullptr && fc.getResult().existsAsFile())
                                       safe->useSample (fc.getResult());
@@ -1586,4 +1586,4 @@ bool runFlExtraShots (AudioEngine& engine, const juce::File& folder)
     folder.getChildFile ("report.txt").replaceWithText (report);
     return ok;
 }
-} // namespace lynx
+} // namespace yw

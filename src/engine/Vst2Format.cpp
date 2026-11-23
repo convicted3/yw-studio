@@ -17,7 +17,7 @@
  #include <dlfcn.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -576,7 +576,7 @@ private:
         if (! instrument && e.numInputs > 0)
         {
             buses = buses.withInput (pinName (e, 0, true).first, set (e.numInputs), true);
-            // round 188d: the other inputs in stereo pairs (the second one is the side input LYNX feeds from the
+            // round 188d: the other inputs in stereo pairs (the second one is the side input YW feeds from the
             // slot's sidechain, as FL's Connections index 1 does), named as the plugin names its pins
             for (int ch = 2; ch < e.numInputs; ch += 2)
                 buses = buses.withInput (pinName (e, ch, true).first, set (e.numInputs - ch), true);
@@ -951,4 +951,4 @@ bool setChunk (juce::AudioPluginInstance& plugin, const std::vector<std::uint8_t
     return true;
 }
 } // namespace vst2
-} // namespace lynx
+} // namespace yw

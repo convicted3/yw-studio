@@ -1,5 +1,5 @@
 // --- Round 190bv: the clip grid as a place to work — recording into slots (core/SessionOps.h, the launcher's record
-// commands), clips between slots and the Playlist, and the groove pool (core/Groove.h). (The .lynx round trips of all
+// commands), clips between slots and the Playlist, and the groove pool (core/Groove.h). (The .yw round trips of all
 // three are in the app's --selftest: the project file needs JUCE.)
 
 #include "core/Groove.h"
@@ -7,7 +7,7 @@
 
 namespace session190bv
 {
-using namespace lynx;
+using namespace yw;
 using grid181a::bar;
 using grid181a::closeTo;
 
@@ -44,7 +44,7 @@ inline std::vector<launcher::RecordedTake> takesOf (launcher::Runtime& runtime)
 
 TEST (session190bv_record_start_and_end_fall_on_the_quantisation_grid)
 {
-    using namespace lynx;
+    using namespace yw;
     using session190bv::bar;
     // asked in the middle of bar 1 with 1-bar quantisation: starts at bar 2
     CHECK (session::recordStart (bar * 0.4, bar) == (double) bar);
@@ -69,7 +69,7 @@ TEST (session190bv_record_start_and_end_fall_on_the_quantisation_grid)
 
 TEST (session190bv_player_records_into_a_slot_on_the_grid_points)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     grid181a::Run run (emptyGridSong()); // global quantisation: 1 bar
     launcher::setClip (run.song, 0, 0, grid181a::patternClip (0));
@@ -135,7 +135,7 @@ TEST (session190bv_player_records_into_a_slot_on_the_grid_points)
 
 TEST (session190bv_recorded_clip_that_arrives_late_joins_in_phase)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     grid181a::Run run (emptyGridSong());
     run.runtime.commands.push ({ launcher::Command::Type::record, 0, 0 });
@@ -176,7 +176,7 @@ TEST (session190bv_recorded_clip_that_arrives_late_joins_in_phase)
 
 TEST (session190bv_fixed_length_recording_ends_by_itself_and_plays_on)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     grid181a::Run run (emptyGridSong());
     run.until (bar * 0.3);
@@ -201,7 +201,7 @@ TEST (session190bv_fixed_length_recording_ends_by_itself_and_plays_on)
 
 TEST (session190bv_stop_and_launch_end_a_recording_without_loop_playback)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     {
         // a stop button: the recording ends on the next point, and nothing plays on
@@ -270,7 +270,7 @@ TEST (session190bv_stop_and_launch_end_a_recording_without_loop_playback)
 
 TEST (session190bv_take_notes_are_placed_from_the_recording_start)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     const double from = 2.0 * bar, until = 4.0 * bar;
     std::vector<RecordedEvent> events {
@@ -308,7 +308,7 @@ TEST (session190bv_take_notes_are_placed_from_the_recording_start)
 
 TEST (session190bv_overdub_notes_land_where_the_loop_was)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     const double anchor = 3.0 * bar; // the playing clip's position 0
     // a one-bar clip in its third pass: a note played 1 beat into that pass, one across the loop's end, one still held
@@ -338,7 +338,7 @@ TEST (session190bv_overdub_notes_land_where_the_loop_was)
 
 TEST (session190bv_recorded_clips_are_named_and_coloured)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto s = grid181a::patternSong();
     s.patterns[0].name = "Pattern 1";
@@ -382,7 +382,7 @@ TEST (session190bv_recorded_clips_are_named_and_coloured)
 
 TEST (session190bv_copy_cut_paste_duplicate_and_drag_between_slots)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (1, 2 * bar));
@@ -447,7 +447,7 @@ TEST (session190bv_copy_cut_paste_duplicate_and_drag_between_slots)
 
 TEST (session190bv_clips_go_between_the_grid_and_the_playlist)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (1, 2 * bar));
@@ -513,7 +513,7 @@ inline Groove offbeatGroove (int late, float soft = 0.5f)
 
 TEST (session190bv_groove_timing_moves_notes_by_the_template_offset)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto g = offbeatGroove (60);
     // notes on the grid: the on-beat 16ths stay, the off-beat ones take the template's offset
@@ -556,7 +556,7 @@ TEST (session190bv_groove_timing_moves_notes_by_the_template_offset)
 
 TEST (session190bv_groove_quantize_comes_before_the_template_and_base_sets_the_grid)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto g = offbeatGroove (60);
     g.timing = 0.0f;
@@ -591,7 +591,7 @@ TEST (session190bv_groove_quantize_comes_before_the_template_and_base_sets_the_g
 
 TEST (session190bv_groove_velocity_follows_the_accents_and_reverses_when_negative)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto g = offbeatGroove (0, 0.5f);
     // Velocity 0: untouched
@@ -617,7 +617,7 @@ TEST (session190bv_groove_velocity_follows_the_accents_and_reverses_when_negativ
 
 TEST (session190bv_groove_random_is_bounded_repeatable_and_differs_per_note_and_pass)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto g = offbeatGroove (0);
     g.timing = 0.0f;
@@ -653,7 +653,7 @@ TEST (session190bv_groove_random_is_bounded_repeatable_and_differs_per_note_and_
 
 TEST (session190bv_groove_plays_through_a_grid_clip_without_changing_its_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto song = grid181a::patternSong (ppq / 8);
     // pattern 0: four 16ths from tick 0 (keys 60..63)
@@ -747,7 +747,7 @@ TEST (session190bv_groove_plays_through_a_grid_clip_without_changing_its_notes)
 
 TEST (session190bv_groove_commit_writes_the_notes_and_frees_the_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto song = grid181a::patternSong();
     song.patterns[0].notes.clear();
@@ -811,9 +811,9 @@ TEST (session190bv_groove_commit_writes_the_notes_and_frees_the_clip)
     CHECK (song.patterns.size() == count);
 }
 
-TEST (session190bv_groove_bank_is_lynx_own_and_well_formed)
+TEST (session190bv_groove_bank_is_yw_own_and_well_formed)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& bank = groove::factoryBank();
     CHECK (bank.size() >= 36 && bank.size() <= 72); // (round 190fm: + 27 "Classic swing")
     std::vector<std::string> names, folders;
@@ -863,7 +863,7 @@ TEST (session190bv_groove_bank_is_lynx_own_and_well_formed)
 
 TEST (session190bv_groove_extract_and_user_file_import)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     // extract: one point per occupied slot, the loudest note's place and velocity
     Pattern p;
@@ -937,7 +937,7 @@ TEST (session190bv_groove_extract_and_user_file_import)
 
 TEST (session190bv_projects_without_grooves_or_slot_recording_play_as_before)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     // a grid clip with no groove, in a project with an (unused) pool: the same events as with no pool at all
     auto song = grid181a::patternSong();
@@ -968,7 +968,7 @@ TEST (session190bv_projects_without_grooves_or_slot_recording_play_as_before)
 
 TEST (session190cy_second_record_button_ends_the_take_into_playback_and_records_the_new_slot)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     grid181a::Run run (emptyGridSong()); // global quantisation: 1 bar
     run.runtime.commands.push ({ launcher::Command::Type::record, 0, 0 });
@@ -1017,7 +1017,7 @@ TEST (session190cy_second_record_button_ends_the_take_into_playback_and_records_
 
 TEST (session190cy_second_record_button_edge_cases)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     {
         // pressed while the first recording still waits for its start: the wait moves to the new slot
@@ -1085,7 +1085,7 @@ TEST (session190cy_second_record_button_edge_cases)
 
 TEST (session190cy_recorded_clips_are_named_after_the_track_and_the_counter_reads_bars_beats_sixteenths)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace session190bv;
     auto s = grid181a::patternSong();
     CHECK (session::recordedClipName (s, "rec MIDI") == "rec MIDI 1");
@@ -1104,10 +1104,10 @@ TEST (session190cy_recorded_clips_are_named_after_the_track_and_the_counter_read
     const auto plain = session::placeRecordedPattern (s, 2, 0, {}, bar);
     CHECK (plain >= 0 && s.patterns[(std::size_t) plain].name.rfind ("Pattern ", 0) == 0);
 
-    CHECK (session::lengthCounter (0.0, lynx::Meter (4, 4)) == "0.0.0");
-    CHECK (session::lengthCounter ((double) ppq, lynx::Meter (4, 4)) == "0.1.0");
-    CHECK (session::lengthCounter (8.0 * ppq + 2.0 * ppq / 4.0, lynx::Meter (4, 4)) == "2.0.2");
-    CHECK (session::lengthCounter (4.0 * ppq + 3.0 * ppq + 3.0 * ppq / 4.0 + 100.0, lynx::Meter (4, 4)) == "1.3.3");
-    CHECK (session::lengthCounter (3.0 * ppq, lynx::Meter (3, 4)) == "1.0.0"); // 3/4
-    CHECK (session::lengthCounter (-5.0, lynx::Meter (4, 4)) == "0.0.0");
+    CHECK (session::lengthCounter (0.0, yw::Meter (4, 4)) == "0.0.0");
+    CHECK (session::lengthCounter ((double) ppq, yw::Meter (4, 4)) == "0.1.0");
+    CHECK (session::lengthCounter (8.0 * ppq + 2.0 * ppq / 4.0, yw::Meter (4, 4)) == "2.0.2");
+    CHECK (session::lengthCounter (4.0 * ppq + 3.0 * ppq + 3.0 * ppq / 4.0 + 100.0, yw::Meter (4, 4)) == "1.3.3");
+    CHECK (session::lengthCounter (3.0 * ppq, yw::Meter (3, 4)) == "1.0.0"); // 3/4
+    CHECK (session::lengthCounter (-5.0, yw::Meter (4, 4)) == "0.0.0");
 }

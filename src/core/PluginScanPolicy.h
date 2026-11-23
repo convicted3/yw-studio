@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::scanpolicy
+namespace yw::scanpolicy
 {
 constexpr int baseTimeoutMs = 30000;          // a file with one plugin (or whose class count is not known)
 constexpr int perClassMs = 2000;              // each further class
@@ -142,4 +142,4 @@ inline std::string lv2Stamp (std::vector<std::pair<std::string, long long>> bund
         stamp += path + "|" + std::to_string (newestTtl) + "\n";
     return stamp;
 }
-} // namespace lynx::scanpolicy
+} // namespace yw::scanpolicy

@@ -12,12 +12,12 @@ struct FlCase
     int mode;          // 0xD7 +0x6C
     int mul;           // 0xD7 +0x68
     float time;        // 0xD7 +0x60 (1/192 beat)
-    float semitones;   // LYNX's channel pitch after the import
+    float semitones;   // YW's channel pitch after the import
     bool keepLength;
     float beats;       // stretchBeats (0 = none)
 };
 
-lynx::Song importCase (const FlCase& k, double sampleSeconds)
+yw::Song importCase (const FlCase& k, double sampleSeconds)
 {
     FlpBuilder b (96);
     b.ascii (0xC7, "25.2.5.5319");
@@ -43,10 +43,10 @@ lynx::Song importCase (const FlCase& k, double sampleSeconds)
     std::memcpy (&params[0x88], &end, 8);
     b.data (0xD7, params);
 
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.fileExists = [] (const std::string&) { return true; };
     o.sampleSeconds = [sampleSeconds] (const std::string&) { return sampleSeconds; };
-    return lynx::importFlp (flp::parseProject (b.bytes), o);
+    return yw::importFlp (flp::parseProject (b.bytes), o);
 }
 } // namespace c164p
 
@@ -91,7 +91,7 @@ TEST (c164p_fl_clip_and_sampler_pitch_import)
         if (! match)
             std::fprintf (stderr, "  %s: pitch %.3f keep %d beats %.4f\n", k.name, (double) s.pitch, (int) s.keepPitch, (double) s.stretchBeats);
         CHECK (match);
-        CHECK (song.channels[0].instrument == (k.type == 4 ? lynx::InstrumentKind::audioClip : lynx::InstrumentKind::sampler));
+        CHECK (song.channels[0].instrument == (k.type == 4 ? yw::InstrumentKind::audioClip : yw::InstrumentKind::sampler));
     }
 
     // the stretch pitch is read from the file
@@ -102,7 +102,7 @@ TEST (c164p_fl_clip_and_sampler_pitch_import)
 
 TEST (c164p_stretch_panel_rules)
 {
-    using namespace lynx;
+    using namespace yw;
     SamplerSettings s;
     applyFlStretchPanel (s, 0, 700, 0, 0.0f, 2.0, 120.0); // Resample: nothing changes
     CHECK (s.pitch == 0.0f && ! s.keepPitch && s.stretchBeats == 0.0f);
@@ -110,7 +110,7 @@ TEST (c164p_stretch_panel_rules)
     CHECK (std::abs (s.stretchBeats - 2.0f) < 1e-5f && ! s.keepPitch);
     SamplerSettings t;
     t.pitch = 20.0f;
-    applyFlStretchPanel (t, 5, 1200, 0, 0.0f, 0.0, 120.0); // clamped to LYNX's ±24 semitones
+    applyFlStretchPanel (t, 5, 1200, 0, 0.0f, 0.0, 120.0); // clamped to YW's ±24 semitones
     CHECK (t.pitch == 24.0f && t.keepPitch);
     SamplerSettings u;
     applyFlStretchPanel (u, -1, 0, 5000, 384.0f, 2.0, 120.0); // with a TIME the MUL belongs to it (set by the caller)

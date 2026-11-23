@@ -941,7 +941,7 @@ std::vector<std::uint8_t> writeProject (const Project& p, const WriteOptions& op
             insert.routes = { 0 }; // an insert the project leaves out: FL's default, routed to the Master
         // the last record is FL's "Current" track: FL plays the selected insert through it, so FL writes it with no
         // route to the Master (flags 0x0C, routes 00); routed to the Master, everything played twice (+6.02 dB in
-        // FL's render of every LYNX export, round 171e2 [FL])
+        // FL's render of every YW export, round 171e2 [FL])
         const auto current = t > 0 && t == tracks - 1;
         if (current)
         {

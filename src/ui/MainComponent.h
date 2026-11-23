@@ -33,7 +33,7 @@
 #include "ui/PlaylistComponent.h"
 #include "ui/SessionDialogs.h"
 #include "ui/SimpleWorkflow.h"
-#include "ui/SupportLynx.h"
+#include "ui/SupportYw.h"
 #include "ui/LiveSessionUi.h"
 #include "ui/HintBar.h"
 #include "ui/Splash.h"
@@ -46,7 +46,7 @@
 #include "ui/Workspace.h"
 #include "ui/ActionSearch.h" // round 190nq (#228)
 
-namespace lynx
+namespace yw
 {
 class GamepadInput;
 struct SettingsHooks; // (ui/SettingsPages.h)
@@ -85,7 +85,7 @@ public:
     void mouseDown (const juce::MouseEvent& e) override; // right-click on the toolbar: the toolbar menu
     bool keyPressed (const juce::KeyPress& key) override;
     void dragOperationStarted (const juce::DragAndDropTarget::SourceDetails&) override; // (issue #12: drops on windows)
-    // issue #174: a Browser / Edison sample or a Playlist audio clip dragged onto a plugin's own editor (or out of LYNX)
+    // issue #174: a Browser / Edison sample or a Playlist audio clip dragged onto a plugin's own editor (or out of YW)
     // goes on as the system's file drag (ui/ExternalDrag.h)
     bool shouldDropFilesWhenDraggedExternally (const juce::DragAndDropTarget::SourceDetails& details, juce::StringArray& files,
                                                bool& canMoveFiles) override;
@@ -94,9 +94,9 @@ public:
     bool keyStateChanged (bool isKeyDown) override;
     ui::Hint hintAt (juce::Point<int> position) override; // the toolbar's background: how to edit it
 
-    // Opens .lynx or .flp (also used by the command line).
+    // Opens .yw or .flp (also used by the command line).
     void openFile (const juce::File& file);
-    // A file the operating system asks LYNX to open while it runs (macOS Finder): as File › Open, unsaved changes are
+    // A file the operating system asks YW to open while it runs (macOS Finder): as File › Open, unsaved changes are
     // asked about first; waits for a project still loading.
     void openFileRequest (const juce::File& file);
     // The document currently saved/opened, empty for an unsaved or imported song.
@@ -110,11 +110,11 @@ public:
     // The main window came up (issue #62): the detached panels restored with the layout go to their saved place, above it.
     void restoreDetachedWindows() { workspace.restoreDetachedWindows(); }
     // Issue #123: at start-up without a file to open, FL's "Startup project" (Settings › General › Startup): the default
-    // template as a new untitled project (nothing changes while it is LYNX's default), an empty project or the last one.
+    // template as a new untitled project (nothing changes while it is YW's default), an empty project or the last one.
     void openStartupProject();
 
-    // issue #232 (round 190ns, LYNX extra, stage 1 of docs/design/PROJECT_TABS.md): File › Open in new window: another
-    // LYNX SHARE window (its own process, as a second start already is) with `file`, or with the start-up project when
+    // issue #232 (round 190ns, YW extra, stage 1 of docs/design/PROJECT_TABS.md): File › Open in new window: another
+    // YW Studio window (its own process, as a second start already is) with `file`, or with the start-up project when
     // `file` is empty. False when it could not be started.
     bool openInNewWindow (const juce::File& file);
 
@@ -177,7 +177,7 @@ public:
     void setAlternateUndoForSnapshot (bool on) noexcept { alternateUndo = on; }
     void updateLookFieldsForSnapshot() { updateLookFields(); } // (round 190lx) // (round 190jn: Q, the hot-swap key; round 190jz: --issueshot190jz)
     juce::Component* getClipGridForSnapshot() const noexcept { return clipGridView.get(); } // --gridshot (round 190bv)
-    // round 190ch (LYNX's own): the project's Lyrics / Notes panel — docked on the right of the Playlist in every layout,
+    // round 190ch (YW's own): the project's Lyrics / Notes panel — docked on the right of the Playlist in every layout,
     // or in its own window — and the Reference match window
     void toggleLyrics();
     void showLyrics (bool floating);
@@ -194,7 +194,7 @@ public:
     void applyProjectWindowLayout (const ProjectFile::WindowLayout& layout);
     bool layoutInSaves = false; // (--details190mrshot: the off-screen window keeps its layout in saves too)
     void warnIfProjectTooBig (const juce::File& file); // round 190mr (DF-147)
-    // round 190mr (DF-34): something dragged inside LYNX over a window button shows that window in front (FL's toolbar)
+    // round 190mr (DF-34): something dragged inside YW over a window button shows that window in front (FL's toolbar)
     void revealPanelUnderDrag();
     int dragRevealPanel = -1;
     // round 190mr (DF-49): FL's Extended Hint Panel (View › Toolbars › Hint bar; ui/ExtendedHintPanel.h), off by default;
@@ -215,7 +215,7 @@ public:
     // The welcome card ("Where are you coming from?"): at the first start of a fresh profile, and from Help › Welcome...
     // in every layout. `firstRun`: the background plugin scan starts and the answer is what setup-done.txt records.
     void showWelcomeCard (bool firstRun);
-    // Issue #252 (round 190oq, LYNX extra; core/StartPage.h): the start page over the window — recent projects and
+    // Issue #252 (round 190oq, YW extra; core/StartPage.h): the start page over the window — recent projects and
     // templates; at start-up when switched on (never over the welcome card), and File › Start page... at any time.
     void showStartPage();
     // A choice (Choice::none = Skip / × / Esc): its layout through the runtime switch (as View › Layout style), its starter,
@@ -241,7 +241,7 @@ public:
     juce::var handleDemoOp (const juce::String& op, const juce::var& args);
     juce::Component* danceStageForTest() const { return danceStage.get(); } // (a DanceStage, ui/DanceView.h)
     void waitForBrowserForSnapshot() { browser.waitForListing (5000); }
-    // --no-plugins project.lynx (round 190ap): the next .lynx project opens with its third-party plugins off
+    // --no-plugins project.yw (round 190ap): the next .yw project opens with its third-party plugins off
     void openNextWithoutPlugins (bool on) { nextOpenWithoutPlugins = on; }
     juce::StringArray getMenuNamesForSnapshot() { return getMenuBarNames(); }
     juce::PopupMenu getMenuForSnapshot (int index) { return getMenuForIndex (index, {}); }
@@ -252,7 +252,7 @@ public:
     void showWindowMenuForSnapshot (bool on) { windowMenuShown = on; menuItemsChanged(); resized(); }
     windowaudio::Link* windowAudioForSnapshot() { return windowAudio.get(); }
     juce::Component& windowAudioBarForSnapshot() { return windowAudioBar; }
-    // a message from another LYNX SHARE window (ui/LynxWindows.h): activate, the audio device's hand-over, hello / bye
+    // a message from another YW Studio window (ui/YwWindows.h): activate, the audio device's hand-over, hello / bye
     void windowMessage (const juce::String& verb, int from);
     juce::PopupMenu getPanelMenuForSnapshot (workspace::Panel panel)
     {
@@ -328,7 +328,7 @@ public:
     static std::unique_ptr<juce::Component> makeHelpContent (const keys::KeyMap* keyMap = nullptr, // nullptr: the defaults
                                                              std::function<void()> onManageShortcuts = {});
     static std::unique_ptr<juce::AlertWindow> makeAboutWindow(); // result 1 = OK, 2 = "Support YW Studio"
-    // round 190fq: the start-up support note (ui/SupportLynx.h), once per normal start; `quietRun` = test mode / CI
+    // round 190fq: the start-up support note (ui/SupportYw.h), once per normal start; `quietRun` = test mode / CI
     void startSupportNote (bool quietRun);
     support::StartupNote& supportNoteForSnapshot();
     supportnote::Moment supportNoteMoment(); // a dialog / overlay in front, playing, recording
@@ -371,7 +371,7 @@ private:
     void showImportReport();
     void importFlp (const juce::File& file);
     void flpImported (const juce::File& file); // after the import: title, recent files, missing files
-    void openLynxProject (const juce::File& file, bool withoutPlugins = false);
+    void openYwProject (const juce::File& file, bool withoutPlugins = false);
     // round 190ap: "Open without third-party plugins" (File menu; --no-plugins on the command line): the project opens
     // with every hosted plugin switched off, its settings kept; the panel switches them back on
     void chooseFileToOpenWithoutPlugins();
@@ -507,7 +507,7 @@ private:
     void addLastTweakedItems (juce::PopupMenu& menu, const AutomationTarget& target);
     // File › Import › MIDI file... (REA round 143)
     void importMidiFile();
-    // round 190pe (P11, LYNX extra): File › Import › Tracks from another project (ui/TrackImportDialog.h, core/TrackImport.h)
+    // round 190pe (P11, YW extra): File › Import › Tracks from another project (ui/TrackImportDialog.h, core/TrackImport.h)
     void importTracksFromProject();
     void importTracksFrom (const juce::File& file);
     void importMidiFile (const juce::File& file, const MidiFileIo::ImportOptions& options);
@@ -619,7 +619,7 @@ private:
     // issue #251 (round 190oq): writes FL's zipped loop package `zip` (the project named after it, its files beside it)
     void writePackage (const juce::File& zip);
     void exportDataFiles();   // FL's File › Export › Project data files... (copies, nothing re-pointed)
-    void collectAllAndSave(); // Live's File › Collect All and Save (LYNX extra): the files into the project's folder
+    void collectAllAndSave(); // Live's File › Collect All and Save (YW extra): the files into the project's folder
     sessionui::Context sessionContext(); // the File › Online session commands (round 168a)
     liveui::Context liveContext();       // the live session's (round 169b)
     void startLiveFromCommandLine();     // --live-host code.txt / --live-join CODE|@code.txt (scripted GUI checks)
@@ -725,7 +725,7 @@ private:
     // FL's recording panel toggles (round 170e2): Blend recorded notes (overdub, off = replace) and the tempo tapper
     IconButton blendButton { "blend", Icon::blend };
     IconButton tapTempoButton { "tapTempo", Icon::tapTempo };
-    // round 170e3: FL's Loop record and Step edit switches, and LYNX's punch in/out on the loop region, as toggles
+    // round 170e3: FL's Loop record and Step edit switches, and YW's punch in/out on the loop region, as toggles
     IconButton loopRecordButton { "loopRecord", Icon::loopRecord };
     IconButton stepEditButton { "stepEdit", Icon::stepEdit };
     IconButton punchButton { "punch", Icon::punch };
@@ -898,7 +898,7 @@ private:
     IconButton snapToggleButton { "snapToggle", Icon::magnet };
     std::vector<int> dividers; // x positions of the toolbar panel separators
     juce::Rectangle<int> snapLabelArea, patternLabelArea, titleArea, transportArea;
-    // round 190oo (O-4, LYNX extra): the Simple top bar's centred project name (empty: off or no room) and its fitted
+    // round 190oo (O-4, YW extra): the Simple top bar's centred project name (empty: off or no room) and its fitted
     // text, made again only when the name or the room changes (no work in paint)
     juce::Rectangle<int> simpleNameArea;
     juce::String simpleNameFor, simpleNameFitted;
@@ -933,7 +933,7 @@ private:
 
     // --- round 190iv: the toolbar per layout style (core/ToolbarLayout.h Look; design190ia slices SG-A and CL-G) ---
     // Pattern: FL's toolbar, untouched. Simple: BandLab's capsules in FL's frame, "Last saved" and Finish at the right.
-    // Clip-launch: the menus on a 23 px row over Live's one-row control bar; LYNX's own panels in its "⋯" menu.
+    // Clip-launch: the menus on a 23 px row over Live's one-row control bar; YW's own panels in its "⋯" menu.
     // The same widgets are reused in each look (their setLook / IconButton::setLook); the parts only one look has are
     // below. Nothing here runs a timer: the main window's timer updates them and each repaints only on a change.
     toolbarlayout::Look toolbarLook = toolbarlayout::Look::fl;
@@ -1011,12 +1011,12 @@ private:
     projectkey::Key scaleShown {};
     bool scaleShownSet = false;
     void showKeyPart (int part);
-    void setLiveScaleControl (bool on); // the LYNX extra's switch (Settings › LYNX extras, the Key menu)
+    void setLiveScaleControl (bool on); // the YW extra's switch (Settings › YW extras, the Key menu)
     void showChordText();
     void addAudioLoggerMenu (juce::PopupMenu& menu);
     void dumpAudioLog();
     void refreshChordOptions();
-    uitrace::Monitor uiTraceMonitor; // LYNX_TRACE_UI: message-thread stalls to ui.log (round 151)
+    uitrace::Monitor uiTraceMonitor; // YW_TRACE_UI: message-thread stalls to ui.log (round 151)
     toolbar::MidiActivityLight midiLight;
     juce::StringArray midiLightInputs; // the open MIDI inputs (refreshed once a second)
     int midiInputTicks = 0;
@@ -1025,15 +1025,15 @@ private:
     // the toolbar's live displays (output monitor, song position, time), at the display's refresh (round 174e capped
     // them at 72 Hz: the oscilloscope's stroke costs twice as much at 144). Round 190kr (QA-11): with the Channel rack
     // maximised over the Playlist (Thief's default view) the toolbar's scope is the only thing that moves at the
-    // display's rate; FL draws it at 143 frames a second, LYNX at 72 (86 screen updates a second; 0.1.29's 143 were the
+    // display's rate; FL draws it at 143 frames a second, YW at 72 (86 screen updates a second; 0.1.29's 143 were the
     // covered Playlist's own playhead frames, painted for nobody). Windows, Thief playing, 2 runs each under load: 72 Hz
     // 85 updates/s, 76.6 % of a core for the process; the display's rate 134/s, 75-93 % (message thread +7, GPU driver
-    // +2 points). LYNX_TOOLBAR_HZ=<n>: another cap (72 = before round 190kr), for A/B measurements.
+    // +2 points). YW_TOOLBAR_HZ=<n>: another cap (72 = before round 190kr), for A/B measurements.
     bool toolbarFrame (double nowMs);
     static double toolbarHz()
     {
         static const double hz = [] {
-            const auto v = juce::SystemStats::getEnvironmentVariable ("LYNX_TOOLBAR_HZ", {}).getDoubleValue();
+            const auto v = juce::SystemStats::getEnvironmentVariable ("YW_TOOLBAR_HZ", {}).getDoubleValue();
             return v >= 10.0 ? juce::jmin (v, 1000.0) : 170.0; // (170: FrameTicker's own cap, the display's rate up to 170 Hz)
         }();
         return hz;
@@ -1139,7 +1139,7 @@ private:
     updater::UpdateBar updateBar; // "YW Studio x.y.z is available" under the toolbar (round 166b)
     juce::Label remoteControlBar;
     // issue #232 stage 2 (round 190nz): "<device> plays in another YW Studio window" under the toolbar, with "Make this
-    // window the one that plays" (ui/WindowAudio.h); the Window menu while other LYNX SHARE windows are open
+    // window the one that plays" (ui/WindowAudio.h); the Window menu while other YW Studio windows are open
     windowaudio::Bar windowAudioBar;
     std::unique_ptr<windowaudio::Link> windowAudio;
     bool windowMenuShown = false;
@@ -1150,10 +1150,10 @@ private:
     juce::File demoSaveTarget; // round 190pl (--demo file.save): the file the next Save as... writes without its file dialog
     juce::File currentFile;
     juce::File importedFlpFile; // the .flp the current project was imported from (until another project is opened)
-    juce::String importedSuffix; // " (imported from FL Studio)" in the title until saved as .lynx
+    juce::String importedSuffix; // " (imported from FL Studio)" in the title until saved as .yw
     juce::String projectName; // suggested name for export (also from an imported .flp)
     HeldNotes heldKeys; // notes the typing piano is playing (tag: the key code)
-    bool wasForeground = true; // (the Plugin database folder is read again when LYNX comes back to the front: issue #104)
+    bool wasForeground = true; // (the Plugin database folder is read again when YW comes back to the front: issue #104)
     // round 190bf: the Plugin database folder's watcher (core/FolderWatcher.h); its thread only posts to this one
     std::unique_ptr<folderwatch::Watcher> pluginDatabaseWatcher;
     void readPluginDatabaseAgain();
@@ -1182,4 +1182,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
-} // namespace lynx
+} // namespace yw

@@ -20,7 +20,7 @@
 #include "ui/VideoMedia.h"
 #include "ui/VisualEditors.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -87,7 +87,7 @@ public:
     }
 };
 
-// A small icon button (drawn paths, LYNX's style)
+// A small icon button (drawn paths, YW's style)
 class IconButton final : public juce::Button
 {
 public:
@@ -314,7 +314,7 @@ public:
 // FL's typed time (round 174d A2 [DECOMP SetTimeLabelClick 0x72a030]): whole numbers split at ':' — S, S:x, M:S:x or
 // H:M:S:x, where x is milliseconds, or frames in an SMPTE time display (frames → ms at the display's whole rate: 24 for
 // 23.976 / 24, 25, 30 for 29.97 drop / 30, the video's rate for Auto; FL takes 1 for the other rates, which drops the
-// frames — LYNX uses their whole rate); a '-' anywhere makes it negative. Not a number: nothing.
+// frames — YW uses their whole rate); a '-' anywhere makes it negative. Not a number: nothing.
 int typingFps (int mode, double videoFps)
 {
     switch (mode)
@@ -552,7 +552,7 @@ public:
         panelBack.overlay = ! settings.dock;
         panelBack.setBounds (panelArea);
         locateButton.setBounds (r.withSizeKeepingCentre (160, 28).translated (0, 40));
-        // FL's order (round 174d, FL 2026 on screen): folder, ▾, the chain, [∞ | ▶ | ■] … volume, speaker (LYNX's
+        // FL's order (round 174d, FL 2026 on screen): folder, ▾, the chain, [∞ | ▶ | ■] … volume, speaker (YW's
         // pop-out after them); the times under the buttons (start ◂ … now … ▸ end); the slider at the bottom
         auto p = panelArea.reduced (10, 6);
         auto row1 = p.removeFromTop (32);
@@ -958,10 +958,10 @@ private:
 
     void chooseFile()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Load video file..."), resolveVideo (settings.path).getParentDirectory(),
+        chooser = yw::ui::makeFileChooser (tr ("Load video file..."), resolveVideo (settings.path).getParentDirectory(),
                                                        juce::String ("*.") + juce::String (videoExtensions).replace (";", ";*."));
         juce::Component::SafePointer<VideoPlayerEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
             if (self != nullptr && fc.getResult().existsAsFile())
                 self->load (fc.getResult());
         });
@@ -985,14 +985,14 @@ private:
 
     void chooseFfmpeg()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Locate ffmpeg"), juce::File(),
+        chooser = yw::ui::makeFileChooser (tr ("Locate ffmpeg"), juce::File(),
 #if JUCE_WINDOWS
                                                        "ffmpeg.exe");
 #else
                                                        "*");
 #endif
         juce::Component::SafePointer<VideoPlayerEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
             if (self == nullptr || ! fc.getResult().existsAsFile())
                 return;
             setFfmpegLocation (fc.getResult());
@@ -1195,4 +1195,4 @@ std::unique_ptr<juce::Component> makeVideoPlayerEditor (AudioEngine& engine, int
         return channel >= 0 && channel < (int) s.channels.size() ? &s.channels[(std::size_t) channel] : nullptr;
     }, channel);
 }
-} // namespace lynx
+} // namespace yw

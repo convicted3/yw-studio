@@ -1,5 +1,5 @@
 // Round 190y, issue #144: a silenced mixer insert (its mute, a solo elsewhere) keeps showing its level, as FL's does,
-// and what LYNX plays stays the same: nothing of it reaches the Master or the inserts it sends to.
+// and what YW plays stays the same: nothing of it reaches the Master or the inserts it sends to.
 
 namespace mute190y
 {
@@ -10,9 +10,9 @@ struct Result
 };
 
 // channel 0 plays a DC of 0.25 on insert 1 (which also sends to insert 2), channel 1 a DC of 0.1 on insert 3
-Result render (const std::function<void (lynx::Song&)>& tweak, bool metering)
+Result render (const std::function<void (yw::Song&)>& tweak, bool metering)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (4);
     s.mixer[1].sends.push_back ({ 2, 1.0f });
@@ -64,7 +64,7 @@ Result render (const std::function<void (lynx::Song&)>& tweak, bool metering)
 
 TEST (mute190y_muted_insert_keeps_its_meter_not_its_sound)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto playing = mute190y::render ([] (Song&) {}, true);
     CHECK (playing.insert1 > 0.1f && playing.insert2 > 0.1f && playing.insert3 > 0.05f);
 
@@ -113,13 +113,13 @@ TEST (mute190y_muted_insert_keeps_its_meter_not_its_sound)
     CHECK (controller.insert1 == 0.0f);
 }
 
-// Round 190y, FL 2026 renders (E:/lynx-work/mute190y/rt, insert 1 = a kick, Master peak): insert 1 muted with a mixer send
+// Round 190y, FL 2026 renders (E:/yw-work/mute190y/rt, insert 1 = a kick, Master peak): insert 1 muted with a mixer send
 // to insert 8 -> 0.0000 (FL cuts the send); unmuted with only the send -> 0.6578; muted with a Fruity Send (dry 100 %) to
 // insert 8 instead -> 0.8222, the same as insert 1 alone (FL keeps running a muted insert's effects: the Fruity Send is
-// heard). Song::muteRunsEffects (.flp imports, new projects) follows that; older LYNX projects keep their old sound.
+// heard). Song::muteRunsEffects (.flp imports, new projects) follows that; older YW projects keep their old sound.
 TEST (mute190y_muted_insert_runs_its_effects_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto fsend = [] (bool fl, bool muted) {
         return [fl, muted] (Song& s) {
             s.muteRunsEffects = fl;
@@ -161,11 +161,11 @@ TEST (mute190y_muted_insert_runs_its_effects_like_fl)
     CHECK (! s.muteRunsEffects);
 }
 
-// Round 190y, LYNX option "Muted inserts don't process" (off by default): on, a muted insert skips its effects, EQ and
-// meter as LYNX did before (its Fruity Send goes quiet, unlike FL); off, the FL numbers above hold.
+// Round 190y, YW option "Muted inserts don't process" (off by default): on, a muted insert skips its effects, EQ and
+// meter as YW did before (its Fruity Send goes quiet, unlike FL); off, the FL numbers above hold.
 TEST (mute190y_option_muted_inserts_dont_process)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto setup = [] (bool option) {
         return [option] (Song& s) {
             s.muteRunsEffects = true;

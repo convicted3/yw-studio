@@ -5,7 +5,7 @@
 
 TEST (s190gp_apex_meter_only_while_shown)
 {
-    using namespace lynx;
+    using namespace yw;
     auto run = [] (bool shown, float* integrated, float* reduction) {
         Song song;
         song.bpm = 120.0;

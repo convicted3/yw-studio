@@ -1,5 +1,5 @@
 // Round 190ey: what the live FL session 190ew found different (part A: the Sampler page, the control menus, the Playlist,
-// issue #152's question). FL facts: /mnt/e/lynx-work/live190ew/ANSWERS.md (shots in its shots/ folder).
+// issue #152's question). FL facts: /mnt/e/yw-work/live190ew/ANSWERS.md (shots in its shots/ folder).
 #include "core/AudioEdit.h"
 #include "core/ClipOps.h"
 #include "core/FlClipMenu.h"
@@ -51,7 +51,7 @@ inline std::vector<std::uint8_t> strc (std::uint32_t count)
 inline std::vector<std::string> waveMenuTexts()
 {
     std::vector<std::string> out;
-    for (const auto& e : lynx::samplerpage::waveMenu())
+    for (const auto& e : yw::samplerpage::waveMenu())
         out.push_back (e.text == nullptr ? std::string ("-") : std::string (e.text));
     return out;
 }
@@ -59,7 +59,7 @@ inline std::vector<std::string> waveMenuTexts()
 
 TEST (flfix190ey_sampler_content_greys_as_fl)
 {
-    using namespace lynx::samplerpage;
+    using namespace yw::samplerpage;
     // SMP-1: Resample greys at the project's rate (44.1 kHz 808s greyed; a 48 kHz sample in a 44.1 kHz project enabled)
     CHECK (! resampleAvailable (true, 44100.0, 44100.0));
     CHECK (resampleAvailable (true, 48000.0, 44100.0));
@@ -73,7 +73,7 @@ TEST (flfix190ey_sampler_content_greys_as_fl)
 
 TEST (flfix190ey_wav_slice_markers_are_read)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's own save of one region (live check 190ew EDI-2: strc 76 bytes = 28 + 2 x 24, count 2): one slice marker
     const auto one = flfix190ey::wave ({ { "strc", flfix190ey::strc (2) } });
     CHECK (one.size() == 12 + 8 + 76);
@@ -92,8 +92,8 @@ TEST (flfix190ey_wav_slice_markers_are_read)
 
 TEST (flfix190ey_crossfade_on_a_loopless_sample_loops_it_all)
 {
-    using namespace lynx;
-    using namespace lynx::samplerpage;
+    using namespace yw;
+    using namespace yw::samplerpage;
     // SMP-4: CROSSFADE 0 -> > 0 on a sample with no loop: Use loop points on, END at the sample's end, START at 0
     SamplerSettings s;
     s.useLoopPoints = false;
@@ -126,7 +126,7 @@ TEST (flfix190ey_crossfade_on_a_loopless_sample_loops_it_all)
 
 TEST (flfix190ey_mul_text_bit_depth_and_summary)
 {
-    using namespace lynx::samplerpage;
+    using namespace yw::samplerpage;
     // SMP-5: "Time stretch (multiplicator): 105.70%" / 111.73% / 89.50%
     CHECK (mulText (800) == "105.70%");
     CHECK (mulText (1600) == "111.73%");
@@ -143,7 +143,7 @@ TEST (flfix190ey_mul_text_bit_depth_and_summary)
 
 TEST (flfix190ey_waveform_menu_is_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     // SMP-7 (FL 2026 shot SMP-7-waveform-right-click-menu.png), top to bottom
     const std::vector<std::string> fl { "Reload", "Save as...", "Locate file", "Copy audio to clipboard", "Paste audio from clipboard", "-",
                                         "Edit in audio editor", "Edit in pitch corrector", "Edit in time warper", "-",
@@ -151,7 +151,7 @@ TEST (flfix190ey_waveform_menu_is_fls)
                                         "Open in new Fruity Slicer 2 channel", "Open in new Slicex channel", "-", "Detect tempo", "Get properties", "-",
                                         "Spectrum view", "Multichannel waveform view" };
     CHECK (flfix190ey::waveMenuTexts() == fl);
-    // what LYNX performs (the rest is left out of the menu, no dead stubs)
+    // what YW performs (the rest is left out of the menu, no dead stubs)
     std::vector<std::string> have;
     for (const auto& e : samplerpage::waveMenu())
         if (e.text != nullptr && e.have)
@@ -168,7 +168,7 @@ TEST (flfix190ey_waveform_menu_is_fls)
 
 TEST (flfix190ey_remove_sample_renames_the_channel)
 {
-    using namespace lynx;
+    using namespace yw;
     // CTL-4: "808 Clap" -> "Sampler", no question; the sample, zones, slices and loop points go
     ChannelDef d;
     d.name = "808 Clap";
@@ -185,19 +185,19 @@ TEST (flfix190ey_remove_sample_renames_the_channel)
 
 TEST (flfix190ey_multilink_off_menu_has_the_control_column)
 {
-    using namespace lynx::mlmenu;
+    using namespace yw::mlmenu;
     // CTL-1: off with a last tweaked control: two columns; on: FL's menu alone; nothing tweaked: one column
     CHECK (showsOwnColumn (false, true));
     CHECK (! showsOwnColumn (true, true) && ! showsOwnColumn (false, false));
-    // LYNX's greyed one-step lines are gone while off
-    CHECK (! showsLynxOneStepItems (false) && showsLynxOneStepItems (true));
+    // YW's greyed one-step lines are gone while off
+    CHECK (! showsYwOneStepItems (false) && showsYwOneStepItems (true));
     // the right column stays FL's "Last 2 tweaked parameters" menu
     CHECK (captionFor (false, 2) == "Last 2 tweaked parameters");
 }
 
 TEST (flfix190ey_automate_names_and_level)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
@@ -231,7 +231,7 @@ TEST (flfix190ey_automate_names_and_level)
     link.source.channel = 0;
     song.automations.push_back (link);
     CHECK (clipops::automateName (song, target, base) == base + " #3");
-    // PL-2: with Levels VOL at 147 % FL's clip plays unity (range top at unity, line at the top): 0.5 of LYNX's travel
+    // PL-2: with Levels VOL at 147 % FL's clip plays unity (range top at unity, line at the top): 0.5 of YW's travel
     const auto& a = song.automations[(std::size_t) first];
     CHECK (a.points.front().value == 0.5f && a.points.front().value == a.points.back().value);
     CHECK (lasttweak::valueText (song, target, a.points.front().value) == "100%  0.0dB  1.00");
@@ -247,7 +247,7 @@ TEST (flfix190ey_automate_names_and_level)
 
 TEST (flfix190ey_level_volume_text_is_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     // PL-6: "Volume multiplier: 147%  10.3dB  3.28", "100%  0.0dB  1.00", "106%  1.4dB  1.18" (FL's curve, levelAdjustGain)
     CHECK (levelVolumeText (1.468f) == "147%  10.3dB  3.28");
     CHECK (levelVolumeText (1.0f) == "100%  0.0dB  1.00");
@@ -258,7 +258,7 @@ TEST (flfix190ey_level_volume_text_is_fls)
 
 TEST (flfix190ey_tempo_dialog_buttons)
 {
-    using namespace lynx::tempodlg;
+    using namespace yw::tempodlg;
     // PL-8: "117.5 (estimated)", the four ranges, Type in (BPM), Type in (beats), "100 (project)", No tempo
     const auto b = buttons (117.5, 100.0);
     CHECK (b.size() == 9);
@@ -277,7 +277,7 @@ TEST (flfix190ey_tempo_dialog_buttons)
 
 TEST (flfix190ey_fade_curve_submenu_is_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     // PL-7 (FL 2026 shot PL-7-fade-curve-submenu.png), the same for Fade in curve and Fade out curve
     const std::vector<std::string> fl { "Reset", "Normalize", "Normalize selection as a group", "Create crossfade", "(v) Manual", "[Declicker]",
                                         "(v) Automatic", "(v) Disabled", "(v) Enabled", "[Curve shape]", "(v) Smooth curve", "(v) Single curve" };
@@ -294,7 +294,7 @@ TEST (flfix190ey_fade_curve_submenu_is_fls)
 
 TEST (flfix190ey_external_input_question_only_from_no_input)
 {
-    using namespace lynx;
+    using namespace yw;
     // ISS152-1: (none) -> In 1 - In 2 asks; In 1 - In 2 -> In 1 does not; (none) -> In 1 asks again
     CHECK (asksExternalInputOnly (18, -1, 0, RecordSource::postEq));
     CHECK (! asksExternalInputOnly (18, 0, 1, RecordSource::postEq));
@@ -307,7 +307,7 @@ TEST (flfix190ey_external_input_question_only_from_no_input)
 
 TEST (flfix190ey_clip_preview_plays_through_the_channel_as_the_song_does)
 {
-    using namespace lynx;
+    using namespace yw;
     // PL-3: the Preview note is the song's own note for the clip (core audioClipNote), on the live queue: the channel plays
     // it, so it goes through the channel's insert (its fader) exactly as the song plays the clip
     const auto makeSong = [] (float insertVolume) {

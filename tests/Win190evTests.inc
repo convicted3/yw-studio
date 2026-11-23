@@ -8,7 +8,7 @@
 
 TEST (win190ev_a_click_in_a_plugin_view_belongs_to_its_docked_window)
 {
-    using lynx::dockstack::clickedWindow;
+    using yw::dockstack::clickedWindow;
     const std::set<std::string> docked { "frame", "editor" };
     auto isDocked = [&docked] (const std::string& w) { return docked.count (w) > 0; };
     // the plugin's own view, two levels under the docked frame, under the main window
@@ -22,7 +22,7 @@ TEST (win190ev_a_click_in_a_plugin_view_belongs_to_its_docked_window)
 
 TEST (win190ev_a_clicked_docked_window_rises_above_panels_but_not_above_overlays)
 {
-    using lynx::dockstack::needsRaise;
+    using yw::dockstack::needsRaise;
     // bottom to top: Playlist, Channel rack, a channel's settings, Mixer, a dancer that keeps in front, the wizard
     const std::vector<std::string> stack { "playlist", "rack", "settings", "mixer", "dancer", "wizard" };
     const std::set<std::string> inFront { "dancer", "wizard" };
@@ -39,7 +39,7 @@ TEST (win190ev_a_clicked_docked_window_rises_above_panels_but_not_above_overlays
 
 TEST (win190ev_the_desktop_list_is_reordered_only_when_it_differs)
 {
-    using lynx::dockstack::listMatches;
+    using yw::dockstack::listMatches;
     // JUCE's list of desktop windows: the main window, then the docked children, then the owned windows
     std::vector<std::string> list { "main", "playlist", "rack", "plugin", "dialog" };
     auto indexOf = [&list] (const std::string& w) {
@@ -63,7 +63,7 @@ TEST (win190ev_the_desktop_list_is_reordered_only_when_it_differs)
 
 TEST (win190ev_docked_panels_do_not_fade_where_the_window_alpha_flashes)
 {
-    using lynx::dockstack::panelFades;
+    using yw::dockstack::panelFades;
     // Windows: a docked panel shows and hides at once (the alpha fade flashed it twice); a plain panel still fades
     CHECK (! panelFades (true, true, true));
     CHECK (panelFades (true, false, true));
@@ -77,24 +77,24 @@ TEST (win190ev_docked_panels_do_not_fade_where_the_window_alpha_flashes)
 
 namespace
 {
-lynx::Song win190evMixer (int inserts)
+yw::Song win190evMixer (int inserts)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
     song.playlistTracks.clear();
-    song.mixer = lynx::Song::defaultMixer (inserts);
+    song.mixer = yw::Song::defaultMixer (inserts);
     return song;
 }
 } // namespace
 
 TEST (win190ev_a_take_plays_where_fl_routes_it)
 {
-    using lynx::RecordSource;
-    using lynx::takes::playbackInsert;
+    using yw::RecordSource;
+    using yw::takes::playbackInsert;
     auto song = win190evMixer (12);
     // FL (FLEngine FUN_012aa880): a Post EQ take of insert 7 (FL's default position; 7 goes to Master) plays through
-    // Master: it holds 7's effects already. LYNX used to give it a new free insert (the reporter's 8 or 10).
+    // Master: it holds 7's effects already. YW used to give it a new free insert (the reporter's 8 or 10).
     CHECK (playbackInsert (song, 7, RecordSource::postEq) == 0);
     for (const auto point : { RecordSource::externalAndMixer, RecordSource::postEffects, RecordSource::postLevel, RecordSource::postTrack })
         CHECK (playbackInsert (song, 7, point) == 0);
@@ -108,7 +108,7 @@ TEST (win190ev_a_take_plays_where_fl_routes_it)
     CHECK (playbackInsert (song, 7, RecordSource::postEq) == 0);
     // a Playlist audio track linked to insert 7: the take plays through 7 whatever its position
     song.playlistTracks.resize (3);
-    song.playlistTracks[2].mode = lynx::PlaylistTrackMode::audio;
+    song.playlistTracks[2].mode = yw::PlaylistTrackMode::audio;
     song.playlistTracks[2].mixerTrack = 7;
     CHECK (playbackInsert (song, 7, RecordSource::postEq) == 7);
     // no insert (Settings' "Record input audio" without armed inserts): a new one, as before
@@ -118,7 +118,7 @@ TEST (win190ev_a_take_plays_where_fl_routes_it)
 
 TEST (win190ev_a_take_on_master_leaves_its_track_unlinked)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     auto song = win190evMixer (12);
     const auto inserts = song.mixer.size();
     const std::vector<Part> parts { { 1920, 3840, 0, 0.0f } };
@@ -128,12 +128,12 @@ TEST (win190ev_a_take_on_master_leaves_its_track_unlinked)
     CHECK (song.mixer.size() == inserts);
     CHECK (song.playlist.size() == 1);
     const auto track = song.playlist.empty() ? -1 : song.playlist[0].track;
-    CHECK (track >= 0 && (track >= (int) song.playlistTracks.size() || song.playlistTracks[(std::size_t) track].mode == lynx::PlaylistTrackMode::unassigned));
+    CHECK (track >= 0 && (track >= (int) song.playlistTracks.size() || song.playlistTracks[(std::size_t) track].mode == yw::PlaylistTrackMode::unassigned));
     // External input only on insert 7: through 7, its track linked to 7 (the next take of 7 lands there)
     placeTakeClips (song, { { "/rec/Gtr.wav", "Gtr", 7, 7 } }, { { 7680, 3840, 0, 0.0f } });
     CHECK (song.channels.size() == 2 && song.channels[1].mixerTrack == 7);
     const auto gtrTrack = song.playlist.back().track;
-    CHECK (gtrTrack >= 0 && gtrTrack < (int) song.playlistTracks.size() && song.playlistTracks[(std::size_t) gtrTrack].mode == lynx::PlaylistTrackMode::audio
+    CHECK (gtrTrack >= 0 && gtrTrack < (int) song.playlistTracks.size() && song.playlistTracks[(std::size_t) gtrTrack].mode == yw::PlaylistTrackMode::audio
            && song.playlistTracks[(std::size_t) gtrTrack].mixerTrack == 7);
     // a file of no insert still gets a new one
     placeTakeClips (song, { { "/rec/In.wav", "In", -1, -1 } }, { { 15360, 3840, 0, 0.0f } });
@@ -142,9 +142,9 @@ TEST (win190ev_a_take_on_master_leaves_its_track_unlinked)
 
 TEST (win190ev_crash_journals_keep_master_and_read_old_files)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     Journal j;
-    j.wav = "C:/Music/LYNX/Recordings/Vox.wav";
+    j.wav = "C:/Music/YW/Recordings/Vox.wav";
     j.ticksPerSample = 0.04;
     for (const int through : { -1, 0, 7 })
     {
@@ -154,8 +154,8 @@ TEST (win190ev_crash_journals_keep_master_and_read_old_files)
     }
     // a journal of 0.1.26 (only "insert", 0 = a new insert)
     Journal old;
-    CHECK (parseJournal ("lynxrec=1\nwav=C:/a.wav\nticksPerSample=0.04\ninsert=0\n", old) && old.insert == -1);
-    CHECK (parseJournal ("lynxrec=1\nwav=C:/a.wav\nticksPerSample=0.04\ninsert=5\n", old) && old.insert == 5);
+    CHECK (parseJournal ("ywrec=1\nwav=C:/a.wav\nticksPerSample=0.04\ninsert=0\n", old) && old.insert == -1);
+    CHECK (parseJournal ("ywrec=1\nwav=C:/a.wav\nticksPerSample=0.04\ninsert=5\n", old) && old.insert == 5);
 }
 
 TEST (win190ev_soloing_the_recording_insert_keeps_its_input_and_take_audible)
@@ -163,14 +163,14 @@ TEST (win190ev_soloing_the_recording_insert_keeps_its_input_and_take_audible)
     auto song = win190evMixer (12);
     song.mixer[7].solo = true;
     const auto audible = song.soloAudible();
-    // the take's clip on Master (where FL puts it) and insert 7 itself are heard with 7 soloed; the new insert LYNX used
+    // the take's clip on Master (where FL puts it) and insert 7 itself are heard with 7 soloed; the new insert YW used
     // to give the clip (8) was not: "soloing 7 is silent, soloing 8 / 10 is heard"
     CHECK (audible[0] && audible[7]);
     CHECK (! audible[8] && ! audible[10]);
 
     // insert 7's input (input 2, mono), armed and recording, soloed: heard at the Master
-    lynx::RackRenderer renderer;
-    lynx::LiveInput input;
+    yw::RackRenderer renderer;
+    yw::LiveInput input;
     std::vector<float> in1 (256, 0.0f), in2 (256, 0.5f), l (256), r (256);
     auto& x = song.mixer[7];
     x.inputChannel = 1;
@@ -184,7 +184,7 @@ TEST (win190ev_soloing_the_recording_insert_keeps_its_input_and_take_audible)
     input.recording.store (true);
     // (the peak of the last blocks: a solo change ramps the inserts' levels over the first ones)
     auto peak = [&] {
-        auto state = lynx::RackState::build (song, nullptr, 48000.0);
+        auto state = yw::RackState::build (song, nullptr, 48000.0);
         float p = 0.0f;
         for (int block = 0; block < 40; ++block)
         {
@@ -207,20 +207,20 @@ TEST (win190ev_soloing_the_recording_insert_keeps_its_input_and_take_audible)
 
 TEST (win190ev_new_inserts_monitor_when_armed_old_projects_keep_auto)
 {
-    using lynx::InputMonitor;
+    using yw::InputMonitor;
     // a new insert (and every insert of a new project) defaults to FL's "When armed": the input is heard while the insert
     // is armed, playing back too (the reporter's armed, soloed insert 7 during playback)
-    CHECK (lynx::MixerTrack {}.monitor == InputMonitor::whenArmed);
-    const auto fresh = lynx::Song::makeDefault();
+    CHECK (yw::MixerTrack {}.monitor == InputMonitor::whenArmed);
+    const auto fresh = yw::Song::makeDefault();
     CHECK (fresh.mixer.size() > 7 && fresh.mixer[7].monitor == InputMonitor::whenArmed);
-    for (const auto& t : lynx::Song::defaultMixer (12))
+    for (const auto& t : yw::Song::defaultMixer (12))
         CHECK (t.monitor == InputMonitor::whenArmed);
-    CHECK (lynx::inputMonitored (InputMonitor::whenArmed, true, true, false));
-    // .lynx: "When armed" is written (it is not the key-less "Auto") and read back; a project saved before (no key)
+    CHECK (yw::inputMonitored (InputMonitor::whenArmed, true, true, false));
+    // .yw: "When armed" is written (it is not the key-less "Auto") and read back; a project saved before (no key)
     // opens with "Auto" as it was saved; every stored value as stored
-    CHECK (lynx::monitorKeyWritten (InputMonitor::whenArmed) && ! lynx::monitorKeyWritten (InputMonitor::automatic));
-    CHECK (lynx::monitorFromKey (0, false) == InputMonitor::automatic);
+    CHECK (yw::monitorKeyWritten (InputMonitor::whenArmed) && ! yw::monitorKeyWritten (InputMonitor::automatic));
+    CHECK (yw::monitorFromKey (0, false) == InputMonitor::automatic);
     for (const auto m : { InputMonitor::off, InputMonitor::whenArmed, InputMonitor::automatic, InputMonitor::on })
-        CHECK (lynx::monitorFromKey ((int) m, lynx::monitorKeyWritten (m)) == m);
-    CHECK (lynx::monitorFromKey (9, true) == InputMonitor::on && lynx::monitorFromKey (-2, true) == InputMonitor::off);
+        CHECK (yw::monitorFromKey ((int) m, yw::monitorKeyWritten (m)) == m);
+    CHECK (yw::monitorFromKey (9, true) == InputMonitor::on && yw::monitorFromKey (-2, true) == InputMonitor::off);
 }

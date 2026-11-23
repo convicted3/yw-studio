@@ -17,12 +17,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::xy
+namespace yw::xy
 {
 int axesOf (EffectKind kind) noexcept; // 2 or 3 (0: not an X-Y controller)
 inline bool isXyController (EffectKind kind) noexcept { return axesOf (kind) > 0; }
@@ -88,7 +88,7 @@ std::unique_ptr<Effect> makeEffect (EffectKind kind);
 // round 190pt: an X-Y-Z slot with flInputCurves set takes its input curves from the slot's FL state
 std::unique_ptr<Effect> makeEffectWithCurves (const EffectSlot& slot);
 
-// FL's saved state (0xD5) → LYNX's slot (nullopt when it doesn't parse). X-Y: i32 version + 10 × i32 parameters
+// FL's saved state (0xD5) → YW's slot (nullopt when it doesn't parse). X-Y: i32 version + 10 × i32 parameters
 // (levels / min / max 0…65536, tension −128…128, speed, acceleration); X-Y-Z: version 3 (levels, speed, acceleration,
 // each axis' output curve: its ends as Min / Max, its point's mode and tension (round 165); round 190pt: the curves read
 // in order (a 3-point curve moves the ones after it), flInputCurves set when an input curve is not straight).
@@ -96,4 +96,4 @@ std::optional<EffectSlot> fromFl (const std::string& pluginName, const std::vect
 
 // The text a parameter shows ("X level 50%", "Tension +32").
 std::string paramText (EffectKind kind, int param, float value);
-} // namespace lynx::xy
+} // namespace yw::xy

@@ -5,7 +5,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -259,4 +259,4 @@ juce::String trackImportReport (const trackimport::Result& r, const juce::String
         lines.add (juce::String::fromUTF8 ("\xe2\x80\xa2 ") + tr ("Plugin not found here: {0}", { p }));
     return lines.joinIntoString ("\n");
 }
-} // namespace lynx
+} // namespace yw

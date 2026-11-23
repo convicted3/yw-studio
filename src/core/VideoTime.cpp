@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <vector>
 
-namespace lynx::vtime
+namespace yw::vtime
 {
 namespace
 {
@@ -238,4 +238,4 @@ std::optional<double> parseSeconds (const std::string& typed, const Rate& r)
         return std::nullopt;
     return frameStart (toFrame (*tc, r), r);
 }
-} // namespace lynx::vtime
+} // namespace yw::vtime

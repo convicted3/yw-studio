@@ -6,7 +6,7 @@
 #include "core/Effects.h"
 #include "core/NoteEdit.h"
 
-namespace lynx::quickrender
+namespace yw::quickrender
 {
 namespace
 {
@@ -159,7 +159,7 @@ int applyPatternRender (Song& song, int pattern, const std::string& samplePath, 
             {
                 clip.kind = ClipKind::audio;
                 clip.channel = channel;
-                // (the place, length, offset and mute stay; FL clears the offsets of an untrimmed clip: LYNX's are 0)
+                // (the place, length, offset and mute stay; FL clears the offsets of an untrimmed clip: YW's are 0)
             }
     return channel;
 }
@@ -418,4 +418,4 @@ std::int64_t ticksForSeconds (const Song& song, std::int64_t startTick, double s
     }
     return tick - startTick;
 }
-} // namespace lynx::quickrender
+} // namespace yw::quickrender

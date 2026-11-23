@@ -6,7 +6,7 @@
     bool runIssuesShot190od (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -41,7 +41,7 @@
         const auto near = [] (juce::Colour a, juce::Colour b) {
             return std::abs (a.getRed() - b.getRed()) < 24 && std::abs (a.getGreen() - b.getGreen()) < 24 && std::abs (a.getBlue() - b.getBlue()) < 24;
         };
-        using namespace lynx;
+        using namespace yw;
 
         // ================= #242: the scale highlighting menu opens again =================
         {

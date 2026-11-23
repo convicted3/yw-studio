@@ -5,10 +5,10 @@
 #include "platform/Paths.h"
 #include "ui/HintBar.h"
 #include "ui/I18n.h"
-#include "ui/LynxWindows.h"
+#include "ui/YwWindows.h"
 #include "ui/Theme.h"
 
-namespace lynx::windowaudio
+namespace yw::windowaudio
 {
 namespace
 {
@@ -272,4 +272,4 @@ void Link::showForSnapshot (int pid, const Device& wantedDevice, bool gaveItAway
     if (relayout != nullptr)
         relayout();
 }
-} // namespace lynx::windowaudio
+} // namespace yw::windowaudio

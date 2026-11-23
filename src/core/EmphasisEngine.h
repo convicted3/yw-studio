@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::emphasis
+namespace yw::emphasis
 {
 namespace detail
 {
@@ -234,4 +234,4 @@ private:
     // work buffers (maxBlock, or 16 · maxBlock for the oversampled ones)
     std::vector<float> xin[2], b8[2], b10[2], b12[2], b14[2], b16[2], b18[2], b22[2], b24[2], b26[2], b20, b21, tpScratch;
 };
-} // namespace lynx::emphasis
+} // namespace yw::emphasis

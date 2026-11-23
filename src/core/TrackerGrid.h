@@ -9,7 +9,7 @@
 //   Ins   the rack channel (only in a track group: which of its channels plays the note)
 //   Vol   velocity 00..7F           Pan  00 (left) .. 40 (centre) .. 80 (right)
 //   Dly   the ticks into the row the note starts (or, on an OFF, ends) at
-//   Fx    LYNX's own note fields, one letter each: Gxx slide, Pxx porta, Yxx chance, Rxx release velocity, Txx fine pitch
+//   Fx    YW's own note fields, one letter each: Gxx slide, Pxx porta, Yxx chance, Rxx release velocity, Txx fine pitch
 //         (cents + 80), Mxx mute; Cxx = a note that ends inside the row it starts in (its length in ticks); round 190om:
 //         Bxx the note's pitch curve (the pitch it ends at, semitones + 80: an imported pitch slide, vibrato, arpeggio)
 //         and, on any row, Vxx the channel's volume multiplier pattern event in that row (00..FF = 0..200 %, 80 = 100 %)
@@ -27,7 +27,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::tracker
+namespace yw::tracker
 {
 // ---------------------------------------------------------------------------------------------------------------- layout
 // (round 190om: bend = the note's pitch curve; volume = the track's channel's volume multiplier events, not a note field)
@@ -157,7 +157,7 @@ int maxValue (const Layout& layout, Field field, std::optional<Fx> fx = std::nul
 // ----------------------------------------------------------------------------------------------------------- the edits
 // Each returns true when the pattern changed. `pattern` is the layout's pattern (the caller's copy inside an edit).
 
-// A note typed at the cursor (tracker semantics, LYNX's data): on a note's start cell the key changes (the rest stays);
+// A note typed at the cursor (tracker semantics, YW's data): on a note's start cell the key changes (the rest stays);
 // elsewhere a new note starts at the row's start and lasts until the next note in the column (or the pattern's end);
 // a note sounding in that column across the row is ended there. `velocity` for a new note; `channel` plays it.
 // Returns the index of the typed note in the edited pattern (-1 = nothing).
@@ -233,4 +233,4 @@ int digitOf (int keyChar, bool hex) noexcept; // -1 = not a digit
 
 // The row playing at pattern tick `tick` (-1 = none).
 std::int64_t rowAt (const Layout& layout, double tick) noexcept;
-} // namespace lynx::tracker
+} // namespace yw::tracker

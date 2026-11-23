@@ -8,7 +8,7 @@
 #include <cmath>
 #include <limits>
 
-namespace lynx
+namespace yw
 {
 std::int64_t patternPositionForTick (const Song& song, double tick, std::int64_t loopLength)
 {
@@ -197,7 +197,7 @@ bool inCurrentPatternClip (const Song& song, std::int64_t tick)
 } // namespace
 
 // Where a take played at song `tick` inside clip `c` lands in its pattern: its place along the clip, never folded by the
-// pattern's length, with LYNX's "Stretched pattern clips loop their pattern" on or off (issue #126; FL's rule, round
+// pattern's length, with YW's "Stretched pattern clips loop their pattern" on or off (issue #126; FL's rule, round
 // 168k [EXEC]: a 1-bar pattern's clip stretched to 4 bars, notes played at bars 2.1 / 3.3 / 4.2 stayed there and the
 // pattern became 4 bars). 0.1.23 folded the take into the pattern with the option on, so a take in an empty clip only
 // ever filled its first bar.
@@ -1087,4 +1087,4 @@ CaptureResult captureMidi (Song& song, const std::vector<scorelog::Entry>& log, 
     commitNoteBatch (song, recorder, std::move (notes), options.mode, options.quantize, cleared, options.placeClip, true);
     return result;
 }
-} // namespace lynx
+} // namespace yw

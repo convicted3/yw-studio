@@ -6,23 +6,23 @@ namespace
 {
 // a trimmed copy of GitHub's /releases answer: a draft, two prereleases, a tag that is no version, escapes
 const char* updateFixture = R"json([
-  {"url":"x","html_url":"https://github.com/Ka1-S/LYNX-SHARE/releases/tag/v0.1.23-alpha","tag_name":"v0.1.23-alpha",
-   "name":"LYNX SHARE 0.1.23-alpha","draft":true,"prerelease":true,"body":"draft","assets":[]},
-  {"html_url":"https://github.com/Ka1-S/LYNX-SHARE/releases/tag/v0.1.22-alpha","tag_name":"v0.1.22-alpha",
-   "name":"LYNX SHARE 0.1.22-alpha","draft":false,"prerelease":true,"id":12345678,"author":{"login":"Ka1-S","id":1},
+  {"url":"x","html_url":"https://github.com/convicted3/yw-studio/releases/tag/v0.1.23-alpha","tag_name":"v0.1.23-alpha",
+   "name":"YW Studio 0.1.23-alpha","draft":true,"prerelease":true,"body":"draft","assets":[]},
+  {"html_url":"https://github.com/convicted3/yw-studio/releases/tag/v0.1.22-alpha","tag_name":"v0.1.22-alpha",
+   "name":"YW Studio 0.1.22-alpha","draft":false,"prerelease":true,"id":12345678,"author":{"login":"YW","id":1},
    "body":"## New\r\n- **Update** button — see [the docs](https://x/y)\r\n- Café 🌶\r\n\r\n## Fixes\r\n* `crash` fixed\r\n",
    "assets":[
-     {"name":"LYNX-0.1.22-alpha-linux-x86_64.tar.gz","size":40000000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-linux-x86_64.tar.gz"},
-     {"name":"LYNX-0.1.22-alpha-macos-universal.dmg","size":50000000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-macos-universal.dmg"},
-     {"name":"LYNX-0.1.22-alpha-setup-x64.exe","size":30000000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-setup-x64.exe"},
-     {"name":"LYNX-0.1.22-alpha-store.msix","size":30000000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-store.msix"},
-     {"name":"LYNX-0.1.22-alpha-windows-x64.zip","size":30000000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-windows-x64.zip"},
-     {"name":"LYNX-0.1.22-alpha-x86_64.AppImage","size":60000000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-x86_64.AppImage"},
-     {"name":"LYNX-0.1.22-alpha-x86_64.AppImage.zsync","size":200000,"browser_download_url":"https://github.com/d/LYNX-0.1.22-alpha-x86_64.AppImage.zsync"},
-     {"name":"LYNX.exe","size":90000000,"browser_download_url":"https://github.com/d/LYNX.exe"},
+     {"name":"YW-0.1.22-alpha-linux-x86_64.tar.gz","size":40000000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-linux-x86_64.tar.gz"},
+     {"name":"YW-0.1.22-alpha-macos-universal.dmg","size":50000000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-macos-universal.dmg"},
+     {"name":"YW-0.1.22-alpha-setup-x64.exe","size":30000000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-setup-x64.exe"},
+     {"name":"YW-0.1.22-alpha-store.msix","size":30000000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-store.msix"},
+     {"name":"YW-0.1.22-alpha-windows-x64.zip","size":30000000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-windows-x64.zip"},
+     {"name":"YW-0.1.22-alpha-x86_64.AppImage","size":60000000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-x86_64.AppImage"},
+     {"name":"YW-0.1.22-alpha-x86_64.AppImage.zsync","size":200000,"browser_download_url":"https://github.com/d/YW-0.1.22-alpha-x86_64.AppImage.zsync"},
+     {"name":"YW.exe","size":90000000,"browser_download_url":"https://github.com/d/YW.exe"},
      {"name":"SHA256SUMS.txt","size":900,"browser_download_url":"https://github.com/d/SHA256SUMS.txt"}]},
   {"html_url":"h","tag_name":"nightly","name":"not a version","draft":false,"prerelease":true,"body":"","assets":[]},
-  {"html_url":"https://github.com/Ka1-S/LYNX-SHARE/releases/tag/v0.1.21-alpha","tag_name":"v0.1.21-alpha","name":"LYNX SHARE 0.1.21-alpha",
+  {"html_url":"https://github.com/convicted3/yw-studio/releases/tag/v0.1.21-alpha","tag_name":"v0.1.21-alpha","name":"YW Studio 0.1.21-alpha",
    "draft":false,"prerelease":true,"body":null,"assets":[]},
   {"html_url":"h","tag_name":"v0.1.20-alpha","draft":false,"prerelease":true,"body":"old","assets":[], "reactions":{"+1":3}, "x":[1,2.5e3,-4,true,false,null]}
 ])json";
@@ -30,7 +30,7 @@ const char* updateFixture = R"json([
 
 TEST (update166b_versions_compare_like_semver)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     const auto v = parseVersion ("v0.1.21-alpha");
     CHECK (v.valid && v.major == 0 && v.minor == 1 && v.patch == 21 && v.pre.size() == 1 && v.pre[0] == "alpha");
     CHECK (v.text() == "0.1.21-alpha");
@@ -55,7 +55,7 @@ TEST (update166b_versions_compare_like_semver)
 
 TEST (update166b_parses_the_release_list_and_picks_the_newest)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     std::string error;
     const auto releases = parseReleases (updateFixture, &error);
     CHECK (error.empty());
@@ -64,9 +64,9 @@ TEST (update166b_parses_the_release_list_and_picks_the_newest)
         return;
     CHECK (releases[0].draft && releases[0].version.text() == "0.1.23-alpha");
     const auto& r = releases[1];
-    CHECK (r.tag == "v0.1.22-alpha" && r.name == "LYNX SHARE 0.1.22-alpha" && r.prerelease && ! r.draft);
-    CHECK (r.page == "https://github.com/Ka1-S/LYNX-SHARE/releases/tag/v0.1.22-alpha");
-    CHECK (r.assets.size() == 9 && r.assets[2].size == 30000000 && r.assets[2].url == "https://github.com/d/LYNX-0.1.22-alpha-setup-x64.exe");
+    CHECK (r.tag == "v0.1.22-alpha" && r.name == "YW Studio 0.1.22-alpha" && r.prerelease && ! r.draft);
+    CHECK (r.page == "https://github.com/convicted3/yw-studio/releases/tag/v0.1.22-alpha");
+    CHECK (r.assets.size() == 9 && r.assets[2].size == 30000000 && r.assets[2].url == "https://github.com/d/YW-0.1.22-alpha-setup-x64.exe");
     CHECK (r.body.find ("\xE2\x80\x94") != std::string::npos);     // —
     CHECK (r.body.find ("Caf\xC3\xA9 \xF0\x9F\x8C\xB6") != std::string::npos); // é and a surrogate pair
     CHECK (releases[2].body.empty()); // "body": null
@@ -93,7 +93,7 @@ TEST (update166b_parses_the_release_list_and_picks_the_newest)
 
 TEST (update166b_flavour_detection_and_method)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     Facts f;
     f.os = "windows";
     CHECK (detectFlavour (f) == Flavour::windowsPortable);
@@ -107,7 +107,7 @@ TEST (update166b_flavour_detection_and_method)
     CHECK (detectFlavour (f) == Flavour::macos);
     f.os = "linux";
     CHECK (detectFlavour (f) == Flavour::linuxTarball);
-    f.appImagePath = "/home/u/LYNX-0.1.20-alpha-x86_64.AppImage";
+    f.appImagePath = "/home/u/YW-0.1.20-alpha-x86_64.AppImage";
     CHECK (detectFlavour (f) == Flavour::linuxAppImage);
     f.forced = "Portable";
     CHECK (detectFlavour (f) == Flavour::windowsPortable);
@@ -127,7 +127,7 @@ TEST (update166b_flavour_detection_and_method)
 
 TEST (update166b_asset_choice_per_flavour)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     const auto releases = parseReleases (updateFixture);
     CHECK (releases.size() == 4);
     if (releases.size() != 4)
@@ -135,11 +135,11 @@ TEST (update166b_asset_choice_per_flavour)
     const auto& assets = releases[1].assets;
     // (the x86_64 Linux packages, whatever this build's architecture: round 190oy added the arm64 ones)
     auto name = [&] (Flavour f) { const auto i = assetFor (f, assets, "x86_64"); return i < 0 ? std::string ("-") : assets[(std::size_t) i].name; };
-    CHECK (name (Flavour::windowsInstaller) == "LYNX-0.1.22-alpha-setup-x64.exe");
-    CHECK (name (Flavour::windowsPortable) == "LYNX-0.1.22-alpha-windows-x64.zip");
-    CHECK (name (Flavour::macos) == "LYNX-0.1.22-alpha-macos-universal.dmg");
-    CHECK (name (Flavour::linuxAppImage) == "LYNX-0.1.22-alpha-x86_64.AppImage"); // not the .zsync
-    CHECK (name (Flavour::linuxTarball) == "LYNX-0.1.22-alpha-linux-x86_64.tar.gz");
+    CHECK (name (Flavour::windowsInstaller) == "YW-0.1.22-alpha-setup-x64.exe");
+    CHECK (name (Flavour::windowsPortable) == "YW-0.1.22-alpha-windows-x64.zip");
+    CHECK (name (Flavour::macos) == "YW-0.1.22-alpha-macos-universal.dmg");
+    CHECK (name (Flavour::linuxAppImage) == "YW-0.1.22-alpha-x86_64.AppImage"); // not the .zsync
+    CHECK (name (Flavour::linuxTarball) == "YW-0.1.22-alpha-linux-x86_64.tar.gz");
     CHECK (name (Flavour::store) == "-");
     CHECK (checksumsAsset (assets) == 8);
     CHECK (assetFor (Flavour::windowsInstaller, releases[2].assets) == -1 && checksumsAsset (releases[2].assets) == -1);
@@ -147,20 +147,20 @@ TEST (update166b_asset_choice_per_flavour)
 
 TEST (arm64_190oy_linux_packages_per_architecture)
 {
-    // Linux arm64 (round 190oy): an arm64 build updates from LYNX-<v>-aarch64.AppImage / -linux-aarch64.tar.gz and never
+    // Linux arm64 (round 190oy): an arm64 build updates from YW-<v>-aarch64.AppImage / -linux-aarch64.tar.gz and never
     // takes the x86_64 packages (nor an x86_64 build the arm64 ones); a release without arm64 packages offers it nothing
-    using namespace lynx::update;
+    using namespace yw::update;
     std::vector<Asset> assets;
-    for (const char* n : { "LYNX-0.1.31-alpha-x86_64.AppImage", "LYNX-0.1.31-alpha-x86_64.AppImage.zsync",
-                           "LYNX-0.1.31-alpha-linux-x86_64.tar.gz", "LYNX-0.1.31-alpha-aarch64.AppImage",
-                           "LYNX-0.1.31-alpha-aarch64.AppImage.zsync", "LYNX-0.1.31-alpha-linux-aarch64.tar.gz",
-                           "LYNX-Plugins-0.1.31-alpha-linux-aarch64.tar.xz", "SHA256SUMS.txt" })
+    for (const char* n : { "YW-0.1.31-alpha-x86_64.AppImage", "YW-0.1.31-alpha-x86_64.AppImage.zsync",
+                           "YW-0.1.31-alpha-linux-x86_64.tar.gz", "YW-0.1.31-alpha-aarch64.AppImage",
+                           "YW-0.1.31-alpha-aarch64.AppImage.zsync", "YW-0.1.31-alpha-linux-aarch64.tar.gz",
+                           "YW-Plugins-0.1.31-alpha-linux-aarch64.tar.xz", "SHA256SUMS.txt" })
         assets.push_back ({ n, std::string ("https://example.invalid/") + n, 1 });
     auto name = [&] (Flavour f, const char* arch) { const auto i = assetFor (f, assets, arch); return i < 0 ? std::string ("-") : assets[(std::size_t) i].name; };
-    CHECK (name (Flavour::linuxAppImage, "aarch64") == "LYNX-0.1.31-alpha-aarch64.AppImage");
-    CHECK (name (Flavour::linuxTarball, "aarch64") == "LYNX-0.1.31-alpha-linux-aarch64.tar.gz");
-    CHECK (name (Flavour::linuxAppImage, "x86_64") == "LYNX-0.1.31-alpha-x86_64.AppImage");
-    CHECK (name (Flavour::linuxTarball, "x86_64") == "LYNX-0.1.31-alpha-linux-x86_64.tar.gz");
+    CHECK (name (Flavour::linuxAppImage, "aarch64") == "YW-0.1.31-alpha-aarch64.AppImage");
+    CHECK (name (Flavour::linuxTarball, "aarch64") == "YW-0.1.31-alpha-linux-aarch64.tar.gz");
+    CHECK (name (Flavour::linuxAppImage, "x86_64") == "YW-0.1.31-alpha-x86_64.AppImage");
+    CHECK (name (Flavour::linuxTarball, "x86_64") == "YW-0.1.31-alpha-linux-x86_64.tar.gz");
     const std::vector<Asset> x86Only (assets.begin(), assets.begin() + 3);
     CHECK (assetFor (Flavour::linuxAppImage, x86Only, "aarch64") == -1 && assetFor (Flavour::linuxTarball, x86Only, "aarch64") == -1);
 #if defined(__aarch64__)
@@ -173,21 +173,21 @@ TEST (arm64_190oy_linux_packages_per_architecture)
 
 TEST (update166b_checksum_verification)
 {
-    using namespace lynx::update;
-    const std::string data = "LYNX SHARE setup";
-    const auto actual = lynx::sha256Hex (reinterpret_cast<const std::uint8_t*> (data.data()), data.size());
+    using namespace yw::update;
+    const std::string data = "YW Studio setup";
+    const auto actual = yw::sha256Hex (reinterpret_cast<const std::uint8_t*> (data.data()), data.size());
     std::string upper = actual;
     for (auto& c : upper)
         c = (char) std::toupper ((unsigned char) c);
-    const auto sums = std::string (64, 'a') + "  LYNX-0.1.22-alpha-windows-x64.zip\n" + upper + "  LYNX-0.1.22-alpha-setup-x64.exe\r\n"
-                      + std::string (64, 'b') + " *LYNX.exe\nnot a line\n" + std::string (63, 'c') + "  short.txt\n";
-    const auto expected = checksumFor (sums, "LYNX-0.1.22-alpha-setup-x64.exe");
+    const auto sums = std::string (64, 'a') + "  YW-0.1.22-alpha-windows-x64.zip\n" + upper + "  YW-0.1.22-alpha-setup-x64.exe\r\n"
+                      + std::string (64, 'b') + " *YW.exe\nnot a line\n" + std::string (63, 'c') + "  short.txt\n";
+    const auto expected = checksumFor (sums, "YW-0.1.22-alpha-setup-x64.exe");
     CHECK (expected == actual); // (lower case)
     CHECK (checksumMatches (expected, actual) && checksumMatches (expected, upper));
-    CHECK (checksumFor (sums, "LYNX.exe") == std::string (64, 'b')); // binary-mode '*'
-    CHECK (checksumFor (sums, "short.txt").empty() && checksumFor (sums, "missing.exe").empty() && checksumFor (sums, "LYNX").empty());
-    const std::string tampered = "LYNX SHARE setuP";
-    CHECK (! checksumMatches (expected, lynx::sha256Hex (reinterpret_cast<const std::uint8_t*> (tampered.data()), tampered.size())));
+    CHECK (checksumFor (sums, "YW.exe") == std::string (64, 'b')); // binary-mode '*'
+    CHECK (checksumFor (sums, "short.txt").empty() && checksumFor (sums, "missing.exe").empty() && checksumFor (sums, "YW").empty());
+    const std::string tampered = "YW Studio setuP";
+    CHECK (! checksumMatches (expected, yw::sha256Hex (reinterpret_cast<const std::uint8_t*> (tampered.data()), tampered.size())));
     // the streaming hash (files) equals the one-shot one for every length around the block and padding edges
     std::string bytes;
     for (int i = 0; i < 300; ++i)
@@ -198,7 +198,7 @@ TEST (update166b_checksum_verification)
         Sha256Stream s1;
         for (std::size_t at = 0; at < n; at += 7) // in odd-sized pieces
             s1.add (bytes.data() + at, std::min<std::size_t> (7, n - at));
-        same = same && s1.finish() == lynx::sha256Hex (reinterpret_cast<const std::uint8_t*> (bytes.data()), n);
+        same = same && s1.finish() == yw::sha256Hex (reinterpret_cast<const std::uint8_t*> (bytes.data()), n);
     }
     CHECK (same);
     Sha256Stream abc;
@@ -209,7 +209,7 @@ TEST (update166b_checksum_verification)
 
 TEST (update166b_skip_version_and_settings)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     const auto s = parseSettings ("automatic=0\nskipped=0.1.22-alpha\nlastCheck=1761900000000\njunk\n");
     CHECK (! s.automatic && s.skipped == "0.1.22-alpha" && s.lastCheckMs == 1761900000000LL);
     const auto again = parseSettings (formatSettings (s));
@@ -235,16 +235,16 @@ TEST (update166b_skip_version_and_settings)
 
 TEST (update166b_release_notes_as_text)
 {
-    using namespace lynx::update;
-    const auto lines = releaseNotes ("# LYNX SHARE 0.1.22\r\n\r\nThe **update**\nbutton: see [the docs](https://x).\n\n\n"
+    using namespace yw::update;
+    const auto lines = releaseNotes ("# YW Studio 0.1.22\r\n\r\nThe **update**\nbutton: see [the docs](https://x).\n\n\n"
                                      "## New\n- A `bar` ![shot](a.png)\n  continues here\n  - nested <b>bold</b>\n1. first\n\n"
-                                     "| Item | Where |\n|---|:---:|\n| Bar | Main window |\n\n---\n```\ncode **stays**\n```\n> quote <https://lynx-share.com>\n\\*not bold\\*\n");
+                                     "| Item | Where |\n|---|:---:|\n| Bar | Main window |\n\n---\n```\ncode **stays**\n```\n> quote <https://yolo.su>\n\\*not bold\\*\n");
     using K = NoteLine::Kind;
     std::vector<std::pair<K, std::string>> want {
-        { K::heading, "LYNX SHARE 0.1.22" }, { K::blank, "" }, { K::text, "The update button: see the docs." }, { K::blank, "" },
+        { K::heading, "YW Studio 0.1.22" }, { K::blank, "" }, { K::text, "The update button: see the docs." }, { K::blank, "" },
         { K::heading, "New" }, { K::bullet, "A bar continues here" }, { K::bullet, "nested bold" }, { K::bullet, "1. first" }, { K::blank, "" },
         { K::text, "Item  \xC2\xB7  Where" }, { K::blank, "" }, { K::text, "Bar  \xC2\xB7  Main window" }, { K::blank, "" },
-        { K::text, "code **stays**" }, { K::text, "quote https://lynx-share.com *not bold*" } };
+        { K::text, "code **stays**" }, { K::text, "quote https://yolo.su *not bold*" } };
     CHECK (lines.size() == want.size());
     for (std::size_t i = 0; i < lines.size() && i < want.size(); ++i)
     {
@@ -267,6 +267,6 @@ TEST (update166b_release_notes_as_text)
     CHECK (alert.size() == 3 && alert[0].text == "Intro" && alert[1].text == "Still an alpha." && alert[2].text == "More.");
     CHECK (releaseNotes (">").empty() && releaseNotes ("> [!NOTE]").empty());
     // a line of HTML only (the logo at the top of the release notes) leaves no empty line
-    const auto logo = releaseNotes ("<p align=\"center\"><img src=\"x.png\" width=\"96\"></p>\n\n**LYNX SHARE 0.1.20 alpha**: text");
-    CHECK (logo.size() == 1 && logo[0].text == "LYNX SHARE 0.1.20 alpha: text");
+    const auto logo = releaseNotes ("<p align=\"center\"><img src=\"x.png\" width=\"96\"></p>\n\n**YW Studio 0.1.20 alpha**: text");
+    CHECK (logo.size() == 1 && logo[0].text == "YW Studio 0.1.20 alpha: text");
 }

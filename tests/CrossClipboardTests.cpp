@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <stdexcept>
 
-using namespace lynx;
+using namespace yw;
 namespace
 {
 int checks = 0, failures = 0;
@@ -24,7 +24,7 @@ int checks = 0, failures = 0;
 
 juce::File sideFolder()
 {
-    return juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-crossclip-tests");
+    return juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-crossclip-tests");
 }
 
 crossclipboard::Payload roundTrip (const crossclipboard::Payload& p, std::size_t limit = crossclipboard::inlineLimit)
@@ -301,8 +301,8 @@ void notOurs()
 {
     EXPECT (! crossclipboard::envelopeOf ("hello").has_value());
     EXPECT (! crossclipboard::envelopeOf ("").has_value());
-    EXPECT (! crossclipboard::envelopeOf ("LYNX SHARE clipboard 9\nnotes x 1\n{}").has_value()); // (a newer format)
-    EXPECT (! crossclipboard::envelopeOf ("LYNX SHARE clipboard 1\nsomething x 1\n{}").has_value());
+    EXPECT (! crossclipboard::envelopeOf ("YW Studio clipboard 9\nnotes x 1\n{}").has_value()); // (a newer format)
+    EXPECT (! crossclipboard::envelopeOf ("YW Studio clipboard 1\nsomething x 1\n{}").has_value());
     // an envelope whose document is not the one it names (half written, edited by hand)
     auto p = payload (crossclipboard::Kind::notes);
     p.notes = { Note {} };
@@ -317,7 +317,7 @@ void notOurs()
         envelope->document = envelope->document.substring (0, envelope->document.length() / 2);
         EXPECT (! crossclipboard::open (*envelope).has_value());
     }
-    EXPECT (! crossclipboard::fromJson ("{\"lynxClipboard\":2,\"kind\":\"notes\"}").has_value());
+    EXPECT (! crossclipboard::fromJson ("{\"ywClipboard\":2,\"kind\":\"notes\"}").has_value());
     EXPECT (crossclipboard::kindFromName ("mixerTracks") == crossclipboard::Kind::mixerTracks);
 }
 } // namespace

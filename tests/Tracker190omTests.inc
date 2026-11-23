@@ -1,11 +1,11 @@
-// Round 190om (LYNX 0.1.31): tracker stage 2. The module import's volume changes as pattern events of the channel's
+// Round 190om (YW 0.1.31): tracker stage 2. The module import's volume changes as pattern events of the channel's
 // Volume multiplier (exact timing; the automation clip of round 190ob where a pattern's plays differ), the pitch changes
 // of sounding notes as the notes' pitch curves (pitch slides, tone portamento on the sounding note, vibrato, arpeggio),
 // several patterns' lanes on one target in the renderer, the Tracker's Bxx / Vxx, and SimSynth's velocity law.
 
 namespace tracker190om
 {
-using namespace lynx;
+using namespace yw;
 
 struct Cell
 {
@@ -17,7 +17,7 @@ struct Cell
 inline std::vector<std::uint8_t> mod (const std::vector<Cell>& cells, const std::vector<int>& orders, int rows = 16)
 {
     std::vector<std::uint8_t> b;
-    tracker190nw::putText (b, "lynx 190om", 20);
+    tracker190nw::putText (b, "yw 190om", 20);
     for (int s = 0; s < 31; ++s)
     {
         tracker190nw::putText (b, s == 0 ? "sine" : "", 22);
@@ -86,7 +86,7 @@ TEST (tracker190om_a_pitch_slide_becomes_the_notes_pitch_curve)
     CHECK (std::abs (pitchAt (*n, 0.0)) < 0.01f && std::abs (pitchAt (*n, 240.0 + 20.0)) < 0.01f);
     for (int f = 1; f <= 5; ++f)
         CHECK (std::abs (pitchAt (*n, 240.0 + f * 40 + 20) - cents (428.0, 428.0 - 4.0 * f)) < 0.02);
-    // held after the slide; stepped (each frame one value), on the steps a .lynx keeps
+    // held after the slide; stepped (each frame one value), on the steps a .yw keeps
     CHECK (std::abs (pitchAt (*n, 5 * 240.0) - cents (428.0, 408.0)) < 0.02);
     for (const auto& q : n->curves->lane (NoteCurveLane::pitch))
         CHECK (std::abs (q.tick * 100.0f - std::round (q.tick * 100.0f)) < 1e-2f && std::abs (q.value * 100.0f - std::round (q.value * 100.0f)) < 1e-2f);
@@ -181,8 +181,8 @@ TEST (tracker190om_a_pattern_played_with_other_volumes_keeps_the_automation_clip
 
 TEST (tracker190om_lanes_of_several_patterns_on_one_target_each_play_their_pattern)
 {
-    using namespace lynx;
-    // FL plays each pattern's events while the pattern plays; LYNX drove the target from the last pattern's lane only
+    using namespace yw;
+    // FL plays each pattern's events while the pattern plays; YW drove the target from the last pattern's lane only
     Song s;
     s.bpm = 120.0;
     s.channels.resize (1);
@@ -244,8 +244,8 @@ TEST (tracker190om_lanes_of_several_patterns_on_one_target_each_play_their_patte
 
 TEST (tracker190om_tracker_shows_bend_and_volume_fx_and_keeps_them_exact)
 {
-    using namespace lynx;
-    using namespace lynx::tracker;
+    using namespace yw;
+    using namespace yw::tracker;
     Song s;
     s.channels.resize (1);
     auto& p = s.patterns.emplace_back();
@@ -307,13 +307,13 @@ TEST (tracker190om_simsynth_plays_the_velocity_as_fl_does)
 {
     // FL 2026 /R renders (round 190om, simsynth/vellaw.txt): the level follows Init.Vol = (11^(v/100) − 1) / 10 of FL's
     // velocity v exactly (−52.3, −21.7, −12.7, −6.0, 0, +6.0 dB at 1, 25, 50, 75, 100, 127); nothing else moves with it
-    const auto state = lynx::simsynth::defaultState();
+    const auto state = yw::simsynth::defaultState();
     auto levelAt = [&] (int rev, float velocity) {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::simsynth;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::simsynth;
         c.pluginState = state;
         c.engineRev = rev;
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::simsynth);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::simsynth);
         inst->prepare (44100.0);
         inst->configure (c, 120.0);
         std::vector<float> l (512), r (512);
@@ -337,15 +337,15 @@ TEST (tracker190om_simsynth_plays_the_velocity_as_fl_does)
     CHECK (levelAt (1, 25.0f / 128.0f) == levelAt (1, 100.0f / 128.0f) && levelAt (1, 100.0f / 128.0f) == levelAt (1, 1.0f));
     CHECK (std::abs (levelAt (1, 0.5f) - ref) < 1e-9); // (and velocity 100 under the law is that full level)
     // new channels take revision 2 or later (round 190pr: 3)
-    CHECK (lynx::ChannelDef {}.engineRev >= 2);
+    CHECK (yw::ChannelDef {}.engineRev >= 2);
 }
 
 TEST (tracker190om_survey_projects_whose_patterns_share_an_event_target)
 {
-    // (a survey for the gold check of the renderer change above: LYNX_SURVEY_190OM=1 and a folder of .flp files)
-    if (realFlpDir.empty() || std::getenv ("LYNX_SURVEY_190OM") == nullptr)
+    // (a survey for the gold check of the renderer change above: YW_SURVEY_190OM=1 and a folder of .flp files)
+    if (realFlpDir.empty() || std::getenv ("YW_SURVEY_190OM") == nullptr)
         return;
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.fileExists = [] (const std::string&) { return false; };
     int files = 0, shared = 0;
     for (auto& entry : std::filesystem::recursive_directory_iterator (realFlpDir))
@@ -356,12 +356,12 @@ TEST (tracker190om_survey_projects_whose_patterns_share_an_event_target)
         const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
         try
         {
-            const auto song = lynx::importFlp (flp::parseProject (bytes), o);
+            const auto song = yw::importFlp (flp::parseProject (bytes), o);
             ++files;
             std::map<std::tuple<int, int, int, int>, std::set<int>> patternsOf;
             for (int p = 0; p < (int) song.patterns.size(); ++p)
                 for (const auto& lane : song.patterns[(std::size_t) p].events)
-                    if (! lane.events.empty() && lane.target.kind != lynx::AutomationTargetKind::tempo && lane.target.kind != lynx::AutomationTargetKind::none)
+                    if (! lane.events.empty() && lane.target.kind != yw::AutomationTargetKind::tempo && lane.target.kind != yw::AutomationTargetKind::none)
                         patternsOf[{ (int) lane.target.kind, lane.target.index, lane.target.slot, lane.target.param }].insert (p);
             int targets = 0;
             for (const auto& [t, ps] : patternsOf)
@@ -381,13 +381,13 @@ TEST (tracker190om_survey_projects_whose_patterns_share_an_event_target)
 
 TEST (tracker190om_survey_a_module)
 {
-    // (a survey: LYNX_SURVEY_MODULE=<file> prints the import's summary and report)
-    const char* path = std::getenv ("LYNX_SURVEY_MODULE");
+    // (a survey: YW_SURVEY_MODULE=<file> prints the import's summary and report)
+    const char* path = std::getenv ("YW_SURVEY_MODULE");
     if (path == nullptr)
         return;
     std::ifstream in (path, std::ios::binary);
     const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-    const auto r = tracker190nw::importOf (bytes, std::getenv ("LYNX_SURVEY_CLIPS") == nullptr);
+    const auto r = tracker190nw::importOf (bytes, std::getenv ("YW_SURVEY_CLIPS") == nullptr);
     if (! r.song)
         return;
     const auto& m = r.summary;

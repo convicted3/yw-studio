@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::pltracks
+namespace yw::pltracks
 {
 // --- Lock to content (FL: EEPLTrackClipLockMenuClick → FUN_012e7a90, the paint loop of FUN_00e5cd20 → FUN_01220fe0) ---
 
@@ -91,13 +91,13 @@ MergeResult mergeSimilarPatternClips (Song& song, const std::vector<int>& clips,
 
 // In FL's order of checks. tooFew: "Please select at least two automation clips."; notAutomation: "The selection may
 // only contain automation clips."; missingEnds: a clip's window lacks control points at its start and end (FUN_013007a0);
-// overlapping: clips overlap in time. The last two can only merge lossily, after FL's question. LYNX has no counterpart
+// overlapping: clips overlap in time. The last two can only merge lossily, after FL's question. YW has no counterpart
 // of FL's other refusals: its clips have no per-clip min / max and no LFO mode.
 enum class AutomationMergeCheck { ok, tooFew, notAutomation, missingEnds, overlapping };
 AutomationMergeCheck checkAutomationMerge (const Song& song, const std::vector<int>& clips);
 // FL's "Target links conflict": the clips don't all drive the same parameter (FUN_012e1a80).
 bool automationLinksConflict (const Song& song, const std::vector<int>& clips);
-// The answers to that question. FL's clip can hold several links, a LYNX automation one target: mergeAll gives every
+// The answers to that question. FL's clip can hold several links, a YW automation one target: mergeAll gives every
 // other target a clip of its own with the same curve, on the same track.
 enum class AutomationLinks { keepFirst, mergeAll, deleteAll };
 // A new automation "<first clip's name> - merged" (made unique) holding what each clip shows, one clip of it at the
@@ -139,4 +139,4 @@ bool isVariant (const Clip& clip) noexcept;
 // ratio. `before` is the clip list when the drag started. Lengths and offsets scale with the stretch.
 void stretchAudioClip (Song& song, const std::vector<Clip>& before, int index, std::int64_t newStart, std::int64_t newLength,
                        bool createVariants);
-} // namespace lynx::pltracks
+} // namespace yw::pltracks

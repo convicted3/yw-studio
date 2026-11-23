@@ -1,11 +1,11 @@
-// LYNX Model's modal core (core/physmod/ModalBank.h).
+// YW Model's modal core (core/physmod/ModalBank.h).
 
 #include "core/physmod/ModalBank.h"
 
 #include "core/CpuFeatures.h"
 #include "core/Simd.h"
 
-namespace lynx::lm
+namespace yw::lm
 {
 namespace
 {
@@ -68,7 +68,7 @@ void runSse (ModalBank& b, const float* force, float* out, int n) noexcept
     sumLanes (lanes, out, n);
 }
 
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
 template <bool driven, bool first>
 __attribute__ ((target ("avx"))) void groupAvx (ModalBank& b, int g, const float* force, float* lanes, int n) noexcept
 {
@@ -143,7 +143,7 @@ __attribute__ ((target ("avx"))) void runAvx (ModalBank& b, const float* force, 
 
 bool modesUseAvx() noexcept
 {
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
     return cpu::hasAvx();
 #else
     return false;
@@ -161,7 +161,7 @@ void runModes (ModalBank& b, const float* force, float* out, int n) noexcept
 {
     if (b.groups <= 0 || n <= 0)
         return;
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
     if (cpu::hasAvx())
     {
         force != nullptr ? runAvx<true> (b, force, out, n) : runAvx<false> (b, force, out, n);
@@ -178,4 +178,4 @@ float modalEnergy (const ModalBank& b) noexcept
         e += b.re[k] * b.re[k] + b.im[k] * b.im[k];
     return e;
 }
-} // namespace lynx::lm
+} // namespace yw::lm

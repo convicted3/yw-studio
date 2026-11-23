@@ -8,7 +8,7 @@
 #include "ui/NativeChild.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -431,7 +431,7 @@ public:
     {
         setComponentID ("tour.welcome");
         setWantsKeyboardFocus (true);
-        getProperties().set ("lynxKeepsKeys", true); // (round 190fc: Esc and its options' keys while it is up)
+        getProperties().set ("ywKeepsKeys", true); // (round 190fc: Esc and its options' keys while it is up)
         title.setText (tr ("Welcome to YW Studio"), juce::dontSendNotification);
         ui::dialog::styleTitle (title); // (round 190jp: the one dialog title, design190ia SG-20)
         // round 190hw: what this workflow is, then the question (two lines: wrapped, never squeezed)
@@ -893,4 +893,4 @@ void FirstSongTour::clickForSnapshot (const juce::String& button)
         if (auto* b = card->button (button); b != nullptr && b->isVisible() && b->isEnabled())
             clicked (button);
 }
-} // namespace lynx
+} // namespace yw

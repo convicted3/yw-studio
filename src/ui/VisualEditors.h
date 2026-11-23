@@ -1,6 +1,6 @@
 #pragma once
 
-// Editors of LYNX's visual plugins (round 164c, docs/analise/REA_rodada164c.md):
+// Editors of YW's visual plugins (round 164c, docs/analise/REA_rodada164c.md):
 //  - Wave Candy: one resizable display in the mode the tabs pick (Auto, Oscilloscope, Spectrum, Spectrogram, Peak meter,
 //    Vectorscope) over the controls of that mode; hover the display to read frequency / note / level, middle-click or
 //    the Hold button freezes it, right-click picks the mode.
@@ -16,7 +16,7 @@
 #include "core/VisualFx.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // What an editor shows: a mixer slot, or a node inside a Patcher
 struct VisualTarget
@@ -69,8 +69,8 @@ private:
 juce::File findFfmpeg();
 void setFfmpegLocation (const juce::File& exe);
 
-// LYNX.exe --visualtest <folder>: editor pictures of every Wave Candy mode and Visualizer preset fed a test signal, a
+// YW.exe --visualtest <folder>: editor pictures of every Wave Candy mode and Visualizer preset fed a test signal, a
 // CPU check of the audio path and a short video export of `project` (default: an FL ZGameEditor demo project), with
 // ffmpeg if present and as images + WAV. Writes report.txt.
 void runVisualTest (const juce::File& folder, const juce::File& project, std::function<void (bool)> done);
-} // namespace lynx
+} // namespace yw

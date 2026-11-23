@@ -1,5 +1,5 @@
 // Round 190gh (B8, community complaint #10: "FL crashes when a MIDI device is plugged or unplugged", "devices are only
-// seen after a restart"): MIDI devices plugged in and out while LYNX SHARE runs.
+// seen after a restart"): MIDI devices plugged in and out while YW Studio runs.
 //
 // AudioEngine::midiHotplugSelfTest() replaces the system's device lists with stand-in ones (midiDeviceListOverride)
 // and runs the engine's device check the way the system's notification and the 2-second check do, while another
@@ -13,7 +13,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 juce::String AudioEngine::midiHotplugSelfTest()
 {
@@ -99,4 +99,4 @@ juce::String AudioEngine::midiHotplugSelfTest()
         return "ERROR " + errors.joinIntoString ("; ");
     return "OK (6 changes, " + juce::String (delivered.load()) + " messages during them)";
 }
-} // namespace lynx
+} // namespace yw

@@ -1,6 +1,6 @@
 #pragma once
 
-// ARA 2 in the Playlist (round 190kx, engine/AraHost.h): the audio clip menu's "Edit in ARA plugin" submenu (LYNX extras
+// ARA 2 in the Playlist (round 190kx, engine/AraHost.h): the audio clip menu's "Edit in ARA plugin" submenu (YW extras
 // column: FL Studio 2026 has no ARA) and the plugin's editor window for a clip.
 
 #include <cstdint>
@@ -9,7 +9,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -41,4 +41,4 @@ bool araByDefault (AudioEngine& engine, int track, const PluginRef& plugin);
 // scan made by a build without ARA): forgotten and scanned again in the background, with a hint. Returns how many.
 int findAraPlugins (AudioEngine& engine);
 } // namespace aramenu
-} // namespace lynx
+} // namespace yw

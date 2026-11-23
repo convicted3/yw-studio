@@ -17,7 +17,7 @@
 #include "ui/Icons.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 // --- shared title bar ---------------------------------------------------------------------
 // The Playlist and Piano Roll carry their toolbar in their window's title bar, as FL Studio's editors do
@@ -49,7 +49,7 @@ const std::vector<EditToolInfo>& editTools();
 const char* editToolId (EditTool tool);
 
 // The mouse cursor of each editor gesture (core/EditorGestures.h): the system arrows for moving,
-// resizing and selecting, LYNX's own tool icons (outlined, so they read on any background) for
+// resizing and selecting, YW's own tool icons (outlined, so they read on any background) for
 // drawing, painting, erasing, muting, slicing, zooming, listening and slipping. Built once.
 juce::MouseCursor editorCursor (gesture::Cursor cursor);
 
@@ -61,7 +61,7 @@ const EditToolInfo& editToolInfo (EditTool tool);
 class ToolStrip;
 
 // FL's Zoom tool icon right-click menu (round 190mp, DE-74; capture 190mp A3.1, fl-pr-zoom-menu.png / fl-pl-zoom-menu.png):
-// Zoom in, Zoom out | Quick zoom 1–3 | Zoom out far, Zoom on selection | Step sequencer mode zoom (Piano roll, which LYNX
+// Zoom in, Zoom out | Quick zoom 1–3 | Zoom out far, Zoom on selection | Step sequencer mode zoom (Piano roll, which YW
 // has not: greyed) or Zoom on performance clips (Playlist), each running the editor's key map action (`prefix` =
 // "pianoRoll." / "playlist."), with its key from `keyText` ("\tShift+1"...).
 juce::PopupMenu quickZoomMenu (const std::string& prefix, const std::function<bool (const std::string&)>& run,
@@ -86,7 +86,7 @@ public:
     // The tooltips with the keys the key map gives the tools now (`keyOf` returns "" for a tool without one).
     void refreshKeys (const std::function<juce::String (EditTool)>& keyOf);
     // Round 190ig (FM-26): the Pattern layout's Playlist in FL's order and glyphs — delete ⊘ for the eraser, slip ◂▸ before
-    // the knife (FL: delete, mute, slip, slice); off: LYNX's own (the other layouts, the Piano roll)
+    // the knife (FL: delete, mute, slip, slice); off: YW's own (the other layouts, the Piano roll)
     void setFlPlaylistLook (bool on);
 
     void resized() override;
@@ -242,7 +242,7 @@ public:
     bool snapFadeHandles = false;
     // round 190cg: "Automation follows clips" (Live's lock-envelopes switch turned round): a clip moved or copied along
     // its track takes the track's lane automation with it. -1 = as the layout: on in the Clip-launch workflow, off in
-    // the others (which is what LYNX did before); 0 / 1 = set by hand.
+    // the others (which is what YW did before); 0 / 1 = set by hand.
     int automationFollowsClips = -1;
     // round 190db: the window's workflow is the Clip-launch workflow (set with the layout style). The audio editor draws
     // a warped clip in beats there, as Live's Clip View does; the Pattern workflow keeps its file-time view.
@@ -374,4 +374,4 @@ std::unique_ptr<juce::Component> makeNoteInspector (AudioEngine& engine, std::ve
 
 // Opens the inspector in a call-out pointing at `screenArea`.
 void showNoteInspector (AudioEngine& engine, std::vector<int> indices, int focus, juce::Rectangle<int> screenArea);
-} // namespace lynx
+} // namespace yw

@@ -24,7 +24,7 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) // x86 SSE, or ARM64 through core/Simd.h (sse2neon)
 #include "core/Simd.h"
-#define LYNX_KEPLER_MXCSR 1
+#define YW_KEPLER_MXCSR 1
 #endif
 
 // the engine's float operations, one rounding each, in its order and rounding mode: no contraction, no reordering
@@ -36,7 +36,7 @@
 #pragma GCC optimize("fp-contract=off", "rounding-math")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -44,7 +44,7 @@ namespace
 // The engine renders with the SSE rounding mode set to "toward zero" and denormals flushed (MXCSR | 0xE040); note-on,
 // parameter and state-load code runs outside the render, in the default mode. Library functions (pow, tan, sin) are
 // evaluated in round-to-nearest; their result is converted in the current mode.
-#ifdef LYNX_KEPLER_MXCSR
+#ifdef YW_KEPLER_MXCSR
 struct RenderMode
 {
     unsigned saved;
@@ -82,7 +82,7 @@ std::atomic<const CrtExp*> crtExp { nullptr };
 
 // the polynomial steps are fused multiply-adds: hardware FMA where the CPU has it (x86: selected at run time; ARM64:
 // always), std::fma otherwise
-#define LYNX_KEPLER_CRT_POW(NAME, FMA, ATTR)                                                                               \
+#define YW_KEPLER_CRT_POW(NAME, FMA, ATTR)                                                                               \
     ATTR double NAME##D (const CrtExp& t, double y) noexcept                                                                \
     {                                                                                                                    \
         constexpr double ln2h = 0x1.62e42ep-1, ln2t = 0x1.efa39ef35793cp-25, k64 = 0x1.71547652b82fep+6,                \
@@ -152,10 +152,10 @@ std::atomic<const CrtExp*> crtExp { nullptr };
         return (float) v;                                                                                                \
     }
 
-LYNX_KEPLER_CRT_POW (crtPow2Sw, std::fma, )
+YW_KEPLER_CRT_POW (crtPow2Sw, std::fma, )
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__clang__) || defined(__GNUC__))
-#define LYNX_KEPLER_HW_FMA 1
-LYNX_KEPLER_CRT_POW (crtPow2Hw, __builtin_fma, __attribute__ ((target ("fma"))))
+#define YW_KEPLER_HW_FMA 1
+YW_KEPLER_CRT_POW (crtPow2Hw, __builtin_fma, __attribute__ ((target ("fma"))))
 bool detectFma() noexcept
 {
     // CPUID.1:ECX bit 12 (FMA) and bit 27 (OSXSAVE), and the OS saving the YMM state (XCR0 bits 1, 2)
@@ -170,11 +170,11 @@ bool detectFma() noexcept
 }
 const bool cpuHasFma = detectFma();
 #endif
-#undef LYNX_KEPLER_CRT_POW
+#undef YW_KEPLER_CRT_POW
 
 double crtPow2 (const CrtExp& t, double y) noexcept
 {
-#ifdef LYNX_KEPLER_HW_FMA
+#ifdef YW_KEPLER_HW_FMA
     if (cpuHasFma)
         return crtPow2HwD (t, y);
 #endif
@@ -183,7 +183,7 @@ double crtPow2 (const CrtExp& t, double y) noexcept
 
 float crtPow2f (const CrtExp& t, float y) noexcept
 {
-#ifdef LYNX_KEPLER_HW_FMA
+#ifdef YW_KEPLER_HW_FMA
     if (cpuHasFma)
         return crtPow2HwF (t, y);
 #endif
@@ -333,7 +333,7 @@ float exoCoshf (float xf) noexcept
 
 bool exoFma() noexcept
 {
-#if defined(LYNX_KEPLER_HW_FMA)
+#if defined(YW_KEPLER_HW_FMA)
     return cpuHasFma;
 #elif defined(__aarch64__) || defined(_M_ARM64)
     return true;
@@ -343,7 +343,7 @@ bool exoFma() noexcept
 }
 
 // a fused multiply-add in the current rounding mode (the hardware instruction where the library would use it)
-#if defined(LYNX_KEPLER_HW_FMA)
+#if defined(YW_KEPLER_HW_FMA)
 __attribute__ ((target ("fma"))) float exoFmaHw (float a, float b, float c) noexcept { return __builtin_fmaf (a, b, c); }
 float exoFmaf (float a, float b, float c) noexcept { return exoFmaHw (a, b, c); }
 #else
@@ -3846,13 +3846,13 @@ int velocityFromInitVol (double initVol) noexcept
     return (int) v;
 }
 
-// ------------------------------------------------------------------------------------------------ LYNX instrument
+// ------------------------------------------------------------------------------------------------ YW instrument
 //
 // Levels: FL's wrapper reads only Final.Pan (note pan + channel pan, the engine's own pan law), Final.Pitch and Final.FCut/
 // FRes; it ignores Final.Vol. FL also sends the channel volume and pan as MIDI events, which set the engine's output
 // gains (REA_rodada165g-flbeta165k §3, FL renders: the channel pan counts twice, the volume follows the engine's cubic
-// law), so LYNX's channel gains reach this instrument only as those two events — not as an output gain. Init.Vol
-// = (11^(1.28·velocity) − 1)/10 from LYNX's velocity (as for GMS, REA_rodada28 inference). The tempo is the song tempo;
+// law), so YW's channel gains reach this instrument only as those two events — not as an output gain. Init.Vol
+// = (11^(1.28·velocity) − 1)/10 from YW's velocity (as for GMS, REA_rodada28 inference). The tempo is the song tempo;
 // while the transport plays, the song position (beats) drives the synced LFO1 and the arpeggiator clock.
 
 class KeplerInstrument final : public Instrument
@@ -4007,7 +4007,7 @@ public:
                     synth->setPitchExpression (k, sentCents[(std::size_t) k] = c);
             }
         // the channel volume and pan as FL sends them (§3 of REA_rodada165g-flbeta165k): MIDI volume = raw volume
-        // (0…12800)·128/12800 truncated, at most 127; MIDI pan = (raw pan − 6400)/100 truncated. LYNX's gains are
+        // (0…12800)·128/12800 truncated, at most 127; MIDI pan = (raw pan − 6400)/100 truncated. YW's gains are
         // channelGain(volume) = (11^v − 1)/10 on its cos/sin pan law, so v comes back as log(10·g + 1)/log 11.
         {
             const auto v = vol > 0.0 ? std::log (10.0 * vol + 1.0) / std::log (11.0) : 0.0;
@@ -4385,4 +4385,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace kepler
-} // namespace lynx
+} // namespace yw

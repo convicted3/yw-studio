@@ -12,13 +12,13 @@ double clipAudioStart (std::int64_t start, std::int64_t offset, float fraction) 
 std::string tempPath (const std::string& name)
 {
     std::error_code ec;
-    return (std::filesystem::temp_directory_path (ec) / ("lynx_rec163_" + processTempTag() + "_" + name)).string();
+    return (std::filesystem::temp_directory_path (ec) / ("yw_rec163_" + processTempTag() + "_" + name)).string();
 }
 } // namespace rec163
 
 TEST (rec163_latency_total)
 {
-    lynx::takes::Latency l;
+    yw::takes::Latency l;
     l.driverInput = 100;
     l.driverOutput = 200;
     CHECK (l.roundTrip() == 300 && l.total() == 300);
@@ -27,12 +27,12 @@ TEST (rec163_latency_total)
     CHECK (l.total() == 300 - 12 + 64);
     l.measured = 517; // a measured round trip replaces the driver's figures
     CHECK (l.roundTrip() == 517 && l.total() == 517 - 12 + 64);
-    CHECK (lynx::takes::setupKey ("ASIO", "SSL 2", "SSL 2", 48000.0, 128) == "ASIO|SSL 2|SSL 2|48000|128");
+    CHECK (yw::takes::setupKey ("ASIO", "SSL 2", "SSL 2", 48000.0, 128) == "ASIO|SSL 2|SSL 2|48000|128");
 }
 
 TEST (rec163_placement_is_sample_accurate)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     // 120 bpm, 48 kHz: 960 ticks per 24000 samples
     const auto tps = 960.0 / 24000.0;
     const auto p = place (1000.0, 100.0, tps, 240); // 240 samples = 9.6 ticks earlier
@@ -70,7 +70,7 @@ TEST (rec163_placement_is_sample_accurate)
 
 TEST (rec163_punch_parts_keep_alignment)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     const auto p = place (1000.25, 4000.0, 0.04, 0);
     const auto parts = punch (p, { { 2000, 3000 }, { 4500, 9000 } });
     CHECK (parts.size() == 2);
@@ -87,7 +87,7 @@ TEST (rec163_punch_parts_keep_alignment)
 
 TEST (rec163_loop_passes)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     // loop [1000, 2000), recording from the loop start for 2.5 passes, no latency
     const auto a = loopPasses (place (1000.0, 2500.0, 0.04, 0), 1000, 2000);
     CHECK (a.size() == 3);
@@ -140,7 +140,7 @@ TEST (rec163_loop_passes)
 
 TEST (rec163_latency_ping_finds_the_loopback)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     // a loopback with `delay` samples, gain and polarity inversion, plus noise; blocks of 128
     const auto run = [] (int delay, float gain, float noiseLevel, int jitter) {
         LatencyPing ping;
@@ -187,7 +187,7 @@ TEST (rec163_latency_ping_finds_the_loopback)
 
 TEST (rec163_take_stream_keeps_the_timeline)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     // a counter pushed in random block sizes and pulled in random chunks comes out exactly
     {
         TakeStream s (2, 1 << 16);
@@ -275,7 +275,7 @@ TEST (rec163_take_stream_keeps_the_timeline)
 
 TEST (rec163_wav_writer_formats_and_long_take)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     const auto path = rec163::tempPath ("a.wav");
     // 24-bit stereo
     {
@@ -347,7 +347,7 @@ TEST (rec163_wav_writer_formats_and_long_take)
 
 TEST (rec163_crash_leaves_a_repairable_wav)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     const auto path = rec163::tempPath ("crash.wav");
     WavTakeWriter w;
     CHECK (w.open (path, 48000.0, 2, SampleFormat::pcm24, 0.1)); // header every 4800 frames
@@ -379,16 +379,16 @@ TEST (rec163_crash_leaves_a_repairable_wav)
 
 TEST (rec163_journal_names_disk)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     Journal j;
-    j.wav = "C:/Music/LYNX/Recordings/Bass DI_Take3.wav";
+    j.wav = "C:/Music/YW/Recordings/Bass DI_Take3.wav";
     j.firstTick = 15360.123456789;
     j.ticksPerSample = 0.04;
     j.sampleRate = 48000.0;
     j.latency = 517;
     j.insert = 3;
     j.playlistTrack = 7;
-    j.project = "C:/Projects/song.lynx";
+    j.project = "C:/Projects/song.yw";
     Journal k;
     CHECK (parseJournal (journalText (j), k));
     CHECK (k.wav == j.wav && k.firstTick == j.firstTick && k.ticksPerSample == j.ticksPerSample && k.latency == 517 && k.insert == 3
@@ -407,8 +407,8 @@ TEST (rec163_journal_names_disk)
 
 TEST (rec163_take_lanes_and_comping)
 {
-    using namespace lynx;
-    using namespace lynx::takes;
+    using namespace yw;
+    using namespace yw::takes;
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
     song.playlist.clear();

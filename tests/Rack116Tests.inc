@@ -4,7 +4,7 @@
 
 TEST (rack116_add_menu_opens_only_from_its_box)
 {
-    using namespace lynx::racklayout;
+    using namespace yw::racklayout;
     const auto box = addChannelBox (100, 150, 400, 28); // nameLeft, nameWidth, the add row's top, the row height
     CHECK (box.contains (175, 414));                 // the middle of the drawn box
     CHECK (box.contains (100, 403) && box.contains (249, 424));

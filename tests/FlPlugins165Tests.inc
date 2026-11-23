@@ -1,4 +1,4 @@
-// --- FL plugins LYNX lacked: Fruity Mute 2, Big Clock, Tuner, HTML NoteBook, inert imports (core/FlExtraFx.h) - round 165g
+// --- FL plugins YW lacked: Fruity Mute 2, Big Clock, Tuner, HTML NoteBook, inert imports (core/FlExtraFx.h) - round 165g
 
 #include "core/FlExtraFx.h"
 
@@ -18,7 +18,7 @@ std::vector<std::uint8_t> ints (std::initializer_list<std::int32_t> v)
 
 TEST (fl165g_mute2_channels_and_switch)
 {
-    using namespace lynx::flextra::mute2;
+    using namespace yw::flextra::mute2;
     // FL: muted below 0.5; channel = round(v · 3) clamped to 2 (Delphi's banker's rounding)
     CHECK (soundOn (0.5f) && soundOn (1.0f) && ! soundOn (0.49f) && ! soundOn (0.0f));
     CHECK (channelOf (0.0f) == Channel::left && channelOf (1.0f / 3.0f) == Channel::both && channelOf (2.0f / 3.0f) == Channel::right);
@@ -38,20 +38,20 @@ TEST (fl165g_mute2_channels_and_switch)
         }
 
     // FL's state: version 1, the switch, the selector
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::fruityMute2);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::fruityMute2);
     CHECK (fromFl (fl165g::ints ({ 1, 1, 0 }), slot) && soundOn (slot.params[mute]) && channelOf (slot.params[channel]) == Channel::left);
     CHECK (fromFl (fl165g::ints ({ 1, 0, 2 }), slot) && ! soundOn (slot.params[mute]) && channelOf (slot.params[channel]) == Channel::right);
     CHECK (! fromFl (fl165g::ints ({ 1, 0 }), slot) && ! fromFl (fl165g::ints ({ 7, 0, 0 }), slot));
 
     // the import: name → effect, through effectFromFl
-    const auto fx = lynx::effectFromFl ("Fruity Mute 2", fl165g::ints ({ 1, 0, 1 }), 120.0);
-    CHECK (fx && fx->kind == lynx::EffectKind::fruityMute2 && channelOf (fx->params[channel]) == Channel::both);
-    CHECK (lynx::effectForFlPlugin ("Fruity Mute 2") == lynx::EffectKind::fruityMute2);
+    const auto fx = yw::effectFromFl ("Fruity Mute 2", fl165g::ints ({ 1, 0, 1 }), 120.0);
+    CHECK (fx && fx->kind == yw::EffectKind::fruityMute2 && channelOf (fx->params[channel]) == Channel::both);
+    CHECK (yw::effectForFlPlugin ("Fruity Mute 2") == yw::EffectKind::fruityMute2);
 
     // the running effect
-    auto effect = lynx::makeEffect (lynx::EffectKind::fruityMute2);
+    auto effect = yw::makeEffect (yw::EffectKind::fruityMute2);
     effect->prepare (48000.0);
-    lynx::EffectParams p {};
+    yw::EffectParams p {};
     p[mute] = 0.0f;
     p[channel] = channelValue (Channel::left);
     std::vector<float> l (32, 1.0f), r (32, 1.0f);
@@ -61,25 +61,25 @@ TEST (fl165g_mute2_channels_and_switch)
 
 TEST (fl165g_big_clock_text)
 {
-    using namespace lynx::flextra::bigclock;
-    lynx::Song song;
-    song.mode = lynx::PlayMode::pattern;
+    using namespace yw::flextra::bigclock;
+    yw::Song song;
+    song.mode = yw::PlayMode::pattern;
     song.bpm = 120.0;
-    const double ticks = 11.0 * 4 * lynx::ppq + 2.0 * lynx::ppq + 1.0 * lynx::ticksPerStep + 170.0; // bar 12, beat 3, step 10 (+170)
-    CHECK (clockText (song, ticks, lynx::Meter (4, 4), Display::barBeatTick) == "12:03:41");  // 240 + 170 LYNX ticks = 41 FL ticks (96 ppq)
-    CHECK (clockText (song, ticks, lynx::Meter (4, 4), Display::barStepTick) == "12:10:17");  // step 10 of the bar, 170 ticks = 17
-    CHECK (clockText (song, 0.0, lynx::Meter (4, 4), Display::barBeatTick) == "1:01:00");
-    CHECK (clockText (song, (double) lynx::ppq * 2 * 61.5, lynx::Meter (4, 4), Display::minSecHundredths) == "1:01:50"); // 123 beats at 120 BPM = 61.5 s
+    const double ticks = 11.0 * 4 * yw::ppq + 2.0 * yw::ppq + 1.0 * yw::ticksPerStep + 170.0; // bar 12, beat 3, step 10 (+170)
+    CHECK (clockText (song, ticks, yw::Meter (4, 4), Display::barBeatTick) == "12:03:41");  // 240 + 170 YW ticks = 41 FL ticks (96 ppq)
+    CHECK (clockText (song, ticks, yw::Meter (4, 4), Display::barStepTick) == "12:10:17");  // step 10 of the bar, 170 ticks = 17
+    CHECK (clockText (song, 0.0, yw::Meter (4, 4), Display::barBeatTick) == "1:01:00");
+    CHECK (clockText (song, (double) yw::ppq * 2 * 61.5, yw::Meter (4, 4), Display::minSecHundredths) == "1:01:50"); // 123 beats at 120 BPM = 61.5 s
     CHECK (displayOf (displayValue (Display::minSecHundredths)) == Display::minSecHundredths);
     CHECK (paramText (display, 1.0f) == "Bar:Step:Tick");
-    CHECK (lynx::effectFromFl ("Fruity Big Clock", {}, 120.0)->kind == lynx::EffectKind::bigClock);
+    CHECK (yw::effectFromFl ("Fruity Big Clock", {}, 120.0)->kind == yw::EffectKind::bigClock);
 }
 
 TEST (fl165g_tuner_state_and_detection)
 {
-    using namespace lynx::flextra::tuner;
+    using namespace yw::flextra::tuner;
     // FL's presets: Default (440 Hz, fast, no bass, Dial = 2), Bass, Horizontal (Basic = 1), Average (reactivity 0)
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::tuner);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::tuner);
     CHECK (fromFl (fl165g::ints ({ 1, 3000, 1, 0, 2 }), slot));
     CHECK (std::abs (referenceHz (slot.params[reference]) - 440.0) < 1e-9 && slot.params[reactivity] == 1.0f && ! bassOn (slot.params[bass])
            && visualOf (slot.params[visual]) == Visual::dial);
@@ -128,7 +128,7 @@ TEST (fl165g_tuner_state_and_detection)
 
 TEST (fl165g_html_notebook)
 {
-    using namespace lynx::flextra::htmlnotebook;
+    using namespace yw::flextra::htmlnotebook;
     // FL's presets: version 1 + a Pascal short string
     std::vector<std::uint8_t> state { 1, 0, 0, 0, 22 };
     const std::string google = "http://www.google.com/";
@@ -136,8 +136,8 @@ TEST (fl165g_html_notebook)
     CHECK (address (state) == google && isWebAddress (google) && ! isWebAddress ("C:\\notes\\a.html"));
     CHECK (address ({ 1, 0, 0, 0, 0 }).empty() && address ({}).empty() && address ({ 1, 0, 0, 0, 9, 'a' }).empty());
     CHECK (stateFor (google) == state);
-    const auto fx = lynx::effectFromFl ("Fruity HTML NoteBook", state, 120.0);
-    CHECK (fx && fx->kind == lynx::EffectKind::htmlNotebook && address (fx->state) == google);
+    const auto fx = yw::effectFromFl ("Fruity HTML NoteBook", state, 120.0);
+    CHECK (fx && fx->kind == yw::EffectKind::htmlNotebook && address (fx->state) == google);
 
     const auto page = parse ("<html><head><title>My &amp; notes</title><style>p{color:red}</style><script>var a='<p>x</p>';</script></head>"
                              "<body><h1>Title</h1><p>Some   <b>bold</b>\n text &copy; <a href=\"x.html\">link</a></p>"
@@ -158,7 +158,7 @@ TEST (fl165g_html_notebook)
 
 TEST (fl165g_inert_and_project_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! flextra::inertPluginNote ("Razer Chroma").empty() && ! flextra::inertPluginNote ("ReWired").empty());
     CHECK (! flextra::inertPluginNote ("FL Studio Mobile Rack FX").empty() && flextra::inertPluginNote ("Fruity Limiter").empty());
     for (const auto k : { EffectKind::fruityMute2, EffectKind::bigClock, EffectKind::tuner, EffectKind::htmlNotebook })

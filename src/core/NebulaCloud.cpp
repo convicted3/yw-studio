@@ -11,7 +11,7 @@
 
 #include "core/Denormals.h"
 
-namespace lynx::verbs::cloud
+namespace yw::verbs::cloud
 {
 namespace
 {
@@ -173,7 +173,7 @@ struct Network::Impl
         goal.gain = (float) gain;
         goal.inject = (float) std::sqrt (std::min (1.0, 0.2 / std::max (1e-6, gain)));
         goal.allpass = (float) (0.91 * feedback);
-        // (LYNX: the looped network's global gain is capped like the others'. The model lets it reach 1 and sustain; its
+        // (YW: the looped network's global gain is capped like the others'. The model lets it reach 1 and sustain; its
         // moving interpolators are not passive, so an uncapped loop is not guaranteed to stay bounded)
         goal.feedback = (float) std::min (0.9995, feedback);
         const auto theta = pi * std::clamp (c.density, 0.0, 1.0) / 4.0;
@@ -494,4 +494,4 @@ void Network::process (const float* inL, const float* inR, float* outL, float* o
             break;
     }
 }
-} // namespace lynx::verbs::cloud
+} // namespace yw::verbs::cloud

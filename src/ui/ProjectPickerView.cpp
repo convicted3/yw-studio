@@ -10,7 +10,7 @@
 #include "ui/PluginThumbs.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -981,4 +981,4 @@ void projectPickerShowTabForSnapshot (juce::Component& view, int tab)
     if (auto* picker = dynamic_cast<ProjectPickerView*> (&view))
         picker->showTab (tab);
 }
-} // namespace lynx
+} // namespace yw

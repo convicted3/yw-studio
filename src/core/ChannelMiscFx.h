@@ -12,12 +12,12 @@
 #include "core/Scheduler.h"
 #include "core/Song.h"
 
-namespace lynx::channelmisc
+namespace yw::channelmisc
 {
 // FL's time knobs (Misc › Time › Shift and Gate, the arpeggiator's Time, the porta Slide; REA_rodada6 §4): the value
 // v (0…) is (27^(v/1024) − 1)·48/26 sixteenths of a step, i.e. this many beats (1024 = one step).
 double flTimeKnobBeats (int v) noexcept;
-// The time-knob value for `beats` (rounded), for LYNX's own knobs that show FL's scale.
+// The time-knob value for `beats` (rounded), for YW's own knobs that show FL's scale.
 int flTimeKnobValue (double beats) noexcept;
 
 // The pan a note gets from the channel's velocity and key tracking (added to the note's own pan, clamped):
@@ -70,4 +70,4 @@ private:
     std::array<Held, 64> held {};
     int heldCount = 0;
 };
-} // namespace lynx::channelmisc
+} // namespace yw::channelmisc

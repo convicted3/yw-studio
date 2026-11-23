@@ -1,13 +1,13 @@
 #pragma once
 
-// FL Studio's Fruity Love Philter as a LYNX mixer effect: the plugin's own engine rebuilt from the installation's DLL
+// FL Studio's Fruity Love Philter as a YW mixer effect: the plugin's own engine rebuilt from the installation's DLL
 // in docs/analise/REA_rodada66.md (clean-room: layouts, formulas and behaviour in our own words; no Image-Line code or
 // data in this repository). Rounds 16–20 and 27 decoded the state and the laws; round 66 decoded the render itself
 // (oversampling, control ticks, articulators, the twelve filter kernels, waveshaper, envelope follower, pan law) and
 // verified it against the DLL.
 //
 // The effect slot keeps FL's saved state (plugin record 0xD5) in EffectSlot::state. The 48 slot parameters are the
-// controls LYNX's editor and automation reach, each as (raw − min) / (max − min) of FL's raw range:
+// controls YW's editor and automation reach, each as (raw − min) / (max − min) of FL's raw range:
 //   [0…7]   the globals: master level, master LFO level, follower level, follower attack, follower release, pattern,
 //           Mod X, Mod Y;
 //   [8 + 5u + 0…4] unit u (0…7): cutoff, resonance, envelope amount, pan, volume.
@@ -22,7 +22,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::philter
+namespace yw::philter
 {
 constexpr int paramCount = 48 + 55; // (round 173d3: + the units' L, B, H, WS, IN, NEXT)
 
@@ -138,4 +138,4 @@ std::optional<EffectSlot> slotFromFl (const std::vector<std::uint8_t>& flState);
 const EffectInfo& info();
 std::unique_ptr<Effect> make (const EffectSlot& slot);
 std::string paramText (int param, float value01);
-} // namespace lynx::philter
+} // namespace yw::philter

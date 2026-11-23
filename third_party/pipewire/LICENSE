@@ -1,5 +1,5 @@
 PipeWire and SPA headers (pipewire 1.6.2, https://gitlab.freedesktop.org/pipewire/pipewire)
-Only the headers LYNX's PipeWire client includes are vendored here (include/pipewire-0.3, include/spa-0.2).
+Only the headers YW's PipeWire client includes are vendored here (include/pipewire-0.3, include/spa-0.2).
 Every file carries "SPDX-License-Identifier: MIT".
 
 Copyright © 2018-2025 Wim Taymans and the PipeWire authors

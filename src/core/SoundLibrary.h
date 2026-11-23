@@ -1,10 +1,10 @@
 #pragma once
 
-// The Simple workflow's sound picker (round 190bu, Simple layout S6, decision I of WHAT-LYNX-LACKS.md): one list of
-// ready sounds by category, made only of what LYNX has itself — the built-in synth's presets (core/SynthPresets.h) and
-// LYNX's own preset banks of its engines (core/LynxBanks.h) — plus the presets of the user's own SoundFont files
+// The Simple workflow's sound picker (round 190bu, Simple layout S6, decision I of WHAT-YW-LACKS.md): one list of
+// ready sounds by category, made only of what YW has itself — the built-in synth's presets (core/SynthPresets.h) and
+// YW's own preset banks of its engines (core/YwBanks.h) — plus the presets of the user's own SoundFont files
 // (core/SoundFontIndex.h) and, since round 190dg, the instrument plugins installed on the computer (the plugin host's
-// scanned list; one entry per plugin, its own presets stay in its own window). No sampled content ships with LYNX. A sound is a recipe for a channel: picking one puts its
+// scanned list; one entry per plugin, its own presets stay in its own window). No sampled content ships with YW. A sound is a recipe for a channel: picking one puts its
 // instrument and settings on the track's channel and leaves the channel's own settings (name, level, pan, insert,
 // colour, arpeggiator…) alone, so the Channel rack and every other layout show an ordinary channel.
 // No JUCE.
@@ -16,7 +16,7 @@
 #include "core/Song.h"
 #include "core/SoundFontIndex.h"
 
-namespace lynx::soundlib
+namespace yw::soundlib
 {
 enum class Category : int { keys, bass, lead, pad, pluck, synths, bells, organ, strings, brass, voices, guitar, drums, effects, count };
 const char* categoryName (Category c) noexcept; // English (the UI translates it)
@@ -45,7 +45,7 @@ struct Sound
 // words in its name and tags ("808" and "kick" are drums, "choir" is a voice, "bell" a bell…).
 Category categoryFor (const std::string& family, const std::string& name, const std::vector<std::string>& tags = {});
 
-// LYNX's own sounds, by category then name; `engineName` names an engine for the second column (default: none shown).
+// YW's own sounds, by category then name; `engineName` names an engine for the second column (default: none shown).
 // Built once ("Init" presets are left out: they are starting points, not sounds).
 const std::vector<Sound>& builtIn();
 // The presets of the user's SoundFont files, by category then name
@@ -83,4 +83,4 @@ int step (const std::vector<Sound>& list, int current, int delta, Category fallb
 // The notes an audition of the sound plays, one after the other: a chord's notes, low notes for a bass, a kit's kick,
 // snare and hat, one hit for a single drum.
 std::vector<int> auditionKeys (const Sound& sound);
-} // namespace lynx::soundlib
+} // namespace yw::soundlib

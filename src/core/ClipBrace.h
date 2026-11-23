@@ -7,9 +7,9 @@
 // to change the position and length of the loop brace", "The left and right arrow keys nudge the loop brace to the
 // left/right by the current grid setting", "The up and down arrow keys shift the loop brace left/right in steps the size
 // of its length", "Regardless of the position of the loop brace, clip will begin playing at the start marker position";
-// SHOT /mnt/e/lynx-work/live190gu/warp/live-clipview-beats-defaults-full.png and gaps190kf/raw (Live 12.4)].
+// SHOT /mnt/e/yw-work/live190gu/warp/live-clipview-beats-defaults-full.png and gaps190kf/raw (Live 12.4)].
 //
-// LYNX's grid clip already holds those values (round 190hr): with Loop on, Clip::offset / length are the loop (Live's
+// YW's grid clip already holds those values (round 190hr): with Loop on, Clip::offset / length are the loop (Live's
 // Loop Position / Length) and ClipGridSlot::startMarker is the Start marker inside it; with Loop off, offset / length are
 // the Start / End markers. Everything here is in content ticks (Clip::offset's units: content beats × ppq for a warped
 // clip, the file's seconds at the song tempo for an unwarped one). JUCE-free, so the tests check the model.
@@ -20,7 +20,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::clipbrace
+namespace yw::clipbrace
 {
 // Where the markers are, in content ticks
 struct Marks
@@ -128,4 +128,4 @@ inline std::int64_t snap (double tick, std::int64_t grid) noexcept
         return (std::int64_t) std::llround (tick);
     return (std::int64_t) std::llround (tick / (double) grid) * grid;
 }
-} // namespace lynx::clipbrace
+} // namespace yw::clipbrace

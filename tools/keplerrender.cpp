@@ -1,4 +1,4 @@
-// Renders a Kepler state with LYNX's engine the way the REA round-46 EXEC harness drives FL's engine DLL (verification,
+// Renders a Kepler state with YW's engine the way the REA round-46 EXEC harness drives FL's engine DLL (verification,
 // REA_rodada46 §6): keplerrender <state.bin> <engine_x64.dll> <out.f32> <length> <rate> [tempo=X] [blk=N]
 // [warm=N] [midivol=V] [midipan=P] [transport]   (FL's export: warm-up, channel levels as MIDI, song playing)
 // [note=start,key,initVol,finalPan,pitchCents,off ...]   (off = −1: held). Output: interleaved stereo float32.
@@ -26,8 +26,8 @@ int main (int argc, char** argv)
     const std::vector<std::uint8_t> state ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
     const int length = std::atoi (argv[4]);
     const double rate = std::atof (argv[5]);
-    lynx::kepler::RefOptions opt;
-    std::vector<lynx::kepler::RefNote> notes;
+    yw::kepler::RefOptions opt;
+    std::vector<yw::kepler::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -53,7 +53,7 @@ int main (int argc, char** argv)
                 v.push_back (std::atof (t.c_str()));
             if (v.size() < 6)
                 continue;
-            lynx::kepler::RefNote n;
+            yw::kepler::RefNote n;
             n.start = (int) v[0];
             n.key = (int) v[1];
             n.initVol = v[2];
@@ -63,13 +63,13 @@ int main (int argc, char** argv)
             notes.push_back (n);
         }
     }
-    if (! lynx::keplerStateUsable (state))
+    if (! yw::keplerStateUsable (state))
     {
         std::fprintf (stderr, "state not usable\n");
         return 1;
     }
     const auto t0 = std::chrono::steady_clock::now();
-    const auto out = lynx::kepler::renderReference (state, argv[2], notes, rate, length, opt);
+    const auto out = yw::kepler::renderReference (state, argv[2], notes, rate, length, opt);
     const auto ms = std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - t0).count();
     if (out.empty())
     {

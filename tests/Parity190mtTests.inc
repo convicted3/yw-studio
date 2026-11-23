@@ -9,18 +9,18 @@
 
 namespace parity190mt
 {
-inline lynx::EffectSlot gSlot()
+inline yw::EffectSlot gSlot()
 {
-    using namespace lynx;
+    using namespace yw;
     namespace rg = mixsuite::ridge;
     auto s = makeEffectSlot (EffectKind::ridgeStrip);
     s.params[rg::voicing] = 1.0f; // the E voicing (the G law rides on it)
     return s;
 }
-inline void gBands (lynx::EffectSlot& s, double lf, double lfHz, double lmf, double lmfKHz, double lmfQ, double hmf, double hmfKHz,
+inline void gBands (yw::EffectSlot& s, double lf, double lfHz, double lmf, double lmfKHz, double lmfQ, double hmf, double hmfKHz,
                     double hmfQ, double hf, double hfKHz)
 {
-    namespace rg = lynx::mixsuite::ridge;
+    namespace rg = yw::mixsuite::ridge;
     namespace g = rg::gch;
     s.params[rg::gLfGain] = g::gainValue (lf); s.params[rg::gLfHz] = g::lfValue (lfHz);
     s.params[rg::gLmfGain] = g::gainValue (lmf); s.params[rg::gLmfKHz] = g::lmfValue (lmfKHz); s.params[rg::gLmfQ] = g::qValue (lmfQ);
@@ -28,9 +28,9 @@ inline void gBands (lynx::EffectSlot& s, double lf, double lfHz, double lmf, dou
     s.params[rg::gHfGain] = g::gainValue (hf); s.params[rg::gHfKHz] = g::hfValue (hfKHz);
 }
 // the steady gain (dB) of a slot for a sine at hz (level −20 dBFS), measured on the second half of 1 s
-inline double sineGainDb (const lynx::EffectSlot& slot, double hz, double sr = 48000.0, double level = 0.1)
+inline double sineGainDb (const yw::EffectSlot& slot, double hz, double sr = 48000.0, double level = 0.1)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) sr;
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
@@ -45,7 +45,7 @@ inline double sineGainDb (const lynx::EffectSlot& slot, double hz, double sr = 4
 
 TEST (parity190mt_ssl_g_law_is_hidden_and_inert_while_off)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace rg = mixsuite::ridge;
     CHECK (effectInfo (EffectKind::ridgeStrip).params.size() == (std::size_t) rg::count);
     CHECK (rg::gEqLaw == rg::h32 + 1 && rg::gHmfGain < rg::omniLaw && std::size (rg::gParams) == 13); // (rollup step 13: 93 … 99, 108 / 109, 136 … 139)
@@ -67,7 +67,7 @@ TEST (parity190mt_ssl_g_law_is_hidden_and_inert_while_off)
 
 TEST (parity190mt_ssl_g_law_follows_the_measured_sections)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace rg = mixsuite::ridge;
     auto s = parity190mt::gSlot();
     s.params[rg::gEqLaw] = 1.0f;
@@ -93,7 +93,7 @@ TEST (parity190mt_ssl_g_law_follows_the_measured_sections)
 
 TEST (parity190mt_ssl_g_translates_onto_the_g_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace rg = mixsuite::ridge;
     int n = 0;
     // SSL G-Channel: LF +5 dB at 80 Hz, HMF +3 dB at 5 kHz Q 1.5, HF +17 dB (beyond the E's ±15) at 10 kHz, HMF ×3
@@ -107,7 +107,7 @@ TEST (parity190mt_ssl_g_translates_onto_the_g_law)
 
 TEST (parity190mt_q10_bell_tan_law_is_exact)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = makeEffectSlot (EffectKind::facetEq);
     s.params[(std::size_t) facet::wavesLawParam] = 1.0f;
     const auto set = [&s] (double hz, double db, double q10) {
@@ -163,7 +163,7 @@ TEST (parity190mt_q10_bell_tan_law_is_exact)
 
 TEST (parity190mt_api560_law_latency_and_network)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = makeEffectSlot (EffectKind::facetEq);
     CHECK (s.params[(std::size_t) facet::api560LawParam] == 0.0f && facet::storedParamCount <= maxEffectParams);
     CHECK (facet::api560LawParam == facet::wavesBandParam0 + facet::bands && facet::storedParamCount == facet::api560GainParam0 + 10);
@@ -202,7 +202,7 @@ TEST (parity190mt_api560_law_latency_and_network)
 
 TEST (parity190mt_rchannel_rvox_type)
 {
-    using namespace lynx;
+    using namespace yw;
     auto plain = makeEffectSlot (EffectKind::compressor);
     CHECK (plain.params[(std::size_t) compressorRVoxType] == 0.0f);
     int n = 0;
@@ -223,7 +223,7 @@ TEST (parity190mt_rchannel_rvox_type)
 
 TEST (parity190mt_rchannel_gate)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // gate on (57), gate mode (58), threshold −40 dB, floor −30 dB, release 100 ms; the compressor at 1:1, EQ off
     auto s = parity190jh::waves ("RChannel Stereo", "RChannel", parity190jh::list (137, { { 20, "0" }, { 41, "1" }, { 42, "16" }, { 43, "160" },

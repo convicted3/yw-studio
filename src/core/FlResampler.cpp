@@ -6,7 +6,7 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) // x86 only: rcpps cannot be reproduced through NEON; ARM64 takes the plain path
 #include "core/Simd.h"
-#define LYNX_FLRS_SSE 1
+#define YW_FLRS_SSE 1
 #endif
 
 #if defined(__clang__)
@@ -15,7 +15,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::flrs
+namespace yw::flrs
 {
 namespace
 {
@@ -150,7 +150,7 @@ void sinc (const Kernel& k, const float* tl, const float* tr, double fracIn, flo
     const float cw = (float) k.twoCosCutoff, cn = (float) k.twoCosStep;
     const int centre = n - 1; // tap index of frame i
 
-#if LYNX_FLRS_SSE
+#if YW_FLRS_SSE
     __m128 den = _mm_loadu_ps (denominators), next = _mm_loadu_ps (seed), cur = _mm_loadu_ps (seed + 4);
     const __m128 twoCos = _mm_setr_ps (cw, cw, cn, cn);
     const __m128 c0 = _mm_setr_ps (0.36f, 0.36f, 0.0f, 0.0f), c2 = _mm_setr_ps (0.64f, 0.64f, 1.0f, 1.0f);
@@ -302,4 +302,4 @@ double speedFor (float cents, double ratio) noexcept
     static const double perCent = (std::log (2.0) / 12.0) / 100.0;
     return std::exp ((double) cents * perCent) * ratio;
 }
-} // namespace lynx::flrs
+} // namespace yw::flrs

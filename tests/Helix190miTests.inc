@@ -1,12 +1,12 @@
-// Round 190mi: Helix+ (core/WavetableSynth.h), LYNX's own extension of Helix after Live Wavetable's values: second
+// Round 190mi: Helix+ (core/WavetableSynth.h), YW's own extension of Helix after Live Wavetable's values: second
 // warps, unison count / blend / width / stack, noise, Comb / Formant / Phaser filters, macros, drawn LFOs, the effects
 // rack, the factory bank (core/HelixBank.cpp). Uses Helix190jaTests.inc's helpers (helix190ja::). No data file.
 
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 
 namespace helix190mi
 {
-namespace w = lynx::wt;
+namespace w = yw::wt;
 using helix190ja::db;
 using helix190ja::rms;
 
@@ -68,7 +68,7 @@ inline double sideDifference (const std::vector<float>& v)
 
 TEST (helix190mi_layout_and_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // Live's values stay where they were; Helix+'s block follows them
     CHECK (w::liveStateSize == 778 && w::extBase == w::liveStateSize && w::ext2Base == w::extBase + w::ext::count); // (190ml: Helix+ 2 follows)
@@ -358,7 +358,7 @@ TEST (helix190mi_effects_rack)
             }
     }
     // the delay repeats after the note: 1/4 at 120 BPM = 0.5 s; the engine stays busy until the tail dies
-    lynx::wt::Engine e;
+    yw::wt::Engine e;
     e.prepare (48000.0);
     auto d = s;
     x (d, w::ext::delayOn, 1.0);
@@ -386,7 +386,7 @@ TEST (helix190mi_effects_rack)
 
 TEST (helix190mi_factory_bank)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& bank = banks::bankOf (InstrumentKind::helix);
     CHECK (bank.size() >= 9 && bank.front().name == "Init");
     // a new Helix channel is the bank's first preset: Helix's own defaults with Helix+ live
@@ -420,7 +420,7 @@ TEST (helix190mi_factory_bank)
 
 TEST (helix190mi_als_export_note)
 {
-    using namespace lynx;
+    using namespace yw;
     // a Helix+ preset goes to Live as Wavetable (Live's values) with a note naming what stays behind; Helix's own
     // default (nothing of Helix+ used) goes without one
     for (const auto* preset : { "Growl FM", "Init" })

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::autosample
+namespace yw::autosample
 {
 namespace
 {
@@ -237,4 +237,4 @@ std::string takeFileName (const std::string& base, const Take& take)
     const auto key = std::clamp (take.key, 0, 127);
     return clean + " " + names[key % 12] + std::to_string (key / 12) + " v" + std::to_string (take.velocity) + ".wav";
 }
-} // namespace lynx::autosample
+} // namespace yw::autosample

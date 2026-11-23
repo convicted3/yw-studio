@@ -27,7 +27,7 @@
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::plugui
+namespace yw::plugui
 {
 namespace
 {
@@ -470,7 +470,7 @@ Layout fruityMultiband()
     v.push_back (section (79, 7, 200, 142, nullptr, boxed));
     v.push_back (display (83, 11, 192, 78, "multiband"));
     // round 190mk (DP-30, capture 190mf A3 fl-mbc-playing.png): FL's SPEED slider under the display (the scroll rate of
-    // the peak display; 0 = off, the cutoff graph only), where LYNX had the "Crossovers" caption
+    // the peak display; 0 = off, the cutoff graph only), where YW had the "Crossovers" caption
     v.push_back (display (86, 90, 186, 12, "mbspeed"));
     v.push_back (knob (103, 121, 34, "Low crossover", nullptr, 0, noCaption));
     v.push_back (knob (153, 121, 34, "Mid lower crossover", nullptr, 0, noCaption));
@@ -1216,10 +1216,10 @@ Layout fruitySend()
     return l;
 }
 
-Layout lynxTune()
+Layout ywTune()
 {
-    // LYNX Tune (own design, REA rounds 95 / 120 / 128). The workflow of the automatic pitch correctors' "auto" mode it
-    // stands in for (Auto-Tune Pro, studied on the official trial — layout logic only, LYNX's own drawing): the input /
+    // YW Tune (own design, REA rounds 95 / 120 / 128). The workflow of the automatic pitch correctors' "auto" mode it
+    // stands in for (Auto-Tune Pro, studied on the official trial — layout logic only, YW's own drawing): the input /
     // key / scale bar on top with AUTO KEY under the scale and the formant / transpose / A4 / mix group on the right;
     // the correction row in the middle — RETUNE SPEED big on the left, FLEX-TUNE beside it, the live correction meter
     // (note name, ±100 cent ring; click = HOLD) in the centre, NATURAL VIBRATO and HUMANIZE big on the right; the pitch
@@ -1329,7 +1329,7 @@ Layout lynxTune()
     rt (knob (618, 461, 13, "Tone level", nullptr, 461, noCaption | bipolar));
     {
         auto io = display (712, 366, 80, 106, "iometer");
-        io.steps = 3; // LYNX Tune's input / output peaks are its meter outputs 3 and 4
+        io.steps = 3; // YW Tune's input / output peaks are its meter outputs 3 and 4
         rt (io);
     }
     // --- the keyboard: BYPASS / REMOVE modes, LATCH, four octaves (a key edits its note name in every octave)
@@ -1362,7 +1362,7 @@ Layout emphasizer()
 
 Layout flEmphasis()
 {
-    // round 167f: FL's Emphasis interpreted (its controls and captions, LYNX's drawing): INPUT GAIN, the big EMPHASIS
+    // round 167f: FL's Emphasis interpreted (its controls and captions, YW's drawing): INPUT GAIN, the big EMPHASIS
     // knob and CEILING on top with the meter strip; the mode, ENVELOPE order, HARDNESS and LINKING below; the bottom
     // strip carries OVERSAMPLING, CHANNEL MODE and the option switches
     Layout l;
@@ -1559,7 +1559,7 @@ Layout booBass()
 Layout sytrusMain()
 {
     // Sytrus' MAIN page: master faders, volume and filter envelopes, unison, the modulation X/Y pad, quality and porta,
-    // and the FM / RM matrix (round 172a). The operator, filter and effect pages are not editable in LYNX (left out).
+    // and the FM / RM matrix (round 172a). The operator, filter and effect pages are not editable in YW (left out).
     Layout l;
     l.fl = "Sytrus";
     l.width = 850;
@@ -1820,7 +1820,7 @@ Layout soundgoodizer()
 
 // --- generated layouts ------------------------------------------------------------------------------
 
-// --- LYNX originals: the mixing suite (REA round 96). Not FL arrangements: LYNX's own panels, laid out with the
+// --- YW originals: the mixing suite (REA round 96). Not FL arrangements: YW's own panels, laid out with the
 // same conventions (titled sections, knobs with captions and read-outs, the graph on top, switches as tabs). -------
 
 // a knob with its caption and its value under it (`d` wide, centred at cx, cy)
@@ -1989,7 +1989,7 @@ Layout ridgeStrip()
 
 Layout compressorLayout()
 {
-    // round 129: LYNX's basic compressor in the role of the Waves Renaissance Compressor (docs/PARITY.md; the official
+    // round 129: YW's basic compressor in the role of the Waves Renaissance Compressor (docs/PARITY.md; the official
     // trial's panel): the threshold fader beside the input / output meters, the gain-reduction meter in the middle with
     // the ratio under it, the make-up gain fader on the right, attack and release along the bottom
     Layout l;
@@ -2001,12 +2001,12 @@ Layout compressorLayout()
     v.push_back (display (58, 26, 112, 180, "iometer"));
     // round 152: RComp's bipolar gain-change meter (reduction down, the expansion's boost up), the held change under it
     v.push_back (display (184, 26, 66, 180, "gcmeter"));
-    // round 150: with the RComp ranges the RC controls take the places of LYNX's (gain −30 … +30, ratio 0.5 … 50 : 1,
+    // round 150: with the RComp ranges the RC controls take the places of YW's (gain −30 … +30, ratio 0.5 … 50 : 1,
     // attack 0.5 … 500 ms, release 5 … 5000 ms)
     v.push_back (when (slider (Item::vslider, 268, 30, 34, 172, "Makeup", TR_NOOP ("Gain")), "Ranges", 0.0f, 0.5f));
     v.push_back (when (slider (Item::vslider, 268, 30, 34, 172, "RC gain", TR_NOOP ("Gain")), "Ranges", 0.5f, 1.0f));
     v.push_back (toggle (314, 30, 94, 20, "Auto gain", TR_NOOP ("Auto gain")));
-    // round 123: the voicing — LYNX's classic compressor, or the measured program-dependent one (substitutes start there)
+    // round 123: the voicing — YW's classic compressor, or the measured program-dependent one (substitutes start there)
     v.push_back (tabs (314, 60, 94, 40, "Voicing", TR_NOOP ("Classic|Vintage")));
     // round 135w: the reference's ARC / Manual, Electro / Opto and Warm / Smooth switches (the vintage voicing's), and
     // its output limiter with the activity pill
@@ -2040,7 +2040,7 @@ Layout glowLeveler()
     // Round tp172d (slice 8): the reference's proportions and hardware — a wide grey faceplate, COMPRESS / LIMIT and
     // AUTO MAKEUP as metal bat toggles with their words printed above and under them, the VU DISPLAY selector as a black
     // pointer knob with INPUT / GR / OUTPUT round it, the model name in big type under the meter, and a charcoal strip
-    // with gold keys (50Hz / 60Hz / OFF) and big ANALOG / HI FREQ / MIX / TRIM captions. LYNX's own extras (the voicing,
+    // with gold keys (50Hz / 60Hz / OFF) and big ANALOG / HI FREQ / MIX / TRIM captions. YW's own extras (the voicing,
     // the classic opto law and release, the make-up reference) stay as small keys where the original has its logo.
     Layout l;
     l.width = 660;
@@ -2071,7 +2071,7 @@ Layout glowLeveler()
     auto vu = display (245, 54, 174, 115, "vumeter");
     vu.steps = 0; // live output 0: gain reduction
     v.push_back (vu);
-    v.push_back (label (262, 176, 140, 34, "GLOW", bigCaption | big)); // the model name under the meter (LYNX's own)
+    v.push_back (label (262, 176, 140, 34, "GLOW", bigCaption | big)); // the model name under the meter (YW's own)
     // round 165x: the VU DISPLAY selector is a parameter (saved with the project, translated from the reference's state)
     v.push_back (label (540, 26, 100, 12, TR_NOOP ("VU display")));
     v.push_back (tabs (540, 42, 100, 68, "VU display", TR_NOOP ("Input|GR|Output"), { 0.5f, 0.0f, 1.0f }, rotarySelector));
@@ -2091,7 +2091,7 @@ Layout glowLeveler()
     v.push_back (knob (574, 270, 46, "Trim", TR_NOOP ("Trim"), 0, (std::uint32_t) (bipolar | noCaption)));
     v.push_back (label (536, 294, 24, 10, "-18"));
     v.push_back (label (588, 294, 24, 10, "18"));
-    // round 165x: where Auto makeup was switched on (the reference's make-up follows the dial from there) — LYNX's own
+    // round 165x: where Auto makeup was switched on (the reference's make-up follows the dial from there) — YW's own
     v.push_back (when (knob (634, 264, 22, "Makeup ref", TR_NOOP ("Makeup ref"), 290), "Voicing", 0.5f, 1.0f));
     return l;
 }
@@ -2148,7 +2148,7 @@ Layout aetherLayout()
 {
     // round 114: the "air" processors' front panel (the role: Slate Digital Fresh Air), from the official product page:
     // two big knobs side by side — the presence / exciter one (MID) on the left, the high shelf (HIGH) on the right —
-    // and the output trim between them; LYNX's extra settings (frequencies, character, mix) small under each
+    // and the output trim between them; YW's extra settings (frequencies, character, mix) small under each
     Layout l;
     l.width = 530;
     l.height = 270;
@@ -2171,7 +2171,7 @@ Layout aetherLayout()
 
 // round 136: Ember's Classic voicing (core/EmberClassic.h) — with Voicing on, Ember's own controls hide and the
 // Classic ones (the reference's laws and texts) show; added around emberLayout() so that layout stays as it is.
-// Round 165 (REA_rodada165ha §3): the reference's one-screen arrangement in LYNX's widgets — Punish top left, the VU
+// Round 165 (REA_rodada165ha §3): the reference's one-screen arrangement in YW's widgets — Punish top left, the VU
 // (output level) top centre, Output with its Auto link top right, the big Drive left, Low cut (+ Thump), Tone,
 // High cut (+ Steep) and Mix in a row, the five styles one click each along the bottom
 Layout withEmberClassic (Layout l)
@@ -2217,7 +2217,7 @@ Layout withEmberClassic (Layout l)
     return l;
 }
 
-// round tp172c7: Kiln Channel, LYNX's console channel — the compact dark single-channel console of its role (the
+// round tp172c7: Kiln Channel, YW's console channel — the compact dark single-channel console of its role (the
 // classic console-emulation channel): the main input level and its meter in the left column, the main output on the
 // right; the centre module carries the VU (output), the name plate, Input / Output, the console selector with the six
 // models printed round it, Drive and Group, and the Noise reduction / Group bypass keys
@@ -2265,7 +2265,7 @@ Layout kilnLayout()
     return l;
 }
 
-// round tp172c8: Fret Channel, LYNX's guitar / bass channel strip (its role: the guitar channel strip measured on the
+// round tp172c8: Fret Channel, YW's guitar / bass channel strip (its role: the guitar channel strip measured on the
 // SSL Guitarstrip trial). The generic layout the parameter view falls back to (the window is core/ui ProEditors' own
 // panel): input column (meter, high-pass, input), PHASE CORRECTION (align to, delay, polarity, all-pass), EQUALISER
 // (low / mid / high, low-pass, pre / post), COMP (mode, threshold, mix, auto gain), DRIVE (amp model, pre-amp, drive,
@@ -2331,7 +2331,7 @@ Layout fretLayout()
     return l;
 }
 
-// round trans189d (issue #94): Strike Shaper, LYNX's level-independent transient designer. The generic layout keeps the
+// round trans189d (issue #94): Strike Shaper, YW's level-independent transient designer. The generic layout keeps the
 // two-knob front panel: ATTACK and SUSTAIN big on either side, Output, Guard and Link between them, Mix and the
 // detector's high-pass small underneath (the editor, ui/ProEditors.cpp StrikeEditor, draws the hardware look)
 Layout strikeLayout()
@@ -2351,11 +2351,11 @@ Layout strikeLayout()
     return l;
 }
 
-// round 190fk: Anvil Bus, LYNX's drum-bus processor (the editor draws the forged-steel look, ui/PluginArtEffects.inc).
+// round 190fk: Anvil Bus, YW's drum-bus processor (the editor draws the forged-steel look, ui/PluginArtEffects.inc).
 // Round 190gx: the controls in the reference's four columns, top to bottom [Live 12.4 Drum Buss panel shot,
-// /mnt/e/lynx-work/live190gu/drumbus/live-drumbuss-panel-type0-drive25.png]: Drive, the three types stacked, Trim, Comp |
+// /mnt/e/yw-work/live190gu/drumbus/live-drumbuss-panel-type0-drive25.png]: Drive, the three types stacked, Trim, Comp |
 // Crunch, Damp, Transients | Boom, Freq., Decay | the Output fader and Dry/Wet (the reference's Bass meter, Force to note
-// and Boom audition are left out: LYNX has no such outputs)
+// and Boom audition are left out: YW has no such outputs)
 Layout anvilLayout()
 {
     Layout l;
@@ -2381,7 +2381,7 @@ Layout anvilLayout()
     return l;
 }
 
-// round tp172c8: Shell Channel, LYNX's drum channel strip (its role: the drum channel strip measured on the SSL Native
+// round tp172c8: Shell Channel, YW's drum channel strip (its role: the drum channel strip measured on the SSL Native
 // Drumstrip trial). The generic layout: input column, GATE and TRANSIENT SHAPER on top, the LOW / HIGH FREQ ENHANCERS and
 // the LISTEN MIC COMPRESSOR below, the process order under them, output column
 Layout shellLayout()
@@ -2647,11 +2647,11 @@ Layout emberLayout()
     return l;
 }
 
-// --- LYNX originals: the dynamics suite (REA round 108) --------------------------------------------------------
+// --- YW originals: the dynamics suite (REA round 108) --------------------------------------------------------
 // The layout logic follows how the reference plugins are used (round 108 UI rule, screenshots in tmp/comp108/ref):
 // the level / gain-reduction display is the window, the main knobs sit in one row under it with their small
 // companions below, the style is one menu button between them, and the rarely touched parts (character, side chain)
-// fold into a page at the bottom. Drawn entirely in LYNX's own style.
+// fold into a page at the bottom. Drawn entirely in YW's own style.
 
 LayoutItem menuOf (float x, float y, float w, float h, const char* param, const char* caption, const char* options)
 {
@@ -2918,7 +2918,7 @@ Layout sentryGate()
 Layout quellDenoiser()
 {
     // round 119: the one-knob noise suppressors' front panel (the role: Waves NS1, screenshot of the official trial):
-    // the reduction meter on the left, one tall Amount fader on the right with its read-out under it; LYNX's extras
+    // the reduction meter on the left, one tall Amount fader on the right with its read-out under it; YW's extras
     // (listen to what is removed, output trim) small along the bottom
     Layout l;
     l.width = 300;
@@ -3069,7 +3069,7 @@ Layout withRhythmVoicing (Layout l)
     const auto rhythmFirst = l.items.size();
     // round tp172d (look slice): PanMan's face — the name top left, then three bowed pods: PAN (Offset / Width /
     // Smoothing, captions above, scale words under, the red L-C-R strip), RATE (the big Rate with its range, the
-    // pattern keys under it: ◀ ramp right to left, ◀▶ left / right, ▶ ramp left to right, plus LYNX's 8 steps), LEVEL
+    // pattern keys under it: ◀ ramp right to left, ◀▶ left / right, ▶ ramp left to right, plus YW's 8 steps), LEVEL
     // (Input, Output, the meter, the analog keys); no value text under the knobs (the tip shows it while dragging)
     add (label (12, 4, 210, 34, "Auto-Pan", dim | alignLeft));
     add (label (12, 34, 300, 14, TR_NOOP ("Rhythmic automatic panner"), alignLeft));
@@ -3266,7 +3266,7 @@ Layout voiceShiftLayout()
     return l;
 }
 
-// round 164d: the hardware insert's panel (LYNX's own; the roles: Pro Tools' H/W Insert and Nuendo's External FX): left
+// round 164d: the hardware insert's panel (YW's own; the roles: Pro Tools' H/W Insert and Nuendo's External FX): left
 // to right the way the signal goes — SEND (where it leaves, how loud), RETURN (where it comes back, how loud, phase),
 // their levels, the ROUND TRIP (the ping and its read-out) and the MIX.
 Layout hardwareInsertLayout()
@@ -3299,7 +3299,7 @@ Layout hardwareInsertLayout()
     return l;
 }
 
-// --- LYNX's reverbs (REA round 100): own panels, the same conventions as the mixing suite. The algorithm / type
+// --- YW's reverbs (REA round 100): own panels, the same conventions as the mixing suite. The algorithm / type
 // menu sits top-left with the Mix, the time controls (pre-delay, decay, size) in the middle, colour and
 // modulation to the right. -------------------------------------------------------------------------------------
 LayoutItem choiceMenu (float x, float y, float w, float h, const char* param, const char* caption, const char* options)
@@ -3315,7 +3315,7 @@ LayoutItem choiceMenu (float x, float y, float w, float h, const char* param, co
 
 // The reverbs keep the reference plugins' layout logic (REA round 100, screenshots of the official demos in
 // tmp/valh100/ref): the same control groups in the same order — mix and pre-delay first, the decay as the largest
-// control, then grouped boxes, the algorithm / mode menu along the bottom — drawn in LYNX's own style.
+// control, then grouped boxes, the algorithm / mode menu along the bottom — drawn in YW's own style.
 // round 114: the reference reverbs / delays write each knob's name above it and its value under it
 Layout captionsAbove (Layout l)
 {
@@ -3506,14 +3506,14 @@ Layout haloLayout()
     l.width = 700;
     l.height = 262;
     auto& v = l.items;
-    v.push_back (label (20, 4, 660, 62, "lynx|halo", plugui::wordmark));
+    v.push_back (label (20, 4, 660, 62, "yw|halo", plugui::wordmark));
     const char* knobs[] = { "Mix", "Shift", "Feedback", "Diffusion", "Size", "Low cut", "High cut", "Mod rate", "Mod depth" };
     const char* captions[] = { TR_NOOP ("Mix"), TR_NOOP ("Shift"), TR_NOOP ("Feedback"), TR_NOOP ("Diffusion"), TR_NOOP ("Size"),
                                TR_NOOP ("Low cut"), TR_NOOP ("High cut"), TR_NOOP ("Mod rate"), TR_NOOP ("Mod depth") };
     for (int i = 0; i < 9; ++i)
         v.push_back (dial (42.0f + 77.0f * (float) i, 134, 66, knobs[i], captions[i], i == 1 ? bipolar : 0));
     v.push_back (label (16, 216, 104, 28, TR_NOOP ("Reverb mode"), alignLeft));
-    // round 135: the reference's four modes (mono in, three stereo sizes) first, LYNX's own three after them
+    // round 135: the reference's four modes (mono in, three stereo sizes) first, YW's own three after them
     auto mode = choiceMenu (122, 216, 130, 28, "Reverb mode", TR_NOOP ("Reverb mode"),
                             TR_NOOP ("Mono|Small stereo|Medium stereo|Big stereo|Wide|Dense|Bright"));
     mode.values = { 0.125f, 0.25f, 0.375f, 0.625f, 0.0f, 0.5f, 1.0f }; // verbs::haloModeIndex (Wide / Dense / Bright keep 0 / ½ / 1)
@@ -3587,7 +3587,7 @@ Layout horizonLayout()
     return l;
 }
 
-// --- LYNX originals: the delay / modulation suite (REA round 101) --------------------------------------------------
+// --- YW originals: the delay / modulation suite (REA round 101) --------------------------------------------------
 
 // option values of a parameter read as floor (v · n): the middle of each step
 std::vector<float> stepCentres (int n, int first = 0, int count = -1)
@@ -3617,7 +3617,7 @@ LayoutItem menuOf (float x, float y, float w, float h, const char* param, const 
 }
 
 // The suite's panels follow the ergonomics of the plugins they are inspired by (round 101 UI rule: the same grouping
-// and the same place for each control, drawn in LYNX's own style): a row of small sections left to right, the
+// and the same place for each control, drawn in YW's own style): a row of small sections left to right, the
 // sections whose meaning depends on the style / mode swap their knobs in place.
 Layout echoformLayout()
 {
@@ -3633,7 +3633,7 @@ Layout echoformLayout()
     l.height = 360; // (tp172d slice 8: + the name block, was 330)
     l.pages = { TR_NOOP ("Main"), TR_NOOP ("Tweak") };
     const auto mainFrom = v.size();
-    // round tp172d (look slice): EchoBoy's face in LYNX's own drawing — captions above the knobs and the printed scale
+    // round tp172d (look slice): EchoBoy's face in YW's own drawing — captions above the knobs and the printed scale
     // words under them (no value text: the tip shows it while dragging), the time unit as TIME / NOTE / DOT / TRIP keys
     // over a red LED read-out, a TAP TEMPO pod with its key and LED tempo, the echo mode as a rotary with its modes
     // printed round it, Input / Saturation / Output and the style on LED read-outs in the third pod
@@ -3700,7 +3700,7 @@ Layout echoformLayout()
     v.push_back (menuOf (750, 214, 180, 22, "Tape voicing", TR_NOOP ("Tape voicing"), TR_NOOP ("Off|Ping-pong tape|Studio tape|Studio tape hot"),
                          { 0.0f, 1.0f / 3.0f, 2.0f / 3.0f, 1.0f }));
     // round tp172d (slice 8): the name block top left of the faceplate, over the pods (EchoBoy's place for its name;
-    // LYNX's name and its own subtitle) — the pods move down under it
+    // YW's name and its own subtitle) — the pods move down under it
     for (auto i = mainFrom; i < v.size(); ++i)
         v[i].y += 30.0f;
     v.push_back (label (12, 1, 112, 32, "Echoform", dim | alignLeft));
@@ -3931,7 +3931,7 @@ Layout latticeLayout()
         v.push_back (slider (Item::vslider, 16.0f + 58.0f * (float) k, 14, 40, 196, faders[k], captions[k]));
         v.push_back (value (10.0f + 58.0f * (float) k, 238, 52, 16, faders[k], 0));
     }
-    // round 135: the reference's MODE menu — its nine algorithms by their tap layout (LYNX's own names, the reference's
+    // round 135: the reference's MODE menu — its nine algorithms by their tap layout (YW's own names, the reference's
     // type index: lattice::tapCount); the engine plays the three 6-tap ones and the two 16-tap ones alike for now
     v.push_back (label (8, 268, 40, 18, TR_NOOP ("Mode")));
     v.push_back (menuOf (46, 266, 128, 22, "Taps", TR_NOOP ("Mode"),
@@ -4008,7 +4008,7 @@ Layout latticeLayout()
     return l;
 }
 
-#include "core/PluginLayout168r.inc" // round 168r: the FL effects that had a generated page, LYNX's simple built-ins
+#include "core/PluginLayout168r.inc" // round 168r: the FL effects that had a generated page, YW's simple built-ins
 
 Layout generated (EffectKind kind)
 {
@@ -4167,7 +4167,7 @@ const Layout& layoutFor (EffectKind kind)
         case EffectKind::nebula: l = captionsAbove (nebulaLayout()); break;
         case EffectKind::halo: l = captionsAbove (haloLayout()); break;
         case EffectKind::horizon: l = captionsAbove (horizonLayout()); break;
-        case EffectKind::lynxTune: l = lynxTune(); break;
+        case EffectKind::ywTune: l = ywTune(); break;
         case EffectKind::echoform: l = captionsAbove (echoformLayout()); break;
         case EffectKind::spiralEcho: l = captionsAbove (spiralLayout()); break;
         case EffectKind::orbit: l = captionsAbove (orbitLayout()); break;
@@ -4198,20 +4198,20 @@ const Layout& layoutFor (EffectKind kind)
         case EffectKind::flPhaseInverter: l = flPhaseInverter(); break;
         case EffectKind::lovePhilter: l = lovePhilterLayout(); break;
         case EffectKind::distructor: l = distructorLayout(); break;
-        case EffectKind::eq: l = lynxEq(); break;
-        case EffectKind::delay: l = lynxDelay(); break;
-        case EffectKind::reverb: l = lynxReverb(); break;
-        case EffectKind::limiter: l = lynxLimiter(); break;
-        case EffectKind::filter: l = lynxFilter(); break;
-        case EffectKind::distortion: l = lynxDistortion(); break;
-        case EffectKind::chorus: l = lynxChorus(); break;
-        case EffectKind::utility: l = lynxUtility(); break;
-        case EffectKind::lofi: l = lynxLofi(); break;
-        case EffectKind::crossover: l = lynxCrossover(); break;
-        case EffectKind::pitchShift: l = lynxPitchShift(); break;
-        case EffectKind::freqShift: l = lynxFreqShift(); break;
-        case EffectKind::rhythmGain: l = lynxRhythm(); break;
-        case EffectKind::volumeGate: l = lynxStepGate(); break;
+        case EffectKind::eq: l = ywEq(); break;
+        case EffectKind::delay: l = ywDelay(); break;
+        case EffectKind::reverb: l = ywReverb(); break;
+        case EffectKind::limiter: l = ywLimiter(); break;
+        case EffectKind::filter: l = ywFilter(); break;
+        case EffectKind::distortion: l = ywDistortion(); break;
+        case EffectKind::chorus: l = ywChorus(); break;
+        case EffectKind::utility: l = ywUtility(); break;
+        case EffectKind::lofi: l = ywLofi(); break;
+        case EffectKind::crossover: l = ywCrossover(); break;
+        case EffectKind::pitchShift: l = ywPitchShift(); break;
+        case EffectKind::freqShift: l = ywFreqShift(); break;
+        case EffectKind::rhythmGain: l = ywRhythm(); break;
+        case EffectKind::volumeGate: l = ywStepGate(); break;
         default: l = generated (kind); break;
     }
     return cache.emplace (kind, std::move (l)).first->second;
@@ -4237,7 +4237,7 @@ const char* fx (int s, const char* field) { return stored ("FX " + std::to_strin
 // oscillators in two columns (envelope faders, wave, pitch, detune, frequency offset, phase, free run), the MOD panel
 // in the middle (the 6 × 6 FM grid "row modulates column", MIX / PAN, LFO 1 / 2 per oscillator, master pitch
 // modulation), LFO 1 / FILTER / LFO 2 below and the effect slots around the 8-band EQ at the bottom. Reference: FL's own
-// window (its installation's Artwork\background.tga, read as a layout only); drawn in LYNX's style.
+// window (its installation's Artwork\background.tga, read as a layout only); drawn in YW's style.
 Layout toxicMain()
 {
     Layout l;
@@ -4463,7 +4463,7 @@ Layout toxicMain()
 // PoiZone (round 168n): FL's arrangement, read from the plugin's own form (TSynthEditorForm in PoiZone_x64.dll: each
 // control's position and the parameter it edits, docs/analise/REA_rodada168n.md §2) — unison / mode switches / master
 // across the top, MOD WHEEL, LFO, ENVELOPE and AMP envelopes, the two oscillators, FILTER and ARPEGGIATOR, then DELAY,
-// CHORUS and the 16-step GATE. FL's x positions; the rows are re-spaced for LYNX's section titles. Drawn in LYNX's style.
+// CHORUS and the 16-step GATE. FL's x positions; the rows are re-spaced for YW's section titles. Drawn in YW's style.
 Layout poizoneMain()
 {
     Layout l;
@@ -4471,7 +4471,7 @@ Layout poizoneMain()
     l.width = 856;
     l.height = 486;
     auto& v = l.items;
-    // a 40-pixel FL wheel at (left, top of the row) → LYNX knob with its caption
+    // a 40-pixel FL wheel at (left, top of the row) → YW knob with its caption
     auto wheel = [&v] (float left, float rowTop, const char* param, const char* caption, std::uint32_t style = 0) {
         v.push_back (knob (left + 20, rowTop + 18, 34, param, caption, rowTop + 46, style));
     };
@@ -4807,4 +4807,4 @@ bool isValueControl (Item type) noexcept
 {
     return type != Item::section && type != Item::label && type != Item::display;
 }
-} // namespace lynx::plugui
+} // namespace yw::plugui

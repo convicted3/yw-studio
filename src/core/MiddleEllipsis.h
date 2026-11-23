@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace lynx::middleellipsis
+namespace yw::middleellipsis
 {
 // How many characters of an n-character text to keep at its start and at its end so that start + ".." + end fits in
 // `width`, where `dots` is the width of "..". widthOf (first, count) measures `count` characters from `first`.
@@ -40,4 +40,4 @@ std::pair<int, int> split (int n, float width, float dots, WidthOf&& widthOf)
         return { 0, 0 };
     return { head, tail };
 }
-} // namespace lynx::middleellipsis
+} // namespace yw::middleellipsis

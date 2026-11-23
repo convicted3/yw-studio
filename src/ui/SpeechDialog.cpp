@@ -7,7 +7,7 @@
 #include "ui/ToolWindow.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::speechui
+namespace yw::speechui
 {
 namespace
 {
@@ -368,7 +368,7 @@ void editThenLoad (AudioEngine& engine, const juce::File& file, std::function<vo
     auto panel = makePanel (engine, settings, [file, then] (bool accepted, const speech::Settings& edited) {
         if (! accepted)
             return then (file);
-        // FL suggests "<Text in CamelCase>_<Personality>.speech"; LYNX saves it in its own speech folder (FL's
+        // FL suggests "<Text in CamelCase>_<Personality>.speech"; YW saves it in its own speech folder (FL's
         // factory folder is read-only) without asking, numbering it when the name is taken
         auto folder = userSpeechFolder();
         folder.createDirectory();
@@ -381,4 +381,4 @@ void editThenLoad (AudioEngine& engine, const juce::File& file, std::function<vo
     });
     openToolWindow (std::move (panel), tr ("Speech properties"), "speech");
 }
-} // namespace lynx::speechui
+} // namespace yw::speechui

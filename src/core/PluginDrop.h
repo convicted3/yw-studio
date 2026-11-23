@@ -1,7 +1,7 @@
 #pragma once
 
 // Issue #152 point 6 (round 190hf): a plugin dragged from the Browser's Plugin database (or the Plugin picker) onto the
-// tracks. Header only, no JUCE. Facts: /mnt/e/lynx-work/dnd190hf/DROP-FACTS.md (static REA of FLEngine_x64.dll, FL
+// tracks. Header only, no JUCE. Facts: /mnt/e/yw-work/dnd190hf/DROP-FACTS.md (static REA of FLEngine_x64.dll, FL
 // Studio 2026; Ableton Live 12's manual and release notes).
 //
 // Pattern workflow (FL's Playlist, FL-exact): only the track-header column takes a plugin (the lanes don't).
@@ -26,7 +26,7 @@
 #include "core/RackOps.h"
 #include "core/Song.h"
 
-namespace lynx::plugindrop
+namespace yw::plugindrop
 {
 enum class Error
 {
@@ -278,4 +278,4 @@ inline Result effectOnSessionTrack (Song& song, EffectSlot fx, int track)
     r.tracks.push_back (track);
     return r;
 }
-} // namespace lynx::plugindrop
+} // namespace yw::plugindrop

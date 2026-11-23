@@ -1,20 +1,20 @@
 #pragma once
 
-// LYNX substitutes for missing third-party plugins (docs/PLUGIN_FALLBACK.md).
+// YW substitutes for missing third-party plugins (docs/PLUGIN_FALLBACK.md).
 //
-// When a project (.flp or .lynx) uses a third-party plugin that isn't installed here, LYNX can put one of its own
+// When a project (.flp or .yw) uses a third-party plugin that isn't installed here, YW can put one of its own
 // built-in effects "in the role of" that plugin: a reverb for a reverb, a delay for a delay... The slot keeps the
 // ORIGINAL plugin reference byte for byte (EffectSlot::substituteFor), so the project saves it back unchanged and
 // reopens with the real plugin on a machine that has it.
 //
 // What stands in for what is DATA: a text table (built in, extendable with registerPluginSubstitutes) of entries
 // that name the third-party product (VST2 unique IDs, VST3 class IDs, CLAP ids, plugin / file names, Waves shell
-// sub-plugin names), the LYNX effect, a default preset and, where the saved state is readable, a parameter map.
+// sub-plugin names), the YW effect, a default preset and, where the saved state is readable, a parameter map.
 // Parameter maps use layouts that are visible in the saved data itself (VST2 float parameters, the attributes of a
 // JUCE XML state, Waves' "RealWorld" parameter lists) and meanings known from public documentation or our own
 // black-box measurements. Since 2026-11, by the project owner's decision, some stand-ins and translators (e.g. the
 // FabFilter roles of round 190kw onwards) were also informed by clean-room static analysis of the third-party
-// binaries: their laws and structure were described in our own words and LYNX's code was written from that
+// binaries: their laws and structure were described in our own words and YW's code was written from that
 // description. No third-party code, tables, presets or other content is copied, and licence protections are never
 // bypassed. The evidence for each case is in docs/analise/REA_*.md. Without a readable state the default preset is used.
 //
@@ -31,7 +31,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // One parameter of the substitute taken from the original plugin's saved state.
 struct SubstituteParamMap
@@ -45,7 +45,7 @@ struct SubstituteParamMap
     Source source = Source::vst2;
     int index = 0;
     std::string attribute;
-    // target: a parameter of the LYNX effect (by position), or the slot's dry/wet (`toSlotMix`)
+    // target: a parameter of the YW effect (by position), or the slot's dry/wet (`toSlotMix`)
     int target = 0;
     bool toSlotMix = false;
     // linear map, clamped: in [inLo, inHi] -> out [outLo, outHi] (0..1 normalised parameter)
@@ -71,7 +71,7 @@ struct SubstituteEntry
     std::vector<std::string> names;      // pluginNameKey of plugin / file names ("valhallavintageverb")
     std::vector<std::string> wavesNames; // pluginNameKey of a WaveShell sub-plugin's <PluginName> ("rcomp")
 
-    // the LYNX effect and its default preset
+    // the YW effect and its default preset
     EffectKind effect = EffectKind::eq;
     std::vector<std::pair<int, float>> preset; // parameter position -> normalised value, over makeEffectSlot (effect)
     // round 190ly ("replaced = …", same items as preset): applied over the preset only when the slot replaces an original
@@ -96,7 +96,7 @@ struct PluginIdentity
     std::array<std::uint8_t, 16> classId {};
     bool hasClassId = false;
     std::string clapId;
-    // VST2: FL's state layout (the 0x35 record / LYNX's VST2 host state); VST3: the component state; CLAP: the raw state
+    // VST2: FL's state layout (the 0x35 record / YW's VST2 host state); VST3: the component state; CLAP: the raw state
     std::vector<std::uint8_t> state;
 };
 
@@ -104,12 +104,12 @@ struct PluginIdentity
 PluginIdentity pluginIdentity (const ForeignPlugin& plugin);
 
 // Parses entries in the table format (docs/PLUGIN_FALLBACK.md). Lines it can't use are skipped and counted in
-// `errors` (when given). Entries whose LYNX effect name is unknown are dropped (counted as errors).
+// `errors` (when given). Entries whose YW effect name is unknown are dropped (counted as errors).
 std::vector<SubstituteEntry> parseSubstituteTable (std::string_view text, int* errors = nullptr);
 
 // The table in use: the built-in entries plus the registered ones (later registrations win on the same key).
 const std::vector<SubstituteEntry>& pluginSubstitutes();
-// Adds entries (table text) — the hook other LYNX modules use to offer themselves as substitutes. Returns how many
+// Adds entries (table text) — the hook other YW modules use to offer themselves as substitutes. Returns how many
 // entries were added. Call it from the UI/message thread before projects open.
 int registerPluginSubstitutes (std::string_view tableText);
 
@@ -134,7 +134,7 @@ bool substituteEffectSlot (EffectSlot& slot, const PluginIdentity& identity);
 struct SubstituteContext
 {
     int key = -1;   // 0 = C … 11 = B; −1 = unknown
-    int scale = -1; // LYNX Tune's scale index (vocal::Scale); −1 = unknown
+    int scale = -1; // YW Tune's scale index (vocal::Scale); −1 = unknown
     bool knowsKey() const noexcept { return key >= 0 && scale >= 0; }
 };
 // The context of a song: every plugin slot (hosted, unresolved or already substituted) whose original state names a
@@ -144,18 +144,18 @@ SubstituteContext substituteContextOf (const Song& song);
 bool substituteEffectSlot (EffectSlot& slot, const PluginIdentity& identity, const SubstituteContext& context);
 
 // The key and scale an Auto-Tune Pro component state was saved with (its <Custom> element's ScaleGivenKey /
-// ScaleGivenScale), as LYNX Tune's key index and scale (vocal::Scale index); nullopt when not readable or a scale
-// LYNX Tune has no equivalent for. Exposed for the tests.
+// ScaleGivenScale), as YW Tune's key index and scale (vocal::Scale index); nullopt when not readable or a scale
+// YW Tune has no equivalent for. Exposed for the tests.
 std::optional<std::pair<int, int>> autoTuneProKey (const std::vector<std::uint8_t>& state);
 // The scale a Waves Tune Real-Time state was saved with (round 120): the active setup's <Scale> element (its root and
-// the twelve note statuses above it, "x" = excluded). `scale` is the LYNX Tune scale whose notes on `key` are exactly
+// the twelve note statuses above it, "x" = excluded). `scale` is the YW Tune scale whose notes on `key` are exactly
 // these, else vocal::Scale::custom with `mask` (bit k = pitch class k, absolute) holding them. nullopt when absent.
 // The parameters an Auto-Tune Pro state holds (its ParamsData: X<n> = parameter n in real units; [EXEC] round 120:
 // 1 scale, 2 key, 4 retune speed ms, 61 humanize, 90 flex-tune, 62 natural vibrato dB). Empty when not readable.
 std::map<int, double> autoTuneProParams (const std::vector<std::uint8_t>& state);
 // Round 128: the active scale's per-note edits of an Auto-Tune Pro state (legacy <Scales> block): {bypass, remove},
-// bit k = absolute pitch class k. `lynxScale` = vocal::Scale major / minor / chromatic (others: nullopt).
-std::optional<std::pair<std::uint16_t, std::uint16_t>> autoTuneProNoteEdits (const std::vector<std::uint8_t>& state, int key, int lynxScale);
+// bit k = absolute pitch class k. `ywScale` = vocal::Scale major / minor / chromatic (others: nullopt).
+std::optional<std::pair<std::uint16_t, std::uint16_t>> autoTuneProNoteEdits (const std::vector<std::uint8_t>& state, int key, int ywScale);
 struct PitchCorrectorScale
 {
     int key = 0;
@@ -191,12 +191,12 @@ std::optional<std::uint64_t> soundtoysStateHash (const std::vector<std::uint8_t>
 int knownSoundtoysStates() noexcept;
 // Round 190kv: the Soundtoys factory presets. The fingerprint of a state's encoded payload without its volatile fields
 // (0 when the state has none); the fingerprints known for a plug-in's widget name ("EchoBoy", "Decapitator", …); a known
-// fingerprint applied to a slot of the matching LYNX effect (the number of parameters set, 0 when not known).
+// fingerprint applied to a slot of the matching YW effect (the number of parameters set, 0 when not known).
 std::uint64_t soundtoysFactoryFingerprint (const std::vector<std::uint8_t>& state);
 std::vector<std::uint64_t> soundtoysFactoryFingerprints (std::string_view widget);
 int applySoundtoysFactoryPreset (std::string_view widget, std::uint64_t fingerprint, EffectSlot& slot);
 
-// --- lossless text form of an .flp plugin reference (.lynx keeps it for substitutes) ------------------------------
+// --- lossless text form of an .flp plugin reference (.yw keeps it for substitutes) ------------------------------
 // Base64 of a versioned binary record of every ForeignPlugin field; foreignFromText(foreignToText(p)) == p, the
 // state byte for byte.
 std::string foreignToText (const ForeignPlugin& plugin);
@@ -205,7 +205,7 @@ bool foreignFromText (const std::string& text, ForeignPlugin& out);
 std::string base64Encode (const std::uint8_t* data, std::size_t size);
 bool base64Decode (const std::string& text, std::vector<std::uint8_t>& out);
 // Round 136: the FNV-1a 64 hash of a Soundtoys state's encoded preset (the bytes after "PRESET =", without the final ';').
-// LYNX does not decode those presets; her saved states are recognised by this hash (core/SoundtoysStates.inc).
+// YW does not decode those presets; her saved states are recognised by this hash (core/SoundtoysStates.inc).
 std::uint64_t soundtoysPresetHash (const std::vector<std::uint8_t>& state);
 
-} // namespace lynx
+} // namespace yw

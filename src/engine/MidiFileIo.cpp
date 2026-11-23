@@ -13,7 +13,7 @@
 #include "core/MidiControls.h"
 #include "engine/Text.h"
 
-namespace lynx::MidiFileIo
+namespace yw::MidiFileIo
 {
 namespace
 {
@@ -28,7 +28,7 @@ struct Parsed
     std::vector<midiimport::ParsedMidi::KeyChange> keys; // round 190nu
 };
 
-// Round 190nu (core/KeyRegions.h): the file's key signatures in time order; LYNX's "Key: <name>" marker meta event at the
+// Round 190nu (core/KeyRegions.h): the file's key signatures in time order; YW's "Key: <name>" marker meta event at the
 // same tick gives the exact scale (a signature holds only major / minor and the accidentals)
 template <typename Out>
 void collectKeys (const juce::MidiFile& midi, Out& out, const std::function<std::int64_t (double)>& toTicks)
@@ -58,7 +58,7 @@ void collectKeys (const juce::MidiFile& midi, Out& out, const std::function<std:
         out.keys.push_back ({ tick, key.root, key.flScale });
 }
 
-// The key signatures (and LYNX's exact-scale markers) of `pattern`'s key regions on the tempo track; `base` = the project
+// The key signatures (and YW's exact-scale markers) of `pattern`'s key regions on the tempo track; `base` = the project
 // key (what applies before the first key marker)
 void addKeySignatures (juce::MidiMessageSequence& tempo, const Pattern& pattern, std::optional<projectkey::Key> base, std::int64_t end)
 {
@@ -408,4 +408,4 @@ bool saveSong (const Song& song, const juce::File& file, juce::String& error)
     flat.patterns[0].markers = keyregions::songKeyMarkers (song);
     return savePattern (flat, 0, file, error);
 }
-} // namespace lynx::MidiFileIo
+} // namespace yw::MidiFileIo

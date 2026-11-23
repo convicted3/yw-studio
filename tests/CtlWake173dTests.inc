@@ -5,7 +5,7 @@
 // allowed() lists the controls that cannot change a render here, each with its reason (FL's own inert ones, with the
 // evidence; CPU-only options); knownGaps() lists the FL-parity gaps (dead controls) with a tracker id. A control that
 // stops moving in its context fails, as does a new control that never moves. Skipped without FL's Data folder.
-// The full survey (every context searched): tools/ctlwake.cpp, /mnt/e/lynx-work/audit173d2.
+// The full survey (every context searched): tools/ctlwake.cpp, /mnt/e/yw-work/audit173d2.
 
 #include "../tools/CtlWake.h"
 
@@ -65,7 +65,7 @@ const std::vector<Allowed>& allowed()
         // pick (TSynthEditorForm ProgramAutoFollowCheckBox, REA_rodada169g2 §2); the engine plays the same either way
         { "Transistor Bass", "Auto follow", "non-audio: which program the editor shows and edits (FL's AF), not what plays" },
         // (rollup 0.1.30) Helix keeps Live's HiQ switch for the .als round trip; its oscillators are always band-limited
-        // (round 190ja: every table's mipmaps), so the switch changes nothing in LYNX
+        // (round 190ja: every table's mipmaps), so the switch changes nothing in YW
         { "Helix", "HiQ", "non-audio: Helix is always band-limited (round 190ja); HiQ is kept for Live's round trip" },
     };
     // FL's Drumaxx engine reads pad 1's Noise Retrig and EG Retrig (pad fields 5, 6) for every pad (REA_rodada67 §6.2),
@@ -90,20 +90,20 @@ struct Gap
     const char* tracker;
 };
 
-// FL-parity gaps: the control is dead in LYNX but acts in FL (briefs in /mnt/e/lynx-work/audit173d/REPORT.md)
+// FL-parity gaps: the control is dead in YW but acts in FL (briefs in /mnt/e/yw-work/audit173d/REPORT.md)
 const std::vector<Gap>& knownGaps()
 {
     static const std::vector<Gap> g {
-        // Harmless's "release velocity to release" scales the release by FL's answer to voice event 5, which LYNX
+        // Harmless's "release velocity to release" scales the release by FL's answer to voice event 5, which YW
         // answers 1 (the reference's; FL's not observed, REA_rodada28)
         { "Harmless", "Release velocity to release", "gap173d2-2" },
         // Kepler Exo's eight modulation slots take a source and a destination picked in FL's editor (the state's matrix
-        // list, REA_rodada167d §4.3); the Default preset routes none and LYNX's editor can't pick them, so the slots'
+        // list, REA_rodada167d §4.3); the Default preset routes none and YW's editor can't pick them, so the slots'
         // amounts and the X / Y pad offsets (sources only through a slot) act on nothing
         { "Kepler Exo", "Mod * amount", "gap173d2-3" },
         { "Kepler Exo", "X offset", "gap173d2-3" },
         { "Kepler Exo", "Y offset", "gap173d2-3" },
-        // Braid (round 190ko): LYNX's second LFO 1 transformer starts on Bipolar (the default's neutral) and the audit moves
+        // Braid (round 190ko): YW's second LFO 1 transformer starts on Bipolar (the default's neutral) and the audit moves
         // it to its two ends, None and Scrambler, which Braid passes through unchanged too (Scrambler is not modelled
         // yet); every type between moves the LFO (its macro wakes on Ramp up). Rollup 0.1.30 step 7 (round 190lc)
         { "Braid", "* LFO 1 FX 2", "rollup030-7-braid-scrambler" },
@@ -134,7 +134,7 @@ bool isAllowed (const std::string& engine, const std::string& control)
 // (`withoutFl`: engines that need nothing of FL's run without its Data folder too, e.g. Tetra on CI)
 void auditEngines (const std::set<std::string>& names, bool except, bool withoutFl = false)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty() && ! withoutFl)
         return;
     static const auto fl = natives142::flAccess();
@@ -198,13 +198,13 @@ TEST (ctlwake173d_generator_controls_sytrus) { ctlwake173d::auditEngines ({ "Syt
 TEST (ctlwake173d_generator_controls_kepler_exo) { ctlwake173d::auditEngines ({ "Kepler Exo" }, false); }
 TEST (ctlwake173d_generator_controls_transistor_bass) { ctlwake173d::auditEngines ({ "Transistor Bass" }, false); }
 TEST (ctlwake173d_generator_controls_drumaxx) { ctlwake173d::auditEngines ({ "Drumaxx" }, false); }
-// (round 190ix: LYNX's own FM synth needs nothing of FL, so it runs on CI too; its contexts are Tetra hints in tools/CtlWake.h)
+// (round 190ix: YW's own FM synth needs nothing of FL, so it runs on CI too; its contexts are Tetra hints in tools/CtlWake.h)
 TEST (ctlwake173d_generator_controls_tetra) { ctlwake173d::auditEngines ({ "Tetra" }, false, true); }
-// (rollup 0.1.30: Helix, LYNX's own wavetable synth (round 190ja), needs nothing of FL either; its contexts are Helix hints in
+// (rollup 0.1.30: Helix, YW's own wavetable synth (round 190ja), needs nothing of FL either; its contexts are Helix hints in
 // tools/CtlWake.h, its keys from a tools/ctlwake survey: 100 controls, 0 dead, HiQ allowed; round 190mi: + 36 Helix+ controls, their keys from
 // the Helix+ hints)
 TEST (ctlwake173d_generator_controls_helix) { ctlwake173d::auditEngines ({ "Helix" }, false, true); }
-// (rollup 0.1.30 step 7: Braid, LYNX's own two-engine macro synth (round 190ko), needs nothing of FL; its contexts are Braid
+// (rollup 0.1.30 step 7: Braid, YW's own two-engine macro synth (round 190ko), needs nothing of FL; its contexts are Braid
 // hints in tools/CtlWake.h)
 TEST (ctlwake173d_generator_controls_braid) { ctlwake173d::auditEngines ({ "Braid" }, false, true); }
 
@@ -212,7 +212,7 @@ TEST (ctlwake173d_generator_controls_braid) { ctlwake173d::auditEngines ({ "Brai
 // version 0, Kepler's 34 floats, Kepler Exo's 151) silently dropped its edits
 TEST (ctlwake173d_every_generator_control_reads_and_writes_on_a_new_channel)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     static const auto fl = natives142::flAccess();
@@ -236,7 +236,7 @@ TEST (ctlwake173d_every_generator_control_reads_and_writes_on_a_new_channel)
 // every allowed / known-gap entry still names a control of its engine (a renamed control would hide a dead one)
 TEST (ctlwake173d_allowed_entries_name_real_controls)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     static const auto fl = natives142::flAccess();
@@ -267,7 +267,7 @@ TEST (ctlwake173d_allowed_entries_name_real_controls)
 // editor's edit upgrades the state to FL 2026's version 1 (29 ints, REA_rodada68 §6.1) instead of being lost
 TEST (ctlwake173d_slayer_mod_wheel_on_a_version_0_state)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::slayer;
     c.pluginState.assign (4 + 4 * 28, 0);
@@ -291,7 +291,7 @@ TEST (ctlwake173d_slayer_mod_wheel_on_a_version_0_state)
 // an edit grows the state to 36 floats (as FL's later states, REA_rodada46 §1.2) instead of being lost, and plays
 TEST (ctlwake173d_kepler_lfo_retrig_on_a_34_float_state)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     static const auto fl = natives142::flAccess();
@@ -316,7 +316,7 @@ TEST (ctlwake173d_kepler_lfo_retrig_on_a_34_float_state)
 // (0x97…0x9a) had nowhere to go; an edit grows the state to 0x9b values, the stream and wrapper sizes with it
 TEST (ctlwake173d_kepler_exo_last_parameters_on_a_151_float_state)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     static const auto fl = natives142::flAccess();

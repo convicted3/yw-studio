@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Mp3Encoder
 {
@@ -38,4 +38,4 @@ struct Mp3Scan
     int frames = 0, kbps = 0, sampleRate = 0, channels = 0;
 };
 Mp3Scan scanMp3 (const std::vector<std::uint8_t>& bytes);
-} // namespace lynx
+} // namespace yw

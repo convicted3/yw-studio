@@ -4,7 +4,7 @@
 // (FLEngine FUN_00cf3310 -> FUN_00cf35a0, rea/NOTES-smart-disable.md): while the generator's "Smart disable" is on
 // and it has no events pending, each block it renders is tested for silence (every output sample at or under -96 dB);
 // silent blocks add their length to a counter, and once the counter reaches the hold (4 s: the sample rate << 2, as
-// for the effect slots) the generator is not called at all until it has events again. LYNX's reading of what FL leaves
+// for the effect slots) the generator is not called at all until it has events again. YW's reading of what FL leaves
 // open: an event (note, MIDI message) or an audible block starts the count again, so only 4 s of continuous silence
 // with nothing sent to the plugin puts it to sleep.
 //
@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::gensmart
+namespace yw::gensmart
 {
 inline constexpr float silenceLevel = 1.5849e-5f; // -96 dBFS (RackRenderer::silenceLevel)
 inline constexpr double holdSeconds = 4.0;
@@ -58,4 +58,4 @@ struct State
     // something is sent to it (it wakes and counts from zero)
     void wake() noexcept { silentSamples = 0; }
 };
-} // namespace lynx::gensmart
+} // namespace yw::gensmart

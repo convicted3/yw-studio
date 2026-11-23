@@ -2,7 +2,7 @@
 
 #include "core/Ncw.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -72,4 +72,4 @@ juce::AudioFormatReader* NcwAudioFormat::createReaderFor (juce::InputStream* sou
         return fail();
     return new NcwReader (std::move (decoded)); // the stream has been fully read: it can go
 }
-} // namespace lynx
+} // namespace yw

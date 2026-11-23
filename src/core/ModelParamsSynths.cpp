@@ -15,7 +15,7 @@
 // Control sets read from the editor forms of FL Studio 2026's own plugin DLLs (each control's parameter number is its
 // Tag, its range Min…Max): docs/analise/REA_rodada168o.md §2. Names follow the plugins' own hints.
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -366,9 +366,9 @@ const std::vector<EngineParam>& morphineEngineParams()
     }();
     return table;
 }
-} // namespace lynx
+} // namespace yw
 
-namespace lynx::modelparams
+namespace yw::modelparams
 {
 namespace
 {
@@ -458,4 +458,4 @@ Table autogunModelTable() { return { &autogunEngineParams(), &ogunGet, &ogunSet 
 Table miniSynthModelTable() { return { &miniSynthEngineParams(), &floatGet<miniSynthParamOffset>, &floatSet<miniSynthParamOffset> }; }
 Table gmsModelTable() { return { &gmsEngineParams(), &floatGet<gmsParamOffset>, &floatSet<gmsParamOffset> }; }
 Table morphineModelTable() { return { &morphineEngineParams(), &floatGet<morphineParamOffset>, &floatSet<morphineParamOffset> }; }
-} // namespace lynx::modelparams
+} // namespace yw::modelparams

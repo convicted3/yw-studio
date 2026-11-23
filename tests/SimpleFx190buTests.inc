@@ -17,10 +17,10 @@
 namespace simplefx190bu
 {
 // two seconds of pink-ish noise at −20 dB, the same every time
-inline std::shared_ptr<const lynx::SampleData> noise()
+inline std::shared_ptr<const yw::SampleData> noise()
 {
     static const auto data = [] {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.resize (96000);
         std::uint32_t seed = 0x190b;
@@ -34,15 +34,15 @@ inline std::shared_ptr<const lynx::SampleData> noise()
             b2 = 0.57000f * b2 + white * 1.0526913f;
             v = (b0 + b1 + b2 + white * 0.1848f) * 0.03f;
         }
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     }();
     return data;
 }
 
 // The noise played by a sampler through insert 1, whose chain `tweak` sets up; the left channel of `blocks` blocks
-inline std::vector<float> render (const std::function<void (lynx::MixerTrack&)>& tweak, int blocks = 150, bool* hasStage = nullptr, float volume = 1.0f)
+inline std::vector<float> render (const std::function<void (yw::MixerTrack&)>& tweak, int blocks = 150, bool* hasStage = nullptr, float volume = 1.0f)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mixer.resize (2);
@@ -107,9 +107,9 @@ inline double differenceDb (const std::vector<float>& a, const std::vector<float
     return db (std::sqrt (best / std::max (1.0e-18, ref)));
 }
 
-inline bool hasParam (lynx::EffectKind kind, const char* name)
+inline bool hasParam (yw::EffectKind kind, const char* name)
 {
-    for (const auto& p : lynx::effectInfo (kind).params)
+    for (const auto& p : yw::effectInfo (kind).params)
         if (std::strcmp (p.name, name) == 0)
             return true;
     return false;
@@ -118,7 +118,7 @@ inline bool hasParam (lynx::EffectKind kind, const char* name)
 
 TEST (simplefx190bu_goal_table)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::size_t moves[] { 0, 7, 10, 5, 5, 7, 6, 8, 8 }; // every parameter the table names exists in its effect (190dg: Punch's Output)
     std::set<std::string> names;
     for (int id = 1; id <= goals::count; ++id)
@@ -207,9 +207,9 @@ TEST (simplefx190bu_goal_table)
 // What each knob does to pink noise: nothing at 0, and no jump in level on the way up
 TEST (simplefx190bu_goal_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simplefx190bu;
-    const bool print = std::getenv ("LYNX_GOAL_CALIB") != nullptr;
+    const bool print = std::getenv ("YW_GOAL_CALIB") != nullptr;
     const auto dry = render ([] (MixerTrack&) {});
     const auto skip = (std::size_t) 24000; // (past the effects' first half second)
     CHECK (rms (dry, skip) > 0.01);
@@ -261,7 +261,7 @@ TEST (simplefx190bu_goal_levels)
 
 TEST (simplefx190bu_chain_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& list = chains::factory();
     CHECK (list.size() >= 20);
     std::set<std::string> names, categories;
@@ -360,9 +360,9 @@ TEST (simplefx190bu_chain_presets)
 
 TEST (simplefx190bu_chain_presets_sound)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simplefx190bu;
-    const bool print = std::getenv ("LYNX_GOAL_CALIB") != nullptr;
+    const bool print = std::getenv ("YW_GOAL_CALIB") != nullptr;
     const auto dry = render ([] (MixerTrack&) {}, 120);
     for (const auto& p : chains::factory())
     {
@@ -389,7 +389,7 @@ TEST (simplefx190bu_chain_presets_sound)
 
 TEST (simplefx190bu_blend_stage)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simplefx190bu;
     bool stage = true;
     const auto dry = render ([] (MixerTrack&) {}, 100, &stage);
@@ -462,7 +462,7 @@ TEST (simplefx190bu_blend_stage)
 
 TEST (simplefx190bu_sound_library)
 {
-    using namespace lynx;
+    using namespace yw;
     using soundlib::Category;
     for (int c = 0; c < (int) Category::count; ++c)
         CHECK (std::string (soundlib::categoryName ((Category) c)).size() > 2);
@@ -579,11 +579,11 @@ TEST (simplefx190bu_sound_library)
     }
 }
 
-// Every sound of the list plays with nothing but LYNX on the computer: the audition is never silent
+// Every sound of the list plays with nothing but YW on the computer: the audition is never silent
 TEST (simplefx190bu_every_sound_auditions)
 {
-    using namespace lynx;
-    const bool print = std::getenv ("LYNX_GOAL_CALIB") != nullptr;
+    using namespace yw;
+    const bool print = std::getenv ("YW_GOAL_CALIB") != nullptr;
     const auto& list = soundlib::builtIn();
     int silent = 0;
     for (const auto& s : list)
@@ -622,7 +622,7 @@ TEST (simplefx190bu_every_sound_auditions)
 // FL has no dry/wet for a whole chain: the export writes the Blend into each slot's Mix and says so
 TEST (simplefx190bu_blend_in_the_fl_export)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = Song::makeDefault();
     auto eq = looks::chain (MasterLookSettings { looks::balanced, 0.5f, { 0, 0, 0 }, 0 }).front(); // (exported as FL's own Parametric EQ 2)
     eq.row = 0;

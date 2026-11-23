@@ -1,4 +1,4 @@
-// Round 190gw: FL Studio 2026 facts from the live screen session 190gu (/mnt/e/lynx-work/live190gu/FACTS.md) applied
+// Round 190gw: FL Studio 2026 facts from the live screen session 190gu (/mnt/e/yw-work/live190gu/FACTS.md) applied
 // FL-exact: the Playlist header's side strips and FL's 48 px default row (B1), the mixer's "Insert multiple..." /
 // "Add multiple..." boxes (B4), the Sampler waveform menu and the audio clip menu (B3), FLM's 3x Osc switches (B6).
 
@@ -15,9 +15,9 @@
 namespace flfacts190gw
 {
 // two Synth channels, A on insert 1 and B on insert 2, each a 4-beat note from the start (song mode)
-inline lynx::Song twoSynths()
+inline yw::Song twoSynths()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.channels.clear();
     s.playlist.clear();
@@ -53,15 +53,15 @@ inline lynx::Song twoSynths()
 }
 
 // the RMS of the output over the second half of `blocks` blocks with only channel `alone`'s pattern clip playing
-inline double levelOf (lynx::Song song, int alone, int blocks = 120)
+inline double levelOf (yw::Song song, int alone, int blocks = 120)
 {
     constexpr int rate = 44100, block = 256;
     for (auto& c : song.playlist)
-        if (c.kind == lynx::ClipKind::pattern && c.pattern != alone)
+        if (c.kind == yw::ClipKind::pattern && c.pattern != alone)
             c.muted = true;
-    const auto tps = lynx::ticksPerSample (song.bpm, rate);
-    auto state = lynx::RackState::build (song, nullptr, rate);
-    lynx::RackRenderer renderer;
+    const auto tps = yw::ticksPerSample (song.bpm, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
+    yw::RackRenderer renderer;
     renderer.prepare (rate, block);
     std::vector<float> l ((std::size_t) block), r ((std::size_t) block);
     double sum = 0.0;
@@ -80,12 +80,12 @@ inline double levelOf (lynx::Song song, int alone, int blocks = 120)
     return std::sqrt (sum / (double) count);
 }
 
-inline std::pair<double, double> insertLevels (const lynx::Song& song) { return { levelOf (song, 0), levelOf (song, 1) }; }
+inline std::pair<double, double> insertLevels (const yw::Song& song) { return { levelOf (song, 0), levelOf (song, 1) }; }
 } // namespace flfacts190gw
 
 TEST (flfacts190gw_header_strips_are_fls)
 {
-    using namespace lynx::trackhdr;
+    using namespace yw::trackhdr;
     // B1: the left 10 px flip the size; the right 9 px column selects; the rest is the header's plate
     CHECK (lockStripWidth == 10 && selectionStripWidth == 9);
     CHECK (zoneAt (0, 96) == HeaderZone::lockStrip && zoneAt (9, 96) == HeaderZone::lockStrip && zoneAt (10, 96) == HeaderZone::plate);
@@ -115,14 +115,14 @@ TEST (flfacts190gw_header_strips_are_fls)
 
 TEST (flfacts190gw_fl_default_row_is_48)
 {
-    using namespace lynx;
+    using namespace yw;
     // B1: FL's Default template row is 48 px; new songs take it, the size factor works on it
     CHECK (Song::flDefaultRowHeight == 48 && Song::legacyRowHeight == 38);
     CHECK (Song().playlistRowHeight == 48 && Song::makeDefault().playlistRowHeight == 48);
     CHECK (polish::heightForFlSize (1.0, 48) == 48 && polish::heightForFlSize (0.0, 48) == 16 && polish::heightForFlSize (2.0, 48) == 80);
     CHECK (polish::heightForFlSize (0.5, 48) == 32 && polish::heightForFlSize (1.5, 48) == 64 && polish::heightForFlSize (1.0 / 3.0, 48) == 26);
     CHECK (std::abs (polish::flSizeForHeight (80, 48) - 2.0f) < 1.0e-6f && std::abs (polish::flSizeForHeight (48, 48) - 1.0f) < 1.0e-6f);
-    // a project kept on LYNX's old 38 px row exports its sizes on that row (its look is kept: 60 px = 200 %)
+    // a project kept on YW's old 38 px row exports its sizes on that row (its look is kept: 60 px = 200 %)
     auto song = Song::makeDefault();
     song.playlistRowHeight = Song::legacyRowHeight;
     song.playlistTracks.resize (2);
@@ -144,7 +144,7 @@ TEST (flfacts190gw_fl_default_row_is_48)
 
 TEST (flfacts190gw_mixer_insert_multiple_range)
 {
-    using namespace lynx;
+    using namespace yw;
     // B4: FL's rule is 502 tracks (Master + 500 inserts + Current): the box takes 1 .. 500 - inserts. With 123 inserts
     // (the live session's project) that is FL's "Please enter a number between 1 and 377." for 600
     Song song;
@@ -169,7 +169,7 @@ TEST (flfacts190gw_mixer_insert_multiple_range)
 
 TEST (flfacts190gw_open_in_new_channel_takes_the_sample_name)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.channels.clear();
     CHECK (samplerpage::openInNewChannelName (song, "Basic 808 Clap") == "Basic 808 Clap");
@@ -185,7 +185,7 @@ TEST (flfacts190gw_open_in_new_channel_takes_the_sample_name)
 
 TEST (flfacts190gw_sampler_views_and_spectrogram)
 {
-    using namespace lynx;
+    using namespace yw;
     // B3: both view switches are in the menu now, global, off by default
     std::vector<std::string> have;
     for (const auto& e : samplerpage::waveMenu())
@@ -221,9 +221,9 @@ TEST (flfacts190gw_sampler_views_and_spectrogram)
 
 TEST (flfacts190gw_clip_menu_items)
 {
-    using namespace lynx;
-    // B3: Pitch-correct / Time-warp sample (LYNX's Newtone / Newtime), Crossfade with (enabled when there is a clip to
-    // crossfade with); round 190jv: Deverb shown as in FL's menu (LYNX's own Deverb; FL 2026 only offers a download there)
+    using namespace yw;
+    // B3: Pitch-correct / Time-warp sample (YW's Newtone / Newtime), Crossfade with (enabled when there is a clip to
+    // crossfade with); round 190jv: Deverb shown as in FL's menu (YW's own Deverb; FL 2026 only offers a download there)
     const auto all = flclipmenu::shown (false, false);
     const auto has = [&all] (const char* text) {
         return std::any_of (all.begin(), all.end(), [text] (const flclipmenu::Entry& e) { return e.text == text; });
@@ -250,7 +250,7 @@ TEST (flfacts190gw_clip_menu_items)
 
 TEST (flfacts190gw_crossfade_with_makes_fls_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     // B3: A (bars 1-5) and B (bars 3-7) on different channels; a third clip of A's channel is not offered
     Song song;
     song.channels.resize (2);
@@ -303,7 +303,7 @@ TEST (flfacts190gw_crossfade_with_makes_fls_clip)
 
 TEST (flfacts190gw_crossfade_links_play)
 {
-    using namespace lynx;
+    using namespace yw;
     // the engine drives both links of one clip: at a held value v, A's Volume multiplier is 2 * f_A(v), B's 2 * f_B(v)
     const auto base = flfacts190gw::twoSynths();
     const auto [plainA, plainB] = flfacts190gw::insertLevels (base);

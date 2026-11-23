@@ -1,5 +1,5 @@
 // Round 190gk: FL value-3+ tails of Gross Beat, Edison and the Sampler waveform menu, and the tlst bug.
-// Evidence: /mnt/e/lynx-work/fltails190gk/HANDOFF.md.
+// Evidence: /mnt/e/yw-work/fltails190gk/HANDOFF.md.
 
 namespace fltails190gk
 {
@@ -76,7 +76,7 @@ inline void entry (std::vector<std::uint8_t>& b, std::uint32_t w4, std::uint32_t
 // entries {0xffff, 1}, {0x10000, 1}, {0x10001, 1}) and the Edison writer (REA 190h): {'cue ', cue id − 1, 1, …}.
 TEST (fltails190gk_edison_tlst_is_fls_layout_for_several_regions)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     Document doc;
     doc.audio.sampleRate = 44100.0;
     doc.audio.channels = { std::vector<float> (4000, 0.1f) };
@@ -109,13 +109,13 @@ TEST (fltails190gk_edison_tlst_is_fls_layout_for_several_regions)
 
     // and Slicex (FL's reader layout, 190r) reads the same keys from Edison's file: the bug was {0, id} vs {id − 1, 1}
     std::int64_t frames = 0;
-    const auto regions = lynx::slicex::wavRegions (wav, frames);
+    const auto regions = yw::slicex::wavRegions (wav, frames);
     CHECK (regions.size() == 4);
     if (regions.size() == 4)
         CHECK (regions[0].key == 38 && regions[1].key == -1 && regions[2].key == 61 && regions[3].key == 70);
 
     // Slicex's writer (Assign current region to this key) and Edison's reader agree too
-    const auto keyed = lynx::slicex::withRegionKeys (wav, { -1, 40, -1, 72 });
+    const auto keyed = yw::slicex::withRegionKeys (wav, { -1, 40, -1, 72 });
     Document fromSlicex;
     CHECK (! keyed.empty() && decodeWav (keyed.data(), keyed.size(), fromSlicex) && fromSlicex.markers.size() == 4);
     if (fromSlicex.markers.size() == 4)
@@ -125,7 +125,7 @@ TEST (fltails190gk_edison_tlst_is_fls_layout_for_several_regions)
 
 TEST (fltails190gk_tlst_readers_take_fls_entries_and_027s_old_ones)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     {
         // FL's layout (as in FL's multi-entry render): regions 2 and 3 keyed
         std::vector<std::uint8_t> b;
@@ -138,7 +138,7 @@ TEST (fltails190gk_tlst_readers_take_fls_entries_and_027s_old_ones)
         if (doc.markers.size() == 3)
             CHECK (doc.markers[0].keyNum == -1 && doc.markers[1].keyNum == 50 && doc.markers[2].keyNum == 51);
         std::int64_t frames = 0;
-        const auto r = lynx::slicex::wavRegions (wav, frames);
+        const auto r = yw::slicex::wavRegions (wav, frames);
         CHECK (r.size() == 3);
         if (r.size() == 3)
             CHECK (r[0].key == -1 && r[1].key == 50 && r[2].key == 51);
@@ -146,7 +146,7 @@ TEST (fltails190gk_tlst_readers_take_fls_entries_and_027s_old_ones)
         CHECK (flfix190ez::chunk (encodeWav (doc, WavFormat::int16), "tlst") == b);
     }
     {
-        // a WAV LYNX 0.1.27's Edison saved: {0, cue id}; both readers still find the right regions
+        // a WAV YW 0.1.27's Edison saved: {0, cue id}; both readers still find the right regions
         std::vector<std::uint8_t> b;
         flfix190ez::put32 (b, 2);
         fltails190gk::entry (b, 0, 2, 50);
@@ -157,28 +157,28 @@ TEST (fltails190gk_tlst_readers_take_fls_entries_and_027s_old_ones)
         if (doc.markers.size() == 3)
             CHECK (doc.markers[0].keyNum == -1 && doc.markers[1].keyNum == 50 && doc.markers[2].keyNum == 51);
         std::int64_t frames = 0;
-        const auto r = lynx::slicex::wavRegions (wav, frames);
+        const auto r = yw::slicex::wavRegions (wav, frames);
         CHECK (r.size() == 3);
         if (r.size() == 3)
             CHECK (r[0].key == -1 && r[1].key == 50 && r[2].key == 51);
     }
 }
 
-// FL's own 3-entry render (not in the repo: FL's audio). LYNX_FL_TLST3_WAV=/mnt/e/lynx-work/r167l/fl_take1_l_all.wav
+// FL's own 3-entry render (not in the repo: FL's audio). YW_FL_TLST3_WAV=/mnt/e/yw-work/r167l/fl_take1_l_all.wav
 TEST (fltails190gk_fl_three_marker_render_reads_in_both)
 {
-    const char* path = std::getenv ("LYNX_FL_TLST3_WAV");
+    const char* path = std::getenv ("YW_FL_TLST3_WAV");
     if (path == nullptr)
         return;
     std::ifstream in (path, std::ios::binary);
     const std::vector<std::uint8_t> fl ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
     std::int64_t frames = 0;
-    const auto r = lynx::slicex::wavRegions (fl, frames);
+    const auto r = yw::slicex::wavRegions (fl, frames);
     CHECK (r.size() == 3);
     if (r.size() == 3)
         CHECK (r[0].key == 60 && r[1].key == 61 && r[2].key == 62);
-    lynx::audioedit::Document doc;
-    CHECK (lynx::audioedit::decodeWav (fl.data(), fl.size(), doc) && doc.markers.size() == 3);
+    yw::audioedit::Document doc;
+    CHECK (yw::audioedit::decodeWav (fl.data(), fl.size(), doc) && doc.markers.size() == 3);
     if (doc.markers.size() == 3)
         CHECK (doc.markers[0].keyNum == 60 && doc.markers[1].keyNum == 61 && doc.markers[2].keyNum == 62);
     std::printf ("fltails190gk: FL render %zu bytes, %zu regions, keys %d %d %d\n", fl.size(), r.size(),
@@ -189,17 +189,17 @@ TEST (fltails190gk_fl_three_marker_render_reads_in_both)
 namespace fltails190gk
 {
 // the Gross Beat slot over 60 blocks; `beforeBlock` may send notes and change the parameters the block sees
-inline std::vector<float> gbRender (const lynx::EffectSlot& slot, const std::function<void (lynx::Effect&, int, lynx::EffectParams&)>& beforeBlock,
-                                    lynx::grossbeat::MidiPicks** picksOut = nullptr, std::unique_ptr<lynx::Effect>* keep = nullptr)
+inline std::vector<float> gbRender (const yw::EffectSlot& slot, const std::function<void (yw::Effect&, int, yw::EffectParams&)>& beforeBlock,
+                                    yw::grossbeat::MidiPicks** picksOut = nullptr, std::unique_ptr<yw::Effect>* keep = nullptr)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     std::vector<float> out;
     if (fx == nullptr)
         return out;
     fx->prepare (44100.0);
     auto params = slot.params;
     std::vector<float> l (512), r (512);
-    const double bpm = 120.0, ticksPerSample = bpm / 60.0 * lynx::ppq / 44100.0;
+    const double bpm = 120.0, ticksPerSample = bpm / 60.0 * yw::ppq / 44100.0;
     double ticks = 0.0;
     std::int64_t n = 0;
     for (int b = 0; b < 60; ++b)
@@ -215,7 +215,7 @@ inline std::vector<float> gbRender (const lynx::EffectSlot& slot, const std::fun
         ticks += 512.0 * ticksPerSample;
     }
     if (picksOut != nullptr)
-        *picksOut = lynx::grossbeat::midiPicksOf (fx.get());
+        *picksOut = yw::grossbeat::midiPicksOf (fx.get());
     if (keep != nullptr)
         *keep = std::move (fx);
     return out;
@@ -224,7 +224,7 @@ inline std::vector<float> gbRender (const lynx::EffectSlot& slot, const std::fun
 
 TEST (fltails190gk_gb_slot_parameter_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int kind = 0; kind < 2; ++kind)
         for (int s = 0; s < grossbeat::slotsPerKind; ++s)
             CHECK (grossbeat::rawFromParam (kind, grossbeat::paramFromRaw (kind, s)) == s);
@@ -232,7 +232,7 @@ TEST (fltails190gk_gb_slot_parameter_round_trips)
 
 TEST (fltails190gk_gb_midi_pick_is_published_for_the_parameter)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::grossBeat);
     grossbeat::MidiPicks* picks = nullptr;
     std::unique_ptr<Effect> fx;
@@ -263,7 +263,7 @@ TEST (fltails190gk_gb_midi_pick_is_published_for_the_parameter)
 
 TEST (fltails190gk_gb_parameter_echo_of_a_pick_changes_nothing)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::grossBeat);
     // reference: the notes alone, the parameter never written back (0.1.27's behaviour)
     const auto notesOnly = fltails190gk::gbRender (slot, [] (Effect& e, int b, EffectParams&) {

@@ -10,7 +10,7 @@
 //  - [STR] Live 12.4's grid context menu (AGridContextMenu): sMenuGridSetWidest / Wide / Medium / Narrow / Narrowest,
 //    sMenuGridAdaptive, sMenuGridFixed (+ " Bars"), sMenuGridTriplet, sMenuGridQuintuplet / Septuplet (Live 12's odd
 //    tuplets, not built here).
-//  - [SHOT] /mnt/e/lynx-work/ableton190o/shots/live-01-clipview-notes.png: the editor's grid value "1/16 ▾" at its
+//  - [SHOT] /mnt/e/yw-work/ableton190o/shots/live-01-clipview-notes.png: the editor's grid value "1/16 ▾" at its
 //    top right.
 //  - [DOC] Live's manual (keys): Ctrl+1 narrower grid, Ctrl+2 wider, Ctrl+3 triplet grid, Ctrl+4 snap to grid on / off,
 //    Ctrl+5 fixed / adaptive. (Quantize Ctrl+U / Quantize Settings… Ctrl+Shift+U are the MIDI Tools' Quantize tool in
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::livegrid
+namespace yw::livegrid
 {
 // The adaptive grid's densities, widest first, as GridIntervalPixel: the smallest on-screen distance between two grid
 // lines. Medium = 20 px, the shipped sets' default [DATA]; the other steps halve / double it [inferred].
@@ -135,4 +135,4 @@ inline Grid fromLive (int fixedNum, int fixedDen, int intervalPixel, int ntoles,
     return g;
 }
 
-} // namespace lynx::livegrid
+} // namespace yw::livegrid

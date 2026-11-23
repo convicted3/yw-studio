@@ -4,7 +4,7 @@
 
 TEST (mixer221_190ng_kept_inserts_follow_the_delete)
 {
-    using namespace lynx::mixerops;
+    using namespace yw::mixerops;
     // the deleted number goes, the later ones move left as their inserts did (FL keeps the count)
     CHECK ((revealedAfterDelete ({ 3, 19 }, { 19 }) == std::set<int> { 3 }));
     CHECK ((revealedAfterDelete ({ 3, 19, 20 }, { 19 }) == std::set<int> { 3, 19 }));
@@ -14,7 +14,7 @@ TEST (mixer221_190ng_kept_inserts_follow_the_delete)
 
 TEST (mixer221_190ng_selection_after_delete)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (20);
     song.channels.clear();

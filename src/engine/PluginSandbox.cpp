@@ -22,15 +22,15 @@
 #include "engine/SandboxWorker.h"
 #include "engine/TimedParameters.h"
 
-static_assert (lynx::PluginHost::maxBlockSize == 4096, "SandboxShared.h: SharedBlock::maxFrames");
+static_assert (yw::PluginHost::maxBlockSize == 4096, "SandboxShared.h: SharedBlock::maxFrames");
 
-namespace lynx
+namespace yw
 {
 using namespace sandboxipc;
 
 SandboxMode pluginSandboxMode()
 {
-    // sandbox.txt: "1" (round 157: each plugin in its own process), "type", "vendor", "all" (round 190jg); else in LYNX's process
+    // sandbox.txt: "1" (round 157: each plugin in its own process), "type", "vendor", "all" (round 190jg); else in YW's process
     const auto text = PluginHost::settingsFolder().getChildFile ("sandbox.txt").loadFileAsString().trim();
     return text == "1" ? SandboxMode::perPlugin : text == "vendor" ? SandboxMode::perVendor : text == "all" ? SandboxMode::allTogether
            : text == "type" ? SandboxMode::perPluginType : SandboxMode::inProcess;
@@ -162,7 +162,7 @@ void setPluginSandboxAlerts (bool show)
     showAlerts = show;
 }
 
-// --- the child side's hooks in LYNX.exe (engine/SandboxWorker.h) ---------------------------------------------------
+// --- the child side's hooks in YW.exe (engine/SandboxWorker.h) ---------------------------------------------------
 namespace sandboxhost
 {
 std::unique_ptr<juce::AudioPluginInstance> open (const juce::PluginDescription& description, double sampleRate, int blockSize, juce::String& error)
@@ -191,8 +191,8 @@ bool bridge32Supported()
 
 juce::File bridge32Executable()
 {
-    // LYNX_BRIDGE32 (tests): another bridge executable
-    if (const auto custom = juce::SystemStats::getEnvironmentVariable ("LYNX_BRIDGE32", {}); custom.isNotEmpty())
+    // YW_BRIDGE32 (tests): another bridge executable
+    if (const auto custom = juce::SystemStats::getEnvironmentVariable ("YW_BRIDGE32", {}); custom.isNotEmpty())
         return juce::File (custom);
     return juce::File::getSpecialLocation (juce::File::currentExecutableFile).getSiblingFile ("YW-bridge32.exe");
 }
@@ -210,7 +210,7 @@ pearch::Arch fileArch (const juce::File& file)
 }
 
 // a module's architecture: a DLL / single-file .vst3 by its header; a VST3 bundle by the module it has (a bundle with a
-// 64-bit module is 64-bit even when it also carries a 32-bit one: LYNX loads that one itself)
+// 64-bit module is 64-bit even when it also carries a 32-bit one: YW loads that one itself)
 pearch::Arch moduleArch (const juce::String& path)
 {
     if (! juce::File::isAbsolutePath (path))
@@ -375,7 +375,7 @@ bool isPlugin32Bit (const juce::PluginDescription& description)
 }
 
 
-#if JUCE_WINDOWS || LYNX_POSIX_SANDBOX
+#if JUCE_WINDOWS || YW_POSIX_SANDBOX
 namespace
 {
 
@@ -736,7 +736,7 @@ std::map<juce::String, std::weak_ptr<SandboxProcess>>& groups()
 // session sends the child JUCE's "kill" message, and JUCE's pipe waits up to the connection timeout (10 s) for a child
 // that is gone — crashed, or ended because the machine stalled — to connect again before it gives up. The rack frees
 // plugins on the message thread (AudioEngine::RackDisposer), so every dead separate-process plugin of a project froze
-// LYNX for 10 s when the project was imported again (Missing files › Apply) or closed. A session now ends on a thread
+// YW for 10 s when the project was imported again (Missing files › Apply) or closed. A session now ends on a thread
 // of its own; nothing waits for it but the app's exit (finishSandboxTeardowns), and only briefly.
 struct Retirements
 {
@@ -823,8 +823,8 @@ private:
     std::atomic<float> value;
 };
 
-// LYNX's stand-in for a sandboxed plugin's editor (inside LYNX's plugin window). The plugin's own window lives in the
-// child process: it is shown, owned by LYNX's plugin window, while this stand-in is on screen, and hidden when the stand-in
+// YW's stand-in for a sandboxed plugin's editor (inside YW's plugin window). The plugin's own window lives in the
+// child process: it is shown, owned by YW's plugin window, while this stand-in is on screen, and hidden when the stand-in
 // is not (the Wrapper settings tab, the window closed or the plugin removed; issues #8 / #9).
 class RemoteEditor final : public juce::AudioProcessorEditor, private juce::Timer
 {
@@ -864,11 +864,11 @@ public:
     }
 
 private:
-    // LYNX's main window (HWND, X11 Window id): the child's window is kept above it, not above every program. (Not the
+    // YW's main window (HWND, X11 Window id): the child's window is kept above it, not above every program. (Not the
     // plugin window holding this stand-in: Windows destroys an owned window with its owner, even in another process.)
     juce::int64 ownerHandle() { return (juce::int64) (juce::pointer_sized_int) mainWindowHandle(); }
 
-    // A LYNX dialog (Save changes?, Export...) is open: the child's window floats above LYNX's windows while LYNX is
+    // A YW dialog (Save changes?, Export...) is open: the child's window floats above YW's windows while YW is
     // active, so it would cover the dialog. Popup menus are modal too, but aren't TopLevelWindows: they don't hide it.
     // shortcut: native dialogs (file choosers) aren't JUCE components and aren't seen; upgrade if one is covered.
     static bool dialogOpen()
@@ -1005,13 +1005,13 @@ public:
         shared->paramOutCount = 0;
         // round 190jg: the automation's changes inside this block, at their offsets (the child's plugin takes them so)
         auto timedCount = 0;
-        for (int k = 0; k < juce::lynxTimedParamCount && timedCount < SharedBlock::maxTimed; ++k)
-            if (const auto at = juce::lynxTimedParamOffsets[k]; at >= 0 && at < frames)
+        for (int k = 0; k < juce::ywTimedParamCount && timedCount < SharedBlock::maxTimed; ++k)
+            if (const auto at = juce::ywTimedParamOffsets[k]; at >= 0 && at < frames)
             {
-                shared->timed[timedCount] = { juce::lynxTimedParamIndices[k], juce::lynxTimedParamValues[k] };
+                shared->timed[timedCount] = { juce::ywTimedParamIndices[k], juce::ywTimedParamValues[k] };
                 shared->timedOffsets[timedCount++] = at;
-                if (const auto i = juce::lynxTimedParamIndices[k]; i >= 0 && i < (int) remoteParams.size())
-                    remoteParams[(std::size_t) i]->setLocally (juce::lynxTimedParamValues[k]);
+                if (const auto i = juce::ywTimedParamIndices[k]; i >= 0 && i < (int) remoteParams.size())
+                    remoteParams[(std::size_t) i]->setLocally (juce::ywTimedParamValues[k]);
             }
         shared->timedCount = timedCount;
         if (auto* head = getPlayHead())
@@ -1035,7 +1035,7 @@ public:
         for (int c = channels; c < buffer.getNumChannels(); ++c)
             buffer.clear (c, 0, frames);
 
-        // rollup 0.1.30: the buffer holds the plugin's own output afterwards, as in LYNX's process (SharedBlock::midiOut)
+        // rollup 0.1.30: the buffer holds the plugin's own output afterwards, as in YW's process (SharedBlock::midiOut)
         midi.clear();
         for (int i = 0; i < std::min ((int) shared->midiOutCount, SharedBlock::maxMidi); ++i)
             if (const auto& e = shared->midiOut[i]; e.size >= 1 && e.size <= 3)
@@ -1084,7 +1084,7 @@ std::unique_ptr<juce::AudioPluginInstance> createSandboxedPlugin (const juce::Pl
                                                                   const juce::String& group)
 {
     trace ("parent: session");
-    // a 32-bit plugin: the 32-bit bridge (round 176a); every other plugin: LYNX.exe itself in child mode
+    // a 32-bit plugin: the 32-bit bridge (round 176a); every other plugin: YW.exe itself in child mode
     const auto bridged32 = isPlugin32Bit (description);
     const auto executable = bridged32 ? bridge32Executable() : juce::File::getSpecialLocation (juce::File::currentExecutableFile);
     if (bridged32 && ! executable.existsAsFile())
@@ -1243,4 +1243,4 @@ void hangSandboxedPluginForTest (juce::AudioPluginInstance&) {}
 void crashSandboxedPluginForTest (juce::AudioPluginInstance&) {}
 
 #endif
-} // namespace lynx
+} // namespace yw

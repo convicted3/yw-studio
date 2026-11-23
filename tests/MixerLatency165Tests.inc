@@ -4,14 +4,14 @@
 namespace latency165
 {
 // channel c → insert c + 1, all to the Master; insert 1 holds a plugin effect (LatentEffect of `fxLatency`)
-inline lynx::Song impulses (int channels, bool latentFx)
+inline yw::Song impulses (int channels, bool latentFx)
 {
-    lynx::Song r;
-    r.mixer = lynx::Song::defaultMixer (channels);
+    yw::Song r;
+    r.mixer = yw::Song::defaultMixer (channels);
     for (int i = 0; i < channels; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.samplePath = "impulse";
         c.volume = 1.0f;
         c.mixerTrack = i + 1;
@@ -20,33 +20,33 @@ inline lynx::Song impulses (int channels, bool latentFx)
     r.patterns.emplace_back();
     if (latentFx)
     {
-        lynx::EffectSlot fx;
-        fx.kind = lynx::EffectKind::plugin;
+        yw::EffectSlot fx;
+        fx.kind = yw::EffectKind::plugin;
         fx.plugin.id = "latent";
         r.mixer[1].effects.push_back (fx);
     }
     return r;
 }
 
-inline lynx::RackState::Factories factories (int fxLatency)
+inline yw::RackState::Factories factories (int fxLatency)
 {
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     f.samples = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.assign (64, 0.0f);
         d->left[0] = 1.0f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    f.pluginEffects = [fxLatency] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { return std::make_shared<LatentEffect> (fxLatency); };
+    f.pluginEffects = [fxLatency] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { return std::make_shared<LatentEffect> (fxLatency); };
     return f;
 }
 
 // plays a note on `channel` and returns the sample index of each impulse onset at the Master
-inline std::vector<int> arrivals (lynx::RackRenderer& renderer, const lynx::RackState& state, bool playing, int channel, int blocks = 2)
+inline std::vector<int> arrivals (yw::RackRenderer& renderer, const yw::RackState& state, bool playing, int channel, int blocks = 2)
 {
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = channel;
     on.key = 60;
     on.velocity = 1.0f;
@@ -71,7 +71,7 @@ inline std::vector<int> arrivals (lynx::RackRenderer& renderer, const lynx::Rack
 
 TEST (latency165_manual_track_latency_in_the_plan)
 {
-    using namespace lynx;
+    using namespace yw;
     // 48 kHz: 100 samples = 2.08333 ms
     Song s = latency165::impulses (3, false);
     const auto ms100 = 100.0f * 1000.0f / 48000.0f;
@@ -112,7 +112,7 @@ TEST (latency165_manual_track_latency_in_the_plan)
 
 TEST (latency165_defaults_change_nothing)
 {
-    using namespace lynx;
+    using namespace yw;
     // the same plan as before the fields existed: a song with latent effects, default latency fields
     Song s = latency165::impulses (4, false);
     s.mixer[1].effects.push_back (makeEffectSlot (EffectKind::eq));
@@ -132,7 +132,7 @@ TEST (latency165_defaults_change_nothing)
 
 TEST (latency165_bypass_always_in_the_plan)
 {
-    using namespace lynx;
+    using namespace yw;
     // insert 1 has a 100-sample plugin; insert 2 is the "mic" track
     Song s = latency165::impulses (2, false);
     s.mixer[1].effects.push_back (makeEffectSlot (EffectKind::eq));
@@ -161,7 +161,7 @@ TEST (latency165_bypass_always_in_the_plan)
 
 TEST (latency165_renderer_bypass_when_recording_or_stopped)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = latency165::impulses (2, true);
     const auto f = latency165::factories (100);
     auto state = RackState::build (song, nullptr, 48000.0, f);
@@ -217,7 +217,7 @@ TEST (latency165_renderer_bypass_when_recording_or_stopped)
 
 TEST (latency165_hardware_output_compensation)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = latency165::impulses (2, true);
     song.mixer[2].outputChannel = 2;
     const auto f = latency165::factories (100);
@@ -234,7 +234,7 @@ TEST (latency165_hardware_output_compensation)
 
 TEST (latency165_delay_line_clear)
 {
-    lynx::DelayLine line (4);
+    yw::DelayLine line (4);
     float l[4] = { 1, 2, 3, 4 }, r[4] = { 1, 2, 3, 4 };
     line.process (l, r, 4);
     line.clear();
@@ -245,7 +245,7 @@ TEST (latency165_delay_line_clear)
 
 TEST (latency165_flp_import)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's insert writer (FUN_00f3d620): 0xEC = f32 manual latency, u32 flags (0x4000 = no master compensation),
     // f32 input latency; 0x31 = the bypass mode, after 0xA5 / 0xA6
     FlpBuilder b;
@@ -292,7 +292,7 @@ TEST (latency165_flp_import)
 
 TEST (latency165_reset_manual_latency)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = latency165::impulses (3, false);
     s.mixer[1].latencyMs = 5.0f;
     s.mixer[0].latencyMs = -1.0f;
@@ -304,7 +304,7 @@ TEST (latency165_reset_manual_latency)
 
 TEST (mixer165_route_selected_and_this_track)
 {
-    using namespace lynx;
+    using namespace yw;
     using mixerops::RouteKind;
     Song s;
     s.mixer = Song::defaultMixer (6);
@@ -342,7 +342,7 @@ TEST (mixer165_route_selected_and_this_track)
 
 TEST (mixer165_create_submix)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (8);
     s.mixer[6].colour = 0xFF336699;
@@ -373,7 +373,7 @@ TEST (mixer165_create_submix)
 
 TEST (export165_stem_tracks_filter)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = latency165::impulses (3, false); // channels on inserts 1..3
     s.mixer.push_back (MixerTrack {});          // insert 4: no sound
     CHECK (exportopts::stemTracks (s) == std::vector<int> ({ 1, 2, 3 }));
@@ -385,7 +385,7 @@ TEST (export165_stem_tracks_filter)
 // recording or not playing" (stopped = the delay lines are skipped)
 TEST (latency165_bench_bypass_cost)
 {
-    using namespace lynx;
+    using namespace yw;
     if (std::getenv ("LAT165_BENCH") == nullptr)
         return;
     auto run = [] (LatencyBypass mode, bool playing) {

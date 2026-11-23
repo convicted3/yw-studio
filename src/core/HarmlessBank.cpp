@@ -1,4 +1,4 @@
-// LYNX's own Harmless presets (round 168o): designed for LYNX on Harmless's engine (core/Harmless.h), clean-room — no
+// YW's own Harmless presets (round 168o): designed for YW on Harmless's engine (core/Harmless.h), clean-room — no
 // FL preset was read or converted. Values are the plugin's raw parameter numbers (core/ModelParamsSynths.cpp names):
 // every preset starts from FL's untouched patch (saw, open filter, no modulation, effects off) and sets what it changes.
 // Times (REA_rodada32): attack (101^x − 1)·0.05 s, decay (1001^x − 1)·0.12 + 0.05 s (1000 = hold), release
@@ -8,10 +8,10 @@
 #include <utility>
 
 #include "core/Harmless.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParamsSynths.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -142,4 +142,4 @@ std::vector<Preset> harmlessBank()
                          { rel, 500 }, { uniOrder, 5 }, { uniPitch, 180 }, { revType, 4 }, { revWet, 400 }, { vol, 1400 } }));
     return b;
 }
-} // namespace lynx::banks
+} // namespace yw::banks

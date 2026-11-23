@@ -14,7 +14,7 @@
 
 #include "core/FlVoiceSettings.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -29,4 +29,4 @@ std::optional<juce::PopupMenu> flVoicePresetsMenu (juce::Component& root);
 bool flVoiceSavePreset (juce::Component& root, const juce::String& name);
 bool flVoiceLoadPreset (juce::Component& root, const juce::File& file);
 juce::File flVoicePresetFolder();
-} // namespace lynx
+} // namespace yw

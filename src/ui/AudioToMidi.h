@@ -7,11 +7,11 @@
 #include "core/ChordLaneOps.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // "Convert to MIDI" (round a2m189b; Ableton Live's Convert Melody / Harmony / Drums to New MIDI Track): the analysis runs
 // on a low-priority worker with a progress window and Cancel (melody and harmony through Basic Pitch on ONNX Runtime,
-// drums with LYNX's own detector); nothing of it runs on the audio thread.
+// drums with YW's own detector); nothing of it runs on the audio thread.
 
 // The Playlist audio clip menu: what the clip plays becomes a new pattern on new channels, on a new track right under
 // the clip and aligned with it (one undo step). `done` runs on the message thread after it was added.
@@ -28,7 +28,7 @@ void convertClipToMidi (AudioEngine& engine, int clipIndex, const a2m::ConvertOp
 void convertAudioToMidi (AudioEngine& engine, std::vector<float> mono, double sampleRate, const a2m::ConvertOptions& options,
                          const juce::String& name, std::function<void (int notes)> done);
 
-// The options dialog (modal, async): the last settings of this run of LYNX, the song's instrument channels to pick from
+// The options dialog (modal, async): the last settings of this run of YW, the song's instrument channels to pick from
 // (or a new Synth channel); `gridTicks` = the grid "Quantize" uses. `go` runs with the settings on OK.
 void showConvertOptions (AudioEngine& engine, juce::Component* owner, std::int64_t gridTicks, std::function<void (const a2m::ConvertOptions&)> go);
 
@@ -39,7 +39,7 @@ int convertClipToMidiNow (AudioEngine& engine, int clipIndex, const a2m::Convert
 // --polyshot190lj: the dialog as it opens (not shown).
 std::unique_ptr<juce::Component> makeConvertOptionsForSnapshot (AudioEngine& engine, std::int64_t gridTicks);
 
-// The settings the dialog showed last (this run of LYNX; the channel is not kept between conversions).
+// The settings the dialog showed last (this run of YW; the channel is not kept between conversions).
 a2m::ConvertOptions& lastConvertOptions();
 
 // Round 190pf (research190oe P13, the Chord lane): the notes an audio clip plays (Basic Pitch, polyphonic; the same worker,
@@ -58,4 +58,4 @@ juce::String convertFileToMidiCsv (AudioEngine& engine, const juce::File& input,
 // "bend,<note index>,<seconds from the note's start>,<cents>". `timing` gets "resample_s,model_s,notes_s".
 juce::String convertFileToMidiCsv (AudioEngine& engine, const juce::File& input, const a2m::ConvertOptions& options, const juce::File& csv,
                                    juce::String* timing = nullptr);
-} // namespace lynx
+} // namespace yw

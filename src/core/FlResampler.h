@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-namespace lynx::flrs
+namespace yw::flrs
 {
 constexpr int liveQuality = 4;   // FL's playback default (24-point sinc)
 constexpr int renderQuality = 5; // FL's render dialog default (32-point sinc)
@@ -50,4 +50,4 @@ double speedFor (float cents, double ratio) noexcept;
 
 // FL's integer part of a read position (truncation) and its fraction.
 inline std::int64_t wholeFrames (double position) noexcept { return (std::int64_t) position; }
-} // namespace lynx::flrs
+} // namespace yw::flrs

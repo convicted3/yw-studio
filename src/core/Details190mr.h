@@ -14,7 +14,7 @@
 #include "core/Rack.h"
 #include "core/Song.h"
 
-namespace lynx::details190mr
+namespace yw::details190mr
 {
 // The note on the same channel and key that touches `note` on its right (`after`: it starts where `note` ends) or on its
 // left (it ends where `note` starts): the pair a hold at the resize cursor glues; −1 = none.
@@ -68,4 +68,4 @@ inline std::vector<int> processingChains (const RackDoc& rack, const std::array<
     }
     return out;
 }
-} // namespace lynx::details190mr
+} // namespace yw::details190mr

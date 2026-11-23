@@ -1,4 +1,4 @@
-// Round 190gl: Ableton Link — LYNX's rules for a Link session (core/LinkSync.h), its saved switches (MidiPrefs) and the
+// Round 190gl: Ableton Link — YW's rules for a Link session (core/LinkSync.h), its saved switches (MidiPrefs) and the
 // toolbar's Link toggle group (core/ToolbarLayout.h). The network part (engine/AbletonLink.cpp) is checked by the app's
 // --linktest route with a second peer. Included at the end of tests.cpp.
 
@@ -8,7 +8,7 @@
 
 TEST (link190gl_quantum_is_the_global_launch_quantisation)
 {
-    using namespace lynx;
+    using namespace yw;
     using linksync::quantumBeats;
     CHECK (quantumBeats (LaunchQuant::bar, 4) == 4.0);
     CHECK (quantumBeats (LaunchQuant::bar, 3) == 3.0);
@@ -25,11 +25,11 @@ TEST (link190gl_quantum_is_the_global_launch_quantisation)
 
 TEST (link190gl_phase_and_error_wrap_the_short_way)
 {
-    using namespace lynx::linksync;
+    using namespace yw::linksync;
     CHECK (std::abs (phase (5.5, 4.0) - 1.5) < 1e-12);
     CHECK (std::abs (phase (-0.5, 4.0) - 3.5) < 1e-12);
     CHECK (phase (8.0, 4.0) == 0.0);
-    // the session at beat 4.1, LYNX at 7.95: 0.15 behind across the bar line (not 3.85 ahead)
+    // the session at beat 4.1, YW at 7.95: 0.15 behind across the bar line (not 3.85 ahead)
     CHECK (std::abs (phaseError (4.1, 7.95, 4.0) - 0.15) < 1e-9);
     CHECK (std::abs (phaseError (7.95, 4.1, 4.0) + 0.15) < 1e-9);
     // half a quantum: one direction only
@@ -40,10 +40,10 @@ TEST (link190gl_phase_and_error_wrap_the_short_way)
 
 TEST (link190gl_start_waits_for_the_matching_phase)
 {
-    using namespace lynx::linksync;
-    // LYNX starts at bar 1 (phase 0): the session at beat 9.3 of a 4-beat quantum -> beat 12
+    using namespace yw::linksync;
+    // YW starts at bar 1 (phase 0): the session at beat 9.3 of a 4-beat quantum -> beat 12
     CHECK (std::abs (nextBeatWithPhase (9.3, 0.0, 4.0) - 12.0) < 1e-9);
-    // LYNX starts on the bar's 2nd beat (song beat 5 = phase 1): the next session beat with phase 1 after 9.3 is 13
+    // YW starts on the bar's 2nd beat (song beat 5 = phase 1): the next session beat with phase 1 after 9.3 is 13
     CHECK (std::abs (nextBeatWithPhase (9.3, 5.0, 4.0) - 13.0) < 1e-9);
     // already there: no wait
     CHECK (std::abs (nextBeatWithPhase (12.0, 0.0, 4.0) - 12.0) < 1e-9);
@@ -52,7 +52,7 @@ TEST (link190gl_start_waits_for_the_matching_phase)
 
 TEST (link190gl_follow_nudges_small_errors_and_jumps_big_ones)
 {
-    using namespace lynx::linksync;
+    using namespace yw::linksync;
     const FollowLaw law;
     // inside the dead band: the session tempo as it is
     auto f = follow (120.0, 0.0002, law);
@@ -73,7 +73,7 @@ TEST (link190gl_follow_nudges_small_errors_and_jumps_big_ones)
 
 TEST (link190gl_tempo_rules)
 {
-    using namespace lynx::linksync;
+    using namespace yw::linksync;
     TempoArbiter a;
     TempoArbiter::Input in;
     in.sessionBpm = 97.0; // joined a session at 97 BPM: its tempo wins (rule 1)
@@ -92,7 +92,7 @@ TEST (link190gl_tempo_rules)
     out = a.step (in);
     CHECK (out.propose == 0.0 && out.play == 125.0 && ! a.changedByPeer());
 
-    // a peer changes the tempo: LYNX follows, and remembers that a peer set it
+    // a peer changes the tempo: YW follows, and remembers that a peer set it
     in.sessionBpm = 133.0;
     out = a.step (in);
     CHECK (out.propose == 0.0 && out.play == 133.0 && a.changedByPeer());
@@ -140,7 +140,7 @@ TEST (link190gl_tempo_rules)
     out = a.step (in);
     CHECK (out.propose == 0.0);
 
-    // rule 4: an external MIDI clock LYNX follows wins over the peers
+    // rule 4: an external MIDI clock YW follows wins over the peers
     in.externalBpm = 128.0;
     out = a.step (in);
     CHECK (out.propose == 128.0 && out.play == 128.0);
@@ -154,7 +154,7 @@ TEST (link190gl_tempo_rules)
 
 TEST (link190gl_tempo_from_the_network_is_the_same_tempo)
 {
-    using namespace lynx::linksync;
+    using namespace yw::linksync;
     // a peer's 110 BPM arrives as whole microseconds per beat: the same tempo, not another peer's change
     const auto fromNetwork = 60.0e6 / 545455.0;
     CHECK (sameTempo (110.0, fromNetwork) && ! sameTempo (110.0, 110.01));
@@ -175,7 +175,7 @@ TEST (link190gl_tempo_from_the_network_is_the_same_tempo)
 
 TEST (link190gl_toggle_text_as_the_reference)
 {
-    using lynx::linksync::toggleText;
+    using yw::linksync::toggleText;
     CHECK (toggleText (false, 3) == "Link");
     CHECK (toggleText (true, 0) == "0 Links");
     CHECK (toggleText (true, 1) == "1 Link");
@@ -184,7 +184,7 @@ TEST (link190gl_toggle_text_as_the_reference)
 
 TEST (link190gl_prefs_roundtrip_and_old_files)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     MidiPrefs p;
     CHECK (! p.link && ! p.linkStartStopSync); // off by default (the reference DAW: Start Stop Sync off)
     CHECK (p.toText().find ("abletonLink") == std::string::npos); // (unchanged files while off)
@@ -206,7 +206,7 @@ TEST (link190gl_prefs_roundtrip_and_old_files)
 
 TEST (link190gl_toolbar_group_hidden_in_fl_layout_first_in_order)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     CHECK (! l.isShown (Group::link));             // FL has no Link: hidden on a new install (Pattern workflow)
     CHECK (l.entries.front().group == Group::link); // left of the transport, as the reference DAW's control bar

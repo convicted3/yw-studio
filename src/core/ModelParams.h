@@ -7,7 +7,7 @@
 // Instrument::setParameter (index, 0…1) without restarting its voices.
 //
 // Each engine's table is listed with ONE line in core/ModelParamList.inc:
-//     LYNX_MODEL_PARAMS (toxic, toxicModelTable)   // → lynx::modelparams::Table lynx::modelparams::toxicModelTable();
+//     YW_MODEL_PARAMS (toxic, toxicModelTable)   // → yw::modelparams::Table yw::modelparams::toxicModelTable();
 // defined in the engine's own file (or here for the plain "float P[i] in the state" engines).
 
 #include <optional>
@@ -17,7 +17,7 @@
 #include "core/EngineParams.h"
 #include "core/Song.h"
 
-namespace lynx::modelparams
+namespace yw::modelparams
 {
 struct Table
 {
@@ -41,4 +41,4 @@ bool setValue01 (ChannelDef& channel, int index, float value);
 // Tables of the engines whose parameters are floats P[i] at an offset of their saved state
 Table toxicModelTable();
 Table poizoneModelTable();
-} // namespace lynx::modelparams
+} // namespace yw::modelparams

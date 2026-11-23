@@ -1,12 +1,12 @@
 #pragma once
 
-// The Pocket effects: LYNX's exact engines for FL Studio Mobile's own effect modules (the "(FL Mobile)" role in
+// The Pocket effects: YW's exact engines for FL Studio Mobile's own effect modules (the "(FL Mobile)" role in
 // docs/PARITY.md), rebuilt in docs/analise/REA_rodada182c.md "F5 effects, round 188h". Clean-room: FL Studio Mobile's
 // laws restated as formulas in our own words; no Image-Line code or data in this repository.
 //
-// Every parameter is the FL Studio Mobile module's own 0…1 value, in its order without the module's Enable (LYNX
+// Every parameter is the FL Studio Mobile module's own 0…1 value, in its order without the module's Enable (YW
 // parameter k = FLM parameter k + 1; Enable is the slot's on switch), so the .flm import copies values as they are and
-// a LYNX knob drives what FL Studio Mobile's knob drives. Every engine runs in single precision like FLM's.
+// a YW knob drives what FL Studio Mobile's knob drives. Every engine runs in single precision like FLM's.
 //
 //   Pocket Distortion (EffectKind::pocketDistortion, FLM module 6): [0] Drive (0.25), [1] BitCrush (0), [2] Gain (1 =
 //     0 dB; −24…0 dB), [3] Stereo (0.5; the drive's left / right balance), [4] Kind (0: four curves), [5] Bias (0.5).
@@ -74,7 +74,7 @@
 //     holds. Lowest Note follows the lowest key held on the Channel Rack.
 //   Pocket Multiband Compressor (EffectKind::pocketMultiband, FLM module 36, core/PocketFxD.cpp, round 190by): [0] Master
 //     gain (0.5 = 0 dB; ±24 dB), [1] Low crossover (0.3; 20·2^(9v) Hz), [2] High crossover (0.7), [3] Solo (0: Off / Low /
-//     Mid / High — LYNX's own: FLM keeps a flag of its editor here), [4] Dry mix (0; v², added to each band's gain),
+//     Mid / High — YW's own: FLM keeps a flag of its editor here), [4] Dry mix (0; v², added to each band's gain),
 //     then per band (low from [5], mid from [12], high from [19]): Input gain (0.5 = 0 dB; ±24 dB), Threshold (1 = 0 dB;
 //     −48…0 dB), Ratio (0; 30v + 1), Attack (0.3; 50v² ms), Release (0.3; 10 ms…1 s), Gain (0.5 = 0 dB; ±24 dB), State
 //     (0: On / Bypass / Mute); [26]…[28] the bands' Width (0.5 = as it is), [29] Width mode (0). Three bands from 24 dB
@@ -90,7 +90,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 constexpr int distortionParams = 6, limiterClassicParams = 3, limiterParams = 4, levellerParams = 2, gateParams = 8, tranceDelayParams = 7, tapeDelayParams = 4, multiFxParams = 6;
 constexpr int autoduckParams = 7, chorusParams = 4, spacerParams = 7, stereoizerParams = 5;
@@ -192,7 +192,7 @@ float multibandAttackSeconds (float v) noexcept;  // 0.05v²
 float multibandReleaseSeconds (float v) noexcept; // 0.99v + 0.01
 float multibandAttackCoefficient (float v) noexcept;  // per sample, for 44.1 kHz at every rate (as FLM)
 float multibandReleaseCoefficient (float v) noexcept;
-int multibandSolo (float v) noexcept;             // LYNX's Solo: ⌊3v + ½⌋ = 0 off, 1 low, 2 mid, 3 high
+int multibandSolo (float v) noexcept;             // YW's Solo: ⌊3v + ½⌋ = 0 off, 1 low, 2 mid, 3 high
 
 constexpr int tapeStopParams = 7;
 std::unique_ptr<Effect> makeTapeStop();
@@ -232,4 +232,4 @@ std::string reverbClassicParamText (int param, float v);
 std::string reverb2ParamText (int param, float v);
 std::string reverbParamText (int param, float v);
 // --- end of round 190dw
-} // namespace lynx::pocket
+} // namespace yw::pocket

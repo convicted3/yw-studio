@@ -1,10 +1,10 @@
-// Round 190ks (Discord: "is it possible for plugins of the same type to share resources?"). `LYNX --sharetest <folder>
+// Round 190ks (Discord: "is it possible for plugins of the same type to share resources?"). `YW --sharetest <folder>
 // <case> report.txt` measures what a project of 8 identical channels costs in memory: the process's resident memory
 // before and after the project is loaded into the live engine (its rack built, its fonts loaded), with what the sample
 // cache holds and how many distinct SoundFont banks the channels play. Cases:
-//   sf2-same     8 LYNX Soundfont channels on one .sf2 file          wav-same     8 Sampler channels on one .wav file
-//   sf2-copies   8 LYNX Soundfont channels, each on its own copy      wav-copies   8 Sampler channels, each on its own copy
-// The files are made in <folder> (a ~30 MB bank, a 20 s stereo sample). Run once with LYNX_CONTENT_SHARE=0 (the copies
+//   sf2-same     8 YW Soundfont channels on one .sf2 file          wav-same     8 Sampler channels on one .wav file
+//   sf2-copies   8 YW Soundfont channels, each on its own copy      wav-copies   8 Sampler channels, each on its own copy
+// The files are made in <folder> (a ~30 MB bank, a 20 s stereo sample). Run once with YW_CONTENT_SHARE=0 (the copies
 // held separately, as before round 190ks) and once without (byte-identical files share one copy).
 
 #include <set>
@@ -23,7 +23,7 @@
  #include <psapi.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -147,7 +147,7 @@ juce::String AudioEngine::shareMemorySelfTest (const juce::File& folder, const j
     const auto after = residentMb();
     const auto use = SampleLibrary::memoryUse();
     juce::String report;
-    report << "case " << which << " (content share " << (std::getenv ("LYNX_CONTENT_SHARE") != nullptr && std::getenv ("LYNX_CONTENT_SHARE")[0] == '0' ? "off" : "on")
+    report << "case " << which << " (content share " << (std::getenv ("YW_CONTENT_SHARE") != nullptr && std::getenv ("YW_CONTENT_SHARE")[0] == '0' ? "off" : "on")
            << "), file " << juce::String ((double) original.getSize() / 1048576.0, 1) << " MB\n";
     report << "resident before " << juce::String (before, 1) << " MB, after " << juce::String (after, 1) << " MB, project costs "
            << juce::String (after - before, 1) << " MB (load " << juce::String (loadMs, 0) << " ms incl. 2 s of timer)\n";
@@ -157,4 +157,4 @@ juce::String AudioEngine::shareMemorySelfTest (const juce::File& folder, const j
     live.closeStandInDevice();
     return "OK\n" + report;
 }
-} // namespace lynx
+} // namespace yw

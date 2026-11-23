@@ -19,7 +19,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -36,7 +36,7 @@ juce::File modelFolder()
    #if JUCE_WINDOWS
     return juce::File::getSpecialLocation (juce::File::windowsLocalAppData).getChildFile ("YW Studio").getChildFile ("models");
    #elif JUCE_MAC
-    return platform::settingsFile ("models"); // ~/Library/Application Support/LYNX (Caches may be purged)
+    return platform::settingsFile ("models"); // ~/Library/Application Support/YW (Caches may be purged)
    #else
     const auto xdg = juce::SystemStats::getEnvironmentVariable ("XDG_DATA_HOME", {});
     const auto data = xdg.startsWithChar ('/') ? juce::File (xdg) : juce::File::getSpecialLocation (juce::File::userHomeDirectory).getChildFile (".local/share");
@@ -463,13 +463,13 @@ private:
     {
         if (offline::enabled()) // (the dialog says so before any job starts: this is the last line)
         {
-            error = tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline), so the stem model is not downloaded.");
+            error = tr ("YW Studio is in offline mode (YW_OFFLINE or --offline), so the stem model is not downloaded.");
             return false;
         }
         const auto modelBytes = model.bytes;
         const auto* modelUrl = model.url;
        #if JUCE_LINUX || JUCE_BSD
-        // (LYNX is built without libcurl, JUCE_USE_CURL=0: the curl program fetches it, as in the updater)
+        // (YW is built without libcurl, JUCE_USE_CURL=0: the curl program fetches it, as in the updater)
         juce::ChildProcess child;
         if (! child.start ({ "curl", "-fsSL", "--connect-timeout", "8", "--speed-limit", "1", "--speed-time", "30",
                              "--max-filesize", juce::String (modelBytes), "-o", dest.getFullPathName(), modelUrl }, 0))
@@ -577,7 +577,7 @@ private:
 };
 } // namespace
 
-// --- the options form (round 190jr, BUILD-LIST 14): FL's TDEMUCSFORM, then LYNX's model rows ---------------------------
+// --- the options form (round 190jr, BUILD-LIST 14): FL's TDEMUCSFORM, then YW's model rows ---------------------------
 namespace
 {
 class StemOptionsPanel final : public juce::Component
@@ -616,7 +616,7 @@ public:
         newInserts.setButtonText (tr ("Assign to new mixer tracks"));
         newInserts.setTooltip (tr ("Assign each stem to a different mixer track"));
         newInserts.setToggleState (options.newInserts, juce::dontSendNotification);
-        // LYNX's model row (BandLab's Splitter offers 4 and 6 stems; the fine-tuned models are the best of HT-Demucs)
+        // YW's model row (BandLab's Splitter offers 4 and 6 stems; the fine-tuned models are the best of HT-Demucs)
         modelLabel.setText (tr ("Model"), juce::dontSendNotification);
         model.addItem (tr ("Standard (4 stems)"), 1);
         model.addItem (tr ("6 stems (adds guitar and piano)"), 2);
@@ -658,7 +658,7 @@ public:
         g.fillAll (theme::colour::bg2);
         g.setColour (theme::colour::bg3);
         g.fillRect (getLocalBounds().withHeight (176).reduced (1, 0)); // (FL's OptionsPanel plate)
-        g.fillRect (juce::Rectangle<int> (1, 180, getWidth() - 2, 82));  // LYNX's model rows
+        g.fillRect (juce::Rectangle<int> (1, 180, getWidth() - 2, 82));  // YW's model rows
     }
 
     void resized() override
@@ -674,7 +674,7 @@ public:
         whenDoneLabel.setBounds (141, 94, 80, 23);
         groupTracks.setBounds (12, 123, 233, 21);
         newInserts.setBounds (12, 150, 233, 21);
-        // LYNX: the model and the two stems only the 6-stem model has
+        // YW: the model and the two stems only the 6-stem model has
         modelLabel.setBounds (12, 186, 50, 23);
         model.setBounds (64, 186, 211, 23);
         stems[4].setBounds (12, 213, 130, 21);
@@ -785,10 +785,10 @@ void extractStemsFromClip (AudioEngine& engine, int clipIndex, std::function<voi
             start (o);
             return;
         }
-        if (offline::enabled()) // LYNX_OFFLINE=1 / --offline: a model that is not installed is not downloaded
+        if (offline::enabled()) // YW_OFFLINE=1 / --offline: a model that is not installed is not downloaded
         {
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, tr ("Extract stems from sample"),
-                                                    tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline), so the stem model is not downloaded. Extracting stems needs it once: start YW Studio without offline mode, or copy the model file into {0}.", { modelFolder().getFullPathName() }));
+                                                    tr ("YW Studio is in offline mode (YW_OFFLINE or --offline), so the stem model is not downloaded. Extracting stems needs it once: start YW Studio without offline mode, or copy the model file into {0}.", { modelFolder().getFullPathName() }));
             return;
         }
         // a model not downloaded yet: the source and the licence, before anything is downloaded
@@ -832,4 +832,4 @@ juce::String extractStemsToFolder (AudioEngine& engine, const juce::File& input,
     separateToFiles (options, *sample, input.getFileNameWithoutExtension(), folder, [] { return false; }, {}, files, {}, error);
     return error;
 }
-} // namespace lynx
+} // namespace yw

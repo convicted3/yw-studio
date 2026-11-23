@@ -2,11 +2,11 @@
 // level-0 send when there is no route (the source keeps its Master send), the slot listens; a loop changes nothing.
 TEST (sc177b_sidechain_picker_makes_the_route)
 {
-    namespace mo = lynx::mixerops;
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (5);
-    lynx::EffectSlot comp;
-    comp.kind = lynx::EffectKind::fruityCompressor;
+    namespace mo = yw::mixerops;
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (5);
+    yw::EffectSlot comp;
+    comp.kind = yw::EffectKind::fruityCompressor;
     song.mixer[3].effects.push_back (comp);
 
     // Insert 1 (the kick) → slot 0 of Insert 3: a level-0 send, the kick still on the Master
@@ -38,8 +38,8 @@ TEST (sc177b_sidechain_picker_makes_the_route)
     CHECK (mo::sidechainFrom (song, 3, 0, 3) == mo::SidechainPick::invalid);
 
     // the vocoder's second input (carrier) and its separate-inputs switch
-    lynx::EffectSlot voc;
-    voc.kind = lynx::EffectKind::vocoder;
+    yw::EffectSlot voc;
+    voc.kind = yw::EffectKind::vocoder;
     song.mixer[2].effects.push_back (voc);
     CHECK (mo::sidechainFrom (song, 2, 0, 1, true) == mo::SidechainPick::linked);
     CHECK (song.mixer[2].effects[0].sidechain2 == 1 && song.mixer[2].effects[0].sidechain == -1 && song.mixer[2].effects[0].params[16] == 1.0f);
@@ -48,8 +48,8 @@ TEST (sc177b_sidechain_picker_makes_the_route)
 // Every engine that reads a side input offers the picker; effects without one do not (no dead control).
 TEST (sc177b_accepts_sidechain_matches_the_engines)
 {
-    namespace mo = lynx::mixerops;
-    using K = lynx::EffectKind;
+    namespace mo = yw::mixerops;
+    using K = yw::EffectKind;
     for (const auto k : { K::compressor, K::fruityLimiter, K::fruityCompressor, K::vocoder, K::vocodex, K::facetEq, K::apexLimiter,
                           K::hushDeEsser, K::crestCompressor, K::prismMultiband, K::sentryGate, K::luxeVerb, K::patcher,
                           K::transmitter, K::flTransporter })

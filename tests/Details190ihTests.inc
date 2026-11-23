@@ -5,11 +5,11 @@
 // received"); before any note both are -1, and outputs 0 … 7 are unchanged
 TEST (details190ih_envelope_controller_last_key_and_velocity)
 {
-    lynx::EnvelopeControllerData d;
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::controller;
-    c.controllerState = lynx::writeEnvelopeController (d);
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::controller);
+    yw::EnvelopeControllerData d;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::controller;
+    c.controllerState = yw::writeEnvelopeController (d);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::controller);
     inst->prepare (48000.0);
     inst->configure (c, 120.0);
     std::vector<float> l (480), r (480);
@@ -33,18 +33,18 @@ TEST (details190ih_envelope_controller_last_key_and_velocity)
 // Playing". With POS SYNC 4 beats the envelope's position is the song's beat within the 4-beat bar.
 TEST (details190ih_gross_beat_publishes_its_play_position)
 {
-    using namespace lynx::grossbeat;
-    const auto fresh = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
+    using namespace yw::grossbeat;
+    const auto fresh = yw::makeEffectSlot (yw::EffectKind::grossBeat);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::grossBeat);
     slot.state = fresh.state;
     slot.params[0] = paramFromRaw (0, 0);
     slot.params[1] = paramFromRaw (1, 0);
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     CHECK (fx != nullptr);
     if (fx == nullptr)
         return;
     fx->prepare (48000.0);
-    const auto tps = 120.0 / 60.0 * lynx::ppq / 48000.0; // ticks per sample at 120 BPM
+    const auto tps = 120.0 / 60.0 * yw::ppq / 48000.0; // ticks per sample at 120 BPM
     std::vector<float> l (480), r (480);
     std::size_t done = 0;
     auto block = [&] (bool moving) {
@@ -60,7 +60,7 @@ TEST (details190ih_gross_beat_publishes_its_play_position)
     for (int b = 0; b < 600; ++b) // 6 s = 12 beats: three passes of the 4-beat envelope
     {
         block (true);
-        const auto beats = (double) done * tps / lynx::ppq;
+        const auto beats = (double) done * tps / yw::ppq;
         const auto expect = std::fmod (beats, 4.0) / 4.0;
         auto d = std::abs ((double) fx->controlOutput (1) - expect);
         d = std::min (d, 1.0 - d); // (at the wrap 0.999 and 0.0 are neighbours)
@@ -97,7 +97,7 @@ TEST (details190ih_gross_beat_publishes_its_play_position)
 // still lights it; Animations off = steady on / off
 TEST (details190ih_rack_activity_light_lights_dims_and_fades)
 {
-    using namespace lynx::activity;
+    using namespace yw::activity;
     Light a;
     CHECK (step (a, 5, false, true) == 0.0f); // the first look learns the counter: opening the rack lights nothing
     CHECK (step (a, 6, true, true) == peak);  // note-on
@@ -146,7 +146,7 @@ TEST (details190ih_engine_counts_note_strikes_per_channel)
 // R3 (DF-137): FL's Alt+1 … Alt+0 open the ten most recent projects; no other action has those chords
 TEST (details190ih_recent_projects_keys)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     for (int n = 1; n <= 10; ++n)
     {
         const auto* a = findAction ("file.recent" + std::to_string (n));
@@ -166,7 +166,7 @@ TEST (details190ih_recent_projects_keys)
 // a note-off shows its note-on's velocity, as FL's hint did (details190if shots/fl-hint-noteon.png)
 TEST (details190ih_last_live_note_packing)
 {
-    using namespace lynx::livenote;
+    using namespace yw::livenote;
     const auto a = pack (0, 60, 100, true);
     CHECK (a != 0u && key (a) == 60 && velocity (a) == 100 && on (a));
     const auto b = pack (a, 60, 100, false); // the same key released: a new word (the serial moved)
@@ -175,12 +175,12 @@ TEST (details190ih_last_live_note_packing)
     CHECK ((c >> 16) == 1u && key (c) == 127 && velocity (c) == 0);
 }
 
-// R12 (owner decision L1, DL-C): Live's keys act only in the Clip-launch layout; Pattern and Simple keep LYNX's keys
+// R12 (owner decision L1, DL-C): Live's keys act only in the Clip-launch layout; Pattern and Simple keep YW's keys
 TEST (details190ih_live_keys_only_in_the_clip_launch_layout)
 {
-    using namespace lynx::keys;
-    using lynx::livekeys::Command;
-    using lynx::layoutstyle::Style;
+    using namespace yw::keys;
+    using yw::livekeys::Command;
+    using yw::layoutstyle::Style;
     const struct { Chord chord; Command command; } live[] {
         { { tab, none }, Command::toggleView },          { { 'O', none }, Command::metronome },
         { { 'o', none }, Command::metronome },           { { f9, none }, Command::arrangementRecord },
@@ -190,27 +190,27 @@ TEST (details190ih_live_keys_only_in_the_clip_launch_layout)
     };
     for (const auto& k : live)
     {
-        CHECK (lynx::livekeys::commandFor (k.chord, Style::clipLaunch) == k.command);
-        CHECK (lynx::livekeys::commandFor (k.chord, Style::pattern) == Command::none);
-        CHECK (lynx::livekeys::commandFor (k.chord, Style::simple) == Command::none);
-        CHECK (std::string (lynx::livekeys::menuKey (k.command, Style::clipLaunch)).size() > 1);
-        CHECK (std::string (lynx::livekeys::menuKey (k.command, Style::pattern)).empty());
+        CHECK (yw::livekeys::commandFor (k.chord, Style::clipLaunch) == k.command);
+        CHECK (yw::livekeys::commandFor (k.chord, Style::pattern) == Command::none);
+        CHECK (yw::livekeys::commandFor (k.chord, Style::simple) == Command::none);
+        CHECK (std::string (yw::livekeys::menuKey (k.command, Style::clipLaunch)).size() > 1);
+        CHECK (std::string (yw::livekeys::menuKey (k.command, Style::pattern)).empty());
     }
     // the FL keys these chords have in the Pattern layout are still in the key map (they are not changed)
     CHECK (findAction ("transport.metronome") != nullptr && findAction ("transport.metronome")->defaults[0] == (Chord { 'M', ctrl }));
     CHECK (findAction ("view.typingPiano") != nullptr && findAction ("view.typingPiano")->defaults[0] == (Chord { 'T', ctrl }));
     // nearby chords stay free of Live's meaning
-    CHECK (lynx::livekeys::commandFor ({ tab, shift }, Style::clipLaunch) == Command::none); // (Shift+Tab: detail view switch)
-    CHECK (lynx::livekeys::commandFor ({ 'M', ctrl }, Style::clipLaunch) == Command::none);  // (Ctrl+M: MIDI Map Mode)
-    CHECK (lynx::livekeys::commandFor ({ 'O', ctrl }, Style::clipLaunch) == Command::none);
+    CHECK (yw::livekeys::commandFor ({ tab, shift }, Style::clipLaunch) == Command::none); // (Shift+Tab: detail view switch)
+    CHECK (yw::livekeys::commandFor ({ 'M', ctrl }, Style::clipLaunch) == Command::none);  // (Ctrl+M: MIDI Map Mode)
+    CHECK (yw::livekeys::commandFor ({ 'O', ctrl }, Style::clipLaunch) == Command::none);
 }
 
 // R9 (DP-16, owner decision PL5): Parametric EQ 2's momentary band solo — while a band is soloed only its region
-// passes (FL manual: "holding (Shift) and clicking the Band Tokens will momentarily solo the Band"), for LYNX's own law
+// passes (FL manual: "holding (Shift) and clicking the Band Tokens will momentarily solo the Band"), for YW's own law
 // and for a slot running FL's engine; ending the solo gives the plain EQ back
 namespace details190ih
 {
-inline double rmsThrough (lynx::Effect& fx, const lynx::EffectParams& params, double hz)
+inline double rmsThrough (yw::Effect& fx, const yw::EffectParams& params, double hz)
 {
     std::vector<float> l (512), r (512);
     double sum = 0.0;
@@ -230,41 +230,41 @@ inline double rmsThrough (lynx::Effect& fx, const lynx::EffectParams& params, do
 
 TEST (details190ih_peq2_band_solo_passes_only_that_band)
 {
-    for (const float law : { 0.0f, 0.5f }) // LYNX's own law, FL's Parametric EQ 2 engine (core/ParametricEqFl.h)
+    for (const float law : { 0.0f, 0.5f }) // YW's own law, FL's Parametric EQ 2 engine (core/ParametricEqFl.h)
     {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::parametricEq);
-        slot.params[(std::size_t) lynx::peqfl::lawParam] = law;
-        slot.params[(std::size_t) lynx::peq::param (2, 1)] = lynx::peq::hzValue (5000.0);
-        auto fx = lynx::makeEffect (slot);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::parametricEq);
+        slot.params[(std::size_t) yw::peqfl::lawParam] = law;
+        slot.params[(std::size_t) yw::peq::param (2, 1)] = yw::peq::hzValue (5000.0);
+        auto fx = yw::makeEffect (slot);
         CHECK (fx != nullptr);
         if (fx == nullptr)
             continue;
         fx->prepare (48000.0);
         const auto lowPlain = details190ih::rmsThrough (*fx, slot.params, 100.0);
-        lynx::peq::setSoloBand (fx.get(), 2);
-        CHECK (lynx::peq::soloBand (fx.get()) == 2);
+        yw::peq::setSoloBand (fx.get(), 2);
+        CHECK (yw::peq::soloBand (fx.get()) == 2);
         const auto lowSolo = details190ih::rmsThrough (*fx, slot.params, 100.0);
         const auto highSolo = details190ih::rmsThrough (*fx, slot.params, 5000.0);
         CHECK (lowPlain > 0.05);
         CHECK (lowSolo < lowPlain * 0.15); // the rest of the spectrum is gone
         CHECK (highSolo > 0.05);           // the band's own region passes
-        lynx::peq::setSoloBand (fx.get(), -1);
-        CHECK (lynx::peq::soloBand (fx.get()) == -1);
+        yw::peq::setSoloBand (fx.get(), -1);
+        CHECK (yw::peq::soloBand (fx.get()) == -1);
         CHECK (std::abs (details190ih::rmsThrough (*fx, slot.params, 100.0) - lowPlain) < 0.02);
     }
     // anything else than a Parametric EQ ignores it
-    auto other = lynx::makeEffect (lynx::makeEffectSlot (lynx::EffectKind::grossBeat));
-    lynx::peq::setSoloBand (other.get(), 1);
-    CHECK (lynx::peq::soloBand (other.get()) == -1);
+    auto other = yw::makeEffect (yw::makeEffectSlot (yw::EffectKind::grossBeat));
+    yw::peq::setSoloBand (other.get(), 1);
+    CHECK (yw::peq::soloBand (other.get()) == -1);
 }
 
 // R8 part (DP-92 / DP-93, owner decision PL4): FL's Presets › Randomize (random values for the published settings
 // only) and Hybridize (a preset brings a random half of the published settings)
 TEST (details190ih_presets_randomize_and_hybridize)
 {
-    lynx::EffectParams p {};
+    yw::EffectParams p {};
     p.fill (0.25f);
-    lynx::presetmix::randomize (p, 10, 12345u);
+    yw::presetmix::randomize (p, 10, 12345u);
     int changed = 0;
     for (int i = 0; i < 10; ++i)
     {
@@ -272,16 +272,16 @@ TEST (details190ih_presets_randomize_and_hybridize)
         changed += p[(std::size_t) i] != 0.25f ? 1 : 0;
     }
     CHECK (changed >= 9);
-    CHECK (p[10] == 0.25f && p[(std::size_t) lynx::maxEffectParams - 1] == 0.25f); // the rest is left alone
-    auto again = lynx::EffectParams {};
+    CHECK (p[10] == 0.25f && p[(std::size_t) yw::maxEffectParams - 1] == 0.25f); // the rest is left alone
+    auto again = yw::EffectParams {};
     again.fill (0.25f);
-    lynx::presetmix::randomize (again, 10, 12345u);
+    yw::presetmix::randomize (again, 10, 12345u);
     CHECK (again == p); // deterministic for a seed
 
-    lynx::EffectParams before {}, preset {};
+    yw::EffectParams before {}, preset {};
     before.fill (0.0f);
     preset.fill (1.0f);
-    const auto mixed = lynx::presetmix::hybridize (before, preset, 100, 777u);
+    const auto mixed = yw::presetmix::hybridize (before, preset, 100, 777u);
     int fromPreset = 0;
     for (int i = 0; i < 100; ++i)
         fromPreset += mixed[(std::size_t) i] == 1.0f ? 1 : 0;

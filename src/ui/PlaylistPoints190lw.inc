@@ -1,4 +1,4 @@
-// Issue #207 (round 190lw, LYNX extras): several points of one curve edited together, and the freehand pen. Included by
+// Issue #207 (round 190lw, YW extras): several points of one curve edited together, and the freehand pen. Included by
 // PlaylistComponent.cpp. The curve is an automation clip's points, an audio clip's envelope lane (round 190gi) or an
 // automation lane (round 177b); core/AutoPointEdit.h does the point work.
 
@@ -320,7 +320,7 @@ bool PlaylistComponent::pointKeyPressed (const juce::KeyPress& key)
     if (haveSelection && mods.isCommandDown() && ! mods.isShiftDown() && ! mods.isAltDown() && (letter == 'C' || letter == 'X'))
     {
         pointClipboard = autopoints::copy (*points, selectedPoints);
-        if (windowclip::enabled()) // (issue #232, round 190nz: and to another LYNX SHARE window)
+        if (windowclip::enabled()) // (issue #232, round 190nz: and to another YW Studio window)
         {
             crossclipboard::Payload copy;
             copy.kind = crossclipboard::Kind::points;
@@ -335,7 +335,7 @@ bool PlaylistComponent::pointKeyPressed (const juce::KeyPress& key)
         return true;
     }
     // Ctrl+V with copied points and the mouse on a curve: pasted at the mouse (snapped), selected (issue #232, round 190nz:
-    // points copied in another LYNX SHARE window too)
+    // points copied in another YW Studio window too)
     if (mods.isCommandDown() && ! mods.isShiftDown() && ! mods.isAltDown() && letter == 'V')
     {
         const auto at = lastMouse; // (the last mouse position over the Playlist)

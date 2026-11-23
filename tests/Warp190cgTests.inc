@@ -12,37 +12,37 @@ namespace warp190cg
 inline bool near (double a, double b, double tolerance = 1.0e-9) { return std::abs (a - b) <= tolerance; }
 
 // a 4 s file at 120 bpm with its start and end markers: 8 beats
-inline lynx::SamplerSettings fourSeconds()
+inline yw::SamplerSettings fourSeconds()
 {
-    lynx::SamplerSettings s;
-    lynx::warpedit::ensureMarkers (s, 4.0, 120.0);
+    yw::SamplerSettings s;
+    yw::warpedit::ensureMarkers (s, 4.0, 120.0);
     return s;
 }
 
 // a song with three audio tracks (inserts 1…3) and a lane of insert 1's volume on track 0
-inline lynx::Song laneSong()
+inline yw::Song laneSong()
 {
-    lynx::Song song;
-    song.mixer = lynx::Song::defaultMixer (4);
+    yw::Song song;
+    song.mixer = yw::Song::defaultMixer (4);
     song.playlistTracks.resize (4);
     for (int t = 0; t < 3; ++t)
     {
-        song.playlistTracks[(std::size_t) t].mode = lynx::PlaylistTrackMode::audio;
+        song.playlistTracks[(std::size_t) t].mode = yw::PlaylistTrackMode::audio;
         song.playlistTracks[(std::size_t) t].mixerTrack = t + 1;
     }
-    lynx::Automation a;
+    yw::Automation a;
     a.name = "Vol";
-    a.target = { lynx::AutomationTargetKind::mixerVolume, 1, 0, 0 };
+    a.target = { yw::AutomationTargetKind::mixerVolume, 1, 0, 0 };
     a.points = { { 0, 0.2f, 0.0f }, { 960, 0.8f, 0.0f }, { 1920, 0.4f, 0.0f }, { 7680, 0.4f, 0.0f } };
     song.automations.push_back (a);
     song.playlistTracks[0].lanes.push_back ({ 0, 0 });
     return song;
 }
 
-inline lynx::Clip patternClip (int track, std::int64_t start, std::int64_t length)
+inline yw::Clip patternClip (int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = 0;
     c.track = track;
     c.start = start;
@@ -53,7 +53,7 @@ inline lynx::Clip patternClip (int track, std::int64_t start, std::int64_t lengt
 
 TEST (warp190cg_segment_tempo_and_x2)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     auto s = warp190cg::fourSeconds();
     CHECK (near (warptools::segmentBpm (s.warp, 0), 120.0));
@@ -81,7 +81,7 @@ TEST (warp190cg_segment_tempo_and_x2)
 
 TEST (warp190cg_set_1_1_1_here)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     auto s = warp190cg::fourSeconds();
     // the audio at 0.5 s (beat 1) becomes beat 0: every marker shifts by one beat, the tempo stays
@@ -96,7 +96,7 @@ TEST (warp190cg_set_1_1_1_here)
 
 TEST (warp190cg_warp_from_here)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     // markers 0 → 0, 1 s → 3, 2 s → 5, 4 s → 8. "Warp 90 BPM From Here" at 1.5 s: the markers after it go, the audio there
     // keeps its beat (4) and the rest runs at 90 bpm (2.5 s = 3.75 beats)
@@ -139,7 +139,7 @@ TEST (warp190cg_warp_from_here)
 
 TEST (warp190cg_warp_as_loop_and_insert_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     // 3.7 s at 120 bpm in 4/4: nearest power of two of bars is 2 (4 s); 7 s: 4 bars; half a second: 1 bar at least
     CHECK (warptools::loopBars (3.7, 120.0, 4.0) == 2.0 && warptools::loopBars (7.0, 120.0, 4.0) == 4.0 && warptools::loopBars (0.5, 120.0, 4.0) == 1.0);
@@ -157,7 +157,7 @@ TEST (warp190cg_warp_as_loop_and_insert_markers)
 
 TEST (warp190cg_quantize_puts_the_attacks_on_the_grid)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     // a 2 s file at 120 bpm (4 beats); bursts played late or early around the eighth notes
     const std::vector<double> at { 0.27, 0.48, 0.79, 1.02, 1.23, 1.52 };
@@ -213,7 +213,7 @@ TEST (warp190cg_quantize_puts_the_attacks_on_the_grid)
 
 TEST (warp190cg_als_keeps_signature_changes_loop_range_and_tempo_view)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live's set: 3/4 at the start, 7/8 from beat 12, 4/4 from beat 26; the loop brace at beats 4…12 with the switch off;
     // the tempo envelope shown from 80 to 160 BPM
     auto xml = als175a::richSet();
@@ -301,9 +301,9 @@ TEST (warp190cg_als_keeps_signature_changes_loop_range_and_tempo_view)
 
 TEST (warp190cg_als_keeps_quantized_warp_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
-    // the rich set's 2 s clip, its file length recorded; quantized in LYNX, exported, read back: the same marked beats
+    // the rich set's 2 s clip, its file length recorded; quantized in YW, exported, read back: the same marked beats
     auto xml = als175a::richSet();
     const std::string from = "</FileRef></SampleRef></AudioClip>";
     CHECK (xml.find (from) != std::string::npos);
@@ -355,7 +355,7 @@ TEST (warp190cg_als_keeps_quantized_warp_markers)
 
 TEST (arrange190cg_loop_switch_and_length)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.loopStart = 3840;
     song.loopEnd = 7680;
@@ -377,7 +377,7 @@ TEST (arrange190cg_loop_switch_and_length)
 
 TEST (arrange190cg_time_commands_carry_clips_markers_and_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = warp190cg::laneSong();
     song.patterns.resize (1);
     song.playlist = { warp190cg::patternClip (0, 0, 1920), warp190cg::patternClip (1, 960, 3840), warp190cg::patternClip (2, 5760, 960) };
@@ -450,7 +450,7 @@ TEST (arrange190cg_time_commands_carry_clips_markers_and_lanes)
 
 TEST (arrange190cg_crop_and_fold)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = warp190cg::laneSong();
     song.patterns.resize (1);
     song.playlist = { warp190cg::patternClip (0, 0, 3840), warp190cg::patternClip (1, 960, 960), warp190cg::patternClip (2, 5760, 960) };
@@ -473,7 +473,7 @@ TEST (arrange190cg_crop_and_fold)
 
 TEST (arrange190cg_automation_follows_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = warp190cg::laneSong();
     // the clip over ticks 0…1920 of track 0 moves two beats later: the rise to 0.8 goes with it (now at tick 2880), the
     // place it left is a straight line between its edge values, the curve after the landing place is as before
@@ -498,7 +498,7 @@ TEST (arrange190cg_automation_follows_clips)
 
 TEST (arrange190cg_group_is_a_bus)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = warp190cg::laneSong();
     // a group the Playlist's way: a header row (no insert of its own) followed by its grouped rows
     song.playlistTracks.insert (song.playlistTracks.begin(), PlaylistTrack {});
@@ -536,7 +536,7 @@ TEST (arrange190cg_group_is_a_bus)
 
 TEST (warp190cy_halve_and_double_scale_the_clip_with_the_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     // Live: ÷2 on a 2-bar loop at 120 BPM: segment 120 -> 60 BPM, End 3.1.1 -> 2.1.1, Loop Length 2.0.0 -> 1.0.0
     auto s = warp190cg::fourSeconds(); // 8 beats at 120
@@ -570,7 +570,7 @@ TEST (warp190cy_halve_and_double_scale_the_clip_with_the_markers)
 
 TEST (warp190cy_marker_drag_stretches_and_shift_drag_slides)
 {
-    using namespace lynx;
+    using namespace yw;
     using warp190cg::near;
     auto s = warp190cg::fourSeconds(); // 8 beats over 4 s
     const auto m = warpedit::addMarker (s, 2.0); // on beat 4
@@ -594,7 +594,7 @@ TEST (warp190cy_marker_drag_stretches_and_shift_drag_slides)
 
 TEST (arrange190cy_duplicate_time_repeats_the_locators_in_the_range)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live: Duplicate Time on bars 3-5 holding locator L12 (bar 4): a second L12 two bars later; the 3/4 change after
     // the range moves right
     auto song = warp190cg::laneSong();

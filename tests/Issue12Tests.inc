@@ -4,7 +4,7 @@
 // editors' tools and letters are key map actions, and a key the user chose wins over the panels' built-in keys.
 TEST (issue12_user_key_wins_over_a_panel_default)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ 'C' }, Context::playlist, false) == "playlist.tool.knife");
@@ -37,7 +37,7 @@ TEST (issue12_user_key_wins_over_a_panel_default)
 // Every action of the key map answers a key the user gives it, in every place it works (no panel swallows it).
 TEST (issue12_every_action_takes_a_user_key)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     const Chord picks[] = { { 'C' }, { 'Q', ctrl | shift }, { f3, alt }, { 'K', ctrl } };
     for (const auto& a : actions())
         for (const auto& c : picks)
@@ -57,7 +57,7 @@ TEST (issue12_every_action_takes_a_user_key)
 // 'S' (the Slip tool) and F1 into 'P', so F4 (next empty pattern) did nothing with the Playlist focused.
 TEST (issue12_function_keys_are_not_letters)
 {
-    using lynx::keys::letterOfKeyCode;
+    using yw::keys::letterOfKeyCode;
     for (int vk = 0x70; vk <= 0x7B; ++vk) // VK_F1…VK_F12, as JUCE's Windows key codes
         CHECK (letterOfKeyCode (vk | 0x10000) == 0);
     for (int vk = 0x60; vk <= 0x6F; ++vk) // the numpad
@@ -73,39 +73,39 @@ TEST (issue12_function_keys_are_not_letters)
 // no loop region) the song plays on, the points keep their place, and the take's clip grows with the playhead.
 TEST (issue12_song_mode_automation_take_grows_past_the_song_end)
 {
-    auto song = lynx::Song::makeDefault();
-    song.mode = lynx::PlayMode::song;
+    auto song = yw::Song::makeDefault();
+    song.mode = yw::PlayMode::song;
     song.playlist.clear();
     song.automations.clear();
-    lynx::Clip pc; // one bar of pattern: the song is one bar long
-    pc.kind = lynx::ClipKind::pattern;
-    pc.length = 4 * lynx::ppq;
+    yw::Clip pc; // one bar of pattern: the song is one bar long
+    pc.kind = yw::ClipKind::pattern;
+    pc.length = 4 * yw::ppq;
     song.playlist.push_back (pc);
-    const double bar = 4.0 * lynx::ppq;
-    CHECK (lynx::songTickForRecorded (song, 1.5 * bar) == (std::int64_t) (0.5 * bar)); // (looping playback: wraps)
-    CHECK (lynx::songTickForRecorded (song, 1.5 * bar, true) == (std::int64_t) (1.5 * bar));
+    const double bar = 4.0 * yw::ppq;
+    CHECK (yw::songTickForRecorded (song, 1.5 * bar) == (std::int64_t) (0.5 * bar)); // (looping playback: wraps)
+    CHECK (yw::songTickForRecorded (song, 1.5 * bar, true) == (std::int64_t) (1.5 * bar));
 
-    lynx::AutomationWrite w;
-    w.target = { lynx::AutomationTargetKind::mixerVolume, 1 };
+    yw::AutomationWrite w;
+    w.target = { yw::AutomationTargetKind::mixerVolume, 1 };
     w.name = "Insert 1 - Volume";
-    lynx::commitAutomationPoints (song, w, { { 100, 0.2f }, { 400, 0.4f } }, 0, true);
+    yw::commitAutomationPoints (song, w, { { 100, 0.2f }, { 400, 0.4f } }, 0, true);
     CHECK (w.createdByTake && w.automation == 0);
-    auto clipOf = [&] () -> const lynx::Clip& {
+    auto clipOf = [&] () -> const yw::Clip& {
         for (const auto& c : song.playlist)
-            if (c.kind == lynx::ClipKind::automation)
+            if (c.kind == yw::ClipKind::automation)
                 return c;
         return song.playlist.front();
     };
     CHECK (clipOf().start == 0 && clipOf().length == (std::int64_t) bar);
     // the playhead goes on (no move): the clip follows it, holding the value
-    lynx::growTakeClip (song, w, (std::int64_t) (1.25 * bar), false);
+    yw::growTakeClip (song, w, (std::int64_t) (1.25 * bar), false);
     CHECK (clipOf().length == (std::int64_t) (1.25 * bar));
     // the gesture starts again in bar 3 (past the old song end): same clip, points where they were played
     w.lastLocal = -1; // (the engine: the first gesture ended)
-    lynx::commitAutomationPoints (song, w, { { 2.5 * bar, 0.9f }, { 2.6 * bar, 1.0f } }, 0, true);
+    yw::commitAutomationPoints (song, w, { { 2.5 * bar, 0.9f }, { 2.6 * bar, 1.0f } }, 0, true);
     int automationClips = 0;
     for (const auto& c : song.playlist)
-        automationClips += c.kind == lynx::ClipKind::automation ? 1 : 0;
+        automationClips += c.kind == yw::ClipKind::automation ? 1 : 0;
     CHECK (automationClips == 1 && song.automations.size() == 1);
     CHECK (clipOf().end() >= (std::int64_t) (2.6 * bar));
     const auto& a = song.automations[0];
@@ -113,44 +113,44 @@ TEST (issue12_song_mode_automation_take_grows_past_the_song_end)
     CHECK (std::abs (a.valueAt (1.2 * bar) - 0.4f) < 1e-6f);              // held between the gestures
     CHECK (std::abs (a.valueAt (2.6 * bar) - 1.0f) < 1e-6f);
     // recording stops at 2.7 bars: the clip ends at the end of that bar
-    lynx::growTakeClip (song, w, (std::int64_t) (2.7 * bar), true);
+    yw::growTakeClip (song, w, (std::int64_t) (2.7 * bar), true);
     CHECK (clipOf().end() == 3 * (std::int64_t) bar);
 }
 
 // Bug: a controller's pitch wheel played but was not recorded. Recording writes it as the channel's pitch bend
-// (MIDI pitch bend target, as for a hosted plugin); a LYNX instrument now plays that lane / clip as the wheel.
-TEST (issue12_recorded_pitch_bend_plays_on_a_lynx_instrument)
+// (MIDI pitch bend target, as for a hosted plugin); a YW instrument now plays that lane / clip as the wheel.
+TEST (issue12_recorded_pitch_bend_plays_on_a_yw_instrument)
 {
     auto render = [] (bool withBend) {
-        auto song = lynx::Song::makeDefault();
-        song.mode = lynx::PlayMode::pattern;
+        auto song = yw::Song::makeDefault();
+        song.mode = yw::PlayMode::pattern;
         song.playlist.clear();
         auto& p = song.patterns[(std::size_t) song.currentPattern];
         p.notes.clear();
-        lynx::Note n;
+        yw::Note n;
         n.channel = 4; // "Synth"
         n.key = 60;
         n.start = 0;
-        n.length = 4 * lynx::ppq;
+        n.length = 4 * yw::ppq;
         p.notes.push_back (n);
         p.events.clear();
         if (withBend)
         {
-            lynx::PatternEvents lane;
-            lane.target = { lynx::AutomationTargetKind::channelParam, 4, 0, lynx::midictl::pitchBendBase };
+            yw::PatternEvents lane;
+            lane.target = { yw::AutomationTargetKind::channelParam, 4, 0, yw::midictl::pitchBendBase };
             lane.events.push_back ({ 0, 1.0f }); // full bend up (+2 semitones, the channel's pitch range)
             p.events.push_back (lane);
         }
-        auto state = lynx::RackState::build (song, nullptr, 48000.0);
+        auto state = yw::RackState::build (song, nullptr, 48000.0);
         auto bound = false;
         for (const auto& b : state->pluginParams)
-            bound = bound || (b.channel == 4 && b.param == lynx::midictl::pitchBendBase);
-        lynx::RackRenderer renderer;
+            bound = bound || (b.channel == 4 && b.param == yw::midictl::pitchBendBase);
+        yw::RackRenderer renderer;
         renderer.prepare (48000.0, 512);
         std::vector<float> l (512), r (512), all;
         for (int block = 0; block < 16; ++block)
         {
-            renderer.process (state.get(), true, block * 512.0 * lynx::ticksPerSample (song.bpm, 48000.0), 512, l.data(), r.data());
+            renderer.process (state.get(), true, block * 512.0 * yw::ticksPerSample (song.bpm, 48000.0), 512, l.data(), r.data());
             all.insert (all.end(), l.begin(), l.end());
         }
         return std::make_pair (bound, all);
@@ -176,7 +176,7 @@ TEST (issue12_recorded_pitch_bend_plays_on_a_lynx_instrument)
 // knobs' curves, and an automation clip / pattern event lane on them binds to the channel's instrument.
 TEST (issue12_sampler_knobs_are_automation_targets)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int k = 0; k < samplerparam::count; ++k)
         for (float v : { 0.0f, 0.25f, 0.5f, 0.9f, 1.0f })
             CHECK (std::abs (samplerparam::toValue (k, samplerparam::toNatural (k, v)) - v) < 1.0e-4f);
@@ -212,7 +212,7 @@ TEST (issue12_sampler_knobs_are_automation_targets)
 // at 0 (the automation brings it up); moving inserts keeps the target on the same route.
 TEST (issue12_send_level_is_an_automation_target)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     while (song.mixer.size() < 4)
         song.mixer.emplace_back().name = "Insert " + std::to_string (song.mixer.size());
@@ -259,7 +259,7 @@ TEST (issue12_sort_reads_each_changing_key_once)
     };
     std::vector<long long> seen (2000, 0);
     auto recordingKey = [&] (int item) { return seen[(std::size_t) item] = changingKey (item); };
-    lynx::sortonce::byKey<int> (items, recordingKey, [] (int a, int b) { return a < b; });
+    yw::sortonce::byKey<int> (items, recordingKey, [] (int a, int b) { return a < b; });
     CHECK (items.size() == 2000);
     CHECK (std::all_of (reads.begin(), reads.end(), [] (int n) { return n == 1; }));
     for (std::size_t i = 1; i < items.size(); ++i)
@@ -274,7 +274,7 @@ TEST (issue12_sort_reads_each_changing_key_once)
 
     // newest first
     std::vector<int> few { 3, 1, 2 };
-    lynx::sortonce::byKey<int> (few, [] (int v) { return v * 10; }, [] (int a, int b) { return a < b; }, true);
+    yw::sortonce::byKey<int> (few, [] (int v) { return v * 10; }, [] (int a, int b) { return a < b; }, true);
     CHECK ((few == std::vector<int> { 3, 2, 1 }));
 }
 
@@ -283,7 +283,7 @@ TEST (issue12_sort_reads_each_changing_key_once)
 // leave unused now run the global actions (as in FL), never a panel's keys, and a focused text field keeps its typing.
 TEST (issue12_secondary_windows_run_the_global_shortcuts)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.findFromSecondaryWindow ({ space }, false, false) == "transport.playStop");
     CHECK (map.findFromSecondaryWindow ({ f12 }, false, false) == "view.closeWindows");
@@ -307,14 +307,14 @@ TEST (issue12_secondary_windows_run_the_global_shortcuts)
 // value when the song is re-applied unchanged, and lets go when the knob is turned by hand.
 TEST (issue12_sampler_cutoff_automation_changes_the_sound)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     for (int i = 0; i < 6000; ++i)
         data->left.push_back (std::sin (0.6f * (float) i) * 0.25f); // ~4.6 kHz
 
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
-    auto energyOf = [] (lynx::Instrument& sampler) {
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
+    auto energyOf = [] (yw::Instrument& sampler) {
         sampler.allNotesOff();
         sampler.noteOn (60, 0.8f);
         std::vector<float> l (4000), r (4000);
@@ -324,12 +324,12 @@ TEST (issue12_sampler_cutoff_automation_changes_the_sound)
             e += (double) l[i] * l[i];
         return e;
     };
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     sampler->prepare (48000.0);
     sampler->configure (c, 120.0);
     const auto open = energyOf (*sampler);
 
-    sampler->setParameter (lynx::samplerparam::cutoff, 0.0f); // the clip at its bottom: 20 Hz
+    sampler->setParameter (yw::samplerparam::cutoff, 0.0f); // the clip at its bottom: 20 Hz
     const auto automated = energyOf (*sampler);
     sampler->configure (c, 120.0); // the song re-applied unchanged (any edit elsewhere): the automation keeps its value
     const auto kept = energyOf (*sampler);

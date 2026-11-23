@@ -1,9 +1,9 @@
 #pragma once
 
-// Channel states built from parameter values for LYNX's own preset banks of FL's drum and physical-model engines
-// (round 168p): the same state layouts LYNX reads from FL projects (Fruit Kick version 0, Plucked!'s five integers,
+// Channel states built from parameter values for YW's own preset banks of FL's drum and physical-model engines
+// (round 168p): the same state layouts YW reads from FL projects (Fruit Kick version 0, Plucked!'s five integers,
 // Drumpad / Sakura model parameters, Drumaxx's "SSLF" + DMS4 kit stream, DrumSynth Live's 120 patches), filled with
-// LYNX's own values — no FL preset is copied or converted. No JUCE.
+// YW's own values — no FL preset is copied or converted. No JUCE.
 
 #include <optional>
 #include <string>
@@ -11,7 +11,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::bankstates
+namespace yw::bankstates
 {
 std::vector<std::uint8_t> fruitKickState (const std::vector<int>& sixParams);
 std::vector<std::uint8_t> pluckedState (const std::vector<int>& fiveParams);
@@ -43,4 +43,4 @@ std::vector<float> drumSynthParams (const std::vector<DrumSynthPatch>& patches);
 // A channel of `kind` ("fruitkick", "plucked", "drumpad", "sakura") from a list of parameter values (the bank audit
 // tool's text format); nullopt for another kind or too few values.
 std::optional<ChannelDef> channelFor (const std::string& kind, const std::vector<float>& values, const std::string& name = {});
-} // namespace lynx::bankstates
+} // namespace yw::bankstates

@@ -22,7 +22,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -33,7 +33,7 @@ constexpr int edgeX = 32, edgeTop = 56, edgeBottom = 96, halvesGap = 80; // the 
 constexpr int tileGap = 8;                                              // between tiles in a row
 constexpr int shadow = 3;                                               // the drop shadow around a picture
 constexpr float textTileSize = 17.0f, tabSize = 19.0f, allSize = 26.0f, titleSize = 26.0f;
-// (FL draws the label in Cuprum 21 / 17, a tall face: these sizes give LYNX's face the same cap heights on screen,
+// (FL draws the label in Cuprum 21 / 17, a tall face: these sizes give YW's face the same cap heights on screen,
 // measured on fl-1920-dynamics-hover: name ~15 px, category ~11 px)
 constexpr float labelNameSize = 25.0f, labelCategorySize = 20.0f, labelPadX = 10.0f, labelPadY = 4.0f;
 
@@ -284,7 +284,7 @@ public:
             return;
         }
         if (pressedTile >= 0)
-            repaint (hoverArea (pressedTile)); // (FL's highlight turns orange while pressed: LYNX's accent)
+            repaint (hoverArea (pressedTile)); // (FL's highlight turns orange while pressed: YW's accent)
         if (pressedTile < 0 && searchBounds().contains (e.getPosition()) && searchText.isEmpty())
         {
             showPlaceholder = true; // FL: "start to type to search plugins...."
@@ -428,10 +428,10 @@ private:
         std::vector<plugincatalog::BuiltinPlugin> genBuiltins, fxBuiltins;
         for (const auto& g : genEntries)
             if (g.folder != 3)
-                genBuiltins.push_back ({ g.key, g.key.rfind ("lynx:gen:", 0) == 0 ? g.key.substr (9) : g.key, true, g.folder == 1 });
+                genBuiltins.push_back ({ g.key, g.key.rfind ("yw:gen:", 0) == 0 ? g.key.substr (7) : g.key, true, g.folder == 1 });
         for (const auto& f : fxEntries)
             if (f.folder != 3)
-                fxBuiltins.push_back ({ f.key, f.key.rfind ("lynx:fx:", 0) == 0 ? f.key.substr (8) : f.key, f.flPlugin, f.flPlugin });
+                fxBuiltins.push_back ({ f.key, f.key.rfind ("yw:fx:", 0) == 0 ? f.key.substr (6) : f.key, f.flPlugin, f.flPlugin });
         // (a built-in plugin at the top of the database, in no folder, keeps its default category here: round 190bf left
         // the picker as it was, FL's picker was not seen with root entries)
         auto database = host.databaseFolders();
@@ -466,12 +466,12 @@ private:
         }
         // FL's Plugin database also lists Generators/Misc/Audio Clip and Automation Clip (.fst with no bitmap: text
         // tiles). Audio Clip adds an audio clip channel (no sample yet); Automation Clip an automation linked to nothing,
-        // its clip on a free Playlist track and its editor open (LYNX keeps automations out of the Channel Rack). A drag
+        // its clip on a free Playlist track and its editor open (YW keeps automations out of the Channel Rack). A drag
         // of it does the same where it is dropped on the Channel Rack or a mixer strip.
         {
             Tile audio;
             audio.name = "Audio Clip"; // (plugin names are not translated)
-            audio.key = "lynx:clip:audio";
+            audio.key = "yw:clip:audio";
             audio.category = "Misc";
             audio.generator = true;
             audio.native = false; // (no picture to draw: a text tile, as in FL)
@@ -485,7 +485,7 @@ private:
             add (std::move (audio));
             Tile automation;
             automation.name = "Automation Clip";
-            automation.key = "lynx:clip:automation";
+            automation.key = "yw:clip:automation";
             automation.category = "Misc";
             automation.generator = true;
             automation.native = false;
@@ -522,7 +522,7 @@ private:
             for (const auto& t : tiles)
                 if (t.generator == generators)
                     names.push_back (t.category);
-            (generators ? tabs.generators : tabs.effects) = pickerview::orderTabs (names, plugincatalog::lynxCategory, installedTab);
+            (generators ? tabs.generators : tabs.effects) = pickerview::orderTabs (names, plugincatalog::ywCategory, installedTab);
         }
         tab = tabs.all();
     }
@@ -769,7 +769,7 @@ private:
         using namespace theme;
         if (searchText.isEmpty() && ! showPlaceholder)
             return;
-        // FL: a magnifier and the text at the top centre (40 px; the hint 16 px), in its highlight colour (LYNX's accent)
+        // FL: a magnifier and the text at the top centre (40 px; the hint 16 px), in its highlight colour (YW's accent)
         const auto area = searchBounds();
         const auto text = searchText.isEmpty() ? tr ("start to type to search plugins....") : searchText;
         const auto f = juce::Font (font (searchText.isEmpty() ? 16.0f : 34.0f));
@@ -860,7 +860,7 @@ private:
             g.setColour (colour::textPrimary);
             g.setFont (font (labelNameSize, true));
             g.drawText (t.name, lines.removeFromTop (labelNameSize), juce::Justification::centredLeft, false);
-            g.setColour (colour::accent); // (FL: white at 0xB0; LYNX: its red)
+            g.setColour (colour::accent); // (FL: white at 0xB0; YW: its red)
             g.setFont (font (labelCategorySize));
             g.drawText (tr (t.category.c_str()), lines, juce::Justification::centredLeft, false);
         }
@@ -1186,4 +1186,4 @@ void takePluginPickerBackdrop (juce::Component& view, juce::Rectangle<int> scree
     if (auto* picker = dynamic_cast<PluginPickerView*> (&view))
         picker->takeBackdrop (screenArea);
 }
-} // namespace lynx
+} // namespace yw

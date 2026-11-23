@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::startup
+namespace yw::startup
 {
 namespace
 {
@@ -187,4 +187,4 @@ StereoSound makeSound (double sampleRate)
 
     return sound;
 }
-} // namespace lynx::startup
+} // namespace yw::startup

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Cross build of LYNX-bridge32.exe (round 176a): the 32-bit plugin bridge, Windows x86, with Zig (clang + MinGW-w64).
-# LYNX.exe (64-bit) runs every 32-bit VST2 / VST3 plugin in one of these processes (src/bridge/Bridge32Main.cpp).
+# Cross build of YW-bridge32.exe (round 176a): the 32-bit plugin bridge, Windows x86, with Zig (clang + MinGW-w64).
+# YW.exe (64-bit) runs every 32-bit VST2 / VST3 plugin in one of these processes (src/bridge/Bridge32Main.cpp).
 #
-#   scripts/build-bridge32.sh   -> $OUT/LYNX-bridge32.exe   (OUT defaults to build-win; objects in $OUT/x86)
+#   scripts/build-bridge32.sh   -> $OUT/YW-bridge32.exe   (OUT defaults to build-win; objects in $OUT/x86)
 #
-# Called by scripts/build-windows-zig.sh after LYNX.exe (it reuses that script's patched JUCE copies, the version header
+# Called by scripts/build-windows-zig.sh after YW.exe (it reuses that script's patched JUCE copies, the version header
 # and the shared object cache when it runs from there). Only the JUCE modules a plugin host needs are compiled.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -18,7 +18,7 @@ B="$OUT/x86"
 mkdir -p "$B/juce" "$B/app" "$OUT/shim"
 echo '#include <dbghelp.h>' > "$OUT/shim/Dbghelp.h"
 
-VERSION="$(sed -n 's/^project(LYNX VERSION \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt)"
+VERSION="$(sed -n 's/^project(YW VERSION \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt)"
 MODULES=(juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra juce_audio_basics juce_audio_processors)
 {
     echo '#pragma once'
@@ -45,7 +45,7 @@ src_of() {
     else echo "$JUCE_DIR/modules/$m"; fi
 }
 
-COMMON=(-target "$TARGET" -std=c++20 -O2 -DNDEBUG=1 -fno-sanitize=undefined -DLYNX_BRIDGE32=1
+COMMON=(-target "$TARGET" -std=c++20 -O2 -DNDEBUG=1 -fno-sanitize=undefined -DYW_BRIDGE32=1
         -include "$B/JuceConfig.h" -include cmake/mingw/mingw_compat.h
         -I"$OUT/shim" -I"$JUCE_DIR/modules" -I"$JUCE_DIR/modules/juce_audio_processors/format_types/VST3_SDK" -Ithird_party/sse2neon -Isrc)
 
@@ -87,16 +87,16 @@ for src in "${SOURCES[@]}"; do OBJECTS+=("$B/app/$(echo "$src" | tr / _).o"); do
 
 echo "Bridge32: resources and link..."
 OUT_ABS="$(cd "$OUT" && pwd)"
-if [[ ! -f "$OUT/lynx_version.h" ]]; then
+if [[ ! -f "$OUT/yw_version.h" ]]; then
     IFS=. read -r VMAJ VMIN VPAT <<< "$VERSION"
-    printf '#pragma once\n#define LYNX_VERSION_MAJOR %s\n#define LYNX_VERSION_MINOR %s\n#define LYNX_VERSION_PATCH %s\n#define LYNX_VERSION_STR "%s"\n' "$VMAJ" "$VMIN" "$VPAT" "$VERSION" > "$OUT/lynx_version.h"
+    printf '#pragma once\n#define YW_VERSION_MAJOR %s\n#define YW_VERSION_MINOR %s\n#define YW_VERSION_PATCH %s\n#define YW_VERSION_STR "%s"\n' "$VMAJ" "$VMIN" "$VPAT" "$VERSION" > "$OUT/yw_version.h"
 fi
-( cd resources && "$ZIG" rc /i "$OUT_ABS" /fo "$OUT_ABS/x86/LYNX-bridge32.res" LYNX-bridge32.rc )
-"$ZIG" c++ -target "$TARGET" -O2 -o "$OUT/LYNX-bridge32.exe" "$B"/juce/*.o "${OBJECTS[@]}" "$B/LYNX-bridge32.res" \
+( cd resources && "$ZIG" rc /i "$OUT_ABS" /fo "$OUT_ABS/x86/YW-bridge32.res" YW-bridge32.rc )
+"$ZIG" c++ -target "$TARGET" -O2 -o "$OUT/YW-bridge32.exe" "$B"/juce/*.o "${OBJECTS[@]}" "$B/YW-bridge32.res" \
     -Wl,--subsystem,windows \
     -lole32 -loleaut32 -luuid -lwinmm -lws2_32 -lshlwapi -lversion -lwininet -limm32 -lcomdlg32 \
     -lgdi32 -luser32 -lcomctl32 -lshell32 -ladvapi32 -lrpcrt4 -ldbghelp -lsetupapi -luxtheme -ldwmapi \
     -ld2d1 -ldcomp -ldwrite -ldxgi -ld3d11 -ldxguid -lwsock32 -lopengl32 -lpropsys -lmfplat -lmfuuid -lksuser
 # large-address aware: 4 GB for big sample-based 32-bit instruments (zig's linker has no flag for it)
-python3 -I scripts/pe_set_laa.py "$OUT/LYNX-bridge32.exe"
-ls -la "$OUT/LYNX-bridge32.exe"
+python3 -I scripts/pe_set_laa.py "$OUT/YW-bridge32.exe"
+ls -la "$OUT/YW-bridge32.exe"

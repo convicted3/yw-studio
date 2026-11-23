@@ -14,13 +14,13 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 enum class NoteTool
 {
     strum, arpeggiate, flip, randomise, scaleLevels, limit,
     quantize, chop, flam, lfo, claw, articulate, riffMachine, chordProgression,
-    euclidean, humanize, noteRepeat // LYNX's versions of FL's piano roll scripts (REA round 143)
+    euclidean, humanize, noteRepeat // YW's versions of FL's piano roll scripts (REA round 143)
 };
 
 const char* noteToolTitle (NoteTool tool); // English, for tr()
@@ -48,4 +48,4 @@ void noteToolChordGenerateForSnapshot (juce::Component& panel);
 
 // Opens the tool in its own window. `onFinished` runs after Accept or Revert (the note indices changed).
 void showNoteTool (AudioEngine& engine, NoteTool tool, std::vector<int> indices, std::int64_t grid, std::function<void()> onFinished = {});
-} // namespace lynx
+} // namespace yw

@@ -1,7 +1,7 @@
 #pragma once
 
-// Round 190jf (slice B17, LYNX's own; FL moves Playlist tracks with Shift+wheel / Move up / down and groups them by
-// dragging past the top of a row, which LYNX keeps): Alt+drag on a Playlist track header moves the track with its
+// Round 190jf (slice B17, YW's own; FL moves Playlist tracks with Shift+wheel / Move up / down and groups them by
+// dragging past the top of a row, which YW keeps): Alt+drag on a Playlist track header moves the track with its
 // folder. Where it lands decides its folder: dropped among a folder's tracks it joins that folder; dropped after a
 // folder's last track it stays outside; dragging to the right goes one level deeper per `stepPx` (as far as the place
 // allows). Plain functions, no JUCE (core/NoteEdit.h › moveFolder does the move).
@@ -10,7 +10,7 @@
 
 #include "core/NoteEdit.h"
 
-namespace lynx::folderdrag
+namespace yw::folderdrag
 {
 constexpr int stepPx = 24; // a level per 24 px to the right of where the drag started
 
@@ -52,4 +52,4 @@ inline bool changes (const Song& song, int track, const Drop& drop)
 {
     return drop.before >= 0 && (drop.before != track || drop.depth != noteedit::folderDepth (song, track));
 }
-} // namespace lynx::folderdrag
+} // namespace yw::folderdrag

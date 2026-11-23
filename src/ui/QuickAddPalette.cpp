@@ -16,7 +16,7 @@
 #include "core/SoundFontIndex.h"
 #include "ui/SoundFontEditor.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -146,7 +146,7 @@ public:
                                              c.instrument = kind;
                                              targets.addInstrument (c);
                                          },
-                                         std::string ("lynx:gen:") + name });
+                                         std::string ("yw:gen:") + name });
 
         // FL's Layer and Dashboard (round 164): no sound of their own
         instruments.all.push_back ({ tr ("Layer"), tr ("built-in"), [this] {
@@ -155,7 +155,7 @@ public:
                                         c.instrument = InstrumentKind::layer;
                                         targets.addInstrument (c);
                                     },
-                                     "lynx:gen:Layer" });
+                                     "yw:gen:Layer" });
         instruments.all.push_back ({ "Dashboard", tr ("built-in"), [this] {
                                         ChannelDef c;
                                         c.name = "Dashboard";
@@ -163,7 +163,7 @@ public:
                                         c.patcher.surface = surface::starterControls();
                                         targets.addInstrument (c);
                                     },
-                                     "lynx:gen:Dashboard" });
+                                     "yw:gen:Dashboard" });
         instruments.all.push_back ({ "Voltage Controller", tr ("built-in"), [this] {
                                         ChannelDef c;
                                         c.name = "Voltage Controller";
@@ -171,7 +171,7 @@ public:
                                         c.pluginState = voltage::write (voltage::Settings {});
                                         targets.addInstrument (c);
                                     },
-                                     "lynx:gen:Voltage Controller" });
+                                     "yw:gen:Voltage Controller" });
         instruments.all.push_back ({ "Fruity Video Player", tr ("built-in"), [this] {
                                         ChannelDef c;
                                         c.name = "Fruity Video Player";
@@ -179,7 +179,7 @@ public:
                                         c.pluginState = video::write (video::Settings {});
                                         targets.addInstrument (c);
                                     },
-                                     "lynx:gen:Fruity Video Player" });
+                                     "yw:gen:Fruity Video Player" });
 
         // FL's own instrument engines (round 142): those this PC can make (the user's FL installation)
         for (const auto& e : natives::instrumentEngines())
@@ -188,9 +188,9 @@ public:
                                                 if (auto c = natives::makeChannel (kind, flStudioAccess()))
                                                     targets.addInstrument (*c);
                                             },
-                                             std::string ("lynx:gen:") + e.name });
+                                             std::string ("yw:gen:") + e.name });
 
-        // LYNX Soundfont (round 158): the empty player, and every indexed SoundFont preset ("piano", "808"...)
+        // YW Soundfont (round 158): the empty player, and every indexed SoundFont preset ("piano", "808"...)
         instruments.all.push_back ({ "YW Soundfont", tr ("built-in"), [this] { targets.addInstrument (sf::makeChannel()); } });
         ensureSoundFontIndex();
         for (const auto& hit : sf::PresetIndex::shared().search ({}, 5000))
@@ -209,8 +209,8 @@ public:
                                              if (const auto fx = newAddableEffect (kind, bpm))
                                                  targets.addEffect (*fx);
                                          },
-                                         std::string ("lynx:fx:") + effectInfo (kind).name });
-        // LYNX equivalents of well-known third-party effects (the substitutes table): findable by the product's name
+                                         std::string ("yw:fx:") + effectInfo (kind).name });
+        // YW equivalents of well-known third-party effects (the substitutes table): findable by the product's name
         for (const auto& entry : pluginSubstitutes())
             if (! entry.instrument)
                 effects.all.push_back ({ tr ("{0} (YW Studio equivalent of {1})", { juce::String::fromUTF8 (effectInfo (entry.effect).name), juce::String::fromUTF8 (entry.product.c_str()) }),
@@ -393,4 +393,4 @@ std::unique_ptr<juce::Component> makeQuickAddPalette (AudioEngine& engine, Quick
 {
     return std::make_unique<QuickAddPalette> (engine, std::move (targets));
 }
-} // namespace lynx
+} // namespace yw

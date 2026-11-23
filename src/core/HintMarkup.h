@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::hintmarkup
+namespace yw::hintmarkup
 {
 struct Segment
 {
@@ -117,4 +117,4 @@ inline std::string plain (const std::string& text, const std::vector<std::string
 
     return out;
 }
-} // namespace lynx::hintmarkup
+} // namespace yw::hintmarkup

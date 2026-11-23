@@ -1,5 +1,5 @@
 // Round 190gx: Beats' law switch — Classic (projects saved before 190gx, bit for bit as before) and Measured (Live 12.4's
-// renders: new channels, imports). The .lynx side (the "beatsLaw190gx" mark) is checked by the app's --selftest
+// renders: new channels, imports). The .yw side (the "beatsLaw190gx" mark) is checked by the app's --selftest
 // (beatslaw190gx_saved); the Classic renders by als175a's tests run on both laws.
 
 #include "core/TimeStretch.h"
@@ -7,10 +7,10 @@
 
 TEST (beatslaw190gx_defaults_lists_and_cache_keys)
 {
-    using namespace lynx;
+    using namespace yw;
     const WarpModeSettings fresh;
     CHECK (fresh.beatsLaw == WarpModeSettings::beatsLawPitchAware); // (round 190ik's default; Measured before it)
-    // the .lynx list: a 190fm list had nine numbers (Classic), the tenth is the law (round 190ik: the eleventh the
+    // the .yw list: a 190fm list had nine numbers (Classic), the tenth is the law (round 190ik: the eleventh the
     // Texture / Complex Pro law)
     const std::array<double, 9> nine { 6, 2, 100, 30, 65, 25, 100, 128, 0 };
     CHECK (warpmodes::fromList (nine, nine.size()).beatsLaw == WarpModeSettings::beatsLawClassic);
@@ -37,7 +37,7 @@ TEST (beatslaw190gx_defaults_lists_and_cache_keys)
 
 TEST (beatslaw190gx_other_methods_ignore_the_law)
 {
-    using namespace lynx;
+    using namespace yw;
     SampleData in;
     in.sampleRate = 44100.0;
     for (int i = 0; i < 44100; ++i)
@@ -51,11 +51,11 @@ TEST (beatslaw190gx_other_methods_ignore_the_law)
 
 TEST (beatslaw190gx_als_import_gets_the_newest_law)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = clipenv190gi::dcSong();
     song.channels[0].sampler.keepPitch = true;
     song.channels[0].sampler.stretchMethod = StretchMethod::beats;
-    song.channels[0].sampler.warpModes.beatsLaw = WarpModeSettings::beatsLawClassic; // (whatever LYNX had: Live has no law)
+    song.channels[0].sampler.warpModes.beatsLaw = WarpModeSettings::beatsLawClassic; // (whatever YW had: Live has no law)
     const auto back = livefacts190gx::reimport (exportAls (song).xml);
     CHECK (back.has_value());
     bool any = false;

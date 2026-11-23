@@ -1,4 +1,4 @@
-// Round 190ly (Valhalla → LYNX stand-ins, part 2). Included after Parity190lsTests.inc.
+// Round 190ly (Valhalla → YW stand-ins, part 2). Included after Parity190lsTests.inc.
 // 1. The owner's perf rule: Atrium's dense 32-line late tank (verbs::atrium::reaLaw, round 190ls, +48 % instructions) is
 //    set only when a ValhallaRoom is translated (the substitute table's `replaced = #24=1`); a new Atrium — and one added
 //    by hand from a substitute menu — keeps the light 8-line tank, and renders as revision 1 did (Parity190ls's gold).
@@ -7,12 +7,12 @@
 #include <string>
 
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/PluginSubstitutes.h"
 
 TEST (parity190ly_atrium_dense_tank_only_for_a_translated_valhallaroom)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace at = verbs::atrium;
     // a new Atrium: revision 1, the light tank, saved as before round 190ls (one value past the controls)
     const auto fresh = makeEffectSlot (EffectKind::atrium);
@@ -53,20 +53,20 @@ TEST (parity190ly_atrium_dense_tank_only_for_a_translated_valhallaroom)
             CHECK (e.replacedPreset.empty());
     // the table grammar: replaced items take hidden "#<index>" positions like preset items, and bad ones count as errors
     int errors = 0;
-    const auto t = parseSubstituteTable ("[x]\nproduct = X\nlynx = Atrium\nnames = X\nreplaced = #24=1; Decay=0.5\n", &errors);
+    const auto t = parseSubstituteTable ("[x]\nproduct = X\nyw = Atrium\nnames = X\nreplaced = #24=1; Decay=0.5\n", &errors);
     CHECK (errors == 0 && t.size() == 1);
     if (t.size() == 1)
         CHECK (t[0].replacedPreset.size() == 2 && t[0].preset.empty() && t[0].replacedPreset[0].first == at::reaLaw);
-    parseSubstituteTable ("[x]\nproduct = X\nlynx = Atrium\nnames = X\nreplaced = #3=1\n", &errors); // a control: by name only
+    parseSubstituteTable ("[x]\nproduct = X\nyw = Atrium\nnames = X\nreplaced = #3=1\n", &errors); // a control: by name only
     CHECK (errors == 1);
 }
 
 namespace parity190ly
 {
 // stereo render of a slot at `sr` in blocks of 256 from a reset
-inline void render (const lynx::EffectSlot& slot, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& slot, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
@@ -86,7 +86,7 @@ inline double windowDb (const std::vector<float>& l, const std::vector<float>& r
 //    another phase at every rate; the hidden rateLaw turns it onto 48 kHz's (refcap030 sr96 3.31 -> 4.81, sr48 identical)
 TEST (parity190ly_spiral_loop_phase_does_not_depend_on_the_rate)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     CHECK (effectInfo (EffectKind::spiralEcho).params.size() == (std::size_t) sp::paramCount); // hidden
     CHECK ((int) sp::rateLaw == (int) sp::revision + 1);
@@ -128,7 +128,7 @@ TEST (parity190ly_spiral_loop_phase_does_not_depend_on_the_rate)
 //    and its diffusion keeps the echo time. Hidden valhallaLaw, set by the ValhallaDelay translator only
 TEST (parity190ly_echoform_valhalla_law_fades_at_feedback_100_and_keeps_the_time)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ef = echosuite::echoform;
     // (rollup 0.1.30 step 10: after round 190kw's lineLaw and round 190lf's five hybrid values; the table's `replaced` item
     // names the index: it must set this law and nothing of the others)
@@ -191,7 +191,7 @@ TEST (parity190ly_echoform_valhalla_law_fades_at_feedback_100_and_keeps_the_time
 // 4. ValhallaVintageVerb Concert Hall at short decays: a trim at 0.51 s faded out by 2.9 s (hidden shortTrim)
 TEST (parity190ly_epoch_concert_hall_short_decay_trim)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ep = verbs::epoch;
     // (rollup 0.1.30 step 10: after round 190kw's loopLaw, which a new Epoch also runs)
     CHECK (ep::shortTrim == ep::loopLaw + 1 && effectInfo (EffectKind::epochVerb).params.size() == (std::size_t) ep::paramCount);

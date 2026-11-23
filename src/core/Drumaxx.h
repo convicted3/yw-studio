@@ -24,7 +24,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the engine can read this Drumaxx state
 bool drumaxxStateUsable (const std::vector<std::uint8_t>& state);
@@ -55,4 +55,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, int block = 512);
 } // namespace drumaxx
-} // namespace lynx
+} // namespace yw

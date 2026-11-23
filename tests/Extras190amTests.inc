@@ -1,11 +1,11 @@
-// Round 190am: the list behind Settings > LYNX extras (core/LynxExtras.h).
+// Round 190am: the list behind Settings > YW extras (core/YwExtras.h).
 
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/Preferences.h"
 
 TEST (extras190am_extras_list)
 {
-    using namespace lynx;
+    using namespace yw;
     std::set<std::string_view> ids, keys;
     int count = 0;
     for (const auto& item : extras::items)

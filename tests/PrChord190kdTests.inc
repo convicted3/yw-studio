@@ -5,32 +5,32 @@
 
 namespace prchord190kd
 {
-inline lynx::Note note (int key, std::int64_t start, std::int64_t length, int channel = 0)
+inline yw::Note note (int key, std::int64_t start, std::int64_t length, int channel = 0)
 {
-    lynx::Note n;
+    yw::Note n;
     n.key = key;
     n.start = start;
     n.length = length;
     n.channel = channel;
     return n;
 }
-inline lynx::prtools::Chord chord (int root, std::vector<int> intervals, int bass = -1)
+inline yw::prtools::Chord chord (int root, std::vector<int> intervals, int bass = -1)
 {
-    lynx::prtools::Chord c;
+    yw::prtools::Chord c;
     c.root = root;
     c.intervals = std::move (intervals);
     c.bass = bass;
     return c;
 }
-inline lynx::chordstrip::Strip strip (std::initializer_list<lynx::prtools::Chord> chords, int tonic = 0, bool minor = false)
+inline yw::chordstrip::Strip strip (std::initializer_list<yw::prtools::Chord> chords, int tonic = 0, bool minor = false)
 {
-    return lynx::chordstrip::fromChords (std::vector<lynx::prtools::Chord> (chords), tonic, minor, 4 * lynx::ppq, 4, false);
+    return yw::chordstrip::fromChords (std::vector<yw::prtools::Chord> (chords), tonic, minor, 4 * yw::ppq, 4, false);
 }
 } // namespace prchord190kd
 
 TEST (prchord190kd_block_notes_inversion_voicing_bass)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     chordstrip::Block b;
     b.chord = chord (0, { 0, 4, 7 }); // C major, octave 4: C4 E4 G4 = 60 64 67
@@ -69,7 +69,7 @@ TEST (prchord190kd_block_notes_inversion_voicing_bass)
 
 TEST (prchord190kd_parse_names_and_numerals)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     // FL's Type a progression: names or numerals, separated by commas, dashes, bars or spaces
     const auto a = chordstrip::parseText ("C, G, Am, F", 0, false);
@@ -98,7 +98,7 @@ TEST (prchord190kd_parse_names_and_numerals)
 
 TEST (prchord190kd_generate_modes_keep_locked_blocks)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     auto s = strip ({ chord (0, { 0, 4, 7 }), chord (7, { 0, 4, 7 }), chord (9, { 0, 3, 7 }), chord (5, { 0, 4, 7 }) });
     s.blocks[1].locked = true;
@@ -113,7 +113,7 @@ TEST (prchord190kd_generate_modes_keep_locked_blocks)
         CHECK (r.blocks.size() == 4);
         CHECK (r.blocks[1].chord == lockedBefore.chord && r.blocks[1].locked);
         CHECK (r.tonic == 0 && ! r.minor); // Rework keeps the key
-        for (const auto& b : r.blocks) // LYNX's generator stays in the key (diatonic roots)
+        for (const auto& b : r.blocks) // YW's generator stays in the key (diatonic roots)
             CHECK (chordstrip::inKey (r, b.chord.root));
     }
     // Start over: a fresh key when nothing is locked, and the blocks' own changes reset
@@ -145,7 +145,7 @@ TEST (prchord190kd_generate_modes_keep_locked_blocks)
 
 TEST (prchord190kd_analyze_reads_the_notes_under_each_block)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     const auto bar = 4 * ppq;
     // bar 1: A C E (A minor), bar 2: F A C (F), bar 3: G B D (G), bar 4: C G C with E two octaves down (C/E: FL names a
@@ -183,7 +183,7 @@ TEST (prchord190kd_analyze_reads_the_notes_under_each_block)
 
 TEST (prchord190kd_learn_from_midi_and_snap)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     // the played keys name the chord; the lowest is the bass
     auto c = chordstrip::learnChord ({ 57, 60, 64, 67 }); // A C E G = Am7
@@ -212,7 +212,7 @@ TEST (prchord190kd_learn_from_midi_and_snap)
 
 TEST (prchord190kd_write_options_and_non_chord_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     const auto bar = 4 * ppq;
     const auto s = strip ({ chord (0, { 0, 4, 7 }), chord (5, { 0, 4, 7 }) }); // C | F, a bar each (C4 E4 G4 + C3; C4 F4 A4 + F3)
@@ -305,7 +305,7 @@ TEST (prchord190kd_write_options_and_non_chord_notes)
 
 TEST (prchord190kd_count_passing_alternatives_voice_leading)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     auto s = strip ({ chord (0, { 0, 4, 7 }), chord (7, { 0, 4, 7 }), chord (9, { 0, 3, 7 }), chord (5, { 0, 4, 7 }) });
     chordstrip::GenerateOptions o;
@@ -339,7 +339,7 @@ TEST (prchord190kd_count_passing_alternatives_voice_leading)
 
 TEST (prchord190kd_key_guess_regenerate_and_rework_change)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
     // FL's key guess on open (REA §3.9): the FL session's line A3 C4 E4 A4 B4 D5 E5 G#4 A4 — A Ionian and A Aeolian tie
     // at 8 in-scale notes and root score 3; FL's order keeps the Major: "A Major (Ionian)", as FL 2026 showed
@@ -386,9 +386,9 @@ TEST (prchord190kd_key_guess_regenerate_and_rework_change)
 
 TEST (prchord190kd_analyze_sparse_block_prefers_common_chords)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace prchord190kd;
-    // two notes under a bar (G#4 for half a beat, A4 for a beat): FL's per-block law would name G#m7b5 by a hair; LYNX's
+    // two notes under a bar (G#4 for half a beat, A4 for a beat): FL's per-block law would name G#m7b5 by a hair; YW's
     // stand-in for FL's style vocabulary (the type priority) keeps the common chord, A with its major seventh
     const auto bar = 4 * ppq;
     const auto r = chordstrip::analysis::analyse ({ note (68, 0, ppq / 2), note (69, 0, ppq) }, 0, bar, chordstrip::analysis::sequence());

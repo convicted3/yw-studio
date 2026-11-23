@@ -1,13 +1,13 @@
 #pragma once
 
-// Ableton Live 12's MIDI Transformations (round 190o, GAPMAP #8 "MT"), LYNX additions beside FL's Piano roll tools
+// Ableton Live 12's MIDI Transformations (round 190o, GAPMAP #8 "MT"), YW additions beside FL's Piano roll tools
 // (core/NoteTools.h, core/PianoRollTools.h stay as they are). Each tool takes the selected notes and returns what
 // replaces them, so a panel can preview from the untouched originals every time a control moves (Live's Auto Apply).
 //
-// Behaviour proven on a set saved by Live 12.4.16 (/mnt/e/lynx-work/ableton190o/live/mt-saved Project/mt-saved.als,
+// Behaviour proven on a set saved by Live 12.4.16 (/mnt/e/yw-work/ableton190o/live/mt-saved Project/mt-saved.als,
 // notes in docs/analise/REA_rodada190o.md); tests/MidiTools190oTests.inc holds Live's output note for note. Tags:
 //   [LIVE]     seen in that save            [MAN] Live 12 manual, "MIDI Tools" (not measured)
-//   [INFERRED] LYNX's reading where neither says
+//   [INFERRED] YW's reading where neither says
 // `grid` is the editor's grid in ticks (Live's percentages are of one grid step). Random parts draw from `seed`, so a
 // preview and its Apply give the same notes. No JUCE.
 
@@ -17,7 +17,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::miditools
+namespace yw::miditools
 {
 using Notes = std::vector<Note>;
 
@@ -75,7 +75,7 @@ struct OrnamentOptions
 };
 // [LIVE] the ornament notes of a negative position end at the note's start and the note is untouched; with a positive
 // position they start where the note started and the note begins after them, keeping its end. Ornaments that would
-// begin before tick 0 are left out (Live keeps them at negative times; a LYNX pattern starts at 0).
+// begin before tick 0 are left out (Live keeps them at negative times; a YW pattern starts at 0).
 Notes ornament (Notes notes, const OrnamentOptions& options, std::int64_t grid);
 
 // --- Recombine ---------------------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ struct TimeWarpOptions
 // [LIVE round 190aa, 7 settings within 1e-5 beats] A note at time t moves to first + c * integral from the first start
 // to t of r(x), where r is 1 / speed interpolated linearly between the breakpoints that are on (flat beyond them) and
 // c makes the last end stay where it was (Fit; else c = 1). With Note End off the lengths stay and Live's c differs a
-// little (0.2 %, up to 7 ticks on the measured clip; LYNX keeps Include's c).
+// little (0.2 %, up to 7 ticks on the measured clip; YW keeps Include's c).
 // The span the breakpoints refer to for these notes (the range given, else the whole bars they touch).
 std::pair<std::int64_t, std::int64_t> timeWarpRange (const Notes& notes, const TimeWarpOptions& options);
 Notes timeWarp (Notes notes, const TimeWarpOptions& options, std::int64_t grid);
@@ -222,4 +222,4 @@ Notes quantize (Notes notes, const QuantizeOptions& options, std::int64_t grid);
 std::vector<int> replaceNotes (Pattern& pattern, const std::vector<int>& indices, const Notes& result);
 // The notes at `indices`, in pattern order.
 Notes notesAt (const Pattern& pattern, const std::vector<int>& indices);
-} // namespace lynx::miditools
+} // namespace yw::miditools

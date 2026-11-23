@@ -9,7 +9,7 @@
 #include "ui/Theme.h"
 #include "ui/TextCache.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace
 {
@@ -516,7 +516,7 @@ void HintBar::paint (juce::Graphics& g)
 
 namespace
 {
-const juce::Identifier quickTipProperty ("lynxQuickTip");
+const juce::Identifier quickTipProperty ("ywQuickTip");
 
 juce::Font tipNameFont() { return juce::Font (theme::font (theme::type::caption)); }
 juce::Font tipKeyFont() { return juce::Font (theme::font (theme::type::caption - 1.0f)); }
@@ -712,4 +712,4 @@ void TweakReadout::mouseDown (const juce::MouseEvent&)
         onClick();
 }
 
-} // namespace lynx::ui
+} // namespace yw::ui

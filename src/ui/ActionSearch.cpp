@@ -4,7 +4,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -362,4 +362,4 @@ void ActionSearchOverlay::parentSizeChanged()
     if (auto* p = getParentComponent())
         setBounds (p->getLocalBounds());
 }
-} // namespace lynx
+} // namespace yw

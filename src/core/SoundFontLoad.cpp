@@ -1,4 +1,4 @@
-// LYNX Soundfont: reading .sf2 / .sf3 files (round 158). TinySoundFont merges the generators into regions; LYNX reads
+// YW Soundfont: reading .sf2 / .sf3 files (round 158). TinySoundFont merges the generators into regions; YW reads
 // and validates the RIFF chunks itself (so damaged files are rejected before TinySoundFont indexes them) and keeps the
 // samples as 16-bit. See core/SoundFont.h.
 
@@ -48,7 +48,7 @@
  #pragma warning(pop)
 #endif
 
-namespace lynx::sf
+namespace yw::sf
 {
 namespace
 {
@@ -61,7 +61,7 @@ struct Span
     std::size_t size = 0;
 };
 
-// The chunks LYNX needs, located inside the file's bytes
+// The chunks YW needs, located inside the file's bytes
 struct Chunks
 {
     Span inam, smpl, sm24;
@@ -704,4 +704,4 @@ std::vector<std::uint8_t> makeTestFont (const std::vector<TestPreset>& presets, 
     out.chunk ("LIST", pdta.b);
     return out.b;
 }
-} // namespace lynx::sf
+} // namespace yw::sf

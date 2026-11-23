@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checks an unpacked LYNX plugin download (scripts/package-plugins.sh) the way hosts will load it (round 188b,
+# Checks an unpacked YW plugin download (scripts/package-plugins.sh) the way hosts will load it (round 188b,
 # docs/PLUGIN_EXPORT.md), on Windows (Git Bash), Linux or macOS:
 #   plugexporttest  the CLAP, each VST3 and each LV2 (Linux, round 190ov): scan, null test against the engine, automation, state, editor, memory, CPU
 #   pluginval       each VST3, strictness 10, no GUI tests (no screen on CI)
@@ -12,8 +12,8 @@
 set -uo pipefail
 pkg="$1" tester="$2" pluginval="$3" validator="$4" reports="$5" pictures="${6:-}"
 mkdir -p "$reports"
-export LYNX_PROFILE_DIR="${LYNX_PROFILE_DIR:-$reports/profile}"
-export LYNX_TEST_MODE=1
+export YW_PROFILE_DIR="${YW_PROFILE_DIR:-$reports/profile}"
+export YW_TEST_MODE=1
 
 # (Windows tools want Windows paths)
 native() {
@@ -56,7 +56,7 @@ done
 for p in "${clap[@]}"; do
     run "clap-validator $(basename "$p")" "$reports/clap-validator.log" "$validator" validate --in-process "$(native "$p")"
 done
-# (two of lv2lint's checks are skipped, both about JUCE's LV2 wrapper, not LYNX: "Plugin Run" fails any run() that takes a
+# (two of lv2lint's checks are skipped, both about JUCE's LV2 wrapper, not YW: "Plugin Run" fails any run() that takes a
 # mutex, and JUCE's run() takes the processor's callback lock, uncontended unless the host is loading a state, as its VST3
 # wrapper does; "UI Resize Interface" fails the ui:resize extension data JUCE's editor offers for hosts that resize it)
 if [[ -n "${LV2LINT:-}" ]]; then
@@ -68,7 +68,7 @@ if [[ -n "${LV2LINT:-}" ]]; then
 fi
 
 echo
-echo "LYNX plugin checks ($pkg):"
+echo "YW plugin checks ($pkg):"
 fail=0
 for r in ${results[@]+"${results[@]}"}; do
     echo "  $r"

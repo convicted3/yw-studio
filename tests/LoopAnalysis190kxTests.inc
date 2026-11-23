@@ -1,5 +1,5 @@
 // Round 190kx: loop analysis — the key and tempo of the user's own loops (core/LoopAnalysis.h). The laws measured on
-// LYNX's own synthetic corpus (tests/LoopCorpus190kx.h; the whole table: tools/loop_accuracy.cpp), the cache, its text
+// YW's own synthetic corpus (tests/LoopCorpus190kx.h; the whole table: tools/loop_accuracy.cpp), the cache, its text
 // form, the worker, and what the Simple drop's switch defaults to.
 
 #include <atomic>
@@ -12,7 +12,7 @@
 namespace loop190kx
 {
 inline bool sameTempo (double got, double want) { return got > 0.0 && std::abs (got / want - 1.0) < 0.01; }
-inline bool sameKey (const std::optional<lynx::keyfollow::LoopKey>& k, const loopcorpus::Item& it)
+inline bool sameKey (const std::optional<yw::keyfollow::LoopKey>& k, const loopcorpus::Item& it)
 {
     return k && k->root == it.keyRoot && k->minor == it.minor;
 }
@@ -22,7 +22,7 @@ inline std::string group (const loopcorpus::Item& it) { return it.name.substr (0
 
 TEST (loop190kx_tempo_beats_the_old_detector_in_every_class)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace loop190kx;
     std::map<std::string, std::pair<int, int>> exact; // group -> (new, legacy)
     int fresh = 0, old = 0, wholeNew = 0, wholeOld = 0, loops = 0;
@@ -54,7 +54,7 @@ TEST (loop190kx_tempo_beats_the_old_detector_in_every_class)
 
 TEST (loop190kx_key_beats_the_old_detector_and_drums_get_no_key)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace loop190kx;
     int fresh = 0, old = 0, keyed = 0, falseNew = 0, falseOld = 0, unkeyed = 0;
     std::map<std::string, std::pair<int, int>> exact;
@@ -91,7 +91,7 @@ TEST (loop190kx_key_beats_the_old_detector_and_drums_get_no_key)
 
 TEST (loop190kx_name_and_acid_come_first_and_long_files_are_left_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto drums = loopcorpus::drums ("house", 124.0, 4, 3);
     // the audio says 124; the name says 120 and A minor, ACID says 16 beats: ACID, then the name, win (they are the
     // maker's own data)
@@ -105,7 +105,7 @@ TEST (loop190kx_name_and_acid_come_first_and_long_files_are_left_alone)
     CHECK (r.keySource == loopanalysis::KeySource::none && ! r.key); // (drums: no key)
     CHECK (loopanalysis::tempoText (r) == "124 BPM");
     // over 70 seconds: a song or a take, not analysed
-    lynx::SampleData song;
+    yw::SampleData song;
     song.sampleRate = 44100.0;
     song.left.assign ((std::size_t) (71.0 * 44100.0), 0.0f);
     for (std::size_t i = 0; i < drums.audio->frames(); ++i)
@@ -132,7 +132,7 @@ TEST (loop190kx_name_and_acid_come_first_and_long_files_are_left_alone)
 
 TEST (loop190kx_cache_is_per_file_stamp_and_round_trips_as_text)
 {
-    using namespace lynx;
+    using namespace yw;
     loopanalysis::Cache cache;
     loopanalysis::Result r;
     r.seconds = 7.74, r.bpm = 124.0, r.tempoConfidence = 0.8, r.beats = 16.0, r.wholeBeats = true;
@@ -163,7 +163,7 @@ TEST (loop190kx_cache_is_per_file_stamp_and_round_trips_as_text)
 
 TEST (loop190kx_worker_analyses_what_is_asked_once_and_answers_cached_files_at_once)
 {
-    using namespace lynx;
+    using namespace yw;
     loopanalysis::Cache::shared().clear();
     const auto drums = loopcorpus::drums ("rock", 100.0, 4, 5);
     std::atomic<int> decoded { 0 }, answered { 0 };
@@ -174,7 +174,7 @@ TEST (loop190kx_worker_analyses_what_is_asked_once_and_answers_cached_files_at_o
         size = 100, modified = 7;
         return true;
     };
-    cb.decode = [&] (const std::string&, double, lynx::SampleData& out, double& total) {
+    cb.decode = [&] (const std::string&, double, yw::SampleData& out, double& total) {
         ++decoded;
         out = *drums.audio;
         total = (double) out.frames() / out.sampleRate;
@@ -201,5 +201,5 @@ TEST (loop190kx_worker_analyses_what_is_asked_once_and_answers_cached_files_at_o
 TEST (loop190kx_simple_drop_switch_is_on_by_default)
 {
     // BandLab fits its loops to the project's tempo and key: the Simple layout's drops do it by default
-    CHECK (lynx::loopanalysis::dropDetects().load());
+    CHECK (yw::loopanalysis::dropDetects().load());
 }

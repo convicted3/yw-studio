@@ -9,7 +9,7 @@
 //
 // The bands (low < 250 Hz, mid 250 Hz - 4 kHz, high > 4 kHz) come from 4th-order Linkwitz-Riley-style
 // crossovers (two cascaded 2nd-order Butterworth sections); spectralColour() turns a band mix into a colour of
-// LYNX's palette (low = warm red-orange, mid = soft lime, high = cool cyan-white). Own design (clean-room).
+// YW's palette (low = warm red-orange, mid = soft lime, high = cool cyan-white). Own design (clean-room).
 //
 // JUCE-free; analyse() is pure and runs on a worker thread.
 
@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::wave
+namespace yw::wave
 {
 constexpr std::size_t minBucket = 64;          // frames per level-0 column (short files)
 constexpr std::size_t maxBaseColumns = 1 << 18; // longer files use a bigger level-0 bucket (memory bound)
@@ -87,4 +87,4 @@ inline Rgb spectralColour (const Point& p) noexcept { return spectralColour (ban
 constexpr Rgb lowColour { 1.00f, 0.38f, 0.20f };  // warm red-orange
 constexpr Rgb midColour { 0.70f, 0.88f, 0.42f };  // soft lime
 constexpr Rgb highColour { 0.52f, 0.90f, 1.00f }; // cool cyan-white
-} // namespace lynx::wave
+} // namespace yw::wave

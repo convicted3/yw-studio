@@ -10,7 +10,7 @@
 
 TEST (textfit190oo_menu_squeeze_keeps_the_panels_at_1920)
 {
-    using namespace lynx;
+    using namespace yw;
     using toolbarlayout::Group;
     // the Pattern toolbar's panels in their tight form at 1920 px (MainComponent::layoutToolbar: 31 px rows, gaps 12)
     std::array<int, toolbarlayout::groupCount> widths {};
@@ -52,8 +52,8 @@ TEST (textfit190oo_menu_squeeze_keeps_the_panels_at_1920)
 
 TEST (textfit190oo_knob_captions)
 {
-    using lynx::textfit::CaptionFit;
-    using lynx::textfit::captionFit;
+    using yw::textfit::CaptionFit;
+    using yw::textfit::captionFit;
     // the Misc page: 50 px pitch, 46 px for the caption
     CHECK (captionFit (40.0f, 46.0f, true, true) == CaptionFit::normal);    // en "CUT GROUP"
     CHECK (captionFit (57.0f, 46.0f, false, true) == CaptionFit::normal);   // de "WIEDERHOLEN": squeezed to ~0.81

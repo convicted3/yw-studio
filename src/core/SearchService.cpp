@@ -20,13 +20,13 @@
  #include <pthread/qos.h>
 #endif
 
-namespace lynx::search
+namespace yw::search
 {
 namespace
 {
 // Round 190os: the worker's own work — loading the index, the background passes over the folders, reloads — runs at the
 // system's background priority (Windows: background mode, which also lowers its disk priority; macOS: the utility
-// QoS class); a search the user typed runs at the normal priority. A pass at the start of LYNX took ~55 % of a core
+// QoS class); a search the user typed runs at the normal priority. A pass at the start of YW took ~55 % of a core
 // for seconds; on a PC with 2 CPUs and an overloaded song that starved the screen (frame gaps of 220-254 ms, the
 // graphics driver's thread waiting behind it: perf190os/HANDOFF.md). Linux: unchanged (an unprivileged thread cannot
 // come back from a lower priority).
@@ -380,7 +380,7 @@ void Service::runSearch (SearchJob& job)
                 if (! stopping && latestSearch == job.id && job.done)
                     job.done (partial);
             }
-            if (t - lastSaved >= 60000 && listed > savedAt) // a long first walk is kept even if LYNX closes meanwhile
+            if (t - lastSaved >= 60000 && listed > savedAt) // a long first walk is kept even if YW closes meanwhile
             {
                 lastSaved = t;
                 savedAt = listed;
@@ -537,4 +537,4 @@ bool Service::runPass (Pass& pass)
         callbacks.indexChanged();
     return true;
 }
-} // namespace lynx::search
+} // namespace yw::search

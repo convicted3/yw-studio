@@ -4,29 +4,29 @@
 
 namespace fpc190z
 {
-inline lynx::fpc::Envelope envelope (int index, std::vector<lynx::fpc::EnvelopePoint> points, int decay = -1, int loop = -1, int sus = -1,
+inline yw::fpc::Envelope envelope (int index, std::vector<yw::fpc::EnvelopePoint> points, int decay = -1, int loop = -1, int sus = -1,
                                      std::array<int, 4> knobs = { 128, 128, 0, 128 }, bool on = true)
 {
-    lynx::fpc::Envelope e;
+    yw::fpc::Envelope e;
     e.index = index;
     e.points = std::move (points);
     e.tail = { 0, on ? -1 : 0, decay, loop, sus, knobs[0], knobs[1], knobs[2], knobs[3] };
     return e;
 }
 
-// FL's render of round 190z's project z1_env (/mnt/e/lynx-work/fpc190z/flp/z1_env.flp → fl/out/z1_env/z1_env.wav,
+// FL's render of round 190z's project z1_env (/mnt/e/yw-work/fpc190z/flp/z1_env.flp → fl/out/z1_env/z1_env.wav,
 // FL Studio 2026 /R, 16-bit): a 440 Hz sine layer per pad, the gain at the start of FPC's tick k (48 samples at
 // 44.1 kHz) divided by the pad's level. `released`: the first tick boundary after the note's end.
 struct Case
 {
-    lynx::fpc::Envelope env;
+    yw::fpc::Envelope env;
     int released;
     std::vector<std::pair<int, float>> fl;
 };
 
 inline std::vector<Case> flCases()
 {
-    using P = lynx::fpc::EnvelopePoint;
+    using P = yw::fpc::EnvelopePoint;
     std::vector<Case> c;
     // the kits' decay: 1 → 0 in 1.25 units (0.625 s), tension 0.2
     c.push_back ({ envelope (0, { P { 0, 1, 0, 0 }, P { 1.25, 0, 0.2f, 0 } }), 6,
@@ -52,27 +52,27 @@ inline std::vector<Case> flCases()
 }
 
 // a constant sample (FPC's gains read straight off the output)
-inline std::shared_ptr<const lynx::SampleData> dc (std::size_t frames, float value = 0.5f)
+inline std::shared_ptr<const yw::SampleData> dc (std::size_t frames, float value = 0.5f)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     d->left.assign (frames, value);
     return d;
 }
 
-inline lynx::fpc::Layer layer (const std::string& path, int low = 0, int high = 127)
+inline yw::fpc::Layer layer (const std::string& path, int low = 0, int high = 127)
 {
-    lynx::fpc::Layer l;
-    l.path = lynx::fpc::fromUtf8 (path);
+    yw::fpc::Layer l;
+    l.path = yw::fpc::fromUtf8 (path);
     l.velocityLow = low;
     l.velocityHigh = high;
     return l;
 }
 
 // an FPC channel with `kit`, its instrument made with `samples`, prepared at 44.1 kHz
-inline std::unique_ptr<lynx::Instrument> instrument (const lynx::fpc::Kit& kit, const std::function<std::shared_ptr<const lynx::SampleData> (const std::string&)>& samples)
+inline std::unique_ptr<yw::Instrument> instrument (const yw::fpc::Kit& kit, const std::function<std::shared_ptr<const yw::SampleData> (const std::string&)>& samples)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::fpc;
     setFpcKit (c, kit, {});
@@ -82,7 +82,7 @@ inline std::unique_ptr<lynx::Instrument> instrument (const lynx::fpc::Kit& kit, 
     return inst;
 }
 
-inline std::vector<float> run (lynx::Instrument& inst, int frames, std::vector<float>* right = nullptr)
+inline std::vector<float> run (yw::Instrument& inst, int frames, std::vector<float>* right = nullptr)
 {
     std::vector<float> l ((std::size_t) frames, 0.0f), r ((std::size_t) frames, 0.0f);
     for (int at = 0; at < frames; at += 256)
@@ -100,7 +100,7 @@ TEST (fpc190z_tick_and_time_scale)
 {
     // FPC steps its envelopes every 48 samples at 44.1 kHz (4·round(48·rate/44100/4) else) and a point's time unit is
     // half a second (FUN_00873060 / FUN_00872ff0)
-    using namespace lynx;
+    using namespace yw;
     CHECK (FpcEnvelope::ticksFor (44100.0) == 48 && FpcEnvelope::ticksFor (48000.0) == 52 && FpcEnvelope::ticksFor (96000.0) == 104);
     CHECK (std::abs (FpcEnvelope::scaleFor (44100.0) - 2.0 * 48.0 / 44100.0) < 1e-15);
     CHECK (std::abs (FpcEnvelope::scaleFor (48000.0) - 2.0 * 52.0 / 48000.0) < 1e-12);
@@ -110,7 +110,7 @@ TEST (fpc190z_envelopes_follow_fl_tick_by_tick)
 {
     // The six envelopes of FL's render, tick by tick: FL's gain at the start of tick k is the level FPC read at the
     // tick before (the first tick jumps to the start level)
-    using namespace lynx;
+    using namespace yw;
     const auto cases = fpc190z::flCases();
     for (std::size_t n = 0; n < cases.size(); ++n)
     {
@@ -125,7 +125,7 @@ TEST (fpc190z_envelopes_follow_fl_tick_by_tick)
             const auto at = std::max (0, tick - 1);
             const auto mine = at < (int) trace.size() - 2 ? trace[(std::size_t) at] : 0.0f;
             if (std::abs (mine - fl) > 3.0e-4f)
-                std::printf ("  envelope %d tick %d: FL %.5f, LYNX %.5f\n", (int) n, tick, (double) fl, (double) mine);
+                std::printf ("  envelope %d tick %d: FL %.5f, YW %.5f\n", (int) n, tick, (double) fl, (double) mine);
             CHECK (std::abs (mine - fl) <= 3.0e-4f);
         }
     }
@@ -147,7 +147,7 @@ TEST (fpc190z_voices_take_the_envelope_and_end_with_it)
     // One pad, a DC layer: without envelope the output is the sample × the pad's level; with the kits' decay envelope
     // it follows the envelope tick by tick (linear ramps between ticks, the first tick at once) and the voice ends with
     // it, long before the sample; FL's default sustain envelope holds while the note lasts and releases after it
-    using namespace lynx;
+    using namespace yw;
     using P = fpc::EnvelopePoint;
     auto kit = fpc::emptyKit();
     auto& pad = kit.pads[0];
@@ -199,7 +199,7 @@ TEST (fpc190z_layer_pan_pan_envelope_and_scale_volume)
     // Layer pan and the pan envelope (level × 2 + layer pan, within −1…1) go through the constant-power law, centred at
     // 1 (FL's render: hard left / right sweep to 1 LSB); a layer that does not scale its volume with the velocity
     // plays every velocity at the level of velocity 100 (FPC divides FL's Init.Vol out)
-    using namespace lynx;
+    using namespace yw;
     using P = fpc::EnvelopePoint;
     const auto samples = [] (const std::string&) { return fpc190z::dc (44100); };
     auto kit = fpc::emptyKit();
@@ -252,7 +252,7 @@ TEST (fpc190z_layer_modes)
     // FPC_x64.dll FUN_00869db0: without "one at a time" every layer whose range holds the velocity plays (here two);
     // Cycle backward steps back from the previous pick (wrapping, from the last one first); Cycle steps on among the
     // layers that hold the velocity; Random (avoid previous) never picks the same twice; Random draws them all
-    using namespace lynx;
+    using namespace yw;
     // each layer's file a DC of its own level: the output says which layers played
     const auto samples = [] (const std::string& path) { return fpc190z::dc (2000, path == "a" ? 0.001f : path == "b" ? 0.01f : path == "c" ? 0.1f : 1.0f); };
     auto kit = fpc::emptyKit();
@@ -323,7 +323,7 @@ TEST (fpc190z_choke_is_one_tick)
 {
     // FPC's choke (FUN_0086b480 / FUN_0086a2d0): the cut voice goes to 0 linearly over its next tick (48 samples) and
     // ends there — not the channel's declicker
-    using namespace lynx;
+    using namespace yw;
     auto kit = fpc::emptyKit();
     kit.pads[0].note = 36;
     kit.pads[0].cutBy = 0;
@@ -349,7 +349,7 @@ TEST (fpc190z_choke_is_one_tick)
 TEST (fpc190z_reversed_layer)
 {
     // layer flag bit 1 ("Reverse sample"): the sample plays from its end
-    using namespace lynx;
+    using namespace yw;
     auto ramp = std::make_shared<SampleData>();
     ramp->sampleRate = 44100.0;
     for (int i = 0; i < 1000; ++i)

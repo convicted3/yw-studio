@@ -7,7 +7,7 @@
 
 TEST (livefix190jd_mpe_tab_lanes)
 {
-    using namespace lynx::mpetab;
+    using namespace yw::mpetab;
     // Live's default: Slide and Pressure checked, Velocity and Release Velocity not
     CHECK (shows (defaultLanes, Lane::slide) && shows (defaultLanes, Lane::pressure));
     CHECK (! shows (defaultLanes, Lane::velocity) && ! shows (defaultLanes, Lane::releaseVelocity));
@@ -31,7 +31,7 @@ TEST (livefix190jd_mpe_tab_lanes)
 
 TEST (livefix190jd_mpe_tab_hits)
 {
-    using namespace lynx::mpetab;
+    using namespace yw::mpetab;
     // a note from x 100 to 200; its curve: points at (100, 50) and (150, 30), held to 200
     const std::vector<Px> points { { 100.0f, 50.0f }, { 150.0f, 30.0f } };
     const std::vector<Px> line { { 100.0f, 50.0f }, { 100.0f, 50.0f }, { 150.0f, 30.0f }, { 200.0f, 30.0f } };
@@ -58,7 +58,7 @@ TEST (livefix190jd_mpe_tab_hits)
 
 TEST (livefix190jd_mpe_tab_pitch_on_notes)
 {
-    using namespace lynx::mpetab;
+    using namespace yw::mpetab;
     // one key row (14 px) a semitone, whole semitones; up = higher; Shift: whole cents
     CHECK (bendCents (0.0f, 0.0f, 14.0f, false) == 0.0f);
     CHECK (bendCents (0.0f, -14.0f, 14.0f, false) == 100.0f);
@@ -69,14 +69,14 @@ TEST (livefix190jd_mpe_tab_pitch_on_notes)
     CHECK (bendCents (0.0f, -14.0f * 60.0f, 14.0f, false) == 4800.0f); // clamped to ±48 st
     // a click on a selected note adds a pitch point at the curve's value there ("0 st" on a plain note), then the drag
     // moves it: the curve starts from the note's own pitch at tick 0
-    lynx::NoteCurvesRef curves;
-    const auto added = lynx::notecurves::addPoint (curves, lynx::NoteCurveLane::pitch, 480.0, 0.0f, 0.0f);
+    yw::NoteCurvesRef curves;
+    const auto added = yw::notecurves::addPoint (curves, yw::NoteCurveLane::pitch, 480.0, 0.0f, 0.0f);
     CHECK (added == 1);
-    CHECK (curves->lane (lynx::NoteCurveLane::pitch).size() == 2);
-    lynx::notecurves::movePoint (curves, lynx::NoteCurveLane::pitch, added, 480.0, bendCents (0.0f, -28.0f, 14.0f, false));
-    CHECK (curves->lane (lynx::NoteCurveLane::pitch)[1].value == 200.0f);
-    CHECK (curves->valueAt (lynx::NoteCurveLane::pitch, 240.0, 0.0f) == 100.0f);
+    CHECK (curves->lane (yw::NoteCurveLane::pitch).size() == 2);
+    yw::notecurves::movePoint (curves, yw::NoteCurveLane::pitch, added, 480.0, bendCents (0.0f, -28.0f, 14.0f, false));
+    CHECK (curves->lane (yw::NoteCurveLane::pitch)[1].value == 200.0f);
+    CHECK (curves->valueAt (yw::NoteCurveLane::pitch, 240.0, 0.0f) == 100.0f);
     // a double-click on the point deletes it
-    lynx::notecurves::removePoint (curves, lynx::NoteCurveLane::pitch, 1);
-    CHECK (curves->lane (lynx::NoteCurveLane::pitch).size() == 1);
+    yw::notecurves::removePoint (curves, yw::NoteCurveLane::pitch, 1);
+    CHECK (curves->lane (yw::NoteCurveLane::pitch).size() == 1);
 }

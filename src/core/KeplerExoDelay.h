@@ -30,7 +30,7 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx
+namespace yw
 {
 namespace kepler_exo
 {
@@ -584,7 +584,7 @@ using Delay = DelayT<>;
 // FUN_180010b30 at +0x30, the wrapper fields, FUN_180010650 (i, 0.5) for the eleven parameters), then ILDelay3 setRate
 // FUN_180011ff0 plus the synth rate set-up's update interval (+0x48c = (int) (fs * 0.002), 0x18001d4c7), reset
 // FUN_180011120 and the Exo defaults; per sample FUN_1800107b0 in MXCSR | 0xE040; events (parameter
-// changes, host tempo +0x490, reset, setRate) applied between samples in nearest or in RZ. LYNX side: Delay with the same
+// changes, host tempo +0x490, reset, setRate) applied between samples in nearest or in RZ. YW side: Delay with the same
 // calls. 13 scenarios, 6.8 M output floats (L, R), 0 mismatches:
 //  * defaults at 44100 and 48000 (150000 samples each);
 //  * six random scenarios of 400000 samples (44100 / 48000 / 96000 / 22050 Hz, one with sample-rate changes) with ~90
@@ -600,4 +600,4 @@ using Delay = DelayT<>;
 // difference is possible. tanf arguments of 2^23 and above (never produced here) use std::tan.
 
 } // namespace kepler_exo
-} // namespace lynx
+} // namespace yw

@@ -8,7 +8,7 @@
 
 TEST (bugs190nq_229_narrow_title_bar_drops_the_caption_then_hides_tools)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
     // wide: caption and every tool
     CHECK (titleCaptionFits (130, 460, 700));
     CHECK (titleToolsRoom (130, 460, 700) == 460);
@@ -24,7 +24,7 @@ TEST (bugs190nq_229_narrow_title_bar_drops_the_caption_then_hides_tools)
 
 TEST (bugs190nq_226_automation_of_a_deleted_insert_says_so)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (6);
     for (int t = 1; t < 6; ++t)
@@ -56,10 +56,10 @@ TEST (bugs190nq_226_automation_of_a_deleted_insert_says_so)
 
 TEST (bugs190nq_222_big_icon_centred_beside_the_insert_effects_column)
 {
-    using namespace lynx::trackiconscale;
+    using namespace yw::trackiconscale;
     // no column: the whole plate
     CHECK ((bigIconArea (4.0f, 200.0f, 0.0f) == std::pair<float, float> { 4.0f, 200.0f }));
-    // with the LYNX extra's insert effects column (104 px at the plate's right): the part left of it
+    // with the YW extra's insert effects column (104 px at the plate's right): the part left of it
     const auto [x, w] = bigIconArea (4.0f, 300.0f, 104.0f);
     CHECK (x == 4.0f && w == 196.0f);
     CHECK (x + w * 0.5f == 102.0f); // the icon's centre: the middle of the name / controls part

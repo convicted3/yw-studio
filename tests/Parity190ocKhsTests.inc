@@ -1,5 +1,5 @@
 // Round 190oc: the Kilohearts Nonlinear Filter as a hidden law of Effector (core/KiloheartsDsp.h, code 49 / 64):
-// DirtyFilterDsp read in HeartCore (docs/analise/REA_rodada190oc.md), LYNX's own half-band around it, translated from the
+// DirtyFilterDsp read in HeartCore (docs/analise/REA_rodada190oc.md), YW's own half-band around it, translated from the
 // snapin's state (core/KiloheartsStates.inc). Uses parity190lnkhs::state / load / named, parity190nbkhs::run and
 // parity190nhkhs::tone / energy / finite.
 
@@ -10,13 +10,13 @@ inline std::string body (const char* type, const char* mode, double cutoff, doub
     return std::string ("\"cutoff\": \"") + std::to_string (cutoff) + "\", \"filter_type\": \"" + type + "\", \"dirt_type\": \"" + mode
            + "\", \"q\": \"" + std::to_string (q) + "\", \"drive\": \"" + std::to_string (drive) + "\", \"$type\": \"dirty_filter\"";
 }
-inline lynx::EffectSlot filter (const char* type, const char* mode = "clean", double cutoff = 1000.0, double q = 0.707, double drive = 0.25)
+inline yw::EffectSlot filter (const char* type, const char* mode = "clean", double cutoff = 1000.0, double q = 0.707, double drive = 0.25)
 {
     int n = 0;
     return parity190lnkhs::load ("kHs Nonlinear Filter", parity190lnkhs::state (body (type, mode, cutoff, q, drive)), n);
 }
 // the steady gain (dB) of a tone through the slot: the last half second's energy against the input's
-inline double gainDb (const lynx::EffectSlot& s, double hz, float amp = 0.25f)
+inline double gainDb (const yw::EffectSlot& s, double hz, float amp = 0.25f)
 {
     const auto x = parity190nhkhs::tone (48000, hz, amp);
     const auto y = parity190nbkhs::run (s, x);
@@ -42,7 +42,7 @@ inline double partialDb (const std::vector<float>& y, double hz, float amp)
 
 TEST (parity190ockhs_law_code_and_translation)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190ockhs;
     namespace k = khsdsp;
     // code 49 (kept for it by round 190nh); round 190nb's and 190nh's codes unchanged
@@ -63,11 +63,11 @@ TEST (parity190ockhs_law_code_and_translation)
     CHECK (makeEffect (d)->latencySamples() == 0);
 }
 
-TEST (parity190ockhs_half_band_is_lynx_own_design)
+TEST (parity190ockhs_half_band_is_yw_own_design)
 {
-    // LYNX's own elliptic half-band: eight coefficients rising in (0, 1); 109 dB down from 0.277 of the 2× rate, flat to
+    // YW's own elliptic half-band: eight coefficients rising in (0, 1); 109 dB down from 0.277 of the 2× rate, flat to
     // 0.223 (H (z) = ½ (A0 (z²) + z^-1 A1 (z²)), evaluated here)
-    const auto a = lynx::khsdsp::Engine::nonlinearHalfBand();
+    const auto a = yw::khsdsp::Engine::nonlinearHalfBand();
     CHECK (a.size() == 8 && std::is_sorted (a.begin(), a.end()) && a.front() > 0.0 && a.back() < 1.0);
     const auto H = [&a] (double f) {
         const auto z = std::polar (1.0, 2.0 * 3.14159265358979 * f), z2 = z * z;

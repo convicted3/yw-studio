@@ -1,19 +1,19 @@
 #pragma once
 
-// The start-up support note (round 190fq, LYNX's own; FL has nothing like it): after the 10th start, once, a small
-// card in the main window's bottom-right corner says LYNX SHARE is free and open source and that it can be supported
+// The start-up support note (round 190fq, YW's own; FL has nothing like it): after the 10th start, once, a small
+// card in the main window's bottom-right corner says YW Studio is free and open source and that it can be supported
 // on Ko-fi (core/Links.h). "Not now" shows it again 30 starts later; "Don't show again" (and Settings › General ›
-// "Show the support note" off) never. Runs that are not a person's start (LYNX_TEST_MODE, CI, the command-line test
+// "Show the support note" off) never. Runs that are not a person's start (YW_TEST_MODE, CI, the command-line test
 // and snapshot modes) neither count nor show it. Donating never unlocks anything.
 //
-// The state is a small text file in the settings folder (ui/SupportLynx.cpp): "launches=", "next=", "show=" lines.
+// The state is a small text file in the settings folder (ui/SupportYw.cpp): "launches=", "next=", "show=" lines.
 // This header holds the rules only (no JUCE), so the core tests check them.
 
 #include <charconv>
 #include <string>
 #include <string_view>
 
-namespace lynx::supportnote
+namespace yw::supportnote
 {
 inline constexpr int firstStart = 10; // the note may show from the 10th start on
 inline constexpr int laterStarts = 30; // "Not now" (or a note left without an answer): 30 more starts
@@ -113,11 +113,11 @@ inline State fromText (std::string_view text)
     return s;
 }
 
-// Not a person's start: LYNX_TEST_MODE, a CI machine (CI / GITHUB_ACTIONS set) or LYNX_NO_SUPPORT_NOTE. The caller
+// Not a person's start: YW_TEST_MODE, a CI machine (CI / GITHUB_ACTIONS set) or YW_NO_SUPPORT_NOTE. The caller
 // reads the environment (and calls this only on the normal start path: the command-line modes return earlier).
 inline bool quietEnvironment (bool testMode, std::string_view ci, std::string_view githubActions, std::string_view noNote) noexcept
 {
     const auto on = [] (std::string_view v) { return ! v.empty() && v != "0" && v != "false"; };
     return testMode || on (ci) || on (githubActions) || on (noNote);
 }
-} // namespace lynx::supportnote
+} // namespace yw::supportnote

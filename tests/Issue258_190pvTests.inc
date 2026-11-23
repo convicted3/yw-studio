@@ -7,7 +7,7 @@
 
 namespace issue258
 {
-using namespace lynx;
+using namespace yw;
 
 // a Song-mode song with `channels`: one pattern whose note plays `noteChannel` at `key` for two bars (track 0) and, when
 // `param` >= 0, an automation clip of (target channel, param) ramping from `from` to `to` over those bars (track 1)
@@ -83,7 +83,7 @@ inline double peak (const std::vector<float>& x)
 // clone's cutoff: the clone's sound follows the clip, and matches the original under the same clip
 TEST (issue258_cloned_transistor_bass_follows_its_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace issue258;
     auto c = tb169g2::channel ("Empty.fst");
     if (! c)
@@ -119,9 +119,9 @@ TEST (issue258_cloned_transistor_bass_follows_its_automation)
 namespace issue258
 {
 // the parameters a channel's automation clip can drive on a native engine, those most likely to move a held note first
-inline std::vector<int> automatableParams (const lynx::ChannelDef& c)
+inline std::vector<int> automatableParams (const yw::ChannelDef& c)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<int> out;
     if (const auto* t = modelparams::tableOf (c.instrument); t != nullptr && t->params != nullptr)
     {
@@ -161,10 +161,10 @@ inline std::vector<int> automatableParams (const lynx::ChannelDef& c)
 // clip moves the original's (round 190pv; issue #258 reported it on Transistor Bass)
 TEST (issue258_every_cloned_native_follows_its_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace issue258;
     std::vector<ChannelDef> made;
-    made.emplace_back(); // (LYNX Synth, the default channel)
+    made.emplace_back(); // (YW Synth, the default channel)
     for (const auto& e : natives::instrumentEngines())
         if (auto c = natives::makeChannel (e.kind, natives142::flAccess()))
             made.push_back (*c);

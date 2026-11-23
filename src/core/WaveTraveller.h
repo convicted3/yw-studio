@@ -25,7 +25,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx::wavetrav
+namespace yw::wavetrav
 {
 constexpr int keyCount = 120;
 constexpr int tableCapacity = 4096; // FL's tables hold 1024 values; extra room for curves that round past it
@@ -165,11 +165,11 @@ struct RefNote
 std::vector<float> renderReference (const State& state, const Sample& sample, const std::vector<RefNote>& notes, int sampleRate,
                                     float tempo, int renderTaps, int length);
 
-} // namespace lynx::wavetrav
+} // namespace yw::wavetrav
 
-namespace lynx
+namespace yw
 {
 bool waveTravellerStateUsable (const std::vector<std::uint8_t>& state);
 // The instrument; `sample` is the channel's sample (silent without one, as FL: the plugin refuses notes)
 std::unique_ptr<Instrument> makeWaveTravellerInstrument (std::shared_ptr<const SampleData> sample);
-} // namespace lynx
+} // namespace yw

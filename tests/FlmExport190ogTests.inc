@@ -1,9 +1,9 @@
 // --- Round 190og (FLM coverage app-0003, QUEUE-0.1.31 #31 (e)): "Save a copy as FL Studio Mobile project (.flm)".
 // The writer (core/FlmFormat.h write) is the reader's inverse; the export (core/FlmExport.h) read back by the .flm import
 // keeps the notes, the patterns (one content per pattern and channel), the tempo, the mixer levels and the instruments
-// and effects FLM has; the rest is listed. Every project here is built by the test. With LYNX_FLM_DIR set (FL Studio
+// and effects FLM has; the rest is listed. Every project here is built by the test. With YW_FLM_DIR set (FL Studio
 // Mobile's demo songs / templates, e.g. FL's "Plugins/Fruity/Generators/FL Studio Mobile/Installed"), every shipped song
-// also goes .flm → LYNX → .flm → LYNX and must keep its notes.
+// also goes .flm → YW → .flm → YW and must keep its notes.
 
 #include <cstdlib>
 #include <filesystem>
@@ -21,8 +21,8 @@
 
 namespace flm190og
 {
-namespace flm = lynx::flm;
-using namespace lynx;
+namespace flm = yw::flm;
+using namespace yw;
 
 inline FlmImportOptions importOptions()
 {
@@ -72,16 +72,16 @@ inline Note note (int channel, int step, int key, float velocity = 0.8f, int ste
     return n;
 }
 
-// A song made in LYNX: Pocket SuperSaw on its own insert with Pocket effects, three drum samplers sharing the Master, a
-// LYNX Synth (no FLM module), a bus two inserts send to, an audio clip, two patterns placed three times
-inline Song lynxSong()
+// A song made in YW: Pocket SuperSaw on its own insert with Pocket effects, three drum samplers sharing the Master, a
+// YW Synth (no FLM module), a bus two inserts send to, an audio clip, two patterns placed three times
+inline Song ywSong()
 {
     Song s;
     s.bpm = 97.0;
     s.beatsPerBar = 3;
     s.mixer = Song::defaultMixer (6);
     s.info.title = "Round trip";
-    s.info.author = "LYNX";
+    s.info.author = "YW";
     s.loopStart = 2 * ppq;
     s.loopEnd = 8 * ppq;
     s.keyboardChords = { KeyboardChord { 9, 1, 4, { 10 } }, KeyboardChord { 5, 0, 4, {} } };
@@ -198,7 +198,7 @@ inline Song lynxSong()
 
 TEST (flm190og_writer_is_the_readers_inverse)
 {
-    namespace flm = lynx::flm;
+    namespace flm = yw::flm;
     flm::Project p;
     p.title = "Writer";
     p.tempo = 123.5;
@@ -313,7 +313,7 @@ TEST (flm190og_writer_is_the_readers_inverse)
 
 TEST (flm190og_export_laws_invert_the_import)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto db : { -40.0, -12.0, -5.2, 0.0, 3.0, 5.6 })
     {
         const auto g = std::pow (10.0, db / 20.0);
@@ -330,8 +330,8 @@ TEST (flm190og_export_laws_invert_the_import)
 
 TEST (flm190og_export_round_trip_keeps_notes_tempo_levels_instruments_effects)
 {
-    using namespace lynx;
-    const auto song = flm190og::lynxSong();
+    using namespace yw;
+    const auto song = flm190og::ywSong();
     FlmExportOptions o;
     o.title = "Round trip";
     o.sampleSeconds = [] (const std::string&) { return 4.0; };
@@ -343,15 +343,15 @@ TEST (flm190og_export_round_trip_keeps_notes_tempo_levels_instruments_effects)
         return;
     const auto& b = *back;
     // the song
-    CHECK (b.bpm == 97.0 && b.beatsPerBar == 3 && b.info.title == "Round trip" && b.info.author == "LYNX");
+    CHECK (b.bpm == 97.0 && b.beatsPerBar == 3 && b.info.title == "Round trip" && b.info.author == "YW");
     const auto key = projectkey::get (b);
     CHECK (key.has_value() && key->root == 9 && projectkey::intervals (*key) == projectkey::intervals (*projectkey::get (song)));
     CHECK (b.keyboardChords == song.keyboardChords);
-    // the loop range: FLM's play loop, which FLM starts switched off (LYNX: the range kept, looping off)
+    // the loop range: FLM's play loop, which FLM starts switched off (YW: the range kept, looping off)
     CHECK (b.loopStart == song.loopStart && b.loopEnd == song.loopEnd && b.loopOff);
     // the notes, every one at its place, on its channel, with its key, velocity and length
     CHECK (flm190og::playedNotes (b) == flm190og::playedNotes (song));
-    // the patterns: the LYNX chunk regroups FLM's one-per-track contents into "Beat" and "Melody", placed three times
+    // the patterns: the YW chunk regroups FLM's one-per-track contents into "Beat" and "Melody", placed three times
     CHECK (b.patterns.size() == 2 && b.patterns[0].name == "Beat" && b.patterns[1].name == "Melody");
     CHECK (std::count_if (b.playlist.begin(), b.playlist.end(), [] (const Clip& c) { return c.kind == ClipKind::pattern; }) == 3);
     {
@@ -361,7 +361,7 @@ TEST (flm190og_export_round_trip_keeps_notes_tempo_levels_instruments_effects)
         const auto plain = importFlm (edited, flm190og::importOptions());
         CHECK (plain.has_value() && plain->patterns.size() > 2 && flm190og::playedNotes (*plain) == flm190og::playedNotes (song));
     }
-    // the instruments: SuperSaw stays SuperSaw with its values; the LYNX Synth plays FLM's MiniSynth (listed)
+    // the instruments: SuperSaw stays SuperSaw with its values; the YW Synth plays FLM's MiniSynth (listed)
     const auto saw = flm190og::channelNamed (b, "Saw"), pad = flm190og::channelNamed (b, "Pad"), kick = flm190og::channelNamed (b, "Kick");
     CHECK (saw >= 0 && pad >= 0 && kick >= 0);
     if (saw < 0 || pad < 0 || kick < 0)
@@ -434,7 +434,7 @@ TEST (flm190og_export_round_trip_keeps_notes_tempo_levels_instruments_effects)
     }
     // the samples the copy needs, once each
     CHECK (out.samples.size() == 4);
-    // what was lost: the LYNX Synth's sound
+    // what was lost: the YW Synth's sound
     bool synthListed = false;
     for (const auto& l : out.lost)
         if (l.sound && l.text.find ("MiniSynth") != std::string::npos && l.detail.find ("Lead") != std::string::npos)
@@ -448,9 +448,9 @@ TEST (flm190og_export_round_trip_keeps_notes_tempo_levels_instruments_effects)
 
 TEST (flm190og_flm_engines_go_back_to_their_modules)
 {
-    // FLM → LYNX → FLM: the modules of FLM's own engines come back with their values
-    using namespace lynx;
-    namespace flm = lynx::flm;
+    // FLM → YW → FLM: the modules of FLM's own engines come back with their values
+    using namespace yw;
+    namespace flm = yw::flm;
     flm::Project p;
     p.title = "Engines";
     p.tempo = 120.0;
@@ -551,13 +551,13 @@ TEST (flm190og_flm_engines_go_back_to_their_modules)
     add (0, mini, {}, "MiniSynth");
     add (19, tb, {}, "Bass");
     add (2, gm, gcustom, "GM");
-    const auto lynxSong = importFlmProject (p, flm190og::importOptions());
-    CHECK (lynxSong.has_value());
-    if (! lynxSong)
+    const auto ywSong = importFlmProject (p, flm190og::importOptions());
+    CHECK (ywSong.has_value());
+    if (! ywSong)
         return;
     FlmExportOptions eo;
     eo.resourceRoots = { "/flm190og-res" }; // (the import's resource folder: factory files stay "@R@")
-    const auto out = exportFlm (*lynxSong, eo);
+    const auto out = exportFlm (*ywSong, eo);
     const auto q = flm::parse (out.bytes);
     CHECK (q.has_value());
     if (! q)
@@ -602,11 +602,11 @@ TEST (flm190og_flm_engines_go_back_to_their_modules)
     CHECK (o3 != nullptr && o3->type == 39 && o3->params.size() == 149);
     {
         const auto again = importFlm (out.bytes, flm190og::importOptions());
-        const auto a = flm190og::channelNamed (*lynxSong, "Osc"), b2 = again ? flm190og::channelNamed (*again, "Osc") : -1;
+        const auto a = flm190og::channelNamed (*ywSong, "Osc"), b2 = again ? flm190og::channelNamed (*again, "Osc") : -1;
         CHECK (a >= 0 && b2 >= 0);
         if (a >= 0 && b2 >= 0)
         {
-            const auto& x = lynxSong->channels[(std::size_t) a];
+            const auto& x = ywSong->channels[(std::size_t) a];
             const auto& y = again->channels[(std::size_t) b2];
             CHECK (x.instrument == InstrumentKind::threeosc && y.instrument == InstrumentKind::threeosc);
             CHECK (x.pluginState == y.pluginState);
@@ -623,9 +623,9 @@ TEST (flm190og_flm_engines_go_back_to_their_modules)
 
 TEST (flm190og_shipped_songs_survive_export_and_import)
 {
-    // FL Studio Mobile's own songs (LYNX_FLM_DIR): .flm → LYNX → .flm → LYNX keeps every note, the tempo and the levels
-    using namespace lynx;
-    const char* dir = std::getenv ("LYNX_FLM_DIR");
+    // FL Studio Mobile's own songs (YW_FLM_DIR): .flm → YW → .flm → YW keeps every note, the tempo and the levels
+    using namespace yw;
+    const char* dir = std::getenv ("YW_FLM_DIR");
     if (dir == nullptr || ! std::filesystem::is_directory (dir))
         return;
     int songs = 0;
@@ -658,8 +658,8 @@ TEST (flm190og_shipped_songs_survive_export_and_import)
 TEST (flm190og_switched_off_send_stays_off)
 {
     // SEND [1] is the route's Enable (FLM's channel writer; REA_rodada190og §2): off = no sound through that route
-    using namespace lynx;
-    namespace flm = lynx::flm;
+    using namespace yw;
+    namespace flm = yw::flm;
     flm::Project p;
     p.title = "Sends";
     flm::Rack master, a, bus;

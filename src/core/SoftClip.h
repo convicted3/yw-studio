@@ -2,12 +2,12 @@
 
 #include <cmath>
 
-namespace lynx
+namespace yw
 {
 // Output protection of the Master (device output and export). Up to round 159 this was a soft clipper that bent
 // everything above 0.9 (−0.9 dBFS) with a tanh: a mastered mix peaking at −0.3 dBFS lost 0.07 dB on every peak and
 // gained odd harmonics (THD 0.29 % on a −0.3 dBFS sine, 0.65 % at −0.1 dBFS; REA_rodada160 §3). FL leaves the mix untouched up to full
-// scale; LYNX now does the same: samples within ±1 pass bit-exact, overs are clamped to ±1 (what the driver or the
+// scale; YW now does the same: samples within ±1 pass bit-exact, overs are clamped to ±1 (what the driver or the
 // integer file format would do anyway) and NaN/inf become silence.
 inline void clipOvers (float* samples, int n) noexcept
 {
@@ -34,4 +34,4 @@ inline void legacySoftClip (float* samples, int n) noexcept
             samples[i] = std::copysign (knee + headroom * std::tanh ((a - knee) / headroom), x);
     }
 }
-} // namespace lynx
+} // namespace yw

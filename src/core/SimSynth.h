@@ -10,7 +10,7 @@
 // envelopes (the amp level squared twice and smoothed), a double-precision 2-stage state-variable filter with LP/BP/HP
 // mix, the host's integer-pan ComputeLRVol per voice, and the plugin-level "chorus" (the left channel through a 20 ms
 // modulated delay line). The voices' oscillator start phases and the noise come from one 65536-entry random table
-// (the C runtime's rand() after srand(666)), read through a 16-bit index shared by everything; LYNX keeps one per
+// (the C runtime's rand() after srand(666)), read through a 16-bit index shared by everything; YW keeps one per
 // instance, started like a freshly created plugin.
 //
 // The channel keeps the plugin's raw saved state (record 0xD5, 564 bytes: 45 doubles, 19 switches, version) in
@@ -23,7 +23,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the engine can read this SimSynth state (at least the 564 bytes the plugin reads)
 bool simSynthStateUsable (const std::vector<std::uint8_t>& state);
@@ -44,7 +44,7 @@ constexpr int hostParamCount = 58;
 std::optional<int> hostParam (const std::vector<std::uint8_t>& state, int h);
 // writes host parameter h into a state (clamped to its range); false when the state can't be read
 bool setHostParam (std::vector<std::uint8_t>& state, int h, int value);
-// a complete state for a new LYNX instance: the plugin as FL creates it (the editor's default patch), version 14
+// a complete state for a new YW instance: the plugin as FL creates it (the editor's default patch), version 14
 std::vector<std::uint8_t> defaultState();
 
 // One note for the reference renderer (the verification harness drives the engine exactly like run/ssx.exe drives
@@ -65,4 +65,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, int block = 512, std::vector<std::int64_t>* counters = nullptr);
 } // namespace simsynth
-} // namespace lynx
+} // namespace yw

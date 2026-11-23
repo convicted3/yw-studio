@@ -1,5 +1,5 @@
-// Live table name → LYNX table (round 190ja; written by /mnt/e/lynx-work/wavetable190ja/ana/match.py: Live's rendered
-// output of each table at positions 0 / 0.5 / 1 against every LYNX table's partials, mean band difference; a table of
+// Live table name → YW table (round 190ja; written by /mnt/e/yw-work/wavetable190ja/ana/match.py: Live's rendered
+// output of each table at positions 0 / 0.5 / 1 against every YW table's partials, mean band difference; a table of
 // the same category wins ties by 1 dB). Only names: no table data of Live's is used. REA_rodada190ja §4.
 { "5th Brutal", "Analog Square" },
 { "Basic Shapes", "Shapes" },

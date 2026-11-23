@@ -8,7 +8,7 @@
 #include "core/ProjectContents.h"
 #include "engine/ClapFormat.h"
 
-namespace lynx
+namespace yw
 {
 using controller::Command;
 using controller::Param;
@@ -341,4 +341,4 @@ bool ControllerBridge::linkedByHand (int cc, int channel) const
             return true;
     return false;
 }
-} // namespace lynx
+} // namespace yw

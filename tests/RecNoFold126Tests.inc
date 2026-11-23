@@ -1,5 +1,5 @@
 // Issue #126 (0.1.26) and its follow-up, the user's hybrid rule. With "Stretched pattern clips loop their pattern
-// (LYNX)" on, a take into a clip that loops a pattern which already has notes folds into the loop (0.1.23, round 167q)
+// (YW)" on, a take into a clip that loops a pattern which already has notes folds into the loop (0.1.23, round 167q)
 // when its place in the loop falls inside that content (the notes at the take's start, to their end in whole bars); an
 // empty pattern, or a place past the content, keeps the note where it was played and the pattern grows (FL's rule,
 // round 168k [EXEC]; Rec168kTests.inc). Option off: FL's rule always. 0.1.23 folded every take, so arming and recording
@@ -9,29 +9,29 @@ namespace recnofold126
 {
 struct LoopFlag
 {
-    explicit LoopFlag (bool on) : was (lynx::stretchedClipsLoop()) { lynx::setStretchedClipsLoop (on); }
-    ~LoopFlag() { lynx::setStretchedClipsLoop (was); }
+    explicit LoopFlag (bool on) : was (yw::stretchedClipsLoop()) { yw::setStretchedClipsLoop (on); }
+    ~LoopFlag() { yw::setStretchedClipsLoop (was); }
     bool was;
 };
 
-constexpr std::int64_t beat = lynx::ppq, bar = 4 * lynx::ppq;
+constexpr std::int64_t beat = yw::ppq, bar = 4 * yw::ppq;
 
 // Song mode, a pattern in a clip of `length` from song tick 0 with `offset`; `kick` = a kick on beat 1 (else empty)
-inline lynx::Song loopSong (std::int64_t length, std::int64_t offset = 0, bool kick = true)
+inline yw::Song loopSong (std::int64_t length, std::int64_t offset = 0, bool kick = true)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     s.patterns[0].notes.clear();
     if (kick)
     {
-        lynx::Note k;
-        k.length = lynx::ticksPerStep;
+        yw::Note k;
+        k.length = yw::ticksPerStep;
         k.key = 36;
         s.patterns[0].notes.push_back (k);
     }
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = 0;
     c.length = length;
     c.offset = offset;
@@ -39,7 +39,7 @@ inline lynx::Song loopSong (std::int64_t length, std::int64_t offset = 0, bool k
     return s;
 }
 
-inline std::vector<std::pair<std::int64_t, int>> startsAndKeys (const lynx::Pattern& p)
+inline std::vector<std::pair<std::int64_t, int>> startsAndKeys (const yw::Pattern& p)
 {
     std::vector<std::pair<std::int64_t, int>> out;
     for (const auto& n : p.notes)
@@ -48,17 +48,17 @@ inline std::vector<std::pair<std::int64_t, int>> startsAndKeys (const lynx::Patt
     return out;
 }
 
-inline int onsOfKey (const lynx::Song& s, int key, std::int64_t ticks)
+inline int onsOfKey (const yw::Song& s, int key, std::int64_t ticks)
 {
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
-    const auto index = lynx::makeScheduleIndex (s);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
+    const auto index = yw::makeScheduleIndex (s);
     int ons = 0;
     for (double t = 0.0; t < (double) ticks; t += 512 * tps)
     {
-        lynx::EventBuffer ev;
-        lynx::scheduleSong (s, t, 512, tps, ev, t == 0.0, &index, false);
+        yw::EventBuffer ev;
+        yw::scheduleSong (s, t, 512, tps, ev, t == 0.0, &index, false);
         for (const auto& e : ev)
-            ons += e.type == lynx::NoteEvent::Type::on && e.key == key;
+            ons += e.type == yw::NoteEvent::Type::on && e.key == key;
     }
     return ons;
 }
@@ -168,7 +168,7 @@ TEST (recnofold126_folded_notes_at_the_loop_end)
         take.stop ((double) (3 * bar));
         const auto& p = s.patterns[0];
         CHECK (p.effectiveLength (s.meter()) == bar);
-        const auto it = std::find_if (p.notes.begin(), p.notes.end(), [] (const lynx::Note& n) { return n.key == 70; });
+        const auto it = std::find_if (p.notes.begin(), p.notes.end(), [] (const yw::Note& n) { return n.key == 70; });
         CHECK (it != p.notes.end() && it->start == 3 * beat + beat / 2 && it->length == beat / 2);
     }
     {
@@ -179,7 +179,7 @@ TEST (recnofold126_folded_notes_at_the_loop_end)
         take.stop ((double) (3 * bar + beat));
         const auto& p = s.patterns[0];
         CHECK (p.effectiveLength (s.meter()) == bar);
-        const auto it = std::find_if (p.notes.begin(), p.notes.end(), [] (const lynx::Note& n) { return n.key == 71; });
+        const auto it = std::find_if (p.notes.begin(), p.notes.end(), [] (const yw::Note& n) { return n.key == 71; });
         CHECK (it != p.notes.end() && it->start == 0 && it->length >= 1 && it->start + it->length <= bar);
     }
     {
@@ -188,7 +188,7 @@ TEST (recnofold126_folded_notes_at_the_loop_end)
         take.note ((double) (2 * beat), beat, 72);
         take.stop ((double) (3 * beat + beat / 2));
         const auto& p = s.patterns[0];
-        const auto it = std::find_if (p.notes.begin(), p.notes.end(), [] (const lynx::Note& n) { return n.key == 72; });
+        const auto it = std::find_if (p.notes.begin(), p.notes.end(), [] (const yw::Note& n) { return n.key == 72; });
         CHECK (it != p.notes.end() && it->start == 2 * beat && it->length == beat);
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-// BandLab project (.blx) import, round 190jr (B15). A LYNX-own import (FL Studio has none), clean-room.
+// BandLab project (.blx) import, round 190jr (B15). A YW-own import (FL Studio has none), clean-room.
 //
 // What a .blx is: Cakewalk / Sonar's "BandLab Interchange file", written next to the project's downloaded audio when a
 // BandLab project is opened in the desktop DAW (Documents\BandLab\Downloads\<project>\). Cakewalk users describe it as
@@ -13,17 +13,17 @@
 // bandlab-mcp project (region positions in SECONDS, automation positions in BEATS, volume linear 0..2 with 1 = unity,
 // pan -1..1, effects = an ordered `effects[]` of { slug, bypass, params }). No code was copied.
 //
-// The song becomes a Simple-workflow project (core/SimpleTracks.h), one LYNX track per BandLab track:
+// The song becomes a Simple-workflow project (core/SimpleTracks.h), one YW track per BandLab track:
 //  - tempo, signature, key, title;
 //  - an audio track ("voice", or regions of audio samples) → an Audio track; each region an audio clip of the sample
 //    file found next to the .blx (by its sample id, its file name or the region's name), with its offset, gain, fades,
 //    pitch and playback rate (the channel's stretch, pitch kept); a looped region (loopLength) repeats as clips;
-//  - a MIDI track → an Instrument track (LYNX's built-in synth, preset by the BandLab sound's name) or a Drums track
+//  - a MIDI track → an Instrument track (YW's built-in synth, preset by the BandLab sound's name) or a Drums track
 //    (built-in kick / snare / clap / hat by General MIDI key); each region a pattern clip of its MIDI sample's notes
 //    (a .mid next to the .blx); a looped region loops its pattern;
 //  - volume, pan, mute on the track's insert / track; volume and pan automation as automation lanes; the send to
 //    BandLab's shared reverb as the Simple layout's shared reverb send;
-//  - effects that have a LYNX equivalent (compressor, 3-band EQ, graphic EQ, reverbs, delays, chorus, distortion,
+//  - effects that have a YW equivalent (compressor, 3-band EQ, graphic EQ, reverbs, delays, chorus, distortion,
 //    limiter); everything else is listed in the import report.
 
 #include <cstdint>
@@ -36,7 +36,7 @@
 #include "core/FlpImport.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 namespace blx
 {
@@ -129,7 +129,7 @@ struct BlxImportOptions
     std::vector<std::string> files;
 };
 
-// The project as a LYNX song.
+// The project as a YW song.
 Song importBlx (const blx::Project& project, const BlxImportOptions& options);
 
 // Parses `bytes` and imports them. nullopt + `error` (English) when it is not a BandLab project.
@@ -141,4 +141,4 @@ std::string blxSampleFile (const blx::Sample* sample, const std::string& sampleI
                            const BlxImportOptions& options);
 // The path the import report lists for a region whose file is not found (and the key of its relocation).
 std::string blxMissingPath (const BlxImportOptions& options, const std::string& sampleId, const std::string& regionName, bool midi);
-} // namespace lynx
+} // namespace yw

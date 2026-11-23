@@ -12,7 +12,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 using namespace theme;
 
@@ -515,7 +515,7 @@ private:
     std::function<void()> drawn;
 };
 
-// Stacks' chord sequence (LYNX's own display; Live's is a chord map we have no rule for): one cell per chord with its
+// Stacks' chord sequence (YW's own display; Live's is a chord map we have no rule for): one cell per chord with its
 // name, the edited chord lit; click a cell to edit that chord.
 class ChordStrip final : public juce::Component
 {
@@ -1492,7 +1492,7 @@ const midigen::ChordBank& MidiToolsPanel::chordBank()
 {
     const auto& path = gen.stacksOptions.bankFile;
     if (path.empty())
-        return midigen::lynxChordBank();
+        return midigen::ywChordBank();
     if (loadedBank.path != path)
     {
         loadedBank.path = path;
@@ -1504,7 +1504,7 @@ const midigen::ChordBank& MidiToolsPanel::chordBank()
             loadedBank.bank = midigen::readChordBank (file.loadFileAsString().toStdString(), error);
         }
     }
-    return loadedBank.bank ? *loadedBank.bank : midigen::lynxChordBank(); // (a file gone or unreadable: LYNX's bank)
+    return loadedBank.bank ? *loadedBank.bank : midigen::ywChordBank(); // (a file gone or unreadable: YW's bank)
 }
 
 void MidiToolsPanel::chooseChordBank()
@@ -1747,10 +1747,10 @@ miditools::Notes MidiToolsPanel::apply (const miditools::Notes& notes, std::int6
         case ornament:
         {
             auto o = ornamentOptions;
-            if (const auto key = projectkey::get (engine.getSong()); key && projectkey::lynxScale (*key) > 0)
+            if (const auto key = projectkey::get (engine.getSong()); key && projectkey::ywScale (*key) > 0)
             {
                 o.scaleRoot = key->root; // (High / Low grace notes step by scale degrees when the project has a key)
-                o.scale = projectkey::lynxScale (*key);
+                o.scale = projectkey::ywScale (*key);
             }
             return miditools::ornament (notes, o, grid);
         }
@@ -1840,4 +1840,4 @@ void MidiToolsPanel::run()
     if (body != nullptr)
         body->repaint();
 }
-} // namespace lynx
+} // namespace yw

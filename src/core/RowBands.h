@@ -8,7 +8,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::rowbands
+namespace yw::rowbands
 {
 // The keys (0..127) of the notes at `indices` (indices out of range are skipped).
 inline std::bitset<128> of (const std::vector<Note>& notes, const std::vector<int>& indices)
@@ -20,4 +20,4 @@ inline std::bitset<128> of (const std::vector<Note>& notes, const std::vector<in
                 rows.set ((std::size_t) key);
     return rows;
 }
-} // namespace lynx::rowbands
+} // namespace yw::rowbands

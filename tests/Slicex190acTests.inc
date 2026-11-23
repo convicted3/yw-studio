@@ -5,7 +5,7 @@
 // the list given, where the old chunks were
 TEST (slicex190ac_region_list_is_rewritten_in_the_wav)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto wav = slicex190h::wavWith (1000, { { 1, 0, 0, "Kick", -1 }, { 2, 250, 100, "Snare", 61 }, { 3, 500, 0, nullptr, -1 } });
     std::int64_t frames = 0;
     const auto regions = slicex::wavRegions (wav, frames);
@@ -67,7 +67,7 @@ TEST (slicex190ac_region_list_is_rewritten_in_the_wav)
 // of this round: length in frames at 44.1 kHz -> BPM shown)
 TEST (slicex190ac_untagged_sample_tempo_is_fls_guess)
 {
-    using namespace lynx;
+    using namespace yw;
     struct Seen { double frames; double beats; int shown; };
     const Seen seen[] = { { 132300, 8, 160 }, { 60417, 2, 88 }, { 126000, 4, 84 }, { 123070, 4, 86 }, { 129073, 4, 82 },
                           { 130667, 4, 81 }, { 127518, 4, 83 }, { 131478, 4, 81 }, { 129865, 4, 82 } };
@@ -85,7 +85,7 @@ TEST (slicex190ac_untagged_sample_tempo_is_fls_guess)
 // an 8-beat loop that still showed 60BPM) only stands in for a deck without an embedded WAV
 TEST (slicex190ac_deck_tempo_survives_a_zoomed_view)
 {
-    using namespace lynx;
+    using namespace yw;
     auto wav = slicex190h::wavWith (1000, { { 1, 0, 0, "Kick", -1 } });
     CHECK (slicex::wavBeats (wav) == 0.0);
     // an ACID chunk: flags, root note, 0x80, 0.0, beats, meter, tempo

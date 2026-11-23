@@ -16,7 +16,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int reeverb2ParamCount = 17; // 15 controls + tempo-synced predelay + Mid/Side input
 // round 190lf, hidden (not in the info: no control, no string; saved while non-zero; 0 in a new instance, an FL import and
@@ -106,4 +106,4 @@ private:
 // the LFO's sine, (float) std::sin ((double) ph · 2π) bit for bit, faster (round 190kz; exposed for the tests)
 float lfoSine (float ph) noexcept;
 } // namespace reeverb2
-} // namespace lynx
+} // namespace yw

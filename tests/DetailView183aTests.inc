@@ -5,7 +5,7 @@
 
 namespace detail183a
 {
-using namespace lynx;
+using namespace yw;
 
 // Channels 0..3 on inserts 1, 1, 2, 3; pattern p holds one note on channel p; pattern 4 holds notes on channels 0 and 1;
 // pattern 5 on channels 0 and 2.
@@ -44,7 +44,7 @@ inline Clip clipOn (int track, int pattern)
 
 TEST (detail183a_chain_of_a_track_from_its_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = detail183a::chainSong();
     s.playlist.push_back (detail183a::clipOn (0, 3)); // one channel: the instrument and its insert
     s.playlist.push_back (detail183a::clipOn (1, 4)); // two channels on one insert: the insert alone
@@ -84,7 +84,7 @@ TEST (detail183a_chain_of_a_track_from_its_clips)
 
 TEST (detail183a_track_mode_decides_before_the_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = detail183a::chainSong();
     s.playlist.push_back (detail183a::clipOn (0, 4));
     // FL's instrument track: its channel, then the channel's insert
@@ -112,7 +112,7 @@ TEST (detail183a_track_mode_decides_before_the_clips)
 
 TEST (detail183a_master_and_an_empty_mixer)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = detail183a::chainSong();
     s.channels[0].mixerTrack = 0; // straight to Master: the Master's chain
     s.playlist.push_back (detail183a::clipOn (0, 0));
@@ -158,7 +158,7 @@ inline EffectSlot marker()
 
 TEST (detail183a_drop_between_cards_keeps_the_slot_places)
 {
-    using namespace lynx;
+    using namespace yw;
     // a free row between the neighbours: taken, nobody moves
     auto s = detail183a::insertWith ({ 0, 4, 7 });
     CHECK (detailchain::insertEffectAt (s, 1, detail183a::marker(), 1) == 1);
@@ -206,7 +206,7 @@ TEST (detail183a_drop_between_cards_keeps_the_slot_places)
 
 TEST (detail183a_drag_a_card_before_another)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = detail183a::insertWith ({ 0, 2, 5 });
     // automation of the first effect follows it
     s.automations.emplace_back();
@@ -225,7 +225,7 @@ TEST (detail183a_drag_a_card_before_another)
 // The detail view's keys (the reference DAW's View menu, Live 12.4 [SHOT] d05): free before, no conflict, every focus.
 TEST (detail183a_keys_are_free_and_reach_the_detail_view)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     for (auto focus : { Context::global, Context::channelRack, Context::pianoRoll, Context::playlist, Context::mixer, Context::browser })

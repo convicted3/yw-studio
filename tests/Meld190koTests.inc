@@ -1,6 +1,6 @@
-// --- round 190ko: the last Live 12 devices that were still dropped — Meld → Braid (LYNX's two-engine macro synth),
-// Spectral Time → Timeprism, Spectral Resonator → Harmonia (LYNX's spectral effects). Laws measured on Live 12.4's renders
-// (/mnt/e/lynx-work/meld190ko RESULTS.md). The device elements are written by the tests with the member names Live saves.
+// --- round 190ko: the last Live 12 devices that were still dropped — Meld → Braid (YW's two-engine macro synth),
+// Spectral Time → Timeprism, Spectral Resonator → Harmonia (YW's spectral effects). Laws measured on Live 12.4's renders
+// (/mnt/e/yw-work/meld190ko RESULTS.md). The device elements are written by the tests with the member names Live saves.
 
 #include <complex>
 
@@ -23,10 +23,10 @@ inline std::string meld (const std::vector<std::pair<std::string, double>>& valu
     for (const auto& [k, x] : values)
         s += "<" + k + "><Manual Value=\"" + als190bq::num (x) + "\" /><AutomationTarget Id=\"" + std::to_string (id++) + "\" /></" + k + ">";
     s += extra + "<ModulationConnections>";
-    for (int t = 0; t < lynx::braid::targetCount; ++t)
+    for (int t = 0; t < yw::braid::targetCount; ++t)
     {
-        s += "<ModulationConnectionsForMeld Id=\"" + std::to_string (t) + "\">" + v ("TargetName", lynx::braid::targetName (t));
-        for (int i = 0; i < lynx::braid::sourceCount; ++i)
+        s += "<ModulationConnectionsForMeld Id=\"" + std::to_string (t) + "\">" + v ("TargetName", yw::braid::targetName (t));
+        for (int i = 0; i < yw::braid::sourceCount; ++i)
             s += v (("ModulationAmounts." + std::to_string (i)).c_str(), t == row && i == source ? als190bq::num (amount) : std::string ("0"));
         s += "</ModulationConnectionsForMeld>";
     }
@@ -36,10 +36,10 @@ inline std::string meld (const std::vector<std::pair<std::string, double>>& valu
 // one Braid note rendered (mid channel), `seconds` long, note-off at `release`
 inline std::vector<float> play (const std::vector<double>& state, int key = 60, double seconds = 1.0, double release = 0.5)
 {
-    lynx::braid::RefNote n;
+    yw::braid::RefNote n;
     n.key = key;
     n.release = (int) (release * 48000.0);
-    const auto out = lynx::braid::renderReference (state, { n }, 48000.0, (int) (seconds * 48000.0));
+    const auto out = yw::braid::renderReference (state, { n }, 48000.0, (int) (seconds * 48000.0));
     std::vector<float> m (out.size() / 2);
     for (std::size_t i = 0; i < m.size(); ++i)
         m[i] = 0.5f * (out[2 * i] + out[2 * i + 1]);
@@ -63,9 +63,9 @@ inline double toneAt (const std::vector<float>& x, double hz, double t0, double 
     return b > a ? 2.0 * std::abs (acc) / (double) (b - a) : 0.0;
 }
 // an effect slot run over a buffer (latency removed)
-inline std::pair<std::vector<float>, std::vector<float>> runSlot (const lynx::EffectSlot& slot, std::vector<float> l, std::vector<float> r)
+inline std::pair<std::vector<float>, std::vector<float>> runSlot (const yw::EffectSlot& slot, std::vector<float> l, std::vector<float> r)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     const auto lat = fx->latencySamples();
     const auto n = l.size();
@@ -81,7 +81,7 @@ inline std::pair<std::vector<float>, std::vector<float>> runSlot (const lynx::Ef
 
 TEST (meld190ko_meld_imports_onto_braid_with_its_values_matrix_and_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace b = braid;
     const auto text = meld190ko::meld ({ { "MeldVoice_EngineA_Oscillator_OscillatorType", 8 }, { "MeldVoice_EngineA_Oscillator_Macro1", 0.25 },
                                          { "MeldVoice_EngineB_Filter_Frequency", 1234.5 }, { "MeldVoice_Drive", 0.4 }, { "Volume", 0.7 },
@@ -114,7 +114,7 @@ TEST (meld190ko_meld_imports_onto_braid_with_its_values_matrix_and_automation)
 
 TEST (meld190ko_braid_plays_every_oscillator_and_filter_bounded_and_deterministic)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace b = braid;
     std::vector<double> base (b::defaults().begin(), b::defaults().end());
     base[(std::size_t) (b::engineBase (1) + b::eng::on)] = 0.0;
@@ -167,7 +167,7 @@ TEST (meld190ko_braid_plays_every_oscillator_and_filter_bounded_and_deterministi
 
 TEST (meld190ko_spectral_time_and_resonator_import_onto_timeprism_and_harmonia)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = timeprism;
     namespace h = harmonia;
     const std::string st = "<Spectral Id=\"1\">" + meld190ko::on() + meld190ko::par ("Freezer_On", 0) + meld190ko::par ("Freezer_FreezeOn", 0) + meld190ko::par ("Freezer_MainMode", 1) +
@@ -209,9 +209,9 @@ TEST (meld190ko_spectral_time_and_resonator_import_onto_timeprism_and_harmonia)
     CHECK (effectInfo (EffectKind::harmonia).params.size() == (std::size_t) h::count);
 }
 
-TEST (meld190ko_envelopes_on_meld_and_the_spectral_devices_move_lynx_parameters)
+TEST (meld190ko_envelopes_on_meld_and_the_spectral_devices_move_yw_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace b = braid;
     namespace t = timeprism;
     // a set: the MIDI track holds a Meld whose A Osc Macro 1 (target 7000) and B Filter Freq (7001) are under envelopes; the
@@ -249,7 +249,7 @@ TEST (meld190ko_envelopes_on_meld_and_the_spectral_devices_move_lynx_parameters)
 
 TEST (meld190ko_measured_laws_of_the_three_engines)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace b = braid;
     namespace t = timeprism;
     namespace h = harmonia;

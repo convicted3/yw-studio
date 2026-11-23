@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::voxstrip
+namespace yw::voxstrip
 {
 namespace
 {
@@ -354,4 +354,4 @@ void Engine::process (float* left, float* right, int n) noexcept
         right[i] = b * (float) outGain;
     }
 }
-} // namespace lynx::voxstrip
+} // namespace yw::voxstrip

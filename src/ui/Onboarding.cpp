@@ -5,7 +5,7 @@
 #include "ui/NativeChild.h"
 #include "ui/Theme.h"
 
-namespace lynx::onboardui
+namespace yw::onboardui
 {
 using onboarding::Choice;
 namespace
@@ -65,7 +65,7 @@ juce::String trademarkLine()
                { "BandLab, FL Studio, GarageBand, Ableton Live, Bitwig, Logic, Cubase, Reaper, Pro Tools, Studio One" });
 }
 
-// --- the icons (LYNX's own vectors on a 64-unit square) -----------------------------------------------------------------
+// --- the icons (YW's own vectors on a 64-unit square) -----------------------------------------------------------------
 void glyph (juce::Graphics& g, juce::Rectangle<float> r, Choice c, juce::Colour ink, juce::Colour back)
 {
     const auto s = r.getWidth() / 64.0f;
@@ -267,7 +267,7 @@ public:
         styleSecondary (skipButton);
         skipButton.onClick = [this] { pick (Choice::none); };
         addAndMakeVisible (skipButton);
-        // issue #233 (rollup 0.1.31 step 2, round 190ns's choice): the one connection LYNX SHARE makes by itself, chosen
+        // issue #233 (rollup 0.1.31 step 2, round 190ns's choice): the one connection YW Studio makes by itself, chosen
         // here before it ever runs; ticked by default, and every answer (Skip / × / Esc too) applies what it shows
         updatesToggle.setButtonText (tr ("Check for updates automatically"));
         updatesToggle.setComponentID ("welcome.updates");
@@ -1003,4 +1003,4 @@ juce::Component* findShowing (juce::Component& window, const juce::String& key)
         return c;
     return findPass (window, key, false);
 }
-} // namespace lynx::onboardui
+} // namespace yw::onboardui

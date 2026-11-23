@@ -9,7 +9,7 @@
 #include <numeric>
 #include <utility>
 
-namespace lynx::tempodetect
+namespace yw::tempodetect
 {
 std::vector<float> onsetCurve (const float* left, const float* right, std::size_t frames, double sampleRate, double hopSeconds)
 {
@@ -221,7 +221,7 @@ float fitBeatsOf (const SampleData* sample, double bpm)
     if (sample->acidBeats <= 0.0f && seconds <= 120.0)
     {
         // round 190kx: the last few samples' tempos are kept (the clip menu asks twice: FL's Fit to tempo submenu and
-        // the LYNX extras' one-click fit), keyed by the sample's data and length
+        // the YW extras' one-click fit), keyed by the sample's data and length
         static std::mutex memoLock;
         // (with a fingerprint of 64 of its values: other data at the same address after a reload is not taken for it)
         static std::vector<std::pair<std::pair<const float*, std::pair<std::size_t, double>>, double>> memo;
@@ -250,5 +250,5 @@ float fitBeatsOf (const SampleData* sample, double bpm)
     }
     return clipops::fitBeats (seconds, bpm, sample->acidBeats, found);
 }
-} // namespace lynx::tempodetect
+} // namespace yw::tempodetect
 

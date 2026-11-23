@@ -14,7 +14,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -605,9 +605,9 @@ private:
 
     void chooseSample()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
+        chooser = yw::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
         juce::Component::SafePointer<WaveTravellerEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
             if (self != nullptr && fc.getResult().existsAsFile())
                 self->setSample (fc.getResult().getFullPathName());
         });
@@ -693,4 +693,4 @@ std::unique_ptr<juce::Component> makeWaveTravellerEditor (AudioEngine& engine, i
         return channel >= 0 && channel < (int) s.channels.size() ? &s.channels[(std::size_t) channel] : nullptr;
     }, channel);
 }
-} // namespace lynx
+} // namespace yw

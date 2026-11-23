@@ -2,7 +2,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // FL's Patcher editor (REA_rodada141): the node graph of a mixer slot (EffectKind::patcher) or of a Channel Rack
 // generator (InstrumentKind::patcher). Add effects, instruments and plugins, cable audio, notes and control values
@@ -33,4 +33,4 @@ extern std::function<void (bool generators)> onBrowsePluginDatabase;
 bool takeInstrumentFromBrowser (const ChannelDef& c);
 bool takeEffectFromBrowser (const EffectSlot& fx);
 } // namespace PatcherWindows
-} // namespace lynx
+} // namespace yw

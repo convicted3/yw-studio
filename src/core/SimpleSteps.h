@@ -1,7 +1,7 @@
 #pragma once
 
 // The Simple workflow's Drum Machine page (round 190lr, DS-39; BandLab's web Studio drum machine dock, reference
-// /mnt/e/lynx-work/bandlab190p/shots/09-drum-machine-dock.png and bandlab182d §"Drum machine dock"): a Drums track's
+// /mnt/e/yw-work/bandlab190p/shots/09-drum-machine-dock.png and bandlab182d §"Drum machine dock"): a Drums track's
 // step grid in the track dock, with BandLab's patterns A–H, Length, Swing, its own ▶ and a typing key per row.
 //
 // It is a VIEW of what the Drums track already is (core/SimpleTracks.h, decision D3): the kit's channels in the
@@ -23,7 +23,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::simplesteps
+namespace yw::simplesteps
 {
 constexpr int letterCount = 8;  // A … H
 constexpr int keyedRows = 8;    // BandLab's kit rows with a typing key
@@ -63,11 +63,11 @@ inline constexpr int lengthChoices[] { 1, 2, 4 };
 void setLengthBars (Song& song, int pattern, int bars);
 
 // The step a velocity 0..1 is drawn with: BandLab draws a step at the default velocity in the track colour and a
-// softer step darker; LYNX's law: the share of the colour = 0.45 + 0.55 × velocity / the default (capped at 1).
+// softer step darker; YW's law: the share of the colour = 0.45 + 0.55 × velocity / the default (capped at 1).
 float shade (float velocity) noexcept;
 
 // The step of `pattern` the song plays now on that track, −1 when none: in Song mode a clip of the pattern on the
 // track under the position (the clip's own start offset and repeats counted); in Pattern mode with that pattern
 // current, the position in the pattern.
 int playingStep (const Song& song, int track, int pattern, double positionTicks, bool playing);
-} // namespace lynx::simplesteps
+} // namespace yw::simplesteps

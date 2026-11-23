@@ -12,7 +12,7 @@
 #include "core/RackOps.h"
 #include "core/SessionIds.h"
 
-namespace lynx::trackimport
+namespace yw::trackimport
 {
 namespace
 {
@@ -715,4 +715,4 @@ Result importTracks (Song& song, const Song& input, const std::vector<int>& chos
     result.ok = ! result.tracks.empty() || ! result.channels.empty();
     return result;
 }
-} // namespace lynx::trackimport
+} // namespace yw::trackimport

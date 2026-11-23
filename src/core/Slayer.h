@@ -15,7 +15,7 @@
 // chords, strum, mono glide); then the effects block (16 effects: phaser, tremolo, auto-wah, wah, ring modulation,
 // shaper, octave, talk box, chorus, flanger, leslie, tremolo pan, delay, reverb), the amp (four types: clean, overdrive,
 // distortion, fuzz, with feedback), the 3-band EQ, the cabinet (two biquads) and the volume. Everything runs on the x87
-// FPU with 64-bit precision and truncating rounding (the engine sets it in every processReplacing); LYNX reproduces
+// FPU with 64-bit precision and truncating rounding (the engine sets it in every processReplacing); YW reproduces
 // that with long double arithmetic under the same control word.
 //
 // Installation data read at run time from the user's own Slayer_Engine.dll (never shipped): the 15 recorded pick
@@ -31,7 +31,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true for an FL Slayer state the engine can read (version 0: 28 parameters, version 1: 29)
 bool slayerStateUsable (const std::vector<std::uint8_t>& state);
@@ -68,7 +68,7 @@ struct RefOptions
 };
 
 // The host's MIDI levels (REA_rodada79 §2): the pitch bend the front-end sends for ProcessEvent 4 (channel pitch in
-// cents), the integer pan of ProcessEvent 2 for a LYNX channel pan (−1…1), and the front-end's output gains for that pan
+// cents), the integer pan of ProcessEvent 2 for a YW channel pan (−1…1), and the front-end's output gains for that pan
 // and the channel gain carried by ProcessEvent 3
 int pitchBend (int cents) noexcept;
 int midiPan (double pan) noexcept;
@@ -82,4 +82,4 @@ int midiVelocity (double initVol) noexcept;
 std::vector<float> renderReference (const std::vector<int>& params, const std::string& dll, const std::vector<RefNote>& notes,
                                     double sampleRate, int length, const RefOptions& options = {});
 } // namespace slayer
-} // namespace lynx
+} // namespace yw

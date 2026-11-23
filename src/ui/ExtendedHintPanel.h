@@ -5,7 +5,7 @@
 // transparent to mouse clicks so the controls under it stay usable. Only its round grip takes the mouse: hovering it
 // fades the panel, dragging it moves the panel. Drawn from FL's measures at 100 %: a 400 x 82 dark translucent pill with a
 // round right end, the hint on the first line, the value in grey italics on the second, a red dot for an automatable
-// control and the grip circle (r 34) on the right. LYNX vectors only; repaints only when the hint changes.
+// control and the grip circle (r 34) on the right. YW vectors only; repaints only when the hint changes.
 
 #include <functional>
 
@@ -15,7 +15,7 @@
 #include "ui/HintBar.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 class ExtendedHintPanel final : public juce::Component
 {
@@ -120,4 +120,4 @@ private:
     bool shownLive = false, faded = false;
     juce::Point<int> grabbedAt;
 };
-} // namespace lynx::ui
+} // namespace yw::ui

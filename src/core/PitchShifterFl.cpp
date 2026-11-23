@@ -17,7 +17,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::psfl
+namespace yw::psfl
 {
 namespace
 {
@@ -223,7 +223,7 @@ float clipLookup (const std::vector<float>& tab, float index, float gain) noexce
 }
 
 // The granular engine's random source (MSVC rand() recurrence). In FL one state is shared by every instance in the
-// process; LYNX gives each instance its own, starting where a freshly loaded engine starts.
+// process; YW gives each instance its own, starting where a freshly loaded engine starts.
 struct Lcg
 {
     std::uint32_t s = 233994u;
@@ -1170,7 +1170,7 @@ void Engine::process (float* left, float* right, int numFrames)
     }
 }
 
-// --- the LYNX mixer effect ------------------------------------------------------------------------------------------
+// --- the YW mixer effect ------------------------------------------------------------------------------------------
 
 void toParams (const State& s, EffectParams& p) noexcept
 {
@@ -1284,4 +1284,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> make (const EffectParams* params) { return std::make_unique<PitchShifterEffect> (params); }
-} // namespace lynx::psfl
+} // namespace yw::psfl

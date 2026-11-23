@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's voice tools (REA_rodada119): two native processors for vocal chains, written from published DSP literature
+// YW's voice tools (REA_rodada119): two native processors for vocal chains, written from published DSP literature
 // and designed against our own black-box measurements of the plugins vocal projects use in these roles (official
 // trials, docs/analise/REA_rodada119.md). Own names, own code, own parameter laws; the laws follow the measured ones,
 // so a saved setting of those plugins translates one to one when a project uses them on a machine without them.
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct EffectInfo;
 class Effect;
@@ -107,7 +107,7 @@ std::unique_ptr<Effect> make (const Tuning& t);
 // smoothing and minimum statistics", IEEE TSAP 9(5), 2001 — the minimum of the smoothed band power over a sliding
 // window, kept as the minima of `subWindows` sub-windows) each band's floor sets a second expander threshold, `off`
 // dB above it; the larger of its reduction and the fixed law's is applied. Latency stays 0.
-// The constants below are fitted (round 190dp, /mnt/e/lynx-work/vqe190dp/qfit) on the reference's programme renders at
+// The constants below are fitted (round 190dp, /mnt/e/yw-work/vqe190dp/qfit) on the reference's programme renders at
 // 0 / 20 / 35 / 50 / 100 % and its stimulus captures at 0 … 100 %: band-envelope distance 4.15 → 2.95 dB; then the
 // tracker got its own Q 8.5 bands (a tone sweeping by is not taken for its own floor), on the channels' mean and
 // evaluated every 16 samples (its cost: within 10 % of the fixed law's), with off1 17 → 16 dB to match.
@@ -175,4 +175,4 @@ int sourceOf (float v) noexcept;         // 0 own side, 1 sum, 2 difference
 double windowMs (float rangeV) noexcept; // grain window: 13.3 ms (80 Hz range), 53.3 ms (20 Hz range)
 } // namespace gemini
 } // namespace voicetools
-} // namespace lynx
+} // namespace yw

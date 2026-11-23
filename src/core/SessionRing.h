@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-namespace lynx::sessionring
+namespace yw::sessionring
 {
 struct Ring
 {
@@ -68,4 +68,4 @@ inline Ring reveal (Ring r, int track, int scene, int tracks, int scenes) noexce
         r.scene = scene - r.height + 1;
     return clamped (r, tracks, scenes);
 }
-} // namespace lynx::sessionring
+} // namespace yw::sessionring

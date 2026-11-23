@@ -15,7 +15,7 @@
 #include "engine/AudioEngine.h"
 #include "engine/Exporter.h"
 
-namespace lynx::determinism190po
+namespace yw::determinism190po
 {
 namespace
 {
@@ -210,10 +210,10 @@ juce::String check (std::function<void (const juce::String&)> log)
                               + (at == -1 ? juce::String() : at == -2 ? juce::String (": other length") : ": first difference at frame " + juce::String (at)));
     }
 
-    // 3. export twice (ExportJob, as the Export window and `LYNX --export` make it): the same file bytes
+    // 3. export twice (ExportJob, as the Export window and `YW --export` make it): the same file bytes
     {
         const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory)
-                             .getChildFile ("lynx-determinism190po-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
+                             .getChildFile ("yw-determinism190po-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
         dir.createDirectory();
         exportopts::Options o;
         o.format = exportopts::Format::wav;
@@ -240,4 +240,4 @@ juce::String check (std::function<void (const juce::String&)> log)
         return "OK (x87 main " + hex (mainCw) + " new thread " + hex (freshCw) + " scoped " + hex (scopedCw) + "; 1 / 6 workers bit-identical; 2 exports one hash)";
     return "ERROR " + failures.joinIntoString ("; ");
 }
-} // namespace lynx::determinism190po
+} // namespace yw::determinism190po

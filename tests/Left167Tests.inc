@@ -9,9 +9,9 @@
 
 namespace left167
 {
-lynx::Song sendSong (int target)
+yw::Song sendSong (int target)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (200);
     auto slot = makeEffectSlot (EffectKind::fruitySend);
@@ -23,8 +23,8 @@ lynx::Song sendSong (int target)
 
 TEST (left167_fruity_send_files_keep_the_legacy_span_when_every_target_fits)
 {
-    using namespace lynx;
-    // the slot alone: 0..127 when its target fits (older LYNX versions read the same insert), else today's span
+    using namespace yw;
+    // the slot alone: 0..127 when its target fits (older YW versions read the same insert), else today's span
     CHECK (flbasic::saveSendSpanOf (left167::sendSong (12), 1, 0) == flbasic::legacySendSpan);
     CHECK (flbasic::saveSendSpanOf (left167::sendSong (127), 1, 0) == flbasic::legacySendSpan);
     CHECK (flbasic::saveSendSpanOf (left167::sendSong (128), 1, 0) == maxMixerTracks - 1);
@@ -51,13 +51,13 @@ TEST (left167_fruity_send_files_keep_the_legacy_span_when_every_target_fits)
         const auto v = flbasic::sendTrackValue (track);
         const auto saved = (float) (std::lround (flbasic::sendTrackValueInSpan (v, 127) * 10000.0) / 10000.0);
         CHECK (flbasic::sendTrack (flbasic::rescaleSendTrackValue (saved, 127)) == track);
-        CHECK (std::lround (saved * 127.0f) == track); // what LYNX 0.1.20 and older read
+        CHECK (std::lround (saved * 127.0f) == track); // what YW 0.1.20 and older read
     }
 }
 
 TEST (left167_fruity_send_presets_carry_their_span)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::fruitySend);
     flbasic::sendToParams ({ 0, 256, 256, 9 }, slot.params.data());
     const auto text = presets::toText (EffectKind::fruitySend, "Bus 9", slot.params);
@@ -65,7 +65,7 @@ TEST (left167_fruity_send_presets_carry_their_span)
     const auto back = presets::fromText (EffectKind::fruitySend, text);
     CHECK (back && flbasic::sendFromParams (back->params.data()).track == 9);
     // a preset saved before round 166d (no span line): "Send to" over 0..127
-    const auto old = presets::fromText (EffectKind::fruitySend, "LYNX preset 1\nengine = Fruity Send\nname = Old\nSend to = "
+    const auto old = presets::fromText (EffectKind::fruitySend, "YW preset 1\nengine = Fruity Send\nname = Old\nSend to = "
                                                                        + std::to_string (40.0 / 127.0) + "\n");
     CHECK (old && flbasic::sendFromParams (old->params.data()).track == 40);
     // past insert 127: today's span
@@ -90,7 +90,7 @@ TEST (left167_flp_import_reads_the_automatic_crossfades_flag)
         }
         const auto project = flp::parseProject (b.bytes);
         CHECK (project.autoCrossfades == (flag == 1));
-        const auto song = lynx::importFlp (project, {});
+        const auto song = yw::importFlp (project, {});
         CHECK (song.autoCrossfades == (flag == 1));
     }
     if (! realFlpDir.empty()) // FL's own: "Basic with limiter" (FL 2026) on, "Mehdi Ebrahiminejad - Never Out" off
@@ -114,9 +114,9 @@ namespace left167
 // one held C4 on `channel` (Pattern mode, 120 BPM, 48 kHz), the channel's PITCH knob (`knob` semitones) or the main
 // pitch (`main` cents) turned at `at` seconds, as a live tweak does: the rack state is rebuilt from the edited song
 // (the instruments are kept and configured again)
-std::vector<float> renderLiveTweak (const lynx::ChannelDef& channel, float knob, float main, double at, double seconds)
+std::vector<float> renderLiveTweak (const yw::ChannelDef& channel, float knob, float main, double at, double seconds)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (2);
     s.bpm = 120.0;
@@ -162,16 +162,16 @@ std::vector<float> renderLiveTweak (const lynx::ChannelDef& channel, float knob,
 } // namespace left167
 
 // FL's generators follow a live PITCH knob or main pitch move on the note that is already sounding (FL 2025 render,
-// REA_rodada167a §1: every synth reads +200 cents right after a +200 move). LYNX's engines took both at note on only.
+// REA_rodada167a §1: every synth reads +200 cents right after a +200 move). YW's engines took both at note on only.
 TEST (left167_sounding_notes_follow_a_live_pitch_knob_and_main_pitch)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
-    const auto print = std::getenv ("LYNX_PITCH_AUDIT") != nullptr;
+    const auto print = std::getenv ("YW_PITCH_AUDIT") != nullptr;
     // FL measured (allpitch2.flp) the first twelve following it at once (Sakura too, but the autocorrelation can't read
     // its string model here, as in issue14_pitch_audit_of_the_instruments); Morphine, Toxic and Kepler take the same host
-    // path in LYNX. The others are drums, own pitch models or unreadable by the estimate.
+    // path in YW. The others are drums, own pitch models or unreadable by the estimate.
     const std::set<std::string> follow { "3x Osc", "Sytrus", "Harmless", "MiniSynth", "Sawer", "SimSynth", "PoiZone", "GMS",
                                          "Harmor", "Fruity DX10", "FL Keys", "BooBass", "Morphine", "Toxic Biohazard", "Kepler" };
     const auto fl = natives142::flAccess();
@@ -200,7 +200,7 @@ TEST (left167_sounding_notes_follow_a_live_pitch_knob_and_main_pitch)
 // The live follow keeps the output bit-exact when nothing moves, and a later slide note still lands on its pitch
 TEST (left167_host_slide_live_jump)
 {
-    using namespace lynx;
+    using namespace yw;
     HostSlide s;
     s.anchor (100.0f);
     s.follow (100.0f);
@@ -228,7 +228,7 @@ TEST (left167_host_slide_live_jump)
 // track after every used track (Track 28 when 27 were used), the track keeping its name
 TEST (left167_rendered_tracks_go_on_the_first_free_playlist_track)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (4);
     s.bpm = 120.0;
@@ -265,7 +265,7 @@ TEST (left167_rendered_tracks_go_on_the_first_free_playlist_track)
 // per-note pitch every block, so the hit still ringing glides; Fruit Kick reads it only at the trigger (no change)
 TEST (left167_drum_slides_bend_bassdrum_and_drumaxx_only)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();

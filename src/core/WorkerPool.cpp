@@ -29,7 +29,7 @@
  #include "core/Simd.h"
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -167,7 +167,7 @@ WorkerPool::Tuning& WorkerPool::tuning() noexcept
 {
     static Tuning t;
     static const bool fromEnvironment = [] {
-        if (const char* e = std::getenv ("LYNX_POOL"); e != nullptr)
+        if (const char* e = std::getenv ("YW_POOL"); e != nullptr)
             t.apply (e);
         return true;
     }();
@@ -562,8 +562,8 @@ void WorkerPool::run (int n, void* ctx, Call fn) noexcept
     work (false);
 
     // (round 190gq) a short spin for the last indices, then sleep until the worker finishing the round wakes us
-    // (LYNX_CALLER_SLEEP=0: the old spin-and-yield wait, for A/B runs)
-    static const bool callerSleeps = [] { const char* e = std::getenv ("LYNX_CALLER_SLEEP"); return e == nullptr || std::atoi (e) != 0; }();
+    // (YW_CALLER_SLEEP=0: the old spin-and-yield wait, for A/B runs)
+    static const bool callerSleeps = [] { const char* e = std::getenv ("YW_CALLER_SLEEP"); return e == nullptr || std::atoi (e) != 0; }();
     if (! callerSleeps)
         for (int spins = 0; done.load (std::memory_order_acquire) < n; ++spins)
         {
@@ -603,4 +603,4 @@ void WorkerPool::run (int n, void* ctx, Call fn) noexcept
 
     ticket.store (base, std::memory_order_release); // count 0: late workers take nothing
 }
-} // namespace lynx
+} // namespace yw

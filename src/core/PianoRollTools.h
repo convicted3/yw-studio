@@ -15,12 +15,12 @@
 #include "core/NoteTools.h"
 #include "core/Song.h"
 
-namespace lynx::prtools
+namespace yw::prtools
 {
 // --- score templates (.fsc) -------------------------------------------------------------------
 struct ScoreNote
 {
-    std::int64_t start = 0, length = 0; // ticks (LYNX PPQ)
+    std::int64_t start = 0, length = 0; // ticks (YW PPQ)
     int key = 60;
     float velocity = 100.0f / 128.0f;   // 0..1 (FL byte / 128)
     float pan = 0.0f;                   // -1..1
@@ -42,7 +42,7 @@ struct Score
     std::int64_t length() const noexcept;
 };
 
-// Reads an FL score file (.fsc: an .flp with one pattern of notes), rescaled to LYNX's PPQ.
+// Reads an FL score file (.fsc: an .flp with one pattern of notes), rescaled to YW's PPQ.
 std::optional<Score> parseScore (std::span<const std::uint8_t> bytes);
 // One note per `step` over one beat (quantizer default), with `swing` (0..1) delaying every other step by
 // up to half a step.
@@ -51,16 +51,16 @@ Score gridScore (std::int64_t step, float swing = 0.0f);
 // The Piano roll's File › Open score / Save score as (round 168g, REA_rodada168g.md §3): the score's notes as notes of
 // `channel` (all of them, at their own times), and an .fsc of `notes` as FL writes one from the piano roll
 // (FUN_0121b1b0 → the project saver in score mode 0x10: the version text, 0x41 = 0, then every note as a 24-byte 0xE0
-// record with the channel field 0; header format 0x10, one channel, LYNX's PPQ).
+// record with the channel field 0; header format 0x10, one channel, YW's PPQ).
 std::vector<Note> notesFromScore (const Score& score, int channel);
 std::vector<std::uint8_t> writeScore (const std::vector<Note>& notes);
 
 // FL's event scores (issue #86, REA_rodada178a §4): the Event editor's Save score as / Open score. One target's events
 // as an .fsc of header format 0x18: 0x41 = 0, then 0xDF records {tick, control 0, the value normalised to 0..1 as a
 // float}. Target-agnostic: opening one puts its curve on whatever target the editor shows (a Tempo curve onto a
-// volume, and back). LYNX's lane values are the normalised values (exactly FL's for the tempo, volumes and pans).
+// volume, and back). YW's lane values are the normalised values (exactly FL's for the tempo, volumes and pans).
 std::vector<std::uint8_t> writeEventScore (const std::vector<PatternEvent>& events, std::uint32_t control = 0);
-// The events of an event score at LYNX's PPQ, sorted, one per tick; nothing when the file is not one (a note score).
+// The events of an event score at YW's PPQ, sorted, one per tick; nothing when the file is not one (a note score).
 std::optional<std::vector<PatternEvent>> parseEventScore (std::span<const std::uint8_t> bytes);
 
 // Per-level strengths (0..1) used when a template's levels are blended into the notes (quantizer, chopper).
@@ -159,7 +159,7 @@ ArticulateOptions articulatePreset (ArticulatePreset preset) noexcept;
 // Returns the indices of the processed notes after the change (chop chords adds notes).
 void articulate (Pattern& pattern, const std::vector<int>& indices, const ArticulateOptions& options, Meter meter);
 
-// --- chord progression (LYNX's own generator) ------------------------------------------------
+// --- chord progression (YW's own generator) ------------------------------------------------
 struct Chord
 {
     int root = 0;              // pitch class 0..11 of the chord root
@@ -176,7 +176,7 @@ std::string chordName (const Chord& chord); // "Am7", "C/E"...
 // Roman numerals of the chords in the key of `tonic` ("I-V-vi-IV"), readable by parseProgression.
 std::string toNumerals (const std::vector<Chord>& chords, int tonic);
 
-// Chord detection (FL 2026's chord readout, LYNX's own rules; REA round 153): names the chord of a set of MIDI keys
+// Chord detection (FL 2026's chord readout, YW's own rules; REA round 153): names the chord of a set of MIDI keys
 // (up to 10 are read, the rest ignored). Exact interval templates only (triads, sixths, sevenths, sus, add9, ninths,
 // power chord); the lowest key is preferred as the root, otherwise the chord is written over its bass ("Am7/C").
 // Returns nothing for fewer than two pitch classes or a set no template fits.
@@ -255,4 +255,4 @@ int builtInRiffChordCount() noexcept;
 // Runs the chain. Without `onExistingNotes`, the channel's notes in `indices` are replaced by one note of `bars`
 // bars at key 48 before the steps run. Returns the indices of the riff's notes.
 std::vector<int> riffMachine (Pattern& pattern, const std::vector<int>& indices, const RiffOptions& options, Meter meter);
-} // namespace lynx::prtools
+} // namespace yw::prtools

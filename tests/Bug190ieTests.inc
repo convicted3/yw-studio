@@ -9,7 +9,7 @@
 //
 // The measure: Δ⁴ (the fourth difference) of the output, a high-pass that leaves a smooth chord at about −120 dB and
 // turns a step of size a into peaks of about 6a. A tempo ramp must not raise it over the same effect at a steady tempo.
-// LYNX_SURVEY_190IE=1 also runs the survey of every built-in effect (default settings and, where the effect has one,
+// YW_SURVEY_190IE=1 also runs the survey of every built-in effect (default settings and, where the effect has one,
 // its tempo sync switched on) and prints the table the round's HANDOFF quotes.
 
 #include <cstring>
@@ -45,11 +45,11 @@ struct Render
 
 // `bpmAt (block start, frames)` gives each block's tempo (held for the block, as the renderer does)
 template <typename Tempo>
-Render render (const lynx::EffectSlot& slot0, const std::vector<float>& in, double rate, int block, Tempo bpmAt)
+Render render (const yw::EffectSlot& slot0, const std::vector<float>& in, double rate, int block, Tempo bpmAt)
 {
     Render out;
     auto slot = slot0;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     if (fx == nullptr)
         return out;
     fx->prepare (rate);
@@ -64,7 +64,7 @@ Render render (const lynx::EffectSlot& slot0, const std::vector<float>& in, doub
         fx->setSongPosition (tick);
         fx->setPlaying (true);
         fx->process (out.l.data() + at, out.r.data() + at, len, slot.params, bpm);
-        tick += len * bpm / 60.0 * lynx::ppq / rate;
+        tick += len * bpm / 60.0 * yw::ppq / rate;
     }
     for (int i = 0; i < n && out.finite; ++i)
         out.finite = std::isfinite (out.l[(std::size_t) i]) && std::isfinite (out.r[(std::size_t) i]);
@@ -116,12 +116,12 @@ struct Result
 };
 
 // steady 120 and 140 BPM against a ramp 120 → 140 over the render (blocks of `block`)
-// (survey only: LYNX_SURVEY_190IE_DUMP=<folder> writes each row's steady and ramp renders there as raw floats, L then R,
+// (survey only: YW_SURVEY_190IE_DUMP=<folder> writes each row's steady and ramp renders there as raw floats, L then R,
 // to compare builds; `dumpName` names the row)
 inline std::string dumpName;
 inline void dump (const char* what, const std::vector<float>& l, const std::vector<float>& r)
 {
-    const char* dir = std::getenv ("LYNX_SURVEY_190IE_DUMP");
+    const char* dir = std::getenv ("YW_SURVEY_190IE_DUMP");
     if (dir == nullptr || dumpName.empty())
         return;
     if (auto* f = std::fopen ((std::string (dir) + "/" + dumpName + "_" + what + ".f32").c_str(), "wb"))
@@ -132,7 +132,7 @@ inline void dump (const char* what, const std::vector<float>& l, const std::vect
     }
 }
 
-inline Result rampVsSteady (const lynx::EffectSlot& slot, double rate, int block, double seconds)
+inline Result rampVsSteady (const yw::EffectSlot& slot, double rate, int block, double seconds)
 {
     Result res;
     const auto in = chord ((int) (seconds * rate), rate);
@@ -161,9 +161,9 @@ inline Result rampVsSteady (const lynx::EffectSlot& slot, double rate, int block
     return res;
 }
 
-inline lynx::EffectSlot delaySlot (float time, float feedback, float mix, float pingPong, float damping)
+inline yw::EffectSlot delaySlot (float time, float feedback, float mix, float pingPong, float damping)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::delay);
+    auto s = yw::makeEffectSlot (yw::EffectKind::delay);
     s.params[0] = time, s.params[1] = feedback, s.params[2] = mix, s.params[3] = pingPong, s.params[4] = damping;
     return s;
 }
@@ -187,7 +187,7 @@ struct OldDelay
         buffer[0].assign ((std::size_t) (3.0 * 192000.0) + 4, 0.0f);
         buffer[1].assign ((std::size_t) (3.0 * 192000.0) + 4, 0.0f);
     }
-    void process (float* l, float* r, int n, const lynx::EffectParams& params, double bpm) noexcept
+    void process (float* l, float* r, int n, const yw::EffectParams& params, double bpm) noexcept
     {
         static constexpr std::array<double, 8> divisions { 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
         const auto beats = divisions[(std::size_t) std::clamp ((int) (params[0] * 8.0f), 0, 7)];
@@ -239,7 +239,7 @@ struct OldTranceDelay
         lineR.assign ((std::size_t) capacity, 0.0f);
         lineP.assign ((std::size_t) capacity, 0.0f);
     }
-    void process (float* left, float* right, int n, const lynx::EffectParams& p, double bpm) noexcept
+    void process (float* left, float* right, int n, const yw::EffectParams& p, double bpm) noexcept
     {
         static constexpr double beatsOf[5] { 0.25, 0.375, 0.5, 0.75, 1.0 };
         const auto k = (int) (p[0] * 4.0f);
@@ -325,7 +325,7 @@ struct OldTranceDelay
 TEST (bug190ie_delay_tempo_ramp_has_no_clicks)
 {
     using namespace bug190ie;
-    const lynx::EffectSlot slots[] { lynx::makeEffectSlot (lynx::EffectKind::delay), delaySlot (0.55f, 0.8f, 0.6f, 1.0f, 0.6f),
+    const yw::EffectSlot slots[] { yw::makeEffectSlot (yw::EffectKind::delay), delaySlot (0.55f, 0.8f, 0.6f, 1.0f, 0.6f),
                                      delaySlot (0.05f, 0.9f, 0.5f, 0.0f, 0.0f) };
     for (const auto& slot : slots)
         for (const auto rate : { 44100.0, 48000.0 })
@@ -350,12 +350,12 @@ TEST (bug190ie_delay_steady_tempo_bit_identical)
     using namespace bug190ie;
     struct Case
     {
-        lynx::EffectSlot slot;
+        yw::EffectSlot slot;
         double rate, bpm;
         int block;
     };
     const Case cases[] {
-        { lynx::makeEffectSlot (lynx::EffectKind::delay), 44100.0, 120.0, 512 },
+        { yw::makeEffectSlot (yw::EffectKind::delay), 44100.0, 120.0, 512 },
         { delaySlot (0.55f, 0.8f, 0.6f, 1.0f, 0.6f), 48000.0, 128.0, 256 },
         { delaySlot (0.05f, 0.9f, 0.5f, 0.0f, 0.0f), 96000.0, 87.5, 333 },
         { delaySlot (0.99f, 0.95f, 1.0f, 0.0f, 1.0f), 44100.0, 60.0, 1024 },
@@ -403,7 +403,7 @@ TEST (bug190ie_delay_tempo_step_settles_on_the_new_length)
     CHECK (same);
 
     // the Time knob moved at a steady tempo: the read position jumps at once (0.1.28's behaviour, kept)
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (rate);
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
     l[(std::size_t) impulseAt] = r[(std::size_t) impulseAt] = 1.0f;
@@ -417,33 +417,33 @@ TEST (bug190ie_delay_tempo_step_settles_on_the_new_length)
     CHECK (std::abs (l[(std::size_t) impulseAt + quarter] - 1.0f) < 1e-6f);
 }
 
-// Every built-in effect under the same ramp (survey; LYNX_SURVEY_190IE=1): default settings, and with its tempo sync
+// Every built-in effect under the same ramp (survey; YW_SURVEY_190IE=1): default settings, and with its tempo sync
 // switched on where it has such a control. Prints one line per effect; the permanent checks are only "finite".
 TEST (bug190ie_survey_tempo_ramp_all_effects)
 {
     using namespace bug190ie;
-    const char* env = std::getenv ("LYNX_SURVEY_190IE");
+    const char* env = std::getenv ("YW_SURVEY_190IE");
     if (env == nullptr || env[0] != '1')
         return;
     const double rate = 48000.0;
-    const char* names = std::getenv ("LYNX_SURVEY_190IE_NAMES"); // (optional: a comma list of effect names)
+    const char* names = std::getenv ("YW_SURVEY_190IE_NAMES"); // (optional: a comma list of effect names)
     std::printf ("  %-28s %-8s %9s %9s %9s %11s %11s\n", "effect", "variant", "tempo dB", "Δ⁴ dB", "peak dB", "ramp dBFS", "steady dBFS");
     std::printf ("  (then the steady 120 BPM render's hash)\n");
-    for (int k = 0; k <= (int) lynx::lastEffectKind; ++k)
+    for (int k = 0; k <= (int) yw::lastEffectKind; ++k)
     {
-        const auto kind = (lynx::EffectKind) k;
-        if (lynx::fxaudit::skipReason (kind) != nullptr || lynx::fxaudit::isNoSound (kind) || kind == lynx::EffectKind::rackMixer)
+        const auto kind = (yw::EffectKind) k;
+        if (yw::fxaudit::skipReason (kind) != nullptr || yw::fxaudit::isNoSound (kind) || kind == yw::EffectKind::rackMixer)
             continue;
-        if (names != nullptr && std::string (",") .append (names).append (",").find (std::string (",") + lynx::effectInfo (kind).name + ",") == std::string::npos)
+        if (names != nullptr && std::string (",") .append (names).append (",").find (std::string (",") + yw::effectInfo (kind).name + ",") == std::string::npos)
             continue;
-        const auto base = lynx::makeEffectSlot (kind);
-        std::vector<std::pair<std::string, lynx::EffectSlot>> variants { { "default", base } };
+        const auto base = yw::makeEffectSlot (kind);
+        std::vector<std::pair<std::string, yw::EffectSlot>> variants { { "default", base } };
         auto synced = base;
         bool any = false;
-        for (const auto& c : lynx::fxaudit::controlsOf (base))
-            if (wantsSync (c.name) && lynx::fxaudit::valueOf (synced, c.param) < 0.5f)
+        for (const auto& c : yw::fxaudit::controlsOf (base))
+            if (wantsSync (c.name) && yw::fxaudit::valueOf (synced, c.param) < 0.5f)
             {
-                lynx::fxaudit::setValue (synced, c.param, 1.0f);
+                yw::fxaudit::setValue (synced, c.param, 1.0f);
                 any = true;
             }
         if (any)
@@ -451,14 +451,14 @@ TEST (bug190ie_survey_tempo_ramp_all_effects)
         for (const auto& [name, slot] : variants)
         {
             dumpName = std::to_string (k) + "_";
-            for (const char* c = lynx::effectInfo (kind).name; *c != 0; ++c)
+            for (const char* c = yw::effectInfo (kind).name; *c != 0; ++c)
                 dumpName += std::isalnum ((unsigned char) *c) ? *c : '-';
             dumpName += "_" + name;
             const auto r = rampVsSteady (slot, rate, 256, 3.0);
             dumpName.clear();
             if (! r.ran)
                 continue;
-            std::printf ("  %-28s %-8s %9.1f %9.1f %9.1f %11.1f %11.1f  %016llx%s%s\n", lynx::effectInfo (kind).name, name.c_str(), r.tempoDepDb, r.excessDb, r.peakExcessDb, r.rampPeakDb, r.steadyPeakDb, (unsigned long long) r.steadyHash,
+            std::printf ("  %-28s %-8s %9.1f %9.1f %9.1f %11.1f %11.1f  %016llx%s%s\n", yw::effectInfo (kind).name, name.c_str(), r.tempoDepDb, r.excessDb, r.peakExcessDb, r.rampPeakDb, r.steadyPeakDb, (unsigned long long) r.steadyHash,
                          r.finite ? "" : "  NOT FINITE", r.tempoDepDb > -60.0 && (r.excessDb > 6.0 || r.peakExcessDb > 6.0) ? "  <-- clicks" : "");
             CHECK (r.finite);
         }
@@ -473,7 +473,7 @@ TEST (bug190ie_pocket_trance_delay_tempo)
     using namespace bug190ie;
     for (const auto mode : { 0.0f, 0.5f, 1.0f })
     {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::pocketTranceDelay);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::pocketTranceDelay);
         slot.params[4] = mode;
         slot.params[1] = 0.7f;
         for (const auto block : { 64, 512 })
@@ -512,7 +512,7 @@ TEST (bug190ie_nebula_synced_tempo)
     for (const auto law : { 1.0f, 0.0f })
         for (const auto mod : { 0.5f, 0.0f })
         {
-            auto slot = lynx::makeEffectSlot (lynx::EffectKind::nebula);
+            auto slot = yw::makeEffectSlot (yw::EffectKind::nebula);
             slot.params[1] = 0.3f; // Sync: straight notes
             slot.params[11] = mod;
             slot.params[14] = law;

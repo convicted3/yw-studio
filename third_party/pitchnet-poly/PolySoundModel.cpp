@@ -262,8 +262,8 @@ void nmfBlock(const Context& ctx, const std::vector<Candidate>& notes, const std
 // Notes only interact where they overlap in time, so the NMF is solved in blocks of a few seconds
 // (with margins) to bound memory on long recordings. A recording shorter than one block is
 // solved in one piece.
-// LYNX modification (round 190lk): the block grid and one block's solve are separate functions (maskBlocks,
-// buildMaskBlock), so that LYNX can build the masks of the blocks an edit reaches on demand (ensureMasks) instead
+// YW modification (round 190lk): the block grid and one block's solve are separate functions (maskBlocks,
+// buildMaskBlock), so that YW can build the masks of the blocks an edit reaches on demand (ensureMasks) instead
 // of keeping every note's masks for the whole recording. buildMasks solves the same blocks in the same way.
 std::vector<MaskBlock> maskBlocks(const Params& p, int T)
 {

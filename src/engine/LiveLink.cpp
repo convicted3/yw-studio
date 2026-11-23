@@ -16,7 +16,7 @@
  #include <poll.h>
 #endif
 
-namespace lynx::livelink
+namespace yw::livelink
 {
 void Connection::push (Event e)
 {
@@ -177,7 +177,7 @@ void Connection::run (std::string url, std::string token, std::string userAgent)
         cleanup();
         return fail (0, "could not open the connection");
     }
-    const auto headers = widen ("Authorization: Bearer " + token + "\r\nSec-WebSocket-Protocol: lynx-relay.v1\r\n");
+    const auto headers = widen ("Authorization: Bearer " + token + "\r\nSec-WebSocket-Protocol: yw-relay.v1\r\n");
     if (! WinHttpSendRequest (request, headers.c_str(), (DWORD) -1L, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) || ! WinHttpReceiveResponse (request, nullptr))
     {
         const auto err = GetLastError();
@@ -298,7 +298,7 @@ void Connection::close()
 #else
 // ---------------------------------------------------------------------------------------------------------------------
 // libcurl's WebSocket API (7.86+, on by default since 8.11), loaded at run time: the distribution's TLS and CA store,
-// and LYNX SHARE still starts on a system without it (the Session menu then says why).
+// and YW Studio still starts on a system without it (the Session menu then says why).
 
 namespace
 {
@@ -400,7 +400,7 @@ void Connection::run (std::string url, std::string token, std::string userAgent)
         return closedEvent (0, "curl_easy_init failed");
     void* headers = nullptr;
     headers = c.slistAppend (headers, ("Authorization: Bearer " + token).c_str());
-    headers = c.slistAppend (headers, "Sec-WebSocket-Protocol: lynx-relay.v1");
+    headers = c.slistAppend (headers, "Sec-WebSocket-Protocol: yw-relay.v1");
     c.setopt (h, optUrl, url.c_str());
     c.setopt (h, optUserAgent, userAgent.c_str());
     c.setopt (h, optHttpHeader, headers);
@@ -455,7 +455,7 @@ void Connection::run (std::string url, std::string token, std::string userAgent)
                 // round 190oh: a frame curl took only part of (the socket's buffer is full: a message over ~64 KiB over
                 // TLS to a far relay) goes on with the rest, the same frame and flags. Leaving it half-sent made the
                 // next message fail (curl error 43), the link closed and a guest's upload started again from its
-                // first piece, for ever (seen from this PC on relay.lynx-share.com; never from a relay close by)
+                // first piece, for ever (seen from this PC on relay.yolo.su; never from a relay close by)
                 if (off >= m.second.size())
                     break;
                 pollfd p { fd, POLLOUT, 0 };
@@ -593,4 +593,4 @@ HttpAnswer http (const std::string& method, const std::string& url, const std::v
 bool httpAvailable() { return false; }
 HttpAnswer http (const std::string&, const std::string&, const std::vector<std::string>&, const std::string&, const std::string&, int) { return {}; }
 #endif
-} // namespace lynx::livelink
+} // namespace yw::livelink

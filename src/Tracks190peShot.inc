@@ -1,20 +1,20 @@
-    // LYNX --tracks190peshot <prefix> (round 190pe, 0.1.32: research190oe P20 Track versions, P11 Import tracks from another
+    // YW --tracks190peshot <prefix> (round 190pe, 0.1.32: research190oe P20 Track versions, P11 Import tracks from another
     // project) off-screen through the real components: the Pattern layout's Playlist with a track that has versions (the
     // header's version chip), the track menu, the versions menu, the other version shown, the Clip-launch arrangement's
     // headers, File › Import, the "Import tracks from another project" window and the Playlist after the import; the undo
     // steps. <prefix>-checks.txt lists the checks. Included in the app class of Main.cpp (savePng / saveMenus).
-    // @150: LYNX_SHOT_SCALE=1.5 LYNX_SHOT_SUFFIX=@150.
+    // @150: YW_SHOT_SCALE=1.5 YW_SHOT_SUFFIX=@150.
     bool runTracks190peShot (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::StringArray report;
         bool allOk = true;
         const auto check = [&report, &allOk] (const char* name, bool ok, const juce::String& detail = {}) {
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         namespace tv = trackversions;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
@@ -178,7 +178,7 @@
         write (ui, "08-pattern-promoted");
         {
             juce::String why; // (the paint gate's project with versions)
-            check ("saved_versions_project", ProjectFile::save (engine.getSong(), juce::File (prefix + "-versions.lynx"), why), why);
+            check ("saved_versions_project", ProjectFile::save (engine.getSong(), juce::File (prefix + "-versions.yw"), why), why);
         }
 
         // ---- the Clip-launch layout's arrangement: the same chip on Live's headers
@@ -250,14 +250,14 @@
         };
         check ("undo_removes_the_import", withoutWorkTime (engine.getSong()) == withoutWorkTime (before));
 
-        // ---- .lynx round trip of the versions and the copy for 0.1.30 (one line)
+        // ---- .yw round trip of the versions and the copy for 0.1.30 (one line)
         {
             juce::String why;
             const auto back = ProjectFile::fromJson (ProjectFile::toJson (engine.getSong()), why);
-            check ("lynx_round_trip", back && back->playlistTracks.size() > 2 && back->playlistTracks[2].versions == engine.getSong().playlistTracks[2].versions
+            check ("yw_round_trip", back && back->playlistTracks.size() > 2 && back->playlistTracks[2].versions == engine.getSong().playlistTracks[2].versions
                                           && back->playlistTracks[2].activeVersion == 1, why);
-            const auto copy = olderlynx::forRelease (engine.getSong(), "0.1.30");
-            const auto lines = std::count_if (copy.lost.begin(), copy.lost.end(), [] (const olderlynx::Loss& l) { return juce::String (l.text).contains ("track version"); });
+            const auto copy = olderyw::forRelease (engine.getSong(), "0.1.30");
+            const auto lines = std::count_if (copy.lost.begin(), copy.lost.end(), [] (const olderyw::Loss& l) { return juce::String (l.text).contains ("track version"); });
             check ("older_copy_line", copy.ok && lines == 1 && ! copy.json.contains ("playlistTrackVersions"));
         }
 

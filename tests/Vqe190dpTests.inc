@@ -1,12 +1,12 @@
 // Round 190dp: Voice Shift's measured unvoiced path, Quell's noise-floor tracker (matched engine) and the classic laws
 // they leave in place for projects saved before. Laws measured black-box on the reference trials' renders
-// (/mnt/e/lynx-work/vqe190dp/HANDOFF.md); old projects keep the classic sound bit for bit.
+// (/mnt/e/yw-work/vqe190dp/HANDOFF.md); old projects keep the classic sound bit for bit.
 
 namespace vqe190dp
 {
 struct Case
 {
-    lynx::EffectKind kind;
+    yw::EffectKind kind;
     int lawIdx;
     int idx[4];
     float val[4];
@@ -24,9 +24,9 @@ struct Render
 
 // 2.5 s in blocks of 256: a 196 Hz pulse-like voice (0 … 0.9 s), noise (0.9 … 1.5 s), a 330 Hz voice gliding up with
 // noise under it (1.5 … 2.2 s), silence. Left = the signal, right = 0.8 × it.
-inline Render render (const lynx::EffectSlot& slot, double sr)
+inline Render render (const yw::EffectSlot& slot, double sr)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) (2.5 * sr), block = 256;
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
@@ -100,7 +100,7 @@ inline double centroidHz (const std::vector<float>& x, double sr)
 
 TEST (vqe190dp_law_parameters_are_appended_and_old_projects_keep_the_classic_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& vs = effectInfo (EffectKind::voiceShift).params;
     CHECK (vs.size() == (std::size_t) voiceshift::count && voiceshift::law == 7);
     CHECK (std::string (vs[(std::size_t) voiceshift::law].name) == "Law" && vs[(std::size_t) voiceshift::law].defaultValue == 1.0f);
@@ -139,11 +139,11 @@ TEST (vqe190dp_law_parameters_are_appended_and_old_projects_keep_the_classic_law
 
 TEST (vqe190dp_classic_laws_render_as_the_base_commit_did)
 {
-    using namespace lynx;
-    // Voice Shift / Quell with the classic law, and LYNX Tune as a new instance (default and two settings) and as a
+    using namespace yw;
+    // Voice Shift / Quell with the classic law, and YW Tune as a new instance (default and two settings) and as a
     // project saved before: Tune shares the TD-PSOLA shifter, whose new unvoiced path only Voice Shift asks for, so Tune
     // has no law switch and sounds as before everywhere. FNV-1a of the float bits, the energy and two samples, from the
-    // base commit 77026c3a2's Psola users (golden: /mnt/e/lynx-work/vqe190dp/golden, mkt.sh)
+    // base commit 77026c3a2's Psola users (golden: /mnt/e/yw-work/vqe190dp/golden, mkt.sh)
     const vqe190dp::Case cases[] = {
         { EffectKind::voiceShift, 7, { -1, -1, -1, -1 }, {  }, 48000.0, 0x1314dc020b9b2a48ull, 3397.19714, -0.135365844, 0.227989152 }, // vs default
         { EffectKind::voiceShift, 7, { 0, -1, -1, -1 }, { 17.0f / 24.0f }, 48000.0, 0xc07450ca160f6651ull, 3334.94096, -0.224264145, -0.134423494 }, // vs pitch +5
@@ -154,10 +154,10 @@ TEST (vqe190dp_classic_laws_render_as_the_base_commit_did)
         { EffectKind::quellDenoiser, 4, { 0, 3, -1, -1 }, { 0.2f, 1.0f }, 48000.0, 0x9d301b8189960364ull, 6213.24266, 0.00172530219, 0.363674372 }, // quell matched 0.2
         { EffectKind::quellDenoiser, 4, { 0, 3, -1, -1 }, { 0.5f, 1.0f }, 44100.0, 0x7d50e4b19ba42b7eull, 5686.8071, 0.00172298297, 0.381973952 }, // quell matched 0.5
         { EffectKind::quellDenoiser, 4, { 0, 3, -1, -1 }, { 1.0f, 1.0f }, 48000.0, 0xafde312c82eb4ba1ull, 6102.93156, 0.00323212706, 0.350229144 }, // quell matched 1.0
-        { EffectKind::lynxTune, -1, { -1, -1, -1, -1 }, {  }, 48000.0, 0xe135bcf9fa391efeull, 6355.39939, 0.0627515689, 0.0538308322 }, // tune default
-        { EffectKind::lynxTune, -1, { -1, -1, -1, -1 }, {  }, 48000.0, 0xe135bcf9fa391efeull, 6355.39939, 0.0627515689, 0.0538308322, 6 }, // tune old project
-        { EffectKind::lynxTune, -1, { 6, 5, 2, 4 }, { 17.0f / 24.0f, 9.0f / 14.0f, 0.3f, 1.0f }, 44100.0, 0x9ae869baf7a05c46ull, 4777.8601, 0.223027334, -0.273250163, -1 }, // tune +5 formant +2 retune
-        { EffectKind::lynxTune, -1, { 9, 0, -1, -1 }, { 1.0f, 2.0f / 11.0f }, 48000.0, 0xd1f9d54494ba43a0ull, 6390.72495, -0.0923300385, -0.0844917744, -1 }, // tune low latency
+        { EffectKind::ywTune, -1, { -1, -1, -1, -1 }, {  }, 48000.0, 0xe135bcf9fa391efeull, 6355.39939, 0.0627515689, 0.0538308322 }, // tune default
+        { EffectKind::ywTune, -1, { -1, -1, -1, -1 }, {  }, 48000.0, 0xe135bcf9fa391efeull, 6355.39939, 0.0627515689, 0.0538308322, 6 }, // tune old project
+        { EffectKind::ywTune, -1, { 6, 5, 2, 4 }, { 17.0f / 24.0f, 9.0f / 14.0f, 0.3f, 1.0f }, 44100.0, 0x9ae869baf7a05c46ull, 4777.8601, 0.223027334, -0.273250163, -1 }, // tune +5 formant +2 retune
+        { EffectKind::ywTune, -1, { 9, 0, -1, -1 }, { 1.0f, 2.0f / 11.0f }, 48000.0, 0xd1f9d54494ba43a0ull, 6390.72495, -0.0923300385, -0.0844917744, -1 }, // tune low latency
     };
     int sameBits = 0, n = 0;
     for (const auto& c : cases)
@@ -181,14 +181,14 @@ TEST (vqe190dp_classic_laws_render_as_the_base_commit_did)
     // other libm versions may round some transcendental calls differently (see Reverb190bzTests.inc)
     std::printf ("  classic laws: %d of %d renders hash-identical to the base commit\n", sameBits, n);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == n);
    #endif
 }
 
 TEST (vqe190dp_voice_shift_unvoiced_path_follows_the_formants)
 {
-    using namespace lynx;
+    using namespace yw;
     // noise (nothing to detect) through Formant −3: the measured law moves it down with the formants (the
     // reference's sweep and noise above its detector come out at the Formant shift), the classic law passes it
     const double sr = 48000.0;
@@ -246,7 +246,7 @@ TEST (vqe190dp_voice_shift_unvoiced_path_follows_the_formants)
 
 TEST (vqe190dp_quell_tracker_takes_a_steady_programme_down_at_high_settings_only)
 {
-    using namespace lynx;
+    using namespace yw;
     // a steady mix-like signal (pink-ish noise plus a chord) at −20 dBFS for 6 s: at 100 % the tracked floor sits near
     // the programme and takes it down (the reference: a dense mix 10 … 24 dB at 100 %), at 35 % it leaves it alone;
     // the classic law is the fixed one. Silence stays silent, nothing is NaN.

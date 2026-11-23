@@ -1,11 +1,11 @@
-// Round 190ob (LYNX 0.1.31): tracker follow-ups. Stage 2 start of the module import: the volume changes of sounding
+// Round 190ob (YW 0.1.31): tracker follow-ups. Stage 2 start of the module import: the volume changes of sounding
 // notes become the channels' Volume multiplier automation (core/ModuleImport.cpp), exact through .flp; the Tracker's
 // default key and its place in the Channel rack's channel menu. (Round 190om makes exact volume changes pattern events:
 // these tests import with volumeAsPatternEvents off, the automation clip path every other channel still takes.)
 
 namespace tracker190ob
 {
-using namespace lynx;
+using namespace yw;
 using namespace tracker190nw;
 
 // ProTracker M.K., speed 6 / tempo 125, one sample (64 frames, volume 64), one pattern. Channel 1: row 0 C-2 + F06,
@@ -14,7 +14,7 @@ using namespace tracker190nw;
 inline std::vector<std::uint8_t> volumeModFile (bool secondChannel = true)
 {
     std::vector<std::uint8_t> b;
-    tracker190nw::putText (b, "lynx volume", 20);
+    tracker190nw::putText (b, "yw volume", 20);
     for (int s = 0; s < 31; ++s)
     {
         tracker190nw::putText (b, s == 0 ? "sine" : "", 22);
@@ -93,7 +93,7 @@ TEST (tracker190ob_volume_changes_become_volume_multiplier_automation)
     // row 8: volume 16, a set on the row's first frame: a jump right there (libxmp sets it on that frame)
     CHECK (std::abs (gainAt (*a, 8 * 240.0 - 1) - 44.0 / 64.0) < 2e-3 && std::abs (gainAt (*a, 8 * 240.0) - 16.0 / 64.0) < 2e-3);
     CHECK (std::abs (gainAt (*a, 8 * 240.0 + 20) - 16.0 / 64.0) < 2e-3 && std::abs (gainAt (*a, 15 * 240.0) - 16.0 / 64.0) < 2e-3);
-    // on the steps a .lynx project stores a point's value in (1/10000: the save keeps them exactly)
+    // on the steps a .yw project stores a point's value in (1/10000: the save keeps them exactly)
     CHECK (std::all_of (a->points.begin(), a->points.end(), [] (const AutomationPoint& p) {
         const auto raw = p.value * 10000.0f;
         return std::abs (raw - std::round (raw)) < 1e-3f;
@@ -154,11 +154,11 @@ TEST (tracker190ob_volume_automation_survives_the_flp_round_trip)
     CHECK (same);
 }
 
-// The Tracker's default key: Shift+F7, beside FL's F7 (Piano roll). Nothing else in LYNX takes it in any context (FL
+// The Tracker's default key: Shift+F7, beside FL's F7 (Piano roll). Nothing else in YW takes it in any context (FL
 // 2026 neither: its ShortcutsModule has no Shift+F7, and FL did nothing on it in the live check of round 190ob).
 TEST (tracker190ob_the_tracker_key_is_shift_f7_and_free)
 {
-    using namespace lynx;
+    using namespace yw;
     keys::KeyMap map;
     const auto& chords = map.chordsFor ("view.tracker");
     const keys::Chord shiftF7 { keys::f7, keys::shift };

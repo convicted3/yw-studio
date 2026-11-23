@@ -20,33 +20,33 @@
 #include "ui/FrameTicker.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 // The built-in effects offered in the slot menus and the quick-add palette, in menu order.
 const std::vector<EffectKind>& addableEffects();
 // The FL engines among them need the user's FL installation (core/NativeEngines.h, round 142): whether one can be
 // added here, its menu name ("(beta)", "(requires FL Studio)") and a new slot (nullopt = not available here)
 bool addableEffectAvailable (EffectKind kind);
-// One of FL Studio's own effects (by its FL name, even when LYNX made it): the plugin menus file it under FL's category
-// (round 170b); LYNX's own effects go under "YW Studio".
+// One of FL Studio's own effects (by its FL name, even when YW made it): the plugin menus file it under FL's category
+// (round 170b); YW's own effects go under "YW Studio".
 bool isFlEffect (EffectKind kind);
 juce::String addableEffectName (EffectKind kind);
 std::optional<EffectSlot> newAddableEffect (EffectKind kind, double bpm = 120.0);
 
-// FL's mixer track state (Mixer track menu › File, REA round 143), in LYNX's .lynxtrack format: load onto `track`
+// FL's mixer track state (Mixer track menu › File, REA round 143), in YW's .ywtrack format: load onto `track`
 // (or, with `asNewInsert`, onto a new insert after it, named after the state), save `track`'s state.
 bool loadMixerTrackState (AudioEngine& engine, int track, const juce::File& file, bool asNewInsert);
 bool saveMixerTrackState (AudioEngine& engine, int track, const juce::File& file);
 
 // FL's mixer presets (REA round 167q): FL's own (.fst of Data\Patches\Mixer presets and Documents\Image-Line\FL
-// Studio\Presets\Mixer presets) and LYNX's states (.lynxtrack of Documents\LYNX\Mixer states), all read here.
+// Studio\Presets\Mixer presets) and YW's states (.ywtrack of Documents\YW\Mixer states), all read here.
 namespace mixerpresets
 {
-// The folders FL lists (user's first, then FL's factory one) and LYNX's states folder; only the existing ones.
+// The folders FL lists (user's first, then FL's factory one) and YW's states folder; only the existing ones.
 juce::Array<juce::File> folders();
 // Every preset of these folders (subfolders too), sorted by name as FL's File › States list.
 juce::Array<juce::File> all();
-bool isMixerPreset (const juce::File& file); // .lynxtrack, or an .fst holding a mixer track
+bool isMixerPreset (const juce::File& file); // .ywtrack, or an .fst holding a mixer track
 // The preset as a track state (FL's: converted, name "" when it has none); nullopt if unreadable.
 std::optional<MixerTrack> read (const juce::File& file);
 // FL's load (FUN_012a7440): onto every track of `tracks` (one undo step); routing, input, monitoring and arm stay.
@@ -74,7 +74,7 @@ juce::String armHint (const AudioEngine& engine, int track);
 void explain (const AudioEngine::RecordingNotice& notice);
 } // namespace mixerinput
 
-// Hardware output targets (REA round 156; LYNX extra): an insert can also go straight to device outputs, a stereo
+// Hardware output targets (REA round 156; YW extra): an insert can also go straight to device outputs, a stereo
 // pair or one channel alone (mono: sum / left / right). Optional: by default inserts reach the device via the Master.
 namespace mixeroutput
 {
@@ -166,7 +166,7 @@ public:
     void itemDropped (const SourceDetails& details) override;
 
     // Multi-selection (docs/WORKFLOW_FL.md P2, M1; FL's own, round 170b): Ctrl+click or Ctrl+drag across strips selects
-    // a range, Ctrl+Shift adds or removes it, Shift+click selects a range (LYNX); selected faders and pans move together
+    // a range, Ctrl+Shift adds or removes it, Shift+click selects a range (YW); selected faders and pans move together
     // and the route arrow routes them all. Always contains the selected track.
     const std::vector<int>& getSelection() const noexcept { return selection; }
     void setSelection (std::vector<int> tracks, int primary);
@@ -209,10 +209,10 @@ public:
     static inline bool showStripInserts = false;
     void setShowStripInserts (bool on);
     juce::Rectangle<int> stripInsertsForSnapshot (int track) const { return insertsArea (track); }
-    // FL's Extra large list (round 190jd): the used slots' names at the strip's foot, 23 px rows, while the LYNX view
+    // FL's Extra large list (round 190jd): the used slots' names at the strip's foot, 23 px rows, while the YW view
     // above is off (core/StripInserts.h flListShown)
     static bool flInsertList() noexcept { return stripinserts::flListShown (layout, showStripInserts); }
-    static stripinserts::Geometry insertsGeometry() noexcept { return flInsertList() ? stripinserts::flExtraLarge : stripinserts::lynxView; }
+    static stripinserts::Geometry insertsGeometry() noexcept { return flInsertList() ? stripinserts::flExtraLarge : stripinserts::ywView; }
     juce::Rectangle<int> routeArrowForSnapshot (int track) const { return arrowArea (track); }
     void resetLoudness();
     void refreshLoudnessForSnapshot() { loudnessShown = engine.getMeters().loudness.read(); repaint(); } // (--snapshot: no frames run)
@@ -382,7 +382,7 @@ private:
     bool liveFrame (double nowMs);
     // The strips kept as a picture of the visible part, with empty meter wells; the levels are drawn over it (round
     // 174e2): a meter frame blits its rows and draws the bars instead of painting the strips under them again. Other
-    // repaints (a fader, a name, hover) refresh their area of the picture. LYNX_MIXER_CACHE=0: off.
+    // repaints (a fader, a name, hover) refresh their area of the picture. YW_MIXER_CACHE=0: off.
     class MeterCache;
     bool meterCacheOn = false;
     bool meterRepaintOnly = false; // set around the meters' own repaints: the picture stays valid
@@ -405,7 +405,7 @@ private:
     juce::Rectangle<int> soloArea (int track) const;
     juce::Rectangle<int> routeArea (int track) const;
     // FL's route arrow at the strip's foot (round 190io, FM-32; core/MixerRouteArrow.h): the Send switch from the selected
-    // track, the selected track's own downward arrow; the "→ n" pill in the routing lane stays (LYNX)
+    // track, the selected track's own downward arrow; the "→ n" pill in the routing lane stays (YW)
     juce::Rectangle<int> arrowArea (int track) const;
     static constexpr int arrowRowHeight = 14;
     // issue #154 part 2 (round 190io): the strip's insert effects list (empty while the view is off)
@@ -430,7 +430,7 @@ private:
     juce::Rectangle<int> invertIcon (int track) const;
     juce::Rectangle<int> swapIcon (int track) const;
     juce::Rectangle<int> meterArea (int track) const;
-    // round 177d: the gain-reduction meter beside the peak meters (only on strips with one of LYNX's own dynamics)
+    // round 177d: the gain-reduction meter beside the peak meters (only on strips with one of YW's own dynamics)
     juce::Rectangle<int> grArea (int track) const;
     float gainReduction (int track) const; // 0..1 over mixerops::gainReductionRangeDb, -1: no such effect on the strip
     juce::Rectangle<int> sendArea (int track) const;   // send level knob (routing lane)
@@ -459,11 +459,11 @@ private:
     int selectAnchor = -1;
     bool selectAdding = true;
     std::vector<int> selectBase; // the selection kept under the range (Ctrl+Shift)
-    bool ctrlClickPending = false; // Ctrl alone: a release on the same strip toggles it (LYNX extra, issue #163)
+    bool ctrlClickPending = false; // Ctrl alone: a release on the same strip toggles it (YW extra, issue #163)
     void dragSelectTo (int track);
     bool headerDragged = false;
     void showSendMenu (int track);
-    void addPreFaderItem (juce::PopupMenu& menu, int from, int track); // LYNX's pre-fader switch of a send (round 190aq)
+    void addPreFaderItem (juce::PopupMenu& menu, int from, int track); // YW's pre-fader switch of a send (round 190aq)
     void routeSelection (int track, mixerops::RouteKind kind); // the selected inserts into `track` (FL's route arrow)
     void soloExclusive (int track);
     std::vector<int> selection { 0 };
@@ -510,7 +510,7 @@ private:
 };
 
 // Effects panel for the selected track, in FL's layout (REA round 104): the audio input row, 10 slots, the
-// knobs of the chosen slot (LYNX), then the insert's built-in 3-band EQ and its audio output target.
+// knobs of the chosen slot (YW), then the insert's built-in 3-band EQ and its audio output target.
 //  - click an empty slot ("Slot N"): choose an effect; click an occupied one: edit its knobs; double click: its window
 //  - the arrow on the left of a slot (or right-click): the slot's options (add / replace, move, delete...)
 //  - on the right of a slot: the mix knob (drag; double-click resets to 100%) and the LED (on/off, bypass)
@@ -566,7 +566,7 @@ public:
         showSlotMenu (slot);
     }
     void showAddMenuFor (int row) { showAddMenu (row); }
-    // Issue #206 (round 190lw, a LYNX extra): a double-click on an empty slot opens the effect search (the Quick-add
+    // Issue #206 (round 190lw, a YW extra): a double-click on an empty slot opens the effect search (the Quick-add
     // palette with the effects alone, its search box focused); the chosen effect lands in that slot. FL's single click
     // (the plugin menu at once) stays: the menu is closed when the second click comes.
     void showSlotSearch (int row);
@@ -661,7 +661,7 @@ private:
     juce::Rectangle<int> bandLevelsBounds() const;
     void setBandLevel (juce::Point<int> p);
     void showBandLevelMenu();
-    bool tuneSelected() const;                // LYNX Tune: its 12 note switches are a keyboard strip
+    bool tuneSelected() const;                // YW Tune: its 12 note switches are a keyboard strip
     juce::Rectangle<int> tuneKeysBounds() const;
     void toggleTuneNote (juce::Point<int> p);
     int knobAt (juce::Point<int> p) const;
@@ -790,4 +790,4 @@ private:
     EffectsPanel effects;
     MixerLayoutBox layoutBox { strips };
 };
-} // namespace lynx
+} // namespace yw

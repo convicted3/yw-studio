@@ -35,7 +35,7 @@
 #include "core/GrossBeat.h"
 #include "core/FruityVocoder.h"
 #include "core/GrossBeatLocator.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 #include "core/MaximusFx.h"
 #include "core/MixSuite.h"
 #include "core/EchoSuite.h"
@@ -77,7 +77,7 @@
 #include "core/PeakShapes.h"
 #include "ui/DesignDisplays.inc" // round 168r: the graphs of the designed editors
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -102,7 +102,7 @@ bool isVertical (const LayoutItem& item) noexcept
 // --- the editor ----------------------------------------------------------------------------------
 
 // round 190ih: what Gross Beat's editor paints while its live parts move (--uiperf), and the measurement switches
-// (LYNX_GB_DIAG, also set by --uiperf's A/B steps: 1 no live repaints, 64 JUCE's software renderer for the window,
+// (YW_GB_DIAG, also set by --uiperf's A/B steps: 1 no live repaints, 64 JUCE's software renderer for the window,
 // bits 8-15 the live display's frames per second). The trail, an opaque editor, the cells alone and the locator alone
 // were measured the same way and changed nothing (details190ih/HANDOFF.md); only the frame rate did.
 struct GbPaintStats
@@ -117,7 +117,7 @@ inline GbPaintStats& gbPaintStats()
 }
 inline int& gbDiagMask()
 {
-    static int mask = juce::SystemStats::getEnvironmentVariable ("LYNX_GB_DIAG", "0").getIntValue();
+    static int mask = juce::SystemStats::getEnvironmentVariable ("YW_GB_DIAG", "0").getIntValue();
     return mask;
 }
 inline int gbDiag() { return gbDiagMask(); }
@@ -207,7 +207,7 @@ public:
                 page = maximusfx::selectedBand (fx->state); // FL reopens Maximus on the band selected when it was saved
         engine.addChangeListener (this);
         const auto& l = activeLayout();
-        for (const auto& item : l.items) // live meters and graphs (mixing suite, LYNX Tune's pitch, round 108's dynamics): 30 Hz
+        for (const auto& item : l.items) // live meters and graphs (mixing suite, YW Tune's pitch, round 108's dynamics): 30 Hz
             if (item.type == Item::display && item.display != nullptr
                 && (std::strcmp (item.display, "grmeter") == 0 || std::strcmp (item.display, "grleds") == 0 || std::strcmp (item.display, "vumeter") == 0 || std::strcmp (item.display, "iometer") == 0 || std::strcmp (item.display, "outmeter") == 0 || std::strcmp (item.display, "limitpill") == 0 || std::strcmp (item.display, "gcmeter") == 0
                     || std::strcmp (item.display, "pitchgraph") == 0 || std::strcmp (item.display, "panpos") == 0 || std::strcmp (item.display, "hwping") == 0
@@ -261,14 +261,14 @@ public:
     // the design size (for the window's aspect ratio)
     juce::Point<int> designSize() const { return { activeLayout().width, activeLayout().height }; }
     // round 190in (design190ia FW-8, owner rule "names stay"): an editor that follows an FL plugin is titled with FL's
-    // name ("Fruity Delay 3", not LYNX's "Delay"; "Fruity Stereo Shaper", not "Utility"); LYNX's own engines keep theirs
+    // name ("Fruity Delay 3", not YW's "Delay"; "Fruity Stereo Shaper", not "Utility"); YW's own engines keep theirs
     juce::String headerName() const
     {
         if (layout == &plugui::soundgoodizerLayout())
             return "Soundgoodizer";
         if (layout != nullptr && layout->fl != nullptr && *layout->fl != 0)
             return utf8 (layout->fl);
-        // a LYNX engine standing in for an FL plugin of an imported project (Fruity Limiter → LYNX's Limiter engine,
+        // a YW engine standing in for an FL plugin of an imported project (Fruity Limiter → YW's Limiter engine,
         // Fruity Stereo Shaper → Utility...): the FL plugin's name, as FL shows it
         if (const auto* fx = stored(); fx != nullptr && fx->kind != EffectKind::plugin && ! fx->flOrigin.plugin.empty())
             return utf8 (fx->flOrigin.plugin.c_str());
@@ -326,13 +326,13 @@ public:
         return juce::jmax (0.25f, juce::jmin ((float) getWidth() / (float) l.width, ((float) getHeight() - headerHeight - footerHeight()) / (float) l.height));
     }
 
-    // LYNX's own engines show a one-line description of the control under the mouse at the bottom (the reference
+    // YW's own engines show a one-line description of the control under the mouse at the bottom (the reference
     // reverbs' description line, round 129)
     bool hasHelpLine() const
     {
         return layout != nullptr && layout != &plugui::soundgoodizerLayout()
                && (std::find (plugui::ownLayoutKinds().begin(), plugui::ownLayoutKinds().end(), kind) != plugui::ownLayoutKinds().end()
-                   || kind == EffectKind::lynxTune); // round 135: LYNX Tune's panel too
+                   || kind == EffectKind::ywTune); // round 135: YW Tune's panel too
     }
     float footerHeight() const { return hasHelpLine() ? 20.0f : 0.0f; }
 
@@ -362,7 +362,7 @@ public:
         g.drawFittedText (text, area.reduced (10.0f, 0.0f).toNearestInt(), juce::Justification::centredLeft, 1, 0.85f);
     }
 
-    // round 135: the MIX caption of a LYNX engine toggles the mix lock (the reference reverbs: click the MIX label)
+    // round 135: the MIX caption of a YW engine toggles the mix lock (the reference reverbs: click the MIX label)
     bool isMixItem (const LayoutItem& item) const
     {
         const auto p = paramOf (item);
@@ -415,7 +415,7 @@ public:
         return (kind == EffectKind::fruitySend && p == 3) || (kind == EffectKind::flTransporter && p == transporter::sendParam);
     }
 
-    // wide option menus of LYNX's own panels get step arrows at both ends (round 114)
+    // wide option menus of YW's own panels get step arrows at both ends (round 114)
     bool hasStepArrows (const LayoutItem& item) const
     {
         return item.type == Item::menu && item.w >= 110.0f && ! hasStyle (item, plugui::plainMenu) && kind != EffectKind::parametricEq && kind != EffectKind::fruitySend && kind != EffectKind::hardwareInsert
@@ -515,7 +515,7 @@ public:
         return fx != nullptr && param >= 0 && param < maxEffectParams ? fx->params[(std::size_t) param] : 0.0f;
     }
 
-    // round 190kl (issue #197): the Peak Controller's LYNX extra LFO shape shown on FL's Shape menu (0 = FL's shape)
+    // round 190kl (issue #197): the Peak Controller's YW extra LFO shape shown on FL's Shape menu (0 = FL's shape)
     int peakExtraShape (int param, const EffectSlot& fx) const
     {
         if (kind != EffectKind::peakController || param != plugui::paramIndex (kind, "LFO shape"))
@@ -564,7 +564,7 @@ public:
                 return;
             }
         if (kind == EffectKind::peakController && current()->params[(std::size_t) peakshapes::extraShapeParam] != 0.0f
-            && param == plugui::paramIndex (kind, "LFO shape")) // round 190kl: stepping FL's Shape leaves LYNX's extra shape
+            && param == plugui::paramIndex (kind, "LFO shape")) // round 190kl: stepping FL's Shape leaves YW's extra shape
         {
             setParams ({ { param, value }, { peakshapes::extraShapeParam, 0.0f } });
             return;
@@ -803,7 +803,7 @@ public:
         // options menu (FL's arrow at the left of the plugin's title)
         drawArrow (g, grid.menu, 0.0f, hoverHeader == 1 ? accent : colour::textSecondary);
 
-        // LYNX's mark (not in the compact grid), bypass LED, name, where it is
+        // YW's mark (not in the compact grid), bypass LED, name, where it is
         if (! grid.logo.isEmpty())
             skin::brandMark (g, grid.logo);
         skin::powerLed (g, grid.led, pluginheader::ledDiameter, fx.enabled);
@@ -947,7 +947,7 @@ public:
     // FL 2026 (capture 190ld B2, fl-delay3-feedback-a..p): the Feedback LEVEL ring keeps its colour up to ~93.8 % and
     // blends linearly to orange (255,168,48) at 100 % (the knob's end; no red inside its range). Res: FL's manual — the
     // ring goes from its colour through orange to red above 75 % (not captured: the same blend, orange half-way).
-    // LYNX keeps its own ring colour (the theme's accent) as the start of the blend.
+    // YW keeps its own ring colour (the theme's accent) as the start of the blend.
     void delay3KnobLook (const LayoutItem& item, float value, skin::KnobLook& look, bool synced) const
     {
         static const juce::Colour orange { 255, 168, 48 };
@@ -966,7 +966,7 @@ public:
     }
 
     // FL 2026 (capture 190ld B2, fl-delay3-time-sync vs -nosync): with TEMPO SYNC on, 15 small dots evenly spaced
-    // around the Time knob over its whole travel (darker marks on FL's panel; LYNX: its caption colour, faint)
+    // around the Time knob over its whole travel (darker marks on FL's panel; YW: its caption colour, faint)
     void paintDelay3StepDots (juce::Graphics& g, juce::Rectangle<float> circle, bool enabled) const
     {
         const auto s = scale();
@@ -1436,7 +1436,7 @@ public: // (the class stays public from here, as before)
                         const auto cell = letters ? juce::Rectangle<float> (key, key).withCentre (centre)
                                                   : juce::Rectangle<float> (w - 4.0f * s, h).withCentre (centre);
                         skin::hwKey (g, cell, o == chosen && fx.enabled, hot);
-                        if (hasStyle (item, plugui::compactKeys)) // round tp172d (slice 8): LYNX's extras on a hardware face — small,
+                        if (hasStyle (item, plugui::compactKeys)) // round tp172d (slice 8): YW's extras on a hardware face — small,
                         {                                          // muted until hovered, the chosen key lit
                             if (o != chosen && ! hot)
                             {
@@ -1677,9 +1677,9 @@ public: // (the class stays public from here, as before)
                     }
                     g.setColour (colour::textPrimary);
                     g.setFont (font (juce::jmax (9.0f, juce::jmin (12.0f * s, r.getHeight() * 0.55f)), true));
-                    if (kind == EffectKind::lynxTune && param == lynxtune::scale && fx.params[lynxtune::moreScales] >= 0.25f)
-                        g.drawFittedText (tr (fx.params[lynxtune::moreScales] >= 0.75f ? "Diminished" : "Whole tone"), textArea.toNearestInt(), juce::Justification::centred, 1, 0.6f);
-                    else if (const auto extra = peakExtraShape (param, fx); extra != 0) // round 190kl: LYNX's extra LFO shape
+                    if (kind == EffectKind::ywTune && param == ywtune::scale && fx.params[ywtune::moreScales] >= 0.25f)
+                        g.drawFittedText (tr (fx.params[ywtune::moreScales] >= 0.75f ? "Diminished" : "Whole tone"), textArea.toNearestInt(), juce::Justification::centred, 1, 0.6f);
+                    else if (const auto extra = peakExtraShape (param, fx); extra != 0) // round 190kl: YW's extra LFO shape
                         g.drawFittedText (tr (peakshapes::name (extra)), textArea.toNearestInt(), juce::Justification::centred, 1, 0.6f);
                     else if (kind == EffectKind::hardwareInsert) // the device's channel names (round 164d)
                         g.drawFittedText (valueText (param, value), textArea.reduced (4.0f * s, 0.0f).toNearestInt(), juce::Justification::centred, 1, 0.6f);
@@ -1782,7 +1782,7 @@ public: // (the class stays public from here, as before)
 
     float param01 (const char* name) const { return valueOf (plugui::paramIndex (kind, name)); }
 
-    // LYNX Tune's live display: the read-out on the left (note, cents, Hz, target, correction meter), the last 8 s of
+    // YW Tune's live display: the read-out on the left (note, cents, Hz, target, correction meter), the last 8 s of
     // sung (white) and corrected (accent) pitch on the right over the key's note lines
     void paintPitchDisplay (juce::Graphics& g, juce::Rectangle<float> r, const EffectSlot& fx, bool readout = true)
     {
@@ -1805,7 +1805,7 @@ public: // (the class stays public from here, as before)
 
         const auto last = history.empty() ? PitchPoint { 0.0f, 0.0f, 0.0f } : history.back();
         [[maybe_unused]] const auto voiced = last.sung > 0.5f;
-        [[maybe_unused]] const auto ref = lynxtune::referenceHz (fx.params[(std::size_t) lynxtune::reference]);
+        [[maybe_unused]] const auto ref = ywtune::referenceHz (fx.params[(std::size_t) ywtune::reference]);
 
         if (readout)
         {
@@ -1866,15 +1866,15 @@ public: // (the class stays public from here, as before)
         const auto span = 7.5f;
         auto yFor = [&] (float note) { return graph.getCentreY() - (note - displayCentre) / span * graph.getHeight() * 0.5f; };
         // note lanes: the scale's notes brighter, C labelled
-        const auto mask = vocal::scaleMask ((vocal::Scale) lynxtune::scaleIndex (fx.params[(std::size_t) lynxtune::scale]),
-                                            lynxtune::keyIndex (fx.params[(std::size_t) lynxtune::key]), 0xfff);
+        const auto mask = vocal::scaleMask ((vocal::Scale) ywtune::scaleIndex (fx.params[(std::size_t) ywtune::scale]),
+                                            ywtune::keyIndex (fx.params[(std::size_t) ywtune::key]), 0xfff);
         g.saveState();
         g.reduceClipRegion (graph.toNearestInt());
         g.setFont (font (juce::jmax (7.0f, 9.0f * s)));
         for (int n = (int) std::floor (displayCentre - span) - 1; n <= (int) std::ceil (displayCentre + span) + 1; ++n)
         {
             const auto inScale = ((mask >> (((n % 12) + 12) % 12)) & 1) != 0;
-            const auto on = fx.params[(std::size_t) (lynxtune::noteC + ((n % 12) + 12) % 12)] >= 0.5f;
+            const auto on = fx.params[(std::size_t) (ywtune::noteC + ((n % 12) + 12) % 12)] >= 0.5f;
             const auto y = yFor ((float) n);
             g.setColour (inScale && on ? colour::gridBar : colour::gridStep);
             g.drawHorizontalLine ((int) y, graph.getX(), graph.getRight());
@@ -1934,7 +1934,7 @@ public: // (the class stays public from here, as before)
         g.drawText (tr ("corrected"), graph.withHeight (14.0f * s).withY (graph.getY() - 14.0f * s).removeFromRight (64.0f * s), juce::Justification::centredLeft);
     }
 
-    // LYNX Tune's correction meter (round 120, the centre of the auto-mode workflow): a ring of segments from −100 to
+    // YW Tune's correction meter (round 120, the centre of the auto-mode workflow): a ring of segments from −100 to
     // +100 cents lit from the top toward the correction being applied, the target note's name in the middle and the
     // sung pitch's offset under it
     void paintPitchRing (juce::Graphics& g, juce::Rectangle<float> r, const EffectSlot& fx)
@@ -2044,7 +2044,7 @@ public: // (the class stays public from here, as before)
         g.drawText (tr ("HOLD"), juce::Rectangle<float> (inner, 12.0f * s).withCentre (c.translated (0.0f, inner * 0.78f)), juce::Justification::centred);
     }
 
-    // --- LYNX Tune's keyboard (round 128; round 147: the Waves Tune Real-Time role's keyboard) ----------------------
+    // --- YW Tune's keyboard (round 128; round 147: the Waves Tune Real-Time role's keyboard) ----------------------
     // A key edits its note name in every octave (the reference's Group Octaves, always on here): in BYPASS mode it
     // switches "pass uncorrected" (still a target, no correction), in REMOVE mode a click cycles the note's status like
     // the reference's — legal → illegal (to the nearest legal note) → illegal, pitch up → illegal, pitch down → legal.
@@ -2054,7 +2054,7 @@ public: // (the class stays public from here, as before)
     int tuneFirstOctave = 2, tuneShownOctaves = 4; // the view: C2 … B5 by default (the editor's own, not saved)
     int tuneRangeDrag = -1;                       // 0 = the low boundary, 1 = the high one
     int tuneSendFlash = 0;                        // round 150: Send lit for a few repaints after a click
-    enum TuneButton { tbBypass, tbRemove, tbReset, tbRange0, tbZoomOut = tbRange0 + lynxtune::rangePresets, tbZoomIn, tbLeft, tbRight, tbLatch,
+    enum TuneButton { tbBypass, tbRemove, tbReset, tbRange0, tbZoomOut = tbRange0 + ywtune::rangePresets, tbZoomIn, tbLeft, tbRight, tbLatch,
                       tbSend, tbReceive, tbGroup, tbCount }; // round 150: Send / Receive; round 152: Group octaves
     juce::Rectangle<float> tuneKeysStrip (juce::Rectangle<float> r) const { return r.withHeight (22.0f * scale()); }
     juce::Rectangle<float> tuneKeysBed (juce::Rectangle<float> r) const { return r.withTrimmedTop (36.0f * scale()).reduced (2.0f * scale(), 2.0f * scale()); }
@@ -2126,9 +2126,9 @@ public: // (the class stays public from here, as before)
         using namespace theme;
         const auto s = scale();
         const auto& p = fx.params;
-        const auto sc = (vocal::Scale) lynxtune::effectiveScale (p[lynxtune::scale], p[lynxtune::moreScales]);
-        const auto inScale = vocal::scaleMask (sc, lynxtune::keyIndex (p[lynxtune::key]), 0xfff);
-        const auto lowNote = lynxtune::rangeNote (p[lynxtune::rangeLow]), highNote = lynxtune::rangeNote (p[lynxtune::rangeHigh]);
+        const auto sc = (vocal::Scale) ywtune::effectiveScale (p[ywtune::scale], p[ywtune::moreScales]);
+        const auto inScale = vocal::scaleMask (sc, ywtune::keyIndex (p[ywtune::key]), 0xfff);
+        const auto lowNote = ywtune::rangeNote (p[ywtune::rangeLow]), highNote = ywtune::rangeNote (p[ywtune::rangeHigh]);
         // the strip: modes, Reset scale, the range presets, the view's navigation, latch
         for (int b = 0; b < tbCount; ++b)
         {
@@ -2139,13 +2139,13 @@ public: // (the class stays public from here, as before)
             else if (b == tbRemove) { lit = tuneRemove; name = tr ("Remove"); }
             else if (b == tbReset) name = tr ("Reset");
             else if (b == tbSend) { lit = tuneSendFlash > 0; name = tr ("Send"); }
-            else if (b == tbReceive) { lit = p[lynxtune::receiveScale] >= 0.5f; name = tr ("Receive"); }
-            else if (b == tbGroup) { lit = lynxtune::groupOctavesOn (p.data()); name = tr ("Group"); }
+            else if (b == tbReceive) { lit = p[ywtune::receiveScale] >= 0.5f; name = tr ("Receive"); }
+            else if (b == tbGroup) { lit = ywtune::groupOctavesOn (p.data()); name = tr ("Group"); }
             else if (b >= tbRange0 && b < tbZoomOut)
             {
-                const auto [lo, hi] = lynxtune::rangePresetNotes (b - tbRange0);
+                const auto [lo, hi] = ywtune::rangePresetNotes (b - tbRange0);
                 lit = lo == lowNote && hi == highNote;
-                name = tr (lynxtune::rangePresetName (b - tbRange0));
+                name = tr (ywtune::rangePresetName (b - tbRange0));
             }
             else if (b == tbZoomOut) name = "-";
             else if (b == tbZoomIn) name = "+";
@@ -2182,10 +2182,10 @@ public: // (the class stays public from here, as before)
         const auto sungNote = pitchHistory.empty() || pitchHistory.back().sung < 0.5f ? -1 : (int) std::lround (pitchHistory.back().target);
         // round 152: each key's status in effect (its own when Group octaves is off)
         const auto mask = tuneMask (p);
-        auto status = [&] (int note) { return lynxtune::noteStatus (p.data(), note, mask); };
-        auto legalNote = [&] (int note) { const auto st = status (note); return st == lynxtune::KeyStatus::legal || st == lynxtune::KeyStatus::bypass; };
+        auto status = [&] (int note) { return ywtune::noteStatus (p.data(), note, mask); };
+        auto legalNote = [&] (int note) { const auto st = status (note); return st == ywtune::KeyStatus::legal || st == ywtune::KeyStatus::bypass; };
         auto keyColour = [&] (int note, bool black) {
-            const auto bypassed = status (note) == lynxtune::KeyStatus::bypass;
+            const auto bypassed = status (note) == ywtune::KeyStatus::bypass;
             auto c = black ? juce::Colour (0xff1c1e24) : juce::Colour (0xffd9dbe0);
             if (! legalNote (note))
                 c = black ? juce::Colour (0xff101114) : juce::Colour (0xff5a5d66); // removed / not in the scale
@@ -2199,10 +2199,10 @@ public: // (the class stays public from here, as before)
             const auto pc = note % 12;
             const auto inRange = note >= lowNote && note <= highNote;
             const auto st = status (note);
-            const bool own = ! lynxtune::groupOctavesOn (p.data()) && lynxtune::keyOverride (p.data(), note) != lynxtune::KeyStatus::follow;
+            const bool own = ! ywtune::groupOctavesOn (p.data()) && ywtune::keyOverride (p.data(), note) != ywtune::KeyStatus::follow;
             if (legalNote (note) && fx.enabled && inRange) // a target: the accent line at the key's top
             {
-                g.setColour (st == lynxtune::KeyStatus::bypass ? juce::Colour (0xffe0a040) : accent);
+                g.setColour (st == ywtune::KeyStatus::bypass ? juce::Colour (0xffe0a040) : accent);
                 g.fillRect (k.withHeight (3.0f * s));
             }
             if (own) // round 152: a key with its own status (Group octaves off): an outline
@@ -2212,14 +2212,14 @@ public: // (the class stays public from here, as before)
             }
             if (! legalNote (note))
             {
-                const auto dir = st == lynxtune::KeyStatus::removedUp ? lynxtune::NoteDir::up
-                                 : (st == lynxtune::KeyStatus::removedDown ? lynxtune::NoteDir::down : lynxtune::NoteDir::nearest);
+                const auto dir = st == ywtune::KeyStatus::removedUp ? ywtune::NoteDir::up
+                                 : (st == ywtune::KeyStatus::removedDown ? ywtune::NoteDir::down : ywtune::NoteDir::nearest);
                 const auto x = juce::Rectangle<float> (7.0f * s, 7.0f * s).withCentre ({ k.getCentreX(), k.getY() + 10.0f * s });
                 g.setColour (accent.withAlpha (0.9f));
-                if (dir != lynxtune::NoteDir::nearest) // illegal, pitch up / down: an arrow
+                if (dir != ywtune::NoteDir::nearest) // illegal, pitch up / down: an arrow
                 {
                     juce::Path a;
-                    const auto up = dir == lynxtune::NoteDir::up;
+                    const auto up = dir == ywtune::NoteDir::up;
                     a.addTriangle (x.getX(), up ? x.getBottom() : x.getY(), x.getRight(), up ? x.getBottom() : x.getY(), x.getCentreX(), up ? x.getY() : x.getBottom());
                     g.fillPath (a);
                 }
@@ -2267,24 +2267,24 @@ public: // (the class stays public from here, as before)
         if (fx == nullptr)
             return;
         const auto note = tuneNoteAtX (r, x);
-        const auto lo = lynxtune::rangeNote (fx->params[lynxtune::rangeLow]), hi = lynxtune::rangeNote (fx->params[lynxtune::rangeHigh]);
+        const auto lo = ywtune::rangeNote (fx->params[ywtune::rangeLow]), hi = ywtune::rangeNote (fx->params[ywtune::rangeHigh]);
         if (pickNearer)
             tuneRangeDrag = std::abs (note - lo) <= std::abs (note - hi) ? 0 : 1;
         if (tuneRangeDrag == 0)
-            setParams ({ { lynxtune::rangeLow, lynxtune::rangeNoteValue (juce::jmin (note, hi)) } });
+            setParams ({ { ywtune::rangeLow, ywtune::rangeNoteValue (juce::jmin (note, hi)) } });
         else if (tuneRangeDrag == 1)
-            setParams ({ { lynxtune::rangeHigh, lynxtune::rangeNoteValue (juce::jmax (note, lo)) } });
-        const auto shown = tuneRangeDrag == 0 ? lynxtune::rangeLow : lynxtune::rangeHigh;
-        ui::showValueTip (*this, tuneRangeBar (r).toNearestInt(), tr ("Range") + " " + juce::String (lynxtune::paramText (shown, current()->params[(std::size_t) shown])));
+            setParams ({ { ywtune::rangeHigh, ywtune::rangeNoteValue (juce::jmax (note, lo)) } });
+        const auto shown = tuneRangeDrag == 0 ? ywtune::rangeLow : ywtune::rangeHigh;
+        ui::showValueTip (*this, tuneRangeBar (r).toNearestInt(), tr ("Range") + " " + juce::String (ywtune::paramText (shown, current()->params[(std::size_t) shown])));
     }
     // round 152: the pitch classes that are targets (the scale on the key, minus the notes switched off)
     static std::uint16_t tuneMask (const EffectParams& p)
     {
         std::uint16_t notes = 0;
         for (int k = 0; k < 12; ++k)
-            if (p[(std::size_t) (lynxtune::noteC + k)] >= 0.5f) notes = (std::uint16_t) (notes | (1u << k));
-        const auto sc = (vocal::Scale) lynxtune::effectiveScale (p[lynxtune::scale], p[lynxtune::moreScales]);
-        return (std::uint16_t) (vocal::scaleMask (sc, lynxtune::keyIndex (p[lynxtune::key]), notes) & notes);
+            if (p[(std::size_t) (ywtune::noteC + k)] >= 0.5f) notes = (std::uint16_t) (notes | (1u << k));
+        const auto sc = (vocal::Scale) ywtune::effectiveScale (p[ywtune::scale], p[ywtune::moreScales]);
+        return (std::uint16_t) (vocal::scaleMask (sc, ywtune::keyIndex (p[ywtune::key]), notes) & notes);
     }
     void tuneKeyClick (juce::Rectangle<float> r, juce::Point<float> at)
     {
@@ -2296,35 +2296,35 @@ public: // (the class stays public from here, as before)
             {
                 if (b == tbLatch)
                     tuneLatch = ! tuneLatch;
-                else if (b == tbSend) // round 150: this scale to every other LYNX Tune with Receive on
+                else if (b == tbSend) // round 150: this scale to every other YW Tune with Receive on
                 {
-                    engine.editSong ([t = track, sl = slot] (Song& song) { lynxtune::sendScaleToAll (song, t, sl); });
+                    engine.editSong ([t = track, sl = slot] (Song& song) { ywtune::sendScaleToAll (song, t, sl); });
                     tuneSendFlash = 8;
                 }
                 else if (b == tbReceive) // on: take the scale sent last now, and the ones sent later
                 {
-                    const bool nowOn = fx->params[lynxtune::receiveScale] < 0.5f;
-                    std::vector<std::pair<int, float>> c { { lynxtune::receiveScale, nowOn ? 1.0f : 0.0f } };
-                    lynxtune::SharedScale sh;
-                    if (nowOn && lynxtune::publishedScale (sh))
+                    const bool nowOn = fx->params[ywtune::receiveScale] < 0.5f;
+                    std::vector<std::pair<int, float>> c { { ywtune::receiveScale, nowOn ? 1.0f : 0.0f } };
+                    ywtune::SharedScale sh;
+                    if (nowOn && ywtune::publishedScale (sh))
                         for (std::size_t i = 0; i < sh.values.size(); ++i)
-                            c.push_back ({ lynxtune::sharedScaleList()[i], sh.values[i] });
+                            c.push_back ({ ywtune::sharedScaleList()[i], sh.values[i] });
                     setParams (c);
                 }
                 else if (b == tbBypass || b == tbRemove)
                     tuneRemove = b == tbRemove;
                 else if (b == tbGroup) // round 152: Group octaves on / off (the keys' own statuses are kept)
-                    setParams ({ { lynxtune::groupOctaves, lynxtune::groupOctavesOn (fx->params.data()) ? 0.0f : 1.0f } });
+                    setParams ({ { ywtune::groupOctaves, ywtune::groupOctavesOn (fx->params.data()) ? 0.0f : 1.0f } });
                 else if (b == tbReset) // every note of the scale legal again, nothing bypassed, no direction
                 {
                     std::vector<std::pair<int, float>> c;
-                    for (int k = 0; k < lynxtune::keyMapParams; ++k) // round 152: and no key of its own
-                        c.push_back ({ lynxtune::keyMap1 + k, 0.0f });
+                    for (int k = 0; k < ywtune::keyMapParams; ++k) // round 152: and no key of its own
+                        c.push_back ({ ywtune::keyMap1 + k, 0.0f });
                     for (int k = 0; k < 12; ++k)
                     {
-                        c.push_back ({ lynxtune::noteC + k, 1.0f });
-                        c.push_back ({ lynxtune::bypassC + k, 0.0f });
-                        c.push_back ({ lynxtune::noteDirC + k, 0.0f });
+                        c.push_back ({ ywtune::noteC + k, 1.0f });
+                        c.push_back ({ ywtune::bypassC + k, 0.0f });
+                        c.push_back ({ ywtune::noteDirC + k, 0.0f });
                     }
                     setParams (c);
                 }
@@ -2332,11 +2332,11 @@ public: // (the class stays public from here, as before)
                 {
                     // a range preset: the keyboard's range, and the detector's input type that covers it
                     const auto k = b - tbRange0;
-                    const auto [lo, hi] = lynxtune::rangePresetNotes (k);
-                    std::vector<std::pair<int, float>> c { { lynxtune::rangeLow, lynxtune::rangeNoteValue (lo) }, { lynxtune::rangeHigh, lynxtune::rangeNoteValue (hi) } };
-                    static constexpr float inputType[lynxtune::rangePresets] { 2.0f / 3.0f, 2.0f / 3.0f, 1.0f / 3.0f, 1.0f / 3.0f, 0.0f, 0.0f, -1.0f };
+                    const auto [lo, hi] = ywtune::rangePresetNotes (k);
+                    std::vector<std::pair<int, float>> c { { ywtune::rangeLow, ywtune::rangeNoteValue (lo) }, { ywtune::rangeHigh, ywtune::rangeNoteValue (hi) } };
+                    static constexpr float inputType[ywtune::rangePresets] { 2.0f / 3.0f, 2.0f / 3.0f, 1.0f / 3.0f, 1.0f / 3.0f, 0.0f, 0.0f, -1.0f };
                     if (inputType[k] >= 0.0f)
-                        c.push_back ({ lynxtune::range, inputType[k] });
+                        c.push_back ({ ywtune::range, inputType[k] });
                     setParams (c);
                 }
                 else if (b == tbZoomOut) tuneShownOctaves = juce::jmin (7, tuneShownOctaves + 1);
@@ -2355,23 +2355,23 @@ public: // (the class stays public from here, as before)
         const auto note = tuneKeyAt (r, at);
         if (note < 0)
             return;
-        if (! lynxtune::groupOctavesOn (fx->params.data())) // round 152: Group octaves off — this key alone
+        if (! ywtune::groupOctavesOn (fx->params.data())) // round 152: Group octaves off — this key alone
         {
             auto copy = fx->params;
-            const auto st = lynxtune::noteStatus (copy.data(), note, tuneMask (copy));
-            const auto next = tuneRemove ? lynxtune::nextRemoveStatus (st)
-                                         : (st == lynxtune::KeyStatus::bypass ? lynxtune::KeyStatus::legal : lynxtune::KeyStatus::bypass);
-            const auto mp = lynxtune::keyMap1 + juce::jlimit (0, lynxtune::keyMapParams - 1, (note - lynxtune::keyMapFirst) / lynxtune::keyMapPerParam);
+            const auto st = ywtune::noteStatus (copy.data(), note, tuneMask (copy));
+            const auto next = tuneRemove ? ywtune::nextRemoveStatus (st)
+                                         : (st == ywtune::KeyStatus::bypass ? ywtune::KeyStatus::legal : ywtune::KeyStatus::bypass);
+            const auto mp = ywtune::keyMap1 + juce::jlimit (0, ywtune::keyMapParams - 1, (note - ywtune::keyMapFirst) / ywtune::keyMapPerParam);
             tuneHeldMap = tuneLatch ? -1 : mp;
             tuneHeldMapValue = copy[(std::size_t) mp];
-            lynxtune::setKeyOverride (copy.data(), note, next);
+            ywtune::setKeyOverride (copy.data(), note, next);
             setParams ({ { mp, copy[(std::size_t) mp] } });
             return;
         }
         const auto pc = note % 12;
-        const auto onP = lynxtune::noteC + pc, byP = lynxtune::bypassC + pc, dirP = lynxtune::noteDirC + pc;
+        const auto onP = ywtune::noteC + pc, byP = ywtune::bypassC + pc, dirP = ywtune::noteDirC + pc;
         const auto on = fx->params[(std::size_t) onP] >= 0.5f, by = fx->params[(std::size_t) byP] >= 0.5f;
-        const auto dir = lynxtune::noteDir (fx->params[(std::size_t) dirP]);
+        const auto dir = ywtune::noteDir (fx->params[(std::size_t) dirP]);
         tuneHeld = tuneLatch ? -1 : pc;
         tuneHeldValues = { fx->params[(std::size_t) onP], fx->params[(std::size_t) byP] };
         tuneHeldDir = fx->params[(std::size_t) dirP];
@@ -2379,12 +2379,12 @@ public: // (the class stays public from here, as before)
         {
             // the reference's status cycle: legal → illegal → illegal, pitch up → illegal, pitch down → legal (a note
             // outside the scale stays illegal: only its direction cycles)
-            const auto sc = (vocal::Scale) lynxtune::effectiveScale (fx->params[lynxtune::scale], fx->params[lynxtune::moreScales]);
-            const bool scaleNote = ((vocal::scaleMask (sc, lynxtune::keyIndex (fx->params[lynxtune::key]), 0xfff) >> pc) & 1u) != 0;
-            const auto nextDir = dir == lynxtune::NoteDir::nearest ? 0.5f : (dir == lynxtune::NoteDir::up ? 1.0f : 0.0f);
+            const auto sc = (vocal::Scale) ywtune::effectiveScale (fx->params[ywtune::scale], fx->params[ywtune::moreScales]);
+            const bool scaleNote = ((vocal::scaleMask (sc, ywtune::keyIndex (fx->params[ywtune::key]), 0xfff) >> pc) & 1u) != 0;
+            const auto nextDir = dir == ywtune::NoteDir::nearest ? 0.5f : (dir == ywtune::NoteDir::up ? 1.0f : 0.0f);
             if (scaleNote && on)
                 setParams ({ { onP, 0.0f }, { byP, 0.0f }, { dirP, 0.0f } });
-            else if (scaleNote && dir == lynxtune::NoteDir::down)
+            else if (scaleNote && dir == ywtune::NoteDir::down)
                 setParams ({ { onP, 1.0f }, { byP, 0.0f }, { dirP, 0.0f } });
             else
                 setParams ({ { onP, on ? 1.0f : 0.0f }, { byP, 0.0f }, { dirP, nextDir } });
@@ -2406,8 +2406,8 @@ public: // (the class stays public from here, as before)
         }
         if (tuneHeld < 0)
             return;
-        setParams ({ { lynxtune::noteC + tuneHeld, tuneHeldValues.first }, { lynxtune::bypassC + tuneHeld, tuneHeldValues.second },
-                     { lynxtune::noteDirC + tuneHeld, tuneHeldDir } });
+        setParams ({ { ywtune::noteC + tuneHeld, tuneHeldValues.first }, { ywtune::bypassC + tuneHeld, tuneHeldValues.second },
+                     { ywtune::noteDirC + tuneHeld, tuneHeldDir } });
         tuneHeld = -1;
     }
     juce::String tuneKeysHint (juce::Rectangle<float> r, juce::Point<float> at) const
@@ -2428,7 +2428,7 @@ public: // (the class stays public from here, as before)
             }
         if (tuneRangeBar (r).expanded (0.0f, 2.0f * scale()).contains (at))
             return tr ("Range: drag a boundary; notes sung outside it pass uncorrected");
-        if (current() != nullptr && ! lynxtune::groupOctavesOn (current()->params.data())) // round 152
+        if (current() != nullptr && ! ywtune::groupOctavesOn (current()->params.data())) // round 152
             return tuneRemove ? tr ("Click a key: change the status of this key only") : tr ("Click a key: bypass / correct this key only");
         return tuneRemove ? tr ("Click a key: change that note's status in every octave") : tr ("Click a key: bypass / correct that note in every octave");
     }
@@ -2518,14 +2518,14 @@ public: // (the class stays public from here, as before)
         g.setFont (font (juce::jmax (8.0f, 10.0f * s), true));
         g.drawText (tr ("Auto Key"), r, juce::Justification::centred);
     }
-    // LEARN (round 135): while LYNX Tune's "Learn scale" is on, every pitch class held on its MIDI channel joins the
+    // LEARN (round 135): while YW Tune's "Learn scale" is on, every pitch class held on its MIDI channel joins the
     // custom scale (switching learning on starts a new scale)
     void learnScaleFromMidi()
     {
         const auto* fx = current();
-        if (fx == nullptr || fx->kind != EffectKind::lynxTune)
+        if (fx == nullptr || fx->kind != EffectKind::ywTune)
             return;
-        const bool on = fx->params[(std::size_t) lynxtune::learnMidi] >= 0.5f;
+        const bool on = fx->params[(std::size_t) ywtune::learnMidi] >= 0.5f;
         if (! on)
         {
             learning = false;
@@ -2540,12 +2540,12 @@ public: // (the class stays public from here, as before)
         if ((held & ~learned) == 0)
             return;
         learned |= held;
-        std::vector<std::pair<int, float>> changes { { lynxtune::scale, (float) (int) vocal::Scale::custom / (float) (vocal::scaleCount - 1) },
-                                                     { lynxtune::moreScales, 0.0f } };
+        std::vector<std::pair<int, float>> changes { { ywtune::scale, (float) (int) vocal::Scale::custom / (float) (vocal::scaleCount - 1) },
+                                                     { ywtune::moreScales, 0.0f } };
         for (int pc = 0; pc < 12; ++pc)
         {
-            changes.push_back ({ lynxtune::noteC + pc, ((learned >> pc) & 1u) != 0 ? 1.0f : 0.0f });
-            changes.push_back ({ lynxtune::bypassC + pc, 0.0f });
+            changes.push_back ({ ywtune::noteC + pc, ((learned >> pc) & 1u) != 0 ? 1.0f : 0.0f });
+            changes.push_back ({ ywtune::bypassC + pc, 0.0f });
         }
         setParams (changes);
     }
@@ -2566,13 +2566,13 @@ public: // (the class stays public from here, as before)
         const auto [k, mode] = vocal::detectKey (keyHistogram);
         if (k < 0)
             return;
-        std::vector<std::pair<int, float>> changes { { lynxtune::key, (float) k / 11.0f },
-                                                     { lynxtune::scale, (float) (int) mode / (float) (vocal::scaleCount - 1) },
-                                                     { lynxtune::moreScales, 0.0f } };
+        std::vector<std::pair<int, float>> changes { { ywtune::key, (float) k / 11.0f },
+                                                     { ywtune::scale, (float) (int) mode / (float) (vocal::scaleCount - 1) },
+                                                     { ywtune::moreScales, 0.0f } };
         for (int pc = 0; pc < 12; ++pc)
         {
-            changes.push_back ({ lynxtune::noteC + pc, 1.0f });
-            changes.push_back ({ lynxtune::bypassC + pc, 0.0f });
+            changes.push_back ({ ywtune::noteC + pc, 1.0f });
+            changes.push_back ({ ywtune::bypassC + pc, 0.0f });
         }
         setParams (changes);
         autoKeyFlash = 20;
@@ -3372,27 +3372,27 @@ public: // (the class stays public from here, as before)
                 return 0.6f + bump - (x > cutoff ? (x - cutoff) * 2.2f : 0.0f);
             }, inner, true);
         }
-        else if (id == "pitchgraph") // LYNX Tune: detected pitch, target, correction and the scrolling pitch graph
+        else if (id == "pitchgraph") // YW Tune: detected pitch, target, correction and the scrolling pitch graph
         {
             paintPitchDisplay (g, r, fx);
             return;
         }
-        else if (id == "pitchtrace") // LYNX Tune (round 120): the scrolling pitch graph alone
+        else if (id == "pitchtrace") // YW Tune (round 120): the scrolling pitch graph alone
         {
             paintPitchDisplay (g, r, fx, false);
             return;
         }
-        else if (id == "pitchring") // LYNX Tune (round 120): the correction meter
+        else if (id == "pitchring") // YW Tune (round 120): the correction meter
         {
             paintPitchRing (g, r, fx);
             return;
         }
-        else if (id == "tunekeys") // LYNX Tune (round 128): the keyboard with BYPASS / REMOVE and LATCH
+        else if (id == "tunekeys") // YW Tune (round 128): the keyboard with BYPASS / REMOVE and LATCH
         {
             paintTuneKeys (g, r, fx);
             return;
         }
-        else if (id == "tuneautokey") // LYNX Tune (round 128): AUTO KEY
+        else if (id == "tuneautokey") // YW Tune (round 128): AUTO KEY
         {
             paintAutoKey (g, r);
             return;
@@ -3549,7 +3549,7 @@ public: // (the class stays public from here, as before)
         {
             // the originals' level meters (SSL E-Channel's IN / OUT meter, RComp's input and output, Doubler's output)
             const auto fracOf = [] (float linear) { return juce::jlimit (0.0f, 1.0f, (20.0f * std::log10 (juce::jmax (1e-6f, linear)) + 48.0f) / 48.0f); };
-            const auto base = item.steps > 0 ? item.steps : 2; // round 135w: the engine's meter outputs (LYNX Tune: 3 / 4)
+            const auto base = item.steps > 0 ? item.steps : 2; // round 135w: the engine's meter outputs (YW Tune: 3 / 4)
             const auto only = item.colour; // round tp172c7: 0 / 1 = the input or the output bar alone (Kiln's side columns)
             if (only != 1) ioMeters[0].update (fracOf (liveMeter (base)), 0.02f);
             if (only != 0) ioMeters[1].update (fracOf (liveMeter (base + 1)), 0.02f);
@@ -4132,7 +4132,7 @@ public: // (the class stays public from here, as before)
         if (eqWidthDrag > 0) // the bandwidth: right (or up while soloing) = wider
         {
             const auto moved = (eqWidthDrag == 1 ? e.position.x - eqDownPos.x : eqDownPos.y - e.position.y) * 0.004f * scale;
-            const auto wider = peq::flLaw (fx->params) ? moved : -moved; // (FL's width grows with the value, LYNX's Q shrinks)
+            const auto wider = peq::flLaw (fx->params) ? moved : -moved; // (FL's width grows with the value, YW's Q shrinks)
             setParams ({ { peq::param (eqSelected, 3), eqDownWidth + wider } });
             ui::showValueTip (*this, juce::Rectangle<int> (6, 6).withCentre (e.getPosition()), peqview::bandText (fx->params, eqSelected));
             return;
@@ -4793,7 +4793,7 @@ public: // (the class stays public from here, as before)
             }
             if (h == 5)
             {
-                const auto flFiles = presetFiles(); // round 168r: ◀ ▶ also run through FL's presets after LYNX's bank
+                const auto flFiles = presetFiles(); // round 168r: ◀ ▶ also run through FL's presets after YW's bank
                 const pluginheader::PresetBar::FlPresets fl {
                     [this] (juce::PopupMenu& m) { addFlPresets (m); }, [this] (int delta) { stepPreset (delta); }, [this] { return presetName; },
                     [flFiles] { return flFiles.size(); },
@@ -4858,7 +4858,7 @@ public: // (the class stays public from here, as before)
                     return;
                 }
 
-        // round 190jd: Fruity Limiter's display switch (FL's scrolling graph by default; LYNX's transfer curve as a second view)
+        // round 190jd: Fruity Limiter's display switch (FL's scrolling graph by default; YW's transfer curve as a second view)
         if (! e.mods.isPopupMenu() && limiterViewItem (item))
             if (const auto part = limiterViewPartAt (item, e.position); part >= 0)
             {
@@ -5187,13 +5187,13 @@ public: // (the class stays public from here, as before)
             }
             if (kind == EffectKind::peakController && param == plugui::paramIndex (kind, "LFO shape")) // round 190kl (issue #197)
             {
-                // FL's five shapes first (the default; FL projects stay exact), then LYNX's extra shapes
+                // FL's five shapes first (the default; FL projects stay exact), then YW's extra shapes
                 const auto* fx = current();
                 const auto extra = fx != nullptr ? peakshapes::idOf (fx->params[(std::size_t) peakshapes::extraShapeParam]) : 0;
                 juce::PopupMenu menu;
                 const auto labels = plugui::optionLabels (item);
                 const auto chosen = plugui::optionAt (item, valueOf (param));
-                // each item with a picture of its shape, as FL's own menu has (drawn by LYNX: one period); the picture
+                // each item with a picture of its shape, as FL's own menu has (drawn by YW: one period); the picture
                 // takes the place of the tick, so the shape playing is drawn in the editor's accent colour
                 const auto icon = [this] (std::function<double (double)> f, bool playing) {
                     juce::Path path;
@@ -5240,19 +5240,19 @@ public: // (the class stays public from here, as before)
                 menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withTargetScreenArea (localAreaToGlobal (r.toNearestInt())));
                 return;
             }
-            if (kind == EffectKind::lynxTune && param == lynxtune::scale) // round 128: + whole tone, diminished
+            if (kind == EffectKind::ywTune && param == ywtune::scale) // round 128: + whole tone, diminished
             {
                 const auto* fx = current();
-                const auto more = fx != nullptr ? juce::roundToInt (fx->params[lynxtune::moreScales] * 2.0f) : 0;
+                const auto more = fx != nullptr ? juce::roundToInt (fx->params[ywtune::moreScales] * 2.0f) : 0;
                 juce::PopupMenu menu;
                 const auto labels = plugui::optionLabels (item);
                 const auto chosen = plugui::optionAt (item, valueOf (param));
                 for (int o = 0; o < (int) labels.size(); ++o)
                     menu.addItem (optionTexts (item)[(std::size_t) o], true, more == 0 && o == chosen,
-                                  [this, param, v = plugui::optionValue (item, o)] { setParams ({ { param, v }, { lynxtune::moreScales, 0.0f } }); });
+                                  [this, param, v = plugui::optionValue (item, o)] { setParams ({ { param, v }, { ywtune::moreScales, 0.0f } }); });
                 menu.addSeparator();
-                menu.addItem (tr ("Whole tone"), true, more == 1, [this] { setParams ({ { lynxtune::moreScales, 0.5f } }); });
-                menu.addItem (tr ("Diminished"), true, more == 2, [this] { setParams ({ { lynxtune::moreScales, 1.0f } }); });
+                menu.addItem (tr ("Whole tone"), true, more == 1, [this] { setParams ({ { ywtune::moreScales, 0.5f } }); });
+                menu.addItem (tr ("Diminished"), true, more == 2, [this] { setParams ({ { ywtune::moreScales, 1.0f } }); });
                 menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withTargetScreenArea (localAreaToGlobal (r.toNearestInt())));
                 return;
             }
@@ -5476,7 +5476,7 @@ public: // (the class stays public from here, as before)
             rhythmMouse (e, activeLayout().items[(std::size_t) dragItem], false);
             return;
         }
-        if (tuneRangeDrag >= 0) // round 147: LYNX Tune's range boundary
+        if (tuneRangeDrag >= 0) // round 147: YW Tune's range boundary
         {
             for (const auto& it : activeLayout().items)
                 if (it.type == Item::display && juce::String (it.display) == "tunekeys")
@@ -5574,7 +5574,7 @@ public: // (the class stays public from here, as before)
             gbScratchUp();
             dragItem = -1;
         }
-        tuneKeyRelease(); // LYNX Tune's keyboard without LATCH: the edit lasts while the key is held
+        tuneKeyRelease(); // YW Tune's keyboard without LATCH: the edit lasts while the key is held
         if (crossoverDrag >= 0)
         {
             crossoverDrag = -1;
@@ -6306,8 +6306,8 @@ public:
         if (kind == EffectKind::grossBeat) // round 190ih: the locator and slot states from the published meters
             gbLiveTick();
         // round 190jd: the scrolling Limiter display / Maximus Monitor as while playing (--parityshot with
-        // LYNX_PARITYSHOT_DEMO=1; the idle pictures stay idle, as FL's originals)
-        if (monitorShown && juce::SystemStats::getEnvironmentVariable ("LYNX_PARITYSHOT_DEMO", {}) == "1")
+        // YW_PARITYSHOT_DEMO=1; the idle pictures stay idle, as FL's originals)
+        if (monitorShown && juce::SystemStats::getEnvironmentVariable ("YW_PARITYSHOT_DEMO", {}) == "1")
             if (auto* times = engine.getProcessTimes(); times != nullptr && levelKey() < times->levelWanted.size())
             {
                 const auto in = times->slotLevels[levelKey() * 2].exchange (0.0f, std::memory_order_relaxed);
@@ -6388,7 +6388,7 @@ private:
                     if (tuneSendFlash > 0 && --tuneSendFlash == 0) // round 150
                         repaint();
                 }
-                // LYNX Tune's pitch history (30 points a second)
+                // YW Tune's pitch history (30 points a second)
                 pitchHistory.push_back ({ liveMeter (0) * 127.0f, liveMeter (1) * 127.0f, (liveMeter (2) - 0.5f) * 4.0f });
                 if (pitchHistory.size() > pitchHistoryLength)
                     pitchHistory.erase (pitchHistory.begin(), pitchHistory.begin() + (std::ptrdiff_t) (pitchHistory.size() - pitchHistoryLength));
@@ -6489,8 +6489,8 @@ private:
     }
 
     // Round 190jd (owner: add, never remove): Fruity Limiter's display shows FL's scrolling analysis graph by default and
-    // LYNX's transfer curve (grid, curve, level trail) as a second view, picked with a two-part switch in the display's
-    // top-right corner ("GRAPH | CURVE") and kept per slot (EffectSlot::displayView, saved in .lynx).
+    // YW's transfer curve (grid, curve, level trail) as a second view, picked with a two-part switch in the display's
+    // top-right corner ("GRAPH | CURVE") and kept per slot (EffectSlot::displayView, saved in .yw).
     bool limiterViewItem (const LayoutItem& item) const
     {
         return kind == EffectKind::fruityLimiter && item.type == Item::display && item.display != nullptr && std::strcmp (item.display, "limiter") == 0;
@@ -7049,7 +7049,7 @@ private:
     struct PitchPoint { float sung, target, shift; }; // MIDI note numbers (0 = none) and the applied correction in semitones
     static constexpr std::size_t pitchHistoryLength = 240; // 8 s
     std::vector<PitchPoint> pitchHistory;
-    // LYNX Tune (round 128): HOLD, the keyboard's mode / latch, AUTO KEY's histogram
+    // YW Tune (round 128): HOLD, the keyboard's mode / latch, AUTO KEY's histogram
     bool tuneHold = false, tuneRemove = true, tuneLatch = true;
     int tuneHeldMap = -1;          // round 152: the key-map parameter held while the key is down (latch off)
     float tuneHeldMapValue = 0.0f;
@@ -7139,8 +7139,8 @@ public:
 
     void closeButtonPressed() override;
 
-    // FL's plugin menu › Scaling (round 190he, core/EditorScale.h): 100 % … 400 % of the plugin's design size; LYNX opens
-    // it at 125 %. A right-click on the docked window's title bar (LYNX's own bar) shows it; the edge still sizes it freely.
+    // FL's plugin menu › Scaling (round 190he, core/EditorScale.h): 100 % … 400 % of the plugin's design size; YW opens
+    // it at 125 %. A right-click on the docked window's title bar (YW's own bar) shows it; the edge still sizes it freely.
     void mouseDown (const juce::MouseEvent& e) override
     {
         if (e.mods.isPopupMenu() && e.eventComponent == this && ! isUsingNativeTitleBar() && e.y < getTitleBarHeight())
@@ -7148,7 +7148,7 @@ public:
             juce::PopupMenu sizes;
             const auto* content = getContentComponent();
             const auto now = content != nullptr ? editorscale::percentForWidth (content->getWidth(), (int) std::ceil (designWidth * 1.25)) : 0;
-            // FL's items (System left out: LYNX's interface already follows the display's scale); Host = LYNX's 125 %
+            // FL's items (System left out: YW's interface already follows the display's scale); Host = YW's 125 %
             sizes.addItem (tr ("Host"), true, false, [safe = juce::Component::SafePointer<NativeEffectWindow> (this)] {
                 if (safe != nullptr)
                     safe->setScalePercent (editorscale::defaultPercent);
@@ -7224,7 +7224,7 @@ void setGrossBeatDiagnostics (int mask)
             if (auto* peer = juce::ComponentPeer::getPeer (i); peer != nullptr && peer->getAvailableRenderingEngines().size() > 1
                                                                && peer->getCurrentRenderingEngine() == 0
                                                                && dynamic_cast<juce::DocumentWindow*> (&peer->getComponent()) != nullptr
-                                                               && ! peer->getComponent().getProperties().contains ("lynxGdi"))
+                                                               && ! peer->getComponent().getProperties().contains ("ywGdi"))
             {
                 std::function<bool (juce::Component&)> hasGb = [&] (juce::Component& c) {
                     if (auto* e = dynamic_cast<NativeEffectEditor*> (&c); e != nullptr && e->isGrossBeat())
@@ -7436,7 +7436,7 @@ void open (AudioEngine& engine, int track, int slot)
         return;
     }
     // (the Parametric EQ opens here, in its layout editor: ParametricEqWindows::open forwards to this function, so
-    // forwarding back to it was an endless loop — every way of opening the Parametric EQ froze LYNX; round 157a)
+    // forwarding back to it was an endless loop — every way of opening the Parametric EQ froze YW; round 157a)
     if (kind == EffectKind::facetEq) // its own editor (analyser, nodes, dynamics; REA round 103)
     {
         FacetEqWindows::open (engine, track, slot);
@@ -7475,7 +7475,7 @@ void open (AudioEngine& engine, int track, int slot)
     const auto title = utf8 (shown) + " - " + (name.isNotEmpty() ? name : tr ("Insert {0}", { juce::String (track) })) + " ("
                        + tr ("slot {0}", { juce::String (slot + 1) }) + ")";
     open[key] = std::make_unique<NativeEffectWindow> (engine, track, slot, title);
-    // FL's "Limit the number of open plugin editors" (round 189o, core/EditorLimit.h): LYNX's own effect windows count too
+    // FL's "Limit the number of open plugin editors" (round 189o, core/EditorLimit.h): YW's own effect windows count too
     auto* window = open[key].get();
     windowplaces::tag (*window, windowplaces::slotKey (track, slot)); // (round 190oa, DF-130: its place kept with the project)
     editorlimit::opened (window, [window] {
@@ -7522,4 +7522,4 @@ void closeAll()
     ProEditorWindows::closeAll();
 }
 } // namespace NativeEffectWindows
-} // namespace lynx
+} // namespace yw

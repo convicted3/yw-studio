@@ -11,7 +11,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct LiveInput;
 struct HardwareOutput;
@@ -129,7 +129,7 @@ float slopeValue (int stages) noexcept;
 const char* typeName (BandType t) noexcept;
 bool flLaw (const EffectParams& params) noexcept;          // runs FL's Parametric EQ 2 / Parametric EQ engine
 std::string orderText (const EffectParams& params, int band); // slope / order of a band, as the editor shows it
-std::string widthText (const EffectParams& params, int band); // Q (LYNX) or bandwidth (FL)
+std::string widthText (const EffectParams& params, int band); // Q (YW) or bandwidth (FL)
 
 // Response of the whole EQ (all bands and the output) in dB, for the editor graph.
 double responseDb (const EffectParams& params, double sampleRate, double hz);
@@ -137,7 +137,7 @@ double responseDb (const EffectParams& params, double sampleRate, double hz);
 // Round 190ih (PLAN R9, DP-16; FL manual, Parametric EQ 2: "holding (Shift) and clicking the Band Tokens will
 // momentarily solo the Band"): while a band is soloed the running EQ's output passes through a band-pass at that
 // band's frequency and width, so only its region is heard. `band` -1 ends it. Any thread; `effect` must be a running
-// Parametric EQ (anything else is ignored). The band's width as a band-pass Q: LYNX's Q, or FL's bandwidth turned round.
+// Parametric EQ (anything else is ignored). The band's width as a band-pass Q: YW's Q, or FL's bandwidth turned round.
 void setSoloBand (Effect* effect, int band) noexcept;
 int soloBand (const Effect* effect) noexcept; // -1 = none
 double soloQ (const EffectParams& params, int band) noexcept;
@@ -163,7 +163,7 @@ public:
     // Automated plugin parameter (built-in effects receive their parameters in process()). 0..1.
     virtual void setParameter (int /*index*/, float /*value*/) noexcept {}
     // Round 190ok (owner decision D3): the slot's engine revision (EffectSlot::engineRev), given once by makeEffect (slot)
-    // right after the effect is made. From revision 2 LYNX's own devices run their per-sample maths (tanh, exp, log, pow,
+    // right after the effect is made. From revision 2 YW's own devices run their per-sample maths (tanh, exp, log, pow,
     // sin) through core/FastMath.h; below it (a project saved before) they call the C library as they did, bit for bit.
     virtual void setEngineRev (int /*rev*/) noexcept {}
     // Round 190jg: a change inside the next process() call (see Instrument::setParameterAt); hosted CLAP / VST3 only.
@@ -198,7 +198,7 @@ public:
     // input 1 is the slot's own input.
     virtual void setMainInput (const float* /*left*/, const float* /*right*/) noexcept {}
     // The notes held on every Channel Rack channel (`count` masks, by channel index) during the next process(); the
-    // pointer stays valid until the next call. Effects that follow notes (LYNX Tune's MIDI targets) keep it.
+    // pointer stays valid until the next call. Effects that follow notes (YW Tune's MIDI targets) keep it.
     virtual void setHeldNotes (const NoteMask* /*channels*/, int /*count*/) noexcept {}
     // Round 190kz: true for an effect that can read those held notes (setHeldNotes) while it processes; it reads every
     // channel's, so the renderer keeps such a slot's block piece by piece (RackRenderer::processBatched) — when its
@@ -266,4 +266,4 @@ void flPanMatrix (double pan, float& ll, float& rl, float& lr, float& rr) noexce
 extern const std::array<float, 12> squeezeMax;
 // `parallel` container holding the effects of the slot's branches.
 std::unique_ptr<Effect> makeParallelEffect (const EffectSlot& slot);
-} // namespace lynx
+} // namespace yw

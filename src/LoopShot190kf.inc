@@ -1,11 +1,11 @@
     // --loopshot190kf <folder> (round gaps190kf, item 3): the Sample browser window's Loop Browser drawn offscreen for the
-    // GarageBand | LYNX pairs — the Instrument keyword buttons, picks narrowing the list (dimmed buttons), the Genre and
+    // GarageBand | YW pairs — the Instrument keyword buttons, picks narrowing the list (dimmed buttons), the Genre and
     // Descriptors grids, Scale, Loop Types and the Favorites button, and the Scale / Loop Types menus. A small library of
     // loop-named files is made in <folder>/library. <folder>/checks.txt lists what was checked. Included in the app
     // class of Main.cpp.
     bool runLoopShot190kf (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -46,7 +46,7 @@
 
         AudioEngine engine (false);
         BrowserComponent browser (engine, BrowserComponent::Role::samples);
-        // a favourite (GarageBand's Favorites check box; LYNX's star) and a user tag that names a keyword
+        // a favourite (GarageBand's Favorites check box; YW's star) and a user tag that names a keyword
         browser.setStarred (library.getChildFile ("Keys/Dark Piano 90 Am.wav"), true);
         browser.setStarred (library.getChildFile ("Synths/Dark Pad Loop 70 Dm.wav"), true);
         BrowserComponent::tagStore().add ({ library.getChildFile ("Vocals/Female Vocal Chop 120 Am.wav").getFullPathName().toStdString() }, "Pop");
@@ -138,7 +138,7 @@
         save (browser, "loops-08-layout-swapped.png");
         browser.setLoopLayout (loopkeys::Layout::defaults());
 
-        // rollup 0.1.30 step 6 (the owner's yes to gaps190kf's question): in the Simple layout, under Show All, LYNX's own
+        // rollup 0.1.30 step 6 (the owner's yes to gaps190kf's question): in the Simple layout, under Show All, YW's own
         // beats and sounds (round 190ke) are listed too; Loop Types Pattern gives the beats only, Genre Trap the trap ones
         {
             const auto before = layoutstyle::current();
@@ -151,13 +151,13 @@
                 beats += item.kind == factorycontent::Kind::beat ? 1 : 0;
                 sounds += item.kind == factorycontent::Kind::sound ? 1 : 0;
             }
-            check ("simple_lists_lynx_content", browser.numLoopsShownForSnapshot() == total + beats + sounds,
+            check ("simple_lists_yw_content", browser.numLoopsShownForSnapshot() == total + beats + sounds,
                    juce::String (browser.numLoopsShownForSnapshot()) + " of " + juce::String (total + beats + sounds));
             auto g = f;
             g.types = loopkeys::pattern;
             browser.setLoopFilter (g);
-            check ("simple_pattern_loops_are_lynx_beats", browser.numLoopsShownForSnapshot() == beats, juce::String (browser.numLoopsShownForSnapshot()));
-            save (browser, "loops-10-simple-lynx-beats.png");
+            check ("simple_pattern_loops_are_yw_beats", browser.numLoopsShownForSnapshot() == beats, juce::String (browser.numLoopsShownForSnapshot()));
+            save (browser, "loops-10-simple-yw-beats.png");
             g.types = loopkeys::allTypes;
             g.keywords = { "trap" };
             browser.setLoopFilter (g);
@@ -166,7 +166,7 @@
             browser.setLoopFilter (f);
             layoutstyle::setCurrent (before);
             browser.loadLoopsForSnapshot();
-            check ("pattern_layout_without_lynx_content", browser.numLoopsShownForSnapshot() == total, juce::String (browser.numLoopsShownForSnapshot()));
+            check ("pattern_layout_without_yw_content", browser.numLoopsShownForSnapshot() == total, juce::String (browser.numLoopsShownForSnapshot()));
         }
 
         // the menus

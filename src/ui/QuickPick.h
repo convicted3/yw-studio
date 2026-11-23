@@ -10,15 +10,15 @@
 #include "engine/AudioEngine.h"
 #include "engine/GeneratorCatalog.h"
 
-namespace lynx::quickpick
+namespace yw::quickpick
 {
 // FL's renamed plugins (issue #11): users rename their most used plugins in the Plugin database ("1_EQ", "2_Limiter")
 // and then, on an empty mixer slot (or the Channel Rack's add menu), press "1" to load that one. The names live in
-// the plugin host (PluginHost::pluginNames); these helpers list LYNX's generators / effects with their keys, show the
+// the plugin host (PluginHost::pluginNames); these helpers list YW's generators / effects with their keys, show the
 // renamed ones first in the menus and pick them by their first character.
 
 // One generator or effect of the Plugin database. `key` is what a user name is stored under: the plugin's identifier
-// string, or "lynx:gen:<English name>" / "lynx:fx:<English name>" for LYNX's built-in ones and FL's engines.
+// string, or "yw:gen:<English name>" / "yw:fx:<English name>" for YW's built-in ones and FL's engines.
 //
 // generatorEntries() is THE list of generators (issue #18): the Channel Rack's Insert ›, Replace › and "+" menus
 // (addGeneratorMenu), the Browser's Plugin database, the user's plugin folders and the renamed picks all read it, so
@@ -29,7 +29,7 @@ struct EffectEntry
 {
     std::string key;
     juce::String label, detail;
-    int folder = 0; // 0 LYNX, 1 FL engines, 3 installed
+    int folder = 0; // 0 YW, 1 FL engines, 3 installed
     std::function<std::optional<EffectSlot>()> make;
     bool available = true; // false: an FL engine without the user's FL installation (listed disabled in the menus)
     bool flPlugin = false; // one of FL's own effects (its FL category in the menus, round 170b)
@@ -39,7 +39,7 @@ struct EffectEntry
 std::vector<GeneratorEntry> generatorEntries (AudioEngine& engine, bool withUnavailable = false);
 
 // The Channel Rack's generator menu, the same for Insert ›, Replace › and the "+" button (issue #18): Kick … Synth,
-// the built-in tools, FL engines ›, VFX ›, Patcher, LYNX Soundfont, Sampler (choose file)..., Plugin ›. `pick` gets
+// the built-in tools, FL engines ›, VFX ›, Patcher, YW Soundfont, Sampler (choose file)..., Plugin ›. `pick` gets
 // the new generator; `chooseSample` (may be empty) runs for "Sampler (choose file)..."; `current` (may be null) is the
 // channel being replaced, whose own generator gets a tick. `owner`: the component whose menu this is (the plugin
 // picker window calls back only while it exists).
@@ -78,16 +78,16 @@ bool addFolderGroups (juce::PopupMenu& menu, AudioEngine& engine, std::function<
 bool addFolderGroups (juce::PopupMenu& menu, AudioEngine& engine, std::function<void (ChannelDef)> add);
 // FL's view switch at the bottom of those menus (radio items Categories / Simple / Tree)
 void addFolderViewItems (juce::PopupMenu& menu, AudioEngine& engine);
-// Whether the plugin with this database key ("lynx:fx:Facet EQ") sits in one of the user's folders (it is then listed
+// Whether the plugin with this database key ("yw:fx:Facet EQ") sits in one of the user's folders (it is then listed
 // under its folder's heading only, as in FL where every plugin is in one folder)
 bool inUserFolder (AudioEngine& engine, const std::string& key);
 
 // Round 190ba (issue #104): the Plugin database is a folder on disk (core/PluginDbFolder.h; FL keeps its own the same
-// way and its users arrange it in Explorer). pluginDatabaseFolder(): Documents/LYNX/Plugin database, or the folder of
+// way and its users arrange it in Explorer). pluginDatabaseFolder(): Documents/YW/Plugin database, or the folder of
 // one kind's user folder ("" = Effects / Generators). refreshPluginDatabase reads it into the plugin host (folders,
 // places, names; the first time it is made from the settings), at most every two seconds unless `force`; the plugin
 // menus, the Browser's Plugin database and the Plugin picker call it before they list anything. installPluginDatabase
-// (once, at start) also makes the host write the changes made in LYNX to the folder. Nothing happens for an engine
+// (once, at start) also makes the host write the changes made in YW to the folder. Nothing happens for an engine
 // whose plugin host keeps no settings (snapshots, exports, tests).
 juce::File pluginDatabaseFolder();
 juce::File pluginDatabaseFolder (bool instruments, const std::string& userFolder);
@@ -123,4 +123,4 @@ void addPicks (juce::PopupMenu& menu, const std::vector<Pick>& picks);
 // menus do (issue #64): "e" EQ, "e" again Effector...; Enter picks it.
 void showMenu (juce::PopupMenu& menu, const juce::PopupMenu::Options& options, std::vector<Pick> picks,
                std::function<bool (const juce::KeyPress&)> onKey = {});
-} // namespace lynx::quickpick
+} // namespace yw::quickpick

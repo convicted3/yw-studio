@@ -2,7 +2,7 @@
 
 // A folder watcher (round 190bf, issue #104): FL Studio's Browser shows a change made to its Plugin database in Explorer
 // by itself, within about a second (seen live, fl190be Q2: a folder and an entry made by the shell appeared in the next
-// frame, ~1 s later; an open menu or picker was not changed, the next one opened showed it). LYNX watches its own
+// frame, ~1 s later; an open menu or picker was not changed, the next one opened showed it). YW watches its own
 // database folder the same way.
 //
 // One background thread per watcher, sleeping on the system's change notification where there is one (Windows:
@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::folderwatch
+namespace yw::folderwatch
 {
 struct Options
 {
@@ -51,4 +51,4 @@ private:
 // The poll's view of a tree: every folder's path and modification time ("" for a missing tree). Changes when a file or
 // folder is made, removed or renamed anywhere in it.
 std::string treeStamp (const std::string& folder);
-} // namespace lynx::folderwatch
+} // namespace yw::folderwatch

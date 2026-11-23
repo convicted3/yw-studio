@@ -1,13 +1,13 @@
 // Round 190aj: a DirectWave program's delay / chorus / reverb ring on after the last voice (FL's plugin runs them in
-// every block). LYNX's rack stopped rendering the channel with the last voice, which cut the tail (FL's renders of the
+// every block). YW's rack stopped rendering the channel with the last voice, which cut the tail (FL's renders of the
 // Stage Grand, Strings and Choir programs: REA_rodada190aj_dw.md).
 
 namespace dw190aj
 {
-inline lynx::dw::Program program (bool reverb, bool delay)
+inline yw::dw::Program program (bool reverb, bool delay)
 {
-    lynx::dw::Program p;
-    lynx::dw::Zone z;
+    yw::dw::Program p;
+    yw::dw::Zone z;
     z.frames = 4000;
     z.sends[2] = reverb ? 0.8f : 0.0f;
     z.sends[0] = delay ? 0.8f : 0.0f;
@@ -19,9 +19,9 @@ inline lynx::dw::Program program (bool reverb, bool delay)
     return p;
 }
 
-inline std::vector<std::shared_ptr<const lynx::dw::ZoneSamples>> samples()
+inline std::vector<std::shared_ptr<const yw::dw::ZoneSamples>> samples()
 {
-    auto s = std::make_shared<lynx::dw::ZoneSamples>();
+    auto s = std::make_shared<yw::dw::ZoneSamples>();
     s->bits = 16; s->channels = 1; s->frames = 4000;
     std::vector<std::int16_t> v (4000 + 512, 0);
     for (int j = 0; j < 4000; ++j)
@@ -34,7 +34,7 @@ struct Run { double voiceEnd = -1.0, ringEnd = -1.0, tailPeak = 0.0, lastPeak = 
 // one short note; seconds until the last voice ends and until the engine rests, the loudest sample after the voice
 inline Run run (bool reverb, bool delay, double bpm = 120.0)
 {
-    lynx::dw::Engine e;
+    yw::dw::Engine e;
     e.setSampleRate (44100.0);
     e.setTempo (bpm);
     e.setProgram (program (reverb, delay), samples(), {});

@@ -1,9 +1,9 @@
 #pragma once
 
-// The Simple workflow's Sampler track (round 190fo; facts: /mnt/e/lynx-work/reabl190fo/BANDLAB-FACTS.md §1): 16 pads in a
+// The Simple workflow's Sampler track (round 190fo; facts: /mnt/e/yw-work/reabl190fo/BANDLAB-FACTS.md §1): 16 pads in a
 // 4 × 4 grid, each holding one sound, played by a click, by the typing keys or by notes, and recorded like any track.
 // BandLab's web Studio has this "multipad sampler" (pad modes Gate / One-shot / Loop, attack, release, tone, pitch ±12,
-// pan, volume, a choke group of 4, colour, crop, reverse, normalize, copy / move); LYNX builds it from what FL already
+// pan, volume, a choke group of 4, colour, crop, reverse, normalize, copy / move); YW builds it from what FL already
 // has, so every layout, the .flp and the .als exports read it as an ordinary project:
 //  - the track is FL's audio track linked to one insert, like the Drums track (core/SimpleTracks.h decision D3);
 //  - each pad is one FL Sampler channel in the track's Channel Rack group, playing through that insert; a pad's notes
@@ -20,7 +20,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::simplepads
+namespace yw::simplepads
 {
 constexpr int padCount = 16;
 constexpr int padKey = 60;      // the note a pad channel plays its sample at (FL's C5)
@@ -38,7 +38,7 @@ char typingKey (int pad) noexcept;
 // The pad a typing key plays (any case), −1 when the key is not one of them.
 int padForKey (int keyCode) noexcept;
 
-// Tone: one knob from a low-pass (below 0) through off (0) to a high-pass (above 0). LYNX's law: an even sweep per
+// Tone: one knob from a low-pass (below 0) through off (0) to a high-pass (above 0). YW's law: an even sweep per
 // octave, low-pass 22.05 kHz → 100 Hz, high-pass 20 Hz → 8 kHz (the same ends as the original's).
 struct Tone
 {
@@ -83,4 +83,4 @@ bool swapPads (Song& song, int track, int a, int b);
 
 // Normalize: the gain (dB, within the Sampler's ±24) that brings `peak` (linear, of the played region) to 0 dBFS.
 float normalizeGainDb (float peak) noexcept;
-} // namespace lynx::simplepads
+} // namespace yw::simplepads

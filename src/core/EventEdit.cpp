@@ -4,7 +4,7 @@
 #include <cmath>
 #include <random>
 
-namespace lynx::eventedit
+namespace yw::eventedit
 {
 namespace
 {
@@ -187,4 +187,4 @@ std::vector<AutomationPoint> toAutomationPoints (const PatternEvents& lane, floa
             out.push_back (pts[k]);
     return out;
 }
-} // namespace lynx::eventedit
+} // namespace yw::eventedit

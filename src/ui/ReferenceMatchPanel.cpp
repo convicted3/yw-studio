@@ -9,7 +9,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -581,4 +581,4 @@ void ReferenceMatchPanel::resized()
     r.removeFromBottom (10);
     graph->setBounds (r);
 }
-} // namespace lynx
+} // namespace yw

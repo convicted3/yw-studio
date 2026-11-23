@@ -1,6 +1,6 @@
 #pragma once
 
-// Spotify's Basic Pitch (ICASSP 2022, Apache-2.0; third_party/basic-pitch) on the ONNX Runtime LYNX ships (round
+// Spotify's Basic Pitch (ICASSP 2022, Apache-2.0; third_party/basic-pitch) on the ONNX Runtime YW ships (round
 // a2m189b; a module of its own since round 190lj so the polyphonic editor can reuse it). Nothing of it is in memory
 // until a Session opens; a closed Session leaves no thread or buffer behind. Implemented in ui/AudioToMidi.cpp.
 //
@@ -17,7 +17,7 @@
 
 #include "core/AudioToMidi.h"
 
-namespace lynx::basicpitch
+namespace yw::basicpitch
 {
 class Session
 {
@@ -47,4 +47,4 @@ private:
 bool posteriorgram (Session& session, const std::vector<float>& mono, double rate, bool withContour,
                     const std::function<bool()>& cancelled, const std::function<void (double)>& progress, a2m::Posteriorgram& out,
                     juce::String& error, double* seconds = nullptr);
-} // namespace lynx::basicpitch
+} // namespace yw::basicpitch

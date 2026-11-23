@@ -6,7 +6,7 @@
 //
 // Content travels through core/ArrangeOps.h's time commands: the clips of every track (cut at the section's edges), the
 // markers inside it and the lane automation. Copies of track clips are unique (core/TrackClips.h), as every copy in
-// LYNX. A section's time signature goes with it: before a command, each edge it touches gets a pinned signature change
+// YW. A section's time signature goes with it: before a command, each edge it touches gets a pinned signature change
 // (the change already there, else one with the meter in force there); afterwards the pins that change nothing are taken
 // away (a change at an edge that repeats the signature before it goes too) and the others are ordinary signature changes
 // again. So a 7/8 chorus moved into a 4/4 song stays 7/8, and the 4/4 bar after it stays 4/4.
@@ -25,7 +25,7 @@
 #include "core/Song.h"
 #include "core/TrackClips.h"
 
-namespace lynx::sections
+namespace yw::sections
 {
 namespace detail
 {
@@ -393,4 +393,4 @@ inline int createScenes (Song& song)
     }
     return first;
 }
-} // namespace lynx::sections
+} // namespace yw::sections

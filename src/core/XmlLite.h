@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::xml
+namespace yw::xml
 {
 struct Attribute
 {
@@ -86,4 +86,4 @@ private:
 
 // Writing: escapes text for an attribute value or element text.
 std::string escape (std::string_view text);
-} // namespace lynx::xml
+} // namespace yw::xml

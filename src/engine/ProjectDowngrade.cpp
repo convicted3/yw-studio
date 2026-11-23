@@ -15,8 +15,8 @@
 #include "core/LimiterLaw.h"
 #include "core/LowLifterFl.h"
 #include "core/LuxeVerb.h"
-#include "core/LynxTune.h"
-#include "core/LynxVerbs.h"
+#include "core/YwTune.h"
+#include "core/YwVerbs.h"
 #include "core/MixSuite.h"
 #include "core/Ogun.h"
 #include "core/SytrusEngine.h"
@@ -41,7 +41,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx::olderlynx
+namespace yw::olderyw
 {
 namespace
 {
@@ -182,7 +182,7 @@ void toRelease0128FromRollup030 (juce::var& root, Losses& lost)
         juce::StringArray tetra, helix, braid;
         forEachChannel (root, [&] (juce::DynamicObject& c, int i) {
             const auto instrument = c.getProperty ("instrument").toString();
-            if (instrument == "tetra" || instrument == "helix" || instrument == "braid") // (rollup step 3: Helix, round 190ja, as Tetra; Braid, 190ko; LYNX Model, 190ni: the 0.1.30 step)
+            if (instrument == "tetra" || instrument == "helix" || instrument == "braid") // (rollup step 3: Helix, round 190ja, as Tetra; Braid, 190ko; YW Model, 190ni: the 0.1.30 step)
             {
                 (instrument == "tetra" ? tetra : instrument == "helix" ? helix : braid).add (channelName (juce::var (&c), i));
                 c.setProperty ("instrument", "sampler");
@@ -654,7 +654,7 @@ void toRelease0128FromRollup030 (juce::var& root, Losses& lost)
     // which gave the same samples on every Maximus state measured): dropped, nothing to report
     forEachEffect (root, [&] (juce::DynamicObject& e, const juce::String&) { drop (e, "engineRev"); });
 
-    // round 190ok: ChannelDef::smartDisable (FL's generator smart disable for a hosted instrument): an older LYNX runs the
+    // round 190ok: ChannelDef::smartDisable (FL's generator smart disable for a hosted instrument): an older YW runs the
     // plugin all the time, the same sound (dropped, nothing to report)
     forEachChannel (root, [&] (juce::DynamicObject& c, int) { drop (c, "smartDisable"); });
 
@@ -955,7 +955,7 @@ void toRelease0128FromRollup030 (juce::var& root, Losses& lost)
     // rollup step 11: hidden parameters past the slot's count, written only when set (0.1.28 plays the effect without them):
     // round 190mb / 190mj's Valhalla laws — Horizon's revision (every new Horizon) and its FutureVerb law, Nebula's
     // Supermassive tone, Orbit's SpaceModulator level and voices (Epoch's rate law goes with the reverbs' revision, the
-    // Measured law's line); round 190mg's Waves laws — Compressor's Renaissance law, Gemini Doubler's splice law, LYNX Tune's
+    // Measured law's line); round 190mg's Waves laws — Compressor's Renaissance law, Gemini Doubler's splice law, YW Tune's
     // Waves Tune Real-Time law (each set only by its translator; Crest's FET amplifier goes with the FET law's line, the
     // L2 requantizer with the L2 law's, Prism's C4 law, Quell's NS1 law and Facet's PuigTec law have their lines above)
     {
@@ -1016,8 +1016,8 @@ void toRelease0128FromRollup030 (juce::var& root, Losses& lost)
                 cut (mixsuite::aether::vitLaw, vitamin); // rollup step 12: round 190mm's Vitamin law
             else if (kind == "geminiDoubler")
                 cut (voicetools::gemini::spliceLaw, splice);
-            else if (kind == "lynxTune")
-                cut (lynxtune::wavesLaw, wavesTune);
+            else if (kind == "ywTune")
+                cut (ywtune::wavesLaw, wavesTune);
         });
         if (! horizonLaws.isEmpty())
             lost.push_back ({ TR_NOOP ("Horizon plays its earlier reverb and echo modes (not the ValhallaFutureVerb laws): {0}"), listOf (horizonLaws), true });
@@ -1477,27 +1477,27 @@ void toRelease0130 (juce::var& root, Losses& lost)
 
     jsfxFor0130 (root, lost); // (round 190pj)
 
-    // round 190ni: LYNX Model. 0.1.30 would play an unknown instrument as its basic synth: an empty Sampler (silent) keeps
+    // round 190ni: YW Model. 0.1.30 would play an unknown instrument as its basic synth: an empty Sampler (silent) keeps
     // the channel, its notes and its routing, as Tetra / Helix / Braid in the copy for 0.1.28
     {
-        juce::StringArray lynxModel;
+        juce::StringArray ywModel;
         forEachChannel (root, [&] (juce::DynamicObject& c, int i) {
-            if (c.getProperty ("instrument").toString() != "lynxmodel")
+            if (c.getProperty ("instrument").toString() != "ywmodel")
                 return;
-            lynxModel.add (channelName (juce::var (&c), i));
+            ywModel.add (channelName (juce::var (&c), i));
             c.setProperty ("instrument", "sampler");
             drop (c, "modelParams");
             drop (c, "pluginState");
             drop (c, "samplePath");
         });
-        if (! lynxModel.isEmpty())
-            lost.push_back ({ TR_NOOP ("YW Model is not in this release: its channels become empty Samplers and play nothing: {0}"), listOf (lynxModel), true });
+        if (! ywModel.isEmpty())
+            lost.push_back ({ TR_NOOP ("YW Model is not in this release: its channels become empty Samplers and play nothing: {0}"), listOf (ywModel), true });
     }
 
     // round 190ov: FL automation clips linked to several controls (target links on an FL import). 0.1.30 plays target links
-    // 1:1 (no sixth element: a control's own scale, set where LYNX counts the control differently from FL), and a link's
+    // 1:1 (no sixth element: a control's own scale, set where YW counts the control differently from FL), and a link's
     // control always follows the linked clip, even where another clip of that control plays. The scales go (the copy opened
-    // again in a newer LYNX plays what 0.1.30 plays); a line for the clips with a scale or a control shared with another
+    // again in a newer YW plays what 0.1.30 plays); a line for the clips with a scale or a control shared with another
     // clip in the Playlist
     {
         std::set<int> withClips;
@@ -1912,10 +1912,10 @@ void toRelease0130 (juce::var& root, Losses& lost)
                               juce::String (ducks), false });
     }
 
-    // round 190ok (D3): EffectSlot::engineRev 2 = LYNX's own devices (Ember, Prism, Crest, Echoform...) compute their
+    // round 190ok (D3): EffectSlot::engineRev 2 = YW's own devices (Ember, Prism, Crest, Echoform...) compute their
     // per-sample tanh / exp / log / pow / sin with core/FastMath.h. 0.1.30 knows revisions 0 and 1 (Maximus: ">= 1"), so it
     // plays a slot at 2 as at 1, with the C library's maths (190ok's nulls: at most -135 dBFS apart). The copy says 1, so
-    // the copy opened again in a newer LYNX plays what 0.1.30 plays, bit for bit; nothing audible to report.
+    // the copy opened again in a newer YW plays what 0.1.30 plays, bit for bit; nothing audible to report.
     // Round 190ok (D2): ChannelDef::smartDisable (FL's generator smart disable of a hosted instrument): 0.1.30 runs the
     // plugin all the time, the same sound: dropped without a line (as 190ok's own 0.1.28 step). Rollup 0.1.31 step 5
     forEachEffect (root, [] (juce::DynamicObject& e, const juce::String&) {
@@ -2032,7 +2032,7 @@ void toRelease0130 (juce::var& root, Losses& lost)
             lost.push_back ({ TR_NOOP ("Muted automation clips lose their target, so they stay silent: {0}"), listOf (muted), false });
     }
 
-    // round 190ox (modulators stage 2): 0.1.30 has LFO modulators on LYNX's own controls only. The other kinds (they sit
+    // round 190ox (modulators stage 2): 0.1.30 has LFO modulators on YW's own controls only. The other kinds (they sit
     // in "modulators190ox", which 0.1.30 does not read) go with a line naming them; an LFO's routes to a hosted
     // plugin's parameters (which 0.1.30 would refuse) and the stage 2 fields go too; an automation of a Macro's knob
     // stays as an unlinked clip
@@ -2147,7 +2147,7 @@ void toRelease0130 (juce::var& root, Losses& lost)
 
     // rollup 0.1.31 step 7 (round 190pi): (a) Ogun / Autogun with FL's link velocity (ChannelDef::engineRev 2, a patch that
     // leaves it on): 0.1.30 plays every note of them at the channel's level; written at revision 1, so the copy plays the
-    // same in newer LYNX. (b) Sytrus' main page (master level, LFO, pitch, Mod X / Y) takes automation from 0.1.31 on: in
+    // same in newer YW. (b) Sytrus' main page (master level, LFO, pitch, Mod X / Y) takes automation from 0.1.31 on: in
     // 0.1.30 such a clip moves nothing. Lines; the data stays
     {
         juce::StringArray oguns, sytrusClips;
@@ -2181,7 +2181,7 @@ void toRelease0130 (juce::var& root, Losses& lost)
     }
 
     // round 190pr: Harmor's filter 1 / 2 frequencies and Mod X / Y / Z follow their automation from ChannelDef::engineRev 3
-    // on; 0.1.30 ignores it. Written at revision 2, so the copy plays the same in newer LYNX. Lines; the data stays
+    // on; 0.1.30 ignores it. Written at revision 2, so the copy plays the same in newer YW. Lines; the data stays
     {
         juce::StringArray harmorClips;
         std::set<int> harmorChannels;
@@ -2237,8 +2237,8 @@ void toRelease0130 (juce::var& root, Losses& lost)
 
     // rollup 0.1.31 step 8: every other channel at engine revision 3 (FL imports and new channels since round 190pr) is
     // written at 2. Revision 3 changes only Harmor and Sytrus (both written at 2 above) and revision 2 only SimSynth and
-    // Ogun / Autogun (written at 1 above), so the copy plays the same here and in newer LYNX, and a channel 0.1.30 later
-    // turns into a Harmor or Sytrus cannot carry revision 3's laws back into a newer LYNX. 0.1.28 drops the key.
+    // Ogun / Autogun (written at 1 above), so the copy plays the same here and in newer YW, and a channel 0.1.30 later
+    // turns into a Harmor or Sytrus cannot carry revision 3's laws back into a newer YW. 0.1.28 drops the key.
     forEachChannel (root, [&] (juce::DynamicObject& c, int) {
         if (c.hasProperty ("engineRev") && (int) c.getProperty ("engineRev") > 2)
             c.setProperty ("engineRev", 2);
@@ -2321,4 +2321,4 @@ juce::String copyName (const juce::String& projectName, const juce::String& rele
 {
     return (projectName.isNotEmpty() ? projectName : juce::String ("Untitled")) + " (for YW Studio " + release + ")";
 }
-} // namespace lynx::olderlynx
+} // namespace yw::olderyw

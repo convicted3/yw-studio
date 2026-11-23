@@ -1,4 +1,4 @@
-// fxaudit (round 173d, issue #77): does every control of LYNX's built-in effects change the sound, and does any
+// fxaudit (round 173d, issue #77): does every control of YW's built-in effects change the sound, and does any
 // setting break the output? See tools/FxAudit.h.
 // Usage: fxaudit [--fl <FL Studio's Data folder>] [--only <effect name>[,<name>…]] [--control <name>] [--quick]
 //                [--segment <s>] [--tail <s>] [--contexts <n>] [--budget <n>] [--tsv <file>] [--all] [--from <n>] [--to <n>]
@@ -18,7 +18,7 @@
 #include "core/NativeEngines.h"
 
 namespace fs = std::filesystem;
-using namespace lynx;
+using namespace yw;
 
 namespace
 {

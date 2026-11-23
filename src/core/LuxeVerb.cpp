@@ -17,7 +17,7 @@
 #pragma clang fp contract(off)
 #pragma STDC FENV_ACCESS ON
 
-namespace lynx
+namespace yw
 {
 using namespace ildsp;
 
@@ -1364,7 +1364,7 @@ std::optional<Settings> parseState (const std::vector<std::uint8_t>& d)
         s.sync[2] = d[13 + 4 * 49] != 0;
         s.sync[3] = d[13 + 4 * 49 + 1] != 0;
     }
-    // older states: the plugin reads no feed-forward sync flags (not confirmed what it then uses; LYNX: off)
+    // older states: the plugin reads no feed-forward sync flags (not confirmed what it then uses; YW: off)
     return s;
 }
 
@@ -1680,4 +1680,4 @@ std::string luxeVerbParamText (int param, float value01)
         default: return fmt ("%.2f", v);
     }
 }
-} // namespace lynx
+} // namespace yw

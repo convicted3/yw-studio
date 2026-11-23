@@ -9,7 +9,7 @@
 //    opacity 224·a / 255, fill at opacity (224·a − 96) / 255 while that is above 0, drawn above the remaining items;
 //  - its opacity a starts at 1 and falls as 0.01^(t / T): T = 1000 ms in the Playlist, 500 ms in the Piano roll; it goes
 //    below 0.025 (about 801 / 401 ms).
-// LYNX's Settings › General › Animations is FL's switch (on = FL's default level; off = "Keep it sober": no ghost);
+// YW's Settings › General › Animations is FL's switch (on = FL's default level; off = "Keep it sober": no ghost);
 // "Reduced effects" turns it off too. Cost rules (ui/Motion.h): no ghost, no timer, no paint — the views draw exactly as
 // before; the timer runs only while a ghost is fading and repaints only the ghosts' area. Message thread only.
 
@@ -17,7 +17,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::ui
+namespace yw::ui
 {
 class DeleteFade final : private juce::Timer
 {
@@ -66,4 +66,4 @@ private:
     std::vector<Ghost> ghosts;
     double frozen = -1.0; // (snapshots) the fixed age, < 0 = live
 };
-} // namespace lynx::ui
+} // namespace yw::ui

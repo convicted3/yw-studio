@@ -2,7 +2,7 @@
 
 TEST (flm190ab_note_pan_pitch_repeat_slide)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm182c;
     t::Bytes f;
     t::tag (f, "10LF");

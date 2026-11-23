@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 struct TickGrid
 {
@@ -76,4 +76,4 @@ struct TickGrid
         return b;
     }
 };
-} // namespace lynx::pocket
+} // namespace yw::pocket

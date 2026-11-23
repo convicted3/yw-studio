@@ -9,7 +9,7 @@
  #include <objc/runtime.h>
 #endif
 
-namespace lynx::platform
+namespace yw::platform
 {
 #if JUCE_WINDOWS
 struct NativeEmbed::Impl
@@ -151,20 +151,20 @@ double primaryScale()
 
 void setEditorScaling (juce::Component& editor, bool dpiUnaware, bool scaleDims)
 {
-    editor.getProperties().set ("lynxDpiUnaware", dpiUnaware);
-    editor.getProperties().set ("lynxScaleEditorDimensions", dpiUnaware || scaleDims);
+    editor.getProperties().set ("ywDpiUnaware", dpiUnaware);
+    editor.getProperties().set ("ywScaleEditorDimensions", dpiUnaware || scaleDims);
     if (auto* processorEditor = dynamic_cast<juce::AudioProcessorEditor*> (&editor))
         processorEditor->setScaleFactor (1.0f); // (each editor sizes itself again with the marks)
 }
 
 double editorSizeScale (const juce::Component& editor)
 {
-    return (bool) editor.getProperties()["lynxScaleEditorDimensions"] ? 1.0 : primaryScale();
+    return (bool) editor.getProperties()["ywScaleEditorDimensions"] ? 1.0 : primaryScale();
 }
 
 double editorContentScale (const juce::Component& editor)
 {
-    return (bool) editor.getProperties()["lynxDpiUnaware"] ? 1.0 : primaryScale();
+    return (bool) editor.getProperties()["ywDpiUnaware"] ? 1.0 : primaryScale();
 }
 
 namespace
@@ -211,4 +211,4 @@ int dpiUnawareWindowCount (void* nativeWindow, int& windows)
     return -1;
 #endif
 }
-} // namespace lynx::platform
+} // namespace yw::platform

@@ -9,7 +9,7 @@
 #include "core/ClipLauncher.h"
 #include "core/RackOps.h"
 
-namespace lynx::session
+namespace yw::session
 {
 // --- when ------------------------------------------------------------------------------------------------------------
 double nextPoint (double now, double quant) noexcept
@@ -787,4 +787,4 @@ void setNotesChannel (std::vector<Note>& notes, int channel) noexcept
         for (auto& n : notes)
             n.channel = channel;
 }
-} // namespace lynx::session
+} // namespace yw::session

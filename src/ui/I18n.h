@@ -15,7 +15,7 @@
 // Marks a literal for translation without translating it (for tables translated later with tr()).
 #define TR_NOOP(text) text
 
-namespace lynx
+namespace yw
 {
 // Translates an English UI string (UTF-8) into the current language.
 juce::String tr (const char* englishUtf8);
@@ -48,11 +48,11 @@ void initialise (const juce::StringArray& commandLine); // --lang <id> overrides
 juce::String tableText (const juce::String& id);
 bool hasTable (const juce::String& id);
 
-// The language id for an OS locale name ("de-AT", "pt_BR.UTF-8", "zh-Hant-TW"...); empty when LYNX lacks it.
+// The language id for an OS locale name ("de-AT", "pt_BR.UTF-8", "zh-Hant-TW"...); empty when YW lacks it.
 juce::String fromLocale (const juce::String& localeName);
-juce::String osDefault(); // the OS interface language when LYNX has it, else "en"
+juce::String osDefault(); // the OS interface language when YW has it, else "en"
 
 // Translations added in 0.1.20 (shown with "New translation - suggestions welcome").
 bool isNewTranslation (const juce::String& id);
 } // namespace i18n
-} // namespace lynx
+} // namespace yw

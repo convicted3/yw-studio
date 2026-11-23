@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::hlfx
+namespace yw::hlfx
 {
 // the Maximus state (plugin record 0xD5) inside an FL preset file (.fst); nullopt if there is none
 std::optional<std::vector<std::uint8_t>> maximusStateFromFst (const std::vector<std::uint8_t>& fst);
@@ -170,9 +170,9 @@ std::vector<MaximusCurvePoint> maximusCurve (const std::vector<std::uint8_t>& st
 // direction cache byte recomputed); the state unchanged when it cannot be read or the points are empty
 std::vector<std::uint8_t> withMaximusCurve (const std::vector<std::uint8_t>& state, int envelope, const std::vector<MaximusCurvePoint>& points);
 // the curve as the engine steps it (FUN_007885d0), sampled at n + 1 evenly spaced x over 0…1; empty when a segment
-// type is not played by LYNX's engine (only FL's types 0 "single curve" and 7 "single curve 2" are)
+// type is not played by YW's engine (only FL's types 0 "single curve" and 7 "single curve 2" are)
 std::vector<float> maximusCurveShape (const std::vector<MaximusCurvePoint>& points, int n);
 bool maximusCurveTypeSupported (int type) noexcept;
 
 std::vector<std::uint8_t> withMaximusParams (std::vector<std::uint8_t> state, const std::vector<std::pair<int, int>>& params);
-} // namespace lynx::hlfx
+} // namespace yw::hlfx

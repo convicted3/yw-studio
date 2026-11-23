@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstring>
 
-namespace lynx::wave
+namespace yw::wave
 {
 namespace
 {
@@ -400,4 +400,4 @@ Rgb spectralColour (const BandMix& mix) noexcept
     c.b = std::clamp (c.b, 0.0f, 1.0f);
     return c;
 }
-} // namespace lynx::wave
+} // namespace yw::wave

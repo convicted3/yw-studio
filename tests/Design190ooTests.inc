@@ -1,13 +1,13 @@
 // Round 190oo (design review 2): the owner's option decisions that have rules in core.
 
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/PlaylistOps.h"
 #include "core/Templates.h"
 
 // CS O-2: a new Clip-launch project links Track N to insert N (Live's new set: a strip on every track), off by default
 TEST (design190oo_cliplaunch_strips_option)
 {
-    using namespace lynx;
+    using namespace yw;
     NewProjectDefaults d;
     CHECK (! d.clipLaunchStrips && d.toText().find ("newClipLaunchStrips=0") != std::string::npos);
     CHECK (NewProjectDefaults::ownsKey ("newClipLaunchStrips"));
@@ -56,7 +56,7 @@ TEST (design190oo_cliplaunch_strips_option)
 // O-1 and O-2 are listed as the other extras are (O-2 is a default, so it is not an extra)
 TEST (design190oo_extras_listed)
 {
-    using namespace lynx;
+    using namespace yw;
     bool shade = false;
     for (const auto& item : extras::items)
         shade = shade || (item.id == "playlist.shadeFadedAudio" && item.settingsKey == "ui-options.txt:shadeFadedAudio");

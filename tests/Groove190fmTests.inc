@@ -1,7 +1,7 @@
 // --- Round 190fm: grooves beyond the clip grid (core/Groove.h): a groove on Playlist pattern clips (played while
 // scheduling, Commit, Extract, grid <-> Playlist), the Live set's GroovePool and clip grooves in and out (.als), and the
-// "Classic swing" grooves of LYNX's own bank. The sets here are written by the tests (only the elements the importer
-// reads), except the read-only check of a set Live ships (skipped where that file is absent). The .lynx round trip of a
+// "Classic swing" grooves of YW's own bank. The sets here are written by the tests (only the elements the importer
+// reads), except the read-only check of a set Live ships (skipped where that file is absent). The .yw round trip of a
 // Playlist clip's groove is in the app's --selftest and --grooveshot190fm (the project file needs JUCE).
 
 #include <filesystem>
@@ -18,7 +18,7 @@
 
 namespace groove190fm
 {
-using namespace lynx;
+using namespace yw;
 constexpr std::int64_t bar = 4 * ppq;
 
 struct Heard
@@ -181,7 +181,7 @@ inline const Clip* playlistClipNamed (const Song& s, const std::string& name)
 
 TEST (groove190fm_playlist_clip_plays_through_its_groove_without_changing_its_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     auto s = song();
     auto g = offbeat (60);
@@ -226,7 +226,7 @@ TEST (groove190fm_playlist_clip_plays_through_its_groove_without_changing_its_no
 
 TEST (groove190fm_clips_without_a_groove_play_bit_identically)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     const auto s = song();
     const auto plain = play (s);
@@ -249,7 +249,7 @@ TEST (groove190fm_clips_without_a_groove_play_bit_identically)
 
 TEST (groove190fm_commit_and_extract_on_playlist_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     auto s = song();
     auto g = offbeat (60);
@@ -295,7 +295,7 @@ TEST (groove190fm_commit_and_extract_on_playlist_clips)
 
 TEST (groove190fm_groove_goes_with_a_clip_between_grid_and_playlist)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     auto s = song();
     const auto id = groove::add (s.grooves, offbeat (60));
@@ -320,7 +320,7 @@ TEST (groove190fm_groove_goes_with_a_clip_between_grid_and_playlist)
 
 TEST (groove190fm_als_import_reads_the_pool_and_clip_grooves)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     FlpImportReport report;
     const auto s = importAls (bytesOf (grooveSet (7, 80)), options (&report));
@@ -360,20 +360,20 @@ TEST (groove190fm_als_import_reads_the_pool_and_clip_grooves)
         }
     }
     CHECK (report.notReproduced.count ("Clip groove that is not in the set's Groove Pool (left out)") == 1);
-    CHECK (report.notReproduced.count ("Default groove for new clips (LYNX's new clips start without a groove)") == 1);
-    CHECK (report.approximated.count ("Grooves (LYNX's groove timing and accents; Live's exact law needs a live check)") == 1);
+    CHECK (report.notReproduced.count ("Default groove for new clips (YW's new clips start without a groove)") == 1);
+    CHECK (report.approximated.count ("Grooves (YW's groove timing and accents; Live's exact law needs a live check)") == 1);
 
     // no default groove, the global amount above Live's 130 %: kept at 130, reported
     FlpImportReport second;
     const auto t = importAls (bytesOf (grooveSet (-1, 131.25)), options (&second));
     CHECK (t.has_value() && std::abs (t->grooves.amount - 1.3f) < 1.0e-6f);
-    CHECK (second.notReproduced.count ("Default groove for new clips (LYNX's new clips start without a groove)") == 0);
+    CHECK (second.notReproduced.count ("Default groove for new clips (YW's new clips start without a groove)") == 0);
     CHECK (second.approximated.count ("Global groove amount above 130 % (kept at 130 %)") == 1);
 }
 
 TEST (groove190fm_als_export_writes_the_pool_and_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     auto s = song();
     auto g = offbeat (60, 0.5f);
@@ -461,10 +461,10 @@ TEST (groove190fm_als_export_writes_the_pool_and_round_trips)
 
 TEST (groove190fm_shipped_live_set_groove_is_read)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace groove190fm;
     // Live's own demo set (read-only, on this machine only): its pool holds one groove that four clips use
-    const std::filesystem::path file = "/mnt/e/lynx-work/ableton/xml/APC40_Demo.xml";
+    const std::filesystem::path file = "/mnt/e/yw-work/ableton/xml/APC40_Demo.xml";
     if (! std::filesystem::exists (file))
     {
         std::printf ("  (skipped: %s is not here)\n", file.string().c_str());
@@ -494,11 +494,11 @@ TEST (groove190fm_shipped_live_set_groove_is_read)
     std::printf ("  APC40 demo: groove \"%s\", %d clips\n", g.name.c_str(), groove::users (*s, g.id));
 }
 
-// --- LYNX's own Classic swing --------------------------------------------------------------------------------------
+// --- YW's own Classic swing --------------------------------------------------------------------------------------
 
 TEST (groove190fm_classic_swing_grooves_follow_the_published_steps)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& bank = groove::factoryBank();
     const auto& steps = groove::classicSwingSteps();
     CHECK ((steps == std::vector<int> { 50, 54, 58, 62, 63, 66, 67, 71, 75 }));
@@ -511,7 +511,7 @@ TEST (groove190fm_classic_swing_grooves_follow_the_published_steps)
     {
         CHECK (g->name.size() > 2 && g->name.substr (g->name.size() - 2) == " %");
         CHECK (g->quantize == 1.0f && g->timing == 1.0f && g->velocity == 0.0f && g->random == 0.0f);
-        // LYNX's own names: no machine or maker in them
+        // YW's own names: no machine or maker in them
         for (const auto* mark : { "MPC", "SP", "Akai", "E-mu", "Emu", "Linn", "Roland", "TR-", "Logic", "Notator" })
             CHECK (g->name.find (mark) == std::string::npos);
     }

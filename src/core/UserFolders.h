@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::userfolders
+namespace yw::userfolders
 {
 // a path as the list compares it: no trailing separator (a drive root keeps its own), case folded where the file
 // system ignores case
@@ -47,4 +47,4 @@ inline std::vector<std::string> add (std::vector<std::string>& list, const std::
     }
     return added;
 }
-} // namespace lynx::userfolders
+} // namespace yw::userfolders

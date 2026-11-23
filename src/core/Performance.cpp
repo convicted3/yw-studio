@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::perf
+namespace yw::perf
 {
 std::int64_t syncTicks (TrackPerformance::Sync sync, std::int64_t clipLength) noexcept
 {
@@ -571,9 +571,9 @@ bool recordedClip (const Song& song, const RecordedPass& pass, Clip& out)
     out.offset = clip.offset + (std::int64_t) std::llround (pass.offset);
     return true;
 }
-} // namespace lynx::perf
+} // namespace yw::perf
 
-namespace lynx::perf
+namespace yw::perf
 {
 void prepareForPerformance (Song& song, int count, std::int64_t spacing)
 {
@@ -598,4 +598,4 @@ void prepareForPerformance (Song& song, int count, std::int64_t spacing)
     song.performanceMode = true;
     song.mode = PlayMode::song;
 }
-} // namespace lynx::perf
+} // namespace yw::perf

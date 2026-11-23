@@ -14,7 +14,7 @@
 //   ZIP64 end record     0x06064b50, 56 bytes (+ extensible data)
 //   ZIP64 extra field    id 0x0001: the 64-bit sizes / offset for the fields stored as 0xFFFFFFFF, in that order
 
-namespace lynx::zip
+namespace yw::zip
 {
 namespace
 {
@@ -308,4 +308,4 @@ std::vector<std::uint8_t> write (const std::vector<NewEntry>& entries, std::stri
     put16 (out, 0);
     return out;
 }
-} // namespace lynx::zip
+} // namespace yw::zip

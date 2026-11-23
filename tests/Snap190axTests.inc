@@ -1,5 +1,5 @@
 // Round 190ax, bug 2: the Playlist's "Line (follows zoom)" snap step against FL's Line / Cell step (FL 2026 FLEngine
-// FUN_00e59e90, docs/analise/REA_rodada190ax.md). LYNX used noteedit::screenStep (the finest of 1/4 step, 1/2 step,
+// FUN_00e59e90, docs/analise/REA_rodada190ax.md). YW used noteedit::screenStep (the finest of 1/4 step, 1/2 step,
 // step, beat, bars that is 16 px wide): a beat where FL steps half a beat (round 190ag's live check: 87 px per bar,
 // Shift+Right moves 48 of FL's 96 PPQ ticks with Line and with Cell), and quarter steps where FL stays on steps.
 
@@ -10,25 +10,25 @@ namespace s190ax
 // the step at `pixelsPerBar` px per bar of `numerator`/`denominator`
 std::int64_t at (double pixelsPerBar, int numerator = 4, int denominator = 4)
 {
-    const auto bar = (double) numerator * (16 / denominator) * lynx::ticksPerStep;
-    return lynx::noteedit::flLineStep (pixelsPerBar / bar, numerator, denominator);
+    const auto bar = (double) numerator * (16 / denominator) * yw::ticksPerStep;
+    return yw::noteedit::flLineStep (pixelsPerBar / bar, numerator, denominator);
 }
 } // namespace s190ax
 
 TEST (s190ax_fl_line_and_cell_step_by_zoom_in_4_4)
 {
     using s190ax::at;
-    const std::int64_t step = lynx::ticksPerStep, beat = lynx::ppq, bar = 4 * beat;
+    const std::int64_t step = yw::ticksPerStep, beat = yw::ppq, bar = 4 * beat;
     // zoom (px per 4/4 bar) -> step; FL's Line and Cell modes take the same step (they round a position differently).
     // The limits are FL's 10 px: a step is 10 px wide at 160 px per bar, two steps at 80, a beat at 40, two beats at 20,
     // a bar at 10, two bars at 5.
     const struct { double pixelsPerBar; std::int64_t ticks; } table[] = {
-        { 800.0, step },      // LYNX's closest zoom: FL never goes under a step (screenStep gave 1/2 step from 512 px)
+        { 800.0, step },      // YW's closest zoom: FL never goes under a step (screenStep gave 1/2 step from 512 px)
         { 512.0, step },
         { 256.0, step },
         { 161.0, step },
         { 159.0, 2 * step },  // two steps (half a beat)
-        { 96.0, 2 * step },   // LYNX's default zoom (screenStep: a beat)
+        { 96.0, 2 * step },   // YW's default zoom (screenStep: a beat)
         { 87.0, 2 * step },   // round 190ag, live in FL 2026: Line and Cell both moved half a beat per Shift+Right
         { 81.0, 2 * step },
         { 79.0, beat },
@@ -43,7 +43,7 @@ TEST (s190ax_fl_line_and_cell_step_by_zoom_in_4_4)
         { 8.25, 2 * bar },    // (round 169d's zoom: two bars there too)
         { 6.0, 2 * bar },
         { 4.5, 4 * bar },
-        { 4.0, 4 * bar },     // LYNX's furthest zoom
+        { 4.0, 4 * bar },     // YW's furthest zoom
         { 2.0, 8 * bar },
         { 1.0, 16 * bar },
         { 0.5, 32 * bar },
@@ -66,13 +66,13 @@ TEST (s190ax_fl_line_and_cell_step_by_zoom_in_4_4)
         last = now;
     }
     // no zoom at all (a window not laid out yet): a bar, and no endless loop
-    CHECK (lynx::noteedit::flLineStep (0.0, 4) == bar && lynx::noteedit::flLineStep (-1.0, 4) == bar);
+    CHECK (yw::noteedit::flLineStep (0.0, 4) == bar && yw::noteedit::flLineStep (-1.0, 4) == bar);
 }
 
 TEST (s190ax_fl_line_step_in_other_time_signatures)
 {
     using s190ax::at;
-    const std::int64_t step = lynx::ticksPerStep, beat = lynx::ppq;
+    const std::int64_t step = yw::ticksPerStep, beat = yw::ppq;
     // 3/4: an odd numerator has no two-beat step (a bar of three beats does not split in two): beat, then the bar
     CHECK (at (3 * 12.0, 3) == beat);       // a beat is 12 px
     CHECK (at (3 * 9.0, 3) == 3 * beat);    // a beat is 9 px, two beats would be 18: the bar (27 px)
@@ -89,14 +89,14 @@ TEST (s190ax_fl_line_step_in_other_time_signatures)
     CHECK (at (8 * 6.0, 8, 16) == 2 * step);      // (an even numerator: two steps)
     CHECK (at (7 * 1.0, 7, 16) == 2 * 7 * step);  // a bar is 7 px: two bars
     // odd values are held: numerator below 1 counts as 1, the denominator is kept inside 1..16
-    CHECK (lynx::noteedit::flLineStep (1.0, 0) == step && lynx::noteedit::flLineStep (1.0, 4, 64) == step);
+    CHECK (yw::noteedit::flLineStep (1.0, 0) == step && yw::noteedit::flLineStep (1.0, 4, 64) == step);
 }
 
 TEST (s190ax_the_line_step_is_no_longer_screen_steps)
 {
     // what the Playlist used before, at the zooms where the two differ (the Piano roll keeps screenStep)
-    const std::int64_t step = lynx::ticksPerStep, beat = lynx::ppq, bar = 4 * beat;
-    CHECK (lynx::noteedit::screenStep (87.0 / (double) bar, bar) == beat && s190ax::at (87.0) == 2 * step);
-    CHECK (lynx::noteedit::screenStep (600.0 / (double) bar, bar) == step / 2 && s190ax::at (600.0) == step);
-    CHECK (lynx::noteedit::screenStep (30.0 / (double) bar, bar) == bar && s190ax::at (30.0) == 2 * beat);
+    const std::int64_t step = yw::ticksPerStep, beat = yw::ppq, bar = 4 * beat;
+    CHECK (yw::noteedit::screenStep (87.0 / (double) bar, bar) == beat && s190ax::at (87.0) == 2 * step);
+    CHECK (yw::noteedit::screenStep (600.0 / (double) bar, bar) == step / 2 && s190ax::at (600.0) == step);
+    CHECK (yw::noteedit::screenStep (30.0 / (double) bar, bar) == bar && s190ax::at (30.0) == 2 * beat);
 }

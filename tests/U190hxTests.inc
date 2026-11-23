@@ -1,11 +1,11 @@
-// Round 190hx (issue #178, "LYNX's own windows flicker while dragged"): a docked window keeps its size in pixels while it
+// Round 190hx (issue #178, "YW's own windows flicker while dragged"): a docked window keeps its size in pixels while it
 // moves, at every interface size (core/DockStack.h physicalPlace).
 #include "core/DockStack.h"
 
 TEST (u190hx_a_docked_window_that_only_moves_keeps_its_size_in_pixels)
 {
-    using lynx::dockstack::physicalPlace;
-    for (const auto scale : { 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 0.8, 0.9, 1.875 }) // (LYNX's sizes x display scales)
+    using yw::dockstack::physicalPlace;
+    for (const auto scale : { 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 0.8, 0.9, 1.875 }) // (YW's sizes x display scales)
         for (const auto width : { 97, 100, 101, 333, 640 })
         {
             const auto first = physicalPlace (0, 0, width, 211, scale);

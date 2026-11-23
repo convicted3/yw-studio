@@ -16,7 +16,7 @@
 
 #include "ui/PaintAB.h"
 
-namespace lynx::textcache
+namespace yw::textcache
 {
 namespace detail
 {
@@ -48,7 +48,7 @@ inline juce::String fontKey (const juce::Font& f)
 // floats, the font's names: allocations and locale-aware number formatting on each call). The call is held the way the
 // key string held it (box sizes to 2 decimals for drawText, the minimum scale and the font's height and scale to 3), so
 // the same calls share an entry as before and draw the same glyphs; an entry is used only when all of it matches.
-// LYNX_PAINT_CACHE=0: the key strings, as before.
+// YW_PAINT_CACHE=0: the key strings, as before.
 struct Call
 {
     char kind; // 't' drawText, 'f' drawFittedText
@@ -192,7 +192,7 @@ inline void drawFittedText (juce::Graphics& g, const juce::String& text, int x, 
 // Round 190ki: GlyphArrangement::getStringWidth (font, text) from a cache. JUCE 8 shapes the text on every call (JUCE's
 // own arrangement cache covers drawText / drawSingleLineText, not this); the toolbar's tempo and time panels measured
 // their readouts several times per paint (round 190jo's fitting loops). The same float as the call, kept per font and
-// text. LYNX_PAINT_CACHE=0: measured every time, as before.
+// text. YW_PAINT_CACHE=0: measured every time, as before.
 inline float stringWidth (const juce::Font& font, const juce::String& text)
 {
     if (! ui::paintCache())
@@ -219,4 +219,4 @@ inline float stringWidth (const juce::Font& font, const juce::String& text)
     map.emplace (h, Entry { font, text, width });
     return width;
 }
-} // namespace lynx::textcache
+} // namespace yw::textcache

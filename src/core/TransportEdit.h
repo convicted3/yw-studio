@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::transportedit
+namespace yw::transportedit
 {
 // --- quantize -------------------------------------------------------------------------------------------------
 
@@ -80,7 +80,7 @@ inline double patternPlayhead (const Song& song, int pattern, double transportTi
             if (best == nullptr || c.track < best->track)
                 best = &c;
 
-    // a stretched clip loops its pattern (LYNX extra stretchedClipsLoop, issue #25): the playhead wraps with it
+    // a stretched clip loops its pattern (YW extra stretchedClipsLoop, issue #25): the playhead wraps with it
     return best != nullptr ? patternTickInClip (*best, inSong, song.patterns[(std::size_t) pattern].effectiveLength (song.meter())) : -1.0;
 }
 
@@ -166,9 +166,9 @@ inline std::int64_t stopTarget (bool alreadyStopped, bool rememberSeek, std::int
 // playback was started from. Its Stop (the toolbar's StopBtnClick 0x1030470 = FUN_011ca520 (0, 0), also Space and the
 // Piano roll play button's right-click) goes back to that mark; Stop while stopped goes to the very start and
 // forgets it (FUN_011c9de0); switching Pattern / Song forgets it (FUN_011ca630). Pause (the Play button pressed while
-// playing = FUN_011ca520 (2, …), LYNX's Ctrl+Space and the Piano roll's play button) keeps the position and leaves
+// playing = FUN_011ca520 (2, …), YW's Ctrl+Space and the Piano roll's play button) keeps the position and leaves
 // the mark alone: a later Stop still goes back to the mark. "Remember seek time" is on in a fresh FL (its variable
-// 0x15d89a0 starts as 1). With it off LYNX keeps its earlier rule: Space goes back to where playback started, the
+// 0x15d89a0 starts as 1). With it off YW keeps its earlier rule: Space goes back to where playback started, the
 // Stop button to the start.
 // `mark` = the remembered position for the current Pattern / Song mode (-1 = none), `playStart` = where this playback
 // was started from (not a resume after a pause).
@@ -201,7 +201,7 @@ inline double rollPlayRightClickTarget (bool playing, double position, double la
 // FL's Home (KeyMap "transport.toStart"): the position goes to the start of the song (Song mode) or the pattern, playing
 // or not, and becomes the mark a later Stop goes back to ("Remember seek time"), as a ruler click at the start would.
 //
-// LYNX extra (Settings › LYNX extras, off by default): REAPER's W does the same. FL gives plain W nothing in its main
+// YW extra (Settings › YW extras, off by default): REAPER's W does the same. FL gives plain W nothing in its main
 // windows, so the key is free there; the typing keyboard keeps it while it is on (W is one of its notes), a text field
 // keeps it, and a key the user bound himself in the shortcut editor wins. The switch is kept in ui-options.txt
 // ("wToStart").
@@ -218,4 +218,4 @@ inline bool wKeyGoesToStart (bool extraOn, int keyCode, bool anyModifier, bool t
 {
     return extraOn && (keyCode == 'W' || keyCode == 'w') && ! anyModifier && ! typingKeyboardTakesIt && ! textFieldFocused;
 }
-} // namespace lynx::transportedit
+} // namespace yw::transportedit

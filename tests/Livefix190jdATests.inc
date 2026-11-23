@@ -8,7 +8,7 @@
 
 TEST (livefix190jd_directwave_zone_drag_as_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     dw::Zone z;
     z.lowKey = 40, z.highKey = 45, z.root = 42, z.lowVel = 30, z.highVel = 80;
     // a plain (or Ctrl) drag moves the keys only: 40–45 → 44–49, root 42 kept
@@ -40,7 +40,7 @@ TEST (livefix190jd_directwave_zone_drag_as_fl)
 
 TEST (livefix190jd_slicex_deck_snap_modes)
 {
-    using namespace lynx::slicex;
+    using namespace yw::slicex;
     // FL's menu: five modes, grid first (the default)
     CHECK (deckSnapCount == 5 && (int) DeckSnap::grid == 0 && (int) DeckSnap::pitchPeriod == 4);
     // a 441 Hz sine at 44.1 kHz: a period of 100 frames, rising crossings at 0, 100, 200 …, falling ones at 50, 150 …

@@ -12,7 +12,7 @@
 #include "ui/FileChoosers.h"
 #include "ui/I18n.h"
 
-namespace lynx::sessionui
+namespace yw::sessionui
 {
 namespace
 {
@@ -214,8 +214,8 @@ void sendProject (Context c)
                             }
                             const auto start = defaultFolder (c).getChildFile (
                                 juce::File::createLegalFileName (projectTitle (c) + " - " + tr ("for {0}", { guest })) + sessionpack::extension);
-                            chooser() = lynx::ui::makeFileChooser (tr ("Send project"), start, juce::String ("*") + sessionpack::extension);
-                            lynx::ui::launchChooser (chooser(), 
+                            chooser() = yw::ui::makeFileChooser (tr ("Send project"), start, juce::String ("*") + sessionpack::extension);
+                            yw::ui::launchChooser (chooser(), 
                                 juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                                 [c, guest, invited] (const juce::FileChooser& fc) {
                                     auto file = fc.getResult();
@@ -250,15 +250,15 @@ void sendPartBack (Context c)
     const auto* self = song.session.self();
     if (! song.session.isGuestCopy() || self == nullptr)
     {
-        warn (tr ("Send my part back"), tr ("Only a project you received (a .lynxpack) has a part to send back. To invite someone, use File › Send project..."));
+        warn (tr ("Send my part back"), tr ("Only a project you received (a .ywpack) has a part to send back. To invite someone, use File › Send project..."));
         return;
     }
     const auto* host = song.session.find (session::hostTag);
     const auto hostName = host != nullptr ? str (host->name) : tr ("the host");
     const auto start = platform::documentsFolder().getChildFile (
         juce::File::createLegalFileName (projectTitle (c) + " - " + tr ("{0}'s part", { str (self->name) })) + sessionpack::extension);
-    chooser() = lynx::ui::makeFileChooser (tr ("Send my part back"), start, juce::String ("*") + sessionpack::extension);
-    lynx::ui::launchChooser (chooser(), 
+    chooser() = yw::ui::makeFileChooser (tr ("Send my part back"), start, juce::String ("*") + sessionpack::extension);
+    yw::ui::launchChooser (chooser(), 
         juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [c, hostName] (const juce::FileChooser& fc) {
             auto file = fc.getResult();
             if (file == juce::File())
@@ -416,8 +416,8 @@ void mergePart (Context c)
         warn (tr ("Merge a part"), tr ("Parts are merged by the host, in the host's project. This is a copy you received."));
         return;
     }
-    chooser() = lynx::ui::makeFileChooser (tr ("Merge a part"), platform::documentsFolder(), juce::String ("*") + sessionpack::extension);
-    lynx::ui::launchChooser (chooser(), juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [c] (const juce::FileChooser& fc) {
+    chooser() = yw::ui::makeFileChooser (tr ("Merge a part"), platform::documentsFolder(), juce::String ("*") + sessionpack::extension);
+    yw::ui::launchChooser (chooser(), juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [c] (const juce::FileChooser& fc) {
         const auto file = fc.getResult();
         if (! file.existsAsFile())
             return;
@@ -452,8 +452,8 @@ void openPackage (Context c, const juce::File& file)
                 + "\n\n"
                 + (manifest->to.keepFull ? tr ("When the session ends you may keep a full copy of the project.")
                                          : tr ("When the session ends you keep your own part (the host's choice)."));
-    if (manifest->lynxVersion != JUCE_APPLICATION_VERSION_STRING)
-        text << "\n\n" << tr ("Made with YW Studio {0} (this is {1}).", { manifest->lynxVersion, JUCE_APPLICATION_VERSION_STRING });
+    if (manifest->ywVersion != JUCE_APPLICATION_VERSION_STRING)
+        text << "\n\n" << tr ("Made with YW Studio {0} (this is {1}).", { manifest->ywVersion, JUCE_APPLICATION_VERSION_STRING });
     auto* w = new juce::AlertWindow (tr ("Open a received project"), text, juce::MessageBoxIconType::NoIcon);
     w->addButton (tr ("Open"), 1, juce::KeyPress (juce::KeyPress::returnKey));
     w->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
@@ -463,4 +463,4 @@ void openPackage (Context c, const juce::File& file)
                         }),
                         true);
 }
-} // namespace lynx::sessionui
+} // namespace yw::sessionui

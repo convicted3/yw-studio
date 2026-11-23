@@ -1,8 +1,8 @@
 #pragma once
 
 // Issue #154 (round 190ht): a linked Playlist track's header can show its mixer track's insert effects as a compact
-// list (Settings › LYNX extras, the Playlist menu; off by default). FL keeps an insert's effects in the Mixer's right
-// panel only, so this is a LYNX extra; the list is the REAPER-style track-panel FX list the issue shows, drawn in the
+// list (Settings › YW extras, the Playlist menu; off by default). FL keeps an insert's effects in the Mixer's right
+// panel only, so this is a YW extra; the list is the REAPER-style track-panel FX list the issue shows, drawn in the
 // linked header's own column and edited through the Mixer's slot code (the same edits as the Device View, round 183a).
 // Design notes: docs/analise/REA_rodada190ht.md. Header only, no JUCE: the list's layout and hit testing.
 //
@@ -16,7 +16,7 @@
 #include "core/MixerOps.h"
 #include "core/Song.h"
 
-namespace lynx::trackinserts
+namespace yw::trackinserts
 {
 constexpr int rowHeight = 13;
 constexpr int addRow = -2; // the "add" row's item
@@ -68,4 +68,4 @@ inline int nextFreeRow (const std::vector<EffectSlot>& effects)
             return r;
     return 0;
 }
-} // namespace lynx::trackinserts
+} // namespace yw::trackinserts

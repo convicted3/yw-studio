@@ -6,15 +6,15 @@
 
 namespace vfxs165
 {
-using lynx::vfx::Event;
+using yw::vfx::Event;
 
 std::vector<std::uint8_t> state (const std::string& source, const std::vector<std::pair<std::string, std::string>>& params = {})
 {
-    auto s = lynx::vfx::defaultScript();
+    auto s = yw::vfx::defaultScript();
     s.setSource (source);
     if (! params.empty())
         s.setParameters (params);
-    return lynx::vfx::writeScript (s);
+    return yw::vfx::writeScript (s);
 }
 
 struct Timed
@@ -24,10 +24,10 @@ struct Timed
 };
 
 // Plays `total` samples in blocks of n (the song playing from tick 0 at `bpm`, 44.1 kHz); `in` at absolute samples
-std::vector<Timed> play (lynx::vfx::Processor& p, std::vector<Timed> in, long total, int n = 512, bool playing = true, double bpm = 120.0)
+std::vector<Timed> play (yw::vfx::Processor& p, std::vector<Timed> in, long total, int n = 512, bool playing = true, double bpm = 120.0)
 {
     std::vector<Timed> out;
-    lynx::vfx::Transport t;
+    yw::vfx::Transport t;
     t.sampleRate = 44100.0;
     t.bpm = bpm;
     t.playing = playing;
@@ -42,7 +42,7 @@ std::vector<Timed> play (lynx::vfx::Processor& p, std::vector<Timed> in, long to
             block.push_back (e);
         }
         t.ticks = (double) start * bpm * 960.0 / (60.0 * t.sampleRate);
-        lynx::vfx::EventList list;
+        yw::vfx::EventList list;
         p.process (block.data(), (int) block.size(), n, t, list);
         list.sortByOffset();
         for (int k = 0; k < list.size(); ++k)
@@ -92,7 +92,7 @@ def onReleaseVoice(v):
 
 TEST (vfx_script_runs_python_on_the_notes)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     auto p = makeProcessor (Kind::script, vfxs165::state (vfxs165::passThrough));
     const auto out = vfxs165::play (*p, { vfxs165::on (100, 60, 0.5f), vfxs165::off (3000, 60) }, 4096);
     // three notes on at the note's sample, three offs at the release's
@@ -110,7 +110,7 @@ TEST (vfx_script_runs_python_on_the_notes)
 
 TEST (vfx_script_ticks_play_notes_at_their_sample)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     // an eighth-note pulse (48 of 96 ticks), each half as long, from the song's start
     const char* src = R"(
 import flvfx as vfx
@@ -144,7 +144,7 @@ def onTick():
 
 TEST (vfx_script_controls_values_and_output_controllers)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     const char* src = R"(
 import flvfx as vfx
 vfx.addOutputController('Level', 0.25)
@@ -205,7 +205,7 @@ def createDialog():
 
 TEST (vfx_script_errors_are_reported_and_never_hang)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     // a syntax error: the line and the message, as FL's editor shows them
     const auto bad = script::describe (std::string ("import flvfx as vfx\ndef onTick(:\n    pass\n"));
     CHECK (! bad->compiled && bad->error.find ("SyntaxError") != std::string::npos && bad->error.find ("line 2") != std::string::npos);
@@ -248,8 +248,8 @@ vfx.addOutputController('n', 0)
     std::vector<double> times;
     for (int b = 0; b < 400; ++b)
     {
-        lynx::vfx::EventList out;
-        lynx::vfx::Transport t;
+        yw::vfx::EventList out;
+        yw::vfx::Transport t;
         auto e = vfx164::on (60);
         const auto before = std::chrono::steady_clock::now();
         loop->process (&e, b == 0 ? 1 : 0, 512, t, out);
@@ -275,20 +275,20 @@ vfx.addOutputController('n', 0)
     CHECK (worst < 50.0);
 }
 
-extern "C" size_t py_lynx_heap_limit; // (third_party/pocketpy/pocketpy.c: LYNX's heap limit, 768 MB)
+extern "C" size_t py_yw_heap_limit; // (third_party/pocketpy/pocketpy.c: YW's heap limit, 768 MB)
 
 TEST (vfx_script_memory_runaway_is_stopped)
 {
-    using namespace lynx::vfx;
-    // a script that keeps allocating is stopped at LYNX's heap limit, with a message; the memory comes back.
+    using namespace yw::vfx;
+    // a script that keeps allocating is stopped at YW's heap limit, with a message; the memory comes back.
     // (round 190fg: the test runs with the limit lowered to 64 MB. Filling the real 768 MB costs the Python thread
     // ~0.5 s of page faults on an idle machine; under six parallel test shards plus builds it once took past the
     // call's time limit (3 s of CPU, 12 s wall), and the script was stopped as "took too long" before the memory
     // stop: the test failed though the product did what it should. The heap counter and the stop are the same at any
     // limit; the shipped limit is checked on its own.)
-    CHECK (py_lynx_heap_limit == ((size_t) 768 << 20));
-    const auto shipped = py_lynx_heap_limit;
-    py_lynx_heap_limit = (size_t) 64 << 20;
+    CHECK (py_yw_heap_limit == ((size_t) 768 << 20));
+    const auto shipped = py_yw_heap_limit;
+    py_yw_heap_limit = (size_t) 64 << 20;
     auto p = makeProcessor (Kind::script, vfxs165::state ("import flvfx as vfx\nkeep = []\ndef onTick():\n    while True:\n        try:\n            keep.append([0] * 400000)\n        except:\n            pass\n"));
     p->setTag (0x165d0005);
     const auto cpuBefore = std::clock();
@@ -306,19 +306,19 @@ TEST (vfx_script_memory_runaway_is_stopped)
     vfxs165::play (*q, {}, 512);
     CHECK (q->controlOutput (0) == 1.0f);
     q.reset();
-    py_lynx_heap_limit = shipped;
+    py_yw_heap_limit = shipped;
 }
 
 // Round 190fg: one operation that asks for more than the heap has room for, in a single allocation, stops the script
 // with the same memory message before anything is allocated (list() of a long iterator: as soon as it passes the limit). Before, an allocation past twice the limit failed and
 // pocketpy aborted the process ('[0] * 300_000_000': c11_vector__reserve "out of memory") or wrote through a null
-// pointer ('x' * 2_000_000_000): one line of a script took LYNX down.
+// pointer ('x' * 2_000_000_000): one line of a script took YW down.
 TEST (vfx_script_one_huge_allocation_is_stopped_not_fatal)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     // (at a 64 MB limit, as the test above: list(range(...)) fills the heap up to the limit first)
-    const auto shipped = py_lynx_heap_limit;
-    py_lynx_heap_limit = (size_t) 64 << 20;
+    const auto shipped = py_yw_heap_limit;
+    py_yw_heap_limit = (size_t) 64 << 20;
     const char* lines[] = { "big = [0] * 300000000", "big = 'x' * 2000000000", "big = 'xy' * 1500000000", "big = [1, 2] * 2000000000",
                             "big = list(range(200000000))" };
     int tag = 0x165d0100;
@@ -340,12 +340,12 @@ TEST (vfx_script_one_huge_allocation_is_stopped_not_fatal)
     vfxs165::play (*ok, {}, 512);
     CHECK (ok->controlOutput (0) == 1.0f);
     ok.reset();
-    py_lynx_heap_limit = shipped;
+    py_yw_heap_limit = shipped;
 }
 
 TEST (vfx_script_voice_changes_reach_the_sounding_note)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     const char* src = R"(
 import flvfx as vfx
 def onTriggerVoice(v):
@@ -373,8 +373,8 @@ def onTick():
 
 TEST (vfx_script_python_has_what_fl_scripts_use)
 {
-    using namespace lynx::vfx;
-    // CPython features pocketpy lacks that FL's factory scripts use: LYNX adds or patches them
+    using namespace yw::vfx;
+    // CPython features pocketpy lacks that FL's factory scripts use: YW adds or patches them
     const char* src = "import flvfx as vfx\nimport re, random, sys, math, time\n"
                       "text = '''two lines \\\nas one'''\n"
                       "class Mine(vfx.Voice):\n    def __init__(self):\n        super().__init__()\n        self.extra: int = 3\n"
@@ -418,7 +418,7 @@ TEST (vfx_script_python_has_what_fl_scripts_use)
 
 TEST (vfx_script_late_answers_play_at_the_next_block)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     // a script slower than the real-time budget: its note comes later, at the start of the first block after it
     // answered. (Round 167e made the margins larger; round 190at removed them: the macOS CI still failed now and then
     // because the audio thread, preempted for longer than the script's 40 ms between handing the block over and
@@ -433,8 +433,8 @@ def onTriggerVoice(v):
     auto p = makeProcessor (Kind::script, vfxs165::state (src));
     script::setRealtime (true);
     script::holdScriptThread (true);
-    lynx::vfx::Transport t;
-    lynx::vfx::EventList first, later;
+    yw::vfx::Transport t;
+    yw::vfx::EventList first, later;
     auto e = vfx164::on (60, 100);
     p->process (&e, 1, 512, t, first);
     script::holdScriptThread (false);
@@ -448,7 +448,7 @@ def onTriggerVoice(v):
     CHECK (first.size() == 0);
     CHECK (later.size() == 1 && later[0].offset == 0 && later[0].voice.key == 60);
     // offline (export) it waits: the note is at its sample
-    lynx::vfx::EventList exact;
+    yw::vfx::EventList exact;
     auto p2 = makeProcessor (Kind::script, vfxs165::state (src));
     p2->process (&e, 1, 512, t, exact);
     CHECK (exact.size() == 1 && exact[0].offset == 100);
@@ -456,7 +456,7 @@ def onTriggerVoice(v):
 
 TEST (vfx_script_runs_fl_factory_scripts)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     if (realFlpDir.empty())
         return;
     namespace fs = std::filesystem;

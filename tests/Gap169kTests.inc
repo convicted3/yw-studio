@@ -6,7 +6,7 @@
 
 TEST (gap169k_picker_selection_like_fl)
 {
-    using namespace lynx::pickersel;
+    using namespace yw::pickersel;
     Selection s;
     // plain click: only that one (PickerPanelMouseUp, no Ctrl / Shift)
     leftUp (s, 3, false, false, leftDownDeselects (s, 3, false));
@@ -47,7 +47,7 @@ TEST (gap169k_picker_selection_like_fl)
 
 TEST (gap169k_render_plan_and_warnings)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (4);
     for (auto& p : song.patterns)

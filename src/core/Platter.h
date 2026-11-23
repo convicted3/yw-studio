@@ -1,8 +1,8 @@
 #pragma once
 
-// Platter (round 190kk): LYNX's record-wear effect — the stylus' tracing error and pinch distortion on a band of the
+// Platter (round 190kk): YW's record-wear effect — the stylus' tracing error and pinch distortion on a band of the
 // input, and surface crackle. It is the engine an imported Ableton Live "Vinyl Distortion" opens on. Clean-room: the laws
-// come from LYNX's own analysis of Live 12.4's renders (round 190kk, /mnt/e/lynx-work/livedev190kk RESULTS.md §2: 1 kHz
+// come from YW's own analysis of Live 12.4's renders (round 190kk, /mnt/e/yw-work/livedev190kk RESULTS.md §2: 1 kHz
 // staircases, tones, sweeps, noise and silence through 60 settings); nothing of Live's code or content is used.
 //
 // Measured facts the engine keeps:
@@ -27,7 +27,7 @@
 #include <complex>
 #include <cstdint>
 
-namespace lynx::platter
+namespace yw::platter
 {
 // (the first seven are what the Device View's card shows: Drive, both bands' drive and frequency, the crackle)
 enum Param
@@ -254,4 +254,4 @@ private:
     double tracingGain = 0.0, pinchGain = 0.0, clickProb = 0.0, crackleGain = 0.0;
     std::uint32_t seed = 0x2545f491u;
 };
-} // namespace lynx::platter
+} // namespace yw::platter

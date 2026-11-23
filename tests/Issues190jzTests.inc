@@ -1,16 +1,16 @@
 // Round 190jz: GitHub issues #192 (the Browser docked as in FL: a maximized window fills what the docked Browser leaves),
 // #194 (audio clip fades from the clip's top corners, FL's handles and tension) and #195 (Home goes to the start; REAPER's
-// W as a LYNX extra).
+// W as a YW extra).
 
 #include "core/KeyMap.h"
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/TransportEdit.h"
 
 // --- #195 -------------------------------------------------------------------------------------------------------------
 
 TEST (issues190jz_home_moves_the_playback_marker_to_the_start)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     // FL's Home: "Move playback marker to start" while the Playlist or the Piano roll has the focus (FL 2026: nothing with
     // the Mixer or the Channel rack focused), with the typing keyboard on or off
@@ -33,7 +33,7 @@ TEST (issues190jz_home_moves_the_playback_marker_to_the_start)
 
 TEST (issues190jz_w_goes_to_the_start_only_as_an_extra)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! transportedit::wGoesToStart()); // off in a fresh profile
     // the switch, no modifier, the typing keyboard not taking W, no text field
     CHECK (! transportedit::wKeyGoesToStart (false, 'W', false, false, false));
@@ -43,7 +43,7 @@ TEST (issues190jz_w_goes_to_the_start_only_as_an_extra)
     CHECK (! transportedit::wKeyGoesToStart (true, 'W', false, true, false));  // a note of the typing keyboard
     CHECK (! transportedit::wKeyGoesToStart (true, 'W', false, false, true));  // typing a name
     CHECK (! transportedit::wKeyGoesToStart (true, 'Q', false, false, false));
-    // Settings › LYNX extras lists it under the preference the main window saves
+    // Settings › YW extras lists it under the preference the main window saves
     bool listed = false;
     for (const auto& item : extras::items)
         if (item.id == "transport.wToStart")
@@ -60,7 +60,7 @@ TEST (issues190jz_w_goes_to_the_start_only_as_an_extra)
 
 TEST (issues190jz_maximized_panels_fill_what_the_docked_browser_leaves)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
     auto l = Layout::makeDefault (1600, 900);
     const auto bw = l[Panel::browser].bounds.w;
     CHECK (l.browserDock == Dock::left && l.browserDocked() && bw >= minWidth);
@@ -94,7 +94,7 @@ TEST (issues190jz_maximized_panels_fill_what_the_docked_browser_leaves)
 
 TEST (issues190jz_panels_move_with_the_free_area_as_fl_windows_do)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
     // FL 2026 (shots fl-192-restored-windows-*): Alt+F8 moved the Mixer left by the Browser's width, and the Playlist that
     // touched the right edge kept that edge (wider); Alt+F8 again put them back
     auto l = Layout::makeDefault (1600, 900);
@@ -127,7 +127,7 @@ TEST (issues190jz_panels_move_with_the_free_area_as_fl_windows_do)
 
 TEST (issues190jz_docked_browser_survives_resize_and_restart)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
     auto l = Layout::makeDefault (1600, 900);
     l[Panel::browser].bounds.w = 300;
     l.dockBrowser (Dock::right);
@@ -168,7 +168,7 @@ TEST (issues190jz_docked_browser_survives_resize_and_restart)
 
 TEST (issues190jz_fade_tension_handle_maps_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL 2026's saved values for the handle typed in as 0.25, 0.5 and 1 (round 190jz, p189l-t*.flp)
     CHECK (std::abs (clipops::fadeTensionFromHandle (0.25) - 7.0899f) < 0.002f);
     CHECK (std::abs (clipops::fadeTensionFromHandle (0.5) - 516.8467f) < 0.05f);
@@ -206,39 +206,39 @@ namespace
 // an audio clip of a steady 1.0 sample with both fades, rendered by the rack in blocks of `block` from tick 0 for `seconds`
 std::vector<float> renderFadedClip (int block, float inTension, float outTension, bool linearOut, double seconds = 2.2)
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
-    s.mixer = lynx::Song::defaultMixer (1);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    s.mode = yw::PlayMode::song;
+    s.mixer = yw::Song::defaultMixer (1);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.samplePath = "steady.wav";
     c.volume = 1.0f;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::audio;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::audio;
     clip.channel = 0;
-    clip.length = lynx::ppq * 4;  // 2 s at 120 BPM
-    clip.fadeIn = lynx::ppq;      // 0.5 s
-    clip.fadeOut = lynx::ppq * 2; // 1 s
+    clip.length = yw::ppq * 4;  // 2 s at 120 BPM
+    clip.fadeIn = yw::ppq;      // 0.5 s
+    clip.fadeOut = yw::ppq * 2; // 1 s
     clip.fadeInTension = inTension;
     clip.fadeOutTension = outTension;
     clip.linearFades = linearOut ? 2 : 0;
-    lynx::clipops::setManualFade (clip, 0, true);
-    lynx::clipops::setManualFade (clip, 1, true);
+    yw::clipops::setManualFade (clip, 0, true);
+    yw::clipops::setManualFade (clip, 1, true);
     s.playlist = { clip };
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (48000 * 4, 1.0f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> all, l ((std::size_t) block), rr ((std::size_t) block);
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
     const auto total = (std::size_t) (seconds * 48000.0);
     double tick = 0.0;
     while (all.size() < total)
@@ -254,7 +254,7 @@ std::vector<float> renderFadedClip (int block, float inTension, float outTension
 
 TEST (issues190jz_clip_fades_render_as_drawn_and_the_same_in_any_block_size)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto in = clipops::fadeTensionFromHandle (0.5), out = clipops::fadeTensionFromHandle (-0.3);
     // the export renders in blocks of 512, playback in the device's blocks (441 here): the same samples
     const auto exported = renderFadedClip (512, in, out, false);

@@ -1,11 +1,11 @@
 #pragma once
 
-// Kilohearts snapin laws on Effector (round 190nb): the five kHs snapins LYNX had no stand-in for — Ring Mod, Reverser,
+// Kilohearts snapin laws on Effector (round 190nb): the five kHs snapins YW had no stand-in for — Ring Mod, Reverser,
 // Resonator, Phase Distortion and Shaper — as hidden laws of FL's Effector (core/Effector.h), set only by the Kilohearts
 // translator (core/KiloheartsStates.inc). Their structures were read statically in Kilohearts' HeartCore 2.4 (REA,
 // docs/analise/REA_rodada190nb.md) and measured on the licensed kHs Essentials (round 190nb); everything below is
-// LYNX's own code restating those laws as formulas. No Kilohearts code, table or preset is used (Phase Distortion's
-// 90° all-pass pair is LYNX's own minimax design; the Shaper's curve is read from the plug-in's state as points).
+// YW's own code restating those laws as formulas. No Kilohearts code, table or preset is used (Phase Distortion's
+// 90° all-pass pair is YW's own minimax design; the Shaper's curve is read from the plug-in's state as points).
 //
 // Effector's hidden parameters (after its 12 named ones; saved only while non-zero, so every project saved before
 // keeps law 0 = FL's Effector, bit for bit):
@@ -22,7 +22,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::khsdsp
+namespace yw::khsdsp
 {
 enum class Law { none = 0, ringMod, reverser, resonator, phaseDistortion, shaper,
                  comb, chorus, tranceGate, distortion, bitcrush, freqShift, phaser, ensemble, nonlinearFilter };
@@ -207,7 +207,7 @@ public:
         nlfReset();
     }
     void setSongBeats (double b) noexcept { songBeats = b; songKnown = true; }
-    // round 190oc: LYNX's own half-band (the Nonlinear Filter's 2× resampler): its all-pass coefficients, A0's at the even
+    // round 190oc: YW's own half-band (the Nonlinear Filter's 2× resampler): its all-pass coefficients, A0's at the even
     // places, A1's at the odd ones (tests, docs)
     static std::vector<double> nonlinearHalfBand() { const auto& a = nlfHalfBand().a; return { a.begin(), a.end() }; }
     // round 190nh: the Trance Gate follows a song position only when it moves (a stopped transport: free running)
@@ -433,7 +433,7 @@ private:
     }
     void analytic (Hilbert& h, double x, double& re, double& im) noexcept
     {
-        // LYNX's own minimax pair (lab/hilbert.py, round 190nb): 2.6° worst error over 15 Hz … 0.46 fs at 48 kHz
+        // YW's own minimax pair (lab/hilbert.py, round 190nb): 2.6° worst error over 15 Hz … 0.46 fs at 48 kHz
         static constexpr double A[4] { 0.2103138494, 0.8090148606, 0.9688736554, 0.9928531669 };
         static constexpr double B[4] { 0.5546664279, 0.9274817547, 0.9841642629, 0.9981473638 };
         double a = x, b = x;
@@ -564,7 +564,7 @@ private:
 
     // ==== round 190nh =============================================================================================
     // Read statically in HeartCore 2.4 (CombFilterDsp, ChorusDsp, TranceGateDsp; docs/analise/REA_rodada190nh.md) and
-    // measured on kHs Essentials; LYNX's own code restating the laws as formulas.
+    // measured on kHs Essentials; YW's own code restating the laws as formulas.
     std::array<Ring, 2> line; // comb / chorus delay lines
     std::uint32_t combFill = 0;
 
@@ -878,7 +878,7 @@ private:
     // ---- the snapins' oversampler (Distortion, Bitcrush) ---------------------------------------------------------
     // N = ⌈150 kHz / fs⌉ (1 … 16); up: each sample held N times, then a 10th-order Chebyshev II low pass (55 dB stop band
     // from 25 kHz, at most 0.55 fs; five sections, the bilinear transform prewarped at the edge, unity at DC); down: the
-    // same low pass, then every N-th sample (the first of each group). The design is the textbook one (LYNX's own code).
+    // same low pass, then every N-th sample (the first of each group). The design is the textbook one (YW's own code).
     struct Cheby2
     {
         double b0[5] {}, b1[5] {}, b2[5] {}, a1[5] {}, a2[5] {};
@@ -1197,7 +1197,7 @@ private:
     // ---- Frequency Shifter -------------------------------------------------------------------------------------
     // A 12th-order Chebyshev II high pass (55 dB, stop band edge max (20 Hz, −0.95 · shift): a downward shift loses what
     // would fold through 0 Hz), then the analytic pair (re, im) and y = cos 2πφ · re − sin 2πφ · im, φ += shift / fs
-    // before each sample (in turns, wrapped once a block). The plug-in's own 90° pair is a fixed table; LYNX uses its own
+    // before each sample (in turns, wrapped once a block). The plug-in's own 90° pair is a fixed table; YW uses its own
     // minimax pair (Phase Distortion's), so the waveform's phase differs while the spectrum matches.
     struct Cheby2Hp
     {
@@ -1280,7 +1280,7 @@ private:
     // course); each voice through its own 2nd-order all-pass (cutoff 50 … 1000 Hz); voice gains mix / √n · √2 · (cos θ,
     // sin θ), θ = π/4 ± spread · π/4 (odd voices left, even right, the first one centred when n is odd), voices 2, 3, 6, 7 …
     // inverted; out = (1 − mix) · x (t − B) + Σ voices. The plug-in's motion curves are tables built at run time;
-    // LYNX's are its own smooth sums of two sines per voice (symmetric: voice pairs mirror each other, sine: one sine
+    // YW's are its own smooth sums of two sines per voice (symmetric: voice pairs mirror each other, sine: one sine
     // a voice), so the voices' pitch drifts (about ±0.5 % at 25 % detune) match in size and speed, not sample for sample.
     double ensPos = 0.0;
     struct EnsVoice
@@ -1386,12 +1386,12 @@ private:
     // across a block and jump when the mode changes. Around it: up 2× through a half-band, up 4× by Catmull-Rom between
     // the 2× samples, down through a 6th-order Chebyshev II low pass (85 dB from 1.5 fs, the snapins' textbook design, as
     // round 190nh's oversampler) keeping every 4th sample, down 2× through the half-band, then a cookbook 17 Hz high pass
-    // (Q 1/√2). The plug-in's half-band is a fixed coefficient table: LYNX designs its own (nlfHalfBand below).
+    // (Q 1/√2). The plug-in's half-band is a fixed coefficient table: YW designs its own (nlfHalfBand below).
     //
-    // LYNX's own half-band: a two-branch polyphase IIR half-band, H (z) = ½ (A0 (z²) + z^-1 A1 (z²)), each branch a cascade
+    // YW's own half-band: a two-branch polyphase IIR half-band, H (z) = ½ (A0 (z²) + z^-1 A1 (z²)), each branch a cascade
     // of first-order all-passes (a + z^-1) / (1 + a z^-1); its coefficients come from the elliptic design of Valenzuela and
     // Constantinides (IEE Proc. G 130, 1983: selectivity from the transition band, the nome's theta series), worked out
-    // here at first use with LYNX's own specification: nlfHalfBandCoefs coefficients (alternately to A0 and A1) and a
+    // here at first use with YW's own specification: nlfHalfBandCoefs coefficients (alternately to A0 and A1) and a
     // transition band of nlfHalfBandTbw of the 2× rate (chosen on the references: lab/halfband.py, REA_rodada190oc §3).
     static constexpr int nlfHalfBandCoefs = 8;        // (17th order: 109 dB stop band)
     static constexpr double nlfHalfBandTbw = 0.054;   // (of the 2× rate: pass band to 0.223 × 2 fs, stop band from 0.277)
@@ -1697,4 +1697,4 @@ private:
         nlfMode = -1;
     }
 };
-} // namespace lynx::khsdsp
+} // namespace yw::khsdsp

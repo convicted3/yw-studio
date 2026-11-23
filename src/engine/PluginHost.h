@@ -28,7 +28,7 @@
 #include "core/ModuleWarmup.h"
 #include "core/GeneratorSmartDisable.h"
 
-namespace lynx
+namespace yw
 {
 // FL's "Notify about rendering mode" (wrapper option, on by default): tells the plugin an export is running
 // (VST3 kOffline process mode, VST2 offline process level) so it can use its render quality. Re-prepares the plugin
@@ -57,7 +57,7 @@ struct PluginCrash
 int pluginCrashCount() noexcept;
 std::vector<PluginCrash> pluginCrashes();
 
-// Round 190gg (B4): a call LYNX's UI makes into a hosted plugin (making its editor, loading a preset, a program or the
+// Round 190gg (B4): a call YW's UI makes into a hosted plugin (making its editor, loading a preset, a program or the
 // spare state), under the crash guard like the audio calls. When it crashes, the plugin is switched off as after a crash
 // inside an audio call (its PluginInstrument / PluginEffect never calls it again, the "Plugin crashed" prompt follows;
 // a plugin no adapter holds is only reported) and the result is false. A plugin already switched off is not called
@@ -113,7 +113,7 @@ struct PluginOutputInfo
 };
 std::vector<PluginOutputInfo> pluginOutputs (const juce::AudioPluginInstance& plugin);
 // The same for the inputs (an effect's: input 1 = its main input, input 2 = the side input), every bus listed whether
-// enabled or not (LYNX turns a side bus on only while it is fed)
+// enabled or not (YW turns a side bus on only while it is fed)
 std::vector<PluginOutputInfo> pluginInputs (const juce::AudioPluginInstance& plugin);
 
 // FL's wrapper options a hosted plugin follows while it runs (REA round 151; PluginRef has them, saved per plugin)
@@ -137,7 +137,7 @@ class TimedParameterQueue
 {
 public:
     static constexpr int capacity = 512;
-    // whether this plugin can take them: CLAP or VST3, in LYNX's process or a separate one (not the 32-bit bridge)
+    // whether this plugin can take them: CLAP or VST3, in YW's process or a separate one (not the 32-bit bridge)
     static bool supports (const juce::AudioPluginInstance& plugin);
     void add (int index, float value, int offset) noexcept;
     // the changes in [from, from + count) of the current chunk (offsets made relative to `from`) published for one
@@ -476,20 +476,20 @@ juce::String generatorSmartDisableSelfTest();
 class PluginHost
 {
 public:
-    // persistent = read and write the list in %APPDATA%\LYNX (false in tests).
+    // persistent = read and write the list in %APPDATA%\YW (false in tests).
     explicit PluginHost (bool persistent = true);
     ~PluginHost();
 
     juce::KnownPluginList& getKnownPlugins() noexcept { return known; }
     juce::AudioPluginFormatManager& getFormats() noexcept { return formats; }
 
-    static juce::File settingsFolder();          // %APPDATA%\LYNX
+    static juce::File settingsFolder();          // %APPDATA%\YW
     // Did this process load any third-party plugin module (instance or in-process scan)? (then it ends without
     // unloading them, platform/CrashGuard.h exitNow)
     static bool pluginsWereLoaded() noexcept;
     static juce::FileSearchPath defaultSearchPath(); // default VST3 folders
 
-    // The folders LYNX scans: the user's list (setup wizard / %APPDATA%\LYNX\plugin-folders.txt), else suggestedFolders().
+    // The folders YW scans: the user's list (setup wizard / %APPDATA%\YW\plugin-folders.txt), else suggestedFolders().
     juce::FileSearchPath pluginFolders() const;
     void setPluginFolders (const juce::FileSearchPath& folders);
     // The standard VST3/CLAP folders plus the folders FL Studio uses on this PC (its configured VST folders and
@@ -501,8 +501,8 @@ public:
     int flPluginDatabaseFiles() { flPluginDatabase(); return flDbFiles; }
 
     // Scans the folders for plugins. `progress(0..1, file)` returns false to cancel.
-    // Each file is examined in a separate process (LYNX.exe --scan-one): a plugin that
-    // hangs or crashes the process doesn't take LYNX down; it is blacklisted and skipped
+    // Each file is examined in a separate process (YW.exe --scan-one): a plugin that
+    // hangs or crashes the process doesn't take YW down; it is blacklisted and skipped
     // in later scans. Incremental: files already listed and unchanged since are skipped.
     int scan (const juce::FileSearchPath& paths, const std::function<bool (float, const juce::String&)>& progress);
     // The same for a given list of plugin files (targeted scan).
@@ -535,20 +535,20 @@ public:
     void forgetAll();
 
     // Favourite plugins (identifier strings), listed first by the plugin menus and the quick-add palette.
-    // Saved in %APPDATA%\LYNX\plugin-favourites.txt. UI thread.
+    // Saved in %APPDATA%\YW\plugin-favourites.txt. UI thread.
     const std::set<std::string>& favourites() const noexcept { return favouriteIds; }
     void setFavourite (const std::string& id, bool favourite);
 
     // Names the user gave plugins (FL's renamed Plugin database entries, issue #11; core/Preferences.h): the
     // Browser's Plugin database shows them and the slot / channel menus list them first, picked by their first
-    // character. Saved in %APPDATA%\LYNX\plugin-names.txt. UI thread.
+    // character. Saved in %APPDATA%\YW\plugin-names.txt. UI thread.
     const std::map<std::string, std::string>& pluginNames() const noexcept { return userNames; }
     void setPluginName (const std::string& key, const std::string& name); // "" = the original name again
 
     // The user's Plugin database folders (round 166f, issue #16; core/PluginCatalog.h): the slot / channel menus
-    // list the plugins of each folder under its heading. Saved in %APPDATA%\LYNX\plugin-folders.txt. UI thread.
+    // list the plugins of each folder under its heading. Saved in %APPDATA%\YW\plugin-folders.txt. UI thread.
     // Since round 190ba (issue #104) the folders, the places and the names live in the Plugin database folder on disk
-    // (core/PluginDbFolder.h, Documents/LYNX/Plugin database): a change made here (setDatabaseFolders, setPluginName)
+    // (core/PluginDbFolder.h, Documents/YW/Plugin database): a change made here (setDatabaseFolders, setPluginName)
     // is written to that folder by `onDatabaseEdited` (set by the UI, which knows the plugins), and what the folder
     // says is taken in with adoptDatabase. The settings keep a copy (plugin-database.txt, plugin-names.txt); until
     // 0.1.25 the folders were saved in plugin-folders.txt, the file of the scan folders, and each wrote over the other.
@@ -569,7 +569,7 @@ public:
     // Adds a specific file (e.g. a .vst3 outside the default folders; an .lv2 bundle adds the plugins its manifest lists).
     int addPluginFile (const juce::File& file);
 
-    // Lets the LV2 format find plugins by URI in every LV2 folder LYNX scans (a host that is not `keep` skips this at
+    // Lets the LV2 format find plugins by URI in every LV2 folder YW scans (a host that is not `keep` skips this at
     // construction: the sandbox child calls it before opening an LV2 plugin; round 161).
     void findLv2Plugins();
 
@@ -622,7 +622,7 @@ public:
     // Matched channels become plugin channels; unmatched effect slots are dropped. Returns how many were matched.
     // `matched` gets one "name → file (how)" line per plugin found.
     // `withoutState` gets the plugins found whose saved settings couldn't be carried over (VST2 <-> VST3 swap).
-    // Effect slots whose plugin is missing become their LYNX substitute (core/PluginSubstitutes.h) when
+    // Effect slots whose plugin is missing become their YW substitute (core/PluginSubstitutes.h) when
     // pluginSubstitutesEnabled(); `substituted` gets one "name -> YW Studio effect" line each (they are not in `missing`).
     int adoptFlPlugins (Song& song, juce::StringArray* missing = nullptr, juce::StringArray* matched = nullptr,
                         juce::StringArray* withoutState = nullptr, juce::StringArray* substituted = nullptr);
@@ -633,17 +633,17 @@ public:
 
     // Export to FL Studio (round 171e): a plugin of this PC as FL's Fruity Wrapper keeps it — the format, its identifier
     // (VST2 id, VST3 class TUID from FL's plugin database or the module's factory, CLAP id), name, path and the state
-    // in FL's layout (VST3: component + controller records; VST2: FL's layout, which LYNX's VST2 host already keeps;
+    // in FL's layout (VST3: component + controller records; VST2: FL's layout, which YW's VST2 host already keeps;
     // CLAP: u32 0 + the plugin's bytes). nullopt = not in the plugin list, or its identifier can't be read.
     std::optional<ForeignPlugin> flWrapperRecord (const PluginRef& ref, bool instrument);
 
-    // A .lynx song just loaded: substitute slots whose original plugin is now installed go back to it (always: the
-    // original is preferred); plugin effect slots whose plugin isn't installed get their LYNX substitute (when
+    // A .yw song just loaded: substitute slots whose original plugin is now installed go back to it (always: the
+    // original is preferred); plugin effect slots whose plugin isn't installed get their YW substitute (when
     // pluginSubstitutesEnabled()). Returns how many slots changed; `restored` / `substituted` count each kind.
     int applySubstitutes (Song& song, int* restored = nullptr, int* substituted = nullptr);
 
     // What a substitute is matched on for a saved reference: its .flp record when it has one, else the format, name
-    // and (decoded) state of the LYNX reference.
+    // and (decoded) state of the YW reference.
     static PluginIdentity identityOf (const PluginRef& ref);
     std::optional<juce::PluginDescription> findForeign (const ForeignPlugin& plugin, bool instrument, juce::String* how = nullptr);
 
@@ -762,7 +762,7 @@ void holdPlugins();                              // all off
 void releasePlugin (const std::string& id);      // this one back on (the caller rebuilds its slots)
 void endPluginHold();                            // the mode off: everything loads again
 
-// Settings → "Substitute missing plugins with YW Studio equivalents" (default on; %APPDATA%\LYNX\substitutes.txt).
+// Settings → "Substitute missing plugins with YW Studio equivalents" (default on; %APPDATA%\YW\substitutes.txt).
 bool pluginSubstitutesEnabled();
 void setPluginSubstitutesEnabled (bool enabled);
 
@@ -784,4 +784,4 @@ std::string capturePluginState (juce::AudioPluginInstance& plugin);
 juce::AudioPlayHead& songPlayHead();
 std::uint32_t processGuarded (juce::AudioPluginInstance& plugin, juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi,
                               std::atomic<bool>& crashed, const std::string& name) noexcept;
-} // namespace lynx
+} // namespace yw

@@ -2,19 +2,19 @@
 
 // In-app update check + Update button (round 166b), the app side of core/UpdateCheck.h:
 // - a background check at start-up (Settings › General › "Check for updates automatically", on by default; never
-//   blocks the start, short timeouts, silent when offline) and Help › "Check for updates..." (says when LYNX SHARE is
+//   blocks the start, short timeouts, silent when offline) and Help › "Check for updates..." (says when YW Studio is
 //   up to date). One version query to the GitHub API, nothing about the user (PRIVACY.md). The list is cached for a
-//   few hours. The Microsoft Store build never checks (the Store updates it), and neither do LYNX_TEST_MODE runs,
-//   unless LYNX_UPDATE_URL points them at a test fixture; command-line modes (--selftest, --scantest...) never start one;
+//   few hours. The Microsoft Store build never checks (the Store updates it), and neither do YW_TEST_MODE runs,
+//   unless YW_UPDATE_URL points them at a test fixture; command-line modes (--selftest, --scantest...) never start one;
 // - a slim bar under the toolbar: "YW Studio x.y.z is available · What's new · Update · ✕" (✕ skips that version);
 // - Update, by build: the Windows installer build downloads the new setup.exe, checks it against the release's
 //   SHA256SUMS.txt, asks to save the project (as on quit), closes, installs it silently over itself (a copy of
-//   LYNX.exe runs `--apply-update` and waits for this process to end) and starts again; the portable zip and macOS
+//   YW.exe runs `--apply-update` and waits for this process to end) and starts again; the portable zip and macOS
 //   download the new zip / dmg to Downloads (checked) and show it; the AppImage updates in place with
 //   appimageupdatetool (zsync) when it is installed, else downloads the new AppImage beside the old one; the tar.gz
 //   opens the release page.
-// Test hooks: LYNX_UPDATE_URL (the release list; also enables the check under LYNX_TEST_MODE),
-// LYNX_UPDATE_FLAVOUR (installer, portable, macos, appimage, tarball, store), LYNX_UPDATE_VERSION (the running version).
+// Test hooks: YW_UPDATE_URL (the release list; also enables the check under YW_TEST_MODE),
+// YW_UPDATE_FLAVOUR (installer, portable, macos, appimage, tarball, store), YW_UPDATE_VERSION (the running version).
 
 #include <functional>
 
@@ -22,7 +22,7 @@
 
 #include "core/UpdateCheck.h"
 
-namespace lynx::updater
+namespace yw::updater
 {
 update::Flavour flavour();
 bool offered(); // this build looks for updates at all (false: the Store build) — the Settings toggle shows
@@ -49,16 +49,16 @@ void checkNow();            // Help › Check for updates...
 // The version it would install as far as known without the network (the recorded one, else from the cached release
 // list); empty when none is known yet.
 juce::String previousVersion();
-// Asks first, then fetches the release list, downloads, checks and installs the older version. LYNX_UPDATE_URL /
-// LYNX_UPDATE_VERSION / LYNX_UPDATE_FLAVOUR apply as for an update (test fixtures).
+// Asks first, then fetches the release list, downloads, checks and installs the older version. YW_UPDATE_URL /
+// YW_UPDATE_VERSION / YW_UPDATE_FLAVOUR apply as for an update (test fixtures).
 void goBack();
 void shutdown();            // stops a check or download in flight (app shutdown)
 
 // After an update by the installer: the helper's result (a notice when it failed) and the temporary files go.
 void afterStart();
 
-// `LYNX.exe --apply-update <setup.exe> <install folder> <pid> [project]` (Windows; a copy of LYNX.exe in the temp
-// folder): waits for process <pid> to end, runs the installer silently into the folder, starts LYNX again. True when
+// `YW.exe --apply-update <setup.exe> <install folder> <pid> [project]` (Windows; a copy of YW.exe in the temp
+// folder): waits for process <pid> to end, runs the installer silently into the folder, starts YW again. True when
 // the arguments asked for it (the caller quits).
 bool runApplyHelper (const juce::StringArray& args);
 
@@ -93,4 +93,4 @@ private:
 // The release notes window (also for --snapshot).
 void showReleaseNotes();
 std::unique_ptr<juce::Component> makeReleaseNotesForSnapshot();
-} // namespace lynx::updater
+} // namespace yw::updater

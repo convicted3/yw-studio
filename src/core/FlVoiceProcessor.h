@@ -23,7 +23,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::flvp
+namespace yw::flvp
 {
 constexpr int snapshotSize = 364;
 
@@ -780,4 +780,4 @@ inline bool mixVoice (const Settings& S, Proc& pr, float* x, float* scratch, int
     pr.first = 0;
     return ended;
 }
-} // namespace lynx::flvp
+} // namespace yw::flvp

@@ -8,7 +8,7 @@
 
 TEST (browser190iz_add_a_tag_splits_commas_as_fl)
 {
-    using namespace lynx::browsertags;
+    using namespace yw::browsertags;
     // FL manual: "typing - Kick,808,C# will give the content 3 tags"
     const auto tags = splitTags ("Kick,808,C#");
     CHECK ((tags == std::vector<std::string> { "Kick", "808", "C#" }));
@@ -28,7 +28,7 @@ TEST (browser190iz_add_a_tag_splits_commas_as_fl)
 
 TEST (browser190iz_tags_toggle_rename_delete)
 {
-    using namespace lynx::browsertags;
+    using namespace yw::browsertags;
     Store s;
     s.add ({ "/a.wav" }, "Dark,Pad");
     s.add ({ "/b.wav" }, "Pad");
@@ -62,7 +62,7 @@ TEST (browser190iz_tags_toggle_rename_delete)
 
 TEST (browser190iz_tag_filter_any_all)
 {
-    using namespace lynx::browsertags;
+    using namespace yw::browsertags;
     Store s;
     s.add ({ "/kick.wav" }, "Drum,808");
     s.add ({ "/snare.wav" }, "Drum");
@@ -78,9 +78,9 @@ TEST (browser190iz_tag_filter_any_all)
 
 TEST (browser190iz_tags_move_with_files_and_round_trip)
 {
-    using namespace lynx::browsertags;
+    using namespace yw::browsertags;
     Store s;
-    s.add ({ "/lib/Drums", "/lib/Drums/kick.wav", "/lib/Drumsy.wav", "plugin:lynx:gen:Synth" }, "Mine");
+    s.add ({ "/lib/Drums", "/lib/Drums/kick.wav", "/lib/Drumsy.wav", "plugin:yw:gen:Synth" }, "Mine");
     s.add ({ "/lib/Drums/kick.wav" }, "Kick");
     s.create ("Unused");
     // a folder renamed: it and everything below keep their tags; a sibling that only starts the same does not move
@@ -90,7 +90,7 @@ TEST (browser190iz_tags_move_with_files_and_round_trip)
     CHECK (s.moved ("/x", "/x") == 0);
 
     const auto text = s.toText();
-    CHECK (text.rfind ("lynx-browser-tags 1\n", 0) == 0);
+    CHECK (text.rfind ("yw-browser-tags 1\n", 0) == 0);
     const auto back = Store::fromText (text);
     CHECK (back == s);
     CHECK (back.exists ("unused"));
@@ -102,7 +102,7 @@ TEST (browser190iz_tags_move_with_files_and_round_trip)
 
 TEST (browser190iz_hash_tag_query)
 {
-    using namespace lynx::browsertags;
+    using namespace yw::browsertags;
     const auto q = parseQuery ("#808 kick #Dark  hard");
     CHECK ((q.tags == std::vector<std::string> { "808", "Dark" }));
     CHECK (q.rest == "kick hard");
@@ -115,8 +115,8 @@ TEST (browser190iz_hash_tag_query)
 
 TEST (browser190iz_fl_six_tabs_in_fl_order)
 {
-    using namespace lynx::browserplaces;
-    using lynx::browserview::RootKind;
+    using namespace yw::browserplaces;
+    using yw::browserview::RootKind;
     // FL 2026: ALL, PROJECT, PLUGINS, PRESETS, SOUNDS, STARRED; the ids 0..2 stay what they were
     CHECK ((int) Tab::all == 0 && (int) Tab::project == 1 && (int) Tab::starred == 2);
     const char* names[tabCount] = { "ALL", "PROJECT", "PLUGINS", "PRESETS", "SOUNDS", "STARRED" };
@@ -131,15 +131,15 @@ TEST (browser190iz_fl_six_tabs_in_fl_order)
     CHECK (! tabShowsRoot (Tab::sounds, RootKind::flPresets) && ! tabShowsRoot (Tab::sounds, RootKind::flDemos));
     CHECK (! tabShowsRoot (Tab::plugins, RootKind::user) && ! tabShowsRoot (Tab::project, RootKind::user));
     CHECK (tabShowsRoot (Tab::all, RootKind::flDemos));
-    CHECK (tabFilter (Tab::sounds, lynx::browserview::ContentFilter::all) == lynx::browserview::ContentFilter::audio);
-    CHECK (tabFilter (Tab::presets, lynx::browserview::ContentFilter::audio) == lynx::browserview::ContentFilter::presets);
-    CHECK (tabFilter (Tab::all, lynx::browserview::ContentFilter::samples) == lynx::browserview::ContentFilter::samples);
+    CHECK (tabFilter (Tab::sounds, yw::browserview::ContentFilter::all) == yw::browserview::ContentFilter::audio);
+    CHECK (tabFilter (Tab::presets, yw::browserview::ContentFilter::audio) == yw::browserview::ContentFilter::presets);
+    CHECK (tabFilter (Tab::all, yw::browserview::ContentFilter::samples) == yw::browserview::ContentFilter::samples);
 }
 
 TEST (browser190iz_live_sidebar_groups)
 {
-    using namespace lynx::browserplaces;
-    using lynx::browserview::RootKind;
+    using namespace yw::browserplaces;
+    using yw::browserview::RootKind;
     const auto rows = sidebar ({ { 0, "Favorites" }, { 4, "Blue" } },
                                { { "FL samples (Packs)", "/fl/Packs", RootKind::flSamples },
                                  { "Scores", "/fl/Scores", RootKind::flMidi },
@@ -167,9 +167,9 @@ TEST (browser190iz_live_sidebar_groups)
 
 TEST (browser190iz_live_categories_list_the_right_places)
 {
-    using namespace lynx::browserplaces;
-    using lynx::browserview::ContentFilter;
-    using lynx::browserview::RootKind;
+    using namespace yw::browserplaces;
+    using yw::browserview::ContentFilter;
+    using yw::browserview::RootKind;
     CHECK (categoryShowsRoot (Category::samples, RootKind::flSamples) && categoryShowsRoot (Category::samples, RootKind::user));
     CHECK (! categoryShowsRoot (Category::samples, RootKind::flPresets));
     CHECK (categoryShowsRoot (Category::sounds, RootKind::pluginPresets) && ! categoryShowsRoot (Category::sounds, RootKind::music));
@@ -179,10 +179,10 @@ TEST (browser190iz_live_categories_list_the_right_places)
     CHECK (categoryFilter (Category::clips, ContentFilter::all) == ContentFilter::projects);
     CHECK (categoryFilter (Category::packs, ContentFilter::samples) == ContentFilter::samples);
     CHECK (wantsPlugins (Category::instruments) == 1 && wantsPlugins (Category::audioEffects) == 0 && wantsPlugins (Category::samples) == -1);
-    CHECK (keepsPlugin (Category::instruments, true, "LYNX", "Synth") && ! keepsPlugin (Category::instruments, true, "VFX", "VFX Arp"));
+    CHECK (keepsPlugin (Category::instruments, true, "YW", "Synth") && ! keepsPlugin (Category::instruments, true, "VFX", "VFX Arp"));
     CHECK (keepsPlugin (Category::midiEffects, true, "VFX", "VFX Arp") && ! keepsPlugin (Category::midiEffects, false, "", "EQ"));
-    CHECK (keepsPlugin (Category::audioEffects, false, "LYNX", "Facet EQ") && ! keepsPlugin (Category::audioEffects, true, "LYNX", "Synth"));
-    CHECK (keepsPlugin (Category::plugIns, false, "", "Vital") && ! keepsPlugin (Category::plugIns, false, "LYNX", "Facet EQ"));
+    CHECK (keepsPlugin (Category::audioEffects, false, "YW", "Facet EQ") && ! keepsPlugin (Category::audioEffects, true, "YW", "Synth"));
+    CHECK (keepsPlugin (Category::plugIns, false, "", "Vital") && ! keepsPlugin (Category::plugIns, false, "YW", "Facet EQ"));
     CHECK (keepsPlugin (Category::modulators, false, "FL engines", "Fruity Peak Controller"));
     CHECK (! keepsPlugin (Category::modulators, false, "FL engines", "Fruity Delay"));
     CHECK (wantsProject (Category::currentProject) && ! wantsProject (Category::samples));
@@ -190,7 +190,7 @@ TEST (browser190iz_live_categories_list_the_right_places)
 
 TEST (browser190iz_send_to_selected_channel_or_focused_plugin)
 {
-    using namespace lynx::browsersend;
+    using namespace yw::browsersend;
     CHECK (decide (Item::sample, Channel::playsSample, false) == Action::sampleIntoSelected);
     CHECK (decide (Item::sample, Channel::plugin, true) == Action::sampleNewChannel); // (as Enter: a new Sampler channel)
     CHECK (decide (Item::sample, Channel::none, false) == Action::sampleNewChannel);
@@ -210,7 +210,7 @@ TEST (browser190iz_send_to_selected_channel_or_focused_plugin)
 
 TEST (browser190iz_preview_plays_five_seconds_unless_full)
 {
-    using namespace lynx::browserpreview;
+    using namespace yw::browserpreview;
     // a 12 s file at 48 kHz: 5 s from the start, capped (faded)
     auto r = range (12 * 48000, 48000.0, 0.0, false);
     CHECK (r.start == 0 && r.end == 5 * 48000 && r.capped);

@@ -4,7 +4,7 @@
     bool runDetailsShot190mv (const juce::String& prefix, const juce::String& project)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -21,7 +21,7 @@
             }
             savePng (c.createComponentSnapshot (area, true, k), prefix + "-" + name + ".png");
         };
-        using namespace lynx;
+        using namespace yw;
         if (project.isEmpty())
             return false;
         flsettings::reset();

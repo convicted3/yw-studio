@@ -12,7 +12,7 @@
 // recomputed (e^(j/64) − 1 to 106 bits). Only arguments the run-time itself rejects or that lie beyond the handled
 // ranges (trigonometric |x| ≥ 4194304) fall back to the C library.
 
-namespace lynx::dmath
+namespace yw::dmath
 {
 double exp (double x) noexcept;   // exact over the whole range, incl. overflow and subnormal results
 double expm1 (double x) noexcept; // exp(x) − 1: own kernel for |x| < ln 2, exp − 1 beyond
@@ -24,4 +24,4 @@ double intPower (double x, long long n) noexcept; // repeated squaring (1/r for 
 double power (double x, double y) noexcept;       // integral y by intPower, otherwise exp(y·ln x)
 double sinh (double x) noexcept;                   // (exp(x) − exp(−x)) / 2, and 0 for |x| ≤ 1e−12
 double tanh (double x) noexcept;
-} // namespace lynx::dmath
+} // namespace yw::dmath

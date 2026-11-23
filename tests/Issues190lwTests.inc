@@ -9,7 +9,7 @@
 
 namespace issues190lw
 {
-using lynx::AutomationPoint;
+using yw::AutomationPoint;
 inline AutomationPoint pt (std::int64_t tick, float value, float tension = 0.0f, std::uint8_t mode = 0)
 {
     AutomationPoint p;
@@ -35,7 +35,7 @@ inline std::vector<AutomationPoint> five()
 TEST (issues190lw_rubber_band_selects_the_points_inside_either_way_round)
 {
     using namespace issues190lw;
-    using namespace lynx::autopoints;
+    using namespace yw::autopoints;
     const auto p = five();
     CHECK (inBox (p, 90, 310, 0.3f, 1.0f) == std::vector<int> ({ 1, 2, 3 }));
     CHECK (inBox (p, 310, 90, 1.0f, 0.3f) == std::vector<int> ({ 1, 2, 3 }));
@@ -47,7 +47,7 @@ TEST (issues190lw_rubber_band_selects_the_points_inside_either_way_round)
 TEST (issues190lw_delete_selected_points_keeps_one_and_the_order)
 {
     using namespace issues190lw;
-    using namespace lynx::autopoints;
+    using namespace yw::autopoints;
     auto p = five();
     CHECK (erase (p, { 3, 1, 1, 42, -1 }) == 2);
     CHECK (p.size() == 3 && p[0].tick == 0 && p[1].tick == 200 && p[2].tick == 400);
@@ -63,7 +63,7 @@ TEST (issues190lw_delete_selected_points_keeps_one_and_the_order)
 TEST (issues190lw_group_move_keeps_shape_between_the_unselected_neighbours)
 {
     using namespace issues190lw;
-    using namespace lynx::autopoints;
+    using namespace yw::autopoints;
     const auto p = five();
     // 1 and 2 moved right by 50 and up by 0.05: fine
     auto m = moved (p, { 1, 2 }, { 50, 0.05f });
@@ -86,7 +86,7 @@ TEST (issues190lw_group_move_keeps_shape_between_the_unselected_neighbours)
 TEST (issues190lw_copy_and_paste_points_replaces_the_span_at_the_target)
 {
     using namespace issues190lw;
-    using namespace lynx::autopoints;
+    using namespace yw::autopoints;
     auto p = five();
     const auto clip = copy (p, { 1, 2 });
     CHECK (clip.points.size() == 2 && clip.points[0].tick == 0 && clip.points[1].tick == 100 && clip.span == 100);
@@ -103,7 +103,7 @@ TEST (issues190lw_copy_and_paste_points_replaces_the_span_at_the_target)
 TEST (issues190lw_freehand_stroke_is_thinned_but_keeps_its_shape)
 {
     using namespace issues190lw;
-    using namespace lynx::autopoints;
+    using namespace yw::autopoints;
     // a pen stroke: a straight rise 0 → 1 over 0..1000, a mouse event every 10 ticks, then a fall back to 0 by 2000
     std::vector<AutomationPoint> points;
     for (std::int64_t t = 0; t <= 1000; t += 10)
@@ -115,7 +115,7 @@ TEST (issues190lw_freehand_stroke_is_thinned_but_keeps_its_shape)
     CHECK (removed > 150);
     CHECK (points.size() == 3 && points[1].tick == 1000); // the corner stays
     for (std::int64_t t = 0; t <= 2000; t += 5)
-        CHECK (std::abs (lynx::automationCurveAt (before, (double) t) - lynx::automationCurveAt (points, (double) t)) <= 0.0101f);
+        CHECK (std::abs (yw::automationCurveAt (before, (double) t) - yw::automationCurveAt (points, (double) t)) <= 0.0101f);
 
     // outside the range nothing changes; steps (two points on one tick) and bent points stay
     std::vector<AutomationPoint> s { pt (0, 0.2f), pt (50, 0.2f), pt (100, 0.2f), pt (100, 0.7f), pt (150, 0.7f), pt (200, 0.7f, 0.5f),
@@ -133,18 +133,18 @@ TEST (issues190lw_freehand_stroke_is_thinned_but_keeps_its_shape)
     for (std::int64_t t = 1000; t < 2000; t += 12)
     {
         const auto next = 0.5f + 0.4f * std::sin ((float) (t - 1000) / 160.0f);
-        lynx::drawmode::drawLine (lane, t, v, t + 12, next);
+        yw::drawmode::drawLine (lane, t, v, t + 12, next);
         v = next;
     }
     const auto drawn = lane.size();
     thin (lane, 1000, 2000);
     CHECK (lane.size() < drawn / 2 && lane.size() >= 10 && sorted (lane));
-    CHECK (std::abs (lynx::automationCurveAt (lane, 3000.0) - 0.5f) < 1.0e-5f);
+    CHECK (std::abs (yw::automationCurveAt (lane, 3000.0) - 0.5f) < 1.0e-5f);
 }
 
 TEST (issues190lw_selected_note_rows_are_banded)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Note> notes (4);
     notes[0].key = 60;
     notes[1].key = 64;
@@ -157,7 +157,7 @@ TEST (issues190lw_selected_note_rows_are_banded)
 
 TEST (issues190lw_second_click_counts_only_near_and_soon)
 {
-    using namespace lynx::secondclick;
+    using namespace yw::secondclick;
     Press first { 100, 200, 1000 };
     CHECK (isSecond (first, { 102, 199, 1300 }, 400));
     CHECK (! isSecond (first, { 102, 199, 1500 }, 400)); // too late

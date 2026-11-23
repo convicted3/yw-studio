@@ -6,7 +6,7 @@
 // material in the playing portion of the clip" (14.2.1); "Pressing the Commit button ... For audio clips, this creates
 // Warp Markers at the appropriate positions in the clip. After pressing Commit, the clip's Groove chooser selection is
 // automatically set to None" (14.1.2); "In audio clips, grooves work by adjusting the clip's warping behavior, and thus
-// only work on clips with Warp enabled" (14). LYNX finds an audio clip's attacks as the audio editor's Quantize audio
+// only work on clips with Warp enabled" (14). YW finds an audio clip's attacks as the audio editor's Quantize audio
 // does (clipwarp::attacks); each attack is a "note" of the clip at its place, its level the attack's peak.
 //
 // Header only (the message thread: Extract, Commit). Not on the audio thread.
@@ -21,7 +21,7 @@
 #include "core/Groove.h"
 #include "core/WarpEdit.h"
 
-namespace lynx::grooveaudio
+namespace yw::grooveaudio
 {
 struct Hit
 {
@@ -151,4 +151,4 @@ inline int commit (Song& song, int track, int scene, const SampleData& sample)
         slot->groove = 0;
     return placed;
 }
-} // namespace lynx::grooveaudio
+} // namespace yw::grooveaudio

@@ -7,7 +7,7 @@
 #include "core/FlmExport.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // The window (its list filled from `result`): "Save copy..." = 1, "Cancel" = 0. Also used by --flmexportshot.
 juce::AlertWindow* buildFlmExportWindow (const FlmExportResult& result, std::shared_ptr<juce::TextEditor> list);
@@ -16,11 +16,11 @@ juce::AlertWindow* buildFlmExportWindow (const FlmExportResult& result, std::sha
 juce::String flmExportLossText (const FlmExportResult& result);
 
 // Writes `target` (.flm) and copies the samples beside it; false with `error`. `result` gets what was written and lost.
-// (Also LYNX --export-flm.)
+// (Also YW --export-flm.)
 bool writeFlmCopy (const Song& song, const juce::File& target, FlmExportResult& result, juce::String& error);
 
 // FL Studio Mobile's factory content on this computer (engine/AudioEngine.cpp): samples there stay "@R@" references
 std::vector<std::string> flmFactoryRoots();
 
 void showFlmExportDialog (AudioEngine& engine, juce::Component* parent, const juce::File& suggestedFolder, const juce::String& projectName);
-} // namespace lynx
+} // namespace yw

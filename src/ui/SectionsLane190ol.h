@@ -5,7 +5,7 @@
 // the song's sections (core/Sections.h) as named blocks over the time line, with the commands of core/SectionOps.h. Looks:
 //  - Simple (44 px): GarageBand's Arrangement track — rounded blocks in the section's colour with the name, "+" in the
 //    header column adds an eight-bar section at the end;
-//  - Pattern (18 px, a LYNX extra): the Playlist's marker tags (the ruler's marker painting): a tag in the section's colour
+//  - Pattern (18 px, a YW extra): the Playlist's marker tags (the ruler's marker painting): a tag in the section's colour
 //    with its name at the start, the section's span tinted.
 // Mouse: drag a section to move it with everything under it (a line shows where it goes; dropped onto the middle of
 // another one, the two swap, GarageBand's drop onto a marker); Ctrl+drag (Option on macOS) copies it; Shift+drag onto
@@ -38,7 +38,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WorkflowExtras.h"
 
-namespace lynx
+namespace yw
 {
 inline juce::String sectionPresetName (int index)
 {
@@ -728,4 +728,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SectionsLaneView)
 };
-} // namespace lynx
+} // namespace yw

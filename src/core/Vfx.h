@@ -6,8 +6,8 @@
 // voices out on one or more outputs, possibly changing them over time (VFX Envelope) or making new ones on the
 // beat (VFX Sequencer).
 //
-// LYNX keeps each plugin's settings in FL's own state format (the .fst / .flp 0xD5 record), so FL's presets and
-// projects load as they are; ChannelDef::pluginState holds a small LYNX header (kind, channel output port) and then
+// YW keeps each plugin's settings in FL's own state format (the .fst / .flp 0xD5 record), so FL's presets and
+// projects load as they are; ChannelDef::pluginState holds a small YW header (kind, channel output port) and then
 // that state. Behaviour rebuilt from FL's plugins (REA, clean-room: our own code).
 
 #include <array>
@@ -19,7 +19,7 @@
 #include <string_view>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct ChannelDef;
 
@@ -39,7 +39,7 @@ constexpr int kindCount = 7;
 constexpr std::array<Kind, kindCount> allKinds { Kind::colorMapper, Kind::envelope,    Kind::keyMapper, Kind::keyboardSplitter,
                                                  Kind::levelScaler, Kind::script, Kind::sequencer };
 
-// FL's plugin name ("VFX Key Mapper"), which LYNX shows too
+// FL's plugin name ("VFX Key Mapper"), which YW shows too
 const char* flName (Kind kind) noexcept;
 std::optional<Kind> kindOfFlName (std::string_view name) noexcept;
 
@@ -114,7 +114,7 @@ struct Transport
 {
     double sampleRate = 44100.0;
     double bpm = 140.0;
-    double ticks = 0.0; // song position (LYNX ticks, 960 per quarter) at the block's start
+    double ticks = 0.0; // song position (YW ticks, 960 per quarter) at the block's start
     bool playing = false;
 };
 
@@ -131,7 +131,7 @@ struct KeyMapperSettings
     int slide = 0;       // pitch slide steps (0 = none)
     // [input pitch class] output notes, relative to the input octave's C (row i → i = no change)
     std::array<std::vector<int>, 12> rows;
-    std::vector<std::uint8_t> extra; // fields of newer versions LYNX keeps as they are
+    std::vector<std::uint8_t> extra; // fields of newer versions YW keeps as they are
     bool operator== (const KeyMapperSettings&) const = default;
 };
 KeyMapperSettings defaultKeyMapper();
@@ -322,7 +322,7 @@ void shiftPattern (SequencerSettings& s, int delta);
 
 // VFX Script: FL's Python note scripts. The state is an INI text (UTF-8 with a BOM, CRLF): [Script] Source= (the
 // source on one line, line breaks as "<linebreak>"), [Parameters] (the script's controls by name), [Surface].
-// LYNX keeps it as it is and runs the script with its built-in Python (core/VfxScript.h, round 165d).
+// YW keeps it as it is and runs the script with its built-in Python (core/VfxScript.h, round 165d).
 struct ScriptSettings
 {
     std::string text;
@@ -341,7 +341,7 @@ std::vector<std::uint8_t> writeScript (const ScriptSettings& s);
 // ---------------------------------------------------------------------------------------------------------------
 // Presets
 
-// LYNX's own presets of a kind (scales, chords… built from music theory, so they exist without FL Studio)
+// YW's own presets of a kind (scales, chords… built from music theory, so they exist without FL Studio)
 struct Preset
 {
     std::string folder, name;
@@ -361,7 +361,7 @@ int outputCount (Kind kind) noexcept;
 int outputsShown (Kind kind) noexcept;
 std::string outputName (Kind kind, int output);
 
-// LYNX's channel / node state: "LVFX", the kind, the channel's output MIDI port (a VFX channel in the Channel Rack
+// YW's channel / node state: "LVFX", the kind, the channel's output MIDI port (a VFX channel in the Channel Rack
 // sends output k on MIDI port `port + k`), then FL's state.
 struct State
 {
@@ -448,4 +448,4 @@ protected:
 std::unique_ptr<Processor> makeProcessor (Kind kind, const std::vector<std::uint8_t>& flState);
 std::unique_ptr<Processor> makeSequencer (const std::vector<std::uint8_t>& flState); // (VfxSequencer.cpp)
 } // namespace vfx
-} // namespace lynx
+} // namespace yw

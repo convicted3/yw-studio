@@ -26,7 +26,7 @@
 // Fallbacks (harmorFallbacks() lists the ones a state needs): a resynthesis sample that cannot be found or read, and
 // images with a per-column gain table (+0x100), are ignored (the part plays its timbres), unknown filter/resonance/
 // phaser shapes and clip modes > 4 switch that stage off, blend modes > 5 play as mode 0. FL's IPP vector functions
-// run at 11-bit accuracy at precision "Average" (Exp/Expm1/Div_32f_A11); LYNX computes them exactly.
+// run at 11-bit accuracy at precision "Average" (Exp/Expm1/Div_32f_A11); YW computes them exactly.
 //
 // Effects rack (REA_rodada38): distortion, chorus, delay, reverb and the Maximus compressor in the state's unit order
 // (core/HarmlessFx.h, hlfx::HarmorRack), plugged into the engine's `harmor::FxHook` slot; the compressor needs Harmor's
@@ -44,7 +44,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can play this Harmor state (version ≥ 16 with articulators and curves, parsed fully)
 bool harmorStateUsable (const std::vector<std::uint8_t>& state);
@@ -74,7 +74,7 @@ namespace harmor
 {
 // The effects rack's slot: every host block, before the master volume (where FL runs its rack), with the records'
 // dry mix (left/right, processed in place) and their FX-send mix (fxL/fxR, which joins the chain at the rack's unit 4);
-// voices: records existed in this block. LYNX plugs Harmor's rack (hlfx::HarmorRack) in here.
+// voices: records existed in this block. YW plugs Harmor's rack (hlfx::HarmorRack) in here.
 struct FxHook
 {
     virtual ~FxHook() = default;
@@ -95,7 +95,7 @@ struct RefNote
 // Renders `notes` from `state` like hmodel.render (host blocks of `block` samples split at every event) with the
 // state's effects rack (compressorState: the Maximus state of Harmor's System\Compression\<type>.fst; empty = the
 // compressor stays off). `mt` (625 words: index, then the 624-word state) seeds the random draws like the DLL's
-// Mersenne Twister; empty = LYNX's fixed per-instance seed. Returns interleaved stereo float samples (2·length),
+// Mersenne Twister; empty = YW's fixed per-instance seed. Returns interleaved stereo float samples (2·length),
 // empty if the state is unusable.
 // One parameter change for the reference renderer (round 190pr): at sample `at`, FL's parameter `k` takes the raw value
 // `raw` (ProcessParam with REC_UpdateValue, as the harness sends it); only the parameters harmor::automatable lists move
@@ -121,7 +121,7 @@ std::optional<std::pair<int, int>> flParamSlot (int k) noexcept;
 bool flParamInState (int k) noexcept;
 // FL's raw value of a normalised one (Round half to even, as the DLL)
 int flRawOf (int k, double v) noexcept;
-// The parameters LYNX's Harmor follows live under automation (ChannelDef::engineRev 3 on; the sounding voices move as in
+// The parameters YW's Harmor follows live under automation (ChannelDef::engineRev 3 on; the sounding voices move as in
 // FL, through the voice's own smoothing): both parts' filter 1 / 2 frequency (52, 64, 438, 450) and Mod X / Y / Z (772…774)
 bool automatable (int k) noexcept;
 
@@ -130,4 +130,4 @@ bool automatable (int k) noexcept;
 float ippExpA11Model (float x) noexcept;
 float ippLnA11Model (float x) noexcept;
 } // namespace harmor
-} // namespace lynx
+} // namespace yw

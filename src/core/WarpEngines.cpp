@@ -33,7 +33,7 @@
  #pragma warning(pop)
 #endif
 
-namespace lynx::warpengine
+namespace yw::warpengine
 {
 namespace
 {
@@ -704,4 +704,4 @@ std::vector<long> pitchAwareCuts (const float* mono, long frames, double sampleR
     cuts.erase (std::remove_if (cuts.begin(), cuts.end(), [frames] (long c) { return c <= 0 || c >= frames; }), cuts.end());
     return cuts;
 }
-} // namespace lynx::warpengine
+} // namespace yw::warpengine

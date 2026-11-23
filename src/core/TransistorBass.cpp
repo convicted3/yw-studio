@@ -20,7 +20,7 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) // x86 SSE, or ARM64 through core/Simd.h (sse2neon)
 #include "core/Simd.h"
-#define LYNX_TBASS_MXCSR 1
+#define YW_TBASS_MXCSR 1
 #endif
 
 // the engine's float operations, one rounding each, in its order: no contraction, no reordering
@@ -30,12 +30,12 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
 // The render flushes denormals (MXCSR | 0x8040) and keeps round-to-nearest (§2.5).
-#ifdef LYNX_TBASS_MXCSR
+#ifdef YW_TBASS_MXCSR
 struct RenderMode
 {
     unsigned saved;
@@ -2374,7 +2374,7 @@ public:
     // of the way per process call of FLM (taken as 512 samples; one tick inside FL), jump on the first block and go
     // back to the centre while no key is held (A/B inside FL, round 190u).
     void setFlmNotePan (float pan) noexcept { flmNotePan = std::clamp (pan, -1.0f, 1.0f); }
-    // the channel's own volume and pan (LYNX's; FLM's rack level and pan sit on the mixer insert): a plain balance
+    // the channel's own volume and pan (YW's; FLM's rack level and pan sit on the mixer insert): a plain balance
     void setFlmChannel (float pan, float volume) noexcept
     {
         const auto p = std::clamp (pan, -1.0f, 1.0f);
@@ -2939,7 +2939,7 @@ bool anyWriteInPlace (std::vector<std::uint8_t>& b, const State& st, int index, 
     return seqWriteInPlace (b, st, index, raw);
 }
 
-// ------------------------------------------------------------------------------------------------ LYNX instrument
+// ------------------------------------------------------------------------------------------------ YW instrument
 class TransistorBassInstrument final : public Instrument
 {
 public:
@@ -3076,7 +3076,7 @@ public:
             plugin->setFlmChannel ((float) pan, (float) vol);
         plugin->setTempo (tempo.load());
         // FL's channel volume reaches the plugin only as MIDI CC 7 (Final.Vol is not read, §2.10): raw volume
-        // (0…12800)·128/12800 truncated, at most 127, as Kepler's host (REA_rodada165g-flbeta165k §3); LYNX's gains are
+        // (0…12800)·128/12800 truncated, at most 127, as Kepler's host (REA_rodada165g-flbeta165k §3); YW's gains are
         // channelGain(v) = (11^v − 1)/10, so v comes back as log(10·g + 1)/log 11 (round 169g2: was the channel gain on
         // the output, 3 dB below FL at the default volume)
         {
@@ -3662,4 +3662,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace tbass
-} // namespace lynx
+} // namespace yw

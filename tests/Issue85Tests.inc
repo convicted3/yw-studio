@@ -5,7 +5,7 @@
 
 TEST (lv2_stamp_changes_only_when_a_bundle_does)
 {
-    using lynx::scanpolicy::lv2Stamp;
+    using yw::scanpolicy::lv2Stamp;
     const auto stamp = lv2Stamp ({ { "/usr/lib/lv2/a.lv2", 100 }, { "/usr/lib/lv2/b.lv2", 200 } });
 
     // nothing changed, even if the disk lists the folders in another order: a stamp that moves rescans everything

@@ -15,7 +15,7 @@
 #include <vector>
 #include "core/DockStack.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -586,7 +586,7 @@ public:
           panel (p)
     {
         setUsingNativeTitleBar (true);
-        getProperties().set ("lynxPanel", true); // a panel, not a tool window: Ctrl+F12 / F12 leave it open
+        getProperties().set ("ywPanel", true); // a panel, not a tool window: Ctrl+F12 / F12 leave it open
         setResizable (true, false);
         snapping.setSizeLimits (workspace::minWidth, workspace::minHeight + Workspace::titleHeight, 10000, 10000);
         snapping.others = [this] { return owner.otherWindowScreenBounds (panel); };
@@ -601,7 +601,7 @@ public:
             wanted = screenBounds;
         }
 
-        getProperties().set ("lynxOwnKeys", true); // (its keyPressed hands every key to the main window itself)
+        getProperties().set ("ywOwnKeys", true); // (its keyPressed hands every key to the main window itself)
         setVisible (true);
         keepAboveMainWindow (*this);
         if (! wanted.isEmpty())
@@ -744,7 +744,7 @@ struct Workspace::PeerWatch final : juce::ComponentMovementWatcher, juce::Compon
     juce::ComponentPeer* peer = nullptr;
 };
 
-// --- round 190jy: docked LYNX editors drawn by the main window (queue item 44) ------------------------------------
+// --- round 190jy: docked YW editors drawn by the main window (queue item 44) ------------------------------------
 namespace
 {
 // stands for an editor drawn here in the native stacking order of the main window's children: never shown
@@ -755,7 +755,7 @@ struct EditorAnchor final : juce::Component
         setOpaque (true);
         setInterceptsMouseClicks (false, false);
         setSize (1, 1);
-        getProperties().set ("lynxEditorAnchor", true);
+        getProperties().set ("ywEditorAnchor", true);
     }
     void paint (juce::Graphics&) override {}
 };
@@ -1266,7 +1266,7 @@ juce::Rectangle<int> Workspace::placeForDockedFrame (int width, int height) cons
     return r;
 }
 
-// --- round 190jy: docked LYNX editors drawn by the main window (queue item 44) ------------------------------------
+// --- round 190jy: docked YW editors drawn by the main window (queue item 44) ------------------------------------
 
 bool Workspace::addEditorWindow (juce::Component& window, juce::Rectangle<int> bounds)
 {
@@ -1282,7 +1282,7 @@ bool Workspace::addEditorWindow (juce::Component& window, juce::Rectangle<int> b
         editorWatch = std::make_unique<EditorWatch> (*this);
     window.setBounds (bounds);
     addChildComponent (window); // (its own visibility stays as it is)
-    window.getProperties().set ("lynxEditorInMainWindow", true);
+    window.getProperties().set ("ywEditorInMainWindow", true);
     editorWindowList.push_back (std::move (entry));
     window.addComponentListener (editorWatch.get());
     nativechild::setStackingListener ([safe = juce::Component::SafePointer<Workspace> (this)] {
@@ -1307,7 +1307,7 @@ void Workspace::removeEditorWindow (juce::Component& window)
                 window.removeComponentListener (editorWatch.get());
             if (window.getParentComponent() == this)
                 removeChildComponent (&window);
-            window.getProperties().remove ("lynxEditorInMainWindow");
+            window.getProperties().remove ("ywEditorInMainWindow");
             if ((*it)->anchor != nullptr)
                 nativechild::detach (*(*it)->anchor);
             editorWindowList.erase (it);
@@ -1851,4 +1851,4 @@ void Workspace::saveState()
     if (persistent && layoutReady)
         stateFile().replaceWithText (getLayoutText());
 }
-} // namespace lynx
+} // namespace yw

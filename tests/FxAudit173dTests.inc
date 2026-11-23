@@ -7,7 +7,7 @@
 // material the programme lacks) and the outputs that are the mode's job (a mute, a freeze); knownGaps() lists the
 // FL-parity gaps (dead controls) scheduled for 0.1.25, each with a tracker id. No NaN / inf ever. The FL engines that start from FL's presets are skipped
 // without FL's Data.
-// The full survey (0, ½ and 1 of every knob, longer programme): scripts/fxaudit.sh, REPORT in /mnt/e/lynx-work/audit173d.
+// The full survey (0, ½ and 1 of every knob, longer programme): scripts/fxaudit.sh, REPORT in /mnt/e/yw-work/audit173d.
 
 #include "../tools/FxAudit.h"
 
@@ -58,7 +58,7 @@ const std::vector<Allowed>& allowed()
         { "Fruity Delay 3", "Time smoothing", "inert", "not-in-programme: the glide time of a delay-time change; a fixed time renders the same" },
         { "Vintage Phaser", "Keep pitch", "inert", "not-in-programme: acts only while the delay time is being changed (automation)" },
         { "Transporter", "Send to", "inert", "routing: picks the insert its loops' send goes to; the send buffer is pulled by that insert, not this one" },
-        { "LYNX Tune", "Receive", "inert", "routing: takes the scale another LYNX Tune instance sends; one instance alone has nothing to receive" },
+        { "YW Tune", "Receive", "inert", "routing: takes the scale another YW Tune instance sends; one instance alone has nothing to receive" },
         { "Pitch correction", "MIDI port", "inert", "routing (round 190ee): the MIDI Out port whose notes reach MIDI mode / Harmonize (RackRenderer); the audit hands the notes to the effect itself" },
         { "Pitch correction", "Port routing", "inert", "routing (round 190ee): notes from the port or (older projects) from the Channel Rack; the audit feeds the same chord both ways" },
         { "Newtone", "Slave to host playback", "inert", "no-source: syncs the playback of the loaded source sample; a new instance has none" },
@@ -71,9 +71,9 @@ const std::vector<Allowed>& allowed()
         { "Fruity WaveShaper", "Unipolar", "inert", "not-in-programme: mirrors a non-symmetric drawn curve; the default curve is a straight line (identical either way)" },
         { "Fruity WaveShaper", "HQ", "inert", "not-in-programme: oversamples the curve; a straight line makes no harmonics to alias" },
         { "Sentry Gate", "Law", "inert", "not-in-programme: the Vocal style's noise reduction acts on hiss-like sound that starts after a pause (60 ms under -60 dBFS); the programme plays without one (tests/Parity190vTests.inc renders it)" },
-        { "LYNX Tune", "Humanize", "inert", "not-in-programme: slows the retune only on a steady note held 0.3 s that then moves; the pad has constant vibrato" },
-        { "LYNX Tune", "C# bypass", "inert", "not-in-programme: leaves notes sung near C# alone; the programme sings none there" },
-        { "LYNX Tune", "Key map *", "inert", "not-in-programme: a per-key override (8 keys each, C1…B8); the programme sings only a few keys" },
+        { "YW Tune", "Humanize", "inert", "not-in-programme: slows the retune only on a steady note held 0.3 s that then moves; the pad has constant vibrato" },
+        { "YW Tune", "C# bypass", "inert", "not-in-programme: leaves notes sung near C# alone; the programme sings none there" },
+        { "YW Tune", "Key map *", "inert", "not-in-programme: a per-key override (8 keys each, C1…B8); the programme sings only a few keys" },
         { "Rhythmic envelope", "P1 tension", "inert", "fl-inert: a segment takes the curve of its arrival point, and the first point has no segment before it (REA_rodada20 §1.3); FL's knob does nothing either" },
         { "Transmitter", "Stereo link", "inert", "fl-inert: FL's engine stores it and ignores it (REA_rodada165g-fltrans165, param 34)" },
         { "Ridge Strip", "Gate hold", "inert", "not-in-programme: holds the gate over gaps longer than 0.25 s; the programme's drums are 16ths" },
@@ -149,7 +149,7 @@ bool needsFlFiles (const std::string& effect, const std::string& control)
 
 void auditRange (int from, int to)
 {
-    using namespace lynx;
+    using namespace yw;
     static const auto fl = natives142::flAccess();
     static const auto prog = fxaudit::programme (0.25, 0.15);
     fxaudit::Options opt;
@@ -347,7 +347,7 @@ TEST (fxaudit173d_effect_controls_118_up) { fxaudit173d::auditRange (118, 200); 
 // a new Fruity Delay Bank / Multiband Delay has no state yet: its bank controls still edit it (they did nothing)
 TEST (fxaudit173d_empty_state_controls_edit_the_defaults)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : { EffectKind::fruityDelayBank, EffectKind::multibandDelay })
     {
         auto slot = makeEffectSlot (kind);
@@ -367,7 +367,7 @@ TEST (fxaudit173d_empty_state_controls_edit_the_defaults)
 // FL's Pitcher (Pitch correction) follows the notes held on the Channel Rack: MIDI mode and Harmonize voices
 TEST (fxaudit173d_pitch_correction_hears_the_held_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto prog = fxaudit::programme (0.3, 0.1);
     auto slot = makeEffectSlot (EffectKind::pitchCorrect);
     for (const auto* n : { "Harmonize", "MIDI", "Mix" })

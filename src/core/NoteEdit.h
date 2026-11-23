@@ -12,7 +12,7 @@
 #include "core/Song.h"
 #include "core/FlSettings.h"
 
-namespace lynx::noteedit
+namespace yw::noteedit
 {
 // Sorts items with a `start` field (notes, clips) and updates `tracked` (indices) to the new positions.
 template <typename T>
@@ -128,7 +128,7 @@ std::int64_t screenStep (double pixelsPerTick, std::int64_t bar, double minPixel
 //   two beats are, and the numerator is even             -> two beats
 //   otherwise                                            -> one bar, doubled while narrower than `min` (up to 32 bars)
 // So it is never finer than a step, however far in the zoom goes. (FL's one exception, 1 tick at its maximum zoom of
-// 8 px per tick, is out of reach here: at 96 PPQ that is 3072 px per bar and LYNX's editors stop at 800.)
+// 8 px per tick, is out of reach here: at 96 PPQ that is 3072 px per bar and YW's editors stop at 800.)
 // numerator / denominator: the time signature (a beat is 16 / denominator steps, a bar `numerator` beats).
 std::int64_t flLineStep (double pixelsPerTick, int numerator, int denominator = 4, double minPixels = 10.0);
 
@@ -227,7 +227,7 @@ void ungroupTrack (Song& song, int track);                   // a member leaves 
 void setGroupCollapsed (Song& song, int track, bool collapsed); // the group of `track`
 void colourGroup (Song& song, int track);                    // "Auto color group": members take the header's colour
 
-// --- Round 190jf (slice B17): folders = nested track groups (LYNX; FL's groups are one level) and FL's group mute / solo ----
+// --- Round 190jf (slice B17): folders = nested track groups (YW; FL's groups are one level) and FL's group mute / solo ----
 // The functions above are nest-aware: a header is any track followed by a deeper one, its members are every track of its
 // folder (sub-folders included), a track is folded away when any folder it is in is collapsed.
 int folderDepth (const Song& song, int track);                     // 0 = not grouped; `grouped ? 1 + nest : 0`
@@ -250,7 +250,7 @@ bool muteGroup (Song& song, int track, const std::vector<int>& insertOf = {});
 bool soloGroup (Song& song, int track, int trackCount, flsettings::SoloMemory* memory = nullptr, bool restore = false);
 // Moves `track` with its folder so that it starts at the old index `before` (count = to the end), at folder `depth`
 // (clamped to what the place allows: at most one deeper than the track above). The clips follow. Returns the track's
-// new index, −1 when nothing moved. LYNX's Alt+drag of a track header (B17).
+// new index, −1 when nothing moved. YW's Alt+drag of a track header (B17).
 int moveFolder (Song& song, int track, int before, int depth);
 int maxFolderDepthAt (const Song& song, int before, int track); // the deepest `moveFolder` allows there
 bool nestTrack (Song& song, int track);   // one level deeper (with its folder), under the track above
@@ -310,7 +310,7 @@ inline int nearestNote (const std::vector<Note>& notes, const std::vector<int>& 
 
 // FL's editor arrow keys on a selection (ShortcutsModule EEShiftU/D, EEShiftU12/D12, EEShiftL/R, round 167j):
 // Shift+Up/Down = a semitone, Ctrl+Up/Down = an octave, Shift+Left/Right = one grid step. The plain arrows act like
-// Shift (a LYNX extra). Ctrl+Shift+Left/Right (rotate), Ctrl+Left/Right and Alt are not arrow moves.
+// Shift (a YW extra). Ctrl+Shift+Left/Right (rotate), Ctrl+Left/Right and Alt are not arrow moves.
 struct ArrowMove
 {
     bool handled = false;
@@ -373,4 +373,4 @@ std::pair<int, int> patternSignatureAt (const Pattern& pattern, std::int64_t tic
 // stroke paints monophonically and Shift paints chords / layers as before.
 inline bool monophonicPaint (bool shiftDown, bool monophonicOption) noexcept { return shiftDown != monophonicOption; }
 
-} // namespace lynx::noteedit
+} // namespace yw::noteedit

@@ -2,7 +2,7 @@
 
 TEST (ember_round170c_tube_has_headroom_and_less_intermodulation)
 {
-    using namespace lynx::mixsuite::ember;
+    using namespace yw::mixsuite::ember;
     using namespace mixsuite96;
     // the curve: unit slope at 0, still asymmetric (even harmonics), 6 dB more headroom than the old one
     CHECK (std::abs ((shape (Style::tube, 1e-3f) - shape (Style::tube, -1e-3f)) / 2e-3f - 1.0f) < 1e-3f);
@@ -12,9 +12,9 @@ TEST (ember_round170c_tube_has_headroom_and_less_intermodulation)
     CHECK (voiceStyle (1) == Style::tubeBiased && voiceStyle (4) == Style::tubeBiased && voiceStyle (0) == Style::tube);
 
     // +10.4 dB of drive (the video's setting), auto gain on: a −12 dBFS 1 kHz tone
-    auto p = defaults (lynx::EffectKind::ember);
+    auto p = defaults (yw::EffectKind::ember);
     p[drive] = (float) (10.4 / 36.0);
-    const auto y = run (lynx::EffectKind::ember, p, sine (1000.0, 0.25, 32768));
+    const auto y = run (yw::EffectKind::ember, p, sine (1000.0, 0.25, 32768));
     const auto f1 = amplitude (y, 1000.0, 16384, 16384), h2 = amplitude (y, 2000.0, 16384, 16384), h3 = amplitude (y, 3000.0, 16384, 16384);
     std::printf ("  Ember Tube +10.4 dB: H2 %.1f dB, H3 %.1f dB\n", db (h2 / f1), db (h3 / f1));
     CHECK (db (h2 / f1) < -26.0 && db (h2 / f1) > -40.0); // was −19 dB
@@ -23,7 +23,7 @@ TEST (ember_round170c_tube_has_headroom_and_less_intermodulation)
     std::vector<float> tt (32768);
     for (std::size_t i = 0; i < tt.size(); ++i)
         tt[i] = (float) (0.4 * std::sin (2.0 * 3.141592653589793 * 50.0 * (double) i / 44100.0) + 0.1 * std::sin (2.0 * 3.141592653589793 * 3000.0 * (double) i / 44100.0));
-    const auto yt = run (lynx::EffectKind::ember, p, tt);
+    const auto yt = run (yw::EffectKind::ember, p, tt);
     const auto carrier = amplitude (yt, 3000.0, 16384, 16384);
     double side = 0.0;
     for (int k = 1; k <= 3; ++k)
@@ -34,12 +34,12 @@ TEST (ember_round170c_tube_has_headroom_and_less_intermodulation)
 
 TEST (echoform_round170c_controls_bypassed_by_hybrid_or_tape_are_idle)
 {
-    using lynx::EffectKind;
-    const auto& layout = lynx::plugui::layoutFor (EffectKind::echoform);
-    auto p = lynx::makeEffectSlot (EffectKind::echoform).params;
-    const auto find = [&] (const char* name) -> const lynx::plugui::LayoutItem* {
+    using yw::EffectKind;
+    const auto& layout = yw::plugui::layoutFor (EffectKind::echoform);
+    auto p = yw::makeEffectSlot (EffectKind::echoform).params;
+    const auto find = [&] (const char* name) -> const yw::plugui::LayoutItem* {
         for (const auto& item : layout.items)
-            if (item.param != nullptr && std::string (item.param) == name && lynx::plugui::isValueControl (item.type)) return &item;
+            if (item.param != nullptr && std::string (item.param) == name && yw::plugui::isValueControl (item.type)) return &item;
         return nullptr;
     };
     const auto* drive = find ("Drive");
@@ -48,15 +48,15 @@ TEST (echoform_round170c_controls_bypassed_by_hybrid_or_tape_are_idle)
     CHECK (drive != nullptr && mix != nullptr && feedback != nullptr);
     if (drive == nullptr || mix == nullptr || feedback == nullptr) return;
     // the default sound (Hybrid off, no tape voicing): everything live
-    CHECK (! lynx::plugui::isIdle (EffectKind::echoform, *drive, p));
+    CHECK (! yw::plugui::isIdle (EffectKind::echoform, *drive, p));
     // Hybrid clean / analog: the colour controls do nothing, mix and feedback still work
-    p[(std::size_t) lynx::plugui::paramIndex (EffectKind::echoform, "Hybrid")] = 0.5f;
-    CHECK (lynx::plugui::isIdle (EffectKind::echoform, *drive, p));
-    CHECK (! lynx::plugui::isIdle (EffectKind::echoform, *mix, p) && ! lynx::plugui::isIdle (EffectKind::echoform, *feedback, p));
+    p[(std::size_t) yw::plugui::paramIndex (EffectKind::echoform, "Hybrid")] = 0.5f;
+    CHECK (yw::plugui::isIdle (EffectKind::echoform, *drive, p));
+    CHECK (! yw::plugui::isIdle (EffectKind::echoform, *mix, p) && ! yw::plugui::isIdle (EffectKind::echoform, *feedback, p));
     // a tape voicing: the same
-    p[(std::size_t) lynx::plugui::paramIndex (EffectKind::echoform, "Hybrid")] = 0.0f;
-    p[(std::size_t) lynx::plugui::paramIndex (EffectKind::echoform, "Tape voicing")] = 1.0f / 3.0f;
-    CHECK (lynx::plugui::isIdle (EffectKind::echoform, *drive, p));
+    p[(std::size_t) yw::plugui::paramIndex (EffectKind::echoform, "Hybrid")] = 0.0f;
+    p[(std::size_t) yw::plugui::paramIndex (EffectKind::echoform, "Tape voicing")] = 1.0f / 3.0f;
+    CHECK (yw::plugui::isIdle (EffectKind::echoform, *drive, p));
     int idle = 0;
     for (const auto& item : layout.items)
         idle += item.idleParam != nullptr ? 1 : 0;
@@ -65,10 +65,10 @@ TEST (echoform_round170c_controls_bypassed_by_hybrid_or_tape_are_idle)
 
 TEST (atrium_round170c_early_mod_rate_and_depth_move_the_early_taps)
 {
-    using lynx::EffectKind;
+    using yw::EffectKind;
     auto p = mixsuite96::defaults (EffectKind::atrium);
-    const auto depth = lynx::presets::paramByName (EffectKind::atrium, "Early mod depth");
-    const auto rate = lynx::presets::paramByName (EffectKind::atrium, "Early mod rate");
+    const auto depth = yw::presets::paramByName (EffectKind::atrium, "Early mod depth");
+    const auto rate = yw::presets::paramByName (EffectKind::atrium, "Early mod rate");
     CHECK (depth >= 0 && rate >= 0);
     if (depth < 0 || rate < 0)
         return;
@@ -102,7 +102,7 @@ TEST (waveshaper_round170c_oversampling_lowers_aliasing)
 {
     // issue #14: FL's OverSelect (Off, 2x, 4x, 8x, 16x) must change the sound — a 7 kHz sine driven into the end of the
     // default curve clips; its 5th and 7th harmonics fold back to 9.1 kHz and 4.9 kHz without oversampling
-    using lynx::EffectKind;
+    using yw::EffectKind;
     auto p = mixsuite96::defaults (EffectKind::fruityWaveShaper);
     p[0] = 1.0f; // Pre amp at its top
     const auto x = mixsuite96::sine (7000.0, 0.95, 32768);

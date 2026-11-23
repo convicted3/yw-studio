@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190op (research190oe P4, LYNX extras): Hide tracks and Deactivate tracks. JUCE-free and header-only; every edit
+// Round 190op (research190oe P4, YW extras): Hide tracks and Deactivate tracks. JUCE-free and header-only; every edit
 // runs inside AudioEngine::editSong (one undo step).
 //
 // Hide (PlaylistTrack::hidden): a view state. A hidden Playlist track has no row (and in the Clip-launch layout no
@@ -23,9 +23,9 @@
 #include "core/DetailChain.h"
 #include "core/Song.h"
 
-namespace lynx::trackstates
+namespace yw::trackstates
 {
-// Settings › LYNX extras "Hide and deactivate tracks" (ui-options.txt "trackStates"): the Pattern layout's menus offer
+// Settings › YW extras "Hide and deactivate tracks" (ui-options.txt "trackStates"): the Pattern layout's menus offer
 // Hide track / Deactivate only while it is on (FL's menus stay FL's); the Clip-launch and Simple layouts always do. A
 // project that holds hidden tracks always offers "Show hidden tracks", whatever the switch.
 inline bool& patternMenus() noexcept
@@ -118,9 +118,9 @@ inline int hideUnused (Song& song)
     return changed;
 }
 
-} // namespace lynx::trackstates
+} // namespace yw::trackstates
 
-namespace lynx::deactivate
+namespace yw::deactivate
 {
 // Which units are deactivated, the ones switched off by hand and the ones that play only into a deactivated insert.
 struct Effective
@@ -306,12 +306,12 @@ inline bool trackDeactivated (const Song& song, const TrackUnits& u) noexcept
         return c >= 0 && c < (int) song.channels.size() && song.channels[(std::size_t) c].deactivated;
     });
 }
-} // namespace lynx::deactivate
+} // namespace yw::deactivate
 
-namespace lynx::trackstates
+namespace yw::trackstates
 {
 // (a track's units are what Hide's neighbour items act on: the same names in this namespace)
 using deactivate::TrackUnits;
 using deactivate::trackDeactivated;
 using deactivate::unitsOfTrack;
-} // namespace lynx::trackstates
+} // namespace yw::trackstates

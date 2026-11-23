@@ -1,4 +1,4 @@
-// fxfuzz: crash fuzzer for LYNX's built-in effects (round 111).
+// fxfuzz: crash fuzzer for YW's built-in effects (round 111).
 //
 // Builds every effect the way the engine and the editors do and drives it hard: every parameter swept across its
 // range (both extremes, random values, every parameter random at once), several sample rates and block sizes, the
@@ -67,7 +67,7 @@ void fillInput (float* l, float* r, int n, int mode, double& phase)
     }
 }
 
-bool run (lynx::Effect& fx, const lynx::EffectParams& params, int blocks, int maxBlock, const char* what, const std::string& name)
+bool run (yw::Effect& fx, const yw::EffectParams& params, int blocks, int maxBlock, const char* what, const std::string& name)
 {
     static std::vector<float> l (8192), r (8192);
     static const float sc[8192] {};
@@ -114,9 +114,9 @@ bool run (lynx::Effect& fx, const lynx::EffectParams& params, int blocks, int ma
     return ! bad;
 }
 
-void fuzzSlot (lynx::EffectSlot slot, const std::string& name)
+void fuzzSlot (yw::EffectSlot slot, const std::string& name)
 {
-    using namespace lynx;
+    using namespace yw;
     ++slotsTested;
     const auto kind = slot.kind;
     const auto& info = effectInfo (kind);
@@ -265,7 +265,7 @@ void fuzzDir (const std::filesystem::path& dir)
 
         if (ext == ".fst")
         {
-            if (auto slot = lynx::effectFromFlPreset (bytes, 120.0))
+            if (auto slot = yw::effectFromFlPreset (bytes, 120.0))
             {
                 ++presets;
                 fuzzSlot (*slot, it->path().string());
@@ -273,10 +273,10 @@ void fuzzDir (const std::filesystem::path& dir)
         }
         else if (ext == ".flp")
         {
-            lynx::Song song;
+            yw::Song song;
             try
             {
-                song = lynx::importFlp (flp::parseProject (bytes));
+                song = yw::importFlp (flp::parseProject (bytes));
             }
             catch (const std::exception&)
             {
@@ -285,7 +285,7 @@ void fuzzDir (const std::filesystem::path& dir)
             ++projects;
             for (std::size_t t = 0; t < song.mixer.size(); ++t)
                 for (std::size_t s = 0; s < song.mixer[t].effects.size(); ++s)
-                    if (song.mixer[t].effects[s].kind != lynx::EffectKind::plugin)
+                    if (song.mixer[t].effects[s].kind != yw::EffectKind::plugin)
                         fuzzSlot (song.mixer[t].effects[s], it->path().string() + " insert " + std::to_string (t) + " slot " + std::to_string (s));
         }
     }
@@ -314,7 +314,7 @@ int main (int argc, char** argv)
     for (int i = 1; i + 3 < argc; ++i)
         if (std::string (argv[i]) == "--replay")
         {
-            auto slot = lynx::makeEffectSlot ((lynx::EffectKind) std::atoi (argv[i + 1]));
+            auto slot = yw::makeEffectSlot ((yw::EffectKind) std::atoi (argv[i + 1]));
             const double sr = std::atof (argv[i + 2]);
             const char* s = argv[i + 3];
             int index = 0, used = 0;
@@ -326,7 +326,7 @@ int main (int argc, char** argv)
             }
             for (int k = 0; k < 20; ++k)
             {
-                auto fx = lynx::makeEffect (slot);
+                auto fx = yw::makeEffect (slot);
                 fx->prepare (sr);
                 run (*fx, slot.params, 6, 2048, "replay", "replay");
             }
@@ -335,14 +335,14 @@ int main (int argc, char** argv)
         }
 
     if (kinds)
-        for (int k = 0; k <= (int) lynx::lastEffectKind; ++k)
+        for (int k = 0; k <= (int) yw::lastEffectKind; ++k)
         {
-            const auto kind = (lynx::EffectKind) k;
-            if (kind == lynx::EffectKind::plugin || (only >= 0 && k != only))
+            const auto kind = (yw::EffectKind) k;
+            if (kind == yw::EffectKind::plugin || (only >= 0 && k != only))
                 continue;
-            std::printf ("kind %d %s\n", k, lynx::effectInfo (kind).name);
+            std::printf ("kind %d %s\n", k, yw::effectInfo (kind).name);
             std::fflush (stdout);
-            fuzzSlot (lynx::makeEffectSlot (kind), lynx::effectInfo (kind).name);
+            fuzzSlot (yw::makeEffectSlot (kind), yw::effectInfo (kind).name);
         }
 
     for (const auto& d : dirs)

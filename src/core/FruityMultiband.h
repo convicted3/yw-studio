@@ -1,8 +1,8 @@
 #pragma once
 
-// FL Studio's Fruity Multiband Compressor as a LYNX mixer effect: an exact engine rebuilt from the plugin's behaviour
+// FL Studio's Fruity Multiband Compressor as a YW mixer effect: an exact engine rebuilt from the plugin's behaviour
 // (docs/analise/REA_rodada56.md; clean-room, no Image-Line code). The slot keeps FL's 28 raw integer controls as its
-// LYNX parameters (raw value normalised over the control's range), so it stays editable and an imported state
+// YW parameters (raw value normalised over the control's range), so it stays editable and an imported state
 // round-trips exactly.
 //
 // Three bands, each split from the input on its own (high: high-pass; mid: low-pass + high-pass; low: low-pass), by
@@ -18,12 +18,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::flmb
+namespace yw::flmb
 {
 constexpr int controls = 28;           // FL's controls 0…27 (the state also holds two UI-only words, not used here)
 constexpr int params = controls;
@@ -53,4 +53,4 @@ std::unique_ptr<Effect> make (const EffectParams* params = nullptr);
 // The same, with FL's raw state kept in the slot (EffectSlot::state): parameters still at their imported value keep
 // FL's exact integer controls even after the project file has rounded them to 4 decimals
 std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& flState, const EffectParams* params = nullptr);
-} // namespace lynx::flmb
+} // namespace yw::flmb

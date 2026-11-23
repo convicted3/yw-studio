@@ -11,9 +11,9 @@
 
 namespace
 {
-lynx::remoteplug::Shared remote190aiSynth()
+yw::remoteplug::Shared remote190aiSynth()
 {
-    lynx::remoteplug::Shared s;
+    yw::remoteplug::Shared s;
     s.id = "VST3-HostSynth-1a2b3c-4d5e6f";
     s.name = "HostSynth";
     s.vendor = "Somebody";
@@ -24,22 +24,22 @@ lynx::remoteplug::Shared remote190aiSynth()
 }
 
 // what the host does to a guest's proposal before its authority judges it
-lynx::live::Codec remote190aiHostRules()
+yw::live::Codec remote190aiHostRules()
 {
-    return [] (const lynx::live::Patch& p) {
+    return [] (const yw::live::Patch& p) {
         auto q = p;
-        lynx::remoteplug::sanitize (q.carrier, lynx::session::hostTag);
+        yw::remoteplug::sanitize (q.carrier, yw::session::hostTag);
         return q;
     };
 }
 
 // Ana (the first guest) puts the host's shared plugin on a new channel of hers; returns its uid
-std::uint64_t remote190aiAddChannel (lynx::Song& working, const lynx::remoteplug::Shared& plugin, const std::string& name)
+std::uint64_t remote190aiAddChannel (yw::Song& working, const yw::remoteplug::Shared& plugin, const std::string& name)
 {
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.name = name;
-    c.instrument = lynx::InstrumentKind::plugin;
-    c.plugin = lynx::remoteplug::makeRef (plugin, lynx::session::hostTag);
+    c.instrument = yw::InstrumentKind::plugin;
+    c.plugin = yw::remoteplug::makeRef (plugin, yw::session::hostTag);
     const auto* me = working.session.find (working.session.me);
     c.mixerTrack = me != nullptr ? me->insertFirst : 0;
     working.channels.push_back (c);
@@ -47,15 +47,15 @@ std::uint64_t remote190aiAddChannel (lynx::Song& working, const lynx::remoteplug
     return working.channels.back().uid;
 }
 
-const lynx::PluginRef* remote190aiRef (const lynx::Song& s, std::uint64_t uid)
+const yw::PluginRef* remote190aiRef (const yw::Song& s, std::uint64_t uid)
 {
-    return lynx::remoteplug::refAt (s, { { lynx::live::Kind::channel, uid, 0 }, -1 });
+    return yw::remoteplug::refAt (s, { { yw::live::Kind::channel, uid, 0 }, -1 });
 }
 } // namespace
 
 TEST (remote190ai_values_and_what_arrives_are_bounded)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginRef ref;
     CHECK (remoteplug::setValue (ref, 7, 0.25f) && remoteplug::setValue (ref, 2, 2.0f) && remoteplug::setValue (ref, 5, -1.0f));
     CHECK (! remoteplug::setValue (ref, 7, 0.25f)); // (nothing changed)
@@ -100,7 +100,7 @@ TEST (remote190ai_values_and_what_arrives_are_bounded)
 
 TEST (remote190ai_a_guest_uses_the_hosts_plugin_and_the_host_renders_it)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (190);
     Live169bNet net (live169bSong(), 2, remote190aiHostRules());
     auto& ana = net.guests[0];
@@ -192,7 +192,7 @@ TEST (remote190ai_a_guest_uses_the_hosts_plugin_and_the_host_renders_it)
 
 TEST (remote190ai_the_state_never_crosses_and_only_the_host_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     // the rule itself
     Song carrier = live169bSong();
     ChannelDef hosted;
@@ -235,7 +235,7 @@ TEST (remote190ai_the_state_never_crosses_and_only_the_host_plays)
 
 TEST (remote190ai_permissions_are_the_sessions)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (11);
     Live169bNet net (live169bSong(), 2, remote190aiHostRules());
     auto& ana = net.guests[0];
@@ -286,7 +286,7 @@ TEST (remote190ai_permissions_are_the_sessions)
 
 TEST (remote190ai_parameter_edits_are_rate_limited)
 {
-    using namespace lynx;
+    using namespace yw;
     remoteplug::Limiter limiter (10.0, 20.0); // 10 a second, 20 at once
     CHECK (limiter.allow (2, 0.0, 0) && limiter.allow (2, 0.0, 15) && limiter.allow (2, 0.0, 5));
     CHECK (! limiter.allow (2, 0.0, 1) && ! limiter.allow (2, 50.0, 1)); // empty; 50 ms later still under one
@@ -320,7 +320,7 @@ TEST (remote190ai_parameter_edits_are_rate_limited)
 
 TEST (remote190ai_a_tweak_survives_the_stems_landing)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (3);
     Live169bNet net (live169bSong(), 1, remote190aiHostRules());
     auto& ana = net.guests[0];
@@ -379,7 +379,7 @@ TEST (remote190ai_a_tweak_survives_the_stems_landing)
 
 TEST (remote190ai_the_end_of_the_session_leaves_the_stems_only)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (5);
     Live169bNet net (live169bSong(), 1, remote190aiHostRules());
     auto& ana = net.guests[0];

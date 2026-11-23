@@ -6,7 +6,7 @@
 #include "core/PreviewTempo.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 PreviewPlayer::PreviewPlayer()
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true))
@@ -248,4 +248,4 @@ void PreviewPlayer::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBu
     addToOutput (l, r, mode, a, b, n);
     buffer.clear();
 }
-} // namespace lynx
+} // namespace yw

@@ -1,5 +1,5 @@
 // Round 190ar part 2: fitted setting maps as state translators (core/FittedMaps.inc). The data are captured component
-// states (saved through the public parameter API at the bank's settings) and the LYNX parameters the map gives there.
+// states (saved through the public parameter API at the bank's settings) and the YW parameters the map gives there.
 namespace p190artr
 {
 struct Case
@@ -17,9 +17,9 @@ inline const std::vector<Case>& cases()
     };
     return c;
 }
-inline lynx::EffectSlot slotFor (const std::string& plugin, const std::string& xml, int* translated = nullptr)
+inline yw::EffectSlot slotFor (const std::string& plugin, const std::string& xml, int* translated = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin fp;
     fp.format = ForeignPlugin::Format::vst3;
     fp.name = plugin;
@@ -38,7 +38,7 @@ inline lynx::EffectSlot slotFor (const std::string& plugin, const std::string& x
 
 TEST (p190ar_fitted_maps_translate_the_captured_states)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (p190artr::cases().size() >= 33);
     for (const auto& c : p190artr::cases())
     {
@@ -57,7 +57,7 @@ TEST (p190ar_fitted_maps_translate_the_captured_states)
 
 TEST (p190ar_fitted_maps_leave_unknown_states_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     // a reference of the same role without a map, and a mapped one whose state carries none of the mapped entries:
     // the substitute stays at its defaults (the entry's preset), nothing is half applied
     auto plain = makeEffectSlot (EffectKind::crestCompressor);

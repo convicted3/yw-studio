@@ -20,7 +20,7 @@
 
 TEST (pr44_utf8_validation_matches_what_nsstring_accepts)
 {
-    using lynx::search::isWellFormedUtf8;
+    using yw::search::isWellFormedUtf8;
     auto ok = [] (const std::string& s) { return isWellFormedUtf8 (s.data(), s.size()); };
     CHECK (ok (""));
     CHECK (ok ("kick.wav"));
@@ -64,7 +64,7 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
 {
     namespace fs = std::filesystem;
     std::error_code ec;
-    const auto dir = (fs::temp_directory_path (ec) / ("lynx_pr44_" + processTempTag())).string();
+    const auto dir = (fs::temp_directory_path (ec) / ("yw_pr44_" + processTempTag())).string();
     fs::remove_all (dir, ec);
     CHECK (::mkdir (dir.c_str(), 0755) == 0);
 
@@ -100,7 +100,7 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
 
     bool opened = false;
     int skipped = -1;
-    auto names = lynx::search::listFolderNames (dir, &opened, &skipped);
+    auto names = yw::search::listFolderNames (dir, &opened, &skipped);
     std::sort (names.begin(), names.end());
     auto want = good;
     std::sort (want.begin(), want.end());
@@ -108,15 +108,15 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
     CHECK (skipped == made);
     CHECK (names == want); // no ".", "..", nothing invalid; the NFD name kept byte for byte
     for (const auto& n : names)
-        CHECK (lynx::search::isWellFormedUtf8 (n.data(), n.size()));
+        CHECK (yw::search::isWellFormedUtf8 (n.data(), n.size()));
 
     // a trailing separator is fine too
-    CHECK (lynx::search::listFolderNames (dir + "/").size() == good.size());
+    CHECK (yw::search::listFolderNames (dir + "/").size() == good.size());
     // an empty folder
-    CHECK (lynx::search::listFolderNames (dir + "/sub folder", &opened, &skipped).empty() && opened && skipped == 0);
+    CHECK (yw::search::listFolderNames (dir + "/sub folder", &opened, &skipped).empty() && opened && skipped == 0);
     // a missing folder, a file
-    CHECK (lynx::search::listFolderNames (dir + "/missing", &opened).empty() && ! opened);
-    CHECK (lynx::search::listFolderNames (dir + "/kick.wav", &opened).empty() && ! opened);
+    CHECK (yw::search::listFolderNames (dir + "/missing", &opened).empty() && ! opened);
+    CHECK (yw::search::listFolderNames (dir + "/kick.wav", &opened).empty() && ! opened);
 
     // a folder that can't be read (no permission): empty, not opened, no crash (root reads anything: skip then)
     const auto locked = dir + "/locked";
@@ -124,7 +124,7 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
     CHECK (pr44::makeFile (locked + "/inside.wav"));
     ::chmod (locked.c_str(), 0);
     if (::geteuid() != 0)
-        CHECK (lynx::search::listFolderNames (locked, &opened).empty() && ! opened);
+        CHECK (yw::search::listFolderNames (locked, &opened).empty() && ! opened);
     ::chmod (locked.c_str(), 0755);
 
     // the background search lists from its own thread while the Browser opens folders: four threads at once
@@ -135,7 +135,7 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
             for (int i = 0; i < 50; ++i)
             {
                 int sk = 0;
-                auto got = lynx::search::listFolderNames (dir, nullptr, &sk);
+                auto got = yw::search::listFolderNames (dir, nullptr, &sk);
                 std::sort (got.begin(), got.end());
                 got.erase (std::remove (got.begin(), got.end(), std::string ("locked")), got.end());
                 if (got == want && sk == made)
@@ -147,12 +147,12 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
     CHECK (same == 200);
 
     // through the search index: only well-formed names get indexed (and so reach JUCE / NSString)
-    lynx::search::FileSystem disk;
+    yw::search::FileSystem disk;
     disk.folderTime = [] (const std::string&) -> std::int64_t { return 1; };
     disk.list = [] (const std::string& folder) {
-        lynx::search::FolderListing l;
+        yw::search::FolderListing l;
         bool ok = false;
-        for (const auto& n : lynx::search::listFolderNames (folder, &ok))
+        for (const auto& n : yw::search::listFolderNames (folder, &ok))
         {
             struct stat st {};
             if (::lstat ((folder + "/" + n).c_str(), &st) == 0 && S_ISDIR (st.st_mode))
@@ -163,7 +163,7 @@ TEST (pr44_listing_skips_names_nsstring_rejects_and_keeps_the_rest)
         l.exists = ok;
         return l;
     };
-    lynx::search::Index index;
+    yw::search::Index index;
     index.refresh (dir, disk);
     bool truncated = false;
     CHECK (index.find ("kick", { dir }, 100, truncated).size() == 2); // kick.wav and its link

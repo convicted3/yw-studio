@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Edison as a LYNX mixer effect (round 190cd; facts in docs/analise/REA_rodada190cd.md, clean-room: the
+// FL Studio's Edison as a YW mixer effect (round 190cd; facts in docs/analise/REA_rodada190cd.md, clean-room: the
 // behaviour in our own words, no Image-Line code or data in this repository).
 //
 // Edison is an audio editor that sits in an effect slot. Its render passes the slot's input through untouched (or
@@ -33,12 +33,12 @@
 #include "core/AudioEdit.h"
 #include "core/Effects.h"
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 }
 
-namespace lynx::edisonfx
+namespace yw::edisonfx
 {
 enum Param
 {
@@ -298,4 +298,4 @@ struct FlState
 };
 std::optional<FlState> parseFlState (const std::vector<std::uint8_t>& state);
 void toParams (const FlState& s, EffectParams& params);
-} // namespace lynx::edisonfx
+} // namespace yw::edisonfx

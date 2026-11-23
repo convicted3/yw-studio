@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace lynx::livenote
+namespace yw::livenote
 {
 constexpr std::uint32_t pack (std::uint32_t previous, int key, int velocity127, bool on) noexcept
 {
@@ -18,4 +18,4 @@ constexpr std::uint32_t pack (std::uint32_t previous, int key, int velocity127, 
 constexpr int key (std::uint32_t packed) noexcept { return (int) (packed >> 8) & 0x7f; }
 constexpr int velocity (std::uint32_t packed) noexcept { return (int) packed & 0x7f; }
 constexpr bool on (std::uint32_t packed) noexcept { return (packed & 0x8000u) != 0; }
-} // namespace lynx::livenote
+} // namespace yw::livenote

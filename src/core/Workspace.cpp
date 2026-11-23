@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <sstream>
 
-namespace lynx::workspace
+namespace yw::workspace
 {
 namespace
 {
@@ -342,7 +342,7 @@ int Layout::bringBackOffscreen()
 std::string Layout::serialise() const
 {
     std::ostringstream out;
-    out << "lynx-layout 1\n";
+    out << "yw-layout 1\n";
     char line[256];
 
     for (int i = 0; i < panelCount; ++i)
@@ -363,7 +363,7 @@ std::string Layout::serialise() const
     for (auto p : order)
         out << ' ' << ids[(int) p];
     out << "\nfocus " << ids[(int) focused] << "\n";
-    out << "dock " << dockId (browserDock) << "\n"; // (issue #192; LYNX 0.1.29 and earlier skip the line)
+    out << "dock " << dockId (browserDock) << "\n"; // (issue #192; YW 0.1.29 and earlier skip the line)
     return out.str();
 }
 
@@ -374,7 +374,7 @@ std::optional<Layout> Layout::parse (const std::string& text, int width, int hei
     std::string header;
     int version = 0;
 
-    if (! (in >> header >> version) || header != "lynx-layout" || version != 1)
+    if (! (in >> header >> version) || header != "yw-layout" || version != 1)
         return std::nullopt;
 
     std::string line;
@@ -448,7 +448,7 @@ std::optional<Layout> Layout::parse (const std::string& text, int width, int hei
         return std::nullopt;
 
     // Issue #192: a layout saved before round 190jz has no dock line: a Browser at the full height of the left (or right)
-    // edge was LYNX's docked one; one moved elsewhere stays where it is (none).
+    // edge was YW's docked one; one moved elsewhere stays where it is (none).
     if (! dock)
     {
         const auto& b = layout[Panel::browser].bounds;
@@ -541,4 +541,4 @@ Rect snap (Rect r, const std::vector<Rect>& others, int desktopWidth, int deskto
 
     return r;
 }
-} // namespace lynx::workspace
+} // namespace yw::workspace

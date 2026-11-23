@@ -1,11 +1,11 @@
 #pragma once
 
-// Test profile and test mode (round 165i). Benchmarks and automated GUI runs must not touch the user's real LYNX
+// Test profile and test mode (round 165i). Benchmarks and automated GUI runs must not touch the user's real YW
 // profile, and nothing may wait for a click on the user's desktop:
-//   LYNX_PROFILE_DIR=<absolute folder>  every user-data path of LYNX goes there: settings, autosave, sessions and crash
+//   YW_PROFILE_DIR=<absolute folder>  every user-data path of YW goes there: settings, autosave, sessions and crash
 //                                       markers / history, plugin list and scan files, caches (waveforms, PCM and
-//                                       time-stretch caches), and the Documents\LYNX folders (templates, mixer states…)
-//   LYNX_TEST_MODE=1                    no prompts: the "closed unexpectedly" notice / crash-report question, the
+//                                       time-stretch caches), and the Documents\YW folders (templates, mixer states…)
+//   YW_TEST_MODE=1                    no prompts: the "closed unexpectedly" notice / crash-report question, the
 //                                       Missing files dialog, the setup wizard, the project info shown on open and the
 //                                       background plugin scan at start are skipped and written to test-mode.log
 // The parsing lives here (no JUCE) so the tests can check it; platform/Paths.cpp applies it.
@@ -14,9 +14,9 @@
 #include <optional>
 #include <string>
 
-namespace lynx::testprofile
+namespace yw::testprofile
 {
-// The profile folder named by LYNX_PROFILE_DIR's value: only an absolute path counts (a relative one would depend on
+// The profile folder named by YW_PROFILE_DIR's value: only an absolute path counts (a relative one would depend on
 // the working directory); trailing separators are dropped.
 inline std::optional<std::string> profileDirFrom (const char* value)
 {
@@ -40,7 +40,7 @@ inline std::optional<std::string> profileDirFrom (const char* value)
     return s;
 }
 
-// LYNX_TEST_MODE's value: on for anything but empty, "0", "false", "no", "off"
+// YW_TEST_MODE's value: on for anything but empty, "0", "false", "no", "off"
 inline bool testModeFrom (const char* value)
 {
     if (value == nullptr)
@@ -51,4 +51,4 @@ inline bool testModeFrom (const char* value)
             s += (char) std::tolower ((unsigned char) *p);
     return ! (s.empty() || s == "0" || s == "false" || s == "no" || s == "off");
 }
-} // namespace lynx::testprofile
+} // namespace yw::testprofile

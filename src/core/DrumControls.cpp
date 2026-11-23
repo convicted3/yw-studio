@@ -13,7 +13,7 @@
 #include "core/Plucked.h"
 #include "core/Slayer.h"
 
-namespace lynx::drumcontrols
+namespace yw::drumcontrols
 {
 namespace
 {
@@ -377,9 +377,9 @@ const std::vector<EngineParam>& params (InstrumentKind kind)
     const auto it = all.find (kind);
     return it != all.end() ? it->second : none;
 }
-} // namespace lynx::drumcontrols
+} // namespace yw::drumcontrols
 
-namespace lynx::modelparams
+namespace yw::modelparams
 {
 namespace
 {
@@ -396,4 +396,4 @@ Table bassDrumModelTable() { return drumTable (InstrumentKind::bassdrum); }
 Table drumSynthModelTable() { return drumTable (InstrumentKind::drumsynth); }
 Table sakuraModelTable() { return drumTable (InstrumentKind::sakura); }
 Table slayerModelTable() { return drumTable (InstrumentKind::slayer); }
-} // namespace lynx::modelparams
+} // namespace yw::modelparams

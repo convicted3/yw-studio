@@ -13,8 +13,8 @@
 //   Off [-1] · Serato Mk2, Side A [1] · Serato Mk2, Side B [2] · Serato CD [3] · Traktor Skratch Mk1, Side A [4] ·
 //   Traktor Skratch Mk1, Side B [5] · Traktor Skratch Mk2, Side A [6] · Traktor Skratch Mk2, Side B [7] ·
 //   Timecode CD [0].
-// LYNX decodes the five sine-and-amplitude formats (Serato Mk2 A / B, Serato CD, Traktor Mk1 A / B). Traktor Mk2 and
-// FL's "Timecode CD" use two other decoders in FL's engine that LYNX does not have yet: `supported()` says so and the
+// YW decodes the five sine-and-amplitude formats (Serato Mk2 A / B, Serato CD, Traktor Mk1 A / B). Traktor Mk2 and
+// FL's "Timecode CD" use two other decoders in FL's engine that YW does not have yet: `supported()` says so and the
 // decoder then reports no signal.
 //
 // Real-time safe after warm(): the position tables (one per format, up to 2.1 M entries) are built off the audio
@@ -25,7 +25,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::dvs
+namespace yw::dvs
 {
 constexpr int comboCount = 9; // FL's Timecode type list, "Off" included
 
@@ -44,7 +44,7 @@ struct Format
     double offset = 0.0;       // seconds subtracted from the place the register names
     std::uint8_t flags = 0;    // 0x10 reversed direction, 0x20 bits on the negative peaks, 0x40 left = primary
 };
-// The format of a state's timecode index; nullptr when LYNX has no decoder for it (off, Traktor Mk2, Timecode CD)
+// The format of a state's timecode index; nullptr when YW has no decoder for it (off, Traktor Mk2, Timecode CD)
 const Format* format (int state) noexcept;
 bool supported (int state) noexcept;
 
@@ -92,4 +92,4 @@ private:
     double pos = 0.0;
     int lockCount = 0;
 };
-} // namespace lynx::dvs
+} // namespace yw::dvs

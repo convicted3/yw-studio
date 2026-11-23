@@ -12,7 +12,7 @@
 #include <array>
 #include <cstddef>
 
-namespace lynx::followpause
+namespace yw::followpause
 {
 enum View : int
 {
@@ -66,4 +66,4 @@ struct State
         layoutChangedMs = nowMs;
     }
 };
-} // namespace lynx::followpause
+} // namespace yw::followpause

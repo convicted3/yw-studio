@@ -4,7 +4,7 @@
 // A Live 12 set stores the scale as an index into the list its Scale choosers show: LiveSet/ScaleInformation { Root
 // 0 = C … 11, Name = index } + LiveSet/InKey (Scale Mode on), and the same pair per clip (MidiClip/ScaleInformation +
 // IsInKey). Live 11 stores the name as text and has clip scales only.
-// [LIVE 12.4 save] /mnt/e/lynx-work/ableton190o/live/mt-saved Project: a clip set to C Bhairav is saved as Root 0,
+// [LIVE 12.4 save] /mnt/e/yw-work/ableton190o/live/mt-saved Project: a clip set to C Bhairav is saved as Root 0,
 // Name 22, IsInKey true, and the set's own pair follows it (the set remembers the scale last chosen). So the index is
 // the chooser's order (… Super Locrian 20, 8-Tone Spanish 21, Bhairav 22, Hungarian Minor 23 …) — not the order of the
 // Live API's help text [BIN], which lists Bhairav and Hungarian Minor before 8-Tone Spanish. The chooser's tail was
@@ -20,7 +20,7 @@
 
 #include "core/ProjectKey.h"
 
-namespace lynx::livescales
+namespace yw::livescales
 {
 struct Scale
 {
@@ -106,4 +106,4 @@ inline int indexFor (const projectkey::Key& key)
             return i;
     return -1;
 }
-} // namespace lynx::livescales
+} // namespace yw::livescales

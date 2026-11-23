@@ -16,7 +16,7 @@ inline double corr (const verbs100::Stereo& s, std::size_t from, std::size_t to)
 TEST (halo_mono_mode_stereo_and_onset_verb183b)
 {
     using namespace verbs100;
-    using lynx::EffectKind;
+    using yw::EffectKind;
     auto p = defaults (EffectKind::halo);
     p[0] = 1.0f;
     p[9] = 0.125f; // the reference's Mono mode (its default)

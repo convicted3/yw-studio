@@ -2,29 +2,29 @@
 
 TEST (hwout_targets_pairs_then_monos)
 {
-    const auto four = lynx::outputTargets ({ "Out 1", "Out 2", "Out 3", "Out 4" });
+    const auto four = yw::outputTargets ({ "Out 1", "Out 2", "Out 3", "Out 4" });
     CHECK (four.size() == 6);
-    CHECK (four.size() == 6 && four[0].channel == 0 && four[0].mode == lynx::OutputMode::stereo && four[0].name == "Out 1 - Out 2");
-    CHECK (four.size() == 6 && four[1].channel == 2 && four[1].mode == lynx::OutputMode::stereo);
-    CHECK (four.size() == 6 && four[2].channel == 0 && four[2].mode == lynx::OutputMode::monoSum && four[2].name == "Out 1");
+    CHECK (four.size() == 6 && four[0].channel == 0 && four[0].mode == yw::OutputMode::stereo && four[0].name == "Out 1 - Out 2");
+    CHECK (four.size() == 6 && four[1].channel == 2 && four[1].mode == yw::OutputMode::stereo);
+    CHECK (four.size() == 6 && four[2].channel == 0 && four[2].mode == yw::OutputMode::monoSum && four[2].name == "Out 1");
     CHECK (four.size() == 6 && four[5].channel == 3);
-    const auto odd = lynx::outputTargets ({ "L", "R", "Aux" });
+    const auto odd = yw::outputTargets ({ "L", "R", "Aux" });
     CHECK (odd.size() == 4 && odd[3].name == "Aux");
-    CHECK (lynx::outputTargets ({}).empty());
+    CHECK (yw::outputTargets ({}).empty());
 
     // names; a channel the device doesn't have is "(missing)"
     const std::vector<std::string> names { "Out 1", "Out 2", "Out 3", "Out 4" };
-    CHECK (lynx::outputTargetName (lynx::outputDefault, lynx::OutputMode::stereo, names, true) == "Out 1 - Out 2");
-    CHECK (lynx::outputTargetName (lynx::outputDefault, lynx::OutputMode::stereo, names, false) == "(none)");
-    CHECK (lynx::outputTargetName (2, lynx::OutputMode::monoSum, names, false) == "Out 3 (mono)");
-    CHECK (lynx::outputTargetName (3, lynx::OutputMode::monoRight, names, false) == "Out 4 (mono, R)");
-    CHECK (lynx::outputTargetName (3, lynx::OutputMode::stereo, names, false) == "Out 4 - Out 5 (missing)"); // pair 4-5: no 5
-    CHECK (lynx::outputTargetName (6, lynx::OutputMode::monoLeft, names, false) == "Out 7 (mono, L) (missing)");
-    CHECK (lynx::outputAvailable (2, lynx::OutputMode::stereo, 4) && ! lynx::outputAvailable (3, lynx::OutputMode::stereo, 4));
-    CHECK (! lynx::outputAvailable (-1, lynx::OutputMode::monoSum, 4));
+    CHECK (yw::outputTargetName (yw::outputDefault, yw::OutputMode::stereo, names, true) == "Out 1 - Out 2");
+    CHECK (yw::outputTargetName (yw::outputDefault, yw::OutputMode::stereo, names, false) == "(none)");
+    CHECK (yw::outputTargetName (2, yw::OutputMode::monoSum, names, false) == "Out 3 (mono)");
+    CHECK (yw::outputTargetName (3, yw::OutputMode::monoRight, names, false) == "Out 4 (mono, R)");
+    CHECK (yw::outputTargetName (3, yw::OutputMode::stereo, names, false) == "Out 4 - Out 5 (missing)"); // pair 4-5: no 5
+    CHECK (yw::outputTargetName (6, yw::OutputMode::monoLeft, names, false) == "Out 7 (mono, L) (missing)");
+    CHECK (yw::outputAvailable (2, yw::OutputMode::stereo, 4) && ! yw::outputAvailable (3, yw::OutputMode::stereo, 4));
+    CHECK (! yw::outputAvailable (-1, yw::OutputMode::monoSum, 4));
 
     // defaults: Master = first pair, inserts = none (through the Master only)
-    CHECK (lynx::MixerTrack {}.outputChannel == lynx::outputDefault && lynx::MixerTrack {}.outputMode == lynx::OutputMode::stereo);
+    CHECK (yw::MixerTrack {}.outputChannel == yw::outputDefault && yw::MixerTrack {}.outputMode == yw::OutputMode::stereo);
 }
 
 TEST (hwout_routing_math)
@@ -32,56 +32,56 @@ TEST (hwout_routing_math)
     const std::vector<float> l { 0.5f, 1.0f }, r { -0.5f, 0.25f };
     std::vector<float> a (2, 0.0f), b (2, 0.0f);
 
-    lynx::addToOutput (l.data(), r.data(), lynx::OutputMode::stereo, a.data(), b.data(), 2);
+    yw::addToOutput (l.data(), r.data(), yw::OutputMode::stereo, a.data(), b.data(), 2);
     CHECK (a[0] == 0.5f && a[1] == 1.0f && b[0] == -0.5f && b[1] == 0.25f);
 
     std::fill (a.begin(), a.end(), 0.0f);
-    lynx::addToOutput (l.data(), r.data(), lynx::OutputMode::monoSum, a.data(), nullptr, 2);
+    yw::addToOutput (l.data(), r.data(), yw::OutputMode::monoSum, a.data(), nullptr, 2);
     CHECK (a[0] == 0.0f && std::abs (a[1] - 0.625f) < 1e-7f); // (L+R)/2
 
     std::fill (a.begin(), a.end(), 0.0f);
-    lynx::addToOutput (l.data(), r.data(), lynx::OutputMode::monoLeft, a.data(), nullptr, 2);
+    yw::addToOutput (l.data(), r.data(), yw::OutputMode::monoLeft, a.data(), nullptr, 2);
     CHECK (a[0] == 0.5f && a[1] == 1.0f);
-    lynx::addToOutput (l.data(), r.data(), lynx::OutputMode::monoRight, a.data(), nullptr, 2); // adds, never overwrites
+    yw::addToOutput (l.data(), r.data(), yw::OutputMode::monoRight, a.data(), nullptr, 2); // adds, never overwrites
     CHECK (a[0] == 0.0f && a[1] == 1.25f);
 
     // a centred mono source keeps its level on a mono-sum output
     const std::vector<float> c { 0.3f };
     std::vector<float> m (1, 0.0f);
-    lynx::addToOutput (c.data(), c.data(), lynx::OutputMode::monoSum, m.data(), nullptr, 1);
+    yw::addToOutput (c.data(), c.data(), yw::OutputMode::monoSum, m.data(), nullptr, 1);
     CHECK (std::abs (m[0] - 0.3f) < 1e-7f);
 
-    lynx::addToOutput (nullptr, r.data(), lynx::OutputMode::stereo, a.data(), b.data(), 2); // nothing to add: no crash
-    lynx::addToOutput (l.data(), r.data(), lynx::OutputMode::stereo, nullptr, nullptr, 2);
+    yw::addToOutput (nullptr, r.data(), yw::OutputMode::stereo, a.data(), b.data(), 2); // nothing to add: no crash
+    yw::addToOutput (l.data(), r.data(), yw::OutputMode::stereo, nullptr, nullptr, 2);
     CHECK (a[1] == 1.25f);
 }
 
 TEST (hwout_renderer_feeds_buses_and_master)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
-    song.mixer = lynx::Song::defaultMixer (5);
+    song.mixer = yw::Song::defaultMixer (5);
     for (int t : { 2, 3, 4 })
-        song.mixer[(std::size_t) t].monitor = lynx::InputMonitor::on;
+        song.mixer[(std::size_t) t].monitor = yw::InputMonitor::on;
     song.mixer[2].inputChannel = 0;                    // stereo input 1-2: L 0.25, R -0.5
     song.mixer[2].outputChannel = 2;                   // -> Out 3, mono sum
-    song.mixer[2].outputMode = lynx::OutputMode::monoSum;
+    song.mixer[2].outputMode = yw::OutputMode::monoSum;
     song.mixer[3].inputChannel = 2;                    // mono input 3: 0.75 on both sides
     song.mixer[3].inputStereo = false;
     song.mixer[3].outputChannel = 2;                   // -> Out 3 too, left only (adds)
-    song.mixer[3].outputMode = lynx::OutputMode::monoLeft;
+    song.mixer[3].outputMode = yw::OutputMode::monoLeft;
     song.mixer[4].inputChannel = 0;                    // -> Out 5 - Out 6 (stereo); the device has no Out 6
     song.mixer[4].outputChannel = 4;
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (state->hwRoutes.size() == 3);
     for (const auto& route : state->hwRoutes)
         CHECK (route.delay == nullptr); // no latency anywhere: nothing to line up
 
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 512);
-    lynx::LiveInput input;
-    lynx::HardwareOutput hw;
+    yw::LiveInput input;
+    yw::HardwareOutput hw;
     renderer.setLiveInput (&input);
     renderer.setHardwareOutput (&hw);
 
@@ -116,7 +116,7 @@ TEST (hwout_renderer_feeds_buses_and_master)
 
     // a muted insert sends nothing to its output either
     song.mixer[4].muted = true;
-    auto muted = lynx::RackState::build (song, state.get(), 48000.0);
+    auto muted = yw::RackState::build (song, state.get(), 48000.0);
     for (int i = 0; i < 12; ++i) // past the fader ramp (0.001 per sample)
     {
         renderer.process (muted.get(), false, 0.0, 256, l.data(), r.data());
@@ -127,10 +127,10 @@ TEST (hwout_renderer_feeds_buses_and_master)
 
     // a target past the buses (device with 100 outputs, say) is ignored, not a crash
     song.mixer[2].outputChannel = 200;
-    auto far = lynx::RackState::build (song, muted.get(), 48000.0);
+    auto far = yw::RackState::build (song, muted.get(), 48000.0);
     CHECK (far->hwRoutes.size() == 2);
     renderer.process (far.get(), false, 0.0, 256, l.data(), r.data());
-    CHECK (hw.bus (64, 0, 1) == nullptr && hw.bus (0, lynx::HardwareOutput::capacity, 1) == nullptr);
+    CHECK (hw.bus (64, 0, 1) == nullptr && hw.bus (0, yw::HardwareOutput::capacity, 1) == nullptr);
     hw.clear();
 }
 
@@ -148,8 +148,8 @@ TEST (hwout_flp_import)
     insert (-1);
     const auto p = flp::parseProject (b.bytes);
     CHECK (p.mixer.size() == 3 && p.mixer[0].output == 0 && p.mixer[1].output == 0 && p.mixer[2].output == -1);
-    const auto song = lynx::importFlp (p);
-    CHECK (song.mixer.size() > 2 && song.mixer[0].outputChannel == lynx::outputDefault);
-    CHECK (song.mixer.size() > 2 && song.mixer[1].outputChannel == 0 && song.mixer[1].outputMode == lynx::OutputMode::stereo);
-    CHECK (song.mixer.size() > 2 && song.mixer[2].outputChannel == lynx::outputDefault);
+    const auto song = yw::importFlp (p);
+    CHECK (song.mixer.size() > 2 && song.mixer[0].outputChannel == yw::outputDefault);
+    CHECK (song.mixer.size() > 2 && song.mixer[1].outputChannel == 0 && song.mixer[1].outputMode == yw::OutputMode::stereo);
+    CHECK (song.mixer.size() > 2 && song.mixer[2].outputChannel == yw::outputDefault);
 }

@@ -9,7 +9,7 @@
 //   header, the notes of one channel in one pattern (the "notes slice"), an automation, an arrangement header, a clip,
 //   a mixer insert (by index), a Playlist row (by index), the participants, the links and the order of the lists.
 // * A Patch carries the entities that changed, as a small Song (the "carrier": the changed entities plus id-only
-//   stubs of whatever they refer to), so the engine sends it with the .lynx JSON code. Index references are matched
+//   stubs of whatever they refer to), so the engine sends it with the .yw JSON code. Index references are matched
 //   by uid on the receiving side: two computers never need the same indices.
 // * Every peer (the host too) runs a Replica: confirmed state C (host revision r) + its own unconfirmed edits = the
 //   working song W (the engine's). The host also runs the Authority, which orders proposals, checks permissions
@@ -26,10 +26,10 @@
 
 #include "core/Song.h"
 
-namespace lynx::live
+namespace yw::live
 {
 // 2 (round 169j): resume after a drop, chat, transport, permissions during the session, live stand-ins, FLAC media
-// 3 (round 190ah): a guest whose LYNX SHARE restarted resumes as itself ("bye" with its token when it does not),
+// 3 (round 190ah): a guest whose YW Studio restarted resumes as itself ("bye" with its token when it does not),
 //   "perms" after a replayed resume, media limits ("limit")
 // 3 (round 190ai): P5-A1 remote plugins — PluginRef::playedBy / values, the host's "shared" and "rbusy" messages
 // 4: both rounds' 3 together (each was a 3 of its own on its branch: one number above both, so neither ever meets this)
@@ -122,7 +122,7 @@ struct Commit
     std::string reason;          // why, for the hint bar ("owned" / "conflict")
 };
 
-// The serialiser's round trip (the engine: the .lynx JSON; tests: identity or a rounding fake). A patch is applied
+// The serialiser's round trip (the engine: the .yw JSON; tests: identity or a rounding fake). A patch is applied
 // everywhere only in the form every peer receives, so all copies stay bit-identical.
 using Codec = std::function<Patch (const Patch&)>;
 
@@ -224,7 +224,7 @@ public:
     // the host epoch the confirmed state belongs to (Authority::epoch)
     std::uint64_t epoch = 0;
 
-    // A guest's own LYNX SHARE restarted (round 190ah): its journal holds base() at baseRevision() — the confirmed
+    // A guest's own YW Studio restarted (round 190ah): its journal holds base() at baseRevision() — the confirmed
     // state the working song was last rebased on — and the working song. A replica made again from those, then
     // restored(), resumes like one whose connection dropped: the host replays what it missed (or sends a snapshot),
     // and what the working song has on top of the base is proposed again with that old base (the conflict check
@@ -336,4 +336,4 @@ FollowAction follow (const HostTransport& host, double nowMs, bool playing, bool
 std::set<Key> unplayable (const Song& song, const std::function<bool (const PluginRef&)>& missing);
 // Of the parts someone needs (`needed`), the ones participant `me` renders: his own, all of whose plugins are here.
 std::vector<Key> toRender (const Song& song, const std::set<Key>& needed, std::uint32_t me, const std::function<bool (const PluginRef&)>& missing);
-} // namespace lynx::live
+} // namespace yw::live

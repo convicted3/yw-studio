@@ -24,9 +24,9 @@ inline flp::Project channelProject (const std::function<void (FlpBuilder&)>& eve
     return flp::parseProject (b.bytes);
 }
 
-inline std::shared_ptr<lynx::SampleData> ramp (int frames, bool stereo)
+inline std::shared_ptr<yw::SampleData> ramp (int frames, bool stereo)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     for (int i = 0; i < frames; ++i)
     {
@@ -78,7 +78,7 @@ TEST (rea167h_flp_sampler_precompute_events)
     CHECK (! none.useLoopPoints());
 
     // the import
-    auto song = lynx::importFlp (p);
+    auto song = yw::importFlp (p);
     REA167H_REQUIRE (! song.channels.empty());
     const auto& s = song.channels[0].sampler;
     CHECK (s.reverse && s.precompute.fadeStereo && s.precompute.swapStereo && s.precompute.fadeIn == 280 && s.precompute.fadeOut == 1024);
@@ -89,8 +89,8 @@ TEST (rea167h_flp_sampler_precompute_events)
     FlpBuilder f;
     f.u8 (0x28);
     f.u8 (1);
-    CHECK (lynx::importFlp (flp::parseProject (f.bytes)).fastDeclick);
-    CHECK (! lynx::importFlp (flp::parseProject (FlpBuilder().bytes)).fastDeclick);
+    CHECK (yw::importFlp (flp::parseProject (f.bytes)).fastDeclick);
+    CHECK (! yw::importFlp (flp::parseProject (FlpBuilder().bytes)).fastDeclick);
 }
 
 // §2 FL's region: the end is a fraction of what follows the start (FUN_00ff0db0) — FL's demos hold ends below starts
@@ -104,7 +104,7 @@ TEST (rea167h_flp_region_end_is_relative)
         std::memcpy (d7.data() + 0x90, &offset, 8);
         b.data (0xD7, d7);
     });
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     REA167H_REQUIRE (! song.channels.empty());
     CHECK (std::abs (song.channels[0].sampler.regionStart - 0.6244f) < 1e-6f);
     CHECK (std::abs (song.channels[0].sampler.regionEnd - (float) (0.6244 + 0.1384 * (1.0 - 0.6244))) < 1e-6f);
@@ -113,10 +113,10 @@ TEST (rea167h_flp_region_end_is_relative)
 // §2 the precompute, effect by effect, against FL's formulas
 TEST (rea167h_precompute_matches_fl_formulas)
 {
-    namespace pc = lynx::precompute;
+    namespace pc = yw::precompute;
     const auto in = rea167h::ramp (2000, true);
     const auto n = 2000;
-    lynx::SamplerSettings s;
+    yw::SamplerSettings s;
     CHECK (! pc::needed (s) && pc::apply (*in, s) == nullptr);
 
     // fade in 280 / fade out 1024: 1 − (N−1−i)·a/(256(N−1)), 1 − i·b/(256(N−1)), floored at 0
@@ -165,7 +165,7 @@ TEST (rea167h_precompute_matches_fl_formulas)
     CHECK (std::abs (out->right[500] - mono->left[500] * (float) std::cos (1499.0 * 1.5707963267948966 / 1999.0)) < 1e-6f);
 
     // trim: silence below t/32768 cut at both ends
-    auto padded = std::make_shared<lynx::SampleData>();
+    auto padded = std::make_shared<yw::SampleData>();
     padded->left.assign (300, 0.001f);
     for (int i = 0; i < 500; ++i)
         padded->left.push_back (0.5f);
@@ -207,14 +207,14 @@ TEST (rea167h_precompute_matches_fl_formulas)
 // §2 the region is cut out and the Sampler maps its Start / End knobs into it; FL's cut edges are declicked
 TEST (rea167h_precompute_region_crop_and_play)
 {
-    namespace pc = lynx::precompute;
-    auto in = std::make_shared<lynx::SampleData>();
+    namespace pc = yw::precompute;
+    auto in = std::make_shared<yw::SampleData>();
     in->sampleRate = 44100.0;
     in->left.assign (4410, 0.5f);
-    lynx::SamplerSettings s;
+    yw::SamplerSettings s;
     s.regionStart = 0.25f;
     s.regionEnd = 0.75f;
-    CHECK (! pc::needed (s)); // a LYNX channel's region alone stays a voice region
+    CHECK (! pc::needed (s)); // a YW channel's region alone stays a voice region
     s.flChannel.assign (90, 0);
     REA167H_REQUIRE (pc::needed (s));
     const auto out = pc::apply (*in, s);
@@ -230,10 +230,10 @@ TEST (rea167h_precompute_region_crop_and_play)
     s.flChannel.clear();
     s.precompute.normalize = true;
     const auto processed = pc::apply (*in, s);
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, processed);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, processed);
     sampler->prepare (44100.0);
-    lynx::ChannelDef def;
-    def.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef def;
+    def.instrument = yw::InstrumentKind::sampler;
     def.sampler = s;
     sampler->configure (def, 120.0);
     sampler->noteOn (60, 1.0f);
@@ -249,14 +249,14 @@ TEST (rea167h_precompute_region_crop_and_play)
 // "Out only"), 2 ms with "Fast declick for cut groups" — (1 + cos(kπ/(n+1)))/2
 TEST (rea167h_cut_declick_times)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.assign (44100, 0.5f);
     auto measure = [&] (int mode, bool fast) {
-        auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         sampler->prepare (44100.0);
-        lynx::ChannelDef def;
-        def.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef def;
+        def.instrument = yw::InstrumentKind::sampler;
         def.sampler.declickMode = mode;
         sampler->configure (def, 120.0);
         sampler->setFastDeclick (fast);
@@ -284,14 +284,14 @@ TEST (rea167h_cut_declick_times)
 // to zero, 10 ms), mode 5 bends the 200 ms raised cosine with curve 5: at its middle 1 − (√6 − 1) / 5 = 0.710
 TEST (rea167h_cut_release_shapes)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.assign (44100, 0.5f);
     auto run = [&] (int mode, int frames) {
-        auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         sampler->prepare (44100.0);
-        lynx::ChannelDef def;
-        def.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef def;
+        def.instrument = yw::InstrumentKind::sampler;
         def.sampler.declickMode = mode;
         sampler->configure (def, 120.0);
         sampler->noteOn (60, 1.0f);
@@ -329,14 +329,14 @@ TEST (rea167h_cut_release_shapes)
 // at 0.25 + 0.4·0.5 = 0.45 of the file [FL render, REA_rodada167h §4]
 TEST (rea167h_start_offset_is_in_the_region)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.assign (44100, 0.0f);
     std::fill (data->left.begin() + 22050, data->left.end(), 1.0f);
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     sampler->prepare (44100.0);
-    lynx::ChannelDef def;
-    def.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef def;
+    def.instrument = yw::InstrumentKind::sampler;
     def.sampler.regionStart = 0.25f;
     def.sampler.regionEnd = 0.75f;
     def.sampler.startOffset = 0.4f;
@@ -359,7 +359,7 @@ TEST (rea167h_start_offset_is_in_the_region)
         std::memcpy (d7.data() + 0x90, &offset, 8);
         b.data (0xD7, d7);
     });
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     REA167H_REQUIRE (! song.channels.empty());
     CHECK (std::abs (song.channels[0].sampler.regionStart - 0.25f) < 1e-6f);
     CHECK (std::abs (song.channels[0].sampler.startOffset - 0.5f) < 1e-6f);

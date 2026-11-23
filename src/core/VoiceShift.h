@@ -1,7 +1,7 @@
 #pragma once
 
-// Voice Shift (round 135): LYNX's monophonic voice shifter, in the role of the small "voice manipulation" effects used
-// on vocal chains (pitch, formant, a hard-tune mode and a robot mode with a bit of tube drive). Original code on LYNX's
+// Voice Shift (round 135): YW's monophonic voice shifter, in the role of the small "voice manipulation" effects used
+// on vocal chains (pitch, formant, a hard-tune mode and a robot mode with a bit of tube drive). Original code on YW's
 // own YIN detector and TD-PSOLA shifter (core/VocalPitch.h); the controls follow the parameter list of the official
 // trial of the plugin it stands in for, read black-box through the host API (docs/analise/REA_rodada135s.md §1):
 //
@@ -25,7 +25,7 @@
 #include <memory>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 struct EffectInfo;
 class Effect;
@@ -62,11 +62,11 @@ int latencyFor (double sampleRate) noexcept;
 double tiltDb (double semitones) noexcept;
 // the drive stage's static curve (no state): input → output at a drive amount 0 … 10
 float driveCurve (float x, double amount) noexcept;
-int midiChannelIndex (float v) noexcept;    // −1 = off, else 0 … 127 (LYNX Tune's law)
+int midiChannelIndex (float v) noexcept;    // −1 = off, else 0 … 127 (YW Tune's law)
 float midiChannelValue (int channel) noexcept;
 
 const EffectInfo& info();
 std::string paramText (int param, float v);
 std::unique_ptr<Effect> make();
 } // namespace voiceshift
-} // namespace lynx
+} // namespace yw

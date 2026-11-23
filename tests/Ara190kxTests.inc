@@ -7,23 +7,23 @@
 
 namespace ara190kx
 {
-lynx::Song songWithClips()
+yw::Song songWithClips()
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0; // (0.5 s a beat: 960 ticks = 0.5 s)
-    lynx::ChannelDef audio;
-    audio.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef audio;
+    audio.instrument = yw::InstrumentKind::audioClip;
     audio.samplePath = "vocal.wav";
     audio.uid = 77;
     audio.ara = { "VST3-Melodyne-1234", "Melodyne" };
     s.channels.push_back (audio);
-    lynx::ChannelDef plain = audio;
+    yw::ChannelDef plain = audio;
     plain.uid = 78;
     plain.ara = {};
     s.channels.push_back (plain);
-    auto clip = [&s] (int channel, std::int64_t start, std::int64_t length, std::int64_t offset, std::uint64_t uid) -> lynx::Clip& {
-        lynx::Clip c;
-        c.kind = lynx::ClipKind::audio;
+    auto clip = [&s] (int channel, std::int64_t start, std::int64_t length, std::int64_t offset, std::uint64_t uid) -> yw::Clip& {
+        yw::Clip c;
+        c.kind = yw::ClipKind::audio;
         c.channel = channel;
         c.start = start;
         c.length = length;
@@ -46,7 +46,7 @@ lynx::Song songWithClips()
 
 TEST (ara190kx_regions_follow_the_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ara190kx::songWithClips();
     CHECK (ara::isAraChannel (s, 0) && ! ara::isAraChannel (s, 1) && ! ara::isAraChannel (s, 7));
     CHECK (ara::anyAraChannel (s));
@@ -67,7 +67,7 @@ TEST (ara190kx_regions_follow_the_clips)
 
 TEST (ara190kx_regions_end_with_the_sample)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ara190kx::songWithClips();
     // a 1.25 s sample: the second clip (0.5 s from 0.5 s) fits; a clip from 1.5 s plays nothing
     auto r = ara::regionsOf (s, 0, 1.25);
@@ -82,14 +82,14 @@ TEST (ara190kx_regions_end_with_the_sample)
 
 TEST (ara190kx_ids_tempo_and_menu)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = ara190kx::songWithClips();
-    CHECK (ara::sourceId (s.channels[0]) == "lynx-ch-77" && ara::modificationId (s.channels[0]) == "lynx-mod-77");
+    CHECK (ara::sourceId (s.channels[0]) == "yw-ch-77" && ara::modificationId (s.channels[0]) == "yw-mod-77");
     const auto t = ara::tempoEntries (s);
     CHECK (t.size() == 2 && t[1].quarters == 4.0 && std::abs (t[1].seconds - 2.0) < 1e-12);
     CHECK (std::abs (ara::secondsPerTick (s) - 0.5 / 960.0) < 1e-15);
-    // the clip menu's LYNX extras list "Edit in ARA plugin" (FL 2026 has no ARA: not one of FL's items)
-    const auto extras = flclipmenu::lynxExtras();
+    // the clip menu's YW extras list "Edit in ARA plugin" (FL 2026 has no ARA: not one of FL's items)
+    const auto extras = flclipmenu::ywExtras();
     CHECK (std::find (extras.begin(), extras.end(), std::string ("Edit in ARA plugin")) != extras.end());
     for (const auto& e : flclipmenu::fl())
         CHECK (e.text != "Edit in ARA plugin");
@@ -105,9 +105,9 @@ namespace ara190kx
 {
 // a sung line (harmonics through three vowel formants, 15 ms fades): (MIDI note or 0 for a rest, seconds), vibrato depth
 // in cents at 5.5 Hz
-lynx::SampleData sung (const std::vector<std::pair<double, double>>& spec, double vibratoCents = 0.0)
+yw::SampleData sung (const std::vector<std::pair<double, double>>& spec, double vibratoCents = 0.0)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = 48000.0;
     double ph = 0.0;
     for (const auto& [midi, seconds] : spec)
@@ -137,15 +137,15 @@ lynx::SampleData sung (const std::vector<std::pair<double, double>>& spec, doubl
     return s;
 }
 
-int voicedNotes (const lynx::newtonefx::Track& t)
+int voicedNotes (const yw::newtonefx::Track& t)
 {
-    return (int) std::count_if (t.pitches.begin(), t.pitches.end(), [] (const lynx::newtonefx::Note& p) { return p.voiced(); });
+    return (int) std::count_if (t.pitches.begin(), t.pitches.end(), [] (const yw::newtonefx::Note& p) { return p.voiced(); });
 }
 } // namespace ara190kx
 
 TEST (melodyne190kx_newtone_fine_split_separates_close_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     newtonefx::AnalyseOptions fine;
     fine.fineSplit = true;
     // 45 cents apart (E +40, F -15) with a 20-cent vibrato: FL's analysis joins them into one note (Center then puts the
@@ -171,7 +171,7 @@ TEST (melodyne190kx_newtone_fine_split_separates_close_notes)
 
 TEST (melodyne190kx_newtone_fl_analysis_unchanged_by_default)
 {
-    using namespace lynx;
+    using namespace yw;
     // the default options are FL's analysis: the same notes as an explicit FL call, sample for sample
     const auto s = ara190kx::sung ({ { 57, 0.4 }, { 0, 0.1 }, { 59, 0.6 }, { 60.4, 0.6 } }, 25.0);
     const auto a = newtonefx::analyseNotes (s);

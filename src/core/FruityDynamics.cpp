@@ -13,12 +13,12 @@
 // matching FL sample for sample:
 // - control values are computed in float from the raw integers, with the transcendental steps in double;
 // - the one-pole "curve" stages keep their state in x87 extended precision inside a block and as a double between
-//   blocks (LYNX: long double, 80-bit on every x86-64 target it is built for); the limiter's RMS running sum likewise;
+//   blocks (YW: long double, 80-bit on every x86-64 target it is built for); the limiter's RMS running sum likewise;
 // - comparisons on levels are made on the float bit patterns (non-negative values), as the plugin does;
 // - the IPP vector functions FL uses (log10, exp, ln, sqrt on floats) are computed here correctly rounded; FL's IPP
 //   build differs from that by 1–2 ulps on some values, which is the only residual against FL.
 
-namespace lynx::fldyn
+namespace yw::fldyn
 {
 const std::array<int, limiterControls> limiterMin { 0, 0, 0, 0, 1, 0, 1, 0, 0, -1000, -1000, 0, 0, 1, 0, 0, 0, 0 };
 const std::array<int, limiterControls> limiterMax { 2000, 1000, 2000, 10000, 8, 10000, 8, 10000, 1000, 1000, 1000, 10000, 10000, 8, 10000, 1000, 1000, 10000 };
@@ -891,7 +891,7 @@ private:
 };
 
 // ===================================================================================================================
-// LYNX effects
+// YW effects
 
 void readLimiter (const EffectParams& params, std::array<int, limiterControls>& p, bool& exact) noexcept
 {
@@ -1249,4 +1249,4 @@ std::string compressorParamText (int i, float v)
 
 std::unique_ptr<Effect> makeLimiter (const EffectParams* initial) { return std::make_unique<FruityLimiterEffect> (initial); }
 std::unique_ptr<Effect> makeCompressor (const EffectParams* initial) { return std::make_unique<FruityCompressorEffect> (initial); }
-} // namespace lynx::fldyn
+} // namespace yw::fldyn

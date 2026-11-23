@@ -6,13 +6,13 @@
 #include "engine/AudioEngine.h"
 #include "ui/Theme.h"
 
-namespace lynx::modring
+namespace yw::modring
 {
 namespace
 {
 AudioEngine* currentEngine = nullptr;
 int armedModulator = -1;
-constexpr const char* targetProperty = "lynxModTarget";
+constexpr const char* targetProperty = "ywModTarget";
 
 struct DepthDrag
 {
@@ -255,4 +255,4 @@ std::optional<AutomationTarget> targetUnder (juce::Point<int> screenPosition)
     }
     return std::nullopt;
 }
-} // namespace lynx::modring
+} // namespace yw::modring

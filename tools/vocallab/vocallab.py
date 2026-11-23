@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# LYNX vocal lab (round 190li): objective scores for monophonic pitch / time / formant edits of a voice.
+# YW vocal lab (round 190li): objective scores for monophonic pitch / time / formant edits of a voice.
 #
 # Every case is a phrase made by vocalsynth.py (known pitch curve, formants and consonants) and an edit; the "ideal" is
 # the same phrase rendered from the edited score, so it is what a perfect, transparent editor would output. A render
-# (LYNX Newtone at an engine revision, Melodyne 5's export of the same edit, ...) is scored against it:
+# (YW Newtone at an engine revision, Melodyne 5's export of the same edit, ...) is scored against it:
 #
 #   pitch      mean |cents| between the render's pitch curve and the ideal's (voiced frames; body / transitions split)
 #   gross      % of voiced frames more than 50 cents off (octave errors, wrong notes)
@@ -169,7 +169,7 @@ def align(render, ideal, max_lag=int(0.12 * SR)):
 
 
 # ------------------------------------------------------------------------------------------------------------- scores
-ALIGN = False   # (renders are sample-aligned: LYNX by construction, Melodyne's exports checked with an unedited one;
+ALIGN = False   # (renders are sample-aligned: YW by construction, Melodyne's exports checked with an unedited one;
                 #  the envelope alignment mis-locked by 0.5-15 ms on pitch-shifted renders. --align turns it on.)
 
 
@@ -286,7 +286,7 @@ def score(render, ideal, truth):
 
 
 # ---------------------------------------------------------------------------------------------------------- the matrix
-# LYNX newtonelab arguments per edit and engine ({t4} = the middle of the 4th sung note in the source)
+# YW newtonelab arguments per edit and engine ({t4} = the middle of the 4th sung note in the source)
 def lab_args(edit, engine, t4, d4=0.0):
     e1 = engine >= 1
     table = {
@@ -344,7 +344,7 @@ def run(argv):
             o = out / f'{phrase}.{edit}.e{eng}.wav'
             cmd = [lab, str(mat / f'{phrase}.wav'), str(o), f'engine={eng}'] + extra + lab_args(edit, eng, t4, d4)
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
-            res[f'lynx-e{eng}'] = score(read_wav(o), ideal, truth)
+            res[f'yw-e{eng}'] = score(read_wav(o), ideal, truth)
         for ex in externs:
             # an external engine for the uniform shifts: NAME:command with {in} {out} {semis}
             name, cmd = ex.split(':', 1)

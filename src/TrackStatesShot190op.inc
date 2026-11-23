@@ -1,21 +1,21 @@
-    // LYNX --trackstates190opshot <prefix> (round 190op, 0.1.31: research190oe P4 Hide / Deactivate tracks, P7 Capture
+    // YW --trackstates190opshot <prefix> (round 190op, 0.1.31: research190oe P4 Hide / Deactivate tracks, P7 Capture
     // automation) off-screen through the real components, in the three layouts: the Playlist before and with two tracks
     // hidden, "Show hidden tracks" (dimmed rows, a crossed eye), the track menu, the Playlist menu, a deactivated channel
     // in the Channel rack and its menu, a deactivated insert in the Mixer and its menu, the record menu with Capture
     // automation; Clip-launch: the Session grid with a hidden column and a deactivated track, the track title menu (Live's
     // Freeze Track group); Simple: the track menu. <prefix>-checks.txt lists the checks. Included in the app class of
-    // Main.cpp (savePng / saveMenus). @150: LYNX_SHOT_SCALE=1.5 LYNX_SHOT_SUFFIX=@150.
+    // Main.cpp (savePng / saveMenus). @150: YW_SHOT_SCALE=1.5 YW_SHOT_SUFFIX=@150.
     bool runTrackStatesShot190op (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::StringArray report;
         bool allOk = true;
         const auto check = [&report, &allOk] (const char* name, bool ok, const juce::String& detail = {}) {
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
         const auto bar = (std::int64_t) 4 * ppq;

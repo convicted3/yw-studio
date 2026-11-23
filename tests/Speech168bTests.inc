@@ -1,10 +1,10 @@
-// Round 168b: FL's speech synthesizer (.speech files, the "Speech properties" form) and LYNX's own voice.
+// Round 168b: FL's speech synthesizer (.speech files, the "Speech properties" form) and YW's own voice.
 #include "core/SampleFiles.h"
 #include "core/Speech.h"
 
 TEST (speech168b_file_defaults_and_roundtrip)
 {
-    using namespace lynx::speech;
+    using namespace yw::speech;
     Settings s;
     // FL's factory "Default.speech" (Data/Patches/Speech): Style 2, Personality 9, Pitch 92, Rate 150
     CHECK (parse ("[Speaker Settings]\r\nStyle=2\r\nPersonality=9\r\nPitch=92\r\nRate=150\r\nVoicingMode=0\r\nText=hello world\r\n", s));
@@ -29,7 +29,7 @@ TEST (speech168b_file_defaults_and_roundtrip)
 
 TEST (speech168b_style_codes_and_names)
 {
-    using namespace lynx::speech;
+    using namespace yw::speech;
     CHECK (styleToCode (Style::natural) == 0 && styleToCode (Style::monotone) == 2 && styleToCode (Style::sing) == 3 && styleToCode (Style::random) == 4);
     for (int i = 0; i < styleCount; ++i)
         CHECK (styleFromCode (styleToCode ((Style) i)) == (Style) i);
@@ -44,7 +44,7 @@ TEST (speech168b_style_codes_and_names)
 
 TEST (speech168b_keyboard_pitch)
 {
-    using namespace lynx::speech;
+    using namespace yw::speech;
     CHECK (keyToStoredPitch (57) == 440);
     CHECK (keyToStoredPitch (45) == 220);
     CHECK (keyToStoredPitch (minKey) == 33 && keyToStoredPitch (maxKey) == 988);
@@ -56,7 +56,7 @@ TEST (speech168b_keyboard_pitch)
 
 TEST (speech168b_words_and_word_pitch)
 {
-    using namespace lynx::speech;
+    using namespace yw::speech;
     const auto w = splitWords ("hello  big_world up(3) (7)x down(-12) bad(z)");
     CHECK (w.size() == 6);
     CHECK (w[0].text == "hello" && w[0].semitones == 0);
@@ -76,7 +76,7 @@ TEST (speech168b_words_and_word_pitch)
 
 TEST (speech168b_suggested_file_name)
 {
-    using namespace lynx::speech;
+    using namespace yw::speech;
     Settings s;
     s.text = "hello big_world, it's 2 me!";
     s.personality = 9;
@@ -88,7 +88,7 @@ TEST (speech168b_suggested_file_name)
 
 TEST (speech168b_render_words_as_slices)
 {
-    using namespace lynx::speech;
+    using namespace yw::speech;
     Settings s;
     s.text = "one two_three four(5)";
     s.pitch = 110;
@@ -113,14 +113,14 @@ TEST (speech168b_render_words_as_slices)
     CHECK (toPhonemes ("cat").find ("AE") != std::string::npos);
     CHECK (spellNumber (1999) == "one thousand nine hundred ninety nine");
     CHECK (spellNumber (10) == "ten");
-    CHECK (lynx::isSampleExtension (".SPEECH"));
+    CHECK (yw::isSampleExtension (".SPEECH"));
 }
 
 #include "core/BrowserView.h"
 
 TEST (speech168b_browser_lists_speech)
 {
-    using namespace lynx::browserview;
+    using namespace yw::browserview;
     CHECK (listed ("Default.speech", ContentFilter::all));
     CHECK (listed ("Default.SPEECH", ContentFilter::audio));
     CHECK (listed ("Default.speech", ContentFilter::samples));

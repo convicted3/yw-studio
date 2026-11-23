@@ -1,7 +1,7 @@
 #pragma once
 
 // The Detail View's device chain (round 183a, Clip-launch workflow; docs/analise/REA_rodada183a.md): which channel and
-// which mixer insert a Playlist track's chain shows. The reference DAW's tracks own their devices; a LYNX track holds
+// which mixer insert a Playlist track's chain shows. The reference DAW's tracks own their devices; a YW track holds
 // clips whose channels play through mixer inserts, so the chain is the track's instrument channel (if it has one) and
 // the insert it plays through. Header only, no JUCE; nothing here runs unless the Detail View is open.
 
@@ -11,7 +11,7 @@
 #include "core/MixerOps.h"
 #include "core/Song.h"
 
-namespace lynx::detailchain
+namespace yw::detailchain
 {
 struct Chain
 {
@@ -265,4 +265,4 @@ inline int moveEffectToInsert (Song& song, int from, int index, int to, bool cop
     mixerops::removeEffectKeepRows (song, from, index);
     return added;
 }
-} // namespace lynx::detailchain
+} // namespace yw::detailchain

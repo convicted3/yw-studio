@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::search
+namespace yw::search
 {
 struct Term
 {
@@ -30,4 +30,4 @@ bool matches (const std::string& query, const std::string& name);
 
 // Wildcard match of the whole text (* and ?), case-insensitive.
 bool wildcardMatch (const std::string& pattern, const std::string& text);
-} // namespace lynx::search
+} // namespace yw::search

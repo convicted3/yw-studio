@@ -21,7 +21,7 @@
 #include "ui/Theme.h"
 #include "ui/VideoTracks.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1369,4 +1369,4 @@ std::unique_ptr<juce::Component> makePanel (AudioEngine& engine)
     return std::make_unique<AdrPanel> (engine);
 }
 } // namespace adrwindow
-} // namespace lynx
+} // namespace yw

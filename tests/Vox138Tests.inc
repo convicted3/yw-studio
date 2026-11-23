@@ -24,7 +24,7 @@ std::vector<std::uint8_t> modernState (int key, int scale, const char* minorRemo
 
 TEST (auto_tune_pro_modern_scale_states_round138)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] her states saved with <ModernScales> load into the official trial with the MODERN list's scale: "2" = Minor
     // (42 states, read as Chromatic before), "1" = Major (1 state); the old-format states keep the classic list
     CHECK ((autoTuneProKey (vox138::modernState (0, 2)) == std::optional<std::pair<int, int>> ({ 0, (int) vocal::Scale::minor })));
@@ -39,21 +39,21 @@ TEST (auto_tune_pro_modern_scale_states_round138)
     const auto at = subst113::autoTune (vox138::modernState (0, 2));
     auto slot = subst113::pluginSlot (at);
     CHECK (substituteEffectSlot (slot, pluginIdentity (at)));
-    CHECK (slot.kind == EffectKind::lynxTune);
-    CHECK (lynxtune::scaleIndex (slot.params[lynxtune::scale]) == (int) vocal::Scale::minor);
-    CHECK (lynxtune::keyIndex (slot.params[lynxtune::key]) == 0);
+    CHECK (slot.kind == EffectKind::ywTune);
+    CHECK (ywtune::scaleIndex (slot.params[ywtune::scale]) == (int) vocal::Scale::minor);
+    CHECK (ywtune::keyIndex (slot.params[ywtune::key]) == 0);
     for (int k : { 1, 4, 6, 9, 11 })
-        CHECK (slot.params[(std::size_t) (lynxtune::noteC + k)] == 0.0f);
+        CHECK (slot.params[(std::size_t) (ywtune::noteC + k)] == 0.0f);
     for (int k : { 0, 2, 3, 5, 7, 8, 10 })
-        CHECK (slot.params[(std::size_t) (lynxtune::noteC + k)] == 1.0f);
-    // whole tone: LYNX Tune's "More scales"
+        CHECK (slot.params[(std::size_t) (ywtune::noteC + k)] == 1.0f);
+    // whole tone: YW Tune's "More scales"
     const auto wt = subst113::autoTune (vox138::modernState (2, 13));
     auto s2 = subst113::pluginSlot (wt);
     CHECK (substituteEffectSlot (s2, pluginIdentity (wt)));
-    CHECK (lynxtune::effectiveScale (s2.params[lynxtune::scale], s2.params[lynxtune::moreScales]) == (int) vocal::Scale::wholeTone);
+    CHECK (ywtune::effectiveScale (s2.params[ywtune::scale], s2.params[ywtune::moreScales]) == (int) vocal::Scale::wholeTone);
 
     // her real kwe state (when the round's extraction is on this machine): C minor, retune 5 ms, humanize 100, flex 20
-    const std::filesystem::path f = "/mnt/d/lynx-work/vox138/at/states/kw0.bin";
+    const std::filesystem::path f = "/mnt/d/yw-work/vox138/at/states/kw0.bin";
     if (std::filesystem::exists (f))
     {
         std::ifstream in (f, std::ios::binary);
@@ -62,16 +62,16 @@ TEST (auto_tune_pro_modern_scale_states_round138)
     }
 }
 
-TEST (lynx_tune_humanize_ramp_round138)
+TEST (yw_tune_humanize_ramp_round138)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] Auto-Tune Pro, retune 0, humanize 100: a note that moves 30 c after 0.8 s steady is pulled back over ~100 ms
-    // (50 %), one that moves after 0.25 s at once; LYNX Tune's slow-down now sets in between 0.275 and 0.375 s
+    // (50 %), one that moves after 0.25 s at once; YW Tune's slow-down now sets in between 0.275 and 0.375 s
     auto run = [] (double holdSec) {
-        auto slot = makeEffectSlot (EffectKind::lynxTune);
-        slot.params[lynxtune::scale] = 0.0f; // chromatic
-        slot.params[lynxtune::retune] = 0.0f;
-        slot.params[lynxtune::humanize] = 1.0f;
+        auto slot = makeEffectSlot (EffectKind::ywTune);
+        slot.params[ywtune::scale] = 0.0f; // chromatic
+        slot.params[ywtune::retune] = 0.0f;
+        slot.params[ywtune::humanize] = 1.0f;
         auto fx = makeEffect (slot);
         const double sr = 48000.0;
         fx->prepare (sr);
@@ -106,7 +106,7 @@ TEST (lynx_tune_humanize_ramp_round138)
 
 TEST (ember_classic_styles_fitted_round138)
 {
-    using namespace lynx;
+    using namespace yw;
     // the E / N / T / P styles carry their own fitted constants (no longer the struct's defaults), each with its measured
     // colour FIR; style A is unchanged
     const auto& a = emberclassic::styleModel (0);

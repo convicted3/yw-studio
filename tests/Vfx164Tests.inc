@@ -18,40 +18,40 @@ const char* keyMapperOctaveUp = "02000000010000000000000000000000000000000000000
 const char* keyMapperMajor = "020000000100000000000000000000000000000000000000010000000000010000000000010000000200010000000200010000000400010000000500010000000500010000000700010000000700010000000900010000000900010000000b00";
 const char* colorMapperDefault = "00000000000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000";
 
-lynx::vfx::Event on (int key, int offset = 0, int colour = 0, float velocity = 0.8f)
+yw::vfx::Event on (int key, int offset = 0, int colour = 0, float velocity = 0.8f)
 {
-    lynx::vfx::Event e;
-    e.type = lynx::vfx::Event::Type::on;
+    yw::vfx::Event e;
+    e.type = yw::vfx::Event::Type::on;
     e.offset = offset;
     e.voice.key = key;
     e.voice.velocity = velocity;
     e.voice.colour = colour;
-    e.id = lynx::vfx::inputId (key, colour);
+    e.id = yw::vfx::inputId (key, colour);
     return e;
 }
 
-lynx::vfx::Event off (int key, int offset = 0, int colour = 0)
+yw::vfx::Event off (int key, int offset = 0, int colour = 0)
 {
     auto e = on (key, offset, colour, 0.0f);
-    e.type = lynx::vfx::Event::Type::off;
+    e.type = yw::vfx::Event::Type::off;
     return e;
 }
 
 // runs one block and returns what came out, sorted
-std::vector<lynx::vfx::Event> run (lynx::vfx::Processor& p, std::vector<lynx::vfx::Event> in, int n = 512)
+std::vector<yw::vfx::Event> run (yw::vfx::Processor& p, std::vector<yw::vfx::Event> in, int n = 512)
 {
-    lynx::vfx::EventList out;
-    lynx::vfx::Transport t;
+    yw::vfx::EventList out;
+    yw::vfx::Transport t;
     p.process (in.data(), (int) in.size(), n, t, out);
     out.sortByOffset();
-    std::vector<lynx::vfx::Event> v;
+    std::vector<yw::vfx::Event> v;
     for (int k = 0; k < out.size(); ++k)
         v.push_back (out[k]);
     return v;
 }
 
 // An instrument that writes down what it was asked to play, and at which sample of its renders
-struct Probe final : lynx::Instrument
+struct Probe final : yw::Instrument
 {
     struct Hit
     {
@@ -73,38 +73,38 @@ struct Probe final : lynx::Instrument
 // A generator Patcher: Notes → VFX node (kind, state) → output `output` → a probe synth node (index 1)
 struct Rig
 {
-    lynx::ChannelDef channel;
+    yw::ChannelDef channel;
     std::vector<std::shared_ptr<Probe>> probes;
-    std::unique_ptr<lynx::Instrument> instrument;
+    std::unique_ptr<yw::Instrument> instrument;
 
-    Rig (lynx::vfx::Kind kind, std::vector<std::uint8_t> fl, int outputs = 1)
+    Rig (yw::vfx::Kind kind, std::vector<std::uint8_t> fl, int outputs = 1)
     {
-        channel.instrument = lynx::InstrumentKind::patcher;
-        lynx::PatchNode v;
+        channel.instrument = yw::InstrumentKind::patcher;
+        yw::PatchNode v;
         v.generator = true;
-        lynx::vfx::makeChannel (v.channel, kind);
-        lynx::vfx::State s;
+        yw::vfx::makeChannel (v.channel, kind);
+        yw::vfx::State s;
         s.kind = kind;
         s.fl = std::move (fl);
-        v.channel.pluginState = lynx::vfx::writeState (s);
+        v.channel.pluginState = yw::vfx::writeState (s);
         channel.patcher.nodes.push_back (v);
-        channel.patcher.wires.push_back (patcher162::midi (lynx::patchFromHost, 0, 0, 0));
+        channel.patcher.wires.push_back (patcher162::midi (yw::patchFromHost, 0, 0, 0));
         for (int k = 0; k < outputs; ++k)
         {
-            channel.patcher.nodes.push_back (patcher162::generatorNode (lynx::InstrumentKind::synth));
+            channel.patcher.nodes.push_back (patcher162::generatorNode (yw::InstrumentKind::synth));
             channel.patcher.wires.push_back (patcher162::midi (0, k, 1 + k, 0));
         }
-        auto factories = lynx::patcher::builtInFactories (48000.0);
+        auto factories = yw::patcher::builtInFactories (48000.0);
         auto builtIn = factories.instrument;
-        factories.instrument = [this, builtIn] (const lynx::ChannelDef& c) -> std::shared_ptr<lynx::Instrument> {
-            if (c.instrument == lynx::InstrumentKind::synth)
+        factories.instrument = [this, builtIn] (const yw::ChannelDef& c) -> std::shared_ptr<yw::Instrument> {
+            if (c.instrument == yw::InstrumentKind::synth)
             {
                 probes.push_back (std::make_shared<Probe>());
                 return probes.back();
             }
             return builtIn (c);
         };
-        instrument = lynx::patcher::makeInstrument (channel, 48000.0, factories);
+        instrument = yw::patcher::makeInstrument (channel, 48000.0, factories);
     }
     void render (int n)
     {
@@ -117,7 +117,7 @@ struct Rig
 
 TEST (vfx_names_and_state_round_trip)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     for (const auto k : allKinds)
     {
         CHECK (kindOfFlName (flName (k)) == k);
@@ -139,31 +139,31 @@ TEST (vfx_key_mapper_reads_fl_presets_and_writes_them_back)
     for (const auto* h : { keyMapperDefault, keyMapperOctaveUp, keyMapperMajor })
     {
         const auto fl = hex (h);
-        const auto s = lynx::vfx::parseKeyMapper (fl);
+        const auto s = yw::vfx::parseKeyMapper (fl);
         CHECK (s.has_value());
         if (s)
-            CHECK (lynx::vfx::writeKeyMapper (*s) == fl); // (byte for byte)
+            CHECK (yw::vfx::writeKeyMapper (*s) == fl); // (byte for byte)
     }
-    const auto up = lynx::vfx::parseKeyMapper (hex (keyMapperOctaveUp));
+    const auto up = yw::vfx::parseKeyMapper (hex (keyMapperOctaveUp));
     CHECK (up && up->rows[3].size() == 2 && up->rows[3][0] == 3 && up->rows[3][1] == 15);
-    CHECK (lynx::vfx::writeKeyMapper (lynx::vfx::defaultKeyMapper()) == hex (keyMapperDefault));
+    CHECK (yw::vfx::writeKeyMapper (yw::vfx::defaultKeyMapper()) == hex (keyMapperDefault));
 }
 
 TEST (vfx_key_mapper_maps_and_releases_what_it_played)
 {
     using namespace vfx164;
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, hex (keyMapperOctaveUp));
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, hex (keyMapperOctaveUp));
     auto out = run (*p, { on (62, 10) });
     CHECK (out.size() == 2 && out[0].voice.key == 62 && out[1].voice.key == 74 && out[0].offset == 10);
     CHECK (p->busy());
     // the settings change while the note is held: its "off" still ends exactly what it started
     p->configure (hex (keyMapperDefault));
     out = run (*p, { off (62, 3) });
-    CHECK (out.size() == 2 && out[0].type == lynx::vfx::Event::Type::off && out[1].type == lynx::vfx::Event::Type::off);
+    CHECK (out.size() == 2 && out[0].type == yw::vfx::Event::Type::off && out[1].type == yw::vfx::Event::Type::off);
     CHECK (out.size() == 2 && ((out[0].voice.key == 62 && out[1].voice.key == 74) || (out[0].voice.key == 74 && out[1].voice.key == 62)));
     CHECK (! p->busy());
     // C major: C# plays C
-    auto major = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, hex (keyMapperMajor));
+    auto major = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, hex (keyMapperMajor));
     out = run (*major, { on (61) });
     CHECK (out.size() == 1 && out[0].voice.key == 60);
 }
@@ -171,13 +171,13 @@ TEST (vfx_key_mapper_maps_and_releases_what_it_played)
 TEST (vfx_color_mapper_sends_each_colour_to_its_voice_port)
 {
     using namespace vfx164;
-    auto s = lynx::vfx::parseColorMapper (hex (colorMapperDefault));
-    CHECK (s && *s == lynx::vfx::defaultColorMapper());
-    CHECK (lynx::vfx::writeColorMapper (lynx::vfx::defaultColorMapper()) == hex (colorMapperDefault));
-    auto changed = lynx::vfx::defaultColorMapper();
+    auto s = yw::vfx::parseColorMapper (hex (colorMapperDefault));
+    CHECK (s && *s == yw::vfx::defaultColorMapper());
+    CHECK (yw::vfx::writeColorMapper (yw::vfx::defaultColorMapper()) == hex (colorMapperDefault));
+    auto changed = yw::vfx::defaultColorMapper();
     changed.port[5] = 1;
     changed.colour[5] = 0;
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::colorMapper, lynx::vfx::writeColorMapper (changed));
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::colorMapper, yw::vfx::writeColorMapper (changed));
     const auto out = run (*p, { on (60, 0, 2), on (64, 0, 5) });
     CHECK (out.size() == 2 && out[0].output == 2 && out[0].voice.colour == 2);
     CHECK (out.size() == 2 && out[1].output == 1 && out[1].voice.colour == 0);
@@ -186,7 +186,7 @@ TEST (vfx_color_mapper_sends_each_colour_to_its_voice_port)
 TEST (vfx_node_in_a_patcher_plays_its_instruments)
 {
     using namespace vfx164;
-    Rig rig (lynx::vfx::Kind::keyMapper, hex (keyMapperOctaveUp));
+    Rig rig (yw::vfx::Kind::keyMapper, hex (keyMapperOctaveUp));
     CHECK (rig.probes.size() == 1);
     rig.render (64);
     rig.instrument->noteOn (60, 0.5f);
@@ -203,15 +203,15 @@ TEST (vfx_node_in_a_patcher_plays_its_instruments)
     }
     // its kind is structure, its settings are not: a new state keeps the graph running
     auto other = rig.channel;
-    lynx::vfx::State s { lynx::vfx::Kind::keyMapper, 0, hex (keyMapperDefault) };
-    other.patcher.nodes[0].channel.pluginState = lynx::vfx::writeState (s);
-    CHECK (lynx::patcher::sameStructure (rig.channel.patcher, other.patcher));
+    yw::vfx::State s { yw::vfx::Kind::keyMapper, 0, hex (keyMapperDefault) };
+    other.patcher.nodes[0].channel.pluginState = yw::vfx::writeState (s);
+    CHECK (yw::patcher::sameStructure (rig.channel.patcher, other.patcher));
 }
 
 TEST (vfx_color_mapper_node_splits_colours_over_its_outputs)
 {
     using namespace vfx164;
-    Rig rig (lynx::vfx::Kind::colorMapper, hex (colorMapperDefault), 3);
+    Rig rig (yw::vfx::Kind::colorMapper, hex (colorMapperDefault), 3);
     CHECK (rig.probes.size() == 3);
     rig.instrument->setNextNoteColour (2);
     rig.instrument->noteOn (60, 0.5f);
@@ -220,48 +220,48 @@ TEST (vfx_color_mapper_node_splits_colours_over_its_outputs)
     CHECK (rig.probes.size() == 3 && rig.probes[2]->hits.size() == 1 && rig.probes[2]->hits[0].key == 60 && rig.probes[2]->hits[0].channel == 2);
     CHECK (rig.probes.size() == 3 && rig.probes[0]->hits.size() == 1 && rig.probes[0]->hits[0].key == 62);
     CHECK (rig.probes.size() == 3 && rig.probes[1]->hits.empty());
-    const auto ports = lynx::patcher::nodePorts (rig.channel.patcher.nodes[0]);
+    const auto ports = yw::patcher::nodePorts (rig.channel.patcher.nodes[0]);
     CHECK (ports.midiIn && ports.midiOuts == 16 && ports.audioOuts == 0);
-    CHECK (lynx::patcher::shownMidiOutputs (rig.channel.patcher, 0) == 4);
+    CHECK (yw::patcher::shownMidiOutputs (rig.channel.patcher, 0) == 4);
 }
 
 TEST (vfx_key_mapper_follows_fl_base_key_offset_and_cycles)
 {
     using namespace vfx164;
-    using lynx::vfx::KeyMapperSettings;
-    auto minor = lynx::vfx::defaultKeyMapper();
+    using yw::vfx::KeyMapperSettings;
+    auto minor = yw::vfx::defaultKeyMapper();
     // FL's Chords / Minor preset rows
     const std::vector<std::vector<int>> rows { { 0, 3, 7 },   { 0, 3, 5 },   { 2, 5, 8 },    { 3, 7, 8 },    { 3, 7, 10 },   { 5, 8, 12 },
                                                { 5, 8, 10 },  { 7, 10, 14 }, { 8, 12, 14 },  { 8, 12, 15 },  { 10, 14, 15 }, { 10, 14, 17 } };
     for (int r = 0; r < 12; ++r)
         minor.rows[(std::size_t) r] = rows[(std::size_t) r];
-    auto keys = [] (const std::vector<lynx::vfx::Event>& out) {
+    auto keys = [] (const std::vector<yw::vfx::Event>& out) {
         std::vector<int> k;
         for (const auto& e : out)
-            if (e.type == lynx::vfx::Event::Type::on)
+            if (e.type == yw::vfx::Event::Type::on)
                 k.push_back (e.voice.key);
         std::sort (k.begin(), k.end());
         return k;
     };
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (minor));
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (minor));
     CHECK ((keys (run (*p, { on (60) })) == std::vector<int> { 60, 63, 67 }));
     CHECK ((keys (run (*p, { on (63) })) == std::vector<int> { 63, 67, 68 }));
     CHECK ((keys (run (*p, { on (71) })) == std::vector<int> { 70, 74, 77 }));
     // base key D: 62 plays row 0 from D, 60 is row 10 of the octave starting on 50
     minor.baseKey = 2;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (minor));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (minor));
     CHECK ((keys (run (*p, { on (62) })) == std::vector<int> { 62, 65, 69 }));
     CHECK ((keys (run (*p, { on (60) })) == std::vector<int> { 60, 64, 65 }));
     // the offset transposes what comes out (it does not pick another row)
-    auto identity = lynx::vfx::defaultKeyMapper();
+    auto identity = yw::vfx::defaultKeyMapper();
     identity.offset = -12;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (identity));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (identity));
     CHECK ((keys (run (*p, { on (60) })) == std::vector<int> { 48 }));
     // cycle up / down follow the row's own order
-    auto cyc = lynx::vfx::defaultKeyMapper();
+    auto cyc = yw::vfx::defaultKeyMapper();
     cyc.rows[0] = { 7, 0, 3 };
     cyc.multimode = 3;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (cyc));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (cyc));
     std::vector<int> seq;
     for (int k = 0; k < 4; ++k)
     {
@@ -270,7 +270,7 @@ TEST (vfx_key_mapper_follows_fl_base_key_offset_and_cycles)
     }
     CHECK ((seq == std::vector<int> { 67, 60, 63, 67 }));
     cyc.multimode = 4;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (cyc));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (cyc));
     seq.clear();
     for (int k = 0; k < 4; ++k)
     {
@@ -279,25 +279,25 @@ TEST (vfx_key_mapper_follows_fl_base_key_offset_and_cycles)
     }
     CHECK ((seq == std::vector<int> { 63, 60, 67, 63 }));
     // an empty row mutes the note
-    auto muted = lynx::vfx::defaultKeyMapper();
+    auto muted = yw::vfx::defaultKeyMapper();
     muted.rows[7].clear();
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (muted));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (muted));
     CHECK (run (*p, { on (67) }).empty() && ! p->busy());
 }
 
 TEST (vfx_key_mapper_pitch_slide_glides_to_the_new_note)
 {
     using namespace vfx164;
-    auto down = lynx::vfx::defaultKeyMapper();
+    auto down = yw::vfx::defaultKeyMapper();
     for (int r = 0; r < 12; ++r)
         down.rows[(std::size_t) r] = { r - 12 };
     down.slide = 144; // FL's "Slide down": 3 steps
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyMapper, lynx::vfx::writeKeyMapper (down));
-    lynx::vfx::EventList out;
-    lynx::vfx::Transport t;
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::keyMapper, yw::vfx::writeKeyMapper (down));
+    yw::vfx::EventList out;
+    yw::vfx::Transport t;
     t.sampleRate = 48000.0;
     t.bpm = 120.0; // a step = 0.125 s = 6000 samples; 3 steps = 18000
-    std::vector<lynx::vfx::Event> in { on (60) };
+    std::vector<yw::vfx::Event> in { on (60) };
     p->process (in.data(), 1, 1000, t, out);
     CHECK (out.size() == 1 && out[0].voice.key == 48 && std::abs (out[0].voice.cents - 1200.0f) < 0.01f);
     float last = 1200.0f;
@@ -306,7 +306,7 @@ TEST (vfx_key_mapper_pitch_slide_glides_to_the_new_note)
     {
         out.clear();
         p->process (nullptr, 0, 1000, t, out);
-        CHECK (out.size() == 1 && out[0].type == lynx::vfx::Event::Type::prop && out[0].prop == lynx::vfx::Prop::pitch);
+        CHECK (out.size() == 1 && out[0].type == yw::vfx::Event::Type::prop && out[0].prop == yw::vfx::Prop::pitch);
         if (out.size() == 1)
         {
             CHECK (out[0].value < last);
@@ -319,44 +319,44 @@ TEST (vfx_key_mapper_pitch_slide_glides_to_the_new_note)
 
 TEST (vfx_level_scaler_curves_match_fl)
 {
-    using L = lynx::vfx::LevelScalerSettings;
-    auto s = lynx::vfx::defaultLevelScaler();
-    const auto fl = lynx::vfx::writeLevelScaler (s);
+    using L = yw::vfx::LevelScalerSettings;
+    auto s = yw::vfx::defaultLevelScaler();
+    const auto fl = yw::vfx::writeLevelScaler (s);
     CHECK (fl.size() == 173);
-    CHECK (lynx::vfx::parseLevelScaler (fl) == s);
-    CHECK (lynx::vfx::levelScale (s, L::velocity, 0.3, 0.0, 1.0, 0.5) == 0.3); // identity
+    CHECK (yw::vfx::parseLevelScaler (fl) == s);
+    CHECK (yw::vfx::levelScale (s, L::velocity, 0.3, 0.0, 1.0, 0.5) == 0.3); // identity
     auto near = [] (double a, double b, double eps = 1e-4) { return std::abs (a - b) < eps; };
     s.at (L::velocity, L::multiply) = 6842; // AutoBeat Lite
-    CHECK (near (lynx::vfx::levelScale (s, L::velocity, 0.78125, 0.0, 1.0, 0.0), 0.652504));
-    s = lynx::vfx::defaultLevelScaler();
+    CHECK (near (yw::vfx::levelScale (s, L::velocity, 0.78125, 0.0, 1.0, 0.0), 0.652504));
+    s = yw::vfx::defaultLevelScaler();
     s.at (L::velocity, L::tension) = 8192;
-    CHECK (near (lynx::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.989073));
+    CHECK (near (yw::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.989073));
     s.at (L::velocity, L::tension) = -8192;
-    CHECK (near (lynx::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.010927));
-    s = lynx::vfx::defaultLevelScaler();
+    CHECK (near (yw::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.010927));
+    s = yw::vfx::defaultLevelScaler();
     s.at (L::finePitch, L::multiply) = 4096;
-    CHECK (near (lynx::vfx::levelScale (s, L::finePitch, 0.5, -1.0, 1.0, 0.0) * 1200.0, 300.0, 0.01));
-    CHECK (near (lynx::vfx::levelScale (s, L::finePitch, -1.0, -1.0, 1.0, 0.0) * 1200.0, -600.0, 0.01));
-    s = lynx::vfx::defaultLevelScaler();
+    CHECK (near (yw::vfx::levelScale (s, L::finePitch, 0.5, -1.0, 1.0, 0.0) * 1200.0, 300.0, 0.01));
+    CHECK (near (yw::vfx::levelScale (s, L::finePitch, -1.0, -1.0, 1.0, 0.0) * 1200.0, -600.0, 0.01));
+    s = yw::vfx::defaultLevelScaler();
     s.at (L::pan, L::offset) = 4096;
-    CHECK (near (lynx::vfx::levelScale (s, L::pan, 0.0, -1.0, 1.0, 0.0), 1.0));
-    CHECK (near (lynx::vfx::levelScale (s, L::pan, -1.0, -1.0, 1.0, 0.0), 0.0));
-    s = lynx::vfx::defaultLevelScaler();
+    CHECK (near (yw::vfx::levelScale (s, L::pan, 0.0, -1.0, 1.0, 0.0), 1.0));
+    CHECK (near (yw::vfx::levelScale (s, L::pan, -1.0, -1.0, 1.0, 0.0), 0.0));
+    s = yw::vfx::defaultLevelScaler();
     s.at (L::modX, L::multiply) = -8192;
-    CHECK (near (lynx::vfx::levelScale (s, L::modX, 0.4, -1.0, 1.0, 0.0), -0.4));
+    CHECK (near (yw::vfx::levelScale (s, L::modX, 0.4, -1.0, 1.0, 0.0), -0.4));
     // humanize: spread around the value, subtract below, add above
-    s = lynx::vfx::defaultLevelScaler();
+    s = yw::vfx::defaultLevelScaler();
     s.at (L::velocity, L::humanize) = 8192;
-    CHECK (near (lynx::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.25) && near (lynx::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 1.0), 0.75));
+    CHECK (near (yw::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.25) && near (yw::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 1.0), 0.75));
     s.at (L::velocity, L::humanizeMode) = 0;
-    CHECK (near (lynx::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 1.0), 0.5));
+    CHECK (near (yw::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 1.0), 0.5));
     s.at (L::velocity, L::humanizeMode) = 2;
-    CHECK (near (lynx::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.5));
+    CHECK (near (yw::vfx::levelScale (s, L::velocity, 0.5, 0.0, 1.0, 0.0), 0.5));
     // the processor: a fixed velocity
-    auto fixed = lynx::vfx::defaultLevelScaler();
+    auto fixed = yw::vfx::defaultLevelScaler();
     fixed.at (L::velocity, L::multiply) = 0;
     fixed.at (L::velocity, L::offset) = 4096;
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::levelScaler, lynx::vfx::writeLevelScaler (fixed));
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::levelScaler, yw::vfx::writeLevelScaler (fixed));
     const auto out = vfx164::run (*p, { vfx164::on (60, 0, 0, 0.9f), vfx164::on (64, 0, 0, 0.2f) });
     CHECK (out.size() == 2 && near (out[0].voice.velocity, 0.5) && near (out[1].voice.velocity, 0.5) && out[0].voice.key == 60);
 }
@@ -364,24 +364,24 @@ TEST (vfx_level_scaler_curves_match_fl)
 TEST (vfx_keyboard_splitter_zones)
 {
     using namespace vfx164;
-    using S = lynx::vfx::KeyboardSplitterSettings;
-    auto keys = [] (const std::vector<lynx::vfx::Event>& out) {
+    using S = yw::vfx::KeyboardSplitterSettings;
+    auto keys = [] (const std::vector<yw::vfx::Event>& out) {
         std::vector<std::pair<int, int>> k; // (output, key)
         for (const auto& e : out)
-            if (e.type == lynx::vfx::Event::Type::on)
+            if (e.type == yw::vfx::Event::Type::on)
                 k.emplace_back (e.output, e.voice.key);
         std::sort (k.begin(), k.end());
         return k;
     };
-    auto def = lynx::vfx::defaultKeyboardSplitter();
-    CHECK (lynx::vfx::parseKeyboardSplitter (lynx::vfx::writeKeyboardSplitter (def)) == def);
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyboardSplitter, lynx::vfx::writeKeyboardSplitter (def));
+    auto def = yw::vfx::defaultKeyboardSplitter();
+    CHECK (yw::vfx::parseKeyboardSplitter (yw::vfx::writeKeyboardSplitter (def)) == def);
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::keyboardSplitter, yw::vfx::writeKeyboardSplitter (def));
     auto out = run (*p, { on (60, 0, 0, 0.78125f) });
     CHECK (out.size() == 1 && out[0].output == 0 && out[0].voice.key == 60 && std::abs (out[0].voice.velocity - 0.78125f) < 1e-4f);
     // FL's "3 zone split transposed"
     S split;
     auto zone = [] (double from, double to) {
-        lynx::vfx::MapCurve m;
+        yw::vfx::MapCurve m;
         m.points.push_back ({ 0.0, 0.0 });
         m.points.push_back ({ from / 132.0, 0.0 });
         m.points.push_back ({ from / 132.0, 1.0 });
@@ -395,24 +395,24 @@ TEST (vfx_keyboard_splitter_zones)
     split.zones[1].keyboard = zone (48, 83);
     split.zones[2].keyboard = zone (84, 131);
     split.zones[2].transpose = -36;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyboardSplitter, lynx::vfx::writeKeyboardSplitter (split));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyboardSplitter, yw::vfx::writeKeyboardSplitter (split));
     CHECK ((keys (run (*p, { on (40) })) == std::vector<std::pair<int, int>> { { 0, 76 } }));
     CHECK ((keys (run (*p, { on (60) })) == std::vector<std::pair<int, int>> { { 1, 60 } }));
     CHECK ((keys (run (*p, { on (90) })) == std::vector<std::pair<int, int>> { { 2, 54 } }));
     out = run (*p, { off (40) });
-    CHECK (out.size() == 1 && out[0].type == lynx::vfx::Event::Type::off && out[0].voice.key == 76 && out[0].output == 0);
+    CHECK (out.size() == 1 && out[0].type == yw::vfx::Event::Type::off && out[0].voice.key == 76 && out[0].output == 0);
     // Velocity / Limited (absolute): v 1 → map 0.75 → velocity 0.75 / 1.28
-    S limited = lynx::vfx::defaultKeyboardSplitter();
+    S limited = yw::vfx::defaultKeyboardSplitter();
     limited.zones[0].velocity.points = { { 0.0, 0.0 }, { 0.75, 0.75 }, { 1.0, 0.75 } };
     limited.zones[0].absolute = true;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyboardSplitter, lynx::vfx::writeKeyboardSplitter (limited));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyboardSplitter, yw::vfx::writeKeyboardSplitter (limited));
     out = run (*p, { on (60, 0, 0, 1.0f), on (62, 0, 0, 0.4f) });
     CHECK (out.size() == 2 && std::abs (out[0].voice.velocity - 0.5859f) < 1e-3f && std::abs (out[1].voice.velocity - 0.3125f) < 1e-3f);
     // random zones: each note on exactly one of them
     S rnd;
-    rnd.zones[0].keyboard = rnd.zones[1].keyboard = lynx::vfx::MapCurve::flat (1.0);
+    rnd.zones[0].keyboard = rnd.zones[1].keyboard = yw::vfx::MapCurve::flat (1.0);
     rnd.zones[0].random = rnd.zones[1].random = true;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::keyboardSplitter, lynx::vfx::writeKeyboardSplitter (rnd));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::keyboardSplitter, yw::vfx::writeKeyboardSplitter (rnd));
     int counts[2] {};
     for (int k = 0; k < 200; ++k)
     {
@@ -430,9 +430,9 @@ TEST (vfx_reads_fl_factory_presets)
         return;
     namespace fs = std::filesystem;
     int files = 0;
-    for (const auto kind : { lynx::vfx::Kind::keyMapper, lynx::vfx::Kind::keyboardSplitter, lynx::vfx::Kind::envelope })
+    for (const auto kind : { yw::vfx::Kind::keyMapper, yw::vfx::Kind::keyboardSplitter, yw::vfx::Kind::envelope })
     {
-        const auto dir = fs::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / lynx::vfx::flName (kind);
+        const auto dir = fs::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / yw::vfx::flName (kind);
         if (! fs::is_directory (dir))
             continue;
         for (const auto& entry : fs::recursive_directory_iterator (dir))
@@ -441,7 +441,7 @@ TEST (vfx_reads_fl_factory_presets)
                 continue;
             std::ifstream in (entry.path(), std::ios::binary);
             const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), {});
-            const auto state = lynx::vfx::stateFromFlPreset (bytes, kind);
+            const auto state = yw::vfx::stateFromFlPreset (bytes, kind);
             CHECK (state.has_value());
             if (! state)
             {
@@ -449,28 +449,28 @@ TEST (vfx_reads_fl_factory_presets)
                 continue;
             }
             ++files;
-            if (kind == lynx::vfx::Kind::keyMapper)
+            if (kind == yw::vfx::Kind::keyMapper)
             {
-                const auto s = lynx::vfx::parseKeyMapper (*state);
-                CHECK (s && lynx::vfx::writeKeyMapper (*s) == *state);
+                const auto s = yw::vfx::parseKeyMapper (*state);
+                CHECK (s && yw::vfx::writeKeyMapper (*s) == *state);
             }
-            if (kind == lynx::vfx::Kind::keyboardSplitter)
+            if (kind == yw::vfx::Kind::keyboardSplitter)
             {
-                const auto s = lynx::vfx::parseKeyboardSplitter (*state);
+                const auto s = yw::vfx::parseKeyboardSplitter (*state);
                 CHECK (s.has_value());
                 if (s)
                 {
-                    const auto again = lynx::vfx::parseKeyboardSplitter (lynx::vfx::writeKeyboardSplitter (*s));
+                    const auto again = yw::vfx::parseKeyboardSplitter (yw::vfx::writeKeyboardSplitter (*s));
                     CHECK (again && again->zones == s->zones);
                 }
             }
-            if (kind == lynx::vfx::Kind::envelope)
+            if (kind == yw::vfx::Kind::envelope)
             {
-                const auto s = lynx::vfx::parseEnvelope (*state);
+                const auto s = yw::vfx::parseEnvelope (*state);
                 CHECK (s.has_value());
                 if (s)
                 {
-                    const auto again = lynx::vfx::parseEnvelope (lynx::vfx::writeEnvelope (*s));
+                    const auto again = yw::vfx::parseEnvelope (yw::vfx::writeEnvelope (*s));
                     CHECK (again && *again == *s);
                 }
             }
@@ -482,16 +482,16 @@ TEST (vfx_reads_fl_factory_presets)
 TEST (vfx_envelope_moves_the_notes_it_matches)
 {
     using namespace vfx164;
-    using E = lynx::vfx::EnvelopeSettings;
-    auto def = lynx::vfx::defaultEnvelope();
-    const auto again = lynx::vfx::parseEnvelope (lynx::vfx::writeEnvelope (def));
+    using E = yw::vfx::EnvelopeSettings;
+    auto def = yw::vfx::defaultEnvelope();
+    const auto again = yw::vfx::parseEnvelope (yw::vfx::writeEnvelope (def));
     CHECK (again && *again == def);
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::envelope, lynx::vfx::writeEnvelope (def));
-    lynx::vfx::EventList out;
-    lynx::vfx::Transport t;
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::envelope, yw::vfx::writeEnvelope (def));
+    yw::vfx::EventList out;
+    yw::vfx::Transport t;
     t.sampleRate = 48000.0;
     // colour 0: the volume envelope starts silent; colour 3 passes untouched
-    std::vector<lynx::vfx::Event> in { on (60, 0, 0, 0.78125f), on (64, 0, 3, 0.5f) };
+    std::vector<yw::vfx::Event> in { on (60, 0, 0, 0.78125f), on (64, 0, 3, 0.5f) };
     p->process (in.data(), 2, 480, t, out);
     out.sortByOffset();
     CHECK (out.size() == 2 && out[0].voice.velocity < 0.01f && std::abs (out[1].voice.velocity - 0.5f) < 1e-5f);
@@ -502,14 +502,14 @@ TEST (vfx_envelope_moves_the_notes_it_matches)
         out.clear();
         p->process (nullptr, 0, 480, t, out);
         for (int k = 0; k < out.size(); ++k)
-            if (out[k].type == lynx::vfx::Event::Type::prop && out[k].prop == lynx::vfx::Prop::velocity)
+            if (out[k].type == yw::vfx::Event::Type::prop && out[k].prop == yw::vfx::Prop::velocity)
                 peak = std::max (peak, out[k].value);
     }
     const auto twice = (float) (std::log (10.0 * 2.0 + 1.0) / std::log (11.0) / 1.28); // velocity of volume × 2
     CHECK (std::abs (peak - twice) < 0.02f);
     CHECK (p->busy());
     // pitch: articulator 1's pitch envelope flat at the top, 100 %: +48 semitones
-    auto up = lynx::vfx::defaultEnvelope();
+    auto up = yw::vfx::defaultEnvelope();
     auto& pitch = up.articulators[0].parts[E::pitch];
     pitch.env = 1.0f;
     pitch.envelope.points = { { 0.0, 1.0 }, { 1.0, 1.0 } };
@@ -517,12 +517,12 @@ TEST (vfx_envelope_moves_the_notes_it_matches)
     up.articulators[0].parts[E::velocity].envelope.footer[1] = 0; // (no volume envelope)
     up.articulators[0].low = 61; // keys 60…71 only
     up.articulators[0].high = 72;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::envelope, lynx::vfx::writeEnvelope (up));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::envelope, yw::vfx::writeEnvelope (up));
     const auto res = run (*p, { on (60), on (72) });
     CHECK (res.size() == 2 && std::abs (res[0].voice.cents - 4800.0f) < 0.5f && res[1].voice.cents == 0.0f);
     // the plugin off: everything passes
     up.enabled = false;
-    p = lynx::vfx::makeProcessor (lynx::vfx::Kind::envelope, lynx::vfx::writeEnvelope (up));
+    p = yw::vfx::makeProcessor (yw::vfx::Kind::envelope, yw::vfx::writeEnvelope (up));
     const auto off = run (*p, { on (60) });
     CHECK (off.size() == 1 && off[0].voice.cents == 0.0f);
 }
@@ -539,21 +539,21 @@ struct SeqNote
 
 // Plays `input` (seconds, key, on / off) through the processor at 120 bpm / 48 kHz with the song playing from 0
 // (or stopped), and returns the notes it sent out
-std::vector<SeqNote> sequence (lynx::vfx::Processor& p, std::vector<std::tuple<double, int, bool>> input, double seconds,
+std::vector<SeqNote> sequence (yw::vfx::Processor& p, std::vector<std::tuple<double, int, bool>> input, double seconds,
                                bool playing = true, float velocity = 100.0f / 128.0f)
 {
     constexpr int block = 480;
     constexpr double rate = 48000.0;
     std::vector<SeqNote> notes;
     std::map<int, std::size_t> open;
-    lynx::vfx::EventList out;
-    lynx::vfx::Transport t;
+    yw::vfx::EventList out;
+    yw::vfx::Transport t;
     t.sampleRate = rate;
     t.bpm = 120.0;
     t.playing = playing;
     for (long long at = 0; at < (long long) (seconds * rate); at += block)
     {
-        std::vector<lynx::vfx::Event> in;
+        std::vector<yw::vfx::Event> in;
         for (const auto& [time, key, down] : input)
         {
             const auto sample = (long long) std::llround (time * rate);
@@ -571,35 +571,35 @@ std::vector<SeqNote> sequence (lynx::vfx::Processor& p, std::vector<std::tuple<d
         {
             const auto& e = out[k];
             const auto time = (double) (at + e.offset) / rate;
-            if (e.type == lynx::vfx::Event::Type::on)
+            if (e.type == yw::vfx::Event::Type::on)
             {
                 const auto volume = (std::pow (11.0, 1.28 * (double) e.voice.velocity) - 1.0) / 10.0;
                 open[e.id] = notes.size();
                 notes.push_back ({ e.voice.key, time, -1.0, (int) std::lround (volume * 100.0) });
             }
-            else if (e.type == lynx::vfx::Event::Type::off && open.count (e.id))
+            else if (e.type == yw::vfx::Event::Type::off && open.count (e.id))
                 notes[open[e.id]].length = time - notes[open[e.id]].start;
         }
     }
     return notes;
 }
 
-lynx::vfx::SequencerSettings blankProgram()
+yw::vfx::SequencerSettings blankProgram()
 {
-    auto s = lynx::vfx::defaultSequencer();
-    s.set (lynx::vfx::SequencerSettings::currentProgram, 0); // "Initial": 16 × N1, gate 90 %, 1/16
+    auto s = yw::vfx::defaultSequencer();
+    s.set (yw::vfx::SequencerSettings::currentProgram, 0); // "Initial": 16 × N1, gate 90 %, 1/16
     return s;
 }
 
-std::unique_ptr<lynx::vfx::Processor> sequencer (const lynx::vfx::SequencerSettings& s)
+std::unique_ptr<yw::vfx::Processor> sequencer (const yw::vfx::SequencerSettings& s)
 {
-    return lynx::vfx::makeProcessor (lynx::vfx::Kind::sequencer, lynx::vfx::writeSequencer (s));
+    return yw::vfx::makeProcessor (yw::vfx::Kind::sequencer, yw::vfx::writeSequencer (s));
 }
 } // namespace vfx164
 
 TEST (vfx_sequencer_state_round_trips_and_resolves_fl_params)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     using S = SequencerSettings;
     auto s = defaultSequencer();
     const auto bytes = writeSequencer (s);
@@ -640,21 +640,21 @@ TEST (vfx_sequencer_reads_fl_factory_bank)
         return;
     std::ifstream in (file, std::ios::binary);
     const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), {});
-    const auto state = lynx::vfx::stateFromFlPreset (bytes, lynx::vfx::Kind::sequencer);
+    const auto state = yw::vfx::stateFromFlPreset (bytes, yw::vfx::Kind::sequencer);
     CHECK (state.has_value());
     if (! state)
         return;
-    const auto s = lynx::vfx::parseSequencer (*state);
+    const auto s = yw::vfx::parseSequencer (*state);
     CHECK (s.has_value());
     if (! s)
         return;
-    CHECK (lynx::vfx::writeSequencer (*s) == *state); // (byte for byte)
+    CHECK (yw::vfx::writeSequencer (*s) == *state); // (byte for byte)
     CHECK (s->programs.size() == 128 && s->program() == 3);
     CHECK (s->current().nameText() == "Simple 4k Up 4 beats");
-    using S = lynx::vfx::SequencerSettings;
+    using S = yw::vfx::SequencerSettings;
     CHECK (s->get (S::steps) == 16 && s->get (S::gate) == 50 && s->get (S::missingKeys) == 3 && s->get (S::arpMode) == 1);
     // T1: C4 E4 G4 held → 60 64 67 67 (N4 missing: the last key) on every 1/16, velocity 96, half a step long
-    auto p = lynx::vfx::makeProcessor (lynx::vfx::Kind::sequencer, *state);
+    auto p = yw::vfx::makeProcessor (yw::vfx::Kind::sequencer, *state);
     const auto notes = vfx164::sequence (*p, { { 0.0, 60, true }, { 0.0, 64, true }, { 0.0, 67, true } }, 1.0);
     CHECK (notes.size() >= 8);
     const int expected[8] = { 60, 64, 67, 67, 60, 64, 67, 67 };
@@ -686,7 +686,7 @@ TEST (vfx_sequencer_reads_fl_factory_bank)
 TEST (vfx_sequencer_plays_fl_test_vectors)
 {
     using namespace vfx164;
-    using S = lynx::vfx::SequencerSettings;
+    using S = yw::vfx::SequencerSettings;
     // T5: steps 0 = thru, transpose +2: the note passes at once and ends with its key
     auto s = blankProgram();
     s.set (S::steps, 0);
@@ -771,17 +771,17 @@ TEST (vfx_sequencer_cost_per_block)
 {
     // the audio-thread cost: 4 held keys, 16 steps of chords, 1 s of 128-sample blocks
     using namespace vfx164;
-    using S = lynx::vfx::SequencerSettings;
+    using S = yw::vfx::SequencerSettings;
     auto s = blankProgram();
     for (int i = 0; i < 64; ++i)
         s.set (0x100 + i, S::chord);
     auto p = sequencer (s);
-    lynx::vfx::EventList out;
-    lynx::vfx::Transport t;
+    yw::vfx::EventList out;
+    yw::vfx::Transport t;
     t.sampleRate = 48000.0;
     t.bpm = 140.0;
     t.playing = true;
-    std::vector<lynx::vfx::Event> in { on (60), on (64), on (67), on (71) };
+    std::vector<yw::vfx::Event> in { on (60), on (64), on (67), on (71) };
     const auto begin = std::chrono::steady_clock::now();
     int notes = 0;
     for (int b = 0; b < 375; ++b)
@@ -790,7 +790,7 @@ TEST (vfx_sequencer_cost_per_block)
         t.ticks = b * 128.0 / 48000.0 * (140.0 / 60.0) * 960.0;
         p->process (b == 0 ? in.data() : nullptr, b == 0 ? 4 : 0, 128, t, out);
         for (int k = 0; k < out.size(); ++k)
-            notes += out[k].type == lynx::vfx::Event::Type::on;
+            notes += out[k].type == yw::vfx::Event::Type::on;
     }
     const auto ms = std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - begin).count();
     std::printf ("  sequencer: 1 s of audio in %.3f ms (%d notes)\n", ms, notes);
@@ -799,7 +799,7 @@ TEST (vfx_sequencer_cost_per_block)
 
 TEST (vfx_script_keeps_fl_scripts_as_they_are)
 {
-    using namespace lynx::vfx;
+    using namespace yw::vfx;
     auto s = defaultScript();
     CHECK (s.source() == "import flvfx as vfx");
     s.setSource ("import flvfx as vfx\n\ndef onTriggerVoice(v):\n    v.trigger()\n");
@@ -807,7 +807,7 @@ TEST (vfx_script_keeps_fl_scripts_as_they_are)
     CHECK (s.source() == "import flvfx as vfx\n\ndef onTriggerVoice(v):\n    v.trigger()\n");
     CHECK (parseScript (writeScript (s)) == s);
     CHECK (! parseScript ({ 9, 0, 0, 0, 'x' }));
-    // (round 165d: LYNX runs it; an incoming voice can't be triggered, as in FL, so nothing comes out)
+    // (round 165d: YW runs it; an incoming voice can't be triggered, as in FL, so nothing comes out)
     auto p = makeProcessor (Kind::script, writeScript (s));
     const auto out = vfx164::run (*p, { vfx164::on (60) });
     CHECK (out.empty());
@@ -853,7 +853,7 @@ TEST (vfx_sequencer_node_plays_its_synth_in_a_patcher)
 {
     // a Patcher channel played live (stopped transport): the Sequencer runs on its own clock and plays the synth
     using namespace vfx164;
-    Rig rig (lynx::vfx::Kind::sequencer, lynx::vfx::writeSequencer (lynx::vfx::defaultSequencer())); // "Up 4 keys"
+    Rig rig (yw::vfx::Kind::sequencer, yw::vfx::writeSequencer (yw::vfx::defaultSequencer())); // "Up 4 keys"
     rig.instrument->noteOn (60, 0.8f);
     rig.instrument->noteOn (64, 0.8f);
     rig.instrument->noteOn (67, 0.8f);

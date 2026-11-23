@@ -5,7 +5,7 @@
 #include <sstream>
 
 
-namespace lynx::pluginpresets
+namespace yw::pluginpresets
 {
 namespace
 {
@@ -406,4 +406,4 @@ std::vector<std::uint8_t> writeFx (const FxFile& file)
     }
     return std::move (w.b);
 }
-} // namespace lynx::pluginpresets
+} // namespace yw::pluginpresets

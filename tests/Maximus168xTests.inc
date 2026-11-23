@@ -7,7 +7,7 @@ namespace
 {
 std::vector<std::uint8_t> mx168Slot()
 {
-    using namespace lynx;
+    using namespace yw;
     std::array<std::array<int, 13>, 4> bands {};
     for (auto& b : bands)
         b = { 0, 1000, 1000, 0, 0, 1000, 1115, 0, 2, 5000, 3, 2882, 0 };
@@ -20,12 +20,12 @@ std::vector<std::uint8_t> mx168Slot()
 // the RMS of a sine at `amp` after `slot`'s Maximus (the last second of two)
 double mx168Rms (const std::vector<std::uint8_t>& slot, float amp)
 {
-    auto fx = lynx::maximusfx::make (slot);
+    auto fx = yw::maximusfx::make (slot);
     fx->prepare (44100.0);
     std::vector<float> l (88200), r (88200);
     for (std::size_t i = 0; i < l.size(); ++i)
         l[i] = r[i] = amp * (float) std::sin (2.0 * 3.141592653589793 * 220.0 * (double) i / 44100.0);
-    lynx::EffectParams params {};
+    yw::EffectParams params {};
     for (std::size_t at = 0; at < l.size(); at += 512)
         fx->process (l.data() + at, r.data() + at, (int) std::min<std::size_t> (512, l.size() - at), params, 120.0);
     double sum = 0.0;
@@ -38,19 +38,19 @@ double mx168Rms (const std::vector<std::uint8_t>& slot, float amp)
 TEST (mx168_the_in_out_graph_takes_the_mouse)
 {
     // the root cause: the plugin window hit-tested only the displays it listed, and "maxcurve" was not one of them
-    CHECK (lynx::plugui::displayTakesMouse ("maxcurve"));
-    CHECK (lynx::plugui::displayTakesMouse ("waveshaper") && lynx::plugui::displayTakesMouse ("eq"));
+    CHECK (yw::plugui::displayTakesMouse ("maxcurve"));
+    CHECK (yw::plugui::displayTakesMouse ("waveshaper") && yw::plugui::displayTakesMouse ("eq"));
     // (round 190oa, DP-27: the bands view takes clicks now — FL's click on the Monitor pauses it)
-    CHECK (lynx::plugui::displayTakesMouse ("maxbands") && ! lynx::plugui::displayTakesMouse (nullptr));
+    CHECK (yw::plugui::displayTakesMouse ("maxbands") && ! yw::plugui::displayTakesMouse (nullptr));
     bool placed = false;
-    for (const auto& item : lynx::plugui::layoutFor (lynx::EffectKind::maximus).items)
+    for (const auto& item : yw::plugui::layoutFor (yw::EffectKind::maximus).items)
         placed = placed || (item.display != nullptr && std::strcmp (item.display, "maxcurve") == 0);
     CHECK (placed);
 }
 
 TEST (mx168_curve_edits_are_written_in_fl_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto slot = mx168Slot();
     for (int band = 0; band < 4; ++band)
     {
@@ -84,7 +84,7 @@ TEST (mx168_curve_edits_are_written_in_fl_layout)
     maximusfx::moveCurvePoint (pts, 3, 0.2, 0.7f);
     CHECK (pts[3].x == 1.0 && pts[3].y == 0.7f);
 
-    // "delete point": FL refuses the first one; LYNX keeps the last too
+    // "delete point": FL refuses the first one; YW keeps the last too
     CHECK (! maximusfx::removeCurvePoint (pts, 0) && ! maximusfx::removeCurvePoint (pts, 3));
     CHECK (maximusfx::removeCurvePoint (pts, 1) && pts.size() == 3);
 
@@ -115,17 +115,17 @@ TEST (mx168_fl_presets_write_back_unchanged)
             continue;
         std::ifstream in (entry.path(), std::ios::binary);
         const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-        const auto state = lynx::hlfx::maximusStateFromFst (bytes);
+        const auto state = yw::hlfx::maximusStateFromFst (bytes);
         if (! state)
             continue;
-        const auto slot = lynx::maximusfx::pack ({ lynx::hlfx::MaximusBuild::shared, -1, *state });
+        const auto slot = yw::maximusfx::pack ({ yw::hlfx::MaximusBuild::shared, -1, *state });
         for (int band = 0; band < 4; ++band)
         {
-            const auto pts = lynx::maximusfx::curveForEditing (slot, band);
+            const auto pts = yw::maximusfx::curveForEditing (slot, band);
             if (pts.empty())
                 continue;
             ++n;
-            CHECK (lynx::maximusfx::withCurve (slot, band, pts) == slot);
+            CHECK (yw::maximusfx::withCurve (slot, band, pts) == slot);
         }
     }
     CHECK (n > 20);

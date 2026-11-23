@@ -10,7 +10,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -82,7 +82,7 @@ void showAlsReport (const juce::File& target, const juce::String& text)
 namespace
 {
 // A sample Live cannot read as it is (core alsSampleNeedsWav): FL's WavPack (.wv), Ogg Vorbis inside a WAV file, a raw
-// Ogg Vorbis stream named .wav (FL ships many), or any other file type LYNX decodes that Live doesn't
+// Ogg Vorbis stream named .wav (FL ships many), or any other file type YW decodes that Live doesn't
 bool needsWavForLive (const juce::File& file)
 {
     juce::MemoryBlock head;
@@ -91,7 +91,7 @@ bool needsWavForLive (const juce::File& file)
     return alsSampleNeedsWav (file.getFileExtension().toStdString(), static_cast<const std::uint8_t*> (head.getData()), head.getSize());
 }
 
-// Decodes `source` the way LYNX plays it and writes it as a 32-bit float WAV
+// Decodes `source` the way YW plays it and writes it as a 32-bit float WAV
 bool writeWavForLive (const juce::File& source, const juce::File& target)
 {
     SampleLibrary library;
@@ -288,8 +288,8 @@ private:
         lastLive11 = live11Button.getToggleState();
         lastReference = referenceButton.getToggleState();
         const auto start = lastFolder.isDirectory() ? lastFolder : suggestedFolder;
-        chooser = lynx::ui::makeFileChooser (tr ("Choose the folder for the Live set"), start, {});
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+        chooser = yw::ui::makeFileChooser (tr ("Choose the folder for the Live set"), start, {});
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [safe = juce::Component::SafePointer<AlsExportPanel> (this)] (const juce::FileChooser& c) {
                                   const auto folder = c.getResult();
                                   if (safe == nullptr || ! folder.isDirectory())
@@ -347,4 +347,4 @@ std::unique_ptr<juce::Component> makeAlsExportPanel (AudioEngine& engine)
 {
     return std::make_unique<AlsExportPanel> (engine, juce::File(), "YW Studio", false);
 }
-} // namespace lynx
+} // namespace yw

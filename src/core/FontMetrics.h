@@ -5,7 +5,7 @@
 // JUCE sizes text by "height" = the font's ascent + descent (hhea, or OS/2 typo with USE_TYPO_METRICS), not by its em.
 // A font with tall metrics draws smaller letters at the same height: Open Sans (2189 + 600 units of 2048 = 1.362 em)
 // draws them 15 % smaller than DejaVu Sans (1901 + 483 = 1.164 em), the font JUCE picked on most Linux systems up to
-// LYNX SHARE 0.1.23 (LYNX brings Open Sans since 0.1.25, round 179a). `withVerticalExtent` gives a font file the same
+// YW Studio 0.1.23 (YW brings Open Sans since 0.1.25, round 179a). `withVerticalExtent` gives a font file the same
 // glyphs with its ascent + descent set to `emFraction` of its em (hhea, OS/2 typo and win, the ascent : descent ratio
 // kept), so it draws as large as a font with that extent. JUCE-free: tests read and write the tables directly.
 
@@ -16,7 +16,7 @@
 #include <optional>
 #include <vector>
 
-namespace lynx::fontmetrics
+namespace yw::fontmetrics
 {
 struct Vertical
 {
@@ -127,6 +127,6 @@ inline std::vector<unsigned char> withVerticalExtent (const void* data, std::siz
     return out;
 }
 
-// DejaVu Sans's ascent + descent (1901 + 483 of 2048 units): the size letters had on Linux up to LYNX SHARE 0.1.23.
+// DejaVu Sans's ascent + descent (1901 + 483 of 2048 units): the size letters had on Linux up to YW Studio 0.1.23.
 inline constexpr double dejaVuSansExtent = (1901.0 + 483.0) / 2048.0;
-} // namespace lynx::fontmetrics
+} // namespace yw::fontmetrics

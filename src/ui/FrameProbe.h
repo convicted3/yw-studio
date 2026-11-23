@@ -5,7 +5,7 @@
 // component its opaque children cover, so the window's own paint() misses most frames (a meter or a fader repaints
 // only its rectangle); this probe covers the whole window, never draws and never takes the mouse, so its paint() runs
 // once per painted frame with that frame's dirty area as the clip.
-// Installed only by --uiperf and LYNX_TRACE_UI (ui.log then gets the frames per second and the longest gap).
+// Installed only by --uiperf and YW_TRACE_UI (ui.log then gets the frames per second and the longest gap).
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -13,7 +13,7 @@
 #include <functional>
 #include <vector>
 
-namespace lynx::ui
+namespace yw::ui
 {
 class FrameProbe final : public juce::Component
 {
@@ -24,7 +24,7 @@ public:
         setWantsKeyboardFocus (false);
         setOpaque (false);
         setAlwaysOnTop (true);
-        getProperties().set ("lynxOverlayIgnores", true); // (round 190ip: never drawn, so it covers no GPU playhead)
+        getProperties().set ("ywOverlayIgnores", true); // (round 190ip: never drawn, so it covers no GPU playhead)
         setAccessible (false);
     }
 
@@ -73,4 +73,4 @@ struct FrameStats
                + juce::String (hitches);
     }
 };
-} // namespace lynx::ui
+} // namespace yw::ui

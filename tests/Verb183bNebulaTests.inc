@@ -5,7 +5,7 @@
 // louder; Width 50 % is mono and 0 % swaps the sides. Its mono modes stay mono.
 namespace verb183bneb
 {
-using lynx::EffectKind;
+using yw::EffectKind;
 
 inline double tailCorr (const verbs100::Stereo& s, std::size_t from, std::size_t to)
 {

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace lynx
+namespace yw
 {
 std::vector<std::pair<std::string, SynthSettings>> synthPresets()
 {
@@ -65,4 +65,4 @@ SynthSettings presetForChannelName (const std::string& channelName)
 
     return SynthSettings {};
 }
-} // namespace lynx
+} // namespace yw

@@ -7,7 +7,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // FL Studio's Project picker (View › Project picker, Ctrl+F8; round 190my, DF-143; captures 190mv A11 and 190my A4):
 // the Plugin picker's full-screen see-through form (TPlugListForm, ui/PickerLook.h) showing the project instead of the
@@ -40,4 +40,4 @@ void projectPickerHoverForSnapshot (juce::Component& view, juce::Point<int> p);
 void projectPickerShowTabForSnapshot (juce::Component& view, int tab); // 0 All, 1 Patterns, 2 Channels
 void projectPickerBackdropForSnapshot (juce::Component& view, const juce::Image& screen); // (no screen to take off Windows)
 void projectPickerTypeForSnapshot (juce::Component& view, const juce::String& text);
-} // namespace lynx
+} // namespace yw

@@ -8,7 +8,7 @@
 
 #include "core/ControllerProfilesData.h"
 
-namespace lynx::controller
+namespace yw::controller
 {
 namespace
 {
@@ -802,4 +802,4 @@ std::string pairedOutput (const std::string& inputName, const std::vector<std::s
     }
     return {};
 }
-} // namespace lynx::controller
+} // namespace yw::controller

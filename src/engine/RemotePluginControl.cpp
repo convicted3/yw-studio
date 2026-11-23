@@ -9,7 +9,7 @@
 #include <set>
 #include <stdexcept>
 
-namespace lynx
+namespace yw
 {
 namespace
 {

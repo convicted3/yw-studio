@@ -5,7 +5,7 @@
 // its linked mixer track. Unassigned and instrument tracks have none.
 TEST (issue11c_audio_track_arms_its_mixer_track)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.playlistTracks.resize (4);
     CHECK (trackmodes::armableInsert (song, 0) < 0);      // unassigned
@@ -33,7 +33,7 @@ TEST (issue11c_audio_track_arms_its_mixer_track)
 // started (bar 5 → 1:01) and not where it was pressed; while stopped it plays from the current position like Space.
 TEST (issue11c_shift_space_stop_target_matches_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) (4 * ppq);
     CHECK (transportedit::shiftSpaceStopTarget (true, false, 0) == 0);                  // Song, no selection: 1:01
     CHECK (transportedit::shiftSpaceStopTarget (true, true, 2 * bar) == 2 * bar);      // Song, selection bars 3-7: 3:01
@@ -41,7 +41,7 @@ TEST (issue11c_shift_space_stop_target_matches_fl)
     CHECK (transportedit::shiftSpaceStopTarget (false, false, 0) == 0);
     CHECK (transportedit::shiftSpaceStopTarget (true, true, -5) == 0);
 
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.find ({ space, shift }, Context::playlist, false) == "transport.playFromStart");
     const auto* action = findAction ("transport.playFromStart");
@@ -52,7 +52,7 @@ TEST (issue11c_shift_space_stop_target_matches_fl)
 // record button) arms it at once, with no input source as well as with one; a second click disarms; the Master has none.
 TEST (issue11d_arm_click_arms_at_once_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (armClick (1, false) == ArmClick::arm);   // insert without (or with) an input: armed at once
     CHECK (armClick (1, true) == ArmClick::disarm);
     CHECK (armClick (126, false) == ArmClick::arm);

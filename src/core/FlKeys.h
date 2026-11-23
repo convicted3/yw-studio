@@ -16,9 +16,9 @@
 // description in ChannelDef::modelParams (see FlKeysTable).
 //
 // Not reproduced (REA_rodada69 §8.6): wavetables with "resample" (Roto Organ) are not resampled to the host rate when
-// it differs from 44.1 kHz, as FL does (Ogg-compressed samples, Grand Piano, are exact since LYNX decodes them as FL,
+// it differs from 44.1 kHz, as FL does (Ogg-compressed samples, Grand Piano, are exact since YW decodes them as FL,
 // REA_rodada77); FL counts its tremolo LFO, its denormal flush and the end of a
-// voice per host block, LYNX per 512-sample block.
+// voice per host block, YW per 512-sample block.
 
 #include <array>
 #include <cstdint>
@@ -30,7 +30,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 namespace flkeys
 {
@@ -137,4 +137,4 @@ struct RefNote
 std::vector<float> renderReference (const Wavetable& wavetable, const State& state, const std::vector<RefNote>& notes,
                                     double sampleRate, int length, int block = 512, bool panLawA = false);
 } // namespace flkeys
-} // namespace lynx
+} // namespace yw

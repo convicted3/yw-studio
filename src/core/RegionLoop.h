@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::regionloop
+namespace yw::regionloop
 {
 // Whether a clip can loop: a pattern or audio clip of the Playlist (not the clip grid's), longer than 0.
 bool loopable (const Song& song, int clip) noexcept;
@@ -46,4 +46,4 @@ bool unloop (Song& song, int clip);
 // The index of the run's region after an edit that may have moved indices (the clip at `start` on `track` of that kind
 // and source), or −1.
 int regionAt (const Song& song, int track, std::int64_t start, const Clip& like);
-} // namespace lynx::regionloop
+} // namespace yw::regionloop

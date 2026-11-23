@@ -1,4 +1,4 @@
-    // LYNX --hwheel254test <report.txt> (round 190ou, issue #254): the horizontal wheel (a tilt wheel, a mouse's second
+    // YW --hwheel254test <report.txt> (round 190ou, issue #254): the horizontal wheel (a tilt wheel, a mouse's second
     // wheel) through the real components, off screen, as JUCE delivers it (Windows' WM_MOUSEHWHEEL: deltaX = -/+60/256 a
     // notch, right / left; X11's buttons 6 / 7 come the same way with the JUCE patch fix 49). FL 2026 (checked in this
     // round on Thief): Playlist and Piano roll 1.5 beats a notch whatever the zoom, the Mixer one insert a notch, the
@@ -7,8 +7,8 @@
     bool runHWheel254Test (const juce::String& reportPath)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
-        using namespace lynx;
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
+        using namespace yw;
         const auto motionBefore = ui::motion::enabled();
         ui::motion::enabled() = false; // (the wheel jumps: no glide to wait for)
         juce::String text;

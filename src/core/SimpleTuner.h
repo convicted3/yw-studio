@@ -7,7 +7,7 @@
 // default, 410–470 Hz in 0.1 Hz steps, dragged); orange while flat or sharp, green in tune. BandLab's tuner (Guitar and
 // Bass tracks) shows the same line that reaches the centre when the string is in tune.
 //
-// LYNX: the pitch comes from the FL Tuner's detector (core/FlExtraFx.h fx::tuner::Analyzer: YIN on the full-rate
+// YW: the pitch comes from the FL Tuner's detector (core/FlExtraFx.h fx::tuner::Analyzer: YIN on the full-rate
 // signal, F1…C10, with FL's Bass range down to F0 for a Bass track), fed with the selected track's audio input by the
 // engine's tuner tap only while the tuner shows (AudioEngine::setTunerInput). The display rules are here. No JUCE.
 
@@ -20,7 +20,7 @@
 #include "core/LiveInput.h"
 #include "core/Song.h"
 
-namespace lynx::simpletuner
+namespace yw::simpletuner
 {
 inline constexpr double defaultReference = 440.0, minReference = 410.0, maxReference = 470.0, referenceStep = 0.1;
 inline constexpr double inTuneCents = 3.0; // the needle's green zone (GarageBand: green at 0 cents; ±3 is the ear's limit)
@@ -76,4 +76,4 @@ inline std::pair<int, int> inputFor (const Song& song, int insert, int deviceCha
             return { first, count };
     return { 0, 1 };
 }
-} // namespace lynx::simpletuner
+} // namespace yw::simpletuner

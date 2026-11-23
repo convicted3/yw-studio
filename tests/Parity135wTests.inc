@@ -12,9 +12,9 @@ inline int firstAbove (const std::vector<float>& x, float threshold, int from = 
 }
 
 // an impulse through Echoform at 48 kHz; returns the wet left / right
-inline void echoImpulse (lynx::EffectParams p, std::vector<float>& l, std::vector<float>& r, int seconds = 2)
+inline void echoImpulse (yw::EffectParams p, std::vector<float>& l, std::vector<float>& r, int seconds = 2)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::echoform);
+    auto fx = yw::makeEffect (yw::EffectKind::echoform);
     fx->prepare (48000.0);
     l.assign ((std::size_t) (48000 * seconds), 0.0f);
     r = l;
@@ -23,9 +23,9 @@ inline void echoImpulse (lynx::EffectParams p, std::vector<float>& l, std::vecto
         fx->process (l.data() + at, r.data() + at, std::min (512, (int) l.size() - at), p, 120.0);
 }
 
-inline lynx::EffectParams cleanEcho (double ms, float feedback01)
+inline yw::EffectParams cleanEcho (double ms, float feedback01)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     auto p = makeEffectSlot (EffectKind::echoform).params;
     p[e::mix] = 1.0f;
@@ -42,7 +42,7 @@ inline lynx::EffectParams cleanEcho (double ms, float feedback01)
 
 TEST (echoform_new_params_keep_old_defaults_round135w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto& info = effectInfo (EffectKind::echoform);
     CHECK ((int) info.params.size() == e::paramCount);
@@ -63,7 +63,7 @@ TEST (echoform_new_params_keep_old_defaults_round135w)
 
 TEST (echoform_start_side_quad_taps_and_freeze_round135w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     std::vector<float> l, r;
     // ping-pong: the first echo on the left by default, on the right with Start side = right
@@ -114,7 +114,7 @@ TEST (echoform_start_side_quad_taps_and_freeze_round135w)
 
 TEST (echoform_groove_feel_accent_round135w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     std::vector<float> l, r;
     // EchoBoy's laws measured on the trial (REA_rodada135w [EXEC]): Groove +25 % = odd repeats a quarter of the echo
@@ -144,7 +144,7 @@ TEST (echoform_groove_feel_accent_round135w)
 
 TEST (echoform_filter_link_and_hdelay_translation_round135w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     auto p = makeEffectSlot (EffectKind::echoform).params;
     p[e::lowCut] = (100.0f - 10.0f) / 1990.0f;
@@ -174,7 +174,7 @@ TEST (echoform_filter_link_and_hdelay_translation_round135w)
 
 TEST (gemini_four_voices_and_reset_round135w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     const auto& info = effectInfo (EffectKind::geminiDoubler);
     CHECK ((int) info.params.size() == g::paramCount && g::voiceParam (2, g::vOn) == g::voice3);
@@ -214,22 +214,22 @@ TEST (gemini_four_voices_and_reset_round135w)
     }
 }
 
-TEST (lynx_tune_real_time_controls_round135w)
+TEST (yw_tune_real_time_controls_round135w)
 {
-    using namespace lynx;
-    namespace t = lynxtune;
-    const auto& info = effectInfo (EffectKind::lynxTune);
+    using namespace yw;
+    namespace t = ywtune;
+    const auto& info = effectInfo (EffectKind::ywTune);
     CHECK ((int) info.params.size() == t::count);
-    const auto p = makeEffectSlot (EffectKind::lynxTune).params;
-    CHECK (formatEffectParam (EffectKind::lynxTune, t::speed, p[t::speed], 120.0) == "15 ms");
-    CHECK (formatEffectParam (EffectKind::lynxTune, t::toleranceCents, p[t::toleranceCents], 120.0) == "Off");
-    CHECK (formatEffectParam (EffectKind::lynxTune, t::vibratoAmount, p[t::vibratoAmount], 120.0) == "100%");
+    const auto p = makeEffectSlot (EffectKind::ywTune).params;
+    CHECK (formatEffectParam (EffectKind::ywTune, t::speed, p[t::speed], 120.0) == "15 ms");
+    CHECK (formatEffectParam (EffectKind::ywTune, t::toleranceCents, p[t::toleranceCents], 120.0) == "Off");
+    CHECK (formatEffectParam (EffectKind::ywTune, t::vibratoAmount, p[t::vibratoAmount], 120.0) == "100%");
     CHECK (p[t::speedLink] == 1.0f && p[t::keepVibrato] == 1.0f && p[t::correction] == 1.0f);
     // the trial's Speed taper (round 120): 0.25 → 25.05 ms, 0.75 → 290 ms
     CHECK (std::abs (t::speedMs (0.25f) - 25.05) < 0.01 && std::abs (t::speedMs (0.75f) - 290.0) < 0.01 && std::abs (t::speedMs (1.0f) - 800.0) < 1e-9);
     CHECK (std::abs (t::speedMs (t::speedValue (120.0)) - 120.0) < 1e-3);
     // the input / output meters (outputs 3 / 4)
-    auto fx = makeEffect (EffectKind::lynxTune);
+    auto fx = makeEffect (EffectKind::ywTune);
     fx->prepare (44100.0);
     std::vector<float> l (2048, 0.25f), r (2048, 0.25f);
     fx->process (l.data(), r.data(), 2048, p, 120.0);
@@ -238,7 +238,7 @@ TEST (lynx_tune_real_time_controls_round135w)
 
 TEST (rcomp_switches_and_limiter_round135w)
 {
-    using namespace lynx;
+    using namespace yw;
     auto p = makeEffectSlot (EffectKind::compressor).params;
     CHECK (formatEffectParam (EffectKind::compressor, 9, p[9], 120.0) == "ARC" && formatEffectParam (EffectKind::compressor, 10, p[10], 120.0) == "electro"
            && formatEffectParam (EffectKind::compressor, 11, p[11], 120.0) == "warm" && formatEffectParam (EffectKind::compressor, 12, p[12], 120.0) == "off");
@@ -275,16 +275,16 @@ TEST (rcomp_switches_and_limiter_round135w)
 
 TEST (layouts_round135w)
 {
-    using namespace lynx;
-    // LYNX Tune's "Real-time" page holds the real-time corrector's controls; Gemini's voices 3–4 sit on page 1
-    const auto& tune = plugui::layoutFor (EffectKind::lynxTune);
+    using namespace yw;
+    // YW Tune's "Real-time" page holds the real-time corrector's controls; Gemini's voices 3–4 sit on page 1
+    const auto& tune = plugui::layoutFor (EffectKind::ywTune);
     CHECK (tune.pages.size() == 3);
     int onReal = 0;
     for (const auto& item : tune.items)
         if (item.page == 2 && item.param != nullptr)
         {
             ++onReal;
-            CHECK (plugui::paramIndex (EffectKind::lynxTune, item.param) >= lynxtune::speedLink);
+            CHECK (plugui::paramIndex (EffectKind::ywTune, item.param) >= ywtune::speedLink);
         }
     CHECK (onReal == 9); // round 152b: + the reference tone and its level
     const auto& gemini = plugui::layoutFor (EffectKind::geminiDoubler);
@@ -293,7 +293,7 @@ TEST (layouts_round135w)
         if (item.param != nullptr && std::string (item.param).rfind ("V3 ", 0) == 0)
             CHECK (item.page == 1);
     // every parameter named by the new layouts exists
-    for (const auto kind : { EffectKind::echoform, EffectKind::compressor, EffectKind::lynxTune, EffectKind::geminiDoubler })
+    for (const auto kind : { EffectKind::echoform, EffectKind::compressor, EffectKind::ywTune, EffectKind::geminiDoubler })
         for (const auto& item : plugui::layoutFor (kind).items)
             if (item.param != nullptr && plugui::isValueControl (item.type))
                 CHECK (plugui::paramIndex (kind, item.param) >= 0);

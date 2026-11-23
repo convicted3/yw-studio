@@ -13,7 +13,7 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx::emphasis
+namespace yw::emphasis
 {
 namespace
 {
@@ -222,4 +222,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> make (const EffectParams* initial) { return std::make_unique<EmphasisEffect> (initial); }
-} // namespace lynx::emphasis
+} // namespace yw::emphasis

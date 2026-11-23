@@ -17,7 +17,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 // what differs between the hosts: the accept button's text (Edison: "Run"; the Piano roll, FL's own word: "Accept"),
 // whether Preview starts ticked, and `dismissed`: called when the panel goes away without being accepted
@@ -297,4 +297,4 @@ private:
     juce::ToggleButton previewToggle;
     juce::TextButton regenerateButton, resetButton, editButton, runButton, cancelButton;
 };
-} // namespace lynx
+} // namespace yw

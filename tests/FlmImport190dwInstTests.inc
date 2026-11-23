@@ -62,7 +62,7 @@ inline double toneOf (const std::vector<float>& y, int from, int to, int side, d
 // 0x1806dc340, 0x1806ddfc0, 0x1806dda30 and the dispatcher's FLNG, spec in the round's notes); the mod wheel
 TEST (flm190dw_gmsynth_fx_kinds_and_mod_wheel)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace gm = gmsmobile;
     const auto root = flm190ab::realResources();
     if (root.empty())
@@ -179,7 +179,7 @@ TEST (flm190dw_gmsynth_fx_kinds_and_mod_wheel)
 // parameters CCLK links to it; Aftertouch reaches no module
 TEST (flm190dw_cc_and_aftertouch_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     namespace rp = flm::rackparam;
     const auto ramp = [] { return flm187d::autoClip (0, 4, 4, 1, { { 0, 1, 0 }, { 2, -1, 32768 }, { 4, 1, 65535 } }); };
@@ -243,7 +243,7 @@ TEST (flm190dw_cc_and_aftertouch_lanes)
 // the Master); the bend of SoundFont Player (±2 semitones) and Transistor Bass (none)
 TEST (flm190dw_pad_output_link_and_bends)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     const auto d = std::vector<float> (flm::samplepad::defaults, flm::samplepad::defaults + flm::samplepad::count);
     const auto bytes = t::song ({ flm190de::rack (flm::kindMaster, {}),
@@ -318,7 +318,7 @@ TEST (flm190dw_pad_output_link_and_bends)
 // plays the file its CSTM names
 TEST (flm190dw_soundfont_and_3xosc_lanes_and_custom_shape)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     flm182c::Bytes sf2;
     {

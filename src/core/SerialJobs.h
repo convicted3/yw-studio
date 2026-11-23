@@ -6,13 +6,13 @@
 #include <mutex>
 #include <thread>
 
-namespace lynx
+namespace yw
 {
 // One background thread that runs small jobs in the order they were posted: file writes the message thread must not
 // wait for. On Windows every JUCE file write ends with FlushFileBuffers, which waits for the disk and took 2 s on a
 // busy one (issue #13: "UI not responding" each time the audio device changed, from saving audio-device.xml on the
 // message thread). The thread starts with the first job; waitIdle() waits for every job posted so far; the
-// destructor runs what is still queued, so nothing posted is lost when LYNX quits. Jobs must capture what they need
+// destructor runs what is still queued, so nothing posted is lost when YW quits. Jobs must capture what they need
 // by value (they may run after the poster is gone).
 class SerialJobs
 {
@@ -100,4 +100,4 @@ private:
     std::thread worker;
     bool busy = false, stopping = false;
 };
-} // namespace lynx
+} // namespace yw

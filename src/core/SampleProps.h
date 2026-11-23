@@ -12,7 +12,7 @@
 
 #include "core/AudioEdit.h"
 
-namespace lynx::sampleprops
+namespace yw::sampleprops
 {
 // --- tempo ↔ length (FL 0x62c120): `frames` = the selection's length (the whole sample without one) -----------------
 double beatsOf (double tempo, double frames, double sampleRate) noexcept;  // frames · tempo / (rate · 60)
@@ -78,4 +78,4 @@ bool accept (audioedit::Document& doc, const Form& form);
 
 // MIDI note name as FL's note lists show them (C5 = 60)
 std::string noteName (int note);
-} // namespace lynx::sampleprops
+} // namespace yw::sampleprops

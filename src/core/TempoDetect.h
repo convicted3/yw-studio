@@ -1,6 +1,6 @@
 #pragma once
 
-// Tempo detection of audio (FL's audio clip "Detect tempo", behaviour from its manual; the method is LYNX's own,
+// Tempo detection of audio (FL's audio clip "Detect tempo", behaviour from its manual; the method is YW's own,
 // REA round 153): an onset-strength curve from band energies, its autocorrelation over the tempo range, and a final
 // snap to the sample's length when the sample is a loop of whole beats.
 
@@ -8,12 +8,12 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 }
 
-namespace lynx::tempodetect
+namespace yw::tempodetect
 {
 struct Options
 {
@@ -38,4 +38,4 @@ std::vector<float> onsetCurve (const float* left, const float* right, std::size_
 // "Fit to tempo" of a whole sample (issue #32 #7): clipops::fitBeats with the WAV's ACID beats, else the tempo detected
 // in it (samples up to 2 minutes), else its power-of-two length at `bpm`. 0 for no sample.
 float fitBeatsOf (const SampleData* sample, double bpm);
-} // namespace lynx::tempodetect
+} // namespace yw::tempodetect

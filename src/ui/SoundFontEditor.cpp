@@ -16,11 +16,11 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-constexpr const char* dragPrefix = "lynx-sf-preset|";
+constexpr const char* dragPrefix = "yw-sf-preset|";
 
 juce::String u8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 std::string std8 (const juce::String& s) { return s.toStdString(); }
@@ -55,7 +55,7 @@ struct PageScope
     skin::StyleScope scope { pageStyle(), skin::Art::soundFont };
 };
 
-// What the editor edits: a Channel Rack channel, or a LYNX Soundfont node inside a Patcher (round 165c: found through
+// What the editor edits: a Channel Rack channel, or a YW Soundfont node inside a Patcher (round 165c: found through
 // `locate`, channel −1 — no automation target, the preview note is rendered off-line instead of played on a channel)
 struct SfTarget
 {
@@ -136,7 +136,7 @@ juce::String channelLabel (AudioEngine& engine, const SfTarget& target)
 
 // --- controls ----------------------------------------------------------------------------------------------------------
 
-// A knob of one parameter, drawn with the plugin skin; LYNX's control contract (drag, wheel, reset, value menu)
+// A knob of one parameter, drawn with the plugin skin; YW's control contract (drag, wheel, reset, value menu)
 class SfKnob final : public juce::Component, public ui::HintSource
 {
 public:
@@ -444,7 +444,7 @@ class SoundFontEditor final : public juce::Component,
 {
 public:
     // issue #174: Edison's drag button may start its drag from this container (the first one it finds): its sample goes
-    // on as a file drag over a plugin's editor or out of LYNX
+    // on as a file drag over a plugin's editor or out of YW
     bool shouldDropFilesWhenDraggedExternally (const juce::DragAndDropTarget::SourceDetails& details, juce::StringArray& files,
                                                bool& canMoveFiles) override
     {
@@ -768,8 +768,8 @@ private:
     void chooseFont()
     {
         const auto start = currentPath().empty() ? juce::File::getSpecialLocation (juce::File::userDocumentsDirectory) : juce::File (u8 (currentPath()));
-        chooser = lynx::ui::makeFileChooser (tr ("Load SoundFont"), start, "*.sf2;*.sf3;*.sfz");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        chooser = yw::ui::makeFileChooser (tr ("Load SoundFont"), start, "*.sf2;*.sf3;*.sfz");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer<SoundFontEditor> (this)] (const juce::FileChooser& fc) {
                                   if (safe == nullptr || fc.getResult() == juce::File())
                                       return;
@@ -824,8 +824,8 @@ private:
             menu.addItem (u8 (f), false, false, nullptr);
         menu.addSeparator();
         menu.addItem (tr ("Add folder..."), [this] {
-            chooser = lynx::ui::makeFileChooser (tr ("Add a SoundFont folder"), juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+            chooser = yw::ui::makeFileChooser (tr ("Add a SoundFont folder"), juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                                   [] (const juce::FileChooser& fc) {
                                       if (fc.getResult() == juce::File())
                                           return;
@@ -1197,4 +1197,4 @@ bool parseSoundFontDrag (const juce::String& description, std::string& path, int
     path = std8 (rest2.fromFirstOccurrenceOf ("|", false, false));
     return ! path.empty();
 }
-} // namespace lynx
+} // namespace yw

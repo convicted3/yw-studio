@@ -8,14 +8,14 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class Workspace;
 
-// Secondary windows (plugin, channel settings, EQ, automation) always stay above the LYNX main window,
+// Secondary windows (plugin, channel settings, EQ, automation) always stay above the YW main window,
 // without staying above other programs: on Windows, the main window becomes their "owner".
 void setMainWindowForOwnership (juce::Component* mainWindow);
-void keepAboveMainWindow (juce::Component& window); // call after the window is visible; sets the LYNX icon
+void keepAboveMainWindow (juce::Component& window); // call after the window is visible; sets the YW icon
 // (it stays owned when JUCE recreates the native window later, e.g. setResizable after it is shown)
 // The main window's native handle (HWND / X11 Window id; nullptr without one): a plugin's window in a separate
 // process is kept above it (round 162d).
@@ -24,20 +24,20 @@ void* mainWindowHandle();
 // a preset's thumbnail from it.
 juce::Component* mainWindowComponent();
 
-// Round 190ev (issue #152, 0.1.26: "the Channel rack almost never comes to the front"): LYNX's own plugin-like editor
+// Round 190ev (issue #152, 0.1.26: "the Channel rack almost never comes to the front"): YW's own plugin-like editor
 // windows (channel settings, the native effects' and controllers' editors, automation clip settings) are FL's docked
 // plugin windows: child windows of the main window floating in the workspace among the docked panels and plugin
 // windows (issue #116), so a click on a panel brings it in front of them and a click on one of them brings it back. As
-// owned top-level windows they stayed above every panel whatever was clicked. They get LYNX's own title bar (a child
+// owned top-level windows they stayed above every panel whatever was clicked. They get YW's own title bar (a child
 // window has no native one) with its close button. `setEditorDock` names the workspace (nullptr: none, at shutdown);
-// FL's "Detach all new plugins" (`setEditorsDetached`) or LYNX_DOCKED_PLUGINS=0 keep them owned top-level windows.
+// FL's "Detach all new plugins" (`setEditorsDetached`) or YW_DOCKED_PLUGINS=0 keep them owned top-level windows.
 void setEditorDock (Workspace* workspace);
 void setEditorsDetached (bool detached);
 // Call where keepAboveMainWindow was called (after the window is visible): docks the window, or keeps it above the main
 // window when it can't be docked. True when it is docked.
 bool dockOrKeepAbove (juce::DocumentWindow& window);
 // Round 190jy (queue item 44; Settings › General › "Draw docked YW Studio editors in the main window", off by default;
-// LYNX_EDITORS_IN_MAIN=1 / 0 overrides it): a docked LYNX editor window (not a hosted plugin's, nor one that holds a
+// YW_EDITORS_IN_MAIN=1 / 0 overrides it): a docked YW editor window (not a hosted plugin's, nor one that holds a
 // native view of its own) is drawn by the main window as one of its components instead of a native child window, so a
 // live display (Gross Beat, Fruity Limiter, Maximus...) costs its paint and no second window presenting frames. It keeps
 // its place among the docked panels and plugin windows (Workspace::addEditorWindow). Windows only. Floating (detached)
@@ -45,12 +45,12 @@ bool dockOrKeepAbove (juce::DocumentWindow& window);
 bool editorsInMainWindow();
 bool editorsInMainWindowSetting(); // (the saved choice, without the environment's override)
 void setEditorsInMainWindow (bool on);
-// Moves the open docked LYNX editors to (true) or from (false) the main window's drawing, at the same place, in the same
+// Moves the open docked YW editors to (true) or from (false) the main window's drawing, at the same place, in the same
 // stacking position; returns how many moved. (The setting's switch; --uiperf A/B and tests.)
 int moveDockedEditors (bool intoMainWindow);
-// `window` is a docked LYNX editor drawn by the main window
+// `window` is a docked YW editor drawn by the main window
 bool isEditorInMainWindow (const juce::Component& window);
-// The docked LYNX editor windows that are open (native child windows and the ones drawn by the main window)
+// The docked YW editor windows that are open (native child windows and the ones drawn by the main window)
 std::vector<juce::DocumentWindow*> dockedEditorWindows();
 // The window a component belongs to as the user sees it: the nearest editor drawn by the main window, else its
 // top-level component (focus, linked windows, click raise)
@@ -64,19 +64,19 @@ void setWindowScreenPosition (juce::Component& window, juce::Point<int> screenTo
 // for the same press after the press's own handler has run (its frame hears the press after its contents), so the new
 // window ended up behind the Playlist. Docked editors call noteEditorRaised whenever they come in front; a panel's press
 // handler calls keepPressRaisedEditorsInFront right after it raised the panel: the windows raised during that same press
-// go back in front. A raise outside a press (keys, menus, a mouse-up) is not noted. LYNX_FIX191=0 turns it off (A/B).
+// go back in front. A raise outside a press (keys, menus, a mouse-up) is not noted. YW_FIX191=0 turns it off (A/B).
 void noteEditorRaised (juce::Component& window);
 void keepPressRaisedEditorsInFront (const juce::MouseEvent& press);
 // Issue #191: true when the action that is opening an editor now comes from a floating (detached) panel window: the
 // mouse was pressed in one less than a second ago, or, without a recent press, the keyboard focus is in one. A docked
 // editor would open inside the main window, behind that window; the Clip-launch and Simple layouts open it as a window
-// of its own then (kept above the main window like the panel). Detached panel windows carry the property "lynxPanel".
+// of its own then (kept above the main window like the panel). Detached panel windows carry the property "ywPanel".
 bool openedFromFloatingPanel();
 
 // Keys a secondary window does not use (no component in it took them) go to the main window's global shortcuts, as in
 // FL (round 165q / issue #12: Space, F12 or a user's key did nothing while the Undo history, Settings, a plugin window...
 // had the focus). keepAboveMainWindow installs the forwarding on the window; the main window sets the handler. A window
-// that handles every key itself (a detached panel) sets the property "lynxOwnKeys".
+// that handles every key itself (a detached panel) sets the property "ywOwnKeys".
 void setSecondaryWindowKeyHandler (std::function<bool (const juce::KeyPress&)> handler);
 // Issue #179: a modal dialog (an alert, Rename..., Export...) is open: the app is blocked as FL is, so keys a window leaves
 // unused run no shortcut meanwhile.
@@ -119,7 +119,7 @@ bool isAboveMainWindow (juce::Component& window);
 
 // Keeps a top-level window reachable (round 163, UI zoom 150%+): a resizable window larger than its screen shrinks
 // to it, and the window moves so its title bar and close button are on the screen. keepAboveMainWindow does it the
-// first time; the UI scale change does it for every LYNX window.
+// first time; the UI scale change does it for every YW window.
 void fitWindowOnScreen (juce::Component& window);
 void fitAllWindowsOnScreen();
 
@@ -134,14 +134,14 @@ std::unique_ptr<juce::Component> fitContentToScreen (std::unique_ptr<juce::Compo
 // asks for the key's place with this (FL goes by scan code).
 int scanCodeOfKeyCode (int juceKeyCode);
 
-// --windowtest only: makes `window` the foreground window even when LYNX was started in the background.
+// --windowtest only: makes `window` the foreground window even when YW was started in the background.
 void forceForegroundForTest (juce::Component& window);
 
-// Native window chrome in the LYNX colours (dark title bar on Windows). keepAboveMainWindow calls it.
+// Native window chrome in the YW colours (dark title bar on Windows). keepAboveMainWindow calls it.
 void applyWindowChrome (juce::Component& window);
 
 // GPU rendering (round 157a). JUCE 8 draws every Windows window with Direct2D (the GPU driver's D3D11 path); a
-// driver that crashes there (Intel igd10um64xe.dll on a hybrid-graphics laptop) takes LYNX down. Off = every LYNX
+// driver that crashes there (Intel igd10um64xe.dll on a hybrid-graphics laptop) takes YW down. Off = every YW
 // window draws with GDI (the CPU), as JUCE 7 did. Saved in gpu-rendering.txt ("0" = off; default on). The change
 // applies to open windows at once (a watcher re-applies it to new windows twice a second).
 bool gpuRenderingEnabled();
@@ -161,7 +161,7 @@ void removeDialogTextFocus();
 // The dialog's first editable, visible text field (top to bottom, then left to right), or nullptr.
 juce::TextEditor* firstTextField (juce::Component& dialog);
 
-// The LYNX SHARE logo by w3teal as the app icon (the mark on its dark tile; 512 px, with transparency), and the icon's
+// The YW Studio logo by w3teal as the app icon (the mark on its dark tile; 512 px, with transparency), and the icon's
 // small-size form (thicker lines, the mark larger in the tile: tools/make_logo.py) with the pepper stem for 21-32
 // physical pixels and without it for 20 px and less. All three are square with the tile filling them.
 juce::Image logoImage();
@@ -169,7 +169,7 @@ juce::Image logoImage();
 juce::Image decodeLogoImage();
 juce::Image logoSmallImage();
 juce::Image logoTinyImage();
-// The mark alone (w3teal's lynx in the red ring with the stem, no tile; 512 px) and its small-size form (128 px).
+// The mark alone (w3teal's yw in the red ring with the stem, no tile; 512 px) and its small-size form (128 px).
 juce::Image logoMarkImage();
 juce::Image logoMarkSmallImage();
 // Where the mark's ring sits in the mark pictures (the ears and the stem rise above it): centre and radius as
@@ -184,7 +184,7 @@ juce::Image logoAt (int px);
 double processCpuSeconds();
 // The CPU time the calling thread has used so far, in seconds (user + kernel; --uiperf: the message thread's share).
 double threadCpuSeconds();
-// Round 190ih (--uiperf with LYNX_UIPERF_THREADS=1): every thread of this process with its name (Windows 10+: the
+// Round 190ih (--uiperf with YW_UIPERF_THREADS=1): every thread of this process with its name (Windows 10+: the
 // thread description, else empty) and the CPU seconds it has used so far; empty where the platform can't list them.
 struct ThreadCpu
 {
@@ -203,4 +203,4 @@ int setThreadPriorities (const std::vector<std::string>& nameParts, bool message
 // the same per thread.
 std::uint64_t processCpuCycles();
 double cpuCyclesPerSecond();
-} // namespace lynx
+} // namespace yw

@@ -6,7 +6,7 @@
     bool runFocus218Shot190ng (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -14,7 +14,7 @@
             allOk = allOk && ok;
         };
         const auto line = [&checks] (const juce::String& what) { checks << "     " << what << "\n"; };
-        using namespace lynx;
+        using namespace yw;
         AudioEngine offline (false);
         MainComponent ui (offline, false);
         ui.setSize (1600, 900);
@@ -111,7 +111,7 @@
             inDialog.setSize (120, 24);
             dialog.setContentNonOwned (&inDialog, true);
             check ("rules: a drop-down in a dialog keeps the keyboard", ! ui::keyfocus::shouldGiveBack (&inDialog, ui));
-            dialog.getProperties().set ("lynxPanel", true);
+            dialog.getProperties().set ("ywPanel", true);
             check ("rules: a drop-down in a panel window (detached Mixer...) gives it back", ui::keyfocus::shouldGiveBack (&inDialog, ui));
             juce::ComboBox typed ("typed");
             typed.setEditableText (true);

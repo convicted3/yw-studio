@@ -12,14 +12,14 @@
 //     first and last packets applies, nothing else).
 // vorbisfile (used by JUCE's OggVorbisAudioFormat) treats a mid-stream page that begins another stream as a chain
 // boundary and drops samples, so in 295 of the installation's 3 137 Ogg WAVs it returned fewer frames than the file
-// holds; and FL's libvorbis builds its MDCT table from single-precision angles (third_party/vorbis/src/mdct.c, LYNX
+// holds; and FL's libvorbis builds its MDCT table from single-precision angles (third_party/vorbis/src/mdct.c, YW
 // modification). With both, all 3 137 files decode bit-identically to FL's decoder [EXEC].
 
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
-namespace lynx::oggvorbis
+namespace yw::oggvorbis
 {
 struct Decoded
 {
@@ -37,4 +37,4 @@ bool isOggStream (const std::uint8_t* bytes, std::size_t size);
 // Decodes an Ogg-in-WAV file or a plain Ogg Vorbis file (the whole file's bytes) as FL does. Like FL's loader it
 // accepts only mono and stereo streams. False when no Vorbis stream could be decoded.
 bool decode (const std::uint8_t* bytes, std::size_t size, Decoded& out);
-} // namespace lynx::oggvorbis
+} // namespace yw::oggvorbis

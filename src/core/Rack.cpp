@@ -9,7 +9,7 @@
 #include "core/NoteEdit.h"
 #include "core/Patcherize.h"
 
-namespace lynx::rack
+namespace yw::rack
 {
 // ---------------------------------------------------------------------------------------------------------------
 // Laws
@@ -388,7 +388,7 @@ void compile (PatcherDoc& doc)
         }
         else
         {
-            // notes: From LYNX → (the chain's zones) → MIDI effects → the instrument; audio: instrument → effects → mixer
+            // notes: From YW → (the chain's zones) → MIDI effects → the instrument; audio: instrument → effects → mixer
             PatchZone z;
             z.key = c.key;
             z.velocity = c.velocity;
@@ -402,7 +402,7 @@ void compile (PatcherDoc& doc)
             {
                 const auto receive = std::clamp (c.receive, -1, 127);
                 z.key = receive < 0 ? RackZone {} : RackZone { receive, receive, receive, receive };
-                c.key = z.key; // (what a LYNX without Drum Racks plays: a key split on the pad's note)
+                c.key = z.key; // (what a YW without Drum Racks plays: a key split on the pad's note)
                 z.playKey = receive < 0 ? -1 : std::clamp (c.play, 0, 127);
                 z.choke = std::clamp (c.choke, 0, drumChokeGroups);
             }
@@ -885,7 +885,7 @@ bool fromPatcher (PatcherDoc& doc, const std::function<float (int node, int para
     for (const auto& p : doc.published)
         if (p.curve.size() > 2 || (p.node >= 0 && p.node >= (int) doc.nodes.size()))
             return false;
-    // the series: From LYNX → a → b → … → To LYNX, every node once, nothing else
+    // the series: From YW → a → b → … → To YW, every node once, nothing else
     std::vector<int> order;
     int at = patchFromHost;
     for (std::size_t guard = 0; guard <= doc.nodes.size(); ++guard)
@@ -1875,7 +1875,7 @@ ChannelDef sliceToDrumRack (const std::string& samplePath, const std::vector<flo
         s.sampler.regionStart = std::clamp (starts[(std::size_t) i], 0.0f, 1.0f);
         s.sampler.regionEnd = std::clamp (i + 1 < (int) starts.size() ? starts[(std::size_t) i + 1] : end, s.sampler.regionStart, 1.0f);
         // Live's Default slicing: Classic mode with a 50 ms release, one voice, every pad in choke group 1; the one-shot
-        // template plays each slice to its end (LYNX's Sampler: release 0 = one-shot)
+        // template plays each slice to its end (YW's Sampler: release 0 = one-shot)
         s.sampler.release = preset == SliceTemplate::gated ? 0.05f : 0.0f;
         s.sampler.cut = preset == SliceTemplate::gated; // (one voice: a new note on the pad cuts the last)
         const auto name = s.name; // (copied first: the pad's node is moved into addPad)
@@ -2004,4 +2004,4 @@ double slicePerBeats (SlicePer per, Meter meter) noexcept
     }
     return 0.0;
 }
-} // namespace lynx::rack
+} // namespace yw::rack

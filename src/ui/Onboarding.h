@@ -1,8 +1,8 @@
 #pragma once
 
 // First-run onboarding, the window's parts (round 190np; core/Onboarding.h has the logic, ONBOARDING-DESIGN.md of round
-// 190nj the design and mockups M1–M5). LYNX's own look: dark cards in the LYNX dialog frame with the red accent strip,
-// LYNX-drawn icons, product names in plain text (no logos).
+// 190nj the design and mockups M1–M5). YW's own look: dark cards in the YW dialog frame with the red accent strip,
+// YW-drawn icons, product names in plain text (no logos).
 //
 //  - The welcome card (M1): an overlay over the main window, as the Setup wizard's, with one question and five choices;
 //    one click applies a choice, Skip / × / Esc keep the Pattern layout. Language, a sound test and the background plugin
@@ -22,9 +22,9 @@
 
 #include "core/Onboarding.h"
 
-namespace lynx::onboardui
+namespace yw::onboardui
 {
-// Whether the settings folder held LYNX's UI settings when the app started (Main.cpp sets it before the window exists)
+// Whether the settings folder held YW's UI settings when the app started (Main.cpp sets it before the window exists)
 bool& profileExistedAtStart();
 
 // --- the welcome card ---------------------------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ struct WelcomeHost
     std::function<juce::String()> deviceName;           // "Speakers (system default)" or the open device's name
     std::function<juce::String()> scanStatus;           // "Plugins: scanning in the background" ... (polled at 1 Hz)
     // issue #233 on the welcome card (rollup 0.1.31 step 2: round 190ns's Updates choice of the old wizard, moved here): the
-    // bottom row's "Check for updates automatically" (only where LYNX updates itself, not in the Store build). `updates`
+    // bottom row's "Check for updates automatically" (only where YW updates itself, not in the Store build). `updates`
     // gets the toggle's state right before `choose` / `moreSetup`: every answer (a choice, Skip, ×, Esc) applies it.
     bool updatesShown = false;
     bool updatesOn = true;
@@ -53,7 +53,7 @@ int welcomeIdealHeight (const juce::Component& card);
 // shots: one tile shown hovered (-1: none)
 void setWelcomeHoverForSnapshot (juce::Component& cardOrOverlay, int tile);
 
-// The choice's LYNX-drawn icon: white strokes on a rounded square of the choice's colour (as the New-track tiles)
+// The choice's YW-drawn icon: white strokes on a rounded square of the choice's colour (as the New-track tiles)
 void paintChoiceIcon (juce::Graphics& g, juce::Rectangle<float> area, onboarding::Choice choice);
 juce::Colour choiceColour (onboarding::Choice choice);
 
@@ -145,4 +145,4 @@ juce::Rectangle<int> areaIn (juce::Component& window, juce::Component& c);
 // The first showing component with this ID (or, failing that, this name / button text) inside `window` and its native
 // panels; nullptr when none (the demo runner and the tips' anchors)
 juce::Component* findShowing (juce::Component& window, const juce::String& idOrName);
-} // namespace lynx::onboardui
+} // namespace yw::onboardui

@@ -1,4 +1,4 @@
-// Round 190jj (capture190ji's "Change in LYNX" lines): the transport states each toolbar look shows (BandLab's Simple
+// Round 190jj (capture190ji's "Change in YW" lines): the transport states each toolbar look shows (BandLab's Simple
 // capsule: Pause and Stop while it runs, Record steady; Live: steady glyphs; FL alone blinks) and the Master-only meter
 // reader behind the Simple top bar's master volume.
 
@@ -7,7 +7,7 @@
 
 TEST (capfix190jj_transport_states_per_look)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     const auto fl = transportStates (Look::fl), simple = transportStates (Look::simple), live = transportStates (Look::live);
     CHECK (fl.pauseWhilePlaying && fl.recordBlinks && ! fl.stopWhilePlaying); // (round 190ih's R3, unchanged)
     CHECK (simple.pauseWhilePlaying && simple.stopWhilePlaying);              // BandLab: Play→Pause, Back→Stop
@@ -17,7 +17,7 @@ TEST (capfix190jj_transport_states_per_look)
 
 TEST (capfix190jj_master_bar_meter_reads_the_master_only)
 {
-    auto bank = std::make_unique<lynx::MeterBank>();
+    auto bank = std::make_unique<yw::MeterBank>();
     bank->accumulate (3, 0.9f, 0.9f); // (an insert: not the Master)
     CHECK (bank->takeMasterBarPeak (0) == 0.0f && bank->takeMasterBarPeak (1) == 0.0f);
     bank->accumulate (0, 0.5f, 0.25f);

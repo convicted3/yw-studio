@@ -7,7 +7,7 @@
 #include <array>
 #include <cstdint>
 
-namespace lynx
+namespace yw
 {
 class VoiceOrder
 {
@@ -64,4 +64,4 @@ inline int voiceLimitFor (int maxPolyphony, bool mono) noexcept
         return 0;
     return maxPolyphony;
 }
-} // namespace lynx
+} // namespace yw

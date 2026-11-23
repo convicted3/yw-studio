@@ -5,7 +5,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class LiveSessionManager;
 
@@ -20,4 +20,4 @@ bool chatVisible();
 // The host: each guest's role and what they keep at the end, changed during the session.
 void showPermissions (LiveSessionManager& live);
 } // namespace liveui
-} // namespace lynx
+} // namespace yw

@@ -1,8 +1,8 @@
 // Round trans189d (issue #94): Strike Shaper's editor — the two-knob transient designer's hardware mood, drawn here
 // from scratch (no bitmaps, logos or fonts of any original): two narrow rack modules side by side, each a brushed
 // silver frame with slotted screws round a black capsule. The left module is the unit itself: SIG / OVL lamps,
-// ATTACK and SUSTAIN on their printed dB scales, ON and LINK lit keys, OUTPUT GAIN. The right module carries LYNX's
-// name plate with LYNX's logo, the two activity rows (how far the attack and sustain gains move, live), the
+// ATTACK and SUSTAIN on their printed dB scales, ON and LINK lit keys, OUTPUT GAIN. The right module carries YW's
+// name plate with YW's logo, the two activity rows (how far the attack and sustain gains move, live), the
 // detector's high-pass, GUARD and the parallel MIX, and the power lamp. Included by ui/ProEditors.cpp.
 
 class StrikeEditor final : public ProEditor
@@ -374,7 +374,7 @@ private:
         g.fillRoundedRectangle (plate, 6.0f);
         g.setColour (juce::Colours::white.withAlpha (0.12f));
         g.drawRoundedRectangle (plate.reduced (0.5f), 6.0f, 1.0f);
-        skin::brandMark (g, juce::Rectangle<float> (40.0f, 40.0f).withCentre ({ plate.getX() + 30.0f, plate.getCentreY() })); // LYNX's logo
+        skin::brandMark (g, juce::Rectangle<float> (40.0f, 40.0f).withCentre ({ plate.getX() + 30.0f, plate.getCentreY() })); // YW's logo
         text (g, { plate.getX() + 54.0f, plate.getY() + 8.0f, 72.0f, 22.0f }, "YW Studio", 19.0f, true, kInk, juce::Justification::centredLeft, 0.12f);
         text (g, { plate.getX() + 55.0f, plate.getY() + 32.0f, 72.0f, 14.0f }, "AUDIO", 8.5f, false, kDim, juce::Justification::centredLeft, 0.4f);
         text (g, { 330.0f, y0 + 154.0f, 202.0f, 26.0f }, "Strike", 24.0f, true, kInk);

@@ -1,6 +1,6 @@
 #pragma once
 
-// Adding a track in the Simple workflow (round 184a, slice S2; design: /mnt/e/lynx-work/simple184a/DESIGN.md §2.1).
+// Adding a track in the Simple workflow (round 184a, slice S2; design: /mnt/e/yw-work/simple184a/DESIGN.md §2.1).
 // In the Simple workflow a track is one Playlist track, one mixer insert and (for an instrument) one channel, made and
 // named together, so the user never meets FL's channel / pattern / insert triangle. Everything is built from FL's own
 // track modes (core/PlaylistOps.h `trackmodes`), so the project stays an ordinary FL-style project that every layout,
@@ -20,7 +20,7 @@
 #include "core/Song.h"
 #include "core/TrackIcons.h"
 
-namespace lynx::simpletracks
+namespace yw::simpletracks
 {
 enum class Kind : std::uint8_t
 {
@@ -158,10 +158,10 @@ double tempoInName (const std::string& name, bool* explicitBpm = nullptr);
 bool isEmptySong (const Song& song);
 
 // Round 190fo: a folder of stems and MIDI files brought in at once (owner decision O6: BandLab's "Download Stems",
-// one file per track named "NN_name", and LYNX's own export for other apps, "Stems/NN name.wav" + "MIDI/NN name.mid").
+// one file per track named "NN_name", and YW's own export for other apps, "Stems/NN name.wav" + "MIDI/NN name.mid").
 // `paths` are the folder's files (any order, sub-folders allowed, '/' separated); the plan keeps the audio and MIDI files
 // in name order (the number first), names each track after its file without the number, skips the "(all tracks)" MIDI
-// file and the "<name> - mixdown" audio file of LYNX's export, and marks a MIDI file whose track name an audio file also has (`muted`: its notes come in on a
+// file and the "<name> - mixdown" audio file of YW's export, and marks a MIDI file whose track name an audio file also has (`muted`: its notes come in on a
 // muted track, since the stem already plays them).
 struct FolderItem
 {
@@ -197,7 +197,7 @@ bool setEchoSend (Song& song, int insert, float level);
 // one pick; BandLab and GarageBand have none, their users fake it with volume automation). It is FL's own way: a Fruity
 // Limiter at the end of the track's chain, its compressor keyed by the trigger's insert through a level-0 send (FL's
 // "Sidechain to this track"), the slot a one-knob effect (goals::duck) whose knob is the Amount. Every layout, the Mixer,
-// the .flp export and older LYNX releases see an ordinary Fruity Limiter with a side input.
+// the .flp export and older YW releases see an ordinary Fruity Limiter with a side input.
 enum class DuckStyle : std::uint8_t
 {
     subtle,  // a gentle dip
@@ -226,4 +226,4 @@ bool setDuckAmount (Song& song, int insert, float amount);
 
 // "03_Lead Vox" → "Lead Vox", "01 Drums" → "Drums", "12-Bass" → "Bass"; anything else stays (a bare number too).
 std::string stemTrackName (const std::string& fileStem);
-} // namespace lynx::simpletracks
+} // namespace yw::simpletracks

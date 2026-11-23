@@ -1,4 +1,4 @@
-// Round 190pa (research190oe P14, LYNX extra): a range on chosen tracks (REAPER's razor edit, Live's time selection over
+// Round 190pa (research190oe P14, YW extra): a range on chosen tracks (REAPER's razor edit, Live's time selection over
 // some tracks). Included by PlaylistComponent.cpp. core/RangeEdit.h does the work on the song; Song::trackRange holds the
 // range, so it is saved with the project and undo brings it back with the edit.
 //

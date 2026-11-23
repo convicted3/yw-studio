@@ -1,15 +1,15 @@
 #pragma once
 
-// One-sentence descriptions of the controls of LYNX's own engines (round 135, docs/PARITY.md "description line"):
+// One-sentence descriptions of the controls of YW's own engines (round 135, docs/PARITY.md "description line"):
 // the reference reverbs (and other originals) explain the control under the mouse in a strip at the bottom of their
-// window. LYNX's editors draw the same strip; the texts are LYNX's own words, English, marked for translation
+// window. YW's editors draw the same strip; the texts are YW's own words, English, marked for translation
 // (resources/i18n/pt-BR.txt). No JUCE: tested in tests/Parity135vTests.inc.
 
 #include <string>
 
 #include "core/Song.h"
 
-namespace lynx::paramhelp
+namespace yw::paramhelp
 {
 // What the control does; nullptr when there is no text. `param` is the parameter's EffectInfo name. The lookup tries
 // the engine's own wording first, then the shared one, then the name without a band / voice / side / section prefix
@@ -27,4 +27,4 @@ Summary summary (EffectKind kind, const EffectParams& params);
 
 // The parameter that names an engine's mode / type / style (−1 = none).
 int modeParam (EffectKind kind);
-} // namespace lynx::paramhelp
+} // namespace yw::paramhelp

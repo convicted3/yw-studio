@@ -7,14 +7,14 @@ namespace p165a
 // small-signal gain (dB) of Ember's Classic voicing at 1 kHz, −70 dBFS
 inline double classicGainDb (int style, float drive, bool punish, bool measuredLaw = true)
 {
-    namespace e = lynx::mixsuite::ember;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::ember);
+    namespace e = yw::mixsuite::ember;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::ember);
     slot.params[(size_t) e::voicing] = 1.0f;
     slot.params[(size_t) e::classicStyle] = (float) style / 4.0f;
     slot.params[(size_t) e::classicDrive] = drive / 10.0f;
     slot.params[(size_t) e::classicPunish] = punish ? 1.0f : 0.0f;
     slot.params[(size_t) e::classicLaw] = measuredLaw ? 1.0f : 0.0f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     fx->reset();
     const int n = 24000;
@@ -48,7 +48,7 @@ TEST (ember_classic_punish_follows_the_measured_law_round165)
 
 TEST (ember_classic_law_upgrade_and_count_round165)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     CHECK ((int) em::count <= maxEffectParams);
     auto old = makeEffectSlot (EffectKind::ember);
@@ -64,7 +64,7 @@ TEST (ember_classic_law_upgrade_and_count_round165)
 TEST (ember_classic_auto_moves_output_with_drive_round165)
 {
     // [EXEC her 63 saved states] the reference's Auto: Output = −1.6 dB per Drive unit (drive 2.0 → −3.2 dB, 5.9 → −9.4)
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto slot = makeEffectSlot (EffectKind::ember);
     slot.params[(size_t) em::voicing] = 1.0f;
@@ -90,7 +90,7 @@ TEST (ember_classic_auto_moves_output_with_drive_round165)
 
 TEST (ember_classic_layout_is_the_one_screen_panel_round165)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& l = plugui::layoutFor (EffectKind::ember);
     bool vu = false, autoToggle = false, styleRow = false;
     for (const auto& it : l.items)

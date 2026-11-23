@@ -17,7 +17,7 @@
 
 #include "core/PlateReverb.h"
 
-namespace lynx
+namespace yw
 {
 namespace reeverb2
 {
@@ -1192,4 +1192,4 @@ std::string reeverb2ParamText (int param, float value01)
     }
     return text;
 }
-} // namespace lynx
+} // namespace yw

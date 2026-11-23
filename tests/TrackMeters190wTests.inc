@@ -4,7 +4,7 @@
 
 TEST (r190w_track_header_levels_follow_fl_defaults)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.playlistTracks.resize (4);
     const trackmodes::HeaderOptions fl; // FL's defaults: audio tracks on, instrument tracks off
@@ -33,7 +33,7 @@ TEST (r190w_track_header_levels_follow_fl_defaults)
 
 TEST (r190w_meter_bank_view_peaks_do_not_steal_the_mixers)
 {
-    using namespace lynx;
+    using namespace yw;
     MeterBank bank;
     bank.accumulate (3, 0.5f, 0.25f);
     CHECK (bank.takePeak (3, 0) == 0.5f);         // the Mixer reads its peak

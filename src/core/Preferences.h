@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::prefs
+namespace yw::prefs
 {
 // --- "key=value" settings files (ui-options.txt, midi-settings.txt) -------------------------------------------------
 // Lines "key=value" (spaces around both trimmed); blank lines and lines without '=' are ignored, the last of a
@@ -82,7 +82,7 @@ int safeBufferSize (const std::vector<int>& available, int current, double sampl
 //                  devices), so a smaller buffer cannot lower the latency, it only adds bursts;
 //  lowLatency    - shared, but asks Windows for a shorter engine period (IAudioClient3); only drivers that support it
 //                  go below 10 ms (many USB class-driver devices stay at 480 samples);
-//  exclusive     - LYNX alone on the device (other programs go silent); the device's own minimum period (often 3 ms).
+//  exclusive     - YW alone on the device (other programs go silent); the device's own minimum period (often 3 ms).
 enum class DriverKind
 {
     wasapiShared,
@@ -90,11 +90,11 @@ enum class DriverKind
     wasapiExclusive,
     directSound,
     asio,
-    lynxAsio, // LYNX ASIO loaded by LYNX itself, without registration (REA round 106)
+    ywAsio, // YW ASIO loaded by YW itself, without registration (REA round 106)
     coreAudio, // macOS
     alsa,      // Linux
     jack,      // Linux (JACK, or PipeWire through pipewire-jack)
-    pipewire,  // Linux: LYNX's native PipeWire client (round 161)
+    pipewire,  // Linux: YW's native PipeWire client (round 161)
     other
 };
 DriverKind driverKind (const std::string& typeName);
@@ -105,13 +105,13 @@ DriverKind driverKind (const std::string& typeName);
 std::vector<int> usableBufferSizes (DriverKind kind, const std::vector<int>& offered, int devicePeriod);
 
 // After dropouts on a Windows shared-mode or DirectSound device (round 160): the ASIO driver worth suggesting, from the
-// ASIO type's device names. The interface's own driver first (e.g. "SSL ASIO Driver 1"), then LYNX ASIO, then any;
+// ASIO type's device names. The interface's own driver first (e.g. "SSL ASIO Driver 1"), then YW ASIO, then any;
 // wrappers (ASIO4ALL, FL Studio ASIO, Generic Low Latency) only when nothing else is there. Empty when the current
 // type already is ASIO / exclusive / not Windows, or no ASIO driver exists.
 std::string suggestedAsioDriver (const std::string& currentTypeName, const std::vector<std::string>& asioDevices);
 
 // --- Linux audio (round 161) ------------------------------------------------------------------------------------
-// The driver type a first start opens on Linux, from the types with whether they found devices: PipeWire (LYNX's own
+// The driver type a first start opens on Linux, from the types with whether they found devices: PipeWire (YW's own
 // client), then JACK (a running server), then ALSA, then whatever has devices. Empty when nothing has devices.
 std::string preferredLinuxDriver (const std::vector<std::pair<std::string, bool>>& typesWithDevices);
 
@@ -140,7 +140,7 @@ enum class VelocityCurve
 };
 float mapVelocity (float velocity, VelocityCurve curve) noexcept; // 0..1 -> 0..1 (0 stays 0: a note-off)
 
-// Round 190ao (pain point 12; LYNX's own: FL's wrapper has no velocity setting, its MIDI group is the ports, release
+// Round 190ao (pain point 12; YW's own: FL's wrapper has no velocity setting, its MIDI group is the ports, release
 // velocity, pitch bend range, MOD X aftertouch and All Notes Off [DATA Fruity Wrapper DFM, REA round 149 C7]): a hosted
 // instrument's own answer to the notes played into it from MIDI devices (PluginRef::velocityMode / fixedVelocity).
 // Mode 0 follows the MIDI settings' curve (the default: nothing changes); 1…4 is the plugin's own curve
@@ -161,7 +161,7 @@ struct MidiInputPrefs
     // "Controller type" (round 190aw, core/ControllerProfile.h): "" = detect a profile by the port name,
     // "generic" = a generic controller (no profile), else a profile's id
     std::string controller;
-    // MPE (issue #108, core/Mpe.h; a LYNX addition): the device is an MPE controller — lower zone, master channel 1,
+    // MPE (issue #108, core/Mpe.h; a YW addition): the device is an MPE controller — lower zone, master channel 1,
     // `mpeMembers` member channels from 2 up, per-note pitch bend over `mpeBendRange` semitones. The MIDI channel
     // filter above does not apply then.
     bool mpe = false;
@@ -194,7 +194,7 @@ struct GlobalLink
 };
 
 // A MIDI mapping of the Clip-launch layout's MIDI Map Mode kept in the settings, for every project (round 190hp, slice
-// B9 of the 0.1.28 pain report; LYNX's own: the reference DAW keeps its mappings with each set, which users complain
+// B9 of the 0.1.28 pain report; YW's own: the reference DAW keeps its mappings with each set, which users complain
 // about). Made with the Mapping Browser's "In every project (YW Studio)". Only targets that exist in any project: the
 // transport switches, Stop all clips and a scene's launch button (it acts while the project has that scene). A
 // project's own mapping of the same MIDI control wins. Parameter mappings become FL's global links (GlobalLink).
@@ -226,13 +226,13 @@ struct MidiPrefs
 {
     std::vector<MidiInputPrefs> inputs; // the devices the user changed (others use the defaults)
     std::vector<MidiOutputPrefs> outputs; // the output devices the user changed
-    std::string clockInput;             // "External clock sync": the input LYNX follows ("" = off)
+    std::string clockInput;             // "External clock sync": the input YW follows ("" = off)
     int clockOffsetMs = 0;              // "External sync offset (milliseconds)", -1000…1000
     std::vector<GlobalLink> globalLinks;
     std::vector<GlobalMapping> globalMappings; // (round 190hp)
     VelocityCurve velocity = VelocityCurve::linear;
     bool pickup = false;                // a controller takes over a parameter only once it reaches its value
-    // FL's "Foot pedal controls note off" (KbHoldSupportBox, on; round 187a): LYNX holds the notes on CC 64 (sustain)
+    // FL's "Foot pedal controls note off" (KbHoldSupportBox, on; round 187a): YW holds the notes on CC 64 (sustain)
     // and CC 66 (sostenuto); off, the pedal goes to the plugins as a controller
     bool footPedalNoteOff = true;
     // FL's Options › MIDI "Song marker jump (MIDI channel)": a note on this channel (1..16; 0 = off) jumps the song to
@@ -244,7 +244,7 @@ struct MidiPrefs
     // "Use a game controller" (round 184a, S16): the first XInput pad plays the transport and is linkable like a
     // MIDI controller (core/GamepadMap.h); off by default
     bool gamepad = false;
-    // Ableton Link (round 190gl, engine/AbletonLink.h): LYNX in the Link session (its control-bar toggle) and the
+    // Ableton Link (round 190gl, engine/AbletonLink.h): YW in the Link session (its control-bar toggle) and the
     // reference DAW's Settings › Link "Start Stop Sync" (off by default, as there). Kept with the MIDI sync settings:
     // like the reference DAW's, they belong to the app, not to a project.
     bool link = false;
@@ -270,7 +270,7 @@ struct MidiPrefs
     bool operator== (const MidiPrefs&) const = default;
 };
 
-// What to do with the MIDI input devices at a periodic check (issue #4: a controller that was not ready when LYNX
+// What to do with the MIDI input devices at a periodic check (issue #4: a controller that was not ready when YW
 // started, or that came back after a reconnection, stayed silent until it was turned off and on in Settings).
 struct MidiPort
 {
@@ -336,7 +336,7 @@ struct PluginRow
     PluginStatus status = PluginStatus::ok;
     bool favourite = false;
     std::string bits = {}; // FL's Bits column (Windows, round 176a): "64", "32" or "32+64"
-    bool separate = false; // round 190gg (LYNX-own): on the "always run in a separate process" list
+    bool separate = false; // round 190gg (YW-own): on the "always run in a separate process" list
 };
 
 enum class PluginFilter { all, instruments, effects, favourites, failed };
@@ -352,7 +352,7 @@ std::set<std::string> parseFavourites (const std::string& text);
 std::string formatFavourites (const std::set<std::string>& ids);
 
 // Plugin names the user gave (FL's renamed Plugin database entries, issue #11): "key<TAB>name" per line. The key is
-// the plugin's identifier string, or "lynx:fx:<name>" / "lynx:gen:<name>" for LYNX's built-in ones. A name that
+// the plugin's identifier string, or "yw:fx:<name>" / "yw:gen:<name>" for YW's built-in ones. A name that
 // starts with a character no other entry starts with ("1_Limiter") is picked by typing it in the slot menus.
 std::map<std::string, std::string> parsePluginNames (const std::string& text);
 std::string formatPluginNames (const std::map<std::string, std::string>& names);
@@ -365,4 +365,4 @@ int uniqueTypeAhead (const std::vector<std::string>& labels, char typed);
 // that can be highlighted (`selectable`, e.g. not headings or separators) count. -1 when none starts with it.
 // Pressing "e" again moves on to the next one (EQ, then Effector...); nothing is picked until Enter.
 int nextTypeAhead (const std::vector<std::string>& labels, const std::vector<bool>& selectable, int current, char typed);
-} // namespace lynx::prefs
+} // namespace yw::prefs

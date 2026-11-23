@@ -7,9 +7,9 @@ namespace pzwheel173d
 {
 // one held C4 on a PoiZone channel; `edit` applied to the channel at `at` seconds as an editor edit does (the rack
 // state rebuilt from the edited song, the instrument kept and configured again)
-std::vector<float> renderEdit (const lynx::ChannelDef& channel, const std::function<void (lynx::ChannelDef&)>& edit, double at, double seconds)
+std::vector<float> renderEdit (const yw::ChannelDef& channel, const std::function<void (yw::ChannelDef&)>& edit, double at, double seconds)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (2);
     s.bpm = 120.0;
@@ -50,11 +50,11 @@ std::vector<float> renderEdit (const lynx::ChannelDef& channel, const std::funct
 
 // FL's PoiZone has its own MODULATION and PITCH BEND wheels on its editor (TSynthEditorForm's ModWheel /
 // PitchBendWheel; parameters 157 / 158, REA_rodada44 §1.3): PB range scales the bend wheel (range r → r + 1
-// semitones), MW amount / destination act through the mod wheel. LYNX's editor had neither, so those controls did
+// semitones), MW amount / destination act through the mod wheel. YW's editor had neither, so those controls did
 // nothing; the wheels are kept in the channel's modelParams (FL's state has no room for them)
 TEST (wheel173d_poizone_wheels_drive_bend_range_and_mod_wheel)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::poizone;
     c.pluginState = poizoneDefaultState();

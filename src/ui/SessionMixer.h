@@ -16,7 +16,7 @@
 #include "ui/ValueControl.h"
 #include "ui/MapMode.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -157,4 +157,4 @@ private:
     Hit dragging, hover;
     int cueChannels = 0; // round 190nc: the device's output count, read at each paint (Cue mode needs a separate Cue Out)
 };
-} // namespace lynx
+} // namespace yw

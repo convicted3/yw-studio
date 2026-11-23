@@ -114,7 +114,7 @@ std::vector<std::uint8_t> id3v2 (std::size_t pictureBytes, bool footer)
     return tag;
 }
 
-bool sameSamples (const lynx::mp3::Decoded& a, const lynx::mp3::Decoded& b, std::size_t offsetInA = 0)
+bool sameSamples (const yw::mp3::Decoded& a, const yw::mp3::Decoded& b, std::size_t offsetInA = 0)
 {
     if (a.left.size() < offsetInA || a.left.size() - offsetInA < b.left.size() || a.right.empty() != b.right.empty())
         return false;
@@ -145,7 +145,7 @@ int bestLag (const std::vector<float>& decoded, const std::vector<float>& source
 
 TEST (mp3_decoder_is_minimp3_exact_with_fl_timing_and_gapless)
 {
-    using namespace lynx::mp3;
+    using namespace yw::mp3;
     constexpr int frames = 3 * 44100 + 321;
     const auto l = mp3test::signal (44100, frames, 0, 22050), r = mp3test::signal (44100, frames, 1, 22050);
 
@@ -253,7 +253,7 @@ TEST (mp3_audio_clip_from_flp_renders_with_fl_timing)
             x *= 0.05f;
     quiet[22050] = quietR[22050] = 0.9f;
     const auto bytes = mp3test::encode (quiet, quietR, 44100, 44100, 2, 320, mp3test::Mode::cbr, true);
-    const auto path = (std::filesystem::temp_directory_path() / ("lynx_mp3clip_" + processTempTag() + ".mp3")).string();
+    const auto path = (std::filesystem::temp_directory_path() / ("yw_mp3clip_" + processTempTag() + ".mp3")).string();
     {
         std::ofstream out (path, std::ios::binary);
         out.write (reinterpret_cast<const char*> (bytes.data()), (std::streamsize) bytes.size());
@@ -271,12 +271,12 @@ TEST (mp3_audio_clip_from_flp_renders_with_fl_timing)
     clip.length = 96 * 4; // 2 s
     arr.items = { clip };
     p.arrangements.push_back (arr);
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.fileExists = [] (const std::string& f) { return std::filesystem::exists (f); };
-    const auto song = lynx::importFlp (p, options);
-    CHECK (song.channels.size() == 1 && song.channels[0].instrument == lynx::InstrumentKind::audioClip && song.channels[0].samplePath == path);
+    const auto song = yw::importFlp (p, options);
+    CHECK (song.channels.size() == 1 && song.channels[0].instrument == yw::InstrumentKind::audioClip && song.channels[0].samplePath == path);
 
-    const auto sample = lynx::tools::readWav (path);
+    const auto sample = yw::tools::readWav (path);
     CHECK (sample != nullptr && sample->sampleRate == 44100.0 && sample->isStereo());
     if (sample == nullptr)
         return;
@@ -289,15 +289,15 @@ TEST (mp3_audio_clip_from_flp_renders_with_fl_timing)
     CHECK (std::abs (peakAt - (22050 + 2257)) <= 1);
 
     const double sr = 48000.0;
-    auto state = lynx::RackState::build (song, nullptr, sr, [&] (const std::string&) { return sample; });
-    lynx::RackRenderer renderer;
+    auto state = yw::RackState::build (song, nullptr, sr, [&] (const std::string&) { return sample; });
+    yw::RackRenderer renderer;
     renderer.prepare (sr);
     std::vector<float> L (96000), R (96000);
     double tick = 0.0;
     for (int pos = 0; pos < 96000; pos += 480)
     {
         renderer.process (state.get(), true, tick, 480, L.data() + pos, R.data() + pos);
-        tick += 480 * lynx::ticksPerSample (song.bpm, sr);
+        tick += 480 * yw::ticksPerSample (song.bpm, sr);
     }
     int outAt = -1;
     float outPeak = 0.0f;
@@ -313,7 +313,7 @@ TEST (mp3_audio_clip_from_flp_renders_with_fl_timing)
 
 TEST (new_channel_insert_skips_effect_buses)
 {
-    auto s = lynx::Song::makeDefault(); // channels on inserts 1..5
+    auto s = yw::Song::makeDefault(); // channels on inserts 1..5
     CHECK (s.nextFreeInsert() == 6);
     s.mixer[6].effects.push_back ({}); // an effect bus with no channel (her vocal reverb/delay return)
     s.mixer[1].sends.push_back ({ 7, 1.0f }); // fed by a send

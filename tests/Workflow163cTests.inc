@@ -4,10 +4,10 @@ namespace w163c
 {
 // An audio clip of `sample` (a 2-bar clip at bar 0, 120 BPM) on a channel with `pitch` semitones, `fine` cents and
 // "keep length"; rendered in song mode for `seconds` (the clip itself lasts 4 s). Returns the left channel.
-std::vector<float> renderClip (std::shared_ptr<lynx::SampleData> sample, float pitch, float fine, bool keepLength, double seconds = 3.0,
+std::vector<float> renderClip (std::shared_ptr<yw::SampleData> sample, float pitch, float fine, bool keepLength, double seconds = 3.0,
                                std::int64_t clipLength = 0)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (2);
     s.bpm = 120.0;
@@ -94,7 +94,7 @@ TEST (w163c_an_unpitched_clip_plays_exactly_as_before)
 TEST (w163c_a_sampler_keeping_length_transposes_its_keys_without_stretch)
 {
     // "Keep length" with no Stretch: the keys transpose through the pitch shifter, the sample keeps its second
-    lynx::SamplerSettings settings;
+    yw::SamplerSettings settings;
     settings.keepPitch = true;
     const auto sine = s162::sine (440.0, 1.0);
     const auto low = s162::playLive (settings, sine, 48, 0.0f, 2.0);
@@ -108,7 +108,7 @@ TEST (w163c_a_sampler_keeping_length_transposes_its_keys_without_stretch)
 
 TEST (w163c_the_pitch_command_sets_the_channel_and_rescales_its_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     ChannelDef c;
@@ -149,7 +149,7 @@ TEST (w163c_the_pitch_command_sets_the_channel_and_rescales_its_clips)
 
 TEST (w163c_clip_properties_keep_length_without_a_stretch)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     ChannelDef c;
     c.instrument = InstrumentKind::audioClip;

@@ -7,7 +7,7 @@
 //
 // A .dawproject is a ZIP (core/ZipLite.h) holding project.xml (the project), metadata.xml (title, artist…) and the
 // files they refer to: audio (`audio/…`) and plug-in states (`plugins/…`). Times are in beats (quarter notes) or
-// seconds; LYNX's ticks are `ppq` per quarter note.
+// seconds; YW's ticks are `ppq` per quarter note.
 //
 // The import, as the .als import does (core/AlsImport.h):
 //  - a Track with notes → a channel (its instrument) + a mixer insert + an instrument Playlist track; each notes clip →
@@ -18,11 +18,11 @@
 //  - Channel role master → insert 0; effect → an insert fed by the Sends; submix → an insert other Channels name as
 //    their destination; Volume / Pan / Mute / Solo / Sends (pre / post, level);
 //  - devices: Vst2Plugin / Vst3Plugin / ClapPlugin → PluginRef::foreign with the state carried over (.fxp / .fxb →
-//    FL's VST2 record, .vstpreset → FL's VST3 record: what the plugin resolver already reads); LYNX's own devices
+//    FL's VST2 record, .vstpreset → FL's VST3 record: what the plugin resolver already reads); YW's own devices
 //    (deviceVendor "YW Studio") back to the same native instrument / effect; Equalizer / Compressor / NoiseGate / Limiter →
 //    Facet EQ / Crest Compressor / Sentry Gate / Apex Limiter;
 //  - automation (Points on Volume, Pan, a Send's Volume, a device parameter, tempo, time signature) → automation lanes
-//    under the track (LYNX's song-time lanes, PlaylistTrack::lanes) or, for a track without a Playlist row (the master,
+//    under the track (YW's song-time lanes, PlaylistTrack::lanes) or, for a track without a Playlist row (the master,
 //    an effect return), an automation clip on a row of its own; tempo → tempo markers (core/TempoMarkers.h); time
 //    signature changes → time signature markers; Markers → Playlist markers; metadata.xml → Song::info;
 //  - Scenes (the clip launcher's ClipSlots) → the clip grid, as the .als import's Session view (the export leaves the grid out).
@@ -40,7 +40,7 @@
 #include "core/FlpImport.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct DawProjectImportOptions
 {
@@ -48,8 +48,8 @@ struct DawProjectImportOptions
     // for next to it), fileExists, saveEmbedded (an embedded audio file → the path it was saved to; without it the
     // embedded audio is reported missing), relocations, report, sampleSeconds. FL's path roots are not used.
     FlpImportOptions common;
-    // A LYNX device's state (deviceVendor "YW Studio", written by exportDawProject) back to a channel's instrument / an
-    // effect slot. Empty = the core's own readers (core/GeneratorPresets.h text for instruments, LYNX's effect state
+    // A YW device's state (deviceVendor "YW Studio", written by exportDawProject) back to a channel's instrument / an
+    // effect slot. Empty = the core's own readers (core/GeneratorPresets.h text for instruments, YW's effect state
     // text for effects). The app passes the project file's readers to restore every field.
     std::function<std::optional<ChannelDef> (const std::string& deviceId, const std::vector<std::uint8_t>& state)> nativeInstrument;
     std::function<std::optional<EffectSlot> (const std::string& deviceId, const std::vector<std::uint8_t>& state)> nativeEffect;
@@ -58,7 +58,7 @@ struct DawProjectImportOptions
 // True for a ZIP that holds a project.xml whose root is <Project> (a .dawproject).
 bool isDawProjectData (const std::uint8_t* data, std::size_t size);
 
-// The project as a LYNX song, or nullopt with `error` (not a ZIP, no project.xml, malformed XML, not a DAWproject).
+// The project as a YW song, or nullopt with `error` (not a ZIP, no project.xml, malformed XML, not a DAWproject).
 std::optional<Song> importDawProject (const std::vector<std::uint8_t>& fileBytes, const DawProjectImportOptions& options = {},
                                       std::string* error = nullptr);
 
@@ -75,7 +75,7 @@ struct DawProjectExportOptions
     std::function<bool (const std::string& path, double& seconds, int& sampleRate, int& channels)> sampleFormat;
     // A loaded plugin's record (format, ids, state in FL's layout: PluginHost::flWrapperRecord), as for the .als export.
     std::function<std::optional<ForeignPlugin> (const PluginRef& ref, bool instrument)> pluginRecord;
-    // A LYNX device's state file (see DawProjectImportOptions). Empty = the core's own writers.
+    // A YW device's state file (see DawProjectImportOptions). Empty = the core's own writers.
     std::function<std::vector<std::uint8_t> (const ChannelDef& channel)> nativeInstrumentState;
     std::function<std::vector<std::uint8_t> (const EffectSlot& slot)> nativeEffectState;
 };
@@ -108,8 +108,8 @@ std::vector<std::uint8_t> flVst3State (const std::vector<std::uint8_t>& componen
 std::vector<std::uint8_t> fxFromFlVst2State (const std::vector<std::uint8_t>& state, std::uint32_t pluginId);
 bool flVst2StateFromFx (const std::vector<std::uint8_t>& fx, std::vector<std::uint8_t>& state, std::uint32_t& pluginId);
 
-// LYNX's own effect state text ("YW Studio effect state 1": the kind, on / off, mix, smart disable, every parameter as its
-// exact float bits, the raw state, sample path and preset name), the core's default for a LYNX effect device.
+// YW's own effect state text ("YW Studio effect state 1": the kind, on / off, mix, smart disable, every parameter as its
+// exact float bits, the raw state, sample path and preset name), the core's default for a YW effect device.
 std::string effectStateText (const EffectSlot& slot);
 std::optional<EffectSlot> effectFromStateText (const std::string& text);
 
@@ -119,4 +119,4 @@ double panOfValue (double value, const std::string& unit, double min, double max
 std::uint32_t colourOf (const std::string& text) noexcept;      // "#rrggbb" → 0xFFRRGGBB (0 = none / invalid)
 std::string colourText (std::uint32_t argb);                     // 0xFFRRGGBB → "#rrggbb"
 } // namespace dawproject
-} // namespace lynx
+} // namespace yw

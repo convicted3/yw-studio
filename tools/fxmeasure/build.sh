@@ -14,8 +14,8 @@ C=(-target x86_64-windows-gnu -std=c++20 -O2 -DNDEBUG=1 -fno-sanitize=undefined 
 "$ZIG" c++ "${C[@]}" -c src/platform/MingwFixes.cpp -o "$OUT/fxmeasure/mingwfixes.o"
 "$ZIG" c++ "${C[@]}" -Wall -c tools/fxmeasure/fxmeasure.cpp -o "$OUT/fxmeasure/fxmeasure.o"
 # common-controls v6 manifest: without it the process stalls before main (hidden loader error box)
-printf '#include <winuser.h>\nCREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "LYNX.manifest"\n' > "$OUT/fxmeasure/fx.rc"
-cp resources/LYNX.manifest "$OUT/fxmeasure/"
+printf '#include <winuser.h>\nCREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "YW.manifest"\n' > "$OUT/fxmeasure/fx.rc"
+cp resources/YW.manifest "$OUT/fxmeasure/"
 ( cd "$OUT/fxmeasure" && "$ZIG" rc /fo fx.res fx.rc )
 "$ZIG" c++ -target x86_64-windows-gnu -O2 -o "$OUT/fxmeasure.exe" "$OUT"/juce/*.o "$OUT/fxmeasure/fxmeasure.o" "$OUT/fxmeasure/mingwfixes.o" "$OUT/fxmeasure/fx.res" \
     -Wl,--subsystem,console \

@@ -1,11 +1,11 @@
-// Round 190jy (queue item 44): docked LYNX editors drawn by the main window keep their place among the native panels and
+// Round 190jy (queue item 44): docked YW editors drawn by the main window keep their place among the native panels and
 // docked plugin windows through a hidden anchor window; the native windows below an anchor get holes where the editor
 // is (core/DockStack.h editorsAbove / holesIn / editorRect).
 #include "core/DockStack.h"
 
 TEST (d190jy_native_windows_below_an_editor_anchor_get_its_hole)
 {
-    using lynx::dockstack::editorsAbove;
+    using yw::dockstack::editorsAbove;
     // bottom up: Playlist (P), anchor of editor 0 (A0), Channel rack (R), anchor of editor 1 (A1), plugin window (W)
     const std::vector<int> windows { 'P', 'A' * 100 + 0, 'R', 'A' * 100 + 1, 'W' };
     const auto anchorOf = [] (int w) { return w >= 'A' * 100 ? w - 'A' * 100 : -1; };
@@ -28,8 +28,8 @@ TEST (d190jy_native_windows_below_an_editor_anchor_get_its_hole)
 
 TEST (d190jy_holes_are_the_editor_rects_clipped_to_each_window)
 {
-    using lynx::dockstack::holesIn;
-    using lynx::dockstack::PhysicalRect;
+    using yw::dockstack::holesIn;
+    using yw::dockstack::PhysicalRect;
     const PhysicalRect panel { 100, 50, 400, 300 };
     // inside, partly outside, wholly outside
     const auto holes = holesIn (panel, { { 150, 80, 100, 60 }, { 450, 300, 200, 200 }, { 600, 10, 50, 50 } });
@@ -42,7 +42,7 @@ TEST (d190jy_holes_are_the_editor_rects_clipped_to_each_window)
 
 TEST (d190jy_an_editor_rect_is_rounded_edge_by_edge_as_its_clip)
 {
-    using lynx::dockstack::editorRect;
+    using yw::dockstack::editorRect;
     // 100 %: exact
     const auto exact = editorRect (13, 27, 400, 300, 1.0);
     CHECK (exact.x == 13 && exact.y == 27 && exact.w == 400 && exact.h == 300);

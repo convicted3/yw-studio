@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-namespace lynx::windowfit
+namespace yw::windowfit
 {
 struct Box
 {
@@ -52,9 +52,9 @@ inline ScrollFit scrollFit (int contentW, int contentH, int areaW, int areaH, in
         fit.scrollsV = true;
     return fit;
 }
-} // namespace lynx::windowfit
+} // namespace yw::windowfit
 
-namespace lynx::windowfit
+namespace yw::windowfit
 {
 // Round 190bj (QA: the Apex Limiter's status row cut off by the window's bottom edge): a resizable window whose CONTENT
 // keeps a fixed aspect ratio (a scaled plugin editor of `baseW` x `baseH`). JUCE's own fixed-aspect constrainer applies
@@ -85,4 +85,4 @@ inline Box aspectContent (Box proposed, Frame frame, int baseW, int baseH, doubl
         out.y = proposed.y + proposed.h - out.h;
     return out;
 }
-} // namespace lynx::windowfit
+} // namespace yw::windowfit

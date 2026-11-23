@@ -1,6 +1,6 @@
 #include "engine/ChannelRackProcessor.h"
 
-namespace lynx
+namespace yw
 {
 ChannelRackProcessor::ChannelRackProcessor (Transport& t, SnapshotExchange<RackState>& x, LiveEventQueue& l,
                                             LiveEventQueue& midi, MeterBank& m, WorkerPool* workers, std::function<void()> threadStart)
@@ -122,4 +122,4 @@ void ChannelRackProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         transport.songTempoMap.store (state->tempoMap, std::memory_order_relaxed);
     }
 }
-} // namespace lynx
+} // namespace yw

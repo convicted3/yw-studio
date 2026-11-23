@@ -3,7 +3,7 @@
 #include "core/Song.h"
 #include <algorithm>
 
-namespace lynx::remote_history
+namespace yw::remote_history
 {
 namespace detail
 {

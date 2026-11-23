@@ -1,6 +1,6 @@
 // round 190lb: the SSL 4K G "Pink" EQ colour, measured black-box (docs/analise/BLACKBOX_rodada190lb.md §2): one
 // second-order section per band fitted on each impulse render of the reference's trial grid (tp172c K4G_ir, 48 kHz;
-// /mnt/e/lynx-work/blackbox190lb/lab fitpink.py + mktab.py). Shelves: [dial frequency node][|dial gain| node] =
+// /mnt/e/yw-work/blackbox190lb/lab fitpink.py + mktab.py). Shelves: [dial frequency node][|dial gain| node] =
 // { f0 Hz, realised |gain| dB, Q } (LF: boost and cut averaged; HF: the cuts, its boosts reached the ceiling).
 // Bells: [dial Q node][|dial gain| node] = { frequency / the band's max-gain frequency, |gain| dB, Q } at the 1 kHz /
 // 3 kHz dial, and the max-gain frequency per dial frequency node (dial Q 3.0).

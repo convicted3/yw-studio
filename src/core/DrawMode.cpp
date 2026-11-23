@@ -4,7 +4,7 @@
 #include <cmath>
 #include <map>
 
-namespace lynx::drawmode
+namespace yw::drawmode
 {
 namespace
 {
@@ -158,4 +158,4 @@ void drawLine (std::vector<AutomationPoint>& points, std::int64_t t0, float v0, 
         t1 = t0 + 1;
     drawPiece (points, t0, t1, v0, v1);
 }
-} // namespace lynx::drawmode
+} // namespace yw::drawmode

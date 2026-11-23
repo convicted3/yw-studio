@@ -5,11 +5,11 @@
 #include "core/Song.h"
 #include "core/TrackClips.h"
 
-// Issue #232, stage 2 (round 190nz, docs/design/PROJECT_TABS.md; a LYNX extra: FL Studio's clipboard stays inside one
-// copy of the program): copy in one LYNX SHARE window, paste in another. What is copied travels as a "fragment", a Song
-// that holds only what the copied things need (src/engine/CrossClipboard.h writes it as LYNX's JSON on the system
+// Issue #232, stage 2 (round 190nz, docs/design/PROJECT_TABS.md; a YW extra: FL Studio's clipboard stays inside one
+// copy of the program): copy in one YW Studio window, paste in another. What is copied travels as a "fragment", a Song
+// that holds only what the copied things need (src/engine/CrossClipboard.h writes it as YW's JSON on the system
 // clipboard); the other window merges it into its own project here. JUCE-free.
-namespace lynx::crosspaste
+namespace yw::crosspaste
 {
 // A channel the other project already has: the same name and the same sound source (instrument kind; the plugin for
 // a plugin channel, the sample for a Sampler / audio clip channel). Its settings and plugin state may differ: an album's
@@ -40,4 +40,4 @@ Song channelsFragment (const Song& song, std::vector<int> channels);
 // children stay among the pasted channels, rack groups are found by name (added when missing). Each keeps its mixer
 // insert number when the song has it (else Master). Returns the new channels' indices.
 std::vector<int> importChannels (Song& song, const Song& fragment, int at);
-} // namespace lynx::crosspaste
+} // namespace yw::crosspaste

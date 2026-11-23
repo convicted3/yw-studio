@@ -4,7 +4,7 @@
 #include <memory>
 #include <juce_core/juce_core.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -19,7 +19,7 @@ public:
     bool active() const noexcept;
     juce::File discoveryFile() const;
 
-    // Round 190np (LYNX --demo, ui/DemoMode.h): more operations, run by `handler` on the message thread like the others
+    // Round 190np (YW --demo, ui/DemoMode.h): more operations, run by `handler` on the message thread like the others
     // (view operations of the window: they take no project guards). Listed by api.describe while set. Message thread.
     using Extension = std::function<juce::var (const juce::String& op, const juce::var& args)>;
     static void setExtension (juce::StringArray operations, Extension handler);
@@ -29,4 +29,4 @@ private:
     explicit RemoteControl (std::unique_ptr<Impl>);
     std::unique_ptr<Impl> impl;
 };
-} // namespace lynx
+} // namespace yw

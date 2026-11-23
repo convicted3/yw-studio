@@ -1,14 +1,14 @@
 #pragma once
 
-// GigaStudio / LinuxSampler instruments (.gig) as LYNX DirectWave zones (round 190ii, issue #149).
+// GigaStudio / LinuxSampler instruments (.gig) as YW DirectWave zones (round 190ii, issue #149).
 //
-// LYNX's own reader (read-only, pure C++). The layout of the format — DLS Level 2 RIFF ('DLS ', 'ptbl', 'lins',
+// YW's own reader (read-only, pure C++). The layout of the format — DLS Level 2 RIFF ('DLS ', 'ptbl', 'lins',
 // 'wvpl') with GigaStudio's chunks ('3lnk' dimensions, '3prg' / '3ewl' dimension regions, '3ewa' parameters,
 // 'xfil' extension files) — follows the MMA's DLS specification and the description of the format in libgig
-// (C. Schoenebeck, GPL-2.0-or-later, compatible with LYNX's AGPL-3.0; see THIRD_PARTY.md); no libgig code is
+// (C. Schoenebeck, GPL-2.0-or-later, compatible with YW's AGPL-3.0; see THIRD_PARTY.md); no libgig code is
 // compiled in. Details: docs/analise/REA_rodada190ii.md §2.
 //
-// A region (key range × velocity range) splits into dimension regions; LYNX makes one zone per dimension region
+// A region (key range × velocity range) splits into dimension regions; YW makes one zone per dimension region
 // that plays on a plain note-on:
 //   velocity           → the zone's velocity range (GigaStudio 3's custom split points, or even splits)
 //   layer              → zones that sound together
@@ -28,7 +28,7 @@
 
 #include "core/SamplerImport.h"
 
-namespace lynx::msimport::gig
+namespace yw::msimport::gig
 {
 std::vector<std::string> instrumentNames (const std::string& path, const Access& access);
 // Instrument `index`: its zones with their samples stored through access.saveWav (nullopt + report.error)
@@ -36,4 +36,4 @@ std::optional<Program> readInstrument (const std::string& path, const Access& ac
 
 // GigaStudio's time code (32-bit) in seconds: 1.000000008813822^code (≈ 2^(code / 2^26.3))
 double timeOf (std::int32_t code);
-} // namespace lynx::msimport::gig
+} // namespace yw::msimport::gig

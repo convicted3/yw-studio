@@ -15,7 +15,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -267,7 +267,7 @@ public:
         summary.setBounds (header.reduced (20, 12));
         footer = area.removeFromBottom (54);
         {
-            // (WG-6: LYNX's one order: Close, then Apply in the accent at the far right)
+            // (WG-6: YW's one order: Close, then Apply in the accent at the far right)
             auto f = footer.reduced (16, 12);
             applyButton.setBounds (f.removeFromRight (150));
             f.removeFromRight (8);
@@ -321,7 +321,7 @@ private:
             lines.add (info.fromFlStudio
                            ? tr ("{0} plugin(s) will not sound as in FL Studio (not installed, not loaded, or without their settings): see what YW Studio did with each.",
                                  { juce::String ((int) info.plugins.size()) })
-                           // (round 190nq: a LYNX project, a Live set... said "as in FL Studio" too)
+                           // (round 190nq: a YW project, a Live set... said "as in FL Studio" too)
                            : tr ("{0} plugin(s) will not sound as they did when the project was saved (not installed, not loaded, or without their settings): see what YW Studio did with each.",
                                  { juce::String ((int) info.plugins.size()) }));
         if (! info.autoRelocated.empty())
@@ -486,9 +486,9 @@ private:
     // --- actions ------------------------------------------------------------------------------
     void chooseSearchFolder()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Search a folder (and its sub-folders) for the missing samples"),
+        chooser = yw::ui::makeFileChooser (tr ("Search a folder (and its sub-folders) for the missing samples"),
                                                        folders.empty() ? juce::File::getSpecialLocation (juce::File::userHomeDirectory) : juce::File (u8 (folders.front())));
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [safe = juce::Component::SafePointer<MissingFilesPanel> (this)] (const juce::FileChooser& c) {
                                   if (safe == nullptr || ! c.getResult().isDirectory())
                                       return;
@@ -504,9 +504,9 @@ private:
             return;
         const auto wanted = u8 (pathFileName (info.files[(std::size_t) row].path));
         const auto start = folders.empty() ? juce::File::getSpecialLocation (juce::File::userHomeDirectory) : juce::File (u8 (folders.front()));
-        chooser = lynx::ui::makeFileChooser (tr ("Where is {0}?", { wanted }), start.getChildFile (wanted),
+        chooser = yw::ui::makeFileChooser (tr ("Where is {0}?", { wanted }), start.getChildFile (wanted),
                                                        "*" + juce::File (wanted).getFileExtension());
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer<MissingFilesPanel> (this), row] (const juce::FileChooser& c) {
                                   if (safe == nullptr || ! c.getResult().existsAsFile())
                                       return;
@@ -836,4 +836,4 @@ MissingFilesInfo missingFilesSnapshotInfo()
     };
     return info;
 }
-} // namespace lynx
+} // namespace yw

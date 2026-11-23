@@ -1,5 +1,5 @@
 // Round 111: crash fuzzing of the built-in effects (docs/analise/REA_rodada111.md; the full run is tools/fxfuzz.cpp and
-// LYNX.exe --fxfuzz). Every effect, every parameter at both ends and random, several rates and block sizes: no crash
+// YW.exe --fxfuzz). Every effect, every parameter at both ends and random, several rates and block sizes: no crash
 // and no NaN / inf output.
 
 #include <limits>
@@ -18,7 +18,7 @@ bool finite (const std::vector<float>& x)
 }
 
 // runs `blocks` blocks of noise through the effect; false = non-finite output
-bool drive (lynx::Effect& fx, const lynx::EffectParams& params, std::mt19937& rng, int blocks)
+bool drive (yw::Effect& fx, const yw::EffectParams& params, std::mt19937& rng, int blocks)
 {
     static const int sizes[] = { 1, 7, 64, 255, 512, 513, 2048 };
     std::vector<float> l (2048), r (2048);
@@ -41,7 +41,7 @@ bool drive (lynx::Effect& fx, const lynx::EffectParams& params, std::mt19937& rn
 
 TEST (fuzz_every_effect_survives_extreme_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (111);
     int checked = 0;
     for (int k = 0; k <= (int) lastEffectKind; ++k)
@@ -82,7 +82,7 @@ TEST (fuzz_every_effect_survives_extreme_parameters)
 
 TEST (fuzz_parametric_eq_steep_shelf_stays_finite)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 111: a shelf band with a high gain and the Q knob near its top (slope S above what the gain allows) made
     // the cookbook's square root negative: NaN coefficients, a silent / broken insert and a NaN curve in the editor
     auto slot = makeEffectSlot (EffectKind::parametricEq);
@@ -113,7 +113,7 @@ TEST (fuzz_parametric_eq_steep_shelf_stays_finite)
 
 TEST (fuzz_effects_at_unusual_rates_do_not_crash)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 111: Multiband Delay wrote past its crossover mask below 44.1 kHz; Fruity Vocoder's band top overflowed an
     // int above 107 kHz
     std::mt19937 rng (3);
@@ -128,7 +128,7 @@ TEST (fuzz_effects_at_unusual_rates_do_not_crash)
 
 TEST (fuzz_renderer_mutes_an_effect_that_outputs_nan)
 {
-    using namespace lynx;
+    using namespace yw;
     // a NaN reaching an insert effect (here from the source itself) is muted after that effect and its state reset,
     // so it never spreads to the rest of the mix
     Song s;

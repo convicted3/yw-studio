@@ -15,8 +15,8 @@
 // the default in the Pattern layout; Clip-launch / Simple keep the straight axis; the alternate option wins everywhere
 TEST (details190mf_fl_normal_meter_law)
 {
-    using namespace lynx::meterscale;
-    namespace ls = lynx::layoutstyle;
+    using namespace yw::meterscale;
+    namespace ls = yw::layoutstyle;
     ls::setCurrent (ls::Style::pattern);
     alternate() = false;
     CHECK (current() == Law::flNormal);
@@ -41,15 +41,15 @@ TEST (details190mf_fl_normal_meter_law)
         last = p;
     }
     // the marks beside a tall Pattern meter are FL's (every 3 dB, +3 … -39), never overlapping
-    const auto tall = lynx::meters::scaleMarks (600.0f, 11.0f);
+    const auto tall = yw::meters::scaleMarks (600.0f, 11.0f);
     CHECK (tall.front() == 3 && std::find (tall.begin(), tall.end(), -48) == tall.end());
     for (auto db : { 3, 0, -3, -6, -9, -12, -18, -24 })
         CHECK (std::find (tall.begin(), tall.end(), db) != tall.end());
     for (std::size_t i = 1; i < tall.size(); ++i)
-        CHECK ((lynx::meters::scalePosition ((float) tall[i - 1]) - lynx::meters::scalePosition ((float) tall[i])) * 600.0f >= 11.0f - 1e-3f);
+        CHECK ((yw::meters::scalePosition ((float) tall[i - 1]) - yw::meters::scalePosition ((float) tall[i])) * 600.0f >= 11.0f - 1e-3f);
     // the other layouts keep their straight axis; the alternate option is one switch for every layout
     ls::setCurrent (ls::Style::clipLaunch);
-    CHECK (current() == Law::straight && std::abs (lynx::meters::scalePosition (-60.0f)) < 1.0e-6f);
+    CHECK (current() == Law::straight && std::abs (yw::meters::scalePosition (-60.0f)) < 1.0e-6f);
     ls::setCurrent (ls::Style::simple);
     CHECK (current() == Law::straight);
     alternate() = true;
@@ -64,7 +64,7 @@ TEST (details190mf_fl_normal_meter_law)
 // BandLab's loop rows start with the length in bars (DS-41): the file's length at the loop's own tempo
 TEST (details190mf_loop_bars)
 {
-    using lynx::loopkeys::loopBars;
+    using yw::loopkeys::loopBars;
     CHECK (loopBars (8.0, 120.0) == 4);           // 16 beats
     CHECK (loopBars (6.4429, 149.0) == 4);        // BandLab's "4 bars · … · 149bpm" (16 beats = 6.443 s)
     CHECK (loopBars (2.0, 120.0) == 1);
@@ -78,7 +78,7 @@ TEST (details190mf_loop_bars)
 // the bar's end stays
 TEST (details190mf_gross_beat_slide_points)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     std::vector<EditPoint> pts { { 0.0, 1.0f, 0.0f, 2 }, { 1.0, 0.5f, 0.0f, 2 }, { 2.0, 0.2f, 0.0f, 2 }, { 3.0, 0.8f, 0.0f, 2 }, { 4.0, 1.0f, 0.0f, 2 } };
     auto a = pts;
     slidePoint (a, 1, 1.5, 0.4f);
@@ -101,7 +101,7 @@ TEST (details190mf_gross_beat_slide_points)
 // old level at x1; a step from 0 moves the first point; one to the bar's end sets the last
 TEST (details190mf_gross_beat_step_draw)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     const std::vector<EditPoint> flat { { 0.0, 1.0f, 0.0f, 2 }, { 1.0, 0.8f, 0.0f, 2 }, { 1.5, 0.6f, 0.0f, 2 }, { 4.0, 1.0f, 0.0f, 2 } };
     auto a = flat;
     stepDraw (a, 0.5, 2.0, 0.25f);
@@ -127,9 +127,9 @@ TEST (details190mf_gross_beat_step_draw)
 // Fruity Multiband Compressor's band meters (DP-29): measured only while shown, the audio bit-identical either way
 TEST (details190mf_multiband_band_meters)
 {
-    lynx::EffectParams params {};
-    auto plain = lynx::flmb::make (nullptr), metered = lynx::flmb::make (nullptr);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::fruityMultiband);
+    yw::EffectParams params {};
+    auto plain = yw::flmb::make (nullptr), metered = yw::flmb::make (nullptr);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::fruityMultiband);
     params = slot.params;
     plain->prepare (44100.0);
     metered->prepare (44100.0);

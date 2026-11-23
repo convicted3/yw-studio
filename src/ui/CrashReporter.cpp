@@ -18,14 +18,14 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-#if __has_include("lynx_build.h")
- #include "lynx_build.h" // LYNX_GIT_COMMIT (written by the build)
+#if __has_include("yw_build.h")
+ #include "yw_build.h" // YW_GIT_COMMIT (written by the build)
 #endif
-#ifndef LYNX_GIT_COMMIT
- #define LYNX_GIT_COMMIT ""
+#ifndef YW_GIT_COMMIT
+ #define YW_GIT_COMMIT ""
 #endif
 
-namespace lynx::crashreporter
+namespace yw::crashreporter
 {
 namespace cr = crashreport;
 
@@ -95,7 +95,7 @@ Session parseSession (const juce::String& text)
             s.editorCrashFile = editor.traceFile.empty() ? juce::File() : autosave.getChildFile (fromUtf8 (editor.traceFile));
         }
         if (body.startsWith ("UI responding again"))
-            s.hangFile = juce::File(); // the freeze ended by itself: not what closed LYNX
+            s.hangFile = juce::File(); // the freeze ended by itself: not what closed YW
     }
     return s;
 }
@@ -219,7 +219,7 @@ cr::ReportInput makeInput (const Session& session, const juce::String& kind, juc
    #else
     in.build += " linux-x64";
    #endif
-    in.commit = LYNX_GIT_COMMIT;
+    in.commit = YW_GIT_COMMIT;
     in.language = utf8 (i18n::current());
     in.os = utf8 (juce::SystemStats::getOperatingSystemName());
     in.osVersion = utf8 (osVersion());
@@ -272,11 +272,11 @@ cr::ReportInput makeInput (const Session& session, const juce::String& kind, juc
     {
         auto byCpu = false; // (plugin windows are always drawn by the CPU: not counted)
         for (int i = juce::TopLevelWindow::getNumTopLevelWindows(); --i >= 0;)
-            if (auto* window = juce::TopLevelWindow::getTopLevelWindow (i); window != nullptr && ! window->getProperties()["lynxGdi"])
+            if (auto* window = juce::TopLevelWindow::getTopLevelWindow (i); window != nullptr && ! window->getProperties()["ywGdi"])
                 byCpu = byCpu || ui::windowDrawnByCpu (*window);
         in.settings.push_back ({ "windowDrawnByCpu", byCpu });
     }
-    for (const auto& [name, variable] : { std::pair<const char*, const char*> { "playlistPicture", "LYNX_PLAYLIST_CACHE" }, { "mixerPicture", "LYNX_MIXER_CACHE" } })
+    for (const auto& [name, variable] : { std::pair<const char*, const char*> { "playlistPicture", "YW_PLAYLIST_CACHE" }, { "mixerPicture", "YW_MIXER_CACHE" } })
     {
         const auto* v = std::getenv (variable);
         in.settings.push_back ({ name, v == nullptr || juce::String (v) != "0" });
@@ -343,7 +343,7 @@ juce::String githubUrl (const cr::ReportInput& in)
 // ================================================================================================================
 juce::String endpoint()
 {
-    const auto custom = juce::SystemStats::getEnvironmentVariable ("LYNX_CRASH_ENDPOINT", {});
+    const auto custom = juce::SystemStats::getEnvironmentVariable ("YW_CRASH_ENDPOINT", {});
     return custom.isNotEmpty() ? custom : juce::String ("https://yolo.su/api/crash.php");
 }
 
@@ -375,7 +375,7 @@ Outcome post (const juce::MemoryBlock& body, juce::String& message)
         return Outcome::retry;
     }
    #if JUCE_LINUX || JUCE_BSD
-    // (LYNX is built without libcurl, JUCE_USE_CURL=0: the curl program sends it)
+    // (YW is built without libcurl, JUCE_USE_CURL=0: the curl program sends it)
     const auto file = juce::File::createTempFile (".json.gz");
     file.replaceWithData (body.getData(), body.getSize());
     juce::ChildProcess curl;
@@ -460,9 +460,9 @@ private:
                 handled.add (id);
                 if (offline::enabled())
                 {
-                    // LYNX_OFFLINE=1 / --offline: nothing leaves this computer. The report stays in the pending folder
+                    // YW_OFFLINE=1 / --offline: nothing leaves this computer. The report stays in the pending folder
                     // (no "tries" mark: it is sent once the mode is off and the person agrees)
-                    callBack (id, false, "offline mode (LYNX_OFFLINE or --offline): the report stays on this computer");
+                    callBack (id, false, "offline mode (YW_OFFLINE or --offline): the report stays on this computer");
                     continue;
                 }
                 juce::MemoryBlock body;
@@ -689,7 +689,7 @@ public:
         if (! manual)
             always.setBounds (r.removeFromTop (24));
         r.removeFromTop (10);
-        // (WG-6: LYNX's one order, right-aligned: Show what will be sent | Don't send | Send, the accent at the far right)
+        // (WG-6: YW's one order, right-aligned: Show what will be sent | Don't send | Send, the accent at the far right)
         auto buttons = r.removeFromTop (30);
         sendButton.setBounds (buttons.removeFromRight (110));
         buttons.removeFromRight (8);
@@ -860,4 +860,4 @@ std::unique_ptr<juce::Component> makeDialogForSnapshot (bool manual)
                                                  { "opening the editor of Example" }),
                                           "Example", nullptr, nullptr, false);
 }
-} // namespace lynx::crashreporter
+} // namespace yw::crashreporter

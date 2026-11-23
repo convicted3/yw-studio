@@ -17,7 +17,7 @@
 #include "core/EngineParams.h"
 #include "core/FlVoiceProcessor.h" // panLaw (FL's ComputeLRVol law)
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -43,7 +43,7 @@ constexpr double defaultP[numP] = { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
 constexpr int defaultS[numS] = { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1 };
 
 // --------------------------------------------------------------------------------------- process-wide data (§2.1)
-// In the DLL these are globals shared by every instance; LYNX keeps one copy per instance.
+// In the DLL these are globals shared by every instance; YW keeps one copy per instance.
 struct Globals
 {
     std::uint32_t crtRand = 1;           // the C runtime's rand() state of the calling thread
@@ -1660,7 +1660,7 @@ std::optional<State> parseState (const std::vector<std::uint8_t>& b)
     return st;
 }
 
-// --------------------------------------------------------------------------------------------- LYNX front-end
+// --------------------------------------------------------------------------------------------- YW front-end
 class SimSynthInstrument final : public Instrument
 {
 public:
@@ -1703,7 +1703,7 @@ public:
         delete retired.exchange (nullptr);
         pitchCents.store (channel.sampler.pitch * 100.0f);
         // round 190om: engine revision 2 plays the note velocity as FL does (ChannelDef::engineRev; a project saved before
-        // keeps its revision and plays every note at full level, as LYNX did)
+        // keeps its revision and plays every note at full level, as YW did)
         velocityLaw.store (channel.engineRev >= 2);
         if (channel.pluginState == state)
             return;
@@ -1860,7 +1860,7 @@ public:
     void render (float* left, float* right, int n, float gl, float gr) noexcept override
     {
         take();
-        // FL's channel volume/pan reach SimSynth only through Final.Vol/Final.Pan: recover them from LYNX's gains
+        // FL's channel volume/pan reach SimSynth only through Final.Vol/Final.Pan: recover them from YW's gains
         // (√2·V·cos((1 + p)π/4), √2·V·sin(…)) so they are not applied twice
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
@@ -1961,7 +1961,7 @@ private:
     float slotInit[numVoices] { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
     static float flInitVol (float velocity) noexcept
     {
-        const auto v = std::clamp ((double) velocity, 0.0, 1.0) * 128.0; // (LYNX's velocity 0…1 = FL's 0…128; 100 → exactly 1)
+        const auto v = std::clamp ((double) velocity, 0.0, 1.0) * 128.0; // (YW's velocity 0…1 = FL's 0…128; 100 → exactly 1)
         return (float) ((std::pow (11.0, v / 100.0) - 1.0) / 10.0);
     }
     // each voice slot's note id and whether its note has not ended yet (round 190ej)
@@ -2121,4 +2121,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace simsynth
-} // namespace lynx
+} // namespace yw

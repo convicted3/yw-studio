@@ -1,6 +1,6 @@
 #pragma once
 
-// Video tracks (round 174d, docs/analise/REA_rodada174d.md §2): LYNX's own (FL has none). Lanes above the Playlist's
+// Video tracks (round 174d, docs/analise/REA_rodada174d.md §2): YW's own (FL has none). Lanes above the Playlist's
 // clip tracks, each holding video clips placed in song time. A video clip is locked to real time (seconds from the song's
 // start): tempo changes never change its speed or where it starts (the post-production rule; FL's Video Player keeps
 // FL's own clock, core/VideoPlayer.h). The project has a frame rate and a start timecode (song time 0 =
@@ -13,7 +13,7 @@
 
 #include "core/VideoTime.h"
 
-namespace lynx
+namespace yw
 {
 struct Song;
 
@@ -99,4 +99,4 @@ double videoEnd (const std::vector<VideoTrack>& tracks) noexcept;
 // video clips and the sample library's video sound tracks)
 bool isVideoPath (const std::string& path) noexcept;
 } // namespace videotrack
-} // namespace lynx
+} // namespace yw

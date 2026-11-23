@@ -13,7 +13,7 @@
 #include "core/Meters.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // One choice of an insert's "Audio input source": a stereo pair of device input channels, or one channel.
 struct InputSource
@@ -105,7 +105,7 @@ inline bool inputMonitored (InputMonitor mode, bool armed, bool playing, bool re
     return false;
 }
 
-// The .lynx key "monitor" of an insert (round 190ev): written only when the mode is not "Auto", so a project without the
+// The .yw key "monitor" of an insert (round 190ev): written only when the mode is not "Auto", so a project without the
 // key — every insert saved before round 190ev made FL's "When armed" the default of new inserts — opens as it was saved.
 constexpr bool monitorKeyWritten (InputMonitor mode) noexcept { return mode != InputMonitor::automatic; }
 constexpr InputMonitor monitorFromKey (int stored, bool present) noexcept
@@ -220,4 +220,4 @@ struct LiveInput
         return c >= 0 && c < numChannels && channels[(std::size_t) c] != nullptr ? channels[(std::size_t) c] + offset : nullptr;
     }
 };
-} // namespace lynx
+} // namespace yw

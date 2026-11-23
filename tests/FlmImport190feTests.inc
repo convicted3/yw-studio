@@ -1,5 +1,5 @@
 // --- FL Studio Mobile (.flm) import, round 190fe: drum-kit cut groups as FLM plays them (a hit spares its own pad, a
-// held note's end cuts too), lanes on 3x Osc parameters, an effect's Mix with Post Gain or several LYNX slots (FLM's
+// held note's end cuts too), lanes on 3x Osc parameters, an effect's Mix with Post Gain or several YW slots (FLM's
 // blend as a parallel container), and racks whose instruments and effects take turns (one insert per part)
 // (docs/analise/FLM_FORMAT.md §6, §7.4, §9). Every project is written by the tests; no file of Image-Line's is committed.
 
@@ -25,7 +25,7 @@ inline std::vector<float> threeOsc()
     return p;
 }
 
-inline int indexOf (const lynx::Song& s, const std::string& n)
+inline int indexOf (const yw::Song& s, const std::string& n)
 {
     for (std::size_t i = 0; i < s.channels.size(); ++i)
         if (s.channels[i].name == n)
@@ -40,7 +40,7 @@ inline float at (const std::vector<float>& y, double seconds) { return y[(std::s
 // own; on a lane that holds its notes the note's end is a trigger too
 TEST (flm190fe_cut_groups_spare_the_pad_that_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     namespace sp = flm::samplepad;
     const std::vector<float> d (sp::defaults, sp::defaults + sp::count);
@@ -85,7 +85,7 @@ TEST (flm190fe_cut_groups_spare_the_pad_that_plays)
     const auto y = t::rendered (hits, 1.0, 0.5f, 44100);
     const auto one = flm190fe::at (y, 0.1);
     CHECK (one > 0.1f);
-    CHECK (std::abs (flm190fe::at (y, 0.4) - 2.0f * one) < 1e-3f); // (LYNX's old rule: A cut itself, 1×)
+    CHECK (std::abs (flm190fe::at (y, 0.4) - 2.0f * one) < 1e-3f); // (YW's old rule: A cut itself, 1×)
     CHECK (std::abs (flm190fe::at (y, 0.6) - one) < 1e-3f);
     // the held lane: B's hit at 0.25 s cuts A; A's note ends at 0.5 s and cuts B
     auto held = *song;
@@ -104,7 +104,7 @@ TEST (flm190fe_cut_groups_spare_the_pad_that_plays)
 // Every 3x Osc parameter a lane may move writes what the import writes for the same value (the laws are one)
 TEST (flm190fe_3xosc_lane_laws_equal_the_import)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     const auto stateFor = [] (const std::vector<float>& p) {
         const auto bytes = flm190bs::song ({ t::rack (flm::kindMaster, {}), t::rack (flm::kindNormal, { t::moduleWith (39, 2, p) }),
@@ -152,7 +152,7 @@ TEST (flm190fe_3xosc_lane_laws_equal_the_import)
 // in), voice settings listed; the engine plays a lane held at v as the import plays v
 TEST (flm190fe_3xosc_lanes_play)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     const auto ramp = [] (std::uint32_t id) { return flm187d::autoClip (0, 4, 4, id, { { 0, 1, 0 }, { 4, 1, 65535 } }); };
     auto p = flm190fe::threeOsc();
@@ -232,7 +232,7 @@ TEST (flm190fe_3xosc_lanes_play)
 // FLM's wrapper around an effect: dry × (1 − Mix) + Post Gain × wet × Mix, heard
 TEST (flm190fe_effect_mix_with_post_gain_is_flms_blend)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     using flm182c::Bytes;
     const auto songWith = [] (const std::vector<Bytes>& modules) {
@@ -267,7 +267,7 @@ TEST (flm190fe_effect_mix_with_post_gain_is_flms_blend)
 // instrument's Post Gain / Mix scales what is already there. Each part becomes an insert sending into the next
 TEST (flm190fe_rack_parts_take_turns)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     const auto bytes = flm190bs::song ({
         t::rack (flm::kindMaster, {}),

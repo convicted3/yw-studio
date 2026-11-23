@@ -15,9 +15,9 @@
 // from the user's installation, never bundled) in ChannelDef::samplePath (empty: no noise).
 //
 // Host interface as FL's wrapper (§2.3): MIDI velocity from Init.Vol, per-note L/R levels from ComputeLRVol(Final.Pan,
-// Final.Vol) and the pitch offset; FL's channel volume/pan/pitch reach Morphine only through those, so LYNX recovers
+// Final.Vol) and the pitch offset; FL's channel volume/pan/pitch reach Morphine only through those, so YW recovers
 // them from its channel gains and does not apply them a second time. The max-polyphony event is taken as value 0 (→ 32
-// voices; FL's value at channel creation is not confirmed). LYNX creates the instance at the rate it plays at, so the
+// voices; FL's value at channel creation is not confirmed). YW creates the instance at the rate it plays at, so the
 // sample-rate-change quirks of §2.13 (chorus wet −p⁴, overdrive smoother and master gain jump) do not apply.
 
 #include <cstdint>
@@ -27,7 +27,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this Morphine state (the whole Mor0 tree parses)
 bool morphineStateUsable (const std::vector<std::uint8_t>& state);
@@ -58,4 +58,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, const std::string& noisePath, int block = 512, double bpm = 120.0, bool rateChange = false);
 } // namespace morphine
-} // namespace lynx
+} // namespace yw

@@ -10,7 +10,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int sakuraParamCount = 146; // "Skr1" state floats (0…113 are parameters)
 constexpr int drumpadParamCount = 38;
@@ -22,4 +22,4 @@ std::unique_ptr<Instrument> makeDrumpadInstrument();
 std::unique_ptr<Instrument> makeBooBassInstrument();
 // true if `path` is the decoded BooBass_Eng_x64.dll build (its multisample can be read)
 bool booBassDllUsable (const std::string& path);
-} // namespace lynx
+} // namespace yw

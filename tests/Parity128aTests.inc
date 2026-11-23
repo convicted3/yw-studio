@@ -7,7 +7,7 @@
 
 namespace parity128a
 {
-inline lynx::EffectParams defaults (lynx::EffectKind kind) { return lynx::makeEffectSlot (kind).params; }
+inline yw::EffectParams defaults (yw::EffectKind kind) { return yw::makeEffectSlot (kind).params; }
 
 // stereo test signal: a loud burst (0.25 s) then quiet, left and right different
 inline void signal (std::vector<float>& l, std::vector<float>& r, int n, double sr, double loud = 0.9, double quiet = 0.05)
@@ -22,7 +22,7 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, int n, double 
     }
 }
 
-inline void process (lynx::Effect& fx, std::vector<float>& l, std::vector<float>& r, const lynx::EffectParams& p, int block = 256)
+inline void process (yw::Effect& fx, std::vector<float>& l, std::vector<float>& r, const yw::EffectParams& p, int block = 256)
 {
     const auto n = (int) l.size();
     for (int i = 0; i < n; i += block)
@@ -39,7 +39,7 @@ inline double rms (const std::vector<float>& x, std::size_t a, std::size_t b)
 
 TEST (parity128a_apex_new_controls)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     using namespace parity128a;
     const double sr = 48000.0;
     // 8 styles; the old 4-step values keep their style
@@ -50,7 +50,7 @@ TEST (parity128a_apex_new_controls)
     CHECK (paramText (pDither, 0.0f) == "Off" && paramText (pDither, 0.2f) == "16 bits" && paramText (pShaping, 2.0f / 3.0f) == "Optimized");
     CHECK (paramText (pMeterScale, 0.4f) == "-48 dB" && paramText (pMeterScale, 1.0f) == "K-20");
 
-    auto p = defaults (lynx::EffectKind::apexLimiter);
+    auto p = defaults (yw::EffectKind::apexLimiter);
     CHECK (p[pAttack] == 0.0f && p[pLinkRelease] == 0.0f && p[pDither] == 0.0f && p[pUnity] == 0.0f && p[pAudition] == 0.0f && p[pDcFilter] == 0.0f);
     p[pGain] = 12.0f / 30.0f;
     p[pRelease] = releaseValue (300.0);
@@ -60,7 +60,7 @@ TEST (parity128a_apex_new_controls)
     signal (l0, r0, n, sr);
 
     // attack: a slower slow stage dips less, so the quiet part after the burst comes back sooner (louder)
-    auto run = [&] (const lynx::EffectParams& q, std::vector<float>& l, std::vector<float>& r) {
+    auto run = [&] (const yw::EffectParams& q, std::vector<float>& l, std::vector<float>& r) {
         auto fx = make();
         fx->prepare (sr);
         l = l0;
@@ -148,12 +148,12 @@ TEST (parity128a_apex_new_controls)
 
 TEST (parity128a_hush_new_controls)
 {
-    using namespace lynx::mixsuite::hush;
+    using namespace yw::mixsuite::hush;
     using namespace parity128a;
-    using lynx::EffectKind;
+    using yw::EffectKind;
     const double sr = 44100.0;
     const int n = 44100;
-    CHECK (lynx::mixsuite::hushInfo().params.size() == (std::size_t) count && display == 17 && count >= 18); // round 135 appended Oversampling
+    CHECK (yw::mixsuite::hushInfo().params.size() == (std::size_t) count && display == 17 && count >= 18); // round 135 appended Oversampling
     auto p = defaults (EffectKind::hushDeEsser);
     CHECK (p[allround] == 0.0f && p[lowPass] == 1.0f && std::abs (lookaheadTimeMs (p[lookaheadTime]) - 2.0) < 1e-6 && p[stereoLink] == 1.0f && p[input] == 0.5f);
     p[threshold] = (float) (20.0 / 60.0); // −40 dBFS
@@ -177,10 +177,10 @@ TEST (parity128a_hush_new_controls)
         }
         return 2.0 * std::sqrt (re * re + im * im) / ws;
     };
-    auto runLR = [&] (const lynx::EffectParams& q, std::vector<float> l, std::vector<float> r, const std::vector<float>* sc = nullptr) {
-        lynx::EffectSlot slot = lynx::makeEffectSlot (EffectKind::hushDeEsser);
+    auto runLR = [&] (const yw::EffectParams& q, std::vector<float> l, std::vector<float> r, const std::vector<float>* sc = nullptr) {
+        yw::EffectSlot slot = yw::makeEffectSlot (EffectKind::hushDeEsser);
         slot.params = q;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (sr);
         for (int i = 0; i < n; i += 512)
         {
@@ -258,9 +258,9 @@ TEST (parity128a_hush_new_controls)
     {
         auto q = p;
         q[lookaheadTime] = lookaheadTimeValue (10.0);
-        lynx::EffectSlot slot = lynx::makeEffectSlot (EffectKind::hushDeEsser);
+        yw::EffectSlot slot = yw::makeEffectSlot (EffectKind::hushDeEsser);
         slot.params = q;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (sr);
         CHECK (fx->latencySamples() == 441);
         q[input] = 0.75f; // +6 dB
@@ -269,9 +269,9 @@ TEST (parity128a_hush_new_controls)
     }
     // saved projects: the slot's parameters are positional, older projects (9 values) keep the new ones at defaults
     {
-        auto slot = lynx::makeEffectSlot (EffectKind::hushDeEsser);
+        auto slot = yw::makeEffectSlot (EffectKind::hushDeEsser);
         CHECK (slot.params[lowPass] == 1.0f && slot.params[display] == 1.0f);
-        CHECK (lynx::formatEffectParam (EffectKind::hushDeEsser, lowPass, 1.0f, 120.0) == "off");
-        CHECK (lynx::formatEffectParam (EffectKind::hushDeEsser, allround, 1.0f, 120.0) == "allround");
+        CHECK (yw::formatEffectParam (EffectKind::hushDeEsser, lowPass, 1.0f, 120.0) == "off");
+        CHECK (yw::formatEffectParam (EffectKind::hushDeEsser, allround, 1.0f, 120.0) == "allround");
     }
 }

@@ -7,14 +7,14 @@ namespace p190ar
 // Classic voicing on a 1 kHz tone: the last 100 ms of one second (left channel)
 inline std::vector<float> classicTone (int style, float drive, double dbfs, bool hotLaw, bool punish = false)
 {
-    namespace e = lynx::mixsuite::ember;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::ember);
+    namespace e = yw::mixsuite::ember;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::ember);
     slot.params[(size_t) e::voicing] = 1.0f;
     slot.params[(size_t) e::classicStyle] = (float) style / 4.0f;
     slot.params[(size_t) e::classicDrive] = drive / 10.0f;
     slot.params[(size_t) e::classicPunish] = punish ? 1.0f : 0.0f;
     slot.params[(size_t) e::classicHot] = hotLaw ? 1.0f : 0.0f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     fx->reset();
     const int n = 48000;
@@ -36,7 +36,7 @@ inline double upperShare (const std::vector<float>& x)
 
 TEST (p190ar_ember_classic_hot_law_upgrade)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     CHECK ((int) em::count <= maxEffectParams);
     auto fresh = makeEffectSlot (EffectKind::ember);
@@ -85,13 +85,13 @@ TEST (p190ar_ember_classic_hot_law_leaves_the_rest_alone)
 TEST (p190ar_ember_classic_coupling_is_bounded_and_rests)
 {
     // silence stays silence, and a full-scale burst leaves no offset or runaway behind
-    namespace e = lynx::mixsuite::ember;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::ember);
+    namespace e = yw::mixsuite::ember;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::ember);
     slot.params[(size_t) e::voicing] = 1.0f;
     slot.params[(size_t) e::classicStyle] = 1.0f; // P
     slot.params[(size_t) e::classicDrive] = 1.0f;
     slot.params[(size_t) e::classicPunish] = 1.0f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     fx->reset();
     const int n = 96000;

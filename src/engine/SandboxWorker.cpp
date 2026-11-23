@@ -21,14 +21,14 @@
 #endif
 
 // The child side of the plugin sandbox (split out of PluginSandbox.cpp in round 176a): the process that hosts plugins
-// for LYNX — LYNX.exe --plugin-host, or the 32-bit bridge LYNX-bridge32.exe for 32-bit plugins. One plugin per process,
+// for YW — YW.exe --plugin-host, or the 32-bit bridge YW-bridge32.exe for 32-bit plugins. One plugin per process,
 // or (round 190jg) a group of them: every message names its plugin's slot.
 
-namespace lynx
+namespace yw
 {
 using namespace sandboxipc;
 
-#if JUCE_WINDOWS || LYNX_POSIX_SANDBOX
+#if JUCE_WINDOWS || YW_POSIX_SANDBOX
 namespace
 {
 #if JUCE_MAC
@@ -41,8 +41,8 @@ pid_t frontmostPid()
     return app != nil ? ((pid_t (*) (id, SEL)) objc_msgSend) (app, sel_registerName ("processIdentifier")) : 0;
 }
 
-// the window number of LYNX's frontmost normal window on screen (0: none)
-long lynxFrontWindow()
+// the window number of YW's frontmost normal window on screen (0: none)
+long ywFrontWindow()
 {
     long number = 0;
     if (const auto list = CGWindowListCopyWindowInfo (kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID))
@@ -75,11 +75,11 @@ public:
         setIcon (sandboxhost::windowIcon());
     }
 
-    // Keeps the window above LYNX's main window (`owner`: its HWND / X11 Window id, from the other process) instead of
-    // above every program: it was always on top, covering LYNX's Wrapper settings and other apps (issue #8). False when
+    // Keeps the window above YW's main window (`owner`: its HWND / X11 Window id, from the other process) instead of
+    // above every program: it was always on top, covering YW's Wrapper settings and other apps (issue #8). False when
     // the platform can't (then it stays always on top, as before). Windows: not done — an owner in another process
-    // attaches the two processes' input queues, so a plugin that hangs its window would freeze LYNX's too; there the
-    // window stays on top but is hidden whenever LYNX's stand-in is not on screen (Wrapper settings, minimised, closed).
+    // attaches the two processes' input queues, so a plugin that hangs its window would freeze YW's too; there the
+    // window stays on top but is hidden whenever YW's stand-in is not on screen (Wrapper settings, minimised, closed).
     // macOS: no owner across processes either, so the window follows which app is active instead.
     bool setOwner (juce::int64 owner)
     {
@@ -103,10 +103,10 @@ public:
         flush (display);
         return true;
        #elif JUCE_MAC
-        // no cross-process owner on macOS: the window floats only while LYNX or this child is the active app, and
+        // no cross-process owner on macOS: the window floats only while YW or this child is the active app, and
         // drops to a normal window (behind the other app) otherwise
         // shortcut: polled 4x a second, upgrade to NSWorkspaceDidActivateApplicationNotification in an .mm if it lags
-        followLynx.startTimer (250);
+        followYw.startTimer (250);
         return true;
        #else
         return false;
@@ -115,8 +115,8 @@ public:
 
     void closeButtonPressed() override { setVisible (false); }
 
-    // A key the plugin's editor left unused (issue #99): LYNX never sees this process's keys, so it goes to LYNX's
-    // shortcuts (Space plays, as with an in-process plugin window); Esc closes the window, as in LYNX's other windows.
+    // A key the plugin's editor left unused (issue #99): YW never sees this process's keys, so it goes to YW's
+    // shortcuts (Space plays, as with an in-process plugin window); Esc closes the window, as in YW's other windows.
     // Always used here: macOS would otherwise beep for every key.
     // shortcut: keys typed into a plugin's native child view on Windows never reach JUCE, so they still stay in the
     // plugin; upgrade with a keyboard hook in this process (as pluginKeyProc in WindowOwner.cpp) if that is wanted.
@@ -144,21 +144,21 @@ public:
 
    #if JUCE_MAC
 private:
-    juce::TimedCallback followLynx { [this] {
+    juce::TimedCallback followYw { [this] {
         const auto front = frontmostPid();
         const auto active = front == ::getppid() || front == ::getpid();
         if (active == isAlwaysOnTop())
             return;
         setAlwaysOnTop (active);
-        // dropped to a normal window: macOS would leave it below LYNX's main window, so it goes back just above it
-        if (const auto lynx = lynxFrontWindow(); ! active && lynx != 0 && getWindowHandle() != nullptr)
+        // dropped to a normal window: macOS would leave it below YW's main window, so it goes back just above it
+        if (const auto yw = ywFrontWindow(); ! active && yw != 0 && getWindowHandle() != nullptr)
             if (const id window = ((id (*) (id, SEL)) objc_msgSend) ((id) getWindowHandle(), sel_registerName ("window")))
-                ((void (*) (id, SEL, long, long)) objc_msgSend) (window, sel_registerName ("orderWindow:relativeTo:"), 1 /* NSWindowAbove */, lynx);
+                ((void (*) (id, SEL, long, long)) objc_msgSend) (window, sel_registerName ("orderWindow:relativeTo:"), 1 /* NSWindowAbove */, yw);
     } };
    #endif
 };
 
-// The bridge's x87 control word before plugin calls (32-bit x86 only: an old plugin's x87 maths follows it; LYNX's own
+// The bridge's x87 control word before plugin calls (32-bit x86 only: an old plugin's x87 maths follows it; YW's own
 // 64-bit code never uses x87). FL's ilbridge.exe resets it the same way (REA_rodada68 §2.1, REA_rodada176a §3).
 void applyFloatMode() noexcept
 {
@@ -201,11 +201,11 @@ public:
 private:
     void run() override
     {
-        // the sandbox's audio thread gets the same FTZ/DAZ as LYNX's own audio threads (round 160: it had none)
-        const lynx::ScopedFlushDenormals noDenormals;
-        // Windows: MMCSS "Pro Audio" as LYNX's own audio threads, and no EcoQoS while LYNX is in the background (a
+        // the sandbox's audio thread gets the same FTZ/DAZ as YW's own audio threads (round 160: it had none)
+        const yw::ScopedFlushDenormals noDenormals;
+        // Windows: MMCSS "Pro Audio" as YW's own audio threads, and no EcoQoS while YW is in the background (a
         // sandbox or bridge process inherits the window owner's Low QoS; round toolchain190gt)
-        lynx::power::becomeProAudioThread();
+        yw::power::becomeProAudioThread();
         while (! threadShouldExit())
         {
             if (! channel.waitRequest (100))
@@ -256,16 +256,16 @@ private:
             timedValues[(std::size_t) k] = shared->timed[k].value;
             timedOffsets[(std::size_t) k] = shared->timedOffsets[k];
         }
-        juce::lynxTimedParamCount = timed;
-        juce::lynxTimedParamIndices = timedIndices.data();
-        juce::lynxTimedParamOffsets = timedOffsets.data();
-        juce::lynxTimedParamValues = timedValues.data();
+        juce::ywTimedParamCount = timed;
+        juce::ywTimedParamIndices = timedIndices.data();
+        juce::ywTimedParamOffsets = timedOffsets.data();
+        juce::ywTimedParamValues = timedValues.data();
         if (frames > 0)
         {
             juce::AudioBuffer<float> buffer (pointers, channels, frames);
             plugin->processBlock (buffer, midiBuffer);
         }
-        juce::lynxTimedParamCount = 0;
+        juce::ywTimedParamCount = 0;
         // (rollup 0.1.30) what the plugin sent out, for the parent's buffer
         int outCount = 0;
         if (frames > 0)
@@ -387,7 +387,7 @@ void SandboxSlot::handle (const juce::ValueTree& message)
         hang = true;
     else if (message.hasType ("showEditor") && plugin != nullptr && plugin->hasEditor())
     {
-        // FL's wrapper Settings › GUI (round 190oh, P3), as in LYNX's own process (ui/PluginWindow.cpp): "DPI aware" off
+        // FL's wrapper Settings › GUI (round 190oh, P3), as in YW's own process (ui/PluginWindow.cpp): "DPI aware" off
         // makes the window and the editor DPI-unaware (Windows), "Scale editor dimensions" sizes it in logical pixels
        #if JUCE_WINDOWS
         const auto unaware = ! (bool) message.getProperty ("dpiAware", true);
@@ -466,7 +466,7 @@ juce::ValueTree SandboxSlot::open (const juce::ValueTree& message)
     reply.setProperty ("editor", plugin->hasEditor(), nullptr);
     reply.setProperty ("tail", plugin->getTailLengthSeconds(), nullptr);
     reply.setProperty ("latency", plugin->getLatencySamples(), nullptr);
-   #if LYNX_POSIX_SANDBOX
+   #if YW_POSIX_SANDBOX
     reply.setProperty ("pid", (int) ::getpid(), nullptr);
    #elif JUCE_WINDOWS
     reply.setProperty ("pid", (int) GetCurrentProcessId(), nullptr);
@@ -514,7 +514,7 @@ bool runPluginSandboxWorker (const juce::String& commandLine)
         return false;
     trace ("child: " + commandLine);
    #if JUCE_MAC
-    juce::Process::setDockIconVisible (false); // (one LYNX icon in the Dock, not one more per sandboxed plugin)
+    juce::Process::setDockIconVisible (false); // (one YW icon in the Dock, not one more per sandboxed plugin)
    #endif
     worker() = std::make_unique<SandboxWorker>();
     if (! worker()->initialiseFromCommandLine (commandLine, pluginSandboxId, 10000))
@@ -533,4 +533,4 @@ void shutdownPluginSandboxWorker()
 bool runPluginSandboxWorker (const juce::String&) { return false; }
 void shutdownPluginSandboxWorker() {}
 #endif
-} // namespace lynx
+} // namespace yw

@@ -1,4 +1,4 @@
-// --- Live set (.als) Session view ↔ LYNX's clip grid, round 181c. The sets are written by the tests (only the elements
+// --- Live set (.als) Session view ↔ YW's clip grid, round 181c. The sets are written by the tests (only the elements
 // the importer reads); the launch numbers are the ones read in Live 12's Clip View (docs/analise/REA_rodada181a.md).
 
 #include "core/AlsExport.h"
@@ -71,9 +71,9 @@ inline std::string sessionSet (bool clips = true)
     return s;
 }
 
-inline lynx::AlsImportOptions options (lynx::FlpImportReport* report = nullptr)
+inline yw::AlsImportOptions options (yw::FlpImportReport* report = nullptr)
 {
-    lynx::AlsImportOptions o;
+    yw::AlsImportOptions o;
     o.common.projectFolder = "E:/sets";
     o.common.fileExists = [] (const std::string&) { return true; };
     o.common.report = report;
@@ -82,7 +82,7 @@ inline lynx::AlsImportOptions options (lynx::FlpImportReport* report = nullptr)
 }
 
 // The grid clip whose slot is named `n` (nullptr: none), and its settings
-inline const lynx::Clip* clipNamed (const lynx::Song& s, const std::string& n, const lynx::ClipGridSlot** settings = nullptr)
+inline const yw::Clip* clipNamed (const yw::Song& s, const std::string& n, const yw::ClipGridSlot** settings = nullptr)
 {
     if (! s.clipGrid)
         return nullptr;
@@ -97,9 +97,9 @@ inline const lynx::Clip* clipNamed (const lynx::Song& s, const std::string& n, c
 }
 
 // Checks a song holds sessionSet's grid (straight from the set, or after a trip through the export)
-inline void checkGrid (const lynx::Song& s)
+inline void checkGrid (const yw::Song& s)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (s.clipGrid.has_value());
     if (! s.clipGrid)
         return;
@@ -159,7 +159,7 @@ inline void checkGrid (const lynx::Song& s)
 
 TEST (als181c_session_clips_fill_the_grid)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     const auto song = importAls (als175a::bytesOf (als181c::sessionSet()), als181c::options (&report));
     CHECK (song.has_value());
@@ -172,7 +172,7 @@ TEST (als181c_session_clips_fill_the_grid)
 
 TEST (als181c_session_clips_on_the_playlist_stay_an_option)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! AlsImportOptions {}.sessionOnPlaylist); // the clip grid is the default: the user's choice, 2026-11-08
     auto o = als181c::options();
     o.sessionOnPlaylist = true;
@@ -187,14 +187,14 @@ TEST (als181c_session_clips_on_the_playlist_stay_an_option)
 
 TEST (als181c_a_set_without_session_clips_adds_no_grid)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = importAls (als175a::bytesOf (als181c::sessionSet (false)), als181c::options());
     CHECK (song.has_value() && ! song->clipGrid.has_value());
 }
 
 TEST (als181c_start_marker_inside_the_loop_is_kept)
 {
-    using namespace lynx;
+    using namespace yw;
     auto set = als181c::sessionSet();
     const auto at = set.find ("<StartRelative Value=\"0.000000\" />");
     CHECK (at != std::string::npos);
@@ -210,7 +210,7 @@ TEST (als181c_start_marker_inside_the_loop_is_kept)
 
 TEST (als181c_grid_round_trips_through_live_session_view)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = importAls (als175a::bytesOf (als181c::sessionSet()), als181c::options());
     CHECK (song.has_value());
     if (! song)
@@ -237,9 +237,9 @@ TEST (als181c_grid_round_trips_through_live_session_view)
     }
 }
 
-TEST (als181c_a_lynx_grid_exports_to_session_view)
+TEST (als181c_a_yw_grid_exports_to_session_view)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     ChannelDef keys;

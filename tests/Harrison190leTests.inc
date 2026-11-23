@@ -1,5 +1,5 @@
 // Round 190le: Ridge Strip's "32C" voicing — Ridge's own engine with the EQ measured on the Harrison 32Classic trial
-// (tp172c H32_eq impulse grid; BLACKBOX_rodada190lb.md §4, /mnt/e/lynx-work/harrison190le): its filters (matched
+// (tp172c H32_eq impulse grid; BLACKBOX_rodada190lb.md §4, /mnt/e/yw-work/harrison190le): its filters (matched
 // Butterworth 12 dB/oct, 25 Hz … 3.15 kHz / 20 kHz … 160 Hz), first-order shelves, matched bells at the dial with
 // Q(|gain|). A hidden parameter (saved only while on) with its own switch on the panel; the Harrison 32C translation
 // turns it on, every other Ridge Strip keeps the old sound.
@@ -23,10 +23,10 @@ inline double analogShelfDb (bool low, double centre, double db, double hz)
     return 20.0 * std::log10 (std::abs (H));
 }
 // a Ridge Strip in the 32C voicing, EQ flat, filters out, dynamics off
-inline lynx::EffectParams flat32()
+inline yw::EffectParams flat32()
 {
-    namespace r = lynx::mixsuite::ridge;
-    auto p = lynx::makeEffectSlot (lynx::EffectKind::ridgeStrip).params;
+    namespace r = yw::mixsuite::ridge;
+    auto p = yw::makeEffectSlot (yw::EffectKind::ridgeStrip).params;
     p[r::h32] = 1.0f;
     p[r::hpf] = p[r::lpf] = 0.0f;
     p[r::dynOn] = 0.0f;
@@ -34,7 +34,7 @@ inline lynx::EffectParams flat32()
         p[(std::size_t) g] = 0.5f;
     return p;
 }
-inline lynx::EffectSlot c32 (const std::string& params)
+inline yw::EffectSlot c32 (const std::string& params)
 {
     using tp172c::p32;
     const std::string base = p32 ("bypass", 0) + p32 ("compressor_in", 0) + p32 ("gate_in", 0) + p32 ("equalizer_in", 1)
@@ -44,11 +44,11 @@ inline lynx::EffectSlot c32 (const std::string& params)
                                  "<SSL_PLUGIN_STATE PluginName=\"Harrison 32Classic Channel Strip\" Version=\"2.0.20\" StateASelected=\"1\"><A><PROCESSOR_STATE>"
                                      + base + params + "</PROCESSOR_STATE></A><B><PROCESSOR_STATE/></B></SSL_PLUGIN_STATE>");
 }
-inline std::vector<float> renderImpulse (const lynx::EffectParams& p, double sr, int n = 8192)
+inline std::vector<float> renderImpulse (const yw::EffectParams& p, double sr, int n = 8192)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::ridgeStrip);
+    auto s = yw::makeEffectSlot (yw::EffectKind::ridgeStrip);
     s.params = p;
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
     l[0] = r[0] = 0.5f;
@@ -60,7 +60,7 @@ inline std::vector<float> renderImpulse (const lynx::EffectParams& p, double sr,
 
 TEST (harrison190le_32c_voicing_is_hidden_off_by_default_and_has_a_control)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     auto s = makeEffectSlot (EffectKind::ridgeStrip);
     CHECK (s.params[r::h32] == 0.0f && ! r::h32Voicing (s.params));
@@ -91,7 +91,7 @@ TEST (harrison190le_32c_voicing_is_hidden_off_by_default_and_has_a_control)
 
 TEST (harrison190le_32c_dials_read_the_originals_scales)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     // the host table's texts at ninths of the travel
     const double hp[9] { 25, 33, 85, 215, 456, 841, 1400, 2160, 3150 }, lp[9] { 160, 212, 538, 1360, 2900, 5340, 8880, 13710, 20000 };
@@ -140,7 +140,7 @@ TEST (harrison190le_32c_dials_read_the_originals_scales)
 
 TEST (harrison190le_32c_curve_is_the_measured_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     using h190le::analogBellDb;
     using h190le::analogShelfDb;
@@ -216,7 +216,7 @@ TEST (harrison190le_32c_curve_is_the_measured_law)
 
 TEST (harrison190le_32c_is_stable_and_leaves_other_strips_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     std::mt19937 rng (190);
     std::uniform_real_distribution<float> u (0.0f, 1.0f);
@@ -254,7 +254,7 @@ TEST (harrison190le_32c_is_stable_and_leaves_other_strips_alone)
 
 TEST (harrison190le_32c_state_translates_to_the_32c_voicing)
 {
-    using namespace lynx;
+    using namespace yw;
     using tp172c::p32;
     namespace r = mixsuite::ridge;
     // the grid's states: a Hi-Mid bell at 711 Hz +6.94 dB, the Lo shelf at the 4th dial (369.3 Hz saved) -13.74,
@@ -289,7 +289,7 @@ TEST (harrison190le_32c_state_translates_to_the_32c_voicing)
 
 TEST (harrison190le_32c_panel_follows_the_voicing_switches)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     const auto& l = plugui::layoutFor (EffectKind::ridgeStrip);
     auto p = makeEffectSlot (EffectKind::ridgeStrip).params;
@@ -376,7 +376,7 @@ inline std::map<int, double> lustrousSetting (double damper, double predelayMs, 
                               { 8, 0 }, { 9, 7.5 }, { 10, 10 }, { 11, 0.7 }, { 12, 0 }, { 13, 20 }, { 21, 18000 } };
     return m;
 }
-inline lynx::EffectSlot lustrousSlot (const std::map<int, double>& params)
+inline yw::EffectSlot lustrousSlot (const std::map<int, double>& params)
 {
     auto f = p190ca::vst3Named ("Lustrous Plates");
     f.state = substtest::flVst3State (lustrousState (params));
@@ -386,7 +386,7 @@ inline lynx::EffectSlot lustrousSlot (const std::map<int, double>& params)
 
 TEST (harrison190le_lustrous_plates_state_translates_to_the_fitted_foil)
 {
-    using namespace lynx;
+    using namespace yw;
     auto paramOf = [] (const EffectSlot& s, const char* name) { return s.params[(std::size_t) p190ca::paramNamed (s.kind, name)]; };
     // refcap182's settings reproduce round 190ca's fitted Foil settings (maps2/Lustrous_Plates.json)
     struct Want { double damper, pre, model; float decay, lowGain, highGain, lowCut; };

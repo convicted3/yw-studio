@@ -4,7 +4,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -128,4 +128,4 @@ std::unique_ptr<juce::Component> makeHistoryPanel (AudioEngine& engine)
 {
     return std::make_unique<HistoryPanel> (engine);
 }
-} // namespace lynx
+} // namespace yw

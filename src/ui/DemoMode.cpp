@@ -1,4 +1,4 @@
-// Round 190np: LYNX --demo, the view operations the tutorial-video pipeline uses through the Remote Control API
+// Round 190np: YW --demo, the view operations the tutorial-video pipeline uses through the Remote Control API
 // (ui/DemoMode.h, docs/DEMO_MODE.md). They run on the message thread (the API's dispatch posts every request there).
 // A control is found by its component ID (what the first-song tour uses), else by its name or button text; a click runs
 // the control's own action (a button's click, a combo box's menu, else a mouse press and release delivered to the
@@ -27,7 +27,7 @@
 #include "ui/MixerComponent.h"
 #include "ui/PolyEditor.h"
 
-namespace lynx
+namespace yw
 {
 namespace demo
 {
@@ -216,7 +216,7 @@ juce::Component* findMenuItem (juce::Component& window, const juce::String& engl
     return findMenuItemIn (window, english, translated);
 }
 
-// a control in another of LYNX's windows (a plugin's editor, a tool window, a dialog): by ID first, then by name
+// a control in another of YW's windows (a plugin's editor, a tool window, a dialog): by ID first, then by name
 juce::Component* findInOtherWindows (juce::Component& window, const juce::String& key)
 {
     auto& desktop = juce::Desktop::getInstance();
@@ -232,7 +232,7 @@ juce::Component* findInOtherWindows (juce::Component& window, const juce::String
     return nullptr;
 }
 
-// Round 190pl: a press, moves and a release delivered through a LYNX window's peer, as the system's mouse events arrive
+// Round 190pl: a press, moves and a release delivered through a YW window's peer, as the system's mouse events arrive
 // (ComponentPeer::handleMouseEvent; nothing reaches the operating system): what is on top at each point gets them, a
 // drag that starts a drag-and-drop (a loop onto the timeline, a plugin onto a slot) drops on what is under its end, a
 // knob turns. `path` in screen pixels, one point per step of `stepMs`; the press at the first, the release at the last.
@@ -301,8 +301,8 @@ private:
         const auto& s = steps[next];
         peer->handleMouseEvent (juce::MouseInputSource::InputSourceType::mouse, peer->globalToLocal (s.at), s.down ? keys.withFlags (button) : keys,
                                 s.down ? 1.0f : 0.0f, 0.0f, juce::Time::currentTimeMillis());
-        // a drag's picture is a window of its own that moves over LYNX's: on an X server without a compositor what it
-        // leaves behind is only painted over by a repaint, so every LYNX window is painted again as it moves and at the end
+        // a drag's picture is a window of its own that moves over YW's: on an X server without a compositor what it
+        // leaves behind is only painted over by a repaint, so every YW window is painted again as it moves and at the end
         if (steps.size() > 4)
         {
             auto& desktop = juce::Desktop::getInstance();
@@ -361,7 +361,7 @@ std::optional<AutomationTarget> parseParamTarget (const juce::String& target)
     return std::nullopt;
 }
 
-// The showing control that sets `target`, in any LYNX window: a knob tagged with it (modring::tagSlider), or the part of
+// The showing control that sets `target`, in any YW window: a knob tagged with it (modring::tagSlider), or the part of
 // a component that paints several knobs (modring::TargetSource: sampled on a 3 px grid) where it answers with it.
 struct ParamControl
 {
@@ -441,7 +441,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
 {
     auto& window = *this;
     // round 190pg: "menu:<text>" is an open menu's item (or the menu bar's title); other targets are looked for in the main
-    // window, then in LYNX's other windows (plugin editors, tool windows)
+    // window, then in YW's other windows (plugin editors, tool windows)
     const auto locate = [&window] (const juce::String& target) -> juce::Component* {
         if (target.startsWith ("menu:"))
             return findMenuItem (window, target.substring (5));
@@ -464,7 +464,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
             return *found;
         fail ("No control showing for \"" + target + "\" (open its editor first)");
     };
-    // round 190pl: the newest of LYNX's windows that `open` made gets the component ID "editor" (ui.editor)
+    // round 190pl: the newest of YW's windows that `open` made gets the component ID "editor" (ui.editor)
     const auto openEditorWindow = [this] (std::function<void()> open) -> juce::Component* {
         auto& desktop = juce::Desktop::getInstance();
         juce::Array<juce::Component*> before;
@@ -723,7 +723,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
                 h->getActions().invoke (juce::AccessibilityActionType::focus);
         return object ({ { "hovered", true }, { "control", described } });
     }
-    // round 190pg: opens a project or a file LYNX imports (.lynx, .flp, .als, .flm, .dawproject, BandLab .band/.blx...),
+    // round 190pg: opens a project or a file YW imports (.yw, .flp, .als, .flm, .dawproject, BandLab .band/.blx...),
     // as File › Open does after its file dialog; the open project is not asked about (a demo take)
     if (op == "ui.open")
     {
@@ -733,7 +733,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
         openFile (file);
         return object ({ { "opened", file.getFileName() } });
     }
-    // round 190pg: a channel's editor window (its instrument: LYNX Model, Helix, a plugin...), as a click on the channel's name
+    // round 190pg: a channel's editor window (its instrument: YW Model, Helix, a plugin...), as a click on the channel's name
     // in the Channel rack opens it. The window gets the component ID "editor" (the newest one), so a script can point at it.
     if (op == "ui.editor")
     {
@@ -759,7 +759,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
             return object ({ { "channel", channel }, { "screen", rect (top->getScreenBounds()) } });
         return object ({ { "channel", channel } }); // (a window inside the main one, or one that was open already)
     }
-    // round 190pg: moves one of LYNX's own windows (a tool window, an editor: by its ID) so that two of them show side by side
+    // round 190pg: moves one of YW's own windows (a tool window, an editor: by its ID) so that two of them show side by side
     if (op == "ui.place")
     {
         auto& c = find();
@@ -901,7 +901,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
         return object ({ { "notes", polyEditorNotes (*editor) } });
     }
     // ---- round 190pl (tutorial batch 2) ----------------------------------------------------------------------------------
-    // Every LYNX window painted again (a private X server without a compositor can keep a closed menu's pixels on screen)
+    // Every YW window painted again (a private X server without a compositor can keep a closed menu's pixels on screen)
     if (op == "ui.repaint")
     {
         auto& desktop = juce::Desktop::getInstance();
@@ -1173,9 +1173,9 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
             fail ("Online sessions are not available");
         if (op == "session.start")
         {
-            const auto relay = juce::SystemStats::getEnvironmentVariable ("LYNX_RELAY_URL", {});
+            const auto relay = juce::SystemStats::getEnvironmentVariable ("YW_RELAY_URL", {});
             if (! demo::isLocalRelay (relay))
-                fail ("session.start needs LYNX_RELAY_URL set to a local test relay (http://127.0.0.1:port)");
+                fail ("session.start needs YW_RELAY_URL set to a local test relay (http://127.0.0.1:port)");
             if (live->isActive())
                 fail ("A live session is already running");
             LiveSessionManager::Options o;
@@ -1190,4 +1190,4 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
     }
     fail ("Unsupported demo operation: " + op);
 }
-} // namespace lynx
+} // namespace yw

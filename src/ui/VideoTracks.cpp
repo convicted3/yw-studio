@@ -22,7 +22,7 @@
 #include "ui/VideoMedia.h"
 #include "ui/VisualEditors.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1344,4 +1344,4 @@ juce::String muxWithVideo (const Song& song, double origin, const juce::File& au
     return tr ("FFmpeg could not write the video:") + "\n" + log.trim().getLastCharacters (600);
 }
 } // namespace videotracks
-} // namespace lynx
+} // namespace yw

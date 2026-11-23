@@ -5,7 +5,7 @@
 
 TEST (leftovers190nr_entries_newer_than_the_version_installed)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     auto names = [] (const char* v) {
         std::string out;
         for (const auto& n : entriesNewerThan (parseVersion (v)))
@@ -24,7 +24,7 @@ TEST (leftovers190nr_entries_newer_than_the_version_installed)
         const std::string n = e.name;
         CHECK (! n.empty() && n != "." && n != ".." && n.find_first_of ("/\\:") == std::string::npos);
         CHECK (parseVersion (e.since).valid);
-        CHECK (n != "LYNX.exe" && n != "Uninstall.exe"); // never the program itself
+        CHECK (n != "YW.exe" && n != "Uninstall.exe"); // never the program itself
     }
 }
 
@@ -57,7 +57,7 @@ std::vector<std::uint8_t> tbState (double bpm, bool ownBpm, double shuffle)
 
 TEST (leftovers190nr_transistor_bass_sequence_as_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     std::int64_t len = 0;
     auto notes = transistorBassSequenceNotes (design168q::tbassState (1), 120.0, &len);
     CHECK (len == 16 * ticksPerStep);
@@ -115,10 +115,10 @@ TEST (leftovers190nr_transistor_bass_sequence_as_notes)
 // Patience +69 MB private in 0.1.30 (round 190nr, heaptrack of 0.1.29 / 0.1.30 on the same set): part of it was Atrium's
 // dense late tank (round 190ls, 32 lines, ~2 MB at 48 kHz) allocated in every Atrium although only a translated
 // ValhallaRoom (atrium::reaLaw) runs it. The rack's instance now has it only then; renders stay bit-identical.
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 TEST (leftovers190nr_atrium_dense_tank_only_where_it_runs)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace at = verbs::atrium;
     auto render = [] (std::unique_ptr<Effect> fx, const EffectSlot& slot) {
         std::vector<float> l (48000), r (48000);

@@ -1,4 +1,4 @@
-// --- Round 184a S8a: FL's own states written from LYNX parameters (core/FlStateWrite.h); each reader of the import must
+// --- Round 184a S8a: FL's own states written from YW parameters (core/FlStateWrite.h); each reader of the import must
 // give the same parameters back.
 
 #include "core/FlStateWrite.h"
@@ -6,7 +6,7 @@
 
 TEST (simple184a_flstate_soft_clipper_enhancer)
 {
-    using namespace lynx;
+    using namespace yw;
     auto clip = makeEffectSlot (EffectKind::fruitySoftClipper);
     for (auto [t, post] : { std::pair { 100, 128 }, { 1, 0 }, { 127, 160 }, { 64, 90 } })
     {
@@ -32,10 +32,10 @@ TEST (simple184a_flstate_soft_clipper_enhancer)
 
 TEST (simple184a_flstate_limiter)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto base = flpexport::fruityLimiterDefaultState();
     auto slot = makeEffectSlot (EffectKind::fruityLimiter);
-    // a new LYNX slot writes FL's own fresh state byte for byte (round 189k: LYNX's default gate threshold is FL's 0)
+    // a new YW slot writes FL's own fresh state byte for byte (round 189k: YW's default gate threshold is FL's 0)
     CHECK (flstate::limiter (slot.params, base) == base);
     // every control at its minimum, its maximum and in between comes back
     for (int pass = 0; pass < 3; ++pass)
@@ -60,7 +60,7 @@ TEST (simple184a_flstate_limiter)
 
 TEST (simple184a_flstate_multiband)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::fruityMultiband);
     for (int pass = 0; pass < 4; ++pass)
     {

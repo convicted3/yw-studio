@@ -9,18 +9,18 @@
 #include <cstring>
 
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 
 namespace parity190ls
 {
 // energy (dB) of the left + right output in [a, b) seconds of an impulse at 0.05 s through the slot at 48 kHz, blocks of 512
-inline double windowDb (const lynx::EffectSlot& slot, double a, double b, double total = 3.0)
+inline double windowDb (const yw::EffectSlot& slot, double a, double b, double total = 3.0)
 {
     const double sr = 48000.0;
     const int n = (int) (total * sr);
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
     l[(std::size_t) (0.05 * sr)] = r[(std::size_t) (0.05 * sr)] = 0.5f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);
@@ -37,7 +37,7 @@ inline double windowDb (const lynx::EffectSlot& slot, double a, double b, double
 
 TEST (parity190ls_atrium_dense_law_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace at = verbs::atrium;
     CHECK (effectInfo (EffectKind::atrium).params.size() == (std::size_t) at::revision); // hidden: no control, no string
     CHECK (at::reaLaw == at::revision + 1);
@@ -60,9 +60,9 @@ TEST (parity190ls_atrium_dense_law_is_hidden_new_instances_run_it_old_projects_d
 
 TEST (parity190ls_atrium_without_the_dense_law_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     // parity190it's gold input (1.6 s at 48 kHz in blocks of 512), revisions 0 and 1 with the dense law off: FNV-1a of the
-    // float bits and the energy, from the base commit's objects (/mnt/e/lynx-work/valhalla190ls/gold: gold_base.txt, 42
+    // float bits and the energy, from the base commit's objects (/mnt/e/yw-work/valhalla190ls/gold: gold_base.txt, 42
     // renders at 44.1 / 48 / 96 kHz; the round's objects print the same lines, gold_new.txt)
     struct Gold { int rev; float type, decay, mod, earlyLate; std::uint64_t hash; double energy; };
     const Gold gold[] = {
@@ -102,7 +102,7 @@ TEST (parity190ls_atrium_without_the_dense_law_renders_as_the_base_commit_did)
 
 TEST (parity190ls_atrium_dense_tank_decays_and_keeps_the_level)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace at = verbs::atrium;
     // every type, a short and a long decay: the dense tank is stable (finite, falling) and its tail sits within a few dB of
     // the 8-line tank's (the front-ends' levels hold: the tank is read at the 8-line tank's 1 / √8)

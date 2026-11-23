@@ -1,7 +1,7 @@
 #pragma once
 
 // The Simple workflow's first-song tour (round 190dv; BandLab's "Welcome to Studio" + coach-mark lesson, studied in
-// bandlab182d/REPORT.md §1 and simple184a/DESIGN.md §2.3.3, clean-room: LYNX's own steps, words and look).
+// bandlab182d/REPORT.md §1 and simple184a/DESIGN.md §2.3.3, clean-room: YW's own steps, words and look).
 //
 // One real song is built step by step: a beat, the song's key, an instrument, chords from the Chord pad, a voice or a
 // loop that follows the key, a one-knob effect, then Finish (a Master look) and save. Each step names the controls it
@@ -29,7 +29,7 @@
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::tour
+namespace yw::tour
 {
 enum Step : int { beat = 0, key, instrument, chords, loop, effect, finish };
 constexpr int stepCount = 7; // the end card ("You're all set") is step == stepCount
@@ -92,7 +92,7 @@ inline std::vector<std::string> targets (int step)
 // A voice or a loop can't be made up: that step offers the loops instead.
 inline bool canDoForUser (int step) noexcept { return step >= 0 && step < stepCount && step != loop; }
 
-// --- where the card goes (round 190jc, design190ia SG-18: BandLab's coachmark sits beside its target; LYNX's card sat in
+// --- where the card goes (round 190jc, design190ia SG-18: BandLab's coachmark sits beside its target; YW's card sat in
 // a corner, up to 1 330 px away from its ring) -------------------------------------------------------------------------
 struct Box
 {
@@ -407,4 +407,4 @@ private:
     bool on = false;
     bool waitForChange = false;
 };
-} // namespace lynx::tour
+} // namespace yw::tour

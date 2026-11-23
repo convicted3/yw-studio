@@ -28,7 +28,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -278,7 +278,7 @@ const CutoffTable& cutoffTable()
 
 // ------------------------------------------------------------------------------------------------------- RNG
 
-// the process-global LCG of GMS (FUN_1800ef8c0); LYNX keeps one per instance (§1.7)
+// the process-global LCG of GMS (FUN_1800ef8c0); YW keeps one per instance (§1.7)
 struct Rng
 {
     static constexpr std::uint32_t A = 0x0bb38435u, C = 0x3619636bu;
@@ -2158,13 +2158,13 @@ public:
     }
 };
 
-// ------------------------------------------------------------------------------------------------------- LYNX front-end
+// ------------------------------------------------------------------------------------------------------- YW front-end
 //
 // Levels (§1.11, REA_rodada28 §4.1). FL hands GMS Final.Vol = chan.Vol (the wrapper switches "link velocity" off),
 // Final.Pan = note pan + chan.Pan and Final.Pitch = 100·(key − 60) + channel pitch; the wrapper turns them into the
-// per-note tables T_L = Vol·cos((1 + pan)π/4), T_R = Vol·sin(…) and T = Final.Pitch/100 − key + 60. LYNX's channel
+// per-note tables T_L = Vol·cos((1 + pan)π/4), T_R = Vol·sin(…) and T = Final.Pitch/100 − key + 60. YW's channel
 // gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…), so V and p are recovered exactly and the channel volume/pan
-// are not applied a second time. Velocity: Init.Vol = (11^(1.28·vel) − 1)/10 from LYNX's velocity (FL velocity/128,
+// are not applied a second time. Velocity: Init.Vol = (11^(1.28·vel) − 1)/10 from YW's velocity (FL velocity/128,
 // round 28 inference), then the wrapper's MIDI velocity. The tempo is the song tempo; the max-polyphony event is
 // taken as value 0 (99 voices, FL's value is not confirmed). While the transport plays, the song position (beats)
 // locks the synced LFOs and the effect LFOs (§1.8, §1.13).
@@ -2519,4 +2519,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace gms
-} // namespace lynx
+} // namespace yw

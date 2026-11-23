@@ -6,7 +6,7 @@
 TEST (fluid174e_meter_advance_matches_30hz_ticks)
 {
     // a burst then silence: 1 s of 144 Hz frames falls as far as 1 s of 30 Hz ticks (the same dB per second)
-    lynx::meters::PeakHold slow, fast;
+    yw::meters::PeakHold slow, fast;
     slow.tick (0.9f);
     fast.advance (0.9f, 1000.0 / 30.0);
     for (int i = 0; i < 30; ++i)
@@ -25,7 +25,7 @@ TEST (fluid174e_meter_advance_matches_30hz_ticks)
     CHECK (fast.peak < 0.9f && fast.peak >= fast.level);
 
     // a long gap (the window was hidden) does not fall more than 30 ticks' worth; silence still reaches 0
-    lynx::meters::PeakHold g;
+    yw::meters::PeakHold g;
     g.advance (0.5f, 33.0);
     g.advance (0.0f, 10000.0);
     CHECK (g.level > 0.0f);
@@ -44,30 +44,30 @@ TEST (fluid174e_meter_advance_matches_30hz_ticks)
 TEST (fluid174e_meter_dirty_rows)
 {
     const auto lin = [] (float v) { return std::clamp (v, 0.0f, 1.0f); };
-    lynx::meters::PeakHold a, b;
+    yw::meters::PeakHold a, b;
     // nothing moved: nothing to redraw
-    CHECK (lynx::meters::dirtyRows (a, b, 100, lin).empty());
+    CHECK (yw::meters::dirtyRows (a, b, 100, lin).empty());
     // the bar rose from 20 % to 50 % of 100 px: rows 50..80 and the new hold line around row 50
     a.level = 0.2f;
     b.level = 0.5f;
     b.peak = 0.5f;
-    auto r = lynx::meters::dirtyRows (a, b, 100, lin);
+    auto r = yw::meters::dirtyRows (a, b, 100, lin);
     CHECK (r.top <= 49 && r.bottom >= 80 && r.bottom <= 81);
     // a sub-pixel move redraws nothing
     a = b;
     b.level = 0.5001f;
-    CHECK (lynx::meters::dirtyRows (a, b, 100, lin).empty());
+    CHECK (yw::meters::dirtyRows (a, b, 100, lin).empty());
     // the clip latch: the top 4 px
     a = b;
     b.clipped = true;
-    r = lynx::meters::dirtyRows (a, b, 100, lin);
+    r = yw::meters::dirtyRows (a, b, 100, lin);
     CHECK (r.top == 0 && r.bottom >= 4);
     // the hold line falling by one pixel: its old and new rows only
     a = {};
     b = {};
     a.peak = 0.70f;
     b.peak = 0.69f;
-    r = lynx::meters::dirtyRows (a, b, 100, lin);
+    r = yw::meters::dirtyRows (a, b, 100, lin);
     CHECK (! r.empty() && r.top >= 28 && r.bottom <= 33);
 }
 
@@ -80,7 +80,7 @@ TEST (fluid174e2_frame_pacing)
     // one second of vertical blanks at `displayHz` (stamps with a little jitter, from an arbitrary clock), cap `capHz`:
     // the frames run and the longest gap between two runs, in display frames
     auto count = [] (double displayHz, double capHz, int frames, double jitterMs = 0.3) {
-        lynx::framepace::Pacer pacer;
+        yw::framepace::Pacer pacer;
         const auto period = 1000.0 / displayHz;
         int n = 0, longestGap = 0, gap = 0;
         for (int i = 0; i < frames + 200; ++i)
@@ -113,7 +113,7 @@ TEST (fluid174e2_frame_pacing)
 
     // blanks of a second monitor (60 Hz, another phase) mixed in: still at most the cap, evenly
     {
-        lynx::framepace::Pacer pacer;
+        yw::framepace::Pacer pacer;
         int n = 0;
         for (int i = 0; i < 144 * 3; ++i)
         {
@@ -127,7 +127,7 @@ TEST (fluid174e2_frame_pacing)
     }
     // a stall of half a second: no burst of catch-up frames after it
     {
-        lynx::framepace::Pacer pacer;
+        yw::framepace::Pacer pacer;
         const auto period = 1000.0 / 144.0;
         for (int i = 0; i < 100; ++i)
             pacer.runs (i * period, period, 60.0);
@@ -142,8 +142,8 @@ TEST (fluid174e2_frame_pacing)
 // refresh (evenly paced); Balanced = the refresh halved until it is at most 100 Hz (Live's rule).
 TEST (overlay190ip_even_frame_rate)
 {
-    using lynx::framepace::evenDivisor;
-    using lynx::framepace::balancedCap;
+    using yw::framepace::evenDivisor;
+    using yw::framepace::balancedCap;
     CHECK (evenDivisor (144.0, 0.0) == 1);
     CHECK (evenDivisor (144.0, 60.0) == 3);   // 48 a second, every 3rd frame (was every 2nd / 3rd)
     CHECK (evenDivisor (144.0, 30.0) == 5);
@@ -162,7 +162,7 @@ TEST (overlay190ip_even_frame_rate)
     // every n-th blank exactly, with jittered stamps; the same blank asked twice gets the same answer
     for (const auto n : { 2, 3, 5 })
     {
-        lynx::framepace::Divider divider;
+        yw::framepace::Divider divider;
         const auto period = 1000.0 / 144.0;
         int runs = 0, last = -1;
         auto even = true;
@@ -183,7 +183,7 @@ TEST (overlay190ip_even_frame_rate)
     }
     // a stall of half a second: one frame at once, then every n-th again (no burst)
     {
-        lynx::framepace::Divider divider;
+        yw::framepace::Divider divider;
         const auto period = 1000.0 / 144.0;
         for (int i = 0; i < 100; ++i)
             divider.runs (i * period, period, 2);

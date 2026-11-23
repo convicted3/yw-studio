@@ -5,7 +5,7 @@
 
 TEST (band190mx_ios23_signature_after_the_settings_event)
 {
-    using namespace lynx;
+    using namespace yw;
     using band190ic::Bytes;
     auto bytes = band190ic::song();
     // a second signature sequence in the iOS 2.3+ layout (read after the song's own, so it wins): 6/8, then 7/8 at bar 3

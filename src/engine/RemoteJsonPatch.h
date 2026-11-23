@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace lynx::remote_json
+namespace yw::remote_json
 {
 [[noreturn]] inline void invalid (const char* message) { throw std::runtime_error (message); }
 
@@ -177,4 +177,4 @@ inline juce::var apply (const juce::var& source, const juce::var& patch)
     bounds (result, 0, nodes);
     return result;
 }
-} // namespace lynx::remote_json
+} // namespace yw::remote_json

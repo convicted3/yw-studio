@@ -29,7 +29,7 @@
 #include "ui/HintBar.h"
 #include "ui/I18n.h"
 
-namespace lynx::workflowextras
+namespace yw::workflowextras
 {
 namespace
 {
@@ -102,7 +102,7 @@ bool readUiOption (const juce::String& key, bool on)
         cliplanes::patternOn = on;
     else if (key == "clipLanesLive")
         cliplanes::liveOn = on;
-    else if (key == "wToStart") // issue #195: REAPER's W goes to the start (LYNX extra)
+    else if (key == "wToStart") // issue #195: REAPER's W goes to the start (YW extra)
         transportedit::setWGoesToStart (on);
     else if (key == "simpleLoopDetect") // round 190kx: Simple drops take the tempo and key found in the audio
         loopanalysis::dropDetects() = on;
@@ -110,7 +110,7 @@ bool readUiOption (const juce::String& key, bool on)
         escclose::enabled() = on;
     else if (key == "trackClipsShown") // round 190ne: track clips listed in the pattern selector too (the Picker group's switch)
         trackclips::setShownInSelector (on);
-    else if (key == "rulerSeeksAnyTool") // issue #227 (round 190nq, LYNX extra)
+    else if (key == "rulerSeeksAnyTool") // issue #227 (round 190nq, YW extra)
         ruler::seekWithAnyTool() = on;
     else if (key == "sectionsLane") // round 190ol (P1): the Pattern layout's Sections lane
         sections::patternLaneOn() = on;
@@ -118,19 +118,19 @@ bool readUiOption (const juce::String& key, bool on)
         chordlane::laneOn() = on;
     else if (key == "prChordHighlight") // round 190pf (P13): the Piano roll lights the Chord lane's chord
         chordlane::pianoRollHighlight() = on;
-    else if (key == "clipLanesFoldedLive") // round 190oo (CS O-3, LYNX extra)
+    else if (key == "clipLanesFoldedLive") // round 190oo (CS O-3, YW extra)
         cliplanes::foldedOnOpen = on;
-    else if (key == "liveScaleControl") // round 190oo (O-5, LYNX extra)
+    else if (key == "liveScaleControl") // round 190oo (O-5, YW extra)
         livescale::shown = on;
-    else if (key == "trackStates") // round 190op (P4, LYNX extra): Hide / Deactivate in the Pattern layout's menus
+    else if (key == "trackStates") // round 190op (P4, YW extra): Hide / Deactivate in the Pattern layout's menus
         trackstates::patternMenus() = on;
-    else if (key == "trackVersions") // round 190pe (P20, LYNX extra): Track versions in the Pattern layout's track menu
+    else if (key == "trackVersions") // round 190pe (P20, YW extra): Track versions in the Pattern layout's track menu
         trackversions::patternMenus() = on;
-    else if (key == "muteKeyToggles") // issue #249 (round 190oq, LYNX extra)
+    else if (key == "muteKeyToggles") // issue #249 (round 190oq, YW extra)
         mutekeys::setToggles (on);
     else if (key == "startPage") // issue #252 (round 190oq; on by default, FL-exact)
         startpage::setEnabled (on);
-    else if (key == "rangeEdits") // round 190pa (P14, LYNX extra): Ctrl+Alt+drag ranges in the Pattern layout
+    else if (key == "rangeEdits") // round 190pa (P14, YW extra): Ctrl+Alt+drag ranges in the Pattern layout
         rangeedit::patternLayoutOn() = on;
     else
         return false;
@@ -324,7 +324,7 @@ void addPlaylistMenuItems (const std::function<void (const char*, const juce::St
         const auto style = layoutstyle::current();
         add ("playlist.clipLanes", tr ("Automation clips as lanes under their tracks"), style != layoutstyle::Style::simple,
              cliplanes::shownIn (style == layoutstyle::Style::clipLaunch, style == layoutstyle::Style::simple));
-        if (style == layoutstyle::Style::clipLaunch) // round 190oo (CS O-3, LYNX extra: Live folds its automation lanes)
+        if (style == layoutstyle::Style::clipLaunch) // round 190oo (CS O-3, YW extra: Live folds its automation lanes)
             add ("playlist.clipLanesFolded", tr ("Automation lanes start folded when a project opens (Clip-launch layout)"), true, cliplanes::foldedOnOpen);
         add ("playlist.pointerClick", tr ("Click on an empty spot selects and moves the song position (pointer click)"), style != layoutstyle::Style::simple, pointerclick::on);
         add ("playlist.headerWidth", tr ("Drag the track header column's right edge to widen it"), style != layoutstyle::Style::simple, headerwidth::draggable);
@@ -534,4 +534,4 @@ void addBrowserDeleteItem (juce::PopupMenu& menu, AudioEngine& engine, bool auto
         engine.editSong ([index] (Song& s) { takecleanup::deleteAudioClip (s, index); });
     });
 }
-} // namespace lynx::workflowextras
+} // namespace yw::workflowextras

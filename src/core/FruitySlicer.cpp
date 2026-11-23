@@ -12,7 +12,7 @@
 // FL's Fruity Slicer (Fruity Slicer_x64.dll, docs/analise/REA_rodada180c.md §Fruity Slicer). The sample edits keep FL's
 // arithmetic: double-precision ramps, Delphi's Round (half to even, std::nearbyint), the result stored as float (FL turns the sample to float before its declick).
 
-namespace lynx::fslicer
+namespace yw::fslicer
 {
 namespace
 {
@@ -86,7 +86,7 @@ std::optional<State> parse (const std::vector<std::uint8_t>& bytes)
     Reader in { bytes };
     State s;
     s.version = in.read<std::uint32_t>();
-    // FUN_00766c40: versions before 13 store a slice as its position only; LYNX reads 13…16
+    // FUN_00766c40: versions before 13 store a slice as its position only; YW reads 13…16
     if (! in.ok || s.version < 13 || s.version > 16)
         return std::nullopt;
 
@@ -503,7 +503,7 @@ void configureSampler (ChannelDef& def, const State& state, std::int64_t frames)
     def.sampler.slicesCutAtEnd = true; // its voice ends with the slice (FL render: exact silence right after it)
     // The voice: Fruity Slicer's voices run the plugin voice processor (FUN_00756d30) with the state's 364-byte block —
     // the five articulators (the volume envelope's release is what a note-off plays, FL render round 180c), Mod X / Y
-    // and the filter type. LYNX's sampler runs the same records as FL's channel voice (REA_rodada69 §3, REA_rodada76).
+    // and the filter type. YW's sampler runs the same records as FL's channel voice (REA_rodada69 §3, REA_rodada76).
     {
         std::array<std::uint8_t, flvp::snapshotSize> block {};
         if (state.voiceBlock.size() == (std::size_t) flvp::snapshotSize)
@@ -517,7 +517,7 @@ void configureSampler (ChannelDef& def, const State& state, std::int64_t frames)
         std::memcpy (&def.sampler.flChannel[87], block.data() + 0x168, 4);
         def.sampler.flChannel[88] = 96; // FL's project PPQ (the articulator times are in ticks of it)
     }
-    // PS: FL shifts the pitch and keeps the length through its licensed stretch engine; LYNX resamples (the slice gets
+    // PS: FL shifts the pitch and keeps the length through its licensed stretch engine; YW resamples (the slice gets
     // shorter or longer with the pitch)
     def.sampler.pitch = std::clamp (def.sampler.pitch + (float) state.pitchCents / 100.0f, -24.0f, 24.0f);
 }
@@ -538,10 +538,10 @@ State fresh (const std::string& path, int sampleRate)
     s.path = path;
     s.sampleRate = sampleRate;
     s.slices.push_back ({});
-    // What a Fruity Slicer added in FL 2026 saves (round 190m, /mnt/e/lynx-work/fpc190m/fl/fresh.flp): ANIMATE and
+    // What a Fruity Slicer added in FL 2026 saves (round 190m, /mnt/e/yw-work/fpc190m/fl/fresh.flp): ANIMATE and
     // DECLICK on, DEC at 4 ms, and the volume envelope on with no delay / attack / hold / decay, full sustain and a
     // short release — the rest of the voice block is the plugin's defaults. FL's stretch method there is 4 (the
-    // licensed engine); LYNX keeps Fill gaps, the method its TS wheel can run.
+    // licensed engine); YW keeps Fill gaps, the method its TS wheel can run.
     s.animate = 1;
     s.declick = 1;
     s.fadeOutMs = 4;
@@ -728,4 +728,4 @@ std::vector<std::int32_t> zeroCrossSlices (const std::vector<std::int32_t>& star
     }
     return out;
 }
-} // namespace lynx::fslicer
+} // namespace yw::fslicer

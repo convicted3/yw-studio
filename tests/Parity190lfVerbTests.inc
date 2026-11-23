@@ -1,7 +1,7 @@
 // Round 190lf, sub-round "verb": the Waves H-Delay loop and TrueVerb's direct sound (owner's permission of 2026-11-17 for
-// REA on third-party binaries; /mnt/e/lynx-work/waves2_190lf/verb/HANDOFF.md, docs/analise/REA_rodada190lf_verb.md).
+// REA on third-party binaries; /mnt/e/yw-work/waves2_190lf/verb/HANDOFF.md, docs/analise/REA_rodada190lf_verb.md).
 // - Echoform's hybrid engine gets a hidden law (echoform::hybridLaw): H-Delay's HiPass / LoPass / LoFi inside the loop and
-//   its smoothed-triangle delay modulation, LYNX's own code fitted on demo-mode probes. 0 for new instances and every
+//   its smoothed-triangle delay modulation, YW's own code fitted on demo-mode probes. 0 for new instances and every
 //   project saved before (bit for bit: lab/gold.sh).
 // - Reeverb 2 gets a hidden direct-path law (reeverb2DirectLaw): TrueVerb's direct sound, a first-order low shelf.
 #include <cmath>
@@ -13,20 +13,20 @@
 namespace parity190lfv
 {
 // one channel's impulse response of a slot (left impulse of `amp` at sample 0)
-inline std::vector<float> impulse (const lynx::EffectSlot& s, double sr, int n, float amp, std::vector<float>* right = nullptr)
+inline std::vector<float> impulse (const yw::EffectSlot& s, double sr, int n, float amp, std::vector<float>* right = nullptr)
 {
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
     l[0] = amp;
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 256)
         fx->process (l.data() + off, r.data() + off, std::min (256, n - off), s.params, 120.0);
     if (right != nullptr) *right = r;
     return l;
 }
-inline lynx::EffectSlot hybridLaw1 (double ms, double fb)
+inline yw::EffectSlot hybridLaw1 (double ms, double fb)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     auto s = makeEffectSlot (EffectKind::echoform);
     s.params[e::hybrid] = e::hybridValue (1);
@@ -54,7 +54,7 @@ inline double bandDb (const std::vector<float>& x, int from, int len, double hz,
 
 TEST (parity190lf_hybrid_law_is_hidden_and_off_for_new_and_old_echoforms)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto& info = effectInfo (EffectKind::echoform);
     CHECK (info.params.size() == (std::size_t) e::paramCount && e::hybridLaw == e::lineLaw + 1 && e::hybridRate == e::lineLaw + 5);
@@ -69,7 +69,7 @@ TEST (parity190lf_hybrid_law_is_hidden_and_off_for_new_and_old_echoforms)
 
 TEST (parity190lf_hybrid_law_filters_sit_inside_the_loop)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const double sr = 48000.0;
     const int t = 18000; // 375 ms
@@ -96,7 +96,7 @@ TEST (parity190lf_hybrid_law_filters_sit_inside_the_loop)
 
 TEST (parity190lf_hybrid_law_modulation_swings_the_delay_from_the_instance_start)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const double sr = 48000.0;
     // depth 50 %, LFO 0.2 Hz (H-Delay's Rate 0.1 with its BPM sync): the delay starts at T and rises; ±T/4 before the
@@ -121,7 +121,7 @@ TEST (parity190lf_hybrid_law_modulation_swings_the_delay_from_the_instance_start
 
 TEST (parity190lf_waves_hdelay_filters_lofi_and_modulation_use_the_hybrid_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;
@@ -146,7 +146,7 @@ TEST (parity190lf_waves_hdelay_filters_lofi_and_modulation_use_the_hybrid_law)
 
 TEST (parity190lf_reeverb2_direct_law_is_hidden_and_exact)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::reeverb2);
     CHECK (info.params.size() == (std::size_t) reeverb2ParamCount && reeverb2DirectLaw == reeverb2ParamCount);
     auto s = makeEffectSlot (EffectKind::reeverb2);
@@ -167,7 +167,7 @@ TEST (parity190lf_reeverb2_direct_law_is_hidden_and_exact)
 
 TEST (parity190lf_waves_trueverb_direct_sound_follows_distance)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     const auto at = [&] (const char* distance) {
         return parity190jh::waves ("TrueVerb Stereo", "TrueVerb",

@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Low Lifter as a LYNX mixer effect: the plugin's own bass enhancer (a Faust program in FL's shared DSP
+// FL Studio's Low Lifter as a YW mixer effect: the plugin's own bass enhancer (a Faust program in FL's shared DSP
 // library), rebuilt in docs/analise/REA_rodada154.md §5 (clean-room: structure, formulas and behaviour in our own
 // words; no Image-Line code or data in this repository).
 //
@@ -17,7 +17,7 @@
 //   [4] Look-ahead 0/1  [5] Invert polarity 0/1  [6] Pre gain 0…10000 (0…18 dB)  [7] Diffuser mix 0…10000
 //   [8] Diffuser depth 0…10000 (−0.99…0.99)  [9] High band gain 0…10000 (−120…0 dB)  [10] Crossover 0…10000
 //   (20…120 Hz)  [11] Low cut 0…10000 (20…120 Hz)  [12] Multiband 0/1  [13] High band on 0/1  [14] Low band on 0/1
-// FL's host skips the engine after a second of silence (the effect then passes its input), as LYNX does.
+// FL's host skips the engine after a second of silence (the effect then passes its input), as YW does.
 
 #include <array>
 #include <cstdint>
@@ -28,7 +28,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::lowlifter
+namespace yw::lowlifter
 {
 constexpr int numParams = 15;
 // round 190mm (sub-round dyn), hidden (after the named ones; saved while non-zero; only the Waves Renaissance Bass /
@@ -103,4 +103,4 @@ private:
     int index = 0;
     Channel ch[2];
 };
-} // namespace lynx::lowlifter
+} // namespace yw::lowlifter

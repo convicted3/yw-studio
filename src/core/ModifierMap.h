@@ -8,7 +8,7 @@
 // "FL Studio 2026 does not respect [macOS's Ctrl+click = right click], and instead left clicks").
 //
 // JUCE, on the other hand, reports a Control+left click on macOS as a popup-menu click (ModifierKeys::isPopupMenu()
-// is "right button or Ctrl" there), so a LYNX editor that asked isPopupMenu() opened a menu where the user wanted
+// is "right button or Ctrl" there), so a YW editor that asked isPopupMenu() opened a menu where the user wanted
 // FL's Ctrl gesture, and nothing ever looked at Cmd (round 168d, the YouTube review on a Mac: "the double click to
 // highlight this bar is ... hard to do"). Docs: docs/analise/REA_rodada168t.md.
 //
@@ -21,7 +21,7 @@
 
 #include <string>
 
-namespace lynx::modmap
+namespace yw::modmap
 {
 enum class Os
 {
@@ -104,4 +104,4 @@ inline std::string keyNames (const std::string& text, Os os)
     }
     return out;
 }
-} // namespace lynx::modmap
+} // namespace yw::modmap

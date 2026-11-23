@@ -1,4 +1,4 @@
-// Live's Operator → Tetra, LYNX's own FM synth (round 190hs, core/FmSynth.h). Tetra keeps Operator's units, so every
+// Live's Operator → Tetra, YW's own FM synth (round 190hs, core/FmSynth.h). Tetra keeps Operator's units, so every
 // parameter Tetra has is copied as Live stores it; the rest is listed in the import report. Evidence tags as in
 // core/AlsDevices.h: [DATA] read in saved sets (Core Library presets and 190hs's render set), [MEASURED] Live renders.
 
@@ -12,7 +12,7 @@
 #include "core/Song.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 using xml::Element;
 
@@ -174,4 +174,4 @@ bool operatorToTetra (const Element& device, ChannelDef& channel, Notes& notes)
         channel.misc.pitchRange = std::clamp ((int) std::lround (manual (device, "Globals/PitchBendRange", 5.0)), 0, 48);
     return true;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

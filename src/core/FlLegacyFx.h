@@ -1,11 +1,11 @@
 #pragma once
 
-// FL Studio's small legacy Fruity effects as exact LYNX engines, rebuilt in docs/analise/REA_rodada165k.md
+// FL Studio's small legacy Fruity effects as exact YW engines, rebuilt in docs/analise/REA_rodada165k.md
 // (clean-room: the plug-ins' layouts, formulas and behaviour in our own words; no Image-Line code or data in this
-// repository). All five are Delphi plug-ins whose kernels run on the x87 in 80-bit precision; LYNX does the same
+// repository). All five are Delphi plug-ins whose kernels run on the x87 in 80-bit precision; YW does the same
 // (long double, 64-bit precision, round to nearest) so their output is bit-identical on x86.
 //
-// Every parameter is FL's control over its range (value = (raw − min) / (max − min)), so the LYNX editor and FL
+// Every parameter is FL's control over its range (value = (raw − min) / (max − min)), so the YW editor and FL
 // automation drive the same values FL's ProcessParam receives:
 //
 //   Fruity Phase Inverter (EffectKind::flPhaseInverter): [0] Invert 0…1024 (1024): None / Left / Right — a third of
@@ -33,7 +33,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::fllegacy
+namespace yw::fllegacy
 {
 constexpr int phaseInverterParams = 1, centerParams = 1, bassBoostParams = 2, eq7Params = 7, delay1Params = 6;
 constexpr int eq7Bands = 7;
@@ -146,4 +146,4 @@ std::unique_ptr<Effect> makeCenter();
 std::unique_ptr<Effect> makeBassBoost();
 std::unique_ptr<Effect> makeEq7();
 std::unique_ptr<Effect> makeDelay1();
-} // namespace lynx::fllegacy
+} // namespace yw::fllegacy

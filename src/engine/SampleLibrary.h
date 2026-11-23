@@ -9,7 +9,7 @@
 #include "core/Instruments.h"
 #include "core/TimeStretch.h"
 
-namespace lynx
+namespace yw
 {
 // Decodes audio files into SampleData, cached by path (one cache for the whole process).
 // Any thread except the audio thread.
@@ -66,7 +66,7 @@ public:
     // Filter for FileChooser ("*.wav;*.flac;...")
     juce::String wildcard() const;
 
-    // The audio files LYNX loads as samples (core/SampleFiles.h: wav, aif(f), flac, ogg, mp3 and FL's WavPack .wv).
+    // The audio files YW loads as samples (core/SampleFiles.h: wav, aif(f), flac, ogg, mp3 and FL's WavPack .wv).
     // Every drop target (Channel Rack, Playlist, Audio editor...) asks this, so they all take what the Browser lists.
     static bool isSampleFile (const juce::File& file);
 
@@ -94,4 +94,4 @@ private:
 };
 // Brings in from disk the range [from, to) (seconds) of a mapped sample. Any thread except the audio thread.
 void prefetchSample (const SampleData& data, double fromSeconds, double toSeconds);
-} // namespace lynx
+} // namespace yw

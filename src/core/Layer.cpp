@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::layer
+namespace yw::layer
 {
 namespace
 {
@@ -177,4 +177,4 @@ std::vector<int> parentsOf (const Song& song, int channel)
         }
     return out;
 }
-} // namespace lynx::layer
+} // namespace yw::layer

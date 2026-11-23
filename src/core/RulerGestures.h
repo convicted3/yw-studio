@@ -13,8 +13,8 @@
 //     selected; Shift with a selection: the selection moves (its length kept); on a marker tag: the time between
 //     that marker and the next one;
 //   - plain left: on a marker tag, the marker; elsewhere the song position (scrub).
-// LYNX-own on top of FL: a right click released in place with no selection opens LYNX's ruler menu (FL: nothing);
-// Ctrl+Shift+drag inside the selection moves it WITH its clips (what LYNX's Shift+drag did before 168t).
+// YW-own on top of FL: a right click released in place with no selection opens YW's ruler menu (FL: nothing);
+// Ctrl+Shift+drag inside the selection moves it WITH its clips (what YW's Shift+drag did before 168t).
 
 #include <algorithm>
 #include <cstdint>
@@ -22,18 +22,18 @@
 #include "core/EditorGestures.h"
 #include "core/ModifierMap.h"
 
-namespace lynx::ruler
+namespace yw::ruler
 {
 enum class Action
 {
     seek,            // scrub the song position
-    marker,          // the marker under the mouse (LYNX: go to it)
+    marker,          // the marker under the mouse (YW: go to it)
     markerMenu,      // the menu of the marker under the mouse
     markerSpan,      // time selection from this marker to the next one
     select,          // a new time selection, anchored at the press
     adjust,          // the nearer edge of the selection follows the mouse
     moveSelection,   // the time selection moves, keeping its length
-    moveWithClips,   // LYNX: the time selection moves with the clips in it
+    moveWithClips,   // YW: the time selection moves with the clips in it
     zoomRange        // a range that the view zooms to on release
 };
 
@@ -45,13 +45,13 @@ struct Press
     bool onMarkerTag = false;
     bool hasSelection = false;
     bool insideSelection = false;
-    bool anyToolSeeks = false; // #227 (round 190nq): the LYNX extra below is on
+    bool anyToolSeeks = false; // #227 (round 190nq): the YW extra below is on
 };
 
-// #227 (round 190nq), a LYNX extra, off by default (FL 2026 checked: with the Select tool a click on the Playlist's ruler
+// #227 (round 190nq), a YW extra, off by default (FL 2026 checked: with the Select tool a click on the Playlist's ruler
 // leaves the song position where it is, [SHOT] 190nq f03c / f04c; with the Paint tool it moves it, f05c): "A click on the
 // ruler moves the song position with every tool". On: the Select and Zoom tools' plain left press on the ruler scrubs as
-// the other tools' does (Ctrl, a double click or the right button still select / zoom a range). Settings › LYNX extras,
+// the other tools' does (Ctrl, a double click or the right button still select / zoom a range). Settings › YW extras,
 // ui-options.txt "rulerSeeksAnyTool". Playlist and Piano roll.
 inline bool& seekWithAnyTool() noexcept
 {
@@ -115,4 +115,4 @@ constexpr bool isClick (int dx, int dy, int slop = 3) noexcept
 {
     return dx * dx + dy * dy < slop * slop;
 }
-} // namespace lynx::ruler
+} // namespace yw::ruler

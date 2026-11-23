@@ -1,8 +1,8 @@
-// Live's own devices → LYNX's, lot 6 (round 190ko; core/AlsDevices.h has the list and the evidence tags): the three
+// Live's own devices → YW's, lot 6 (round 190ko; core/AlsDevices.h has the list and the evidence tags): the three
 // Live 12 devices that were still dropped — Meld (an instrument) → Braid, Spectral Time → Timeprism, Spectral Resonator
 // → Harmonia. Same rules as the earlier lots: each conversion is a law in a unit, what is fitted or has no counterpart
 // becomes a note for the import report, and only the device's saved state is read. The laws were measured on Live
-// 12.4's own renders of probe sets (round 190ko, /mnt/e/lynx-work/meld190ko: sets m1, m2, s1 and 190kk's k1 presets).
+// 12.4's own renders of probe sets (round 190ko, /mnt/e/yw-work/meld190ko: sets m1, m2, s1 and 190kk's k1 presets).
 
 #include "core/AlsDevices.h"
 
@@ -16,7 +16,7 @@
 #include "core/Timeprism.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 namespace
 {
@@ -81,7 +81,7 @@ bool meldToBraid (const Element& device, ChannelDef& channel, Notes& notes)
                 state[(std::size_t) braid::matrixIndex (row, s)] = (float) c.number ("ModulationAmounts." + std::to_string (s), 0.0);
             ++row;
         }
-    // the wheel: Pitch Mod ← Pitch Bend carries the bend range (LYNX's channel range holds whole semitones) [MEASURED m1]
+    // the wheel: Pitch Mod ← Pitch Bend carries the bend range (YW's channel range holds whole semitones) [MEASURED m1]
     const auto bend = state[(std::size_t) braid::matrixIndex (braid::tgt::pitch, braid::src::pitchBend)];
     if (std::abs (bend) > 1.0e-6f)
         channel.misc.pitchRange = std::clamp ((int) std::lround (std::abs (bend) * 48.0f), 1, 48);
@@ -241,4 +241,4 @@ bool spectralResonatorToHarmonia (const Element& device, Translated& out)
         out.notes.approximated.push_back ("the partials' modulation (chorus / wander / granular): YW Studio's own random patterns");
     return true;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

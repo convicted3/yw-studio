@@ -15,13 +15,13 @@
 #include "core/Biquad.h"
 #include "core/BlockConvolver.h"
 
-namespace lynx::ppkernels
+namespace yw::ppkernels
 {
 #include "core/EchoBoyKernels.inc" // round 148: EchoBoy ping-pong kernels
 }
 #include "core/Effects.h"
 
-namespace lynx::echosuite
+namespace yw::echosuite
 {
 namespace
 {
@@ -175,7 +175,7 @@ struct StereoSections
     }
     void process (float& l, float& r) noexcept
     {
-       #if LYNX_BIQUAD_SSE2
+       #if YW_BIQUAD_SSE2
         auto x = _mm_set_pd ((double) r, (double) l);
         for (int k = 0; k < N; ++k)
         {
@@ -538,7 +538,7 @@ double modSyncBeats (int index) noexcept
     return beats[std::clamp (index, 0, 6)];
 }
 
-// round 144: the rhythm editor's laws (LYNX's own [model]; Even keeps the measured round-137 law)
+// round 144: the rhythm editor's laws (YW's own [model]; Even keeps the measured round-137 law)
 RhythmEdit rhythmEditOf (float v) noexcept
 {
     v = clamp01 (v);
@@ -624,7 +624,7 @@ namespace
 #ifndef TR_NOOP
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
-// LYNX's own tap patterns (positions in grid steps, levels 0 … 1); written for Echoform, not taken from any product
+// YW's own tap patterns (positions in grid steps, levels 0 … 1); written for Echoform, not taken from any product
 struct RhythmPreset
 {
     const char* name;
@@ -742,7 +742,7 @@ int nearestPrime (int samples) noexcept
 double feedbackGain (float v) noexcept { return 2.0 * clamp01 (v); }
 
 // round 190ly [EXEC]: the ValhallaDelay role's loop laws (echoform::valhallaLaw), fitted by the lab on refcap030's
-// ValhallaDelay captures (black-box; /mnt/e/lynx-work/valhalla2_190ly, docs/analise/REA_rodada190ly.md §2).
+// ValhallaDelay captures (black-box; /mnt/e/yw-work/valhalla2_190ly, docs/analise/REA_rodada190ly.md §2).
 // fbDb: the loop gain correction (dB) at the knob values vdKnots (linear between); diffLen: the loop
 // diffusers' lengths × this; diffGain: their all-pass gain at Diffusion 100 %; diffComp: the share of their delay read
 // back out of the echo time (the reference keeps the time: its diffused echo spreads around it)
@@ -767,7 +767,7 @@ static const VdLaw& vdLaw() noexcept
         // at 80 % and a pairs file down: their other settings fade faster); over it the cut holds −1.1 dB to 120 % and
         // eases to 0 by 160 % (knot 80 % = the old line's value there)
         VdLaw r { { 0.0, 0.0, 0.0, -1.1 / 3.0, -1.1, -1.1, -0.5, 0.0, 0.0 }, 3.5, 0.8, 1.0 };
-       #ifdef LYNX_VD_FIT
+       #ifdef YW_VD_FIT
         if (const char* v = std::getenv ("VD_FB"))
             std::sscanf (v, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf", &r.fbDb[0], &r.fbDb[1], &r.fbDb[2], &r.fbDb[3], &r.fbDb[4], &r.fbDb[5],
                          &r.fbDb[6], &r.fbDb[7], &r.fbDb[8]);
@@ -849,7 +849,7 @@ float hybridFilterValue (double hz) noexcept { return (float) std::clamp (std::l
 // mix 100 %, its Saturation at 0 / 6 / 12 / 18 / 24): the first echo's tone and the tone of every further pass (white
 // noise bursts, 1/3-octave power ratios: rep 1 = output tone × loop tone, rep 2 / rep 1 = feedback × loop tone),
 // the steady-sine gain / 2nd / 3rd harmonic over −40 … 0 dBFS, the pitch wobble of a steady 1 kHz echo and the
-// impulse's spread. LYNX's model (our own code): write path = saturation → loop tone, read path = output tone; the
+// impulse's spread. YW's model (our own code): write path = saturation → loop tone, read path = output tone; the
 // tones are RBJ biquads fitted to the measured curves (≤ 0.3 dB rms), the saturation either a knee shaper
 // x / (1 + |x|^p)^(1/p) with a bias b (even harmonics) between a drive and a gain, or a compressor (the dynamic
 // styles: ratio, threshold, make-up per Saturation step; attack 4 ms, release 120 ms from level steps), linear
@@ -879,7 +879,7 @@ const VoicingData voicingTable[voicingCount] {
 #include "core/EchoVoicings.inc"
 };
 // the saturation types: the measured curve of a representative style (clean digital, studio tape, valve tape,
-// broadcast FM's compressor, fuzzed, squashed) — LYNX names
+// broadcast FM's compressor, fuzzed, squashed) — YW names
 constexpr int satTypeSource[satTypeCount] { 15, 1, 4, 12, 25, 24 };
 
 const VoicingData& voicingData (int k) noexcept { return voicingTable[std::clamp (k - 1, 0, voicingCount - 1)]; }
@@ -1074,7 +1074,7 @@ const char* modeName (Mode m) noexcept
 }
 
 // round 190dl: the measured tape stage's constants (Law = Measured, Tape character), see designMeasuredTape (). The lab's
-// fitting harness builds this file with LYNX_ECHO_FIT and writes them; the product reads them as constants. Two of the
+// fitting harness builds this file with YW_ECHO_FIT and writes them; the product reads them as constants. Two of the
 // fitted sections are not run (recLp2Hz, a low pass at 20.9 kHz, and fbHigh*, +0.65 dB above 4.4 kHz): without them the
 // stage costs about what the classic tape does and the bank scores the same or higher
 struct TapeLaw
@@ -1085,7 +1085,7 @@ struct TapeLaw
     double compThresholdDb, compRatio, compAttackMs, compReleaseMs, compKneeDb;
     double satK, satBias; // the head's curve (the classic Tape's: 0.95, 0.11)
 };
-#ifdef LYNX_ECHO_FIT
+#ifdef YW_ECHO_FIT
 TapeLaw tapeLaw
 #else
 constexpr TapeLaw tapeLaw
@@ -2099,7 +2099,7 @@ private:
         // the host's reset); prepare() restarts it
         double lfoPhase = 0.0, lfoSmooth = 0.0;
     } hyb;
-    // round 190lf: LoFi's low pass, LYNX's own design (a Kaiser-windowed sinc, linear phase) fitted to the measured
+    // round 190lf: LoFi's low pass, YW's own design (a Kaiser-windowed sinc, linear phase) fitted to the measured
     // magnitude of H-Delay's LoFi echo (REA_rodada190lf_verb §3.2: 33 taps at 48 kHz, 6.34 kHz, β 4.8)
     std::array<double, hybridFirMax> hybFirK {};
     int hybFirN = 0;
@@ -2223,7 +2223,7 @@ private:
     //   response twice), Q 0.80 (high pass) / 0.95 (low pass), the knob's frequency through a bilinear map without
     //   pre-warping (5 kHz → 4.83 kHz, 7.86 kHz → 7.26 kHz at 48 kHz); fitted to the impulse responses within 0.03 dB;
     // - LoFi: a steep linear-phase low pass inside the loop whose delay is taken off the echo time (each pass lands on
-    //   T): flat to 4.5 kHz, −4.4 dB at 6 kHz, −27 dB at 8 kHz (here LYNX's own Kaiser-windowed sinc, ±0.6 dB to −40 dB);
+    //   T): flat to 4.5 kHz, −4.4 dB at 6 kHz, −27 dB at 8 kHz (here YW's own Kaiser-windowed sinc, ±0.6 dB to −40 dB);
     // - modulation: a triangle LFO through a one-pole of 0.37 s (measured from its harmonics: H3 / H1 0.072 at a 5 s
     //   period, 0.094 at 10 s, 0.04 at 1 s) swings the read delay by ± depth · T / 2 (depth 0 … 1), both lines in step;
     //   the LFO starts at the centre, rising, when the instance starts, and runs on across resets.
@@ -2841,7 +2841,7 @@ public:
     }
 
 private:
-    // round 190do: the measured loop [EXEC] (tp172d renders of the reference, black-box; /mnt/e/lynx-work/mod190do):
+    // round 190do: the measured loop [EXEC] (tp172d renders of the reference, black-box; /mnt/e/yw-work/mod190do):
     // the low / high cuts as first-order bilinear sections (the reference's per-pass magnitude, echo by echo; its low
     // cut sits at 0.8 of the knob's frequency), a second-order all-pass at 2875 Hz (Q 0.34) for the extra low-mid
     // group delay of its loop (S1: +31 samples at 100 Hz, +9.5 at 400 Hz over the high band), a loop limiter of
@@ -2930,7 +2930,7 @@ private:
     double turnTheta = 0.0, turnAdvance = 0.0, turnC = 1.0, turnS = 0.0; // round 190ly: rateTurn () at this rate
 
     // round 190fy [EXEC] (black-box: the tp172d reference renders, checked on refcap0124's 36 one-parameter captures;
-    // /mnt/e/lynx-work/parityfx190fy): revision 1 of the measured loop. Echo by echo, revision 0 was late against the
+    // /mnt/e/yw-work/parityfx190fy): revision 1 of the measured loop. Echo by echo, revision 0 was late against the
     // reference above 1 kHz and early under 200 Hz (its low-mid all-pass delayed the mids, not the lows). Revision 1 reads
     // the line 1.8 samples (at 48 kHz) sooner, at least one sample after the input (a linear read under two samples: the
     // dial's 0.01 ms floor answers two samples after the input, the reference one, revision 0 three), and
@@ -2944,7 +2944,7 @@ private:
     {
         static const Rev1 law = [] {
             Rev1 r { 1.0, -1.8, 7080.0, 0.101 };
-           #ifdef LYNX_SPIRAL_FIT
+           #ifdef YW_SPIRAL_FIT
             if (const char* v = std::getenv ("SP_SCALE")) r.scale = std::atof (v);
             if (const char* v = std::getenv ("SP_OFFSET")) r.offset = std::atof (v);
             if (const char* v = std::getenv ("SP_APHZ")) r.allpassHz = std::atof (v);
@@ -2983,9 +2983,9 @@ float modeValue (Mode m) noexcept { return ((float) m + 1.0f) / (float) modeCoun
 double smModeDb (Mode m) noexcept
 {
     static double db[modeCount] = { 0.0, -3.5, 4.8, 4.0, 0.0, -6.5, 0.0, 0.8, 0.0, 0.0, 0.0 };
-   #ifdef LYNX_VERB_FIT
+   #ifdef YW_VERB_FIT
     static const bool loaded = [] {
-        if (const char* v = std::getenv ("LYNX_ORBIT_DB"))
+        if (const char* v = std::getenv ("YW_ORBIT_DB"))
             std::sscanf (v, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf", &db[0], &db[1], &db[2], &db[3], &db[4], &db[5], &db[6], &db[7], &db[8], &db[9], &db[10]);
         return true;
     }();
@@ -3199,7 +3199,7 @@ private:
     // ---- round 190mj [EXEC] (orbit::voiceLaw): ValhallaSpaceModulator's own voices -------------------------------------
     // Measured black-box on the reference (refcap030's host, round 190mj's probes: click trains every 60 ms at Rate 0.1 /
     // 1 Hz, Depth 2 / 10 / 30 ms, Manual 0 / 1.28 ms, Feedback 0 / +50 %, each mode, a click on L then on R; and still
-    // probes at Rate 0, Feedback 0 / ±50 / 100 %). LYNX's own code and fits; nothing of the reference is copied.
+    // probes at Rate 0, Feedback 0 / ±50 / 100 %). YW's own code and fits; nothing of the reference is copied.
     // - The sweep is one phase that runs on from load (a reset does not restart it), at 10 |2 v − 1|^(10/3) Hz.
     // - Every tap is read through a first-order all-pass fractional delay (Thiran: η = (1 − d) / (1 + d), d the fraction
     //   of the delay in samples) — flat in level at any position, where linear interpolation dulls the top.
@@ -3270,8 +3270,8 @@ private:
         return y;
     }
 
-    // the measured per-mode constants (LYNX's own fits, output-error least squares on the still probes' impulse responses);
-    // LYNX_VERB_FIT builds read overrides from LYNX_ORBIT_V2 (k=v,...)
+    // the measured per-mode constants (YW's own fits, output-error least squares on the still probes' impulse responses);
+    // YW_VERB_FIT builds read overrides from YW_ORBIT_V2 (k=v,...)
     struct VoiceFit
     {
         // the feedback path at +50 % (loop gain 0.378 included): −0.41 at the lows, +0.20 at the top, crossing near 1 kHz
@@ -3295,9 +3295,9 @@ private:
     static VoiceFit& voiceFit() noexcept
     {
         static VoiceFit f;
-       #ifdef LYNX_VERB_FIT
+       #ifdef YW_VERB_FIT
         static const bool loaded = [] {
-            if (const char* v = std::getenv ("LYNX_ORBIT_V2"))
+            if (const char* v = std::getenv ("YW_ORBIT_V2"))
             {
                 std::string str (v);
                 std::size_t at = 0;
@@ -3547,8 +3547,8 @@ namespace
 // round 190it: what feeds the loop in revision 1 (0 = the longest tap; the lab build can try 1 = the sum / √taps)
 int latticeFeedMode() noexcept
 {
-   #ifdef LYNX_VERB_FIT
-    static const int m = [] { const char* e = std::getenv ("LYNX_LAT"); return e != nullptr ? std::atoi (e) : 0; }();
+   #ifdef YW_VERB_FIT
+    static const int m = [] { const char* e = std::getenv ("YW_LAT"); return e != nullptr ? std::atoi (e) : 0; }();
     return m;
    #else
     return 0;
@@ -4057,4 +4057,4 @@ std::string paramText (EffectKind kind, int param, float v)
     }
     return fmt ("%.2f", v);
 }
-} // namespace lynx::echosuite
+} // namespace yw::echosuite

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace lynx
+namespace yw
 {
 ControllerIo::ControllerIo() : profiles (controller::Library::builtIn()) {}
 
@@ -13,7 +13,7 @@ void ControllerIo::loadProfiles (const juce::File& userFolder)
     profiles = controller::Library::builtIn();
     if (userFolder.isDirectory())
     {
-        auto files = userFolder.findChildFiles (juce::File::findFiles, false, "*.lynxctl");
+        auto files = userFolder.findChildFiles (juce::File::findFiles, false, "*.ywctl");
         files.sort();
         for (const auto& f : files)
             if (f.getSize() < 1024 * 1024) // (a profile is a few kilobytes)
@@ -210,4 +210,4 @@ void ControllerIo::pump (bool learning)
     if (! wanted.empty())
         hub.refresh (*surface, [this] (const std::string& input, const std::uint8_t* bytes, std::size_t size) { send (input, bytes, size); });
 }
-} // namespace lynx
+} // namespace yw

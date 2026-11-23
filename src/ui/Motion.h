@@ -7,7 +7,7 @@
 // scopes are live views, not animations: they keep moving (their rate is Settings › General › Animation rate).
 // Message thread only.
 
-namespace lynx::ui::motion
+namespace yw::ui::motion
 {
 inline bool& enabled()
 {
@@ -16,4 +16,4 @@ inline bool& enabled()
 }
 
 constexpr int panelFadeMs = 110; // a docked panel opening or closing
-} // namespace lynx::ui::motion
+} // namespace yw::ui::motion

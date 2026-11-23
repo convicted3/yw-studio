@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct MultilinkSession
 {
@@ -49,4 +49,4 @@ struct MultilinkSession
 
     bool complete() const noexcept { return ! targets.empty() && linked >= (int) targets.size(); }
 };
-} // namespace lynx
+} // namespace yw

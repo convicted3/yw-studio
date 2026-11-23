@@ -8,7 +8,7 @@
 
 #include <juce_audio_devices/juce_audio_devices.h>
 
-namespace lynx::standin
+namespace yw::standin
 {
 struct Device final : juce::AudioIODevice, private juce::Thread
 {
@@ -112,4 +112,4 @@ private:
     const double rate;
     const int block, pause;
 };
-} // namespace lynx::standin
+} // namespace yw::standin

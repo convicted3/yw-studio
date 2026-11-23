@@ -6,7 +6,7 @@
 #include <new>
 #include <thread>
 
-namespace lynx
+namespace yw
 {
 void RollingAudioLog::stopWriter() noexcept
 {
@@ -243,4 +243,4 @@ bool RollingAudioLog::dump (Dump& out)
     out.rate = rate;
     return true;
 }
-} // namespace lynx
+} // namespace yw

@@ -14,7 +14,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx::themeui
+namespace yw::themeui
 {
 namespace
 {
@@ -190,7 +190,7 @@ juce::String toJson (const themes::Spec& spec)
     }
     if (spec.gridIntensity != 1.0f) // (round 190je; files without it keep the theme's own lines)
         o->setProperty ("gridIntensity", spec.gridIntensity);
-    if (spec.menuStyle != themes::MenuStyle::lynxDark)
+    if (spec.menuStyle != themes::MenuStyle::ywDark)
         o->setProperty ("menuStyle", juce::String (themes::menuStyleId (spec.menuStyle)));
     if (spec.clipsUseNoteColours) // (round 190od: FL's OverrideClips)
         o->setProperty ("clipsUseNoteColors", true);
@@ -265,7 +265,7 @@ juce::File backgroundsFolder()
         const auto beside = juce::File::getSpecialLocation (juce::File::currentExecutableFile).getSiblingFile ("Backgrounds");
         if (beside.isDirectory() || beside.createDirectory().wasOk())
         {
-            const auto probe = beside.getChildFile (".lynx-write-test");
+            const auto probe = beside.getChildFile (".yw-write-test");
             const auto ok = probe.replaceWithText ("x") && probe.existsAsFile();
             probe.deleteFile();
             if (ok)
@@ -408,7 +408,7 @@ public:
 
 // --- FL's Theme page landmarks (round 190jp, design190ia slice 26 FW-S5b / FW-20) -----------------------------------------
 // A preset's thumbnail: the user's preset keeps the 1/10 picture of the window taken when it was saved (a PNG beside its
-// .lynxtheme); a built-in preset (or one saved without a window) gets a small drawing of LYNX's layout in its colours.
+// .ywtheme); a built-in preset (or one saved without a window) gets a small drawing of YW's layout in its colours.
 // Both are made once and kept: nothing is drawn per paint.
 juce::Image schematicThumbnail (const themes::Spec& spec, int w, int h)
 {
@@ -640,7 +640,7 @@ public:
         menuStyleBox.addItem (tr ("YW Studio dark (default)"), 1);
         menuStyleBox.addItem (tr ("FL classic (light)"), 2);
         menuStyleBox.onChange = [this] {
-            edit ([style = menuStyleBox.getSelectedId() == 2 ? themes::MenuStyle::flClassic : themes::MenuStyle::lynxDark] (themes::Spec& s) { s.menuStyle = style; });
+            edit ([style = menuStyleBox.getSelectedId() == 2 ? themes::MenuStyle::flClassic : themes::MenuStyle::ywDark] (themes::Spec& s) { s.menuStyle = style; });
         };
         styleLabel (gridLabel, tr ("Grid line intensity"));
         gridSlider.setRange (themes::gridIntensityMin * 100.0, themes::gridIntensityMax * 100.0, 5.0);
@@ -650,7 +650,7 @@ public:
         gridSlider.onValueChange = [this] { edit ([v = (float) gridSlider.getValue() / 100.0f] (themes::Spec& s) { s.gridIntensity = v; }, false); };
         styleNote (lookNote, tr ("Grid line intensity: the bar, beat and step lines of the Piano roll, Playlist and Channel rack (100 % = the theme's own; double-click resets)."));
 
-        // the Backgrounds folder next to LYNX.exe (issue #12): its images in a list, the folder a click away
+        // the Backgrounds folder next to YW.exe (issue #12): its images in a list, the folder a click away
         styleLabel (imageListLabel, tr ("Backgrounds folder"));
         imageList.onChange = [this] {
             const auto i = imageList.getSelectedItemIndex();
@@ -662,7 +662,7 @@ public:
         styleNote (imageNote, tr ("Images you choose are copied into the Backgrounds folder next to YW Studio.exe, so a portable YW Studio keeps them, "
                                   "and a saved theme preset keeps its image."));
 
-        // Startup sound (issue #12): any audio file instead of LYNX's own sound
+        // Startup sound (issue #12): any audio file instead of YW's own sound
         soundButton.onClick = [this] { chooseSound(); };
         soundPlay.onClick = [this] {
             if (previewStartupSound)
@@ -679,9 +679,9 @@ public:
         savePreset.onClick = [this] { exportTheme (true); };
         resetButton.onClick = [this] { edit ([] (themes::Spec& s) { s = themes::Spec {}; }); };
         styleNote (presetNote, tr ("Themes change the accent color, the background and the workspace behind the panels. Your own presets are "
-                                   "saved as .lynxtheme files and can be shared."));
-        importButton.setTooltip (tr ("Load a .lynxtheme file"));
-        exportButton.setTooltip (tr ("Save the current theme as a .lynxtheme file"));
+                                   "saved as .ywtheme files and can be shared."));
+        importButton.setTooltip (tr ("Load a .ywtheme file"));
+        exportButton.setTooltip (tr ("Save the current theme as a .ywtheme file"));
         savePreset.setTooltip (tr ("Keep the current theme in the preset list"));
 
         // FL's Adjustments: five knobs over the whole palette (double-click: back to 0), applied a moment after a move
@@ -1143,9 +1143,9 @@ private:
 
     void importTheme()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Import theme"), userThemesFolder(), juce::String ("*") + fileExtension);
+        chooser = yw::ui::makeFileChooser (tr ("Import theme"), userThemesFolder(), juce::String ("*") + fileExtension);
         juce::Component::SafePointer<ThemePage> safe (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
             if (safe == nullptr || ! fc.getResult().existsAsFile())
                 return;
             if (auto t = loadFile (fc.getResult()))
@@ -1201,10 +1201,10 @@ private:
             keepAboveMainWindow (*window);
             return;
         }
-        chooser = lynx::ui::makeFileChooser (tr ("Export theme"),
+        chooser = yw::ui::makeFileChooser (tr ("Export theme"),
                                                        userThemesFolder().getChildFile (juce::File::createLegalFileName (juce::String::fromUTF8 (spec.name.c_str())) + fileExtension),
                                                        juce::String ("*") + fileExtension);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe] (const juce::FileChooser& fc) {
             if (safe == nullptr || fc.getResult() == juce::File())
                 return;
             saveFile (safe->spec, fc.getResult().withFileExtension (fileExtension));
@@ -1223,10 +1223,10 @@ private:
 
     void chooseSound()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Startup sound"), juce::File::getSpecialLocation (juce::File::userMusicDirectory),
+        chooser = yw::ui::makeFileChooser (tr ("Startup sound"), juce::File::getSpecialLocation (juce::File::userMusicDirectory),
                                                        "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
         juce::Component::SafePointer<ThemePage> safe (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
             if (safe == nullptr || ! fc.getResult().existsAsFile())
                 return;
             // a short sound: it plays in full at every start
@@ -1297,8 +1297,8 @@ private:
 void chooseWorkspaceImage (std::function<void (const juce::File&)> done)
 {
     static std::unique_ptr<juce::FileChooser> chooser;
-    chooser = lynx::ui::makeFileChooser (tr ("Workspace image"), backgroundsFolder(), "*.png;*.jpg;*.jpeg;*.gif");
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [done] (const juce::FileChooser& fc) {
+    chooser = yw::ui::makeFileChooser (tr ("Workspace image"), backgroundsFolder(), "*.png;*.jpg;*.jpeg;*.gif");
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [done] (const juce::FileChooser& fc) {
         if (! fc.getResult().existsAsFile())
             return;
         if (! juce::ImageFileFormat::loadFrom (fc.getResult()).isValid())
@@ -1342,4 +1342,4 @@ std::unique_ptr<juce::Component> makeThemePage()
 {
     return std::make_unique<ThemePage>();
 }
-} // namespace lynx::themeui
+} // namespace yw::themeui

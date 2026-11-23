@@ -1,6 +1,6 @@
 #pragma once
 
-// ADR, automated dialogue replacement (round 174d, issue #83, docs/analise/REA_rodada174d.md §5): LYNX's own (FL has
+// ADR, automated dialogue replacement (round 174d, issue #83, docs/analise/REA_rodada174d.md §5): YW's own (FL has
 // none). The cue list (in / out timecode, character, the line, notes), its CSV import / export, the takes of each cue
 // (named "<cue>_<character>_T<n>", rated, circled), the comp (which take plays each part of the cue), and the cue
 // signals the actor sees and hears before the line: the streamer (a bar crossing the picture), the punch (a flash at
@@ -14,7 +14,7 @@
 
 #include "core/VideoTime.h"
 
-namespace lynx
+namespace yw
 {
 struct AdrTake
 {
@@ -134,4 +134,4 @@ std::vector<CompSpan> compSpans (const AdrCue& cue);
 // Sets take `take` for [from, to) in the cue's comp (parts it covers are cut, neighbours of the same take merge)
 void setCompRange (AdrCue& cue, double from, double to, int take);
 } // namespace adr
-} // namespace lynx
+} // namespace yw

@@ -7,9 +7,9 @@
 namespace slicex190l
 {
 // a 1 s mono sample at 44.1 kHz with four cue points: each quarter a constant level 0.1 · (index + 1)
-inline std::shared_ptr<lynx::SampleData> sample (float scale = 1.0f)
+inline std::shared_ptr<yw::SampleData> sample (float scale = 1.0f)
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 44100; ++i)
         s->left.push_back (scale * 0.1f * (float) (i / 11025 + 1));
     s->sampleRate = 44100.0;
@@ -19,21 +19,21 @@ inline std::shared_ptr<lynx::SampleData> sample (float scale = 1.0f)
 
 inline std::vector<std::uint8_t> state (int regionsA, int regionsB = 0)
 {
-    auto st = lynx::slicex::fresh();
-    st.setOptionByte (lynx::slicex::oSameDeckOnly, 1); // (a note plays its own deck's regions only)
-    lynx::slicex::setDeckFile (st, 0, "a.wav", regionsA);
+    auto st = yw::slicex::fresh();
+    st.setOptionByte (yw::slicex::oSameDeckOnly, 1); // (a note plays its own deck's regions only)
+    yw::slicex::setDeckFile (st, 0, "a.wav", regionsA);
     if (regionsB > 0)
-        lynx::slicex::setDeckFile (st, 1, "b.wav", regionsB);
-    return lynx::slicex::write (st);
+        yw::slicex::setDeckFile (st, 1, "b.wav", regionsB);
+    return yw::slicex::write (st);
 }
 
-inline lynx::ChannelDef channel (int regionsB = 0)
+inline yw::ChannelDef channel (int regionsB = 0)
 {
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::slicex;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::slicex;
     c.samplePath = "a.wav";
     if (regionsB > 0)
-        lynx::slicex::setDeckBPath (c, "b.wav");
+        yw::slicex::setDeckBPath (c, "b.wav");
     c.pluginState = state (4, regionsB);
     return c;
 }
@@ -41,7 +41,7 @@ inline lynx::ChannelDef channel (int regionsB = 0)
 
 TEST (slicex190l_instrument_plays_what_the_engine_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto a = slicex190l::sample();
     const auto def = slicex190l::channel();
     auto inst = makeSlicexInstrument (a, nullptr);
@@ -100,7 +100,7 @@ TEST (slicex190l_instrument_plays_what_the_engine_plays)
 
 TEST (slicex190l_note_colour_picks_the_deck_and_the_state_is_taken_live)
 {
-    using namespace lynx;
+    using namespace yw;
     auto def = slicex190l::channel (4);
     auto inst = makeSlicexInstrument (slicex190l::sample(), slicex190l::sample (-1.0f));
     inst->prepare (44100.0);
@@ -146,7 +146,7 @@ TEST (slicex190l_note_colour_picks_the_deck_and_the_state_is_taken_live)
 
 TEST (slicex190l_flp_import_makes_a_slicex_channel_with_both_decks)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's state as the importer gets it: deck A names a file, deck B holds its WAV
     auto st = slicex::fresh();
     slicex::setDeckFile (st, 0, "%FLStudioFactoryData%\\Data\\Patches\\a.wav", 4);
@@ -192,30 +192,30 @@ namespace slicex190l
 // the engine on the four-region sample, with the state edited by `edit` and optional keys per region
 struct Rig
 {
-    std::shared_ptr<lynx::SampleData> audio = sample();
-    lynx::slicex::State state = lynx::slicex::fresh();
-    lynx::slicex::Engine engine;
+    std::shared_ptr<yw::SampleData> audio = sample();
+    yw::slicex::State state = yw::slicex::fresh();
+    yw::slicex::Engine engine;
 
     Rig()
     {
-        lynx::slicex::setDeckFile (state, 0, "a.wav", 4);
+        yw::slicex::setDeckFile (state, 0, "a.wav", 4);
         engine.setRate (44100, false);
         engine.setTempo (120.0f);
     }
 
     void load (std::vector<int> keys = {})
     {
-        lynx::slicex::DeckAudio a;
+        yw::slicex::DeckAudio a;
         a.owner = audio, a.left = audio->leftData(), a.frames = (std::int64_t) audio->frames();
-        a.regions = lynx::slicex::regionsFromMarkers (audio->markerStarts, a.frames);
+        a.regions = yw::slicex::regionsFromMarkers (audio->markerStarts, a.frames);
         for (std::size_t i = 0; i < keys.size() && i < a.regions.size(); ++i)
             a.regions[i].key = keys[i];
-        engine.setProgram (lynx::slicex::makeProgram (state, a, {}));
+        engine.setProgram (yw::slicex::makeProgram (state, a, {}));
     }
 
     int play (int key, float velocity = 0.78125f)
     {
-        lynx::slicex::Note n;
+        yw::slicex::Note n;
         n.key = key, n.velocity = velocity, n.pitchCents = (float) (100 * (key - 60));
         return engine.trigger (n);
     }
@@ -234,11 +234,11 @@ TEST (slicex190l_a_region_that_ends_holds_its_last_frame_into_the_declick)
     // FL's renders of regions that end before their note (a start offset, a raised pitch): the output does not drop
     // to zero at the region's last frame, the closing declick fades that level out over 20 ms
     slicex190l::Rig rig;
-    rig.state.setOptionByte (lynx::slicex::oStartWholeLength, 1);
+    rig.state.setOptionByte (yw::slicex::oStartWholeLength, 1);
     for (auto& r : rig.state.decks[0].regions)
-        r[lynx::slicex::rStart] = 6400; // the second half of each region: 5512 frames
+        r[yw::slicex::rStart] = 6400; // the second half of each region: 5512 frames
     rig.load();
-    const int base = lynx::slicex::autoBaseKey (4);
+    const int base = yw::slicex::autoBaseKey (4);
     CHECK (rig.play (base + 1) >= 0); // level 0.2
     const auto out = rig.render (8000);
     const float level = out[5000];
@@ -256,12 +256,12 @@ TEST (slicex190l_a_cut_voice_keeps_its_envelope_level)
     // reached (it used to jump back to the level at the start of the envelope's segment)
     slicex190l::Rig rig;
     for (auto& r : rig.state.decks[0].regions)
-        r[lynx::slicex::rCutGroup] = 1;
-    auto& env = rig.state.groups[0].art[lynx::slicex::volume].envelope; // FL's default: 1 → 0 over half a second
+        r[yw::slicex::rCutGroup] = 1;
+    auto& env = rig.state.groups[0].art[yw::slicex::volume].envelope; // FL's default: 1 → 0 over half a second
     env.enabled = -1;
     env.sustain = -1;
     rig.load();
-    const int base = lynx::slicex::autoBaseKey (4);
+    const int base = yw::slicex::autoBaseKey (4);
     CHECK (rig.play (base + 3) >= 0); // level 0.4
     const auto first = rig.render (9600);
     const float before = std::abs (first[9599]);
@@ -283,12 +283,12 @@ TEST (slicex190l_global_lfo_phase_follows_the_song)
     // started with the song; with a local phase every note starts it over
     auto level = [] (int flags, double beats) {
         slicex190l::Rig rig;
-        auto& lfo = rig.state.groups[0].art[lynx::slicex::volume].lfo;
+        auto& lfo = rig.state.groups[0].art[yw::slicex::volume].lfo;
         lfo.enabled = -1;
         lfo.flags = flags;
         rig.load();
         rig.engine.setSongPosition (beats, beats * 0.5);
-        rig.play (lynx::slicex::autoBaseKey (4) + 3);
+        rig.play (yw::slicex::autoBaseKey (4) + 3);
         return rig.render (512)[400];
     };
     // the default speed's period is 8 beats (REA_rodada190h §4.1): a quarter and three quarters of it are the extremes
@@ -303,8 +303,8 @@ TEST (slicex190l_global_lfo_phase_follows_the_song)
 TEST (slicex190l_song_time_layering_plays_the_layer_the_song_is_in)
 {
     slicex190l::Rig rig;
-    rig.state.setOptionInt (lynx::slicex::oLayering, 7);
-    rig.state.setOptionInt (lynx::slicex::oCrossfade, 0);
+    rig.state.setOptionInt (yw::slicex::oLayering, 7);
+    rig.state.setOptionInt (yw::slicex::oCrossfade, 0);
     // the sample is one bar: 4 beats over its second
     const double beats[2] = { 0.0, 4.0 };
     std::memcpy (rig.state.decks[0].params.data() + 0x10, &beats[0], 8);

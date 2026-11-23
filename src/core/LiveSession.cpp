@@ -16,7 +16,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::live
+namespace yw::live
 {
 namespace
 {
@@ -1530,4 +1530,4 @@ std::vector<Key> toRender (const Song& song, const std::set<Key>& needed, std::u
     }
     return out;
 }
-} // namespace lynx::live
+} // namespace yw::live

@@ -1,4 +1,4 @@
-// --- FL Studio Mobile (.flm) import, round 188h: FLM's own effects as LYNX's Pocket engines (core/PocketFx.h). The
+// --- FL Studio Mobile (.flm) import, round 188h: FLM's own effects as YW's Pocket engines (core/PocketFx.h). The
 // expected values are worked by hand from FLM's laws in REA_rodada182c.md "F5 effects, round 188h".
 
 #include "core/PocketFx.h"
@@ -6,10 +6,10 @@
 namespace flm188h
 {
 // runs `n` frames of a constant stereo input through a fresh engine; returns the outputs
-inline std::vector<std::array<float, 2>> run (lynx::EffectKind kind, std::initializer_list<float> values, std::vector<std::array<float, 2>> in,
+inline std::vector<std::array<float, 2>> run (yw::EffectKind kind, std::initializer_list<float> values, std::vector<std::array<float, 2>> in,
                                               double rate = 48000.0)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (rate);
     auto p = makeEffectSlot (kind).params;
@@ -33,7 +33,7 @@ inline bool near (float a, double b, double tol = 1e-5) { return std::abs ((doub
 
 TEST (flm188h_pocket_distortion)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketDistortion;
     // defaults: Drive 0.25, soft curve: g = 10^1.25, k = g − 1, y = g·x/(k|x| + 1)
     {
@@ -99,7 +99,7 @@ TEST (flm188h_pocket_distortion)
 
 TEST (flm188h_pocket_limiter_classic)
 {
-    using namespace lynx;
+    using namespace yw;
     // threshold −12 dB (v 0.5), release 0.7 (rate 100·0.06² + 1 = 1.36 per second), output 0 dB: a full-scale sample
     // comes out at the output level (gain = threshold, × output/threshold); the gain then recovers along
     // 1 − cos²(πt/2)(1 − g₀): half way (t = 0.5, 0.3676 s) it is 1 − 0.5(1 − g₀)
@@ -117,7 +117,7 @@ TEST (flm188h_pocket_limiter_classic)
 
 TEST (flm188h_maps_pocket_modules)
 {
-    using namespace lynx;
+    using namespace yw;
     // Distortion and Limiter (legacy) copy FLM's values (parameter k + 1 → slot parameter k), Enable → the slot's switch
     const auto d = flmfx::map (flm188f::moduleOf (6, { 0.0f, 0.7f, 0.1f, 0.9f, 0.4f, 0.67f, 0.3f }));
     CHECK (d.slots.size() == 1 && d.label == "FL Studio Mobile: Distortion");
@@ -137,7 +137,7 @@ TEST (flm188h_maps_pocket_modules)
 
 TEST (flm188h_pocket_limiter_leveller)
 {
-    using namespace lynx;
+    using namespace yw;
     // Limiter: In / Out 0 dB, threshold −12 dB, release 0.2 → 0.2⁴·1.9 + 0.1 s. The output is 2 ms (96 samples at 48 kHz)
     // late; a full-scale sample sets the floor g₀ = threshold at once, felt from the next sample (the delayed copy of
     // the peak meets the gain 95 samples into its quarter-sine recovery)
@@ -164,7 +164,7 @@ TEST (flm188h_pocket_limiter_leveller)
 
 TEST (flm188h_pocket_gate)
 {
-    using namespace lynx;
+    using namespace yw;
     // defaults: threshold −60 dB, attack 10 ms (A. curve −1), release 250 ms, hold 250 ms; 255 samples late. A −20 dB
     // tone: the gate opens at the first 256-sample block and is fully open well before 0.2 s; its floor is −60 dB
     std::vector<std::array<float, 2>> in (24000);
@@ -182,7 +182,7 @@ TEST (flm188h_pocket_gate)
 
 TEST (flm188h_pocket_delays)
 {
-    using namespace lynx;
+    using namespace yw;
     // Trance Delay at 120 BPM, 48 kHz: Time 0.775 = 3/4 beat = 18000 samples; the loop stores fb·(input + echo), so the
     // first echo is fb (0.4 · 0.99) × Mix² and the second fb²; the dry stays at unity
     {
@@ -218,7 +218,7 @@ TEST (flm188h_pocket_delays)
 
 TEST (flm188h_post_gain_and_new_modules)
 {
-    using namespace lynx;
+    using namespace yw;
     // Post Gain 0.75 = +10 dB (40g − 20) on the module's output: a utility after it (Mix 100 %)
     auto m = flm188f::moduleOf (28, { 1.0f, 0.5f, 0.5f, 0.2f, 0.8f });
     m.reserved = { 0.75f, 1.0f, 0.5f };
@@ -249,7 +249,7 @@ TEST (flm188h_post_gain_and_new_modules)
 
 TEST (flm188h_pocket_multifx)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketMultiFx;
     // Delay (kind 0), LFO Rate 1 beat → the delay runs at twice it: 2 beats at 120 BPM = 1 s, × ⅓ → (72000 − 1)·⅓ =
     // 23999 samples; Y 0.5 = an open loop filter (one sample later); X 0.7 → feedback and echo level 0.49

@@ -4,7 +4,7 @@
     // layout (BandLab's Smart View: key box | scale box) — and a folder dropped on the Browser (the outline while it is
     // dragged over, the folder in the list afterwards). <prefix>-checks.txt lists what was checked. Run with
     // XDG_CONFIG_HOME / APPDATA pointing to a scratch folder (the Browser's folder list is written). @150:
-    // LYNX_SHOT_SCALE=1.5 and LYNX_SHOT_SUFFIX=@150. Included in the app class of Main.cpp (savePng / saveMenus).
+    // YW_SHOT_SCALE=1.5 and YW_SHOT_SUFFIX=@150. Included in the app class of Main.cpp (savePng / saveMenus).
     bool runIssuesShot190ll (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
@@ -14,7 +14,7 @@
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
 
         // ---- #203: the Piano roll's scale choice --------------------------------------------------------------------

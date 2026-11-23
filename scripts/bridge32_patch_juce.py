@@ -1,4 +1,4 @@
-"""LYNX-bridge32.exe (round 176a): JUCE 8 passes lambdas where Win32 wants a __stdcall callback. MSVC converts a lambda to
+"""YW-bridge32.exe (round 176a): JUCE 8 passes lambdas where Win32 wants a __stdcall callback. MSVC converts a lambda to
 any calling convention; clang, on 32-bit x86, only to the default (cdecl) one, so those calls don't compile. This makes
 copies of the affected modules under <out> with each such lambda turned into a static CALLBACK function. 64-bit builds
 are unaffected (one calling convention). Copies are only rewritten when their content changes (object cache).
@@ -16,11 +16,11 @@ PATCHES = [
             reinterpret_cast<PlatformTimerListener*> (context)->onTimerExpired();
         };
 """,
-     """        struct LynxCallback { static void CALLBACK call (UINT, UINT, DWORD_PTR context, DWORD_PTR, DWORD_PTR)
+     """        struct YwCallback { static void CALLBACK call (UINT, UINT, DWORD_PTR context, DWORD_PTR, DWORD_PTR)
         {
             reinterpret_cast<PlatformTimerListener*> (context)->onTimerExpired();
         } };
-        const auto callback = &LynxCallback::call;
+        const auto callback = &YwCallback::call;
 """),
     ("juce_gui_basics", "native/juce_NativeMessageBox_windows.cpp",
      "config.pfCallback     = [] (HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)\n",

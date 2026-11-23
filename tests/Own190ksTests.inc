@@ -13,7 +13,7 @@
 namespace own190ks
 {
 // a stand-in for a hosted drum plugin: while its capture is on, it "sends" the hits scripted for its renders
-struct PadPlugin final : lynx::Instrument
+struct PadPlugin final : yw::Instrument
 {
     void prepare (double) noexcept override {}
     void noteOn (int key, float) noexcept override { received.push_back (key); }
@@ -50,27 +50,27 @@ struct PadPlugin final : lynx::Instrument
     std::vector<int> received;
 };
 
-lynx::Song twoPlugins()
+yw::Song twoPlugins()
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0;
-    s.mixer = lynx::Song::defaultMixer (2);
+    s.mixer = yw::Song::defaultMixer (2);
     for (int c = 0; c < 2; ++c)
     {
-        lynx::ChannelDef ch;
-        ch.instrument = lynx::InstrumentKind::plugin;
+        yw::ChannelDef ch;
+        ch.instrument = yw::InstrumentKind::plugin;
         ch.plugin.id = "VST3-Pads-" + std::to_string (c);
         s.channels.push_back (ch);
     }
     s.patterns.emplace_back();
-    s.patterns[0].lengthTicks = lynx::ppq * 4;
-    s.mode = lynx::PlayMode::pattern;
+    s.patterns[0].lengthTicks = yw::ppq * 4;
+    s.mode = yw::PlayMode::pattern;
     return s;
 }
 
-std::array<std::uint64_t, lynx::RackRenderer::ownNoteWords> marks (std::initializer_list<int> channels)
+std::array<std::uint64_t, yw::RackRenderer::ownNoteWords> marks (std::initializer_list<int> channels)
 {
-    std::array<std::uint64_t, lynx::RackRenderer::ownNoteWords> m {};
+    std::array<std::uint64_t, yw::RackRenderer::ownNoteWords> m {};
     for (const auto c : channels)
         m[(std::size_t) c >> 6] |= std::uint64_t { 1 } << (c & 63);
     return m;
@@ -79,7 +79,7 @@ std::array<std::uint64_t, lynx::RackRenderer::ownNoteWords> marks (std::initiali
 
 TEST (own190ks_echo_guard_keeps_the_plugins_own_notes_and_drops_the_echo_of_its_input)
 {
-    lynx::ownnotes::EchoGuard g;
+    yw::ownnotes::EchoGuard g;
     const std::int64_t window = 2400; // 50 ms at 48 kHz
     // a pad clicked: its note on and off are the plugin's own
     CHECK (g.noteOut (36, true, 1000, window));
@@ -108,14 +108,14 @@ TEST (own190ks_the_rack_takes_the_marked_plugins_own_notes_with_their_sample_in_
     a->script = { { 0, 100, 36, 0.5f }, { 1, 10, 38, 1.0f }, { 3, 5, 36, 0.0f } };
     // channel 1 (window closed): its hits are not taken
     b->script = { { 0, 0, 42, 0.7f } };
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     auto made = 0;
-    f.pluginInstruments = [&] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Instrument> { return made++ == 0 ? a : b; };
-    const auto state = lynx::RackState::build (twoPlugins(), nullptr, 48000.0, f);
-    lynx::RackRenderer r;
+    f.pluginInstruments = [&] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Instrument> { return made++ == 0 ? a : b; };
+    const auto state = yw::RackState::build (twoPlugins(), nullptr, 48000.0, f);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256);
-    std::array<lynx::RackRenderer::OwnNoteEvent, lynx::RackRenderer::ownNoteCapacity> taken {};
+    std::array<yw::RackRenderer::OwnNoteEvent, yw::RackRenderer::ownNoteCapacity> taken {};
 
     // nothing marked: no capture is switched on, nothing comes back (no cost when no plugin window is open)
     r.process (state.get(), true, 0.0, 256, l.data(), rr.data(), nullptr);
@@ -126,10 +126,10 @@ TEST (own190ks_the_rack_takes_the_marked_plugins_own_notes_with_their_sample_in_
     // channel 0 marked: its capture is on, channel 1's stays off
     a->renders = 0;
     r.setOwnNoteChannels (marks ({ 0 }));
-    std::vector<lynx::RackRenderer::OwnNoteEvent> all;
+    std::vector<yw::RackRenderer::OwnNoteEvent> all;
     for (int block = 0; block < 4; ++block)
     {
-        r.process (state.get(), true, block * 256.0 * 120.0 * lynx::ppq / (60.0 * 48000.0), 256, l.data(), rr.data(), nullptr);
+        r.process (state.get(), true, block * 256.0 * 120.0 * yw::ppq / (60.0 * 48000.0), 256, l.data(), rr.data(), nullptr);
         const auto n = r.takeOwnNotes (taken.data(), (int) taken.size());
         for (int k = 0; k < n; ++k)
             all.push_back (taken[(std::size_t) k]);
@@ -168,18 +168,18 @@ TEST (own190ks_a_plugins_own_notes_go_into_the_take_like_played_notes)
 {
     // what the engine does with them: each becomes a RecordedEvent on the plugin's channel (the typing keyboard's
     // path), so the take's note has the pad's key, its velocity and its length
-    lynx::Song song = own190ks::twoPlugins();
-    lynx::NoteRecorder rec;
+    yw::Song song = own190ks::twoPlugins();
+    yw::NoteRecorder rec;
     rec.begin (song.patterns[0].effectiveLength (song.meter()));
-    rec.add (song, { (double) lynx::ppq, 1, 36, 100.0f / 127.0f, true });
-    rec.add (song, { (double) lynx::ppq + 24, 1, 36, 0.0f, false });
+    rec.add (song, { (double) yw::ppq, 1, 36, 100.0f / 127.0f, true });
+    rec.add (song, { (double) yw::ppq + 24, 1, 36, 0.0f, false });
     const auto notes = rec.takeFinished();
     CHECK (((int) notes.size()) == (1));
     if (! notes.empty())
     {
         CHECK ((notes[0].channel) == (1));
         CHECK ((notes[0].key) == (36));
-        CHECK ((notes[0].start) == ((std::int64_t) lynx::ppq));
+        CHECK ((notes[0].start) == ((std::int64_t) yw::ppq));
         CHECK (std::abs (notes[0].velocity - 100.0f / 127.0f) < 1.0e-6f);
     }
 }
@@ -191,26 +191,26 @@ TEST (own190ks_a_soundfont_bank_copied_to_another_file_is_held_once)
     // bank is not
     namespace fs = std::filesystem;
     const auto stamp = std::to_string ((long long) std::chrono::steady_clock::now().time_since_epoch().count());
-    const auto dir = fs::temp_directory_path() / ("lynx-own190ks-" + stamp);
+    const auto dir = fs::temp_directory_path() / ("yw-own190ks-" + stamp);
     fs::create_directories (dir);
-    const auto bytes = lynx::sf::makeTestFont ({ { "Piano", 0, 0 }, { "Kit", 128, 0 } });
-    auto other = lynx::sf::makeTestFont ({ { "Organ", 0, 16 } });
+    const auto bytes = yw::sf::makeTestFont ({ { "Piano", 0, 0 }, { "Kit", 128, 0 } });
+    auto other = yw::sf::makeTestFont ({ { "Organ", 0, 16 } });
     auto write = [&] (const std::string& name, const std::vector<std::uint8_t>& data) {
         const auto path = (dir / name).string();
         std::ofstream (path, std::ios::binary).write ((const char*) data.data(), (std::streamsize) data.size());
         return path;
     };
     const auto a = write ("library.sf2", bytes), b = write ("project-copy.sf2", bytes), c = write ("other.sf2", other);
-    auto fa = lynx::sf::loadFontFile (a), fb = lynx::sf::loadFontFile (b), fc = lynx::sf::loadFontFile (c);
+    auto fa = yw::sf::loadFontFile (a), fb = yw::sf::loadFontFile (b), fc = yw::sf::loadFontFile (c);
     CHECK (fa != nullptr && fb != nullptr && fc != nullptr);
     CHECK (fa == fb); // (one font in memory for both files)
     CHECK (fa != fc);
     // once nothing plays it, it goes: a later load of the copy parses it again
-    std::weak_ptr<const lynx::sf::Font> gone = fa;
+    std::weak_ptr<const yw::sf::Font> gone = fa;
     fa.reset();
     fb.reset();
     CHECK (gone.expired());
-    const auto again = lynx::sf::loadFontFile (b);
+    const auto again = yw::sf::loadFontFile (b);
     CHECK (again != nullptr && again->presets.size() == 2);
     std::error_code ec;
     fs::remove_all (dir, ec);

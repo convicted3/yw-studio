@@ -1,7 +1,7 @@
 // --- Round 190fo: the Simple layout's Sampler track — 16 pads (core/SimplePads.h) — and a folder of stems and MIDI files
 // brought in at once (core/SimpleTracks.h folderPlan). The render tests play pads on the real render path (RackState /
 // RackRenderer) and check the modes, the tone, the choke groups and that a pad is the same sound as an ordinary Sampler
-// channel with the same settings (nothing new in the DSP: the plugin quality gate's "no level change"); LYNX_190FO_REPORT=1
+// channel with the same settings (nothing new in the DSP: the plugin quality gate's "no level change"); YW_190FO_REPORT=1
 // prints the numbers.
 
 #include <chrono>
@@ -16,9 +16,9 @@
 
 namespace simple190fo
 {
-using namespace lynx;
+using namespace yw;
 
-inline bool report() { return std::getenv ("LYNX_190FO_REPORT") != nullptr; }
+inline bool report() { return std::getenv ("YW_190FO_REPORT") != nullptr; }
 
 // a Sampler track with its 16 pads on a default song
 inline Song padsSong (simpletracks::Result& r)
@@ -139,7 +139,7 @@ inline void hitPad (Song& s, const simpletracks::Result& r, int pad, std::int64_
 
 TEST (simple190fo_pads_track_shape)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     namespace sp = simplepads;
     st::Result r;
@@ -195,7 +195,7 @@ TEST (simple190fo_pads_track_shape)
 
 TEST (simple190fo_pad_keys_tone_and_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = simplepads;
     // the keys: four rows, bottom to top, and back
     const std::string rows = "VBNMFGHJRTYU4567";
@@ -249,7 +249,7 @@ TEST (simple190fo_pad_keys_tone_and_modes)
 
 TEST (simple190fo_pad_edits)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = simplepads;
     simpletracks::Result r;
     auto s = simple190fo::padsSong (r);
@@ -284,7 +284,7 @@ TEST (simple190fo_pad_edits)
 
 TEST (simple190fo_pads_play_on_the_render_path)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = simplepads;
     using simple190fo::rms;
     using simple190fo::db;
@@ -383,7 +383,7 @@ TEST (simple190fo_pads_play_on_the_render_path)
 
 TEST (simple190fo_folder_of_stems_and_midi)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     CHECK (st::stemTrackName ("03_Lead Vox") == "Lead Vox");
     CHECK (st::stemTrackName ("01 Drums") == "Drums");
@@ -394,7 +394,7 @@ TEST (simple190fo_folder_of_stems_and_midi)
     CHECK (bl.size() == 4);
     if (bl.size() == 4)
         CHECK (bl[0].name == "Drums" && bl[1].name == "Bass" && bl[2].name == "Keys" && bl[3].name == "Pad" && ! bl[0].midi && ! bl[0].muted);
-    // LYNX's own export for other apps: Stems/ and MIDI/, the "(all tracks)" file and the mixdown left out, a MIDI file
+    // YW's own export for other apps: Stems/ and MIDI/, the "(all tracks)" file and the mixdown left out, a MIDI file
     // whose stem is there comes in muted, one with no stem doesn't
     auto ly = st::folderPlan ({ "MIDI/02 Keys.mid", "Stems/01 Drums.wav", "Stems/02 Keys.wav", "MIDI/My song (all tracks).mid", "My song - mixdown.wav",
                                 "README.txt", "MIDI/03 Lead.mid" });
@@ -410,7 +410,7 @@ TEST (simple190fo_folder_of_stems_and_midi)
 
 TEST (simple190fo_shared_reverb_and_reset_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     Song s = Song::makeDefault();
     s.playlist.clear();

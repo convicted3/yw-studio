@@ -4,7 +4,7 @@
 
 TEST (export_options_text_round_trip_and_clamping)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     Options o;
     o.format = Format::mp3;
     o.mp3Kbps = 192;
@@ -50,8 +50,8 @@ TEST (export_options_text_round_trip_and_clamping)
 
 TEST (export_render_song_ranges_loops_and_tail)
 {
-    using namespace lynx;
-    using namespace lynx::exportopts;
+    using namespace yw;
+    using namespace yw::exportopts;
     auto song = Song::makeDefault();
     const auto bar = (std::int64_t) ppq * song.beatsPerBar;
     Clip a;
@@ -106,7 +106,7 @@ TEST (export_render_song_ranges_loops_and_tail)
 
 TEST (export_tail_wrap_cut_normalize_mono)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     std::vector<float> l { 1, 2, 3, 4, 10, 20, 30 }, r { 0, 0, 0, 0, 1, 1, 1 };
     auto l2 = l, r2 = r;
     applyTail (l2, r2, 4, TailMode::wrap);
@@ -136,8 +136,8 @@ TEST (export_tail_wrap_cut_normalize_mono)
 
 TEST (export_stems_tracks_channels_and_names)
 {
-    using namespace lynx;
-    using namespace lynx::exportopts;
+    using namespace yw;
+    using namespace yw::exportopts;
     auto song = Song::makeDefault(); // channels 0..4 on inserts 1..5, notes in pattern 0
     song.setRoute (5, 7, true, 0.5f);
     const auto tracks = stemTracks (song);
@@ -164,7 +164,7 @@ TEST (export_stems_tracks_channels_and_names)
 
 TEST (export_dither_without_noise_shaping)
 {
-    lynx::Dither shaped (16), flat (16, false);
+    yw::Dither shaped (16), flat (16, false);
     std::vector<float> a (4096), b (4096);
     for (std::size_t i = 0; i < a.size(); ++i)
         a[i] = b[i] = 0.25f * (float) std::sin ((double) i * 0.05);
@@ -184,9 +184,9 @@ TEST (export_mp3_encoder_frames)
 {
     for (const auto [rate, kbps, channels] : { std::tuple { 44100, 320, 2 }, std::tuple { 48000, 128, 1 } })
     {
-        lynx::Mp3Encoder enc;
+        yw::Mp3Encoder enc;
         std::string error;
-        CHECK (enc.open (rate, rate, channels, kbps, error, "Night Drive", "LYNX"));
+        CHECK (enc.open (rate, rate, channels, kbps, error, "Night Drive", "YW"));
         std::vector<float> l ((std::size_t) rate), r ((std::size_t) rate);
         for (std::size_t i = 0; i < l.size(); ++i)
         {
@@ -198,27 +198,27 @@ TEST (export_mp3_encoder_frames)
             CHECK (enc.encode (l.data() + done, r.data() + done, (int) std::min<std::size_t> (4096, l.size() - done), bytes));
         CHECK (enc.finish (bytes));
         CHECK (bytes.size() > 3 && bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3');
-        const auto scan = lynx::scanMp3 (bytes);
+        const auto scan = yw::scanMp3 (bytes);
         // one second = rate / 1152 frames (plus the encoder's delay and padding frames)
         CHECK (scan.frames >= rate / 1152 && scan.frames <= rate / 1152 + 4);
         CHECK (scan.kbps == kbps && scan.sampleRate == rate && scan.channels == channels);
     }
 
-    lynx::Mp3Encoder resampled; // 96 kHz in, 48 kHz out
+    yw::Mp3Encoder resampled; // 96 kHz in, 48 kHz out
     std::string error;
     CHECK (resampled.open (96000, 48000, 2, 256, error));
     std::vector<float> silence (96000, 0.0f);
     std::vector<std::uint8_t> bytes;
     resampled.encode (silence.data(), silence.data(), (int) silence.size(), bytes);
     resampled.finish (bytes);
-    const auto scan = lynx::scanMp3 (bytes);
+    const auto scan = yw::scanMp3 (bytes);
     CHECK (scan.sampleRate == 48000 && scan.frames >= 41 && scan.frames <= 46);
 }
 
 TEST (perfmon_sources_loads_and_find)
 {
-    using namespace lynx;
-    using namespace lynx::perfmon;
+    using namespace yw;
+    using namespace yw::perfmon;
     auto song = Song::makeDefault();
     song.channels[4].instrument = InstrumentKind::plugin;
     song.channels[4].plugin.name = "Serum";
@@ -268,8 +268,8 @@ TEST (perfmon_sources_loads_and_find)
 
 TEST (clipprops_read_apply_and_groups)
 {
-    using namespace lynx;
-    using namespace lynx::clipprops;
+    using namespace yw;
+    using namespace yw::clipprops;
     auto song = Song::makeDefault();
     song.patterns.emplace_back().name = "Drop";
     ChannelDef audio;
@@ -331,8 +331,8 @@ TEST (clipprops_read_apply_and_groups)
 
 TEST (arrangements_merge_insert_replace_move)
 {
-    using namespace lynx;
-    using namespace lynx::arrangeops;
+    using namespace yw;
+    using namespace yw::arrangeops;
     Song song;
     song.beatsPerBar = 4;
     const auto bar = (std::int64_t) ppq * 4;
@@ -395,40 +395,40 @@ TEST (arrangements_merge_insert_replace_move)
 
 TEST (new_project_setup_and_templates)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (legalProjectName ("  My: song?. ") == "My_ song_" && legalProjectName (" .. ") == "Untitled");
     NewProjectSetup s;
     s.name = "Night Drive";
-    CHECK (newProjectPath (s, ".lynx").empty());
+    CHECK (newProjectPath (s, ".yw").empty());
     s.folder = "C:\\Music\\";
-    CHECK (newProjectPath (s, ".lynx") == "C:\\Music/Night Drive/Night Drive.lynx");
+    CHECK (newProjectPath (s, ".yw") == "C:\\Music/Night Drive/Night Drive.yw");
     s.ownFolder = false;
     s.folder = "/home/x";
-    CHECK (newProjectPath (s, ".lynx") == "/home/x/Night Drive.lynx");
+    CHECK (newProjectPath (s, ".yw") == "/home/x/Night Drive.yw");
     s.bpm = 900.0;
     s.beatsPerBar = 7;
     s.info.author = "Me";
     auto song = makeTemplate (0);
     applySetup (song, s);
     CHECK (song.bpm == 522.0 && song.beatsPerBar == 7 && song.info.author == "Me" && song.info.title == "Night Drive");
-    CHECK (templateDisplayName ("C:/T/Trap kit.lynx") == "Trap kit" && templateDisplayName (".hidden") == ".hidden");
+    CHECK (templateDisplayName ("C:/T/Trap kit.yw") == "Trap kit" && templateDisplayName (".hidden") == ".hidden");
 }
 
 // Issue #123: the default template's saved form (FL's Options › General › "Default template")
 TEST (default_template_choice_text_round_trip_and_rejects_paths)
 {
-    using namespace lynx;
+    using namespace yw;
     using K = TemplateChoice::Kind;
-    CHECK (TemplateChoice::parse ("").isLynxDefault());
+    CHECK (TemplateChoice::parse ("").isYwDefault());
     CHECK (TemplateChoice {}.toText().empty());
     const TemplateChoice house { K::builtIn, "House" };
     CHECK (house.toText() == "builtin:House" && TemplateChoice::parse ("builtin:House") == house);
-    const TemplateChoice mine { K::user, "Vocal chain.lynx" };
-    CHECK (mine.toText() == "user:Vocal chain.lynx" && TemplateChoice::parse (mine.toText()) == mine);
-    // unknown built-ins, paths, empty names and other prefixes read as LYNX's default
-    for (const char* bad : { "builtin:Nope", "user:../x.lynx", "user:C:\\x.lynx", "user:a/b.lynx", "user:", "builtin:", "user:..",
-                             "file:x.lynx", "garbage" })
-        CHECK (TemplateChoice::parse (bad).isLynxDefault());
+    const TemplateChoice mine { K::user, "Vocal chain.yw" };
+    CHECK (mine.toText() == "user:Vocal chain.yw" && TemplateChoice::parse (mine.toText()) == mine);
+    // unknown built-ins, paths, empty names and other prefixes read as YW's default
+    for (const char* bad : { "builtin:Nope", "user:../x.yw", "user:C:\\x.yw", "user:a/b.yw", "user:", "builtin:", "user:..",
+                             "file:x.yw", "garbage" })
+        CHECK (TemplateChoice::parse (bad).isYwDefault());
     CHECK (builtInTemplateIndex ("Empty") == 0 && builtInTemplateIndex ("House") == 3 && builtInTemplateIndex ("house") == -1);
     // FL's "Startup project" choice
     for (auto c : { StartupProject::emptyProject, StartupProject::defaultTemplate, StartupProject::lastProject })
@@ -441,7 +441,7 @@ TEST (default_template_choice_text_round_trip_and_rejects_paths)
 
 TEST (touch_keyboard_geometry_velocity_and_no_stuck_notes)
 {
-    using namespace lynx::touchkb;
+    using namespace yw::touchkb;
     Layout k;
     k.lowest = 48;
     k.whiteKeys = 14;
@@ -466,7 +466,7 @@ TEST (touch_keyboard_geometry_velocity_and_no_stuck_notes)
     std::map<std::pair<int, int>, int> balance;
     int ons = 0;
     {
-        lynx::HeldNotes notes ([&] (int channel, int key, float, bool on) {
+        yw::HeldNotes notes ([&] (int channel, int key, float, bool on) {
             balance[{ channel, key }] += on ? 1 : -1;
             ons += on ? 1 : 0;
         });
@@ -485,15 +485,15 @@ TEST (touch_keyboard_geometry_velocity_and_no_stuck_notes)
 
 TEST (clipprops_bar_beat_tick_text)
 {
-    using namespace lynx;
-    using namespace lynx::clipprops;
+    using namespace yw;
+    using namespace yw::clipprops;
     const auto beat = (std::int64_t) ppq, bar = beat * 4;
-    CHECK (formatPosition (0, lynx::Meter (4, 4)) == "1:1:000" && formatLength (0, lynx::Meter (4, 4)) == "0:0:000");
-    CHECK (formatPosition (2 * bar + beat + 5, lynx::Meter (4, 4)) == "3:2:005" && formatLength (2 * bar + beat + 5, lynx::Meter (4, 4)) == "2:1:005");
-    CHECK (parsePosition ("3:2:005", lynx::Meter (4, 4)) == 2 * bar + beat + 5 && parseLength ("2:1:005", lynx::Meter (4, 4)) == 2 * bar + beat + 5);
-    CHECK (parsePosition ("5", lynx::Meter (4, 4)) == 4 * bar && parsePosition ("5:3", lynx::Meter (4, 4)) == 4 * bar + 2 * beat && parseLength ("2", lynx::Meter (4, 4)) == 2 * bar);
-    CHECK (parsePosition ("0:1:000", lynx::Meter (4, 4)) == -1 && parsePosition ("1:5:000", lynx::Meter (4, 4)) == -1 && parsePosition ("1:1:x", lynx::Meter (4, 4)) == -1 && parsePosition ("", lynx::Meter (4, 4)) == -1);
-    CHECK (parsePosition ("1:4", lynx::Meter (3, 4)) == -1 && parsePosition ("2:3", lynx::Meter (3, 4)) == 3 * beat + 2 * beat);
+    CHECK (formatPosition (0, yw::Meter (4, 4)) == "1:1:000" && formatLength (0, yw::Meter (4, 4)) == "0:0:000");
+    CHECK (formatPosition (2 * bar + beat + 5, yw::Meter (4, 4)) == "3:2:005" && formatLength (2 * bar + beat + 5, yw::Meter (4, 4)) == "2:1:005");
+    CHECK (parsePosition ("3:2:005", yw::Meter (4, 4)) == 2 * bar + beat + 5 && parseLength ("2:1:005", yw::Meter (4, 4)) == 2 * bar + beat + 5);
+    CHECK (parsePosition ("5", yw::Meter (4, 4)) == 4 * bar && parsePosition ("5:3", yw::Meter (4, 4)) == 4 * bar + 2 * beat && parseLength ("2", yw::Meter (4, 4)) == 2 * bar);
+    CHECK (parsePosition ("0:1:000", yw::Meter (4, 4)) == -1 && parsePosition ("1:5:000", yw::Meter (4, 4)) == -1 && parsePosition ("1:1:x", yw::Meter (4, 4)) == -1 && parsePosition ("", yw::Meter (4, 4)) == -1);
+    CHECK (parsePosition ("1:4", yw::Meter (3, 4)) == -1 && parsePosition ("2:3", yw::Meter (3, 4)) == 3 * beat + 2 * beat);
     for (std::int64_t t : { (std::int64_t) 0, beat * 7 + 33, bar * 100 + 1 })
-        CHECK (parsePosition (formatPosition (t, lynx::Meter (4, 4)), lynx::Meter (4, 4)) == t && parseLength (formatLength (t, lynx::Meter (7, 4)), lynx::Meter (7, 4)) == t);
+        CHECK (parsePosition (formatPosition (t, yw::Meter (4, 4)), yw::Meter (4, 4)) == t && parseLength (formatLength (t, yw::Meter (7, 4)), yw::Meter (7, 4)) == t);
 }

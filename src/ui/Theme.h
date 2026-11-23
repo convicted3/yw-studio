@@ -6,17 +6,17 @@
 
 #include <cstdint>
 
-namespace lynx
+namespace yw
 {
 enum class ClipKind : std::uint8_t; // (core/Song.h)
 }
 
-// LYNX design tokens: the single source of colours, type sizes, spacing and radii for the whole UI,
+// YW design tokens: the single source of colours, type sizes, spacing and radii for the whole UI,
 // plus the LookAndFeel that draws every stock JUCE widget with them.
 //
 // Identity: dark, flat, high contrast, with one red accent used sparingly (selection, active
 // states, playhead/record, primary actions). Surfaces get lighter as they rise ("elevation").
-namespace lynx::theme
+namespace yw::theme
 {
 // --- colours -----------------------------------------------------------------------------------
 // (aliases repeat the hex value: juce::Colour is not constexpr, and copying another inline
@@ -84,7 +84,7 @@ inline juce::Colour audioClip { 0xff5a87b8 };
 inline juce::Colour defaultTrack { 0xff485156 };
 } // namespace colour
 
-// User themes (round 162d): the tokens above hold LYNX's built-in look until a theme replaces them (ui/ThemeSettings.h
+// User themes (round 162d): the tokens above hold YW's built-in look until a theme replaces them (ui/ThemeSettings.h
 // applies one live). Code reads the tokens when it paints, so never copy one into a member or a static.
 void setPalette (const themes::Palette& palette); // the tokens only (ThemeSettings also refreshes the windows)
 themes::Palette currentPalette();
@@ -144,7 +144,7 @@ void saveBoldText (int setting);
 // new juce::Font whose typeface JUCE then looks up by name (its typeface cache compares the family and style strings),
 // and the fonts a paint sets share one JUCE font object, so JUCE's glyph and context checks see the same font at once.
 // The cache empties when the interface font changes (clearFontCache) and with the image caches (ui/ImageCaches.h).
-// LYNX_PAINT_CACHE=0 (diagnostics) makes a new font on every call, as before.
+// YW_PAINT_CACHE=0 (diagnostics) makes a new font on every call, as before.
 juce::Font font (float size, bool bold = false);
 void clearFontCache();
 
@@ -156,7 +156,7 @@ int labelColumnWidth (std::initializer_list<const juce::Label*> labels, int minW
 // A menu item's text with FL's accelerator letter `key` (core/MenuMnemonic.h, round 170a): the letter is underlined in
 // the menu and typing it picks the item, e.g. theme::mnemonic (tr ("Delete..."), 'D').
 juce::String mnemonic (const juce::String& text, char key);
-// Japanese / Korean / Chinese: the installed UI font family LYNX uses for that language (empty: none installed, or a
+// Japanese / Korean / Chinese: the installed UI font family YW uses for that language (empty: none installed, or a
 // language that needs no font of its own — see needsOwnFont).
 juce::String uiFontForLanguage (const juce::String& languageId);
 bool needsOwnFont (const juce::String& languageId);
@@ -179,7 +179,7 @@ int translationExtra (const juce::Font& font, std::initializer_list<const char*>
 
 // --- menus -------------------------------------------------------------------------------------------
 // Options › General › Menu density (round 163): compact rows close to native Windows / FL menus (the default),
-// or the roomier rows of LYNX 0.1.17 and older.
+// or the roomier rows of YW 0.1.17 and older.
 namespace menus
 {
 void setCompact (bool compact);
@@ -187,10 +187,10 @@ bool compact();
 int itemHeight();    // a normal row
 int headerHeight();  // a section header: FL's full-width band (round 190je: 17 px compact, 22 comfortable)
 int separatorHeight();
-// The menu text, one step larger than the body text (round 190je, design190ia FW-15: FL's cap 8 px, LYNX's was 7): 14 at
+// The menu text, one step larger than the body text (round 190je, design190ia FW-15: FL's cap 8 px, YW's was 7): 14 at
 // 100 %, scaled by Settings › General › Text size like the body role. The shortcut column uses type::small, italic as FL's.
 float textSize();
-// Settings › Theme › Menu style (round 190je, FW-16): LYNX's dark menus (the default) or FL's classic light grey ones.
+// Settings › Theme › Menu style (round 190je, FW-16): YW's dark menus (the default) or FL's classic light grey ones.
 void setStyle (themes::MenuStyle style);
 themes::MenuStyle style();
 struct Colours
@@ -230,7 +230,7 @@ inline juce::Colour noteColour (float velocity)
     return colour::noteSoft.interpolatedWith (colour::noteHard, juce::jlimit (0.0f, 1.0f, velocity));
 }
 
-// Note colour groups (REA round 153): group 0 is LYNX's note colour, groups 1..15 LYNX's own hue wheel; the velocity
+// Note colour groups (REA round 153): group 0 is YW's note colour, groups 1..15 YW's own hue wheel; the velocity
 // sets the brightness, as for group 0.
 inline juce::Colour noteGroupHue (int group)
 {
@@ -254,7 +254,7 @@ inline juce::Colour tame (juce::Colour c)
 }
 
 // --- the Live look of the Clip-launch layout (round 190ig; tokens measured by round 190ia in Ableton Live 12.4's Dark
-// theme at 100 %, /mnt/e/lynx-work/design190ia/findings/cliplaunch.md §0). Used only while the Clip-launch layout shows,
+// theme at 100 %, /mnt/e/yw-work/design190ia/findings/cliplaunch.md §0). Used only while the Clip-launch layout shows,
 // so the Pattern layout never changes. Fixed values (the reference look), not user-theme tokens.
 namespace livelook
 {
@@ -278,7 +278,7 @@ inline const juce::Colour on { 0xffffad56 };         // Live's "on" orange: acti
 inline const juce::Colour meterWell { 0xff181818 };  // the wells of the level meters
 inline const juce::Colour knobRing { 0xff111111 };   // a knob's open ring and its needle (#181818)
 inline const juce::Colour focusOutline { 0xff757575 }; // the focused view's 2 px outline
-// Round 190jn: whether the Clip-launch layout shows Live's look now (the Clip-launch layout without View › "Classic LYNX
+// Round 190jn: whether the Clip-launch layout shows Live's look now (the Clip-launch layout without View › "Classic YW
 // look", round 190ig's switch). Every Live-look painter (grid, Session mixer, Arrangement, Clip / Device View, Info View,
 // status bar) asks this one switch, so the Pattern and Simple layouts never change.
 bool active() noexcept;
@@ -328,13 +328,13 @@ ClipLook clipBody (juce::Colour clipColour, juce::Colour trackColour, ClipKind k
 float contrast (juce::Colour a, juce::Colour b);
 
 // Live's marks on a clip or track colour (round 190oj, design190oj CS-4/5/6): the colour × k (Live: name ×0.24, waveform
-// ×0.15; 7–10:1 on Live's pastels) when that reaches `ratio` on the fill, else `light` — on LYNX's and FL's darker colours
+// ×0.15; 7–10:1 on Live's pastels) when that reaches `ratio` on the fill, else `light` — on YW's and FL's darker colours
 // Live's dark ink read 1.5–3:1. Cached per colour (message thread; paint calls it per clip).
 juce::Colour liveMarkOn (juce::Colour fill, float k, float ratio, juce::Colour light);
 
 // A user colour as FL fills a button or a header band with it: the colour itself (FL keeps its saturation: Synth Bass
 // #0E4498, Grv Kick #8A211A measured in fl-channelrack.png), its brightness held in [lo, hi] so white text on it keeps
-// its contrast (LYNX: FL's lighter fills such as Titey Tom #B65227 read 4.2:1 with white).
+// its contrast (YW: FL's lighter fills such as Titey Tom #B65227 read 4.2:1 with white).
 juce::Colour colourFill (juce::Colour c, float lo, float hi);
 
 // FL's light tint of a track colour for its name ("KICK" red-pink on the red group): saturation × 0.45, brightness 0.95;
@@ -388,13 +388,13 @@ void fillLaunchTriangle (juce::Graphics& g, juce::Rectangle<float> a, juce::Colo
 // is the tag's fill (the info colour while the frozen audio is up to date, the warning colour when it needs attention).
 void drawFrozenTag (juce::Graphics& g, juce::Rectangle<float> r, juce::Colour tag, juce::Colour flake);
 
-// FL's number wheel ("digiwheel": channel RANGE / TRACK, the rack's insert box) in the LYNX skin: a dark inset display,
+// FL's number wheel ("digiwheel": channel RANGE / TRACK, the rack's insert box) in the YW skin: a dark inset display,
 // red only while hovered or dragged. Draws the box (with FL's small up / down marks at its right when `marks`); returns
 // the colour for its value text, which goes in box.withTrimmedRight (digitMarksWidth) when marked (round 168s).
 constexpr float digitMarksWidth = 9.0f;
 juce::Colour drawDigitDisplay (juce::Graphics& g, juce::Rectangle<float> box, bool hot, bool dimmed = false, bool marks = false);
 
-// Draws a rotary value arc in the LYNX style (used by custom-painted knobs too).
+// Draws a rotary value arc in the YW style (used by custom-painted knobs too).
 void drawKnob (juce::Graphics& g, juce::Rectangle<float> bounds, float value01, bool bipolar, juce::Colour arc, bool hover = false);
 
 // --- legacy names (kept so code written against the old palette keeps compiling) ---------------
@@ -416,7 +416,7 @@ inline juce::Colour text { 0xffeceef2 }; // = colour::textPrimary
 // The folders JUCE scans for fonts, from the ones fontconfig knows (Linux): only absolute, existing folders JUCE's
 // list can carry, none of them inside another one of the list (JUCE reads each with everything below it).
 juce::StringArray fontFoldersToScan (const juce::StringArray& fontconfigFolders, const std::function<bool (const juce::String&)>& exists);
-// --selftest "fonts=": every font LYNX draws with has a typeface and glyphs, and a font without one does not crash.
+// --selftest "fonts=": every font YW draws with has a typeface and glyphs, and a font without one does not crash.
 juce::String fontSelfTest();
 // --selftest "paint_caches=" (round 190gr): the font cache and the shape tiles against shapes drawn straight.
 juce::String paintCacheSelfTest();
@@ -441,11 +441,11 @@ public:
     // the default for this language (applyLanguageFont). Returns the family chosen, empty when the default stays.
     juce::String applyInterfaceFont (const juce::String& languageId, const juce::String& runOverride = {});
 
-    // Every font gets a typeface (issue #142): one whose family is not installed draws with LYNX's own font.
+    // Every font gets a typeface (issue #142): one whose family is not installed draws with YW's own font.
     juce::Typeface::Ptr getTypefaceForFont (const juce::Font&) override;
 
-    // property set on a Button / TabBarButton to draw one of lynx::Icon next to (or instead of) its text
-    static constexpr const char* iconProperty = "lynxIcon";
+    // property set on a Button / TabBarButton to draw one of yw::Icon next to (or instead of) its text
+    static constexpr const char* iconProperty = "ywIcon";
 
     // buttons
     void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour& backgroundColour, bool highlighted, bool down) override;
@@ -507,7 +507,7 @@ public:
     juce::Rectangle<int> getTooltipBounds (const juce::String& tipText, juce::Point<int> screenPos, juce::Rectangle<int> parentArea) override;
     void drawTooltip (juce::Graphics&, const juce::String& text, int width, int height) override;
     void drawAlertBox (juce::Graphics&, juce::AlertWindow&, const juce::Rectangle<int>& textArea, juce::TextLayout&) override;
-    // JUCE's message boxes (showMessageBoxAsync, showOkCancelBox, showAsync...) on LYNX's one dialog frame (round 190oo, WG-6)
+    // JUCE's message boxes (showMessageBoxAsync, showOkCancelBox, showAsync...) on YW's one dialog frame (round 190oo, WG-6)
     juce::AlertWindow* createAlertWindow (const juce::String& title, const juce::String& message, const juce::String& button1,
                                           const juce::String& button2, const juce::String& button3, juce::MessageBoxIconType iconType,
                                           int numButtons, juce::Component* associatedComponent) override;
@@ -522,10 +522,10 @@ public:
     void drawProgressBar (juce::Graphics&, juce::ProgressBar&, int width, int height, double progress, const juce::String& textToShow) override;
     void drawGroupComponentOutline (juce::Graphics&, int w, int h, const juce::String& text, const juce::Justification&, juce::GroupComponent&) override;
 
-    // file browser (the LYNX browser panel is a FileTreeComponent)
+    // file browser (the YW browser panel is a FileTreeComponent)
     void drawFileBrowserRow (juce::Graphics&, int width, int height, const juce::File& file, const juce::String& filename, juce::Image* icon,
                              const juce::String& fileSizeDescription, const juce::String& fileTimeDescription, bool isDirectory,
                              bool isItemSelected, int itemIndex, juce::DirectoryContentsDisplayComponent&) override;
     void drawTreeviewPlusMinusBox (juce::Graphics&, const juce::Rectangle<float>& area, juce::Colour backgroundColour, bool isOpen, bool isMouseOver) override;
 };
-} // namespace lynx::theme
+} // namespace yw::theme

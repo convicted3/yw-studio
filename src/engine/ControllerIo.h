@@ -18,7 +18,7 @@
 #include "core/LiveEventQueue.h"
 #include "core/Preferences.h"
 
-namespace lynx
+namespace yw
 {
 class ControllerIo
 {
@@ -27,7 +27,7 @@ public:
     ~ControllerIo();
 
     // --- message thread ---
-    // LYNX as the controllers see it (the main window's bridge); null closes every session.
+    // YW as the controllers see it (the main window's bridge); null closes every session.
     void setSurface (controller::Surface* surface);
     // The built-in profiles plus the user's folder (read again on each call).
     void loadProfiles (const juce::File& userFolder);
@@ -87,4 +87,4 @@ private:
     std::atomic<bool> anyClaimed { false };
     SpscQueue<Event, 2048> queue;                // MIDI thread -> message thread
 };
-} // namespace lynx
+} // namespace yw

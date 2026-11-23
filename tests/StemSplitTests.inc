@@ -4,7 +4,7 @@
 
 TEST (stemsplit_overlap_add_rebuilds_the_signal)
 {
-    using namespace lynx::stemsplit;
+    using namespace yw::stemsplit;
     // lengths around the segment borders: shorter than one, exactly one, one more frame, several
     for (const std::int64_t frames : { (std::int64_t) 1, (std::int64_t) 1000, segmentFrames, segmentFrames + 1, segmentFrames * 3 + 17 })
     {
@@ -44,7 +44,7 @@ TEST (stemsplit_overlap_add_rebuilds_the_signal)
 
 TEST (stemsplit_cancel_stops_at_the_segment)
 {
-    using namespace lynx::stemsplit;
+    using namespace yw::stemsplit;
     std::vector<float> mono ((std::size_t) segmentFrames * 3, 0.1f);
     int calls = 0;
     Stems stems;
@@ -54,7 +54,7 @@ TEST (stemsplit_cancel_stops_at_the_segment)
 
 TEST (stemsplit_clips_are_aligned_on_new_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef channel;
     channel.name = "song";
@@ -105,7 +105,7 @@ TEST (stemsplit_clips_are_aligned_on_new_tracks)
 
 TEST (stemsplit_threads_leave_cores_for_audio_167x)
 {
-    using lynx::stemsplit::separationThreads;
+    using yw::stemsplit::separationThreads;
     CHECK (separationThreads (6, 12) == 5);   // physical − 1
     CHECK (separationThreads (8, 8) == 6);    // logical − 2 caps it without SMT
     CHECK (separationThreads (16, 32) == 15);
@@ -119,11 +119,11 @@ TEST (stemsplit_resample_stops_when_asked_167x)
 {
     std::vector<float> in (200000, 0.25f);
     int asked = 0;
-    const auto stopped = lynx::audioedit::resampleChannel (in, 183750, [&] { return ++asked >= 2; });
+    const auto stopped = yw::audioedit::resampleChannel (in, 183750, [&] { return ++asked >= 2; });
     CHECK (stopped.empty());
     CHECK (asked == 2);
-    const auto whole = lynx::audioedit::resampleChannel (in, 183750, [] { return false; });
+    const auto whole = yw::audioedit::resampleChannel (in, 183750, [] { return false; });
     CHECK (whole.size() == 183750);
     CHECK (std::abs (whole[90000] - 0.25f) < 1.0e-4f);
-    CHECK (lynx::audioedit::resampleChannel (in, 183750) == whole); // the old overload is unchanged
+    CHECK (yw::audioedit::resampleChannel (in, 183750) == whole); // the old overload is unchanged
 }

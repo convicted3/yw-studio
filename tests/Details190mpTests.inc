@@ -4,7 +4,7 @@
 // tempo is not touched
 TEST (details190mp_half_speed_transport)
 {
-    lynx::Transport t;
+    yw::Transport t;
     t.sampleRate.store (48000.0);
     t.bpm.store (150.0);
     const auto normal = t.ticksPerSample();
@@ -12,17 +12,17 @@ TEST (details190mp_half_speed_transport)
     CHECK (std::abs (t.ticksPerSample() * 2.0 - normal) < 1.0e-12);
     CHECK (t.bpm.load() == 150.0);
     t.linkBpm.store (120.0); // an override is halved as well
-    CHECK (std::abs (t.ticksPerSample() - 60.0 * lynx::ppq / (60.0 * 48000.0)) < 1.0e-12);
+    CHECK (std::abs (t.ticksPerSample() - 60.0 * yw::ppq / (60.0 * 48000.0)) < 1.0e-12);
     t.linkBpm.store (0.0);
     t.pinnedBpm.store (75.0); // a pinned tempo is the renderer's, already halved
-    CHECK (std::abs (t.ticksPerSample() - 75.0 * lynx::ppq / (60.0 * 48000.0)) < 1.0e-12);
+    CHECK (std::abs (t.ticksPerSample() - 75.0 * yw::ppq / (60.0 * 48000.0)) < 1.0e-12);
 }
 
 // FL's Auto name clips (REA FUN_012ef5f0, capture 190mp A1): each source of the track's clips, in start order, takes the
 // track's name ("Name", "Name #2"…) and colour; a leading '-' is dropped; a nameless track changes nothing
 TEST (details190mp_auto_name_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.channels.resize (2);
     song.channels[0].name = "Main Vox";
@@ -71,10 +71,10 @@ TEST (details190mp_auto_name_clips)
     CHECK (pltracks::autoNameClips (song, 2) == 0 && pltracks::autoNameClips (song, 9) == 0);
 }
 
-// FL's Restretch all (REA FUN_00fe7510): the channels stretched ahead of time are those LYNX renders a stretched copy for
+// FL's Restretch all (REA FUN_00fe7510): the channels stretched ahead of time are those YW renders a stretched copy for
 TEST (details190mp_restretchable_channels)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.channels.resize (4);
     for (auto& c : song.channels)

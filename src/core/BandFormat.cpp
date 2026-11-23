@@ -10,7 +10,7 @@
 
 #include "core/XmlLite.h"
 
-namespace lynx::band
+namespace yw::band
 {
 namespace
 {
@@ -1031,4 +1031,4 @@ void applyMetadata (const std::vector<std::uint8_t>& bytes, Project& project)
     project.keyRoot = keyRootOf (key);
     project.keyMinor = lowercase (first ({ "com_apple_garageband_metadata_songGender", "SongGenderKey" })) == "minor";
 }
-} // namespace lynx::band
+} // namespace yw::band

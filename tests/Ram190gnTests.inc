@@ -3,9 +3,9 @@
 namespace r190gn
 {
 // a stereo test sample: two partials and a little noise, `seconds` long
-std::shared_ptr<lynx::SampleData> tone (double seconds, double rate = 44100.0)
+std::shared_ptr<yw::SampleData> tone (double seconds, double rate = 44100.0)
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     s->sampleRate = rate;
     std::uint32_t noise = 190u;
     const auto n = (std::size_t) (seconds * rate);
@@ -23,9 +23,9 @@ std::shared_ptr<lynx::SampleData> tone (double seconds, double rate = 44100.0)
 
 // a song of `channels` keep-pitch samplers (Stretch, 4 beats) playing `keys` (a chord per bar, notes of `length` ticks)
 // on pattern 0, one pattern clip of `bars` bars; channel c's notes are moved up by c semitones
-lynx::Song song (int channels, const std::vector<int>& keys, std::int64_t length, int bars, lynx::StretchMethod method = lynx::StretchMethod::general)
+yw::Song song (int channels, const std::vector<int>& keys, std::int64_t length, int bars, yw::StretchMethod method = yw::StretchMethod::general)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (4);
     s.bpm = 128.0;
@@ -63,24 +63,24 @@ lynx::Song song (int channels, const std::vector<int>& keys, std::int64_t length
     return s;
 }
 
-lynx::RackState::Factories factories (std::shared_ptr<lynx::SampleData> sample)
+yw::RackState::Factories factories (std::shared_ptr<yw::SampleData> sample)
 {
-    lynx::RackState::Factories f;
-    f.samples = [sample] (const std::string&) { return std::shared_ptr<const lynx::SampleData> (sample); };
-    f.stretchedSamples = [sample] (const std::string&, double ratio, lynx::StretchMethod m, double, const lynx::StretchMap&,
-                                   const lynx::StretchOptions& options) { // (rollup 0.1.28: round 190fm's warp settings)
-        return std::shared_ptr<const lynx::SampleData> (lynx::timeStretch (*sample, ratio, m, 0.0, options));
+    yw::RackState::Factories f;
+    f.samples = [sample] (const std::string&) { return std::shared_ptr<const yw::SampleData> (sample); };
+    f.stretchedSamples = [sample] (const std::string&, double ratio, yw::StretchMethod m, double, const yw::StretchMap&,
+                                   const yw::StretchOptions& options) { // (rollup 0.1.28: round 190fm's warp settings)
+        return std::shared_ptr<const yw::SampleData> (yw::timeStretch (*sample, ratio, m, 0.0, options));
     };
     return f;
 }
 
 // the song rendered from its start for `seconds` (blocks of 256), the left then right samples
-std::vector<float> render (const lynx::RackState& state, double seconds)
+std::vector<float> render (const yw::RackState& state, double seconds)
 {
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (44100.0, 256);
     std::vector<float> out, l (256), rr (256);
-    const auto tps = lynx::ticksPerSample (state.song.bpm, 44100.0);
+    const auto tps = yw::ticksPerSample (state.song.bpm, 44100.0);
     double tick = 0.0;
     for (int b = 0; b < (int) (seconds * 44100.0 / 256.0); ++b)
     {
@@ -92,7 +92,7 @@ std::vector<float> render (const lynx::RackState& state, double seconds)
     return out;
 }
 
-int held (const lynx::RackState& state)
+int held (const yw::RackState& state)
 {
     int n = 0;
     for (const auto& i : state.instruments)
@@ -105,7 +105,7 @@ int held (const lynx::RackState& state)
 // same song rendered with the shifters planned by the song and with all 8 made up front, as before)
 TEST (ram190gn_planned_shifters_sound_the_same_as_eight_up_front)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto sample = r190gn::tone (1.5);
     for (const auto method : { StretchMethod::general, StretchMethod::transients })
     {
@@ -134,7 +134,7 @@ TEST (ram190gn_planned_shifters_sound_the_same_as_eight_up_front)
 // same as with its own made at build time, and the stock is refilled off the audio thread
 TEST (ram190gn_a_live_note_takes_a_stock_shifter)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto sample = r190gn::tone (1.0);
     auto s = r190gn::song (1, { 64 }, (std::int64_t) ppq / 4, 1);
     s.patterns[0].notes.clear(); // nothing in the song: no shifter planned
@@ -182,7 +182,7 @@ TEST (ram190gn_a_live_note_takes_a_stock_shifter)
 // a Layer's notes count for its children; a channel without notes holds none (the live reserve is in the stock)
 TEST (ram190gn_song_analysis_bounds_the_voices)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto shortSample = r190gn::tone (0.2);
     // 4 beats of 0.2 s at 128 BPM: the stretched copy lasts ~1.9 s, the notes are a bar (1.9 s) apart: at most 2 at once
     {
@@ -235,7 +235,7 @@ TEST (ram190gn_song_analysis_bounds_the_voices)
 // reserveFor grows them on the rendering thread
 TEST (ram190gn_renderer_buffers_follow_the_song)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto make = [] (int channels, int inserts) {
         Song s;
         s.mixer = Song::defaultMixer (inserts);

@@ -1,4 +1,4 @@
-// Issue #158 (round 190eh): overlapping pattern clips. FL 2026, 25 command-line renders (/mnt/e/lynx-work/iss158/,
+// Issue #158 (round 190eh): overlapping pattern clips. FL 2026, 25 command-line renders (/mnt/e/yw-work/iss158/,
 // HANDOFF.md): a pattern plays from one Playlist clip at a time — a later clip of the SAME pattern (any track; the same
 // start: the one later in the list) takes over at its start, the earlier clip starts no more notes from there (also after
 // the later clip has ended), the notes it already started play to their ends. Clips of different patterns never cut each
@@ -8,14 +8,14 @@
 
 namespace iss158
 {
-constexpr std::int64_t bar = 4 * lynx::ppq;
+constexpr std::int64_t bar = 4 * yw::ppq;
 
 // Patterns as in the FL renders: P1 = channel 0 key 60 held 8 bars + channel 1 key 72 a short note on every beat; P2 = the
 // same channels with keys 67 / 79; P3 = channels 2 / 3, keys 64 / 76; P4 = channel 1 key 72 on every beat + channel 2 key
 // 76 on every beat of bars 4-8 only.
-inline lynx::Song song (bool takeover = true)
+inline yw::Song song (bool takeover = true)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -63,10 +63,10 @@ inline lynx::Song song (bool takeover = true)
     return s;
 }
 
-inline lynx::Clip clip (int pattern, std::int64_t startBar, std::int64_t bars, int track = 0, std::int64_t offset = 0)
+inline yw::Clip clip (int pattern, std::int64_t startBar, std::int64_t bars, int track = 0, std::int64_t offset = 0)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = pattern;
     c.start = startBar * bar;
     c.length = bars * bar;
@@ -77,15 +77,15 @@ inline lynx::Clip clip (int pattern, std::int64_t startBar, std::int64_t bars, i
 
 struct Played
 {
-    lynx::NoteEvent::Type type;
+    yw::NoteEvent::Type type;
     int channel, key;
     std::int64_t tick;
 };
 
 // The whole song played once in 512-sample blocks at 48 kHz; each event at its tick. With or without the index.
-inline std::vector<Played> play (const lynx::Song& s, bool withIndex = true)
+inline std::vector<Played> play (const yw::Song& s, bool withIndex = true)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto tps = ticksPerSample (s.bpm, 48000.0);
     const auto index = makeScheduleIndex (s);
     std::vector<Played> out;
@@ -100,20 +100,20 @@ inline std::vector<Played> play (const lynx::Song& s, bool withIndex = true)
     return out;
 }
 
-inline int count (const std::vector<Played>& p, lynx::NoteEvent::Type type, int key, std::int64_t from = 0,
+inline int count (const std::vector<Played>& p, yw::NoteEvent::Type type, int key, std::int64_t from = 0,
                   std::int64_t to = std::numeric_limits<std::int64_t>::max())
 {
     return (int) std::count_if (p.begin(), p.end(), [&] (const Played& e) { return e.type == type && e.key == key && e.tick >= from && e.tick < to; });
 }
 inline int ons (const std::vector<Played>& p, int key, std::int64_t from = 0, std::int64_t to = std::numeric_limits<std::int64_t>::max())
 {
-    return count (p, lynx::NoteEvent::Type::on, key, from, to);
+    return count (p, yw::NoteEvent::Type::on, key, from, to);
 }
 inline std::vector<std::int64_t> offsOf (const std::vector<Played>& p, int key)
 {
     std::vector<std::int64_t> t;
     for (const auto& e : p)
-        if (e.type == lynx::NoteEvent::Type::off && e.key == key)
+        if (e.type == yw::NoteEvent::Type::off && e.key == key)
             t.push_back (e.tick);
     std::sort (t.begin(), t.end());
     return t;
@@ -132,7 +132,7 @@ TEST (iss158_a_later_clip_of_the_same_pattern_takes_over_on_its_track)
     CHECK (ons (p, 72, 2 * bar, 4 * bar) == 8);       // one note per beat where both clips lie
     CHECK (ons (p, 60) == 2);
     CHECK ((offsOf (p, 60) == std::vector<std::int64_t> { 4 * bar, 6 * bar }));
-    // LYNX before (and projects saved before, the option off): both clips play every note
+    // YW before (and projects saved before, the option off): both clips play every note
     auto legacy = song (false);
     legacy.playlist = s.playlist;
     CHECK (ons (play (legacy), 72) == 32);
@@ -162,7 +162,7 @@ TEST (iss158_different_patterns_never_cut_each_other)
     // FL a / b / c / d / g / i / j / k / l: overlapping clips of different patterns (same or other channels, same or other
     // track, inside, the same start, either list order) all play every note
     using namespace iss158;
-    const std::vector<std::vector<lynx::Clip>> cases {
+    const std::vector<std::vector<yw::Clip>> cases {
         { clip (0, 0, 4), clip (1, 2, 4) },    { clip (0, 0, 4), clip (1, 2, 4, 1) }, { clip (0, 0, 4), clip (2, 2, 4) },
         { clip (0, 0, 8), clip (1, 2, 2) },    { clip (1, 2, 4), clip (0, 0, 4) },    { clip (0, 0, 4), clip (1, 0, 4) },
         { clip (0, 0, 4, 1), clip (1, 2, 4) }, { clip (0, 0, 8), clip (2, 2, 2) },
@@ -180,7 +180,7 @@ TEST (iss158_different_patterns_never_cut_each_other)
             CHECK (ons (p, key) == ons (q, key));
             CHECK (offsOf (p, key) == offsOf (q, key));
         }
-        CHECK (ons (p, 72) == (int) (clips[clips[0].pattern == 0 ? 0 : 1].length / lynx::ppq));
+        CHECK (ons (p, 72) == (int) (clips[clips[0].pattern == 0 ? 0 : 1].length / yw::ppq));
     }
 }
 
@@ -221,11 +221,11 @@ TEST (iss158_a_muted_clip_or_track_takes_nothing_over)
         CHECK (ons (p, 72) == 32);
         CHECK (ons (p, 60) == 1);
         // unmuted again: the inner clip takes over (the index keeps the chain, the mute is read live)
-        const auto index = lynx::makeScheduleIndex (s);
+        const auto index = yw::makeScheduleIndex (s);
         s.playlistTracks[1].muted = false;
         s.playlist[1].muted = false;
-        CHECK (lynx::patternClipStopsAt (s, 0, &index) == 2 * bar);
-        CHECK (lynx::patternClipStopsAt (s, 0) == 2 * bar);
+        CHECK (yw::patternClipStopsAt (s, 0, &index) == 2 * bar);
+        CHECK (yw::patternClipStopsAt (s, 0) == 2 * bar);
     }
 }
 
@@ -245,11 +245,11 @@ TEST (iss158_takeover_is_per_pattern_and_the_boundary_is_inclusive)
     // outer clip's note exactly at bar 2 does not play
     {
         auto s = song();
-        s.playlist = { clip (0, 0, 8), clip (0, 2, 2, 0, lynx::ppq / 2) };
+        s.playlist = { clip (0, 0, 8), clip (0, 2, 2, 0, yw::ppq / 2) };
         const auto p = play (s);
         CHECK (ons (p, 72, 2 * bar, 2 * bar + 1) == 0);
-        CHECK (ons (p, 72, 2 * bar - lynx::ppq, 2 * bar) == 1);
-        CHECK (ons (p, 72, 2 * bar + lynx::ppq / 2, 2 * bar + lynx::ppq / 2 + 1) == 1);
+        CHECK (ons (p, 72, 2 * bar - yw::ppq, 2 * bar) == 1);
+        CHECK (ons (p, 72, 2 * bar + yw::ppq / 2, 2 * bar + yw::ppq / 2 + 1) == 1);
     }
     // FL w_earlier_ends_first: P1 0-3 bars, P1 2-6 bars: the earlier held note ends at bar 3, the later one at bar 6
     {
@@ -266,20 +266,20 @@ TEST (iss158_the_index_and_the_scan_agree)
     using namespace iss158;
     auto s = song();
     s.playlist = { clip (0, 0, 8), clip (1, 1, 4, 1), clip (0, 2, 2, 2), clip (0, 2, 4, 1), clip (0, 6, 2), clip (2, 0, 8) };
-    const auto index = lynx::makeScheduleIndex (s);
+    const auto index = yw::makeScheduleIndex (s);
     for (std::size_t i = 0; i < s.playlist.size(); ++i)
-        CHECK (lynx::patternClipStopsAt (s, i, &index) == lynx::patternClipStopsAt (s, i));
-    CHECK (lynx::patternClipStopsAt (s, 0, &index) == 2 * iss158::bar);
-    CHECK (lynx::patternClipStopsAt (s, 2, &index) == 2 * iss158::bar); // (the same start: the clip later in the list)
-    CHECK (lynx::patternClipStopsAt (s, 3, &index) == 6 * iss158::bar);
-    CHECK (lynx::patternClipStopsAt (s, 4, &index) == std::numeric_limits<std::int64_t>::max());
-    CHECK (lynx::patternClipStopsAt (s, 1, &index) == std::numeric_limits<std::int64_t>::max());
+        CHECK (yw::patternClipStopsAt (s, i, &index) == yw::patternClipStopsAt (s, i));
+    CHECK (yw::patternClipStopsAt (s, 0, &index) == 2 * iss158::bar);
+    CHECK (yw::patternClipStopsAt (s, 2, &index) == 2 * iss158::bar); // (the same start: the clip later in the list)
+    CHECK (yw::patternClipStopsAt (s, 3, &index) == 6 * iss158::bar);
+    CHECK (yw::patternClipStopsAt (s, 4, &index) == std::numeric_limits<std::int64_t>::max());
+    CHECK (yw::patternClipStopsAt (s, 1, &index) == std::numeric_limits<std::int64_t>::max());
     const auto a = play (s, true), b = play (s, false);
     CHECK (a.size() == b.size());
     for (const auto key : { 60, 67, 64, 72, 79, 76 })
         CHECK (ons (a, key) == ons (b, key) && offsOf (a, key) == offsOf (b, key));
     s.patternClipTakeover = false;
-    CHECK (lynx::patternClipStopsAt (s, 0, &index) == std::numeric_limits<std::int64_t>::max());
+    CHECK (yw::patternClipStopsAt (s, 0, &index) == std::numeric_limits<std::int64_t>::max());
 }
 
 TEST (iss158_midi_export_writes_what_plays)
@@ -287,19 +287,19 @@ TEST (iss158_midi_export_writes_what_plays)
     using namespace iss158;
     auto s = song();
     s.playlist = { clip (0, 0, 8), clip (0, 2, 2) };
-    const auto notes = lynx::exportopts::midiExportNotes (s);
-    const auto beats = std::count_if (notes.begin(), notes.end(), [] (const lynx::Note& n) { return n.key == 72; });
+    const auto notes = yw::exportopts::midiExportNotes (s);
+    const auto beats = std::count_if (notes.begin(), notes.end(), [] (const yw::Note& n) { return n.key == 72; });
     CHECK (beats == 16);
     s.patternClipTakeover = false;
-    const auto all = lynx::exportopts::midiExportNotes (s);
-    CHECK (std::count_if (all.begin(), all.end(), [] (const lynx::Note& n) { return n.key == 72; }) == 32 + 8);
+    const auto all = yw::exportopts::midiExportNotes (s);
+    CHECK (std::count_if (all.begin(), all.end(), [] (const yw::Note& n) { return n.key == 72; }) == 32 + 8);
 }
 
 TEST (iss158_flp_import_turns_it_on_and_keeps_the_file_order)
 {
     // an .flp plays as in FL: the option is on, and two clips of a pattern at the same start keep the file's order (the
     // later one wins)
-    using namespace lynx;
+    using namespace yw;
     flp::Project p;
     p.tempo = 120.0;
     flp::Channel c;

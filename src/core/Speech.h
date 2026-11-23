@@ -1,23 +1,23 @@
 #pragma once
 
-// LYNX's speech synthesizer (round 168b): text in, a spoken sample out, one slice per word.
+// YW's speech synthesizer (round 168b): text in, a spoken sample out, one slice per word.
 //
 // FL Studio's "Speech synthesizer" (the .speech files of Data/Patches/Speech and the "Speech properties" form) drives
 // Image-Line's Speaker_x64.dll, a wrapper around a licensed third-party engine (SoftVoice, Inc.'s sveng64.dll). The
-// wrapper and FL's form are FL's own and were studied with REA (docs/analise/REA_rodada168b.md); LYNX follows them where
+// wrapper and FL's form are FL's own and were studied with REA (docs/analise/REA_rodada168b.md); YW follows them where
 // they are FL's logic: the .speech file (an INI "[Speaker Settings]" section), its defaults, the text syntax (words split
 // at spaces, "_" joins words into one slice, "word(N)" moves that word N semitones), pitch quantised to keyboard keys
 // and clamped to the keyboard's range, the four styles and their file codes (0, 2, 3, 4), the three voicing modes,
 // the 20 personality names, the 20..500 words per minute range and the file name the form suggests when saving.
-// The voice itself is LYNX's own: a formant synthesizer with letter-to-sound rules written for LYNX (no code, rules,
-// dictionary or data of the third-party engine), so it is LYNX's equivalent, not a copy of FL's sound. No JUCE.
+// The voice itself is YW's own: a formant synthesizer with letter-to-sound rules written for YW (no code, rules,
+// dictionary or data of the third-party engine), so it is YW's equivalent, not a copy of FL's sound. No JUCE.
 
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
 
-namespace lynx::speech
+namespace yw::speech
 {
 // The 20 personalities in FL's order (the file stores the index).
 inline constexpr int personalityCount = 20;
@@ -61,7 +61,7 @@ struct Settings
 };
 
 // What choosing a personality in the dialog sets (pitch, rate, style, voicing): FL asks its engine for that voice's
-// defaults; these are LYNX's own voices' defaults (several match FL's factory presets named after a voice).
+// defaults; these are YW's own voices' defaults (several match FL's factory presets named after a voice).
 Settings personalityDefaults (int personality, const Settings& keepText);
 
 // The .speech file ("[Speaker Settings]" INI section, CRLF). parse() returns false when the text is empty (FL refuses
@@ -104,4 +104,4 @@ Rendered render (const Settings& settings, double sampleRate = 44100.0);
 std::string toPhonemes (std::string_view text);
 // Numbers spelled out ("10" -> "ten", "1999" -> "one thousand nine hundred ninety nine").
 std::string spellNumber (std::int64_t value);
-} // namespace lynx::speech
+} // namespace yw::speech

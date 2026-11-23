@@ -8,7 +8,7 @@
 // OSC grouping), portamento, 3 filter units (13 types, waveshaper), voice end and declick ramps, and the post-voice chain
 // (oversampling decimators, effects unit/chorus, 3 delays, the shared reverb, 3-band EQ, DC stage).
 //
-// Rendering settings, as FL: while LYNX exports (offline render) a channel uses the state's *render* oversampling
+// Rendering settings, as FL: while YW exports (offline render) a channel uses the state's *render* oversampling
 // order and envelope-accuracy tick (main ints 0x310/0x308) and the 16 384-point band-limited tables — what FL uses when
 // it exports a project (§1.2, §7.2; most demo patches then run 8× oversampled); during live playback it uses the live
 // pair (0x30C/0x304) and 4 096-point tables, as FL plays them.
@@ -20,7 +20,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 namespace sytrus
 {
@@ -49,7 +49,7 @@ std::optional<int> settingValue (const std::vector<std::uint8_t>& state, int set
 // writes it (clamped to the control's range) and re-stores the state; false if the state cannot be read
 bool setSetting (std::vector<std::uint8_t>& state, int setting, int value);
 
-// FL's automation of Sytrus' own parameters (round 190pi): the ones LYNX takes — 0 master level, 1 master LFO, 2 master
+// FL's automation of Sytrus' own parameters (round 190pi): the ones YW takes — 0 master level, 1 master LFO, 2 master
 // pitch, 18 Mod X, 19 Mod Y (FL's parameter numbers, the main page's controls)
 inline bool automatable (int param) noexcept { return (param >= 0 && param <= 2) || param == 18 || param == 19; }
 
@@ -64,7 +64,7 @@ struct NoteParams
     int colour = 0;         // note colour (14 inverts PORTA)
     std::int64_t id = 0;    // caller's handle (release by id)
     // FL's Final.FCut / FRes of the voice, −1…1 (the note's Mod X / Y; round 190pr): they move the articulators' Mod X / Y
-    // map positions, main Mod X / Y + 256 · FCut / FRes [round 31's model]; 0 = the note's default (LYNX before)
+    // map positions, main Mod X / Y + 256 · FCut / FRes [round 31's model]; 0 = the note's default (YW before)
     double fcut = 0.0, fres = 0.0;
 };
 
@@ -129,4 +129,4 @@ private:
 } // namespace sytrus
 
 std::unique_ptr<Instrument> makeSytrusInstrument();
-} // namespace lynx
+} // namespace yw

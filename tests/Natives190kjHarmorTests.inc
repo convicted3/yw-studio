@@ -69,10 +69,10 @@ double natives190kjPeakHz (const std::vector<float>& y, int a, int len)
 TEST (natives190kj_resynthesis_analysis_matches_fl)
 {
     // FUN_00794510 + FUN_00795720 on rs_sine.wav: geometry, pixels, codes and the frequency plane as FL's DLL built them
-    lynx::harmor::SampleData s;
-    CHECK (lynx::harmor::readWavMono (natives190kjSineWav(), s));
+    yw::harmor::SampleData s;
+    CHECK (yw::harmor::readWavMono (natives190kjSineWav(), s));
     CHECK (s.rate == 44100.0 && s.mono.size() == 88200);
-    const auto P = lynx::harmor::analyseResynthesis (s.mono.data(), s.mono.size(), s.rate);
+    const auto P = yw::harmor::analyseResynthesis (s.mono.data(), s.mono.size(), s.rate);
     CHECK (P != nullptr);
     if (P == nullptr)
         return;
@@ -101,18 +101,18 @@ TEST (natives190kj_resynthesis_analysis_matches_fl)
     CHECK (std::fabs (fr (100, 2) - 0.27539062f) < 1e-3f && std::fabs (fr (100, 3) + 0.48228267f) < 1e-3f);
     CHECK (std::fabs (fr (5, 2) - 0.27441406f) < 1e-3f && std::fabs (fr (5, 3) + 0.48667339f) < 1e-3f);
     // the second setting (part misc +0x20 = 1, FUN_00794260): harmonics of C1, 511 rows
-    lynx::harmor::ResynthOptions o;
+    yw::harmor::ResynthOptions o;
     o.mode = 1;
-    const auto Q = lynx::harmor::analyseResynthesis (s.mono.data(), s.mono.size(), s.rate, o);
+    const auto Q = yw::harmor::analyseResynthesis (s.mono.data(), s.mono.size(), s.rate, o);
     CHECK (Q != nullptr && Q->rows == 511 && Q->stride == 512 && std::fabs (Q->k148 + 4800.0) < 1e-6);
 }
 
 TEST (natives190kj_resynthesis_reader_mixes_channels_as_fl)
 {
     // stereo files are analysed as the mean of their channels; float WAVs read as they are
-    lynx::harmor::SampleData m, st;
-    CHECK (lynx::harmor::readWavMono (natives190kjSineWav (220.0, 1), m));
-    CHECK (lynx::harmor::readWavMono (natives190kjSineWav (220.0, 2), st));
+    yw::harmor::SampleData m, st;
+    CHECK (yw::harmor::readWavMono (natives190kjSineWav (220.0, 1), m));
+    CHECK (yw::harmor::readWavMono (natives190kjSineWav (220.0, 2), st));
     CHECK (m.mono.size() == st.mono.size());
     bool ok = true;
     for (std::size_t i = 0; i < m.mono.size(); i += 997)
@@ -121,18 +121,18 @@ TEST (natives190kj_resynthesis_reader_mixes_channels_as_fl)
         ok = ok && std::fabs (st.mono[i] - (m.mono[i] + (float) (std::int16_t) (v / 2) / 32768.0f) * 0.5f) < 1e-7f;
     }
     CHECK (ok);
-    lynx::harmor::SampleData none;
-    CHECK (! lynx::harmor::readWavMono (std::vector<std::uint8_t> { 'R', 'I', 'F', 'F' }, none));
+    yw::harmor::SampleData none;
+    CHECK (! yw::harmor::readWavMono (std::vector<std::uint8_t> { 'R', 'I', 'F', 'F' }, none));
 }
 
 TEST (natives190kj_resynthesis_plays_the_sample)
 {
     // a part with the sine loaded plays 220 Hz on C5 (the sample's own pitch) and an octave up on C6, at a steady level
-    const auto path = natives190kjTempWav ("lynx_natives190kj_sine.wav", natives190kjSineWav());
+    const auto path = natives190kjTempWav ("yw_natives190kj_sine.wav", natives190kjSineWav());
     const auto st = harmorTestState (false, false, 0, path);
-    CHECK (lynx::harmorFallbacks (st).empty());
-    const auto y5 = lynx::harmor::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, -1 } }, 44100.0, 30000);
-    const auto y6 = lynx::harmor::renderReference (st, { { 0, 72, 1.0, 1.0, 0.0, -1 } }, 44100.0, 30000);
+    CHECK (yw::harmorFallbacks (st).empty());
+    const auto y5 = yw::harmor::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, -1 } }, 44100.0, 30000);
+    const auto y6 = yw::harmor::renderReference (st, { { 0, 72, 1.0, 1.0, 0.0, -1 } }, 44100.0, 30000);
     CHECK (y5.size() == 60000 && y6.size() == 60000);
     CHECK (std::fabs (natives190kjPeakHz (y5, 8192, 8192) - 220.0) < 2.0);
     CHECK (std::fabs (natives190kjPeakHz (y6, 8192, 8192) - 440.0) < 4.0);
@@ -149,27 +149,27 @@ TEST (natives190kj_resynthesis_plays_the_sample)
 TEST (natives190kj_engine_revision_keeps_old_projects)
 {
     // engineRev 0 (a project saved before this round): the resynthesis part plays its timbres exactly as before —
-    // bit-identical to the same state whose sample cannot be found (LYNX's former path) — while revision 1 plays the
+    // bit-identical to the same state whose sample cannot be found (YW's former path) — while revision 1 plays the
     // sample; states without a resynthesis image render identically under both revisions
-    const auto path = natives190kjTempWav ("lynx_natives190kj_rev.wav", natives190kjSineWav());
+    const auto path = natives190kjTempWav ("yw_natives190kj_rev.wav", natives190kjSineWav());
     const auto st = harmorTestState (false, false, 0, path);
     const auto missing = harmorTestState (false, false, 0, path + ".missing");
-    const std::vector<lynx::harmor::RefNote> notes { { 0, 60, 0.8, 1.0, 0.0, 12000 }, { 4000, 67, 0.6, 1.0, 0.0, 16000 } };
-    const auto old0 = lynx::harmor::renderReference (st, notes, 44100.0, 20000, 512, {}, 120.0, {}, 0);
-    const auto gone = lynx::harmor::renderReference (missing, notes, 44100.0, 20000, 512, {}, 120.0, {}, 1);
-    const auto now1 = lynx::harmor::renderReference (st, notes, 44100.0, 20000, 512, {}, 120.0, {}, 1);
+    const std::vector<yw::harmor::RefNote> notes { { 0, 60, 0.8, 1.0, 0.0, 12000 }, { 4000, 67, 0.6, 1.0, 0.0, 16000 } };
+    const auto old0 = yw::harmor::renderReference (st, notes, 44100.0, 20000, 512, {}, 120.0, {}, 0);
+    const auto gone = yw::harmor::renderReference (missing, notes, 44100.0, 20000, 512, {}, 120.0, {}, 1);
+    const auto now1 = yw::harmor::renderReference (st, notes, 44100.0, 20000, 512, {}, 120.0, {}, 1);
     CHECK (! old0.empty() && old0 == gone);
     CHECK (now1 != old0);
     for (int features : { 0, 1, 16 })
     {
         const auto plain = harmorTestState (false, false, features);
-        CHECK (lynx::harmor::renderReference (plain, notes, 44100.0, 8000, 512, {}, 120.0, {}, 0)
-               == lynx::harmor::renderReference (plain, notes, 44100.0, 8000, 512, {}, 120.0, {}, 1));
+        CHECK (yw::harmor::renderReference (plain, notes, 44100.0, 8000, 512, {}, 120.0, {}, 0)
+               == yw::harmor::renderReference (plain, notes, 44100.0, 8000, 512, {}, 120.0, {}, 1));
     }
     const auto image = harmorTestState (false, true);
-    CHECK (lynx::harmor::renderReference (image, notes, 44100.0, 8000, 512, {}, 120.0, {}, 0)
-           == lynx::harmor::renderReference (image, notes, 44100.0, 8000, 512, {}, 120.0, {}, 1));
-    lynx::ChannelDef fresh;
+    CHECK (yw::harmor::renderReference (image, notes, 44100.0, 8000, 512, {}, 120.0, {}, 0)
+           == yw::harmor::renderReference (image, notes, 44100.0, 8000, 512, {}, 120.0, {}, 1));
+    yw::ChannelDef fresh;
     CHECK (fresh.engineRev >= 1); // (round 190om: 2, SimSynth's velocity law; Harmor's resynthesis since 1)
     std::filesystem::remove (path);
 }
@@ -177,20 +177,20 @@ TEST (natives190kj_engine_revision_keeps_old_projects)
 TEST (natives190kj_resynthesis_cpu_report)
 {
     // analysis time of a 2 s sample and the render-time factor of one resynthesised voice (report only)
-    lynx::harmor::SampleData s;
-    lynx::harmor::readWavMono (natives190kjSineWav(), s);
+    yw::harmor::SampleData s;
+    yw::harmor::readWavMono (natives190kjSineWav(), s);
     const auto t0 = std::chrono::steady_clock::now();
-    const auto P = lynx::harmor::analyseResynthesis (s.mono.data(), s.mono.size(), s.rate);
+    const auto P = yw::harmor::analyseResynthesis (s.mono.data(), s.mono.size(), s.rate);
     const auto t1 = std::chrono::steady_clock::now();
-    const auto path = natives190kjTempWav ("lynx_natives190kj_cpu.wav", natives190kjSineWav());
+    const auto path = natives190kjTempWav ("yw_natives190kj_cpu.wav", natives190kjSineWav());
     const auto st = harmorTestState (false, false, 0, path);
-    lynx::harmorFallbacks (st); // (analysis cached)
+    yw::harmorFallbacks (st); // (analysis cached)
     const auto t2 = std::chrono::steady_clock::now();
-    const auto y = lynx::harmor::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, -1 } }, 44100.0, 88200);
+    const auto y = yw::harmor::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, -1 } }, 44100.0, 88200);
     const auto t3 = std::chrono::steady_clock::now();
     const auto plain = harmorTestState (false, false, 0);
     const auto t4 = std::chrono::steady_clock::now();
-    const auto z = lynx::harmor::renderReference (plain, { { 0, 60, 1.0, 1.0, 0.0, -1 } }, 44100.0, 88200);
+    const auto z = yw::harmor::renderReference (plain, { { 0, 60, 1.0, 1.0, 0.0, -1 } }, 44100.0, 88200);
     const auto t5 = std::chrono::steady_clock::now();
     const auto ms = [] (auto a, auto b) { return std::chrono::duration<double, std::milli> (b - a).count(); };
     std::printf ("  natives190kj resynthesis: analysis of 2 s %.1f ms; one voice RTF %.4f (the same part without the sample %.4f)\n",

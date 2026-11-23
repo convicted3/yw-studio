@@ -4,14 +4,14 @@
 
 namespace
 {
-lynx::EffectSlot gb168Slot (int timeSlot, int volumeSlot, const std::vector<std::uint8_t>& state)
+yw::EffectSlot gb168Slot (int timeSlot, int volumeSlot, const std::vector<std::uint8_t>& state)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::grossBeat);
     slot.state = state;
-    slot.params[0] = lynx::grossbeat::paramFromRaw (0, timeSlot);
-    slot.params[1] = lynx::grossbeat::paramFromRaw (1, volumeSlot);
-    slot.params[4] = lynx::grossbeat::paramFromRaw (4, 0); // no smoothing: the gate edges stay sharp
-    slot.params[5] = lynx::grossbeat::paramFromRaw (5, 0);
+    slot.params[0] = yw::grossbeat::paramFromRaw (0, timeSlot);
+    slot.params[1] = yw::grossbeat::paramFromRaw (1, volumeSlot);
+    slot.params[4] = yw::grossbeat::paramFromRaw (4, 0); // no smoothing: the gate edges stay sharp
+    slot.params[5] = yw::grossbeat::paramFromRaw (5, 0);
     return slot;
 }
 
@@ -27,10 +27,10 @@ int gb168Index (const std::vector<std::string>& names, const std::string& name)
 // the video's case #19: "there's no way I'm drawing every single Gross Beat" — a new instance had 72 empty slots
 TEST (gb168_new_instance_has_factory_slots_that_sound)
 {
-    const auto fresh = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
+    const auto fresh = yw::makeEffectSlot (yw::EffectKind::grossBeat);
     CHECK (! fresh.state.empty());
-    const auto volumeNames = lynx::grossbeat::slotNames (fresh.state, true);
-    const auto timeNames = lynx::grossbeat::slotNames (fresh.state, false);
+    const auto volumeNames = yw::grossbeat::slotNames (fresh.state, true);
+    const auto timeNames = yw::grossbeat::slotNames (fresh.state, false);
     CHECK (volumeNames.size() == 36 && timeNames.size() == 36);
     CHECK (volumeNames.size() == 36 && volumeNames[0].empty() && timeNames[0].empty()); // slot 1 = straight through, as FL's "Empty"
     const auto gateSlot = gb168Index (volumeNames, "Gate 1/4 beat");
@@ -62,8 +62,8 @@ TEST (gb168_new_instance_has_factory_slots_that_sound)
 // the video's case #20: "I'm clicking in here and it's not doing anything"
 TEST (gb168_point_editing_is_written_back_and_heard)
 {
-    using namespace lynx::grossbeat;
-    const auto fresh = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
+    using namespace yw::grossbeat;
+    const auto fresh = yw::makeEffectSlot (yw::EffectKind::grossBeat);
     auto state = editableState (fresh.state);
     auto& slot = state.slots[(std::size_t) slotsPerKind + 0]; // volume slot 1 (empty)
     auto points = editPoints (slot);
@@ -100,7 +100,7 @@ TEST (gb168_point_editing_is_written_back_and_heard)
 // a slot's per-slot settings and every factory slot survive FL's layout written back and read again
 TEST (gb168_state_round_trip_is_exact)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     auto state = factoryState();
     state.slots[3].triggerSync = 2;
     state.slots[3].positionSync = 0;
@@ -150,16 +150,16 @@ TEST (gb168_fl_demo_states_write_back)
                     for (const auto& s : insert.slots)
                         if (s.plugin == "Gross Beat")
                         {
-                            const auto parsed = lynx::grossbeat::parseState (s.state.data(), s.state.size());
+                            const auto parsed = yw::grossbeat::parseState (s.state.data(), s.state.size());
                             CHECK (parsed.has_value());
                             if (! parsed)
                                 continue;
-                            const auto written = lynx::grossbeat::writeState (*parsed);
-                            const auto again = lynx::grossbeat::parseState (written.data(), written.size());
+                            const auto written = yw::grossbeat::writeState (*parsed);
+                            const auto again = yw::grossbeat::parseState (written.data(), written.size());
                             CHECK (again.has_value());
                             // the sound is the same: the selected slots render identically from both states
-                            auto original = lynx::grossbeat::slotFromFl (s.state);
-                            auto rewritten = lynx::grossbeat::slotFromFl (written);
+                            auto original = yw::grossbeat::slotFromFl (s.state);
+                            auto rewritten = yw::grossbeat::slotFromFl (written);
                             CHECK (original && rewritten);
                             if (original && rewritten && states < 12)
                             {
@@ -181,12 +181,12 @@ TEST (gb168_fl_demo_states_write_back)
 // an edit while the effect runs: the running engine takes it in place (no rebuild, buffer and position kept)
 TEST (gb168_running_effect_takes_an_edit)
 {
-    using namespace lynx::grossbeat;
-    const auto fresh = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
+    using namespace yw::grossbeat;
+    const auto fresh = yw::makeEffectSlot (yw::EffectKind::grossBeat);
     auto slot = gb168Slot (0, 0, fresh.state);
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
-    const auto tps = 120.0 / 60.0 * lynx::ppq / 48000.0;
+    const auto tps = 120.0 / 60.0 * yw::ppq / 48000.0;
     std::vector<float> l (512, 1.0f), r (512, 1.0f);
     std::size_t done = 0;
     auto block = [&] {
@@ -214,12 +214,12 @@ TEST (gb168_running_effect_takes_an_edit)
     CHECK (! fx->acceptState (withState (slot.state, state)));
 }
 
-// presets carry the whole bank: LYNX SHARE's factory presets and a user preset saved and loaded
+// presets carry the whole bank: YW Studio's factory presets and a user preset saved and loaded
 TEST (gb168_presets_carry_the_slots)
 {
-    const auto& factory = lynx::presets::factory (lynx::EffectKind::grossBeat);
+    const auto& factory = yw::presets::factory (yw::EffectKind::grossBeat);
     CHECK (factory.size() >= 10);
-    CHECK (lynx::presets::savesState (lynx::EffectKind::grossBeat) && ! lynx::presets::savesState (lynx::EffectKind::fruityDelay2));
+    CHECK (yw::presets::savesState (yw::EffectKind::grossBeat) && ! yw::presets::savesState (yw::EffectKind::fruityDelay2));
     int pump = -1;
     for (int i = 0; i < (int) factory.size(); ++i)
         if (factory[(std::size_t) i].name == "Pump")
@@ -229,51 +229,51 @@ TEST (gb168_presets_carry_the_slots)
     {
         const auto& p = factory[(std::size_t) pump];
         CHECK (! p.state.empty());
-        const auto params = lynx::presets::apply (lynx::EffectKind::grossBeat, p);
-        const auto names = lynx::grossbeat::slotNames (p.state, true);
-        const auto v = lynx::grossbeat::rawFromParam (1, params[1]);
+        const auto params = yw::presets::apply (yw::EffectKind::grossBeat, p);
+        const auto names = yw::grossbeat::slotNames (p.state, true);
+        const auto v = yw::grossbeat::rawFromParam (1, params[1]);
         CHECK (v >= 0 && v < 36 && names[(std::size_t) v] == "Pump");
     }
     // a user preset: the parameters and the edited bank come back
-    auto state = lynx::grossbeat::factoryState();
+    auto state = yw::grossbeat::factoryState();
     state.slots[50].name = "My gate";
-    const auto bytes = lynx::grossbeat::withState ({}, state);
-    auto params = lynx::makeEffectSlot (lynx::EffectKind::grossBeat).params;
-    params[1] = lynx::grossbeat::paramFromRaw (1, 14);
-    const auto text = lynx::presets::toText (lynx::EffectKind::grossBeat, "Mine", params, &bytes);
-    const auto loaded = lynx::presets::fromText (lynx::EffectKind::grossBeat, text);
+    const auto bytes = yw::grossbeat::withState ({}, state);
+    auto params = yw::makeEffectSlot (yw::EffectKind::grossBeat).params;
+    params[1] = yw::grossbeat::paramFromRaw (1, 14);
+    const auto text = yw::presets::toText (yw::EffectKind::grossBeat, "Mine", params, &bytes);
+    const auto loaded = yw::presets::fromText (yw::EffectKind::grossBeat, text);
     CHECK (loaded && loaded->hasState && loaded->state == bytes && loaded->name == "Mine" && loaded->params[1] == params[1]);
     // other engines keep writing parameters only
-    const auto plain = lynx::presets::toText (lynx::EffectKind::fruityDelay2, "x", params, &bytes);
+    const auto plain = yw::presets::toText (yw::EffectKind::fruityDelay2, "x", params, &bytes);
     CHECK (plain.find ("state") == std::string::npos);
 }
 
-// the user's ask after the review: "tem que fazer uns presets legais" — every LYNX slot is named, distinct and moves;
+// the user's ask after the review: "tem que fazer uns presets legais" — every YW slot is named, distinct and moves;
 // every factory preset selects named slots; two of the classic moves checked by ear-free measurement
 TEST (gb168_factory_slots_are_named_distinct_and_used_by_presets)
 {
-    const auto state = lynx::grossbeat::factoryState();
+    const auto state = yw::grossbeat::factoryState();
     std::set<std::string> names;
     int time = 0, volume = 0;
-    for (int i = 0; i < 2 * lynx::grossbeat::slotsPerKind; ++i)
+    for (int i = 0; i < 2 * yw::grossbeat::slotsPerKind; ++i)
     {
         const auto& slot = state.slots[(std::size_t) i];
         if (slot.name.empty())
             continue;
         CHECK (names.insert (slot.name).second);
-        const auto levels = lynx::grossbeat::renderSlot (slot, 256);
+        const auto levels = yw::grossbeat::renderSlot (slot, 256);
         const auto [lo, hi] = std::minmax_element (levels.begin(), levels.end());
         CHECK ((*hi - *lo > 1.0e-3f || slot.name == "Mute") && *lo >= -1.0e-4f && *hi <= 1.0f + 1.0e-4f); // Mute: silence on purpose
-        (i < lynx::grossbeat::slotsPerKind ? time : volume) += 1;
+        (i < yw::grossbeat::slotsPerKind ? time : volume) += 1;
     }
     CHECK (time >= 24 && volume >= 29);
 
-    const auto& factory = lynx::presets::factory (lynx::EffectKind::grossBeat);
+    const auto& factory = yw::presets::factory (yw::EffectKind::grossBeat);
     CHECK (factory.size() >= 25);
     for (const auto& p : factory)
     {
-        const auto params = lynx::presets::apply (lynx::EffectKind::grossBeat, p);
-        const auto t = lynx::grossbeat::rawFromParam (0, params[0]), v = lynx::grossbeat::rawFromParam (1, params[1]);
+        const auto params = yw::presets::apply (yw::EffectKind::grossBeat, p);
+        const auto t = yw::grossbeat::rawFromParam (0, params[0]), v = yw::grossbeat::rawFromParam (1, params[1]);
         CHECK (t >= 0 && t < 36 && v >= 0 && v < 36);
         if (p.name != "Default")
             CHECK (! state.slots[(std::size_t) t].name.empty() || ! state.slots[(std::size_t) (36 + v)].name.empty());
@@ -281,22 +281,22 @@ TEST (gb168_factory_slots_are_named_distinct_and_used_by_presets)
 
     // Spin back: the last beat plays backwards (a rising ramp comes out falling); Sidechain hard: silent on the beat,
     // back to full within the beat
-    const auto timeNames = lynx::grossbeat::slotNames (lynx::grossbeat::factoryContainer(), false);
-    const auto volumeNames = lynx::grossbeat::slotNames (lynx::grossbeat::factoryContainer(), true);
+    const auto timeNames = yw::grossbeat::slotNames (yw::grossbeat::factoryContainer(), false);
+    const auto volumeNames = yw::grossbeat::slotNames (yw::grossbeat::factoryContainer(), true);
     const auto spin = gb168Index (timeNames, "Spin back"), duck = gb168Index (volumeNames, "Sidechain hard");
     CHECK (spin > 0 && duck > 0);
     std::vector<float> ramp (100000);
     for (std::size_t i = 0; i < ramp.size(); ++i)
         ramp[i] = (float) i / (float) ramp.size();
-    const auto back = renderGrossBeat (gb168Slot (spin, 0, lynx::grossbeat::factoryContainer()), ramp, 48000.0, 120.0);
+    const auto back = renderGrossBeat (gb168Slot (spin, 0, yw::grossbeat::factoryContainer()), ramp, 48000.0, 120.0);
     CHECK (back[15 + 60000] < back[15 + 70000]);  // beat 3: forwards
     CHECK (back[15 + 80000] > back[15 + 90000]);  // beat 4: backwards
-    const auto ducked = renderGrossBeat (gb168Slot (0, duck, lynx::grossbeat::factoryContainer()), std::vector<float> (100000, 1.0f), 48000.0, 120.0);
+    const auto ducked = renderGrossBeat (gb168Slot (0, duck, yw::grossbeat::factoryContainer()), std::vector<float> (100000, 1.0f), 48000.0, 120.0);
     CHECK (ducked[15 + 24000 + 50] < 0.3f && ducked[15 + 24000 + 20000] > 0.95f);
 }
 
-// with FL installed, FL's own Gross Beat presets are listed beside LYNX SHARE's (the preset menu asks flPluginsForEffect)
+// with FL installed, FL's own Gross Beat presets are listed beside YW Studio's (the preset menu asks flPluginsForEffect)
 TEST (gb168_fl_presets_are_listed)
 {
-    CHECK (lynx::flPluginsForEffect (lynx::EffectKind::grossBeat) == std::vector<std::string> { "Gross Beat" });
+    CHECK (yw::flPluginsForEffect (yw::EffectKind::grossBeat) == std::vector<std::string> { "Gross Beat" });
 }

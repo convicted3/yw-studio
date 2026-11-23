@@ -11,7 +11,7 @@
 #include "core/KeyRegions.h"
 #include "core/MidiOut.h"
 
-namespace lynx::midiimport
+namespace yw::midiimport
 {
 namespace
 {
@@ -281,7 +281,7 @@ void setTempoEvents (Pattern& pattern, const std::vector<PatternEvent>& tempos, 
     pattern.events.push_back (std::move (lane));
 }
 
-// Round 190nu (core/KeyRegions.h; LYNX extra): the file's key signatures as the new pattern's key markers. A key at the
+// Round 190nu (core/KeyRegions.h; YW extra): the file's key signatures as the new pattern's key markers. A key at the
 // start becomes the project key when the import starts a new project (else a key marker there, unless it is the project
 // key already); the later ones key markers. (FL's MIDI import keeps no key.)
 static void setKeyMarkers (Song& song, Pattern& pattern, const std::vector<ParsedMidi::KeyChange>& keys, std::int64_t shift, bool newProject)
@@ -425,4 +425,4 @@ std::vector<int> importIntoChannel (Song& song, int channel, const ParsedMidi& m
     }
     return indices;
 }
-} // namespace lynx::midiimport
+} // namespace yw::midiimport

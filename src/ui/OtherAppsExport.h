@@ -2,7 +2,7 @@
 
 // File › Export › "For other apps..." (round 184a, slice S9; the Simple workflow's Finish dock offers it too): one folder
 // with stems, MIDI, a Live set, an FL Studio project, the mixdown and a README (the plan: core/ExportBundle.h). Every
-// file comes from a writer LYNX already has: engine/Exporter (stems, mixdown), the MIDI file writer, writeAlsProject,
+// file comes from a writer YW already has: engine/Exporter (stems, mixdown), the MIDI file writer, writeAlsProject,
 // engine/FlStudioExport. One progress window; a step that fails is listed at the end and the others are still written.
 
 #include <functional>
@@ -12,7 +12,7 @@
 #include "core/FlpExport.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // The options window (the folder is asked for after it), then the export and its report.
 void showOtherAppsExportDialog (AudioEngine& engine, const juce::File& suggestedFolder, const juce::String& projectName);
@@ -64,4 +64,4 @@ bool writeMidi (const Song& song, const std::vector<Note>& notes, const juce::Fi
 // Appends silence to the WAV `file` up to `frames` (same format); nothing when it is that long already.
 bool padWav (const juce::File& file, juce::int64 frames, juce::String& error);
 } // namespace otherapps
-} // namespace lynx
+} // namespace yw

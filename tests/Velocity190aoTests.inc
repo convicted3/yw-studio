@@ -1,10 +1,10 @@
-// Round 190ao (pain point 12, LYNX's own: FL's wrapper has no velocity setting): a hosted instrument's own velocity
+// Round 190ao (pain point 12, YW's own: FL's wrapper has no velocity setting): a hosted instrument's own velocity
 // curve or fixed velocity for the notes played into it. core/Preferences.h mapPluginVelocity; PluginRef::velocityMode.
 
 TEST (velocity190ao_the_default_follows_the_midi_settings_exactly)
 {
-    using namespace lynx::prefs;
-    lynx::PluginRef ref; // a new plugin, and a project saved before the setting existed
+    using namespace yw::prefs;
+    yw::PluginRef ref; // a new plugin, and a project saved before the setting existed
     CHECK (ref.velocityMode == pluginVelocityFollow && ref.fixedVelocity == defaultFixedVelocity);
     for (const auto global : { VelocityCurve::linear, VelocityCurve::soft, VelocityCurve::hard, VelocityCurve::fixed })
         for (const auto v : { 0.0f, 0.01f, 0.25f, 0.5f, 0.8f, 1.0f })
@@ -13,7 +13,7 @@ TEST (velocity190ao_the_default_follows_the_midi_settings_exactly)
 
 TEST (velocity190ao_a_plugin_curve_replaces_the_midi_settings_curve)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     // whatever the MIDI settings say, the plugin's own curve is the one applied (once, not on top of the other)
     for (const auto global : { VelocityCurve::linear, VelocityCurve::soft, VelocityCurve::hard, VelocityCurve::fixed })
     {
@@ -27,7 +27,7 @@ TEST (velocity190ao_a_plugin_curve_replaces_the_midi_settings_curve)
 
 TEST (velocity190ao_fixed_velocity_is_the_plugins_own_value)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     CHECK (pluginVelocityFixed == 4);
     for (const auto v : { 0.01f, 0.4f, 1.0f })
     {
@@ -45,32 +45,32 @@ TEST (velocity190ao_fixed_velocity_is_the_plugins_own_value)
 
 TEST (velocity190ao_the_setting_is_part_of_the_plugin_and_never_recreates_it)
 {
-    lynx::PluginRef a, b;
-    b.velocityMode = lynx::prefs::pluginVelocityFixed;
+    yw::PluginRef a, b;
+    b.velocityMode = yw::prefs::pluginVelocityFixed;
     CHECK (! (a == b));
     b = a;
     b.fixedVelocity = 64;
     CHECK (! (a == b));
     // changing it keeps the running plugin (the rack build compares the processing options only)
-    lynx::Song song;
-    song.mixer = lynx::Song::defaultMixer (2);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::plugin;
+    yw::Song song;
+    song.mixer = yw::Song::defaultMixer (2);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::plugin;
     c.plugin.id = "synth";
     song.channels.push_back (c);
     song.patterns.emplace_back();
     song.uniqueInstances();
     int made = 0;
-    lynx::RackState::Factories f;
-    f.pluginInstruments = [&made] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Instrument> {
+    yw::RackState::Factories f;
+    f.pluginInstruments = [&made] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Instrument> {
         ++made;
         return std::make_shared<reload190ao::FakeSynth> (std::string());
     };
-    const auto first = lynx::RackState::build (song, nullptr, 48000.0, f);
+    const auto first = yw::RackState::build (song, nullptr, 48000.0, f);
     auto shape = reload190ao::shapeOf (*first);
-    song.channels[0].plugin.velocityMode = lynx::prefs::pluginVelocityFixed;
+    song.channels[0].plugin.velocityMode = yw::prefs::pluginVelocityFixed;
     song.channels[0].plugin.fixedVelocity = 90;
-    const auto second = lynx::RackState::build (song, &shape, 48000.0, f);
+    const auto second = yw::RackState::build (song, &shape, 48000.0, f);
     CHECK (made == 1);
     CHECK (second->instruments[0] == first->instruments[0]);
 }

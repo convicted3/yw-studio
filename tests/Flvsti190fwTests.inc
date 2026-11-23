@@ -1,4 +1,4 @@
-// --- round 190fw: Image-Line's "FL Studio VSTi" in LYNX (issue #162) ------------------------------------------------
+// --- round 190fw: Image-Line's "FL Studio VSTi" in YW (issue #162) ------------------------------------------------
 // Both FL Studio VST plugins were blacklisted by a scan child killed at the fixed 30 s limit while the FL engine was
 // still booting. The parent now watches what the child does (core/PluginScanPolicy.h): a child that works or shows a
 // window gets more time (up to a cap), one that sits still ends at the old limit.
@@ -7,9 +7,9 @@
 
 namespace flvsti190fw
 {
-lynx::scanpolicy::ChildActivity act (long long cpuMs, long long readBytes = 0, long long faults = 0, int windows = 0)
+yw::scanpolicy::ChildActivity act (long long cpuMs, long long readBytes = 0, long long faults = 0, int windows = 0)
 {
-    lynx::scanpolicy::ChildActivity a;
+    yw::scanpolicy::ChildActivity a;
     a.cpuMs = cpuMs;
     a.readBytes = readBytes;
     a.faults = faults;
@@ -20,7 +20,7 @@ lynx::scanpolicy::ChildActivity act (long long cpuMs, long long readBytes = 0, l
 
 TEST (flvsti190fw_scan_child_work_is_cpu_reads_faults_or_a_window)
 {
-    using namespace lynx::scanpolicy;
+    using namespace yw::scanpolicy;
     using flvsti190fw::act;
     // CPU: 5 % of the interval or more
     CHECK (childWorked (act (1000), act (1025), 500));
@@ -39,11 +39,11 @@ TEST (flvsti190fw_scan_child_work_is_cpu_reads_faults_or_a_window)
 
 TEST (flvsti190fw_scan_child_that_sits_still_ends_at_the_old_limit)
 {
-    using namespace lynx::scanpolicy;
+    using namespace yw::scanpolicy;
     using flvsti190fw::act;
     ChildWatch watch;
     CHECK (watch.limitMs() == baseTimeoutMs);
-    // no report at all (the 32-bit bridge's child, an older LYNX): exactly the old rule
+    // no report at all (the 32-bit bridge's child, an older YW): exactly the old rule
     CHECK (! watch.expired (29999));
     CHECK (watch.expired (30000));
     CHECK (std::string (watch.why (30000)) == "no sign of work");
@@ -57,7 +57,7 @@ TEST (flvsti190fw_scan_child_that_sits_still_ends_at_the_old_limit)
 
 TEST (flvsti190fw_scan_child_that_works_gets_more_time_up_to_the_cap)
 {
-    using namespace lynx::scanpolicy;
+    using namespace yw::scanpolicy;
     using flvsti190fw::act;
     // FL's engine still booting at 30 s: kept while it works
     ChildWatch boot;
@@ -97,7 +97,7 @@ TEST (flvsti190fw_scan_child_that_works_gets_more_time_up_to_the_cap)
 
 TEST (flvsti190fw_scan_child_limit_still_grows_with_the_class_count)
 {
-    using namespace lynx::scanpolicy;
+    using namespace yw::scanpolicy;
     // the Waves shell rule (round 107) is unchanged; and the cap never shortens a large shell's limit
     for (const int classes : { 0, 1, 2, 400, 100000 })
     {
@@ -111,7 +111,7 @@ TEST (flvsti190fw_scan_child_limit_still_grows_with_the_class_count)
     for (int t = 0; t <= timeoutMs (400); t += 5000)
         shell.report (t, flvsti190fw::act (cpu += 5000));
     CHECK (! shell.expired (timeoutMs (400) - 1));
-    // test limits (LYNX_TEST_SCAN_MS) are the constructor's
+    // test limits (YW_TEST_SCAN_MS) are the constructor's
     ChildWatch quick (2000, 2000, 8000);
     CHECK (quick.limitMs() == 2000);
     CHECK (quick.expired (2000));
@@ -119,7 +119,7 @@ TEST (flvsti190fw_scan_child_limit_still_grows_with_the_class_count)
 
 TEST (flvsti190fw_failed_rows_show_the_file_format)
 {
-    using lynx::scanpolicy::formatOfFile;
+    using yw::scanpolicy::formatOfFile;
     // (a VST2 .dll was listed as "VST3" in the Plugin Manager's failed rows)
     CHECK (formatOfFile ("C:\\Program Files\\Common Files\\VST2\\FL Studio VSTi.dll") == "VST");
     CHECK (formatOfFile ("C:\\Program Files\\Common Files\\VST2\\FL Studio VSTi (Multi).DLL") == "VST");
@@ -127,7 +127,7 @@ TEST (flvsti190fw_failed_rows_show_the_file_format)
     CHECK (formatOfFile ("C:\\Program Files\\Common Files\\VST3\\Harrison\\Harrison DeNoiser.vst3") == "VST3");
     CHECK (formatOfFile ("C:\\Program Files\\Common Files\\VST3\\Sonible.vst3\\") == "VST3");
     CHECK (formatOfFile ("C:\\Program Files\\Common Files\\CLAP\\Surge XT.clap") == "CLAP");
-    CHECK (formatOfFile ("urn:lynx-test:a") == "LV2");
+    CHECK (formatOfFile ("urn:yw-test:a") == "LV2");
     CHECK (formatOfFile ("http://lsp-plug.in/plugins/lv2/comp") == "LV2");
     CHECK (formatOfFile ("lv2-folders:/usr/lib/lv2") == "LV2");
     CHECK (formatOfFile ("/Library/Audio/Plug-Ins/Components/Foo.component") == "AudioUnit");

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 
-namespace lynx::loadtrace
+namespace yw::loadtrace
 {
 namespace
 {
@@ -270,4 +270,4 @@ std::vector<std::string> RootProbe::missingRoots() const
             out.push_back (root);
     return out;
 }
-} // namespace lynx::loadtrace
+} // namespace yw::loadtrace

@@ -7,19 +7,19 @@
 namespace inst169h
 {
 // FL's Ogun preset "300 Ft Glass Bowl" as a new channel gets it (natives::makeChannel), or nullopt without FL
-std::optional<lynx::ChannelDef> ogunChannel()
+std::optional<yw::ChannelDef> ogunChannel()
 {
     if (realFlpDir.empty())
         return std::nullopt;
-    auto c = lynx::natives::makeChannel (lynx::InstrumentKind::ogun, natives142::flAccess());
-    if (! c || c->instrument != lynx::InstrumentKind::ogun || ! lynx::ogunStateUsable (c->pluginState))
+    auto c = yw::natives::makeChannel (yw::InstrumentKind::ogun, natives142::flAccess());
+    if (! c || c->instrument != yw::InstrumentKind::ogun || ! yw::ogunStateUsable (c->pluginState))
         return std::nullopt;
     return c;
 }
 
 // renders `blocks` blocks of 512 of a held C5, calling `between (block)` before each block
 template <typename Between>
-std::vector<float> run (lynx::Instrument& inst, int blocks, Between&& between)
+std::vector<float> run (yw::Instrument& inst, int blocks, Between&& between)
 {
     std::vector<float> out;
     std::vector<float> l (512), r (512);
@@ -43,7 +43,7 @@ double energy (const std::vector<float>& v, std::size_t from, std::size_t to)
     return e;
 }
 
-float normalisedOf (const lynx::EngineParam& p, int raw) { return (float) (raw - p.low) / (p.high - p.low); }
+float normalisedOf (const yw::EngineParam& p, int raw) { return (float) (raw - p.low) / (p.high - p.low); }
 } // namespace inst169h
 
 TEST (inst169h_ogun_automation_is_live)
@@ -52,9 +52,9 @@ TEST (inst169h_ogun_automation_is_live)
     const auto channel = ogunChannel();
     if (! channel)
         return;
-    const auto& table = lynx::ogunEngineParams();
+    const auto& table = yw::ogunEngineParams();
     auto fresh = [&] {
-        auto inst = lynx::makeOgunInstrument();
+        auto inst = yw::makeOgunInstrument();
         inst->prepare (44100.0);
         inst->configure (*channel, 140.0);
         return inst;
@@ -66,8 +66,8 @@ TEST (inst169h_ogun_automation_is_live)
     CHECK (energy (reference, 10240, 20480) > 1e-3);
 
     // the parameter's own value again: nothing changes (bit for bit)
-    const auto vol = *lynx::findEngineParam (table, 0);
-    const auto p0 = *lynx::ogunParam (channel->pluginState, 0);
+    const auto vol = *yw::findEngineParam (table, 0);
+    const auto p0 = *yw::ogunParam (channel->pluginState, 0);
     {
         auto inst = fresh();
         const auto same = run (*inst, 40, [&] (int b) { if (b == 5) inst->setParameter (0, normalisedOf (vol, p0)); });
@@ -101,8 +101,8 @@ TEST (inst169h_ogun_automation_is_live)
     // automatable index is safe at its ends while a note plays (effects re-designed live, lines re-allocated /
     // cleared like FL)
     {
-        const auto crs = *lynx::findEngineParam (table, 1);
-        const auto p1 = *lynx::ogunParam (channel->pluginState, 1);
+        const auto crs = *yw::findEngineParam (table, 1);
+        const auto p1 = *yw::ogunParam (channel->pluginState, 1);
         auto inst = fresh();
         const auto out = run (*inst, 40, [&] (int b) {
             if (b == 10)
@@ -142,12 +142,12 @@ TEST (inst169h_ogun_knob_edits_keep_the_note_and_automation_survives_a_rebuild)
     const auto channel = ogunChannel();
     if (! channel)
         return;
-    auto inst = lynx::makeOgunInstrument();
+    auto inst = yw::makeOgunInstrument();
     inst->prepare (44100.0);
     inst->configure (*channel, 140.0);
     // a knob of the editor (the state changes in P[0…48] only): the held note goes on, now silent with Volume 0
     auto edited = *channel;
-    CHECK (lynx::ogunSetParam (edited.pluginState, 0, 0));
+    CHECK (yw::ogunSetParam (edited.pluginState, 0, 0));
     const auto out = run (*inst, 30, [&] (int b) {
         if (b == 10)
             inst->configure (edited, 140.0);
@@ -160,7 +160,7 @@ TEST (inst169h_ogun_knob_edits_keep_the_note_and_automation_survives_a_rebuild)
     CHECK (energy (out, 24 * 512, 30 * 512) > 1e-4);
 
     // an automated value outlives a rebuild of the engine (a new tempo)
-    auto inst2 = lynx::makeOgunInstrument();
+    auto inst2 = yw::makeOgunInstrument();
     inst2->prepare (44100.0);
     inst2->configure (*channel, 140.0);
     inst2->setParameter (0, 0.0f);
@@ -176,29 +176,29 @@ TEST (inst169h_ogun_automation_clip_drives_the_engine)
     if (! channel)
         return;
     auto render = [&] (bool automated) {
-        lynx::Song s;
-        s.mixer = lynx::Song::defaultMixer (2);
+        yw::Song s;
+        s.mixer = yw::Song::defaultMixer (2);
         s.channels.push_back (*channel);
         s.channels[0].mixerTrack = 0;
         s.patterns.emplace_back();
-        s.mode = lynx::PlayMode::song;
+        s.mode = yw::PlayMode::song;
         if (automated)
         {
-            lynx::Automation a; // Master volume: held at 0
-            a.target = { lynx::AutomationTargetKind::channelParam, 0, 0, 0 };
-            a.points = { { 0, 0.0f, 0.0f }, { lynx::ppq * 16, 0.0f, 0.0f } };
+            yw::Automation a; // Master volume: held at 0
+            a.target = { yw::AutomationTargetKind::channelParam, 0, 0, 0 };
+            a.points = { { 0, 0.0f, 0.0f }, { yw::ppq * 16, 0.0f, 0.0f } };
             s.automations.push_back (a);
-            lynx::Clip clip;
-            clip.kind = lynx::ClipKind::automation;
+            yw::Clip clip;
+            clip.kind = yw::ClipKind::automation;
             clip.automation = 0;
-            clip.length = lynx::ppq * 16;
+            clip.length = yw::ppq * 16;
             s.playlist.push_back (clip);
         }
-        auto state = lynx::RackState::build (s, nullptr, 48000.0);
-        lynx::RackRenderer r;
+        auto state = yw::RackState::build (s, nullptr, 48000.0);
+        yw::RackRenderer r;
         r.prepare (48000.0, 256);
-        lynx::LiveEventQueue live;
-        lynx::NoteEvent on;
+        yw::LiveEventQueue live;
+        yw::NoteEvent on;
         on.channel = 0;
         on.key = 60;
         on.velocity = 0.9f;
@@ -206,7 +206,7 @@ TEST (inst169h_ogun_automation_clip_drives_the_engine)
         std::vector<float> l (256), rr (256), all;
         for (int b = 0; b < 120; ++b)
         {
-            r.process (state.get(), true, (double) b * 256.0 * 140.0 / 60.0 * lynx::ppq / 48000.0, 256, l.data(), rr.data(), b == 0 ? &live : nullptr);
+            r.process (state.get(), true, (double) b * 256.0 * 140.0 / 60.0 * yw::ppq / 48000.0, 256, l.data(), rr.data(), b == 0 ? &live : nullptr);
             all.insert (all.end(), l.begin(), l.end());
         }
         return energy (all, 20 * 256, all.size());
@@ -220,14 +220,14 @@ TEST (inst169h_autogun_shot_channel)
 {
     if (realFlpDir.empty())
         return;
-    const auto c = lynx::natives::autogunShotChannel (natives142::flAccess());
+    const auto c = yw::natives::autogunShotChannel (natives142::flAccess());
     CHECK (c.has_value());
     if (! c)
         return;
-    CHECK (c->instrument == lynx::InstrumentKind::autogun && c->name == "Autogun" && lynx::autogunStateUsable (c->pluginState));
-    CHECK (lynx::modelparams::tableOf (c->instrument) != nullptr);
+    CHECK (c->instrument == yw::InstrumentKind::autogun && c->name == "Autogun" && yw::autogunStateUsable (c->pluginState));
+    CHECK (yw::modelparams::tableOf (c->instrument) != nullptr);
     // Magic dust (P63) is live from automation: the stage switches off at 0 (FL's Gen_Render test), the voice goes on
-    auto inst = lynx::makeAutogunInstrument();
+    auto inst = yw::makeAutogunInstrument();
     inst->prepare (44100.0);
     inst->configure (*c, 140.0);
     const auto out = inst169h::run (*inst, 20, [&] (int b) {

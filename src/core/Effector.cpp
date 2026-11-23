@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <vector>
 
-namespace lynx::effector
+namespace yw::effector
 {
 namespace
 {
@@ -797,4 +797,4 @@ std::unique_ptr<Effect> make (bool kiloheartsLaw, int kiloheartsLatency)
 {
     return std::make_unique<Effector> (kiloheartsLaw, kiloheartsLatency);
 }
-} // namespace lynx::effector
+} // namespace yw::effector

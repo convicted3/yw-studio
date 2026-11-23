@@ -9,9 +9,9 @@
 namespace audiox190aq
 {
 // channel 0 plays a DC of 0.25 on insert 1, which sends to insert 2; insert 2 goes to the Master
-inline std::vector<float> renderSend (const std::function<void (lynx::Song&)>& tweak, int blocks = 16)
+inline std::vector<float> renderSend (const std::function<void (yw::Song&)>& tweak, int blocks = 16)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (3);
     s.mixer[1].sends.push_back ({ 2, 1.0f });
@@ -59,7 +59,7 @@ inline float peakOfTail (const std::vector<float>& x)
 
 TEST (audiox190aq_pre_fader_send_ignores_the_fader)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto post = audiox190aq::renderSend ([] (Song&) {});
     CHECK (audiox190aq::peakOfTail (post) > 0.05f);
 
@@ -101,7 +101,7 @@ TEST (audiox190aq_pre_fader_send_ignores_the_fader)
 
 TEST (audiox190aq_pre_fader_send_keeps_the_post_fader_route)
 {
-    using namespace lynx;
+    using namespace yw;
     // one insert with a pre-fader send and its post-fader route to Master: the Master route follows the fader, the
     // send does not; a second, post-fader send of the same insert follows it too
     auto build = [] (float fader, bool pre) {
@@ -125,7 +125,7 @@ TEST (audiox190aq_pre_fader_send_keeps_the_post_fader_route)
 
 TEST (audiox190aq_pre_fader_send_model)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (4);
     s.setRoute (1, 2, true);
@@ -156,7 +156,7 @@ TEST (audiox190aq_pre_fader_send_model)
 
 TEST (audiox190aq_pre_fader_send_in_flp_and_als)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = Song::makeDefault();
     s.setRoute (1, 5, true);
     s.setRoute (2, 5, true);
@@ -191,7 +191,7 @@ TEST (audiox190aq_pre_fader_send_in_flp_and_als)
             for (const auto& send : m.sends)
                 if (send.level > 0.0f) // (round 190kc: the -inf sends of the other tracks come back as sends at 0)
                     (send.pre ? pre : post)++;
-        CHECK (pre == 2); // Live's "Pre" comes back as LYNX's pre-fader sends
+        CHECK (pre == 2); // Live's "Pre" comes back as YW's pre-fader sends
     }
     // a return fed both ways stays "Post" in Live, with a note
     Song mixed = s;
@@ -206,7 +206,7 @@ TEST (audiox190aq_pre_fader_send_in_flp_and_als)
 namespace audiox190aq
 {
 // a plugin stand-in that delays by `latency` samples and reports it (a look-ahead effect)
-class Latent final : public lynx::Effect
+class Latent final : public yw::Effect
 {
 public:
     explicit Latent (int samples) : latency (samples), line (samples) {}
@@ -216,7 +216,7 @@ public:
         line.clear();
         ++resets;
     }
-    void process (float* l, float* r, int n, const lynx::EffectParams&, double) noexcept override
+    void process (float* l, float* r, int n, const yw::EffectParams&, double) noexcept override
     {
         line.process (l, r, n);
         ++blocks;
@@ -226,22 +226,22 @@ public:
 
 private:
     int latency;
-    lynx::DelayLine line;
+    yw::DelayLine line;
 };
 
-inline lynx::EffectSlot latentSlot (const char* id)
+inline yw::EffectSlot latentSlot (const char* id)
 {
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::plugin;
     fx.plugin.id = id;
     return fx;
 }
 
 // insert 1 (the singer: input 0, a 100-sample plugin and an EQ) → insert 2 (a bus with a 40-sample plugin) → Master
 // (a 60-sample plugin); insert 3 (a 25-sample plugin, not on that path) → Master. One impulse channel on each of 1, 3.
-inline lynx::Song lowLatencySong()
+inline yw::Song lowLatencySong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (4); // the Master and inserts 1 to 4
     s.mixer[1].inputChannel = 0;
@@ -266,17 +266,17 @@ inline lynx::Song lowLatencySong()
     return s;
 }
 
-inline lynx::RackState::Factories lowLatencyFactories (std::vector<char> tracks)
+inline yw::RackState::Factories lowLatencyFactories (std::vector<char> tracks)
 {
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     f.samples = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.assign (64, 0.0f);
         d->left[0] = 1.0f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    f.pluginEffects = [] (const lynx::PluginRef& ref, double) -> std::shared_ptr<lynx::Effect> {
+    f.pluginEffects = [] (const yw::PluginRef& ref, double) -> std::shared_ptr<yw::Effect> {
         return std::make_shared<Latent> (std::atoi (ref.id.c_str() + 3));
     };
     f.lowLatencyTracks = std::move (tracks);
@@ -284,12 +284,12 @@ inline lynx::RackState::Factories lowLatencyFactories (std::vector<char> tracks)
 }
 
 // where channel `channel`'s impulse comes out of the Master (the first sample above 0.01), −1 = nowhere in 512
-inline int impulseAt (const lynx::RackState& state, int channel)
+inline int impulseAt (const yw::RackState& state, int channel)
 {
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = channel;
     on.key = 60;
     on.velocity = 1.0f;
@@ -308,7 +308,7 @@ inline int impulseAt (const lynx::RackState& state, int channel)
 
 TEST (audiox190aq_low_latency_chooses_the_live_path)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = audiox190aq::lowLatencySong();
     using Tracks = std::vector<char>;
 
@@ -367,7 +367,7 @@ TEST (audiox190aq_low_latency_chooses_the_live_path)
 
 TEST (audiox190aq_low_latency_pdc_before_during_after)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = audiox190aq::lowLatencySong();
 
     // before: the singer's path is 100 + 40 + 60 = 200 samples late, insert 3's path waits for it
@@ -424,7 +424,7 @@ TEST (audiox190aq_low_latency_pdc_before_during_after)
 
 TEST (audiox190aq_low_latency_slot_restarts_clean)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = audiox190aq::lowLatencySong();
     auto before = RackState::build (s, nullptr, 48000.0, audiox190aq::lowLatencyFactories ({}));
     auto during = RackState::build (s, before.get(), 48000.0, audiox190aq::lowLatencyFactories (lowlatency::bypassTracks (s, { 1 })));
@@ -467,9 +467,9 @@ TEST (audiox190aq_low_latency_slot_restarts_clean)
 namespace audiox190aq
 {
 // a drum-like loop of `beats` beats at `bpm`: a kick on each beat, a noise hat between, over a quiet tone
-inline std::shared_ptr<lynx::SampleData> drumLoop (double bpm, int beats, double rate = 44100.0, double tailSeconds = 0.0)
+inline std::shared_ptr<yw::SampleData> drumLoop (double bpm, int beats, double rate = 44100.0, double tailSeconds = 0.0)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     const auto n = (std::size_t) std::llround (((double) beats * 60.0 / bpm + tailSeconds) * rate);
     d->left.assign (n, 0.0f);
@@ -496,7 +496,7 @@ inline std::shared_ptr<lynx::SampleData> drumLoop (double bpm, int beats, double
 
 TEST (audiox190aq_preview_tempo_from_the_name)
 {
-    using namespace lynx;
+    using namespace yw;
     using previewtempo::nameTempo;
     // "bpm" beside a number, either side, any case; the file must be a beat long or more
     CHECK (nameTempo ("Break Scatty 174 bpm.wav", 4.0) == 174.0);
@@ -536,8 +536,8 @@ TEST (audiox190aq_preview_tempo_from_the_name)
 
 TEST (audiox190aq_preview_tempo_detected_only_for_loops)
 {
-    using namespace lynx;
-    // a 4-bar drum loop with no tempo in its name: LYNX's detection finds it
+    using namespace yw;
+    // a 4-bar drum loop with no tempo in its name: YW's detection finds it
     const auto loop = audiox190aq::drumLoop (120.0, 16);
     const auto found = previewtempo::find (*loop, "Drums.wav");
     CHECK (found.source == previewtempo::Source::detected && std::abs (found.bpm - 120.0) < 0.3);
@@ -561,7 +561,7 @@ TEST (audiox190aq_preview_tempo_detected_only_for_loops)
 
 TEST (audiox190aq_preview_stretch_ratio_and_beat_start)
 {
-    using namespace lynx;
+    using namespace yw;
     using previewtempo::stretchRatio;
     CHECK (std::abs (stretchRatio (120.0, 140.0) - 120.0 / 140.0) < 1.0e-12); // faster: shorter
     CHECK (std::abs (stretchRatio (174.0, 140.0) - 174.0 / 140.0) < 1.0e-12);
@@ -578,7 +578,7 @@ TEST (audiox190aq_preview_stretch_ratio_and_beat_start)
             CHECK (r >= 1.0 / 1.5 - 1.0e-9 && r <= 1.5 + 1.0e-9);
         }
 
-    // the stretch itself (LYNX's own stretcher): the loop comes out at the project's tempo, the same pitch
+    // the stretch itself (YW's own stretcher): the loop comes out at the project's tempo, the same pitch
     const auto loop = audiox190aq::drumLoop (120.0, 16);
     const auto ratio = stretchRatio (120.0, 140.0);
     const auto out = timeStretch (*loop, ratio, StretchMethod::general);

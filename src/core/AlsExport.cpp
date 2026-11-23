@@ -36,7 +36,7 @@
 
 // Evidence tags as in docs/analise/ALS_FORMAT.md. [LIVE] = checked by opening the result in Live 12.4.
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -155,7 +155,7 @@ std::string num (double v)
     if (std::abs (v) < 1e-12)
         return "0";
    #if defined (__APPLE__)
-    // Floating-point std::to_chars needs macOS 13.3 and LYNX targets 11.0: shortest precision that reads back exactly.
+    // Floating-point std::to_chars needs macOS 13.3 and YW targets 11.0: shortest precision that reads back exactly.
     for (int precision = 15;; ++precision)
     {
         std::ostringstream text;
@@ -264,7 +264,7 @@ struct LiveTrack
     enum class Kind { midi, audio, group, ret } kind = Kind::midi;
     std::string name;
     std::uint32_t colour = 0;
-    int insert = 0;   // the LYNX mixer insert whose fader / effects / sends the track carries (0: none of its own)
+    int insert = 0;   // the YW mixer insert whose fader / effects / sends the track carries (0: none of its own)
     int channel = -1; // midi: the channel
     int row = -1;     // audio: the Playlist track
     int group = -1;   // index of its group track in the list (-1: none)
@@ -516,9 +516,9 @@ struct Exporter
     }
 
 
-    // ---- racks (round 183c, REA_rodada183c): a LYNX rack as Live's Audio Effect / Instrument / MIDI Effect Rack, with
+    // ---- racks (round 183c, REA_rodada183c): a YW rack as Live's Audio Effect / Instrument / MIDI Effect Rack, with
     // its chains, zones, chain mixers, macros, variations and the macro mappings onto what Live gets (plugins, nested
-    // racks, chain volume / pan, the selector). LYNX's built-in effects in a chain are listed, as on a track.
+    // racks, chain volume / pan, the selector). YW's built-in effects in a chain are listed, as on a track.
 
     // A macro mapping on a parameter element: Live's KeyMidi (channel 16, the macro) before its Manual, and the range in
     // the parameter's own units [DATA]
@@ -536,7 +536,7 @@ struct Exporter
     }
 
     // ---- Drum Racks (round 190ec, ALS_FORMAT.md §7): a pad's BranchInfo, its sends and Audio To, the return chains, and
-    // a LYNX Sampler on a pad as Live's Simpler
+    // a YW Sampler on a pad as Live's Simpler
     bool rackPresetMode = false; // (round 190hr: writing an .adg)
     std::string drumTarget {}; // "AudioOut/Track.<track Id>/DeviceIn.<device Id>" of the Drum Rack about to be written (top level)
     static constexpr const char* sendFloor = "0.0003162277571"; // (Live's −70 dB send floor = −inf [DATA])
@@ -625,8 +625,8 @@ struct Exporter
     }
 
     // A Helix channel → Live's Wavetable (round 190ja): the import backwards — Helix keeps Wavetable's units, so every value
-    // goes out as it is; the tables go out as the Live table that maps onto each (Live's own content), and their LYNX
-    // names in the device's info text so LYNX reads them back exactly [MODEL]
+    // goes out as it is; the tables go out as the Live table that maps onto each (Live's own content), and their YW
+    // names in the device's info text so YW reads them back exactly [MODEL]
     bool helixDevice (const ChannelDef& ch, Node& out)
     {
         out = sk["InstrumentVector"];
@@ -674,7 +674,7 @@ struct Exporter
         return true;
     }
 
-    // A LYNX Sampler on a pad → Live's Simpler [DATA: Live's default pad Simpler; the import's laws backwards
+    // A YW Sampler on a pad → Live's Simpler [DATA: Live's default pad Simpler; the import's laws backwards
     // (core/AlsDevices.cpp applySimpler)]: One-Shot when it plays the whole sample (release 0), else Classic with its
     // envelope; Volume (dB), Pan, Transpose, Reverse; one sample part per zone (or the sample, its region in frames)
     bool simplerDevice (const ChannelDef& ch, Node& out)
@@ -826,7 +826,7 @@ struct Exporter
                     bool made = false;
                     if (rackPresetMode && ((node.generator && node.channel.instrument == InstrumentKind::plugin) || (! node.generator && node.effect.kind == EffectKind::plugin)))
                     {
-                        // [LIVE, round 190hr] Live 12.4.16 closed ("A serious program error") on each LYNX-written .adg
+                        // [LIVE, round 190hr] Live 12.4.16 closed ("A serious program error") on each YW-written .adg
                         // holding a VST3 plugin device (kHs Gain, no saved state), while the same racks without it, nested
                         // racks, Instrument / MIDI Effect / Drum Racks loaded: plugins stay out of rack presets until a
                         // plugin with a state Live saved is checked
@@ -938,7 +938,7 @@ struct Exporter
                         else if (device.name == "PluginDevice" && device.at ("PluginDesc/VstPluginInfo") != nullptr)
                         {
                             // a VST2 parameter (Live keeps 0..1 and the parameter's index as its id [DATA]); VST3 ids are not
-                            // LYNX's indices: listed
+                            // YW's indices: listed
                             if (auto* list = device.child ("ParameterList"))
                             {
                                 Node p = sk["PluginFloatParameter"];
@@ -1108,7 +1108,7 @@ struct Exporter
     // ---- grooves (round 190fm) [SCHEMA 2742-2759: GroovePool{LomId, Grooves, DefaultGrooveId (Live 12)}, Groove Id=…
     // {LomId, Name, Clip, Grid, QuantizationAmount, TimingAmount, RandomAmount, VelocityAmount, Annotation, Selection,
     // SourceContext}; DATA: the shipped Live 12 sets and a Live 11.0.12 set save the same members, SourceContext empty
-    // for a groove that came from no file]. Live's Groove Id = the groove's index in LYNX's pool.
+    // for a groove that came from no file]. Live's Groove Id = the groove's index in YW's pool.
     std::string liveGrooveId (std::uint32_t id) const
     {
         const auto& list = song.grooves.grooves;
@@ -1172,7 +1172,7 @@ struct Exporter
         return out;
     }
 
-    // The set's pool and the main track's GlobalGrooveAmount (percent; LYNX's pool amount 0…1.3)
+    // The set's pool and the main track's GlobalGrooveAmount (percent; YW's pool amount 0…1.3)
     void groovePool (Node& set, Node* main)
     {
         if (main != nullptr)
@@ -1190,7 +1190,7 @@ struct Exporter
             for (std::size_t i = 0; i < song.grooves.grooves.size(); ++i)
                 list->add (grooveNode (song.grooves.grooves[i], (int) i));
         }
-        pool->value ("DefaultGrooveId", "-1"); // (Live 12 only; LYNX has no default groove for new clips)
+        pool->value ("DefaultGrooveId", "-1"); // (Live 12 only; YW has no default groove for new clips)
         if (! song.grooves.grooves.empty())
             note ("Grooves: Live plays them by its own groove law, which may sound slightly different from YW Studio's");
     }
@@ -1514,7 +1514,7 @@ struct Exporter
                 continue;
             // the events: each point, and a curved segment (FL's curve modes, a tension) sampled at 8 steps; round 190gx:
             // a volume segment is also cut until Live's straight line in its own value (its Clip Gain law, measured in
-            // 190gu) keeps LYNX's gain curve within 0.05 dB
+            // 190gu) keeps YW's gain curve within 0.05 dB
             std::vector<std::pair<double, double>> events;
             for (std::size_t k = 0; k < points.size(); ++k)
             {
@@ -1603,8 +1603,8 @@ struct Exporter
         if (curved)
             note ("Clip envelope curves are written as straight segments (8 per curved segment)");
     }
-    static constexpr const char* clipVolumePlaceholder = "@lynx-clip-volume";
-    static constexpr const char* clipPanPlaceholder = "@lynx-clip-pan";
+    static constexpr const char* clipVolumePlaceholder = "@yw-clip-volume";
+    static constexpr const char* clipPanPlaceholder = "@yw-clip-pan";
 
     // after the renumbering: each track's clip envelope placeholders → its own targets' ids
     void clipEnvelopeTargets (Node& track)
@@ -1669,7 +1669,7 @@ struct Exporter
         return slots != nullptr && scene >= 0 && scene < (int) slots->kids.size() ? &slots->kids[(std::size_t) scene] : nullptr;
     }
 
-    // Puts a session clip in a slot; false when the slot already holds one (two LYNX clips met in one Live slot)
+    // Puts a session clip in a slot; false when the slot already holds one (two YW clips met in one Live slot)
     bool putSessionClip (Node& track, int scene, Node clip)
     {
         auto* slot = sessionSlot (track, scene);
@@ -1811,7 +1811,7 @@ struct Exporter
                 continue;
             // (a plugin or an Instrument Rack (round 183c) is a device of its own: its track goes out even with no notes)
             const auto plugin = ch.instrument == InstrumentKind::plugin || rack::isRack (ch);
-            const auto native = ch.instrument == InstrumentKind::helix; // (a LYNX engine with a Live twin, round 190ja)
+            const auto native = ch.instrument == InstrumentKind::helix; // (a YW engine with a Live twin, round 190ja)
             if (! plays[i] && ! plugin && ! native)
                 continue;
             LiveTrack t;
@@ -1988,7 +1988,7 @@ struct Exporter
                 note ("Mixer insert with effects but no channel not exported: " + song.mixer[m].name);
 
         // round 190op (P4): Live has no deactivated tracks (its Track Activator is a mute): a deactivated unit is written with
-        // its Activator off, so the set sounds as LYNX plays it, its devices and their states kept
+        // its Activator off, so the set sounds as YW plays it, its devices and their states kept
         for (auto& t : ordered)
             if ((t.insert > 0 && t.insert < (int) song.mixer.size() && song.mixer[(std::size_t) t.insert].deactivated)
                 || (t.channel >= 0 && t.channel < (int) song.channels.size() && song.channels[(std::size_t) t.channel].deactivated))
@@ -2038,7 +2038,7 @@ struct Exporter
                     if (helixDevice (ch, d))
                     {
                         addDevice (n, std::move (d));
-                        // (round 190mi) Helix+'s values are LYNX's own: Live's Wavetable has no place for them
+                        // (round 190mi) Helix+'s values are YW's own: Live's Wavetable has no place for them
                         const auto st = helixState (ch);
                         bool plus = st[(std::size_t) wt::extBase] >= 0.5;
                         bool used = false;
@@ -2184,7 +2184,7 @@ struct Exporter
                 Node b;
                 b.name = "SendPreBool";
                 b.set ("Id", num (r));
-                // LYNX's pre-fader sends (round 190aq): Live's switch is per return, so a return is "Pre" when every
+                // YW's pre-fader sends (round 190aq): Live's switch is per return, so a return is "Pre" when every
                 // send into it is pre-fader (a mix of both stays "Post", noted below)
                 const auto target = returnInsert[(std::size_t) r];
                 int preSends = 0, postSends = 0;
@@ -2370,9 +2370,9 @@ struct Exporter
                 continue;
             auto& slot = envelopes[t->get ("Id")];
             slot.first = owner;
-            // round als190ka: LYNX's curve (bends, FL's curve modes, its straight fader travel) as Live's straight
+            // round als190ka: YW's curve (bends, FL's curve modes, its straight fader travel) as Live's straight
             // pieces: each segment is cut until what Live plays between two events (straight along its fader for the
-            // gains, core/LiveFader.h) stays within 0.1 dB (gains) or 0.3 % of the range of LYNX's curve
+            // gains, core/LiveFader.h) stays within 0.1 dB (gains) or 0.3 % of the range of YW's curve
             const auto& pts = a.points;
             const auto valueAt = [&pts] (double tick) { return (double) automationCurveAt (pts, tick); };
             double lo = 1.0e300, hi = -1.0e300;
@@ -2489,7 +2489,7 @@ AlsExportResult exportAls (const Song& input, const AlsExportOptions& options)
         result.notes.push_back ("internal error: the set skeletons could not be read");
         return result;
     }
-    // track versions (round 190pe, a LYNX extra): Live has none; each track goes over as the version it plays
+    // track versions (round 190pe, a YW extra): Live has none; each track goes over as the version it plays
     std::optional<Song> stripped;
     if (trackversions::any (input))
     {
@@ -2540,6 +2540,6 @@ bool alsSampleNeedsWav (const std::string& extension, const std::uint8_t* head, 
         return ! ogg && riffWave; // a WAV file named .ogg
     if (ext == "aif" || ext == "aiff" || ext == "flac" || ext == "mp3")
         return ogg || riffWave; // the content is not what the name says
-    return true; // WavPack (.wv) and every other type LYNX decodes
+    return true; // WavPack (.wv) and every other type YW decodes
 }
-} // namespace lynx
+} // namespace yw

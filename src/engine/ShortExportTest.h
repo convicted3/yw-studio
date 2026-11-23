@@ -8,10 +8,10 @@
 
 #include <juce_core/juce_core.h>
 
-namespace lynx::shortexport
+namespace yw::shortexport
 {
 // Message thread, with the message loop running; returns at once. `done` gets "OK (...)" or "ERROR ..." on the message
-// thread. `everyUnit`: every instrument LYNX can make here (else a handful, for the selftest); `repeats`: each pair
+// thread. `everyUnit`: every instrument YW can make here (else a handful, for the selftest); `repeats`: each pair
 // that many times (a race shows up in some of them); `pluginFiles`: hosted instruments to add; `log`: a line per pair.
 void run (bool everyUnit, int repeats, const juce::StringArray& pluginFiles, std::function<void (const juce::String&)> log,
           std::function<void (juce::String)> done);
@@ -30,4 +30,4 @@ void stress (int count, std::int64_t seed, bool realtime, const juce::String& pl
 // comes out as an MPEG-4 file where the system has an AAC encoder, and is refused without a file where it has none.
 // Synchronous, on the calling thread. "OK (...)" or "ERROR ...".
 juce::String formatsCheck();
-} // namespace lynx::shortexport
+} // namespace yw::shortexport

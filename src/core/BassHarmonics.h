@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190mm (sub-round dyn): LYNX's model of the psycho-acoustic bass family (the Renaissance Bass and MaxxBass roles).
+// Round 190mm (sub-round dyn): YW's model of the psycho-acoustic bass family (the Renaissance Bass and MaxxBass roles).
 // Clean-room: the structure was read from the references' DSP (docs/analise/REA_rodada190mm_dyn.md §3) — a third-order
 // Butterworth crossover built from a first- and a second-order all-pass (low = their mean, high = their half difference,
 // so low + high is the second-order all-pass), the original low band scaled (or removed), and harmonics of the low band
@@ -13,7 +13,7 @@
 #include <array>
 #include <cmath>
 
-namespace lynx::bassharm
+namespace yw::bassharm
 {
 struct Fit
 {
@@ -148,4 +148,4 @@ private:
     Ap2 hB, qB;
     double e1 = 1.0, g2 = 1.0, fb = 0.0;
 };
-} // namespace lynx::bassharm
+} // namespace yw::bassharm

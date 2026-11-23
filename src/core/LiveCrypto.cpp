@@ -9,7 +9,7 @@ extern "C" {
 #include "monocypher.h"
 }
 
-namespace lynx::livecrypto
+namespace yw::livecrypto
 {
 namespace
 {
@@ -34,7 +34,7 @@ std::uint64_t get64 (const std::uint8_t* p)
 
 void randomBytes (std::uint8_t* out, std::size_t size)
 {
-    // (std::random_device is the OS generator on every platform LYNX SHARE builds for: rand_s / getrandom)
+    // (std::random_device is the OS generator on every platform YW Studio builds for: rand_s / getrandom)
     std::random_device device;
     for (std::size_t i = 0; i < size; i += 4)
     {
@@ -91,8 +91,8 @@ std::optional<Invite> parseCode (const std::string& text)
         else
             return std::nullopt;
     }
-    if (s.rfind ("lynx", 0) == 0 && s.size() == 30)
-        s = s.substr (4);
+    if (s.rfind ("yw", 0) == 0 && s.size() == 28)
+        s = s.substr (2);
     if (s.size() != 26)
         return std::nullopt;
     return Invite { s.substr (0, 10), s.substr (10) };
@@ -271,5 +271,5 @@ bool fromHex (const std::string& hex, std::uint8_t* out, std::size_t size)
     }
     return true;
 }
-} // namespace lynx::livecrypto
+} // namespace yw::livecrypto
 

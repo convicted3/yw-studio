@@ -4,9 +4,9 @@
 // frequency law; High EQ boosts +12 dB but cuts only −4.5 dB.
 namespace verb183bplate
 {
-inline double toneDb (const lynx::EffectParams& p, double hz)
+inline double toneDb (const yw::EffectParams& p, double hz)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::foilPlate);
+    auto fx = yw::makeEffect (yw::EffectKind::foilPlate);
     fx->prepare (48000.0);
     const int n = 96000;
     std::vector<float> a ((std::size_t) n), b;
@@ -25,7 +25,7 @@ inline double toneDb (const lynx::EffectParams& p, double hz)
 TEST (foil_valhallaplate_laws_verb183b)
 {
     using namespace verbs100;
-    using lynx::EffectKind;
+    using yw::EffectKind;
     auto p = defaults (EffectKind::foilPlate);
     p[0] = 1.0f;
     // Width 0 / 100 / 200 % keeps the level (the reference: −27.4 / −27.5 / −27.2 dB)

@@ -2,7 +2,7 @@
 
 // Round 190fz (Discord, 2026-11-10: "make it able to pull the velocity window, it too small"): the divider between the
 // Piano roll's note grid and its event editor (the velocity / event lane), as FL Studio 2026 has it. Facts from REA of
-// FLEngine_x64.dll (2026-10-08 build), written up in /mnt/e/lynx-work/evpane190fz/HANDOFF.md:
+// FLEngine_x64.dll (2026-10-08 build), written up in /mnt/e/yw-work/evpane190fz/HANDOFF.md:
 //  - TEventEditForm.Splitter is a TQuickSplitter 10 px tall, cursor crVSplit, hint "Right-click / shift+enter for
 //    alternate size" (form resource).
 //  - The splitter keeps its place as a fraction of its travel (0 = the grid folded away, 1 = the event editor folded
@@ -26,7 +26,7 @@
 #include <sstream>
 #include <string>
 
-namespace lynx::evpane
+namespace yw::evpane
 {
 constexpr int barThickness = 10;      // the divider bar's height (FL: Splitter.Height = 10)
 constexpr int minPane = 46;           // the least a pane keeps while it shows (FL: round (46 * scale))
@@ -99,7 +99,7 @@ inline std::string toText (const State& s)
     // the shortest text that reads back as the same float, with a "." whatever the user's locale
     auto number = [] (float v) {
        #if defined (__APPLE__)
-        // (rollup 0.1.28: floating-point std::to_chars needs macOS 13.3 and LYNX targets 11.0, as in AlsExport.cpp's
+        // (rollup 0.1.28: floating-point std::to_chars needs macOS 13.3 and YW targets 11.0, as in AlsExport.cpp's
         // num(): the shortest precision that reads back as the same float)
         for (int precision = 1;; ++precision)
         {
@@ -145,4 +145,4 @@ inline State fromText (const std::string& text)
     }
     return s;
 }
-} // namespace lynx::evpane
+} // namespace yw::evpane

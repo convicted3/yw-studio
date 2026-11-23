@@ -7,7 +7,7 @@
 // Backspace shift rows, octave and edit step, block selection, copy / paste (also as text), transpose, interpolate,
 // follow playback. Every edit is one undo step through AudioEngine::editSong.
 //
-// Where it lives (LYNX's own look in each): a tool window in the Pattern layout (View › Tracker, the pattern and channel
+// Where it lives (YW's own look in each): a tool window in the Pattern layout (View › Tracker, the pattern and channel
 // menus), "Edit in tracker" on a clip of the Clip-launch grid, and a tab of the Simple dock (one track's pattern).
 // Painting: only the visible rows and tracks, the text through ui/TextCache; while playing only the old and new playhead
 // rows repaint (a FrameTicker that detaches when the transport stops: no timer while stopped).
@@ -21,7 +21,7 @@
 
 #include "core/TrackerGrid.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -123,4 +123,4 @@ void closeTracker();
 bool isTrackerOpen();
 // The window's editor on its own (for --snapshot style captures).
 std::unique_ptr<TrackerComponent> makeTracker (AudioEngine& engine, bool compact = false);
-} // namespace lynx
+} // namespace yw

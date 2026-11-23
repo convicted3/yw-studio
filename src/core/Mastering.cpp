@@ -7,7 +7,7 @@
 #include "core/Effects.h"
 #include "core/Loudness.h"
 
-namespace lynx::mastering
+namespace yw::mastering
 {
 const std::vector<double>& targets()
 {
@@ -112,4 +112,4 @@ Result process (std::vector<float>& left, std::vector<float>& right, double samp
     right.swap (outR);
     return result;
 }
-} // namespace lynx::mastering
+} // namespace yw::mastering

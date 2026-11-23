@@ -17,7 +17,7 @@
 
 // Frequency Splitter (docs/analise/REA_rodada62.md). §-references below are to that document.
 
-namespace lynx::fsplit
+namespace yw::fsplit
 {
 namespace
 {
@@ -823,4 +823,4 @@ private:
 
 std::unique_ptr<Effect> make() { return std::make_unique<SplitterEffect>(); }
 std::unique_ptr<Effect> make (const EffectParams& params) { return std::make_unique<SplitterEffect> (&params); }
-} // namespace lynx::fsplit
+} // namespace yw::fsplit

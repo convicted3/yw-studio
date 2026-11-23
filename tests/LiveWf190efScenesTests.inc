@@ -7,7 +7,7 @@
 
 namespace live190ef_scene
 {
-using namespace lynx;
+using namespace yw;
 
 inline Clip patternClip (int pattern, std::int64_t length = 4 * ppq)
 {
@@ -57,7 +57,7 @@ inline int clipsIn (const Song& s, int row)
 
 TEST (live190ef_scene_duplicate_copies_the_row_and_its_scene_below)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     const auto original = s;
     const auto at = session::duplicateScene (s, 1);
@@ -84,7 +84,7 @@ TEST (live190ef_scene_duplicate_copies_the_row_and_its_scene_below)
 
 TEST (live190ef_scene_duplicate_edges)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     // an empty row shown under the last scene: it becomes a scene and an empty copy follows
     const auto at = session::duplicateScene (s, 5);
@@ -98,7 +98,7 @@ TEST (live190ef_scene_duplicate_edges)
 
 TEST (live190ef_scene_capture_copies_the_playing_clips_into_a_new_row)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     // Drums plays row 1 (the 8-beat "Fill"), Bass nothing, Keys row 2
     const auto at = session::captureScene (s, 0, { 1, -1, 2 });
@@ -119,7 +119,7 @@ TEST (live190ef_scene_capture_with_nothing_playing_inserts_a_scene_like_the_sele
 {
     // round 190em (Live 12.4.16, live check 190ei Q1a): nothing plays: an empty scene below, with the selected scene's
     // name, tempo and time signature (it used to make no row)
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     const auto before = s.clipGrid->scenes.size();
     CHECK (session::captureScene (s, 1, {}) == 2);
@@ -137,7 +137,7 @@ TEST (live190ef_scene_capture_with_nothing_playing_inserts_a_scene_like_the_sele
 
 TEST (live190ef_scene_tempo_and_time_signature_fields)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     CHECK (session::setSceneTempo (s, 0, 92.5) && s.clipGrid->scenes[0].tempo == 92.5);
     CHECK (session::setSceneTempo (s, 0, 2000.0) && s.clipGrid->scenes[0].tempo == maxTempo);
@@ -156,7 +156,7 @@ TEST (live190ef_scene_tempo_and_time_signature_fields)
 
 TEST (live190ef_scene_capture_into_a_slot_picks_the_slot)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     CHECK (session::captureSlot (s, 1, 1) == 1);  // Bass row 1 is empty (no clip; its missing stop button is no clip)
     CHECK (session::captureSlot (s, 0, 0) == 2);  // Drums rows 0 and 1 are taken: the first empty one below
@@ -175,7 +175,7 @@ TEST (live190ef_scene_capture_into_a_slot_picks_the_slot)
 
 TEST (live190ef_scene_captured_phrase_as_clip_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = 4 * ppq;
     // played while the transport ran: the notes keep their place in the bar of the first one
     std::vector<scorelog::Entry> played (2);
@@ -188,7 +188,7 @@ TEST (live190ef_scene_captured_phrase_as_clip_notes)
     played[1].endMs = 3500.0;
     played[1].key = 64;
     std::int64_t length = 0;
-    auto notes = session::phraseNotes (played, 4000.0, 120.0, lynx::Meter (4, 4), length);
+    auto notes = session::phraseNotes (played, 4000.0, 120.0, yw::Meter (4, 4), length);
     CHECK (notes.size() == 2 && notes[0].start == ppq && notes[0].length == ppq / 2 && notes[0].key == 60);
     CHECK (notes[1].start == bar + 2 * ppq && notes[1].length == ppq);
     CHECK (length == 2 * bar);
@@ -199,18 +199,18 @@ TEST (live190ef_scene_captured_phrase_as_clip_notes)
     stopped[1].startMs = 1500.0; // held
     stopped[1].key = 67;
     stopped[1].velocity = 0.5f;
-    notes = session::phraseNotes (stopped, 2500.0, 120.0, lynx::Meter (3, 4), length);
+    notes = session::phraseNotes (stopped, 2500.0, 120.0, yw::Meter (3, 4), length);
     CHECK (notes.size() == 2 && notes[0].start == 0 && notes[0].length == ppq);
     CHECK (notes[1].start == ppq && notes[1].length == 2 * ppq && notes[1].velocity == 0.5f);
     CHECK (length == 3 * ppq); // one bar of 3/4
     // nothing: one empty bar
-    notes = session::phraseNotes ({}, 0.0, 120.0, lynx::Meter (4, 4), length);
+    notes = session::phraseNotes ({}, 0.0, 120.0, yw::Meter (4, 4), length);
     CHECK (notes.empty() && length == bar);
 }
 
 TEST (live190ef_scene_playlist_clip_into_a_slot_is_a_copy)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ef_scene::song();
     Clip c = live190ef_scene::patternClip (1, 2 * ppq);
     c.start = 5 * ppq;

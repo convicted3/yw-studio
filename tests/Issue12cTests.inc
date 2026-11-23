@@ -5,20 +5,20 @@
 namespace issue12c
 {
 // a song in Song mode with an automation clip (0 → 1 over 4 bars) on `target`, at bar 1
-inline lynx::Song songWithClip (const lynx::AutomationTarget& target)
+inline yw::Song songWithClip (const yw::AutomationTarget& target)
 {
-    auto song = lynx::Song::makeDefault();
-    song.mode = lynx::PlayMode::song;
-    lynx::Automation a;
+    auto song = yw::Song::makeDefault();
+    song.mode = yw::PlayMode::song;
+    yw::Automation a;
     a.target = target;
-    a.points = { { 0, 0.0f, 0.0f }, { 16 * lynx::ppq, 1.0f, 0.0f } };
+    a.points = { { 0, 0.0f, 0.0f }, { 16 * yw::ppq, 1.0f, 0.0f } };
     song.automations.push_back (a);
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::automation;
+    yw::Clip c;
+    c.kind = yw::ClipKind::automation;
     c.automation = (int) song.automations.size() - 1;
     c.track = 3;
     c.start = 0;
-    c.length = 16 * lynx::ppq;
+    c.length = 16 * yw::ppq;
     song.playlist.push_back (c);
     return song;
 }
@@ -26,7 +26,7 @@ inline lynx::Song songWithClip (const lynx::AutomationTarget& target)
 
 TEST (issue12c_automated_value_at_the_playhead)
 {
-    using namespace lynx;
+    using namespace yw;
     const AutomationTarget send { AutomationTargetKind::mixerSend, 1, 0 };
     const AutomationTarget volume { AutomationTargetKind::mixerVolume, 2 };
     auto song = issue12c::songWithClip (send);
@@ -83,7 +83,7 @@ TEST (issue12c_automated_value_at_the_playhead)
 // The refresh runs on the UI thread once per frame: measure it on a big song (300 automated targets, 3000 clips)
 TEST (issue12c_display_refresh_is_cheap)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
     while (song.mixer.size() < 100)

@@ -14,10 +14,10 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 // ---------------------------------------------------------------------------------------------------------------
-// The character: LYNX's own lynx (tufted ears, a bob tail, a shirt in the outfit colour), drawn from the pose with
+// The character: YW's own yw (tufted ears, a bob tail, a shirt in the outfit colour), drawn from the pose with
 // vector shapes. Body units: about 1.0 tall, y up, the origin between the feet.
 // ---------------------------------------------------------------------------------------------------------------
 namespace dancer
@@ -107,7 +107,7 @@ void draw (juce::Graphics& g, juce::Point<float> feet, float height, const dance
         return std::array<P, 3> { top, elbow, hand };
     };
 
-    // the tail (a lynx's short bob), behind the body
+    // the tail (a yw's short bob), behind the body
     {
         const auto base = hip + side * 0.045f - up * 0.02f;
         const auto a = -0.9f + pose.tail * 0.35f; // a short bob, down and out to the right
@@ -151,7 +151,7 @@ void draw (juce::Graphics& g, juce::Point<float> feet, float height, const dance
         shirt.closeSubPath();
         g.setColour (outfit);
         g.fillPath (shirt);
-        // a stripe across the chest (LYNX's mark)
+        // a stripe across the chest (YW's mark)
         {
             juce::Graphics::ScopedSaveState save (g);
             g.reduceClipRegion (shirt);
@@ -198,7 +198,7 @@ void draw (juce::Graphics& g, juce::Point<float> feet, float height, const dance
         }
         const auto c = r.at (headC);
         blob (g, c, r.px (0.112f) * std::abs (r.sx), r.px (0.102f), fur, outline);
-        // cheek ruffs (a lynx's side whiskers)
+        // cheek ruffs (a yw's side whiskers)
         for (int i = 0; i < 2; ++i)
         {
             const auto s = i == 0 ? -1.0f : 1.0f;
@@ -689,7 +689,7 @@ void DanceStage::scan()
                 d.animator = dance::SheetAnimator ((std::uint32_t) c * 7919u + 1u);
             }
         }
-        // its sprite sheet (a missing or unusable file: LYNX's own dancer)
+        // its sprite sheet (a missing or unusable file: YW's own dancer)
         d.sheet = d.now.sheet.empty() ? nullptr : dancer::sheetFor (d.now.sheet);
         auto inst = engine.getChannelInstrument (c);
         if (inst != d.instrument)
@@ -721,7 +721,7 @@ void DanceStage::markOverlayCover()
     // round 190jx: the stage lies over the whole workspace but draws nothing where no dancer of its own is (none, hidden
     // ones, or dancers in windows of their own): a moving playhead under it may then be drawn by ui/MotionOverlay
     const auto draws = std::any_of (dancers.begin(), dancers.end(), [] (const auto& p) { return p.second.now.visible && p.second.window == nullptr; });
-    getProperties().set ("lynxOverlayIgnores", ! draws);
+    getProperties().set ("ywOverlayIgnores", ! draws);
 }
 
 void DanceStage::update()
@@ -1101,8 +1101,8 @@ public:
         loadSheet.setTooltip (tr ("A picture (PNG) in Fruity Dance's format: 8 frames across, one row per move, and a text file of the same name with one move name per line"));
         loadSheet.onClick = [this] {
             const auto now = juce::String::fromUTF8 (settings.sheet.c_str());
-            chooser = lynx::ui::makeFileChooser (tr ("Load sprite sheet"), juce::File::isAbsolutePath (now) ? juce::File (now) : juce::File(), "*.png;*.jpg;*.jpeg");
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+            chooser = yw::ui::makeFileChooser (tr ("Load sprite sheet"), juce::File::isAbsolutePath (now) ? juce::File (now) : juce::File(), "*.png;*.jpg;*.jpeg");
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                      [safe = juce::Component::SafePointer<DanceEditor> (this)] (const juce::FileChooser& fc) {
                                          if (safe != nullptr && fc.getResult() != juce::File())
                                              safe->useSheet (fc.getResult());
@@ -1170,7 +1170,7 @@ public:
         }
         if (! settings.sheet.empty())
         {
-            // the sheet's file (in the warning colour when it cannot be shown: LYNX's dancer stands in)
+            // the sheet's file (in the warning colour when it cannot be shown: YW's dancer stands in)
             const auto name = juce::File::createLegalFileName (juce::String::fromUTF8 (settings.sheet.c_str()).replaceCharacter ('\\', '/').fromLastOccurrenceOf ("/", false, false));
             g.setColour (sheet != nullptr ? theme::colour::textSecondary : theme::colour::warning);
             g.drawText (sheet != nullptr ? name : tr ("Could not read {0}", { name }), sheetName, juce::Justification::centredLeft);
@@ -1193,7 +1193,7 @@ public:
             moveBox.setBounds (r.removeFromLeft (180));
         }
         {
-            // FL's layout: the switches in one column, the sliders beside them (Blend, Speed, Reflect; LYNX's Size last)
+            // FL's layout: the switches in one column, the sliders beside them (Blend, Speed, Reflect; YW's Size last)
             auto block = area.removeFromTop (4 * 30 + 26);
             area.removeFromTop (8);
             auto switches = block.removeFromLeft (150);
@@ -1243,7 +1243,7 @@ private:
         return dance::read (song.channels[(std::size_t) channel].pluginState);
     }
 
-    // the move list: LYNX's own moves, or the sheet's (Freestyle, then its names: FL's list)
+    // the move list: YW's own moves, or the sheet's (Freestyle, then its names: FL's list)
     void fillMoves()
     {
         moveBox.clear (juce::dontSendNotification);
@@ -1559,4 +1559,4 @@ juce::String danceWindowSelfTest (juce::String* detail)
     return "OK";
    #endif
 }
-} // namespace lynx
+} // namespace yw

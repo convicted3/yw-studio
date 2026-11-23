@@ -4,8 +4,8 @@
 // defaults).
 namespace p190fx
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 using namespace dyn108;
 
 // a steady tone: `db` dBFS at `hz` for `seconds`
@@ -29,15 +29,15 @@ inline double settledGain (EffectKind kind, const EffectParams& p, double hz, do
 TEST (p190fx_glow_sc_weighting_is_appended_off_and_keeps_the_1k_law)
 {
     using namespace p190fx;
-    namespace gl = lynx::mixsuite::glow;
-    const auto& info = lynx::effectInfo (EffectKind::glowLeveler);
+    namespace gl = yw::mixsuite::glow;
+    const auto& info = yw::effectInfo (EffectKind::glowLeveler);
     CHECK ((int) info.params.size() == gl::count && gl::scWeighting == gl::optoMemory + 1 && gl::scWeighting == 14);
     CHECK (info.params[(std::size_t) gl::scWeighting].name == std::string ("SC weighting"));
-    CHECK (lynx::makeEffectSlot (EffectKind::glowLeveler).params[(std::size_t) gl::scWeighting] == 0.0f);
-    CHECK (lynx::mixsuite::paramText (EffectKind::glowLeveler, gl::scWeighting, 0.0f) == "emphasis");
-    CHECK (lynx::mixsuite::paramText (EffectKind::glowLeveler, gl::scWeighting, 1.0f) == "even");
+    CHECK (yw::makeEffectSlot (EffectKind::glowLeveler).params[(std::size_t) gl::scWeighting] == 0.0f);
+    CHECK (yw::mixsuite::paramText (EffectKind::glowLeveler, gl::scWeighting, 0.0f) == "emphasis");
+    CHECK (yw::mixsuite::paramText (EffectKind::glowLeveler, gl::scWeighting, 1.0f) == "even");
 
-    auto p = lynx::makeEffectSlot (EffectKind::glowLeveler).params;
+    auto p = yw::makeEffectSlot (EffectKind::glowLeveler).params;
     p[gl::peakReduction] = 0.6f;
     auto e = p;
     e[gl::scWeighting] = 1.0f;

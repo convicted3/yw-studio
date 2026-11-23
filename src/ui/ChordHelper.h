@@ -1,12 +1,12 @@
 #pragma once
 
-// The Piano roll's Chord helper (round 190mc, GitHub discussion #105; the theory in core/ModalHelper.h). A LYNX extra:
+// The Piano roll's Chord helper (round 190mc, GitHub discussion #105; the theory in core/ModalHelper.h). A YW extra:
 // select a chord, see the key it implies with the chords before it, the related keys for modal interchange (the parallel
 // minor or major first) and the chords they lend, ranked from common to uncommon, with their movement from the current
 // root, the change of quality, the common tones and a mood. A click inserts the chord after the selection, voice-led
 // (or in the side menu's inversion, with its extension); hovering a chord plays the move (selected chord → that chord).
 //
-// One panel, three looks: the Pattern layout's (LYNX's FL-style tool window, as the Chord progression tool and the MIDI
+// One panel, three looks: the Pattern layout's (YW's FL-style tool window, as the Chord progression tool and the MIDI
 // Tools), the Clip-launch layout's (Live 12.4's Dark greys, square rows, the light-blue selection) and the Simple
 // layout's (rounded cards, larger rows, the red accent). Perf: it computes only while it is open, and only when the
 // selected notes (or the notes before them) change; no timer runs unless a preview is pending or sounding.
@@ -20,7 +20,7 @@
 #include "ui/DemoMode.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 class ChordHelperPanel final : public juce::Component, public juce::TooltipClient, public demo::CellSource, private juce::ChangeListener, private juce::Timer
 {
@@ -141,4 +141,4 @@ private:
     std::vector<int> sounding;
     int soundingChannel = -1;
 };
-} // namespace lynx
+} // namespace yw

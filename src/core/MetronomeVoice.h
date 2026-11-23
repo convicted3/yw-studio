@@ -3,7 +3,7 @@
 // The metronome as FL Studio 2026 plays it (REA round 165z-a2, measured with FL's Tools › Audio logger):
 //  - five sounds, in the order of FL's right-click "Metronome sound" menu: Hi-hat, Tick, Beep, Cowbell, Pulse; the
 //    factory default is Tick (FL's "Metronome number" = 1). They are FL's own sample files (Data\System\Metronome.wav,
-//    Metronome2..5.wav, 44.1 kHz), read from the user's FL install at run time; without FL, LYNX synthesises sounds
+//    Metronome2..5.wav, 44.1 kHz), read from the user's FL install at run time; without FL, YW synthesises sounds
 //    of the same length and peak (fallbackSound).
 //  - a beat plays the sample at its pitch × 0.6233 (−4.11 dB); the downbeat (first beat of a bar) plays it two
 //    semitones up (linear interpolation) × 0.9404 (−0.53 dB); a mono file goes to both sides at the same gain.
@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::metronome
+namespace yw::metronome
 {
 constexpr int soundCount = 5;   // Hi-hat, Tick, Beep, Cowbell, Pulse
 constexpr int defaultSound = 1; // Tick
@@ -41,8 +41,8 @@ inline const char* soundFileName (int sound) noexcept
 
 inline int clampSound (int sound) noexcept { return sound >= 0 && sound < soundCount ? sound : defaultSound; }
 
-// ui-options.txt before round 165z-a2 kept "metronomeSound" as 0 LYNX click, 1 hi-hat, 2 tick, 3 beep, 4 cowbell,
-// 5 pulse (the default 0). The LYNX click is gone: it becomes FL's default, Tick; the others keep their sound.
+// ui-options.txt before round 165z-a2 kept "metronomeSound" as 0 YW click, 1 hi-hat, 2 tick, 3 beep, 4 cowbell,
+// 5 pulse (the default 0). The YW click is gone: it becomes FL's default, Tick; the others keep their sound.
 inline int soundFromLegacy (int legacy) noexcept
 {
     return legacy >= 1 && legacy <= soundCount ? legacy - 1 : defaultSound;
@@ -60,11 +60,11 @@ struct Sample
 {
     std::vector<float> left, right;
     double rate = 44100.0;
-    bool fromFl = false; // FL's file (else LYNX's fallback)
+    bool fromFl = false; // FL's file (else YW's fallback)
     int frames() const noexcept { return (int) left.size(); }
 };
 
-// LYNX's stand-in for FL's file when FL is not installed: the same length and peak, synthesised.
+// YW's stand-in for FL's file when FL is not installed: the same length and peak, synthesised.
 inline Sample fallbackSound (int sound, double rate = 44100.0)
 {
     struct Shape
@@ -208,4 +208,4 @@ inline Beat beatAt (double position, const Span* spans, int count, Span base) no
     const auto intoBar = (start - s.tick) - floorDiv (start - s.tick, bar) * bar;
     return { start, intoBar == 0 };
 }
-} // namespace lynx::metronome
+} // namespace yw::metronome

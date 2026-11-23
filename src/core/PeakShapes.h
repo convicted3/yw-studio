@@ -1,5 +1,5 @@
 #pragma once
-// Round 190kl (issue #197, a user's request): LYNX's extra LFO shapes for the Peak Controller, a LYNX extra next to
+// Round 190kl (issue #197, a user's request): YW's extra LFO shapes for the Peak Controller, a YW extra next to
 // FL's own five (Sine, Triangle, Square, Saw, Random), which stay the default so FL projects play exactly as in FL.
 //
 // Stored in the slot's hidden parameter `extraShapeParam` (after FL's twelve; not in the parameter list, so automation,
@@ -7,15 +7,15 @@
 // - 0 = none: FL's Shape plays, with exactly the code it always had (every project saved before 0.1.30 has no value
 //   there, reads 0, and renders bit for bit as before);
 // - 1…11 = the shapes below (table revision 1). The ids never change: a later revision only adds ids after the last,
-//   so a project keeps its shape whatever LYNX opens it.
-// A hidden parameter that is 0 is not written to .lynx (core/Effects.h savedEffectParamCount), so a project that does
+//   so a project keeps its shape whatever YW opens it.
+// A hidden parameter that is 0 is not written to .yw (core/Effects.h savedEffectParamCount), so a project that does
 // not use the extras saves byte for byte as before. FL's Phase, Tension, Speed and the song lock apply to every shape.
 // JUCE-free (tests/U190klTests.inc).
 
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::peakshapes
+namespace yw::peakshapes
 {
 constexpr int extraShapeParam = 12; // EffectSlot::params index (FL's 12: Base … Ramp)
 constexpr int revision = 1;
@@ -93,4 +93,4 @@ inline double wave (int id, double phase, std::uint32_t period) noexcept
         default: return 0.0;
     }
 }
-} // namespace lynx::peakshapes
+} // namespace yw::peakshapes

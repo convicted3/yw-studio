@@ -20,23 +20,23 @@
 #include "engine/AudioEngine.h"
 #include "ui/Icons.h"
 
-namespace lynx::search
+namespace yw::search
 {
 struct SearchResult;
 struct FolderMatches;
 }
-namespace lynx::similarity
+namespace yw::similarity
 {
 struct Result;
 }
 
-namespace lynx
+namespace yw
 {
 namespace loopinfo
 {
 class Shared;
 }
-// File browser (like FL's Browser): drawn by LYNX itself so it can show what the mouse is over and explain it
+// File browser (like FL's Browser): drawn by YW itself so it can show what the mouse is over and explain it
 // in the hint bar.
 //  - three tabs, as FL's Browser: STARRED (the files and folders starred from their right-click menu), ALL (the current project, then every sample folder: FL's folders, Documents,
 //    Music, Desktop, Downloads and the user's folders, each with its own colour) and PROJECT (only the current
@@ -48,7 +48,7 @@ class Shared;
 //    shows its waveform and the playback position); double-click: new sampler channel with it
 //  - drag a file onto the Channel Rack (new channel, or onto a row: replaces its sample), the Playlist (audio
 //    clip where it is dropped) or a mixer insert (effect presets); drag a pattern onto the Playlist (a clip)
-//  - double-click a .lynx/.flp/.mid: opens it (onOpenProject)
+//  - double-click a .yw/.flp/.mid: opens it (onOpenProject)
 //  - search box (Ctrl+F): ALL searches the folder of the selection (or every folder) and below
 //    (core/SearchQuery syntax) through the search index (core/SearchService: a background worker, round 162);
 //    PROJECT filters the project's items; Esc clears and leaves the box, Enter leaves it; a click anywhere else
@@ -100,11 +100,11 @@ public:
     static std::unique_ptr<juce::Component> makeLoopsDock (AudioEngine& engine, const std::function<void (BrowserComponent&)>& wire,
                                                            std::function<void()> onClose);
     static BrowserComponent* browserOfLoopsDock (juce::Component* dock);
-    // Whether the Sample browser was open when LYNX last closed (its view file).
+    // Whether the Sample browser was open when YW last closed (its view file).
     static bool sampleBrowserWasOpen();
-    // Round 190hd: the Browser's search index kept up to date by a low-priority child process (LYNX --browser-indexer
+    // Round 190hd: the Browser's search index kept up to date by a low-priority child process (YW --browser-indexer
     // <parent pid> <roots file>) woken by file-system changes, as Live's Indexer. Main allows it for the normal window
-    // only (command-line modes and tests index in-process, as before); LYNX_INDEXER_PROCESS=0 turns it off.
+    // only (command-line modes and tests index in-process, as before); YW_INDEXER_PROCESS=0 turns it off.
     static inline bool allowIndexerProcess = false;
     static int runIndexerProcess (const juce::StringArray& args); // the child: never returns while its parent lives
 
@@ -118,7 +118,7 @@ public:
     std::function<void (const juce::File&)> onOpenProject;
     // Enter / Shift+Up/Down: put this file into the selected channel; returns false if it can't take it.
     std::function<bool (const juce::File&)> onLoadIntoChannel;
-    // Double-click an FL mixer preset / LYNX mixer track state: onto the Mixer's selected tracks (false = not one)
+    // Double-click an FL mixer preset / YW mixer track state: onto the Mixer's selected tracks (false = not one)
     std::function<bool (const juce::File&)> onOpenMixerPreset;
     // Current project items (set by the main window)
     std::function<void (int)> onOpenPattern;     // double-click a pattern: it opens in the Piano Roll
@@ -154,7 +154,7 @@ public:
     void leaveSearchBox();
     bool isTypingInSearch() const;
 
-    // The project's file (.lynx, or the imported .flp): its folder shows as "Project folder".
+    // The project's file (.yw, or the imported .flp): its folder shows as "Project folder".
     void setProjectFile (const juce::File& file);
 
     // FL 2026's six tabs (round 190iz, core/BrowserPlaces.h): the numbers 0-2 are what they were; FL's left-to-right
@@ -165,8 +165,8 @@ public:
         projectTab,
         starredTab, // the files and folders the user starred (FL's STARRED)
         pluginsTab, // the Plugin database alone, opened (FL's PLUGINS)
-        presetsTab, // the preset places (FL's PRESETS; FL Cloud's presets are not part of LYNX)
-        soundsTab,  // the sample places, audio only (FL's SOUNDS; FL Cloud's sounds are not part of LYNX)
+        presetsTab, // the preset places (FL's PRESETS; FL Cloud's presets are not part of YW)
+        soundsTab,  // the sample places, audio only (FL's SOUNDS; FL Cloud's sounds are not part of YW)
         tabCount
     };
     void setTab (int tab);
@@ -206,7 +206,7 @@ public:
     // `index`) with the entry open on its parameters, selected and in view
     bool revealProjectParameters (bool effect, int index, int slot);
     bool historyShownForCheck() const;
-    // round 190ke (--simplegb190keshot): "YW Studio content" with these folders open ("lynx-content", "lynx-content/Beats"...),
+    // round 190ke (--simplegb190keshot): "YW Studio content" with these folders open ("yw-content", "yw-content/Beats"...),
     // and the rows listed now (tree / tag-filter results)
     void showFactoryContentForSnapshot (const juce::StringArray& openFolders);
     juce::StringArray rowLabelsForCheck() const;
@@ -273,10 +273,10 @@ public:
     void waitForListing (int timeoutMs);
     void paint (juce::Graphics& g) override;
 
-    static constexpr const char* dragDescription = "lynx-arquivo";
-    static constexpr const char* patternDragDescription = "lynx-pattern";
-    static constexpr const char* generatorDragDescription = "lynx-plugin-generator";
-    static constexpr const char* effectDragDescription = "lynx-plugin-effect";
+    static constexpr const char* dragDescription = "yw-arquivo";
+    static constexpr const char* patternDragDescription = "yw-pattern";
+    static constexpr const char* generatorDragDescription = "yw-plugin-generator";
+    static constexpr const char* effectDragDescription = "yw-plugin-effect";
     static constexpr int addFolderId = 1000;
 
     class FileTree;     // the folder tree / search results (implementation detail)
@@ -345,7 +345,7 @@ public:
     // One tag store for every Browser of the process (the user's, browser-tags.txt in the settings folder; not the project).
     static browsertags::Store& tagStore();
     // Round 190ke (owner decision D2): what the TAGS panel, the tag filter and the row menus' ticks see — the user's store,
-    // plus the built-in tags of LYNX's own factory content (core/FactoryContent.h) in the Simple layout
+    // plus the built-in tags of YW's own factory content (core/FactoryContent.h) in the Simple layout
     static browsertags::Store shownTags();
     // Round 190ke: the "YW Studio content" items' actions the main window carries out (a beat becomes a Drums track at the
     // playhead; an effect chain goes onto the selected track's insert). Sounds go through onAddInstrument.
@@ -392,7 +392,7 @@ public:
     class LiveSidebar;
 
     // --- Round gaps190kf: the Loop Browser of the Sample browser window (GarageBand's: keyword buttons, Scale, Loop
-    // Types, favourites; LYNX's Tempo and Places; core/LoopKeywords.h). The search row's LOOPS button shows it.
+    // Types, favourites; YW's Tempo and Places; core/LoopKeywords.h). The search row's LOOPS button shows it.
     void setLoopsShown (bool shown);
     bool isLoopsShown() const noexcept { return loopsShown; }
     const loopkeys::Filter& loopFilter() const noexcept { return loopFilterState; }
@@ -604,4 +604,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BrowserComponent)
 };
-} // namespace lynx
+} // namespace yw

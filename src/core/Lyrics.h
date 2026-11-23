@@ -1,7 +1,7 @@
 #pragma once
 
-// The project's Lyrics / Notes (round 190ch, LYNX's own; the panel is ui/LyricsPanel.h). The text IS the project's
-// Comments (Song::info.comments: FL's Settings › Info page, kept in .lynx, written to and read from .flp), so there is
+// The project's Lyrics / Notes (round 190ch, YW's own; the panel is ui/LyricsPanel.h). The text IS the project's
+// Comments (Song::info.comments: FL's Settings › Info page, kept in .yw, written to and read from .flp), so there is
 // one store and every older project already has its notes in the panel. It stays plain text; two things in it are read:
 //
 //   [Chorus]            a line that is only a name in square brackets is a section heading
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::lyrics
+namespace yw::lyrics
 {
 struct Line
 {
@@ -357,4 +357,4 @@ inline int wordCount (std::string_view text)
     }
     return words;
 }
-} // namespace lynx::lyrics
+} // namespace yw::lyrics

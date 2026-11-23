@@ -12,9 +12,9 @@
 #include "core/FruityBasicFx.h"
 #include "core/GrossBeat.h"
 #include "core/EffectPresetTable.inc"
-#include "core/EffectBanks168r.inc" // round 168r: LYNX's banks for the FL effects and the simple built-ins
+#include "core/EffectBanks168r.inc" // round 168r: YW's banks for the FL effects and the simple built-ins
 
-namespace lynx::presets
+namespace yw::presets
 {
 namespace
 {
@@ -69,7 +69,7 @@ constexpr int grid = 2000;
 
 EffectKind kindNamed (const std::string& name)
 {
-    // the exact name first: LYNX's "Frequency shifter" and FL's "Frequency Shifter" differ only in case (round 168r)
+    // the exact name first: YW's "Frequency shifter" and FL's "Frequency Shifter" differ only in case (round 168r)
     for (int k = 0; k <= (int) lastEffectKind; ++k)
         if (name == effectInfo ((EffectKind) k).name)
             return (EffectKind) k;
@@ -136,8 +136,8 @@ Table parseTable()
     return table;
 }
 
-// Gross Beat (round 168m): LYNX's factory bank with a starting pair of slots selected — every preset carries the
-// whole bank, so a preset also brings the slots back to LYNX's set
+// Gross Beat (round 168m): YW's factory bank with a starting pair of slots selected — every preset carries the
+// whole bank, so a preset also brings the slots back to YW's set
 void addGrossBeat (Table& table)
 {
     const auto bank = grossbeat::factoryContainer();
@@ -379,7 +379,7 @@ std::string toText (EffectKind kind, const std::string& name, const EffectParams
     out << "engine = " << effectInfo (kind).name << "\n";
     out << "name = " << name << "\n";
     const auto& info = effectInfo (kind).params;
-    // round 167a: Fruity Send's "Send to" over 0..127 when it fits (older LYNX versions read the same insert)
+    // round 167a: Fruity Send's "Send to" over 0..127 when it fits (older YW versions read the same insert)
     const auto sendSpan = kind == EffectKind::fruitySend && params.size() > 3 ? flbasic::saveSendSpan ({ params[3] }) : 0;
     if (sendSpan > 0)
         out << sendSpanKey << " = " << sendSpan << "\n";
@@ -476,4 +476,4 @@ std::string fileNameFor (const std::string& presetName)
         out.resize (64);
     return out.empty() ? "Preset" : out;
 }
-} // namespace lynx::presets
+} // namespace yw::presets

@@ -37,7 +37,7 @@
 #include "ui/Theme.h"
 #include "ui/TouchKeyboard.h"
 
-namespace lynx
+namespace yw
 {
 using namespace theme;
 
@@ -91,7 +91,7 @@ public:
     DockKnob()
     {
         setWantsKeyboardFocus (true);
-        getProperties().set ("lynxClickKeepsKeys", true); // (round 190fc: clicked, the arrow keys turn it; Space still plays)
+        getProperties().set ("ywClickKeepsKeys", true); // (round 190fc: clicked, the arrow keys turn it; Space still plays)
         setMouseCursor (juce::MouseCursor::UpDownResizeCursor);
     }
 
@@ -243,7 +243,7 @@ public:
 };
 
 // BandLab's preset stepper chevrons and its chain bypass button (round 190kn, DS-26 / DS-28: bandlab190p
-// 11-sounds-free-loops.png "‹ Bass Boost ›" and the struck "Fx" disc beside Save). LYNX vectors.
+// 11-sounds-free-loops.png "‹ Bass Boost ›" and the struck "Fx" disc beside Save). YW vectors.
 class ChevronButton final : public juce::Button
 {
 public:
@@ -1546,13 +1546,13 @@ private:
 
     void addFolder()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Add a SoundFont folder"), juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
+        chooser = yw::ui::makeFileChooser (tr ("Add a SoundFont folder"), juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
         juce::Component::SafePointer<InstrumentPage> safe (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                                  [safe] (const juce::FileChooser& fc) {
                                      if (fc.getResult() == juce::File())
                                          return;
-                                     // (the same list the LYNX Soundfont editor's "SoundFont folders" menu keeps)
+                                     // (the same list the YW Soundfont editor's "SoundFont folders" menu keeps)
                                      auto lines = juce::StringArray::fromLines (soundFontFoldersFile().loadFileAsString());
                                      lines.removeEmptyStrings();
                                      lines.addIfNotAlreadyThere (fc.getResult().getFullPathName());
@@ -1805,7 +1805,7 @@ private:
 // =====================================================================================================================
 namespace
 {
-// LYNX's own pad colours (index 1…8; 0 = the track's colour)
+// YW's own pad colours (index 1…8; 0 = the track's colour)
 juce::Colour padColour (int index, juce::Colour track)
 {
     static const juce::uint32 palette[simplepads::colourCount] { 0xffe5383b, 0xffe8833a, 0xffe2c044, 0xff5fbf6a,
@@ -2246,7 +2246,7 @@ public:
         repaint();
     }
 
-    // files from the system and sounds from LYNX's browser land on the pad under the pointer
+    // files from the system and sounds from YW's browser land on the pad under the pointer
     bool isInterestedInFileDrag (const juce::StringArray& files) override { return track >= 0 && ! files.isEmpty(); }
     void fileDragMove (const juce::StringArray&, int x, int y) override { setDropTarget (padAt ({ x, y })); }
     void fileDragExit (const juce::StringArray&) override { setDropTarget (-1); }
@@ -2564,7 +2564,7 @@ private:
         return m;
     }
 
-    // kits: the pads' sounds and settings in a file of the user's (Documents/LYNX/Sampler kits/<name>.lynxkit)
+    // kits: the pads' sounds and settings in a file of the user's (Documents/YW/Sampler kits/<name>.ywkit)
     static juce::File kitFolder() { return platform::documentsFolder().getChildFile ("YW Studio/Sampler kits"); }
 
     juce::PopupMenu kitMenu()
@@ -2572,7 +2572,7 @@ private:
         juce::PopupMenu m;
         m.addItem (tr ("Save the pads as a kit..."), track >= 0, false, [this] { askKitName(); });
         juce::PopupMenu mine, rename, remove;
-        const auto files = kitFolder().findChildFiles (juce::File::findFiles, false, "*.lynxkit");
+        const auto files = kitFolder().findChildFiles (juce::File::findFiles, false, "*.ywkit");
         auto sorted = files;
         std::sort (sorted.begin(), sorted.end(), [] (const juce::File& a, const juce::File& b) { return a.getFileName().compareNatural (b.getFileName()) < 0; });
         for (const auto& f : sorted)
@@ -2621,7 +2621,7 @@ public:
     static bool renameKit (const juce::File& kitFile, const juce::String& rawName)
     {
         const auto name = juce::File::createLegalFileName (rawName).trim();
-        const auto target = kitFile.getSiblingFile (name + ".lynxkit");
+        const auto target = kitFile.getSiblingFile (name + ".ywkit");
         if (name.length() < 2 || name.length() > 50 || target.exists() || ! kitFile.existsAsFile())
             return false;
         auto json = juce::JSON::parse (kitFile.loadFileAsString());
@@ -2661,17 +2661,17 @@ public:
             pads.add (juce::var (o.release()));
         }
         auto root = std::make_unique<juce::DynamicObject>();
-        root->setProperty ("lynxSamplerKit", 1);
+        root->setProperty ("ywSamplerKit", 1);
         root->setProperty ("name", name);
         root->setProperty ("pads", pads);
         kitFolder().createDirectory();
-        return kitFolder().getChildFile (name + ".lynxkit").replaceWithText (juce::JSON::toString (juce::var (root.release())));
+        return kitFolder().getChildFile (name + ".ywkit").replaceWithText (juce::JSON::toString (juce::var (root.release())));
     }
 
     bool openKit (const juce::File& file)
     {
         const auto json = juce::JSON::parse (file.loadFileAsString());
-        if ((int) json.getProperty ("lynxSamplerKit", 0) != 1)
+        if ((int) json.getProperty ("ywSamplerKit", 0) != 1)
             return false;
         struct Loaded
         {
@@ -3817,4 +3817,4 @@ juce::Rectangle<int> SimpleDock::cardBoundsForSnapshot (int card) const
     return c != nullptr ? getLocalArea (c, c->getLocalBounds()) : juce::Rectangle<int>();
 }
 void SimpleDock::setSearchForSnapshot (const juce::String& text) { instrumentPage->searchFor (text); }
-} // namespace lynx
+} // namespace yw

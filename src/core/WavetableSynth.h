@@ -1,11 +1,11 @@
 #pragma once
 
-// Helix: LYNX's own wavetable synthesizer (round 190ja, build list 17b, owner decision O13). LYNX's own engine, name,
+// Helix: YW's own wavetable synthesizer (round 190ja, build list 17b, owner decision O13). YW's own engine, name,
 // look, code and wave tables; Ableton Live's Wavetable device imports onto it (core/AlsDevicesWt.cpp) with its own
 // parameter values, so the parameters below use Wavetable's units and ranges as a Live set stores them (times in
 // seconds, gains linear, transpose in semitones, filter in Hz, the modulation matrix's amounts −1…1). The laws that make
 // those values sound like Live were measured black-box on Live 12 renders (docs/analise/REA_rodada190ja.md); no Ableton
-// code, preset, sample or wave table is used. Helix's tables are generated here, additively, from LYNX's own recipes
+// code, preset, sample or wave table is used. Helix's tables are generated here, additively, from YW's own recipes
 // (core/WavetableTables.cpp); Live's table names map onto the closest of them on import.
 //
 // A voice: two wavetable oscillators (table, position, an effect: FM / Classic (pulse width, sync) / Modern (warp,
@@ -26,7 +26,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 struct ChannelDef;
 
@@ -69,7 +69,7 @@ constexpr int matrixBase = tableBase + 2;
 constexpr int matrixIndex (int target, int source) noexcept { return matrixBase + target * sourceCount + source; }
 constexpr int liveStateSize = matrixBase + targetCount * sourceCount; // Live Wavetable's values (778): a project before 190mi
 
-// --- Helix+ (round 190mi): LYNX's own extension block after Live's values (Serum-class features, clean-room). Live's
+// --- Helix+ (round 190mi): YW's own extension block after Live's values (Serum-class features, clean-room). Live's
 // import / export never touch it. `revision` 0 (a channel saved before 190mi: the block is missing and reads as its
 // defaults) ignores every value below, so old projects render bit for bit as before; 1 (new channels, the factory
 // presets, any edit of a Helix+ control) makes it live. Every value defaults to "off": a revision 1 channel that uses no
@@ -255,7 +255,7 @@ constexpr int unisonNone = 0, unisonClassic = 1, unisonShimmer = 2, unisonNoise 
 constexpr int maxUnison = 16;    // (Live's Unison Voices reach 8; Helix+'s count 16)
 constexpr int liveMaxUnison = 8;
 
-// --- wave tables (core/WavetableTables.cpp): LYNX's own, generated from recipes on first use, then kept
+// --- wave tables (core/WavetableTables.cpp): YW's own, generated from recipes on first use, then kept
 constexpr int frameCount = 64;                 // frames per table (the position moves through them)
 constexpr int mipCount = 19;                   // half an octave apart: highest partial 1023, 723, 511 … 1
 int mipLength (int mip) noexcept;              // samples per frame at mip m (4096 … 512; a guard sample follows)
@@ -283,7 +283,7 @@ const Table& table (int index);
 const Table* tableIfBuilt (int index) noexcept;
 // a frame's partial amplitudes and phases before the mipmaps (tests, the editor's drawing): `partials` values each
 void tableSpectrum (int index, int frame, float* amplitude, float* phase, int partials);
-// Live's table name ("Basic Shapes") → the closest LYNX table (−1: unknown name) and what differs, for the import report
+// Live's table name ("Basic Shapes") → the closest YW table (−1: unknown name) and what differs, for the import report
 struct TableMatch
 {
     int table = 0;
@@ -292,7 +292,7 @@ struct TableMatch
 TableMatch matchLiveTable (const std::string& liveName);
 // the Live table name an exported Helix table goes out as (the first Live table that maps onto it; "Basic Shapes" if none)
 std::string liveTableFor (int index);
-// a LYNX table by its own name (−1: none)
+// a YW table by its own name (−1: none)
 int tableByName (const std::string& name) noexcept;
 
 // --- user tables and the sample oscillator's sample (Helix+ 2, round 190ml): the channel's own data, kept in
@@ -495,4 +495,4 @@ namespace modelparams
 struct Table;
 Table helixModelTable();
 } // namespace modelparams
-} // namespace lynx
+} // namespace yw

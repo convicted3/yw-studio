@@ -1,4 +1,4 @@
-// Round 167g: FL project-level .flp events LYNX's importer ignored (docs/analise/REA_rodada167g.md)
+// Round 167g: FL project-level .flp events YW's importer ignored (docs/analise/REA_rodada167g.md)
 
 // §1 Main pitch: event 0x50, i16 cents, written by FL's project saver (FUN_00f40840) from the main pitch knob; FL's own
 // command-line render of a sampler playing a 440 Hz sine follows it: 0 → 440.0 Hz, +300 → 523.3 Hz, −400 → 349.3 Hz.
@@ -11,7 +11,7 @@ TEST (rea167g_flp_main_pitch)
         b.u16 ((std::uint16_t) (std::int16_t) cents);
         const auto p = flp::parseProject (b.bytes);
         CHECK (p.mainPitch == cents);
-        const auto song = lynx::importFlp (p);
+        const auto song = yw::importFlp (p);
         CHECK (song.masterPitch == (float) cents);
     }
     // a word 0x50 inside a channel's events is not the project's (FL writes it only among the project's events)
@@ -29,7 +29,7 @@ TEST (rea167g_flp_main_pitch)
         return;
     std::ifstream in (path, std::ios::binary);
     const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
-    CHECK (lynx::importFlp (flp::parseProject (file)).masterPitch == -400.0f); // [DATA] 0x50 = 65136 (−400 cents)
+    CHECK (yw::importFlp (flp::parseProject (file)).masterPitch == -400.0f); // [DATA] 0x50 = 65136 (−400 cents)
 }
 
 // §2 The state FL saves for the next opening: 0x43 current pattern (FL's number), 0x09 SONG / PAT, 0x0A Project info ›
@@ -93,31 +93,31 @@ TEST (rea167g_flp_saved_state)
     {
         const auto p = flp::parseProject (rea167g::stateProject (2, 1, 1, 1));
         CHECK (p.currentPattern == 2 && p.songMode == 1 && p.showInfo && p.currentArrangement == 1);
-        const auto song = lynx::importFlp (p);
+        const auto song = yw::importFlp (p);
         CHECK (song.patterns.size() == 2);
         CHECK (song.currentPattern == 1);            // FL's pattern 2, not the fullest (pattern 1)
-        CHECK (song.mode == lynx::PlayMode::song);   // SONG although the Playlist is empty
+        CHECK (song.mode == yw::PlayMode::song);   // SONG although the Playlist is empty
         CHECK (song.info.showOnOpen);
         CHECK (song.currentArrangement == 1);        // "Intro", not the first one
     }
     {
-        const auto song = lynx::importFlp (flp::parseProject (rea167g::stateProject (1, 0, 0, 0)));
-        CHECK (song.currentPattern == 0 && song.mode == lynx::PlayMode::pattern && ! song.info.showOnOpen);
+        const auto song = yw::importFlp (flp::parseProject (rea167g::stateProject (1, 0, 0, 0)));
+        CHECK (song.currentPattern == 0 && song.mode == yw::PlayMode::pattern && ! song.info.showOnOpen);
         CHECK (song.currentArrangement == 0);
     }
     {
         // the saved pattern was empty (not imported) → the fullest; no 0x09 / 0x0A / 0x64 (older files) → as before
         const auto p = flp::parseProject (rea167g::stateProject (3, -1, -1, -1));
         CHECK (p.currentPattern == 3 && p.songMode == -1 && ! p.showInfo && p.currentArrangement == -1);
-        const auto song = lynx::importFlp (p);
-        CHECK (song.currentPattern == 0 && song.mode == lynx::PlayMode::pattern && song.currentArrangement == 0);
+        const auto song = yw::importFlp (p);
+        CHECK (song.currentPattern == 0 && song.mode == yw::PlayMode::pattern && song.currentArrangement == 0);
     }
     {
         // FL's loader: a pattern number out of 1…999 selects pattern 1; 0x09 / 0x0A only mean "on" when = 1; an
         // arrangement index past the last one opens the first
         const auto p = flp::parseProject (rea167g::stateProject (1000, 2, 2, 7));
         CHECK (p.currentPattern == 1 && p.songMode == 0 && ! p.showInfo);
-        CHECK (lynx::importFlp (p).currentArrangement == 0);
+        CHECK (yw::importFlp (p).currentArrangement == 0);
     }
 
     if (realFlpDir.empty())
@@ -132,16 +132,16 @@ TEST (rea167g_flp_saved_state)
     {
         const auto p = flp::parseProject (mehran);
         CHECK (p.currentPattern == 46 && p.songMode == 1 && p.showInfo);
-        const auto song = lynx::importFlp (p);
+        const auto song = yw::importFlp (p);
         const auto* selected = p.findPattern (46);
         CHECK (selected != nullptr);
         if (selected != nullptr && song.currentPattern < (int) song.patterns.size())
             CHECK (song.patterns[(std::size_t) song.currentPattern].notes.size() == selected->notes.size() && ! selected->notes.empty());
-        CHECK (song.mode == lynx::PlayMode::song && song.info.showOnOpen);
+        CHECK (song.mode == yw::PlayMode::song && song.info.showOnOpen);
     }
     const auto asher = load ("Asher Postman - Future House.flp");
     if (! asher.empty())
-        CHECK (lynx::importFlp (flp::parseProject (asher)).currentArrangement == 1);
+        CHECK (yw::importFlp (flp::parseProject (asher)).currentArrangement == 1);
 }
 
 // §3 Project created / working time: event 0xED = f64 creation date + f64 working time (Delphi TDateTime days); FL's
@@ -156,14 +156,14 @@ TEST (rea167g_flp_created_and_working_time)
     b.data (0xED, times);
     const auto p = flp::parseProject (b.bytes);
     CHECK (p.createdDays == created && p.workDays == work);
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (std::abs (song.info.workSeconds - work * 86400.0) < 1e-6);
     // a local reading: within the widest time-zone offset (±14 h) of the same reading taken as UTC
     CHECK (std::abs (song.info.created - (created - 25569.0) * 86400.0) <= 14.0 * 3600.0);
     CHECK (! song.info.empty());
-    CHECK (lynx::flDateTimeToUnix (0.0) == 0.0 && lynx::flDateTimeToUnix (-3.0) == 0.0 && lynx::flDateTimeToUnix (1e9) == 0.0);
+    CHECK (yw::flDateTimeToUnix (0.0) == 0.0 && yw::flDateTimeToUnix (-3.0) == 0.0 && yw::flDateTimeToUnix (1e9) == 0.0);
     // whole seconds survive the conversion
-    const auto t = lynx::flDateTimeToUnix (45126.5);
+    const auto t = yw::flDateTimeToUnix (45126.5);
     CHECK (std::abs (t - std::round (t)) < 1e-3);
 
     if (realFlpDir.empty())
@@ -172,7 +172,7 @@ TEST (rea167g_flp_created_and_working_time)
     const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
     if (file.empty())
         return;
-    const auto demo = lynx::importFlp (flp::parseProject (file));
+    const auto demo = yw::importFlp (flp::parseProject (file));
     // [DATA] created 2018-07-13 18:38:51 (FL's local time), 12.98 hours of work
     CHECK (std::abs (demo.info.workSeconds / 3600.0 - 12.98) < 0.01);
     CHECK (std::abs (demo.info.created - 1531507131.0) <= 14.0 * 3600.0 + 1.0);
@@ -182,40 +182,40 @@ TEST (rea167g_flp_created_and_working_time)
 // a note starting before keeps its remaining length from the offset, or is dropped when the setting is off)
 TEST (rea167g_play_truncated_notes_in_clips)
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (1);
     auto& p = s.patterns.emplace_back();
-    lynx::Note long1;
+    yw::Note long1;
     long1.start = 0;
-    long1.length = 3 * lynx::ppq; // beats 1–3
+    long1.length = 3 * yw::ppq; // beats 1–3
     long1.key = 60;
     p.notes.push_back (long1);
-    lynx::Note short1 = long1;
-    short1.start = lynx::ppq / 2;
-    short1.length = lynx::ppq / 4; // ends before the offset: never plays
+    yw::Note short1 = long1;
+    short1.start = yw::ppq / 2;
+    short1.length = yw::ppq / 4; // ends before the offset: never plays
     short1.key = 62;
     p.notes.push_back (short1);
     p.sortNotes();
 
-    lynx::Clip c; // the clip starts 2 beats into the pattern, at song beat 4, 2 beats long
+    yw::Clip c; // the clip starts 2 beats into the pattern, at song beat 4, 2 beats long
     c.pattern = 0;
-    c.start = 4 * lynx::ppq;
-    c.length = 2 * lynx::ppq;
-    c.offset = 2 * lynx::ppq;
+    c.start = 4 * yw::ppq;
+    c.length = 2 * yw::ppq;
+    c.offset = 2 * yw::ppq;
     s.playlist.push_back (c);
 
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0); // 1 beat = 24000 samples
+    const auto tps = yw::ticksPerSample (120.0, 48000.0); // 1 beat = 24000 samples
     const auto run = [&] {
-        lynx::EventBuffer ev;
-        lynx::scheduleSong (s, 0.0, 192000, tps, ev);
+        yw::EventBuffer ev;
+        yw::scheduleSong (s, 0.0, 192000, tps, ev);
         std::vector<std::pair<int, int>> out; // (sample, key) of the "on"s, then of the "off"s as -key
         for (const auto& e : ev)
-            out.emplace_back (e.sampleOffset, e.type == lynx::NoteEvent::Type::on ? e.key : -e.key);
+            out.emplace_back (e.sampleOffset, e.type == yw::NoteEvent::Type::on ? e.key : -e.key);
         std::sort (out.begin(), out.end());
         return out;
     };
 
-    CHECK (! s.playTruncatedNotes); // (projects saved before keep LYNX's old behaviour)
+    CHECK (! s.playTruncatedNotes); // (projects saved before keep YW's old behaviour)
     CHECK (run().empty());
 
     s.playTruncatedNotes = true;
@@ -231,10 +231,10 @@ TEST (rea167g_play_truncated_notes_in_clips)
     FlpBuilder b;
     b.u8 (0x1E);
     b.u8 (1);
-    CHECK (lynx::importFlp (flp::parseProject (b.bytes)).playTruncatedNotes);
-    CHECK (! lynx::importFlp (flp::parseProject (FlpBuilder().bytes)).playTruncatedNotes);
+    CHECK (yw::importFlp (flp::parseProject (b.bytes)).playTruncatedNotes);
+    CHECK (! yw::importFlp (flp::parseProject (FlpBuilder().bytes)).playTruncatedNotes);
     // a new project has it on, as FL's
-    lynx::Song fresh;
-    lynx::applyNewProjectDefaults (fresh, lynx::NewProjectDefaults {});
+    yw::Song fresh;
+    yw::applyNewProjectDefaults (fresh, yw::NewProjectDefaults {});
     CHECK (fresh.playTruncatedNotes);
 }

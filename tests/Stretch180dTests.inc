@@ -2,7 +2,7 @@
 
 TEST (render180d_time_stretches_the_trimmed_region)
 {
-    using namespace lynx;
+    using namespace yw;
     // 1 s of file: 0.1 s of silence, 0.3 s of sound, 0.6 s of silence
     SampleData d;
     d.sampleRate = 1000.0;
@@ -25,7 +25,7 @@ TEST (render180d_time_stretches_the_trimmed_region)
 
 TEST (render180d_a_trimmed_clip_plays_what_it_draws)
 {
-    using namespace lynx;
+    using namespace yw;
     // 1 s of file at 44.1 kHz: 0.1 s of silence, 0.3 s of a 440 Hz tone, 0.6 s of silence; Trim on
     constexpr double rate = 44100.0;
     auto sample = std::make_shared<SampleData>();
@@ -119,7 +119,7 @@ TEST (render180d_time_stretches_what_the_precomputed_effects_leave)
 {
     // FL trims after its precomputed effects (FUN_00ff0db0): Thief's Importer Ride, faded out by Precomputed fade out 807,
     // trims to 0.38 s of its 1.30 s, and TIME stretches that (FL renders: 2x slower at TIME 367, round 180d)
-    using namespace lynx;
+    using namespace yw;
     SampleData d;
     d.sampleRate = 1000.0;
     d.left.assign (1000, 0.5f);
@@ -145,7 +145,7 @@ TEST (render180d_a_stretched_trimmed_clip_starts_on_time)
     // Stretching the whole file and trimming after it kept the stretcher's smear of the silence before the tone: the tone
     // started 966 frames late at this ratio, 1848 with a ratio 0.01 % off (round 180d, bl16). Like FL, the trimmed span
     // alone is stretched now (RackState::Factories::stretchedSpans; unset here: stretched in place): the tone starts at once.
-    using namespace lynx;
+    using namespace yw;
     constexpr double rate = 44100.0;
     auto sample = std::make_shared<SampleData>();
     sample->sampleRate = rate;

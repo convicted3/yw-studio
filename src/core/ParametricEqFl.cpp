@@ -18,7 +18,7 @@
 // Exact Fruity Parametric EQ 2 / Fruity Parametric EQ engines (docs/analise/REA_rodada50.md). Every float/double
 // rounding below is deliberate: it follows the order of operations observed in the plugins (§2–§3).
 
-namespace lynx::peqfl
+namespace yw::peqfl
 {
 namespace
 {
@@ -692,10 +692,10 @@ __attribute__ ((always_inline)) inline void runStagesN (Stage* const* st, float*
     }
 }
 
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
 // round 190kz: the same cascade compiled for AVX2 (picked at run time, src/core/CpuFeatures.h): the same SSE2 operations,
 // VEX-encoded (three-operand forms, fewer register copies), the same bits; no FMA (the target list has none)
-LYNX_TARGET_AVX2 void runStagesAvx2 (Stage* const* st, int count, float* io, int n) noexcept
+YW_TARGET_AVX2 void runStagesAvx2 (Stage* const* st, int count, float* io, int n) noexcept
 {
     for (; count >= 4; st += 4, count -= 4)
         runStagesN<4> (st, io, n);
@@ -711,7 +711,7 @@ LYNX_TARGET_AVX2 void runStagesAvx2 (Stage* const* st, int count, float* io, int
 
 void runStages (Stage* const* st, int count, float* io, int n) noexcept
 {
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
     if (cpu::hasAvx2())
     {
         runStagesAvx2 (st, count, io, n);
@@ -1003,13 +1003,13 @@ std::optional<Settings> parsePeq1 (const std::vector<std::uint8_t>& d)
 Law lawOf (const EffectParams& params) noexcept
 {
     const auto v = (int) std::lround (params[(std::size_t) lawParam] * 2.0f);
-    return v == 1 ? Law::peq2 : v == 2 ? Law::peq1 : Law::lynx;
+    return v == 1 ? Law::peq2 : v == 2 ? Law::peq1 : Law::yw;
 }
 
 namespace
 {
-// LYNX's own frequency value of a v1 frequency (the editor's 20 Hz…20 kHz law)
-float lynxHzValue (double hz) { return (float) std::clamp (std::log (std::max (hz, 1.0) / 20.0) / std::log (1000.0), 0.0, 1.0); }
+// YW's own frequency value of a v1 frequency (the editor's 20 Hz…20 kHz law)
+float ywHzValue (double hz) { return (float) std::clamp (std::log (std::max (hz, 1.0) / 20.0) / std::log (1000.0), 0.0, 1.0); }
 double peq1Hz (int raw)
 {
     const auto x = (float) ((double) raw * 1.52587890625e-05);
@@ -1018,10 +1018,10 @@ double peq1Hz (int raw)
 }
 double peq1MainDb (int raw) { return 20.0 * std::log10 (std::max ((double) peq1MainGain (raw), 1.0e-6)); }
 float gainParam (double db) { return (float) std::clamp (db / 36.0 + 0.5, 0.0, 1.0); }
-// FL UI type ↔ LYNX band type (core/Effects.h peq::BandType order: off, peak, lowShelf, highShelf, lowCut, highCut,
+// FL UI type ↔ YW band type (core/Effects.h peq::BandType order: off, peak, lowShelf, highShelf, lowCut, highCut,
 // bandPass, notch)
-constexpr int lynxOfFl[8] = { 0, 5, 6, 4, 7, 2, 1, 3 };
-constexpr int flOfLynx[8] = { 0, 6, 5, 7, 3, 1, 2, 4 };
+constexpr int ywOfFl[8] = { 0, 5, 6, 4, 7, 2, 1, 3 };
+constexpr int flOfYw[8] = { 0, 6, 5, 7, 3, 1, 2, 4 };
 } // namespace
 
 void toParams (const Settings& s, EffectParams& params) noexcept
@@ -1030,7 +1030,7 @@ void toParams (const Settings& s, EffectParams& params) noexcept
     {
         const auto ub = (std::size_t) b;
         const int ui = s.type[ub] >= 0 && s.type[ub] < 8 ? s.type[ub] : 0;
-        params[(std::size_t) (4 * b)] = (float) lynxOfFl[ui] / 7.0f;
+        params[(std::size_t) (4 * b)] = (float) ywOfFl[ui] / 7.0f;
         params[(std::size_t) (4 * b + 2)] = std::clamp ((float) ((double) s.gain[ub] / 3600.0 + 0.5), 0.0f, 1.0f);
         params[(std::size_t) (4 * b + 3)] = std::clamp (raw01 (s.width[ub], 65536.0), 0.0f, 1.0f);
         params[(std::size_t) (29 + b)] = (float) (std::clamp (s.order[ub], -3, 3) + 3) / 6.0f;
@@ -1039,7 +1039,7 @@ void toParams (const Settings& s, EffectParams& params) noexcept
         else
         {
             params[(std::size_t) (v1FreqParam + b)] = std::clamp (raw01 (s.freq[ub], 65536.0), 0.0f, 1.0f);
-            params[(std::size_t) (4 * b + 1)] = lynxHzValue (peq1Hz (s.freq[ub]));
+            params[(std::size_t) (4 * b + 1)] = ywHzValue (peq1Hz (s.freq[ub]));
         }
     }
     if (s.law == Law::peq2)
@@ -1067,7 +1067,7 @@ Settings fromParams (const EffectParams& params) noexcept
     {
         const auto ub = (std::size_t) b;
         const int lt = std::clamp ((int) std::lround (params[(std::size_t) (4 * b)] * 7.0f), 0, 7);
-        s.type[ub] = flOfLynx[lt];
+        s.type[ub] = flOfYw[lt];
         s.gain[ub] = (int) std::lround (((double) params[(std::size_t) (4 * b + 2)] - 0.5) * 3600.0);
         s.width[ub] = fromRaw01 (params[(std::size_t) (4 * b + 3)], 65536.0);
         s.order[ub] = std::clamp ((int) std::lround (params[(std::size_t) (29 + b)] * 6.0f) - 3, -3, 3);
@@ -1078,7 +1078,7 @@ Settings fromParams (const EffectParams& params) noexcept
         {
             // FL's own value while the band has not been moved in the editor; else the nearest v1 value
             const int raw = fromRaw01 (params[(std::size_t) (v1FreqParam + b)], 65536.0);
-            if (lynxHzValue (peq1Hz (raw)) == f)
+            if (ywHzValue (peq1Hz (raw)) == f)
                 s.freq[ub] = raw;
             else
             {
@@ -1424,4 +1424,4 @@ bool stagesMatchReference (std::uint32_t seed) noexcept
     }
     return true;
 }
-} // namespace lynx::peqfl
+} // namespace yw::peqfl

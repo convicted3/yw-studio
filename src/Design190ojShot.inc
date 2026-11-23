@@ -6,7 +6,7 @@
     // Main.cpp.
     bool runDesign190ojShot (const juce::String& prefix, const juce::String& projectPath)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         const juce::ScopedValueSetter<bool> shown (ui::showingForShots(), true);
         juce::StringArray made, checks;
@@ -144,7 +144,7 @@
         // one-bar fade out, the Playlist at 220 px a bar — FL draws the curve and the fade preview, Live shades the faded part
         {
             const auto bar = (std::int64_t) 4 * ppq;
-            const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190oj-fade.wav");
+            const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190oj-fade.wav");
             {
                 wav.deleteFile();
                 juce::WavAudioFormat format;

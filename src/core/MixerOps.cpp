@@ -14,7 +14,7 @@
 #include <functional>
 #include <numeric>
 
-namespace lynx::mixerops
+namespace yw::mixerops
 {
 void soloSelected (Song& song, const std::vector<int>& targets, bool alt)
 {
@@ -239,7 +239,7 @@ namespace
 // Patchers), plugins' own "send to insert" settings (Soundfont reverb / chorus, Voltage Controller outputs),
 // automation, links, initial values, pattern events and controller sources. FL keeps the mixer's own routes,
 // channels, Playlist tracks and automation / links (FUN_012a4030, FUN_012cb6c0) but leaves the plugin-side numbers
-// alone, so its Fruity Send / Patcher outputs end on another track; LYNX keeps those too (REA_rodada177a §1).
+// alone, so its Fruity Send / Patcher outputs end on another track; YW keeps those too (REA_rodada177a §1).
 // A reference to a deleted insert is dropped: sends removed, side-chains and slot sends cleared, channels to the
 // Master, automation / links without a target (FL marks them -1 too).
 void remapTrackReferences (Song& song, const std::function<int (int)>& map)
@@ -532,7 +532,7 @@ bool anySlot (const EffectSlot& slot, const Fn& fn)
     return false;
 }
 
-// LYNX's stand-in for FL's plugin "side routing" (FUN_0127bcc0 with flag 2): a plugin of another insert or a channel
+// YW's stand-in for FL's plugin "side routing" (FUN_0127bcc0 with flag 2): a plugin of another insert or a channel
 // points at insert `t` (round 190jv)
 bool sideRoutedTo (const Song& song, int t)
 {
@@ -588,7 +588,7 @@ bool insertLinked (const Song& song, int t)
 {
     if (! isInsert (song, t))
         return true; // (the Master, or no such insert: never trimmed)
-    // FL: a channel's output, a Playlist audio track (LYNX: an instrument track's link too), a route in or out
+    // FL: a channel's output, a Playlist audio track (YW: an instrument track's link too), a route in or out
     if (std::any_of (song.channels.begin(), song.channels.end(), [t] (const ChannelDef& c) { return c.mixerTrack == t; }))
         return true;
     if (std::any_of (song.playlistTracks.begin(), song.playlistTracks.end(), [t] (const PlaylistTrack& p) { return p.mixerTrack == t; }))
@@ -2120,4 +2120,4 @@ std::vector<int> channelsOn (const Song& song, const std::vector<int>& inserts)
             out.push_back (c);
     return out;
 }
-} // namespace lynx::mixerops
+} // namespace yw::mixerops

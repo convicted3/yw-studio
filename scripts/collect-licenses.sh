@@ -8,7 +8,7 @@
 # Source: every LICENSE / LICENCE / COPYING / NOTICE / ThirdPartyNotices / GNU-GPL file under third_party/ (named after its
 # path: third_party/ara/ARA_API/LICENSE.txt -> ara-ARA_API-LICENSE.txt), the Open Sans font licence (resources/fonts/OFL.txt)
 # and resources/licenses/* (licence texts that a component names but does not carry, e.g. GPL-3.0.txt for the VST 3 and
-# ASIO SDKs' GPLv3 option). LYNX SHARE's own licence (AGPL-3.0, also the licence LYNX uses JUCE under) is LICENSE next to
+# ASIO SDKs' GPLv3 option). YW Studio's own licence (AGPL-3.0, also the licence YW uses JUCE under) is LICENSE next to
 # the program. Plain bash + coreutils: runs in the Linux container, on macOS and in Git Bash.
 set -euo pipefail
 OUT="${1:?usage: scripts/collect-licenses.sh <folder>}"
@@ -25,13 +25,13 @@ done < <(find third_party -maxdepth 4 -type f \( -iname 'LICEN[CS]E*' -o -iname 
 cp resources/fonts/OFL.txt "$OUT/open-sans-OFL.txt"; n=$((n + 1))
 for f in resources/licenses/*; do cp "$f" "$OUT/"; n=$((n + 1)); done
 cat > "$OUT/README.txt" <<'TXT'
-Licence texts of the third-party components in LYNX SHARE.
+Licence texts of the third-party components in YW Studio.
 
-THIRD_PARTY.md (next to the program) lists every component, what it is used for, its licence and any change LYNX made.
-Each file here is named after the component's folder in LYNX SHARE's source (https://github.com/convicted3/yw-studio,
+THIRD_PARTY.md (next to the program) lists every component, what it is used for, its licence and any change YW made.
+Each file here is named after the component's folder in YW Studio's source (https://github.com/convicted3/yw-studio,
 folder third_party/), for example ara-ARA_API-LICENSE.txt is the ARA SDK's Apache License 2.0 and ara-NOTICE.txt its
 NOTICE; onnxruntime-ThirdPartyNotices.txt is Microsoft's notice file for ONNX Runtime 1.23.2. GPL-3.0.txt is the
-licence of the GPLv3 option under which LYNX uses Steinberg's VST 3 and ASIO SDKs. LYNX SHARE itself, and JUCE as LYNX
+licence of the GPLv3 option under which YW uses Steinberg's VST 3 and ASIO SDKs. YW Studio itself, and JUCE as YW
 uses it, are under the GNU Affero General Public License v3 (LICENSE next to the program).
 TXT
 echo "collect-licenses: $n licence files in $OUT"

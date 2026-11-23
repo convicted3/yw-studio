@@ -4,9 +4,9 @@
 // and the device". While it is on, what the Browser loads replaces the linked device, preset or sample in place instead
 // of making a new channel or adding an effect; Q, Esc, the Browser's bar or the device's button end it.
 //
-// What LYNX links:
-//   - a mixer effect slot: another effect from the Plugin database, an FL effect preset (.fst) or one of LYNX's own
-//     effect presets (.lynxpreset of the same effect) takes its place; the slot keeps its row, its Mix and its sidechain
+// What YW links:
+//   - a mixer effect slot: another effect from the Plugin database, an FL effect preset (.fst) or one of YW's own
+//     effect presets (.ywpreset of the same effect) takes its place; the slot keeps its row, its Mix and its sidechain
 //     sources, and the device comes in with its own on / off state: on (round 190cy, Live 12.4.16 live check 190cw: an
 //     Utility that was off, swapped for the preset "Wide Stereo", came in on);
 //   - a channel: another generator from the Plugin database or a synth preset replaces its instrument (the channel keeps
@@ -26,7 +26,7 @@
 #include "core/SampleFiles.h"
 #include "core/Song.h"
 
-namespace lynx::hotswap
+namespace yw::hotswap
 {
 enum class Kind : std::uint8_t { none, effect, channel };
 
@@ -139,7 +139,7 @@ inline Target swapEffect (Song& song, const Target& target, EffectSlot fresh)
 }
 
 // A preset of the same effect into the linked slot: its settings change (the instance, and so the link, stays) and the
-// device is on, as a preset loads it (round 190cy, Live 12.4.16: the swapped-in preset's own state; LYNX presets carry
+// device is on, as a preset loads it (round 190cy, Live 12.4.16: the swapped-in preset's own state; YW presets carry
 // no on / off). False when the slot is gone or holds another kind of effect.
 inline bool swapEffectPreset (Song& song, const Target& target, EffectKind kind, const EffectParams& params,
                               const std::vector<std::uint8_t>* state, const std::string& presetName)
@@ -193,8 +193,8 @@ enum class Candidate : std::uint8_t
     none,
     effect,       // a Plugin database effect
     generator,    // a Plugin database generator
-    effectPreset, // .fst (an FL effect preset) or .lynxpreset (one of LYNX's effect presets)
-    synthPreset,  // .fst / .gmsynth of a synth LYNX converts
+    effectPreset, // .fst (an FL effect preset) or .ywpreset (one of YW's effect presets)
+    synthPreset,  // .fst / .gmsynth of a synth YW converts
     sample
 };
 
@@ -215,7 +215,7 @@ inline Candidate candidateFor (const Song& song, const Target& target, const std
 {
     const auto ext = lowerExtension (fileName);
     if (target.kind == Kind::effect)
-        return findEffect (song, target.instance).found() && (ext == ".fst" || ext == ".lynxpreset") ? Candidate::effectPreset : Candidate::none;
+        return findEffect (song, target.instance).found() && (ext == ".fst" || ext == ".ywpreset") ? Candidate::effectPreset : Candidate::none;
     if (target.kind == Kind::channel)
     {
         const auto channel = findChannel (song, target.instance);
@@ -231,7 +231,7 @@ inline Candidate candidateFor (const Song& song, const Target& target, const std
 
 // --- the session -----------------------------------------------------------------------------------------------------
 // The Browser's side of the link: what it is linked to and what the Browser showed before, put back when the mode ends
-// (the tab and the search text; LYNX's choice, the reference leaves its browser where the user browsed to).
+// (the tab and the search text; YW's choice, the reference leaves its browser where the user browsed to).
 struct Session
 {
     Target target;
@@ -293,4 +293,4 @@ struct Session
         return false;
     }
 };
-} // namespace lynx::hotswap
+} // namespace yw::hotswap

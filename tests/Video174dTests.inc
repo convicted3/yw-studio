@@ -4,7 +4,7 @@
 
 TEST (video174d_rates)
 {
-    using namespace lynx::vtime;
+    using namespace yw::vtime;
     CHECK (rateAt (0).num == 24000 && rateAt (0).den == 1001 && rateAt (0).nominal() == 24);
     CHECK (rateAt (3).drop && rateAt (3).nominal() == 30 && ! rateAt (4).drop);
     for (int i = 0; i < rateCount; ++i)
@@ -24,7 +24,7 @@ TEST (video174d_rates)
 
 TEST (video174d_drop_frame_timecode)
 {
-    using namespace lynx::vtime;
+    using namespace yw::vtime;
     const auto df = rateAt (3), ndf = rateAt (4), df60 = rateAt (8);
     // the minute boundaries: 00:00:59;29 → 00:01:00;02 (labels ;00 and ;01 skipped), but 00:10:00;00 exists
     CHECK (format (toTimecode (1799, df), df) == "00:00:59;29");
@@ -50,7 +50,7 @@ TEST (video174d_drop_frame_timecode)
 
 TEST (video174d_timecode_parse)
 {
-    using namespace lynx::vtime;
+    using namespace yw::vtime;
     const auto r25 = rateAt (2), df = rateAt (3);
     CHECK (parse ("01:02:03:04", r25) == (Timecode { 1, 2, 3, 4, false }));
     CHECK (parse ("1:2:3:4", r25) == (Timecode { 1, 2, 3, 4, false }));
@@ -73,7 +73,7 @@ TEST (video174d_timecode_parse)
 
 TEST (video174d_track_showing_and_edits)
 {
-    using namespace lynx;
+    using namespace yw;
     VideoTrack t;
     CHECK (videotrack::addClip (t, "a.mp4", 10.0, 30.0, 1) == 0); // 10…40
     CHECK (videotrack::addClip (t, "b.mp4", 50.0, 20.0, 2) == 1); // 50…70
@@ -114,7 +114,7 @@ TEST (video174d_track_showing_and_edits)
 
 TEST (video174d_timecode_clock_and_tempo)
 {
-    using namespace lynx;
+    using namespace yw;
     VideoSettings v;
     v.rate = vtime::rateAt (2); // 25
     v.startTimecode = 3600.0;
@@ -131,7 +131,7 @@ TEST (video174d_timecode_clock_and_tempo)
 
 TEST (video174d_tempo_map)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.bpm = 100.0;
     const videotrack::TempoMap flat (song, 60.0);
@@ -164,7 +164,7 @@ TEST (video174d_tempo_map)
 
 TEST (video174d_adr_cues_names_csv)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<AdrCue> cues;
     CHECK (adr::nextId (cues) == "1");
     AdrCue a;
@@ -208,7 +208,7 @@ TEST (video174d_adr_cues_names_csv)
 
 TEST (video174d_adr_signals_and_comp)
 {
-    using namespace lynx;
+    using namespace yw;
     AdrCue c;
     c.in = 10.0;
     c.out = 12.0;
@@ -236,7 +236,7 @@ TEST (video174d_adr_signals_and_comp)
 
 TEST (video174d_dialogue_alignment)
 {
-    using namespace lynx;
+    using namespace yw;
     // a "line": syllables (harmonic bursts of different pitches and vowel colours) with pauses; the take says the same
     // syllables 0.15 s later, the middle ones slower and the pauses changed
     constexpr double sr = 16000.0;
@@ -275,7 +275,7 @@ TEST (video174d_dialogue_alignment)
             const auto g = guideSyl[k].start + f * guideSyl[k].length;
             const auto want = takeSyl[k].start + f * takeSyl[k].length;
             worst = std::max (worst, std::abs (map.takeAt (g) - want));
-            if (std::getenv ("LYNX_ALIGN_DEBUG"))
+            if (std::getenv ("YW_ALIGN_DEBUG"))
                 std::printf ("    syllable %d at %.2f: %.1f ms\n", (int) k, f, (map.takeAt (g) - want) * 1000.0);
         }
     std::printf ("  dialogue alignment: worst syllable error %.1f ms\n", worst * 1000.0);
@@ -298,7 +298,7 @@ TEST (video174d_dialogue_alignment)
 TEST (video174d_player_clock_follows_the_tempo)
 {
     // FL's Video Player clock is the song's real time (round 174d A3): 120 BPM for 4 bars, then 60 BPM
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.bpm = 120.0;
     song.mode = PlayMode::song;
@@ -341,7 +341,7 @@ TEST (video174d_player_clock_follows_the_tempo)
 TEST (video174d_song_length_counts_the_picture)
 {
     // a project with only its picture so far plays (and its playhead runs) to the picture's end, not one bar
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.bpm = 120.0;
     song.mode = PlayMode::song;

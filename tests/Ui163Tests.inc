@@ -3,8 +3,8 @@
 
 TEST (ui163_window_fit)
 {
-    using lynx::windowfit::Box;
-    using lynx::windowfit::place;
+    using yw::windowfit::Box;
+    using yw::windowfit::place;
     const Box screen { 0, 0, 1280, 700 }; // a 1920x1050 work area at 150%
     // inside: unchanged
     CHECK ((place ({ 100, 100, 600, 400 }, screen) == Box { 100, 100, 600, 400 }));

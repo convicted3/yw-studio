@@ -1,13 +1,13 @@
 // Round gaps190kf (item 3): the Loop Browser's keywords and filters (core/LoopKeywords.h) — GarageBand's keyword
 // buttons (several picked = all of them), the Scale menu (Any / Minor / Major / Neither / Good for Both), Loop Types,
-// favourites, keys near the project key, LYNX's tempo filter and the keyword layout (swap / place / reset).
-// Evidence: /mnt/e/lynx-work/gaps190kf/loops/NOTES.md.
+// favourites, keys near the project key, YW's tempo filter and the keyword layout (swap / place / reset).
+// Evidence: /mnt/e/yw-work/gaps190kf/loops/NOTES.md.
 
 #include "core/LoopKeywords.h"
 
 TEST (loops190kf_words_split_folders_names_camel_and_digits)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     CHECK ((words ("/lib/Drum Loops/DarkPad90_Am.wav") == std::vector<std::string> { "lib", "drum", "loops", "dark", "pad", "90", "am" }));
     CHECK ((words ("C:\\Packs\\808s\\Hi-Hat 01.WAV") == std::vector<std::string> { "c", "packs", "808s", "hi", "hat", "01" }));
     CHECK (words ("").empty());
@@ -15,7 +15,7 @@ TEST (loops190kf_words_split_folders_names_camel_and_digits)
 
 TEST (loops190kf_keywords_from_names_folders_and_implied)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     // a kick in a Kicks folder: Kick and the family it implies (All Drums)
     auto k = describe ("/s/Drums/Kicks/Kick Hard 01.wav", "Drums/Kicks/Kick Hard 01.wav");
     CHECK (k.keywords.count ("kick") == 1);
@@ -46,7 +46,7 @@ TEST (loops190kf_keywords_from_names_folders_and_implied)
 
 TEST (loops190kf_tags_and_factory_keywords)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     // a user tag that names a keyword (by id or label, any case) gives it; other tags don't make keywords
     auto k = describe ("/s/take 7.wav", "take 7.wav", { "Dark", "my best", "ELEC PIANO" }, { "lo-fi" });
     CHECK (k.keywords.count ("dark") == 1);
@@ -63,7 +63,7 @@ TEST (loops190kf_tags_and_factory_keywords)
 
 TEST (loops190kf_loop_types_by_extension)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     CHECK (typeOf ("a.wav") == audio);
     CHECK (typeOf ("a.AIFF") == audio);
     CHECK (typeOf ("a.flac") == audio);
@@ -75,7 +75,7 @@ TEST (loops190kf_loop_types_by_extension)
 
 TEST (loops190kf_scale_from_the_name)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     CHECK (describe ("/s/Keys 120 Am.wav").scale == Scale::minor);
     CHECK (describe ("/s/Keys 120 Cmaj.wav").scale == Scale::major);
     CHECK (describe ("/s/Keys F# major.wav").scale == Scale::major);
@@ -91,7 +91,7 @@ TEST (loops190kf_scale_from_the_name)
 
 TEST (loops190kf_tempo_from_the_name)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     CHECK (describe ("/s/Beat 98 bpm.wav").tempo == 98.0);
     CHECK (describe ("/s/Drum Loop_128.wav").tempo == 128.0); // (a bare number in a loop's name)
     CHECK (describe ("/s/Snare 100.wav").tempo == 0.0);       // (a bare number in a one-shot's name is not a tempo)
@@ -101,7 +101,7 @@ TEST (loops190kf_tempo_from_the_name)
 
 TEST (loops190kf_keyword_buttons_narrow_to_all_picked)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     // GarageBand: "Clicking multiple buttons narrows the results to those loops that match all of the selected keywords"
     const std::vector<LoopInfo> loops { describe ("/s/Dark Piano 90 Am.wav", "Dark Piano 90 Am.wav"), describe ("/s/Piano Happy 120 C maj.wav", "Piano Happy 120 C maj.wav"),
                                         describe ("/s/Dark Pad Loop 70 Dm.wav", "Dark Pad Loop 70 Dm.wav"), describe ("/s/Kick 1.wav", "Kick 1.wav"),
@@ -152,7 +152,7 @@ TEST (loops190kf_keyword_buttons_narrow_to_all_picked)
 
 TEST (loops190kf_tempo_and_near_key_filters)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     const std::vector<LoopInfo> loops { describe ("/s/A 90 bpm Am.wav"), describe ("/s/B 120 bpm Em.wav"), describe ("/s/C 128 bpm.wav"), describe ("/s/Kick.wav") };
     Filter f;
     const auto [lo, hi] = tempoBounds (1, 125.0); // near the project tempo (±6 %)
@@ -176,7 +176,7 @@ TEST (loops190kf_tempo_and_near_key_filters)
 
 TEST (loops190kf_vocabulary_grid_and_layout)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     // three categories; ids unique; the instrument grid starts with GarageBand's first row's families
     std::set<std::string> ids;
     for (const auto& k : vocabulary())
@@ -209,14 +209,14 @@ TEST (loops190kf_vocabulary_grid_and_layout)
 
 TEST (loops190kf_factory_source_hook)
 {
-    using namespace lynx::loopkeys;
+    using namespace yw::loopkeys;
     // round 190ke's factory tags plug in here (a thread-safe lookup by path); none by default
     CHECK (factoryKeywords ("/x/a.wav").empty());
-    setFactorySource ([] (const std::string& path) { return path == "/lynx/Starter Beat.wav" ? std::vector<std::string> { "hip hop", "beats" } : std::vector<std::string> {}; });
-    const auto k = describe ("/lynx/Starter Beat.wav", "Starter Beat.wav", {}, factoryKeywords ("/lynx/Starter Beat.wav"));
+    setFactorySource ([] (const std::string& path) { return path == "/yw/Starter Beat.wav" ? std::vector<std::string> { "hip hop", "beats" } : std::vector<std::string> {}; });
+    const auto k = describe ("/yw/Starter Beat.wav", "Starter Beat.wav", {}, factoryKeywords ("/yw/Starter Beat.wav"));
     CHECK (k.keywords.count ("hip hop") == 1);
     CHECK (k.keywords.count ("all drums") == 1); // (beats implies All Drums)
     CHECK (factoryKeywords ("/x/a.wav").empty());
     setFactorySource (nullptr);
-    CHECK (factoryKeywords ("/lynx/Starter Beat.wav").empty());
+    CHECK (factoryKeywords ("/yw/Starter Beat.wav").empty());
 }

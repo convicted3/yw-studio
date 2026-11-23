@@ -18,7 +18,7 @@
 #include "core/OggVorbis.h"
 #include "core/WavPack.h"
 
-namespace lynx::tools
+namespace yw::tools
 {
 inline std::shared_ptr<const SampleData> readWav (const std::string& path)
 {
@@ -158,4 +158,4 @@ inline std::shared_ptr<const SampleData> readWav (const std::string& path)
     sample->acidBeats = extras.acidBeats;
     return sample;
 }
-} // namespace lynx::tools
+} // namespace yw::tools

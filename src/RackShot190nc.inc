@@ -2,11 +2,11 @@
     // its chain's devices inline (DL-95), Live's Macro Map overlay (Map on, a parameter picked, the Map button, the Macro
     // Mappings list in the Browser's place), and the Session mixer's Solo / Cue controls (DL-110: one output pair, then a
     // device given four outputs). <prefix>-checks.txt lists the checks; -perf.txt the Device View's paint times. Included
-    // in the app class of Main.cpp (savePng / saveMenus). @150: LYNX_SHOT_SCALE=1.5 and LYNX_SHOT_SUFFIX=@150.
+    // in the app class of Main.cpp (savePng / saveMenus). @150: YW_SHOT_SCALE=1.5 and YW_SHOT_SUFFIX=@150.
     bool runRackShot190nc (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -14,21 +14,21 @@
             allOk = allOk && ok;
         };
         const auto line = [&checks] (const juce::String& what) { checks << "     " << what << "\n"; };
-        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (lynx::shot::snapshot (c), prefix + "-" + name + ".png"); };
+        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (yw::shot::snapshot (c), prefix + "-" + name + ".png"); };
         const auto mouseOn = [] (juce::Component& target, juce::Point<int> p, juce::ModifierKeys mods, int clicks = 1) {
             auto source = juce::Desktop::getInstance().getMainMouseSource();
             const auto now = juce::Time::getCurrentTime();
             return juce::MouseEvent (source, p.toFloat(), mods, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, &target, &target, now, p.toFloat(), now, clicks, false);
         };
-        std::function<lynx::RackView* (juce::Component&)> findRack = [&findRack] (juce::Component& c) -> lynx::RackView* {
-            if (auto* r = dynamic_cast<lynx::RackView*> (&c))
+        std::function<yw::RackView* (juce::Component&)> findRack = [&findRack] (juce::Component& c) -> yw::RackView* {
+            if (auto* r = dynamic_cast<yw::RackView*> (&c))
                 return r;
             for (auto* child : c.getChildren())
                 if (auto* r = findRack (*child))
                     return r;
             return nullptr;
         };
-        using namespace lynx;
+        using namespace yw;
 
         AudioEngine offline (false);
         MainComponent ui (offline, false);
@@ -171,7 +171,7 @@
         rackView->setMapMode (false);
         check ("Map off: the list goes", rackView->mappingsListForCheck() == nullptr);
 
-        // the rack's own window keeps LYNX's devices pane (Live's look only in the Device View)
+        // the rack's own window keeps YW's devices pane (Live's look only in the Device View)
         {
             auto window = RackWindows::makeSlotView (offline, 2, 0, true);
             window->setSize (std::max (720, window->preferredWidth (230)), 230);

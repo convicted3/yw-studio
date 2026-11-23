@@ -1,7 +1,7 @@
 // The X11 part of ui/MotionOverlay's Linux / BSD backend (round 190jx): see MotionOverlayX11.h.
 //
 // libX11 and libXrender are the ones JUCE loads at run time (juce_XSymbols_linux.cpp: dlopen); they are looked up the
-// same way here, so LYNX links neither and runs where JUCE runs. Without libXrender (or the Render extension, or an
+// same way here, so YW links neither and runs where JUCE runs. Without libXrender (or the Render extension, or an
 // ARGB32 picture format) ready() is false and the views paint their marks as before.
 
 #include "ui/MotionOverlayX11.h"
@@ -16,7 +16,7 @@
 #include <map>
 #include <vector>
 
-namespace lynx::ui::x11overlay
+namespace yw::ui::x11overlay
 {
 namespace
 {
@@ -611,4 +611,4 @@ const char* selfTestOnServer()
     }
     return result;
 }
-} // namespace lynx::ui::x11overlay
+} // namespace yw::ui::x11overlay

@@ -3,9 +3,9 @@
 // Round 190ih (PLAN R12, owner decision L1): Ableton Live's keyboard shortcuts in the Clip-launch layout. Live's
 // manual (Keyboard Shortcuts; Live Concepts 3.6; Arrangement View 6.13) gives them; in this layout they take Live's
 // meaning, as round 190cm did for Ctrl+I / Ctrl+R (core/SessionKeys.h). In the Pattern (FL) and Simple layouts
-// nothing changes: the chords fall through to LYNX's key map there.
+// nothing changes: the chords fall through to YW's key map there.
 //
-//   Tab           toggle Session ↔ Arrangement view       (LYNX: the clip grid ↔ the Playlist; from "Both", the grid)
+//   Tab           toggle Session ↔ Arrangement view       (YW: the clip grid ↔ the Playlist; from "Both", the grid)
 //   O             metronome on / off                      (FL layout: Ctrl+M, which is MIDI Map Mode here)
 //   F9            Arrangement Record (recording on / off)  (FL layout: F9 = Mixer)
 //   Ctrl+Shift+F9 Session Record (the selected scene)
@@ -13,14 +13,14 @@
 //   M             Computer MIDI Keyboard on / off          (FL layout: Ctrl+T)
 //   Ctrl+Alt+B    show / hide the Browser                 (FL layout: Alt+F8)
 //   Ctrl+Shift+F  Follow on / off                         (the Playlist's follow)
-//   Ctrl+J        Consolidate (LYNX's consolidate of the Playlist selection, which renders it to audio)
+//   Ctrl+J        Consolidate (YW's consolidate of the Playlist selection, which renders it to audio)
 // Not here yet (they need the clip grid or the Playlist, edited by another round): 0 = deactivate the selected clip,
 // Ctrl+E = split, Shift+? = Info View.
 
 #include "core/KeyMap.h"
 #include "core/LayoutStyle.h"
 
-namespace lynx::livekeys
+namespace yw::livekeys
 {
 enum class Command
 {
@@ -79,4 +79,4 @@ constexpr const char* menuKey (Command c, layoutstyle::Style style) noexcept
     }
     return "";
 }
-} // namespace lynx::livekeys
+} // namespace yw::livekeys

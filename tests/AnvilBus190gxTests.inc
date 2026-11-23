@@ -1,9 +1,9 @@
 // --- Round 190gx: Anvil Bus refitted on Live 12.4's second Drum Buss render set (round 190gu: 46 cases at 44.1 / 48 /
-// 96 kHz; /mnt/e/lynx-work/livefacts190gx/db/REPORT.md). The numbers in the checks are Live's own measurements.
+// 96 kHz; /mnt/e/yw-work/livefacts190gx/db/REPORT.md). The numbers in the checks are Live's own measurements.
 
 namespace anvil190gx
 {
-using namespace lynx;
+using namespace yw;
 
 // the engine on a stereo-identical signal (256-sample blocks) at `rate`; the output, latency removed
 inline std::vector<float> run (const EffectParams& p, std::vector<float> x, double rate = 48000.0)
@@ -43,7 +43,7 @@ inline std::vector<float> pad (double rate, double seconds)
 
 TEST (anvil190gx_comp_sits_before_the_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     using anvil190fk::params;
     using anvil190fk::sineOut;
@@ -61,8 +61,8 @@ TEST (anvil190gx_comp_sits_before_the_curve)
 TEST (anvil190gx_dry_wet_blends_the_raw_input_with_comp_on)
 {
     // Live 190gu: Comp on, Dry/Wet 0.5 = 0.5 · input + 0.5 · the Comp-on device, sample for sample (within 0.005 dB on
-    // every step of the staircase); LYNX's blend is that exactly
-    using namespace lynx;
+    // every step of the staircase); YW's blend is that exactly
+    using namespace yw;
     namespace a = anvil;
     std::vector<float> x (48000);
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -77,7 +77,7 @@ TEST (anvil190gx_dry_wet_blends_the_raw_input_with_comp_on)
 
 TEST (anvil190gx_boom_amount_sets_the_ring)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     using anvil190fk::params;
     using anvil190fk::relGain;
@@ -100,7 +100,7 @@ TEST (anvil190gx_boom_amount_sets_the_ring)
 
 TEST (anvil190gx_soft_75_and_type_eq_depth)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     using anvil190fk::params;
     using anvil190fk::sineOut;
@@ -117,8 +117,8 @@ TEST (anvil190gx_soft_75_and_type_eq_depth)
 
 TEST (anvil190gx_rate_independent)
 {
-    // Live's three render rates agree within 0.25 dB rms; LYNX's engine: the same settings on the pad at 44.1 / 48 / 96 kHz
-    using namespace lynx;
+    // Live's three render rates agree within 0.25 dB rms; YW's engine: the same settings on the pad at 44.1 / 48 / 96 kHz
+    using namespace yw;
     namespace a = anvil;
     const auto p = anvil190fk::params ({ { a::drive, 0.5f }, { a::comp, 1.0f }, { a::boom, 0.5f }, { a::transients, a::transientsValue (-0.5) } });
     double level[3] {};
@@ -135,7 +135,7 @@ TEST (anvil190gx_transients_move_a_steady_pad)
 {
     // Live 190gu: a sustained pad's rms re the neutral device: −1.0 → −3.92 dB, +0.25 → +1.15 dB. Anvil Bus holds the
     // direction with part of the depth (a deeper level term moves the drum loop's measured segments off)
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     const auto x = anvil190gx::pad (48000.0, 1.5);
     const auto level = [&] (double t) {

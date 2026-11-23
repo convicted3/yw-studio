@@ -70,7 +70,7 @@
 #include "ui/WindowClipboard.h"
 #include "ui/SoundFontEditor.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -138,7 +138,7 @@ juce::String instrumentName (InstrumentKind k)
         case InstrumentKind::tetra: return "Tetra";
         case InstrumentKind::helix: return "Helix";
         case InstrumentKind::braid: return "Braid";
-        case InstrumentKind::lynxModel: return "YW Model";
+        case InstrumentKind::ywModel: return "YW Model";
     }
     return "?";
 }
@@ -319,7 +319,7 @@ void ChannelRackComponent::showFilterMenu (juce::Component* target)
     juce::PopupMenu menu;
     menu.addItem (tr ("All"), true, filterGroup == rackfilter::all, [this] { setFilterGroup (rackfilter::all); });
     // FL 2026's list (round 190oq, issue #246; REA_rodada190oq §3): "All", a line, then the groups A–Z — its built-in
-    // "Audio" (the audio clip channels) and "Unsorted" (the channels in no group) among them, as LYNX's two views
+    // "Audio" (the audio clip channels) and "Unsorted" (the channels in no group) among them, as YW's two views
     // (round 168t: offered for every project), then the project's own groups
     struct Entry
     {
@@ -1105,7 +1105,7 @@ void ChannelRackComponent::paint (juce::Graphics& g)
             g.fillRect (0, y + 1, getWidth(), rowHeight - 2);
         }
 
-        if (column) // LYNX: the playing column, soft, under the step buttons (their colours and groups stay readable)
+        if (column) // YW: the playing column, soft, under the step buttons (their colours and groups stay readable)
         {
             g.setColour (playhead.withAlpha (0.2f));
             g.fillRect (gridLeft() + playheadStep * stepWidth - 1, y, stepWidth, rowHeight);
@@ -1239,7 +1239,7 @@ void ChannelRackComponent::paint (juce::Graphics& g)
         if (cell.getRight() < (float) clip.getX() || cell.getX() > (float) clip.getRight())
             continue;
         theme::fillRoundRect (g, cell, 1.5f, step == playheadStep ? playhead : theme::stepOff (step).brighter (0.12f));
-        // LYNX: each bar's first step marked (finding the bars on 32 / 64-step patterns)
+        // YW: each bar's first step marked (finding the bars on 32 / 64-step patterns)
         if (playheadColumn.load (std::memory_order_relaxed) && step % stepsPerBar == 0 && step != playheadStep)
         {
             g.setColour (accent.withAlpha (0.7f));
@@ -1388,7 +1388,7 @@ void ChannelRackComponent::paint (juce::Graphics& g)
                 g.setColour (onAccent.withAlpha (channel.muted ? 0.5f : frozen ? 0.7f : 0.92f));
                 g.setFont (theme::font (theme::type::body + 1.0f));
                 // FL's Channel rack menu › Options › Channel name alignment › Left (round 190kd): the name from the left edge,
-                // as LYNX drew it before 190jp
+                // as YW drew it before 190jp
                 const auto left = nameAlignLeft;
                 const auto rightTrim = rightUsed + iconWidth > 0.0f ? rightUsed + iconWidth + 4.0f : left ? 5.0f : 6.0f;
                 const auto textArea = nameArea.withTrimmedLeft (left ? 7.0f : 6.0f).withTrimmedRight (rightTrim);
@@ -1522,7 +1522,7 @@ juce::Rectangle<int> ChannelRackComponent::automationRowBounds (int automation) 
     return {};
 }
 
-// FL draws an automation clip channel's steps as any channel's (idle: LYNX does not start a clip from steps, the triggered
+// FL draws an automation clip channel's steps as any channel's (idle: YW does not start a clip from steps, the triggered
 // playback of details DE-123); the piano roll overview leaves the row empty (a clip has no notes)
 void ChannelRackComponent::paintAutomationSteps (juce::Graphics& g, juce::Rectangle<int> clip)
 {
@@ -1821,7 +1821,7 @@ void ChannelRackComponent::paintAutomationSlot (juce::Graphics& g, int a, int y)
         theme::fillRoundRect (g, slot.reduced (selected ? 3.0f : 2.0f), 1.5f, juce::Colours::white.withAlpha (selected ? 0.75f : 0.9f));
 }
 
-// Right-click on an automation clip row: what LYNX already does with a clip (the Playlist's automation clip items)
+// Right-click on an automation clip row: what YW already does with a clip (the Playlist's automation clip items)
 void ChannelRackComponent::showAutomationMenu (int automation)
 {
     const auto& song = engine.getSong();
@@ -2845,7 +2845,7 @@ void ChannelRackComponent::copySelected()
 {
     const auto& song = engine.getSong();
     stepClipboard = copyChannelSteps (song.activePattern(), engine.getSelectedChannels(), (int) song.channels.size());
-    if (windowclip::enabled() && ! stepClipboard.empty()) // (issue #232, round 190nz: and to another LYNX SHARE window)
+    if (windowclip::enabled() && ! stepClipboard.empty()) // (issue #232, round 190nz: and to another YW Studio window)
     {
         crossclipboard::Payload copy;
         copy.kind = crossclipboard::Kind::steps;
@@ -2908,7 +2908,7 @@ void ChannelRackComponent::cutSelected()
 
 void ChannelRackComponent::pasteSelected()
 {
-    // issue #232 (round 190nz): steps copied in another LYNX SHARE window
+    // issue #232 (round 190nz): steps copied in another YW Studio window
     if (auto incoming = windowclip::incoming (crossclipboard::Kind::steps); incoming && ! incoming->steps.empty())
         stepClipboard = std::move (incoming->steps);
     if (stepClipboard.empty() || engine.getSelectedChannels().empty())
@@ -2956,7 +2956,7 @@ int ChannelRackComponent::addChannel (ChannelDef c, bool openEditor, int insert)
     int index = 0;
     if (filterGroup >= 0 && c.group < 0) // a new channel joins the group shown (FL)
         c.group = filterGroup;
-    // round 190ok (D2): Settings › Audio › "Smart disable for new instrument plugins" (LYNX extra; FL's default: off)
+    // round 190ok (D2): Settings › Audio › "Smart disable for new instrument plugins" (YW extra; FL's default: off)
     if (c.instrument == InstrumentKind::plugin && flsettings::options().smartDisableNewPlugins.load())
         c.setSmartDisable (true);
     engine.editSong ([&] (Song& s) { index = addChannelRouted (s, c, insert); });
@@ -3863,7 +3863,7 @@ void ChannelRackComponent::fillWindowMenu (int channel, wrappermenu::Spec& spec)
             safe->rename (channel);
     };
     // FL's Channel column (round 190ld, DF-118): "Save channel state as..." writes the channel as the project stores it
-    // (ProjectFile::channelStateBytes, LYNX's .lynxchannel); "Browse channel states" opens one into this channel (its
+    // (ProjectFile::channelStateBytes, YW's .ywchannel); "Browse channel states" opens one into this channel (its
     // mixer track stays). FL's own .fst states are read by the Browser.
     spec.saveChannelState = [safe, channel] {
         if (safe != nullptr && channel < (int) safe->engine.getSong().channels.size())
@@ -3886,7 +3886,7 @@ void ChannelRackComponent::fillWindowMenu (int channel, wrappermenu::Spec& spec)
     spec.randomColour = [safe, channel] {
         if (safe == nullptr || channel >= (int) safe->engine.getSong().channels.size())
             return;
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
         const auto colour = palette[(std::size_t) juce::Random::getSystemRandom().nextInt ((int) palette.size())];
         safe->engine.editSong ([targets = selrename::targets (channel, safe->engine.getSelectedChannels()), colour] (Song& s) {
             selrename::colourChannels (s, targets, colour); // (issue #201)
@@ -3928,7 +3928,7 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
     auto instruments = replaceMenu (channel);
 
     // FL's layout (REA round 104): two columns, the channel on the left (editors, name and colour, sample,
-    // insert / replace / clone / delete) and its steps on the right (clipboard, fills, rotation); LYNX's own
+    // insert / replace / clone / delete) and its steps on the right (clipboard, fills, rotation); YW's own
     // items (settings windows, arpeggiator, organisation) follow in their place
     juce::PopupMenu menu;
     ui::addItemHeader (menu, tr ("Channel"), juce::String::fromUTF8 (c.name.c_str()), c.colour != 0 ? juce::Colour (c.colour) : juce::Colour());
@@ -3939,7 +3939,7 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
         if (onOpenPianoRoll)
             onOpenPianoRoll();
     });
-    // round 190ob (LYNX's own, beside FL's Piano roll: the other view of the same notes): the Tracker on this channel's
+    // round 190ob (YW's own, beside FL's Piano roll: the other view of the same notes): the Tracker on this channel's
     // track (the channel is selected first when it is not, so it has a track even without notes)
     menu.addItem (tr ("Edit in tracker") + (actionKeyText ? actionKeyText ("view.tracker") : juce::String()), [this, channel] {
         if (channel >= (int) engine.getSong().channels.size())
@@ -3961,11 +3961,11 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
                              engine.editSong ([channel, colour] (Song& s) { s.channels[(std::size_t) channel].colour = colour; });
                      }, juce::Rectangle<int> (juce::Desktop::getMousePosition().x, juce::Desktop::getMousePosition().y, 1, 1)));
     menu.addItem (tr ("Random color"), [this, channel] {
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
         const auto colour = palette[(std::size_t) juce::Random::getSystemRandom().nextInt ((int) palette.size())];
         engine.editSong ([channel, colour] (Song& s) { s.channels[(std::size_t) channel].colour = colour; });
     });
-    // FL's "Change icon" (SetPlugIconMenuClick, REA round 168h); LYNX's own icon set
+    // FL's "Change icon" (SetPlugIconMenuClick, REA round 168h); YW's own icon set
     menu.addItem (tr ("Change icon..."), [this, channel] {
         if (channel >= (int) engine.getSong().channels.size())
             return;
@@ -4002,7 +4002,7 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
         closeEditor (channel);
         engine.editSong ([channel] (Song& s) { patcherize::patcherizeChannel (s, channel); });
     });
-    // Freeze (round 190ay; LYNX's own, FL has none): the channel's sound rendered to audio that plays in its place while
+    // Freeze (round 190ay; YW's own, FL has none): the channel's sound rendered to audio that plays in its place while
     // its instrument / plugin is unloaded; the clicked channel, or every selected one when it is among them
     {
         const auto& song = engine.getSong();
@@ -4034,7 +4034,7 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
             menu.addItem (several ? tr ("Re-freeze selected channels") : tr ("Re-freeze"), [this, targets] { freezeChannels (targets); });
         }
     }
-    // round 190op (P4, LYNX extra; owner decision O-3): Deactivate unloads the instrument with nothing rendered (Freeze
+    // round 190op (P4, YW extra; owner decision O-3): Deactivate unloads the instrument with nothing rendered (Freeze
     // renders); the clicked channel, or every selected one when it is among them
     if (layoutstyle::current() != layoutstyle::Style::pattern || trackstates::patternMenus() || c.deactivated)
     {
@@ -4058,7 +4058,7 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
     // FL's Loop Starter channel menu (round 168b): Replace sample, Generate steps, Locked, One-shot category
     loopstarterui::addChannelMenu (menu, engine, channel);
     menu.addItem (selected > 1 ? theme::mnemonic (tr ("Clone {0} channels", { juce::String (selected) }), 'C') : theme::mnemonic (tr ("Clone"), 'C') + "\tAlt+C", [this] { cloneSelected(); });
-    // issue #232 stage 2 (round 190nz, LYNX extra): the channels themselves, also to another LYNX SHARE window
+    // issue #232 stage 2 (round 190nz, YW extra): the channels themselves, also to another YW Studio window
     menu.addItem (selected > 1 ? tr ("Copy {0} channels", { juce::String (selected) }) : tr ("Copy channel"), [this] { copyChannels(); });
     menu.addItem (tr ("Paste channels"), canPasteChannels(), false, [this] { pasteChannels(); });
 
@@ -4088,7 +4088,7 @@ juce::PopupMenu ChannelRackComponent::buildChannelMenu (int channel)
             engine.editSong ([channel] (Song& s) { trackmodes::unassignFromInstrumentTracks (s, channel); });
         });
 
-    // LYNX: the channel's settings windows and its arpeggiator
+    // YW: the channel's settings windows and its arpeggiator
     menu.addSeparator();
     if (c.instrument == InstrumentKind::sampler)
     {
@@ -4311,7 +4311,7 @@ void ChannelRackComponent::openNewGenerator (int row, InstrumentKind kind)
     {
         case InstrumentKind::kick: case InstrumentKind::snare: case InstrumentKind::hat: case InstrumentKind::clap:
         case InstrumentKind::synth: case InstrumentKind::sampler: case InstrumentKind::audioClip:
-            return; // (LYNX's drums and synth: no window, as before)
+            return; // (YW's drums and synth: no window, as before)
         case InstrumentKind::plugin:
             openPluginWindow (row); // the plugin opens when added
             openEditorRow = row;
@@ -4371,15 +4371,15 @@ void ChannelRackComponent::saveChannelState (int channel)
     const auto folder = channelStateFolder();
     folder.createDirectory();
     const auto name = juce::File::createLegalFileName (juce::String::fromUTF8 (c.name.c_str())).trim();
-    fileChooser = lynx::ui::makeFileChooser (tr ("Save channel state as..."), folder.getChildFile ((name.isEmpty() ? juce::String ("Channel") : name) + ".lynxchannel"),
-                                             "*.lynxchannel");
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+    fileChooser = yw::ui::makeFileChooser (tr ("Save channel state as..."), folder.getChildFile ((name.isEmpty() ? juce::String ("Channel") : name) + ".ywchannel"),
+                                             "*.ywchannel");
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
                                               | juce::FileBrowserComponent::warnAboutOverwriting,
                              [this, channel] (const juce::FileChooser& chooser) {
                                  auto file = chooser.getResult();
                                  if (file == juce::File() || channel >= (int) engine.getSong().channels.size())
                                      return;
-                                 file = file.withFileExtension ("lynxchannel");
+                                 file = file.withFileExtension ("ywchannel");
                                  const auto bytes = ProjectFile::channelStateBytes (engine.getSong().channels[(std::size_t) channel]);
                                  if (! file.replaceWithData (bytes.data(), bytes.size()))
                                      juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Save channel state as..."),
@@ -4389,8 +4389,8 @@ void ChannelRackComponent::saveChannelState (int channel)
 
 void ChannelRackComponent::openChannelState (int channel)
 {
-    fileChooser = lynx::ui::makeFileChooser (tr ("Browse channel states"), channelStateFolder(), "*.lynxchannel");
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+    fileChooser = yw::ui::makeFileChooser (tr ("Browse channel states"), channelStateFolder(), "*.ywchannel");
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                              [this, channel] (const juce::FileChooser& chooser) {
                                  juce::MemoryBlock data;
                                  if (! chooser.getResult().loadFileAsData (data) || channel >= (int) engine.getSong().channels.size())
@@ -4417,8 +4417,8 @@ void ChannelRackComponent::openChannelState (int channel)
 
 void ChannelRackComponent::chooseSample (int channel, int insertAt)
 {
-    fileChooser = lynx::ui::makeFileChooser (tr ("Choose sample"), juce::File(), engine.getSampleLibrary().wildcard());
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+    fileChooser = yw::ui::makeFileChooser (tr ("Choose sample"), juce::File(), engine.getSampleLibrary().wildcard());
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [this, channel, insertAt] (const juce::FileChooser& chooser) {
                                   if (! chooser.getResult().existsAsFile())
                                       return;
@@ -4562,7 +4562,7 @@ void ChannelRackComponent::rename (int channel)
 namespace
 {
 // Live's "Slice to Drum Rack" (round 190ec): Simpler in Slicing mode → a Drum Rack on the same track, one pad per slice
-// (Live's Default slicing facts: gated, choke group 1), no clip. LYNX: the Sampler channel's own slices if it has them,
+// (Live's Default slicing facts: gated, choke group 1), no clip. YW: the Sampler channel's own slices if it has them,
 // else its transients (a .speech sample: its words), inside its played region; the channel keeps its name, insert,
 // levels and colour.
 void sliceChannelToDrumRack (AudioEngine& engine, int channel)
@@ -4682,7 +4682,7 @@ void ChannelRackComponent::filesDropped (const juce::StringArray& files, int x, 
 
         if (file.hasFileExtension ("sf2;sf3;sfz"))
         {
-            // a SoundFont: into the LYNX Soundfont channel it was dropped on, else a new channel
+            // a SoundFont: into the YW Soundfont channel it was dropped on, else a new channel
             openSoundFontFile (engine, file, target);
             target = -1;
             continue;
@@ -4870,7 +4870,7 @@ void ChannelRackComponent::itemDropped (const SourceDetails& details)
         return;
     }
 
-    // a preset dragged from a LYNX Soundfont list: onto a LYNX Soundfont channel it loads there, else a new channel
+    // a preset dragged from a YW Soundfont list: onto a YW Soundfont channel it loads there, else a new channel
     std::string path;
     int bank = 0, program = 0;
     if (parseSoundFontDrag (details.description.toString(), path, bank, program))
@@ -4888,4 +4888,4 @@ void ChannelRackComponent::itemDropped (const SourceDetails& details)
     if (const auto file = BrowserComponent::draggedFile (details); file.existsAsFile())
         filesDropped ({ file.getFullPathName() }, details.localPosition.x, details.localPosition.y);
 }
-} // namespace lynx
+} // namespace yw

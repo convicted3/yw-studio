@@ -6,10 +6,10 @@
 namespace ntt167
 {
 // a Transmitter with both section effects Off and no tilt: transient + sustain = the input delayed by the lookahead
-lynx::EffectSlot plainTransmitter()
+yw::EffectSlot plainTransmitter()
 {
-    using namespace lynx::transmitter;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::transmitter);
+    using namespace yw::transmitter;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::transmitter);
     slot.params[transientEffect] = paramFromRaw (transientEffect, off);
     slot.params[sustainEffect] = paramFromRaw (sustainEffect, off);
     slot.params[transientTilt] = slot.params[sustainTilt] = 0.5f;
@@ -19,7 +19,7 @@ lynx::EffectSlot plainTransmitter()
 
 TEST (ntt167_transmitter_synced_text_and_columns)
 {
-    using namespace lynx::transmitter;
+    using namespace yw::transmitter;
     // FL: 768 positions (16 steps × 48 ticks), shown one tick on
     CHECK (syncedText (10000) == "16:0");
     CHECK (syncedText (0) == "0:1");
@@ -39,9 +39,9 @@ TEST (ntt167_transmitter_synced_text_and_columns)
 
 TEST (ntt167_transmitter_parts_are_what_fl_sends)
 {
-    using namespace lynx::transmitter;
+    using namespace yw::transmitter;
     // FL's engine goldens (REA_rodada167b §1): out = level_T · part_T + level_S · part_S, the parts before the levels and
-    // the on switches. LYNX's parts follow the same law.
+    // the on switches. YW's parts follow the same law.
     Engine e;
     auto raw = fltrans165::defaultRaw();
     raw[transientLevel] = 7000;
@@ -83,8 +83,8 @@ TEST (ntt167_transmitter_parts_are_what_fl_sends)
 
 TEST (ntt167_transmitter_sends_route_to_inserts)
 {
-    using namespace lynx;
-    using namespace lynx::transmitter;
+    using namespace yw;
+    using namespace yw::transmitter;
     // insert 1: a Transmitter with both parts switched off on its own output; its transient goes to insert 3 and its
     // sustain to insert 2. The parts add up to the input (delayed by the lookahead), so the Master gets the input back.
     auto both = [] (Song& s) {
@@ -127,7 +127,7 @@ TEST (ntt167_transmitter_sends_route_to_inserts)
 
 TEST (ntt167_transmitter_send_pdc_after_its_latency)
 {
-    using namespace lynx;
+    using namespace yw;
     // insert 1: [latent 100][Transmitter (88, lookahead) → 2]: the send leaves after both (188), unlike a Fruity Send
     Song s;
     s.mixer = Song::defaultMixer (3);
@@ -144,7 +144,7 @@ TEST (ntt167_transmitter_send_pdc_after_its_latency)
 
 TEST (ntt167_transmitter_envelope_view)
 {
-    using namespace lynx;
+    using namespace yw;
     // a running Transmitter keeps FL's envelope columns: a burst raises the transient envelope, the tail the sustain
     auto fx = transmitter::make();
     fx->prepare (44100);
@@ -195,9 +195,9 @@ std::string newtimeXml (std::int64_t moved)
 
 TEST (ntt167_newtime_imports_fl_warp_markers)
 {
-    using namespace lynx;
-    using namespace lynx::newtonefx;
-    // FL's segments become LYNX's markers: each segment's source start → output start, and the end
+    using namespace yw;
+    using namespace yw::newtonefx;
+    // FL's segments become YW's markers: each segment's source start → output start, and the end
     const auto st = newtonetest::state (1, 4, ntt167::newtimeXml (300), "C:\\x.wav");
     const auto map = warpOf (st);
     CHECK (map && map->frames == 3000);
@@ -209,7 +209,7 @@ TEST (ntt167_newtime_imports_fl_warp_markers)
     CHECK (warpedLength (*map, 3000) == 3000);
     CHECK (std::abs (warpToOutput (*map, 3000, 1500.0) - 1650.0) < 1e-9); // segment 1 stretched 1.3×
     CHECK (std::abs (warpToOutput (*map, 3000, 2500.0) - 2650.0) < 1e-9); // segment 2 squeezed to 700
-    // a Newtone state is no warp; LYNX's own markers still read
+    // a Newtone state is no warp; YW's own markers still read
     CHECK (! warpOf (newtonetest::state (0, 4, newtonetest::xmlWithTrack (true), "")));
     CHECK (warpOf (writeWarp (*map)) == map);
 
@@ -239,7 +239,7 @@ TEST (ntt167_newtime_imports_fl_warp_markers)
 
 TEST (ntt167_newtone_snap_to_beat_grid)
 {
-    using namespace lynx::newtonefx;
+    using namespace yw::newtonefx;
     // FL's Snap to grid menu (Beat, 1/2 ... 1/8 beat, Off): at 120 BPM / 44.1 kHz a beat is 22050 samples
     CHECK (snapToBeatGrid (12000, 44100.0, 120.0, 1) == 22050);
     CHECK (snapToBeatGrid (10000, 44100.0, 120.0, 1) == 0);

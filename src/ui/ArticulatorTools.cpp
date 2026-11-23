@@ -12,7 +12,7 @@
 #include "ui/HintBar.h"
 #include "ui/I18n.h"
 
-namespace lynx::articulator
+namespace yw::articulator
 {
 namespace
 {
@@ -21,7 +21,7 @@ std::int64_t clipboardLength = 0;
 
 bool validAutomation (const Song& song, int automation) { return automation >= 0 && automation < (int) song.automations.size(); }
 
-// LYNX keeps a segment's tension on its first point with FL's opposite sign; the envelope tools (FL's / Edison's) on the
+// YW keeps a segment's tension on its first point with FL's opposite sign; the envelope tools (FL's / Edison's) on the
 // point where it ends with FL's sign
 audioedit::Envelope toEnvelope (const std::vector<AutomationPoint>& points, double length)
 {
@@ -255,4 +255,4 @@ juce::PopupMenu menu (AudioEngine& engine, int automation, std::int64_t clipLeng
     });
     return m;
 }
-} // namespace lynx::articulator
+} // namespace yw::articulator

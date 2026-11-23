@@ -5,16 +5,16 @@
 // Round 190jv (queue item 15): FL's slide notes step on FL's native generators. FL's host moves a sounding voice's Final
 // pitch once per tick of the project (PPQ 96), in n + 1 equal steps for a slide note n ticks long, the first with the
 // slide's start and the last at its end (REA_rodada190hg §1.1, measured on Slicex; REA_rodada190jv §3: FL's own renders
-// of its render-test generators). core/HostSlide.h Steps, RackRenderer::stepsSlides, the Sampler's and LYNX Soundfont's
-// own steps. LYNX's own generators, hosted plugins and the channel's porta keep the straight glide.
+// of its render-test generators). core/HostSlide.h Steps, RackRenderer::stepsSlides, the Sampler's and YW Soundfont's
+// own steps. YW's own generators, hosted plugins and the channel's porta keep the straight glide.
 
 namespace slides190jv
 {
 constexpr double rate = 48000.0;
 
-std::shared_ptr<lynx::SampleData> sine (double seconds, double hz)
+std::shared_ptr<yw::SampleData> sine (double seconds, double hz)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     d->left.resize ((std::size_t) (seconds * rate));
     for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -25,9 +25,9 @@ std::shared_ptr<lynx::SampleData> sine (double seconds, double hz)
 
 // a Sampler channel (the sine at its root key) with a C5 for two beats and a slide note an octave up at FL tick 48,
 // `flTicks` long; the left channel of `seconds` rendered in blocks of `block`
-std::vector<float> render (lynx::InstrumentKind kind, int flTicks, int block, double seconds = 1.2)
+std::vector<float> render (yw::InstrumentKind kind, int flTicks, int block, double seconds = 1.2)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -83,7 +83,7 @@ std::vector<double> periodsCents (const std::vector<float>& x, double from, doub
 
 TEST (slides190jv_hostslide_steps_n_plus_one_on_the_ticks)
 {
-    using namespace lynx;
+    using namespace yw;
     // a slide 4 ticks long (1000 samples, a tick = 250): 5 steps of 240 cents, the first at once
     HostSlide s;
     HostSlide::pendingSteps() = { 4, 0.25f };
@@ -111,7 +111,7 @@ TEST (slides190jv_hostslide_steps_n_plus_one_on_the_ticks)
     CHECK (std::abs (f.advanceFirst (250.0f) - 1200.0f) < 1.0e-3f); // the end
     CHECK (! f.moving());
 
-    // without steps (porta, LYNX's own engines): the straight glide, as before
+    // without steps (porta, YW's own engines): the straight glide, as before
     HostSlide g;
     g.start (1200.0f, 1000.0f);
     CHECK (! g.stepping());
@@ -130,9 +130,9 @@ TEST (slides190jv_hostslide_steps_n_plus_one_on_the_ticks)
     CHECK (! k.moving());
 }
 
-TEST (slides190jv_fl_natives_step_lynx_own_engines_glide)
+TEST (slides190jv_fl_natives_step_yw_own_engines_glide)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto k : { InstrumentKind::sampler, InstrumentKind::threeosc, InstrumentKind::sytrus, InstrumentKind::harmor,
                           InstrumentKind::directwave, InstrumentKind::flkeys, InstrumentKind::soundfont, InstrumentKind::slicex,
                           InstrumentKind::minisynth, InstrumentKind::transistorbass, InstrumentKind::fpc, InstrumentKind::patcher })
@@ -150,7 +150,7 @@ TEST (slides190jv_sampler_slide_note_steps_on_fl_ticks)
     constexpr double tick = 250.0;
     for (const auto block : { 480, 256, 64 }) // (the rack starts a render call on each tick: any device block)
     {
-        const auto x = render (lynx::InstrumentKind::sampler, 2, block);
+        const auto x = render (yw::InstrumentKind::sampler, 2, block);
         const auto near = [] (const std::vector<double>& v, double want) {
             return ! v.empty() && std::all_of (v.begin(), v.end(), [want] (double c) { return std::abs (c - want) < 12.0; });
         };
@@ -168,7 +168,7 @@ TEST (slides190jv_sampler_slide_note_steps_on_fl_ticks)
                          t49.empty() ? -1.0 : t49.front(), (int) t49.size());
     }
     // a slide 4 ticks long: 240, 480, 720, 960, then 1200
-    const auto x = render (lynx::InstrumentKind::sampler, 4, 480);
+    const auto x = render (yw::InstrumentKind::sampler, 4, 480);
     int measured = 0;
     for (int k = 0; k < 4; ++k)
     {

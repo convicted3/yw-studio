@@ -4,9 +4,9 @@
 namespace flm189hb
 {
 // a fresh engine at 48 kHz, 120 BPM, no song position, blocks of 512; `values` overwrite the defaults from the first
-inline std::vector<std::array<float, 2>> run (lynx::EffectKind kind, std::vector<std::pair<int, float>> values, std::vector<std::array<float, 2>> in)
+inline std::vector<std::array<float, 2>> run (yw::EffectKind kind, std::vector<std::pair<int, float>> values, std::vector<std::array<float, 2>> in)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (48000.0);
     auto p = makeEffectSlot (kind).params;
@@ -36,7 +36,7 @@ inline bool near (double a, double b, double tol) { return std::abs (a - b) <= t
 
 TEST (flm189h_pocket_wow_flutter)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketWowFlutter;
     const auto fs = 48000.0;
     const auto c = (double) (float) (1.0 - 44.1 / fs);
@@ -80,7 +80,7 @@ TEST (flm189h_pocket_wow_flutter)
 
 TEST (flm189h_pocket_phaser)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketPhaser;
     const auto fs = 48000.0;
     const auto lo = (double) (float) (50.0 / fs), hi = (double) (float) (16000.0 / fs);
@@ -108,7 +108,7 @@ TEST (flm189h_pocket_phaser)
 
 TEST (flm189h_pocket_flanger)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketFlanger;
     // no LFO amount, Delay 1 (x = 0.5 of the 240-sample tape at 48 kHz): one loop = 0.5 · (240 − 2) + 2 = 121 samples;
     // no feedback, wet not inverted: the impulse comes back once, ~122 samples later
@@ -153,7 +153,7 @@ TEST (flm189h_pocket_flanger)
 
 TEST (flm189h_pocket_tremolo)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketTremolo;
     const auto cg = (double) (float) std::exp (-2094.395084187993 / 48000.0);
     // first sample: the LFO is 0 before its first step: gain (0 + 1)·(1 − 0)·0.495, through the 333 Hz one-pole
@@ -189,7 +189,7 @@ TEST (flm189h_pocket_tremolo)
 
 TEST (flm189h_pocket_extremes)
 {
-    using namespace lynx;
+    using namespace yw;
     // every value at 0 and at 1 on loud noise: finite output, nothing runs away
     std::vector<std::array<float, 2>> noise (20000);
     std::uint32_t s = 1;
@@ -215,7 +215,7 @@ TEST (flm189h_pocket_extremes)
 
 TEST (flm189h_maps_pocket_modules_b)
 {
-    using namespace lynx;
+    using namespace yw;
     // Wow & Flutter 43, Phaser 14, Flanger 13, Tremolo 46: FLM's values copied (parameter k + 1 → slot parameter k)
     const auto w = flmfx::map (flm188f::moduleOf (43, { 1.0f, 0.3f, 0.2f, 0.8f }));
     CHECK (w.slots.size() == 1 && w.label == "FL Studio Mobile: Wow & Flutter");
@@ -233,9 +233,9 @@ TEST (flm189h_maps_pocket_modules_b)
 // Round 190g: the two controls the effect audit cannot see move the sound where FLM's laws say they do.
 namespace flm190g
 {
-inline std::vector<std::array<float, 2>> render (lynx::EffectSlot slot, int moveParam = -1, float moveTo = 0.0f)
+inline std::vector<std::array<float, 2>> render (yw::EffectSlot slot, int moveParam = -1, float moveTo = 0.0f)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (slot);
     fx->prepare (44100.0);
     std::vector<float> l (88200), r (88200);
@@ -266,7 +266,7 @@ inline double difference (const std::vector<std::array<float, 2>>& a, const std:
 
 TEST (flm190g_tremolo_stereo_offset_moves_the_right_channel_only)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto base = flm190g::render (makeEffectSlot (EffectKind::pocketTremolo));
     for (const float v : { 0.25f, 0.5f })
     {
@@ -283,7 +283,7 @@ TEST (flm190g_tremolo_stereo_offset_moves_the_right_channel_only)
 
 TEST (flm190g_wow_random_rate_acts_when_moved_not_when_loaded)
 {
-    using namespace lynx;
+    using namespace yw;
     // FLM writes the sync length (parameter 8) after the free rate (7): a loaded state takes its random interval from
     // the sync length (4 beats = 2 s at 120 bpm), whatever the free rate is
     const auto base = flm190g::render (makeEffectSlot (EffectKind::pocketWowFlutter));

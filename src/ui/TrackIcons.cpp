@@ -7,7 +7,7 @@
 #include "ui/Icons.h"
 #include "ui/Theme.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace
 {
@@ -524,7 +524,7 @@ Shape make (Icon icon)
             quad (st, { 12.0f, 3.5f }, { 15.5f, 3.5f }, { 15.5f, 10.5f });
             circle (fi, 12.0f, 15.5f, 1.4f);
             break;
-        case Icon::tag: // an FL icon LYNX has no own one for: a label
+        case Icon::tag: // an FL icon YW has no own one for: a label
             poly (st, { { 3.5f, 12.0f }, { 3.5f, 3.5f }, { 12.0f, 3.5f }, { 20.5f, 12.0f }, { 12.0f, 20.5f } }, true);
             circle (fi, 8.0f, 8.0f, 1.5f);
             break;
@@ -546,7 +546,7 @@ const Shape& get (Icon icon)
 
 } // namespace
 
-// The grid of the icon picker: LYNX's icons in rows, the current one highlighted, the name of the hovered one below.
+// The grid of the icon picker: YW's icons in rows, the current one highlighted, the name of the hovered one below.
 // Issue #220 (round 190ng): only the icons the search box's words match are laid out (in the picker's order); the grid
 // keeps the room of all of them, so the window doesn't jump while typing.
 class IconGrid final : public juce::Component
@@ -790,4 +790,4 @@ void showTrackIconPicker (juce::Rectangle<int> screenArea, int currentFlIndex, s
             p->focusSearch();
     });
 }
-} // namespace lynx::ui
+} // namespace yw::ui

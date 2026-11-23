@@ -17,7 +17,7 @@
 
 #include <vector>
 
-namespace lynx::ui::picturecheck
+namespace yw::ui::picturecheck
 {
 struct Stats
 {
@@ -114,7 +114,7 @@ inline juce::String run (juce::Component& root, const juce::String& label, const
     collect (root, cached);
     juce::String out;
     if (cached.empty())
-        return label + ": no cached picture (LYNX_PLAYLIST_CACHE=0 / LYNX_MIXER_CACHE=0?)\n";
+        return label + ": no cached picture (YW_PLAYLIST_CACHE=0 / YW_MIXER_CACHE=0?)\n";
     auto index = 0;
     for (auto* c : cached)
     {
@@ -171,4 +171,4 @@ inline juce::String run (juce::Component& root, const juce::String& label, const
     }
     return out;
 }
-} // namespace lynx::ui::picturecheck
+} // namespace yw::ui::picturecheck

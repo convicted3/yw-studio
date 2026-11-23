@@ -6,31 +6,31 @@
 namespace pb170f
 {
 // patterns P1 (1 bar, a note per beat on channel 0), P2 (2 bars), P3 (1 bar, empty)
-inline lynx::Song blockSong()
+inline yw::Song blockSong()
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (1);
     s.patterns.resize (3);
     for (int i = 0; i < 3; ++i)
         s.patterns[(std::size_t) i].name = "P" + std::to_string (i + 1);
     for (int step : { 0, 4, 8, 12 })
         s.patterns[0].toggleStep (0, step);
-    s.patterns[1].lengthTicks = 8 * lynx::ppq;
+    s.patterns[1].lengthTicks = 8 * yw::ppq;
     s.patterns[1].toggleStep (0, 0);
     s.patternBlocksOn = true;
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     return s;
 }
-constexpr std::int64_t bar = 4 * lynx::ppq;
+constexpr std::int64_t bar = 4 * yw::ppq;
 
-inline std::vector<int> noteOns (const lynx::Song& s, int samples)
+inline std::vector<int> noteOns (const yw::Song& s, int samples)
 {
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0); // 1 beat = 24000 samples
-    lynx::EventBuffer ev;
-    lynx::scheduleSong (s, 0.0, samples, tps, ev, false, nullptr, false);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0); // 1 beat = 24000 samples
+    yw::EventBuffer ev;
+    yw::scheduleSong (s, 0.0, samples, tps, ev, false, nullptr, false);
     std::vector<int> ons;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on)
+        if (e.type == yw::NoteEvent::Type::on)
             ons.push_back (e.sampleOffset);
     return ons;
 }
@@ -38,7 +38,7 @@ inline std::vector<int> noteOns (const lynx::Song& s, int samples)
 
 TEST (pb170f_click_places_whole_pattern_on_the_bar)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
 
@@ -68,7 +68,7 @@ TEST (pb170f_click_places_whole_pattern_on_the_bar)
 
 TEST (pb170f_drag_paints_at_pattern_length_and_right_drag_erases)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
 
@@ -91,7 +91,7 @@ TEST (pb170f_drag_paints_at_pattern_length_and_right_drag_erases)
 
 TEST (pb170f_blocks_play_in_song_mode_and_set_the_song_length)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 0, bar)); // P1 on bar 2
@@ -122,7 +122,7 @@ TEST (pb170f_blocks_play_in_song_mode_and_set_the_song_length)
 
 TEST (pb170f_blocks_and_clips_play_together)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     Clip c;
@@ -141,7 +141,7 @@ TEST (pb170f_blocks_and_clips_play_together)
 
 TEST (pb170f_a_grown_pattern_is_cut_at_its_next_block)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::paintRange (s, 0, 0, bar + 1) == 2); // P1 on bars 1 and 2
@@ -156,7 +156,7 @@ TEST (pb170f_a_grown_pattern_is_cut_at_its_next_block)
 
 TEST (pb170f_bars_follow_time_signature_changes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = pb170f::blockSong();
     // 3/4 from bar 2 (tick 4 beats): bar 2 = [4, 7) beats, bar 3 = [7, 10)
     Marker m;
@@ -173,7 +173,7 @@ TEST (pb170f_bars_follow_time_signature_changes)
 
 TEST (pb170f_pattern_list_edits_keep_blocks_on_their_pattern)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     s.addArrangement ("Arrangement 2");
@@ -207,7 +207,7 @@ TEST (pb170f_pattern_list_edits_keep_blocks_on_their_pattern)
 
 TEST (pb170f_turn_blocks_into_clips_one_locked_track_per_pattern)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     Clip c;
@@ -257,7 +257,7 @@ TEST (pb170f_turn_blocks_into_clips_one_locked_track_per_pattern)
 
 TEST (pb170f_export_renders_blocks)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 1, bar));
@@ -273,7 +273,7 @@ TEST (pb170f_export_renders_blocks)
 
 TEST (pb170f_blocks_undo_labels_and_arrangement_copies)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     s.patterns[2].toggleStep (0, 0);
@@ -291,13 +291,13 @@ TEST (pb170f_blocks_undo_labels_and_arrangement_copies)
     CHECK (patternblocks::place (s, 2, 5 * bar));
     s.selectArrangement (0);
 
-    // the option and every arrangement's blocks are saved in .lynx (LYNX.exe --selftest: pattern_blocks=OK)
+    // the option and every arrangement's blocks are saved in .yw (YW.exe --selftest: pattern_blocks=OK)
     CHECK (s.arrangements[1].blocks.size() == 3);
 }
 
 TEST (pb170f_key_map_actions)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (keys::findAction ("playlist.patternBlocks") != nullptr);
     CHECK (keys::findAction ("playlist.blocksToClips") != nullptr);
     keys::KeyMap map;
@@ -306,7 +306,7 @@ TEST (pb170f_key_map_actions)
 
 TEST (pb170f_move_block_within_its_row)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 0, bar)); // P1 on bars 2 and 4
@@ -338,7 +338,7 @@ TEST (pb170f_move_block_within_its_row)
 
 TEST (pb170f_move_cut_blocks_and_order)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 0, 0)); // P1 on bars 1 and 2
@@ -362,7 +362,7 @@ TEST (pb170f_move_cut_blocks_and_order)
 
 TEST (pb170f_erase_any_row)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 0, bar)); // P1 on bar 2, P2 on bars 3–4
@@ -421,7 +421,7 @@ TEST (pb170f_erase_any_row)
 
 TEST (pb170f_move_erase_labels)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 0, bar));
@@ -437,7 +437,7 @@ TEST (pb170f_move_erase_labels)
 // Our follow-up to PR #132 (issue #127): what the view's gestures use.
 TEST (pb170f_erase_takes_only_the_row_under_the_mouse)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 0, 2 * bar)); // P1 and P3 on bar 3, P2 over bars 3-4
@@ -464,7 +464,7 @@ TEST (pb170f_erase_takes_only_the_row_under_the_mouse)
 
 TEST (pb170f_move_keeps_the_grabbed_bar_under_the_mouse)
 {
-    using namespace lynx;
+    using namespace yw;
     using pb170f::bar;
     auto s = pb170f::blockSong();
     CHECK (patternblocks::place (s, 1, 2 * bar)); // the 2-bar P2 over bars 3-4

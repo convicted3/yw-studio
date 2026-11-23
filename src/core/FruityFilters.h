@@ -1,9 +1,9 @@
 #pragma once
 
-// FL Studio's small filters as LYNX mixer effects, exact engines rebuilt in docs/analise/REA_rodada63.md (clean-room:
+// FL Studio's small filters as YW mixer effects, exact engines rebuilt in docs/analise/REA_rodada63.md (clean-room:
 // layouts, formulas and behaviour in our own words; no Image-Line code or data in this repository).
 //
-// Every parameter is FL's control over its range (value = (raw − min) / (max − min)), so the LYNX editor and FL
+// Every parameter is FL's control over its range (value = (raw − min) / (max − min)), so the YW editor and FL
 // automation drive the same values FL's ProcessParam receives:
 //
 //   Fruity Fast LP (EffectKind::fruityFastLP):  [0] cutoff 0…1024 (1024), [1] resonance 0…1024 (0).
@@ -27,7 +27,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::flfilter
+namespace yw::flfilter
 {
 constexpr int fastLPParams = 2, freeFilterParams = 5, filterParams = 7;
 
@@ -104,4 +104,4 @@ private:
 std::unique_ptr<Effect> makeFastLP();
 std::unique_ptr<Effect> makeFreeFilter();
 std::unique_ptr<Effect> makeFilter();
-} // namespace lynx::flfilter
+} // namespace yw::flfilter

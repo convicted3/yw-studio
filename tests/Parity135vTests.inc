@@ -7,7 +7,7 @@
 
 TEST (description_line_covers_every_control_round135)
 {
-    using namespace lynx;
+    using namespace yw;
     using K = EffectKind;
     // the reference reverbs / delays: every control explained (the engines this round owns)
     for (const auto kind : { K::epochVerb, K::atrium, K::foilPlate, K::nebula, K::halo, K::horizon, K::spiralEcho, K::orbit, K::latticeMod })
@@ -17,11 +17,11 @@ TEST (description_line_covers_every_control_round135)
                 std::printf ("  %s / %s: no description\n", effectInfo (kind).name, p.name);
             CHECK (paramhelp::describe (kind, p.name) != nullptr);
         }
-    // LYNX's other engines: every control they had in round 135 (parameters appended later fall back to the name)
+    // YW's other engines: every control they had in round 135 (parameters appended later fall back to the name)
     const std::pair<K, int> others[] = { { K::ridgeStrip, 34 }, { K::glowLeveler, 8 }, { K::hushDeEsser, 18 }, { K::aether, 10 },
                                          { K::ember, 65 }, { K::crestCompressor, 43 }, { K::prismMultiband, 52 }, { K::sentryGate, 27 },
                                          { K::quellDenoiser, 4 }, { K::geminiDoubler, 33 }, { K::compressor, 9 }, { K::facetEq, 88 },
-                                         { K::apexLimiter, 15 }, { K::lynxTune, 46 }, { K::echoform, 34 } };
+                                         { K::apexLimiter, 15 }, { K::ywTune, 46 }, { K::echoform, 34 } };
     for (const auto& [kind, count] : others)
     {
         const auto& params = effectInfo (kind).params;
@@ -41,7 +41,7 @@ TEST (description_line_covers_every_control_round135)
 
 TEST (description_line_mode_summary_round135)
 {
-    using namespace lynx;
+    using namespace yw;
     using K = EffectKind;
     auto p = makeEffectSlot (K::epochVerb).params;
     const auto mode = paramhelp::modeParam (K::epochVerb);
@@ -62,8 +62,8 @@ TEST (description_line_mode_summary_round135)
 
 TEST (halo_four_reference_modes_round135)
 {
-    using namespace lynx;
-    // LYNX's own three keep their values (older projects unchanged), the reference's four sit between them
+    using namespace yw;
+    // YW's own three keep their values (older projects unchanged), the reference's four sit between them
     CHECK (formatEffectParam (EffectKind::halo, 9, 0.0f, 120.0) == "Wide");
     CHECK (formatEffectParam (EffectKind::halo, 9, 0.5f, 120.0) == "Dense");
     CHECK (formatEffectParam (EffectKind::halo, 9, 1.0f, 120.0) == "Bright");
@@ -71,7 +71,7 @@ TEST (halo_four_reference_modes_round135)
     CHECK (formatEffectParam (EffectKind::halo, 9, 0.25f, 120.0) == "Small stereo");
     CHECK (formatEffectParam (EffectKind::halo, 9, 0.375f, 120.0) == "Medium stereo");
     CHECK (formatEffectParam (EffectKind::halo, 9, 0.625f, 120.0) == "Big stereo");
-    // the layout's menu lists the four first, then LYNX's three, each option landing on its mode
+    // the layout's menu lists the four first, then YW's three, each option landing on its mode
     const auto& l = plugui::layoutFor (EffectKind::halo);
     int menus = 0;
     for (const auto& item : l.items)
@@ -107,14 +107,14 @@ TEST (halo_four_reference_modes_round135)
     CHECK (el > 0.0 && er < 0.01 * el);
     // the reference's state: parameter9 below 0.25 = Mono, then a step every 0.25
     auto translate = [] (const char* attrs) {
-        lynx::ForeignPlugin fp;
-        fp.format = lynx::ForeignPlugin::Format::vst3;
+        yw::ForeignPlugin fp;
+        fp.format = yw::ForeignPlugin::Format::vst3;
         fp.name = "ValhallaShimmer";
         fp.path = "C:\\Program Files\\Common Files\\VST3\\ValhallaShimmer.vst3";
         fp.state = substtest::flVst3State (substtest::juceXmlComponent (std::string ("<MYPLUGINSETTINGS ") + attrs + "/>"));
-        const auto id = lynx::pluginIdentity (fp);
-        const auto* entry = lynx::findPluginSubstitute (id, false);
-        return entry != nullptr ? lynx::makeSubstituteSlot (*entry, &id) : lynx::EffectSlot {};
+        const auto id = yw::pluginIdentity (fp);
+        const auto* entry = yw::findPluginSubstitute (id, false);
+        return entry != nullptr ? yw::makeSubstituteSlot (*entry, &id) : yw::EffectSlot {};
     };
     CHECK (formatEffectParam (EffectKind::halo, 9, translate ("parameter9=\"0.0\"").params[9], 120.0) == "Mono");
     CHECK (formatEffectParam (EffectKind::halo, 9, translate ("parameter9=\"0.3\"").params[9], 120.0) == "Small stereo");
@@ -124,7 +124,7 @@ TEST (halo_four_reference_modes_round135)
 
 TEST (horizon_mode_dependent_controls_round135)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& l = plugui::layoutFor (EffectKind::horizon);
     auto shown = [&] (const char* param, float echoMode, float reverbMode) {
         auto p = makeEffectSlot (EffectKind::horizon).params;
@@ -148,7 +148,7 @@ TEST (horizon_mode_dependent_controls_round135)
 
 TEST (lattice_mode_menu_and_original_preset_name_round135)
 {
-    using namespace lynx;
+    using namespace yw;
     // UberMod's nine algorithms, each on the type index whose tap count the engine plays
     const auto& l = plugui::layoutFor (EffectKind::latticeMod);
     const int counts[] = { 1, 2, 3, 3, 3, 4, 8, 8, 16 };
@@ -164,16 +164,16 @@ TEST (lattice_mode_menu_and_original_preset_name_round135)
     CHECK (menus == 1);
 
     // the preset name the original was saved with: a Valhalla attribute, a Waves <Preset Name>
-    lynx::ForeignPlugin fp;
-    fp.format = lynx::ForeignPlugin::Format::vst3;
+    yw::ForeignPlugin fp;
+    fp.format = yw::ForeignPlugin::Format::vst3;
     fp.name = "ValhallaVintageVerb";
     fp.path = "C:\\Program Files\\Common Files\\VST3\\ValhallaVintageVerb.vst3";
     fp.state = substtest::flVst3State (substtest::juceXmlComponent ("<ValhallaVintageVerb presetName=\"Detuned &amp; Big\" Mix=\"0.4\"/>"));
-    const auto id = lynx::pluginIdentity (fp);
-    const auto* entry = lynx::findPluginSubstitute (id, false);
-    CHECK (entry != nullptr && lynx::makeSubstituteSlot (*entry, &id).presetName == "Detuned & Big");
+    const auto id = yw::pluginIdentity (fp);
+    const auto* entry = yw::findPluginSubstitute (id, false);
+    CHECK (entry != nullptr && yw::makeSubstituteSlot (*entry, &id).presetName == "Detuned & Big");
     const std::string waves = "<PresetChunkXMLTree version=\"3\">\n <Preset Name=\"Start Me Up\" GenericType=\"CL2A\">\n  <PresetHeader>\n   <PluginName>CLA-2A</PluginName>";
-    CHECK (lynx::originalPresetName (std::vector<std::uint8_t> (waves.begin(), waves.end())) == "Start Me Up");
+    CHECK (yw::originalPresetName (std::vector<std::uint8_t> (waves.begin(), waves.end())) == "Start Me Up");
     const std::string empty = "<PresetChunkXMLTree version=\"3\">\n <Preset Name=\"\" GenericType=\"CL2A\">";
-    CHECK (lynx::originalPresetName (std::vector<std::uint8_t> (empty.begin(), empty.end())).empty());
+    CHECK (yw::originalPresetName (std::vector<std::uint8_t> (empty.begin(), empty.end())).empty());
 }

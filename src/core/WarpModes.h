@@ -2,10 +2,10 @@
 
 // The warp mode's own settings in the Clip View (round 190fm; Live 12.4's Clip View Audio panel shows, under the warp
 // mode, Beats' Preserve chooser, its Transient Loop Mode and Transient Envelope, Tones' and Texture's Grain Size; facts in
-// /mnt/e/lynx-work/realive190fm/LIVE-FACTS.md §1, docs/analise/ALS_FORMAT.md §21). The values are the channel's
+// /mnt/e/yw-work/realive190fm/LIVE-FACTS.md §1, docs/analise/ALS_FORMAT.md §21). The values are the channel's
 // SamplerSettings::warpModes, rendered offline by core/TimeStretch. Header only, no JUCE.
 //
-// Owner decision O16 (taken as recommended): the warp mode stays on the channel, as in LYNX's model, and an edit made
+// Owner decision O16 (taken as recommended): the warp mode stays on the channel, as in YW's model, and an edit made
 // from one grid clip's Clip View first gives that clip its own copy of the channel when other clips play it too (like
 // "Make unique"), so only that clip changes — what Live's per-clip mode does.
 
@@ -15,7 +15,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::warpmodes
+namespace yw::warpmodes
 {
 // Beats › Preserve, index = WarpModeSettings::beatsPreserve (0…5 the note grid, 6 Transients). [Live: 7 values with
 // Transients = 6, the default; the order of the grid values is inferred — live check]
@@ -31,10 +31,10 @@ inline const std::array<const char*, 3>& loopNames()
     return names;
 }
 
-// The .lynx form of a channel's warpModes (engine/ProjectFile.cpp "warpModes"): the struct's numbers in its order, the
+// The .yw form of a channel's warpModes (engine/ProjectFile.cpp "warpModes"): the struct's numbers in its order, the
 // tenth the Beats law (round 190gx; a nine-number list was saved before it: Classic), the eleventh the Texture / Complex
 // Pro law (round 190ik; a ten-number list was saved before it: Classic); a channel with the defaults writes nothing.
-// fromList clamps to the ranges LYNX keeps; fewer than nine numbers: defaults.
+// fromList clamps to the ranges YW keeps; fewer than nine numbers: defaults.
 inline std::array<double, 11> toList (const WarpModeSettings& w)
 {
     return { (double) w.beatsPreserve, (double) w.beatsLoop, (double) w.beatsEnvelope, (double) w.tonesGrain, (double) w.textureGrain,
@@ -126,12 +126,12 @@ inline bool setMode (Song& song, int channel, int method)
     s.keepPitch = method >= 0;
     if (method >= 0)
         s.stretchMethod = (StretchMethod) std::clamp (method, 0, stretchMethodCount - 1);
-    s.warpModes.complexPro = false; // (a mode chosen in LYNX is LYNX's own Complex, not an imported Complex Pro)
+    s.warpModes.complexPro = false; // (a mode chosen in YW is YW's own Complex, not an imported Complex Pro)
     s.moveBakedPitchToKnob();       // (round 190ik: a Complex Pro transposition goes to the Pitch knob outside it)
     return true;
 }
 
-// The settings shown for each mode, clamped to the ranges LYNX keeps.
+// The settings shown for each mode, clamped to the ranges YW keeps.
 inline bool setPreserve (Song& song, int channel, int index)
 {
     if (channel < 0 || channel >= (int) song.channels.size())
@@ -168,7 +168,7 @@ inline bool setGrain (Song& song, int channel, double value)
     return true;
 }
 // Texture's Flux and Complex Pro's Formants / Envelope (round 190gx): the Clip View shows them under their mode, as Live
-// does [LIVE 190gu warp/live-audio-box-{texture,complex-pro}.png], only when LYNX's engine plays them (no dead controls):
+// does [LIVE 190gu warp/live-audio-box-{texture,complex-pro}.png], only when YW's engine plays them (no dead controls):
 // round 190ik's engines (warpLaw Measured) do; the values are kept for the .als either way.
 inline bool textureFluxPlays (const WarpModeSettings& w) noexcept { return w.warpLaw >= WarpModeSettings::warpLawMeasured; }
 inline bool complexProPlays (const WarpModeSettings& w) noexcept { return w.warpLaw >= WarpModeSettings::warpLawMeasured; }
@@ -237,7 +237,7 @@ inline bool setBeatsLaw (Song& song, int channel, int law)
         = law >= 2 ? WarpModeSettings::beatsLawPitchAware : law != 0 ? WarpModeSettings::beatsLawMeasured : WarpModeSettings::beatsLawClassic;
     return true;
 }
-// Live's Complex Pro: LYNX's Complex with the clip's formants kept (complexPro)
+// Live's Complex Pro: YW's Complex with the clip's formants kept (complexPro)
 inline bool setComplexPro (Song& song, int channel)
 {
     if (channel < 0 || channel >= (int) song.channels.size())
@@ -248,4 +248,4 @@ inline bool setComplexPro (Song& song, int channel)
     s.warpModes.complexPro = true; // (an offline transposition it already had stays: round 190ik)
     return true;
 }
-} // namespace lynx::warpmodes
+} // namespace yw::warpmodes

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace lynx::channelloops
+namespace yw::channelloops
 {
 namespace
 {
@@ -291,4 +291,4 @@ void remapChannels (Pattern& pattern, const std::vector<int>& newIndexOf)
         if (l.channel >= 0 && l.channel < (int) newIndexOf.size())
             l.channel = newIndexOf[(std::size_t) l.channel];
 }
-} // namespace lynx::channelloops
+} // namespace yw::channelloops

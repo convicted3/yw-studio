@@ -20,7 +20,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx::flfilter
+namespace yw::flfilter
 {
 namespace
 {
@@ -759,4 +759,4 @@ private:
 std::unique_ptr<Effect> makeFastLP() { return std::make_unique<FastLPEffect>(); }
 std::unique_ptr<Effect> makeFreeFilter() { return std::make_unique<FreeFilterEffect>(); }
 std::unique_ptr<Effect> makeFilter() { return std::make_unique<FilterEffect>(); }
-} // namespace lynx::flfilter
+} // namespace yw::flfilter

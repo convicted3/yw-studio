@@ -58,7 +58,7 @@ body:
       label: Audio comparison (very helpful)
       description: |
         Export the same part from FL Studio and from YW Studio (File › Export › Wave) and attach both (zip them).
-        If you can, also attach the project (.flp or .lynx) or a small project that shows the difference.
+        If you can, also attach the project (.flp or .yw) or a small project that shows the difference.
 
   - type: textarea
     id: settings

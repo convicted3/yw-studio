@@ -15,7 +15,7 @@
 #include <cmath>
 #include <vector>
 
-namespace lynx::dynhistory
+namespace yw::dynhistory
 {
 constexpr double flPixelsPerSecond = 87.0; // at 100 % UI scale: one column per pixel
 constexpr double columnMs = 1000.0 / flPixelsPerSecond;
@@ -103,4 +103,4 @@ private:
     float pendingIn = 0.0f, pendingOut = 0.0f, lastGain = 1.0f;
     bool seen = false;
 };
-} // namespace lynx::dynhistory
+} // namespace yw::dynhistory

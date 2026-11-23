@@ -5,14 +5,14 @@
 // keeps the fitted laws (the revision-0 fingerprints below are the base's).
 namespace parity190mb
 {
-namespace cr = lynx::dyn::crest;
-inline lynx::EffectSlot crest (cr::Style st, float thr, float ratio, float knee, float rev, float att = 0.3f)
+namespace cr = yw::dyn::crest;
+inline yw::EffectSlot crest (cr::Style st, float thr, float ratio, float knee, float rev, float att = 0.3f)
 {
     auto s = parity190kw::crest (cr::styleValue (st), cr::voicingValue (st), thr, ratio, knee, att, 0.3f, rev);
     s.params[(std::size_t) cr::range] = 1.0f; // 60 dB
     return s;
 }
-// LYNX's own tube curve (the law's quintic, written out again here) and the stage's gain for a swing d around a bias b
+// YW's own tube curve (the law's quintic, written out again here) and the stage's gain for a swing d around a bias b
 inline double tube (double u)
 {
     const auto c = std::clamp (u, -11.4, 18.03);
@@ -23,7 +23,7 @@ inline double stage (double b, double d) { return (std::tanh (tube (b + d)) - st
 
 TEST (parity190mb_crest_upward_static_law_and_editor_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // threshold −30 dB, 4 : 1, knee 18 dB, range 60 (the upward range: 36 dB)
     const auto r4 = cr::ratioValue (4.0);
@@ -53,7 +53,7 @@ TEST (parity190mb_crest_upward_static_law_and_editor_curve)
 
 TEST (parity190mb_crest_varimu_static_law_and_editor_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     const auto curve = [] (double ratio, float knee, double in, float rev = 1.0f) {
         return cr::staticGainDb (parity190mb::crest (cr::Style::variMu, 0.5f, cr::ratioValue (ratio), knee, rev).params, in);
@@ -82,7 +82,7 @@ TEST (parity190mb_crest_varimu_static_law_and_editor_curve)
 
 TEST (parity190mb_crest_translated_states_run_the_new_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // Pro-C 3 states (FFBS v1, 100 values): style 4 Upward, 7 Vari-Mu → revision 1 (5 TTM → Two-way keeps its measured law)
     const std::pair<int, cr::Style> map[] { { 4, cr::Style::upward }, { 7, cr::Style::variMu }, { 5, cr::Style::twoWay } };
@@ -113,7 +113,7 @@ TEST (parity190mb_crest_translated_states_run_the_new_laws)
 
 TEST (parity190mb_crest_fingerprints_revision_0_unchanged_revision_1_pinned)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     struct Case { float rev; cr::Style st; float threshold, ratio, knee, attack, release; double sr; std::uint64_t hash; };
     static const Case cases[] {

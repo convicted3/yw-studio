@@ -1,7 +1,7 @@
 #pragma once
 
 // Round 190fj: the render the Ember law tests hash (tests/Ember190fjTests.inc) — also built against the base commit's
-// objects to make the classic goldens (/mnt/e/lynx-work/ember190fj/golden).
+// objects to make the classic goldens (/mnt/e/yw-work/ember190fj/golden).
 
 #include <algorithm>
 #include <cmath>
@@ -21,9 +21,9 @@ struct Render
 
 // 1.5 s in blocks of 256: a 1 kHz sine rising from −30 to 0 dBFS (0 … 0.5 s), 110 Hz + 2.5 kHz at −6 dBFS (0.5 … 1 s),
 // a −12 dBFS noise burst (1 … 1.2 s), silence. Left = the signal, right = 0.7 × it plus a quiet 330 Hz tone.
-inline Render render (const lynx::EffectSlot& slot, double sr)
+inline Render render (const yw::EffectSlot& slot, double sr)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) (1.5 * sr), block = 256;
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);

@@ -1,7 +1,7 @@
     // --hostplaytest190ll report.txt "<YW Test Synth.vst3>" [--buffer N] (round 190ll, issue #199: Vital crackled when
     // its own preset played from the Piano roll, not when played in its own window). The engine's own device callback
     // (a stand-in device at 48 kHz, driven block by block as --renderaheadtest) plays a pattern of 16th-note chords on
-    // the VST3 test synth (tools/testplugin/lynx_test_synth_vst3.cpp, its LYNX_TEST_SYNTH_LOG) in the ways a user
+    // the VST3 test synth (tools/testplugin/yw_test_synth_vst3.cpp, its YW_TEST_SYNTH_LOG) in the ways a user
     // plays: the channel selected (real-time), not selected (render-ahead), its editor opened and closed while it
     // plays, the channel selected and unselected while it plays, and a knob moved in its editor on every block. What
     // the plugin got is read back from its log: every block's song position must follow the one before by exactly the
@@ -60,9 +60,9 @@
         constexpr double bpm = 140.0, rate = 48000.0;
         const auto logBase = report.getSiblingFile ("hostplay190ll-synth-" + juce::String (juce::Time::currentTimeMillis()));
        #if JUCE_WINDOWS
-        _putenv_s ("LYNX_TEST_SYNTH_LOG", logBase.getFullPathName().toRawUTF8());
+        _putenv_s ("YW_TEST_SYNTH_LOG", logBase.getFullPathName().toRawUTF8());
        #else
-        setenv ("LYNX_TEST_SYNTH_LOG", logBase.getFullPathName().toRawUTF8(), 1);
+        setenv ("YW_TEST_SYNTH_LOG", logBase.getFullPathName().toRawUTF8(), 1);
        #endif
         auto text = std::make_shared<juce::String>();
         auto step = [report, text] (const juce::String& line) { *text << line << "\n"; report.replaceWithText (*text); };
@@ -72,7 +72,7 @@
         *run = [this, step, ok, run, block, pluginFile, logBase, report] (std::size_t index) {
             if (index >= std::size (scenarios))
             {
-                lynx::renderAheadOption().store (true);
+                yw::renderAheadOption().store (true);
                 step (juce::String ("result=") + (*ok ? "OK" : "FAIL"));
                 if (*ok)
                     for (const auto& f : logBase.getParentDirectory().findChildFiles (juce::File::findFiles, false, logBase.getFileName() + "*"))
@@ -85,8 +85,8 @@
                 return;
             }
             const auto& sc = scenarios[index];
-            // (probing another synth: LYNX_HOSTPLAY_ONLY = words of the scenarios to run, e.g. "selected,maximum")
-            if (const auto only = juce::SystemStats::getEnvironmentVariable ("LYNX_HOSTPLAY_ONLY", {}); only.isNotEmpty())
+            // (probing another synth: YW_HOSTPLAY_ONLY = words of the scenarios to run, e.g. "selected,maximum")
+            if (const auto only = juce::SystemStats::getEnvironmentVariable ("YW_HOSTPLAY_ONLY", {}); only.isNotEmpty())
             {
                 bool wanted = false;
                 for (const auto& w : juce::StringArray::fromTokens (only, ",", {}))
@@ -97,8 +97,8 @@
                     return;
                 }
             }
-            lynx::renderAheadOption().store (sc.renderAhead);
-            engine = std::make_unique<lynx::AudioEngine>();
+            yw::renderAheadOption().store (sc.renderAhead);
+            engine = std::make_unique<yw::AudioEngine>();
             engine->getDeviceManager().closeAudioDevice(); // the engine's callback is driven by hand below
             engine->setRenderAheadAlways (true);           // (a light project: the app would leave it real-time)
             auto& host = engine->getPluginHost();
@@ -115,10 +115,10 @@
                 (*run) (std::size (scenarios));
                 return;
             }
-            auto song = lynx::Song::makeDefault();
+            auto song = yw::Song::makeDefault();
             song.bpm = bpm;
             auto& c = song.channels[0];
-            c.instrument = lynx::InstrumentKind::plugin;
+            c.instrument = yw::InstrumentKind::plugin;
             c.plugin.id = synth->createIdentifierString().toStdString();
             c.plugin.name = synth->name.toStdString();
             c.plugin.fixedBuffers = sc.play == Play::fixedBuffers || sc.play == Play::fixedMaximum;
@@ -127,13 +127,13 @@
                 song.channels[k].muted = true;
             auto& notes = song.patterns[0].notes;
             notes.clear();
-            const auto sixteenth = (std::int64_t) lynx::ppq / 4;
+            const auto sixteenth = (std::int64_t) yw::ppq / 4;
             // two bars of 16th-note chords (overlapping legato notes, velocities and fine pitches that vary: what a
             // Piano roll part sends a synth)
             for (int k = 0; k < 32; ++k)
                 for (const auto key : { 48 + (k % 5), 55 + (k % 3), 60 + (k % 7) })
                 {
-                    lynx::Note n { k * sixteenth, (k % 4 == 0 ? 3 : 1) * sixteenth + 7, 0, key, 0.5f + 0.015f * (float) (k % 30) };
+                    yw::Note n { k * sixteenth, (k % 4 == 0 ? 3 : 1) * sixteenth + 7, 0, key, 0.5f + 0.015f * (float) (k % 30) };
                     n.finePitch = (float) (k % 3) * 10.0f - 10.0f;
                     notes.push_back (n);
                 }
@@ -141,15 +141,15 @@
             song.patterns[0].lengthTicks = 32 * sixteenth;
             if (sc.play == Play::songMode)
             {
-                song.mode = lynx::PlayMode::song;
-                lynx::Clip clip;
+                song.mode = yw::PlayMode::song;
+                yw::Clip clip;
                 clip.pattern = 0;
                 clip.start = 0;
                 clip.length = 4 * 32 * sixteenth;
                 song.playlist.push_back (clip);
             }
             else
-                song.mode = lynx::PlayMode::pattern;
+                song.mode = yw::PlayMode::pattern;
             engine->setSong (std::move (song));
             engine->setSelectedChannel (sc.play == Play::ahead || sc.play == Play::songMode ? 1 : 0);
             auto device = std::make_shared<StandIn> (block);
@@ -175,14 +175,14 @@
                 cb.audioDeviceIOCallbackWithContext (nullptr, 0, outs, 2, block, context);
                 engine->play();
                 const auto blocks = (int) (6.0 * rate / block);
-                // (probing another synth: LYNX_HOSTPLAY_WAV = a prefix: each scenario's output as <prefix>-<n>.wav;
-                // LYNX_HOSTPLAY_ZERO = a word: the plugin's parameters whose names hold it are set to 0, e.g. a
+                // (probing another synth: YW_HOSTPLAY_WAV = a prefix: each scenario's output as <prefix>-<n>.wav;
+                // YW_HOSTPLAY_ZERO = a word: the plugin's parameters whose names hold it are set to 0, e.g. a
                 // synth's phase randomisation, so two runs can be compared sample by sample)
-                const auto wavPrefix = juce::SystemStats::getEnvironmentVariable ("LYNX_HOSTPLAY_WAV", {});
+                const auto wavPrefix = juce::SystemStats::getEnvironmentVariable ("YW_HOSTPLAY_WAV", {});
                 juce::AudioBuffer<float> recorded (2, wavPrefix.isNotEmpty() ? blocks * block : 1);
-                if (const auto zero = juce::SystemStats::getEnvironmentVariable ("LYNX_HOSTPLAY_ZERO", {}); zero.isNotEmpty())
+                if (const auto zero = juce::SystemStats::getEnvironmentVariable ("YW_HOSTPLAY_ZERO", {}); zero.isNotEmpty())
                     if (const auto held0 = engine->getChannelInstrument (0))
-                        if (auto* hosted = dynamic_cast<lynx::PluginInstrument*> (held0.get()))
+                        if (auto* hosted = dynamic_cast<yw::PluginInstrument*> (held0.get()))
                         {
                             juce::StringArray names;
                             const auto& params = hosted->getInstance().getParameters();
@@ -194,17 +194,17 @@
                                 }
                             step ("     zeroed: " + names.joinIntoString (", "));
                         }
-                // (LYNX_HOSTPLAY_SET = "name=value;name=value": parameters by their exact names, 0..1; LYNX_HOSTPLAY_LIST=1
+                // (YW_HOSTPLAY_SET = "name=value;name=value": parameters by their exact names, 0..1; YW_HOSTPLAY_LIST=1
                 // lists every parameter with its value in the report)
                 if (const auto held1 = engine->getChannelInstrument (0))
-                    if (auto* hosted = dynamic_cast<lynx::PluginInstrument*> (held1.get()))
+                    if (auto* hosted = dynamic_cast<yw::PluginInstrument*> (held1.get()))
                     {
                         const auto& params = hosted->getInstance().getParameters();
-                        for (const auto& pair : juce::StringArray::fromTokens (juce::SystemStats::getEnvironmentVariable ("LYNX_HOSTPLAY_SET", {}), ";", {}))
+                        for (const auto& pair : juce::StringArray::fromTokens (juce::SystemStats::getEnvironmentVariable ("YW_HOSTPLAY_SET", {}), ";", {}))
                             for (int pi = 0; pi < params.size(); ++pi)
                                 if (params[pi]->getName (100) == pair.upToFirstOccurrenceOf ("=", false, false).trim())
                                     hosted->setParameterFromUi (pi, pair.fromFirstOccurrenceOf ("=", false, false).getFloatValue());
-                        if (juce::SystemStats::getEnvironmentVariable ("LYNX_HOSTPLAY_LIST", {}) == "1")
+                        if (juce::SystemStats::getEnvironmentVariable ("YW_HOSTPLAY_LIST", {}) == "1")
                             for (int pi = 0; pi < params.size(); ++pi)
                                 step ("     param " + juce::String (pi) + " " + params[pi]->getName (100) + " = " + juce::String (params[pi]->getValue(), 4)
                                       + " (" + params[pi]->getCurrentValueAsText() + ")");
@@ -212,13 +212,13 @@
                 const auto perSecond = (int) (rate / block);
                 int key = 0;
                 const auto held = engine->getChannelInstrument (0);
-                auto* plugin = dynamic_cast<lynx::PluginInstrument*> (held.get());
+                auto* plugin = dynamic_cast<yw::PluginInstrument*> (held.get());
                 for (int k = 0; k < blocks; ++k)
                 {
                     if (sc.play == Play::editorToggles && k % (perSecond / 2) == 0)
                     {
                         const auto open = (k / (perSecond / 2)) % 2 == 0;
-                        engine->setEditorOpen (&key, [] (lynx::Song& s) { return &s.channels[0].plugin; }, -1, open);
+                        engine->setEditorOpen (&key, [] (yw::Song& s) { return &s.channels[0].plugin; }, -1, open);
                         engine->dispatchPendingMessages();
                     }
                     if (sc.play == Play::selectionToggles && k % (perSecond / 3) == 0)

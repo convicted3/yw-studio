@@ -1,4 +1,4 @@
-// Round 190jd (the "what LYNX should change" lines of live check 190iw): Piano roll previews, the Playlist's new
+// Round 190jd (the "what YW should change" lines of live check 190iw): Piano roll previews, the Playlist's new
 // automation clip colours, FL's count-in readout, Gross Beat's FL-colours locator, and the .flp audio clip channel step
 // that played only its 1/16 (FL plays the whole clip). The paint is checked by the --snapshot pairs; these are the parts
 // without JUCE.
@@ -16,7 +16,7 @@
 // grab of an already-selected note don't. (While playing, previewsEditedNote keeps everything silent, round 190ib.)
 TEST (livefix190jd_piano_roll_grab_preview_as_fl)
 {
-    using lynx::gesture::previewsGrabbedNote;
+    using yw::gesture::previewsGrabbedNote;
     CHECK (previewsGrabbedNote (false, false));  // grab an unselected note: sounds
     CHECK (! previewsGrabbedNote (false, true)); // grab a selected note: silent
     CHECK (! previewsGrabbedNote (true, false)); // resize: silent
@@ -27,7 +27,7 @@ TEST (livefix190jd_piano_roll_grab_preview_as_fl)
 // keep FL's default grey (0 = #485156)
 TEST (livefix190jd_new_automation_clip_colour_by_parameter)
 {
-    using namespace lynx;
+    using namespace yw;
     AutomationTarget t;
     t.kind = AutomationTargetKind::channelVolume;
     CHECK (autoclipplace::colourFor (t) == 0xff8c5f5fu);
@@ -42,7 +42,7 @@ TEST (livefix190jd_new_automation_clip_colour_by_parameter)
 // Live check 190iw Q7: "REC IN 4" … "REC IN 1", one per beat of the count-in
 TEST (livefix190jd_count_in_beats_left)
 {
-    using lynx::countin::beatsLeft;
+    using yw::countin::beatsLeft;
     constexpr int q = 96;
     CHECK (beatsLeft (0.0, 4, q) == 0);
     CHECK (beatsLeft (-5.0, 4, q) == 0);
@@ -57,7 +57,7 @@ TEST (livefix190jd_count_in_beats_left)
 // Live check 190iw Q7: FL's locator colours over a beat, and its trail that fades with it
 TEST (livefix190jd_gross_beat_fl_locator_colours)
 {
-    using namespace lynx::gblocator;
+    using namespace yw::gblocator;
     CHECK (lineColour (0.0) == 0xFFFFFCC1u); // cream on the beat
     CHECK (lineColour (1.0) == 0xFF764A5Au); // dusty red at its end
     CHECK (lineColour (0.35) == 0xFFE1B179u); // orange between
@@ -78,11 +78,11 @@ TEST (livefix190jd_gross_beat_fl_locator_colours)
 }
 
 // Live check 190iw Q6: one step on an audio clip channel of an .flp plays the whole clip in FL (FL's render: 1 / 2 / 5 s
-// clips play 1.010 / 2.010 / 5.010 s); LYNX's import played only the step's 1/16 (0.13 s at 120 BPM). The project is the
-// one LYNX's own .flp export writes (the probe the live check rendered in FL), read back by the import.
+// clips play 1.010 / 2.010 / 5.010 s); YW's import played only the step's 1/16 (0.13 s at 120 BPM). The project is the
+// one YW's own .flp export writes (the probe the live check rendered in FL), read back by the import.
 TEST (livefix190jd_flp_audio_clip_channel_step_plays_the_whole_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto data = r190io::sine (2.0);
     auto song = r190io::stepSong (InstrumentKind::audioClip, "C:\\samples\\sine2s.wav");
     flpexport::Report report;
@@ -102,11 +102,11 @@ TEST (livefix190jd_flp_audio_clip_channel_step_plays_the_whole_clip)
     CHECK (seconds > 1.85);
 }
 
-// Coordinator 190jd (add, never remove): Fruity Limiter's display keeps LYNX's transfer curve as a second view, chosen per
+// Coordinator 190jd (add, never remove): Fruity Limiter's display keeps YW's transfer curve as a second view, chosen per
 // slot; FL's scrolling graph is the default. The choice is part of the slot (undo, compare, copy) and of nothing audible.
 TEST (livefix190jd_limiter_display_view_is_kept_per_slot)
 {
-    using namespace lynx;
+    using namespace yw;
     auto a = makeEffectSlot (EffectKind::fruityLimiter);
     CHECK (a.displayView == 0); // FL's graph by default
     auto b = a;

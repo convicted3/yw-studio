@@ -10,7 +10,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 struct ChannelDef;
@@ -33,4 +33,4 @@ std::unique_ptr<juce::Component> makeVideoPlayerEditor (AudioEngine& engine, std
 std::unique_ptr<juce::Component> makeVideoPlayerEditor (AudioEngine& engine, int channel);
 // The Video Player editor inside `root` (it may be `root`) shows `still` on its screen (the picker's thumbnail)
 void showVideoStill (juce::Component& root, const juce::Image& still);
-} // namespace lynx
+} // namespace yw

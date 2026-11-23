@@ -11,12 +11,12 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-// FL's form is 256 x 490 with its own 26 px caption bar; LYNX's window has the system title bar, so the panel is the
-// form's client area below the caption, enlarged for LYNX's 13 px text.
+// FL's form is 256 x 490 with its own 26 px caption bar; YW's window has the system title bar, so the panel is the
+// form's client area below the caption, enlarged for YW's 13 px text.
 constexpr float formScale = 1.3f;
 constexpr int captionHeight = 26;
 
@@ -189,7 +189,7 @@ public:
 };
 
 // The caption FL gives a control in the window: its event name ("Channel volume", "Channel panning"; FL's own words,
-// live check 190cq), the mixer's "Insert 1 - Volume" as LYNX names them elsewhere.
+// live check 190cq), the mixer's "Insert 1 - Volume" as YW names them elsewhere.
 juce::String parameterCaption (AudioEngine& engine, const AutomationTarget& t)
 {
     if (t.kind == AutomationTargetKind::channelVolume)
@@ -256,7 +256,7 @@ public:
             };
             auto box = std::make_unique<WheelBox> (spec, [&value] { return (double) value; }, [this, &value, minimum, maximum] (double v) {
                 auto now = juce::jlimit (minimum, maximum, juce::roundToInt (v));
-                // the Ctrl wheel: controllers 0...127, then keys from 256 (FL's numbers between are what LYNX cannot
+                // the Ctrl wheel: controllers 0...127, then keys from 256 (FL's numbers between are what YW cannot
                 // link: aftertouch, pitch bend)
                 if (&value == &cc && now > 127 && now < linkNoteBase)
                     now = now > value ? linkNoteBase : 127;
@@ -269,7 +269,7 @@ public:
             return box;
         };
         portBox = wheel (tr ("MIDI input port number"), -1, 255, -1, port, true, -1000);
-        // (FL's channel wheel runs 1...16; 0 = any channel is LYNX's own, for the links older versions made that way)
+        // (FL's channel wheel runs 1...16; 0 = any channel is YW's own, for the links older versions made that way)
         channelBox = wheel (tr ("MIDI channel number"), 0, 16, 1, channel, false, 0);
         ctrlBox = wheel (tr ("Continuous Controller number"), -1, linkNoteLast, -1, cc, true, -1000);
         ctrlBox->onMenu = [this] {
@@ -1012,17 +1012,17 @@ juce::PopupMenu multilinkButtonMenu (AudioEngine& engine, const std::function<vo
     juce::PopupMenu menu;
     // Live check 190ew CTL-1 (FL 2026 shot CTL-1-multilink-off-menu.png): with multilink off FL shows two columns, the
     // last tweaked control's own menu (captioned with its name) on the left, then the menu of the last tweaked
-    // parameters; LYNX's greyed one-step items are not shown then (mlmenu::showsLynxOneStepItems)
+    // parameters; YW's greyed one-step items are not shown then (mlmenu::showsYwOneStepItems)
     const auto on = engine.isMultilinkOn();
     if (mlmenu::showsOwnColumn (on, engine.getLastTweaked (0).has_value()) && lastTweakedColumn != nullptr)
     {
         lastTweakedColumn (menu);
         menu.addColumnBreak();
     }
-    // FL's menu, in FL's order (live shot link190bt-09a); LYNX's own one-step items (round 177b-4: the queued controls
+    // FL's menu, in FL's order (live shot link190bt-09a); YW's own one-step items (round 177b-4: the queued controls
     // link to the next controllers moved) after it, below a line, while multilink is on
     addMultilinkControlsItems (menu, engine);
-    if (mlmenu::showsLynxOneStepItems (on))
+    if (mlmenu::showsYwOneStepItems (on))
     {
         menu.addSeparator();
         menu.addItem (tr ("Link to controller"), [&engine] { engine.multilinkToControllers (false); });
@@ -1049,12 +1049,12 @@ juce::PopupMenu remoteControlFormulaMenu (std::function<void (const juce::String
     return menu;
 }
 
-// FL's CtrlMenu, the part LYNX's links can follow: the standard continuous controllers by name ("CC #7 (Volume)").
+// FL's CtrlMenu, the part YW's links can follow: the standard continuous controllers by name ("CC #7 (Volume)").
 juce::PopupMenu remoteControlControllerMenu (std::function<void (int)> pick)
 {
     juce::PopupMenu menu;
     // "Special": of FL's four, the key link (Note C0 = number 256; round 190cs). Channel / key aftertouch and the pitch
-    // bend wheel are left out: LYNX's links cannot follow them.
+    // bend wheel are left out: YW's links cannot follow them.
     menu.addSectionHeader (tr ("Special"));
     menu.addItem (tr ("Note C0"), [pick] { pick (linkNoteBase); });
     menu.addSectionHeader (tr ("Standard Continuous Controllers"));
@@ -1066,4 +1066,4 @@ juce::PopupMenu remoteControlControllerMenu (std::function<void (int)> pick)
     }
     return menu;
 }
-} // namespace lynx
+} // namespace yw

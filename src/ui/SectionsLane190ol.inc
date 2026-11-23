@@ -1,5 +1,5 @@
 // Round 190ol (research190oe P1): the Playlist's side of the Sections lane (ui/SectionsLane190ol.h). Included in
-// PlaylistComponent.cpp (namespace lynx).
+// PlaylistComponent.cpp (namespace yw).
 
 // --- the Playlist's side -----------------------------------------------------------------------------------------------
 bool PlaylistComponent::sectionsLaneShown() const

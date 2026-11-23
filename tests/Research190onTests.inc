@@ -7,10 +7,10 @@
 
 namespace research190on
 {
-inline std::string ids (const std::vector<lynx::actionsearch::Entry>& e, const std::string& query, const std::vector<std::string>& recent = {})
+inline std::string ids (const std::vector<yw::actionsearch::Entry>& e, const std::string& query, const std::vector<std::string>& recent = {})
 {
     std::string s;
-    for (auto i : lynx::actionsearch::find (e, query, recent))
+    for (auto i : yw::actionsearch::find (e, query, recent))
         s += e[(std::size_t) i].id;
     return s;
 }
@@ -51,7 +51,7 @@ inline std::map<std::string, std::string> table (const std::string& lang)
 
 TEST (research190on_p2_palette_matcher_ranks_and_folds)
 {
-    using namespace lynx::actionsearch;
+    using namespace yw::actionsearch;
     using research190on::ids;
     std::vector<Entry> e {
         { "pref", "Preferences", "Preferences", "Options", "" },
@@ -70,8 +70,8 @@ TEST (research190on_p2_palette_matcher_ranks_and_folds)
     CHECK (ids (e, "МИКШ") == "ru");            // Cyrillic capitals fold
     CHECK (ids (e, "mtrnm") == "met");          // the loose match: the letters in order from a word start
     {
-        using lynx::actionsearch::fold;
-        using lynx::actionsearch::looseMatch;
+        using yw::actionsearch::fold;
+        using yw::actionsearch::looseMatch;
         CHECK (looseMatch (fold ("Song position to the next transient"), fold ("nxt trnsnt")));
         CHECK (! looseMatch (fold ("Move the playback marker to the start"), fold ("metro"))); // (letters scattered over words)
         CHECK (looseMatch (fold ("Metronome on/off"), fold ("mtrnm")));
@@ -109,8 +109,8 @@ TEST (research190on_p2_palette_matcher_ranks_and_folds)
 
 TEST (research190on_p2_palette_key_and_languages)
 {
-    using namespace lynx;
-    using namespace lynx::keys;
+    using namespace yw;
+    using namespace yw::keys;
     const auto* palette = findAction ("view.commandPalette");
     CHECK (palette != nullptr);
     if (palette != nullptr)
@@ -153,9 +153,9 @@ TEST (research190on_p2_palette_key_and_languages)
 namespace research190on
 {
 // a drum loop: `hits` sharp noise bursts `period` seconds apart (the first at `first`), 44.1 kHz mono
-inline lynx::SampleData drumLoop (int hits, double first, double period, double seconds)
+inline yw::SampleData drumLoop (int hits, double first, double period, double seconds)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = 44100.0;
     s.left.assign ((std::size_t) (seconds * s.sampleRate), 0.0f);
     std::uint32_t seed = 12345;
@@ -175,7 +175,7 @@ inline lynx::SampleData drumLoop (int hits, double first, double period, double 
 
 TEST (research190on_p8_tab_to_transient_visits_a_drum_loops_hits)
 {
-    using namespace lynx;
+    using namespace yw;
     const double first = 0.05, period = 0.25;
     const auto sample = research190on::drumLoop (8, first, period, 2.1);
     const auto attacks = clipwarp::attacks (sample);
@@ -243,14 +243,14 @@ TEST (research190on_p8_tab_to_transient_visits_a_drum_loops_hits)
 }
 
 // ==== 190on P10: stacked controller lanes
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/StackedLanes.h"
 
 TEST (research190on_p10_stacked_lanes)
 {
-    using namespace lynx;
-    using namespace lynx::stackedlanes;
-    CHECK (! enabled (false, false)); // Pattern layout: a LYNX extra, off
+    using namespace yw;
+    using namespace yw::stackedlanes;
+    CHECK (! enabled (false, false)); // Pattern layout: a YW extra, off
     CHECK (enabled (false, true) && enabled (true, false)); // on, or the Clip-launch layout
     // heights: in proportion, at least minHeight, adding up
     auto h = heights ({ 1.0f, 1.0f, 1.0f, 1.0f }, 200, 0);
@@ -281,7 +281,7 @@ TEST (research190on_p10_stacked_lanes)
     CHECK (back == lanes && std::abs (bottom - 0.75f) < 1e-6f);
     CHECK (fromText ("p99:1 x:2 junk p3:1").size() == 1);
     CHECK (fromText ("p1:1 p2:1 p3:1 p4:1 p5:1 p6:1").size() == (std::size_t) maxAdded);
-    // listed as a LYNX extra
+    // listed as a YW extra
     bool listed = false;
     for (const auto& item : extras::items)
         listed = listed || (item.id == "pianoRoll.stackedLanes" && item.settingsKey == "ui-options.txt:prStackedLanesExtra");
@@ -295,7 +295,7 @@ TEST (research190on_p10_stacked_lanes)
 
 TEST (research190on_online_remove_guest_new_code_for_new_joins)
 {
-    using namespace lynx;
+    using namespace yw;
     livecrypto::Invite now { "abcdefghij", livecrypto::newSecret() };
     const auto next = liverekey::rotated (now);
     CHECK (next.room == now.room && next.secret != now.secret);

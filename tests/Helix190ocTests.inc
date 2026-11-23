@@ -4,7 +4,7 @@
 
 namespace helix190oc
 {
-namespace w = lynx::wt;
+namespace w = yw::wt;
 using helix190ja::db;
 using helix190ja::rms;
 using helix190mi::finite;
@@ -34,7 +34,7 @@ inline double sideShare (const std::vector<float>& v)
 
 TEST (helix190oc_layout_and_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // the fourth block follows round 3's; seven automatable values, no matrix rows
     CHECK (w::ext4Base == w::ext3Base + w::ext3::count && w::stateSize == w::ext4Base + w::ext4::count && w::ext4::count == 8);
@@ -216,7 +216,7 @@ TEST (helix190oc_spectral_unison)
 
 TEST (helix190oc_factory_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& bank = banks::bankOf (InstrumentKind::helix);
     int found = 0;
     for (int i = 0; i < (int) bank.size(); ++i)

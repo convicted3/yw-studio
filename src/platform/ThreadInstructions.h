@@ -14,7 +14,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::platform
+namespace yw::platform
 {
 class ThreadInstructions
 {
@@ -58,4 +58,4 @@ private:
     ThreadInstructions (const ThreadInstructions&) = delete;
     ThreadInstructions& operator= (const ThreadInstructions&) = delete;
 };
-} // namespace lynx::platform
+} // namespace yw::platform

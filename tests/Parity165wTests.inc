@@ -3,7 +3,7 @@
 
 TEST (gemini_doubler_measured_shelves_round165w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     auto base = makeEffectSlot (EffectKind::geminiDoubler).params;
     CHECK (base[g::eqLaw] == 1.0f && g::paramCount == (int) effectInfo (EffectKind::geminiDoubler).params.size());
@@ -56,7 +56,7 @@ TEST (gemini_doubler_measured_shelves_round165w)
 
 TEST (gemini_doubler_older_projects_keep_their_shelves_round165w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     // a project saved before round 165w has no EQ law: it loads with round 124's shelves (its gains mean what they meant)
     auto slot = makeEffectSlot (EffectKind::geminiDoubler);
@@ -78,7 +78,7 @@ TEST (gemini_doubler_older_projects_keep_their_shelves_round165w)
 
 TEST (gemini_doubler_translates_deep_shelf_cuts_round165w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;
@@ -101,9 +101,9 @@ TEST (gemini_doubler_translates_deep_shelf_cuts_round165w)
 // burst) at times after the burst ends
 namespace p165w
 {
-inline std::vector<double> glowRecovery (const lynx::EffectParams& p, double burstDb, double burstSecs, const std::vector<double>& at)
+inline std::vector<double> glowRecovery (const yw::EffectParams& p, double burstDb, double burstSecs, const std::vector<double>& at)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr double sr = 48000.0;
     const auto pre = (std::size_t) sr, burst = (std::size_t) (burstSecs * sr), post = (std::size_t) (16.0 * sr);
     std::vector<float> l (pre + burst + post), r;
@@ -133,7 +133,7 @@ inline std::vector<double> glowRecovery (const lynx::EffectParams& p, double bur
 
 TEST (glow_classic_measured_release_round165w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     auto p = makeEffectSlot (EffectKind::glowLeveler).params;
     CHECK (p[g::releaseLaw] == 1.0f && p[g::voicing] == 1.0f && (int) effectInfo (EffectKind::glowLeveler).params.size() == g::count);
@@ -172,7 +172,7 @@ TEST (glow_classic_measured_release_round165w)
 
 TEST (glow_older_projects_keep_the_round123_release_round165w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     auto slot = makeEffectSlot (EffectKind::glowLeveler);
     upgradeLoadedEffectParams (slot, (std::size_t) g::releaseLaw);
@@ -218,7 +218,7 @@ inline std::vector<std::uint8_t> fabf (const std::vector<float>& values)
 } // namespace p165w
 TEST (hush_input_output_pan_round165w)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     const auto& info = effectInfo (EffectKind::hushDeEsser);
     CHECK ((int) info.params.size() == h::count && h::outputPan == h::rangeLaw - 1); // (round 165x appended three)

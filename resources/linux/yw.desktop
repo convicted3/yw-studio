@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=YW Studio
+GenericName=Digital Audio Workstation
+GenericName[pt_BR]=Estação de trabalho de áudio digital
+Comment=A lightweight DAW, fully open source
+Comment[pt_BR]=Uma DAW leve e totalmente open-source
+Exec=YW %F
+Icon=yw
+Terminal=false
+Categories=AudioVideo;Audio;Midi;Music;Sequencer;
+Keywords=DAW;music;audio;MIDI;sequencer;FL Studio;flp;
+MimeType=application/x-yw-project;

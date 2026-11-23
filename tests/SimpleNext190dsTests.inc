@@ -1,7 +1,7 @@
 // --- Round 190ds: the Simple layout's next block — the keyboard's Scale keys / Chord pad / Lock to key (core/ScaleKeys.h),
 // loops that follow the project key (core/KeyFollow.h, ProjectKey retune), and a pattern for every new Instrument track
 // (core/SimpleTracks.h). The last test measures the key move's quality on the real render path (pitch in cents, the
-// length kept, artefacts against an ideal transposition and LYNX's stretch modes, CPU); LYNX_190DS_REPORT=1 prints the
+// length kept, artefacts against an ideal transposition and YW's stretch modes, CPU); YW_190DS_REPORT=1 prints the
 // tables.
 
 #include <chrono>
@@ -20,7 +20,7 @@
 
 namespace simple190ds
 {
-using namespace lynx;
+using namespace yw;
 
 inline int scaleIndex (const char* name)
 {
@@ -115,7 +115,7 @@ inline Render renderClip (std::shared_ptr<SampleData> data, float clipPitch, boo
     s.mode = PlayMode::song;
     RackState::Factories f;
     f.samples = [data] (const std::string&) { return std::shared_ptr<const SampleData> (data); };
-    f.stretchedSamples = [data] (const std::string&, double ratio, StretchMethod m, double semis, const StretchMap&, const lynx::StretchOptions&) {
+    f.stretchedSamples = [data] (const std::string&, double ratio, StretchMethod m, double semis, const StretchMap&, const yw::StretchOptions&) {
         return std::shared_ptr<const SampleData> (timeStretch (*data, ratio, m, semis));
     };
     auto state = RackState::build (s, nullptr, rate, f);
@@ -232,12 +232,12 @@ inline double rms (const std::vector<float>& x, std::size_t from, std::size_t to
     return std::sqrt (s / (double) std::max<std::size_t> (1, to - from));
 }
 
-inline bool report() { return std::getenv ("LYNX_190DS_REPORT") != nullptr; }
+inline bool report() { return std::getenv ("YW_190DS_REPORT") != nullptr; }
 } // namespace simple190ds
 
 TEST (simple190ds_scale_keys_every_scale)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& scales = notetools::flReferenceScales();
     for (int sc = 0; sc < (int) scales.size(); ++sc)
         for (int root = 0; root < 12; ++root)
@@ -266,7 +266,7 @@ TEST (simple190ds_scale_keys_every_scale)
 
 TEST (simple190ds_diatonic_chords_and_numerals)
 {
-    using namespace lynx;
+    using namespace yw;
     using simple190ds::key;
     const auto cMajor = key (0, "Major (Ionian)");
     CHECK (cMajor.flScale >= 0);
@@ -309,7 +309,7 @@ TEST (simple190ds_diatonic_chords_and_numerals)
 
 TEST (simple190ds_strum_and_chord_sets)
 {
-    using namespace lynx;
+    using namespace yw;
     scalekeys::Settings s;
     s.strumMs = 60;
     const auto up = scalekeys::strummed ({ 64, 60, 67 }, s);
@@ -320,7 +320,7 @@ TEST (simple190ds_strum_and_chord_sets)
     s.strumMs = 500; // clamped
     CHECK (scalekeys::strummed ({ 60, 64 }, s).back().second == scalekeys::maxStrumMs);
 
-    // FL Studio Mobile's KEYB (the text of a real file's default set) and LYNX's chords from it
+    // FL Studio Mobile's KEYB (the text of a real file's default set) and YW's chords from it
     const std::string keyb = "{\n    \"chords\": [\n        {\n            \"baseNote\": 0,\n            \"extensions\": [],\n            \"octave\": 3,\n"
                              "            \"quality\": 0\n        },\n        {\n            \"baseNote\": 2,\n            \"extensions\": [],\n"
                              "            \"octave\": 3,\n            \"quality\": 1\n        },\n        {\n            \"baseNote\": 11,\n"
@@ -362,14 +362,14 @@ TEST (simple190ds_strum_and_chord_sets)
     pads.projectChords = false;
     CHECK (scalekeys::padCount (song, pads) == 7);
     CHECK (scalekeys::padNotes (song, pads, 0, 48).empty()); // (no key: the diatonic pads have nothing to play)
-    // extensions are semitones over the root (LYNX's own edits)
+    // extensions are semitones over the root (YW's own edits)
     std::vector<KeyboardChord> own { { 7, 0, 4, { 10 } } };
     CHECK ((scalekeys::setChord (own, 0, 48, scalekeys::Spread::close) == std::vector<int> { 55, 59, 62, 65 })); // G7
 }
 
 TEST (simple190ds_flm_key_locker)
 {
-    using namespace lynx;
+    using namespace yw;
     // FLM's HEAD root + scale index (REA 190ds), as the files on disk hold them
     auto named = [] (std::uint32_t root, std::uint32_t scale) {
         const auto k = scalekeys::flmKeyLocker (root, scale);
@@ -397,7 +397,7 @@ TEST (simple190ds_flm_key_locker)
 
 TEST (simple190ds_typing_keys_follow_the_mode)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto aMinor = simple190ds::songIn (simple190ds::key (9, "Minor Natural (Aeolian)"));
     scalekeys::Settings s;
     // Keys mode: as typed; Lock to key: out of key plays nothing
@@ -438,7 +438,7 @@ TEST (simple190ds_typing_keys_follow_the_mode)
 
 TEST (simple190ds_key_in_the_file_name)
 {
-    using namespace lynx;
+    using namespace yw;
     using keyfollow::LoopKey;
     const std::pair<const char*, std::optional<LoopKey>> cases[] {
         { "Night Pad 120 Gm.wav", LoopKey { 7, true } },
@@ -473,7 +473,7 @@ TEST (simple190ds_key_in_the_file_name)
 
 TEST (simple190ds_key_detected_from_the_audio)
 {
-    using namespace lynx;
+    using namespace yw;
     // progressions in a key (i VI VII i / I IV V I and friends); the move needs the right notes, so the relative major
     // root must be right; the key itself (major or minor) too for these clear cadences
     struct Case
@@ -535,7 +535,7 @@ TEST (simple190ds_key_detected_from_the_audio)
 
 TEST (simple190ds_loops_follow_the_project_key)
 {
-    using namespace lynx;
+    using namespace yw;
     using simple190ds::key;
     // the move between relative-major roots, −6 … +5
     const auto gMinor = key (7, "Minor Natural (Aeolian)"), cMajor = key (0, "Major (Ionian)");
@@ -624,7 +624,7 @@ TEST (simple190ds_loops_follow_the_project_key)
 
 TEST (simple190ds_simple_tracks_patterns_and_keyed_loops)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     Song s = Song::makeDefault();
     s.playlist.clear();
@@ -681,10 +681,10 @@ TEST (simple190ds_simple_tracks_patterns_and_keyed_loops)
 
 TEST (simple190ds_key_move_quality)
 {
-    // The key move is the clip's pitch on LYNX's own voice pitch shifter (core/TimeStretch VoicePitchShifter): measured
-    // on the real render path for every move a loop can get (−6 … +5), and against LYNX's stretch modes.
+    // The key move is the clip's pitch on YW's own voice pitch shifter (core/TimeStretch VoicePitchShifter): measured
+    // on the real render path for every move a loop can get (−6 … +5), and against YW's stretch modes.
     using namespace simple190ds;
-    using lynx::StretchMethod;
+    using yw::StretchMethod;
     constexpr double rate = 48000.0;
     constexpr int n = 65536;
     const std::size_t from = (std::size_t) (0.6 * rate); // (past the start)
@@ -728,7 +728,7 @@ TEST (simple190ds_key_move_quality)
 
     // a chord loop (G minor: Gm Eb F Gm) moved +3 / −5: how much of its first chord (0.12 … 0.46 s, 16384 points) is not
     // the moved chord's partials — for the ideal transposition (the loop resampled by the channel: the same pitches, no
-    // stretch), the clip's pitch on a loop that keeps time (a dropped loop) in each of LYNX's stretch modes, the clip's
+    // stretch), the clip's pitch on a loop that keeps time (a dropped loop) in each of YW's stretch modes, the clip's
     // pitch on a loop at its own speed, and the loop not moved at all
     const auto loop = chordLoop ({ { 55, 58, 62 }, { 51, 55, 58 }, { 53, 57, 60 }, { 55, 58, 62 } });
     const struct

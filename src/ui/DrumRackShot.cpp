@@ -14,7 +14,7 @@
 #include "ui/RackEditor.h"
 #include "ui/ShotScale.h"
 
-namespace lynx::drumshot
+namespace yw::drumshot
 {
 namespace
 {
@@ -69,7 +69,7 @@ void writePng (const juce::Image& image, const juce::String& path)
     juce::PNGImageFormat().writeImageToStream (image, out);
 }
 
-// a popup menu drawn as LYNX draws it (the look and feel's own item painting), for the Live | LYNX menu pairs
+// a popup menu drawn as YW draws it (the look and feel's own item painting), for the Live | YW menu pairs
 juce::Image menuImage (const juce::PopupMenu& menu, int width)
 {
     auto& lf = juce::LookAndFeel::getDefaultLookAndFeel();
@@ -250,7 +250,7 @@ void run (const juce::String& prefix)
             r.showMacros = false, r.showPads = false, r.showChains = true, r.showDevices = false, r.showIO = true, r.showSends = true, r.showReturns = true;
             r.selectedChain = 0;
         });
-        // the pad menu (Live's items, then LYNX's) and the Audio To menu
+        // the pad menu (Live's items, then YW's) and the Audio To menu
         auto menuView = RackWindows::makeChannelView (offline, 0, true);
         const auto padMenu = menuView->padMenuForSnapshot (rack::drumFirstPad);
         writePng (menuImage (padMenu, 300), prefix + "-drumrack-pad-menu.png");
@@ -352,4 +352,4 @@ void run (const juce::String& prefix)
     }
     juce::File (prefix + "-checks.txt").replaceWithText (checks);
 }
-} // namespace lynx::drumshot
+} // namespace yw::drumshot

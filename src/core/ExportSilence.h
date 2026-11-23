@@ -8,7 +8,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::exportsilence
+namespace yw::exportsilence
 {
 inline std::string reason (const Song& song, bool patternOnly)
 {
@@ -23,4 +23,4 @@ inline std::string reason (const Song& song, bool patternOnly)
                          : "nothing to render: the song (Playlist / arrangement) is empty; the project's notes are only in its patterns (--pattern renders the current one)";
     return "the render is silent (its peak stays below -60 dBFS): every clip is muted or silent, or plays through a muted or silent track";
 }
-} // namespace lynx::exportsilence
+} // namespace yw::exportsilence

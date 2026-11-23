@@ -4,7 +4,7 @@
 // ONE accessor over the one store, Song::scaleHighlight — FL's own project scale (.flp event 0xF3: FL's reference-scale
 // index + root; −1 Default, −2 Black notes = FL's default and "no key" here, −3 Automatic). No other model holds a key:
 // the Simple workflow's Key button, Scale keys and Chord pad, and the Clip-launch workflow's clip column all read and
-// write it through these functions, so .lynx, .flp and live sessions carry it as they already do. Header only, no JUCE.
+// write it through these functions, so .yw, .flp and live sessions carry it as they already do. Header only, no JUCE.
 
 #include <algorithm>
 #include <array>
@@ -21,7 +21,7 @@
 #define TR_NOOP(text) text // marks the names for translation (ui/I18n.h defines the same)
 #endif
 
-namespace lynx::projectkey
+namespace yw::projectkey
 {
 struct Key
 {
@@ -34,7 +34,7 @@ constexpr int noKey = -2; // FL's "Black notes" highlight, its default: no key c
 
 inline bool validFlScale (int flScale) noexcept { return flScale >= 0 && flScale < (int) notetools::flReferenceScales().size(); }
 
-// The project's key; nullopt when none is chosen (FL's Default, Black notes, Automatic, or an index LYNX doesn't know).
+// The project's key; nullopt when none is chosen (FL's Default, Black notes, Automatic, or an index YW doesn't know).
 inline std::optional<Key> get (const Song& song)
 {
     const auto& h = song.scaleHighlight;
@@ -118,8 +118,8 @@ inline void set (Song& song, std::optional<Key> key)
     retuneFollowers (song);
 }
 
-// LYNX's own scale list index with the same degrees (notetools::scales(), what the Piano roll's snap uses); 0 = none listed.
-inline int lynxScale (const Key& key) noexcept { return notetools::scaleForFlReference (key.flScale); }
+// YW's own scale list index with the same degrees (notetools::scales(), what the Piano roll's snap uses); 0 = none listed.
+inline int ywScale (const Key& key) noexcept { return notetools::scaleForFlReference (key.flScale); }
 
 // Whether a MIDI key is in the key's scale.
 inline bool contains (const Key& key, int midiKey)
@@ -176,4 +176,4 @@ inline std::vector<int> commonFirst()
     }();
     return order;
 }
-} // namespace lynx::projectkey
+} // namespace yw::projectkey

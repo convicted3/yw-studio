@@ -1,12 +1,12 @@
 #pragma once
 
-// Note Chance, Velocity Range and probability groups (round 187c; Live 12's note probability, a LYNX addition: FL has
+// Note Chance, Velocity Range and probability groups (round 187c; Live 12's note probability, a YW addition: FL has
 // none). Live's manual (Editing MIDI, "Chance" and "Velocity Deviation"): a note plays with its probability each time
 // it is played; its velocity is "chosen randomly from within the specified range each time a note is played" (+20 on
 // 60 = between 60 and 80; negative ranges go down); "Play All" groups play all their notes with the group's
 // probability, "Play One" groups play "only one note in the group ... selected at random".
 //
-// LYNX draws these from a stateless hash instead of a running random generator, so the audio thread keeps no state and
+// YW draws these from a stateless hash instead of a running random generator, so the audio thread keeps no state and
 // renders are reproducible: the draw for one occurrence of a note depends only on Song::chanceSeed, where the note is
 // (its clip or pattern, channel, key and start) and which pass of the loop this is. The "on" and "off" of an occurrence
 // see the same draw, whatever the block size; each new loop pass draws again.
@@ -18,7 +18,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::chance
+namespace yw::chance
 {
 constexpr std::uint64_t mix (std::uint64_t x) noexcept // splitmix64's finaliser
 {
@@ -121,4 +121,4 @@ inline std::vector<Note> realised (const std::vector<Note>& notes, std::uint32_t
     }
     return out;
 }
-} // namespace lynx::chance
+} // namespace yw::chance

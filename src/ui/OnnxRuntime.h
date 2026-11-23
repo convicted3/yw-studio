@@ -1,13 +1,13 @@
 #pragma once
 
-// ONNX Runtime, shipped next to LYNX and loaded at run time by its full path (never a copy from the system's search path;
+// ONNX Runtime, shipped next to YW and loaded at run time by its full path (never a copy from the system's search path;
 // the Windows build is cross-compiled with MinGW and can't link Microsoft's import library). Used by "Extract stems from
 // sample" (ui/StemExtract) and "Convert to MIDI" (ui/AudioToMidi); nothing of it is in memory until one of them runs.
 
 #include <juce_core/juce_core.h>
 #include <onnxruntime_c_api.h>
 
-namespace lynx::onnx
+namespace yw::onnx
 {
 inline juce::File runtimeFile()
 {
@@ -47,4 +47,4 @@ struct Runtime
     juce::DynamicLibrary library;
     const OrtApi* api = nullptr;
 };
-} // namespace lynx::onnx
+} // namespace yw::onnx

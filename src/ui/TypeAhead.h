@@ -1,8 +1,8 @@
 #pragma once
 
-// Type-to-jump for LYNX's lists and menus (issue #182, round 190ib; the rule is core/TypeAhead.h). JUCE's PopupMenu and
-// ListBox ask through `juce::lynxTypeAheadHook` (cmake/LynxPatchJuce.cmake, fix 37: menus, dropdowns and every ListBox
-// whose model names its rows with getNameForRow); LYNX's own lists (the Browser, the Plugin manager's table) call
+// Type-to-jump for YW's lists and menus (issue #182, round 190ib; the rule is core/TypeAhead.h). JUCE's PopupMenu and
+// ListBox ask through `juce::ywTypeAheadHook` (cmake/YwPatchJuce.cmake, fix 37: menus, dropdowns and every ListBox
+// whose model names its rows with getNameForRow); YW's own lists (the Browser, the Plugin manager's table) call
 // typeAheadRow from their key handlers. One state for all of them: only one list has the keyboard at a time.
 
 #include <functional>
@@ -13,10 +13,10 @@
 
 namespace juce
 {
-extern int (*lynxTypeAheadHook) (const void* owner, juce_wchar typed, int current, int count, const std::function<String (int)>& textOf);
+extern int (*ywTypeAheadHook) (const void* owner, juce_wchar typed, int current, int count, const std::function<String (int)>& textOf);
 }
 
-namespace lynx::ui
+namespace yw::ui
 {
 inline typeahead::State& typeAheadState()
 {
@@ -47,8 +47,8 @@ inline int typeAheadRow (const void* owner, const juce::KeyPress& key, int curre
 // Installs the JUCE hook (once, at start-up).
 inline void installTypeAhead()
 {
-    juce::lynxTypeAheadHook = [] (const void* owner, juce::juce_wchar typed, int current, int count, const std::function<juce::String (int)>& textOf) {
+    juce::ywTypeAheadHook = [] (const void* owner, juce::juce_wchar typed, int current, int count, const std::function<juce::String (int)>& textOf) {
         return typeAheadRow (owner, typed, current, count, textOf);
     };
 }
-} // namespace lynx::ui
+} // namespace yw::ui

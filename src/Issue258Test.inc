@@ -8,32 +8,32 @@
     struct Issue258Case
     {
         juce::String name;
-        lynx::ChannelDef channel;
+        yw::ChannelDef channel;
         int key = 60, param = 0;
     };
 
     // the cases this PC can make: Transistor Bass (FL's "Empty" preset, program A6 = key 81 shown, its sequence gated)
-    // when FL Studio is here, and LYNX Synth's cutoff always
+    // when FL Studio is here, and YW Synth's cutoff always
     static std::vector<Issue258Case> issue258Cases()
     {
         std::vector<Issue258Case> out;
-        const auto& fl = lynx::flStudioAccess();
+        const auto& fl = yw::flStudioAccess();
         if (! fl.roots.data.empty())
         {
             const auto empty = juce::File (juce::String::fromUTF8 (fl.roots.data.c_str()))
                                    .getChildFile ("Patches/Plugin presets/Generators/Transistor Bass/Empty.fst");
-            if (auto tb = lynx::natives::channelFromPresetFile (lynx::InstrumentKind::transistorbass, empty.getFullPathName().toStdString(), fl))
+            if (auto tb = yw::natives::channelFromPresetFile (yw::InstrumentKind::transistorbass, empty.getFullPathName().toStdString(), fl))
             {
-                lynx::transistorBassSelectProgram (tb->pluginState, 81);
-                for (int i = 0; i < lynx::tbseq::steps; ++i)
-                    lynx::modelparams::setRawValue (*tb, lynx::tbseq::firstStep + 5 * i + 2, 1.0f);
+                yw::transistorBassSelectProgram (tb->pluginState, 81);
+                for (int i = 0; i < yw::tbseq::steps; ++i)
+                    yw::modelparams::setRawValue (*tb, yw::tbseq::firstStep + 5 * i + 2, 1.0f);
                 out.push_back ({ "Transistor Bass cutoff", *tb, 81, 2 });
             }
         }
-        lynx::ChannelDef synth;
+        yw::ChannelDef synth;
         synth.name = "Synth";
-        synth.instrument = lynx::InstrumentKind::synth;
-        out.push_back ({ "YW Synth cutoff", synth, 60, lynx::synthparam::target (lynx::synthparam::cutoff) });
+        synth.instrument = yw::InstrumentKind::synth;
+        out.push_back ({ "YW Synth cutoff", synth, 60, yw::synthparam::target (yw::synthparam::cutoff) });
         return out;
     }
 
@@ -69,19 +69,19 @@
             int getOutputLatencyInSamples() override { return 0; }
             int getInputLatencyInSamples() override { return 0; }
         };
-        constexpr std::int64_t bar = 4 * lynx::ppq;
-        const auto wasAhead = lynx::renderAheadOption().load();
-        lynx::renderAheadOption().store (renderAhead);
+        constexpr std::int64_t bar = 4 * yw::ppq;
+        const auto wasAhead = yw::renderAheadOption().load();
+        yw::renderAheadOption().store (renderAhead);
         Device device;
         std::vector<float> out;
         {
-            lynx::AudioEngine e (true, -1, false, true); // (the live engine's graph and workers; no device opened: driven by hand)
+            yw::AudioEngine e (true, -1, false, true); // (the live engine's graph and workers; no device opened: driven by hand)
             e.setRenderAheadAlways (renderAhead);
-            auto song = lynx::Song::makeDefault();
+            auto song = yw::Song::makeDefault();
             for (auto& p : song.patterns)
                 p.notes.clear();
             song.playlist.clear();
-            song.mode = lynx::PlayMode::song;
+            song.mode = yw::PlayMode::song;
             auto channel = c.channel;
             channel.mixerTrack = 1;
             song.channels.push_back (channel);
@@ -102,16 +102,16 @@
             int followed = original;
             auto pageTimer = [&e, &followed] {
                 const auto& s = e.getSong();
-                if (followed < 0 || followed >= (int) s.channels.size() || s.channels[(std::size_t) followed].instrument != lynx::InstrumentKind::transistorbass)
+                if (followed < 0 || followed >= (int) s.channels.size() || s.channels[(std::size_t) followed].instrument != yw::InstrumentKind::transistorbass)
                     return;
                 const auto instrument = e.getChannelInstrument (followed);
-                const auto prog = lynx::transistorBassProgram (s.channels[(std::size_t) followed].pluginState);
+                const auto prog = yw::transistorBassProgram (s.channels[(std::size_t) followed].pluginState);
                 const auto selected = instrument != nullptr ? instrument->selectedProgram() : -1;
                 if (selected < 0 || ! prog || prog->program == selected)
                     return;
                 auto next = s.channels[(std::size_t) followed].pluginState;
-                if (lynx::transistorBassSelectProgram (next, selected))
-                    e.editSong ([followed, next] (lynx::Song& x) { x.channels[(std::size_t) followed].pluginState = next; }, false);
+                if (yw::transistorBassSelectProgram (next, selected))
+                    e.editSong ([followed, next] (yw::Song& x) { x.channels[(std::size_t) followed].pluginState = next; }, false);
             };
             auto playBlocks = [&] (int blocks, std::vector<float>* into) {
                 for (int k = 0; k < blocks; ++k)
@@ -134,21 +134,21 @@
             e.stop();
             cb.audioDeviceIOCallbackWithContext (nullptr, 0, outs, 2, 512, context);
             // 2. Clone (the Channel rack's cloneSelected: the clone right below, selected)
-            e.editSong ([original] (lynx::Song& s) { lynx::cloneChannel (s, original); });
+            e.editSong ([original] (yw::Song& s) { yw::cloneChannel (s, original); });
             const auto clone = original + 1;
             e.setSelectedChannel (clone);
             const auto player = onOriginal ? original : clone;
             followed = player;
             // 3. a new pattern whose note plays the clone (or the original), the first pattern moved later
-            e.editSong ([player, c, bar] (lynx::Song& s) {
+            e.editSong ([player, c, bar] (yw::Song& s) {
                 s.patterns.emplace_back();
                 s.patterns.back().notes.push_back ({ 0, 2 * bar, player, c.key, 0.78f });
                 s.currentPattern = (int) s.patterns.size() - 1;
                 for (auto& clip : s.playlist)
-                    if (clip.kind == lynx::ClipKind::pattern && clip.pattern == 0)
+                    if (clip.kind == yw::ClipKind::pattern && clip.pattern == 0)
                         clip.start = 4 * bar;
-                lynx::Clip p;
-                p.kind = lynx::ClipKind::pattern;
+                yw::Clip p;
+                p.kind = yw::ClipKind::pattern;
                 p.pattern = (int) s.patterns.size() - 1;
                 p.track = 1;
                 p.start = 0;
@@ -165,21 +165,21 @@
             }
             playBlocks (10, nullptr);
             // 4. right-click › Create automation clip on the knob (addAutomationClip), its points then drawn
-            e.editSong ([player, c, bar, from, to] (lynx::Song& s) {
-                lynx::Automation a;
+            e.editSong ([player, c, bar, from, to] (yw::Song& s) {
+                yw::Automation a;
                 a.name = "issue 258";
-                a.target = { lynx::AutomationTargetKind::channelParam, player, 0, c.param };
+                a.target = { yw::AutomationTargetKind::channelParam, player, 0, c.param };
                 a.points = { { 0, from, 0.0f }, { 2 * bar, from, 0.0f } };
                 s.automations.push_back (a);
-                lynx::Clip clip;
-                clip.kind = lynx::ClipKind::automation;
+                yw::Clip clip;
+                clip.kind = yw::ClipKind::automation;
                 clip.automation = (int) s.automations.size() - 1;
                 clip.track = 2;
                 clip.start = 0;
                 clip.length = 2 * bar;
                 s.playlist.push_back (clip);
             });
-            e.editSong ([from, to, bar] (lynx::Song& s) {
+            e.editSong ([from, to, bar] (yw::Song& s) {
                 s.automations.back().points = { { 0, from, 0.0f }, { bar, 0.5f * (from + to), 0.0f }, { 2 * bar, to, 0.0f } };
             });
             // 5. played from the start
@@ -191,7 +191,7 @@
             cb.audioDeviceIOCallbackWithContext (nullptr, 0, outs, 2, 512, context);
             cb.audioDeviceStopped();
         }
-        lynx::renderAheadOption().store (wasAhead);
+        yw::renderAheadOption().store (wasAhead);
         return out;
     }
 

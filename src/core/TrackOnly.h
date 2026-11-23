@@ -1,6 +1,6 @@
 #pragma once
 
-// Issue #191 point 5 (round 190iu), a LYNX extra: Track-only mode. The Pattern (FL) layout without the Channel rack:
+// Issue #191 point 5 (round 190iu), a YW extra: Track-only mode. The Pattern (FL) layout without the Channel rack:
 // 1 Playlist track = 1 instrument, for people who work linearly and never use patterns as building blocks.
 //
 // It is built from FL's own pieces, so nothing new has to be learnt and the files stay FL's:
@@ -26,7 +26,7 @@
 #include "core/PlaylistOps.h"
 #include "core/Song.h"
 
-namespace lynx::trackonly
+namespace yw::trackonly
 {
 inline std::atomic<bool>& enabledFlag() noexcept
 {
@@ -67,4 +67,4 @@ inline int withoutTrack (const Song& song)
             ++n;
     return n;
 }
-} // namespace lynx::trackonly
+} // namespace yw::trackonly

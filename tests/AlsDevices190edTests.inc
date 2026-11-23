@@ -1,4 +1,4 @@
-// --- Live's own devices in a set → LYNX's own, lot 3 (round 190ed, core/AlsDevices.h): EQ Three, Drum Buss, Auto
+// --- Live's own devices in a set → YW's own, lot 3 (round 190ed, core/AlsDevices.h): EQ Three, Drum Buss, Auto
 // Filter's LFO / envelope follower / side chain, Operator and Drift, and the envelopes of racks, devices inside racks and
 // plugins. The device elements are written by the tests with the member names Live saves; no file of Live's is used.
 // Which statements about Live are [ASSUMED] is listed in the round's handoff.
@@ -26,15 +26,15 @@ using als190cf::near;
 using als190cf::on;
 using als190cf::target;
 
-inline std::optional<lynx::alsdev::Translated> translate (const std::string& text, double bpm = 120.0) { return als190cf::translate (text, bpm); }
+inline std::optional<yw::alsdev::Translated> translate (const std::string& text, double bpm = 120.0) { return als190cf::translate (text, bpm); }
 // (round 190fk) a Drum Buss as round 190ek's rack: the importer's default is now Anvil Bus (core/AnvilBus.h)
-inline std::optional<lynx::alsdev::Translated> translateRack (const std::string& text)
+inline std::optional<yw::alsdev::Translated> translateRack (const std::string& text)
 {
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     doc.parse (text);
-    lynx::alsdev::Context context;
+    yw::alsdev::Context context;
     context.drumBussRack = true;
-    return lynx::alsdev::effectFromLiveDevice (doc.root(), context);
+    return yw::alsdev::effectFromLiveDevice (doc.root(), context);
 }
 
 // a set: one MIDI track (Id 10) with `midiDevices` and `midiEnvelopes`, one audio track (Id 20) with `audioDevices` and
@@ -57,20 +57,20 @@ inline std::string set (const std::string& midiDevices, const std::string& audio
     return s;
 }
 
-inline std::optional<lynx::Song> import (const std::string& text, lynx::FlpImportReport& report)
+inline std::optional<yw::Song> import (const std::string& text, yw::FlpImportReport& report)
 {
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     if (! doc.parse (text))
         return std::nullopt;
     auto options = als175a::options (&report);
     std::string error;
-    auto song = lynx::importAlsXml (doc, options, &error);
+    auto song = yw::importAlsXml (doc, options, &error);
     if (! song)
         std::printf ("  import error: %s\n", error.c_str());
     return song;
 }
 
-inline const lynx::Automation* automationOn (const lynx::Song& song, const lynx::AutomationTarget& t)
+inline const yw::Automation* automationOn (const yw::Song& song, const yw::AutomationTarget& t)
 {
     for (const auto& a : song.automations)
         if (a.target == t)
@@ -104,9 +104,9 @@ inline std::string sideChain (int track)
 }
 
 // a peak controller run over `seconds` of a constant-amplitude input at 120 BPM, stopped: the last value of `output`
-inline float controllerOutput (const lynx::EffectSlot& slot, float amplitude, int output, double seconds = 0.05)
+inline float controllerOutput (const yw::EffectSlot& slot, float amplitude, int output, double seconds = 0.05)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     fx->setPlaying (false);
     std::vector<float> l (256, amplitude), r (256, amplitude);
@@ -119,9 +119,9 @@ inline float controllerOutput (const lynx::EffectSlot& slot, float amplitude, in
     return fx->controlOutput (output);
 }
 
-inline std::unique_ptr<lynx::patcher::Graph> graphOf (const lynx::PatcherDoc& doc)
+inline std::unique_ptr<yw::patcher::Graph> graphOf (const yw::PatcherDoc& doc)
 {
-    auto g = std::make_unique<lynx::patcher::Graph> (doc, 48000.0, lynx::patcher::builtInFactories (48000.0));
+    auto g = std::make_unique<yw::patcher::Graph> (doc, 48000.0, yw::patcher::builtInFactories (48000.0));
     g->prepare (48000.0);
     return g;
 }
@@ -150,8 +150,8 @@ inline std::string operatorDevice (int algorithm, const std::array<double, 4>& v
 
 TEST (als190ed_eq_three_becomes_prism)
 {
-    using namespace lynx;
-    using namespace lynx::dyn::prism;
+    using namespace yw;
+    using namespace yw::dyn::prism;
     using als190ed::near;
     // −6 dB low, +3 dB mid, 0 dB high, 48 dB/oct at 300 Hz / 3 kHz
     const auto t = als190ed::translate (als190ed::eqThree (0.501187, 1.412538, 1.0, true, true, true, 300.0, 3000.0, 1.0));
@@ -196,8 +196,8 @@ TEST (als190ed_eq_three_becomes_prism)
 
 TEST (als190ed_drum_buss_becomes_a_rack)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     namespace em = mixsuite::ember;
     namespace sh = mixsuite::shell;
     using als190ed::near;
@@ -277,8 +277,8 @@ TEST (als190ed_drum_buss_becomes_a_rack)
 
 TEST (als190ed_peak_controller_laws)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190ed::near;
     // the amounts come back through the controller's own processing: peak k × a constant input level, LFO base + k × wave
     for (const double k : { 0.25, 0.5, 1.0 })
@@ -351,7 +351,7 @@ TEST (als190ed_peak_controller_laws)
 
 TEST (als190ed_auto_filter_modulation_is_a_linked_peak_controller)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190ed::near;
     // Bus: an Auto Filter at C6 (note 84 ≈ 1047 Hz) with a synced LFO (1 bar … index 9 = a quarter note) of 12 semitones
     // and an envelope follower of +24 semitones; Keys: an Auto Filter whose envelope listens to Kick (track 30)
@@ -417,8 +417,8 @@ TEST (als190ed_auto_filter_modulation_is_a_linked_peak_controller)
 
 TEST (als190ed_operator_and_drift_become_the_synth)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190ed::near;
     using als190ed::par;
     // (round 190hs) Operator now imports onto Tetra (tests/Tetra190hsTests.inc); the synth's pitch helper stays for Drift
@@ -450,15 +450,15 @@ TEST (als190ed_operator_and_drift_become_the_synth)
     // through the importer: Operator (with or without FM) is Tetra, with its values (round 190hs)
     FlpImportReport report;
     const auto song = als190ed::import (als190ed::set (als190ed::operatorDevice (0, { 1.0, 0.000316227757, 0.000316227757, 0.000316227757 }), {}), report);
-    CHECK (song.has_value() && report.converted.count ("Operator -> Tetra (LYNX's FM synth)") == 1);
+    CHECK (song.has_value() && report.converted.count ("Operator -> Tetra (YW's FM synth)") == 1);
     FlpImportReport fmReport;
     const auto fm = als190ed::import (als190ed::set (als190ed::operatorDevice (0, { 1.0, 0.5, 0.000316227757, 0.000316227757 }), {}), fmReport);
-    CHECK (fm.has_value() && fmReport.converted.count ("Operator -> Tetra (LYNX's FM synth)") == 1 && fmReport.unsupported.empty() && fmReport.notReproduced.empty());
+    CHECK (fm.has_value() && fmReport.converted.count ("Operator -> Tetra (YW's FM synth)") == 1 && fmReport.unsupported.empty() && fmReport.notReproduced.empty());
 }
 
 TEST (als190ed_envelopes_of_racks_and_plugins_follow)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190ed::near;
     using als190ed::par;
     using als190ed::target;

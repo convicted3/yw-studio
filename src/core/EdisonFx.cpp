@@ -11,7 +11,7 @@
 #include "core/Instruments.h"
 #include "core/Song.h"
 
-namespace lynx::edisonfx
+namespace yw::edisonfx
 {
 namespace ae = audioedit;
 
@@ -903,4 +903,4 @@ void toParams (const FlState& s, EffectParams& params)
     params[noiseThreshold] = s.noiseThreshold;
     params[ignoreOwnSelection] = s.ignoreOwnSelection ? 1.0f : 0.0f;
 }
-} // namespace lynx::edisonfx
+} // namespace yw::edisonfx

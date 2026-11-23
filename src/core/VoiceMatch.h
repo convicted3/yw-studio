@@ -1,7 +1,7 @@
 #pragma once
 
 // Matched voicings (REA round 123): engines that reproduce, as closely as black-box measurement allows, the
-// plug-ins her vocal projects use when they are missing. They are selected by a "Voicing" parameter of the LYNX
+// plug-ins her vocal projects use when they are missing. They are selected by a "Voicing" parameter of the YW
 // effect that substitutes the plug-in (Ridge Strip, Hush De-esser, Compressor, Glow Leveler); the effect's own
 // engine stays untouched at voicing 0. Every law here was measured on the vendors' official trials hosted
 // headless (tools/fxmeasure: impulses, sine stairs, tone bursts, pink noise, her own takes) and fitted; no
@@ -12,7 +12,7 @@
 
 #include "core/Biquad.h"
 
-namespace lynx::vmatch
+namespace yw::vmatch
 {
 // ---- E-type console channel strip (Ridge Strip, voicing "E") ----
 namespace echannel
@@ -232,7 +232,7 @@ struct Settings
     // weighting. 0 = the voicing's own emphasis (every project before); 1 = the even weighting those references measured
     // (much less treble emphasis, a little more bass), its 1 kHz gain the same, so every 1 kHz law fitted before holds
     int scWeighting = 0;
-    // round 190lf [EXEC] (REA_rodada190lf_dyn §1): the cell law. 0 = the laws above (every project before); 1 = LYNX's
+    // round 190lf [EXEC] (REA_rodada190lf_dyn §1): the cell law. 0 = the laws above (every project before); 1 = YW's
     // compact opto behaviour model fitted on our black-box probes of an opto-leveler emulation (a feedback side chain
     // through a low and a high peaking filter, a fast and a slow conductance sharing the light, an exposure that slows
     // the release, a high-frequency band that is reduced less, its own peak reduction / Hi Freq / gain laws). Uses
@@ -307,7 +307,7 @@ private:
 // round 152: the measured static correction (dB of gain added) at a ratio ≥ 1 and a level `over` dB above the threshold
 double measuredStaticDelta (double ratio, double over) noexcept;
 
-// ---- round 190mg (REA_rodada190mg_ren): the "Renaissance law" of the vintage voicing — LYNX's model of the reference's
+// ---- round 190mg (REA_rodada190mg_ren): the "Renaissance law" of the vintage voicing — YW's model of the reference's
 // structure (clean-room: structure from REA, every constant fitted on our own demo-mode probes). Compressor's hidden law
 // parameter selects it; only the Renaissance Compressor translator sets it.
 struct RenSettings
@@ -364,7 +364,7 @@ private:
     float last = 0.0f, change = 0.0f;
 };
 } // namespace progcomp
-} // namespace lynx::vmatch
+} // namespace yw::vmatch
 
 // ---- round tp172c: a modern console channel strip (Ridge Strip, "Modern" voicing) ----
 // Fitted black-box on the SSL Native Channel Strip 2 trial (its renders only: impulses on a dense grid of every EQ band,
@@ -373,7 +373,7 @@ private:
 // width follows the gain; the filters are a 3rd-order high-pass and a 2nd-order low-pass. The compressor is feed-forward
 // (peak or RMS detector, threshold offset and slope per ratio, soft knee in RMS mode), the auto make-up a share of the
 // reduction at 0 dBFS; the gate / expander shares the threshold scale, the gate has its hold and hysteresis.
-namespace lynx::vmatch::strip2
+namespace yw::vmatch::strip2
 {
 // Controls in the reference's own units (its dials' read-outs)
 struct Settings
@@ -426,4 +426,4 @@ private:
     bool gateOpen = false;
     float lastComp = 0.0f, lastGate = 0.0f;
 };
-} // namespace lynx::vmatch::strip2
+} // namespace yw::vmatch::strip2

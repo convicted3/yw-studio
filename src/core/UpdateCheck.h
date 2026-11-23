@@ -1,9 +1,9 @@
 #pragma once
 
 // In-app update check (round 166b), the logic without JUCE (tested in isolation; the app side is ui/Updater.h):
-// - the GitHub releases list of Ka1-S/LYNX-SHARE (JSON) parsed into releases, drafts skipped, prereleases included;
+// - the GitHub releases list of convicted3/yw-studio (JSON) parsed into releases, drafts skipped, prereleases included;
 // - semantic-version comparison of a release tag ("v0.1.21-alpha") with the running version (CMake's "0.1.20");
-// - the build flavour LYNX runs as (installer, portable zip, Store, macOS, AppImage, tar.gz), the update method and
+// - the build flavour YW runs as (installer, portable zip, Store, macOS, AppImage, tar.gz), the update method and
 //   the release asset that flavour uses;
 // - the release's SHA256SUMS.txt line for a file;
 // - the release notes (Markdown) as readable lines;
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::update
+namespace yw::update
 {
 // --- versions ---------------------------------------------------------------------------------------------------
 struct Version
@@ -28,7 +28,7 @@ struct Version
 };
 
 // "v0.1.21-alpha", "0.1.21", "0.1" (patch 0), "0.1.28.1" (round 190hl), "V1.2.3-rc.1+build.5" (build metadata
-// ignored); invalid otherwise. (LYNX SHARE 0.1.28 and older read only two or three numbers: they drop a release whose
+// ignored); invalid otherwise. (YW Studio 0.1.28 and older read only two or three numbers: they drop a release whose
 // tag has four, so they never offer it.)
 Version parseVersion (const std::string& text);
 
@@ -36,7 +36,7 @@ Version parseVersion (const std::string& text);
 // one by one by semver 2.0 precedence (numeric ones as numbers, below alphanumeric ones; a shorter list sorts first
 // when equal so far: "1.0.0-alpha" < "1.0.0-alpha.1" < "1.0.0-beta").
 // Round 190hl: a version WITHOUT a prerelease equals every prerelease of the same numbers ("0.1.28" == "0.1.28-alpha").
-// LYNX SHARE builds carry CMake's bare "0.1.28" while their release tag is "v0.1.28-alpha": the running build IS that
+// YW Studio builds carry CMake's bare "0.1.28" while their release tag is "v0.1.28-alpha": the running build IS that
 // release, so it is neither an update for it nor a version to go back to (under strict semver "0.1.28-alpha" <
 // "0.1.28" and Help › "Go back to..." in 0.1.28 reinstalled 0.1.28 itself). Two prereleases still order by semver.
 int compare (const Version& a, const Version& b);
@@ -66,9 +66,9 @@ int newestIndex (const std::vector<Release>& releases, const Version& running);
 // --- build flavours ---------------------------------------------------------------------------------------------
 enum class Flavour
 {
-    windowsInstaller, // %LOCALAPPDATA%\Programs\LYNX with the NSIS installer's Uninstall.exe beside LYNX.exe
-    windowsPortable,  // the zip (or the bare LYNX.exe)
-    store,            // the Microsoft Store (MSIX) package: the Store updates it; LYNX never checks
+    windowsInstaller, // %LOCALAPPDATA%\Programs\YW with the NSIS installer's Uninstall.exe beside YW.exe
+    windowsPortable,  // the zip (or the bare YW.exe)
+    store,            // the Microsoft Store (MSIX) package: the Store updates it; YW never checks
     macos,
     linuxAppImage,
     linuxTarball,
@@ -81,7 +81,7 @@ struct Facts
     bool packaged = false;       // Windows: a package identity (MSIX)
     bool uninstallerBesideExe = false;
     std::string appImagePath;    // Linux: $APPIMAGE when it names an existing file
-    std::string forced;          // LYNX_UPDATE_FLAVOUR (tests): a flavourId() name wins over the facts
+    std::string forced;          // YW_UPDATE_FLAVOUR (tests): a flavourId() name wins over the facts
 };
 
 Flavour detectFlavour (const Facts& facts);
@@ -156,7 +156,7 @@ struct Settings
     bool automatic = true;      // Settings › General › "Check for updates automatically"
     std::string skipped;        // the version the user skipped (✕ on the bar): that one and older stay quiet
     std::int64_t lastCheckMs = 0; // when the release list was last fetched (the cache's age)
-    // Round 190gh (B2): the version LYNX SHARE ran before its last update (written by the updater when it applies
+    // Round 190gh (B2): the version YW Studio ran before its last update (written by the updater when it applies
     // or saves an update); Help › "Go back to <version>..." offers it. Empty: none recorded (an update made by a
     // version without this field, or none yet).
     std::string previous;
@@ -188,7 +188,7 @@ Settings skipLeft (Settings settings, const Version& left);
 
 // --- installing.txt (round 190hl) -------------------------------------------------------------------------------
 // The note the Windows installer path leaves in the update folder for the version it installs (read after the
-// restart): the version installed, the one it replaced, whether it went back. LYNX SHARE 0.1.27 and older read
+// restart): the version installed, the one it replaced, whether it went back. YW Studio 0.1.27 and older read
 // everything after the first "version=" as the version, so "version=" is written LAST (round 190gh wrote it first
 // and 0.1.27 said "updated to 0.0.0"); 0.1.28 and newer read the lines in any order.
 struct InstallingNote
@@ -202,8 +202,8 @@ InstallingNote parseInstalling (const std::string& text);
 // --- leftovers of a newer version (round 190nr) --------------------------------------------------------------------
 // Going back runs the OLDER version's installer over the folder, and its uninstall list doesn't know what newer
 // versions added (0.1.29 left 0.1.30's licenses\ behind, round 190nk). The helper of the version being left (a copy
-// of the NEWER LYNX.exe, --apply-update) removes, after the older installer succeeded, every install-folder entry that
-// arrived after the version installed. Add an entry here whenever the installer (resources/installer/LYNX.nsi) gets a
+// of the NEWER YW.exe, --apply-update) removes, after the older installer succeeded, every install-folder entry that
+// arrived after the version installed. Add an entry here whenever the installer (resources/installer/YW.nsi) gets a
 // new top-level file or folder. Names are top-level entries of the install folder.
 struct InstallEntry
 {
@@ -215,7 +215,7 @@ const std::vector<InstallEntry>& installEntries();
 std::vector<std::string> entriesNewerThan (const Version& installed);
 
 // An automatic check reuses the cached release list for this long (GitHub allows 60 unauthenticated calls an hour
-// per address; LYNX started many times a day asks once every few hours).
+// per address; YW started many times a day asks once every few hours).
 constexpr std::int64_t cacheLifetimeMs = 3LL * 60 * 60 * 1000;
 bool cacheFresh (std::int64_t lastCheckMs, std::int64_t nowMs);
 
@@ -223,4 +223,4 @@ bool cacheFresh (std::int64_t lastCheckMs, std::int64_t nowMs);
 // own token, and dropped anyway).
 constexpr const char* releasesUrl = "https://api.github.com/repos/convicted3/yw-studio/releases?per_page=10";
 constexpr const char* releasesPage = "https://github.com/convicted3/yw-studio/releases";
-} // namespace lynx::update
+} // namespace yw::update

@@ -61,22 +61,22 @@ void mdct_init(mdct_lookup *lookup,int n){
 
 /* trig lookups... */
 
-  /* LYNX modification (docs/analise/REA_rodada77.md): the angles are formed in single precision,
+  /* YW modification (docs/analise/REA_rodada77.md): the angles are formed in single precision,
      (float)k * ((float)M_PI / (float)d), and only then widened for cos/sin, the way FL Studio's
      decoder builds this table; with the original double-precision angles a few table entries round
      differently and the decoded samples differ from FL's by up to ~4e-7. */
-#define LYNX_ANGLE(k,d) ((double)((float)(k)*((float)M_PI/(float)(d))))
+#define YW_ANGLE(k,d) ((double)((float)(k)*((float)M_PI/(float)(d))))
   for(i=0;i<n/4;i++){
-    T[i*2]=FLOAT_CONV(cos(LYNX_ANGLE(4*i,n)));
-    T[i*2+1]=FLOAT_CONV(-sin(LYNX_ANGLE(4*i,n)));
-    T[n2+i*2]=FLOAT_CONV(cos(LYNX_ANGLE(2*i+1,2*n)));
-    T[n2+i*2+1]=FLOAT_CONV(sin(LYNX_ANGLE(2*i+1,2*n)));
+    T[i*2]=FLOAT_CONV(cos(YW_ANGLE(4*i,n)));
+    T[i*2+1]=FLOAT_CONV(-sin(YW_ANGLE(4*i,n)));
+    T[n2+i*2]=FLOAT_CONV(cos(YW_ANGLE(2*i+1,2*n)));
+    T[n2+i*2+1]=FLOAT_CONV(sin(YW_ANGLE(2*i+1,2*n)));
   }
   for(i=0;i<n/8;i++){
-    T[n+i*2]=FLOAT_CONV(cos(LYNX_ANGLE(4*i+2,n))*.5);
-    T[n+i*2+1]=FLOAT_CONV(-sin(LYNX_ANGLE(4*i+2,n))*.5);
+    T[n+i*2]=FLOAT_CONV(cos(YW_ANGLE(4*i+2,n))*.5);
+    T[n+i*2+1]=FLOAT_CONV(-sin(YW_ANGLE(4*i+2,n))*.5);
   }
-#undef LYNX_ANGLE
+#undef YW_ANGLE
 
   /* bitreverse lookup... */
 

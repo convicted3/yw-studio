@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -217,13 +217,13 @@ std::unique_ptr<juce::Component> makePluginsOffPanel (AudioEngine& engine)
 
 juce::String pluginsOffSelfTest()
 {
-    const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-pluginsoff-selftest-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
+    const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-pluginsoff-selftest-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
     if (! folder.createDirectory())
         return "could not create " + folder.getFullPathName();
     const juce::ScopeGuard cleanUp { [&folder] { folder.deleteRecursively(); } };
 
     // a project with hosted plugins everywhere one can be: two channels (one plugin twice), insert slots, a Patcher
-    // with a generator and an effect node, and a LYNX substitute that keeps its original's reference. The plugins are
+    // with a generator and an effect node, and a YW substitute that keeps its original's reference. The plugins are
     // not installed (the test must never run third-party code); their settings are long, binary-looking strings.
     const auto stateOf = [] (int seed) {
         juce::MemoryBlock block ((size_t) (3000 + seed * 517));
@@ -267,7 +267,7 @@ juce::String pluginsOffSelfTest()
         patcher.patcher.nodes.push_back (generator);
         patcher.patcher.nodes.push_back (effect);
         song.mixer[2].effects.push_back (patcher);
-        // a substitute (a LYNX effect standing for a plugin that is not installed) keeps the original
+        // a substitute (a YW effect standing for a plugin that is not installed) keeps the original
         EffectSlot substitute = makeEffectSlot (EffectKind::compressor);
         substitute.substituteFor = ref ("VST3-TestLimiter-55555555-eeeeeeee", "Test Limiter", 7);
         song.mixer[3].effects.push_back (substitute);
@@ -276,7 +276,7 @@ juce::String pluginsOffSelfTest()
     if (original.size() != 7)
         return "the test project has " + juce::String ((int) original.size()) + " plugin settings, not 7";
 
-    const auto first = folder.getChildFile ("first.lynx"), second = folder.getChildFile ("second.lynx"), third = folder.getChildFile ("third.lynx");
+    const auto first = folder.getChildFile ("first.yw"), second = folder.getChildFile ("second.yw"), third = folder.getChildFile ("third.yw");
     juce::String error;
     if (! ProjectFile::save (song, first, error))
         return "could not save the test project: " + error;
@@ -403,4 +403,4 @@ juce::String pluginsOffSelfTest()
         return "the mode outlived its engine";
     return "OK";
 }
-} // namespace lynx
+} // namespace yw

@@ -1,4 +1,4 @@
-// LYNX's own Fruity DX10 presets (round 168o): designed for LYNX on DX10's engine (core/Dx10.h), clean-room — no FL
+// YW's own Fruity DX10 presets (round 168o): designed for YW on DX10's engine (core/Dx10.h), clean-room — no FL
 // preset was read or converted. Each preset gives the 22 knobs as positions 0…1 (raw = position × 65536; Coarse −3…3
 // is given as octaves). Laws (REA_rodada42): modulator ratio = ⌊40.1·c²⌋ + fine (fine ≥ 0.5: ¼, ⅓, ½, ⅔, ¾), level
 // 0.0002·x² per sample, amplitude decay ≥ 0.98 = hold.
@@ -8,9 +8,9 @@
 #include <cstring>
 
 #include "core/Dx10.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -148,4 +148,4 @@ std::vector<Preset> dx10Bank()
     }
     return b;
 }
-} // namespace lynx::banks
+} // namespace yw::banks

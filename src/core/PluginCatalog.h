@@ -4,9 +4,9 @@
 // database (categories along the picker, a search, favourites), instead of one menu of every plugin. FL groups its
 // generators as Controller, Drum, MIDI, Misc, Patcher, Sampler, Synth classic, Synth special, Visual and its effects
 // as Controller, Delay reverb, Distortion, Dynamics, Filter, Flanger, Gain, Misc, Patcher, Visual [EXEC: FL Studio
-// 2026's Plugin picker, F8]; for third-party plugins it goes by what the plugin reports. LYNX does the same from the
+// 2026's Plugin picker, F8]; for third-party plugins it goes by what the plugin reports. YW does the same from the
 // category a plugin declares (VST3 sub-categories such as "Fx|Dynamics", CLAP features) and, when it declares none
-// useful (most VST2 plugins say only "Effect" / "Synth"), from words in its name, in LYNX's own category names.
+// useful (most VST2 plugins say only "Effect" / "Synth"), from words in its name, in YW's own category names.
 // No JUCE here (tests/PluginCatalogTests151.inc).
 
 #include <map>
@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::plugincatalog
+namespace yw::plugincatalog
 {
 struct Entry
 {
@@ -57,8 +57,8 @@ int countIn (const std::vector<Entry>& entries, bool instruments, const std::str
 
 // --- Round 166f (issue #16): the user's plugin folders ---------------------------------------------------------------
 // FL Studio lets users arrange its Plugin database in folders and subfolders (e.g. "Stock/EQ", "Third party/Reverb");
-// the mixer slot's and the Channel Rack's plugin menus then list the plugins in groups, one heading per folder. LYNX
-// keeps the same in its own Plugin database (the Browser): a folder path per plugin key ("lynx:fx:<name>", a plugin's
+// the mixer slot's and the Channel Rack's plugin menus then list the plugins in groups, one heading per folder. YW
+// keeps the same in its own Plugin database (the Browser): a folder path per plugin key ("yw:fx:<name>", a plugin's
 // identifier — the keys of ui/QuickPick.h) plus the folders the user created (empty ones too), per kind. Folder
 // paths use "/" between levels, at most `maxFolderDepth` levels; they are saved as text (plugin-folders.txt):
 //   "fx<TAB>Stock/EQ"                 a folder of effects        "gen<TAB>Synths"   a folder of generators
@@ -118,8 +118,8 @@ std::string groupHeading (const std::string& path); // "Stock › EQ" (a path sh
 
 // Folders from FL Studio's own Plugin database: `files` = the .fst presets under its Effects (or Generators) folder as
 // paths relative to it ("Stock/EQ/Fruity Parametric EQ 2.fst"; FL's own category folders included), `names` = the
-// shown name of each LYNX plugin of that kind (its key's label) and their keys. A preset whose name (the file name) is
-// the name of a LYNX plugin (same letters and digits, any case) puts that plugin in the preset's folder. Returns how
+// shown name of each YW plugin of that kind (its key's label) and their keys. A preset whose name (the file name) is
+// the name of a YW plugin (same letters and digits, any case) puts that plugin in the preset's folder. Returns how
 // many plugins were placed.
 int importFlFolders (Folders& folders, bool instruments, const std::vector<std::string>& files,
                      const std::vector<std::pair<std::string, std::string>>& keyAndName);
@@ -129,14 +129,14 @@ int importFlFolders (Folders& folders, bool instruments, const std::vector<std::
 // 2026-11-04): FL's mixer slot and Add menus show every plugin under its folder's heading, A-Z. `name` is a plugin's
 // English name, with or without FL's "Fruity " prefix ("Compressor" is not FL's, "Fruity Compressor" / "Fruity
 // Limiter" / "Peak Controller" are); "" = not one of FL's plugins. FL's legacy effects that its database leaves out
-// (Fruity 7 Band EQ, Fruity Delay, ...) get the folder of their family (LYNX's choice, FL lists them under More plugins).
+// (Fruity 7 Band EQ, Fruity Delay, ...) get the folder of their family (YW's choice, FL lists them under More plugins).
 // `fruityPrefix`: "Limiter" may also be "Fruity Limiter" (only for plugins known to be FL's own).
 std::string flCategory (const std::string& name, bool instruments, bool fruityPrefix = true);
-// The heading of LYNX's own plugins in those menus; it comes first.
-inline const char* const lynxCategory = "YW Studio";
+// The heading of YW's own plugins in those menus; it comes first.
+inline const char* const ywCategory = "YW Studio";
 // `user` plus a folder for every built-in plugin (`keyAndName`: its key and English name) the user did not file:
-// FL's category (by the exact name; with `flPlugin`, an FL plugin of LYNX, also without "Fruity " and "Misc" when FL
-// has no folder for it), else lynxCategory.
+// FL's category (by the exact name; with `flPlugin`, an FL plugin of YW, also without "Fruity " and "Misc" when FL
+// has no folder for it), else ywCategory.
 struct BuiltinPlugin
 {
     std::string key, name;
@@ -151,4 +151,4 @@ Folders withDefaultCategories (const Folders& user, bool instruments, const std:
 // Returns each one's Bits label: "64", "32", "32+64" (the 64-bit one of a pair) or "" (the 32-bit one of a pair: not
 // listed, the combined entry stands for it).
 std::vector<std::string> combinedBits (const std::vector<std::pair<std::string, bool>>& items);
-} // namespace lynx::plugincatalog
+} // namespace yw::plugincatalog

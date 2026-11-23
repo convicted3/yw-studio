@@ -6,11 +6,11 @@
 // FL layout (Pattern workflow): FL 2026's Browser has six icon tabs, in this order (FLEngine strings "PROJECT",
 // "PLUGINS", "PRESETS", "SOUNDS", "STARRED" next to "UserTabs", "*.tabconfig"; Settings/Browser/Tab_*.tabconfig;
 // reference shot fl-playlist.png 0,104,205,140: waveform, documents, plug, globe, cloud, star): ALL, PROJECT
-// (Current project), PLUGINS (Plugin database), PRESETS, SOUNDS (FL Cloud), STARRED. LYNX has no FL Cloud: PRESETS
+// (Current project), PLUGINS (Plugin database), PRESETS, SOUNDS (FL Cloud), STARRED. YW has no FL Cloud: PRESETS
 // lists the preset places on disk and SOUNDS the sample places, each under its content filter.
 //
 // Clip-launch layout: Live 12's browser (reference live-session.png 0..318, 86..800): a sidebar with three headed groups
-// (Collections, Library, Places) beside the content list. Library categories LYNX has nothing for (Max for Live,
+// (Collections, Library, Places) beside the content list. Library categories YW has nothing for (Max for Live,
 // Grooves as files, Tunings) are shown dimmed, as Live dims the places it can't open (Cloud, Push).
 
 #include <array>
@@ -19,7 +19,7 @@
 
 #include "core/BrowserView.h"
 
-namespace lynx::browserplaces
+namespace yw::browserplaces
 {
 // --- FL's tabs ---------------------------------------------------------------------------------------------------------
 // The tab ids keep the Browser's earlier numbers (0 ALL, 1 PROJECT, 2 STARRED) so a saved tab or a caller's
@@ -97,7 +97,7 @@ enum class Group
     places
 };
 
-// The sidebar's Library entries in Live's order, and the places LYNX adds.
+// The sidebar's Library entries in Live's order, and the places YW adds.
 enum class Category
 {
     // Library
@@ -107,17 +107,17 @@ enum class Category
     instruments, // the Plugin database's generators
     audioEffects,
     midiEffects, // FL's VFX note processors
-    modulators,  // LYNX's controllers (Peak, Formula, LFO, Envelope controllers)
-    maxForLive,  // none in LYNX (dimmed)
+    modulators,  // YW's controllers (Peak, Formula, LFO, Envelope controllers)
+    maxForLive,  // none in YW (dimmed)
     plugIns,     // the installed VST3 / CLAP plugins
     clips,       // MIDI clips: the Scores places
     samples,     // every sample place, audio only
     grooves,     // the groove pool lives under the grid (dimmed here)
-    tunings,     // none in LYNX (dimmed)
+    tunings,     // none in YW (dimmed)
     templates,   // the user's project templates
     // Places
     packs,          // FL's sample packs
-    userLibrary,    // LYNX's own places (plugin presets, Speech, Clipboard files)
+    userLibrary,    // YW's own places (plugin presets, Speech, Clipboard files)
     currentProject, // the project's items
     folder,         // one of the folders the Browser shows (its path in Entry::path)
     addFolder,      // "Add Folder..."
@@ -301,4 +301,4 @@ inline bool wantsProject (Category c) noexcept { return c == Category::currentPr
 
 // Live's Drums: the words a drum sample's path is searched for (core/SearchQuery syntax, OR between them).
 inline const char* drumsQuery() noexcept { return "kick OR snare OR hat OR clap OR perc OR drum OR tom OR cymbal OR rim OR 808"; }
-} // namespace lynx::browserplaces
+} // namespace yw::browserplaces

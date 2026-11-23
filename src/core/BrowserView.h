@@ -9,16 +9,16 @@
 #include <string>
 #include <vector>
 
-namespace lynx::browserview
+namespace yw::browserview
 {
 // What the Browser lists in its folders and search results (folders are always listed).
 enum class ContentFilter
 {
-    all,      // every file LYNX can use (audio, MIDI, projects, presets, SoundFonts)
+    all,      // every file YW can use (audio, MIDI, projects, presets, SoundFonts)
     audio,    // audio files only
     samples,  // audio files and SoundFonts
     presets,  // channel / plugin presets and SoundFonts
-    projects, // .lynx / .flp projects and MIDI files
+    projects, // .yw / .flp projects and MIDI files
     count
 };
 
@@ -28,7 +28,7 @@ const char* contentFilterLabel (ContentFilter filter); // English menu text (the
 ContentFilter contentFilterFromId (const std::string& id); // unknown: all
 
 // Whether a file named `fileName` (only its extension matters, case-insensitive) is listed under `filter`.
-// Files LYNX doesn't use are never listed.
+// Files YW doesn't use are never listed.
 bool listed (const std::string& fileName, ContentFilter filter);
 
 // The kinds of top-level entries a Browser has. Folder roots are identified by their path; the two entries without a
@@ -41,8 +41,8 @@ enum class RootKind
     flDemos,        // FL's demo projects
     flMidi,         // FL's MIDI scores
     flPresets,      // FL's channel / plugin presets (3x Osc, synth presets)
-    pluginPresets,  // LYNX's own plugin presets folder
-    speech,         // speech files (.speech): FL's Data/Patches/Speech and LYNX's own (round 168b)
+    pluginPresets,  // YW's own plugin presets folder
+    speech,         // speech files (.speech): FL's Data/Patches/Speech and YW's own (round 168b)
     clipboardFiles, // FL's "Clipboard files": what Tools › Clipboard saved (round 181b)
     documents,
     music,
@@ -104,4 +104,4 @@ struct View
     static View fromText (const std::string& text);
     bool operator== (const View&) const = default;
 };
-} // namespace lynx::browserview
+} // namespace yw::browserview

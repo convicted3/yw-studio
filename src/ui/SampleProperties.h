@@ -14,7 +14,7 @@
 
 #include "core/SampleProps.h"
 
-namespace lynx
+namespace yw
 {
 struct SamplePropertiesHost
 {
@@ -30,4 +30,4 @@ std::unique_ptr<juce::Component> makeSamplePropertiesPanel (const audioedit::Doc
 
 // FL's form size (the client area under its caption)
 constexpr int samplePropertiesWidth = 472, samplePropertiesHeight = 584;
-} // namespace lynx
+} // namespace yw

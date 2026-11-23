@@ -19,7 +19,7 @@
 // core/FlAutoSlicer) grains line up with the slice starts and the first grain of each slice holds for "transient hold";
 // tempo lock plays the sample once per its beat count (the WAV's ACID beats, else the channel's stretch TIME in beats,
 // as FL hands the plugin with Dispatcher 0x13); the keys can move the start in 16th notes or to the k-th slice. The
-// sample reader uses FL's render quality (16 points per side) while LYNX exports and the plugin's 12 live.
+// sample reader uses FL's render quality (16 points per side) while YW exports and the plugin's 12 live.
 //
 // Not modelled: rcpps (a CPU-specific approximate reciprocal in the sinc kernel) is replaced by the exact reciprocal;
 // the sines of the kernel use the C library instead of IPP's ippsSin_64f_A50 (both: about −130 dB, isolated samples
@@ -35,7 +35,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this Fruity Granulizer state (any version the plugin loads: 1 … 7)
 bool granulizerStateUsable (const std::vector<std::uint8_t>& state);
@@ -97,4 +97,4 @@ struct RefOptions
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const SampleData& sample, const std::vector<RefNote>& notes,
                                     double sampleRate, int length, const RefOptions& options = {});
 } // namespace granulizer
-} // namespace lynx
+} // namespace yw

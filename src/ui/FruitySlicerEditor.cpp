@@ -23,7 +23,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -668,7 +668,7 @@ private:
         if (auto a = sliceAudio (slice); ! a.empty())
             audioclipboard::editor() = std::move (a);
     }
-    // FL: "Left-click and drag to take slice out of Fruity Slicer" — written to LYNX/Edits and dragged as the Browser
+    // FL: "Left-click and drag to take slice out of Fruity Slicer" — written to YW/Edits and dragged as the Browser
     // drags a sample (the Channel rack, the Playlist and the sample channels take it, as Edison's Drag)
     void dragSliceOut()
     {
@@ -790,9 +790,9 @@ private:
 
     void chooseSample()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
+        chooser = yw::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
         juce::Component::SafePointer<FruitySlicerEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
             if (self != nullptr && fc.getResult().existsAsFile())
                 self->loadSample (fc.getResult().getFullPathName());
         });
@@ -803,9 +803,9 @@ private:
         const auto data = processedOne ? processed : original;
         if (data == nullptr)
             return;
-        chooser = lynx::ui::makeFileChooser (processedOne ? tr ("Save processed sample...") : tr ("Save original sample..."), juce::File(), "*.wav");
+        chooser = yw::ui::makeFileChooser (processedOne ? tr ("Save processed sample...") : tr ("Save original sample..."), juce::File(), "*.wav");
         juce::Component::SafePointer<FruitySlicerEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                                  [self, data] (const juce::FileChooser& fc) {
             if (self == nullptr || fc.getResult() == juce::File())
                 return;
@@ -889,7 +889,7 @@ private:
                 starts.push_back ((std::int32_t) m);
         else if (tag >= 20 && tag <= 22)
         {
-            // LYNX's transient detector (FL's own detector is not reproduced): dull / medium / sharp sensitivity, moved by
+            // YW's transient detector (FL's own detector is not reproduced): dull / medium / sharp sensitivity, moved by
             // the LOW / HIGH wheels
             const auto base = tag == 20 ? 0.3f : tag == 21 ? 0.5f : 0.7f;
             const auto nudge = (float) ((autoLow.getValue() + autoHigh.getValue()) / 400.0 - 0.5) * 0.4f;
@@ -932,7 +932,7 @@ private:
         });
     }
 
-    // FL's dump: the channel's notes in the current pattern become the slices (FL's project PPQ 96, scaled to LYNX's)
+    // FL's dump: the channel's notes in the current pattern become the slices (FL's project PPQ 96, scaled to YW's)
     void dump (int tag)
     {
         if (original == nullptr || channel < 0)
@@ -1110,4 +1110,4 @@ std::unique_ptr<juce::Component> makeFruitySlicerEditor (AudioEngine& engine, st
     }
     return editor;
 }
-} // namespace lynx
+} // namespace yw

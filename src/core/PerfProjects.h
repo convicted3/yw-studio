@@ -2,14 +2,14 @@
 
 // The big-project performance gate's synthetic projects (round perfgate190id, community slice B12: "big projects make
 // the UI sluggish; slow load"). Deterministic: the same code makes the same song, bit for bit, so a change of a
-// measurement is a change of LYNX, never of the project. Used by tools/perfbench.cpp (audio CPU, load, memory; the
-// CI gate) and by `LYNX --perfgen <folder>` (the same songs as .lynx files + their WAVs, for --paintbench / --opentime
+// measurement is a change of YW, never of the project. Used by tools/perfbench.cpp (audio CPU, load, memory; the
+// CI gate) and by `YW --perfgen <folder>` (the same songs as .yw files + their WAVs, for --paintbench / --opentime
 // and by hand). scripts/perf-gate.sh runs the gate; baselines in tests/perf/.
 //
 //   synth100     100 built-in synth channels into 50 inserts, 3 effects each (round 190ge)
 //   inserts50    one synth through 50 inserts chained by sends, 4 effects each (round 190ge)
 //   stream       24 audio clips of 60 s on 12 inserts: long audio streaming (round 190ge)
-//   big200       200 channels (synths, drums, samplers, audio clips), 120 inserts (100 + 20 buses) with LYNX's own
+//   big200       200 channels (synths, drums, samplers, audio clips), 120 inserts (100 + 20 buses) with YW's own
 //                effects, 2,000 pattern / audio clips and 200 automation clips over 64 bars
 //   automation   32 synths, 16 inserts, 400 automation clips with a point every 16th (volume, pan, sends, effect
 //                parameters and mixes, channel levels, the tempo)
@@ -28,7 +28,7 @@
 #include "core/Song.h"
 #include "core/SynthPresets.h"
 
-namespace lynx::perfprojects
+namespace yw::perfprojects
 {
 using Samples = std::map<std::string, std::shared_ptr<const SampleData>>;
 
@@ -524,4 +524,4 @@ inline bool make (const std::string& name, Song& song, Samples& samples, const s
         return false;
     return true;
 }
-} // namespace lynx::perfprojects
+} // namespace yw::perfprojects

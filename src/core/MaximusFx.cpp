@@ -5,7 +5,7 @@
 #include <cstring>
 #include <algorithm>
 
-namespace lynx::maximusfx
+namespace yw::maximusfx
 {
 namespace
 {
@@ -384,4 +384,4 @@ int selectedBand (const std::vector<std::uint8_t>& slotState)
     std::memcpy (&b, blob->state.data() + 0x1e0, 4);
     return b >= 0 && b <= 3 ? (int) b : 3;
 }
-} // namespace lynx::maximusfx
+} // namespace yw::maximusfx

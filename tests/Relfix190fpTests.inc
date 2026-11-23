@@ -1,6 +1,6 @@
 // Round 190fp: the two release problems of 0.1.27.
 // (1) The Linux plugin download was missing from the release: every host on Ubuntu 22.04 (glibc 2.35) failed to load
-//     LYNX Plugins.clap and the VST3s ("cannot allocate memory in static TLS block"). The crash guard's thread_local
+//     YW Plugins.clap and the VST3s ("cannot allocate memory in static TLS block"). The crash guard's thread_local
 //     frame pointer (platform/CrashGuard.cpp, round 190dt) was initial-exec; in a module a host loads with dlopen that
 //     one variable makes the module's whole TLS block static (DF_STATIC_TLS), and glibc keeps only a small reserve for
 //     those. In the exported plugins' runtime the frame is now a pthread key (as on macOS), and
@@ -12,7 +12,7 @@
 
 TEST (relfix190fp_wizard_finish_scans_only_when_asked)
 {
-    using namespace lynx::autoscan;
+    using namespace yw::autoscan;
     // ticked (the default): Finish starts the scan, unless "Scan now" already did
     CHECK (onWizardFinish (true, false));
     CHECK (! onWizardFinish (true, true));
@@ -53,21 +53,21 @@ TEST (relfix190fp_crash_guard_has_no_static_tls_in_plugins)
     const auto tls = guard.find ("tls_model (\"initial-exec\")");
     CHECK (tls != std::string::npos);
     // the initial-exec variable sits in the #else of a branch that the exported plugins' runtime takes
-    const auto branch = guard.rfind ("#if defined(__APPLE__) || defined(LYNX_GUARD_FRAME_KEY)", tls);
+    const auto branch = guard.rfind ("#if defined(__APPLE__) || defined(YW_GUARD_FRAME_KEY)", tls);
     CHECK (branch != std::string::npos);
     const auto elseAt = guard.find ("#else", branch);
     CHECK (elseAt != std::string::npos && elseAt < tls && guard.find ("#endif", branch) > tls);
-    // ...set by the define only that runtime has (cmake/LynxPlugins.cmake)
-    const auto define = guard.find ("#if defined(LYNX_EXPORT_VERSION)");
+    // ...set by the define only that runtime has (cmake/YwPlugins.cmake)
+    const auto define = guard.find ("#if defined(YW_EXPORT_VERSION)");
     CHECK (define != std::string::npos && define < branch);
-    CHECK (guard.find ("#define LYNX_GUARD_FRAME_KEY 1", define) < branch);
+    CHECK (guard.find ("#define YW_GUARD_FRAME_KEY 1", define) < branch);
     // the key is created on install for the same builds
-    CHECK (guard.find ("#if defined(__APPLE__) || defined(LYNX_GUARD_FRAME_KEY)\n    pthread_key_create (&frameKey, nullptr);")
+    CHECK (guard.find ("#if defined(__APPLE__) || defined(YW_GUARD_FRAME_KEY)\n    pthread_key_create (&frameKey, nullptr);")
            != std::string::npos);
-    const auto plugins = readFile ("cmake/LynxPlugins.cmake");
-    const auto defines = plugins.find ("set(LYNX_PLUGIN_DEFINES");
-    CHECK (defines != std::string::npos && plugins.find ("LYNX_EXPORT_VERSION=", defines) != std::string::npos);
-    CHECK (plugins.find ("target_compile_definitions(lynx_plugin_runtime PUBLIC ${LYNX_PLUGIN_DEFINES})") != std::string::npos);
+    const auto plugins = readFile ("cmake/YwPlugins.cmake");
+    const auto defines = plugins.find ("set(YW_PLUGIN_DEFINES");
+    CHECK (defines != std::string::npos && plugins.find ("YW_EXPORT_VERSION=", defines) != std::string::npos);
+    CHECK (plugins.find ("target_compile_definitions(yw_plugin_runtime PUBLIC ${YW_PLUGIN_DEFINES})") != std::string::npos);
 
     // the release check fails a Linux library that asks for static TLS
     const auto compat = readFile ("scripts/check-linux-compat.sh");

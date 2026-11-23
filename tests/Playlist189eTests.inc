@@ -1,6 +1,6 @@
 // --- Round 189e: FL's Playlist Edit / Select parity and "Drop audio on track headers" ------------------------------
 // (FLEngine 2026 [DECOMP] FUN_00eb35f0, FUN_00e51730, FUN_00eb1da0, FUN_00eb1ae0, FUN_00e71980, FUN_00e71430; FL 2026
-// shots in /mnt/e/lynx-work/flgap189e/shots/fl)
+// shots in /mnt/e/yw-work/flgap189e/shots/fl)
 
 #include "core/ClipOps.h"
 #include "core/KeyMap.h"
@@ -9,10 +9,10 @@
 
 namespace
 {
-lynx::Clip clip189e (int pattern, int track, std::int64_t start, std::int64_t length)
+yw::Clip clip189e (int pattern, int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = pattern;
     c.track = track;
     c.start = start;
@@ -23,7 +23,7 @@ lynx::Clip clip189e (int pattern, int track, std::int64_t start, std::int64_t le
 
 TEST (playlist189e_slice_insert_space_cuts_the_crossing_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips { clip189e (0, 0, 0, 400), clip189e (0, 1, 100, 100), clip189e (0, 2, 500, 100) };
     std::vector<Marker> markers;
     Marker m;
@@ -45,7 +45,7 @@ TEST (playlist189e_slice_insert_space_cuts_the_crossing_clips)
 
 TEST (playlist189e_trim_keeps_only_the_time_selection_at_the_start)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips { clip189e (0, 0, 0, 100), clip189e (1, 0, 150, 200), clip189e (2, 1, 400, 100) };
     std::vector<Marker> markers;
     noteedit::trimTime (clips, markers, 200, 300);
@@ -55,7 +55,7 @@ TEST (playlist189e_trim_keeps_only_the_time_selection_at_the_start)
 
 TEST (playlist189e_shift_moves_by_snap_and_by_track_held_in_range)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips { clip189e (0, 0, 96, 100), clip189e (0, 3, 400, 100), clip189e (0, 5, 0, 100) };
     CHECK (clipops::shiftClipsInTime (clips, { 0, 1 }, 96) == 96 && clips[0].start == 192 && clips[1].start == 496 && clips[2].start == 0);
     CHECK (clipops::shiftClipsInTime (clips, { 0, 1 }, -384) == -192 && clips[0].start == 0 && clips[1].start == 304); // (not before 0)
@@ -67,7 +67,7 @@ TEST (playlist189e_shift_moves_by_snap_and_by_track_held_in_range)
 
 TEST (playlist189e_select_by_source_and_invert)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.playlist = { clip189e (0, 0, 0, 96), clip189e (1, 1, 0, 96), clip189e (0, 2, 96, 96) };
     for (const auto* path : { "C:/s/kick.wav", "C:/s/kick.wav", "C:/s/snare.wav" })
@@ -102,7 +102,7 @@ TEST (playlist189e_select_by_source_and_invert)
 
 TEST (playlist189e_drop_on_header_as_audio_clips_tracks_and_instrument_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     ChannelDef old;
     old.name = "Conga";
@@ -145,7 +145,7 @@ TEST (playlist189e_drop_on_header_as_audio_clips_tracks_and_instrument_tracks)
 
 TEST (playlist189e_drop_on_header_changes_nothing_when_no_mixer_track_is_free)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     for (int i = 0; i < 600 && trackmodes::freeMixerTrack (song) > 0; ++i)
     {
@@ -163,7 +163,7 @@ TEST (playlist189e_drop_on_header_changes_nothing_when_no_mixer_track_is_free)
 
 TEST (playlist189e_new_keys_are_fl_defaults_without_conflicts)
 {
-    using namespace lynx;
+    using namespace yw;
     keys::KeyMap map;
     CHECK (map.find (keys::Chord { keys::left, keys::shift }, keys::Context::playlist, false) == "playlist.shiftLeft");
     CHECK (map.find (keys::Chord { keys::down, keys::shift }, keys::Context::playlist, false) == "playlist.shiftDown");

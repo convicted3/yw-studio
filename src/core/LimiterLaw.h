@@ -3,11 +3,11 @@
 // Round 190lf: the Limiter's L2 law (docs/analise/REA_rodada190lf.md §2). The REA of the Waves L2 DSP showed its
 // structure (a look-ahead brickwall: the gain each sample needs, a running minimum over the look-ahead window, a
 // slower follower of that minimum, a release stage whose speed follows the depth and the follower — ARC — and a
-// trapezoid smoothing of the gain over the window); every number below is LYNX's own, fitted on our black-box renders
+// trapezoid smoothing of the gain over the window); every number below is YW's own, fitted on our black-box renders
 // of the Waves demo (cap/l2d probes: gain trajectories after bursts of 5 ms … 4 s at 3 … 20 dB of reduction).
 // The law sits behind a hidden parameter: 0 = the classic Limiter, exactly as every project saved before has it.
 
-namespace lynx::limiterlaw
+namespace yw::limiterlaw
 {
 constexpr int lawParam = 3;   // hidden: 0 = classic, l2LawValue = the L2 law
 constexpr int arcParam = 4;   // hidden, L2 law only: >= 0.5 = the programme-dependent release (else the Release knob)
@@ -29,7 +29,7 @@ constexpr double manualTimeScale = 0.43429448190325176;
 constexpr double arcFollowAttackS = 0.10743, arcFollowReleaseS = 0.21765;
 constexpr double arcLaw[6] = { 9.3181, 9.6655, 6.9906, -6.9001, 0.9427, -1.2230 };
 constexpr double arcDepthFloor = -2.7631021115928547; // ln (10^(−24/20))
-// Round 190mg: IDR, the L2's output requantizer (docs/analise/REA_rodada190mg_dyn.md §2), as LYNX measured it on the demo:
+// Round 190mg: IDR, the L2's output requantizer (docs/analise/REA_rodada190mg_dyn.md §2), as YW measured it on the demo:
 // the output rounded to the Quantize word length (24 / 22 / 20 / 18 / 16 bits) through an error-feedback noise shaper
 // (none, moderate, normal, ultra: our minimum-phase fits of the measured noise spectra, below) with, at Type 1, a
 // triangular (TPDF) random dither of ±1 LSB — the white error of every Type 1 render is 0.250 LSB² (TPDF 1/6 + the
@@ -47,4 +47,4 @@ constexpr double ditherShaping[3][ditherTaps] {
 };
 // l2dither:end
 
-} // namespace lynx::limiterlaw
+} // namespace yw::limiterlaw

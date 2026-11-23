@@ -5,10 +5,10 @@
 
 namespace p190arapex
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 using namespace dyn108;
-namespace ap = lynx::apex;
+namespace ap = yw::apex;
 
 // a 1 kHz tone: −40 dBFS for 0.2 s, `loud` dBFS for `burst` s, −40 dBFS for `tail` s
 inline std::vector<float> quietLoudQuiet (double loud, double burst, double tail)

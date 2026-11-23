@@ -45,10 +45,10 @@ inline std::vector<std::uint8_t> bytesOf (const std::string& s) { return { s.beg
 
 inline std::vector<std::uint8_t> zipOf (const std::vector<std::pair<std::string, std::vector<std::uint8_t>>>& files)
 {
-    std::vector<lynx::zip::NewEntry> entries;
+    std::vector<yw::zip::NewEntry> entries;
     for (const auto& [name, data] : files)
         entries.push_back ({ name, data });
-    return lynx::zip::write (entries);
+    return yw::zip::write (entries);
 }
 
 inline bool near (double a, double b, double eps = 1.0e-4) { return std::abs (a - b) <= eps; }
@@ -62,7 +62,7 @@ inline bool reported (const std::map<std::string, int>& list, const std::string&
     return std::any_of (list.begin(), list.end(), [&] (const auto& kv) { return kv.first.find (part) != std::string::npos; });
 }
 
-inline const lynx::Automation* automationOf (const lynx::Song& s, lynx::AutomationTarget t)
+inline const yw::Automation* automationOf (const yw::Song& s, yw::AutomationTarget t)
 {
     for (const auto& a : s.automations)
         if (a.target == t)
@@ -70,7 +70,7 @@ inline const lynx::Automation* automationOf (const lynx::Song& s, lynx::Automati
     return nullptr;
 }
 
-inline const lynx::Clip* clipAt (const lynx::Song& s, lynx::ClipKind kind, int track, std::int64_t start)
+inline const yw::Clip* clipAt (const yw::Song& s, yw::ClipKind kind, int track, std::int64_t start)
 {
     for (const auto& c : s.playlist)
         if (c.kind == kind && c.track == track && c.start == start)
@@ -78,7 +78,7 @@ inline const lynx::Clip* clipAt (const lynx::Song& s, lynx::ClipKind kind, int t
     return nullptr;
 }
 
-inline bool laneHas (const lynx::Song& s, int row, lynx::AutomationTarget t)
+inline bool laneHas (const yw::Song& s, int row, yw::AutomationTarget t)
 {
     if (row < 0 || row >= (int) s.playlistTracks.size())
         return false;
@@ -91,14 +91,14 @@ inline bool laneHas (const lynx::Song& s, int row, lynx::AutomationTarget t)
 // The rich song of the round trip, in the shape the import gives (one insert, channel and row per track)
 struct Rich
 {
-    lynx::Song song;
+    yw::Song song;
     std::vector<std::uint8_t> vst3Component, vst3Controller, vst2State, wav;
     std::array<std::uint8_t, 16> vst3Class {};
 };
 
 inline Rich richSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Rich r;
     auto& s = r.song;
     s.channels.clear();
@@ -170,7 +170,7 @@ inline Rich richSong()
     s.mixer[(std::size_t) ret].effects.push_back (makeEffectSlot (EffectKind::delay));
     s.mixer[(std::size_t) ret].volume = 0.5f;
 
-    // channels: 0 Lead (LYNX's synth), 1 Keys (a VST2), 2 the loop's audio clip channel
+    // channels: 0 Lead (YW's synth), 1 Keys (a VST2), 2 the loop's audio clip channel
     ChannelDef leadCh;
     leadCh.name = "Lead";
     leadCh.colour = 0xFF112233;
@@ -321,7 +321,7 @@ inline Rich richSong()
 
 TEST (dawproject190jf_zip_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     std::vector<std::uint8_t> big (70000);
     for (std::size_t i = 0; i < big.size(); ++i)
@@ -364,7 +364,7 @@ TEST (dawproject190jf_zip_round_trip)
 
 TEST (dawproject190jf_xml_escaping)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     CHECK (xml::escape ("a<b>&\"c'\n") == "a&lt;b&gt;&amp;&quot;c&apos;&#10;");
     auto r = richSong();
@@ -383,7 +383,7 @@ TEST (dawproject190jf_xml_escaping)
 
 TEST (dawproject190jf_plugin_state_files)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     // VST3: .vstpreset both ways, the class id as the FUID's 32 hex digits
     const auto cls = alsVst3ClassId ({ 0x12345678, (std::int32_t) 0x9ABCDEF0, 0x0F1E2D3C, 0x4B5A6978 });
@@ -431,7 +431,7 @@ TEST (dawproject190jf_plugin_state_files)
     CHECK (dawproject::flVst2StateFromFx (fxck, state, id) && parseFlVst2State (state, parsed) && parsed.params == params.params && parsed.chunk.empty());
     CHECK (dawproject::fxFromFlVst2State ({}, 1).empty() && ! dawproject::flVst2StateFromFx ({ 1, 2, 3 }, state, id));
 
-    // LYNX's own effect state text: every parameter's exact bits, the raw state, the names
+    // YW's own effect state text: every parameter's exact bits, the raw state, the names
     auto fx = makeEffectSlot (EffectKind::reverb);
     fx.params[5] = 0.123456789f;
     fx.params[100] = -0.0f;
@@ -445,7 +445,7 @@ TEST (dawproject190jf_plugin_state_files)
     CHECK (restored && restored->kind == EffectKind::reverb && restored->params == fx.params && restored->mix == 0.3f && ! restored->enabled
            && ! restored->smartDisable && restored->state == fx.state && restored->samplePath == fx.samplePath && restored->presetName == "P=1");
     CHECK (std::signbit (restored->params[100]));
-    CHECK (! dawproject::effectFromStateText ("LYNX effect state 1\nkind=4\n")); // (a hosted plug-in is never a LYNX device)
+    CHECK (! dawproject::effectFromStateText ("YW effect state 1\nkind=4\n")); // (a hosted plug-in is never a YW device)
     CHECK (! dawproject::effectFromStateText ("garbage"));
 
     // units
@@ -457,7 +457,7 @@ TEST (dawproject190jf_plugin_state_files)
 
 TEST (dawproject190jf_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     auto r = richSong();
     const auto& a = r.song;
@@ -480,7 +480,7 @@ TEST (dawproject190jf_round_trip)
         states += e.name.rfind ("plugins/", 0) == 0 ? 1 : 0;
     CHECK (states == 5); // the synth, the reverb, the VST3, the delay, the VST2
     CHECK (out.projectXml.find ("<Vst3Plugin") != std::string::npos && out.projectXml.find ("deviceID=\"123456789ABCDEF00F1E2D3C4B5A6978\"") != std::string::npos);
-    CHECK (out.projectXml.find ("deviceVendor=\"LYNX\"") != std::string::npos && out.projectXml.find ("role=\"submix\"") != std::string::npos);
+    CHECK (out.projectXml.find ("deviceVendor=\"YW\"") != std::string::npos && out.projectXml.find ("role=\"submix\"") != std::string::npos);
     CHECK (out.projectXml.find ("role=\"effect\"") != std::string::npos && out.projectXml.find ("reference=\"") != std::string::npos);
     CHECK (dawProjectForeignPlugins (out.bytes).size() == 2);
 
@@ -527,7 +527,7 @@ TEST (dawproject190jf_round_trip)
             CHECK (x.sends[k].target == y.sends[k].target && near (x.sends[k].level, y.sends[k].level) && x.sends[k].pre == y.sends[k].pre);
         CHECK (x.effects.size() == y.effects.size());
     }
-    // LYNX's own effects come back exactly; the VST3's state bytes and class id
+    // YW's own effects come back exactly; the VST3's state bytes and class id
     if (b.mixer.size() == a.mixer.size())
     {
         const auto& rev = b.mixer[1].effects.front();
@@ -627,7 +627,7 @@ TEST (dawproject190jf_round_trip)
 
 TEST (dawproject190jf_bitwig_readme_example)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     const auto xmlText = std::string (dawprojectReadmeExample);
     const std::vector<std::uint8_t> loop (64, 7);
@@ -691,7 +691,7 @@ TEST (dawproject190jf_bitwig_readme_example)
 
 TEST (dawproject190jf_handmade_features)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     const std::string project = R"(<?xml version="1.0" encoding="UTF-8"?>
 <Project version="1.0">
@@ -879,7 +879,7 @@ TEST (dawproject190jf_handmade_features)
 
 TEST (dawproject190jf_robustness)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     std::string err;
     const auto fails = [&err] (const std::vector<std::uint8_t>& bytes) {
@@ -925,7 +925,7 @@ TEST (dawproject190jf_robustness)
 
 TEST (dawproject190jf_what_does_not_map)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     auto r = richSong();
     auto& s = r.song;
@@ -967,7 +967,7 @@ TEST (dawproject190jf_fl_layout)
     // An .flp's usual layout (round 190jf e2e on FL's demo "Thief"): unassigned rows with one channel's pattern clips, rows
     // of automation clips, named empty rows, audio clips whose samples are not on this computer (no path), a pattern not
     // on the Playlist. The rows, their names and folders survive; each channel's notes go to its row's track.
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     Song s;
     s.channels.clear();

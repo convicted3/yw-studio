@@ -17,7 +17,7 @@
 #include "ui/ValueControl.h"
 #include "ui/HintBar.h"
 
-namespace lynx::pluginheader
+namespace yw::pluginheader
 {
 namespace
 {
@@ -84,7 +84,7 @@ void drawTurn (juce::Graphics& g, juce::Rectangle<float> r, bool redo, juce::Col
     g.fillPath (head);
 }
 
-bool isLynxEngine (EffectKind kind)
+bool isYwEngine (EffectKind kind)
 {
     return flPluginsForEffect (kind).empty();
 }
@@ -120,7 +120,7 @@ juce::File userFolder (EffectKind kind)
 
 juce::Array<juce::File> userPresets (EffectKind kind)
 {
-    auto files = userFolder (kind).findChildFiles (juce::File::findFiles, false, "*.lynxpreset");
+    auto files = userFolder (kind).findChildFiles (juce::File::findFiles, false, "*.ywpreset");
     std::sort (files.begin(), files.end(), [] (const juce::File& a, const juce::File& b) {
         return a.getFileNameWithoutExtension().compareNatural (b.getFileNameWithoutExtension()) < 0;
     });
@@ -131,7 +131,7 @@ void clearHistory() { histories().clear(); }
 
 juce::String describe (EffectKind kind, const char* param)
 {
-    // round 135: the texts moved to core/ParamHelp (tested; every LYNX engine has its own wording)
+    // round 135: the texts moved to core/ParamHelp (tested; every YW engine has its own wording)
     const auto* text = paramhelp::describe (kind, param);
     return text != nullptr ? tr (text) : juce::String();
 }
@@ -169,9 +169,9 @@ const EffectSlot* PresetBar::current() const
     return fx.kind == kind ? &fx : nullptr;
 }
 
-bool PresetBar::hasLynxPresets() const
+bool PresetBar::hasYwPresets() const
 {
-    return ! presets::factory (kind).empty() || isLynxEngine (kind);
+    return ! presets::factory (kind).empty() || isYwEngine (kind);
 }
 
 juce::Rectangle<float> PresetBar::place (juce::Rectangle<float> area, bool withPresets, float keepLeft)
@@ -360,7 +360,7 @@ void PresetBar::paint (juce::Graphics& g, juce::Colour accent) const
 
 juce::String PresetBar::presetLabel (const FlPresets* flPresets) const
 {
-    if (flPresets != nullptr && ! hasLynxPresets() && flPresets->name)
+    if (flPresets != nullptr && ! hasYwPresets() && flPresets->name)
     {
         const auto n = flPresets->name();
         return n.isNotEmpty() ? n : tr ("(no preset)");
@@ -535,7 +535,7 @@ void PresetBar::loadUser (const juce::File& file)
 
 void PresetBar::stepPreset (int delta, const FlPresets* flPresets)
 {
-    if (! hasLynxPresets())
+    if (! hasYwPresets())
     {
         if (flPresets != nullptr && flPresets->step)
             flPresets->step (delta);
@@ -666,7 +666,7 @@ void PresetBar::saveAs (juce::Component& owner)
             return;
         const auto folder = userFolder (kind);
         folder.createDirectory();
-        const auto file = folder.getChildFile (utf8 (presets::fileNameFor (name.toStdString()).c_str()) + ".lynxpreset");
+        const auto file = folder.getChildFile (utf8 (presets::fileNameFor (name.toStdString()).c_str()) + ".ywpreset");
         file.replaceWithText (utf8 (presets::toText (kind, name.toStdString(), slotNow->params, &slotNow->state).c_str()));
         engine.editSong ([t = track, s = slot, n = name.toStdString()] (Song& song) { song.mixer[(std::size_t) t].effects[(std::size_t) s].presetName = n; }, false);
         safe->repaint();
@@ -741,4 +741,4 @@ void showSidechainPicker (AudioEngine& engine, int track, int slot, juce::Compon
     menu.showMenuAsync (options);
 }
 
-} // namespace lynx::pluginheader
+} // namespace yw::pluginheader

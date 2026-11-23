@@ -1,5 +1,5 @@
 // Round 190ln: REA on third-party plug-in binaries for parity (owner's permission of 2026-11-17), clean-room
-// (docs/analise/REA_rodada190ln.md; lab /mnt/e/lynx-work/rea3_190ln). Translators only: no LYNX effect's sound changed.
+// (docs/analise/REA_rodada190ln.md; lab /mnt/e/yw-work/rea3_190ln). Translators only: no YW effect's sound changed.
 // - Eiosis AirEQ / Slate VM AirEQ Air / Earth -> Facet EQ in physical units (was Facet flat).
 // - Slate Infinity EQ -> Facet EQ in physical units (was Facet flat).
 #include <cmath>
@@ -24,23 +24,23 @@ inline std::vector<std::uint8_t> archive (const char* client, std::initializer_l
     t += "</section></archive></archives></package>";
     return { t.begin(), t.end() };
 }
-inline lynx::EffectSlot load (const char* name, const std::vector<std::uint8_t>& state, int& translated)
+inline yw::EffectSlot load (const char* name, const std::vector<std::uint8_t>& state, int& translated)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst3;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst3;
     id.name = name;
     id.state = state;
-    const auto* e = lynx::findPluginSubstitute (id, false);
+    const auto* e = yw::findPluginSubstitute (id, false);
     if (e == nullptr)
         return {};
-    return lynx::makeSubstituteSlot (*e, &id, &translated);
+    return yw::makeSubstituteSlot (*e, &id, &translated);
 }
-inline double band (const lynx::EffectSlot& s, int b, int field) { return s.params[(std::size_t) lynx::facet::param (b, field)]; }
+inline double band (const yw::EffectSlot& s, int b, int field) { return s.params[(std::size_t) yw::facet::param (b, field)]; }
 } // namespace parity190ln
 
 TEST (parity190ln_aireq_translates_cuts_shelves_and_bells_onto_facet)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // refcap182 S4: band 1 bell 250 Hz −4 dB Q 2, band 2 bell 4 kHz +3 dB Q 0.5 (+ the low cut on, 100 Hz steep 24 dB/oct)
     const auto st = parity190ln::archive ("AEqP-state", { { "Band1On", 0.75 }, { "Band1Frequency", 0.25 + 0.125 * (10.0 / 290.0) }, { "Band1Gain", 0.5 - 4.0 / 36.0 },
@@ -67,7 +67,7 @@ TEST (parity190ln_aireq_translates_cuts_shelves_and_bells_onto_facet)
 
 TEST (parity190ln_aireq_shelf_air_earth_and_vm_modules)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // S3: band 1 as a shelf, 8 kHz +4 dB -> Facet low shelf, the gain as dialled, Q 2.07 (the cookbook shelf of slope 1)
     const auto s3 = parity190ln::load ("Eiosis AirEQ", parity190ln::archive ("AEqP-state", { { "Band1On", 0.75 }, { "Band1Type", 0.75 }, { "Band1Frequency", 0.75 + 0.125 * 500.0 / 8500.0 },
@@ -86,7 +86,7 @@ TEST (parity190ln_aireq_shelf_air_earth_and_vm_modules)
     CHECK (facet::slopeDb ((float) parity190ln::band (air, 1, 4)) == 12);
     CHECK (std::abs (facet::outputDb (air.params[(std::size_t) facet::outputParam]) - 6.0) < 0.05); // output +6 of ±24
     // no readable state: Facet flat, as before
-    lynx::PluginIdentity id;
+    yw::PluginIdentity id;
     id.name = "Eiosis AirEQ";
     const auto* e = findPluginSubstitute (id, false);
     CHECK (e != nullptr && e->effect == EffectKind::facetEq);
@@ -97,7 +97,7 @@ TEST (parity190ln_aireq_shelf_air_earth_and_vm_modules)
 
 TEST (parity190ln_infinity_eq_translates_its_bands)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // refcap182 X2: low shelf 70 Hz +5, bell 400 Hz −5 (width 26 st), high shelf 8 kHz +4; a disabled band in between
     const auto s = parity190ln::load ("Inf EQ", parity190ln::archive ("InfE-state", { { "Band1State", 0.5 }, { "Band1Type", 1.5 / 12.0 }, { "Band1Frequency", 0.24306 },

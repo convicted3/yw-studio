@@ -23,7 +23,7 @@ std::vector<std::uint8_t> emphasisState (int version, std::array<int, 13> raw, s
 
 TEST (emphasis_state_and_engine_values_match_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // the "Default" preset (version 10): the controls, the option bytes, FL's texts
     const auto def = emphasisState (10, { 0, 0, 1, 0, 0, 0, 0, 10000, 10000, 9912, 0, 2, 7 }, { 0, 1, 1 });
     const auto s = emphasis::parse (def);
@@ -104,11 +104,11 @@ TEST (emphasis_matches_fl_engine)
     for (const auto& c : cases)
         for (const double rate : { 44100.0, 48000.0 })
         {
-            const auto slot = lynx::effectFromFl ("Emphasis", emphasisState (c.version, c.raw, c.options));
-            CHECK (slot && slot->kind == lynx::EffectKind::flEmphasis);
+            const auto slot = yw::effectFromFl ("Emphasis", emphasisState (c.version, c.raw, c.options));
+            CHECK (slot && slot->kind == yw::EffectKind::flEmphasis);
             if (! slot)
                 continue;
-            auto fx = lynx::makeEffect (*slot);
+            auto fx = yw::makeEffect (*slot);
             fx->prepare (rate);
             auto [l, r] = signal();
             for (int i = 0; i < 24000; i += 512)
@@ -129,9 +129,9 @@ TEST (emphasis_matches_fl_engine)
 
 TEST (emphasis_reports_its_latency_before_the_first_block)
 {
-    // FL's engine reports 2381 samples for the Default preset at 44.1 kHz (4x oversampling); LYNX knows it from the
+    // FL's engine reports 2381 samples for the Default preset at 44.1 kHz (4x oversampling); YW knows it from the
     // slot's controls before the first block (PDC) and keeps it after
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::flEmphasis);
     auto fx = makeEffect (slot);
     fx->prepare (44100.0);

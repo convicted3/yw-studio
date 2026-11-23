@@ -7,7 +7,7 @@
 #include <numeric>
 #include <random>
 
-namespace lynx::flmnotefx
+namespace yw::flmnotefx
 {
 namespace
 {
@@ -173,7 +173,7 @@ bool Chain::add (std::uint32_t type, std::span<const float> params)
 
 double Chain::uniform() noexcept
 {
-    // (a small generator of LYNX's own: FLM's draws differ at every playback anyway)
+    // (a small generator of YW's own: FLM's draws differ at every playback anyway)
     state ^= state << 13;
     state ^= state >> 17;
     state ^= state << 5;
@@ -207,10 +207,10 @@ bool Chain::apply (Note& n)
     }
     return true;
 }
-} // namespace lynx::flmnotefx
+} // namespace yw::flmnotefx
 
-// --- round 190de: Arpeggiator and Note Echo (FLM_FORMAT §7.8; PROVEN-REA in FLM's FL plugin, laws in LYNX's words) ---
-namespace lynx::flmnotefx
+// --- round 190de: Arpeggiator and Note Echo (FLM_FORMAT §7.8; PROVEN-REA in FLM's FL plugin, laws in YW's words) ---
+namespace yw::flmnotefx
 {
 namespace
 {
@@ -783,4 +783,4 @@ std::vector<TimedNote> echo (std::span<const float> params, const std::vector<Ti
     std::stable_sort (out.begin(), out.end(), [] (const TimedNote& a, const TimedNote& b) { return a.start < b.start; });
     return out;
 }
-} // namespace lynx::flmnotefx
+} // namespace yw::flmnotefx

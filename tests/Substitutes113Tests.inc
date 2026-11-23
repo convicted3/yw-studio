@@ -17,10 +17,10 @@ std::vector<std::uint8_t> autoTuneState (int key, int scale)
     return c;
 }
 
-lynx::ForeignPlugin autoTune (const std::vector<std::uint8_t>& component)
+yw::ForeignPlugin autoTune (const std::vector<std::uint8_t>& component)
 {
-    lynx::ForeignPlugin at;
-    at.format = lynx::ForeignPlugin::Format::vst3;
+    yw::ForeignPlugin at;
+    at.format = yw::ForeignPlugin::Format::vst3;
     at.classId = substtest::classIdOf ("415453563854413175746f2d54756e65");
     at.hasClassId = true;
     at.name = "Auto-Tune Pro";
@@ -39,10 +39,10 @@ std::vector<std::uint8_t> freshAirState (float mid, float high)
     return s;
 }
 
-lynx::EffectSlot pluginSlot (const lynx::ForeignPlugin& p)
+yw::EffectSlot pluginSlot (const yw::ForeignPlugin& p)
 {
-    lynx::EffectSlot slot;
-    slot.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot slot;
+    slot.kind = yw::EffectKind::plugin;
     slot.plugin.name = p.name;
     slot.plugin.foreign = p;
     return slot;
@@ -51,7 +51,7 @@ lynx::EffectSlot pluginSlot (const lynx::ForeignPlugin& p)
 
 TEST (auto_tune_pro_key_and_scale_are_read_round113)
 {
-    using namespace lynx;
+    using namespace yw;
     // [model] 0 = major, 1 = minor, 2 = chromatic (her projects: "A, 1" and "E, 1" are sung in minor, "C, 2" in no key)
     CHECK ((autoTuneProKey (subst113::autoTuneState (9, 1)) == std::optional<std::pair<int, int>> ({ 9, (int) vocal::Scale::minor })));
     CHECK ((autoTuneProKey (subst113::autoTuneState (4, 0)) == std::optional<std::pair<int, int>> ({ 4, (int) vocal::Scale::major })));
@@ -60,29 +60,29 @@ TEST (auto_tune_pro_key_and_scale_are_read_round113)
     CHECK (! autoTuneProKey (subst113::autoTuneState (12, 1))); // not a key
     CHECK (! autoTuneProKey (substtest::juceXmlComponent ("<AutoTune/>")));
 
-    // the substitute: A minor; its parameters unreadable here: Auto-Tune's default 20 ms retune (round 120: = LYNX's
+    // the substitute: A minor; its parameters unreadable here: Auto-Tune's default 20 ms retune (round 120: = YW's
     // time constant 1.36 x 20 - 3 ms), no humanize
     const auto at = subst113::autoTune (subst113::autoTuneState (9, 1));
     auto slot = subst113::pluginSlot (at);
     CHECK (substituteEffectSlot (slot, pluginIdentity (at)));
-    CHECK (slot.kind == EffectKind::lynxTune);
-    CHECK (lynxtune::keyIndex (slot.params[lynxtune::key]) == 9);
-    CHECK (vocal::Scale (lynxtune::scaleIndex (slot.params[lynxtune::scale])) == vocal::Scale::minor);
-    CHECK (std::abs (lynxtune::retuneMs (slot.params[lynxtune::retune]) - 24.2) < 0.1);
-    CHECK (slot.params[lynxtune::humanize] == 0.0f);
+    CHECK (slot.kind == EffectKind::ywTune);
+    CHECK (ywtune::keyIndex (slot.params[ywtune::key]) == 9);
+    CHECK (vocal::Scale (ywtune::scaleIndex (slot.params[ywtune::scale])) == vocal::Scale::minor);
+    CHECK (std::abs (ywtune::retuneMs (slot.params[ywtune::retune]) - 24.2) < 0.1);
+    CHECK (slot.params[ywtune::humanize] == 0.0f);
 
     // unreadable: chromatic, gentle (50 ms, humanize 50 %) instead of C major at 20 ms
     const auto blind = subst113::autoTune (substtest::juceXmlComponent ("<AutoTune/>"));
     auto other = subst113::pluginSlot (blind);
     CHECK (substituteEffectSlot (other, pluginIdentity (blind)));
-    CHECK (vocal::Scale (lynxtune::scaleIndex (other.params[lynxtune::scale])) == vocal::Scale::chromatic);
-    CHECK (std::abs (lynxtune::retuneMs (other.params[lynxtune::retune]) - 50.0) < 0.5);
-    CHECK (std::abs (other.params[lynxtune::humanize] - 0.5f) < 1e-6f);
+    CHECK (vocal::Scale (ywtune::scaleIndex (other.params[ywtune::scale])) == vocal::Scale::chromatic);
+    CHECK (std::abs (ywtune::retuneMs (other.params[ywtune::retune]) - 50.0) < 0.5);
+    CHECK (std::abs (other.params[ywtune::humanize] - 0.5f) < 1e-6f);
 }
 
 TEST (pitch_correctors_take_the_project_key_round113)
 {
-    using namespace lynx;
+    using namespace yw;
     // luisa sonsa: Auto-Tune Pro (E minor) on two inserts, Waves Tune Real-Time (state not translated) on another
     Song song;
     song.mixer = Song::defaultMixer (3);
@@ -102,16 +102,16 @@ TEST (pitch_correctors_take_the_project_key_round113)
 
     auto& slot = song.mixer[3].effects[0];
     CHECK (substituteEffectSlot (slot, pluginIdentity (wt), context));
-    CHECK (slot.kind == EffectKind::lynxTune);
-    CHECK (lynxtune::keyIndex (slot.params[lynxtune::key]) == 4);
-    CHECK (vocal::Scale (lynxtune::scaleIndex (slot.params[lynxtune::scale])) == vocal::Scale::minor);
-    CHECK (std::abs (lynxtune::retuneMs (slot.params[lynxtune::retune]) - 50.0) < 0.5); // its own speed is not known
+    CHECK (slot.kind == EffectKind::ywTune);
+    CHECK (ywtune::keyIndex (slot.params[ywtune::key]) == 4);
+    CHECK (vocal::Scale (ywtune::scaleIndex (slot.params[ywtune::scale])) == vocal::Scale::minor);
+    CHECK (std::abs (ywtune::retuneMs (slot.params[ywtune::retune]) - 50.0) < 0.5); // its own speed is not known
 
     // its own readable key wins over the project's
     auto own = song.mixer[3].effects[1];
     CHECK (substituteEffectSlot (own, pluginIdentity (own.plugin.foreign), context));
-    CHECK (lynxtune::keyIndex (own.params[lynxtune::key]) == 7);
-    CHECK (vocal::Scale (lynxtune::scaleIndex (own.params[lynxtune::scale])) == vocal::Scale::major);
+    CHECK (ywtune::keyIndex (own.params[ywtune::key]) == 7);
+    CHECK (vocal::Scale (ywtune::scaleIndex (own.params[ywtune::scale])) == vocal::Scale::major);
 
     // no key anywhere: chromatic
     Song plain;
@@ -121,7 +121,7 @@ TEST (pitch_correctors_take_the_project_key_round113)
 
 TEST (fresh_air_amounts_become_a_gentle_air_band_round113)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto amounts = freshAirAmounts (subst113::freshAirState (0.488f, 0.374f));
     CHECK (amounts && std::abs (amounts->first - 0.488f) < 1e-6f && std::abs (amounts->second - 0.374f) < 1e-6f);
     CHECK (! freshAirAmounts (std::vector<std::uint8_t> (2000, 0)));
@@ -146,7 +146,7 @@ TEST (fresh_air_amounts_become_a_gentle_air_band_round113)
 
 TEST (gentle_defaults_of_unreadable_vocal_substitutes_round113)
 {
-    using namespace lynx;
+    using namespace yw;
     auto entryFor = [] (const char* name, const char* waves = nullptr) {
         PluginIdentity id;
         id.format = ForeignPlugin::Format::vst3;
@@ -191,7 +191,7 @@ TEST (gentle_defaults_of_unreadable_vocal_substitutes_round113)
 
 TEST (waves_vocal_states_translated_round113)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slotFor = [] (const char* waves, const char* values, int& translated) {
         PluginIdentity id;
         id.format = ForeignPlugin::Format::vst3;
@@ -239,7 +239,7 @@ TEST (waves_vocal_states_translated_round113)
 
 TEST (substitutes_can_be_bypassed_per_project_round113)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer = Song::defaultMixer (1);
     const auto at = subst113::autoTune (subst113::autoTuneState (9, 1));
@@ -265,15 +265,15 @@ TEST (substitutes_can_be_bypassed_per_project_round113)
 TEST (waves_shell_uses_scan_every_installed_shell_round113)
 {
     // her projects were saved with the 15.5 shell; the laptop has 16.0 (and 16.3): those files must be described
-    lynx::ForeignPlugin p;
-    p.format = lynx::ForeignPlugin::Format::vst3;
+    yw::ForeignPlugin p;
+    p.format = yw::ForeignPlugin::Format::vst3;
     p.name = "WaveShell1-VST3 15.5_x64";
     p.path = "C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 15.5_x64.vst3";
-    CHECK (lynx::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 16.0_x64.vst3", p, nullptr));
-    CHECK (lynx::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 16.3_x64.vst3", p, nullptr));
-    CHECK (! lynx::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\Auto-Tune Pro.vst3", p, nullptr));
-    lynx::ForeignPlugin other;
-    other.format = lynx::ForeignPlugin::Format::vst3;
+    CHECK (yw::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 16.0_x64.vst3", p, nullptr));
+    CHECK (yw::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 16.3_x64.vst3", p, nullptr));
+    CHECK (! yw::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\Auto-Tune Pro.vst3", p, nullptr));
+    yw::ForeignPlugin other;
+    other.format = yw::ForeignPlugin::Format::vst3;
     other.name = "Fresh Air";
-    CHECK (! lynx::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 16.0_x64.vst3", other, nullptr));
+    CHECK (! yw::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 16.0_x64.vst3", other, nullptr));
 }

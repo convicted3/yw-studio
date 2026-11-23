@@ -24,13 +24,13 @@
 // Host interface (REA_rodada28 §4.1 inferences, as for Harmless): Init.Vol = (11^(1.28·velocity) − 1)/10; FL's
 // default "linked velocity" gives Final.Vol = channel volume × Init.Vol (DX10 sends no link event); Final.Pan = note
 // pan + channel pan; Final.Pitch = 100·(key − 60) + channel pitch + note fine pitch (cents), plus the pitch
-// articulator (restored every tick, inference); Final.FCut/FRes (Mod X/Y of notes) = 0. LYNX's channel gains are
+// articulator (restored every tick, inference); Final.FCut/FRes (Mod X/Y of notes) = 0. YW's channel gains are
 // turned back into FL's channel volume/pan (gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)) and applied once, inside the
 // engine. Sequencer ticks fall on the song's PPQ grid while the transport moves, else run freely at the same rate.
 // Voices that DX10 or the processor flag as finished are removed at the end of the block, as FL's host does on the
 // plugin's kill request.
 //
-// Differences from FL by design / not modelled (REA_rodada42 §4): global LFOs ignore song-position jumps; LYNX notes
+// Differences from FL by design / not modelled (REA_rodada42 §4): global LFOs ignore song-position jumps; YW notes
 // have no Mod X/Y. (The end-fade table uses IPP's cosine since REA_rodada74.)
 
 #include <cstdint>
@@ -40,7 +40,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this DX10 state (version 1 or 2 with the 22 parameters)
 bool dx10StateUsable (const std::vector<std::uint8_t>& state);
@@ -85,4 +85,4 @@ struct RefOptions
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, const RefOptions& options = {});
 } // namespace dx10
-} // namespace lynx
+} // namespace yw

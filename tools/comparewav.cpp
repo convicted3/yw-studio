@@ -1,4 +1,4 @@
-// comparewav: compares two WAVs (e.g. FL render vs LYNX render of the same project).
+// comparewav: compares two WAVs (e.g. FL render vs YW render of the same project).
 // Usage: comparewav reference.wav test.wav
 // Shows the level (RMS and peak), the average spectrum in octave bands (difference in dB), the brightness
 // (spectral centroid) and the correlation of the volume envelopes (10 ms) after aligning the start.
@@ -15,7 +15,7 @@ namespace
 {
 using Signal = std::vector<float>;
 
-Signal mono (const lynx::SampleData& s)
+Signal mono (const yw::SampleData& s)
 {
     Signal out (s.frames());
     const auto* l = s.leftData();
@@ -124,8 +124,8 @@ int main (int argc, char** argv)
         return 2;
     }
 
-    const auto a = lynx::tools::readWav (argv[1]);
-    const auto b = lynx::tools::readWav (argv[2]);
+    const auto a = yw::tools::readWav (argv[1]);
+    const auto b = yw::tools::readWav (argv[2]);
 
     if (a == nullptr || b == nullptr)
     {

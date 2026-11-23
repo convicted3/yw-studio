@@ -1,59 +1,59 @@
-// LYNX's plugins for other hosts: THE one table (round 180b). A rename is one edit here: plugin/ExportCatalog.h, the VST3
-// wrapper, cmake/LynxPlugins.cmake and scripts/build-windows-zig.sh all read this file (one entry per line, keep the format).
-// Exported names only: inside LYNX the engines keep their names. Names were checked by a web search only, with no
+// YW's plugins for other hosts: THE one table (round 180b). A rename is one edit here: plugin/ExportCatalog.h, the VST3
+// wrapper, cmake/YwPlugins.cmake and scripts/build-windows-zig.sh all read this file (one entry per line, keep the format).
+// Exported names only: inside YW the engines keep their names. Names were checked by a web search only, with no
 // trademark registry check. Once released, the clap id and the code never change: hosts store them in their projects.
 //
 // name, instrument, effect kind, instrument kind, clap id, VST3 code, VST3 category, built
 // built: 0 = not compiled, 1 = in the CLAP only, 2 = in the CLAP and as its own VST3 (the user's option C, 2026-11-08:
-// every LYNX effect in the CLAP, a short list as VST3; round 188b, docs/PLUGIN_EXPORT.md)
-LYNX_PLUGIN ("YW Facet EQ", 0, facetEq, dx10, "su.yolo.yw.facet-eq", 0x59577846, "Fx|EQ", 2)
-LYNX_PLUGIN ("YW FM10", 1, eq, dx10, "su.yolo.yw.fm10", 0x59577831, "Instrument|Synth", 2)
-LYNX_PLUGIN ("YW Apex Limiter", 0, apexLimiter, dx10, "su.yolo.yw.apex-limiter", 0x59577841, "Fx|Dynamics|Mastering", 2)
-LYNX_PLUGIN ("YW Crest Compressor", 0, crestCompressor, dx10, "su.yolo.yw.crest-compressor", 0x59577863, "Fx|Dynamics", 2)
-LYNX_PLUGIN ("YW Prism Multiband", 0, prismMultiband, dx10, "su.yolo.yw.prism-multiband", 0x59577849, "Fx|Dynamics", 1)
-LYNX_PLUGIN ("YW Sentry Gate", 0, sentryGate, dx10, "su.yolo.yw.sentry-gate", 0x59577859, "Fx|Dynamics", 1)
-LYNX_PLUGIN ("YW Glow Leveler", 0, glowLeveler, dx10, "su.yolo.yw.glow-leveler", 0x59577847, "Fx|Dynamics", 1)
-LYNX_PLUGIN ("YW Hush De-esser", 0, hushDeEsser, dx10, "su.yolo.yw.hush-de-esser", 0x59577848, "Fx|Dynamics", 1)
-LYNX_PLUGIN ("YW Ridge Strip", 0, ridgeStrip, dx10, "su.yolo.yw.ridge-strip", 0x59577852, "Fx|Dynamics|EQ", 1)
-LYNX_PLUGIN ("YW Kiln Channel", 0, kilnChannel, dx10, "su.yolo.yw.kiln-channel", 0x5957784b, "Fx|Dynamics|EQ", 1)
-LYNX_PLUGIN ("YW Fret Channel", 0, fretChannel, dx10, "su.yolo.yw.fret-channel", 0x59577854, "Fx|Dynamics|EQ", 1)
-LYNX_PLUGIN ("YW Shell Channel", 0, shellChannel, dx10, "su.yolo.yw.shell-channel", 0x59577853, "Fx|Dynamics|EQ", 1)
-LYNX_PLUGIN ("YW Aether", 0, aether, dx10, "su.yolo.yw.aether", 0x59577845, "Fx|EQ", 1)
-LYNX_PLUGIN ("YW Ember Saturator", 0, ember, dx10, "su.yolo.yw.ember-saturator", 0x5957784d, "Fx|Distortion", 1)
-LYNX_PLUGIN ("YW Atrium", 0, atrium, dx10, "su.yolo.yw.atrium", 0x59577857, "Fx|Reverb", 2)
-LYNX_PLUGIN ("YW Epoch Verb", 0, epochVerb, dx10, "su.yolo.yw.epoch-verb", 0x59577856, "Fx|Reverb", 1)
-LYNX_PLUGIN ("YW Foil Plate", 0, foilPlate, dx10, "su.yolo.yw.foil-plate", 0x59577850, "Fx|Reverb", 1)
-LYNX_PLUGIN ("YW Nebula", 0, nebula, dx10, "su.yolo.yw.nebula", 0x5957784e, "Fx|Reverb", 1)
-LYNX_PLUGIN ("YW Halo", 0, halo, dx10, "su.yolo.yw.halo", 0x5957784f, "Fx|Reverb", 1)
-LYNX_PLUGIN ("YW Horizon", 0, horizon, dx10, "su.yolo.yw.horizon", 0x5957785a, "Fx|Reverb|Delay", 1)
-LYNX_PLUGIN ("YW Echoform", 0, echoform, dx10, "su.yolo.yw.echoform", 0x59577843, "Fx|Delay", 2)
-LYNX_PLUGIN ("YW Spiral Echo", 0, spiralEcho, dx10, "su.yolo.yw.spiral-echo", 0x59577858, "Fx|Delay", 1)
-LYNX_PLUGIN ("YW Lattice Mod", 0, latticeMod, dx10, "su.yolo.yw.lattice-mod", 0x5957784c, "Fx|Delay|Modulation", 1)
-LYNX_PLUGIN ("YW Orbit", 0, orbit, dx10, "su.yolo.yw.orbit", 0x59577842, "Fx|Modulation", 1)
-LYNX_PLUGIN ("YW Tune", 0, lynxTune, dx10, "su.yolo.yw.tune", 0x59577855, "Fx|Pitch Shift", 2)
-LYNX_PLUGIN ("YW Voice Shift", 0, voiceShift, dx10, "su.yolo.yw.voice-shift", 0x5957784a, "Fx|Pitch Shift", 1)
-LYNX_PLUGIN ("YW Gemini Doubler", 0, geminiDoubler, dx10, "su.yolo.yw.gemini-doubler", 0x59577844, "Fx|Spatial", 1)
-LYNX_PLUGIN ("YW Quell Denoiser", 0, quellDenoiser, dx10, "su.yolo.yw.quell-denoiser", 0x59577851, "Fx|Restoration", 1)
-// round 190ov: LYNX's later own engines (the effects Live's Drum Buss, Erosion, Corpus, Vinyl Distortion, Spectral Time and
-// Spectral Resonator import onto, the transient designer, LYNX Model). Names: a web search only (docs/PLUGINS-PACK.md).
-// Rollup 0.1.31 step 6 (owner decision): Tetra, Helix and Braid export as LYNX Fourfold, LYNX Wavecoil and LYNX Duoloom
+// every YW effect in the CLAP, a short list as VST3; round 188b, docs/PLUGIN_EXPORT.md)
+YW_PLUGIN ("YW Facet EQ", 0, facetEq, dx10, "su.yolo.yw.facet-eq", 0x59577846, "Fx|EQ", 2)
+YW_PLUGIN ("YW FM10", 1, eq, dx10, "su.yolo.yw.fm10", 0x59577831, "Instrument|Synth", 2)
+YW_PLUGIN ("YW Apex Limiter", 0, apexLimiter, dx10, "su.yolo.yw.apex-limiter", 0x59577841, "Fx|Dynamics|Mastering", 2)
+YW_PLUGIN ("YW Crest Compressor", 0, crestCompressor, dx10, "su.yolo.yw.crest-compressor", 0x59577863, "Fx|Dynamics", 2)
+YW_PLUGIN ("YW Prism Multiband", 0, prismMultiband, dx10, "su.yolo.yw.prism-multiband", 0x59577849, "Fx|Dynamics", 1)
+YW_PLUGIN ("YW Sentry Gate", 0, sentryGate, dx10, "su.yolo.yw.sentry-gate", 0x59577859, "Fx|Dynamics", 1)
+YW_PLUGIN ("YW Glow Leveler", 0, glowLeveler, dx10, "su.yolo.yw.glow-leveler", 0x59577847, "Fx|Dynamics", 1)
+YW_PLUGIN ("YW Hush De-esser", 0, hushDeEsser, dx10, "su.yolo.yw.hush-de-esser", 0x59577848, "Fx|Dynamics", 1)
+YW_PLUGIN ("YW Ridge Strip", 0, ridgeStrip, dx10, "su.yolo.yw.ridge-strip", 0x59577852, "Fx|Dynamics|EQ", 1)
+YW_PLUGIN ("YW Kiln Channel", 0, kilnChannel, dx10, "su.yolo.yw.kiln-channel", 0x5957784b, "Fx|Dynamics|EQ", 1)
+YW_PLUGIN ("YW Fret Channel", 0, fretChannel, dx10, "su.yolo.yw.fret-channel", 0x59577854, "Fx|Dynamics|EQ", 1)
+YW_PLUGIN ("YW Shell Channel", 0, shellChannel, dx10, "su.yolo.yw.shell-channel", 0x59577853, "Fx|Dynamics|EQ", 1)
+YW_PLUGIN ("YW Aether", 0, aether, dx10, "su.yolo.yw.aether", 0x59577845, "Fx|EQ", 1)
+YW_PLUGIN ("YW Ember Saturator", 0, ember, dx10, "su.yolo.yw.ember-saturator", 0x5957784d, "Fx|Distortion", 1)
+YW_PLUGIN ("YW Atrium", 0, atrium, dx10, "su.yolo.yw.atrium", 0x59577857, "Fx|Reverb", 2)
+YW_PLUGIN ("YW Epoch Verb", 0, epochVerb, dx10, "su.yolo.yw.epoch-verb", 0x59577856, "Fx|Reverb", 1)
+YW_PLUGIN ("YW Foil Plate", 0, foilPlate, dx10, "su.yolo.yw.foil-plate", 0x59577850, "Fx|Reverb", 1)
+YW_PLUGIN ("YW Nebula", 0, nebula, dx10, "su.yolo.yw.nebula", 0x5957784e, "Fx|Reverb", 1)
+YW_PLUGIN ("YW Halo", 0, halo, dx10, "su.yolo.yw.halo", 0x5957784f, "Fx|Reverb", 1)
+YW_PLUGIN ("YW Horizon", 0, horizon, dx10, "su.yolo.yw.horizon", 0x5957785a, "Fx|Reverb|Delay", 1)
+YW_PLUGIN ("YW Echoform", 0, echoform, dx10, "su.yolo.yw.echoform", 0x59577843, "Fx|Delay", 2)
+YW_PLUGIN ("YW Spiral Echo", 0, spiralEcho, dx10, "su.yolo.yw.spiral-echo", 0x59577858, "Fx|Delay", 1)
+YW_PLUGIN ("YW Lattice Mod", 0, latticeMod, dx10, "su.yolo.yw.lattice-mod", 0x5957784c, "Fx|Delay|Modulation", 1)
+YW_PLUGIN ("YW Orbit", 0, orbit, dx10, "su.yolo.yw.orbit", 0x59577842, "Fx|Modulation", 1)
+YW_PLUGIN ("YW Tune", 0, ywTune, dx10, "su.yolo.yw.tune", 0x59577855, "Fx|Pitch Shift", 2)
+YW_PLUGIN ("YW Voice Shift", 0, voiceShift, dx10, "su.yolo.yw.voice-shift", 0x5957784a, "Fx|Pitch Shift", 1)
+YW_PLUGIN ("YW Gemini Doubler", 0, geminiDoubler, dx10, "su.yolo.yw.gemini-doubler", 0x59577844, "Fx|Spatial", 1)
+YW_PLUGIN ("YW Quell Denoiser", 0, quellDenoiser, dx10, "su.yolo.yw.quell-denoiser", 0x59577851, "Fx|Restoration", 1)
+// round 190ov: YW's later own engines (the effects Live's Drum Buss, Erosion, Corpus, Vinyl Distortion, Spectral Time and
+// Spectral Resonator import onto, the transient designer, YW Model). Names: a web search only (docs/PLUGINS-PACK.md).
+// Rollup 0.1.31 step 6 (owner decision): Tetra, Helix and Braid export as YW Fourfold, YW Wavecoil and YW Duoloom
 // (Sequential's Tetra, Line 6's Helix Native and Mutable Instruments' Braids are other makers' products), and Harmonia as
-// LYNX Chimefield (Cherry Audio's Harmonia synth); inside LYNX the engines keep their names. Web search only, 2026-11-21.
+// YW Chimefield (Cherry Audio's Harmonia synth); inside YW the engines keep their names. Web search only, 2026-11-21.
 // Held back at 0 in step 6 (CI plugins run 44975814572: a crash in plugexporttest's reference render, a state that didn't
 // save back byte for byte); round 190pq fixed both and builds the three synths as CLAP, VST3 and LV2 (docs/PLUGIN_EXPORT.md).
-LYNX_PLUGIN ("YW Strike Shaper", 0, strikeShaper, dx10, "su.yolo.yw.strike-shaper", 0x59577873, "Fx|Dynamics", 1)
-LYNX_PLUGIN ("YW Anvil Bus", 0, anvilBus, dx10, "su.yolo.yw.anvil-bus", 0x59577862, "Fx|Distortion|Dynamics", 1)
-LYNX_PLUGIN ("YW Corrode", 0, corrode, dx10, "su.yolo.yw.corrode", 0x59577872, "Fx|Distortion|Modulation", 1)
-LYNX_PLUGIN ("YW Soundboard", 0, soundboard, dx10, "su.yolo.yw.soundboard", 0x59577864, "Fx|Filter", 1)
-LYNX_PLUGIN ("YW Platter", 0, platter, dx10, "su.yolo.yw.platter", 0x59577870, "Fx|Distortion", 1)
-LYNX_PLUGIN ("YW Timeprism", 0, timeprism, dx10, "su.yolo.yw.timeprism", 0x59577874, "Fx|Delay", 1)
-LYNX_PLUGIN ("YW Chimefield", 0, harmonia, dx10, "su.yolo.yw.chimefield", 0x59577868, "Fx|Filter", 1)
-LYNX_PLUGIN ("YW Model", 1, eq, lynxModel, "su.yolo.yw.model", 0x59577837, "Instrument|Synth", 2)
-LYNX_PLUGIN ("YW Fourfold", 1, eq, tetra, "su.yolo.yw.fourfold", 0x59577838, "Instrument|Synth", 2)
-LYNX_PLUGIN ("YW Wavecoil", 1, eq, helix, "su.yolo.yw.wavecoil", 0x59577839, "Instrument|Synth", 2)
-LYNX_PLUGIN ("YW Duoloom", 1, eq, braid, "su.yolo.yw.duoloom", 0x59577830, "Instrument|Synth", 2)
-LYNX_PLUGIN ("YW Osc Trio", 1, eq, threeosc, "su.yolo.yw.osc-trio", 0x59577832, "Instrument|Synth", 0)
-LYNX_PLUGIN ("YW SimOsc", 1, eq, simsynth, "su.yolo.yw.simosc", 0x59577833, "Instrument|Synth", 0)
-LYNX_PLUGIN ("YW Harmlite", 1, eq, harmless, "su.yolo.yw.harmlite", 0x59577834, "Instrument|Synth", 0)
-LYNX_PLUGIN ("YW Plucker", 1, eq, plucked, "su.yolo.yw.plucker", 0x59577835, "Instrument|Synth", 0)
-LYNX_PLUGIN ("YW Wave Wanderer", 1, eq, wavetraveller, "su.yolo.yw.wave-wanderer", 0x59577836, "Instrument|Synth", 0)
+YW_PLUGIN ("YW Strike Shaper", 0, strikeShaper, dx10, "su.yolo.yw.strike-shaper", 0x59577873, "Fx|Dynamics", 1)
+YW_PLUGIN ("YW Anvil Bus", 0, anvilBus, dx10, "su.yolo.yw.anvil-bus", 0x59577862, "Fx|Distortion|Dynamics", 1)
+YW_PLUGIN ("YW Corrode", 0, corrode, dx10, "su.yolo.yw.corrode", 0x59577872, "Fx|Distortion|Modulation", 1)
+YW_PLUGIN ("YW Soundboard", 0, soundboard, dx10, "su.yolo.yw.soundboard", 0x59577864, "Fx|Filter", 1)
+YW_PLUGIN ("YW Platter", 0, platter, dx10, "su.yolo.yw.platter", 0x59577870, "Fx|Distortion", 1)
+YW_PLUGIN ("YW Timeprism", 0, timeprism, dx10, "su.yolo.yw.timeprism", 0x59577874, "Fx|Delay", 1)
+YW_PLUGIN ("YW Chimefield", 0, harmonia, dx10, "su.yolo.yw.chimefield", 0x59577868, "Fx|Filter", 1)
+YW_PLUGIN ("YW Model", 1, eq, ywModel, "su.yolo.yw.model", 0x59577837, "Instrument|Synth", 2)
+YW_PLUGIN ("YW Fourfold", 1, eq, tetra, "su.yolo.yw.fourfold", 0x59577838, "Instrument|Synth", 2)
+YW_PLUGIN ("YW Wavecoil", 1, eq, helix, "su.yolo.yw.wavecoil", 0x59577839, "Instrument|Synth", 2)
+YW_PLUGIN ("YW Duoloom", 1, eq, braid, "su.yolo.yw.duoloom", 0x59577830, "Instrument|Synth", 2)
+YW_PLUGIN ("YW Osc Trio", 1, eq, threeosc, "su.yolo.yw.osc-trio", 0x59577832, "Instrument|Synth", 0)
+YW_PLUGIN ("YW SimOsc", 1, eq, simsynth, "su.yolo.yw.simosc", 0x59577833, "Instrument|Synth", 0)
+YW_PLUGIN ("YW Harmlite", 1, eq, harmless, "su.yolo.yw.harmlite", 0x59577834, "Instrument|Synth", 0)
+YW_PLUGIN ("YW Plucker", 1, eq, plucked, "su.yolo.yw.plucker", 0x59577835, "Instrument|Synth", 0)
+YW_PLUGIN ("YW Wave Wanderer", 1, eq, wavetraveller, "su.yolo.yw.wave-wanderer", 0x59577836, "Instrument|Synth", 0)

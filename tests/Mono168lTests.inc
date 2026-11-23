@@ -8,7 +8,7 @@
 namespace mono168l
 {
 // an instrument that records what the rack asks of it (a hosted plugin's place in the rack)
-struct VoiceSpy final : lynx::Instrument
+struct VoiceSpy final : yw::Instrument
 {
     struct Got
     {
@@ -22,7 +22,7 @@ struct VoiceSpy final : lynx::Instrument
     void setNextNoteExpression (float, float cents, bool) noexcept override { nextCents = cents; }
     void noteOn (int key, float) noexcept override
     {
-        auto& g = lynx::HostSlide::pendingGlide();
+        auto& g = yw::HostSlide::pendingGlide();
         got.push_back ({ 'n', key, nextCents, g.fromCents, g.samples, 0.0f });
         g.taken = g.samples > 0.0f;
         nextCents = 0.0f;
@@ -43,31 +43,31 @@ struct VoiceSpy final : lynx::Instrument
 
 struct Rig
 {
-    lynx::Song song;
+    yw::Song song;
     std::shared_ptr<VoiceSpy> spy = std::make_shared<VoiceSpy>();
-    std::unique_ptr<const lynx::RackState> state;
-    lynx::RackRenderer renderer;
-    lynx::LiveEventQueue live;
-    lynx::RackState::Factories f;
+    std::unique_ptr<const yw::RackState> state;
+    yw::RackRenderer renderer;
+    yw::LiveEventQueue live;
+    yw::RackState::Factories f;
 
-    explicit Rig (std::function<void (lynx::ChannelDef&)> setup)
+    explicit Rig (std::function<void (yw::ChannelDef&)> setup)
     {
-        song.mixer = lynx::Song::defaultMixer (2);
+        song.mixer = yw::Song::defaultMixer (2);
         song.bpm = 120.0;
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::plugin;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::plugin;
         c.plugin.id = "spy";
         setup (c);
         song.channels.push_back (c);
         song.patterns.emplace_back();
-        f.pluginInstruments = [this] (const lynx::PluginRef&, double) { return std::shared_ptr<lynx::Instrument> (spy); };
-        state = lynx::RackState::build (song, nullptr, 48000.0, f);
+        f.pluginInstruments = [this] (const yw::PluginRef&, double) { return std::shared_ptr<yw::Instrument> (spy); };
+        state = yw::RackState::build (song, nullptr, 48000.0, f);
         renderer.prepare (48000.0, 256);
     }
     void play (int key, bool on = true, int colour = 0)
     {
-        lynx::NoteEvent e;
-        e.type = on ? lynx::NoteEvent::Type::on : lynx::NoteEvent::Type::off;
+        yw::NoteEvent e;
+        e.type = on ? yw::NoteEvent::Type::on : yw::NoteEvent::Type::off;
         e.key = key;
         e.velocity = 0.8f;
         e.colour = (std::int8_t) colour;
@@ -80,21 +80,21 @@ struct Rig
 
 TEST (mono168l_misc_mono_porta_slide_on_every_generator)
 {
-    using namespace lynx;
-    // the video's channels: an imported 3x Osc, LYNX's built-in Kick / Hat, Toxic Biohazard, a Sampler, a hosted plugin
+    using namespace yw;
+    // the video's channels: an imported 3x Osc, YW's built-in Kick / Hat, Toxic Biohazard, a Sampler, a hosted plugin
     for (const auto kind : { InstrumentKind::threeosc, InstrumentKind::kick, InstrumentKind::hat, InstrumentKind::toxic, InstrumentKind::sampler,
                              InstrumentKind::plugin, InstrumentKind::sytrus, InstrumentKind::soundfont, InstrumentKind::patcher })
     {
         ChannelDef c;
         c.instrument = kind;
-        CHECK (channelHasMono (c) && channelHasPortamento (c)); // (main: only the LYNX Synth / Sampler had them)
+        CHECK (channelHasMono (c) && channelHasPortamento (c)); // (main: only the YW Synth / Sampler had them)
         setChannelMono (c, true);
         setChannelPortamento (c, true, 0.5f);
         CHECK (channelMono (c) && channelPortamento (c) && std::abs (channelPortamentoBeats (c) - 0.5f) < 1e-6f);
         setChannelMono (c, false);
         CHECK (! channelMono (c) && channelPortamento (c));
     }
-    // the LYNX Synth keeps its own flags (its page and the Misc tab show the same)
+    // the YW Synth keeps its own flags (its page and the Misc tab show the same)
     ChannelDef synth;
     setChannelMono (synth, true);
     setChannelPortamento (synth, true, 9.0f); // (clamped to 4 beats)
@@ -111,7 +111,7 @@ TEST (mono168l_misc_mono_porta_slide_on_every_generator)
 
 TEST (mono168l_fl_glide_time)
 {
-    using namespace lynx::channelpoly;
+    using namespace yw::channelpoly;
     // FL's Slide knob: n = round((27^(v/1024) − 1)·48/26) 1/192 beats; FL's porta ticks n·24/48 at 96 PPQ; the glide
     // lasts ticks + 1 ticks (FLEngine 0x1312200, 0xd26460)
     CHECK (portaTicks (24.0f / 192.0f) == 12 && std::abs (glideBeats (24.0f / 192.0f) - 13.0 / 96.0) < 1e-12); // 820, FL's default
@@ -122,7 +122,7 @@ TEST (mono168l_fl_glide_time)
 
 TEST (mono168l_channel_layer_mono_and_porta_like_fl)
 {
-    using namespace lynx::channelpoly;
+    using namespace yw::channelpoly;
     Layer layer;
     Mode mono;
     mono.mono = true;
@@ -200,7 +200,7 @@ TEST (mono168l_channel_layer_mono_and_porta_like_fl)
 
 TEST (mono168l_rack_plays_mono_and_porta_in_front_of_a_plugin)
 {
-    using namespace lynx;
+    using namespace yw;
     {
         // Mono: one note on, the rest are slides of the sounding voice; its off when the last key goes up
         mono168l::Rig rig ([] (ChannelDef& c) { setChannelMono (c, true); });
@@ -240,18 +240,18 @@ TEST (mono168l_rack_plays_mono_and_porta_in_front_of_a_plugin)
 }
 
 // Every generator engine plays a Mono channel legato and a Porta channel's glide (needs FL's data: the FL engines'
-// factory states). LYNX_MONO_AUDIT=1 prints the table.
+// factory states). YW_MONO_AUDIT=1 prints the table.
 TEST (mono168l_every_engine_plays_mono_legato_and_porta)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
-    const auto print = std::getenv ("LYNX_MONO_AUDIT") != nullptr;
+    const auto print = std::getenv ("YW_MONO_AUDIT") != nullptr;
     // (the same engines whose pitch the autocorrelation can't read as issue14's audit; Plucked! reads its pitch only
     // when a voice starts, so FL can't glide it either)
     const std::set<std::string> unreadable { "FL Slayer", "Fruity Granulizer", "Wave Traveller", "Drumaxx", "Fruit Kick", "BassDrum", "Drumpad", "FPC", "Sakura", "Ogun" };
-    // (rollup 0.1.31: LYNX Model, a struck bar / tine model, follows neither slides nor the channel porta: the rack retriggers it, as Plucked!)
-    const std::set<std::string> noSlide { "Plucked!", "LYNX Model" };
+    // (rollup 0.1.31: YW Model, a struck bar / tine model, follows neither slides nor the channel porta: the rack retriggers it, as Plucked!)
+    const std::set<std::string> noSlide { "Plucked!", "YW Model" };
     // their sound follows the voice's own timeline (BeepMap scans its image left to right, a Transistor Bass preset runs
     // its own sequencer): a pitch read at another moment of the voice can't be compared with the reference
     const std::set<std::string> ownTimeline { "BeepMap", "Transistor Bass" };

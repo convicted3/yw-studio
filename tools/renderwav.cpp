@@ -3,14 +3,14 @@
 // Without an index, picks the pattern with the most notes.
 //
 // Real-time diagnostics (REA round 87), environment variables:
-//   LYNX_BLOCK=n      block size (default 256)
-//   LYNX_THREADS=n    n worker threads, as the app's audio engine uses
-//   LYNX_REALTIME=1   paces the blocks at real time (the workers sleep between blocks, as with a sound card)
-//   LYNX_WARMUP=n     n samples of stopped-transport silence before the song, like FL's render warm-up (1536–2304
+//   YW_BLOCK=n      block size (default 256)
+//   YW_THREADS=n    n worker threads, as the app's audio engine uses
+//   YW_REALTIME=1   paces the blocks at real time (the workers sleep between blocks, as with a sound card)
+//   YW_WARMUP=n     n samples of stopped-transport silence before the song, like FL's render warm-up (1536–2304
 //                     samples, REA round 154): the effects' parameter glides settle as in a running app (round 170i)
-//   LYNX_STRETCH=0    keep-pitch samples unstretched (default since rollup 0.1.31 step 8: stretched to the tempo, as the app)
-//   LYNX_PROFILE=1    per-channel / per-insert-effect CPU time, heaviest first
-//   LYNX_ALLOCS=1     counts the heap allocations made while a block is processed (the audio thread and the
+//   YW_STRETCH=0    keep-pitch samples unstretched (default since rollup 0.1.31 step 8: stretched to the tempo, as the app)
+//   YW_PROFILE=1    per-channel / per-insert-effect CPU time, heaviest first
+//   YW_ALLOCS=1     counts the heap allocations made while a block is processed (the audio thread and the
 //                     workers; round 167e) and prints where the first distinct ones came from (Linux: addresses for
 //                     addr2line -e renderwav)
 // The block timing report (budget = block duration) is always printed.
@@ -53,7 +53,7 @@
 #include "core/TempoMap.h"
 #include "core/ExportOptions.h"
 
-// LYNX_ALLOCS: every operator new while `counting` is set (inside RackRenderer::process) is counted
+// YW_ALLOCS: every operator new while `counting` is set (inside RackRenderer::process) is counted
 namespace allocs
 {
 std::atomic<bool> counting { false };
@@ -177,7 +177,7 @@ int main (int argc, char** argv)
     std::ifstream in (argv[1], std::ios::binary);
     std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
 
-    lynx::Song song;
+    yw::Song song;
 
     // On Linux/WSL FL lives under /mnt/c; the .flp paths use backslashes.
     const std::string flRoot = std::getenv ("FL_ROOT") ? std::getenv ("FL_ROOT")
@@ -196,7 +196,7 @@ int main (int argc, char** argv)
         return p;
     };
 
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.roots = { flRoot, flRoot + "/Data", "" };
     options.fileExists = [&] (const std::string& p) { return std::filesystem::exists (toLocal (p)); };
     options.readFile = [&] (const std::string& p) { // (the rack compressors' presets of Harmless/Harmor)
@@ -204,10 +204,10 @@ int main (int argc, char** argv)
         return std::vector<std::uint8_t> ((std::istreambuf_iterator<char> (f)), std::istreambuf_iterator<char>());
     };
 
-    // LYNX_REPORT=1: the import report (what is converted, approximated, unsupported, not reproduced, dropped) after the
+    // YW_REPORT=1: the import report (what is converted, approximated, unsupported, not reproduced, dropped) after the
     // import (round 190pr: the demo song sweep's "what remains")
-    lynx::FlpImportReport report;
-    const bool printReport = std::getenv ("LYNX_REPORT") != nullptr;
+    yw::FlpImportReport report;
+    const bool printReport = std::getenv ("YW_REPORT") != nullptr;
     if (printReport)
         options.report = &report;
 
@@ -215,7 +215,7 @@ int main (int argc, char** argv)
     try
     {
         const auto parsed = flp::parseProject (bytes);
-        song = lynx::importFlp (parsed, options);
+        song = yw::importFlp (parsed, options);
         if (printReport)
         {
             // the automation targets: clips (0xE3), song-start values (0xD8), pattern events (0xDF: per target, value range)
@@ -280,7 +280,7 @@ int main (int argc, char** argv)
                     const auto bpm = song.tempoAt (t);
                     if (std::fmod (t, 4.0 * bar) == 0.0)
                         std::printf ("tempo at bar %d: %.3f BPM, %.3f s\n", (int) (t / bar) + 1, bpm, seconds);
-                    seconds += 60.0 / (bpm * (double) lynx::ppq);
+                    seconds += 60.0 / (bpm * (double) yw::ppq);
                 }
                 std::printf ("tempo map end %.3f s\n", seconds);
             }
@@ -299,8 +299,8 @@ int main (int argc, char** argv)
         return 1;
     }
 
-    // LYNX_SOLO="i j …": only those LYNX channels play (every other channel muted), e.g. one channel's silence check
-    if (const char* e = std::getenv ("LYNX_SOLO"))
+    // YW_SOLO="i j …": only those YW channels play (every other channel muted), e.g. one channel's silence check
+    if (const char* e = std::getenv ("YW_SOLO"))
     {
         std::vector<bool> keep (song.channels.size(), false);
         std::istringstream list (e);
@@ -312,22 +312,22 @@ int main (int argc, char** argv)
                 song.channels[i].muted = true;
     }
 
-    // LYNX_SUBSTITUTES=1: third-party effects become their LYNX substitutes, as in the app when none is installed
-    // (otherwise they stay unresolved, i.e. silent pass-through); LYNX_DISABLE="t.k t.k": those insert slots off
-    if (const char* e = std::getenv ("LYNX_SUBSTITUTES"); e != nullptr && std::atoi (e) != 0)
+    // YW_SUBSTITUTES=1: third-party effects become their YW substitutes, as in the app when none is installed
+    // (otherwise they stay unresolved, i.e. silent pass-through); YW_DISABLE="t.k t.k": those insert slots off
+    if (const char* e = std::getenv ("YW_SUBSTITUTES"); e != nullptr && std::atoi (e) != 0)
     {
-        const auto context = lynx::substituteContextOf (song);
+        const auto context = yw::substituteContextOf (song);
         for (std::size_t t = 0; t < song.mixer.size(); ++t)
             for (std::size_t k = 0; k < song.mixer[t].effects.size(); ++k)
-                if (auto& fx = song.mixer[t].effects[k]; fx.kind == lynx::EffectKind::plugin && fx.plugin.foreign.format != lynx::ForeignPlugin::Format::none
-                    && lynx::substituteEffectSlot (fx, lynx::pluginIdentity (fx.plugin.foreign), context))
-                    std::printf ("insert %d: %s -> %s (slot %d.%d)\n", (int) t, lynx::substituteOriginalName (fx).c_str(), lynx::effectInfo (fx.kind).name, (int) t, (int) k);
+                if (auto& fx = song.mixer[t].effects[k]; fx.kind == yw::EffectKind::plugin && fx.plugin.foreign.format != yw::ForeignPlugin::Format::none
+                    && yw::substituteEffectSlot (fx, yw::pluginIdentity (fx.plugin.foreign), context))
+                    std::printf ("insert %d: %s -> %s (slot %d.%d)\n", (int) t, yw::substituteOriginalName (fx).c_str(), yw::effectInfo (fx.kind).name, (int) t, (int) k);
     }
-    // LYNX_SUBSTITUTES_BYPASS=1: the project's "substitutes bypassed" switch on (A/B)
-    if (const char* e = std::getenv ("LYNX_SUBSTITUTES_BYPASS"); e != nullptr && std::atoi (e) != 0)
+    // YW_SUBSTITUTES_BYPASS=1: the project's "substitutes bypassed" switch on (A/B)
+    if (const char* e = std::getenv ("YW_SUBSTITUTES_BYPASS"); e != nullptr && std::atoi (e) != 0)
         song.substitutesBypassed = true;
-    // LYNX_PARAM="t.k.p=v …": insert t, slot k, parameter p set to the normalised value v (experiments)
-    if (const char* e = std::getenv ("LYNX_PARAM"))
+    // YW_PARAM="t.k.p=v …": insert t, slot k, parameter p set to the normalised value v (experiments)
+    if (const char* e = std::getenv ("YW_PARAM"))
     {
         std::istringstream list (e);
         std::string item;
@@ -336,19 +336,19 @@ int main (int argc, char** argv)
             int t = -1, k = -1, prm = -1;
             float v = 0.0f;
             if (std::sscanf (item.c_str(), "%d.%d.%d=%f", &t, &k, &prm, &v) == 4 && t >= 0 && t < (int) song.mixer.size() && k >= 0
-                && k < (int) song.mixer[(std::size_t) t].effects.size() && prm >= 0 && prm < lynx::maxEffectParams)
+                && k < (int) song.mixer[(std::size_t) t].effects.size() && prm >= 0 && prm < yw::maxEffectParams)
                 song.mixer[(std::size_t) t].effects[(std::size_t) k].params[(std::size_t) prm] = v;
         }
     }
-    // LYNX_MUTE="name|name…": channels with these names muted (round 190ov: what one channel adds to a render)
-    if (const char* e = std::getenv ("LYNX_MUTE"))
+    // YW_MUTE="name|name…": channels with these names muted (round 190ov: what one channel adds to a render)
+    if (const char* e = std::getenv ("YW_MUTE"))
     {
         std::string list = std::string ("|") + e + "|";
         for (auto& c : song.channels)
             if (list.find ("|" + c.name + "|") != std::string::npos)
                 c.muted = true;
     }
-    if (const char* e = std::getenv ("LYNX_DISABLE"))
+    if (const char* e = std::getenv ("YW_DISABLE"))
     {
         std::istringstream list (e);
         std::string item;
@@ -367,19 +367,19 @@ int main (int argc, char** argv)
 
     if (wholeSong) // with the app's empty tail (1 s), so the song does not wrap to its start inside the rendered tail
     {
-        const auto tail = (std::int64_t) std::ceil (lynx::ticksPerSample (song.bpm, 44100) * 44100.0);
+        const auto tail = (std::int64_t) std::ceil (yw::ticksPerSample (song.bpm, 44100) * 44100.0);
         // round 190pr: following the Start / skip / pause markers, as the app's export (and FL's) when Song::exportMarkers is on
-        if (const auto spans = lynx::exportopts::exportSpans (song); spans.size() > 1 || (spans.size() == 1 && spans.front().first > 0))
+        if (const auto spans = yw::exportopts::exportSpans (song); spans.size() > 1 || (spans.size() == 1 && spans.front().first > 0))
         {
-            lynx::exportopts::Options o;
-            o.range = lynx::exportopts::Range::song;
+            yw::exportopts::Options o;
+            o.range = yw::exportopts::Range::song;
             o.disableMaxPolyphony = false; // (as this tool renders every other song)
             std::int64_t loopTicks = 0;
-            song = lynx::exportopts::makeRenderSong (song, o, tail, songTicks, loopTicks);
+            song = yw::exportopts::makeRenderSong (song, o, tail, songTicks, loopTicks);
             std::printf ("export follows the markers: %zu span(s), from tick %lld\n", spans.size(), (long long) spans.front().first);
         }
         else
-            song = lynx::makeExportSong (song, true, tail, songTicks);
+            song = yw::makeExportSong (song, true, tail, songTicks);
     }
 
     int chosen = argc > 3 && ! wholeSong ? std::atoi (argv[3]) : -1;
@@ -398,15 +398,15 @@ int main (int argc, char** argv)
     const auto lengthTicks = wholeSong ? songTicks : pattern.effectiveLength (song.meter()) * loops;
 
     constexpr int sampleRate = 44100;
-    const int blockSize = std::getenv ("LYNX_BLOCK") ? std::clamp (std::atoi (std::getenv ("LYNX_BLOCK")), 16, 8192) : 256;
-    const auto tps = lynx::ticksPerSample (song.bpm, sampleRate);
+    const int blockSize = std::getenv ("YW_BLOCK") ? std::clamp (std::atoi (std::getenv ("YW_BLOCK")), 16, 8192) : 256;
+    const auto tps = yw::ticksPerSample (song.bpm, sampleRate);
     // round 190pr: with tempo automation / tempo events the transport moves at the block's tempo, as the app's does
     // (RackRenderer::currentBpm; before, this tool played every song at its start tempo: Secret Agent Rendezvous' first
-    // 24 bars at 110 instead of FL's 120 BPM); LYNX_FIXEDTEMPO=1: the old clock
-    const bool followTempo = lynx::tempomap::active (song) && std::getenv ("LYNX_FIXEDTEMPO") == nullptr;
+    // 24 bars at 110 instead of FL's 120 BPM); YW_FIXEDTEMPO=1: the old clock
+    const bool followTempo = yw::tempomap::active (song) && std::getenv ("YW_FIXEDTEMPO") == nullptr;
     auto totalSamples = followTempo ? (std::size_t) std::ceil (song.secondsForTicks (lengthTicks) * sampleRate) + sampleRate
                                     : (std::size_t) (lengthTicks / tps) + sampleRate; // +1 s of tail
-    if (const char* s = std::getenv ("LYNX_SECONDS"); s != nullptr && std::atof (s) > 0) // benchmark: render only the start
+    if (const char* s = std::getenv ("YW_SECONDS"); s != nullptr && std::atof (s) > 0) // benchmark: render only the start
         totalSamples = std::min (totalSamples, (std::size_t) (std::atof (s) * sampleRate));
 
     std::printf ("%.1f BPM, %zu channels, pattern \"%s\" (%zu notes), %d loops, %.1f s\n", song.bpm,
@@ -420,38 +420,38 @@ int main (int argc, char** argv)
         std::printf ("  %2zu %-28s -> %s\n", i, song.channels[i].name.c_str(), k < std::size (kinds) ? kinds[k] : "?");
     }
 
-    // like the app's export: instruments with FL render-quality settings use them (LYNX_LIVE=1: the live ones)
-    lynx::setOfflineRendering (std::getenv ("LYNX_LIVE") == nullptr);
-    std::map<std::string, std::shared_ptr<const lynx::SampleData>> cache;
+    // like the app's export: instruments with FL render-quality settings use them (YW_LIVE=1: the live ones)
+    yw::setOfflineRendering (std::getenv ("YW_LIVE") == nullptr);
+    std::map<std::string, std::shared_ptr<const yw::SampleData>> cache;
     const auto buildStart = std::chrono::steady_clock::now();
-    lynx::RackState::Factories factories;
+    yw::RackState::Factories factories;
     factories.samples = [&] (const std::string& p) {
         auto& entry = cache[p];
         if (entry == nullptr)
-            entry = lynx::tools::readWav (toLocal (p));
+            entry = yw::tools::readWav (toLocal (p));
         if (entry == nullptr)
             std::printf ("  (could not read %s)\n", p.c_str());
         return entry;
     };
     // Keep-pitch samples are time-stretched to the tempo as in the app (its sample library does the same stretch, cached;
-    // round 190gn's LYNX_STRETCH=1, the default since rollup 0.1.31 step 8 so measurements match the app: round 190pt found
-    // the Vocodex demo's "silence" was renderwav's unstretched clips). LYNX_STRETCH=0 plays them unstretched (the old default).
+    // round 190gn's YW_STRETCH=1, the default since rollup 0.1.31 step 8 so measurements match the app: round 190pt found
+    // the Vocodex demo's "silence" was renderwav's unstretched clips). YW_STRETCH=0 plays them unstretched (the old default).
     std::size_t stretchedCount = 0;
-    if (const char* e = std::getenv ("LYNX_STRETCH"); e == nullptr || e[0] != '0')
-        factories.stretchedSamples = [&] (const std::string& p, double ratio, lynx::StretchMethod method, double semitones,
-                                          const lynx::StretchMap& map, const lynx::StretchOptions& options) -> std::shared_ptr<const lynx::SampleData> {
+    if (const char* e = std::getenv ("YW_STRETCH"); e == nullptr || e[0] != '0')
+        factories.stretchedSamples = [&] (const std::string& p, double ratio, yw::StretchMethod method, double semitones,
+                                          const yw::StretchMap& map, const yw::StretchOptions& options) -> std::shared_ptr<const yw::SampleData> {
             const auto original = factories.samples (p);
             if (original == nullptr)
                 return nullptr;
             ++stretchedCount;
-            return map.empty() ? lynx::timeStretch (*original, ratio, method, semitones, options)
-                               : lynx::timeStretchMapped (*original, map, method, semitones, options);
+            return map.empty() ? yw::timeStretch (*original, ratio, method, semitones, options)
+                               : yw::timeStretchMapped (*original, map, method, semitones, options);
         };
-    auto state = lynx::RackState::build (song, nullptr, sampleRate, factories);
+    auto state = yw::RackState::build (song, nullptr, sampleRate, factories);
     if (factories.stretchedSamples)
-        std::printf ("keep-pitch samples stretched to the tempo: %zu (LYNX_STRETCH=0: unstretched)\n", stretchedCount);
+        std::printf ("keep-pitch samples stretched to the tempo: %zu (YW_STRETCH=0: unstretched)\n", stretchedCount);
     else
-        std::printf ("keep-pitch samples NOT stretched (LYNX_STRETCH=0)\n");
+        std::printf ("keep-pitch samples NOT stretched (YW_STRETCH=0)\n");
     std::printf ("rack build: %.0f ms\n", std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - buildStart).count());
     {
         std::size_t edges = 0, delayed = 0, tracksWithFx = 0;
@@ -466,9 +466,9 @@ int main (int argc, char** argv)
             tracksWithFx += ! t.effects.empty();
         std::printf ("mixer: %zu edges (%zu with PDC delay), %zu tracks with effects\n", edges, delayed, tracksWithFx);
     }
-    // LYNX_LISTFX=1: every mixer track with effects or sends: fader, effects (kind, on, mix, unresolved plugins), sends
+    // YW_LISTFX=1: every mixer track with effects or sends: fader, effects (kind, on, mix, unresolved plugins), sends
     // (round 190pr: where a demo song's level goes)
-    if (std::getenv ("LYNX_LISTFX") != nullptr)
+    if (std::getenv ("YW_LISTFX") != nullptr)
         for (std::size_t t = 0; t < song.mixer.size(); ++t)
         {
             const auto& tr = song.mixer[t];
@@ -477,26 +477,26 @@ int main (int argc, char** argv)
             std::printf ("track %3zu %-24s vol %.3f pan %+.2f%s%s:", t, tr.name.c_str(), tr.volume, tr.pan, tr.muted ? " MUTED" : "",
                          tr.toMaster ? "" : " (not to master)");
             for (const auto& fx : tr.effects)
-                std::printf (" [@%d %s%s%s mix %.2f]", fx.row, lynx::effectInfo (fx.kind).name, fx.enabled ? "" : " off",
-                             fx.kind == lynx::EffectKind::plugin ? (" " + fx.plugin.name + (fx.plugin.foreign.format != lynx::ForeignPlugin::Format::none ? " UNRESOLVED" : "")).c_str() : "",
+                std::printf (" [@%d %s%s%s mix %.2f]", fx.row, yw::effectInfo (fx.kind).name, fx.enabled ? "" : " off",
+                             fx.kind == yw::EffectKind::plugin ? (" " + fx.plugin.name + (fx.plugin.foreign.format != yw::ForeignPlugin::Format::none ? " UNRESOLVED" : "")).c_str() : "",
                              fx.mix);
             for (const auto& s : tr.sends)
                 std::printf (" ->%d(%.2f)", s.target, s.level);
             std::printf ("\n");
         }
-    lynx::RackRenderer renderer;
-    // LYNX_THREADS=n: n worker threads for the channels and mixer layers, as the app's audio engine uses
-    std::unique_ptr<lynx::WorkerPool> pool;
-    if (const char* t = std::getenv ("LYNX_THREADS"); t != nullptr && std::atoi (t) > 0)
+    yw::RackRenderer renderer;
+    // YW_THREADS=n: n worker threads for the channels and mixer layers, as the app's audio engine uses
+    std::unique_ptr<yw::WorkerPool> pool;
+    if (const char* t = std::getenv ("YW_THREADS"); t != nullptr && std::atoi (t) > 0)
     {
-        pool = std::make_unique<lynx::WorkerPool> (std::atoi (t), [] { realtimePriority(); });
+        pool = std::make_unique<yw::WorkerPool> (std::atoi (t), [] { realtimePriority(); });
         renderer.setWorkerPool (pool.get());
     }
     renderer.prepare (sampleRate, std::max (2048, blockSize));
-    const bool profile = std::getenv ("LYNX_PROFILE") != nullptr;
-    const bool countAllocs = std::getenv ("LYNX_ALLOCS") != nullptr;
+    const bool profile = std::getenv ("YW_PROFILE") != nullptr;
+    const bool countAllocs = std::getenv ("YW_ALLOCS") != nullptr;
     long blocksWithAllocs = 0;
-    const bool realtime = std::getenv ("LYNX_REALTIME") != nullptr;
+    const bool realtime = std::getenv ("YW_REALTIME") != nullptr;
 #if defined(_WIN32)
     timeBeginPeriod (1);
     realtimePriority();
@@ -522,7 +522,7 @@ int main (int argc, char** argv)
 #endif
     };
 
-    if (const char* w = std::getenv ("LYNX_WARMUP"); w != nullptr && std::atoi (w) > 0)
+    if (const char* w = std::getenv ("YW_WARMUP"); w != nullptr && std::atoi (w) > 0)
     {
         std::vector<float> wl ((std::size_t) blockSize), wr ((std::size_t) blockSize);
         for (int done = 0, total = std::atoi (w); done < total; done += blockSize)
@@ -547,7 +547,7 @@ int main (int argc, char** argv)
         blocksWithAllocs += allocs::count.load() != allocsBefore;
         wallMs.push_back (std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - t0).count());
         cpuMs.push_back (threadCpuMs() - c0);
-        tick += n * (followTempo ? lynx::ticksPerSample (renderer.currentBpm(), sampleRate) : tps);
+        tick += n * (followTempo ? yw::ticksPerSample (renderer.currentBpm(), sampleRate) : tps);
 
         if (realtime) // the next block starts one block later, like a sound card's callback
             std::this_thread::sleep_until (started + std::chrono::microseconds ((long long) ((pos + (std::size_t) n) * 1.0e6 / sampleRate)));
@@ -560,7 +560,7 @@ int main (int argc, char** argv)
             for (std::size_t k = 0; k < state->effects[t].size(); ++k, ++index)
                 if (index < after.size() && after[index] != latenciesBefore[index])
                     std::printf ("latency changed after the first block: insert %zu slot %zu %s: %d -> %d\n", t, k + 1,
-                                 lynx::effectInfo (song.mixer[t].effects[k].kind).name, latenciesBefore[index], after[index]);
+                                 yw::effectInfo (song.mixer[t].effects[k].kind).name, latenciesBefore[index], after[index]);
     }
     std::printf ("render: %.0f ms\n", std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - started).count());
     {
@@ -593,7 +593,7 @@ int main (int argc, char** argv)
         }
         if (pool == nullptr)
             report ("thread-cpu", cpuMs);
-#if ! defined(LYNX_OLDPOOL)
+#if ! defined(YW_OLDPOOL)
         if (pool != nullptr)
             std::printf ("workers: %d threads ran %llu indices, %llu wake-ups\n", pool->workers(),
                          (unsigned long long) pool->indicesRunByWorkers(), (unsigned long long) pool->wakeUps());
@@ -629,16 +629,16 @@ int main (int argc, char** argv)
             double maxNs = 0.0;
         };
         std::vector<Row> rows;
-        for (std::size_t c = 0; c < song.channels.size() && c < (std::size_t) lynx::RackRenderer::maxChannels; ++c)
+        for (std::size_t c = 0; c < song.channels.size() && c < (std::size_t) yw::RackRenderer::maxChannels; ++c)
             if (const auto ns = (double) u.channelNs[c].load(); ns > 0.0)
                 rows.push_back ({ ns, "channel " + std::to_string (c) + " \"" + song.channels[c].name + "\"", (double) u.channelMaxNs[c].load() });
         for (std::size_t t = 0; t < song.mixer.size(); ++t)
-            for (std::size_t k = 0; k < song.mixer[t].effects.size() && k < (std::size_t) lynx::maxEffectSlots; ++k)
-                if (const auto ns = (double) u.effectNs[t * lynx::maxEffectSlots + k].load(); ns > 0.0)
+            for (std::size_t k = 0; k < song.mixer[t].effects.size() && k < (std::size_t) yw::maxEffectSlots; ++k)
+                if (const auto ns = (double) u.effectNs[t * yw::maxEffectSlots + k].load(); ns > 0.0)
                     rows.push_back ({ ns, "insert " + std::to_string (t) + " slot " + std::to_string (k + 1) + " "
-                                              + lynx::effectInfo (song.mixer[t].effects[k].kind).name
+                                              + yw::effectInfo (song.mixer[t].effects[k].kind).name
                                               + (song.mixer[t].effects[k].plugin.name.empty() ? "" : " (" + song.mixer[t].effects[k].plugin.name + ")"),
-                                          (double) u.effectMaxNs[t * lynx::maxEffectSlots + k].load() });
+                                          (double) u.effectMaxNs[t * yw::maxEffectSlots + k].load() });
         std::sort (rows.begin(), rows.end(), [] (const Row& a, const Row& b) { return a.ns > b.ns; });
         const auto audioMs = 1000.0 * (double) u.processedSamples.load() / sampleRate;
         std::printf ("profile: process %.0f ms for %.0f ms of audio (units below are CPU time, summed over threads)\n", total * 1e-6, audioMs);
@@ -662,14 +662,14 @@ int main (int argc, char** argv)
         std::printf ("pitch shifters: %d held by %d channels (%d from the stock, %d left in it, %d voices missed one)\n", held, channels,
                      stock != nullptr ? stock->handedOut() : 0, stock != nullptr ? stock->ready (0) + stock->ready (1) : 0,
                      stock != nullptr ? stock->missed() : 0);
-        if (std::getenv ("LYNX_SHIFTER_LIST") != nullptr)
+        if (std::getenv ("YW_SHIFTER_LIST") != nullptr)
             for (std::size_t c = 0; c < state->instruments.size(); ++c)
                 if (const auto& i = state->instruments[c]; i != nullptr && i->pitchShiftersHeld() > 0)
                     std::printf ("  shifters %2zu %-28s %d\n", c, song.channels[c].name.c_str(), i->pitchShiftersHeld());
     }
 
-    // LYNX_RAW=path: also write the un-normalized float samples (L block then R block), for bit-exact comparisons
-    if (const char* raw = std::getenv ("LYNX_RAW"); raw != nullptr)
+    // YW_RAW=path: also write the un-normalized float samples (L block then R block), for bit-exact comparisons
+    if (const char* raw = std::getenv ("YW_RAW"); raw != nullptr)
     {
         std::ofstream r (raw, std::ios::binary);
         r.write ((const char*) left.data(), (std::streamsize) (left.size() * sizeof (float)));

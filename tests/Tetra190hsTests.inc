@@ -1,4 +1,4 @@
-// Round 190hs: Tetra (core/FmSynth.h), LYNX's own 4-operator FM synth, and Live's Operator imported onto it
+// Round 190hs: Tetra (core/FmSynth.h), YW's own 4-operator FM synth, and Live's Operator imported onto it
 // (core/AlsDevicesFm.cpp). Uses the .als builders of AlsDevices190edTests.inc. No data file is needed.
 
 #include "core/FmSynth.h"
@@ -7,7 +7,7 @@
 
 namespace tetra190hs
 {
-namespace f = lynx::fm;
+namespace f = yw::fm;
 
 inline double rms (const std::vector<float>& x, int from, int to, int stride = 1, int offset = 0)
 {
@@ -42,7 +42,7 @@ inline int op (int k, int p) { return f::opBase (k) + p; }
 
 TEST (tetra190hs_parameters_and_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace f = fm;
     // the automatable table: every parameter once, sorted, unique English names, defaults inside their ranges
     const auto& table = tetraEngineParams();
@@ -94,7 +94,7 @@ TEST (tetra190hs_parameters_and_laws)
 
 TEST (tetra190hs_engine_sine_fm_and_envelopes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace tetra190hs;
     namespace f = fm;
     const double fs = 48000.0;
@@ -174,7 +174,7 @@ TEST (tetra190hs_engine_sine_fm_and_envelopes)
 
 TEST (tetra190hs_voices_glide_and_instrument)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace tetra190hs;
     namespace f = fm;
     const double fs = 48000.0;
@@ -228,8 +228,8 @@ TEST (tetra190hs_voices_glide_and_instrument)
 
 TEST (tetra190hs_operator_imports_onto_tetra)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using namespace tetra190hs;
     namespace f = fm;
     using als190ed::par;

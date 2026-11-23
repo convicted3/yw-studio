@@ -4,7 +4,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -35,7 +35,7 @@ public:
     void closeSoon()
     {
         // round 170h: hiding the active window let Windows activate another program (seen: the terminal), so after
-        // File › New › Create, Esc or a note tool's Accept the shortcuts and Space did nothing until a click in LYNX.
+        // File › New › Create, Esc or a note tool's Accept the shortcuts and Space did nothing until a click in YW.
         // The main window takes the activation first, as a closing plugin window does (round 165q).
         if (isActiveWindow())
             activateMainWindow();
@@ -51,7 +51,7 @@ public:
 
     juce::String key;
 };
-constexpr const char* focusMark = "lynxFocusOnOpen";
+constexpr const char* focusMark = "ywFocusOnOpen";
 
 // gives the marked component the focus unless it has it already (false: nothing marked or not showing)
 bool focusMarked (juce::Component& root)
@@ -133,4 +133,4 @@ juce::DocumentWindow* findToolWindow (const juce::String& key)
             return w;
     return nullptr;
 }
-} // namespace lynx
+} // namespace yw

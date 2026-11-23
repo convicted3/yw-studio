@@ -7,7 +7,7 @@
 
 namespace parity135f
 {
-inline lynx::EffectParams defaults (lynx::EffectKind kind) { return lynx::makeEffectSlot (kind).params; }
+inline yw::EffectParams defaults (yw::EffectKind kind) { return yw::makeEffectSlot (kind).params; }
 
 inline void sine (std::vector<float>& x, int n, double sr, double hz, double amp, double phase = 0.0)
 {
@@ -15,7 +15,7 @@ inline void sine (std::vector<float>& x, int n, double sr, double hz, double amp
     for (int i = 0; i < n; ++i) x[(std::size_t) i] = (float) (amp * std::sin (2.0 * M_PI * hz * i / sr + phase));
 }
 
-inline void run (lynx::loudness::Meter& m, std::vector<float>& l, std::vector<float>& r, int block = 512)
+inline void run (yw::loudness::Meter& m, std::vector<float>& l, std::vector<float>& r, int block = 512)
 {
     for (int i = 0; i < (int) l.size(); i += block)
         m.process (l.data() + i, r.data() + i, std::min (block, (int) l.size() - i));
@@ -26,8 +26,8 @@ inline double db (double x) { return 20.0 * std::log10 (x); }
 
 TEST (parity135f_kweighting_48k_matches_bs1770)
 {
-    lynx::loudness::Biquad a, b;
-    lynx::loudness::kWeighting (48000.0, a, b);
+    yw::loudness::Biquad a, b;
+    yw::loudness::kWeighting (48000.0, a, b);
     CHECK (std::abs (a.b0 - 1.53512485958697) < 1e-9 && std::abs (a.b1 + 2.69169618940638) < 1e-9 && std::abs (a.b2 - 1.19839281085285) < 1e-9);
     CHECK (std::abs (a.a1 + 1.69065929318241) < 1e-9 && std::abs (a.a2 - 0.73248077421585) < 1e-9);
     CHECK (std::abs (b.a1 + 1.99004745483398) < 1e-9 && std::abs (b.a2 - 0.99007225036621) < 1e-9);
@@ -39,7 +39,7 @@ TEST (parity135f_loudness_ebu_cases)
     for (const double sr : { 44100.0, 48000.0, 96000.0 })
     {
         // EBU Tech 3341 case 1: a stereo 1 kHz sine at −23 dBFS = −23.0 LUFS (M, S, I)
-        lynx::loudness::Meter m;
+        yw::loudness::Meter m;
         m.prepare (sr);
         std::vector<float> l, r;
         sine (l, (int) (20 * sr), sr, 1000.0, std::pow (10.0, -23.0 / 20.0));
@@ -52,7 +52,7 @@ TEST (parity135f_loudness_ebu_cases)
     {
         // case 3: −36 / −23 / −36 dBFS for 10 / 20 / 10 s → I = −23 (the relative gate drops the quiet parts)
         const double sr = 48000.0;
-        lynx::loudness::Meter m;
+        yw::loudness::Meter m;
         m.prepare (sr);
         for (const auto [secs, level] : { std::pair { 10, -36.0 }, std::pair { 20, -23.0 }, std::pair { 10, -36.0 } })
         {
@@ -67,7 +67,7 @@ TEST (parity135f_loudness_ebu_cases)
     {
         // EBU Tech 3342 case 1: 20 s at −20 then 20 s at −30 LUFS → LRA 10 LU (±1)
         const double sr = 48000.0;
-        lynx::loudness::Meter m;
+        yw::loudness::Meter m;
         m.prepare (sr);
         for (const double level : { -20.0, -30.0 })
         {
@@ -85,7 +85,7 @@ TEST (parity135f_true_peak)
 {
     using namespace parity135f;
     // a sine at a quarter of the rate, 45° off the samples: sample peak −3 dB, true peak 0 dB
-    lynx::loudness::Meter m;
+    yw::loudness::Meter m;
     m.prepare (48000.0);
     std::vector<float> l, r;
     sine (l, 48000, 48000.0, 12000.0, 1.0, M_PI / 4.0);
@@ -98,28 +98,28 @@ TEST (parity135f_true_peak)
 
 TEST (parity135f_apex_new_params)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const auto& inf = info();
     CHECK ((int) inf.params.size() == paramCount && paramCount == 24);
-    auto p = parity135f::defaults (lynx::EffectKind::apexLimiter);
+    auto p = parity135f::defaults (yw::EffectKind::apexLimiter);
     CHECK (oversamplingFactor (p[pOversampling]) == 1 && p[pSidechain] < 0.5f && displayMode (p[pDisplayMode]) == 0);
     CHECK (std::abs (loudnessTarget (p[pLoudnessTarget]) + 14.0) < 1e-9);
     CHECK (paramText (pOversampling, 1.0f) == "8x" && paramText (pPeakMeter, 1.0f) == "True peak" && paramText (pDisplayMode, 0.75f) == "Infinite");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::apexLimiter, pLoudnessTarget, 0.0f, 120.0) == "-23 LUFS");
+    CHECK (yw::formatEffectParam (yw::EffectKind::apexLimiter, pLoudnessTarget, 0.0f, 120.0) == "-23 LUFS");
 }
 
 TEST (parity135f_apex_oversampling)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double sr = 48000.0;
     for (const float os : { 0.0f, 1.0f / 3.0f, 2.0f / 3.0f, 1.0f })
     {
-        auto p = parity135f::defaults (lynx::EffectKind::apexLimiter);
+        auto p = parity135f::defaults (yw::EffectKind::apexLimiter);
         p[pOversampling] = os;
         p[pGain] = 12.0f / 30.0f;
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::apexLimiter);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::apexLimiter);
         slot.params = p;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         CHECK (fx->latencySamples() == latencyFor (sr, oversamplingFactor (os)));
         fx->prepare (sr);
         const auto lat = fx->latencySamples();
@@ -150,9 +150,9 @@ TEST (parity135f_apex_oversampling)
 
 TEST (parity135f_apex_sidechain_and_meters)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double sr = 48000.0;
-    auto p = parity135f::defaults (lynx::EffectKind::apexLimiter);
+    auto p = parity135f::defaults (yw::EffectKind::apexLimiter);
     p[pSidechain] = 1.0f;
     auto fx = make();
     fx->prepare (sr);
@@ -175,7 +175,7 @@ TEST (parity135f_apex_sidechain_and_meters)
     CHECK (fx->controlOutput (0) < 0.01f);
 
     // the loudness meter on the output: a −23 dBFS 1 kHz sine, no limiting → I ≈ −23 LUFS; the reset button clears it
-    auto q = parity135f::defaults (lynx::EffectKind::apexLimiter);
+    auto q = parity135f::defaults (yw::EffectKind::apexLimiter);
     auto g = make();
     g->prepare (sr);
     std::vector<float> a, b;
@@ -195,17 +195,17 @@ TEST (parity135f_sentry_and_hush_oversampling)
 {
     // with oversampling on, the latency grows by the oversampler's and the result matches the base-rate one (delayed)
     const double sr = 48000.0;
-    struct Case { lynx::EffectKind kind; int param; };
-    for (const auto c : { Case { lynx::EffectKind::sentryGate, lynx::dyn::sentry::oversampling },
-                          Case { lynx::EffectKind::hushDeEsser, lynx::mixsuite::hush::oversampling } })
+    struct Case { yw::EffectKind kind; int param; };
+    for (const auto c : { Case { yw::EffectKind::sentryGate, yw::dyn::sentry::oversampling },
+                          Case { yw::EffectKind::hushDeEsser, yw::mixsuite::hush::oversampling } })
     {
-        auto slot = lynx::makeEffectSlot (c.kind);
+        auto slot = yw::makeEffectSlot (c.kind);
         CHECK (slot.params[(std::size_t) c.param] == 0.0f);
-        CHECK (lynx::formatEffectParam (c.kind, c.param, 2.0f / 3.0f, 120.0) == "4x");
-        auto base = lynx::makeEffect (slot);
+        CHECK (yw::formatEffectParam (c.kind, c.param, 2.0f / 3.0f, 120.0) == "4x");
+        auto base = yw::makeEffect (slot);
         auto q = slot;
         q.params[(std::size_t) c.param] = 2.0f / 3.0f;
-        auto over = lynx::makeEffect (q);
+        auto over = yw::makeEffect (q);
         base->prepare (sr);
         over->prepare (sr);
         // a bursty test signal: 3 kHz + 7 kHz bursts over a quiet floor (opens / closes the gate, triggers the de-esser)
@@ -224,7 +224,7 @@ TEST (parity135f_sentry_and_hush_oversampling)
             over->process (l2.data() + i, r2.data() + i, std::min (2000, n - i), q.params, 120.0);
         }
         const int extra = over->latencySamples() - base->latencySamples();
-        CHECK (extra == lynx::mixsuite::Oversampler::latency());
+        CHECK (extra == yw::mixsuite::Oversampler::latency());
         double e = 0.0, s = 0.0;
         for (int i = 9600; i < n - extra; ++i)
         {
@@ -232,7 +232,7 @@ TEST (parity135f_sentry_and_hush_oversampling)
             e += d * d;
             s += (double) l[(std::size_t) i] * l[(std::size_t) i];
         }
-        std::printf ("  %s oversampling 4x: latency +%d, difference %.1f dB\n", lynx::effectInfo (c.kind).name, extra, 10.0 * std::log10 (e / s));
+        std::printf ("  %s oversampling 4x: latency +%d, difference %.1f dB\n", yw::effectInfo (c.kind).name, extra, 10.0 * std::log10 (e / s));
         CHECK (10.0 * std::log10 (e / s) < -20.0);
     }
 }
@@ -240,14 +240,14 @@ TEST (parity135f_sentry_and_hush_oversampling)
 TEST (parity135f_prism_six_bands)
 {
     using namespace dyn108;
-    namespace m = lynx::dyn::prism;
+    namespace m = yw::dyn::prism;
     // the old parameter block keeps its indices; the new ones are appended
     CHECK (m::bandLookahead0 == 48 && m::band5 == 52 && m::xover4 == 72 && m::bandCountParam == 76 && m::scExternal == 83 && m::processingMode == 84 && m::panMode == 86 && m::dynamicEngine == 87 && m::bandLink0 == 88 && m::count == 157); // (tp172b6: + Audition) // round 144: + processing, oversampling, pan mode
-    CHECK ((int) lynx::effectInfo (EffectKind::prismMultiband).params.size() == m::count);
+    CHECK ((int) yw::effectInfo (EffectKind::prismMultiband).params.size() == m::count);
     auto p = defaults (EffectKind::prismMultiband);
     CHECK (m::bandCount (p) == 4 && m::param (4, m::fEnabled) == 60 && m::param (5, m::fSolo) == 71);
-    CHECK (lynx::dyn::paramText (EffectKind::prismMultiband, m::param (4, m::fThreshold), m::thresholdValue (-18.0)) == "-18.0 dB");
-    CHECK (lynx::dyn::paramText (EffectKind::prismMultiband, m::bandPanParam (2), 0.25f) == "50% L");
+    CHECK (yw::dyn::paramText (EffectKind::prismMultiband, m::param (4, m::fThreshold), m::thresholdValue (-18.0)) == "-18.0 dB");
+    CHECK (yw::dyn::paramText (EffectKind::prismMultiband, m::bandPanParam (2), 0.25f) == "50% L");
     // six bands, every range at 0: the output is the input exactly (transparent at rest)
     p[m::bandCountParam] = m::bandCountValue (6);
     for (int b = 0; b < m::bands; ++b) p[(std::size_t) m::param (b, m::fRange)] = 0.5f;
@@ -283,9 +283,9 @@ TEST (parity135f_prism_six_bands)
     // (the output level of a tone this far up also depends on the crossover tree's phase there: the band's own gain
     // meter is the check)
     auto bandGain = [&] (double hz) {
-        auto slot = lynx::makeEffectSlot (EffectKind::prismMultiband);
+        auto slot = yw::makeEffectSlot (EffectKind::prismMultiband);
         slot.params = p;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (sr);
         auto x = tone (hz), r = x;
         for (std::size_t off = 0; off < x.size(); off += 512)
@@ -304,15 +304,15 @@ TEST (parity135f_prism_six_bands)
 TEST (parity135f_prism_pan_and_sidechain)
 {
     using namespace dyn108;
-    namespace m = lynx::dyn::prism;
+    namespace m = yw::dyn::prism;
     auto p = defaults (EffectKind::prismMultiband);
     // band 2 (120 Hz … 1 kHz) with a +6 dB level and no dynamics, panned hard left: the right channel loses the band
     for (int b = 0; b < m::legacyBands; ++b) p[(std::size_t) m::param (b, m::fEnabled)] = b == 1 ? 1.0f : 0.0f;
     p[(std::size_t) m::param (1, m::fRange)] = 0.5f;
     p[(std::size_t) m::bandPanParam (1)] = 0.0f;
-    auto slot = lynx::makeEffectSlot (EffectKind::prismMultiband);
+    auto slot = yw::makeEffectSlot (EffectKind::prismMultiband);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     std::vector<float> l ((std::size_t) sr / 2), r;
     for (std::size_t i = 0; i < l.size(); ++i) l[i] = (float) (0.2 * std::sin (2.0 * pi * 400.0 * (double) i / sr));
@@ -345,15 +345,15 @@ TEST (parity135f_prism_pan_and_sidechain)
 TEST (parity135f_crest_wet_dry_pan)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     auto p = defaults (EffectKind::crestCompressor);
     CHECK (p[c::wetPan] == 0.5f && p[c::dryPan] == 0.5f && c::trigger == c::dryPan + 1);
-    CHECK (lynx::dyn::paramText (EffectKind::crestCompressor, c::wetPan, 1.0f) == "100% R");
+    CHECK (yw::dyn::paramText (EffectKind::crestCompressor, c::wetPan, 1.0f) == "100% R");
     // all wet, the wet path panned hard right: the left channel is silent, the right one is the compressed signal
     auto run2 = [] (const EffectParams& q, std::vector<float>& l, std::vector<float>& r) {
-        auto slot = lynx::makeEffectSlot (EffectKind::crestCompressor);
+        auto slot = yw::makeEffectSlot (EffectKind::crestCompressor);
         slot.params = q;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (sr);
         for (std::size_t off = 0; off < l.size(); off += 512)
             fx->process (l.data() + off, r.data() + off, (int) std::min<std::size_t> (512, l.size() - off), q, 120.0);
@@ -373,13 +373,13 @@ TEST (parity135f_crest_wet_dry_pan)
 
 TEST (parity135f_facet_new_shapes_and_character)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // the nine original shapes keep their values; the new ones sit between them and round-trip
     for (int k = 0; k <= 8; ++k) CHECK (shape ((float) k / 8.0f) == (Shape) k && shapeValue ((Shape) k) == (float) k / 8.0f);
     CHECK (shape (shapeValue (Shape::flatTilt)) == Shape::flatTilt && shape (shapeValue (Shape::allPass)) == Shape::allPass);
     CHECK (paramText (param (0, 0), shapeValue (Shape::allPass)) == "All Pass" && paramText (characterParam, 1.0f) == "Warm");
     CHECK ((int) info().params.size() == paramCount && info().params[(std::size_t) characterParam].defaultValue == 0.0f);
-    auto p = parity135f::defaults (lynx::EffectKind::facetEq);
+    auto p = parity135f::defaults (yw::EffectKind::facetEq);
     // all pass at 1 kHz: flat magnitude (digital and analog)
     p[(std::size_t) param (0, 0)] = shapeValue (Shape::allPass);
     p[(std::size_t) param (0, 1)] = hzValue (1000.0);
@@ -412,17 +412,17 @@ TEST (parity135f_facet_new_shapes_and_character)
     CHECK (std::abs (characterSample (2, 0.0316f) - 0.0316f) < 0.0316f * 0.002f && characterSample (2, 1.0f) < characterSample (1, 1.0f));
 }
 
-TEST (parity135f_lynxtune_learn_and_classic)
+TEST (parity135f_ywtune_learn_and_classic)
 {
-    using namespace lynx::lynxtune;
+    using namespace yw::ywtune;
     CHECK (learnMidi == moreScales + 1 && classicMode == learnMidi + 1 && speedLink == classicMode + 1);
-    CHECK ((int) lynx::effectInfo (lynx::EffectKind::lynxTune).params.size() == count);
+    CHECK ((int) yw::effectInfo (yw::EffectKind::ywTune).params.size() == count);
     CHECK (paramText (classicMode, 1.0f) == "On");
-    auto p = parity135f::defaults (lynx::EffectKind::lynxTune);
+    auto p = parity135f::defaults (yw::EffectKind::ywTune);
     p[midiChannel] = 1.0f / 128.0f; // channel 1
     auto fx = make();
     fx->prepare (48000.0);
-    lynx::NoteMask held[2] {};
+    yw::NoteMask held[2] {};
     held[0][0] = 1ull << 60; // C4
     held[0][1] = 1ull << (64 - 64); // E4
     fx->setHeldNotes (held, 2);
@@ -432,7 +432,7 @@ TEST (parity135f_lynxtune_learn_and_classic)
     CHECK (mask == ((1u << 0) | (1u << 4)));
     // classic ([EXEC] Auto-Tune Pro: the same retune, the short-latency DSP): the same pull to A (440 Hz), less latency
     auto run = [] (bool classic, int* latency) {
-        auto q = parity135f::defaults (lynx::EffectKind::lynxTune);
+        auto q = parity135f::defaults (yw::EffectKind::ywTune);
         q[scale] = 0.0f; // chromatic
         q[retune] = std::sqrt (150.0f / 400.0f);
         q[classicMode] = classic ? 1.0f : 0.0f;
@@ -453,6 +453,6 @@ TEST (parity135f_lynxtune_learn_and_classic)
         return crossings * 48000.0 / (to - from);
     };
     const auto fn = freq (normal, 72000, 96000), fc = freq (classic, 72000, 96000);
-    std::printf ("  lynx tune classic: end %.1f Hz (default %.1f Hz), latency %d (default %d)\n", fc, fn, latClassic, latNormal);
+    std::printf ("  yw tune classic: end %.1f Hz (default %.1f Hz), latency %d (default %d)\n", fc, fn, latClassic, latNormal);
     CHECK (std::abs (fc - 440.0) < 3.0 && std::abs (fn - 440.0) < 3.0 && latClassic < latNormal);
 }

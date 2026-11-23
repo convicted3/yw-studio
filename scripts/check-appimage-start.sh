@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Starts a LYNX AppImage the way the AppImage catalog test does: a fresh home folder, no network (when a network
-# namespace can be created), on a virtual X display; passes when LYNX is still running after WAIT seconds and shows
+# Starts a YW AppImage the way the AppImage catalog test does: a fresh home folder, no network (when a network
+# namespace can be created), on a virtual X display; passes when YW is still running after WAIT seconds and shows
 # a top-level window. Needs Xvfb and xwininfo (packages xvfb, x11-utils).
 #
 # FONTS=none: the same on a system where no font is found at all, neither by JUCE's own folder scan nor by fontconfig
 # (issue #142: on NixOS JUCE found no monospaced font, and 0.1.25 crashed while drawing its first text with one).
 #
-# usage: [FONTS=none] scripts/check-appimage-start.sh <LYNX AppImage> [seconds to wait, default 12]
+# usage: [FONTS=none] scripts/check-appimage-start.sh <YW AppImage> [seconds to wait, default 12]
 set -uo pipefail
 AI="$(readlink -f "$1")"; WAIT="${2:-12}"
 WORK="$(mktemp -d)"
@@ -39,9 +39,9 @@ APID=$!
 sleep "$WAIT"
 echo "--- output"; head -50 "$WORK/run.log"
 if ! kill -0 "$APID" 2> /dev/null; then
-    wait "$APID"; echo "ERROR: LYNX exited within $WAIT s (exit $?)"; exit 1
+    wait "$APID"; echo "ERROR: YW exited within $WAIT s (exit $?)"; exit 1
 fi
 wins="$(DISPLAY="$DISP" xwininfo -root -children 2> /dev/null | grep -E '^ +0x[0-9a-f]+ "[^"]+"' || true)"
 echo "--- top-level windows"; echo "$wins"
-grep -q '"LYNX' <<< "$wins" || { echo "ERROR: no LYNX window after $WAIT s"; exit 1; }
-echo "OK: LYNX is running after $WAIT s with its window"
+grep -q '"YW' <<< "$wins" || { echo "ERROR: no YW window after $WAIT s"; exit 1; }
+echo "OK: YW is running after $WAIT s with its window"

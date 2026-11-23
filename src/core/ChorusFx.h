@@ -1,8 +1,8 @@
 #pragma once
 
-// FL Studio's chorus family as LYNX mixer effects, exact engines rebuilt in docs/analise/REA_rodada59.md (clean-room:
+// FL Studio's chorus family as YW mixer effects, exact engines rebuilt in docs/analise/REA_rodada59.md (clean-room:
 // layouts, formulas and behaviour in our own words; no Image-Line code or data in this repository). FL's saved state
-// is only the controls, which become the slot parameters (value = (raw − min) / (max − min)) so the LYNX editor and
+// is only the controls, which become the slot parameters (value = (raw − min) / (max − min)) so the YW editor and
 // automation can change them.
 //
 // Fruity Chorus (EffectKind::fruityChorus): [0] delay 0…1024, [1] depth 0…5000, [2] stereo 0…1024,
@@ -26,7 +26,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx
+namespace yw
 {
 // FL import: the exact chorus effect for an FL plugin name and saved state (nullopt for other plugins and for states
 // that cannot be read), and the number of FL controls each exact chorus maps one to one onto its parameters (0 for
@@ -35,9 +35,9 @@ std::optional<EffectSlot> chorusFromFl (const std::string& pluginName, const std
 int chorusControls (const std::string& pluginName) noexcept;
 // numbers the Hyper Chorus and the Vintage Chorus slots of an imported song in mixer order (EffectSlot::state)
 void numberChorusInstances (Song& song);
-} // namespace lynx
+} // namespace yw
 
-namespace lynx::fruitychorusfx
+namespace yw::fruitychorusfx
 {
 constexpr int params = 12;
 using State = std::array<int, params>; // raw controls, all from 0
@@ -62,7 +62,7 @@ public:
     void setParam (int index, int raw) noexcept;
     void load (const State& s) noexcept; // every control in order, like FL's state load
     // FL's "enabled" notification: filter states and delay lines cleared; FL draws the three LFO start phases at
-    // random (0…32766 of a 2^24 cycle), LYNX takes the given ones
+    // random (0…32766 of a 2^24 cycle), YW takes the given ones
     void reset (std::uint32_t phase1 = 0, std::uint32_t phase2 = 0, std::uint32_t phase3 = 0) noexcept;
     int param (int index) const noexcept;
     void render (const float* in, float* out, int n) noexcept; // interleaved stereo; in may equal out
@@ -74,9 +74,9 @@ private:
 
 const EffectInfo& info();
 std::unique_ptr<Effect> make();
-} // namespace lynx::fruitychorusfx
+} // namespace yw::fruitychorusfx
 
-namespace lynx::hyperchorusfx
+namespace yw::hyperchorusfx
 {
 constexpr int params = 11;
 using State = std::array<int, params>; // raw controls
@@ -118,9 +118,9 @@ std::unique_ptr<Effect> make (int instance = 0);
 int instanceOf (const std::vector<std::uint8_t>& slotState) noexcept; // 0 when the slot holds none
 std::vector<std::uint8_t> instanceState (int instance);
 std::uint32_t randState (int calls) noexcept; // the C runtime's rand() state after `calls` calls from seed 1
-} // namespace lynx::hyperchorusfx
+} // namespace yw::hyperchorusfx
 
-namespace lynx::vintagechorusfx
+namespace yw::vintagechorusfx
 {
 constexpr int params = 17;
 using State = std::array<int, params>; // raw controls
@@ -157,4 +157,4 @@ private:
 
 const EffectInfo& info();
 std::unique_ptr<Effect> make (int instance = 0);
-} // namespace lynx::vintagechorusfx
+} // namespace yw::vintagechorusfx

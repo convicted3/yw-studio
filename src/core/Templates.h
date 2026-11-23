@@ -5,7 +5,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // New project templates (File > New from template).
 std::vector<std::string> templateNames();
@@ -38,21 +38,21 @@ enum class MasterChain
 {
     empty,      // nothing on the Master
     clipper,    // a soft clipper only (transparent below 0 dB)
-    lynxDefault // LYNX's template: a limiter (transparent up to -0.3 dB)
+    ywDefault // YW's template: a limiter (transparent up to -0.3 dB)
 };
 
 struct NewProjectDefaults
 {
     static constexpr int defaultInserts = 16;
     int inserts = defaultInserts;               // 0..maxMixerTracks - 1
-    MasterChain master = MasterChain::lynxDefault;
+    MasterChain master = MasterChain::ywDefault;
     bool cleanMixer = false;
     int playlistTracks = 16;                    // tracks the Playlist shows at least (1..500)
     // FL's Options › Project settings › "Enable automatic crossfades in new projects" (round 166e; on by default)
     bool autoCrossfades = true;
-    // LYNX extra (round 190gz, issue #170): "Link Playlist tracks to mixer tracks in new projects" (off: FL's tracks)
+    // YW extra (round 190gz, issue #170): "Link Playlist tracks to mixer tracks in new projects" (off: FL's tracks)
     bool linkTracks = false;
-    // LYNX extra (round 190oo, design review CS O-2, off by default): a new project made while the Clip-launch layout
+    // YW extra (round 190oo, design review CS O-2, off by default): a new project made while the Clip-launch layout
     // shows starts with Track N linked to mixer insert N (linkClipLaunchStrips), so its Session mixer shows a full strip
     // on every column, as a new Live set does
     bool clipLaunchStrips = false;
@@ -84,39 +84,39 @@ NewProjectDefaults& newProjectDefaults();
 // linked, or an insert another track holds, is left alone. Nothing is routed differently, so the song sounds the same.
 // Returns how many tracks were linked.
 int linkClipLaunchStrips (Song& song, int tracks);
-// A new project from a built-in template (-1 = LYNX's default song) with the current defaults applied.
+// A new project from a built-in template (-1 = YW's default song) with the current defaults applied.
 Song makeNewProject (int templateIndex = -1);
 
 // Round 190ad: a new project plays hosted plugins at FL's wrapper level (Song::flPluginLevels). A song that starts a
-// new project takes it unless it already holds a hosted plugin channel made under LYNX's own law (a user's template
+// new project takes it unless it already holds a hosted plugin channel made under YW's own law (a user's template
 // saved before: it keeps its sound). Returns whether the song has FL's levels afterwards.
 bool adoptFlPluginLevels (Song& song);
 
-// A user template's name from its file name ("Trap kit.lynx" → "Trap kit").
+// A user template's name from its file name ("Trap kit.yw" → "Trap kit").
 std::string templateDisplayName (const std::string& fileName);
 
 // The default template (issue #123; FL's Options › General › Miscellaneous › "Default template", REA_rodada186a): what
-// LYNX opens at start-up and what File › New starts from, always as a new untitled project. Saved as one line of text:
-// "" = LYNX's default song, "builtin:<name>" = a built-in template (templateNames), "user:<file name>" = a .lynx file
-// in the user's templates folder. Anything unreadable reads as LYNX's default.
+// YW opens at start-up and what File › New starts from, always as a new untitled project. Saved as one line of text:
+// "" = YW's default song, "builtin:<name>" = a built-in template (templateNames), "user:<file name>" = a .yw file
+// in the user's templates folder. Anything unreadable reads as YW's default.
 struct TemplateChoice
 {
     enum class Kind
     {
-        lynxDefault,
+        ywDefault,
         builtIn,
         user
     };
-    Kind kind = Kind::lynxDefault;
-    std::string name; // the built-in template's name, or the user template's file name ("Vocal chain.lynx")
+    Kind kind = Kind::ywDefault;
+    std::string name; // the built-in template's name, or the user template's file name ("Vocal chain.yw")
 
     std::string toText() const;
     static TemplateChoice parse (const std::string& text);
-    bool isLynxDefault() const noexcept { return kind == Kind::lynxDefault; }
+    bool isYwDefault() const noexcept { return kind == Kind::ywDefault; }
     bool operator== (const TemplateChoice&) const = default;
 };
 
-// What LYNX opens at start-up without a file to open (FL's Options › General › Miscellaneous › "Startup project",
+// What YW opens at start-up without a file to open (FL's Options › General › Miscellaneous › "Startup project",
 // REA_rodada186a: Empty project / Default template / Last used project; FL's default is the default template). Saved as
 // "empty" / "template" / "last"; anything else reads as the default template.
 enum class StartupProject
@@ -130,4 +130,4 @@ StartupProject parseStartupProject (const std::string& text) noexcept;
 
 // The index of a built-in template by its name (templateNames), or -1.
 int builtInTemplateIndex (const std::string& name);
-} // namespace lynx
+} // namespace yw

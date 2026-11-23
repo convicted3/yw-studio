@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190ik: a labelled onset bank made by LYNX's own code (additive synthesis and noise, nothing recorded), for the Beats
+// Round 190ik: a labelled onset bank made by YW's own code (additive synthesis and noise, nothing recorded), for the Beats
 // transient detector's gate (before / after F-measure, per category). Each case knows exactly where its onsets are:
 //  drums    kick / snare / hat patterns at changing levels;
 //  drumbass drums over a plucked bass line;

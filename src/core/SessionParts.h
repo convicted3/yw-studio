@@ -15,7 +15,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::parts
+namespace yw::parts
 {
 // Adds (or finds, by name) the guest a project is sent to: a new tag, his reserved inserts and rows after whatever the
 // project uses and the other guests' ranges, his colour and whether he may keep a full copy. The host's own record
@@ -56,4 +56,4 @@ Song keepOnlyPart (const Song& guestCopy);
 
 // The participant a channel belongs to (its uid tag; 0 = no uid yet).
 std::uint32_t ownerOfChannel (const ChannelDef& c) noexcept;
-} // namespace lynx::parts
+} // namespace yw::parts

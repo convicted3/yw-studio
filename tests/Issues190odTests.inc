@@ -18,9 +18,9 @@ struct Stereo
 {
     std::vector<float> l, r;
 };
-Stereo render (lynx::InstrumentKind kind, bool props, float noteVel, float slideVel, float slidePan, int flTicks, int block, bool withSlide = true)
+Stereo render (yw::InstrumentKind kind, bool props, float noteVel, float slideVel, float slidePan, int flTicks, int block, bool withSlide = true)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -88,7 +88,7 @@ double rms (const std::vector<float>& x, double from, double to)
 TEST (issues190od_slide_note_fades_the_velocity_in_steps)
 {
     using namespace issues190od;
-    using lynx::InstrumentKind;
+    using yw::InstrumentKind;
     for (const auto block : { 480, 64 })
     {
         const auto loud = render (InstrumentKind::sampler, true, 1.0f, 1.0f, 0.0f, 2, block, false);
@@ -116,7 +116,7 @@ TEST (issues190od_slide_note_fades_the_velocity_in_steps)
 TEST (issues190od_slide_note_moves_the_pan_and_equal_props_change_nothing)
 {
     using namespace issues190od;
-    using lynx::InstrumentKind;
+    using yw::InstrumentKind;
     const auto left = render (InstrumentKind::sampler, true, 0.8f, 0.8f, -1.0f, 4, 256);
     const auto l = rms (left.l, 60 * tick, 90 * tick), r = rms (left.r, 60 * tick, 90 * tick);
     CHECK (l > 0.01 && r < l * 0.05);
@@ -126,11 +126,11 @@ TEST (issues190od_slide_note_moves_the_pan_and_equal_props_change_nothing)
     CHECK (same.l == before.l && same.r == before.r);
 }
 
-// #236: LYNX's own engines that glide (LYNX Synth) take the same steps: the rack splits their render calls for them
+// #236: YW's own engines that glide (YW Synth) take the same steps: the rack splits their render calls for them
 TEST (issues190od_slide_note_velocity_on_a_gliding_engine)
 {
     using namespace issues190od;
-    using lynx::InstrumentKind;
+    using yw::InstrumentKind;
     const auto loud = render (InstrumentKind::synth, true, 1.0f, 1.0f, 0.0f, 8, 480, false);
     const auto fade = render (InstrumentKind::synth, true, 1.0f, 0.2f, 0.0f, 8, 480);
     const auto ref = rms (loud.l, 60 * tick, 90 * tick), after = rms (fade.l, 60 * tick, 90 * tick);
@@ -140,7 +140,7 @@ TEST (issues190od_slide_note_velocity_on_a_gliding_engine)
 // #236: new projects take FL's law (the project file's key: the app's --issuesshot190od checks it)
 TEST (issues190od_new_projects_take_the_slide_note_props_law)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (makeNewProject().slideNoteProps);
     CHECK (! Song {}.slideNoteProps);
 }
@@ -148,7 +148,7 @@ TEST (issues190od_new_projects_take_the_slide_note_props_law)
 // #240: a template's own date and working time stay behind; the new project is dated when it starts
 TEST (issues190od_template_clock_is_cleared)
 {
-    using namespace lynx;
+    using namespace yw;
     ProjectInfo info;
     info.title = "My template";
     info.created = 1.7e9;
@@ -157,10 +157,10 @@ TEST (issues190od_template_clock_is_cleared)
     CHECK (info.created == 0.0 && info.workSeconds == 0.0 && info.title == "My template");
 }
 
-// #239 (LYNX extra, core/AutoLook.h): name rules colour and give an icon to what gets a matching name
+// #239 (YW extra, core/AutoLook.h): name rules colour and give an icon to what gets a matching name
 TEST (issues190od_auto_look_rules_follow_names)
 {
-    using namespace lynx;
+    using namespace yw;
     autolook::Rules rules;
     rules.on = true;
     rules.list.push_back ({ "kick", autolook::Match::contains, 0xff3a6fd8, 7, autolook::everything });
@@ -210,7 +210,7 @@ TEST (issues190od_auto_look_rules_follow_names)
 // option on, what an edit adds without a colour (audio clip channels, automation clips) takes a note colour; off: nothing
 TEST (issues190od_new_clips_use_note_colours)
 {
-    using namespace lynx;
+    using namespace yw;
     std::array<std::uint32_t, newclipcolours::count> notes {};
     for (int i = 0; i < newclipcolours::count; ++i)
         notes[(std::size_t) i] = 0xff100000u + (std::uint32_t) i;

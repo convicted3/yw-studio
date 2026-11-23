@@ -1,4 +1,4 @@
-# LYNX SHARE server: Caddy reverse proxy with automatic HTTPS (Let's Encrypt / ZeroSSL).
+# YW Studio server: Caddy reverse proxy with automatic HTTPS (Let's Encrypt / ZeroSSL).
 # Installed to /etc/caddy/Caddyfile by server/setup.sh. The services listen on 127.0.0.1 only.
 {
 	# no admin endpoint on a public port (default is localhost:2019, kept)
@@ -16,7 +16,7 @@
 	}
 	# Access log without client addresses or headers (privacy: same rule as the crash-report API, PRIVACY.md).
 	log {
-		output file /var/log/caddy/lynx-access.log {
+		output file /var/log/caddy/yw-access.log {
 			roll_size 20MiB
 			roll_keep 10
 			roll_keep_for 720h
@@ -34,7 +34,7 @@
 	}
 }
 
-api.lynx-share.com {
+api.yolo.su {
 	import common
 	# share uploads: at most 2 GiB per file (the service checks the declared size too)
 	request_body {
@@ -45,7 +45,7 @@ api.lynx-share.com {
 	}
 }
 
-relay.lynx-share.com {
+relay.yolo.su {
 	import common
 	request_body {
 		max_size 64KB

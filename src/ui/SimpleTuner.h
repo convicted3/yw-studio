@@ -4,7 +4,7 @@
 // evidence). A one-segment capsule after the tempo capsule with a tuning-fork glyph (GarageBand's Tuner button in its
 // control bar); a click opens the tuner beside it for the selected track's audio input: the Keynote (big note letter and
 // its sharp), the needle on a −50…+50 cent arc, the Tune Deviation in cents and the Reference Tuning (drag; double-click:
-// 440.0 Hz). LYNX vectors only; dark panel, amber while flat / sharp and green in tune as GarageBand's (LYNX's own warning
+// 440.0 Hz). YW vectors only; dark panel, amber while flat / sharp and green in tune as GarageBand's (YW's own warning
 // and LED colours).
 //
 // Performance: nothing runs while it is closed. Open, a 30 Hz timer reads the engine's tuner tap (fed only then),
@@ -15,7 +15,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -44,4 +44,4 @@ double reference();
 void setReference (double hz);
 inline constexpr int panelWidth = 360, panelHeight = 268;
 } // namespace simpletunerui
-} // namespace lynx
+} // namespace yw

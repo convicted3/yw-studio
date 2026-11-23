@@ -12,7 +12,7 @@
 #include "core/MixSuite.h"
 #include "core/VocalPitch.h"
 
-namespace lynx::voiceshift
+namespace yw::voiceshift
 {
 double pitchSemitones (float v) noexcept { return -12.0 + 24.0 * (double) std::clamp (v, 0.0f, 1.0f); }
 double formantSemitones (float v) noexcept { return pitchSemitones (v); }
@@ -113,7 +113,7 @@ struct OnsetLaw
 OnsetLaw onsetLaw() noexcept
 {
     OnsetLaw o;
-   #ifdef LYNX_LAB190HO
+   #ifdef YW_LAB190HO
     if (const char* e = std::getenv ("VS_RISE")) o.riseDb = std::atof (e);
     if (const char* e = std::getenv ("VS_WIN")) o.plainMs = std::atof (e);
     if (const char* e = std::getenv ("VS_FAST")) o.fastMs = std::atof (e);
@@ -367,4 +367,4 @@ std::unique_ptr<Effect> make()
     e->prepare (44100.0);
     return e;
 }
-} // namespace lynx::voiceshift
+} // namespace yw::voiceshift

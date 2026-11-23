@@ -9,17 +9,17 @@
 #include "ui/ToolWindow.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace
 {
-constexpr const char* hintProperty = "lynxHint";
-constexpr const char* hintMenuProperty = "lynxHintMenu";
-constexpr const char* hintAutoProperty = "lynxHintAuto";
-constexpr const char* ownContractProperty = "lynxOwnContract";
-constexpr const char* ownMenuProperty = "lynxOwnMenu";
-constexpr const char* configuredProperty = "lynxContract";
-constexpr const char* sensitivityProperty = "lynxDragPixels";
+constexpr const char* hintProperty = "ywHint";
+constexpr const char* hintMenuProperty = "ywHintMenu";
+constexpr const char* hintAutoProperty = "ywHintAuto";
+constexpr const char* ownContractProperty = "ywOwnContract";
+constexpr const char* ownMenuProperty = "ywOwnMenu";
+constexpr const char* configuredProperty = "ywContract";
+constexpr const char* sensitivityProperty = "ywDragPixels";
 
 juce::String number (double v, int decimals)
 {
@@ -277,7 +277,7 @@ namespace
 // FL's value menu › "Set..." (round 190mv, DF-146; capture 190mv A10, fl-knob-set.png): a 162 × 206 window "Knob" holding one
 // big knob for fine adjusting — the value on its cap, the control's name under it. A drag over the whole travel of the
 // big knob is three times the small control's, so each pixel moves the value a third as much (Ctrl / Shift finer still,
-// the wheel, Alt-click or a double-click reset, as on every LYNX control).
+// the wheel, Alt-click or a double-click reset, as on every YW control).
 class SetKnobPanel final : public juce::Component
 {
 public:
@@ -907,4 +907,4 @@ void addItemHeader (juce::PopupMenu& menu, const juce::String& kind, const juce:
     item.isEnabled = false;
     menu.addItem (std::move (item));
 }
-} // namespace lynx::ui
+} // namespace yw::ui

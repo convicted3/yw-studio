@@ -17,7 +17,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace
 {
@@ -144,7 +144,7 @@ private:
 
 WaveformCache::WaveformCache()
 {
-    registerAudioFormats (formats); // LYNX's MP3 reader first (round 157b)
+    registerAudioFormats (formats); // YW's MP3 reader first (round 157b)
     formats.registerFormat (new WavPackAudioFormat(), false);
 }
 
@@ -157,7 +157,7 @@ WaveformCache::~WaveformCache()
 
 juce::File WaveformCache::diskFolder()
 {
-    return lynx::platform::cacheFolder ("wavecache");
+    return yw::platform::cacheFolder ("wavecache");
 }
 
 std::shared_ptr<const wave::Summary> WaveformCache::find (const juce::String& path, const Source& source)
@@ -920,4 +920,4 @@ void WaveformDisplay::paint (juce::Graphics& g)
     g.setColour (colour::textSecondary);
     g.drawText (text, band.withTrimmedLeft (4), juce::Justification::centredLeft, true);
 }
-} // namespace lynx::ui
+} // namespace yw::ui

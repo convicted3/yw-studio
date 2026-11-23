@@ -2,7 +2,7 @@
 
 // Shared machinery of the display-first editors (ui/ProEditors.cpp, REA round 114): parameter access by name, the
 // control contract (drag, Ctrl = fine, wheel, double-click / Alt-click = reset, right-click = value / automation menu),
-// LYNX-style knobs, switches, option buttons and bottom-bar items, a scrolling level / gain-reduction history fed by
+// YW-style knobs, switches, option buttons and bottom-bar items, a scrolling level / gain-reduction history fed by
 // the slot's analyser tap (or the effect's live meters), a spectrum analyser, level meters and dB scales.
 // Only ProEditors.cpp includes it.
 
@@ -24,7 +24,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::pro
+namespace yw::pro
 {
 inline float dbOf (float linear) noexcept { return linear > 1e-6f ? 20.0f * std::log10 (linear) : -120.0f; }
 
@@ -1517,4 +1517,4 @@ private:
     std::vector<float> fftData, window;
     std::uint32_t lastSpectrum = 0;
 };
-} // namespace lynx::pro
+} // namespace yw::pro

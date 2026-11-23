@@ -6,7 +6,7 @@
     bool runIssuesShot190ng (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -21,7 +21,7 @@
             savePng (c.createComponentSnapshot (area, true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (area, true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
+        using namespace yw;
         using workspace::Panel;
 
         // ================= #217: Esc closes the focused window =================
@@ -54,7 +54,7 @@
                 check ("Esc closes the focused " + juce::String (panel == Panel::channelRack ? "Channel rack" : panel == Panel::mixer ? "Mixer" : "Piano roll"),
                        was && ! ws.isPanelVisible (panel));
             }
-            // the Playlist with a selection: the first Esc clears it (LYNX, issue #218), the next closes the window (FL)
+            // the Playlist with a selection: the first Esc clears it (YW, issue #218), the next closes the window (FL)
             ws.show (Panel::playlist);
             ws.activate (Panel::playlist);
             auto& pl = ui.getPlaylistForSnapshot();
@@ -74,7 +74,7 @@
             workflowextras::setExtra ("general.escCloses", true);
             check ("the switch is saved with the UI options", workflowextras::uiOptionsText().contains ("escClosesWindows=1"));
 
-            // Settings: LYNX extras and General list the switch
+            // Settings: YW extras and General list the switch
             for (const auto general : { false, true })
             {
                 auto page = general ? makeGeneralPage (offline, {}, false) : makeExtrasPage (offline, {}, false);
@@ -126,7 +126,7 @@
             check ("cleared: every icon again", picker.shownCount() == all);
             write (picker, picker.getLocalBounds(), "icons-all");
 
-            auto dialog = makeNameAndColourDialog (tr ("Rename track"), "Kick", lynxPalette()[1], 5);
+            auto dialog = makeNameAndColourDialog (tr ("Rename track"), "Kick", ywPalette()[1], 5);
             auto* icons = iconPickerOfNameDialog (*dialog);
             check ("Rename, color and icon: the icon picker is in the window", icons != nullptr && icons->pickedFlIndex() == 5);
             if (icons != nullptr)
@@ -145,7 +145,7 @@
             dialog->setTopLeftPosition (0, 0);
             write (frame, frame.getLocalBounds(), "rename-color-icon");
             frame.removeChildComponent (dialog.get());
-            auto patternDialog = makeNameAndColourDialog (tr ("Rename pattern"), "Pattern 1", lynxPalette()[6]);
+            auto patternDialog = makeNameAndColourDialog (tr ("Rename pattern"), "Pattern 1", ywPalette()[6]);
             check ("patterns keep the name and colour window (FL: no icon)", iconPickerOfNameDialog (*patternDialog) == nullptr);
         }
 
@@ -159,7 +159,7 @@
             {
                 song.playlistTracks[(std::size_t) i].name = rows[i].first;
                 song.playlistTracks[(std::size_t) i].icon = rows[i].second;
-                song.playlistTracks[(std::size_t) i].colour = lynxPalette()[(std::size_t) (1 + 2 * i)];
+                song.playlistTracks[(std::size_t) i].colour = ywPalette()[(std::size_t) (1 + 2 * i)];
             }
             engine.setSong (song);
             engine.dispatchPendingMessages();

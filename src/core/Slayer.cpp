@@ -22,7 +22,7 @@
 #pragma GCC optimize ("rounding-math")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -30,7 +30,7 @@ using ld = long double;
 
 // ------------------------------------------------------------------------------------------------ x87 (§2.1)
 // The engine runs on the x87 with 64-bit precision; processReplacing switches to truncating rounding for its whole
-// duration. long double is the x87 format on the targets LYNX builds for; the guards set the control word.
+// duration. long double is the x87 format on the targets YW builds for; the guards set the control word.
 #if (defined(__x86_64__) || defined(__i386__)) && (defined(__GNUC__) || defined(__clang__))
 struct X87Mode
 {
@@ -122,7 +122,7 @@ inline float bitsF (std::uint32_t u) noexcept
 // ------------------------------------------------------------------------------------------------ installation data
 constexpr const char* engineSha256 = "84b64c43cc6528401e1c4e84074785e100e8453c4db4c8322a5d5f608de724a9";
 // the same engine without its signature (peImageSha256Hex, round 169g): FL Studio 2025 ships this image signed with
-// another certificate, so its whole-file hash differs while every byte LYNX reads is the same
+// another certificate, so its whole-file hash differs while every byte YW reads is the same
 constexpr const char* engineImageSha256 = "f33fd40e8fd530a25715dab192c8b5cb05b319f04b14b691c210ae562c73a07d";
 
 struct DllData
@@ -763,7 +763,7 @@ void Engine::midi (int status, int d1, int d2, int detune) noexcept
     }
     else if (type == 0xc0)
     {
-        // program change: the factory programs are not part of LYNX (the front-end never sends it)
+        // program change: the factory programs are not part of YW (the front-end never sends it)
     }
     else if (type == 0xe0)
     {
@@ -2345,7 +2345,7 @@ int bendFromCents (int cents) noexcept
     return (int) std::min (v, 0x3fffll);
 }
 
-// FL's channel pan as ProcessEvent 2 sends it (the event's flags): (pan − 6400)/100 truncated, clamped to −64…64; LYNX
+// FL's channel pan as ProcessEvent 2 sends it (the event's flags): (pan − 6400)/100 truncated, clamped to −64…64; YW
 // keeps the channel pan as (pan − 6400)/6400
 int midiPanFrom (double pan) noexcept
 {
@@ -2360,8 +2360,8 @@ void hostGainsFor (int pan, float channelGain, float& l, float& r) noexcept
     flvp::panLaw ((float) pan * 0.015625f, channelGain * 2.0f, l, r);
 }
 
-// ------------------------------------------------------------------------------------------------ LYNX instrument
-// FL Slayer as a LYNX instrument: the engine driven like the front-end drives it (§6 of round 68, round 79). FL sends
+// ------------------------------------------------------------------------------------------------ YW instrument
+// FL Slayer as a YW instrument: the engine driven like the front-end drives it (§6 of round 68, round 79). FL sends
 // this plugin the channel's levels as MIDI events (its info flags carry 0x4000): pan and volume become the front-end's
 // output gains (FL does not scale the plugin's output itself), the channel pitch a pitch bend; the root note stays in
 // the key. Parameter automation and state edits reach the running engine as setParameter calls, like FL's
@@ -2509,7 +2509,7 @@ public:
             }
         };
         sendBend();
-        // channel volume and pan (LYNX's gains: g·√2·cos/sin((1 + pan)·π/4)) → ProcessEvent 3 / 2 → the front-end's gains
+        // channel volume and pan (YW's gains: g·√2·cos/sin((1 + pan)·π/4)) → ProcessEvent 3 / 2 → the front-end's gains
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         const auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
         float hostL = 0.0f, hostR = 0.0f;
@@ -2705,4 +2705,4 @@ std::vector<float> renderReference (const std::vector<int>& params, const std::s
     return out;
 }
 } // namespace slayer
-} // namespace lynx
+} // namespace yw

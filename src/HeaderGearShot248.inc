@@ -1,10 +1,10 @@
-    // Rollup 0.1.31 step 7 (PRs #248 / #256 by FKHR26): LYNX --headergearshot248 <prefix> [--shot-scale 1.5 --shot-suffix @150]
+    // Rollup 0.1.31 step 7 (PRs #248 / #256 by FKHR26): YW --headergearshot248 <prefix> [--shot-scale 1.5 --shot-suffix @150]
     // pictures the docked channel window of a Sampler channel with its header shown (the default) and hidden by the gear
     // in its title bar, and checks that the choice is kept for the window; <prefix>-checks.txt lists the checks (result=OK).
     // Included in the app class of Main.cpp (savePng).
     bool runHeaderGearShot (const juce::String& prefix)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::StringArray lines;
         bool ok = true;
         const auto check = [&] (const juce::String& name, bool pass) {

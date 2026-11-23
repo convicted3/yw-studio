@@ -1,7 +1,7 @@
 #pragma once
 
-// Round 190ox (modulators stage 2, research 190oe P9): the modulation amount ring on LYNX's knobs, drag-to-assign and the
-// Modulators panel's Assign mode. LYNX's own look (Bitwig's idea of a ring per routed source, not its drawing): a thin
+// Round 190ox (modulators stage 2, research 190oe P9): the modulation amount ring on YW's knobs, drag-to-assign and the
+// Modulators panel's Assign mode. YW's own look (Bitwig's idea of a ring per routed source, not its drawing): a thin
 // arc in the automation colour just inside the knob's value arc, from the knob's value to value + depth (bipolar
 // modulators: both ways, the far side dimmer). On screen only: a hardware controller's LED ring keeps showing the
 // value (the patent gate of round 190ox, US 9,196,236 B1, claims a rotary encoder's indicator of base + offset).
@@ -15,7 +15,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -37,7 +37,7 @@ struct Ring
 bool ringFor (const AutomationTarget& target, Ring& out);
 
 // Draws the ring around a knob drawn in `circle` whose value arc runs from `startAngle` over `sweep` radians, at value
-// `value` (0..1). The standard LYNX knob: −135° … +135°.
+// `value` (0..1). The standard YW knob: −135° … +135°.
 // `knobAccent`: the knob's own arc colour; a ring close to it in hue is drawn in the second colour instead (a plugin
 // page in the automation colour's teal).
 void draw (juce::Graphics& g, juce::Rectangle<float> circle, float value, const Ring& ring, juce::Colour knobAccent = {},
@@ -74,4 +74,4 @@ std::optional<AutomationTarget> taggedTarget (const juce::Component& c);
 // The modulatable control under a point on the screen (drag-to-assign).
 std::optional<AutomationTarget> targetUnder (juce::Point<int> screenPosition);
 } // namespace modring
-} // namespace lynx
+} // namespace yw

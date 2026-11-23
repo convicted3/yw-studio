@@ -4,7 +4,7 @@
 
 TEST (extras190am_show_only_used_inserts_rule)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault(); // channels play into inserts 1..5
     const auto count = (int) song.mixer.size();
     CHECK (count >= 16);

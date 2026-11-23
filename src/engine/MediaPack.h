@@ -9,7 +9,7 @@
 
 #include <juce_core/juce_core.h>
 
-namespace lynx::mediapack
+namespace yw::mediapack
 {
 // The smallest file worth packing (below it the raw bytes go faster than an encoder starts).
 constexpr juce::int64 minimumSize = 256 * 1024;
@@ -21,4 +21,4 @@ bool pack (const juce::File& wav, const juce::File& pack);
 bool unpack (const juce::File& pack, const juce::File& out);
 // Whether the bytes start like a pack.
 bool isPack (const juce::File& file);
-} // namespace lynx::mediapack
+} // namespace yw::mediapack

@@ -8,7 +8,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -20,7 +20,7 @@ bool sameClip (const Clip& a, const Clip& b)
            && a.start == b.start && a.length == b.length && a.offset == b.offset;
 }
 
-// LYNX's palette as a row of swatches; the first is "automatic".
+// YW's palette as a row of swatches; the first is "automatic".
 class ColourRow final : public juce::Component
 {
 public:
@@ -29,7 +29,7 @@ public:
 
     void paint (juce::Graphics& g) override
     {
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
         const auto n = (int) palette.size() + 1;
         const auto w = (float) getWidth() / (float) n;
         for (int i = 0; i < n; ++i)
@@ -58,7 +58,7 @@ public:
 
     void mouseDown (const juce::MouseEvent& e) override
     {
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
         const auto n = (int) palette.size() + 1;
         const auto i = juce::jlimit (0, n - 1, (int) ((float) e.x / ((float) getWidth() / (float) n)));
         colour = i == 0 ? 0u : palette[(std::size_t) i - 1];
@@ -711,4 +711,4 @@ std::unique_ptr<juce::Component> makeArrangementsPanel (AudioEngine& engine)
 {
     return std::make_unique<ArrangementsPanel> (engine);
 }
-} // namespace lynx
+} // namespace yw

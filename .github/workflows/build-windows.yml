@@ -38,7 +38,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          version="$(sed -n 's/^project(LYNX VERSION \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt)"
+          version="$(sed -n 's/^project(YW VERSION \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "label=$version-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
@@ -69,9 +69,9 @@ jobs:
             ./scripts/build-windows-zig.sh 2>&1 | grep -v '^1 warning generated\.$'
           ./scripts/fetch-onnxruntime.sh windows build-win || echo "::warning::onnxruntime not fetched (stem split / audio-to-MIDI off)"
           mkdir -p out
-          cp build-win/LYNX.exe "out/YW Studio.exe"
-          for f in lynx-asio.dll lynx-asio32.dll onnxruntime.dll; do [[ -f "build-win/$f" ]] && cp "build-win/$f" out/ || true; done
-          [[ -f build-win/LYNX-bridge32.exe ]] && cp build-win/LYNX-bridge32.exe out/YW-bridge32.exe || true
+          cp build-win/YW.exe "out/YW Studio.exe"
+          for f in yw-asio.dll yw-asio32.dll onnxruntime.dll; do [[ -f "build-win/$f" ]] && cp "build-win/$f" out/ || true; done
+          [[ -f build-win/YW-bridge32.exe ]] && cp build-win/YW-bridge32.exe out/YW-bridge32.exe || true
           ls -la out
 
       - uses: actions/upload-artifact@v4
@@ -100,7 +100,7 @@ jobs:
         shell: pwsh
         continue-on-error: true
         run: |
-          $p = Start-Process "bin\YW Studio.exe" -ArgumentList '--selftest', "$PWD\selftest.txt", "$PWD\selftest-demo.lynx" -Wait -PassThru
+          $p = Start-Process "bin\YW Studio.exe" -ArgumentList '--selftest', "$PWD\selftest.txt", "$PWD\selftest-demo.yw" -Wait -PassThru
           if (Test-Path selftest.txt) { Get-Content selftest.txt -Tail 30 }
           if ($p.ExitCode -ne 0 -or -not (Select-String -Path selftest.txt -Pattern '^result=OK' -Quiet)) { throw "self-test failed (exit $($p.ExitCode))" }
 
@@ -111,7 +111,7 @@ jobs:
           New-Item -ItemType Directory -Force "pkg\$name" | Out-Null
           Copy-Item bin\* "pkg\$name\"
           Copy-Item LICENSE, THIRD_PARTY.md, PRIVACY.md "pkg\$name\"
-          if (Test-Path "pkg\$name\lynx-asio.dll") { Copy-Item "asio\Register YW ASIO.bat", "asio\Unregister YW ASIO.bat" "pkg\$name\" }
+          if (Test-Path "pkg\$name\yw-asio.dll") { Copy-Item "asio\Register YW ASIO.bat", "asio\Unregister YW ASIO.bat" "pkg\$name\" }
           & "$env:ProgramFiles\Git\bin\bash.exe" scripts/collect-licenses.sh "pkg/$name/licenses"
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path "pkg\$name" -DestinationPath "dist\$name.zip"
@@ -119,7 +119,7 @@ jobs:
           if (-not $nsis) { $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe" }
           if (-not (Test-Path $nsis)) { choco install nsis -y --no-progress; $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe" }
           & $nsis -V2 -INPUTCHARSET UTF8 "-DVERSION=$env:VERSION" "-DSTAGE=$PWD\pkg\$name" "-DOUTFILE=$PWD\dist\YW-Studio-$env:LABEL-setup-x64.exe" `
-            "-DICON=$PWD\resources\LYNX.ico" resources\installer\LYNX.nsi
+            "-DICON=$PWD\resources\YW.ico" resources\installer\YW.nsi
           if ($LASTEXITCODE -ne 0) { throw "makensis failed ($LASTEXITCODE)" }
           Get-ChildItem dist | Format-Table Name, Length
 

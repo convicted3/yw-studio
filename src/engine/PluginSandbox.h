@@ -9,30 +9,30 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-namespace lynx
+namespace yw
 {
-// Optional out-of-process plugins ("sandbox"): each plugin runs in a child LYNX.exe
+// Optional out-of-process plugins ("sandbox"): each plugin runs in a child YW.exe
 // (`--plugin-host`). Audio, MIDI and parameters go through shared memory every block; state and
-// editor window, through messages. If the child hangs or exits, the plugin goes silent and LYNX keeps running.
+// editor window, through messages. If the child hangs or exits, the plugin goes silent and YW keeps running.
 // Windows, Linux (round 161) and macOS.
 
-constexpr const char* pluginSandboxId = "lynx-plugin-host";
+constexpr const char* pluginSandboxId = "yw-plugin-host";
 
-// On/off (file sandbox.txt in %APPDATA%\LYNX; default: off).
+// On/off (file sandbox.txt in %APPDATA%\YW; default: off).
 bool pluginSandboxEnabled();
 void setPluginSandboxEnabled (bool enabled);
 
 // Round 190jg: how plugins run when the option is on, as Bitwig's plugin hosting modes ("Individually", "By plug-in",
 // "By manufacturer", "Together"). A crash takes down only the process it happened in: the instance alone (perPlugin),
 // every instance of that plugin (perPluginType), its vendor's plugins (perVendor) or every sandboxed plugin
-// (allTogether), never LYNX. More plugins per process = fewer processes (memory, start-up), less isolation.
+// (allTogether), never YW. More plugins per process = fewer processes (memory, start-up), less isolation.
 enum class SandboxMode { inProcess = 0, perPlugin = 1, perVendor = 2, allTogether = 3, perPluginType = 4 };
 SandboxMode pluginSandboxMode();
 void setPluginSandboxMode (SandboxMode mode);
 // The group a plugin joins under `mode` (the key of its process; empty = a process of its own)
 juce::String sandboxGroupFor (const juce::PluginDescription& description, SandboxMode mode);
 
-// Plugins that always run in a separate process, by name (round 157a): e.g. one whose editor crashed LYNX (a GPU
+// Plugins that always run in a separate process, by name (round 157a): e.g. one whose editor crashed YW (a GPU
 // driver failing inside the plugin's OpenGL window takes the host down with it; in its own process only the plugin
 // goes). File separate-process.txt in the settings folder, one name per line.
 bool pluginAlwaysSeparate (const juce::String& name);
@@ -40,11 +40,11 @@ void setPluginAlwaysSeparate (const juce::String& name, bool on);
 // The whole list (round 190gg: the Plugin manager's "Separate process" column reads it once per refresh)
 juce::StringArray pluginsAlwaysSeparate();
 
-// 32-bit plugins (round 176a, Windows x64 only): LYNX is 64-bit and can't load a 32-bit module, so a 32-bit VST2 / VST3
-// always runs in the 32-bit bridge LYNX-bridge32.exe (next to LYNX.exe) — the same separate-process protocol as "Make
+// 32-bit plugins (round 176a, Windows x64 only): YW is 64-bit and can't load a 32-bit module, so a 32-bit VST2 / VST3
+// always runs in the 32-bit bridge YW-bridge32.exe (next to YW.exe) — the same separate-process protocol as "Make
 // bridged", as FL runs them in its System\Tools\Bridge\32bit\ilbridge.exe. The scan describes them there too.
 bool bridge32Supported();               // this build can run them (Windows x64); elsewhere the option is hidden
-juce::File bridge32Executable();        // LYNX-bridge32.exe beside LYNX.exe (it may be missing)
+juce::File bridge32Executable();        // YW-bridge32.exe beside YW.exe (it may be missing)
 bool isModule32Bit (const juce::String& fileOrIdentifier); // a 32-bit x86 VST2 DLL / VST3 bundle or file
 bool isPlugin32Bit (const juce::PluginDescription& description);
 // Issue #209: the answer without touching the plugin's file — what this run or an earlier one found (kept in
@@ -70,7 +70,7 @@ std::unique_ptr<juce::AudioPluginInstance> createSandboxedPlugin (const juce::Pl
                                                                   int blockSize, const std::string& stateBase64, juce::String& error,
                                                                   const juce::String& group = {});
 // FL's wrapper Settings › GUI for a proxy (round 190oh, P3): the child makes the editor's window DPI-unaware (Windows) and
-// takes the editor's reported size in logical pixels, as ui/PluginWindow.cpp does in LYNX's own process
+// takes the editor's reported size in logical pixels, as ui/PluginWindow.cpp does in YW's own process
 void setSandboxedEditorScaling (juce::AudioPluginInstance& plugin, bool dpiAware, bool scaleEditorDimensions);
 // Running group processes (tests), and a proxy's group ("" for a process of its own; for the 32-bit bridge "32|"...)
 int sandboxProcessCount();
@@ -109,6 +109,6 @@ void setPluginSandboxAlerts (bool show);
 void hangSandboxedPluginForTest (juce::AudioPluginInstance& plugin);
 // Test (--bridge32test): the child's process id (0 when unknown).
 int sandboxedPluginProcessId (const juce::AudioPluginInstance& plugin);
-// Test: makes the child process crash (abort) as a misbehaving plugin would; LYNX must keep running.
+// Test: makes the child process crash (abort) as a misbehaving plugin would; YW must keep running.
 void crashSandboxedPluginForTest (juce::AudioPluginInstance& plugin);
-} // namespace lynx
+} // namespace yw

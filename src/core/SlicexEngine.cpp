@@ -19,7 +19,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx::slicex
+namespace yw::slicex
 {
 namespace
 {
@@ -1360,4 +1360,4 @@ std::vector<float> lfoCycle (const Articulator& a, int count)
         out[(std::size_t) i] = wave.value ((u32) (wave.startPhase + (u32) (4294967296.0 * (double) i / (double) std::max (count, 1))));
     return out;
 }
-} // namespace lynx::slicex
+} // namespace yw::slicex

@@ -1,6 +1,6 @@
 #pragma once
 
-// Reference matching for mastering (round 190ch, LYNX's own; the window is ui/ReferenceMatchPanel.h). Everything runs
+// Reference matching for mastering (round 190ch, YW's own; the window is ui/ReferenceMatchPanel.h). Everything runs
 // on this computer, on the song's own render and a reference file the user picks: no service, no model.
 //
 //   analyse   integrated loudness and true peak (core/Loudness.h, ITU-R BS.1770-4 / EBU R 128), the long-term average
@@ -11,7 +11,7 @@
 //             (a low shelf, six bells, a high shelf: least squares on the EQ's own response), and the gain that
 //             brings the song to the reference's loudness
 //   apply     the suggestion as two ordinary slots at the end of the Master, both named "Reference match": Facet EQ
-//             (the curve; its output gain = the loudness gain) and Apex Limiter (true-peak ceiling). They are LYNX's
+//             (the curve; its output gain = the loudness gain) and Apex Limiter (true-peak ceiling). They are YW's
 //             own plugins with their own editors: every band and the gain can be changed or switched off afterwards.
 //
 // Nothing here is hidden processing: what Match does is exactly what those two slots show. No JUCE: tested in
@@ -31,7 +31,7 @@
 #include "core/Loudness.h"
 #include "core/Song.h"
 
-namespace lynx::refmatch
+namespace yw::refmatch
 {
 constexpr int bands = 31;
 constexpr double maxBandDb = 6.0;       // the most the suggestion moves a band
@@ -505,4 +505,4 @@ inline void setBypassed (Song& song, bool off)
     for (const auto i : matchSlots (song))
         song.mixer[0].effects[(std::size_t) i].enabled = ! off;
 }
-} // namespace lynx::refmatch
+} // namespace yw::refmatch

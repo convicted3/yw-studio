@@ -4,9 +4,9 @@
 
 #include "core/FlPluginDb.h"
 
-namespace lynx
+namespace yw
 {
-// The FL Studio installation on this PC, as FL itself records it (read-only; LYNX never writes to FL's files or keys).
+// The FL Studio installation on this PC, as FL itself records it (read-only; YW never writes to FL's files or keys).
 struct FlStudioInstall
 {
     juce::File installDir;        // e.g. C:\Program Files\Image-Line\FL Studio 2026   (%FLStudioFactoryData%)
@@ -26,4 +26,4 @@ FlStudioInstall findFlStudio();
 
 // Reads FL's plugin database (.nfo and .fst files under Installed). `files` = how many files were read.
 FlPluginDb readFlPluginDatabase (const FlStudioInstall& fl, int* files = nullptr);
-} // namespace lynx
+} // namespace yw

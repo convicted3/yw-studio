@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::touchkb
+namespace yw::touchkb
 {
 inline bool isBlack (int note) noexcept
 {
@@ -32,7 +32,7 @@ struct Rect
 
 struct Layout
 {
-    int lowest = 48;         // the leftmost key, always a C (48 = C4 as LYNX names keys: octave = key / 12)
+    int lowest = 48;         // the leftmost key, always a C (48 = C4 as YW names keys: octave = key / 12)
     int whiteKeys = 21;      // white keys shown (3 octaves)
     float width = 700.0f, height = 120.0f;
     float blackLength = 0.62f; // black keys' length, part of the height
@@ -107,4 +107,4 @@ inline int shiftOctave (int lowest, int octaves, int whiteKeys) noexcept
         probe.lowest = best -= 12;
     return best;
 }
-} // namespace lynx::touchkb
+} // namespace yw::touchkb

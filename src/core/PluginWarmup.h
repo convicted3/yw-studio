@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace lynx::warmup
+namespace yw::warmup
 {
 // Export "Plugin warm-up" (round 155). An export builds its own engine: every hosted plugin is a fresh instance whose
 // saved state was just restored, then it is re-prepared for the offline render mode. Some plugins finish that work
@@ -115,4 +115,4 @@ struct Hash
     // parameter values are quantised so float noise in a plugin's cache does not count as a change
     void addValue (float v) noexcept { add ((std::uint64_t) (std::int64_t) (v * 100000.0f)); }
 };
-} // namespace lynx::warmup
+} // namespace yw::warmup

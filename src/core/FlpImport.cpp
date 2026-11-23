@@ -90,7 +90,7 @@
 #include <set>
 #include <ctime>
 
-namespace lynx
+namespace yw
 {
 double flDateTimeToUnix (double days)
 {
@@ -554,8 +554,8 @@ double channelFilterHz (int type, double x)
 
 } // namespace
 
-// Round 190ov: a link's scale (Automation::Link::scale) for FL's value → LYNX's `map`, sampled evenly over 0..1. Empty when
-// the map leaves every value alone (most of FL's controls: LYNX keeps their scale); otherwise the fewest points (2, 3, 5,
+// Round 190ov: a link's scale (Automation::Link::scale) for FL's value → YW's `map`, sampled evenly over 0..1. Empty when
+// the map leaves every value alone (most of FL's controls: YW keeps their scale); otherwise the fewest points (2, 3, 5,
 // 9 … 1025) whose straight lines give the map at all 1025 sample points within 1e-6 (a straight map: two points, exact),
 // else the 1025 points.
 std::vector<float> flLinkScale (const std::function<float (float)>& map)
@@ -1024,8 +1024,8 @@ std::vector<std::uint8_t> wrappedFruityState (const ForeignPlugin& plugin)
     return native;
 }
 
-// A Patcher node's parameter port p in FL's numbering → LYNX's parameter of that node (round 171b): a hosted plugin
-// keeps its index, a built-in effect goes through effectParamFromFl; −1 = no LYNX equivalent
+// A Patcher node's parameter port p in FL's numbering → YW's parameter of that node (round 171b): a hosted plugin
+// keeps its index, a built-in effect goes through effectParamFromFl; −1 = no YW equivalent
 static int flPatcherParam (const PatchNode& node, const std::string& flPlugin, int p)
 {
     if (p < 0)
@@ -1077,7 +1077,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
     song.compensateMixerLevels = false; // (round 190hq: FL's own scope, mixer effect parameters only)
     song.timeSignatureMode = project.timeSignatureMode;
     if (project.hasScaleHighlight)
-        song.scaleHighlight = { project.scaleHighlight >= -3 && project.scaleHighlight < 256 ? notetools::flMenuScaleIndex (project.scaleHighlight) : -2, // (FL's index -> LYNX's)
+        song.scaleHighlight = { project.scaleHighlight >= -3 && project.scaleHighlight < 256 ? notetools::flMenuScaleIndex (project.scaleHighlight) : -2, // (FL's index -> YW's)
                                 std::clamp (project.scaleRoot, 0, 11) };
     song.dataFolder = project.dataFolder;
     song.masterPitch = (float) std::clamp (project.mainPitch, -1200, 1200); // FL's render follows it (REA round 167g §1)
@@ -1132,9 +1132,9 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         return inData.empty() ? path : inData;
     };
 
-    // round 190fn: the FL Studio Mobile Racks' own inserts (LYNX channel → the rack's level, pan and effects)
+    // round 190fn: the FL Studio Mobile Racks' own inserts (YW channel → the rack's level, pan and effects)
     std::vector<std::pair<int, MixerTrack>> flmRackInserts;
-    // round 190jv: the FL Studio Mobile Racks with several instruments (a Layer, its instruments right after it as LYNX
+    // round 190jv: the FL Studio Mobile Racks with several instruments (a Layer, its instruments right after it as YW
     // channels, the rack's insert and parts placed once the mixer exists)
     struct FlmRackLayer
     {
@@ -1145,7 +1145,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         bool insertUsed = false;
     };
     std::vector<FlmRackLayer> flmRackLayers;
-    // round 190jv: the racks' note effects (LYNX channel → the modules in the rack's order), run over FL's notes below
+    // round 190jv: the racks' note effects (YW channel → the modules in the rack's order), run over FL's notes below
     std::vector<std::pair<int, std::vector<std::pair<std::uint32_t, std::vector<float>>>>> flmRackNoteFx;
 
     for (const auto& c : project.channels)
@@ -1681,7 +1681,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             def.pluginState = c.pluginState;
         }
 
-        // Dashboard (REA_rodada164f-flimport): its value controls as LYNX's Dashboard panel (FL's state kept, for its
+        // Dashboard (REA_rodada164f-flimport): its value controls as YW's Dashboard panel (FL's state kept, for its
         // controller links below)
         if (c.pluginName == "Dashboard")
             if (auto dash = surface::parseFlDashboard (c.pluginState))
@@ -2020,7 +2020,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                 def.instrument = InstrumentKind::fruitydance;
                 def.pluginState = c.pluginState;
                 // a sprite sheet inside FL's folder is saved as %FLStudioFactoryData%\... (round 190bf, fl190be Q5):
-                // LYNX keeps the dancer with the file's real place (the export writes FL's own bytes back while it is
+                // YW keeps the dancer with the file's real place (the export writes FL's own bytes back while it is
                 // not edited: flOrigin below)
                 if (const auto stored = dance::fromFl (c.pluginState); stored && ! stored->sheet.empty())
                     if (const auto expanded = dance::fromFl (c.pluginState, options.roots.factoryData); expanded && expanded->sheet != stored->sheet)
@@ -2044,7 +2044,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             }
             else if (name == "fruity soundfont player" || name == "soundfont player")
             {
-                // FL's SoundFont player → LYNX Soundfont: the font (FL path macros expanded; MissingFiles relocates it
+                // FL's SoundFont player → YW Soundfont: the font (FL path macros expanded; MissingFiles relocates it
                 // when it moved), its preset and the overrides (REA_rodada158 §1)
                 sf::FlPlayerState fl;
                 if (sf::parseFlPlayerState (c.pluginState, fl))
@@ -2361,7 +2361,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         // Round 190fn (FLM coverage instruments-0022): the "FL Studio Mobile Rack" generator (FLM's own FLP export writes
         // every instrument track as one) on the .flm importer's engines: the rack's instrument on this channel, the
         // rack's level, pan and effects on an insert of their own in front of the channel's FL insert (placed below,
-        // once the mixer exists). FL's channel settings stay FL's. What LYNX cannot rebuild keeps the stand-in (listed).
+        // once the mixer exists). FL's channel settings stay FL's. What YW cannot rebuild keeps the stand-in (listed).
         const auto flmRack = c.type == flp::ChannelType::instrument && c.pluginName == "FL Studio Mobile Rack" && ! c.pluginState.empty();
         std::vector<ChannelDef> flmRackChildren; // round 190jv: a rack's instruments, pushed right after this channel
         if (flmRack)
@@ -2395,7 +2395,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                 to.misc.pitchRange = r.misc.pitchRange;
                 // round 190gw (live check 190gu B6): the module's own Gate (3x Osc MISC › Poly › Gate, a .flm import's
                 // Time › Gate) shortens the notes it plays inside FL as well: the shorter of it and FL's channel gate.
-                // (FL's render of 190fe's all-0.5 rack: notes ~70 ms long; without this LYNX held the whole beat, ~10 dB louder)
+                // (FL's render of 190fe's all-0.5 rack: notes ~70 ms long; without this YW held the whole beat, ~10 dB louder)
                 if (r.misc.gateBeats > 0.0f)
                     to.misc.gateBeats = to.misc.gateBeats > 0.0f ? std::min (to.misc.gateBeats, r.misc.gateBeats) : r.misc.gateBeats;
                 if (r.maxPolyphony > 0 && (to.maxPolyphony == 0 || r.maxPolyphony < to.maxPolyphony))
@@ -2407,7 +2407,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                 to.muted = to.muted || r.muted;
                 if (std::abs (r.volume - 1.0f) > 1.0e-4f)
                 {
-                    // (LYNX's channel curve gain = (11^v − 1) / 10; its inverse)
+                    // (YW's channel curve gain = (11^v − 1) / 10; its inverse)
                     const auto gain = (double) channelGain (to.volume) * channelGain (r.volume) / channelGain (1.0f);
                     to.volume = (float) std::clamp (std::log (10.0 * std::max (0.0, gain) + 1.0) / std::log (11.0), 0.0, 1.0);
                 }
@@ -2531,14 +2531,14 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             {
                 const auto note = flextra::inertPluginNote (c.pluginName); // round 165g: ReWired, Video Player, FL Studio Mobile
                 if (c.pluginName == "ReWired")
-                    def.muted = true; // no sound of their own in LYNX: the stand-in synth must not play their notes
+                    def.muted = true; // no sound of their own in YW: the stand-in synth must not play their notes
                 // (Keyboard Controller only sends notes to other channels). Round qafix190kq: ReWired stays silent, so it is
                 // "not reproduced", not "played with a synth preset"
                 ++(c.pluginName == "ReWired" ? r.notReproduced : r.unsupported)[note.empty() ? c.pluginName : note];
             }
         }
 
-        // Export to FL Studio (round 171e): the original generator, written back while LYNX leaves it as imported (an FPC
+        // Export to FL Studio (round 171e): the original generator, written back while YW leaves it as imported (an FPC
         // becomes several channels and a wrapped plugin travels as its plugin reference: neither keeps one)
         if (c.type == flp::ChannelType::instrument && ! c.pluginName.empty() && c.pluginName != "Fruity Wrapper" && c.pluginName != "FPC"
             && flmRackChildren.empty()) // (round 190jv: a FL Studio Mobile Rack that became a Layer and its instruments)
@@ -2556,7 +2556,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         }
     }
 
-    // Layer children: FL's channel indices → LYNX's (children that did not become channels are dropped)
+    // Layer children: FL's channel indices → YW's (children that did not become channels are dropped)
     for (auto& def : song.channels)
         if (def.instrument == InstrumentKind::layer
             && std::none_of (flmRackLayers.begin(), flmRackLayers.end(), [&] (const FlmRackLayer& g) { return &song.channels[(std::size_t) g.layer] == &def; }))
@@ -2608,7 +2608,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         track.solo = insert.index > 0 && (insert.flags & 0x1000) != 0;
         // REA round 146a (FL's insert writer FUN_00f3d620): bits 6-7 = dock (0 left, 1 middle, 2 right), 0x400 separator
         track.separator = insert.index > 0 && (insert.flags & 0x400) != 0;
-        // (FL's last insert, the "Current" track, is saved with dock 0 too; LYNX keeps it in the middle)
+        // (FL's last insert, the "Current" track, is saved with dock 0 too; YW keeps it in the middle)
         const auto dockBits = insert.flags >> 6 & 3;
         const auto isCurrentTrack = insert.index > 0 && insert.index + 1 == (int) project.mixer.size();
         track.dock = dockBits == 2 ? MixerDock::right : (dockBits == 0 && ! isCurrentTrack) ? MixerDock::left : MixerDock::middle;
@@ -2636,7 +2636,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             track.flInput = insert.input;
             track.monitor = InputMonitor::on;
         }
-        // 0xA6 "Monitor external input" (REA round 168j: ExtInputMonitorOffMenuClick's tags = LYNX's order); files
+        // 0xA6 "Monitor external input" (REA round 168j: ExtInputMonitorOffMenuClick's tags = YW's order); files
         // without it keep the rule above
         if (insert.monitor >= 0)
             track.monitor = (InputMonitor) std::clamp (insert.monitor, 0, 3);
@@ -2680,7 +2680,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
     std::map<std::pair<int, int>, decltype (LovePhilterConversion::paramMap)> lovePhilterMaps; // Love Philter automation
 
     // data files of the user's FL installation that some effects load at run time (Soundgoodizer's presets,
-    // REA_rodada40); nothing of them is stored in LYNX itself, only in the imported project
+    // REA_rodada40); nothing of them is stored in YW itself, only in the imported project
     const FlDataReader flData = [&options] (const std::string& relative) -> std::vector<std::uint8_t> {
         const auto path = resolveFlPath ("%FLStudioFactoryData%\\" + relative, options.roots);
         if (path.empty() || ! options.readFile || (options.fileExists && ! options.fileExists (path)))
@@ -2695,7 +2695,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             return;
         if (plugin == "Gross Beat")
             ++options.report->partialEffects["Gross Beat (state not read: volume gate only)"];
-        if (plugin == "ZGameEditor Visualizer") // round 164c: its effects are approximated by LYNX Visualizer layers
+        if (plugin == "ZGameEditor Visualizer") // round 164c: its effects are approximated by YW Visualizer layers
             ++options.report->partialEffects["ZGameEditor Visualizer (scene approximated with YW Visualizer layers)"];
         if (plugin == "Maximus")
             ++options.report->partialEffects["Maximus (option not decoded: approximated)"];
@@ -2751,9 +2751,9 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         }
     };
 
-    // FL's Patcher as LYNX's real graph (REA_rodada141): every node (effects through the same converters as the mixer
+    // FL's Patcher as YW's real graph (REA_rodada141): every node (effects through the same converters as the mixer
     // slots, instruments through a one-channel import), every cable (audio with its gain, notes, control values mapped
-    // to LYNX's parameters), the editor positions and the extra outputs
+    // to YW's parameters), the editor positions and the extra outputs
     std::function<std::optional<PatcherDoc> (const std::vector<std::uint8_t>&, const flp::Channel*)> patcherFromFl;
     // the last converted Patcher's side-chain pin: its bus k, an index into FL's input list of the insert, as for the
     // other effects (REA_rodada22 §1.2). The pin's name is only the source track's name when saved (Bien Duro: "7
@@ -2770,7 +2770,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             const auto& fl = graph->nodes[n];
             PatchNode node;
             node.label = fl.label;
-            // FL's boxes are small: its positions spread to LYNX's node size (FL's dense graphs sit ~60 px apart)
+            // FL's boxes are small: its positions spread to YW's node size (FL's dense graphs sit ~60 px apart)
             constexpr float spreadX = 2.0f, spreadY = 1.6f;
             node.x = fl.x * spreadX;
             node.y = fl.y * spreadY;
@@ -2853,7 +2853,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                 if ((fl.flags & 4) != 0)
                     made->enabled = false;
                 node.effect = std::move (*made);
-                // the extra outputs FL's splitters have (bands / difference) as LYNX bus heads
+                // the extra outputs FL's splitters have (bands / difference) as YW bus heads
                 for (const auto& cable : graph->cables)
                     for (const auto& [id, port] : graph->ports)
                         if (id == cable.source && port.node == (int) n && ! port.input && port.kind == 0 && port.index > 0
@@ -3012,14 +3012,14 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                     w.fromPort = src->index >= 0x10000000 ? src->index - 0x10000000 : 0;
                     // a Control Surface's outputs: FL's numbers → the panel's order (as for mixer links, round 164)
                     if (! source.generator && source.effect.kind == EffectKind::controlSurface)
-                        if (const auto k = surface::flOutputToLynx (source.effect.state, w.fromPort))
+                        if (const auto k = surface::flOutputToYw (source.effect.state, w.fromPort))
                             w.fromPort = *k;
                 }
-                // (a Peak Controller's outputs keep FL's numbers: 0 Peak+LFO, 1 Peak, 2 LFO, as LYNX's and as the mixer links;
+                // (a Peak Controller's outputs keep FL's numbers: 0 Peak+LFO, 1 Peak, 2 LFO, as YW's and as the mixer links;
                 // REA_rodada17 §5.1, issue #111)
                 if (! isPatchParamOutput (w.fromPort) && w.fromPort >= patcher::nodePorts (source).controlOuts)
                 {
-                    // the source has no such output in LYNX (an X-Y controller, a Control Surface…): its target keeps the
+                    // the source has no such output in YW (an X-Y controller, a Control Surface…): its target keeps the
                     // value FL saved instead of being pinned to 0
                     if (options.report != nullptr)
                         ++options.report->partialEffects["Patcher: control from " + graph->nodes[(std::size_t) src->node].plugin + " (not reproduced)"];
@@ -3472,7 +3472,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                                     addMissingFile (options.report->missingFiles, candidates.front(),
                                                     (insert.name.empty() ? "Insert " + std::to_string (insert.index) : insert.name) + ": " + slot.plugin);
                             }
-                            // Newtone's note edits and Newtime's warp markers are rendered by LYNX's engines (REA_rodada95,
+                            // Newtone's note edits and Newtime's warp markers are rendered by YW's engines (REA_rodada95,
                             // REA_rodada167b: close, not sample-exact). Only slave mode plays them (otherwise FL passes the
                             // input through).
                             ++options.report->converted[slot.plugin];
@@ -3502,8 +3502,8 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                 effectSlotMap.insert ({ { insert.index, slot.index }, { (int) track.effects.size(), slot.plugin } });
                 if (slot.index >= 0 && slot.index < maxEffectSlots)
                     fx.row = slot.index; // FL's slot place (round 170b): an effect in slot 5 stays in slot 5
-                // Export to FL Studio (round 171e): the FL effect itself, written back while LYNX leaves it as imported (one
-                // FL slot = one LYNX slot here; a hosted plugin travels as its plugin reference)
+                // Export to FL Studio (round 171e): the FL effect itself, written back while YW leaves it as imported (one
+                // FL slot = one YW slot here; a hosted plugin travels as its plugin reference)
                 if (fx.kind != EffectKind::plugin && expanded.size() == 1)
                     fx.flOrigin = { slot.plugin, slot.state, 0 };
                 track.effects.push_back (fx);
@@ -3657,7 +3657,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         }
         if (m.type == Marker::keyScale) // round 190nu: FL's key marker (core/KeyRegions.h)
         {
-            if (const auto key = keyregions::keyFromFl (m.keyRoot, notetools::flMenuScaleIndex (m.keyScale), m.keyMask)) // (FL's index -> LYNX's)
+            if (const auto key = keyregions::keyFromFl (m.keyRoot, notetools::flMenuScaleIndex (m.keyScale), m.keyMask)) // (FL's index -> YW's)
                 marker.keyRoot = key->root, marker.keyFlScale = key->flScale;
             else
                 marker.keyFlScale = m.keyScale == -1 ? keyregions::defaultScale : keyregions::noScale;
@@ -3803,7 +3803,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
     auto resolveTarget = [&] (flp::ControlId id, std::function<float (float)>& valueMap) {
         auto target = automationTargetFor (id, channelMap, (int) song.mixer.size());
 
-        // FL Soundfont Player → LYNX Soundfont: FL's P index and scale → LYNX's parameter (REA_rodada158 §1)
+        // FL Soundfont Player → YW Soundfont: FL's P index and scale → YW's parameter (REA_rodada158 §1)
         if (target.kind == AutomationTargetKind::channelParam && target.index >= 0 && target.index < (int) song.channels.size()
             && song.channels[(std::size_t) target.index].instrument == InstrumentKind::soundfont)
         {
@@ -3817,8 +3817,8 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                 target.kind = AutomationTargetKind::none;
         }
 
-        // round 165: FL's Dashboard parameter p ≥ 1 = record p − 1 = LYNX's control p − 1 (its output); 0 is the patch
-        // selector (not a LYNX target). The Voltage Controller's 0…15 (offsets, scales) are LYNX's own numbers.
+        // round 165: FL's Dashboard parameter p ≥ 1 = record p − 1 = YW's control p − 1 (its output); 0 is the patch
+        // selector (not a YW target). The Voltage Controller's 0…15 (offsets, scales) are YW's own numbers.
         if (target.kind == AutomationTargetKind::channelParam && target.index >= 0 && target.index < (int) song.channels.size())
         {
             const auto& channel = song.channels[(std::size_t) target.index];
@@ -3938,7 +3938,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             if (target.kind == AutomationTargetKind::tempo)
             {
                 // FL's Tempo events (issue #86, REA_rodada178a §2): BPM × 1000 (10 000…522 000), whole BPM in files
-                // saved before FL 10.1.0 (FL's loader multiplies them, FUN_00f45960) — LYNX's tempo scale exactly
+                // saved before FL 10.1.0 (FL's loader multiplies them, FUN_00f45960) — YW's tempo scale exactly
                 const auto oldFile = project.versionNumber > 0 && project.versionNumber < 10001000u;
                 return [oldFile] (std::int32_t raw) {
                     const auto milli = oldFile ? (double) raw * 1000.0 : (double) raw;
@@ -4055,7 +4055,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         }
     }
 
-    // an FL point's curve (the segment that ends at it) onto LYNX's point where that segment starts
+    // an FL point's curve (the segment that ends at it) onto YW's point where that segment starts
     const auto flCurveOnto = [] (AutomationPoint& previous, const flp::AutomationPoint& p) {
         previous.mode = p.curve < flcurve::modeCount ? p.curve : (std::uint8_t) flcurve::singleCurve;
         previous.tension = std::isfinite (p.tension) ? std::clamp (0.0f - p.tension, -1.0f, 1.0f) : 0.0f;
@@ -4085,7 +4085,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         // its links (0xE3, in the file's order). Round 190ov: FL drives every control a clip is linked to (Synth_dfr
         // Overcome: two sends per clip; 16 of FL's 46 demos have such clips, up to 26 links on one), each through its own
         // mapping formula (0xE6) and then the control's own range (rea/FL-FACTS-autolinks.md: one clip value, the same for
-        // every link; no range per link); LYNX kept the first, 1:1. One link without a formula: the clip as before (its
+        // every link; no range per link); YW kept the first, 1:1. One link without a formula: the clip as before (its
         // points on the target's own scale). Otherwise target links (Automation::links, round 190gw), the points in FL's
         // clip value (range applied) and each link's formula and scale.
         bool firstSeen = false, tempoLink = false;
@@ -4106,7 +4106,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                     continue;
                 if (! firstValid)
                     firstValid = std::make_pair (target, map);
-                // (the tempo is LYNX's tempo map, read from its automations, not an automation slot: no target link)
+                // (the tempo is YW's tempo map, read from its automations, not an automation slot: no target link)
                 if (target.kind == AutomationTargetKind::tempo)
                 {
                     tempoLink = true;
@@ -4123,7 +4123,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             }
         // (one link with a mapping formula: a target link too, the formula before the control's scale as in FL)
         const auto asLinks = linked.size() > 1 || (linked.size() == 1 && ! linked.front().formula.empty());
-        if (! asLinks && firstValid && ! (firstValid->first == a.target)) // (the first link has no LYNX target, a later one has)
+        if (! asLinks && firstValid && ! (firstValid->first == a.target)) // (the first link has no YW target, a later one has)
         {
             a.target = firstValid->first;
             valueMap = firstValid->second;
@@ -4262,7 +4262,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
             auto output = link.source.param() - flp::ControlId::pluginParamBase;
             if (sourceChannel.instrument == InstrumentKind::dashboard) // FL's output number → the panel's order
             {
-                const auto k = surface::flDashboardOutputToLynx (sourceChannel.pluginState, output);
+                const auto k = surface::flDashboardOutputToYw (sourceChannel.pluginState, output);
                 if (! k)
                     continue;
                 output = *k;
@@ -4287,7 +4287,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         if (! link.source.isMixer() || link.source.track() < 0 || link.source.track() >= (int) song.mixer.size())
             continue;
 
-        // an X-Y (-Z) Controller / Control Surface imported as LYNX's own (round 164): a live link (below)
+        // an X-Y (-Z) Controller / Control Surface imported as YW's own (round 164): a live link (below)
         const auto liveSlot = effectSlotMap.find ({ link.source.track(), link.source.slot() });
         const auto liveKind = liveSlot != effectSlotMap.end() ? song.mixer[(std::size_t) link.source.track()].effects[(std::size_t) liveSlot->second.first].kind
                                                               : EffectKind::eq;
@@ -4334,7 +4334,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         a.source = { link.source.track(), found->second.first, link.source.param() - flp::ControlId::pluginParamBase };
         if (sourceSlot.kind == EffectKind::controlSurface) // FL's output numbers → the panel's order
         {
-            const auto k = surface::flOutputToLynx (sourceSlot.state, a.source.output);
+            const auto k = surface::flOutputToYw (sourceSlot.state, a.source.output);
             if (! k)
                 continue;
             a.source.output = *k;
@@ -4553,7 +4553,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                     track.grouped = t.index > 0 && t.grouped;
                     track.performance = performance; // Performance mode's track settings (round 165m)
                     track.collapsed = ! t.expanded;
-                    // FL's track locks (round 168f): a locked size is in FL's pixels, clamped to LYNX's row limits
+                    // FL's track locks (round 168f): a locked size is in FL's pixels, clamped to YW's row limits
                     track.lockedToContent = t.lockedToContent;
                     track.lockedHeight = t.lockedHeight > 0 ? polish::clampTrackHeight (t.lockedHeight) : -1;
                     track.icon = std::clamp (t.icon, 0, 0xFFFF); // (REA round 168j)
@@ -4639,4 +4639,4 @@ std::optional<MixerTrack> mixerTrackFromFlPreset (std::span<const std::uint8_t> 
         return std::nullopt;
     }
 }
-} // namespace lynx
+} // namespace yw

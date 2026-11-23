@@ -15,7 +15,7 @@ std::vector<float> sine (double hz, double rate, int n, float amplitude = 1.0f)
 
 TEST (visual164_tap_ring_and_pass_through)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = visualfx::make();
     fx->prepare (48000.0);
     auto* tap = visualfx::tapOf (fx.get());
@@ -49,7 +49,7 @@ TEST (visual164_tap_ring_and_pass_through)
 
 TEST (visual164_capture_records_only_while_playing)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = visualfx::make();
     fx->prepare (44100.0);
     visualfx::Capture cap;
@@ -75,7 +75,7 @@ TEST (visual164_capture_records_only_while_playing)
 
 TEST (visual164_spectrum_and_trigger)
 {
-    using namespace lynx::visualfx::analysis;
+    using namespace yw::visualfx::analysis;
     const auto x = visual164::sine (1000.0, 48000.0, 4096);
     std::vector<float> db;
     std::vector<std::complex<float>> work;
@@ -103,7 +103,7 @@ TEST (visual164_spectrum_and_trigger)
 
 TEST (visual164_meter_modes)
 {
-    using namespace lynx::visualfx::analysis;
+    using namespace yw::visualfx::analysis;
     const auto x = visual164::sine (997.0, 48000.0, 48000 * 3);
     auto run = [&] (MeterMode mode) {
         Meter m;
@@ -133,7 +133,7 @@ TEST (visual164_meter_modes)
 
 TEST (visual164_wave_candy_params_and_fl_state)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace wc = visualfx::wavecandy;
     CHECK (effectInfo (EffectKind::waveCandy).params.size() == (std::size_t) wc::count);
     CHECK (effectInfo (EffectKind::visualizer).params.size() == (std::size_t) visualfx::visualizer::count);
@@ -201,7 +201,7 @@ TEST (visual164_wave_candy_params_and_fl_state)
 
 TEST (visual164_scene_text_round_trip)
 {
-    using namespace lynx::visualfx::scene;
+    using namespace yw::visualfx::scene;
     for (const auto& preset : presets())
     {
         const auto back = parse (write (preset));
@@ -226,17 +226,17 @@ TEST (visual164_scene_text_round_trip)
     CHECK (back && *back == s);
     CHECK (! parse ("not a scene"));
     // out-of-range values are clamped
-    const auto odd = parse ("LYNX visualizer 1\nsize=99999x3\nfps=500\nlayer=bars\nsize=7\ncount=100000\nopacity=-2\n");
+    const auto odd = parse ("YW visualizer 1\nsize=99999x3\nfps=500\nlayer=bars\nsize=7\ncount=100000\nopacity=-2\n");
     CHECK (odd && odd->width == 1920 && odd->fps == 120 && odd->layers.size() == 1 && odd->layers[0].size == 1.0f
            && odd->layers[0].count == 512 && odd->layers[0].opacity == 0.0f);
-    // a new Visualizer slot carries LYNX's default scene
-    const auto slot = lynx::makeEffectSlot (lynx::EffectKind::visualizer);
+    // a new Visualizer slot carries YW's default scene
+    const auto slot = yw::makeEffectSlot (yw::EffectKind::visualizer);
     CHECK (fromState (slot.state) && *fromState (slot.state) == defaultScene());
 }
 
 TEST (visual164_zgameeditor_state)
 {
-    using namespace lynx::visualfx::scene;
+    using namespace yw::visualfx::scene;
     const std::string ini = "FLhd\x01\x02[General]\r\nGlWindowMode=1\r\nLayerCount=4\r\nLayerOrder=0,2,1,3\r\n"
                             "[AppSet0]\r\nApp=Background\\FourCornerGradient\r\nEnabled=1\r\n"
                             "[AppSet1]\r\nApp=Text\\TextTrueType\r\nEnabled=1\r\n"
@@ -253,15 +253,15 @@ TEST (visual164_zgameeditor_state)
     CHECK (s->layers[2].text == "My song\nby me");
     CHECK (s->width == 1280 && s->height == 720 && s->fps == 60);
     CHECK (unmapped.empty());
-    // only effects without a counterpart: LYNX's default scene (in the project's video size)
+    // only effects without a counterpart: YW's default scene (in the project's video size)
     const std::string only = "[General]\nLayerCount=1\n[AppSet0]\nApp=Feedback\\70sKaleido\n[Video export]\nVideoW=640\nVideoH=480\n";
     const auto fallback = fromZge ({ only.begin(), only.end() });
     // (round 165e: the feedback layer stays over the default scene)
     CHECK (fallback && fallback->layers.size() == defaultScene().layers.size() + 1 && fallback->width == 640
            && fallback->layers.back().type == LayerType::feedback);
     CHECK (! fromZge ({ 1, 2, 3 }));
-    const auto fx = lynx::effectFromFl ("ZGameEditor Visualizer", { ini.begin(), ini.end() });
-    CHECK (fx && fx->kind == lynx::EffectKind::visualizer && fromState (fx->state) && fromState (fx->state)->layers.size() == 4);
+    const auto fx = yw::effectFromFl ("ZGameEditor Visualizer", { ini.begin(), ini.end() });
+    CHECK (fx && fx->kind == yw::EffectKind::visualizer && fromState (fx->state) && fromState (fx->state)->layers.size() == 4);
 
     if (! realFlpDir.empty())
     {
@@ -284,7 +284,7 @@ TEST (visual164_zgameeditor_state)
 
 TEST (visual164_frames_and_beats)
 {
-    using namespace lynx::visualfx;
+    using namespace yw::visualfx;
     std::array<float, shownParams> params {};
     params[visualizer::sensitivity] = 0.5f;
     params[visualizer::beatThreshold] = 0.4f;
@@ -363,7 +363,7 @@ TEST (visual164_frames_and_beats)
 
 TEST (visual164_catalog_visual_category)
 {
-    using namespace lynx::plugincatalog;
+    using namespace yw::plugincatalog;
     auto fx = [] (const char* name, const char* category) { return Entry { "id", name, "Vendor", "VST3", category, false }; };
     CHECK (categoryOf (fx ("Plugin Visualizer Pro", "Fx")) == "Visual");
     CHECK (categoryOf (fx ("Mystery", "Fx|Visual")) == "Visual");

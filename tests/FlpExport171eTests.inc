@@ -1,5 +1,5 @@
 // --- Export to FL Studio (round 171e, idea by Tookolld): the .flp writer (flp/FlpWrite.h) and the Song → .flp conversion
-// (core/FlpExport.h), checked by reading the file back with LYNX's own .flp reader and importer
+// (core/FlpExport.h), checked by reading the file back with YW's own .flp reader and importer
 
 #include "core/FlpExport.h"
 #include "core/FlWrapper.h"
@@ -9,23 +9,23 @@ namespace fx171e
 {
 bool near (double a, double b, double tolerance) { return std::abs (a - b) <= tolerance; }
 
-lynx::FlpImportOptions importOptions()
+yw::FlpImportOptions importOptions()
 {
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.fileExists = [] (const std::string&) { return true; };
     return o;
 }
 
 // a song with something of everything the export maps
-lynx::Song richSong()
+yw::Song richSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = Song::makeDefault();
     s.bpm = 128.0;
     s.beatsPerBar = 3;
     s.swing = 0.25f;
     s.info.title = "Export test";
-    s.info.author = "LYNX";
+    s.info.author = "YW";
 
     ChannelDef sampler;
     sampler.name = "Loop";
@@ -45,12 +45,12 @@ lynx::Song richSong()
 
     ChannelDef osc;
     osc.name = "Lead";
-    osc.instrument = InstrumentKind::threeosc; // LYNX's own default state = a new FL 3x Osc
+    osc.instrument = InstrumentKind::threeosc; // YW's own default state = a new FL 3x Osc
     osc.mixerTrack = 3;
     osc.misc.echo.feedback = 0.5f;
     osc.misc.echo.echoes = 3;
     osc.misc.echo.timeBeats = 0.5f;
-    osc.arp.direction = 5; // LYNX's "sticky" = FL's 4
+    osc.arp.direction = 5; // YW's "sticky" = FL's 4
     osc.arp.range = 2;
     osc.misc.mono = true;
     osc.misc.porta = true;
@@ -117,7 +117,7 @@ lynx::Song richSong()
     fl.flOrigin = { "Fruity Limiter", limiterState, 0 };
     fl.mix = 0.5f;
     s.mixer[2].effects.push_back (fl);
-    // a LYNX-only effect: left out (option B) or bounced (option A)
+    // a YW-only effect: left out (option B) or bounced (option A)
     EffectSlot own;
     own.kind = EffectKind::eq;
     s.mixer[3].effects.push_back (own);
@@ -229,7 +229,7 @@ TEST (flpexport171e_writer_reads_back)
 
 TEST (flpexport171e_value_helpers_invert_fl)
 {
-    using namespace lynx::flpexport;
+    using namespace yw::flpexport;
     for (const double t : { 0.001, 0.05, 0.3, 1.0, 4.0 })
         CHECK (fx171e::near (flp::Channel::envelopeTime (envelopeTimeValue (t)), t, t * 0.001 + 1e-5));
     CHECK (envelopeTimeValue (0.0) <= 100);
@@ -243,7 +243,7 @@ TEST (flpexport171e_value_helpers_invert_fl)
 
 TEST (flpexport171e_wrapper_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin p;
     p.format = ForeignPlugin::Format::vst3;
     p.name = "Synth";
@@ -280,26 +280,26 @@ TEST (flpexport171e_wrapper_round_trips)
 
 TEST (flpexport171e_song_round_trips_through_the_importer)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = fx171e::richSong();
     flpexport::Options options;
-    options.lynxOnly = flpexport::LynxOnly::substitute;
+    options.ywOnly = flpexport::YwOnly::substitute;
     flpexport::Report report;
     const auto bytes = flpexport::exportFlp (song, options, report);
     const auto project = flp::parseProject (bytes);
     CHECK (project.warnings.empty());
-    CHECK (project.header.ppq == 960); // a note 373 ticks longer than half a beat needs LYNX's PPQ
+    CHECK (project.header.ppq == 960); // a note 373 ticks longer than half a beat needs YW's PPQ
     const auto back = importFlp (project, fx171e::importOptions());
 
     CHECK (back.bpm == 128.0 && back.beatsPerBar == 3 && fx171e::near (back.swing, 0.25, 0.01));
-    CHECK (back.info.title == "Export test" && back.info.author == "LYNX");
+    CHECK (back.info.title == "Export test" && back.info.author == "YW");
     CHECK (back.channels.size() == song.channels.size());
     if (back.channels.size() == song.channels.size())
     {
         for (std::size_t i = 0; i < song.channels.size(); ++i)
         {
             CHECK (back.channels[i].name == song.channels[i].name);
-            // (a hosted plugin under LYNX's own law is written at the knob that sounds the same in FL, round 190ad)
+            // (a hosted plugin under YW's own law is written at the knob that sounds the same in FL, round 190ad)
             const auto wrapped = song.channels[i].instrument == InstrumentKind::plugin && ! song.flPluginLevels;
             const auto volume = wrapped ? std::log (10.0 * channelGain (song.channels[i].volume) * 0.70710678 + 1.0) / std::log (11.0)
                                         : (double) song.channels[i].volume;
@@ -347,10 +347,10 @@ TEST (flpexport171e_song_round_trips_through_the_importer)
         CHECK (! d.effects.empty() && d.effects[0].kind == EffectKind::fruityLimiter && fx171e::near (d.effects[0].mix, 0.5, 0.001));
         if (! d.effects.empty())
             CHECK (d.effects[0].flOrigin.plugin == "Fruity Limiter" && d.effects[0].flOrigin.state == song.mixer[2].effects[0].flOrigin.state);
-        CHECK (back.mixer[3].effects.empty()); // the LYNX-only EQ: left out with option B
+        CHECK (back.mixer[3].effects.empty()); // the YW-only EQ: left out with option B
     }
     CHECK (std::any_of (report.dropped.begin(), report.dropped.end(), [] (const std::string& l) { return l.find ("slot 1") != std::string::npos; }));
-    // the Master's LYNX Limiter: FL's Fruity Limiter in its place
+    // the Master's YW Limiter: FL's Fruity Limiter in its place
     CHECK (! back.mixer.empty() && ! back.mixer[0].effects.empty() && back.mixer[0].effects[0].flOrigin.plugin == "Fruity Limiter");
     CHECK (! report.substituted.empty());
 
@@ -383,7 +383,7 @@ TEST (flpexport171e_song_round_trips_through_the_importer)
 TEST (flpexport171e_reexport_keeps_fl_states)
 {
     // an imported FL project goes back with the very states FL wrote (generator and effect origins)
-    using namespace lynx;
+    using namespace yw;
     auto song = fx171e::richSong();
     flpexport::Options options;
     flpexport::Report r1, r2;
@@ -405,7 +405,7 @@ TEST (flpexport171e_reexport_keeps_fl_states)
     const auto* a = slot (first, 2);
     const auto* b = slot (second, 2);
     CHECK (a != nullptr && b != nullptr && a->plugin == b->plugin && a->state == b->state);
-    // the import's fingerprint matches what the import made; a change in LYNX breaks it
+    // the import's fingerprint matches what the import made; a change in YW breaks it
     CHECK (! imported.mixer[2].effects.empty() && imported.mixer[2].effects[0].flOrigin.fingerprint == flpexport::fingerprint (imported.mixer[2].effects[0]));
     if (! imported.mixer[2].effects.empty())
     {
@@ -416,13 +416,13 @@ TEST (flpexport171e_reexport_keeps_fl_states)
 
 TEST (flpexport171e_render_plan_and_freeze)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = fx171e::richSong();
     flpexport::Options options; // option A
     const auto plan = flpexport::planRenders (song, options);
-    // the default song's LYNX drums and synth (channels 0…4) are frozen; the sampler, 3x Osc and the VST3 are not
+    // the default song's YW drums and synth (channels 0…4) are frozen; the sampler, 3x Osc and the VST3 are not
     CHECK (plan.channels == std::vector<int> ({ 0, 1, 2, 3, 4 }));
-    // insert 3 holds the LYNX-only EQ; insert 2's effect is FL's own
+    // insert 3 holds the YW-only EQ; insert 2's effect is FL's own
     CHECK (std::find (plan.inserts.begin(), plan.inserts.end(), 3) != plan.inserts.end());
     CHECK (std::find (plan.inserts.begin(), plan.inserts.end(), 2) == plan.inserts.end());
 
@@ -439,15 +439,15 @@ TEST (flpexport171e_render_plan_and_freeze)
     const auto project = flp::parseProject (flpexport::exportFlp (song, options, report));
     CHECK (project.channels[0].type == flp::ChannelType::audioClip && project.channels[0].samplePath == "C:/out/kick.wav");
     // the render plays at unity: FL's default channel volume, 10000 of 12800, where audioClipUnity × channelGain = 1
-    // (round 182b: written at 12800 it played 5.2 dB loud in FL and in LYNX)
+    // (round 182b: written at 12800 it played 5.2 dB loud in FL and in YW)
     CHECK (song.channels[0].volume == audioClipUnityVolume);
     CHECK (project.channels[0].volume == 10000);
     CHECK (std::abs (20.0 * std::log10 (channelGain (song.channels[0].volume) / channelGain (10000.0f / 12800.0f))) < 1e-6);
 }
 
-TEST (flpexport171e_insert_render_switches_off_the_lynx_slots)
+TEST (flpexport171e_insert_render_switches_off_the_yw_slots)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = fx171e::richSong();
     flpexport::Options options;
     Automation a;
@@ -473,7 +473,7 @@ TEST (flpexport171e_insert_render_switches_off_the_lynx_slots)
                                                                                     flpexport::planRenders (song, options).inserts.end(), 3)
                                                                          == flpexport::planRenders (song, options).inserts.end());
     // the render of an insert is its output alone: the inserts feeding it reach the Master only through it (p2 in
-    // LYNX played its loop twice, once in the loop insert's render and once inside the reverb insert's render)
+    // YW played its loop twice, once in the loop insert's render and once inside the reverb insert's render)
     const auto renderSong = flpexport::makeInsertRenderSong (fx171e::richSong(), 3);
     CHECK (renderSong.mixer[3].solo && renderSong.mixer[3].toMaster && renderSong.mixer[3].sends.empty());
     for (std::size_t t = 1; t < renderSong.mixer.size(); ++t)
@@ -483,7 +483,7 @@ TEST (flpexport171e_insert_render_switches_off_the_lynx_slots)
 
 TEST (flpexport171e_sample_paths_rewritten_for_the_package)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = fx171e::richSong();
     flpexport::Options options;
     options.samplePath = [] (const std::string& p) { return "Samples/" + p.substr (p.find_last_of ("/\\") + 1); };
@@ -495,16 +495,16 @@ TEST (flpexport171e_sample_paths_rewritten_for_the_package)
 TEST (flpexport171e_fl_round_171e_fixes)
 {
     // FL 2026 renders of the first exports (REA_rodada171e §5): a 3x Osc with no state, a plugin not on this PC, the PPQ
-    using namespace lynx;
+    using namespace yw;
     auto song = fx171e::richSong();
     flpexport::Options options;
     flpexport::Report report;
-    // 1. LYNX's 3x Osc with no state goes as FL's own version-14 state (an empty one made FL's notes never end)
+    // 1. YW's 3x Osc with no state goes as FL's own version-14 state (an empty one made FL's notes never end)
     CHECK (song.channels[6].pluginState.empty());
     auto project = flp::parseProject (flpexport::exportFlp (song, options, report));
     CHECK (project.channels[6].pluginName == "3x Osc" && project.channels[6].pluginState == flpexport::defaultThreeOscState());
     CHECK (threeOscStateUsable (flpexport::defaultThreeOscState()) && flpexport::defaultThreeOscState().size() == 460);
-    // the other engines LYNX plays need their own state (else they are rendered)
+    // the other engines YW plays need their own state (else they are rendered)
     ChannelDef sim;
     sim.instrument = InstrumentKind::simsynth;
     CHECK (flpexport::needsFreeze (sim));
@@ -570,8 +570,8 @@ TEST (flpexport171e_fl_round_171e_fixes)
 TEST (flpexport171e_automation_clip_range)
 {
     // an FL automation clip's levels are its range (pan = low, volume = high, of 12800, in the target's whole range):
-    // FL's own tempo clips keep 1250..4250 (60..180 BPM). LYNX writes the whole range; the importer reads either.
-    using namespace lynx;
+    // FL's own tempo clips keep 1250..4250 (60..180 BPM). YW writes the whole range; the importer reads either.
+    using namespace yw;
     auto song = fx171e::richSong();
     for (auto& a : song.automations)
         if (a.target.kind == AutomationTargetKind::tempo)
@@ -624,8 +624,8 @@ TEST (flpexport171e_automation_clip_range)
 TEST (flpexport171e2_sidechain_inputs_are_level_0_routes)
 {
     // FL finds a compressor's side-chain input in the routes into its insert (a route at level 0 = sidechain only);
-    // the export must write one for every side-chain source LYNX keeps, or FL's ducking stops (thief: +3.7 dB in FL)
-    using namespace lynx;
+    // the export must write one for every side-chain source YW keeps, or FL's ducking stops (thief: +3.7 dB in FL)
+    using namespace yw;
     auto song = fx171e::richSong();
     while (song.mixer.size() < 5)
         song.mixer.push_back ({});
@@ -652,9 +652,9 @@ TEST (flpexport171e2_sidechain_inputs_are_level_0_routes)
 TEST (flpexport171e2_current_track_is_not_routed_to_the_master)
 {
     // FL's last mixer record is its "Current" track, which plays the selected insert: routed to the Master it doubled
-    // the whole song (every LYNX export rendered +6.02 dB in FL; with the record as FL writes it, a kick-only export
-    // renders bit-exact with LYNX, esr -84 dB [FL, round 171e2]). FL writes it with flags 0x0C, no route, no controls.
-    using namespace lynx;
+    // the whole song (every YW export rendered +6.02 dB in FL; with the record as FL writes it, a kick-only export
+    // renders bit-exact with YW, esr -84 dB [FL, round 171e2]). FL writes it with flags 0x0C, no route, no controls.
+    using namespace yw;
     const auto song = fx171e::richSong();
     flpexport::Options options;
     flpexport::Report report;

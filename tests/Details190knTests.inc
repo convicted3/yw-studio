@@ -7,9 +7,9 @@
 
 namespace details190kn
 {
-lynx::Song mixerSong (int inserts)
+yw::Song mixerSong (int inserts)
 {
-    lynx::Song song;
+    yw::Song song;
     song.mixer.resize ((std::size_t) inserts + 1);
     return song;
 }
@@ -17,7 +17,7 @@ lynx::Song mixerSong (int inserts)
 
 TEST (details190kn_unmute_all_clears_mutes_and_solos_but_keeps_locked_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = details190kn::mixerSong (4);
     song.mixer[1].muted = true;
     song.mixer[2].muted = true;
@@ -36,7 +36,7 @@ TEST (details190kn_unmute_all_clears_mutes_and_solos_but_keeps_locked_tracks)
 
 TEST (details190kn_a_locked_track_is_not_silenced_by_a_solo_elsewhere)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = details190kn::mixerSong (4);
     song.mixer[1].solo = true;
     auto audible = song.soloAudible();
@@ -58,7 +58,7 @@ TEST (details190kn_a_locked_track_is_not_silenced_by_a_solo_elsewhere)
 
 TEST (details190kn_slot_solo_keeps_one_effect_then_turns_all_back_on)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = details190kn::mixerSong (1);
     for (int i = 0; i < 3; ++i)
         song.mixer[1].effects.push_back (makeEffectSlot (EffectKind::eq));
@@ -76,7 +76,7 @@ TEST (details190kn_slot_solo_keeps_one_effect_then_turns_all_back_on)
 
 TEST (details190kn_chain_preset_stepper_follows_the_menu_order_and_wraps)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<std::string> order;
     for (const auto* category : chains::categories())
         for (const auto& p : chains::factory())
@@ -102,7 +102,7 @@ TEST (details190kn_chain_preset_stepper_follows_the_menu_order_and_wraps)
 
 TEST (details190kn_live_count_in_position_runs_from_minus_bars_up_to_one)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto beat = (double) ppq, bar = 4.0 * beat;
     // 2 bars of 4/4 (Live manual 19.6: "beginning at -2.1.1. ... up to 1.1.1.")
     auto p = countin::livePosition (2.0 * bar, 4, 4, ppq);

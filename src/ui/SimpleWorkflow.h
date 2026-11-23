@@ -1,6 +1,6 @@
 #pragma once
 
-// The Simple workflow (View › Layout style, round 184a; design: /mnt/e/lynx-work/simple184a/DESIGN.md): one window with
+// The Simple workflow (View › Layout style, round 184a; design: /mnt/e/yw-work/simple184a/DESIGN.md): one window with
 // the tracks and the timeline. This object owns the style's own parts: slice S3's New track chooser (the home screen of
 // an empty project and the "Add track" button in the Playlist's title bar) and, in later slices, the dock for the
 // selected track and the Finish dock. MainComponent makes it the first time the style is chosen and keeps it for the
@@ -14,7 +14,7 @@
 
 #include "core/SimpleTracks.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 struct SampleData;
@@ -90,7 +90,7 @@ public:
     void showChooser();
     void hideChooser();
     bool isChooserShowing() const noexcept;
-    // "Start from" (round 190ch, ui/StartFromPanel.h): LYNX's demo song and the templates, with a preview, over the
+    // "Start from" (round 190ch, ui/StartFromPanel.h): YW's demo song and the templates, with a preview, over the
     // Playlist like the chooser
     void showStartFrom();
     void hideStartFrom();
@@ -168,7 +168,7 @@ public:
 private:
     class Chooser;
     void closeByHand(); // the chooser was closed (✕, Esc, a click outside): it stays closed for this project
-    void addDefaultInstrument();                   // the Instrument tile: LYNX's synth on a new track, ready to play
+    void addDefaultInstrument();                   // the Instrument tile: YW's synth on a new track, ready to play
     void chooseInstrument (juce::Component& tile);
     void chooseSample();
     void importFiles();
@@ -204,4 +204,4 @@ private:
     juce::File sampleFolder; // where the last sample for a Sampler track came from (this session)
     std::shared_ptr<int> lifetime = std::make_shared<int> (0); // (round 190kx: late answers check it)
 };
-} // namespace lynx
+} // namespace yw

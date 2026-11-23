@@ -6,7 +6,7 @@
 // LIST is not read, as FL ignores it
 TEST (slicex190r_region_keys_are_read_and_written_as_fl_does)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto wav = slicex190h::wavWith (1000, { { 1, 0, 0, "Kick", -1 }, { 2, 250, 0, "Snare", -1 }, { 3, 500, 0, "", -1 } });
     std::int64_t frames = 0;
     auto regions = slicex::wavRegions (wav, frames);
@@ -49,7 +49,7 @@ TEST (slicex190r_region_keys_are_read_and_written_as_fl_does)
 // ---- the editor's helpers (curve shapes for the articulator graph)
 TEST (slicex190r_curve_levels_follow_the_points)
 {
-    using namespace lynx;
+    using namespace yw;
     slicex::Curve c;
     c.enabled = -1;
     slicex::Point a, b, d;
@@ -84,7 +84,7 @@ TEST (slicex190r_curve_levels_follow_the_points)
 
 TEST (slicex190r_lfo_cycle_is_one_bipolar_period)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto st = slicex::fresh();
     const auto w = slicex::lfoCycle (st.groups[0].art[slicex::volume], 64);
     CHECK (w.size() == 64);
@@ -102,7 +102,7 @@ TEST (slicex190r_lfo_cycle_is_one_bipolar_period)
 // holds the packed stream. The deck's beat grid is the two doubles FL shows the tempo from.
 TEST (slicex190r_packed_wav_length_comes_from_fact_and_beats_are_set)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<std::uint8_t> w;
     const auto put32 = [&w] (std::uint32_t v) { for (int i = 0; i < 4; ++i) w.push_back ((std::uint8_t) (v >> (8 * i))); };
     const auto tag = [&w] (const char* t) { w.insert (w.end(), t, t + 4); };

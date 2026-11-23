@@ -9,12 +9,12 @@
 #include "core/Python.h"
 #include "core/ScriptDialogPy.h"
 
-namespace lynx::scriptform
+namespace yw::scriptform
 {
 namespace
 {
 // The ScriptDialog class (Python side), written from FL's published script references (Edison's and the Piano roll's:
-// the same class in both); LYNX's own code. `_h.execute` is the host's native (bindExecute).
+// the same class in both); YW's own code. `_h.execute` is the host's native (bindExecute).
 constexpr const char* dialogSource = R"PY(
 class ScriptDialog:
     def __init__(self, title='', description=''):
@@ -325,4 +325,4 @@ void restore (const std::string& scriptKey, Form& form)
                 }
             }
 }
-} // namespace lynx::scriptform
+} // namespace yw::scriptform

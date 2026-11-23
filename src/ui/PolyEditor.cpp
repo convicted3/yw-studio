@@ -19,7 +19,7 @@
 
 #include "../../third_party/pitchnet-poly/PolyEngine.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -35,14 +35,14 @@ constexpr int headerHeight = 40, keyboardWidth = 64, rulerHeight = 16, footerHei
 } // namespace pal
 
 const char* const noteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-// LYNX's piano roll naming (key 60 = C5), as Newtone
+// YW's piano roll naming (key 60 = C5), as Newtone
 juce::String noteName (double midi)
 {
     const auto k = (int) std::lround (midi);
     return juce::String (noteNames[((k % 12) + 12) % 12]) + juce::String (k / 12);
 }
 
-// Basic Pitch's note posteriorgram (LYNX's ONNX Runtime session, ui/BasicPitchSession.h) as PitchNet's evidence: frame k
+// Basic Pitch's note posteriorgram (YW's ONNX Runtime session, ui/BasicPitchSession.h) as PitchNet's evidence: frame k
 // of the stitched posteriorgram is at k x 256 / 22050 s (core a2m::runModelBatched keeps an exact grid)
 bool evidenceOf (const std::vector<float>& mono, double rate, polyphonic::NoteEvidence& ev, const std::function<bool()>& stop,
                  const std::function<void (double)>& progress, juce::String& note)
@@ -773,7 +773,7 @@ private:
     bool valid (int k) const noexcept { return k >= 0 && k < (int) model.notes.size(); }
     bool bufferMode() const noexcept { return (bool) apply; }
 
-    // the editor's Options menu: the LYNX extra that prepares edited clips (also in Settings › LYNX extras)
+    // the editor's Options menu: the YW extra that prepares edited clips (also in Settings › YW extras)
     void showOptions()
     {
         juce::PopupMenu menu;
@@ -1905,4 +1905,4 @@ double polyEditorPaintMs (juce::Component& editor, int paints)
     }
     return (juce::Time::getMillisecondCounterHiRes() - t0) / std::max (1, paints);
 }
-} // namespace lynx
+} // namespace yw

@@ -12,10 +12,10 @@
  #include <windows.h>
 #endif
 
-// LYNX.exe --bridge32test "YW Test Synth 32.dll" report.txt (round 176a): the 32-bit plugin bridge end to end, with
-// LYNX's own 32-bit test VST2 (tools/testplugin/lynx_test_vst2.c, built for x86). Each step writes key=value lines.
+// YW.exe --bridge32test "YW Test Synth 32.dll" report.txt (round 176a): the 32-bit plugin bridge end to end, with
+// YW's own 32-bit test VST2 (tools/testplugin/yw_test_vst2.c, built for x86). Each step writes key=value lines.
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -189,12 +189,12 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
     std::vector<float> l (96000), r (96000);
     const auto clear = [&] { std::fill (l.begin(), l.end(), 0.0f); std::fill (r.begin(), r.end(), 0.0f); };
 
-    // 2. open (sample rate 48 kHz, LYNX's prepared block 4096): it runs in the bridge, as a 32-bit module
-    setEnv ("LYNX_TEST_VST2_LATENCY", "64"); // (the bridge inherits it)
+    // 2. open (sample rate 48 kHz, YW's prepared block 4096): it runs in the bridge, as a 32-bit module
+    setEnv ("YW_TEST_VST2_LATENCY", "64"); // (the bridge inherits it)
     t0 = juce::Time::getMillisecondCounterHiRes();
     auto remote = createSandboxedPlugin (description, 48000.0, PluginHost::maxBlockSize, {}, error);
     const auto openMs = juce::Time::getMillisecondCounterHiRes() - t0;
-    setEnv ("LYNX_TEST_VST2_LATENCY", "0");
+    setEnv ("YW_TEST_VST2_LATENCY", "0");
     if (remote == nullptr)
     {
         fail ("open: " + error);
@@ -245,12 +245,12 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
     report << "peak=" << peak << " hz=" << juce::String (hz, 1) << " render_1s_ms=" << juce::String (renderMs, 1) << " block_us_mean="
            << juce::String (meanUs, 1) << " block_us_p50=" << juce::String (blockUs[blockUs.size() / 2], 1) << " block_us_p99="
            << juce::String (blockUs[blockUs.size() * 99 / 100], 1) << " block_us_max=" << juce::String (blockUs.back(), 1)
-           << " bridge_cpu_ms_per_s=" << juce::String (childCpu, 1) << " lynx_thread_cpu_ms_per_s=" << juce::String (ownCpu, 1) << "\n";
+           << " bridge_cpu_ms_per_s=" << juce::String (childCpu, 1) << " yw_thread_cpu_ms_per_s=" << juce::String (ownCpu, 1) << "\n";
     if (peak < 0.3f || std::abs (hz - 440.0) > 5.0)
         fail ("no / wrong sound (440 Hz sine expected)");
 
     // 3b. cost per instance (10 s of 256-sample blocks, the device's usual size): the bridged 32-bit plugin, and with
-    // --compare <64-bit build of the same plugin>, that one in LYNX's process and in a 64-bit separate process
+    // --compare <64-bit build of the same plugin>, that one in YW's process and in a 64-bit separate process
     {
         const auto timeIt = [&] (Instrument& v, int childPid, const char* label) {
             std::vector<float> a (256), b (256);
@@ -270,7 +270,7 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
            #endif
             const auto blocks = 48000 * 10 / 256;
             report << "perf_" << label << ": us_per_block=" << juce::String (wall * 1000.0 / blocks, 2) << " cpu_pct_of_realtime="
-                   << juce::String ((own + child) / 100.0, 3) << " (lynx " << juce::String (own / 100.0, 3) << " + child " << juce::String (child / 100.0, 3)
+                   << juce::String ((own + child) / 100.0, 3) << " (yw " << juce::String (own / 100.0, 3) << " + child " << juce::String (child / 100.0, 3)
                    << ")\n";
             return wall * 1000.0 / blocks;
         };
@@ -347,7 +347,7 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
     else
         fail ("second instance: " + error);
 
-    // 6. editor: the plugin's window opens in the bridge while LYNX's stand-in is on screen, and closes with it
+    // 6. editor: the plugin's window opens in the bridge while YW's stand-in is on screen, and closes with it
    #if JUCE_WINDOWS
     if (! juce::JUCEApplicationBase::getCommandLineParameters().contains ("--no-editor")) // (--no-editor: no window on screen)
     {
@@ -369,7 +369,7 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
         clear();
         voice.render (l.data(), r.data(), 4800, 1.0f, 1.0f);
         const auto peakWithEditor = peakOf (l, r, 4800);
-        holder = nullptr; // LYNX's plugin window closed: the stand-in hides the plugin's window
+        holder = nullptr; // YW's plugin window closed: the stand-in hides the plugin's window
         const auto h0 = juce::Time::getMillisecondCounterHiRes();
         auto hidden = false;
         while (! (hidden = ! windowShown (pid, description.name)) && juce::Time::getMillisecondCounterHiRes() - h0 < 5000.0)
@@ -382,9 +382,9 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
    #endif
 
     // 7. a crashing 32-bit plugin (an access violation in its 20th process call) takes only the bridge down
-    setEnv ("LYNX_TEST_VST2_CRASH", "process");
+    setEnv ("YW_TEST_VST2_CRASH", "process");
     auto crasher = createSandboxedPlugin (description, 48000.0, PluginHost::maxBlockSize, {}, error);
-    setEnv ("LYNX_TEST_VST2_CRASH", "");
+    setEnv ("YW_TEST_VST2_CRASH", "");
     if (crasher != nullptr)
     {
         auto& p3 = *crasher;
@@ -423,4 +423,4 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
     write();
     return ok ? 0 : 1;
 }
-} // namespace lynx
+} // namespace yw

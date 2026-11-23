@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's video decoding (round 174d, docs/analise/REA_rodada174d.md §3), shared by the Video Player (round 165g) and
+// YW's video decoding (round 174d, docs/analise/REA_rodada174d.md §3), shared by the Video Player (round 165g) and
 // the video tracks. The decoders, tried in order:
 //   1. the operating system's own (built in, nothing to install): Windows Media Foundation (ui/VideoMediaWindows.cpp),
 //      macOS AVFoundation (ui/VideoMediaMac.mm);
@@ -21,7 +21,7 @@
 
 #include "core/VideoPlayer.h"
 
-namespace lynx::media
+namespace yw::media
 {
 // --- the native decoders -----------------------------------------------------------------------------------------
 // One open file, decoded on one thread at a time.
@@ -111,4 +111,4 @@ private:
 
 // Scales BGRA rows (area average when shrinking, nearest when growing); dst is w × h × 4
 void scaleBgra (const std::uint8_t* src, int srcW, int srcH, int srcStride, std::uint8_t* dst, int w, int h, int dstStride) noexcept;
-} // namespace lynx::media
+} // namespace yw::media

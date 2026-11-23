@@ -4,7 +4,7 @@
 
 TEST (keys96_gate_keeps_a_taken_key_whole)
 {
-    lynx::HostKeyGate gate;
+    yw::HostKeyGate gate;
     int asked = 0;
     auto yes = [&asked] { ++asked; return true; };
     auto no = [&asked] { ++asked; return false; };
@@ -45,7 +45,7 @@ TEST (keys187a_a_taken_key_repeats_for_the_host)
 {
     // round 187a: a held key the host took repeats as over the main window (a shortcut runs again); one the plugin
     // got repeats for the plugin only
-    lynx::HostKeyGate gate;
+    yw::HostKeyGate gate;
     int asked = 0, again = 0;
     auto yes = [&asked] { ++asked; return true; };
     auto no = [&asked] { ++asked; return false; };
@@ -71,10 +71,10 @@ TEST (keys187a_a_taken_key_repeats_for_the_host)
 
 TEST (keys96_options_off_for_a_new_plugin)
 {
-    // FL: the Troubleshooting box is off for a new plugin [UI: E:\lynx-work\pain181c\shots\d21.png]; the plugin gets
+    // FL: the Troubleshooting box is off for a new plugin [UI: E:\yw-work\pain181c\shots\d21.png]; the plugin gets
     // keys first ("Typing keyboard priority" on: FL's General option "Disable typing keyboard priority by default" is
     // off, its registry value 0 on the study install, 2026-11-09)
-    lynx::PluginRef ref;
+    yw::PluginRef ref;
     CHECK (! ref.allowHostKeys);
     CHECK (! ref.hostKeysFirst);
 
@@ -89,24 +89,24 @@ TEST (keys96_options_off_for_a_new_plugin)
 TEST (keys96_option_reads_from_fl_wrapper_flags)
 {
     // FL 2026: the same project saved with the option off and on differs in this one bit of the second flags word
-    // (+21; E:\lynx-work\pain181c\flp\off.flp, on.flp, byte 45291: 00 -> 08)
-    lynx::ForeignPlugin f;
-    lynx::PluginRef ref;
+    // (+21; E:\yw-work\pain181c\flp\off.flp, on.flp, byte 45291: 00 -> 08)
+    yw::ForeignPlugin f;
+    yw::PluginRef ref;
     f.hasWrapperOptions = true;
     f.wrapperVersion = 12;
     f.wrapperFlags = 0xB4007D8Cu;
     f.hasWrapperFlags2 = true;
     f.wrapperFlags2 = 0;
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (! ref.allowHostKeys);
     f.wrapperFlags2 = 0x800u;
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (ref.allowHostKeys && ref.allNotesOffOnStop); // its neighbour 0x1000 untouched
 }
 
 TEST (keys96_option_writes_to_fl_wrapper_flags)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin p;
     p.format = ForeignPlugin::Format::vst3;
     p.name = "Synth";
@@ -135,19 +135,19 @@ TEST (keys96_option_writes_to_fl_wrapper_flags)
 TEST (keys187a_typing_keyboard_priority_is_fl_wrapper_flag_0x01000000)
 {
     // FL 2026: one project saved with the plugin window's keyboard button on and off differs in this bit only
-    // (E:\lynx-work\flgap187a\fl\kb-on.flp / kb-off2.flp: wrapper flags 0xB4007D8C -> 0xB5007D8C)
-    lynx::ForeignPlugin f;
-    lynx::PluginRef ref;
+    // (E:\yw-work\flgap187a\fl\kb-on.flp / kb-off2.flp: wrapper flags 0xB4007D8C -> 0xB5007D8C)
+    yw::ForeignPlugin f;
+    yw::PluginRef ref;
     f.hasWrapperOptions = true;
     f.wrapperVersion = 12;
     f.wrapperFlags = 0xB4007D8Cu;
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (! ref.hostKeysFirst);
     f.wrapperFlags = 0xB5007D8Cu;
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (ref.hostKeysFirst && ref.resetOnFlush); // its neighbour 0x02000000 untouched
 
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin p;
     p.format = ForeignPlugin::Format::vst3;
     p.name = "Synth";
@@ -170,12 +170,12 @@ TEST (keys187a_typing_keyboard_priority_is_fl_wrapper_flag_0x01000000)
 
 TEST (keys187a_new_plugins_follow_disable_typing_keyboard_priority)
 {
-    // FL's General option (DisablePlugFocusDefaultBox, off): on, a new plugin starts with LYNX first
-    CHECK (! lynx::pluginkeys::newPluginsHostFirst().load());
-    CHECK (! lynx::PluginRef {}.hostKeysFirst);
-    lynx::pluginkeys::newPluginsHostFirst() = true;
-    const lynx::PluginRef fresh;
-    lynx::pluginkeys::newPluginsHostFirst() = false;
+    // FL's General option (DisablePlugFocusDefaultBox, off): on, a new plugin starts with YW first
+    CHECK (! yw::pluginkeys::newPluginsHostFirst().load());
+    CHECK (! yw::PluginRef {}.hostKeysFirst);
+    yw::pluginkeys::newPluginsHostFirst() = true;
+    const yw::PluginRef fresh;
+    yw::pluginkeys::newPluginsHostFirst() = false;
     CHECK (fresh.hostKeysFirst);
-    CHECK (! lynx::PluginRef {}.hostKeysFirst);
+    CHECK (! yw::PluginRef {}.hostKeysFirst);
 }

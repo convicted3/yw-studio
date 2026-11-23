@@ -7,7 +7,7 @@
 #include "core/DrumSynthLive.h"
 #include "core/PhysicalModels.h"
 
-namespace lynx::bankstates
+namespace yw::bankstates
 {
 namespace
 {
@@ -118,7 +118,7 @@ std::vector<float> drumSynthParams (const std::vector<DrumSynthPatch>& patches)
             m[(std::size_t) (drumSynthPatchParams * slot + i)] = (float) patch.values[(std::size_t) i];
     };
     // FL's own kits cover every key: its fresh DrumSynth Live (the Plugin database's state) repeats its 24-patch kit
-    // over the 120 keys (key k plays patch k mod 24, REA_rodada169e §3). LYNX's kits are one-octave kits, repeated the
+    // over the 120 keys (key k plays patch k mod 24, REA_rodada169e §3). YW's kits are one-octave kits, repeated the
     // same way every 12 keys, so the step sequencer's C5 (60) plays the kit's C like any other C.
     for (int key = 0; key < drumSynthPatches; ++key)
         for (const auto& patch : patches)
@@ -203,4 +203,4 @@ std::optional<ChannelDef> channelFor (const std::string& kind, const std::vector
         return std::nullopt;
     return def;
 }
-} // namespace lynx::bankstates
+} // namespace yw::bankstates

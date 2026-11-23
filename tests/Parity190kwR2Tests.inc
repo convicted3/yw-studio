@@ -2,7 +2,7 @@
 // analysis of the reference (docs/analise/REA_rodada190kw.md: true stereo with the width matrix and the feedback
 // rotation, the line-length / level / brightness laws) and fitted on refcap030's captures (docs/PARITY.md "Round 190kw").
 // A new LuxeVerb and a translated Pro-R 2 state get it (hidden luxeVerbSpaceRevision = 1); a project saved before loads
-// 0 and renders bit for bit as the base commit did (fingerprints below, /mnt/e/lynx-work/rea190kw/r2/gold).
+// 0 and renders bit for bit as the base commit did (fingerprints below, /mnt/e/yw-work/rea190kw/r2/gold).
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -29,21 +29,21 @@ inline std::vector<std::uint8_t> ffbs (const std::vector<float>& v)
     return b;
 }
 // a Pro-R 2 state (Modern, 100 % wet) with the given Space, Brightness and raw Stereo Width, rendered on an impulse
-inline lynx::EffectSlot proR2 (float space, float bright, float width)
+inline yw::EffectSlot proR2 (float space, float bright, float width)
 {
     std::vector<float> v (136, 0.0f);
     v[0] = space; v[1] = 0.0f; v[2] = 0.5f; v[3] = bright; v[5] = 0.3f; v[7] = width; v[9] = 100.0f;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::luxeVerb);
-    if (const auto st = lynx::fabfilter::parseState (ffbs (v))) lynx::fabfilter::fromProR2 (*st, slot);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::luxeVerb);
+    if (const auto st = yw::fabfilter::parseState (ffbs (v))) yw::fabfilter::fromProR2 (*st, slot);
     return slot;
 }
-inline void impulse (const lynx::EffectSlot& slot, bool leftOnly, std::vector<float>& l, std::vector<float>& r, double sr = 48000.0)
+inline void impulse (const yw::EffectSlot& slot, bool leftOnly, std::vector<float>& l, std::vector<float>& r, double sr = 48000.0)
 {
     const int n = (int) (1.5 * sr);
     l.assign ((std::size_t) n, 0.0f); r.assign ((std::size_t) n, 0.0f);
     l[100] = 0.5f;
     if (! leftOnly) r[100] = 0.5f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);
@@ -58,7 +58,7 @@ inline double db (const std::vector<float>& x, int from = 200)
 
 TEST (parity190kwR2_revision_is_hidden_new_instances_and_pro_r2_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (effectInfo (EffectKind::luxeVerb).params.size() == (std::size_t) luxeVerbSpaceDucking); // no new control
     auto s = makeEffectSlot (EffectKind::luxeVerb);
     CHECK (s.params[(std::size_t) luxeVerbSpaceRevision] == 1.0f && s.params[(std::size_t) luxeVerbSpaceWidthExt] == 0.0f);
@@ -122,7 +122,7 @@ TEST (parity190kwR2_revision0_renders_as_the_base_commit_did)
 
 TEST (parity190kwR2_width_law_true_stereo_and_output_matrix)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<float> l, r;
     // Stereo Width 100 %: v = 0, s_in = 1, no rotation, X = Y = 1 — the two channels' networks are independent, so a
     // left-only impulse leaves the right channel silent
@@ -149,7 +149,7 @@ TEST (parity190kwR2_width_law_true_stereo_and_output_matrix)
 
 TEST (parity190kwR2_space0_level_and_brightness_law)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<float> l, r;
     // Space 0: the reference still rings ~0.2 s at nearly the level of Space 25 % (−14.4 vs −18.1 dB); revision 0 was
     // 6 … 11 dB short of it
@@ -178,19 +178,19 @@ TEST (parity190kwR2_space0_level_and_brightness_law)
 namespace p190lgr2t
 {
 // a Pro-R 2 state (Modern, 100 % wet): Space, Decay Rate (−1 … 1), Distance, Thickness (−1 … 1), Ducking (dB)
-inline lynx::EffectSlot state (float space, float rate, float distance, float thick, float duckDb)
+inline yw::EffectSlot state (float space, float rate, float distance, float thick, float duckDb)
 {
     std::vector<float> v (136, 0.0f);
     v[0] = space; v[1] = rate; v[2] = distance; v[3] = 0.5f; v[5] = 0.3f; v[6] = thick; v[7] = 0.7f; v[8] = duckDb; v[9] = 100.0f;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::luxeVerb);
-    if (const auto st = lynx::fabfilter::parseState (p190kwr2t::ffbs (v))) lynx::fabfilter::fromProR2 (*st, slot);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::luxeVerb);
+    if (const auto st = yw::fabfilter::parseState (p190kwr2t::ffbs (v))) yw::fabfilter::fromProR2 (*st, slot);
     return slot;
 }
 // renders `in` (mono, both channels) through the slot; returns the left + right sum
-inline std::vector<double> render (const lynx::EffectSlot& slot, const std::vector<float>& in, double sr = 48000.0)
+inline std::vector<double> render (const yw::EffectSlot& slot, const std::vector<float>& in, double sr = 48000.0)
 {
     std::vector<float> l (in), r (in);
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) in.size();
     for (int off = 0; off < n; off += 512)

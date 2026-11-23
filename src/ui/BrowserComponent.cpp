@@ -28,7 +28,7 @@
 #include "core/FlpImport.h"
 #include "core/ProjectContents.h"
 #include "core/FactoryContent.h"
-#include "core/FactoryLoops.h" // (rollup 0.1.30 step 6: LYNX content in the Loop Browser)
+#include "core/FactoryLoops.h" // (rollup 0.1.30 step 6: YW content in the Loop Browser)
 #include "core/LayoutStyle.h"
 #include "core/SoundLibrary.h"
 #include "core/SearchIndex.h"
@@ -89,7 +89,7 @@
 #include "ui/WorkflowExtras.h" // round 190iu (issue #191.6)
 #include "ui/LoopInfo.h" // round 190kx
 
-namespace lynx
+namespace yw
 {
 juce::ChangeBroadcaster& loopLengthsRead(); // (round 190mf, ui/LoopBrowserParts.inc: the Simple loop rows' lengths read)
 namespace
@@ -101,7 +101,7 @@ bool isAudio (const juce::File& f)
 
 bool isListed (const juce::File& f)
 {
-    return f.hasFileExtension ("wav;flac;ogg;mp3;aif;aiff;wv;ncw;mid;midi;lynx;flp;als;flm;fst;sf2;sf3;sfz;dwp;dwb;gig;mod;xm;s3m;it");
+    return f.hasFileExtension ("wav;flac;ogg;mp3;aif;aiff;wv;ncw;mid;midi;yw;flp;als;flm;fst;sf2;sf3;sfz;dwp;dwb;gig;mod;xm;s3m;it");
 }
 
 constexpr int maxResults = 500;
@@ -173,9 +173,9 @@ Icon iconFor (const juce::File& f, bool folder)
         return Icon::audioFile;
     if (f.hasFileExtension ("mid;midi"))
         return Icon::pianoRoll;
-    if (f.hasFileExtension ("lynx;flp;als;flm"))
+    if (f.hasFileExtension ("yw;flp;als;flm"))
         return Icon::project;
-    if (f.hasFileExtension ("fst;sf2;sf3;sfz;lynxpreset;fxp;fxb;vstpreset;adv;adg;dwp;dwb;gig")) // (round 190hr: Live device / rack presets; round 190ii: sampler instruments)
+    if (f.hasFileExtension ("fst;sf2;sf3;sfz;ywpreset;fxp;fxb;vstpreset;adv;adg;dwp;dwb;gig")) // (round 190hr: Live device / rack presets; round 190ii: sampler instruments)
         return Icon::preset;
     return Icon::file;
 }
@@ -190,15 +190,15 @@ juce::String rowHint (const juce::File& f, bool folder, bool expanded)
                    "[Shift][Up] / [Shift][Down] swap through the files");
     if (f.hasFileExtension ("mid;midi"))
         return tr ("MIDI file: [2xLMB] open it as a project");
-    if (f.hasFileExtension ("lynx;flp;als;flm"))
+    if (f.hasFileExtension ("yw;flp;als;flm"))
         return tr ("Project: [2xLMB] open it");
-    if (f.hasFileExtension ("lynxtrack") || (f.hasFileExtension ("fst") && f.getFullPathName().containsIgnoreCase ("Mixer presets")))
+    if (f.hasFileExtension ("ywtrack") || (f.hasFileExtension ("fst") && f.getFullPathName().containsIgnoreCase ("Mixer presets")))
         return tr ("Mixer preset: [2xLMB] load it onto the selected mixer tracks  drag onto a mixer track (onto the empty mixer space: a new track)");
     if (f.hasFileExtension ("fst"))
         return tr ("Preset: [2xLMB] new channel with it (FL synth presets)  drag onto a mixer insert: effect preset");
-    if (f.hasFileExtension ("lynxpreset") && f.isAChildOf (genpresetui::root()))
+    if (f.hasFileExtension ("ywpreset") && f.isAChildOf (genpresetui::root()))
         return tr ("Generator preset: [2xLMB] new channel with it");
-    if (f.hasFileExtension ("lynxpreset;fxp;fxb;vstpreset"))
+    if (f.hasFileExtension ("ywpreset;fxp;fxb;vstpreset"))
         return tr ("Plugin preset: [2xLMB] load it into its plugin (an open plugin window, or the selected channel's plugin)");
     if (f.hasFileExtension ("sfz"))
         return tr ("SFZ instrument: [LMB] preview  [2xLMB] new YW Soundfont channel (or into the selected one)  drag to the Channel Rack");
@@ -276,7 +276,7 @@ Icon categoryIcon (Category c)
     return Icon::folder;
 }
 
-// Each top-level folder has its own colour (FL colours its Browser's folders by kind; LYNX uses its own set).
+// Each top-level folder has its own colour (FL colours its Browser's folders by kind; YW uses its own set).
 juce::Colour rootColour (int index)
 {
     static const juce::Colour colours[] = { juce::Colour (0xff6ea8fe), juce::Colour (0xff3ddc84), juce::Colour (0xffe58fd0),
@@ -308,7 +308,7 @@ DraggedPlugin& draggedPlugin()
 
 // Round 190hd: the indexer process (REA 190hc action 5, parts 2-3, after Live's Indexer: "StartIndex" runs the library
 // indexer as a separate process at a low priority and rescans on file-system events). The Browser's index of its
-// folders (core/SearchIndex.h) is kept up to date by `LYNX --browser-indexer <pid> <roots file>`: a child at the
+// folders (core/SearchIndex.h) is kept up to date by `YW --browser-indexer <pid> <roots file>`: a child at the
 // lowest priority (Windows: idle class + background mode, so its disk reads are low priority too; elsewhere nice 19
 // and, on Linux, the idle I/O class) that walks the folders whose times changed, writes the index file, tells this
 // process, and then sleeps on the system's change notifications for those trees (core/FolderWatcher.h) until the
@@ -555,7 +555,7 @@ struct BrowserComponent::SearchShared
     // the background pass over these folders: by the indexer process where it may run, else here (round 190hd)
     void refreshInBackground (std::vector<std::string> roots)
     {
-        if (allowIndexerProcess && juce::SystemStats::getEnvironmentVariable ("LYNX_INDEXER_PROCESS", {}) != "0")
+        if (allowIndexerProcess && juce::SystemStats::getEnvironmentVariable ("YW_INDEXER_PROCESS", {}) != "0")
         {
             if (indexer == nullptr)
                 indexer = std::make_unique<IndexerProcess> (*service);
@@ -584,7 +584,7 @@ struct BrowserComponent::SearchShared
 
 // "Find similar samples" (round 190as): the analysis of the Browser's samples and its worker (core/SampleSimilarity.h),
 // one per process while a Browser exists, the index kept in the settings folder between sessions. The worker has the
-// lowest priority, rests as long as it works and waits while LYNX plays, records or renders.
+// lowest priority, rests as long as it works and waits while YW plays, records or renders.
 struct BrowserComponent::SimilarShared
 {
     juce::ChangeBroadcaster statusChanged;
@@ -699,7 +699,7 @@ public:
         return {};
     }
 
-    // FL layout: 24 px rows (design slice FM-S7 / finding FM-9: FL's tree rows are 23 px with a larger face than LYNX's
+    // FL layout: 24 px rows (design slice FM-S7 / finding FM-9: FL's tree rows are 23 px with a larger face than YW's
     // 22 px ones); the Clip-launch layout's Live-style list: 19 px (Live's row pitch, CL-22). Round 190iz.
     static constexpr int flRowHeight = 24, liveRowHeight = 19;
     int rowHeight = flRowHeight;
@@ -736,7 +736,7 @@ public:
         plugins,  // the Plugin database and its folders (round 142): built-in, FL engines, installed plugins
         plugin,   // one of its plugins (double-click adds it)
         collection, // a collection's heading in the STARRED tab (round 190ce): its items are its children
-        factory     // round 190ke: "YW Studio content" and its folders (the Simple layout): LYNX's own sounds, beats, chains
+        factory     // round 190ke: "YW Studio content" and its folders (the Simple layout): YW's own sounds, beats, chains
     };
 
     struct Node
@@ -768,7 +768,7 @@ public:
         // Generators' (-1 the other database folders); userFolder = the user's folder path ("" = Effects / Generators)
         int folderKind = -1;
         std::string userFolder;
-        // round 190bj (issue B4): LYNX's own groups under Effects / Generators — the format folder of their Installed
+        // round 190bj (issue B4): YW's own groups under Effects / Generators — the format folder of their Installed
         // entries ("YW Studio", "FL engines", "VFX"; "" = Installed itself), core/PluginDbFolder.h groupFolder()
         std::string group;
         bool isGroup = false;
@@ -777,7 +777,7 @@ public:
         // plugin's parameters (what the wrapper menu's Browse parameters shows); a parameter row's target
         AutomationTarget parameter;
         // round 190oa (DF-109, capture 190oa B3): FL draws the plugin's editor picture (~106 × 52) on its own lines under
-        // an effect / plugin generator entry of Current project; LYNX: the Plugin picker's picture, over `thumbRows`
+        // an effect / plugin generator entry of Current project; YW: the Plugin picker's picture, over `thumbRows`
         // pseudo rows (`thumbPart` 0, 1, 2 of the picture's lines; `thumbOwner` = the entry)
         juce::Image thumb;
         std::vector<std::unique_ptr<Node>> thumbRows;
@@ -798,7 +798,7 @@ public:
             if (slot.kind == EffectKind::plugin)
                 key = slot.plugin.id, native = false;
             else
-                key = std::string ("lynx:fx:") + effectInfo (slot.kind).name;
+                key = std::string ("yw:fx:") + effectInfo (slot.kind).name;
         }
         else if (item.kind == projectcontents::Kind::generator && item.index >= 0 && item.index < (int) song.channels.size() && gens != nullptr)
         {
@@ -906,7 +906,7 @@ public:
     // A Plugin database entry outside the database's tree (a collection's item): the same row, double-click and drag.
     static std::unique_ptr<Node> makePluginItem (BrowserComponent& browser, const std::string& key)
     {
-        if (factorycontent::isKey (key)) // (round 190ke: LYNX's own content in a collection or a tag search)
+        if (factorycontent::isKey (key)) // (round 190ke: YW's own content in a collection or a tag search)
             return makeFactoryItem (browser, key);
         auto safe = juce::Component::SafePointer<BrowserComponent> (&browser);
         for (int generators = 1; generators >= 0; --generators)
@@ -950,7 +950,7 @@ public:
         return nullptr; // (the plugin is not installed any more: the collection leaves it out)
     }
 
-    // Round 190ke (owner decision D2): one item of LYNX's own content, a plugin-like row (double-click / Enter: add it;
+    // Round 190ke (owner decision D2): one item of YW's own content, a plugin-like row (double-click / Enter: add it;
     // drag a sound onto the Channel Rack) whose key the collections and the tags store; nullptr for an unknown key
     static std::unique_ptr<Node> makeFactoryItem (BrowserComponent& browser, const std::string& key)
     {
@@ -1003,7 +1003,7 @@ public:
             n->expanded = open.count (path) > 0;
             return n;
         };
-        auto root = folder (nullptr, tr ("YW Studio content"), "lynx-content");
+        auto root = folder (nullptr, tr ("YW Studio content"), "yw-content");
         root->colour = theme::colour::accent;
         const std::tuple<factorycontent::Kind, const char*, juce::String> kinds[] { { factorycontent::Kind::sound, "Sounds", tr ("Sounds") },
                                                                                     { factorycontent::Kind::beat, "Beats", tr ("Beats") },
@@ -1011,7 +1011,7 @@ public:
         int total = 0;
         for (const auto& [kind, id, title] : kinds)
         {
-            const auto kindPath = juce::String ("lynx-content/") + id;
+            const auto kindPath = juce::String ("yw-content/") + id;
             auto group = folder (root.get(), title, kindPath);
             std::map<std::string, std::unique_ptr<Node>> byFolder;
             std::vector<std::string> order;
@@ -1128,7 +1128,7 @@ public:
         });
     }
 
-    // FL's "Plugin database", interpreted (round 142, issue #5): Generators and Effects, each with LYNX's built-in ones,
+    // FL's "Plugin database", interpreted (round 142, issue #5): Generators and Effects, each with YW's built-in ones,
     // FL's engines (those the user's FL installation provides) and the installed VST3 / CLAP plugins
     static std::unique_ptr<Node> makePluginDatabase (BrowserComponent& browser, const std::set<juce::String>& open)
     {
@@ -1189,14 +1189,14 @@ public:
         // Generators
         {
             auto gens = folder (root.get(), tr ("Generators"), Icon::keyboard);
-            auto lynxGens = folder (gens.get(), "YW Studio", Icon::folder);
+            auto ywGens = folder (gens.get(), "YW Studio", Icon::folder);
             auto flGens = folder (gens.get(), tr ("FL engines"), Icon::folder);
             // FL's VFX note processors (round 164b): channels with no sound, they play other channels / Patcher nodes
             auto vfxGens = folder (gens.get(), tr ("VFX (note effects)"), Icon::folder);
             auto installed = folder (gens.get(), tr ("Installed"), Icon::folder);
             // round 190pj (issue #241): the JSFX scripts (the bundled pack and the JSFX folders) in a category of their own
             auto jsfxGens = folder (gens.get(), "JSFX", Icon::folder);
-            Node* folders[] = { lynxGens.get(), flGens.get(), vfxGens.get(), installed.get() };
+            Node* folders[] = { ywGens.get(), flGens.get(), vfxGens.get(), installed.get() };
             gens->folderKind = 1;
             for (auto [node, group] : { std::pair { folders[0], "YW Studio" }, std::pair { folders[1], "FL engines" }, std::pair { folders[2], "VFX" },
                                         std::pair { folders[3], "" } })
@@ -1214,7 +1214,7 @@ public:
                 target->children.back()->original = e.label;
             }
             for (auto& [path, n] : mine) sortFolder (*n);
-            for (auto* f : { &lynxGens, &flGens, &vfxGens, &jsfxGens, &installed })
+            for (auto* f : { &ywGens, &flGens, &vfxGens, &jsfxGens, &installed })
                 if (! (*f)->children.empty())
                 {
                     byLabel (**f);
@@ -1225,11 +1225,11 @@ public:
         // Effects
         {
             auto fxs = folder (root.get(), tr ("Effects"), Icon::mixer);
-            auto lynxFx = folder (fxs.get(), "YW Studio", Icon::folder);
+            auto ywFx = folder (fxs.get(), "YW Studio", Icon::folder);
             auto flFx = folder (fxs.get(), tr ("FL engines"), Icon::folder);
             auto installed = folder (fxs.get(), tr ("Installed"), Icon::folder);
             auto jsfxFx = folder (fxs.get(), "JSFX", Icon::folder); // (round 190pj)
-            Node* folders[] = { lynxFx.get(), flFx.get(), installed.get(), installed.get() };
+            Node* folders[] = { ywFx.get(), flFx.get(), installed.get(), installed.get() };
             fxs->folderKind = 0;
             for (auto [node, group] : { std::pair { folders[0], "YW Studio" }, std::pair { folders[1], "FL engines" }, std::pair { folders[2], "" } })
             {
@@ -1246,7 +1246,7 @@ public:
                 target->children.back()->original = e.label;
             }
             for (auto& [path, n] : mine) sortFolder (*n);
-            for (auto* f : { &lynxFx, &flFx, &jsfxFx, &installed })
+            for (auto* f : { &ywFx, &flFx, &jsfxFx, &installed })
                 if (! (*f)->children.empty())
                 {
                     byLabel (**f);
@@ -2954,7 +2954,7 @@ private:
         // (issue #104: the items below act on the Plugin database folder as it is on disk now)
         if (n.kind == Kind::plugin || n.kind == Kind::plugins)
             quickpick::refreshPluginDatabase (engine, true);
-        if (n.kind == Kind::plugin && factorycontent::isKey (n.pluginKey)) // round 190ke: LYNX's own content
+        if (n.kind == Kind::plugin && factorycontent::isKey (n.pluginKey)) // round 190ke: YW's own content
         {
             menu.addSectionHeader (n.label);
             menu.addItem (tr ("Add"), [act = n.activate] {
@@ -3018,7 +3018,7 @@ private:
             if (const auto item = itemOf (n); ! item.empty()) // round 190ce: the collections take Plugin database entries too
                 browser.addCollectionItems (menu, item);
             // FL's "System" group on an entry (round 190bf, fl190be q1-entry-menu.png): its file in the Plugin database
-            // folder (the Installed one for a plugin in no folder). FL's "Windows shell menu" is left out: LYNX has no
+            // folder (the Installed one for a plugin in no folder). FL's "Windows shell menu" is left out: YW has no
             // shell context menu of its own.
             {
                 const auto entry = n.pluginKey.empty() ? juce::File() : quickpick::pluginDatabaseEntry (n.pluginKey, (bool) n.generator);
@@ -3069,7 +3069,7 @@ private:
             {
                 // round 190ba (issue #104): the Plugin database is a folder the user can arrange in the file manager, as
                 // FL's (its Browser opens the folder from this menu too). The database itself, Effects / Generators, one
-                // of the user's folders; LYNX's own groups (LYNX SHARE, FL engines, Installed) open the Installed entries
+                // of the user's folders; YW's own groups (YW Studio, FL engines, Installed) open the Installed entries
                 juce::File dir = quickpick::pluginDatabaseFolder();
                 if (n.folderKind >= 0)
                     dir = quickpick::pluginDatabaseFolder (n.folderKind == 1, n.userFolder);
@@ -3085,7 +3085,7 @@ private:
             if (n.kind == Kind::plugins)
             {
                 // FL's "System" group at the end of a folder's menu (round 190bf, fl190be q1-folder-menu.png): "Open"
-                // (FL's "Windows shell menu" is left out: LYNX has no shell context menu of its own)
+                // (FL's "Windows shell menu" is left out: YW has no shell context menu of its own)
                 menu.addSectionHeader (tr ("System"));
                 menu.addItem (tr ("Open"), databaseDir.isDirectory(), false, [dir = databaseDir] { dir.startAsProcess(); });
             }
@@ -3834,7 +3834,7 @@ BrowserComponent::BrowserComponent (AudioEngine& e, Role r)
     addAndMakeVisible (*tagsButton);
     tagsPanel = std::make_unique<TagsPanel> (*this);
     addChildComponent (*tagsPanel);
-    // round gaps190kf: the Loop Browser (the Sample browser window's: LYNX's own window, so FL's Browser panel keeps FL's row)
+    // round gaps190kf: the Loop Browser (the Sample browser window's: YW's own window, so FL's Browser panel keeps FL's row)
     loopsButton = std::make_unique<LoopsButton> (*this);
     addChildComponent (*loopsButton);
     loopsButton->setVisible (role == Role::samples);
@@ -4010,7 +4010,7 @@ void BrowserComponent::saveCollections()
     const auto& store = collectionStore();
     collectionsFile().getParentDirectory().createDirectory();
     collectionsFile().replaceWithText (juce::String::fromUTF8 (store.toText().c_str()));
-    juce::String starredText; // (an older LYNX SHARE reads this one)
+    juce::String starredText; // (an older YW Studio reads this one)
     for (const auto& path : store.starredPaths())
         starredText << juce::String::fromUTF8 (path.c_str()) << "\n";
     starredFile().replaceWithText (starredText);
@@ -4286,7 +4286,7 @@ bool BrowserComponent::revealCurrentPreset (const hotswap::Target& target)
     if (fx.presetName.empty())
         return false;
     // the files the effect's presets come from: FL's preset folders of the plugin it stands for (the editor's preset
-    // list, round 168r) and LYNX's own saved presets of the effect
+    // list, round 168r) and YW's own saved presets of the effect
     juce::Array<juce::File> files, folders;
     if (const auto roots = findFlStudioRoots(); ! roots.data.empty())
         for (const auto& plugin : flPluginsForEffect (fx.kind))
@@ -4405,7 +4405,7 @@ bool BrowserComponent::hotSwapLoadFile (const juce::File& file)
     };
 
     // a hosted plugin's own preset into the linked plugin (as its window's preset menu loads it)
-    if (pluginpresetui::isPresetFile (file) && (! file.hasFileExtension ("lynxpreset") || pluginpresetui::readLynxPreset (file).has_value()))
+    if (pluginpresetui::isPresetFile (file) && (! file.hasFileExtension ("ywpreset") || pluginpresetui::readYwPreset (file).has_value()))
     {
         juce::AudioPluginInstance* plugin = nullptr;
         if (target.kind == hotswap::Kind::effect)
@@ -4432,7 +4432,7 @@ bool BrowserComponent::hotSwapLoadFile (const juce::File& file)
         case hotswap::Candidate::effectPreset:
         {
             const auto at = hotswap::findEffect (song, target.instance);
-            if (file.hasFileExtension ("lynxpreset")) // one of LYNX's presets of this very effect: its settings only
+            if (file.hasFileExtension ("ywpreset")) // one of YW's presets of this very effect: its settings only
             {
                 const auto kind = song.mixer[(std::size_t) at.track].effects[(std::size_t) at.slot].kind;
                 const auto preset = presets::fromText (kind, file.loadFileAsString().toStdString());
@@ -4937,7 +4937,7 @@ juce::PopupMenu BrowserComponent::buildViewMenu()
         safe->engine.setFullSamplePreview (! safe->engine.isFullSamplePreview());
         safe->savePrefs();
     });
-    // LYNX's own (round 190aq, off by default): loops are auditioned at the project's tempo, starting on the beat
+    // YW's own (round 190aq, off by default): loops are auditioned at the project's tempo, starting on the beat
     menu.addItem (tr ("Preview in time (loops play at the project's tempo, on the beat)"), true, engine.isPreviewInTime(), [safe] {
         if (safe == nullptr)
             return;
@@ -4983,7 +4983,7 @@ public:
 
     ~SampleBrowserHost() override
     {
-        // a window the user closed is hidden first (ToolWindow::closeSoon); one deleted while visible goes with LYNX
+        // a window the user closed is hidden first (ToolWindow::closeSoon); one deleted while visible goes with YW
         // and opens again at the next start
         auto* window = getTopLevelComponent();
         auto v = browser.getView();
@@ -5002,7 +5002,7 @@ public:
 
     void resized() override { browser.setBounds (getLocalBounds()); }
 
-    // issue #174: a sample dragged from this window onto a plugin's own editor (or out of LYNX) goes on as a file drag
+    // issue #174: a sample dragged from this window onto a plugin's own editor (or out of YW) goes on as a file drag
     bool shouldDropFilesWhenDraggedExternally (const juce::DragAndDropTarget::SourceDetails& details, juce::StringArray& files,
                                                bool& canMoveFiles) override
     {
@@ -5110,9 +5110,9 @@ void BrowserComponent::rebuildRoots()
     rootAlso.clear();
     using browserview::RootKind;
 
-    // FL folders (if installed) and user folders. Round 190bj (QA: the FL folders were listed with LYNX_NO_FL=1): the
+    // FL folders (if installed) and user folders. Round 190bj (QA: the FL folders were listed with YW_NO_FL=1): the
     // installation comes from findFlStudio, as everywhere else (FL's own install path, Program Files\Image-Line, Wine,
-    // LYNX_FL_INSTALL; none with LYNX_NO_FL)
+    // YW_FL_INSTALL; none with YW_NO_FL)
     const auto flInstall = findFlStudio();
     const auto fl = flInstall.installDir;
 
@@ -5360,7 +5360,7 @@ void BrowserComponent::rebuildTree()
         top.push_back (FileTree::makePluginDatabase (*this, openPluginFolders));
         browserStartupMark ("  browser: the Plugin database tree");
     }
-    // round 190ke (owner decision D2): LYNX's own content with its tags, in the Simple layout
+    // round 190ke (owner decision D2): YW's own content with its tags, in the Simple layout
     if (! liveLayout && layoutstyle::current() == layoutstyle::Style::simple && (allLike || tab == presetsTab || tab == soundsTab))
         top.push_back (FileTree::makeFactoryRoot (*this, openFactoryFolders));
 
@@ -5516,8 +5516,8 @@ void BrowserComponent::changeListenerCallback (juce::ChangeBroadcaster* source)
 
 void BrowserComponent::addUserFolder()
 {
-    chooser = lynx::ui::makeFileChooser (tr ("Add a folder to the Browser"), juce::File::getSpecialLocation (juce::File::userMusicDirectory));
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [this] (const juce::FileChooser& fc) {
+    chooser = yw::ui::makeFileChooser (tr ("Add a folder to the Browser"), juce::File::getSpecialLocation (juce::File::userMusicDirectory));
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [this] (const juce::FileChooser& fc) {
         const auto folder = fc.getResult();
         if (! folder.isDirectory())
             return;
@@ -5773,7 +5773,7 @@ void BrowserComponent::fileSelected (const juce::File& file, bool preview)
 
 // FL's Browser menus (REA round 143b, [EXEC] FL 2026: right-click on a sample, a folder, a plugin): the file's actions
 // first, then a "System" section (open the parent folder, locate the file, delete it) and a "Tags" section (Favorite);
-// a folder: Expand all / Collapse all, then System (Open). LYNX keeps its own "Add folder..." and "Refresh".
+// a folder: Expand all / Collapse all, then System (Open). YW keeps its own "Add folder..." and "Refresh".
 // Round 163 (user feedback: "this sort of UI has a ton of wasted space"): no "System" / "Tags" titles any more; the
 // rarely used system actions sit in one "File" sub-menu, Starred stays one click away.
 void BrowserComponent::addSystemItems (juce::PopupMenu& menu, const juce::File& file)
@@ -5853,12 +5853,12 @@ juce::PopupMenu BrowserComponent::buildFileMenu (const juce::File& file)
         menu.addItem (tr ("Send to the Playlist as an audio clip"), onSendToPlaylist != nullptr, false, [this, file] { onSendToPlaylist (file); });
         menu.addSeparator();
         menu.addItem (tr ("Edit in the audio editor..."), [this, file] { openAudioEditor (engine, file); });
-        // FL's Sounds tab menu: "Open/Edit in...", then "Find similar samples" (FL asks FL Cloud; LYNX looks through
+        // FL's Sounds tab menu: "Open/Edit in...", then "Find similar samples" (FL asks FL Cloud; YW looks through
         // the Browser's own folders, round 190as)
         if (! file.hasFileExtension ("speech"))
             menu.addItem (tr ("Find similar samples"), [this, file] { findSimilar (file); });
     }
-    else if (file.hasFileExtension ("lynx;flp;als;flm"))
+    else if (file.hasFileExtension ("yw;flp;als;flm"))
         menu.addItem (tr ("Open project"), onOpenProject != nullptr, false, [this, file] { onOpenProject (file); });
     else if (file.hasFileExtension ("mid;midi"))
         menu.addItem (tr ("Open MIDI file"), onOpenProject != nullptr, false, [this, file] { onOpenProject (file); });
@@ -5868,7 +5868,7 @@ juce::PopupMenu BrowserComponent::buildFileMenu (const juce::File& file)
             menu.addItem (tr ("Send to selected channel or focused plugin"), [this, file] { sendToSelected (file); });
         menu.addItem (tr ("Open in a new channel"), [this, file] { openFile (file); });
     }
-    else if (pluginpresetui::isPresetFile (file)) // round 190iz: a hosted plugin's preset (.lynxpreset, .fxp, .vstpreset)
+    else if (pluginpresetui::isPresetFile (file)) // round 190iz: a hosted plugin's preset (.ywpreset, .fxp, .vstpreset)
         menu.addItem (tr ("Send to selected channel or focused plugin"), [this, file] { sendToSelected (file); });
     else if (file.hasFileExtension ("sf2;sf3;sfz"))
     {
@@ -5920,7 +5920,7 @@ void BrowserComponent::showFolderMenu (const juce::File& folder, std::function<v
             });
         if (const auto merged = rootAlso.find (folder.getFullPathName()); merged != rootAlso.end())
         {
-            // a LYNX extra (FL has no exclusion; round 178a): the folders this root merges, each one ticked in or out;
+            // a YW extra (FL has no exclusion; round 178a): the folders this root merges, each one ticked in or out;
             // the root's own folder stays (Hide... hides the root)
             juce::PopupMenu folders;
             folders.addItem (folder.getFullPathName(), false, true, nullptr);
@@ -6814,7 +6814,7 @@ void BrowserComponent::loadSelected()
     }
     if (file.hasFileExtension ("sf2;sf3;sfz"))
     {
-        // Enter: into the selected LYNX Soundfont channel, else a new one
+        // Enter: into the selected YW Soundfont channel, else a new one
         if (! openSoundFontFile (engine, file, engine.getSelectedChannel()))
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load SoundFont"), tr ("This file is not a SoundFont YW Studio can read."));
         return;
@@ -6907,7 +6907,7 @@ void BrowserComponent::newSampleChannel (const juce::File& file)
 
 void BrowserComponent::openFile (const juce::File& file)
 {
-    // a user preset of one of LYNX's generators (round 190fs): a new channel with that generator and sound
+    // a user preset of one of YW's generators (round 190fs): a new channel with that generator and sound
     if (genpresetui::isPresetFile (file))
     {
         juce::String error;
@@ -6916,7 +6916,7 @@ void BrowserComponent::openFile (const juce::File& file)
         return;
     }
     // a hosted plugin's preset (round 162d, issue #8): into the plugin it belongs to
-    if (pluginpresetui::isPresetFile (file) && (! file.hasFileExtension ("lynxpreset") || pluginpresetui::readLynxPreset (file).has_value()))
+    if (pluginpresetui::isPresetFile (file) && (! file.hasFileExtension ("ywpreset") || pluginpresetui::readYwPreset (file).has_value()))
     {
         juce::String message;
         if (! pluginpresetui::applyFromBrowser (engine, file, message) && message.isNotEmpty())
@@ -6952,11 +6952,11 @@ void BrowserComponent::openFile (const juce::File& file)
         return;
     }
 
-    // FL's mixer preset (REA round 167q) or LYNX's mixer track state: onto the selected mixer tracks
-    if (file.hasFileExtension ("fst;lynxtrack") && onOpenMixerPreset && onOpenMixerPreset (file))
+    // FL's mixer preset (REA round 167q) or YW's mixer track state: onto the selected mixer tracks
+    if (file.hasFileExtension ("fst;ywtrack") && onOpenMixerPreset && onOpenMixerPreset (file))
         return;
 
-    // preset of an FL synth that LYNX converts (3x Osc, Sytrus, GMS...): new channel with the built-in synth
+    // preset of an FL synth that YW converts (3x Osc, Sytrus, GMS...): new channel with the built-in synth
     if (file.hasFileExtension ("fst;gmsynth"))
     {
         // FL's preset of a third-party plugin (round 190fs): into that plugin (an open window, or a new channel)
@@ -6993,7 +6993,7 @@ void BrowserComponent::openFile (const juce::File& file)
         return;
     }
 
-    if (file.hasFileExtension ("lynx;flp;als;flm;mid;midi;mod;xm;s3m;it") && onOpenProject) // (round 190nw: tracker modules)
+    if (file.hasFileExtension ("yw;flp;als;flm;mid;midi;mod;xm;s3m;it") && onOpenProject) // (round 190nw: tracker modules)
         onOpenProject (file);
 }
 
@@ -7088,9 +7088,9 @@ void BrowserComponent::addTagItems (juce::PopupMenu& menu, const std::string& it
     if (item.empty())
         return;
     juce::Component::SafePointer<BrowserComponent> safe (this);
-    // FL's Tags section: Favorite (LYNX's Starred / the collections, above), Tags ▸, Add tag, Edit tags
+    // FL's Tags section: Favorite (YW's Starred / the collections, above), Tags ▸, Add tag, Edit tags
     juce::PopupMenu tags;
-    const auto shown = shownTags(); // (round 190ke: with LYNX content's tags in the Simple layout)
+    const auto shown = shownTags(); // (round 190ke: with YW content's tags in the Simple layout)
     for (const auto& t : shown.all())
     {
         const auto name = juce::String::fromUTF8 (t.name.c_str());
@@ -7227,7 +7227,7 @@ void BrowserComponent::runTagFilter()
     // FL: the picked tags filter the content (Any / All); Live: "#tag" in the search; the rest of the text must be in
     // the item's name
     const auto query = browsertags::parseQuery (searchBox.getText().trim().toStdString());
-    const auto store = shownTags(); // (round 190ke: LYNX content's tags too, in the Simple layout)
+    const auto store = shownTags(); // (round 190ke: YW content's tags too, in the Simple layout)
     std::vector<std::string> items;
     if (! picked.empty())
         items = store.filter (picked, matchMode);
@@ -7495,4 +7495,4 @@ void BrowserComponent::savePrefs() const
     prefsFile().replaceWithText (text);
 }
 #include "ui/LoopBrowserParts.inc" // round gaps190kf
-} // namespace lynx
+} // namespace yw

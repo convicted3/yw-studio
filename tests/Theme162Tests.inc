@@ -4,7 +4,7 @@
 
 TEST (theme162_default_palette_is_the_built_in_look)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto p = derivePalette (defaultAccent, defaultBackground);
     CHECK (p == defaultPalette());
     CHECK (p.accent == 0xffe5383b && p.accentHover == 0xfff2545a && p.accentPressed == 0xffc12a30 && p.accentMuted == 0xff5c1f24);
@@ -16,7 +16,7 @@ TEST (theme162_default_palette_is_the_built_in_look)
 
 TEST (theme162_derived_palettes_keep_relations_and_contrast)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     // a navy background keeps the elevation steps of the built-in look
     const auto navy = derivePalette (0xff3d8bfd, 0xff12161d);
     CHECK (navy.bg1 == 0xff12161d);
@@ -44,7 +44,7 @@ TEST (theme162_derived_palettes_keep_relations_and_contrast)
 
 TEST (theme162_hex_and_fit_ids)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     std::uint32_t c = 0;
     CHECK (parseHex ("#E5383B", c) && c == 0xffe5383b);
     CHECK (parseHex ("e5383b", c) && c == 0xffe5383b);

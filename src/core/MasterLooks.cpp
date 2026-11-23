@@ -12,11 +12,11 @@
 #include "core/ParametricEqFl.h"
 #include "core/StereoFx.h"
 
-namespace lynx::looks
+namespace yw::looks
 {
 namespace
 {
-// One end of a look (Light or Heavy). LYNX's own values, tuned by ear and by loudness / tilt measurements (round
+// One end of a look (Light or Heavy). YW's own values, tuned by ear and by loudness / tilt measurements (round
 // 189k notes): EQ gains in dB, the multiband's thresholds (dB) and amount (FL's ratio control, 0…1), its make-up gains,
 // the drive into the finisher (dB, the multiband's output gain; soft-clipper looks only), the Stereo Enhancer's
 // separation (FL's raw −96…96, negative = wider) and the Limiter's gain (dB).
@@ -199,7 +199,7 @@ EffectSlot limiterSlot (const Point& p, double ceilingDb)
     return slot;
 }
 
-// the true-peak stage (round 190ea): LYNX's Apex Limiter at 0 dB gain, True peak on (its guard holds the output's true
+// the true-peak stage (round 190ea): YW's Apex Limiter at 0 dB gain, True peak on (its guard holds the output's true
 // peak at its ceiling within a few hundredths of a dB on a 16× reference meter, round 190co), its ceiling 0.05 dB under
 // trueCeilingDb so the stated ceiling holds on that meter too (measured worst −0.98 dBTP at −1.00, −1.00 at −1.05); the other controls at a new instance's values (1 ms
 // look-ahead, Clean, 150 ms release, no oversampling, no dither). Below the ceiling it passes the signal unchanged
@@ -387,4 +387,4 @@ float autoInputGainDb (double inputLufs) noexcept
         return 0.0f;
     return (float) std::clamp (referenceLufs - inputLufs, -18.0, 18.0);
 }
-} // namespace lynx::looks
+} // namespace yw::looks

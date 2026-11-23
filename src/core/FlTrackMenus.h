@@ -1,13 +1,13 @@
 #pragma once
 
-// The fixed parts of FL Studio 2026's menus that round 190dx brought to LYNX (FL facts: /mnt/e/lynx-work/flpl190dx/
+// The fixed parts of FL Studio 2026's menus that round 190dx brought to YW (FL facts: /mnt/e/yw-work/flpl190dx/
 // FL-FACTS.md; [FORM] = FL's form resources, [SHOT] = FL screenshots). JUCE-free menu models: the UI builds its menus
 // from them (texts are the English keys of the i18n tables) and the tests check them against FL.
 
 #include <string>
 #include <vector>
 
-namespace lynx::fltrackmenus
+namespace yw::fltrackmenus
 {
 struct Entry
 {
@@ -58,10 +58,10 @@ inline std::string assignInstrumentTrackText (bool hasInstrumentTrack)
     return hasInstrumentTrack ? "Unassign from instrument track" : "Assign to new instrument track";
 }
 
-// Mixer › Disk recording › Options, FL's order (RecordingMenu [FORM]); LYNX lists the ones it has, in this order
+// Mixer › Disk recording › Options, FL's order (RecordingMenu [FORM]); YW lists the ones it has, in this order
 inline std::vector<std::string> diskRecordingOptions()
 {
     return { "Auto-unarm", "Auto-create audio clip", "Latency compensation", "Ignore silent takes", "Auto name playlist tracks",
              "Group loop recorded takes", "Apply track level and mute when recording" };
 }
-} // namespace lynx::fltrackmenus
+} // namespace yw::fltrackmenus

@@ -24,7 +24,7 @@
 #include "platform/NativeEmbed.h"
 #include "platform/Paths.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -443,7 +443,7 @@ public:
         gui = static_cast<const clap_plugin_gui_t*> (plugin->get_extension (plugin, CLAP_EXT_GUI));
         latency = static_cast<const clap_plugin_latency_t*> (plugin->get_extension (plugin, CLAP_EXT_LATENCY));
         audioPorts = static_cast<const clap_plugin_audio_ports_t*> (plugin->get_extension (plugin, CLAP_EXT_AUDIO_PORTS));
-        // round 190jg (BUILD-LIST 18): the further extensions LYNX hosts
+        // round 190jg (BUILD-LIST 18): the further extensions YW hosts
         tailExt = static_cast<const clap_plugin_tail_t*> (plugin->get_extension (plugin, CLAP_EXT_TAIL));
         renderExt = static_cast<const clap_plugin_render_t*> (plugin->get_extension (plugin, CLAP_EXT_RENDER));
         voiceInfoExt = static_cast<const clap_plugin_voice_info_t*> (plugin->get_extension (plugin, CLAP_EXT_VOICE_INFO));
@@ -524,7 +524,7 @@ public:
 
     void prepareToPlay (double sampleRate, int blockSize) override
     {
-        // already active with these settings: nothing to do. (LYNX prepares a plugin again to switch it to offline
+        // already active with these settings: nothing to do. (YW prepares a plugin again to switch it to offline
         // rendering, on the export's thread; a CLAP has no process mode in activate, and activate / deactivate belong
         // on the main thread: issue #46)
         if (active && sampleRate == activeRate && juce::jmax (1, blockSize) == maxBlock)
@@ -652,14 +652,14 @@ public:
         }
 
         // round 190jg (sample-accurate automation, engine/TimedParameters.h): the automation's changes inside this block
-        for (int k = 0; k < juce::lynxTimedParamCount; ++k)
+        for (int k = 0; k < juce::ywTimedParamCount; ++k)
         {
-            const auto index = juce::lynxTimedParamIndices[k];
+            const auto index = juce::ywTimedParamIndices[k];
             if (index < 0 || index >= (int) byIndex.size())
                 continue;
             auto* parameter = byIndex[(std::size_t) index];
-            const auto value = juce::jlimit (0.0f, 1.0f, juce::lynxTimedParamValues[k]);
-            auto e = makeEvent<clap_event_param_value_t> (CLAP_EVENT_PARAM_VALUE, (uint32_t) juce::jlimit (0, n - 1, juce::lynxTimedParamOffsets[k]));
+            const auto value = juce::jlimit (0.0f, 1.0f, juce::ywTimedParamValues[k]);
+            auto e = makeEvent<clap_event_param_value_t> (CLAP_EVENT_PARAM_VALUE, (uint32_t) juce::jlimit (0, n - 1, juce::ywTimedParamOffsets[k]));
             e.param_id = parameter->id;
             e.cookie = parameter->cookie;
             e.note_id = -1;
@@ -787,7 +787,7 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return gui != nullptr; }
 
-    // Round 190jg: the plugin's presets (preset-discovery factory + preset-load) as JUCE programs, which LYNX's plugin
+    // Round 190jg: the plugin's presets (preset-discovery factory + preset-load) as JUCE programs, which YW's plugin
     // window lists in its preset bar (the wrapper's preset menu and arrows). Found on the message thread the first time
     // they are asked for there; one program (none) until then and without the extensions, as before.
     int getNumPrograms() override
@@ -1307,7 +1307,7 @@ private:
    #endif
 
     // --- round 190jg (BUILD-LIST 18) ---------------------------------------------------------------------------------
-    // thread-pool: the plugin's tasks of one process call run on LYNX's own worker threads (a pool kept for CLAP plugins:
+    // thread-pool: the plugin's tasks of one process call run on YW's own worker threads (a pool kept for CLAP plugins:
     // the rack's pool may be running the very block that called). While another plugin's tasks hold it, or off the
     // audio thread, they run here one after the other (still complete when request_exec returns, as the spec asks).
     static const clap_host_thread_pool_t& hostThreadPool()
@@ -1366,7 +1366,7 @@ private:
                 if (auto* self = from (hh))
                     self->onMainThread ([self] { self->readRemoteControls(); });
             },
-            [] (const clap_host_t*, clap_id) {} // (a suggested page: LYNX's controller pages follow the knob banks)
+            [] (const clap_host_t*, clap_id) {} // (a suggested page: YW's controller pages follow the knob banks)
         };
         return e;
     }
@@ -1722,7 +1722,7 @@ private:
         window.ptr = embed.nativeHandle();
        #endif
         // round 190gg (B4): this runs from the message loop, outside every other guard: a plugin that crashes building
-        // its view in its new window is switched off (its window shows the crash notice) instead of ending LYNX
+        // its view in its new window is switched off (its window shows the crash notice) instead of ending YW
         if (! callPluginFromUi (owner, "opening its editor", [this, &window] {
                 owner.gui->set_parent (owner.plugin, &window);
                 owner.gui->show (owner.plugin);
@@ -1958,4 +1958,4 @@ bool setClapNoteExpressions (juce::AudioPluginInstance& plugin, float bendRange)
         return clap->setNoteExpressions (bendRange);
     return false;
 }
-} // namespace lynx
+} // namespace yw

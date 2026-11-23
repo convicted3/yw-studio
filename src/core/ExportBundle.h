@@ -1,6 +1,6 @@
 #pragma once
 
-// "Export for other apps" (round 184a, slice S9; design: /mnt/e/lynx-work/simple184a/DESIGN.md §2.3.2): one click writes
+// "Export for other apps" (round 184a, slice S9; design: /mnt/e/yw-work/simple184a/DESIGN.md §2.3.2): one click writes
 // a folder that any other music app can take in, without the user knowing which formats it reads:
 //   <name> (for other apps)/
 //     Stems/NN <track>.wav         one per Playlist track that sounds, 24-bit, all from the song's start and of the
@@ -9,7 +9,7 @@
 //     MIDI/NN <track>.mid          each track with notes (tempo, time signature and key as meta events)
 //     MIDI/<name> (all tracks).mid
 //     <name> Project/<name>.als    a Live 12 set with its samples (core/AlsExport.h)
-//     <name>.flp                   an FL Studio project (engine/FlStudioExport.h; LYNX-only sounds rendered to audio)
+//     <name>.flp                   an FL Studio project (engine/FlStudioExport.h; YW-only sounds rendered to audio)
 //     <name> - mixdown.wav         the whole song as heard (optional, on by default)
 //     README.txt                   tempo, time signature, key, length, the files and how to import them
 // This is the plan only: names, order, which tracks give stems or MIDI, the README. The writing is the UI's
@@ -23,7 +23,7 @@
 #include "core/ProjectKey.h"
 #include "core/Song.h"
 
-namespace lynx::exportbundle
+namespace yw::exportbundle
 {
 struct Options
 {
@@ -90,4 +90,4 @@ std::string keyText (const Song& song);
 // `failed`: the relative paths, as the writer got on (failed ones are listed with why).
 std::string readme (const Song& song, const Plan& plan, double seconds, const std::vector<std::string>& written,
                     const std::vector<std::string>& failed);
-} // namespace lynx::exportbundle
+} // namespace yw::exportbundle

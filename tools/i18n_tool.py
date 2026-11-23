@@ -147,7 +147,7 @@ def cmd_merge(lang, folder):
     merged.update({k: v for k, v in entries.items() if k in ref and not problems(k, v)})
     name, countries = LANGUAGES[lang]
     out = [f"language: {name}", f"countries: {countries}", "",
-           f"# LYNX interface in {name} (JUCE LocalisedStrings format).",
+           f"# YW interface in {name} (JUCE LocalisedStrings format).",
            "# One line per string: \"English text\" = \"Translation\"  (escapes: \\n \\t \\\" \\\\)",
            "# Every key of pt-BR.txt must be here; terms: docs/i18n/" + lang + "-glossary.md; how to help: docs/i18n/README.md",
            "# After editing, run: python3 tools/make_i18n.py  (embeds the tables in src/ui/I18nData.h)"]

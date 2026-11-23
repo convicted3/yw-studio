@@ -39,9 +39,9 @@ std::vector<std::uint8_t> version1Blob()
 }
 
 // a note of `frames` frames at `midi` with a 5.5 Hz vibrato of `depth` semitones and a slow rise of `rise` semitones
-lynx::polyedit::Note wobbly (double midi, int frames, double frameSeconds, double depth, double rise)
+yw::polyedit::Note wobbly (double midi, int frames, double frameSeconds, double depth, double rise)
 {
-    lynx::polyedit::Note n;
+    yw::polyedit::Note n;
     n.startFrame = 0;
     n.endFrame = frames - 1;
     for (int i = 0; i < frames; ++i)
@@ -117,7 +117,7 @@ double spread (const std::vector<double>& v)
 
 TEST (polyedit190lo_version2_round_trip_and_version1_still_reads)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     Model m;
     m.sampleRate = 44100.0;
     m.frames = 44100;
@@ -155,7 +155,7 @@ TEST (polyedit190lo_version2_round_trip_and_version1_still_reads)
 
 TEST (polyedit190lo_candidates_come_after_the_notes_for_the_engine)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     Model m;
     m.sampleRate = 44100.0;
     m.frames = 44100;
@@ -178,7 +178,7 @@ TEST (polyedit190lo_candidates_come_after_the_notes_for_the_engine)
 
 TEST (polyedit190lo_modulation_and_drift_split_the_pitch_track)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     const double fs = 512.0 / 44100.0;
     const auto n = pe190lo::wobbly (60.0, 260, fs, 0.4, 0.6);
     const auto parts = pitchParts (n, fs);
@@ -205,7 +205,7 @@ TEST (polyedit190lo_modulation_and_drift_split_the_pitch_track)
 
 TEST (polyedit190lo_fallback_detector_without_evidence_is_the_harmonic_one)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     const auto source = pe190lk::chord ({ 57.0, 64.0 }, 1.0);
     Model harmonic, fallback;
     AnalyseOptions h;
@@ -224,9 +224,9 @@ TEST (polyedit190lo_fallback_detector_without_evidence_is_the_harmonic_one)
 
 TEST (polyedit190lo_slow_reattacks_split_a_held_pitch)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     // a pad-like C4 (0.25 s attacks, 0.1 s release) held through a chord change 0.3 s apart: G3 + C4, then A3 + C4
-    auto source = std::make_shared<lynx::SampleData>();
+    auto source = std::make_shared<yw::SampleData>();
     source->sampleRate = pe190lk::rate;
     source->left.assign ((std::size_t) (2.8 * pe190lk::rate), 0.0f);
     pe190lo::tone (source->left, pe190lk::rate, 60.0, 0.0, 0.9, 0.25);
@@ -250,11 +250,11 @@ TEST (polyedit190lo_slow_reattacks_split_a_held_pitch)
 
 TEST (polyedit190lo_overlap_aware_moves_keep_the_shared_partials)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     // C4 + G4 (G4's 2nd partial meets C4's 3rd) held; G4 moved 0.1 s later. The true result: G4 starting 0.1 s later
     const double rate = pe190lk::rate;
     auto make = [rate] (double gStart) {
-        auto s = std::make_shared<lynx::SampleData>();
+        auto s = std::make_shared<yw::SampleData>();
         s->sampleRate = rate;
         s->left.assign ((std::size_t) (2.0 * rate), 0.0f);
         pe190lo::tone (s->left, rate, 60.0, 0.0, 1.5, 0.01);
@@ -269,7 +269,7 @@ TEST (polyedit190lo_overlap_aware_moves_keep_the_shared_partials)
     if (g < 0)
         return;
     m.edits[g].moveSeconds = 0.1;
-    auto error = [&] (const lynx::SampleData& out) {
+    auto error = [&] (const yw::SampleData& out) {
         // the level error of the shared partial (784 Hz) over the held part, in 0.1 s steps
         double e = 0.0;
         for (double t = 0.4; t < 1.3; t += 0.1)
@@ -289,8 +289,8 @@ TEST (polyedit190lo_overlap_aware_moves_keep_the_shared_partials)
 
 TEST (polyedit190lo_modulation_zero_flattens_a_vibrato)
 {
-    using namespace lynx::polyedit;
-    auto source = std::make_shared<lynx::SampleData>();
+    using namespace yw::polyedit;
+    auto source = std::make_shared<yw::SampleData>();
     source->sampleRate = pe190lk::rate;
     source->left.assign ((std::size_t) (2.0 * pe190lk::rate), 0.0f);
     pe190lo::tone (source->left, pe190lk::rate, 57.0, 0.0, 1.6, 0.02, 0.4);

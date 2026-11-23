@@ -1,5 +1,5 @@
-// bankaudit: renders LYNX preset-bank candidates with the real engines and prints level / length / spectrum figures
-// (round 168p: the sanity check of LYNX's own banks — no silence, no clipping, plausible pitch and length).
+// bankaudit: renders YW preset-bank candidates with the real engines and prints level / length / spectrum figures
+// (round 168p: the sanity check of YW's own banks — no silence, no clipping, plausible pitch and length).
 //
 //   bankaudit <presets.txt> [wavdir]
 //
@@ -140,14 +140,14 @@ int main (int argc, char** argv)
         for (const auto& v : split (f[4], ','))
             if (! v.empty())
                 values.push_back (std::stof (v));
-        auto def = lynx::bankstates::channelFor (f[0], values);
+        auto def = yw::bankstates::channelFor (f[0], values);
         if (! def)
         {
             std::printf ("%-28s  (cannot build)\n", f[2].c_str());
             ++bad;
             continue;
         }
-        auto inst = lynx::makeInstrument (def->instrument);
+        auto inst = yw::makeInstrument (def->instrument);
         inst->configure (*def, 120.0);
         inst->prepare (rate);
         struct N { int key; float vel; double len, at; };
@@ -168,7 +168,7 @@ int main (int argc, char** argv)
         const int total = (int) ((end + 4.0) * rate);
         std::vector<float> l ((std::size_t) total, 0.0f), r ((std::size_t) total, 0.0f);
         const int block = 256;
-        const auto gain = lynx::channelGain (def->volume);
+        const auto gain = yw::channelGain (def->volume);
         for (int pos = 0; pos < total; pos += block)
         {
             const double t0 = (double) pos / rate, t1 = (double) (pos + block) / rate;

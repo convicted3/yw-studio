@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-// Maps an OS locale name to one of LYNX's interface languages (header-only, no JUCE: unit-tested).
-namespace lynx::i18n
+// Maps an OS locale name to one of YW's interface languages (header-only, no JUCE: unit-tested).
+namespace yw::i18n
 {
 // "pt-BR", "pt_BR.UTF-8", "zh-Hans-CN", "zh_TW", "de-AT", "ja_JP.UTF-8@euro"... -> "pt-BR", "zh-Hans", "zh-Hant", "de",
 // "ja"; empty when the language is not in `available` (ids such as "en", "pt-BR", "zh-Hans").
@@ -56,4 +56,4 @@ inline std::string languageForLocale (const std::string& localeName, const std::
     }
     return {};
 }
-} // namespace lynx::i18n
+} // namespace yw::i18n

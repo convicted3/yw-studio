@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Round 163c: renders sample pitching in LYNX (Windows, LYNX.exe --render) and measures the pitch and length.
+"""Round 163c: renders sample pitching in YW (Windows, YW.exe --render) and measures the pitch and length.
 
-usage: pitchcheck.py make <dir> <winDir> <realSample.wav>   -> writes the samples and .lynx projects into <dir>
+usage: pitchcheck.py make <dir> <winDir> <realSample.wav>   -> writes the samples and .yw projects into <dir>
        pitchcheck.py measure <dir>                            -> prints a table from the rendered <case>.out.wav files
-<winDir> is <dir> as Windows sees it (D:\\lynx-work\\...), used for the sample paths inside the projects.
+<winDir> is <dir> as Windows sees it (D:\\yw-work\\...), used for the sample paths inside the projects.
 """
 import json, math, os, shutil, sys, wave
 
@@ -63,7 +63,7 @@ def project(kind, sample, semis, fine, keep, key):
                               "stretchBeats": 0.0, "keepPitch": keep, "region": [0.0, 1.0], "reverse": False}}
     if fine:
         ch["misc"] = {"fineTune": fine}
-    p = {"format": "lynx-project", "version": 1, "bpm": 120.0, "beatsPerBar": 4, "currentPattern": 0, "channels": [ch],
+    p = {"format": "yw-project", "version": 1, "bpm": 120.0, "beatsPerBar": 4, "currentPattern": 0, "channels": [ch],
          "patterns": [{"name": "P", "length": PPQ * 16, "notes": [] if kind == "clip" else [[0, PPQ * 16, 0, key, 0.8]]}],
          "playlist": [[0, 0, 0, PPQ * 16, 0, 1, 0]] if kind == "clip" else [],
          "mode": "song" if kind == "clip" else "pattern"}
@@ -78,7 +78,7 @@ def make(d, wd, real):
     for src in ("sine440", "real"):
         for name, kind, semis, fine, keep, key in CASES:
             pj = project(kind, wd + "\\" + src + ".wav", semis, fine, keep, key)
-            with open(os.path.join(d, f"{src}_{name}.lynx"), "w") as f:
+            with open(os.path.join(d, f"{src}_{name}.yw"), "w") as f:
                 json.dump(pj, f, indent=1)
 
 

@@ -6,9 +6,9 @@
 
 namespace fab99
 {
-struct EqGolden { lynx::facet::Shape shape; double hz, gain, q; int slope; std::array<double, 9> db; };
+struct EqGolden { yw::facet::Shape shape; double hz, gain, q; int slope; std::array<double, 9> db; };
 constexpr std::array<double, 9> goldenHz { 50, 100, 200, 500, 1000, 2000, 5000, 10000, 15000 };
-using S = lynx::facet::Shape;
+using S = yw::facet::Shape;
 const EqGolden eqGolden[] = {
     { S::bell, 1000, 12, 1, 12, { 0.08, 0.32, 1.20, 5.69, 12.00, 5.69, 1.18, 0.30, 0.13 } },
     { S::bell, 1000, -12, 1, 12, { -0.08, -0.32, -1.20, -5.69, -12.00, -5.69, -1.18, -0.30, -0.13 } },
@@ -24,17 +24,17 @@ const EqGolden eqGolden[] = {
     { S::tiltShelf, 1000, 6, 1, 12, { -6.00, -6.00, -5.97, -5.10, -0.00, 5.10, 5.97, 6.00, 6.00 } },
 };
 
-lynx::EffectParams eqDefaults()
+yw::EffectParams eqDefaults()
 {
-    lynx::EffectParams p {};
-    const auto& info = lynx::facet::info();
+    yw::EffectParams p {};
+    const auto& info = yw::facet::info();
     for (std::size_t i = 0; i < info.params.size(); ++i) p[i] = info.params[i].defaultValue;
     return p;
 }
 
-lynx::EffectParams eqBand (const EqGolden& g)
+yw::EffectParams eqBand (const EqGolden& g)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto p = eqDefaults();
     p[(std::size_t) param (0, 0)] = shapeValue (g.shape);
     p[(std::size_t) param (0, 1)] = hzValue (g.hz);
@@ -44,7 +44,7 @@ lynx::EffectParams eqBand (const EqGolden& g)
     return p;
 }
 
-double sineGainDb (lynx::Effect& fx, const lynx::EffectParams& p, double hz, double sr, int latency = 0)
+double sineGainDb (yw::Effect& fx, const yw::EffectParams& p, double hz, double sr, int latency = 0)
 {
     const int n = (int) sr; // 1 s
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
@@ -60,7 +60,7 @@ double sineGainDb (lynx::Effect& fx, const lynx::EffectParams& p, double hz, dou
 
 TEST (facet_eq_parameter_laws)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     CHECK (std::abs (hz (hzValue (1000.0)) - 1000.0) < 0.01);
     CHECK (std::abs (hz (0.0f) - 10.0) < 1e-9 && std::abs (hz (1.0f) - 30000.0) < 1e-6);
     CHECK (std::abs (q (0.5f) - 1.0) < 1e-9 && std::abs (q (0.0f) - 0.025) < 1e-12 && std::abs (q (1.0f) - 40.0) < 1e-9);
@@ -85,7 +85,7 @@ TEST (facet_eq_matches_measured_reference_curves)
         for (std::size_t k = 0; k < fab99::goldenHz.size(); ++k)
         {
             if (g.db[k] < -30.0 || fab99::goldenHz[k] > 10000.0) continue;
-            const double mine = lynx::facet::responseDb (p, 48000.0, fab99::goldenHz[k]);
+            const double mine = yw::facet::responseDb (p, 48000.0, fab99::goldenHz[k]);
             worst = std::max (worst, std::abs (mine - g.db[k]));
             if (std::abs (mine - g.db[k]) >= 0.3) std::printf ("  facet %d Hz %.0f: %.3f vs %.3f\n", (int) g.shape, fab99::goldenHz[k], mine, g.db[k]);
             CHECK (std::abs (mine - g.db[k]) < 0.35);
@@ -98,7 +98,7 @@ TEST (facet_eq_matches_measured_reference_curves)
 
 TEST (facet_eq_processing_follows_its_response)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto fx = make();
     // all bands off: bit-transparent
     {
@@ -137,9 +137,9 @@ TEST (facet_eq_processing_follows_its_response)
 
 TEST (apex_limiter_ceiling_latency_and_release)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     auto fx = make();
-    lynx::EffectParams p {};
+    yw::EffectParams p {};
     for (std::size_t i = 0; i < info().params.size(); ++i) p[i] = info().params[i].defaultValue;
     CHECK (paramText (1, p[1]) == "-0.1 dB");
     CHECK (paramText (4, 1.0f) == "Safe");

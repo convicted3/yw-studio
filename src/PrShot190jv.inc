@@ -8,7 +8,7 @@
     // <folder>/checks.txt lists what was checked. Included in the app class of Main.cpp.
     bool runPrShot190jv (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -58,7 +58,7 @@
         roll.scrollToNotes (true);
         engine.dispatchPendingMessages();
 
-        // 1. the menus: View with its new submenu, and the submenu (FL's DFM order, then LYNX's scales)
+        // 1. the menus: View with its new submenu, and the submenu (FL's DFM order, then YW's scales)
         {
             const auto view = roll.getViewMenuForSnapshot();
             bool listed = false;
@@ -75,7 +75,7 @@
                        shot::fileName (folder.getChildFile ("pr190jv-01-view-scale-highlighting.png").getFullPathName()));
         }
 
-        // 2. "No scale": LYNX's black-key rows (FL's Black notes)
+        // 2. "No scale": YW's black-key rows (FL's Black notes)
         roll.setScaleForSnapshot (0, 0);
         shoot (roll, "pr190jv-02-no-scale");
 
@@ -131,7 +131,7 @@
         check ("automatic_off", ! roll.isAutoScaleForTests());
 
         // 6. coverage prtools-0003, FL's arpeggiator tool: the Arpeggiate dialog with its FL section (pattern None:
-        //    LYNX's arpeggiator), then FL's Default pattern (the user's FL install, read only) previewed on a C E G
+        //    YW's arpeggiator), then FL's Default pattern (the user's FL install, read only) previewed on a C E G
         //    chord of one bar: C E G C E G … every sixteenth (core/FlArpeggiator.h)
         {
             engine.editSong ([] (Song& s) {

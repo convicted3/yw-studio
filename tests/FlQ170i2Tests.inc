@@ -5,7 +5,7 @@ TEST (flq170i2_slice_starts_on_their_exact_frame)
 {
     // a slice stored as float(p / total) a hair below p / total started one frame early (floor): FL's render test
     // "Slicex" played every slice after the first one sample late against FL
-    using namespace lynx;
+    using namespace yw;
     constexpr int total = 100000;
     int p = -1;
     for (int q = 1; q < total && p < 0; ++q)
@@ -34,7 +34,7 @@ TEST (flq170i2_fpc_volume_law_and_velocity)
     // FL's renders of FL's render test "FPC" and of pad-volume 64 / layer-volume 127 / hard-left / velocity-64
     // variants: the kick's gain is (21.527^(v/127) − 1)/10 for the pad and the layer, × 1/(2·√2), with the velocity
     // through FL's Init.Vol law (unity at 100) — 0.000 dB on all of them (REA_rodada170i §7)
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     std::ifstream in (std::filesystem::path (realFlpDir) / "System" / "Render tests" / "FPC.flp", std::ios::binary);
@@ -95,8 +95,8 @@ TEST (flq170i2_equo_render_is_not_hq_and_glides_from_construction)
 {
     // FL's command-line render of FL's render test "EQUO" uses the plain band design (not the "HQ non-realtime" one)
     // and its motion smoother glides from FL's construction values after the load; with motion smoothness 0 it starts
-    // on the loaded curve (FL render −87 dB against LYNX, REA_rodada170i §8)
-    using namespace lynx;
+    // on the loaded curve (FL render −87 dB against YW, REA_rodada170i §8)
+    using namespace yw;
     std::vector<std::uint8_t> st (4143, 0);
     auto put = [&st] (std::size_t at, std::int32_t v) { std::memcpy (st.data() + at, &v, 4); };
     put (0, 4);
@@ -155,7 +155,7 @@ TEST (flq170i2_drumaxx_pitched_up_at_low_rates_stays_in_its_buffer)
 {
     // tools/genfuzz: at 22.05 kHz a pad with Pitch at max and the channel pitched up steps over 4 internal samples per
     // host sample, and a 256-sample pass overran the DLL-sized 1024-sample buffer into the next pad (crash in reset)
-    using namespace lynx;
+    using namespace yw;
     auto c = banks::defaultChannel (InstrumentKind::drumaxx, "Drumaxx");
     CHECK (c.has_value());
     if (! c)
@@ -194,7 +194,7 @@ TEST (flq170i2_bassdrum_pitched_up_at_low_rates_stays_in_its_buffer)
 {
     // tools/genfuzz: below 44.1 kHz BassDrum's resampling ratio passes 4 and a 512-sample pass overran the DLL-sized
     // 2048-sample buffer into the next voice (crash in generate)
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto c = natives::makeChannel (InstrumentKind::bassdrum, natives142::flAccess()); // (FL's Plugin database state)
@@ -232,7 +232,7 @@ TEST (flq170i2_morphine_all_notes_off_ends_a_note_retriggered_at_velocity_zero)
 {
     // tools/genfuzz: a note at velocity 0 on a key that sounds clears the key's held entry and leaves its voice alive;
     // All Notes Off (Stop) only released the held keys, so that voice rang forever
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto c = natives::makeChannel (InstrumentKind::morphine, natives142::flAccess());

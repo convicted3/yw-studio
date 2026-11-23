@@ -1,6 +1,6 @@
 #pragma once
 
-// Strike Shaper (round trans189d, issue #94): LYNX's level-independent transient designer, in the role of the classic
+// Strike Shaper (round trans189d, issue #94): YW's level-independent transient designer, in the role of the classic
 // two-knob "differential envelope" transient designer. Written from the public description of that method (no third-
 // party code): two envelopes of the same signal are compared, and the gain follows their RATIO, so the result does
 // not depend on the input level and there is no threshold.
@@ -26,7 +26,7 @@
 #include <array>
 #include <cmath>
 
-namespace lynx::strike
+namespace yw::strike
 {
 enum Param { attack, sustain, output, guard, mix, link, detectHp, count };
 
@@ -230,4 +230,4 @@ private:
     std::array<double, 5> hpc {};
     std::array<Channel, 2> ch {};
 };
-} // namespace lynx::strike
+} // namespace yw::strike

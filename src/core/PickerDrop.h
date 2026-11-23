@@ -3,7 +3,7 @@
 // Issue #177: entries dragged from the Playlist's Picker panel (patterns, audio clips, automation clips) and dropped on
 // the Playlist, as FL Studio 2026 places them. Header only, no JUCE (tests/PickerDrop190hmTests.inc).
 //
-// FL evidence (FLEngine_x64.dll, image base 0x400000, static decompile; /mnt/e/lynx-work/pickerdrag190hm/HANDOFF.md):
+// FL evidence (FLEngine_x64.dll, image base 0x400000, static decompile; /mnt/e/yw-work/pickerdrag190hm/HANDOFF.md):
 // - PickerPanelMouseMove FUN_00e4daa0: with the left button held past the drag distance and Ctrl up, the drag starts.
 //   The entry under the press joins the picker selection (a press on an entry that is not selected makes it the only
 //   one); every selected entry is dragged, in selection order. The drag image is centred on the mouse.
@@ -19,7 +19,7 @@
 //   snapped time (each starts where the previous one ends); audio / automation clips on an instrument track ask the same
 //   question first (No: nothing is placed). The current pattern does not change.
 // - The dropped clips become the Playlist's selection (flag 0x80 on each new item).
-// Live check (FL 2026, round 190hm, shots /mnt/e/lynx-work/pickerdrag190hm/shots fl-07 / fl-08 / fl-12): Bar snap, a drop
+// Live check (FL 2026, round 190hm, shots /mnt/e/yw-work/pickerdrag190hm/shots fl-07 / fl-08 / fl-12): Bar snap, a drop
 // at bar 3.7 lands on bar 4 and one at 2.3 on bar 2 (nearest line); Pattern 2 + 3 picked and dropped on Track 5 → Tracks
 // 5 and 6; Shift on drop → Pattern 1, 2, 3 one after the other on one track; the new clips selected, the others not.
 // A Shift press on a picked entry renames the picked patterns instead (FL's "Name for patterns"), so Shift is pressed
@@ -31,7 +31,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::pickerdrop
+namespace yw::pickerdrop
 {
 constexpr int maxTracks = 500; // FL's Playlist tracks
 
@@ -150,4 +150,4 @@ inline int currentPatternAfter (const std::vector<Clip>& placed, bool chain, int
             return it->pattern;
     return current;
 }
-} // namespace lynx::pickerdrop
+} // namespace yw::pickerdrop

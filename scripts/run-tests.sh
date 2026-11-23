@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# usage: scripts/run-tests.sh [-j N] [-s M] <lynx_tests> [lynx_tests arguments: FL Data folder, --filter ...]
+# usage: scripts/run-tests.sh [-j N] [-s M] <yw_tests> [yw_tests arguments: FL Data folder, --filter ...]
 #
-# Runs the core tests in parallel (round speed185a): the tests are split into M shards (lynx_tests --shard k/M, default
+# Runs the core tests in parallel (round speed185a): the tests are split into M shards (yw_tests --shard k/M, default
 # M = 3 x N), N of them run at a time, then the timing-sensitive tests listed in tests/serial-tests.txt run alone, on an
 # idle machine, as they always did. Every test runs exactly once (the shards are a partition) and checks the same.
 #
 # The output is each shard's output one after the other (test names, their "  FAILED file:line" lines and times), then
-# the slowest tests, then ONE "N checks, M failures" line for the whole run: the same format as a single lynx_tests run,
+# the slowest tests, then ONE "N checks, M failures" line for the whole run: the same format as a single yw_tests run,
 # so the scripts that read it work unchanged. A shard that crashes adds a "  FAILED" line under the test it was running.
-# Exit status: 0 only if every shard ran to its end with 0 failures. -j 1: the plain single run of lynx_tests.
-# The shard logs stay in <lynx_tests>.shards/ (LYNX_TEST_LOGS=<dir> to choose).
+# Exit status: 0 only if every shard ran to its end with 0 failures. -j 1: the plain single run of yw_tests.
+# The shard logs stay in <yw_tests>.shards/ (YW_TEST_LOGS=<dir> to choose).
 # tests/test-weights.txt ("<name> <ms>", the slowest tests of a CI run and of a local run with FL's Data, the larger of
-# the two) balances the shards, heaviest first; refresh it with: cat <lynx_tests>.shards/*.times. It only changes which
+# the two) balances the shards, heaviest first; refresh it with: cat <yw_tests>.shards/*.times. It only changes which
 # shard runs a test, never whether it runs.
 set -u
-jobs="${LYNX_TEST_JOBS:-}" shards=""
+jobs="${YW_TEST_JOBS:-}" shards=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -j) jobs="$2"; shift 2 ;;
@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
         *) break ;;
     esac
 done
-bin="${1:?usage: run-tests.sh [-j N] [-s M] <lynx_tests> [arguments]}"; shift
+bin="${1:?usage: run-tests.sh [-j N] [-s M] <yw_tests> [arguments]}"; shift
 [[ -z "$jobs" || "$jobs" == auto ]] && jobs="$(nproc 2> /dev/null || sysctl -n hw.ncpu 2> /dev/null || echo 4)"
 case "$jobs" in '' | *[!0-9]* | 0) echo "run-tests: -j wants a number or auto, not '$jobs'" >&2; exit 2 ;; esac
 (( jobs == 1 )) && exec "$bin" "$@"
@@ -31,12 +31,12 @@ case "$jobs" in '' | *[!0-9]* | 0) echo "run-tests: -j wants a number or auto, n
 here="$(cd "$(dirname "$0")/.." && pwd)"
 serial="$(grep -v '^ *#' "$here/tests/serial-tests.txt" 2> /dev/null | tr -d ' \r' | grep . | paste -sd, -)"
 heavy=""
-if [[ "${LYNX_TEST_SKIP_HEAVY:-0}" == 1 ]]; then
+if [[ "${YW_TEST_SKIP_HEAVY:-0}" == 1 ]]; then
     heavy="$(grep -v '^ *#' "$here/tests/heavy-tests.txt" 2> /dev/null | tr -d ' \r' | grep . | paste -sd, -)"
-    [[ -n "$heavy" ]] && echo "run-tests: LYNX_TEST_SKIP_HEAVY=1: the tests of tests/heavy-tests.txt do NOT run"
+    [[ -n "$heavy" ]] && echo "run-tests: YW_TEST_SKIP_HEAVY=1: the tests of tests/heavy-tests.txt do NOT run"
 fi
 skip=(); [[ -n "$heavy" ]] && skip=(--exclude "$heavy")
-logs="${LYNX_TEST_LOGS:-$bin.shards}"
+logs="${YW_TEST_LOGS:-$bin.shards}"
 mkdir -p "$logs" && rm -f "$logs"/*.log "$logs"/*.times "$logs"/*.rc
 weights=()
 [[ -f "$here/tests/test-weights.txt" ]] && weights=(--weights "$here/tests/test-weights.txt")
@@ -74,7 +74,7 @@ for p in "${parts[@]}"; do
         f2="${sum#*, }"; failures=$((failures + ${f2%% failures}))
     fi
     if [[ -z "$sum" || ( "$rc" != 0 && "$rc" != 1 ) ]]; then
-        echo "  FAILED $f:0: shard $p of lynx_tests stopped (exit $rc) during the test above"
+        echo "  FAILED $f:0: shard $p of yw_tests stopped (exit $rc) during the test above"
         failures=$((failures + 1)); bad=1
     elif [[ "$rc" != 0 && "${sum#*, }" == "0 failures" ]]; then
         bad=1

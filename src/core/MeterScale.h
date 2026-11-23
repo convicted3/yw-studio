@@ -1,12 +1,12 @@
 #pragma once
 
 // Round 190lx (DF-61): FL's General › Miscellaneous "Alternate meter scale" ("Alternate scale for all peak meters").
-// LYNX's peak meters show -60 … +6 dB on a straight dB axis; with the alternate scale they use FL's alternate law, which
+// YW's peak meters show -60 … +6 dB on a straight dB axis; with the alternate scale they use FL's alternate law, which
 // spreads the top of the range (0 … -15 dB) over most of the meter (capture 190lx A1: the dB the hint bar reads at each
 // height of an FL mixer meter). Pure logic, no JUCE.
 //
 // Round 190mf (owner decision): the default (normal) scale in the Pattern layout is FL's own normal law, measured from
-// the same 43 readings (capture 190lx A1); the Clip-launch and Simple layouts keep LYNX's straight -60 … +6 dB axis
+// the same 43 readings (capture 190lx A1); the Clip-launch and Simple layouts keep YW's straight -60 … +6 dB axis
 // (their own looks). The alternate scale stays one switch for all peak meters.
 
 #include "core/LayoutStyle.h"
@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::meterscale
+namespace yw::meterscale
 {
 inline bool& alternate() noexcept
 {
@@ -34,7 +34,7 @@ inline constexpr float flK = 0.22656f, flA = 41.0f;
 
 enum class Law
 {
-    straight,   // LYNX's -60 … +6 dB axis, linear in dB (the Clip-launch and Simple layouts)
+    straight,   // YW's -60 … +6 dB axis, linear in dB (the Clip-launch and Simple layouts)
     flNormal,   // FL's normal law (the Pattern layout's default)
     flAlternate // FL's "Alternate meter scale" (every layout, when the option is on)
 };
@@ -89,4 +89,4 @@ inline Law lawOf (bool alt) noexcept { return alt ? Law::flAlternate : Law::stra
 inline float positionOfDb (float db, bool alt) noexcept { return positionOfDb (db, lawOf (alt)); }
 inline float dbAtPosition (float pos, bool alt) noexcept { return dbAtPosition (pos, lawOf (alt)); }
 inline float position (float gain, bool alt) noexcept { return position (gain, lawOf (alt)); }
-} // namespace lynx::meterscale
+} // namespace yw::meterscale

@@ -10,38 +10,38 @@
 #include "engine/AudioEngine.h"
 
 // Presets of hosted plugins from the plugin window (round 162d, issue #8; FL's wrapper: the presets menu and ◀ ▶):
-// the plugin's own programs, the user's presets in <settings>/Presets/Plugins/<plugin>/ (LYNX's .lynxpreset for any
+// the plugin's own programs, the user's presets in <settings>/Presets/Plugins/<plugin>/ (YW's .ywpreset for any
 // format, VST2 .fxp / .fxb and VST3 .vstpreset dropped there too), Save preset, Load / Export a preset file. The same
 // folder is the Browser's "Plugin presets" place.
-namespace lynx::pluginpresetui
+namespace yw::pluginpresetui
 {
 juce::File presetsRoot();                               // <settings>/Presets/Plugins
 juce::File folderFor (const juce::String& pluginName);  // that plugin's folder (not created)
-bool isPresetFile (const juce::File& file);             // .lynxpreset (of a plugin), .fxp, .fxb, .vstpreset
+bool isPresetFile (const juce::File& file);             // .ywpreset (of a plugin), .fxp, .fxb, .vstpreset
 juce::Array<juce::File> userPresets (const juce::String& pluginName); // sorted by name
 
-// The plugin a .lynxpreset was saved from (nullopt: not a plugin preset).
-std::optional<pluginpresets::Preset> readLynxPreset (const juce::File& file);
+// The plugin a .ywpreset was saved from (nullopt: not a plugin preset).
+std::optional<pluginpresets::Preset> readYwPreset (const juce::File& file);
 
 // Applies a preset file to the plugin. False + `error` (a sentence for the user) when the file is not for this plugin
 // or this plugin can't read that format (e.g. a VST2 .fxp chunk for a plugin in a separate process).
 bool load (juce::AudioPluginInstance& plugin, const juce::File& file, juce::String& error);
 // Writes the plugin's current settings in the file's format (by extension).
 bool save (juce::AudioPluginInstance& plugin, const juce::File& file, const juce::String& presetName, juce::String& error);
-// The formats `save` can write for this plugin ("*.lynxpreset;*.fxp;*.fxb" …).
+// The formats `save` can write for this plugin ("*.ywpreset;*.fxp;*.fxb" …).
 juce::String saveWildcard (juce::AudioPluginInstance& plugin);
 
 // Browser: a preset file was double-clicked. Applies it to the plugin it belongs to — an open plugin window's plugin
-// (the last one used first), then the selected channel's plugin; a .lynxpreset of an instrument nobody has open
+// (the last one used first), then the selected channel's plugin; a .ywpreset of an instrument nobody has open
 // becomes a new channel with that plugin. `message` receives what happened when nothing could take it.
 bool applyFromBrowser (AudioEngine& engine, const juce::File& file, juce::String& message);
 // Round 190fs: an FL preset (.fst) of a third-party plugin (FL's wrapper record). `load` reads it too (the plugin's
 // state carried over as from an .flp). From the Browser: into an open window of that plugin (or the selected channel's
-// plugin), else a new channel when the plugin is an instrument LYNX SHARE found; `message` says what to do otherwise.
+// plugin), else a new channel when the plugin is an instrument YW Studio found; `message` says what to do otherwise.
 bool isFlPresetOfPlugin (const juce::File& file);
 bool applyFlPresetFromBrowser (AudioEngine& engine, const juce::File& file, juce::String& message);
 
-// Round 190ao (pain point 13; LYNX's own): the preset menu's "Play a note when a preset loads" — a short C5 on the
+// Round 190ao (pain point 13; YW's own): the preset menu's "Play a note when a preset loads" — a short C5 on the
 // instrument after a preset is loaded while the song is stopped. A user setting (preset-audition.txt in the settings
 // folder; off by default), the same for every plugin.
 bool auditionOnLoad();
@@ -106,4 +106,4 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
     bool titleLook = false;
 };
-} // namespace lynx::pluginpresetui
+} // namespace yw::pluginpresetui

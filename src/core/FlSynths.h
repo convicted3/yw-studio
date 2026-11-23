@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Harmless: oscillators (timbre, odd mask, sub, unison), volume envelope, filter with
 // envelope, LFO, mono/porta. `gain` receives Harmless's master volume (linear). `bpm` converts
@@ -79,12 +79,12 @@ struct EnvelopeControllerData : std::array<ControllerArticulator, 8>
     float modX = 0.5f, modY = 0.5f; // the global Mod X / Mod Y knobs (0..1), added to each note's own
     bool continuous = false;        // FL's flag bit 2: with no note the output follows base and the Mod X / Y maps
 };
-// Reads FL's state or the one LYNX writes (below).
+// Reads FL's state or the one YW writes (below).
 // FL's parameter numbers of the global Mod X / Mod Y knobs (REA_rodada15 FUN_008ae740: 11·k + s for the 8 outputs,
 // then 88 / 89, value / 65536): the automation / link targets of an Envelope Controller channel (round 164f)
 constexpr int envelopeControllerModXParam = 88, envelopeControllerModYParam = 89;
 std::optional<EnvelopeControllerData> parseEnvelopeController (const std::vector<std::uint8_t>& state);
-// LYNX's own state of an Envelope Controller ("LYEC" + version 2: the 8 articulators with their LFOs and maps, the
+// YW's own state of an Envelope Controller ("LYEC" + version 2: the 8 articulators with their LFOs and maps, the
 // global Mod X / Y and flags), what its editor saves; version 1 (envelopes only) still loads.
 std::vector<std::uint8_t> writeEnvelopeController (const EnvelopeControllerData& data);
 // A new controller: each output a simple attack / decay / sustain / release envelope on any key.
@@ -121,7 +121,7 @@ std::optional<KeyboardControllerData> parseKeyboardController (const std::vector
 // Writes `data` into a version 3 state (round 165c, the Keyboard Controller's editor): the other bytes of a valid `state`
 // (smoothing, the UI's key range, "link") are kept; anything else becomes a new state with FL's defaults.
 void writeKeyboardController (const KeyboardControllerData& data, std::vector<std::uint8_t>& state);
-// A new Keyboard Controller (LYNX's own default): each key's value rising from 0 to 1 over the keyboard, note-off value 0
+// A new Keyboard Controller (YW's own default): each key's value rising from 0 to 1 over the keyboard, note-off value 0
 // with auto release.
 std::vector<std::uint8_t> defaultKeyboardController();
 
@@ -222,7 +222,7 @@ std::optional<std::string> drumSynthLiveSound (const std::vector<std::uint8_t>& 
 bool synthFromKepler (const std::vector<std::uint8_t>& state, SynthSettings& synth, float& gain);
 
 // FLEX (§1.1): pack and preset names, from the plugin state. FLEX packs are protected and
-// LYNX does not open them: the channel gets a synth patch chosen by those names.
+// YW does not open them: the channel gets a synth patch chosen by those names.
 std::optional<std::pair<std::string, std::string>> flexPresetName (const std::vector<std::uint8_t>& state);
 
 // PoiZone, BassDrum, Toxic Biohazard (REA_rodada15 §12): PoiZone maps well (2 osc + noise, 2 ADSR,
@@ -239,7 +239,7 @@ bool synthFromMorphine (const std::vector<std::uint8_t>& state, SynthSettings& s
 bool synthFromBooBass (const std::vector<std::uint8_t>& state, SynthSettings& synth);
 
 // Drumpad (§6): patch name ("War Drum Lo 01"); `drumToneForName` gives a generic drum by name
-// (kicks/snares/hi-hats use LYNX's drum instruments).
+// (kicks/snares/hi-hats use YW's drum instruments).
 std::optional<std::string> drumpadPatchName (const std::vector<std::uint8_t>& state);
 SynthSettings drumToneForName (const std::string& patchName);
 // Drumpad: the 38 state parameters (2 Mallet Amplitude, 29 Pitch, …; REA_rodada18 §12)
@@ -247,4 +247,4 @@ std::optional<std::array<float, 38>> drumpadParams (const std::vector<std::uint8
 // Sakura: the 146 raw state floats (0…113 are parameters) for the physical string model (REA_rodada28 §1)
 std::optional<std::vector<float>> sakuraParams (const std::vector<std::uint8_t>& state);
 std::vector<std::string> drumSampleCandidates (const std::string& soundName);
-} // namespace lynx
+} // namespace yw

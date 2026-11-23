@@ -15,7 +15,7 @@
 #include "core/PlaylistOps.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -644,4 +644,4 @@ bool AudioEngine::placeSlotAudio (const std::vector<std::pair<juce::File, int>>&
                 clipLauncher->commands.push ({ launcher::Command::Type::launch, p.track, p.scene, p.until });
     return true;
 }
-} // namespace lynx
+} // namespace yw

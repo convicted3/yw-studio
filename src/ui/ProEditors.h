@@ -4,13 +4,13 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
-// Display-first editors of LYNX's dynamics and saturation engines (REA round 114). Each one follows the workflow of
+// Display-first editors of YW's dynamics and saturation engines (REA round 114). Each one follows the workflow of
 // the plugin it is inspired by, the way Facet EQ does (round 103): the window is the display — scrolling levels and
 // gain reduction for the limiter / compressor / gate / de-esser, the spectrum with draggable bands for the
 // multiband and the saturator —, the main knobs float over its bottom, the rarely used settings live in a bottom
-// bar, and the display itself is edited by dragging (threshold line, gain, crossovers, band nodes). Drawn in LYNX's
+// bar, and the display itself is edited by dragging (threshold line, gain, crossovers, band nodes). Drawn in YW's
 // own style (colours, knobs, fonts); no graphics of the references are used.
 namespace ProEditorWindows
 {
@@ -25,4 +25,4 @@ juce::Image windowContentForSnapshot (AudioEngine& engine, int track, int slot, 
 
 // The editor alone (for --plugui); `demo` fills the displays with a synthetic signal.
 std::unique_ptr<juce::Component> makeProEditor (AudioEngine& engine, int track, int slot, bool demo = false);
-} // namespace lynx
+} // namespace yw

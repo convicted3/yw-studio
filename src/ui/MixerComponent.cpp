@@ -53,7 +53,7 @@
 #include "core/StandIns.h"
 #include "ui/I18n.h"
 #include "ui/LiveRemoteUi.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 #include "core/VocalPitch.h"
 #include "ui/Icons.h"
 #include "ui/ValueControl.h"
@@ -74,7 +74,7 @@
 #include "core/TrackStates.h" // round 190op (P4)
 #include "ui/WindowClipboard.h" // issue #232 stage 2 (round 190nz)
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -269,7 +269,7 @@ private:
 MixerStrips::MixerStrips (AudioEngine& e)
     : engine (e)
 {
-    if (const auto* v = std::getenv ("LYNX_MIXER_CACHE"); v == nullptr || juce::String (v) != "0")
+    if (const auto* v = std::getenv ("YW_MIXER_CACHE"); v == nullptr || juce::String (v) != "0")
     {
         setCachedComponentImage (new MeterCache (*this)); // (owned by the component)
         meterCacheOn = true;
@@ -1462,7 +1462,7 @@ void MixerStrips::paintStripInserts (juce::Graphics& g, int t)
 
 // FL's Extra large list (round 190jd, live check 190iw Q6; q6-fl-mixer-extralarge-fxlist-zoom2.png): one 23 px cell per
 // used slot in slot order, a little darker than the strip, the name cut in the middle in FL's light grey-blue; empty
-// cells below (fainter, 1 px lines between them); no bypass dots, icons or "add" row. Hover / drag as the LYNX view.
+// cells below (fainter, 1 px lines between them); no bypass dots, icons or "add" row. Hover / drag as the YW view.
 void MixerStrips::paintFlInsertList (juce::Graphics& g, int t)
 {
     using namespace theme;
@@ -2168,9 +2168,9 @@ void MixerStrips::paint (juce::Graphics& g)
                 const auto left = (float) meters.getRight() + 1.0f;
                 g.setFont (scaleFont);
 
-                for (auto db : lynx::meters::scaleMarks ((float) meters.getHeight(), textHeight + 1.0f))
+                for (auto db : yw::meters::scaleMarks ((float) meters.getHeight(), textHeight + 1.0f))
                 {
-                    const auto y = (float) meters.getBottom() - lynx::meters::scalePosition ((float) db) * (float) meters.getHeight();
+                    const auto y = (float) meters.getBottom() - yw::meters::scalePosition ((float) db) * (float) meters.getHeight();
                     g.setColour (db == 0 ? colour::textPrimary : colour::textSecondary);
                     g.fillRect (juce::Rectangle<float> (left, y - 0.5f, 2.0f, 1.0f));
                     const auto box = juce::Rectangle<float> (left + 2.0f, y - textHeight * 0.5f, (float) masterScaleWidth - 2.0f, textHeight)
@@ -2196,7 +2196,7 @@ void MixerStrips::paint (juce::Graphics& g)
             theme::fillRoundRect (g, cap.translated (0.0f, 1.5f), radius::sm, juce::Colours::black.withAlpha (0.35f));
             // same cap as the LookAndFeel's linear faders
             // FL's fader colours (manual, Mixer › Level faders: "Grey (Default), Green (Selected), Orange (Armed for
-            // recording)"; details190if fl-fader-selected-green.png): LYNX's green LED colour and its warning orange
+            // recording)"; details190if fl-fader-selected-green.png): YW's green LED colour and its warning orange
             {
                 const auto armedCap = t > 0 && engine.isInsertArmed (t);
                 auto capColour = armedCap ? colour::warning : isSelected ? colour::ledOn : juce::Colour (0xffd4d7dd);
@@ -2320,7 +2320,7 @@ void MixerStrips::paint (juce::Graphics& g)
                                                                    faderPosition (song.routeLevel (selected, t))),
                               false,
                               dragging (Part::send) ? colour::accent : colour::accentHover, hovered (Part::send) || dragging (Part::send));
-                // a pre-fader send (LYNX's switch, round 190aq) is marked beside its knob
+                // a pre-fader send (YW's switch, round 190aq) is marked beside its knob
                 if (on && t > 0 && song.sendPre (selected, t))
                 {
                     // (its whole text, ending at the knob's left edge: the strip's margin is narrower than "PRE")
@@ -2460,7 +2460,7 @@ void MixerStrips::mouseDown (const juce::MouseEvent& e)
         // FL's third item (Tag -1, round 190fl): the number of inserts to have, the new ones at the end. Round 190gw: FL 2026
         // shows it only on THIS "+" (the one after the last strip): AddMixerTracksMenuBeforePopup 0x12a87d0 sets the
         // item's Visible (TQuickMenuItem.Visible's setter 0x840720) to "the menu was not opened from the toolbar's
-        // AddTrackAfterSelectedBtn" — LYNX has no such toolbar button, and FL's track / options menus never had the item
+        // AddTrackAfterSelectedBtn" — YW has no such toolbar button, and FL's track / options menus never had the item
         menu.addItem (tr ("Increase number of tracks to..."), room, false, [this] { askInsertCount(); });
         // FL's "Add from state" (REA round 167q: AddMixerTracksMenu, FUN_012a87d0 / FUN_012a83b0)
         juce::PopupMenu fromState;
@@ -2647,7 +2647,7 @@ void MixerStrips::mouseDown (const juce::MouseEvent& e)
         selectBase.clear();
         if (e.mods.isShiftDown())
             selectBase = selection;
-        // LYNX extra (issue #163, owner 2026-11-14; FL has no Ctrl+click toggle): with Ctrl alone the press waits; a drag
+        // YW extra (issue #163, owner 2026-11-14; FL has no Ctrl+click toggle): with Ctrl alone the press waits; a drag
         // onto another strip does FL's range from here, a release on this strip adds / removes it
         ctrlClickPending = ! e.mods.isShiftDown();
         if (! ctrlClickPending)
@@ -3099,8 +3099,8 @@ void MixerStrips::deleteTracks (std::vector<int> tracks)
 // FUN_012a5280 with flags 0x11, docs/analise/REA_rodada190jv.md): "Remove unused tracks|Select the mixer track types to be
 // removed." with two exclusive choices ("Unlinked tracks only" ticked) and OK / Cancel; then, when at least one track
 // would go, "Remove unused tracks|This will |delete| %d unused mixer track(s). Are you sure?" (Yes / No and Remember my
-// choice: FL's message 0x33 "TrimUnusedMixerTracks", File/Data). With none FL does nothing (LYNX: a hint). FL refuses the
-// whole trim while a plugin has "side routing"; LYNX renumbers those references, so it never refuses (MixerOps.h).
+// choice: FL's message 0x33 "TrimUnusedMixerTracks", File/Data). With none FL does nothing (YW: a hint). FL refuses the
+// whole trim while a plugin has "side routing"; YW renumbers those references, so it never refuses (MixerOps.h).
 void MixerStrips::trimUnusedTracks()
 {
     juce::Component::SafePointer<MixerStrips> safe (this);
@@ -3188,7 +3188,7 @@ void MixerStrips::routeSelection (int t, mixerops::RouteKind kind)
         ui::postHint ({ tr ("Sidechain") + ": " + tr ("The link was made; add a compressor to this insert to use it."), {} }, 6000);
 }
 
-// LYNX's pre-fader switch of a send (round 190aq; FL's sends are post-fader, the default): a ticked item in the send
+// YW's pre-fader switch of a send (round 190aq; FL's sends are post-fader, the default): a ticked item in the send
 // knob's and the route arrow's menus. The route to Master has none.
 void MixerStrips::addPreFaderItem (juce::PopupMenu& menu, int from, int t)
 {
@@ -3332,7 +3332,7 @@ ui::Hint MixerStrips::hintAt (juce::Point<int> p)
     const auto name = juce::String::fromUTF8 (song.mixer[(std::size_t) t].name.c_str());
     const auto gesture = ui::valueGestures();
 
-    // the channels that play into this insert (FL shows them by the insert; LYNX in the hint)
+    // the channels that play into this insert (FL shows them by the insert; YW in the hint)
     auto feeds = [&song, t, tracks = (int) song.mixer.size()] {
         juce::StringArray names;
         for (const auto& c : song.channels)
@@ -3440,7 +3440,7 @@ void MixerStrips::mouseUp (const juce::MouseEvent& e)
 
     if (ctrlClickPending && selectAnchor > 0)
     {
-        // the LYNX Ctrl+click toggle (the last selected track stays: the mixer always has one)
+        // the YW Ctrl+click toggle (the last selected track stays: the mixer always has one)
         auto s = selection;
         const auto t = selectAnchor;
         if (const auto it = std::lower_bound (s.begin(), s.end(), t); it != s.end() && *it == t)
@@ -3613,7 +3613,7 @@ namespace
 {
 juce::File mixerStatesFolder()
 {
-    return lynx::platform::documentsFolder().getChildFile ("YW Studio/Mixer states");
+    return yw::platform::documentsFolder().getChildFile ("YW Studio/Mixer states");
 }
 
 std::unique_ptr<juce::FileChooser>& mixerStateChooser()
@@ -3689,7 +3689,7 @@ juce::PopupMenu trackLatencyMenu (AudioEngine& engine, int t)
     // auto = the plan's latency without the manual part, in samples (no ms rounding left over when no plugin has any)
     const auto total = trackLatencyMs (engine, t);
     const auto rate = sampleRateOf (engine);
-    const auto autoMs = total - 1000.0 * lynx::manualLatencySamples (track, rate) / rate;
+    const auto autoMs = total - 1000.0 * yw::manualLatencySamples (track, rate) / rate;
     menu.addSectionHeader (tr ("Latency {0} ms (auto {1} ms, manual {2} ms)",
                                { juce::String (total, 2), juce::String (std::abs (autoMs) < 0.005 ? 0.0 : autoMs, 2), juce::String (track.latencyMs, 2) }));
     menu.addItem (tr ("Reset"), track.latencyMs != 0.0f, false, [&engine, t] { setTrackLatency (engine, t, 0.0); });
@@ -3818,7 +3818,7 @@ bool loadOnTracks (AudioEngine& engine, const std::vector<int>& tracks, const ju
     const auto state = read (file);
     if (! state)
         return false;
-    // FL's mixer presets restore the track's name and colour (WhatsNew); LYNX's states keep the track's own
+    // FL's mixer presets restore the track's name and colour (WhatsNew); YW's states keep the track's own
     const auto takeName = file.hasFileExtension ("fst") && ! state->name.empty();
     bool any = false;
     engine.editSong ([&] (Song& s) {
@@ -3851,7 +3851,7 @@ int insertTrack (AudioEngine& engine, int at, const juce::File& file)
 } // namespace mixerpresets
 
 // issue #232 stage 2 (round 190nz): Copy / Paste mixer track state (the File submenu), within one window and between
-// LYNX SHARE windows (ui/WindowClipboard.h); this window's own copy until another window copies something newer
+// YW Studio windows (ui/WindowClipboard.h); this window's own copy until another window copies something newer
 static std::vector<MixerTrack>& copiedTrackStates()
 {
     static std::vector<MixerTrack> states;
@@ -4101,11 +4101,11 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
             if (t < (int) engine.getSong().mixer.size())
                 engine.editSong ([targets, colour] (Song& s) { selrename::colourMixer (s, targets, colour); });
         };
-        ui::showColourPickerPopup ({ mouse.x, mouse.y, 1, 1 }, tr ("Change color..."), current != 0 ? juce::Colour (current) : juce::Colour (lynxPalette()[0]), {},
+        ui::showColourPickerPopup ({ mouse.x, mouse.y, 1, 1 }, tr ("Change color..."), current != 0 ? juce::Colour (current) : juce::Colour (ywPalette()[0]), {},
                                    [set] (juce::Colour c) { set (c.getARGB()); }, {}, [set] { set (0); });
     });
     menu.addItem (tr ("Random color"), [this, targets] {
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
         const auto colour = palette[(std::size_t) juce::Random::getSystemRandom().nextInt ((int) palette.size())];
         engine.editSong ([targets, colour] (Song& s) { selrename::colourMixer (s, targets, colour); }); // (issue #201)
     });
@@ -4117,7 +4117,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
         const auto& mixer = engine.getSong().mixer;
         const auto colourOf = [&mixer] (int track) {
             const auto c = track >= 0 && track < (int) mixer.size() ? mixer[(std::size_t) track].colour : 0u;
-            return c != 0 ? juce::Colour (c) : juce::Colour (lynxPalette()[0]);
+            return c != 0 ? juce::Colour (c) : juce::Colour (ywPalette()[0]);
         };
         showGradientColourDialog (colourOf (sorted.front()), colourOf (sorted.back()), (int) sorted.size(),
                                   [this, sorted] (juce::Colour first, juce::Colour last) {
@@ -4126,7 +4126,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
                                       });
                                   });
     });
-    // FL's "Change icon..." (SetIconMenuClick, REA round 168h: every selected track gets it); LYNX's own icon set
+    // FL's "Change icon..." (SetIconMenuClick, REA round 168h: every selected track gets it); YW's own icon set
     menu.addItem (tr ("Change icon..."), [this, t, targets = std::find (selection.begin(), selection.end(), t) != selection.end() ? selection : std::vector<int> { t }] {
         ui::showTrackIconPicker (juce::Rectangle<int> (juce::Desktop::getMousePosition().x, juce::Desktop::getMousePosition().y, 1, 1), engine.getSong().mixer[(std::size_t) t].icon, [this, targets] (int icon) {
             engine.editSong ([targets, icon] (Song& s) {
@@ -4150,7 +4150,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
         menu.addItem (tr ("Unassign from Audio track(s)"), anyLinked, false,
                       [this, targets] { engine.editSong ([targets] (Song& s) { mixerops::unassignAudioTracks (s, targets); }); });
     }
-    // round 190op (P4, LYNX extra; owner decision O-3): Deactivate unloads the insert's effects (and what plays only into
+    // round 190op (P4, YW extra; owner decision O-3): Deactivate unloads the insert's effects (and what plays only into
     // it); it carries silence, its routing stays. Every selected track with it; the Master and the Current track never
     if (const auto off = song.mixer[(std::size_t) t].deactivated;
         t > 0 && ! isCurrent && (layoutstyle::current() != layoutstyle::Style::pattern || trackstates::patternMenus() || off))
@@ -4161,7 +4161,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
     menu.addSeparator();
 
     // FL's "File" submenu (REA round 167q, TFXForm's FileMenu): open/save a state, Browse states and the "States" list
-    // of FL's mixer presets (FL's own .fst and the user's) and LYNX's .lynxtrack states, loaded onto every selected
+    // of FL's mixer presets (FL's own .fst and the user's) and YW's .ywtrack states, loaded onto every selected
     // track (FUN_012a7440)
     {
         const auto targets = std::find (selection.begin(), selection.end(), t) != selection.end() ? selection : std::vector<int> { t };
@@ -4169,10 +4169,10 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
         file.addItem (tr ("Open mixer track state..."), [this, targets] {
             auto& chooser = mixerStateChooser();
             const auto start = mixerpresets::folders().isEmpty() ? mixerStatesFolder() : mixerpresets::folders()[0];
-            chooser = lynx::ui::makeFileChooser (tr ("Open mixer track state"), start,
+            chooser = yw::ui::makeFileChooser (tr ("Open mixer track state"), start,
                                                            juce::String ("*.fst;*") + ProjectFile::mixerTrackStateExtension);
             juce::Component::SafePointer<MixerStrips> safe (this);
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe, targets] (const juce::FileChooser& fc) {
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe, targets] (const juce::FileChooser& fc) {
                 if (safe != nullptr && fc.getResult().existsAsFile() && ! mixerpresets::loadOnTracks (safe->engine, targets, fc.getResult()))
                     juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Open mixer track state"),
                                                             tr ("This file is not a mixer track state YW Studio can read."));
@@ -4181,16 +4181,16 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
         file.addItem (tr ("Save mixer track state as...") + "\tCtrl+Shift+S", [this, t, trackName] {
             auto& chooser = mixerStateChooser();
             const auto name = juce::File::createLegalFileName (trackName.isNotEmpty() ? trackName : tr ("Mixer track {0}", { juce::String (t) }));
-            chooser = lynx::ui::makeFileChooser (tr ("Save mixer track state"), mixerStatesFolder().getChildFile (name + ProjectFile::mixerTrackStateExtension),
+            chooser = yw::ui::makeFileChooser (tr ("Save mixer track state"), mixerStatesFolder().getChildFile (name + ProjectFile::mixerTrackStateExtension),
                                                            juce::String ("*") + ProjectFile::mixerTrackStateExtension);
             juce::Component::SafePointer<MixerStrips> safe (this);
             mixerStatesFolder().createDirectory();
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe, t] (const juce::FileChooser& fc) {
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe, t] (const juce::FileChooser& fc) {
                 if (safe != nullptr && fc.getResult() != juce::File())
                     saveMixerTrackState (safe->engine, t, fc.getResult().withFileExtension (ProjectFile::mixerTrackStateExtension));
             });
         });
-        // issue #232 stage 2 (round 190nz, LYNX extra): a state through the clipboard, also to another LYNX SHARE window
+        // issue #232 stage 2 (round 190nz, YW extra): a state through the clipboard, also to another YW Studio window
         // (the effects with their plugins' settings as they are now, level, pan, EQ, name and colour; routing stays)
         file.addSeparator();
         file.addItem (targets.size() > 1 ? tr ("Copy {0} mixer track states", { juce::String ((int) targets.size()) }) : tr ("Copy mixer track state"),
@@ -4392,7 +4392,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
     // FL's track latency (the "Track latency compensation" label's menu, REA round 165f-mixer)
     menu.addSubMenu (tr ("Track latency: {0}", { manualLatencyText (engine, song.mixer[(std::size_t) t]) }), trackLatencyMenu (engine, t));
 
-    // --- LYNX's sound items (FL has them on the strip itself) -------------------------------------------
+    // --- YW's sound items (FL has them on the strip itself) -------------------------------------------
     menu.addSectionHeader (tr ("Sound"));
     {
         const auto& track = song.mixer[(std::size_t) t];
@@ -4415,10 +4415,10 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
         });
         if (t > 0)
             menu.addItem (tr ("Render to audio (freeze)..."), [this, t] { bounceInsertToAudio (engine, t); });
-        // round 190ch (LYNX's own, not an FL item): the one-click vocal clean-up chain on this insert. Round 190cm: here
-        // with LYNX's other sound items, no longer between FL's own "File" and audio input rows
+        // round 190ch (YW's own, not an FL item): the one-click vocal clean-up chain on this insert. Round 190cm: here
+        // with YW's other sound items, no longer between FL's own "File" and audio input rows
         if (t > 0)
-            menu.addSubMenu (tr ("Clean voice"), lynx::ui::cleanVoiceMenu (engine, t));
+            menu.addSubMenu (tr ("Clean voice"), yw::ui::cleanVoiceMenu (engine, t));
     }
 
     // --- FL's "Group" section (REA round 146a) -----------------------------------------------------------
@@ -4432,7 +4432,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
         menu.addItem (tr ("Create group"), [this, targets, t] { engine.editSong ([targets, t] (Song& s) { mixerops::createGroup (s, targets, t); }); });
         menu.addItem (tr ("Auto color group"), song.mixer[(std::size_t) t].colour != 0 && ! isCurrent, false,
                       [this, t] { engine.editSong ([t] (Song& s) { mixerops::autoColorGroup (s, t); }); });
-        // LYNX's addition (round 177a): a group folds to its bus strip, or to a slim tab when it has no bus
+        // YW's addition (round 177a): a group folds to its bus strip, or to a slim tab when it has no bus
         const auto canFold = mixerops::canFold (song, t);
         const auto folded = mixerops::isFolded (song, t);
         menu.addItem (folded ? tr ("Unfold group") : tr ("Fold group"), canFold, false, [this, t] {
@@ -4448,7 +4448,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
             updateSize();
         });
 
-        // LYNX's addition (round 177a): VCA faders, their strips left of the Master
+        // YW's addition (round 177a): VCA faders, their strips left of the Master
         std::vector<int> members;
         for (const auto m : targets)
             if (m > 0)
@@ -4548,7 +4548,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
             if (mixeroptions::renderTracks)
                 mixeroptions::renderTracks (targets, {});
         });
-        // FL's Disk recording "Options" (round 166e) and LYNX's own disarm after a take (issue #16)
+        // FL's Disk recording "Options" (round 166e) and YW's own disarm after a take (issue #16)
         disk.addSectionHeader (tr ("Options"));
         const auto& ro = engine.getRecordOptions();
         auto setRecord = [&eng] (std::function<void (AudioEngine::RecordOptions&)> change) {
@@ -4568,7 +4568,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
                       [setRecord] { setRecord ([] (AudioEngine::RecordOptions& r) { r.latencyCompensation = ! r.latencyCompensation; }); });
         disk.addItem (tr ("Disarm the inserts when recording stops"), true, ro.disarmOnStop,
                       [setRecord] { setRecord ([] (AudioEngine::RecordOptions& r) { r.disarmOnStop = ! r.disarmOnStop; }); });
-        // LYNX's own (round 190aq): also in the record button's menu
+        // YW's own (round 190aq): also in the record button's menu
         disk.addItem (tr ("Low latency while recording (bypasses effects that add latency on armed or monitored inserts)"), true, ro.lowLatencyRecording,
                       [setRecord] { setRecord ([] (AudioEngine::RecordOptions& r) { r.lowLatencyRecording = ! r.lowLatencyRecording; }); });
         // FL's "Format" group (round 190bf, fl190be bonus shot): the recorded takes' sample format, radio items (the
@@ -4605,7 +4605,7 @@ juce::PopupMenu MixerStrips::buildMenu (int t)
                      [this] { engine.editSong ([] (Song& s) { s.autoPdc = ! s.autoPdc; }); });
         pdc.addItem (tr ("Compensate automations (delay a plugin's automation with its audio)"), true, song.compensateAutomations,
                      [this] { engine.editSong ([] (Song& s) { s.compensateAutomations = ! s.compensateAutomations; }); });
-        // round 190hq (LYNX extra, Song::compensateMixerLevels): the faders, pans, route levels and VCA faders too
+        // round 190hq (YW extra, Song::compensateMixerLevels): the faders, pans, route levels and VCA faders too
         pdc.addItem (tr ("Compensate fader and route automations too (YW Studio)"), song.compensateAutomations, song.compensateMixerLevels,
                      [this] { engine.editSong ([] (Song& s) { s.compensateMixerLevels = ! s.compensateMixerLevels; }); });
         menu.addSubMenu (tr ("Plugin delay compensation"), pdc);
@@ -4819,7 +4819,7 @@ bool MixerStrips::isSilenced (int t) const
     return (std::size_t) t < audible.size() && ! audible[(std::size_t) t];
 }
 
-// --- the loudness panel beside the Master (round 190am, LYNX's own; Mixer menu, off by default) -----------------------
+// --- the loudness panel beside the Master (round 190am, YW's own; Mixer menu, off by default) -----------------------
 namespace
 {
 constexpr float loudnessBarTop = 0.0f, loudnessBarBottom = -42.0f; // LUFS at the bar's ends
@@ -5169,7 +5169,7 @@ bool MixerStrips::liveFrame (double nowMs)
         }
     }
 
-    // round 177d: the gain-reduction meters (strips with one of LYNX's own dynamics only; nothing while hidden)
+    // round 177d: the gain-reduction meters (strips with one of YW's own dynamics only; nothing while hidden)
     if (showing)
     {
         grShown.resize (mixer.size(), -1);
@@ -5307,12 +5307,12 @@ const EffectKind allEffects[] = { EffectKind::eq,     EffectKind::parametricEq, 
                                       EffectKind::delay,  EffectKind::reverb,       EffectKind::chorus,     EffectKind::filter,
                                       EffectKind::distortion, EffectKind::utility, EffectKind::volumeGate,
                                       EffectKind::pitchShift, EffectKind::freqShift, EffectKind::lofi, EffectKind::effector, EffectKind::crossover, EffectKind::frequencySplitter, EffectKind::autoPan, EffectKind::vocoder, EffectKind::pitchCorrect,
-                                      EffectKind::ridgeStrip, EffectKind::glowLeveler, EffectKind::hushDeEsser, EffectKind::aether, EffectKind::ember, EffectKind::kilnChannel, EffectKind::fretChannel, EffectKind::shellChannel, EffectKind::strikeShaper, EffectKind::anvilBus, EffectKind::corrode, EffectKind::soundboard, EffectKind::platter, EffectKind::timeprism, EffectKind::harmonia, // LYNX's mixing suite
-                                      EffectKind::lynxTune, // LYNX's own pitch corrector
-                                      EffectKind::epochVerb, EffectKind::atrium, EffectKind::foilPlate, EffectKind::nebula, EffectKind::halo, EffectKind::horizon, // LYNX's reverbs
-                                      EffectKind::echoform, EffectKind::spiralEcho, EffectKind::orbit, EffectKind::latticeMod, // LYNX's delay / modulation suite
-                                      EffectKind::crestCompressor, EffectKind::prismMultiband, EffectKind::sentryGate, // LYNX's dynamics suite
-                                      EffectKind::quellDenoiser, EffectKind::geminiDoubler, EffectKind::voiceShift, // LYNX's voice tools
+                                      EffectKind::ridgeStrip, EffectKind::glowLeveler, EffectKind::hushDeEsser, EffectKind::aether, EffectKind::ember, EffectKind::kilnChannel, EffectKind::fretChannel, EffectKind::shellChannel, EffectKind::strikeShaper, EffectKind::anvilBus, EffectKind::corrode, EffectKind::soundboard, EffectKind::platter, EffectKind::timeprism, EffectKind::harmonia, // YW's mixing suite
+                                      EffectKind::ywTune, // YW's own pitch corrector
+                                      EffectKind::epochVerb, EffectKind::atrium, EffectKind::foilPlate, EffectKind::nebula, EffectKind::halo, EffectKind::horizon, // YW's reverbs
+                                      EffectKind::echoform, EffectKind::spiralEcho, EffectKind::orbit, EffectKind::latticeMod, // YW's delay / modulation suite
+                                      EffectKind::crestCompressor, EffectKind::prismMultiband, EffectKind::sentryGate, // YW's dynamics suite
+                                      EffectKind::quellDenoiser, EffectKind::geminiDoubler, EffectKind::voiceShift, // YW's voice tools
                                       EffectKind::pocketDistortion, EffectKind::pocketLimiterClassic, EffectKind::pocketLimiter, EffectKind::pocketLeveller,
                                       EffectKind::pocketGate, EffectKind::pocketTranceDelay, EffectKind::pocketTapeDelay, EffectKind::pocketMultiFx, // Pocket: FL Studio Mobile's effects (round 188h)
                                       EffectKind::pocketAutoduck, EffectKind::pocketChorus, EffectKind::pocketSpacer, EffectKind::pocketStereoizer, // Pocket (round 189h)
@@ -5361,7 +5361,7 @@ const std::vector<EffectKind>& addableEffects()
 
 bool isFlEffect (EffectKind kind)
 {
-    // allEffects lists LYNX's own effects first and FL's from the Formula Controller on (the outboard gear insert is LYNX's)
+    // allEffects lists YW's own effects first and FL's from the Formula Controller on (the outboard gear insert is YW's)
     const auto& list = addableEffects();
     const auto first = std::find (list.begin(), list.end(), EffectKind::formulaController);
     const auto at = std::find (list.begin(), list.end(), kind);
@@ -5377,7 +5377,7 @@ bool addableEffectAvailable (EffectKind kind)
 juce::String addableEffectName (EffectKind kind)
 {
     const auto name = juce::String::fromUTF8 (effectInfo (kind).name);
-    // LYNX's own pitch / frequency effects sit next to FL's look-alikes (Pitch Shifter, Frequency Shifter, Pitcher)
+    // YW's own pitch / frequency effects sit next to FL's look-alikes (Pitch Shifter, Frequency Shifter, Pitcher)
     // in the lists: tell them apart (round 162, issue #7 review)
     if (kind == EffectKind::pitchShift || kind == EffectKind::freqShift || kind == EffectKind::pitchCorrect)
         return tr ("{0} (YW Studio)", { name });
@@ -5960,7 +5960,7 @@ void askNumber (const juce::String& title, const juce::String& text, int value, 
 
 juce::PopupMenu snapshotsMenu (AudioEngine& engine)
 {
-    // Round 190hp (slice B16 of the 0.1.28 pain report; LYNX's own, core/MixSnapshots.h): take, recall and compare whole
+    // Round 190hp (slice B16 of the 0.1.28 pain report; YW's own, core/MixSnapshots.h): take, recall and compare whole
     // mixes. Each change is one undo step.
     const auto& song = engine.getSong();
     juce::PopupMenu menu;
@@ -6017,7 +6017,7 @@ void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects)
         if (on && withEq > 0) // nothing is lost: switching it off brings the EQ back as it was
             ui::postHint ({ tr ("Clean mixer: the EQ of {0} insert(s) is bypassed and hidden (kept in the project)", { juce::String ((int) withEq) }), {}, false, false }, 5000);
     });
-    // LYNX option (round 190y): the old cheap mute; FL keeps a muted insert's effects running (and showing its level)
+    // YW option (round 190y): the old cheap mute; FL keeps a muted insert's effects running (and showing its level)
     menu.addItem (tr ("Muted inserts don't process (YW Studio, saves CPU; this project)"), true, song.mutedInsertsSkip, [&engine] {
         const auto on = ! engine.getSong().mutedInsertsSkip;
         engine.editSong ([on] (Song& s) { s.mutedInsertsSkip = on; });
@@ -6032,7 +6032,7 @@ void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects)
             MixerStrips::showUsedOnly = on;
         notifyChanged();
     });
-    // LYNX's own (issue #154 part 2, round 190io; off = FL's mixer): each strip lists its insert's effects
+    // YW's own (issue #154 part 2, round 190io; off = FL's mixer): each strip lists its insert's effects
     menu.addItem (tr ("Insert effects on the strips (YW Studio)"), true, MixerStrips::showStripInserts, [] {
         const auto on = ! MixerStrips::showStripInserts;
         if (setShowStripInserts)
@@ -6041,7 +6041,7 @@ void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects)
             MixerStrips::showStripInserts = on;
         notifyChanged();
     });
-    // LYNX's own (round 190am; off = FL's mixer): the Master's loudness in LUFS and its true peak, beside the Master
+    // YW's own (round 190am; off = FL's mixer): the Master's loudness in LUFS and its true peak, beside the Master
     menu.addItem (tr ("Loudness meter beside the Master (YW Studio)"), true, MixerStrips::showLoudness, [] {
         const auto on = ! MixerStrips::showLoudness;
         if (setShowLoudness)
@@ -6056,12 +6056,12 @@ void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects)
         engine.editSong ([&removed] (Song& s) { removed = mixerops::removeUnusedTrailingInserts (s); });
         ui::postHint ({ tr ("Removed {0} unused insert(s)", { juce::String (removed) }), {}, false, false }, 3000);
     });
-    // LYNX's option (round 186c, pain point 1; off = FL, which drops them): a deleted insert's incoming sends stay greyed
+    // YW's option (round 186c, pain point 1; off = FL, which drops them): a deleted insert's incoming sends stay greyed
     menu.addItem (tr ("Keep links to deleted inserts, greyed (YW Studio)"), true, MixerStrips::keepLostLinks, [] {
         MixerStrips::keepLostLinks = ! MixerStrips::keepLostLinks;
         notifyChanged();
     });
-    // LYNX's addition (round 186c, pain point 4; off by default): the mixer's groups mirror the Playlist's track groups
+    // YW's addition (round 186c, pain point 4; off by default): the mixer's groups mirror the Playlist's track groups
     menu.addItem (tr ("Mixer groups follow the Playlist (YW Studio)"), true, MixerStrips::followPlaylist, [&engine] {
         MixerStrips::followPlaylist = ! MixerStrips::followPlaylist;
         if (MixerStrips::followPlaylist)
@@ -6104,7 +6104,7 @@ void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects)
         juce::PopupMenu chain;
         const std::pair<const char*, MasterChain> chains[] = { { TR_NOOP ("Empty (nothing on the Master)"), MasterChain::empty },
                                                                { TR_NOOP ("Soft clipper only"), MasterChain::clipper },
-                                                               { TR_NOOP ("YW Studio default (limiter)"), MasterChain::lynxDefault } };
+                                                               { TR_NOOP ("YW Studio default (limiter)"), MasterChain::ywDefault } };
         for (const auto& [label, c] : chains)
             chain.addItem (tr (label), true, d.master == c, [c = c] {
                 newProjectDefaults().master = c;
@@ -6125,7 +6125,7 @@ void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects)
             });
         menu.addSubMenu (tr ("Playlist tracks shown ({0})", { juce::String (d.playlistTracks) }), tracks);
     }
-    // round 190oo (design review CS O-2, a LYNX extra): Live's new set — a strip on every Clip-launch column
+    // round 190oo (design review CS O-2, a YW extra): Live's new set — a strip on every Clip-launch column
     menu.addItem (tr ("New Clip-launch projects: a mixer track for every track"), true, d.clipLaunchStrips, [] {
         newProjectDefaults().clipLaunchStrips = ! newProjectDefaults().clipLaunchStrips;
         notifyChanged();
@@ -6295,8 +6295,8 @@ int shownParams (const EffectSlot& slot)
     const auto all = (int) effectInfo (slot.kind).params.size();
     if (slot.kind == EffectKind::rhythmGain)
         return std::min (all, 2 + 3 * (int) std::lround (slot.params[1] * 12.0f));
-    if (slot.kind == EffectKind::lynxTune) // the note switches are the keyboard strip above the knobs
-        return std::min (all, (int) lynxtune::noteC);
+    if (slot.kind == EffectKind::ywTune) // the note switches are the keyboard strip above the knobs
+        return std::min (all, (int) ywtune::noteC);
     return all;
 }
 } // namespace
@@ -6328,7 +6328,7 @@ juce::Rectangle<int> EffectsPanel::knobBoundsIn (int param, int areaBottom) cons
     }
     if (vocoderSelected()) // the band levels above the knobs
         top = bandLevelsBounds().getBottom() + 22;
-    if (tuneSelected()) // LYNX Tune's note keyboard above the knobs
+    if (tuneSelected()) // YW Tune's note keyboard above the knobs
         top = tuneKeysBounds().getBottom() + 22;
 
     return { 8 + (param % columns) * w, top + (param / columns) * rowHeight, w, rowHeight - 4 };
@@ -6385,7 +6385,7 @@ bool EffectsPanel::vocoderSelected() const
 bool EffectsPanel::tuneSelected() const
 {
     const auto* s = slots();
-    return s != nullptr && selectedSlot >= 0 && selectedSlot < (int) s->size() && (*s)[(std::size_t) selectedSlot].kind == EffectKind::lynxTune;
+    return s != nullptr && selectedSlot >= 0 && selectedSlot < (int) s->size() && (*s)[(std::size_t) selectedSlot].kind == EffectKind::ywTune;
 }
 
 juce::Rectangle<int> EffectsPanel::tuneKeysBounds() const
@@ -6395,7 +6395,7 @@ juce::Rectangle<int> EffectsPanel::tuneKeysBounds() const
 
 namespace
 {
-// LYNX Tune's keyboard strip: one octave, white keys in a row, black keys on top (C … B → key rectangles)
+// YW Tune's keyboard strip: one octave, white keys in a row, black keys on top (C … B → key rectangles)
 juce::Rectangle<float> tuneKeyRect (juce::Rectangle<float> area, int pc)
 {
     static constexpr int whiteIndex[12] { 0, -1, 1, -1, 2, 3, -1, 4, -1, 5, -1, 6 };
@@ -6424,7 +6424,7 @@ void EffectsPanel::toggleTuneNote (juce::Point<int> p)
     if (pc < 0)
         return;
     engine.editSong ([t = track, slot = selectedSlot, pc] (Song& song) {
-        auto& v = song.mixer[(std::size_t) t].effects[(std::size_t) slot].params[(std::size_t) (lynxtune::noteC + pc)];
+        auto& v = song.mixer[(std::size_t) t].effects[(std::size_t) slot].params[(std::size_t) (ywtune::noteC + pc)];
         v = v >= 0.5f ? 0.0f : 1.0f;
     });
 }
@@ -6689,7 +6689,7 @@ void EffectsPanel::paint (juce::Graphics& g)
                 g.drawEllipse (ledArea.expanded (2.0f), 1.0f);
             }
             g.setColour (slot.enabled ? colour::textPrimary : colour::textDisabled);
-            // a LYNX substitute shows the plugin it stands in for, with a "YW Studio" badge
+            // a YW substitute shows the plugin it stands in for, with a "YW Studio" badge
             const auto substitute = slot.isSubstitute();
             auto name = quickpick::slotName (engine, slot); // (a plugin renamed in the Plugin database: its new name, round 165c)
             if (slot.look != 0) // part of a Master look (round 189k, the Simple workflow's Finish dock)
@@ -6837,7 +6837,7 @@ void EffectsPanel::paint (juce::Graphics& g)
     const auto vocoder = slot.kind == EffectKind::vocoder;
     g.setColour (colour::textPrimary);
     g.setFont (font (type::title, true));
-    const auto tune = slot.kind == EffectKind::lynxTune;
+    const auto tune = slot.kind == EffectKind::ywTune;
     const auto editorButton = ! gate && ! vocoder && NativeEffectWindows::canOpen (slot.kind);
     const auto titleY = (gate ? gateStepsBounds().getY() : vocoder ? bandLevelsBounds().getY() : tune ? tuneKeysBounds().getY() : knobBounds (0).getY()) - 28;
     const auto scButton = sidechainButtonBounds();
@@ -6869,8 +6869,8 @@ void EffectsPanel::paint (juce::Graphics& g)
     if (tune) // the scale's notes on one octave; a note switched off is never a target
     {
         const auto area = tuneKeysBounds().toFloat();
-        const auto scaleMask = vocal::scaleMask ((vocal::Scale) lynxtune::scaleIndex (slot.params[lynxtune::scale]), lynxtune::keyIndex (slot.params[lynxtune::key]), 0xfff);
-        const auto custom = lynxtune::scaleIndex (slot.params[lynxtune::scale]) == (int) vocal::Scale::custom;
+        const auto scaleMask = vocal::scaleMask ((vocal::Scale) ywtune::scaleIndex (slot.params[ywtune::scale]), ywtune::keyIndex (slot.params[ywtune::key]), 0xfff);
+        const auto custom = ywtune::scaleIndex (slot.params[ywtune::scale]) == (int) vocal::Scale::custom;
         for (const auto black : { false, true })
             for (int pc = 0; pc < 12; ++pc)
             {
@@ -6878,7 +6878,7 @@ void EffectsPanel::paint (juce::Graphics& g)
                 if (isBlack != black)
                     continue;
                 const auto r = tuneKeyRect (area, pc).reduced (1.0f);
-                const auto on = slot.params[(std::size_t) (lynxtune::noteC + pc)] >= 0.5f;
+                const auto on = slot.params[(std::size_t) (ywtune::noteC + pc)] >= 0.5f;
                 const auto inScale = custom || (scaleMask & (1u << pc)) != 0;
                 auto fill = isBlack ? colour::bg0 : colour::bg2;
                 if (inScale && on)
@@ -6997,7 +6997,7 @@ void EffectsPanel::mouseDown (const juce::MouseEvent& e)
         return;
     }
 
-    // round 177d (LYNX's own; FL's insert EQ has no bypass): right-click the EQ's title bar to bypass it, its settings kept
+    // round 177d (YW's own; FL's insert EQ has no bypass): right-click the EQ's title bar to bypass it, its settings kept
     if (eqShown() && eqFoldBounds().contains (e.getPosition()) && flmods::popup (e.mods) && track >= 0 && track < (int) engine.getSong().mixer.size())
     {
         const auto bypassed = engine.getSong().mixer[(std::size_t) track].eq.bypassed;
@@ -7096,7 +7096,7 @@ void EffectsPanel::mouseDown (const juce::MouseEvent& e)
         const auto i = effectIn (row);
         if (i < 0)
         {
-            // issue #206 follow-up (round 190qb, LYNX extra): a middle-click goes straight to the effect search, with no
+            // issue #206 follow-up (round 190qb, YW extra): a middle-click goes straight to the effect search, with no
             // plugin menu flashing up first (a double-click's first press opens FL's menu)
             if (e.mods.isMiddleButtonDown() && ! e.mods.isLeftButtonDown() && ! e.mods.isRightButtonDown())
             {
@@ -7366,7 +7366,7 @@ void EffectsPanel::mouseWheelMove (const juce::MouseEvent& e, const juce::MouseW
     if (auto eqControl = eqControlAt (e.getPosition()); eqControl != 0)
     {
         // round 190oa (DF-86, capture 190oa A5: FL's wheel over a band changes its level, ≈ 0.8 dB a notch); Ctrl+wheel
-        // keeps LYNX's width
+        // keeps YW's width
         if (isEqPoint (eqControl) && ! flmods::ctrl (e.mods) && wheel.deltaY != 0.0f)
         {
             const auto band = (std::size_t) (eqPointBase - eqControl);
@@ -7851,7 +7851,7 @@ bool EffectsPanel::dropPreset (const juce::File& file, juce::Point<int> position
         return false;
 
     const auto* bytes = static_cast<const std::uint8_t*> (data.getData());
-    if (file.hasFileExtension ("adv;adg")) // round 190fm: a Live device or Audio Effect Rack preset → LYNX's own engines
+    if (file.hasFileExtension ("adv;adg")) // round 190fm: a Live device or Audio Effect Rack preset → YW's own engines
     {
         std::string error;
         if (auto live = importLiveDevicePreset (std::vector<std::uint8_t> (bytes, bytes + data.getSize()), {}, &error))
@@ -8113,10 +8113,10 @@ void EffectsPanel::showAddMenu (int row)
     auto picks = quickpick::renamedEffects (engine, addFx);
     quickpick::addPicks (menu, picks);
     // rounds 166f / 170b (Busy Works: "random order"): every effect under its category heading, A-Z, as FL's slot menu
-    // (LYNX SHARE first, then FL's Plugin database categories, the user's own folders among them)
+    // (YW Studio first, then FL's Plugin database categories, the user's own folders among them)
     quickpick::addFolderGroups (menu, engine, std::function<void (EffectSlot)> (addFx));
 
-    // LYNX equivalents of well-known third-party effects, with the same default preset a substitute gets
+    // YW equivalents of well-known third-party effects, with the same default preset a substitute gets
     juce::PopupMenu equivalents;
     for (const auto& entry : pluginSubstitutes())
         if (! entry.instrument)
@@ -8212,7 +8212,7 @@ void EffectsPanel::showSlotMenu (int slot)
     // FL's FX slot ▸ menu (round 190mp, DF-77; capture 190mp A5, fl-mixer-slot-menu.png; hint "FX slot N options"): FL's
     // items in FL's order — Replace ▸, Delete... | Patcherize, Patcherize all | Presets | Spare state | Parameters | CPU |
     // Move up / down | View editor, Rename, color and icon... F2, Change color..., Random color, Change icon... | Scaling ▸,
-    // Help. An item a mixer slot can't do in LYNX is greyed, never left out (as ui/WrapperMenu.h). LYNX's own items follow
+    // Help. An item a mixer slot can't do in YW is greyed, never left out (as ui/WrapperMenu.h). YW's own items follow
     // under a line.
     const auto& fx = (*slots())[(std::size_t) slot];
     const auto isPlugin = fx.kind == EffectKind::plugin;
@@ -8281,7 +8281,7 @@ void EffectsPanel::showSlotMenu (int slot)
     menu.addItem (tr ("Save preset as..."), false, false, [] {});
     if (isPlugin)
     {
-        // FL's "Add to plugin database (flag as favorite)": LYNX's favourites (the picker's stars), as the wrapper menu
+        // FL's "Add to plugin database (flag as favorite)": YW's favourites (the picker's stars), as the wrapper menu
         const auto id = fx.plugin.id;
         auto& host = engine.getPluginHost();
         menu.addItem (tr ("Add to plugin database (flag as favorite)"), ! id.empty(), host.favourites().count (id) > 0, [this, id] {
@@ -8293,7 +8293,7 @@ void EffectsPanel::showSlotMenu (int slot)
         menu.addItem (tr ("Add to plugin database (flag as favorite)"), false, false, [] {});
     menu.addItem (tr ("Display preset name in preset selector"), false, true, [] {});
 
-    // Spare state (FL): LYNX's A/B copy of the settings (the same store as the A/B compare items below)
+    // Spare state (FL): YW's A/B copy of the settings (the same store as the A/B compare items below)
     const auto spareKey = std::make_pair (track, slot);
     const auto hasSpare = spare.count (spareKey) > 0 && spare[spareKey].kind == fx.kind;
     menu.addSectionHeader (tr ("Spare state"));
@@ -8358,7 +8358,7 @@ void EffectsPanel::showSlotMenu (int slot)
     menu.addSubMenu (tr ("Scaling"), juce::PopupMenu(), false);
     menu.addItem (tr ("Help"), false, false, [] {});
 
-    // LYNX's own items
+    // YW's own items
     menu.addSeparator();
     // round 190ce: hot-swap from the Mixer too (the Device View's card has its own item and button)
     if (extendSlotMenu == nullptr && onHotSwapSlot != nullptr)
@@ -8392,9 +8392,9 @@ void EffectsPanel::showSlotMenu (int slot)
         juce::PopupMenu source;
         source.addItem (fx.samplePath.empty() ? tr ("No sample") : current.getFileName(), false, false, [] {});
         source.addItem (tr ("Choose a sample..."), [this, slot, current] {
-            sampleChooser = lynx::ui::makeFileChooser (tr ("Source sample"), current.existsAsFile() ? current : juce::File(),
+            sampleChooser = yw::ui::makeFileChooser (tr ("Source sample"), current.existsAsFile() ? current : juce::File(),
                                                                  "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
-            lynx::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+            yw::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                         [this, slot] (const juce::FileChooser& fc) {
                                             const auto file = fc.getResult();
                                             if (file == juce::File())
@@ -8589,7 +8589,7 @@ void explain (const AudioEngine::RecordingNotice& notice)
 // Round 157 ([DATA] the 0.1.15 projects of a singer who found that "the effects do nothing" on her voice): her
 // microphone was the input of both Insert 1 (with the effects) and the Master. The Master plays its input straight
 // away, without any insert's effects, so the dry voice covered the processed one. When an input is chosen and the
-// Master plays the same device channel as an insert, LYNX says so and offers to take it off the Master.
+// Master plays the same device channel as an insert, YW says so and offers to take it off the Master.
 void warnDoubleMonitoring (AudioEngine& engine, int track)
 {
     const auto& mixer = engine.getSong().mixer;
@@ -8721,7 +8721,7 @@ void showMenu (AudioEngine& engine, int track, juce::Component* target, std::fun
                                                                { RecordSource::postTrack, TR_NOOP ("Post track") } };
         for (const auto& [point, label] : points)
             menu.addItem (tr (label), true, mt.recordSource == point, [&engine, track, point = point] { engine.setInsertRecordSource (track, point); });
-        // LYNX extra: the dry device input as a second take beside a processed one (DI + amp, for re-amping)
+        // YW extra: the dry device input as a second take beside a processed one (DI + amp, for re-amping)
         menu.addItem (tr ("Also record the dry input as a second take (YW Studio)"), mt.recordSource != RecordSource::externalInput,
                       mt.recordDryToo && mt.recordSource != RecordSource::externalInput,
                       [&engine, track, on = mt.recordDryToo] { engine.setInsertRecordDryToo (track, ! on); });
@@ -8806,8 +8806,8 @@ void chooseRecordTo (AudioEngine& engine, int track)
         initial = folder.getChildFile (name + ".wav");
     }
     static std::unique_ptr<juce::FileChooser> chooser;
-    chooser = lynx::ui::makeFileChooser (tr ("Record {0} to", { insert }), initial, "*.wav");
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+    chooser = yw::ui::makeFileChooser (tr ("Record {0} to", { insert }), initial, "*.wav");
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                           [&engine, track] (const juce::FileChooser& fc) {
                               auto file = fc.getResult();
                               if (file == juce::File() || track >= (int) engine.getSong().mixer.size())
@@ -9025,4 +9025,4 @@ void MixerComponent::resized()
     viewport.setBounds (area);
     strips.setVisibleHeight (area.getHeight() - viewport.getScrollBarThickness());
 }
-} // namespace lynx
+} // namespace yw

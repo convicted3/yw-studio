@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // One file a project references that doesn't exist on this PC.
 struct MissingFile
@@ -23,13 +23,13 @@ struct MissingFile
     bool skipped = false;            // the user chose to leave it missing
 };
 
-// A plugin a project uses that isn't installed (or wasn't scanned) here, and what LYNX put in its place.
+// A plugin a project uses that isn't installed (or wasn't scanned) here, and what YW put in its place.
 struct MissingPlugin
 {
     std::string name;
     std::vector<std::string> usedBy;
     std::string replacement; // English, for display ("Built-in synth", "Removed from the mixer"...); may hold "{0}"
-    std::string replacementArg; // what "{0}" stands for (a LYNX substitute's effect name), not translated
+    std::string replacementArg; // what "{0}" stands for (a YW substitute's effect name), not translated
 };
 
 // The last component of a path saved on Windows or elsewhere ('\\' and '/' both separate).
@@ -47,7 +47,7 @@ const T* listRowEntry (const std::vector<T>& list, int row) noexcept
 // Adds `user` to the entry for `path` (one entry per path, case-insensitive on the separators and letters).
 void addMissingFile (std::vector<MissingFile>& list, const std::string& path, const std::string& user);
 
-// The user samples a .lynx song references that `fileExists` says are gone: channel samples (sampler, audio clip,
+// The user samples a .yw song references that `fileExists` says are gone: channel samples (sampler, audio clip,
 // Granulizer, 3x Osc custom wave), sampler zones (not FL Keys' installation wavetables) and effect samples
 // (Newtone/Newtime), also inside parallel containers and Patcher graphs. FL Studio installation data some engines keep in samplePath (DLLs, wave folders) is left out.
 std::vector<MissingFile> findMissingSamples (const Song& song, const std::function<bool (const std::string&)>& fileExists);
@@ -89,4 +89,4 @@ std::vector<std::string> parseFolderList (const std::string& text);
 std::string folderListText (const std::vector<std::string>& folders);
 // Adds `folder` at the front (most recent first), keeping at most `limit` entries.
 void rememberFolder (std::vector<std::string>& folders, const std::string& folder, std::size_t limit = 20);
-} // namespace lynx
+} // namespace yw

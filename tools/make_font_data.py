@@ -1,5 +1,5 @@
 # Generates src/ui/CondensedFontData.h: Open Sans Condensed SemiBold and Bold (resources/fonts, SIL OFL 1.1, the same
-# Open Sans family LYNX already carries; unmodified files from https://github.com/googlefonts/opensans fonts/ttf), embedded in
+# Open Sans family YW already carries; unmodified files from https://github.com/googlefonts/opensans fonts/ttf), embedded in
 # the app for Settings › General › "Condensed labels (FL style)" (round 190je, design190ia FM-5 / FM-S8). Base64 in pieces
 # of 4000 characters (every compiler takes string literals of that size); ui/Theme.cpp decodes them once, on first use.
 # Run from the repository root: python3 tools/make_font_data.py
@@ -17,7 +17,7 @@ lines = [
 for name, path in FILES:
     data = open(path, "rb").read()
     lines.append("// %s: %s, %d bytes, sha256 %s" % (name, path, len(data), hashlib.sha256(data).hexdigest()))
-lines += ["", "namespace lynx::condensedfont", "{"]
+lines += ["", "namespace yw::condensedfont", "{"]
 for name, path in FILES:
     text = base64.b64encode(open(path, "rb").read()).decode("ascii")
     pieces = [text[i:i + 4000] for i in range(0, len(text), 4000)]
@@ -25,5 +25,5 @@ for name, path in FILES:
     lines += ['    "%s",' % p for p in pieces]
     lines.append("};")
     lines.append("inline constexpr int %sPieces = %d;" % (name, len(pieces)))
-lines += ["} // namespace lynx::condensedfont", ""]
+lines += ["} // namespace yw::condensedfont", ""]
 open("src/ui/CondensedFontData.h", "w").write("\n".join(lines))

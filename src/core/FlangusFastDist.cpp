@@ -21,7 +21,7 @@
 #pragma GCC optimize("fp-contract=off", "rounding-math")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -718,7 +718,7 @@ public:
         engine.prepare ((int) std::lround (sampleRate));
         fresh = true;
     }
-    // LYNX's reset (transport jumps) = FL's flush: gains at their targets, delay line cleared, LFOs restarted
+    // YW's reset (transport jumps) = FL's flush: gains at their targets, delay line cleared, LFOs restarted
     void reset() noexcept override { fresh = true; }
     void process (float* left, float* right, int n, const EffectParams& params, double) noexcept override
     {
@@ -1018,7 +1018,7 @@ class FlangerEffect final : public Effect
 {
 public:
     void prepare (double sampleRate) noexcept override { engine.prepare ((int) std::lround (sampleRate)); }
-    // LYNX's reset = FL's "enabled" notification: delay lines cleared, LFO restarted
+    // YW's reset = FL's "enabled" notification: delay lines cleared, LFO restarted
     void reset() noexcept override { engine.enable(); }
     void process (float* left, float* right, int n, const EffectParams& params, double) noexcept override
     {
@@ -1051,4 +1051,4 @@ private:
 
 std::unique_ptr<Effect> make() { return std::make_unique<FlangerEffect>(); }
 } // namespace flangerfx
-} // namespace lynx
+} // namespace yw

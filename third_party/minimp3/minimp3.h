@@ -740,7 +740,7 @@ static float L3_pow_43(int x)
 }
 
 static int L3_huffman(float *dst, bs_t *bs, const L3_gr_info_t *gr_info, const float *scf, int layer3gr_limit)
-{   /* LYNX: returns 1 when the big values read past the granule's part2_3_length (a damaged granule) */
+{   /* YW: returns 1 when the big values read past the granule's part2_3_length (a damaged granule) */
     int overread;
     static const int16_t tabs[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         785,785,785,785,784,784,784,784,513,513,513,513,513,513,513,513,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,
@@ -849,7 +849,7 @@ static int L3_huffman(float *dst, bs_t *bs, const L3_gr_info_t *gr_info, const f
             } while ((big_val_cnt -= np) > 0 && --sfb_cnt >= 0);
         }
     }
-    overread = BSPOS > layer3gr_limit; /* LYNX */
+    overread = BSPOS > layer3gr_limit; /* YW */
 
     for (np = 1 - big_val_cnt;; dst += 4)
     {
@@ -876,7 +876,7 @@ static int L3_huffman(float *dst, bs_t *bs, const L3_gr_info_t *gr_info, const f
     }
 
     bs->pos = layer3gr_limit;
-    return overread; /* LYNX */
+    return overread; /* YW */
 }
 
 static void L3_midside_stereo(float *left, int n)
@@ -1247,7 +1247,7 @@ static void L3_decode(mp3dec_t *h, mp3dec_scratch_t *s, L3_gr_info_t *gr_info, i
         int layer3gr_limit = s->bs.pos + gr_info[ch].part_23_length;
         L3_decode_scalefactors(h->header, s->ist_pos[ch], &s->bs, gr_info + ch, s->scf, ch);
         if (L3_huffman(s->grbuf[ch], &s->bs, gr_info + ch, s->scf, layer3gr_limit))
-            memset(s->grbuf[ch], 0, 576*sizeof(float)); /* LYNX: a damaged granule is silent (as ffmpeg/mpg123 conceal it), not a burst */
+            memset(s->grbuf[ch], 0, 576*sizeof(float)); /* YW: a damaged granule is silent (as ffmpeg/mpg123 conceal it), not a burst */
     }
 
     if (HDR_TEST_I_STEREO(h->header))

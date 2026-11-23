@@ -1,4 +1,4 @@
-// Renders a Fruity Granulizer state with LYNX's engine exactly like the round-67 EXEC harness drives the DLL
+// Renders a Fruity Granulizer state with YW's engine exactly like the round-67 EXEC harness drives the DLL
 // (verification harness, REA_rodada67 §4): granulizerrender <state.bin> <sample.raw> <channels> <format 0=int16 1=float>
 //   <sample rate> <out.f32> <length> <rate> [blk=N] [seed=N] [tempo=BPM] [beats=N] [slices=auto|<file of starts>]
 //   [note=start,key,finalVol,finalPan,pitchCents,release ...]
@@ -23,11 +23,11 @@ int main (int argc, char** argv)
     }
     std::ifstream in (argv[1], std::ios::binary);
     const std::vector<std::uint8_t> raw ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-    const auto state = lynx::granulizerNormalisedState (raw, {});
+    const auto state = yw::granulizerNormalisedState (raw, {});
     std::ifstream sin (argv[2], std::ios::binary);
     const std::vector<char> bytes ((std::istreambuf_iterator<char> (sin)), std::istreambuf_iterator<char>());
     const int ch = std::atoi (argv[3]), fmt = std::atoi (argv[4]);
-    lynx::SampleData smp;
+    yw::SampleData smp;
     smp.sampleRate = std::atof (argv[5]);
     const auto bpf = (std::size_t) ch * (fmt != 0 ? 4 : 2);
     const auto frames = bytes.size() / bpf;
@@ -47,8 +47,8 @@ int main (int argc, char** argv)
         }
     const int length = std::atoi (argv[7]);
     const double rate = std::atof (argv[8]);
-    lynx::granulizer::RefOptions opt;
-    std::vector<lynx::granulizer::RefNote> notes;
+    yw::granulizer::RefOptions opt;
+    std::vector<yw::granulizer::RefNote> notes;
     for (int i = 9; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -63,7 +63,7 @@ int main (int argc, char** argv)
         else if (a.rfind ("beats=", 0) == 0)
             opt.beats = (float) std::atof (a.c_str() + 6);
         else if (a == "slices=auto")
-            opt.slices = lynx::flslice::autoSlice (smp.left.data(), ch > 1 ? smp.right.data() : nullptr, (std::int64_t) frames, smp.sampleRate);
+            opt.slices = yw::flslice::autoSlice (smp.left.data(), ch > 1 ? smp.right.data() : nullptr, (std::int64_t) frames, smp.sampleRate);
         else if (a.rfind ("slices=", 0) == 0)
         {
             if (std::FILE* sf = std::fopen (a.c_str() + 7, "r"))
@@ -76,12 +76,12 @@ int main (int argc, char** argv)
         }
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::granulizer::RefNote n;
+            yw::granulizer::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%d", &n.start, &n.key, &n.finalVol, &n.finalPan, &n.pitchOffset, &n.release) == 6)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::granulizer::renderReference (state, smp, notes, rate, length, opt);
+    const auto out = yw::granulizer::renderReference (state, smp, notes, rate, length, opt);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

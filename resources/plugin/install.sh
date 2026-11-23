@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs LYNX's plugins for other hosts for the current user (no root), on Linux or macOS:
+# Installs YW's plugins for other hosts for the current user (no root), on Linux or macOS:
 #   Linux  CLAP -> ~/.clap   VST3 -> ~/.vst3   LV2 -> ~/.lv2
 #   macOS  CLAP -> ~/Library/Audio/Plug-Ins/CLAP   VST3 -> ~/Library/Audio/Plug-Ins/VST3
 # Run it again to update; ./install.sh --uninstall removes exactly what it installed (the names in PLUGINS.txt).
@@ -15,7 +15,7 @@ fi
 lv2="$HOME/.lv2" # (Linux only: the archive has an LV2 folder there, round 190ov)
 
 if [ "$1" = "--uninstall" ]; then
-    rm -rf "$clap/LYNX Plugins.clap"
+    rm -rf "$clap/YW Plugins.clap"
     for b in "$here"/VST3/*.vst3; do
         [ -e "$b" ] && rm -rf "$vst3/$(basename "$b")"
     done
@@ -23,16 +23,16 @@ if [ "$1" = "--uninstall" ]; then
         [ -e "$b" ] && rm -rf "$lv2/$(basename "$b")"
     done
     if [ -d "$here/LV2" ]; then
-        echo "LYNX plugins removed from $clap, $vst3 and $lv2."
+        echo "YW plugins removed from $clap, $vst3 and $lv2."
     else
-        echo "LYNX plugins removed from $clap and $vst3."
+        echo "YW plugins removed from $clap and $vst3."
     fi
     exit 0
 fi
 
 mkdir -p "$clap" "$vst3"
-rm -rf "$clap/LYNX Plugins.clap"
-cp -R "$here/CLAP/LYNX Plugins.clap" "$clap/"
+rm -rf "$clap/YW Plugins.clap"
+cp -R "$here/CLAP/YW Plugins.clap" "$clap/"
 for b in "$here"/VST3/*.vst3; do
     [ -e "$b" ] || continue
     rm -rf "$vst3/$(basename "$b")"
@@ -46,13 +46,13 @@ for b in "$here"/LV2/*.lv2; do
 done
 if [ "$(uname -s)" = Darwin ]; then
     # a download is quarantined; these bundles are signed ad hoc only (no Apple Developer ID yet)
-    xattr -dr com.apple.quarantine "$clap/LYNX Plugins.clap" 2> /dev/null || true
+    xattr -dr com.apple.quarantine "$clap/YW Plugins.clap" 2> /dev/null || true
     for b in "$here"/VST3/*.vst3; do
         [ -e "$b" ] && xattr -dr com.apple.quarantine "$vst3/$(basename "$b")" 2> /dev/null || true
     done
 fi
 if [ -d "$here/LV2" ]; then
-    echo "LYNX plugins installed: CLAP in $clap, VST3 in $vst3, LV2 in $lv2. Rescan the plugins in your host."
+    echo "YW plugins installed: CLAP in $clap, VST3 in $vst3, LV2 in $lv2. Rescan the plugins in your host."
 else
-    echo "LYNX plugins installed: CLAP in $clap, VST3 in $vst3. Rescan the plugins in your host."
+    echo "YW plugins installed: CLAP in $clap, VST3 in $vst3. Rescan the plugins in your host."
 fi

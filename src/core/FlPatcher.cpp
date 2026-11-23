@@ -9,7 +9,7 @@
 #include <map>
 #include <set>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -611,4 +611,4 @@ int flPatcherMidiPinPort (const PatcherPort& pin)
         }
     return pin.index >= 0 && pin.index < 256 ? pin.index : -2;
 }
-} // namespace lynx
+} // namespace yw

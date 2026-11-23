@@ -1,5 +1,5 @@
 #pragma once
-// Real-time scheduling for LYNX's audio threads on Linux (round 161), without root:
+// Real-time scheduling for YW's audio threads on Linux (round 161), without root:
 //  1. SCHED_FIFO directly when RLIMIT_RTPRIO allows it (the "audio" group / limits.conf, as JACK set-ups do);
 //  2. else RealtimeKit (org.freedesktop.RealtimeKit1 on the system bus, what PipeWire and PulseAudio use);
 //  3. else the desktop portal's Realtime interface (Flatpak / sandboxes).
@@ -7,7 +7,7 @@
 // as they are. Elsewhere (Windows, macOS) everything here does nothing.
 #include <juce_core/juce_core.h>
 
-namespace lynx::rt
+namespace yw::rt
 {
 enum class Status
 {
@@ -39,4 +39,4 @@ juce::String describe();
 // The one-time hint when real-time was denied: true the first time it is asked after a denial in this installation
 // (`flagFile` remembers it).
 bool shouldShowHint (const juce::File& flagFile);
-} // namespace lynx::rt
+} // namespace yw::rt

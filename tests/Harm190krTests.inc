@@ -91,7 +91,7 @@ TEST (perf190kr_harmless_bank_kernel_matches_the_one_group_loop)
                 {
                     bankKernelReference (ref.osc0.data(), ref.osc1.data(), ref.oscC.data(), ref.T.data(), ref.A.data(), top, m,
                                          ref.kp.data(), ref.acc.data());
-                    ran = lynx::harmlessBankKernelForTest (path, got.osc0.data(), got.osc1.data(), got.oscC.data(), got.T.data(),
+                    ran = yw::harmlessBankKernelForTest (path, got.osc0.data(), got.osc1.data(), got.oscC.data(), got.T.data(),
                                                            got.A.data(), top, m, got.kp.data(), got.acc.data());
                 }
                 if (! ran)
@@ -186,7 +186,7 @@ TEST (perf190kr_vocodex_sliding_max_matches_the_queue)
                 SlidingMaxQueue q (w);
                 for (std::size_t at = 0; at < ref.size(); at += (std::size_t) block)
                     q.run (ref.data() + at, (int) std::min<std::size_t> ((std::size_t) block, ref.size() - at));
-                const auto got = lynx::vocodex::slidingMaxForTest (w, x, block);
+                const auto got = yw::vocodex::slidingMaxForTest (w, x, block);
                 ++cases;
                 if (got.size() == ref.size() && std::memcmp (got.data(), ref.data(), sizeof (float) * ref.size()) == 0)
                     ++same;

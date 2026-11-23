@@ -6,7 +6,7 @@
 
 TEST (transport162_quantize_tick_strength)
 {
-    using lynx::transportedit::quantizeTick;
+    using yw::transportedit::quantizeTick;
     // full strength: the nearest grid line (ties go up, as noteedit::quantize)
     CHECK (quantizeTick (130, 240, 1.0) == 240 && quantizeTick (110, 240, 1.0) == 0 && quantizeTick (120, 240, 1.0) == 240);
     // 50%: halfway there, both directions
@@ -27,66 +27,66 @@ TEST (transport162_quantize_tick_strength)
 
 TEST (transport162_quantize_notes_and_clips)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     for (auto s : { 10, 250, 470 })
     {
-        lynx::Note n;
+        yw::Note n;
         n.start = s;
         n.length = 77;
         p.notes.push_back (n);
     }
-    lynx::transportedit::quantizeNoteStarts (p, { 0, 1, 2, 9 }, 240, 0.5);
+    yw::transportedit::quantizeNoteStarts (p, { 0, 1, 2, 9 }, 240, 0.5);
     CHECK (p.notes[0].start == 5 && p.notes[1].start == 245 && p.notes[2].start == 475);
     CHECK (p.notes[0].length == 77 && p.notes[2].length == 77); // lengths kept
 
     // starts only, full strength: the same result as noteedit::quantize
     auto q = p;
-    lynx::transportedit::quantizeNoteStarts (q, { 0, 1, 2 }, 240, 1.0);
+    yw::transportedit::quantizeNoteStarts (q, { 0, 1, 2 }, 240, 1.0);
     auto r = p;
-    lynx::noteedit::quantize (r, { 0, 1, 2 }, 240);
+    yw::noteedit::quantize (r, { 0, 1, 2 }, 240);
     for (std::size_t i = 0; i < 3; ++i)
         CHECK (q.notes[i].start == r.notes[i].start);
 
-    std::vector<lynx::Clip> clips (2);
+    std::vector<yw::Clip> clips (2);
     clips[0].start = 3840 + 500;
     clips[0].length = 1000;
     clips[0].offset = 96;
     clips[1].start = 100;
-    lynx::transportedit::quantizeClipStarts (clips, { 0 }, 3840, 1.0);
+    yw::transportedit::quantizeClipStarts (clips, { 0 }, 3840, 1.0);
     CHECK (clips[0].start == 3840 && clips[0].length == 1000 && clips[0].offset == 96 && clips[1].start == 100);
-    lynx::transportedit::quantizeClipStarts (clips, { 1 }, 960, 0.5);
+    yw::transportedit::quantizeClipStarts (clips, { 1 }, 960, 0.5);
     CHECK (clips[1].start == 50);
 }
 
 TEST (transport162_piano_roll_playhead)
 {
-    using lynx::transportedit::patternPlayhead;
-    lynx::Song song;
+    using yw::transportedit::patternPlayhead;
+    yw::Song song;
     song.beatsPerBar = 4;
     song.patterns.resize (2);
-    const auto bar = (std::int64_t) lynx::ppq * 4;
-    lynx::Note n;
+    const auto bar = (std::int64_t) yw::ppq * 4;
+    yw::Note n;
     n.start = 0;
     n.length = bar; // pattern 0 is one bar long
     song.patterns[0].notes.push_back (n);
     song.currentPattern = 0;
 
     // Pattern mode: the current pattern loops; another pattern is not playing
-    song.mode = lynx::PlayMode::pattern;
-    const auto len = (double) song.patterns[0].effectiveLength (lynx::Meter (4, 4));
+    song.mode = yw::PlayMode::pattern;
+    const auto len = (double) song.patterns[0].effectiveLength (yw::Meter (4, 4));
     CHECK (std::abs (patternPlayhead (song, 0, len + 100.0) - 100.0) < 1e-9);
     CHECK (patternPlayhead (song, 1, 100.0) < 0.0);
 
     // Song mode: inside a clip of the pattern (offset counted), nothing outside
-    song.mode = lynx::PlayMode::song;
-    lynx::Clip c;
+    song.mode = yw::PlayMode::song;
+    yw::Clip c;
     c.pattern = 0;
     c.track = 2;
     c.start = 2 * bar;
     c.length = bar;
     c.offset = 240;
     song.playlist.push_back (c);
-    lynx::Clip other = c;
+    yw::Clip other = c;
     other.pattern = 1;
     other.start = 0;
     song.playlist.push_back (other);
@@ -94,7 +94,7 @@ TEST (transport162_piano_roll_playhead)
     CHECK (patternPlayhead (song, 0, (double) (bar + 10)) < 0.0);
     CHECK (std::abs (patternPlayhead (song, 1, 10.0) - 250.0) < 1e-9);
     // two clips of the pattern at the same time: the upper track wins
-    lynx::Clip upper = c;
+    yw::Clip upper = c;
     upper.track = 0;
     upper.offset = 0;
     song.playlist.push_back (upper);
@@ -106,24 +106,24 @@ TEST (transport162_piano_roll_playhead)
 
 TEST (ui163_piano_roll_ruler_seek)
 {
-    using lynx::transportedit::patternSeekTarget;
-    lynx::Song song;
+    using yw::transportedit::patternSeekTarget;
+    yw::Song song;
     song.beatsPerBar = 4;
     song.patterns.resize (2);
-    const auto bar = (std::int64_t) lynx::ppq * 4;
-    song.mode = lynx::PlayMode::pattern;
+    const auto bar = (std::int64_t) yw::ppq * 4;
+    song.mode = yw::PlayMode::pattern;
     CHECK (patternSeekTarget (song, 0, 500.0, 0.0) == 500.0);
     CHECK (patternSeekTarget (song, 0, -5.0, 0.0) == 0.0);
 
-    song.mode = lynx::PlayMode::song;
+    song.mode = yw::PlayMode::song;
     CHECK (patternSeekTarget (song, 0, 500.0, 0.0) < 0.0); // no clip of it
-    lynx::Clip a;
+    yw::Clip a;
     a.pattern = 0;
     a.track = 1;
     a.start = 4 * bar;
     a.length = bar;
     a.offset = 100;
-    lynx::Clip b = a;
+    yw::Clip b = a;
     b.start = 2 * bar;
     b.offset = 0;
     song.playlist.push_back (a);
@@ -139,7 +139,7 @@ TEST (ui163_piano_roll_ruler_seek)
 
 TEST (transport162_follow_and_stop)
 {
-    using lynx::transportedit::followViewStart;
+    using yw::transportedit::followViewStart;
     // in view: unchanged; past the right edge (or its margin) or left of the view: a page jump
     CHECK (followViewStart (1000.0, 4000.0, 2000.0, 100.0) == 1000.0);
     CHECK (followViewStart (1000.0, 4000.0, 5200.0, 100.0) == 5100.0);
@@ -150,7 +150,7 @@ TEST (transport162_follow_and_stop)
 
     // feedback 190bm: inside a loop (the Piano Roll in Pattern mode) the view holds still at the loop's end
     {
-        using lynx::transportedit::followViewStartInLoop;
+        using yw::transportedit::followViewStartInLoop;
         const auto lead = 20.0, margin = 20.0;
         // a pattern that fits the view (zoom to fit: its end is the view's right edge): the view never moves, not in
         // the right margin (the plain rule paged forward there, then back at the wrap) and not at the wrap
@@ -193,13 +193,13 @@ TEST (transport162_follow_and_stop)
         CHECK (followViewStartInLoop (1000.0, 4000.0, -1.0, 100.0, 100.0, 8000.0) == 1000.0);
     }
 
-    using lynx::transportedit::stopTarget;
+    using yw::transportedit::stopTarget;
     CHECK (stopTarget (false, false, 5000) == 0);
     CHECK (stopTarget (false, true, 5000) == 5000);
     CHECK (stopTarget (false, true, -1) == 0);
     CHECK (stopTarget (true, true, 5000) == 0); // the second Stop: the very start
 
-    using lynx::transportedit::rollPlayRightClickTarget;
+    using yw::transportedit::rollPlayRightClickTarget;
     CHECK (rollPlayRightClickTarget (true, 9000.0, 3000.0) == 3000.0);  // playing: back to the last start
     CHECK (rollPlayRightClickTarget (false, 9000.0, 3000.0) == 3000.0); // paused elsewhere: the same
     CHECK (rollPlayRightClickTarget (false, 3000.0, 3000.0) == 0.0);    // already there: the pattern start
@@ -207,9 +207,9 @@ TEST (transport162_follow_and_stop)
 
 TEST (transport162_meter_scale_marks)
 {
-    using namespace lynx::meters;
+    using namespace yw::meters;
     // (round 190mf: the straight -60 … +6 dB axis is the Clip-launch and Simple layouts' scale; Pattern uses FL's law)
-    lynx::layoutstyle::setCurrent (lynx::layoutstyle::Style::clipLaunch);
+    yw::layoutstyle::setCurrent (yw::layoutstyle::Style::clipLaunch);
     CHECK (scalePosition (-60.0f) == 0.0f && scalePosition (6.0f) == 1.0f && std::abs (scalePosition (0.0f) - 60.0f / 66.0f) < 1e-6f);
     // a tall meter shows the whole FL-like set, top down
     const auto tall = scaleMarks (400.0f, 11.0f);
@@ -225,5 +225,5 @@ TEST (transport162_meter_scale_marks)
         for (std::size_t i = 1; i < marks.size(); ++i)
             CHECK ((scalePosition ((float) marks[i - 1]) - scalePosition ((float) marks[i])) * h >= 11.0f - 1e-3f);
     }
-    lynx::layoutstyle::setCurrent (lynx::layoutstyle::Style::pattern);
+    yw::layoutstyle::setCurrent (yw::layoutstyle::Style::pattern);
 }

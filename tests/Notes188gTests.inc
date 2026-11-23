@@ -1,4 +1,4 @@
-// Round 188g: the rest of GitHub issue #63 (docs/analise/REA_rodada188g.md): a note's Mod X / Y on LYNX's own Sampler,
+// Round 188g: the rest of GitHub issue #63 (docs/analise/REA_rodada188g.md): a note's Mod X / Y on YW's own Sampler,
 // its fine pitch on hosted plugins (FL's wrapper: the key it rounds to, the VST3 tuning), release velocity on the
 // Sampler (FL's leaves it alone) and the Fruity Slicer / Slicex slices of a sample's second half one frame early.
 
@@ -6,9 +6,9 @@
 
 namespace notes188g
 {
-std::shared_ptr<lynx::SampleData> noise (int frames, std::uint32_t seed = 11)
+std::shared_ptr<yw::SampleData> noise (int frames, std::uint32_t seed = 11)
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     s->sampleRate = 44100.0;
     for (int i = 0; i < frames; ++i)
     {
@@ -36,7 +36,7 @@ double brightness (const std::vector<float>& v)
 // it to a key (ties to even), VST3 sends the rest as tuning, CLAP truncates and sends nothing else.
 TEST (notes188g_hosted_note_pitch_follows_fl_wrapper)
 {
-    using namespace lynx::hostpitch;
+    using namespace yw::hostpitch;
     struct Case
     {
         int key;
@@ -71,7 +71,7 @@ TEST (notes188g_hosted_note_pitch_follows_fl_wrapper)
 // for their note ons in the order they were played.
 TEST (notes188g_sent_keys_end_notes_on_their_own_key)
 {
-    using namespace lynx::hostpitch;
+    using namespace yw::hostpitch;
     SentKeys keys;
     keys.on (60, of (60, 70.0f));  // → 61, −30
     keys.on (60, of (60, -20.0f)); // → 60, −20
@@ -89,13 +89,13 @@ TEST (notes188g_sent_keys_end_notes_on_their_own_key)
     CHECK (keys.off (62) == 63);
 }
 
-// #63: a note's Mod X / Y on LYNX's own Sampler move its filter as FL's voice moves the channel filter (REA_rodada76 §1:
+// #63: a note's Mod X / Y on YW's own Sampler move its filter as FL's voice moves the channel filter (REA_rodada76 §1:
 // X + (b − 128) / 128): a note at Mod X 0.25 on a channel at cutoff F sounds like a centred note on the channel at the
 // cutoff half of FL's X range lower. A centred note is unchanged, bit for bit; Mod Y moves the resonance; an open
 // channel closes for a note with Mod X below the centre.
-TEST (notes188g_note_mod_x_moves_lynx_sampler_filter)
+TEST (notes188g_note_mod_x_moves_yw_sampler_filter)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = notes188g::noise (22050);
     auto render = [&] (float cutoffHz, float resonance, std::optional<std::pair<float, float>> mod) {
         ChannelDef c;
@@ -140,7 +140,7 @@ TEST (notes188g_note_mod_x_moves_lynx_sampler_filter)
 // A VFX (VFX Envelope / Color Mapper) moving a sounding note's Mod X reaches the same filter.
 TEST (notes188g_vfx_mod_x_moves_a_sounding_sampler_note)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = notes188g::noise (22050, 5);
     auto render = [&] (bool move) {
         ChannelDef c;
@@ -162,10 +162,10 @@ TEST (notes188g_vfx_mod_x_moves_a_sounding_sampler_note)
 }
 
 // FL's Sampler ignores a note's release velocity: its note off (FLEngine FUN_00d241e0) releases the voice's articulators
-// with the channel's envelope records only (REA_rodada188g §3); LYNX's own Sampler does the same.
+// with the channel's envelope records only (REA_rodada188g §3); YW's own Sampler does the same.
 TEST (notes188g_release_velocity_leaves_the_sampler_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = notes188g::noise (44100, 3);
     auto render = [&] (std::optional<float> release) {
         ChannelDef c;
@@ -188,13 +188,13 @@ TEST (notes188g_release_velocity_leaves_the_sampler_alone)
     CHECK (render (1.0f) == plain);
 }
 
-// Round 180c's "notes 1 frame late from 2.25 s" (/mnt/e/lynx-work/issues180c/note-timing.md): the Fruity Slicer project
+// Round 180c's "notes 1 frame late from 2.25 s" (/mnt/e/yw-work/issues180c/note-timing.md): the Fruity Slicer project
 // played slice k at 2.25 s + … one frame late against FL because the sampler scaled the slice starts (p / frames) by the
 // last frame's index (frames − 1): every slice in the sample's second half started one frame early in the sample. FL's
 // render starts each slice on its own frame.
 TEST (notes188g_slices_in_the_second_half_start_on_their_frame)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr int frames = 176400; // round 180c's loop.wav: 4 s at 44.1 kHz, 16 slices of 11025 frames
     auto ramp = std::make_shared<SampleData>();
     ramp->sampleRate = 44100.0;

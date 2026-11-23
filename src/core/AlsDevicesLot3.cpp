@@ -1,8 +1,8 @@
-// Live's own devices → LYNX's, lot 3 (round 190ed; core/AlsDevices.h has the list and the evidence tags). The same
+// Live's own devices → YW's, lot 3 (round 190ed; core/AlsDevices.h has the list and the evidence tags). The same
 // rules as lots 1 and 2: each conversion is a law in a unit, what is fitted or has no counterpart becomes a note for the
 // import report, only the device's saved state is read, and each translator records which Live parameter drives
-// which LYNX parameter (ParamLink) so automation and rack macros follow. Round 190ek refit the laws to Live 12.4's renders
-// (round 190ei): [MEASURED] = read off those renders, [FITTED] = LYNX's stages fitted to them, [ASSUMED] = still a guess.
+// which YW parameter (ParamLink) so automation and rack macros follow. Round 190ek refit the laws to Live 12.4's renders
+// (round 190ei): [MEASURED] = read off those renders, [FITTED] = YW's stages fitted to them, [ASSUMED] = still a guess.
 
 #include "core/AlsDevices.h"
 
@@ -19,7 +19,7 @@
 #include "core/Rack.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 namespace
 {
@@ -105,7 +105,7 @@ bool eqThreeToPrism (const Element& device, Translated& out)
 // ================================================================================================ Drum Buss
 
 // The laws below were fitted to Live 12.4's renders of round 190ei (one Drum Buss per track: noise, a 1 kHz sine
-// staircase, an impulse and a drum loop through it; LYNX's rack run on the same inputs, round 190ek's error table)
+// staircase, an impulse and a drum loop through it; YW's rack run on the same inputs, round 190ek's error table)
 namespace
 {
 double interpolate (const double* xs, const double* ys, int n, double x) noexcept
@@ -312,7 +312,7 @@ bool drumBussToRack (const Element& device, Translated& out)
     }
 
     // the macros, named after Live's controls; each macro's 0 … 127 is its Live control's whole range (Live's
-    // parameters reach them through `links`), mapped onto the LYNX controls between their values at the two ends
+    // parameters reach them through `links`), mapped onto the YW controls between their values at the two ends
     auto* r = rack::rackOf (doc);
     if (r == nullptr)
         return false;
@@ -439,7 +439,7 @@ bool drumBussToRack (const Element& device, Translated& out)
     return true;
 }
 
-// Round 190fk (owner decision O20): Drum Buss onto LYNX's own drum-bus engine, Anvil Bus (core/AnvilBus.h), whose laws
+// Round 190fk (owner decision O20): Drum Buss onto YW's own drum-bus engine, Anvil Bus (core/AnvilBus.h), whose laws
 // were fitted to the same renders of Live 12.4 (rounds 190ei / 190fk). Every control maps one to one; Live's parameters
 // reach the engine's through `links`, so envelopes and rack macros on them are carried. The rack above stays for the
 // A/B harness and its tests (Context::drumBussRack); projects that already hold the rack keep it as it is.
@@ -755,4 +755,4 @@ bool driftToSynth (const Element& device, ChannelDef& channel, double bpm, Notes
     notes.approximated.push_back ("oscillators, filter and amp envelope on the built-in synth (level not matched to Live's)");
     return true;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

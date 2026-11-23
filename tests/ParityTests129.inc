@@ -1,18 +1,18 @@
-// --- Round 129: the originals' preset bar — LYNX's factory presets, user preset files, A / B in the slot ----------
+// --- Round 129: the originals' preset bar — YW's factory presets, user preset files, A / B in the slot ----------
 
 #include "core/EffectPresets.h"
 
 TEST (factory_presets_resolve_every_value_round129)
 {
-    const auto kinds = lynx::presets::kindsWithFactoryPresets();
+    const auto kinds = yw::presets::kindsWithFactoryPresets();
     CHECK (kinds.size() >= 16);
     for (const auto kind : kinds)
-        for (const auto& preset : lynx::presets::factory (kind))
+        for (const auto& preset : yw::presets::factory (kind))
         {
             std::vector<std::string> unresolved;
-            lynx::presets::apply (kind, preset, 120.0, &unresolved);
+            yw::presets::apply (kind, preset, 120.0, &unresolved);
             if (! unresolved.empty())
-                std::printf ("  %s / %s: unresolved %s\n", lynx::effectInfo (kind).name, preset.name.c_str(), unresolved.front().c_str());
+                std::printf ("  %s / %s: unresolved %s\n", yw::effectInfo (kind).name, preset.name.c_str(), unresolved.front().c_str());
             CHECK (unresolved.empty());
             CHECK (! preset.name.empty() && ! preset.values.empty());
         }
@@ -20,7 +20,7 @@ TEST (factory_presets_resolve_every_value_round129)
 
 TEST (preset_values_land_on_the_shown_value_round129)
 {
-    using namespace lynx;
+    using namespace yw;
     // a number in the editor's own unit, an option by its name, seconds vs milliseconds, kHz
     const auto decay = presets::valueFromText (EffectKind::epochVerb, presets::paramByName (EffectKind::epochVerb, "Decay"), "2.8 s");
     CHECK (decay && formatEffectParam (EffectKind::epochVerb, 2, *decay, 120.0) == "2.80 s");
@@ -41,7 +41,7 @@ TEST (preset_values_land_on_the_shown_value_round129)
 
 TEST (user_preset_text_round_trip_round129)
 {
-    using namespace lynx;
+    using namespace yw;
     auto params = makeEffectSlot (EffectKind::glowLeveler).params;
     params[0] = 0.4f;
     params[1] = 0.125f;
@@ -58,22 +58,22 @@ TEST (user_preset_text_round_trip_round129)
 
 TEST (tune_presets_keep_the_key_and_scale_round129)
 {
-    using namespace lynx;
-    auto current = makeEffectSlot (EffectKind::lynxTune).params;
-    const auto key = presets::paramByName (EffectKind::lynxTune, "Key"), scale = presets::paramByName (EffectKind::lynxTune, "Scale");
-    current[(std::size_t) key] = *presets::valueFromText (EffectKind::lynxTune, key, "E");
-    current[(std::size_t) scale] = *presets::valueFromText (EffectKind::lynxTune, scale, "Minor");
-    const auto& list = presets::factory (EffectKind::lynxTune);
+    using namespace yw;
+    auto current = makeEffectSlot (EffectKind::ywTune).params;
+    const auto key = presets::paramByName (EffectKind::ywTune, "Key"), scale = presets::paramByName (EffectKind::ywTune, "Scale");
+    current[(std::size_t) key] = *presets::valueFromText (EffectKind::ywTune, key, "E");
+    current[(std::size_t) scale] = *presets::valueFromText (EffectKind::ywTune, scale, "Minor");
+    const auto& list = presets::factory (EffectKind::ywTune);
     CHECK (! list.empty());
-    const auto params = presets::apply (EffectKind::lynxTune, list.back(), 120.0, nullptr, &current);
-    CHECK (formatEffectParam (EffectKind::lynxTune, key, params[(std::size_t) key], 120.0) == "E");
-    CHECK (formatEffectParam (EffectKind::lynxTune, scale, params[(std::size_t) scale], 120.0) == "Minor");
-    CHECK (params[(std::size_t) presets::paramByName (EffectKind::lynxTune, "Retune")] != current[(std::size_t) presets::paramByName (EffectKind::lynxTune, "Retune")]);
+    const auto params = presets::apply (EffectKind::ywTune, list.back(), 120.0, nullptr, &current);
+    CHECK (formatEffectParam (EffectKind::ywTune, key, params[(std::size_t) key], 120.0) == "E");
+    CHECK (formatEffectParam (EffectKind::ywTune, scale, params[(std::size_t) scale], 120.0) == "Minor");
+    CHECK (params[(std::size_t) presets::paramByName (EffectKind::ywTune, "Retune")] != current[(std::size_t) presets::paramByName (EffectKind::ywTune, "Retune")]);
 }
 
 TEST (substitute_roles_fixed_round129)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slotFor = [] (const char* name, std::uint32_t vst2 = 0) {
         PluginIdentity id;
         id.format = vst2 != 0 ? ForeignPlugin::Format::vst2 : ForeignPlugin::Format::vst3;
@@ -91,7 +91,7 @@ TEST (substitute_roles_fixed_round129)
     CHECK (formatEffectParam (echo.kind, presets::paramByName (echo.kind, "Mode"), echo.params[(std::size_t) presets::paramByName (echo.kind, "Mode")], 120.0) == "Tape");
     CHECK (formatEffectParam (echo.kind, presets::paramByName (echo.kind, "Note L"), echo.params[(std::size_t) presets::paramByName (echo.kind, "Note L")], 120.0) == "1/4");
     CHECK (slotFor ("PrimalTap").kind == EffectKind::echoform);
-    // Little Plate: LYNX's plate
+    // Little Plate: YW's plate
     CHECK (slotFor ("Little Plate").kind == EffectKind::foilPlate);
     // Foil Plate's EQ defaults: 700 Hz / 10 kHz like the reference
     const auto foil = makeEffectSlot (EffectKind::foilPlate);
@@ -101,7 +101,7 @@ TEST (substitute_roles_fixed_round129)
 
 TEST (glow_trim_and_compressor_meters_round129)
 {
-    using namespace lynx;
+    using namespace yw;
     // Glow Leveler's TRIM (after the mix) moves the output by its dB; older projects (no value) keep 0 dB
     auto run = [] (EffectKind kind, const EffectParams& p, float amplitude) {
         auto fx = makeEffect (kind);
@@ -133,7 +133,7 @@ TEST (glow_trim_and_compressor_meters_round129)
 
 TEST (nebula_clear_and_echoform_phase_round129)
 {
-    using namespace lynx;
+    using namespace yw;
     // Nebula's CLEAR: a flip of the button's value empties the network (the tail stops at once)
     {
         auto p = makeEffectSlot (EffectKind::nebula).params;
@@ -200,7 +200,7 @@ TEST (nebula_clear_and_echoform_phase_round129)
 
 TEST (compressor_mix_and_trim_round129)
 {
-    using namespace lynx;
+    using namespace yw;
     // the RComp role's MIX (0 % = the dry signal) and TRIM (after the mix); defaults leave older projects unchanged
     auto p = makeEffectSlot (EffectKind::compressor).params;
     CHECK (formatEffectParam (EffectKind::compressor, 6, p[6], 120.0) == "100%" && formatEffectParam (EffectKind::compressor, 7, p[7], 120.0) == "+0.0 dB");

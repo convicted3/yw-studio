@@ -1,4 +1,4 @@
-    // --prchord190kd <folder> (round 190kd): the FL | LYNX pairs of this round, drawn offscreen.
+    // --prchord190kd <folder> (round 190kd): the FL | YW pairs of this round, drawn offscreen.
     //  1. FL's Chord progression tool with its strip of chord blocks on the A minor line of the FL session (A3 C4 E4 A4 B4
     //     D5 E5 G#4 A4, an eighth apart, a beat long): the dialog as it opens, then Analyze, a selected block, the block
     //     outlined red while learning from MIDI (a C/E played in), Names rel, the alternatives, and the menus (chord
@@ -9,7 +9,7 @@
     // Each picture at 1x and at 150 % ("@150"); menus at the shot scale. <folder>/checks.txt lists what was checked.
     bool runPrChordShot190kd (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;

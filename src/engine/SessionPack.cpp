@@ -17,7 +17,7 @@
 #include "engine/ProjectFile.h"
 #include "platform/Paths.h"
 
-namespace lynx::sessionpack
+namespace yw::sessionpack
 {
 namespace
 {
@@ -202,10 +202,10 @@ bool insideFolder (const std::string& path, const juce::File& root)
 juce::String manifestToJson (const Manifest& m)
 {
     auto root = std::make_unique<juce::DynamicObject>();
-    root->setProperty ("format", "lynxpack");
+    root->setProperty ("format", "ywpack");
     root->setProperty ("version", formatVersion);
     root->setProperty ("kind", m.part ? "part" : "project");
-    root->setProperty ("lynxVersion", m.lynxVersion);
+    root->setProperty ("ywVersion", m.ywVersion);
     root->setProperty ("projectName", m.projectName);
     root->setProperty ("projectId", m.projectId);
     root->setProperty ("created", m.created);
@@ -251,7 +251,7 @@ juce::String manifestToJson (const Manifest& m)
 std::optional<Manifest> manifestFromJson (const juce::String& json, juce::String& error)
 {
     juce::var root;
-    if (juce::JSON::parse (json, root).failed() || root["format"].toString() != "lynxpack")
+    if (juce::JSON::parse (json, root).failed() || root["format"].toString() != "ywpack")
     {
         error = "not a YW Studio package";
         return std::nullopt;
@@ -263,7 +263,7 @@ std::optional<Manifest> manifestFromJson (const juce::String& json, juce::String
     }
     Manifest m;
     m.part = root["kind"].toString() == "part";
-    m.lynxVersion = root["lynxVersion"].toString();
+    m.ywVersion = root["ywVersion"].toString();
     m.projectName = root["projectName"].toString();
     m.projectId = root["projectId"].toString();
     m.created = root["created"].toString();
@@ -818,7 +818,7 @@ bool write (const Song& song, Manifest manifest, PluginHost& host, const juce::F
     manifest.media.clear();
     manifest.plugins.clear();
     manifest.missing.clear();
-    manifest.lynxVersion = JUCE_APPLICATION_VERSION_STRING;
+    manifest.ywVersion = JUCE_APPLICATION_VERSION_STRING;
     manifest.projectId = str (song.projectId);
     manifest.created = juce::Time::getCurrentTime().toISO8601 (true);
 
@@ -875,7 +875,7 @@ bool write (const Song& song, Manifest manifest, PluginHost& host, const juce::F
         manifest.standIns += (int) t.standIns.size();
 
     const auto json = ProjectFile::toJson (packed);
-    builder.addEntry (new juce::MemoryInputStream (json.toRawUTF8(), json.getNumBytesAsUTF8(), true), 9, "project.lynx", juce::Time::getCurrentTime());
+    builder.addEntry (new juce::MemoryInputStream (json.toRawUTF8(), json.getNumBytesAsUTF8(), true), 9, "project.yw", juce::Time::getCurrentTime());
     const auto manifestJson = manifestToJson (manifest);
     builder.addEntry (new juce::MemoryInputStream (manifestJson.toRawUTF8(), manifestJson.getNumBytesAsUTF8(), true), 9, "manifest.json",
                       juce::Time::getCurrentTime());
@@ -992,7 +992,7 @@ std::optional<Opened> open (const juce::File& file, const juce::File& destinatio
     if (! manifest)
         return std::nullopt;
     juce::ZipFile zip (file);
-    if (zip.getIndexOfFileName ("project.lynx") < 0)
+    if (zip.getIndexOfFileName ("project.yw") < 0)
     {
         error = "the package has no project";
         return std::nullopt;
@@ -1018,11 +1018,11 @@ std::optional<Opened> open (const juce::File& file, const juce::File& destinatio
     Opened opened;
     opened.manifest = *manifest;
     opened.folder = folder;
-    opened.project = folder.getChildFile ("project.lynx");
+    opened.project = folder.getChildFile ("project.yw");
     // the project file takes the project's name (the window title and Recent projects show it)
     if (const auto named = folder.getChildFile (juce::File::createLegalFileName (manifest->projectName.isNotEmpty() ? manifest->projectName
                                                                                                                  : file.getFileNameWithoutExtension())
-                                                  + ".lynx");
+                                                  + ".yw");
         ! named.exists() && opened.project.moveFileTo (named))
         opened.project = named;
     for (const auto& m : manifest->media)
@@ -1164,4 +1164,4 @@ bool adoptMedia (Song& song, const juce::File& folder, juce::String& error)
     applyRelocations (song, relink);
     return true;
 }
-} // namespace lynx::sessionpack
+} // namespace yw::sessionpack

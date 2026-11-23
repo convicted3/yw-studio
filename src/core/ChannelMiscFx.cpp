@@ -4,7 +4,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace lynx::channelmisc
+namespace yw::channelmisc
 {
 double flTimeKnobBeats (int v) noexcept
 {
@@ -209,4 +209,4 @@ void NoteEcho::process (int channel, const NoteEvent* in, int inCount, double st
     }
     flush (endTick);
 }
-} // namespace lynx::channelmisc
+} // namespace yw::channelmisc

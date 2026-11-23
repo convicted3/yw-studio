@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190jq: three Playlist view options, all LYNX extras (FL's look and behaviour stay the default). No JUCE here:
+// Round 190jq: three Playlist view options, all YW extras (FL's look and behaviour stay the default). No JUCE here:
 // tested in tests/Playlist190jqTests.inc; the Playlist (ui/PlaylistComponent.cpp) reads them, ui/WorkflowExtras.cpp
 // saves them in ui-options.txt (preferences of this computer, not of a project).
 //
@@ -13,7 +13,7 @@
 //    the Pencil or the Brush works like FL's Select tool (a click deselects, a drag draws a selection box) and also
 //    moves the song position there, as a click in Live's Arrangement does; a double click places the clip (what the
 //    single click did). The switch sits in the Playlist toolbar when "Pointer click switch in the Playlist toolbar"
-//    (Settings › LYNX extras) is on.
+//    (Settings › YW extras) is on.
 //  - cliplanes (issue #191.3, the view option round 190iu left open): automation clips drawn as foldable child lanes under
 //    the track that owns their control (core/LaneView.h › ownerTrack), as Live draws automation lanes under each track.
 //    Nothing in the song changes: a track whose clips are all automation clips of one owner is drawn right under that
@@ -29,9 +29,9 @@
 #include "core/NoteEdit.h"
 #include "core/Song.h"
 
-namespace lynx::headerwidth
+namespace yw::headerwidth
 {
-inline bool draggable = false; // ui-options.txt headerWidthDrag (Settings › LYNX extras, Playlist menu)
+inline bool draggable = false; // ui-options.txt headerWidthDrag (Settings › YW extras, Playlist menu)
 inline int extra = 0;          // ui-options.txt headerWidthExtra: px added to the layout's own width (0 = FL's width)
 inline constexpr int maxExtra = 360;
 // the grip: 1 px of the selection strip and 3 px of the arrangement past the column's right edge (the strip itself keeps
@@ -48,11 +48,11 @@ inline int dragged (int startExtra, int dx, int base, int playlistWidth) noexcep
     const auto most = std::max (0, std::min (maxExtra, playlistWidth / 2 - base));
     return std::clamp (startExtra + dx, 0, most);
 }
-} // namespace lynx::headerwidth
+} // namespace yw::headerwidth
 
-namespace lynx::pointerclick
+namespace yw::pointerclick
 {
-inline bool buttonShown = false; // ui-options.txt pointerClickButton: the switch in the Playlist toolbar (LYNX extra)
+inline bool buttonShown = false; // ui-options.txt pointerClickButton: the switch in the Playlist toolbar (YW extra)
 inline bool on = false;          // ui-options.txt pointerClick: the switch itself
 
 // Turning the extra on shows the switch, lit; turning it off hides it and ends the mode (no hidden state).
@@ -77,16 +77,16 @@ inline EmptyPress onEmpty (bool switchOn, EditTool tool, int clicks) noexcept
         return EmptyPress::place;
     return clicks >= 2 ? EmptyPress::place : EmptyPress::pointer;
 }
-} // namespace lynx::pointerclick
+} // namespace yw::pointerclick
 
-namespace lynx::cliplanes
+namespace yw::cliplanes
 {
 inline bool patternOn = false; // ui-options.txt clipLanesPattern (FL: automation clips on tracks of their own)
 inline bool liveOn = true;     // ui-options.txt clipLanesLive (Live: automation lanes under each track)
 
 inline bool shownIn (bool clipLaunch, bool simple) noexcept { return ! simple && (clipLaunch ? liveOn : patternOn); }
 inline void setShownIn (bool clipLaunch, bool value) noexcept { (clipLaunch ? liveOn : patternOn) = value; }
-// Round 190oo (CS O-3, LYNX extra, off by default): Live folds a track's automation lanes; with this on, a project opened
+// Round 190oo (CS O-3, YW extra, off by default): Live folds a track's automation lanes; with this on, a project opened
 // (or imported) shows its automation lanes folded the first time the Clip-launch arrangement shows it. The track's lane
 // arrow unfolds them as before; nothing else changes. ui-options.txt clipLanesFoldedLive.
 inline bool foldedOnOpen = false;
@@ -252,4 +252,4 @@ inline int movedTrack (const Projection& p, int fromTrack, int rows, int tracks)
     const auto track = target < tracks ? p.trackAt (target) : target; // (past the rows: the free tracks below, in order)
     return p.isChild (track) ? -1 : track;
 }
-} // namespace lynx::cliplanes
+} // namespace yw::cliplanes

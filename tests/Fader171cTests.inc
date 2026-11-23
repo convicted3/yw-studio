@@ -6,17 +6,17 @@ namespace
 // insert 2 monitors a DC input of 0.25 on both sides; nothing else plays
 struct Fader171cRig
 {
-    lynx::Song song = [] {
-        auto s = lynx::Song::makeDefault();
+    yw::Song song = [] {
+        auto s = yw::Song::makeDefault();
         s.channels.clear();
         s.playlist.clear();
-        s.mixer = lynx::Song::defaultMixer (3);
-        s.mixer[2].monitor = lynx::InputMonitor::on;
+        s.mixer = yw::Song::defaultMixer (3);
+        s.mixer[2].monitor = yw::InputMonitor::on;
         s.mixer[2].inputChannel = 0;
         return s;
     }();
-    lynx::RackRenderer renderer;
-    lynx::LiveInput input;
+    yw::RackRenderer renderer;
+    yw::LiveInput input;
     std::vector<float> a = std::vector<float> (256, 0.25f), l = std::vector<float> (256), r = std::vector<float> (256);
 
     Fader171cRig()
@@ -27,15 +27,15 @@ struct Fader171cRig
         input.channels[1] = a.data();
         input.numChannels = 2;
     }
-    void block (const lynx::RackState& state) { renderer.process (&state, false, 0.0, 256, l.data(), r.data()); }
+    void block (const yw::RackState& state) { renderer.process (&state, false, 0.0, 256, l.data(), r.data()); }
 };
 } // namespace
 
 TEST (fader171c_live_levels_follow_the_song)
 {
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (4);
-    lynx::LiveLevels live (song);
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (4);
+    yw::LiveLevels live (song);
     CHECK (live.matches (song) && live.mixerVolume.size() == song.mixer.size() && song.mixer.size() >= 4 && live.channelVolume.size() == song.channels.size());
     CHECK (live.mixerVolume[2].load() == song.mixer[2].volume);
 
@@ -56,21 +56,21 @@ TEST (fader171c_live_levels_follow_the_song)
     CHECK (live.mixerVolume[2].load() == 0.3f);
 
     // every built snapshot carries them
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (state->live != nullptr && state->live->matches (song) && state->live->mixerVolume[2].load() == 0.9f);
 }
 
 TEST (fader171c_a_live_fader_move_glides_without_a_rebuild)
 {
     Fader171cRig rig;
-    auto state = lynx::RackState::build (rig.song, nullptr, 48000.0);
+    auto state = yw::RackState::build (rig.song, nullptr, 48000.0);
     rig.block (*state);
     CHECK (std::abs (rig.l[200] - 0.25f) < 1e-4f); // unity fader
 
     // the fader dragged down to −12 dB-ish: the same snapshot plays it
     const auto position = 0.45f;
     state->live->mixerVolume[2].store (position);
-    const auto target = lynx::mixerMatrix (rig.song.mixer[2], position, 0.0f, rig.song.panTriangular);
+    const auto target = yw::mixerMatrix (rig.song.mixer[2], position, 0.0f, rig.song.panTriangular);
     CHECK (target.ll < 0.5f);
 
     float previous = rig.l[255];
@@ -110,13 +110,13 @@ TEST (fader171c_rebuilt_snapshot_keeps_the_dragged_value)
 {
     // the publish after the drag builds from the Song, which holds the same value: no jump at the swap
     Fader171cRig rig;
-    auto state = lynx::RackState::build (rig.song, nullptr, 48000.0);
+    auto state = yw::RackState::build (rig.song, nullptr, 48000.0);
     rig.song.mixer[2].volume = 0.5f;
     state->live->store (rig.song);
     for (int b = 0; b < 8; ++b)
         rig.block (*state);
     const auto before = rig.l[255];
-    auto next = lynx::RackState::build (rig.song, state.get(), 48000.0);
+    auto next = yw::RackState::build (rig.song, state.get(), 48000.0);
     rig.block (*next);
     CHECK (std::abs (rig.l[0] - before) < 1e-6f && std::abs (rig.l[200] - before) < 1e-6f);
 }
@@ -126,12 +126,12 @@ TEST (fader171c_no_live_levels_uses_the_song)
     // a snapshot without live levels (older callers) plays its Song's values
     Fader171cRig rig;
     rig.song.mixer[2].volume = 0.4f;
-    auto built = lynx::RackState::build (rig.song, nullptr, 48000.0);
-    auto copy = std::make_unique<lynx::RackState> (*built);
+    auto built = yw::RackState::build (rig.song, nullptr, 48000.0);
+    auto copy = std::make_unique<yw::RackState> (*built);
     copy->live = nullptr;
     for (int b = 0; b < 8; ++b)
         rig.block (*copy);
-    const auto target = lynx::mixerMatrix (rig.song.mixer[2], 0.4f, 0.0f, rig.song.panTriangular);
+    const auto target = yw::mixerMatrix (rig.song.mixer[2], 0.4f, 0.0f, rig.song.panTriangular);
     CHECK (std::abs (rig.l[200] - 0.25f * target.ll) < 1e-4f);
 }
 
@@ -142,7 +142,7 @@ TEST (fader171c_no_live_levels_uses_the_song)
 TEST (smooth173f_a_fast_fader_drag_never_steps_the_gain)
 {
     Fader171cRig rig; // insert 2 plays a DC of 0.25: its output is the gain curve itself
-    auto state = lynx::RackState::build (rig.song, nullptr, 48000.0);
+    auto state = yw::RackState::build (rig.song, nullptr, 48000.0);
     rig.block (*state);
 
     // a new fader value every 256 samples (5 ms: faster than any screen), jumping between the bottom and the top
@@ -167,14 +167,14 @@ TEST (smooth173f_a_fast_fader_drag_never_steps_the_gain)
     state->live->mixerVolume[2].store (last);
     for (int b = 0; b < 8; ++b)
         rig.block (*state);
-    const auto target = lynx::mixerMatrix (rig.song.mixer[2], last, 0.0f, rig.song.panTriangular);
+    const auto target = yw::mixerMatrix (rig.song.mixer[2], last, 0.0f, rig.song.panTriangular);
     CHECK (std::abs (rig.l[200] - 0.25f * target.ll) < 1e-4f);
 }
 
 TEST (smooth173f_a_fast_pan_drag_never_steps_either_side)
 {
     Fader171cRig rig;
-    auto state = lynx::RackState::build (rig.song, nullptr, 48000.0);
+    auto state = yw::RackState::build (rig.song, nullptr, 48000.0);
     rig.block (*state);
     float previousL = rig.l[255], previousR = rig.r[255], worstStep = 0.0f;
     for (int b = 0; b < 48; ++b)

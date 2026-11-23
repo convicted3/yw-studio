@@ -8,7 +8,7 @@
 
 TEST (grandrop165_granulizer_window_takes_a_dropped_sample)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (projectcontents::pluginWindowTakesSample (InstrumentKind::granulizer));
     CHECK (! projectcontents::pluginWindowTakesSample (InstrumentKind::sampler)); // (its waveform has its own target)
     CHECK (! projectcontents::pluginWindowTakesSample (InstrumentKind::harmor));

@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's own mixing suite (REA_rodada96): five native effects built only from published DSP knowledge
+// YW's own mixing suite (REA_rodada96): five native effects built only from published DSP knowledge
 // (textbooks, papers, AES / DAFx literature and public circuit analyses of classic studio hardware).
 // None of them is a model of a particular product; they fill the roles a vocal chain needs:
 //
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct EffectInfo;
 class Effect;
@@ -352,12 +352,12 @@ namespace glow
 // round 165x (REA_rodada165x §1): appended — the make-up reference (the peak reduction dial where AUTO MAKEUP was
 // switched on: the trial's make-up follows the dial from there; 0.46 = round 152's fixed reference, so older projects
 // are unchanged); the opto release now also selects the measured attack; and the VU display (gain reduction / input /
-// output: the reference saves its VU DISPLAY knob with the state, so LYNX keeps the editor's selector with the project)
+// output: the reference saves its VU DISPLAY knob with the state, so YW keeps the editor's selector with the project)
 // round 190dm (appended): the Opto classic voicing's cell memory (VoiceMatch.h opto::Settings::memory; off = as before)
 // round 190fx (appended): the Opto classic voicing's side-chain weighting (opto::Settings::scWeighting; off = as before)
 enum Param { peakReduction, gain, mode, emphasis, mix, trim, autoMakeup, voicing, optoLaw, analog, releaseLaw, makeupRef, vuDisplay, optoMemory, scWeighting, count,
              // round 190lf, hidden (not in the info: no control, no text; saved while non-zero): the Opto classic voicing's
-             // cell law (VoiceMatch.h opto::Settings::cellLaw = 1, LYNX's compact opto behaviour model, REA_rodada190lf_dyn
+             // cell law (VoiceMatch.h opto::Settings::cellLaw = 1, YW's compact opto behaviour model, REA_rodada190lf_dyn
              // §1). 0 = off: new instances and every project saved before (the laws above, bit for bit); the CLA-2A
              // translator sets it
              cellLaw = count };
@@ -728,7 +728,7 @@ int activeBands (const EffectParams& p) noexcept; // 1 … 6 (Bands, or bandsMor
 std::pair<float, float> bandCountValues (int n) noexcept;
 constexpr int characters = 28;               // the measured voicings (1 … 28; 0 = off)
 int characterIndex (float v) noexcept;       // 0 … 28
-const char* characterName (int k) noexcept;  // LYNX's own names ("Off" for 0)
+const char* characterName (int k) noexcept;  // YW's own names ("Off" for 0)
 // the drive dB of Ember (0 … 36) on the reference's 0 … 100 % scale (its translation: % × 30 dB), clamped
 inline double referenceDrive (double driveDb) noexcept { return std::clamp (driveDb / 30.0, 0.0, 1.0); }
 // a voicing's static curve at a drive (0 … 1 on the reference's scale): y = A · g (D · x) / D, g with unit slope at 0
@@ -769,7 +769,7 @@ int oversampling (float v) noexcept;   // 2, 4 or 8
 // round 135
 constexpr int voices = 5;               // Voice: 0 = off (the Style menu), 1 … 5
 int voiceIndex (float v) noexcept;      // 0 … 5
-const char* voiceName (int k) noexcept; // LYNX's names of the five voicings
+const char* voiceName (int k) noexcept; // YW's names of the five voicings
 Style voiceStyle (int k) noexcept;      // the curve of a voicing
 double lowCutWideHz (float v) noexcept; // 0 = off, else 20 Hz … 1 kHz (log)
 double highCutWideHz (float v) noexcept;// 1 = off, else 1 … 20 kHz (log)
@@ -820,4 +820,4 @@ bool isSuiteKind (EffectKind kind) noexcept;
 // Output 0 = gain reduction 0..1 over 0..30 dB (Ridge: compressor), 1 = second gain reduction (Ridge: gate),
 // 2 = input peak, 3 = output peak (linear, 0..1 clamped).
 } // namespace mixsuite
-} // namespace lynx
+} // namespace yw

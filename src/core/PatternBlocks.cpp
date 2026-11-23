@@ -6,7 +6,7 @@
 #include <limits>
 #include <tuple>
 
-namespace lynx::patternblocks
+namespace yw::patternblocks
 {
 namespace
 {
@@ -473,4 +473,4 @@ void swapPatterns (Song& song, int a, int b)
         normalize (list, count);
     });
 }
-} // namespace lynx::patternblocks
+} // namespace yw::patternblocks

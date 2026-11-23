@@ -1,7 +1,7 @@
 #pragma once
 
-// The header controls every original LYNX's engines stand in for has (REA round 129, docs/PARITY.md): undo / redo of
-// this plugin's own edits, A / B compare with "copy to the other", and a preset bar (◀ name ▶, a menu of LYNX's factory
+// The header controls every original YW's engines stand in for has (REA round 129, docs/PARITY.md): undo / redo of
+// this plugin's own edits, A / B compare with "copy to the other", and a preset bar (◀ name ▶, a menu of YW's factory
 // presets and the user's own, Save / Delete). Shared by the generic panels (ui/PluginEditors.cpp) and the display-first
 // editors (ui/ProEditorBase.h): the owner draws its header and hands the right part of it to `PresetBar`.
 //
@@ -14,7 +14,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -37,7 +37,7 @@ enum class Part
 // Round 190in (design190ia FW-S2, FW-9): one slot grid for the header of every native editor (the generic panels,
 // the display-first editors, Facet EQ), so nothing jumps from one editor to the next. The left slots count from the
 // header's left edge, the right ones from its right edge; a header narrower than `compactBelow` (FL's small Fruity
-// windows) uses the compact grid (no LYNX mark, no A→B, a smaller preset box), the same for every such editor.
+// windows) uses the compact grid (no YW mark, no A→B, a smaller preset box), the same for every such editor.
 //   [▸ 16][mark 18][LED][title …]  …  [undo 18][redo 18] 8 [A 18][B 18][A→B 30] 8 [preset 160][◂ 16][▸ 16]
 // A slot an editor cannot use is drawn disabled in its place (paintDisabledSlots), never left out.
 constexpr float compactBelow = 520.0f;
@@ -73,13 +73,13 @@ public:
     juce::String hintFor (Part part) const;
 
     // A click on a part: `owner` anchors the menus. `flPresets` (optional) adds FL's factory presets of an FL effect
-    // to the preset menu (the generic editor's own list) and is used for ◀ ▶ when the engine has no LYNX presets.
+    // to the preset menu (the generic editor's own list) and is used for ◀ ▶ when the engine has no YW presets.
     struct FlPresets
     {
         std::function<void (juce::PopupMenu&)> addTo;
         std::function<void (int delta)> step;
         std::function<juce::String()> name;
-        // round 168r: ◀ ▶ run through LYNX's bank, the user's presets and then FL's (an engine with both)
+        // round 168r: ◀ ▶ run through YW's bank, the user's presets and then FL's (an engine with both)
         std::function<int()> count;       // FL's presets of this plugin
         std::function<int()> index;       // the FL preset loaded now (−1 = none)
         std::function<void (int)> load;   // loads FL preset i
@@ -94,7 +94,7 @@ public:
     bool hover (juce::Point<float> p); // true when the hovered part changed (repaint)
     void hoverExit() { hovered = Part::none; }
 
-    bool hasLynxPresets() const;
+    bool hasYwPresets() const;
     // Round 190ce (the Device View card's save button): the "Save preset" dialog, over `owner`.
     void savePreset (juce::Component& owner) { saveAs (owner); }
     juce::String presetLabel (const FlPresets* flPresets = nullptr) const;
@@ -118,7 +118,7 @@ private:
     juce::uint32 lastEdit = 0;
 };
 
-// The user's presets of an engine: <settings>/Presets/<engine>/*.lynxpreset, sorted by name.
+// The user's presets of an engine: <settings>/Presets/<engine>/*.ywpreset, sorted by name.
 juce::File userFolder (EffectKind kind);
 juce::Array<juce::File> userPresets (EffectKind kind);
 
@@ -133,7 +133,7 @@ juce::String describe (EffectKind kind, const char* param);
 // when the engine has no mode.
 juce::String modeLine (EffectKind kind, const EffectParams& params, double bpm);
 
-// The mix lock ("Keep the Mix when loading presets"), also toggled by a click on a LYNX engine's MIX caption (round 135).
+// The mix lock ("Keep the Mix when loading presets"), also toggled by a click on a YW engine's MIX caption (round 135).
 bool isMixLocked (EffectKind kind);
 void toggleMixLock (EffectKind kind);
 
@@ -142,7 +142,7 @@ void toggleMixLock (EffectKind kind);
 // also gets a picker of its own: its window header and its slot menu list the inserts, and picking one makes the link
 // (mixerops::sidechainFrom: a level-0 send when there is no route, the source keeps its Master send). FL's way still
 // works as before.
-// Does slot `slot` of insert `track` read a side input? (LYNX / FL engines: mixerops::acceptsSidechain; a hosted plugin:
+// Does slot `slot` of insert `track` read a side input? (YW / FL engines: mixerops::acceptsSidechain; a hosted plugin:
 // when it has a second input bus.)
 bool takesSidechain (AudioEngine& engine, int track, int slot);
 // The insert the slot listens to, as the header shows it ("3 Kick"), or "" when none.
@@ -153,4 +153,4 @@ void addSidechainPicker (juce::PopupMenu& menu, AudioEngine& engine, int track, 
 void showSidechainPicker (AudioEngine& engine, int track, int slot, juce::Component* target, juce::Rectangle<int> area = {},
                           bool second = false);
 } // namespace pluginheader
-} // namespace lynx
+} // namespace yw

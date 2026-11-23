@@ -12,15 +12,15 @@
 #include "core/ScriptDialogPy.h"
 #include "pocketpy.h"
 
-namespace lynx::audioedit::script
+namespace yw::audioedit::script
 {
 namespace
 {
 // ---------------------------------------------------------------------------------------------------------------
-// The enveditor module (Python side), written from FL's published Edison Script Reference; LYNX's own code. The host
-// part (_lynxedison) is native and works on the document and the script's own samples.
+// The enveditor module (Python side), written from FL's published Edison Script Reference; YW's own code. The host
+// part (_ywedison) is native and works on the document and the script's own samples.
 constexpr const char* enveditorSource = R"PY(
-import _lynxedison as _h
+import _ywedison as _h
 
 NF_NumChannels = 1
 NF_Format = 2
@@ -593,7 +593,7 @@ bool nNormFmt (int argc, py_StackRef argv)
         setChannels (*d, std::max (1, s->audio.numChannels()));
     if ((mode & 4) != 0)
         setRate (*d, s->audio.sampleRate);
-    // (NF_Format: LYNX keeps every sample as 32-bit float)
+    // (NF_Format: YW keeps every sample as 32-bit float)
     py_newnone (py_retval());
     return true;
 }
@@ -770,7 +770,7 @@ bool nMsg (int argc, py_StackRef argv)
 
 bool installModule (std::string& error)
 {
-    py_GlobalRef host = py_newmodule ("_lynxedison");
+    py_GlobalRef host = py_newmodule ("_ywedison");
     py_bindfunc (host, "new", nNew);
     py_bindfunc (host, "len", nLen);
     py_bindfunc (host, "setlen", nSetLen);
@@ -889,10 +889,10 @@ Outcome run (const std::string& source, Document& doc, Range selection, const st
     return out;
 }
 
-// ------------------------------------------------------------------------------------------------- LYNX's scripts
+// ------------------------------------------------------------------------------------------------- YW's scripts
 const std::vector<Builtin>& builtins()
 {
-    // LYNX's own small scripts (not FL's): examples of the API that also do something useful
+    // YW's own small scripts (not FL's): examples of the API that also do something useful
     static const std::vector<Builtin> list = {
         { "Amp", "Gain", R"PY(from enveditor import *
 
@@ -980,4 +980,4 @@ for i in range(EditorSample.RegionCount):
     };
     return list;
 }
-} // namespace lynx::audioedit::script
+} // namespace yw::audioedit::script

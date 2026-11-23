@@ -15,7 +15,7 @@
   #define SCHED_RESET_ON_FORK 0x40000000
  #endif
 
-namespace lynx::rt
+namespace yw::rt
 {
 namespace
 {
@@ -271,7 +271,7 @@ Status promote (pid_t tid, int wanted, int& granted)
 
 bool disabled()
 {
-    static const auto off = juce::SystemStats::getEnvironmentVariable ("LYNX_NO_RT", {}).isNotEmpty();
+    static const auto off = juce::SystemStats::getEnvironmentVariable ("YW_NO_RT", {}).isNotEmpty();
     return off;
 }
 } // namespace
@@ -350,11 +350,11 @@ bool shouldShowHint (const juce::File& flagFile)
     flagFile.replaceWithText ("shown\n");
     return true;
 }
-} // namespace lynx::rt
+} // namespace yw::rt
 
 #else
 
-namespace lynx::rt
+namespace yw::rt
 {
 void noteAudioThread (bool) noexcept {}
 bool promotePending() { return false; }
@@ -362,6 +362,6 @@ Status status() { return Status::unknown; }
 void resetForNewDevice() {}
 juce::String describe() { return {}; }
 bool shouldShowHint (const juce::File&) { return false; }
-} // namespace lynx::rt
+} // namespace yw::rt
 
 #endif

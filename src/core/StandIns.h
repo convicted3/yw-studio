@@ -14,10 +14,10 @@
 
 #include "core/Song.h"
 
-namespace lynx::standins
+namespace yw::standins
 {
 // Third-party plugins (hosted VST3 / VST2 / CLAP) a channel / an effect slot / an insert uses, directly or inside a
-// Patcher or a parallel container. LYNX's own engines (the FL engines included) are never stand-ins: the same LYNX
+// Patcher or a parallel container. YW's own engines (the FL engines included) are never stand-ins: the same YW
 // plays them the same on every computer.
 bool slotUsesPlugin (const EffectSlot& slot);
 bool channelUsesPlugin (const ChannelDef& channel);
@@ -77,11 +77,11 @@ bool hasAny (const Song& song) noexcept; // any channel or insert has stand-ins,
 Song project (const Song& song, const std::function<bool (const PluginRef&)>& missing, Projected* out = nullptr);
 // The stand-in of a channel / insert for pattern `patternUid` (0 = the timeline stem); nullptr if none.
 const StandIn* find (const std::vector<StandIn>& list, std::uint64_t patternUid, bool loop) noexcept;
-} // namespace lynx::standins
+} // namespace yw::standins
 
 // Freeze (round 190ay): a channel rendered to audio that plays in its place while its instrument is not loaded at all.
 // The renders run through sessionpack::renderFreeze (engine/SessionPack.cpp); the playback is standins::project.
-namespace lynx::freeze
+namespace yw::freeze
 {
 // Why `channel` cannot be frozen, as an English sentence for the UI (translate it); nullptr = it can.
 const char* whyNot (const Song& song, int channel) noexcept;
@@ -100,7 +100,7 @@ Song thawed (Song song);
 void lighten (Song& renderSong, int channel, int keepInsert = -1);
 
 // --- Track freeze (round 190ff; the Clip-launch workflow's Freeze Track, Bounce Track in Place) ----------------------
-// Live's Freeze Track renders a track with all its devices; its mixer (volume, pan, sends) stays live. A LYNX track is a
+// Live's Freeze Track renders a track with all its devices; its mixer (volume, pan, sends) stays live. A YW track is a
 // Playlist track whose chain is a channel and the insert it plays through (core/DetailChain.h), so a track freeze
 // renders the channel with its volume and pan through that insert's effects, before the insert's EQ and fader, and
 // plays it into the same insert with its effects unloaded.
@@ -169,4 +169,4 @@ int consolidatePatternClips (Song& song, const ConsolidatePlan& plan);
 // Audio clips: the song to render (Range::selection over the span, tail cut) and what follows the render.
 Song consolidateRenderSong (const Song& song, const ConsolidatePlan& plan);
 int applyAudioConsolidation (Song& song, const ConsolidatePlan& plan, const std::string& samplePath, std::int64_t lengthTicks);
-} // namespace lynx::freeze
+} // namespace yw::freeze

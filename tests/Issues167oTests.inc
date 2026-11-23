@@ -2,7 +2,7 @@
 
 TEST (issue23_f10_f11_toggle_settings_like_fl)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     // FLEngine 0x13545f0: open on the asked page → close; on another page → switch; closed → open
     CHECK (settingsKeyPress (false, -1, 5) == SettingsKey::open);
     CHECK (settingsKeyPress (true, 5, 5) == SettingsKey::close);
@@ -11,7 +11,7 @@ TEST (issue23_f10_f11_toggle_settings_like_fl)
 
 TEST (issue23_fl_function_keys_and_the_sheet_list)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ f12, ctrl }, Context::global, false) == "view.closeUnfocusedWindows");
@@ -52,7 +52,7 @@ namespace issues167o
 std::filesystem::path scratch (const std::string& name)
 {
     std::error_code ec;
-    const auto dir = std::filesystem::temp_directory_path (ec) / ("lynx_issues167o_" + processTempTag() + "_" + name);
+    const auto dir = std::filesystem::temp_directory_path (ec) / ("yw_issues167o_" + processTempTag() + "_" + name);
     std::filesystem::remove_all (dir, ec);
     std::filesystem::create_directories (dir, ec);
     return dir;
@@ -67,7 +67,7 @@ void touch (const std::filesystem::path& file, const std::vector<std::uint8_t>& 
 
 TEST (issue24_fl_preset_order)
 {
-    using namespace lynx::presetcycle;
+    using namespace yw::presetcycle;
     // FLEngine 0x662a40 as measured on FL's Ogun (shots pn1–pn5): the folder's own files, then the subfolders
     CHECK (flLess ("Default.fst", "Default (pad).fst"));
     CHECK (flLess ("Default (pad).fst", "Default (tonal).fst"));
@@ -84,7 +84,7 @@ TEST (issue24_fl_preset_order)
 
 TEST (issue24_fl_preset_arrows_step_and_wrap)
 {
-    using namespace lynx::presetcycle;
+    using namespace yw::presetcycle;
     CHECK (step (-1, 1, 229) == 0);      // ▶ from no preset: the first (FL: 1 / 229)
     CHECK (step (-1, -1, 229) == 228);   // ◀ from no preset: the last
     CHECK (step (0, -1, 229) == 228);    // wraps (FL: "Default" 1/229 ◀ → "Waterphone" 229/229)
@@ -96,7 +96,7 @@ TEST (issue24_fl_preset_arrows_step_and_wrap)
 
 TEST (issue24_preset_list_merges_fl_and_user_folders)
 {
-    using namespace lynx::presetcycle;
+    using namespace yw::presetcycle;
     const auto fl = issues167o::scratch ("fl"), user = issues167o::scratch ("user");
     for (const auto* f : { "Default.fst", "Default (pad).fst", "SFX/Waterphone.fst", "Atmospheric/300 Ft Glass Bowl.fst", "Atmospheric/readme.txt",
                            "Pad/Pad 10.fst", "Pad/Pad 2.fst" })
@@ -112,7 +112,7 @@ TEST (issue24_preset_list_merges_fl_and_user_folders)
     CHECK (rel == expected);
     CHECK (list.back().name == "Waterphone" && std::filesystem::file_size (list.back().path) == 2);
     CHECK (indexOfName (list, "default (PAD)") == 1 && indexOfName (list, "nothing") == -1);
-    lynx::FlPathRoots roots;
+    yw::FlPathRoots roots;
     roots.data = "/fl/Data";
     roots.userData = "/docs/FL Studio";
     const auto folders = pluginPresetFolders (roots, true, "Ogun");
@@ -126,7 +126,7 @@ TEST (issue24_preset_list_merges_fl_and_user_folders)
 
 TEST (issue24_midi_out_preset_keeps_channel_and_port)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto dir = issues167o::scratch ("midiout");
     midiout::State preset;
     preset.channel = 9;
@@ -168,9 +168,9 @@ TEST (issue24_fl_ogun_presets_in_fls_order)
     // Atmospheric's "300 Ft Glass Bowl" / "Alien Queens Lair" first, SFX's "Waterphone" last
     if (realFlpDir.empty())
         return;
-    lynx::FlPathRoots roots;
+    yw::FlPathRoots roots;
     roots.data = realFlpDir;
-    const auto list = lynx::presetcycle::listPresets (lynx::presetcycle::pluginPresetFolders (roots, true, "Ogun"));
+    const auto list = yw::presetcycle::listPresets (yw::presetcycle::pluginPresetFolders (roots, true, "Ogun"));
     if (list.size() != 229)
         return; // (another FL version)
     CHECK (list[0].name == "Default" && list[1].name == "Default (pad)" && list[2].name == "Default (tonal)");
@@ -178,27 +178,27 @@ TEST (issue24_fl_ogun_presets_in_fls_order)
     CHECK (list.back().relative == "SFX/Waterphone.fst");
     // the arrows load them into an Ogun channel, keeping the channel's own settings
     const auto fl = natives142::flAccess();
-    auto channel = lynx::natives::makeChannel (lynx::InstrumentKind::ogun, fl);
+    auto channel = yw::natives::makeChannel (yw::InstrumentKind::ogun, fl);
     CHECK (channel.has_value());
     if (! channel)
         return;
     channel->mixerTrack = 3;
     channel->misc.pitchRange = 7;
-    // (FL's three "Default" presets are Ogun state version 12: since round 169l LYNX reads them too (REA_rodada169l §4),
+    // (FL's three "Default" presets are Ogun state version 12: since round 169l YW reads them too (REA_rodada169l §4),
     // rewritten as version 14, so the arrows stop on them like FL; "Alien Queens Lair" is version 14)
-    const auto pad = lynx::natives::withPreset (*channel, list[1].path, list[1].name, fl);
+    const auto pad = yw::natives::withPreset (*channel, list[1].path, list[1].name, fl);
     CHECK (pad.has_value());
     if (pad)
     {
-        CHECK (pad->instrument == lynx::InstrumentKind::ogun && pad->name == "Default (pad)");
+        CHECK (pad->instrument == yw::InstrumentKind::ogun && pad->name == "Default (pad)");
         CHECK (pad->mixerTrack == 3 && pad->misc.pitchRange == 7);
         CHECK (! pad->pluginState.empty() && pad->pluginState[0] == 14);
     }
-    const auto next = lynx::natives::withPreset (*channel, list[4].path, list[4].name, fl);
+    const auto next = yw::natives::withPreset (*channel, list[4].path, list[4].name, fl);
     CHECK (next.has_value());
     if (next)
     {
-        CHECK (next->instrument == lynx::InstrumentKind::ogun && next->name == "Alien Queens Lair");
+        CHECK (next->instrument == yw::InstrumentKind::ogun && next->name == "Alien Queens Lair");
         CHECK (next->mixerTrack == 3 && next->misc.pitchRange == 7);
         CHECK (next->pluginState != channel->pluginState);
     }
@@ -215,7 +215,7 @@ namespace sfzt
 // a mono (or stereo) 16-bit WAV of a sine at `hz`, with a smpl loop when loopEnd > loopStart
 void writeSine (const std::string& path, double hz, double seconds, int channels = 1, std::int64_t loopStart = -1, std::int64_t loopEnd = -1)
 {
-    lynx::audioedit::Document d;
+    yw::audioedit::Document d;
     d.audio.sampleRate = 44100.0;
     const auto n = (std::size_t) (seconds * 44100.0);
     d.audio.channels.assign ((std::size_t) channels, std::vector<float> (n));
@@ -223,7 +223,7 @@ void writeSine (const std::string& path, double hz, double seconds, int channels
         for (auto& ch : d.audio.channels)
             ch[i] = 0.5f * (float) std::sin (2.0 * 3.14159265358979 * hz * (double) i / 44100.0);
     d.loopStart = loopStart, d.loopEnd = loopEnd;
-    sft::writeFile (path, lynx::audioedit::encodeWav (d, lynx::audioedit::WavFormat::int16));
+    sft::writeFile (path, yw::audioedit::encodeWav (d, yw::audioedit::WavFormat::int16));
 }
 
 std::string writeText (const std::string& path, const std::string& text)
@@ -255,7 +255,7 @@ std::vector<float> play (sft::Rig& rig, int key, double seconds, double release 
 
 TEST (issue22_sfz_parse_headers_defines_and_note_names)
 {
-    namespace sfz = lynx::sfz;
+    namespace sfz = yw::sfz;
     CHECK (sfz::noteNumber ("c4") == 60 && sfz::noteNumber ("C#4") == 61 && sfz::noteNumber ("db4") == 61);
     CHECK (sfz::noteNumber ("a-1") == 9 && sfz::noteNumber ("64") == 64 && sfz::noteNumber ("x") == -1);
 
@@ -302,9 +302,9 @@ TEST (issue22_sfz_loads_and_plays_at_the_regions_pitch)
 <region> sample=stereo.wav lokey=81 hikey=90 pitch_keycenter=57 loop_mode=one_shot
 <region> sample=missing.wav key=100
 )");
-    lynx::sfz::Report report;
+    yw::sfz::Report report;
     std::string error;
-    const auto font = lynx::sfz::loadFile (path, &error, &report);
+    const auto font = yw::sfz::loadFile (path, &error, &report);
     CHECK (font != nullptr);
     if (font == nullptr)
         return;
@@ -313,9 +313,9 @@ TEST (issue22_sfz_loads_and_plays_at_the_regions_pitch)
     CHECK (font->presets[0].regions.size() == 3);
 
     // the browser's quick scan: valid, one preset named after the file
-    const auto info = lynx::sf::scanFontFile (path);
+    const auto info = yw::sf::scanFontFile (path);
     CHECK (info.valid && info.presets.size() == 1 && info.presets[0].name == "Test Piano");
-    CHECK (! lynx::sf::scanFontFile (sfzt::writeText (dir + "/empty.sfz", "<region> lokey=1")).valid);
+    CHECK (! yw::sf::scanFontFile (sfzt::writeText (dir + "/empty.sfz", "<region> lokey=1")).valid);
 
     sft::Rig rig (path);
     const auto up = sfzt::play (rig, 69, 0.5); // key 69 = the root: 440 Hz
@@ -394,10 +394,10 @@ TEST (issue22_sfz_release_trigger_choke_groups_and_loops)
     // off_by: the open hi-hat (group 1) is choked by the closed one (group 2)
     rig.inst->noteOn (42, 0.8f);
     rig.run (0.05);
-    CHECK (lynx::sf::activeVoices (*rig.inst) >= 1);
+    CHECK (yw::sf::activeVoices (*rig.inst) >= 1);
     rig.inst->noteOn (46, 0.8f);
     rig.run (0.1);
-    CHECK (lynx::sf::activeVoices (*rig.inst) == 1);
+    CHECK (yw::sf::activeVoices (*rig.inst) == 1);
     rig.inst->noteOff (42);
     rig.inst->noteOff (46);
     std::error_code ec;

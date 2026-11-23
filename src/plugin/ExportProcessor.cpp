@@ -8,7 +8,7 @@
 #include "core/EffectPresets.h"
 #include "core/Effects.h"
 #include "core/Instruments.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParams.h"
 #include "core/PluginLayout.h"
 #include "core/RackRenderer.h"
@@ -22,7 +22,7 @@
 #include "ui/ProEditors.h"
 #include "ui/Theme.h"
 
-namespace lynx::plugexport
+namespace yw::plugexport
 {
 namespace
 {
@@ -474,7 +474,7 @@ void ExportProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         const auto renderUpTo = [&] (int end) {
             if (end > done)
             {
-                renderer->process (state, false, quarters * lynx::ppq, end - done, buffer.getWritePointer (0, done), buffer.getWritePointer (1, done), &liveEvents);
+                renderer->process (state, false, quarters * yw::ppq, end - done, buffer.getWritePointer (0, done), buffer.getWritePointer (1, done), &liveEvents);
                 done = end;
             }
         };
@@ -540,7 +540,7 @@ void ExportProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
             renderer->setSideInput (nullptr, nullptr, -1);
         renderer->setSlotParamsOverride (&live, insertTrack, 0);
         renderer->setMetronomeInput (inputs.getReadPointer (0), inputs.getReadPointer (1), insertTrack);
-        renderer->process (state, playing, quarters * lynx::ppq, numSamples, buffer.getWritePointer (0), buffer.getWritePointer (1), &liveEvents);
+        renderer->process (state, playing, quarters * yw::ppq, numSamples, buffer.getWritePointer (0), buffer.getWritePointer (1), &liveEvents);
     }
     for (int c = 2; c < buffer.getNumChannels(); ++c)
         buffer.clear (c, 0, numSamples);
@@ -634,4 +634,4 @@ bool loadState (juce::AudioProcessor& processor, const void* data, int size)
     auto* p = dynamic_cast<ExportProcessor*> (&processor);
     return p != nullptr && p->loadState (data, size);
 }
-} // namespace lynx::plugexport
+} // namespace yw::plugexport

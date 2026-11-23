@@ -1,15 +1,15 @@
 // Round 190oo (design review 2, group "lanes"): the Clip-launch arrangement's automation lanes drawn as Live's envelope
-// (CS-19, core/PlaylistViewOptions.h › cliplanes::laneClipLists), folded when a project opens (CS O-3, LYNX extra:
-// cliplanes::tracksToFold) and Live's three-part scale control (O-5, LYNX extra: core/LiveScaleControl.h). Uses the
+// (CS-19, core/PlaylistViewOptions.h › cliplanes::laneClipLists), folded when a project opens (CS O-3, YW extra:
+// cliplanes::tracksToFold) and Live's three-part scale control (O-5, YW extra: core/LiveScaleControl.h). Uses the
 // song of tests/Playlist190jqTests.inc (Lead's volume clips on track 5, its pan clip on track 7, both lanes of track 1).
 
 #include "core/LiveScaleControl.h"
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/PlaylistViewOptions.h"
 
 TEST (lanes190oo_envelope_lane_clips_in_time_order)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = playlist190jq::songWithEnvelopes();
     // one more volume clip on track 5, at bar 1, added last: the lane's list is in time order, not in list order
     Clip extra = s.playlist[1];
@@ -42,8 +42,8 @@ TEST (lanes190oo_envelope_lane_clips_in_time_order)
 
 TEST (lanes190oo_lanes_folded_when_a_project_opens)
 {
-    using namespace lynx;
-    CHECK (! cliplanes::foldedOnOpen); // a LYNX extra: off by default (Live-exact drawing stays on)
+    using namespace yw;
+    CHECK (! cliplanes::foldedOnOpen); // a YW extra: off by default (Live-exact drawing stays on)
     auto s = playlist190jq::songWithEnvelopes();
     s.playlistTracks.resize (12);
     const auto p = cliplanes::project (s, 12, true);
@@ -57,7 +57,7 @@ TEST (lanes190oo_lanes_folded_when_a_project_opens)
     s.playlistTracks[1].lanesFolded = true;
     s.playlistTracks[3].lanesFolded = true;
     CHECK (cliplanes::tracksToFold (s, p, true).empty());
-    // listed in Settings › LYNX extras under the key the main window saves
+    // listed in Settings › YW extras under the key the main window saves
     bool listed = false;
     for (const auto& item : extras::items)
         if (item.id == "playlist.clipLanesFolded")
@@ -67,8 +67,8 @@ TEST (lanes190oo_lanes_folded_when_a_project_opens)
 
 TEST (lanes190oo_live_scale_control_parts)
 {
-    using namespace lynx;
-    CHECK (! livescale::shown); // a LYNX extra: off by default (the one key box stays)
+    using namespace yw;
+    CHECK (! livescale::shown); // a YW extra: off by default (the one key box stays)
     // the key box's 145 px: the 18 px switch, then root and mode as Live's 44 : 66, 2 px apart
     const auto p = livescale::split (145);
     CHECK (p.toggleX == 0 && p.toggleW == 18);

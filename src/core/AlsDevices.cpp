@@ -7,10 +7,10 @@
 #include "core/DynamicsSuite.h"
 #include "core/Effects.h"
 #include "core/FacetEq.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 namespace
 {
@@ -415,7 +415,7 @@ bool utilityIsExact (const LiveUtility& u) noexcept
     const auto db = dbOfGain (u.gain);
     const auto gainOk = u.mute || u.gain <= 0.0 || (db > -24.0 && db <= 24.0);
     // [MEASURED 190cw r13–r17, 190cz u00–u13]: width M + w·S, the mid/side balance, the balance law after the width /
-    // mono / mid-side stage and phase before channel mode are Live's; the matrix (balance included) must fit LYNX's ±2
+    // mono / mid-side stage and phase before channel mode are Live's; the matrix (balance included) must fit YW's ±2
     // coefficients
     const auto m = utilityMatrix (u);
     const auto fits = std::abs (m.ll) <= 2.0 && std::abs (m.rl) <= 2.0 && std::abs (m.lr) <= 2.0 && std::abs (m.rr) <= 2.0;
@@ -448,7 +448,7 @@ bool utilityToUtility (const Element& device, EffectSlot& slot, Notes& notes)
     const auto u = readUtility (device);
     slot = makeEffectSlot (EffectKind::utility);
     auto& p = slot.params;
-    // Gain: LYNX's ±24 dB, the bottom of the knob = mute
+    // Gain: YW's ±24 dB, the bottom of the knob = mute
     const auto db = dbOfGain (u.gain);
     if (u.mute || u.gain <= 0.0)
         p[0] = 0.0f;
@@ -458,7 +458,7 @@ bool utilityToUtility (const Element& device, EffectSlot& slot, Notes& notes)
         if (db > 24.0 || db <= -24.0)
             notes.approximated.push_back (text ("gain %.1f dB (Utility: -24 … +24 dB)", db));
     }
-    // the balance is in the matrix (Live's constant-power law); LYNX's own balance stays centred
+    // the balance is in the matrix (Live's constant-power law); YW's own balance stays centred
     p[1] = 0.5f;
     auto m = utilityMatrix (u);
     const auto fits = std::abs (m.ll) <= 2.0 && std::abs (m.rl) <= 2.0 && std::abs (m.lr) <= 2.0 && std::abs (m.rr) <= 2.0;
@@ -594,7 +594,7 @@ std::optional<Translated> effectFromLiveDevice (const Element& device, const Con
     const auto tag = device.name();
     Translated t;
     bool ok = false;
-    // (190cf) a Live parameter that drives a LYNX parameter by the law the translator used (automation, rack macros)
+    // (190cf) a Live parameter that drives a YW parameter by the law the translator used (automation, rack macros)
     const auto link = [&t] (const char* live, int param, std::function<float (double)> law) { t.links.push_back ({ live, param, std::move (law) }); };
     if (tag == "Eq8")
     {
@@ -670,7 +670,7 @@ std::optional<Translated> effectFromLiveDevice (const Element& device, const Con
         if (ok && ! device.boolean ("LegacyMode", false))
             link ("Gain", 0, [] (double gain) { return gain <= 0.0 ? 0.0f : std::max (1.0e-4f, linValue (dbOfGain (gain), -24.0, 24.0)); });
         // (190cx) no Balance link: Live's balance (constant power with a boost) sits in the Utility's matrix, which no
-        // single LYNX control moves — its automation / macros are listed as not carried instead of half-applied
+        // single YW control moves — its automation / macros are listed as not carried instead of half-applied
     }
     else if (tag == "Reverb")
     {
@@ -806,7 +806,7 @@ std::optional<Translated> effectFromLiveDevice (const Element& device, const Con
             t.approximate = true;
             ok = drumBussToRack (device, t);
         }
-        else // round 190fk: LYNX's own drum-bus engine
+        else // round 190fk: YW's own drum-bus engine
         {
             t.to = "Anvil Bus";
             t.approximate = true;
@@ -1018,7 +1018,7 @@ SimplerResult applySimpler (const Element& device, ChannelDef& channel, double b
         notes.dropped.push_back ("Spread");
     if (manual (device, "VolumeAndPan/PanoramaRnd", 0.0) != 0.0)
         notes.dropped.push_back ("random pan");
-    // (velocity > volume is LYNX's own fixed law: listed once per device)
+    // (velocity > volume is YW's own fixed law: listed once per device)
     notes.approximated.push_back ("velocity sensitivity (YW Studio's own velocity law)");
 
     // The part's region, as fractions of the file (a single sample only: zones play whole files)
@@ -1126,4 +1126,4 @@ SimplerResult applySimpler (const Element& device, ChannelDef& channel, double b
     }
     return result;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

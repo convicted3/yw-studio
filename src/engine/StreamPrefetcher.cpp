@@ -2,7 +2,7 @@
 
 #include "platform/PowerThrottling.h"
 
-namespace lynx
+namespace yw
 {
 StreamPrefetcher::StreamPrefetcher (const Transport& t)
     : juce::Thread ("YW Studio prefetch"),
@@ -73,4 +73,4 @@ void StreamPrefetcher::run()
         wait (100);
     }
 }
-} // namespace lynx
+} // namespace yw

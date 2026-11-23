@@ -15,7 +15,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -553,7 +553,7 @@ public:
             case SurfaceControl::Kind::knob:
             case SurfaceControl::Kind::slider:
             {
-                const auto range = e.mods.isCtrlDown() || e.mods.isShiftDown() ? 1000.0f : 200.0f; // (fine: Ctrl, as every LYNX knob)
+                const auto range = e.mods.isCtrlDown() || e.mods.isShiftDown() ? 1000.0f : 200.0f; // (fine: Ctrl, as every YW knob)
                 setValue (i, grab.x + (grabAt.y - e.position.y) / range, c.valueY);
                 ui::showValueTip (*this, r.toNearestInt(), juce::String (juce::roundToInt ((*controls)[(std::size_t) i].value * 100.0f)) + "%");
                 break;
@@ -1103,4 +1103,4 @@ void closeAll()
     windows().clear();
 }
 } // namespace Controller164Windows
-} // namespace lynx
+} // namespace yw

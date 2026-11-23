@@ -1,9 +1,9 @@
 #pragma once
 
-// Ableton Link (round 190gl): LYNX as a peer of a Link session — the tempo shared with every peer, beats and phase
+// Ableton Link (round 190gl): YW as a peer of a Link session — the tempo shared with every peer, beats and phase
 // aligned over a quantum (the clip grid's global launch quantisation), Play waiting for the session's phase, and the
 // optional Start Stop Sync. Ableton's Link library (GPL-2.0-or-later, used under the GPLv3; third_party/link) does the
-// networking; core/LinkSync.h holds LYNX's rules and is what the tests check.
+// networking; core/LinkSync.h holds YW's rules and is what the tests check.
 //
 // Threads: the message thread switches Link on / off and the options; the audio thread runs beginBlock() once per
 // device callback (Link's audio-thread API: no allocation, no locks); Link's own threads call back with the number of
@@ -17,7 +17,7 @@
 #include "core/LinkSync.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 class AbletonLink
 {
@@ -28,7 +28,7 @@ public:
     AbletonLink& operator= (const AbletonLink&) = delete;
 
     // --- message thread ---
-    // Joins or leaves the network session. On joining, a session of LYNX alone takes `projectBpm`; a running one keeps
+    // Joins or leaves the network session. On joining, a session of YW alone takes `projectBpm`; a running one keeps
     // its tempo (the first peer sets it).
     void setEnabled (bool on, double projectBpm);
     bool isEnabled() const noexcept { return enabled.load (std::memory_order_relaxed); }
@@ -40,7 +40,7 @@ public:
     // While the transport is stopped (or waits for the session) with another peer: how far the session is through the
     // quantum, counted to where Play would start (0..1, the reference DAW's progress bar); -1 = nothing to show.
     double startProgress() const noexcept { return progress.load (std::memory_order_relaxed); }
-    // A peer changed the tempo since LYNX last set it (the project takes it when Link is switched off).
+    // A peer changed the tempo since YW last set it (the project takes it when Link is switched off).
     bool tempoChangedByPeer() const noexcept { return peerTempo.load (std::memory_order_relaxed); }
     // A tempo the user set (sent at once, without waiting for the next block).
     void proposeTempo (double bpm);
@@ -64,7 +64,7 @@ public:
     Stats stats() const noexcept;
     void resetStats() noexcept;
 
-    // LYNX --linktest report.txt [seconds] ["peer"]: Link switched on with simulated audio callbacks (48 kHz, 256 frames,
+    // YW --linktest report.txt [seconds] ["peer"]: Link switched on with simulated audio callbacks (48 kHz, 256 frames,
     // real time) for `seconds` (default 20). With "peer", a second Link peer in this process starts at another tempo and
     // phase, so the two must converge; without it, a peer on the network (LinkHut) is expected. The report gives the
     // peers, the tempo and phase error over time, the start that waited for the phase and the audio-thread cost.
@@ -87,10 +87,10 @@ private:
     {
         bool active = false;      // Link was on in the last block
         std::uint32_t seenResets = 0;
-        bool running = false;     // LYNX's transport runs on the session
+        bool running = false;     // YW's transport runs on the session
         bool pending = false;     // Play waits for the session's phase
         double startBeat = 0.0;   // where the waiting start begins (beats)
-        double steady = 0.0;      // LYNX's running clock (beats; never wraps: loops and jumps don't break the phase)
+        double steady = 0.0;      // YW's running clock (beats; never wraps: loops and jumps don't break the phase)
         bool sessionPlaying = false;
         bool answeringPeer = false; // the UI was asked to press Play for a peer's start
         double sampleRate = 44100.0;
@@ -101,4 +101,4 @@ private:
     std::atomic<std::uint64_t> statBlocks { 0 };
     std::atomic<double> statSum { 0.0 }, statMax { 0.0 };
 };
-} // namespace lynx
+} // namespace yw

@@ -2,7 +2,7 @@
 // Each engine's impulse response is checked against an independent double-precision model written here from the laws
 // (design, 2× hold-and-keep path, the band pipelines' delays), plus the laws themselves, the channel modes, the silence
 // gate and extremes. The renders against FL Studio Mobile inside FL are in the round's notes
-// (/mnt/e/lynx-work/flm190dw/fx, 34 sets at the 16-bit floor).
+// (/mnt/e/yw-work/flm190dw/fx, 34 sets at the 16-bit floor).
 
 namespace eq190dw
 {
@@ -57,10 +57,10 @@ inline std::vector<double> cascade (std::vector<Bq> f, const std::vector<double>
 }
 
 // the left output of an engine for a unit impulse at sample 0 (both sides); `right` gets the right side
-inline std::vector<float> ir (lynx::EffectKind kind, const std::vector<float>& values, int n, double fs = 44100.0,
+inline std::vector<float> ir (yw::EffectKind kind, const std::vector<float>& values, int n, double fs = 44100.0,
                               std::vector<float>* right = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (fs);
     auto p = makeEffectSlot (kind).params;
@@ -115,7 +115,7 @@ inline std::vector<double> eqReference (const std::vector<float>& v, int n, doub
 
 TEST (pocketeq190dw_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (std::abs (pocket::eqHz (0.0f) - 32.0) < 1e-9);
     CHECK (std::abs (pocket::eqHz (1.0f) - std::pow (2.0, 14.25)) < 1e-6);
     CHECK (std::abs (pocket::eqHz (0.07f) - 50.0) < 1.0); // FLM's "Low Cut 50Hz" preset value
@@ -150,7 +150,7 @@ TEST (pocketeq190dw_laws)
 
 TEST (pocketeq190dw_equalizer_matches_its_model)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::vector<std::vector<float>> sets {
         { 0.5595f, 0.2065f, 0.1862f, 0.0f, 0.4403f, 0.3207f, 0.6021f, 0.51f, 0.5f, 1.0f, 0.5f, 0.51f, 0.6318f, 0.5696f, 0.208f, 1.0f, 0, 0, 0, 0 },
         { 0.0f, 0.006f, 0.3691f, 0.0f, 0.5f, 0.4f, 0.5f, 0.51f, 0.5f, 0.6f, 0.5f, 0.51f, 0.5337f, 0.6317f, 0.5f, 1.0f, 0, 0, 0, 0 },
@@ -175,7 +175,7 @@ TEST (pocketeq190dw_equalizer_matches_its_model)
 
 TEST (pocketeq190dw_graphic_eq_matches_its_model)
 {
-    using namespace lynx;
+    using namespace yw;
     static constexpr double centres[8] { 80, 160, 375, 750, 1500, 3000, 6000, 12000 };
     const std::vector<std::vector<float>> sets { { 0.0f, 0.0691f, 0.1406f, 0.3586f, 0.2175f, 0.1276f, 0.0862f, 0.0f },
                                                  { 0.249f, 0.3314f, 0.351f, 0.5f, 0.5f, 0.4255f, 0.6098f, 0.649f },
@@ -205,7 +205,7 @@ TEST (pocketeq190dw_graphic_eq_matches_its_model)
 
 TEST (pocketeq190dw_filter_matches_its_model)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::vector<std::vector<float>> sets { { 1.0f, 0.0f, 0.0f, 0.5f }, { 0.7f, 0.0f, 0.0f, 0.5f }, { 0.5788f, 0.5037f, 1.0f, 0.0f },
                                                  { 0.6075f, 1.0f, 0.0f, 0.5f }, { 0.5f, 0.5f, 0.5f, 0.5f }, { 0.6f, 0.3f, 0.0f, 1.0f },
                                                  { 0.3f, 0.8f, 0.5f, 1.0f } };
@@ -248,7 +248,7 @@ TEST (pocketeq190dw_filter_matches_its_model)
 
 TEST (pocketeq190dw_channel_modes_and_silence)
 {
-    using namespace lynx;
+    using namespace yw;
     // band 1 boosted on the left only: the right side stays flat (one sample late)
     std::vector<float> v (20, 0.5f);
     for (int b = 0; b < 4; ++b)
@@ -301,7 +301,7 @@ TEST (pocketeq190dw_channel_modes_and_silence)
 
 TEST (pocketeq190dw_extremes_stay_finite)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (190);
     std::uniform_real_distribution<float> u (-1.0f, 1.0f);
     for (double fs : { 44100.0, 48000.0, 96000.0 })

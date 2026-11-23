@@ -1,7 +1,7 @@
 // The alternative plugin-editor styles of the kit (REA round 126, "Plugin style" in Settings > General):
 //   Neon      — near-black with saturated light of the family colour: full-panel washes, LED segment rings and neon
 //               rings on knobs, neon-outlined glass, coloured section headers, a big glowing title;
-//   Hardware  — premium studio gear in LYNX's own design: a brushed, anodized faceplate tinted by the family, screws,
+//   Hardware  — premium studio gear in YW's own design: a brushed, anodized faceplate tinted by the family, screws,
 //               engraved labels, big machined aluminium knobs with a printed scale and a lamp ring, backlit displays;
 //   Vivid     — bright, flat and bold: a saturated colour block per family, dark cards, oversized friendly knobs,
 //               chunky pills, heavy type and a springy opening.

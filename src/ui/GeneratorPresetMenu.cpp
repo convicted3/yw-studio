@@ -3,7 +3,7 @@
 #include "ui/I18n.h"
 #include "ui/PluginPresetMenu.h"
 
-namespace lynx::genpresetui
+namespace yw::genpresetui
 {
 namespace
 {
@@ -33,12 +33,12 @@ juce::File folderFor (InstrumentKind kind)
 
 bool isPresetFile (const juce::File& file)
 {
-    return file.hasFileExtension ("lynxpreset") && file.existsAsFile() && genpresets::looksLikePreset (startOf (file));
+    return file.hasFileExtension ("ywpreset") && file.existsAsFile() && genpresets::looksLikePreset (startOf (file));
 }
 
 std::optional<genpresets::Preset> read (const juce::File& file)
 {
-    if (! file.hasFileExtension ("lynxpreset") || file.getSize() > 256 * 1024 * 1024)
+    if (! file.hasFileExtension ("ywpreset") || file.getSize() > 256 * 1024 * 1024)
         return std::nullopt;
     auto preset = genpresets::fromText (file.loadFileAsString().toStdString());
     if (preset && preset->name.empty())
@@ -49,7 +49,7 @@ std::optional<genpresets::Preset> read (const juce::File& file)
 juce::Array<juce::File> userPresets (InstrumentKind kind)
 {
     juce::Array<juce::File> out;
-    for (const auto& f : folderFor (kind).findChildFiles (juce::File::findFiles, false, "*.lynxpreset"))
+    for (const auto& f : folderFor (kind).findChildFiles (juce::File::findFiles, false, "*.ywpreset"))
         if (isPresetFile (f))
             out.add (f);
     std::sort (out.begin(), out.end(), [] (const juce::File& a, const juce::File& b) {
@@ -145,4 +145,4 @@ void reveal (const juce::File& folder)
     folder.createDirectory();
     folder.revealToUser();
 }
-} // namespace lynx::genpresetui
+} // namespace yw::genpresetui

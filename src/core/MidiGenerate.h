@@ -1,14 +1,14 @@
 #pragma once
 
-// Ableton Live 12's MIDI Tools generators (round 190fm, LIVE-FACTS §4) as LYNX additions beside FL's Piano roll tools:
+// Ableton Live 12's MIDI Tools generators (round 190fm, LIVE-FACTS §4) as YW additions beside FL's Piano roll tools:
 // Rhythm, Seed, Shape, Stacks and a one-voice Euclidean. Like Live's Generate, a generator writes new notes into a time
 // range (the editor's time selection, else the whole pattern) and they replace the notes of that channel starting in
 // the range. Every random draw comes from `Context::seed`, so a preview and its Generate give the same notes; the
 // panel draws a new seed for each Generate press (Live: every press gives a new result).
 //
-// The settings and their defaults are core/MidiGenerateOptions.h (Live's [DATA]); what each control does is LYNX's
+// The settings and their defaults are core/MidiGenerateOptions.h (Live's [DATA]); what each control does is YW's
 // reading where only the names and defaults are known ([INFERRED] in the comments; "needs live check" in
-// docs/analise/REA_rodada190fm-mt.md). Clean-room: LYNX's own rhythm order, shape formulas and chord bank; a user's
+// docs/analise/REA_rodada190fm-mt.md). Clean-room: YW's own rhythm order, shape formulas and chord bank; a user's
 // own .stacks chord bank can be read at run time (readChordBank). No JUCE.
 
 #include <cstdint>
@@ -19,7 +19,7 @@
 #include "core/MidiGenerateOptions.h"
 #include "core/Song.h"
 
-namespace lynx::midigen
+namespace yw::midigen
 {
 using Notes = std::vector<Note>;
 
@@ -45,7 +45,7 @@ struct Context
 // --- Rhythm ------------------------------------------------------------------------------------------------------
 // How many rhythms Pattern chooses from: C(steps, density) (saturates at INT64_MAX).
 std::int64_t rhythmCount (int steps, int density) noexcept;
-// The hit steps (ascending, before Shift) of rhythm `pattern` (taken modulo rhythmCount). LYNX's own order [INFERRED:
+// The hit steps (ascending, before Shift) of rhythm `pattern` (taken modulo rhythmCount). YW's own order [INFERRED:
 // Live's table is unknown]: rank the steps by priority — first the `density` hits of the Euclidean rhythm (euclideanHit,
 // in time order), then the other steps in time order — and take the pattern-th `density`-subset of that ranking in
 // lexicographic order. Pattern 0 is the Euclidean rhythm; neighbouring patterns differ in few steps.
@@ -86,9 +86,9 @@ struct ChordBank
     // The rules for a scale of `scaleSize` notes: that size's set, else the nearest smaller one, else the first.
     const std::vector<std::vector<int>>* rulesFor (int scaleSize) const noexcept;
 };
-// LYNX's own bank (sizes 5, 6, 7, 16 rules each), written from basic chord theory: triads, sevenths, sus, power,
+// YW's own bank (sizes 5, 6, 7, 16 rules each), written from basic chord theory: triads, sevenths, sus, power,
 // quartal, added-note and open voicings (MidiGenerate.cpp lists them).
-const ChordBank& lynxChordBank();
+const ChordBank& ywChordBank();
 // Reads a chord bank in Live's .stacks layout (JSON: "chord_rulesets": [{ "scale_cardinality": n, "rules": [[...], ...]
 // }, ...]); nullopt (with `error`) when the text has no usable rule set. For a file the user owns, read at run time.
 std::optional<ChordBank> readChordBank (const std::string& json, std::string& error);
@@ -103,7 +103,7 @@ std::string stackChordName (const StackChord& chord, const ScaleRef& scale, cons
 // Offset moves a chord's start by 1/16 steps keeping its end (never before the range or after its end). Velocity 100.
 Notes stacks (const StacksOptions& options, const Context& context, const ChordBank& bank);
 
-// --- Euclidean (LYNX, one voice) ---------------------------------------------------------------------------------
+// --- Euclidean (YW, one voice) ---------------------------------------------------------------------------------
 // euclideanHit (steps, density, rotation) on every step of `division`, repeated over the range.
 Notes euclid (const EuclidOptions& options, const Context& context);
 
@@ -114,4 +114,4 @@ Notes generate (const Settings& settings, const Context& context, const ChordBan
 std::vector<int> notesInRange (const Pattern& pattern, int channel, std::int64_t from, std::int64_t to);
 // Replaces those notes by `generated` (miditools::replaceNotes); returns the new notes' indices after sorting.
 std::vector<int> writeGenerated (Pattern& pattern, const Context& context, const Notes& generated);
-} // namespace lynx::midigen
+} // namespace yw::midigen

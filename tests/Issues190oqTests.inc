@@ -9,9 +9,9 @@
 namespace issues190oq
 {
 // two audio clip channels routed to insert 2, one to insert 3, one with its own ARA link (also routed to 2), a synth on 2
-lynx::Song araInsertSong()
+yw::Song araInsertSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mixer = Song::defaultMixer();
@@ -57,7 +57,7 @@ lynx::Song araInsertSong()
 
 TEST (issues190oq_243_ara_insert_links_the_routed_audio_clip_channels)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = issues190oq::araInsertSong();
     CHECK (ara::araInsertSlot (s, 2) == 1 && ara::araInsertSlot (s, 3) == -1 && ara::araInsertSlot (s, 0) == -1);
     CHECK (ara::anyAraInsert (s));
@@ -99,7 +99,7 @@ TEST (issues190oq_243_ara_insert_links_the_routed_audio_clip_channels)
 
 TEST (issues190oq_243_time_map_follows_the_tempo)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -157,7 +157,7 @@ TEST (issues190oq_243_time_map_follows_the_tempo)
 
 TEST (issues190oq_243_bar_signatures_follow_the_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.beatsPerBar = 4;
     s.beatUnit = 4;
@@ -193,7 +193,7 @@ TEST (issues190oq_243_bar_signatures_follow_the_markers)
 
 TEST (issues190oq_252_start_page_logic)
 {
-    using namespace lynx::startpage;
+    using namespace yw::startpage;
     // on by default (FL's Welcome window shows at every start; owner decision, rollup 0.1.31 step 6); only on a normal
     // start without a file, never over the first run's card
     CHECK (enabled());
@@ -201,9 +201,9 @@ TEST (issues190oq_252_start_page_logic)
     CHECK (! showAtStart (false, false, false, false) && ! showAtStart (true, true, false, false) && ! showAtStart (true, false, true, false)
            && ! showAtStart (true, false, false, true));
     std::vector<Recent> list {
-        { "/p/Beats/Night Drive.lynx", "Night Drive", "/p/Beats", 1000, true, 0 },
+        { "/p/Beats/Night Drive.yw", "Night Drive", "/p/Beats", 1000, true, 0 },
         { "/p/Vocals/Demo Vocal.flp", "Demo Vocal", "/p/Vocals", 900, false, 0 },
-        { "/p/Beats/Trap Idea 2.lynx", "Trap Idea 2", "/p/Beats", 800, true, 0 },
+        { "/p/Beats/Trap Idea 2.yw", "Trap Idea 2", "/p/Beats", 800, true, 0 },
     };
     CHECK ((filter (list, "") == std::vector<int> { 0, 1, 2 }));
     CHECK ((filter (list, "  ") == std::vector<int> { 0, 1, 2 }));
@@ -231,7 +231,7 @@ TEST (issues190oq_252_start_page_logic)
 
 TEST (issues190oq_246_rack_groups_as_fl_2026_names_them)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL 2026 calls its built-in groups "Audio" / "Automation"; its loader renames an older project's "Audio clips" /
     // "Automation clips" (REA_rodada190oq §3)
     Song s;
@@ -250,7 +250,7 @@ TEST (issues190oq_246_rack_groups_as_fl_2026_names_them)
 // had no target on import, so its clips played nothing; plugin parameters and mixer volume / pan were mapped.
 TEST (issues190oq_253_flp_send_automation_targets_the_route)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::map<int, int> channels;
     const auto mixerId = [] (int track, int param) { return flp::ControlId { 0x70000000u + ((std::uint32_t) track << 22) + (std::uint32_t) param }; };
     auto t = automationTargetFor (mixerId (22, flp::ControlId::mixerSendBase + 2), channels, 30);

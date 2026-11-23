@@ -1,8 +1,8 @@
 #pragma once
 
-// FL Studio's small stereo / dynamics mixer effects as exact LYNX engines, rebuilt in docs/analise/REA_rodada54.md
+// FL Studio's small stereo / dynamics mixer effects as exact YW engines, rebuilt in docs/analise/REA_rodada54.md
 // (clean-room: layouts, formulas and behaviour in our own words; no Image-Line code or data in this repository).
-// Every effect's parameters are FL's controls over their ranges, value = (raw − min) / (max − min), so the LYNX UI
+// Every effect's parameters are FL's controls over their ranges, value = (raw − min) / (max − min), so the YW UI
 // can edit them and FL automation maps one to one; the saved state's own values are copied in at import.
 //
 // Fruity Stereo Shaper (EffectKind::stereoShaper):
@@ -10,8 +10,8 @@
 //   [4] delay (−4096…4096; > 0 delays the right channel, < 0 the left)
 //   [5] phase / dephasing (−4096…4096; > 0 all-passes the right channel, < 0 the left)
 //   [6] effects order (0 = delay/phase before the matrix, 1 = after)
-//   [7] LYNX only: output the "In/Out difference" (input − output) instead of the output; FL sends that signal to
-//       its parameter-6 destination, which LYNX uses for Patcher branches.
+//   [7] YW only: output the "In/Out difference" (input − output) instead of the output; FL sends that signal to
+//       its parameter-6 destination, which YW uses for Patcher branches.
 //
 // Fruity Stereo Enhancer (EffectKind::stereoEnhancer):
 //   [0] pan (−128…128), [1] volume (0…320; 256 = 0 dB), [2] stereo separation (−96…96), [3] phase offset / delay
@@ -34,7 +34,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::stereofx
+namespace yw::stereofx
 {
 // ------------------------------------------------------------------------------------------- Fruity Stereo Shaper
 constexpr int stereoShaperParams = 8;
@@ -88,4 +88,4 @@ void spreaderToParams (const SpreaderState& s, float* params) noexcept;
 SpreaderState spreaderFromParams (const float* params) noexcept;
 std::string spreaderParamText (int param, float value01);
 std::unique_ptr<Effect> makeSpreader();
-} // namespace lynx::stereofx
+} // namespace yw::stereofx

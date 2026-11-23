@@ -1,11 +1,11 @@
 #pragma once
 
-// First-run onboarding (round 190np; design: /mnt/e/lynx-work/onboard190nj/ONBOARDING-DESIGN.md, mockups M1–M5).
-// LYNX's own: no other DAW asks at first run, so the card, its words and its icons are LYNX's (clean-room).
+// First-run onboarding (round 190np; design: /mnt/e/yw-work/onboard190nj/ONBOARDING-DESIGN.md, mockups M1–M5).
+// YW's own: no other DAW asks at first run, so the card, its words and its icons are YW's (clean-room).
 //
 //  - The welcome card asks one question, "Where are you coming from?", with five choices. One click applies the
 //    layout and the starter of the choice; Skip, × or Esc keep the Pattern layout (the default, unchanged). It shows
-//    on a fresh profile only: a profile that already has LYNX settings (an upgrade) keeps what it had (the old Setup
+//    on a fresh profile only: a profile that already has YW settings (an upgrade) keeps what it had (the old Setup
 //    wizard when it was never finished, else nothing).
 //  - "Next: 3 things to try": three items per choice that tick themselves from the song (and a few view facts the
 //    window passes in `Context`), never from timers or counted clicks.
@@ -30,7 +30,7 @@
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::onboarding
+namespace yw::onboarding
 {
 // --- the five choices ---------------------------------------------------------------------------------------------------
 enum class Choice : int { none = -1, mobile = 0, fl, live, timeline, newcomer };
@@ -86,7 +86,7 @@ inline const char* choiceText (Choice c) noexcept
     }
 }
 
-// The layout a choice opens; no choice (Skip, ×, Esc) keeps the Pattern layout, LYNX's default
+// The layout a choice opens; no choice (Skip, ×, Esc) keeps the Pattern layout, YW's default
 inline layoutstyle::Style layoutFor (Choice c) noexcept
 {
     switch (c)
@@ -119,7 +119,7 @@ inline bool showsMixer (Choice c) noexcept { return c == Choice::timeline; } // 
 enum class StartAction { none, welcomeCard, setupWizard };
 
 // `setupDone`: setup-done.txt exists (the old wizard or this card was answered once). `hadProfile`: the settings folder
-// already held LYNX's UI settings before this start (an upgrade, or a user who never finished the old wizard).
+// already held YW's UI settings before this start (an upgrade, or a user who never finished the old wizard).
 // `welcomePending`: the card was shown and not answered yet (a restart for another language, the app closed).
 inline StartAction startAction (bool setupDone, bool hadProfile, bool welcomePending) noexcept
 {
@@ -465,4 +465,4 @@ public:
 private:
     bool shownThisSession = false;
 };
-} // namespace lynx::onboarding
+} // namespace yw::onboarding

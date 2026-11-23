@@ -1,9 +1,9 @@
 #pragma once
 
-// The audio editor's tool windows (round 165l): LYNX's versions of FL Edison's tool forms (Amp, Equalize, Match
+// The audio editor's tool windows (round 165l): YW's versions of FL Edison's tool forms (Amp, Equalize, Match
 // spectrum, Blur, Convolution reverb, Clean up, Vocal denoise, Claw machine, Drum(loop) stretch, Loop tuner and the
 // point-envelope tools Scale levels / Decimate / Filter / Smooth up / Create sequence). Each window lays its controls
-// out in sections like FL's form (docs/analise/REA_rodada165l.md), in LYNX's look; Reset / Preview / Accept /
+// out in sections like FL's form (docs/analise/REA_rodada165l.md), in YW's look; Reset / Preview / Accept /
 // Cancel; the audio tools run on a worker thread with a progress bar and Cancel, Accept makes one undo step. The DSP
 // is core/AudioEditTools.
 
@@ -13,7 +13,7 @@
 
 #include "core/AudioEditTools.h"
 
-namespace lynx::audiotools
+namespace yw::audiotools
 {
 // What a tool window needs from the editor that opened it.
 class Host
@@ -112,4 +112,4 @@ private:
     juce::Point<float> hover;
     juce::String readout;
 };
-} // namespace lynx::audiotools
+} // namespace yw::audiotools

@@ -29,7 +29,7 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx
+namespace yw
 {
 namespace kepler_exo
 {
@@ -411,7 +411,7 @@ struct EqT
 using Eq = EqT<>;
 
 // ---------------------------------------------------------------------------------------------- verification notes
-// Harnesses (Windows, our own code; the DLL loaded unmodified and its functions called at their RVAs; LYNX side the
+// Harnesses (Windows, our own code; the DLL loaded unmodified and its functions called at their RVAs; YW side the
 // same steps on this header, built with -ffp-contract=off), every float compared bit for bit:
 //  * band setter FUN_180006950 on 60000 random records (types 0/1/2, 20..22000 Hz, Q 0.28..3.64, -16..+16 dB incl. 0 dB,
 //    2/fs for 44100 and 48000): round-to-nearest 0 mismatches; MXCSR | 0xE040 (render mode) 159 of 300000 floats differ
@@ -432,4 +432,4 @@ using Eq = EqT<>;
 // pow2; sin / cos / cosh / exp / log would need the same treatment).
 
 } // namespace kepler_exo
-} // namespace lynx
+} // namespace yw

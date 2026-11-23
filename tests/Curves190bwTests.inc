@@ -1,13 +1,13 @@
 // Round 190bw: FL's per-point curve modes in automation clips (13 modes: Single curve, Double curve, Hold, Stairs,
 // Smooth stairs, Pulse, Wave, Single curve 2, Double curve 2, Half sine, Smooth, Single curve 3, Double curve 3).
 // The law: FL's envelope evaluator [DECOMP FLEngine 0xb9def0; the same shared library as the WaveShaper map,
-// REA_rodada51 §2.4]. FL keeps a segment's mode and tension on the point where it ends; LYNX on the point where it
+// REA_rodada51 §2.4]. FL keeps a segment's mode and tension on the point where it ends; YW on the point where it
 // starts, the tension with the opposite sign.
 #include "core/FlpExport.h"
 #include "flp/FlpWrite.h"
 namespace curves190bw
 {
-using namespace lynx;
+using namespace yw;
 
 // FL's Round (to the nearest, ties to even)
 double roundFl (double v) { return std::nearbyint (v); }
@@ -185,7 +185,7 @@ TEST (curves190bw_matches_fls_waveshaper_engine_point_for_point)
         for (std::size_t i = 0; i < map.size(); ++i)
         {
             ws.push_back ({ i == 0 ? 0.0f : map[i].x - map[i - 1].x, map[i].y, map[i].t, (std::uint8_t) map[i].mode });
-            if (i > 0) // FL's mode and tension of point i: LYNX's point i − 1, the tension negated
+            if (i > 0) // FL's mode and tension of point i: YW's point i − 1, the tension negated
             {
                 pts.back().mode = (std::uint8_t) map[i].mode;
                 pts.back().tension = -map[i].t;
@@ -212,7 +212,7 @@ TEST (curves190bw_matches_fls_waveshaper_engine_point_for_point)
 TEST (curves190bw_older_projects_keep_their_bend)
 {
     using namespace curves190bw;
-    // a bent segment of a project saved before the curve modes: LYNX's own power law, to the last bit
+    // a bent segment of a project saved before the curve modes: YW's own power law, to the last bit
     std::vector<AutomationPoint> old { { 0, 0.1f, 0.6f, AutomationPoint::legacyCurve }, { 960, 0.9f, -0.35f, AutomationPoint::legacyCurve }, { 1920, 0.3f, 0.0f } };
     for (int tick = 1; tick < 1920; tick += 37)
     {
@@ -434,8 +434,8 @@ TEST (curves190bw_an_automation_clip_renders_every_mode)
 // starts stay where starts were whatever the lengths are.
 TEST (curves190bw_flip_preserves_the_start_times)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     Pattern p;
     const auto note = [] (std::int64_t start, int key, std::int64_t length) { Note n; n.start = start; n.key = key; n.length = length; return n; };
     p.notes = { note (0, 60, 96), note (96, 64, 24), note (240, 67, 48) };
@@ -465,8 +465,8 @@ TEST (curves190bw_flip_preserves_the_start_times)
 // then the transposition folded by octaves onto the keyboard.
 TEST (curves190bw_limit_follows_fls_limiter)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     const auto note = [] (int key) { Note n; n.key = key; n.length = 24; return n; };
     const auto run = [&] (std::vector<int> keys, const LimitOptions& o) {
         Pattern p;
@@ -533,8 +533,8 @@ TEST (curves190bw_limit_follows_fls_limiter)
 // are the law worked out separately in double precision (FL keeps the bend's parameters in single precision).
 TEST (curves190bw_level_scaling_follows_fls_law)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     struct Case { double x, center, multiply, offset, tension, expected; };
     const Case cases[] = {
         { 0.25, 0.0, 1.0, 0.0, 0.0, 0.25 },                 // FL's defaults change nothing
@@ -552,7 +552,7 @@ TEST (curves190bw_level_scaling_follows_fls_law)
     for (const auto& c : cases)
         CHECK (std::abs (flLevelScale (c.x, c.center, c.multiply, c.offset, c.tension) - c.expected) < 2e-6);
 
-    // on the notes: velocity with tension, the multiplier ramping through time (LYNX's extra)
+    // on the notes: velocity with tension, the multiplier ramping through time (YW's extra)
     Pattern p;
     for (int i = 0; i < 3; ++i)
     {
@@ -586,8 +586,8 @@ TEST (curves190bw_level_scaling_follows_fls_law)
 // release draw comes last, so a seed gives the older amounts the values it always gave.
 TEST (curves190bw_randomise_reaches_mod_and_release)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     Pattern p;
     for (int i = 0; i < 8; ++i)
     {
@@ -627,8 +627,8 @@ TEST (curves190bw_randomise_reaches_mod_and_release)
 // (none), 66 chords in six groups, 22 scales — and the allowed keys are marked FL's way (octaves −1…10, steps added).
 TEST (curves190ct_limit_list_is_fls_chords_and_scales)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     const auto& list = limitRestrictions();
     CHECK (list.size() == 89);
     int chords = 0, scaleCount = 0, groups = 0;
@@ -699,8 +699,8 @@ TEST (curves190ct_limit_list_is_fls_chords_and_scales)
 // go up (pan to the right, pitch up) and timing only later; on, they spread both ways, the same draws as before.
 TEST (curves190ct_randomise_bipolar_off_moves_every_level_up)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     Pattern p;
     for (int i = 0; i < 32; ++i)
     {

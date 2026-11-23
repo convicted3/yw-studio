@@ -1,4 +1,4 @@
-// LYNX's plugins as CLAP (round 180b): one module holds every entry of plugin/ExportCatalog.h. JUCE 8 has no CLAP client,
+// YW's plugins as CLAP (round 180b): one module holds every entry of plugin/ExportCatalog.h. JUCE 8 has no CLAP client,
 // so this is the small bridge from the CLAP ABI (third_party/clap, MIT) to a juce::AudioProcessor. 32-bit float audio.
 
 #include <atomic>
@@ -18,7 +18,7 @@
 namespace juce::detail { bool dispatchNextMessageOnSystemQueue (bool returnIfNoPendingMessages); } // juce_Messaging_linux.cpp
 #endif
 
-namespace lynx::plugexport
+namespace yw::plugexport
 {
 namespace
 {
@@ -510,7 +510,7 @@ const char* const* featuresOf (const Entry& e)
             case EffectKind::spiralEcho: list = make ({ CLAP_PLUGIN_FEATURE_DELAY }); break;
             case EffectKind::latticeMod: list = make ({ CLAP_PLUGIN_FEATURE_DELAY, CLAP_PLUGIN_FEATURE_CHORUS }); break;
             case EffectKind::orbit: list = make ({ CLAP_PLUGIN_FEATURE_CHORUS, CLAP_PLUGIN_FEATURE_FLANGER }); break;
-            case EffectKind::lynxTune: list = make ({ CLAP_PLUGIN_FEATURE_PITCH_CORRECTION }); break;
+            case EffectKind::ywTune: list = make ({ CLAP_PLUGIN_FEATURE_PITCH_CORRECTION }); break;
             case EffectKind::voiceShift: list = make ({ CLAP_PLUGIN_FEATURE_PITCH_SHIFTER }); break;
             case EffectKind::geminiDoubler: list = make ({ CLAP_PLUGIN_FEATURE_CHORUS }); break; // (a doubler: no own feature)
             case EffectKind::quellDenoiser: list = make ({ CLAP_PLUGIN_FEATURE_RESTORATION }); break;
@@ -542,7 +542,7 @@ const clap_plugin_descriptor_t* descriptorOf (std::size_t index)
             d.url = "https://yolo.su";
             d.manual_url = "";
             d.support_url = "";
-            d.version = LYNX_EXPORT_VERSION;
+            d.version = YW_EXPORT_VERSION;
             d.description = "YW Studio plugin";
             d.features = featuresOf (e);
             list.push_back (d);
@@ -567,13 +567,13 @@ const clap_plugin_factory_t factory {
     }
 };
 } // namespace
-} // namespace lynx::plugexport
+} // namespace yw::plugexport
 
 extern "C" CLAP_EXPORT const clap_plugin_entry_t clap_entry {
     CLAP_VERSION_INIT,
     [] (const char*) { return true; },
     [] {},
     [] (const char* id) -> const void* {
-        return std::strcmp (id, CLAP_PLUGIN_FACTORY_ID) == 0 ? &lynx::plugexport::factory : nullptr;
+        return std::strcmp (id, CLAP_PLUGIN_FACTORY_ID) == 0 ? &yw::plugexport::factory : nullptr;
     }
 };

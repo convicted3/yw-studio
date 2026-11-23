@@ -3,7 +3,7 @@
 
 TEST (typing168t_action_has_fl_name_and_ctrl_t)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     const auto* a = findAction ("view.typingPiano");
     CHECK (a != nullptr);
     if (a == nullptr)
@@ -22,7 +22,7 @@ TEST (typing168t_action_has_fl_name_and_ctrl_t)
 // "Auto" time marker and the piano stays on; while it is on, plain letters are the piano's (K did nothing).
 TEST (typing168t2_fl_octave_root_and_ctrl_t_in_playlist)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     CHECK (typingPianoNote ('Z') == 48 && typingPianoNote ('M') == 59);
     CHECK (typingPianoNote ('Q') == 60 && typingPianoNote ('E') == 64 && typingPianoNote ('R') == 65 && typingPianoNote ('P') == 76);
     CHECK (typingPianoNote ('Z', 5) == 60 && typingPianoNote ('Z', 2) == 24 && typingPianoNote ('Z', 6) == 72);
@@ -48,7 +48,7 @@ TEST (typing168t2_fl_octave_root_and_ctrl_t_in_playlist)
 // System/Config/Typing to piano/*.scr. Note names as FL's (C5 = 60).
 TEST (typing_fl_layouts_from_scr_files)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     namespace tp = typingpiano;
     CHECK (tp::layoutCount() == 31); // FL's 31 files (round 169f: Performance mode too)
     CHECK (std::string (tp::layoutName (0)) == "Layout FPC (C4)" && std::string (tp::layoutName (tp::pianoLayout())) == "Layout Piano");
@@ -82,7 +82,7 @@ TEST (typing_fl_layouts_from_scr_files)
 // LOCK = -1; FUN_011828c0 plays table + root + 12 x octave offset for every layout and takes every key but FREE).
 TEST (typing169f_fl_layout_piano_free_lock_and_performance)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     namespace tp = typingpiano;
     // FL's menu order: by name, so "Major" before "Major + Chords"; Performance mode between Janko and Piano
     CHECK (std::string (tp::layoutName (2)) == "Layout Performance mode" && tp::performanceLayout() == 2 && tp::pianoLayout() == 3);
@@ -90,7 +90,7 @@ TEST (typing169f_fl_layout_piano_free_lock_and_performance)
     for (int l = 1; l < tp::layoutCount(); ++l)
         CHECK (std::string (tp::layoutName (l - 1)) < tp::layoutName (l));
 
-    // FL's Layout Piano: LYNX's two rows plus L ; , . / [ ] = ; 1 4 8 - F K ' are LOCK; A ` \ are FREE
+    // FL's Layout Piano: YW's two rows plus L ; , . / [ ] = ; 1 4 8 - F K ' are LOCK; A ` \ are FREE
     const auto piano = tp::pianoLayout();
     const std::pair<int, int> extra[] = { { 'L', 61 }, { ';', 63 }, { ',', 60 }, { '.', 62 }, { '/', 64 }, { '[', 77 }, { ']', 79 }, { '=', 78 } };
     for (auto [k, n] : extra)
@@ -117,10 +117,10 @@ TEST (typing169f_fl_layout_piano_free_lock_and_performance)
     CHECK (typingPianoNotes ('1', 4, 0, perfLayout) == std::vector<int> { 0 } && typingPianoNotes ('6', 4, 0, perfLayout) == std::vector<int> { 48 });
     CHECK (typingPianoNotes ('Q', 4, 0, perfLayout) == std::vector<int> { 12 } && typingPianoNotes ('/', 4, 0, perfLayout) == std::vector<int> { 88 });
     CHECK (typingPianoKey ('-', 4, 0, perfLayout).taken && typingPianoKey ('-', 4, 0, perfLayout).notes.empty());
-    lynx::perf::MidiMapping mapping;
-    lynx::perf::Command c;
+    yw::perf::MidiMapping mapping;
+    yw::perf::Command c;
     CHECK (mapping.note (typingPianoNotes ('Y', 4, 0, perfLayout)[0], true, c) && c.track == 5 && c.column == 0
-           && c.type == lynx::perf::Command::Type::press);
+           && c.type == yw::perf::Command::Type::press);
 
     // every layout has one token per key (the last key parses, a key past the end of a short string never reads past it)
     for (int l = 0; l < tp::layoutCount(); ++l)

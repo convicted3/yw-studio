@@ -22,7 +22,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -608,7 +608,7 @@ private:
         updateTitle();
     }
 
-    // FL names the Tempo lane in its title ("Events - Tempo"); LYNX's other lanes keep the pattern's name
+    // FL names the Tempo lane in its title ("Events - Tempo"); YW's other lanes keep the pattern's name
     void updateTitle()
     {
         const auto name = target.kind == AutomationTargetKind::tempo ? describeAutomationTarget (engine, target)
@@ -729,8 +729,8 @@ private:
 
     void openScore()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Open automation"), juce::File(), "*.fsc;*.mid;*.midi");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        chooser = yw::ui::makeFileChooser (tr ("Open automation"), juce::File(), "*.fsc;*.mid;*.midi");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                  [safe = juce::Component::SafePointer<EventEditor> (this)] (const juce::FileChooser& fc) {
                                      if (safe != nullptr && fc.getResult().existsAsFile())
                                          safe->loadScore (fc.getResult());
@@ -769,9 +769,9 @@ private:
     {
         // (FL's starts in the user's Presets\\Scores\\Automation; seen round 178a)
         const auto automationScores = findFlStudio().userData.getChildFile ("Presets").getChildFile ("Scores").getChildFile ("Automation");
-        chooser = lynx::ui::makeFileChooser (tr ("Import MIDI file..."), automationScores.isDirectory() ? automationScores : juce::File(),
+        chooser = yw::ui::makeFileChooser (tr ("Import MIDI file..."), automationScores.isDirectory() ? automationScores : juce::File(),
                                              "*.mid;*.midi");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                  [safe = juce::Component::SafePointer<EventEditor> (this)] (const juce::FileChooser& fc) {
                                      if (safe == nullptr || ! fc.getResult().existsAsFile())
                                          return;
@@ -825,11 +825,11 @@ private:
     void saveScore()
     {
         const auto name = describeAutomationTarget (engine, target);
-        chooser = lynx::ui::makeFileChooser (tr ("Save automation as"),
+        chooser = yw::ui::makeFileChooser (tr ("Save automation as"),
                                              juce::File::getSpecialLocation (juce::File::userMusicDirectory)
                                                  .getChildFile (juce::File::createLegalFileName (name) + ".fsc"),
                                              "*.fsc");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                                  [safe = juce::Component::SafePointer<EventEditor> (this)] (const juce::FileChooser& fc) {
                                      auto file = fc.getResult();
                                      if (safe == nullptr || file == juce::File())
@@ -1018,7 +1018,7 @@ private:
                 const auto p = engine.songPlayheadTicks();
                 for (const auto& c : song.playlist)
                     if (c.kind == ClipKind::pattern && c.pattern == song.currentPattern && p >= (double) c.start && p < (double) c.end())
-                        tick = patternTickInClip (c, p, patternLength()); // a stretched clip loops its pattern (LYNX extra, issue #25)
+                        tick = patternTickInClip (c, p, patternLength()); // a stretched clip loops its pattern (YW extra, issue #25)
             }
         }
 
@@ -1155,4 +1155,4 @@ std::unique_ptr<juce::Component> makeEventEditor (AudioEngine& engine, const Aut
 {
     return std::make_unique<EventEditor> (engine, target);
 }
-} // namespace lynx
+} // namespace yw

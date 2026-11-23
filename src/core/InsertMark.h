@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <string>
 
-namespace lynx::insertmark
+namespace yw::insertmark
 {
 constexpr double periodMs = 1200.0;
 constexpr std::uint32_t cyan = 0xff03c3d5; // (3,195,213)
@@ -53,4 +53,4 @@ inline std::string timeText (double seconds)
     std::snprintf (text, sizeof (text), "%lld:%02lld:%03lld", ms / 60000, (ms / 1000) % 60, ms % 1000);
     return text;
 }
-} // namespace lynx::insertmark
+} // namespace yw::insertmark

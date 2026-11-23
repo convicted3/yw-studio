@@ -1,11 +1,11 @@
 #pragma once
 
-// LYNX Soundfont (round 158, GitHub issue #6): LYNX's own SoundFont 2 / 3 player, close to FL Studio's Fruity
+// YW Soundfont (round 158, GitHub issue #6): YW's own SoundFont 2 / 3 player, close to FL Studio's Fruity
 // Soundfont Player (docs/analise/REA_rodada158.md).
 //
 // Loading: TinySoundFont (third_party/tinysoundfont, MIT; SF3's Ogg Vorbis samples through stb_vorbis) parses the
 // file into presets of fully merged regions (preset + instrument generators, global zones, key / velocity ranges);
-// LYNX copies them into its own Font (samples as 16-bit) and renders its own voices: SF2 volume / modulation
+// YW copies them into its own Font (samples as 16-bit) and renders its own voices: SF2 volume / modulation
 // envelopes, both LFOs, the resonant low-pass, loops (continuous / until release), exclusive classes, the SF2 default
 // modulators (velocity → attenuation and → cut-off, mod wheel → vibrato, CC 7 / 10 / 11 / 91 / 93, pitch wheel with
 // the RPN 0 range), sustain pedal, a polyphony limit, and FL-style overrides (envelope ADSR, pitch LFO, cut-off /
@@ -33,7 +33,7 @@
 #include "core/Instruments.h"
 #include "core/Song.h"
 
-namespace lynx::sf
+namespace yw::sf
 {
 // --- the font --------------------------------------------------------------------------------------------------------
 
@@ -138,7 +138,7 @@ enum Param : int
     pAttack, pDecay, pSustain, pRelease,          // 0 = the preset's own (FL: "at the minimum the bank's envelope")
     pLfoDelay, pLfoAmount, pLfoSpeed,             // pitch LFO override: amount 0 = off, 0.5 = zero
     pCutoff, pCutoffMod,                          // filter override: 0 = the preset's
-    pResonance,                                   // LYNX: resonance override (0 = the preset's)
+    pResonance,                                   // YW: resonance override (0 = the preset's)
     pBendRange,                                   // semitones
     pResampling,                                  // 0 linear, 1 standard (cubic), 2 HQ (8-point sinc), 3 extreme HQ (16-point)
     pProgramMode,                                 // 0 automatic, 1 instrument, 2 drums (one-shot)
@@ -178,7 +178,7 @@ float denormalise (int index, float value01) noexcept;
 // the shown value ("2.0 s", "Preset", "64 voices"…)
 std::string displayValue (int index, float value);
 
-// A new LYNX Soundfont channel (default name "YW Soundfont"; `fontPath` may be empty: a silent channel until a
+// A new YW Soundfont channel (default name "YW Soundfont"; `fontPath` may be empty: a silent channel until a
 // font is loaded)
 ChannelDef makeChannel (const std::string& fontPath = {}, int bank = 0, int program = 0);
 
@@ -200,13 +200,13 @@ struct FlPlayerState
     int programMode = 0;
 };
 bool parseFlPlayerState (const std::vector<std::uint8_t>& state, FlPlayerState& out);
-// LYNX Soundfont settings from FL's (the bank / program from the preset index when the font's presets are given)
+// YW Soundfont settings from FL's (the bank / program from the preset index when the font's presets are given)
 std::vector<float> paramsFromFl (const FlPlayerState& fl, const std::vector<PresetInfo>& fontPresets);
 // FL's control range (min, max) of its parameter P0…P12
 std::pair<int, int> flParamRange (int flIndex) noexcept;
-// FL's parameter P2…P12 at a raw value → (LYNX parameter, its value); nothing for P0 / P1 (not automatable in FL)
+// FL's parameter P2…P12 at a raw value → (YW parameter, its value); nothing for P0 / P1 (not automatable in FL)
 std::optional<std::pair<int, float>> paramFromFl (int flIndex, int raw) noexcept;
-// FL automation (P index, FL's 0…1 over the control's whole range) → (LYNX parameter, its 0…1)
+// FL automation (P index, FL's 0…1 over the control's whole range) → (YW parameter, its 0…1)
 std::optional<std::pair<int, float>> automationFromFl (int flIndex, float flNormalised) noexcept;
 
 // --- background loading ---------------------------------------------------------------------------------------------
@@ -257,7 +257,7 @@ private:
 
 std::unique_ptr<Instrument> makeInstrument (std::shared_ptr<FontHandle> font);
 
-// Test hooks: the number of voices sounding now (audio thread's view) of a LYNX Soundfont instrument, −1 otherwise
+// Test hooks: the number of voices sounding now (audio thread's view) of a YW Soundfont instrument, −1 otherwise
 int activeVoices (const Instrument& instrument) noexcept;
 
 // Writes a tiny valid SF2 into bytes: one preset per entry (name, bank, program), each with `layers` velocity layers
@@ -270,4 +270,4 @@ struct TestPreset
     bool loop = true;
 };
 std::vector<std::uint8_t> makeTestFont (const std::vector<TestPreset>& presets, int layers = 2, int sampleRate = 22050);
-} // namespace lynx::sf
+} // namespace yw::sf

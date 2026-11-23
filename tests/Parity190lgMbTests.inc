@@ -7,9 +7,9 @@ namespace parity190lgmb
 {
 // one Pro-MB band over the whole range: threshold −30 dB, the given range / mode, ratio 4 : 1, attack / release 20 %,
 // knee 24 dB, look-ahead 1 ms (switch `la`); the other bands unused
-inline lynx::EffectSlot proMb (float rangeDb, float mode, float la)
+inline yw::EffectSlot proMb (float rangeDb, float mode, float la)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<std::pair<int, float>> v { { 0, 1.0f }, { 1, (float) std::log2 (30.0) }, { 2, 0.5f }, { 3, (float) std::log2 (30000.0) },
                                            { 4, 0.5f }, { 5, mode }, { 6, 0.5f }, { 7, rangeDb }, { 8, 0.6f }, { 9, 20.0f },
                                            { 10, 20.0f }, { 11, 24.0f }, { 12, 1.0f }, { 133, 1.0f }, { 139, 1.0f }, { 141, la } };
@@ -23,13 +23,13 @@ inline lynx::EffectSlot proMb (float rangeDb, float mode, float la)
     return entry != nullptr ? makeSubstituteSlot (*entry, &id, nullptr) : makeEffectSlot (EffectKind::prismMultiband);
 }
 // the gain (dB) of a steady 200 Hz tone at `db` dBFS over its last half second
-inline double toneGain (const lynx::EffectParams& p, double db)
+inline double toneGain (const yw::EffectParams& p, double db)
 {
     std::vector<float> x (96000);
     const auto a = std::pow (10.0, db / 20.0);
     for (std::size_t i = 0; i < x.size(); ++i)
         x[i] = (float) (a * std::sin (2.0 * dyn108::pi * 200.0 * (double) i / dyn108::sr));
-    const auto y = dyn108::run (lynx::EffectKind::prismMultiband, p, x);
+    const auto y = dyn108::run (yw::EffectKind::prismMultiband, p, x);
     double ex = 0.0, ey = 0.0;
     for (std::size_t i = 48000; i < 90000; ++i)
     {
@@ -42,7 +42,7 @@ inline double toneGain (const lynx::EffectParams& p, double db)
 
 TEST (parity190lg_prism_revision_is_hidden_set_by_the_translator_only)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     CHECK (effectInfo (EffectKind::prismMultiband).params.size() == (std::size_t) m::count); // no new control or string
     CHECK (m::revision == m::count && m::lookaheadSwitch == m::count + 1);
@@ -72,7 +72,7 @@ TEST (parity190lg_prism_revision1_soft_range_and_inverted_modes)
 {
     // the static law (24 dB over a −30 dB threshold at 4 : 1 is 18 dB before the range): the reference's soft range of
     // 0.6 × 24 + 12 = 26.4 dB around −12 leaves 11.0 dB; round 150's 12 dB knee gives the full 12
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     auto rev1 = parity190lgmb::proMb (-12.0f, 0.0f, 1.0f).params, rev0 = rev1;
     rev0[(std::size_t) m::revision] = rev0[(std::size_t) m::lookaheadSwitch] = 0.0f;

@@ -17,7 +17,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations" // (the synchronous AVAsset properties: we run on our own thread)
 
-namespace lynx::media
+namespace yw::media
 {
 namespace
 {
@@ -216,7 +216,7 @@ std::shared_ptr<const video::AudioTrack> decodeNativeAudio (const juce::File& fi
         return track;
     }
 }
-} // namespace lynx::media
+} // namespace yw::media
 
 #pragma clang diagnostic pop
 

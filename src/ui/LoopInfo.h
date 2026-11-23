@@ -18,12 +18,12 @@
 #include "core/LoopAnalysis.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 }
 
-namespace lynx::loopinfo
+namespace yw::loopinfo
 {
 class Shared final : public juce::ChangeBroadcaster
 {
@@ -52,7 +52,7 @@ private:
     std::unique_ptr<loopanalysis::Service> worker; // (last: goes first)
 };
 
-// What a Browser row of a loop shows (BandLab's rows: "4 bars · 102bpm · D min"; LYNX's words): the bars (a loop of
+// What a Browser row of a loop shows (BandLab's rows: "4 bars · 102bpm · D min"; YW's words): the bars (a loop of
 // whole bars of `meter`), the tempo and the key; "" when nothing is known.
 juce::String rowText (const loopanalysis::Result& r, Meter meter);
-} // namespace lynx::loopinfo
+} // namespace yw::loopinfo

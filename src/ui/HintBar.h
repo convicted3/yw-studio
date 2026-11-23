@@ -25,7 +25,7 @@
 //   [Ctrl] [Shift] [Alt] [F5] [L]... (any other short key name: a key cap)
 // e.g. tr ("Note: [LMB] drag moves  [Shift][LMB] duplicates  [RMB] deletes  [Alt] no snap").
 // Tooltips should stay plain text (they are shown as is); use ui::plainHint() to derive one.
-namespace lynx::ui
+namespace yw::ui
 {
 // Shows `hint` in the bar until `holdMs` after the last call (call it on every drag step).
 void postHint (const Hint& hint, int holdMs = 1200);
@@ -77,8 +77,8 @@ public:
     const Hint& getHint() const noexcept { return current; }
     void paint (juce::Graphics& g) override;
     // Round 190kn (DF-47): a right-click on the hint bar opens what FL 2026 opens there, the toolbars menu (captured:
-    // details190kn raw/f09), which the owner gives through `onMenu`; LYNX adds the shown value and text for the clipboard
-    // at its end (FL's own "copy any value" is the controls' Copy value, which LYNX's value menus have too)
+    // details190kn raw/f09), which the owner gives through `onMenu`; YW adds the shown value and text for the clipboard
+    // at its end (FL's own "copy any value" is the controls' Copy value, which YW's value menus have too)
     void mouseDown (const juce::MouseEvent& e) override;
     juce::PopupMenu copyMenu() const; // (tests / shots)
     std::function<juce::PopupMenu()> onMenu;
@@ -122,7 +122,7 @@ private:
 };
 
 // FL's Tools › Last tweaked as a toolbar read-out (round 162d, issue #8): the name and value of the last moved
-// automatable control (a LYNX knob or a hosted plugin's own parameter); a click opens that parameter's menu (create
+// automatable control (a YW knob or a hosted plugin's own parameter); a click opens that parameter's menu (create
 // automation clip, link to controller, edit events, init song with this position, value). Handy when a plugin's own
 // window has no menu of its own or misbehaves. The owner refreshes it from its timer.
 class TweakReadout final : public juce::Component,
@@ -151,4 +151,4 @@ private:
     juce::String name, value;
     double changedMs = 0.0; // the value changed at (drawn in the accent colour for a moment)
 };
-} // namespace lynx::ui
+} // namespace yw::ui

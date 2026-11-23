@@ -1,17 +1,17 @@
 #pragma once
 
-// The user's own presets of LYNX's built-in generators (round 190fs; owner decision O7: LYNX's own file first, FL's
+// The user's own presets of YW's built-in generators (round 190fs; owner decision O7: YW's own file first, FL's
 // .fst channel state later). FL's plugin wrapper saves a generator's settings with "Save preset as..." (PluginMenu
-// SaveStateMenu, REA rows wrapper_wheel-0072); LYNX's channel window keeps that in its preset box, next to FL's
-// presets and LYNX's banks, with the same items as the hosted plugins' and the mixer effects' preset menus: Save
+// SaveStateMenu, REA rows wrapper_wheel-0072); YW's channel window keeps that in its preset box, next to FL's
+// presets and YW's banks, with the same items as the hosted plugins' and the mixer effects' preset menus: Save
 // preset..., "Your presets", Delete preset, Show the presets folder.
 //
-// A preset holds the generator's whole sound: exactly the instrument fields the .lynx project stores for the channel
+// A preset holds the generator's whole sound: exactly the instrument fields the .yw project stores for the channel
 // and that loading an FL preset replaces (natives::withPreset): the plugin state, the model parameters, the sample /
-// data file path and zones, the controller state, LYNX's synth settings and the key names. The channel's own settings
+// data file path and zones, the controller state, YW's synth settings and the key names. The channel's own settings
 // (name aside, mixer insert, levels, Misc tab, colour, arpeggiator, envelopes of the Envelope tab) stay as they are.
 //
-// The file is a small text file, extension .lynxpreset like LYNX's other presets but with its own first line, in
+// The file is a small text file, extension .ywpreset like YW's other presets but with its own first line, in
 // <settings>/Presets/Plugins/Generators/<generator>/ (the Browser's "Plugin presets" place). Float values are written
 // as their exact bits, so a save and a load give back the identical state (and the identical sound).
 // Pure C++ (no JUCE): the format is tested in the core tests.
@@ -21,9 +21,9 @@
 
 #include "core/Song.h"
 
-namespace lynx::genpresets
+namespace yw::genpresets
 {
-constexpr const char* extension = ".lynxpreset";
+constexpr const char* extension = ".ywpreset";
 constexpr const char* header = "YW Studio generator preset 1";
 // The folder under the plugin presets folder that holds every generator's own folder
 constexpr const char* generatorsFolder = "Generators";
@@ -35,7 +35,7 @@ struct Preset
     ChannelDef sound;   // the instrument fields (soundOf); the channel settings are defaults
 };
 
-// The generator's id in the file: the same id the .lynx project writes ("dx10", "threeosc"…); nullopt when unknown.
+// The generator's id in the file: the same id the .yw project writes ("dx10", "threeosc"…); nullopt when unknown.
 std::string kindId (InstrumentKind kind);
 std::optional<InstrumentKind> kindFromId (const std::string& id);
 
@@ -45,12 +45,12 @@ std::string engineName (InstrumentKind kind);
 std::string folderName (InstrumentKind kind);
 
 // Whether a generator's channel window has a preset box, so its user presets can be saved there: the FL engines with a
-// preset folder, the engines with a LYNX bank and LYNX's own synth (its "Presets..." box).
+// preset folder, the engines with a YW bank and YW's own synth (its "Presets..." box).
 bool canSave (InstrumentKind kind);
 
 // The file text of a preset of `channel`'s generator, named `name`.
 std::string toText (const std::string& name, const ChannelDef& channel);
-// nullopt when the text is not a generator preset (an effect's or a hosted plugin's .lynxpreset, a damaged file).
+// nullopt when the text is not a generator preset (an effect's or a hosted plugin's .ywpreset, a damaged file).
 std::optional<Preset> fromText (const std::string& text);
 // Whether a file starting with `start` (its first bytes are enough) is a generator preset
 bool looksLikePreset (const std::string& start);
@@ -67,4 +67,4 @@ ChannelDef newChannel (const Preset& preset);
 
 // The file name (without the extension) for a preset name: path separators and reserved characters replaced
 std::string fileNameFor (const std::string& name);
-} // namespace lynx::genpresets
+} // namespace yw::genpresets

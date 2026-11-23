@@ -12,17 +12,17 @@
 
 namespace
 {
-lynx::Song live169bSong()
+yw::Song live169bSong()
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.channels.clear();
     s.patterns.clear();
     s.playlist.clear();
     for (const auto* name : { "Kick", "Snare", "Bass" })
     {
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.name = name;
-        c.instrument = lynx::InstrumentKind::synth;
+        c.instrument = yw::InstrumentKind::synth;
         c.mixerTrack = (int) s.channels.size() + 1;
         s.channels.push_back (c);
     }
@@ -30,13 +30,13 @@ lynx::Song live169bSong()
         s.patterns.emplace_back().name = name;
     for (int i = 0; i < 4; ++i)
     {
-        lynx::Note n;
+        yw::Note n;
         n.channel = i % 3;
         n.start = i * 240;
         n.key = 36 + i;
         s.patterns[0].notes.push_back (n);
     }
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.pattern = 0;
     clip.track = 0;
     clip.length = 3840;
@@ -44,11 +44,11 @@ lynx::Song live169bSong()
     clip.pattern = 1;
     clip.start = 3840;
     s.playlist.push_back (clip);
-    lynx::uids::normalize (s);
+    yw::uids::normalize (s);
     return s;
 }
 
-int live169bChannel (const lynx::Song& s, std::uint64_t uid)
+int live169bChannel (const yw::Song& s, std::uint64_t uid)
 {
     for (int i = 0; i < (int) s.channels.size(); ++i)
         if (s.channels[(std::size_t) i].uid == uid)
@@ -56,15 +56,15 @@ int live169bChannel (const lynx::Song& s, std::uint64_t uid)
     return -1;
 }
 
-bool live169bSame (const lynx::Song& a, const lynx::Song& b) { return lynx::live::diff (a, b).empty(); }
+bool live169bSame (const yw::Song& a, const yw::Song& b) { return yw::live::diff (a, b).empty(); }
 
-// what LYNX's publishSong does after every edit
-void live169bPublish (lynx::Song& s) { lynx::uids::normalize (s); }
+// what YW's publishSong does after every edit
+void live169bPublish (yw::Song& s) { yw::uids::normalize (s); }
 } // namespace
 
 TEST (live169b_diff_apply_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto a = live169bSong();
     auto b = a;
     b.bpm = 141.0;
@@ -125,7 +125,7 @@ TEST (live169b_diff_apply_round_trip)
 
 TEST (live169b_patch_applies_by_uid_not_index)
 {
-    using namespace lynx;
+    using namespace yw;
     // two copies whose channel order differs (the guest has an unconfirmed channel of his own in front)
     const auto host = live169bSong();
     auto guest = host;
@@ -169,7 +169,7 @@ TEST (live169b_patch_applies_by_uid_not_index)
 
 TEST (live169b_authority_permissions_and_ripples)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = live169bSong();
     const auto* ana = parts::invite (song, "Host", "Ana", 0xFF3D9BE9, false);
     CHECK (ana != nullptr && ana->tag == 2);
@@ -238,7 +238,7 @@ TEST (live169b_authority_permissions_and_ripples)
 
 TEST (live169b_conflicts_the_earlier_edit_wins)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = live169bSong();
     parts::invite (song, "Host", "Ana", 0xFF3D9BE9, false);
     parts::invite (song, "Host", "Pedro", 0xFF5CC85C, false);
@@ -284,37 +284,37 @@ struct Live169bNet
 {
     struct Peer
     {
-        std::unique_ptr<lynx::live::Replica> replica;
-        lynx::Song working;
-        std::deque<lynx::live::Commit> inbox;    // host -> this peer
-        std::deque<lynx::live::Proposal> outbox; // this peer -> host
+        std::unique_ptr<yw::live::Replica> replica;
+        yw::Song working;
+        std::deque<yw::live::Commit> inbox;    // host -> this peer
+        std::deque<yw::live::Proposal> outbox; // this peer -> host
         bool holding = false;
     };
-    std::unique_ptr<lynx::live::Authority> authority;
+    std::unique_ptr<yw::live::Authority> authority;
     Peer host;
     std::vector<Peer> guests;
-    lynx::live::Codec codec;
+    yw::live::Codec codec;
     int rejected = 0;
 
-    Live169bNet (lynx::Song song, int guestCount, lynx::live::Codec c = {}) : codec (std::move (c))
+    Live169bNet (yw::Song song, int guestCount, yw::live::Codec c = {}) : codec (std::move (c))
     {
         static const char* names[] = { "Ana", "Pedro", "Lia" };
         for (int g = 0; g < guestCount; ++g)
-            lynx::parts::invite (song, "Host", names[g], 0xFF3D9BE9u + (std::uint32_t) g, false);
-        authority = std::make_unique<lynx::live::Authority> (song, codec);
-        host.replica = std::make_unique<lynx::live::Replica> (song, 0, 1, codec);
+            yw::parts::invite (song, "Host", names[g], 0xFF3D9BE9u + (std::uint32_t) g, false);
+        authority = std::make_unique<yw::live::Authority> (song, codec);
+        host.replica = std::make_unique<yw::live::Replica> (song, 0, 1, codec);
         host.working = song;
         for (int g = 0; g < guestCount; ++g)
         {
             Peer p;
-            p.replica = std::make_unique<lynx::live::Replica> (song, 0, (std::uint32_t) g + 2, codec);
+            p.replica = std::make_unique<yw::live::Replica> (song, 0, (std::uint32_t) g + 2, codec);
             p.working = song;
             p.working.session.me = (std::uint32_t) g + 2;
             guests.push_back (std::move (p));
         }
     }
 
-    void deliver (Peer& p, const lynx::live::Commit& c)
+    void deliver (Peer& p, const yw::live::Commit& c)
     {
         auto u = p.replica->onCommit (c, p.working, p.holding);
         rejected += (int) u.rejected.size();
@@ -322,7 +322,7 @@ struct Live169bNet
             p.working = *u.working;
     }
 
-    void broadcast (const lynx::live::Commit& c)
+    void broadcast (const yw::live::Commit& c)
     {
         deliver (host, c);
         for (std::size_t g = 0; g < guests.size(); ++g)
@@ -359,7 +359,7 @@ struct Live169bNet
         auto& peer = guests[(std::size_t) g];
         if (up)
         {
-            auto p = codec ? lynx::live::Proposal { peer.outbox.front().seq, peer.outbox.front().baseRev, codec (peer.outbox.front().patch) } : peer.outbox.front();
+            auto p = codec ? yw::live::Proposal { peer.outbox.front().seq, peer.outbox.front().baseRev, codec (peer.outbox.front().patch) } : peer.outbox.front();
             peer.outbox.pop_front();
             broadcast (authority->propose ((std::uint32_t) g + 2, p));
         }
@@ -388,9 +388,9 @@ struct Live169bNet
 };
 
 // One random edit by participant `who` (0 = host) on his working song: mostly in his own area, sometimes not
-void live169bRandomEdit (lynx::Song& s, int who, std::mt19937& rng)
+void live169bRandomEdit (yw::Song& s, int who, std::mt19937& rng)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto tag = (std::uint32_t) who + 1;
     auto pick = [&] (int n) { return n <= 0 ? 0 : (int) (rng() % (std::uint32_t) n); };
     std::vector<int> mine;
@@ -485,7 +485,7 @@ void live169bRandomEdit (lynx::Song& s, int who, std::mt19937& rng)
 
 TEST (live169b_replicas_converge_over_a_delayed_network)
 {
-    using namespace lynx;
+    using namespace yw;
     int seeds = 0, converged = 0, rejectedTotal = 0, commits = 0;
     for (unsigned seed = 1; seed <= 24; ++seed)
     {
@@ -522,8 +522,8 @@ TEST (live169b_replicas_converge_over_a_delayed_network)
 
 TEST (live169b_codec_rounding_is_adopted)
 {
-    using namespace lynx;
-    // a serializer that rounds (like the .lynx JSON does for clip gains): every copy ends with the rounded value and
+    using namespace yw;
+    // a serializer that rounds (like the .yw JSON does for clip gains): every copy ends with the rounded value and
     // the sender does not keep re-sending its own unrounded one
     live::Codec rounding = [] (const live::Patch& p) {
         auto q = p;
@@ -549,7 +549,7 @@ TEST (live169b_codec_rounding_is_adopted)
 
 TEST (live169b_commits_wait_while_recording)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (3);
     Live169bNet net (live169bSong(), 1);
     auto& guest = net.guests[0];
@@ -576,7 +576,7 @@ TEST (live169b_commits_wait_while_recording)
 
 TEST (live169b_undo_per_user)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (5);
     Live169bNet net (live169bSong(), 1);
     auto& host = net.host.working;
@@ -640,11 +640,11 @@ TEST (live169b_undo_per_user)
 
 TEST (live169b_invite_code_and_encryption)
 {
-    using namespace lynx::livecrypto;
+    using namespace yw::livecrypto;
     const Invite invite { "2syq75e66t", newSecret() };
     CHECK (invite.secret.size() == 16 && newSecret() != invite.secret);
     const auto code = formatCode (invite);
-    CHECK (code.size() == 36 && code.rfind ("LYNX-2SYQ7-5E66T-", 0) == 0);
+    CHECK (code.size() == 36 && code.rfind ("YW-2SYQ7-5E66T-", 0) == 0);
     auto parsed = parseCode (code);
     CHECK (parsed && parsed->room == invite.room && parsed->secret == invite.secret);
     // pasted with spaces, lower case, inside a link
@@ -652,8 +652,8 @@ TEST (live169b_invite_code_and_encryption)
     for (auto& ch : loose)
         ch = ch == '-' ? ' ' : (char) std::tolower ((unsigned char) ch);
     CHECK (parseCode (loose) && parseCode (loose)->secret == invite.secret);
-    CHECK (parseCode ("https://lynx-share.com/join#" + code) && parseCode ("https://lynx-share.com/join#" + code)->room == invite.room);
-    CHECK (! parseCode ("LYNX-ABC") && ! parseCode (code + "X") && ! parseCode ("LYNX-2SYQ7-5E66T-!!!!-AAAA-AAAA-AAAA"));
+    CHECK (parseCode ("https://yolo.su/join#" + code) && parseCode ("https://yolo.su/join#" + code)->room == invite.room);
+    CHECK (! parseCode ("YW-ABC") && ! parseCode (code + "X") && ! parseCode ("YW-2SYQ7-5E66T-!!!!-AAAA-AAAA-AAAA"));
 
     const auto keys = derive (invite);
     const auto again = derive (*parsed);

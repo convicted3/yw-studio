@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -143,7 +143,7 @@ const ld piX87 = 3.14159265358979323846264338327950288L; // fldpi
 
 // The library's sample reader runs with x87 control word 0x73F (FUN_005a2b90 … FUN_005a2b80): 64-bit precision,
 // rounding toward −∞ for every x87 operation and store (SSE code keeps rounding to nearest). The guard sets the same
-// rounding for LYNX's long double arithmetic (x87 on x86 GCC/Clang); the x87 parts live in noinline functions so the
+// rounding for YW's long double arithmetic (x87 on x86 GCC/Clang); the x87 parts live in noinline functions so the
 // compiler cannot move them out of the guarded region.
 #if (defined(__x86_64__) || defined(__i386__)) && (defined(__GNUC__) || defined(__clang__))
 struct X87Down
@@ -157,7 +157,7 @@ struct X87Down
     }
     ~X87Down() { asm volatile ("fldcw %0" : : "m"(saved) : "memory"); }
 };
-#define LYNX_NOINLINE __attribute__ ((noinline))
+#define YW_NOINLINE __attribute__ ((noinline))
 // an x87 store to float (fstp DWORD) under the current control word: the compiler would turn the conversion of a value
 // that came from a double into an SSE conversion (rounding to nearest)
 inline float x87Float (ld v) noexcept
@@ -171,11 +171,11 @@ inline float x87Float (ld v) noexcept { return (float) v; }
 struct X87Down
 {
 };
-#define LYNX_NOINLINE
+#define YW_NOINLINE
 #endif
 
 // the kernel's x87 set-up, part 1 (0x5f8c40): the window and sinc arguments
-LYNX_NOINLINE void sincArgs (double fr, double wa, double cb, double* d) noexcept
+YW_NOINLINE void sincArgs (double fr, double wa, double cb, double* d) noexcept
 {
     X87Down guard;
     const auto frl = (ld) fr;
@@ -188,7 +188,7 @@ LYNX_NOINLINE void sincArgs (double fr, double wa, double cb, double* d) noexcep
 }
 
 // part 2 (0x5f8ca0): the recurrences' first values and the four denominators
-LYNX_NOINLINE void sincStart (double fr, const double* sn, double wc, double cc, float* cur, float* prev, float* x) noexcept
+YW_NOINLINE void sincStart (double fr, const double* sn, double wc, double cc, float* cur, float* prev, float* x) noexcept
 {
     X87Down guard;
     const auto w0 = (ld) sn[0], w1 = (ld) sn[1], n0 = (ld) sn[2], n1 = (ld) sn[3];
@@ -1187,7 +1187,7 @@ public:
     {
         take();
         engine.maxPoly = maxPoly.load();
-        // FL's channel volume/pan from LYNX's gains (as 3x Osc)
+        // FL's channel volume/pan from YW's gains (as 3x Osc)
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
         if (std::fabs (pan) < 1e-9)
@@ -1288,7 +1288,7 @@ private:
     }
 
     static constexpr int blockSize = 512;
-    static constexpr double ppq = (double) lynx::ppq; // LYNX's song ticks per beat (setSongPosition): 960
+    static constexpr double ppq = (double) yw::ppq; // YW's song ticks per beat (setSongPosition): 960
     std::shared_ptr<const SampleData> sample;
     Engine engine;
     Setup current;
@@ -1304,7 +1304,7 @@ private:
     std::array<bool, 2> slicesReady { false, false };
     std::array<float, blockSize> bufL {}, bufR {};
     std::array<float, maxVoices> volFactor {}, notePan {};
-    std::array<std::uint32_t, maxVoices> slotNote {}; // each voice slot's LYNX note id (round 190ej)
+    std::array<std::uint32_t, maxVoices> slotNote {}; // each voice slot's YW note id (round 190ej)
     double rate = 44100.0, channelVol = 1.0, channelPan = 0.0, tickPhase = 0.0, lastTicks = -1.0;
     float nextPan = 0.0f, nextCents = 0.0f;
 };
@@ -1460,4 +1460,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace granulizer
-} // namespace lynx
+} // namespace yw

@@ -4,7 +4,7 @@
 // reduction share max (slow, w · fast). Revision 0 keeps the fitted Allround (tests/Parity190kwGold.inc).
 TEST (parity190lg_crest_versatile_static_law_and_editor_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     const auto r4 = cr::ratioValue (4.0);
     const auto all = cr::styleValue (cr::Style::allround);
@@ -22,7 +22,7 @@ TEST (parity190lg_crest_versatile_static_law_and_editor_curve)
 
 TEST (parity190lg_crest_versatile_translated_state_runs_it)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // a Pro-C 3 state (FFBS v1, 100 values) with style 1 = Versatile translates to Allround with the revision on
     fabfilter::State st;

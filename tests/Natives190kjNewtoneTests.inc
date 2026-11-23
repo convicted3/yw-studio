@@ -8,9 +8,9 @@
 namespace natives190kj
 {
 // a sung line: harmonics of each note's f0 through a vowel-like resonance; `spec` = (MIDI note or 0 for a rest, seconds)
-lynx::SampleData line (const std::vector<std::pair<double, double>>& spec)
+yw::SampleData line (const std::vector<std::pair<double, double>>& spec)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = 44100.0;
     double ph = 0.0;
     for (const auto& [midi, seconds] : spec)
@@ -41,7 +41,7 @@ lynx::SampleData line (const std::vector<std::pair<double, double>>& spec)
 
 TEST (natives190kj_newtone_analysis_tiles_the_file_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's analysis (EXEC on Newtone_x64.dll, round natives190kj): a lead-in note (unvoiced, the first note's pitch) from 0
     // to the first onset, then each note from its onset to the next one (a rest belongs to the note before), the last
     // one to the end; fOrigPitch from whole-sample periods; volume fades 0.2 x the length; 73 ms smooth-in after silence
@@ -56,7 +56,7 @@ TEST (natives190kj_newtone_analysis_tiles_the_file_like_fl)
     for (std::size_t k = 0; k + 1 < t.pitches.size(); ++k)
         CHECK (t.pitches[k].origEnd == t.pitches[k + 1].origStart && t.pitches[k].curEnd == t.pitches[k].origEnd);
     CHECK (t.pitches.back().origEnd == (std::int64_t) s.frames());
-    // onsets at 0.2, 0.65, 1.1 s: FL places them within ~150 samples; LYNX within 10 ms
+    // onsets at 0.2, 0.65, 1.1 s: FL places them within ~150 samples; YW within 10 ms
     const double onsets[] = { 0.2, 0.65, 1.1 };
     // whole-sample periods: C4 261.63 Hz -> 44100 / floor (168.56) = 262.5 Hz = 60.0575 (FL: 60.058); D4 -> 62.0889; E4 -> 64.0384
     const double pitch[] = { 69.0 + 12.0 * std::log2 (44100.0 / 168.0 / 440.0), 69.0 + 12.0 * std::log2 (44100.0 / 150.0 / 440.0),
@@ -90,7 +90,7 @@ TEST (natives190kj_newtone_analysis_tiles_the_file_like_fl)
 
 TEST (natives190kj_newtone_native_v3_and_old_states)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = natives190kj::line ({ { 0, 0.15 }, { 57, 0.4 }, { 60, 0.4 }, { 0, 0.1 } });
     auto t = newtonefx::analyseNotes (s);
     CHECK (t.pitches.size() == 3u);
@@ -132,7 +132,7 @@ TEST (natives190kj_newtone_native_v3_and_old_states)
 
 TEST (natives190kj_newtone_editor_commands)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = natives190kj::line ({ { 0, 0.2 }, { 60, 0.4 }, { 0, 0.1 }, { 64, 0.4 }, { 0, 0.1 }, { 67, 0.4 }, { 0, 0.2 } });
     auto t = newtonefx::analyseNotes (s);
     CHECK (t.pitches.size() == 4u);
@@ -196,7 +196,7 @@ TEST (natives190kj_newtone_editor_commands)
 
 TEST (natives190kj_newtone_analysis_cpu_report)
 {
-    using namespace lynx;
+    using namespace yw;
     // the analysis of a 10 s sung line (offline, on Analyse / a new sample): its time
     std::vector<std::pair<double, double>> spec;
     for (int k = 0; k < 20; ++k)

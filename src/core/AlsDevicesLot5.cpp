@@ -1,8 +1,8 @@
-// Live's own devices → LYNX's, lot 5 (round 190kk; core/AlsDevices.h has the list and the evidence tags): MIDI Effect
+// Live's own devices → YW's, lot 5 (round 190kk; core/AlsDevices.h has the list and the evidence tags): MIDI Effect
 // Racks written into the notes, and the devices that were still dropped (Erosion, Vinyl Distortion, Corpus, Looper).
 // Same rules as the earlier lots: each conversion is a law in a unit, what is fitted or has no counterpart becomes a
 // note for the import report, and only the device's saved state is read. The laws were measured on Live 12.4's own
-// renders of probe sets (round 190kk, /mnt/e/lynx-work/livedev190kk: sets k1-render / k2-render, RESULTS.md).
+// renders of probe sets (round 190kk, /mnt/e/yw-work/livedev190kk: sets k1-render / k2-render, RESULTS.md).
 
 #include "core/AlsDevices.h"
 
@@ -16,7 +16,7 @@
 #include "core/Soundboard.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 namespace
 {
@@ -235,7 +235,7 @@ bool looperToSlot (const Element& device, Translated& out)
     }
     else
     {
-        // LYNX's slot recorder: it passes the input and records / plays a take in the slot, as a looper does
+        // YW's slot recorder: it passes the input and records / plays a take in the slot, as a looper does
         out.slot = makeEffectSlot (EffectKind::edison);
         out.to = "Edison (an empty slot recorder: the input passes, as through Live's empty Looper)";
     }
@@ -301,4 +301,4 @@ bool corpusToSoundboard (const Element& device, Translated& out)
         out.notes.approximated.push_back ("Material: the damping tilt fitted at -100, 0 and +100 %");
     return true;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

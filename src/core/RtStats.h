@@ -10,7 +10,7 @@
 #include <atomic>
 #include <cstdint>
 
-namespace lynx
+namespace yw
 {
 class RtStats
 {
@@ -49,7 +49,7 @@ public:
         }
     }
 
-    // FL's "%d underruns" in the CPU panel: the driver's own count when it reports one (>= 0), else LYNX's estimate
+    // FL's "%d underruns" in the CPU panel: the driver's own count when it reports one (>= 0), else YW's estimate
     // (blocks over the deadline + late calls).
     static std::uint64_t underrunCount (std::uint64_t overBudget, std::uint64_t lateCalls, int deviceXruns) noexcept
     {
@@ -131,4 +131,4 @@ private:
     std::atomic<double> lastStartMs { 0.0 }, lastOverMs { 0.0 }, lastLateMs { 0.0 };
     std::array<std::atomic<std::uint64_t>, bins> histogram {};
 };
-} // namespace lynx
+} // namespace yw

@@ -18,11 +18,11 @@ namespace simpleduck190ot
 constexpr double rate = 48000.0;
 constexpr double bpm = 120.0; // a beat = 0.5 s = 24000 samples
 
-inline lynx::Song freshSong()
+inline yw::Song freshSong()
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = bpm;
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     s.mixer.resize (6);
     s.mixer[0].name = "Master";
     for (int i = 1; i < 6; ++i)
@@ -31,20 +31,20 @@ inline lynx::Song freshSong()
 }
 
 // a Simple audio track playing `file` from the start for 8 beats
-inline lynx::simpletracks::Result audioTrack (lynx::Song& s, const char* name, const char* file)
+inline yw::simpletracks::Result audioTrack (yw::Song& s, const char* name, const char* file)
 {
-    lynx::simpletracks::Request q;
-    q.kind = lynx::simpletracks::Kind::audio;
+    yw::simpletracks::Request q;
+    q.kind = yw::simpletracks::Kind::audio;
     q.name = name;
     q.audioFile = file;
-    q.audioLength = 8 * lynx::ppq;
-    return lynx::simpletracks::addTrack (s, q);
+    q.audioLength = 8 * yw::ppq;
+    return yw::simpletracks::addTrack (s, q);
 }
 
 // "kick.wav": a 60 Hz burst at -6 dBFS for 80 ms on every beat (decaying); "pad.wav": a steady 330 Hz sine at -12 dBFS
-inline std::shared_ptr<const lynx::SampleData> sample (const std::string& path)
+inline std::shared_ptr<const yw::SampleData> sample (const std::string& path)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     d->left.resize ((std::size_t) (rate * 4.5));
     for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -61,13 +61,13 @@ inline std::shared_ptr<const lynx::SampleData> sample (const std::string& path)
     return d;
 }
 
-inline std::vector<float> render (const lynx::Song& s, int frames)
+inline std::vector<float> render (const yw::Song& s, int frames)
 {
-    auto state = lynx::RackState::build (s, nullptr, rate, [] (const std::string& p) { return sample (p); });
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, rate, [] (const std::string& p) { return sample (p); });
+    yw::RackRenderer r;
     r.prepare (rate, 512);
     std::vector<float> all, l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, rate);
+    const auto tps = yw::ticksPerSample (s.bpm, rate);
     for (int done = 0; done < frames; done += 512)
     {
         r.process (state.get(), true, done * tps, 512, l.data(), rr.data());
@@ -102,7 +102,7 @@ inline double dipDb (const std::vector<float>& out)
 
 struct Pair
 {
-    lynx::Song song;
+    yw::Song song;
     int kick = -1, pad = -1;
 };
 
@@ -117,7 +117,7 @@ inline Pair kickAndPad()
 
 TEST (simpleduck190ot_goal_maps_fruity_limiter_compressor)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace fd = fldyn;
     // not in the "+" menu's one-knob effects, but a goal with its effect
     CHECK (goals::count == 8 && goals::lastId == goals::duck);
@@ -151,7 +151,7 @@ TEST (simpleduck190ot_goal_maps_fruity_limiter_compressor)
 
 TEST (simpleduck190ot_duck_under_makes_fl_sidechain_routing)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     auto [s, kick, pad] = simpleduck190ot::kickAndPad();
     CHECK (kick > 0 && pad > 0 && kick != pad);
@@ -212,7 +212,7 @@ TEST (simpleduck190ot_duck_under_makes_fl_sidechain_routing)
 // is the pad alone.
 TEST (simpleduck190ot_pad_dips_6_db_on_each_kick)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     using namespace simpleduck190ot;
     auto [s, kick, pad] = kickAndPad();
@@ -241,7 +241,7 @@ TEST (simpleduck190ot_pad_dips_6_db_on_each_kick)
 
 TEST (simpleduck190ot_echo_send_is_a_shared_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     namespace ef = echosuite::echoform;
     auto [s, kick, pad] = simpleduck190ot::kickAndPad();
@@ -276,7 +276,7 @@ TEST (simpleduck190ot_echo_send_is_a_shared_insert)
 // importer: the same sidechain.
 TEST (simpleduck190ot_flp_export_writes_fl_sidechain)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletracks;
     auto made = simpleduck190ot::kickAndPad();
     auto& s = made.song;

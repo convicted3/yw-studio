@@ -8,7 +8,7 @@
 #include "core/MissingFiles.h"
 #include "core/Preferences.h"
 
-namespace lynx::safety
+namespace yw::safety
 {
 namespace
 {
@@ -525,4 +525,4 @@ std::vector<std::string> filesInCommandLine (const std::string& commandLine)
     finish();
     return files;
 }
-} // namespace lynx::safety
+} // namespace yw::safety

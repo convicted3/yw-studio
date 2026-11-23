@@ -16,7 +16,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::wavetrav
+namespace yw::wavetrav
 {
 namespace
 {
@@ -840,9 +840,9 @@ std::vector<float> renderReference (const State& st, const Sample& smp, const st
     }
     return out;
 }
-} // namespace lynx::wavetrav
+} // namespace yw::wavetrav
 
-namespace lynx
+namespace yw
 {
 bool waveTravellerStateUsable (const std::vector<std::uint8_t>& state)
 {
@@ -950,7 +950,7 @@ public:
     void render (float* left, float* right, int n, float gl, float gr) noexcept override
     {
         take();
-        // FL's channel volume / pan from LYNX's gains (as the Granulizer and 3x Osc)
+        // FL's channel volume / pan from YW's gains (as the Granulizer and 3x Osc)
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
         if (std::fabs (pan) < 1e-9)
@@ -1008,7 +1008,7 @@ private:
     float lastTempo = -1.0f;
     std::array<float, 2 * blockSize> buf {};
     std::array<float, wavetrav::Engine::maxVoices> volFactor {}, notePan {};
-    std::array<std::uint32_t, wavetrav::Engine::maxVoices> slotNote {}; // each voice slot's LYNX note id (round 190ej)
+    std::array<std::uint32_t, wavetrav::Engine::maxVoices> slotNote {}; // each voice slot's YW note id (round 190ej)
     std::array<int, wavetrav::Engine::maxVoices> noteKey {};
     double channelVol = 1.0, channelPan = 0.0;
     float nextPan = 0.0f, nextCents = 0.0f;
@@ -1019,4 +1019,4 @@ std::unique_ptr<Instrument> makeWaveTravellerInstrument (std::shared_ptr<const S
 {
     return std::make_unique<WaveTravellerInstrument> (std::move (sample));
 }
-} // namespace lynx
+} // namespace yw

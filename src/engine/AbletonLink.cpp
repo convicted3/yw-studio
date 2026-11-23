@@ -41,7 +41,7 @@
 #ifndef ASIO_NO_TYPEID
  #define ASIO_NO_TYPEID 1
 #endif
-// (a namespace of LYNX's own for the bundled Asio, as Link's CMake names it: no clash with another copy)
+// (a namespace of YW's own for the bundled Asio, as Link's CMake names it: no clash with another copy)
 #ifndef ASIO_VERSION_NAMESPACE
  #define ASIO_VERSION_NAMESPACE link_asio_1_38_2
 #endif
@@ -72,7 +72,7 @@
 #include <thread>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 using Micros = std::chrono::microseconds;
 
@@ -107,7 +107,7 @@ void AbletonLink::setEnabled (bool on, double projectBpm)
         return;
     if (on && ! owned->link.isEnabled())
     {
-        // alone, the session keeps LYNX's tempo; joining a running session, its tempo wins (Link merges them)
+        // alone, the session keeps YW's tempo; joining a running session, its tempo wins (Link merges them)
         auto state = owned->link.captureAppSessionState();
         state.setTempo (std::clamp (projectBpm, 20.0, 999.0), owned->link.clock().micros());
         owned->link.commitAppSessionState (state);
@@ -198,7 +198,7 @@ int AbletonLink::beginBlock (Transport& transport, int numSamples, double output
     in.tempoMap = transport.songTempoMap.load (std::memory_order_relaxed);
     in.externalBpm = external;
 
-    // Link was just switched on (or on again): LYNX's state starts over
+    // Link was just switched on (or on again): YW's state starts over
     if (fresh)
     {
         rt.active = true;
@@ -208,7 +208,7 @@ int AbletonLink::beginBlock (Transport& transport, int numSamples, double output
         rt.steady = positionBeats;
         rt.sessionPlaying = state.isPlaying();
         rt.arbiter.reset (in);
-        // already playing alone: the session takes LYNX's beat (with peers LYNX moves to theirs, below)
+        // already playing alone: the session takes YW's beat (with peers YW moves to theirs, below)
         if (playing)
         {
             state.requestBeatAtTime (positionBeats, hostTime, quantum);
@@ -312,7 +312,7 @@ int AbletonLink::beginBlock (Transport& transport, int numSamples, double output
     rt.sessionPlaying = state.isPlaying();
     peerTempo.store (rt.arbiter.changedByPeer(), std::memory_order_relaxed);
 
-    // the phase: LYNX's clock follows the session (nudged, or a jump when far off); an external clock owns it
+    // the phase: YW's clock follows the session (nudged, or a jump when far off); an external clock owns it
     auto bpm = tempo.play;
     if (rt.running && ! started && external <= 0.0)
     {
@@ -397,16 +397,16 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         peer->commitAppSessionState (state);
     }
 
-    AbletonLink lynxLink;
+    AbletonLink ywLink;
     Transport t;
     t.sampleRate.store (rate);
     t.bpm.store (120.0);
     t.projectBpm.store (120.0);
     t.songTempoNow.store (120.0);
     t.linkQuantum.store (4.0);
-    lynxLink.setStartStopSync (true);
-    lynxLink.deviceStarted (rate);
-    out << "link=Ableton Link 4.1.1 own-peer=" << (ownPeer ? 1 : 0) << " quantum=4 rate=48000 frames=256 lynx-tempo=120\n";
+    ywLink.setStartStopSync (true);
+    ywLink.deviceStarted (rate);
+    out << "link=Ableton Link 4.1.1 own-peer=" << (ownPeer ? 1 : 0) << " quantum=4 rate=48000 frames=256 yw-tempo=120\n";
 
     // simulated callbacks in real time (the host clock must advance as the samples do)
     const auto clockStart = std::chrono::steady_clock::now();
@@ -423,9 +423,9 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         std::this_thread::sleep_until (due);
         const auto now = (double) b * frames / rate;
 
-        if (! lynxLink.isEnabled() && now >= 1.0) // LYNX joins the session the other peer runs (its tempo wins)
+        if (! ywLink.isEnabled() && now >= 1.0) // YW joins the session the other peer runs (its tempo wins)
         {
-            lynxLink.setEnabled (true, 120.0);
+            ywLink.setEnabled (true, 120.0);
             out << std::setprecision (3) << "t=" << now << " Link switched on in YW Studio\n";
         }
         if (! pressedPlay && now >= 3.0) // the user presses Play after the session has formed
@@ -433,9 +433,9 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
             t.playing.store (true);
             pressedPlay = true;
             playPressedAt = now;
-            out << std::setprecision (3) << "t=" << now << " play pressed; peers=" << lynxLink.peers() << " position=0\n";
+            out << std::setprecision (3) << "t=" << now << " play pressed; peers=" << ywLink.peers() << " position=0\n";
         }
-        if (ownPeer && ! peerTempoSet && now >= 7.0) // the other peer changes the tempo: LYNX must follow
+        if (ownPeer && ! peerTempoSet && now >= 7.0) // the other peer changes the tempo: YW must follow
         {
             auto state = peer->captureAppSessionState();
             state.setTempo (133.0, peer->clock().micros());
@@ -443,7 +443,7 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
             peerTempoSet = true;
             out << "t=" << now << " the other peer sets 133 BPM\n";
         }
-        if (! ownTempoSet && now >= seconds * 0.7) // LYNX's project tempo is edited: the peers must follow
+        if (! ownTempoSet && now >= seconds * 0.7) // YW's project tempo is edited: the peers must follow
         {
             t.projectBpm.store (110.0);
             t.songTempoNow.store (110.0);
@@ -453,24 +453,24 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         }
 
         // the UI's part of Start Stop Sync: a peer's start / stop presses Play / Stop
-        if (! ownPeer && lynxLink.takeRemoteStop())
+        if (! ownPeer && ywLink.takeRemoteStop())
         {
             t.playing.store (false);
             t.linkWaiting.store (false);
             out << std::setprecision (3) << "t=" << now << " a peer stopped the session: YW Studio's Stop pressed\n";
         }
-        if (! ownPeer && lynxLink.takeRemoteStart())
+        if (! ownPeer && ywLink.takeRemoteStart())
         {
             t.playing.store (true);
             out << std::setprecision (3) << "t=" << now << " a peer started the session: YW Studio's Play pressed\n";
         }
         const auto callStart = std::chrono::steady_clock::now();
-        const auto start = lynxLink.beginBlock (t, frames, 0.0);
-        if (lynxLink.isEnabled())
+        const auto start = ywLink.beginBlock (t, frames, 0.0);
+        if (ywLink.isEnabled())
             callUs.push_back (std::chrono::duration<double, std::micro> (std::chrono::steady_clock::now() - callStart).count());
         if (t.linkWaiting.load() && ! waitLogged)
         {
-            out << "t=" << now << " start waits for the session's phase (progress " << std::setprecision (3) << lynxLink.startProgress() << ")\n";
+            out << "t=" << now << " start waits for the session's phase (progress " << std::setprecision (3) << ywLink.startProgress() << ")\n";
             waitLogged = true;
         }
         if (start >= 0)
@@ -489,12 +489,12 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
             t.positionTicks.store (t.positionTicks.load() + n * tps);
         }
 
-        // the alignment: the session's beat at this block's end against LYNX's position (both on the phase)
+        // the alignment: the session's beat at this block's end against YW's position (both on the phase)
         if (t.playing.load() && b % 47 == 0)
         {
-            auto* p = lynxLink.impl.load();
+            auto* p = ywLink.impl.load();
             const auto state = p->link.captureAppSessionState();
-            const auto hostEnd = p->filter.sampleTimeToHostTime ((double) lynxLink.rt.sampleTime);
+            const auto hostEnd = p->filter.sampleTimeToHostTime ((double) ywLink.rt.sampleTime);
             const auto sessionBeat = state.beatAtTime (hostEnd, 4.0);
             const auto local = t.positionTicks.load() / (double) ppq;
             const auto errorBeats = linksync::phaseError (sessionBeat, local, 4.0);
@@ -508,13 +508,13 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
             }
             if (b % (47 * 8) == 0)
             {
-                out << std::setprecision (3) << "t=" << now << " peers=" << lynxLink.peers() << " session=" << state.tempo()
-                    << " lynx=" << t.linkBpm.load() << " phase error=" << std::setprecision (2) << errorMs << " ms";
+                out << std::setprecision (3) << "t=" << now << " peers=" << ywLink.peers() << " session=" << state.tempo()
+                    << " yw=" << t.linkBpm.load() << " phase error=" << std::setprecision (2) << errorMs << " ms";
                 if (peer != nullptr)
                 {
                     const auto ps = peer->captureAppSessionState();
                     out << " peer tempo=" << std::setprecision (3) << ps.tempo()
-                        << " peer-vs-lynx phase=" << std::setprecision (2)
+                        << " peer-vs-yw phase=" << std::setprecision (2)
                         << linksync::phaseError (ps.beatAtTime (hostEnd, 4.0), local, 4.0) * 60000.0 / std::max (1.0, ps.tempo()) << " ms";
                 }
                 out << "\n";
@@ -522,8 +522,8 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         }
     }
 
-    const auto stats = lynxLink.stats();
-    out << std::setprecision (3) << "result: peers=" << lynxLink.peers() << " session tempo=" << lynxLink.sessionTempo();
+    const auto stats = ywLink.stats();
+    out << std::setprecision (3) << "result: peers=" << ywLink.peers() << " session tempo=" << ywLink.sessionTempo();
     if (peer != nullptr)
         out << " peer tempo=" << peer->captureAppSessionState().tempo();
     out << "\nresult: phase error after the start: mean=" << (phaseSamples > 0 ? sumMs / phaseSamples : 0.0) << " ms worst=" << worstMs
@@ -537,7 +537,7 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
     }
     out << "\n";
 
-    // Start Stop Sync: the other peer stops; LYNX's UI is asked to press Stop
+    // Start Stop Sync: the other peer stops; YW's UI is asked to press Stop
     if (peer != nullptr)
     {
         auto state = peer->captureAppSessionState();
@@ -547,13 +547,13 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         for (int b = 0; b < 400 && ! asked; ++b)
         {
             std::this_thread::sleep_for (std::chrono::microseconds ((std::int64_t) (frames * 1.0e6 / rate)));
-            lynxLink.beginBlock (t, frames, 0.0);
-            asked = lynxLink.takeRemoteStop();
+            ywLink.beginBlock (t, frames, 0.0);
+            asked = ywLink.takeRemoteStop();
         }
         out << "start stop sync: the peer's stop " << (asked ? "reached YW Studio (Stop pressed)" : "did NOT reach YW Studio") << "\n";
         peer->enable (false);
     }
-    lynxLink.setEnabled (false, 120.0);
+    ywLink.setEnabled (false, 120.0);
     return out.str();
 }
-} // namespace lynx
+} // namespace yw

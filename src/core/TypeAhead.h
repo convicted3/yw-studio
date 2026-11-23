@@ -4,13 +4,13 @@
 // selects the row whose text starts with what was typed: the first letter jumps, more letters typed quickly (within
 // `timeoutMs` of each other) narrow it to a longer prefix, and the same letter again goes on to the next row that starts
 // with it (as the file lists of Windows, macOS and GNOME do). Pure and header-only: the UI passes the rows' texts. Used by
-// JUCE's PopupMenu and ListBox through cmake/LynxPatchJuce.cmake (fix 37) and by LYNX's own lists (ui/TypeAhead.h).
+// JUCE's PopupMenu and ListBox through cmake/YwPatchJuce.cmake (fix 37) and by YW's own lists (ui/TypeAhead.h).
 
 #include <cstdint>
 #include <functional>
 #include <string>
 
-namespace lynx::typeahead
+namespace yw::typeahead
 {
 constexpr std::uint32_t timeoutMs = 1000; // a pause longer than this starts a new prefix
 
@@ -30,7 +30,7 @@ constexpr char32_t lower (char32_t c) noexcept
     return c;
 }
 
-// A row's text as it is matched: lower case, without LYNX's menu accelerator marks (U+0001, core/MenuMnemonic.h),
+// A row's text as it is matched: lower case, without YW's menu accelerator marks (U+0001, core/MenuMnemonic.h),
 // cut at a tab (a menu item's key text), leading spaces dropped.
 inline std::u32string key (const std::u32string& text)
 {
@@ -75,4 +75,4 @@ inline int find (State& state, const void* owner, char32_t typed, std::uint32_t 
     }
     return -1;
 }
-} // namespace lynx::typeahead
+} // namespace yw::typeahead

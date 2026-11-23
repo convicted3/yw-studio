@@ -1,7 +1,7 @@
 #pragma once
 
 // Hardware output targets of the mixer (REA round 156). FL's "Audio output target" sends an insert straight to
-// device outputs besides its routing to the Master; LYNX lists every output channel alone too (mono: the sum
+// device outputs besides its routing to the Master; YW lists every output channel alone too (mono: the sum
 // (L+R)/2, the left side only or the right side only), which FL cannot do.
 //
 // Realtime path: the renderer adds each targeted insert's post-fader output (delayed to line up with the Master)
@@ -16,7 +16,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // One choice of the output menu.
 struct OutputTarget
@@ -178,4 +178,4 @@ private:
     std::vector<float> buffers; // planar, maxChannels × capacity
     std::uint64_t dirty = 0;    // audio thread only
 };
-} // namespace lynx
+} // namespace yw

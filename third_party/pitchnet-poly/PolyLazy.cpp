@@ -1,8 +1,8 @@
-// LYNX addition (round 190lk, not part of PitchNet): the masks of a deferred analysis (Params::deferMasks), built on
+// YW addition (round 190lk, not part of PitchNet): the masks of a deferred analysis (Params::deferMasks), built on
 // demand for the frames an edit reaches. Licensed as the rest of this folder (AGPL-3.0).
 //
 // PitchNet's analyze() keeps every active note's masks (partial regions x frames) for the whole recording: about
-// 0.6 MB per second of dense chords, so a five-minute take held ~180 MB of masks besides its audio. LYNX analyses a
+// 0.6 MB per second of dense chords, so a five-minute take held ~180 MB of masks besides its audio. YW analyses a
 // clip once, keeps only its notes (and saves them in the project), and builds the masks of the NMF blocks an edit
 // reaches when it renders. A block's masks depend only on that block's frames and the notes in it, and a frame's
 // spectral peaks only on that frame and its neighbours, so the masks are exactly the ones analyze() would have kept.

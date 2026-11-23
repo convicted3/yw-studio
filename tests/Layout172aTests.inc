@@ -1,5 +1,5 @@
 // Round 172a: the FL engines' designed pages — Harmor's page in FL's arrangement with both parts and the global strip,
-// Sytrus' FM / RM matrix, and no page with an empty titled panel or a note about what LYNX doesn't edit.
+// Sytrus' FM / RM matrix, and no page with an empty titled panel or a note about what YW doesn't edit.
 
 #include <algorithm>
 #include <cctype>
@@ -11,13 +11,13 @@
 
 namespace layout172a
 {
-bool inside (const lynx::plugui::LayoutItem& outer, const lynx::plugui::LayoutItem& inner)
+bool inside (const yw::plugui::LayoutItem& outer, const yw::plugui::LayoutItem& inner)
 {
     const auto cx = inner.x + inner.w * 0.5f, cy = inner.y + inner.h * 0.5f;
     return cx >= outer.x && cx <= outer.x + outer.w && cy >= outer.y && cy <= outer.y + outer.h;
 }
 
-bool samePage (const lynx::plugui::LayoutItem& a, const lynx::plugui::LayoutItem& b)
+bool samePage (const yw::plugui::LayoutItem& a, const yw::plugui::LayoutItem& b)
 {
     return a.page < 0 || b.page < 0 || a.page == b.page;
 }
@@ -31,7 +31,7 @@ std::string lower (std::string s)
 
 TEST (layout172a_engine_pages_have_no_empty_panels_or_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using plugui::Item;
     int pages = 0;
     for (const auto kind : plugui::instrumentLayoutKinds())
@@ -42,11 +42,11 @@ TEST (layout172a_engine_pages_have_no_empty_panels_or_notes)
         ++pages;
         for (const auto& s : layout->items)
         {
-            // no text about what LYNX leaves as saved / doesn't play / has no presets for
+            // no text about what YW leaves as saved / doesn't play / has no presets for
             if (s.label != nullptr)
             {
                 const auto text = layout172a::lower (s.label);
-                for (const char* bad : { "saved patch", "not played", "no lynx presets", "not decoded", "not edited", "not editable" })
+                for (const char* bad : { "saved patch", "not played", "no yw presets", "not decoded", "not edited", "not editable" })
                 {
                     CHECK (text.find (bad) == std::string::npos);
                     if (text.find (bad) != std::string::npos)
@@ -69,7 +69,7 @@ TEST (layout172a_engine_pages_have_no_empty_panels_or_notes)
 
 TEST (layout172a_harmor_page_edits_both_parts_and_the_global_strip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto* layout = plugui::instrumentLayout (InstrumentKind::harmor);
     CHECK (layout != nullptr);
     if (layout == nullptr)
@@ -122,7 +122,7 @@ TEST (layout172a_harmor_page_edits_both_parts_and_the_global_strip)
 
 TEST (layout172a_sytrus_page_shows_the_matrix)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto* layout = plugui::instrumentLayout (InstrumentKind::sytrus);
     CHECK (layout != nullptr);
     if (layout == nullptr)

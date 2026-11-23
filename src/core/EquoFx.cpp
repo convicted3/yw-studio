@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::equofx
+namespace yw::equofx
 {
 namespace
 {
@@ -923,4 +923,4 @@ std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& flState)
 {
     return std::make_unique<EquoEffect> (flState);
 }
-} // namespace lynx::equofx
+} // namespace yw::equofx

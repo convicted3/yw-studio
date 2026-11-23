@@ -16,14 +16,14 @@ struct History : u190b::History
 
 TEST (u190mz_alternate_mode_is_on_by_default_and_old_files_migrate)
 {
-    using lynx::undokeys::SettingsReader;
-    CHECK (lynx::undokeys::alternateModeDefault); // FL 2026's default (FLEngine .data 0x15452d0 = 1)
+    using yw::undokeys::SettingsReader;
+    CHECK (yw::undokeys::alternateModeDefault); // FL 2026's default (FLEngine .data 0x15452d0 = 1)
     {
         SettingsReader r; // no settings file, or a file without either key
         CHECK (r.alternate);
     }
     {
-        SettingsReader r; // an older LYNX wrote "alternateUndo=0" (its default, never chosen): FL 2026's default now
+        SettingsReader r; // an older YW wrote "alternateUndo=0" (its default, never chosen): FL 2026's default now
         r.legacyKey (false);
         CHECK (r.alternate);
     }
@@ -50,7 +50,7 @@ TEST (u190mz_alternate_mode_is_on_by_default_and_old_files_migrate)
 
 TEST (u190mz_issue214_ctrl_z_keeps_going_back_by_default)
 {
-    const auto mode = lynx::undokeys::alternateModeDefault;
+    const auto mode = yw::undokeys::alternateModeDefault;
     u190mz::History h;
     h.size = 4;
     // the reporter's case: Ctrl+Z twice is two steps back, not undo + redo
@@ -121,7 +121,7 @@ TEST (u190mz_toggle_mode_edge_cases_from_the_report)
 
 TEST (u190mz_edit_menu_names_the_step_with_the_key_that_does_it)
 {
-    using namespace lynx::undokeys;
+    using namespace yw::undokeys;
     const auto same = [] (const char* a, const char* b) { return a != nullptr && b != nullptr && std::string (a) == b; };
     // history of 4 states (position 3 = the newest), nothing undone; FL alternate mode (shots: fl-edit-menu-1/-2)
     auto u = undoMenuItem (true, 3, true, false);
@@ -155,7 +155,7 @@ TEST (u190mz_redo_keys_in_every_window)
 {
     // Ctrl+Y and Ctrl+Shift+Z redo, and Ctrl+Z / Ctrl+Alt+Z stay the undo keys, wherever the focus is (both modes use the
     // same chords; only what they do changes)
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     for (const auto context : { Context::global, Context::channelRack, Context::pianoRoll, Context::playlist, Context::mixer, Context::browser })
     {

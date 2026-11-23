@@ -2,14 +2,14 @@
 """Builds the MSIX package layout (the folder `makeappx pack /d` packs) for the Microsoft Store build (round 165n).
 
 Usage:
-  scripts/make-msix-layout.py --version 0.1.20[-alpha] --bin <folder with LYNX.exe> --out <layout folder>
+  scripts/make-msix-layout.py --version 0.1.20[-alpha] --bin <folder with YW.exe> --out <layout folder>
                               [--identity-name N] [--publisher P] [--publisher-display D] [--display-name L]
                               [--test-identity]
                               [--extra file ...]
 
 The identity defaults come from the environment (MSIX_IDENTITY_NAME, MSIX_PUBLISHER, MSIX_PUBLISHER_DISPLAY: the
 repository variables, copied from Partner Center › Product identity) and fall back to the same values; MSIX_DISPLAY_NAME
-is the app name reserved in Partner Center (default "LYNX SHARE"; Start menu, taskbar and the app itself say LYNX SHARE too). --test-identity
+is the app name reserved in Partner Center (default "YW Studio"; Start menu, taskbar and the app itself say YW Studio too). --test-identity
 appends Windows' "unsigned package" OID to the publisher, so `Add-AppxPackage -AllowUnsigned` installs the package
 for a test (it can then never clash with the Store-signed one). See docs/STORE.md.
 """
@@ -20,14 +20,14 @@ import shutil
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# LYNX's identity in Partner Center (Product identity; family name KA1WARE.LYNXSHARE_sj8hjwabzpdr8, Store ID
+# YW's identity in Partner Center (Product identity; family name KA1WARE.YWSHARE_sj8hjwabzpdr8, Store ID
 # 9NQRFBFDCX6N): the defaults, so a local package matches the release workflow's (whose repository variables hold
 # the same values)
-DEFAULT_NAME = "KA1WARE.LYNXSHARE"
+DEFAULT_NAME = "KA1WARE.YWSHARE"
 DEFAULT_PUBLISHER = "CN=BACBB786-A595-4AC3-9807-A70EAA268E4C"
 DEFAULT_DISPLAY = "KA1WARE"
 UNSIGNED_OID = "OID.2.25.311729368913984317654407730594956997722=1"
-APP_FILES = ("LYNX.exe", "lynx-asio.dll", "onnxruntime.dll", "LYNX-bridge32.exe")  # (lynx-asio32.dll is for registering with 32-bit hosts: not in the package)
+APP_FILES = ("YW.exe", "yw-asio.dll", "onnxruntime.dll", "YW-bridge32.exe")  # (yw-asio32.dll is for registering with 32-bit hosts: not in the package)
 
 
 def msix_version(version, store_build=0):
@@ -54,18 +54,18 @@ def xml_escape(text):
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", required=True)
-    ap.add_argument("--bin", required=True, help="folder with LYNX.exe (and lynx-asio.dll)")
+    ap.add_argument("--bin", required=True, help="folder with YW.exe (and yw-asio.dll)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--identity-name", default=os.environ.get("MSIX_IDENTITY_NAME") or DEFAULT_NAME)
     ap.add_argument("--publisher", default=os.environ.get("MSIX_PUBLISHER") or DEFAULT_PUBLISHER)
     ap.add_argument("--publisher-display", default=os.environ.get("MSIX_PUBLISHER_DISPLAY") or DEFAULT_DISPLAY)
-    ap.add_argument("--display-name", default=os.environ.get("MSIX_DISPLAY_NAME") or "LYNX SHARE")
+    ap.add_argument("--display-name", default=os.environ.get("MSIX_DISPLAY_NAME") or "YW Studio")
     ap.add_argument("--store-build", type=int, default=int(os.environ.get("MSIX_STORE_BUILD") or 0),
                     help="0..9: repackaged build of the same release (see msix_version)")
     ap.add_argument("--test-identity", action="store_true")
     ap.add_argument("--loose", action="store_true",
                     help="also write unqualified logo names, for Add-AppxPackage -Register without makepri's resources.pri")
-    ap.add_argument("--extra", nargs="*", default=[], help="more files for the package root (Demo.lynx, LICENSE...)")
+    ap.add_argument("--extra", nargs="*", default=[], help="more files for the package root (Demo.yw, LICENSE...)")
     a = ap.parse_args(argv)
 
     if not re.match(r"^[A-Za-z0-9.\-]{3,50}$", a.identity_name):
@@ -81,7 +81,7 @@ def main(argv):
         src = os.path.join(a.bin, name)
         if os.path.exists(src):
             shutil.copy2(src, a.out)
-        elif name == "LYNX.exe":
+        elif name == "YW.exe":
             raise SystemExit(f"missing {src}")
     for extra in a.extra:
         if os.path.isdir(extra):  # a folder (the third-party licence texts, round 190nk) keeps its name

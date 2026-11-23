@@ -15,7 +15,7 @@
 
 #include "core/EditorPolish.h"
 
-namespace lynx::trackhdr
+namespace yw::trackhdr
 {
 // FUN_012e83e0's modes that a header press uses: 0 add, 1 only this one, 2 toggle, 3 remove.
 enum class SelMode { add, only, toggle, remove };
@@ -56,8 +56,8 @@ struct PressPlan
     ClipPick clips = ClipPick::none;
     bool rangeFollowsResult = false; // Ctrl+Shift: the drag selects when the press left the track selected, else deselects
     RangeDrag drag = RangeDrag::none;
-    bool lynxShiftRange = false;     // LYNX's own Shift+click: the tracks from the last clicked one (kept, see REA doc)
-    // LYNX extra (issue #163, owner 2026-11-14): with Ctrl alone nothing changes on the press; a drag that leaves the
+    bool ywShiftRange = false;     // YW's own Shift+click: the tracks from the last clicked one (kept, see REA doc)
+    // YW extra (issue #163, owner 2026-11-14): with Ctrl alone nothing changes on the press; a drag that leaves the
     // track does FL's Ctrl press (this track alone with its clips) and FL's range; a click without that toggles the
     // track (its clips join or leave the clip selection) — FL has no Ctrl+click toggle
     bool ctrlClickToggles = false;
@@ -80,7 +80,7 @@ inline PressPlan planPress (bool ctrl, bool shift, bool alt)
         else
         {
             // FL: Ctrl+press = this track alone and every clip on it; Ctrl+drag adds the tracks crossed (and their
-            // clips). LYNX: deferred to the drag, a plain Ctrl+click toggles (ctrlClickToggles)
+            // clips). YW: deferred to the drag, a plain Ctrl+click toggles (ctrlClickToggles)
             p.mode = SelMode::only;
             p.clips = ClipPick::replace;
             p.drag = RangeDrag::select;
@@ -90,8 +90,8 @@ inline PressPlan planPress (bool ctrl, bool shift, bool alt)
     }
     if (shift && ! ctrl && ! alt)
     {
-        // FL: Shift+click opens "Rename, color and icon" (FUN_012e2510); LYNX keeps its Shift+click range
-        p.lynxShiftRange = true;
+        // FL: Shift+click opens "Rename, color and icon" (FUN_012e2510); YW keeps its Shift+click range
+        p.ywShiftRange = true;
         return p;
     }
     return p; // a click (Alt or not): this track alone
@@ -107,7 +107,7 @@ inline RangeDrag dragAfter (const PressPlan& plan, bool trackNowSelected)
 // --- the resize band (FUN_00ea93a0) ----------------------------------------------------------------------------------
 
 // The band at the bottom of a header that resizes the track: a quarter of the row, 4 to 14 px (FL's normal header
-// style; ×UI scale in FL, LYNX works in logical px). Rows of 6 px or less have none.
+// style; ×UI scale in FL, YW works in logical px). Rows of 6 px or less have none.
 inline int resizeBand (int rowHeight)
 {
     return std::clamp (rowHeight / 4, 4, 14);
@@ -222,7 +222,7 @@ inline void applyOnlyOrAll (std::vector<int>& selected, int track, int count)
         selected = { track };
 }
 
-// LYNX's Ctrl+click toggle (issue #163): the clip selection follows the track — its clips join when it becomes
+// YW's Ctrl+click toggle (issue #163): the clip selection follows the track — its clips join when it becomes
 // selected and leave when it is deselected. `clipTracks[i]` is the track of clip i.
 inline void toggleTrackClips (std::vector<int>& clipSelection, const std::vector<int>& clipTracks, int track, bool nowSelected)
 {
@@ -237,4 +237,4 @@ inline void toggleTrackClips (std::vector<int>& clipSelection, const std::vector
             clipSelection.erase (it);
     }
 }
-} // namespace lynx::trackhdr
+} // namespace yw::trackhdr

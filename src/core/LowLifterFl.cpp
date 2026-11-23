@@ -17,7 +17,7 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx::lowlifter
+namespace yw::lowlifter
 {
 namespace
 {
@@ -543,4 +543,4 @@ float bassLevelValue (double db) noexcept { return db <= -71.9 ? 0.0f : (float) 
 double bassLevelDb (float v) noexcept { return v <= 0.0f ? -200.0 : (double) std::clamp (v, 0.0f, 1.0f) * 96.0 - 72.0; }
 float bassFreqValue (double hz) noexcept { return (float) std::clamp (std::log (std::max (hz, 16.0) / 16.0) / std::log (1000.0 / 16.0), 1.0e-4, 1.0); }
 double bassFreqHz (float v) noexcept { return 16.0 * std::pow (1000.0 / 16.0, (double) std::clamp (v, 0.0f, 1.0f)); }
-} // namespace lynx::lowlifter
+} // namespace yw::lowlifter

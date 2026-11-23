@@ -13,7 +13,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx::simpletunerui
+namespace yw::simpletunerui
 {
 using namespace theme;
 
@@ -35,7 +35,7 @@ double& referenceValue()
     return hz;
 }
 
-// GarageBand's Tuner button glyph, drawn as LYNX's own vector: a tuning fork (two tines on a stem), 24-unit grid
+// GarageBand's Tuner button glyph, drawn as YW's own vector: a tuning fork (two tines on a stem), 24-unit grid
 void drawFork (juce::Graphics& g, juce::Rectangle<float> box, juce::Colour ink, float stroke)
 {
     const auto s = juce::jmin (box.getWidth(), box.getHeight()) / 24.0f;
@@ -451,4 +451,4 @@ void setReference (double hz)
     referenceFile().getParentDirectory().createDirectory();
     referenceFile().replaceWithText (juce::String (v, 1));
 }
-} // namespace lynx::simpletunerui
+} // namespace yw::simpletunerui

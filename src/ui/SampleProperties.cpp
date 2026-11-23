@@ -7,7 +7,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -138,7 +138,7 @@ private:
     bool dragged = false;
 };
 
-// A button of FL's narrow 42 px boxes (Round, Limit): LYNX's look, the word in the small UI size with 2 px margins, so it
+// A button of FL's narrow 42 px boxes (Round, Limit): YW's look, the word in the small UI size with 2 px margins, so it
 // is not cut ("Rou...") where FL's smaller form font fits it
 class CompactButton final : public juce::TextButton
 {
@@ -460,4 +460,4 @@ std::unique_ptr<juce::Component> makeSamplePropertiesPanel (const audioedit::Doc
 {
     return std::make_unique<SamplePropertiesPanel> (doc, fileName, std::move (host));
 }
-} // namespace lynx
+} // namespace yw

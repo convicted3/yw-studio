@@ -5,7 +5,7 @@
 
 #include "core/Inflate.h"
 
-namespace lynx::gzip
+namespace yw::gzip
 {
 namespace
 {
@@ -99,4 +99,4 @@ std::vector<std::uint8_t> compressStored (const std::uint8_t* data, std::size_t 
         out.push_back ((std::uint8_t) ((std::uint32_t) size >> (8 * k)));
     return out;
 }
-} // namespace lynx::gzip
+} // namespace yw::gzip

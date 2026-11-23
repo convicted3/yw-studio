@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Writes the MSIX (Microsoft Store) image assets to resources/msix/Assets from LYNX's icon (round 165n).
+"""Writes the MSIX (Microsoft Store) image assets to resources/msix/Assets from YW's icon (round 165n).
 
 Usage: scripts/make-msix-assets.py   (needs Pillow; the PNGs are committed, so a release build does not run this)
 
-Every logo comes from resources/lynx_badge.png (the app icon: the LYNX SHARE logo by w3teal on its own dark tile, so it
+Every logo comes from resources/yw_badge.png (the app icon: the YW Studio logo by w3teal on its own dark tile, so it
 needs no plate; written by tools/make_logo.py), the 16-32 px icons from its small-size form
-resources/brand/lynx-share-logo-small.png (20 px and less without the stem: lynx-share-logo-tiny.png), and the
-project-file logo from the largest image in resources/LYNX_doc.ico. Scale and target-size variants follow
+resources/brand/yw-studio-logo-small.png (20 px and less without the stem: yw-studio-logo-tiny.png), and the
+project-file logo from the largest image in resources/YW_doc.ico. Scale and target-size variants follow
 Microsoft's tile/icon asset guidelines; makepri (in the release workflow) indexes them into resources.pri.
 """
 import os
@@ -20,7 +20,7 @@ TARGETS = (16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256)
 
 
 def badge():
-    return Image.open(os.path.join(ROOT, "resources", "lynx_badge.png")).convert("RGBA")
+    return Image.open(os.path.join(ROOT, "resources", "yw_badge.png")).convert("RGBA")
 
 
 def small_badge(name):
@@ -28,7 +28,7 @@ def small_badge(name):
 
 
 def doc_icon():
-    ico = Image.open(os.path.join(ROOT, "resources", "LYNX_doc.ico"))
+    ico = Image.open(os.path.join(ROOT, "resources", "YW_doc.ico"))
     best = max(ico.info.get("sizes", {ico.size}), key=lambda s: s[0])
     ico.size = best
     return ico.convert("RGBA")
@@ -53,7 +53,7 @@ def main():
         if f.endswith(".png"):
             os.remove(os.path.join(OUT, f))
     b, d = badge(), doc_icon()
-    sb, tb = small_badge("lynx-share-logo-small.png"), small_badge("lynx-share-logo-tiny.png")
+    sb, tb = small_badge("yw-studio-logo-small.png"), small_badge("yw-studio-logo-tiny.png")
     for s in SCALES:
         k = s / 100.0
         save(placed(b, round(44 * k), round(44 * k), 1.0), f"Square44x44Logo.scale-{s}.png")

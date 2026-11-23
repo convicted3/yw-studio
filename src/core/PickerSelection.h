@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace lynx::pickersel
+namespace yw::pickersel
 {
 // The picked entries (pattern indices) in the order they were picked; the first one is the Shift anchor.
 struct Selection
@@ -103,4 +103,4 @@ inline int skippedWarning (const RenderPlan& plan) noexcept
         return 0;
     return plan.picked == 1 ? 1 : 2;
 }
-} // namespace lynx::pickersel
+} // namespace yw::pickersel

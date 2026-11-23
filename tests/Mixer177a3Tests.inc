@@ -1,10 +1,10 @@
-// --- Round 177a slice 3: VCA faders (LYNX's addition; FL Studio has none) ----------------------------------------------
+// --- Round 177a slice 3: VCA faders (YW's addition; FL Studio has none) ----------------------------------------------
 
 #include "core/MixerOps.h"
 
 TEST (mixer177a3_vca_gains_add_in_db_nest_and_follow_moves)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (8);
     auto db = [] (float gain) { return 20.0 * std::log10 ((double) gain); };
@@ -53,7 +53,7 @@ TEST (mixer177a3_vca_gains_add_in_db_nest_and_follow_moves)
 
 TEST (mixer177a3_merge_and_delete_vca)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (6);
     const auto v = mixerops::createVca (song, { 2, 3 }, "Bus");
@@ -90,7 +90,7 @@ TEST (mixer177a3_merge_and_delete_vca)
 
 TEST (mixer177a3_vca_scales_its_members_in_the_render)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();

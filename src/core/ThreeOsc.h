@@ -20,7 +20,7 @@
 //
 // Differences from FL by design / not modelled (REA_rodada47 §5): the "HQ" oscillators (engine_x64.dll, band-limited
 // tables) play the plain tables; the custom wave is resampled with our own interpolation (FL's resampler not decoded);
-// FL's host "HQ render" oversampling mode is on only while LYNX renders offline (REA_rodada80 §3.3); the random seed is per instrument (in FL all
+// FL's host "HQ render" oversampling mode is on only while YW renders offline (REA_rodada80 §3.3); the random seed is per instrument (in FL all
 // 3x Osc channels share one seed drawn at start-up). The processor's end-fade table uses IPP's cosine (REA_rodada74).
 
 #include <cstdint>
@@ -32,7 +32,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // FL Studio Mobile's 3x Osc module is the same machine in float (REA spec of round 190n) and carries, per parameter,
 // the FL raw value it converts from; a channel imported from a .flm is a desktop state plus
@@ -109,4 +109,4 @@ bool isFlmTarget (int k) noexcept; // k = 1…24, 26…105, 107…112, 114
 bool writeFlmParam (std::uint8_t* state, int k, double v, int stepsPerBeat, double bpm) noexcept;
 // --- end of round 190fe
 } // namespace threeosc
-} // namespace lynx
+} // namespace yw

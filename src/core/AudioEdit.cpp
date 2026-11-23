@@ -9,7 +9,7 @@
 #include "core/Instruments.h"
 #include "core/TimeStretch.h"
 
-namespace lynx::audioedit
+namespace yw::audioedit
 {
 namespace
 {
@@ -558,7 +558,7 @@ void timeStretch (Document& doc, Range r, double ratio)
         return;
 
     const auto part = copy (doc.audio, r);
-    const auto stretched = lynx::timeStretch (*toSampleData (part), ratio);
+    const auto stretched = yw::timeStretch (*toSampleData (part), ratio);
     const auto frames = (std::int64_t) std::llround ((double) r.length() * ratio);
 
     Audio with;
@@ -995,7 +995,7 @@ bool parseMarkers (const std::uint8_t* data, std::size_t size, Document& out, st
                 // u32 count, then 24-byte entries: fourcc "cue ", u32 cue id - 1, u32 1, u8 0xFF, u8 note, u8 0x90, u8 0,
                 // u32 0, u32 0. Round 190gk: FL's own multi-entry files settle the first two words (an FL /R render with
                 // three markers, r167l: cue ids 0x10000..0x10002, entries 0xffff / 0x10000 / 0x10001 then 1 each;
-                // Edison's writer 0x613f00, REA 190h; Slicex 190r). LYNX 0.1.27 wrote {0, cue id} instead, which only
+                // Edison's writer 0x613f00, REA 190h; Slicex 190r). YW 0.1.27 wrote {0, cue id} instead, which only
                 // matches FL for cue id 1: an entry whose second word is not FL's constant 1 is read that old way.
                 const auto count = (std::size_t) get32 (data + body);
                 for (std::size_t i = 0; i < count && 4 + (i + 1) * 24 <= len; ++i)
@@ -1009,7 +1009,7 @@ bool parseMarkers (const std::uint8_t* data, std::size_t size, Document& out, st
                         c->key = t[13] < 128 ? (int) t[13] : -1;
                 }
             }
-            else if (pass == 1 && std::memcmp (tag, "lxkn", 4) == 0) // round 190ee: LYNX 0.1.27's own chunk (read only)
+            else if (pass == 1 && std::memcmp (tag, "lxkn", 4) == 0) // round 190ee: YW 0.1.27's own chunk (read only)
             {
                 for (std::size_t q = body; q + 8 <= body + len; q += 8)
                     if (auto* c = findCue (get32 (data + q)))
@@ -1194,7 +1194,7 @@ std::vector<std::uint8_t> encodeWav (const Document& doc, WavFormat format)
 
         // the regions' trigger notes (Edison's Region › Trigger note) in FL Edison's own "tlst" chunk (round 190ez,
         // layout from a WAV FL wrote: live FL check 190ew EDI-2), written only when a region has one, so files without
-        // them stay as they were. LYNX 0.1.27 wrote them in a chunk of its own ("lxkn"), still read above.
+        // them stay as they were. YW 0.1.27 wrote them in a chunk of its own ("lxkn"), still read above.
         if (std::any_of (doc.markers.begin(), doc.markers.end(), [] (const Marker& m) { return m.keyNum >= 0; }))
         {
             at = beginChunk (o, "tlst");
@@ -1656,4 +1656,4 @@ WavExtras decodeWavExtras (const std::uint8_t* data, std::size_t size, std::int6
     }
     return x;
 }
-} // namespace lynx::audioedit
+} // namespace yw::audioedit

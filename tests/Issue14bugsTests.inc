@@ -3,7 +3,7 @@
 
 TEST (issue14_snap_to_scale_moves_every_note_onto_the_scale)
 {
-    using namespace lynx;
+    using namespace yw;
     int major = 0;
     for (int i = 0; i < (int) notetools::scales().size(); ++i)
         if (std::string (notetools::scales()[(std::size_t) i].name) == "Major")
@@ -33,7 +33,7 @@ TEST (issue14_snap_to_scale_moves_every_note_onto_the_scale)
 TEST (issue14_renderer_publishes_the_sounding_keys)
 {
     layer164::Rig rig (1); // channel 0 = a Layer, channel 1 = a plugin
-    CHECK (rig.renderer.soundingKeys (1) == (lynx::NoteMask {}));
+    CHECK (rig.renderer.soundingKeys (1) == (yw::NoteMask {}));
     rig.play (1, 60);
     rig.play (1, 100);
     auto k = rig.renderer.soundingKeys (1);
@@ -41,16 +41,16 @@ TEST (issue14_renderer_publishes_the_sounding_keys)
     rig.play (1, 60, false);
     k = rig.renderer.soundingKeys (1);
     CHECK ((k[0] >> 60 & 1u) == 0u && (k[1] >> (100 - 64) & 1u) == 1u);
-    CHECK (rig.renderer.soundingKeys (-1) == (lynx::NoteMask {}) && rig.renderer.soundingKeys (5000) == (lynx::NoteMask {}));
+    CHECK (rig.renderer.soundingKeys (-1) == (yw::NoteMask {}) && rig.renderer.soundingKeys (5000) == (yw::NoteMask {}));
 }
 
 namespace issue14
 {
 // a pattern of one channel played by the renderer (Pattern mode, 120 BPM, 48 kHz): the output
-std::vector<float> renderPattern (const lynx::ChannelDef& channel, const std::vector<lynx::Note>& notes, float masterPitch, double seconds)
+std::vector<float> renderPattern (const yw::ChannelDef& channel, const std::vector<yw::Note>& notes, float masterPitch, double seconds)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
     s.masterPitch = masterPitch;
     auto c = channel;
@@ -58,19 +58,19 @@ std::vector<float> renderPattern (const lynx::ChannelDef& channel, const std::ve
     s.channels.push_back (c);
     s.patterns.emplace_back();
     s.patterns[0].notes = notes;
-    s.patterns[0].lengthTicks = (std::int64_t) (lynx::ppq * 16);
-    s.mode = lynx::PlayMode::pattern;
-    auto samples = [] (const std::string& path) -> std::shared_ptr<const lynx::SampleData> {
+    s.patterns[0].lengthTicks = (std::int64_t) (yw::ppq * 16);
+    s.mode = yw::PlayMode::pattern;
+    auto samples = [] (const std::string& path) -> std::shared_ptr<const yw::SampleData> {
         auto p = path;
         std::replace (p.begin(), p.end(), '\\', '/');
-        return lynx::tools::readWav (lynx::existingPathIgnoringCase (p));
+        return yw::tools::readWav (yw::existingPathIgnoringCase (p));
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, samples);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, samples);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     const auto n = (int) (seconds * 48000.0);
     std::vector<float> out;
-    const auto tps = 120.0 / 60.0 * lynx::ppq / 48000.0;
+    const auto tps = 120.0 / 60.0 * yw::ppq / 48000.0;
     for (int done = 0; done < n; done += 512)
     {
         std::vector<float> l (512), rr (512);
@@ -116,30 +116,30 @@ double cents (double a, double b) { return a > 0.0 && b > 0.0 ? 1200.0 * std::lo
 
 // An audit of every instrument engine (prints a table): the master pitch, the channel's PITCH knob and slide notes
 // Every instrument follows the main pitch, its channel's PITCH knob and slide notes (issue #14 C). Needs FL's data
-// (the FL engines' factory presets); LYNX_PITCH_AUDIT=1 also prints the table.
+// (the FL engines' factory presets); YW_PITCH_AUDIT=1 also prints the table.
 TEST (issue14_pitch_audit_of_the_instruments)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
-    const auto print = std::getenv ("LYNX_PITCH_AUDIT") != nullptr;
+    const auto print = std::getenv ("YW_PITCH_AUDIT") != nullptr;
     // the pitch of a guitar / string model and of drums can't be read by the autocorrelation estimate (Sakura: C4 reads as
     // 870 Hz and G4 lower than C4; Ogun's held C4 reads 2 octaves apart at 0.3 s and 1.0 s, its slide +726…+740 cents at
-    // 0.6…0.65 s with LYNX_PITCH_TRACE; Drumpad doesn't follow the key)
+    // 0.6…0.65 s with YW_PITCH_TRACE; Drumpad doesn't follow the key)
     // Wave Traveller plays the channel's sample (none here: silent, as FL) and its pitch changes the curve's speed (REA_rodada167f)
     // Fruity Slicer (round 180c) plays its own sample's slices: a new one has none, silent as FL
     // Slicex (in the list since round 190r) likewise: a new one has empty decks, and its keys pick regions, not pitches
     const std::set<std::string> unreadable { "FL Slayer", "Fruity Granulizer", "Wave Traveller", "Fruity Slicer", "Slicex", "Drumaxx", "Fruit Kick", "BassDrum", "Drumpad", "FPC", "Sakura", "Ogun", "DirectWave" }; // (round 190hz: a new DirectWave has no zones, silent as FL's)
     // Plucked! reads Final.Pitch only when a voice starts (REA_rodada65 §1.2: it sizes the delay line): FL can't glide it
-    // (rollup 0.1.31: LYNX Model, a struck bar / tine model, follows neither slides nor the channel porta: the rack retriggers it, as Plucked!)
-    const std::set<std::string> noSlide { "Plucked!", "LYNX Model" };
+    // (rollup 0.1.31: YW Model, a struck bar / tine model, follows neither slides nor the channel porta: the rack retriggers it, as Plucked!)
+    const std::set<std::string> noSlide { "Plucked!", "YW Model" };
     const auto fl = natives142::flAccess();
     std::vector<std::pair<std::string, ChannelDef>> list;
     {
         ChannelDef synth;
-        synth.name = "LYNX Synth";
+        synth.name = "YW Synth";
         synth.instrument = InstrumentKind::synth;
-        list.emplace_back ("LYNX Synth", synth);
+        list.emplace_back ("YW Synth", synth);
     }
     // (round 169l2: the Default preset the audit was written with, not the Plugin database patch of a new channel)
     for (const auto& e : natives::instrumentEngines())
@@ -169,7 +169,7 @@ TEST (issue14_pitch_audit_of_the_instruments)
         const auto knob = issue14::pitchAt (issue14::renderPattern (bent, { held }, 0.0f, 1.5), 1.0);
         const auto slidOut = issue14::renderPattern (c, { held, slide }, 0.0f, 1.5);
         const auto slid = issue14::pitchAt (slidOut, 1.0);
-        if (print && std::getenv ("LYNX_PITCH_TRACE") != nullptr)
+        if (print && std::getenv ("YW_PITCH_TRACE") != nullptr)
             for (const auto t : { 0.3, 0.45, 0.55, 0.6, 0.65, 0.7, 0.8, 0.9, 1.0 })
                 std::printf ("    %s slide t=%.2f %+.0f cents\n", name.c_str(), t, issue14::cents (base, issue14::pitchAt (slidOut, t)));
         if (print)
@@ -195,7 +195,7 @@ TEST (issue14_pitch_audit_of_the_instruments)
 namespace issue14
 {
 // a hosted "plugin" that records the live pitch the renderer gives it and the slides it gets
-struct PitchSpy final : lynx::Instrument
+struct PitchSpy final : yw::Instrument
 {
     float live = -99999.0f;
     int slides = 0, slideKey = -1;
@@ -215,7 +215,7 @@ struct PitchSpy final : lynx::Instrument
 
 TEST (issue14_plugin_channels_get_the_pitch_knob_main_pitch_and_slides)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer = Song::defaultMixer (2);
     song.masterPitch = 50.0f;

@@ -7,7 +7,7 @@
 #include <set>
 #include <tuple>
 
-namespace lynx::noteedit
+namespace yw::noteedit
 {
 namespace
 {
@@ -1445,4 +1445,4 @@ void addPatternSignatureChange (Pattern& pattern, std::int64_t from, std::int64_
     if (to > from && ! hadEnd)
         add (to / ppq * ppq, before.first, before.second);
 }
-} // namespace lynx::noteedit
+} // namespace yw::noteedit

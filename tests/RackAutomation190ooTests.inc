@@ -1,6 +1,6 @@
 // Round 190oo (design review 2, PAT-7; details DE-123's blocker): FL's automation clip channels in the Channel rack
 // (core/RackAutomation.h). The rows sit where FL's channel order has them (.flp import), stay in place while channels are
-// inserted, removed and moved, move as FL moves a channel, and go with their automation. The .lynx round trip, the
+// inserted, removed and moved, move as FL moves a channel, and go with their automation. The .yw round trip, the
 // default of an older file and the copy for 0.1.30 are checked in the app's --selftest ("rackauto190oo": ProjectFile).
 
 #include "core/RackAutomation.h"
@@ -8,28 +8,28 @@
 
 namespace ra190oo
 {
-lynx::Automation clip (const std::string& name, int slot = -1)
+yw::Automation clip (const std::string& name, int slot = -1)
 {
-    lynx::Automation a;
+    yw::Automation a;
     a.name = name;
-    a.points = { { 0, 0.2f, 0.0f }, { 4 * lynx::ppq, 0.8f, 0.0f } };
+    a.points = { { 0, 0.2f, 0.0f }, { 4 * yw::ppq, 0.8f, 0.0f } };
     a.rackSlot = slot;
     return a;
 }
 
-lynx::Song rack (int channels)
+yw::Song rack (int channels)
 {
-    lynx::Song s;
+    yw::Song s;
     for (int c = 0; c < channels; ++c)
         s.channels.emplace_back().name = std::string (1, (char) ('A' + c));
     return s;
 }
 
 // the rack top to bottom as text: channels by name, automation rows by name in brackets
-std::string text (const lynx::Song& s)
+std::string text (const yw::Song& s)
 {
     std::string out;
-    for (const auto& e : lynx::rackauto::order (s))
+    for (const auto& e : yw::rackauto::order (s))
         out += e.automation ? "[" + s.automations[(std::size_t) e.index].name + "]" : s.channels[(std::size_t) e.index].name;
     return out;
 }
@@ -37,7 +37,7 @@ std::string text (const lynx::Song& s)
 
 TEST (rackauto190oo_flp_import_keeps_fl_channel_order)
 {
-    using namespace lynx;
+    using namespace yw;
     flp::Project p;
     const auto add = [&p] (int index, flp::ChannelType type, const char* name) {
         flp::Channel c;
@@ -72,7 +72,7 @@ TEST (rackauto190oo_flp_import_keeps_fl_channel_order)
 
 TEST (rackauto190oo_old_project_rows_after_the_channels)
 {
-    using namespace lynx;
+    using namespace yw;
     // a project saved before round 190oo: every clip at −1, so the channel rows keep their places and the clips follow
     auto s = ra190oo::rack (3);
     CHECK (rackauto::rows (s).empty() && rackauto::rowsBefore (s, {}) == (std::vector<int> { 0, 0, 0, 0 })); // (no clip: as before)
@@ -88,7 +88,7 @@ TEST (rackauto190oo_old_project_rows_after_the_channels)
 
 TEST (rackauto190oo_only_clips_get_rows)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ra190oo::rack (2);
     s.automations.push_back (ra190oo::clip ("clip", 1));
     auto live = ra190oo::clip ("peak", 1); // a Peak Controller link: no clip
@@ -110,7 +110,7 @@ TEST (rackauto190oo_only_clips_get_rows)
 
 TEST (rackauto190oo_rows_stay_put_while_channels_change)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ra190oo::rack (3); // A B C
     s.automations.push_back (ra190oo::clip ("x", 2)); // A B [x] C
     CHECK (ra190oo::text (s) == "AB[x]C");
@@ -134,7 +134,7 @@ TEST (rackauto190oo_rows_stay_put_while_channels_change)
 
 TEST (rackauto190oo_reorder_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ra190oo::rack (3); // A B C
     s.automations.push_back (ra190oo::clip ("x")); // A B C [x]
     CHECK (rackauto::moveRow (s, 0, -1) && ra190oo::text (s) == "AB[x]C");
@@ -158,7 +158,7 @@ TEST (rackauto190oo_reorder_like_fl)
 
 TEST (rackauto190oo_deleting_a_clip_removes_its_row)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ra190oo::rack (2);
     s.automations.push_back (ra190oo::clip ("x", 1));
     s.automations.push_back (ra190oo::clip ("y", 1));
@@ -171,7 +171,7 @@ TEST (rackauto190oo_deleting_a_clip_removes_its_row)
 
 TEST (rackauto190oo_filter_views)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ra190oo::rack (1);
     s.channelGroups = { "Drums", rackauto::groupName };
     CHECK (rackauto::shownUnder (s, rackfilter::all));
@@ -181,7 +181,7 @@ TEST (rackauto190oo_filter_views)
 
 TEST (rackauto190oo_drum_kit_split_keeps_rows_under_the_kit)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = ra190oo::rack (2); // A (the kit) B
     s.automations.push_back (ra190oo::clip ("x", 1)); // A [x] B
     std::vector<DrumPad> pads (3);

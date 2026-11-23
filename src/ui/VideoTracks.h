@@ -1,6 +1,6 @@
 #pragma once
 
-// The Playlist's video tracks (round 174d, core/VideoTrack.h, docs/analise/REA_rodada174d.md §4): LYNX's own, drawn
+// The Playlist's video tracks (round 174d, core/VideoTrack.h, docs/analise/REA_rodada174d.md §4): YW's own, drawn
 // like FL's Playlist. A section between the ruler and the clip tracks:
 //  - a timecode row (SMPTE at the project's rate, from the project's start timecode)
 //  - one lane per video track: FL-style header (name, mute LED, colour), clips drawn as a filmstrip under a title bar
@@ -18,7 +18,7 @@
 #include "core/VideoTrack.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class PlaylistComponent;
@@ -118,4 +118,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VideoLanesView)
 };
-} // namespace lynx
+} // namespace yw

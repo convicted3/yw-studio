@@ -6,7 +6,7 @@
 #include <fstream>
 
 #include "core/EffectPresets.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/MixSuite.h"
 #include "core/PluginSubstitutes.h"
 #include "core/VoiceShift.h"
@@ -15,11 +15,11 @@ namespace p135s
 {
 constexpr double sr = 48000.0;
 
-inline void run (lynx::EffectKind kind, const lynx::EffectParams& p, std::vector<float>& l, std::vector<float>& r, double bpm = 120.0)
+inline void run (yw::EffectKind kind, const yw::EffectParams& p, std::vector<float>& l, std::vector<float>& r, double bpm = 120.0)
 {
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (std::size_t off = 0; off < l.size(); off += 256)
@@ -71,7 +71,7 @@ inline double rms (const std::vector<float>& v, std::size_t from, std::size_t to
 
 TEST (voice_shift_modes_round135s)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     // the parameter list follows the trial's: pitch / formant ±12 st with 0.1 st read-outs, link, three modes, drive 0–10
     auto p = makeEffectSlot (EffectKind::voiceShift).params;
@@ -132,7 +132,7 @@ TEST (voice_shift_modes_round135s)
 
 TEST (ember_decapitator_controls_round135s)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto base = makeEffectSlot (EffectKind::ember).params;
     CHECK (effectInfo (EffectKind::ember).params.size() == (std::size_t) em::count);
@@ -191,7 +191,7 @@ TEST (ember_decapitator_controls_round135s)
 
 TEST (autopan_panner_sources_round135s)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ap = autopan;
     auto base = makeEffectSlot (EffectKind::autoPan).params;
     CHECK (effectInfo (EffectKind::autoPan).params.size() == (std::size_t) ap::count + 27); // + round 136's Rhythm voicing + round 150's Tweak block + round 152's trigger block
@@ -243,7 +243,7 @@ TEST (autopan_panner_sources_round135s)
 
 TEST (foil_infinite_and_low_cut_round135s)
 {
-    using namespace lynx;
+    using namespace yw;
     auto p = makeEffectSlot (EffectKind::foilPlate).params;
     CHECK (p.size() >= 14 && p[12] == 0.0f && p[13] == 0.0f);
     CHECK (formatEffectParam (EffectKind::foilPlate, 13, 1.0f, 120.0).find ("1") != std::string::npos);
@@ -262,26 +262,26 @@ TEST (foil_infinite_and_low_cut_round135s)
 
 TEST (soundtoys_known_states_round135s)
 {
-    using namespace lynx;
+    using namespace yw;
     // the hash covers only the PRESET payload (the FL wrapper header and the version lines around it don't matter)
     const std::string text = "WIDGET = Little AlterBoy;\rVERSION = 4;\rPRESET = 0101TEST ;\r";
     const std::vector<std::uint8_t> st (text.begin(), text.end());
     CHECK (soundtoysStateHash (st) && *soundtoysStateHash (st) == 0xb3c6c15d69b2af7dull);
     CHECK (! soundtoysStateHash (std::vector<std::uint8_t> { 1, 2, 3 }));
     CHECK (knownSoundtoysStates() == 17);
-    // an unknown AlterBoy state: the substitute (round 136's measured model, kept by the round-138 merge: LYNX Tune as
+    // an unknown AlterBoy state: the substitute (round 136's measured model, kept by the round-138 merge: YW Tune as
     // the voice shifter) with her usual setting — Quantize, formant +1.2 st, drive 4.6
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst2;
     id.name = "LittleAlterBoy";
     id.state = st;
     const auto* entry = findPluginSubstitute (id, false);
-    CHECK (entry != nullptr && entry->effect == EffectKind::lynxTune);
+    CHECK (entry != nullptr && entry->effect == EffectKind::ywTune);
     if (entry != nullptr)
     {
         int n = -1;
         const auto s = makeSubstituteSlot (*entry, &id, &n);
-        CHECK (n == 0 && s.params[lynxtune::driveStage] == 1.0f && std::abs (s.params[lynxtune::drive] - 0.46f) < 1e-6f);
+        CHECK (n == 0 && s.params[ywtune::driveStage] == 1.0f && std::abs (s.params[ywtune::drive] - 0.46f) < 1e-6f);
     }
     // round 135's own translators stay reachable for Voice Shift (its table: 17 payloads, checked above)
     CHECK (effectInfo (EffectKind::voiceShift).params.size() == (std::size_t) voiceshift::count);
@@ -289,7 +289,7 @@ TEST (soundtoys_known_states_round135s)
 
 TEST (autopan_panel_places_every_parameter_round135s)
 {
-    using namespace lynx;
+    using namespace yw;
     // the panel shows every parameter on at least one control (some swap in place with the source) and stays inside
     const auto& l = plugui::layoutFor (EffectKind::autoPan);
     std::vector<int> placed (effectInfo (EffectKind::autoPan).params.size(), 0);
@@ -305,6 +305,6 @@ TEST (autopan_panel_places_every_parameter_round135s)
     }
     for (std::size_t p = 0; p < placed.size(); ++p)
         CHECK (placed[p] >= 1);
-    // the Voice Shift panel is one of LYNX's own panels
+    // the Voice Shift panel is one of YW's own panels
     CHECK (std::find (plugui::ownLayoutKinds().begin(), plugui::ownLayoutKinds().end(), EffectKind::voiceShift) != plugui::ownLayoutKinds().end());
 }

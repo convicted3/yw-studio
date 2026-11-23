@@ -3,11 +3,11 @@
 // The Simple dock's Controls tab (round 190ke, owner decision D4 of coverage190jw: GarageBand's Smart Controls in the
 // Simple layout). GarageBand (Apple's GarageBand User Guide for Mac, "Intro to Smart Controls"): one pane under the
 // tracks with a set of big labelled screen controls for the selected track's patch, each driving one or more of its
-// key parameters (an instrument's cutoff, resonance and envelope, the amp's gain, the effects' amounts). LYNX: eight big
-// knobs per track. Each knob drives one control the track already has — a parameter of its instrument (LYNX Synth,
+// key parameters (an instrument's cutoff, resonance and envelope, the amp's gain, the effects' amounts). YW: eight big
+// knobs per track. Each knob drives one control the track already has — a parameter of its instrument (YW Synth,
 // Sampler, Soundfont and the FL engines' knobs, through the same AutomationTarget the automation clips use), a one-knob
 // effect of its chain (its knob), another effect's Mix or parameter, or the track's Volume, Pan and Reverb send — so
-// every other layout shows the same values in the same places. LYNX picks eight per instrument and chain (`defaults`);
+// every other layout shows the same values in the same places. YW picks eight per instrument and chain (`defaults`);
 // the user can point any knob at another control (`candidates`), kept on the track's insert (MixerTrack::smartControls,
 // saved in the project). No JUCE (tests/SimpleGb190keTests.inc).
 
@@ -18,7 +18,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::smartcontrols
+namespace yw::smartcontrols
 {
 constexpr int knobCount = 8;
 
@@ -67,7 +67,7 @@ float defaultValueOf (const Song& song, const Owner& owner, const Control& c);
 std::vector<Control> instrumentControls (const Song& song, const Owner& owner, int most = 4);
 // Every control the track offers (the remap menu): the instrument's parameters, then each effect's, then the track's
 std::vector<Control> candidates (const Song& song, const Owner& owner);
-// LYNX's default mapping: up to four of the instrument's key parameters, the chain's one-knob effects (else its effects'
+// YW's default mapping: up to four of the instrument's key parameters, the chain's one-knob effects (else its effects'
 // Mix), then Reverb, Pan and Volume; the rest of the chain fills what is left, then empty knobs.
 Mapping defaults (const Song& song, const Owner& owner);
 // The mapping in use: the user's (MixerTrack::smartControls), knob by knob, where it is still valid; the default's
@@ -81,6 +81,6 @@ std::array<std::optional<Control>, knobCount> decode (const std::string& text);
 // Points knob `knob` of the track at `control` (nullopt: back to the default's); the insert's text is rewritten ("" when
 // every knob is the default's). False for a bad knob or insert.
 bool remap (Song& song, const Owner& owner, int knob, std::optional<Control> control);
-// Every knob back to LYNX's default mapping
+// Every knob back to YW's default mapping
 bool reset (Song& song, const Owner& owner);
-} // namespace lynx::smartcontrols
+} // namespace yw::smartcontrols

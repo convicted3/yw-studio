@@ -2,7 +2,7 @@
 
 // MIDI synchronisation (REA round 165f, docs/analise/REA_rodada165f-midisync.md): FL Studio's Options › MIDI
 // "Send master sync" (MIDI clock + Song Position Pointer, or MIDI Time Code at 24 / 25 / 30 / 29.97 fps, drop or
-// non-drop) to an output and "External clock sync" (LYNX follows an incoming MIDI clock: tempo, Start / Continue /
+// non-drop) to an output and "External clock sync" (YW follows an incoming MIDI clock: tempo, Start / Continue /
 // Stop, Song Position Pointer). Pure logic, no devices: the engine feeds blocks and incoming bytes, tests check it.
 // Real-time safe: no allocation, no locks; fixed-capacity outputs.
 
@@ -13,7 +13,7 @@
 
 #include "core/LiveEventQueue.h"
 
-namespace lynx::midisync
+namespace yw::midisync
 {
 // FL's "Synchronization type" list (the order of its combo box, without the separator)
 enum class SyncType
@@ -200,4 +200,4 @@ double fitBpm (const double* times, int count) noexcept;
 // plugins on transport" on (FUN_011c89c0, REA_rodada167l §6): midiOutShortMsg (0x7bb0 + ch) = CC 123 value 0 on the
 // 16 channels, nothing else (no CC 64, unlike the init / after-render reset). `out` gets 16 × 3 bytes.
 void transportNotesOff (std::array<std::uint8_t, 48>& out) noexcept;
-} // namespace lynx::midisync
+} // namespace yw::midisync

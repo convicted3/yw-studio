@@ -1,8 +1,8 @@
-// Helix+ 2 (round 190ml): the channel's own wave tables and sample (core/WavetableSynth.h). LYNX's own code and design:
+// Helix+ 2 (round 190ml): the channel's own wave tables and sample (core/WavetableSynth.h). YW's own code and design:
 // the tables are kept as spectra (64 frames × their partials) in the channel's pluginState and built into mipmaps by the
 // factory tables' builder (core/WavetableTables.cpp), so a drawn, imported or typed table is band-limited the same way.
 // Import: pitch-detected cycles (a YIN difference function), fixed-size frames or frames spread over the file; frames
-// normalised and phase-aligned on request. Formulas: LYNX's own small expression language, evaluated by a tree walker
+// normalised and phase-aligned on request. Formulas: YW's own small expression language, evaluated by a tree walker
 // with no access to anything but its numbers (no names but its variables, constants and math functions; length, size and
 // depth limits). No other product's code, table or file layout is used.
 
@@ -18,7 +18,7 @@
 #include "core/Simd.h"
 #include "core/WavetableSynth.h"
 
-namespace lynx::wt
+namespace yw::wt
 {
 namespace
 {
@@ -669,7 +669,7 @@ UserTable userTableFromAudio (const float* audio, int samples, double rate, cons
     return t;
 }
 
-// --- formulas: LYNX's small expression language
+// --- formulas: YW's small expression language
 namespace
 {
 struct Node
@@ -1104,7 +1104,7 @@ std::vector<std::uint8_t> userTableWav (const UserTable& t)
     return w.b;
 }
 
-// --- Helix round 3 (round 190mt): the sample's partials and its band-limited levels (LYNX's own designs [MODEL])
+// --- Helix round 3 (round 190mt): the sample's partials and its band-limited levels (YW's own designs [MODEL])
 namespace
 {
 // the stored form of a partial (SPEC chunk): its frequency on a 1/4096-octave grid above 5 Hz, its amplitude as half float;
@@ -1385,4 +1385,4 @@ std::shared_ptr<const SampleLevels> sampleLevels (const SampleBuffer& smp)
     levelsBuilt().push_back ({ h, n, stereo, built });
     return built;
 }
-} // namespace lynx::wt
+} // namespace yw::wt

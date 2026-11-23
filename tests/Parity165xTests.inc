@@ -8,9 +8,9 @@ namespace p165x
 {
 // Glow's classic voicing on a 1 kHz tone: 1 s at −40 dBFS, then `burstDb`; the gain (dB, against the probe before the
 // burst) in 1 ms windows from the burst's start
-inline std::vector<double> glowOnset (const lynx::EffectParams& p, double burstDb, int windows)
+inline std::vector<double> glowOnset (const yw::EffectParams& p, double burstDb, int windows)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr double sr = 48000.0;
     const std::size_t pre = 48000, n = pre + 48 * (std::size_t) windows + 4800;
     std::vector<float> l (n), r;
@@ -40,7 +40,7 @@ inline std::vector<double> glowOnset (const lynx::EffectParams& p, double burstD
 
 TEST (glow_classic_measured_attack_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     auto p = makeEffectSlot (EffectKind::glowLeveler).params;
     p[g::mode] = 1.0f; // Limit
@@ -78,7 +78,7 @@ TEST (glow_classic_measured_attack_round165x)
 
 TEST (glow_auto_makeup_reference_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     namespace o = vmatch::opto;
     const auto& info = effectInfo (EffectKind::glowLeveler);
@@ -154,7 +154,7 @@ TEST (glow_auto_makeup_reference_round165x)
 
 TEST (hush_extended_ranges_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     const auto& info = effectInfo (EffectKind::hushDeEsser);
     CHECK ((int) info.params.size() == h::count && h::linkSide == 24); // (round 190dm appended Air and Mix after it)
@@ -212,9 +212,9 @@ namespace p165x
 // the vocal voicing on L / R test material (sibilance 9 kHz, 1 kHz / 1.5 kHz probes in L / R, −40 dB each): the
 // steady gains of the L probe into L and R and of the R probe into R (lock-in, last 0.5 s of 2 s)
 struct LinkGains { double ll, lr, rr; };
-inline LinkGains hushLink (const lynx::EffectParams& q, double sibL, double sibR)
+inline LinkGains hushLink (const yw::EffectParams& q, double sibL, double sibR)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr double sr = 48000.0, pi = 3.141592653589793;
     const std::size_t n = 96000;
     std::vector<float> l (n), r (n);
@@ -241,7 +241,7 @@ inline LinkGains hushLink (const lynx::EffectParams& q, double sibL, double sibR
 
 TEST (hush_pro_ds_stereo_link_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     auto p = makeEffectSlot (EffectKind::hushDeEsser).params;
     p[h::vocalVoicing] = 1.0f; // Pro-DS's Single Vocal
@@ -277,7 +277,7 @@ TEST (hush_pro_ds_stereo_link_round165x)
 
 TEST (hush_pro_ds_translation_ranges_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     // her first state's values with: high-pass 20 kHz (1), Stereo Link 150 % Side (0.75 / 1), input +7.2 dB (0.2),
     // output −∞ (−1)
@@ -298,7 +298,7 @@ TEST (hush_pro_ds_translation_ranges_round165x)
 
 TEST (max_effect_params_192_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (maxEffectParams == 192);
     // every engine fits; Ember (163) can grow again
     for (int k = 0; k <= (int) lastEffectKind; ++k)
@@ -364,7 +364,7 @@ TEST (max_effect_params_192_round165x)
 
 TEST (ember_classic_footer_line_round165x)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = mixsuite::ember;
     auto p = makeEffectSlot (EffectKind::ember).params;
     auto s = paramhelp::summary (EffectKind::ember, p);

@@ -9,7 +9,7 @@ namespace flgran165
 {
 // our own deterministic drum-like signal (tmp/flgran165/py/goldsig.py builds the same int16 data for the DLL):
 // six square-wave hits halving every 1200 frames; right = left·3 >> 2
-lynx::SampleData drums (int ch, double rate)
+yw::SampleData drums (int ch, double rate)
 {
     constexpr int n = 48000;
     const int hits[] = { 0, 7000, 15500, 26000, 33000, 41000 };
@@ -27,7 +27,7 @@ lynx::SampleData drums (int ch, double rate)
             x[(std::size_t) i] = std::clamp (x[(std::size_t) i] + v, -32768, 32767);
         }
     }
-    lynx::SampleData d;
+    yw::SampleData d;
     d.sampleRate = rate;
     for (int i = 0; i < n; ++i)
     {
@@ -48,7 +48,7 @@ std::vector<std::uint8_t> state (const std::array<int, 12>& P, int sliceMode, in
     std::memcpy (b.data() + 52, &sliceMode, 4);
     std::memcpy (b.data() + 56, &keyMode, 4);
     std::memcpy (b.data() + 60, &sync, 4);
-    return lynx::granulizerNormalisedState (b, {});
+    return yw::granulizerNormalisedState (b, {});
 }
 
 double energy (const std::vector<float>& y, int c)
@@ -60,9 +60,9 @@ double energy (const std::vector<float>& y, int c)
 }
 
 // the instrument on a channel, one note, `n` frames (left only)
-std::vector<float> play (const lynx::ChannelDef& ch, std::shared_ptr<const lynx::SampleData> smp, int n, double rate = 44100.0)
+std::vector<float> play (const yw::ChannelDef& ch, std::shared_ptr<const yw::SampleData> smp, int n, double rate = 44100.0)
 {
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::granulizer, smp);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::granulizer, smp);
     inst->prepare (rate);
     inst->configure (ch, 140.0);
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
@@ -77,31 +77,31 @@ TEST (granulizer165_modes)
     using namespace flgran165;
     const std::array<int, 12> P { 204, 50, 611, 300, 0, 180, 0, 0, 0, 0, 0, 228 };
     auto s = state (P, 1, 2, 1);
-    CHECK (lynx::granulizerMode (s, 0) == 1 && lynx::granulizerMode (s, 1) == 2 && lynx::granulizerMode (s, 2) == 1
-           && ! lynx::granulizerMode (s, 3));
-    CHECK (lynx::granulizerSetMode (s, 2, 0) && lynx::granulizerMode (s, 2) == 0);
-    CHECK (lynx::granulizerSetMode (s, 0, 9) && lynx::granulizerMode (s, 0) == 2); // clamped to "detect"
+    CHECK (yw::granulizerMode (s, 0) == 1 && yw::granulizerMode (s, 1) == 2 && yw::granulizerMode (s, 2) == 1
+           && ! yw::granulizerMode (s, 3));
+    CHECK (yw::granulizerSetMode (s, 2, 0) && yw::granulizerMode (s, 2) == 0);
+    CHECK (yw::granulizerSetMode (s, 0, 9) && yw::granulizerMode (s, 0) == 2); // clamped to "detect"
     // FL's editor: "Transient" keys turn slice detection on when the transients are off (0x758050, on every load)
-    CHECK (lynx::granulizerSetMode (s, 0, 0) && lynx::granulizerSetMode (s, 1, 3) && lynx::granulizerMode (s, 0) == 2);
-    CHECK (lynx::granulizerMode (state (P, 0, 3, 0), 0) == 2 && lynx::granulizerMode (state (P, 1, 3, 0), 0) == 1);
+    CHECK (yw::granulizerSetMode (s, 0, 0) && yw::granulizerSetMode (s, 1, 3) && yw::granulizerMode (s, 0) == 2);
+    CHECK (yw::granulizerMode (state (P, 0, 3, 0), 0) == 2 && yw::granulizerMode (state (P, 1, 3, 0), 0) == 1);
     // the sync byte 2 ("auto", never saved by FL in practice) is kept as off
-    CHECK (lynx::granulizerMode (state (P, 0, 0, 2), 2) == 0);
+    CHECK (yw::granulizerMode (state (P, 0, 0, 2), 2) == 0);
 }
 
 TEST (granulizer165_goldens)
 {
-    // LYNX's engine against our goldens, which the installation's DLL renders within −134 / −94 / −136 dB before the
+    // YW's engine against our goldens, which the installation's DLL renders within −134 / −94 / −136 dB before the
     // first release (tmp/flgran165/py/gold165.py; the −94 dB case: the sample reader's edge path at a 48 kHz sample)
     using namespace flgran165;
-    using N = lynx::granulizer::RefNote;
-    struct Golden { std::vector<std::uint8_t> state; int ch, fs, rate; lynx::granulizer::RefOptions opt; std::vector<N> notes;
+    using N = yw::granulizer::RefNote;
+    struct Golden { std::vector<std::uint8_t> state; int ch, fs, rate; yw::granulizer::RefOptions opt; std::vector<N> notes;
                     double el, er; std::tuple<int, float, float> at[6]; };
     auto check = [] (const Golden& g) {
         const auto smp = drums (g.ch, g.rate);
         auto opt = g.opt;
-        if (lynx::granulizerMode (g.state, 0) == 2)
-            opt.slices = lynx::flslice::autoSlice (smp.leftData(), g.ch > 1 ? smp.rightData() : nullptr, (std::int64_t) smp.frames(), smp.sampleRate);
-        const auto y = lynx::granulizer::renderReference (g.state, smp, g.notes, (double) g.fs, 32768, opt);
+        if (yw::granulizerMode (g.state, 0) == 2)
+            opt.slices = yw::flslice::autoSlice (smp.leftData(), g.ch > 1 ? smp.rightData() : nullptr, (std::int64_t) smp.frames(), smp.sampleRate);
+        const auto y = yw::granulizer::renderReference (g.state, smp, g.notes, (double) g.fs, 32768, opt);
         CHECK (y.size() == 2 * 32768);
         if (y.size() != 2 * 32768)
             return;
@@ -113,9 +113,9 @@ TEST (granulizer165_goldens)
     };
     {
         // auto slices (slices 0, 7000, 15480, 26000, 32976, 41000) with the transient hold
-        CHECK ((lynx::flslice::autoSlice (drums (2, 44100).leftData(), drums (2, 44100).rightData(), 48000, 44100.0)
+        CHECK ((yw::flslice::autoSlice (drums (2, 44100).leftData(), drums (2, 44100).rightData(), 48000, 44100.0)
                 == std::vector<std::int64_t> { 0, 7000, 15480, 26000, 32976, 41000 }));
-        lynx::granulizer::RefOptions o;
+        yw::granulizer::RefOptions o;
         o.points = 12, o.tempo = 120.0;
         check ({ state ({ 204, 50, 611, 300, 0, 180, 0, 0, 0, 0, 0, 228 }, 2, 0, 0), 2, 44100, 44100, o,
                  { { 0, 60, 0.8, 0.0, 0.0, -1 }, { 9000, 62, 0.6, -0.3, 0.0, 20000 } }, 646.7863275739593, 309.46088519508237,
@@ -125,7 +125,7 @@ TEST (granulizer165_goldens)
     }
     {
         // regions (the WAV's markers) with "Transient" keys: C#5 and D#5 start at slices 1 and 3; mono 48 kHz sample
-        lynx::granulizer::RefOptions o;
+        yw::granulizer::RefOptions o;
         o.points = 12, o.tempo = 120.0, o.slices = { 0, 7000, 26000, 41000 };
         check ({ state ({ 150, 120, 400, 500, 0, 180, 0, 20, 1, 0, 0, 300 }, 1, 3, 0), 1, 44100, 48000, o,
                  { { 0, 61, 1.0, 0.2, 0.0, -1 }, { 6000, 63, 0.5, 0.0, 0.0, -1 } }, 1561.4073825720589, 2339.501975751048,
@@ -135,7 +135,7 @@ TEST (granulizer165_goldens)
     }
     {
         // tempo locked at 4 beats, 140 BPM, "Step" keys, auto slices, FL's render quality (16 points), 44.1 kHz sample at 48 kHz
-        lynx::granulizer::RefOptions o;
+        yw::granulizer::RefOptions o;
         o.points = 16, o.tempo = 140.0, o.beats = 4.0f;
         check ({ state ({ 180, 60, 500, 611, 0, 180, 0, 30, 0, 0, 0, 100 }, 2, 2, 1), 2, 48000, 44100, o,
                  { { 0, 60, 0.9, 0.0, 0.0, -1 }, { 5000, 64, 0.7, 0.0, 13.0, 25000 } }, 1200.1440687254085, 436.4748503902965,
@@ -150,13 +150,13 @@ TEST (granulizer165_instrument)
     // the channel's wiring: which beat count FL hands the plugin, where the slices come from, the render quality
     using namespace flgran165;
     auto make = [] (double acid, std::vector<std::int64_t> markers = {}) {
-        auto d = std::make_shared<lynx::SampleData> (drums (2, 44100.0));
+        auto d = std::make_shared<yw::SampleData> (drums (2, 44100.0));
         d->acidBeats = (float) acid;
         d->markerStarts = std::move (markers);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    lynx::ChannelDef ch;
-    ch.instrument = lynx::InstrumentKind::granulizer;
+    yw::ChannelDef ch;
+    ch.instrument = yw::InstrumentKind::granulizer;
     ch.pluginState = state ({ 204, 50, 611, 300, 0, 180, 0, 0, 0, 0, 0, 228 }, 0, 2, 1);
     constexpr int n = 30000;
     // the WAV's ACID beats win over the channel's TIME (FL render g12): ACID 4 + TIME 8 = TIME 4 alone ≠ TIME 8 alone
@@ -180,10 +180,10 @@ TEST (granulizer165_instrument)
     CHECK (detect == regions && detect != plain && noMarkers == plain);
     // FL renders with 16 interpolation points per side, plays live with 12: a sample off the host rate sounds slightly
     // different while exporting
-    auto offRate = std::make_shared<lynx::SampleData> (drums (2, 48000.0));
+    auto offRate = std::make_shared<yw::SampleData> (drums (2, 48000.0));
     const auto live = play (ch, offRate, n);
-    lynx::setOfflineRendering (true);
+    yw::setOfflineRendering (true);
     const auto exported = play (ch, offRate, n);
-    lynx::setOfflineRendering (false);
+    yw::setOfflineRendering (false);
     CHECK (live != exported && std::inner_product (live.begin(), live.end(), live.begin(), 0.0) > 1.0);
 }

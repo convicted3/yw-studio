@@ -1,9 +1,9 @@
 #pragma once
 
-// Corrode (round 190kk): LYNX's degrader — a very short delay whose time is moved by a sine or by band-passed noise, so
+// Corrode (round 190kk): YW's degrader — a very short delay whose time is moved by a sine or by band-passed noise, so
 // the input picks up phase noise, buzz and grit that grow with frequency. It is the engine an imported Ableton Live
-// "Erosion" (Live 12's Erosion and the legacy one) opens on. Clean-room: every law below comes from LYNX's own
-// measurements of Live 12.4's output on test tones (round 190kk, /mnt/e/lynx-work/livedev190kk RESULTS.md §1): the
+// "Erosion" (Live 12's Erosion and the legacy one) opens on. Clean-room: every law below comes from YW's own
+// measurements of Live 12.4's output on test tones (round 190kk, /mnt/e/yw-work/livedev190kk RESULTS.md §1): the
 // device is pure phase modulation (the carrier falls as J0 / exp(−σ²ω²/2) of the same delay deviation at 500 Hz, 2 kHz
 // and 8 kHz), adds nothing on silence and is exactly transparent at Amount 0; nothing of Live's code or content is used.
 //
@@ -26,7 +26,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::corrode
+namespace yw::corrode
 {
 enum Param { amount, frequency, width, noise, stereo, count };
 
@@ -221,4 +221,4 @@ private:
     double smoothed = -1.0;
     std::uint32_t seed = 0x9e3779b9u;
 };
-} // namespace lynx::corrode
+} // namespace yw::corrode

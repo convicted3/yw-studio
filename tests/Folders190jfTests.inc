@@ -1,4 +1,4 @@
-// Round 190jf, slice B17 (community complaint #31 "nested groups"; OD1): Playlist folders = FL's track groups with LYNX's
+// Round 190jf, slice B17 (community complaint #31 "nested groups"; OD1): Playlist folders = FL's track groups with YW's
 // nesting (PlaylistTrack::nest), FL's group mute / solo (Alt+click / Alt+right-click on the LED), FL's "Hide collapsed
 // grouped tracks", Alt+drag of a header into / out of a folder, nested groups from a Live set, and a folder's bus.
 
@@ -10,9 +10,9 @@
 namespace
 {
 // tracks named "0".."n-1" with depths `d` (0 = not grouped)
-lynx::Song folderSong (const std::vector<int>& d)
+yw::Song folderSong (const std::vector<int>& d)
 {
-    lynx::Song s;
+    yw::Song s;
     s.playlistTracks.resize (d.size());
     for (std::size_t i = 0; i < d.size(); ++i)
     {
@@ -22,14 +22,14 @@ lynx::Song folderSong (const std::vector<int>& d)
     }
     return s;
 }
-std::vector<int> depthsOf (const lynx::Song& s)
+std::vector<int> depthsOf (const yw::Song& s)
 {
     std::vector<int> out;
     for (int t = 0; t < (int) s.playlistTracks.size(); ++t)
-        out.push_back (lynx::noteedit::folderDepth (s, t));
+        out.push_back (yw::noteedit::folderDepth (s, t));
     return out;
 }
-std::string namesOf (const lynx::Song& s)
+std::string namesOf (const yw::Song& s)
 {
     std::string out;
     for (const auto& t : s.playlistTracks)
@@ -40,7 +40,7 @@ std::string namesOf (const lynx::Song& s)
 
 TEST (folders190jf_flat_groups_behave_as_before)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's groups: 0 header of 1,2; 3 alone; 4 header of 5
     auto s = folderSong ({ 0, 1, 1, 0, 0, 1 });
     CHECK (noteedit::isGroupHeader (s, 0) && ! noteedit::isGroupHeader (s, 1) && ! noteedit::isGroupHeader (s, 3) && noteedit::isGroupHeader (s, 4));
@@ -62,7 +62,7 @@ TEST (folders190jf_flat_groups_behave_as_before)
 
 TEST (folders190jf_nested_folders)
 {
-    using namespace lynx;
+    using namespace yw;
     //            0  1  2  3  4  5  6
     auto s = folderSong ({ 0, 1, 2, 2, 1, 0, 1 });
     CHECK (noteedit::isGroupHeader (s, 0) && noteedit::isGroupHeader (s, 1) && ! noteedit::isGroupHeader (s, 2));
@@ -87,7 +87,7 @@ TEST (folders190jf_nested_folders)
 
 TEST (folders190jf_normalize_and_nest)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = folderSong ({ 0, 3, 1, 4 }); // jumps: 1 can be at most 1 deep, 3 at most 2
     CHECK (noteedit::normalizeFolders (s));
     CHECK ((depthsOf (s) == std::vector<int> { 0, 1, 1, 2 }));
@@ -108,7 +108,7 @@ TEST (folders190jf_normalize_and_nest)
 
 TEST (folders190jf_move_folder_keeps_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = folderSong ({ 0, 1, 1, 0, 0 });
     for (int t = 0; t < 5; ++t)
     {
@@ -136,7 +136,7 @@ TEST (folders190jf_move_folder_keeps_clips)
 
 TEST (folders190jf_fl_group_mute_and_solo)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = folderSong ({ 0, 1, 1, 0, 0 });
     // FL: Alt+click the LED of any member: the group (header included) takes the clicked track's flipped state
     CHECK ((noteedit::groupMuteSet (s, 2) == std::vector<int> { 0, 1, 2 }) && noteedit::groupMuteSet (s, 3).empty());
@@ -167,7 +167,7 @@ TEST (folders190jf_fl_group_mute_and_solo)
 
 TEST (folders190jf_alt_drag_drop_place)
 {
-    using namespace lynx;
+    using namespace yw;
     //                        0  1  2  3  4
     const auto s = folderSong ({ 0, 1, 1, 0, 0 });
     // track 4 dropped on the upper half of row 2 (inside the group): joins it, level 1
@@ -190,7 +190,7 @@ TEST (folders190jf_alt_drag_drop_place)
 
 TEST (folders190jf_nested_bus)
 {
-    using namespace lynx;
+    using namespace yw;
     // 0 outer header, 1 inner header (its own insert), 2 inner member, 3 outer member; inserts 1..4
     auto s = folderSong ({ 0, 1, 2, 1 });
     s.mixer.resize (8);
@@ -210,7 +210,7 @@ TEST (folders190jf_nested_bus)
 
 TEST (folders190jf_clone_keeps_level)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = folderSong ({ 0, 1, 2, 0 });
     Clip c;
     c.track = 2;
@@ -223,7 +223,7 @@ TEST (folders190jf_clone_keeps_level)
 
 TEST (folders190jf_live_nested_groups_import)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 175a's set with a group inside the group: Band ⊃ { Keys, Inner ⊃ { Vocal } }
     auto set = als175a::richSet();
     auto swap = [&set] (const std::string& from, const std::string& to) {

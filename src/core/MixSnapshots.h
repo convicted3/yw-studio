@@ -1,7 +1,7 @@
 #pragma once
 
 // Mix snapshots (round 190hp, slice B16 of the 0.1.28 pain report, complaint #30: "Mixer: hide unused tracks, snapshots").
-// LYNX's own: FL keeps one insert's settings in a file (the track menu's Mixer states, .fst; LYNX has them too) and the
+// YW's own: FL keeps one insert's settings in a file (the track menu's Mixer states, .fst; YW has them too) and the
 // reference DAW has no mixer snapshots. The Mixer menu's "Mix snapshots (YW Studio)" submenu:
 //   - Take snapshot: the whole mix as it is now — every insert's fader, pan, separation, mute, its route to the Master
 //     (on / level) and its sends (target, level, pre / post) — named "Snapshot n"; at most maxMixSnapshots per project;
@@ -18,7 +18,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::mixsnap
+namespace yw::mixsnap
 {
 // The mix as it is now.
 inline MixSnapshot capture (const Song& song, std::string name = {})
@@ -184,4 +184,4 @@ inline void remap (Song& song, const std::function<int (int)>& map)
         std::sort (s.inserts.begin(), s.inserts.end(), [] (const MixSnapshot::Insert& a, const MixSnapshot::Insert& b) { return a.track < b.track; });
     }
 }
-} // namespace lynx::mixsnap
+} // namespace yw::mixsnap

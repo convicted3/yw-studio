@@ -16,7 +16,7 @@
  #include <vector>
 
  // PipeWire / SPA headers (MIT, third_party/pipewire): only declarations, inline helpers and constants are used; every
- // libpipewire function is called through a pointer resolved with dlsym, so LYNX starts without PipeWire installed.
+ // libpipewire function is called through a pointer resolved with dlsym, so YW starts without PipeWire installed.
  #if defined(__GNUC__)
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wpedantic"
@@ -39,7 +39,7 @@
   #pragma GCC diagnostic pop
  #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -85,7 +85,7 @@ struct Api
     static Api* get()
     {
         static Api* api = [] () -> Api* {
-            if (juce::SystemStats::getEnvironmentVariable ("LYNX_NO_PIPEWIRE", {}).isNotEmpty())
+            if (juce::SystemStats::getEnvironmentVariable ("YW_NO_PIPEWIRE", {}).isNotEmpty())
                 return nullptr;
             auto* lib = dlopen ("libpipewire-0.3.so.0", RTLD_NOW | RTLD_LOCAL);
             if (lib == nullptr)
@@ -192,7 +192,7 @@ struct Connection
 
     bool connect()
     {
-        loop = api.threadLoopNew ("lynx-pipewire", nullptr);
+        loop = api.threadLoopNew ("yw-pipewire", nullptr);
         if (loop == nullptr)
             return false;
         context = api.contextNew (api.threadLoopGetLoop (loop), nullptr, 0);
@@ -702,7 +702,7 @@ private:
         api.propertiesSet (props, PW_KEY_NODE_LATENCY, prefs::pipewireLatency (block, rate).c_str());
         api.propertiesSet (props, "node.rate", ("1/" + std::to_string (rate)).c_str());
         // the input and output streams run in the same graph cycle, on the same driver (as pw-loopback does)
-        api.propertiesSet (props, "node.group", ("lynx." + std::to_string ((long) getpid())).c_str());
+        api.propertiesSet (props, "node.group", ("yw." + std::to_string ((long) getpid())).c_str());
         if (! endpoint.node.empty())
             api.propertiesSet (props, "target.object", endpoint.node.c_str());
 
@@ -1068,14 +1068,14 @@ juce::String describePipeWire()
     c->unlock();
     return s;
 }
-} // namespace lynx
+} // namespace yw
 
 #else
 
-namespace lynx
+namespace yw
 {
 std::unique_ptr<juce::AudioIODeviceType> makePipeWireDeviceType() { return nullptr; }
 juce::String describePipeWire() { return "PipeWire: Linux only"; }
-} // namespace lynx
+} // namespace yw
 
 #endif

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""calibrate.py - LYNX Model's auto-calibration (round 190ni): fits each mallet instrument's mode tables per key and
+"""calibrate.py - YW Model's auto-calibration (round 190ni): fits each mallet instrument's mode tables per key and
 velocity layer from CC0 recordings and writes the parameter table (.lpm, tools/physmod/lpm.py), its provenance record
-and the C++ include LYNX compiles in. Only fitted parameters ship (a few KB per instrument), never audio, and the
+and the C++ include YW compiles in. Only fitted parameters ship (a few KB per instrument), never audio, and the
 attack is synthesised by the engine (a Gaussian contact pulse + band-pass noise), never a recorded transient.
 
   calibrate.py fit <instrument|all> <notes-root> <manifest.json> <out-dir> [--holdout N] [--inc-dir DIR]
@@ -168,7 +168,7 @@ CLAMPED_BETA = [1.875104069, 4.694091133, 7.854757438, 10.99554073, 14.13716839,
 
 
 def mode_shape(beam, shape, u):
-    """the engine's modeShape (LynxModel.cpp): bending mode `shape` of a free-free (0) or clamped-free (1) beam at u"""
+    """the engine's modeShape (YwModel.cpp): bending mode `shape` of a free-free (0) or clamped-free (1) beam at u"""
     if shape <= 0:
         return 1.0
     k = shape - 1
@@ -280,12 +280,12 @@ def noise_fit(x, sr, modes_all, main_a0):
     return {'noiseDb': level, 'noiseHz': fc, 'noiseQ': q, 'noiseMs': tau_ms}
 
 
-# --- the engine's first 150 ms, emulated (src/core/physmod/LynxModel.cpp at its default knobs) ------------------------
+# --- the engine's first 150 ms, emulated (src/core/physmod/YwModel.cpp at its default knobs) ------------------------
 EMU_SECONDS = 0.15
 EMU_EDGES = np.array([0.0, 0.003, 0.006, 0.012, 0.025, 0.05, 0.1, 0.15])
 TAUS = np.geomspace(0.00003, 0.002, 11)
 RISES = np.array([0.0, 0.002, 0.004, 0.008, 0.016])
-H_DRIVE = 0.1  # LynxModel.cpp hDrive
+H_DRIVE = 0.1  # YwModel.cpp hDrive
 NOISE_T = np.array([0.0015, 0.003, 0.006, 0.012, 0.025, 0.05])
 NOISE_DB = np.arange(-50.0, 21.0, 3.0)
 

@@ -15,12 +15,12 @@ std::vector<std::uint8_t> presetState (const char* name)
     return preset.channels.empty() ? std::vector<std::uint8_t> {} : preset.channels[0].pluginState;
 }
 
-bool overlaps (const lynx::SurfaceControl& a, const lynx::SurfaceControl& b)
+bool overlaps (const yw::SurfaceControl& a, const yw::SurfaceControl& b)
 {
-    auto box = [] (const lynx::SurfaceControl& c) {
+    auto box = [] (const yw::SurfaceControl& c) {
         const auto s = std::max (0.5f, c.size);
-        const auto w = c.kind == lynx::SurfaceControl::Kind::slider ? 40.0f : c.kind == lynx::SurfaceControl::Kind::checkBox ? 110.0f * s : 56.0f * s;
-        const auto h = c.kind == lynx::SurfaceControl::Kind::slider ? 140.0f * s : c.kind == lynx::SurfaceControl::Kind::checkBox ? 24.0f : 56.0f * s + 14.0f;
+        const auto w = c.kind == yw::SurfaceControl::Kind::slider ? 40.0f : c.kind == yw::SurfaceControl::Kind::checkBox ? 110.0f * s : 56.0f * s;
+        const auto h = c.kind == yw::SurfaceControl::Kind::slider ? 140.0f * s : c.kind == yw::SurfaceControl::Kind::checkBox ? 24.0f : 56.0f * s + 14.0f;
         return std::array<float, 4> { c.x, c.y, c.x + w, c.y + h };
     };
     const auto p = box (a), q = box (b);
@@ -30,11 +30,11 @@ bool overlaps (const lynx::SurfaceControl& a, const lynx::SurfaceControl& b)
 
 TEST (dashboard164f_fl_presets)
 {
-    using Kind = lynx::SurfaceControl::Kind;
+    using Kind = yw::SurfaceControl::Kind;
     // Sliders: 10 sliders, records 0…9 publish FL's outputs 0…9, every value 32768 of 0…65536
     if (const auto st = dash164f::presetState ("Sliders.fst"); ! st.empty())
     {
-        const auto d = lynx::surface::parseFlDashboard (st);
+        const auto d = yw::surface::parseFlDashboard (st);
         CHECK (d && d->controls.size() == 10);
         if (d && d->controls.size() == 10)
             for (int k = 0; k < 10; ++k)
@@ -42,7 +42,7 @@ TEST (dashboard164f_fl_presets)
                 const auto& c = d->controls[(std::size_t) k];
                 CHECK (c.kind == Kind::slider && c.name == "Slider" + std::to_string (k + 1) && std::abs (c.value - 0.5f) < 1e-6f);
                 CHECK (d->flOutputs[(std::size_t) k] == k);
-                CHECK (lynx::surface::flDashboardOutputToLynx (st, k) == k);
+                CHECK (yw::surface::flDashboardOutputToYw (st, k) == k);
                 for (int j = 0; j < k; ++j)
                     CHECK (! dash164f::overlaps (c, d->controls[(std::size_t) j]));
             }
@@ -50,20 +50,20 @@ TEST (dashboard164f_fl_presets)
     // XP-30: the patch selector and the labels hold no value; the 6 sliders send CCs (no controller outputs)
     if (const auto st = dash164f::presetState ("XP30.fst"); ! st.empty())
     {
-        const auto d = lynx::surface::parseFlDashboard (st);
+        const auto d = yw::surface::parseFlDashboard (st);
         CHECK (d && d->controls.size() == 6);
         if (d && d->controls.size() == 6)
         {
             CHECK (d->controls[0].name == "CUTOFF" && d->controls[5].name == "CHOR" && d->controls[4].name == "REV");
             CHECK (std::abs (d->controls[0].value - 64.0f / 127.0f) < 1e-5f);
             CHECK (std::all_of (d->flOutputs.begin(), d->flOutputs.end(), [] (int o) { return o == -1; }));
-            CHECK (! lynx::surface::flDashboardOutputToLynx (st, 0));
+            CHECK (! yw::surface::flDashboardOutputToYw (st, 0));
         }
     }
     // MIDI Out: wheels and a slider in FL's record order (Wheel1…6, Slider1, Wheel7…12)
     if (const auto st = dash164f::presetState ("MIDI Out.fst"); ! st.empty())
     {
-        const auto d = lynx::surface::parseFlDashboard (st);
+        const auto d = yw::surface::parseFlDashboard (st);
         CHECK (d && d->controls.size() == 13);
         if (d && d->controls.size() == 13)
             CHECK (d->controls[6].kind == Kind::slider && d->controls[6].name == "Slider1" && d->controls[7].kind == Kind::knob && d->controls[7].name == "Wheel7");
@@ -72,21 +72,21 @@ TEST (dashboard164f_fl_presets)
     // check boxes; its records publish outputs 19, 27, 0, 9… (FL's numbers, bit 31 = deactivated)
     if (const auto st = dash164f::presetState ("Peavey.fst"); ! st.empty())
     {
-        const auto d = lynx::surface::parseFlDashboard (st);
+        const auto d = yw::surface::parseFlDashboard (st);
         CHECK (d && d->controls.size() == 36);
         if (d && ! d->controls.empty())
         {
             CHECK (d->controls[0].kind == Kind::slider && d->controls[1].kind == Kind::checkBox && d->controls[2].kind == Kind::knob);
             CHECK (d->flOutputs[0] == 19 && d->flOutputs[1] == 27 && d->flOutputs[2] == 0 && d->flOutputs[3] == 9);
-            CHECK (lynx::surface::flDashboardOutputToLynx (st, 27) == 1);
+            CHECK (yw::surface::flDashboardOutputToYw (st, 27) == 1);
             int overlapping = 0;
             for (std::size_t i = 0; i < d->controls.size(); ++i)
                 for (std::size_t j = 0; j < i; ++j)
                     overlapping += dash164f::overlaps (d->controls[i], d->controls[j]) ? 1 : 0;
-            std::printf ("  Peavey Dashboard: %d overlapping control pairs in LYNX's panel\n", overlapping);
+            std::printf ("  Peavey Dashboard: %d overlapping control pairs in YW's panel\n", overlapping);
         }
     }
-    CHECK (! lynx::surface::parseFlDashboard ({ 1, 2, 3 }));
+    CHECK (! yw::surface::parseFlDashboard ({ 1, 2, 3 }));
 }
 
 TEST (dashboard164f_import_with_link)
@@ -102,7 +102,7 @@ TEST (dashboard164f_import_with_link)
     put (params + 4 * (1 + 7), 57344);
     put (records + 81 * 3 + 0x40, 7);
     put (records + 81 * 7 + 0x40, 3);
-    CHECK (lynx::surface::flDashboardOutputToLynx (st, 7) == 3 && lynx::surface::flDashboardOutputToLynx (st, 3) == 7);
+    CHECK (yw::surface::flDashboardOutputToYw (st, 7) == 3 && yw::surface::flDashboardOutputToYw (st, 3) == 7);
     flp::Project project;
     flp::Channel dash;
     dash.index = 0;
@@ -117,25 +117,25 @@ TEST (dashboard164f_import_with_link)
     source.raw = (0u << 16) | (std::uint32_t) (flp::ControlId::pluginParamBase + 7);
     target.raw = (1u << 16) | 0u;
     project.controllerLinks.push_back ({ source, target });
-    lynx::FlpImportReport report;
-    lynx::FlpImportOptions options;
+    yw::FlpImportReport report;
+    yw::FlpImportOptions options;
     options.report = &report;
-    const auto song = lynx::importFlp (project, options);
+    const auto song = yw::importFlp (project, options);
     CHECK (song.channels.size() == 2);
     if (song.channels.size() != 2)
         return;
-    CHECK (song.channels[0].instrument == lynx::InstrumentKind::dashboard && song.channels[0].patcher.surface.size() == 10);
+    CHECK (song.channels[0].instrument == yw::InstrumentKind::dashboard && song.channels[0].patcher.surface.size() == 10);
     CHECK (report.converted.count ("Dashboard") == 1);
     int links = 0;
     for (const auto& a : song.automations)
         if (a.isLive() && a.source.channel == 0)
         {
             ++links;
-            CHECK (a.source.output == 3 && a.target.kind == lynx::AutomationTargetKind::channelVolume && a.target.index == 1);
+            CHECK (a.source.output == 3 && a.target.kind == yw::AutomationTargetKind::channelVolume && a.target.index == 1);
         }
     CHECK (links == 1);
     // the channel's instrument publishes the panel's values on those outputs
-    auto instrument = lynx::makeInstrument (lynx::InstrumentKind::dashboard, nullptr);
+    auto instrument = yw::makeInstrument (yw::InstrumentKind::dashboard, nullptr);
     instrument->configure (song.channels[0], 120.0);
     CHECK (std::abs (instrument->controlOutput (3) - 0.25f) < 1e-6f && std::abs (instrument->controlOutput (7) - 0.875f) < 1e-6f);
 }
@@ -144,11 +144,11 @@ TEST (voltage164f_fl_render_pitch_and_velocity)
 {
     // FL's renders of REA_rodada164f-flimport (fl_volt10 / fl_volt12 / fl_volt12b): main L = velocity, main R = pitch,
     // offsets 0, scales × 1, ±10 V; notes C3…C7 / C5, C#5, D5, B4, A#4, D#5, A4 with velocities 1, 16, 32, 64, 100, 128
-    auto s = *lynx::voltage::parse (volt164::flState);
+    auto s = *yw::voltage::parse (volt164::flState);
     for (int o = 0; o < 8; ++o)
         s.params[(std::size_t) o] = 32768, s.params[(std::size_t) o + 8] = 65536;
-    s.source[0] = lynx::voltage::Source::velocity;
-    s.source[1] = lynx::voltage::Source::pitch;
+    s.source[0] = yw::voltage::Source::velocity;
+    s.source[1] = yw::voltage::Source::pitch;
     struct Step
     {
         int key, velocity;
@@ -165,7 +165,7 @@ TEST (voltage164f_fl_render_pitch_and_velocity)
         volt164::Rig rig (s);
         for (const auto& st : steps)
         {
-            rig.instrument->noteOn (st.key, (float) st.velocity / 128.0f); // (LYNX's velocity from FL's: / 128)
+            rig.instrument->noteOn (st.key, (float) st.velocity / 128.0f); // (YW's velocity from FL's: / 128)
             rig.run (64);
             CHECK (std::abs (rig.left[32] - st.l) < 2.0e-4f);
             CHECK (std::abs (rig.right[32] - (standard == 0 ? st.r10 : st.r12)) < 2.0e-4f);

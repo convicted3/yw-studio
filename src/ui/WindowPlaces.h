@@ -3,7 +3,7 @@
 // Round 190oa (DF-130, owner decision F3): plugin and channel windows keep their place with the project, as FL's do —
 // FL writes each plugin's window position, size and open state into its wrapper record (event 0xD4: x / y at +36 / +40,
 // width / height at +44 / +48, the flags at +16; Thief.flp's 122 records all carry a position, REA 190oa R3) and opens
-// the project with those windows where they were. LYNX keeps the places of the windows a project shows (a channel's,
+// the project with those windows where they were. YW keeps the places of the windows a project shows (a channel's,
 // a mixer slot's) in a registry keyed by what the window edits; the project file carries it next to the window layout
 // (ProjectFile::WindowLayout::places) and a load opens the windows that were open, where they were.
 //
@@ -15,7 +15,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::windowplaces
+namespace yw::windowplaces
 {
 struct Place
 {
@@ -31,7 +31,7 @@ inline std::map<juce::String, Place>& all()
 
 // Rollup 0.1.31 step 7 (PRs #248 / #256 by FKHR26): the gear in a docked channel or plugin window's title bar hides the
 // window's header strip (tabs, presets, the channel's controls); shown by default, each window keeps its choice (the window
-// kind and its place key), with the places: in the project as [key, "headerHidden"], an entry older LYNX skips
+// kind and its place key), with the places: in the project as [key, "headerHidden"], an entry older YW skips
 inline std::set<juce::String>& hiddenHeaders()
 {
     static std::set<juce::String> keys;
@@ -133,4 +133,4 @@ inline void fromVar (const juce::var& v)
             else if (e.isArray() && e.size() == 2 && e[1].toString() == "headerHidden")
                 hiddenHeaders().insert (e[0].toString());
 }
-} // namespace lynx::windowplaces
+} // namespace yw::windowplaces

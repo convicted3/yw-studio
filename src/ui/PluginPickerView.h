@@ -7,7 +7,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // FL Studio's Plugin picker (View › Plugin picker, F8; rounds 169k, 171c and 175b, core/PickerView.h,
 // docs/analise/REA_rodada171c.md §2, REA_rodada175b.md): a see-through veil over the whole screen with every generator
@@ -32,4 +32,4 @@ std::unique_ptr<juce::Component> makePluginPickerView (AudioEngine& engine, Plug
 // FL's picker is its own window over the whole screen (the main window's monitor, its work area) and see-through: the
 // screen under it is taken once before it shows (`screenArea` in logical screen coordinates).
 void takePluginPickerBackdrop (juce::Component& view, juce::Rectangle<int> screenArea);
-} // namespace lynx
+} // namespace yw

@@ -15,9 +15,9 @@
 //
 // Host interface as FL's wrapper (§1.3, §1.10, §1.11): MIDI velocity from Init.Vol, per-note L/R level tables from
 // ComputeLRVol(Final.Pan, Final.Vol) and the pitch-offset table; FL's channel volume/pan/pitch reach GMS only through
-// those tables, so LYNX recovers them from its channel gains and does not apply them a second time. The max-polyphony
+// those tables, so YW recovers them from its channel gains and does not apply them a second time. The max-polyphony
 // event is sent with value 0 (→ 99 voices; FL's value at channel creation is not confirmed, §1.3). Random draws: GMS
-// uses one process-global LCG shared by every instance (§1.7); LYNX gives every instance its own generator started like
+// uses one process-global LCG shared by every instance (§1.7); YW gives every instance its own generator started like
 // a freshly created plugin (state 0, then the constructor's and the rate set's voice resets), so renders are
 // deterministic and FL's noise/dither/random phases differ from any given FL render by design.
 
@@ -28,7 +28,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this GMS state ("SSLF" + Syn3/Syn4 preset with the 212 parameters)
 bool gmsStateUsable (const std::vector<std::uint8_t>& state);
@@ -61,4 +61,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
                                     int length, const std::string& wavesDir, int block = 512, double bpm = 140.0, int maxPoly = 0,
                                     double songPos = -1.0, bool effects = true);
 } // namespace gms
-} // namespace lynx
+} // namespace yw

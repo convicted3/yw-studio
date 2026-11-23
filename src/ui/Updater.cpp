@@ -23,7 +23,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::updater
+namespace yw::updater
 {
 namespace
 {
@@ -42,8 +42,8 @@ juce::File updateFolder()
     return base.getChildFile ("YW-update");
 }
 
-// round 190nx: LYNX_OFFLINE=1 / --offline: no update check, download or going back (PRIVACY.md)
-juce::String offlineText() { return tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline), so it does not connect to the internet: no update check and no update download."); }
+// round 190nx: YW_OFFLINE=1 / --offline: no update check, download or going back (PRIVACY.md)
+juce::String offlineText() { return tr ("YW Studio is in offline mode (YW_OFFLINE or --offline), so it does not connect to the internet: no update check and no update download."); }
 
 juce::File downloadsFolder()
 {
@@ -76,11 +76,11 @@ void saveSettings (const update::Settings& s) { settingsPath().replaceWithText (
 
 update::Version runningVersion()
 {
-    const auto forced = env ("LYNX_UPDATE_VERSION");
+    const auto forced = env ("YW_UPDATE_VERSION");
     return update::parseVersion (utf8 (forced.isNotEmpty() ? forced : juce::String (JUCE_APPLICATION_VERSION_STRING)));
 }
 
-juce::String overrideUrl() { return env ("LYNX_UPDATE_URL"); }
+juce::String overrideUrl() { return env ("YW_UPDATE_URL"); }
 
 juce::String userAgent() { return "YW-Studio/" + juce::String (JUCE_APPLICATION_VERSION_STRING) + " (update check)"; }
 
@@ -197,7 +197,7 @@ public:
         dest.getParentDirectory().createDirectory();
         dest.deleteFile();
        #if JUCE_LINUX || JUCE_BSD
-        // (LYNX is built without libcurl, JUCE_USE_CURL=0: the curl program fetches it, as the crash report upload)
+        // (YW is built without libcurl, JUCE_USE_CURL=0: the curl program fetches it, as the crash report upload)
         juce::StringArray args { "curl", "-sS", "-L", "--connect-timeout", "8", "-A", userAgent(), "-o", dest.getFullPathName(), "-w", "%{http_code}" };
         if (quick)
             args.addArray ({ "-m", "20", "-H", "Accept: application/vnd.github+json" });
@@ -578,7 +578,7 @@ std::uint32_t currentPid() { return (std::uint32_t) GetCurrentProcessId(); }
 std::uint32_t currentPid() { return (std::uint32_t) getpid(); }
 #endif
 
-// Windows installer build: a copy of LYNX.exe waits for this process to end, installs and restarts LYNX SHARE
+// Windows installer build: a copy of YW.exe waits for this process to end, installs and restarts YW Studio
 void installAndRestart (const juce::File& setup)
 {
     auto& c = controller();
@@ -655,7 +655,7 @@ void appImageUpdate()
     const auto current = appImageFile();
    #if JUCE_LINUX || JUCE_BSD
     // AppImageUpdate's command-line tool: the zsync update information embedded by scripts/package-linux.sh
-    // (zsync|https://lynx-share.com/update/...) fetches only the changed blocks, then -O replaces the file
+    // (zsync|https://yolo.su/update/...) fetches only the changed blocks, then -O replaces the file
     // (going back downloads the older AppImage: the tool only knows the newest one)
     if (const auto tool = findInPath ("appimageupdatetool"); current != juce::File() && tool != juce::File() && overrideUrl().isEmpty() && ! c.rollingBack)
     {
@@ -781,7 +781,7 @@ update::Flavour flavour()
         const auto exe = juce::File::getSpecialLocation (juce::File::currentExecutableFile);
         facts.uninstallerBesideExe = exe.getSiblingFile ("Uninstall.exe").existsAsFile();
         facts.appImagePath = utf8 (appImageFile().getFullPathName());
-        facts.forced = utf8 (env ("LYNX_UPDATE_FLAVOUR"));
+        facts.forced = utf8 (env ("YW_UPDATE_FLAVOUR"));
         return update::detectFlavour (facts);
     }();
     return f;
@@ -809,8 +809,8 @@ void startAutomaticCheck()
 {
     if (offline::enabled()) // no network at all, not even the quiet check
         return;
-    // round 190gh (B2), tests: LYNX_TEST_MODE + LYNX_UPDATE_URL + LYNX_UPDATE_GO_BACK=1 go back at start, without asking
-    if (offered() && platform::testMode() && overrideUrl().isNotEmpty() && env ("LYNX_UPDATE_GO_BACK") == "1")
+    // round 190gh (B2), tests: YW_TEST_MODE + YW_UPDATE_URL + YW_UPDATE_GO_BACK=1 go back at start, without asking
+    if (offered() && platform::testMode() && overrideUrl().isNotEmpty() && env ("YW_UPDATE_GO_BACK") == "1")
     {
         goBack();
         return;
@@ -821,7 +821,7 @@ void startAutomaticCheck()
     // Finish starts the check when it is ticked)
     if (! setupWizardDone())
         return;
-    // LYNX_TEST_MODE: no network, unless a test fixture is named
+    // YW_TEST_MODE: no network, unless a test fixture is named
     if (platform::testMode() && overrideUrl().isEmpty())
         return;
     check (false);
@@ -838,7 +838,7 @@ void checkNow()
     }
     if (platform::testMode() && overrideUrl().isEmpty())
     {
-        message (juce::MessageBoxIconType::InfoIcon, tr ("Check for updates"), "LYNX_TEST_MODE: no network (set LYNX_UPDATE_URL)");
+        message (juce::MessageBoxIconType::InfoIcon, tr ("Check for updates"), "YW_TEST_MODE: no network (set YW_UPDATE_URL)");
         return;
     }
     check (true);
@@ -886,7 +886,7 @@ void goBack()
     }
     if (platform::testMode() && overrideUrl().isEmpty())
     {
-        message (juce::MessageBoxIconType::InfoIcon, title, "LYNX_TEST_MODE: no network (set LYNX_UPDATE_URL)");
+        message (juce::MessageBoxIconType::InfoIcon, title, "YW_TEST_MODE: no network (set YW_UPDATE_URL)");
         return;
     }
     auto& c = controller();
@@ -1006,7 +1006,7 @@ void afterStart()
     }
     folder.getChildFile ("installing.txt").deleteFile();
     folder.getChildFile ("installing-notes.md").deleteFile();
-    // the installer and the helper copy of LYNX.exe go (nothing has been downloaded yet in this session)
+    // the installer and the helper copy of YW.exe go (nothing has been downloaded yet in this session)
     for (const auto& f : folder.findChildFiles (juce::File::findFiles, false, "*.exe;*.part;*.tmp"))
         f.deleteFile();
     // the helper may still be ending: its copy once more a little later, unless an update of this session needs the folder
@@ -1051,7 +1051,7 @@ bool runApplyHelper (const juce::StringArray& args)
     auto finish = [&] (bool ok, const juce::String& detail) {
         log (juce::String ("helper: ") + (ok ? "installed" : "FAILED") + (detail.isNotEmpty() ? " (" + detail + ")" : juce::String()));
         resultFile.replaceWithText ("result=" + juce::String (ok ? "ok" : "failed") + "\ndetail=" + detail + "\n");
-        // LYNX SHARE starts again (the old one when the installation failed: it shows why)
+        // YW Studio starts again (the old one when the installation failed: it shows why)
         const auto exe = folder.getChildFile ("YW Studio.exe");
         if (exe.existsAsFile())
             exe.startAsProcess (juce::File::isAbsolutePath (project) ? project.quoted() : juce::String());
@@ -1073,7 +1073,7 @@ bool runApplyHelper (const juce::StringArray& args)
                 return true;
             }
         }
-    // plugin sandbox / scan child processes of LYNX.exe end a moment later: wait until the exe can be replaced
+    // plugin sandbox / scan child processes of YW.exe end a moment later: wait until the exe can be replaced
     const auto exe = folder.getChildFile ("YW Studio.exe");
     for (int i = 0; i < 150 && exe.existsAsFile(); ++i)
     {
@@ -1430,7 +1430,7 @@ public:
         r.removeFromBottom (12);
         viewport.setBounds (r.reduced (1));
         notes.fitWidth (viewport.getMaximumVisibleWidth());
-        // (WG-6: LYNX's one order: Open on GitHub on the left; Close, then Update in the accent at the far right)
+        // (WG-6: YW's one order: Open on GitHub on the left; Close, then Update in the accent at the far right)
         if (updateButton.isVisible())
         {
             updateButton.setBounds (buttons.removeFromRight (120));
@@ -1479,4 +1479,4 @@ std::unique_ptr<juce::Component> makeReleaseNotesForSnapshot()
     controller().phase = Phase::available;
     return std::make_unique<NotesPanel> (r);
 }
-} // namespace lynx::updater
+} // namespace yw::updater

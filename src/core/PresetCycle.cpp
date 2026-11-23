@@ -5,7 +5,7 @@
 #include <map>
 #include <system_error>
 
-namespace lynx::presetcycle
+namespace yw::presetcycle
 {
 namespace
 {
@@ -171,4 +171,4 @@ int indexOfName (const std::vector<Preset>& list, const std::string& name)
             return (int) i;
     return -1;
 }
-} // namespace lynx::presetcycle
+} // namespace yw::presetcycle

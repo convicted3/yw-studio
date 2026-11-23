@@ -1,16 +1,16 @@
-// Round 190nq: issues #225 (Mixer Left / Right select), #227 (ruler click with every tool, LYNX extra), #228 (the action
-// search, LYNX extra), #230 (FL's "Show fade previews").
+// Round 190nq: issues #225 (Mixer Left / Right select), #227 (ruler click with every tool, YW extra), #228 (the action
+// search, YW extra), #230 (FL's "Show fade previews").
 
 #include "core/ActionSearch.h"
 #include "core/ClipOps.h"
 #include "core/KeyMap.h"
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/MixerOps.h"
 #include "core/RulerGestures.h"
 
 TEST (issues190nq_225_mixer_left_right_select_the_neighbour)
 {
-    using namespace lynx;
+    using namespace yw;
     auto noneHidden = [] (int) { return false; };
     CHECK (mixerops::neighbourTrack (10, 3, 1, noneHidden) == 4);
     CHECK (mixerops::neighbourTrack (10, 3, -1, noneHidden) == 2);
@@ -23,7 +23,7 @@ TEST (issues190nq_225_mixer_left_right_select_the_neighbour)
     CHECK (mixerops::neighbourTrack (10, 6, -1, hidden) == 3);
     CHECK (mixerops::neighbourTrack (10, 8, 1, hidden) == 8);
 
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     // FL 2026: Left / Right, also with Ctrl or Shift, select; Alt moves (unchanged)
@@ -41,15 +41,15 @@ TEST (issues190nq_225_mixer_left_right_select_the_neighbour)
 
 TEST (issues190nq_227_ruler_click_moves_the_song_position_with_every_tool)
 {
-    using namespace lynx::ruler;
-    using lynx::EditTool;
+    using namespace yw::ruler;
+    using yw::EditTool;
     Press p;
     p.mods.left = true;
     p.tool = EditTool::lasso;
     CHECK (press (p) == Action::select); // FL 2026 (and the default): the Select tool keeps the song position
     p.tool = EditTool::zoom;
     CHECK (press (p) == Action::zoomRange);
-    p.anyToolSeeks = true; // the LYNX extra
+    p.anyToolSeeks = true; // the YW extra
     CHECK (press (p) == Action::seek);
     p.tool = EditTool::lasso;
     CHECK (press (p) == Action::seek);
@@ -68,7 +68,7 @@ TEST (issues190nq_227_ruler_click_moves_the_song_position_with_every_tool)
     CHECK (press (r) == Action::select);
     CHECK (! seekWithAnyTool()); // off by default
     bool listed = false;
-    for (const auto& item : lynx::extras::items)
+    for (const auto& item : yw::extras::items)
         if (item.id == "playlist.rulerSeeksAnyTool")
             listed = item.settingsKey == "ui-options.txt:rulerSeeksAnyTool";
     CHECK (listed);
@@ -76,7 +76,7 @@ TEST (issues190nq_227_ruler_click_moves_the_song_position_with_every_tool)
 
 TEST (issues190nq_228_action_search_finds_and_ranks)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<actionsearch::Entry> e {
         { "a", "Toggle the metronome", "Toggle the metronome", "Everywhere", "Ctrl+M" },
         { "b", "Metronome sound", "Metronome sound", "Everywhere", "" },
@@ -109,7 +109,7 @@ TEST (issues190nq_228_action_search_finds_and_ranks)
 
 TEST (issues190nq_230_fade_preview_gain_follows_the_drawn_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     Clip c;
     c.kind = ClipKind::audio;
     c.length = 1000;

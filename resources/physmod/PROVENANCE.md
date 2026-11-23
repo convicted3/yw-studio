@@ -1,6 +1,6 @@
-# LYNX Model: provenance of the parameter tables
+# YW Model: provenance of the parameter tables
 
-LYNX Model (`src/core/physmod/LynxModel.h`, rounds 190ni, 190nl and 190nm) ships **fitted parameters only**: one table per instrument
+YW Model (`src/core/physmod/YwModel.h`, rounds 190ni, 190nl and 190nm) ships **fitted parameters only**: one table per instrument
 (`<name>.lpm`, format in `tools/physmod/lpm.py`), compiled in as `src/core/physmod/tables/<name>.inc`. No audio from
 any recording is shipped or played. The strike is synthesised: a contact force `t e^(-t / tau)` and band-pass noise,
 whose parameters are fitted. No recorded transient or attack table is used, by owner decision (design study 190nd §3

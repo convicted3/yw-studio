@@ -3,7 +3,7 @@
 TEST (fl165_key_click_velocity_follows_the_position_on_the_key)
 {
     // FL's preview keyboard: soft at the key's base, full velocity at its tip
-    using lynx::gesture::keyClickVelocity;
+    using yw::gesture::keyClickVelocity;
     CHECK (keyClickVelocity (0.0, 60.0) < 0.05f);
     CHECK (keyClickVelocity (0.0, 60.0) >= 1.0f / 127.0f);
     CHECK (std::abs (keyClickVelocity (29.5, 60.0) - 0.5f) < 0.01f);
@@ -16,7 +16,7 @@ TEST (fl165_key_click_velocity_follows_the_position_on_the_key)
 
 TEST (fl165_ghost_step_makes_the_pattern_longer)
 {
-    using lynx::lengthWithStep;
+    using yw::lengthWithStep;
     const std::int64_t step = 24, bar = 384; // 16 steps a bar
     CHECK (lengthWithStep (bar, 3, step, bar) == bar);          // inside: unchanged
     CHECK (lengthWithStep (bar, 15, step, bar) == bar);         // the last step: unchanged
@@ -28,21 +28,21 @@ TEST (fl165_ghost_step_makes_the_pattern_longer)
 
 TEST (fl165_plugin_names_round_trip)
 {
-    std::map<std::string, std::string> names { { "lynx:fx:Parametric EQ", "1_EQ" }, { "VST3-Limiter-abc", "2_Limiter" } };
-    const auto text = lynx::prefs::formatPluginNames (names);
-    CHECK (lynx::prefs::parsePluginNames (text) == names);
+    std::map<std::string, std::string> names { { "yw:fx:Parametric EQ", "1_EQ" }, { "VST3-Limiter-abc", "2_Limiter" } };
+    const auto text = yw::prefs::formatPluginNames (names);
+    CHECK (yw::prefs::parsePluginNames (text) == names);
     // a broken line, spaces and an empty name are skipped
-    const auto parsed = lynx::prefs::parsePluginNames ("no tab here\n  key \t  3_Verb \nempty\t \n");
+    const auto parsed = yw::prefs::parsePluginNames ("no tab here\n  key \t  3_Verb \nempty\t \n");
     CHECK (parsed.size() == 1 && parsed.at ("key") == "3_Verb");
     // JUCE writes the file with CRLF line ends on every system
-    CHECK (lynx::prefs::parsePluginNames ("lynx:fx:EQ\t1_EQ\r\nb\t2_B\r\n").at ("lynx:fx:EQ") == "1_EQ");
+    CHECK (yw::prefs::parsePluginNames ("yw:fx:EQ\t1_EQ\r\nb\t2_B\r\n").at ("yw:fx:EQ") == "1_EQ");
     // names with tabs or new lines are never written (they would break the file)
-    CHECK (lynx::prefs::formatPluginNames ({ { "k", "a\tb" } }).empty());
+    CHECK (yw::prefs::formatPluginNames ({ { "k", "a\tb" } }).empty());
 }
 
 TEST (fl165_type_ahead_picks_the_one_renamed_plugin)
 {
-    using lynx::prefs::uniqueTypeAhead;
+    using yw::prefs::uniqueTypeAhead;
     const std::vector<std::string> labels { "1_EQ", "2_Limiter", "3_Verb", "Reverb", "reese" };
     CHECK (uniqueTypeAhead (labels, '1') == 0);
     CHECK (uniqueTypeAhead (labels, '3') == 2);
@@ -54,7 +54,7 @@ TEST (fl165_type_ahead_picks_the_one_renamed_plugin)
 
 TEST (fl165_fl_window_keys)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     // FL 2026's defaults (its ShortcutsModule action list, REA round 165a)

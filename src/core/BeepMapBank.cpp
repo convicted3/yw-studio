@@ -1,4 +1,4 @@
-// LYNX's own BeepMap bank (round 168q). Designed for LYNX — never converted from FL's preset files. BeepMap plays a
+// YW's own BeepMap bank (round 168q). Designed for YW — never converted from FL's preset files. BeepMap plays a
 // bitmap as a bank of sine oscillators (core/BeepMap.h, REA_rodada65 §2), so every preset here is a small picture drawn
 // by code: one row per oscillator, the columns played left to right, red = left level, green = right level.
 //
@@ -22,9 +22,9 @@
 #include <vector>
 
 #include "core/BeepMap.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -339,4 +339,4 @@ std::vector<Preset> beepMapBank()
     }));
     return bank;
 }
-} // namespace lynx::banks
+} // namespace yw::banks

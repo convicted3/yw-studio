@@ -1,4 +1,4 @@
-// Renders a Transistor Bass state with LYNX's engine the way the REA round-57 EXEC harness drives FL's engine DLL
+// Renders a Transistor Bass state with YW's engine the way the REA round-57 EXEC harness drives FL's engine DLL
 // (verification, REA_rodada57 §2.11): tbassrender <state.bin> <engine_x64.dll> <out.f32> <length> <rate> [tempo=X] [blk=N]
 // [note=start,key,initVol,finalPan,pitchCents,off[,fcut,fres,channel] ...]   (off = −1: held). Output: interleaved stereo
 // float32.
@@ -26,8 +26,8 @@ int main (int argc, char** argv)
     const std::vector<std::uint8_t> state ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
     const int length = std::atoi (argv[4]);
     const double rate = std::atof (argv[5]);
-    lynx::tbass::RefOptions opt;
-    std::vector<lynx::tbass::RefNote> notes;
+    yw::tbass::RefOptions opt;
+    std::vector<yw::tbass::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -45,7 +45,7 @@ int main (int argc, char** argv)
                 v.push_back (std::atof (t.c_str()));
             if (v.size() < 6)
                 continue;
-            lynx::tbass::RefNote n;
+            yw::tbass::RefNote n;
             n.start = (int) v[0];
             n.key = (int) v[1];
             n.initVol = v[2];
@@ -59,13 +59,13 @@ int main (int argc, char** argv)
             notes.push_back (n);
         }
     }
-    if (! lynx::transistorBassStateUsable (state))
+    if (! yw::transistorBassStateUsable (state))
     {
         std::fprintf (stderr, "state not usable\n");
         return 1;
     }
     const auto t0 = std::chrono::steady_clock::now();
-    const auto out = lynx::tbass::renderReference (state, argv[2], notes, rate, length, opt);
+    const auto out = yw::tbass::renderReference (state, argv[2], notes, rate, length, opt);
     const auto ms = std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - t0).count();
     if (out.empty())
     {

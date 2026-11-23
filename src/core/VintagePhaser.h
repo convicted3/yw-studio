@@ -10,7 +10,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int vintagePhaserParamCount = 36;
 
@@ -18,4 +18,4 @@ std::unique_ptr<Effect> makeVintagePhaser();
 
 // FL state (version + 36 raw ints [+ 1 byte]) → the effect's parameters; nullopt if not a Vintage Phaser state
 std::optional<EffectSlot> vintagePhaserFromFl (const std::vector<std::uint8_t>& state);
-} // namespace lynx
+} // namespace yw

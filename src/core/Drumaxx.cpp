@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -170,7 +170,7 @@ inline float crtCosf (float xf) noexcept
 // double — near 1 (|x − 1| < 1/16) from s = u/(u + 2) with an odd series, else from the exponent, a 256-entry
 // ln(1 + i/256) table at the rounded top mantissa bits and a cubic in the reduced remainder —, then e^(y·ln x) with
 // k = round(t·64/ln 2), a 2^(j/64) table and a cubic (the near-1 branch uses the unfused exp the routine falls into),
-// rounded to float. The tables are the exact mathematical values rounded to nearest (computed for LYNX, not copied).
+// rounded to float. The tables are the exact mathematical values rounded to nearest (computed for YW, not copied).
 // ln(1 + i/256), i = 0…256, each rounded to the nearest double
 alignas (64) constexpr double crtLnTable[257] = {
     0x0.0p+0, 0x1.ff00aa2b10bc0p-9, 0x1.fe02a6b106789p-8, 0x1.7dc475f810a77p-7,
@@ -995,7 +995,7 @@ public:
             d.gR = d.tR;
         int done = 0;
         // The DLL's 1024-sample buffer holds 256 host samples up to a step of 4 (44.1 kHz and up, every pitch). Below
-        // ~38 kHz with the pad pitched up a block would overrun it, so LYNX renders fewer host samples per pass
+        // ~38 kHz with the pad pitched up a block would overrun it, so YW renders fewer host samples per pass
         // (found by tools/genfuzz, round 170i2): at FL's rates nothing changes.
         const auto most = std::clamp ((int) (1000.0 / std::max (step, 1.0e-6)), 1, 256);
         while (0 < n)
@@ -1105,7 +1105,7 @@ public:
             }
             if (! any)
             {
-                // (the DLL leaves the host's buffer as it is, zeros in FL: LYNX's own buffers are reused, so clear them)
+                // (the DLL leaves the host's buffer as it is, zeros in FL: YW's own buffers are reused, so clear them)
                 std::fill (l + done, l + done + m, 0.0f);
                 std::fill (r + done, r + done + m, 0.0f);
                 for (auto& b : eqL)
@@ -1346,7 +1346,7 @@ public:
     {
         take();
         // FL's channel volume and pan reach the plugin as Final.Vol / Final.Pan (round 169l: through the host's
-        // ComputeLRVol, see keyLevels); LYNX's channel gains are √2·V·cos/sin((1 + p)π/4), V and p recovered exactly
+        // ComputeLRVol, see keyLevels); YW's channel gains are √2·V·cos/sin((1 + p)π/4), V and p recovered exactly
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
         if (std::fabs (pan) < 1e-9)
@@ -1487,4 +1487,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace drumaxx
-} // namespace lynx
+} // namespace yw

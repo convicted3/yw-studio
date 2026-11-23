@@ -1,5 +1,5 @@
 // Round 190gp (A9): smart disable takes each built-in effect's declared tail (Effect::tailSamples) instead of the fixed
-// 1 s hold. The test of every effect that declares one, against the old fixed hold (lynx::setDeclaredTails): random
+// 1 s hold. The test of every effect that declares one, against the old fixed hold (yw::setDeclaredTails): random
 // settings, a loud burst (noise, a low sine, clicks; up to +12 dBFS), digital silence, a second burst, silence. While
 // the old output's tail is above −120 dBFS the new one must be the same, bit for bit, and after it both are silence;
 // on the second burst (the effect woken from where it stopped) the two differ by less than −120 dBFS.
@@ -23,9 +23,9 @@ struct Result
     bool shorter = false;      // the declared tail ended the hold early (the outputs differ somewhere)
 };
 
-inline std::shared_ptr<lynx::SampleData> signal (Rng& g, double loud)
+inline std::shared_ptr<yw::SampleData> signal (Rng& g, double loud)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     const auto total = (std::size_t) (4.2 * rate);
     d->left.assign (total, 0.0f);
     d->right.assign (total, 0.0f);
@@ -46,10 +46,10 @@ inline std::shared_ptr<lynx::SampleData> signal (Rng& g, double loud)
 }
 
 // the song: the signal as an audio clip into insert 1, which holds the effect
-inline std::vector<float> render (lynx::EffectKind kind, const lynx::EffectParams& params, std::shared_ptr<const lynx::SampleData> data,
+inline std::vector<float> render (yw::EffectKind kind, const yw::EffectParams& params, std::shared_ptr<const yw::SampleData> data,
                                   int block, bool declared)
 {
-    using namespace lynx;
+    using namespace yw;
     setDeclaredTails (declared);
     Song song;
     song.bpm = 120.0;
@@ -117,7 +117,7 @@ inline Result compare (const std::vector<float>& a, const std::vector<float>& b)
 
 TEST (s190gp_declared_tails_never_cut_a_tail)
 {
-    using namespace lynx;
+    using namespace yw;
     const EffectKind kinds[] = { EffectKind::eq, EffectKind::parametricEq, EffectKind::filter, EffectKind::distortion,
                                  EffectKind::utility, EffectKind::limiter, EffectKind::compressor };
     int runs = 0, shorter = 0, bad = 0;
@@ -158,7 +158,7 @@ TEST (s190gp_declared_tails_never_cut_a_tail)
 // every built-in that declares a tail gives a non-negative one at its defaults; the others keep the hold
 TEST (s190gp_declared_tails_defaults)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : { EffectKind::eq, EffectKind::parametricEq, EffectKind::filter, EffectKind::distortion, EffectKind::utility,
                              EffectKind::limiter, EffectKind::compressor })
     {

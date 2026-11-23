@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# LYNX vocal lab (round 190li): synthetic sung phrases with a known ground truth, for scoring monophonic pitch editors
-# (LYNX Newtone, Melodyne as the reference bar) without any third-party recording.
+# YW vocal lab (round 190li): synthetic sung phrases with a known ground truth, for scoring monophonic pitch editors
+# (YW Newtone, Melodyne as the reference bar) without any third-party recording.
 #
 # The voice is a source-filter model rendered additively: every harmonic k of the pitch curve f0(t) gets the amplitude
 # of a fixed spectral envelope at k*f0(t) (glottal tilt x vowel formant resonances), so the envelope is exactly known
@@ -316,7 +316,7 @@ def _set(**kw):
 
 
 # the edits: name -> (what it does in words, phrase -> edited phrase). The same list drives the Melodyne capture plan
-# (tools/vocallab/README.md) and LYNX's lab renders (newtonelab specs in cases.json).
+# (tools/vocallab/README.md) and YW's lab renders (newtonelab specs in cases.json).
 EDITS = {
     'up3': ('all notes +3 st', lambda p: _all(p, _set(shift=3))),
     'down3': ('all notes -3 st', lambda p: _all(p, _set(shift=-3))),

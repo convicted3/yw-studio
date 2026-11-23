@@ -4,7 +4,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -405,7 +405,7 @@ std::unique_ptr<juce::Component> makeVersionsPanel (VersionsActions actions)
 
 juce::String versionsSelfTest()
 {
-    const auto root = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-versions-selftest-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
+    const auto root = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-versions-selftest-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
     const auto project = root.getChildFile ("project"), backup = root.getChildFile ("backup");
     if (! project.createDirectory() || ! backup.createDirectory())
         return "could not create " + root.getFullPathName();
@@ -416,15 +416,15 @@ juce::String versionsSelfTest()
         contents[f.getFullPathName()] = text;
         return f.replaceWithText (text);
     };
-    auto ok = write (project.getChildFile ("Song.lynx"), "one") && write (project.getChildFile ("Song_2.lynx"), "two two")
-              && write (project.getChildFile ("Song_3.lynx"), "three") && write (project.getChildFile ("Other.lynx"), "other")
-              && write (backup.getChildFile ("Song_3 (autosaved on 2026-10-20 at 14h19).lynx"), "auto")
-              && write (backup.getChildFile ("Song_2 (overwritten on 2026-10-20 at 13h00).lynx"), "before")
-              && write (backup.getChildFile ("Else (autosaved on 2026-10-20 at 14h19).lynx"), "else");
+    auto ok = write (project.getChildFile ("Song.yw"), "one") && write (project.getChildFile ("Song_2.yw"), "two two")
+              && write (project.getChildFile ("Song_3.yw"), "three") && write (project.getChildFile ("Other.yw"), "other")
+              && write (backup.getChildFile ("Song_3 (autosaved on 2026-10-20 at 14h19).yw"), "auto")
+              && write (backup.getChildFile ("Song_2 (overwritten on 2026-10-20 at 13h00).yw"), "before")
+              && write (backup.getChildFile ("Else (autosaved on 2026-10-20 at 14h19).yw"), "else");
     if (! ok)
         return "could not write the test files";
 
-    VersionsContext c { project.getChildFile ("Song_3.lynx"), "Song_3", backup, ".lynx" };
+    VersionsContext c { project.getChildFile ("Song_3.yw"), "Song_3", backup, ".yw" };
     auto entries = versionEntries (c);
     if (entries.size() != 5)
         return "listed " + juce::String ((int) entries.size()) + " entries, not 5";
@@ -439,7 +439,7 @@ juce::String versionsSelfTest()
     const auto* cur = find ("Song_3");
     if (v2 == nullptr || a3 == nullptr || cur == nullptr || ! cur->current || v2->current || v2->size != 7)
         return "the entries are not the files written";
-    if (versionFile (c, *v2) != project.getChildFile ("Song_2.lynx") || versionFile (c, *a3).getParentDirectory() != backup)
+    if (versionFile (c, *v2) != project.getChildFile ("Song_2.yw") || versionFile (c, *a3).getParentDirectory() != backup)
         return "an entry points to the wrong file";
 
     if (! setVersionLabel (c, *v2, "  before the\tdrop ") || ! setVersionLabel (c, *a3, "good bass"))
@@ -455,8 +455,8 @@ juce::String versionsSelfTest()
         return "the backup labels are not read for the rotation";
 
     // a label of a file that is gone leaves with the next write; an empty label removes it (and the empty file)
-    backup.getChildFile ("Song_3 (autosaved on 2026-10-20 at 14h19).lynx").deleteFile();
-    contents.erase (backup.getChildFile ("Song_3 (autosaved on 2026-10-20 at 14h19).lynx").getFullPathName());
+    backup.getChildFile ("Song_3 (autosaved on 2026-10-20 at 14h19).yw").deleteFile();
+    contents.erase (backup.getChildFile ("Song_3 (autosaved on 2026-10-20 at 14h19).yw").getFullPathName());
     entries = versionEntries (c);
     const auto* o2 = find ("Song_2 (overwritten on 2026-10-20 at 13h00)");
     if (o2 == nullptr || ! setVersionLabel (c, *o2, "x") || backupLabels (backup, "Song_3").size() != 1 || ! setVersionLabel (c, *o2, "")
@@ -471,9 +471,9 @@ juce::String versionsSelfTest()
         return "unexpected files were written";
 
     // a project never saved: only the backups filed under its name
-    VersionsContext fresh { juce::File(), "Else", backup, ".lynx" };
+    VersionsContext fresh { juce::File(), "Else", backup, ".yw" };
     if (versionEntries (fresh).size() != 1)
         return "an unsaved project does not list just its backups";
     return "OK";
 }
-} // namespace lynx
+} // namespace yw

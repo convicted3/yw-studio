@@ -9,7 +9,7 @@
 
 // FL Studio Mobile's laws, read in round 188h (REA_rodada182c.md "F5 effects, round 188h", with the addresses).
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -430,9 +430,9 @@ private:
 // lines; Mirror: lines of 2D and the left input delayed by D; Ping-Pong: the lines cross, with an input balance.
 // Round 190ie (issue #185): FLM's lines are rings as long as the delay (a ring of D samples read, then written, at one
 // position). Here they are rings of the largest length, read D samples behind the write position: the same samples at
-// a steady tempo, bit for bit. A tempo change (the REA of FLM covers Time / Mode changes only; LYNX's tempo clips step
+// a steady tempo, bit for bit. A tempo change (the REA of FLM covers Time / Mode changes only; YW's tempo clips step
 // the tempo at every block, which re-cut FLM-style rings: a click per block, peaks near 0 dBFS) glides the lengths to
-// the new tempo's as LYNX's Delay does (FL's Fruity Delay 3 law, REA_rodada190ie): no click, the echoes bend like a tape.
+// the new tempo's as YW's Delay does (FL's Fruity Delay 3 law, REA_rodada190ie): no click, the echoes bend like a tape.
 class TranceDelay final : public Effect
 {
 public:
@@ -700,9 +700,9 @@ std::string levellerParamText (int param, float v)
     const auto i = (int) ((std::pow (std::clamp (v, 0.0f, 1.0f), 0.6f) * 72.0f - 60.0f) * 10.0f);
     return i == 0 ? std::string ("0 dB") : format (i > 0 ? "+%.1f dB" : "%.1f dB", i * 0.1);
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 std::string limiterParamText (int param, float v)
 {
@@ -714,9 +714,9 @@ std::string limiterParamText (int param, float v)
         default: return percent (v);
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 std::string gateParamText (int param, float v)
 {
@@ -730,9 +730,9 @@ std::string gateParamText (int param, float v)
         default: return percent (v);
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 const char* tranceTimeName (float v) noexcept
 {
@@ -755,9 +755,9 @@ std::string tranceDelayParamText (int param, float v)
         default: return format ("%.0f", (double) (int) (v * 100.0f));
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 std::string tapeDelayParamText (int param, float v)
 {
@@ -768,4 +768,4 @@ std::string tapeDelayParamText (int param, float v)
         default: return format ("%.0f%%", (double) (int) (v * 100.0f));
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

@@ -10,7 +10,7 @@
 
 TEST (toolbar170e_windows_touchpad_wheel_pieces_scale_with_the_fingers)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     const auto notch = windowsWheelNotch; // 120 wheel units in JUCE's units on Windows
 
     // a notched wheel is unchanged (one notch = one step), on Windows and elsewhere
@@ -57,7 +57,7 @@ TEST (toolbar170e_windows_touchpad_wheel_pieces_scale_with_the_fingers)
 
 TEST (toolbar170e_pinch_zoom_factor)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     CHECK (pinchZoomFactor (1.0) == 1.0);
     CHECK (pinchZoomFactor (1.05) == 1.05);
     CHECK (pinchZoomFactor (0.9) == 0.9);
@@ -76,7 +76,7 @@ TEST (toolbar170e_pinch_zoom_factor)
 
 TEST (toolbar170e2_recording_options_outlast_the_file_buttons)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     std::array<int, groupCount> widths;
     widths.fill (100);
@@ -91,8 +91,8 @@ TEST (toolbar170e2_recording_options_outlast_the_file_buttons)
 
 TEST (toolbar170e3_loop_record_decides_whether_song_takes_fold)
 {
-    using lynx::PlayMode;
-    using namespace lynx::recordloop;
+    using yw::PlayMode;
+    using namespace yw::recordloop;
     // on (the default): a loop region loops; no region: the song plays on (round 168k)
     CHECK (! linear (PlayMode::song, true, true));
     CHECK (linear (PlayMode::song, false, true));
@@ -109,28 +109,28 @@ TEST (toolbar170e3_loop_record_decides_whether_song_takes_fold)
 TEST (toolbar170e3_loop_record_off_keeps_a_second_pass_where_it_was_played)
 {
     // Song mode, loop region over bars 3-4, Loop record off: the take runs on to bar 5 and the note stays there
-    auto s = lynx::Song::makeDefault();
-    const std::int64_t bar = (std::int64_t) lynx::ppq * s.beatsPerBar;
-    s.mode = lynx::PlayMode::song;
+    auto s = yw::Song::makeDefault();
+    const std::int64_t bar = (std::int64_t) yw::ppq * s.beatsPerBar;
+    s.mode = yw::PlayMode::song;
     s.loopStart = 2 * bar;
     s.loopEnd = 4 * bar;
     s.patterns[0].notes.clear();
     s.playlist.clear();
-    lynx::NoteRecorder recorder;
+    yw::NoteRecorder recorder;
     recorder.begin (s.patterns[0].effectiveLength (s.meter()));
-    if (lynx::recordloop::notesLinear (s.mode, s.hasLoop(), false))
+    if (yw::recordloop::notesLinear (s.mode, s.hasLoop(), false))
         recorder.setLinear (true);
     std::vector<int> cleared;
-    lynx::TakeQuantize q {};
+    yw::TakeQuantize q {};
     q.grid = 0;
-    recorder.add (s, { (double) (2 * bar + lynx::ppq), 0, 60, 0.8f, true });
-    recorder.add (s, { (double) (2 * bar + 2 * lynx::ppq), 0, 60, 0.0f, false });
-    recorder.add (s, { (double) (4 * bar + lynx::ppq), 0, 62, 0.8f, true });
-    recorder.add (s, { (double) (4 * bar + 2 * lynx::ppq), 0, 62, 0.0f, false });
+    recorder.add (s, { (double) (2 * bar + yw::ppq), 0, 60, 0.8f, true });
+    recorder.add (s, { (double) (2 * bar + 2 * yw::ppq), 0, 60, 0.0f, false });
+    recorder.add (s, { (double) (4 * bar + yw::ppq), 0, 62, 0.8f, true });
+    recorder.add (s, { (double) (4 * bar + 2 * yw::ppq), 0, 62, 0.0f, false });
     recorder.end (s, (double) (5 * bar));
     auto notes = recorder.takeFinished();
     bool first = true;
-    lynx::commitNoteBatch (s, recorder, std::move (notes), lynx::RecordMode::overdub, q, cleared, true, first);
+    yw::commitNoteBatch (s, recorder, std::move (notes), yw::RecordMode::overdub, q, cleared, true, first);
     const auto& p = s.patterns[(std::size_t) s.currentPattern];
     CHECK (p.notes.size() == 2);
     // a bar apart and two bars apart: the second pass did not fold back onto the first
@@ -139,10 +139,10 @@ TEST (toolbar170e3_loop_record_off_keeps_a_second_pass_where_it_was_played)
 
 TEST (toolbar170e3_step_edit_writes_steps_and_chords)
 {
-    using namespace lynx::stepedit;
-    lynx::Pattern p;
+    using namespace yw::stepedit;
+    yw::Pattern p;
     Writer w;
-    const std::int64_t step = lynx::ticksPerStep;
+    const std::int64_t step = yw::ticksPerStep;
     w.reset (0);
     // a chord: three keys down, then up: one step, then the position moves on once
     CHECK (! w.play ({ 0, 60, 0.8f, true }, p, step));
@@ -164,7 +164,7 @@ TEST (toolbar170e3_step_edit_writes_steps_and_chords)
     w.play ({ 0, 62, 0.9f, true }, p, step);
     CHECK (p.notes.size() == 4);
     w.play ({ 0, 62, 0.0f, false }, p, step);
-    CHECK (std::is_sorted (p.notes.begin(), p.notes.end(), [] (const lynx::Note& a, const lynx::Note& b) { return a.start < b.start; }));
+    CHECK (std::is_sorted (p.notes.begin(), p.notes.end(), [] (const yw::Note& a, const yw::Note& b) { return a.start < b.start; }));
     // a key released that was held before step edit started moves nothing
     Writer fresh;
     fresh.reset (4 * step);
@@ -173,7 +173,7 @@ TEST (toolbar170e3_step_edit_writes_steps_and_chords)
 
 TEST (toolbar170e3_step_edit_and_blend_keys_as_fl)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ 'E', ctrl }, Context::global, false) == "record.stepEdit"); // FL: Options › Step edit Ctrl+E
@@ -183,7 +183,7 @@ TEST (toolbar170e3_step_edit_and_blend_keys_as_fl)
 
 TEST (toolbar170e3_bigger_icons_and_wide_windows)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     CHECK (iconMaxPx (IconSize::medium) >= 19.0f);
     CHECK (toolIconPx (IconSize::medium) >= 18.0f);
     // a 4K window at 100 %: the default size grows a step; a size the user picked stays
@@ -203,32 +203,32 @@ TEST (toolbar170e3_bigger_icons_and_wide_windows)
 
 TEST (toolbar170e5_loop_record_off_in_pattern_mode_rule)
 {
-    using lynx::PlayMode;
-    CHECK (lynx::recordloop::patternLinear (PlayMode::pattern, false));
-    CHECK (! lynx::recordloop::patternLinear (PlayMode::pattern, true)); // on (the default): the pattern loops
-    CHECK (! lynx::recordloop::patternLinear (PlayMode::song, false));   // Song mode keeps its own rule
+    using yw::PlayMode;
+    CHECK (yw::recordloop::patternLinear (PlayMode::pattern, false));
+    CHECK (! yw::recordloop::patternLinear (PlayMode::pattern, true)); // on (the default): the pattern loops
+    CHECK (! yw::recordloop::patternLinear (PlayMode::song, false));   // Song mode keeps its own rule
     // the take's pattern starts at the start of the pass it begins in
-    CHECK (lynx::recordloop::patternOrigin (0.0, 3840) == 0.0);
-    CHECK (lynx::recordloop::patternOrigin (3839.0, 3840) == 0.0);
-    CHECK (lynx::recordloop::patternOrigin (3840.0, 3840) == 3840.0);
-    CHECK (lynx::recordloop::patternOrigin (9000.0, 3840) == 7680.0);
-    CHECK (lynx::recordloop::patternOrigin (-50.0, 3840) == 0.0);
-    CHECK (lynx::recordloop::patternOrigin (100.0, 0) == 100.0); // (a zero length is one tick)
+    CHECK (yw::recordloop::patternOrigin (0.0, 3840) == 0.0);
+    CHECK (yw::recordloop::patternOrigin (3839.0, 3840) == 0.0);
+    CHECK (yw::recordloop::patternOrigin (3840.0, 3840) == 3840.0);
+    CHECK (yw::recordloop::patternOrigin (9000.0, 3840) == 7680.0);
+    CHECK (yw::recordloop::patternOrigin (-50.0, 3840) == 0.0);
+    CHECK (yw::recordloop::patternOrigin (100.0, 0) == 100.0); // (a zero length is one tick)
 }
 
 TEST (toolbar170e5_pattern_plays_once_from_the_take_origin)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     p.toggleStep (0, 0); // a note on the pattern's first step (1 bar = 3840 ticks)
-    const auto len = p.effectiveLength (lynx::Meter (4, 4));
+    const auto len = p.effectiveLength (yw::Meter (4, 4));
     const double sr = 48000.0, bpm = 120.0;
-    const auto tps = lynx::ticksPerSample (bpm, sr);
+    const auto tps = yw::ticksPerSample (bpm, sr);
     auto ons = [&] (double start, int samples, double origin) {
-        lynx::EventBuffer ev;
-        lynx::schedulePatternLoop (p, len, start, samples, tps, ev, 0.0f, nullptr, false, origin);
+        yw::EventBuffer ev;
+        yw::schedulePatternLoop (p, len, start, samples, tps, ev, 0.0f, nullptr, false, origin);
         int n = 0;
         for (auto& e : ev)
-            n += e.type == lynx::NoteEvent::Type::on ? 1 : 0;
+            n += e.type == yw::NoteEvent::Type::on ? 1 : 0;
         return n;
     };
     const auto bar = (double) len;
@@ -244,13 +244,13 @@ TEST (toolbar170e5_pattern_plays_once_from_the_take_origin)
     CHECK (ons (2.0 * bar - 10.0 * tps, 64, bar) == 0);
     // the same sample as the looping schedule
     {
-        lynx::EventBuffer a, b;
-        lynx::schedulePatternLoop (p, len, bar - 10.0 * tps, 64, tps, a);
-        lynx::schedulePatternLoop (p, len, bar - 10.0 * tps, 64, tps, b, 0.0f, nullptr, false, bar);
+        yw::EventBuffer a, b;
+        yw::schedulePatternLoop (p, len, bar - 10.0 * tps, 64, tps, a);
+        yw::schedulePatternLoop (p, len, bar - 10.0 * tps, 64, tps, b, 0.0f, nullptr, false, bar);
         CHECK (a.size() > 0 && b.size() > 0 && a[0].sampleOffset == b[0].sampleOffset);
     }
     // a note recorded past the pattern's (old) end plays too, where it was played
-    lynx::Note late;
+    yw::Note late;
     late.start = (std::int64_t) bar + 960;
     late.length = 240;
     p.notes.push_back (late);
@@ -259,49 +259,49 @@ TEST (toolbar170e5_pattern_plays_once_from_the_take_origin)
 
 TEST (toolbar170e5_pattern_take_with_loop_record_off_grows_the_pattern)
 {
-    auto s = lynx::Song::makeDefault();
-    s.mode = lynx::PlayMode::pattern;
+    auto s = yw::Song::makeDefault();
+    s.mode = yw::PlayMode::pattern;
     s.patterns[0].notes.clear();
     s.patterns[0].lengthTicks = 0;
-    const std::int64_t bar = (std::int64_t) lynx::ppq * s.beatsPerBar;
+    const std::int64_t bar = (std::int64_t) yw::ppq * s.beatsPerBar;
     CHECK (s.patterns[0].effectiveLength (s.meter()) == bar);
 
-    lynx::NoteRecorder recorder;
+    yw::NoteRecorder recorder;
     recorder.begin (s.patterns[0].effectiveLength (s.meter()));
-    recorder.setPatternOrigin (lynx::recordloop::patternOrigin (0.0, bar));
+    recorder.setPatternOrigin (yw::recordloop::patternOrigin (0.0, bar));
     // one note in bar 1, one in bar 3: the take ran on past the 1-bar pattern's end
-    recorder.add (s, { (double) lynx::ppq, 0, 60, 0.8f, true });
-    recorder.add (s, { (double) (2 * lynx::ppq), 0, 60, 0.0f, false });
-    recorder.add (s, { (double) (2 * bar + lynx::ppq), 0, 62, 0.8f, true });
-    recorder.add (s, { (double) (2 * bar + 2 * lynx::ppq), 0, 62, 0.0f, false });
+    recorder.add (s, { (double) yw::ppq, 0, 60, 0.8f, true });
+    recorder.add (s, { (double) (2 * yw::ppq), 0, 60, 0.0f, false });
+    recorder.add (s, { (double) (2 * bar + yw::ppq), 0, 62, 0.8f, true });
+    recorder.add (s, { (double) (2 * bar + 2 * yw::ppq), 0, 62, 0.0f, false });
     recorder.end (s, (double) (3 * bar));
     auto notes = recorder.takeFinished();
-    CHECK (notes.size() == 2 && notes[1].start == 2 * bar + lynx::ppq); // not folded onto bar 1
+    CHECK (notes.size() == 2 && notes[1].start == 2 * bar + yw::ppq); // not folded onto bar 1
     std::vector<int> cleared;
-    lynx::TakeQuantize q {};
+    yw::TakeQuantize q {};
     q.grid = 0;
     bool first = true;
-    lynx::commitNoteBatch (s, recorder, std::move (notes), lynx::RecordMode::overdub, q, cleared, false, first);
+    yw::commitNoteBatch (s, recorder, std::move (notes), yw::RecordMode::overdub, q, cleared, false, first);
     // the pattern is now 3 bars long (its length follows its notes)
     CHECK (s.patterns[0].notes.size() == 2);
     CHECK (s.patterns[0].effectiveLength (s.meter()) == 3 * bar);
 
     // Loop record on (the default): the same notes fold into the 1-bar loop
-    lynx::NoteRecorder folded;
+    yw::NoteRecorder folded;
     folded.begin (bar);
-    folded.add (s, { (double) (2 * bar + lynx::ppq), 0, 62, 0.8f, true });
-    folded.add (s, { (double) (2 * bar + 2 * lynx::ppq), 0, 62, 0.0f, false });
+    folded.add (s, { (double) (2 * bar + yw::ppq), 0, 62, 0.8f, true });
+    folded.add (s, { (double) (2 * bar + 2 * yw::ppq), 0, 62, 0.0f, false });
     folded.end (s, (double) (3 * bar));
     const auto f = folded.takeFinished();
-    CHECK (f.size() == 1 && f[0].start == lynx::ppq);
+    CHECK (f.size() == 1 && f[0].start == yw::ppq);
     // a take that began in pass 2 counts from bar 2
-    lynx::NoteRecorder later;
+    yw::NoteRecorder later;
     later.begin (bar);
-    later.setPatternOrigin (lynx::recordloop::patternOrigin ((double) bar + 100.0, bar));
-    later.add (s, { (double) (bar + lynx::ppq), 0, 64, 0.8f, true });
-    later.end (s, (double) (bar + 2 * lynx::ppq));
+    later.setPatternOrigin (yw::recordloop::patternOrigin ((double) bar + 100.0, bar));
+    later.add (s, { (double) (bar + yw::ppq), 0, 64, 0.8f, true });
+    later.end (s, (double) (bar + 2 * yw::ppq));
     const auto l = later.takeFinished();
-    CHECK (l.size() == 1 && l[0].start == lynx::ppq);
+    CHECK (l.size() == 1 && l[0].start == yw::ppq);
     // begin() resets it
     later.begin (bar);
     CHECK (later.getPatternOrigin() < 0.0);
@@ -309,23 +309,23 @@ TEST (toolbar170e5_pattern_take_with_loop_record_off_grows_the_pattern)
 
 TEST (toolbar170e5_playhead_runs_on_past_the_pattern_end)
 {
-    auto s = lynx::Song::makeDefault();
-    s.mode = lynx::PlayMode::pattern;
+    auto s = yw::Song::makeDefault();
+    s.mode = yw::PlayMode::pattern;
     s.patterns[0].lengthTicks = 0;
     s.patterns[0].notes.clear();
-    const std::int64_t bar = (std::int64_t) lynx::ppq * s.beatsPerBar;
-    CHECK (lynx::transportedit::patternPlayhead (s, 0, (double) bar + 10.0) == 10.0);            // looping
-    CHECK (lynx::transportedit::patternPlayhead (s, 0, (double) bar + 10.0, 0.0) == (double) bar + 10.0); // take
-    CHECK (lynx::transportedit::patternPlayhead (s, 0, (double) bar * 3 + 5.0, (double) bar) == 2.0 * bar + 5.0);
-    CHECK (lynx::transportedit::patternPlayhead (s, 0, 10.0, (double) bar) == 10.0); // (before the origin: as before)
+    const std::int64_t bar = (std::int64_t) yw::ppq * s.beatsPerBar;
+    CHECK (yw::transportedit::patternPlayhead (s, 0, (double) bar + 10.0) == 10.0);            // looping
+    CHECK (yw::transportedit::patternPlayhead (s, 0, (double) bar + 10.0, 0.0) == (double) bar + 10.0); // take
+    CHECK (yw::transportedit::patternPlayhead (s, 0, (double) bar * 3 + 5.0, (double) bar) == 2.0 * bar + 5.0);
+    CHECK (yw::transportedit::patternPlayhead (s, 0, 10.0, (double) bar) == 10.0); // (before the origin: as before)
 }
 
 TEST (toolbar170e5_step_edit_step_is_the_main_snap)
 {
-    using lynx::stepedit::stepLength;
-    CHECK (stepLength (lynx::ppq, 120) == lynx::ppq);                // main snap "Beat": a beat, whatever the editor's
-    CHECK (stepLength (lynx::ticksPerStep / 2, 960) == lynx::ticksPerStep / 2);
+    using yw::stepedit::stepLength;
+    CHECK (stepLength (yw::ppq, 120) == yw::ppq);                // main snap "Beat": a beat, whatever the editor's
+    CHECK (stepLength (yw::ticksPerStep / 2, 960) == yw::ticksPerStep / 2);
     CHECK (stepLength (0, 120) == 120);                                // main "Line" / "Events": the Piano roll's grid
-    CHECK (stepLength (0, 1) == lynx::ticksPerStep);                   // free on both: a step, not single ticks
-    CHECK (stepLength (0, 0) == lynx::ticksPerStep);
+    CHECK (stepLength (0, 1) == yw::ticksPerStep);                   // free on both: a step, not single ticks
+    CHECK (stepLength (0, 0) == yw::ticksPerStep);
 }

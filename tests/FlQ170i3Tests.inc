@@ -37,8 +37,8 @@ inline std::vector<std::uint8_t> fstState (const std::filesystem::path& path)
 TEST (flq170i3_wave_traveller_reads_fl_older_header_version)
 {
     // FL's own Plugin presets\Generators\Wave Traveller\Default.fst has header version 1000001 (FL writes 1000005);
-    // FL's loader drops the version word (FUN_0074aee0), LYNX refused the state
-    using namespace lynx;
+    // FL's loader drops the version word (FUN_0074aee0), YW refused the state
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto folder = std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Generators" / "Wave Traveller";
@@ -62,8 +62,8 @@ TEST (flq170i3_cut_groups_skip_fl_plugin_generators)
 {
     // FL's renders of 26 FL generators with "cut itself" equal the ones without (REA_rodada170i3 §2): a note never
     // chokes an FL plugin generator (Ogun's release tail in 169l's project was cut by a Drumaxx note), while the
-    // sampler, the audio clip and the LYNX synth in the same group are still cut (REA_rodada167h)
-    using namespace lynx;
+    // sampler, the audio clip and the YW synth in the same group are still cut (REA_rodada167h)
+    using namespace yw;
     Song song;
     const InstrumentKind kinds[] = { InstrumentKind::ogun, InstrumentKind::sytrus, InstrumentKind::threeosc,
                                      InstrumentKind::drumaxx, InstrumentKind::sampler, InstrumentKind::audioClip,
@@ -87,7 +87,7 @@ TEST (flq170i3_ogun_delay_and_reverb_switches_change_the_sound)
 {
     // Ogun's delay only runs with S.b358[1] set and its reverb with P[53]'s low byte (designDelay / designReverb): the
     // editor had no switch for them, so on FL's Plugin database Ogun (delay off) the delay knobs did nothing
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto db = flq170i3::fstState (std::filesystem::path (realFlpDir) / "Patches" / "Plugin database" / "Generators"

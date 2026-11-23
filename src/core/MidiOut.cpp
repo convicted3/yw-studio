@@ -10,7 +10,7 @@
 #include "core/HostNotePitch.h"
 #include "core/Instruments.h"
 
-namespace lynx::midiout
+namespace yw::midiout
 {
 namespace
 {
@@ -123,7 +123,7 @@ std::optional<State> parse (const std::vector<std::uint8_t>& data)
         s.sendPanVolPitch = r.u8() != 0;
         s.mapNoteColour = r.u8() != 0;
     }
-    // (a cut-short state — LYNX's older writer, a hand-made test — keeps its header: the rest stays at the defaults)
+    // (a cut-short state — YW's older writer, a hand-made test — keeps its header: the rest stays at the defaults)
     const auto headerOk = r.ok;
     if (const auto program = r.i32(); r.ok)
         s.program = program;
@@ -968,4 +968,4 @@ void requestReset (Instrument& instrument, bool allControllersFirst)
     if (auto* device = dynamic_cast<MidiOutDevice*> (&instrument))
         device->requestReset (allControllersFirst);
 }
-} // namespace lynx::midiout
+} // namespace yw::midiout

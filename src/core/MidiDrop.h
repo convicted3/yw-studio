@@ -7,15 +7,15 @@
 //
 // - Playlist (FL's model: a pattern holds several channels; FL itself takes MIDI only on the Channel rack and the Piano
 //   roll, docs/analise/REA_rodada190iu.md): one new pattern named after the file at the drop. On an instrument track
-//   every note goes to the track's channel; elsewhere each MIDI track with notes gets a new channel (LYNX Synth, as
+//   every note goes to the track's channel; elsewhere each MIDI track with notes gets a new channel (YW Synth, as
 //   File › Import › MIDI file makes them), all in that one pattern. The track's mode is not changed.
 // - Clip-launch arrangement and clip-grid slots (Live's model: one instrument per track): the notes go to the track's
-//   instrument; a track without one becomes an instrument track of a new LYNX Synth channel, named after the file. In
+//   instrument; a track without one becomes an instrument track of a new YW Synth channel, named after the file. In
 //   the arrangement each further MIDI track of the file goes on its own track below (Live puts a multi-track file on
 //   several tracks); a slot takes all of them merged. An audio track takes no MIDI (Live refuses it too).
 //
 // FL 2026 takes MIDI files on the Channel rack, the Piano roll and the desktop only (its manual; a drop on the Playlist
-// grid is not documented), so the Playlist drop in the Pattern layout is a LYNX extra, off by default (Settings › LYNX
+// grid is not documented), so the Playlist drop in the Pattern layout is a YW extra, off by default (Settings › YW
 // extras, the Playlist menu; ui-options.txt "midiDrop"). Live takes them in both its views, so the Clip-launch layout
 // always does.
 //
@@ -34,7 +34,7 @@
 #include "core/Song.h"
 #include "core/TrackOnly.h"
 
-namespace lynx::mididrop
+namespace yw::mididrop
 {
 inline std::atomic<bool>& playlistDropFlag() noexcept
 {
@@ -54,7 +54,7 @@ struct Result
     std::string error;                         // "no notes", "audio track", "no track"
 };
 
-// The channel LYNX makes for a MIDI track with no channel to go to: LYNX Synth, as the MIDI import makes them.
+// The channel YW makes for a MIDI track with no channel to go to: YW Synth, as the MIDI import makes them.
 inline ChannelDef newChannel (const std::string& name)
 {
     ChannelDef c;
@@ -91,7 +91,7 @@ inline bool isAudioTrack (const Song& song, int track)
     return track >= 0 && track < (int) song.playlistTracks.size() && song.playlistTracks[(std::size_t) track].mode == PlaylistTrackMode::audio;
 }
 
-// The MIDI tracks with notes (LYNX's import groups: one per file track; all channels of a track together).
+// The MIDI tracks with notes (YW's import groups: one per file track; all channels of a track together).
 inline std::vector<midiimport::Group> noteGroups (const midiimport::ParsedMidi& midi)
 {
     auto gs = midiimport::groups (midi, midiimport::Options {});
@@ -140,7 +140,7 @@ inline std::string groupName (const midiimport::ParsedMidi& midi, const midiimpo
     return count <= 1 ? fileName : fileName + " " + std::to_string (index + 1);
 }
 
-// the channel of a Live-style track, made when it has none (an instrument track of a new LYNX Synth); -1: an audio
+// the channel of a Live-style track, made when it has none (an instrument track of a new YW Synth); -1: an audio
 // track, or no room
 inline int instrumentOf (Song& song, int track, const std::string& name)
 {
@@ -296,4 +296,4 @@ inline Result dropOnSlot (Song& song, const midiimport::ParsedMidi& midi, const 
     r.ok = true;
     return r;
 }
-} // namespace lynx::mididrop
+} // namespace yw::mididrop

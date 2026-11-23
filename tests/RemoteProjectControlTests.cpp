@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <limits>
 
-using namespace lynx;
+using namespace yw;
 namespace
 {
 void check (bool condition, const char* message)
@@ -187,7 +187,7 @@ void exactDocuments()
            "Metadata-only edit changed unrelated double precision");
     check (remote_document::hash (remote_document::bytes (source)).size() == 64, "Document hash malformed");
 }
-// Issue #108 (MPE stage 2, round 190hy): a note's curves are saved in .lynx (the note's 20th element, three flat
+// Issue #108 (MPE stage 2, round 190hy): a note's curves are saved in .yw (the note's 20th element, three flat
 // [tick, value, ...] lanes), load back, leave notes without curves as they were saved before, and stay editable through
 // document edits (plain data arrays).
 void noteCurvesDocuments()
@@ -215,7 +215,7 @@ void noteCurvesDocuments()
     }
     const auto exact = ProjectFile::fromJson (ProjectFile::toJsonExact (source), error);
     check (exact.has_value() && exact->patterns == source.patterns, "Exact documents lost note curves");
-    // a note without curves keeps the old, shorter form (old LYNX versions read the curved note and drop its curves)
+    // a note without curves keeps the old, shorter form (old YW versions read the curved note and drop its curves)
     const auto document = json (ProjectFile::toJson (source).toRawUTF8());
     const auto& notes = document["patterns"][0]["notes"];
     check (notes[0].size() < 20 && notes[1].size() == 20, "Note curves changed the saved form of plain notes");
@@ -700,7 +700,7 @@ void richDocumentAllowlist()
         refusesWith ([&] { remote_document::stage (accepted, addValue (path, "file:///tmp/program")); }, "editable document allowlist");
 }
 
-// Round 190ha: fields LYNX gained after the allowlist was first written. An edit of an object that carries them is
+// Round 190ha: fields YW gained after the allowlist was first written. An edit of an object that carries them is
 // accepted; the values a live session shares, racks and the groove pool pass through unchanged and stay read-only.
 void currentFieldsAllowlist()
 {
@@ -781,7 +781,7 @@ void currentFieldsAllowlist()
 }
 
 // Round 190lq (issue #204): FL's law for the notes of an audio clip channel (whole clip, layered, key-transposed) is the
-// default; a project saved before the "clipNotes190lq" mark keeps LYNX's earlier law on its audio clip channels, and that
+// default; a project saved before the "clipNotes190lq" mark keeps YW's earlier law on its audio clip channels, and that
 // survives a save / open
 void audioClipNoteLaw190lq()
 {
@@ -819,7 +819,7 @@ void audioClipNoteLaw190lq()
 void discoveryCleanup()
 {
     const auto directory = juce::File::getCurrentWorkingDirectory()
-        .getChildFile ("lynx-control-test-" + remote_files::randomToken());
+        .getChildFile ("yw-control-test-" + remote_files::randomToken());
     struct Cleanup
     {
         juce::File directory;

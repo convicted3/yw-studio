@@ -2,7 +2,7 @@
 
 TEST (rea151_plugin_catalog_categories)
 {
-    using namespace lynx::plugincatalog;
+    using namespace yw::plugincatalog;
     const auto fx = [] (const char* name, const char* declared = "") { return Entry { name, name, "Vendor", "VST3", declared, false }; };
     const auto gen = [] (const char* name, const char* declared = "") { return Entry { name, name, "Vendor", "VST3", declared, true }; };
     // the category the plugin declares first (VST3 sub-categories)
@@ -35,7 +35,7 @@ TEST (rea151_plugin_catalog_categories)
 
 TEST (rea151_plugin_catalog_search_and_favourites)
 {
-    using namespace lynx::plugincatalog;
+    using namespace yw::plugincatalog;
     std::vector<Entry> all {
         { "a", "Zeta Reverb", "Acme", "VST3", "Fx|Reverb", false },
         { "b", "alpha Comp", "Acme", "VST3", "Fx|Dynamics", false },
@@ -79,7 +79,7 @@ TEST (r165c_plugin_catalog_renamed_plugins)
 {
     // a plugin renamed in the Plugin database ("1_EQ", FL's quick-pick prefix): the picker sorts and finds it by its new
     // name and still by its original one; its category still comes from the original name
-    using namespace lynx::plugincatalog;
+    using namespace yw::plugincatalog;
     std::vector<Entry> all { { "a", "Zeta EQ", "Acme", "VST3", "Fx|EQ", false, "1_EQ" }, { "b", "Alpha Comp", "Acme", "VST3", "Fx|Dynamics", false } };
     CHECK (all[0].shownName() == "1_EQ");
     CHECK (all[1].shownName() == "Alpha Comp");

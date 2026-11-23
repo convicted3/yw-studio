@@ -1,14 +1,14 @@
 // Round 190ov (0.1.31): FL automation clips linked to several controls. FL drives every control a clip is linked to (its
-// .flp holds one 0xE3 record per link); LYNX kept the first. Several reproducible links now import as target links
+// .flp holds one 0xE3 record per link); YW kept the first. Several reproducible links now import as target links
 // (Automation::links), the points in FL's clip value and each link's own scale; a target that other clips drive too plays
 // them as one, the clip that plays deciding (as issue #97's groups).
 
 namespace autolinks190ov
 {
 // two Synth channels on inserts 1 and 2, each one long note (song mode), so a channel's level follows its insert's fader
-inline lynx::Song twoInserts (std::int64_t length)
+inline yw::Song twoInserts (std::int64_t length)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.channels.clear();
     s.playlist.clear();
@@ -43,10 +43,10 @@ inline lynx::Song twoInserts (std::int64_t length)
     return s;
 }
 
-inline void addClip (lynx::Song& s, int automation, std::int64_t start, std::int64_t length)
+inline void addClip (yw::Song& s, int automation, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::automation;
+    yw::Clip c;
+    c.kind = yw::ClipKind::automation;
     c.automation = automation;
     c.track = 3 + automation;
     c.start = start;
@@ -54,9 +54,9 @@ inline void addClip (lynx::Song& s, int automation, std::int64_t start, std::int
     s.playlist.push_back (c);
 }
 
-inline lynx::Automation held (const std::string& name, const lynx::AutomationTarget& target, float v, std::int64_t length)
+inline yw::Automation held (const std::string& name, const yw::AutomationTarget& target, float v, std::int64_t length)
 {
-    lynx::Automation a;
+    yw::Automation a;
     a.name = name;
     a.target = target;
     a.points = { { 0, v, 0.0f }, { length, v, 0.0f } };
@@ -64,15 +64,15 @@ inline lynx::Automation held (const std::string& name, const lynx::AutomationTar
 }
 
 // the RMS of channel `alone`'s output over each window [from, to) of song ticks (the other pattern clip muted)
-inline std::vector<double> levels (lynx::Song song, int alone, const std::vector<std::pair<double, double>>& windows)
+inline std::vector<double> levels (yw::Song song, int alone, const std::vector<std::pair<double, double>>& windows)
 {
     constexpr int rate = 44100, block = 256;
     for (auto& c : song.playlist)
-        if (c.kind == lynx::ClipKind::pattern && c.pattern != alone)
+        if (c.kind == yw::ClipKind::pattern && c.pattern != alone)
             c.muted = true;
-    const auto tps = lynx::ticksPerSample (song.bpm, rate);
-    auto state = lynx::RackState::build (song, nullptr, rate);
-    lynx::RackRenderer renderer;
+    const auto tps = yw::ticksPerSample (song.bpm, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
+    yw::RackRenderer renderer;
     renderer.prepare (rate, block);
     std::vector<float> l ((std::size_t) block), r ((std::size_t) block);
     std::vector<double> sum (windows.size(), 0.0);
@@ -98,14 +98,14 @@ inline std::vector<double> levels (lynx::Song song, int alone, const std::vector
     return out;
 }
 
-inline lynx::AutomationTarget fader (int track) { return { lynx::AutomationTargetKind::mixerVolume, track, 0, 0 }; }
+inline yw::AutomationTarget fader (int track) { return { yw::AutomationTargetKind::mixerVolume, track, 0, 0 }; }
 
 inline bool near (double a, double b) { return std::abs (a - b) <= 0.01 * std::max (a, b) + 1e-6; }
 } // namespace autolinks190ov
 
 TEST (autolinks190ov_links_drive_every_control_through_their_scales)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace autolinks190ov;
     // one clip linked to both faders, the second link through a scale (FL's value 0..1 -> 0.2..0.6): at a held clip value
     // v the first fader is at v, the second at 0.2 + 0.4 v, as each set by hand
@@ -131,7 +131,7 @@ TEST (autolinks190ov_links_drive_every_control_through_their_scales)
 
 TEST (autolinks190ov_a_shared_control_follows_the_clip_that_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace autolinks190ov;
     // fader 1: a plain clip at 0.3 over beats 0..2, then a clip linked to faders 1 and 2 at 0.8 over beats 2..4. FL's rule
     // (issue #97): the clip that plays decides; before round 190ov the link took fader 1 over the whole song
@@ -157,9 +157,9 @@ TEST (autolinks190ov_a_shared_control_follows_the_clip_that_plays)
 
 TEST (autolinks190ov_flp_export_and_import_keep_every_link)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace autolinks190ov;
-    // LYNX -> .flp: one 0xE3 record per link on the clip's channel; .flp -> LYNX: the links back, the points in FL's value
+    // YW -> .flp: one 0xE3 record per link on the clip's channel; .flp -> YW: the links back, the points in FL's value
     auto song = twoInserts (2 * ppq);
     auto a = held ("Both faders", fader (1), 0.25f, 2 * ppq);
     a.points[1].value = 0.75f;
@@ -204,7 +204,7 @@ TEST (autolinks190ov_flp_export_and_import_keep_every_link)
         CHECK (alone->links.empty() && alone->target == fader (2));
     }
 
-    // a clip whose first link has no LYNX target but a later one has: that one, as a plain clip (FL drives it)
+    // a clip whose first link has no YW target but a later one has: that one, as a plain clip (FL drives it)
     auto broken = project;
     for (auto it = broken.automationLinks.begin(); it != broken.automationLinks.end(); ++it)
         if (it->channel == single)
@@ -231,7 +231,7 @@ TEST (autolinks190ov_flp_export_and_import_keep_every_link)
             CHECK (x.links.size() == 1 && x.links[0].formula == "1-Input" && x.links[0].target == fader (2));
         }
 
-    // a tempo link next to another link: the tempo is LYNX's tempo map, not a target link, so the clip drives the other
+    // a tempo link next to another link: the tempo is YW's tempo map, not a target link, so the clip drives the other
     // one (as a plain clip when that is the only one left)
     auto tempo = project;
     for (auto& l : tempo.automationLinks)
@@ -258,7 +258,7 @@ TEST (autolinks190ov_flp_export_and_import_keep_every_link)
 
 TEST (autolinks190ov_fl_demos_with_multi_link_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's own demos (when the FL folder is given): Synth_dfr - Overcome's clips each drive two sends; Bombs Away has a clip
     // with 26 links. Every reproducible link is there, and a clip with one link stays a plain clip
     if (realFlpDir.empty())

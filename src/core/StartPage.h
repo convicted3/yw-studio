@@ -1,10 +1,10 @@
 #pragma once
 
-// Issue #252 (round 190oq): the start page — recent projects and templates on one page when LYNX starts. FL Studio 2026
+// Issue #252 (round 190oq): the start page — recent projects and templates on one page when YW starts. FL Studio 2026
 // has one: its "Welcome to FL Studio" window (TWelcomeWizard, REA_rodada190oq §6) lists "Recent projects" (up to 50, the
 // file name, its folder and how long ago it changed), demo projects, "Other projects..." and "Start a new ... project",
 // and shows at every start without a file until "Do not show this in the future" is ticked; Bitwig (Dashboard) and Studio
-// One (Start page) have theirs, Live 12 has none. LYNX's page is drawn in LYNX's own look with FL's contents. On by
+// One (Start page) have theirs, Live 12 has none. YW's page is drawn in YW's own look with FL's contents. On by
 // default, as FL's window (owner decision, rollup 0.1.31 step 6); it shows over the start-up project,
 // which stays open behind it (Esc or × keeps it). The first run keeps its welcome card (round 190np) and never shows the
 // page in the same start. Also File › Start page... at any time.
@@ -19,7 +19,7 @@
 
 #include "core/SearchQuery.h"
 
-namespace lynx::startpage
+namespace yw::startpage
 {
 inline std::atomic<bool>& enabledFlag() noexcept
 {
@@ -142,4 +142,4 @@ inline int moveRow (int row, int delta, int count) noexcept
     const auto to = row + delta;
     return to < 0 ? 0 : to >= count ? count - 1 : to;
 }
-} // namespace lynx::startpage
+} // namespace yw::startpage

@@ -8,12 +8,12 @@
 
 namespace iss190ht
 {
-constexpr std::int64_t bar = 4 * lynx::ppq;
+constexpr std::int64_t bar = 4 * yw::ppq;
 
 // P1: 1 bar (a note per beat), P2: 2 bars (a note on beat 1 and a long note from beat 7 to the end), P3: 1 bar
-inline lynx::Song song()
+inline yw::Song song()
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (1);
     s.patterns.resize (3);
     for (int i = 0; i < 3; ++i)
@@ -21,21 +21,21 @@ inline lynx::Song song()
     for (int step : { 0, 4, 8, 12 })
         s.patterns[0].toggleStep (0, step);
     s.patterns[1].toggleStep (0, 0);
-    lynx::Note longNote;
-    longNote.start = 6 * lynx::ppq;
-    longNote.length = 2 * lynx::ppq;
+    yw::Note longNote;
+    longNote.start = 6 * yw::ppq;
+    longNote.length = 2 * yw::ppq;
     s.patterns[1].notes.push_back (longNote);
     s.patterns[1].sortNotes();
     s.patterns[2].toggleStep (0, 0);
     s.patternBlocksOn = true;
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     return s;
 }
 } // namespace iss190ht
 
 TEST (iss190ht_mute_tool_mutes_blocks_and_their_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     using iss190ht::bar;
     auto s = iss190ht::song();
     CHECK (patternblocks::place (s, 0, 0) && patternblocks::place (s, 0, bar) && patternblocks::place (s, 2, 0));
@@ -75,7 +75,7 @@ TEST (iss190ht_mute_tool_mutes_blocks_and_their_clips)
 
 TEST (iss190ht_muted_block_plays_nothing)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = iss190ht::song();
     CHECK (patternblocks::place (s, 0, 0));
     auto played = s;
@@ -89,7 +89,7 @@ TEST (iss190ht_muted_block_plays_nothing)
 
 TEST (iss190ht_select_tool_area_and_group_move)
 {
-    using namespace lynx;
+    using namespace yw;
     using iss190ht::bar;
     auto s = iss190ht::song();
     CHECK (patternblocks::place (s, 0, 0) && patternblocks::place (s, 1, 0) && patternblocks::place (s, 2, 2 * bar) && patternblocks::place (s, 0, 4 * bar));
@@ -129,7 +129,7 @@ TEST (iss190ht_select_tool_area_and_group_move)
 
 TEST (iss190ht_slice_tool_cuts_the_pattern_into_two)
 {
-    using namespace lynx;
+    using namespace yw;
     using iss190ht::bar;
     auto s = iss190ht::song();
     s.currentPattern = 2;
@@ -173,7 +173,7 @@ TEST (iss190ht_slice_tool_cuts_the_pattern_into_two)
 
 TEST (iss190ht_slice_shares_a_set_length_and_moves_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using iss190ht::bar;
     auto s = iss190ht::song();
     // P1 with a set length of 1 bar and notes on every beat: cut at beat 3
@@ -196,7 +196,7 @@ TEST (iss190ht_slice_shares_a_set_length_and_moves_notes)
 
 TEST (iss190ht_track_inserts_list_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ti = trackinserts;
     // rows: one per effect, then "add" while a slot is free
     CHECK (ti::itemCount (0) == 1 && ti::itemCount (3) == 4 && ti::itemCount (maxEffectSlots) == maxEffectSlots);
@@ -220,7 +220,7 @@ TEST (iss190ht_track_inserts_list_layout)
 
 TEST (iss190ht_track_inserts_edits_are_the_mixers)
 {
-    using namespace lynx;
+    using namespace yw;
     // the list's gestures use the Device View's edits on the linked insert (round 183a / 190dr)
     Song s;
     s.mixer.resize (4);

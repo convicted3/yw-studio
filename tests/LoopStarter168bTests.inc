@@ -14,7 +14,7 @@ std::string ls168bRead (const std::filesystem::path& p)
 
 TEST (loopstarter168b_fl_random_bit_exact)
 {
-    using lynx::loopstarter::FlRand;
+    using yw::loopstarter::FlRand;
     // reference values from FL's own toolbox.py (rand_int / rand_uniform / rand_tri) run in Python 3.12
     FlRand r (12345);
     const std::uint32_t expect[] = { 556608163u, 323275282u, 1178251266u, 1799102494u, 2023681743u };
@@ -32,7 +32,7 @@ TEST (loopstarter168b_fl_random_bit_exact)
 
 TEST (loopstarter168b_step_tokens)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     // drum_setup.py: velocity range(72, 125, 4) / 128 (default state 7), shift a..x / 24, octave q r s, offset 0..b
     CHECK (std::abs (velocityOfToken ('0') - 72.0f / 128.0f) < 1e-6f);
     CHECK (std::abs (velocityOfToken ('d') - 124.0f / 128.0f) < 1e-6f);
@@ -46,7 +46,7 @@ TEST (loopstarter168b_step_tokens)
 
 TEST (loopstarter168b_presets_and_notes)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     const std::string json = R"({"P1": {"genre": "trap", "weight": 2, "kit": ["kick", "ghost snare|clap"],
         "rhythm_strs": [">```>```>```>```", "````>```````>```"], "vel_strs": ["dddddddddddddddd", "0000000000000000"],
         "repeat_strs": ["0000000000000000", "0000300000000000"],
@@ -62,17 +62,17 @@ TEST (loopstarter168b_presets_and_notes)
     // the kick: 4 bars alternate its two variants (1 hit, 2 hits)
     const auto kick = laneNotes (p.lanes[0], 4, 3, 60);
     CHECK (kick.size() == 6);
-    CHECK (kick[0].start == 0 && kick[1].start == 16 * lynx::ticksPerStep && kick[2].start == 20 * lynx::ticksPerStep);
-    CHECK (kick[0].channel == 3 && kick[0].key == 60 && kick[0].length <= lynx::ticksPerStep);
+    CHECK (kick[0].start == 0 && kick[1].start == 16 * yw::ticksPerStep && kick[2].start == 20 * yw::ticksPerStep);
+    CHECK (kick[0].channel == 3 && kick[0].key == 60 && kick[0].length <= yw::ticksPerStep);
     // the snare's repeat '3' (every half step) fills up to the next hit, at most a beat
     const auto snare = laneNotes (p.lanes[1], 1, 0, 60);
     CHECK (snare.size() == 8 + 1);
-    CHECK (snare[1].start - snare[0].start == lynx::ticksPerStep / 2);
+    CHECK (snare[1].start - snare[0].start == yw::ticksPerStep / 2);
 }
 
 TEST (loopstarter168b_config)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     const std::string json = R"({"default_genre": "trap", "same_sample_block_count": {"oneshot": 3},
       "tag_map": {"trap": {"label": "Trap"}, "lofi": {"label": "Lo-Fi"}},
       "genres": {
@@ -104,7 +104,7 @@ TEST (loopstarter168b_config)
 
 TEST (loopstarter168b_set_blanks)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     Genre g;
     g.kit = { { "kick", 1.0 }, { "snare", 1.0 }, { "rim", 0.0 }, { "shaker", 0.0 }, { "tom", 0.0 } };
     g.sizeMin = 3;
@@ -144,7 +144,7 @@ TEST (loopstarter168b_set_blanks)
 
 TEST (loopstarter168b_classifier)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     CHECK (classifySample ("Packs/Drums/Kicks/Big Kick.wav") == "kick");
     CHECK (classifySample ("Packs/Drums/Hats/707 OH.wav") == "open hat");
     CHECK (classifySample ("Packs/Legacy/Collider Sub Kick.wav") == "sub kick");
@@ -164,7 +164,7 @@ TEST (loopstarter168b_classifier)
 
 TEST (loopstarter168b_generate_apply_send)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     const auto config = builtinConfig();
     Sources src;
     src.config = &config;
@@ -177,7 +177,7 @@ TEST (loopstarter168b_generate_apply_send)
         withNotes += c.notes.empty() ? 0 : 1;
     CHECK (withNotes >= 2);
 
-    lynx::Song song;
+    yw::Song song;
     song.mixer.resize (5); // master + 4 inserts
     const auto patternsBefore = (int) song.patterns.size();
     const auto channelsBefore = (int) song.channels.size();
@@ -203,7 +203,7 @@ TEST (loopstarter168b_generate_apply_send)
         CHECK (n.channel != ch);
 
     // send to playlist: first free track at the position; the channels leave Loop Starter
-    lynx::Clip blocker;
+    yw::Clip blocker;
     blocker.track = 0;
     blocker.start = 0;
     blocker.length = 1000000;
@@ -221,7 +221,7 @@ TEST (loopstarter168b_generate_apply_send)
 
 TEST (loopstarter168b_fl_install)
 {
-    using namespace lynx::loopstarter;
+    using namespace yw::loopstarter;
     if (realFlpDir.empty())
         return;
     const auto notes = std::filesystem::path (realFlpDir).parent_path() / "System" / "Tools" / "Chord progression" / "Notes";

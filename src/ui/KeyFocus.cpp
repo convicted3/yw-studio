@@ -1,6 +1,6 @@
 #include "ui/KeyFocus.h"
 
-namespace lynx::ui::keyfocus
+namespace yw::ui::keyfocus
 {
 namespace
 {
@@ -9,7 +9,7 @@ bool insidePanelWindow (const juce::Component* c)
     if (c == nullptr)
         return false;
     const auto* top = c->getTopLevelComponent();
-    return top != nullptr && (bool) top->getProperties().getWithDefault ("lynxPanel", false);
+    return top != nullptr && (bool) top->getProperties().getWithDefault ("ywPanel", false);
 }
 
 struct Watch final : juce::FocusChangeListener
@@ -99,4 +99,4 @@ void uninstall (juce::Component& root)
     juce::Desktop::getInstance().removeFocusChangeListener (&watch());
     watch().root = nullptr;
 }
-} // namespace lynx::ui::keyfocus
+} // namespace yw::ui::keyfocus

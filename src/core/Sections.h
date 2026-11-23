@@ -1,8 +1,8 @@
 #pragma once
 
-// The Sections lane (round 190ol, P1 of /mnt/e/lynx-work/research190oe/TOP25.md): named song sections (Intro, Verse,
+// The Sections lane (round 190ol, P1 of /mnt/e/yw-work/research190oe/TOP25.md): named song sections (Intro, Verse,
 // Chorus...) over the whole arrangement, and the commands that move, copy, duplicate, replace or delete a section with
-// everything under it — the clips of every track, the lane automation and the time markers — in one undo step. A LYNX
+// everything under it — the clips of every track, the lane automation and the time markers — in one undo step. A YW
 // extra modelled on GarageBand's Arrangement track (Apple's guide: "Add arrangement markers" — a new marker is eight
 // bars long and starts at the end of the last one; "Edit arrangement markers" — drag moves a marker with its regions,
 // Option-drag copies it, Command-drag onto another replaces that one, Delete once empties it and again removes it) and
@@ -25,7 +25,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 namespace sections
 {
@@ -35,7 +35,7 @@ inline constexpr int defaultBars = 8; // GarageBand: "When you add an arrangemen
 // (the UI shows them translated with the context "@song section: ", ui/SectionsLane190ol.h: "Chorus" is also the effect)
 inline constexpr const char* presetNames[] = { "Intro", "Verse", "Chorus", "Bridge", "Outro" };
 
-// The automatic colours (SongSection::colour 0): pastel tones in GarageBand's manner, by the section's place. LYNX's own.
+// The automatic colours (SongSection::colour 0): pastel tones in GarageBand's manner, by the section's place. YW's own.
 inline constexpr std::uint32_t palette[] = { 0xFF5B8DEF, 0xFF4FB286, 0xFFE0A33A, 0xFFD5577A, 0xFF8E6BE0, 0xFF3FB3C4, 0xFFE07A4F, 0xFF9AAF3B };
 inline std::uint32_t colourOf (const std::vector<SongSection>& list, int index) noexcept
 {
@@ -202,7 +202,7 @@ inline std::vector<Marker> markersWithSections (const std::vector<Marker>& marke
 
 // --- the lane's visibility (owner decision O-1 of research190oe) ---------------------------------------------------------
 // Simple: the lane shows once the song has a section (the title bar's "Sections" button adds the first one and can hide
-// it again); Pattern: a LYNX extra, off by default (Playlist menu › View › "Sections lane", Settings › LYNX extras,
+// it again); Pattern: a YW extra, off by default (Playlist menu › View › "Sections lane", Settings › YW extras,
 // ui-options.txt "sectionsLane"); Clip-launch: off.
 inline bool& patternLaneOn() noexcept
 {
@@ -210,4 +210,4 @@ inline bool& patternLaneOn() noexcept
     return on;
 }
 } // namespace sections
-} // namespace lynx
+} // namespace yw

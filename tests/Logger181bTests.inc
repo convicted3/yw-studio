@@ -12,12 +12,12 @@ std::vector<float> rollingRamp (int n, float start)
         v[(std::size_t) i] = start + (float) i * 0.001f;
     return v;
 }
-using RollPos = lynx::RollingAudioLog::Position;
+using RollPos = yw::RollingAudioLog::Position;
 }
 
 TEST (logger181b_memory_per_length)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     CHECK (log.bytesInUse() == 0); // off: nothing allocated
     log.setSampleRate (48000.0);
     CHECK (log.bytesInUse() == 0);
@@ -37,12 +37,12 @@ TEST (logger181b_memory_per_length)
 
 TEST (logger181b_off_writes_nothing_and_enable_waits_for_the_rate)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setEnabled (true); // on, but no device yet
     CHECK (log.bytesInUse() == 0);
     const auto block = rollingRamp (64, 0.1f);
     log.push (RollPos::postEffects, block.data(), block.data(), 64); // must not crash
-    lynx::RollingAudioLog::Dump dump;
+    yw::RollingAudioLog::Dump dump;
     CHECK (! log.dump (dump));
     log.setSampleRate (1000.0);
     CHECK (log.framesCapacity() == 60000u);
@@ -53,14 +53,14 @@ TEST (logger181b_off_writes_nothing_and_enable_waits_for_the_rate)
 
 TEST (logger181b_position_takes_only_its_own_tap)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setSampleRate (1000.0);
     log.setEnabled (true);
     CHECK (log.getPosition() == RollPos::postEffects); // FL's default
     const std::vector<float> pre (10, 0.25f), post (10, 0.5f);
     log.push (RollPos::preEffects, pre.data(), pre.data(), 10);
     log.push (RollPos::postEffects, post.data(), post.data(), 10);
-    lynx::RollingAudioLog::Dump d;
+    yw::RollingAudioLog::Dump d;
     CHECK (log.dump (d) && d.left.size() == 10 && d.left[0] == 0.5f);
     log.setPosition (RollPos::preEffects);
     log.push (RollPos::postEffects, post.data(), post.data(), 10);
@@ -70,7 +70,7 @@ TEST (logger181b_position_takes_only_its_own_tap)
 
 TEST (logger181b_wraps_keeping_the_newest_in_order)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setSampleRate (100.0);
     log.setEnabled (true); // 6000 frames
     log.setLengthSeconds (1); // 100 frames
@@ -87,7 +87,7 @@ TEST (logger181b_wraps_keeping_the_newest_in_order)
         }
         log.push (RollPos::postEffects, l.data(), r.data(), 40);
     }
-    lynx::RollingAudioLog::Dump d;
+    yw::RollingAudioLog::Dump d;
     CHECK (log.dump (d));
     CHECK (d.left.size() == 100u && d.rate == 100.0);
     CHECK (d.left.front() == 181.0f && d.left.back() == 280.0f && d.right.back() == -280.0f);
@@ -103,7 +103,7 @@ TEST (logger181b_wraps_keeping_the_newest_in_order)
 
 TEST (logger181b_silence_stops_storing_after_8_seconds)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setSampleRate (100.0);
     log.setEnabled (true); // 6000 frames, 800 of silence stay
     const std::vector<float> tone (100, 0.5f), zero (100, 0.0f), faint (100, 0.9e-6f);
@@ -111,12 +111,12 @@ TEST (logger181b_silence_stops_storing_after_8_seconds)
     for (int s = 0; s < 40; ++s) // 40 s of silence: 8 s stored
         log.push (RollPos::postEffects, s % 2 == 0 ? zero.data() : faint.data(), zero.data(), 100);
     log.push (RollPos::postEffects, tone.data(), tone.data(), 100);
-    lynx::RollingAudioLog::Dump d;
+    yw::RollingAudioLog::Dump d;
     CHECK (log.dump (d));
     CHECK (d.left.size() == 100u + 800u + 100u);
     CHECK (d.left[99] == 0.5f && d.left[100] == 0.0f && d.left[900] == 0.5f);
     // only silence: nothing above the level, "the audio logger is empty"
-    lynx::RollingAudioLog quiet;
+    yw::RollingAudioLog quiet;
     quiet.setSampleRate (100.0);
     quiet.setEnabled (true);
     quiet.push (RollPos::postEffects, faint.data(), faint.data(), 100);
@@ -128,14 +128,14 @@ TEST (logger181b_silence_stops_storing_after_8_seconds)
 
 TEST (logger181b_resize_keeps_the_newest_audio)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setSampleRate (100.0);
     log.setEnabled (true);
     log.setLengthSeconds (2);
     const auto a = rollingRamp (150, 1.0f);
     log.push (RollPos::postEffects, a.data(), a.data(), 150);
     log.setLengthSeconds (1); // shorter: the last 100 frames
-    lynx::RollingAudioLog::Dump d;
+    yw::RollingAudioLog::Dump d;
     CHECK (log.dump (d) && d.left.size() == 100u && d.left.front() == a[50] && d.left.back() == a[149]);
     log.setLengthSeconds (3); // longer: the same audio, with room after it
     CHECK (log.dump (d) && d.left.size() == 100u && d.left.front() == a[50] && d.left.back() == a[149]);
@@ -149,7 +149,7 @@ TEST (logger181b_resize_keeps_the_newest_audio)
 // Every frame carries its number, so a lost, repeated or torn frame shows in a dump.
 TEST (logger181b_no_audio_is_lost_while_dumps_and_new_lengths_have_the_ring)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setSampleRate (48000.0);
     log.setEnabled (true);
     std::atomic<bool> stop { false };
@@ -172,7 +172,7 @@ TEST (logger181b_no_audio_is_lost_while_dumps_and_new_lengths_have_the_ring)
     });
 
     auto intact = true;
-    lynx::RollingAudioLog::Dump d;
+    yw::RollingAudioLog::Dump d;
     for (int i = 0; i < 60; ++i)
     {
         const auto before = blocks.load();
@@ -191,7 +191,7 @@ TEST (logger181b_no_audio_is_lost_while_dumps_and_new_lengths_have_the_ring)
 
 TEST (logger181b_audio_comes_back_after_switching_off_and_on)
 {
-    lynx::RollingAudioLog log;
+    yw::RollingAudioLog log;
     log.setSampleRate (1000.0);
     log.setEnabled (true);
     std::atomic<bool> stop { false };
@@ -204,7 +204,7 @@ TEST (logger181b_audio_comes_back_after_switching_off_and_on)
             blocks.fetch_add (1);
         }
     });
-    lynx::RollingAudioLog::Dump d;
+    yw::RollingAudioLog::Dump d;
     for (int i = 0; i < 100; ++i)
     {
         log.setEnabled (false);
@@ -220,7 +220,7 @@ TEST (logger181b_audio_comes_back_after_switching_off_and_on)
 
 TEST (chord181b_names)
 {
-    auto name = [] (std::vector<int> keys, bool sharps = true) { lynx::chordread::NameOptions o; o.sharps = sharps; return lynx::chordread::nameKeys (keys, o).text; };
+    auto name = [] (std::vector<int> keys, bool sharps = true) { yw::chordread::NameOptions o; o.sharps = sharps; return yw::chordread::nameKeys (keys, o).text; };
     CHECK (name ({ 60 }).empty());
     CHECK (name ({ 60, 64 }) == "M 3rd");
     CHECK (name ({ 60, 67 }) == "5th");
@@ -242,17 +242,17 @@ TEST (chord181b_names)
 
 TEST (chord181b_novelty_past_four_tensions)
 {
-    using namespace lynx::chordread;
+    using namespace yw::chordread;
     const auto n = nameKeys ({ 60, 61, 62, 63, 64, 65, 66, 67, 68 });
     if (n.novelty)
         CHECK (std::find_if (noveltyNames().begin(), noveltyNames().end(), [&n] (const char* s) { return n.text == s; }) != noveltyNames().end());
-    for (const auto* s : noveltyNames()) // (LYNX's own wording)
+    for (const auto* s : noveltyNames()) // (YW's own wording)
         CHECK (std::string (s) != "Jaazzz" && std::string (s) != "Mayhem");
 }
 
 TEST (chord181b_roman_needs_a_key)
 {
-    using namespace lynx::chordread;
+    using namespace yw::chordread;
     NameOptions o;
     o.roman = true;
     CHECK (nameKeys ({ 67, 71, 74 }, o).text == "G"); // no key: letter names
@@ -266,7 +266,7 @@ TEST (chord181b_roman_needs_a_key)
 
 TEST (chord181b_timing)
 {
-    using namespace lynx::chordread;
+    using namespace yw::chordread;
     Readout r;
     CHECK (r.text() == noChord);
     r.note (0, 60, true, 0);
@@ -319,7 +319,7 @@ TEST (chord181b_timing)
 
 TEST (chord181b_selection_shows_at_least_2_seconds)
 {
-    using namespace lynx::chordread;
+    using namespace yw::chordread;
     Readout r;
     r.selection ({ 60, 64, 67, 60 }, 1000); // (the same key twice counts once)
     CHECK (r.text() == "C");
@@ -333,7 +333,7 @@ TEST (chord181b_selection_shows_at_least_2_seconds)
 
 TEST (toolbar181b_chord_panel_is_on_the_default_toolbar)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto d = Layout::makeDefault();
     CHECK (d.isShown (Group::chord) && d.isDefault());
     CHECK (d.orderToString().find ("chord,meters") != std::string::npos); // on the left of the meters, as in FL
@@ -371,7 +371,7 @@ TEST (toolbar181b_chord_panel_is_on_the_default_toolbar)
 // comparison (11552 sets with sharps, 300 with flats, 8000 Roman: 0 differences) is in docs/analise/REA_rodada181b.md.
 TEST (chord181b_names_match_the_measured_fl_sample)
 {
-    using namespace lynx::chordread;
+    using namespace yw::chordread;
     struct Row { std::vector<int> keys; const char* name; };
     auto check = [] (const std::vector<Row>& rows, const NameOptions& options) {
         for (const auto& r : rows)
@@ -476,14 +476,14 @@ TEST (chord181b_names_match_the_measured_fl_sample)
 
 TEST (macros181b_declick_changes_only_selected_audio_clips)
 {
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (3);
-    song.channels[0].instrument = lynx::InstrumentKind::audioClip;
-    song.channels[1].instrument = lynx::InstrumentKind::sampler;
-    song.channels[2].instrument = lynx::InstrumentKind::audioClip;
-    CHECK (lynx::audioClipsAmong (song, { 1 }) == 0);
-    CHECK (lynx::audioClipsAmong (song, { 0, 1, 7, -1 }) == 1);
-    CHECK (lynx::setDeclickOfAudioClips (song, { 0, 1 }, 4) == 1);
+    song.channels[0].instrument = yw::InstrumentKind::audioClip;
+    song.channels[1].instrument = yw::InstrumentKind::sampler;
+    song.channels[2].instrument = yw::InstrumentKind::audioClip;
+    CHECK (yw::audioClipsAmong (song, { 1 }) == 0);
+    CHECK (yw::audioClipsAmong (song, { 0, 1, 7, -1 }) == 1);
+    CHECK (yw::setDeclickOfAudioClips (song, { 0, 1 }, 4) == 1);
     CHECK (song.channels[0].sampler.declickMode == 4);
     CHECK (song.channels[1].sampler.declickMode == 0);
     CHECK (song.channels[2].sampler.declickMode == 0);
@@ -491,44 +491,44 @@ TEST (macros181b_declick_changes_only_selected_audio_clips)
 
 TEST (macros181b_prepare_for_midi_export_follows_fl)
 {
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (20);
     song.channels[2].plugin.name = "FPC";
     song.channels[3].name = "Lead";
-    lynx::prepareForMidiExport (song);
+    yw::prepareForMidiExport (song);
     std::vector<int> channels;
     for (const auto& c : song.channels)
     {
-        CHECK (c.instrument == lynx::InstrumentKind::midiOut);
+        CHECK (c.instrument == yw::InstrumentKind::midiOut);
         CHECK (c.plugin.name.empty());
-        channels.push_back (lynx::midictl::parseMidiOut (c.pluginState).channel);
+        channels.push_back (yw::midictl::parseMidiOut (c.pluginState).channel);
     }
     // 0 1 FPC 2 3 ... 8, skipping 9 (MIDI channel 10), 10 ... 15, then 0 again
     const std::vector<int> expected { 0, 1, 9, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3 };
     CHECK (channels == expected);
     CHECK (song.channels[3].name == "Lead");
 
-    lynx::Song kept;
+    yw::Song kept;
     kept.channels.resize (3);
-    kept.channels[1].instrument = lynx::InstrumentKind::layer;
-    lynx::prepareForMidiExport (kept);
+    kept.channels[1].instrument = yw::InstrumentKind::layer;
+    yw::prepareForMidiExport (kept);
     // as FL 2026 does (seen at runtime): a Layer becomes a MIDI Out too, and takes its turn
-    CHECK (kept.channels[1].instrument == lynx::InstrumentKind::midiOut);
-    CHECK (lynx::midictl::parseMidiOut (kept.channels[2].pluginState).channel == 2);
+    CHECK (kept.channels[1].instrument == yw::InstrumentKind::midiOut);
+    CHECK (yw::midictl::parseMidiOut (kept.channels[2].pluginState).channel == 2);
 }
 
 TEST (macros181b_switch_audio_clips_sets_the_mode_of_clips_only)
 {
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (3);
-    song.channels[0].instrument = lynx::InstrumentKind::audioClip;
-    song.channels[2].instrument = lynx::InstrumentKind::audioClip;
-    CHECK (lynx::setStretchOfAudioClips (song, { 0, 1, 2 }, true, lynx::StretchMethod::tones) == 2);
-    CHECK (song.channels[0].sampler.keepPitch && song.channels[0].sampler.stretchMethod == lynx::StretchMethod::tones);
+    song.channels[0].instrument = yw::InstrumentKind::audioClip;
+    song.channels[2].instrument = yw::InstrumentKind::audioClip;
+    CHECK (yw::setStretchOfAudioClips (song, { 0, 1, 2 }, true, yw::StretchMethod::tones) == 2);
+    CHECK (song.channels[0].sampler.keepPitch && song.channels[0].sampler.stretchMethod == yw::StretchMethod::tones);
     CHECK (! song.channels[1].sampler.keepPitch);
     // Resample: the stretch engine goes off, the method stays for when it comes back on
-    CHECK (lynx::setStretchOfAudioClips (song, { 2 }, false, lynx::StretchMethod::general) == 1);
-    CHECK (! song.channels[2].sampler.keepPitch && song.channels[2].sampler.stretchMethod == lynx::StretchMethod::tones);
+    CHECK (yw::setStretchOfAudioClips (song, { 2 }, false, yw::StretchMethod::general) == 1);
+    CHECK (! song.channels[2].sampler.keepPitch && song.channels[2].sampler.stretchMethod == yw::StretchMethod::tones);
     CHECK (song.channels[0].sampler.keepPitch);
-    CHECK (lynx::setStretchOfAudioClips (song, { 1 }, true, lynx::StretchMethod::beats) == 0);
+    CHECK (yw::setStretchOfAudioClips (song, { 1 }, true, yw::StretchMethod::beats) == 0);
 }

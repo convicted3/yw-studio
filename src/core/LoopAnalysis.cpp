@@ -25,7 +25,7 @@
 #include "core/PreviewTempo.h"
 #include "core/TempoDetect.h"
 
-namespace lynx::loopanalysis
+namespace yw::loopanalysis
 {
 namespace
 {
@@ -302,7 +302,7 @@ Tempo detectTempo (const SampleData& audio)
     // 2. a loop is cut to whole bars: the tempos that make the file 1, 2, 4, 8 or 16 bars of four beats (or 3, 6, 12
     //    bars, or 2 beats) are tried, each by the comb with a preference for powers of two of bars; one that the comb
     //    finds nearly as strong as the free pulse decides the pulse's family (a 3:4 or 2:3 relation the comb alone gets
-    //    wrong: dotted rhythms, busy hats). LYNX's own use of the loop's length; the length test is as tempodetect's.
+    //    wrong: dotted rhythms, busy hats). YW's own use of the loop's length; the length test is as tempodetect's.
     if (o.loopCandidates && seconds <= maxSeconds)
     {
         static constexpr std::pair<int, double> counts[] = { { 4, 1.0 },  { 8, 1.0 },   { 16, 1.0 },  { 32, 1.0 },  { 64, 1.0 },
@@ -374,7 +374,7 @@ Tempo detectTempo (const SampleData& audio)
             if (b >= minBpm * 0.99 && b <= maxBpm * 1.01)
                 if (const auto v = backbeat (b); v > strongest)
                     strongest = v, chosen = b;
-        // no backbeat: the octave tempodetect::detect (FL's "Detect tempo" in LYNX) reads, when it found this pulse
+        // no backbeat: the octave tempodetect::detect (FL's "Detect tempo" in YW) reads, when it found this pulse
         if (chosen <= 0.0 && o.detectorOctave)
         {
             const auto legacy = tempodetect::detect (audio.leftData(), audio.isStereo() ? audio.rightData() : nullptr, frames, rate).bpm;
@@ -635,7 +635,7 @@ keyfollow::Detection detectKey (const SampleData& audio)
         out.key = best.key;
     // the major key or its relative minor (the same notes; profiles barely tell them apart): the tonic's weight with its
     // fifth decides, counted over the whole loop, its bass and its first moments (a loop starts on its downbeat, which
-    // mostly holds the tonic chord) — the tonic-and-fifth test of LYNX's own key guess (core/KeyGuess.h, round 184a)
+    // mostly holds the tonic chord) — the tonic-and-fifth test of YW's own key guess (core/KeyGuess.h, round 184a)
     if (out.key && o.tonicDecision)
     {
         double startSum = 0.0;
@@ -970,4 +970,4 @@ void Service::run()
         }
     }
 }
-} // namespace lynx::loopanalysis
+} // namespace yw::loopanalysis

@@ -1,7 +1,7 @@
 #pragma once
 
 // MPE (MIDI Polyphonic Expression), stage 1 (issue #108, round 190bb; docs/analise/REA_rodada190bb-mpe.md).
-// A LYNX addition: FL Studio 2026 has no MPE switch (its wrapper's MIDI section ends at "Send MOD X as polyphonic
+// A YW addition: FL Studio 2026 has no MPE switch (its wrapper's MIDI section ends at "Send MOD X as polyphonic
 // aftertouch", read from the settings form), so the per-note data follows what FL's piano roll already has:
 //
 //   per-note pitch bend  ->  the note's fine pitch (cents)
@@ -22,7 +22,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::mpe
+namespace yw::mpe
 {
 constexpr int maxMembers = 15;
 constexpr float defaultBendRange = 48.0f; // semitones, the specification's default for member channels
@@ -380,4 +380,4 @@ inline bool toNoteExpression (const std::uint8_t* bytes, int size, float bendRan
             return false;
     }
 }
-} // namespace lynx::mpe
+} // namespace yw::mpe

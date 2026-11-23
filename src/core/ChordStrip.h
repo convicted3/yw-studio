@@ -16,9 +16,9 @@
 // that were in the Piano roll before ("Non chord notes": Replace all, Replace clashing, Keep (FL's default), Snap).
 // "Learn from MIDI input" replaces the selected chord with the chord played on a MIDI controller.
 //
-// What is FL's and what is LYNX's own: the blocks, their switches, the modes and their rules, the note options, the
+// What is FL's and what is YW's own: the blocks, their switches, the modes and their rules, the note options, the
 // learn and snap rules are FL's (see the REA doc). FL's generator and analyser are trained models whose data stays in
-// FL; LYNX generates with its own table of diatonic moves (prtools::generateProgression's) and analyses with its own
+// FL; YW generates with its own table of diatonic moves (prtools::generateProgression's) and analyses with its own
 // chord templates scored against the notes' sounding time (REA §1 lists FL's analyser law as far as it was read).
 // Header only, no JUCE.
 
@@ -36,7 +36,7 @@
 #include "core/PianoRollTools.h"
 #include "core/Song.h"
 
-namespace lynx::chordstrip
+namespace yw::chordstrip
 {
 using prtools::Chord;
 
@@ -57,7 +57,7 @@ struct Block
     int bassTranspose = 0;       // octaves of the bass (FL's Transpose › Bass: one octave up / down)
     int fixedBass = -1;          // FL's Fixed bass: a pitch class kept when the chord is regenerated; -1 = none
     Voicing voicing = Voicing::block;
-    int colour = -1;             // FL's Color 1 … 8 (LYNX note colour 0 … 7); -1 = the channel's own
+    int colour = -1;             // FL's Color 1 … 8 (YW note colour 0 … 7); -1 = the channel's own
 
     bool operator== (const Block&) const = default;
 };
@@ -169,7 +169,7 @@ inline int bassKey (const Block& b, int octave)
     return baseC - 12 + pc (pitch) + 12 * b.bassTranspose;
 }
 
-// The inversion that keeps the block's main notes closest to `previous` (LYNX's "Smooth voicing": the same search as
+// The inversion that keeps the block's main notes closest to `previous` (YW's "Smooth voicing": the same search as
 // prtools::writeProgression's voice leading; FL shows its own choice as the block's ⇕ number).
 inline int smoothInversion (Block b, int octave, const std::vector<int>& previous)
 {
@@ -209,11 +209,11 @@ inline void voiceLead (Strip& s, int octave, bool smooth, bool lockedToo = false
     }
 }
 
-// --- the generator (LYNX's table, FL's modes) ----------------------------------------------------
+// --- the generator (YW's table, FL's modes) ----------------------------------------------------
 
 namespace detail
 {
-// LYNX's own table of moves between scale degrees (prtools::generateProgression's): the usual functional pulls
+// YW's own table of moves between scale degrees (prtools::generateProgression's): the usual functional pulls
 inline float move (int from, int to) noexcept
 {
     static constexpr float moves[7][7] = {
@@ -318,7 +318,7 @@ inline std::array<float, 7> accompanyBias (const Strip& s, const std::vector<Not
         double covered = 0.0;
         for (auto iv : c.intervals)
             covered += w[(std::size_t) pc (c.root + iv)];
-        // (FL: no weight for a chord the notes don't fit at its default depth; LYNX keeps a little for every degree)
+        // (FL: no weight for a chord the notes don't fit at its default depth; YW keeps a little for every degree)
         const auto f = (float) (covered / total);
         bias[(std::size_t) d] = 0.02f + 30.0f * f * f * f * f * f * f;
     }
@@ -386,7 +386,7 @@ inline std::vector<Chord> alternatives (const Strip& s, std::size_t i, int count
 namespace analysis
 {
 // FL's 7 chord types in vocabulary order (maj, min, dim, sus4, sus2, aug, hdim): the intervals in FL's "analysis
-// order" (-1 = an empty slot whose weight is skipped), FL's priority, and the LYNX intervals of the type's triad.
+// order" (-1 = an empty slot whose weight is skipped), FL's priority, and the YW intervals of the type's triad.
 struct Type
 {
     std::array<int, 10> order;
@@ -419,8 +419,8 @@ struct Settings
 inline Settings single() { return {}; }
 // Analyze over the blocks (FL's analyse_chord_sequence: bass note and root match 1.14, cumulative 0.9 x 0.3, no slash
 // weight, separations 12 / 12). FL sets no type priority there because its HMM vocabulary (trained style priorities,
-// which stay in FL) already prefers common chords; LYNX, without that data, keeps the single analysis's type priority
-// (0.2: major / minor before diminished / half-diminished) as its stand-in [LYNX].
+// which stay in FL) already prefers common chords; YW, without that data, keeps the single analysis's type priority
+// (0.2: major / minor before diminished / half-diminished) as its stand-in [YW].
 inline Settings sequence()
 {
     Settings s;
@@ -560,7 +560,7 @@ inline Result analyse (const std::vector<Note>& notes, std::int64_t from, std::i
     return r;
 }
 
-// FL's result as LYNX's chord: the type's triad, the played extensions (a ninth, eleventh or a clashing third / fifth
+// FL's result as YW's chord: the type's triad, the played extensions (a ninth, eleventh or a clashing third / fifth
 // an octave up, sixths and sevenths as they are), the slash bass
 inline Chord Result::chord() const
 {
@@ -945,7 +945,7 @@ struct WriteOptions
     int octave = 4;
     bool main = true, bass = true; // FL's spanner › Notes (both off: chords shown, no notes)
     NonChord nonChord = NonChord::keep;
-    std::string rhythm;         // LYNX's rhythm cells (prtools::ChordWriteOptions::rhythm); empty = held
+    std::string rhythm;         // YW's rhythm cells (prtools::ChordWriteOptions::rhythm); empty = held
     float velocity = 100.0f / 128.0f;
     bool group = true;          // FL: the notes of each generated chord are grouped
     std::vector<int> snapBlocks; // FL's chord menu › Snap existing notes: the blocks whose existing notes snap anyway
@@ -965,7 +965,7 @@ inline int blockAt (const Strip& s, std::int64_t t)
     return -1;
 }
 
-// The notes a block renders (main and / or bass, LYNX's rhythm cells), absolute ticks.
+// The notes a block renders (main and / or bass, YW's rhythm cells), absolute ticks.
 inline std::vector<Note> blockNotes (const Strip& s, std::size_t i, const WriteOptions& o)
 {
     std::vector<Note> out;
@@ -977,7 +977,7 @@ inline std::vector<Note> blockNotes (const Strip& s, std::size_t i, const WriteO
         hits.push_back ({ chordStart, length });
     else
     {
-        // LYNX's rhythm cells over 4 x the first block's length, as prtools::writeProgression does
+        // YW's rhythm cells over 4 x the first block's length, as prtools::writeProgression does
         const auto unit = std::max<std::int64_t> (1, s.blocks.front().length);
         const auto cells = (std::int64_t) o.rhythm.size();
         const auto blockLen = 4 * unit;
@@ -1302,4 +1302,4 @@ inline std::string toText (const Strip& s)
         chords.push_back (b.chord);
     return prtools::toNumerals (chords, s.tonic);
 }
-} // namespace lynx::chordstrip
+} // namespace yw::chordstrip

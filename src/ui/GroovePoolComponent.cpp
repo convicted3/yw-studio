@@ -15,7 +15,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -25,7 +25,7 @@ constexpr int baseWidth = 52, valueWidth = 64, amountWidth = 56;
 juce::String utf8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 juce::String percent (float v) { return juce::String (juce::roundToInt (v * 100.0f)) + " %"; }
 
-// the folders of LYNX's own grooves, as shown
+// the folders of YW's own grooves, as shown
 const char* const folderNames[] = { TR_NOOP ("Swing"), TR_NOOP ("Classic swing"), TR_NOOP ("Feel"), TR_NOOP ("Accent"), TR_NOOP ("Utility") };
 
 // A groove file of the user's (.agr; as saved it may be gzip-packed) into the pool. Returns the new id, 0: not read.
@@ -420,8 +420,8 @@ void addGrooveMenuItems (juce::PopupMenu& menu, AudioEngine& engine, juce::Compo
     }
     menu.addSeparator();
     menu.addItem (tr ("Import a groove file..."), [&engine, added, safe = juce::Component::SafePointer<juce::Component> (owner)] {
-        auto chooser = lynx::ui::makeSharedFileChooser (tr ("Import a groove file"), {}, "*.agr");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        auto chooser = yw::ui::makeSharedFileChooser (tr ("Import a groove file"), {}, "*.agr");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                  [&engine, added, safe, chooser] (const juce::FileChooser& c) {
                                      const auto file = c.getResult();
                                      if (safe == nullptr || ! file.existsAsFile())
@@ -442,4 +442,4 @@ int groovePoolHeight (const AudioEngine& engine, int maxRows)
     const auto rows = juce::jlimit (1, maxRows, (int) engine.getSong().grooves.grooves.size());
     return titleHeight + headHeight + rows * rowHeight + 2;
 }
-} // namespace lynx
+} // namespace yw

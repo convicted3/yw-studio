@@ -1,7 +1,7 @@
 #pragma once
 
-// LYNX Dance on screen (round 165e): the dancers of the project's dance channels drawn over the workspace (drag one to
-// move it, right-click for its moves), and the channel's editor. The character is LYNX's own, drawn with vector shapes
+// YW Dance on screen (round 165e): the dancers of the project's dance channels drawn over the workspace (drag one to
+// move it, right-click for its moves), and the channel's editor. The character is YW's own, drawn with vector shapes
 // (core/FruityDance.h has the moves and FL's key map).
 
 #include <functional>
@@ -14,7 +14,7 @@
 
 #include "core/FruityDance.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class Instrument;
@@ -70,7 +70,7 @@ public:
 
     void paint (juce::Graphics& g) override;
     bool hitTest (int x, int y) override;
-    // round 190jx: "lynxOverlayIgnores" on the stage while it draws no dancer itself (ui/MotionOverlay covers nothing then)
+    // round 190jx: "ywOverlayIgnores" on the stage while it draws no dancer itself (ui/MotionOverlay covers nothing then)
     void markOverlayCover();
     void mouseDown (const juce::MouseEvent& e) override;
     void mouseDrag (const juce::MouseEvent& e) override;
@@ -93,11 +93,11 @@ private:
         juce::Rectangle<float> bounds; // painted last
         bool drawn = false;
         std::unique_ptr<juce::Component> window; // its own native window (see above), or nullptr
-        // a sprite sheet (issue #121): its frames are drawn instead of LYNX's character
+        // a sprite sheet (issue #121): its frames are drawn instead of YW's character
         std::shared_ptr<const dancer::Sheet> sheet;
         dance::SheetAnimator animator;
         dance::SheetFrame frame;
-        std::int64_t lastCycle = 0; // (FL's "Sync changes": LYNX's dancer changes its move when a cycle starts)
+        std::int64_t lastCycle = 0; // (FL's "Sync changes": YW's dancer changes its move when a cycle starts)
         bool floating = false;      // its window is kept in front (FL's "Keep in front")
         juce::Rectangle<int> placedArea; // where its window was put, in the stage (round 190bj: the only place counted)
     };
@@ -139,4 +139,4 @@ juce::String danceWindowSelfTest (juce::String* detail = nullptr);
 // The dance channel's settings: a live preview, the move, mirrored / shown, size, speed, the outfit colour, the keys,
 // and "Load sprite sheet..." (FL's button of that name in Fruity Dance's editor)
 std::unique_ptr<juce::Component> makeDanceEditor (AudioEngine& engine, int channel);
-} // namespace lynx
+} // namespace yw

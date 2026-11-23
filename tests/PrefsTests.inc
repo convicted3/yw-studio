@@ -3,14 +3,14 @@
 
 TEST (prefs_key_values)
 {
-    const auto kv = lynx::prefs::parseKeyValues ("a=1\n  b = two words \r\nnoequals\n=x\na=3\nc=\n");
+    const auto kv = yw::prefs::parseKeyValues ("a=1\n  b = two words \r\nnoequals\n=x\na=3\nc=\n");
     CHECK (kv.size() == 3);
     CHECK (kv.at ("a") == "3" && kv.at ("b") == "two words" && kv.at ("c").empty());
 }
 
 TEST (prefs_autosave_choices_and_backup_rotation)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     CHECK (clampAutosaveMinutes (0) == 0 && clampAutosaveMinutes (-5) == 0);
     CHECK (clampAutosaveMinutes (2) == 2 && clampAutosaveMinutes (4) == 5 && clampAutosaveMinutes (999) == 30 && clampAutosaveMinutes (3) == 2);
     CHECK (clampAutosaveKeep (0) == 1 && clampAutosaveKeep (500) == 100 && clampAutosaveKeep (7) == 7);
@@ -36,7 +36,7 @@ TEST (prefs_autosave_choices_and_backup_rotation)
 
 TEST (prefs_midi_velocity_curves_and_device_settings)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     CHECK (mapVelocity (0.5f, VelocityCurve::linear) == 0.5f);
     CHECK (mapVelocity (0.5f, VelocityCurve::soft) > 0.6f && mapVelocity (0.5f, VelocityCurve::hard) < 0.35f);
     CHECK (mapVelocity (0.2f, VelocityCurve::fixed) == 1.0f && mapVelocity (0.0f, VelocityCurve::fixed) == 0.0f);
@@ -75,7 +75,7 @@ TEST (prefs_midi_velocity_curves_and_device_settings)
 
 TEST (prefs_midi_pickup)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     CHECK (! pickupReached (0.5f, -1.0f, 0.1f));    // first value, far away
     CHECK (pickupReached (0.5f, -1.0f, 0.5f));      // lands on it
     CHECK (! pickupReached (0.5f, 0.1f, 0.3f));     // still below
@@ -95,7 +95,7 @@ TEST (prefs_midi_pickup)
 
 TEST (prefs_plugin_manager_filter_and_favourites)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     std::vector<PluginRow> rows (4);
     rows[0] = { "Serum", "Xfer Records", "VST3", "Synth", "C:\\VST3\\Serum.vst3", "s", true, PluginStatus::ok, true };
     rows[1] = { "Pro-Q 3", "FabFilter", "VST3", "EQ", "C:\\VST3\\Pro-Q 3.vst3", "q", false, PluginStatus::ok, false };
@@ -120,27 +120,27 @@ TEST (prefs_plugin_manager_filter_and_favourites)
 
 TEST (keymap_shortcut_manager_helpers)
 {
-    lynx::keys::KeyMap map;
+    yw::keys::KeyMap map;
     CHECK (map.overridesJson() == "{\n}\n"); // nothing changed
     CHECK (map.isDefault ("pattern.next"));
 
     // the chord of an existing global action, asked for another global action: reported as taken
     const auto& play = map.chordsFor ("transport.playStop");
     CHECK (! play.empty());
-    const auto users = map.actionsWith (play.front(), lynx::keys::Context::global, "transport.pause");
+    const auto users = map.actionsWith (play.front(), yw::keys::Context::global, "transport.pause");
     CHECK (users.size() == 1 && users[0] == "transport.playStop");
-    CHECK (map.actionsWith (play.front(), lynx::keys::Context::global, "transport.playStop").empty());
+    CHECK (map.actionsWith (play.front(), yw::keys::Context::global, "transport.playStop").empty());
 
-    lynx::keys::Chord f9 { lynx::keys::f9, lynx::keys::ctrl | lynx::keys::shift };
-    CHECK (map.actionsWith (f9, lynx::keys::Context::global).empty());
+    yw::keys::Chord f9 { yw::keys::f9, yw::keys::ctrl | yw::keys::shift };
+    CHECK (map.actionsWith (f9, yw::keys::Context::global).empty());
     map.setChords ("pattern.next", { f9 });
     CHECK (! map.isDefault ("pattern.next"));
     const auto json = map.overridesJson();
     CHECK (json == "{\n  \"pattern.next\": [\"Ctrl+Shift+F9\"]\n}\n");
-    CHECK (map.actionsWith (f9, lynx::keys::Context::global).size() == 1);
+    CHECK (map.actionsWith (f9, yw::keys::Context::global).size() == 1);
 
     // the overrides read back give the same map
-    lynx::keys::KeyMap back;
+    yw::keys::KeyMap back;
     std::vector<std::string> errors;
     CHECK (back.loadJson (json, &errors) && errors.empty());
     CHECK (back.chordsFor ("pattern.next") == map.chordsFor ("pattern.next"));

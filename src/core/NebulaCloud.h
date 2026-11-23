@@ -6,7 +6,7 @@
 // This file and NebulaCloud.cpp are a C++ port of the Faust library function `re.valhallaSupermassive`
 // (https://github.com/grame-cncm/faustlibraries, reverbs.lib 1.6.2, declared there as
 // `author "David Braun"`, `license "MIT"`). The network structures, the delay / gain / modulation / filter laws and
-// the fixed 33- and 32-sample offsets are that model's. LYNX's changes: block processing, glided controls (line
+// the fixed 33- and 32-sample offsets are that model's. YW's changes: block processing, glided controls (line
 // lengths at 0.25 samples per sample, coefficients over 5 ms; the model applies its parameters directly), a
 // single-precision signal path, the modulator's sine / cosine by rotation between blocks, and the looped network's
 // global gain capped at 0.9995 like the other loops (the model lets it reach 1). Its licence:
@@ -37,7 +37,7 @@
 
 #include <memory>
 
-namespace lynx::verbs::cloud
+namespace yw::verbs::cloud
 {
 // the six networks, named by structure
 enum class Topology
@@ -86,4 +86,4 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl;
 };
-} // namespace lynx::verbs::cloud
+} // namespace yw::verbs::cloud

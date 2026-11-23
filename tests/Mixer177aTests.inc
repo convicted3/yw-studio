@@ -16,7 +16,7 @@
 
 namespace
 {
-int insertNamed (const lynx::Song& song, const std::string& name)
+int insertNamed (const yw::Song& song, const std::string& name)
 {
     for (int t = 0; t < (int) song.mixer.size(); ++t)
         if (song.mixer[(std::size_t) t].name == name)
@@ -24,12 +24,12 @@ int insertNamed (const lynx::Song& song, const std::string& name)
     return -1;
 }
 
-int sendParamTrack (float value) { return (int) std::lround (value * (lynx::maxMixerTracks - 1)); }
+int sendParamTrack (float value) { return (int) std::lround (value * (yw::maxMixerTracks - 1)); }
 
 // A project where every kind of reference points at a named insert
-lynx::Song routedSong()
+yw::Song routedSong()
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (9);
     const char* names[] { "Master", "lead", "kick", "bass", "bus", "fx", "verb", "delay", "spare", "last" };
@@ -107,9 +107,9 @@ lynx::Song routedSong()
 }
 
 // every reference still names the same track
-void checkRoutedSong (const lynx::Song& song)
+void checkRoutedSong (const yw::Song& song)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto lead = insertNamed (song, "lead"), kick = insertNamed (song, "kick"), bass = insertNamed (song, "bass"),
                bus = insertNamed (song, "bus"), fx = insertNamed (song, "fx"), verb = insertNamed (song, "verb"),
                delay = insertNamed (song, "delay"), last = insertNamed (song, "last");
@@ -142,7 +142,7 @@ void checkRoutedSong (const lynx::Song& song)
 
 TEST (mixer177a_moving_inserts_keeps_every_route_on_its_track)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = routedSong();
     checkRoutedSong (song);
 
@@ -169,7 +169,7 @@ TEST (mixer177a_moving_inserts_keeps_every_route_on_its_track)
 
 TEST (mixer177a_relative_patcher_output_stays_relative_when_it_still_lands_right)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = routedSong();
     // inserts added before both the channel's insert and the output's: the output is still "the next insert"
     CHECK (mixerops::insertTracks (song, 1, 2) == 2);
@@ -183,7 +183,7 @@ TEST (mixer177a_relative_patcher_output_stays_relative_when_it_still_lands_right
 
 TEST (mixer177a_deleting_an_insert_drops_its_links_and_never_moves_them)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = routedSong();
     const auto count = song.mixer.size();
     CHECK (mixerops::deleteTrack (song, 6)); // "verb"
@@ -223,7 +223,7 @@ TEST (mixer177a_moved_track_exports_the_right_insert_numbers_to_flp)
 {
     // An imported Fruity Send / Transmitter keeps FL's own state for the .flp export (FlOrigin). After a move its insert
     // numbers are rewritten with the track, the other bytes stay as imported, and it is still exported as FL's state.
-    using namespace lynx;
+    using namespace yw;
     auto le = [] (std::vector<std::uint8_t>& d, int v) {
         for (int b = 0; b < 4; ++b)
             d.push_back ((std::uint8_t) (((std::uint32_t) v >> (8 * b)) & 0xFF));
@@ -258,7 +258,7 @@ TEST (mixer177a_moved_track_exports_the_right_insert_numbers_to_flp)
 
     auto exported = [&song] {
         flpexport::Options options;
-        options.lynxOnly = flpexport::LynxOnly::substitute;
+        options.ywOnly = flpexport::YwOnly::substitute;
         flpexport::Report report;
         return flpexport::toProject (song, options, report);
     };
@@ -290,15 +290,15 @@ TEST (mixer177a_moved_track_exports_the_right_insert_numbers_to_flp)
     }
     CHECK (slots (exported(), 1).empty());
 
-    // a LYNX load / save never remaps: the project's own numbers are written as they are (no move = same bytes)
+    // a YW load / save never remaps: the project's own numbers are written as they are (no move = same bytes)
     CHECK (song.mixer[8].effects[0].flOrigin.fingerprint == flpexport::fingerprint (song.mixer[8].effects[0]));
 }
 
 TEST (mixer177a_side_input_numbers_follow_the_source_in_the_flp_export)
 {
     // FL's Fruity Limiter names its side input by place k in the insert's inputs list (itself, then the inserts routing
-    // into it by number). After the two sources swap places, the exported k still names the source LYNX listens to.
-    using namespace lynx;
+    // into it by number). After the two sources swap places, the exported k still names the source YW listens to.
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.clear();
     song.mixer = Song::defaultMixer (6);
@@ -319,7 +319,7 @@ TEST (mixer177a_side_input_numbers_follow_the_source_in_the_flp_export)
 
     auto exportedState = [&song] {
         flpexport::Options options;
-        options.lynxOnly = flpexport::LynxOnly::substitute;
+        options.ywOnly = flpexport::YwOnly::substitute;
         flpexport::Report report;
         const auto p = flpexport::toProject (song, options, report);
         for (const auto& m : p.mixer)

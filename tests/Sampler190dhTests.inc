@@ -1,14 +1,14 @@
 // Round 190dh: FL's Sampler page (Channel settings › Sampler) — the laws its controls apply (core/SamplerPage.h), the
 // loop points of the Playback START / END knobs in the precompute, FL's loop record 0xFB and Content flags 0x8F in
-// .flp import / export. FL facts in /mnt/e/lynx-work/sampler190dh/FL-FACTS.md.
+// .flp import / export. FL facts in /mnt/e/yw-work/sampler190dh/FL-FACTS.md.
 
 #include "core/SamplerPage.h"
 
 namespace sampler190dh
 {
-inline std::shared_ptr<lynx::SampleData> tone (int frames)
+inline std::shared_ptr<yw::SampleData> tone (int frames)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     for (int i = 0; i < frames; ++i)
         d->left.push_back (0.2f + 0.6f * std::sin (0.021f * (float) i) * (1.0f - (float) i / (float) frames));
@@ -52,9 +52,9 @@ inline std::vector<std::uint8_t> loopRecord (std::int64_t a, std::int64_t b, boo
 // loop points of the Playback knobs as on the file's own loop, and only with "Use loop points"
 TEST (sampler190dh_ping_pong_loop)
 {
-    namespace pc = lynx::precompute;
+    namespace pc = yw::precompute;
     const auto in = sampler190dh::tone (1200);
-    lynx::SamplerSettings s;
+    yw::SamplerSettings s;
     // no loop in the file: the knobs' loop 300…500 (inclusive)
     s.loopStart = 300, s.loopEnd = 500;
     CHECK (pc::needed (s));
@@ -80,15 +80,15 @@ TEST (sampler190dh_ping_pong_loop)
     out = pc::apply (*looped, s);
     CHECK (out != nullptr && out->loopStart == 600 && out->loopEnd == 700 + 99 + 1 && out->left[701] == looped->left[699]);
     // a sampler with no loop override and no effect is not precomputed (old projects play as before)
-    CHECK (! pc::needed (lynx::SamplerSettings {}));
+    CHECK (! pc::needed (yw::SamplerSettings {}));
 }
 
 // FL's loop knobs (FUN_01007150 / FUN_010074b0): START clamps to the sample and drags END after it; END never goes
 // before START; Shift moves the whole loop
 TEST (sampler190dh_loop_knobs)
 {
-    using namespace lynx::samplerpage;
-    lynx::SamplerSettings s;
+    using namespace yw::samplerpage;
+    yw::SamplerSettings s;
     CHECK ((shownLoop (s, -1, -1) == std::pair<std::int64_t, std::int64_t> (-1, -1)));
     CHECK ((shownLoop (s, 100, 201) == std::pair<std::int64_t, std::int64_t> (100, 200))); // (the file's end is exclusive)
     setLoopStart (s, 300, 1000, -1, -1);
@@ -109,7 +109,7 @@ TEST (sampler190dh_loop_knobs)
     setLoopEnd (s, 1500, 1000, -1, -1, true);
     CHECK (s.loopStart == 799 && s.loopEnd == 999);
     // from the file's loop: the first turn copies it, then edits it
-    lynx::SamplerSettings f;
+    yw::SamplerSettings f;
     setLoopEnd (f, 500, 1000, 100, 201);
     CHECK (f.loopStart == 100 && f.loopEnd == 500);
 }
@@ -117,22 +117,22 @@ TEST (sampler190dh_loop_knobs)
 // Declicking mode (FL's DeclickModeSelect, .flp 0xD7 byte 0x53): FL's six items in FL's order, each to its cut release
 TEST (sampler190dh_declicking_modes)
 {
-    using namespace lynx::samplerpage;
+    using namespace yw::samplerpage;
     const std::vector<std::string> fl = { "Out only (no bleeding)", "Transient (no bleeding)", "Transient (bleeding)",
                                           "Generic (bleeding)", "Smooth (bleeding)", "Crossfade (bleeding)" };
     CHECK (std::size (declickModeNames) == fl.size());
     for (std::size_t i = 0; i < fl.size(); ++i)
         CHECK (fl[i] == declickModeNames[i]);
     // each mode's cut release, measured on the sampler voice (a raised cosine; mode 1 a follower, mode 5 curved)
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.assign (44100, 0.5f);
     for (int mode = 0; mode < 6; ++mode)
     {
-        auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         sampler->prepare (44100.0);
-        lynx::ChannelDef def;
-        def.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef def;
+        def.instrument = yw::InstrumentKind::sampler;
         def.sampler.declickMode = mode;
         sampler->configure (def, 120.0);
         sampler->noteOn (60, 1.0f);
@@ -159,7 +159,7 @@ TEST (sampler190dh_declicking_modes)
         d7[0x53] = 4;
         b.data (0xD7, d7);
     });
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (! song.channels.empty() && song.channels[0].sampler.declickMode == 4);
 }
 
@@ -167,16 +167,16 @@ TEST (sampler190dh_declicking_modes)
 // polarity, normalize, crossfade, swap stereo, trim — checked where the order changes the result
 TEST (sampler190dh_precomputed_effects_order)
 {
-    namespace pc = lynx::precompute;
+    namespace pc = yw::precompute;
     const auto n = 2000;
-    auto in = std::make_shared<lynx::SampleData>();
+    auto in = std::make_shared<yw::SampleData>();
     in->sampleRate = 44100.0;
     for (int i = 0; i < n; ++i)
     {
         in->left.push_back (0.3f + 0.4f * std::sin (0.05f * (float) i));
         in->right.push_back (0.1f * std::cos (0.03f * (float) i));
     }
-    lynx::SamplerSettings s;
+    yw::SamplerSettings s;
     // normalize comes after the fade out: the faded peak (not the file's) is brought to 1
     s.precompute.fadeOut = 512;
     s.precompute.normalize = true;
@@ -214,7 +214,7 @@ TEST (sampler190dh_precomputed_effects_order)
     out = pc::apply (*in, s);
     CHECK ((int) out->frames() < n / 4 + 2);
     // ping pong comes before the crossfade: the crossfade blends the bounced loop's end into its start
-    auto looped = std::make_shared<lynx::SampleData> (*in);
+    auto looped = std::make_shared<yw::SampleData> (*in);
     looped->loopStart = 400, looped->loopEnd = 801;
     s = {};
     s.precompute.pingPong = true;
@@ -224,20 +224,20 @@ TEST (sampler190dh_precomputed_effects_order)
     const auto c = (std::int64_t) ((bounced - 400 + 1) * 1024 / 2048);
     CHECK (out->loopStart == 400 + c && out->loopEnd == bounced + 1);
     // CROSSFADE above 0 switches "Use loop points" on (FL's FXAttackWheelChange)
-    lynx::SamplerSettings x;
+    yw::SamplerSettings x;
     x.useLoopPoints = false;
-    lynx::samplerpage::turnCrossfade (x, 0);
+    yw::samplerpage::turnCrossfade (x, 0);
     CHECK (! x.useLoopPoints);
-    lynx::samplerpage::turnCrossfade (x, 300);
+    yw::samplerpage::turnCrossfade (x, 300);
     CHECK (x.useLoopPoints && x.precompute.crossfade == 300);
 }
 
 // Time stretching: TIME × 2^(MUL/10000) is the length; PITCH is FL's stretch pitch, and in Resample mode turning it
-// switches the mode to Auto; the Mode list keeps Resample and LYNX's engines
+// switches the mode to Auto; the Mode list keeps Resample and YW's engines
 TEST (sampler190dh_time_stretching_values)
 {
-    using namespace lynx::samplerpage;
-    lynx::SamplerSettings s;
+    using namespace yw::samplerpage;
+    yw::SamplerSettings s;
     CHECK (stretchTime (s) == 0.0f);
     setStretchTime (s, 4.0f);
     CHECK (s.stretchBeats == 4.0f && stretchTime (s) == 4.0f);
@@ -250,31 +250,31 @@ TEST (sampler190dh_time_stretching_values)
     setStretchMul (s, 99999, 0.0);
     CHECK (s.stretchMul == 20000);
     // MUL without a TIME: the sample's own length (at the project tempo) times the factor
-    lynx::SamplerSettings m;
+    yw::SamplerSettings m;
     setStretchMul (m, 10000, 3.0);
     CHECK (std::abs (m.stretchBeats - 6.0f) < 1e-5f);
     setStretchTime (m, 0.0f);
     CHECK (m.stretchBeats == 0.0f);
 
     // PITCH: FL's stretch pitch inside the channel's pitch
-    lynx::SamplerSettings p;
+    yw::SamplerSettings p;
     p.pitch = 2.0f; // (the header's PITCH)
     turnStretchPitch (p, 300);
     CHECK (p.flStretchPitch == 300 && std::abs (p.pitch - 5.0f) < 1e-5f);
-    CHECK (p.keepPitch && p.flStretchMode == 5 && p.stretchMethod == lynx::StretchMethod::general); // (Resample → Auto)
+    CHECK (p.keepPitch && p.flStretchMode == 5 && p.stretchMethod == yw::StretchMethod::general); // (Resample → Auto)
     turnStretchPitch (p, -1500);
     CHECK (p.flStretchPitch == -1200 && std::abs (p.pitch - (-10.0f)) < 1e-4f);
-    lynx::SamplerSettings z;
+    yw::SamplerSettings z;
     turnStretchPitch (z, 0); // (back at 0 in Resample: the mode stays)
     CHECK (! z.keepPitch);
     z.keepPitch = true;
-    z.stretchMethod = lynx::StretchMethod::mono;
+    z.stretchMethod = yw::StretchMethod::mono;
     turnStretchPitch (z, 100);
-    CHECK (z.stretchMethod == lynx::StretchMethod::mono && z.flStretchMode == 0); // (a stretch mode is kept)
+    CHECK (z.stretchMethod == yw::StretchMethod::mono && z.flStretchMode == 0); // (a stretch mode is kept)
 
     // the Mode list
-    CHECK (std::string (modeItems[modeIndex (lynx::SamplerSettings {})].name) == "Resample");
-    lynx::SamplerSettings k;
+    CHECK (std::string (modeItems[modeIndex (yw::SamplerSettings {})].name) == "Resample");
+    yw::SamplerSettings k;
     for (int i = 0; i < modeItemCount; ++i)
     {
         selectMode (k, i);
@@ -296,7 +296,7 @@ TEST (sampler190dh_time_stretching_values)
         b.data (0xD7, d7);
         b.utf16 (0xC4, u"C:\\samples\\loop.wav");
     });
-    const auto song = lynx::importFlp (proj);
+    const auto song = yw::importFlp (proj);
     CHECK (! song.channels.empty());
     if (! song.channels.empty())
     {
@@ -308,18 +308,18 @@ TEST (sampler190dh_time_stretching_values)
 // Content (FL's 0x8F bits) and the loop record 0xFB: imported, saved back by the export
 TEST (sampler190dh_content_flags_and_loop_record)
 {
-    using namespace lynx::samplerpage;
+    using namespace yw::samplerpage;
     const auto p = sampler190dh::oneSampler ([] (FlpBuilder& b) {
         b.data (0xFB, sampler190dh::loopRecord (1200, 3400, true));
         b.u8 (0x8F);
         b.u32 (0x100 | 8 | 4 | 1); // keep on disk, use loop points, slice markers, resample (no load regions)
-        b.utf16 (0xC4, u"C:\\samples\\loop.wav"); // (a sampler without a sample imports as LYNX's synth)
+        b.utf16 (0xC4, u"C:\\samples\\loop.wav"); // (a sampler without a sample imports as YW's synth)
     });
     CHECK (p.channels.size() == 1);
     if (p.channels.empty())
         return;
     CHECK (p.channels[0].loopStart == 1200 && p.channels[0].loopEnd == 3400);
-    auto song = lynx::importFlp (p);
+    auto song = yw::importFlp (p);
     CHECK (! song.channels.empty());
     if (song.channels.empty())
         return;
@@ -331,24 +331,24 @@ TEST (sampler190dh_content_flags_and_loop_record)
     CHECK (! unset.channels.empty() && unset.channels[0].loopStart == -1);
     // round trip through the export (the sample file is not on disk here, so the import guessed a stand-in: make it the
     // sampler it is in FL)
-    song.channels[0].instrument = lynx::InstrumentKind::sampler;
+    song.channels[0].instrument = yw::InstrumentKind::sampler;
     song.channels[0].samplePath = "/samples/loop.wav";
-    lynx::flpexport::Report report;
-    const auto exported = lynx::flpexport::toProject (song, {}, report);
+    yw::flpexport::Report report;
+    const auto exported = yw::flpexport::toProject (song, {}, report);
     bool found = false;
     for (const auto& c : exported.channels)
         if (c.loopStart == 1200 && c.loopEnd == 3400 && c.sampleFlags == (0x100 | 8 | 4 | 1))
             found = true;
     CHECK (found);
-    // a LYNX sampler with the defaults exports what LYNX wrote before (load regions + use loop points), no loop record
-    lynx::SamplerSettings d;
+    // a YW sampler with the defaults exports what YW wrote before (load regions + use loop points), no loop record
+    yw::SamplerSettings d;
     CHECK (contentFlags (d) == (2 | 8));
     d.useLoopPoints = false;
     CHECK (contentFlags (d) == 2);
     setContentFlags (d, 0x10B);
     CHECK (d.keepOnDisk && d.resampleOnLoad && d.loadRegions && d.useLoopPoints && ! d.loadSliceMarkers);
     // FL greys Keep on disk while a loop plays
-    lynx::SamplerSettings k;
+    yw::SamplerSettings k;
     CHECK (keepOnDiskAvailable (k, false) && ! keepOnDiskAvailable (k, true));
     k.useLoopPoints = false;
     CHECK (keepOnDiskAvailable (k, true));
@@ -357,8 +357,8 @@ TEST (sampler190dh_content_flags_and_loop_record)
 // SMP START / LENGTH: FL's end is relative, so moving the start keeps the length
 TEST (sampler190dh_smp_start_and_length)
 {
-    using namespace lynx::samplerpage;
-    lynx::SamplerSettings s;
+    using namespace yw::samplerpage;
+    yw::SamplerSettings s;
     CHECK (lengthOf (s) == 1.0f);
     setLength (s, 0.5f);
     CHECK (s.regionStart == 0.0f && std::abs (s.regionEnd - 0.5f) < 1e-6f);

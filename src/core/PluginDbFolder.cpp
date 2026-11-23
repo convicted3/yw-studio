@@ -14,7 +14,7 @@
 #include <sstream>
 #include <thread>
 
-namespace lynx::plugindb
+namespace yw::plugindb
 {
 namespace
 {
@@ -91,7 +91,7 @@ struct Found
     std::string folder, stem; // the user folder ("" = the kind's own) and the file name without the extension
     Entry entry;
 
-    // the name it shows: the file's when it was renamed in the file manager, else the one given in LYNX ("" = its own)
+    // the name it shows: the file's when it was renamed in the file manager, else the one given in YW ("" = its own)
     std::string shownName() const { return stem == entry.file ? entry.shown : stem; }
 };
 
@@ -232,7 +232,7 @@ std::set<std::string> defaultFolders (const std::vector<Plugin>& plugins, bool i
     return out;
 }
 
-// the folders LYNX read at the last refresh of a root ("fx:Stock/EQ", "gen:Synths"): only those may be removed by apply()
+// the folders YW read at the last refresh of a root ("fx:Stock/EQ", "gen:Synths"): only those may be removed by apply()
 std::map<std::string, std::set<std::string>>& lastDirs()
 {
     static std::map<std::string, std::set<std::string>> d;
@@ -244,8 +244,8 @@ std::map<std::string, std::string>& installedSignature()
     return s;
 }
 
-// The signature of the Installed folder LYNX wrote last (round 190gd): a 64-bit FNV-1a hash of the plugin list
-// that made it, kept in <root>/installed.index (LYNX's own notes, like database.index)
+// The signature of the Installed folder YW wrote last (round 190gd): a 64-bit FNV-1a hash of the plugin list
+// that made it, kept in <root>/installed.index (YW's own notes, like database.index)
 std::string signatureHash (const std::string& signature)
 {
     std::uint64_t h = 1469598103934665603ULL;
@@ -386,7 +386,7 @@ void writeInstalled (const std::string& root, const std::vector<Plugin>& plugins
                 stale.push_back (it->path());
         }
     }
-    // the folder LYNX wrote for this very list, with every entry in place: nothing to read or write (an entry deleted or
+    // the folder YW wrote for this very list, with every entry in place: nothing to read or write (an entry deleted or
     // renamed in the file manager is noticed by its name and written again below; an entry's text edited by hand is
     // written again when the plugin list next changes)
     const auto indexPath = u8path (root) / "installed.index";
@@ -417,7 +417,7 @@ void writeReadMe (const std::string& root)
     writeFile (file,
                "YW Studio: Plugin database\r\n"
                "\r\n"
-               "Effects and Generators hold one small file per plugin (.lynxplugin). The folders here are the folders\r\n"
+               "Effects and Generators hold one small file per plugin (.ywplugin). The folders here are the folders\r\n"
                "of the Browser's Plugin database, the Plugin picker and the plugin menus of the Mixer, the Channel Rack\r\n"
                "and the Add menu.\r\n"
                "\r\n"
@@ -510,7 +510,7 @@ Report applyImpl (const std::string& root, const std::vector<Plugin>& plugins, c
             {
                 const auto stem = freeStem (dir, f.stem, p.format);
                 auto e = f.entry;
-                if (stem != f.stem) // (its name was taken there: the new file name is LYNX's, not a rename)
+                if (stem != f.stem) // (its name was taken there: the new file name is YW's, not a rename)
                 {
                     e.shown = f.shownName();
                     e.file = stem;
@@ -533,7 +533,7 @@ Report applyImpl (const std::string& root, const std::vector<Plugin>& plugins, c
         }
         if (first)
             continue;
-        // folders taken out in LYNX: those read at the last refresh that the model no longer has (deepest first)
+        // folders taken out in YW: those read at the last refresh that the model no longer has (deepest first)
         std::vector<std::string> gone;
         if (const auto last = lastDirs().find (root); last != lastDirs().end())
             for (const auto& tagged : last->second)
@@ -551,7 +551,7 @@ Report applyImpl (const std::string& root, const std::vector<Plugin>& plugins, c
             const auto dir = folderPath (base, folder);
             if (! fs::is_directory (dir, ec))
                 continue;
-            // entries of plugins LYNX does not have now go with their folder
+            // entries of plugins YW does not have now go with their folder
             std::vector<fs::path> left;
             for (fs::directory_iterator it (dir, ec), end; it != end && ! ec; it.increment (ec))
                 if (Entry e; ! it->is_directory (ec) && isEntryFile (it->path()) && readEntry (it->path(), e) && ! known.count (e.key))
@@ -745,7 +745,7 @@ Report refresh (const std::string& root, const std::vector<Plugin>& plugins, Sta
     const auto effects = readKind (root, false), generators = readKind (root, true);
     if (! indexed && effects.entries.empty() && generators.entries.empty())
     {
-        // the first time: the tree from what LYNX kept in its settings
+        // the first time: the tree from what YW kept in its settings
         r = applyImpl (root, plugins, state, seen, true);
         r.migrated = true;
     }
@@ -786,7 +786,7 @@ std::string groupFolder (const std::string& root, bool instruments, const std::s
     std::error_code ec;
     const auto installed = u8path (root) / "Installed" / (instruments ? "Generators" : "Effects");
     if (group == "YW Studio")
-        if (const auto own = u8path (folderOnDisk (root, instruments, plugincatalog::lynxCategory)); fs::is_directory (own, ec))
+        if (const auto own = u8path (folderOnDisk (root, instruments, plugincatalog::ywCategory)); fs::is_directory (own, ec))
             return utf8 (own);
     if (! group.empty())
         if (const auto format = installed / u8path (safeFileName (group)); fs::is_directory (format, ec))
@@ -826,4 +826,4 @@ Report apply (const std::string& root, const std::vector<Plugin>& plugins, const
         saveIndex (root, seen);
     return r;
 }
-} // namespace lynx::plugindb
+} // namespace yw::plugindb

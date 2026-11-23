@@ -1,14 +1,14 @@
 #pragma once
 
-// Loops follow the project key (round 190ds; BandLab study /mnt/e/lynx-work/bandlab190p/STUDY.md §1.5 item F, rows
-// looper-007 / editing-008). LYNX's own design, clean-room:
+// Loops follow the project key (round 190ds; BandLab study /mnt/e/yw-work/bandlab190p/STUDY.md §1.5 item F, rows
+// looper-007 / editing-008). YW's own design, clean-room:
 //  - an audio file's key is read from its name ("Dm", "G minor", "F#maj", or a bare "C" beside a tempo, as loop packs
 //    name their files) or, when the name has none, detected from the audio (a pitch-class profile of its spectrum
 //    against major and minor key profiles; percussion and noise give no key);
 //  - the key is kept on the file's channel (SamplerSettings::loopKeyRoot / loopKeyMinor / loopKeySource);
 //  - each audio clip has a "follow the project key" switch (Clip::followKey). A following clip is moved to the project
 //    key by the nearest interval (−6 … +5 semitones between relative-major roots) through the clip's own pitch, which
-//    keeps the clip's length (the voice's pitch shifter, core/TimeStretch's VoicePitchShifter, LYNX's own stretch engine);
+//    keeps the clip's length (the voice's pitch shifter, core/TimeStretch's VoicePitchShifter, YW's own stretch engine);
 //    projectkey::set re-tunes every following clip whenever the key changes (core/ProjectKey.h);
 //  - off for everything that exists (old projects sound the same); on for loops dropped in the Simple workflow.
 // No JUCE.
@@ -20,12 +20,12 @@
 #include "core/ProjectKey.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 }
 
-namespace lynx::keyfollow
+namespace yw::keyfollow
 {
 struct LoopKey
 {
@@ -78,4 +78,4 @@ inline bool asksToSetKey (const Song& song) { return ! projectkey::get (song).ha
 
 // The project key for a loop key: its root with Major or Minor (FL's scale list)
 projectkey::Key projectKeyFor (const LoopKey& key);
-} // namespace lynx::keyfollow
+} // namespace yw::keyfollow

@@ -96,7 +96,7 @@ std::vector<std::uint8_t> wavWith (std::uint32_t frames, const std::vector<Cue>&
 
 TEST (slicex190h_fresh_state_round_trips_with_fl_defaults)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = slicex::fresh();
     const auto bytes = slicex::write (s);
     // version, 8 masters, 47 option bytes, 3 editor ints; per deck: flag, empty path, 76 bytes, 4 two-point curves,
@@ -125,7 +125,7 @@ TEST (slicex190h_fresh_state_round_trips_with_fl_defaults)
 
 TEST (slicex190h_edited_state_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = slicex::fresh();
     s.masters[slicex::mPitch] = -700;
     s.setOptionInt (slicex::oLayering, 6);
@@ -167,7 +167,7 @@ TEST (slicex190h_edited_state_round_trips)
 
 TEST (slicex190h_laws_match_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // master volume (11^x − 1)/10 with 12800 = unity; FL's demo "Ghost Break" stores 13549
     CHECK (slicex::masterVolume (12800) == 1.0f);
     CHECK (std::abs (slicex::masterVolume (13549) - 1.165699f) < 1e-6f);
@@ -195,7 +195,7 @@ TEST (slicex190h_laws_match_fl)
 
 TEST (slicex190h_wav_regions_as_fl_reads_them)
 {
-    using namespace lynx;
+    using namespace yw;
     // markers run to the next start − 1 (the last to the sample's end); a region with a length keeps its own end;
     // names and keys come from the labels and FL's trigger list
     const auto wav = slicex190h::wavWith (4000, { { 3, 3000, 0, nullptr, -1 }, { 1, 0, 0, "Kick", -1 }, { 2, 1000, 500, "Snare", 72 } });
@@ -220,7 +220,7 @@ TEST (slicex190h_wav_regions_as_fl_reads_them)
 
 TEST (slicex190h_key_map_follows_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     auto regions = [] (int n) {
         std::vector<slicex::WavRegion> r ((std::size_t) n);
         for (int i = 0; i < n; ++i)
@@ -256,7 +256,7 @@ TEST (slicex190h_key_map_follows_fl)
 TEST (slicex190h_fl_projects_states_rewrite_byte_for_byte)
 {
     // every Slicex state in the installation's projects reads and writes back unchanged (needs FL's Data folder)
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     int seen = 0, same = 0;
@@ -299,19 +299,19 @@ namespace slicex190h
 struct Rig
 {
     std::shared_ptr<std::vector<float>> audio = std::make_shared<std::vector<float>>();
-    lynx::slicex::State state = lynx::slicex::fresh();
-    lynx::slicex::Engine engine;
+    yw::slicex::State state = yw::slicex::fresh();
+    yw::slicex::Engine engine;
     std::vector<float> left, right;
 
     // a 1 s mono sample at 44.1 kHz: four regions of 11025 frames, each a constant level (0.1 · (index + 1)) with a
     // fast sine on top in the second half of the sample
-    lynx::slicex::DeckAudio deck (std::vector<int> keys = {}) const
+    yw::slicex::DeckAudio deck (std::vector<int> keys = {}) const
     {
-        lynx::slicex::DeckAudio a;
+        yw::slicex::DeckAudio a;
         a.owner = audio;
         a.left = audio->data();
         a.frames = (std::int64_t) audio->size();
-        a.regions = lynx::slicex::regionsFromMarkers ({ 0, 11025, 22050, 33075 }, a.frames);
+        a.regions = yw::slicex::regionsFromMarkers ({ 0, 11025, 22050, 33075 }, a.frames);
         for (std::size_t i = 0; i < keys.size() && i < a.regions.size(); ++i)
             a.regions[i].key = keys[i];
         return a;
@@ -321,16 +321,16 @@ struct Rig
     {
         for (int i = 0; i < 44100; ++i)
             audio->push_back (0.1f * (float) (i / 11025 + 1) + (i >= 22050 ? 0.05f * (float) std::sin (i * 1.5) : 0.0f));
-        state.decks[0].regions.assign (4, lynx::slicex::defaultRegion());
+        state.decks[0].regions.assign (4, yw::slicex::defaultRegion());
         engine.setRate (44100, false);
         engine.setTempo (120.0f);
     }
 
-    void load (std::vector<int> keys = {}) { engine.setProgram (lynx::slicex::makeProgram (state, deck (std::move (keys)), {})); }
+    void load (std::vector<int> keys = {}) { engine.setProgram (yw::slicex::makeProgram (state, deck (std::move (keys)), {})); }
 
     int play (int key, int colour = 0, float cents = 0.0f)
     {
-        lynx::slicex::Note n;
+        yw::slicex::Note n;
         n.key = key;
         n.colour = colour;
         n.pitchCents = (float) (100 * (key - 60)) + cents;
@@ -350,7 +350,7 @@ struct Rig
 
 TEST (slicex190h_engine_plays_each_region_on_its_key_at_the_samples_own_pitch)
 {
-    using namespace lynx;
+    using namespace yw;
     slicex190h::Rig rig;
     rig.load();
     CHECK (rig.play (59) == -1 && rig.play (64) == -1 && rig.engine.idle());
@@ -373,7 +373,7 @@ TEST (slicex190h_engine_plays_each_region_on_its_key_at_the_samples_own_pitch)
 
 TEST (slicex190h_engine_note_off_cuts_the_slice_with_fls_20_ms_declick)
 {
-    using namespace lynx;
+    using namespace yw;
     slicex190h::Rig rig;
     rig.load();
     const int id = rig.play (60);
@@ -408,7 +408,7 @@ TEST (slicex190h_engine_note_off_cuts_the_slice_with_fls_20_ms_declick)
 
 TEST (slicex190h_engine_region_settings_pitch_pan_volume_delay_reverse)
 {
-    using namespace lynx;
+    using namespace yw;
     slicex190h::Rig rig;
     auto& rec = rig.state.decks[0].regions;
     rec[0][slicex::rVolume] = 16000;   // ×4
@@ -453,7 +453,7 @@ TEST (slicex190h_engine_region_settings_pitch_pan_volume_delay_reverse)
 
 TEST (slicex190h_engine_layering_cut_groups_filter_and_envelope)
 {
-    using namespace lynx;
+    using namespace yw;
     slicex190h::Rig rig;
     // regions 0 and 1 share key 72: "cycle" layering plays them in turn, "all" plays both
     rig.state.setOptionInt (slicex::oLayering, 6);

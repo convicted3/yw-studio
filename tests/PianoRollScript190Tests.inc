@@ -10,26 +10,26 @@
 namespace prscript190
 {
 // a pattern with a C major arpeggio on channel 0 (4 notes, one per beat) and two notes of channel 1
-inline lynx::Pattern pattern()
+inline yw::Pattern pattern()
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     const int keys[] = { 60, 64, 67, 72 };
     for (int i = 0; i < 4; ++i)
     {
-        lynx::Note n;
+        yw::Note n;
         n.channel = 0;
         n.key = keys[i];
-        n.start = (std::int64_t) i * lynx::ppq;
-        n.length = lynx::ppq / 2;
+        n.start = (std::int64_t) i * yw::ppq;
+        n.length = yw::ppq / 2;
         n.velocity = 0.5f + 0.125f * (float) i;
         p.notes.push_back (n);
     }
     for (int i = 0; i < 2; ++i)
     {
-        lynx::Note n;
+        yw::Note n;
         n.channel = 1;
         n.key = 36;
-        n.start = (std::int64_t) i * 2 * lynx::ppq + 10;
+        n.start = (std::int64_t) i * 2 * yw::ppq + 10;
         n.length = 100;
         n.group = 3;
         p.notes.push_back (n);
@@ -38,7 +38,7 @@ inline lynx::Pattern pattern()
     return p;
 }
 
-inline std::vector<int> channelIndices (const lynx::Pattern& p, int channel)
+inline std::vector<int> channelIndices (const yw::Pattern& p, int channel)
 {
     std::vector<int> out;
     for (std::size_t i = 0; i < p.notes.size(); ++i)
@@ -49,21 +49,21 @@ inline std::vector<int> channelIndices (const lynx::Pattern& p, int channel)
 
 struct Result
 {
-    lynx::prscript::Outcome outcome;
+    yw::prscript::Outcome outcome;
     std::vector<int> selected;
     int forms = 0;
 };
 
 // runs a script to its end on channel 0 of `p`, answering every form with its defaults changed by `set`
-inline Result runAll (const std::string& src, lynx::Pattern& p, const std::vector<int>& selection = {}, const std::map<std::string, double>& set = {},
+inline Result runAll (const std::string& src, yw::Pattern& p, const std::vector<int>& selection = {}, const std::map<std::string, double>& set = {},
                double limitMs = 20000.0, std::int64_t timeFrom = 0, std::int64_t timeTo = 0)
 {
-    using namespace lynx::prscript;
+    using namespace yw::prscript;
     Result r;
     std::vector<Form> answers;
     for (int round = 0; round < 8; ++round)
     {
-        auto score = scoreOf (p, 0, selection, 4, 4, timeFrom, timeTo, lynx::Note {});
+        auto score = scoreOf (p, 0, selection, 4, 4, timeFrom, timeTo, yw::Note {});
         r.outcome = run (src, score, answers, limitMs);
         if (r.outcome.status != Outcome::Status::needsForm)
         {
@@ -83,14 +83,14 @@ inline Result runAll (const std::string& src, lynx::Pattern& p, const std::vecto
 
 inline bool done (const Result& r)
 {
-    if (r.outcome.status != lynx::prscript::Outcome::Status::done)
+    if (r.outcome.status != yw::prscript::Outcome::Status::done)
         std::printf ("  script: %s\n", r.outcome.error.c_str());
-    return r.outcome.status == lynx::prscript::Outcome::Status::done;
+    return r.outcome.status == yw::prscript::Outcome::Status::done;
 }
 
 inline bool failedWith (const Result& r, const char* text)
 {
-    const bool ok = r.outcome.status == lynx::prscript::Outcome::Status::failed && r.outcome.error.find (text) != std::string::npos;
+    const bool ok = r.outcome.status == yw::prscript::Outcome::Status::failed && r.outcome.error.find (text) != std::string::npos;
     if (! ok)
         std::printf ("  expected an error with '%s', got status %d: %s\n", text, (int) r.outcome.status, r.outcome.error.c_str());
     return ok;
@@ -99,7 +99,7 @@ inline bool failedWith (const Result& r, const char* text)
 
 TEST (prscript190_reference_example_and_what_survives)
 {
-    // the example of FL's reference: every note muted; the other channel and LYNX-only note data stay
+    // the example of FL's reference: every note muted; the other channel and YW-only note data stay
     auto p = prscript190::pattern();
     for (auto& n : p.notes)
         if (n.channel == 0)
@@ -142,8 +142,8 @@ TEST (prscript190_score_values_and_units)
                                         "print(s.snap_root_note, s.snap_scale_helper)\n",
                                         p);
     CHECK (prscript190::done (r));
-    const auto expected = std::to_string (lynx::ppq) + " 4 4 4 0 " + std::to_string (3 * lynx::ppq + lynx::ppq / 2) + "\n"
-                          "60 0 " + std::to_string (lynx::ppq / 2) + " 0.0 -30 0.25 5 True False False 0\n"
+    const auto expected = std::to_string (yw::ppq) + " 4 4 4 0 " + std::to_string (3 * yw::ppq + yw::ppq / 2) + "\n"
+                          "60 0 " + std::to_string (yw::ppq / 2) + " 0.0 -30 0.25 5 True False False 0\n"
                           "0 0 0 0.5 0.78125 0.5 0 0 0 False\n"
                           "128 128\n"
                           "None None (0, -1) 1\n"
@@ -192,7 +192,7 @@ TEST (prscript190_live_notes_add_clone_delete)
         if (n.key == 76)
         {
             ++found;
-            CHECK (n.start == lynx::ppq && n.velocity == 1.0f && n.pan == -1.0f);
+            CHECK (n.start == yw::ppq && n.velocity == 1.0f && n.pan == -1.0f);
         }
         if (n.key == 48)
         {
@@ -201,7 +201,7 @@ TEST (prscript190_live_notes_add_clone_delete)
         }
     }
     CHECK (found == 2);
-    CHECK (std::is_sorted (p.notes.begin(), p.notes.end(), [] (const lynx::Note& a, const lynx::Note& b) { return a.start < b.start; }));
+    CHECK (std::is_sorted (p.notes.begin(), p.notes.end(), [] (const yw::Note& a, const yw::Note& b) { return a.start < b.start; }));
     CHECK (prscript190::channelIndices (p, 1).size() == 2);
 }
 
@@ -267,15 +267,15 @@ TEST (prscript190_members_are_typed_as_in_fl)
 TEST (prscript190_markers_and_timeline_selection)
 {
     auto p = prscript190::pattern();
-    lynx::Marker a;
-    a.tick = lynx::ppq;
+    yw::Marker a;
+    a.tick = yw::ppq;
     a.name = "Verse 'one'";
     p.markers.push_back (a);
-    lynx::Marker sig;
-    sig.tick = 8 * lynx::ppq;
+    yw::Marker sig;
+    sig.tick = 8 * yw::ppq;
     sig.numerator = 3;
     sig.denominator = 4;
-    sig.action = lynx::Marker::timeSignature;
+    sig.action = yw::Marker::timeSignature;
     p.markers.push_back (sig);
     auto q = p;
     auto r = prscript190::runAll ("import flpianoroll as flp\n"
@@ -296,7 +296,7 @@ TEST (prscript190_markers_and_timeline_selection)
     CHECK (q.markers.size() == 2);
     if (q.markers.size() == 2)
     {
-        CHECK (q.markers[0].name == "Drop" && q.markers[0].tick == 2 * lynx::ppq && q.markers[0].action == 0);
+        CHECK (q.markers[0].name == "Drop" && q.markers[0].tick == 2 * yw::ppq && q.markers[0].action == 0);
         CHECK (q.markers[1].isSignature() && q.markers[1].numerator == 3);
     }
 
@@ -328,9 +328,9 @@ TEST (prscript190_preview_style_form_and_messages)
                             "  flp.Utils.ShowMessage('mode ' + str(form.GetInputValue('Mode')))\n"
                             "  flp.Utils.log('logged')\n";
     auto p = prscript190::pattern();
-    auto score = lynx::prscript::scoreOf (p, 0, {}, 4, 4, 0, 0, lynx::Note {});
-    const auto first = lynx::prscript::run (src, score, {});
-    CHECK (first.status == lynx::prscript::Outcome::Status::needsForm);
+    auto score = yw::prscript::scoreOf (p, 0, {}, 4, 4, 0, 0, yw::Note {});
+    const auto first = yw::prscript::run (src, score, {});
+    CHECK (first.status == yw::prscript::Outcome::Status::needsForm);
     CHECK (first.form.title == "Transpose" && first.form.description == "Moves the notes." && first.form.controls.size() == 3);
     if (first.form.controls.size() == 3)
     {
@@ -369,24 +369,24 @@ TEST (prscript190_timeout_and_sandbox)
     // a script that never ends is stopped
     CHECK (prscript190::failedWith (prscript190::runAll ("import flpianoroll as flp\nwhile True:\n  pass\n", p, {}, {}, 150.0), "TimeoutError"));
     // no files, no programs, no network, no file reader
-    for (const char* src : { "open('/etc/passwd')\n", "open('lynx-test-file.txt', 'w')\n", "import os\nos.system('echo hi')\n", "import socket\n",
+    for (const char* src : { "open('/etc/passwd')\n", "open('yw-test-file.txt', 'w')\n", "import os\nos.system('echo hi')\n", "import socket\n",
                              "import subprocess\n", "import urllib\n", "__import__('os')\n",
                              "import flpianoroll as flp\nflp.score.loadScoreFromFile('x.fsc')\n" })
     {
         const auto r = prscript190::runAll (src, p);
-        CHECK (r.outcome.status == lynx::prscript::Outcome::Status::failed);
-        if (r.outcome.status != lynx::prscript::Outcome::Status::failed)
+        CHECK (r.outcome.status == yw::prscript::Outcome::Status::failed);
+        if (r.outcome.status != yw::prscript::Outcome::Status::failed)
             std::printf ("  ran: %s", src);
     }
-    CHECK (! std::filesystem::exists ("lynx-test-file.txt"));
+    CHECK (! std::filesystem::exists ("yw-test-file.txt"));
     CHECK (p == before);
     // and the interpreter is fine afterwards
     CHECK (prscript190::done (prscript190::runAll ("import flpianoroll as flp\nflp.score.getNote(0).muted = True\n", p)));
 }
 
-TEST (prscript190_lynx_scripts_run)
+TEST (prscript190_yw_scripts_run)
 {
-    for (const auto& b : lynx::prscript::builtins())
+    for (const auto& b : yw::prscript::builtins())
     {
         auto p = prscript190::pattern();
         const auto before = p;
@@ -398,11 +398,11 @@ TEST (prscript190_lynx_scripts_run)
     }
     // Octave layers: one copy per note, an octave up
     auto p = prscript190::pattern();
-    CHECK (prscript190::done (prscript190::runAll (lynx::prscript::builtins()[1].source, p)));
+    CHECK (prscript190::done (prscript190::runAll (yw::prscript::builtins()[1].source, p)));
     CHECK (prscript190::channelIndices (p, 0).size() == 8);
     // Mirror in time: the last note's end becomes the first note's start
     p = prscript190::pattern();
-    CHECK (prscript190::done (prscript190::runAll (lynx::prscript::builtins()[2].source, p)));
+    CHECK (prscript190::done (prscript190::runAll (yw::prscript::builtins()[2].source, p)));
     const auto mine = prscript190::channelIndices (p, 0);
     CHECK (p.notes[(std::size_t) mine[0]].key == 72 && p.notes[(std::size_t) mine[0]].start == 0);
 }
@@ -476,7 +476,7 @@ TEST (prscript190_fl_scripts_run_unmodified)
             if (n.channel == 0)
             {
                 n.start = 0;
-                n.length = 2 * lynx::ppq;
+                n.length = 2 * yw::ppq;
             }
         const auto r = prscript190::runAll (src, p, {}, { { "Seed", 5.0 }, { "Note Prob", 1.0 } });
         CHECK (prscript190::done (r) && r.forms == 1);
@@ -484,7 +484,7 @@ TEST (prscript190_fl_scripts_run_unmodified)
         const auto mine = prscript190::channelIndices (p, 0);
         CHECK (mine.size() == 8);
         for (const int i : mine)
-            CHECK (p.notes[(std::size_t) i].length == lynx::ppq / 4);
+            CHECK (p.notes[(std::size_t) i].length == yw::ppq / 4);
         ran += prscript190::done (r);
     }
     std::printf ("  FL Studio's own Piano roll scripts run unmodified: %d of 5\n", ran);
@@ -493,7 +493,7 @@ TEST (prscript190_fl_scripts_run_unmodified)
 TEST (prscript190_run_last_script_key)
 {
     // FL's key for Tools > Scripts > Run last script again (live capture): Ctrl+Alt+Y in the Piano roll
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.find ({ 'Y', ctrl | alt }, Context::pianoRoll, false) == "pianoRoll.runLastScript");
     CHECK (map.find ({ 'Y', alt }, Context::pianoRoll, false) == "pianoRoll.flip");

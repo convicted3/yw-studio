@@ -5,7 +5,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -333,7 +333,7 @@ void LyricsPanel::nextHit (int step)
 void LyricsPanel::showSectionMenu()
 {
     juce::PopupMenu menu;
-    // (song sections: "Chorus" and "Bridge" are other things elsewhere in LYNX, so each has its own translation)
+    // (song sections: "Chorus" and "Bridge" are other things elsewhere in YW, so each has its own translation)
     for (const auto& text : { trc ("@song section: Intro"), trc ("@song section: Verse"), trc ("@song section: Pre-chorus"), trc ("@song section: Chorus"),
                               trc ("@song section: Bridge"), trc ("@song section: Hook"), trc ("@song section: Outro") })
         menu.addItem (text, [this, text] { addSection (text); });
@@ -474,4 +474,4 @@ void LyricsPanel::resized()
     margin->setBounds (r.removeFromLeft (marginWidth));
     editor.setBounds (r);
 }
-} // namespace lynx
+} // namespace yw

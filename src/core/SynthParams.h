@@ -1,9 +1,9 @@
 #pragma once
 
-// LYNX Synth's knobs as automation targets (issue #152, round 190he: "YW Studio's own plugins can't be linked"). FL
-// makes every parameter of its plugins linkable (Link to controller, automation clips, Init song value); LYNX Synth's
+// YW Synth's knobs as automation targets (issue #152, round 190he: "YW Studio's own plugins can't be linked"). FL
+// makes every parameter of its plugins linkable (Link to controller, automation clips, Init song value); YW Synth's
 // page had plain knobs with no parameter menu. A synth channel's AutomationTarget { channelParam, channel, 0, base + k }
-// with k one of these. The numbers start at `base` so that an FL project's dead automation on a 3x Osc that LYNX
+// with k one of these. The numbers start at `base` so that an FL project's dead automation on a 3x Osc that YW
 // converted to its synth (FL plugin parameter P = channelParam P, small numbers) never turns into one of these.
 // Values 0…1 follow the knobs' own travel (the Synth page's ranges and skews), so a clip at 50 % is the knob at mid
 // travel and a MIDI controller's centre is the knob's centre.
@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::synthparam
+namespace yw::synthparam
 {
 constexpr int base = 0x2800;
 // the oscillators' knobs (osc o: o * oscFields + field), then the page's other knobs
@@ -164,4 +164,4 @@ inline void setNatural (SynthSettings& s, int k, float x) noexcept
 
 inline float get (const SynthSettings& s, int k) noexcept { return toValue (k, natural (s, k)); }
 inline void set (SynthSettings& s, int k, float value) noexcept { setNatural (s, k, toNatural (k, value)); }
-} // namespace lynx::synthparam
+} // namespace yw::synthparam

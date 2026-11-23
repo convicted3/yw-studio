@@ -11,9 +11,9 @@ inline float peakNear (const std::vector<float>& x, int at, int radius = 96)
     return m;
 }
 
-inline lynx::EffectParams rhythmEcho (int repeats, int noteIdx, double decayDb, float feedback01)
+inline yw::EffectParams rhythmEcho (int repeats, int noteIdx, double decayDb, float feedback01)
 {
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     auto p = p135w::cleanEcho (500.0, feedback01);
     p[e::rhythm] = 1.0f;
     p[e::rhythmSync] = 0.5f; // note
@@ -27,7 +27,7 @@ inline lynx::EffectParams rhythmEcho (int repeats, int noteIdx, double decayDb, 
 
 TEST (echoform_rhythm_defaults_and_texts_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto& info = effectInfo (EffectKind::echoform);
     CHECK ((int) info.params.size() == e::paramCount);
@@ -42,7 +42,7 @@ TEST (echoform_rhythm_defaults_and_texts_round137)
 
 TEST (echoform_rhythm_pattern_law_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // EchoBoy measured: 4 repeats of 1/8 at 120 BPM = taps at 250 / 500 / 750 ms, each 1/√4 (−6 dB)
     auto p = p137::rhythmEcho (4, 3, 0.0, 0.0f);
@@ -70,7 +70,7 @@ TEST (echoform_rhythm_pattern_law_round137)
 
 TEST (echoform_rhythm_impulse_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<float> l, r;
     // no feedback: three taps at −6 dB of the impulse (0.5), nothing after the pattern
     p135w::echoImpulse (p137::rhythmEcho (4, 3, 0.0, 0.0f), l, r, 2);
@@ -91,7 +91,7 @@ TEST (echoform_rhythm_impulse_round137)
 
 TEST (echoform_era_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto p0 = makeEffectSlot (EffectKind::echoform).params;
     CHECK (p0[e::era] == 0.0f && formatEffectParam (EffectKind::echoform, e::era, 0.0f, 120.0) == "past");
@@ -119,7 +119,7 @@ TEST (echoform_era_round137)
 
 TEST (voiceshift_midi_control_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     auto p = makeEffectSlot (EffectKind::voiceShift).params;
     CHECK (effectInfo (EffectKind::voiceShift).params.size() == (std::size_t) vs::count);
@@ -153,7 +153,7 @@ TEST (voiceshift_midi_control_round137)
 
 TEST (lattice_input_pan_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace lt = echosuite::lattice;
     auto p = makeEffectSlot (EffectKind::latticeMod).params;
     CHECK (lt::inputPanOf (p[lt::inputPan]) == 1);
@@ -184,7 +184,7 @@ TEST (lattice_input_pan_round137)
 
 TEST (echoform_ducking_measured_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] ValhallaDelay demo, a 1 kHz tone into the echo (300 ms, 70 % feedback): the echoes during the tone are
     // reduced by 41.5 dB (amplitude 0.5, ducking 100 %), 20.1 dB (0.25, 75 %), 7.1 dB (0.25, 50 %), none at 0.05 / 50 %
@@ -213,7 +213,7 @@ TEST (echoform_ducking_measured_round137)
 
 TEST (crest_trigger_host_sync_and_midi_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     auto p = makeEffectSlot (EffectKind::crestCompressor).params;
     CHECK (cr::triggerOf (p[cr::trigger]) == cr::Trigger::off);
@@ -271,7 +271,7 @@ TEST (crest_trigger_host_sync_and_midi_round137)
 
 TEST (echoform_lofi_switch_round137)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     auto p = p135w::cleanEcho (300.0, 0.0f);
     CHECK (p[e::lofi] == 0.0f);

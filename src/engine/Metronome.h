@@ -8,7 +8,7 @@
 #include "core/MetronomeVoice.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 // The metronome (core/MetronomeVoice.h has FL's measured behaviour): one click per beat of the meter (round 190fg: a
 // 6/8 bar clicks six eighths, metronome::beatAt), the downbeat two semitones
@@ -18,7 +18,7 @@ namespace lynx
 class Metronome final
 {
 public:
-    // Loads the five sounds: FL's own files from `flDataFolder` (FL's "Data" folder), LYNX's stand-ins for any that
+    // Loads the five sounds: FL's own files from `flDataFolder` (FL's "Data" folder), YW's stand-ins for any that
     // is missing. Off the audio thread.
     Metronome (const Transport& transport, const juce::File& flDataFolder);
 
@@ -52,4 +52,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Metronome)
 };
-} // namespace lynx
+} // namespace yw

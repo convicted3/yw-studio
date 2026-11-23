@@ -24,7 +24,7 @@
  #endif
 #endif
 
-namespace lynx::prefault
+namespace yw::prefault
 {
 struct Region
 {
@@ -114,4 +114,4 @@ inline Result populateNew (const std::vector<Region>& before, std::size_t maxReg
 #endif
     return out;
 }
-} // namespace lynx::prefault
+} // namespace yw::prefault

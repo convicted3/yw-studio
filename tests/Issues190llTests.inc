@@ -10,7 +10,7 @@
 // name/icon will only apply to unnamed tracks"): the colour goes to every selected track, the name to the unnamed ones
 TEST (issues190ll_201_mixer_selection_takes_the_colour)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer.resize (6);
     s.mixer[2].name = "Kick";
@@ -40,7 +40,7 @@ TEST (issues190ll_201_mixer_selection_takes_the_colour)
 
 TEST (issues190ll_201_playlist_tracks_and_channels_take_the_colour)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.playlistTracks.resize (2);
     s.playlistTracks[1].name = "Bass";
@@ -69,7 +69,7 @@ TEST (issues190ll_201_f2_renames_the_selected_channel_in_the_rack)
 {
     // the channel menu shows "Rename and color... F2": with the Channel Rack focused F2 opens it (elsewhere F2 stays the
     // pattern's rename, in the Mixer the track's)
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ f2, none }, Context::channelRack, false) == "rack.rename");
@@ -81,7 +81,7 @@ TEST (issues190ll_201_f2_renames_the_selected_channel_in_the_rack)
 // Browser onto the FL Studio Browser and it will be added to the list"); listed already: nothing changes
 TEST (issues190ll_200_dropped_folders_join_the_list)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<std::string> list { "/home/u/Samples", "", "  ", "/home/u/Loops/" };
     auto added = userfolders::add (list, { "/home/u/Drums", "/home/u/Samples/", "/home/u/Loops", "/home/u/Drums" }, false);
     CHECK ((added == std::vector<std::string> { "/home/u/Drums" }));
@@ -100,7 +100,7 @@ TEST (issues190ll_200_dropped_folders_join_the_list)
 // (Vital resets them to it before every 128 samples) clicks there. The blocks now say where they began.
 TEST (issues190ll_199_fixed_blocks_tell_where_they_began)
 {
-    using namespace lynx;
+    using namespace yw;
     FixedBlock fixed (96, 2);
     std::vector<float> l (1024), r (1024);
     float* io[2] = { l.data(), r.data() };
@@ -127,13 +127,13 @@ TEST (issues190ll_199_fixed_blocks_tell_where_they_began)
 // the wrap (the pattern's first note) reports the pattern's start, not its end + a few samples
 TEST (issues190od_199_blocks_after_the_pattern_wrap_report_its_start)
 {
-    auto s = lynx::Song::makeDefault();
-    s.mode = lynx::PlayMode::pattern;
+    auto s = yw::Song::makeDefault();
+    s.mode = yw::PlayMode::pattern;
     const auto length = (double) s.patterns[0].effectiveLength (s.meter());
-    const auto wrap = lynx::hostPositionWrap (s, s.songLength());
+    const auto wrap = yw::hostPositionWrap (s, s.songLength());
     CHECK (wrap.at == length && wrap.to == 0.0);
 
-    lynx::HostTimeline t;
+    yw::HostTimeline t;
     const auto tps = 960.0 * 130.0 / 60.0 / 48000.0; // 130 BPM at 48 kHz
     t.ticksPerSample.store (tps);
     t.tick.store (length - 79.0 * tps);
@@ -146,13 +146,13 @@ TEST (issues190od_199_blocks_after_the_pattern_wrap_report_its_start)
     CHECK (std::abs (t.tickAt (79) - length) < 1e-6);                 // no wrap known: unchanged
 
     // Song mode: the loop region's end goes back to its start; without a region, the song's end to 0
-    s.mode = lynx::PlayMode::song;
-    const auto bar = (std::int64_t) lynx::ppq * s.beatsPerBar;
-    s.playlist = { lynx::Clip { 0, 0, 0, 4 * bar, 0 } };
-    auto w = lynx::hostPositionWrap (s, s.songLength());
+    s.mode = yw::PlayMode::song;
+    const auto bar = (std::int64_t) yw::ppq * s.beatsPerBar;
+    s.playlist = { yw::Clip { 0, 0, 0, 4 * bar, 0 } };
+    auto w = yw::hostPositionWrap (s, s.songLength());
     CHECK (w.at == (double) s.songLength() && w.to == 0.0);
     s.loopStart = bar;
     s.loopEnd = 3 * bar;
-    w = lynx::hostPositionWrap (s, s.songLength());
+    w = yw::hostPositionWrap (s, s.songLength());
     CHECK (! s.loopPlays() || (w.at == (double) (3 * bar) && w.to == (double) bar));
 }

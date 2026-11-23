@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct Marker;
 struct Song;
@@ -121,4 +121,4 @@ const char* actionName (int action) noexcept;
 // the action's short tag on the ruler (FL draws an icon): "" for plain markers
 const char* actionTag (int action) noexcept;
 } // namespace markers
-} // namespace lynx
+} // namespace yw

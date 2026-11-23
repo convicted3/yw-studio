@@ -1,7 +1,7 @@
 #pragma once
 
 // One-knob effects (round 190bu, Simple layout S13; design: simple184a/DESIGN.md §3.3). A goal is a plain English word
-// for a result ("Brighter", "Room"); its knob drives several parameters of ONE ordinary LYNX effect through the table
+// for a result ("Brighter", "Room"); its knob drives several parameters of ONE ordinary YW effect through the table
 // in GoalKnobs.cpp. The slot stays that effect with two small fields (EffectSlot::goal, goalAmount), so the Mixer, the
 // other layouts and the exports see a normal effect and its full editor is one click away.
 //
@@ -19,7 +19,7 @@
 //                               (core/SimpleTracks.h setDuck). FL's own plugin, so the .flp export writes it as it is.
 //
 // Every knob at 0 leaves the sound as it was (wet 0, 0 dB or no drive). The laws are piecewise linear over the
-// effect's own 0..1 parameter values; the values are LYNX's own, tuned by measurement (round 190bu: loudness on pink
+// effect's own 0..1 parameter values; the values are YW's own, tuned by measurement (round 190bu: loudness on pink
 // noise; round 190dg's gate: at every position on five test sounds the level stays within −6 … +3 dB of the clean
 // sound, moves at most 1.5 dB per eighth of a turn, peaks rise at most 3 dB, and a knob turned while a sound plays makes
 // no click — RackRenderer glides it; tests/SimpleGate190dgTests.inc). No JUCE.
@@ -29,7 +29,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::goals
+namespace yw::goals
 {
 enum Id : int { none = 0, brighter, echo, punch, room, bass, level, dirty, warm, duck };
 constexpr int count = 8; // ids 1…8: the "+" menu's one-knob effects
@@ -64,4 +64,4 @@ void setAmount (EffectSlot& slot, float amount);
 // knob put them (a parameter moved by hand in the full editor makes it an ordinary slot again; the fields stay, so
 // turning the knob once more takes it back).
 bool active (const EffectSlot& slot) noexcept; // (no allocation)
-} // namespace lynx::goals
+} // namespace yw::goals

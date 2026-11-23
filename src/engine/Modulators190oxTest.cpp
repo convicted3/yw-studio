@@ -1,4 +1,4 @@
-// Round 190ox (modulators stage 2): the app's --selftest part for what lives outside the core — the .lynx round trip of
+// Round 190ox (modulators stage 2): the app's --selftest part for what lives outside the core — the .yw round trip of
 // every kind, an older project's text unchanged, the copy for 0.1.30 (the losses listed), and a hosted plugin's state
 // captured at a modulated parameter's base.
 
@@ -11,7 +11,7 @@
 #include "engine/ProjectDowngrade.h"
 #include "engine/ProjectFile.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -145,7 +145,7 @@ juce::String modulators190oxSelfTest()
 
     // 3. the copy for 0.1.30: the other kinds, the hosted route and the macro clip's link go, each listed
     {
-        const auto copy = olderlynx::forRelease (song, "0.1.30");
+        const auto copy = olderyw::forRelease (song, "0.1.30");
         if (! copy.ok || copy.json.contains ("modulators190ox") || copy.json.contains ("modulatorMacro"))
             return "ERROR copy for 0.1.30 keeps stage 2";
         int lines = 0;
@@ -182,4 +182,4 @@ juce::String modulators190oxSelfTest()
     }
     return "OK";
 }
-} // namespace lynx
+} // namespace yw

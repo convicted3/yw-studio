@@ -15,7 +15,7 @@
 // The song bytes: a 24-byte root header (magic 23 47 C0 AB, then u32 LE @+0x10 = size − 24) and a flat run of records,
 // each a 36-byte header (reversed FourCC tag, u32 idx @+0x08, u32 payload size @+0x1C) and its payload. Facts used here
 // come from public descriptions of Logic's format, checked again on GarageBand files before use (sources and the
-// evidence per field: /mnt/e/lynx-work/band190ic/HANDOFF.md):
+// evidence per field: /mnt/e/yw-work/band190ic/HANDOFF.md):
 //  - LogicProFormatWriter's PROJECTDATA_FORMAT.md (MIT, J. Kubis): framing, tempo, signature, region placements,
 //    MIDI notes, audio regions (gRuA trim/length), file references (lFuA), channel strips (OCuA fader/pan), track rows
 //    (karT), environment objects (ivnE);
@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::band
+namespace yw::band
 {
 constexpr int ppq = 960; // the song's ticks per quarter note
 
@@ -130,4 +130,4 @@ std::optional<std::vector<ExsZone>> readExs (const std::vector<std::uint8_t>& by
 
 // "C", "F#", "Bb" → 0..11 (−1 when not a note name)
 int keyRootOf (const std::string& name) noexcept;
-} // namespace lynx::band
+} // namespace yw::band

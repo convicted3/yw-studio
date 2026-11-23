@@ -1,19 +1,19 @@
 // --- Round 190jv (BUILD-LIST 19 "FLM residue", FLM coverage instruments-0022): the "FL Studio Mobile Rack" generator of
 // an .flp with several instruments (a Layer whose children are the rack's instruments, each on its .flm engine and key
 // range) and with the rack's parts (an effect before an instrument hears only what comes before it: FLM_FORMAT §8.2).
-// Every state is written by the tests (flm182c's / flm190fn's helpers). Also Pitcher 2 on LYNX Tune as FL renders it.
+// Every state is written by the tests (flm182c's / flm190fn's helpers). Also Pitcher 2 on YW Tune as FL renders it.
 
 #include "core/FlmEffects.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 
 namespace flm190jv
 {
 using Bytes = flm182c::Bytes;
-namespace flm = lynx::flm;
+namespace flm = yw::flm;
 
 inline Bytes saw (std::uint32_t id, int low = 0, int high = 127)
 {
-    return flm182c::module (23, id, {}, "Default/Default", low, high, lynx::pocketsaw::flmParamCount);
+    return flm182c::module (23, id, {}, "Default/Default", low, high, yw::pocketsaw::flmParamCount);
 }
 inline Bytes filter (std::uint32_t id) { return flm182c::module (9, id, {}, "Default/Default", 0, 127, 5); }
 inline Bytes graphicEq (std::uint32_t id) { return flm182c::module (7, id, {}, "Default/Default", 0, 127, 4); }
@@ -44,9 +44,9 @@ inline ::flp::Project project (const Bytes& state)
     return p;
 }
 
-inline lynx::FlpImportOptions options (lynx::FlpImportReport& report)
+inline yw::FlpImportOptions options (yw::FlpImportReport& report)
 {
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.report = &report;
     o.fileExists = [] (const std::string&) { return false; };
     return o;
@@ -55,7 +55,7 @@ inline lynx::FlpImportOptions options (lynx::FlpImportReport& report)
 
 TEST (flm190jv_flp_mobile_rack_with_several_instruments_is_a_layer)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190jv;
     // two SuperSaws split at C5 (the second panned right by its Wet Pan), then a Filter after both
     const auto state = flm190fn::rackState (flm182c::rack (flm::kindNormal, { t::saw (2, 0, 59), flm190fn::withReserved (t::saw (3, 60, 127), 0.5f, 1.0f, 0.75f),
@@ -103,7 +103,7 @@ TEST (flm190jv_flp_mobile_rack_with_several_instruments_is_a_layer)
 
 TEST (flm190jv_flp_mobile_rack_parts_take_turns)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190jv;
     // instrument, Graphic EQ, instrument: the EQ hears only the first (FLM_FORMAT §6.1, 190fe's FL render)
     const auto state = flm190fn::rackState (flm182c::rack (flm::kindNormal, { t::saw (2), t::graphicEq (3), t::saw (4) }));
@@ -128,7 +128,7 @@ TEST (flm190jv_flp_mobile_rack_parts_take_turns)
 
 TEST (flm190jv_flp_mobile_rack_effect_before_its_only_instrument_hears_nothing)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190jv;
     // Filter → SuperSaw plays as the SuperSaw alone (190fe's FL render of "fe_lp_then_osc": the instrument alone, to the bit)
     const auto first = flm190fn::rackState (flm182c::rack (flm::kindNormal, { t::filter (3), t::saw (2) }));
@@ -155,23 +155,23 @@ TEST (flm190jv_flp_mobile_rack_effect_before_its_only_instrument_hears_nothing)
 
 TEST (flm190jv_flp_mobile_rack_kit_and_arpeggiator_stay_stand_ins)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190jv;
     FlpImportReport report;
     const auto kit = flm190fn::rackState (flm182c::rack (flm::kindNormal, { t::saw (2) }, { flm182c::sample ("Kick", "@R@", "Drum Samples\\Kick\\Kick 1.wav") }));
     const auto s = importFlp (t::project (kit), t::options (report));
     CHECK (s.channels.size() == 2 && s.channels[0].instrument == InstrumentKind::synth);
-    CHECK (report.unsupported.count ("FL Studio Mobile Rack (drum kit: not reproduced yet); played with a LYNX SHARE synth preset") == 1);
+    CHECK (report.unsupported.count ("FL Studio Mobile Rack (drum kit: not reproduced yet); played with a YW Studio synth preset") == 1);
     const auto arp = flm190fn::rackState (flm182c::rack (flm::kindNormal, { flm182c::module (51, 4, {}, "Default/Default", 0, 127, 20), t::saw (2) }));
     FlpImportReport other;
     const auto a = importFlp (t::project (arp), t::options (other));
     CHECK (a.channels.size() == 2 && a.channels[0].instrument == InstrumentKind::synth);
-    CHECK (other.unsupported.count ("FL Studio Mobile Rack (an Arpeggiator or Note Echo: not reproduced yet); played with a LYNX SHARE synth preset") == 1);
+    CHECK (other.unsupported.count ("FL Studio Mobile Rack (an Arpeggiator or Note Echo: not reproduced yet); played with a YW Studio synth preset") == 1);
 }
 
 TEST (flm190jv_flp_mobile_rack_note_effects_move_fls_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190jv;
     // Transpose +12 (Octave 0.5 = 0, Semitone 1.0 = +12) moves the Lead's D up an octave; the next channel's note is
     // untouched. Then a Scale of C only without Snap drops the D (FLM plays nothing for it)
@@ -205,7 +205,7 @@ TEST (flm190jv_flp_mobile_rack_note_effects_move_fls_notes)
 
 TEST (flm190jv_flm_layer_takes_the_instruments_common_gate)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190de;
     // a note's Time › Gate is its channel's — the Layer's: two 3x Osc with the same Poly › Gate give it to the Layer;
     // different gates are listed and the notes play as written
@@ -239,10 +239,10 @@ TEST (flm190jv_flm_layer_takes_the_instruments_common_gate)
 
 TEST (flm190jv_flp_mobile_rack_layer_keeps_the_module_gate)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190jv;
     // two 3x Osc with one Poly › Gate in an .flp's Rack generator: the gate on the Layer (190fe's FL render "fe_osc_pg"
-    // plays the first 3x Osc's notes ~70 ms long; ungated, LYNX rendered it 7.4 dB too loud)
+    // plays the first 3x Osc's notes ~70 ms long; ungated, YW rendered it 7.4 dB too loud)
     auto gated = flm190fe::threeOsc();
     gated[129] = 0.3f;
     const auto state = flm190fn::rackState (flm182c::rack (flm::kindNormal, { flm190de::moduleWith (39, 2, gated), flm190de::moduleWith (39, 3, gated) }));
@@ -255,10 +255,10 @@ TEST (flm190jv_flp_mobile_rack_layer_keeps_the_module_gate)
     CHECK (s.channels[1].instrument == InstrumentKind::threeosc && s.channels[2].instrument == InstrumentKind::threeosc);
 }
 
-TEST (flm190jv_pitcher2_on_lynx_tune_as_fl_renders_it)
+TEST (flm190jv_pitcher2_on_yw_tune_as_fl_renders_it)
 {
-    using namespace lynx;
-    namespace lt = lynxtune;
+    using namespace yw;
+    namespace lt = ywtune;
     // FL's renders of Pitcher 2 (rea flm.md §4): only D allowed — the notes of an octave all land on its own D (A4, B4 →
     // D4, not D5): C and C# go up, E … B down; the Speed matched at FL's 90 % time (at least 9 ms)
     flm::Module m;

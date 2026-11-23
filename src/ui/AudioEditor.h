@@ -1,7 +1,7 @@
 #pragma once
 
 // Audio editor window (round 86; the feature set follows FL Studio's Edison, docs/analise/REA_rodada86.md — the
-// window and the drawing are LYNX's own). Waveform or spectrogram of one piece of audio with zoom/scroll, a
+// window and the drawing are YW's own). Waveform or spectrogram of one piece of audio with zoom/scroll, a
 // selection, markers/regions and a loop; edits from core/AudioEdit (cut/copy/paste, delete, trim, silence, fades
 // with curves, normalize, amp, reverse, polarity, DC removal, time stretch / pitch shift, resample, channels);
 // an undo history; recording from the sound card input, the Master or a mixer insert; saving as WAV (markers and
@@ -16,7 +16,7 @@
 #include "core/AudioEdit.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // An empty editor (Tools menu): record into it or open a file.
 void openAudioEditor (AudioEngine& engine);
@@ -65,7 +65,7 @@ std::unique_ptr<juce::Component> makeEdisonSlotEditor (AudioEngine& engine, int 
 // Slave on); otherwise a fresh Edison. Returns the effect's index, or -1 when the track is full.
 int addEdisonSlot (AudioEngine& engine, int track, bool openAndRecord = false);
 // Tools › Macros › "Remove all Edison instances": FL's question first (title "Remove Edison instances", Yes / No; live FL
-// check 190cq, shot edison190cd-07b), then every Edison slot is emptied on Yes. LYNX keeps this as one undo step
+// check 190cq, shot edison190cd-07b), then every Edison slot is emptied on Yes. YW keeps this as one undo step
 // (coordinator decision, rollup 190cv: an undo is strictly better), so its text leaves out FL's second line "(No undo)".
 // The question alone and the Yes action alone, for --edisonslottest.
 juce::MessageBoxOptions removeAllEdisonInstancesQuestion();
@@ -98,4 +98,4 @@ void setAudioEditorSamplePropsForSnapshot (juce::Component& editor, const audioe
 std::unique_ptr<juce::Component> makeAudioToolPanelForSnapshot (juce::Component& editor, int tool, int envelopeMode = 0);
 const char* audioToolNameForSnapshot (int tool); // nullptr past the last tool
 void setAudioEditorEnvelopeModeForSnapshot (juce::Component& editor, int mode);
-} // namespace lynx
+} // namespace yw

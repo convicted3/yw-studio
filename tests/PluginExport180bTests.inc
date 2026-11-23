@@ -1,4 +1,4 @@
-// --- Round 180b: LYNX's own plugins as VST3 / CLAP ---------------------------------------------------------------------
+// --- Round 180b: YW's own plugins as VST3 / CLAP ---------------------------------------------------------------------
 // The plugin runs the app's renderer on a one-slot song: its input enters the insert through the metronome input, and
 // the host's parameters reach the slot without a rebuild. That path must sound like the effect run alone.
 
@@ -6,19 +6,19 @@
 
 #include "core/NativeEngines.h"
 #include "core/UpdateCheck.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParams.h"
 #include "plugin/ExportCatalog.h"
 
 namespace
 {
-lynx::Song pluginExportSong (lynx::EffectKind kind)
+yw::Song pluginExportSong (yw::EffectKind kind)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     song.mixer.resize (2);
     song.mixer[0].effects.clear();
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     slot.smartDisable = false;
     slot.sidechain = 2; // round 188b: as the plugin's song (plugin/ExportProcessor.cpp): the host's side-chain bus track
     song.mixer[1].effects = { slot };
@@ -43,17 +43,17 @@ TEST (pluginexport180b_rack_path_equals_the_effect_alone)
     constexpr double rate = 48000.0;
     constexpr int size = 256;
     // round 188b: every exported effect (the catalog), plus the generic utility
-    std::vector<lynx::EffectKind> kinds { lynx::EffectKind::utility };
-    for (const auto& e : lynx::plugexport::catalog)
+    std::vector<yw::EffectKind> kinds { yw::EffectKind::utility };
+    for (const auto& e : yw::plugexport::catalog)
         if (! e.instrument)
             kinds.push_back (e.effect);
     for (const auto kind : kinds)
     {
         const auto song = pluginExportSong (kind);
-        auto state = lynx::RackState::build (song, nullptr, rate);
-        auto renderer = std::make_unique<lynx::RackRenderer>();
+        auto state = yw::RackState::build (song, nullptr, rate);
+        auto renderer = std::make_unique<yw::RackRenderer>();
         renderer->prepare (rate, size);
-        auto direct = lynx::makeEffect (kind);
+        auto direct = yw::makeEffect (kind);
         direct->prepare (rate);
         const auto params = song.mixer[1].effects[0].params;
 
@@ -81,12 +81,12 @@ TEST (pluginexport180b_host_parameters_reach_the_slot_without_a_rebuild)
 {
     constexpr double rate = 48000.0;
     constexpr int size = 256;
-    const auto song = pluginExportSong (lynx::EffectKind::utility);
-    auto state = lynx::RackState::build (song, nullptr, rate);
-    auto renderer = std::make_unique<lynx::RackRenderer>();
+    const auto song = pluginExportSong (yw::EffectKind::utility);
+    auto state = yw::RackState::build (song, nullptr, rate);
+    auto renderer = std::make_unique<yw::RackRenderer>();
     renderer->prepare (rate, size);
     auto params = song.mixer[1].effects[0].params;
-    const auto& info = lynx::effectInfo (lynx::EffectKind::utility);
+    const auto& info = yw::effectInfo (yw::EffectKind::utility);
     CHECK (! info.params.empty());
     std::vector<float> inL (size), inR (size), outL (size), outR (size);
     const auto energy = [&] {
@@ -109,22 +109,22 @@ TEST (pluginexport180b_host_parameters_reach_the_slot_without_a_rebuild)
 
 TEST (pluginexport180b_catalog_needs_no_fl_data)
 {
-    // every exported engine starts from LYNX's own state, on a PC without FL Studio
-    for (const auto& e : lynx::plugexport::catalog)
+    // every exported engine starts from YW's own state, on a PC without FL Studio
+    for (const auto& e : yw::plugexport::catalog)
     {
         if (e.instrument)
         {
-            const auto* engine = lynx::natives::instrumentEngine (e.synth);
-            CHECK (engine != nullptr && engine->needs == lynx::natives::Needs::nothing);
+            const auto* engine = yw::natives::instrumentEngine (e.synth);
+            CHECK (engine != nullptr && engine->needs == yw::natives::Needs::nothing);
             // (a bank's first preset; Tetra and Braid have no bank and start from their engine's defaults: rollup 0.1.31 step 6)
-            const auto channel = lynx::plugexport::instrumentChannel (e);
-            CHECK (channel.instrument == e.synth && lynx::banks::defaultChannel (e.synth, e.name).has_value() == lynx::banks::hasBank (e.synth));
-            CHECK (lynx::modelparams::tableOf (e.synth) != nullptr);
+            const auto channel = yw::plugexport::instrumentChannel (e);
+            CHECK (channel.instrument == e.synth && yw::banks::defaultChannel (e.synth, e.name).has_value() == yw::banks::hasBank (e.synth));
+            CHECK (yw::modelparams::tableOf (e.synth) != nullptr);
         }
         else
         {
-            const auto* engine = lynx::natives::effectEngine (e.effect);
-            CHECK (engine == nullptr || engine->needs == lynx::natives::Needs::nothing);
+            const auto* engine = yw::natives::effectEngine (e.effect);
+            CHECK (engine == nullptr || engine->needs == yw::natives::Needs::nothing);
         }
     }
 }
@@ -164,21 +164,21 @@ TEST (pluginexport180b_static_image_caches_are_registered)
     CHECK (found >= 8); // (the lint still sees the caches it was written for)
 }
 
-// --- Round 188b: every LYNX effect in the CLAP, a short list as VST3, a separate optional download -----------------------
+// --- Round 188b: every YW effect in the CLAP, a short list as VST3, a separate optional download -----------------------
 
-TEST (pluginexport188b_catalog_identities_are_unique_and_lynx_named)
+TEST (pluginexport188b_catalog_identities_are_unique_and_yw_named)
 {
     std::set<std::string> names, ids;
-    std::set<lynx::EffectKind> effects;
+    std::set<yw::EffectKind> effects;
     auto instruments = 0;
-    for (const auto& e : lynx::plugexport::catalog)
+    for (const auto& e : yw::plugexport::catalog)
     {
         const std::string name = e.name, id = e.clapId;
         CHECK (names.insert (name).second);
         CHECK (ids.insert (id).second);
-        CHECK (name.rfind ("LYNX ", 0) == 0);
-        CHECK (id.rfind ("com.ka1-s.lynx.", 0) == 0);
-        // LYNX names only (the user, 2026-11-08): never an FL Studio name
+        CHECK (name.rfind ("YW ", 0) == 0);
+        CHECK (id.rfind ("su.yolo.yw.", 0) == 0);
+        // YW names only (the user, 2026-11-08): never an FL Studio name
         for (const char* banned : { "Fruity", "FL ", "Image-Line", "Gross Beat", "Maximus", "Sytrus", "Harmor" })
             CHECK (name.find (banned) == std::string::npos);
         if (e.instrument)
@@ -186,15 +186,15 @@ TEST (pluginexport188b_catalog_identities_are_unique_and_lynx_named)
         else
             CHECK (effects.insert (e.effect).second);
     }
-    // every LYNX-named effect is in the CLAP (option C)
-    for (const auto kind : { lynx::EffectKind::facetEq, lynx::EffectKind::apexLimiter, lynx::EffectKind::ridgeStrip, lynx::EffectKind::glowLeveler,
-                             lynx::EffectKind::hushDeEsser, lynx::EffectKind::aether, lynx::EffectKind::ember, lynx::EffectKind::lynxTune,
-                             lynx::EffectKind::epochVerb, lynx::EffectKind::atrium, lynx::EffectKind::foilPlate, lynx::EffectKind::nebula,
-                             lynx::EffectKind::halo, lynx::EffectKind::horizon, lynx::EffectKind::echoform, lynx::EffectKind::spiralEcho,
-                             lynx::EffectKind::orbit, lynx::EffectKind::latticeMod, lynx::EffectKind::crestCompressor,
-                             lynx::EffectKind::prismMultiband, lynx::EffectKind::sentryGate, lynx::EffectKind::quellDenoiser,
-                             lynx::EffectKind::geminiDoubler, lynx::EffectKind::voiceShift, lynx::EffectKind::kilnChannel,
-                             lynx::EffectKind::fretChannel, lynx::EffectKind::shellChannel })
+    // every YW-named effect is in the CLAP (option C)
+    for (const auto kind : { yw::EffectKind::facetEq, yw::EffectKind::apexLimiter, yw::EffectKind::ridgeStrip, yw::EffectKind::glowLeveler,
+                             yw::EffectKind::hushDeEsser, yw::EffectKind::aether, yw::EffectKind::ember, yw::EffectKind::ywTune,
+                             yw::EffectKind::epochVerb, yw::EffectKind::atrium, yw::EffectKind::foilPlate, yw::EffectKind::nebula,
+                             yw::EffectKind::halo, yw::EffectKind::horizon, yw::EffectKind::echoform, yw::EffectKind::spiralEcho,
+                             yw::EffectKind::orbit, yw::EffectKind::latticeMod, yw::EffectKind::crestCompressor,
+                             yw::EffectKind::prismMultiband, yw::EffectKind::sentryGate, yw::EffectKind::quellDenoiser,
+                             yw::EffectKind::geminiDoubler, yw::EffectKind::voiceShift, yw::EffectKind::kilnChannel,
+                             yw::EffectKind::fretChannel, yw::EffectKind::shellChannel })
         CHECK (effects.count (kind) == 1);
     CHECK (instruments >= 1);
 }
@@ -204,12 +204,12 @@ TEST (pluginexport188b_table_codes_are_unique)
     // the VST3 codes (hosts store them in their projects) and the built column, read from the table as the build reads it
     std::ifstream in ("src/plugin/plugins.def");
     CHECK (in.good());
-    const std::regex line (R"re(^LYNX_PLUGIN \("([^"]+)", ([01]), [^,]+, [^,]+, "[^"]+", (0x[0-9a-f]+), "([^"]+)", ([012])\)$)re");
+    const std::regex line (R"re(^YW_PLUGIN \("([^"]+)", ([01]), [^,]+, [^,]+, "[^"]+", (0x[0-9a-f]+), "([^"]+)", ([012])\)$)re");
     std::set<std::string> codes;
     auto rows = 0, vst3 = 0, built = 0;
     for (std::string text; std::getline (in, text);)
     {
-        if (text.rfind ("LYNX_PLUGIN ", 0) != 0)
+        if (text.rfind ("YW_PLUGIN ", 0) != 0)
             continue;
         std::smatch m;
         CHECK (std::regex_match (text, m, line));
@@ -221,7 +221,7 @@ TEST (pluginexport188b_table_codes_are_unique)
         vst3 += m[5].str() == "2" ? 1 : 0;
     }
     CHECK (rows > 0);
-    CHECK (built == (int) lynx::plugexport::catalog.size());
+    CHECK (built == (int) yw::plugexport::catalog.size());
     // a short list: each VST3 carries the whole runtime (docs/PLUGIN_EXPORT.md). Round 190pq: 11, the three synths
     // (Fourfold, Wavecoil, Duoloom) joined the eight, as the round's brief asked
     CHECK (vst3 >= 1 && vst3 <= 11);
@@ -231,10 +231,10 @@ TEST (pluginexport188b_plugin_downloads_are_never_taken_for_the_app)
 {
     // The plugin bundles sit in the same GitHub release as the app (scripts/package-plugins.sh): the updater must never
     // pick one for an app update, and their checksum file is not the app's SHA256SUMS.txt
-    using namespace lynx::update;
+    using namespace yw::update;
     std::vector<Asset> assets;
-    for (const char* name : { "LYNX-Plugins-0.1.26-win-x64.zip", "LYNX-Plugins-0.1.26-win-x64.7z", "LYNX-Plugins-0.1.26-linux-x86_64.tar.xz",
-                              "LYNX-Plugins-0.1.26-macos-universal.tar.xz", "LYNX-Plugins-0.1.26-SHA256SUMS.txt" })
+    for (const char* name : { "YW-Plugins-0.1.26-win-x64.zip", "YW-Plugins-0.1.26-win-x64.7z", "YW-Plugins-0.1.26-linux-x86_64.tar.xz",
+                              "YW-Plugins-0.1.26-macos-universal.tar.xz", "YW-Plugins-0.1.26-SHA256SUMS.txt" })
         assets.push_back ({ name, std::string ("https://example.invalid/") + name, 1 });
     for (const auto f : { Flavour::windowsInstaller, Flavour::windowsPortable, Flavour::macos, Flavour::linuxAppImage, Flavour::linuxTarball })
         CHECK (assetFor (f, assets) == -1);
@@ -248,15 +248,15 @@ TEST (pluginexport188b_side_chain_bus_reaches_the_detector)
     // and the side track itself is never heard
     constexpr double rate = 48000.0;
     constexpr int size = 256;
-    auto song = pluginExportSong (lynx::EffectKind::crestCompressor);
-    const auto& info = lynx::effectInfo (lynx::EffectKind::crestCompressor);
+    auto song = pluginExportSong (yw::EffectKind::crestCompressor);
+    const auto& info = yw::effectInfo (yw::EffectKind::crestCompressor);
     for (std::size_t i = 0; i < info.params.size(); ++i)
         if (std::string (info.params[i].name) == "External SC")
             song.mixer[1].effects[0].params[i] = 1.0f;
-    auto state = lynx::RackState::build (song, nullptr, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
     const auto params = song.mixer[1].effects[0].params;
     const auto run = [&] (float sideLevel, float mainLevel) {
-        auto renderer = std::make_unique<lynx::RackRenderer>();
+        auto renderer = std::make_unique<yw::RackRenderer>();
         renderer->prepare (rate, size);
         std::vector<float> inL (size), inR (size), sideL (size), sideR (size), outL (size), outR (size);
         auto energy = 0.0;

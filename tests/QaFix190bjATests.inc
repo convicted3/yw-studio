@@ -1,5 +1,5 @@
-// Round 190bj: fixes for QA 190bh (/mnt/e/lynx-work/qa190bh/BUGS.md) in round 190bf's areas: B3 (Disk recording format
-// one take late), B4 ("Open" on LYNX SHARE), B8 (stage and preview rows), B9 (the held row in the key help).
+// Round 190bj: fixes for QA 190bh (/mnt/e/yw-work/qa190bh/BUGS.md) in round 190bf's areas: B3 (Disk recording format
+// one take late), B4 ("Open" on YW Studio), B8 (stage and preview rows), B9 (the held row in the key help).
 // Needs PluginDb190baTests.inc (plugindb190ba helpers) before it.
 
 #include "core/FruityDance.h"
@@ -9,9 +9,9 @@
 // B3: a take's file made before its first sample (the next take, made when the previous one ended) takes a new format
 TEST (qafix190bj_take_format_changes_before_the_first_sample)
 {
-    using namespace lynx::takes;
+    using namespace yw::takes;
     namespace fs = std::filesystem;
-    const auto dir = fs::temp_directory_path() / ("lynx-qafix190bj-" + std::to_string ((long long) std::chrono::steady_clock::now().time_since_epoch().count()));
+    const auto dir = fs::temp_directory_path() / ("yw-qafix190bj-" + std::to_string ((long long) std::chrono::steady_clock::now().time_since_epoch().count()));
     fs::create_directories (dir);
     std::vector<float> left (1000, 0.25f), right (1000, -0.5f);
     const float* planar[] { left.data(), right.data() };
@@ -36,7 +36,7 @@ TEST (qafix190bj_take_format_changes_before_the_first_sample)
         CHECK (bits == steps[k].second && tag == (steps[k].first == SampleFormat::float32 ? 3 : 1));
         CHECK ((std::int64_t) fs::file_size (file) == 44 + 1000 * 2 * bits / 8);
         std::vector<std::vector<float>> back;
-        CHECK (lynx::takes::readWav (file, back) && back.size() == 2 && back[0].size() == 1000 && std::abs (back[1][500] + 0.5f) < 1.0e-3f);
+        CHECK (yw::takes::readWav (file, back) && back.size() == 2 && back[0].size() == 1000 && std::abs (back[1][500] + 0.5f) < 1.0e-3f);
         open = steps[k].first;
     }
     // once samples are in, the format stays (a take is never mixed)
@@ -55,33 +55,33 @@ TEST (qafix190bj_take_format_changes_before_the_first_sample)
     fs::remove_all (dir, ec);
 }
 
-// B4: "Open" on the Browser's own groups opens their folder: LYNX SHARE = Effects/LYNX SHARE (not Installed/Effects)
+// B4: "Open" on the Browser's own groups opens their folder: YW Studio = Effects/YW Studio (not Installed/Effects)
 TEST (qafix190bj_group_folders)
 {
     using namespace plugindb190ba;
     TempRoot t;
-    lynx::plugindb::State state;
-    lynx::plugindb::refresh (t.root, plugins(), state);
+    yw::plugindb::State state;
+    yw::plugindb::refresh (t.root, plugins(), state);
     auto same = [] (const std::string& a, const fs::path& b) { return fs::path ((const char8_t*) a.c_str()) == b; };
-    CHECK (same (lynx::plugindb::groupFolder (t.root, false, "LYNX"), t.fx ("LYNX SHARE")));
-    CHECK (same (lynx::plugindb::groupFolder (t.root, false, "FL engines"), u8 (t.root) / "Installed/Effects/FL engines"));
-    CHECK (same (lynx::plugindb::groupFolder (t.root, false, ""), u8 (t.root) / "Installed/Effects"));
-    CHECK (same (lynx::plugindb::groupFolder (t.root, true, "FL engines"), u8 (t.root) / "Installed/Generators/FL engines"));
-    // no LYNX SHARE folder of generators here (Sytrus is FL's): their Installed entries; a format folder that is not there:
+    CHECK (same (yw::plugindb::groupFolder (t.root, false, "YW"), t.fx ("YW Studio")));
+    CHECK (same (yw::plugindb::groupFolder (t.root, false, "FL engines"), u8 (t.root) / "Installed/Effects/FL engines"));
+    CHECK (same (yw::plugindb::groupFolder (t.root, false, ""), u8 (t.root) / "Installed/Effects"));
+    CHECK (same (yw::plugindb::groupFolder (t.root, true, "FL engines"), u8 (t.root) / "Installed/Generators/FL engines"));
+    // no YW Studio folder of generators here (Sytrus is FL's): their Installed entries; a format folder that is not there:
     // Installed of the kind
-    CHECK (same (lynx::plugindb::groupFolder (t.root, true, "LYNX"), u8 (t.root) / "Installed/Generators"));
-    CHECK (same (lynx::plugindb::groupFolder (t.root, true, "VFX"), u8 (t.root) / "Installed/Generators"));
-    // the user moved every LYNX SHARE effect away and removed the folder: the Installed LYNX entries
-    fs::rename (t.fx ("LYNX SHARE/Facet EQ.lynxplugin"), t.fx ("Facet EQ.lynxplugin"));
-    fs::remove (t.fx ("LYNX SHARE"));
-    CHECK (same (lynx::plugindb::groupFolder (t.root, false, "LYNX"), u8 (t.root) / "Installed/Effects/LYNX"));
+    CHECK (same (yw::plugindb::groupFolder (t.root, true, "YW"), u8 (t.root) / "Installed/Generators"));
+    CHECK (same (yw::plugindb::groupFolder (t.root, true, "VFX"), u8 (t.root) / "Installed/Generators"));
+    // the user moved every YW Studio effect away and removed the folder: the Installed YW entries
+    fs::rename (t.fx ("YW Studio/Facet EQ.ywplugin"), t.fx ("Facet EQ.ywplugin"));
+    fs::remove (t.fx ("YW Studio"));
+    CHECK (same (yw::plugindb::groupFolder (t.root, false, "YW"), u8 (t.root) / "Installed/Effects/YW"));
 }
 
 // B8: the preview and the stage draw the same frame (FL: the first row while the song is stopped, the move's row while
 // it plays); B9: the key help names every move and says the last row is the held one
 TEST (qafix190bj_dance_preview_stage_and_keys)
 {
-    using namespace lynx::dance;
+    using namespace yw::dance;
     const std::vector<std::string> names { "Bounce", "Sway", "Spin" }; // QA's 3-row sheet
     Settings s;
     s.move = 2; // "Sway" (Freestyle, Bounce, Sway)

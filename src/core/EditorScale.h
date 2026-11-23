@@ -5,18 +5,18 @@
 #include <cmath>
 
 // Round 190he (issue #152: "plugin scaling fails, the FL-engine plugins can't be made smaller"): the size of the
-// windows LYNX draws for a plugin (a channel's settings window, a built-in effect's window). FL's plugin menu has
+// windows YW draws for a plugin (a channel's settings window, a built-in effect's window). FL's plugin menu has
 // "Scaling" (FLEngine_x64.dll PluginMenu: PluginScalingMenu; FL 2026 shot shots/FL-harmor-wrapper-menu-scaling.png):
-// System, Host (ticked by default), 100 % … 400 %; FL's 100 % is the plugin's own design size. LYNX opens these
+// System, Host (ticked by default), 100 % … 400 %; FL's 100 % is the plugin's own design size. YW opens these
 // windows at FL's size × 1.25, its "Host" size; FL's 100 % is the smaller size the reporter asked for. Dragging the
 // window's edge also sizes it, keeping its proportions, between `minPercent` and `maxPercent`.
-namespace lynx::editorscale
+namespace yw::editorscale
 {
-inline constexpr int defaultPercent = 125; // LYNX's size (FL × 1.25), FL's "Host"; a channel's `editorScale` 0 means this
+inline constexpr int defaultPercent = 125; // YW's size (FL × 1.25), FL's "Host"; a channel's `editorScale` 0 means this
 inline constexpr int minPercent = 40, maxPercent = 400;
 inline constexpr std::array<int, 9> menuPercents { 100, 125, 150, 175, 200, 250, 300, 350, 400 }; // FL's items
 
-// the stored value (0 = Host, LYNX's default) as a percentage of FL's size
+// the stored value (0 = Host, YW's default) as a percentage of FL's size
 constexpr int percentOf (int stored) noexcept
 {
     return stored <= 0 ? defaultPercent : std::clamp (stored, minPercent, maxPercent);
@@ -39,4 +39,4 @@ inline int percentForWidth (int width, int defaultWidth) noexcept
     const auto p = (int) std::lround ((double) width * defaultPercent / (double) defaultWidth);
     return std::clamp (p, minPercent, maxPercent);
 }
-} // namespace lynx::editorscale
+} // namespace yw::editorscale

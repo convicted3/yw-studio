@@ -4,7 +4,7 @@
 
 TEST (score167_detects_the_melody)
 {
-    using namespace lynx;
+    using namespace yw;
     // C4, E4, G4 (0.5 s each, 0.1 s apart), all sung 0.2 semitone sharp; E4 at half the level
     const double rate = 44100.0, sharp = 0.2;
     SampleData s;

@@ -1,6 +1,6 @@
 #pragma once
 
-// The LYNX Soundfont preset search (round 158, GitHub issue #6): every preset of every .sf2 / .sf3 under the user's
+// The YW Soundfont preset search (round 158, GitHub issue #6): every preset of every .sf2 / .sf3 under the user's
 // folders (the Browser's folders + the SoundFont folders of the settings), indexed on a background thread and kept in a
 // cache file between sessions. A font file is read again only when its size or modification time changed, and only
 // its header chunks are read (core/SoundFont.h scanFontFile), so indexing thousands of presets takes moments.
@@ -19,7 +19,7 @@
 
 #include "core/SoundFont.h"
 
-namespace lynx::sf
+namespace yw::sf
 {
 struct IndexedFont
 {
@@ -87,4 +87,4 @@ private:
     std::atomic<bool> running { false }, stopping { false }, again { false };
     std::atomic<int> gen { 0 };
 };
-} // namespace lynx::sf
+} // namespace yw::sf

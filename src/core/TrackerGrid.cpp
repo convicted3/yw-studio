@@ -14,7 +14,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx::tracker
+namespace yw::tracker
 {
 namespace
 {
@@ -1444,4 +1444,4 @@ std::int64_t rowAt (const Layout& layout, double tick) noexcept
     const auto row = (std::int64_t) std::floor (tick / (double) layout.rowTicks);
     return row < layout.rows ? row : -1;
 }
-} // namespace lynx::tracker
+} // namespace yw::tracker

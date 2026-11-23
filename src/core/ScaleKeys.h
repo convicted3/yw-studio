@@ -1,7 +1,7 @@
 #pragma once
 
-// Scale keys, Chord pad and Lock to key (round 190ds; design /mnt/e/lynx-work/simple184a/DESIGN.md §3.2, slice S12):
-// the on-screen keyboard's three modes and what the typing keyboard plays in them. LYNX's own take on the "play in key"
+// Scale keys, Chord pad and Lock to key (round 190ds; design /mnt/e/yw-work/simple184a/DESIGN.md §3.2, slice S12):
+// the on-screen keyboard's three modes and what the typing keyboard plays in them. YW's own take on the "play in key"
 // keyboards of beginner apps (one key per scale degree; one pad per in-key chord; out-of-key keys locked), clean-room,
 // own names. Everything reads the ONE project key (core/ProjectKey.h); nothing here stores a key of its own.
 //
@@ -30,7 +30,7 @@
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::scalekeys
+namespace yw::scalekeys
 {
 enum class Mode : int { keys = 0, scaleKeys = 1, chordPad = 2 };
 
@@ -312,7 +312,7 @@ inline std::vector<std::pair<int, int>> strummed (std::vector<int> notes, const 
 }
 
 // FL Studio Mobile's keyboard chord set (an .flm file's KEYB chunk: {"chords": [{"baseNote", "extensions", "octave",
-// "quality"}...], "rootNote"}, docs/analise/FLM_FORMAT.md §2) as LYNX's: the same numbering (qualities above,
+// "quality"}...], "rootNote"}, docs/analise/FLM_FORMAT.md §2) as YW's: the same numbering (qualities above,
 // extensions in semitones). `droppedExtensions` counts extension values outside 1…35 (skipped). A small scanner, not a
 // JSON library: anything it doesn't understand is skipped. At most 24 chords.
 inline std::vector<KeyboardChord> parseFlmChordSet (const std::string& json, int* droppedExtensions = nullptr)
@@ -404,4 +404,4 @@ inline const char* typingLabel (int index) noexcept
     static const char* labels[] { "Z", "X", "C", "V", "B", "N", "M", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" };
     return index >= 0 && index < (int) (sizeof (labels) / sizeof (labels[0])) ? labels[index] : "";
 }
-} // namespace lynx::scalekeys
+} // namespace yw::scalekeys

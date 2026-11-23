@@ -1,10 +1,10 @@
 #pragma once
 
-// #228 (round 190nq), a LYNX extra: "?" opens a search over every action of the key map (REAPER's Actions list and the
+// #228 (round 190nq), a YW extra: "?" opens a search over every action of the key map (REAPER's Actions list and the
 // command palettes of code editors, interpreted; FL Studio 2026 has none — its Gopher assistant is a chat, Alt+F1). Type a
 // few letters of what it does, its panel or its key; Enter runs it.
 //
-// Round 190on (research190oe P2, the command palette): the same box finds the main menus' items, the LYNX extras' switches,
+// Round 190on (research190oe P2, the command palette): the same box finds the main menus' items, the YW extras' switches,
 // the Settings pages and the recent projects too (`Kind`), and matches loosely:
 //   - case- and accent-insensitive ("edicao" finds "Edição", "ÜBER" finds "über"), in the UI language and in English;
 //   - every word of the query somewhere in the item (its name, English name, place, keys or id), or else the query's
@@ -23,7 +23,7 @@
 
 #include "core/SearchQuery.h"
 
-namespace lynx::actionsearch
+namespace yw::actionsearch
 {
 // what an entry is (the palette groups nothing by it: it only tells the row's tag and how it runs)
 enum class Kind : std::uint8_t { action, menu, extra, setting, recent };
@@ -253,4 +253,4 @@ inline void noteRun (std::vector<std::string>& recent, const std::string& id, st
     if (recent.size() > keep)
         recent.resize (keep);
 }
-} // namespace lynx::actionsearch
+} // namespace yw::actionsearch

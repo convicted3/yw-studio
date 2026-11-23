@@ -1,6 +1,6 @@
 // Round 190ej (issue #158 follow-up): two overlapping notes of one key on one channel. FL 2026 gives every note its own
-// voice and ends that voice at the note's end; LYNX's instruments ended every voice of the key at the first note's end.
-// FL's /R renders (/mnt/e/lynx-work/voices190ej/, HANDOFF.md): FIFO (A 0-4 s, B 2-6 s) and LIFO (C 8-14 s, D 10-12 s)
+// voice and ends that voice at the note's end; YW's instruments ended every voice of the key at the first note's end.
+// FL's /R renders (/mnt/e/yw-work/voices190ej/, HANDOFF.md): FIFO (A 0-4 s, B 2-6 s) and LIFO (C 8-14 s, D 10-12 s)
 // on one channel, key 60. Per voice (B sounds to 6 s, C to 14 s): the Sampler, 3x Osc, Sytrus, BeepMap, DX10, SimSynth,
 // Ogun, DirectWave, Harmor, Harmless. One note per key, the newest holds it (B sounds to 6 s, the key goes quiet at D's
 // end): Kepler, Kepler Exo, MiniSynth, PoiZone, Sawer, Toxic Biohazard, Morphine, GMS, BooBass, Sakura.
@@ -20,7 +20,7 @@ struct Step
 };
 
 // `steps` (in time order) played on `in` at key 60, rendered for `seconds`; the left channel
-inline std::vector<float> run (lynx::Instrument& in, const std::vector<Step>& steps, double seconds, int key = 60)
+inline std::vector<float> run (yw::Instrument& in, const std::vector<Step>& steps, double seconds, int key = 60)
 {
     std::vector<float> out, l (64), r (64);
     std::size_t next = 0;
@@ -103,9 +103,9 @@ Result measure (Make make, bool withIds = true)
     return r;
 }
 
-inline std::shared_ptr<const lynx::SampleData> sine (double seconds = 3.0)
+inline std::shared_ptr<const yw::SampleData> sine (double seconds = 3.0)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     d->left.resize ((std::size_t) (seconds * rate));
     for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -113,19 +113,19 @@ inline std::shared_ptr<const lynx::SampleData> sine (double seconds = 3.0)
     return d;
 }
 
-inline std::unique_ptr<lynx::Instrument> sampler (double seconds = 4.0)
+inline std::unique_ptr<yw::Instrument> sampler (double seconds = 4.0)
 {
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.sampler.release = 0.02f; // (without a release the sampler plays its sample out: the note's end changes nothing)
-    auto in = lynx::makeInstrument (lynx::InstrumentKind::sampler, sine (seconds));
+    auto in = yw::makeInstrument (yw::InstrumentKind::sampler, sine (seconds));
     in->prepare (rate);
     in->configure (c, 120.0);
     return in;
 }
 
 // records the note id each call carries
-struct IdSpy final : lynx::Instrument
+struct IdSpy final : yw::Instrument
 {
     struct Event
     {
@@ -146,7 +146,7 @@ struct IdSpy final : lynx::Instrument
 // ScheduledNotes numbers every scheduled note; its "off" carries the number, also when the later note ends first
 TEST (voices190ej_each_scheduled_note_gets_its_own_id)
 {
-    using namespace lynx;
+    using namespace yw;
     ScheduledNotes ledger;
     const double tps = 0.01; // 100 samples a tick
     EventBuffer ev;
@@ -198,7 +198,7 @@ TEST (voices190ej_each_scheduled_note_gets_its_own_id)
 // The channel's echo delay: each repeat is a voice of its own (its own id), and the note's end carries the note's id
 TEST (voices190ej_echo_repeats_are_voices_of_their_own)
 {
-    using namespace lynx;
+    using namespace yw;
     channelmisc::NoteEcho echo;
     EchoSettings s;
     s.feedback = 0.5f;
@@ -238,12 +238,12 @@ TEST (voices190ej_the_rack_hands_each_note_its_id)
         auto spy = std::make_shared<voices190ej::IdSpy>();
         auto& p = rig.song.patterns[0];
         // FIFO 0-4 / 2-6 beats, LIFO 8-14 / 10-12 beats, key 60
-        p.notes = { i32d::Rig::note (0, 4 * lynx::ppq, 60), i32d::Rig::note (2 * lynx::ppq, 4 * lynx::ppq, 60),
-                    i32d::Rig::note (8 * lynx::ppq, 6 * lynx::ppq, 60), i32d::Rig::note (10 * lynx::ppq, 2 * lynx::ppq, 60) };
-        p.lengthTicks = 16 * lynx::ppq;
-        lynx::setChannelMono (rig.song.channels[1], mono);
-        rig.state = lynx::RackState::build (rig.song, nullptr, rig.rate);
-        const_cast<lynx::RackState&> (*rig.state).instruments[1] = spy;
+        p.notes = { i32d::Rig::note (0, 4 * yw::ppq, 60), i32d::Rig::note (2 * yw::ppq, 4 * yw::ppq, 60),
+                    i32d::Rig::note (8 * yw::ppq, 6 * yw::ppq, 60), i32d::Rig::note (10 * yw::ppq, 2 * yw::ppq, 60) };
+        p.lengthTicks = 16 * yw::ppq;
+        yw::setChannelMono (rig.song.channels[1], mono);
+        rig.state = yw::RackState::build (rig.song, nullptr, rig.rate);
+        const_cast<yw::RackState&> (*rig.state).instruments[1] = spy;
         rig.play (15.0);
         std::vector<voices190ej::IdSpy::Event> ons, offs;
         for (const auto& e : spy->log)
@@ -268,7 +268,7 @@ TEST (voices190ej_the_rack_hands_each_note_its_id)
     }
 }
 
-// LYNX's Sampler, FL's channel sampler (issue #158's cases e / f / h / m / v / w / y): the first end leaves the other
+// YW's Sampler, FL's channel sampler (issue #158's cases e / f / h / m / v / w / y): the first end leaves the other
 // note's voice sounding; without ids (a live key), the key's voices all end, as before
 TEST (voices190ej_sampler_ends_only_the_note_s_own_voice)
 {
@@ -286,7 +286,7 @@ TEST (voices190ej_sampler_ends_only_the_note_s_own_voice)
 // and the later clip's held note of the same key sounds on to bar 6
 TEST (voices190ej_issue158_case_e_held_note_sounds_on)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = iss158::song();
     s.playlist = { iss158::clip (0, 0, 4), iss158::clip (0, 2, 4) };
     for (auto& c : s.channels)
@@ -310,22 +310,22 @@ TEST (voices190ej_issue158_case_e_held_note_sounds_on)
         out.insert (out.end(), l.begin(), l.end());
         tick += 512 * tps;
     }
-    // 1 bar = 2 s: one held note in 1-3 s, two in 5-7 s, the later one alone in 9-11 s (LYNX before: silence there)
+    // 1 bar = 2 s: one held note in 1-3 s, two in 5-7 s, the later one alone in 9-11 s (YW before: silence there)
     const auto one = voices190ej::rms (out, 1.0, 3.0), two = voices190ej::rms (out, 5.0, 7.0), later = voices190ej::rms (out, 9.0, 11.0);
     CHECK (one > 0.01);
     CHECK (two > 1.5 * one);
     CHECK (later > 0.8 * one && later < 1.2 * one);
 }
 
-// The LYNX Synth (LYNX's own, FL's rule for its generators) and a VoiceShaper-free FPC-like path: per voice
-TEST (voices190ej_lynx_synth_ends_only_the_note_s_own_voice)
+// The YW Synth (YW's own, FL's rule for its generators) and a VoiceShaper-free FPC-like path: per voice
+TEST (voices190ej_yw_synth_ends_only_the_note_s_own_voice)
 {
     using namespace voices190ej;
     const auto make = [] {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::synth;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::synth;
         c.synth.release = 0.02f;
-        auto in = lynx::makeInstrument (lynx::InstrumentKind::synth);
+        auto in = yw::makeInstrument (yw::InstrumentKind::synth);
         in->prepare (rate);
         in->configure (c, 120.0);
         return in;
@@ -339,7 +339,7 @@ TEST (voices190ej_lynx_synth_ends_only_the_note_s_own_voice)
 // One note per key (the generators FL plays that way): the newest note holds the key, the earlier note's end does nothing
 TEST (voices190ej_key_owners)
 {
-    lynx::KeyOwners owners;
+    yw::KeyOwners owners;
     CHECK (owners.ends (60, 0) && owners.ends (60, 5)); // (nothing started: every end ends)
     owners.start (60, 1);
     owners.start (60, 2);
@@ -350,10 +350,10 @@ TEST (voices190ej_key_owners)
     CHECK (owners.ends (61, 9));
 }
 
-// FL's generators with the user's FL installation (the lynx_tests FL Data argument): each as FL 2026 renders it
+// FL's generators with the user's FL installation (the yw_tests FL Data argument): each as FL 2026 renders it
 TEST (voices190ej_fl_generators_end_voices_as_fl_does)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();
@@ -404,16 +404,16 @@ TEST (voices190ej_fl_generators_end_voices_as_fl_does)
     }
 }
 
-// Evidence (not a check): LYNX_190EJ_WRITE_FLP=<folder> writes an FL project with FL's SoundFont Player (FL's own
+// Evidence (not a check): YW_190EJ_WRITE_FLP=<folder> writes an FL project with FL's SoundFont Player (FL's own
 // Default.sf2) playing round 190ej's FIFO / LIFO notes (key 60: 0-2 / 1-3 bars, 4-7 / 5-6 bars at 120 BPM). FL renders it
-// (FL64.exe /R /Ewav) and LYNX imports the same file (/mnt/e/lynx-work/voices190ej/HANDOFF.md).
+// (FL64.exe /R /Ewav) and YW imports the same file (/mnt/e/yw-work/voices190ej/HANDOFF.md).
 TEST (voices190ej_write_fl_soundfont_probe)
 {
-    const auto* dir = std::getenv ("LYNX_190EJ_WRITE_FLP");
+    const auto* dir = std::getenv ("YW_190EJ_WRITE_FLP");
     if (dir == nullptr)
         return;
-    // (LYNX_190EJ_FONT: the same font by a path this machine's LYNX reads, for LYNX's render of the same project)
-    const auto* local = std::getenv ("LYNX_190EJ_FONT");
+    // (YW_190EJ_FONT: the same font by a path this machine's YW reads, for YW's render of the same project)
+    const auto* local = std::getenv ("YW_190EJ_FONT");
     const std::string font = local != nullptr ? local
                                               : "C:\\Program Files\\Image-Line\\FL Studio 2026\\Plugins\\Fruity\\Generators\\Soundfont Player\\Data\\Default.sf2";
     flp::Project p;
@@ -456,12 +456,12 @@ TEST (voices190ej_write_fl_soundfont_probe)
     std::printf ("  wrote %s/%s\n", dir, name.c_str());
 }
 
-// LYNX Soundfont, FL's SoundFont Player (FL 2026 [EXEC: /R render of the probe above, Default.sf2]: both notes of the
+// YW Soundfont, FL's SoundFont Player (FL 2026 [EXEC: /R render of the probe above, Default.sf2]: both notes of the
 // key sound on after the first one's end): through the rack, so the ids come from the scheduler
 TEST (voices190ej_soundfont_ends_only_the_note_s_own_voices)
 {
-    using namespace lynx;
-    const auto folder = std::filesystem::temp_directory_path() / ("lynx-190ej-sf-" + processTempTag());
+    using namespace yw;
+    const auto folder = std::filesystem::temp_directory_path() / ("yw-190ej-sf-" + processTempTag());
     std::filesystem::create_directories (folder);
     const auto path = (folder / "font.sf2").string();
     {

@@ -18,7 +18,7 @@
 //
 // Host interface as FL's wrapper: MIDI velocity from Init.Vol, per-note level tables from ComputeLRVol(Final.Pan,
 // Final.Vol) and the pitch-offset table, engine chunks of 64 samples. The phase generator of free-running operators is
-// process-global in FL (shared by every instance); LYNX gives each instance its own generator started like a freshly
+// process-global in FL (shared by every instance); YW gives each instance its own generator started like a freshly
 // loaded DLL, so free-running phases are deterministic and differ from any given FL render by design.
 
 #include <cstdint>
@@ -29,7 +29,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this Toxic Biohazard state ("SSLF" + TBi2/TBio/TBiD preset of 10 050 bytes)
 bool toxicStateUsable (const std::vector<std::uint8_t>& state);
@@ -96,4 +96,4 @@ std::vector<SeqEvent> sequencerEvents (const std::vector<std::uint8_t>& state, c
 // parameter `index` as the engine reads it (the modulation slots applied) after the MIDI input
 float modulatedParam (const std::vector<std::uint8_t>& state, const std::vector<RefMidi>& midi, int index);
 } // namespace toxic
-} // namespace lynx
+} // namespace yw

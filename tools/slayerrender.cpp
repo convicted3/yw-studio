@@ -1,4 +1,4 @@
-// Renders FL Slayer parameters with LYNX's engine exactly like the round-68 EXEC harness drives the DLL (verification
+// Renders FL Slayer parameters with YW's engine exactly like the round-68 EXEC harness drives the DLL (verification
 // harness, REA_rodada68 §7): slayerrender <dll> <out.f32> <length> <rate> p0,p1,…,p28 [blk=N] [tempo=T]
 //   [note=start,key,velocity,release ...] [midi=s,st,d1,d2] [param=s,index,integer]. Writes interleaved stereo float32 (raw engine output).
 #include <cstdio>
@@ -25,8 +25,8 @@ int main (int argc, char** argv)
         while (std::getline (ss, item, ','))
             params.push_back (std::atoi (item.c_str()));
     }
-    lynx::slayer::RefOptions opt;
-    std::vector<lynx::slayer::RefNote> notes;
+    yw::slayer::RefOptions opt;
+    std::vector<yw::slayer::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -50,12 +50,12 @@ int main (int argc, char** argv)
             opt.peek.push_back ((int) std::strtol (a.c_str() + 5, nullptr, 16));
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::slayer::RefNote n;
+            yw::slayer::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%d,%d", &n.start, &n.key, &n.velocity, &n.release) >= 3)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::slayer::renderReference (params, argv[1], notes, rate, length, opt);
+    const auto out = yw::slayer::renderReference (params, argv[1], notes, rate, length, opt);
     if (out.empty())
     {
         std::fprintf (stderr, "not usable\n");

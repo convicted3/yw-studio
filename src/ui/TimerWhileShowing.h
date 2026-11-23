@@ -13,7 +13,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::ui
+namespace yw::ui
 {
 class TimerWhileShowing final : private juce::ComponentMovementWatcher
 {
@@ -65,4 +65,4 @@ private:
     juce::Timer& timer;
     int rateHz;
 };
-} // namespace lynx::ui
+} // namespace yw::ui

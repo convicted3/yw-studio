@@ -20,7 +20,7 @@
 #include "core/Dither.h"
 #include "core/SoftClip.h"
 
-namespace lynx
+namespace yw
 {
 class RenderStream
 {
@@ -164,4 +164,4 @@ private:
     bool ended = false, endedInTail = false;
     double writeMs = 0.0;
 };
-} // namespace lynx
+} // namespace yw

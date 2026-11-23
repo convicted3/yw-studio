@@ -1,7 +1,7 @@
-// Round 190kt: REA on third-party binaries (owner's permission of 2026-11-17; /mnt/e/lynx-work/rea190kt/HANDOFF.md,
+// Round 190kt: REA on third-party binaries (owner's permission of 2026-11-17; /mnt/e/yw-work/rea190kt/HANDOFF.md,
 // docs/analise/REA_rodada190kt.md).
 // - Crest Compressor's Bus style gets a console law (hidden busLaw): a feedback compressor with a rational soft knee and
-//   RC ballistics, LYNX's own model of the structure REA showed in the Waves SSLComp DSP, fitted on our demo-mode probes.
+//   RC ballistics, YW's own model of the structure REA showed in the Waves SSLComp DSP, fitted on our demo-mode probes.
 //   Off for new instances and every project saved before (bit for bit: lab/gold.sh).
 // - Waves SSLComp translates onto it (was Compressor's classic voicing, round 190jh).
 #include <cmath>
@@ -12,10 +12,10 @@
 
 namespace parity190kt
 {
-namespace cr = lynx::dyn::crest;
-inline lynx::EffectSlot console (double thrDb, double ratio, double kneeDb, double attMs, double relMs, bool autoRel)
+namespace cr = yw::dyn::crest;
+inline yw::EffectSlot console (double thrDb, double ratio, double kneeDb, double attMs, double relMs, bool autoRel)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::crestCompressor);
+    auto s = yw::makeEffectSlot (yw::EffectKind::crestCompressor);
     s.params[(std::size_t) cr::style] = cr::styleValue (cr::Style::bus);
     s.params[(std::size_t) cr::busLaw] = 1.0f;
     s.params[(std::size_t) cr::threshold] = (float) ((thrDb + 60.0) / 60.0);
@@ -43,9 +43,9 @@ inline void tone (std::vector<float>& l, std::vector<float>& r, double sr, std::
         l[i] = r[i] = (float) (std::pow (10.0, db / 20.0) * std::sin (2.0 * M_PI * 1000.0 * t));
     }
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
@@ -63,7 +63,7 @@ inline double gainDb (const std::vector<float>& out, double sr, double a, double
 
 TEST (parity190kt_crest_console_law_is_hidden_and_off_for_new_and_old_crests)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     const auto& info = effectInfo (EffectKind::crestCompressor);
     CHECK (info.params.size() == (std::size_t) cr::count && cr::busLaw == cr::count); // hidden: no control, no string
@@ -79,7 +79,7 @@ TEST (parity190kt_crest_console_law_is_hidden_and_off_for_new_and_old_crests)
 
 TEST (parity190kt_console_law_is_a_feedback_curve_with_a_soft_knee)
 {
-    namespace cr = lynx::dyn::crest;
+    namespace cr = yw::dyn::crest;
     // a hard-ish knee settles at ratio 1 + loop gain: 4:1 → 10 dB more in = 2.5 dB more out, well over the threshold
     const auto g1 = cr::consoleSteadyDb (-40.0, 4.0, 0.5, -10.0), g2 = cr::consoleSteadyDb (-40.0, 4.0, 0.5, 0.0);
     CHECK (std::abs ((g2 + 10.0) - (g1 + 0.0) - 2.5) < 0.4);
@@ -108,7 +108,7 @@ TEST (parity190kt_crest_console_law_renders_its_curve_and_rc_timing)
     parity190kt::tone (l, r, sr, { { 0.0, -6.0 } });
     auto s = parity190kt::console (-30.0, 4.0, 10.0, 0.05, 85.8, false);
     parity190kt::render (s, sr, l, r);
-    const auto want = lynx::dyn::crest::consoleSteadyDb (-30.0, 4.0, 10.0, -6.0);
+    const auto want = yw::dyn::crest::consoleSteadyDb (-30.0, 4.0, 10.0, -6.0);
     CHECK (want < -10.0 && std::abs (parity190kt::gainDb (l, sr, 1.0, 1.9, -6.0) - want) < 0.5);
     // release: after the level drops, the reduction decays towards 0 dB with the release resistor's τ (85.8 ms):
     // about e^-1 of it is left after one τ
@@ -126,7 +126,7 @@ TEST (parity190kt_crest_console_law_renders_its_curve_and_rc_timing)
 
 TEST (parity190kt_waves_sslcomp_translates_onto_crest_console_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     int n = 0;
     // threshold +4, 2:1, attack 30 ms, release Auto, make-up 2 dB, IN on, mix 100 %, trim 0, SC high-pass 100 Hz

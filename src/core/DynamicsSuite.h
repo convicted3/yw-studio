@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's dynamics suite (REA_rodada108): three native processors designed against our own black-box measurements of
+// YW's dynamics suite (REA_rodada108): three native processors designed against our own black-box measurements of
 // the reference mixing plugins (docs/analise/MEASURE_fabfilter.md §2, §6, §7 and §12) and published DSP literature.
 // Own names, own code, own parameter laws:
 //
@@ -29,7 +29,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct EffectInfo;
 class Effect;
@@ -66,7 +66,7 @@ enum Param
     count,
     // round 190kt, hidden (not in the info: no control, no text; saved while non-zero): the Bus style's console law — a
     // FEEDBACK compressor (the detector hears the compressed output) with a rational soft knee and RC ballistics,
-    // LYNX's own model of the console bus compressor's structure (REA_rodada190kt §2), fitted on our renders. Off (0) for
+    // YW's own model of the console bus compressor's structure (REA_rodada190kt §2), fitted on our renders. Off (0) for
     // new instances and every project saved before (the Bus style as it was, bit for bit); the bus-compressor
     // translators (Waves SSLComp) set it. Threshold / ratio / knee / attack / release keep their ranges and mean, in
     // this law: the detector's threshold, 1 + the loop gain, the knee's width (dB), and the RC time constants (ms);
@@ -74,7 +74,7 @@ enum Param
     busLaw = count,
     // round 190ky, hidden like busLaw (no control, no text; saved while non-zero): the FET law — a FET feedback limiter
     // (the detector hears the gained signal, three parallel peak followers sum into a control level, a two-term soft
-    // law turns it into gain), LYNX's own model of the structure REA showed in a FET-limiter emulation's DSP
+    // law turns it into gain), YW's own model of the structure REA showed in a FET-limiter emulation's DSP
     // (REA_rodada190ky §2), fitted on our renders. 0 = off: new instances and every project saved before (each style as
     // it was, bit for bit). k / 16 (k = 1 … 10) picks one of the fitted voicings (fetVoiceFits in DynamicsSuite.cpp: two
     // revisions × the four ratio buttons and all buttons); the knobs keep their meaning: threshold = the control
@@ -89,7 +89,7 @@ enum Param
     revision,
     // round 190mg, hidden like fetLaw (after round 190kw's revision since the 0.1.30 rollup, step 11; saved while
     // non-zero; 0 = off, every project before): the FET law's output
-    // amplifier — LYNX's own static law of the amplifier stage after the FET (level-dependent H2 / H3, a DC part, the
+    // amplifier — YW's own static law of the amplifier stage after the FET (level-dependent H2 / H3, a DC part, the
     // harmonics led by a first-order pre-emphasis), fitted on our Comp Off / Comp On stairs of the reference (REA_rodada190mg_dyn
     // §3). The value carries the compressed path's level at the amplifier: (dB + 64) / 128 (the translator's Input + voicing gain)
     fetAmp
@@ -221,7 +221,7 @@ enum Global { xover1 = legacyBands * fieldsPerBand, xover2, xover3, slope, looka
               // 20 ms). Only the Pro-MB translator sets them; a project saved before keeps 0 (bit for bit)
               revision = count, lookaheadSwitch = count + 1,
               // round 190mg, hidden (no control, no text; saved while non-zero; only the Waves C4 translator sets them):
-              // the C4 law — LYNX's own model of the Waves C4's structure, fitted black-box (REA_rodada190mg.md §2):
+              // the C4 law — YW's own model of the Waves C4's structure, fitted black-box (REA_rodada190mg.md §2):
               // in-phase squared-biquad crossovers (crossoverQ), per band peak detector → rational gain with a cubic
               // knee → look-ahead minimum → two-stage release → triangular smoothing → gain between 0 dB and the
               // range. 0 = Prism's own engine (every project saved before); c4LawValue (false) electro, (true) opto
@@ -397,4 +397,4 @@ std::string paramText (EffectKind kind, int param, float v);
 // The effect; with `initial` the latency already matches those parameters before the first block.
 std::unique_ptr<Effect> make (EffectKind kind, const EffectParams* initial = nullptr);
 } // namespace dyn
-} // namespace lynx
+} // namespace yw

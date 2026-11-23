@@ -38,9 +38,9 @@ inline std::vector<std::uint8_t> stateEvent (const std::vector<std::uint8_t>& b)
 }
 
 // a program with three zones as FL's "Add sample(s)" makes them
-inline lynx::dw::Doc threeZones()
+inline yw::dw::Doc threeZones()
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     auto doc = freshDoc();
     auto p = program (doc, 0);
     p.zones.push_back (newZone ("C:\\s\\a.wav", "a", 44100, 1, 44100.0f, 16, 48, 0, 127));
@@ -53,8 +53,8 @@ inline lynx::dw::Doc threeZones()
 
 TEST (directwave_doc_writes_every_fl_state_back_byte_for_byte)
 {
-    using namespace lynx::dw;
-    // a state LYNX made: read and written back the same, and an unchanged program set back changes nothing
+    using namespace yw::dw;
+    // a state YW made: read and written back the same, and an unchanged program set back changes nothing
     const auto made = writeDoc (dw190hz::threeZones());
     const auto again = readDoc (made);
     CHECK (again.has_value());
@@ -98,7 +98,7 @@ TEST (directwave_doc_writes_every_fl_state_back_byte_for_byte)
 
 TEST (directwave_fresh_state_is_fl_new_directwave)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     const auto doc = freshDoc();
     CHECK (programCount (doc) == 128);
     CHECK (program (doc, 5).name == "---" && program (doc, 5).zones.empty());
@@ -115,7 +115,7 @@ TEST (directwave_fresh_state_is_fl_new_directwave)
 
 TEST (directwave_program_edits_rewrite_only_their_fields)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     auto doc = dw190hz::threeZones();
     auto p = program (doc, 0);
     CHECK (p.zones.size() == 3);
@@ -154,7 +154,7 @@ TEST (directwave_program_edits_rewrite_only_their_fields)
 
 TEST (directwave_zone_menu_actions_as_fl)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     // Automap (0x180013d50): roots 48, 60, 72 → 0…59, 60…71, 72…127
     auto p = program (dw190hz::threeZones(), 0);
     auto z = p.zones;
@@ -203,7 +203,7 @@ TEST (directwave_zone_menu_actions_as_fl)
 
 TEST (directwave_program_and_bank_files)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     auto doc = dw190hz::threeZones();
     const auto dwp = writeProgramFile (doc, 0);
     CHECK (dwp.size() > 8 && std::memcmp (dwp.data(), "DwPr", 4) == 0 && dwp[4] == 38);
@@ -238,7 +238,7 @@ TEST (directwave_program_and_bank_files)
 
 TEST (directwave_slot_program_picks_the_played_program)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     auto doc = dw190hz::threeZones();
     auto p = program (doc, 0);
     // program 3 gets one zone; MIDI slot 0 still plays program 0
@@ -260,8 +260,8 @@ TEST (directwave_slot_program_picks_the_played_program)
 
 TEST (directwave_program_from_sfz)
 {
-    using namespace lynx::dw;
-    const auto parsed = lynx::sfz::parse ("<control> default_path=s\\ \n<group> lovel=1 hivel=100 loop_mode=loop_continuous\n"
+    using namespace yw::dw;
+    const auto parsed = yw::sfz::parse ("<control> default_path=s\\ \n<group> lovel=1 hivel=100 loop_mode=loop_continuous\n"
                                           "<region> sample=a.wav lokey=c3 hikey=b3 pitch_keycenter=c4 tune=-50 volume=-6 pan=50\n"
                                           "<region> sample=b.wav key=72 loop_mode=one_shot transpose=2\n<region> sample=missing.wav key=10\n");
     const auto p = programFromSfz (parsed, "/k", [] (const std::string& path) { return path.find ("missing") == std::string::npos ? path : std::string(); });
@@ -277,9 +277,9 @@ TEST (directwave_program_from_sfz)
 
 TEST (directwave_new_zone_is_fl_new_zone_byte_for_byte)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     // FL 2026's own save after "Add sample(s)..." of our 16-bit mono tone (52920 frames at 44.1 kHz) in a DirectWave
-    // program (round 190hz FL session, /mnt/e/lynx-work/dwave190hz/fl/dw_1.flp: the zone record FL wrote, its 912 bytes)
+    // program (round 190hz FL session, /mnt/e/yw-work/dwave190hz/fl/dw_1.flp: the zone record FL wrote, its 912 bytes)
     const char* const fl =
         "030000008403000000000000f401000019000000000000003c007f007f000000000000803f0000003f0000000000020000f501000004000000000000"
         "00746f6e65f60100002300000000000000453a5c6c796e782d776f726b5c6477617665313930687a5c666c5c746f6e652e776176f701000028000000"
@@ -302,7 +302,7 @@ TEST (directwave_new_zone_is_fl_new_zone_byte_for_byte)
         expected.push_back ((std::uint8_t) std::stoi (std::string (fl + i, 2), nullptr, 16));
     auto doc = freshDoc();
     auto p = program (doc, 0);
-    p.zones.push_back (newZone ("E:\\lynx-work\\dwave190hz\\fl\\tone.wav", zoneNameOf ("E:\\lynx-work\\dwave190hz\\fl\\tone.wav"), 52920, 1, 44100.0f, 16, 60, 0, 127));
+    p.zones.push_back (newZone ("E:\\yw-work\\dwave190hz\\fl\\tone.wav", zoneNameOf ("E:\\yw-work\\dwave190hz\\fl\\tone.wav"), 52920, 1, 44100.0f, 16, 60, 0, 127));
     setProgram (doc, 0, p);
     const auto state = writeDoc (doc);
     // the zone record inside the state: find its header (id 3) by the expected bytes

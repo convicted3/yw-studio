@@ -6,7 +6,7 @@
 // device that appears (headphones plugged in), the open device going away, and a device that will not open. The
 // devices differ in what a pair of speakers and a headset differ in: 8 kHz mono (a Bluetooth hands-free headset) up
 // to 192 kHz with 8 outputs, buffers from 32 to 8192 samples, and callbacks that deliver more samples than the device
-// announced. The project plays every instrument and effect LYNX can make on this machine.
+// announced. The project plays every instrument and effect YW can make on this machine.
 //
 // After every switch the song must still sound (finite samples, not silence), the transport must run at the new
 // device's rate and the engine must have rebuilt its plugins for it.
@@ -15,7 +15,7 @@
 
 #include "engine/ChannelRackProcessor.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -217,7 +217,7 @@ struct StandInType final : juce::AudioIODeviceType
     }
 };
 
-// Every instrument and effect LYNX can make here, each channel playing a short note per beat into one of the inserts
+// Every instrument and effect YW can make here, each channel playing a short note per beat into one of the inserts
 // that hold the effects (all of them with `everyUnit`; else a handful, for the selftest).
 Song testSong (bool everyUnit)
 {
@@ -577,4 +577,4 @@ juce::String AudioEngine::deviceChangeSelfTest (int switches, bool everyUnit, co
     engine.rackDisposer.flush();
     return failures.isEmpty() ? "OK (" + juce::String (done) + " device changes)" : "ERROR " + failures;
 }
-} // namespace lynx
+} // namespace yw

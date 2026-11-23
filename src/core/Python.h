@@ -1,17 +1,17 @@
 #pragma once
 
-// LYNX's embedded Python (round 165d): the pocketpy interpreter (third_party/pocketpy, MIT), small enough to ship
-// inside LYNX, runs the scripts LYNX meets in FL Studio projects (VFX Script) and can run other LYNX scripts.
+// YW's embedded Python (round 165d): the pocketpy interpreter (third_party/pocketpy, MIT), small enough to ship
+// inside YW, runs the scripts YW meets in FL Studio projects (VFX Script) and can run other YW scripts.
 //
 //  - One thread ("the Python thread") runs every script. pocketpy keeps its state in globals, so nothing else may
 //    touch it: work reaches that thread through runSync() (UI / tests: wait for it) or through a Service that the
 //    audio thread wakes with wake() (lock-free: an atomic and a semaphore).
-//  - Up to 15 independent interpreters ("VMs", pocketpy's limit is 16 and VM 0 is LYNX's scratch VM): each script
+//  - Up to 15 independent interpreters ("VMs", pocketpy's limit is 16 and VM 0 is YW's scratch VM): each script
 //    instance takes one, so its globals, modules and random state are its own.
 //  - Sandbox: scripts cannot open files, run programs or import modules from disk (only pocketpy's built-in
-//    modules and the ones LYNX adds). A script that runs too long is interrupted (TimeoutError), so a bad script
-//    never hangs LYNX.
-//  - LYNX's additions to pocketpy's standard library, for scripts written for CPython 3.12: `re` (sub, match,
+//    modules and the ones YW adds). A script that runs too long is interrupted (TimeoutError), so a bad script
+//    never hangs YW.
+//  - YW's additions to pocketpy's standard library, for scripts written for CPython 3.12: `re` (sub, match,
 //    search, fullmatch, findall, split, compile, escape), the 3-argument pow(), sys.float_info, random.gauss(),
 //    random.seed() with any value.
 //
@@ -22,7 +22,7 @@
 #include <functional>
 #include <string>
 
-namespace lynx::python
+namespace yw::python
 {
 // Run `job` on the Python thread and wait for it (never from the audio thread). Jobs run one at a time.
 void runSync (const std::function<void()>& job);
@@ -40,7 +40,7 @@ void removeService (Service* service);
 void wake() noexcept;
 
 // --- Python thread only ------------------------------------------------------------------------------------------
-// A fresh interpreter (LYNX's library installed, sandboxed) and its release; -1 when all are in use
+// A fresh interpreter (YW's library installed, sandboxed) and its release; -1 when all are in use
 int acquireVm();
 void releaseVm (int vm);
 // Switch to that interpreter
@@ -52,4 +52,4 @@ void setTimeLimit (double milliseconds) noexcept;
 std::string takeError();
 // Where print() of the current VM goes (per VM; null = nowhere)
 void setPrint (std::function<void (const std::string&)> print);
-} // namespace lynx::python
+} // namespace yw::python

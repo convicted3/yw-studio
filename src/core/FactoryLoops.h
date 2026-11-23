@@ -1,10 +1,10 @@
 #pragma once
 
-// Rollup 0.1.30 step 6 (round 190km; the owner answered yes to gaps190kf's question): LYNX's own tagged content (round
+// Rollup 0.1.30 step 6 (round 190km; the owner answered yes to gaps190kf's question): YW's own tagged content (round
 // 190ke's Loop Starter beats and sounds, core/FactoryContent.h) as rows of the Loop Browser (round gaps190kf,
 // core/LoopKeywords.h), so a new user without sample folders still finds loops there.
 //
-// A beat is a pattern loop (LYNX's third Loop Type, GarageBand's Drummer loops: a groove the Channel Rack plays) at its
+// A beat is a pattern loop (YW's third Loop Type, GarageBand's Drummer loops: a groove the Channel Rack plays) at its
 // genre's suggested tempo; a sound is a MIDI loop's instrument (GarageBand's green Software Instrument loops: notes
 // played by a sound). Their keywords come from their folder and name words and from 190ke's built-in tags that name a
 // keyword; the row's path is the tag store's item (collections::pluginItem), so the user's own tags and favourites of
@@ -18,9 +18,9 @@
 #include "core/FactoryContent.h"
 #include "core/LoopKeywords.h"
 
-namespace lynx::factoryloops
+namespace yw::factoryloops
 {
-// The row path of an item (the tag store's item for its plugin key), and back (nullptr: not LYNX content)
+// The row path of an item (the tag store's item for its plugin key), and back (nullptr: not YW content)
 inline std::string pathOf (const factorycontent::Item& item) { return collections::pluginItem (item.key); }
 inline const factorycontent::Item* itemOf (const std::string& path)
 {
@@ -54,4 +54,4 @@ inline std::vector<loopkeys::LoopInfo> loops()
             out.push_back (describe (item));
     return out;
 }
-} // namespace lynx::factoryloops
+} // namespace yw::factoryloops

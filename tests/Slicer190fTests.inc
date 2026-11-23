@@ -6,9 +6,9 @@
 namespace slicer190f
 {
 // a steady tone long enough for every test (one slice)
-std::shared_ptr<lynx::SampleData> tone (int frames = 44100)
+std::shared_ptr<yw::SampleData> tone (int frames = 44100)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     for (int i = 0; i < frames; ++i)
         d->left.push_back (0.5f * (float) std::sin (i * 0.2));
@@ -17,9 +17,9 @@ std::shared_ptr<lynx::SampleData> tone (int frames = 44100)
 }
 
 // What a Slicer channel with these voice settings plays: the note held for `held` frames, then released
-std::vector<float> play (const lynx::flvoice::Settings& voice, int held, int total)
+std::vector<float> play (const yw::flvoice::Settings& voice, int held, int total)
 {
-    using namespace lynx;
+    using namespace yw;
     auto state = fslicer::fresh ("C:\\loops\\tone.wav", 44100);
     fslicer::setVoiceSettings (state, voice);
     const auto sample = tone();
@@ -51,7 +51,7 @@ float peak (const std::vector<float>& x, int from, int to)
 
 TEST (slicer190f_voice_settings_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     // the plugins' defaults: the envelopes off, the volume record's flag 4 and release tension −101
     const auto defaults = flvoice::read ({});
     CHECK (! defaults.articulators[flvoice::volume].envelope && defaults.articulators[flvoice::volume].flags == 4);
@@ -111,7 +111,7 @@ TEST (slicer190f_voice_settings_round_trip)
 
 TEST (slicer190f_note_off_ends_the_slice)
 {
-    using namespace lynx;
+    using namespace yw;
     const int held = 4410, total = 44100;
 
     // the volume envelope off (a new Slicer): the note-off starts the processor's 10 ms end fade
@@ -140,7 +140,7 @@ TEST (slicer190f_note_off_ends_the_slice)
 
 TEST (slicer190f_lfos_reach_the_voice)
 {
-    using namespace lynx;
+    using namespace yw;
     const int held = 22050, total = 22050;
     const auto plain = slicer190f::play (flvoice::read ({}), held, total);
 
@@ -171,7 +171,7 @@ TEST (slicer190f_lfos_reach_the_voice)
 
 TEST (slicer190f_voice_settings_survive_flp_export_and_import)
 {
-    using namespace lynx;
+    using namespace yw;
     auto state = slicer180c::threeSlices();
     auto voice = fslicer::voiceSettings (state);
     voice.articulators[flvoice::volume].envelope = true;

@@ -8,7 +8,7 @@
 // distance, brightness, character, thickness, width, pre-delay, decay-rate EQ), and their curves were matched
 // black-box to the reference's measured impulse responses: RT60 per octave, pre-delay, early-reflection density,
 // echo-density build-up, wet level, L/R correlation and the pitch spread of a sustained sine
-// (/mnt/e/lynx-work/tp172b/irstats.py). Nothing captured from the reference is shipped.
+// (/mnt/e/yw-work/tp172b/irstats.py). Nothing captured from the reference is shipped.
 //
 // Header-only: LuxeVerb.cpp includes it. Allocation happens in prepare(); process() is real-time safe.
 
@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::spaceverb
+namespace yw::spaceverb
 {
 enum class Style { modern, vintage, plate };
 
@@ -899,4 +899,4 @@ private:
     double side = 1.0, dryGain = 0.89, wetGain = 0.45, norm = 0.3;
     double duckEnv = 0.0, duckDb = 0.0; // round 190it
 };
-} // namespace lynx::spaceverb
+} // namespace yw::spaceverb

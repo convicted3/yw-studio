@@ -4,7 +4,7 @@
 #include <cstring>
 #include <numeric>
 
-namespace lynx::chordread
+namespace yw::chordread
 {
 namespace
 {
@@ -370,4 +370,4 @@ bool Readout::tick (std::uint32_t nowMs)
     shownNovelty = waitingNovelty;
     return changed;
 }
-} // namespace lynx::chordread
+} // namespace yw::chordread

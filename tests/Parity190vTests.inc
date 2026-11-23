@@ -1,13 +1,13 @@
 // --- Round 190v: Crest's Two-way and Vari-mu laws and Sentry's Vocal noise reduction, fitted black-box to round
-// trial190k's reference renders (LYNX's own test signals through the public parameter API; docs/PARITY.md "Round
+// trial190k's reference renders (YW's own test signals through the public parameter API; docs/PARITY.md "Round
 // 190v"). The numbers below are those renders' 1 kHz stair gains (dB, the last 140 ms of each 0.4 s step). ---------------
 
 #include "core/DynamicsSuite.h"
 
 namespace p190v
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 using namespace dyn108;
 
 // threshold (dB), ratio, knee (dB), attack (ms) and the gain at −48, −36, −24, −12, −6 and 0 dBFS (release 200 ms)
@@ -18,9 +18,9 @@ struct Row
 };
 
 // the worst difference (dB) between Crest's stair gains and the rows
-inline double worstError (lynx::dyn::crest::Style style, const Row* rows, std::size_t count)
+inline double worstError (yw::dyn::crest::Style style, const Row* rows, std::size_t count)
 {
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     const std::vector<double> levels { -48, -36, -24, -12, -6, 0 };
     std::size_t per = 0;
     const auto x = stair (levels, 0.5, 1000.0, per);
@@ -70,7 +70,7 @@ inline std::vector<float> noise (double dbfs, double seconds, unsigned seed)
 
 TEST (p190v_crest_two_way_follows_the_reference_grid)
 {
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // upward compression under threshold − 6 dB, a fixed gain that falls as the threshold rises and as the attack slows,
     // downward compression over threshold + 3 dB; round 108's −18 dB stairs are the first row
     const p190v::Row rows[] {
@@ -90,7 +90,7 @@ TEST (p190v_crest_two_way_follows_the_reference_grid)
 
 TEST (p190v_crest_vari_mu_follows_the_reference_grid)
 {
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // the reduction depends on the level more than on the overshoot (threshold −48 against −18: 4.5 dB more at 0 dBFS,
     // not 22) and falls as the knee grows (−14.6 / −13.0 / −10.8 dB at knee 0 / 18 / 72); round 108's stairs are row 1
     const p190v::Row rows[] {
@@ -108,7 +108,7 @@ TEST (p190v_crest_vari_mu_follows_the_reference_grid)
     std::printf ("  Vari-mu against the grid: worst error %.2f dB over %d points\n", worst, (int) std::size (rows) * 6);
     CHECK (worst <= 0.8);
     // the editor's curve says the same: a larger knee reduces less, a lower threshold barely more
-    auto p = p190v::defaults (lynx::EffectKind::crestCompressor);
+    auto p = p190v::defaults (yw::EffectKind::crestCompressor);
     p[c::style] = c::styleValue (c::Style::variMu);
     p[c::revision] = 0.0f; // round 190mb: the measured law's editor curve (revision 1 runs Pro-C 3's tube node, Parity190mbCrestTests)
     p[c::threshold] = 0.6f;
@@ -146,7 +146,7 @@ TEST (p190v_crest_vari_mu_follows_the_reference_grid)
 
 TEST (p190v_crest_two_way_release_and_safety)
 {
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     using namespace dyn108;
     // a −40 → −6 → −40 dBFS step at threshold −24, ratio 4, attack 10 ms: the gain is half-way back after about a quarter
     // of the release knob (50 ms at 200, 240 ms at 1000 on the reference); it used to be back within 3 ms whatever the knob
@@ -203,7 +203,7 @@ TEST (p190v_crest_two_way_release_and_safety)
 
 TEST (p190v_sentry_vocal_turns_noise_down_after_a_pause)
 {
-    namespace s = lynx::dyn::sentry;
+    namespace s = yw::dyn::sentry;
     using namespace dyn108;
     // 0.5 s of silence, then white noise at −20 dBFS for 2.5 s; threshold −60 (the gate itself stays open on it)
     auto x = p190v::noise (-20.0, 3.0, 190u);
@@ -245,7 +245,7 @@ TEST (p190v_sentry_vocal_turns_noise_down_after_a_pause)
 
 TEST (p190v_projects_saved_before_keep_the_classic_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace c = dyn::crest;
     namespace s = dyn::sentry;
     using namespace dyn108;
@@ -272,7 +272,7 @@ TEST (p190v_projects_saved_before_keep_the_classic_laws)
     }
     // the classic laws are round 108's, as 0.1.25 rendered them (1 kHz stairs at threshold −36, ratio 4, knee 0, attack
     // 10 ms, release 200 ms: the gain at −48, −36, −24, −12, −6 and 0 dBFS, taken from the build whose classic renders
-    // hash-match 0.1.25's, /mnt/e/lynx-work/parity190v/hash/hash.md)
+    // hash-match 0.1.25's, /mnt/e/yw-work/parity190v/hash/hash.md)
     const std::vector<double> levels { -48, -36, -24, -12, -6, 0 };
     std::size_t per = 0;
     const auto x = stair (levels, 0.5, 1000.0, per);

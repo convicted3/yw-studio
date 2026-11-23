@@ -1,9 +1,9 @@
-// LYNX's own Helix presets (round 190mi): designed for LYNX on Helix (core/WavetableSynth.h) and its Helix+ block
+// YW's own Helix presets (round 190mi): designed for YW on Helix (core/WavetableSynth.h) and its Helix+ block
 // (second warps, unison stacking, noise, comb / formant / phaser filters, macros, drawn LFOs, the effects rack); round
-// 190ml adds presets for Helix+ 2 (oscillator 3, the sample oscillator with LYNX-made samples, user tables made from
+// 190ml adds presets for Helix+ 2 (oscillator 3, the sample oscillator with YW-made samples, user tables made from
 // formulas and harmonics, macros 5…8, chaos sources, the shifter / EQ / multiband); round 190mt adds presets for the
 // granular and spectral oscillators (Helix round 3); round 190oc two for their unison and reverse grains (Helix round 4).
-// Clean-room: no Serum, Live or other preset was read or converted; LYNX's own tables (core/WavetableTables.cpp).
+// Clean-room: no Serum, Live or other preset was read or converted; YW's own tables (core/WavetableTables.cpp).
 // The first preset ("Init") is Helix's own default, so a new Helix channel sounds as before.
 
 #include <cmath>
@@ -12,10 +12,10 @@
 #include <initializer_list>
 #include <utility>
 
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/WavetableSynth.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -88,7 +88,7 @@ Preset make (const char* name, const char* category, std::vector<std::string> ta
             } };
 }
 
-// --- LYNX-made material for the presets (190ml): tables from formulas and partial lists, samples synthesised here
+// --- YW-made material for the presets (190ml): tables from formulas and partial lists, samples synthesised here
 w::UserTable formulaTable (const char* formula, const char* name)
 {
     w::UserTable t;
@@ -371,7 +371,7 @@ std::vector<Preset> helixBank()
         d.tables[0] = formulaTable ("p < 0.08 + 0.84*t ? 0.9 : -0.9", "Drawn Pulse");
         return d;
     }));
-    // --- Helix round 3 (round 190mt): the granular and spectral oscillators on LYNX-made samples (their partials kept)
+    // --- Helix round 3 (round 190mt): the granular and spectral oscillators on YW-made samples (their partials kept)
     b.push_back (make ("Grain Cloud", "Pad", { "granular", "cloud", "ambient", "evolving" }, [] (Patch& p) {
         p.osc (0, osc::on, 0).x2 (ext2::sampleRoot, 45);
         p.x3 (ext3::grainOn, 1).x3 (ext3::grainPosition, 0.35).x3 (ext3::grainSize, 0.14).x3 (ext3::grainDensity, 28).x3 (ext3::grainSpray, 0.3)
@@ -443,4 +443,4 @@ std::vector<Preset> helixBank()
     }));
     return b;
 }
-} // namespace lynx::banks
+} // namespace yw::banks

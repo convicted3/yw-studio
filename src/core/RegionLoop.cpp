@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace lynx::regionloop
+namespace yw::regionloop
 {
 namespace
 {
@@ -167,4 +167,4 @@ int regionAt (const Song& song, int track, std::int64_t start, const Clip& like)
     }
     return -1;
 }
-} // namespace lynx::regionloop
+} // namespace yw::regionloop

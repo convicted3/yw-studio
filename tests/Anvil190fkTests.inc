@@ -1,12 +1,12 @@
-// --- Round 190fk: Anvil Bus, LYNX's drum-bus engine (core/AnvilBus.h), and Live's Drum Buss imported onto it ---------
+// --- Round 190fk: Anvil Bus, YW's drum-bus engine (core/AnvilBus.h), and Live's Drum Buss imported onto it ---------
 // The numbers are Live 12.4's own, measured by round 190ei on test signals (RESULTS.md §2); the engine holds them within
-// the tolerances below (the round's A/B against the renders: /mnt/e/lynx-work/drumbus190fk/HANDOFF.md).
+// the tolerances below (the round's A/B against the renders: /mnt/e/yw-work/drumbus190fk/HANDOFF.md).
 
 #include "core/AnvilBus.h"
 
 namespace anvil190fk
 {
-using namespace lynx;
+using namespace yw;
 
 inline EffectParams params (std::initializer_list<std::pair<int, float>> values)
 {
@@ -47,7 +47,7 @@ inline double relGain (const EffectParams& p, double hz) { return sineOut (p, -4
 
 TEST (anvil190fk_knob_laws_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     CHECK (std::abs (a::dampHz (a::dampValue (1000.0)) - 1000.0) < 0.01 && std::abs (a::dampHz (0.0f) - 500.0) < 1e-9 && std::abs (a::dampHz (1.0f) - 20000.0) < 1e-6);
     CHECK (std::abs (a::trimDb (a::trimValue (-12.0)) + 12.0) < 1e-4 && a::trimDb (1.0f) == 0.0 && std::abs (a::trimDb (0.0f) + 70.0) < 1e-9);
@@ -63,7 +63,7 @@ TEST (anvil190fk_knob_laws_round_trip)
 
 TEST (anvil190fk_holds_lives_measured_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     using anvil190fk::params;
     using anvil190fk::sineOut;
     using anvil190fk::relGain;
@@ -105,7 +105,7 @@ TEST (anvil190fk_holds_lives_measured_levels)
 
 TEST (anvil190fk_transients_follow_the_measured_direction)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     // a hit every 0.5 s (a 1 kHz burst, 2 ms attack, 120 ms decay): + lifts the attack and the tail, − cuts the tail
     // [Live, drum loop: +1.0 → kick attack +13 dB, tail +10.6 dB; −0.5 → snare tail −3 dB]
@@ -140,7 +140,7 @@ TEST (anvil190fk_transients_follow_the_measured_direction)
 
 TEST (anvil190fk_safe_at_the_extremes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace a = anvil;
     // every control at its ends, a +12 dBFS square wave then silence: finite, no denormals left, reset clean (round 190gx:
     // ten seconds of silence — Boom at 1.0 rings for seconds, as Live's does: −20 dB/s at 50 Hz)
@@ -173,7 +173,7 @@ TEST (anvil190fk_safe_at_the_extremes)
 
 TEST (anvil190fk_is_a_registered_built_in)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::anvilBus);
     CHECK (std::string (info.name) == "Anvil Bus" && info.params.size() == (std::size_t) anvil::count);
     auto fx = makeEffect (EffectKind::anvilBus);
@@ -201,8 +201,8 @@ TEST (anvil190fk_is_a_registered_built_in)
 
 TEST (anvil190fk_live_drum_buss_imports_onto_anvil_bus)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     namespace a = anvil;
     // Drive 50 % Medium, Damping 6 kHz, Transients −0.45, Boom 0.3 at 60 Hz decay 0.8, Comp on, Trim −6 dB, Output −3 dB,
     // Dry/Wet 41 %, Boom audition on

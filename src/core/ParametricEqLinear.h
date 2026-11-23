@@ -12,7 +12,7 @@
 
 #include "core/ParametricEqFl.h"
 
-namespace lynx::peqfl
+namespace yw::peqfl
 {
 // FFT size for the plugin's quality setting (0 = default 2) at the host rate
 int linearFftSize (int quality, int hostRate) noexcept;
@@ -78,4 +78,4 @@ private:
     std::vector<float> history[2];
     int historyPos = 0, fadeCount = 0, fadeLength = 0, active = 0;
 };
-} // namespace lynx::peqfl
+} // namespace yw::peqfl

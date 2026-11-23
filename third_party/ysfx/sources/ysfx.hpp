@@ -200,6 +200,6 @@ int32_t ysfx_insert_file(ysfx_t *fx, ysfx_file_t *file);
 void ysfx_serialize(ysfx_t *fx);
 uint32_t ysfx_get_slider_of_var(ysfx_t *fx, EEL_F *var);
 bool ysfx_find_data_file(ysfx_t *fx, EEL_F *file, std::string &result);
-extern ysfx_lynx_path_filter_t *ysfx_lynx_path_filter; // LYNX
+extern ysfx_yw_path_filter_t *ysfx_yw_path_filter; // YW
 ysfx_file_type_t ysfx_detect_file_type(ysfx_t *fx, const char *path, void **fmtobj);
 void ysfx_set_window_state(ysfx_t *fx, bool hasFocus, bool windowVisible, bool mouseOver);

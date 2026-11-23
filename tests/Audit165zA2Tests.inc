@@ -3,20 +3,20 @@
 
 TEST (audit165za2_metronome_sounds_follow_fl_menu)
 {
-    namespace m = lynx::metronome;
+    namespace m = yw::metronome;
     // FL's right-click menu: Hi-hat, Tick, Beep, Cowbell, Pulse; the factory default is Tick ("Metronome number" = 1)
     CHECK (m::soundCount == 5);
     CHECK (std::string (m::soundName (0)) == "Hi-hat" && std::string (m::soundName (1)) == "Tick" && std::string (m::soundName (2)) == "Beep"
            && std::string (m::soundName (3)) == "Cowbell" && std::string (m::soundName (4)) == "Pulse");
     CHECK (m::defaultSound == 1);
-    lynx::Transport transport;
+    yw::Transport transport;
     CHECK (transport.metronomeSound.load() == m::defaultSound && transport.metronomeTrack.load() == 0);
     // FL's files in Data\System
     CHECK (std::string (m::soundFileName (0)) == "Metronome.wav" && std::string (m::soundFileName (1)) == "Metronome2.wav"
            && std::string (m::soundFileName (4)) == "Metronome5.wav");
     CHECK (m::clampSound (-1) == m::defaultSound && m::clampSound (5) == m::defaultSound && m::clampSound (3) == 3);
 
-    // ui-options.txt before 0.1.20: 0 LYNX click (gone: FL's default Tick), 1 hi-hat .. 5 pulse keep their sound
+    // ui-options.txt before 0.1.20: 0 YW click (gone: FL's default Tick), 1 hi-hat .. 5 pulse keep their sound
     CHECK (m::soundFromLegacy (0) == 1);
     CHECK (m::soundFromLegacy (1) == 0 && m::soundFromLegacy (2) == 1 && m::soundFromLegacy (3) == 2 && m::soundFromLegacy (4) == 3
            && m::soundFromLegacy (5) == 4);
@@ -28,7 +28,7 @@ TEST (audit165za2_metronome_sounds_follow_fl_menu)
 
 TEST (audit165za2_metronome_levels_measured_in_fl)
 {
-    namespace m = lynx::metronome;
+    namespace m = yw::metronome;
     // a ramp stands in for a sound: the output shows the gain, the pitch and the interpolation
     m::Sample s;
     s.rate = 44100.0;
@@ -80,7 +80,7 @@ TEST (audit165za2_metronome_levels_measured_in_fl)
     v.next (1.0f, a, b);
     CHECK (a == 0.0f && v.playing());
 
-    // LYNX's stand-ins without FL: the length and peak of FL's files (frames at 44.1 kHz)
+    // YW's stand-ins without FL: the length and peak of FL's files (frames at 44.1 kHz)
     const int frameCounts[] = { 4612, 657, 3000, 9467, 67 };
     const float peaks[] = { 0.8f, 1.0f, 0.645f, 1.0f, 0.488f };
     for (int i = 0; i < m::soundCount; ++i)
@@ -98,19 +98,19 @@ TEST (audit165za2_metronome_plays_through_its_mixer_track)
 {
     // FL's Settings › Audio › "Metronome track": "---" plays into the Master, an insert plays it through that insert
     // (its fader and mute), the Master when the insert does not exist
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
     for (auto& p : song.patterns)
         p.notes.clear();
-    song.mixer = lynx::Song::defaultMixer (4);
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    song.mixer = yw::Song::defaultMixer (4);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
 
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 512);
     std::vector<float> clickL (256, 0.5f), clickR (256, -0.25f), l (256), r (256);
 
-    auto run = [&] (const lynx::RackState* st, int track, int blocks = 12) {
+    auto run = [&] (const yw::RackState* st, int track, int blocks = 12) {
         for (int i = 0; i < blocks; ++i) // past the fader ramps
         {
             renderer.setMetronomeInput (clickL.data(), clickR.data(), track);
@@ -130,23 +130,23 @@ TEST (audit165za2_metronome_plays_through_its_mixer_track)
     CHECK (std::abs (l[100]) < 1e-6f);
 
     // through insert 3's fader (half way to 0 dB, FL's fader curve) and mute
-    song.mixer[3].volume = lynx::unityFader * 0.5f;
-    const auto halfFader = lynx::faderGain (lynx::unityFader * 0.5f);
+    song.mixer[3].volume = yw::unityFader * 0.5f;
+    const auto halfFader = yw::faderGain (yw::unityFader * 0.5f);
     CHECK (halfFader > 0.01f && halfFader < 0.9f);
-    auto half = lynx::RackState::build (song, state.get(), 48000.0);
+    auto half = yw::RackState::build (song, state.get(), 48000.0);
     run (half.get(), 3);
     CHECK (std::abs (l[100] - 0.5f * halfFader) < 2e-3f);
     run (half.get(), 0); // (the Master is not insert 3)
     CHECK (std::abs (l[100] - 0.5f) < 1e-3f);
     song.mixer[3].muted = true;
-    auto muted = lynx::RackState::build (song, half.get(), 48000.0);
+    auto muted = yw::RackState::build (song, half.get(), 48000.0);
     run (muted.get(), 3, 20);
     CHECK (std::abs (l[100]) < 1e-6f);
 
     // the Master's fader applies to it too (it goes into the Master's input)
     song.mixer[3].muted = false;
-    song.mixer[0].volume = lynx::unityFader * 0.5f;
-    auto master = lynx::RackState::build (song, muted.get(), 48000.0);
+    song.mixer[0].volume = yw::unityFader * 0.5f;
+    auto master = yw::RackState::build (song, muted.get(), 48000.0);
     run (master.get(), 0);
     CHECK (std::abs (l[100] - 0.5f * halfFader) < 2e-3f);
 }

@@ -9,7 +9,7 @@ namespace
 struct GuardRun
 {
     static constexpr double budget = 64.0 / 48.0;
-    lynx::OverloadGuard g;
+    yw::OverloadGuard g;
     double now = 1000.0, pulse = 1000.0;
     GuardRun() { g.uiPulse (now); }
     // runs `ms` of callbacks; returns the time of the first callback after which the guard was off (-1: never)
@@ -32,7 +32,7 @@ struct GuardRun
 
 TEST (perf190os_overload_guard_lets_go_at_once_when_the_transport_stops)
 {
-    using namespace lynx;
+    using namespace yw;
     GuardRun r;
     r.run (600.0, 2.0 * GuardRun::budget, true);
     CHECK (r.g.engaged() && r.g.timesEngaged() == 1);
@@ -63,7 +63,7 @@ TEST (perf190os_overload_guard_lets_go_at_once_when_the_transport_stops)
 
 TEST (perf190os_overload_guard_lets_go_within_1_s_of_the_overloads_end_while_playing)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto heavy : { 2.0, 5.0, 12.0 }) // (12x: 16 ms callbacks, fewer than 4 in a 100 ms window)
     {
         GuardRun r;

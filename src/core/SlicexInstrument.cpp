@@ -11,7 +11,7 @@
 #include "core/HostSlide.h"
 #include "core/SlicexEngine.h"
 
-namespace lynx
+namespace yw
 {
 namespace slicex
 {
@@ -283,7 +283,7 @@ public:
     void render (float* left, float* right, int n, float gl, float gr) noexcept override
     {
         take();
-        // FL's channel volume / pan from LYNX's gains (as Wave Traveller, the Granulizer and 3x Osc)
+        // FL's channel volume / pan from YW's gains (as Wave Traveller, the Granulizer and 3x Osc)
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
         if (std::fabs (pan) < 1e-9)
@@ -358,7 +358,7 @@ private:
         int id = -1, key = 60;
         bool released = false;
         float volFactor = 1.0f, pan = 0.0f, cents = 0.0f;
-        std::uint32_t noteId = 0; // the LYNX note that started it (round 190ej)
+        std::uint32_t noteId = 0; // the YW note that started it (round 190ej)
         HostSlide slide {};       // the channel's porta moving the note's Final.Pitch (round 190hg)
         // a slide note moving it: FL's host steps it once per tick (round 190hg, REA_rodada190hg §1.1)
         struct Stepped
@@ -457,4 +457,4 @@ PlayLine playLine (const Instrument* instrument) noexcept
     return { m.deck, m.frame };
 }
 } // namespace slicex
-} // namespace lynx
+} // namespace yw

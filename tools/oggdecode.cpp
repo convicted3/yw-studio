@@ -23,8 +23,8 @@ int main (int argc, char** argv)
     {
         std::ifstream in (argv[a], std::ios::binary);
         const std::vector<std::uint8_t> bytes { std::istreambuf_iterator<char> (in), {} };
-        lynx::oggvorbis::Decoded d;
-        if (! lynx::oggvorbis::decode (bytes.data(), bytes.size(), d))
+        yw::oggvorbis::Decoded d;
+        if (! yw::oggvorbis::decode (bytes.data(), bytes.size(), d))
         {
             std::printf ("FAIL | %s\n", argv[a]);
             continue;

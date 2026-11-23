@@ -7,64 +7,64 @@
 #define PK_IS_AMALGAMATED_C
 #include "pocketpy.h"
 
-// LYNX: set by the host (src/core/Python.cpp) to interrupt a script that runs too long; checked once per opcode
-volatile int py_lynx_interrupt = 0;
+// YW: set by the host (src/core/Python.cpp) to interrupt a script that runs too long; checked once per opcode
+volatile int py_yw_interrupt = 0;
 
-// LYNX heap: pocketpy's allocations, counted (all VMs run on the host's one Python thread). Past py_lynx_heap_limit
-// the script is interrupted (py_lynx_out_of_memory says why); an allocation past twice the limit fails.
+// YW heap: pocketpy's allocations, counted (all VMs run on the host's one Python thread). Past py_yw_heap_limit
+// the script is interrupted (py_yw_out_of_memory says why); an allocation past twice the limit fails.
 #include <stdlib.h>
-size_t py_lynx_heap_limit = (size_t)768 << 20;
-size_t py_lynx_heap_bytes = 0;
-volatile int py_lynx_out_of_memory = 0;
-#define LYNX_HEAP_HEADER 16
+size_t py_yw_heap_limit = (size_t)768 << 20;
+size_t py_yw_heap_bytes = 0;
+volatile int py_yw_out_of_memory = 0;
+#define YW_HEAP_HEADER 16
 
-static int py_lynx_heap_allows(size_t grow) {
-    if(py_lynx_heap_bytes + grow > py_lynx_heap_limit) {
-        py_lynx_out_of_memory = 1;
-        py_lynx_interrupt = 1;
-        if(py_lynx_heap_bytes + grow > py_lynx_heap_limit * 2) return 0;
+static int py_yw_heap_allows(size_t grow) {
+    if(py_yw_heap_bytes + grow > py_yw_heap_limit) {
+        py_yw_out_of_memory = 1;
+        py_yw_interrupt = 1;
+        if(py_yw_heap_bytes + grow > py_yw_heap_limit * 2) return 0;
     }
     return 1;
 }
 
-// LYNX: one operation that asks for more than the heap has left in a single go (a big repeat such as
+// YW: one operation that asks for more than the heap has left in a single go (a big repeat such as
 // 'x' * 2_000_000_000 or [0] * 300_000_000, list() of a long iterator) is stopped with the memory message before it
 // allocates: past twice the limit an allocation fails, and pocketpy's growth code aborts the process on a failed
 // allocation (c11_vector__reserve) or writes through the null pointer (a big string), taking the host down with it.
-static int py_lynx_heap_room(size_t bytes) {
-    if(bytes > py_lynx_heap_limit || py_lynx_heap_bytes + bytes > py_lynx_heap_limit) {
-        py_lynx_out_of_memory = 1;
-        py_lynx_interrupt = 1;
+static int py_yw_heap_room(size_t bytes) {
+    if(bytes > py_yw_heap_limit || py_yw_heap_bytes + bytes > py_yw_heap_limit) {
+        py_yw_out_of_memory = 1;
+        py_yw_interrupt = 1;
         return 0;
     }
     return 1;
 }
 
-void* py_lynx_malloc(size_t size) {
-    if(!py_lynx_heap_allows(size)) return NULL;
-    size_t* p = (size_t*)malloc(size + LYNX_HEAP_HEADER);
+void* py_yw_malloc(size_t size) {
+    if(!py_yw_heap_allows(size)) return NULL;
+    size_t* p = (size_t*)malloc(size + YW_HEAP_HEADER);
     if(!p) return NULL;
     p[0] = size;
-    py_lynx_heap_bytes += size;
-    return (char*)p + LYNX_HEAP_HEADER;
+    py_yw_heap_bytes += size;
+    return (char*)p + YW_HEAP_HEADER;
 }
 
-void* py_lynx_realloc(void* ptr, size_t size) {
-    if(!ptr) return py_lynx_malloc(size);
-    size_t* base = (size_t*)((char*)ptr - LYNX_HEAP_HEADER);
+void* py_yw_realloc(void* ptr, size_t size) {
+    if(!ptr) return py_yw_malloc(size);
+    size_t* base = (size_t*)((char*)ptr - YW_HEAP_HEADER);
     size_t old = base[0];
-    if(size > old && !py_lynx_heap_allows(size - old)) return NULL;
-    size_t* p = (size_t*)realloc(base, size + LYNX_HEAP_HEADER);
+    if(size > old && !py_yw_heap_allows(size - old)) return NULL;
+    size_t* p = (size_t*)realloc(base, size + YW_HEAP_HEADER);
     if(!p) return NULL;
     p[0] = size;
-    py_lynx_heap_bytes = py_lynx_heap_bytes - old + size;
-    return (char*)p + LYNX_HEAP_HEADER;
+    py_yw_heap_bytes = py_yw_heap_bytes - old + size;
+    return (char*)p + YW_HEAP_HEADER;
 }
 
-void py_lynx_free(void* ptr) {
+void py_yw_free(void* ptr) {
     if(!ptr) return;
-    size_t* base = (size_t*)((char*)ptr - LYNX_HEAP_HEADER);
-    py_lynx_heap_bytes -= base[0];
+    size_t* base = (size_t*)((char*)ptr - YW_HEAP_HEADER);
+    py_yw_heap_bytes -= base[0];
     free(base);
 }
 // common/_generated.h
@@ -8377,10 +8377,10 @@ static bool str__mul__(int argc, py_Ref argv) {
         if(n <= 0) {
             py_newstr(py_retval(), "");
         } else {
-            // LYNX: the whole result is one allocation (and its size an int): asked for before it is made
+            // YW: the whole result is one allocation (and its size an int): asked for before it is made
             const size_t bytes = n > (py_i64)(0x7fffffff / (self->size > 0 ? self->size : 1)) ? (size_t)-1
                                                                                              : (size_t)self->size * (size_t)n;
-            if(!py_lynx_heap_room(bytes)) return RuntimeError("out of memory");
+            if(!py_yw_heap_room(bytes)) return RuntimeError("out of memory");
             char* p = py_newstrn(py_retval(), self->size * n);
             for(int i = 0; i < n; i++) {
                 memcpy(p + i * self->size, self->data, self->size);
@@ -13419,7 +13419,7 @@ typedef struct CompExpr {
 
     Opcode op0;
     Opcode op1;
-    bool as_iter;  // LYNX: a generator expression (evaluated eagerly as a list, then iter())
+    bool as_iter;  // YW: a generator expression (evaluated eagerly as a list, then iter())
 } CompExpr;
 
 void CompExpr__dtor(Expr* self_) {
@@ -13452,7 +13452,7 @@ void CompExpr__emit_(Expr* self_, Ctx* ctx) {
     }
     Ctx__emit_jump(ctx, block_start, BC_KEEPLINE);
     Ctx__exit_block(ctx);
-    if(self->as_iter) Ctx__emit_(ctx, OP_GET_ITER, BC_NOARG, BC_KEEPLINE);  // LYNX
+    if(self->as_iter) Ctx__emit_(ctx, OP_GET_ITER, BC_NOARG, BC_KEEPLINE);  // YW
 }
 
 CompExpr* CompExpr__new(int line, Opcode op0, Opcode op1) {
@@ -14661,7 +14661,7 @@ static Error* exprUnaryOp(Compiler* self) {
     return NULL;
 }
 
-static Error* consume_comp(Compiler* self, Opcode op0, Opcode op1);  // LYNX
+static Error* consume_comp(Compiler* self, Opcode op0, Opcode op1);  // YW
 
 static Error* exprGroup(Compiler* self) {
     Error* err;
@@ -14672,7 +14672,7 @@ static Error* exprGroup(Compiler* self) {
         return NULL;
     }
     check(EXPR_TUPLE(self));  // () is just for change precedence
-    if(match(TK_FOR)) {  // LYNX: (x for x in y), a generator expression evaluated eagerly
+    if(match(TK_FOR)) {  // YW: (x for x in y), a generator expression evaluated eagerly
         check(consume_comp(self, OP_BUILD_LIST, OP_LIST_APPEND));
         ((CompExpr*)Ctx__s_top(ctx()))->as_iter = true;
         consume(TK_RPAREN);
@@ -14819,7 +14819,7 @@ static Error* exprCall(Compiler* self) {
             c11_vector__push(CallExprKwArg, &e->kwargs, kw);
         } else {
             check(EXPR(self));
-            if(e->args.length == 0 && e->kwargs.length == 0 && match(TK_FOR)) {  // LYNX: f(x for x in y)
+            if(e->args.length == 0 && e->kwargs.length == 0 && match(TK_FOR)) {  // YW: f(x for x in y)
                 check(consume_comp(self, OP_BUILD_LIST, OP_LIST_APPEND));
                 ((CompExpr*)Ctx__s_top(ctx()))->as_iter = true;
                 c11_vector__push(Expr*, &e->args, Ctx__s_popx(ctx()));
@@ -16176,7 +16176,7 @@ static Error* eat_name(Lexer* self) {
 #undef less
 
     if(out != KW_COUNT && c11__sveq2(name, KW_BEGIN[out]) && (out + TK_FALSE) == TK_MATCH) {
-        // LYNX: "match" is a soft keyword (CPython): a name unless it starts a statement and is not followed by
+        // YW: "match" is a soft keyword (CPython): a name unless it starts a statement and is not followed by
         // ".", "=", "(", ")", ",", ":" or "]" (re.match(...), match = ..., def match(...))
         TokenIndex prev = self->nexts.length > 0 ? c11_vector__back(Token, &self->nexts).type : TK_SOF;
         const char* p = self->curr_char;
@@ -16225,7 +16225,7 @@ static Error* _eat_string(Lexer* self, c11_sbuf* buff, char quote, enum StringTy
             switch(eatchar_include_newline(self)) {
                 // For the list of available escape sequences see
                 // https://docs.python.org/3/reference/lexical_analysis.html#escape-sequences
-                case '\n': break;  // LYNX: a backslash before a line break continues the line
+                case '\n': break;  // YW: a backslash before a line break continues the line
                 case '"': c11_sbuf__write_char(buff, '"'); break;
                 case '\'': c11_sbuf__write_char(buff, '\''); break;
                 case '\\': c11_sbuf__write_char(buff, '\\'); break;
@@ -17918,9 +17918,9 @@ __NEXT_STEP:
     }
 
 #if PK_ENABLE_WATCHDOG
-    // LYNX: the host's supervisor thread raises a flag when the script runs past its time (no clock() per opcode);
+    // YW: the host's supervisor thread raises a flag when the script runs past its time (no clock() per opcode);
     // it stays raised until the host clears it, so an `except:` in the script cannot swallow it
-    if(py_lynx_interrupt) {
+    if(py_yw_interrupt) {
         TimeoutError("the script took too long");
         goto __ERROR;
     }
@@ -19085,9 +19085,9 @@ __ERROR_RE_RAISE:
     } while(0);
 
 #if PK_ENABLE_WATCHDOG
-    // LYNX: a script stopped for running too long is not given to its own `except:` / `finally:` handlers (an
+    // YW: a script stopped for running too long is not given to its own `except:` / `finally:` handlers (an
     // `except:` in a loop would catch the TimeoutError of every opcode again and again, growing without end)
-    int target = py_lynx_interrupt ? -1 : Frame__goto_exception_handler(frame, &self->stack, &self->unhandled_exc);
+    int target = py_yw_interrupt ? -1 : Frame__goto_exception_handler(frame, &self->stack, &self->unhandled_exc);
 #else
     int target = Frame__goto_exception_handler(frame, &self->stack, &self->unhandled_exc);
 #endif
@@ -33490,8 +33490,8 @@ static bool list__new__(int argc, py_Ref argv) {
             }
             if(!res) break;
             py_list_append(list, py_retval());
-            // LYNX: list() of a long iterator grows inside one call, where no opcode checks the heap limit
-            if(py_lynx_out_of_memory) {
+            // YW: list() of a long iterator grows inside one call, where no opcode checks the heap limit
+            if(py_yw_out_of_memory) {
                 py_shrink(2);
                 return RuntimeError("out of memory");
             }
@@ -33591,9 +33591,9 @@ static bool list__mul__(int argc, py_Ref argv) {
     if(py_istype(_1, tp_int)) {
         py_i64 n64 = py_toint(_1);
         List* list_0 = py_touserdata(_0);
-        // LYNX: the result's size is known: a repeat past the heap's room stops the script before it allocates
+        // YW: the result's size is known: a repeat past the heap's room stops the script before it allocates
         if(n64 > 0 && list_0->length > 0 &&
-           !py_lynx_heap_room(n64 > (py_i64)(0x7fffffff / list_0->length)
+           !py_yw_heap_room(n64 > (py_i64)(0x7fffffff / list_0->length)
                                   ? (size_t)-1
                                   : (size_t)n64 * (size_t)list_0->length * sizeof(py_TValue)))
             return RuntimeError("out of memory");

@@ -11,7 +11,7 @@
 #include <array>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct PlateReverb
 {
@@ -115,4 +115,4 @@ struct PlateReverb
         }
     }
 };
-} // namespace lynx
+} // namespace yw

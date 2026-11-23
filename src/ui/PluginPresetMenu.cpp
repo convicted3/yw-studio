@@ -13,7 +13,7 @@
 #include "ui/PluginWindow.h"
 #include "ui/Theme.h"
 
-namespace lynx::pluginpresetui
+namespace yw::pluginpresetui
 {
 namespace
 {
@@ -189,21 +189,21 @@ juce::File folderFor (const juce::String& pluginName)
 
 bool isPresetFile (const juce::File& file)
 {
-    return file.hasFileExtension ("lynxpreset;fxp;fxb;vstpreset");
+    return file.hasFileExtension ("ywpreset;fxp;fxb;vstpreset");
 }
 
 juce::Array<juce::File> userPresets (const juce::String& pluginName)
 {
-    auto files = folderFor (pluginName).findChildFiles (juce::File::findFiles, false, "*.lynxpreset;*.fxp;*.fxb;*.vstpreset");
+    auto files = folderFor (pluginName).findChildFiles (juce::File::findFiles, false, "*.ywpreset;*.fxp;*.fxb;*.vstpreset");
     std::sort (files.begin(), files.end(), [] (const juce::File& a, const juce::File& b) {
         return a.getFileName().compareNatural (b.getFileName()) < 0;
     });
     return files;
 }
 
-std::optional<pp::Preset> readLynxPreset (const juce::File& file)
+std::optional<pp::Preset> readYwPreset (const juce::File& file)
 {
-    if (! file.hasFileExtension ("lynxpreset") || file.getSize() > 64 * 1024 * 1024)
+    if (! file.hasFileExtension ("ywpreset") || file.getSize() > 64 * 1024 * 1024)
         return std::nullopt;
     return pp::fromText (file.loadFileAsString().toStdString());
 }
@@ -212,9 +212,9 @@ namespace
 {
 bool loadUnguarded (juce::AudioPluginInstance& plugin, const juce::File& file, juce::String& error)
 {
-    if (file.hasFileExtension ("lynxpreset"))
+    if (file.hasFileExtension ("ywpreset"))
     {
-        const auto preset = readLynxPreset (file);
+        const auto preset = readYwPreset (file);
         if (! preset)
         {
             error = tr ("This file is not a plugin preset.");
@@ -285,7 +285,7 @@ bool loadUnguarded (juce::AudioPluginInstance& plugin, const juce::File& file, j
 
 bool load (juce::AudioPluginInstance& plugin, const juce::File& file, juce::String& error)
 {
-    // round 190gg (B4): a plugin that crashes on a preset is switched off (as when it crashes while playing), not LYNX
+    // round 190gg (B4): a plugin that crashes on a preset is switched off (as when it crashes while playing), not YW
     auto ok = false;
     if (callPluginFromUi (plugin, "loading a preset", [&] { ok = loadUnguarded (plugin, file, error); }))
         return ok;
@@ -345,7 +345,7 @@ bool save (juce::AudioPluginInstance& plugin, const juce::File& file, const juce
 
 juce::String saveWildcard (juce::AudioPluginInstance& plugin)
 {
-    juce::String w = "*.lynxpreset";
+    juce::String w = "*.ywpreset";
     if (vst2::info (plugin))
         w << ";*.fxp;*.fxb";
     if (isVst3 (plugin))
@@ -355,8 +355,8 @@ juce::String saveWildcard (juce::AudioPluginInstance& plugin)
 
 bool applyFromBrowser (AudioEngine& engine, const juce::File& file, juce::String& message)
 {
-    const auto preset = readLynxPreset (file);
-    // the plugin this file is for: from a .lynxpreset, or the folder it is in (<Plugins>/<plugin name>/)
+    const auto preset = readYwPreset (file);
+    // the plugin this file is for: from a .ywpreset, or the folder it is in (<Plugins>/<plugin name>/)
     const auto folderName = file.getParentDirectory().getFileName();
     auto matches = [&] (juce::AudioPluginInstance& p) {
         if (preset)
@@ -446,7 +446,7 @@ bool applyFlPresetFromBrowser (AudioEngine& engine, const juce::File& file, juce
                 engine.auditionPreset (*p);
             return true;
         }
-    // nobody has it open: an instrument LYNX SHARE found becomes a new channel with the preset (as FL's Browser does)
+    // nobody has it open: an instrument YW Studio found becomes a new channel with the preset (as FL's Browser does)
     if (const auto d = engine.getPluginHost().findForeign (*f, true); d.has_value() && d->isInstrument)
     {
         PluginRef ref;
@@ -729,7 +729,7 @@ juce::PopupMenu PresetBar::presetsMenu()
         folder.createDirectory();
         folder.revealToUser();
     });
-    // round 190ao (LYNX's own, off by default): hear a preset at once
+    // round 190ao (YW's own, off by default): hear a preset at once
     if (onLoaded && plugin.getPluginDescription().isInstrument)
     {
         menu.addSeparator();
@@ -782,9 +782,9 @@ void PresetBar::saveAs()
 
 void PresetBar::loadFile()
 {
-    chooser = lynx::ui::makeFileChooser (tr ("Load preset"), folderFor (plugin.getName()), "*.lynxpreset;*.fxp;*.fxb;*.vstpreset;*.fst");
+    chooser = yw::ui::makeFileChooser (tr ("Load preset"), folderFor (plugin.getName()), "*.ywpreset;*.fxp;*.fxb;*.vstpreset;*.fst");
     juce::Component::SafePointer<PresetBar> safe (this);
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
         if (safe != nullptr && fc.getResult().existsAsFile())
             safe->apply ({ -1, fc.getResult(), fc.getResult().getFileNameWithoutExtension() });
     });
@@ -793,19 +793,19 @@ void PresetBar::loadFile()
 void PresetBar::exportFile()
 {
     const auto start = folderFor (plugin.getName()).getChildFile (juce::File::createLegalFileName (current.isEmpty() ? plugin.getName() : current) + pp::extension);
-    chooser = lynx::ui::makeFileChooser (tr ("Export preset"), start, saveWildcard (plugin));
+    chooser = yw::ui::makeFileChooser (tr ("Export preset"), start, saveWildcard (plugin));
     juce::Component::SafePointer<PresetBar> safe (this);
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
                               | juce::FileBrowserComponent::warnAboutOverwriting,
                           [safe] (const juce::FileChooser& fc) {
                               auto file = fc.getResult();
                               if (safe == nullptr || file == juce::File())
                                   return;
                               if (! isPresetFile (file))
-                                  file = file.withFileExtension ("lynxpreset");
+                                  file = file.withFileExtension ("ywpreset");
                               juce::String error;
                               if (! save (safe->plugin, file, file.getFileNameWithoutExtension(), error))
                                   juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Export preset"), error);
                           });
 }
-} // namespace lynx::pluginpresetui
+} // namespace yw::pluginpresetui

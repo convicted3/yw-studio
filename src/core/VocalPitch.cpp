@@ -4,24 +4,24 @@
 #include <cmath>
 #include <limits>
 
-#if (defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64)) && ! defined(LYNX_BREATH_SCALAR)
+#if (defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64)) && ! defined(YW_BREATH_SCALAR)
  #include "core/Simd.h" // (x86 SSE, or NEON through sse2neon)
- #define LYNX_BREATH_SIMD 1
+ #define YW_BREATH_SIMD 1
 #else
- #define LYNX_BREATH_SIMD 0
+ #define YW_BREATH_SIMD 0
 #endif
 
-namespace lynx::vocal
+namespace yw::vocal
 {
 namespace
 {
 constexpr double pi = 3.14159265358979323846;
 
-#if LYNX_BREATH_SIMD
+#if YW_BREATH_SIMD
 // The exactly rounded square root of four floats. Not _mm_sqrt_ps on ARM64: with SSE2NEON_PRECISE_SQRT (core/Simd.h)
 // sse2neon builds it from the reciprocal-square-root estimate and two Newton steps, which is not exactly rounded and
 // returns inf / NaN for inputs in the denormal range (a band's power while the voice has next to nothing there) —
-// round 190bb, a NaN in LYNX Tune's output on macOS arm64 only.
+// round 190bb, a NaN in YW Tune's output on macOS arm64 only.
 inline __m128 exactSqrt (__m128 x) noexcept
 {
  #if defined(__aarch64__) || defined(_M_ARM64)
@@ -861,7 +861,7 @@ float BreathNoise::process (float voice, float gain) noexcept
         rng ^= rng << 5;
         nz[b] = (float) ((double) rng / 2147483647.5 - 1.0);
     }
-#if LYNX_BREATH_SIMD
+#if YW_BREATH_SIMD
     // four bands at a time (element-wise mul / add / sqrt only: the same samples as the plain loops below)
     const auto fol = _mm_set1_ps (follow), zero = _mm_setzero_ps();
     auto sumP = zero, sumW = zero;
@@ -949,4 +949,4 @@ void BreathNoise::tidy() noexcept
         flush (power[b]);
     }
 }
-} // namespace lynx::vocal
+} // namespace yw::vocal

@@ -4,7 +4,7 @@
 #include <cctype>
 #include <cmath>
 
-namespace lynx::themes
+namespace yw::themes
 {
 namespace
 {
@@ -66,7 +66,7 @@ double contrastRatio (std::uint32_t a, std::uint32_t b)
 std::uint32_t readableTextOn (std::uint32_t background)
 {
     constexpr std::uint32_t white = 0xffffffff, dark = 0xff111214;
-    // white wins ties: LYNX's accent keeps its white text unless the colour is clearly light
+    // white wins ties: YW's accent keeps its white text unless the colour is clearly light
     return contrastRatio (white, background) * 1.7 >= contrastRatio (dark, background) ? white : dark;
 }
 
@@ -165,7 +165,7 @@ ButtonLook buttonLook (const Palette& p, ButtonKind kind, bool on, double hoverI
 {
     const auto hover = enabled ? std::clamp (hoverIn, 0.0, 1.0) : 0.0;
     const auto flat = kind != ButtonKind::secondary;
-    // text drawn on the accent keeps 4.5:1 (LYNX red with white text is 4.2:1: a hair deeper red where text sits on it)
+    // text drawn on the accent keeps 4.5:1 (YW red with white text is 4.2:1: a hair deeper red where text sits on it)
     const auto accentFill = flat ? p.accent : withContrast (p.accent, p.onAccent, textContrastFloor);
     ButtonLook look {};
 
@@ -229,12 +229,12 @@ Palette paletteFor (const Spec& spec)
 
 const char* menuStyleId (MenuStyle style)
 {
-    return style == MenuStyle::flClassic ? "flClassic" : "lynx";
+    return style == MenuStyle::flClassic ? "flClassic" : "yw";
 }
 
 MenuStyle menuStyleFromId (const std::string& id)
 {
-    return id == "flClassic" ? MenuStyle::flClassic : MenuStyle::lynxDark;
+    return id == "flClassic" ? MenuStyle::flClassic : MenuStyle::ywDark;
 }
 
 MenuColours menuColours (const Palette& p, MenuStyle style)
@@ -244,7 +244,7 @@ MenuColours menuColours (const Palette& p, MenuStyle style)
         // section band, a slate hover with white text. FL's band text is light (#E6EEF2, 2.4:1) and its shortcuts 4.5:1:
         // here dark band text (6.0:1) and a slightly darker shortcut grey (4.7:1)
         return { 0xffbbc4c9, 0xff5f686d, 0xff0f1f29, 0xff4c4e57, 0xff5e6870, 0xff919ca4, 0xff0f1f29, 0xff5e6c75, 0xffffffff, 0xff949ca2, 0xff0f1f29 };
-    // LYNX's dark menus: the band between bg3 and bg5 (FW-12)
+    // YW's dark menus: the band between bg3 and bg5 (FW-12)
     return { p.bg3, p.borderStrong, p.textPrimary, p.textSecondary, p.textDisabled, mix (p.bg3, p.bg5, 0.55), p.textSecondary, p.bg5, p.textPrimary,
              mix (p.border, p.borderStrong, 0.5), p.accent };
 }
@@ -513,4 +513,4 @@ bool parseHex (const std::string& textIn, std::uint32_t& argb)
     argb = 0xff000000u | value;
     return true;
 }
-} // namespace lynx::themes
+} // namespace yw::themes

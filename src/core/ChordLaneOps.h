@@ -9,7 +9,7 @@
 //  - the degree chords of the key at a point (the picker's first list: the Scale degree chord stamp's chords, round 190nu);
 //  - export: the chords as notes in a new pattern, the Chord pad's chord set, and time markers for formats without a chord
 //    track (.flp).
-// Patent desk check (/mnt/e/lynx-work/190pf/PATENT-GATE.md): detection stays ONE offline pass over stored notes / a stored
+// Patent desk check (/mnt/e/yw-work/190pf/PATENT-GATE.md): detection stays ONE offline pass over stored notes / a stored
 // clip with exact interval templates — no live estimate confirmed by a later pass (Apple US 9,852,721), no tuning offset
 // applied to the audio (US 9,804,818), no learned chord-sequence model refining the chords (Yamaha US 10,586,519).
 // Header only, no JUCE. Tested in tests/ChordLane190pfTests.inc.
@@ -27,7 +27,7 @@
 #include "core/MarkerPlan.h"
 #include "core/PlaylistOps.h"
 
-namespace lynx::chordlane
+namespace yw::chordlane
 {
 // A note as the song plays it: song ticks, MIDI key
 struct TimedNote
@@ -397,4 +397,4 @@ inline std::vector<Marker> markersWithChords (const std::vector<Marker>& markers
         *added = count;
     return out;
 }
-} // namespace lynx::chordlane
+} // namespace yw::chordlane

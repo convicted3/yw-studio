@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::slicex
+namespace yw::slicex
 {
 // A point of FL's curve record (envelopes, LFO amplitude, maps, the decks' editor curves)
 struct Point
@@ -129,7 +129,7 @@ struct Deck
     double beatStart() const noexcept;
     double beatEnd() const noexcept;
     // the sample's beat count: the embedded WAV's own (FL writes it there, ACID chunk; also for a sample that came
-    // without one), else the saved view range (a deck by reference, as LYNX writes one: its whole length)
+    // without one), else the saved view range (a deck by reference, as YW writes one: its whole length)
     double beats() const noexcept;
     // the editor's selection, in beats of the sample's grid like the shown range (start, end), −1 / −1 = none
     // (round 190aj, FL's own saves: a drag over 160 px of a deck showing 0.576…7.421 beats saved 1.78309…3.31693)
@@ -184,7 +184,7 @@ struct State
     bool operator== (const State&) const = default;
 };
 
-// FL's 0xD5 state (versions 1…6, as 0x10000…0x60003 or plain); nullopt when it is not a Slicex state LYNX can read
+// FL's 0xD5 state (versions 1…6, as 0x10000…0x60003 or plain); nullopt when it is not a Slicex state YW can read
 std::optional<State> parse (const std::vector<std::uint8_t>& bytes);
 // The state as FL writes it (the same bytes for a state FL wrote)
 std::vector<std::uint8_t> write (const State& state);
@@ -298,4 +298,4 @@ double wheelZoomFactor (double notches, bool fine) noexcept;
 // ---- the keyboard's marks (round 190hz, 0x898cf0): the keys that have regions on the current deck, in the full
 // display mode; deck A's in the other display modes
 inline int keyboardMarkDeck (int displayMode, int currentDeck) noexcept { return displayMode == 0 ? currentDeck : 0; }
-} // namespace lynx::slicex
+} // namespace yw::slicex

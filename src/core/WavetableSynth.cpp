@@ -1,6 +1,6 @@
-// Helix, LYNX's own wavetable synth (round 190ja, core/WavetableSynth.h). Evidence tags: [DATA] read in Live's saved
+// Helix, YW's own wavetable synth (round 190ja, core/WavetableSynth.h). Evidence tags: [DATA] read in Live's saved
 // sets / presets (the parameter set, ranges and defaults), [MEASURED] black-box Live 12.4 renders of the 190ja render
-// sets (docs/analise/REA_rodada190ja.md, the rows named), [MODEL] LYNX's own choice where no measurement decides.
+// sets (docs/analise/REA_rodada190ja.md, the rows named), [MODEL] YW's own choice where no measurement decides.
 
 #include "core/WavetableSynth.h"
 
@@ -25,7 +25,7 @@
 #define HELIX_LAMBDA_INLINE
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace wt
 {
@@ -116,7 +116,7 @@ HELIX_INLINE std::int64_t roundHalfAway (double x) noexcept
 
 float segment (float x, float slope) noexcept { return segmentInline (x, slope); }
 
-// --- Helix+ laws (round 190mi; LYNX's own [MODEL], no measurement decides them)
+// --- Helix+ laws (round 190mi; YW's own [MODEL], no measurement decides them)
 namespace
 {
 // the asymmetric split point of Asym + / − / ± (b −1…1)
@@ -229,7 +229,7 @@ double delayBeats (int index) noexcept
 
 std::array<double, 3> formantHz (double vowel) noexcept
 {
-    // A E I O U: textbook averages of adult vowel formants (F1, F2, F3), LYNX's own rounding
+    // A E I O U: textbook averages of adult vowel formants (F1, F2, F3), YW's own rounding
     static constexpr double f[5][3] { { 800, 1150, 2800 }, { 450, 1900, 2600 }, { 300, 2250, 3000 }, { 450, 850, 2600 }, { 330, 750, 2400 } };
     const auto v = std::clamp (vowel, 0.0, 1.0) * 4.0;
     const auto i = std::min ((int) v, 3);
@@ -237,7 +237,7 @@ std::array<double, 3> formantHz (double vowel) noexcept
     return { f[i][0] + (f[i + 1][0] - f[i][0]) * t, f[i][1] + (f[i + 1][1] - f[i][1]) * t, f[i][2] + (f[i + 1][2] - f[i][2]) * t };
 }
 
-// --- Helix+ 2 laws (round 190ml; LYNX's own [MODEL])
+// --- Helix+ 2 laws (round 190ml; YW's own [MODEL])
 void ChaosState::start (std::uint32_t s) noexcept
 {
     seed = s * 2654435761u + 0x9e3779b9u;
@@ -307,7 +307,7 @@ double shiftHz (double shift) noexcept
     return 5000.0 * shift * shift * shift;
 }
 
-// --- Helix round 3 laws (round 190mt; LYNX's own [MODEL])
+// --- Helix round 3 laws (round 190mt; YW's own [MODEL])
 double spectralShiftHz (double shift) noexcept
 {
     // ±1 → ±2 kHz, cubic like the shifter's: fine near 0 (0.1 = 2 Hz, 0.3 = 54 Hz, 0.5 = 250 Hz)
@@ -316,7 +316,7 @@ double spectralShiftHz (double shift) noexcept
 }
 double spectralExponent (double stretch) noexcept { return 1.0 + 0.5 * std::clamp (stretch, -1.0, 1.0); } // (0.5 … 1.5)
 
-// --- Helix round 4 laws (round 190oc; LYNX's own [MODEL])
+// --- Helix round 4 laws (round 190oc; YW's own [MODEL])
 double oscUnisonSpread (int u, int n) noexcept { return n > 1 ? 2.0 * (double) std::clamp (u, 0, n - 1) / (double) (n - 1) - 1.0 : 0.0; }
 int spectralUnisonStride (int n) noexcept
 {
@@ -811,7 +811,7 @@ HELIX_INLINE float filterSample (std::array<Svf, 2>& s, float x, const FilterCoe
 {
     if (c.circuit > 0)
         x = 2.0f * std::tanh (x * c.drive * 0.5f); // (the driven circuits saturate softly; Clean ignores Drive [190hs c0]; the ceiling
-                                                   // fitted on the 135 presets of 190ja W3: ±3 left LYNX +1.3 dB louder, ±1 −1.5 dB)
+                                                   // fitted on the 135 presets of 190ja W3: ±3 left YW +1.3 dB louder, ±1 −1.5 dB)
     auto y = filterStage (s[0], x, c);
     if (c.steep)
         y = filterStage (s[1], y, c);
@@ -1022,7 +1022,7 @@ struct Engine::Impl
         std::uint8_t f = 0;
         if (t >= tgt::lfo1 && t < tgt::lfo2 + 3)
             f |= lfoRowCell;
-        if (t == tgt::pitch && s == src::pitchBend) // (Pitch ← Pitch Bend is the channel's wheel in LYNX [MODEL])
+        if (t == tgt::pitch && s == src::pitchBend) // (Pitch ← Pitch Bend is the channel's wheel in YW [MODEL])
             f |= wheelCell;
         if (s <= src::lfo2 || s >= src::chaos1)
             f |= internalCell;
@@ -1460,7 +1460,7 @@ struct Engine::Impl
                 const bool lfoRow = (c.flags & lfoRowCell) != 0;
                 if (lfoRow != lfoRowsOnly)
                     continue;
-                // Pitch ← Pitch Bend is the channel's wheel in LYNX (its range is the channel's) [MODEL]
+                // Pitch ← Pitch Bend is the channel's wheel in YW (its range is the channel's) [MODEL]
                 if (c.flags & wheelCell)
                     continue;
                 const auto a = c.amount * ((c.flags & internalCell) ? internalScale : 1.0f);
@@ -2978,7 +2978,7 @@ struct Engine::Impl
         }
     }
 
-    // --- Helix+ 2's effects (round 190ml) [MODEL: LYNX's own designs from textbook parts]
+    // --- Helix+ 2's effects (round 190ml) [MODEL: YW's own designs from textbook parts]
     struct Fx2
     {
         // the shifter: four second-order all-pass sections on [path A L, A R, path B L, B R] (SIMD: one vector a stage);
@@ -3295,7 +3295,7 @@ struct Engine::Impl
                     fx.delayPos = 0;
             }
         }
-        // reverb: eight damped delay lines mixed by a Hadamard matrix (LYNX's own small FDN)
+        // reverb: eight damped delay lines mixed by a Hadamard matrix (YW's own small FDN)
         const bool reverbOn = xp (ext::reverbOn) > 0.5;
         if (reverbOn)
         {
@@ -3721,11 +3721,11 @@ std::vector<float> renderReference (const std::vector<double>& state, const std:
     return out;
 }
 } // namespace wt
-} // namespace lynx
+} // namespace yw
 
 // =====================================================================================================================
 // parameters, texts, the channel's values and the instrument
-namespace lynx
+namespace yw
 {
 namespace wt
 {
@@ -4597,4 +4597,4 @@ private:
 } // namespace
 
 std::unique_ptr<Instrument> makeHelixInstrument() { return std::make_unique<HelixInstrument>(); }
-} // namespace lynx
+} // namespace yw

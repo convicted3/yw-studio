@@ -5,13 +5,13 @@
 // Duplicate Loop (coverage live1:detail-019) [DOC Live 12 manual 8.9 "Looping Clips": "You can quickly duplicate the
 // loop's length and its contents via the Edit menu's Duplicate Loop command. In MIDI clips, any notes to the right of the
 // loop will be moved, so that they maintain their position relative to the end of the loop."; SHOT
-// /mnt/e/lynx-work/ableton187c/shots/live-01-velocity-lane.png: the Clip panel's "Duplicate" button under Start / End;
+// /mnt/e/yw-work/ableton187c/shots/live-01-velocity-lane.png: the Clip panel's "Duplicate" button under Start / End;
 // STR live-exe-strings-u16.txt 11787-11799: mpDuplicateLoopBang, DuplicateLoop in the ClipRegionPanel].
 //
 // Crop Clip (coverage live1:detail-020) [DOC Live 12 manual 8.11: "Crop Clip is used when cropping to the region between
 // start and end marker (in unlooped clips) or the start/loop start marker and loop end marker (in looped clips)"; 10.7.1:
 // "MIDI data that is outside of the loop brace can be deleted using the Crop Clip command"; SHOT
-// /mnt/e/lynx-work/details2_190ld/shots/ref/live-clip-menu.png: "Crop Clip  Ctrl+Shift+J" in the clip's menu].
+// /mnt/e/yw-work/details2_190ld/shots/ref/live-clip-menu.png: "Crop Clip  Ctrl+Shift+J" in the clip's menu].
 //
 // Randomize (coverage live1:detail-047) [DOC Live 12 manual 10.5.12: "Velocity values for selected notes (or notes with
 // selected markers) can be randomized by clicking on the Randomize button. If no notes or markers are selected, values
@@ -19,7 +19,7 @@
 // number shown in the slider."; SHOT ableton187c/shots/live-01-velocity-lane.png: the Velocity lane's footer
 // "Velocity  Randomize [100]"].
 //
-// LYNX's grid clip: with Loop on, Clip::offset / length are the loop brace and ClipGridSlot::startMarker sits inside it
+// YW's grid clip: with Loop on, Clip::offset / length are the loop brace and ClipGridSlot::startMarker sits inside it
 // (core/ClipBrace.h); with Loop off they are the Start / End markers. The clip's notes are its pattern's (ticks from the
 // pattern's start). JUCE-free, so the tests check the model.
 
@@ -31,10 +31,10 @@
 
 #include "core/Song.h"
 
-namespace lynx::cliploop
+namespace yw::cliploop
 {
 // The span a MIDI clip plays: [from, to) in pattern ticks (the loop brace with Loop on, Start..End with it off). The
-// Start marker never lies before the loop start in LYNX (ClipGridSlot::startMarker >= 0), so the reference's "start / loop
+// Start marker never lies before the loop start in YW (ClipGridSlot::startMarker >= 0), so the reference's "start / loop
 // start marker, whichever comes first" is the loop start.
 struct Span
 {
@@ -175,4 +175,4 @@ inline void randomizeVelocity (Pattern& p, const std::vector<int>& indices, int 
         n.velocity = (float) std::clamp (steps + by (random), 1, 127) / 127.0f;
     }
 }
-} // namespace lynx::cliploop
+} // namespace yw::cliploop

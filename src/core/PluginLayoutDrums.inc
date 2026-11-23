@@ -4,7 +4,7 @@
 // Positions are FL's own control places read from each plugin's editor form (the binary DFM of TSynthEditorForm in
 // the plugin's DLL: Left/Top/Width/Height of the control whose Tag is the parameter index; docs/analise/
 // REA_rodada168p.md §1), so FL users find every control where they expect it. Sections, captions and the drawing are
-// LYNX's own (FL draws its captions into bitmaps; nothing of FL's artwork is used). Value items name the knobs of
+// YW's own (FL draws its captions into bitmaps; nothing of FL's artwork is used). Value items name the knobs of
 // ChannelSettings' model panel (src/ui/ChannelSettingsDrums.inc); values are 0..1 over each knob's range.
 
 // --- option lists -------------------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ Layout drumaxx()
 {
     // the 16 pads in two banks of eight (1-8 / 9-16, the page tabs), each with its volume, pan, mute and solo and a
     // play pad that also selects it; the selected pad's voice (Drumpad's controls) below; the master EQ and limiter
-    // at the bottom. Drumaxx's pattern sequencer is not played by LYNX (REA_rodada67 §9), so no panel for it (round 172a).
+    // at the bottom. Drumaxx's pattern sequencer is not played by YW (REA_rodada67 §9), so no panel for it (round 172a).
     Layout l;
     l.fl = "Drumaxx";
     l.width = 762;
@@ -444,7 +444,7 @@ Layout sakura()
 
 Layout slayer()
 {
-    // FL Slayer's guitar in LYNX's panels, in the form's order: STRINGS / COILS / PICKUP at the top, the playing
+    // FL Slayer's guitar in YW's panels, in the form's order: STRINGS / COILS / PICKUP at the top, the playing
     // controls (TONE, SLAP, FRET, HARMONIC, DAMP, velocity), the AID mode and timing, then AMP, EQ, CABINET and FX
     Layout l;
     l.fl = "FL Slayer";

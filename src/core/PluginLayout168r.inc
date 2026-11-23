@@ -3,7 +3,7 @@
 //
 // FL effects: the arrangement of FL Studio 2026's own editor form (the TSynthEditorForm resource of each plugin DLL,
 // read as a layout reference only — positions, sizes, control kinds and ranges; docs/analise/REA_rodada168r.md §2),
-// drawn in LYNX's style. LYNX's own built-ins: LYNX's own design (§3).
+// drawn in YW's style. YW's own built-ins: YW's own design (§3).
 
 // --- FL's generic "Fruity" cells (Fast LP, Bass Boost, Delay, Center, Phase Inverter): FL's bevels sit 165 apart from x = 5
 
@@ -69,7 +69,7 @@ Layout flPhaseInverter()
 
 Layout fl7BandEq()
 {
-    // FL: seven vertical ±18 dB faders 47.5 apart, the band's frequency under each (340 × 150); LYNX adds the curve
+    // FL: seven vertical ±18 dB faders 47.5 apart, the band's frequency under each (340 × 150); YW adds the curve
     Layout l;
     l.fl = "Fruity 7 Band EQ";
     l.width = 340;
@@ -264,10 +264,10 @@ Layout pitcherLayout()
     return l;
 }
 
-// --- LYNX's own simple built-ins: LYNX's own design (a graph of what the setting does on top, the controls in titled
+// --- YW's own simple built-ins: YW's own design (a graph of what the setting does on top, the controls in titled
 // sections under it; captions above the knobs, values under them) -------------------------------------------------
 
-Layout lynxEq()
+Layout ywEq()
 {
     Layout l;
     l.width = 420;
@@ -283,7 +283,7 @@ Layout lynxEq()
     return l;
 }
 
-Layout lynxDelay()
+Layout ywDelay()
 {
     Layout l;
     l.width = 420;
@@ -300,7 +300,7 @@ Layout lynxDelay()
     return l;
 }
 
-Layout lynxReverb()
+Layout ywReverb()
 {
     Layout l;
     l.width = 460;
@@ -324,7 +324,7 @@ Layout lynxReverb()
     return l;
 }
 
-Layout lynxLimiter()
+Layout ywLimiter()
 {
     Layout l;
     l.width = 380;
@@ -340,7 +340,7 @@ Layout lynxLimiter()
     return l;
 }
 
-Layout lynxFilter()
+Layout ywFilter()
 {
     Layout l;
     l.width = 400;
@@ -357,7 +357,7 @@ Layout lynxFilter()
     return l;
 }
 
-Layout lynxDistortion()
+Layout ywDistortion()
 {
     Layout l;
     l.width = 400;
@@ -373,7 +373,7 @@ Layout lynxDistortion()
     return l;
 }
 
-Layout lynxChorus()
+Layout ywChorus()
 {
     Layout l;
     l.width = 380;
@@ -388,7 +388,7 @@ Layout lynxChorus()
     return l;
 }
 
-Layout lynxUtility()
+Layout ywUtility()
 {
     Layout l;
     l.width = 420;
@@ -406,7 +406,7 @@ Layout lynxUtility()
     return l;
 }
 
-Layout lynxLofi()
+Layout ywLofi()
 {
     Layout l;
     l.width = 360;
@@ -422,7 +422,7 @@ Layout lynxLofi()
     return l;
 }
 
-Layout lynxCrossover()
+Layout ywCrossover()
 {
     Layout l;
     l.width = 420;
@@ -442,7 +442,7 @@ Layout lynxCrossover()
     return l;
 }
 
-Layout lynxPitchShift()
+Layout ywPitchShift()
 {
     Layout l;
     l.width = 400;
@@ -457,7 +457,7 @@ Layout lynxPitchShift()
     return l;
 }
 
-Layout lynxFreqShift()
+Layout ywFreqShift()
 {
     Layout l;
     l.width = 380;
@@ -471,7 +471,7 @@ Layout lynxFreqShift()
     return l;
 }
 
-Layout lynxRhythm()
+Layout ywRhythm()
 {
     // the curve on top; Period, Points and Control only; each point's position, level and tension (6 per page)
     Layout l;
@@ -512,7 +512,7 @@ Layout lynxRhythm()
     return l;
 }
 
-Layout lynxStepGate()
+Layout ywStepGate()
 {
     // the 32 steps as bars (two bars of sixteenths), the mix and the edges
     Layout l;

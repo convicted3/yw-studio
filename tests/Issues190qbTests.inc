@@ -4,9 +4,9 @@
 
 TEST (issues190qb_215_folders_in_the_export_name)
 {
-    using namespace lynx::exportnaming;
+    using namespace yw::exportnaming;
     Context c;
-    c.project = "LYNX SHARE";
+    c.project = "YW Studio";
     c.year = 2026;
     c.month = 11;
     c.day = 20;
@@ -16,12 +16,12 @@ TEST (issues190qb_215_folders_in_the_export_name)
     c.format = "WAV";
     c.track = "Master";
     // the issue's two templates: without and with a folder (a leading "/" = inside the export folder)
-    CHECK (resolve ("$project_D$day-M$month-Y$year_$bpm-BPM_$samplerateHz-$bitdepth", c) == "LYNX SHARE_D20-M11-Y2026_130-BPM_48000Hz-24bit");
-    CHECK (resolve ("/BOUNCE/$project_D$day-M$month-Y$year_$bpm-BPM_$samplerateHz-$bitdepth", c) == "BOUNCE/LYNX SHARE_D20-M11-Y2026_130-BPM_48000Hz-24bit");
-    CHECK (resolve ("BOUNCE/$project", c) == "BOUNCE/LYNX SHARE");
-    CHECK (resolve ("BOUNCE\\$project", c) == "BOUNCE/LYNX SHARE"); // (a backslash too, always "/" out)
+    CHECK (resolve ("$project_D$day-M$month-Y$year_$bpm-BPM_$samplerateHz-$bitdepth", c) == "YW Studio_D20-M11-Y2026_130-BPM_48000Hz-24bit");
+    CHECK (resolve ("/BOUNCE/$project_D$day-M$month-Y$year_$bpm-BPM_$samplerateHz-$bitdepth", c) == "BOUNCE/YW Studio_D20-M11-Y2026_130-BPM_48000Hz-24bit");
+    CHECK (resolve ("BOUNCE/$project", c) == "BOUNCE/YW Studio");
+    CHECK (resolve ("BOUNCE\\$project", c) == "BOUNCE/YW Studio"); // (a backslash too, always "/" out)
     // wildcards in folders, nested
-    CHECK (resolve ("Bounces/$year/$month/$project", c) == "Bounces/2026/11/LYNX SHARE");
+    CHECK (resolve ("Bounces/$year/$month/$project", c) == "Bounces/2026/11/YW Studio");
     // a "/" inside a value stays a character ("_"): the template is split before the wildcards are filled
     c.project = "AC/DC";
     CHECK (resolve ("$project", c) == "AC_DC");

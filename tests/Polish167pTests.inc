@@ -5,8 +5,8 @@
 
 TEST (polish167p_submenu_beside_outer_edge)
 {
-    using lynx::menuplace::Box;
-    using lynx::menuplace::placeSubmenu;
+    using yw::menuplace::Box;
+    using yw::menuplace::placeSubmenu;
     const Box screen { 0, 0, 1920, 1040 };
     // a two-column menu at x 195..525; "Insert" in the first column (right edge 515) at y 398
     const Box parent { 195, 170, 330, 470 }, insert { 200, 398, 315, 21 };
@@ -24,7 +24,7 @@ TEST (polish167p_submenu_beside_outer_edge)
 
 TEST (polish167p_midiout_knob_cell)
 {
-    using namespace lynx::midiout::view;
+    using namespace yw::midiout::view;
     // the editor's cells (round 167p): 240 x 100
     for (const auto& cellBox : { Rect { 0, 0, 240, 100 }, Rect { 0, 0, 180, 80 }, Rect { 10, 20, 300, 120 } })
     {
@@ -40,7 +40,7 @@ TEST (polish167p_midiout_knob_cell)
         CHECK (! c.label.intersects (c.gear));
         CHECK (c.label.bottom() + rowGap <= cellBox.bottom());
     }
-    lynx::midiout::Control c;
+    yw::midiout::Control c;
     CHECK (look (c) == Look::unassigned);
     CHECK (readout (c, 0).empty()); // no "0" inside an unset knob
     c.number = 74;

@@ -1,7 +1,7 @@
 #pragma once
 
-// Game controller control (round 184a, slice S16; design: /mnt/e/lynx-work/simple184a/DESIGN.md §4.2). FL Studio Mobile
-// can be driven with a game pad; LYNX does it on the desktop, for every layout style, off by default (Settings › MIDI ›
+// Game controller control (round 184a, slice S16; design: /mnt/e/yw-work/simple184a/DESIGN.md §4.2). FL Studio Mobile
+// can be driven with a game pad; YW does it on the desktop, for every layout style, off by default (Settings › MIDI ›
 // "Use a game controller"). This is the plain logic: the pad's state as XInput reports it, dead zones and curves, the
 // default map of buttons to actions, and the MIDI controllers each button and axis also sends, so any of them can be
 // linked to any parameter through the usual Link to controller (the pad is then one more MIDI source). No JUCE; the
@@ -10,7 +10,7 @@
 #include <array>
 #include <cstdint>
 
-namespace lynx::gamepad
+namespace yw::gamepad
 {
 // One pad's state, in XInput's units (XINPUT_GAMEPAD): button bits, triggers 0…255, sticks −32768…32767.
 struct State
@@ -101,4 +101,4 @@ Changes compare (const State& before, const State& now) noexcept;
 
 // Gains in dB per poll for the trigger volume (`dt` seconds since the last poll): −dB from LT, +dB from RT.
 double volumeStepDb (const State& s, double dt) noexcept;
-} // namespace lynx::gamepad
+} // namespace yw::gamepad

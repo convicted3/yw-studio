@@ -2,7 +2,7 @@
 
 // MIDI messages as automatable "parameters" of a hosted plugin, like FL's plugin wrapper (REA_rodada22 §2.1): past
 // the plugin's own parameters, index 0x1000 + n is MIDI CC n (0…127) and 0x1080 + c is the channel pressure
-// (aftertouch) of MIDI channel c + 1. LYNX adds 0x1090 + c, the pitch bend of MIDI channel c + 1 (FL bends through
+// (aftertouch) of MIDI channel c + 1. YW adds 0x1090 + c, the pitch bend of MIDI channel c + 1 (FL bends through
 // the channel's pitch knob instead). An automation clip, a pattern event lane or a MIDI link on such an index sends
 // the message to the plugin whenever its 7-bit (14-bit for the bend) value changes; a .flp's automation of the
 // wrapper's index arrives here unchanged.
@@ -14,11 +14,11 @@
 #include <string>
 #include <vector>
 
-namespace lynx::midictl
+namespace yw::midictl
 {
 constexpr int ccBase = 0x1000;       // + CC number 0…127
 constexpr int pressureBase = 0x1080; // + MIDI channel 0…15
-constexpr int pitchBendBase = 0x1090; // + MIDI channel 0…15 (LYNX)
+constexpr int pitchBendBase = 0x1090; // + MIDI channel 0…15 (YW)
 constexpr int end = 0x10A0;
 constexpr int count = end - ccBase;
 
@@ -78,7 +78,7 @@ inline int message (int param, int value, int midiChannel, std::uint8_t out[3]) 
     return 0;
 }
 
-// FL's MIDI Out state (REA_rodada16 §1.1): what LYNX reads and edits of it. The rest of FL's bytes (control
+// FL's MIDI Out state (REA_rodada16 §1.1): what YW reads and edits of it. The rest of FL's bytes (control
 // definitions, page names) are kept as they are.
 struct MidiOutSettings
 {
@@ -163,4 +163,4 @@ private:
     std::array<int, count> sent {};
     std::atomic<bool> dirty { false };
 };
-} // namespace lynx::midictl
+} // namespace yw::midictl

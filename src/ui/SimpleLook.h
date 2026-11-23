@@ -8,7 +8,7 @@
 
 #include <juce_graphics/juce_graphics.h>
 
-namespace lynx::ui::simplelook
+namespace yw::ui::simplelook
 {
 inline bool& largeControls()
 {
@@ -16,7 +16,7 @@ inline bool& largeControls()
     return on;
 }
 
-// Round 190oo (design review 2, option O-4 / CS-28, a LYNX extra, off by default): the project's name centred at the
+// Round 190oo (design review 2, option O-4 / CS-28, a YW extra, off by default): the project's name centred at the
 // top of the Simple layout's top bar, over the capsules, as BandLab shows "New Project" (View › "Project name at the
 // top (BandLab)" in the Simple layout; Settings › YW Studio extras "simple.projectName"; ui-options.txt simpleProjectName).
 // Off: the top bar is as before.
@@ -61,7 +61,7 @@ inline juce::Colour inkOn (juce::Colour fill)
 }
 
 // --- the Simple workflow's small vector glyphs (round 190jc, design190ia SG-7..SG-10, SG-12: no more 2-5 px text glyphs
-// for ‹ › × − +). LYNX's own shapes, stroked with round caps; `r` is the glyph's box, drawn centred in it.
+// for ‹ › × − +). YW's own shapes, stroked with round caps; `r` is the glyph's box, drawn centred in it.
 enum class Glyph { chevronLeft, chevronRight, cross, plus, minus, piano, keyboard, notes, fx, pads, dials, headphones, drumMachine, tracker };
 
 inline void drawGlyph (juce::Graphics& g, Glyph glyph, juce::Rectangle<float> r, juce::Colour colour, float stroke = 1.5f)
@@ -169,7 +169,7 @@ inline void drawGlyph (juce::Graphics& g, Glyph glyph, juce::Rectangle<float> r,
             g.fillRect (juce::Rectangle<float> (r.getX(), r.getBottom() - stroke * 0.7f, r.getWidth(), stroke * 0.7f));
             return;
         }
-        case Glyph::fx: // the Effects: a knob with its pointer and a short arc (LYNX's own "effect" sign)
+        case Glyph::fx: // the Effects: a knob with its pointer and a short arc (YW's own "effect" sign)
         {
             const auto d = juce::jmin (r.getWidth(), r.getHeight()) - stroke;
             const auto knob = juce::Rectangle<float> (d, d).withCentre (c);
@@ -199,7 +199,7 @@ inline void drawGlyph (juce::Graphics& g, Glyph glyph, juce::Rectangle<float> r,
                                                                              b.getY() + b.getHeight() * (i < 3 ? 0.53f : 0.77f) }));
             return;
         }
-        case Glyph::tracker: // round 190nw, the Tracker tab (LYNX's own mark): two columns of rows, a cursor row lit
+        case Glyph::tracker: // round 190nw, the Tracker tab (YW's own mark): two columns of rows, a cursor row lit
         {
             const auto side = juce::jmin (r.getWidth(), r.getHeight()) - stroke;
             const auto b = juce::Rectangle<float> (side, side * 0.86f).withCentre (c);
@@ -226,4 +226,4 @@ inline void drawGlyph (juce::Graphics& g, Glyph glyph, juce::Rectangle<float> r,
         }
     }
 }
-} // namespace lynx::ui::simplelook
+} // namespace yw::ui::simplelook

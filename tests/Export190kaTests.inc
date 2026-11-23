@@ -23,7 +23,7 @@ inline std::vector<float> testSine (double hz, double rate, std::size_t n, doubl
 
 TEST (export190ka_formats_names_extensions_and_order)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     CHECK (formatCount == 6 && (int) Format::aiff == 4 && (int) Format::aac == 5); // (appended: saved numbers keep their meaning)
     CHECK (std::string (extension (Format::aiff)) == ".aif" && std::string (extension (Format::aac)) == ".m4a");
     CHECK (std::string (extension (Format::wav)) == ".wav" && std::string (extension (Format::flac)) == ".flac");
@@ -59,7 +59,7 @@ TEST (export190ka_formats_names_extensions_and_order)
 
 TEST (export190ka_settings_round_trip_and_old_files)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     Options o;
     o.format = Format::aiff;
     o.aiffBits = 16;
@@ -94,7 +94,7 @@ TEST (export190ka_settings_round_trip_and_old_files)
 
 TEST (export190ka_size_estimate_and_fl_mask)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     Options o;
     o.sampleRate = 48000.0;
     o.format = Format::aiff;
@@ -128,7 +128,7 @@ TEST (export190ka_size_estimate_and_fl_mask)
 
 TEST (export190ka_aac_rates)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     CHECK (aacDecimation (44100.0) == 1 && aacSampleRate (44100.0) == 44100.0);
     CHECK (aacDecimation (48000.0) == 1 && aacSampleRate (48000.0) == 48000.0);
     CHECK (aacDecimation (88200.0) == 2 && aacSampleRate (88200.0) == 44100.0);
@@ -140,7 +140,7 @@ TEST (export190ka_aac_rates)
 
 TEST (export190ka_decimate_keeps_the_band_and_its_timing)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     using namespace export190ka;
     // 1 kHz at 96 kHz halved: the same sine at 48 kHz, in time (no delay), to the 16-bit noise floor
     {

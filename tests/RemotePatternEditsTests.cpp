@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <stdexcept>
 
-using namespace lynx;
+using namespace yw;
 namespace
 {
 void check (bool condition, const char* message)
@@ -238,7 +238,7 @@ void metadataAndValidation()
     check (resized.song.playlist[0].length == 1500 && resized.song.arrangements[1].clips[0].length == 3840,
            "length following did not preserve trimmed clips or update stored arrangements");
     check (remote_patterns::set (original, 0, {}, 0).song.patterns[0].lengthTicks == 0, "automatic length was refused");
-    // Round 190ha: only what LYNX's pattern length box can set, 0 (automatic) or 1..999 whole bars of the song's meter
+    // Round 190ha: only what YW's pattern length box can set, 0 (automatic) or 1..999 whole bars of the song's meter
     check (remote_patterns::set (original, 0, {}, 999 * 3840).song.patterns[0].lengthTicks == 999 * 3840, "999 bars were refused");
     for (const auto ticks : { std::int64_t (960), std::int64_t (5760), std::int64_t (3841), std::int64_t (1000) * 3840 })
         refuses ([&] { remote_patterns::set (original, 0, {}, ticks); });

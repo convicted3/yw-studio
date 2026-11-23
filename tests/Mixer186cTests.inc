@@ -4,7 +4,7 @@
 
 TEST (mixer186c_delete_tracks_reroutes_feeders_and_skips_master)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (8);
     // 1 → 2 (only), 2 → 5 and the Master; 3 → 2 as a level-0 sidechain link (no signal)
@@ -30,7 +30,7 @@ TEST (mixer186c_delete_tracks_reroutes_feeders_and_skips_master)
 
 TEST (mixer186c_delete_tracks_linked_playlist_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (6);
     song.channels.resize (1);
@@ -72,7 +72,7 @@ TEST (mixer186c_delete_tracks_linked_playlist_tracks)
 
 TEST (mixer186c_keep_lost_links_option)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (6);
     song.mixer[3].name = "Bus";
@@ -105,7 +105,7 @@ TEST (mixer186c_keep_lost_links_option)
 
 TEST (mixer186c_groups_follow_the_playlist_and_arrange)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (8);
     for (int t = 1; t <= 8; ++t)

@@ -115,9 +115,9 @@ inline Bytes song (std::initializer_list<Bytes> racksAndChannels, double tempo =
     return out;
 }
 
-inline lynx::FlmImportOptions anyFile (lynx::FlpImportReport* report)
+inline yw::FlmImportOptions anyFile (yw::FlpImportReport* report)
 {
-    lynx::FlmImportOptions o;
+    yw::FlmImportOptions o;
     o.common.projectFolder = "E:/flm/Song";
     o.resourceRoot = "C:/FLM";
     o.common.fileExists = [] (const std::string& p) { return p.find ("E:/flm/Song/") == 0 || p.find ("C:/FLM/") == 0; };
@@ -126,20 +126,20 @@ inline lynx::FlmImportOptions anyFile (lynx::FlpImportReport* report)
 }
 
 // the imported song played from its start: a mono test sample for every file (`frames` of `value` at 44.1 kHz)
-inline std::vector<float> rendered (const lynx::Song& song, double seconds, float value = 0.5f, int frames = 44100, std::vector<float>* right = nullptr)
+inline std::vector<float> rendered (const yw::Song& song, double seconds, float value = 0.5f, int frames = 44100, std::vector<float>* right = nullptr)
 {
     constexpr double rate = 44100.0;
-    auto state = lynx::RackState::build (song, nullptr, rate, [value, frames] (const std::string&) -> std::shared_ptr<const lynx::SampleData> {
-        auto d = std::make_shared<lynx::SampleData>();
+    auto state = yw::RackState::build (song, nullptr, rate, [value, frames] (const std::string&) -> std::shared_ptr<const yw::SampleData> {
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign ((std::size_t) frames, value);
         d->sampleRate = 44100.0;
         return d;
     });
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (rate, 2048);
     const auto total = (std::size_t) (seconds * rate);
     std::vector<float> l (total, 0.0f), r (total, 0.0f);
-    const auto perSample = lynx::ticksPerSample (song.bpm, rate);
+    const auto perSample = yw::ticksPerSample (song.bpm, rate);
     double tick = 0.0;
     for (std::size_t pos = 0; pos < total; pos += 256)
     {
@@ -155,7 +155,7 @@ inline std::vector<float> rendered (const lynx::Song& song, double seconds, floa
 
 TEST (flm190bs_sample_slot_fields_and_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     t::Pad pad { "Hat", { 0.7143f, 0.25f, 0.75f, 0.0f, 1.0f, 0.5f, 0.3f, 0.4f, 0.6f, 0.2f, 0.9f }, true, 0.25, 2, false, 1, 1.5, 3.0, 7 };
     const auto bytes = t::song ({ t::rack (flm::kindMaster, {}), t::rack (flm::kindNormal, {}, { t::sampleOf (pad) }),
@@ -190,7 +190,7 @@ TEST (flm190bs_sample_slot_fields_and_laws)
 
 TEST (flm190bs_drum_pads_take_their_settings)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     namespace sp = flm::samplepad;
     const std::vector<float> d (sp::defaults, sp::defaults + sp::count);
@@ -271,7 +271,7 @@ TEST (flm190bs_drum_pads_take_their_settings)
 // attack towards 5 and clipped at 1, then the decay towards EG S; the release towards 0 only on a lane that holds notes.
 TEST (flm190bs_pad_envelope_in_the_sampler)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto sample = [] {
         auto d = std::make_shared<SampleData>();
         d->left.assign (44100 * 3, 1.0f);
@@ -365,7 +365,7 @@ TEST (flm190bs_pad_envelope_in_the_sampler)
     CHECK (std::abs (later[0] / unit - 0.125f) < 2e-3f);                        // 0.5·(0.5)² = 0.125 s in
     CHECK (earlier[5000] == 0.0f && std::abs (earlier[5512 + 441] / unit - 0.01f) < 2e-3f); // 0.125 s of silence first
 
-    // editing the ADSR by hand goes back to LYNX's own envelope
+    // editing the ADSR by hand goes back to YW's own envelope
     SamplerSettings edited;
     edited.flmPad = shaped;
     samplerparam::set (edited, samplerparam::attack, 0.1f);
@@ -374,7 +374,7 @@ TEST (flm190bs_pad_envelope_in_the_sampler)
 
 TEST (flm190bs_drum_pads_render_at_their_level)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     namespace sp = flm::samplepad;
     const std::vector<float> d (sp::defaults, sp::defaults + sp::count);
@@ -399,7 +399,7 @@ TEST (flm190bs_drum_pads_render_at_their_level)
 
 TEST (flm190bs_audio_clips_take_their_slot_settings)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     namespace sp = flm::samplepad;
     const std::vector<float> d (sp::defaults, sp::defaults + sp::count);
@@ -479,7 +479,7 @@ TEST (flm190bs_audio_clips_take_their_slot_settings)
     CHECK (channelOf (one ("Bend")).sampler.pitch == 24.0f);
     CHECK (report.partialEffects.count ("FL Studio Mobile: audio clip Speed automation (the first value is used)") == 1
            && report.notReproduced.count ("FL Studio Mobile: audio clip automation of other sample settings (not imported)") == 1
-           && report.partialEffects.count ("FL Studio Mobile: audio clip time-stretch (LYNX's stretcher, approximated)") == 1
+           && report.partialEffects.count ("FL Studio Mobile: audio clip time-stretch (YW's stretcher, approximated)") == 1
            && report.partialEffects.count ("FL Studio Mobile: audio clip time-stretch (played unstretched)") == 0);
     CHECK (report.converted.count ("FL Studio Mobile: looped audio clip") == 1 && report.converted.count ("FL Studio Mobile: audio clip level") == 1
            && report.converted.count ("FL Studio Mobile: audio clip envelope (automation)") == 1);
@@ -487,7 +487,7 @@ TEST (flm190bs_audio_clips_take_their_slot_settings)
 
 TEST (flm190bs_audio_clip_levels_render)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     const auto level = [] (double beat, int value, bool user = true) { return flm182c::Ev { beat, 0.0, user ? 1 : -1, 200, 127, value }; };
     const auto half = (int) std::lround (65534.0 * 0.7143);
@@ -514,7 +514,7 @@ TEST (flm190bs_audio_clip_levels_render)
 
 TEST (flm190bs_note_effects_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace fx = flmnotefx;
     // Transpose: Octave round(8v − 4), Semitone round(24v − 12); off = nothing
     CHECK (fx::transposeShift (std::vector<float> { 1.0f, 0.5f, 0.5f }) == 0);
@@ -590,7 +590,7 @@ TEST (flm190bs_note_effects_laws)
 
 TEST (flm190bs_note_effects_and_key_ranges_on_import)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     std::vector<float> scale { 1.0f, 0.0f, 1.0f / 33.0f, 0.0f }; // C major, Snap off: a filter
     for (int i = 0; i < 12; ++i)
@@ -639,7 +639,7 @@ TEST (flm190bs_note_effects_and_key_ranges_on_import)
 
 TEST (flm190bs_rack_with_several_instruments_is_a_layer)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     const std::string device = "/storage/emulated/0/Android/data/com.imageline.FLM/files/My Samples/";
     const auto bytes = t::song ({
@@ -678,9 +678,9 @@ TEST (flm190bs_rack_with_several_instruments_is_a_layer)
     CHECK (std::abs (l[4410]) > 0.05f && std::abs (l[22050 + 4410]) > 0.05f);
 }
 
-TEST (flm190bs_soundfont_player_is_lynx_soundfont)
+TEST (flm190bs_soundfont_player_is_yw_soundfont)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     const auto state = [] (const std::string& path, int patch) {
         t::Bytes b;
@@ -712,9 +712,9 @@ TEST (flm190bs_soundfont_player_is_lynx_soundfont)
     CHECK (std::abs (seconds (p[sf::pAttack]) - 1.44703) < 2e-3 && std::abs (seconds (p[sf::pDecay]) - 2.5 * 0.237637) < 2e-3
            && std::abs (seconds (p[sf::pRelease]) - 2.5 * 1.44703) < 5e-3);
     CHECK (std::abs (p[sf::pSustain] - (float) std::pow (10.0, -5.0 + 5.0 * std::pow (64.0 / 127.0, 0.2))) < 1e-5f && p[sf::pVelocityCurve] == 1.0f);
-    // Original: the font's own envelope (LYNX's knobs at "Preset")
+    // Original: the font's own envelope (YW's knobs at "Preset")
     const auto o = sf::readParams (original->modelParams);
     CHECK (original->instrument == InstrumentKind::soundfont && o[sf::pAttack] == 0.0f && o[sf::pDecay] == 0.0f && o[sf::pSustain] == 0.0f && o[sf::pRelease] == 0.0f);
-    CHECK (report.converted["FL Studio Mobile: SoundFont Player (LYNX Soundfont)"] == 2 && report.unsupported.count ("FL Studio Mobile: SoundFont Player") == 0
+    CHECK (report.converted["FL Studio Mobile: SoundFont Player (YW Soundfont)"] == 2 && report.unsupported.count ("FL Studio Mobile: SoundFont Player") == 0
            && report.partialEffects.count ("FL Studio Mobile: SoundFont Player (level and envelope shape approximated)") == 1);
 }

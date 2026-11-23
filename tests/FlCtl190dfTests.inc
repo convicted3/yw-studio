@@ -1,14 +1,14 @@
 // Round 190df: FL's multilink menu (MLWheelMenu), sample history, channel envelope presets (.CHENV), the sampler's FL
 // voice as the Envelope / instrument page sees it and the plugin spare state (core/FlControlMenus.h). FL facts in
-// /mnt/e/lynx-work/flctl190df/FL-FACTS.md.
+// /mnt/e/yw-work/flctl190df/FL-FACTS.md.
 namespace flctl190df
 {
-inline std::vector<std::string> texts (const std::vector<lynx::mlmenu::Entry>& entries)
+inline std::vector<std::string> texts (const std::vector<yw::mlmenu::Entry>& entries)
 {
     std::vector<std::string> out;
     for (const auto& e : entries)
-        out.push_back (e.kind == lynx::mlmenu::Entry::Kind::separator ? std::string ("-")
-                       : e.kind == lynx::mlmenu::Entry::Kind::caption ? "[" + e.text + "]"
+        out.push_back (e.kind == yw::mlmenu::Entry::Kind::separator ? std::string ("-")
+                       : e.kind == yw::mlmenu::Entry::Kind::caption ? "[" + e.text + "]"
                                                                        : e.text);
     return out;
 }
@@ -17,7 +17,7 @@ inline bool near (double a, double b, double tolerance = 1.0e-7) { return std::a
 
 TEST (flctl190df_multilink_menu_is_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     // multilink on, two queued controls: FL's live menu (shot link190bt-09a), top to bottom
     const std::vector<std::string> on = { "[2 parameters selected]", "[Automation]", "Edit events", "Init song with these positions",
                                           "Init pattern with these positions", "-", "Create automation clips", "[Remote control]",
@@ -46,7 +46,7 @@ TEST (flctl190df_multilink_menu_is_fls)
 
 TEST (flctl190df_randomize_and_humanize_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     using flctl190df::near;
     // Randomize: Random(2^30 + 1) over the whole range
     CHECK (mlmenu::randomize (0) == 0.0f);
@@ -64,7 +64,7 @@ TEST (flctl190df_randomize_and_humanize_laws)
 
 TEST (flctl190df_init_pattern_writes_the_value_at_the_patterns_start)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.patterns.resize (2);
     const AutomationTarget t { AutomationTargetKind::channelVolume, 0, 0, 0 };
@@ -88,7 +88,7 @@ TEST (flctl190df_init_pattern_writes_the_value_at_the_patterns_start)
 
 TEST (flctl190df_sample_history_is_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     auto& l = samplehistory::list();
     const auto kept = l;
     l.clear();
@@ -114,7 +114,7 @@ TEST (flctl190df_sample_history_is_fls)
 
 TEST (flctl190df_channel_envelope_presets_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     flvoice::Articulator a;
     a.flags = 1;
     a.envelope = true;
@@ -133,7 +133,7 @@ TEST (flctl190df_channel_envelope_presets_round_trip)
 
 TEST (flctl190df_sampler_fl_voice_page_reads_and_writes_fl_values)
 {
-    using namespace lynx;
+    using namespace yw;
     SamplerSettings s;
     CHECK (! flsamplervoice::has (s));
     s.flChannel.assign (90, 0);
@@ -157,7 +157,7 @@ TEST (flctl190df_sampler_fl_voice_page_reads_and_writes_fl_values)
 
 TEST (flctl190df_spare_state_store_and_flip)
 {
-    using namespace lynx;
+    using namespace yw;
     sparestate::Store store;
     int pluginA = 0, pluginB = 0;
     CHECK (! store.flip (&pluginA, { 1 }).has_value()); // nothing stored: nothing to flip

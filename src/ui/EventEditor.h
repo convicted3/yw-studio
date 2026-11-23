@@ -12,7 +12,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // Opens (or brings to front) the event editor of the current pattern, showing `target`.
 void openEventEditor (AudioEngine& engine, const AutomationTarget& target);
@@ -28,4 +28,4 @@ void openConvertToAutomationPanel (int events, double initialPercent, std::funct
 
 // Just the editor (for --snapshot mode).
 std::unique_ptr<juce::Component> makeEventEditor (AudioEngine& engine, const AutomationTarget& target);
-} // namespace lynx
+} // namespace yw

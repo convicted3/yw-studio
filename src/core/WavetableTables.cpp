@@ -1,4 +1,4 @@
-// Helix's wave tables (round 190ja, core/WavetableSynth.h): LYNX's own, generated here from additive and wave-shape
+// Helix's wave tables (round 190ja, core/WavetableSynth.h): YW's own, generated here from additive and wave-shape
 // recipes the first time a table is used, kept as mipmaps (half an octave apart, each distinct frame once) and never
 // freed. No table data comes from another product: the recipes are textbook shapes (sine, triangle, saw, pulse), harmonic
 // series, formant envelopes, filter responses, FM / sync / fold sweeps and seeded noise. Live's table names map onto the
@@ -14,7 +14,7 @@
 #include <mutex>
 #include <unordered_map>
 
-namespace lynx::wt
+namespace yw::wt
 {
 namespace
 {
@@ -824,10 +824,10 @@ int indexOf (const char* name) { return std::max (0, tableByName (name)); }
 struct Pair
 {
     const char* live;
-    const char* lynx;
+    const char* yw;
 };
-// Live's 194 table names (its browser's categories) → the closest LYNX table. The pairs were chosen by measuring Live's
-// output for each table at five positions against every LYNX table (REA_rodada190ja §4)
+// Live's 194 table names (its browser's categories) → the closest YW table. The pairs were chosen by measuring Live's
+// output for each table at five positions against every YW table (REA_rodada190ja §4)
 const Pair pairs[] = {
 #include "core/WavetableMatch.inc"
 };
@@ -837,7 +837,7 @@ std::string liveTableFor (int index)
 {
     const std::string name = tableName (index);
     for (const auto& p : pairs)
-        if (name == p.lynx)
+        if (name == p.yw)
             return p.live;
     return "Basic Shapes";
 }
@@ -847,7 +847,7 @@ TableMatch matchLiveTable (const std::string& liveName)
     // (names not in the list fall back on keywords)
     for (const auto& p : pairs)
         if (liveName == p.live)
-            return { indexOf (p.lynx), std::string ("Live's \"") + p.live + "\" -> YW Studio table \"" + p.lynx + "\" (YW Studio's own table; its frames differ)" };
+            return { indexOf (p.yw), std::string ("Live's \"") + p.live + "\" -> YW Studio table \"" + p.yw + "\" (YW Studio's own table; its frames differ)" };
     auto has = [&] (const char* k) { return liveName.find (k) != std::string::npos; };
     const char* pick = "Shapes";
     if (has ("Noise") || has ("Rain") || has ("Vinyl") || has ("Junk"))
@@ -874,4 +874,4 @@ TableMatch matchLiveTable (const std::string& liveName)
         return { indexOf ("Shapes"), {} };
     return { indexOf (pick), std::string ("Live's \"") + liveName + "\" -> YW Studio table \"" + pick + "\" (by name; YW Studio's own table, it sounds different)" };
 }
-} // namespace lynx::wt
+} // namespace yw::wt

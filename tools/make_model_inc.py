@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turns a model file into a C++ include (one byte array) that LYNX compiles in, so the model needs no file next to the
+"""Turns a model file into a C++ include (one byte array) that YW compiles in, so the model needs no file next to the
 program. Used for Basic Pitch's nmp.onnx (third_party/basic-pitch/README.md).
 
 usage: tools/make_model_inc.py <model file> <array name> <output .inc>"""

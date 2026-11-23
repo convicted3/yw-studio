@@ -25,7 +25,7 @@
 #include "core/Preferences.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 class MidiSyncIo final : private juce::Thread
 {
@@ -77,7 +77,7 @@ public:
     // the samples of the blocks since deviceStarted + its offset in its block, modulo 2^31 (−1: not a port message, e.g.
     // a note off of a stop / panic marker)
     std::function<void (const std::string&, const std::uint8_t*, int, double, double, std::int64_t)> testSink;
-    // LYNX --selftest (round 190jl): ports, timing, echo guard and notes off through the sender thread (dry run)
+    // YW --selftest (round 190jl): ports, timing, echo guard and notes off through the sender thread (dry run)
     static juce::String portSelfTest (bool& ok);
 
     // --- MIDI thread: true if the message was the followed clock's (consumed) ---
@@ -85,7 +85,7 @@ public:
 
     // --- UI ---
     std::string clockStatus() const;             // "No clock" / "Receiving clock 120.0 BPM" (English; the UI translates)
-    double followedBpm() const noexcept;         // the external tempo LYNX plays at now (0 = not following)
+    double followedBpm() const noexcept;         // the external tempo YW plays at now (0 = not following)
     struct Stats
     {
         std::uint64_t sent = 0, dropped = 0;
@@ -96,7 +96,7 @@ public:
 
     // tests / --midisync-test: the receiver
     midisync::Receiver& receiver() noexcept { return clockIn; }
-    // LYNX --midisync-test report.txt ["output device"] ["input device"]: the generator → receiver loopback in memory,
+    // YW --midisync-test report.txt ["output device"] ["input device"]: the generator → receiver loopback in memory,
     // then 5 s of simulated audio callbacks (48 kHz, 256 frames) sending MIDI clock through the sender thread (to the
     // output device, or timed without one), and with an input (a loopback cable / virtual port) the clock received.
     static juce::String selfTest (const juce::String& outputName, const juce::String& inputName);
@@ -170,4 +170,4 @@ private:
     mutable Stats lastStats;
     mutable double lastStatsMs = 0.0;
 };
-} // namespace lynx
+} // namespace yw

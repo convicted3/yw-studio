@@ -44,7 +44,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -69,21 +69,21 @@ constexpr int minColumns = 8, minRows = 8;
 // round 190bv: the row under the slots with each track's stop and arm buttons
 const LookMetric statusHeight { 22, 19 };
 constexpr int armWidth = 22;
-constexpr const char* gridDragDescription = "lynx-grid-clip";
+constexpr const char* gridDragDescription = "yw-grid-clip";
 constexpr int fixedLengths[] = { 1, 2, 4, 8, 16, 32 };
 // round 190ef: the reference's View › "Scene Tempo And Time Signature" (a preference): each scene shows a tempo field
 // and a time signature field at its right; the scene column grows by their width
 constexpr int tempoFieldWidth = 46, signatureFieldWidth = 42, sceneFieldsWidth = tempoFieldWidth + signatureFieldWidth + 4;
 bool sceneFieldsOn = false;
 // Live's two scene-launch preferences in the Main track menu (round 190ld, Live 12.4 shots/ref/live-scene-menu-queued.png):
-// "Select Next Scene on Launch" (on, as LYNX always did) and "Trigger Recording on Launch" (details DL-36; off)
+// "Select Next Scene on Launch" (on, as YW always did) and "Trigger Recording on Launch" (details DL-36; off)
 bool selectNextOnLaunch = true, recordOnSceneLaunch = false;
 // round 190em: Live 12.4.16's launch triangle of a scene without its own tempo / signature (190ei shot: #1E1E1E)
 const juce::Colour liveSceneTriangle { 0xff1e1e1e };
 // round 190ig (CL-11, CL-12): a waiting launch in Live pulses: its triangle (a waiting stop: the track's stop square)
 // fades from black to the playing green #00D38D and back, one pulse every 400 ms whatever the tempo — filmed in Live
 // 12.4 (round 190ig: 10 pulses at 167 BPM and again at 100 BPM, best-fit period 400.0 ms both; a waiting stop's square
-// the same, /mnt/e/lynx-work/design190ig/s4/film1..3). Round 181a's look keeps its 150 ms on / off blink.
+// the same, /mnt/e/yw-work/design190ig/s4/film1..3). Round 181a's look keeps its 150 ms on / off blink.
 constexpr int liveBlinkPeriodMs = 400;
 constexpr int classicBlinkPhaseMs = 150;
 // --design190igs4shot: the blink phase drawn (0 dark, 1 lit — round 190ia's two stills #002217 / #008A5C; -1: the clock's)
@@ -109,7 +109,7 @@ float livePulse() noexcept
     return (float) (0.5 - 0.5 * std::cos (juce::MathConstants<double>::twoPi * phase));
 }
 int sceneWidthNow() noexcept { return sceneBaseWidthNow() + (sceneFieldsOn ? sceneFieldsWidth : 0); }
-constexpr const char* playlistDragDescription = "lynx-playlist-clip";
+constexpr const char* playlistDragDescription = "yw-playlist-clip";
 
 const std::pair<LaunchQuant, const char*> quantNames[] = {
     { LaunchQuant::global, TR_NOOP ("Global") }, { LaunchQuant::none, TR_NOOP ("None") }, { LaunchQuant::bars8, TR_NOOP ("8 bars") },
@@ -1025,7 +1025,7 @@ public:
                 return true;
             }
             // round 190ef: the reference's Insert Scene (Ctrl+I), Capture and Insert Scene (Ctrl+Shift+I) and Rename
-            // (Ctrl+R), only in the Clip-launch layout (elsewhere the chords stay LYNX's global keys, core/SessionKeys.h)
+            // (Ctrl+R), only in the Clip-launch layout (elsewhere the chords stay YW's global keys, core/SessionKeys.h)
             if (letter == 'I' && sessionkeys::defaultKeyActs (shift ? sessionkeys::Command::gridCaptureInsertScene : sessionkeys::Command::gridInsertScene))
             {
                 if (shift)
@@ -1782,7 +1782,7 @@ public:
     // live-launch-states.png, live-clipview-audio.png and live190cw session190bv-02a). Clip-launch layout only.
 
     // The colour a Live clip is filled with: its own colour, else its track's (Live 12.4 Settings › Theme "Clip Color =
-    // Track Color"), else LYNX's colour for its pattern / audio (a project made in LYNX has uncoloured tracks).
+    // Track Color"), else YW's colour for its pattern / audio (a project made in YW has uncoloured tracks).
     static juce::Colour liveClipFill (const Song& song, const ClipGrid& grid, const Clip& clip, int t)
     {
         const auto& slot = grid.slots[(std::size_t) clip.gridSlot];
@@ -1792,7 +1792,7 @@ public:
             return juce::Colour (song.playlistTracks[(std::size_t) t].colour);
         return clip.kind == ClipKind::audio ? theme::colour::audioClip : theme::tame (PlaylistComponent::patternColour (song, clip.pattern));
     }
-    // Live's ink on a clip colour is that colour × 0.24 (7–10:1 on Live's pastels); on a dark LYNX colour that would not
+    // Live's ink on a clip colour is that colour × 0.24 (7–10:1 on Live's pastels); on a dark YW colour that would not
     // read, so a dark fill takes Live's light text instead
     static juce::Colour liveInk (juce::Colour fill)
     {
@@ -1800,8 +1800,8 @@ public:
         // (round 190oj, CS-6: chosen by contrast, not by brightness: "Mello" #258ed0 took light ink at 2.1:1)
         return theme::liveMarkOn (fill, 0.24f, 4.5f, theme::livelook::text.brighter (0.4f));
     }
-    // Live's grid text: LYNX's UI font at 12 px, 12 % wider — Live's own face is wider at the same 7 px cap ("Drums" 30 px
-    // in Live, 26 px in LYNX's plain font; round 190ia's font note); Live's face itself is not copied
+    // Live's grid text: YW's UI font at 12 px, 12 % wider — Live's own face is wider at the same 7 px cap ("Drums" 30 px
+    // in Live, 26 px in YW's plain font; round 190ia's font note); Live's face itself is not copied
     static juce::Font liveFont() { return theme::font (theme::type::small).withHorizontalScale (1.12f); }
     // the launch zone of a slot whose left edge is x: Live's 16 px zone, the 1 px divider after it
     static juce::Rectangle<float> liveTriangle (juce::Rectangle<int> cell)
@@ -1951,7 +1951,7 @@ public:
         const auto fill = clip != nullptr ? liveClipFill (song, grid, *clip, t)
                           : trackColour != 0 ? juce::Colour (trackColour)
                                              : theme::tame (PlaylistComponent::patternColour (song, (int) song.patterns.size()));
-        // round 190im (R12, DL-15): a deactivated clip is drawn greyed (Live's look not captured: LYNX's grey of the clip's
+        // round 190im (R12, DL-15): a deactivated clip is drawn greyed (Live's look not captured: YW's grey of the clip's
         // own brightness, its name dimmed)
         const auto inactive = clip != nullptr && clip->gridSlot >= 0 && clip->gridSlot < (int) grid.slots.size() && ! grid.slots[(std::size_t) clip->gridSlot].active;
         const auto shown = inactive ? juce::Colour::greyLevel (0.22f + 0.18f * fill.getPerceivedBrightness()) : fill;
@@ -2088,7 +2088,7 @@ public:
             {
                 const auto length = (double) std::max<std::int64_t> (1, clip->length);
                 const auto loops = (int) std::floor (std::max (0.0, state->clockNow.load (std::memory_order_relaxed) - view->anchor.load (std::memory_order_relaxed)) / length) + 1;
-                const auto beats = length / (double) lynx::ppq; // (Live: "1 ◔ 32" for the 32-beat Drums loop of the Patience set)
+                const auto beats = length / (double) yw::ppq; // (Live: "1 ◔ 32" for the 32-beat Drums loop of the Patience set)
                 const auto whole = (int) std::floor (beats + 1.0e-9);
                 g.setColour (lv::text);
                 g.setFont (liveFont());
@@ -2117,7 +2117,7 @@ public:
         g.fillEllipse (arm.withSizeKeepingCentre (7.0f, 7.0f));
     }
 
-    // Round 190ld (DL-11): Live's monitor icons, measured in Live 12.4 (details2_190ld raw/L08), drawn as LYNX vectors:
+    // Round 190ld (DL-11): Live's monitor icons, measured in Live 12.4 (details2_190ld raw/L08), drawn as YW vectors:
     // a MIDI track's 22 x 11 keyboard (a #757575 frame and key lines every 3 px, the black keys 3 x 6 with a #b5b5b5 core) and an audio track's
     // 7 x 11 microphone (#b5b5b5: a 3 x 7 head in a U-shaped holder on a stem)
     static void paintMonitorIcon (juce::Graphics& g, int icon, juce::Rectangle<int> area)
@@ -2157,7 +2157,7 @@ public:
         namespace lv = theme::livelook;
         if (area.getWidth() < 4 || area.getHeight() < 4)
             return;
-        const auto span = (double) miniatureBeats * (double) lynx::ppq;
+        const auto span = (double) miniatureBeats * (double) yw::ppq;
         const auto pxPerTick = (double) area.getWidth() / span;
         const auto step = (double) miniatureStepTicks (song);
         const auto pos = std::floor (juce::jmax (0.0, engine.getTransport().positionTicks.load (std::memory_order_relaxed)) / step) * step;
@@ -2237,7 +2237,7 @@ public:
     // A scene cell in Live's look (round 190ia CL-14a/b, live-session.png 1540,86,1630,340 and live-launch-states.png):
     // a 17 px #363636 cell over a 1 px #242424 separator, a 7 x 9 #1E1E1E launch triangle 4 px in, the name centred
     // between it and the scene number at the right (both #B5B5B5, cut without an ellipsis as Live cuts "Breakdo"); a
-    // selected scene #B0DDEB with #070707 text. A scene with its own tempo or time signature keeps LYNX's cyan triangle.
+    // selected scene #B0DDEB with #070707 text. A scene with its own tempo or time signature keeps YW's cyan triangle.
     void paintSceneLive (juce::Graphics& g, const ClipGridScene& scene, int row, juce::Rectangle<int> r) const
     {
         namespace c = theme::colour;
@@ -2395,7 +2395,7 @@ public:
             first.uid = 0;
             first.start = 0;
             PlaylistComponent::setCopiedClips ({ first }, carriedOf (block.clips.front().content)); // (round 190ne: a track clip travels along)
-            PlaylistComponent::publishCopiedClips (engine); // (issue #232: its first clip to another LYNX SHARE window)
+            PlaylistComponent::publishCopiedClips (engine); // (issue #232: its first clip to another YW Studio window)
             copiedBlock = std::move (block);
             copiedSlot.reset();
             copiedSlotStamp = PlaylistComponent::copiedStamp();
@@ -2413,7 +2413,7 @@ public:
         clip.uid = 0;
         clip.start = 0;
         PlaylistComponent::setCopiedClips ({ clip }, carriedOf (*content)); // (round 190ne: a track clip travels along)
-        PlaylistComponent::publishCopiedClips (engine); // (issue #232: and to another LYNX SHARE window)
+        PlaylistComponent::publishCopiedClips (engine); // (issue #232: and to another YW Studio window)
         copiedSlot = std::move (content);
         copiedSlotStamp = PlaylistComponent::copiedStamp();
         if (cutToo)
@@ -2432,14 +2432,14 @@ public:
     {
         if ((copiedSlot || copiedBlock) && copiedSlotStamp == PlaylistComponent::copiedStamp())
             return true;
-        if (windowclip::hasIncoming (crossclipboard::Kind::clips)) // (issue #232: copied in another LYNX SHARE window)
+        if (windowclip::hasIncoming (crossclipboard::Kind::clips)) // (issue #232: copied in another YW Studio window)
             return true;
         const auto& clips = PlaylistComponent::copiedClips();
         return std::any_of (clips.begin(), clips.end(), [] (const Clip& c) { return c.kind == ClipKind::pattern || c.kind == ClipKind::audio; });
     }
     void pasteSlot (int track, int scene)
     {
-        // issue #232 (round 190nz): a clip copied in another LYNX SHARE window: its first pattern or audio clip, with what
+        // issue #232 (round 190nz): a clip copied in another YW Studio window: its first pattern or audio clip, with what
         // it plays (core/CrossPaste.h)
         if (auto incoming = windowclip::incoming (crossclipboard::Kind::clips))
         {
@@ -2625,7 +2625,7 @@ public:
 
     void addExtractGroove (juce::PopupMenu& menu, int track, int scene) { addGrooveItems (menu, track, scene, false, true); }
 
-    // LYNX's own clip options after Live's items (round 190ld): a pattern into the slot, launch settings, follow action, groove
+    // YW's own clip options after Live's items (round 190ld): a pattern into the slot, launch settings, follow action, groove
     void addClipOptions (juce::PopupMenu& menu, int track, int scene, bool)
     {
         const auto& song = engine.getSong();
@@ -2643,7 +2643,7 @@ public:
         addGrooveItems (menu, track, scene, true, false);
     }
 
-    // round 190nw (LYNX's own): a pattern clip's notes in the tracker editor, on that clip's pattern
+    // round 190nw (YW's own): a pattern clip's notes in the tracker editor, on that clip's pattern
     void addEditInTracker (juce::PopupMenu& menu, int track, int scene)
     {
         const auto* grid = gridOf();
@@ -2663,7 +2663,7 @@ public:
         const auto& song = engine.getSong();
         // Round 190ld (Live 12.4's clip menu, details2_190ld shots/ref/live-clip-menu.png): in Live's look a clip's menu
         // starts with Live's items in Live's order and groups (Cut / Copy / Duplicate / Delete; Rename / Extract Groove(s) /
-        // Deactivate Clip; the colour last), then LYNX's own options after a separator (add, never remove)
+        // Deactivate Clip; the colour last), then YW's own options after a separator (add, never remove)
         if (liveLook() && launcher::clipAt (*grid, track, scene) != nullptr)
         {
             auto copy = *grid;
@@ -2875,7 +2875,7 @@ private:
 
 public:
     // Freeze Track / Unfreeze Track (round 190ff, the reference's Freeze Track: the track's instrument with its volume
-    // and pan through its insert's effects; core/StandIns.h lynx::freeze track freeze)
+    // and pan through its insert's effects; core/StandIns.h yw::freeze track freeze)
     void toggleTrackFreeze (int track)
     {
         const auto& song = engine.getSong();
@@ -2908,7 +2908,7 @@ public:
         const auto frozen = valid && song.channels[(std::size_t) channel].freeze.on();
         menu.addItem ((frozen ? tr ("Unfreeze Track") : tr ("Freeze Track")) + sessionkeys::menuKey (sessionkeys::Command::freezeTrack), valid, false,
                       [this, track] { toggleTrackFreeze (track); });
-        // (LYNX's own: a frozen track whose audio no longer matches is rendered again without unfreezing first)
+        // (YW's own: a frozen track whose audio no longer matches is rendered again without unfreezing first)
         if (frozen && (engine.freezeOutOfDate (channel) || engine.frozenAudioMissing (channel)))
             menu.addItem (tr ("Re-freeze"), [this, channel] {
                 freezeTrack (engine, channel, [safe = juce::Component::SafePointer<juce::Component> (this)] (bool) {
@@ -2920,7 +2920,7 @@ public:
             bounceTrackInPlace (engine, channel);
             repaint();
         });
-        // round 190op (P4, LYNX extras; owner decision O-3): Deactivate Track unloads the track's devices (the Track
+        // round 190op (P4, YW extras; owner decision O-3): Deactivate Track unloads the track's devices (the Track
         // Activator stays Live's mute); Hide takes the column out of view (Show hidden tracks, Playlist menu)
         {
             const auto units = trackstates::unitsOfTrack (song, track);
@@ -3000,7 +3000,7 @@ public:
 
     // Round 190ld: Live 12.4's Main track menu (details2_190ld shots/ref/live-scene-menu-queued.png) in Live's look — its
     // items in Live's order and groups (Duplicate / Delete; Rename; Insert Scene / Capture and Insert Scene; Cancel Scene
-    // Launch; the colour), then LYNX's own scene items and the grid options after a separator (add, never remove)
+    // Launch; the colour), then YW's own scene items and the grid options after a separator (add, never remove)
     juce::PopupMenu buildSceneMenuLive (int scene)
     {
         juce::PopupMenu menu;
@@ -3208,7 +3208,7 @@ private:
     {
         // round 190em: the reference's rates (live check 190ei): tempo ≈ 2.8 BPM per pixel in whole BPM, the numerator
         // ≈ 4.6 per pixel, the denominator one step (1, 2, 4, 8, 16) per 10 px; a drag on a field that is off turns it
-        // on. Ctrl on the tempo: a hundredth per pixel (LYNX's fine drag).
+        // on. Ctrl on the tempo: a hundredth per pixel (YW's fine drag).
         const auto dy = (double) -e.getDistanceFromDragStartY();
         const auto scene = fieldScene;
         const auto undoable = ! fieldUndoTaken;
@@ -3463,7 +3463,7 @@ private:
             if (const auto want = mixerHeight(); want != mixer->getHeight())
                 resized();
             mixer->tick(); // (its meters and arm buttons repaint themselves when they change)
-            if (! ui::paintSavings()) // (LYNX_PAINT_SAVINGS=0: the whole mixer every tick, as before)
+            if (! ui::paintSavings()) // (YW_PAINT_SAVINGS=0: the whole mixer every tick, as before)
                 mixer->repaint();
         }
         // round 190im (R6): a launched scene's pulse and its end (before the paths below that return early)
@@ -3473,7 +3473,7 @@ private:
         // whose own state moved (a playing clip's progress, a blink, an arm) are repainted, header to status row
         const auto columns = juce::jmax (0, juce::jmin (columnCount(), launcher::maxTracks));
         const auto cells = cellArea();
-        if (! ui::paintSavings()) // (LYNX_PAINT_SAVINGS=0: the whole grid every tick, as before)
+        if (! ui::paintSavings()) // (YW_PAINT_SAVINGS=0: the whole grid every tick, as before)
         {
             repaint();
             return;
@@ -3492,7 +3492,7 @@ private:
             return;
         }
         const auto visible = juce::Rectangle<int> (0, 0, cells.getRight(), getHeight());
-        if (! ui::paintCache()) // (LYNX_PAINT_CACHE=0: a changed column is repainted whole, as round 190ge did)
+        if (! ui::paintCache()) // (YW_PAINT_CACHE=0: a changed column is repainted whole, as round 190ge did)
         {
             for (int t = firstColumn(); t < columns && columnX (t) < cells.getRight(); t = nextShown (t))
                 if (const auto now = columnState (t); now != columnStates[(std::size_t) t])
@@ -3665,11 +3665,11 @@ private:
     static constexpr int miniatureBeats = 20, miniatureSteps = 80;
     static std::int64_t miniatureStepTicks (const Song&)
     {
-        return juce::jmax<std::int64_t> (1, (std::int64_t) miniatureBeats * (std::int64_t) lynx::ppq / miniatureSteps);
+        return juce::jmax<std::int64_t> (1, (std::int64_t) miniatureBeats * (std::int64_t) yw::ppq / miniatureSteps);
     }
     // Round 190ld (DL-11, Live manual 7.3: "A microphone icon appears in an audio track that is set to monitor its input.
     // A keyboard icon appears in a MIDI track"): 1 = mic, 2 = keyboard, 0 = none.
-    // Live 12.4 shows it for Monitor "In" only (raw/L09: an armed track on Auto keeps its miniature). LYNX's equivalents:
+    // Live 12.4 shows it for Monitor "In" only (raw/L09: an armed track on Auto keeps its miniature). YW's equivalents:
     // an audio track whose insert monitors "On"; a MIDI track whose channel takes a controller's input whatever is armed
     // (its "Receive from" lock).
     // (per column, worked out again only when the song changed: the grid's 30 Hz tick asks every column)
@@ -3708,7 +3708,7 @@ private:
         if (clip == nullptr || clip->gridSlot < 0 || clip->gridSlot >= (int) grid->slots.size() || grid->slots[(std::size_t) clip->gridSlot].loop)
             return -1.0;
         const auto bpm = juce::jmax (1.0, engine.getSong().bpm);
-        return (1.0 - (double) juce::jlimit (0.0f, 1.0f, progress)) * (double) clip->length / (double) lynx::ppq * 60.0 / bpm;
+        return (1.0 - (double) juce::jlimit (0.0f, 1.0f, progress)) * (double) clip->length / (double) yw::ppq * 60.0 / bpm;
     }
 
     static std::uint64_t mixBits (std::uint64_t h, std::uint64_t v) noexcept { return (h ^ v) * 1099511628211ull; }
@@ -4073,4 +4073,4 @@ bool playlistClipDrag (const juce::var& description, int& index)
     index = text.fromFirstOccurrenceOf ("|", false, false).getIntValue();
     return index >= 0;
 }
-} // namespace lynx
+} // namespace yw

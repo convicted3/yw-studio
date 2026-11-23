@@ -6,15 +6,15 @@ namespace beat190kr
 {
 struct HelpGuard
 {
-    int help = lynx::WorkerPool::tuning().helpPercent.load();
-    ~HelpGuard() { lynx::WorkerPool::tuning().helpPercent = help; }
+    int help = yw::WorkerPool::tuning().helpPercent.load();
+    ~HelpGuard() { yw::WorkerPool::tuning().helpPercent = help; }
 };
 } // namespace beat190kr
 
 TEST (beat190kr_tuning_parses_help)
 {
     const beat190kr::HelpGuard guard;
-    auto& t = lynx::WorkerPool::tuning();
+    auto& t = yw::WorkerPool::tuning();
     t.apply ("help=40");
     CHECK (t.helpPercent.load() == 40);
     t.apply ("spin=60");
@@ -29,34 +29,34 @@ TEST (beat190kr_wake_limit_renders_the_same)
 {
     // the renderer's task graph with every wake limit (none, a few workers, one, none at all) and without a pool: bit for bit
     const beat190kr::HelpGuard guard;
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (16);
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (16);
     for (int i = 5; i < 40; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = i % 3 == 0 ? lynx::InstrumentKind::hat : lynx::InstrumentKind::synth;
+        yw::ChannelDef c;
+        c.instrument = i % 3 == 0 ? yw::InstrumentKind::hat : yw::InstrumentKind::synth;
         c.mixerTrack = i % 7 == 0 ? 0 : 1 + i % 13;
         c.volume = 0.25f;
         song.channels.push_back (c);
         for (int step = i % 5; step < 16; step += 2)
-            song.patterns[0].notes.push_back ({ (std::int64_t) step * lynx::ticksPerStep, 150, i, 40 + i, 0.6f });
+            song.patterns[0].notes.push_back ({ (std::int64_t) step * yw::ticksPerStep, 150, i, 40 + i, 0.6f });
     }
     song.patterns[0].sortNotes();
     song.setRoute (3, 7, true, 0.6f);
     song.setRoute (7, 9, true, 0.5f);
     song.setRoute (9, 11, true, 0.5f);
-    song.mixer[9].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
+    song.mixer[9].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
     std::uint64_t sleeps = 0;
     auto render = [&song, &sleeps] (int help, bool pool) {
-        lynx::WorkerPool::tuning().helpPercent = help;
-        auto state = lynx::RackState::build (song, nullptr, 48000.0);
-        lynx::WorkerPool workers (4);
-        lynx::RackRenderer r;
+        yw::WorkerPool::tuning().helpPercent = help;
+        auto state = yw::RackState::build (song, nullptr, 48000.0);
+        yw::WorkerPool workers (4);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         if (pool)
             r.setWorkerPool (&workers);
         std::vector<float> out, l (480), rr (480);
-        const auto tps = lynx::ticksPerSample (song.bpm, 48000.0);
+        const auto tps = yw::ticksPerSample (song.bpm, 48000.0);
         for (int block = 0; block < 120; ++block)
         {
             r.process (state.get(), true, block * 480 * tps, 480, l.data(), rr.data());

@@ -16,7 +16,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -413,7 +413,7 @@ private:
             auto toggle = std::make_unique<juce::ToggleButton>();
             toggle->setRadioGroupId (c.radioGroup);
             if (c.radioGroup != 0)
-                toggle->getProperties().set ("lynxRadio", true); // drawn as a radio dot (Theme.cpp drawTickBox), as FL's
+                toggle->getProperties().set ("ywRadio", true); // drawn as a radio dot (Theme.cpp drawTickBox), as FL's
             toggle->setToggleState (c.initial > 0.5, juce::dontSendNotification);
             toggle->onClick = changed;
             editor = std::move (toggle);
@@ -491,8 +491,8 @@ private:
     }
 
     // FL's Piano roll arpeggiator tool (round 190jv, coverage prtools-0003; core/FlArpeggiator.h): its pattern from the
-    // user's FL install (Data/Patches/Scores/Arpeggiator, read only) and its options, after LYNX's own arpeggiator's
-    // four. "None" keeps LYNX's arpeggiator; a pattern runs FL's law with FL's controls (DFM TPRArpForm, FL's defaults).
+    // user's FL install (Data/Patches/Scores/Arpeggiator, read only) and its options, after YW's own arpeggiator's
+    // four. "None" keeps YW's arpeggiator; a pattern runs FL's law with FL's controls (DFM TPRArpForm, FL's defaults).
     static constexpr std::size_t flArpFirst = 4; // (the controls after Step, Gate, Direction, Octaves)
     void addFlArpeggiator()
     {
@@ -659,7 +659,7 @@ private:
                 add ({ Control::slider, tr ("Scale at the end"), -2.0, 2.0, 0.01, 1.0, percent });
                 add ({ Control::slider, tr ("Offset"), -1.0, 1.0, 0.01, 0.0, signedPercent });
                 // FL's level scaling: Center (the value the scaling turns around) and Tension (bends the distance
-                // from the centre). FL's Center starts at 0 for every level; LYNX starts it on the centre line for
+                // from the centre). FL's Center starts at 0 for every level; YW starts it on the centre line for
                 // pan and fine pitch, which is how this tool always scaled them.
                 add ({ Control::slider, tr ("Center"), 0.0, 1.0, 0.01, 0.0, percent });
                 add ({ Control::slider, tr ("Tension"), -1.0, 1.0, 0.01, 0.0, signedPercent });
@@ -998,7 +998,7 @@ private:
         chordState.analyzeAvailable = ! existingNotes.empty();
         chordState.opening = existingNotes;
 
-        // with notes, the key is guessed from them (FL opens on the key it analyses; LYNX: its Automatic guess,
+        // with notes, the key is guessed from them (FL opens on the key it analyses; YW: its Automatic guess,
         // core/ScaleDetect.h, the minor read as the natural minor)
         if (const auto key = chordstrip::guessKey (existingNotes))
         {
@@ -1642,4 +1642,4 @@ void showNoteTool (AudioEngine& engine, NoteTool tool, std::vector<int> indices,
     panel->onFinished = std::move (onFinished);
     openToolWindow (std::move (panel), tr (noteToolTitle (tool)), "notetool");
 }
-} // namespace lynx
+} // namespace yw

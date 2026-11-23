@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""fxparity.py — sound parity of LYNX's effects against the third-party originals they are inspired by (round tp172b).
+"""fxparity.py — sound parity of YW's effects against the third-party originals they are inspired by (round tp172b).
 
-The originals are rendered black-box by tools/fxmeasure (a host, public parameter API only) and LYNX by
+The originals are rendered black-box by tools/fxmeasure (a host, public parameter API only) and YW by
 tools/fxrender, on the same stimuli at matched settings. Each pair of renders is compared exactly like FL's own render
 tests (scripts/flref_compare.py: alignment, ESR, level, third-octave spectrum, 50 ms envelope) and scored 0-10 with
 the same scale as the FL-native parity tracker (round 170i).
 
 Usage:
-  fxparity.py pair <original.wav> <lynx.wav>        metrics + score as JSON
-  fxparity.py dir <original-dir> <lynx-dir>         every <name>.wav present in both, one JSON line each
+  fxparity.py pair <original.wav> <yw.wav>        metrics + score as JSON
+  fxparity.py dir <original-dir> <yw-dir>         every <name>.wav present in both, one JSON line each
   (round 190mm) a reference with a sidecar <name>.mask.json has those spans (Waves demo-mode mutes) left out of
   every metric; references without one score exactly as before
-  fxparity.py verb <original.wav> <lynx.wav> [t0]   reverb score of two impulse renders (impulse at t0 s, default
+  fxparity.py verb <original.wav> <yw.wav> [t0]   reverb score of two impulse renders (impulse at t0 s, default
                                                     0.1): the mean of seven 0-10 sub-scores (see verb_score)
 """
 import json
@@ -29,7 +29,7 @@ def score(r):
     s = r.get('silent')
     if s == 'fl':
         return None
-    if s == 'lynx':
+    if s == 'yw':
         return 0
     e = r['esr_db']
     spec = r.get('spec_db') or 0
@@ -89,7 +89,7 @@ def read_wav(path):
 
 
 fc.read_fl = lambda p: read_wav(p)[0]
-fc.read_lynx = lambda p: read_wav(p)[0]
+fc.read_yw = lambda p: read_wav(p)[0]
 
 
 def rate_of(path):
@@ -180,7 +180,7 @@ def verb_stats(path, t0=0.1):
 
 
 def verb_score(a, b, t0=0.1):
-    """Reverb score 0-10 of LYNX's impulse render `b` against the original's `a`: the mean of seven sub-scores, each
+    """Reverb score 0-10 of YW's impulse render `b` against the original's `a`: the mean of seven sub-scores, each
     10 at a perfect match and 0 at the given distance (linear in between):
       rt60     mean |log2 ratio| of the RT60 per octave 125 Hz - 8 kHz      0 at 1 octave
       edc      mean |dB| between the broadband EDCs over 0 … −40 dB of the original, time scaled 0..1   0 at 10 dB
@@ -210,7 +210,7 @@ def verb_score(a, b, t0=0.1):
     out = {k: round(v, 2) for k, v in sub.items()}
     out['score'] = round(float(np.mean(list(sub.values()))), 2)
     out['rt60_orig'] = [x and round(x, 3) for x in A['rt60']]
-    out['rt60_lynx'] = [x and round(x, 3) for x in B['rt60']]
+    out['rt60_yw'] = [x and round(x, 3) for x in B['rt60']]
     out['detail'] = {'d_rt60_oct': round(d_rt, 3), 'd_edc_db': round(d_edc, 2), 'd_early_db': round(A['early_db'] - B['early_db'], 2),
                      'd_predelay_ms': round(B['predelay_ms'] - A['predelay_ms'], 2), 'd_balance_db': round(d_bal, 2),
                      'lr': [round(A['lr_corr'], 3), round(B['lr_corr'], 3)],

@@ -4,15 +4,15 @@
 # `$CXX a.cpp b.cpp ... -o x` compiles its sources one after the other, and every tool build-local.sh links against the
 # core compiled the whole core again: 9 serial core compiles were ~90 of the ~100 minutes of a CI "Core" job (round
 # speed185a). Through this wrapper each source is compiled ONCE per build (keyed on the source path and the flags),
-# LYNX_BUILD_JOBS compiles at a time, and every link uses the objects. Same compiler, same flags: the same code.
+# YW_BUILD_JOBS compiles at a time, and every link uses the objects. Same compiler, same flags: the same code.
 #
-#   LYNX_CXX_ONCE_REAL   the real compiler command (words split on spaces, so "ccache g++" works)
-#   LYNX_CXX_ONCE_RUN    an id of the current build: objects are reused within it, compiled again in the next one
-#   LYNX_BUILD_JOBS      parallel compiles (default: the CPUs)
+#   YW_CXX_ONCE_REAL   the real compiler command (words split on spaces, so "ccache g++" works)
+#   YW_CXX_ONCE_RUN    an id of the current build: objects are reused within it, compiled again in the next one
+#   YW_BUILD_JOBS      parallel compiles (default: the CPUs)
 # A command with -c (one translation unit) is passed straight to the compiler.
 set -u
-read -r -a real <<< "${LYNX_CXX_ONCE_REAL:?LYNX_CXX_ONCE_REAL is not set}"
-run="${LYNX_CXX_ONCE_RUN:?LYNX_CXX_ONCE_RUN is not set}"
+read -r -a real <<< "${YW_CXX_ONCE_REAL:?YW_CXX_ONCE_REAL is not set}"
+run="${YW_CXX_ONCE_RUN:?YW_CXX_ONCE_RUN is not set}"
 
 if [[ "${1:-}" == --one ]]; then # --one <flags file> <object> <source>: one compile (through xargs below)
     flagsfile="$2" o="$3" src="$4" flags=()
@@ -50,7 +50,7 @@ for s in "${srcs[@]}"; do
     grep -qxF "$s" "$stamp" || todo+=("$o" "$s")
 done
 if [[ ${#todo[@]} -gt 0 ]]; then
-    jobs="${LYNX_BUILD_JOBS:-$(nproc 2> /dev/null || sysctl -n hw.ncpu 2> /dev/null || echo 4)}"
+    jobs="${YW_BUILD_JOBS:-$(nproc 2> /dev/null || sysctl -n hw.ncpu 2> /dev/null || echo 4)}"
     printf '%s\n' "${todo[@]}" | xargs -n 2 -P "$jobs" "$0" --one "$dir/flags" || exit 1
     # (recorded only once compiled: a stopped or failed compile is done again by the next command)
     for ((i = 1; i < ${#todo[@]}; i += 2)); do echo "${todo[$i]}" >> "$stamp"; done

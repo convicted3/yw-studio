@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::launcher
+namespace yw::launcher
 {
 // --- the model ---------------------------------------------------------------------------------------------------
 ClipGrid& ensureGrid (Song& song)
@@ -1184,4 +1184,4 @@ void playBlock (Runtime& runtime, const Song& song, const ClipGrid& grid, const 
     runtime.clock = clock + numSamples * tps;
     runtime.running.store (true, std::memory_order_relaxed);
 }
-} // namespace lynx::launcher
+} // namespace yw::launcher

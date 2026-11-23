@@ -1,11 +1,11 @@
 #pragma once
 
 // FL Studio 2026's audio clip menu (the Playlist's right-click on an audio clip) as a JUCE-free model, round 190dz.
-// FL facts: /mnt/e/lynx-work/flclip190dz/HANDOFF.md — [FORM] TFRUITYLOOPSMAINFORM EEAUMenu (rea190bc dfm dump), [H 0x...]
+// FL facts: /mnt/e/yw-work/flclip190dz/HANDOFF.md — [FORM] TFRUITYLOOPSMAINFORM EEAUMenu (rea190bc dfm dump), [H 0x...]
 // FLEngine_x64.dll handlers (EEAUMenuPopup 0x1237290 and the OnClick handlers), [SHOT] flgap189o FL-clipmenu-*.png.
 // FL draws it in two columns with section bands: "Audio clip" + "Region" on the left, "Sample" + "Automation" + "Fades"
 // on the right. The Playlist builds its audio clip menu from this list in this order (texts are the English keys of
-// the i18n tables); LYNX's own items with no FL counterpart get a third column (round 190jv).
+// the i18n tables); YW's own items with no FL counterpart get a third column (round 190jv).
 
 #include "core/ClipOps.h"
 #include "core/Song.h"
@@ -21,14 +21,14 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::flclipmenu
+namespace yw::flclipmenu
 {
 struct Entry
 {
     enum class Kind { header, item, check, submenu, separator, columnBreak } kind = Kind::item;
     std::string text;
-    // what LYNX does with it: performs it; FL greys it in the menu's usual state and LYNX shows it greyed there (and
-    // leaves it out where FL would enable it); or LYNX cannot do it yet (left out of LYNX's menu, listed in HANDOFF)
+    // what YW does with it: performs it; FL greys it in the menu's usual state and YW shows it greyed there (and
+    // leaves it out where FL would enable it); or YW cannot do it yet (left out of YW's menu, listed in HANDOFF)
     enum class Have { yes, greyedOnly, missing } have = Have::yes;
     char mnemonic = 0;      // FL's underlined letter ('&' in its captions), 0 = none
     bool conditional = false; // FL shows it only in some states (Crossfade selected)
@@ -68,14 +68,14 @@ inline std::vector<Entry> fl()
         { K::header, TR_NOOP ("Sample") },
         { K::item, TR_NOOP ("Make unique as sample"), H::yes, 'u' },
         { K::item, TR_NOOP ("Edit sample"), H::yes, 'E' },
-        // round 190gw (live check 190gu B3): FL opens Newtone / Newtime on the Master with the clip's sample; LYNX's own
+        // round 190gw (live check 190gu B3): FL opens Newtone / Newtime on the Master with the clip's sample; YW's own
         // Newtone / Newtime (mixerops::openSampleInMasterEditor)
         { K::item, TR_NOOP ("Pitch-correct sample"), H::yes, 'P' },
         { K::item, TR_NOOP ("Time-warp sample"), H::yes, 'T' },
         { K::item, TR_NOOP ("Extract stems from sample") },
         // (FL 2026 only offers to download its neural module here, live check 190gu B3: "This feature needs to be downloaded
-        // before it can be used". Round 190jv (details190if DE-113): FL's menu shows the item, so LYNX does too; it opens
-        // the clip's sample in LYNX's audio editor with LYNX's own Deverb tool (core/AudioEditTools.h deverb, round 167c))
+        // before it can be used". Round 190jv (details190if DE-113): FL's menu shows the item, so YW does too; it opens
+        // the clip's sample in YW's audio editor with YW's own Deverb tool (core/AudioEditTools.h deverb, round 167c))
         { K::item, TR_NOOP ("Deverb") },
         { K::item, TR_NOOP ("Detect tempo"), H::yes, 'D' },
         { K::item, TR_NOOP ("Fit to tempo"), H::yes, 'F' },
@@ -115,17 +115,17 @@ inline std::vector<Entry> fadeCurve()
     };
 }
 
-// LYNX's own audio clip items with no FL counterpart (kept: add, never remove), in a third column of their own after FL's
+// YW's own audio clip items with no FL counterpart (kept: add, never remove), in a third column of their own after FL's
 // two (round 190jv: FL's two columns stay as FL draws them; before, they followed FL's Fades below a line), in this
 // order. Round 190gi: Clip envelope ›, Auto-warp, Quantize audio (core/ClipEnvelope.h, core/ClipWarp.h); round 190hp: Split at silence... (core/StripSilence.h); round 190lj: Convert to MIDI (polyphonic)... (the options dialog of ui/AudioToMidi); round 190lk: Edit notes (polyphonic)... (ui/PolyEditor, core/PolyEdit.h). Comping's "Promote this take..." comes first when the clip is on a take lane (core/Comping, round 163).
-inline std::vector<std::string> lynxExtras()
+inline std::vector<std::string> ywExtras()
 {
     return { TR_NOOP ("Color palette"), TR_NOOP ("Split here"), TR_NOOP ("Split at silence..."), TR_NOOP ("Merge clips"), TR_NOOP ("Reverse"), TR_NOOP ("Convert to MIDI"), TR_NOOP ("Convert to MIDI (polyphonic)..."), TR_NOOP ("Edit notes (polyphonic)..."), TR_NOOP ("Slice to New MIDI Track..."), TR_NOOP ("Pitch... (semitones, cents, keep length)"),
              TR_NOOP ("Normalize"), TR_NOOP ("Clip volume"), TR_NOOP ("Clip envelope"), TR_NOOP ("Auto-warp"), TR_NOOP ("Quantize audio"),
              TR_NOOP ("Edit in ARA plugin"), TR_NOOP ("Open in a new Sampler channel"), TR_NOOP ("Show the file in Explorer"), TR_NOOP ("Cut"), TR_NOOP ("Copy"), TR_NOOP ("Paste here") };
 }
 
-// What LYNX shows of FL's list: FL's entries without the missing ones, Crossfade with only while it is greyed in FL
+// What YW shows of FL's list: FL's entries without the missing ones, Crossfade with only while it is greyed in FL
 // (`crossfadeWithGreyed`: no other channel's audio clip overlaps the clicked one), Crossfade selected only when FL
 // shows it. Separators and headers stay where FL has them.
 inline std::vector<Entry> shown (bool crossfadeWithGreyed, bool crossfadeSelectedShown)
@@ -147,7 +147,7 @@ inline std::vector<Entry> shown (bool crossfadeWithGreyed, bool crossfadeSelecte
 // ---- Select region › (EEAUMenuPopup fills it from the sample's regions; EEAUFullRegMenuClick 0x1239b70) -------------
 // "Full" (FL's Default radio item, Tag −1: the clip back to its whole source) and one item per region of the sample,
 // named "Region N" when the region has no name. A region runs from its start to the next region's start (or the end).
-// LYNX's regions: the file's cue markers (SampleData::markerStarts, frames of the file).
+// YW's regions: the file's cue markers (SampleData::markerStarts, frames of the file).
 struct Region
 {
     std::int64_t first = 0, end = 0; // frames of the file, [first, end)
@@ -207,7 +207,7 @@ inline int currentRegion (const std::vector<ClipWindow>& windows, const Clip& cl
 
 // FL's Chop › "Time based" chops ([H 0x1236260], the submenu FL builds once): bars, beats and parts of a beat, in FL's
 // order. (FL's other groups — Chop into regions, Dull / Medium / Sharp auto-slicing, Trim outside selection, Repeating,
-// Marching, Patterns, Complex — are not in LYNX yet.)
+// Marching, Patterns, Complex — are not in YW yet.)
 struct Chop
 {
     const char* text;
@@ -219,4 +219,4 @@ inline std::vector<Chop> timeBasedChops()
     return { { TR_NOOP ("Chop in bars"), 0 },        { TR_NOOP ("Chop in beats"), 1 },        { TR_NOOP ("Chop in half beats"), 2 }, { TR_NOOP ("Chop in quarter beats"), 4 },
              { TR_NOOP ("Chop in 8th beats"), 8 }, { TR_NOOP ("Chop in 16th beats"), 16 }, { TR_NOOP ("Chop in 32nd beats"), 32 } };
 }
-} // namespace lynx::flclipmenu
+} // namespace yw::flclipmenu

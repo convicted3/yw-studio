@@ -3,7 +3,7 @@
 // Where Ctrl+V puts the clipboard's notes or clips (issue #211, round 190mq), per layout. No JUCE here.
 //
 // - Pattern layout: FL Studio 2026, the same rule in the Piano roll and the Playlist (captured in FL 2026 by round
-//   190mq, /mnt/e/lynx-work/issues211_190mq/s/notes.md, shots f04..f28 and p05..p17):
+//   190mq, /mnt/e/yw-work/issues211_190mq/s/notes.md, shots f04..f28 and p05..p17):
 //   1. the anchor: the start of the time selection made on the ruler, else the spot of the last single click on the
 //      ruler (the ruler's double click clears both; Stop does not). When it is in view, the earliest note / clip lands
 //      on it and the rest keep their distance from it. (One at the very start is none: see anchorInView.)
@@ -12,7 +12,7 @@
 //      visible"), the rest keeping their distance from it.
 //   3. landing exactly where they were copied from, they move one grid step to the right (so the copy shows).
 // - Clip-launch layout (Ableton Live 12, manual 10.5.4 "Notes in the clipboard will be pasted starting at the location
-//   of the insert marker"; the insert marker is the time selection's start or the clicked spot, which in LYNX is the
+//   of the insert marker"; the insert marker is the time selection's start or the clicked spot, which in YW is the
 //   song position): the earliest item lands on the time selection's start, else on the song position.
 // - Simple layout (BandLab: a pasted region lands on the playhead, the mobile app's centre marker): the song position.
 // With no place to go (no position known), everything stays where it was copied from.
@@ -21,7 +21,7 @@
 
 #include <cstdint>
 
-namespace lynx::pasteplace
+namespace yw::pasteplace
 {
 enum class Rule
 {
@@ -111,4 +111,4 @@ struct UniformBars
         return { n * length, length };
     }
 };
-} // namespace lynx::pasteplace
+} // namespace yw::pasteplace

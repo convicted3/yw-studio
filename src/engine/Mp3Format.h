@@ -6,7 +6,7 @@
 
 #include <juce_audio_formats/juce_audio_formats.h>
 
-namespace lynx
+namespace yw
 {
 class Mp3AudioFormat final : public juce::AudioFormat
 {
@@ -29,7 +29,7 @@ public:
     using juce::AudioFormat::createWriterFor;
 };
 
-// Registers LYNX's MP3 reader first, then JUCE's basic formats: on Windows/macOS JUCE also lists Windows Media /
+// Registers YW's MP3 reader first, then JUCE's basic formats: on Windows/macOS JUCE also lists Windows Media /
 // Core Audio, which open .mp3 files too, and the manager uses the first format that opens a file.
 void registerAudioFormats (juce::AudioFormatManager& formats);
-} // namespace lynx
+} // namespace yw

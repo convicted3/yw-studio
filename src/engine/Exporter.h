@@ -15,7 +15,7 @@ namespace juce
 class AudioPluginInstance;
 }
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class Instrument;
@@ -51,7 +51,7 @@ juce::String exportExtension (ExportSettings::Format format);
 // instances that play, playback stopped. While a hold is open, an ExportJob made on the message thread (the Export
 // window's mix, its stems and its marker sections; round 190jx: Render to audio and Freeze too) renders with the live engine's hosted plugins and the Patchers that
 // host plugins: the same instances, so a plugin with internal state, a random seed, a licence check or a long boot
-// renders what was heard. LYNX's own units are made new (their render is the same either way). Opening the hold stops
+// renders what was heard. YW's own units are made new (their render is the same either way). Opening the hold stops
 // playback; when it and the last job that used it are gone (message thread), every plugin it lent gets its sample rate
 // and its state back and is reset as FL resets it, and the live engine plays again. The export makes its own instances,
 // as before, without a hold (the command line, the remote renderer, the self-tests' own engines), when the live engine
@@ -134,7 +134,7 @@ public:
     double getMusicSeconds() const noexcept { return musicSeconds; }
     float getPeak() const noexcept { return peak; }
     // FL's "Extra data" (markers, loop, tempo: Options::saveTempo / loopMarkers / playlistMarkers) in WAV files: on for
-    // the user's exports (the export window, --export), off for LYNX's own renders (bounces, consolidation, the
+    // the user's exports (the export window, --export), off for YW's own renders (bounces, consolidation, the
     // auto-sampler), whose files become samples again and must not carry a loop
     void setExtraData (bool on) noexcept { extraData = on; }
     AudioEngine& getEngine() noexcept { return *engine; }
@@ -184,7 +184,7 @@ private:
 // Seconds the export of `song` with these options lasts (the music, all loops; no tail).
 double exportMusicSeconds (const Song& song, const exportopts::Options& options);
 
-// Round 190gj (P9): FL renders "Split mixer tracks" in one pass (TRENDERFORM; REA_rodada84 §1). LYNX's stem of an insert
+// Round 190gj (P9): FL renders "Split mixer tracks" in one pass (TRENDERFORM; REA_rodada84 §1). YW's stem of an insert
 // is the render of makeBounceSong (song, insert); here one engine plays the song once, the output of every insert a stem
 // needs is tapped, and each file is made from what that stem's own render would have put out (exportopts::planStemTap,
 // StemMixer) by the same code (RenderStream, ExportJob's sink): the same file, bit for bit. A target the one render
@@ -278,4 +278,4 @@ int runStemExport (const StemPlan& plan, std::function<void (std::function<void(
                    const std::function<void (double)>& progress, const std::function<void (const juce::String&)>& status,
                    const std::function<void (std::size_t, bool, float)>& done, bool separate = false, bool extraData = true,
                    StemRunStats* stats = nullptr);
-} // namespace lynx
+} // namespace yw

@@ -3,7 +3,7 @@
 #include "core/Mp3Decoder.h"
 #include "engine/NcwFormat.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -92,4 +92,4 @@ void registerAudioFormats (juce::AudioFormatManager& formats)
     formats.registerBasicFormats();
     formats.registerFormat (new NcwAudioFormat(), false); // Kontakt's NCW samples (round 190ii, issue #149)
 }
-} // namespace lynx
+} // namespace yw

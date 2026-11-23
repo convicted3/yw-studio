@@ -1,15 +1,15 @@
 #pragma once
 
 // Drawing into a cached picture without JUCE's readback (round 174e2). JUCE 8.0.4 keeps a software copy of every
-// Direct2D image and copies the whole image back from the GPU each time a Graphics drawing into it ends. LYNX's cached
+// Direct2D image and copies the whole image back from the GPU each time a Graphics drawing into it ends. YW's cached
 // pictures (the Playlist's, the Mixer's) are normally only drawn to the window, never read, so that readback (8 MB for
-// a full-screen Playlist, and a GPU stall) is pure cost. cmake/LynxPatchJuce.cmake (fix 16) adds the flag; a Graphics
+// a full-screen Playlist, and a GPU stall) is pure cost. cmake/YwPatchJuce.cmake (fix 16) adds the flag; a Graphics
 // made while a ScopedNoImageReadback lives puts the readback off. Other platforms: nothing to skip.
 //
 // Round 190bm (0.1.25 showed the Mixer and the Playlist black): "put off", not "never". In 0.1.25 the software copy
 // simply stayed as allocated (black), and JUCE reads that copy whenever the picture is drawn by anything but the
 // Direct2D device it was painted on: a window drawn without the GPU (Options > General settings > GPU rendering off,
-// which LYNX also switches off by itself after a crash in the graphics driver), a window on a monitor of another
+// which YW also switches off by itself after a crash in the graphics driver), a window on a monitor of another
 // graphics adapter than the system's first, or the pages of a new device after the adapters changed. The patch
 // (fix 22) now reads the picture back when the copy is first needed, and counts pictures it could not read
 // (pictureLossCount: the caches repaint). A window drawn without the GPU gets a software picture in the first place.
@@ -22,27 +22,27 @@
 namespace juce
 {
 class ImagePixelData;
-extern bool lynxSkipImageReadback;                // juce_Direct2DImage_windows.cpp (patched)
-extern const ImagePixelData* lynxNoReadbackImage; // (patched) the one image the flag is for
-extern int lynxImageContentLost;                  // (patched) device pictures lost before they could be read back
+extern bool ywSkipImageReadback;                // juce_Direct2DImage_windows.cpp (patched)
+extern const ImagePixelData* ywNoReadbackImage; // (patched) the one image the flag is for
+extern int ywImageContentLost;                  // (patched) device pictures lost before they could be read back
 }
 #endif
 
-namespace lynx::ui
+namespace yw::ui
 {
 // While it lives, a Graphics made on `image` ends without the readback (any other image: as ever)
 struct ScopedNoImageReadback
 {
 #if JUCE_WINDOWS
-    explicit ScopedNoImageReadback (const juce::Image& image) : before (juce::lynxSkipImageReadback), imageBefore (juce::lynxNoReadbackImage)
+    explicit ScopedNoImageReadback (const juce::Image& image) : before (juce::ywSkipImageReadback), imageBefore (juce::ywNoReadbackImage)
     {
-        juce::lynxSkipImageReadback = true;
-        juce::lynxNoReadbackImage = image.getPixelData();
+        juce::ywSkipImageReadback = true;
+        juce::ywNoReadbackImage = image.getPixelData();
     }
     ~ScopedNoImageReadback()
     {
-        juce::lynxSkipImageReadback = before;
-        juce::lynxNoReadbackImage = imageBefore;
+        juce::ywSkipImageReadback = before;
+        juce::ywNoReadbackImage = imageBefore;
     }
     bool before;
     const juce::ImagePixelData* imageBefore;
@@ -57,7 +57,7 @@ struct ScopedNoImageReadback
 inline int pictureLossCount() noexcept
 {
 #if JUCE_WINDOWS
-    return juce::lynxImageContentLost;
+    return juce::ywImageContentLost;
 #else
     return 0;
 #endif
@@ -88,7 +88,7 @@ inline bool windowDrawnByCpu (const juce::Component& c)
     return false;
 }
 
-// A cached picture's image, cleared. Null when it cannot be had (no size, or more pixels than any window LYNX draws:
+// A cached picture's image, cleared. Null when it cannot be had (no size, or more pixels than any window YW draws:
 // the caller then paints its component straight to the window). `software`: see windowDrawnByCpu.
 constexpr juce::int64 maxPicturePixels = 16384 * 8192; // (an 8K display at 200 % is 7680 x 4320)
 inline juce::Image makePicture (int width, int height, bool software)
@@ -142,4 +142,4 @@ inline void notePicture (const char* name, const juce::Image& picture, float sca
                        + juce::String (juce::roundToInt (scale * 100.0f)) + " %, " + kind + ", " + drawn)
                           .toStdString());
 }
-} // namespace lynx::ui
+} // namespace yw::ui

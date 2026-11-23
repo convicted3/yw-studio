@@ -46,7 +46,7 @@
 #include "core/StateParams.h"
 #include "core/Vocodex.h"
 
-namespace lynx::fxaudit
+namespace yw::fxaudit
 {
 constexpr double rate = 44100.0;
 constexpr int blockSize = 512;
@@ -1018,7 +1018,7 @@ inline std::vector<Hint> hintsFor (EffectKind kind)
         case EffectKind::distructor:
             out.push_back (named ("every module's output up (the final clipper's range)", { { "M1 Out", 1.0f }, { "M2 Out", 1.0f }, { "M3 Out", 1.0f }, { "M4 Out", 1.0f } }));
             break;
-        case EffectKind::lynxTune:
+        case EffectKind::ywTune:
             out.push_back (named ("the created vibrato on, at once", { { "Vibrato shape", 1.0f / 3.0f }, { "Vibrato depth", 1.0f }, { "Onset delay", 0.0f }, { "Vibrato rate", 0.5f } }));
             out.push_back (named ("the reference tone on, MIDI channel 1", { { "MIDI", 1.0f / 128.0f }, { "Reference tone", 1.0f } }));
             break;
@@ -1190,14 +1190,14 @@ inline bool keepInContext (const std::string& name)
 // The number of parameters a kind had when the last survey recorded its "rand:k" contexts (tests/FxAudit173dKnown.inc).
 // A random context draws one value per control in the controls' order, so a control added later — in the middle of
 // the editor, or before the parameters the editor doesn't show — would hand every control after it the next one's
-// draw and the recorded contexts would mean other settings (round 190bb: LYNX Tune's Breathiness made "B dir" →
+// draw and the recorded contexts would mean other settings (round 190bb: YW Tune's Breathiness made "B dir" →
 // rand:3 dead). Parameters from this index on draw after all the others. Regenerate the known keys and drop the
 // entry after a new survey.
 inline int surveyedParamCount (EffectKind kind)
 {
     switch (kind)
     {
-        case EffectKind::lynxTune: return 95; // round 190bb: + Breathiness (95)
+        case EffectKind::ywTune: return 95; // round 190bb: + Breathiness (95)
         default: return 1 << 30;
     }
 }
@@ -1483,7 +1483,7 @@ inline KindReport audit (const EffectSlot& slot0, const Programme& prog, const O
                 if (! from)
                     continue;
                 const auto moved = bestMove (*from, c, prog, ro, thr, true);
-                if (std::getenv ("LYNX_FXAUDIT_DEBUG") != nullptr)
+                if (std::getenv ("YW_FXAUDIT_DEBUG") != nullptr)
                     std::printf ("    [%s] %s: %s → %.0f dB\n", c.name.c_str(), key.c_str(), why.c_str(), moved);
                 if (moved > thr)
                 {
@@ -1508,4 +1508,4 @@ inline const char* statusText (Status s)
 {
     return s == Status::ok ? "ok" : s == Status::dependent ? "dependent-ok" : s == Status::nonAudio ? "non-audio" : "DEAD";
 }
-} // namespace lynx::fxaudit
+} // namespace yw::fxaudit

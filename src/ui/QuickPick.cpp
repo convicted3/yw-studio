@@ -18,7 +18,7 @@
 #include "ui/PluginWindow.h"
 #include "ui/Theme.h"
 
-namespace lynx::quickpick
+namespace yw::quickpick
 {
 std::vector<GeneratorEntry> generatorEntries (AudioEngine& engine, bool withUnavailable)
 {
@@ -48,14 +48,14 @@ std::vector<EffectEntry> effectEntries (AudioEngine& engine, bool withUnavailabl
         if (const auto available = addableEffectAvailable (kind); available || withUnavailable)
         {
             const auto flEngine = natives::effectEngine (kind) != nullptr;
-            out.push_back ({ std::string ("lynx:fx:") + effectInfo (kind).name, addableEffectName (kind),
+            out.push_back ({ std::string ("yw:fx:") + effectInfo (kind).name, addableEffectName (kind),
                              flEngine ? tr ("built-in FL engine") : tr ("built-in"), flEngine ? 1 : 0,
                              [kind, bpm] { return std::optional<EffectSlot> (newAddableEffect (kind, bpm)); } });
             out.back().available = available;
             out.back().flPlugin = isFlEffect (kind);
         }
     // round 183c: Live-style Audio Effect Rack (a Patcher in rack mode, core/Rack.h)
-    out.push_back ({ "lynx:fx:Audio Effect Rack", tr ("Audio Effect Rack"), tr ("built-in"), 0,
+    out.push_back ({ "yw:fx:Audio Effect Rack", tr ("Audio Effect Rack"), tr ("built-in"), 0,
                      [] { return std::optional<EffectSlot> (rack::makeRackSlot (RackDoc::Kind::audioEffect)); } });
 
     auto types = engine.getPluginHost().getKnownPlugins().getTypes();
@@ -80,12 +80,12 @@ namespace
 // The built-in plugins of `entries` with what their default category needs (round 170b)
 plugincatalog::BuiltinPlugin builtinOf (const GeneratorEntry& e)
 {
-    const auto name = e.key.rfind ("lynx:gen:", 0) == 0 ? e.key.substr (9) : e.key;
+    const auto name = e.key.rfind ("yw:gen:", 0) == 0 ? e.key.substr (7) : e.key;
     return { e.key, name, true, e.folder == 1 };
 }
 plugincatalog::BuiltinPlugin builtinOf (const EffectEntry& e)
 {
-    const auto name = e.key.rfind ("lynx:fx:", 0) == 0 ? e.key.substr (8) : e.key;
+    const auto name = e.key.rfind ("yw:fx:", 0) == 0 ? e.key.substr (6) : e.key;
     return { e.key, name, e.flPlugin, e.flPlugin };
 }
 
@@ -209,7 +209,7 @@ void addGeneratorMenu (juce::PopupMenu& menu, AudioEngine& engine, std::function
     }, owner, pick);
     menu.addSubMenu (tr ("Plugin (VST/VST3/CLAP)"), plugins);
     menu.addSeparator();
-    // FL's Add menu (round 170b): the generators under their categories, A-Z (FL's Plugin database folders, LYNX's own
+    // FL's Add menu (round 170b): the generators under their categories, A-Z (FL's Plugin database folders, YW's own
     // first); the channel's own generator is ticked (only kinds with one entry: the VFX and FL engines share kinds / names)
     categorizedItems<GeneratorEntry> (menu, engine, entries, true, [&] (juce::PopupMenu& m, int i) {
         const auto& e = entries[(std::size_t) i];
@@ -356,7 +356,7 @@ juce::String slotName (AudioEngine& engine, const EffectSlot& slot)
         return slot.patcher.rack.front().name.empty() ? tr ("Audio Effect Rack") : juce::String::fromUTF8 (slot.patcher.rack.front().name.c_str());
     if (slot.isSubstitute() || original != juce::String (effectInfo (slot.kind).name)) // (a stand-in shows what it stands for)
         return original;
-    return shownName (engine, std::string ("lynx:fx:") + effectInfo (slot.kind).name, original);
+    return shownName (engine, std::string ("yw:fx:") + effectInfo (slot.kind).name, original);
 }
 
 void rename (AudioEngine& engine, const std::string& key, const juce::String& original, std::function<void()> done)
@@ -591,4 +591,4 @@ void showMenu (juce::PopupMenu& menu, const juce::PopupMenu::Options& options, s
     // when they open (the timer finds them)
     keys->start();
 }
-} // namespace lynx::quickpick
+} // namespace yw::quickpick

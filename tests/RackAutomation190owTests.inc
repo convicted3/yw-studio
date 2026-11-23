@@ -1,9 +1,9 @@
-// Round 190ow (PAT-7 rest, details DE-123): what FL's automation clip channels do in the Channel rack, now that LYNX's rows
+// Round 190ow (PAT-7 rest, details DE-123): what FL's automation clip channels do in the Channel rack, now that YW's rows
 // do it too (core/RackAutomation.h). Steps / notes on a row (Pattern::autoNotes) start the clip from its beginning and
 // play it while the note is held, then the value holds (FL's manual, "Triggering"; FL 2026 /R renders of round 190ow's
 // probes); a step of no length plays the clip once. The row's knobs are the clip's MIN / MAX (FL: "a scaling factor that
 // re-ranges the output", the points stay). The mute light silences the clip. The .flp export writes the channels in the
-// rack's order, and the import puts every row where FL's channel order has it. The .lynx round trip and the copies for
+// rack's order, and the import puts every row where FL's channel order has it. The .yw round trip and the copies for
 // 0.1.30 / 0.1.28 are checked in the app's --selftest ("rackauto190ow": ProjectFile).
 
 #include "core/RackAutomation.h"
@@ -16,42 +16,42 @@ namespace ra190ow
 // automation slot 0 shows what the automation plays at each block.
 struct Rig
 {
-    lynx::Song song;
-    explicit Rig (lynx::PlayMode mode = lynx::PlayMode::song)
+    yw::Song song;
+    explicit Rig (yw::PlayMode mode = yw::PlayMode::song)
     {
-        song = lynx::Song::makeDefault();
+        song = yw::Song::makeDefault();
         song.mode = mode;
         song.channels.clear();
         song.channels.emplace_back().name = "Tone";
         song.playlist.clear();
         song.automations.clear();
-        song.mixer = lynx::Song::defaultMixer (2);
-        lynx::Automation a;
+        song.mixer = yw::Song::defaultMixer (2);
+        yw::Automation a;
         a.name = "Duck";
-        a.target = { lynx::AutomationTargetKind::mixerVolume, 0 };
-        a.points = { { 0, 0.0f, 0.0f }, { 2 * lynx::ppq, 1.0f, 0.0f } }; // 0 -> 1 over two beats
+        a.target = { yw::AutomationTargetKind::mixerVolume, 0 };
+        a.points = { { 0, 0.0f, 0.0f }, { 2 * yw::ppq, 1.0f, 0.0f } }; // 0 -> 1 over two beats
         song.automations.push_back (a);
         song.patterns.resize (1);
-        song.patterns[0].lengthTicks = 16 * lynx::ppq;
-        lynx::Clip pc;
-        pc.kind = lynx::ClipKind::pattern;
+        song.patterns[0].lengthTicks = 16 * yw::ppq;
+        yw::Clip pc;
+        pc.kind = yw::ClipKind::pattern;
         pc.pattern = 0;
-        pc.length = 16 * lynx::ppq;
+        pc.length = 16 * yw::ppq;
         song.playlist.push_back (pc);
         // (an empty pattern's clip to beat 64 on another track keeps the song long: the position never wraps)
-        song.patterns.emplace_back().lengthTicks = 4 * lynx::ppq;
-        lynx::Clip pad;
-        pad.kind = lynx::ClipKind::pattern;
+        song.patterns.emplace_back().lengthTicks = 4 * yw::ppq;
+        yw::Clip pad;
+        pad.kind = yw::ClipKind::pattern;
         pad.pattern = 1;
         pad.track = 3;
-        pad.length = 64 * lynx::ppq;
+        pad.length = 64 * yw::ppq;
         song.playlist.push_back (pad);
     }
     void trigger (double beat, double beats)
     {
-        lynx::Note n;
-        n.start = (std::int64_t) std::llround (beat * lynx::ppq);
-        n.length = (std::int64_t) std::llround (beats * lynx::ppq);
+        yw::Note n;
+        n.start = (std::int64_t) std::llround (beat * yw::ppq);
+        n.length = (std::int64_t) std::llround (beats * yw::ppq);
         n.channel = 0;
         song.patterns[0].autoNotes.push_back (n);
         song.patterns[0].sortNotes();
@@ -59,12 +59,12 @@ struct Rig
     // the automation's value at beat `beat` (the renderer runs blocks from 0 up to it); NaN = not automated
     float at (double beat) const
     {
-        auto state = lynx::RackState::build (song, nullptr, 48000.0);
-        lynx::RackRenderer renderer;
+        auto state = yw::RackState::build (song, nullptr, 48000.0);
+        yw::RackRenderer renderer;
         renderer.prepare (48000.0, 64);
         std::vector<float> l (64), r (64);
         // (64 samples at 120 BPM and 48 kHz: 2.56 ticks; the position is set straight, as the engine does each block)
-        renderer.process (state.get(), true, beat * lynx::ppq, 64, l.data(), r.data());
+        renderer.process (state.get(), true, beat * yw::ppq, 64, l.data(), r.data());
         return renderer.automationValueForCheck (0);
     }
 };
@@ -74,16 +74,16 @@ bool near (float a, float b) { return std::abs (a - b) < 2.0e-3f; }
 
 TEST (rackauto190ow_steps_on_the_row)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     CHECK (! p.hasAutoStep (0, 3));
     p.toggleAutoStep (0, 3);
     CHECK (p.hasAutoStep (0, 3) && ! p.hasAutoStep (1, 3) && ! p.hasAutoStep (0, 2));
-    CHECK (p.autoNotes.size() == 1 && p.autoNotes[0].start == 3 * lynx::ticksPerStep && p.notes.empty()); // (never a channel's)
+    CHECK (p.autoNotes.size() == 1 && p.autoNotes[0].start == 3 * yw::ticksPerStep && p.notes.empty()); // (never a channel's)
     p.toggleAutoStep (0, 3);
     CHECK (p.autoNotes.empty());
     // a muted note in the step counts as off: setting the step replaces it
-    lynx::Note muted;
-    muted.start = 2 * lynx::ticksPerStep;
+    yw::Note muted;
+    muted.start = 2 * yw::ticksPerStep;
     muted.channel = 0;
     muted.muted = true;
     p.autoNotes.push_back (muted);
@@ -91,17 +91,17 @@ TEST (rackauto190ow_steps_on_the_row)
     p.toggleAutoStep (0, 2);
     CHECK (p.hasAutoStep (0, 2) && p.autoNotes.size() == 1 && ! p.autoNotes[0].muted);
     // FL's pattern length counts the automation rows' notes
-    lynx::Pattern q;
-    lynx::Note late;
-    late.start = 5 * lynx::ppq * 4; // bar 6
-    late.length = lynx::ticksPerStep;
+    yw::Pattern q;
+    yw::Note late;
+    late.start = 5 * yw::ppq * 4; // bar 6
+    late.length = yw::ticksPerStep;
     q.autoNotes.push_back (late);
-    CHECK (q.effectiveLength ({ 4, 4 }) == 6 * 4 * lynx::ppq);
+    CHECK (q.effectiveLength ({ 4, 4 }) == 6 * 4 * yw::ppq);
 }
 
 TEST (rackauto190ow_removing_an_automation_takes_its_steps)
 {
-    lynx::Song s;
+    yw::Song s;
     s.automations.resize (3);
     for (auto& a : s.automations)
         a.points = { { 0, 0.5f, 0.0f } };
@@ -151,13 +151,13 @@ TEST (rackauto190ow_the_pattern_clip_decides_where_its_steps_play)
 {
     ra190ow::Rig rig;
     rig.trigger (4.0, 0.0);
-    rig.song.playlist[0].start = 8 * lynx::ppq; // the pattern clip from beat 8, its first four beats cut (offset)
-    rig.song.playlist[0].offset = 2 * lynx::ppq;
-    rig.song.playlist[0].length = 4 * lynx::ppq;
+    rig.song.playlist[0].start = 8 * yw::ppq; // the pattern clip from beat 8, its first four beats cut (offset)
+    rig.song.playlist[0].offset = 2 * yw::ppq;
+    rig.song.playlist[0].length = 4 * yw::ppq;
     CHECK (std::isnan (rig.at (9.5)));
     CHECK (ra190ow::near (rig.at (10.5), 0.25f)); // pattern beat 4 plays at song beat 8 - 2 + 4 = 10
     // a step the clip's end cuts plays on to its own end (FL 2026: probes p13_cut, p15_cutnote)
-    rig.song.playlist[0].length = 3 * lynx::ppq; // ends at beat 11
+    rig.song.playlist[0].length = 3 * yw::ppq; // ends at beat 11
     CHECK (ra190ow::near (rig.at (11.5), 0.75f));
     CHECK (ra190ow::near (rig.at (13.0), 1.0f));
     CHECK (std::isnan (rig.at (8.5)));            // a step before the clip's offset never plays
@@ -168,12 +168,12 @@ TEST (rackauto190ow_the_pattern_clip_decides_where_its_steps_play)
 TEST (rackauto190ow_a_trigger_and_a_playlist_clip_the_later_start_wins)
 {
     ra190ow::Rig rig;
-    lynx::Clip ac;
-    ac.kind = lynx::ClipKind::automation;
+    yw::Clip ac;
+    ac.kind = yw::ClipKind::automation;
     ac.automation = 0;
     ac.track = 1;
-    ac.start = 2 * lynx::ppq;
-    ac.length = 2 * lynx::ppq;
+    ac.start = 2 * yw::ppq;
+    ac.length = 2 * yw::ppq;
     rig.song.playlist.push_back (ac);
     CHECK (ra190ow::near (rig.at (3.0), 0.5f)); // the Playlist clip
     rig.trigger (3.0, 0.0);
@@ -185,12 +185,12 @@ TEST (rackauto190ow_a_muted_clip_drives_nothing)
 {
     ra190ow::Rig rig;
     rig.trigger (1.0, 0.0);
-    lynx::Clip ac;
-    ac.kind = lynx::ClipKind::automation;
+    yw::Clip ac;
+    ac.kind = yw::ClipKind::automation;
     ac.automation = 0;
     ac.track = 1;
-    ac.start = 4 * lynx::ppq;
-    ac.length = 2 * lynx::ppq;
+    ac.start = 4 * yw::ppq;
+    ac.length = 2 * yw::ppq;
     rig.song.playlist.push_back (ac);
     CHECK (! std::isnan (rig.at (1.5)) && ! std::isnan (rig.at (5.0)));
     rig.song.automations[0].muted = true;
@@ -200,8 +200,8 @@ TEST (rackauto190ow_a_muted_clip_drives_nothing)
 
 TEST (rackauto190ow_pattern_mode_plays_the_current_patterns_steps)
 {
-    ra190ow::Rig rig (lynx::PlayMode::pattern);
-    rig.song.patterns[0].lengthTicks = 8 * lynx::ppq;
+    ra190ow::Rig rig (yw::PlayMode::pattern);
+    rig.song.patterns[0].lengthTicks = 8 * yw::ppq;
     rig.song.currentPattern = 0;
     rig.trigger (2.0, 0.0);
     CHECK (std::isnan (rig.at (1.0)));          // the first pass: the target's own value before the step
@@ -209,8 +209,8 @@ TEST (rackauto190ow_pattern_mode_plays_the_current_patterns_steps)
     CHECK (ra190ow::near (rig.at (6.0), 1.0f));
     CHECK (ra190ow::near (rig.at (9.0), 1.0f));  // the second pass, before the step: the pass before still holds
     CHECK (ra190ow::near (rig.at (11.0), 0.5f)); // started again at 8 + 2
-    lynx::Pattern other;
-    other.lengthTicks = 8 * lynx::ppq;
+    yw::Pattern other;
+    other.lengthTicks = 8 * yw::ppq;
     rig.song.patterns.push_back (other);
     rig.song.currentPattern = (int) rig.song.patterns.size() - 1; // another pattern: its steps only
     CHECK (std::isnan (rig.at (3.0)));
@@ -218,31 +218,31 @@ TEST (rackauto190ow_pattern_mode_plays_the_current_patterns_steps)
 
 TEST (rackauto190ow_the_knobs_rerange_the_clip_and_leave_it_alone_untouched)
 {
-    lynx::Automation a;
-    a.points = { { 0, 0.0f, 0.0f }, { lynx::ppq, 1.0f, 0.0f } };
+    yw::Automation a;
+    a.points = { { 0, 0.0f, 0.0f }, { yw::ppq, 1.0f, 0.0f } };
     CHECK (! a.reranged());
-    const auto plain = a.playAt (0.3 * lynx::ppq, 0.0);
+    const auto plain = a.playAt (0.3 * yw::ppq, 0.0);
     a.rangeMin = 0.25f;
     a.rangeMax = 0.75f;
     CHECK (a.reranged());
-    CHECK (ra190ow::near (a.playAt (0.0, 0.0), 0.25f) && ra190ow::near (a.playAt (lynx::ppq, 0.0), 0.75f));
-    CHECK (ra190ow::near (a.playAt (0.5 * lynx::ppq, 0.0), 0.5f));
-    CHECK (a.valueAt (0.5 * lynx::ppq) == 0.5f); // the points stay as drawn (FL: "the Playlist display will remain unchanged")
+    CHECK (ra190ow::near (a.playAt (0.0, 0.0), 0.25f) && ra190ow::near (a.playAt (yw::ppq, 0.0), 0.75f));
+    CHECK (ra190ow::near (a.playAt (0.5 * yw::ppq, 0.0), 0.5f));
+    CHECK (a.valueAt (0.5 * yw::ppq) == 0.5f); // the points stay as drawn (FL: "the Playlist display will remain unchanged")
     a.rangeMin = 0.0f;
     a.rangeMax = 1.0f;
-    CHECK (a.playAt (0.3 * lynx::ppq, 0.0) == plain); // back: the same bits
+    CHECK (a.playAt (0.3 * yw::ppq, 0.0) == plain); // back: the same bits
     // an FL clip's own range (the points written in it): untouched = nothing re-ranged; MIN up to its MAX = flat
     a.pointsMin = a.rangeMin = 0.2f;
     a.pointsMax = a.rangeMax = 0.6f;
-    a.points = { { 0, 0.2f, 0.0f }, { lynx::ppq, 0.6f, 0.0f } };
-    CHECK (! a.reranged() && a.playAt (0.5 * lynx::ppq, 0.0) == a.valueAt (0.5 * lynx::ppq));
+    a.points = { { 0, 0.2f, 0.0f }, { yw::ppq, 0.6f, 0.0f } };
+    CHECK (! a.reranged() && a.playAt (0.5 * yw::ppq, 0.0) == a.valueAt (0.5 * yw::ppq));
     a.rangeMax = 1.0f; // MAX 0.6 -> 1.0: the top of the curve goes up, its bottom stays
-    CHECK (ra190ow::near (a.playAt (0.0, 0.0), 0.2f) && ra190ow::near (a.playAt (lynx::ppq, 0.0), 1.0f));
+    CHECK (ra190ow::near (a.playAt (0.0, 0.0), 0.2f) && ra190ow::near (a.playAt (yw::ppq, 0.0), 1.0f));
 }
 
 TEST (rackauto190ow_flp_import_reads_the_rows_steps_mute_and_range)
 {
-    using namespace lynx;
+    using namespace yw;
     flp::Project p;
     p.header.ppq = 96;
     const auto add = [&p] (int index, flp::ChannelType type, const char* name) -> flp::Channel& {
@@ -322,7 +322,7 @@ TEST (rackauto190ow_flp_import_reads_the_rows_steps_mute_and_range)
 
 TEST (rackauto190ow_flp_export_keeps_numbers_when_the_rows_follow_the_channels)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     for (int c = 0; c < 3; ++c)
         song.channels.emplace_back().name = "C" + std::to_string (c);
@@ -340,7 +340,7 @@ TEST (rackauto190ow_flp_export_keeps_numbers_when_the_rows_follow_the_channels)
     const auto out = flp::parseProject (flpexport::exportFlp (song, options, report));
     RA190OW_REQUIRE (out.channels.size() == 4);
     CHECK (out.channels[3].type == flp::ChannelType::automationClip && out.channels[3].index == 3);
-    CHECK (out.channels[3].pan == 0 && out.channels[3].volume == 12800 && out.channels[3].enabled); // (a LYNX clip: as before)
+    CHECK (out.channels[3].pan == 0 && out.channels[3].volume == 12800 && out.channels[3].enabled); // (a YW clip: as before)
     CHECK (out.automationLinks.size() == 1 && out.automationLinks[0].channel == 3 && out.automationLinks[0].target.channel() == 2);
     // the row placed above C1: FL's channel 1 is the clip, C1 and C2 move down one, and everything that names them
     song.automations[0].rackSlot = 1;
@@ -366,11 +366,11 @@ TEST (rackauto190ow_editor_playhead_follows_a_triggered_clip)
 {
     ra190ow::Rig rig;
     rig.trigger (4.0, 1.0);
-    CHECK (lynx::rackauto::triggeredAt (rig.song, 0, 3.0 * lynx::ppq) < 0.0);
-    CHECK (std::abs (lynx::rackauto::triggeredAt (rig.song, 0, 4.5 * lynx::ppq) - 0.5 * lynx::ppq) < 1.0);
-    CHECK (lynx::rackauto::triggeredAt (rig.song, 0, 5.5 * lynx::ppq) < 0.0); // the note ended: no playhead
-    const auto v = lynx::rackauto::triggeredValue (rig.song, 0, 5.5 * lynx::ppq);
-    CHECK (ra190ow::near (v.first, 0.5f) && v.second == 4.0 * lynx::ppq); // (the knobs on screen hold the value)
+    CHECK (yw::rackauto::triggeredAt (rig.song, 0, 3.0 * yw::ppq) < 0.0);
+    CHECK (std::abs (yw::rackauto::triggeredAt (rig.song, 0, 4.5 * yw::ppq) - 0.5 * yw::ppq) < 1.0);
+    CHECK (yw::rackauto::triggeredAt (rig.song, 0, 5.5 * yw::ppq) < 0.0); // the note ended: no playhead
+    const auto v = yw::rackauto::triggeredValue (rig.song, 0, 5.5 * yw::ppq);
+    CHECK (ra190ow::near (v.first, 0.5f) && v.second == 4.0 * yw::ppq); // (the knobs on screen hold the value)
     rig.song.automations[0].muted = true;
-    CHECK (std::isnan (lynx::rackauto::triggeredValue (rig.song, 0, 4.5 * lynx::ppq).first));
+    CHECK (std::isnan (yw::rackauto::triggeredValue (rig.song, 0, 4.5 * yw::ppq).first));
 }

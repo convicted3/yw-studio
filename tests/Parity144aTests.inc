@@ -2,7 +2,7 @@
 
 TEST (lattice_delay_sync_reference_law_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace lt = echosuite::lattice;
     auto p = makeEffectSlot (EffectKind::latticeMod).params;
     CHECK ((int) effectInfo (EffectKind::latticeMod).params.size() == lt::paramCount);
@@ -51,8 +51,8 @@ TEST (lattice_delay_sync_reference_law_round144)
 
 TEST (facet_linear_phase_resolution_round144)
 {
-    using namespace lynx;
-    using namespace lynx::facet;
+    using namespace yw;
+    using namespace yw::facet;
     auto p = makeEffectSlot (EffectKind::facetEq).params;
     CHECK ((int) effectInfo (EffectKind::facetEq).params.size() == paramCount);
     CHECK (resolution (p[(std::size_t) resolutionParam]) == 1); // Medium: the old FIR length

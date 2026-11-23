@@ -7,7 +7,7 @@
 // does not sleep at all, and wait_for's loop spins until the deadline. Every timed wait of a background thread ended in
 // such a spin (round 190la measured ~0.5 ms of spin per wait: a 10 ms supervisor loop = ~5 % of a core). Here the wait
 // sleeps whole milliseconds rounded up (the deadline may be seen up to ~1 ms late, never early). JUCE's own
-// WaitableEvent gets the same fix (cmake/LynxPatchJuce.cmake, fix 44). Everywhere else: std::condition_variable.
+// WaitableEvent gets the same fix (cmake/YwPatchJuce.cmake, fix 44). Everywhere else: std::condition_variable.
 
 #include <chrono>
 #include <condition_variable>
@@ -19,7 +19,7 @@ extern "C" __declspec (dllimport) int __stdcall SleepConditionVariableSRW (struc
                                                                           unsigned long, unsigned long);
 #endif
 
-namespace lynx::cvwait
+namespace yw::cvwait
 {
 // cv.wait_for (lock, timeout, pred): true when pred() holds at the end
 template <class Rep, class Period, class Pred>
@@ -57,4 +57,4 @@ void waitFor (std::condition_variable& cv, std::unique_lock<std::mutex>& lock, s
     cv.wait_for (lock, timeout);
 #endif
 }
-} // namespace lynx::cvwait
+} // namespace yw::cvwait

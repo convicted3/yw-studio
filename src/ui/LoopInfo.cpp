@@ -6,7 +6,7 @@
 #include "platform/Paths.h"
 #include "ui/I18n.h"
 
-namespace lynx::loopinfo
+namespace yw::loopinfo
 {
 namespace
 {
@@ -138,4 +138,4 @@ juce::String rowText (const loopanalysis::Result& r, Meter meter)
         parts.add (juce::String (projectkey::rootName (r.key->root)) + " " + (r.key->minor ? tr ("minor") : tr ("major")));
     return parts.joinIntoString (juce::String::fromUTF8 (" \xc2\xb7 "));
 }
-} // namespace lynx::loopinfo
+} // namespace yw::loopinfo

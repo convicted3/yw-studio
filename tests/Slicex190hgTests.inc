@@ -6,9 +6,9 @@
 namespace slicex190hg
 {
 // a 1 s mono 441 Hz sine at 44.1 kHz with four cue points (four regions of 11025 frames)
-inline std::shared_ptr<lynx::SampleData> sine()
+inline std::shared_ptr<yw::SampleData> sine()
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 44100; ++i)
         s->left.push_back (0.5f * (float) std::sin (2.0 * 3.141592653589793 * 441.0 * (double) i / 44100.0));
     s->sampleRate = 44100.0;
@@ -29,7 +29,7 @@ inline int crossings (const std::vector<float>& x, std::size_t from, std::size_t
 
 TEST (slicex190hg_a_slide_note_bends_the_sounding_slice)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto a = slicex190hg::sine();
     auto def = slicex190l::channel();
     auto inst = makeSlicexInstrument (a, nullptr);
@@ -68,7 +68,7 @@ TEST (slicex190hg_a_slide_note_bends_the_sounding_slice)
 
 TEST (slicex190hg_channel_porta_glides_a_new_slice_in)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto a = slicex190hg::sine();
     auto inst = makeSlicexInstrument (a, nullptr);
     inst->prepare (44100.0);

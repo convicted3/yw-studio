@@ -6,7 +6,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-namespace lynx
+namespace yw
 {
 // The CLAP plugin id (e.g. "com.vendor.plugin") of a scanned CLAP plugin: its module is opened and the descriptor whose
 // id hashes to the description's uniqueId is read (Export to FL Studio, round 171e: FL's wrapper keys CLAP by its id).
@@ -53,7 +53,7 @@ private:
                                PluginCreationCallback) override;
 };
 
-// Adds the LYNX formats (JUCE's VST3 + CLAP + our VST2 host) to a manager.
+// Adds the YW formats (JUCE's VST3 + CLAP + our VST2 host) to a manager.
 void addPluginFormats (juce::AudioPluginFormatManager& manager);
 
 // Issue #108 (MPE, core/Mpe.h): from now on a CLAP plugin that takes CLAP notes gets the pitch bend, CC 74 and channel
@@ -63,7 +63,7 @@ void addPluginFormats (juce::AudioPluginFormatManager& manager);
 bool setClapNoteExpressions (juce::AudioPluginInstance& plugin, float bendRange);
 
 // --- round 190jg (BUILD-LIST 18): more CLAP extensions -----------------------------------------------------------------
-// LYNX hosts clap.thread-pool (the plugin's tasks on LYNX's worker threads), clap.tail (getTailLengthSeconds),
+// YW hosts clap.thread-pool (the plugin's tasks on YW's worker threads), clap.tail (getTailLengthSeconds),
 // clap.render (an export renders offline), clap.voice-info, clap.state-context, clap.remote-controls, clap.preset-load
 // with the preset discovery factory (the plugin's presets are its programs in the plugin window's preset bar), and
 // sample-accurate parameter changes (engine/TimedParameters.h).
@@ -101,11 +101,11 @@ struct ClapVoiceInfo
 };
 ClapVoiceInfo clapVoiceInfo (juce::AudioPluginInstance& plugin);
 
-// What a CLAP plugin offers and what LYNX made of it (--clapext): its extensions, presets found, remote pages, voice
+// What a CLAP plugin offers and what YW made of it (--clapext): its extensions, presets found, remote pages, voice
 // info, tail; message thread
 juce::String describeClapPlugin (juce::AudioPluginInstance& plugin);
 // clap.tail: whether the plugin declares its tail (then getTailLengthSeconds is the plugin's own, used by smart disable)
 bool clapDeclaresTail (const juce::AudioPluginInstance& plugin);
 // thread-pool use since the plugin was made: requests and tasks (tests)
 std::pair<int, int> clapThreadPoolUse (juce::AudioPluginInstance& plugin);
-} // namespace lynx
+} // namespace yw

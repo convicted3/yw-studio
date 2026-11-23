@@ -7,7 +7,7 @@
 #include <cstring>
 #include <type_traits>
 
-// LYNX (round 190kr): the split-complex FFT passes and the real-FFT twists run four values at a time with SSE2 where
+// YW (round 190kr): the split-complex FFT passes and the real-FFT twists run four values at a time with SSE2 where
 // available (float only). Each output value is computed by the same IEEE operations in the same order as the scalar
 // code, so the results are bit-identical.
 #if defined(__SSE2__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
@@ -16,14 +16,14 @@
 #else
 #	define SIGNALSMITH_LINEAR_SSE2 0
 #endif
-// LYNX (round 190kz): the strided radix-4 passes, the 2-point pass and the radix-5 final pass also eight values at a time
-// with AVX2 where the CPU has it (picked at run time: src/core/CpuFeatures.h; LYNX_CPU=sse2 keeps the four-wide loops).
+// YW (round 190kz): the strided radix-4 passes, the 2-point pass and the radix-5 final pass also eight values at a time
+// with AVX2 where the CPU has it (picked at run time: src/core/CpuFeatures.h; YW_CPU=sse2 keeps the four-wide loops).
 // The same operations on eight lanes, so every path gives the same bits.
 #if SIGNALSMITH_LINEAR_SSE2 && (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__)) && defined(__has_include)
 #	if __has_include("core/CpuFeatures.h")
 #		include "core/CpuFeatures.h"
 #		include <immintrin.h>
-#		define SIGNALSMITH_LINEAR_AVX LYNX_CPU_DISPATCH
+#		define SIGNALSMITH_LINEAR_AVX YW_CPU_DISPATCH
 #	endif
 #endif
 #ifndef SIGNALSMITH_LINEAR_AVX
@@ -287,7 +287,7 @@ private:
 			size_t s = 0;
 #if SIGNALSMITH_LINEAR_AVX
 			if constexpr (simdFloat) {
-				if (lynx::cpu::hasAvx2()) s = pass2Avx(stride, inputR, inputI, outputR, outputI);
+				if (yw::cpu::hasAvx2()) s = pass2Avx(stride, inputR, inputI, outputR, outputI);
 			}
 #endif
 #if SIGNALSMITH_LINEAR_SSE2
@@ -436,7 +436,7 @@ private:
 		if constexpr (simdFloat) {
 			size_t quarter = size/4;
 #if SIGNALSMITH_LINEAR_AVX
-			if (stride%8 == 0 && lynx::cpu::hasAvx2()) {
+			if (stride%8 == 0 && yw::cpu::hasAvx2()) {
 				combine4StridedAvx<inverse>(size, stride, inputR, inputI, outputR, outputI);
 				return;
 			}
@@ -1045,7 +1045,7 @@ private:
 		size_t i = 0;
 #if SIGNALSMITH_LINEAR_AVX
 		if constexpr (std::is_same<Sample, float>::value) {
-			if (lynx::cpu::hasAvx2()) i = finalPass5Avx(f0r, f0i, f1r, f1i, f2r, f2i, f3r, f3i, f4r, f4i, tw1r, tw1i, tw2r, tw2i);
+			if (yw::cpu::hasAvx2()) i = finalPass5Avx(f0r, f0i, f1r, f1i, f2r, f2i, f3r, f3i, f4r, f4i, tw1r, tw1i, tw2r, tw2i);
 		}
 #endif
 #if SIGNALSMITH_LINEAR_SSE2

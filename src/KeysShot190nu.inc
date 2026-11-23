@@ -10,7 +10,7 @@
     // <folder>/checks.txt lists what was checked.
     bool runKeysShot190nu (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -87,7 +87,7 @@
             // the paint cost of the regions: instructions per whole frame of the Piano roll (median of 15) with the three
             // key markers and with the same view after they are taken out (the rows' single fill path)
             {
-                const lynx::platform::ThreadInstructions counter;
+                const yw::platform::ThreadInstructions counter;
                 const auto frameInstructions = [&roll, &counter] {
                     std::vector<long long> v;
                     juce::Image image (juce::Image::ARGB, roll.getWidth(), roll.getHeight(), true);

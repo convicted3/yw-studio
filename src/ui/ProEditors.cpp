@@ -20,7 +20,7 @@
 #include "ui/ProEditorBase.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1193,7 +1193,7 @@ private:
         // round tp172b4: the style button at the knobs' height, then the character and the voicing under it (labelled),
         // where the reference keeps its character control
         // round tp172b4 (second pass): the style a single pill button at the knobs' height, as the reference's; the
-        // character and the voicing (LYNX's) small text buttons under it ("Character: Warm")
+        // character and the voicing (YW's) small text buttons under it ("Character: Warm")
         {
             auto st = menu ({ 334.0f, by + 30.0f, 96.0f, 24.0f }, style, {}, "Clean|Allround|Punch|Upward|Two-way|Vari-mu|Classic|Opto|Vocal|Bus|Pumping");
             st.look = 1;
@@ -1211,7 +1211,7 @@ private:
         out.push_back (button ({ p.getRight() + 42.0f, main().getY(), 18.0f, 12.0f }, idInMeter, "IN", v (inputMeter) >= 0.5f,
                                tr ("Input meter: show or hide")));
         // round tp172b4 (second pass): KNEE, RANGE, LOOKAHEAD and HOLD as the reference's short curved bars under the big
-        // knobs (DRIVE, LYNX's, the same in the middle), the side-chain button under them
+        // knobs (DRIVE, YW's, the same in the middle), the side-chain button under them
         const auto sy = p.getBottom() - 70.0f;
         for (const auto& [x, prm, cap] : { std::tuple<float, int, juce::String> { 108.0f, (int) knee, tr ("Knee") }, { 226.0f, (int) range, tr ("Range") },
                                            { 342.0f, (int) drive, tr ("Drive") }, { 458.0f, (int) lookahead, tr ("Lookahead") },
@@ -1796,7 +1796,7 @@ private:
     }
     static constexpr float panelW = 460.0f, expertW = 116.0f; // (the reference's widths)
     // round tp172b6 [EXEC, the reference's editor]: Free side-chain filtering: a bar in the band's colour above the panel with
-    // a grey handle at each end (they replace LYNX's Low / High knobs), joined to the Free key by a thin line
+    // a grey handle at each end (they replace YW's Low / High knobs), joined to the Free key by a thin line
     bool scFreeShown() const { return selected >= 0 && expert && v (dyn::prism::bandScFree0 + selected) >= 0.5f; }
     float scBarY() const { return panelArea().getY() - 22.0f; }
     float scHandleX (int h) const
@@ -2256,7 +2256,7 @@ private:
         m.addItem (tr ("Compress"), true, v (bp (b, fMode)) < 0.5f, [this, b] { set ({ { bp (b, fMode), 0.0f } }); });
         m.addItem (tr ("Expand"), true, v (bp (b, fMode)) >= 0.5f, [this, b] { set ({ { bp (b, fMode), 1.0f } }); });
         m.addSeparator();
-        // round tp172b6: LYNX's own settings the reference's panel doesn't show: the slopes, the pan ring's mode, the side chain's three-way input
+        // round tp172b6: YW's own settings the reference's panel doesn't show: the slopes, the pan ring's mode, the side chain's three-way input
         const auto choice = [&] (const char* title, int param, const juce::String& options) {
             const auto c = menu ({}, param, {}, options);
             juce::PopupMenu sub;
@@ -3271,7 +3271,7 @@ private:
 // =============================================================================================================
 // Aether — the reference "air" processor's workflow: the output level on an arc meter fills the top; under it two
 // big knobs side by side (MID AIR = the presence exciter, HIGH AIR = the air shelf) with the link button between
-// them, the power switch at the bottom left and the small TRIM at the bottom right. LYNX's extra settings (the two
+// them, the power switch at the bottom left and the small TRIM at the bottom right. YW's extra settings (the two
 // frequencies, the exciter's character, mix) sit in the bottom bar.
 class AetherEditor final : public ProEditor
 {
@@ -3377,7 +3377,7 @@ private:
         g.drawText (bold ? caps (t) : t, r, juce::Justification::centred, false);
     }
 
-    // a disc knob: the value inside, a short pointer at the rim (angles as LYNX's knobs: −135°…+135°)
+    // a disc knob: the value inside, a short pointer at the rim (angles as YW's knobs: −135°…+135°)
     void discKnob (juce::Graphics& g, juce::Rectangle<float> slot, juce::Rectangle<float> disc, int param, const juce::String& cap, bool big)
     {
         frostFill (g, slot);
@@ -3549,9 +3549,9 @@ private:
     }
 };
 
-// round tp172c7: Kiln Channel, LYNX's console channel — the compact dark single-channel console of its role, drawn here
+// round tp172c7: Kiln Channel, YW's console channel — the compact dark single-channel console of its role, drawn here
 // from scratch: near-black side columns (a stereo meter pair on a 0 .. 66 dB scale with -inf read-outs, IN / OUT with a
-// big knob and its dB read-out), the brushed centre module with corner screws, LYNX's kiln emblem over an amber VU with a
+// big knob and its dB read-out), the brushed centre module with corner screws, YW's kiln emblem over an amber VU with a
 // dual scale (VU over %), the name plate, Input / Output on dotted rings with the GROUP I/O and LINK I/O lamps between,
 // the chicken-head console switch with its six models round it, Drive and Group with their numbers printed round them,
 // and the Noise reduction / Group bypass keys with their labels below; the name and an info mark under the module.
@@ -3795,7 +3795,7 @@ private:
 
     static void emblem (juce::Graphics& g, juce::Point<float> c, float r)
     {
-        // LYNX's kiln mark: an arched kiln mouth with a flame inside, on a dark badge with a light rim
+        // YW's kiln mark: an arched kiln mouth with a flame inside, on a dark badge with a light rim
         const auto badge = juce::Rectangle<float> (r * 1.9f, r * 2.3f).withCentre (c);
         g.setColour (juce::Colour (0xff0b0b0c));
         g.fillRoundedRectangle (badge, r * 0.3f);
@@ -4364,4 +4364,4 @@ std::unique_ptr<juce::Component> makeProEditor (AudioEngine& engine, int track, 
 {
     return make (engine, track, slot, demo);
 }
-} // namespace lynx
+} // namespace yw

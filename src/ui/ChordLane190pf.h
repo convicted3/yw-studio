@@ -3,7 +3,7 @@
 // Round 190pf (research190oe P13): the Chord lane ---------------------------------------------------------------------
 // A child of the Playlist under the ruler (and under the Sections lane when it shows; PlaylistComponent::chordLaneHeight):
 // the song's chords (core/ChordLane.h) as named blocks over the time line, Cubase's / Logic's / Studio Pro's chord track
-// done LYNX's way. A LYNX extra in every layout, off by default (Playlist menu › View › "Chord lane", Settings › LYNX
+// done YW's way. A YW extra in every layout, off by default (Playlist menu › View › "Chord lane", Settings › YW
 // extras; the Simple ruler's menu has it too). Looks:
 //  - Pattern (18 px): FL's marker-tag style as the Sections lane's Pattern look, in a steel blue (sections are orange);
 //  - Clip-launch (18 px): flat Live-grey blocks with the name;
@@ -38,7 +38,7 @@
 #include "ui/Theme.h"
 #include "ui/WorkflowExtras.h"
 
-namespace lynx
+namespace yw
 {
 // The lane's name of a chord in the spelling the app shows (flats when the note names use flats)
 inline juce::String chordLaneName (const SongChord& c)
@@ -655,4 +655,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChordLaneView)
 };
-} // namespace lynx
+} // namespace yw

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::remotemap
+namespace yw::remotemap
 {
 namespace
 {
@@ -619,4 +619,4 @@ void usedNumbers (const Song& song, std::uint64_t ccs[2], std::uint64_t notes[2]
             notes[(m.number - linkNoteBase) >> 6] |= std::uint64_t { 1 } << ((m.number - linkNoteBase) & 63);
     }
 }
-} // namespace lynx::remotemap
+} // namespace yw::remotemap

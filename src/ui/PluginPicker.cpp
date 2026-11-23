@@ -14,7 +14,7 @@
 #include "ui/ToolWindow.h"
 #include "platform/Paths.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -503,7 +503,7 @@ private:
     AudioEngine& engine;
     std::function<void (PluginRef)> onChosen;
     std::function<void (ChannelDef)> onBuiltIn;
-    inline static const std::string builtInPrefix = "lynx:vfx:";
+    inline static const std::string builtInPrefix = "yw:vfx:";
     std::vector<plugincatalog::Entry> entries;
     std::vector<int> shown;
     std::vector<Group> groupRows;
@@ -557,4 +557,4 @@ void showPluginPicker (AudioEngine& engine, bool instruments, std::function<void
     openToolWindow (std::make_unique<PluginPicker> (engine, instruments, std::move (onChosen), instruments ? std::move (onBuiltIn) : nullptr),
                     tr ("Plugin picker"), "pluginpicker");
 }
-} // namespace lynx
+} // namespace yw

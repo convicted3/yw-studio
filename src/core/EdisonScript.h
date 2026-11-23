@@ -1,9 +1,9 @@
 #pragma once
 
-// Edison's audio scripts (Tools › Run script / Edit last script), run by LYNX's embedded Python (core/Python.h) on the
+// Edison's audio scripts (Tools › Run script / Edit last script), run by YW's embedded Python (core/Python.h) on the
 // audio editor's document (round 167c, docs/analise/REA_rodada167c.md §2).
 //
-// LYNX's own `enveditor` module is written from FL Studio's published "Edison Script Reference" (the Reference.txt FL
+// YW's own `enveditor` module is written from FL Studio's published "Edison Script Reference" (the Reference.txt FL
 // ships in System\Config\Audio scripts: names, signatures and behaviour; clean-room, our own code): the globals Editor
 // (SelectionStartS / SelectionEndS), EditorSample and Utils (ShowMessage, ProgressMsg); the classes Sample (Length,
 // NumChans, SampleRate, RegionCount, GetSampleAt, SetSampleAt, NormalizeFromTo, AmpFromTo, SilenceFromTo, SineFromTo,
@@ -14,7 +14,7 @@
 // AddInputText, AddInputSurface, AddGroup, EndGroup, GetInputValue, SetNormalizedValue, SetText, Execute; the same
 // names starting in lower case work too), the constants NF_NumChannels, NF_Format, NF_Samplerate, NF_All.
 //
-// A script either calls form.Execute() itself or defines createDialog() and apply(form) (FL's "preview" style): LYNX
+// A script either calls form.Execute() itself or defines createDialog() and apply(form) (FL's "preview" style): YW
 // then shows createDialog()'s form and calls apply() with the values. Positions are frames, both ends included, as in
 // FL. With no selection Editor.SelectionStartS / SelectionEndS span the whole sample (what Edison's tools do).
 //
@@ -30,7 +30,7 @@
 #include "core/AudioEdit.h"
 #include "core/ScriptDialog.h"
 
-namespace lynx::audioedit::script
+namespace yw::audioedit::script
 {
 // the forms a script asks for (core/ScriptDialog.h: shared with the Piano roll's scripts)
 using Control = scriptform::Control;
@@ -67,7 +67,7 @@ Outcome run (const std::string& source, Document& doc, Range selection, const st
 using scriptform::remember;
 using scriptform::restore;
 
-// The scripts LYNX ships (its own, written for LYNX): folder / name / source
+// The scripts YW ships (its own, written for YW): folder / name / source
 struct Builtin
 {
     const char* folder;
@@ -75,4 +75,4 @@ struct Builtin
     const char* source;
 };
 const std::vector<Builtin>& builtins();
-} // namespace lynx::audioedit::script
+} // namespace yw::audioedit::script

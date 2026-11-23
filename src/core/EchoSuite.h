@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's delay / modulation suite (REA_rodada101): four native effects written from published DSP literature
+// YW's delay / modulation suite (REA_rodada101): four native effects written from published DSP literature
 // (fractional delay lines, Hilbert-transform frequency shifting, delay-line pitch shifting, barber-pole and
 // through-zero flanging, tape / bucket-brigade echo descriptions from AES / DAFx papers and textbooks) and from our
 // black-box measurements of the delay / modulation plugins that projects use most (docs/analise/REA_rodada101.md).
@@ -27,7 +27,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct EffectInfo;
 class Effect;
@@ -93,7 +93,7 @@ enum Param
     rhythmEdit,    // where the taps sit: Even (0, evenly spaced, the measured law), Free (0.5, each tap at its own time),
                    // Grid (1, each tap's time snapped to the Grid note)
     rhythmGrid,    // the grid of the Grid edit: 1/2, 1/4, 1/8, 1/16, 1/32, 1/64 (default 1/16)
-    rhythmShape,   // how Decay spreads over the slots: Decay, Reverse, Swell, Fade, Nonlin (LYNX laws, default Decay)
+    rhythmShape,   // how Decay spreads over the slots: Decay, Reverse, Swell, Fade, Nonlin (YW laws, default Decay)
     rhythmTime1,   // the time of each heard tap in the Free / Grid edits, 0 … 1 of the pattern length (default k / 16)
     rhythmTimeLast = rhythmTime1 + 14,
     // ---- round 144 (docs/PARITY.md: EchoBoy's Style Edit / Tweak rows), appended; every default = the old sound
@@ -200,7 +200,7 @@ double rhythmLengthMs (const EffectParams& p, double bpm) noexcept;
 // and the level of slot 0 in `slot0`; levels are equal-power normalised over the slots that fit in the length
 std::vector<RhythmTap> rhythmTaps (const EffectParams& p, double bpm, double* slot0 = nullptr);
 int rhythmPattern (const EffectParams& p, double bpm, std::array<RhythmTap, 16>& taps, double& slot0) noexcept; // no allocation
-// round 144: the rhythm editor (EchoBoy's Pattern / Custom Time / Custom Beats roles; laws and presets are LYNX's own)
+// round 144: the rhythm editor (EchoBoy's Pattern / Custom Time / Custom Beats roles; laws and presets are YW's own)
 enum class RhythmEdit { even, free, grid };
 enum class RhythmShape { decay, reverse, swell, fade, nonlin };
 RhythmEdit rhythmEditOf (float v) noexcept;
@@ -213,7 +213,7 @@ double rhythmShapeDb (RhythmShape shape, double decayDb, double u) noexcept;
 double rhythmTapMs (const EffectParams& p, int k, double bpm) noexcept;
 // the inverse for the editor: a time in ms → the tap's time value (snapped to the grid in the Grid edit)
 float rhythmTimeValue (const EffectParams& p, double ms, double bpm) noexcept;
-// LYNX-authored tap patterns for the editor's Pattern menu (no preset of any other product)
+// YW-authored tap patterns for the editor's Pattern menu (no preset of any other product)
 int rhythmPresetCount() noexcept;
 const char* rhythmPresetName (int index) noexcept;
 // the parameter edits that load pattern `index` (Rhythm on, edit, grid, length, repeats, tap times and levels)
@@ -239,7 +239,7 @@ float hybridValue (int h) noexcept;
 constexpr int voicingCount = 31;
 int voicingOf (float v) noexcept;        // 0 = off, 1 … voicingCount
 float voicingValue (int k) noexcept;
-const char* voicingName (int k) noexcept; // LYNX's own names ("off" for 0)
+const char* voicingName (int k) noexcept; // YW's own names ("off" for 0)
 // the voicing that plays EchoBoy's factory style `style` (0 … 30, the order of its Style parameter); 0 for its edited style
 int voicingForEchoBoyStyle (int style) noexcept;
 constexpr int satTypeCount = 6;
@@ -357,4 +357,4 @@ double tapLevel (const EffectParams& p, int tap, int taps) noexcept;        // s
 // Wet / dry laws: equal power (Echoform, Orbit, Lattice) or linear (Spiral Echo).
 void equalPowerMix (float m, float& dry, float& wet) noexcept;
 } // namespace echosuite
-} // namespace lynx
+} // namespace yw

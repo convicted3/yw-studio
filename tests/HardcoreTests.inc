@@ -22,7 +22,7 @@ std::vector<std::uint8_t> hardcoreTestState (std::uint32_t seed, std::array<int,
     std::vector<std::uint8_t> s { 'S', 'S', 'L', 'F', 0xcc, 0x01, 0, 0, '1', 'R', 'C', 'H' };
     const auto* p = (const std::uint8_t*) v.data();
     s.insert (s.end(), p, p + 200);
-    const char name[] = "LYNX test";
+    const char name[] = "YW test";
     s.insert (s.end(), name, name + sizeof (name) - 1);
     s.resize (8 + 0x1cc, 0);
     return s;
@@ -51,14 +51,14 @@ TEST (hardcore_exact)
     }
     struct Gold { int i; float l, r; };
     auto run = [&] (const std::vector<std::uint8_t>& st, bool cabinet, std::initializer_list<Gold> gold) {
-        const auto s = lynx::hardcore::parse (st);
-        CHECK (s.has_value() && s->presetName == "LYNX test");
+        const auto s = yw::hardcore::parse (st);
+        CHECK (s.has_value() && s->presetName == "YW test");
         if (! s)
             return;
-        lynx::hardcore::Engine e;
+        yw::hardcore::Engine e;
         if (cabinet)
             for (int c = 1; c <= 20; ++c)
-                e.setCabinetFile (c, hardcoreInstallFile (lynx::hardcore::cabinetPath (c)));
+                e.setCabinetFile (c, hardcoreInstallFile (yw::hardcore::cabinetPath (c)));
         for (int i = 0; i < 50; ++i)
             e.set (i, s->values[(std::size_t) i]);
         e.prepare (44100.0);
@@ -83,7 +83,7 @@ TEST (hardcore_exact)
          { { 100, 0.06743612140417099f, 0.11324237287044525f }, { 1000, -0.019734300673007965f, -0.3736976683139801f },
            { 2047, 0.8394869565963745f, 1.0702182054519653f }, { 4000, -0.34187665581703186f, -0.32515519857406616f },
            { 8191, 0.4963859021663666f, 0.36226585507392883f } });
-    if (! hardcoreInstallFile (lynx::hardcore::cabinetPath (4)).empty())
+    if (! hardcoreInstallFile (yw::hardcore::cabinetPath (4)).empty())
     {
         // cabinets "Model D" (float WAV) and "Model T" (24-bit stereo WAV)
         run (hardcoreTestState (4, { 6, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0 }, 0, 4), true,
@@ -97,12 +97,12 @@ TEST (hardcore_exact)
 
         // the FL import: the slot carries the installation's impulses; the mixer effect equals the engine
         const auto st = hardcoreTestState (4, { 6, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0 }, 0, 4);
-        const auto slot = lynx::effectFromFl ("Hardcore", st, 120.0, hardcoreInstallFile);
-        CHECK (slot && slot->kind == lynx::EffectKind::hardcore && lynx::hardcore::hasCabinet (*slot, 4)
-               && lynx::hardcore::hasCabinet (*slot, 20));
+        const auto slot = yw::effectFromFl ("Hardcore", st, 120.0, hardcoreInstallFile);
+        CHECK (slot && slot->kind == yw::EffectKind::hardcore && yw::hardcore::hasCabinet (*slot, 4)
+               && yw::hardcore::hasCabinet (*slot, 20));
         if (slot)
         {
-            auto fx = lynx::makeEffect (*slot);
+            auto fx = yw::makeEffect (*slot);
             fx->prepare (44100.0);
             std::vector<float> l (inL), r (inR);
             fx->process (l.data(), r.data(), 700, slot->params, 120.0);
@@ -113,17 +113,17 @@ TEST (hardcore_exact)
 
     // import without the installation: the exact engine, cabinet off; parameters round trip through the slot
     const auto st = hardcoreTestState (1, { 1, 2, 3, 4, 5 }, { 1, 1, 1, 1, 1 }, 1, 7);
-    const auto slot = lynx::effectFromFl ("Hardcore", st, 120.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::hardcore && slot->state.empty());
+    const auto slot = yw::effectFromFl ("Hardcore", st, 120.0);
+    CHECK (slot && slot->kind == yw::EffectKind::hardcore && slot->state.empty());
     if (slot)
     {
-        const auto s = *lynx::hardcore::parse (st);
+        const auto s = *yw::hardcore::parse (st);
         for (int i = 0; i < 50; ++i)
-            CHECK (lynx::hardcore::fromSlot (i, slot->params[(std::size_t) i]) == s.values[(std::size_t) i]);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::hardcore, 45, slot->params[45], 120.0) == "Distortion");
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::hardcore, 11, slot->params[11], 120.0) == "Model G");
+            CHECK (yw::hardcore::fromSlot (i, slot->params[(std::size_t) i]) == s.values[(std::size_t) i]);
+        CHECK (yw::formatEffectParam (yw::EffectKind::hardcore, 45, slot->params[45], 120.0) == "Distortion");
+        CHECK (yw::formatEffectParam (yw::EffectKind::hardcore, 11, slot->params[11], 120.0) == "Model G");
     }
-    CHECK (lynx::effectInfo (lynx::EffectKind::hardcore).params.size() == 50);
-    CHECK (lynx::hardcore::cabinetPath (9) == "Plugins\\Fruity\\Effects\\Hardcore\\Imp\\Model I .wav");
-    CHECK (! lynx::hardcore::parse (std::vector<std::uint8_t> (100, 0)).has_value());
+    CHECK (yw::effectInfo (yw::EffectKind::hardcore).params.size() == 50);
+    CHECK (yw::hardcore::cabinetPath (9) == "Plugins\\Fruity\\Effects\\Hardcore\\Imp\\Model I .wav");
+    CHECK (! yw::hardcore::parse (std::vector<std::uint8_t> (100, 0)).has_value());
 }

@@ -11,10 +11,10 @@
 
 #if JUCE_WINDOWS
 extern "C" __declspec (dllimport) int __stdcall SystemParametersInfoW (unsigned int, unsigned int, void*, unsigned int);
-static int lynxSystemParametersInfoW (unsigned int a, unsigned int b, void* c, unsigned int d) { return SystemParametersInfoW (a, b, c, d); }
+static int ywSystemParametersInfoW (unsigned int a, unsigned int b, void* c, unsigned int d) { return SystemParametersInfoW (a, b, c, d); }
 #endif
 
-namespace lynx::skin
+namespace yw::skin
 {
 namespace
 {
@@ -64,7 +64,7 @@ juce::Colour accentFor (EffectKind kind)
         case EffectKind::hardcore: case EffectKind::distructor: case EffectKind::fruityWaveShaper: case EffectKind::fruitySoftClipper:
         case EffectKind::lofi: case EffectKind::squeeze: case EffectKind::pocketDistortion: case EffectKind::pocketWaveshaper:
             return colour::ember;
-        case EffectKind::lynxTune: case EffectKind::pitchCorrect: case EffectKind::pitchShift: case EffectKind::flPitchShifter:
+        case EffectKind::ywTune: case EffectKind::pitchCorrect: case EffectKind::pitchShift: case EffectKind::flPitchShifter:
         case EffectKind::vocoder: case EffectKind::vocodex: case EffectKind::quellDenoiser: case EffectKind::aether: case EffectKind::newtone: case EffectKind::edison:
         case EffectKind::voiceShift:
             return colour::rose;
@@ -99,7 +99,7 @@ bool motion = true;
 const juce::Image& grainTile()
 {
     static juce::Image tile;
-    static const bool registered = lynx::ui::registerImageCache ([] { tile = {}; }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { tile = {}; }); (void) registered;
     if (tile.isNull())
         tile = [] {
         juce::Image img (juce::Image::ARGB, 128, 128, true);
@@ -138,7 +138,7 @@ void cachedLayer (juce::Graphics& g, juce::Rectangle<float> a, juce::Colour acce
     key = key * 11u + (std::uint64_t) currentArt;
     key ^= (std::uint64_t) accent.getARGB() * 0x9e3779b97f4a7c15ull;
     static std::map<std::uint64_t, juce::Image> cache;
-    static const bool registered = lynx::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
     auto it = cache.find (key);
     if (it == cache.end())
     {
@@ -277,7 +277,7 @@ Style plainStyleFor (int key)
     switch ((K) key)
     {
         // the user's picks
-        case K::lynxTune: return V;
+        case K::ywTune: return V;
         case K::epochVerb: return H;
         case K::crestCompressor: return G;
         // analytic, display-first tools: Glow
@@ -384,7 +384,7 @@ void bloom (juce::Graphics& g, juce::Point<float> c, float radius, juce::Colour 
     const auto level = juce::jlimit (1, 64, (int) std::lround (alpha * 64.0f));
     const auto key = (std::uint64_t) colour.withAlpha ((juce::uint8) 255).getARGB() * 67u + (std::uint64_t) level;
     static std::unordered_map<std::uint64_t, juce::Image> sprites;
-    static const bool registered = lynx::ui::registerImageCache ([] { sprites.clear(); }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { sprites.clear(); }); (void) registered;
     auto it = sprites.find (key);
     if (it == sprites.end())
     {
@@ -423,7 +423,7 @@ void drawCanvas (juce::Graphics& g, juce::Rectangle<float> a, juce::Colour accen
     const auto big = juce::jmax (a.getWidth(), a.getHeight());
     if (! reduced)
     {
-        // aurora: a large bloom of the accent behind the upper left, a cooler one to the right, LYNX red low on the right
+        // aurora: a large bloom of the accent behind the upper left, a cooler one to the right, YW red low on the right
         auto blob = [&] (float fx, float fy, float r, juce::Colour c, float alpha) {
             const juce::Point<float> p { a.getX() + a.getWidth() * fx, a.getY() + a.getHeight() * fy };
             juce::ColourGradient grad (c.withAlpha (alpha), p.x, p.y, c.withAlpha (0.0f), p.x + r, p.y, true);
@@ -509,7 +509,7 @@ void brandMark (juce::Graphics& g, juce::Rectangle<float> a)
     // a picture resampled once per size (x2 for high-DPI), halving step by step: one big jump from 512 px aliases at
     // the 16-24 px header size
     static std::map<int, juce::Image> cache;
-    static const bool registered = lynx::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
     auto scaled = [] (juce::Image img, int px)
     {
         while (px > 0 && img.getWidth() / 2 >= px)
@@ -518,8 +518,8 @@ void brandMark (juce::Graphics& g, juce::Rectangle<float> a)
             img = img.rescaled (px, px, juce::Graphics::highResamplingQuality);
         return img;
     };
-    // The mark by w3teal (the lynx in the red ring with the pepper stem) without the app icon's tile, which would
-    // shrink the lynx to half the button (round 190eq): its ring fills the button's circle
+    // The mark by w3teal (the yw in the red ring with the pepper stem) without the app icon's tile, which would
+    // shrink the yw to half the button (round 190eq): its ring fills the button's circle
     // (d + 3, over the place of the old dark edge and ring) and its ears rise above it, as far as the area's top; a
     // dark disc under it (1 px wider) so the cut-outs read the same on every skin. Up to 32 physical pixels across
     // (the 1x header buttons) the mark's small-size form (thicker lines and ring).
@@ -943,7 +943,7 @@ void knob (juce::Graphics& g, juce::Rectangle<float> boundsIn, const KnobLook& k
     key ^= ((std::uint64_t) k.ring.getARGB() * 0x165667b19e3779f9ull) ^ (k.noArc ? 0x27d4eb2f165667c5ull : 0u); // round 190ld
 
     static std::unordered_map<std::uint64_t, juce::Image> cache;
-    static const bool registered = lynx::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
     auto it = cache.find (key);
     if (it == cache.end())
     {
@@ -1403,4 +1403,4 @@ void valuePlate (juce::Graphics& g, juce::Rectangle<float> r, float corner)
     g.setColour (juce::Colours::white.withAlpha (0.08f));
     g.drawHorizontalLine ((int) r.getBottom(), r.getX() + corner, r.getRight() - corner);
 }
-} // namespace lynx::skin
+} // namespace yw::skin

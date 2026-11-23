@@ -1,4 +1,4 @@
-// Round 190ho (0.1.30 plugin parity follow-ups; /mnt/e/lynx-work/parity190ho/HANDOFF.md), black-box references only:
+// Round 190ho (0.1.30 plugin parity follow-ups; /mnt/e/yw-work/parity190ho/HANDOFF.md), black-box references only:
 //  - Voice Shift: the Measured law's revision 1 (a hidden parameter): from a sung onset's rise in level until the
 //    detector has decided, the unvoiced grains keep the source's formants — the start of the note is no longer read at
 //    the formant factor (a low thump at every onset); projects saved by 0.1.27 … 0.1.29 keep revision 0 (round 190dp's
@@ -25,7 +25,7 @@ struct Render
 };
 
 // a breath of noise, then a sung-like note (170 Hz, 8 harmonics falling 6 dB / octave), a gap, another note (220 Hz);
-// right = 0.8 × left (the same signal as /mnt/e/lynx-work/parity190ho/gold/gold.cpp)
+// right = 0.8 × left (the same signal as /mnt/e/yw-work/parity190ho/gold/gold.cpp)
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 {
     unsigned s = 4242u;
@@ -49,9 +49,9 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
     }
 }
 
-inline Render render (const lynx::EffectSlot& slot, double sr, double seconds)
+inline Render render (const yw::EffectSlot& slot, double sr, double seconds)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) (seconds * sr), block = 256;
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
@@ -77,7 +77,7 @@ inline Render render (const lynx::EffectSlot& slot, double sr, double seconds)
 
 TEST (parity190ho_voice_shift_revision_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     CHECK (effectInfo (EffectKind::voiceShift).params.size() == (std::size_t) vs::count); // hidden: no control, no string
     CHECK ((int) vs::revision == (int) vs::count);
@@ -104,7 +104,7 @@ TEST (parity190ho_voice_shift_revision_is_hidden_new_instances_run_it_old_projec
 
 TEST (parity190ho_revision0_and_the_selector_colours_render_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     namespace rd = mixsuite::ridge;
     struct Case
@@ -118,7 +118,7 @@ TEST (parity190ho_revision0_and_the_selector_colours_render_as_the_base_commit_d
         std::uint64_t hash;
         double energy, a, b;
     };
-    // FNV-1a of the float bits, the energy, two samples; from the base commit's objects (/mnt/e/lynx-work/parity190ho/gold:
+    // FNV-1a of the float bits, the energy, two samples; from the base commit's objects (/mnt/e/yw-work/parity190ho/gold:
     // gold_base.txt; the round's objects print the same lines with the Voice Shift revision forced to 0, gold_new.txt).
     // Voice Shift: Law = Measured; Ridge: the 4K voicing, HPF 0.3, one band, the selector's Brown / Black / Orange
     const Case cases[] = {
@@ -157,14 +157,14 @@ TEST (parity190ho_revision0_and_the_selector_colours_render_as_the_base_commit_d
     }
     std::printf ("  revision 0 / selector colours: %d of %d renders hash-identical to the base commit\n", sameBits, n);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == n);
    #endif
 }
 
 TEST (parity190ho_voice_shift_revision1_keeps_the_onset_out_of_the_formant_shift)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     // two sung-like notes (180 Hz, 8 harmonics) out of silence. At Formant −6 the start of each note, heard as unvoiced
     // while the detector decides, was read at the formant factor: its fundamental near 127 Hz, under every harmonic of
@@ -215,7 +215,7 @@ TEST (parity190ho_voice_shift_revision1_keeps_the_onset_out_of_the_formant_shift
 // this round's 6.50) replaced this round's; these two tests now check 190lb's code against this round's reference points
 TEST (parity190ho_ridge_4k_g_pink_is_translated_and_hidden)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     // the 4K G's EQ Type 0 = Pink (its trial's states: K4G_ir), 1 = Black
     auto p = tp172c::sslSlot ("SSL 4K G", "<PARAM id=\"EqType\" value=\"0.0\"/><PARAM id=\"LowMidEqFreq\" value=\"1.0\"/>"
@@ -237,7 +237,7 @@ TEST (parity190ho_ridge_4k_g_pink_is_translated_and_hidden)
 
 TEST (parity190ho_ridge_4k_pink_follows_the_reference_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ec = vmatch::echannel;
     ec::Settings s;
     s.model = 1;

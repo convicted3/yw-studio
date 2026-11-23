@@ -1,12 +1,12 @@
 #pragma once
 
-// LYNX's own factory content with keyword tags (round 190ke, owner decision D2 of coverage190jw: GarageBand's Loop
-// Browser keywords — instrument, genre, mood — on LYNX's own content only; no third-party content is tagged).
+// YW's own factory content with keyword tags (round 190ke, owner decision D2 of coverage190jw: GarageBand's Loop
+// Browser keywords — instrument, genre, mood — on YW's own content only; no third-party content is tagged).
 //
 // GarageBand (Apple's GarageBand User Guide for Mac, "Search for Apple Loops"): the Loop Browser filters loops by keyword
-// buttons (instrument, genre, descriptors such as Dark / Cheerful, Relaxed / Intense, Clean / Distorted). LYNX ships no
+// buttons (instrument, genre, descriptors such as Dark / Cheerful, Relaxed / Intense, Clean / Distorted). YW ships no
 // sampled content: its factory content is the sounds of its own instruments (core/SoundLibrary.h builtIn: the built-in
-// synth's presets and LYNX's preset banks), the beats of Loop Starter's own genres (core/LoopStarter.h builtinPresets,
+// synth's presets and YW's preset banks), the beats of Loop Starter's own genres (core/LoopStarter.h builtinPresets,
 // one-bar drum grooves on the built-in kit) and the factory effect chains (core/ChainPresets.h). Each item gets tags of
 // three kinds: what it is (the instrument), a genre and a mood, from its category and words in its name (and a bank
 // preset's own search words). The Browser lists them under "YW Studio content" in the Simple layout and its TAGS panel / the
@@ -19,14 +19,14 @@
 #include "core/BrowserTags.h"
 #include "core/SimpleTracks.h"
 
-namespace lynx::factorycontent
+namespace yw::factorycontent
 {
 enum class Kind { sound, beat, chain };
 
 struct Item
 {
     Kind kind = Kind::sound;
-    std::string key;    // the Browser's plugin key: "lynx-content/<kind>/<id>" (the tag store's item is "plugin:" + key)
+    std::string key;    // the Browser's plugin key: "yw-content/<kind>/<id>" (the tag store's item is "plugin:" + key)
     std::string name;   // shown as it is (preset names are not translated)
     std::string folder; // the folder under its kind: a sound's category, a beat's genre, a chain's category (English)
     std::string detail; // the second column: what makes it ("YW Studio synth", "Trap", the chain's description)
@@ -36,7 +36,7 @@ struct Item
     std::string preset; // beat: the groove's name in loopstarter::builtinPresets (genre)
 };
 
-inline constexpr const char* keyPrefix = "lynx-content/";
+inline constexpr const char* keyPrefix = "yw-content/";
 inline bool isKey (const std::string& pluginKey) noexcept { return pluginKey.rfind (keyPrefix, 0) == 0; }
 
 // Every item, sounds then beats then chains (built once)
@@ -59,4 +59,4 @@ bool applyChain (Song& song, const Item& chain, int insert);
 // The user's store with the factory tags added (the TAGS panel, the filters): the user's own come first for a name in
 // both (its case wins); items keep the tags of both.
 browsertags::Store merged (const browsertags::Store& user);
-} // namespace lynx::factorycontent
+} // namespace yw::factorycontent

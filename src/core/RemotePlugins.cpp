@@ -5,7 +5,7 @@
 
 #include "core/StandIns.h"
 
-namespace lynx::remoteplug
+namespace yw::remoteplug
 {
 namespace
 {
@@ -319,4 +319,4 @@ void endSession (Song& song, bool values)
             ref.values.clear();
     });
 }
-} // namespace lynx::remoteplug
+} // namespace yw::remoteplug

@@ -1,4 +1,4 @@
-// flkeysrender: renders FL Keys notes with LYNX's port (core/FlKeys), for comparison with the installation's plugin
+// flkeysrender: renders FL Keys notes with YW's port (core/FlKeys), for comparison with the installation's plugin
 // (REA_rodada69 §7). Reads the wavetable from FL's folder: raw files and 16-bit PCM WAVs (not Ogg-compressed ones).
 // Usage: flkeysrender <Wavtables folder> <state.bin> <out.f32> <rate> <length> <block> [law=x87] [dump=<file>]
 //        events: on3=<start>,<key>,<init vol>,<final vol>,<final pan>,<cents>  off=<sample>,<note index>
@@ -11,7 +11,7 @@
 
 #include "core/FlKeys.h"
 
-using namespace lynx;
+using namespace yw;
 
 static std::vector<std::uint8_t> readAll (const std::string& path)
 {

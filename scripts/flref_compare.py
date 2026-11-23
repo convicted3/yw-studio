@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""flref_compare.py — compares FL Studio reference renders with LYNX renders of the same projects.
+"""flref_compare.py — compares FL Studio reference renders with YW renders of the same projects.
 
 Usage:
-  flref_compare.py pair <fl.wav> <lynx.raw|lynx.wav>          one comparison, printed as JSON
-  flref_compare.py batch <fl-dir> <lynx-dir> [report.md]     every <fl-dir>/<g>/<n>.wav with <lynx-dir>/<g>/<n>.raw
-  flref_compare.py culprit <fl.wav> <lynx.raw> <stem.raw>...  ranks LYNX channel stems by how well they explain the
-                                                               residual (LYNX - FL) after alignment
+  flref_compare.py pair <fl.wav> <yw.raw|yw.wav>          one comparison, printed as JSON
+  flref_compare.py batch <fl-dir> <yw-dir> [report.md]     every <fl-dir>/<g>/<n>.wav with <yw-dir>/<g>/<n>.raw
+  flref_compare.py culprit <fl.wav> <yw.raw> <stem.raw>...  ranks YW channel stems by how well they explain the
+                                                               residual (YW - FL) after alignment
 
 Metrics (after the alignment search, over the overlapping part):
-  lag       samples LYNX is late (+) / early (-) relative to FL (cross-correlation of the mono sums; search window
+  lag       samples YW is late (+) / early (-) relative to FL (cross-correlation of the mono sums; search window
             +-LAG_WINDOW_S seconds, never fewer than 4096 samples: +-4096 at 44.1 / 48 kHz, +-8192 at 96 kHz)
-  peak_db   20log10(peak LYNX / peak FL)
-  rms_db    20log10(rms LYNX / rms FL)
+  peak_db   20log10(peak YW / peak FL)
+  rms_db    20log10(rms YW / rms FL)
   esr_db    error-to-signal ratio 20log10(rms(L-F)/rms(F)); <= -40 dB is close, >= 0 dB is unrelated
   gesr_db   the same after the best single gain (a pure level error has a low gesr_db)
   worst_s   the 1-second window with the largest error (seconds into FL's render) and its local esr
@@ -20,7 +20,7 @@ Metrics (after the alignment search, over the overlapping part):
   spec_db   mean |level difference| over third-octave bands 31 Hz…16 kHz of the long-term spectra (first 5 minutes)
             (env_corr and spec_db stay meaningful for whole songs, where any phase drift makes esr_db ~0 dB)
   bands     level difference (dB) in low (<200 Hz), mid (200 Hz–4 kHz), high (>4 kHz) bands
-LYNX raw files are renderwav's LYNX_RAW output (float32, left block then right block); FL wavs are 16-bit PCM.
+YW raw files are renderwav's YW_RAW output (float32, left block then right block); FL wavs are 16-bit PCM.
 """
 import json
 import os
@@ -61,7 +61,7 @@ def read_fl(path):
     return x[:, :2]
 
 
-def read_lynx(path):
+def read_yw(path):
     if path.endswith('.wav'):
         return read_fl(path)
     a = np.fromfile(path, '<f4').astype(np.float64)
@@ -78,7 +78,7 @@ def rms(x):
 
 
 def find_lag(f, l, maxlag=None, span=None):
-    """Lag (LYNX later = +) maximizing the cross-correlation of the mono sums over the first `span` samples (default
+    """Lag (YW later = +) maximizing the cross-correlation of the mono sums over the first `span` samples (default
     1 764 000 = 40 s at 44.1 kHz at every rate, as before) within +-maxlag samples (default lag_window(): +-85 ms at the current SR, at least 4096 samples)."""
     if maxlag is None:
         maxlag = lag_window()
@@ -161,16 +161,16 @@ def compare(flpath, lypath, mask=None):
     demo mode's periodic mutes, detected in the capture and stored next to the reference, see fxparity.py). None =
     the unmasked comparison, bit-identical to before."""
     f = read_fl(flpath)
-    l = read_lynx(lypath)
-    r = {'fl_s': round(len(f) / SR, 2), 'lynx_s': round(len(l) / SR, 2),
+    l = read_yw(lypath)
+    r = {'fl_s': round(len(f) / SR, 2), 'yw_s': round(len(l) / SR, 2),
          'fl_peak_db': round(db(float(np.max(np.abs(f))) if len(f) else 0), 2),
-         'lynx_peak_db': round(db(float(np.max(np.abs(l))) if len(l) else 0), 2)}
+         'yw_peak_db': round(db(float(np.max(np.abs(l))) if len(l) else 0), 2)}
     if not np.isfinite(l).all():
         r['nan'] = True
         l = np.nan_to_num(l)
     fl_silent = r['fl_peak_db'] < -90
-    ly_silent = r['lynx_peak_db'] < -90
-    r['silent'] = 'both' if fl_silent and ly_silent else 'fl' if fl_silent else 'lynx' if ly_silent else ''
+    ly_silent = r['yw_peak_db'] < -90
+    r['silent'] = 'both' if fl_silent and ly_silent else 'fl' if fl_silent else 'yw' if ly_silent else ''
     lag, corr = find_lag(f, l)
     r['lag'] = lag
     r['xcorr'] = round(corr, 4)
@@ -221,7 +221,7 @@ def compare(flpath, lypath, mask=None):
 def culprit(flpath, lypath, stems):
     """Ranks stems by the share of the residual energy envelope they explain (50 ms windows)."""
     f = read_fl(flpath)
-    l = read_lynx(lypath)
+    l = read_yw(lypath)
     lag, _ = find_lag(f, l)
     fa, la = align(f, l, lag)
     e = la - fa
@@ -237,7 +237,7 @@ def culprit(flpath, lypath, stems):
     ee = env(e)
     out = []
     for s in stems:
-        x = read_lynx(s)
+        x = read_yw(s)
         x = x[lag:] if lag >= 0 else np.pad(x, ((-lag, 0), (0, 0)))
         se = env(x)
         c = float(np.corrcoef(ee, se)[0, 1]) if np.std(ee) > 0 and np.std(se) > 0 else 0.0
@@ -254,7 +254,7 @@ def score(r):
     """Sort key: worst first (silence mismatch, then error-to-signal ratio)."""
     if r.get('missing'):
         return 1000.0
-    if r.get('silent') in ('fl', 'lynx'):
+    if r.get('silent') in ('fl', 'yw'):
         return 500.0
     if r.get('silent') == 'both':
         return -1000.0
@@ -305,7 +305,7 @@ def write_report(rows, report):
     def bucket(rs, lo, hi):
         return sum(1 for r in rs if r.get('silent') == '' and lo <= r['esr_db'] < hi)
 
-    lines = ['# FL reference renders vs LYNX — scoreboard', '',
+    lines = ['# FL reference renders vs YW — scoreboard', '',
              '%d projects; %d compared, %d silent in both (empty templates etc.), %d missing.' % (
                  len(rows), len(rt) + len(songs), sum(1 for r in done if r.get('silent') == 'both'),
                  sum(1 for r in rows if r.get('missing'))), '',
@@ -328,12 +328,12 @@ def write_report(rows, report):
         return 1000.0 if r.get('silent') else r.get('spec_db', 0.0)
 
     lines += ['', '## Songs, demos and templates, worst first (by third-octave spectrum distance)', '',
-              '| # | project | FL s | LYNX s | RMS dB | spec dB | env corr | ESR dB | lag | bands L/M/H dB | note |',
+              '| # | project | FL s | YW s | RMS dB | spec dB | env corr | ESR dB | lag | bands L/M/H dB | note |',
               '|---|---|---|---|---|---|---|---|---|---|---|']
     for i, r in enumerate(sorted(songs, key=skey, reverse=True), 1):
         note = ('silent: ' + r['silent']) if r.get('silent') else ''
         lines.append('| %d | %s | %.1f | %.1f | %+.2f | %.2f | %s | %.1f | %d | %s | %s |' % (
-            i, nm(r), r['fl_s'], r['lynx_s'], r['rms_db'], r.get('spec_db', 0.0), r.get('env_corr', ''), r['esr_db'],
+            i, nm(r), r['fl_s'], r['yw_s'], r['rms_db'], r.get('spec_db', 0.0), r.get('env_corr', ''), r['esr_db'],
             r['lag'], '/'.join('%+.1f' % b for b in r['bands']), note))
     for r in rows:
         if r.get('missing'):

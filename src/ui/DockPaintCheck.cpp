@@ -19,7 +19,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::dockpaint
+namespace yw::dockpaint
 {
 struct Check::State
 {
@@ -65,7 +65,7 @@ struct Check::State
             return out;
         const auto r = nativechild::physicalInTop (workspace, gb->getBounds());
         for (auto* c : nativechild::attachedChildren (mainHandle()))
-            if (c->isVisible() && ! (bool) c->getProperties().getWithDefault ("lynxEditorAnchor", false) && c != gb.getComponent()
+            if (c->isVisible() && ! (bool) c->getProperties().getWithDefault ("ywEditorAnchor", false) && c != gb.getComponent()
                 && nativechild::rectInParentWindow (*c).intersects (r))
                 out.push_back (c);
         return out;
@@ -226,7 +226,7 @@ juce::String Check::step (int index)
             if (s.gb == nullptr)
                 return bail ("Gross Beat did not open docked");
             moveDockedEditors (true);
-            // (still pictures for the pixel comparison: the editors' animated art and LYNX's animations off)
+            // (still pictures for the pixel comparison: the editors' animated art and YW's animations off)
             skin::setArtMotion (false);
             skin::kickArtLayers();
             ui::motion::enabled() = false;
@@ -459,7 +459,7 @@ juce::String Check::step (int index)
         {
             bool cleared = ws.editorWindows().empty();
             for (auto* c : nativechild::attachedChildren (s.mainHandle()))
-                cleared = cleared && nativechild::holesOf (*c).empty() && ! (bool) c->getProperties().getWithDefault ("lynxEditorAnchor", false);
+                cleared = cleared && nativechild::holesOf (*c).empty() && ! (bool) c->getProperties().getWithDefault ("ywEditorAnchor", false);
             out << s.expect ("closed_leaves_no_holes", s.gb == nullptr && cleared);
             out << "dockcheck_result=" << (s.fails == 0 ? "OK" : "FAIL " + juce::String (s.fails)) << "\n";
             break;
@@ -470,4 +470,4 @@ juce::String Check::step (int index)
     return out;
 #endif
 }
-} // namespace lynx::dockpaint
+} // namespace yw::dockpaint

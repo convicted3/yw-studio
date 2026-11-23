@@ -4,10 +4,10 @@
 # the source folders; nothing else in the tree is sent. Exits with the run's result.
 # The pushed tree is public: don't use this for anything that must stay private.
 set -euo pipefail
-repo="${LYNX_CI_REPO:-convicted3/yw-studio}"
+repo="${YW_CI_REPO:-convicted3/yw-studio}"
 out="${OUT:-build-win}"
-limit="${LYNX_CI_LIMIT:-10}"
-workflow="${LYNX_CI_WORKFLOW:-$(dirname "$(readlink -f "$0")")/../.github/workflows/round-build.yml}"
+limit="${YW_CI_LIMIT:-10}"
+workflow="${YW_CI_WORKFLOW:-$(dirname "$(readlink -f "$0")")/../.github/workflows/round-build.yml}"
 branch="ci/$(basename "$PWD")-$$"
 
 # the tree to build, made with a private index so the work tree and its staging stay as they are
@@ -25,13 +25,13 @@ if ! git cat-file -e "HEAD:.github/workflows/round-build.yml" 2>/dev/null; then
 fi
 tree="$(git write-tree)"
 unset GIT_INDEX_FILE
-# LYNX_CI_RELEASE_OPT=1: the release's code generation (real -O3 + ThinLTO, round 190kz) instead of the fast default
+# YW_CI_RELEASE_OPT=1: the release's code generation (real -O3 + ThinLTO, round 190kz) instead of the fast default
 msg="Round build of $(git rev-parse --short HEAD)"
-[[ "${LYNX_CI_RELEASE_OPT:-0}" == 1 ]] && msg="$msg [release-opt]"
+[[ "${YW_CI_RELEASE_OPT:-0}" == 1 ]] && msg="$msg [release-opt]"
 sha="$(git commit-tree "$tree" -p HEAD -m "$msg")"
 
-# LYNX_CI_FORBIDDEN (optional, set on the machine): a text that must never leave it. Never put its value in this file.
-if [[ -n "${LYNX_CI_FORBIDDEN:-}" ]] && git grep -qIi -e "$LYNX_CI_FORBIDDEN" "$sha" --; then
+# YW_CI_FORBIDDEN (optional, set on the machine): a text that must never leave it. Never put its value in this file.
+if [[ -n "${YW_CI_FORBIDDEN:-}" ]] && git grep -qIi -e "$YW_CI_FORBIDDEN" "$sha" --; then
     echo "round build: the tree holds a forbidden string, not pushing" >&2
     exit 4
 fi
@@ -75,4 +75,4 @@ mkdir -p "$out"
 gh run download "$run" -R "$repo" -n build-win -D "$out.dl$$"
 for f in "$out.dl$$"/*; do mv -f "$f" "$out/"; done
 rmdir "$out.dl$$"
-ls -la "$out/LYNX.exe"
+ls -la "$out/YW.exe"

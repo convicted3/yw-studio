@@ -1,16 +1,16 @@
 #pragma once
 
-// LYNX's one dialog system, the rules without JUCE (round 190oo, design review 2: WG-6 and WG-22), used by
+// YW's one dialog system, the rules without JUCE (round 190oo, design review 2: WG-6 and WG-22), used by
 // ui/DialogFrame.h and tested in tests/DialogRules190ooTests.inc.
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
-namespace lynx::dialogrules
+namespace yw::dialogrules
 {
 // WG-6: the order of a dialog's buttons, left to right, as indices of the order they were added in. `primary` is the
-// Return button (-1: none), `cancel` the Escape one (-1: none). LYNX's order: the other buttons as added, then Cancel,
+// Return button (-1: none), `cancel` the Escape one (-1: none). YW's order: the other buttons as added, then Cancel,
 // the primary at the far right. `asAdded` keeps the order they were added in (FL's message windows: Yes | No).
 inline std::vector<int> buttonOrder (int count, int primary, int cancel, bool asAdded)
 {
@@ -45,4 +45,4 @@ inline float bandRows (float height, float scale)
 {
     return height <= 1.0f ? std::max (1.0f, std::floor (scale)) : std::max (1.0f, std::round (height * scale));
 }
-} // namespace lynx::dialogrules
+} // namespace yw::dialogrules

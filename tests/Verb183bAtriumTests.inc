@@ -4,8 +4,8 @@
 TEST (atrium_level_laws_verb183b)
 {
     using namespace verbs100;
-    using lynx::EffectKind;
-    auto total = [] (lynx::EffectParams p) { const auto s = impulse (EffectKind::atrium, p, 12.0); return energyDb (s, 0, s.l.size()); };
+    using yw::EffectKind;
+    auto total = [] (yw::EffectParams p) { const auto s = impulse (EffectKind::atrium, p, 12.0); return energyDb (s, 0, s.l.size()); };
     auto p = defaults (EffectKind::atrium);
     p[0] = 1.0f;
     p[4] = 0.0f;
@@ -18,9 +18,9 @@ TEST (atrium_level_laws_verb183b)
     CHECK (std::abs (late - early) < 5.0 && mid > early - 1.0 && mid < late + 1.0);
     // Decay 2.1 s → 8.6 s: the reference −27.2 → −26.8 dB
     p[4] = 0.5f;
-    p[2] = lynx::verbs::atrium::decayValue (2.1);
+    p[2] = yw::verbs::atrium::decayValue (2.1);
     const auto shortRoom = total (p);
-    p[2] = lynx::verbs::atrium::decayValue (8.6);
+    p[2] = yw::verbs::atrium::decayValue (8.6);
     const auto longRoom = total (p);
     CHECK (std::abs (longRoom - shortRoom) < 2.5);
     // Late size 0 / 100 %: the reference holds its level (−26.9 / −27.2 dB)

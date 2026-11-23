@@ -9,7 +9,7 @@
 
 #include <algorithm>
 
-namespace lynx::framepace
+namespace yw::framepace
 {
 struct Pacer
 {
@@ -76,4 +76,4 @@ struct Divider
     double lastStampMs = -1.0, nextMs = 0.0;
     bool lastRan = false;
 };
-} // namespace lynx::framepace
+} // namespace yw::framepace

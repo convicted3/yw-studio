@@ -5,7 +5,7 @@
 
 TEST (browser163_content_filter)
 {
-    using namespace lynx::browserview;
+    using namespace yw::browserview;
     CHECK (listed ("Kick.WAV", ContentFilter::all));
     CHECK (listed ("pad.sf2", ContentFilter::all));
     CHECK (! listed ("readme.txt", ContentFilter::all));
@@ -17,7 +17,7 @@ TEST (browser163_content_filter)
     CHECK (! listed ("beat.flp", ContentFilter::samples));
     CHECK (listed ("lead.fst", ContentFilter::presets));
     CHECK (! listed ("lead.wav", ContentFilter::presets));
-    CHECK (listed ("song.lynx", ContentFilter::projects));
+    CHECK (listed ("song.yw", ContentFilter::projects));
     CHECK (listed ("song.mid", ContentFilter::projects));
     CHECK (! listed ("kick.wav", ContentFilter::projects));
     for (int i = 0; i < contentFilterCount; ++i)
@@ -27,7 +27,7 @@ TEST (browser163_content_filter)
 
 TEST (browser163_view_round_trip)
 {
-    using namespace lynx::browserview;
+    using namespace yw::browserview;
     View v;
     CHECK (v.shows ("C:\\Users\\me\\Desktop"));
     v.setShown ("C:\\Users\\me\\Desktop", false);

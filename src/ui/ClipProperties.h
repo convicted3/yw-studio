@@ -6,7 +6,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -24,4 +24,4 @@ void showArrangements (AudioEngine& engine, bool mergeFirst = false);
 // Panels for --snapshot mode.
 std::unique_ptr<juce::Component> makeClipPropertiesPanel (AudioEngine& engine, int clip, std::vector<int> selection);
 std::unique_ptr<juce::Component> makeArrangementsPanel (AudioEngine& engine);
-} // namespace lynx
+} // namespace yw

@@ -1,13 +1,13 @@
-// LYNX-bridge32.exe (round 176a): the 32-bit plugin bridge. LYNX is a 64-bit program, and a 64-bit process cannot load
-// a 32-bit DLL, so LYNX runs each 32-bit VST2 / VST3 plugin in one of these processes — the same child side as "Make
+// YW-bridge32.exe (round 176a): the 32-bit plugin bridge. YW is a 64-bit program, and a 64-bit process cannot load
+// a 32-bit DLL, so YW runs each 32-bit VST2 / VST3 plugin in one of these processes — the same child side as "Make
 // bridged" (engine/SandboxWorker.cpp: shared-memory audio, MIDI, parameters and transport every block; state and the
 // editor window through messages), compiled for x86. FL Studio does the same with System\Tools\Bridge\32bit\ilbridge.exe.
 //
-//   LYNX-bridge32.exe --plugin-host ...                      (started by LYNX: engine/PluginSandbox.cpp)
-//   LYNX-bridge32.exe --scan-one <format> <file> <result.xml>  (the plugin scan, PluginHost::scanOne)
+//   YW-bridge32.exe --plugin-host ...                      (started by YW: engine/PluginSandbox.cpp)
+//   YW-bridge32.exe --scan-one <format> <file> <result.xml>  (the plugin scan, PluginHost::scanOne)
 //
-// It has no window, audio device or settings of its own, and ends when LYNX goes away. A plugin that crashes takes only
-// this process down: LYNX mutes the plugin and says so.
+// It has no window, audio device or settings of its own, and ends when YW goes away. A plugin that crashes takes only
+// this process down: YW mutes the plugin and says so.
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
@@ -18,7 +18,7 @@
 
 #include <windows.h>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -74,11 +74,11 @@ juce::Image windowIcon() { return {}; }
 
 // FL's bridge runs plugins with x87 control word 0x033F: all exceptions masked, 64-bit precision, round to nearest
 // (ilbridge.exe 0x528ba0 / constant 0x71b368, REA_rodada68 §2.1). An old plugin doing its maths on the x87 then gives
-// the same samples in LYNX as in FL (Windows' own default for a 32-bit program is 0x027F, 53-bit precision).
-// LYNX_BRIDGE32_X87=0 leaves the default (A/B tests).
+// the same samples in YW as in FL (Windows' own default for a 32-bit program is 0x027F, 53-bit precision).
+// YW_BRIDGE32_X87=0 leaves the default (A/B tests).
 unsigned x87ControlWord()
 {
-    static const unsigned word = juce::SystemStats::getEnvironmentVariable ("LYNX_BRIDGE32_X87", "033F").getHexValue32();
+    static const unsigned word = juce::SystemStats::getEnvironmentVariable ("YW_BRIDGE32_X87", "033F").getHexValue32();
     return word;
 }
 } // namespace sandboxhost
@@ -116,7 +116,7 @@ public:
 
     void initialise (const juce::String& commandLine) override
     {
-        // no Windows error boxes for a plugin that crashes or a DLL that is missing: LYNX reports it
+        // no Windows error boxes for a plugin that crashes or a DLL that is missing: YW reports it
         SetErrorMode (SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
         const auto args = juce::StringArray::fromTokens (commandLine, true);
         if (const auto i = args.indexOf ("--scan-one"); i >= 0)
@@ -140,6 +140,6 @@ public:
         TerminateProcess (GetCurrentProcess(), 0);
     }
 };
-} // namespace lynx
+} // namespace yw
 
-START_JUCE_APPLICATION (lynx::Bridge32Application)
+START_JUCE_APPLICATION (yw::Bridge32Application)

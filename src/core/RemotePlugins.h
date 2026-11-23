@@ -24,7 +24,7 @@
 #include "core/LiveSession.h"
 #include "core/Song.h"
 
-namespace lynx::remoteplug
+namespace yw::remoteplug
 {
 constexpr std::size_t maxShared = 32;   // plugins a host shares at once
 constexpr std::size_t maxParams = 1024; // parameters listed per plugin (and values kept on a PluginRef)
@@ -157,4 +157,4 @@ std::vector<live::Key> toRender (const Song& song, const std::set<live::Key>& ne
 // The session is over: nobody plays anything for anyone any more. Clears `playedBy` (and, with `values`, the values:
 // the host captures the plugin's real state first; a guest keeps the audio stand-ins only).
 void endSession (Song& song, bool values = true);
-} // namespace lynx::remoteplug
+} // namespace yw::remoteplug

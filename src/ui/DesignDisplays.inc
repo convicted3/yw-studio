@@ -14,7 +14,7 @@
 #include "core/LiveHistory.h"
 #include "core/EffectResponse.h"
 
-namespace lynx::designui
+namespace yw::designui
 {
 // round 190kl (issue #197): the history advances by the time that passed (core/LiveHistory.h), 30 columns a second
 struct History : livehistory::History<3, 240>
@@ -237,12 +237,12 @@ inline void paintSpread (juce::Graphics& g, juce::Rectangle<float> a, float s, c
 // Frequency Shifter: partials of a harmonic input (grey) and where they land (accent; both sidebands for ring modulation)
 inline void paintShift (juce::Graphics& g, juce::Rectangle<float> a, float s, const EffectSlot& fx, juce::Colour c)
 {
-    // FL's Frequency Shifter (Type, Range, Frequency) or LYNX's (Shift, read through its displayed Hz)
-    const auto lynxOwn = fx.kind == EffectKind::freqShift;
-    const auto type = lynxOwn ? 0.0f : p01 (fx, "Type"), range = lynxOwn ? 0.0f : p01 (fx, "Range");
+    // FL's Frequency Shifter (Type, Range, Frequency) or YW's (Shift, read through its displayed Hz)
+    const auto ywOwn = fx.kind == EffectKind::freqShift;
+    const auto type = ywOwn ? 0.0f : p01 (fx, "Type"), range = ywOwn ? 0.0f : p01 (fx, "Range");
     const auto x = 2.0f * p01 (fx, "Frequency") - 1.0f;
     const auto top = range < 1.0f / 3.0f ? 20000.0 : 200.0;
-    const auto hz = lynxOwn ? shownNumber (fx, "Shift")
+    const auto hz = ywOwn ? shownNumber (fx, "Shift")
                             : range >= 2.0f / 3.0f ? 0.0 : (x < 0 ? -1.0 : 1.0) * top * std::pow (std::abs ((double) x), 2.0);
     g.setColour (colour::gridBeat);
     g.drawHorizontalLine ((int) (a.getBottom() - 1.0f), a.getX(), a.getRight());
@@ -602,4 +602,4 @@ inline bool paint (juce::Graphics& g, const juce::String& id, juce::Rectangle<fl
         detail::paintPeakMeter (g, a, s, fx, c, history, demo);
     return true;
 }
-} // namespace lynx::designui
+} // namespace yw::designui

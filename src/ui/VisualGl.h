@@ -21,7 +21,7 @@
 
 #include "core/VisualFx.h"
 
-namespace lynx
+namespace yw
 {
 namespace visualgl
 {
@@ -144,4 +144,4 @@ private:
     std::atomic<int> state { 0 }; // 0 waiting, 1 ready, −1 failed
     std::atomic<bool> closing { false };
 };
-} // namespace lynx
+} // namespace yw

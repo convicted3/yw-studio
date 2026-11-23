@@ -4,7 +4,7 @@
 #include <cctype>
 #include <set>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -350,4 +350,4 @@ void rememberFolder (std::vector<std::string>& folders, const std::string& folde
     if (limit > 0 && folders.size() > limit)
         folders.resize (limit);
 }
-} // namespace lynx
+} // namespace yw

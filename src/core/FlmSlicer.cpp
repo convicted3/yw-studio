@@ -10,9 +10,9 @@
 #include "core/Instruments.h"
 
 // FL Studio Mobile's Slicer (round 190de; FLM_FORMAT §7.7). Clean-room: the detector and the voice below are the
-// behaviour read in FLM's FL plugin, written in LYNX's own words and code.
+// behaviour read in FLM's FL plugin, written in YW's own words and code.
 
-namespace lynx::flmslicer
+namespace yw::flmslicer
 {
 const float defaults[paramCount] = { 1.0f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
 
@@ -377,4 +377,4 @@ std::unique_ptr<Instrument> makeInstrument (std::shared_ptr<const SampleData> sa
 {
     return std::make_unique<SlicerInstrument> (std::move (sample));
 }
-} // namespace lynx::flmslicer
+} // namespace yw::flmslicer

@@ -1,11 +1,11 @@
-// Round 165 (linuxmouse165): Fruity WaveShaper's curve edited in LYNX (FL's point editor) — the state written back,
+// Round 165 (linuxmouse165): Fruity WaveShaper's curve edited in YW (FL's point editor) — the state written back,
 // point edits, and the running effect taking a new curve without being rebuilt.
 
 #include "core/FruityShapers.h"
 
 TEST (linuxmouse165_waveshaper_state_round_trip)
 {
-    namespace fs = lynx::flshape;
+    namespace fs = yw::flshape;
     const auto stA = waveShaperTestState (150, 100, 120, false, true, 1, true, true);
     const auto a = fs::parseWaveShaper (stA);
     CHECK (a.has_value());
@@ -38,7 +38,7 @@ TEST (linuxmouse165_waveshaper_state_round_trip)
 
 TEST (linuxmouse165_waveshaper_point_edits)
 {
-    namespace fs = lynx::flshape;
+    namespace fs = yw::flshape;
     auto pts = fs::waveShaperForEditing ({}).points; // (0,0) (1,1)
     // add between the ends, in time order
     CHECK (fs::addWaveShaperPoint (pts, 0.5f, 0.2f) == 1);
@@ -68,17 +68,17 @@ TEST (linuxmouse165_waveshaper_point_edits)
 
 TEST (linuxmouse165_waveshaper_takes_a_new_curve_while_running)
 {
-    namespace fs = lynx::flshape;
+    namespace fs = yw::flshape;
     const auto st = waveShaperTestState (100, 128, 128, false, false, 0, false, false); // stateless kernel: exact compare
     auto edited = fs::waveShaperForEditing (st);
     fs::moveWaveShaperPoint (edited.points, 2, 0.6f, 0.1f);
     const auto st2 = fs::writeWaveShaper (edited, st);
 
-    auto slot = lynx::effectFromFl ("Fruity WaveShaper", st, 120.0);
+    auto slot = yw::effectFromFl ("Fruity WaveShaper", st, 120.0);
     CHECK (slot.has_value());
     if (! slot)
         return;
-    auto running = lynx::makeEffect (*slot);
+    auto running = yw::makeEffect (*slot);
     running->prepare (44100.0);
     std::vector<float> l (512), r (512);
     auto fill = [&] { for (int n = 0; n < 512; ++n) l[(std::size_t) n] = r[(std::size_t) n] = (float) std::sin (n * 0.05) * 0.9f; };
@@ -90,7 +90,7 @@ TEST (linuxmouse165_waveshaper_takes_a_new_curve_while_running)
 
     auto slot2 = *slot;
     slot2.state = st2;
-    auto rebuilt = lynx::makeEffect (slot2);
+    auto rebuilt = yw::makeEffect (slot2);
     rebuilt->prepare (44100.0);
     std::vector<float> l2 (512), r2 (512);
     for (int n = 0; n < 512; ++n)

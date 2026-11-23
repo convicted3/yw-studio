@@ -1,11 +1,11 @@
 #pragma once
 
-// The LYNX plugin-editor skin (REA round 122): one design kit shared by every built-in plugin editor — the
+// The YW plugin-editor skin (REA round 122): one design kit shared by every built-in plugin editor — the
 // display-first editors (ProEditors), the FL-arranged panels (PluginEditors), Facet EQ, the generator pages and
-// LYNX Tune. It only changes how things are DRAWN: layouts, control placement and gestures stay with each editor.
+// YW Tune. It only changes how things are DRAWN: layouts, control placement and gestures stay with each editor.
 //
-// Identity: LYNX's dark surfaces and red brand mark, with one accent per plugin family (reverbs violet, delays blue,
-// modulation teal, dynamics amber, saturation orange, voice rose, EQ / filters the LYNX red) so each editor is
+// Identity: YW's dark surfaces and red brand mark, with one accent per plugin family (reverbs violet, delays blue,
+// modulation teal, dynamics amber, saturation orange, voice rose, EQ / filters the YW red) so each editor is
 // recognisable at a glance. Knobs carry a lit value arc with a soft glow, machined caps and a pointer; displays sit
 // in inset wells; meters are lit gradients with peak holds; lit buttons glow. Everything is plain vector drawing
 // (static layers — the canvas with its blooms and grain, the knobs — are rendered once into cached images), cheap
@@ -24,12 +24,12 @@
 #include "core/Song.h"
 #include "ui/Theme.h"
 
-namespace lynx::skin
+namespace yw::skin
 {
 // --- colours -------------------------------------------------------------------------------------
 namespace colour
 {
-inline const juce::Colour crimson { 0xffe5383b }; // = theme accent (EQ, filters, LYNX's own default)
+inline const juce::Colour crimson { 0xffe5383b }; // = theme accent (EQ, filters, YW's own default)
 inline const juce::Colour violet { 0xffa48bff };  // reverbs
 inline const juce::Colour azure { 0xff5aa2ff };   // delays / echoes
 inline const juce::Colour teal { 0xff3fd0c2 };    // modulation
@@ -45,7 +45,7 @@ inline const juce::Colour wellBottom { 0xff121318 };
 } // namespace colour
 
 // a juce::Slider carrying this property (the accent as an int64 ARGB) is drawn with the skin by theme::LookAndFeel
-inline constexpr const char* sliderProperty = "lynxSkinAccent";
+inline constexpr const char* sliderProperty = "ywSkinAccent";
 
 // the accent of a built-in effect's family
 juce::Colour accentFor (EffectKind kind);
@@ -57,7 +57,7 @@ juce::Colour accentForInstrument (const juce::String& pluginName);
 void canvas (juce::Graphics&, juce::Rectangle<float> area, juce::Colour accent);
 // the header strip: raised gradient, top highlight, hairline and an accent line fading out from the left
 void headerBar (juce::Graphics&, juce::Rectangle<float> area, juce::Colour accent);
-// LYNX's mark (the app logo, cached at the size asked) followed by nothing: callers draw the name next to it
+// YW's mark (the app logo, cached at the size asked) followed by nothing: callers draw the name next to it
 void brandMark (juce::Graphics&, juce::Rectangle<float> area);
 // the plugin's name in the header (bold, with a short accent underline); returns the width used
 float titleText (juce::Graphics&, juce::Rectangle<float> area, const juce::String& name, juce::Colour accent, bool underline = true);
@@ -145,7 +145,7 @@ void valuePlate (juce::Graphics&, juce::Rectangle<float> area, float corner);
 //
 // Round 170j adds "Themed": a plugin that has its own ART (ui/PluginArt.inc) is drawn in a theme of its own — an
 // illustration in its background, its own palette, materials and knobs, evoking the mood of the plugin it is
-// inspired by (Sakura's cherry blossoms, Toxic Biohazard's containment lab...). All of it is LYNX's own procedural
+// inspired by (Sakura's cherry blossoms, Toxic Biohazard's containment lab...). All of it is YW's own procedural
 // vector drawing. A plugin without art falls back to its automatic style.
 enum class Style { glow = 0, neon, hardware, vivid, themed };
 inline constexpr int styleCount = 5;
@@ -154,10 +154,10 @@ inline constexpr int styleCount = 5;
 enum class Art // ids: generators 1..127 (ui/PluginArtGeneratorIds.inc), effects 128..255 (ui/PluginArtEffectIds.inc)
 {
     none = 0,
-   #define LYNX_ART(id, value) id = value,
+   #define YW_ART(id, value) id = value,
    #include "ui/PluginArtGeneratorIds.inc"
    #include "ui/PluginArtEffectIds.inc"
-   #undef LYNX_ART
+   #undef YW_ART
 };
 Art art();                                 // the art the kit draws with right now (Style::themed only)
 Art artForEffect (EffectKind);
@@ -172,7 +172,7 @@ bool artMotion();
 void setArtMotion (bool);
 bool osReducedMotion();
 void kickArtLayers(); // the open editors' art layers re-check whether they may move (after a settings change)
-juce::String artSelfTest(); // "OK" or what failed: style resolution with art, every art drawn (LYNX --selftest)
+juce::String artSelfTest(); // "OK" or what failed: style resolution with art, every art drawn (YW --selftest)
 // the style the kit draws in right now (editors set it for their paint with StyleScope)
 Style style();
 void setStyle (Style);
@@ -180,7 +180,7 @@ const char* styleName (Style);            // English; translated with tr()
 Style styleFromName (const juce::String&); // "neon", "Hardware"... (unknown: glow)
 
 // Per plugin (the user's choice, round 126): every editor has its own style, alternating across the set so it feels
-// varied — LYNX Tune Vivid, Epoch Verb Hardware, Crest Compressor Glow... Settings can force one style everywhere
+// varied — YW Tune Vivid, Epoch Verb Hardware, Crest Compressor Glow... Settings can force one style everywhere
 // (-1 = automatic, per plugin), and an editor's header menu can override its own (saved with the UI options).
 int forcedStyle();
 void setForcedStyle (int styleOrMinusOne);
@@ -197,7 +197,7 @@ void overridesFromString (const juce::String&);
 inline std::function<void()> onStyleSettingsChanged; // the main window saves its UI options
 // adds "Plugin style" (Automatic / Glow / Neon / Hardware / Vivid) for one editor to a menu; `changed` repaints it
 void addStyleMenu (juce::PopupMenu&, int key, std::function<void()> changed);
-inline constexpr const char* styleProperty = "lynxSkinStyle"; // a generator page's knob: its page's automatic style
+inline constexpr const char* styleProperty = "ywSkinStyle"; // a generator page's knob: its page's automatic style
 // the styleProperty value: the automatic style and the page's art in one int
 inline int packStyle (Style s, Art a) { return (int) s | ((int) a << 8); }
 inline Style unpackStyle (int packed) { return (Style) juce::jlimit (0, styleCount - 1, packed & 0xff); }
@@ -349,4 +349,4 @@ struct Ballistics
         return std::abs (level + peak - before) > 1e-4f;
     }
 };
-} // namespace lynx::skin
+} // namespace yw::skin

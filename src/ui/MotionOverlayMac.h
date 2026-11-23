@@ -7,11 +7,11 @@
 // (MotionOverlayMac.mm is Objective-C++).
 //
 // OFF by default: it was built and checked headless on the CI's macOS runner (a layer in a window that is never shown,
-// rendered with renderInContext), not on a screen. LYNX_OVERLAY_MAC=1 turns it on.
+// rendered with renderInContext), not on a screen. YW_OVERLAY_MAC=1 turns it on.
 
 #include <cstdint>
 
-namespace lynx::ui::maclayer
+namespace yw::ui::maclayer
 {
 struct Rect
 {
@@ -19,7 +19,7 @@ struct Rect
     bool empty() const noexcept { return w <= 0 || h <= 0; }
 };
 
-// LYNX_OVERLAY_MAC=1 (and not LYNX_OVERLAY=0: MotionOverlay's business)
+// YW_OVERLAY_MAC=1 (and not YW_OVERLAY=0: MotionOverlay's business)
 bool enabled();
 // the view's device pixels per point (its window's backingScaleFactor; 1 without a window)
 double backingScale (void* nsView);
@@ -55,4 +55,4 @@ private:
 // --selftest: a layer on `nsView` (a window that is never shown), rendered with renderInContext: the mark where it was
 // put, nothing outside its clip, gone after restore(). Empty = OK, else what went wrong.
 const char* selfTest (void* nsView);
-} // namespace lynx::ui::maclayer
+} // namespace yw::ui::maclayer

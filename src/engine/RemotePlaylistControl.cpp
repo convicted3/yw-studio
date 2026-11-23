@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string_view>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -217,4 +217,4 @@ juce::var dispatchRemotePlaylist (AudioEngine& engine, const juce::String& op, c
     return object ({ { "changed", changed }, { "createdClipIds", created }, { "updated", (juce::int64) transaction.updated },
                      { "removed", (juce::int64) transaction.removed }, { "totalClips", (juce::int64) engine.getSong().playlist.size() } });
 }
-} // namespace lynx
+} // namespace yw

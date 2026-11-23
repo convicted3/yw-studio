@@ -1,7 +1,7 @@
 #pragma once
 
-// "Clean voice" (round 190ch, LYNX's own): one button that puts a classic vocal clean-up chain at the start of a
-// track's insert. It is a preset of LYNX's own effects, nothing more: every slot is an ordinary slot named
+// "Clean voice" (round 190ch, YW's own): one button that puts a classic vocal clean-up chain at the start of a
+// track's insert. It is a preset of YW's own effects, nothing more: every slot is an ordinary slot named
 // "Clean voice" that can be opened, changed, switched off or removed in the Mixer. No model, no service: plain DSP.
 //
 //   (optional) Quell Denoiser   steady background noise down, lightly (a multiband downward expander, core/VoiceTools.h)
@@ -10,7 +10,7 @@
 //   Hush De-esser               harsh "s" sounds held back, up to 6 dB
 //   Crest Compressor            gentle levelling: Clean style, 2.5:1 from −18 dB, soft knee, 2 dB of make-up
 //
-// LYNX has no real-time spectral denoiser: the noise-profile denoiser is a tool of the audio editor (core/
+// YW has no real-time spectral denoiser: the noise-profile denoiser is a tool of the audio editor (core/
 // AudioEditTools.h), so the optional first slot is the multiband one. No neural model (decision for 0.1.27). No JUCE:
 // tested in tests/BandlabExtras190chTests.inc.
 
@@ -26,7 +26,7 @@
 #include "core/Song.h"
 #include "core/VoiceTools.h"
 
-namespace lynx::cleanvoice
+namespace yw::cleanvoice
 {
 constexpr const char* slotName = "Clean voice"; // EffectSlot::presetName of the chain's slots (how they are found again)
 
@@ -187,4 +187,4 @@ inline bool apply (Song& song, int insert, const Options& options = {})
     }
     return true;
 }
-} // namespace lynx::cleanvoice
+} // namespace yw::cleanvoice

@@ -21,7 +21,7 @@
 #pragma clang fp contract(off)
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -174,7 +174,7 @@ EngineParams engineParams (const Patches& patches, int key) noexcept
         return out;
     const auto* src = patches.data() + drumSynthPatchParams * slot;
     const auto target = src[34];
-    // a morph target outside the 120 keys is treated as no morph (LYNX's choice; not observed in FL data)
+    // a morph target outside the 120 keys is treated as no morph (YW's choice; not observed in FL data)
     const auto targetSlot = target >= 0 && target != key ? drumSynthKeyToSlot (target) : -1;
     const auto* dst = targetSlot >= 0 ? patches.data() + drumSynthPatchParams * targetSlot : nullptr;
     const auto f = dst != nullptr ? morphFraction (src[37]) : 0.0f;
@@ -638,7 +638,7 @@ public:
                 if (auto& v = voices[(std::size_t) order[(std::size_t) i]]; ! v.cut && ((v.mode == 0 && v.slot == slot) || (v.mode > 1 && v.mode == mode)))
                     v.cut = true, v.fade = 1.0f;
         if (orderCount == maxVoices)
-            kill (0); // all voices busy: the oldest makes room (LYNX's choice)
+            kill (0); // all voices busy: the oldest makes room (YW's choice)
         int index = 0;
         while (voices[(std::size_t) index].active)
             ++index;
@@ -647,7 +647,7 @@ public:
         v.active = true;
         v.key = key, v.slot = slot, v.mode = mode, v.notePan = pan;
         v.noteId = startingNoteId(); // (round 190ej)
-        // FL velocity (0…128, LYNX 0…1 × 128) → Init.Vol = (11^(vel/100) − 1)/10 (REA_rodada28 §4.1, inference);
+        // FL velocity (0…128, YW 0…1 × 128) → Init.Vol = (11^(vel/100) − 1)/10 (REA_rodada28 §4.1, inference);
         // the engine's own Final.Vol factor is applied with the channel volume at mix time (see render)
         Levels lv;
         lv.initVol = (float) ((std::pow (11.0, 1.28 * std::clamp ((double) velocity, 0.0, 1.0)) - 1.0) / 10.0);
@@ -681,12 +681,12 @@ public:
     // Levels (§1.3, REA_rodada28 §4.1). In FL each voice leaves the engine already × 2·1.03858·Final.Vol, and the
     // front-end hands it to the host with vol = Final.Vol·g(LEVEL) and pan = Final.Pan + PAN through the per-voice law
     // L = vol·cos((1 + pan)π/4), R = vol·sin(…) — so the channel volume counts twice and channel, note and patch pan
-    // add up before one cos/sin law. LYNX's channel gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)
+    // add up before one cos/sin law. YW's channel gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)
     // (panGains), from which V = √((gl² + gr²)/2) and p are recovered exactly; FL's law is then applied as a whole
     // (no separate 1/√2 factor as in Sakura/Drumpad/BooBass, whose FL level is a single Vol·cos/sin product).
     // Final.Vol = channel volume: the front-end does not link the note velocity to it (it never sends the "link
     // velocity" voice event; FL's default for that flag is not confirmed — at FL's default velocity 100 both readings
-    // agree). Velocity acts through the patch's velocity knobs (§1.5). Mod X/Y (Final.FCut/FRes) are 0: LYNX notes
+    // agree). Velocity acts through the patch's velocity knobs (§1.5). Mod X/Y (Final.FCut/FRes) are 0: YW notes
     // have none. Both Final.Vol factors follow channel volume changes per block (FL freezes the engine's at note-on).
     void render (float* left, float* right, int n, float gl, float gr) noexcept override
     {
@@ -737,7 +737,7 @@ private:
     {
         bool active = false, released = false, cut = false;
         int key = 0, slot = 0, mode = 0;
-        std::uint32_t noteId = 0; // the LYNX note that started it (round 190ej)
+        std::uint32_t noteId = 0; // the YW note that started it (round 190ej)
         float notePan = 0.0f, fade = 1.0f;
         EngineVoice engine;
     };
@@ -823,4 +823,4 @@ std::optional<std::vector<float>> drumSynthLiveParams (const std::vector<std::ui
 
 std::unique_ptr<Instrument> makeDrumSynthInstrument() { return std::make_unique<DrumSynthInstrument>(); }
 bool drumSynthDllUsable (const std::string& path) { return loadWaves (path) != nullptr; }
-} // namespace lynx
+} // namespace yw

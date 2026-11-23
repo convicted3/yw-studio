@@ -13,7 +13,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::safety
+namespace yw::safety
 {
 // --- backups --------------------------------------------------------------------------------------------------------
 // Why a backup was written: the periodic autosave, or the previous file kept when a save replaced it.
@@ -28,7 +28,7 @@ enum class BackupKind
 std::string backupName (const std::string& stem, BackupKind kind, int year, int month, int day, int hour, int minute);
 
 // True when `name` (no extension) is a backup of project `stem`: this module's names (with an optional "_N"), and the
-// older LYNX names (prefs::backupName "Song (2026-10-16 19.50.03)" and the plain "Song").
+// older YW names (prefs::backupName "Song (2026-10-16 19.50.03)" and the plain "Song").
 bool isBackupOf (const std::string& name, const std::string& stem);
 // The kind of a backup name made by backupName (older names count as autosaves).
 BackupKind backupKind (const std::string& name);
@@ -45,7 +45,7 @@ std::vector<std::string> backupsToRemove (const std::vector<BackupFile>& files, 
 // The newest backup of `stem` ("" if none); `includeOverwritten` false skips the "overwritten" ones.
 std::string newestBackup (const std::vector<BackupFile>& files, const std::string& stem, bool includeOverwritten = true);
 
-// The file to offer after LYNX did not close properly: the newest file written since the session started
+// The file to offer after YW did not close properly: the newest file written since the session started
 // (`sessionStart`, same unit as the times), not an "overwritten" copy (that is older than the saved project).
 // "" when nothing was written in that session.
 std::string crashRecoveryCandidate (const std::vector<BackupFile>& files, std::int64_t sessionStart);
@@ -92,7 +92,7 @@ std::map<std::string, std::string> packagePlan (const Song& song, const std::str
 // "samples", "Samples", "Audio" and "Audio/Recorded" subfolders) by file name. Returns how many references changed.
 int resolveProjectSamples (Song& song, const std::string& projectFolder, const std::function<bool (const std::string&)>& fileExists);
 // --- versions (pain point 37, round 177d) ---------------------------------------------------------------------------
-// Compares two LYNX version strings ("0.1.25-alpha", "0.1.9"): the dotted numbers in order, so "0.1.10" is newer than
+// Compares two YW version strings ("0.1.25-alpha", "0.1.9"): the dotted numbers in order, so "0.1.10" is newer than
 // "0.1.9"; a suffix after the numbers ("-alpha") does not count. < 0: a is older, 0: same, > 0: a is newer.
 // An empty or unreadable string counts as 0.0.0.
 int compareVersions (const std::string& a, const std::string& b);
@@ -169,9 +169,9 @@ std::string copyName (const Entry& entry, const std::string& currentStem);
 int agoValue (std::int64_t seconds, int& unit) noexcept;
 } // namespace versions
 
-// --- opening files from outside LYNX (D#92, round 180a) ------------------------------------------------------------
-// `name` with `extension` (".lynx") added unless it already ends with it, in any case. A dot inside the name stays:
-// "beat.v2" -> "beat.v2.lynx", never "beat.lynx" (which could be another project).
+// --- opening files from outside YW (D#92, round 180a) ------------------------------------------------------------
+// `name` with `extension` (".yw") added unless it already ends with it, in any case. A dot inside the name stays:
+// "beat.v2" -> "beat.v2.yw", never "beat.yw" (which could be another project).
 std::string withProjectExtension (const std::string& name, const std::string& extension);
 
 // Whether a start-up argument names a file rather than an option ("--lang", macOS's "-psn_0_123").
@@ -180,4 +180,4 @@ bool isFileArgument (const std::string& argument);
 // The files in the string the operating system hands to a running application (macOS: one string, a path with spaces
 // in double quotes, a quote inside a path as \"). Options are left out.
 std::vector<std::string> filesInCommandLine (const std::string& commandLine);
-} // namespace lynx::safety
+} // namespace yw::safety

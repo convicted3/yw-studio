@@ -9,7 +9,7 @@
 // measured before.
 TEST (extras190am_true_peak_clears_to_silence)
 {
-    lynx::loudness::TruePeak tp;
+    yw::loudness::TruePeak tp;
     unsigned seed = 190;
     double loud = 0.0;
     for (int i = 0; i < 2000; ++i)

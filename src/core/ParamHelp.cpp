@@ -14,7 +14,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::paramhelp
+namespace yw::paramhelp
 {
 namespace
 {
@@ -601,30 +601,30 @@ const std::map<std::pair<K, std::string>, const char*>& own()
         { { K::facetEq, "analyzer speed" }, TR_NOOP ("How fast the spectrum analyser reacts") },
         { { K::facetEq, "analyzer tilt" }, TR_NOOP ("Tilts the analyser so that a balanced mix looks flat") },
         { { K::facetEq, "display range" }, TR_NOOP ("Range of the EQ curve display") },
-        // LYNX Tune
-        { { K::lynxTune, "key" }, TR_NOOP ("The song's key: the notes are corrected towards its scale") },
-        { { K::lynxTune, "scale" }, TR_NOOP ("The scale whose notes the voice is pulled to") },
-        { { K::lynxTune, "retune" }, TR_NOOP ("How fast the pitch moves to the target note: 0 = the robotic effect") },
-        { { K::lynxTune, "humanize" }, TR_NOOP ("Slower correction on long notes so they sound natural") },
-        { { K::lynxTune, "formant preserve" }, TR_NOOP ("Keeps the voice's character when the pitch moves") },
-        { { K::lynxTune, "formant shift" }, TR_NOOP ("Makes the voice sound bigger or smaller without changing the pitch") },
-        { { K::lynxTune, "transpose" }, TR_NOOP ("Shifts the corrected voice in semitones") },
-        { { K::lynxTune, "reference" }, TR_NOOP ("Pitch of A: 440 Hz unless the song is tuned differently") },
-        { { K::lynxTune, "range" }, TR_NOOP ("The voice range the pitch detector expects") },
-        { { K::lynxTune, "low latency" }, TR_NOOP ("Shorter delay for live use, slightly less accurate detection") },
-        { { K::lynxTune, "midi" }, TR_NOOP ("Notes played on MIDI set the target pitch") },
-        { { K::lynxTune, "tracking" }, TR_NOOP ("How strict the pitch detection is: relaxed for noisy or breathy takes") },
-        { { K::lynxTune, "flex-tune" }, TR_NOOP ("Corrects only notes close to a target, so slides and expression stay") },
-        { { K::lynxTune, "natural vibrato" }, TR_NOOP ("Turns the singer's own vibrato up or down") },
-        { { K::lynxTune, "ignore vibrato" }, TR_NOOP ("Does not chase the singer's vibrato") },
-        { { K::lynxTune, "vibrato shape" }, TR_NOOP ("Shape of the added vibrato") },
-        { { K::lynxTune, "vibrato rate" }, TR_NOOP ("Speed of the added vibrato") },
-        { { K::lynxTune, "vibrato depth" }, TR_NOOP ("Amount of the added vibrato") },
-        { { K::lynxTune, "onset delay" }, TR_NOOP ("Time into a note before the added vibrato starts") },
-        { { K::lynxTune, "onset rate" }, TR_NOOP ("How fast the added vibrato fades in") },
-        { { K::lynxTune, "more scales" }, TR_NOOP ("Shows the extra scales in the scale list") },
-        { { K::lynxTune, "note" }, TR_NOOP ("Whether this note is a target of the correction") },
-        { { K::lynxTune, "note bypass" }, TR_NOOP ("Leaves this note uncorrected") },
+        // YW Tune
+        { { K::ywTune, "key" }, TR_NOOP ("The song's key: the notes are corrected towards its scale") },
+        { { K::ywTune, "scale" }, TR_NOOP ("The scale whose notes the voice is pulled to") },
+        { { K::ywTune, "retune" }, TR_NOOP ("How fast the pitch moves to the target note: 0 = the robotic effect") },
+        { { K::ywTune, "humanize" }, TR_NOOP ("Slower correction on long notes so they sound natural") },
+        { { K::ywTune, "formant preserve" }, TR_NOOP ("Keeps the voice's character when the pitch moves") },
+        { { K::ywTune, "formant shift" }, TR_NOOP ("Makes the voice sound bigger or smaller without changing the pitch") },
+        { { K::ywTune, "transpose" }, TR_NOOP ("Shifts the corrected voice in semitones") },
+        { { K::ywTune, "reference" }, TR_NOOP ("Pitch of A: 440 Hz unless the song is tuned differently") },
+        { { K::ywTune, "range" }, TR_NOOP ("The voice range the pitch detector expects") },
+        { { K::ywTune, "low latency" }, TR_NOOP ("Shorter delay for live use, slightly less accurate detection") },
+        { { K::ywTune, "midi" }, TR_NOOP ("Notes played on MIDI set the target pitch") },
+        { { K::ywTune, "tracking" }, TR_NOOP ("How strict the pitch detection is: relaxed for noisy or breathy takes") },
+        { { K::ywTune, "flex-tune" }, TR_NOOP ("Corrects only notes close to a target, so slides and expression stay") },
+        { { K::ywTune, "natural vibrato" }, TR_NOOP ("Turns the singer's own vibrato up or down") },
+        { { K::ywTune, "ignore vibrato" }, TR_NOOP ("Does not chase the singer's vibrato") },
+        { { K::ywTune, "vibrato shape" }, TR_NOOP ("Shape of the added vibrato") },
+        { { K::ywTune, "vibrato rate" }, TR_NOOP ("Speed of the added vibrato") },
+        { { K::ywTune, "vibrato depth" }, TR_NOOP ("Amount of the added vibrato") },
+        { { K::ywTune, "onset delay" }, TR_NOOP ("Time into a note before the added vibrato starts") },
+        { { K::ywTune, "onset rate" }, TR_NOOP ("How fast the added vibrato fades in") },
+        { { K::ywTune, "more scales" }, TR_NOOP ("Shows the extra scales in the scale list") },
+        { { K::ywTune, "note" }, TR_NOOP ("Whether this note is a target of the correction") },
+        { { K::ywTune, "note bypass" }, TR_NOOP ("Leaves this note uncorrected") },
     };
     return help;
 }
@@ -664,7 +664,7 @@ std::string shorter (const std::string& s)
         return s.substr (4);
     if (s.size() > 2 && std::isdigit ((unsigned char) s[0]) && s[1] == ' ')
         return s.substr (2);
-    // a note switch of LYNX Tune: "c#", "c# bypass"
+    // a note switch of YW Tune: "c#", "c# bypass"
     for (const auto* prefix : { "echo ", "early ", "late ", "reverb ", "comp ", "gate " })
         if (startsWith (s, prefix) && s.size() > std::strlen (prefix))
             return s.substr (std::strlen (prefix));
@@ -795,8 +795,8 @@ const char* describe (EffectKind kind, const char* param)
     if (param == nullptr || *param == 0)
         return nullptr;
     auto key = fold (param);
-    // LYNX Tune's note switches ("C", "C# bypass")
-    if (kind == K::lynxTune)
+    // YW Tune's note switches ("C", "C# bypass")
+    if (kind == K::ywTune)
     {
         if (isNoteName (key)) return lookup (kind, "note");
         if (key.size() > 7 && key.compare (key.size() - 7, 7, " bypass") == 0 && isNoteName (key.substr (0, key.size() - 7)))
@@ -857,4 +857,4 @@ Summary summary (EffectKind kind, const EffectParams& params)
         s.text = kindSummary (kind);
     return s;
 }
-} // namespace lynx::paramhelp
+} // namespace yw::paramhelp

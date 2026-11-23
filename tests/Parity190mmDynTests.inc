@@ -1,6 +1,6 @@
 // Round 190mm (sub-round dyn): Waves Renaissance Vox, RDeEsser, C6, API-2500, MaxxBass, Renaissance Bass and Vitamin
-// get LYNX stand-ins (/mnt/e/lynx-work/waves4_190mm/dyn/HANDOFF.md, docs/analise/REA_rodada190mm_dyn.md). Each runs a
-// hidden law (LYNX's own model of the structure REA read in the reference's DSP, every constant fitted on our
+// get YW stand-ins (/mnt/e/yw-work/waves4_190mm/dyn/HANDOFF.md, docs/analise/REA_rodada190mm_dyn.md). Each runs a
+// hidden law (YW's own model of the structure REA read in the reference's DSP, every constant fitted on our
 // demo-mode probes); 0 for new instances and every project saved before. The numbers checked below are the
 // references', read from the round's bank (cap/out/<tag>/<S>_stim.wav: 1 kHz stairs, the sweep's magnitude).
 #include <cmath>
@@ -13,9 +13,9 @@
 
 namespace parity190mmdyn
 {
-inline std::vector<float> render (const lynx::EffectSlot& s, std::vector<float> l, double sr = 48000.0)
+inline std::vector<float> render (const yw::EffectSlot& s, std::vector<float> l, double sr = 48000.0)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     fx->reset();
     std::vector<float> r = l;
@@ -31,7 +31,7 @@ inline std::vector<float> sine (double hz, double db, double seconds = 0.8, doub
     return x;
 }
 // the steady gain (dB) of the last 0.2 s
-inline double gainDb (const lynx::EffectSlot& s, double hz, double db, double seconds = 0.8)
+inline double gainDb (const yw::EffectSlot& s, double hz, double db, double seconds = 0.8)
 {
     const auto x = sine (hz, db, seconds);
     const auto y = render (s, x);
@@ -60,7 +60,7 @@ inline double toneDb (const std::vector<float>& y, double hz, double sr = 48000.
 
 TEST (parity190mm_dyn_laws_are_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     auto c = makeEffectSlot (EffectKind::compressor);
     CHECK (effectInfo (EffectKind::compressor).params.size() == 20 && savedEffectParamCount (c) == 20);
     for (int k = compressorVoxLaw; k < compressorApiEnd; ++k)
@@ -84,7 +84,7 @@ TEST (parity190mm_dyn_laws_are_hidden_and_off_for_new_and_old_instances)
 
 TEST (parity190mm_dyn_rvox_static_law_matches_the_reference_stairs)
 {
-    using namespace lynx;
+    using namespace yw;
     // the bank's X1 (Compression −10 dB) / X2 (−20 dB) / X4 (−25 dB, Gain −3 dB) states: 1 kHz stairs (top steps, settled)
     int n = 0;
     const auto x1 = vm123::wavesSlot ("Renaissance Vox", "-10 -80 130 * * * * 0 *", n);
@@ -108,7 +108,7 @@ TEST (parity190mm_dyn_rvox_static_law_matches_the_reference_stairs)
 
 TEST (parity190mm_dyn_rdeesser_splits_and_reduces_the_band_by_the_range)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     int n = 0;
     // the default state: −40 dB, range −16 dB, 5506 Hz, high-pass, split
@@ -135,7 +135,7 @@ TEST (parity190mm_dyn_rdeesser_splits_and_reduces_the_band_by_the_range)
 
 TEST (parity190mm_dyn_maxxbass_and_rbass_share_the_crossover)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // MaxxBass default (80 Hz, harmonics off): the crossover's sum is an all-pass (the reference's sweep: 0.0 dB)
     const auto d = vm123::wavesSlot ("MaxxBass", "0 80 -15 20 1 0 * * 16 16 1 0 0 -144", n);
@@ -157,7 +157,7 @@ TEST (parity190mm_dyn_maxxbass_and_rbass_share_the_crossover)
 
 TEST (parity190mm_dyn_vitamin_default_is_an_all_pass_and_direct_gain_scales)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     std::string vals;
     // 145 values: crossovers 90 / 500 / 2594 / 9310, bands A … E Off (91 … 95), direct 0 dB (100)
@@ -177,7 +177,7 @@ TEST (parity190mm_dyn_vitamin_default_is_an_all_pass_and_direct_gain_scales)
 
 TEST (parity190mm_dyn_c6_floating_band_and_api2500_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace pr = dyn::prism;
     int n = 0;
     // C6 X2: floating band 1 at 300 Hz, −30 dB, range −6 dB; band 6 at 6 kHz, −40 dB, range −6 dB

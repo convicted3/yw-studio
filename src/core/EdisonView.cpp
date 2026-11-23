@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdio>
 
-namespace lynx::edisonview
+namespace yw::edisonview
 {
 namespace
 {
@@ -177,4 +177,4 @@ int pitchRegions (audioedit::Document& doc, const std::vector<PitchSegment>& seg
     }
     return n;
 }
-} // namespace lynx::edisonview
+} // namespace yw::edisonview

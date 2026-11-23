@@ -10,7 +10,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::effector
+namespace yw::effector
 {
 constexpr int typeCount = 12;
 enum Param { type, bypass, wetMix, paramX, paramY, modRate, tempoReduce, modX, modY, modShape, inputLevel, outputGain };
@@ -24,4 +24,4 @@ std::string formatParam (int param, float value, double bpm);
 // are allocated at prepare()
 // kiloheartsLatency (round 190nh): the law's reported latency (khsdsp::lawLatency)
 std::unique_ptr<Effect> make (bool kiloheartsLaw = false, int kiloheartsLatency = 0);
-} // namespace lynx::effector
+} // namespace yw::effector

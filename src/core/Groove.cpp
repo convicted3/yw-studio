@@ -9,7 +9,7 @@
 #include "core/NoteChance.h"
 #include "core/XmlLite.h"
 
-namespace lynx::groove
+namespace yw::groove
 {
 const char* baseName (GrooveBase base) noexcept
 {
@@ -387,7 +387,7 @@ Groove extractFromClip (const Song& song, const Clip& clip, GrooveBase base, std
     return extract (window, clip.length, base, std::move (name));
 }
 
-// --- LYNX's own grooves ----------------------------------------------------------------------------------------------
+// --- YW's own grooves ----------------------------------------------------------------------------------------------
 namespace
 {
 Groove named (std::string name, GrooveBase base, std::int64_t length)
@@ -445,7 +445,7 @@ std::vector<BankEntry> makeBank()
 
     // round 190fm, "Classic swing": the swing steps drum machines publish for their timing correction (one family 50, 54,
     // 58, 62, 66, 71, 75 %; another 50, 54, 58, 63, 67, 71 %), by the same formula. As on those machines the notes are
-    // first put on the grid (Quantize 100 %), then every second one is delayed: 50 % is the plain grid. LYNX's own
+    // first put on the grid (Quantize 100 %), then every second one is delayed: 50 % is the plain grid. YW's own
     // names, no machine's
     for (const auto* what : { "8ths", "16ths", "32nds" })
         for (const auto percent : classicSwingSteps())
@@ -585,4 +585,4 @@ bool fromGrooveElement (const xml::Element& node, Groove& out, std::string* erro
     out = std::move (g);
     return true;
 }
-} // namespace lynx::groove
+} // namespace yw::groove

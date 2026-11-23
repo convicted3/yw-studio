@@ -8,9 +8,9 @@
 #include "core/RenDynamics.h"
 #include "core/BusComp2500.h"
 #include "core/EchoSuite.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 #include "core/PeakShapes.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/LimiterLaw.h"
 
 #include "core/Effector.h"
@@ -78,7 +78,7 @@
 #include <type_traits>
 #include <cstring>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1274,7 +1274,7 @@ private:
     // round 190lf: the L2 law (core/LimiterLaw.h, docs/analise/REA_rodada190lf.md §2). The Gain knob is the make-up
     // (an L2 threshold t and ceiling c: gain = c − t), the input limited at ceiling / gain: the gain each sample needs, its
     // minimum over the window, ARC's follower of that minimum and its release (or the Release knob's), two moving
-    // averages; the audio delayed by the window. Every constant is LYNX's own fit on our Waves-demo probes.
+    // averages; the audio delayed by the window. Every constant is YW's own fit on our Waves-demo probes.
     void processL2 (float* l, float* r, int n, const EffectParams& params) noexcept
     {
         namespace ll = limiterlaw;
@@ -1426,7 +1426,7 @@ private:
         l2Count = 1;
         l2MinValues[0] = 1.0;
         l2MinTimes[0] = -1;
-        for (auto& h : ditherHist) h.fill (0.0); // round 190mg: the requantizer (LYNX's renders stay deterministic)
+        for (auto& h : ditherHist) h.fill (0.0); // round 190mg: the requantizer (YW's renders stay deterministic)
         ditherPos[0] = ditherPos[1] = 0;
         ditherSeed[0] = 0x6C078965u;
         ditherSeed[1] = 0x5DEECE66u;
@@ -2220,7 +2220,7 @@ int soloBand (const Effect* effect) noexcept
 double soloQ (const EffectParams& params, int band) noexcept
 {
     const auto v = params[(std::size_t) param (std::clamp (band, 0, bands - 1), 3)];
-    return std::clamp (q (flLaw (params) ? 1.0f - v : v), 0.5, 18.0); // (FL's bandwidth grows with the value; LYNX's Q shrinks)
+    return std::clamp (q (flLaw (params) ? 1.0f - v : v), 0.5, 18.0); // (FL's bandwidth grows with the value; YW's Q shrinks)
 }
 } // namespace peq
 
@@ -2625,7 +2625,7 @@ private:
 // §4.1). Parameters (0..1): 0 bands (4 << round(5v)), 1 order (1 + round(2v)), 2 listen (0 modulator, 1 carrier,
 // 2 mix), 3 swap L/R, then FL's twelve controls as (raw − min) / (max − min): 4/5 FreqMin/Max (0…65536), 6 FreqScale
 // (0…128), 7 invert, 8 Formant (−1200…1200 cents), 9 band width (5…200 %), 10/11 attack/release (10…1000 ms),
-// 12 hold, 13/14/15 modulator/carrier/wet levels (0…160); 16 LYNX's side-input mode. The per-band levels of the
+// 12 hold, 13/14/15 modulator/carrier/wet levels (0…160); 16 YW's side-input mode. The per-band levels of the
 // analysis bank travel in EffectSlot::state (FL's saved state); they apply while the band count matches.
 namespace vocoder
 {
@@ -3263,7 +3263,7 @@ public:
             songBeats += beats;
         const auto whole = std::floor (cycles);
         const auto lfoAmount = (lfoAmountRaw < 0.0 ? -1.0 : 1.0) * (std::pow (6.0, std::abs (lfoAmountRaw) / 256.0) - 1.0) * 0.2;
-        // round 190kl (issue #197): LYNX's extra shapes (core/PeakShapes.h) when one is picked; none = FL's shape, as before
+        // round 190kl (issue #197): YW's extra shapes (core/PeakShapes.h) when one is picked; none = FL's shape, as before
         const auto extra = peakshapes::idOf (p[peakshapes::extraShapeParam]);
         const auto shaped = extra != 0 ? peakshapes::wave (extra, cycles - whole, (std::uint32_t) (std::int64_t) whole)
                                        : wave (shape, cycles - whole, (std::uint32_t) (std::int64_t) whole);
@@ -3394,7 +3394,7 @@ double responseDb (const EffectParams& params, double sr, double f)
 
     return total;
 }
-bool flLaw (const EffectParams& params) noexcept { return peqfl::lawOf (params) != peqfl::Law::lynx; }
+bool flLaw (const EffectParams& params) noexcept { return peqfl::lawOf (params) != peqfl::Law::yw; }
 
 std::string orderText (const EffectParams& params, int band)
 {
@@ -3483,7 +3483,7 @@ const EffectInfo& effectInfoOf (EffectKind kind)
                                                   // round 135w: the RComp role's switches (the vintage voicing's ARC / Electro / Warm
                                                   // by default, as fitted) and its 0 dBFS output limiter (off: older projects unchanged)
                                                   { "Release mode", 0.0f }, { "Release curve", 0.0f }, { "Character", 0.0f }, { "Limiter", 0.0f },
-                                                  // round 150: the RComp role's own ranges (off: LYNX's, older projects unchanged) —
+                                                  // round 150: the RComp role's own ranges (off: YW's, older projects unchanged) —
                                                   // ratio 1.00 : 1, gain 0 dB, attack 16 ms, release 160 ms (the reference's defaults)
                                                   { "Ranges", 0.0f }, { "RC ratio", 0.625f }, { "RC gain", 0.5f }, { "RC attack", 0.5f }, { "RC release", 0.5f },
                                                   // round 152: the vintage voicing's static curve measured at every ratio (on for new
@@ -4094,7 +4094,7 @@ const EffectInfo& effectInfoOf (EffectKind kind)
             return rackMixerInfo;
         }
         case EffectKind::edison: return edisonfx::info();
-        case EffectKind::lynxTune: return lynxtune::info();
+        case EffectKind::ywTune: return ywtune::info();
         case EffectKind::fruityPhaser: return fruityPhaserInfo;
         case EffectKind::epochVerb:
         case EffectKind::atrium:
@@ -4872,8 +4872,8 @@ std::string formatEffectParam (EffectKind kind, int param, float v, double bpm)
         case EffectKind::timeprism:
         case EffectKind::harmonia:
             return mixsuite::paramText (kind, param, v);
-        case EffectKind::lynxTune:
-            return lynxtune::paramText (param, v);
+        case EffectKind::ywTune:
+            return ywtune::paramText (param, v);
         case EffectKind::fruityPhaser:
             return phaserfx::paramText (param, v);
         case EffectKind::epochVerb:
@@ -5074,9 +5074,9 @@ EffectSlot makeEffectSlot (EffectKind kind)
         slot.params[i] = info.params[i].defaultValue;
     if (kind == EffectKind::patcher) // a new Patcher passes its input through, as FL's
         slot.patcher.wires.push_back ({});
-    if (kind == EffectKind::visualizer) // round 164c: LYNX's default scene
+    if (kind == EffectKind::visualizer) // round 164c: YW's default scene
         slot.state = visualfx::scene::toState (visualfx::scene::defaultScene());
-    if (kind == EffectKind::grossBeat) // round 168m: a new Gross Beat starts with LYNX's factory slots (FL loads its default bank)
+    if (kind == EffectKind::grossBeat) // round 168m: a new Gross Beat starts with YW's factory slots (FL loads its default bank)
         slot.state = grossbeat::factoryContainer();
     if (kind == EffectKind::spiralEcho) // round 190fy: a new Spiral Echo runs the measured loop's revision 1 (hidden parameter)
         slot.params[(std::size_t) echosuite::spiral::revision] = 1.0f;
@@ -5293,7 +5293,7 @@ void upgradeLoadedEffectParams (EffectSlot& slot, std::size_t savedCount) noexce
     // (round 124) keeps the shelf + exciter it was set up with
     if (slot.kind == EffectKind::aether && savedCount <= (std::size_t) mixsuite::aether::dynamic)
         slot.params[(std::size_t) mixsuite::aether::dynamic] = 0.0f;
-    // round 190bz: a LYNX reverb saved before the 0.1.27 engine law (per-band decay, tone corrector, onset network)
+    // round 190bz: a YW reverb saved before the 0.1.27 engine law (per-band decay, tone corrector, onset network)
     // keeps the classic engine, bit for bit
     {
         int law = -1;
@@ -5503,8 +5503,8 @@ std::unique_ptr<Effect> makeEffectOfSlot (const EffectSlot& slot)
         return mixsuite::makeRidge (&slot.params);
     if (slot.kind == EffectKind::aether) // issue #113: its model (the exciter's oversampling latency) known before the first block
         return mixsuite::makeAether (&slot.params);
-    if (slot.kind == EffectKind::lynxTune) // issue #113: its range / low-latency path known before the first block
-        return lynxtune::make (&slot.params);
+    if (slot.kind == EffectKind::ywTune) // issue #113: its range / low-latency path known before the first block
+        return ywtune::make (&slot.params);
     if (slot.kind == EffectKind::transmitter) // issue #113: its look-ahead (latency) known before the first block
         return transmitter::make (&slot.params);
     if (slot.kind == EffectKind::flPitchShifter) // issue #113: its engine (latency) known before the first block
@@ -5589,7 +5589,7 @@ std::unique_ptr<Effect> makeEffect (EffectKind kind)
         case EffectKind::fruityChorus: return fruitychorusfx::make();
         case EffectKind::hyperChorus: return hyperchorusfx::make();
         case EffectKind::vintageChorus: return vintagechorusfx::make();
-        case EffectKind::grossBeat: return grossbeat::make ({}); // without a state: LYNX's factory bank (round 168m); use makeEffect (slot)
+        case EffectKind::grossBeat: return grossbeat::make ({}); // without a state: YW's factory bank (round 168m); use makeEffect (slot)
         case EffectKind::lovePhilter: return philter::make (EffectSlot {}); // without a state: passes the signal
         case EffectKind::fruityDelayBank: return fldbank::make ({}); // a new FL instance; use makeEffect (slot) for a state
         case EffectKind::fruityMultiband: return flmb::make();
@@ -5621,26 +5621,26 @@ std::unique_ptr<Effect> makeEffect (EffectKind kind)
         case EffectKind::soundboard:
         case EffectKind::platter:
         case EffectKind::timeprism:
-        case EffectKind::harmonia: return mixsuite::make (kind); // LYNX's own mixing suite (REA_rodada96)
+        case EffectKind::harmonia: return mixsuite::make (kind); // YW's own mixing suite (REA_rodada96)
         case EffectKind::rackMixer: return rack::makeChainMixer(); // a rack chain's mixer (round 183c)
         case EffectKind::edison: return std::make_unique<edisonfx::Processor>(); // without its slot: nothing to play (round 190cd)
-        case EffectKind::lynxTune: return lynxtune::make(); // LYNX's own pitch corrector (REA_rodada95)
+        case EffectKind::ywTune: return ywtune::make(); // YW's own pitch corrector (REA_rodada95)
         case EffectKind::fruityPhaser: return phaserfx::make(); // FL's Fruity Phaser, exact (REA_rodada105_phaser)
         case EffectKind::epochVerb:
         case EffectKind::atrium:
         case EffectKind::foilPlate:
         case EffectKind::nebula:
         case EffectKind::halo:
-        case EffectKind::horizon: return verbs::make (kind); // LYNX's own reverbs (REA_rodada100)
+        case EffectKind::horizon: return verbs::make (kind); // YW's own reverbs (REA_rodada100)
         case EffectKind::echoform:
         case EffectKind::spiralEcho:
         case EffectKind::orbit:
-        case EffectKind::latticeMod: return echosuite::make (kind); // LYNX's delay / modulation suite (REA_rodada101)
+        case EffectKind::latticeMod: return echosuite::make (kind); // YW's delay / modulation suite (REA_rodada101)
         case EffectKind::crestCompressor:
         case EffectKind::prismMultiband:
-        case EffectKind::sentryGate: return dyn::make (kind); // LYNX's dynamics suite (REA_rodada108)
+        case EffectKind::sentryGate: return dyn::make (kind); // YW's dynamics suite (REA_rodada108)
         case EffectKind::quellDenoiser:
-        case EffectKind::geminiDoubler: return voicetools::make (kind); // LYNX's voice tools (REA_rodada119)
+        case EffectKind::geminiDoubler: return voicetools::make (kind); // YW's voice tools (REA_rodada119)
         case EffectKind::formulaController: return formula::makeEffect ({});
         case EffectKind::voiceShift: return voiceshift::make(); // round 135
         case EffectKind::emphasizer: return emphasizer::make(); // round 154
@@ -5697,4 +5697,4 @@ std::unique_ptr<Effect> makeEffect (EffectKind kind)
     }
     return std::make_unique<Eq>();
 }
-} // namespace lynx
+} // namespace yw

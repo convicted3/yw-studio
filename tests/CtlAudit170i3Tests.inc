@@ -36,7 +36,7 @@ const std::vector<Case>& cases()
           {} },
         { "Harmor", {}, { { "A/B mix", "the Default preset's part B is off" } }, {} },
         { "Harmless",
-          { { 92, 1.0f }, { 93, 1000.0f }, { lynx::harmlessComboIndex + 3, 1.0f } }, // delay and compressor on
+          { { 92, 1.0f }, { 93, 1000.0f }, { yw::harmlessComboIndex + 3, 1.0f } }, // delay and compressor on
           { { "Release velocity", "needs a note-off velocity" }, { "Threaded", "CPU use only" } },
           {} },
         { "GMS",
@@ -133,26 +133,26 @@ bool listed (const std::string& name, const std::vector<const char*>& names)
 
 struct Setup
 {
-    lynx::ChannelDef channel;
-    std::vector<lynx::ctlaudit::Control> all;      // every editor control (the random settings change them all)
-    std::vector<lynx::ctlaudit::Control> controls; // the sample (the allowed ones out)
+    yw::ChannelDef channel;
+    std::vector<yw::ctlaudit::Control> all;      // every editor control (the random settings change them all)
+    std::vector<yw::ctlaudit::Control> controls; // the sample (the allowed ones out)
     std::vector<int> at;                           // the sample's places in `all`
-    lynx::ctlaudit::Pattern pattern;
+    yw::ctlaudit::Pattern pattern;
 };
 
-lynx::ctlaudit::Samples samples()
+yw::ctlaudit::Samples samples()
 {
     return [] (const std::string& p) {
         auto q = p;
         std::replace (q.begin(), q.end(), '\\', '/');
-        return lynx::tools::readWav (lynx::existingPathIgnoringCase (q));
+        return yw::tools::readWav (yw::existingPathIgnoringCase (q));
     };
 }
 
 // the engine's new channel with the case's settings and a sample of at most `most` of its editor controls
 std::optional<Setup> setup (const Case& k, std::size_t most)
 {
-    using namespace lynx;
+    using namespace yw;
     static const auto fl = natives142::flAccess();
     ctlaudit::flAccess = &fl;
     const natives::InstrumentEngine* engine = nullptr;
@@ -189,7 +189,7 @@ std::optional<Setup> setup (const Case& k, std::size_t most)
 // each engine's sampled controls change the render through a new instrument (directly or with other settings)
 TEST (ctl170i3_every_control_changes_the_render)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto smp = ctl170i3::samples();
@@ -216,7 +216,7 @@ TEST (ctl170i3_every_control_changes_the_render)
 // keeps the sounding notes (the instrument is configured, not replaced; its engine keeps its voices)
 TEST (ctl170i3_editor_edits_and_automation_reach_the_playing_instrument)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto smp = ctl170i3::samples();
@@ -254,7 +254,7 @@ TEST (ctl170i3_editor_edits_and_automation_reach_the_playing_instrument)
 // them). Sytrus and Harmor still build a new engine for any edit of their state (listed in REA_rodada170i3c §3).
 TEST (ctl170i3_a_knob_edit_keeps_the_sounding_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto smp = ctl170i3::samples();

@@ -1,6 +1,6 @@
-// Round 190lf: REA on the Waves DSP binaries, third pass (owner's permission of 2026-11-17; /mnt/e/lynx-work/waves2_190lf/
+// Round 190lf: REA on the Waves DSP binaries, third pass (owner's permission of 2026-11-17; /mnt/e/yw-work/waves2_190lf/
 // HANDOFF.md, docs/analise/REA_rodada190lf.md).
-// - The Limiter gets an L2 law (hidden [3]): LYNX's own model of the look-ahead brickwall REA showed in the Waves L2 DSP
+// - The Limiter gets an L2 law (hidden [3]): YW's own model of the look-ahead brickwall REA showed in the Waves L2 DSP
 //   (window minimum, ARC's follower and depth-dependent release, two moving averages), fitted on our demo-mode probes.
 //   0 for new instances and every project saved before (bit for bit: lab/gold.sh).
 // - Waves L2 translates onto it; Waves PuigTec EQP1A gets a substitute entry (Facet EQ, eight fitted bands).
@@ -12,10 +12,10 @@
 
 namespace parity190lf
 {
-inline lynx::EffectSlot l2 (double thrDb, double ceilDb, bool arc, double releaseMs = 100.0)
+inline yw::EffectSlot l2 (double thrDb, double ceilDb, bool arc, double releaseMs = 100.0)
 {
-    namespace ll = lynx::limiterlaw;
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::limiter);
+    namespace ll = yw::limiterlaw;
+    auto s = yw::makeEffectSlot (yw::EffectKind::limiter);
     s.params[0] = (float) ((ceilDb + 12.0) / 12.0);
     s.params[1] = (float) ((ceilDb - thrDb) / 24.0);
     s.params[2] = (float) (std::log (releaseMs / 10.0) / std::log (100.0));
@@ -39,7 +39,7 @@ inline void bursts (std::vector<float>& l, std::vector<float>& r, double sr, std
 
 TEST (parity190lf_limiter_l2_law_is_hidden_and_off_for_new_and_old_limiters)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ll = limiterlaw;
     CHECK (effectInfo (EffectKind::limiter).params.size() == 3 && ll::lawParam == 3); // hidden: no control, no string
     auto s = makeEffectSlot (EffectKind::limiter);
@@ -86,7 +86,7 @@ TEST (parity190lf_limiter_l2_law_releases_by_programme_or_by_the_knob)
     const double sr = 48000.0;
     const int n = (int) (6.0 * sr);
     // the gain 100 ms after a burst ends, against the small-signal gain (dB)
-    const auto after = [&] (const lynx::EffectSlot& s, double len) {
+    const auto after = [&] (const yw::EffectSlot& s, double len) {
         std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
         parity190lf::bursts (l, r, sr, { { 1.0, 1.0 + len } });
         parity190kt::render (s, sr, l, r);
@@ -106,7 +106,7 @@ TEST (parity190lf_limiter_l2_law_releases_by_programme_or_by_the_knob)
 
 TEST (parity190lf_waves_l2_and_puigtec_are_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ll = limiterlaw;
     int n = 0;
     // refcap182's X2: ARC, threshold -6, ceiling -0.3 → make-up 5.7 dB

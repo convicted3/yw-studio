@@ -11,7 +11,7 @@
 
 TEST (rollup027_flm_layer_plays_supersaw_on_its_own_engine)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = flm190bs;
     const std::string device = "/storage/emulated/0/Android/data/com.imageline.FLM/files/My Samples/";
     const auto& d = pocketsaw::defaults();
@@ -51,7 +51,7 @@ TEST (rollup027_flm_layer_plays_supersaw_on_its_own_engine)
 
 TEST (rollup027_hot_swap_default_key_only_in_the_ableton_style_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     using layoutstyle::Style;
     // the default Q acts in the Clip-launch (Ableton-style) layout only; a key the user chose acts everywhere
     CHECK (hotswap::keyActsInLayout (Style::clipLaunch, true) && ! hotswap::keyActsInLayout (Style::pattern, true) && ! hotswap::keyActsInLayout (Style::simple, true));
@@ -66,7 +66,7 @@ TEST (rollup027_hot_swap_default_key_only_in_the_ableton_style_layout)
 // the classic Foil engine): a stand-in that starts from its own preset still runs the Classic law.
 TEST (rollup027_reverb_stand_ins_with_their_own_preset_keep_the_classic_law)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto law = (std::size_t) verbs::foil::engineLaw;
     CHECK (std::string (effectInfo (EffectKind::foilPlate).params[law].name) == "Law");
     CHECK (makeEffectSlot (EffectKind::foilPlate).params[law] == 1.0f); // a new Foil Plate: Measured
@@ -85,7 +85,7 @@ TEST (rollup027_reverb_stand_ins_with_their_own_preset_keep_the_classic_law)
 // keys only in the Clip-launch layout; in FL's layout (and Simple) the chord is not taken, so the global keeps it.
 TEST (rollup027_ableton_style_keys_do_not_hide_fl_layout_globals)
 {
-    using namespace lynx;
+    using namespace yw;
     using layoutstyle::Style;
     using sessionkeys::Command;
     for (const auto c : { Command::gridNewMidiClip, Command::audioInsertWarpMarkers, Command::audioQuantize })
@@ -122,7 +122,7 @@ TEST (rollup027_ableton_style_keys_do_not_hide_fl_layout_globals)
 // own measure: the step at the switch against both voicings' own steps there), both ways.
 TEST (rollup027_foil_plate_voicing_switch_is_click_free_under_both_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto prog = fxaudit::programme (0.6, 0.25);
     const auto voicing = (std::size_t) plugui::paramIndex (EffectKind::foilPlate, "Voicing");
     const auto law = (std::size_t) verbs::foil::engineLaw;
@@ -148,11 +148,11 @@ TEST (rollup027_foil_plate_voicing_switch_is_click_free_under_both_laws)
         }
 }
 
-// Round 190cm: Pocket SuperSaw in LYNX's channel workflow — slide notes, the channel porta's glide, the channel's
+// Round 190cm: Pocket SuperSaw in YW's channel workflow — slide notes, the channel porta's glide, the channel's
 // pitch live, and the MIDI wheel through the module's own Pitch bend range (it had no source before).
 TEST (rollup027_pocket_supersaw_slides_glides_and_bends_like_a_channel)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ps = pocketsaw;
     using namespace saw190by;
     const double fs = 48000.0;

@@ -1,16 +1,16 @@
 // --- Round 190ag (issue #147): the Playlist's Shift+arrow / Alt+arrow clip moves, as in FL -------------------------
 // (FLEngine 2026 [DECOMP] FUN_00e51730 the shift, FUN_00e50fa0 its clamp and move passes, FUN_00e52360 the editor's
-// KeyDown, FUN_00e7e290 the scroll that follows; FL 2026 shots in /mnt/e/lynx-work/plkeys190ag/shots/fl)
+// KeyDown, FUN_00e7e290 the scroll that follows; FL 2026 shots in /mnt/e/yw-work/plkeys190ag/shots/fl)
 
 #include "core/ClipOps.h"
 #include "core/KeyMap.h"
 
 namespace
 {
-lynx::Clip clip190ag (int track, std::int64_t start, std::int64_t length)
+yw::Clip clip190ag (int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = 0;
     c.track = track;
     c.start = start;
@@ -21,7 +21,7 @@ lynx::Clip clip190ag (int track, std::int64_t start, std::int64_t length)
 
 TEST (plkeys190ag_selection_stops_together_at_the_song_start_and_keeps_its_spacing)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips { clip190ag (0, 48, 96), clip190ag (1, 240, 96), clip190ag (2, 960, 96) };
     // a step that fits: every selected clip moves, the others stay
     CHECK (clipops::shiftClipsInTime (clips, { 0, 1 }, -24) == -24);
@@ -40,7 +40,7 @@ TEST (plkeys190ag_selection_stops_together_at_the_song_start_and_keeps_its_spaci
 
 TEST (plkeys190ag_selection_stops_together_at_the_first_and_last_track)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips { clip190ag (0, 0, 96), clip190ag (2, 0, 96), clip190ag (498, 0, 96) };
     // first track: the upper clip cannot go up, so the lower one stays too (the shape of the selection is kept)
     CHECK (clipops::shiftClipsTrack (clips, { 0, 1 }, -1) == 0 && clips[0].track == 0 && clips[1].track == 2);
@@ -54,7 +54,7 @@ TEST (plkeys190ag_selection_stops_together_at_the_first_and_last_track)
 
 TEST (plkeys190ag_clips_moved_onto_occupied_space_overlap_like_after_a_drag)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's shift has no collision rule (FUN_00e50fa0 only adds the deltas): the clips end up on top of each other
     std::vector<Clip> clips { clip190ag (0, 0, 192), clip190ag (1, 96, 192), clip190ag (0, 384, 96) };
     CHECK (clipops::shiftClipsTrack (clips, { 1 }, -1) == -1);
@@ -66,7 +66,7 @@ TEST (plkeys190ag_clips_moved_onto_occupied_space_overlap_like_after_a_drag)
 
 TEST (plkeys190ag_fine_step_is_one_pixel_of_ticks_and_never_less_than_a_tick)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (clipops::pixelStepTicks (0.125) == 8);  // zoomed out: 8 ticks per pixel
     CHECK (clipops::pixelStepTicks (0.4) == 3);    // 2.5 ticks per pixel, rounded
     CHECK (clipops::pixelStepTicks (1.0) == 1);
@@ -76,7 +76,7 @@ TEST (plkeys190ag_fine_step_is_one_pixel_of_ticks_and_never_less_than_a_tick)
 
 TEST (plkeys190ag_view_follows_the_leading_edge_of_the_moved_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     // a 640 px view at 0.5 px per tick shows 1280 ticks; FL's margin is 1/32 of the view = 20 px = 40 ticks
     const auto view = 640.0, zoom = 0.5;
     // well inside the view: no scroll, in either direction
@@ -97,7 +97,7 @@ TEST (plkeys190ag_view_follows_the_leading_edge_of_the_moved_clips)
 
 TEST (plkeys190ag_arrow_keys_are_fl_s_and_stay_inside_the_playlist)
 {
-    using namespace lynx;
+    using namespace yw;
     keys::KeyMap map;
     const auto both = (std::uint8_t) (keys::alt | keys::shift);
     CHECK (map.find (keys::Chord { keys::left, keys::shift }, keys::Context::playlist, false) == "playlist.shiftLeft");

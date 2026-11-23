@@ -9,7 +9,7 @@ inline bool near (double a, double b, double eps = 1.0e-9) { return std::abs (a 
 
 TEST (slicex190hz_time_axis_and_view_follow_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // Slicex answers the editor's subdivision question with 10 (0x881cb0): base 0.2 / 10 in 0.5 s units, 1/4 / 10 beat
     const auto t = slicex::articulatorTimeAxis (false);
     CHECK (slicex190hz::near (t.base, 0.02) && t.step1 == 2.0 && t.step2 == 0.0);
@@ -28,7 +28,7 @@ TEST (slicex190hz_time_axis_and_view_follow_fl)
 
 TEST (slicex190hz_ruler_step_law_matches_fl_shots)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto env = slicex::articulatorTimeAxis (false);
     // FL's graph is 365 px over 2 units (182.5 px a unit): lines every 14.6 px = 0.08 units (shot m0), no thick ones
     // until 2.0 (25 lines)
@@ -61,7 +61,7 @@ TEST (slicex190hz_ruler_step_law_matches_fl_shots)
 
 TEST (slicex190hz_snap_rounds_and_alt_inverts)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (slicex190hz::near (slicex::snapToGrid (0.13, 0.08), 0.16));
     CHECK (slicex190hz::near (slicex::snapToGrid (0.03, 0.08), 0.0));
     CHECK (slicex::snapToGrid (0.375, 0.25) == 0.5);  // 1.5 steps: halves go to the even count (Delphi's Round)
@@ -76,7 +76,7 @@ TEST (slicex190hz_snap_rounds_and_alt_inverts)
 
 TEST (slicex190hz_wheel_zoom_and_keyboard_marks)
 {
-    using namespace lynx;
+    using namespace yw;
     // a wheel notch zooms by FL's measured menu step (2^-0.225), Ctrl by a quarter of that exponent
     CHECK (slicex190hz::near (slicex::wheelZoomFactor (1.0, false), slicex::zoomStep, 1.0e-9));
     CHECK (slicex190hz::near (slicex::wheelZoomFactor (-1.0, false), 1.0 / slicex::zoomStep, 1.0e-9));

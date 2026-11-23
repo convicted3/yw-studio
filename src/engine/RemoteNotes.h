@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace lynx::remote_notes
+namespace yw::remote_notes
 {
 namespace detail
 {
@@ -167,4 +167,4 @@ inline Note fromValue (const juce::var& value, std::size_t channels)
         n.repeat = (int) detail::integer (value, "repeat", 0, 14);
     return n;
 }
-} // namespace lynx::remote_notes
+} // namespace yw::remote_notes

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- macOS bundle of LYNX's plugins for other hosts (.vst3 / .clap, round 188b, cmake/LynxPlugins.cmake) -->
+<!-- macOS bundle of YW's plugins for other hosts (.vst3 / .clap, round 188b, cmake/YwPlugins.cmake) -->
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key><string>English</string>
@@ -12,7 +12,7 @@
   <key>CFBundleSignature</key><string>????</string>
   <key>CFBundleShortVersionString</key><string>${MACOSX_BUNDLE_SHORT_VERSION_STRING}</string>
   <key>CFBundleVersion</key><string>${MACOSX_BUNDLE_BUNDLE_VERSION}</string>
-  <key>NSHumanReadableCopyright</key><string>LYNX SHARE, AGPL-3.0</string>
+  <key>NSHumanReadableCopyright</key><string>YW Studio, AGPL-3.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSMinimumSystemVersion</key><string>11.0</string>
 </dict>

@@ -12,7 +12,7 @@
 #include "core/Scheduler.h"
 #include "core/VocalPitch.h"
 
-namespace lynx::newtonefx
+namespace yw::newtonefx
 {
 namespace
 {
@@ -261,7 +261,7 @@ public:
         }
         else
         {
-            // another rate: FL's engine output is not a plain resampling (§5); LYNX resamples linearly
+            // another rate: FL's engine output is not a plain resampling (§5); YW resamples linearly
             for (int k = 0; k < n; ++k)
             {
                 const auto x = (double) (position + k) * ratio;
@@ -303,7 +303,7 @@ namespace
 {
 constexpr double twoPi = 6.283185307179586;
 
-// Analysis marks of the source (LYNX's own analysis, not Newtone's): one per period where voiced, locked to the
+// Analysis marks of the source (YW's own analysis, not Newtone's): one per period where voiced, locked to the
 // peaks of a low-passed copy; every `unvoicedHop` samples elsewhere
 struct Mark
 {
@@ -499,7 +499,7 @@ float readAt (const std::vector<float>& x, double pos) noexcept
 } // namespace
 
 // ------------------------------------------------------------------------------------------- round 190li: engine 1
-// LYNX's natural engine (Track::engine 1), scored against Melodyne 5 with tools/vocallab (docs/analise/REA_rodada190li.md).
+// YW's natural engine (Track::engine 1), scored against Melodyne 5 with tools/vocallab (docs/analise/REA_rodada190li.md).
 // The same notes and edits as engine 0, rendered with textbook methods only:
 //  - TD-PSOLA with asymmetric grains: every analysis mark's window reaches back to the mark before and on to the mark
 //    after (raised-cosine halves), so at no shift the windows add up to exactly one and an unshifted part is the source
@@ -1215,7 +1215,7 @@ std::shared_ptr<SampleData> renderEdits (const SampleData& source, const Track& 
             if (p.fadeOutTime > 0.0 && until < p.fadeOutTime)
                 g *= p.fadeOutGain + (1.0 - p.fadeOutGain) * until / p.fadeOutTime;
             // tremolo [EXEC flnewt165]: 1 + tremAmp·sin, in step with the vibrato, its depth following the vibrato's
-            // start → end envelope normalised to its peak (FL's engine gives NaN when both ends are 0; LYNX: none)
+            // start → end envelope normalised to its peak (FL's engine gives NaN when both ends are 0; YW: none)
             if (p.tremAmp != 0.0 && p.vibPeriod > 0.0 && tremPeak > 0.0)
             {
                 const auto u = std::clamp (since / (double) std::max<std::int64_t> (1, p.curEnd - p.curStart), 0.0, 1.0);
@@ -1365,7 +1365,7 @@ std::unique_ptr<Effect> make (std::shared_ptr<const SampleData> source, const st
     return make (renderedSource (std::move (source), state));
 }
 
-// ------------------------------------------------------------------------------------------------- LYNX's projects
+// ------------------------------------------------------------------------------------------------- YW's projects
 namespace
 {
 template <typename T>
@@ -1883,7 +1883,7 @@ int dumpScore (Song& song, int channel, const std::vector<DetectedNote>& notes, 
         song.patterns.emplace_back();
     song.currentPattern = std::clamp (song.currentPattern, 0, (int) song.patterns.size() - 1);
     auto& pattern = song.activePattern();
-    pattern.notes.erase (std::remove_if (pattern.notes.begin(), pattern.notes.end(), [channel] (const lynx::Note& n) { return n.channel == channel; }),
+    pattern.notes.erase (std::remove_if (pattern.notes.begin(), pattern.notes.end(), [channel] (const yw::Note& n) { return n.channel == channel; }),
                          pattern.notes.end());
     const auto ticksPerFrame = song.bpm / 60.0 * ppq / sampleRate;
     const std::int64_t shortest = 3 * ppq / 96;
@@ -1894,7 +1894,7 @@ int dumpScore (Song& song, int channel, const std::vector<DetectedNote>& notes, 
         const auto end = std::max<std::int64_t> (0, std::llround ((double) d.end * ticksPerFrame));
         if (end - start <= shortest)
             continue;
-        lynx::Note n;
+        yw::Note n;
         n.start = start;
         n.length = end - start;
         n.channel = channel;
@@ -2405,4 +2405,4 @@ std::int64_t snapToBeatGrid (std::int64_t position, double sampleRate, double bp
     return (std::int64_t) std::llround (std::round ((double) position / step) * step);
 }
 
-} // namespace lynx::newtonefx
+} // namespace yw::newtonefx

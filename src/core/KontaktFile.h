@@ -1,7 +1,7 @@
 #pragma once
 
-// Kontakt instruments (.nki) (round 190ii, issue #149): what LYNX can say about one. Kontakt's library format is
-// closed and protected libraries are encrypted; LYNX never decrypts or works around that protection. The samples of
+// Kontakt instruments (.nki) (round 190ii, issue #149): what YW can say about one. Kontakt's library format is
+// closed and protected libraries are encrypted; YW never decrypts or works around that protection. The samples of
 // unprotected material in NCW (Kontakt's lossless compressed WAV) open as audio (core/Ncw.h). Reading the zone map of
 // unencrypted instruments (Kontakt 1 / 2 XML, the NI container of Kontakt 4.2 and later) is not done yet: the file is
 // recognised and the import dialog says what it is (docs/analise/REA_rodada190ii.md §3, from the public descriptions
@@ -14,7 +14,7 @@
 
 #include "core/SamplerImport.h"
 
-namespace lynx::msimport::kontakt
+namespace yw::msimport::kontakt
 {
 enum class Kind
 {
@@ -30,4 +30,4 @@ Kind detect (const std::uint8_t* data, std::size_t size);
 bool protectedContainer (const std::uint8_t* data, std::size_t size);
 
 std::optional<Program> readInstrument (const std::string& path, const Access& access, Report& report);
-} // namespace lynx::msimport::kontakt
+} // namespace yw::msimport::kontakt

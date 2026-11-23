@@ -15,7 +15,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx::noterepeat
+namespace yw::noterepeat
 {
 constexpr int rateCount = 14; // 1..14 (0 = no repeat)
 
@@ -29,7 +29,7 @@ inline const char* rateName (int index) noexcept
     return index >= 0 && index <= rateCount ? names[(std::size_t) index] : "";
 }
 
-// The time between two strikes, in LYNX ticks (ppq a quarter note): 0 for no repeat
+// The time between two strikes, in YW ticks (ppq a quarter note): 0 for no repeat
 constexpr std::int64_t interval (int index) noexcept
 {
     // in 1/960 beats: 1/4, 1/8., 1/4T, 1/8, 1/16., 1/8T, 1/16, 1/32., 1/16T, 1/32, 1/64., 1/32T, 1/64, 1/64T
@@ -59,4 +59,4 @@ inline int strikeCount (const Note& note, std::int64_t length) noexcept
     const auto step = interval (note.repeat);
     return step <= 0 || length <= step ? 1 : (int) std::min<std::int64_t> (4096, (length + step - 1) / step);
 }
-} // namespace lynx::noterepeat
+} // namespace yw::noterepeat

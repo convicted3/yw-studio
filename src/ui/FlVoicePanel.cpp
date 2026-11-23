@@ -13,11 +13,11 @@
 #include "ui/PluginSkin.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-// FL's page (FL Studio 2026, a Fruity Slicer's channel window; shots in /mnt/e/lynx-work/fpc190m/shots/fl-*.png):
+// FL's page (FL Studio 2026, a Fruity Slicer's channel window; shots in /mnt/e/yw-work/fpc190m/shots/fl-*.png):
 // the target tabs, then three boxes side by side — Envelope (switch, graph, six knobs and the amount, the three
 // tensions under attack / decay / release, Tempo), LFO (three shape buttons, graph, four knobs, Tempo and Global)
 // and Filter (Mod X, Mod Y, type). Panning has no envelope box; the volume envelope has no amount.
@@ -429,7 +429,7 @@ public:
         return menu;
     }
 
-    // LYNX's folder for them (what "Save as..." writes) and FL's user folder when it is there (read only)
+    // YW's folder for them (what "Save as..." writes) and FL's user folder when it is there (read only)
     static juce::File envelopePresetFolder() { return PluginHost::settingsFolder().getChildFile ("Presets").getChildFile ("Channel envelopes"); }
     static juce::Array<juce::File> envelopePresetFiles()
     {
@@ -522,8 +522,8 @@ private:
         s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
         s.setPopupDisplayEnabled (true, true, this);
         // the same knobs as the Sampler's Envelope / instrument page (round 170j)
-        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
-        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
+        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::ywSynth).getARGB());
+        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::ywSynth));
         s.onValueChange = [this] { apply(); };
         addAndMakeVisible (s);
         if (name.isNotEmpty())
@@ -711,4 +711,4 @@ std::unique_ptr<juce::Component> makeFlVoicePanel (AudioEngine& engine, std::fun
 {
     return std::make_unique<FlVoicePanel> (engine, std::move (read), std::move (write));
 }
-} // namespace lynx
+} // namespace yw

@@ -1,6 +1,6 @@
 #pragma once
 
-// The Master's loudness readout (round 190am, LYNX's own; off by default): short-term and integrated loudness in LUFS
+// The Master's loudness readout (round 190am, YW's own; off by default): short-term and integrated loudness in LUFS
 // and the true peak in dBTP of what leaves the Master, measured by the meter the export and Apex Limiter already use
 // (core/Loudness.h, ITU-R BS.1770-4 / EBU R 128).
 //
@@ -20,7 +20,7 @@
 
 #include "core/Loudness.h"
 
-namespace lynx
+namespace yw
 {
 class MasterLoudness
 {
@@ -112,4 +112,4 @@ inline std::string formatLoudness (float value)
     std::snprintf (text, sizeof (text), "%.1f", (double) value);
     return std::strcmp (text, "-0.0") == 0 ? "0.0" : text;
 }
-} // namespace lynx
+} // namespace yw

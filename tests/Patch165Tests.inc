@@ -2,29 +2,29 @@
 
 namespace patch165
 {
-lynx::PatchNode hwNode (int roundTrip, bool invert = false)
+yw::PatchNode hwNode (int roundTrip, bool invert = false)
 {
-    lynx::PatchNode n;
-    n.effect = lynx::makeEffectSlot (lynx::EffectKind::hardwareInsert);
+    yw::PatchNode n;
+    n.effect = yw::makeEffectSlot (yw::EffectKind::hardwareInsert);
     n.effect.params = hw164::routed (roundTrip);
-    n.effect.params[lynx::hwinsert::invert] = invert ? 1.0f : 0.0f;
+    n.effect.params[yw::hwinsert::invert] = invert ? 1.0f : 0.0f;
     return n;
 }
 
 // A Patcher (mixer slot) whose input goes through a Hardware Insert and, in parallel, straight to its output
-lynx::EffectSlot parallelSlot (int roundTrip)
+yw::EffectSlot parallelSlot (int roundTrip)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::patcher);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::patcher);
     slot.patcher.nodes = { hwNode (roundTrip) };
-    slot.patcher.wires = { patcher141::audio (lynx::patchFromHost, 0), patcher141::audio (0, lynx::patchToHost),
-                           patcher141::audio (lynx::patchFromHost, lynx::patchToHost) };
+    slot.patcher.wires = { patcher141::audio (yw::patchFromHost, 0), patcher141::audio (0, yw::patchToHost),
+                           patcher141::audio (yw::patchFromHost, yw::patchToHost) };
     return slot;
 }
 } // namespace patch165
 
 TEST (patch165_hw_insert_in_a_mixer_slot_patcher_lines_up)
 {
-    using namespace lynx;
+    using namespace yw;
     // through the simulated cable at its round trip, the Patcher reports the round trip as its latency and delays its own
     // dry branch by it: output = 2 × input, `roundTrip` later, to the sample — for blocks split into chunks and blocks
     // longer than the graph's piece (the device offset has to follow both splits)
@@ -61,7 +61,7 @@ TEST (patch165_hw_insert_in_a_mixer_slot_patcher_lines_up)
 
 TEST (patch165_offline_patcher_hw_insert_passes_dry_at_its_latency)
 {
-    using namespace lynx;
+    using namespace yw;
     // an export (no device): the insert passes its dry signal delayed by the round trip, so the parallel branches still
     // line up (output = 2 × input, delayed)
     const auto slot = patch165::parallelSlot (300);
@@ -86,7 +86,7 @@ TEST (patch165_offline_patcher_hw_insert_passes_dry_at_its_latency)
 
 TEST (patch165_generator_patcher_hw_insert_follows_the_chunk)
 {
-    using namespace lynx;
+    using namespace yw;
     // a synth inside a generator Patcher goes through the insert (phase inverted) and straight out: when the device
     // offset follows the chunks the two branches cancel exactly; without the straight branch the synth is heard
     for (const auto withDry : { true, false })
@@ -147,7 +147,7 @@ TEST (patch165_generator_patcher_hw_insert_follows_the_chunk)
 
 TEST (patch165_round_trip_is_structure_inside_a_patcher)
 {
-    using namespace lynx;
+    using namespace yw;
     // a new round trip (the ping's result) builds the graph again, so its delay compensation and the reported latency
     // follow; the ping button and the gains are values the running graph takes
     const auto a = patch165::parallelSlot (300);
@@ -165,12 +165,12 @@ TEST (patch165_round_trip_is_structure_inside_a_patcher)
 
 TEST (patch165_song_finds_hardware_inserts_inside_patchers)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song = Song::makeDefault();
     CHECK (hwinsert::countActive (song) == 0);
     // a mixer-slot Patcher, a Patcher inside it, a generator Patcher
     auto slot = patch165::parallelSlot (100);
-    auto nested = lynx::makeEffectSlot (EffectKind::patcher);
+    auto nested = yw::makeEffectSlot (EffectKind::patcher);
     nested.patcher.nodes = { patch165::hwNode (50) };
     PatchNode holder;
     holder.effect = nested;
@@ -200,7 +200,7 @@ TEST (patch165_song_finds_hardware_inserts_inside_patchers)
 
 TEST (patch165_keyboard_controller_state_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     // the editor's writes keep FL's other bytes (smoothing, key range, link) and read back exactly
     std::vector<std::uint8_t> state;
     KeyboardControllerData d;
@@ -223,7 +223,7 @@ TEST (patch165_keyboard_controller_state_round_trip)
 
 TEST (keyboard_controller_default_state)
 {
-    using namespace lynx;
+    using namespace yw;
     // what a new one starts with, in the Channel Rack and in the Patcher: a ramp over the keys, released to 0
     const auto d = parseKeyboardController (defaultKeyboardController());
     CHECK (d && d->keys[0] == 0.0f && d->keys[127] == 1.0f && d->keys[131] == 1.0f);
@@ -235,7 +235,7 @@ TEST (keyboard_controller_default_state)
 namespace patch165
 {
 // What reaches a child: each note with the level, pan and pitch it was given
-class LayerRecorder final : public lynx::Instrument
+class LayerRecorder final : public yw::Instrument
 {
 public:
     explicit LayerRecorder (bool scalesVoices) : scales (scalesVoices) {}
@@ -268,23 +268,23 @@ public:
 struct LayerRig
 {
     bool scales = true;
-    lynx::PatcherDoc doc;
+    yw::PatcherDoc doc;
     std::map<std::string, std::shared_ptr<LayerRecorder>> made;
-    std::unique_ptr<lynx::patcher::Graph> graph;
+    std::unique_ptr<yw::patcher::Graph> graph;
 
     explicit LayerRig (int children, bool scalesVoices = true) : scales (scalesVoices)
     {
-        lynx::PatchNode layer;
+        yw::PatchNode layer;
         layer.generator = true;
-        layer.channel.instrument = lynx::InstrumentKind::layer;
+        layer.channel.instrument = yw::InstrumentKind::layer;
         layer.channel.name = "layer";
         doc.nodes.push_back (layer);
-        doc.wires.push_back (patcher162::midi (lynx::patchFromHost, 0, 0, 0));
+        doc.wires.push_back (patcher162::midi (yw::patchFromHost, 0, 0, 0));
         for (int k = 1; k <= children; ++k)
         {
-            lynx::PatchNode c;
+            yw::PatchNode c;
             c.generator = true;
-            c.channel.instrument = lynx::InstrumentKind::synth;
+            c.channel.instrument = yw::InstrumentKind::synth;
             c.channel.name = "c" + std::to_string (k);
             doc.nodes.push_back (c);
             doc.wires.push_back (patcher162::midi (0, 0, k, 0));
@@ -293,23 +293,23 @@ struct LayerRig
     void build()
     {
         made.clear();
-        lynx::patcher::Factories f;
-        f.instrument = [this] (const lynx::ChannelDef& c) -> std::shared_ptr<lynx::Instrument> {
+        yw::patcher::Factories f;
+        f.instrument = [this] (const yw::ChannelDef& c) -> std::shared_ptr<yw::Instrument> {
             auto r = std::make_shared<LayerRecorder> (scales);
             made[c.name] = r;
             return r;
         };
-        graph = std::make_unique<lynx::patcher::Graph> (doc, 48000.0, f);
+        graph = std::make_unique<yw::patcher::Graph> (doc, 48000.0, f);
         graph->prepare (48000.0);
     }
     LayerRecorder& child (int k) { return *made["c" + std::to_string (k)]; }
-    lynx::ChannelDef& layer() { return doc.nodes[0].channel; }
+    yw::ChannelDef& layer() { return doc.nodes[0].channel; }
 };
 } // namespace patch165
 
 TEST (patch165_layer_node_plays_every_child_at_its_level)
 {
-    using namespace lynx;
+    using namespace yw;
     patch165::LayerRig rig (2);
     rig.build();
     rig.graph->noteOn (60, 0.8f);
@@ -335,7 +335,7 @@ TEST (patch165_layer_node_plays_every_child_at_its_level)
 
 TEST (patch165_layer_node_pan_pitch_and_key_regions)
 {
-    using namespace lynx;
+    using namespace yw;
     patch165::LayerRig rig (2);
     rig.layer().pan = -0.5f;
     rig.layer().misc.rootNote = 56;   // (its children play 4 semitones up, as RawFL's Layer)
@@ -351,7 +351,7 @@ TEST (patch165_layer_node_pan_pitch_and_key_regions)
 
 TEST (patch165_layer_node_crossfade_sequential_random)
 {
-    using namespace lynx;
+    using namespace yw;
     { // Crossfade at 0: only the first child sounds; at 0.5 of 3 children: the middle one fully
         patch165::LayerRig rig (3);
         rig.layer().layer.crossfade = true;
@@ -401,7 +401,7 @@ TEST (patch165_layer_node_crossfade_sequential_random)
 
 TEST (patch165_layer_node_children_and_structure)
 {
-    using namespace lynx;
+    using namespace yw;
     // children: what the Children pin reaches through MIDI Out nodes, Layers left out, in node order
     patch165::LayerRig rig (2);
     PatchNode out, other;

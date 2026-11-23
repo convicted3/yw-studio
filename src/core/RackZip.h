@@ -5,12 +5,12 @@
 // Channel to unzip it", "Unzip all (Alt+U)"): the zipped channels next to each other share ONE strip of half a row
 // (FL: 15 px where a row is 30) at the place of the first; in it each channel is a 5 px bar in its colour, as wide as
 // the channel button, side by side 14 px apart (FL: 80 px bars at x 318 and 412), the first under the button. The flag
-// is the channel's (ChannelDef::zipped, saved in .lynx). No JUCE: pure layout.
+// is the channel's (ChannelDef::zipped, saved in .yw). No JUCE: pure layout.
 
 #include <cstdint>
 #include <vector>
 
-namespace lynx::rackzip
+namespace yw::rackzip
 {
 constexpr int barHeight = 5;
 constexpr int barGap = 14;
@@ -111,4 +111,4 @@ inline std::uint32_t barBottom (std::uint32_t top) noexcept
     const auto down = [] (std::uint32_t c, int shift) { const auto v = (int) ((c >> shift) & 0xffu) - 32; return (std::uint32_t) (v < 0 ? 0 : v) << shift; };
     return (top & 0xff000000u) | down (top, 16) | down (top, 8) | down (top, 0);
 }
-} // namespace lynx::rackzip
+} // namespace yw::rackzip

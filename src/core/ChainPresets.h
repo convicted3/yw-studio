@@ -1,10 +1,10 @@
 #pragma once
 
 // Chain presets, "sounds" for a track (round 190bu, Simple layout S14; design: simple184a/DESIGN.md §3.4). A preset is
-// a short chain of LYNX's own effects — mostly one-knob effects (core/GoalKnobs.h), with a few of LYNX's plain effects —
+// a short chain of YW's own effects — mostly one-knob effects (core/GoalKnobs.h), with a few of YW's plain effects —
 // and a Blend, the dry/wet of the whole chain (MixerTrack::chainBlend). Choosing one replaces the insert's slots, so
-// the Mixer and every other layout show the same effects in the same slots. Names, categories and values are LYNX's
-// own. The user's own presets are mixer track states (.lynxtrack, engine/ProjectFile.h) in a folder of their own.
+// the Mixer and every other layout show the same effects in the same slots. Names, categories and values are YW's
+// own. The user's own presets are mixer track states (.ywtrack, engine/ProjectFile.h) in a folder of their own.
 // No JUCE.
 
 #include <string>
@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::chains
+namespace yw::chains
 {
 // One slot of a preset: a one-knob effect (`goal` and its knob), or a plain effect (`kind`) with some of its
 // parameters named and set (0..1 values) and its slot mix.
@@ -59,4 +59,4 @@ bool unchanged (const Song& song, int track);
 // What a user preset file keeps of an insert: its slots, Blend and preset name on an otherwise new track (no level,
 // pan, EQ or routing), named `name`.
 MixerTrack stateOf (const MixerTrack& track, const std::string& name);
-} // namespace lynx::chains
+} // namespace yw::chains

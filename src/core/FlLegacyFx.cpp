@@ -19,7 +19,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx::fllegacy
+namespace yw::fllegacy
 {
 namespace
 {
@@ -819,4 +819,4 @@ std::unique_ptr<Effect> makeCenter() { return std::make_unique<CenterEffect>(); 
 std::unique_ptr<Effect> makeBassBoost() { return std::make_unique<BassBoostEffect>(); }
 std::unique_ptr<Effect> makeEq7() { return std::make_unique<Eq7Effect>(); }
 std::unique_ptr<Effect> makeDelay1() { return std::make_unique<Delay1Effect>(); }
-} // namespace lynx::fllegacy
+} // namespace yw::fllegacy

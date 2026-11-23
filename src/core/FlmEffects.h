@@ -1,11 +1,11 @@
 #pragma once
 
-// FL Studio Mobile effect modules → LYNX effect slots, round 188f (slice F5 of the .flm import; the value maps are
+// FL Studio Mobile effect modules → YW effect slots, round 188f (slice F5 of the .flm import; the value maps are
 // REA_rodada182c.md "F5, round 188f" and FLM_FORMAT.md §7.2). Clean-room: FLM's parameter laws and filter designs were
 // read from the plugin's code and are restated here as formulas; no Image-Line code was copied.
 //
 // Mapped today:
-//  - Equalizer (3), Graphic EQ (7), Filter (9), Reverb legacy (12), Reverb 2 (35) and Reverb (32): LYNX's exact Pocket
+//  - Equalizer (3), Graphic EQ (7), Filter (9), Reverb legacy (12), Reverb 2 (35) and Reverb (32): YW's exact Pocket
 //    engines since round 190dw (core/PocketFxE.cpp, core/PocketReverb.cpp; FLM's values copied as they are). Until then
 //    they were approximated on the Parametric EQ and Reeverb 2; projects saved with those slots keep them.
 //  - Autoduck legacy (10): Pocket Autoduck (module 29's engine) with the legacy curve, exact (round 190dw).
@@ -22,7 +22,7 @@
 #include "core/FlmFormat.h"
 #include "core/Song.h"
 
-namespace lynx::flmfx
+namespace yw::flmfx
 {
 // The sample rate the rate-dependent conversions assume (FLM computes its filters at the device's rate; a band's Q
 // and the Filter's level offset vary slightly with it)
@@ -30,7 +30,7 @@ constexpr double designRate = 48000.0;
 
 struct Mapped
 {
-    std::vector<EffectSlot> slots; // empty = LYNX has no equivalent
+    std::vector<EffectSlot> slots; // empty = YW has no equivalent
     std::string label;             // what the import report lists ("FL Studio Mobile: Equalizer")
     std::vector<std::string> partial; // what isn't reproduced (each one report line)
 };
@@ -44,7 +44,7 @@ int tunedEqNote (float v) noexcept;                 // ⌊11v + 0.001⌋: 0 = C 
 double tunedEqHz (int note, int band) noexcept;     // 110·2^((note − 9)/12 + band), band 0…7
 double tunedEqOctaves (float v) noexcept;           // 10v³ + 0.1
 
-// An automation lane on parameter `param` of the module (FLM's index; −2 = the module's Mix, −3 its Post Gain): the LYNX
+// An automation lane on parameter `param` of the module (FLM's index; −2 = the module's Mix, −3 its Post Gain): the YW
 // targets it moves and, per target, the value for each of `values` (0…1, FLM's). Empty = not automatable.
 struct LaneTarget
 {
@@ -60,4 +60,4 @@ double equalizerHz (float v) noexcept;  // 2^(9.25 v + 5)
 double filterHz (float v) noexcept;     // 2^(10.3 v + 4)
 double filterQ (float v) noexcept;      // 2 v² + 0.8
 int rawControl (float v, float lo, float hi) noexcept; // FLM's reverb controls: ⌊lo + v (hi − lo) + 0.5⌋
-} // namespace lynx::flmfx
+} // namespace yw::flmfx

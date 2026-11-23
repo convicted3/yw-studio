@@ -3,7 +3,7 @@
 
 TEST (pain177d_ultra_fine_drag_and_wheel)
 {
-    using namespace lynx::controls;
+    using namespace yw::controls;
     CHECK (fineScale (false, false) == 1.0);
     CHECK (fineScale (false, true) == 1.0); // Shift alone changes nothing (FL)
     CHECK (fineScale (true, false) == fineFactor);
@@ -20,7 +20,7 @@ TEST (pain177d_ultra_fine_drag_and_wheel)
 
 TEST (pain177d_solo_selected_channel_action_is_bound_nowhere_by_default)
 {
-    const auto& actions = lynx::keys::actions();
+    const auto& actions = yw::keys::actions();
     const auto it = std::find_if (actions.begin(), actions.end(), [] (const auto& a) { return std::string (a.id) == "channel.soloSelected"; });
     CHECK (it != actions.end());
     if (it != actions.end())
@@ -29,7 +29,7 @@ TEST (pain177d_solo_selected_channel_action_is_bound_nowhere_by_default)
 
 TEST (pain177d_backups_wait_for_a_quiet_moment)
 {
-    using lynx::prefs::backupMayRun;
+    using yw::prefs::backupMayRun;
     constexpr double minute = 60000.0, longest = 10 * minute;
     // recording: never (FL), not even past the longest wait
     CHECK (! backupMayRun (true, false, 1e9, false, 0.0, longest));
@@ -40,16 +40,16 @@ TEST (pain177d_backups_wait_for_a_quiet_moment)
     // on (the default): not while playing, not right after MIDI input
     CHECK (! backupMayRun (false, true, 1e9, true, 0.0, longest));
     CHECK (! backupMayRun (false, false, 1000.0, true, 0.0, longest));
-    CHECK (backupMayRun (false, false, lynx::prefs::backupQuietMs, true, 0.0, longest));
+    CHECK (backupMayRun (false, false, yw::prefs::backupQuietMs, true, 0.0, longest));
     // the user's decision: 10 minutes without a backup and it is written anyway, playing or just after MIDI input
-    CHECK (lynx::prefs::defaultBackupLongestWaitMinutes == 10);
+    CHECK (yw::prefs::defaultBackupLongestWaitMinutes == 10);
     CHECK (! backupMayRun (false, true, 0.0, true, longest - 1.0, longest));
     CHECK (backupMayRun (false, true, 0.0, true, longest, longest));
-    CHECK (lynx::prefs::clampBackupLongestWait (10) == 10);
-    CHECK (lynx::prefs::clampBackupLongestWait (0) == 5);
-    CHECK (lynx::prefs::clampBackupLongestWait (1000) == 60);
+    CHECK (yw::prefs::clampBackupLongestWait (10) == 10);
+    CHECK (yw::prefs::clampBackupLongestWait (0) == 5);
+    CHECK (yw::prefs::clampBackupLongestWait (1000) == 60);
     // clock and active sensing are not someone playing
-    using lynx::prefs::midiMeansPlaying;
+    using yw::prefs::midiMeansPlaying;
     CHECK (midiMeansPlaying (0x90) && midiMeansPlaying (0xB3) && midiMeansPlaying (0xE0));
     CHECK (! midiMeansPlaying (0xF8) && ! midiMeansPlaying (0xFE) && ! midiMeansPlaying (0xF0) && ! midiMeansPlaying (0x40));
     // 15 minutes stopped with a device sending clock and active sensing: only played messages reset the 5 s, so the
@@ -69,8 +69,8 @@ TEST (pain177d_backups_wait_for_a_quiet_moment)
 
 TEST (pain177d_saved_by_newer_version)
 {
-    using lynx::safety::compareVersions;
-    using lynx::safety::savedByNewerVersion;
+    using yw::safety::compareVersions;
+    using yw::safety::savedByNewerVersion;
     CHECK (compareVersions ("0.1.10", "0.1.9") > 0);
     CHECK (compareVersions ("0.1.9", "0.1.10") < 0);
     CHECK (compareVersions ("0.1.25-alpha", "0.1.25") == 0);

@@ -1,11 +1,11 @@
 // Round 190ad: hosted plugins of an FL project played 3 dB under FL (Surge XT VST3, FL 2026 renders, REA_rodada190ad.md).
 // Fruity Wrapper scales the plugin's output by the host's pan kernel of (channel pan, 2 × the channel volume curve):
-// √2 × the curve at the centre, 2 × on the side panned to; LYNX's own channel law is 1 × at the centre. Projects
-// imported from .flp follow FL (Song::flPluginLevels); LYNX's own projects keep their law.
+// √2 × the curve at the centre, 2 × on the side panned to; YW's own channel law is 1 × at the centre. Projects
+// imported from .flp follow FL (Song::flPluginLevels); YW's own projects keep their law.
 namespace plug190ad
 {
 // a fake hosted plugin: keeps the gains the rack hands it
-struct GainSpy final : lynx::Instrument
+struct GainSpy final : yw::Instrument
 {
     float gl = -1.0f, gr = -1.0f;
     void prepare (double) noexcept override {}
@@ -15,10 +15,10 @@ struct GainSpy final : lynx::Instrument
     void render (float*, float*, int, float l, float r) noexcept override { gl = l; gr = r; }
 };
 
-// the gains the rack hands a hosted plugin channel, under FL's levels or LYNX's own law
+// the gains the rack hands a hosted plugin channel, under FL's levels or YW's own law
 std::pair<float, float> gains (bool flLevels, float volume, float pan, bool triangular = false)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer = Song::defaultMixer (2);
     song.flPluginLevels = flLevels;
@@ -48,10 +48,10 @@ bool close (float a, float b, float tolerance = 2.0e-6f) { return std::abs (a - 
 float db (float ratio) { return 20.0f * std::log10 (ratio); }
 } // namespace plug190ad
 
-TEST (plug190ad_lynx_projects_keep_their_plugin_level)
+TEST (plug190ad_yw_projects_keep_their_plugin_level)
 {
-    using namespace lynx;
-    // LYNX's own law: the curve at the centre, √2 × on the side panned to — unchanged for every project saved before
+    using namespace yw;
+    // YW's own law: the curve at the centre, √2 × on the side panned to — unchanged for every project saved before
     for (const auto v : { 0.25f, 0.5f, 0.78f, 1.0f })
     {
         const auto [l, r] = plug190ad::gains (false, v, 0.0f);
@@ -62,15 +62,15 @@ TEST (plug190ad_lynx_projects_keep_their_plugin_level)
     const auto [l, r] = plug190ad::gains (false, 0.78f, -1.0f);
     CHECK (plug190ad::close (l, channelGain (0.78f) * 1.41421356f));
     CHECK (std::abs (r) < 1.0e-6f);
-    // the triangular law never reached a plugin channel under LYNX's own law
+    // the triangular law never reached a plugin channel under YW's own law
     CHECK (plug190ad::gains (false, 0.78f, -0.5f, true) == plug190ad::gains (false, 0.78f, -0.5f, false));
 }
 
 TEST (plug190ad_fl_projects_play_hosted_plugins_at_the_wrapper_level)
 {
-    using namespace lynx;
+    using namespace yw;
     const float sqrt2 = 1.41421356f;
-    // centre: √2 × the curve, +3.01 dB over LYNX's own law at every volume (FL's renders: +3.0 dB at 25 / 50 / 78 / 100 %)
+    // centre: √2 × the curve, +3.01 dB over YW's own law at every volume (FL's renders: +3.0 dB at 25 / 50 / 78 / 100 %)
     for (const auto v : { 0.25f, 0.5f, 0.78f, 1.0f })
     {
         const auto [l, r] = plug190ad::gains (true, v, 0.0f);
@@ -79,7 +79,7 @@ TEST (plug190ad_fl_projects_play_hosted_plugins_at_the_wrapper_level)
         const auto own = plug190ad::gains (false, v, 0.0f);
         CHECK (std::abs (plug190ad::db (l / own.first) - 3.0103f) < 0.001f);
     }
-    // FL's default channel (78 %) leaves a plugin at −2.2 dB, where LYNX's own law leaves it at −5.2 dB
+    // FL's default channel (78 %) leaves a plugin at −2.2 dB, where YW's own law leaves it at −5.2 dB
     CHECK (std::abs (plug190ad::db (plug190ad::gains (true, 0.78f, 0.0f).first) - -2.20f) < 0.01f);
     CHECK (std::abs (plug190ad::db (plug190ad::gains (false, 0.78f, 0.0f).first) - -5.21f) < 0.01f);
 
@@ -126,8 +126,8 @@ TEST (plug190ad_fl_projects_play_hosted_plugins_at_the_wrapper_level)
 
 TEST (plug190ad_only_hosted_plugins_follow_the_wrapper_level)
 {
-    using namespace lynx;
-    // the same song with FL's levels on and off renders the same when it has no hosted plugin (LYNX's synth here)
+    using namespace yw;
+    // the same song with FL's levels on and off renders the same when it has no hosted plugin (YW's synth here)
     std::vector<float> out[2];
     for (int fl = 0; fl < 2; ++fl)
     {
@@ -161,7 +161,7 @@ TEST (plug190ad_only_hosted_plugins_follow_the_wrapper_level)
 
 TEST (plug190ad_new_projects_take_fl_plugin_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     // File › New and every built-in template: FL's levels (none of them holds a hosted plugin)
     CHECK (makeNewProject().flPluginLevels);
     for (int i = 0; i < (int) templateNames().size(); ++i)
@@ -170,10 +170,10 @@ TEST (plug190ad_new_projects_take_fl_plugin_levels)
         CHECK (song.flPluginLevels);
         CHECK (std::none_of (song.channels.begin(), song.channels.end(), [] (const ChannelDef& c) { return c.instrument == InstrumentKind::plugin; }));
     }
-    // what a project saved before reads as (no key): LYNX's own law
+    // what a project saved before reads as (no key): YW's own law
     CHECK (! Song::makeDefault().flPluginLevels);
     CHECK (! Song {}.flPluginLevels);
-    // a user's template: without a hosted plugin it takes FL's levels; with one made under LYNX's law it keeps them
+    // a user's template: without a hosted plugin it takes FL's levels; with one made under YW's law it keeps them
     auto plain = Song::makeDefault();
     CHECK (adoptFlPluginLevels (plain) && plain.flPluginLevels);
     auto withPlugin = Song::makeDefault();
@@ -191,11 +191,11 @@ TEST (plug190ad_new_projects_take_fl_plugin_levels)
 
 TEST (plug190ad_wrapper_velocity_is_round_128)
 {
-    using lynx::hostpitch::flWrapperVelocity;
-    // an .flp note's velocity byte b is b / 128 in LYNX: FL's wrapper sends b itself (127 at most)
+    using yw::hostpitch::flWrapperVelocity;
+    // an .flp note's velocity byte b is b / 128 in YW: FL's wrapper sends b itself (127 at most)
     for (int b = 1; b <= 128; ++b)
         CHECK (flWrapperVelocity ((float) b / 128.0f) == std::min (b, 127));
-    CHECK (flWrapperVelocity (100.0f / 128.0f) == 100); // (LYNX's own law, round(127 v), sends 99)
+    CHECK (flWrapperVelocity (100.0f / 128.0f) == 100); // (YW's own law, round(127 v), sends 99)
     CHECK ((int) std::lround (100.0f / 128.0f * 127.0f) == 99);
     CHECK (flWrapperVelocity (0.5f / 128.0f) == 1);  // Round(0.5) = 0 in FL; a note on stays a note on
     CHECK (flWrapperVelocity (2.5f / 128.0f) == 2);  // ties to even, as FL's Round
@@ -206,7 +206,7 @@ TEST (plug190ad_wrapper_velocity_is_round_128)
 
 TEST (plug190ad_flp_import_and_export_keep_the_plugin_level)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto written = [] (const Song& s) {
         flpexport::Options options;
         flpexport::Report report;
@@ -218,7 +218,7 @@ TEST (plug190ad_flp_import_and_export_keep_the_plugin_level)
         return importFlp (p, o);
     };
     auto s = Song::makeDefault();
-    CHECK (! s.flPluginLevels); // LYNX's own projects: their own law
+    CHECK (! s.flPluginLevels); // YW's own projects: their own law
     s.channels.resize (2);
     auto& c = s.channels[0];
     c.instrument = InstrumentKind::plugin;
@@ -245,8 +245,8 @@ TEST (plug190ad_flp_import_and_export_keep_the_plugin_level)
             CHECK (std::abs (again.channels[1].volume - 0.6f) < 1.0e-4f);
         }
     }
-    // LYNX's own law: FL plays the plugin √2 louder at the same knob, so the knob written is the one that sounds
-    // the same in FL (and in LYNX when the .flp comes back); other channels keep theirs
+    // YW's own law: FL plays the plugin √2 louder at the same knob, so the knob written is the one that sounds
+    // the same in FL (and in YW when the .flp comes back); other channels keep theirs
     s.flPluginLevels = false;
     {
         const auto again = back (written (s));
@@ -263,7 +263,7 @@ TEST (plug190ad_flp_import_and_export_keep_the_plugin_level)
 
 TEST (plug190ad_a_patcher_channel_is_not_compensated)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's levels apply to the rack's own hosted plugin channels only: what a Patcher hosts keeps the Patcher's level
     // (the channel is a Patcher, not a wrapper; nothing inside it reads the project's flag), so it is never raised
     // twice — the same render with the flag on and off

@@ -5,7 +5,7 @@
 
 #include <atomic>
 
-namespace lynx
+namespace yw
 {
 template <typename T>
 class StateHandoff
@@ -35,4 +35,4 @@ private:
     T slot {};
     std::atomic<bool> full { false };
 };
-} // namespace lynx
+} // namespace yw

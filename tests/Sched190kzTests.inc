@@ -1,6 +1,6 @@
 // Round 190kz (sched, 0.1.30 perf-first): one worker-pool round per device block. A block the renderer cuts in pieces
 // (the automation's 128-sample grid, pattern events) runs every piece's serial part first, then ONE task-graph round in
-// which each unit renders its pieces one after another (RackRenderer::processBatched). LYNX_POOL="rounds=chunk" = one
+// which each unit renders its pieces one after another (RackRenderer::processBatched). YW_POOL="rounds=chunk" = one
 // round per piece, as before. The samples must not change at all.
 
 #include "core/SynthParams.h"
@@ -9,19 +9,19 @@ namespace sched190kz
 {
 struct Guard
 {
-    int rounds = lynx::WorkerPool::tuning().blockRounds.load(), help = lynx::WorkerPool::tuning().helpPercent.load();
+    int rounds = yw::WorkerPool::tuning().blockRounds.load(), help = yw::WorkerPool::tuning().helpPercent.load();
     ~Guard()
     {
-        lynx::WorkerPool::tuning().blockRounds = rounds;
-        lynx::WorkerPool::tuning().helpPercent = help;
+        yw::WorkerPool::tuning().blockRounds = rounds;
+        yw::WorkerPool::tuning().helpPercent = help;
     }
 };
 
 // 35 synth / hat channels on 13 inserts with routes and a reverb (the task graph's test song), played in Song mode with
 // automation clips on a channel's volume, an insert's fader, an insert's pan and the reverb's mix: the 128-sample grid
-lynx::Song song (bool heldNotesEffect, bool compressor = false)
+yw::Song song (bool heldNotesEffect, bool compressor = false)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.mixer = Song::defaultMixer (16);
     for (int i = 5; i < 40; ++i)
@@ -47,7 +47,7 @@ lynx::Song song (bool heldNotesEffect, bool compressor = false)
         pitcher.params[43] = 0.0f;
         s.mixer[5].effects.push_back (pitcher);
     }
-    if (compressor) // (LYNX's compressor reads them only with its MIDI trigger on: at its defaults the block is batched)
+    if (compressor) // (YW's compressor reads them only with its MIDI trigger on: at its defaults the block is batched)
         s.mixer[6].effects.push_back (makeEffectSlot (EffectKind::compressor));
     const auto bars = 4 * 4 * ppq;
     auto automate = [&s, bars] (AutomationTarget target, float from, float to) {
@@ -66,7 +66,7 @@ lynx::Song song (bool heldNotesEffect, bool compressor = false)
     automate ({ AutomationTargetKind::mixerVolume, 7, 0, 0 }, 0.3f, 1.0f);
     automate ({ AutomationTargetKind::mixerPan, 11, 0, 0 }, 0.1f, 0.9f);
     automate ({ AutomationTargetKind::effectParam, 9, 0, 0 }, 0.0f, 1.0f);
-    // (a LYNX Synth knob: a plugin parameter binding, applied by its channel inside its task)
+    // (a YW Synth knob: a plugin parameter binding, applied by its channel inside its task)
     automate ({ AutomationTargetKind::channelParam, 7, 0, synthparam::target (synthparam::cutoff) }, 0.2f, 0.8f);
     for (int k = 0; k < 4; ++k)
     {
@@ -89,20 +89,20 @@ struct Result
 };
 
 // the song played from its start in device blocks of `block` samples: alone (no pool) or with 4 workers
-Result render (const lynx::Song& s, int block, bool pool, const char* spec)
+Result render (const yw::Song& s, int block, bool pool, const char* spec)
 {
     if (spec != nullptr)
-        lynx::WorkerPool::tuning().apply (spec);
-    lynx::WorkerPool::tuning().helpPercent = 0; // (every needed worker woken: the rounds really go to the workers)
-    auto state = lynx::RackState::build (s, nullptr, 48000.0);
-    lynx::WorkerPool workers (4);
-    lynx::RackRenderer r;
+        yw::WorkerPool::tuning().apply (spec);
+    yw::WorkerPool::tuning().helpPercent = 0; // (every needed worker woken: the rounds really go to the workers)
+    auto state = yw::RackState::build (s, nullptr, 48000.0);
+    yw::WorkerPool workers (4);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     if (pool)
         r.setWorkerPool (&workers);
     Result out;
     std::vector<float> l ((std::size_t) block), rr ((std::size_t) block);
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
     const auto before = workers.stats().rounds;
     double tick = 0.0;
     for (int done = 0; done < 2 * 48000; done += block, ++out.blocks)
@@ -115,7 +115,7 @@ Result render (const lynx::Song& s, int block, bool pool, const char* spec)
     out.rounds = workers.stats().rounds - before;
     out.batched = r.batchedBlockCount();
     out.batchedRounds = r.batchedRoundCount();
-    out.heldRefusals = r.batchRefusedCount (lynx::RackRenderer::BatchRefusal::heldNotes);
+    out.heldRefusals = r.batchRefusedCount (yw::RackRenderer::BatchRefusal::heldNotes);
     return out;
 }
 } // namespace sched190kz
@@ -123,7 +123,7 @@ Result render (const lynx::Song& s, int block, bool pool, const char* spec)
 TEST (sched190kz_tuning_parses_rounds)
 {
     const sched190kz::Guard guard;
-    auto& t = lynx::WorkerPool::tuning();
+    auto& t = yw::WorkerPool::tuning();
     CHECK (t.blockRounds.load() == 1 || t.blockRounds.load() == 0);
     t.apply ("rounds=chunk");
     CHECK (t.blockRounds.load() == 0);

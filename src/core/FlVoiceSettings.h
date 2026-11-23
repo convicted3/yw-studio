@@ -12,7 +12,7 @@
 
 #include "core/FlVoiceProcessor.h"
 
-namespace lynx::flvoice
+namespace yw::flvoice
 {
 enum Target
 {
@@ -110,4 +110,4 @@ inline void write (std::vector<std::uint8_t>& block, const Settings& s)
     std::memcpy (block.data() + 0x160, &s.modY, 4);
     std::memcpy (block.data() + 0x168, &s.filterType, 4);
 }
-} // namespace lynx::flvoice
+} // namespace yw::flvoice

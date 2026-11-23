@@ -1,8 +1,8 @@
-// Round 190js: plugin parity 5 (black-box; /mnt/e/lynx-work/parity190js/HANDOFF.md).
+// Round 190js: plugin parity 5 (black-box; /mnt/e/yw-work/parity190js/HANDOFF.md).
 // - The Waves reverbs (RVerb, H-Reverb, TrueVerb) translated onto their stand-in Reeverb 2: decay, pre-delay, the wet level
 //   by the decay, each reverb's measured tone, H-Reverb's ducking, TrueVerb's direct path and levels (refcap182).
 // - Hush De-esser's Single Vocal gets a "stands out" revision (hidden vocalRevision; a project saved before keeps round
-//   148's Single Vocal bit for bit: fingerprints from the base commit's objects, /mnt/e/lynx-work/parity190js/gold).
+//   148's Single Vocal bit for bit: fingerprints from the base commit's objects, /mnt/e/yw-work/parity190js/gold).
 // - Facet EQ's automatic threshold refitted at 5 ms (knee by the range; the Pro-Q 4 translator's 50 % = 9.2 / 268 ms).
 #include <cmath>
 #include <cstdint>
@@ -15,7 +15,7 @@
 
 namespace parity190js
 {
-namespace hu = lynx::mixsuite::hush;
+namespace hu = yw::mixsuite::hush;
 // the gold input (as gold/gold.cpp): a 500 Hz body (-14 dBFS) with resonant 7 kHz hiss bursts of rising level, the body off
 // after 1.75 s
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
@@ -39,9 +39,9 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
         r[(std::size_t) i] = (float) (0.9 * v);
     }
 }
-inline lynx::EffectSlot vocal (float revision)
+inline yw::EffectSlot vocal (float revision)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::hushDeEsser);
+    auto s = yw::makeEffectSlot (yw::EffectKind::hushDeEsser);
     s.params[(std::size_t) hu::rangeLaw] = 1.0f;
     s.params[(std::size_t) hu::vocalVoicing] = 1.0f;
     s.params[(std::size_t) hu::allround] = 0.0f;
@@ -49,9 +49,9 @@ inline lynx::EffectSlot vocal (float revision)
     s.params[(std::size_t) hu::vocalRevision] = revision;
     return s;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
@@ -72,7 +72,7 @@ inline double bandGainDb (const std::vector<float>& in, const std::vector<float>
 
 TEST (parity190js_hush_single_vocal_revision_is_hidden_new_and_translated_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hu = mixsuite::hush;
     const auto& info = effectInfo (EffectKind::hushDeEsser);
     CHECK (info.params.size() == (std::size_t) hu::timing && hu::vocalRevision == hu::timing + 1); // hidden: no control, no string
@@ -98,7 +98,7 @@ TEST (parity190js_hush_single_vocal_revision_is_hidden_new_and_translated_run_it
 
 TEST (parity190js_hush_single_vocal_revision0_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hu = mixsuite::hush;
     struct Case
     {
@@ -111,7 +111,7 @@ TEST (parity190js_hush_single_vocal_revision0_renders_as_the_base_commit_did)
         double energy, a, b;
     };
     // 2.2 s of the gold input in blocks of 256: FNV-1a of the float bits, the energy, two samples. From the base commit's
-    // objects (origin/parity190jh; /mnt/e/lynx-work/parity190js/gold: gold_base.txt — the round's objects print the same lines)
+    // objects (origin/parity190jh; /mnt/e/yw-work/parity190js/gold: gold_base.txt — the round's objects print the same lines)
     const Case cases[] = {
 #include "Parity190jsGold.inc" // (beside this file: the CMake test build has no -I for the repository root)
     };
@@ -144,7 +144,7 @@ TEST (parity190js_hush_single_vocal_revision0_renders_as_the_base_commit_did)
 
 TEST (parity190js_hush_single_vocal_acts_on_what_stands_out)
 {
-    using namespace lynx;
+    using namespace yw;
     // a 500 Hz body at -14 dBFS (sine peak) under a 7 kHz burst at 0.3 … 0.6 s: 5 dB over the body (the reference leaves it),
     // 12 dB over (the whole range); range 12 dB, threshold -30 dB, wide band, look-ahead 10 ms, 48 kHz
     const double sr = 48000.0;
@@ -178,7 +178,7 @@ TEST (parity190js_hush_single_vocal_acts_on_what_stands_out)
 
 TEST (parity190js_facet_auto_threshold_knee_follows_the_range)
 {
-    using namespace lynx;
+    using namespace yw;
     // a +6 dB bell at 1 kHz, automatic threshold: a -6 dBFS tone for 1 s, then -40 dBFS. The reference keeps ~5 dB of cut
     // at -40 dBFS with a -30 dB range (time-constant probe: 4.5 s), and none with -15 dB; round 190jh's 30.5 dB knee took
     // 2.7 / 0.6 dB there
@@ -205,7 +205,7 @@ TEST (parity190js_facet_auto_threshold_knee_follows_the_range)
 
 TEST (parity190js_waves_reverbs_are_translated_onto_reeverb2)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // RVerb: decay 2.4 s, pre-delay 30 ms (index 2 / 17)
     const auto rv = parity190jh::waves ("RVerb Stereo", "RVerb", parity190jh::list (96, { { 2, "2.4" }, { 17, "30" } }), n);

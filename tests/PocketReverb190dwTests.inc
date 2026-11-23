@@ -9,10 +9,10 @@ struct Stereo
     std::vector<float> l, r;
 };
 
-inline Stereo run (lynx::EffectKind kind, std::initializer_list<std::pair<int, float>> values, Stereo io, double fs = 48000.0,
+inline Stereo run (yw::EffectKind kind, std::initializer_list<std::pair<int, float>> values, Stereo io, double fs = 48000.0,
                    double bpm = 120.0, int block = 256)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (fs);
     auto p = makeEffectSlot (kind).params;
@@ -49,7 +49,7 @@ inline double decaySlope (const std::vector<float>& x, int from, double fs)
 
 TEST (pocket190dw_reverb_info_and_texts)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK ((int) effectInfo (EffectKind::pocketReverbClassic).params.size() == pocket::reverbClassicParams);
     CHECK ((int) effectInfo (EffectKind::pocketReverb2).params.size() == pocket::reverb2Params);
     CHECK ((int) effectInfo (EffectKind::pocketReverb).params.size() == pocket::reverbParams);
@@ -65,7 +65,7 @@ TEST (pocket190dw_reverb_info_and_texts)
 
 TEST (pocket190dw_reverb_silence_and_dry)
 {
-    using namespace lynx;
+    using namespace yw;
     using rv190dw::run;
     const int n = 48000;
     const rv190dw::Stereo zero { std::vector<float> ((std::size_t) n, 0.0f), std::vector<float> ((std::size_t) n, 0.0f) };
@@ -97,7 +97,7 @@ TEST (pocket190dw_reverb_silence_and_dry)
 // ⌊E·3.4013603e-5·⌊(room + 3)·fs/103⌋⌋ samples, weighted 0.5·m/oL and 0.36·m/oR (m = the shorter tap).
 TEST (pocket190dw_reverb2_early_reflection_law)
 {
-    using namespace lynx;
+    using namespace yw;
     const double fs = 48000.0;
     const int n = 4096, at = 300;
     // ER 1 (× 1.25), DRY 0, WET 0, HIGH / LOW CUT off, SIZE 0.5 (room 51), DIFFUSION 1
@@ -125,7 +125,7 @@ TEST (pocket190dw_reverb2_early_reflection_law)
 // 60·15553/21589 dB per T — at any rate
 TEST (pocket190dw_reverb_decay_law_and_rates)
 {
-    using namespace lynx;
+    using namespace yw;
     for (double fs : { 44100.0, 48000.0, 96000.0 })
     {
         const int n = (int) (fs * 3.0), at = 100;
@@ -148,7 +148,7 @@ TEST (pocket190dw_reverb_decay_law_and_rates)
 // Reverb 2's DELAY with TEMPO: a whole number of 1/16 beats, shortened while above 1000 ms; then as the free DELAY
 TEST (pocket190dw_reverb2_tempo_delay)
 {
-    using namespace lynx;
+    using namespace yw;
     const int n = 96000;
     // 4/16 beat at 120 BPM = 125 ms = the free DELAY 0.125
     const auto synced = rv190dw::run (EffectKind::pocketReverb2, { { 10, 0.25f }, { 11, 1.0f } }, rv190dw::impulse (n, 10), 48000.0, 120.0);
@@ -164,7 +164,7 @@ TEST (pocket190dw_reverb2_tempo_delay)
 
 TEST (pocket190dw_reverb_extremes_finite)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (190);
     std::uniform_real_distribution<float> u (-1.0f, 1.0f);
     rv190dw::Stereo noise { std::vector<float> (48000), std::vector<float> (48000) };

@@ -3,7 +3,7 @@
 #include <cstring>
 #include <set>
 
-namespace lynx::msimport::kontakt
+namespace yw::msimport::kontakt
 {
 namespace
 {
@@ -122,4 +122,4 @@ std::optional<Program> readInstrument (const std::string& path, const Access& ac
     }
     return std::nullopt;
 }
-} // namespace lynx::msimport::kontakt
+} // namespace yw::msimport::kontakt

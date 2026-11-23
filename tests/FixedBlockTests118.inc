@@ -2,13 +2,13 @@
 
 TEST (fixed_block_calls_the_plugin_with_whole_blocks_only)
 {
-    lynx::FixedBlock fixed (64, 2);
+    yw::FixedBlock fixed (64, 2);
     std::vector<int> sizes;
     std::vector<float> l (1000), r (1000);
     for (int i = 0; i < 1000; ++i)
         l[(std::size_t) i] = (float) (i + 1), r[(std::size_t) i] = -(float) (i + 1);
 
-    // the host's chunks: variable, some of one sample (LYNX splits at every event)
+    // the host's chunks: variable, some of one sample (YW splits at every event)
     const int chunks[] = { 1, 7, 64, 3, 200, 1, 1, 90, 633 };
     int at = 0;
     for (const auto n : chunks)
@@ -39,7 +39,7 @@ TEST (fixed_block_calls_the_plugin_with_whole_blocks_only)
 
 TEST (fixed_block_instrument_mode_and_positions)
 {
-    lynx::FixedBlock fixed (32, 2);
+    yw::FixedBlock fixed (32, 2);
     std::vector<float> l (100, 5.0f), r (100, 5.0f);
     int calls = 0;
     std::vector<int> positions;
@@ -68,7 +68,7 @@ TEST (fixed_block_instrument_mode_and_positions)
 
 TEST (underrun_count_prefers_the_driver)
 {
-    CHECK (lynx::RtStats::underrunCount (3, 2, -1) == 5); // no driver count: LYNX's own estimate
-    CHECK (lynx::RtStats::underrunCount (3, 2, 0) == 0);  // the driver says none
-    CHECK (lynx::RtStats::underrunCount (0, 0, 7) == 7);
+    CHECK (yw::RtStats::underrunCount (3, 2, -1) == 5); // no driver count: YW's own estimate
+    CHECK (yw::RtStats::underrunCount (3, 2, 0) == 0);  // the driver says none
+    CHECK (yw::RtStats::underrunCount (0, 0, 7) == 7);
 }

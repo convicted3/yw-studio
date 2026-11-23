@@ -17,7 +17,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -311,11 +311,11 @@ private:
     std::vector<float> storage, scratch;
 };
 
-// ------------------------------------------------------------------------------------------------------- LYNX front-end
+// ------------------------------------------------------------------------------------------------------- YW front-end
 //
 // Levels as the other FL voice generators (REA_rodada47 §2.1): Final.Vol = channel volume × Init.Vol (Init.Vol =
-// (11^(1.28·vel) − 1)/10 from LYNX's velocity), Final.Pan = note pan + channel pan, Final.Pitch = 100·(key − 60) +
-// channel pitch + note cents; LYNX's channel gains gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…) give V and p back.
+// (11^(1.28·vel) − 1)/10 from YW's velocity), Final.Pan = note pan + channel pan, Final.Pitch = 100·(key − 60) +
+// channel pitch + note cents; YW's channel gains gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…) give V and p back.
 
 class PluckedInstrument final : public Instrument
 {
@@ -429,7 +429,7 @@ private:
     std::atomic<float> pitchCents { 0.0f };
     std::atomic<int> maxPoly { 0 };
     std::array<float, maxVoices> volFactor {}, notePan {};
-    std::array<std::uint32_t, maxVoices> slotNote {}; // each voice slot's LYNX note id (round 190ej)
+    std::array<std::uint32_t, maxVoices> slotNote {}; // each voice slot's YW note id (round 190ej)
     double channelVol = 1.0, channelPan = 0.0;
     float nextPan = 0.0f, nextCents = 0.0f;
 };
@@ -494,4 +494,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace plucked
-} // namespace lynx
+} // namespace yw

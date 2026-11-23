@@ -12,8 +12,8 @@ struct LoopDevice
 {
     int roundTrip = 0;
     std::vector<float> outA, outB; // the device's output stream (channels 2, 3)
-    lynx::HardwareOutput bus;
-    lynx::LiveInput input;
+    yw::HardwareOutput bus;
+    yw::LiveInput input;
     std::vector<float> inA, inB; // this callback's input (channels 0, 1)
 
     float returned (const std::vector<float>& out, std::int64_t t) const
@@ -23,7 +23,7 @@ struct LoopDevice
     }
 
     // one callback of `n` samples processed in chunks of `chunk` by `fx` (as the renderer does): returns its output
-    void callback (lynx::Effect& fx, const lynx::EffectParams& p, float* l, float* r, int n, int chunk)
+    void callback (yw::Effect& fx, const yw::EffectParams& p, float* l, float* r, int n, int chunk)
     {
         const auto at = (std::int64_t) outA.size();
         inA.assign ((std::size_t) n, 0.0f);
@@ -52,21 +52,21 @@ struct LoopDevice
     }
 };
 
-lynx::EffectParams routed (int roundTrip)
+yw::EffectParams routed (int roundTrip)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::hardwareInsert);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::hardwareInsert);
     auto p = slot.params;
-    p[lynx::hwinsert::output] = lynx::hwinsert::channelValue (2);
-    p[lynx::hwinsert::input] = lynx::hwinsert::channelValue (0);
-    p[lynx::hwinsert::inputStereo] = 1.0f;
-    p[lynx::hwinsert::roundTrip] = lynx::hwinsert::roundTripValue (roundTrip);
+    p[yw::hwinsert::output] = yw::hwinsert::channelValue (2);
+    p[yw::hwinsert::input] = yw::hwinsert::channelValue (0);
+    p[yw::hwinsert::inputStereo] = 1.0f;
+    p[yw::hwinsert::roundTrip] = yw::hwinsert::roundTripValue (roundTrip);
     return p;
 }
 } // namespace hw164
 
 TEST (hw164_params_and_defaults)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto slot = makeEffectSlot (EffectKind::hardwareInsert);
     CHECK ((int) effectInfo (EffectKind::hardwareInsert).params.size() == hwinsert::count);
     CHECK (hwinsert::channelOf (slot.params[hwinsert::output]) == -1 && hwinsert::channelOf (slot.params[hwinsert::input]) == -1); // nothing routed at first
@@ -95,7 +95,7 @@ TEST (hw164_params_and_defaults)
 
 TEST (hw164_return_lines_up_with_the_dry_path)
 {
-    using namespace lynx;
+    using namespace yw;
     // through the cable at its exact round trip, the wet signal is the dry signal delayed by the reported latency,
     // bit for bit, for any block / chunk size; 50 % mix = the same (both paths line up); phase inverted at 50 % = silence
     std::mt19937 rng (164);
@@ -140,7 +140,7 @@ TEST (hw164_return_lines_up_with_the_dry_path)
 
 TEST (hw164_send_return_gains_and_mono)
 {
-    using namespace lynx;
+    using namespace yw;
     hw164::LoopDevice dev;
     dev.roundTrip = 256;
     auto p = hw164::routed (256);
@@ -168,7 +168,7 @@ TEST (hw164_send_return_gains_and_mono)
 
 TEST (hw164_offline_passes_the_dry_signal_at_its_latency)
 {
-    using namespace lynx;
+    using namespace yw;
     // an export (no device output buses): the dry signal, delayed by the round trip, so every other path stays aligned
     auto p = hw164::routed (300);
     auto fx = makeEffect (makeEffectSlot (EffectKind::hardwareInsert));
@@ -191,7 +191,7 @@ TEST (hw164_offline_passes_the_dry_signal_at_its_latency)
 
 TEST (hw164_ping_measures_its_own_path)
 {
-    using namespace lynx;
+    using namespace yw;
     // the Ping button (a momentary value) measures exactly the send -> return path, while the track keeps playing
     for (const auto [roundTrip, block] : { std::pair { 371, 128 }, std::pair { 1536, 512 }, std::pair { 64, 64 } })
     {
@@ -243,7 +243,7 @@ TEST (hw164_ping_measures_its_own_path)
 
 TEST (hw164_cost_per_block)
 {
-    using namespace lynx;
+    using namespace yw;
     // the DSP cost of one routed insert (stereo send + return, 100 % wet, round trip 512) per 256-sample block;
     // printed for the round doc, the bound is loose (a slow CI box must pass)
     LiveInput input;

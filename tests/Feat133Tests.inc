@@ -7,7 +7,7 @@
 namespace feat133
 {
 // An instrument that records what the renderer asks of it.
-struct Recorder final : lynx::Instrument
+struct Recorder final : yw::Instrument
 {
     std::vector<std::pair<int, float>> params;
     std::vector<std::pair<int, int>> midiNotes; // key, channel
@@ -26,7 +26,7 @@ struct Recorder final : lynx::Instrument
 
 TEST (midi_controls_indices_names_and_messages)
 {
-    using namespace lynx::midictl;
+    using namespace yw::midictl;
     CHECK (isCc (0x1040) && ! isPressure (0x1040) && isMidiParam (0x1040));
     CHECK (isPressure (0x1080) && isPressure (0x108F) && isPitchBend (0x1090) && ! isMidiParam (0x10A0) && ! isMidiParam (0xFFF));
     CHECK (paramName (ccBase + 64) == "MIDI CC #64 (Damper pedal (sustain))");
@@ -46,7 +46,7 @@ TEST (midi_controls_indices_names_and_messages)
 
 TEST (midi_controls_state_sends_each_change_once)
 {
-    using namespace lynx::midictl;
+    using namespace yw::midictl;
     State s;
     std::vector<std::vector<std::uint8_t>> out;
     auto flush = [&] { s.flush (0, [&] (const std::uint8_t* b, int n) { out.emplace_back (b, b + n); }); };
@@ -69,34 +69,34 @@ TEST (midi_controls_state_sends_each_change_once)
 
 TEST (midi_cc_automation_reaches_the_plugin_instrument)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::plugin;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::plugin;
     c.plugin.id = "VST3-Piano-1";
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    s.mode = lynx::PlayMode::song;
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::channelParam, 0, 0, lynx::midictl::ccBase + 64 };
-    a.points = { { 0, 1.0f, 0.0f }, { lynx::ppq * 4, 1.0f, 0.0f } };
+    s.mode = yw::PlayMode::song;
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::channelParam, 0, 0, yw::midictl::ccBase + 64 };
+    a.points = { { 0, 1.0f, 0.0f }, { yw::ppq * 4, 1.0f, 0.0f } };
     s.automations.push_back (a);
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
-    clip.length = lynx::ppq * 4;
+    clip.length = yw::ppq * 4;
     s.playlist.push_back (clip);
 
     auto recorder = std::make_shared<feat133::Recorder>();
-    lynx::RackState::Factories f;
-    f.pluginInstruments = [&] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Instrument> { return recorder; };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, f);
-    lynx::RackRenderer r;
+    yw::RackState::Factories f;
+    f.pluginInstruments = [&] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Instrument> { return recorder; };
+    auto state = yw::RackState::build (s, nullptr, 48000.0, f);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256);
     r.process (state.get(), true, 0.0, 256, l.data(), rr.data(), nullptr);
     const auto sent = std::any_of (recorder->params.begin(), recorder->params.end(),
-                                   [] (const auto& p) { return p.first == lynx::midictl::ccBase + 64 && p.second == 1.0f; });
+                                   [] (const auto& p) { return p.first == yw::midictl::ccBase + 64 && p.second == 1.0f; });
     CHECK (sent);
 }
 
@@ -104,20 +104,20 @@ TEST (flp_wrapper_midi_cc_automation_keeps_its_index)
 {
     // FL addresses MIDI CC n of a wrapped plugin as parameter 0x1000 + n (controlID 0x8000 + 0x1000 + n)
     const std::map<int, int> channels { { 3, 0 } };
-    const auto t = lynx::automationTargetFor ({ (3u << 16) | 0x9040u }, channels, 4);
-    CHECK (t.kind == lynx::AutomationTargetKind::channelParam && t.index == 0 && t.param == lynx::midictl::ccBase + 64);
-    const auto p = lynx::automationTargetFor ({ (3u << 16) | 0x9081u }, channels, 4);
-    CHECK (p.param == lynx::midictl::pressureBase + 1);
+    const auto t = yw::automationTargetFor ({ (3u << 16) | 0x9040u }, channels, 4);
+    CHECK (t.kind == yw::AutomationTargetKind::channelParam && t.index == 0 && t.param == yw::midictl::ccBase + 64);
+    const auto p = yw::automationTargetFor ({ (3u << 16) | 0x9081u }, channels, 4);
+    CHECK (p.param == yw::midictl::pressureBase + 1);
 }
 
 namespace feat133
 {
 double eval (const std::string& f, double a = 0, double b = 0, double c = 0, double songTime = 0)
 {
-    const auto p = lynx::formula::Program::compile (f);
+    const auto p = yw::formula::Program::compile (f);
     if (p == nullptr)
         return -999.0;
-    lynx::formula::Inputs in;
+    yw::formula::Inputs in;
     in.a = a;
     in.b = b;
     in.c = c;
@@ -159,32 +159,32 @@ TEST (formula_controller_language_follows_fl)
     CHECK (s1 == s2 && s1 != s3 && s1 >= 0.0 && s1 < 1.0);
     // errors
     std::string error;
-    CHECK (lynx::formula::Program::compile ("a+(b", &error) == nullptr && error == "Missing )");
-    CHECK (lynx::formula::Program::compile ("foo(1)", &error) == nullptr && error.find ("foo") != std::string::npos);
-    CHECK (lynx::formula::Program::compile ("a+", &error) == nullptr);
-    CHECK (lynx::formula::Program::compile ("", &error) == nullptr);
+    CHECK (yw::formula::Program::compile ("a+(b", &error) == nullptr && error == "Missing )");
+    CHECK (yw::formula::Program::compile ("foo(1)", &error) == nullptr && error.find ("foo") != std::string::npos);
+    CHECK (yw::formula::Program::compile ("a+", &error) == nullptr);
+    CHECK (yw::formula::Program::compile ("", &error) == nullptr);
 }
 
 TEST (formula_controller_state_import_and_output)
 {
     // FL's "Default.fst" state: version 2, a b c = 0, "a+b+c", an RTF description
     std::vector<std::uint8_t> st { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 'a', '+', 'b', '+', 'c', 0, 0, 0, 0 };
-    const auto parsed = lynx::formula::parseState (st);
+    const auto parsed = yw::formula::parseState (st);
     CHECK (parsed && parsed->version == 2 && parsed->formula == "a+b+c" && parsed->a == 0.0f);
 
-    lynx::formula::State mine;
+    yw::formula::State mine;
     mine.a = 0.5f;
     mine.b = 1.0f;
     mine.formula = "a*b+c";
-    const auto bytes = lynx::formula::writeState (mine);
-    const auto back = lynx::formula::parseState (bytes);
+    const auto bytes = yw::formula::writeState (mine);
+    const auto back = yw::formula::parseState (bytes);
     CHECK (back && back->formula == "a*b+c" && back->a == 0.5f && back->b == 1.0f && back->c == 0.0f);
 
-    const auto slot = lynx::effectFromFl ("Fruity Formula Controller", bytes, 120.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::formulaController && slot->params[0] == 0.5f && slot->params[1] == 1.0f);
-    CHECK (std::string (lynx::effectInfo (lynx::EffectKind::formulaController).name) == "Formula Controller");
+    const auto slot = yw::effectFromFl ("Fruity Formula Controller", bytes, 120.0);
+    CHECK (slot && slot->kind == yw::EffectKind::formulaController && slot->params[0] == 0.5f && slot->params[1] == 1.0f);
+    CHECK (std::string (yw::effectInfo (yw::EffectKind::formulaController).name) == "Formula Controller");
 
-    auto fx = lynx::makeEffect (*slot);
+    auto fx = yw::makeEffect (*slot);
     fx->prepare (48000.0);
     std::vector<float> l (64, 0.25f), r (64, -0.25f);
     auto p = slot->params;
@@ -197,64 +197,64 @@ TEST (formula_controller_state_import_and_output)
     CHECK (fx->controlOutput (0) == 1.0f); // clipped to 0..1
 
     // the song position in quarter notes
-    lynx::EffectSlot saw = lynx::makeEffectSlot (lynx::EffectKind::formulaController);
-    lynx::formula::State sawState;
+    yw::EffectSlot saw = yw::makeEffectSlot (yw::EffectKind::formulaController);
+    yw::formula::State sawState;
     sawState.formula = "Frac(SongTime)";
-    saw.state = lynx::formula::writeState (sawState);
-    auto sawFx = lynx::makeEffect (saw);
-    sawFx->setSongPosition (lynx::ppq * 2.5);
+    saw.state = yw::formula::writeState (sawState);
+    auto sawFx = yw::makeEffect (saw);
+    sawFx->setSongPosition (yw::ppq * 2.5);
     sawFx->process (l.data(), r.data(), 64, saw.params, 120.0);
     CHECK (std::abs (sawFx->controlOutput (0) - 0.5f) < 1e-6f);
 }
 
 TEST (midi_out_routes_notes_and_controls_to_the_plugin_on_its_port)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
-    lynx::ChannelDef out;
-    out.instrument = lynx::InstrumentKind::midiOut;
-    lynx::midictl::MidiOutSettings settings;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
+    yw::ChannelDef out;
+    out.instrument = yw::InstrumentKind::midiOut;
+    yw::midictl::MidiOutSettings settings;
     settings.channel = 4;
     settings.port = 2;
     settings.program = 5;
-    lynx::midictl::writeMidiOut (out.pluginState, settings);
-    CHECK (lynx::midictl::parseMidiOut (out.pluginState).channel == 4 && lynx::midictl::parseMidiOut (out.pluginState).port == 2);
+    yw::midictl::writeMidiOut (out.pluginState, settings);
+    CHECK (yw::midictl::parseMidiOut (out.pluginState).channel == 4 && yw::midictl::parseMidiOut (out.pluginState).port == 2);
     s.channels.push_back (out);
-    lynx::ChannelDef piano;
-    piano.instrument = lynx::InstrumentKind::plugin;
+    yw::ChannelDef piano;
+    piano.instrument = yw::InstrumentKind::plugin;
     piano.plugin.id = "VST3-Piano-1";
     piano.plugin.midiInPort = 2;
     s.channels.push_back (piano);
-    lynx::ChannelDef other = piano;
+    yw::ChannelDef other = piano;
     other.plugin.midiInPort = 5; // another port: not reached
     s.channels.push_back (other);
     s.patterns.emplace_back();
 
     // the MIDI Out's CC 1 automated
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::channelParam, 0, 0, lynx::midictl::ccBase + 1 };
-    a.points = { { 0, 0.5f, 0.0f }, { lynx::ppq * 4, 0.5f, 0.0f } };
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::channelParam, 0, 0, yw::midictl::ccBase + 1 };
+    a.points = { { 0, 0.5f, 0.0f }, { yw::ppq * 4, 0.5f, 0.0f } };
     s.automations.push_back (a);
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
-    clip.length = lynx::ppq * 4;
+    clip.length = yw::ppq * 4;
     s.playlist.push_back (clip);
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
 
     std::vector<std::shared_ptr<feat133::Recorder>> made;
-    lynx::RackState::Factories f;
-    f.pluginInstruments = [&] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Instrument> {
+    yw::RackState::Factories f;
+    f.pluginInstruments = [&] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Instrument> {
         made.push_back (std::make_shared<feat133::Recorder>());
         return made.back();
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, f);
+    auto state = yw::RackState::build (s, nullptr, 48000.0, f);
     CHECK (made.size() == 2 && state->midiTargets[0] == std::vector<int> { 1 });
 
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0; // played on the MIDI Out channel
     on.key = 60;
     on.velocity = 0.8f;
@@ -264,7 +264,7 @@ TEST (midi_out_routes_notes_and_controls_to_the_plugin_on_its_port)
     CHECK (made[0]->midiNotes.size() == 1 && made[0]->midiNotes[0].first == 60 && made[0]->midiNotes[0].second == 4);
     CHECK (made[1]->midiNotes.empty() && made[0]->plainNotes == 0);
     const auto cc = std::any_of (made[0]->params.begin(), made[0]->params.end(),
-                                 [] (const auto& p) { return p.first == lynx::midictl::ccBase + 1; });
+                                 [] (const auto& p) { return p.first == yw::midictl::ccBase + 1; });
     CHECK (cc && made[1]->params.empty());
     // FL's reset when playback starts (REA_rodada167i §1.4), on the MIDI Out's channel: the pitch bend range (RPN 0 =
     // 12 semitones), then the program
@@ -274,17 +274,17 @@ TEST (midi_out_routes_notes_and_controls_to_the_plugin_on_its_port)
     CHECK (at ({ 0xC4, 4 }) < (std::ptrdiff_t) m0.size() && at ({ 0xC4, 4 }) > 2 && made[1]->messages.empty());
 
     // a pattern note of the MIDI Out channel, scheduled while playing
-    s.mode = lynx::PlayMode::pattern;
-    lynx::Note n;
+    s.mode = yw::PlayMode::pattern;
+    yw::Note n;
     n.channel = 0;
     n.key = 62;
     n.start = 0;
-    n.length = lynx::ppq;
+    n.length = yw::ppq;
     s.patterns[0].notes.push_back (n);
-    s.patterns[0].lengthTicks = lynx::ppq * 4;
+    s.patterns[0].lengthTicks = yw::ppq * 4;
     made.clear();
-    auto patternState = lynx::RackState::build (s, nullptr, 48000.0, f);
-    lynx::RackRenderer r2;
+    auto patternState = yw::RackState::build (s, nullptr, 48000.0, f);
+    yw::RackRenderer r2;
     r2.prepare (48000.0, 256);
     r2.process (patternState.get(), true, 0.0, 256, l.data(), rr.data(), nullptr);
     CHECK (made.size() == 2 && made[0]->midiNotes.size() == 1 && made[0]->midiNotes[0].first == 62 && made[0]->midiNotes[0].second == 4);
@@ -297,13 +297,13 @@ TEST (flp_demos_formula_controllers_import_and_compile)
         return;
     int slots = 0, compiled = 0, links = 0;
     // top-level slots and Patcher children (the demos use them inside Patchers, REA_rodada14 §7.2)
-    std::function<void (const lynx::EffectSlot&)> visit = [&] (const lynx::EffectSlot& fx) {
-        if (fx.kind == lynx::EffectKind::formulaController)
+    std::function<void (const yw::EffectSlot&)> visit = [&] (const yw::EffectSlot& fx) {
+        if (fx.kind == yw::EffectKind::formulaController)
         {
             ++slots;
-            const auto text = lynx::formula::formulaOf (fx.state);
+            const auto text = yw::formula::formulaOf (fx.state);
             std::string error;
-            if (lynx::formula::Program::compile (text, &error) != nullptr)
+            if (yw::formula::Program::compile (text, &error) != nullptr)
                 ++compiled;
             else
                 std::printf ("  formula not compiled: '%s' (%s)\n", text.c_str(), error.c_str());
@@ -320,7 +320,7 @@ TEST (flp_demos_formula_controllers_import_and_compile)
             continue;
         std::ifstream in (path, std::ios::binary);
         const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
-        const auto song = lynx::importFlp (flp::parseProject (file));
+        const auto song = yw::importFlp (flp::parseProject (file));
         for (const auto& track : song.mixer)
             for (const auto& fx : track.effects)
                 visit (fx);

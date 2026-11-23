@@ -1,26 +1,26 @@
 // Round 190he (issue #152, Nuelka's list for 0.1.27): docked windows that a click in a plugin view made by another
-// thread or process must raise (core/DockStack.h), and the size of LYNX's plugin windows (FL's Scaling, core/EditorScale.h).
+// thread or process must raise (core/DockStack.h), and the size of YW's plugin windows (FL's Scaling, core/EditorScale.h).
 #include "core/DockStack.h"
 #include "core/EditorScale.h"
 
 TEST (u190he_a_click_from_another_thread_or_process_raises_its_docked_window)
 {
-    using lynx::dockstack::clickNeedsParentNotice;
+    using yw::dockstack::clickNeedsParentNotice;
     CHECK (clickNeedsParentNotice (4242, 17));   // a plugin view of another thread / a bridged plugin's process
-    CHECK (! clickNeedsParentNotice (17, 17));   // LYNX's UI thread: the message hook raises it (once)
+    CHECK (! clickNeedsParentNotice (17, 17));   // YW's UI thread: the message hook raises it (once)
     CHECK (! clickNeedsParentNotice (0, 17));    // the window is gone
 }
 
-TEST (u190he_scaling_offers_fl_sizes_and_lynx_default_stays_125)
+TEST (u190he_scaling_offers_fl_sizes_and_yw_default_stays_125)
 {
-    using namespace lynx::editorscale;
-    // FL's PluginScalingMenu: 100 % … 400 %; LYNX opens at FL's size × 1.25
+    using namespace yw::editorscale;
+    // FL's PluginScalingMenu: 100 % … 400 %; YW opens at FL's size × 1.25
     CHECK (menuPercents.front() == 100 && menuPercents.back() == 400);
     CHECK (percentOf (0) == 125); // FL's "Host" (stored 0: nothing written in the project)
     CHECK (storedFor (125) == 125); // (125 % chosen by hand is not Host: FL ticks one or the other)
     CHECK (storedFor (100) == 100);
     CHECK (percentOf (100) == 100);
-    // FL's 100 % is smaller than LYNX's default: the window can be made smaller (the reporter's request)
+    // FL's 100 % is smaller than YW's default: the window can be made smaller (the reporter's request)
     CHECK (factorOf (100) < 1.0 && std::abs (factorOf (100) - 0.8) < 1e-9);
     CHECK (std::abs (factorOf (0) - 1.0) < 1e-9);
     CHECK (std::abs (factorOf (250) - 2.0) < 1e-9);
@@ -31,7 +31,7 @@ TEST (u190he_scaling_offers_fl_sizes_and_lynx_default_stays_125)
 
 TEST (u190he_dragging_the_edge_gives_the_matching_percentage)
 {
-    using namespace lynx::editorscale;
+    using namespace yw::editorscale;
     CHECK (percentForWidth (800, 800) == 125);  // unchanged
     CHECK (percentForWidth (640, 800) == 100);  // FL's own size
     CHECK (percentForWidth (1600, 800) == 250);
@@ -46,7 +46,7 @@ TEST (u190he_dragging_the_edge_gives_the_matching_percentage)
 
 TEST (u190he_pick_a_clicked_clip_paints_as_it_is)
 {
-    using namespace lynx;
+    using namespace yw;
     Clip clicked;
     clicked.kind = ClipKind::audio;
     clicked.channel = 3;
@@ -75,7 +75,7 @@ TEST (u190he_pick_a_clicked_clip_paints_as_it_is)
 
 TEST (u190he_pick_the_template_stands_while_its_source_is_what_the_tools_paint)
 {
-    using namespace lynx;
+    using namespace yw;
     Clip pat;
     pat.kind = ClipKind::pattern;
     pat.pattern = 4;
@@ -95,7 +95,7 @@ TEST (u190he_pick_the_template_stands_while_its_source_is_what_the_tools_paint)
 
 TEST (u190he_pick_alt_p_toggles_the_picker_panel_in_the_playlist)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto* action = keys::findAction ("playlist.pickerPanel");
     CHECK (action != nullptr);
     keys::KeyMap map;

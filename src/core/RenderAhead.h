@@ -1,6 +1,6 @@
 #pragma once
 
-// Render-ahead (anticipative processing; LYNX extra, round 190gq, owner decision O22: on by default, Options › Audio
+// Render-ahead (anticipative processing; YW extra, round 190gq, owner decision O22: on by default, Options › Audio
 // settings › "Render ahead (lower CPU at small buffers)"). Reaper's model: the part of the rack nobody plays live renders
 // a few device blocks ahead of the song position on its own thread, into a ring; the device callback renders only the
 // live part at the device block and mixes in what is ready. A heavy project then has a whole window (about 23 ms) for
@@ -48,7 +48,7 @@
 #include "core/RackRenderer.h"
 #include "core/SnapshotExchange.h"
 
-namespace lynx
+namespace yw
 {
 class WorkerPool;
 class OsSemaphore;
@@ -406,4 +406,4 @@ private:
     bool lastFlagsSet = false;
     std::vector<float> scratchL, scratchR;
 };
-} // namespace lynx
+} // namespace yw

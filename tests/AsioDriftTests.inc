@@ -1,4 +1,4 @@
-// --- LYNX ASIO full-duplex input: drift-compensated FIFO (asio/InputDrift.h) - round 106 ----------------------------
+// --- YW ASIO full-duplex input: drift-compensated FIFO (asio/InputDrift.h) - round 106 ----------------------------
 
 namespace asiodrift
 {
@@ -16,7 +16,7 @@ struct DuplexRun
 inline DuplexRun simulate (double ppm, int packet, int period, int block, int target, double seconds, double stallAt = -1.0)
 {
     constexpr double rate = 48000.0, freq = 1000.0, pi = 3.14159265358979323846;
-    lynxasio::InputDrift fifo;
+    ywasio::InputDrift fifo;
     fifo.reset (2, target, rate);
     DuplexRun run;
     const double captureRate = rate * (1.0 + ppm * 1.0e-6);
@@ -108,7 +108,7 @@ TEST (asio_input_drift_unity_is_transparent)
 {
     // same clock: the interpolator must not colour the sound (16-tap windowed sinc, flat below 20 kHz)
     constexpr double pi = 3.14159265358979323846;
-    lynxasio::InputDrift fifo;
+    ywasio::InputDrift fifo;
     fifo.reset (1, 400, 48000.0);
     std::vector<float> in (256), out (256);
     double peak = 0.0;

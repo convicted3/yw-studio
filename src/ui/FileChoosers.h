@@ -1,18 +1,18 @@
 #pragma once
 
-// LYNX's file choosers (issue #72: "File chooser fails to open or load the selected file", Arch Linux).
+// YW's file choosers (issue #72: "File chooser fails to open or load the selected file", Arch Linux).
 //
 // JUCE's native chooser on Linux runs zenity (or kdialog in a KDE session / without zenity) as a child process and reads
 // the chosen path from its output. JUCE looks for them with `which` (not installed on every distribution: Arch's base
 // has none) and never checks that the dialog really opened: a zenity or kdialog that cannot start (a broken GTK / Qt, a
 // missing library, a display it cannot open) ends at once with nothing printed, which JUCE reports as "cancelled", so
-// nothing opens and nothing loads. LYNX now:
+// nothing opens and nothing loads. YW now:
 //  - on Linux uses the native dialog only when the program JUCE would run is on PATH (searched directly, no `which`)
 //    and answers `--version` (exit code 0) within 5 s; otherwise JUCE's built-in chooser (always works);
 //  - when a native dialog ends without a file less than a second after it was launched (it never showed: nobody picks
 //    or cancels that fast), uses the built-in chooser for the rest of the session and opens it at once in its place;
 //  - gives zenity / kdialog each filter pattern in upper case too (they match case-sensitively: "*.wav" hid "LOOP.WAV");
-//  - LYNX_FILE_DIALOG=builtin or =native forces one (troubleshooting).
+//  - YW_FILE_DIALOG=builtin or =native forces one (troubleshooting).
 // Windows and macOS keep their native dialogs. Every chooser of the UI goes through makeFileChooser / launchChooser.
 // Message thread only.
 
@@ -27,7 +27,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace filechooser
 {
@@ -103,7 +103,7 @@ inline juce::String withUpperCase (const juce::String& filters)
 // Whether new choosers use the system's dialog (checked once per run on Linux)
 inline bool nativeDialogs()
 {
-    const auto forced = juce::SystemStats::getEnvironmentVariable ("LYNX_FILE_DIALOG", {}).trim().toLowerCase();
+    const auto forced = juce::SystemStats::getEnvironmentVariable ("YW_FILE_DIALOG", {}).trim().toLowerCase();
     if (forced == "builtin" || forced == "built-in" || forced == "juce")
         return false;
     if (forced == "native")
@@ -165,7 +165,7 @@ std::function<void (const juce::FileChooser&)> watched (const juce::FileChooser*
     const auto info = it != made().end() ? it->second : Made {};
     if (it != made().end())
         made().erase (it); // (read once: the chooser launches once)
-    const auto forced = juce::SystemStats::getEnvironmentVariable ("LYNX_FILE_DIALOG", {}).trim().equalsIgnoreCase ("native");
+    const auto forced = juce::SystemStats::getEnvironmentVariable ("YW_FILE_DIALOG", {}).trim().equalsIgnoreCase ("native");
     if (! info.native || forced)
         return callback;
     const auto launched = juce::Time::getMillisecondCounterHiRes();
@@ -217,4 +217,4 @@ inline void launchChooser (const std::shared_ptr<juce::FileChooser>& chooser, in
                               kept.push_back (std::move (next));
                           }));
 }
-} // namespace lynx::ui
+} // namespace yw::ui

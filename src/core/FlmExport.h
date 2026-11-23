@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio Mobile project (.flm) export, round 190og: "Save a copy as FL Studio Mobile project (.flm)..." (a LYNX-own
+// FL Studio Mobile project (.flm) export, round 190og: "Save a copy as FL Studio Mobile project (.flm)..." (a YW-own
 // command; FL Studio has no .flm writer). The song becomes an FLM 5 project the way FLM itself writes one
 // (docs/analise/FLM_FORMAT.md; core/FlmFormat.h's writer) and the .flm import (core/FlmImport.h) reads it back:
 //  - the song: title, tempo, beats per bar, the key (FLM's key locker), the Chord pad set (KEYB), the credits (META);
@@ -10,10 +10,10 @@
 //  - the mixer: an insert used by one channel is that channel's rack (its level, pan, mute, solo, effects); an insert
 //    several channels use, or one that receives sends, becomes an FLM bus channel the others send into; the Master's
 //    effects and level are FLM's master rack;
-//  - instruments FLM has a module for keep their sound: FL Studio Mobile's own engines in LYNX (MiniSynth, SuperSaw,
+//  - instruments FLM has a module for keep their sound: FL Studio Mobile's own engines in YW (MiniSynth, SuperSaw,
 //    GMSynth, Transistor Bass in FLM's build, the DW Sampler with its zones, 3x Osc) and FL's MiniSynth / Transistor Bass /
 //    3x Osc; any other instrument keeps its notes on FLM's MiniSynth and is listed;
-//  - effects: every Pocket engine (FLM's own effects in LYNX), with its Mix and the Post Gain a utility after it holds;
+//  - effects: every Pocket engine (FLM's own effects in YW), with its Mix and the Post Gain a utility after it holds;
 //  - automation clips of an insert's level / pan, of Pocket effects and of the DW Sampler's / GMSynth's own values;
 //  - the notes: every pattern clip of the Playlist as a clip of its channels' lanes (one FLM content per pattern and
 //    channel, so a pattern placed twice stays one linked content); audio clips with their level, pan, pitch, reverse;
@@ -29,7 +29,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct FlmExportOptions
 {
@@ -69,9 +69,9 @@ struct FlmExportResult
 
 FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options = {});
 
-// The LYNX chunk (round 190og): FLM keeps one pattern per track, so the export adds at the end of the file a chunk FLM's
-// loader skips (an unknown tag; FLM_FORMAT §1) with what LYNX needs to rebuild its own patterns — which FLM content of
-// which channel was which LYNX pattern, and each pattern's name and colour — and a checksum of everything before it.
+// The YW chunk (round 190og): FLM keeps one pattern per track, so the export adds at the end of the file a chunk FLM's
+// loader skips (an unknown tag; FLM_FORMAT §1) with what YW needs to rebuild its own patterns — which FLM content of
+// which channel was which YW pattern, and each pattern's name and colour — and a checksum of everything before it.
 // The import uses it only while the checksum holds (a song saved again by FLM has no such chunk, or other bytes).
 namespace flmexport
 {
@@ -96,4 +96,4 @@ void regroupPatterns (Song& song, const Extras& extras, const std::map<std::pair
 float flmFaderValue (double gain) noexcept;
 float flmPostGainValue (double gain) noexcept;
 float flmSpeedValue (int semitones) noexcept;
-} // namespace lynx
+} // namespace yw

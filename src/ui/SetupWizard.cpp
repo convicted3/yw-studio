@@ -17,7 +17,7 @@
 #include "platform/Paths.h"
 #include "platform/FileTypes.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -102,7 +102,7 @@ public:
         {
             auto& choice = styleChoices[(std::size_t) i];
             choice.setRadioGroupId (184017);
-            choice.getProperties().set ("lynxRadio", true); // drawn as a radio dot (Theme.cpp drawTickBox)
+            choice.getProperties().set ("ywRadio", true); // drawn as a radio dot (Theme.cpp drawTickBox)
             choice.setToggleState (i == initialStyle, juce::dontSendNotification);
             body.addAndMakeVisible (choice);
             auto& note = styleNotes[(std::size_t) i];
@@ -124,11 +124,11 @@ public:
             note.setBorderSize (juce::BorderSize<int> (0, 26, 0, 0)); // under the name, past the radio dot
             body.addAndMakeVisible (note);
         }
-        // the Linux AppImage (round 161): an applications-menu entry and the .lynx file type, on by default
+        // the Linux AppImage (round 161): an applications-menu entry and the .yw file type, on by default
         body.addChildComponent (menuEntry);
         menuEntry.setVisible (runningAsAppImage());
         menuEntry.setToggleState (true, juce::dontSendNotification);
-        // issue #233 (round 190ns): the one connection LYNX makes by itself, chosen here before it ever runs (the
+        // issue #233 (round 190ns): the one connection YW makes by itself, chosen here before it ever runs (the
         // automatic check waits for this wizard: updater::startAutomaticCheck)
         for (auto* c : std::initializer_list<juce::Component*> { &updatesLabel, &checkUpdates, &updatesNote })
             body.addChildComponent (c);
@@ -409,8 +409,8 @@ private:
 
     void chooseFolder()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Plugin folder"), juce::File(), "");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [this] (const juce::FileChooser& c) {
+        chooser = yw::ui::makeFileChooser (tr ("Plugin folder"), juce::File(), "");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [this] (const juce::FileChooser& c) {
             if (const auto folder = c.getResult(); folder.isDirectory())
             {
                 folderList.addIfNotAlreadyThere (folder.getFullPathName(), true);
@@ -517,8 +517,8 @@ private:
     double progress = 0.0;
     juce::ProgressBar progressBar { progress };
     juce::ToggleButton scanAtStart { tr ("Look for new plugins in the background at every start") };
-    juce::ToggleButton menuEntry { tr ("Show YW Studio in the applications menu and open .lynx files with it") };
-    // round 190ns (issue #233): the automatic update check, the only connection LYNX SHARE makes by itself
+    juce::ToggleButton menuEntry { tr ("Show YW Studio in the applications menu and open .yw files with it") };
+    // round 190ns (issue #233): the automatic update check, the only connection YW Studio makes by itself
     SectionLabel updatesLabel { tr ("Updates") };
     juce::ToggleButton checkUpdates { tr ("Check for updates automatically") };
     juce::Label updatesNote { {}, tr ("A few seconds after start-up YW Studio asks GitHub for the newest version number; nothing about you is sent. "
@@ -550,7 +550,7 @@ public:
             g.setColour (juce::Colours::black.withAlpha (0.08f));
             g.drawRoundedRectangle (panel.expanded ((float) i), 4.0f + (float) i, 2.0f);
         }
-        // round 190jp (design190ia SG-20): the one LYNX dialog frame (1 px frame, the 3 px accent strip on top) instead of
+        // round 190jp (design190ia SG-20): the one YW dialog frame (1 px frame, the 3 px accent strip on top) instead of
         // a red outline of its own; the wizard's big title stays in its body (SG-24)
         const auto frame = wizard.getBounds().expanded (1).withTop (wizard.getY() - 1 - ui::dialog::accentStrip);
         ui::dialog::paintFrame (g, frame.toFloat(), ui::dialog::Kind::window, false);
@@ -621,4 +621,4 @@ void setBackgroundScanAtStart (bool on)
 {
     scanAtStartFile().replaceWithText (on ? "1" : "0");
 }
-} // namespace lynx
+} // namespace yw

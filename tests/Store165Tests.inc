@@ -4,19 +4,19 @@
 
 TEST (store165_packaged_settings_folder)
 {
-    namespace st = lynx::store;
-    CHECK (st::packagedSettingsFolder ("C:\\Users\\ana\\AppData\\Local", "LYNX.LYNX_abc123")
-           == "C:\\Users\\ana\\AppData\\Local\\Packages\\LYNX.LYNX_abc123\\LocalCache\\Roaming\\LYNX");
+    namespace st = yw::store;
+    CHECK (st::packagedSettingsFolder ("C:\\Users\\ana\\AppData\\Local", "YW.YW_abc123")
+           == "C:\\Users\\ana\\AppData\\Local\\Packages\\YW.YW_abc123\\LocalCache\\Roaming\\YW");
     CHECK (st::packagedSettingsFolder ("C:\\Users\\ana\\AppData\\Local\\", "F_x")
-           == "C:\\Users\\ana\\AppData\\Local\\Packages\\F_x\\LocalCache\\Roaming\\LYNX");
+           == "C:\\Users\\ana\\AppData\\Local\\Packages\\F_x\\LocalCache\\Roaming\\YW");
     CHECK (st::packagedSettingsFolder ("", "F_x").empty());
     CHECK (st::packagedSettingsFolder ("C:\\L", "").empty());
-    CHECK (st::appsFolderTarget ("LYNX.LYNX_abc123") == "shell:AppsFolder\\LYNX.LYNX_abc123!LYNX");
+    CHECK (st::appsFolderTarget ("YW.YW_abc123") == "shell:AppsFolder\\YW.YW_abc123!YW");
 }
 
 TEST (store165_migration_keeps_preferences_not_caches)
 {
-    namespace st = lynx::store;
+    namespace st = yw::store;
     // preferences, plugin list, favourites, presets, themes, layouts, the user's plugin folder come along
     for (const auto* name : { "plugins.xml", "plugin-favourites.txt", "ui-options.txt", "keys.json", "audio-device.xml",
                               "recentes.txt", "crash-reports.txt", "setup-done.txt", "browser-folders.txt", "workspace.txt" })

@@ -10,10 +10,10 @@
 #include "core/ChainPresets.h"
 #include "core/DemoSongs.h"
 #include "core/LoopStarter.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/SoundLibrary.h"
 
-namespace lynx::factorycontent
+namespace yw::factorycontent
 {
 namespace
 {
@@ -287,4 +287,4 @@ browsertags::Store merged (const browsertags::Store& user)
         out.items[item].insert (keys.begin(), keys.end());
     return out;
 }
-} // namespace lynx::factorycontent
+} // namespace yw::factorycontent

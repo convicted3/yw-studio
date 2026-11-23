@@ -1,14 +1,14 @@
-// Round 190fq: an optional, low-key way to donate (LYNX's own; FL has nothing like it). The rules of the start-up
+// Round 190fq: an optional, low-key way to donate (YW's own; FL has nothing like it). The rules of the start-up
 // support note (core/SupportNote.h): the 10th start shows it, "Not now" waits 30 more starts, "Don't show again" and
 // the Settings box off mean never, test / CI runs never count or show it. The donation page is one constant
-// (core/Links.h) used everywhere; Help › Support LYNX SHARE... is in the Help menu of every layout. The app side
-// (the card in the window, the menus of the three layouts, the windows) is checked by LYNX --donateshot.
+// (core/Links.h) used everywhere; Help › Support YW Studio... is in the Help menu of every layout. The app side
+// (the card in the window, the menus of the three layouts, the windows) is checked by YW --donateshot.
 #include "core/Links.h"
 #include "core/SupportNote.h"
 
 namespace donate190fq
 {
-using namespace lynx;
+using namespace yw;
 
 // n starts of a person's app; true if the note was due at any of them (each due start shows it: noteShown)
 inline int startsUntilShown (supportnote::State& s, int maxStarts)
@@ -41,7 +41,7 @@ inline int count (const std::string& text, const std::string& what)
 
 TEST (donate190fq_the_tenth_start_shows_the_note_once)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     State s;
     CHECK (s.launches == 0 && s.nextAt == 10 && s.show);
     for (int k = 1; k <= 9; ++k)
@@ -59,7 +59,7 @@ TEST (donate190fq_the_tenth_start_shows_the_note_once)
 
 TEST (donate190fq_not_now_waits_thirty_more_starts)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     State s;
     CHECK (donate190fq::startsUntilShown (s, 100) == 10);
     choose (s, Choice::notNow);
@@ -72,7 +72,7 @@ TEST (donate190fq_not_now_waits_thirty_more_starts)
 
 TEST (donate190fq_dont_show_again_and_support_mean_never)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     for (auto c : { Choice::never, Choice::support })
     {
         State s;
@@ -86,7 +86,7 @@ TEST (donate190fq_dont_show_again_and_support_mean_never)
 
 TEST (donate190fq_the_settings_box_off_means_never_and_on_counts_from_now)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     State s;
     setShow (s, false);
     CHECK (donate190fq::startsUntilShown (s, 1000) == -1);
@@ -106,16 +106,16 @@ TEST (donate190fq_the_settings_box_off_means_never_and_on_counts_from_now)
 
 TEST (donate190fq_test_and_ci_runs_never_count_or_show)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     State s;
     for (int k = 0; k < 1000; ++k)
         CHECK (! countStart (s, true));
     CHECK (s == State {});
-    CHECK (quietEnvironment (true, "", "", ""));        // LYNX_TEST_MODE
+    CHECK (quietEnvironment (true, "", "", ""));        // YW_TEST_MODE
     CHECK (quietEnvironment (false, "true", "", ""));   // CI=true (GitHub, most CI services)
     CHECK (quietEnvironment (false, "1", "", ""));
     CHECK (quietEnvironment (false, "", "true", ""));   // GITHUB_ACTIONS
-    CHECK (quietEnvironment (false, "", "", "1"));      // LYNX_NO_SUPPORT_NOTE
+    CHECK (quietEnvironment (false, "", "", "1"));      // YW_NO_SUPPORT_NOTE
     CHECK (! quietEnvironment (false, "", "", ""));     // a person's start
     CHECK (! quietEnvironment (false, "0", "false", "0"));
     // the start path: only after the command-line modes (they return before the window), and only through the quiet check
@@ -126,15 +126,15 @@ TEST (donate190fq_test_and_ci_runs_never_count_or_show)
     const auto after = main.find ("void startAfterWindow (bool offerSetupWizard)");
     CHECK (after != std::string::npos && main.find ("startSupportNote();", after) < main.find ("void startSupportNote()", after));
     // no splash (round 190np: that path offers the first-run welcome card only under --demo, which has no splash)
-    CHECK (donate190fq::count (main, "startAfterWindow (false);") + donate190fq::count (main, "startAfterWindow (lynx::demo::active());") == 1);
+    CHECK (donate190fq::count (main, "startAfterWindow (false);") + donate190fq::count (main, "startAfterWindow (yw::demo::active());") == 1);
     CHECK (donate190fq::count (main, "startAfterWindow (true);") >= 1);  // the splash's landing
-    CHECK (main.find ("lynx::supportnote::quietEnvironment (lynx::platform::testMode(), env (\"CI\"), env (\"GITHUB_ACTIONS\"), env (\"LYNX_NO_SUPPORT_NOTE\"))")
+    CHECK (main.find ("yw::supportnote::quietEnvironment (yw::platform::testMode(), env (\"CI\"), env (\"GITHUB_ACTIONS\"), env (\"YW_NO_SUPPORT_NOTE\"))")
            != std::string::npos);
 }
 
 TEST (donate190fq_the_card_waits_for_a_quiet_moment)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     CHECK (canShowNow ({}));
     CHECK (! canShowNow ({ true, false, false, true }));  // a dialog / overlay in front
     CHECK (! canShowNow ({ false, true, false, true }));  // playing
@@ -144,7 +144,7 @@ TEST (donate190fq_the_card_waits_for_a_quiet_moment)
 
 TEST (donate190fq_state_round_trips_and_survives_a_broken_file)
 {
-    using namespace lynx::supportnote;
+    using namespace yw::supportnote;
     const State s { 57, 70, false };
     CHECK (toText (s) == "launches=57\nnext=70\nshow=0\n");
     CHECK (fromText (toText (s)) == s);
@@ -157,7 +157,7 @@ TEST (donate190fq_state_round_trips_and_survives_a_broken_file)
 TEST (donate190fq_one_donation_url_everywhere)
 {
     using donate190fq::fileText;
-    const std::string url = lynx::links::donate;
+    const std::string url = yw::links::donate;
     CHECK (url.rfind ("https://ko-fi.com/", 0) == 0);
     const auto name = url.substr (std::string ("https://ko-fi.com/").size());
     CHECK (! name.empty() && name.find ('/') == std::string::npos);
@@ -175,11 +175,11 @@ TEST (donate190fq_one_donation_url_everywhere)
         const auto text = fileText (path.c_str());
         if (text.find ("ko-fi.com") != std::string::npos)
         {
-            std::printf ("  %s names the Ko-fi page itself (use lynx::links::donate)\n", path.c_str());
+            std::printf ("  %s names the Ko-fi page itself (use yw::links::donate)\n", path.c_str());
             CHECK (false);
         }
     }
-    CHECK (fileText ("src/ui/SupportLynx.cpp").find ("juce::URL (links::donate).launchInDefaultBrowser()") != std::string::npos);
+    CHECK (fileText ("src/ui/SupportYw.cpp").find ("juce::URL (links::donate).launchInDefaultBrowser()") != std::string::npos);
     // the repository's texts carry the same page
     CHECK (fileText (".github/FUNDING.yml").find ("ko_fi: " + name + "\n") != std::string::npos);
     CHECK (fileText ("README.md").find (url) != std::string::npos);
@@ -189,15 +189,15 @@ TEST (donate190fq_one_donation_url_everywhere)
 TEST (donate190fq_help_has_support_next_to_about_in_every_layout)
 {
     // the Help menu is one branch for the three layouts (Pattern, Clip-launch, Simple): the item sits right above
-    // About, outside the Simple-only block at the menu's top (LYNX --donateshot checks the built menus of all three)
+    // About, outside the Simple-only block at the menu's top (YW --donateshot checks the built menus of all three)
     const auto ui = donate190fq::fileText ("src/ui/MainComponent.cpp");
-    const auto item = ui.find ("menu.addItem (tr (\"Support LYNX SHARE...\"), [] { support::showSupportWindow(); });\n        menu.addItem (tr (\"About LYNX SHARE\")");
+    const auto item = ui.find ("menu.addItem (tr (\"Support YW Studio...\"), [] { support::showSupportWindow(); });\n        menu.addItem (tr (\"About YW Studio\")");
     CHECK (item != std::string::npos);
-    CHECK (donate190fq::count (ui, "tr (\"Support LYNX SHARE...\")") == 1);
+    CHECK (donate190fq::count (ui, "tr (\"Support YW Studio...\")") == 1);
     const auto simpleOnly = ui.rfind ("if (layoutStyle == layoutstyle::Style::simple && simpleWorkflow != nullptr)", item);
     const auto blockEnd = ui.find ("menu.addItem (tr (\"Shortcuts\")", simpleOnly);
     CHECK (simpleOnly != std::string::npos && blockEnd != std::string::npos && blockEnd < item);
     CHECK (ui.find ("layoutStyle", blockEnd) > item); // (no layout condition between the common items and it)
     // the About window's button opens the same window
-    CHECK (ui.find ("if (result == 2) // \"Support LYNX SHARE\"\n                                             support::showSupportWindow();") != std::string::npos);
+    CHECK (ui.find ("if (result == 2) // \"Support YW Studio\"\n                                             support::showSupportWindow();") != std::string::npos);
 }

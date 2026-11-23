@@ -5,7 +5,7 @@
 
 namespace details190lr
 {
-using namespace lynx;
+using namespace yw;
 
 // A Drums track with a three-sound kit and a one-bar starter (kick on 0 and 8)
 inline Song drumSong (int* trackOut)
@@ -43,7 +43,7 @@ inline Song drumSong (int* trackOut)
 // track's own pattern, B … H are made on demand as "<track> B" …, a rename keeps them, "Add" places a clip on a bar
 TEST (details190lr_drum_machine_rows_letters_and_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     int track = -1;
     auto song = details190lr::drumSong (&track);
     CHECK (track >= 0);
@@ -123,10 +123,10 @@ TEST (details190lr_drum_machine_rows_letters_and_clips)
 }
 
 // Live's scene follow action (manual 16.7): the scene's Follow Action Time after the scene starts, its action launches
-// another scene (Next wraps to the first); a new scene launch replaces it, Stop All Clips ends it (the .lynx round trip: --details190lrshot)
+// another scene (Next wraps to the first); a new scene launch replaces it, Stop All Clips ends it (the .yw round trip: --details190lrshot)
 TEST (details190lr_scene_follow_action_launches_the_next_scene)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
@@ -168,7 +168,7 @@ TEST (details190lr_scene_follow_action_launches_the_next_scene)
 // Live's single-track Back to Arrangement: only that track gives its Playlist clips back; the other stays with the grid
 TEST (details190lr_one_track_back_to_arrangement)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (0));

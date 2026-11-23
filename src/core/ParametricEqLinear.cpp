@@ -18,7 +18,7 @@
 // table follow the plugin; the FFT convolution is computed here in double precision (the plugin's single-precision
 // FFT rounding is not reproduced, §5.6).
 
-namespace lynx::peqfl
+namespace yw::peqfl
 {
 namespace
 {
@@ -473,4 +473,4 @@ void LinearPhase::process (float* io, int n) noexcept
         ++fadeCount;
     }
 }
-} // namespace lynx::peqfl
+} // namespace yw::peqfl

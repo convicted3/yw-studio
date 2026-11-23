@@ -14,7 +14,7 @@
 #include "core/RenderAhead.h"
 #include "core/FlSettings.h"
 #include "core/LayoutStyle.h"
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/Templates.h" // round 190oo (CS O-2: newProjectDefaults)
 #include "ui/PolyEditor.h"
 #include "ui/WorkflowExtras.h" // round 190iu
@@ -39,13 +39,13 @@
 #include <algorithm>
 #include <array>
 
-namespace lynx
+namespace yw
 {
 using namespace settingsui;
 
 juce::File autosaveFolder()
 {
-    return lynx::platform::settingsFile ("autosave");
+    return yw::platform::settingsFile ("autosave");
 }
 
 namespace
@@ -307,7 +307,7 @@ public:
        #if ! JUCE_WINDOWS
         gpuRendering.setVisible (false);
        #endif
-        // round 190jy (queue item 44, LYNX's own): a docked LYNX editor drawn by the main window, so its live display
+        // round 190jy (queue item 44, YW's own): a docked YW editor drawn by the main window, so its live display
         // costs only its paint; hosted plugins and detached windows keep windows of their own
         toggle (editorsInMain, tr ("Draw docked YW Studio editors in the main window (lighter live displays)"), options.editorsInMainWindow,
                 [this] (bool on) { options.editorsInMainWindow = on; });
@@ -356,12 +356,12 @@ public:
         toggle (startupSound, tr ("Play the startup sound"), options.startupSound, [this] (bool on) { options.startupSound = on; });
         toggle (scanAtStart, tr ("Look for new plugins in the background at every start"), options.scanAtStart,
                 [this] (bool on) { options.scanAtStart = on; });
-        // round 190fq (LYNX's own): the start-up note about supporting LYNX SHARE on Ko-fi (ui/SupportLynx.h)
+        // round 190fq (YW's own): the start-up note about supporting YW Studio on Ko-fi (ui/SupportYw.h)
         toggle (supportNoteBox, tr ("Show the support note"), options.supportNote, [this] (bool on) { options.supportNote = on; });
         supportNoteBox.setTooltip (tr ("Now and then at start-up, a small note in a corner about supporting YW Studio on Ko-fi. "
                                        "Donating is optional and never unlocks anything."));
-        // the AppImage on Linux (round 161): its menu entry and the .lynx file type, in the user's ~/.local/share
-        toggle (menuEntry, tr ("Show YW Studio in the applications menu and open .lynx files with it"), options.menuEntry,
+        // the AppImage on Linux (round 161): its menu entry and the .yw file type, in the user's ~/.local/share
+        toggle (menuEntry, tr ("Show YW Studio in the applications menu and open .yw files with it"), options.menuEntry,
                 [this] (bool on) { options.menuEntry = on; });
         menuEntry.setVisible (runningAsAppImage());
 
@@ -388,9 +388,9 @@ public:
                 [this] (bool on) { options.rememberSeek = on; });
         toggle (hoverValues, tr ("Show a control's value next to the mouse when hovering over it (YW Studio)"), options.hoverValues,
                 [this] (bool on) { options.hoverValues = on; });
-        // issue #217 (round 190ng): FL 2026 closes the focused window on Esc (core/EscClose.h); the LYNX extras page has it too
+        // issue #217 (round 190ng): FL 2026 closes the focused window on Esc (core/EscClose.h); the YW extras page has it too
         toggle (escCloses, tr ("Esc closes the focused window"), escclose::enabled(), [] (bool on) { workflowextras::setExtra ("general.escCloses", on); });
-        // LYNX extra (issue #25): FL plays a stretched pattern clip once; off = FL's behaviour
+        // YW extra (issue #25): FL plays a stretched pattern clip once; off = FL's behaviour
         toggle (clipsLoop, tr ("Stretched pattern clips loop their pattern (YW Studio)"), options.stretchedClipsLoop,
                 [this] (bool on) { options.stretchedClipsLoop = on; });
         clipsLoop.setTooltip (tr ("On: a pattern clip stretched past its pattern repeats the pattern. Off: it plays the pattern once, as in FL Studio"));
@@ -444,7 +444,7 @@ public:
             // round 190mr (DF-135; FL's label, off as in FL)
             flag (historyOnUndo, tr ("Show undo history in the browser when undoing changes"),
                   tr ("An undo opens the Browser at Current project › History"), fl.historyOnUndo);
-            // round 190mr (DF-141, owner F3; LYNX's switch: FL always does it): a project opens with the windows where they were
+            // round 190mr (DF-141, owner F3; YW's switch: FL always does it): a project opens with the windows where they were
             flag (projectLayout, tr ("Load the window layout saved with a project"),
                   tr ("On: a project opens with its windows where they were when it was saved, as in FL Studio. Off: the layout on screen stays"),
                   fl.projectWindowLayout);
@@ -526,7 +526,7 @@ public:
         // issue #221 (round 190ng): where a remembered "Remember my choice" answer is undone
         styleNote (messagesNote, tr ("Ticked messages are shown; untick one to skip its question. A question answered with \"Remember my choice\" is unticked here: tick it, or Show all, to be asked again."));
         // FL's Hints and warnings › "Project data size warning" (round 190mr, DF-147): the size a saved project may reach
-        // before LYNX warns, or "Don't warn me"
+        // before YW warns, or "Don't warn me"
         styleLabel (dataSizeLabel, tr ("Project data size warning"));
         for (const auto mb : flsettings::projectSizeChoices) // (FL's texts: "50MB", "100MB (default)", "1GB", "1.5GB")
             dataSizeBox.addItem (mb == 0 ? tr ("Don't warn me")
@@ -748,7 +748,7 @@ private:
         t.onClick = [this, &t, set = std::move (set)] { change ([&] { set (t.getToggleState()); }); };
     }
 
-    // the LYNX extras page switches this one too (round 190am): the copy kept here follows when the page comes back
+    // the YW extras page switches this one too (round 190am): the copy kept here follows when the page comes back
     void visibilityChanged() override
     {
         followLayoutStyle();
@@ -1122,12 +1122,12 @@ private:
         flag (threadMixer, tr ("Multithreaded mixer processing"), tr ("May increase CPU performance"), o.multithreadMixer);
         flag (smartDisableAll, tr ("Smart disable"),
               tr ("May increase CPU performance. Off: every effect is processed all the time, whatever its own Smart disable switch says"), o.smartDisable);
-        // LYNX extra (round 190ok, owner decision D2): FL's generator smart disable on for new instrument plugins
+        // YW extra (round 190ok, owner decision D2): FL's generator smart disable on for new instrument plugins
         flag (smartDisableNew, tr ("Smart disable for new instrument plugins"),
               tr ("New channels with an instrument plugin get Smart disable on: the plugin is not called while it gets no notes and its "
                   "sound has been silent for 4 seconds. FL Studio starts a new generator with it off."),
               o.smartDisableNewPlugins);
-        // LYNX extra (round 190gq, core/RenderAhead.h; owner decision O22: on by default)
+        // YW extra (round 190gq, core/RenderAhead.h; owner decision O22: on by default)
         flag (renderAhead, tr ("Render ahead (lower CPU at small buffers)"),
               tr ("Tracks nobody plays live are rendered a little ahead on another thread, so heavy projects hold small buffers. Inputs, the "
                   "channels being played and everything they feed stay real-time; edits on the other tracks can be heard up to about 25 ms late."),
@@ -1302,9 +1302,9 @@ private:
     // Linux: whether the audio thread got real-time priority (round 161), and how to get it when it did not
     void updateRealtime()
     {
-        const auto state = lynx::rt::status();
-        const auto denied = state == lynx::rt::Status::denied;
-        if (state == lynx::rt::Status::unknown)
+        const auto state = yw::rt::status();
+        const auto denied = state == yw::rt::Status::denied;
+        if (state == yw::rt::Status::unknown)
             realtime.setText ({}, juce::dontSendNotification);
         else if (denied)
             realtime.setText (tr ("Audio thread: normal priority, so the sound breaks up more easily under load. To allow real-time priority, "
@@ -1312,7 +1312,7 @@ private:
                                   "(/etc/security/limits.d), then log in again. YW Studio never needs root."),
                               juce::dontSendNotification);
         else
-            realtime.setText (tr ("Audio thread: real-time priority ({0})", { lynx::rt::describe() }), juce::dontSendNotification);
+            realtime.setText (tr ("Audio thread: real-time priority ({0})", { yw::rt::describe() }), juce::dontSendNotification);
         realtime.setColour (juce::Label::textColourId, denied ? theme::colour::warning : theme::colour::textSecondary);
         if (denied != realtimeDenied)
         {
@@ -1482,7 +1482,7 @@ private:
             case prefs::DriverKind::wasapiExclusive:  return tr ("Windows Audio (exclusive, lowest latency)");
             case prefs::DriverKind::directSound:      return tr ("DirectSound (legacy)");
             case prefs::DriverKind::asio:             return "ASIO";
-            case prefs::DriverKind::lynxAsio:         return tr ("YW ASIO (built in)");
+            case prefs::DriverKind::ywAsio:         return tr ("YW ASIO (built in)");
             case prefs::DriverKind::coreAudio:        return "Core Audio";
             case prefs::DriverKind::alsa:             return "ALSA";
             case prefs::DriverKind::jack:             return tr ("JACK / PipeWire");
@@ -1514,7 +1514,7 @@ private:
                 return tr ("Old Windows audio path with high latency. Use it only when the others fail.");
             case prefs::DriverKind::asio:
                 return tr ("Low-latency drivers. YW ASIO, FL Studio ASIO and ASIO4ALL work with any device; a manufacturer's ASIO driver works with its own device.");
-            case prefs::DriverKind::lynxAsio:
+            case prefs::DriverKind::ywAsio:
                 if (platform::runningPackaged()) // the Store build: the package folder moves with every update
                     return tr ("YW Studio's own ASIO driver, with any device: playback and recording (microphone) at low latency. \"Driver settings...\" chooses shared or exclusive mode, the output and input devices and shows the latency. "
                                "To use it in other programs, install YW Studio from yolo.su (the installer registers it).");
@@ -1598,7 +1598,7 @@ public:
         typeLabel.setFont (theme::font (theme::type::small));
         typeLabel.setColour (juce::Label::textColourId, theme::colour::textSecondary);
         addAndMakeVisible (typeLabel);
-        // FL's list: "(generic controller)" first, then the device scripts; LYNX adds the automatic choice on top
+        // FL's list: "(generic controller)" first, then the device scripts; YW adds the automatic choice on top
         type.addItem (controllers.detected.isNotEmpty() ? tr ("Detect automatically ({0})", { controllers.detected })
                                                         : tr ("Detect automatically ({0})", { tr ("Generic controller") }),
                       1);
@@ -1646,7 +1646,7 @@ public:
         channel.addItem (tr ("Any MIDI channel"), 1);
         for (int c = 1; c <= 16; ++c)
             channel.addItem (tr ("MIDI channel {0}", { juce::String (c) }), c + 1);
-        // issue #108 (a LYNX addition; FL has no MPE input): the device is an MPE controller — every channel is
+        // issue #108 (a YW addition; FL has no MPE input): the device is an MPE controller — every channel is
         // taken (channel 1 = master, the member channels from 2 up carry one note each with its bend, CC 74, pressure)
         channel.addSeparator();
         channel.addItem (tr ("MPE controller"), mpeItem);
@@ -1973,7 +1973,7 @@ public:
             }
             rebuildInputs();
         };
-        profilesFolder.setTooltip (tr ("Your own controller profiles (*.lynxctl) go here; Refresh device list reads them again"));
+        profilesFolder.setTooltip (tr ("Your own controller profiles (*.ywctl) go here; Refresh device list reads them again"));
         profilesFolder.onClick = [] {
             const auto folder = AudioEngine::controllerProfilesFolder();
             folder.createDirectory();
@@ -2191,7 +2191,7 @@ private:
             hooks.midiChanged();
     }
 
-    // the LYNX extras page switches the game controller too (round 190am)
+    // the YW extras page switches the game controller too (round 190am)
     void visibilityChanged() override
     {
         if (isVisible())
@@ -2469,7 +2469,7 @@ private:
 };
 
 // ================================================================================================================
-// LYNX extras (round 190am)
+// YW extras (round 190am)
 // ================================================================================================================
 class ExtrasPage final : public ScrollingPage
 {
@@ -2495,7 +2495,7 @@ public:
             styleToggle (row.toggle, tr (std::string (item.title).c_str()));
             row.toggle.setComponentID (juce::String (row.id)); // (--snapshot and tests find a switch by its id)
             row.toggle.onClick = [this, &row] {
-                setLynxExtra (engine, hooks, row.id, row.toggle.getToggleState(), persistent);
+                setYwExtra (engine, hooks, row.id, row.toggle.getToggleState(), persistent);
                 refresh(); // (what the app really did, e.g. an action that was refused)
             };
             styleNote (row.note, tr (std::string (item.note).c_str()));
@@ -2562,7 +2562,7 @@ private:
     void refresh()
     {
         for (auto& row : rows)
-            row->toggle.setToggleState (lynxExtraOn (engine, hooks, row->id), juce::dontSendNotification);
+            row->toggle.setToggleState (ywExtraOn (engine, hooks, row->id), juce::dontSendNotification);
     }
 
     static constexpr int noteIndent = 27; // under the caption, past the check box
@@ -2685,7 +2685,7 @@ std::unique_ptr<juce::Component> makeLinkPage (AudioEngine& engine, const Settin
     return std::make_unique<LinkPage> (engine, hooks);
 }
 
-bool lynxExtraOn (AudioEngine& engine, const SettingsHooks& hooks, std::string_view id)
+bool ywExtraOn (AudioEngine& engine, const SettingsHooks& hooks, std::string_view id)
 {
     if (const auto own = workflowextras::extraOn (id)) return *own; // round 190iu (ui/WorkflowExtras.h)
     if (id == "mixer.loudness") return MixerStrips::showLoudness;
@@ -2710,9 +2710,9 @@ bool lynxExtraOn (AudioEngine& engine, const SettingsHooks& hooks, std::string_v
     return false;
 }
 
-void setLynxExtra (AudioEngine& engine, const SettingsHooks& hooks, std::string_view id, bool on, bool persistent)
+void setYwExtra (AudioEngine& engine, const SettingsHooks& hooks, std::string_view id, bool on, bool persistent)
 {
-    if (lynxExtraOn (engine, hooks, id) == on)
+    if (ywExtraOn (engine, hooks, id) == on)
         return;
     const auto saved = [] { // the main window writes ui-options.txt
         if (mixeroptions::changed)
@@ -2875,4 +2875,4 @@ std::unique_ptr<juce::Component> makeMidiPage (AudioEngine& engine, const Settin
 {
     return std::make_unique<MidiPage> (engine, hooks, persistent);
 }
-} // namespace lynx
+} // namespace yw

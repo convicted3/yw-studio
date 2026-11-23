@@ -194,7 +194,7 @@ TEST (issue171_older_unregistered_saves_are_not_unscrambled)
 
 TEST (issue171_trial_save_imports_with_its_samples_and_mixer_routes)
 {
-    using namespace lynx;
+    using namespace yw;
     flp::WriteOptions o;
     o.version = "25.2.5.5319";
     o.build = 5319;
@@ -212,7 +212,7 @@ TEST (issue171_trial_save_imports_with_its_samples_and_mixer_routes)
 
 TEST (issue165_missing_files_rows_past_the_end_are_nothing)
 {
-    using lynx::listRowEntry;
+    using yw::listRowEntry;
     const std::vector<int> list { 7 };
     CHECK (listRowEntry (list, 0) != nullptr && *listRowEntry (list, 0) == 7);
     CHECK (listRowEntry (list, 1) == nullptr); // (the row JUCE painted below the last one: the report's crash)
@@ -223,7 +223,7 @@ TEST (issue165_missing_files_rows_past_the_end_are_nothing)
 
 TEST (issue169_stop_and_space_go_back_to_the_seek_mark)
 {
-    using lynx::transportedit::stopReturnTarget;
+    using yw::transportedit::stopReturnTarget;
     // "Remember seek time" on (FL's default): the ruler click, also one made while playing...
     CHECK (stopReturnTarget (false, true, true, 4 * 384, 0) == 4 * 384);
     CHECK (stopReturnTarget (false, true, false, 4 * 384, 0) == 4 * 384); // the Stop button too (it went to 1:1:1)
@@ -232,7 +232,7 @@ TEST (issue169_stop_and_space_go_back_to_the_seek_mark)
     CHECK (stopReturnTarget (false, true, true, -1, 1152) == 1152);
     // Stop while stopped: the very start
     CHECK (stopReturnTarget (true, true, false, 4 * 384, 1152) == 0);
-    // option off: Space back to where playback started, the Stop button to the start (LYNX's earlier rule)
+    // option off: Space back to where playback started, the Stop button to the start (YW's earlier rule)
     CHECK (stopReturnTarget (false, false, true, 4 * 384, 1152) == 1152);
     CHECK (stopReturnTarget (false, false, false, 4 * 384, 1152) == 0);
     CHECK (stopReturnTarget (false, true, true, -1, -5) == 0);

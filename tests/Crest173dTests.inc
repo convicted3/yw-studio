@@ -9,7 +9,7 @@
 TEST (crest173d_styles_never_boost_peaks)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     std::vector<std::vector<float>> signals;
     {
         // 2 s of a drum loop at −18 dBFS peak: 16ths of a kick (80 Hz) with a hat (noise) between, gaps in between

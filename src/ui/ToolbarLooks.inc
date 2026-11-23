@@ -4,7 +4,7 @@
 // frame (the menu over the hint bar at the left) with BandLab's landmarks: the transport as one 40 px capsule where FL's
 // transport sits (owner decision SG-A, recommended: muscle memory), a metronome / tempo / time signature capsule, the Key
 // capsule, the "Last saved" status in four states and Finish at the right. The Clip-launch layout replaces the two rows
-// with Live 12's frame: the menus on a 23 px row, then one 38 px control bar of 17 px boxes in Live's order (CL-2); LYNX's
+// with Live 12's frame: the menus on a 23 px row, then one 38 px control bar of 17 px boxes in Live's order (CL-2); YW's
 // own panels (Pattern / Song, snap, patterns, windows, file, recording options, the output monitor) are in its "⋯" menu.
 //
 // Performance: static paint. No timer of its own: the main window's timer calls updateLookFields(), and each field
@@ -22,7 +22,7 @@
 #include "ui/SimpleWorkflow.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 using toolbarlayout::Look;
 namespace sb = toolbarlayout::simplebar;
@@ -69,7 +69,7 @@ void MainComponent::setUpLookParts()
         o.recordAutomation = ! o.recordAutomation;
         engine.setRecordOptions (o);
     };
-    // round 190pa (P21, LYNX extra): the automation write mode (Live has none; its Arm writes as Read / Touch)
+    // round 190pa (P21, YW extra): the automation write mode (Live has none; its Arm writes as Read / Touch)
     automationArmButton.onRightClick = [this] {
         makeAutomationModeMenu().showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&automationArmButton));
     };
@@ -149,7 +149,7 @@ namespace
 {
 // BandLab's metronome popover (bandlab190p shots/07-metronome-tap-countin.png, 342 x 356 at 100 %): Tap Tempo (− tempo / Tap
 // +), Metronome Sound (the sounds and ▶ to hear it), Metronome Volume (a slider and its dB) and Count-in Duration (Off /
-// 1 Bar / 2 Bars); LYNX's colours, BandLab's order and controls (Simple layout only)
+// 1 Bar / 2 Bars); YW's colours, BandLab's order and controls (Simple layout only)
 class MetronomePopover final : public juce::Component
 {
 public:
@@ -421,9 +421,9 @@ void MainComponent::applyFlTiles()
         b.setLook (fl ? BL::flTile : BL::standard, box);
     // FM-4 / FM-7: FL's larger menu-bar text and hint (the window starts in the Pattern look without a look change, so
     // this runs from applyIconSizing as well as from applyToolbarLook)
-    if ((bool) menuBar.getProperties().getWithDefault ("lynxFlMenuBar", false) != fl)
+    if ((bool) menuBar.getProperties().getWithDefault ("ywFlMenuBar", false) != fl)
     {
-        menuBar.getProperties().set ("lynxFlMenuBar", fl);
+        menuBar.getProperties().set ("ywFlMenuBar", fl);
         menuBar.repaint();
     }
     hintBar.setLarger (fl);
@@ -434,7 +434,7 @@ void MainComponent::applyFlTiles()
         for (auto* b : { &metronomeButton, &tapTempoButton, &blendButton, &punchButton, &typingPianoButton })
             b->setLook (BL::flTile, box);
     }
-    // round 190ki (perf; on by default on the software renderer since round 190mh, opt-in LYNX_TILE_MODE=2 on the native
+    // round 190ki (perf; on by default on the software renderer since round 190mh, opt-in YW_TILE_MODE=2 on the native
     // ones): the tiles' bodies from an atlas of this component's toolbar band (toolbarBackdropStamp, and paint()'s clip)
     for (auto* c : getChildren())
         if (auto* b = dynamic_cast<IconButton*> (c))
@@ -628,7 +628,7 @@ void MainComponent::layoutSimpleToolbar (juce::Rectangle<int> bar, int menuWidth
     widths[(std::size_t) P::transport] = 4 * sb::segment + sb::timeWidth; // (round 190ld: + BandLab's Cycle)
     widths[(std::size_t) P::tempo] = sb::segment + sb::chevronWidth + sb::tempoWidth + sb::signatureWidth; // (round 190ld: BandLab's ▾)
     widths[(std::size_t) P::key] = toolbarLayout.isShown (Group::key) ? sb::keyWidth : 0;
-    // (round 190jj: BandLab's master volume slider with its meter, then LYNX's master pitch knob)
+    // (round 190jj: BandLab's master volume slider with its meter, then YW's master pitch knob)
     widths[(std::size_t) P::master] = toolbarLayout.isShown (Group::master) ? toolbar::MasterKnob::sliderWidth + 8 + h + 26 : 0;
     widths[(std::size_t) P::file] = toolbarLayout.isShown (Group::file) ? 3 * h + 4 : 0;
     widths[(std::size_t) P::link] = toolbarLayout.isShown (Group::link) ? toolbar::LinkToggle::idealWidth (h) : 0;
@@ -741,7 +741,7 @@ void MainComponent::layoutSimpleToolbar (juce::Rectangle<int> bar, int menuWidth
     }
     put (moreButton, right.removeFromRight (sb::moreWidth).withSizeKeepingCentre (sb::moreWidth, sb::moreWidth));
 
-    // round 190oo (O-4, CS-28; LYNX extra, off by default): the project's name centred at the top, over the capsules, as
+    // round 190oo (O-4, CS-28; YW extra, off by default): the project's name centred at the top, over the capsules, as
     // BandLab's "New Project" (mockups/O-4-simple-project-name.png). It takes the strip above the capsules, centred on
     // the window, as wide as the parts that reach into that strip (the menus at the left, the master pitch knob and the
     // file buttons of the first row) leave free on both sides; with less than 60 px it is not shown.
@@ -896,7 +896,7 @@ void MainComponent::layoutLiveControlBar (juce::Rectangle<int> bar, int menuWidt
     const auto punchW = runWidth (I::punch, I::punchOut); // (round 190lx: Punch-In, Loop, Punch-Out)
     const auto tail = punchW > 0 ? lb::sectionGap + punchW : 0;
     // the transport where Live's is: Live centres its transport group together with the loop / punch group after it
-    // (CL-2: 716..1011 and 1033..1267 at 1920 px); LYNX has only punch there, so the group keeps Live's loop width
+    // (CL-2: 716..1011 and 1033..1267 at 1920 px); YW has only punch there, so the group keeps Live's loop width
     auto centreX = bar.getCentreX() - (centreW + lb::sectionGap + lb::loopSectionWidth) / 2;
     centreX = juce::jmin (centreX, rightEnd - rightW - lb::sectionGap - centreW - tail);
     centreX = juce::jmax (centreX, leftEnd + lb::sectionGap);
@@ -942,7 +942,7 @@ void MainComponent::paintLookToolbar (juce::Graphics& g)
         g.fillRoundedRectangle (hintBar.getBounds().toFloat(), radius::md);
     }
 
-    // round 190oo (O-4, LYNX extra): the Simple top bar's centred project name, as the window title and the other layouts
+    // round 190oo (O-4, YW extra): the Simple top bar's centred project name, as the window title and the other layouts
     // name it ("Untitled" until it has one), in the primary ink (#eceef2 on bg3: well over 4.5:1), shortened in the middle
     if (toolbarLook == Look::simple && ! simpleNameArea.isEmpty())
     {
@@ -1201,4 +1201,4 @@ juce::PopupMenu MainComponent::makeToolbarMoreMenu()
     menu.addItem (tr ("Customize toolbar..."), [this] { showCustomizeToolbar(); });
     return menu;
 }
-} // namespace lynx
+} // namespace yw

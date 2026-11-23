@@ -1,11 +1,11 @@
 #pragma once
 
-// Editors of the round 164 controllers (LYNX's own look, FL's workflow): the X-Y / X-Y-Z Controller and the Control
+// Editors of the round 164 controllers (YW's own look, FL's workflow): the X-Y / X-Y-Z Controller and the Control
 // Surface (mixer slots or Patcher nodes), the Dashboard and the Voltage Controller (Channel Rack channels).
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // An effect slot found in the song (a mixer slot or a Patcher node; null = gone), and its running control output k.
 using SlotLocator = std::function<EffectSlot* (Song&)>;
@@ -25,4 +25,4 @@ bool handles (EffectKind kind) noexcept;
 void open (AudioEngine& engine, int track, int slot);
 void closeAll();
 } // namespace Controller164Windows
-} // namespace lynx
+} // namespace yw

@@ -10,17 +10,17 @@
 #include "engine/FlStudio.h"
 #include "engine/PluginHost.h"
 
-namespace lynx::flstudio
+namespace yw::flstudio
 {
 namespace
 {
 juce::String str (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 } // namespace
 
-flpexport::Options optionsFor (PluginHost* host, flpexport::LynxOnly mode)
+flpexport::Options optionsFor (PluginHost* host, flpexport::YwOnly mode)
 {
     flpexport::Options o;
-    o.lynxOnly = mode;
+    o.ywOnly = mode;
     if (const auto fl = findFlStudio(); fl.installDir.isDirectory())
         o.flFactoryData = fl.installDir.getFullPathName().toStdString();
     if (host != nullptr)
@@ -37,7 +37,7 @@ flpexport::Options optionsFor (PluginHost* host, flpexport::LynxOnly mode)
     return o;
 }
 
-flpexport::Options optionsFor (PluginHost* host, flpexport::LynxOnly mode, const Song& song)
+flpexport::Options optionsFor (PluginHost* host, flpexport::YwOnly mode, const Song& song)
 {
     auto o = optionsFor (host, mode);
     if (host == nullptr)
@@ -68,7 +68,7 @@ bool exportProject (const Song& project, const flpexport::Options& options, cons
                     const juce::File& renderDir, double sampleRate, const RenderFn& render,
                     const std::function<bool (double, const juce::String&)>& progress, Written& written, juce::String& error)
 {
-    // Freeze (round 190ay) is LYNX's own: FL gets the project unfrozen, every channel with its plugin
+    // Freeze (round 190ay) is YW's own: FL gets the project unfrozen, every channel with its plugin
     const auto song = freeze::thawed (project);
     const auto plan = flpexport::planRenders (song, options);
     Song out = song;
@@ -245,4 +245,4 @@ bool write (const Song& song, flpexport::Options options, const juce::File& targ
     }
     return true;
 }
-} // namespace lynx::flstudio
+} // namespace yw::flstudio

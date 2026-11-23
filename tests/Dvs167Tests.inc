@@ -8,7 +8,7 @@
 
 TEST (dvs167_types_and_state)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's list: Off → −1, Timecode CD (last) → 0, the others keep their index [DECOMP 0x733fe0]
     CHECK (dvs::stateOfCombo (0) == -1 && dvs::stateOfCombo (1) == 1 && dvs::stateOfCombo (7) == 7 && dvs::stateOfCombo (8) == 0);
     for (int c = 0; c < dvs::comboCount; ++c)
@@ -39,7 +39,7 @@ TEST (dvs167_types_and_state)
 
 TEST (dvs167_register_and_table)
 {
-    using namespace lynx;
+    using namespace yw;
     // the register's sequence: maximal length over the record (no repeat within it), Serato A
     const auto& f = *dvs::format (1);
     auto s = f.seed;
@@ -64,7 +64,7 @@ TEST (dvs167_register_and_table)
 
 TEST (dvs167_decoder_follows_the_record)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const int st : { 1, 2, 3, 4, 5 })
     {
         dvs::warm (st, true);
@@ -111,7 +111,7 @@ TEST (dvs167_decoder_follows_the_record)
 
 TEST (dvs167_scratcher_plays_the_record)
 {
-    using namespace lynx;
+    using namespace yw;
     // a sample whose frame k holds k / n (a ramp), so the output names the frame played
     const int n = 44100;
     std::vector<float> ramp ((std::size_t) n);
@@ -156,7 +156,7 @@ TEST (dvs167_scratcher_plays_the_record)
 
 TEST (dvs167_riaa_preamp)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's RIAA preamp [DECOMP 0x72cdf0]: y = 20 x − 20 z₁ x₋₁ + (p₁ + p₂) y₋₁ − p₁ p₂ y₋₂ (an impulse shows it)
     const double rate = 44100.0;
     const auto p1 = std::exp (-1.0 / (rate * 0.00318)), p2 = std::exp (-1.0 / (rate * 7.5e-5)), z1 = std::exp (-1.0 / (rate * 3.18e-4));
@@ -164,7 +164,7 @@ TEST (dvs167_riaa_preamp)
     std::vector<float> ramp (1000, 0.0f);
     eng.setSample (scratcher::prepareSample (ramp.data(), ramp.data(), ramp.size(), 44100.0));
     eng.setSampleRate (rate);
-    eng.setTimecode (6, true); // (a type LYNX does not decode: the preamp still runs, the platter stays silent)
+    eng.setTimecode (6, true); // (a type YW does not decode: the preamp still runs, the platter stays silent)
     std::vector<float> l (64, 0.0f), r (64, 0.0f);
     eng.process (l.data(), r.data(), 64);
     std::vector<float> x (64, 0.0f), y (64, 0.0f);

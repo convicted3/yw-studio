@@ -6,7 +6,7 @@
 // - FL's Edit › Undo backwards (UndoBackwardsAction, Ctrl+Alt+Z): one more step back each time.
 // - Settings › General › "Alternate undo mode" (AlternateUndoBox) swaps the two shortcuts: Ctrl+Z walks back through
 //   the history (classic undo) and Ctrl+Alt+Z is the undo/redo key.
-// - Redo (Ctrl+Y / Ctrl+Shift+Z, a LYNX extra) always redoes one step, in both modes.
+// - Redo (Ctrl+Y / Ctrl+Shift+Z, a YW extra) always redoes one step, in both modes.
 //
 // Round 190mz (issue #214): FL 2026 (26.1.7) ships with "Alternate undo mode" ON, so Ctrl+Z steps back through the
 // history out of the box (as in Live, BandLab and most programs). Evidence: the option's variable is a typed constant
@@ -14,8 +14,8 @@
 // HKCU\Software\Image-Line\Shared\General "Alternate undo mode" with the variable's own value as the default, and only
 // the check box (FUN_0135d5d0) writes it otherwise. Rounds 167k / 190b had read the form's check box (no "Checked" in
 // the DFM) as "off". Shots of FL's General › Undo history panel and its Edit menu in both modes:
-// /mnt/e/lynx-work/issue214_190mz/shots/ref.
-namespace lynx::undokeys
+// /mnt/e/yw-work/issue214_190mz/shots/ref.
+namespace yw::undokeys
 {
 enum class Step
 {
@@ -88,4 +88,4 @@ constexpr MenuItem redoMenuItem (bool alternateMode, bool liveStyle, int positio
     return { canRedo || liveStyle, canRedo, canRedo ? position + 1 : -1,
              liveStyle ? "edit.redo" : (alternateMode ? "edit.undoBackwards" : "edit.undo") };
 }
-} // namespace lynx::undokeys
+} // namespace yw::undokeys

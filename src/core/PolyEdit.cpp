@@ -10,7 +10,7 @@
 #include <list>
 #include <mutex>
 
-namespace lynx::polyedit
+namespace yw::polyedit
 {
 namespace
 {
@@ -386,7 +386,7 @@ bool analyse (const SampleData& source, const polyphonic::NoteEvidence* evidence
         return true;
     const auto mono = monoOf (source);
     auto params = polyphonic::Params::forSampleRate (source.sampleRate);
-    params.deferMasks = true; // (LYNX: the masks of the edited blocks are built when rendering)
+    params.deferMasks = true; // (YW: the masks of the edited blocks are built when rendering)
     params.slowReattacks = options.slowReattacks;
     const auto useEvidence = evidence != nullptr && ! evidence->empty();
     const auto detector = useEvidence ? options.detector : Detector::harmonic;
@@ -880,4 +880,4 @@ bool sameNotes (const Model& a, const Model& b)
     }
     return true;
 }
-} // namespace lynx::polyedit
+} // namespace yw::polyedit

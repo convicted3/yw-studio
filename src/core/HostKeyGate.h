@@ -5,11 +5,11 @@
 // Who owns a key pressed with the focus in a hosted plugin's view (round 181c / 187a, issue #96). A key the host takes
 // on its first key-down stays the host's until it is released: the plugin never sees the repeats or the key-up of a
 // press it didn't get, and it still gets the whole of any key the host left alone. The host's repeats run again, as
-// a held key repeats over LYNX's main window (FL's Space, arrows, +/-: one keyboard, whichever window has the focus).
-// Used for LYNX's shortcuts over a plugin and, with FL's per-plugin "Typing keyboard priority" button off, for the
+// a held key repeats over YW's main window (FL's Space, arrows, +/-: one keyboard, whichever window has the focus).
+// Used for YW's shortcuts over a plugin and, with FL's per-plugin "Typing keyboard priority" button off, for the
 // keys the host uses first (FL manual, Wrapper: "FL Studio uses keyboard shortcuts first then any unused shortcuts are
 // passed to the plugin").
-namespace lynx
+namespace yw
 {
 class HostKeyGate
 {
@@ -45,4 +45,4 @@ public:
 private:
     std::bitset<256> taken;
 };
-} // namespace lynx
+} // namespace yw

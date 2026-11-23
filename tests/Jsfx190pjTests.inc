@@ -12,7 +12,7 @@
 
 TEST (jsfx190pj_paths_and_ids)
 {
-    using namespace lynx::jsfx;
+    using namespace yw::jsfx;
     CHECK (normalise ("C:\\Users\\me\\JSFX\\..\\JSFX\\a.jsfx") == "C:/Users/me/JSFX/a.jsfx");
     CHECK (normalise ("/home/me//JSFX/./Utility/") == "/home/me/JSFX/Utility");
     CHECK (normalise ("//server/share/x") == "//server/share/x");
@@ -21,9 +21,9 @@ TEST (jsfx190pj_paths_and_ids)
     CHECK (! isInside ("/home/me/JSFX/../secret.txt", "/home/me/JSFX", false)); // (the ".." is resolved first)
     CHECK (isInside ("c:/users/ME/jsfx/a.jsfx", "C:\\Users\\me\\JSFX", true));
     CHECK (! isInside ("c:/users/ME/jsfx/a.jsfx", "C:\\Users\\me\\JSFX", false));
-    const std::vector<std::string> roots { "/home/me/Documents/LYNX/JSFX", "/home/me/.config/LYNX/JSFX pack", "/home/me/.config/REAPER/Effects",
+    const std::vector<std::string> roots { "/home/me/Documents/YW/JSFX", "/home/me/.config/YW/JSFX pack", "/home/me/.config/REAPER/Effects",
                                            "/home/me/.config/REAPER/Effects/Saike" };
-    auto at = locate ("/home/me/.config/LYNX/JSFX pack/chokehold/Clipper/soft_clipper.jsfx", roots, false);
+    auto at = locate ("/home/me/.config/YW/JSFX pack/chokehold/Clipper/soft_clipper.jsfx", roots, false);
     CHECK (at.root == 1 && at.relative == "chokehold/Clipper/soft_clipper.jsfx");
     at = locate ("/home/me/.config/REAPER/Effects/Saike/Tight_Compressor.jsfx", roots, false); // (the deepest root)
     CHECK (at.root == 3 && at.relative == "Tight_Compressor.jsfx");
@@ -37,7 +37,7 @@ TEST (jsfx190pj_paths_and_ids)
 
 TEST (jsfx190pj_headers_and_roles)
 {
-    using namespace lynx::jsfx;
+    using namespace yw::jsfx;
     CHECK (looksLikeJsfx ("desc:Volume\nslider1:v=0<-12,12>Gain\n"));
     CHECK (looksLikeJsfx ("// This effect Copyright (C) 2004 and later Cockos Incorporated\n// License: LGPL\n\ndesc: 3-Band EQ\n"));
     CHECK (looksLikeJsfx ("\xef\xbb\xbf" "desc:BOM first\n"));
@@ -55,7 +55,7 @@ TEST (jsfx190pj_headers_and_roles)
 
 TEST (jsfx190pj_saved_state)
 {
-    using namespace lynx::jsfx;
+    using namespace yw::jsfx;
     SavedState s;
     s.relative = "chokehold/Clipper/soft_clipper.jsfx";
     s.source = 0x0123456789abcdefull;
@@ -84,16 +84,16 @@ TEST (jsfx190pj_bundled_pack)
     // every embedded file inflates to the bytes of resources/jsfx (the pack is MIT only: owner decision 2)
     int scripts = 0;
     bool same = true, licence = false;
-    for (const auto& f : lynx::jsfxpack::files)
+    for (const auto& f : yw::jsfxpack::files)
     {
-        const auto data = lynx::inflateZlib (f.zlib, f.zlibSize);
+        const auto data = yw::inflateZlib (f.zlib, f.zlibSize);
         CHECK (data.has_value() && data->size() == f.size);
         const auto disk = i18ntest::readFile (std::string ("resources/jsfx/") + f.path);
         same = same && data.has_value() && disk.size() == data->size() && std::equal (disk.begin(), disk.end(), (const char*) data->data());
         const std::string path (f.path);
         scripts += path.size() > 5 && path.substr (path.size() - 5) == ".jsfx" ? 1 : 0;
         licence = licence || path == "chokehold/LICENSE.txt";
-        // no @gfx scripts before LYNX draws @gfx (stage 3), and no REAPER stock effects
+        // no @gfx scripts before YW draws @gfx (stage 3), and no REAPER stock effects
         if (data && path.find (".jsfx") != std::string::npos)
         {
             const std::string text ((const char*) data->data(), data->size());
@@ -106,7 +106,7 @@ TEST (jsfx190pj_bundled_pack)
     CHECK (scripts == 31);
 }
 
-// the runtime LYNX links (third_party/ysfx, with LYNX's file filter unset here) renders a bundled script as upstream
+// the runtime YW links (third_party/ysfx, with YW's file filter unset here) renders a bundled script as upstream
 // ysfx does: tools/jsfx_ref.cpp's input and slider schedule, every 61st frame against its output
 TEST (jsfx190pj_runtime_matches_upstream)
 {
@@ -149,15 +149,15 @@ TEST (jsfx190pj_runtime_matches_upstream)
         float* outs[2] = { l.data(), r.data() };
         ysfx_process_float (fx, ins, outs, 2, 2, 512);
         for (int i = 0; i < 512; ++i, ++frame)
-            if (frame % 61 == 0 && point < std::size (lynx::jsfxref::softClipper))
+            if (frame % 61 == 0 && point < std::size (yw::jsfxref::softClipper))
             {
-                worst = std::max ({ worst, std::abs (l[(std::size_t) i] - lynx::jsfxref::softClipper[point][0]),
-                                    std::abs (r[(std::size_t) i] - lynx::jsfxref::softClipper[point][1]) });
+                worst = std::max ({ worst, std::abs (l[(std::size_t) i] - yw::jsfxref::softClipper[point][0]),
+                                    std::abs (r[(std::size_t) i] - yw::jsfxref::softClipper[point][1]) });
                 ++point;
             }
     }
     ysfx_free (fx);
-    CHECK (point == std::size (lynx::jsfxref::softClipper));
+    CHECK (point == std::size (yw::jsfxref::softClipper));
     CHECK (worst <= 1.0e-5f);
     std::printf ("  jsfx190pj: soft_clipper against upstream ysfx, %d points, max |diff| %.3g\n", (int) point, (double) worst);
 }

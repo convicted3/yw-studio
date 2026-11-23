@@ -8,7 +8,7 @@
 #include "core/RackOps.h"
 #include "core/SessionIds.h"
 
-namespace lynx::crosspaste
+namespace yw::crosspaste
 {
 namespace
 {
@@ -427,4 +427,4 @@ std::vector<int> importChannels (Song& song, const Song& fragment, int at)
                 song.channels[(std::size_t) added[(std::size_t) i]].layer.children.push_back (added[(std::size_t) k]);
     return added;
 }
-} // namespace lynx::crosspaste
+} // namespace yw::crosspaste

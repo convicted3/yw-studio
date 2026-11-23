@@ -55,7 +55,7 @@
 #include "engine/StreamPrefetcher.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 class AudioLogger;
 
@@ -70,7 +70,7 @@ FlPathRoots findFlStudioRoots();
 // The user's FL installation as the native FL engines read it (round 142): its folders and this PC's file system
 const natives::FlAccess& flStudioAccess(); // (found once per session)
 
-// Start-up trace hook (round 165i): Main's LYNX_TRACE_STARTUP log receives the engine's own steps (null: off)
+// Start-up trace hook (round 165i): Main's YW_TRACE_STARTUP log receives the engine's own steps (null: off)
 inline void (*startupMark) (const char* step) = nullptr;
 
 class AudioEngine final : private juce::AudioIODeviceCallback,
@@ -80,7 +80,7 @@ class AudioEngine final : private juce::AudioIODeviceCallback,
 {
 public:
     // workerThreads: extra audio threads (< 0 = by the CPU's cores). An engine that only serves an editor needs none.
-    // userPluginList = false: the plugin host neither reads nor writes LYNX's plugin list and settings, nor reads FL's
+    // userPluginList = false: the plugin host neither reads nor writes YW's plugin list and settings, nor reads FL's
     // plugin database in the background (round 180b: an editor inside another host must not, and its close must not
     // wait for that reader)
     // deferDeviceOpen (round 190go, the app's start): the engine is ready to play but opens no device, MIDI port or
@@ -96,10 +96,10 @@ public:
     void openMidiDevices();
     bool isAudioDeviceOpenPending() const noexcept { return devicePending; }
     // Windows (round 190go): the ASIO device of the last session is made and opened on a worker thread now (the
-    // driver itself on JUCE's ASIO thread, cmake/LynxPatchJuce.cmake fix 29); openAudioDevice() then takes it. Making
+    // driver itself on JUCE's ASIO thread, cmake/YwPatchJuce.cmake fix 29); openAudioDevice() then takes it. Making
     // and opening it took ~0.8 s of the start's critical path. Elsewhere, or for another device type: nothing.
     static void prewarmAudioDevice();
-    // Round 180b (LYNX's plugins in another host): this engine plays nothing, it serves an editor whose audio runs in the
+    // Round 180b (YW's plugins in another host): this engine plays nothing, it serves an editor whose audio runs in the
     // plugin's own renderer. The editor's displays read that renderer's times and tap, and its running effect.
     void setExternalRuntime (ProcessTimes* times, std::function<std::shared_ptr<Effect>()> effect)
     {
@@ -152,7 +152,7 @@ public:
         return std::find (standInInserts.begin(), standInInserts.end(), track) != standInInserts.end();
     }
 
-    // Freeze (round 190ay, core/StandIns.h lynx::freeze): a frozen channel plays its rendered audio and its instrument is
+    // Freeze (round 190ay, core/StandIns.h yw::freeze): a frozen channel plays its rendered audio and its instrument is
     // not loaded. frozenAudioMissing: its audio is not on disk (as of the last publish), so it plays its instrument
     // instead — never silence. freezeOutOfDate: the notes, tempo or arrangement it was rendered from changed since
     // (worked out on demand, once per edit of the song). Where the audio goes: next to the project's recordings. UI thread.
@@ -179,7 +179,7 @@ public:
     const juce::StringArray& getPluginsWithoutState() const noexcept { return pluginsWithoutState; }
     // What the last imported .flp converted, approximated or left out.
     const FlpImportReport& getImportReport() const noexcept { return importReport; }
-    // The last imported .flp's plugins that were not found, with what uses them and what LYNX put in their place.
+    // The last imported .flp's plugins that were not found, with what uses them and what YW put in their place.
     const std::vector<MissingPlugin>& getMissingPluginDetails() const noexcept { return missingPluginDetails; }
 
     // Live instances (to open the plugin window). nullptr if not a plugin.
@@ -266,7 +266,7 @@ public:
     // plugin's "Notify about rendering mode" option. Message thread or the render thread, while nothing else edits.
     void forEachHostedPlugin (const std::function<void (juce::AudioPluginInstance&, bool notifyRender)>& visit) const;
     // The render's plugin warm-up (renderOffline, round 155): silent discarded blocks until the hosted plugins settle,
-    // then a new PDC plan if a latency changed and LYNX's own units reset. Returns blocks == 0 when the song has no
+    // then a new PDC plan if a latency changed and YW's own units reset. Returns blocks == 0 when the song has no
     // hosted plugin. `latency` receives the delay compensation's total afterwards.
     warmup::Result warmUpPlugins (const warmup::Settings& settings, double sampleRate, int blockSize,
                                   const std::function<bool (double)>& progress, int& latency);
@@ -334,7 +334,7 @@ public:
         // Ctrl+P turns a 2-bar count-in off and back on at 2 bars. A count-in that is on sets it.
         int countInLength = 1;
         bool waitForInput = false;      // playback starts at the first played note
-        // FL's Wait for input right-click (manual "Toolbar panels", round 190ld): "Only when recording" (on = LYNX's
+        // FL's Wait for input right-click (manual "Toolbar panels", round 190ld): "Only when recording" (on = YW's
         // behaviour so far: Play alone never waits) and "Respect recording filter" (only input the recording filter takes
         // starts it: notes start it only while the filter records notes)
         bool waitOnlyWhenRecording = true;
@@ -348,11 +348,11 @@ public:
         bool askWhatToRecord = true;    // the record button asks first ("What would you like to record?")
         // FL's record menu "Options" (REA round 134): arming recording also starts playback
         bool startsPlayback = false;
-        // LYNX's own "Disarm the inserts when recording stops" (record menu and Mixer › Disk recording; issue #16): the
+        // YW's own "Disarm the inserts when recording stops" (record menu and Mixer › Disk recording; issue #16): the
         // armed inserts are disarmed when a take stops. FL has no such option (round 166e measured: neither its
         // "Disarm on stop" nor the mixer's "Auto-unarm" disarms the inserts after a live take).
         bool disarmOnStop = false;
-        // LYNX's "Low latency while recording" (round 190aq, core/LowLatency.h; FL has no such switch): while an insert
+        // YW's "Low latency while recording" (round 190aq, core/LowLatency.h; FL has no such switch): while an insert
         // with an audio input is armed or monitored "On", the latency-adding effects on its path to the Master are
         // bypassed and the PDC plan is made without them; they return when it is disarmed. What is recorded and the
         // saved project never change. Off by default.
@@ -403,9 +403,9 @@ public:
         // FL's "Loop record" (toolbar LoopRecordBtn / Options, round 170e3 [DECOMP 0xf1e2a0 toggles a global that
         // FUN_011d4800 reads: off while recording, the play end becomes "never", so playback runs on]): on, Song mode
         // recording loops the loop region (one take per pass); off, it plays straight through the region and the notes
-        // and audio stay where they were played. Pattern mode always loops the pattern in LYNX.
+        // and audio stay where they were played. Pattern mode always loops the pattern in YW.
         bool loopRecord = true;
-        // LYNX's own option (off = FL's result, REA round 177c): after loop recording only the last pass plays, on top
+        // YW's own option (off = FL's result, REA round 177c): after loop recording only the last pass plays, on top
         // of the other passes (muted, newest first, folded). Round 163's behaviour.
         bool lastLoopPassPlays = false;
         // round 170d (the Busy Works video: the chord on the downbeat after the count-in was lost; Cubase's "MIDI Record
@@ -437,7 +437,7 @@ public:
     double recordTickFor (double eventMs) const noexcept;
     // The count-in catch of the take being counted in / recorded (round 170d; UI thread).
     const CountInCatch& getCountInCatch() const noexcept { return takeCatch; }
-    // Record › Capture MIDI (round 170d, LYNX's own): the last phrase played without recording into the current pattern
+    // Record › Capture MIDI (round 170d, YW's own): the last phrase played without recording into the current pattern
     // (core/Recorder.h captureMidi), one undo step. UI thread.
     CaptureResult captureMidi();
     // Round 190ef / 190em (the Clip-launch layout with the clip grid shown, as Live 12.4.16 captures into its Session
@@ -449,7 +449,7 @@ public:
     //     (session::phraseTempo).
     // `placed`: the row written (−1: nothing captured). The notes play on the track's instrument channel.
     CaptureResult captureMidiToSlot (int track, int scene, int& placed, bool& into);
-    // Record › Capture automation (round 190op, research190oe P7; LYNX extra after Live 13's announced Capture Automation):
+    // Record › Capture automation (round 190op, research190oe P7; YW extra after Live 13's announced Capture Automation):
     // the knob / fader / button moves made while playing without recording (core/CaptureAutomation.h, the last two
     // minutes) become automation — the last continuous gesture of each moved control, in the layout's form: the Pattern
     // layout an automation clip (a lane while lanes are on), Clip-launch the Arrangement lane or, for a control moved
@@ -480,7 +480,7 @@ public:
     void previewFile (const juce::File& file, double startFraction, bool full);
     void setFullSamplePreview (bool on) noexcept { fullSamplePreview = on; }
     bool isFullSamplePreview() const noexcept { return fullSamplePreview; }
-    // The Browser's "Preview in time" (LYNX extra, round 190aq, core/PreviewTempo.h; off by default): a previewed loop
+    // The Browser's "Preview in time" (YW extra, round 190aq, core/PreviewTempo.h; off by default): a previewed loop
     // plays stretched to the project's tempo and, while the transport plays, starts on the next beat. A file with no
     // usable tempo plays as it always did. The stretch is made on a worker thread: previewFile returns at once and the
     // sound starts when it is ready. UI thread.
@@ -527,7 +527,7 @@ public:
     // GitHub #198 (round 190ks): a note played by clicking an instrument's own pads or keys (FPC's pads, DirectWave's and
     // Slicex's keyboards): heard on the channel and recorded while recording, as a played note — FL's host entry for a
     // plugin note "as if the user played it" (Dispatcher opcode 0x38 → the MIDI / typing keyboard's record-and-play
-    // function, REA rea/REA-plugin-midiout-record.md). FL's own FPC / Slicex clicks only play (a LYNX extra here, the
+    // function, REA rea/REA-plugin-midiout-record.md). FL's own FPC / Slicex clicks only play (a YW extra here, the
     // issue's request). Never moved by the input scale snap (a pad's key is the pad). UI thread.
     void sendGuiNote (int channel, int key, float velocity, bool on);
     // The keys held right now on MIDI inputs and the typing piano (as played, before the scale snap), ascending; for
@@ -631,7 +631,7 @@ public:
     // device's MIDI settings (on / off, MIDI channel, what it plays) apply as to hardware. Message thread.
     void injectMidiInput (const juce::MidiMessage& message, const juce::String& deviceName) { handleMidiInput (nullptr, deviceName.toStdString(), message); }
     static juce::File defaultRecordingFolder();
-    // The take files written since LYNX started (or since forgetRecordings), oldest first. UI thread.
+    // The take files written since YW started (or since forgetRecordings), oldest first. UI thread.
     const std::vector<juce::File>& getSessionRecordings() const noexcept { return sessionRecordings; }
     void forgetRecordings (const std::vector<juce::File>& files);
 
@@ -705,14 +705,14 @@ public:
     bool hasAudioInput() const;
     // Closes the device input again when nothing needs it (no insert takes an input, no armed recording, no hardware
     // insert returning from it): a capture the Audio editor opened for one recording no longer keeps the input — and
-    // Windows' microphone-in-use icon — on until LYNX quits, as in FL (round 165q). The input device's name is kept
+    // Windows' microphone-in-use icon — on until YW quits, as in FL (round 165q). The input device's name is kept
     // for the next openAudioInput(). UI thread.
     void releaseAudioInputIfUnused();
     bool audioInputNeeded() const;
     // Sets an insert's input source (undoable; -1 = none) and opens the device input when needed.
     void setInsertInput (int track, int channel, bool stereo);
     void setInsertMonitor (int track, InputMonitor mode);
-    // FL's "Record" position of an insert and LYNX's "also record the dry input" (round 168x, issue #41); undoable
+    // FL's "Record" position of an insert and YW's "also record the dry input" (round 168x, issue #41); undoable
     void setInsertRecordSource (int track, RecordSource source);
     void setInsertRecordDryToo (int track, bool on);
 
@@ -919,13 +919,13 @@ public:
     // Round 190jl (engine/MidiOutPortTest.cpp): MIDI Out channels to the hardware outputs on their port, end to end
     static juce::String midiOutPortSelfTest();
     // Round 190ks (GitHub #198): a take records what a hosted plugin plays from its window (src/engine/PadRecordTest.cpp,
-    // `LYNX --padrectest "<YW Test Pads.vst3>" report.txt`)
+    // `YW --padrectest "<YW Test Pads.vst3>" report.txt`)
     static juce::String padRecordSelfTest (const juce::String& pluginPath);
     // Round 190ks: what 8 identical SoundFont / Sampler channels cost in memory (src/engine/ShareMemoryTest.cpp,
-    // `LYNX --sharetest <folder> sf2-same|sf2-copies|wav-same|wav-copies report.txt`)
+    // `YW --sharetest <folder> sf2-same|sf2-copies|wav-same|wav-copies report.txt`)
     static juce::String shareMemorySelfTest (const juce::File& folder, const juce::String& which);
     const prefs::MidiPrefs& getMidiPrefs() const noexcept { return midiPrefs; }
-    // Applies them (and saves them in %APPDATA%\LYNX\midi-settings.txt when `save`).
+    // Applies them (and saves them in %APPDATA%\YW\midi-settings.txt when `save`).
     void setMidiPrefs (const prefs::MidiPrefs& prefs, bool save = true);
     // master sync out / external clock in / all notes off (round 165f)
     MidiSyncIo& getMidiSync() noexcept { return midiSync; }
@@ -943,12 +943,12 @@ public:
     // saved unchanged; a temporary state (not saved, exports play at the normal speed)
     void setHalfSpeed (bool on) noexcept { transport.playSpeed.store (on ? 0.5 : 1.0, std::memory_order_relaxed); }
     bool isHalfSpeed() const noexcept { return transport.playSpeed.load (std::memory_order_relaxed) != 1.0; }
-    // MIDI controller profiles (round 190aw, core/ControllerSession.h): the devices that run one, and LYNX as they see
+    // MIDI controller profiles (round 190aw, core/ControllerSession.h): the devices that run one, and YW as they see
     // it (the main window's bridge; null when it closes).
     ControllerIo& getControllers() noexcept { return controllerIo; }
     const ControllerIo& getControllers() const noexcept { return controllerIo; }
     void setControllerSurface (controller::Surface* surface);
-    // The user's controller profiles (*.lynxctl).
+    // The user's controller profiles (*.ywctl).
     static juce::File controllerProfilesFolder();
     // Reads the profiles again (Settings › MIDI "Refresh device list") and moves the devices to them.
     void reloadControllerProfiles();
@@ -986,7 +986,7 @@ public:
     int switchPluginOn (const std::string& id);
     bool channelPluginOff (int channel) const noexcept { return std::find (channelsOff.begin(), channelsOff.end(), channel) != channelsOff.end(); }
     bool insertPluginOff (int track) const noexcept { return std::find (insertsOff.begin(), insertsOff.end(), track) != insertsOff.end(); }
-    // Round 190op (P4, LYNX extra): Deactivate. A deactivated channel / insert (by hand, or one that plays only into a
+    // Round 190op (P4, YW extra): Deactivate. A deactivated channel / insert (by hand, or one that plays only into a
     // deactivated insert: core/TrackStates.h deactivate::effective) is not loaded and carries silence, as of the last
     // publish. setDeactivated switches the given channels and inserts off or on again, one undo step; switching off first
     // keeps what their running plugins hold (capturePluginStates), so Reactivate loads the same state.
@@ -1110,7 +1110,7 @@ public:
                         bool asEdit = false);
 
     // Round 190pe (P11, File › Import › Tracks from another project): another project read into a Song of its own, by the
-    // importer of its format (.lynx, .flp, .als, .flm, .band, .blx, DAWproject, modules), its plugins found or
+    // importer of its format (.yw, .flp, .als, .flm, .band, .blx, DAWproject, modules), its plugins found or
     // substituted as an import does. The open song is not touched. `decoded` keeps the decoded samples until the edit
     // that brings the tracks in has built the rack. Message thread.
     struct OtherProject
@@ -1315,7 +1315,7 @@ public:
     // Settings › Audio "Driver settings…": shows the device's own panel (ASIO) and, when the driver says its settings
     // changed, reopens it with them. The device object is replaced (its driver re-read), so the old pointer is never
     // used after the close (0.1.17 / 0.1.18 called the deleted device: issues #12 and #13), and the buffer size the
-    // panel chose is kept (the reopen asks for the driver's preferred size instead of the size LYNX had before, which
+    // panel chose is kept (the reopen asks for the driver's preferred size instead of the size YW had before, which
     // silently undid an ASIO4ALL / FL ASIO buffer change). Returns true when the device was reopened. Message thread.
     static bool showDriverPanel (juce::AudioDeviceManager& devices);
     // --selftest "driver_panel": showDriverPanel with a fake device whose panel changes its buffer (and one whose panel
@@ -1323,7 +1323,7 @@ public:
     static juce::String driverPanelSelfTest();
     // --selftest "device_change" / --devicechangetest (issue #134, engine/DeviceChangeTest.cpp): a playing project while
     // the output device, its sample rate and its buffer size change, on stand-in devices with real callback threads.
-    // "OK (...)" or "ERROR ...". `everyUnit`: every instrument and effect LYNX can make here (else a handful);
+    // "OK (...)" or "ERROR ...". `everyUnit`: every instrument and effect YW can make here (else a handful);
     // `pluginFiles`: hosted plugins to add; `log` receives a line per change.
     static juce::String deviceChangeSelfTest (int switches, bool everyUnit, const juce::StringArray& pluginFiles = {},
                                               const std::function<void (const juce::String&)>& log = {});
@@ -1333,8 +1333,8 @@ public:
     // compensation's trim on and off. "OK (...)" or "ERROR ...". `log` receives a line per check.
     static juce::String exportParitySelfTest (const std::function<void (const juce::String&)>& log = {});
     // Round 190jb: exports with the live engine's plugin instances (engine/Exporter.h LiveExportHold), on a stand-in device:
-    // LYNX's own units render the same with and without the hold; a hosted plugin whose sound depends on its instance
-    // (`plugins`: VST3 / CLAP files, e.g. the LYNX Test Synth with LYNX_TEST_SYNTH_SEED=1, Surge XT) exports what
+    // YW's own units render the same with and without the hold; a hosted plugin whose sound depends on its instance
+    // (`plugins`: VST3 / CLAP files, e.g. the YW Test Synth with YW_TEST_SYNTH_SEED=1, Surge XT) exports what
     // playback played; playback after the export plays as before it; the plugins get their state and rate back.
     static juce::String exportLiveSelfTest (const std::function<void (const juce::String&)>& log = {}, const juce::StringArray& plugins = {});
     // Self-tests (round 190hn, engine/ShortExportTest.cpp): an engine made without a device plays through a stand-in one
@@ -1342,7 +1342,7 @@ public:
     // empty = opened.
     juce::String openStandInDevice (double sampleRate, int blockSize);
     void closeStandInDevice();
-    // %APPDATA%\LYNX\audio-glitches.log: a line each time callbacks run over their deadline (at most every 2 s).
+    // %APPDATA%\YW\audio-glitches.log: a line each time callbacks run over their deadline (at most every 2 s).
     static juce::File glitchLogFile();
 
     // Total latency compensated by PDC (at the Master output), in samples.
@@ -1463,7 +1463,7 @@ private:
     void adoptPrepared (PreparedFlp& prepared); // the plugins of a prepared import found / substituted (message thread)
 
     std::unique_ptr<WorkerPool> workers; // extra renderer threads (before the graph, which uses them)
-    LynxDeviceManager deviceManager; // (JUCE's, taking the prewarmed ASIO device: round 190go)
+    YwDeviceManager deviceManager; // (JUCE's, taking the prewarmed ASIO device: round 190go)
     juce::AudioProcessorGraph graph;
     juce::AudioProcessorPlayer player;
     Transport transport;
@@ -1663,8 +1663,8 @@ private:
     renderahead::Targets renderAheadTargets; // (round 190gq) the channels played live, for the render-ahead's partition
     std::atomic<double> blockTimeMs { 0.0 };         // when positionTicks was last updated
     std::atomic<double> blockDurationMs { 0.0 };     // the last block's length (round 174e: playheadAdvanceTicks)
-    // round 174e: the device's callback thread (Windows): its priority when first seen and after LYNX raised it to the
-    // workers' MMCSS "Pro Audio" class (a driver's own thread at normal priority competed with the UI; LYNX_DEVICE_BOOST=0:
+    // round 174e: the device's callback thread (Windows): its priority when first seen and after YW raised it to the
+    // workers' MMCSS "Pro Audio" class (a driver's own thread at normal priority competed with the UI; YW_DEVICE_BOOST=0:
     // left as the driver made it). Shown in the real-time report.
     std::atomic<unsigned long> deviceThreadId { 0 };
     std::atomic<int> deviceThreadPriorityBefore { -100 }, deviceThreadPriorityAfter { -100 };
@@ -1867,7 +1867,7 @@ private:
     std::array<int, 2> pingOutputs { -1, -1 };     // callback output slots the click goes to
     int pingInput = -1;                            // callback input slot listened to
     RecordingSettings recordingSettings;
-    juce::File journalFor (const juce::File& wav) const { return wav.withFileExtension ("wav.lynxrec"); }
+    juce::File journalFor (const juce::File& wav) const { return wav.withFileExtension ("wav.ywrec"); }
     void writeJournals();
     bool journalsWritten = false;
     MeterBank meters;
@@ -1997,4 +1997,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioEngine)
 };
-} // namespace lynx
+} // namespace yw

@@ -31,7 +31,7 @@
 #include "core/MiniSynth.h"
 #include "core/PocketSuperSaw.h"
 #include "core/FmSynth.h"
-#include "core/physmod/LynxModel.h"
+#include "core/physmod/YwModel.h"
 #include "core/WavetableSynth.h"
 #include "core/Braid.h"
 #include "core/SimSynth.h"
@@ -65,7 +65,7 @@
 #include <cmath>
 #include <complex>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -337,7 +337,7 @@ private:
             case InstrumentKind::tetra:
             case InstrumentKind::helix:
             case InstrumentKind::braid:
-            case InstrumentKind::lynxModel:
+            case InstrumentKind::ywModel:
             case InstrumentKind::drumaxx:
             case InstrumentKind::slayer:
             case InstrumentKind::fruitydance:
@@ -565,7 +565,7 @@ struct SvfCoefficients
     int mode = 0;
     // 4-pole ladder (Toxic Biohazard, REA_rodada26 §2): f = 2fc/fs, k = 3.6f − 1.6f² − 1, p = (k + 1)/2, feedback
     // res·R(u) with u = (log2 fc − 5)/9; stages s = (x + x_prev)·p − k·s_prev; input saturated by
-    // v·(1 − 3a + 4a² − 2a³), a = min(|v|/15, 1). (FL builds its table for 44.1 kHz; LYNX keeps fc in Hz at any rate.)
+    // v·(1 − 3a + 4a² − 2a³), a = min(|v|/15, 1). (FL builds its table for 44.1 kHz; YW keeps fc in Hz at any rate.)
     bool ladder = false;
     float lp = 0.0f, lk = 0.0f, feedback = 0.0f;
 
@@ -753,81 +753,81 @@ private:
 // vector types lower double compares lane by lane through the integer unit on SSE2: slower than the voice loop.)
 namespace lanes
 {
-#define LYNX_LANES_INLINE [[gnu::always_inline]] inline
+#define YW_LANES_INLINE [[gnu::always_inline]] inline
 struct I4
 {
     union { __m128i v; std::int32_t e[4]; };
-    LYNX_LANES_INLINE std::int32_t& operator[] (int j) noexcept { return e[j]; }
-    LYNX_LANES_INLINE std::int32_t operator[] (int j) const noexcept { return e[j]; }
+    YW_LANES_INLINE std::int32_t& operator[] (int j) noexcept { return e[j]; }
+    YW_LANES_INLINE std::int32_t operator[] (int j) const noexcept { return e[j]; }
 };
 struct F4
 {
     union { __m128 v; float e[4]; };
-    LYNX_LANES_INLINE float& operator[] (int j) noexcept { return e[j]; }
-    LYNX_LANES_INLINE float operator[] (int j) const noexcept { return e[j]; }
+    YW_LANES_INLINE float& operator[] (int j) noexcept { return e[j]; }
+    YW_LANES_INLINE float operator[] (int j) const noexcept { return e[j]; }
 };
 struct D4 // (also the mask of a double compare: each lane all ones or all zeros)
 {
     union { __m128d p[2]; double e[4]; };
-    LYNX_LANES_INLINE double& operator[] (int j) noexcept { return e[j]; }
-    LYNX_LANES_INLINE double operator[] (int j) const noexcept { return e[j]; }
+    YW_LANES_INLINE double& operator[] (int j) noexcept { return e[j]; }
+    YW_LANES_INLINE double operator[] (int j) const noexcept { return e[j]; }
 };
 using L4 = D4;
 
-LYNX_LANES_INLINE F4 mk (__m128 v) noexcept { F4 r; r.v = v; return r; }
-LYNX_LANES_INLINE I4 mk (__m128i v) noexcept { I4 r; r.v = v; return r; }
-LYNX_LANES_INLINE D4 mk (__m128d lo, __m128d hi) noexcept { D4 r; r.p[0] = lo; r.p[1] = hi; return r; }
-LYNX_LANES_INLINE F4 f4 (float x) noexcept { return mk (_mm_set1_ps (x)); }
-LYNX_LANES_INLINE D4 d4 (double x) noexcept { return mk (_mm_set1_pd (x), _mm_set1_pd (x)); }
-LYNX_LANES_INLINE I4 i4 (std::int32_t x) noexcept { return mk (_mm_set1_epi32 (x)); }
+YW_LANES_INLINE F4 mk (__m128 v) noexcept { F4 r; r.v = v; return r; }
+YW_LANES_INLINE I4 mk (__m128i v) noexcept { I4 r; r.v = v; return r; }
+YW_LANES_INLINE D4 mk (__m128d lo, __m128d hi) noexcept { D4 r; r.p[0] = lo; r.p[1] = hi; return r; }
+YW_LANES_INLINE F4 f4 (float x) noexcept { return mk (_mm_set1_ps (x)); }
+YW_LANES_INLINE D4 d4 (double x) noexcept { return mk (_mm_set1_pd (x), _mm_set1_pd (x)); }
+YW_LANES_INLINE I4 i4 (std::int32_t x) noexcept { return mk (_mm_set1_epi32 (x)); }
 
-LYNX_LANES_INLINE F4 operator+ (F4 a, F4 b) noexcept { return mk (_mm_add_ps (a.v, b.v)); }
-LYNX_LANES_INLINE F4 operator- (F4 a, F4 b) noexcept { return mk (_mm_sub_ps (a.v, b.v)); }
-LYNX_LANES_INLINE F4 operator* (F4 a, F4 b) noexcept { return mk (_mm_mul_ps (a.v, b.v)); }
-LYNX_LANES_INLINE F4& operator+= (F4& a, F4 b) noexcept { return a = a + b; }
-LYNX_LANES_INLINE F4& operator-= (F4& a, F4 b) noexcept { return a = a - b; }
-LYNX_LANES_INLINE F4& operator*= (F4& a, F4 b) noexcept { return a = a * b; }
-LYNX_LANES_INLINE I4 operator< (F4 a, F4 b) noexcept { return mk (_mm_castps_si128 (_mm_cmplt_ps (a.v, b.v))); }
-LYNX_LANES_INLINE I4 operator>= (F4 a, F4 b) noexcept { return mk (_mm_castps_si128 (_mm_cmpge_ps (a.v, b.v))); }
+YW_LANES_INLINE F4 operator+ (F4 a, F4 b) noexcept { return mk (_mm_add_ps (a.v, b.v)); }
+YW_LANES_INLINE F4 operator- (F4 a, F4 b) noexcept { return mk (_mm_sub_ps (a.v, b.v)); }
+YW_LANES_INLINE F4 operator* (F4 a, F4 b) noexcept { return mk (_mm_mul_ps (a.v, b.v)); }
+YW_LANES_INLINE F4& operator+= (F4& a, F4 b) noexcept { return a = a + b; }
+YW_LANES_INLINE F4& operator-= (F4& a, F4 b) noexcept { return a = a - b; }
+YW_LANES_INLINE F4& operator*= (F4& a, F4 b) noexcept { return a = a * b; }
+YW_LANES_INLINE I4 operator< (F4 a, F4 b) noexcept { return mk (_mm_castps_si128 (_mm_cmplt_ps (a.v, b.v))); }
+YW_LANES_INLINE I4 operator>= (F4 a, F4 b) noexcept { return mk (_mm_castps_si128 (_mm_cmpge_ps (a.v, b.v))); }
 
-LYNX_LANES_INLINE D4 operator+ (D4 a, D4 b) noexcept { return mk (_mm_add_pd (a.p[0], b.p[0]), _mm_add_pd (a.p[1], b.p[1])); }
-LYNX_LANES_INLINE D4 operator- (D4 a, D4 b) noexcept { return mk (_mm_sub_pd (a.p[0], b.p[0]), _mm_sub_pd (a.p[1], b.p[1])); }
-LYNX_LANES_INLINE D4 operator* (D4 a, D4 b) noexcept { return mk (_mm_mul_pd (a.p[0], b.p[0]), _mm_mul_pd (a.p[1], b.p[1])); }
-LYNX_LANES_INLINE D4 operator/ (D4 a, D4 b) noexcept { return mk (_mm_div_pd (a.p[0], b.p[0]), _mm_div_pd (a.p[1], b.p[1])); }
-LYNX_LANES_INLINE D4& operator+= (D4& a, D4 b) noexcept { return a = a + b; }
-LYNX_LANES_INLINE L4 operator< (D4 a, D4 b) noexcept { return mk (_mm_cmplt_pd (a.p[0], b.p[0]), _mm_cmplt_pd (a.p[1], b.p[1])); }
-LYNX_LANES_INLINE L4 operator> (D4 a, D4 b) noexcept { return mk (_mm_cmpgt_pd (a.p[0], b.p[0]), _mm_cmpgt_pd (a.p[1], b.p[1])); }
-LYNX_LANES_INLINE L4 operator>= (D4 a, D4 b) noexcept { return mk (_mm_cmpge_pd (a.p[0], b.p[0]), _mm_cmpge_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE D4 operator+ (D4 a, D4 b) noexcept { return mk (_mm_add_pd (a.p[0], b.p[0]), _mm_add_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE D4 operator- (D4 a, D4 b) noexcept { return mk (_mm_sub_pd (a.p[0], b.p[0]), _mm_sub_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE D4 operator* (D4 a, D4 b) noexcept { return mk (_mm_mul_pd (a.p[0], b.p[0]), _mm_mul_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE D4 operator/ (D4 a, D4 b) noexcept { return mk (_mm_div_pd (a.p[0], b.p[0]), _mm_div_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE D4& operator+= (D4& a, D4 b) noexcept { return a = a + b; }
+YW_LANES_INLINE L4 operator< (D4 a, D4 b) noexcept { return mk (_mm_cmplt_pd (a.p[0], b.p[0]), _mm_cmplt_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE L4 operator> (D4 a, D4 b) noexcept { return mk (_mm_cmpgt_pd (a.p[0], b.p[0]), _mm_cmpgt_pd (a.p[1], b.p[1])); }
+YW_LANES_INLINE L4 operator>= (D4 a, D4 b) noexcept { return mk (_mm_cmpge_pd (a.p[0], b.p[0]), _mm_cmpge_pd (a.p[1], b.p[1])); }
 
-LYNX_LANES_INLINE I4 operator- (I4 a, I4 b) noexcept { return mk (_mm_sub_epi32 (a.v, b.v)); }
-LYNX_LANES_INLINE I4& operator-= (I4& a, I4 b) noexcept { return a = a - b; }
-LYNX_LANES_INLINE I4 operator| (I4 a, I4 b) noexcept { return mk (_mm_or_si128 (a.v, b.v)); }
-LYNX_LANES_INLINE I4 operator== (I4 a, I4 b) noexcept { return mk (_mm_cmpeq_epi32 (a.v, b.v)); }
-LYNX_LANES_INLINE I4 operator> (I4 a, I4 b) noexcept { return mk (_mm_cmpgt_epi32 (a.v, b.v)); }
-LYNX_LANES_INLINE I4 operator<= (I4 a, I4 b) noexcept { return mk (_mm_xor_si128 (_mm_cmpgt_epi32 (a.v, b.v), _mm_set1_epi32 (-1))); }
+YW_LANES_INLINE I4 operator- (I4 a, I4 b) noexcept { return mk (_mm_sub_epi32 (a.v, b.v)); }
+YW_LANES_INLINE I4& operator-= (I4& a, I4 b) noexcept { return a = a - b; }
+YW_LANES_INLINE I4 operator| (I4 a, I4 b) noexcept { return mk (_mm_or_si128 (a.v, b.v)); }
+YW_LANES_INLINE I4 operator== (I4 a, I4 b) noexcept { return mk (_mm_cmpeq_epi32 (a.v, b.v)); }
+YW_LANES_INLINE I4 operator> (I4 a, I4 b) noexcept { return mk (_mm_cmpgt_epi32 (a.v, b.v)); }
+YW_LANES_INLINE I4 operator<= (I4 a, I4 b) noexcept { return mk (_mm_xor_si128 (_mm_cmpgt_epi32 (a.v, b.v), _mm_set1_epi32 (-1))); }
 
-LYNX_LANES_INLINE F4 select (I4 m, F4 a, F4 b) noexcept
+YW_LANES_INLINE F4 select (I4 m, F4 a, F4 b) noexcept
 {
     const auto k = _mm_castsi128_ps (m.v);
     return mk (_mm_or_ps (_mm_and_ps (k, a.v), _mm_andnot_ps (k, b.v)));
 }
-LYNX_LANES_INLINE I4 select (I4 m, I4 a, I4 b) noexcept { return mk (_mm_or_si128 (_mm_and_si128 (m.v, a.v), _mm_andnot_si128 (m.v, b.v))); }
-LYNX_LANES_INLINE D4 select (L4 m, D4 a, D4 b) noexcept
+YW_LANES_INLINE I4 select (I4 m, I4 a, I4 b) noexcept { return mk (_mm_or_si128 (_mm_and_si128 (m.v, a.v), _mm_andnot_si128 (m.v, b.v))); }
+YW_LANES_INLINE D4 select (L4 m, D4 a, D4 b) noexcept
 {
     return mk (_mm_or_pd (_mm_and_pd (m.p[0], a.p[0]), _mm_andnot_pd (m.p[0], b.p[0])), _mm_or_pd (_mm_and_pd (m.p[1], a.p[1]), _mm_andnot_pd (m.p[1], b.p[1])));
 }
 // a double compare's lanes as a float / int mask, and back
-LYNX_LANES_INLINE I4 narrow (L4 m) noexcept
+YW_LANES_INLINE I4 narrow (L4 m) noexcept
 {
     return mk (_mm_castps_si128 (_mm_shuffle_ps (_mm_castpd_ps (m.p[0]), _mm_castpd_ps (m.p[1]), _MM_SHUFFLE (2, 0, 2, 0))));
 }
-LYNX_LANES_INLINE L4 widen (I4 m) noexcept { return mk (_mm_castsi128_pd (_mm_unpacklo_epi32 (m.v, m.v)), _mm_castsi128_pd (_mm_unpackhi_epi32 (m.v, m.v))); }
-LYNX_LANES_INLINE F4 toFloat (D4 x) noexcept { return mk (_mm_movelh_ps (_mm_cvtpd_ps (x.p[0]), _mm_cvtpd_ps (x.p[1]))); }
-LYNX_LANES_INLINE F4 abs (F4 x) noexcept { return mk (_mm_and_ps (x.v, _mm_castsi128_ps (_mm_set1_epi32 (0x7fffffff)))); }
-LYNX_LANES_INLINE bool any (I4 m) noexcept { return _mm_movemask_ps (_mm_castsi128_ps (m.v)) != 0; }
+YW_LANES_INLINE L4 widen (I4 m) noexcept { return mk (_mm_castsi128_pd (_mm_unpacklo_epi32 (m.v, m.v)), _mm_castsi128_pd (_mm_unpackhi_epi32 (m.v, m.v))); }
+YW_LANES_INLINE F4 toFloat (D4 x) noexcept { return mk (_mm_movelh_ps (_mm_cvtpd_ps (x.p[0]), _mm_cvtpd_ps (x.p[1]))); }
+YW_LANES_INLINE F4 abs (F4 x) noexcept { return mk (_mm_and_ps (x.v, _mm_castsi128_ps (_mm_set1_epi32 (0x7fffffff)))); }
+YW_LANES_INLINE bool any (I4 m) noexcept { return _mm_movemask_ps (_mm_castsi128_ps (m.v)) != 0; }
 
 // SynthInstrument::polyBlep, lane by lane (the divisions only when a lane is next to a discontinuity, as there)
-LYNX_LANES_INLINE F4 polyBlep (D4 t, D4 dt) noexcept
+YW_LANES_INLINE F4 polyBlep (D4 t, D4 dt) noexcept
 {
     const auto before = narrow (t < dt), after = narrow (t > d4 (1.0) - dt);
     if (! any (before | after))
@@ -840,7 +840,7 @@ LYNX_LANES_INLINE F4 polyBlep (D4 t, D4 dt) noexcept
 }
 
 // SynthInstrument::oscillator for the shapes without state or tables (sine, triangle, saw, square)
-LYNX_LANES_INLINE F4 oscillator (Waveform w, D4 phase, D4 dt) noexcept
+YW_LANES_INLINE F4 oscillator (Waveform w, D4 phase, D4 dt) noexcept
 {
     const auto firstHalf = phase < d4 (0.5);
     switch (w)
@@ -867,7 +867,7 @@ LYNX_LANES_INLINE F4 oscillator (Waveform w, D4 phase, D4 dt) noexcept
 // one oscillator of the voice loop: its phase step (std::min (0.49, …)), its value × its level, the phase advanced and
 // wrapped
 // (`unit`: every lane's pitch factor and the pitch wheel are exactly 1, so × them changes no bit and is left out)
-LYNX_LANES_INLINE F4 advance (Waveform w, float level, D4& phase, D4 phaseDelta, double ratio, D4 pitchMul, D4 bend, bool unit) noexcept
+YW_LANES_INLINE F4 advance (Waveform w, float level, D4& phase, D4 phaseDelta, double ratio, D4 pitchMul, D4 bend, bool unit) noexcept
 {
     auto delta = phaseDelta * d4 (ratio);
     if (! unit)
@@ -880,7 +880,7 @@ LYNX_LANES_INLINE F4 advance (Waveform w, float level, D4& phase, D4 phaseDelta,
 }
 
 // SvfCoefficients::process (the four responses)
-LYNX_LANES_INLINE F4 svf (int mode, F4 in, F4& lo, F4& bp, F4 a1, F4 a2, F4 a3, F4 k) noexcept
+YW_LANES_INLINE F4 svf (int mode, F4 in, F4& lo, F4& bp, F4 a1, F4 a2, F4 a3, F4 k) noexcept
 {
     const auto v3 = in - lo;
     const auto v1 = a1 * bp + a2 * v3;
@@ -897,13 +897,13 @@ LYNX_LANES_INLINE F4 svf (int mode, F4 in, F4& lo, F4& bp, F4 a1, F4 a2, F4 a3, 
 }
 
 // the 3-band tone control
-LYNX_LANES_INLINE F4 bands (F4 x, F4& st0, F4& st1, F4 c0, F4 c1, F4 g0, F4 g1, F4 g2) noexcept
+YW_LANES_INLINE F4 bands (F4 x, F4& st0, F4& st1, F4 c0, F4 c1, F4 g0, F4 g1, F4 g2) noexcept
 {
     st0 += c0 * (x - st0);
     st1 += c1 * (x - st1);
     return st0 * g0 + (st1 - st0) * g1 + (x - st1) * g2;
 }
-#undef LYNX_LANES_INLINE
+#undef YW_LANES_INLINE
 } // namespace lanes
 
 std::atomic<bool> synthLanesFlag { true };
@@ -1045,7 +1045,7 @@ public:
 
     void setSongPosition (double ticks) noexcept override { songTicks = ticks; }
 
-    // an automation clip / a modulator on one of LYNX Synth's knobs (core/SynthParams.h, issue #152). Audio thread.
+    // an automation clip / a modulator on one of YW Synth's knobs (core/SynthParams.h, issue #152). Audio thread.
     void setParameter (int index, float value) noexcept override
     {
         if (! synthparam::valid (index) || ! std::isfinite (value))
@@ -1821,7 +1821,7 @@ private:
             for (int h = 1; h <= top; ++h)
             {
                 // a·sin(2π(h·t + φ)) = Im: coefficient −i·a/2·e^(i2πφ) at +h and its conjugate at −h
-                const auto a = (double) amplitude[(std::size_t) h - 1] * (2.0 / 3.141592653589793); // 1/n saw = LYNX's ±1 saw
+                const auto a = (double) amplitude[(std::size_t) h - 1] * (2.0 / 3.141592653589793); // 1/n saw = YW's ±1 saw
                 const auto c = std::polar (a / 2.0, twoPi * phase[(std::size_t) h - 1] - twoPi / 4.0);
                 bins[(std::size_t) h] = c;
                 bins[(std::size_t) (wavetableSize - h)] = std::conj (c);
@@ -1970,8 +1970,8 @@ private:
 // transposed by the key (60 = original pitch), with FL's sampler interpolation (core/FlResampler.h: 24-point sinc while
 // playing, 32-point when exporting, FL's defaults; REA_rodada69 §1).
 
-// Issue #63: a note's Mod X / Y move LYNX's own sampler filter as FL's voice moves its channel filter (REA_rodada76
-// §1 / §4): input X = the channel's X + (modX byte − 128) / 128, Y the same with Mod Y. LYNX's cutoff (Hz) and resonance
+// Issue #63: a note's Mod X / Y move YW's own sampler filter as FL's voice moves its channel filter (REA_rodada76
+// §1 / §4): input X = the channel's X + (modX byte − 128) / 128, Y the same with Mod Y. YW's cutoff (Hz) and resonance
 // go to FL's X / Y through the laws of FL's 12 dB filters (the X → frequency law FlpImport's channelFilterHz uses for
 // types 1…5, the Y → Q law of FL's biquads, and the SVF's resonance = (2 − 1/Q) / 1.9 the import maps it with), get the
 // note's offsets and come back. A channel at 19.5 kHz or above counts as fully open (FL's X = 1).
@@ -2077,7 +2077,7 @@ struct SamplerVoice
     double loopStart = 0.0, loopEnd = 0.0; // loopEnd > loopStart: the voice jumps back to the loop start
     bool loopWhileHeld = false;
     SvfCoefficients filter;         // this voice's (with a cutoff envelope, or the note's own Mod X / Y)
-    // issue #63: the note's Mod X / Y on LYNX's own sampler, as FL's voice takes them (REA_rodada76 §1): offsets of the
+    // issue #63: the note's Mod X / Y on YW's own sampler, as FL's voice takes them (REA_rodada76 §1): offsets of the
     // channel filter's X / Y, (b − 128) / 128 = modX · 2 − 1 (0 = the note leaves the channel filter as it is)
     float noteCut = 0.0f, noteRes = 0.0f;
     float noteFc = -1.0f, noteQ = -1.0f; int noteType = -1; // the channel values `filter` was last set from
@@ -2322,7 +2322,7 @@ public:
         // channel and on a Sampler of the same file are bit-identical (round 190lq: the whole sample whatever the note's
         // length, overlapping notes layer, the key transposes it from the root note — A5 740 Hz for 0.6 s, C4 220 Hz for
         // 2 s — and FL's velocity and channel laws: velocity 50 / 100 / 128 = 0.023 / 0.097 / 0.200 for a 0.25 sine).
-        // Playlist / session clips (their own keys) and the notes of older LYNX projects (SamplerSettings::
+        // Playlist / session clips (their own keys) and the notes of older YW projects (SamplerSettings::
         // clipNoteLegacy: the clip's own pitch, cut at the note's end) keep the clip voice.
         const auto asClip = clipMode && (key >= audioClipKeyBase || clipNoteLegacy.load (std::memory_order_relaxed));
 
@@ -2413,7 +2413,7 @@ public:
         }
 
         // with stretch in FL's Resample mode the note still transposes: pitch and length change together, like tape
-        // (FL's manual: "playing a chord plays each note at a different speed"; round 162, issue #9 — LYNX played every
+        // (FL's manual: "playing a chord plays each note at a different speed"; round 162, issue #9 — YW played every
         // key at the sample's own pitch and ignored the pitch knob and the fine tune)
         const auto root = zone != nullptr ? zone->zone.rootKey : 60;
         const auto tune = zone != nullptr ? (double) zone->zone.tune : 0.0;
@@ -3106,7 +3106,7 @@ public:
             // Round 190jd (live check 190iw Q6): the end of a NOTE of the channel (a step, a Piano roll note, a key played
             // on it; keys below audioClipKeyBase) leaves the clip playing to its end, as FL does — FL's renders of one
             // step on a 1 / 2 / 5 s clip channel play 1.010 / 2.010 / 5.010 s, the same as a Sampler without its volume
-            // envelope; LYNX stopped every voice at the step's end (0.13 s). Stop, cut groups and choke still end it.
+            // envelope; YW stopped every voice at the step's end (0.13 s). Stop, cut groups and choke still end it.
             // Round 190lq (issue #204): a note's end goes to the Sampler's note-off below (FL plays the notes of an audio
             // clip channel as a Sampler's: without a volume envelope the sample plays on). The legacy law of a project
             // saved before 0.1.30 (SamplerSettings::clipNoteLegacy) ends the note's own voice at its end, as that project
@@ -4604,8 +4604,8 @@ std::unique_ptr<Instrument> makeInstrument (InstrumentKind kind, std::shared_ptr
         return makeHelixInstrument();
     if (kind == InstrumentKind::braid) // round 190ko
         return makeBraidInstrument();
-    if (kind == InstrumentKind::lynxModel) // round 190ni
-        return makeLynxModelInstrument();
+    if (kind == InstrumentKind::ywModel) // round 190ni
+        return makeYwModelInstrument();
     if (kind == InstrumentKind::drumaxx)
         return makeDrumaxxInstrument();
     if (kind == InstrumentKind::slayer)
@@ -4617,4 +4617,4 @@ std::unique_ptr<Instrument> makeInstrument (InstrumentKind kind, std::shared_ptr
 
     return std::make_unique<DrumInstrument> (kind);
 }
-} // namespace lynx
+} // namespace yw

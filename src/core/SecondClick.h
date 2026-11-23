@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-namespace lynx::secondclick
+namespace yw::secondclick
 {
 struct Press
 {
@@ -22,4 +22,4 @@ inline bool isSecond (const Press& first, const Press& now, std::int64_t timeout
     return first.ms >= 0 && now.ms >= first.ms && now.ms - first.ms <= timeoutMs && std::abs (now.x - first.x) <= slop
            && std::abs (now.y - first.y) <= slop;
 }
-} // namespace lynx::secondclick
+} // namespace yw::secondclick

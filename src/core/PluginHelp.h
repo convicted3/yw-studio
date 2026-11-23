@@ -1,7 +1,7 @@
 #pragma once
 
-// Round 190oa (DF-131, FL's plugin wrapper menu › Help: FL opens the plugin's page of its manual): the page of LYNX's
-// wiki for a built-in plugin, https://lynx-share.com/wiki/built-in/<fx|gen>-<slug>/ (website/_src/build.py makes one per
+// Round 190oa (DF-131, FL's plugin wrapper menu › Help: FL opens the plugin's page of its manual): the page of YW's
+// wiki for a built-in plugin, https://yolo.su/wiki/built-in/<fx|gen>-<slug>/ (website/_src/build.py makes one per
 // catalogue entry with a wiki body; the slug is the plugin's name in lower case, every run of other characters one
 // "-"). The ids below are website/_src/catalog.json's at this round; a name without a page gets the built-in index.
 
@@ -9,7 +9,7 @@
 #include <cctype>
 #include <string>
 
-namespace lynx::pluginhelp
+namespace yw::pluginhelp
 {
 inline std::string slug (const std::string& name)
 {
@@ -45,7 +45,7 @@ inline bool hasPage (const std::string& id)
         "fx-fruity-love-philter fx-fruity-multiband-compressor fx-fruity-panomatic fx-fruity-phaser fx-fruity-scratcher "
         "fx-fruity-send fx-fruity-soft-clipper fx-fruity-waveshaper fx-gemini-doubler fx-glow-leveler fx-gross-beat "
         "fx-halo fx-hardcore fx-hardware-insert fx-horizon fx-hush-de-esser fx-hyper-chorus fx-kiln-channel "
-        "fx-lattice-mod fx-limiter fx-lo-fi fx-low-lifter fx-luxeverb fx-lynx-tune fx-maximus fx-multiband-delay "
+        "fx-lattice-mod fx-limiter fx-lo-fi fx-low-lifter fx-luxeverb fx-yw-tune fx-maximus fx-multiband-delay "
         "fx-nebula fx-newtime fx-newtone fx-orbit fx-parametric-eq fx-patcher fx-peak-controller fx-pitch-correction "
         "fx-pitch-shift fx-pitch-shifter fx-pocket-autoduck fx-pocket-chorus fx-pocket-comb-filter fx-pocket-compressor "
         "fx-pocket-distortion fx-pocket-eq fx-pocket-filter fx-pocket-flanger fx-pocket-gate fx-pocket-graphic-eq "
@@ -60,7 +60,7 @@ inline bool hasPage (const std::string& id)
         "gen-3x-osc gen-bassdrum gen-beepmap gen-boobass gen-dashboard gen-drum-rack gen-drumaxx gen-drumpad "
         "gen-envelope-controller gen-fl-keys gen-fl-slayer gen-fpc gen-fruit-kick gen-fruity-dance gen-fruity-dx10 "
         "gen-fruity-granulizer gen-fruity-slicer gen-fruity-video-player gen-gms gen-gmsynth-flm gen-harmless "
-        "gen-harmor gen-instrument-rack gen-kepler gen-kepler-exo gen-keyboard-controller gen-layer gen-lynx-soundfont "
+        "gen-harmor gen-instrument-rack gen-kepler gen-kepler-exo gen-keyboard-controller gen-layer gen-yw-soundfont "
         "gen-midi-effect-rack gen-midi-out gen-minisynth gen-morphine gen-ogun gen-patcher gen-plucked "
         "gen-pocket-supersaw gen-poizone gen-sakura gen-sawer gen-simsynth gen-slicex gen-synth gen-sytrus "
         "gen-toxic-biohazard gen-transistor-bass gen-vfx-color-mapper gen-vfx-envelope gen-vfx-key-mapper "
@@ -77,4 +77,4 @@ inline std::string pageFor (const std::string& name, bool generator)
     const auto id = std::string (generator ? "gen-" : "fx-") + slug (name);
     return std::string (wikiRoot) + "built-in/" + (hasPage (id) ? id + "/" : std::string());
 }
-} // namespace lynx::pluginhelp
+} // namespace yw::pluginhelp

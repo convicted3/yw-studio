@@ -25,7 +25,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 namespace dw
 {
@@ -163,15 +163,15 @@ private:
     std::unique_ptr<Impl> d;
 };
 
-// --------------------------------------------------------------------------------------------- LYNX channel
-// The program LYNX plays: MIDI slot 0's program (FL's MIDI channel 1) when it has zones, else the first one with zones
+// --------------------------------------------------------------------------------------------- YW channel
+// The program YW plays: MIDI slot 0's program (FL's MIDI channel 1) when it has zones, else the first one with zones
 // (round 190hz; before, always the first with zones — the same program in every demo).
 const Program* playedProgram (const State& state);
 
 // One program record (the body of chunk 1) / zone record (chunk 3), as parseState reads them (round 190hz: the editor)
 Program parseProgram (const std::uint8_t* body, std::size_t size);
 Zone parseZone (const std::uint8_t* body, std::size_t size);
-// The bytes LYNX reads of zone record `id` (0x1F4…0x204; 0 = none it reads by size). A shorter record is read as
+// The bytes YW reads of zone record `id` (0x1F4…0x204; 0 = none it reads by size). A shorter record is read as
 // DirectWave reads it: over zeros, the sample format record's (0x1F7) bit depth 32 (rollup 0.1.30, REA round 190ii).
 std::size_t zoneRecordSize (std::uint32_t id) noexcept;
 
@@ -221,4 +221,4 @@ float cosfCrt (float x);
 float powfCrt (float x, float y);
 float expfCrt (float x);
 } // namespace dw
-} // namespace lynx
+} // namespace yw

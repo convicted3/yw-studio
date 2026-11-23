@@ -18,7 +18,7 @@
 #include <tuple>
 #include <map>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -73,9 +73,9 @@ const DocumentFields& editableDocumentFields (DocumentShape shape)
         add (S::root, "mixerLevelPdc190hq"); // (round 190hq: Mixer › Plugin delay compensation › compensate fader and route automations)
         add (S::root, "format version savedBy projectId nextUid session clipFadesPerClip", S::readOnly);
         // Not reviewed for document edits (yet): the groove pool (its ids are clip references), controller mappings
-        // (formulas, ports, targets). They pass through unchanged; edit them in LYNX.
+        // (formulas, ports, targets). They pass through unchanged; edit them in YW.
         add (S::root, "grooves midiLinkSettings midiNoteLinks remoteMappings", S::readOnly);
-        add (S::root, "mixSnapshots", S::readOnly); // (round 190hp: the Mixer menu's Mix snapshots; edit them in LYNX)
+        add (S::root, "mixSnapshots", S::readOnly); // (round 190hp: the Mixer menu's Mix snapshots; edit them in YW)
         add (S::root, "clipEnvelopes", S::clipEnvelope, true);
         add (S::root, "info", S::info);
         add (S::root, "channels", S::channel, true);
@@ -95,7 +95,7 @@ const DocumentFields& editableDocumentFields (DocumentShape shape)
              "mixer maxPolyphony colour group swingMix arp cut keyRegion receiveFrom icon editorScale flWrapperFlags loopStarter uid "
              "cutOthersOnly cutAtNoteEnd simplePad engineRev smartDisable"); // (engineRev: natives190kj, rollup step 6; smartDisable: round 190ok)
         add (S::channel, "deactivated"); // (round 190op, P4)
-        add (S::channel, "freeze trackFreeze", S::readOnly); // (rendered stems: files LYNX wrote, and the live channel)
+        add (S::channel, "freeze trackFreeze", S::readOnly); // (rendered stems: files YW wrote, and the live channel)
         add (S::channel, "plugin", S::plugin);
         add (S::channel, "flOrigin", S::origin);
         add (S::channel, "keyLabels", S::keyLabels);
@@ -110,7 +110,7 @@ const DocumentFields& editableDocumentFields (DocumentShape shape)
              "midiInPort midiOutPort notifyRender latencyMs releaseVelocity sendBendRange bendRange modXAftertouch "
              "allNotesOffOnStop resetOnFlush sendLoopPosition allowHostKeys hostKeysFirst bitSize detached outputs "
              "mpe processInactive inputs pinnedOnTop velocityMode fixedVelocity recordOwnNotes dpiAware scaleEditorDimensions");
-        // Online Sessions: the participant whose LYNX plays the plugin, and the values it shares
+        // Online Sessions: the participant whose YW plays the plugin, and the values it shares
         add (S::plugin, "playedBy values", S::readOnly);
         add (S::origin, "plugin state print");
         add (S::arp, "chord chordSustain slide octaveRepeat");
@@ -145,7 +145,7 @@ const DocumentFields& editableDocumentFields (DocumentShape shape)
         add (S::link, "branch source target param curve");
         add (S::patcher, "wires io published outputTracks fromMidiPorts toMidiPorts fromNotesHidden surface surfaceAt");
         add (S::patcher, "nodes", S::node, true);
-        add (S::patcher, "rack", S::readOnly); // (a rack's chains, macros and variations point at nodes: edit them in LYNX)
+        add (S::patcher, "rack", S::readOnly); // (a rack's chains, macros and variations point at nodes: edit them in YW)
         add (S::node, "label x y paramIns paramOuts");
         add (S::node, "channel", S::channel);
         add (S::node, "effect", S::effect);
@@ -528,4 +528,4 @@ Song stage (const Song& source, const juce::var& patch)
 }
 } // namespace remote_document
 
-} // namespace lynx
+} // namespace yw

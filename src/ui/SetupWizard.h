@@ -4,7 +4,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -27,11 +27,11 @@ std::unique_ptr<juce::Component> makeSetupWizardContent (AudioEngine& engine, st
                                                          std::function<void()> onClose, int layoutStyle = 0,
                                                          std::function<void (int)> onLayoutStyle = {});
 
-// Whether the wizard was finished or skipped once (%APPDATA%\LYNX\setup-done.txt).
+// Whether the wizard was finished or skipped once (%APPDATA%\YW\setup-done.txt).
 bool setupWizardDone();
 void markSetupWizardDone();
 
 // "Scan for new plugins at every start" (on by default; set in the wizard).
 bool backgroundScanAtStart();
 void setBackgroundScanAtStart (bool on);
-} // namespace lynx
+} // namespace yw

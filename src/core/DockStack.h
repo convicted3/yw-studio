@@ -5,9 +5,9 @@
 #include <vector>
 
 // Round 190ev (issue #152, 0.1.26: "selecting the window behind does not bring it over the one in front; the Channel
-// rack almost never comes to the front"): the stacking rules of the windows docked in LYNX's main window (FL's docked
+// rack almost never comes to the front"): the stacking rules of the windows docked in YW's main window (FL's docked
 // plugin windows, issue #116), kept apart from the native window code so they can be tested anywhere.
-namespace lynx::dockstack
+namespace yw::dockstack
 {
 // The docked window a mouse click belongs to. `ancestry` is the clicked native window and its parents, innermost first
 // (a click in a plugin's own view lands in a window of the plugin, several levels under the docked frame); `isDocked`
@@ -101,7 +101,7 @@ inline bool keepsSize (int nativeW, int nativeH, int w, int h, double scale) noe
     return std::abs ((double) nativeW - w * scale) < 1.0 && std::abs ((double) nativeH - h * scale) < 1.0;
 }
 
-// Round 190jy (queue item 44, Settings › General › "Draw docked YW Studio editors in the main window"): a docked LYNX editor
+// Round 190jy (queue item 44, Settings › General › "Draw docked YW Studio editors in the main window"): a docked YW editor
 // can be drawn by the main window itself (its own components, its own frames) instead of a native child window of its
 // own: a live display then costs its paint and no second window presenting frames (Gross Beat: +8 points of process CPU
 // while playing). The main window's drawing is under all its native child windows (the panels, docked plugin windows),
@@ -156,4 +156,4 @@ inline std::vector<PhysicalRect> holesIn (const PhysicalRect& window, const std:
     }
     return out;
 }
-} // namespace lynx::dockstack
+} // namespace yw::dockstack

@@ -2,8 +2,8 @@
 
 // Ember Saturator's "Classic" voicing (round 136, vox136): a five-style saturator whose structure and constants were
 // measured black-box on the official Soundtoys Decapitator trial (hosted through the VST3 API, fed signals, outputs
-// measured; nothing decompiled or copied) so that the projects that used it sound the same through LYNX
-// (docs/analise/REA_rodada136.md). LYNX's own code: a pre-emphasised, oversampled asymmetric soft clipper with a
+// measured; nothing decompiled or copied) so that the projects that used it sound the same through YW
+// (docs/analise/REA_rodada136.md). YW's own code: a pre-emphasised, oversampled asymmetric soft clipper with a
 // signal-dependent bias, a de-emphasis and a DC blocker, between the original's measured control laws.
 //
 //   in ─► Low cut (2nd-order high-pass; Thump = a resonant one) ─► Tone (2nd-order tilt) ─► pre-emphasis ─► drive gain
@@ -17,7 +17,7 @@
 #include "core/HalfBandBlock.h"
 #include "core/MixSuite.h"
 
-namespace lynx::emberclassic
+namespace yw::emberclassic
 {
 constexpr int styleFirTaps = 16;
 
@@ -185,4 +185,4 @@ private:
     std::array<Channel, 2> ch;
     std::vector<float> wet;
 };
-} // namespace lynx::emberclassic
+} // namespace yw::emberclassic

@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX --demo (round 190np; docs/DEMO_MODE.md): the automation mode the tutorial-video pipeline drives. A developer
+// YW --demo (round 190np; docs/DEMO_MODE.md): the automation mode the tutorial-video pipeline drives. A developer
 // feature, off by default and in no menu. With it the Remote Control API (docs/REMOTE_CONTROL.md) is on, its
 // "Remote control active" strip is hidden (it would be in every frame), the update check and the support note stay
 // quiet, and the API gains view operations: ui.find / ui.click / ui.list / ui.window (controls by component ID or
@@ -9,7 +9,7 @@
 
 #include <juce_graphics/juce_graphics.h>
 
-namespace lynx::demo
+namespace yw::demo
 {
 bool active() noexcept;
 void setActive (bool on) noexcept;
@@ -47,4 +47,4 @@ struct ParamSource
     virtual ~ParamSource() = default;
     virtual juce::Rectangle<int> demoParamBounds (int kind, int index, int slot, int param) const = 0;
 };
-} // namespace lynx::demo
+} // namespace yw::demo

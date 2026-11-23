@@ -16,7 +16,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::takes
+namespace yw::takes
 {
 std::string setupKey (const std::string& type, const std::string& output, const std::string& input, double sampleRate, int block)
 {
@@ -133,11 +133,11 @@ int playbackInsert (const Song& song, int recordedOn, RecordSource point)
         return -1;
     if (point == RecordSource::externalInput)
         return recordedOn;
-    // a Playlist audio track linked to the insert (FL looks in the current arrangement: LYNX's tracks are shared by all)
+    // a Playlist audio track linked to the insert (FL looks in the current arrangement: YW's tracks are shared by all)
     if (std::any_of (song.playlistTracks.begin(), song.playlistTracks.end(),
                      [recordedOn] (const PlaylistTrack& pt) { return pt.mode == PlaylistTrackMode::audio && pt.mixerTrack == recordedOn; }))
         return recordedOn;
-    // LYNX's "Link Playlist tracks to mixer tracks" (round 190gz): the insert's own track takes the take and becomes its
+    // YW's "Link Playlist tracks to mixer tracks" (round 190gz): the insert's own track takes the take and becomes its
     // audio track, so the clip plays through the insert as on any linked audio track
     if (autolink::pairedTakeTrack (song, recordedOn) >= 0)
         return recordedOn;
@@ -171,7 +171,7 @@ struct TakeTrackChoice
 //   - else one of its sub-tracks (the grouped tracks right under it) where the take fits, or a new sub-track at the end
 //     of that group ("Subsequent recordings, made on the same Mixer Input, will appear as sub-tracks to this parent");
 //   - with no linked audio track, "the first Playlist Track where it won't overlap with existing content" (from the top).
-// LYNX kept the last rule as "a new track after the last one used", so every take, wherever it was recorded, went to
+// YW kept the last rule as "a new track after the last one used", so every take, wherever it was recorded, went to
 // yet another track (Discord report 2026-11-15: "it keeps making new tracks").
 TakeTrackChoice chooseTakeTrack (const Song& song, int insert, std::int64_t start, std::int64_t end)
 {
@@ -191,7 +191,7 @@ TakeTrackChoice chooseTakeTrack (const Song& song, int insert, std::int64_t star
             // a new sub-track under the group (past the last track: nothing below has to move)
             return { u, t, u < count };
         }
-    // LYNX's "Link Playlist tracks to mixer tracks" (round 190gz): insert N's take goes to Track N when it is still empty
+    // YW's "Link Playlist tracks to mixer tracks" (round 190gz): insert N's take goes to Track N when it is still empty
     if (const auto paired = insert > 0 ? autolink::pairedTakeTrack (song, insert) : -1; paired >= 0)
         return { paired, -1, false };
     // (a track linked to another insert or a channel, or a member of a group, is not used for this take)
@@ -232,7 +232,7 @@ namespace
 {
 // A loop pass lands on the first track from `from` on with no clip in the pass's range (FL 26, REA round 177c §2.1: runs R10
 // to R12). A named track or a member of a group counts as free; a track linked to an insert or a channel, and a comp group
-// (LYNX's own, it must keep what it plays) do not.
+// (YW's own, it must keep what it plays) do not.
 int firstFreeTrack (const Song& song, int from, std::int64_t start, std::int64_t end)
 {
     for (auto t = from;; ++t)
@@ -1032,7 +1032,7 @@ std::string journalText (const Journal& j)
 {
     std::ostringstream s;
     s.precision (17);
-    s << "lynxrec=1\nwav=" << j.wav << "\nfirstTick=" << j.firstTick << "\nticksPerSample=" << j.ticksPerSample << "\nsampleRate=" << j.sampleRate
+    s << "ywrec=1\nwav=" << j.wav << "\nfirstTick=" << j.firstTick << "\nticksPerSample=" << j.ticksPerSample << "\nsampleRate=" << j.sampleRate
       << "\nlatency=" << j.latency << "\ninsert=" << std::max (0, j.insert) << "\nplaysThrough=" << j.insert << "\nplaylistTrack=" << j.playlistTrack
       << "\nproject=" << j.project << "\n";
     return s.str();
@@ -1053,7 +1053,7 @@ bool parseJournal (const std::string& text, Journal& j)
         const auto key = line.substr (0, eq), v = line.substr (eq + 1);
         try
         {
-            if (key == "lynxrec")
+            if (key == "ywrec")
                 any = true;
             else if (key == "wav")
                 j.wav = v;
@@ -1104,4 +1104,4 @@ double minutesLeft (std::int64_t bytesFree, double sampleRate, int channels, Sam
     const auto perSecond = sampleRate * std::max (1, channels) * bytesPerSample (format);
     return perSecond > 0.0 ? (double) std::max<std::int64_t> (0, bytesFree) / perSecond / 60.0 : 0.0;
 }
-} // namespace lynx::takes
+} // namespace yw::takes

@@ -1,7 +1,7 @@
 #pragma once
 
 // Arrangement commands of round 190cg (Ableton Live's Arrangement, the rows of rea190bk/COVERAGE-LIVE-2.md; evidence per
-// command in /mnt/e/lynx-work/warp190cg/HANDOFF.md). They are additions: FL's workflow keeps its own commands.
+// command in /mnt/e/yw-work/warp190cg/HANDOFF.md). They are additions: FL's workflow keeps its own commands.
 //  - the loop switch: the Playlist's time selection is the loop (FL); Song::loopOff keeps the range and stops looping it;
 //  - the time commands Cut / Paste / Duplicate Time, which carry the clips, the markers and the lane automation;
 //  - Crop clips to the time selection;
@@ -22,7 +22,7 @@
 #include "core/ChordLane.h"
 #include "core/Song.h"
 
-namespace lynx::arrange
+namespace yw::arrange
 {
 // --- The loop switch ------------------------------------------------------------------------------------------------
 
@@ -507,4 +507,4 @@ inline bool leaveGroupBus (Song& song, int insert, int bus)
     m.toMaster = true;
     return true;
 }
-} // namespace lynx::arrange
+} // namespace yw::arrange

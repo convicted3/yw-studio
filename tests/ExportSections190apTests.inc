@@ -4,19 +4,19 @@ namespace exportsections190ap
 {
 // an 8-bar song (one pattern clip of 8 bars) with markers Intro (bar 1), Verse (bar 3), a time signature at bar 4 (not
 // a section), a nameless marker at bar 5 and Drop at bar 7
-inline lynx::Song song (bool markerAtStart = true)
+inline yw::Song song (bool markerAtStart = true)
 {
-    auto s = lynx::Song::makeDefault();
-    const auto bar = (std::int64_t) lynx::ppq * s.beatsPerBar;
-    s.mode = lynx::PlayMode::song;
+    auto s = yw::Song::makeDefault();
+    const auto bar = (std::int64_t) yw::ppq * s.beatsPerBar;
+    s.mode = yw::PlayMode::song;
     s.playlist.clear();
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.pattern = 0;
     clip.start = 0;
     clip.length = 8 * bar;
     s.playlist.push_back (clip);
-    const auto add = [&s, bar] (int atBar, const char* name, int action = lynx::Marker::none, int numerator = 0) {
-        lynx::Marker m;
+    const auto add = [&s, bar] (int atBar, const char* name, int action = yw::Marker::none, int numerator = 0) {
+        yw::Marker m;
         m.tick = (atBar - 1) * bar;
         m.name = name;
         m.action = action;
@@ -26,7 +26,7 @@ inline lynx::Song song (bool markerAtStart = true)
     if (markerAtStart)
         add (1, "Intro");
     add (3, "Verse");
-    add (4, "3/4", lynx::Marker::timeSignature, 3);
+    add (4, "3/4", yw::Marker::timeSignature, 3);
     add (5, "");
     add (7, "Drop: A/B?");
     add (7, "Second marker at the drop");
@@ -37,9 +37,9 @@ inline lynx::Song song (bool markerAtStart = true)
 
 TEST (exportsections190ap_markers_cut_the_song)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     const auto song = exportsections190ap::song();
-    const auto bar = (std::int64_t) lynx::ppq * song.beatsPerBar;
+    const auto bar = (std::int64_t) yw::ppq * song.beatsPerBar;
     CHECK (song.songLength() == 8 * bar);
     const auto sections = markerSections (song);
     CHECK (sections.size() == 4);
@@ -65,14 +65,14 @@ TEST (exportsections190ap_markers_cut_the_song)
     auto plain = song;
     plain.markers().clear();
     CHECK (markerSections (plain).empty());
-    CHECK (markerSections (lynx::Song {}).empty());
+    CHECK (markerSections (yw::Song {}).empty());
 }
 
 TEST (exportsections190ap_each_section_renders_as_a_selection)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     const auto song = exportsections190ap::song();
-    const auto bar = (std::int64_t) lynx::ppq * song.beatsPerBar;
+    const auto bar = (std::int64_t) yw::ppq * song.beatsPerBar;
     Options o;
     o.sections = true;
     o.loops = 3;
@@ -108,7 +108,7 @@ TEST (exportsections190ap_each_section_renders_as_a_selection)
 
 TEST (exportsections190ap_file_names_and_counts)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     CHECK (sectionBaseName ("Song", 1, 4, "Intro") == "Song - 01 Intro");
     CHECK (sectionBaseName ("Song", 4, 4, "Drop: A/B?") == "Song - 04 Drop_ A_B_");
     CHECK (sectionBaseName ("Song", 12, 12, "  Outro. ") == "Song - 12 Outro");
@@ -135,7 +135,7 @@ TEST (exportsections190ap_file_names_and_counts)
 
 TEST (exportsections190ap_options_text_keeps_the_new_switch_and_old_files_read)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     Options o;
     o.sections = true;
     o.stems = Stems::channels;
@@ -148,7 +148,7 @@ TEST (exportsections190ap_options_text_keeps_the_new_switch_and_old_files_read)
 
 TEST (exportsections190ap_presets_and_same_as_last_time)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     CHECK (cleanPresetName ("  Stems for\tmixing \n") == "Stems for mixing");
     CHECK (cleanPresetName ("[MP3 demo]") == "MP3 demo");
     CHECK (cleanPresetName (" [ ] ").empty() && cleanPresetName ("").empty());

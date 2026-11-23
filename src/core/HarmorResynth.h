@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::harmor
+namespace yw::harmor
 {
 struct ResynthPlanes
 {
@@ -62,4 +62,4 @@ std::shared_ptr<const ResynthPlanes> resynthesisFor (const std::string& savedPat
 // Plain RIFF/WAVE reader (8/16/24/32-bit PCM, 32-bit float), channels mixed as FL does.
 bool readWavMono (const std::string& path, SampleData& out);
 bool readWavMono (const std::vector<std::uint8_t>& bytes, SampleData& out);
-} // namespace lynx::harmor
+} // namespace yw::harmor

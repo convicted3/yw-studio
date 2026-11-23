@@ -38,7 +38,7 @@
 #include "core/PianoRollTools.h"
 #include "core/Song.h"
 
-namespace lynx::flarp
+namespace yw::flarp
 {
 enum class Mode { normal, flip, alternate };   // FL's Pattern mode / Range mode items
 enum class Sync { time, block, chord };        // FL's Sync items
@@ -104,7 +104,7 @@ inline int blend (int k, int h, int p, int s) noexcept
 }
 } // namespace detail
 
-// The loader's law on a parsed .fsc (LYNX ticks).
+// The loader's law on a parsed .fsc (YW ticks).
 inline Prepared prepare (const prtools::Score& score, const Options& o)
 {
     Prepared out;
@@ -343,4 +343,4 @@ inline std::vector<int> apply (Pattern& pattern, const std::vector<int>& indices
             }
     return result;
 }
-} // namespace lynx::flarp
+} // namespace yw::flarp

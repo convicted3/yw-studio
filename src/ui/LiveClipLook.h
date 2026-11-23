@@ -7,14 +7,14 @@
 //   with a #111111 rim; toggles (Warp, Loop) #FFAD56 with #070707 text while on; labels #B5B5B5; section headers 17 px
 //   #464646; the editor's tab bar 17 px #363636 with the shown tab #464646.
 // style() swaps a widget's colours (and, for toggles and sliders, its look) to Live's and back: the colours a widget had
-// before are kept in its properties, so LYNX's look comes back exactly as it was.
+// before are kept in its properties, so YW's look comes back exactly as it was.
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "ui/LiveLook.h"
 #include "ui/Theme.h"
 
-namespace lynx::liveclip
+namespace yw::liveclip
 {
 namespace ll = theme::livelook;
 inline const juce::Colour pill { 0xff242424 };   // a small button's fill (Set, ÷2, ×2, Reverse, Edit)
@@ -116,7 +116,7 @@ inline Laf& laf()
 // One colour of a widget set for Live's look (the earlier one kept) or given back.
 inline void swapColour (juce::Component& c, int id, juce::Colour live, bool on)
 {
-    const auto key = juce::Identifier ("lynxLiveKept" + juce::String (id));
+    const auto key = juce::Identifier ("ywLiveKept" + juce::String (id));
     auto& props = c.getProperties();
     if (on)
     {
@@ -135,7 +135,7 @@ inline void swapColour (juce::Component& c, int id, juce::Colour live, bool on)
         c.setColour (id, juce::Colour ((juce::uint32) (juce::int64) kept));
 }
 
-// Live's colours on a widget (on) or LYNX's back (off). TextButtons that toggle (Warp, Reverse, Fade, Follow Action,
+// Live's colours on a widget (on) or YW's back (off). TextButtons that toggle (Warp, Reverse, Fade, Follow Action,
 // Linked) light orange; plain ones are pills.
 inline void style (juce::Component& c, bool on)
 {
@@ -174,7 +174,7 @@ inline void style (juce::Component& c, bool on)
     }
 }
 
-// A section header of Live's column (17 px #464646): its icon (a small LYNX glyph: 0 clip, 1 launch, 2 audio, 3 pitch
+// A section header of Live's column (17 px #464646): its icon (a small YW glyph: 0 clip, 1 launch, 2 audio, 3 pitch
 // & time), its title and the fold triangle (▼ open, ◀ folded) 12 px from the right (live-clipview-audio.png 771..805).
 inline void paintHeader (juce::Graphics& g, juce::Rectangle<int> r, const juce::String& title, int icon, bool open)
 {
@@ -219,4 +219,4 @@ inline void paintHeader (juce::Graphics& g, juce::Rectangle<int> r, const juce::
         t.addTriangle (tx + 5.0f, cy - 3.0f, tx + 5.0f, cy + 3.0f, tx, cy);
     g.fillPath (t);
 }
-} // namespace lynx::liveclip
+} // namespace yw::liveclip

@@ -14,13 +14,13 @@
 #include "ui/ScriptPanel.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
 const char* const scriptWindowKey = "pianoroll-script";
 
-// Documents/LYNX/Piano roll scripts, beside LYNX's other user folders (Projects, Templates, Mixer states, Plugin
+// Documents/YW/Piano roll scripts, beside YW's other user folders (Projects, Templates, Mixer states, Plugin
 // database), as the docs say (round 190bj: the first builds of round 190as used Documents/Piano roll scripts)
 juce::File myScriptsFolder()
 {
@@ -33,7 +33,7 @@ juce::File oldScriptsFolder()
     return platform::documentsFolder().getChildFile ("Piano roll scripts");
 }
 
-// where scripts come from besides LYNX's own: the user's Documents/LYNX/Piano roll scripts, then FL Studio's folders
+// where scripts come from besides YW's own: the user's Documents/YW/Piano roll scripts, then FL Studio's folders
 // (read in place): its factory scripts, the user's FL scripts and the ones FL downloaded
 std::vector<std::pair<juce::String, juce::File>> scriptFolders()
 {
@@ -116,7 +116,7 @@ void PianoRollComponent::addScriptItems (juce::PopupMenu& menu)
     {
         ScriptRef r;
         r.name = juce::String::fromUTF8 (b.name);
-        r.key = "lynx:" + r.name;
+        r.key = "yw:" + r.name;
         r.source = b.source;
         menu.addItem (r.name, free, false, [this, r] { runScript (r); });
     }
@@ -181,7 +181,7 @@ void PianoRollComponent::runScriptForSnapshot (const juce::String& name)
         {
             ScriptRef r;
             r.name = name;
-            r.key = "lynx:" + name;
+            r.key = "yw:" + name;
             r.source = b.source;
             runScript (r);
             return;
@@ -376,4 +376,4 @@ void PianoRollComponent::commitScript (const ScriptJob& job, const Pattern& resu
     if (platform::testMode())
         platform::testModeLog ("piano roll script " + job.ref.name + " done");
 }
-} // namespace lynx
+} // namespace yw

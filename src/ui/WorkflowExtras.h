@@ -2,7 +2,7 @@
 
 // Round 190iu (issues #186 and #191): the workflow pieces that hook into editors other rounds own (Playlist, clip grid,
 // picker panel, Browser, main window). Each editor calls one function from here at one place; the rules live in core:
-//   - core/WheelZones.h   #186   wheel: scroll over the track headers, zoom over the arrangement (LYNX extra)
+//   - core/WheelZones.h   #186   wheel: scroll over the track headers, zoom over the arrangement (YW extra)
 //   - core/TempTool.h     #191.1 temporary tools while a tool key is held (FL)
 //   - core/MidiDrop.h     #191.2 .mid files dropped on the Playlist, the Clip-launch arrangement and the clip grid
 //   - core/TakeCleanup.h  #191.6 deleting takes and recorded envelopes from the picker panel and the Browser
@@ -21,20 +21,20 @@
 #include "core/TempTool.h"
 #include "core/TrackOnly.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
 namespace workflowextras
 {
-// --- the settings: ui-options.txt keys and the Settings › LYNX extras switches ------------------------------------------
+// --- the settings: ui-options.txt keys and the Settings › YW extras switches ------------------------------------------
 // The main window's loader hands every key here first: true when it is one of these (and it was applied).
 bool readUiOption (const juce::String& key, bool on);
 // The keys with a number (round 190jq: headerWidthExtra); true when it is one of them.
 bool readUiValue (const juce::String& key, const juce::String& value);
 // The lines the main window appends to ui-options.txt ("\nkey=1"...).
 juce::String uiOptionsText();
-// Settings › LYNX extras: the switches these own (nullopt: not one of them).
+// Settings › YW extras: the switches these own (nullopt: not one of them).
 std::optional<bool> extraOn (std::string_view id);
 // Sets one (false: not one of them). `changed` runs after (the main window saves; the views repaint).
 bool setExtra (std::string_view id, bool on);
@@ -107,4 +107,4 @@ void addPickerCleanupItems (juce::PopupMenu& menu, AudioEngine& engine, std::fun
 // The Browser's Current project: a "Delete" item for an audio clip's audio file row (its channel) or an automation row.
 void addBrowserDeleteItem (juce::PopupMenu& menu, AudioEngine& engine, bool automation, int index);
 } // namespace workflowextras
-} // namespace lynx
+} // namespace yw

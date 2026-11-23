@@ -1,12 +1,12 @@
 // Round 190el: the Drum Rack made to match what Ableton Live 12.4 showed in the 190ei live check
-// (/mnt/e/lynx-work/live190ei/ANSWERS.md §B): the empty rack's views, return chains named with their letter, Live's
+// (/mnt/e/yw-work/live190ei/ANSWERS.md §B): the empty rack's views, return chains named with their letter, Live's
 // "Slice N" pads and the rack / track named after the clip, the Slice to New MIDI Track list, the note editor's pad rows,
-// Save as Default Pad (copyPad) and the .als a Live check opens (written by LYNX's own export when
-// LYNX_DRUMRACK190EL_EXPORT names a folder).
+// Save as Default Pad (copyPad) and the .als a Live check opens (written by YW's own export when
+// YW_DRUMRACK190EL_EXPORT names a folder).
 
 namespace drumrack190el
 {
-using namespace lynx;
+using namespace yw;
 
 PatchNode sampler (const std::string& path, const std::string& name)
 {
@@ -83,7 +83,7 @@ struct TestKit
     std::vector<std::pair<std::string, std::vector<float>>> samples; // file name, audio
 };
 
-// The set for the Live check: track "LYNX Kit" (a Drum Rack, 7 pads, two return chains, sends, a pad into a return,
+// The set for the Live check: track "YW Kit" (a Drum Rack, 7 pads, two return chains, sends, a pad into a return,
 // two hats in choke group 1, a pad with its own Play note), track "drums" (the loop sliced per 1/4 note: 8 pads
 // "Slice 1"… in choke group 1, the rack named "drums"). `dir`: where the samples are (as the set will refer to them).
 TestKit testKit (const std::string& dir)
@@ -100,7 +100,7 @@ TestKit testKit (const std::string& dir)
                            { "Clap", "clap.wav", 39, 1, 0.3 },  { "Hat Closed", "hat-closed.wav", 42, 2, 0.08 }, { "Tom", "tom.wav", 43, 4, 0.5 },
                            { "Hat Open", "hat-open.wav", 46, 3, 0.7 } };
     ChannelDef kitChannel;
-    kitChannel.name = "LYNX Kit";
+    kitChannel.name = "YW Kit";
     kitChannel.instrument = InstrumentKind::patcher;
     kitChannel.patcher = rack::makeDrumRack();
     auto& doc = kitChannel.patcher;
@@ -109,7 +109,7 @@ TestKit testKit (const std::string& dir)
         kit.samples.push_back ({ p.file, drumSound (p.kind, p.seconds, (std::uint32_t) p.key) });
         rack::addPad (doc, p.key, p.name, sampler (dir + "/" + p.file, p.name));
     }
-    rack::rackOf (doc)->name = "LYNX Kit";
+    rack::rackOf (doc)->name = "YW Kit";
     rack::addReturn (doc, "Mix Bus");
     rack::addReturn (doc, "Reverb");
     rack::setChoke (doc, 4, 1);                          // Hat Closed
@@ -138,7 +138,7 @@ TestKit testKit (const std::string& dir)
 
     // the patterns: a two-bar beat on the kit, the slices replayed where they were
     Pattern beat;
-    beat.name = "LYNX Kit";
+    beat.name = "YW Kit";
     for (int step = 0; step < 32; ++step)
     {
         const auto add = [&beat, step] (int key, float velocity) {
@@ -181,7 +181,7 @@ TestKit testKit (const std::string& dir)
         c.length = 8 * ppq;
         song.playlist.push_back (c);
         song.playlistTracks.resize (2);
-        song.playlistTracks[(std::size_t) i].name = i == 0 ? "LYNX Kit" : "drums";
+        song.playlistTracks[(std::size_t) i].name = i == 0 ? "YW Kit" : "drums";
     }
     return kit;
 }
@@ -197,7 +197,7 @@ std::string windowsPath (const std::string& path)
 
 TEST (drumrack190el_empty_drum_rack_opens_as_live_pads_and_devices_only)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto doc = rack::makeDrumRack();
     const auto& r = *rack::rackOf (doc);
     // Live 12.4's new Drum Rack (190ei shots/live-drumrack-empty.png): the pads and "Drop an Instrument or Sample Here";
@@ -208,7 +208,7 @@ TEST (drumrack190el_empty_drum_rack_opens_as_live_pads_and_devices_only)
 
 TEST (drumrack190el_return_chains_show_their_letter_and_filled_pads_list)
 {
-    using namespace lynx;
+    using namespace yw;
     auto doc = rack::makeDrumRack();
     rack::addPad (doc, 36, "Bass Drum");
     rack::addPad (doc, 42, "Closed Hi Hat");
@@ -229,14 +229,14 @@ TEST (drumrack190el_return_chains_show_their_letter_and_filled_pads_list)
 
 TEST (drumrack190el_slice_per_list_and_names_follow_live)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live's "Create one slice per" (190ei B6a): Warp Marker, Transient, Bar, 1/2 Note … 1/32 Note, in that order
     const char* expected[] { "Warp Marker", "Transient", "Bar", "1/2 Note", "1/4 Note", "1/8 Note", "1/16 Note", "1/32 Note" };
     for (int k = 0; k < rack::slicePerCount; ++k)
         CHECK (std::string (rack::slicePerName ((rack::SlicePer) k)) == expected[k]);
-    CHECK (rack::slicePerBeats (rack::SlicePer::bar, lynx::Meter (4, 4)) == 4.0 && rack::slicePerBeats (rack::SlicePer::bar, lynx::Meter (3, 4)) == 3.0);
-    CHECK (rack::slicePerBeats (rack::SlicePer::half, lynx::Meter (4, 4)) == 2.0 && rack::slicePerBeats (rack::SlicePer::thirtySecond, lynx::Meter (4, 4)) == 0.125);
-    CHECK (rack::slicePerBeats (rack::SlicePer::transient, lynx::Meter (4, 4)) == 0.0 && rack::slicePerBeats (rack::SlicePer::warpMarker, lynx::Meter (4, 4)) == 0.0);
+    CHECK (rack::slicePerBeats (rack::SlicePer::bar, yw::Meter (4, 4)) == 4.0 && rack::slicePerBeats (rack::SlicePer::bar, yw::Meter (3, 4)) == 3.0);
+    CHECK (rack::slicePerBeats (rack::SlicePer::half, yw::Meter (4, 4)) == 2.0 && rack::slicePerBeats (rack::SlicePer::thirtySecond, yw::Meter (4, 4)) == 0.125);
+    CHECK (rack::slicePerBeats (rack::SlicePer::transient, yw::Meter (4, 4)) == 0.0 && rack::slicePerBeats (rack::SlicePer::warpMarker, yw::Meter (4, 4)) == 0.0);
     // pads "Slice 1"…, the rack and the channel named after the clip (190ei B6b)
     const auto drum = rack::sliceToDrumRack ("/x/drums.wav", { 0.0f, 0.25f, 0.5f, 0.75f }, "Slice", rack::SliceTemplate::gated, 1.0f, "drums");
     const auto& r = *rack::rackOf (drum.patcher);
@@ -264,7 +264,7 @@ TEST (drumrack190el_slice_per_list_and_names_follow_live)
 
 TEST (drumrack190el_copy_pad_saves_and_applies_a_default_pad)
 {
-    using namespace lynx;
+    using namespace yw;
     using drumrack190el::sampler;
     auto from = rack::makeDrumRack();
     const auto c = rack::addPad (from, 40, "Snare", sampler ("/x/snare.wav", "Snare"));
@@ -302,7 +302,7 @@ TEST (drumrack190el_copy_pad_saves_and_applies_a_default_pad)
 
 TEST (drumrack190el_als_return_names_carry_the_letter_live_shows)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace drumrack190el;
     auto kit = testKit ("E:/kit");
     for (const auto version : { AlsVersion::live12, AlsVersion::live11 })
@@ -354,13 +354,13 @@ TEST (drumrack190el_als_return_names_carry_the_letter_live_shows)
     }
 }
 
-// The sets for the next Live check (round 190el): LYNX's own export of testKit(), Live 12 and Live 11, with the samples
-// beside them. Runs only with LYNX_DRUMRACK190EL_EXPORT=<folder>.
+// The sets for the next Live check (round 190el): YW's own export of testKit(), Live 12 and Live 11, with the samples
+// beside them. Runs only with YW_DRUMRACK190EL_EXPORT=<folder>.
 TEST (drumrack190el_export_sets_for_the_live_check)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace drumrack190el;
-    const char* dir = std::getenv ("LYNX_DRUMRACK190EL_EXPORT");
+    const char* dir = std::getenv ("YW_DRUMRACK190EL_EXPORT");
     if (dir == nullptr)
         return;
     const std::string folder = dir;
@@ -376,7 +376,7 @@ TEST (drumrack190el_export_sets_for_the_live_check)
     {
         AlsExportOptions o;
         o.version = version;
-        o.creator = "LYNX SHARE";
+        o.creator = "YW Studio";
         o.sampleFormat = [&frames] (const std::string& path, double& count, double& rate) {
             const auto it = frames.find (path);
             count = it != frames.end() ? it->second : 0.0, rate = 44100.0;
@@ -387,7 +387,7 @@ TEST (drumrack190el_export_sets_for_the_live_check)
             return it != frames.end() ? it->second / 44100.0 : 0.0;
         };
         const auto out = exportAls (kit.song, o);
-        const auto file = folder + (version == AlsVersion::live12 ? "/lynx-drumrack-live12.als" : "/lynx-drumrack-live11.als");
+        const auto file = folder + (version == AlsVersion::live12 ? "/yw-drumrack-live12.als" : "/yw-drumrack-live11.als");
         std::FILE* f = std::fopen (file.c_str(), "wb");
         CHECK (f != nullptr && ! out.bytes.empty());
         if (f != nullptr)

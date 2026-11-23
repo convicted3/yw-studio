@@ -3,7 +3,7 @@
 // Detailed, frequency-coloured waveforms (Playlist audio clips, the Sampler editor, the Browser preview).
 //
 //  - WaveformCache: one core/WaveAnalysis Summary per audio file, built on a background thread (never the
-//    audio or UI thread), kept in memory and on disk (%APPDATA%\LYNX\wavecache, keyed by path + size + date).
+//    audio or UI thread), kept in memory and on disk (%APPDATA%\YW\wavecache, keyed by path + size + date).
 //    It broadcasts a change when a waveform becomes ready, so views just repaint.
 //  - paintWaveform(): draws any frame range of a Summary straight into a pixel buffer (one image per call,
 //    physical-pixel resolution, anti-aliased peak and RMS edges), so many clips still scroll smoothly.
@@ -24,7 +24,7 @@
 #include "core/Instruments.h"
 #include "core/WaveAnalysis.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 class WaveformCache final : public juce::ChangeBroadcaster,
                             private juce::DeletedAtShutdown
@@ -35,7 +35,7 @@ public:
 
     // (may be created again after JUCE's shutdown deleted it, round 190pq: a plugin of the pack shuts JUCE down with its last
     // instance, but the host keeps the library loaded — JUCE's own thread_local text shaping pins it — so the next
-    // instrument's editor got no cache and crashed in a host that removed every LYNX plugin and added one again)
+    // instrument's editor got no cache and crashed in a host that removed every YW plugin and added one again)
     JUCE_DECLARE_SINGLETON_SINGLETHREADED_INLINE (WaveformCache, false)
 
     using Source = std::function<std::shared_ptr<const SampleData>()>;
@@ -202,4 +202,4 @@ private:
     float regionX (float fraction) const; // the x of a play-order fraction of the region
     juce::Rectangle<int> locatorArea (float fraction) const;
 };
-} // namespace lynx::ui
+} // namespace yw::ui

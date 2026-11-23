@@ -3,7 +3,7 @@
 #include <juce_core/juce_core.h>
 #include <functional>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 bool isRemotePatternOperation (const juce::String&);

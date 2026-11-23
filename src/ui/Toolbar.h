@@ -14,7 +14,7 @@
 // Widgets of the main toolbar (docs/WORKFLOW_FL.md section 5.1), each with its own hint: the song position
 // slider, the time display, master volume and pitch, the CPU / memory / polyphony meter and the output
 // monitor. Laid out by MainComponent::resized().
-namespace lynx::toolbar
+namespace yw::toolbar
 {
 // A thin slider under the time display: where the playhead is in the song (Song mode) or in the
 // current pattern (Pattern mode). Click or drag to move the playhead; the wheel moves it by a bar.
@@ -68,7 +68,7 @@ public:
         bars,  // the Pattern toolbar: FL's B:S:T ("1:01:00", round 190jo FM-6); the other looks: bar : beat : step
         clock,
         smpte,
-        beats  // round 190jo: LYNX's "1 : 1 : 1" (bar : beat : step) kept in the Pattern toolbar's menu
+        beats  // round 190jo: YW's "1 : 1 : 1" (bar : beat : step) kept in the Pattern toolbar's menu
     };
 
 private:
@@ -180,7 +180,7 @@ private:
     juce::StringArray inputs;
 };
 
-// CPU load, memory used by LYNX and the polyphony (notes sounding now), in two rows.
+// CPU load, memory used by YW and the polyphony (notes sounding now), in two rows.
 class PerformanceMeter final : public juce::Component,
                                public ui::HintSource
 {
@@ -218,7 +218,7 @@ public:
     enum Refresh { slow, medium, fast };
     static inline int refresh = medium;   // saved in the UI options ("cpuRefresh")
     // round 190ld: FL's "Misc" radio pair, what the panel's second number shows: the voice count (FL's default) or the
-    // frames per second of the display (LYNX: frames in which something on screen moved). Saved ("cpuView").
+    // frames per second of the display (YW: frames in which something on screen moved). Saved ("cpuView").
     enum SecondView { voiceCount, framesPerSecond };
     static inline int secondView = voiceCount;
     void setFramesPerSecond (int fps);
@@ -274,7 +274,7 @@ private:
     juce::String text { "---" };
 };
 
-// The project key (round 184a S11, design §3.1; LYNX's own panel): "Key" over the key's name ("A minor", "none"). A click
+// The project key (round 184a S11, design §3.1; YW's own panel): "Key" over the key's name ("A minor", "none"). A click
 // opens the Key menu (root, scale, None, Guess from notes). Hidden by default; the Simple and Clip-launch workflows show it.
 class KeyPanel final : public juce::Component,
                        public ui::HintSource
@@ -311,7 +311,7 @@ private:
 
 // Ableton Link's switch (round 190gl), as the reference DAW's control bar has it (its manual's "The Link Toggle in the
 // Control Bar"): "Link" while off; on, the number of other peers ("0 Links", "1 Link", "2 Links"), lit; the arrow beside
-// it opens the drop-down (Link on / off, Configure Link...). In FL's Pattern layout it is LYNX's own small switch,
+// it opens the drop-down (Link on / off, Configure Link...). In FL's Pattern layout it is YW's own small switch,
 // hidden until the user shows it (Settings › Link › Show Link Toggle, or the toolbar's edit mode).
 // Live's phase-nudge buttons (round 190mv, DL-51; capture 190mv B2, live-phase-nudge.png): a 16 px box with four upright
 // bars, no box at rest, grey under the mouse, orange (255,194,129) with black bars while held. Held, the song runs a
@@ -417,7 +417,7 @@ public:
     static juce::String modeName (int m);
     std::function<void()> onModeChanged;   // the main window saves the choice
 
-    // diagnostics (LYNX_OVERLAY_STATS / --selftest): frames this display showed on the GPU overlay instead of a repaint
+    // diagnostics (YW_OVERLAY_STATS / --selftest): frames this display showed on the GPU overlay instead of a repaint
     static std::atomic<int>& overlayFrames();
 
 private:
@@ -427,7 +427,7 @@ private:
     // window runs no Direct2D frame and no present for it. Profiled (Windows, Thief playing, toolbar at the display's
     // rate): the main window's frames were ~58 % of the message thread's cycles (EndDraw 28 %, the display's paint 11 %,
     // present 11 %), nearly all for this display. The repaint stays the fallback whenever the overlay cannot show it
-    // (another platform, drawing with the CPU, something in front of it). LYNX_SCOPE_OVERLAY=0: always the repaint.
+    // (another platform, drawing with the CPU, something in front of it). YW_SCOPE_OVERLAY=0: always the repaint.
     void frameChanged();      // the display's picture changed this frame: on the overlay, else a repaint
     void stopOverlay();       // it stopped moving: the view paints itself again
     void paintDisplay (juce::Graphics& g, bool software);
@@ -553,7 +553,7 @@ private:
 //  - drag a panel sideways to move it (an accent line shows where it lands)
 //  - drag a panel down into the tray to remove it; drag a panel from the tray onto the toolbar to add it there
 //  - double-click a panel in the tray: add / remove it; right-click a panel: remove, move left / right
-//  - presets (LYNX's own), "Reset" and "Done" (Esc or Enter) on the tray
+//  - presets (YW's own), "Reset" and "Done" (Esc or Enter) on the tray
 class EditOverlay final : public juce::Component,
                           public ui::HintSource
 {
@@ -609,4 +609,4 @@ private:
     juce::ComboBox presetBox;
     juce::TextButton resetButton, doneButton;
 };
-} // namespace lynx::toolbar
+} // namespace yw::toolbar

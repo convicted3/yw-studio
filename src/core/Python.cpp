@@ -36,12 +36,12 @@
 extern "C"
 {
 #include "pocketpy.h"
-extern volatile int py_lynx_interrupt; // (third_party/pocketpy/pocketpy.c, LYNX's additions)
-extern volatile int py_lynx_out_of_memory;
-extern size_t py_lynx_heap_limit;
+extern volatile int py_yw_interrupt; // (third_party/pocketpy/pocketpy.c, YW's additions)
+extern volatile int py_yw_out_of_memory;
+extern size_t py_yw_heap_limit;
 }
 
-namespace lynx::python
+namespace yw::python
 {
 namespace
 {
@@ -90,7 +90,7 @@ struct ThreadCpuClock
 #endif
 };
 
-// --- LYNX's library ----------------------------------------------------------------------------------------------
+// --- YW's library ----------------------------------------------------------------------------------------------
 
 // What a script written for CPython 3.12 expects and pocketpy lacks (our own code)
 constexpr const char* prelude = R"PY(
@@ -148,7 +148,7 @@ def _randrange(start, stop=None, step=1):
 random.randrange = _randrange
 
 # str methods CPython has and pocketpy lacks (ASCII rules; other characters count as letters)
-import _lynxstr
+import _ywstr
 def _letter(c):
     return ('a' <= c <= 'z') or ('A' <= c <= 'Z') or ord(c) > 127
 def _digit(c):
@@ -227,7 +227,7 @@ for _n, _f in (('isdigit', _isdigit), ('isdecimal', _isdigit), ('isnumeric', _is
                ('rpartition', _rpartition), ('rfind', _rfind), ('rindex', _rindex), ('rsplit', _rsplit),
                ('expandtabs', _expandtabs)):
     if not hasattr('', _n):
-        _lynxstr.add(_n, _f)
+        _ywstr.add(_n, _f)
 
 # globals() is a name dict whose get() needs its default: CPython's get(key, default=None)
 _names = type(globals())
@@ -235,12 +235,12 @@ _names_get = _names.get
 def _names_get_default(self, key, default=None):
     return _names_get(self, key, default)
 if _names is not dict:
-    _lynxstr.add('get', _names_get_default, _names)
+    _ywstr.add('get', _names_get_default, _names)
 )PY";
 
 // `re` on top of one native search (std::regex, ECMAScript syntax after a few Python → ECMAScript rewrites)
 constexpr const char* reModule = R"PY(
-import _lynxre
+import _ywre
 
 I = IGNORECASE = 2
 M = MULTILINE = 8
@@ -333,11 +333,11 @@ class Pattern:
     def __init__(self, pattern, flags=0):
         self.pattern = pattern
         self.flags = flags
-        self._names = _lynxre.names(pattern)
-        self.groups = _lynxre.groups(pattern, flags)
+        self._names = _ywre.names(pattern)
+        self.groups = _ywre.groups(pattern, flags)
         self.groupindex = self._names
     def _find(self, string, pos, mode):
-        spans = _lynxre.find(self.pattern, self.flags, string, pos, mode)
+        spans = _ywre.find(self.pattern, self.flags, string, pos, mode)
         if spans is None:
             return None
         m = Match(string, spans, self._names, self)
@@ -558,7 +558,7 @@ std::size_t byteOffset (const char* s, std::size_t size, int chars)
     return size;
 }
 
-// _lynxstr.add(name, function): a method of str (LYNX's prelude adds CPython's missing ones)
+// _ywstr.add(name, function): a method of str (YW's prelude adds CPython's missing ones)
 bool strAdd (int argc, py_StackRef argv)
 {
     if (argc != 2 && argc != 3)
@@ -580,7 +580,7 @@ bool reError (const std::exception& e)
     return py_exception (tp_ValueError, "bad regular expression (%s)", e.what());
 }
 
-// _lynxre.find(pattern, flags, string, pos, mode): mode 0 search, 1 match (anchored at pos), 2 fullmatch →
+// _ywre.find(pattern, flags, string, pos, mode): mode 0 search, 1 match (anchored at pos), 2 fullmatch →
 // a list of (start, end) per group (−1, −1 = did not take part), or None
 bool reFind (int argc, py_StackRef argv)
 {
@@ -638,7 +638,7 @@ bool reFind (int argc, py_StackRef argv)
     }
 }
 
-// _lynxre.groups(pattern, flags): the number of groups (raises on a bad pattern)
+// _ywre.groups(pattern, flags): the number of groups (raises on a bad pattern)
 bool reGroups (int argc, py_StackRef argv)
 {
     PY_CHECK_ARGC (2);
@@ -655,7 +655,7 @@ bool reGroups (int argc, py_StackRef argv)
     }
 }
 
-// _lynxre.names(pattern): {name: group number} of the (?P<name>…) groups
+// _ywre.names(pattern): {name: group number} of the (?P<name>…) groups
 bool reNames (int argc, py_StackRef argv)
 {
     PY_CHECK_ARGC (1);
@@ -831,13 +831,13 @@ struct Host
             const auto overCpu = cpuLimit >= 0 && cpuNow >= 0 && cpuNow > cpuLimit;
             if (overCpu || Clock::now().time_since_epoch().count() > d)
             {
-                py_lynx_interrupt = 1;
+                py_yw_interrupt = 1;
                 deadline = 0;
             }
         }
     }
 
-    // a fresh VM: LYNX's library, sandboxed imports, print to the VM's own sink
+    // a fresh VM: YW's library, sandboxed imports, print to the VM's own sink
     void install()
     {
         auto* cb = py_callbacks();
@@ -849,13 +849,13 @@ struct Host
         };
         cb->flush = [] {};
         cb->getchr = [] { return -1; };
-        py_bindfunc (py_newmodule ("_lynxstr"), "add", strAdd);
-        py_GlobalRef re = py_newmodule ("_lynxre");
+        py_bindfunc (py_newmodule ("_ywstr"), "add", strAdd);
+        py_GlobalRef re = py_newmodule ("_ywre");
         py_bindfunc (re, "find", reFind);
         py_bindfunc (re, "groups", reGroups);
         py_bindfunc (re, "names", reNames);
         setTimeLimit (2000.0);
-        if (! py_exec (prelude, "<lynx>", EXEC_MODE, nullptr))
+        if (! py_exec (prelude, "<yw>", EXEC_MODE, nullptr))
             py_clearexc (nullptr);
         if (! py_exec (reModule, "re", EXEC_MODE, py_newmodule ("re")))
             py_clearexc (nullptr);
@@ -950,8 +950,8 @@ void setTimeLimit (double milliseconds) noexcept
     if (milliseconds <= 0.0)
     {
         h.deadline = 0;
-        py_lynx_interrupt = 0;
-        py_lynx_out_of_memory = 0;
+        py_yw_interrupt = 0;
+        py_yw_out_of_memory = 0;
         return;
     }
     const auto limitNs = (std::int64_t) (milliseconds * 1.0e6);
@@ -959,16 +959,16 @@ void setTimeLimit (double milliseconds) noexcept
     h.cpuDeadline = cpu >= 0 ? cpu + limitNs : -1;
     // (without a CPU clock the wall clock is the limit, as before)
     h.deadline = (Clock::now() + std::chrono::nanoseconds (cpu >= 0 ? 4 * limitNs : limitNs)).time_since_epoch().count();
-    py_lynx_interrupt = 0;
-    py_lynx_out_of_memory = 0;
+    py_yw_interrupt = 0;
+    py_yw_out_of_memory = 0;
 }
 
 std::string takeError()
 {
     char* text = py_formatexc();
     std::string out = text != nullptr ? text : "error";
-    if (py_lynx_out_of_memory != 0) // (stopped by the heap limit, not by the clock)
-        out = "MemoryError: the script used more than " + std::to_string (py_lynx_heap_limit >> 20) + " MB of memory";
+    if (py_yw_out_of_memory != 0) // (stopped by the heap limit, not by the clock)
+        out = "MemoryError: the script used more than " + std::to_string (py_yw_heap_limit >> 20) + " MB of memory";
     if (text != nullptr)
         py_free (text);
     py_clearexc (nullptr);
@@ -978,4 +978,4 @@ std::string takeError()
 }
 
 void setPrint (std::function<void (const std::string&)> print) { host().prints[(std::size_t) py_currentvm()] = std::move (print); }
-} // namespace lynx::python
+} // namespace yw::python

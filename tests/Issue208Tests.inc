@@ -10,40 +10,40 @@
 
 namespace i208
 {
-lynx::Note step (int index, int repeat = 0, std::int64_t length = lynx::ticksPerStep)
+yw::Note step (int index, int repeat = 0, std::int64_t length = yw::ticksPerStep)
 {
-    lynx::Note n;
-    n.start = (std::int64_t) index * lynx::ticksPerStep;
+    yw::Note n;
+    n.start = (std::int64_t) index * yw::ticksPerStep;
     n.length = length;
     n.repeat = repeat;
     return n;
 }
 
-std::vector<std::int64_t> strikes (const lynx::Note& n)
+std::vector<std::int64_t> strikes (const yw::Note& n)
 {
     std::vector<std::int64_t> out;
-    lynx::noterepeat::forEachStrike (n, n.start, n.length, [&] (std::int64_t at, std::int64_t, int) { out.push_back (at); });
+    yw::noterepeat::forEachStrike (n, n.start, n.length, [&] (std::int64_t at, std::int64_t, int) { out.push_back (at); });
     return out;
 }
 } // namespace i208
 
 TEST (i208_repeat_rates_are_fls_table)
 {
-    using namespace lynx::noterepeat;
+    using namespace yw::noterepeat;
     // FL's table (FLEngine 0x154a138): index 0 = none, then 1/4 beat ... 1/64 triplet
     CHECK (std::string (rateName (0)) == "No repeat" && std::string (rateName (1)) == "1/4 (Beat)");
     CHECK (std::string (rateName (7)) == "1/16 (Step)" && std::string (rateName (10)) == "1/32 (Half step)");
     CHECK (std::string (rateName (14)) == "1/64 triplet" && std::string (rateName (15)).empty());
-    CHECK (interval (0) == 0 && interval (1) == lynx::ppq && interval (4) == lynx::ppq / 2);
-    CHECK (interval (7) == lynx::ticksPerStep && interval (10) == lynx::ticksPerStep / 2 && interval (13) == lynx::ticksPerStep / 4);
-    CHECK (interval (2) == lynx::ppq * 3 / 4 && interval (3) == lynx::ppq * 2 / 3 && interval (14) == lynx::ppq / 24);
+    CHECK (interval (0) == 0 && interval (1) == yw::ppq && interval (4) == yw::ppq / 2);
+    CHECK (interval (7) == yw::ticksPerStep && interval (10) == yw::ticksPerStep / 2 && interval (13) == yw::ticksPerStep / 4);
+    CHECK (interval (2) == yw::ppq * 3 / 4 && interval (3) == yw::ppq * 2 / 3 && interval (14) == yw::ppq / 24);
     for (int i = 2; i <= rateCount; ++i)
         CHECK (interval (i) < interval (i - 1)); // (faster and faster)
 }
 
 TEST (i208_a_repeated_note_is_struck_at_its_rate_while_it_lasts)
 {
-    using namespace lynx;
+    using namespace yw;
     // one beat at 1/16: four strikes, each to the next
     auto n = i208::step (0, 7, ppq);
     CHECK ((i208::strikes (n) == std::vector<std::int64_t> { 0, 240, 480, 720 }));
@@ -61,7 +61,7 @@ TEST (i208_a_repeated_note_is_struck_at_its_rate_while_it_lasts)
 
 TEST (i208_scheduler_plays_every_strike)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     p.notes.push_back (i208::step (0, 7, ppq)); // one beat at 1/16
     const auto tps = 960.0 * 2.0 / 44100.0;      // 120 BPM, 44.1 kHz
@@ -82,7 +82,7 @@ TEST (i208_scheduler_plays_every_strike)
 
 TEST (i208_scheduler_plays_strikes_of_a_playlist_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.clear();
     Pattern p;
@@ -106,7 +106,7 @@ TEST (i208_scheduler_plays_strikes_of_a_playlist_clip)
 
 TEST (i208_graph_lanes_in_fls_order)
 {
-    using namespace lynx::notetools;
+    using namespace yw::notetools;
     const Level fl[] { Level::notePitch, Level::velocity, Level::release, Level::finePitch, Level::pan, Level::modX, Level::modY, Level::shift, Level::repeat };
     for (int tab = 0; tab < stepLevelCount; ++tab)
         CHECK (stepLevel (tab) == fl[tab]);
@@ -118,7 +118,7 @@ TEST (i208_graph_lanes_in_fls_order)
     CHECK (graphNote == 6 && graphShift == 7 && graphRepeat == 8 && graphLaneCount == 9);
     for (int tab = 0; tab < graphLaneCount; ++tab)
         CHECK (graphTabOrder[tab] == (int) stepLevel (tab));
-    lynx::Note n;
+    yw::Note n;
     setGraphValue (n, graphShift, 0.5f);
     CHECK (std::abs (graphValue (n, graphShift) - 0.5f) < 0.01f && graphDefault (graphShift) == 0.0f && ! graphIsBipolar (graphShift));
     CHECK (std::string (graphLaneName (graphRepeat)) == "Repeat");
@@ -126,8 +126,8 @@ TEST (i208_graph_lanes_in_fls_order)
 
 TEST (i208_note_pitch_shift_and_repeat_levels)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     auto n = i208::step (5);
     // Note pitch: the key
     setLevelValue (n, Level::notePitch, 72.0f / 127.0f);
@@ -157,7 +157,7 @@ TEST (i208_note_pitch_shift_and_repeat_levels)
 
 TEST (i208_flp_round_trip_of_repeat_and_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.clear();
     Pattern p;
@@ -198,7 +198,7 @@ TEST (i208_flp_round_trip_of_repeat_and_levels)
 
 TEST (i208_burn_to_midi_writes_each_strike)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.clear();
     Pattern p;

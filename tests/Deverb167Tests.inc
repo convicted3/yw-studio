@@ -5,13 +5,13 @@ namespace deverb167
 // noise bursts (`burst` s every `period` s) in a room: a velvet-noise impulse response decaying to -60 dB in `t60` s
 struct Room
 {
-    lynx::audioedit::Document dry, wet;
+    yw::audioedit::Document dry, wet;
 };
 inline Room make (double t60, double rate = 44100.0, double seconds = 4.0, double period = 0.8, double burst = 0.12)
 {
     Room r;
     const auto n = (int) (rate * seconds);
-    r.dry.audio = lynx::audioedit::silence (1, rate, n);
+    r.dry.audio = yw::audioedit::silence (1, rate, n);
     std::uint32_t seed = 12345;
     auto rnd = [&seed] {
         seed = seed * 1664525u + 1013904223u;
@@ -28,7 +28,7 @@ inline Room make (double t60, double rate = 44100.0, double seconds = 4.0, doubl
         const auto at = (int) (t + (rnd() * 0.5 + 0.5) * (spacing - 1));
         taps.emplace_back (at, (rnd() > 0 ? 0.35 : -0.35) * std::exp (-6.907755 * (at / rate) / t60));
     }
-    r.wet.audio = lynx::audioedit::silence (1, rate, n);
+    r.wet.audio = yw::audioedit::silence (1, rate, n);
     const auto& x = r.dry.audio.channels[0];
     auto& y = r.wet.audio.channels[0];
     for (int i = 0; i < n; ++i)
@@ -40,7 +40,7 @@ inline Room make (double t60, double rate = 44100.0, double seconds = 4.0, doubl
 }
 
 // the energy (dB) of the parts `from`..`to` s after each burst's start
-inline double energyDb (const lynx::audioedit::Audio& a, double from, double to, double period = 0.8)
+inline double energyDb (const yw::audioedit::Audio& a, double from, double to, double period = 0.8)
 {
     double e = 0.0;
     for (int i = 0; i < a.frames(); ++i)
@@ -55,7 +55,7 @@ inline double energyDb (const lynx::audioedit::Audio& a, double from, double to,
 
 TEST (deverb167_reverb_time)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     // the room's T60 read from the free decays after each burst
     for (const double t60 : { 0.5, 1.0 })
     {
@@ -72,7 +72,7 @@ TEST (deverb167_reverb_time)
 
 TEST (deverb167_removes_the_tail)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     const auto room = deverb167::make (1.0);
     for (const bool voice : { false, true })
     {

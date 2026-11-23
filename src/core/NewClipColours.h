@@ -13,7 +13,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::newclipcolours
+namespace yw::newclipcolours
 {
 constexpr int count = 16;
 
@@ -57,4 +57,4 @@ inline int colourNew (Song& song, std::size_t channelsBefore, std::size_t automa
             au.colour = pick(), ++coloured;
     return coloured;
 }
-} // namespace lynx::newclipcolours
+} // namespace yw::newclipcolours

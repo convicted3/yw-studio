@@ -37,13 +37,13 @@
  #include <unistd.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
 constexpr std::size_t maxMessage = 1024 * 1024;
 constexpr std::size_t maxHandshake = 1024;
-constexpr const char* protocol = "lynx-control/1";
+constexpr const char* protocol = "yw-control/1";
 using Field = std::pair<const char*, juce::var>;
 
 juce::var object (std::initializer_list<Field> fields)
@@ -239,7 +239,7 @@ struct RemoteControl::Impl final : juce::Thread
                     { "hasMore", ! changes.empty() && ! entries.isEmpty() && (juce::int64) entries.getLast()["revision"] < (juce::int64) changes.back().revision } });
             }
             if (op == "api.describe")
-                return object ({ { "protocol", protocol }, { "apiVersion", 1 }, { "projectFormat", "lynx-json/1" },
+                return object ({ { "protocol", protocol }, { "apiVersion", 1 }, { "projectFormat", "yw-json/1" },
                     { "maxRequestBytes", (int) maxMessage }, { "maxResponseBytes", (int) maxMessage },
                     { "authentication", "hmac-sha256-mutual" }, { "capabilities", status()["capabilities"] },
                     { "operations", juce::var ([] {
@@ -441,7 +441,7 @@ struct RemoteControl::Impl final : juce::Thread
         signalThreadShouldExit();
         stopThread (3500);
         listener.close();
-        // A second custom LYNX may have replaced this file; never remove its record.
+        // A second custom YW may have replaced this file; never remove its record.
         try
         {
             remote_files::removeDiscoveryIfOwned (discovery, token);
@@ -606,7 +606,7 @@ struct RemoteControl::Impl final : juce::Thread
         std::string pending;
         if (! authenticate (socket, pending))
         {
-            writeFrame (socket, failure ("Authentication failed; lynx-control/1 mutual authentication is required"),
+            writeFrame (socket, failure ("Authentication failed; yw-control/1 mutual authentication is required"),
                         maxHandshake, juce::Time::getMillisecondCounterHiRes() + 500.0);
             return;
         }
@@ -648,11 +648,11 @@ std::unique_ptr<RemoteControl> RemoteControl::create (AudioEngine& engine, bool 
                                                     std::function<juce::String()> projectPath)
 {
     if (! enabled) return {};
-    const auto override = juce::SystemStats::getEnvironmentVariable ("LYNX_CONTROL_DISCOVERY", {});
+    const auto override = juce::SystemStats::getEnvironmentVariable ("YW_CONTROL_DISCOVERY", {});
     try
     {
         if (override.isNotEmpty() && ! juce::File::isAbsolutePath (override))
-            invalid ("LYNX_CONTROL_DISCOVERY must be an absolute path");
+            invalid ("YW_CONTROL_DISCOVERY must be an absolute path");
         const auto file = override.isEmpty() ? platform::settingsFile ("control/connection.json") : juce::File (override);
         return std::unique_ptr<RemoteControl> (new RemoteControl (std::make_unique<Impl> (engine, std::move (name), std::move (projectPath), file)));
     }
@@ -662,4 +662,4 @@ std::unique_ptr<RemoteControl> RemoteControl::create (AudioEngine& engine, bool 
         return {};
     }
 }
-} // namespace lynx
+} // namespace yw

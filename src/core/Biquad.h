@@ -8,10 +8,10 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) // x86 SSE2, or ARM64 through core/Simd.h (sse2neon)
  #include "core/Simd.h"
- #define LYNX_BIQUAD_SSE2 1
+ #define YW_BIQUAD_SSE2 1
 #endif
 
-namespace lynx
+namespace yw
 {
 struct Biquad
 {
@@ -31,7 +31,7 @@ struct Biquad
     // both channels of a block, with state in locals (same result as per-sample process())
     void processBlock (float* l, float* r, int n) noexcept
     {
-       #if LYNX_BIQUAD_SSE2
+       #if YW_BIQUAD_SSE2
         // both channels side by side in a 2-double register (same math, same order)
         auto s1 = _mm_set_pd (z1[1], z1[0]), s2 = _mm_set_pd (z2[1], z2[0]);
         const auto c0 = _mm_set1_pd (b0), c1 = _mm_set1_pd (b1), c2 = _mm_set1_pd (b2), d1 = _mm_set1_pd (a1), d2 = _mm_set1_pd (a2);
@@ -123,4 +123,4 @@ struct Biquad
                  (a + 1) + (a - 1) * cw + sq, -2 * ((a - 1) + (a + 1) * cw), (a + 1) + (a - 1) * cw - sq);
     }
 };
-} // namespace lynx
+} // namespace yw

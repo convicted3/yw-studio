@@ -6,8 +6,8 @@
 
 TEST (toolbar190iv_each_layout_style_has_its_toolbar_look)
 {
-    using namespace lynx::toolbarlayout;
-    using lynx::layoutstyle::Style;
+    using namespace yw::toolbarlayout;
+    using yw::layoutstyle::Style;
     CHECK (lookFor (Style::pattern) == Look::fl);
     CHECK (lookFor (Style::simple) == Look::simple);
     CHECK (lookFor (Style::clipLaunch) == Look::live);
@@ -26,7 +26,7 @@ TEST (toolbar190iv_each_layout_style_has_its_toolbar_look)
 
 TEST (toolbar190iv_simple_bar_fits_by_priority)
 {
-    using namespace lynx::toolbarlayout::simplebar;
+    using namespace yw::toolbarlayout::simplebar;
     std::array<int, partCount> widths {};
     for (int i = 0; i < partCount; ++i)
         widths[(std::size_t) i] = 100;
@@ -51,7 +51,7 @@ TEST (toolbar190iv_simple_bar_fits_by_priority)
 
 TEST (toolbar190iv_save_status_has_four_states)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     CHECK (saveState (false, false, false) == SaveState::fresh);
     CHECK (saveState (false, true, false) == SaveState::saved);
     CHECK (saveState (true, false, false) == SaveState::unsaved);
@@ -62,7 +62,7 @@ TEST (toolbar190iv_save_status_has_four_states)
 
 TEST (toolbar190iv_live_control_bar_keeps_live_order_and_fits)
 {
-    using namespace lynx::toolbarlayout::livebar;
+    using namespace yw::toolbarlayout::livebar;
     // Live 12.4's measures (CL-2): a 38 px band of 17 px boxes with 2 px gaps under a 23 px menu row
     CHECK (band == 38 && box == 17 && gap == 2 && menuRow == 23);
     // Live's order: left (Link ... key), the transport in the centre, punch, then the right part ending with the view selector

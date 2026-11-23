@@ -2,7 +2,7 @@
 
 #include "engine/ProjectFile.h"
 
-namespace lynx::crossclipboard
+namespace yw::crossclipboard
 {
 namespace
 {
@@ -59,7 +59,7 @@ std::optional<Kind> kindFromName (const juce::String& name) noexcept
 juce::String toJson (const Payload& payload)
 {
     auto root = std::make_unique<juce::DynamicObject>();
-    root->setProperty ("lynxClipboard", formatVersion);
+    root->setProperty ("ywClipboard", formatVersion);
     root->setProperty ("kind", kindName (payload.kind));
     root->setProperty ("stamp", payload.stamp);
     root->setProperty ("pid", payload.pid);
@@ -126,7 +126,7 @@ juce::String toJson (const Payload& payload)
 std::optional<Payload> fromJson (const juce::String& json)
 {
     const auto root = juce::JSON::parse (json);
-    if (! root.isObject() || (int) root.getProperty ("lynxClipboard", 0) < 1 || (int) root.getProperty ("lynxClipboard", 0) > formatVersion)
+    if (! root.isObject() || (int) root.getProperty ("ywClipboard", 0) < 1 || (int) root.getProperty ("ywClipboard", 0) > formatVersion)
         return std::nullopt;
     const auto kind = kindFromName (root["kind"].toString());
     if (! kind)
@@ -275,4 +275,4 @@ void prune (const juce::File& sideFolder, int keepNewest)
     for (int i = keepNewest; i < files.size(); ++i)
         files.getReference (i).deleteFile();
 }
-} // namespace lynx::crossclipboard
+} // namespace yw::crossclipboard

@@ -1,13 +1,13 @@
-    // LYNX --trackclips190neshot <prefix> (round 190ne, 0.1.31: track clips, core/TrackClips.h) off-screen through the real
+    // YW --trackclips190neshot <prefix> (round 190ne, 0.1.31: track clips, core/TrackClips.h) off-screen through the real
     // components: the Pattern layout with two instrument tracks whose clips own their notes, a bus track and FL's
     // tracks as they are; the Picker's "Track clips" group open and folded, the headers' marks, the track and clip menus;
     // the pencil, Ctrl+B / Ctrl+Alt+B, Cut / Paste and Delete through the Playlist's own handlers, with Undo; the same
-    // instrument track with the switch off (FL's own: every pencil click places one pattern), for the FL | LYNX pair.
-    // <prefix>-checks.txt lists the checks. @150: LYNX_SHOT_SCALE=1.5 LYNX_SHOT_SUFFIX=@150.
+    // instrument track with the switch off (FL's own: every pencil click places one pattern), for the FL | YW pair.
+    // <prefix>-checks.txt lists the checks. @150: YW_SHOT_SCALE=1.5 YW_SHOT_SUFFIX=@150.
     bool runTrackClipsShot190ne (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::StringArray report;
         bool allOk = true;
         const auto check = [&report, &allOk] (const char* name, bool ok, const juce::String& detail = {}) {
@@ -18,12 +18,12 @@
             juce::File (prefix + "-checks.txt").replaceWithText (report.joinIntoString ("\n") + "\nresult=" + (allOk ? "OK" : "FAIL") + "\n");
             return allOk;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
         const auto bar = (std::int64_t) 4 * ppq;
 
-        // the wireframe's song (/mnt/e/lynx-work/study190nd/tracks/wireframe-track-clips.svg), as LYNX data
+        // the wireframe's song (/mnt/e/yw-work/study190nd/tracks/wireframe-track-clips.svg), as YW data
         const auto makeSong = [bar] (bool ownClips) {
             auto s = Song::makeDefault();
             s.playlist.clear();

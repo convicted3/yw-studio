@@ -14,14 +14,14 @@
 // decimator. The channel keeps the plugin's raw saved state (record 0xD5, as FL wrote it) in ChannelDef::pluginState.
 //
 // Level: Ogun applies Final.Vol × (3^(P0/128) − 1)/2 × the volume articulator and its own pan matrix (FL's host does
-// not apply the channel volume/pan to it, REA_rodada28): LYNX's channel gains are turned back into Final.Vol/Pan and
+// not apply the channel volume/pan to it, REA_rodada28): YW's channel gains are turned back into Final.Vol/Pan and
 // applied once, inside the engine.
 //
-// Rendering: FL forces quality 4 when it renders to a file (dispatcher process-mode flag); LYNX does the same while
+// Rendering: FL forces quality 4 when it renders to a file (dispatcher process-mode flag); YW does the same while
 // it exports (offlineRendering()); live playback uses the state's quality (P54).
 //
 // Differences from FL by design / not modelled (REA_rodada37 §1.20 and open questions):
-// - Seed 2 "Random": FL's per-note counter starts from its RTL random seed (clock); LYNX's starts at a fixed value per
+// - Seed 2 "Random": FL's per-note counter starts from its RTL random seed (clock); YW's starts at a fixed value per
 //   instance (0), so Random spectra are deterministic and differ from any given FL render.
 // - Read start j₀ (argmin of the first table) is ill-conditioned: an occasional time shift of a note's table vs FL.
 // - IPP's 11-bit exp in the fullness shaping is evaluated exactly (FL's last bits differ; −52 dB worst synthetic case).
@@ -37,7 +37,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can play this Ogun state (version ≥ 14, every articulator and curve parsed)
 bool ogunStateUsable (const std::vector<std::uint8_t>& state);
@@ -46,7 +46,7 @@ bool ogunStateUsable (const std::vector<std::uint8_t>& state);
 bool autogunStateUsable (const std::vector<std::uint8_t>& state);
 
 // true when the state leaves FL's link velocity on (byte +0x20a, round 190pi): the host scales the voice by the note's
-// Init.Vol (LYNX does from ChannelDef::engineRev 2 on, rollup 0.1.31 step 7)
+// Init.Vol (YW does from ChannelDef::engineRev 2 on, rollup 0.1.31 step 7)
 bool ogunLinksVelocity (const std::vector<std::uint8_t>& state, bool autogun = false);
 
 // Raw integer parameter P[index] (0…63) of a state, or nullopt
@@ -96,4 +96,4 @@ struct RefOptions
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, const RefOptions& options = {});
 } // namespace ogun
-} // namespace lynx
+} // namespace yw

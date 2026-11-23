@@ -1,6 +1,6 @@
 #pragma once
 
-// FL's Fruity Slicer as a LYNX generator (round 180c, docs/analise/REA_rodada180c.md §Fruity Slicer): its saved state
+// FL's Fruity Slicer as a YW generator (round 180c, docs/analise/REA_rodada180c.md §Fruity Slicer): its saved state
 // (FL's 0xD5 stream, read and written byte for byte), the slice edits FL makes to the sample when it loads (reverse,
 // declick, fades) and what a note plays. The voices are the sampler's: each key from the first slice's note plays one
 // slice at the sample's own pitch.
@@ -14,7 +14,7 @@
 
 #include "core/FlVoiceSettings.h"
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 struct ChannelDef;
@@ -58,7 +58,7 @@ struct State
     bool operator== (const State&) const = default;
 };
 
-// FL's 0xD5 state (versions 13…16; FUN_00766c40). nullopt when it is not a Fruity Slicer state LYNX can read.
+// FL's 0xD5 state (versions 13…16; FUN_00766c40). nullopt when it is not a Fruity Slicer state YW can read.
 std::optional<State> parse (const std::vector<std::uint8_t>& bytes);
 // The state as FL writes it (version 16)
 std::vector<std::uint8_t> write (const State& state);
@@ -67,7 +67,7 @@ std::vector<std::uint8_t> write (const State& state);
 std::vector<std::int64_t> sliceLengths (const State& state, std::int64_t frames);
 
 // FL's edits to the loaded sample, in FL's order (FUN_007686d0): reversed slices, declick, the TS stretch with the
-// Fill gaps methods (0, 1: FUN_0075b5d0), fades. FL runs the other methods and PS through a licensed engine: LYNX
+// Fill gaps methods (0, 1: FUN_0075b5d0), fades. FL runs the other methods and PS through a licensed engine: YW
 // leaves the length as it is there (see the REA doc).
 std::shared_ptr<SampleData> prepare (const SampleData& sample, const State& state);
 // Where the slices start in the prepared sample (moved by a Fill gaps stretch)
@@ -105,7 +105,7 @@ struct DumpNote
     int pitchCents = 0;
 };
 // `frames` / `sampleRate`: the sample; `bpm`: the project's tempo (Original length places the slices in real time).
-// `random` (0 ≤ r < n) stands in for Delphi's Random, whose seed LYNX does not share.
+// `random` (0 ≤ r < n) stands in for Delphi's Random, whose seed YW does not share.
 std::vector<DumpNote> dumpNotes (const State& state, int tag, std::int64_t frames, double sampleRate, double bpm, int ppq,
                                  const std::function<int (int)>& random);
 
@@ -124,4 +124,4 @@ int firstNote (const State& state);
 // below the first slice's key or past the last one plays nothing (TriggerVoice FUN_00768230 starts no voice).
 std::vector<int> keyTable (const State& state);
 } // namespace fslicer
-} // namespace lynx
+} // namespace yw

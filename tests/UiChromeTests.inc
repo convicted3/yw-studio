@@ -7,7 +7,7 @@
 
 TEST (ui_hint_markup_parses_mouse_and_key_tokens)
 {
-    using namespace lynx::hintmarkup;
+    using namespace yw::hintmarkup;
     using K = Segment::Kind;
     const auto s = parse ("Volume: [LMB] drag  [Ctrl] fine  [Alt][LMB] reset");
     CHECK (s.size() == 8);
@@ -28,7 +28,7 @@ TEST (ui_hint_markup_parses_mouse_and_key_tokens)
 
 TEST (ui_default_layout_sizes)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
 
     // FL's fresh desktop at the common window sizes (desktop = window minus the toolbar)
     for (const auto& [w, h] : std::vector<std::pair<int, int>> { { 1280, 640 }, { 1600, 820 }, { 1920, 1000 }, { 2560, 1360 } })
@@ -64,7 +64,7 @@ TEST (ui_default_layout_sizes)
 
 TEST (ui_polyphony_counts_sounding_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.channels.resize (2);
     Pattern p;
@@ -109,9 +109,9 @@ TEST (ui_polyphony_counts_sounding_notes)
 
 TEST (ui_master_pitch_is_a_named_undo_step)
 {
-    auto before = lynx::Song::makeDefault();
+    auto before = yw::Song::makeDefault();
     auto after = before;
     after.masterPitch = 100.0f;
-    CHECK (std::string (lynx::describeChange (before, after).text) == "Master pitch");
-    CHECK (lynx::Song {}.masterPitch == 0.0f);
+    CHECK (std::string (yw::describeChange (before, after).text) == "Master pitch");
+    CHECK (yw::Song {}.masterPitch == 0.0f);
 }

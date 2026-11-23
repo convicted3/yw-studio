@@ -1,0 +1,8 @@
+[Unit]
+Description=YW Studio daily backup of service data
+
+[Service]
+Type=oneshot
+ExecStart=/opt/yw/ops/backup.sh
+Nice=15
+IOSchedulingClass=idle

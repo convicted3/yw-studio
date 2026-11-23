@@ -30,7 +30,7 @@ inline double energy (const std::vector<float>& l, const std::vector<float>& r)
 
 TEST (state_params_delay_bank_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto* table = stateparams::tableFor (EffectKind::fruityDelayBank);
     CHECK (table != nullptr);
     if (table == nullptr)
@@ -64,7 +64,7 @@ TEST (state_params_delay_bank_round_trip)
 
 TEST (state_params_band_tables)
 {
-    using namespace lynx;
+    using namespace yw;
     // Multiband Delay: bank·48 + target·16 + band, then the editor's target and bank
     const auto* mbd = stateparams::tableFor (EffectKind::multibandDelay);
     CHECK (mbd != nullptr && mbd->params.size() == 8u * 48u + 2u);
@@ -95,7 +95,7 @@ TEST (state_params_band_tables)
 
 TEST (delay_bank_takes_state_edits_while_running)
 {
-    using namespace lynx;
+    using namespace yw;
     // an edited bank control reaches the running engine (no rebuild); an option change asks for a new effect
     auto state = fldbank::defaultState();
     const auto bytes = fldbank::serialise (state);
@@ -130,7 +130,7 @@ TEST (delay_bank_takes_state_edits_while_running)
 
 TEST (band_table_effects_take_state_edits)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr int n = 512;
     const auto l = panels105::noise (n, 3), r = panels105::noise (n, 4);
     // Multiband Delay: every volume cell of every bank at 0 → the wet path falls silent, mix fully wet
@@ -165,7 +165,7 @@ TEST (band_table_effects_take_state_edits)
 
 TEST (round105_layouts_are_fl_arrangements)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : { EffectKind::vocoder, EffectKind::frequencySplitter, EffectKind::fruityDelayBank, EffectKind::equo,
                              EffectKind::multibandDelay, EffectKind::convolver })
     {
@@ -188,7 +188,7 @@ TEST (round105_layouts_are_fl_arrangements)
 
 TEST (state_params_vocodex_in_place)
 {
-    using namespace lynx;
+    using namespace yw;
     // the Default preset of the installation (skipped without the FL Data directory)
     const auto file = std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / "Vocodex" / "Default.fst";
     if (realFlpDir.empty() || ! std::filesystem::exists (file))

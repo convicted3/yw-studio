@@ -2,10 +2,10 @@
 
 namespace vm127
 {
-lynx::PluginIdentity named (const char* name)
+yw::PluginIdentity named (const char* name)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst2;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst2;
     id.name = name;
     return id;
 }
@@ -15,7 +15,7 @@ TEST (panman_substitute_moves_the_balance_round127)
 {
     // round 136: the substitute is Auto-pan's Rhythm voicing (her most used PanMan state as the fallback): a 1 kHz tone
     // must swing between the sides (round 113's preset was a pass-through, round 127's a ±50 % balance)
-    using namespace lynx;
+    using namespace yw;
     const auto id = vm127::named ("PanMan");
     const auto* e = findPluginSubstitute (id, false);
     CHECK (e != nullptr && e->effect == EffectKind::autoPan);
@@ -104,25 +104,25 @@ std::vector<std::uint8_t> efxState (int key, int scale, const char* notes /* 12 
     return std::vector<std::uint8_t> (x.begin(), x.end());
 }
 
-lynx::EffectSlot tuneSlot (const std::vector<std::uint8_t>& component, int& translated)
+yw::EffectSlot tuneSlot (const std::vector<std::uint8_t>& component, int& translated)
 {
     auto at = subst113::autoTune (component);
-    const auto id = lynx::pluginIdentity (at);
-    const auto* e = lynx::findPluginSubstitute (id, false);
+    const auto id = yw::pluginIdentity (at);
+    const auto* e = yw::findPluginSubstitute (id, false);
     CHECK (e != nullptr);
-    return e != nullptr ? lynx::makeSubstituteSlot (*e, &id, &translated) : lynx::EffectSlot {};
+    return e != nullptr ? yw::makeSubstituteSlot (*e, &id, &translated) : yw::EffectSlot {};
 }
 } // namespace vm127
 
 TEST (auto_tune_pro_extra_controls_translate_round127)
 {
-    using namespace lynx;
-    namespace t = lynxtune;
-    // her usual state: Alto-Tenor, detune 0, transpose 0, mix 100, formant on, throat 100, tracking 50 → LYNX defaults
+    using namespace yw;
+    namespace t = ywtune;
+    // her usual state: Alto-Tenor, detune 0, transpose 0, mix 100, formant on, throat 100, tracking 50 → YW defaults
     {
         int n = 0;
         const auto s = vm127::tuneSlot (vm127::autoTuneState (4, 1, { { 4, 7.44 }, { 61, 100 }, { 90, 20 }, { 3, 0 }, { 74, 0 }, { 92, 100 }, { 10, 1 }, { 70, 1 }, { 71, 100 }, { 9, 50 }, { 11, 0 } }), n);
-        CHECK (n == 12 && s.kind == EffectKind::lynxTune);
+        CHECK (n == 12 && s.kind == EffectKind::ywTune);
         CHECK (t::keyIndex (s.params[t::key]) == 4 && t::scaleIndex (s.params[t::scale]) == (int) vocal::Scale::minor);
         CHECK (std::abs (t::referenceHz (s.params[t::reference]) - 440.0) < 1e-3 && t::transposeSemitones (s.params[t::transpose]) == 0);
         CHECK (s.params[t::mix] == 1.0f && t::rangeIndex (s.params[t::range]) == 1 && s.params[t::formantPreserve] == 1.0f);
@@ -156,8 +156,8 @@ TEST (auto_tune_pro_extra_controls_translate_round127)
 
 TEST (auto_tune_efx_states_translate_round127)
 {
-    using namespace lynx;
-    namespace t = lynxtune;
+    using namespace yw;
+    namespace t = ywtune;
     // her B minor state with F added (custom targets), −12 st, throat 50 %
     {
         int n = 0;
@@ -189,7 +189,7 @@ TEST (auto_tune_efx_states_translate_round127)
 
 TEST (waves_cla76_translates_onto_crest_round127)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace c = dyn::crest;
     // her one state, the factory "Start Me Up": Input -8.7, Output -16.9, attack 4.3, release 4.31, all buttons, mix 41.3
     std::string values;

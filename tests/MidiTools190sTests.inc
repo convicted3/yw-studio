@@ -5,9 +5,9 @@
 
 namespace mt190s
 {
-inline lynx::Note at (std::int64_t start, std::int64_t length)
+inline yw::Note at (std::int64_t start, std::int64_t length)
 {
-    lynx::Note n;
+    yw::Note n;
     n.start = start;
     n.length = length;
     return n;
@@ -16,7 +16,7 @@ inline lynx::Note at (std::int64_t start, std::int64_t length)
 
 TEST (mt190s_quantize_moves_starts_and_keeps_lengths)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto grid = (std::int64_t) ppq / 4; // 1/16 = 240
     miditools::QuantizeOptions o;             // the defaults: Grid, Start, 100 %
     CHECK (o.step == 0 && o.start && ! o.end && ! o.triplets && o.amount == 1.0f);
@@ -44,7 +44,7 @@ TEST (mt190s_quantize_moves_starts_and_keeps_lengths)
 
 TEST (mt190s_quantize_note_ends)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto grid = (std::int64_t) ppq / 4;
     miditools::QuantizeOptions o;
     o.start = false;

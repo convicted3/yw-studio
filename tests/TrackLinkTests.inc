@@ -6,11 +6,11 @@ namespace tracklink
 // tracks: 0 = unassigned, 1 = audio track on insert 6, 2 = unassigned "Vocals"; insert 7 a prepared vocal chain
 struct Setup
 {
-    lynx::Song song = lynx::Song::makeDefault(); // channels 0..4 on inserts 1..5
+    yw::Song song = yw::Song::makeDefault(); // channels 0..4 on inserts 1..5
     int take = -1;
     Setup()
     {
-        using namespace lynx;
+        using namespace yw;
         while (song.mixer.size() < 16)
             song.mixer.emplace_back().name = "Insert " + std::to_string (song.mixer.size());
         song.playlistTracks.resize (3);
@@ -29,8 +29,8 @@ struct Setup
     }
     int clip (int track, std::int64_t start)
     {
-        lynx::Clip c;
-        c.kind = lynx::ClipKind::audio;
+        yw::Clip c;
+        c.kind = yw::ClipKind::audio;
         c.channel = take;
         c.track = track;
         c.start = start;
@@ -43,7 +43,7 @@ struct Setup
 
 TEST (tracklink_unassigned_track_links_to_a_prepared_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     s.clip (2, 0);
     // an insert in use (effects, a name) is a valid target; FL (round 190cp, FUN_012f38f0): an insert with its own name
@@ -62,7 +62,7 @@ TEST (tracklink_unassigned_track_links_to_a_prepared_insert)
 
 TEST (tracklink_an_unnamed_track_takes_the_insert_name)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     // FL: "Track 1" › Audio track › "6. Insert 6" renames the track "Insert 6"
     CHECK (trackmodes::linkToMixerTrack (s.song, 0, 9));
@@ -82,7 +82,7 @@ TEST (tracklink_an_unnamed_track_takes_the_insert_name)
 
 TEST (tracklink_audio_track_relinks_and_the_old_insert_is_reset)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     s.song.mixer[6].name = "Old bus";
     s.song.mixer[6].colour = 0xFFAA0000;
@@ -102,7 +102,7 @@ TEST (tracklink_audio_track_relinks_and_the_old_insert_is_reset)
 
 TEST (tracklink_clips_follow_by_followaudiotracks_rules)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     // the same take also sits on another audio track (insert 6): FL's "Make clip unique?" case, which a relink does
     // not answer: the channel keeps its route (issue #15)
@@ -120,7 +120,7 @@ TEST (tracklink_clips_follow_by_followaudiotracks_rules)
 
 TEST (tracklink_instrument_track_becomes_an_audio_track)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     // as Track mode › Audio track does: the track becomes an audio track, its former channel stays on its insert
     CHECK (trackmodes::makeInstrumentTrack (s.song, 0, 4) && s.song.playlistTracks[0].mixerTrack == 5);
@@ -136,7 +136,7 @@ TEST (tracklink_instrument_track_becomes_an_audio_track)
 
 TEST (tracklink_refuses_master_range_linked_and_reserved_inserts)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     const auto size = (int) s.song.mixer.size();
     CHECK (! trackmodes::canLinkToMixerTrack (s.song, 2, 0) && ! trackmodes::linkToMixerTrack (s.song, 2, 0)); // Master
@@ -166,7 +166,7 @@ TEST (tracklink_refuses_master_range_linked_and_reserved_inserts)
 
 TEST (tracklink_new_mixer_track_always_adds_an_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     // FL's "New mixer track(s)" (FUN_012ec590 / FUN_012a71e0): a new insert past the last one, even with free ones
     CHECK (trackmodes::canAddMixerTrack (s.song) && trackmodes::freeMixerTrack (s.song) == 8);
@@ -193,7 +193,7 @@ TEST (tracklink_new_mixer_track_always_adds_an_insert)
 
 TEST (tracklink_new_mixer_track_skips_inserts_reserved_in_a_session)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     SessionParticipant host, guest;
     host.tag = session::hostTag;
@@ -218,7 +218,7 @@ TEST (tracklink_new_mixer_track_skips_inserts_reserved_in_a_session)
 
 TEST (tracklink_a_pick_links_every_selected_track)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     s.song.playlistTracks.resize (6);
     // FL (FUN_012ec590): the first selected track takes the pick, each next one the next insert no track is linked to
@@ -244,7 +244,7 @@ TEST (tracklink_a_pick_links_every_selected_track)
 
 TEST (tracklink_audio_track_menu_model)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     s.song.playlistTracks[2].name.clear(); // FL builds the entries from the inserts only
     s.song.mixer[9].name.clear();
@@ -266,7 +266,7 @@ TEST (tracklink_audio_track_menu_model)
     CHECK (trackmodes::makeInstrumentTrack (s.song, 0, 4));
     menu = trackmodes::audioTrackMenu (s.song, 0);
     CHECK (menu.inserts.size() == 16 && menu.inserts[4].ticked && menu.inserts[4].enabled);
-    // an insert reserved for another participant is greyed too (LYNX's online sessions)
+    // an insert reserved for another participant is greyed too (YW's online sessions)
     SessionParticipant host, guest;
     host.tag = session::hostTag;
     guest.tag = 2;
@@ -282,7 +282,7 @@ TEST (tracklink_audio_track_menu_model)
 
 TEST (tracklink_relinked_audio_track_names_the_new_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     // a named audio track (FL: its name was set by the first link) relinks: the old insert is reset, the new one takes
     // the track's name and colour even when it had one of its own (FL's audio-track branch of FUN_012f38f0)
@@ -300,7 +300,7 @@ TEST (tracklink_relinked_audio_track_names_the_new_insert)
 
 TEST (tracklink_link_follows_insert_delete_and_move)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     s.song.mixer[9].name = "Keys";
     CHECK (trackmodes::linkToMixerTrack (s.song, 2, 9));
@@ -318,11 +318,11 @@ TEST (tracklink_link_follows_insert_delete_and_move)
 
 TEST (tracklink_explicit_insert_survives_flp_export_and_import)
 {
-    using namespace lynx;
+    using namespace yw;
     tracklink::Setup s;
     CHECK (trackmodes::linkToMixerTrack (s.song, 2, 12) && trackmodes::linkToMixerTrack (s.song, 0, 7));
     flpexport::Options options;
-    options.lynxOnly = flpexport::LynxOnly::substitute;
+    options.ywOnly = flpexport::YwOnly::substitute;
     flpexport::Report report;
     const auto back = importFlp (flp::parseProject (flpexport::exportFlp (s.song, options, report)));
     CHECK (back.playlistTracks.size() >= 3);

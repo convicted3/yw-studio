@@ -14,7 +14,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::nativechild
+namespace yw::nativechild
 {
 namespace
 {
@@ -36,7 +36,7 @@ void* topHandle (const juce::Component& area)
 juce::Point<int> placedOrigin (const juce::Component& c)
 {
     const auto& p = c.getProperties();
-    return { (int) p.getWithDefault ("lynxNativeX", 0), (int) p.getWithDefault ("lynxNativeY", 0) };
+    return { (int) p.getWithDefault ("ywNativeX", 0), (int) p.getWithDefault ("ywNativeY", 0) };
 }
 
 // JUCE keeps a peer's scale listeners to itself (protected); a child window's are only called on WM_DPICHANGED, which
@@ -49,7 +49,7 @@ struct PeerScaleListeners : juce::ComponentPeer
     }
 };
 
-// `bounds` (the component's bounds: in the main window's client area, LYNX's zoomed units) in the parent's physical
+// `bounds` (the component's bounds: in the main window's client area, YW's zoomed units) in the parent's physical
 // pixels (times the UI zoom = the peer's logical pixels, times the display's scale = physical).
 // Issue #178 (round 190hx): the position and the size are rounded each on its own, as JUCE does for its own windows
 // (Rectangle::toNearestInt). Rounding the right and bottom EDGES made the size depend on the position at a scale that is
@@ -77,7 +77,7 @@ void keepNativeSize (const juce::Component& c, const juce::ComponentPeer& peer, 
     }
 }
 
-// LYNX's own exact placement is under way (placePhysically): the window procedure leaves its position alone
+// YW's own exact placement is under way (placePhysically): the window procedure leaves its position alone
 bool placingExactly = false;
 
 // the native window's place in its parent's client area, physical pixels
@@ -123,7 +123,7 @@ std::vector<juce::Component*> attachedChildrenOf (void* parent, const juce::Comp
     auto& desktop = juce::Desktop::getInstance();
     for (int i = 0; i < desktop.getNumComponents(); ++i)
         if (auto* c = desktop.getComponent (i); c != nullptr && c != except && isAttached (*c)
-            && (juce::pointer_sized_int) (juce::int64) c->getProperties().getWithDefault ("lynxNativeParent", (juce::int64) 0) == (juce::pointer_sized_int) parent)
+            && (juce::pointer_sized_int) (juce::int64) c->getProperties().getWithDefault ("ywNativeParent", (juce::int64) 0) == (juce::pointer_sized_int) parent)
             out.push_back (c);
    #if JUCE_WINDOWS
     std::stable_sort (out.begin(), out.end(), [] (juce::Component* a, juce::Component* b) { return isAbove (b->getWindowHandle(), a->getWindowHandle()); });
@@ -292,7 +292,7 @@ void stackingChanged()
 //   "Solid" off, the dancer's arms and reflection) it is "transparent", and the click goes to the window under it.
 // - Issue #161: JUCE answers WM_MOUSEACTIVATE from the clicked window's own component, and a panel (the Playlist, the
 //   Piano roll...) does not take the keyboard focus on a click, so JUCE said "don't activate": back from another app,
-//   a click in a panel left LYNX's main window inactive and Space went nowhere. clickActivatesWindow() decides it.
+//   a click in a panel left YW's main window inactive and Space went nowhere. clickActivatesWindow() decides it.
 struct Subclassed
 {
     WNDPROC original = nullptr;
@@ -314,7 +314,7 @@ std::map<HWND, std::vector<juce::Rectangle<int>>>& holesNow()
     return holes;
 }
 
-bool pretendInactive = false; // (tests: the window answers as when LYNX is in the background)
+bool pretendInactive = false; // (tests: the window answers as when YW is in the background)
 
 // the top-level window the child belongs to is the foreground window (the active one of the active app)
 bool rootIsForeground (HWND hwnd)
@@ -334,7 +334,7 @@ void raiseForForeignClick (HWND frame, LPARAM pointInFrame);
 
 // Round 190he (issue #152, "the windows still flicker"): JUCE moves a child window to a place it works out with the
 // scale of the display at that point taken as a SCREEN point, and with SWP_FRAMECHANGED (the whole window redrawn) on
-// every move; LYNX then put it at its real place in the parent (placePhysically). With a display scale other than 100 %
+// every move; YW then put it at its real place in the parent (placePhysically). With a display scale other than 100 %
 // every move or resize of a panel or docked window showed it first at the wrong place, then at the right one: a flash
 // on each step of a drag. The window now goes straight to its place in the parent's own pixels (the component's bounds
 // are already the new ones when JUCE asks), without the frame change (a child window has no frame to recalculate).
@@ -470,7 +470,7 @@ void raiseClicked (juce::Component::SafePointer<juce::Component> safe)
     auto* c = safe.getComponent();
     if (c == nullptr || ! isAttached (*c) || ! c->isVisible())
         return;
-    const auto parent = (void*) (juce::pointer_sized_int) (juce::int64) c->getProperties().getWithDefault ("lynxNativeParent", (juce::int64) 0);
+    const auto parent = (void*) (juce::pointer_sized_int) (juce::int64) c->getProperties().getWithDefault ("ywNativeParent", (juce::int64) 0);
     const auto siblings = attachedChildrenOf (parent);
     if (dockstack::needsRaise (siblings, c, [] (juce::Component* w) { return staysInFront (w); }))
     {
@@ -532,7 +532,7 @@ LRESULT CALLBACK clickHookProc (int code, WPARAM wParam, LPARAM lParam)
 }
 
 // Round 190he (issue #152 again, 0.1.27: "no window can be put over the Channel rack"): the hook above sees only the
-// windows of LYNX's UI thread. A plugin view made by another thread, or in another process (a bridged 32-bit plugin, a
+// windows of YW's UI thread. A plugin view made by another thread, or in another process (a bridged 32-bit plugin, a
 // plugin run in its own process), gets its clicks from the system directly, so a click inside it never raised its
 // docked window: the Channel rack (or any panel) clicked before stayed over it. Windows tells every ancestor of the
 // clicked child window about a button press (WM_PARENTNOTIFY), whatever thread or process made the child: the docked
@@ -593,14 +593,14 @@ KeyForwarder& keyForwarder()
 
 bool dockingEnabled()
 {
-    // Issue #165 (Linux, Wayland desktop through XWayland, and LYNX's own private X server): an X11 child window in the
+    // Issue #165 (Linux, Wayland desktop through XWayland, and YW's own private X server): an X11 child window in the
     // main window takes no keyboard focus for its text fields (the SoundFont's preset search box typed nothing), a
     // closed or moved one leaves its picture behind until something else repaints there, and it has no frame of its
     // own. The docking glue (click raise, placement, stacking checks) is written for Win32 only, so on Linux and macOS
     // plugin and channel windows are the system's own windows ("Detached", as before issue #116) unless
-    // LYNX_DOCKED_PLUGINS=1 (core/DockingPolicy.h).
+    // YW_DOCKED_PLUGINS=1 (core/DockingPolicy.h).
     static const bool on = [] {
-        const auto value = juce::SystemStats::getEnvironmentVariable ("LYNX_DOCKED_PLUGINS", {}).trim().toStdString();
+        const auto value = juce::SystemStats::getEnvironmentVariable ("YW_DOCKED_PLUGINS", {}).trim().toStdString();
        #if JUCE_WINDOWS
         return dockpolicy::dockingOn (value, true);
        #else
@@ -619,13 +619,13 @@ bool attach (juce::Component& c, juce::Component& area, int styleFlags)
         return false;
     const auto bounds = c.getBounds();
     // no title bar, no taskbar entry, no shadow: a plain child window the system clips to the main window. (Round 190ev:
-    // a docked LYNX editor window keeps the flags it was attached with, also when it is attached again.)
+    // a docked YW editor window keeps the flags it was attached with, also when it is attached again.)
     if (styleFlags < 0)
-        styleFlags = (int) c.getProperties().getWithDefault ("lynxNativeFlags", 0);
-    c.getProperties().set ("lynxNativeFlags", styleFlags);
+        styleFlags = (int) c.getProperties().getWithDefault ("ywNativeFlags", 0);
+    c.getProperties().set ("ywNativeFlags", styleFlags);
     c.addToDesktop (styleFlags, handle);
-    c.getProperties().set ("lynxNativeChild", true);
-    c.getProperties().set ("lynxNativeParent", (juce::int64) (juce::pointer_sized_int) handle);
+    c.getProperties().set ("ywNativeChild", true);
+    c.getProperties().set ("ywNativeParent", (juce::int64) (juce::pointer_sized_int) handle);
    #if JUCE_WINDOWS
     subclass (c, ! c.isOpaque()); // (not opaque: a floater, with per-pixel transparency)
    #endif
@@ -638,7 +638,7 @@ void detach (juce::Component& c)
     if (! isAttached (c))
         return;
     const auto bounds = c.getBounds() - placedOrigin (c);
-    for (const auto* key : { "lynxNativeChild", "lynxNativeParent", "lynxNativeX", "lynxNativeY" })
+    for (const auto* key : { "ywNativeChild", "ywNativeParent", "ywNativeX", "ywNativeY" })
         c.getProperties().remove (key);
     c.removeFromDesktop();
     c.setBounds (bounds);
@@ -646,7 +646,7 @@ void detach (juce::Component& c)
 
 bool isAttached (const juce::Component& c)
 {
-    return c.isOnDesktop() && (bool) c.getProperties().getWithDefault ("lynxNativeChild", false);
+    return c.isOnDesktop() && (bool) c.getProperties().getWithDefault ("ywNativeChild", false);
 }
 
 void place (juce::Component& c, const juce::Component& area, juce::Rectangle<int> boundsInArea)
@@ -657,8 +657,8 @@ void place (juce::Component& c, const juce::Component& area, juce::Rectangle<int
         return;
     }
     const auto origin = originOf (area);
-    c.getProperties().set ("lynxNativeX", origin.x);
-    c.getProperties().set ("lynxNativeY", origin.y);
+    c.getProperties().set ("ywNativeX", origin.x);
+    c.getProperties().set ("ywNativeY", origin.y);
     c.setBounds (boundsInArea + origin);
     placePhysically (c, boundsInArea + origin);
 }
@@ -690,7 +690,7 @@ bool reattachIfNeeded (juce::Component& c, juce::Component& area)
 {
     if (! isAttached (c))
         return false;
-    const auto parent = (juce::pointer_sized_int) (juce::int64) c.getProperties().getWithDefault ("lynxNativeParent", (juce::int64) 0);
+    const auto parent = (juce::pointer_sized_int) (juce::int64) c.getProperties().getWithDefault ("ywNativeParent", (juce::int64) 0);
     if (parent == (juce::pointer_sized_int) topHandle (area))
         return false;
     const auto visible = c.isVisible();
@@ -706,7 +706,7 @@ void refresh (juce::Component& c, juce::Component& area)
     if (! isAttached (c))
         return;
     const auto bounds = boundsIn (c, area);
-    const auto parent = (juce::pointer_sized_int) (juce::int64) c.getProperties().getWithDefault ("lynxNativeParent", (juce::int64) 0);
+    const auto parent = (juce::pointer_sized_int) (juce::int64) c.getProperties().getWithDefault ("ywNativeParent", (juce::int64) 0);
     if (parent != (juce::pointer_sized_int) topHandle (area))
     {
         // the main window's native window was made again: the old child window went with it
@@ -796,14 +796,14 @@ namespace
 {
 bool coverCheckWanted()
 {
-    static const bool on = juce::SystemStats::getEnvironmentVariable ("LYNX_COVERCHECK", {}).trim() != "0";
+    static const bool on = juce::SystemStats::getEnvironmentVariable ("YW_COVERCHECK", {}).trim() != "0";
     return on;
 }
 
 #if JUCE_WINDOWS
 bool occlusionCheckWanted()
 {
-    static const bool on = juce::SystemStats::getEnvironmentVariable ("LYNX_OCCLUSION", {}).trim() != "0";
+    static const bool on = juce::SystemStats::getEnvironmentVariable ("YW_OCCLUSION", {}).trim() != "0";
     return on;
 }
 
@@ -834,12 +834,12 @@ bool cloaked (HWND w)
 
 // Round 190la: a top-level window (the main window, a detached panel, a plugin window) whose visible part (on its
 // monitor) lies wholly under ONE visible, opaque top-level window of any program above it in the stacking order (a
-// maximised browser over LYNX while a song plays): nothing it paints reaches the screen, so its live views need not step
+// maximised browser over YW while a song plays): nothing it paints reaches the screen, so its live views need not step
 // and its GPU playhead need not be committed (the frame steps resume within the idle poll's 50 ms when it shows again).
 // Windows that may let it show through never count: layered or click-through windows (overlays, translucent terminals),
 // windows without a redirection surface (DirectComposition content may be translucent), cloaked windows (other virtual
 // desktops, hidden store apps), minimised ones, and windows with a region (a hole). Message thread; the answer is kept
-// for 8 ms (every ticker of a frame asks about the same window). LYNX_OCCLUSION=0: never (A/B).
+// for 8 ms (every ticker of a frame asks about the same window). YW_OCCLUSION=0: never (A/B).
 bool occludedByOtherWindows (HWND top)
 {
     if (top == nullptr || ! occlusionCheckWanted() || IsIconic (top))
@@ -911,7 +911,7 @@ bool coveredBySiblingWindows (const juce::Component& c)
     auto* hwnd = peer != nullptr ? static_cast<HWND> (peer->getNativeHandle()) : nullptr;
     if (hwnd == nullptr)
         return false;
-    // round 190la: the top-level window it is in, wholly under another program's window (or another LYNX window)
+    // round 190la: the top-level window it is in, wholly under another program's window (or another YW window)
     if ((GetWindowLongPtr (hwnd, GWL_STYLE) & WS_CHILD) == 0)
         return occludedByOtherWindows (hwnd);
     // what of the window can show: its rectangle, clipped by each parent's client area on the way up (screen pixels)
@@ -1560,4 +1560,4 @@ bool isLayered (void* window)
     return false;
    #endif
 }
-} // namespace lynx::nativechild
+} // namespace yw::nativechild

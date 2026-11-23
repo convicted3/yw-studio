@@ -1,8 +1,8 @@
 #pragma once
 
-// FL Studio's Maximus and Soundgoodizer as LYNX mixer effects, on the exact engine of core/HarmlessFx (rebuilt in
+// FL Studio's Maximus and Soundgoodizer as YW mixer effects, on the exact engine of core/HarmlessFx (rebuilt in
 // docs/analise/REA_rodada36.md and REA_rodada40.md; clean-room). The effect slot carries everything in
-// EffectSlot::state as LYNX's own small container:
+// EffectSlot::state as YW's own small container:
 //
 //   "LXMX", u8 container version (1), u8 build (0 = Maximus / Shared SG_x64.dll, 1 = Soundgoodizer_x64.dll's copy),
 //   i32 band-mix parameter (−1 = the state's own parameter 5), then the Maximus state bytes.
@@ -20,7 +20,7 @@
 #include "core/Effects.h"
 #include "core/HarmlessFx.h"
 
-namespace lynx::maximusfx
+namespace yw::maximusfx
 {
 struct Blob
 {
@@ -79,11 +79,11 @@ std::vector<std::uint8_t> withCurve (const std::vector<std::uint8_t>& slotState,
 int addCurvePoint (std::vector<CurveEditPoint>& points, double x, float y, float tension = 0.0f, std::uint8_t type = 0);
 int moveCurvePoint (std::vector<CurveEditPoint>& points, int index, double x, float y);
 bool removeCurvePoint (std::vector<CurveEditPoint>& points, int index);
-// the curve as the engine plays it, n + 1 samples over x 0…1 (empty: a segment type LYNX's engine doesn't play)
+// the curve as the engine plays it, n + 1 samples over x 0…1 (empty: a segment type YW's engine doesn't play)
 std::vector<float> curveShape (const std::vector<CurveEditPoint>& points, int n);
 // the curve's axes as levels: 0.5 = 0 dBFS, 1 = +9.5 dB (level = (3^(2v) − 1) / 2); "-inf" at 0
 std::string curveLevelText (double v);
 
 // The band selected in FL's editor when the state was saved (UI block +0x1E0), 0…3
 int selectedBand (const std::vector<std::uint8_t>& slotState);
-} // namespace lynx::maximusfx
+} // namespace yw::maximusfx

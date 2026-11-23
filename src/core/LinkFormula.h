@@ -5,13 +5,13 @@
 // just "Input" (any letter case) is FL's "(default 1:1 mapping)".
 //
 // Clean-room: the function names, their argument counts and what each returns were read from FL's behaviour
-// (static study); the parser and evaluator are LYNX's own.
+// (static study); the parser and evaluator are YW's own.
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-namespace lynx::linkformula
+namespace yw::linkformula
 {
 // Is this text FL's default mapping (empty, or the single word Input)?
 bool isDefaultMapping (const std::string& text);
@@ -87,4 +87,4 @@ constexpr double incrementResolution = 1.0 / 128.0;
 std::optional<float> linkModeValue (int mode, const Formula& formula, float input, float current);
 // Does the mode act on every event (as a plain controller does), or on presses only?
 inline bool linkModeIsAbsolute (int mode) noexcept { return mode <= (int) LinkMode::hold || mode >= linkModeCount; }
-} // namespace lynx::linkformula
+} // namespace yw::linkformula

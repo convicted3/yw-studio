@@ -14,8 +14,8 @@
    [OPTIONAL] #define TSF_MEMCPY, TSF_MEMSET to avoid string.h
    [OPTIONAL] #define TSF_POW, TSF_POWF, TSF_EXPF, TSF_LOG, TSF_TAN, TSF_LOG10, TSF_SQRT to avoid math.h
 
-   LYNX modification (2026-10-25): tsf_region also keeps the ChorusEffectsSend and ReverbEffectsSend generators
-   (fields chorusSend / reverbSend); LYNX renders its own voices from the parsed regions.
+   YW modification (2026-10-25): tsf_region also keeps the ChorusEffectsSend and ReverbEffectsSend generators
+   (fields chorusSend / reverbSend); YW renders its own voices from the parsed regions.
 
    NOT YET IMPLEMENTED
      - Better low-pass filter without lowering performance too much
@@ -440,7 +440,7 @@ struct tsf_region
 	int freqModLFO, modLfoToPitch;
 	float delayVibLFO;
 	int freqVibLFO, vibLfoToPitch;
-	float chorusSend, reverbSend; // LYNX modification: ChorusEffectsSend / ReverbEffectsSend in 0.1 % units (0..1000)
+	float chorusSend, reverbSend; // YW modification: ChorusEffectsSend / ReverbEffectsSend in 0.1 % units (0..1000)
 };
 
 struct tsf_preset
@@ -570,8 +570,8 @@ static void tsf_region_operator(struct tsf_region* region, tsf_u16 genOper, unio
 		{ GEN_UINT_ADD15                   , _TSFREGIONOFFSET(unsigned int, end                  ) }, //12 EndAddrsCoarseOffset
 		{ GEN_INT   | GEN_INT_LIMIT960     , _TSFREGIONOFFSET(         int, modLfoToVolume       ) }, //13 ModLfoToVolume
 		{ 0                                , (0                                                  ) }, //   Unused
-		{ GEN_FLOAT | GEN_FLOAT_MAX1000    , _TSFREGIONOFFSET(       float, chorusSend           ) }, //15 ChorusEffectsSend (LYNX modification)
-		{ GEN_FLOAT | GEN_FLOAT_MAX1000    , _TSFREGIONOFFSET(       float, reverbSend           ) }, //16 ReverbEffectsSend (LYNX modification)
+		{ GEN_FLOAT | GEN_FLOAT_MAX1000    , _TSFREGIONOFFSET(       float, chorusSend           ) }, //15 ChorusEffectsSend (YW modification)
+		{ GEN_FLOAT | GEN_FLOAT_MAX1000    , _TSFREGIONOFFSET(       float, reverbSend           ) }, //16 ReverbEffectsSend (YW modification)
 		{ GEN_FLOAT | GEN_FLOAT_LIMITPAN   , _TSFREGIONOFFSET(       float, pan                  ) }, //17 Pan
 		{ 0                                , (0                                                  ) }, //   Unused
 		{ 0                                , (0                                                  ) }, //   Unused

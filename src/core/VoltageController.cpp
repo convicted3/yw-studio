@@ -8,7 +8,7 @@
 #include "core/Instruments.h"
 #include "core/Song.h"
 
-namespace lynx::voltage
+namespace yw::voltage
 {
 namespace
 {
@@ -394,4 +394,4 @@ std::unique_ptr<Instrument> makeInstrument()
 {
     return std::make_unique<VoltageInstrument>();
 }
-} // namespace lynx::voltage
+} // namespace yw::voltage

@@ -4,7 +4,7 @@
 // Detect tempo item (and the Sampler waveform menu's) opens one dialog titled "Tempo detection - <clip>": the estimate,
 // then one button per choice, top to bottom: "<estimate> (estimated)", the four ranges, "Type in (BPM)", "Type in
 // (beats)", "<project tempo> (project)", "No tempo". A tempo chosen there becomes the sample's tempo: the sample is
-// synchronised to the project (LYNX: fitted to that many beats, pitch kept); "No tempo" leaves it unsynchronised.
+// synchronised to the project (YW: fitted to that many beats, pitch kept); "No tempo" leaves it unsynchronised.
 // Header-only, no JUCE (tested in tests/FlFix190eyTests.inc).
 
 #include <cmath>
@@ -16,7 +16,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx::tempodlg
+namespace yw::tempodlg
 {
 enum class Choice { estimated, range, typeBpm, typeBeats, project, noTempo };
 
@@ -63,4 +63,4 @@ inline double beatsAt (double seconds, double bpm) noexcept
 {
     return seconds > 0.0 && bpm > 0.0 ? seconds * bpm / 60.0 : 0.0;
 }
-} // namespace lynx::tempodlg
+} // namespace yw::tempodlg

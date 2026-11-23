@@ -2,11 +2,11 @@
 
 // Round 190on (research190oe P8): Tab to transient, Pro Tools' editing move (its "Tab to Transients": Tab moves the
 // insertion point to the next transient, Option/Ctrl+Tab back, Shift extends the selection; with nothing to stop at, the
-// clip boundaries). A LYNX extra: FL Studio 2026 and Live 12 have no such keys (Live's Sample Editor shows its transients
+// clip boundaries). A YW extra: FL Studio 2026 and Live 12 have no such keys (Live's Sample Editor shows its transients
 // and moves between warp markers with Ctrl+Left / Right; its manual's chapter 9 and 42.11), so the actions are unbound in
 // every layout and live in the Shortcut manager and the command palette.
 //
-// The stops are the attacks LYNX already finds for the audio editor's transient ticks and Quantize audio
+// The stops are the attacks YW already finds for the audio editor's transient ticks and Quantize audio
 // (clipwarp::attacks: stretchdetail::detectAttacks, 6 dB), placed in song time as the groove extraction places them
 // (grooveaudio::contentBeat: through the channel's warp markers when it is warped). A clip with no attack in its playing
 // portion stops at its two edges instead. No JUCE.
@@ -20,7 +20,7 @@
 #include "core/GrooveAudio.h"
 #include "core/Song.h"
 
-namespace lynx::transientnav
+namespace yw::transientnav
 {
 // The song ticks of `clip`'s attacks (`attackSeconds`: file seconds, as clipwarp::attacks gives them) inside its playing
 // portion, in order. A clip that plays backwards has none (its attacks are not where the file has them).
@@ -117,4 +117,4 @@ inline std::vector<std::int64_t> frameStops (std::vector<std::int64_t> attacks, 
     out.erase (std::unique (out.begin(), out.end()), out.end());
     return out;
 }
-} // namespace lynx::transientnav
+} // namespace yw::transientnav

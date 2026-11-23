@@ -10,7 +10,7 @@
 #include "ui/PluginWindow.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::aramenu
+namespace yw::aramenu
 {
 namespace
 {
@@ -256,4 +256,4 @@ juce::PopupMenu forClip (AudioEngine& engine, int clipIndex)
     menu.addItem (tr ("Find ARA plugins"), [&engine] { findAraPlugins (engine); });
     return menu;
 }
-} // namespace lynx::aramenu
+} // namespace yw::aramenu

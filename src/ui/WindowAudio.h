@@ -6,19 +6,19 @@
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 }
 
-// Issue #232, stage 2 (round 190nz, docs/design/PROJECT_TABS.md; a LYNX extra): an audio driver that only one program
-// may use at a time (ASIO, an exclusive-mode device) plays in one LYNX SHARE window. The other window says so in a bar
+// Issue #232, stage 2 (round 190nz, docs/design/PROJECT_TABS.md; a YW extra): an audio driver that only one program
+// may use at a time (ASIO, an exclusive-mode device) plays in one YW Studio window. The other window says so in a bar
 // under its toolbar, with "Make this window the one that plays": the window that has the device stops, lets it go and
 // shows the same bar; this one opens it. The device saved in Settings › Audio stays the one both windows want (the
-// window without it never saves its stand-in device over it). Messages go through ui/LynxWindows.h.
-namespace lynx::windowaudio
+// window without it never saves its stand-in device over it). Messages go through ui/YwWindows.h.
+namespace yw::windowaudio
 {
-// The bar (LYNX's look, as the update bar: raised surface, accent edge, the action in the accent).
+// The bar (YW's look, as the update bar: raised surface, accent edge, the action in the accent).
 class Bar final : public juce::Component
 {
 public:
@@ -35,7 +35,7 @@ private:
     juce::TextButton playHere;
 };
 
-// The device setup a window wants: type and output device name (from LYNX's audio-device.xml / JUCE's state XML).
+// The device setup a window wants: type and output device name (from YW's audio-device.xml / JUCE's state XML).
 struct Device
 {
     juce::String type, name;
@@ -54,7 +54,7 @@ public:
     Link (AudioEngine& engine, Bar& bar, std::function<void()> relayout, std::function<void()> stopPlaying);
     ~Link() override;
 
-    // a message of another window (LynxWindows): release-audio, audio-released, audio-busy, hello / changed / bye
+    // a message of another window (YwWindows): release-audio, audio-released, audio-busy, hello / changed / bye
     void received (const juce::String& verb, int from);
     // the bar's button: asks the window that has the device for it
     void playHere();
@@ -85,4 +85,4 @@ private:
     bool savingOff = false;   // this window no longer writes audio-device.xml by itself (restoreAudioDeviceState)
     int asked = 0;            // the window asked for the device (waiting for its answer)
 };
-} // namespace lynx::windowaudio
+} // namespace yw::windowaudio

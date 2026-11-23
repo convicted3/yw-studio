@@ -1,4 +1,4 @@
-// Round gaps190kf: the remaining 0.1.30 coverage gaps (/mnt/e/lynx-work/gaps190kf/HANDOFF.md).
+// Round gaps190kf: the remaining 0.1.30 coverage gaps (/mnt/e/yw-work/gaps190kf/HANDOFF.md).
 // Item 1b (detail-072): an audio clip's Transpose reaches Live's ±48 st in the real-time warp modes (Complex, Tones,
 // Beats in the Clip View), where the voice shifter used to stop at ±24. Uses round 190ik's song / render helpers.
 
@@ -7,9 +7,9 @@
 namespace gaps190kf
 {
 constexpr double twoPi = 2.0 * 3.141592653589793;
-inline std::shared_ptr<lynx::SampleData> tone440()
+inline std::shared_ptr<yw::SampleData> tone440()
 {
-    auto tone = std::make_shared<lynx::SampleData>();
+    auto tone = std::make_shared<yw::SampleData>();
     tone->sampleRate = 44100.0;
     for (int i = 0; i < 44100 * 4; ++i)
         tone->left.push_back ((float) (0.4 * std::sin (twoPi * 440.0 * i / 44100.0)));
@@ -17,12 +17,12 @@ inline std::shared_ptr<lynx::SampleData> tone440()
     return tone;
 }
 // the 8-beat warped clip of rampSong (fixed 120 BPM) with its own transposition
-inline lynx::Song transposedSong (float semitones, bool keepPitch = true, lynx::StretchMethod method = lynx::StretchMethod::complex)
+inline yw::Song transposedSong (float semitones, bool keepPitch = true, yw::StretchMethod method = yw::StretchMethod::complex)
 {
     auto song = warp190ik::rampSong (8.0, keepPitch, false);
     song.channels.back().sampler.stretchMethod = method;
     for (auto& c : song.playlist)
-        if (c.kind == lynx::ClipKind::audio)
+        if (c.kind == yw::ClipKind::audio)
             c.pitch = semitones;
     return song;
 }
@@ -30,7 +30,7 @@ inline lynx::Song transposedSong (float semitones, bool keepPitch = true, lynx::
 
 TEST (gaps190kf_clip_transpose_reaches_plus_minus_48_semitones_in_real_time)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gaps190kf;
     const auto tone = tone440();
     for (const auto method : { StretchMethod::complex, StretchMethod::tones })
@@ -53,7 +53,7 @@ TEST (gaps190kf_clip_transpose_reaches_plus_minus_48_semitones_in_real_time)
 
 TEST (gaps190kf_clip_transpose_within_24_keeps_the_old_shifter_path)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gaps190kf;
     const auto tone = tone440();
     // ±24 is reached exactly as before (the shifter's ±2 octaves); 25 goes one semitone further now (it stopped at 24)
@@ -76,7 +76,7 @@ TEST (gaps190kf_clip_transpose_within_24_keeps_the_old_shifter_path)
 // in content ticks (core/ClipBrace.h)
 TEST (gaps190kf_clip_brace_marks_follow_loop_on_and_off)
 {
-    using namespace lynx;
+    using namespace yw;
     Clip c;
     c.kind = ClipKind::audio;
     c.offset = 2 * ppq;
@@ -93,7 +93,7 @@ TEST (gaps190kf_clip_brace_marks_follow_loop_on_and_off)
 
 TEST (gaps190kf_clip_brace_drags_as_live)
 {
-    using namespace lynx;
+    using namespace yw;
     Clip c;
     c.kind = ClipKind::audio;
     c.offset = 4 * ppq;
@@ -106,7 +106,7 @@ TEST (gaps190kf_clip_brace_drags_as_live)
     CHECK (clipbrace::move (c, slot, clipbrace::Part::loopStart, 5 * ppq, ppq));
     CHECK (c.offset == 5 * ppq && c.length == 7 * ppq && slot.startMarker == ppq);
     CHECK (c.fadeIn + c.fadeOut <= c.length);
-    // past the Start marker: it goes back to the loop's start (LYNX keeps it inside the loop)
+    // past the Start marker: it goes back to the loop's start (YW keeps it inside the loop)
     CHECK (clipbrace::move (c, slot, clipbrace::Part::loopStart, 7 * ppq, ppq));
     CHECK (c.offset == 7 * ppq && slot.startMarker == 0);
     // the loop's end, never shorter than the minimum

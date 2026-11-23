@@ -4,7 +4,7 @@
 
 TEST (toolbar_layout_default_roundtrip)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     CHECK ((int) l.entries.size() == groupCount);
     CHECK (l.isDefault());
@@ -23,7 +23,7 @@ TEST (toolbar_layout_default_roundtrip)
 
 TEST (toolbar_layout_parse_tolerant)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     Layout l;
     // unknown ids ignored, duplicates keep the first, missing groups come back shown at their default place
     l.orderFromString (" snap , -record,bogus,snap,transport\r");
@@ -45,7 +45,7 @@ TEST (toolbar_layout_parse_tolerant)
 
 TEST (toolbar_layout_move_clamps)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     CHECK (! l.move (Group::link, -1)); // already first (round 190gl: the Link toggle's group, before the transport)
     CHECK (l.move (Group::transport, 1));
@@ -55,7 +55,7 @@ TEST (toolbar_layout_move_clamps)
 
 TEST (toolbar_layout_fit_drops_by_priority)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     std::array<int, groupCount> widths;
     widths.fill (100);
@@ -77,7 +77,7 @@ TEST (toolbar_layout_fit_drops_by_priority)
 
 TEST (toolbar_icon_sizes_grow)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     CHECK (rowHeight (IconSize::small) < rowHeight (IconSize::medium) && rowHeight (IconSize::medium) < rowHeight (IconSize::large));
     // medium: 19 px icons with room around them (round 170e3; 16 px read as tiny at 1920)
     CHECK (std::min ((float) rowHeight (IconSize::medium) * iconFraction (IconSize::medium), iconMaxPx (IconSize::medium)) == 19.0f);

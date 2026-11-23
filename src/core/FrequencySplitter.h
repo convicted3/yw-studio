@@ -1,18 +1,18 @@
 #pragma once
 
-// FL Studio's Frequency Splitter as an exact LYNX engine, rebuilt in docs/analise/REA_rodada62.md (clean-room: layouts,
+// FL Studio's Frequency Splitter as an exact YW engine, rebuilt in docs/analise/REA_rodada62.md (clean-room: layouts,
 // formulas and behaviour in our own words; no Image-Line code or data in this repository).
 //
 // The plugin is a thin wrapper around a VST2 engine (`engine_x64.dll`, "HQ 3-Band Splitter") with 26 parameters,
-// each 0…1. LYNX's slot (EffectKind::frequencySplitter) carries those 26 engine values, so the editor can change them
-// and FL's automation maps one to one, plus three LYNX-only output flags:
+// each 0…1. YW's slot (EffectKind::frequencySplitter) carries those 26 engine values, so the editor can change them
+// and FL's automation maps one to one, plus three YW-only output flags:
 //   [0] low/mid frequency, [1] mid/high frequency (30·2^(9.0589·v) Hz), [2] low/mid slope, [3] mid/high slope
 //   (⌊v/0.125⌋ → 6/12/18/24/36/48/72/96 dB/oct), [4] filter mode (0 normal IIR, 1 FFT linear phase),
 //   [5] number of bands (< 0.5: 2, else 3), [6] FFT quality (⌊v·5.994⌋: 512…16384 at 44.1 kHz), [7] FFT cross-fade
 //   time (10^(2v)·2 ms), [8…10] low/mid/high send level, [11…13] low/mid/high level in the summed output
 //   (v < 0.5: 2v, else 1 + 13.8866·(v − 0.5); 0.5 = 0 dB), [14…16] send mutes, [17…19] summed mutes,
 //   [20…22] send solos, [23…25] summed solos (≥ 0.5 = on);
-//   [26…28] LYNX only: which band sends form the output (low, mid, high); all off = the summed output (FL's main
+//   [26…28] YW only: which band sends form the output (low, mid, high); all off = the summed output (FL's main
 //   output). A Patcher bus k of FL is the sum of the bands whose send destination is k.
 
 #include <array>
@@ -24,7 +24,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::fsplit
+namespace yw::fsplit
 {
 constexpr int engineParams = 26;
 constexpr int outputLow = 26, outputMid = 27, outputHigh = 28;
@@ -77,4 +77,4 @@ private:
 
 std::unique_ptr<Effect> make();
 std::unique_ptr<Effect> make (const EffectParams& params); // latency known from the slot's parameters before the first block
-} // namespace lynx::fsplit
+} // namespace yw::fsplit

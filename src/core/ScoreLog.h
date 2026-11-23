@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace lynx::scorelog
+namespace yw::scorelog
 {
 struct Entry
 {
@@ -59,4 +59,4 @@ struct DumpOptions
 // start and end are converted to ticks (rounded); the window reaches back from the end of the last note; the first
 // note starts the pattern (tick 0) and every silence longer than two bars is shortened to two bars.
 std::vector<Note> dump (const std::vector<Entry>& log, const DumpOptions& options);
-} // namespace lynx::scorelog
+} // namespace yw::scorelog

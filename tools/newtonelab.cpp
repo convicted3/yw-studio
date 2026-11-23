@@ -1,4 +1,4 @@
-// LYNX vocal lab (round 190li): runs LYNX's Newtone engine (core/NewtoneFx.h: analyseNotes + an edit + renderEdits)
+// YW vocal lab (round 190li): runs YW's Newtone engine (core/NewtoneFx.h: analyseNotes + an edit + renderEdits)
 // offline on a WAV, for the scoring in tools/vocallab/vocallab.py. Also dumps the analysed notes (detection scoring).
 //
 // usage: newtonelab <in.wav> <out.wav|-> [options / edits, applied in order]
@@ -7,7 +7,7 @@
 //   notes=<path.json>  write the analysed notes (before the edits) as JSON
 //   shift=<sel>:<st>   pitch offset (semitones) added to the chosen notes
 //   centre=<0..1>  variation=<0..2>  transition=<0..2>      the editor's global knobs (every note)
-//   modulation=<0..2>  pitchdrift=<0..2>                     LYNX's split of Variation (round 190li; every note)
+//   modulation=<0..2>  pitchdrift=<0..2>                     YW's split of Variation (round 190li; every note)
 //   formant=<sel>:<st> volume=<sel>:<dB> stretch=<sel>:<factor, > 1 = longer> lengthen=<sel>:<seconds> (later notes move)
 //   quantize=<grid seconds>
 //   bench=<N>          render N more times and print the render's cost (ms, and CPU instructions per source second where
@@ -32,7 +32,7 @@
 // (the parts of the core the Newtone engine does not use: Edison's score dump and Newtime's stretch)
 #include "core/Song.h"
 #include "core/TimeStretch.h"
-namespace lynx
+namespace yw
 {
 void Pattern::sortNotes() {}
 Pattern& Song::activePattern() { std::abort(); }
@@ -77,7 +77,7 @@ long long instructionsOf (void (*f) (void*), void* ctx)
     return -1;
 }
 
-std::shared_ptr<lynx::SampleData> readWav (const char* path)
+std::shared_ptr<yw::SampleData> readWav (const char* path)
 {
     std::ifstream in (path, std::ios::binary);
     std::vector<unsigned char> d ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
@@ -102,7 +102,7 @@ std::shared_ptr<lynx::SampleData> readWav (const char* path)
         }
         else if (std::memcmp (&d[i], "data", 4) == 0 && ch > 0)
         {
-            auto s = std::make_shared<lynx::SampleData>();
+            auto s = std::make_shared<yw::SampleData>();
             s->sampleRate = sr;
             const auto bytes = bits / 8;
             const auto frames = std::min (n, d.size() - i - 8) / (std::size_t) (bytes * ch);
@@ -131,7 +131,7 @@ std::shared_ptr<lynx::SampleData> readWav (const char* path)
     return nullptr;
 }
 
-void writeWav (const char* path, const lynx::SampleData& s)
+void writeWav (const char* path, const yw::SampleData& s)
 {
     const auto frames = s.frames();
     const int ch = s.isStereo() ? 2 : 1;
@@ -162,7 +162,7 @@ void writeWav (const char* path, const lynx::SampleData& s)
     std::fclose (f);
 }
 
-std::vector<int> select (const lynx::newtonefx::Track& t, const std::string& sel, double fs)
+std::vector<int> select (const yw::newtonefx::Track& t, const std::string& sel, double fs)
 {
     if (sel == "all")
         return {};
@@ -184,7 +184,7 @@ std::vector<int> select (const lynx::newtonefx::Track& t, const std::string& sel
 }
 
 template <typename F>
-void each (lynx::newtonefx::Track& t, const std::vector<int>& which, F&& f)
+void each (yw::newtonefx::Track& t, const std::vector<int>& which, F&& f)
 {
     if (which.empty())
     {
@@ -196,7 +196,7 @@ void each (lynx::newtonefx::Track& t, const std::vector<int>& which, F&& f)
             f (t.pitches[(std::size_t) k]);
 }
 
-void dumpNotes (const char* path, const lynx::newtonefx::Track& t, double fs)
+void dumpNotes (const char* path, const yw::newtonefx::Track& t, double fs)
 {
     std::FILE* f = std::fopen (path, "w");
     if (f == nullptr)
@@ -216,7 +216,7 @@ void dumpNotes (const char* path, const lynx::newtonefx::Track& t, double fs)
 
 int main (int argc, char** argv)
 {
-    using namespace lynx::newtonefx;
+    using namespace yw::newtonefx;
     if (argc < 3)
     {
         std::fprintf (stderr, "usage: newtonelab in.wav out.wav|- [engine=N fine=0|1 notes=x.json shift=all:3 ...]\n");
@@ -315,7 +315,7 @@ int main (int argc, char** argv)
     {
         struct Ctx
         {
-            const lynx::SampleData* s;
+            const yw::SampleData* s;
             const Track* t;
             int n;
         } ctx { src.get(), &track, bench };

@@ -16,7 +16,7 @@
 #include <memory>
 #include <mutex>
 
-namespace lynx
+namespace yw
 {
 template <typename T>
 class MessageThreadOwned
@@ -101,4 +101,4 @@ private:
     std::shared_ptr<State> state = std::make_shared<State>();
     bool pending = false;
 };
-} // namespace lynx
+} // namespace yw

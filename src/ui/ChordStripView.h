@@ -2,8 +2,8 @@
 
 // FL Studio's Chord progression tool in the Piano roll: its top panel (the spanner's options for generation, Generate and
 // the three Generate modes) and its Chord viewer, the strip of chord blocks (round 190kd; FL 2026 screen session
-// shots f27–f36 in /mnt/e/lynx-work/prchord190kd/raw, DFM TPRChordToolForm, FL's manual; core/ChordStrip.h has the rules).
-// Included by ui/NoteToolDialogs.cpp only (the Chord progression dialog). LYNX vectors only.
+// shots f27–f36 in /mnt/e/yw-work/prchord190kd/raw, DFM TPRChordToolForm, FL's manual; core/ChordStrip.h has the rules).
+// Included by ui/NoteToolDialogs.cpp only (the Chord progression dialog). YW vectors only.
 //
 // Layout, top to bottom (FL's order): the top bar [spanner][Generate][Rework][Start over][Analyze]; the ruler with the
 // bar numbers; the key tab ("♪ A Major (Ionian)", right-click: Edit › root / scale, Randomize); the blocks — each with
@@ -22,7 +22,7 @@
 #include "ui/Icons.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 struct ChordToolState
 {
@@ -701,7 +701,7 @@ private:
         edited();
     }
 
-    // the dialog's chord types for Select chord › (FL's chord list, in LYNX's names)
+    // the dialog's chord types for Select chord › (FL's chord list, in YW's names)
     static const std::vector<std::pair<const char*, std::vector<int>>>& chordTypes()
     {
         static const std::vector<std::pair<const char*, std::vector<int>>> types {
@@ -1066,4 +1066,4 @@ private:
     std::vector<int> learnPeak;
     bool learnHeld = false;
 };
-} // namespace lynx
+} // namespace yw

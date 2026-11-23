@@ -5,7 +5,7 @@
 // Opening one of the user's vocal projects sat at 0 % for a long time with nothing said about why. This module is the
 // bookkeeping behind both the answer and the fix:
 //  - phase timing: every stage of an open (parse, import, sample probing and decoding, plugin database, plugin scan,
-//    plugin instantiation, rack build, PDC...) adds its time here; the --export report and %APPDATA%\LYNX\load.log
+//    plugin instantiation, rack build, PDC...) adds its time here; the --export report and %APPDATA%\YW\load.log
 //    print the table, so a slow open on someone else's PC says what dominated;
 //  - progress: the stages map onto one bar that only moves forward, with a line saying what is loading now
 //    ("Loading Auto-Tune Pro... 3/12"); the UI polls it from a timer while the work runs elsewhere or in steps;
@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::loadtrace
+namespace yw::loadtrace
 {
 struct Phase
 {
@@ -108,4 +108,4 @@ private:
     mutable std::mutex lock;
     int probeCount = 0, skippedCount = 0;
 };
-} // namespace lynx::loadtrace
+} // namespace yw::loadtrace

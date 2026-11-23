@@ -15,11 +15,11 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx::transporter
+namespace yw::transporter
 {
 namespace
 {
-using namespace lynx::ildsp;
+using namespace yw::ildsp;
 
 constexpr float twoSqrt2 = 2.828427f, sqrtHalf = 0.70710677f, eps = 1.1920929e-07f, rnd = 2.3283064e-10f;
 constexpr int ringMask = 1023;
@@ -746,7 +746,7 @@ public:
         else
         {
             // FL's Flush and Update buttons are momentary (pressed = 1, released = 0; the engine reacts to the press).
-            // LYNX's push buttons flip their value at each click: any change is a press, given to the engine for one
+            // YW's push buttons flip their value at each click: any change is a press, given to the engine for one
             // block and released on the next; a click during that block is pressed after the release (round 167n)
             for (int b = 0; b < numButtons; ++b)
             {
@@ -790,8 +790,8 @@ public:
         {
             const int m = std::min (blockSize, n - done);
             // FL's beat input: the bar position at the start of the block (the host's integer tick), for every sample
-            const double t = ticks + (double) done * (bpm > 0.0 ? bpm : 120.0) * (double) lynx::ppq / (60.0 * (double) rate);
-            std::fill (beat.begin(), beat.begin() + m, beatOf (t, lynx::ppq));
+            const double t = ticks + (double) done * (bpm > 0.0 ? bpm : 120.0) * (double) yw::ppq / (60.0 * (double) rate);
+            std::fill (beat.begin(), beat.begin() + m, beatOf (t, yw::ppq));
             const float* dl = left + done;
             const float* dr = right + done;
             if (sidechained)
@@ -842,4 +842,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> make() { return std::make_unique<TransporterEffect>(); }
-} // namespace lynx::transporter
+} // namespace yw::transporter

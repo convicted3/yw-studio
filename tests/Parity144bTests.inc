@@ -2,12 +2,12 @@
 
 namespace p144b
 {
-namespace m = lynx::dyn::prism;
+namespace m = yw::dyn::prism;
 
 // two bands split at 1 kHz (24 dB/oct), the low band a static −12 dB (range 0: no dynamics), the high band untouched
-inline lynx::EffectParams lowCut (float mode, float os = 0.0f)
+inline yw::EffectParams lowCut (float mode, float os = 0.0f)
 {
-    auto p = dyn108::defaults (lynx::EffectKind::prismMultiband);
+    auto p = dyn108::defaults (yw::EffectKind::prismMultiband);
     p[m::bandCountParam] = m::bandCountValue (2);
     p[m::xover1] = m::crossoverValue (1000.0);
     for (int b = 0; b < 2; ++b)
@@ -20,19 +20,19 @@ inline lynx::EffectParams lowCut (float mode, float os = 0.0f)
 }
 
 // steady-state gain (dB) of a sine through the effect (latency removed by the runner)
-inline double toneGain (const lynx::EffectParams& p, double hz)
+inline double toneGain (const yw::EffectParams& p, double hz)
 {
     std::vector<float> x (24000);
     for (std::size_t i = 0; i < x.size(); ++i)
         x[i] = (float) (0.25 * std::sin (2.0 * dyn108::pi * hz * (double) i / dyn108::sr));
-    const auto y = dyn108::run (lynx::EffectKind::prismMultiband, p, x);
+    const auto y = dyn108::run (yw::EffectKind::prismMultiband, p, x);
     return dyn108::rmsDb (y, 12000, 18000) - dyn108::rmsDb (x, 12000, 18000);
 }
 } // namespace p144b
 
 TEST (prism_processing_modes_defaults_round144b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     const auto p = makeEffectSlot (EffectKind::prismMultiband).params;
     CHECK ((int) effectInfo (EffectKind::prismMultiband).params.size() == m::count);
@@ -59,7 +59,7 @@ TEST (prism_processing_modes_defaults_round144b)
 
 TEST (prism_linear_and_minimum_phase_round144b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // every mode at rest: linear = the input delayed exactly; minimum = an all-pass (flat magnitude, not the input)
     std::vector<float> noise (16384);
@@ -99,7 +99,7 @@ TEST (prism_linear_and_minimum_phase_round144b)
 
 TEST (prism_oversampling_round144b)
 {
-    using namespace lynx;
+    using namespace yw;
     // the static band level is the same with 2x / 4x as without (the gains are applied at the high rate)
     for (const float os : { 0.5f, 1.0f })
         for (const float mode : { 0.0f, 0.5f, 1.0f })
@@ -113,7 +113,7 @@ TEST (prism_oversampling_round144b)
 
 TEST (prism_promb_mode_translation_round144b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // Pro-MB state slots 139 (0 linear, 1 dynamic, 2 minimum) and 140 (0 off, 1 2x, 2 4x)
     std::vector<std::pair<int, float>> mb { { 0, 1.0f }, { 1, (float) std::log2 (300.0) }, { 2, 0.5f }, { 3, (float) std::log2 (3000.0) },
@@ -138,7 +138,7 @@ TEST (prism_promb_mode_translation_round144b)
 
 TEST (prism_mid_side_band_pan_round144b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // a pure side signal (L = −R) at 100 Hz (the runner below leaves the latency in: only steady levels are read), band 1's pan fully left: left / right keeps the left side, mid / side
     // (the reference's band pan: side gain 0) removes it

@@ -6,11 +6,11 @@
 #include <functional>
 #include <unordered_map>
 
-// LYNX's own vector icons, drawn with juce::Path on a 24x24 grid. Original designs, one family:
+// YW's own vector icons, drawn with juce::Path on a 24x24 grid. Original designs, one family:
 // - live area 3..21 (a 3-unit margin), coordinates on half units so 24 px and 16 px stay crisp;
 // - line icons share one fine stroke (strokeWidth(): about 1.25-1.5 px at toolbar sizes), round caps and joins;
 // - transport symbols and small accents (a lit step, a note, a dot) are solid fills.
-namespace lynx
+namespace yw
 {
 enum class Icon
 {
@@ -50,9 +50,9 @@ enum class Icon
     note,       // the Browser's Scores folder: an eighth note (round 178a)
     deleteTool, // Playlist (Pattern layout): FL's delete tool, a circle with a slash (round 190ig, FM-26)
     slipArrows, // Playlist (Pattern layout): FL's slip tool, two arrowheads back to back (round 190ig, FM-26)
-    // round 190iv: the Simple top bar's save status and the Clip-launch layout's control bar (LYNX vectors drawn to read
+    // round 190iv: the Simple top bar's save status and the Clip-launch layout's control bar (YW vectors drawn to read
     // like BandLab's and Live's)
-    cloud,             // saved by LYNX's backup
+    cloud,             // saved by YW's backup
     cloudCheck,        // all changes saved
     sessionView,       // Live's view selector: three columns (the clip grid)
     arrangementView,   // three rows (the Playlist)
@@ -62,7 +62,7 @@ enum class Icon
     browserPanel,      // a left panel beside a page (show / hide the Browser)
     metronomeDots,     // Live's metronome: a ring and a dot
     toStart,           // round 190jj: BandLab's Back-to-start (a bar and a triangle pointing left), the Simple capsule's idle Stop
-    // round 190jo (design190ia FW-22): the audio editor's tool grid and small icon row, LYNX vectors with Edison's metaphors
+    // round 190jo (design190ia FW-22): the audio editor's tool grid and small icon row, YW vectors with Edison's metaphors
     copy, paste, trash, trim, silence, fadeIn, fadeOut, fadeCurve, normalize, amp, reverse, invert, dcCenter, resample,
     marker, region, setLoop, equalizer, denoise, reverb, spectrogram,
     pointer,           // round 190jq: the Playlist's pointer-click switch, a mouse pointer (issue #191)
@@ -100,7 +100,7 @@ void draw (juce::Graphics& g, Icon icon, juce::Rectangle<float> area, juce::Colo
 // A flat button that shows an icon, optionally followed by text. Uses the theme colours:
 // neutral at rest, red accent when toggled on (or when `primary`).
 //
-// Hover and press states fade in and out (about 120 ms) instead of switching at once. The states follow LYNX's one rule
+// Hover and press states fade in and out (about 120 ms) instead of switching at once. The states follow YW's one rule
 // for every button kind (core/ThemePalette.h buttonLook, round 190je): a switch previews its "on" look under the mouse
 // (FL 2024), a button that acts once lights a tile.
 class IconButton : public juce::Button,
@@ -126,7 +126,7 @@ public:
     // drawn on whole pixels, so 16, 20 and 24 px boxes stay crisp.
     void setIconSizing (float fraction, float maxPx);
 
-    // Round 190iv: how the button draws itself per toolbar look (core/ToolbarLayout.h Look). `standard` is every LYNX
+    // Round 190iv: how the button draws itself per toolbar look (core/ToolbarLayout.h Look). `standard` is every YW
     // button as before; the others are used only by the Simple and Clip-launch toolbars:
     //  - capsule: a segment of a BandLab capsule (the capsule's fill is drawn behind it): a hover / pressed fill only,
     //    the glyph in `iconBoxPx`; on = the accent glyph (Record: a muted-red fill)
@@ -149,9 +149,9 @@ public:
     // within the button's bounds (in the parent; 0: not cacheable). The atlas is an image of the parent's band at the
     // parent's coordinates; each button keeps its region of it drawn for its current state (the backdrop and the body,
     // by the same calls, pixels and clip as the frame) and blits it; the glyph is drawn straight over it. Hover fades,
-    // fractional scales, translucent components and LYNX_PAINT_CACHE=0 paint straight. On by default on JUCE's software
-    // renderer (round 190mh: pixel-exact there), opt-in on the native ones with LYNX_TILE_MODE=2 (Icons.cpp
-    // tileModeSetting: Direct2D then draws a later path of the frame a little differently); LYNX_TILE_MODE=0: off.
+    // fractional scales, translucent components and YW_PAINT_CACHE=0 paint straight. On by default on JUCE's software
+    // renderer (round 190mh: pixel-exact there), opt-in on the native ones with YW_TILE_MODE=2 (Icons.cpp
+    // tileModeSetting: Direct2D then draws a later path of the frame a little differently); YW_TILE_MODE=0: off.
     // Empty: no cache.
     // `parentClip` (round 190mh; JUCE's software renderer, where the atlas is on by default, paints straight without it):
     // the parent's clip bounds when it last painted into a frame (in the parent; it paints just before its children),
@@ -221,4 +221,4 @@ private:
 // Windows; the software renderer paints them straight and is only reported on stderr): "OK" when every pixel is the
 // same, else an error naming the case.
 juce::String flTileCacheSelfTest();
-} // namespace lynx
+} // namespace yw

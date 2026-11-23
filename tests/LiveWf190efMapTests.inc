@@ -7,27 +7,27 @@
 
 namespace live190efmap
 {
-inline lynx::Song gridSong()
+inline yw::Song gridSong()
 {
-    lynx::Song s;
+    yw::Song s;
     s.playlistTracks.resize (3);
     if (s.patterns.empty())
         s.patterns.emplace_back();
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
-    c.length = 4 * lynx::ppq;
-    lynx::launcher::setClip (s, 0, 0, c);
-    lynx::launcher::setClip (s, 1, 1, c);
-    lynx::launcher::insertScene (s, 2); // three scenes (setClip made two)
+    c.length = 4 * yw::ppq;
+    yw::launcher::setClip (s, 0, 0, c);
+    yw::launcher::setClip (s, 1, 1, c);
+    yw::launcher::insertScene (s, 2); // three scenes (setClip made two)
     return s;
 }
-inline const lynx::AutomationTarget volume { lynx::AutomationTargetKind::mixerVolume, 1, 0, 0 };
-inline const lynx::AutomationTarget pan { lynx::AutomationTargetKind::mixerPan, 1, 0, 0 };
+inline const yw::AutomationTarget volume { yw::AutomationTargetKind::mixerVolume, 1, 0, 0 };
+inline const yw::AutomationTarget pan { yw::AutomationTargetKind::mixerPan, 1, 0, 0 };
 } // namespace live190efmap
 
 TEST (live190ef_map_range_maps_the_travel_onto_min_max)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     CHECK (applyRange (0.0f, 0.0f, 1.0f) == 0.0f && applyRange (1.0f, 0.0f, 1.0f) == 1.0f);
     CHECK (std::abs (applyRange (0.5f, 0.0f, 1.0f) - 0.5f) < 1e-6f);  // the default range keeps the position
     CHECK (std::abs (applyRange (0.0f, 0.25f, 0.75f) - 0.25f) < 1e-6f);
@@ -43,7 +43,7 @@ TEST (live190ef_map_range_maps_the_travel_onto_min_max)
 
 TEST (live190ef_map_key_toggles_between_min_and_max)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     // round 190em (Live 12.4.16, live check 190ei: Track Volume at 0 dB, the 1st press -inf, the 2nd +6 dB, the 3rd -inf)
     CHECK (keyToggle (0.3f, 0.0f, 1.0f) == 0.0f); // anywhere but Min: to Min first
     CHECK (keyToggle (0.0f, 0.0f, 1.0f) == 1.0f); // at Min: to Max
@@ -66,8 +66,8 @@ TEST (live190ef_map_key_toggles_between_min_and_max)
 
 TEST (live190ef_map_button_edges)
 {
-    using namespace lynx::remotemap;
-    const auto note = lynx::linkNoteBase + 36;
+    using namespace yw::remotemap;
+    const auto note = yw::linkNoteBase + 36;
     CHECK (midiEdge (note, 100, -1) == Edge::press && midiEdge (note, 0, 100) == Edge::release);
     CHECK (midiEdge (note, 1, 1) == Edge::press); // every note on presses, even at the same velocity
     CHECK (midiEdge (20, 127, -1) == Edge::press && midiEdge (20, 0, 127) == Edge::release);
@@ -77,8 +77,8 @@ TEST (live190ef_map_button_edges)
 
 TEST (live190ef_map_assigning_a_parameter_makes_one_link)
 {
-    using namespace lynx::remotemap;
-    lynx::Song s;
+    using namespace yw::remotemap;
+    yw::Song s;
     CHECK (assignMidi (s, Target::parameter (live190efmap::volume), { 0, 16, -1 }) == Refusal::none);
     CHECK (s.midiLinks.size() == 1 && s.midiLinks[0].cc == 16 && s.midiLinks[0].channel == 0 && s.midiLinks[0].target == live190efmap::volume);
     CHECK (s.remoteMappings.empty()); // (a parameter's MIDI mapping is FL's link: one storage)
@@ -95,20 +95,20 @@ TEST (live190ef_map_assigning_a_parameter_makes_one_link)
 
 TEST (live190ef_map_slot_and_scene_rules_of_the_lesson)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     auto s = live190efmap::gridSong();
-    const MidiControl pad { 9, lynx::linkNoteBase + 36, -1 };
+    const MidiControl pad { 9, yw::linkNoteBase + 36, -1 };
     CHECK (assignMidi (s, Target::slot (0, 0), pad) == Refusal::none);
     // "can be assigned to multiple clips so long as they all reside in different tracks"
     CHECK (assignMidi (s, Target::slot (1, 1), pad) == Refusal::none);
     CHECK (assignMidi (s, Target::slot (0, 2), pad) == Refusal::sameTrack);
     // "you can't assign a MIDI controller to a scene if it has already been assigned to a clip"
     CHECK (assignMidi (s, Target::sceneLaunch (1), pad) == Refusal::usedBySlot);
-    CHECK (assignMidi (s, Target::sceneLaunch (1), { 9, lynx::linkNoteBase + 37, -1 }) == Refusal::none);
+    CHECK (assignMidi (s, Target::sceneLaunch (1), { 9, yw::linkNoteBase + 37, -1 }) == Refusal::none);
     CHECK (s.remoteMappings.size() == 3);
     // the slot's mapping again with another control: replaced, not added
-    CHECK (assignMidi (s, Target::slot (0, 0), { 9, lynx::linkNoteBase + 40, -1 }) == Refusal::none);
-    CHECK (s.remoteMappings.size() == 3 && midiOf (s, Target::slot (0, 0)).number == lynx::linkNoteBase + 40);
+    CHECK (assignMidi (s, Target::slot (0, 0), { 9, yw::linkNoteBase + 40, -1 }) == Refusal::none);
+    CHECK (s.remoteMappings.size() == 3 && midiOf (s, Target::slot (0, 0)).number == yw::linkNoteBase + 40);
     // now track 0 is free for the first pad again
     CHECK (assignMidi (s, Target::slot (0, 2), pad) == Refusal::none);
     // keys follow the same rules
@@ -116,8 +116,8 @@ TEST (live190ef_map_slot_and_scene_rules_of_the_lesson)
     CHECK (assignKey (s, Target::slot (0, 1), 'A') == Refusal::sameTrack);
     CHECK (assignKey (s, Target::slot (2, 1), 'A') == Refusal::none);
     CHECK (assignKey (s, Target::sceneLaunch (0), 'A') == Refusal::usedBySlot);
-    CHECK (assignKey (s, Target::of (lynx::RemoteAction::play), ' ') == Refusal::none);
-    CHECK (assignKey (s, Target::of (lynx::RemoteAction::play), 0) == Refusal::invalid);
+    CHECK (assignKey (s, Target::of (yw::RemoteAction::play), ' ') == Refusal::none);
+    CHECK (assignKey (s, Target::of (yw::RemoteAction::play), 0) == Refusal::invalid);
     CHECK (keyOf (s, Target::slot (2, 1)).key == 'A' && ! keyOf (s, Target::slot (1, 1)).found);
     // unmap: one kind only
     CHECK (unmap (s, Target::slot (0, 0), Mode::key) == 1 && midiOf (s, Target::slot (0, 0)).found && ! keyOf (s, Target::slot (0, 0)).found);
@@ -126,7 +126,7 @@ TEST (live190ef_map_slot_and_scene_rules_of_the_lesson)
 
 TEST (live190ef_map_browser_rows_min_max_invert_delete)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     auto s = live190efmap::gridSong();
     assignMidi (s, Target::parameter (live190efmap::volume), { 0, 16, -1 });
     assignMidi (s, Target::slot (0, 0), { 0, 60, -1 });
@@ -150,33 +150,33 @@ TEST (live190ef_map_browser_rows_min_max_invert_delete)
     CHECK (removeRow (s, rows (s, Mode::midi)[0]) && s.midiLinks.empty());
     CHECK (! removeRow (s, Row { true, 5 }));
     // the list's texts
-    CHECK (controlText (16) == "CC 16" && controlText (lynx::linkNoteBase + 60) == "C3" && controlText (lynx::linkNoteBase + 61) == "C#3");
+    CHECK (controlText (16) == "CC 16" && controlText (yw::linkNoteBase + 60) == "C3" && controlText (yw::linkNoteBase + 61) == "C#3");
     CHECK (noteText (0) == "C-2" && noteText (127) == "G8");
 }
 
 TEST (live190ef_map_mappings_follow_their_scene_rows)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     auto s = live190efmap::gridSong();
     assignMidi (s, Target::slot (1, 1), { 0, 61, -1 });
     assignKey (s, Target::sceneLaunch (2), 'S');
     assignKey (s, Target::trackStop (1), 'T');
-    lynx::launcher::insertScene (s, 1); // a row above: both move down
+    yw::launcher::insertScene (s, 1); // a row above: both move down
     CHECK (midiOf (s, Target::slot (1, 2)).found && ! midiOf (s, Target::slot (1, 1)).found);
     CHECK (keyOf (s, Target::sceneLaunch (3)).found);
     CHECK (keyOf (s, Target::trackStop (1)).found); // (a track's stop button has no row)
-    lynx::launcher::removeScene (s, 2); // the slot's row goes: its mapping goes with it
+    yw::launcher::removeScene (s, 2); // the slot's row goes: its mapping goes with it
     CHECK (! midiOf (s, Target::slot (1, 2)).found && s.remoteMappings.size() == 2);
     CHECK (keyOf (s, Target::sceneLaunch (2)).found); // the scene below moved up
 }
 
 TEST (live190ef_map_what_an_event_or_a_key_fires)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     auto s = live190efmap::gridSong();
     assignMidi (s, Target::slot (0, 0), { 0, 20, 2 });
     assignMidi (s, Target::slot (1, 1), { 0, 20, 2 });
-    assignMidi (s, Target::of (lynx::RemoteAction::stopAllClips), { 0, 21, -1 });
+    assignMidi (s, Target::of (yw::RemoteAction::stopAllClips), { 0, 21, -1 });
     assignMidi (s, Target::parameter (live190efmap::volume), { 0, 22, -1 }); // (a link: never a "fire")
     auto fires = midiFires (s, 0, 20, 127, -1, 2);
     CHECK (fires.size() == 2 && fires[0].edge == Edge::press && fires[0].target == Target::slot (0, 0) && fires[1].target == Target::slot (1, 1));
@@ -193,33 +193,33 @@ TEST (live190ef_map_what_an_event_or_a_key_fires)
     assignKey (s, Target::parameter (live190efmap::pan), 'P');
     setRange (s, rows (s, Mode::key)[0], 0.2f, 0.8f);
     const auto keyFired = keyFires (s, 'P', true);
-    CHECK (keyFired.size() == 1 && keyFired[0].target.action == lynx::RemoteAction::parameter && keyFired[0].min == 0.2f && keyFired[0].max == 0.8f);
+    CHECK (keyFired.size() == 1 && keyFired[0].target.action == yw::RemoteAction::parameter && keyFired[0].min == 0.2f && keyFired[0].max == 0.8f);
     CHECK (keyFires (s, 'P', false)[0].edge == Edge::release && keyFires (s, 'X', true).empty());
     // the MIDI numbers the mappings take from the instruments
     std::uint64_t ccs[2] {}, notes[2] {};
-    assignMidi (s, Target::sceneLaunch (0), { 0, lynx::linkNoteBase + 100, -1 });
+    assignMidi (s, Target::sceneLaunch (0), { 0, yw::linkNoteBase + 100, -1 });
     usedNumbers (s, ccs, notes);
     CHECK ((ccs[0] >> 20 & 1u) && (ccs[0] >> 21 & 1u) && ! (ccs[0] >> 22 & 1u) && (notes[1] >> (100 - 64) & 1u));
 }
 
 TEST (live190ef_map_parameter_mappings_follow_and_leave_with_their_target)
 {
-    using namespace lynx::remotemap;
-    lynx::Song s;
+    using namespace yw::remotemap;
+    yw::Song s;
     s.channels.resize (2);
-    assignKey (s, Target::parameter ({ lynx::AutomationTargetKind::channelVolume, 1, 0, 0 }), 'V');
-    assignKey (s, Target::of (lynx::RemoteAction::metronome), 'M');
+    assignKey (s, Target::parameter ({ yw::AutomationTargetKind::channelVolume, 1, 0, 0 }), 'V');
+    assignKey (s, Target::of (yw::RemoteAction::metronome), 'M');
     auto visited = 0;
-    s.forEachTarget ([&] (lynx::AutomationTarget&) { ++visited; });
+    s.forEachTarget ([&] (yw::AutomationTarget&) { ++visited; });
     CHECK (visited >= 1);
-    s.forEachTarget ([] (lynx::AutomationTarget& t) {
-        if (t.kind == lynx::AutomationTargetKind::channelVolume)
-            t.kind = lynx::AutomationTargetKind::none; // (as deleting the channel does)
+    s.forEachTarget ([] (yw::AutomationTarget& t) {
+        if (t.kind == yw::AutomationTargetKind::channelVolume)
+            t.kind = yw::AutomationTargetKind::none; // (as deleting the channel does)
     });
     s.removeDeadMidiLinks();
-    CHECK (s.remoteMappings.size() == 1 && s.remoteMappings[0].action == lynx::RemoteAction::metronome);
+    CHECK (s.remoteMappings.size() == 1 && s.remoteMappings[0].action == yw::RemoteAction::metronome);
     // a plain link has no settings until its range changes
-    lynx::MidiLink l;
+    yw::MidiLink l;
     CHECK (! l.hasSettings());
     l.max = 0.5f;
     CHECK (l.hasSettings());

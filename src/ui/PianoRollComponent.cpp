@@ -55,7 +55,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -68,7 +68,7 @@ bool isBlackKey (int key)
 // Round 190jo (design190ia FM-15 / FM-16): FL's note, lit from the top (its upper part +6 %, the rest -4 % of its colour,
 // after FL's top-to-bottom gradient) with a 1 px edge at 72 % of it, radius 2 (one flat fill on rows under 8 px); `edge`: the state's outline (selected, hovered),
 // transparent for the note's own edge. The label is dark on a light note and light on a dark one (≥ 4.5:1 on the
-// velocity range of LYNX's red), bold, at the small text size.
+// velocity range of YW's red), bold, at the small text size.
 void paintNoteBody (juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill, juce::Colour edge)
 {
     // (perf: two solid fills instead of a gradient, whose brush the Direct2D renderer makes again for every note; the
@@ -413,7 +413,7 @@ PianoRollComponent::PianoRollComponent (AudioEngine& e)
     for (int i = 0; i < (int) chords().size(); ++i)
     {
         chordBox.addItem (tr (chords()[(std::size_t) i].name), i + 1);
-        if (i == 0) // round 190nu (LYNX extra, discussion #105): the clicked degree's chord in the key of its region
+        if (i == 0) // round 190nu (YW extra, discussion #105): the clicked degree's chord in the key of its region
             chordBox.addItem (tr ("Scale degree chord"), degreeStampId);
     }
     chordBox.setSelectedId (1, juce::dontSendNotification);
@@ -575,7 +575,7 @@ juce::Rectangle<int> PianoRollComponent::gridArea() const
         .withTrimmedRight (scrollBarSize).withTrimmedBottom (velocityHeight + eventPaneBarArea().getHeight() + liveFooterHeight());
 }
 
-// Round gap190og (detail-047): Live's footer under the editor lanes holds the Velocity Controls; LYNX draws it while the
+// Round gap190og (detail-047): Live's footer under the editor lanes holds the Velocity Controls; YW draws it while the
 // dock shows the Velocity lane in the Live look (elsewhere 0: the Pattern layout's Piano roll and the FL look stay as they are)
 int PianoRollComponent::liveFooterHeight() const
 {
@@ -1640,7 +1640,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
     // the overview follows the notes (edits, undo, another channel or pattern) and the view
     {
         // (round 190gp: hashed again only when the song, the pattern or the channel changed since the last paint;
-        // LYNX_PAINT_SAVINGS=0 hashes on every paint, as before)
+        // YW_PAINT_SAVINGS=0 hashes on every paint, as before)
         const auto stamp = engine.getSongStamp();
         if (! ui::paintSavings() || stamp != overviewStamp || song.currentPattern != overviewPattern || channel != overviewChannel)
         {
@@ -1698,7 +1698,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
     // every note drawn outside it (a rounded rectangle is a path to build and fill) was work for no pixel: the notes,
     // ghosts and velocity markers whose drawing lies wholly outside are skipped (the pixels stay the same)
     const auto dirtyArea = g.getClipBounds();
-    const auto cull = ui::paintSavings(); // (LYNX_PAINT_SAVINGS=0: everything drawn, as before)
+    const auto cull = ui::paintSavings(); // (YW_PAINT_SAVINGS=0: everything drawn, as before)
     const auto outside = [&dirtyArea, cull] (const juce::Rectangle<float>& r, float margin) {
         return cull && ! r.expanded (margin).getSmallestIntegerContainer().intersects (dirtyArea);
     };
@@ -1847,7 +1847,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
                 continue;
             const auto hovered = &n - pattern.notes.data() == hover.ghost;
             // (round 190jo FM-20: FL's ghosts are full-row bars, 1.48:1 over the field with a 1 px edge, no label: the
-            // light text at 14 % with a 22 % edge reads the same on LYNX's dark rows)
+            // light text at 14 % with a 22 % edge reads the same on YW's dark rows)
             g.setColour (textPrimary.withAlpha (hovered ? 0.20f : editGhosts ? 0.17f : 0.14f));
             g.fillRoundedRectangle (r, 2.0f);
             g.setColour (textPrimary.withAlpha (hovered ? 0.40f : editGhosts ? 0.30f : 0.22f));
@@ -1944,7 +1944,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
 
             if (gesture::noteLabelFits (r.getWidth(), rowHeight)) // the note's name, readable on its colour
             {
-                // (round 190jo FM-16: a dark label on a light note, as FL's: bg0 on LYNX red is 5.3:1, the light label was
+                // (round 190jo FM-16: a dark label on a light note, as FL's: bg0 on YW red is 5.3:1, the light label was
                 // 2.3:1; bold, 3 px in from the left as FL's)
                 g.setColour (noteLabelColour (fill));
                 g.setFont (noteLabelFont (rowHeight));
@@ -1993,7 +1993,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
         if (! mpeLaneAreas().empty()) // (round 190hy: as Live's MPE view, each note's pitch curve over it)
             paintMpePitchOnNotes (g, grid);
 
-        // round 190nu: the Scale degree chord a click would write, as outlines with its numeral and name (LYNX's look: the
+        // round 190nu: the Scale degree chord a click would write, as outlines with its numeral and name (YW's look: the
         // accent outline, a faint fill; only while the degree stamp is chosen and the mouse rests on the empty grid)
         if (degreeGhost.tick >= 0 && ! degreeGhost.keys.empty())
         {
@@ -2226,7 +2226,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
             g.fillRect (juce::Rectangle<float> (x0, (float) rulerTop, x1 - x0, 2.0f));
         }
 
-        // View › "Ruler: song bars" (round 177d, LYNX's own; off = FL's pattern bars): the bar numbers the Playlist shows
+        // View › "Ruler: song bars" (round 177d, YW's own; off = FL's pattern bars): the bar numbers the Playlist shows
         // where the pattern's first clip plays
         const auto songOrigin = songBarsRuler ? polish::patternSongOrigin (song, song.currentPattern) : std::nullopt;
         for (auto b = firstBar; b <= lastBar; ++b)
@@ -2430,7 +2430,7 @@ void PianoRollComponent::paint (juce::Graphics& g)
             // the octave name on each C; with a chosen scale on each root, as FL labels it (round 190kd: "A3", "A4" in A minor)
             const auto isC = key % 12 == labelClass;
 
-            // every key named (LYNX, on by default: notenames::everyKey) once the rows are tall enough to read
+            // every key named (YW, on by default: notenames::everyKey) once the rows are tall enough to read
             const auto everyKey = notenames::everyKey.load (std::memory_order_relaxed) && rowHeight >= 8;
             // (round 190jo FM-17: as FL, only the Cs are named on the piano by default, larger and bold; "Note names on
             // every key" names the others; a folded list names each row)
@@ -2662,7 +2662,7 @@ void PianoRollComponent::visibilityChanged()
 }
 
 // The note properties the bottom lane edits: FL's (velocity, pan, fine pitch, release, Mod X / Y: its "Control" list,
-// FLEngine strings "Note release", "Note modulation X / Y"), then Live 12's Chance and Velocity Range (round 187c, LYNX
+// FLEngine strings "Note release", "Note modulation X / Y"), then Live 12's Chance and Velocity Range (round 187c, YW
 // additions marked "(YW Studio)")
 void PianoRollComponent::addNoteLanes()
 {
@@ -2675,7 +2675,7 @@ void PianoRollComponent::addNoteLanes()
     laneBox.addItem (tr ("Chance"), laneChance);
     laneBox.addItem (tr ("Velocity range (YW Studio)"), laneVelocityRange);
     // MPE stage 2 (round 190hy, issue #108): each note's own pitch bend / slide (CC 74) / pressure curve, as Live 11+'s
-    // note expression lanes (LYNX additions: FL 2026 has no per-note curves)
+    // note expression lanes (YW additions: FL 2026 has no per-note curves)
     laneBox.addItem (tr ("MPE pitch bend"), laneMpePitch);
     laneBox.addItem (tr ("MPE slide"), laneMpeSlide);
     laneBox.addItem (tr ("MPE pressure"), laneMpePressure);
@@ -3006,7 +3006,7 @@ void PianoRollComponent::mouseDown (const juce::MouseEvent& e)
     // TimePanelMouseDown 0xe56bf0, REA_rodada168t.md): Ctrl+drag, a double click held and dragged, the Select tool, or
     // a right-drag (on a Mac Cmd or Control: core/ModifierMap.h)
     if (e.y >= rulerTop && e.y < headerHeight && e.x >= keyboardWidth
-        && ((e.mods.isLeftButtonDown() && (flmods::ctrl (e.mods) || e.getNumberOfClicks() >= 2 || (tools.getTool() == EditTool::lasso && ! ruler::seekWithAnyTool()))) // (#227: LYNX extra)
+        && ((e.mods.isLeftButtonDown() && (flmods::ctrl (e.mods) || e.getNumberOfClicks() >= 2 || (tools.getTool() == EditTool::lasso && ! ruler::seekWithAnyTool()))) // (#227: YW extra)
             || (e.mods.isRightButtonDown() && ! flmods::ctrl (e.mods))))
     {
         drag = Drag::rulerSelect;
@@ -4961,14 +4961,14 @@ juce::PopupMenu PianoRollComponent::toolsMenu()
     tool (NoteTool::scaleLevels, "Alt+X");
     tool (NoteTool::lfo, "Alt+O");
 
-    // FL's second column ("Scripts": Python tools shipped with FL); LYNX has its own built-in versions
+    // FL's second column ("Scripts": Python tools shipped with FL); YW has its own built-in versions
     menu.addSectionHeader (tr ("More tools"));
     tool (NoteTool::euclidean, nullptr);
     tool (NoteTool::humanize, nullptr);
     tool (NoteTool::noteRepeat, nullptr);
-    // Live 12's MIDI Transformations as a docked-style panel (round 190s; LYNX addition beside FL's tools above)
+    // Live 12's MIDI Transformations as a docked-style panel (round 190s; YW addition beside FL's tools above)
     menu.addItem (tr ("MIDI Tools") + "...", [this] { openMidiTools(); });
-    // LYNX's Chord helper (round 190mc, discussion #105): modal interchange from the selected chord
+    // YW's Chord helper (round 190mc, discussion #105): modal interchange from the selected chord
     menu.addItem (tr ("Chord helper") + "..." + keyText ("pianoRoll.chordHelper"), [this] { openChordHelper(); });
     {
         juce::PopupMenu velocity;
@@ -4995,7 +4995,7 @@ juce::PopupMenu PianoRollComponent::toolsMenu()
         menu.addSubMenu (tr ("Select by velocity"), velocity);
     }
     {
-        // Live 12's note Chance (round 187c, LYNX additions): probability groups, a reset and a new draw for the project
+        // Live 12's note Chance (round 187c, YW additions): probability groups, a reset and a new draw for the project
         juce::PopupMenu chance;
         const auto several = selection.size() > 1;
         chance.addItem (tr ("Group the selected notes: play all"), several, false, [this] {
@@ -5537,7 +5537,7 @@ bool PianoRollComponent::runAction (const std::string& id)
             EditorGlobals::get().onOptionsChanged();
         repaint();
     }
-    else if (is ("pianoRoll.stackedLanes")) // round 190on (P10): Settings › LYNX extras, the View menu
+    else if (is ("pianoRoll.stackedLanes")) // round 190on (P10): Settings › YW extras, the View menu
     {
         stackedLanesExtra = ! stackedLanesExtra;
         if (EditorGlobals::get().onOptionsChanged)
@@ -5573,9 +5573,9 @@ bool PianoRollComponent::runAction (const std::string& id)
     {
         // FL: Import MIDI and Open score share one file window (FUN_0120b340): .fsc, .mid or both
         const auto score = is ("pianoRoll.openScore");
-        chooser = lynx::ui::makeFileChooser (score ? tr ("Open score") : tr ("Import MIDI"), juce::File(),
+        chooser = yw::ui::makeFileChooser (score ? tr ("Open score") : tr ("Import MIDI"), juce::File(),
                                                        score ? "*.fsc;*.mid;*.midi" : "*.mid;*.midi");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer<PianoRollComponent> (this)] (const juce::FileChooser& fc) {
                                   if (safe != nullptr && fc.getResult().existsAsFile())
                                       safe->loadFile (fc.getResult());
@@ -5585,9 +5585,9 @@ bool PianoRollComponent::runAction (const std::string& id)
     {
         const auto& song = engine.getSong();
         const auto name = juce::String::fromUTF8 (song.activePattern().name.c_str());
-        chooser = lynx::ui::makeFileChooser (tr ("Export MIDI"), juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile (name + ".mid"),
+        chooser = yw::ui::makeFileChooser (tr ("Export MIDI"), juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile (name + ".mid"),
                                                        "*.mid");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe = juce::Component::SafePointer<PianoRollComponent> (this)] (const juce::FileChooser& fc) {
                                   auto file = fc.getResult();
                                   if (safe == nullptr || file == juce::File())
@@ -5605,10 +5605,10 @@ bool PianoRollComponent::runAction (const std::string& id)
         const auto& song = engine.getSong();
         auto name = channel >= 0 && channel < (int) song.channels.size() ? juce::String::fromUTF8 (song.channels[(std::size_t) channel].name.c_str())
                                                                         : juce::String ("Score");
-        chooser = lynx::ui::makeFileChooser (tr ("Save score as"),
+        chooser = yw::ui::makeFileChooser (tr ("Save score as"),
                                                        juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile (juce::File::createLegalFileName (name) + ".fsc"),
                                                        "*.fsc;*.mid");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe = juce::Component::SafePointer<PianoRollComponent> (this)] (const juce::FileChooser& fc) {
                                   auto file = fc.getResult();
                                   if (safe == nullptr || file == juce::File())
@@ -5676,7 +5676,7 @@ void PianoRollComponent::wheelNoteProperty (int note, float deltaY, bool fine, j
             notetools::spreadGroupChance (p, targets);
     }, newBurst);
 
-    // hear it (FL previews the single note; the selection's nearest note too is LYNX's own, issue #16) and a single
+    // hear it (FL previews the single note; the selection's nearest note too is YW's own, issue #16) and a single
     // note becomes the template for new notes (FL)
     const auto& notes = currentPattern (engine.getSong()).notes;
     const auto heard = note >= 0 ? note : noteedit::nearestNote (notes, targets, xToTick (mouse.x), yToKey (mouse.y), pixelsPerTick, rowHeight);
@@ -5943,7 +5943,7 @@ void PianoRollComponent::copySelection()
     publishNotes();
 }
 
-// issue #232 stage 2 (round 190nz): the note clipboard also on the system clipboard, for another LYNX SHARE window
+// issue #232 stage 2 (round 190nz): the note clipboard also on the system clipboard, for another YW Studio window
 void PianoRollComponent::publishNotes()
 {
     if (! windowclip::enabled() || clipboard.empty())
@@ -5954,7 +5954,7 @@ void PianoRollComponent::publishNotes()
     windowclip::publish (std::move (copy));
 }
 
-// Pain point 26 (round 177d, LYNX's own; FL's ghost notes can only be looked at): the ghost notes on show (the other
+// Pain point 26 (round 177d, YW's own; FL's ghost notes can only be looked at): the ghost notes on show (the other
 // channels' notes in this pattern, and this channel's notes in the clips that play at the same time) go to the note
 // clipboard, so Ctrl+V pastes them into the channel being edited, where they were drawn.
 std::vector<Note> PianoRollComponent::visibleGhostNotes() const
@@ -5985,7 +5985,7 @@ void PianoRollComponent::copyGhostNotes()
 
 void PianoRollComponent::paste()
 {
-    // issue #232 (round 190nz): notes copied in another LYNX SHARE window paste here, on the channel being edited
+    // issue #232 (round 190nz): notes copied in another YW Studio window paste here, on the channel being edited
     auto incoming = windowclip::incoming (crossclipboard::Kind::notes);
     if (incoming && ! incoming->notes.empty())
         clipboard = incoming->notes;
@@ -6252,7 +6252,7 @@ bool PianoRollComponent::handleKey (const juce::KeyPress& key)
     if (alt && ! cmd && letter == 'M')
     {
         auto mute = ! shift;
-        // issue #249 (round 190oq, LYNX extra, off = FL): Alt+M on notes that are all muted unmutes them
+        // issue #249 (round 190oq, YW extra, off = FL): Alt+M on notes that are all muted unmutes them
         if (mute && mutekeys::toggles())
         {
             const auto& notes = currentPattern (engine.getSong()).notes;
@@ -7028,7 +7028,7 @@ juce::PopupMenu PianoRollComponent::editMenu()
     juce::PopupMenu menu;
     menu.addItem (theme::mnemonic (tr ("Cut"), 't') + "\tCtrl+X", ! selection.empty(), false, [this] { copySelection(); deleteSelection(); });
     menu.addItem (theme::mnemonic (tr ("Copy"), 'C') + "\tCtrl+C", [this] { copySelection(); });
-    menu.addItem (tr ("Copy ghost notes"), ! visibleGhostNotes().empty(), false, [this] { copyGhostNotes(); }); // (LYNX, round 177d)
+    menu.addItem (tr ("Copy ghost notes"), ! visibleGhostNotes().empty(), false, [this] { copyGhostNotes(); }); // (YW, round 177d)
     menu.addItem (theme::mnemonic (tr ("Paste"), 'P') + "\tCtrl+V", ! clipboard.empty() || windowclip::hasIncoming (crossclipboard::Kind::notes), false,
                   [this] { paste(); });
     menu.addItem (theme::mnemonic (tr ("Duplicate"), 'u') + "\tCtrl+B", [this] { duplicateSelection(); });
@@ -7092,7 +7092,7 @@ juce::PopupMenu PianoRollComponent::viewMenu()
         menu.addItem (tr ("Stacked controller lanes (YW Studio)") + keyText ("pianoRoll.stackedLanes"), true, stackedLanesExtra,
                       [this] { runAction ("pianoRoll.stackedLanes"); });
     {
-        // round 190j (discussion #136): flat = LYNX's keyboard until round 190oo; "Piano keys" = FL 2026's own keyboard
+        // round 190j (discussion #136): flat = YW's keyboard until round 190oo; "Piano keys" = FL 2026's own keyboard
         // (the white keys meet behind the black ones, with lines only between B / C and E / F: flshots/fl-pr-keys-x3.png),
         // the default since round 190oo (O-2); the lined piano keys stay as they were
         juce::PopupMenu style;
@@ -7114,8 +7114,8 @@ juce::PopupMenu PianoRollComponent::viewMenu()
 }
 
 // FL's View › Scale highlighting (EEAutoKeyMenu, round 190jv): in FL's DFM order — "Root note" and the twelve roots,
-// "Scale", Snap to scale, FL's Default / Black notes (LYNX: "No scale", the black-key rows) and Automatic; FL appends
-// its Reference scales after the last of them, here LYNX's scale list (the toolbar scale box's). The roots apply to a
+// "Scale", Snap to scale, FL's Default / Black notes (YW: "No scale", the black-key rows) and Automatic; FL appends
+// its Reference scales after the last of them, here YW's scale list (the toolbar scale box's). The roots apply to a
 // chosen scale, so they wait for one.
 juce::PopupMenu PianoRollComponent::scaleHighlightMenu()
 {
@@ -7304,7 +7304,7 @@ juce::PopupMenu PianoRollComponent::markersMenu()
     menu.addItem (tr ("Add time signature change...") + keyText ("pianoRoll.markerSignature"), [this] { runAction ("pianoRoll.markerSignature"); });
     {
         // round 190nu: FL's "Add key marker" (at the time selection's start, else the playhead, as the other markers here)
-        // and LYNX's key region over the time selection (its end brings back what was there)
+        // and YW's key region over the time selection (its end brings back what was there)
         const auto tick = markerKeyTick();
         const auto here = keyregions::stateAt (currentPattern (engine.getSong()), tick);
         menu.addSubMenu (tr ("Add key marker"), keyChoiceMenu (here, [this, tick] (keyregions::State s) { addKeyMarker (tick, s); }));
@@ -7461,7 +7461,7 @@ juce::PopupMenu PianoRollComponent::patternMarkerMenu (int index)
 // --- MPE lanes (round 190hy, issue #108; core/NoteCurves.h, docs/analise/REA_rodada190hy-mpe.md) -------------------
 // Each note's own pitch bend / slide / pressure curve, edited as Live 11+ edits its note expression: the lane shows the
 // curves over the notes' lengths (the selected notes brighter), a drag draws the curve of the note under the mouse (a
-// selected one first), a point is dragged to move it and double-clicked to delete it; LYNX's own lane gestures on top
+// selected one first), a point is dragged to move it and double-clicked to delete it; YW's own lane gestures on top
 // (right-drag erases, Alt+click clears). FL 2026 has no per-note curves (FLEngine / Fruity Wrapper strings: none).
 
 void PianoRollComponent::setMpeView (bool on)
@@ -7871,7 +7871,7 @@ bool PianoRollComponent::mpeDoubleClick (const juce::MouseEvent& e)
     }
     return true;
 }
-// --- the MPE tab as Live 12.4's (round 190jd; core/MpeTab.h, /mnt/e/lynx-work/livecheck190iw/ANSWERS.md Q3) -----------
+// --- the MPE tab as Live 12.4's (round 190jd; core/MpeTab.h, /mnt/e/yw-work/livecheck190iw/ANSWERS.md Q3) -----------
 
 int PianoRollComponent::mpeLaneIdOf (mpetab::Lane lane) noexcept
 {
@@ -8132,7 +8132,7 @@ void PianoRollComponent::paintMpeValueLane (juce::Graphics& g, juce::Rectangle<i
 
 void PianoRollComponent::paintMpeTabFrame (juce::Graphics& g)
 {
-    // Live 12.4's MPE tab around the stacked lanes (q3-pair-live-vs-lynx-mpe-tab.png): the key column shows each lane's
+    // Live 12.4's MPE tab around the stacked lanes (q3-pair-live-vs-yw-mpe-tab.png): the key column shows each lane's
     // icon (Slide ⇕, Pressure ↓) and scale (127 / 0; Pressure 127 / 64 / 0); the footer row the ▾ "Show Lane" button and
     // the focused lane's name; over a lane's line, the ghost point with its value
     using namespace theme::colour;
@@ -8225,4 +8225,4 @@ void PianoRollComponent::paintMpeTabFrame (juce::Graphics& g)
         textcache::drawText (g, mpeGhostText, tag.toNearestInt(), juce::Justification::centred, false);
     }
 }
-} // namespace lynx
+} // namespace yw

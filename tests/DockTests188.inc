@@ -2,7 +2,7 @@
 
 TEST (detach_new_plugins_marks_only_the_plugins_an_edit_added)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef loaded;
     loaded.instrument = InstrumentKind::plugin;
@@ -62,7 +62,7 @@ TEST (detach_new_plugins_marks_only_the_plugins_an_edit_added)
 // "Detach all new plugins" on never flips it, and one imported Detached stays Detached.
 TEST (detach_new_plugins_leaves_loaded_detached_flags_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef docked;
     docked.instrument = InstrumentKind::plugin;
@@ -91,7 +91,7 @@ TEST (detach_new_plugins_leaves_loaded_detached_flags_alone)
 // Round 190i (issue #116): FL's Tools › Macros › "Switch all plugin editors to" › Attached / Detached
 TEST (switch_all_plugin_editors_sets_every_hosted_plugins_detached_flag)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef synth;
     synth.instrument = InstrumentKind::plugin;

@@ -3,8 +3,8 @@
 // Issue #191 point 6 (round 190iu): the recording takes (audio clips) and the recorded envelopes (automation clips) the
 // picker panel and the Browser's Current project list can be deleted one by one, and the unused ones all at once.
 // FL's picker lists the same three kinds; its Channel rack deletes an audio clip's channel and the Playlist menu's
-// Tools › "Purge unused audio clips" removes the unused ones (both already in LYNX). Deleting an automation clip from
-// the list and "Delete unused automation clips" are LYNX's own. Every delete is one undo step; files on disk stay.
+// Tools › "Purge unused audio clips" removes the unused ones (both already in YW). Deleting an automation clip from
+// the list and "Delete unused automation clips" are YW's own. Every delete is one undo step; files on disk stay.
 // Plain edits for AudioEngine::editSong. No JUCE: tested in tests/Workflow190iuTests.inc.
 
 #include <algorithm>
@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::takecleanup
+namespace yw::takecleanup
 {
 // An audio clip (a take) with its channel and every clip of it, in every arrangement and the clip grid. False when
 // `channel` is not an audio clip channel.
@@ -68,4 +68,4 @@ inline int deleteUnusedAutomations (Song& song)
         song.removeAutomation (a);
     return (int) list.size();
 }
-} // namespace lynx::takecleanup
+} // namespace yw::takecleanup

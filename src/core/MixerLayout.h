@@ -4,7 +4,7 @@
 // (TFXForm.FXViewModeSelect, hint "Mixer layout", handler FXViewModeSelectChange 0x128e190). Its items are
 // Compact, Compact 2, Compact alt | Wide, Wide 2, Wide 3, Wide alt | Extra large; the chosen index (0..7, separators
 // not counted) is a global FL keeps per user (registry General\FruityLoopsMainForm "FXViewMode", FUN_0119fad0), not in
-// the project. Its default is 3 = Wide (the global's initial value). LYNX keeps it in ui-options.txt ("mixerLayout").
+// the project. Its default is 3 = Wide (the global's initial value). YW keeps it in ui-options.txt ("mixerLayout").
 //
 // The strip width FL lays out (FUN_01280570, `s` = the UI scale, Round = Delphi's round half to even):
 //   base  = even (Round (s * (20 + 2 * [Wide 3 or Extra large]) - 0.5) + 1 rounded down to even)
@@ -24,7 +24,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::mixerlayout
+namespace yw::mixerlayout
 {
 enum class Layout
 {
@@ -88,13 +88,13 @@ inline int flStripWidth (Layout l, float scale = 1.0f)
     return base * 2 + round (extra * (double) scale - 0.4999999701976776) * 2;
 }
 
-// How LYNX draws a layout (LYNX skin on FL's widths; the elements' arrangement is LYNX's own, see
+// How YW draws a layout (YW skin on FL's widths; the elements' arrangement is YW's own, see
 // docs/analise/REA_rodada168h.md).
 struct Spec
 {
     int stripWidth = 44;   // strip pitch (FL's width)
     int gap = 4;           // space between two strip plates
-    int masterWidth = 72;  // the Master (it also carries LYNX's dB scale)
+    int masterWidth = 72;  // the Master (it also carries YW's dB scale)
     bool verticalName = true;
     bool nameLow = false;  // alt layouts: the name in the lower part of the strip
     bool stereoKnob = true;
@@ -141,4 +141,4 @@ inline Spec specOf (Layout l)
     s.nameLow = isAlt (l);
     return s;
 }
-} // namespace lynx::mixerlayout
+} // namespace yw::mixerlayout

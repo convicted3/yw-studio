@@ -5,8 +5,8 @@
 #include <cstring>
 
 // The CPU a Windows module (DLL / EXE, a PE file) was built for, from its first bytes (round 176a: 32-bit plugins run
-// in LYNX-bridge32.exe). Pure, so the core tests cover it.
-namespace lynx::pearch
+// in YW-bridge32.exe). Pure, so the core tests cover it.
+namespace yw::pearch
 {
 enum class Arch
 {
@@ -26,7 +26,7 @@ inline Arch fromHeader (const std::uint8_t* data, std::size_t size) noexcept
     if (data == nullptr || size < 0x40 || data[0] != 'M' || data[1] != 'Z')
         return Arch::unknown;
     std::uint32_t peOffset = 0;
-    std::memcpy (&peOffset, data + 0x3c, 4); // (little-endian on every platform LYNX builds for)
+    std::memcpy (&peOffset, data + 0x3c, 4); // (little-endian on every platform YW builds for)
     if (peOffset > size || size - peOffset < 6 || std::memcmp (data + peOffset, "PE\0\0", 4) != 0)
         return Arch::unknown;
     const auto machine = (std::uint16_t) (data[peOffset + 4] | (data[peOffset + 5] << 8));
@@ -50,4 +50,4 @@ inline const char* vst3Folder (Arch arch) noexcept
         default: return "";
     }
 }
-} // namespace lynx::pearch
+} // namespace yw::pearch

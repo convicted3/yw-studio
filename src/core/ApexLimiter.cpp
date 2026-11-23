@@ -10,7 +10,7 @@
 #include "core/Loudness.h"
 #include "core/MixSuite.h"
 
-namespace lynx::apex
+namespace yw::apex
 {
 namespace
 {
@@ -79,7 +79,7 @@ constexpr StyleLaw laws[styleCount] = {
 //    crossings, so a steady tone keeps one gain through its cycles while a transient's crossings come fast and its
 //    peaks are taken one by one).
 struct StyleLaw1 { double attackFactor, releaseFactor, fastMs, holdRelease, rampDb, minLookMs, depthSlow, depthFast, postHoldMs, zcHold = 0.0; };
-#ifdef LYNX_LGLAB
+#ifdef YW_LGLAB
 StyleLaw1 laws1[styleCount] = {
 #else
 constexpr StyleLaw1 laws1[styleCount] = {
@@ -95,13 +95,13 @@ constexpr StyleLaw1 laws1[styleCount] = {
     { 0.023, 0.642, 73.9, 0.365, 0.52, 0.0, 0.0, 0.0, 0.0, 1.0 },     // Safe: a full half-period hold
 };
 constexpr double maxPostHoldMs = 20.0;
-#ifdef LYNX_LGLAB
-// lab only: LYNX_LGLAB="s4.minLookMs=5,all.depthSlow=1,..." overrides the revision-1 table
+#ifdef YW_LGLAB
+// lab only: YW_LGLAB="s4.minLookMs=5,all.depthSlow=1,..." overrides the revision-1 table
 struct LgLab
 {
     LgLab()
     {
-        const char* e = std::getenv ("LYNX_LGLAB");
+        const char* e = std::getenv ("YW_LGLAB");
         if (e == nullptr) return;
         std::string str (e);
         std::size_t pos = 0;
@@ -978,4 +978,4 @@ std::unique_ptr<Effect> make (const EffectParams* initial)
     if (initial != nullptr) fx->presetLatency (*initial);
     return fx;
 }
-} // namespace lynx::apex
+} // namespace yw::apex

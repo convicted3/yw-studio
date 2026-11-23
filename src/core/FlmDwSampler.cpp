@@ -9,9 +9,9 @@
 #include "core/Instruments.h"
 
 // FL Studio Mobile's DW Sampler (round 190de; FLM_FORMAT §7.5). Clean-room: the laws below are the behaviour read in
-// FLM's FL plugin, written in LYNX's own words and code.
+// FLM's FL plugin, written in YW's own words and code.
 
-namespace lynx::flmdw
+namespace yw::flmdw
 {
 const float defaults[paramCount] = { 1.0f, 0.0f, 0.1f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
                                      0.0f, 1.0f, 1.0f, 1.0f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f };
@@ -873,4 +873,4 @@ private:
 };
 
 std::unique_ptr<Instrument> makeInstrument (std::vector<EngineZone> zones) { return std::make_unique<FlmDwSamplerInstrument> (std::move (zones)); }
-} // namespace lynx::flmdw
+} // namespace yw::flmdw

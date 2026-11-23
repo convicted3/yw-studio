@@ -4,7 +4,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // Facet EQ's own editor (REA round 103): a large response graph over a live spectrum analyser (the slot's input and
 // output), one node per band — drag = frequency and gain, mouse wheel = Q, double-click on the graph = new band,
@@ -25,4 +25,4 @@ void drawFacetEqCurve (juce::Graphics& g, juce::Rectangle<float> area, const Eff
 std::unique_ptr<juce::Component> makeFacetEqEditor (AudioEngine& engine, int track, int slot, bool demo = false);
 // Round 166f (--eq166fshot): one analyser tick without the editor's timer (claims the slot's analyser tap)
 void tickFacetEqEditor (juce::Component& editor);
-} // namespace lynx
+} // namespace yw

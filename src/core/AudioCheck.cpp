@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace lynx::audiocheck
+namespace yw::audiocheck
 {
 Verdict verdict (bool deviceOpen, float peak, bool heard) noexcept
 {
@@ -61,4 +61,4 @@ std::vector<Choice> alternatives (const std::string& os, const Choice& current,
                 add ({ type, n });
     return out;
 }
-} // namespace lynx::audiocheck
+} // namespace yw::audiocheck

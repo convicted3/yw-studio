@@ -39,7 +39,7 @@
  #include <sys/resource.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -125,7 +125,7 @@ void setPluginRenderMode (juce::AudioPluginInstance& plugin, bool offline, int b
     {
         // VST3 reads the process mode in its setup (setupProcessing). JUCE's VST3 host skips prepareToPlay when the
         // plugin is active at the same rate and block size, so the plugin was never told: an export ran it in
-        // real-time mode (round 169c, issue #32 [LOG] the LYNX Test Synth saw kRealtime through a whole export). It is
+        // real-time mode (round 169c, issue #32 [LOG] the YW Test Synth saw kRealtime through a whole export). It is
         // set up again from scratch.
         plugin.releaseResources();
         plugin.prepareToPlay (plugin.getSampleRate(), blockSize);
@@ -632,11 +632,11 @@ PluginInstrument::PluginInstrument (std::unique_ptr<juce::AudioPluginInstance> i
     takesTuning = noteFormat == hostpitch::Format::vst3;
     if (takesTuning)
     {
-        juce::lynxNoteTuningHook = [] (void* context, int channel, int key) noexcept {
+        juce::ywNoteTuningHook = [] (void* context, int channel, int key) noexcept {
             return channel == 0 ? static_cast<hostpitch::SentKeys*> (context)->takeTuning (key) : 0.0f;
         };
-        // round 190fg: and which LYNX note each note on / off belongs to, so a note off carries its own note's id
-        juce::lynxNoteTagHook = [] (void* context, bool noteOn, int channel, int key) noexcept -> unsigned int {
+        // round 190fg: and which YW note each note on / off belongs to, so a note off carries its own note's id
+        juce::ywNoteTagHook = [] (void* context, bool noteOn, int channel, int key) noexcept -> unsigned int {
             return channel == 0 ? static_cast<hostpitch::SentKeys*> (context)->takeTag (noteOn, key) : 0u;
         };
     }
@@ -652,7 +652,7 @@ void PluginInstrument::releaseHeldKeys() noexcept
     sentKeys.played = {}; // (their note offs went out with these)
 }
 
-// Round 190fg: a note on / off just written on MIDI channel 1 of a VST3 queues the LYNX note it belongs to (0 = none),
+// Round 190fg: a note on / off just written on MIDI channel 1 of a VST3 queues the YW note it belongs to (0 = none),
 // for the patched host to pair the note off with its own note on's id (core/HostNotePitch.h SentKeys::tag)
 void PluginInstrument::tagSent (bool noteOn, int channel, int key, std::uint32_t note) noexcept
 {
@@ -814,7 +814,7 @@ void PluginInstrument::setParameterFromUi (int index, float value)
     guardedUiParameter (*plugin, parameterChanges, crashed, name, index, value);
 }
 
-// The MIDI velocity of a note on: LYNX's own law is JUCE's (127 v, rounded); a project with FL's levels sends it as
+// The MIDI velocity of a note on: YW's own law is JUCE's (127 v, rounded); a project with FL's levels sends it as
 // Fruity Wrapper does (core/HostNotePitch.h, round 190ad)
 juce::uint8 PluginInstrument::midiVelocity (float velocity) const noexcept
 {
@@ -1126,8 +1126,8 @@ void TimedParameterQueue::add (int index, float value, int offset) noexcept
 }
 
 TimedParameterQueue::Scope::Scope (TimedParameterQueue& q, int from, int length) noexcept
-    : previousCount (juce::lynxTimedParamCount), previousIndices (juce::lynxTimedParamIndices),
-      previousOffsets (juce::lynxTimedParamOffsets), previousValues (juce::lynxTimedParamValues)
+    : previousCount (juce::ywTimedParamCount), previousIndices (juce::ywTimedParamIndices),
+      previousOffsets (juce::ywTimedParamOffsets), previousValues (juce::ywTimedParamValues)
 {
     auto n = 0;
     if (q.count > 0 && q.chunk == hostTimeline().chunk.load (std::memory_order_relaxed))
@@ -1139,18 +1139,18 @@ TimedParameterQueue::Scope::Scope (TimedParameterQueue& q, int from, int length)
                 q.blockValues[(std::size_t) n] = q.values[(std::size_t) i];
                 ++n;
             }
-    juce::lynxTimedParamCount = n;
-    juce::lynxTimedParamIndices = q.blockIndices.data();
-    juce::lynxTimedParamOffsets = q.blockOffsets.data();
-    juce::lynxTimedParamValues = q.blockValues.data();
+    juce::ywTimedParamCount = n;
+    juce::ywTimedParamIndices = q.blockIndices.data();
+    juce::ywTimedParamOffsets = q.blockOffsets.data();
+    juce::ywTimedParamValues = q.blockValues.data();
 }
 
 TimedParameterQueue::Scope::~Scope()
 {
-    juce::lynxTimedParamCount = previousCount;
-    juce::lynxTimedParamIndices = previousIndices;
-    juce::lynxTimedParamOffsets = previousOffsets;
-    juce::lynxTimedParamValues = previousValues;
+    juce::ywTimedParamCount = previousCount;
+    juce::ywTimedParamIndices = previousIndices;
+    juce::ywTimedParamOffsets = previousOffsets;
+    juce::ywTimedParamValues = previousValues;
 }
 
 void PluginInstrument::render (float* left, float* right, int n, float gl, float gr) noexcept
@@ -1197,9 +1197,9 @@ void PluginInstrument::render (float* left, float* right, int n, float gl, float
     }
     flushMidiControls();
     // issue #63: the VST3 host picks up each note on's tuning while this thread runs the plugin's blocks
-    const auto tuningBefore = juce::lynxNoteTuningContext;
-    juce::lynxNoteTuningContext = takesTuning ? &sentKeys : nullptr;
-    const juce::ScopeGuard tuningBack { [tuningBefore] { juce::lynxNoteTuningContext = tuningBefore; } };
+    const auto tuningBefore = juce::ywNoteTuningContext;
+    juce::ywNoteTuningContext = takesTuning ? &sentKeys : nullptr;
+    const juce::ScopeGuard tuningBack { [tuningBefore] { juce::ywNoteTuningContext = tuningBefore; } };
     // the play head reports where each block starts in the chunk (round 169c); put back to 0 for the effects after it
     const auto chunkOffset = blockClock.start (hostTimeline().chunk.load (std::memory_order_relaxed));
     blockClock.advance (n);
@@ -1892,7 +1892,7 @@ juce::String pluginStateContentionSelfTest()
         whileHeld (3, [&] { adapter.setParameter (1, 0.31f); render(); });
         require (probe.blocks.load() > blocksBeforeCapture && probe.writes.load() == writesBeforeCapture + 1,
                  "a state capture made processing or automation wait");
-        // ... and neither does a knob moved in LYNX's UI: a block runs while the plugin is inside that write
+        // ... and neither does a knob moved in YW's UI: a block runs while the plugin is inside that write
         const auto blocksBeforeUi = probe.blocks.load();
         std::function<void()> renderBeside = [&] { std::thread audio ([&] { render(); }); audio.join(); };
         probe.duringWrite.store (&renderBeside);
@@ -2715,11 +2715,11 @@ private:
     std::thread thread;
 };
 
-// LYNX_TEST_SCAN_MS=<base>,<stall>,<cap> (--lv2scantest): shorter limits, so the test's children need seconds, not minutes
+// YW_TEST_SCAN_MS=<base>,<stall>,<cap> (--lv2scantest): shorter limits, so the test's children need seconds, not minutes
 scanpolicy::ChildWatch makeChildWatch()
 {
     juce::StringArray limits;
-    limits.addTokens (juce::SystemStats::getEnvironmentVariable ("LYNX_TEST_SCAN_MS", {}), ",", {});
+    limits.addTokens (juce::SystemStats::getEnvironmentVariable ("YW_TEST_SCAN_MS", {}), ",", {});
     if (limits.size() == 3)
         return scanpolicy::ChildWatch (limits[0].getIntValue(), limits[1].getIntValue(), limits[2].getIntValue());
     return scanpolicy::ChildWatch();
@@ -2734,10 +2734,10 @@ bool scanResultComplete (const juce::File& result)
     return xml != nullptr && xml->hasTagName ("PLUGINS") && xml->getNumChildElements() > 0;
 }
 
-// why a plugin file was not described (%APPDATA%\LYNX\scan-failures.log), so a "missing" plugin can be explained
+// why a plugin file was not described (%APPDATA%\YW\scan-failures.log), so a "missing" plugin can be explained
 void logScanFailure (const juce::String& file, const juce::String& why, juce::uint32 elapsedMs)
 {
-    const auto log = lynx::platform::settingsFile ("scan-failures.log");
+    const auto log = yw::platform::settingsFile ("scan-failures.log");
     if (log.getSize() > 256 * 1024)
         log.deleteFile();
     log.appendText (juce::Time::getCurrentTime().toISO8601 (true) + " | " + file + " | " + why + " | " + juce::String (elapsedMs / 1000.0, 1) + " s\n");
@@ -2747,9 +2747,9 @@ void logScanFailure (const juce::String& file, const juce::String& why, juce::ui
 
 bool PluginHost::scanOne (juce::AudioPluginFormat& format, const juce::String& file, const std::function<bool()>& keepGoing)
 {
-    // a result file of our own: several LYNX processes (and scans) may run at once
+    // a result file of our own: several YW processes (and scans) may run at once
     const auto result = juce::File::getSpecialLocation (juce::File::tempDirectory)
-                            .getChildFile ("lynx-scan-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()) + ".xml");
+                            .getChildFile ("yw-scan-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()) + ".xml");
     // a 32-bit module (round 176a) is described by the 32-bit bridge, which can load it; without the bridge it is skipped
     const auto bits32 = isModule32Bit (file);
     const auto exe = bits32 ? bridge32Executable() : juce::File::getSpecialLocation (juce::File::currentExecutableFile);
@@ -2766,7 +2766,7 @@ bool PluginHost::scanOne (juce::AudioPluginFormat& format, const juce::String& f
     };
     if (ok)
     {
-        // wait in short steps so a cancelled scan (or LYNX closing) doesn't wait for a slow plugin; a file holding
+        // wait in short steps so a cancelled scan (or YW closing) doesn't wait for a slow plugin; a file holding
         // many plugins (Waves shell) gets more time once the child has said how many, and a child that is still
         // working (FL Studio's own plugin boots the FL engine) or shows a window gets more time (core/PluginScanPolicy.h)
         auto watch = makeChildWatch();
@@ -2946,7 +2946,7 @@ int PluginHost::scanFiles (const juce::StringArray& files, const std::function<b
     const std::scoped_lock lock (scanLock);
     stopScan = false;
     const auto before = known.getNumTypes();
-    // what was found so far is saved as the scan goes (at most every few seconds): LYNX closed in the middle of a
+    // what was found so far is saved as the scan goes (at most every few seconds): YW closed in the middle of a
     // background scan used to lose it all, and the next start described the same files again
     auto lastSave = juce::Time::getMillisecondCounter();
     auto unsaved = false;
@@ -3236,7 +3236,7 @@ int PluginHost::scanOneFile (const juce::String& formatName, const juce::String&
         if (format->getName() == formatName && formatName == "LV2" && file.startsWith (lv2BatchPrefix))
         {
             // (--lv2scantest: a child that dies, and one that a cancel has to stop)
-            const auto fault = juce::SystemStats::getEnvironmentVariable ("LYNX_TEST_CRASH", {});
+            const auto fault = juce::SystemStats::getEnvironmentVariable ("YW_TEST_CRASH", {});
             if (fault == "lv2-batch")
                 std::abort();
             if (fault == "lv2-batch-hang")
@@ -3709,11 +3709,11 @@ juce::StringArray PluginHost::filesToScanFor (const std::vector<FlpPluginUse>& u
 
 std::string PluginHost::stateFromFlWrapper (const ForeignPlugin& f, const juce::PluginDescription& d)
 {
-    // CLAP: u32 0 + the clap_plugin_state.save bytes (REA_rodada22 §2); LYNX's CLAP host stores the same
+    // CLAP: u32 0 + the clap_plugin_state.save bytes (REA_rodada22 §2); YW's CLAP host stores the same
     if (f.format == ForeignPlugin::Format::clap && d.pluginFormatName == "CLAP")
         return f.state.size() > 4 ? juce::MemoryBlock (f.state.data() + 4, f.state.size() - 4).toBase64Encoding().toStdString() : std::string {};
 
-    // VST2: LYNX's VST2 host keeps FL's own state layout (REA_rodada89 §2)
+    // VST2: YW's VST2 host keeps FL's own state layout (REA_rodada89 §2)
     if (f.format == ForeignPlugin::Format::vst2 && d.pluginFormatName == Vst2PluginFormat::formatName)
     {
         FlVst2State check;
@@ -3773,7 +3773,7 @@ int PluginHost::adoptFlPlugins (Song& song, juce::StringArray* missing, juce::St
         return true;
     };
 
-    // FL automates a VST3 by "slot" (record 4: slot → ParamID); LYNX by position in JUCE's list, which is
+    // FL automates a VST3 by "slot" (record 4: slot → ParamID); YW by position in JUCE's list, which is
     // getParameterInfo order (REA_rodada22 §2.3). Needs the plugin's current list: only when something is
     // automated, in-process (skipped with the sandbox on, where k stays the position — FL's default for a new instance).
     // (the instance it asks for stays ready for the rack: the same plugin is not created twice on open)
@@ -3843,7 +3843,7 @@ int PluginHost::adoptFlPlugins (Song& song, juce::StringArray* missing, juce::St
             if (fx.kind != EffectKind::plugin || fx.plugin.foreign.format == ForeignPlugin::Format::none)
                 continue;
             const auto foreign = fx.plugin.foreign;
-            // not installed: a LYNX substitute plays in its place and keeps the original record for later
+            // not installed: a YW substitute plays in its place and keeps the original record for later
             if (pluginSubstitutesEnabled() && ! findForeign (foreign, false) && substituteEffectSlot (fx, pluginIdentity (foreign), context))
             {
                 if (substituted != nullptr)
@@ -3932,7 +3932,7 @@ PluginIdentity PluginHost::identityOf (const PluginRef& ref)
             }
     }
     else
-        id.state.assign (bytes, bytes + state.getSize()); // VST2: FL's layout (LYNX's VST2 host); CLAP: the plugin's own
+        id.state.assign (bytes, bytes + state.getSize()); // VST2: FL's layout (YW's VST2 host); CLAP: the plugin's own
     return id;
 }
 
@@ -4262,8 +4262,8 @@ std::unique_ptr<juce::AudioPluginInstance> PluginHost::createInstance (const Plu
     if (! ref.dpiAware)
         dpiUnaware.emplace();
     // round 190ok: the memory the plugin maps while it loads, prepares and takes its settings is faulted in here, off the
-    // audio thread (platform/PrefaultMemory.h; Linux; LYNX_PREFAULT=0 leaves it out)
-    static const bool prefaultOn = juce::SystemStats::getEnvironmentVariable ("LYNX_PREFAULT", "1") != "0";
+    // audio thread (platform/PrefaultMemory.h; Linux; YW_PREFAULT=0 leaves it out)
+    static const bool prefaultOn = juce::SystemStats::getEnvironmentVariable ("YW_PREFAULT", "1") != "0";
     const auto mapsBefore = prefaultOn ? prefault::mappings() : std::vector<prefault::Region> {};
     auto instance = createRightInstance (formats, *description, sampleRate, maxBlockSize, message);
     dpiUnaware.reset();
@@ -4275,7 +4275,7 @@ std::unique_ptr<juce::AudioPluginInstance> PluginHost::createInstance (const Plu
             *error = message;
         return nullptr;
     }
-    // round 190gg (B4): a fault on one of this plugin's own threads switches it off instead of ending LYNX (Linux / macOS)
+    // round 190gg (B4): a fault on one of this plugin's own threads switches it off instead of ending YW (Linux / macOS)
     crashguard::watchPluginModule (description->fileOrIdentifier.toStdString());
 
     preparePlugin (*instance, sampleRate, preparedBlock);
@@ -4286,7 +4286,7 @@ std::unique_ptr<juce::AudioPluginInstance> PluginHost::createInstance (const Plu
 
         if (state.fromBase64Encoding (juce::String::fromUTF8 (ref.state.c_str())))
         {
-            // round 190dt: guarded like the audio calls (a plugin that crashes on its own saved settings took LYNX down
+            // round 190dt: guarded like the audio calls (a plugin that crashes on its own saved settings took YW down
             // while the project opened). It is left out: the slot keeps those settings, so the project saves them.
             auto* raw = instance.get();
             if (const auto code = crashguard::run ([raw, &state] { raw->setStateInformation (state.getData(), (int) state.getSize()); }); code != 0)
@@ -4380,9 +4380,9 @@ modulewarm::Registry& warmup()
 
 void startModuleOf (const juce::PluginDescription& d)
 {
-    if (pluginSandboxEnabled() || std::getenv ("LYNX_NO_MODULE_WARMUP") != nullptr) // (the env var: A/B measurements)
+    if (pluginSandboxEnabled() || std::getenv ("YW_NO_MODULE_WARMUP") != nullptr) // (the env var: A/B measurements)
         return;
-    if (isPlugin32Bit (d)) // (it loads in the 32-bit bridge, never in LYNX's own process)
+    if (isPlugin32Bit (d)) // (it loads in the 32-bit bridge, never in YW's own process)
         return;
     if (modulewarm::worthStartingAhead (d.pluginFormatName.toStdString(), d.fileOrIdentifier.toStdString()))
         warmup().start (d.fileOrIdentifier.toStdString());
@@ -4623,7 +4623,7 @@ std::optional<ForeignPlugin> PluginHost::flWrapperRecord (const PluginRef& ref, 
         p.vst2Id = (std::uint32_t) d->uniqueId;
         FlVst2State check;
         if (parseFlVst2State (state, check))
-            p.state = state; // LYNX's VST2 host keeps FL's own layout (REA_rodada89 §2)
+            p.state = state; // YW's VST2 host keeps FL's own layout (REA_rodada89 §2)
         else if (! state.empty())
         {
             FlVst2State chunk;
@@ -4650,4 +4650,4 @@ std::optional<ForeignPlugin> PluginHost::flWrapperRecord (const PluginRef& ref, 
     return p;
 }
 
-} // namespace lynx
+} // namespace yw

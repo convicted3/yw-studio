@@ -14,7 +14,7 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx::emphasizer
+namespace yw::emphasizer
 {
 namespace
 {
@@ -377,4 +377,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> make() { return std::make_unique<EmphasizerEffect>(); }
-} // namespace lynx::emphasizer
+} // namespace yw::emphasizer

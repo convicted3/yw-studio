@@ -2,7 +2,7 @@
 
 TEST (rea143b_channel_misc_functions)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef synth;
     synth.instrument = InstrumentKind::synth;
     ChannelDef sampler;
@@ -33,12 +33,12 @@ TEST (rea143b_channel_misc_functions)
 
 TEST (rea143b_step_position_like_fl_hint_bar)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's hint bar over the second step of bar 1: "1:02:00" (bar:step:tick, 24 ticks per step)
-    CHECK (stepPositionText (0, lynx::Meter (4, 4)) == "1:01:00");
-    CHECK (stepPositionText (ticksPerStep, lynx::Meter (4, 4)) == "1:02:00");
-    CHECK (stepPositionText (ticksPerStep * 16, lynx::Meter (4, 4)) == "2:01:00");
-    CHECK (stepPositionText (ticksPerStep * 15 + ticksPerStep / 2, lynx::Meter (4, 4)) == "1:16:12");
-    CHECK (stepPositionText (ticksPerStep * 12, lynx::Meter (3, 4)) == "2:01:00"); // 3/4: 12 steps per bar
-    CHECK (stepPositionText (-5, lynx::Meter (4, 4)) == "1:01:00");
+    CHECK (stepPositionText (0, yw::Meter (4, 4)) == "1:01:00");
+    CHECK (stepPositionText (ticksPerStep, yw::Meter (4, 4)) == "1:02:00");
+    CHECK (stepPositionText (ticksPerStep * 16, yw::Meter (4, 4)) == "2:01:00");
+    CHECK (stepPositionText (ticksPerStep * 15 + ticksPerStep / 2, yw::Meter (4, 4)) == "1:16:12");
+    CHECK (stepPositionText (ticksPerStep * 12, yw::Meter (3, 4)) == "2:01:00"); // 3/4: 12 steps per bar
+    CHECK (stepPositionText (-5, yw::Meter (4, 4)) == "1:01:00");
 }

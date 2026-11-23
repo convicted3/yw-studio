@@ -7,23 +7,23 @@
 namespace p190lpr2t
 {
 // a Pro-R 2 state (Modern, 100 % wet): Space, Distance, Character; Decay Rate 0 (× 1), Brightness ½, Stereo Width 0.7
-inline lynx::EffectSlot state (float space, float distance, float character)
+inline yw::EffectSlot state (float space, float distance, float character)
 {
     std::vector<float> v (136, 0.0f);
     v[0] = space; v[1] = 0.0f; v[2] = distance; v[3] = 0.5f; v[5] = character; v[7] = 0.7f; v[9] = 100.0f;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::luxeVerb);
-    if (const auto st = lynx::fabfilter::parseState (p190kwr2t::ffbs (v))) lynx::fabfilter::fromProR2 (*st, slot);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::luxeVerb);
+    if (const auto st = yw::fabfilter::parseState (p190kwr2t::ffbs (v))) yw::fabfilter::fromProR2 (*st, slot);
     return slot;
 }
 // an impulse at 0.2 s (after the parameters' smoothing has settled) on both channels through the slot
 constexpr double t0 = 0.2;
 inline int i0 (double sr) { return (int) std::lround (t0 * sr); }
-inline void render (const lynx::EffectSlot& slot, std::vector<float>& l, std::vector<float>& r, double sr = 48000.0)
+inline void render (const yw::EffectSlot& slot, std::vector<float>& l, std::vector<float>& r, double sr = 48000.0)
 {
     const int n = (int) (0.5 * sr);
     l.assign ((std::size_t) n, 0.0f); r.assign ((std::size_t) n, 0.0f);
     l[(std::size_t) i0 (sr)] = r[(std::size_t) i0 (sr)] = 0.5f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);
@@ -91,7 +91,7 @@ TEST (parity190lpR2_tap_levels_follow_space_distance_and_character)
 
 TEST (parity190lpR2_revision_rule_and_the_far_early_field)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace p190lpr2t;
     // the taps live in revision 1 only: a Pro-R 2 state gets it, a project saved before the revision loads 0 and keeps
     // tp172b's spread reflections (something before 6.67 ms at Space 0, Distance ½)

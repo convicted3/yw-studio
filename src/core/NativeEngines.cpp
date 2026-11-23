@@ -13,14 +13,14 @@
 #include "core/HardcoreFx.h"
 #include "core/Harmless.h"
 #include "core/HarmlessFx.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/MidiOut.h"
 #include "core/MixSuite.h"
 #include "core/PhysicalModels.h"
 #include "core/Slicex.h"
 #include "flp/Flp.h"
 
-namespace lynx::natives
+namespace yw::natives
 {
 namespace
 {
@@ -114,7 +114,7 @@ std::optional<ChannelDef> channelFromPreset (InstrumentKind kind, const Instrume
 
 const std::vector<InstrumentEngine>& instrumentEngines()
 {
-    // name, preset folder (Generators), needs, beta. Engines that play from an empty state (LYNX's own defaults) need
+    // name, preset folder (Generators), needs, beta. Engines that play from an empty state (YW's own defaults) need
     // nothing; the rest start from the user's FL "Default" preset (with its data files: DLL tables, wave folders...).
     static const std::vector<InstrumentEngine> list = {
         { InstrumentKind::threeosc, "3x Osc", "3x Osc", own, false },
@@ -134,10 +134,10 @@ const std::vector<InstrumentEngine>& instrumentEngines()
         { InstrumentKind::simsynth, "SimSynth", "SimSynth", own, false },
         { InstrumentKind::minisynth, "MiniSynth", "MiniSynth", fl, false },
         { InstrumentKind::pocketSuperSaw, "Pocket SuperSaw", "", own, false }, // (FL Studio Mobile's SuperSaw: plays from its defaults)
-        { InstrumentKind::tetra, "Tetra", "", own, false }, // (round 190hs: LYNX's own FM synth, plays from its defaults: one sine)
-        { InstrumentKind::helix, "Helix", "", own, false }, // (round 190ja: LYNX's own wavetable synth, plays from its defaults)
-        { InstrumentKind::braid, "Braid", "", own, false }, // (round 190ko: LYNX's own two-engine macro synth, plays from its defaults)
-        { InstrumentKind::lynxModel, "YW Model", "", own, false }, // (round 190ni: LYNX's own physical models, from its bank's Marimba)
+        { InstrumentKind::tetra, "Tetra", "", own, false }, // (round 190hs: YW's own FM synth, plays from its defaults: one sine)
+        { InstrumentKind::helix, "Helix", "", own, false }, // (round 190ja: YW's own wavetable synth, plays from its defaults)
+        { InstrumentKind::braid, "Braid", "", own, false }, // (round 190ko: YW's own two-engine macro synth, plays from its defaults)
+        { InstrumentKind::ywModel, "YW Model", "", own, false }, // (round 190ni: YW's own physical models, from its bank's Marimba)
         { InstrumentKind::dx10, "Fruity DX10", "Fruity DX10", own, false },
         { InstrumentKind::plucked, "Plucked!", "Plucked!", own, false },
         { InstrumentKind::sawer, "Sawer", "Sawer", fl, false },
@@ -207,7 +207,7 @@ std::vector<std::string> presetCandidates (const std::string& presetFolder, bool
     // comes first — Drumaxx' "Default Kit" (REA_rodada169e §1), Transistor Bass' "Factory programs", Sakura's "Bowed 6",
     // Ogun's version-11 state, and the engines whose Default preset differs from it (3x Osc, Sytrus, Harmor, Harmless,
     // PoiZone, MiniSynth, Sawer, FL Keys, Granulizer, Toxic, BeepMap: user decision, round 169l2). Where FL's Default.fst
-    // equals it (Kepler, SimSynth, DX10, Plucked!, Fruit Kick) nothing changes; an entry LYNX can't read falls through to
+    // equals it (Kepler, SimSynth, DX10, Plucked!, Fruit Kick) nothing changes; an entry YW can't read falls through to
     // the Default preset, then the folder.
     if (generator && access.listPresets)
     {
@@ -308,7 +308,7 @@ bool available (const InstrumentEngine& e, const FlAccess& access)
 {
     if (e.kind == InstrumentKind::boobass)
         return ! booBassDll (access).empty();
-    // an engine with a LYNX preset bank starts from it without FL (round 168n)
+    // an engine with a YW preset bank starts from it without FL (round 168n)
     return e.needs == Needs::nothing || banks::hasBank (e.kind) || ! defaultPresetPath (e.presetFolder, true, access).empty();
 }
 
@@ -348,14 +348,14 @@ std::optional<ChannelDef> makeChannel (InstrumentKind kind, const FlAccess& acce
             return def;
     }
 
-    // without FL: the first preset of LYNX's own bank (round 168n)
+    // without FL: the first preset of YW's own bank (round 168n)
     if (auto def = banks::defaultChannel (kind, engine->name))
         return def;
 
     if (engine->needs != Needs::nothing)
         return std::nullopt;
 
-    ChannelDef def; // LYNX's own default: the engine plays from an empty state
+    ChannelDef def; // YW's own default: the engine plays from an empty state
     def.name = engine->name;
     def.instrument = kind;
     if (kind == InstrumentKind::slicex)
@@ -428,7 +428,7 @@ std::optional<EffectSlot> makeSlot (EffectKind kind, const FlAccess& access, dou
                         grossbeat::setPpq (slot->state, 96);
                         // round 173d: FL's Default preset keeps every slot empty (FL fills a new instance from its default
                         // bank, not in the preset): with it every slot picked in the editor, and the attack / release /
-                        // tension / mix knobs, did nothing. A new instance starts on LYNX's factory slots, as without FL
+                        // tension / mix knobs, did nothing. A new instance starts on YW's factory slots, as without FL
                         const auto names = grossbeat::slotNames (slot->state, false);
                         if (std::all_of (names.begin(), names.end(), [] (const std::string& n) { return n.empty(); }))
                             slot->state = grossbeat::factoryContainer();
@@ -508,4 +508,4 @@ void followControl (ChannelDef& c, int index, const FlAccess& fl)
         c.modelParams.push_back ((float) byte);
 }
 
-} // namespace lynx::natives
+} // namespace yw::natives

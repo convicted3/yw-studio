@@ -15,7 +15,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -31,7 +31,7 @@ enum Column
     statusColumn,
     fileColumn,
     bitsColumn, // (FL's Bits column, round 176a; Windows x64 only)
-    separateColumn // (round 190gg, LYNX-own: "always run in a separate process")
+    separateColumn // (round 190gg, YW-own: "always run in a separate process")
 };
 
 juce::String statusText (prefs::PluginStatus s)
@@ -127,7 +127,7 @@ public:
         table.setColour (juce::ListBox::outlineColourId, theme::colour::border);
         table.setOutlineThickness (1);
         addAndMakeVisible (table);
-        // an empty list is not "no plugins": LYNX's own instruments and effects are never listed here (GitHub issue #2)
+        // an empty list is not "no plugins": YW's own instruments and effects are never listed here (GitHub issue #2)
         emptyHint.setText (tr ("No third-party plugins found yet ({0}). Press Find new plugins, or add folders with Plugin folders...", { platform::pluginFormatNames() })
                                + "\n\n"
                                + tr ("YW Studio's own instruments and effects are not listed here: they are always available from the Channel Rack's + button, "
@@ -473,7 +473,7 @@ private:
 
     // Round 190gg (B1): the plugin on / off the "always in a separate process" list. On: its instances in the open
     // project move to their own processes now (as the crash prompt's choice); off: new instances and other projects run
-    // it inside LYNX again (an instance keeps its own Processing › "Run in a separate process").
+    // it inside YW again (an instance keeps its own Processing › "Run in a separate process").
     void toggleSeparate (int row)
     {
         const auto* r = rowAt (row);
@@ -552,9 +552,9 @@ private:
        #else
         const juce::String patterns ("*.vst3;*.clap");
        #endif
-        chooser = lynx::ui::makeFileChooser (tr ("Add a plugin file"), juce::File::getSpecialLocation (juce::File::userHomeDirectory),
+        chooser = yw::ui::makeFileChooser (tr ("Add a plugin file"), juce::File::getSpecialLocation (juce::File::userHomeDirectory),
                                                        patterns);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles
                                   | juce::FileBrowserComponent::canSelectDirectories,
                               [safe = juce::Component::SafePointer<PluginManagerPanel> (this)] (const juce::FileChooser& c) {
                                   if (safe == nullptr || c.getResult() == juce::File() || ! safe->persistent)
@@ -631,4 +631,4 @@ std::unique_ptr<juce::Component> makePluginManagerPanel (AudioEngine& engine, bo
 {
     return std::make_unique<PluginManagerPanel> (engine, persistent, std::move (onFolders));
 }
-} // namespace lynx
+} // namespace yw

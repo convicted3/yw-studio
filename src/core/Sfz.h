@@ -1,8 +1,8 @@
 #pragma once
 
-// SFZ instruments (round 167o, issue #22; https://sfzformat.com): an .sfz file is read into a LYNX Soundfont font
+// SFZ instruments (round 167o, issue #22; https://sfzformat.com): an .sfz file is read into a YW Soundfont font
 // (core/SoundFont.h) and played by its voices. FL Studio loads SFZ through DirectWave (its import list has .sfz,
-// docs/analise/REA_rodada167o.md); in LYNX SHARE an .sfz opens as a channel of LYNX's own sampler-player.
+// docs/analise/REA_rodada167o.md); in YW Studio an .sfz opens as a channel of YW's own sampler-player.
 //
 // Supported: the headers <control> <global> <master> <group> <region> with their inheritance, comments, #define and
 // #include, default_path / note_offset / octave_offset, note names (c4 = 60), and the opcodes
@@ -25,7 +25,7 @@
 
 #include "core/SoundFont.h"
 
-namespace lynx::sfz
+namespace yw::sfz
 {
 // One region after the headers' inheritance (global → master → group → region): its opcodes, the last value wins.
 struct ParsedRegion
@@ -79,4 +79,4 @@ std::shared_ptr<const sf::Font> loadText (const std::string& text, const std::st
 sf::FontInfo scanFile (const std::string& path);
 
 bool isSfzPath (const std::string& path);
-} // namespace lynx::sfz
+} // namespace yw::sfz

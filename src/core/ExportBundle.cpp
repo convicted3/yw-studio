@@ -8,7 +8,7 @@
 #include "core/PatternBlocks.h"
 #include "core/QuickRender.h"
 
-namespace lynx::exportbundle
+namespace yw::exportbundle
 {
 namespace
 {
@@ -178,4 +178,4 @@ std::string readme (const Song& song, const Plan& plan, double seconds, const st
     line ("- Online studios and other apps: import the stems as audio tracks and the .mid files as MIDI tracks.");
     return r;
 }
-} // namespace lynx::exportbundle
+} // namespace yw::exportbundle

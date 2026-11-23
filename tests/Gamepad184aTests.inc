@@ -6,7 +6,7 @@
 
 TEST (gamepad184a_default_map)
 {
-    using namespace lynx::gamepad;
+    using namespace yw::gamepad;
     const auto& m = defaultMap();
     CHECK (m[(std::size_t) Button::a] == Action::playStop);
     CHECK (m[(std::size_t) Button::b] == Action::record);
@@ -23,7 +23,7 @@ TEST (gamepad184a_default_map)
 
 TEST (gamepad184a_button_bits_are_xinputs)
 {
-    using namespace lynx::gamepad;
+    using namespace yw::gamepad;
     CHECK (mask (Button::up) == 0x0001 && mask (Button::right) == 0x0008);
     CHECK (mask (Button::start) == 0x0010 && mask (Button::back) == 0x0020);
     CHECK (mask (Button::leftShoulder) == 0x0100 && mask (Button::rightShoulder) == 0x0200);
@@ -43,7 +43,7 @@ TEST (gamepad184a_button_bits_are_xinputs)
 
 TEST (gamepad184a_dead_zones)
 {
-    using namespace lynx::gamepad;
+    using namespace yw::gamepad;
     State s;
     s.connected = true;
     s.leftX = 7000; // inside the left stick's dead zone (7849)
@@ -69,7 +69,7 @@ TEST (gamepad184a_dead_zones)
 
 TEST (gamepad184a_controllers_are_linkable_and_unique)
 {
-    using namespace lynx::gamepad;
+    using namespace yw::gamepad;
     std::vector<int> used;
     for (int i = 0; i < buttonCount; ++i)
         used.push_back (controllerOf ((Button) i));
@@ -93,7 +93,7 @@ TEST (gamepad184a_controllers_are_linkable_and_unique)
 
 TEST (gamepad184a_changes_between_polls)
 {
-    using namespace lynx::gamepad;
+    using namespace yw::gamepad;
     State before, now;
     before.connected = now.connected = true;
     auto c = compare (before, now);
@@ -121,7 +121,7 @@ TEST (gamepad184a_changes_between_polls)
 
 TEST (gamepad184a_trigger_volume)
 {
-    using namespace lynx::gamepad;
+    using namespace yw::gamepad;
     State s;
     s.connected = true;
     CHECK (volumeStepDb (s, 1.0 / 60.0) == 0.0);
@@ -135,10 +135,10 @@ TEST (gamepad184a_trigger_volume)
 
 TEST (gamepad184a_setting_is_off_by_default_and_saved)
 {
-    lynx::prefs::MidiPrefs p;
+    yw::prefs::MidiPrefs p;
     CHECK (! p.gamepad);
     CHECK (p.toText().find ("gamepad") == std::string::npos); // (an old settings file stays as it was)
     p.gamepad = true;
-    CHECK (lynx::prefs::MidiPrefs::fromText (p.toText()).gamepad);
-    CHECK (lynx::prefs::MidiPrefs::fromText (p.toText()) == p);
+    CHECK (yw::prefs::MidiPrefs::fromText (p.toText()).gamepad);
+    CHECK (yw::prefs::MidiPrefs::fromText (p.toText()) == p);
 }

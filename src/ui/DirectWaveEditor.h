@@ -11,7 +11,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 struct ChannelDef;
@@ -20,7 +20,7 @@ struct Song;
 // `channel`: the Channel Rack channel (−1 in a Patcher: `locate` finds the node)
 std::unique_ptr<juce::Component> makeDirectWaveEditor (AudioEngine& engine, std::function<ChannelDef* (Song&)> locate, int channel);
 
-// The editor test (LYNX --dwedittest): one command for the DirectWave editor inside `root`, its result as text. The
+// The editor test (YW --dwedittest): one command for the DirectWave editor inside `root`, its result as text. The
 // commands are listed at DirectWaveEditor::test.
 juce::String directWaveEditorTest (juce::Component& root, const juce::String& command);
-} // namespace lynx
+} // namespace yw

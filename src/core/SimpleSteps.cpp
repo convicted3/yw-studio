@@ -6,7 +6,7 @@
 
 #include "core/SimpleTracks.h"
 
-namespace lynx::simplesteps
+namespace yw::simplesteps
 {
 namespace
 {
@@ -201,4 +201,4 @@ int playingStep (const Song& song, int track, int pattern, double pos, bool play
             }
     return at < 0.0 ? -1 : (int) (at / ticksPerStep);
 }
-} // namespace lynx::simplesteps
+} // namespace yw::simplesteps

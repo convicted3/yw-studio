@@ -2,13 +2,13 @@
 
 TEST (safety_backup_names_like_fl)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     const auto a = backupName ("Night Drive", BackupKind::autosaved, 2026, 10, 20, 14, 9);
     CHECK (a == "Night Drive (autosaved on 2026-10-20 at 14h09)");
     const auto o = backupName ("Night Drive", BackupKind::overwritten, 2026, 1, 2, 3, 4);
     CHECK (o == "Night Drive (overwritten on 2026-01-02 at 03h04)");
     CHECK (isBackupOf (a, "Night Drive") && isBackupOf (o, "Night Drive") && isBackupOf (a + "_3", "Night Drive"));
-    CHECK (isBackupOf ("Night Drive (2026-10-16 09.05.03)", "Night Drive")); // older LYNX names
+    CHECK (isBackupOf ("Night Drive (2026-10-16 09.05.03)", "Night Drive")); // older YW names
     CHECK (isBackupOf ("Night Drive", "Night Drive"));
     CHECK (! isBackupOf ("Night Drive 2 (autosaved on 2026-10-20 at 14h09)", "Night Drive"));
     CHECK (! isBackupOf ("Night Drive (autosaved on 2026-10-20 at 14h0x)", "Night Drive"));
@@ -19,7 +19,7 @@ TEST (safety_backup_names_like_fl)
 
 TEST (safety_backup_rotation_by_time)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     const std::vector<BackupFile> files { { "Song (autosaved on 2026-10-20 at 10h00)", 100 },
                                           { "Song (overwritten on 2026-10-20 at 09h00)", 50 },
                                           { "Song (2026-10-19 23.00.00)", 10 },
@@ -40,7 +40,7 @@ TEST (safety_backup_rotation_by_time)
 
 TEST (safety_crash_recovery_candidate)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     const std::vector<BackupFile> files { { "Beat (autosaved on 2026-10-20 at 10h00)", 100 },
                                           { "recovered 2026-10-20 10-05-00", 105 },
                                           { "Beat (overwritten on 2026-10-20 at 10h06)", 106 },
@@ -52,7 +52,7 @@ TEST (safety_crash_recovery_candidate)
 
 TEST (safety_unique_and_version_names)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     std::set<std::string> taken { "Song", "Song_2", "Beat_7", "Beat_8" };
     auto isTaken = [&] (const std::string& s) { return taken.count (s) > 0; };
     CHECK (uniqueName ("Free", isTaken) == "Free");
@@ -67,24 +67,24 @@ TEST (safety_unique_and_version_names)
 
 TEST (safety_paths_and_package_plan)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     CHECK (isRelativePath ("samples/kick.wav") && ! isRelativePath ("C:\\x\\kick.wav") && ! isRelativePath ("/home/a.wav")
            && ! isRelativePath ("\\\\server\\a.wav") && ! isRelativePath (""));
     CHECK (joinPath ("C:\\Projects\\Beat", "samples/kick.wav") == "C:\\Projects\\Beat\\samples\\kick.wav");
     CHECK (joinPath ("/home/u/Beat/", "samples/kick.wav") == "/home/u/Beat/samples/kick.wav");
 
-    lynx::Song song;
-    auto add = [&] (lynx::InstrumentKind kind, const std::string& path) {
-        lynx::ChannelDef c;
+    yw::Song song;
+    auto add = [&] (yw::InstrumentKind kind, const std::string& path) {
+        yw::ChannelDef c;
         c.instrument = kind;
         c.samplePath = path;
         song.channels.push_back (c);
     };
-    add (lynx::InstrumentKind::sampler, "D:\\Drums\\Kick.wav");
-    add (lynx::InstrumentKind::sampler, "E:\\Other\\kick.wav"); // same file name, another file
-    add (lynx::InstrumentKind::audioClip, "D:\\Vox\\lead.flac");
-    add (lynx::InstrumentKind::sampler, "D:\\Drums\\Kick.wav"); // used twice: one entry
-    add (lynx::InstrumentKind::synth, "D:\\ignored.wav");       // not a sample user
+    add (yw::InstrumentKind::sampler, "D:\\Drums\\Kick.wav");
+    add (yw::InstrumentKind::sampler, "E:\\Other\\kick.wav"); // same file name, another file
+    add (yw::InstrumentKind::audioClip, "D:\\Vox\\lead.flac");
+    add (yw::InstrumentKind::sampler, "D:\\Drums\\Kick.wav"); // used twice: one entry
+    add (yw::InstrumentKind::synth, "D:\\ignored.wav");       // not a sample user
     CHECK (referencedSamples (song).size() == 3);
 
     const auto plan = packagePlan (song);
@@ -94,7 +94,7 @@ TEST (safety_paths_and_package_plan)
     CHECK (plan.at ("D:\\Vox\\lead.flac") == "samples/lead.flac");
 
     // a package opened in /x/Beat: relative paths go inside it; a moved sample is found next to the project
-    lynx::applyRelocations (song, plan);
+    yw::applyRelocations (song, plan);
     song.channels[2].samplePath = "C:\\Old place\\lead.flac";
     std::set<std::string> disk { "/x/Beat/samples/Kick.wav", "/x/Beat/Audio/lead.flac" };
     const auto changed = resolveProjectSamples (song, "/x/Beat", [&] (const std::string& p) { return disk.count (p) > 0; });
@@ -108,21 +108,21 @@ TEST (safety_paths_and_package_plan)
 // D#92, round 180a: a dotted name keeps its dot; the string macOS hands to a running application
 TEST (safety_project_extension_and_open_requests)
 {
-    using namespace lynx::safety;
-    CHECK (withProjectExtension ("beat", ".lynx") == "beat.lynx");
-    CHECK (withProjectExtension ("beat.v2", ".lynx") == "beat.v2.lynx");
-    CHECK (withProjectExtension ("beat.lynx", ".lynx") == "beat.lynx");
-    CHECK (withProjectExtension ("BEAT.LYNX", ".lynx") == "BEAT.LYNX");
-    CHECK (withProjectExtension ("lynx", ".lynx") == "lynx.lynx");
+    using namespace yw::safety;
+    CHECK (withProjectExtension ("beat", ".yw") == "beat.yw");
+    CHECK (withProjectExtension ("beat.v2", ".yw") == "beat.v2.yw");
+    CHECK (withProjectExtension ("beat.yw", ".yw") == "beat.yw");
+    CHECK (withProjectExtension ("BEAT.YW", ".yw") == "BEAT.YW");
+    CHECK (withProjectExtension ("yw", ".yw") == "yw.yw");
 
-    CHECK (isFileArgument ("beat.lynx") && isFileArgument ("/x/beat.lynx") && isFileArgument ("C:\\x\\beat.lynx"));
+    CHECK (isFileArgument ("beat.yw") && isFileArgument ("/x/beat.yw") && isFileArgument ("C:\\x\\beat.yw"));
     CHECK (! isFileArgument ("") && ! isFileArgument ("--lang") && ! isFileArgument ("-psn_0_123"));
 
     using Files = std::vector<std::string>;
     CHECK (filesInCommandLine ("") == Files {});
-    CHECK (filesInCommandLine ("/x/beat.lynx") == Files { "/x/beat.lynx" });
-    CHECK (filesInCommandLine ("\"/My Beats/a b.lynx\"") == Files { "/My Beats/a b.lynx" });
-    CHECK (filesInCommandLine ("\"/a b/c.lynx\" /d.lynx") == (Files { "/a b/c.lynx", "/d.lynx" }));
-    CHECK (filesInCommandLine ("/say\\\"hi\\\".lynx") == Files { "/say\"hi\".lynx" });
-    CHECK (filesInCommandLine ("-psn_0_123 /x/m\xc3\xbasica.lynx") == Files { "/x/m\xc3\xbasica.lynx" });
+    CHECK (filesInCommandLine ("/x/beat.yw") == Files { "/x/beat.yw" });
+    CHECK (filesInCommandLine ("\"/My Beats/a b.yw\"") == Files { "/My Beats/a b.yw" });
+    CHECK (filesInCommandLine ("\"/a b/c.yw\" /d.yw") == (Files { "/a b/c.yw", "/d.yw" }));
+    CHECK (filesInCommandLine ("/say\\\"hi\\\".yw") == Files { "/say\"hi\".yw" });
+    CHECK (filesInCommandLine ("-psn_0_123 /x/m\xc3\xbasica.yw") == Files { "/x/m\xc3\xbasica.yw" });
 }

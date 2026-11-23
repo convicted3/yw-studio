@@ -4,7 +4,7 @@
 #include <cmath>
 #include <limits>
 
-namespace lynx::autopoints
+namespace yw::autopoints
 {
 namespace
 {
@@ -220,4 +220,4 @@ int thin (std::vector<AutomationPoint>& points, std::int64_t from, std::int64_t 
     points = std::move (out);
     return removed;
 }
-} // namespace lynx::autopoints
+} // namespace yw::autopoints

@@ -6,7 +6,7 @@
 #include <functional>
 #include <sstream>
 
-namespace lynx::plugincatalog
+namespace yw::plugincatalog
 {
 namespace
 {
@@ -47,7 +47,7 @@ bool hasToken (const std::string& text, std::initializer_list<const char*> words
     return false;
 }
 
-// LYNX's category names (the picker shows them translated)
+// YW's category names (the picker shows them translated)
 constexpr const char* synth = "Synth";
 constexpr const char* sampler = "Sampler";
 constexpr const char* drum = "Drum";
@@ -359,7 +359,7 @@ void moveToFolder (Folders& folders, bool instruments, const std::string& key, c
     const auto clean = addFolder (folders, instruments, path);
     if (clean.empty()) folders.of.erase (key);
     else folders.of[key] = clean;
-    folders.top.erase (key); // (a choice made in LYNX: no longer a root entry)
+    folders.top.erase (key); // (a choice made in YW: no longer a root entry)
 }
 
 std::vector<MenuFolder> menuTree (const Folders& folders, bool instruments, const std::vector<std::string>& keys)
@@ -382,7 +382,7 @@ std::vector<MenuFolder> menuTree (const Folders& folders, bool instruments, cons
                 if (! f.items.empty() || ! f.sub.empty()) out.push_back (std::move (f));
             }
         std::sort (out.begin(), out.end(), [] (const MenuFolder& a, const MenuFolder& b) {
-            const auto la = a.path == lynxCategory, lb = b.path == lynxCategory; // LYNX's own plugins first (round 170b)
+            const auto la = a.path == ywCategory, lb = b.path == ywCategory; // YW's own plugins first (round 170b)
             if (la != lb)
                 return la;
             return naturalCompare (a.name, b.name) < 0;
@@ -487,7 +487,7 @@ const std::vector<CategoryList>& flEffectFolders()
                     "Low Lifter", "Newtime", "Newtone", "Pitch Shifter", "Pitcher", "Transmitter", "Transporter", "Vocodex" } },
         { "Patcher", { "Patcher", "VFX Color Mapper", "VFX Envelope", "VFX Key Mapper", "VFX Keyboard Splitter", "VFX Level Scaler", "VFX Script", "VFX Sequencer" } },
         { "Visual", { "Fruity Big Clock", "Fruity HTML NoteBook", "Fruity NoteBook 2", "Fruity NoteBook", "Fruity Spectroman", "Fruity dB Meter", "Razer Chroma",
-                      "Tuner", "Wave Candy", "ZGameEditor Visualizer", /* LYNX's name of it */ "Visualizer" } },
+                      "Tuner", "Wave Candy", "ZGameEditor Visualizer", /* YW's name of it */ "Visualizer" } },
     };
     return list;
 }
@@ -537,7 +537,7 @@ Folders withDefaultCategories (const Folders& user, bool instruments, const std:
             continue; // at the top of the database, in no folder (round 190bf)
         auto folder = flCategory (b.name, instruments, b.fruityPrefix || b.flPlugin);
         if (folder.empty())
-            folder = b.flPlugin ? "Misc" : lynxCategory;
+            folder = b.flPlugin ? "Misc" : ywCategory;
         out.kind (instruments).insert (folder);
         out.of[b.key] = folder;
     }
@@ -557,4 +557,4 @@ std::vector<std::string> combinedBits (const std::vector<std::pair<std::string, 
     }
     return out;
 }
-} // namespace lynx::plugincatalog
+} // namespace yw::plugincatalog

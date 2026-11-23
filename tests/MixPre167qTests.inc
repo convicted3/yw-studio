@@ -1,40 +1,40 @@
-// Round 167q: issue #25 (a stretched pattern clip loops its pattern: LYNX extra, on by default; off = FL: once) and FL
+// Round 167q: issue #25 (a stretched pattern clip loops its pattern: YW extra, on by default; off = FL: once) and FL
 // mixer presets.
 
 namespace mixpre167q
 {
 // The "on" events of the song in [0, ticks), scheduled in blocks of `block` samples (with or without the index):
 // (song tick, key), sorted.
-inline std::vector<std::pair<long, int>> songOns (const lynx::Song& s, std::int64_t ticks, int block, bool withIndex)
+inline std::vector<std::pair<long, int>> songOns (const yw::Song& s, std::int64_t ticks, int block, bool withIndex)
 {
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0); // 1 beat = 24000 samples, 250 samples per tick
-    const auto index = lynx::makeScheduleIndex (s);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0); // 1 beat = 24000 samples, 250 samples per tick
+    const auto index = yw::makeScheduleIndex (s);
     std::vector<std::pair<long, int>> out;
     const auto total = (long) std::llround ((double) ticks / tps);
     for (long at = 0; at < total; at += block)
     {
-        lynx::EventBuffer ev;
+        yw::EventBuffer ev;
         const auto n = (int) std::min<long> (block, total - at);
-        lynx::scheduleSong (s, (double) at * tps, n, tps, ev, false, withIndex ? &index : nullptr, false);
+        yw::scheduleSong (s, (double) at * tps, n, tps, ev, false, withIndex ? &index : nullptr, false);
         CHECK (ev.droppedCount() == 0);
         for (const auto& e : ev)
-            if (e.type == lynx::NoteEvent::Type::on)
+            if (e.type == yw::NoteEvent::Type::on)
                 out.emplace_back (std::lround ((double) (at + e.sampleOffset) * tps), e.key);
     }
     std::sort (out.begin(), out.end());
     return out;
 }
 
-inline lynx::Song oneBarSong()
+inline yw::Song oneBarSong()
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (1);
     auto& p = s.patterns.emplace_back(); // 1 bar: C5 on beat 0, C6 on beat 2
     for (auto [beat, key] : { std::pair { 0, 60 }, std::pair { 2, 72 } })
     {
-        lynx::Note n;
-        n.start = beat * lynx::ppq;
-        n.length = lynx::ppq / 4;
+        yw::Note n;
+        n.start = beat * yw::ppq;
+        n.length = yw::ppq / 4;
         n.key = key;
         p.notes.push_back (n);
     }
@@ -44,30 +44,30 @@ inline lynx::Song oneBarSong()
 
 // Issue #25 (Disar): "create a clip, extend it beyond its length, play" — FL 2026 plays a pattern clip stretched past
 // its pattern ONCE: the extended part is silent (round 168k: FL command-line render of a 1-bar pattern clip stretched to
-// 4 bars: onsets at 0.0 / 1.0 s only, silence after). LYNX loops the pattern instead, as a LYNX extra the user asked for
-// (Options › General "Stretched pattern clips loop their pattern (LYNX)", on by default; off = FL's behaviour).
+// 4 bars: onsets at 0.0 / 1.0 s only, silence after). YW loops the pattern instead, as a YW extra the user asked for
+// (Options › General "Stretched pattern clips loop their pattern (YW)", on by default; off = FL's behaviour).
 namespace mixpre167q
 {
-struct LoopFlag // sets the LYNX extra for one test and puts the app's setting back
+struct LoopFlag // sets the YW extra for one test and puts the app's setting back
 {
-    explicit LoopFlag (bool on) : was (lynx::stretchedClipsLoop()) { lynx::setStretchedClipsLoop (on); }
-    ~LoopFlag() { lynx::setStretchedClipsLoop (was); }
+    explicit LoopFlag (bool on) : was (yw::stretchedClipsLoop()) { yw::setStretchedClipsLoop (on); }
+    ~LoopFlag() { yw::setStretchedClipsLoop (was); }
     bool was;
 };
 
 // a 1-bar pattern clip stretched to 4 bars, and a clip that starts 1 beat into the pattern, 8 beats long, at song beat 20
-inline lynx::Song stretchedSong()
+inline yw::Song stretchedSong()
 {
     auto s = oneBarSong();
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
     c.start = 0;
-    c.length = 16 * lynx::ppq;
+    c.length = 16 * yw::ppq;
     s.playlist.push_back (c);
-    lynx::Clip o = c;
-    o.start = 20 * lynx::ppq;
-    o.offset = lynx::ppq;
-    o.length = 8 * lynx::ppq;
+    yw::Clip o = c;
+    o.start = 20 * yw::ppq;
+    o.offset = yw::ppq;
+    o.length = 8 * yw::ppq;
     s.playlist.push_back (o);
     return s;
 }
@@ -77,7 +77,7 @@ TEST (mixpre167q_stretched_pattern_clip_loops_its_pattern)
 {
     const mixpre167q::LoopFlag loop (true);
     auto s = mixpre167q::stretchedSong();
-    const auto ppq = (long) lynx::ppq;
+    const auto ppq = (long) yw::ppq;
     const std::vector<std::pair<long, int>> expected {
         { 0, 60 }, { 2 * ppq, 72 }, { 4 * ppq, 60 }, { 6 * ppq, 72 }, { 8 * ppq, 60 }, { 10 * ppq, 72 }, { 12 * ppq, 60 }, { 14 * ppq, 72 },
         // the offset clip: pattern beat 2 at song beat 21, then the pattern again from song beat 23
@@ -85,38 +85,38 @@ TEST (mixpre167q_stretched_pattern_clip_loops_its_pattern)
     };
     for (const auto block : { 64, 480, 512, 4096 })
         for (const auto withIndex : { false, true })
-            CHECK (mixpre167q::songOns (s, 32 * lynx::ppq, block, withIndex) == expected);
+            CHECK (mixpre167q::songOns (s, 32 * yw::ppq, block, withIndex) == expected);
 
     // a clip within its pattern plays it once, as before
     s.playlist.resize (1);
-    s.playlist[0].length = 3 * lynx::ppq;
-    CHECK ((mixpre167q::songOns (s, 8 * lynx::ppq, 512, true) == std::vector<std::pair<long, int>> { { 0, 60 }, { 2 * ppq, 72 } }));
+    s.playlist[0].length = 3 * yw::ppq;
+    CHECK ((mixpre167q::songOns (s, 8 * yw::ppq, 512, true) == std::vector<std::pair<long, int>> { { 0, 60 }, { 2 * ppq, 72 } }));
 
     // an offset past the pattern's length (a piece split from a long clip): the pass it falls in
-    s.playlist[0].offset = 6 * lynx::ppq; // pattern beat 2 of the second pass
-    s.playlist[0].length = 4 * lynx::ppq;
-    CHECK ((mixpre167q::songOns (s, 4 * lynx::ppq, 512, true) == std::vector<std::pair<long, int>> { { 0, 72 }, { 2 * ppq, 60 } }));
+    s.playlist[0].offset = 6 * yw::ppq; // pattern beat 2 of the second pass
+    s.playlist[0].length = 4 * yw::ppq;
+    CHECK ((mixpre167q::songOns (s, 4 * yw::ppq, 512, true) == std::vector<std::pair<long, int>> { { 0, 72 }, { 2 * ppq, 60 } }));
 
     // MIDI export takes the repeats too
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     s.playlist[0].offset = 0;
-    s.playlist[0].length = 8 * lynx::ppq;
-    const auto notes = lynx::exportopts::midiExportNotes (s);
+    s.playlist[0].length = 8 * yw::ppq;
+    const auto notes = yw::exportopts::midiExportNotes (s);
     CHECK (notes.size() == 4);
     if (notes.size() == 4)
-        CHECK (notes[2].start == 4 * lynx::ppq && notes[2].key == 60 && notes[3].start == 6 * lynx::ppq && notes[3].key == 72);
+        CHECK (notes[2].start == 4 * yw::ppq && notes[2].key == 60 && notes[3].start == 6 * yw::ppq && notes[3].key == 72);
 
     // the Piano roll's playhead wraps with the passes
-    CHECK (lynx::patternTickInClip (s.playlist[0], 5.0 * lynx::ppq, 4 * lynx::ppq) == 1.0 * lynx::ppq);
-    CHECK (lynx::transportedit::patternPlayhead (s, 0, 5.0 * lynx::ppq) == 1.0 * lynx::ppq);
-    const auto passes = lynx::clipPasses (s.playlist[0], 4 * lynx::ppq);
-    CHECK (passes.loops && passes.first == 0 && passes.last == 1 && passes.length == 4 * lynx::ppq);
+    CHECK (yw::patternTickInClip (s.playlist[0], 5.0 * yw::ppq, 4 * yw::ppq) == 1.0 * yw::ppq);
+    CHECK (yw::transportedit::patternPlayhead (s, 0, 5.0 * yw::ppq) == 1.0 * yw::ppq);
+    const auto passes = yw::clipPasses (s.playlist[0], 4 * yw::ppq);
+    CHECK (passes.loops && passes.first == 0 && passes.last == 1 && passes.length == 4 * yw::ppq);
 
     // a pattern whose length changes later: the clip follows the new length
-    s.patterns[0].lengthTicks = 8 * lynx::ppq; // 2 bars: the 8-beat clip is within it, it plays once
-    CHECK ((mixpre167q::songOns (s, 8 * lynx::ppq, 512, true) == std::vector<std::pair<long, int>> { { 0, 60 }, { 2 * ppq, 72 } }));
-    s.patterns[0].lengthTicks = 2 * lynx::ppq; // half a bar: the note on beat 2 is past it, the clip repeats beats 0-1
-    CHECK ((mixpre167q::songOns (s, 8 * lynx::ppq, 512, true)
+    s.patterns[0].lengthTicks = 8 * yw::ppq; // 2 bars: the 8-beat clip is within it, it plays once
+    CHECK ((mixpre167q::songOns (s, 8 * yw::ppq, 512, true) == std::vector<std::pair<long, int>> { { 0, 60 }, { 2 * ppq, 72 } }));
+    s.patterns[0].lengthTicks = 2 * yw::ppq; // half a bar: the note on beat 2 is past it, the clip repeats beats 0-1
+    CHECK ((mixpre167q::songOns (s, 8 * yw::ppq, 512, true)
             == std::vector<std::pair<long, int>> { { 0, 60 }, { 2 * ppq, 60 }, { 4 * ppq, 60 }, { 6 * ppq, 60 } }));
 }
 
@@ -125,40 +125,40 @@ TEST (mixpre167q_stretched_pattern_clip_plays_once_with_the_option_off)
 {
     const mixpre167q::LoopFlag loop (false);
     auto s = mixpre167q::stretchedSong();
-    const auto ppq = (long) lynx::ppq;
+    const auto ppq = (long) yw::ppq;
     const std::vector<std::pair<long, int>> expected { { 0, 60 }, { 2 * ppq, 72 }, { 21 * ppq, 72 } };
     for (const auto block : { 64, 480, 512, 4096 })
         for (const auto withIndex : { false, true })
-            CHECK (mixpre167q::songOns (s, 32 * lynx::ppq, block, withIndex) == expected);
-    s.mode = lynx::PlayMode::song;
+            CHECK (mixpre167q::songOns (s, 32 * yw::ppq, block, withIndex) == expected);
+    s.mode = yw::PlayMode::song;
     s.playlist.resize (1);
-    CHECK (lynx::exportopts::midiExportNotes (s).size() == 2);
-    CHECK (lynx::transportedit::patternPlayhead (s, 0, 5.0 * lynx::ppq) == 5.0 * lynx::ppq);
-    CHECK (! lynx::clipPasses (s.playlist[0], 4 * lynx::ppq).loops);
+    CHECK (yw::exportopts::midiExportNotes (s).size() == 2);
+    CHECK (yw::transportedit::patternPlayhead (s, 0, 5.0 * yw::ppq) == 5.0 * yw::ppq);
+    CHECK (! yw::clipPasses (s.playlist[0], 4 * yw::ppq).loops);
 }
 
 // Many clips of many shapes, scheduled block by block: the same events with and without the index, nothing dropped,
 // every event inside its block, no crash (issue #25 was reported as a crash).
 TEST (mixpre167q_repeats_stress)
 {
-    const mixpre167q::LoopFlag keep (lynx::stretchedClipsLoop());
+    const mixpre167q::LoopFlag keep (yw::stretchedClipsLoop());
     std::mt19937 rng (25);
     auto pick = [&rng] (int lo, int hi) { return std::uniform_int_distribution<int> (lo, hi) (rng); };
     for (int round = 0; round < 80; ++round)
     {
-        lynx::setStretchedClipsLoop (round % 4 != 3); // both modes of the LYNX extra
-        lynx::Song s;
+        yw::setStretchedClipsLoop (round % 4 != 3); // both modes of the YW extra
+        yw::Song s;
         s.channels.resize (3);
         for (int p = 0; p < 3; ++p)
         {
             auto& pat = s.patterns.emplace_back();
             if (p == 2 && round % 3 == 0)
-                pat.lengthTicks = lynx::ppq * pick (1, 3); // an explicit length shorter than its notes
+                pat.lengthTicks = yw::ppq * pick (1, 3); // an explicit length shorter than its notes
             for (int k = pick (0, 12); k > 0; --k)
             {
-                lynx::Note n;
-                n.start = pick (0, 8 * lynx::ppq);
-                n.length = pick (1, 3 * lynx::ppq);
+                yw::Note n;
+                n.start = pick (0, 8 * yw::ppq);
+                n.length = pick (1, 3 * yw::ppq);
                 n.key = pick (36, 84);
                 n.channel = pick (0, 2);
                 n.slide = pick (0, 9) == 0;
@@ -169,15 +169,15 @@ TEST (mixpre167q_repeats_stress)
         s.playTruncatedNotes = round % 2 == 0;
         for (int k = pick (1, 8); k > 0; --k)
         {
-            lynx::Clip c;
+            yw::Clip c;
             c.pattern = pick (0, 2);
             c.track = pick (0, 3);
-            c.start = pick (0, 32) * lynx::ppq / 4;
-            c.length = pick (1, 64 * lynx::ppq);
-            c.offset = pick (0, 3) == 0 ? pick (0, 20 * lynx::ppq) : 0;
+            c.start = pick (0, 32) * yw::ppq / 4;
+            c.length = pick (1, 64 * yw::ppq);
+            c.offset = pick (0, 3) == 0 ? pick (0, 20 * yw::ppq) : 0;
             s.playlist.push_back (c);
         }
-        const auto length = s.songLength() + 2 * lynx::ppq;
+        const auto length = s.songLength() + 2 * yw::ppq;
         const auto block = pick (16, 2048);
         const auto a = mixpre167q::songOns (s, length, block, false), b = mixpre167q::songOns (s, length, block, true);
         CHECK (a == b);
@@ -239,7 +239,7 @@ TEST (mixpre167q_fl_mixer_preset_new_layout)
                                           { track (5, 0, 0x1FC0), 16000 } })); // another track's: not part of it
 
     CHECK (flp::looksLikeMixerPreset (b.bytes));
-    const auto preset = lynx::mixerTrackFromFlPreset (b.bytes);
+    const auto preset = yw::mixerTrackFromFlPreset (b.bytes);
     CHECK (preset.has_value());
     if (! preset)
         return;
@@ -251,7 +251,7 @@ TEST (mixpre167q_fl_mixer_preset_new_layout)
     CHECK (preset->effects.size() == 1);
     if (! preset->effects.empty())
     {
-        CHECK (preset->effects[0].kind == lynx::EffectKind::limiter);
+        CHECK (preset->effects[0].kind == yw::EffectKind::limiter);
         CHECK (std::abs (preset->effects[0].mix - 0.5f) < 0.01f);
     }
 
@@ -261,10 +261,10 @@ TEST (mixpre167q_fl_mixer_preset_new_layout)
     project.u8 (0x40); project.u16 (0); // new channel
     project.data (0xEC, mixpre167q::le32s ({ 0u, 0x4Cu, 0u }));
     CHECK (! flp::looksLikeMixerPreset (project.bytes));
-    CHECK (! lynx::mixerTrackFromFlPreset (project.bytes).has_value());
+    CHECK (! yw::mixerTrackFromFlPreset (project.bytes).has_value());
     const std::vector<std::uint8_t> junk { 'F', 'L', 'h', 'd', 1, 2 };
     CHECK (! flp::looksLikeMixerPreset (junk));
-    CHECK (! lynx::mixerTrackFromFlPreset (junk).has_value());
+    CHECK (! yw::mixerTrackFromFlPreset (junk).has_value());
 }
 
 // The old layout (Reverb/Chorus/Flanger send 3.6.5, the mastering presets 5.3.3): no 0xEC, the slots first (the slot
@@ -293,13 +293,13 @@ TEST (mixpre167q_fl_mixer_preset_old_layout)
     for (const auto& c : project.controls)
         CHECK (c.id.isMixer() && c.id.track() == 1);
 
-    const auto preset = lynx::mixerTrackFromFlPreset (b.bytes);
+    const auto preset = yw::mixerTrackFromFlPreset (b.bytes);
     CHECK (preset.has_value());
     if (! preset)
         return;
     CHECK (preset->name == "Reverb");
     CHECK (std::abs (preset->volume - 0.4f) < 1e-4f); // 64 → 6400 of 16000
-    CHECK (preset->effects.size() == 1 && ! preset->effects.empty() && preset->effects[0].kind == lynx::EffectKind::reverb);
+    CHECK (preset->effects.size() == 1 && ! preset->effects.empty() && preset->effects[0].kind == yw::EffectKind::reverb);
     if (! preset->effects.empty())
         CHECK (std::abs (preset->effects[0].mix - 0.5f) < 0.01f);
 }
@@ -319,7 +319,7 @@ TEST (mixpre167q_fl_factory_mixer_presets)
         std::ifstream in (entry.path(), std::ios::binary);
         const std::vector<std::uint8_t> bytes { std::istreambuf_iterator<char> (in), {} };
         CHECK (flp::looksLikeMixerPreset (bytes));
-        const auto preset = lynx::mixerTrackFromFlPreset (bytes);
+        const auto preset = yw::mixerTrackFromFlPreset (bytes);
         CHECK (preset.has_value());
         if (! preset)
             continue;
@@ -343,19 +343,19 @@ namespace mixpre167q
 constexpr int barSamples = 96000;
 
 // a synth channel (the default instrument) on Insert 1 with the 1-bar pattern; `clips` on the Playlist
-inline lynx::Song synthSong (std::vector<lynx::Clip> clips)
+inline yw::Song synthSong (std::vector<yw::Clip> clips)
 {
     auto s = oneBarSong();
-    s.mixer = lynx::Song::defaultMixer (2);
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
     s.channels[0].mixerTrack = 1;
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     s.playlist = std::move (clips);
     return s;
 }
-inline lynx::Clip clipAt (std::int64_t start, std::int64_t length, std::int64_t offset = 0)
+inline yw::Clip clipAt (std::int64_t start, std::int64_t length, std::int64_t offset = 0)
 {
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
     c.start = start;
     c.length = length;
@@ -371,10 +371,10 @@ struct Jump // when the position reaches `at`, it goes to `to` (once, or each ti
     double at = -1.0, to = 0.0;
     bool repeat = false;
 };
-inline std::vector<float> render (lynx::Song s, double from, int samples, int block, Jump jump = {}, int changeAt = -1,
-                                  const std::function<void (lynx::Song&)>& change = {})
+inline std::vector<float> render (yw::Song s, double from, int samples, int block, Jump jump = {}, int changeAt = -1,
+                                  const std::function<void (yw::Song&)>& change = {})
 {
-    using namespace lynx;
+    using namespace yw;
     std::shared_ptr<const RackState> state = RackState::build (s, nullptr, 48000.0);
     RackRenderer r;
     r.prepare (48000.0, 4096);
@@ -393,13 +393,13 @@ inline std::vector<float> render (lynx::Song s, double from, int samples, int bl
         auto n = std::min (block, samples - done);
         if (changeAt > done)
             n = std::min (n, changeAt - done);
-        if (jump.at >= 0.0 && ! lynx::transportReached (position, jump.at))
-            n = lynx::transportSamplesUntil (position, jump.at, tps, n);
+        if (jump.at >= 0.0 && ! yw::transportReached (position, jump.at))
+            n = yw::transportSamplesUntil (position, jump.at, tps, n);
         std::vector<float> l ((std::size_t) n), rr ((std::size_t) n);
         r.process (state.get(), true, position, n, l.data(), rr.data(), nullptr);
         out.insert (out.end(), l.begin(), l.end());
         position += n * tps;
-        if (jump.at >= 0.0 && lynx::transportReached (position, jump.at))
+        if (jump.at >= 0.0 && yw::transportReached (position, jump.at))
         {
             position = jump.to;
             if (! jump.repeat)
@@ -424,10 +424,10 @@ inline double maxDiff (const std::vector<float>& a, std::size_t aFrom, const std
         m = std::max (m, (double) std::abs (a[aFrom + i] - b[bFrom + i]));
     return m;
 }
-inline bool printNumbers() { return std::getenv ("LYNX_PRINT_CLIPLOOP") != nullptr; }
+inline bool printNumbers() { return std::getenv ("YW_PRINT_CLIPLOOP") != nullptr; }
 inline void dump (const std::vector<float>& x, const char* name)
 {
-    if (const char* dir = std::getenv ("LYNX_DUMP_CLIPLOOP"))
+    if (const char* dir = std::getenv ("YW_DUMP_CLIPLOOP"))
         if (auto* f = std::fopen ((std::string (dir) + "/" + name + ".f32").c_str(), "wb"))
         {
             std::fwrite (x.data(), sizeof (float), x.size(), f);
@@ -441,7 +441,7 @@ inline void dump (const std::vector<float>& x, const char* name)
 TEST (mixpre167q_stretched_clip_repeats_sound)
 {
     using namespace mixpre167q;
-    const auto bar = 4 * (std::int64_t) lynx::ppq;
+    const auto bar = 4 * (std::int64_t) yw::ppq;
     const auto stretched = synthSong ({ clipAt (0, 4 * bar) });
     const auto copies = synthSong ({ clipAt (0, bar), clipAt (bar, bar), clipAt (2 * bar, bar), clipAt (3 * bar, bar) });
     for (const auto block : { 512, 480, 4096 })
@@ -486,9 +486,9 @@ TEST (mixpre167q_stretched_clip_offsets_and_length_changes_sound)
 {
     using namespace mixpre167q;
     const LoopFlag loop (true);
-    const auto bar = 4 * (std::int64_t) lynx::ppq, beat = (std::int64_t) lynx::ppq;
-    auto same = [] (const lynx::Song& a, const lynx::Song& b, int samples, const char* what, int changeAt = -1,
-                    const std::function<void (lynx::Song&)>& changeA = {}, const std::function<void (lynx::Song&)>& changeB = {}) {
+    const auto bar = 4 * (std::int64_t) yw::ppq, beat = (std::int64_t) yw::ppq;
+    auto same = [] (const yw::Song& a, const yw::Song& b, int samples, const char* what, int changeAt = -1,
+                    const std::function<void (yw::Song&)>& changeA = {}, const std::function<void (yw::Song&)>& changeB = {}) {
         const auto x = render (a, 0.0, samples, 512, {}, changeAt, changeA);
         const auto y = render (b, 0.0, samples, 512, {}, changeAt, changeB);
         const auto d = maxDiff (x, 0, y, 0, x.size());
@@ -518,8 +518,8 @@ TEST (mixpre167q_stretched_clip_offsets_and_length_changes_sound)
     // the pattern's length changes while the song plays (after bar 2): 1 bar -> 2 bars, the passes follow the new length
     same (synthSong ({ clipAt (0, 4 * bar) }), synthSong ({ clipAt (0, bar), clipAt (bar, bar), clipAt (2 * bar, bar), clipAt (3 * bar, bar) }),
           4 * barSamples, "length change while playing", 2 * barSamples,
-          [bar] (lynx::Song& s) { s.patterns[0].lengthTicks = 2 * bar; },
-          [bar] (lynx::Song& s) {
+          [bar] (yw::Song& s) { s.patterns[0].lengthTicks = 2 * bar; },
+          [bar] (yw::Song& s) {
               s.patterns[0].lengthTicks = 2 * bar;
               s.playlist = { clipAt (0, 2 * bar), clipAt (2 * bar, 2 * bar) };
           });
@@ -531,10 +531,10 @@ TEST (mixpre167q_stretched_clip_repeats_sound_through_jumps_and_loops)
 {
     using namespace mixpre167q;
     const LoopFlag loop (true);
-    const auto ppq = (double) lynx::ppq;
+    const auto ppq = (double) yw::ppq;
     const auto beatSamples = barSamples / 4;
-    const auto song = synthSong ({ clipAt (0, 16 * lynx::ppq) });
-    const auto bar = 16 * lynx::ppq / 4;
+    const auto song = synthSong ({ clipAt (0, 16 * yw::ppq) });
+    const auto bar = 16 * yw::ppq / 4;
     const auto copies = synthSong ({ clipAt (0, bar), clipAt (bar, bar), clipAt (2 * bar, bar), clipAt (3 * bar, bar) });
     const auto reference = render (song, 0.0, barSamples, 512); // bar 1
     dump (reference, "reference");

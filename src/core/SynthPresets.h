@@ -6,7 +6,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Built-in synth presets (name, settings). The first one is the default.
 std::vector<std::pair<std::string, SynthSettings>> synthPresets();
@@ -14,4 +14,4 @@ std::vector<std::pair<std::string, SynthSettings>> synthPresets();
 // Preset matching a channel name ("Bass", "Pad", "808"...), to give a reasonable sound
 // to FL synths that become the built-in synth on import.
 SynthSettings presetForChannelName (const std::string& channelName);
-} // namespace lynx
+} // namespace yw

@@ -55,24 +55,24 @@ TEST (kepler_exo_state_layout)
 {
     const std::vector<float> panel (0x97, 0.25f);
     const auto st = keplerExoTestState (panel);
-    CHECK (lynx::keplerExoState (st) && lynx::keplerStateUsable (st));
-    CHECK (lynx::keplerPanelOffset (st, 0x48) == 0x21 + 4 * 0x48 && lynx::keplerPanelOffset (st, 0x97) == -1);
-    CHECK (! lynx::keplerExoState (keplerTestState())); // a Kepler-1 state is not Exo's
+    CHECK (yw::keplerExoState (st) && yw::keplerStateUsable (st));
+    CHECK (yw::keplerPanelOffset (st, 0x48) == 0x21 + 4 * 0x48 && yw::keplerPanelOffset (st, 0x97) == -1);
+    CHECK (! yw::keplerExoState (keplerTestState())); // a Kepler-1 state is not Exo's
     // version 3 with the ×4 oversampling byte (not modelled; no FL data uses it) and a non-finite value are refused
-    CHECK (lynx::keplerExoState (keplerExoTestState (panel, 3)));
-    CHECK (! lynx::keplerExoState (keplerExoTestState (panel, 3, {}, true)));
+    CHECK (yw::keplerExoState (keplerExoTestState (panel, 3)));
+    CHECK (! yw::keplerExoState (keplerExoTestState (panel, 3, {}, true)));
     auto bad = panel;
     bad[5] = std::numeric_limits<float>::quiet_NaN();
-    CHECK (! lynx::keplerExoState (keplerExoTestState (bad)));
+    CHECK (! yw::keplerExoState (keplerExoTestState (bad)));
     auto cut = st;
     cut.resize (0x21 + 4 * 10);
-    CHECK (! lynx::keplerExoState (cut));
+    CHECK (! yw::keplerExoState (cut));
     // FL's wrapped plugin state: the same engine state 16 bytes in
     const auto wrapped = keplerExoWrapped (st);
-    CHECK (lynx::keplerExoState (wrapped) && lynx::keplerPanelOffset (wrapped, 0x48) == 16 + 0x21 + 4 * 0x48);
+    CHECK (yw::keplerExoState (wrapped) && yw::keplerPanelOffset (wrapped, 0x48) == 16 + 0x21 + 4 * 0x48);
     auto badSize = wrapped;
     badSize[8] = 0xff, badSize[9] = 0xff; // an engine-state size past the end
-    CHECK (! lynx::keplerExoState (badSize));
+    CHECK (! yw::keplerExoState (badSize));
 }
 
 TEST (kepler_exo_imports_from_fl_projects)
@@ -87,28 +87,28 @@ TEST (kepler_exo_imports_from_fl_projects)
         c.pluginName = plugin;
         c.pluginState = state;
         p.channels.push_back (c);
-        lynx::FlpImportOptions options;
+        yw::FlpImportOptions options;
         options.roots.factoryData = factory;
         options.fileExists = [] (const std::string& path) { return std::filesystem::exists (path); };
-        return lynx::importFlp (p, options);
+        return yw::importFlp (p, options);
     };
     const auto none = import ("Kepler Exo", st, "/nonexistent-fl");
-    CHECK (none.channels.size() == 1 && none.channels[0].instrument != lynx::InstrumentKind::keplerExo);
+    CHECK (none.channels.size() == 1 && none.channels[0].instrument != yw::InstrumentKind::keplerExo);
     const auto dll = keplerExoDll();
-    if (dll.empty() || ! lynx::keplerExoDllUsable (dll))
+    if (dll.empty() || ! yw::keplerExoDllUsable (dll))
         return;
-    CHECK (! lynx::keplerExoDllUsable (keplerDll()) && lynx::keplerDllUsable (dll));
+    CHECK (! yw::keplerExoDllUsable (keplerDll()) && yw::keplerDllUsable (dll));
     const auto factory = std::filesystem::path (realFlpDir).parent_path().string();
     const auto s = import ("Kepler Exo", st, factory);
-    CHECK (s.channels.size() == 1 && s.channels[0].instrument == lynx::InstrumentKind::keplerExo);
+    CHECK (s.channels.size() == 1 && s.channels[0].instrument == yw::InstrumentKind::keplerExo);
     CHECK (s.channels[0].pluginState == st && ! s.channels[0].samplePath.empty());
     const auto w = import ("Kepler Exo", keplerExoWrapped (st), factory);
-    CHECK (w.channels.size() == 1 && w.channels[0].instrument == lynx::InstrumentKind::keplerExo);
+    CHECK (w.channels.size() == 1 && w.channels[0].instrument == yw::InstrumentKind::keplerExo);
     const auto k1 = import ("Kepler Exo", keplerTestState(), factory);
-    CHECK (k1.channels.size() == 1 && k1.channels[0].instrument != lynx::InstrumentKind::keplerExo);
+    CHECK (k1.channels.size() == 1 && k1.channels[0].instrument != yw::InstrumentKind::keplerExo);
     // the engines refuse the other plugin's DLL
-    CHECK (lynx::kepler::renderReference (st, keplerDll(), { { 0, 60, 1.0, 0.0, 0.0, -1 } }, 44100.0, 512).empty());
-    CHECK (! lynx::kepler::renderReference (st, dll, { { 0, 60, 1.0, 0.0, 0.0, -1 } }, 44100.0, 512).empty());
+    CHECK (yw::kepler::renderReference (st, keplerDll(), { { 0, 60, 1.0, 0.0, 0.0, -1 } }, 44100.0, 512).empty());
+    CHECK (! yw::kepler::renderReference (st, dll, { { 0, 60, 1.0, 0.0, 0.0, -1 } }, 44100.0, 512).empty());
 }
 
 TEST (kepler_exo_renders_like_the_dll)
@@ -127,14 +127,14 @@ TEST (kepler_exo_renders_like_the_dll)
                                  0.523100019f, 0.800300002f, 0.800333321f, 0.486900002f, 1.0f, 0.400000006f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
                                  0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 1.0f };
     const auto st = keplerExoTestState (panel, 4, { { 2, 0x25 } });
-    CHECK (lynx::keplerExoState (st));
+    CHECK (yw::keplerExoState (st));
     const auto dll = keplerExoDll();
-    if (dll.empty() || ! lynx::keplerExoDllUsable (dll))
+    if (dll.empty() || ! yw::keplerExoDllUsable (dll))
         return;
-    const std::vector<lynx::kepler::RefNote> notes { { 0, 60, 1.0, 0.0, 0.0, 33075 }, { 11025, 64, 0.6, 0.0, 0.0, 33075 },
+    const std::vector<yw::kepler::RefNote> notes { { 0, 60, 1.0, 0.0, 0.0, 33075 }, { 11025, 64, 0.6, 0.0, 0.0, 33075 },
                                                      { 22050, 67, 0.8, 0.0, 0.0, 44100 } };
-    const auto y = lynx::kepler::renderReference (st, dll, notes, 44100.0, 40000);
-    CHECK (lynx::kepler::renderReference (keplerExoWrapped (st), dll, notes, 44100.0, 40000) == y);
+    const auto y = yw::kepler::renderReference (st, dll, notes, 44100.0, 40000);
+    CHECK (yw::kepler::renderReference (keplerExoWrapped (st), dll, notes, 44100.0, 40000) == y);
     CHECK (y.size() == 2 * 40000);
     if (y.size() != 2 * 40000)
         return;

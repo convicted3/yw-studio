@@ -9,7 +9,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::channelburn
+namespace yw::channelburn
 {
 // What a burn writes out for a channel (and so what is worth resetting afterwards, FL's "Reset after burning to MIDI").
 struct Baked
@@ -27,7 +27,7 @@ Baked whatBurns (const Song& song, int pattern, int channel);
 // end — late echoes — are left out). Empty when the channel has no notes there.
 std::vector<Note> playedNotes (const Song& song, int pattern, int channel);
 
-// Which settings the burn switches off afterwards (FL asks; LYNX adds Time and always turns the channel's loop off).
+// Which settings the burn switches off afterwards (FL asks; YW adds Time and always turns the channel's loop off).
 struct Reset
 {
     bool arpeggiator = true;
@@ -39,4 +39,4 @@ struct Reset
 // Burns the channel's notes of the current pattern: into that pattern (its notes are replaced) or into a new pattern
 // inserted after it and selected (the original stays). Returns false when the channel has no notes to burn.
 bool burnMidi (Song& song, int channel, bool toNewPattern, const Reset& reset);
-} // namespace lynx::channelburn
+} // namespace yw::channelburn

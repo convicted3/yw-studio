@@ -7,7 +7,7 @@
 
 namespace details190lx
 {
-using namespace lynx;
+using namespace yw;
 
 inline Clip clipOf (int pattern)
 {
@@ -30,7 +30,7 @@ inline Song gridSong()
 // past the grid dropped; Duplicate puts the copy right under the rectangle
 TEST (details190lx_slot_block_copy_paste_duplicate)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace details190lx;
     auto s = gridSong();
     launcher::setClip (s, 0, 0, clipOf (0));
@@ -70,7 +70,7 @@ TEST (details190lx_slot_block_copy_paste_duplicate)
 // alone records from where recording starts to the region's end; both = round 163's punch; off: neither end
 TEST (details190lx_punch_in_and_out_each_on_its_own)
 {
-    using lynx::recordloop::punchEnds;
+    using yw::recordloop::punchEnds;
     constexpr std::int64_t here = 100, from = 1000, to = 5000, open = 1 << 30;
     auto e = punchEnds (here, from, to, true, true, true, open);
     CHECK (e.in == from && e.out == to && e.stopsAtOut);
@@ -82,11 +82,11 @@ TEST (details190lx_punch_in_and_out_each_on_its_own)
     CHECK (e.in == here && e.out == open && ! e.stopsAtOut);
 }
 
-// FL's "Alternate meter scale": off = LYNX's straight -60 … +6 dB axis; on = FL's measured law, rising, and the hint's
+// FL's "Alternate meter scale": off = YW's straight -60 … +6 dB axis; on = FL's measured law, rising, and the hint's
 // reading under the pointer is its inverse
 TEST (details190lx_alternate_meter_scale_law)
 {
-    using namespace lynx::meterscale;
+    using namespace yw::meterscale;
     CHECK (std::abs (positionOfDb (-60.0f, false)) < 1.0e-6f && std::abs (positionOfDb (6.0f, false) - 1.0f) < 1.0e-6f);
     CHECK (std::abs (dbAtPosition (0.5f, false) + 27.0f) < 1.0e-4f);
     // FL's Master meter (capture 190lx A1, H = 346 px, bottom 555): 0 dB at y 262, -6 dB at y 370; hint readings
@@ -110,8 +110,8 @@ TEST (details190lx_alternate_meter_scale_law)
 // (100 % = 99 % of a step); the old lanes read and write as before
 TEST (details190lx_graph_note_and_shift_lanes)
 {
-    using namespace lynx;
-    using namespace lynx::notetools;
+    using namespace yw;
+    using namespace yw::notetools;
     Note n;
     n.start = 3 * ticksPerStep;
     n.key = 60;

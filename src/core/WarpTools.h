@@ -1,7 +1,7 @@
 #pragma once
 
-// Warp commands on a channel's markers (round 190cg; the commands of Ableton Live's sample editor, the method LYNX's own:
-// /mnt/e/lynx-work/warp190cg/HANDOFF.md lists the evidence per command). They work on SamplerSettings::warp (file
+// Warp commands on a channel's markers (round 190cg; the commands of Ableton Live's sample editor, the method YW's own:
+// /mnt/e/yw-work/warp190cg/HANDOFF.md lists the evidence per command). They work on SamplerSettings::warp (file
 // seconds → content beats, core/WarpEdit.h) after warpedit::ensureMarkers; the caller ends with warpedit::syncLength.
 // Everything here stays piecewise linear, which is what the offline stretcher renders (core/TimeStretch warpStretchMap),
 // so each command plays exactly as its markers say. JUCE-free and header-only.
@@ -13,7 +13,7 @@
 
 #include "core/WarpEdit.h"
 
-namespace lynx::warptools
+namespace yw::warptools
 {
 // The segment (index of its left marker) that holds file time `seconds`; the end segments reach beyond the end markers.
 inline int segmentAt (const std::vector<WarpPoint>& w, double seconds) noexcept
@@ -249,4 +249,4 @@ inline int quantize (SamplerSettings& s, const std::vector<double>& points, doub
     s.warp = std::move (kept);
     return placed;
 }
-} // namespace lynx::warptools
+} // namespace yw::warptools

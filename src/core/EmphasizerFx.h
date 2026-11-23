@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Emphasizer (FL 2025+, the one-knob sibling of Emphasis) as an exact LYNX engine, rebuilt in
+// FL Studio's Emphasizer (FL 2025+, the one-knob sibling of Emphasis) as an exact YW engine, rebuilt in
 // docs/analise/REA_rodada154.md (clean-room: the plug-in's layout, formulas and behaviour in our own words; no
 // Image-Line code or data in this repository).
 //
@@ -10,7 +10,7 @@
 // optional level matching (÷ input gain) → bypass cross-fade with the delayed dry signal, × 0.9999.
 //
 // Parameters (EffectKind::emphasizer) are FL's controls over their range, value = raw / max, so FL automation and the
-// LYNX editor drive what FL's ProcessParam receives:
+// YW editor drive what FL's ProcessParam receives:
 //   [0] Input gain 0…10000 (0…+24 dB, linear in dB)   [1] Emphasis 0…10000 (0…100 %, default 5013)
 //   [2] Soft clipping 0/1                              [3] Level matching 0/1
 //   [4] Bypass 0/1 (a 20 Hz cross-fade, not a hard switch)   [5] Output 0…10000 (FL's volume curve, 10000 = 0 dB)
@@ -26,7 +26,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::emphasizer
+namespace yw::emphasizer
 {
 constexpr int numParams = 6;
 constexpr std::array<int, numParams> rawMax { 10000, 10000, 1, 1, 1, 10000 };
@@ -90,4 +90,4 @@ private:
     std::vector<float> dryBufL = std::vector<float> (ring), dryBufR = std::vector<float> (ring),
                        wetL = std::vector<float> (ring), wetR = std::vector<float> (ring), gain = std::vector<float> (ring);
 };
-} // namespace lynx::emphasizer
+} // namespace yw::emphasizer

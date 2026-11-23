@@ -14,7 +14,7 @@
 
 #include "core/Biquad.h"
 
-namespace lynx
+namespace yw
 {
 struct LrSplit
 {
@@ -106,4 +106,4 @@ struct LrSplit
         return high && flip ? -h : h;
     }
 };
-} // namespace lynx
+} // namespace yw

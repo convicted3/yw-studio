@@ -28,7 +28,7 @@ ok "$(nproc) logical cores"
 echo "FL Studio installation: $FL"
 if [[ -d "$FL/Data" ]]; then
     ok "Data folder"
-    # files LYNX reads at run time and checks by SHA-256 (the decoded builds)
+    # files YW reads at run time and checks by SHA-256 (the decoded builds)
     check () {
         local f="$FL/$1" want="$2"
         if [[ ! -f "$f" ]]; then bad "$1 missing"; return; fi

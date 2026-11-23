@@ -5,7 +5,7 @@
 // by the first clip crossed (unmuted -> mute all, already-muted ones stay muted; muted -> unmute all).
 TEST (audit165zb_double_right_click_mute_sweep_follows_the_first_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! gesture::isDoubleClick (0, 100, 0.0));          // no earlier click
     CHECK (gesture::isDoubleClick (1000, 1300, 2.0));
     CHECK (! gesture::isDoubleClick (1000, 1600, 2.0));      // too slow

@@ -8,7 +8,7 @@ namespace flm190fn
 {
 using namespace flm182c;
 using Bytes = flm182c::Bytes; // (other test files have a Bytes of their own)
-namespace flm = lynx::flm;
+namespace flm = yw::flm;
 
 inline Bytes meta (const std::string& created, double editSeconds, const std::string& author, const std::string& notes, const std::string& saved)
 {
@@ -76,7 +76,7 @@ inline ::flp::Project flpWithRack (const Bytes& state, int mixerTrack = 3)
 
 TEST (flm190fn_resources_folder_from_a_pick)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::set<std::string> dirs { "D:/FLM/Resources/Drum Samples", "E:/FL/Plugins/Fruity/Generators/FL Studio Mobile/Installed/oscdata.dat",
                                        "F:/Copy/Synth Presets2" };
     const auto exists = [&dirs] (const std::string& p) { return dirs.count (p) > 0; };
@@ -92,7 +92,7 @@ TEST (flm190fn_resources_folder_from_a_pick)
 
 TEST (flm190fn_factory_samples_from_the_users_resources_first)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bytes = flm190fn::kitSong();
     const std::string fl = "C:/FL/Plugins/Fruity/Generators/FL Studio Mobile/Installed", mine = "D:/FLM/Resources";
     std::set<std::string> files { mine + "/Drum Samples/Kick/Kick 1.wav", mine + "/Drum Samples/Clap/Clap 2.wav", fl + "/Drum Samples/Kick/Kick 1.wav" };
@@ -150,7 +150,7 @@ TEST (flm190fn_factory_samples_from_the_users_resources_first)
 
 TEST (flm190fn_short_send_plays_at_its_linear_gain)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     // a channel whose SEND to the bus has only words [0]…[2] (FLM rebuilds the level from the linear gain [2])
@@ -197,7 +197,7 @@ TEST (flm190fn_short_send_plays_at_its_linear_gain)
 
 TEST (flm190fn_meta_credits_reach_project_info)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     Bytes f;
@@ -221,7 +221,7 @@ TEST (flm190fn_meta_credits_reach_project_info)
 
 TEST (flm190fn_flp_mobile_rack_plays_on_the_flm_engine)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     // a SuperSaw (type 23) at Post Gain −6 dB-ish and Wet Pan right, then a Filter (type 9): FLM's rack in an .flp
@@ -258,7 +258,7 @@ TEST (flm190fn_flp_mobile_rack_plays_on_the_flm_engine)
 
 TEST (flm190fn_flp_mobile_rack_left_as_stand_in_when_not_rebuilt)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     const auto check = [] (const Bytes& state, const std::string& line) {
@@ -269,7 +269,7 @@ TEST (flm190fn_flp_mobile_rack_left_as_stand_in_when_not_rebuilt)
         const auto s = importFlp (flm190fn::flpWithRack (state), o);
         CHECK (s.channels.size() == 1 && s.channels.front().instrument == InstrumentKind::synth);
         CHECK (s.channels.size() == 1 && s.channels.front().mixerTrack == 3);
-        CHECK (report.unsupported.count (line + "; played with a LYNX SHARE synth preset") == 1);
+        CHECK (report.unsupported.count (line + "; played with a YW Studio synth preset") == 1);
         CHECK (report.converted.empty());
     };
     // a drum kit, an Arpeggiator, a state that is not a rack (round 190jv: two instruments, an effect first and the note
@@ -284,7 +284,7 @@ TEST (flm190fn_flp_mobile_rack_left_as_stand_in_when_not_rebuilt)
 
 TEST (flm190fn_newer_app_version_is_named)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     const auto song = [] (const std::string& version) {
@@ -322,7 +322,7 @@ TEST (flm190fn_newer_app_version_is_named)
 
 TEST (flm190fn_effect_enable_lane_switches_the_slots)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     // a Filter (type 9) with an Enable lane: on (65535) at beat 0, off (0) at beat 2, on at beat 4
@@ -359,7 +359,7 @@ TEST (flm190fn_effect_enable_lane_switches_the_slots)
 
 TEST (flm190fn_flp_mobile_rack_fx_on_the_flm_engines)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace flm182c;
     using Bytes = flm182c::Bytes;
     // a Rack FX: Filter (9) → Equalizer (3) → a Tuner (24, sound-neutral) → a SuperSaw (an instrument: an effect rack

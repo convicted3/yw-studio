@@ -6,9 +6,9 @@
 
 namespace rea167l
 {
-inline std::shared_ptr<lynx::SampleData> impulse (int frames, bool stereo, float level = 0.5f)
+inline std::shared_ptr<yw::SampleData> impulse (int frames, bool stereo, float level = 0.5f)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     d->left.assign ((std::size_t) frames, 0.0f);
     d->left[0] = level;
@@ -38,7 +38,7 @@ TEST (rea167l_flp_legacy_precompute_events)
     const auto& c = p.channels[0];
     CHECK (c.boost == 64 && c.eq == 200 && c.ringMix == 128 && c.ringFreq == 64 && c.stereoDelay == 2148);
     CHECK (c.cutoff == 600 && c.resonance == 300 && c.reverb == 100 && c.reverbType == 0 && c.pogo == 384 && c.soloLock);
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     REA167L_REQUIRE (! song.channels.empty());
     const auto& q = song.channels[0].sampler.precompute;
     CHECK (q.boost == 64 && q.eq == 200 && q.ringMix == 128 && q.ringFreq == 64 && q.stereoDelay == 2148 && q.cutoff == 600);
@@ -46,17 +46,17 @@ TEST (rea167l_flp_legacy_precompute_events)
     CHECK (song.channels[0].soloLock);
 
     // FL's defaults (no events): nothing to precompute
-    const auto none = lynx::importFlp (rea167h::channelProject ([] (FlpBuilder&) {}));
+    const auto none = yw::importFlp (rea167h::channelProject ([] (FlpBuilder&) {}));
     REA167L_REQUIRE (! none.channels.empty());
     CHECK (! none.channels[0].sampler.precompute.legacy() && ! none.channels[0].soloLock);
-    CHECK (! lynx::SamplePrecompute {}.any());
+    CHECK (! yw::SamplePrecompute {}.any());
 }
 
 // §1 FL's formulas, effect by effect
 TEST (rea167l_legacy_precompute_formulas)
 {
-    namespace pc = lynx::precompute;
-    lynx::SamplerSettings s;
+    namespace pc = yw::precompute;
+    yw::SamplerSettings s;
     // stereo delay 2148: the left channel starts 100 frames later (FL: v > 2048 delays the left), the sample is 100
     // frames longer; 1748 delays the right one by 300
     {
@@ -98,7 +98,7 @@ TEST (rea167l_legacy_precompute_formulas)
         s.precompute = {};
         s.precompute.ringMix = 256;
         s.precompute.ringFreq = 200;
-        auto in = std::make_shared<lynx::SampleData>();
+        auto in = std::make_shared<yw::SampleData>();
         in->sampleRate = 44100.0;
         in->left.assign (400, 1.0f);
         in->right.assign (400, 1.0f);
@@ -115,7 +115,7 @@ TEST (rea167l_legacy_precompute_formulas)
     }
     // the low-pass: a DC step settles at its level (unity gain at DC), slower with a lower cutoff
     {
-        auto step = std::make_shared<lynx::SampleData>();
+        auto step = std::make_shared<yw::SampleData>();
         step->sampleRate = 44100.0;
         step->left.assign (20000, 0.5f);
         s.precompute = {};
@@ -129,7 +129,7 @@ TEST (rea167l_legacy_precompute_formulas)
     }
     // pogo 512: the read position follows sin(i/(N−1)·π/2)·(N−1) — the sample's start is played fast
     {
-        auto ramp = std::make_shared<lynx::SampleData>();
+        auto ramp = std::make_shared<yw::SampleData>();
         ramp->sampleRate = 44100.0;
         for (int i = 0; i < 1001; ++i)
             ramp->left.push_back ((float) i / 1000.0f);
@@ -158,28 +158,28 @@ TEST (rea167l_legacy_precompute_formulas)
 // FUN_00ffaaa0 / FUN_00ffa980: the solo skips locked channels] and 0x32 the ghost channels (+0x1fc)
 TEST (rea167l_channel_solo_lock_and_ghosts)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     REA167L_REQUIRE (song.channels.size() >= 4);
     for (auto& c : song.channels)
         c.muted = false, c.soloLock = false;
     song.channels[2].soloLock = true;
-    lynx::noteedit::soloChannel (song, 0);
+    yw::noteedit::soloChannel (song, 0);
     CHECK (! song.channels[0].muted && song.channels[1].muted && ! song.channels[2].muted && song.channels[3].muted);
     // again: the unlocked channels play again; the locked one was never touched
     song.channels[2].muted = true;
-    lynx::noteedit::soloChannel (song, 0);
+    yw::noteedit::soloChannel (song, 0);
     CHECK (! song.channels[0].muted && ! song.channels[1].muted && song.channels[2].muted && ! song.channels[3].muted);
     // a locked channel muted by hand does not stop the solo from being "alone"
-    lynx::noteedit::soloChannel (song, 1);
+    yw::noteedit::soloChannel (song, 1);
     CHECK (song.channels[0].muted && ! song.channels[1].muted && song.channels[2].muted);
-    lynx::noteedit::soloChannel (song, 1);
+    yw::noteedit::soloChannel (song, 1);
     CHECK (! song.channels[0].muted && ! song.channels[3].muted);
 
-    // .lynx round trip, .flp 0x32
-    const auto ghost = lynx::importFlp (rea167h::channelProject ([] (FlpBuilder& b) { b.u8 (0x32); b.u8 (0); }));
+    // .yw round trip, .flp 0x32
+    const auto ghost = yw::importFlp (rea167h::channelProject ([] (FlpBuilder& b) { b.u8 (0x32); b.u8 (0); }));
     REA167L_REQUIRE (! ghost.channels.empty());
     CHECK (ghost.channels[0].ghostHidden);
-    const auto shown = lynx::importFlp (rea167h::channelProject ([] (FlpBuilder& b) { b.u8 (0x32); b.u8 (1); }));
+    const auto shown = yw::importFlp (rea167h::channelProject ([] (FlpBuilder& b) { b.u8 (0x32); b.u8 (1); }));
     REA167L_REQUIRE (! shown.channels.empty());
     CHECK (! shown.channels[0].ghostHidden);
 }
@@ -187,48 +187,48 @@ TEST (rea167l_channel_solo_lock_and_ghosts)
 // §4 "Solo selected track(s)" (S) and "Alt solo selected track(s)" (Alt+S) [DECOMP FUN_0127c2a0 / FUN_0127bb10]
 TEST (rea167l_mixer_alt_solo)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     REA167L_REQUIRE (song.mixer.size() > 4);
     // 1 → 2 → Master; 3 → Master
     song.mixer[1].toMaster = false;
-    song.mixer[1].sends = { lynx::MixerSend { 2, 1.0f } };
-    lynx::mixerops::soloSelected (song, { 2 }, false);
+    song.mixer[1].sends = { yw::MixerSend { 2, 1.0f } };
+    yw::mixerops::soloSelected (song, { 2 }, false);
     CHECK (song.mixer[2].solo && ! song.mixer[2].soloSources && ! song.mixer[1].solo);
     auto heard = song.soloAudible();
     CHECK (heard[2] && ! heard[1] && ! heard[3]);
     // Alt+S on a plain solo: the feeding track is heard too
-    lynx::mixerops::soloSelected (song, { 2 }, true);
+    yw::mixerops::soloSelected (song, { 2 }, true);
     heard = song.soloAudible();
     CHECK (song.mixer[2].solo && song.mixer[2].soloSources && heard[1] && heard[2] && ! heard[3]);
     // S on an alt solo: back to the plain one; S again: no solo
-    lynx::mixerops::soloSelected (song, { 2 }, false);
+    yw::mixerops::soloSelected (song, { 2 }, false);
     CHECK (song.mixer[2].solo && ! song.mixer[2].soloSources);
-    lynx::mixerops::soloSelected (song, { 2 }, false);
+    yw::mixerops::soloSelected (song, { 2 }, false);
     CHECK (! song.mixer[2].solo);
     // Alt+S twice: alt solo, then none
-    lynx::mixerops::soloSelected (song, { 2 }, true);
+    yw::mixerops::soloSelected (song, { 2 }, true);
     CHECK (song.mixer[2].solo && song.mixer[2].soloSources);
-    lynx::mixerops::soloSelected (song, { 2 }, true);
+    yw::mixerops::soloSelected (song, { 2 }, true);
     CHECK (! song.mixer[2].solo);
     // a track nothing feeds: S again clears it (both kinds are the same there)
-    lynx::mixerops::soloSelected (song, { 3 }, true);
-    lynx::mixerops::soloSelected (song, { 3 }, false);
+    yw::mixerops::soloSelected (song, { 3 }, true);
+    yw::mixerops::soloSelected (song, { 3 }, false);
     CHECK (! song.mixer[3].solo);
-    // soloing others clears the old solo (the kind is saved in .lynx: ProjectFile "soloSources")
-    lynx::mixerops::soloSelected (song, { 2 }, false);
-    lynx::mixerops::soloSelected (song, { 3, 2 }, false);
+    // soloing others clears the old solo (the kind is saved in .yw: ProjectFile "soloSources")
+    yw::mixerops::soloSelected (song, { 2 }, false);
+    yw::mixerops::soloSelected (song, { 3, 2 }, false);
     CHECK (song.mixer[3].solo && song.mixer[2].solo && ! song.mixer[2].soloSources);
     // the shortcut: Alt+S in the mixer
-    const auto* alt = lynx::keys::findAction ("mixer.altSoloSelected");
+    const auto* alt = yw::keys::findAction ("mixer.altSoloSelected");
     REA167L_REQUIRE (alt != nullptr && ! alt->defaults.empty());
-    CHECK (alt->context == lynx::keys::Context::mixer && lynx::keys::toString (alt->defaults[0]) == "Alt+S");
+    CHECK (alt->context == yw::keys::Context::mixer && yw::keys::toString (alt->defaults[0]) == "Alt+S");
 }
 
 // §6 CC 123 to the "Send all notes off" outputs on a transport reset [DECOMP FUN_011c89c0]
 TEST (rea167l_transport_notes_off_bytes)
 {
     std::array<std::uint8_t, 48> b {};
-    lynx::midisync::transportNotesOff (b);
+    yw::midisync::transportNotesOff (b);
     for (int ch = 0; ch < 16; ++ch)
         CHECK (b[(std::size_t) ch * 3] == 0xb0 + ch && b[(std::size_t) ch * 3 + 1] == 123 && b[(std::size_t) ch * 3 + 2] == 0);
 }
@@ -247,84 +247,84 @@ TEST (rea167l_export_wav_extras_match_fl)
     std::vector<std::uint8_t> want;
     for (const char* p = fl; p[0] != 0 && p[1] != 0; p += 2)
         want.push_back ((std::uint8_t) std::stoi (std::string (p, 2), nullptr, 16));
-    lynx::exportopts::WavExtras x;
+    yw::exportopts::WavExtras x;
     x.loop = true;
     x.musicFrames = 3925130; // (FL's loop end 3925129 = the last frame of the music)
     x.acid = true;
     x.tempo = 120.0f;
     x.markers = { { 176400, "Verse" }, { 352800, "" }, { 661500, "Drop A" } };
-    const auto got = lynx::exportopts::wavExtraChunks (x, 44100.0, 3925359);
+    const auto got = yw::exportopts::wavExtraChunks (x, 44100.0, 3925359);
     CHECK (got.size() == want.size());
     CHECK (got == want);
 
     // from a song: the plain markers only, at their time; tempo and meter
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
     song.beatsPerBar = 3;
     song.markers().clear();
-    lynx::Marker a;
-    a.tick = 8 * lynx::ppq;
+    yw::Marker a;
+    a.tick = 8 * yw::ppq;
     a.name = "Verse";
     song.addMarker (a);
-    lynx::Marker sig;
-    sig.tick = 12 * lynx::ppq;
+    yw::Marker sig;
+    sig.tick = 12 * yw::ppq;
     sig.numerator = 7;
-    sig.action = lynx::Marker::timeSignature;
+    sig.action = yw::Marker::timeSignature;
     song.addMarker (sig);
-    lynx::Marker loop;
-    loop.tick = 14 * lynx::ppq;
-    loop.action = lynx::Marker::markerLoop;
+    yw::Marker loop;
+    loop.tick = 14 * yw::ppq;
+    loop.action = yw::Marker::markerLoop;
     song.addMarker (loop);
-    lynx::exportopts::Options o;
-    o.range = lynx::exportopts::Range::pattern;
-    auto e = lynx::exportopts::wavExtras (song, o, 44100.0);
+    yw::exportopts::Options o;
+    o.range = yw::exportopts::Range::pattern;
+    auto e = yw::exportopts::wavExtras (song, o, 44100.0);
     CHECK (e.loop && ! e.acid && e.numerator == 3 && e.denominator == 4 && e.tempo == 120.0f);
     o.saveTempo = true;
     o.loopMarkers = false;
     o.playlistMarkers = false;
-    e = lynx::exportopts::wavExtras (song, o, 44100.0);
+    e = yw::exportopts::wavExtras (song, o, 44100.0);
     CHECK (e.acid && ! e.loop && e.markers.empty());
     // the defaults are FL's (tempo off, loop and playlist markers on) and survive the settings text
-    const lynx::exportopts::Options d;
+    const yw::exportopts::Options d;
     CHECK (! d.saveTempo && d.loopMarkers && d.playlistMarkers);
-    CHECK (lynx::exportopts::fromText (lynx::exportopts::toText (o)) == o);
-    CHECK (lynx::exportopts::wavExtraChunks ({}, 44100.0, 100).empty());
+    CHECK (yw::exportopts::fromText (yw::exportopts::toText (o)) == o);
+    CHECK (yw::exportopts::wavExtraChunks ({}, 44100.0, 100).empty());
 }
 
 TEST (rea167l_export_wav_extras_song_markers)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
     song.markers().clear();
-    lynx::Marker a;
-    a.tick = 2 * lynx::ppq; // 1 s
+    yw::Marker a;
+    a.tick = 2 * yw::ppq; // 1 s
     a.name = "A";
     song.addMarker (a);
-    lynx::Marker b;
-    b.tick = 6 * lynx::ppq; // 3 s
+    yw::Marker b;
+    b.tick = 6 * yw::ppq; // 3 s
     song.addMarker (b);
     // the song as the range: a clip of 16 beats so both markers are inside
-    song.mode = lynx::PlayMode::song;
+    song.mode = yw::PlayMode::song;
     song.playlist.clear();
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
     c.start = 0;
-    c.length = 16 * lynx::ppq;
+    c.length = 16 * yw::ppq;
     song.playlist.push_back (c);
-    lynx::exportopts::Options o;
-    const auto e = lynx::exportopts::wavExtras (song, o, 44100.0);
+    yw::exportopts::Options o;
+    const auto e = yw::exportopts::wavExtras (song, o, 44100.0);
     REA167L_REQUIRE (e.markers.size() == 2);
     CHECK (e.markers[0].frame == 44100 && e.markers[0].name == "A" && e.markers[1].frame == 132300 && e.markers[1].name.empty());
     // a selection from beat 4: the second marker 1 s in, the first left out
-    song.loopStart = 4 * lynx::ppq;
-    song.loopEnd = 12 * lynx::ppq;
-    o.range = lynx::exportopts::Range::selection;
-    const auto s = lynx::exportopts::wavExtras (song, o, 44100.0);
+    song.loopStart = 4 * yw::ppq;
+    song.loopEnd = 12 * yw::ppq;
+    o.range = yw::exportopts::Range::selection;
+    const auto s = yw::exportopts::wavExtras (song, o, 44100.0);
     REA167L_REQUIRE (s.markers.size() == 1);
     CHECK (s.markers[0].frame == 44100);
 
     // appended to a WAV file: the RIFF size follows, the frames are read back
-    const auto path = (std::filesystem::temp_directory_path() / ("lynx_rea167l_extras_" + processTempTag() + ".wav")).string();
+    const auto path = (std::filesystem::temp_directory_path() / ("yw_rea167l_extras_" + processTempTag() + ".wav")).string();
     {
         std::vector<std::uint8_t> w;
         auto put = [&w] (const char* t) { w.insert (w.end(), t, t + 4); };
@@ -334,38 +334,38 @@ TEST (rea167l_export_wav_extras_song_markers)
         put ("data"); u32 (10); for (int i = 0; i < 10; ++i) w.push_back (0);
         std::ofstream (path, std::ios::binary).write ((const char*) w.data(), (std::streamsize) w.size());
     }
-    CHECK (lynx::exportopts::wavDataFrames (path) == 2);
-    lynx::exportopts::WavExtras x;
+    CHECK (yw::exportopts::wavDataFrames (path) == 2);
+    yw::exportopts::WavExtras x;
     x.markers = { { 1, "m" } };
-    CHECK (lynx::exportopts::appendWavExtras (path, x, 44100.0));
+    CHECK (yw::exportopts::appendWavExtras (path, x, 44100.0));
     std::ifstream in (path, std::ios::binary);
     std::vector<std::uint8_t> back ((std::istreambuf_iterator<char> (in)), {});
     REA167L_REQUIRE (back.size() > 54);
     const auto riff = (std::uint32_t) back[4] | (std::uint32_t) back[5] << 8 | (std::uint32_t) back[6] << 16 | (std::uint32_t) back[7] << 24;
     CHECK (riff == back.size() - 8);
     CHECK (std::string (back.begin() + 54, back.begin() + 58) == "cue ");
-    CHECK (lynx::exportopts::wavDataFrames (path) == 2);
+    CHECK (yw::exportopts::wavDataFrames (path) == 2);
     std::filesystem::remove (path);
 }
 
 // §2 FL 2026's per-clip stretch (+0x40) [FL render r167l/fl/l_all.flp take 2: a 2 s 440 Hz ramp, 6-beat clips]
 namespace rea167l
 {
-inline std::vector<float> renderSine (const lynx::Song& s, double seconds)
+inline std::vector<float> renderSine (const yw::Song& s, double seconds)
 {
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.resize (96000);
         for (std::size_t i = 0; i < d->left.size(); ++i)
             d->left[i] = 0.5f * (float) std::sin (2.0 * 3.14159265358979 * 440.0 * (double) i / 48000.0);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256), out;
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
     for (int b = 0; b < (int) (seconds * 48000.0 / 256.0); ++b)
     {
         r.process (state.get(), true, (double) b * 256.0 * tps, 256, l.data(), rr.data());
@@ -400,22 +400,22 @@ TEST (rea167l_clip_stretch_import)
     const auto p = flp::parseProject (b.bytes);
     REA167L_REQUIRE (p.arrangements.size() == 1 && p.arrangements[0].items.size() == 1);
     CHECK (p.arrangements[0].items[0].stretch == 1.5);
-    lynx::FlpImportOptions o;
+    yw::FlpImportOptions o;
     o.fileExists = [] (const std::string&) { return true; };
     o.sampleSeconds = [] (const std::string&) { return 2.0; };
-    const auto song = lynx::importFlp (p, o);
+    const auto song = yw::importFlp (p, o);
     REA167L_REQUIRE (song.playlist.size() == 1);
     // FL: the 6-beat item stretched 1.5 ends 9 beats after its start (the song's end with it)
-    CHECK (song.playlist[0].stretch == 1.5 && song.playlist[0].length == 9 * lynx::ppq);
+    CHECK (song.playlist[0].stretch == 1.5 && song.playlist[0].length == 9 * yw::ppq);
     // the Playlist reads the file at 1 / stretch
     const auto& ch = song.channels[(std::size_t) song.playlist[0].channel];
-    CHECK (std::abs (lynx::clipops::framesPerTick (ch, song.playlist[0], 96000.0, 48000.0, 120.0) * 1.5
-                     - lynx::clipops::framesPerTick (ch, 96000.0, 48000.0, 120.0)) < 1.0e-9);
+    CHECK (std::abs (yw::clipops::framesPerTick (ch, song.playlist[0], 96000.0, 48000.0, 120.0) * 1.5
+                     - yw::clipops::framesPerTick (ch, 96000.0, 48000.0, 120.0)) < 1.0e-9);
 }
 
 TEST (rea167l_clip_stretch_plays_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = rea167k::rampSong();
     s.playlist[0].length = 12 * ppq; // 6 s at 120 BPM; after the file's end the clip holds its last value (FL, round 168j)
     // Resample: ×2 = 4 s at 220 Hz, ×0.5 = 1 s at 880 Hz (FL: st_r_2 / st_r_05)

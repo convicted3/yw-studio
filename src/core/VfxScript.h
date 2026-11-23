@@ -1,8 +1,8 @@
 #pragma once
 
-// VFX Script (round 165d): FL Studio's Python note scripts, run by LYNX's embedded Python (core/Python.h).
+// VFX Script (round 165d): FL Studio's Python note scripts, run by YW's embedded Python (core/Python.h).
 //
-// LYNX's own `flvfx` module is written from FL's published documentation of the VFX Script API (the plugin's manual
+// YW's own `flvfx` module is written from FL's published documentation of the VFX Script API (the plugin's manual
 // page and its "API reference" tab: names, signatures and behaviour; clean-room, our own code):
 //   vfx.context (ticks, PPQ, isPlaying, tempo, voices, form), vfx.Voice (note, finePitch, velocity, releaseVelocity,
 //   pan, fcut, fres, color, length, output; trigger(), release(), copyFrom()), vfx.ScriptDialog (addInputKnob,
@@ -12,7 +12,7 @@
 //
 // Real time: the audio thread never runs Python. Each block it hands the notes and the block's ticks to the Python
 // thread (lock-free), waits a bounded time for the answer and plays what the script sent at its sample; an answer
-// that comes later plays at the next block's start. While LYNX exports (offline) it always waits, so a render is
+// that comes later plays at the next block's start. While YW exports (offline) it always waits, so a render is
 // exact and repeatable. A script that runs too long is stopped and the editor says why.
 
 #include <cstdint>
@@ -22,7 +22,7 @@
 
 #include "core/Vfx.h"
 
-namespace lynx::vfx::script
+namespace yw::vfx::script
 {
 // The script's PPQ (vfx.context.PPQ)
 constexpr int ppq = 96;
@@ -117,6 +117,6 @@ void holdScriptThread (bool hold) noexcept;
 // the remainder). Set by the export for the blocks after the music; off otherwise.
 void setSongEnded (bool ended) noexcept;
 
-// The API reference text the editor shows (LYNX's own words)
+// The API reference text the editor shows (YW's own words)
 const char* apiReference() noexcept;
-} // namespace lynx::vfx::script
+} // namespace yw::vfx::script

@@ -9,7 +9,7 @@
 #include "core/Scheduler.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Arpeggiator
 {
@@ -69,4 +69,4 @@ private:
     bool sliding = false;   // a slide-mode note is sounding (the next steps glide it)
     std::uint32_t random = 0x2545F491u;
 };
-} // namespace lynx
+} // namespace yw

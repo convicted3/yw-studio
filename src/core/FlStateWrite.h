@@ -1,7 +1,7 @@
 #pragma once
 
-// FL Studio's own saved state (plugin record 0xD5) written from a LYNX slot's parameters (round 184a S8a, for the Master
-// looks): the inverse of the readers that import these plugins as LYNX's exact engines (FlEffects.cpp). A slot LYNX
+// FL Studio's own saved state (plugin record 0xD5) written from a YW slot's parameters (round 184a S8a, for the Master
+// looks): the inverse of the readers that import these plugins as YW's exact engines (FlEffects.cpp). A slot YW
 // makes has no FL state of its own (FlOrigin), so without these the FL export renders it into the insert instead of
 // writing the plugin. Each writer gives the bytes FL itself saves for those control values; the readers' layouts are
 // documented in docs/analise/REA_rodada48 (Limiter), REA_rodada51 (Soft Clipper), REA_rodada54 (Stereo Enhancer) and
@@ -19,7 +19,7 @@
 #include "core/StereoFx.h"
 #include "core/Song.h"
 
-namespace lynx::flstate
+namespace yw::flstate
 {
 inline void putI32 (std::vector<std::uint8_t>& d, std::size_t at, int v)
 {
@@ -29,7 +29,7 @@ inline void putI32 (std::vector<std::uint8_t>& d, std::size_t at, int v)
         d[at + (std::size_t) b] = (std::uint8_t) (((std::uint32_t) v >> (8 * b)) & 0xFF);
 }
 
-// FL's raw control from LYNX's normalised value over [min, max].
+// FL's raw control from YW's normalised value over [min, max].
 inline int rawOf (float v, int min, int max) noexcept
 {
     const auto c = v < 0.0f ? 0.0 : v > 1.0f ? 1.0 : (double) v;
@@ -112,4 +112,4 @@ inline std::vector<std::uint8_t> parametricEq2 (const EffectParams& p, std::vect
     putI32 (base, 0x13E, (int) ((mask & ~0x7Fu) | (s.mask & 0x7Fu)));
     return base;
 }
-} // namespace lynx::flstate
+} // namespace yw::flstate

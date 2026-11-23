@@ -26,11 +26,11 @@ TEST (luxeverb_engine)
         float l, r;
     };
     auto run = [&] (const std::vector<std::uint8_t>& state, double bpm, const std::vector<Golden>& gold) {
-        const auto slot = lynx::effectFromFl ("LuxeVerb", state, bpm);
-        CHECK (slot.has_value() && slot->kind == lynx::EffectKind::luxeVerb);
-        if (! slot || slot->kind != lynx::EffectKind::luxeVerb)
+        const auto slot = yw::effectFromFl ("LuxeVerb", state, bpm);
+        CHECK (slot.has_value() && slot->kind == yw::EffectKind::luxeVerb);
+        if (! slot || slot->kind != yw::EffectKind::luxeVerb)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         fx->reset();
         std::vector<float> l (inL), r (inR);
@@ -65,7 +65,7 @@ TEST (luxeverb_engine)
           0x3f30adb8u }, { 36, 5000, 0x40a00000u }, { 37, 120, 0x3f999999u }, { 41, -24, 0xc1c00000u }, { 41, 7,
           0x40e00000u }, { 13, 2, 0x40400000u }, { 28, 1, 0x40000000u } })
     {
-        const float f = lynx::luxeverb::engineValue (m.k, m.v);
+        const float f = yw::luxeverb::engineValue (m.k, m.v);
         std::uint32_t u = 0;
         std::memcpy (&u, &f, 4);
         CHECK (u == m.bits);
@@ -79,23 +79,23 @@ TEST (luxeverb_engine)
     v8[9] = 1; // feedback delay sync
     v7[13 + 4 * 4] = 0x7c; v7[13 + 4 * 4 + 1] = 0x16; // decay 5756
     v8[13 + 38 * 4] = 1;                             // limiter
-    const auto s7 = lynx::luxeverb::parseState (v7);
-    const auto s8 = lynx::luxeverb::parseState (v8);
+    const auto s7 = yw::luxeverb::parseState (v7);
+    const auto s8 = yw::luxeverb::parseState (v8);
     CHECK (s7 && s7->raw[4] == 5756 && s7->raw[38] == 1 && s7->raw[41] == 24 && s7->raw[43] == 1719 && s7->sync[0] && ! s7->sync[1]);
     CHECK (s8 && s8->raw[38] == 1 && s8->raw[42] == 20 && s8->sync[1] && ! s8->sync[2]);
-    CHECK (! lynx::luxeverb::parseState ({ 10, 0, 0, 0 }).has_value());
+    CHECK (! yw::luxeverb::parseState ({ 10, 0, 0, 0 }).has_value());
     v7[0] = 10;
-    CHECK (! lynx::luxeverb::parseState (v7).has_value());
+    CHECK (! yw::luxeverb::parseState (v7).has_value());
     v8.resize (40);
-    CHECK (! lynx::luxeverb::parseState (v8).has_value());
+    CHECK (! yw::luxeverb::parseState (v8).has_value());
 
     // the parameters map back to FL's integers; texts in FL's units
-    lynx::luxeverb::Settings s;
+    yw::luxeverb::Settings s;
     s.raw[0] = -600; s.raw[16] = -84; s.raw[24] = -4000; s.raw[35] = 1800; s.sync = { true, false, true, false };
-    lynx::EffectParams p {};
-    lynx::luxeverb::toParams (s, p);
-    CHECK (lynx::luxeverb::fromParams (p) == s);
-    CHECK (lynx::luxeVerbParamText (0, 0.0f) == "-60.0 dB" && lynx::luxeVerbParamText (13, 0.5f) == "freeze");
-    CHECK (lynx::luxeVerbParamText (49, 1.0f) == "on" && lynx::luxeVerbParamText (16, 1.0f) == "+12.0 st");
-    CHECK (lynx::effectInfo (lynx::EffectKind::luxeVerb).params.size() == (std::size_t) lynx::luxeVerbAllParamCount); // + the Space engine (round tp172b)
+    yw::EffectParams p {};
+    yw::luxeverb::toParams (s, p);
+    CHECK (yw::luxeverb::fromParams (p) == s);
+    CHECK (yw::luxeVerbParamText (0, 0.0f) == "-60.0 dB" && yw::luxeVerbParamText (13, 0.5f) == "freeze");
+    CHECK (yw::luxeVerbParamText (49, 1.0f) == "on" && yw::luxeVerbParamText (16, 1.0f) == "+12.0 st");
+    CHECK (yw::effectInfo (yw::EffectKind::luxeVerb).params.size() == (std::size_t) yw::luxeVerbAllParamCount); // + the Space engine (round tp172b)
 }

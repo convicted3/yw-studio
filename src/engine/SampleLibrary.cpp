@@ -36,7 +36,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -224,7 +224,7 @@ std::unique_ptr<juce::AudioFormatReader> createFlOggReader (const juce::File& fi
 
 SampleLibrary::SampleLibrary()
 {
-    registerAudioFormats (formats); // LYNX's MP3 reader first (round 157b), then JUCE's
+    registerAudioFormats (formats); // YW's MP3 reader first (round 157b), then JUCE's
     formats.registerFormat (new WavPackAudioFormat(), false); // .wv files from FL packs
 }
 
@@ -307,7 +307,7 @@ namespace
 // 23 vocal chops, 2.0 s of the 4.4 s open). The copy is kept in the cache folder, keyed by the source file (path, size,
 // date), the ratio, the method and the stretcher's own fingerprint — a short test signal stretched by this build — so
 // a changed algorithm never reuses an old copy. The floats are stored as computed: what plays is bit for bit the same.
-constexpr char stretchMagic[8] = { 'L', 'Y', 'N', 'X', 'S', 'T', 'R', '1' };
+constexpr char stretchMagic[8] = { 'Y', 'W', 'S', 'T', 'S', 'T', 'R', '1' };
 constexpr int stretchHeader = 32;
 constexpr juce::int64 stretchCacheLimit = 1024LL * 1024 * 1024; // pruned (oldest first) to 3/4 of it when exceeded
 
@@ -417,7 +417,7 @@ juce::File spanCacheFile (const SampleData& span, double ratio, StretchMethod me
 // into the process's own memory (FL's Thief: 24 copies, 229 MB of private memory), and every page of the mapping is
 // locked in RAM (VirtualLock / mlock) before the sampler can see it: the audio thread never waits for the disk and
 // never takes a page fault on it (locked pages are always mapped and resident). The pages are the cache file's, not
-// the process's (no commit, shared with another LYNX that maps the same copy). When the pages can't be locked (the
+// the process's (no commit, shared with another YW that maps the same copy). When the pages can't be locked (the
 // system's limit for locked memory) the copy is read into RAM as before. The floats are the file's: the same sound.
 namespace lockedpages
 {
@@ -438,7 +438,7 @@ bool lock (const void* at, std::size_t bytes)
 {
     if (at == nullptr || bytes == 0)
         return false;
-    static const bool off = [] { const auto* e = std::getenv ("LYNX_STRETCH_MAP"); return e != nullptr && e[0] == '0'; }();
+    static const bool off = [] { const auto* e = std::getenv ("YW_STRETCH_MAP"); return e != nullptr && e[0] == '0'; }();
     if (off)
         return false;
 #if JUCE_WINDOWS
@@ -628,7 +628,7 @@ std::shared_ptr<SampleData> readStretched (const juce::File& file)
 
 void pruneStretchCache()
 {
-    // writes cut short by quitting (an hour old: not one another LYNX is writing now)
+    // writes cut short by quitting (an hour old: not one another YW is writing now)
     for (const auto& t : SampleLibrary::cacheFolder().findChildFiles (juce::File::findFiles, false, "*.str.*.tmp"))
         if (t.getLastModificationTime() < juce::Time::getCurrentTime() - juce::RelativeTime::hours (1))
             t.deleteFile();
@@ -670,7 +670,7 @@ void writeStretched (const juce::File& file, const SampleData& data)
         temp.deleteFile();
         return;
     }
-    if (! temp.moveFileTo (file)) // (another LYNX wrote it meanwhile: keep that one)
+    if (! temp.moveFileTo (file)) // (another YW wrote it meanwhile: keep that one)
         temp.deleteFile();
 }
 // The disk copy is written in the background, off the project open (round 165i: on Windows the 23 stretched copies of
@@ -708,7 +708,7 @@ std::shared_ptr<const SampleData> SampleLibrary::loadStretched (const juce::Stri
             return it->second;
     }
 
-    static const bool useDisk = [] { const auto* e = std::getenv ("LYNX_STRETCH_DISK"); return e == nullptr || e[0] != '0'; }();
+    static const bool useDisk = [] { const auto* e = std::getenv ("YW_STRETCH_DISK"); return e == nullptr || e[0] != '0'; }();
     const auto onDisk = useDisk ? stretchCacheFile (path, ratio, method, semitones, map, options) : juce::File();
     std::shared_ptr<const SampleData> stretched;
     {
@@ -764,7 +764,7 @@ std::shared_ptr<const SampleData> SampleLibrary::loadStretchedSpan (const juce::
     }
     // round 190gn (A2): on disk too (the stretch is the costly part of an open: Thief's 10 spans, 1.8 s), keyed by the span's
     // own audio (what is stretched), so any change to the file or to its precomputed effects makes another copy
-    static const bool useDisk = [] { const auto* e = std::getenv ("LYNX_STRETCH_DISK"); return e == nullptr || e[0] != '0'; }();
+    static const bool useDisk = [] { const auto* e = std::getenv ("YW_STRETCH_DISK"); return e == nullptr || e[0] != '0'; }();
     const auto onDisk = useDisk ? spanCacheFile (*span, ratio, method, semitones, options) : juce::File();
     std::shared_ptr<const SampleData> stretched;
     {
@@ -793,7 +793,7 @@ std::shared_ptr<const SampleData> SampleLibrary::loadStretchedSpan (const juce::
 
 juce::File SampleLibrary::cacheFolder()
 {
-    // (under a test profile, LYNX_PROFILE_DIR: inside it)
+    // (under a test profile, YW_PROFILE_DIR: inside it)
     const auto profile = platform::profileOverride();
     auto folder = (profile != juce::File() ? profile.getChildFile ("cache") : juce::File::getSpecialLocation (juce::File::tempDirectory)).getChildFile ("YW-cache");
     folder.createDirectory();
@@ -803,7 +803,7 @@ juce::File SampleLibrary::cacheFolder()
 namespace
 {
 // One cache file per channel: 32-byte header + contiguous float32.
-constexpr char cacheMagic[8] = { 'L', 'Y', 'N', 'X', 'P', 'C', 'M', '1' };
+constexpr char cacheMagic[8] = { 'Y', 'W', 'S', 'T', 'P', 'C', 'M', '1' };
 constexpr int cacheHeader = 32;
 
 struct Mapped
@@ -838,7 +838,7 @@ std::unique_ptr<juce::MemoryMappedFile> mapChannel (const juce::File& file, doub
     return rate == sampleRate && count == frames ? std::move (mapped) : nullptr;
 }
 
-// Round 167e: the decoded copies (*.L.pcm / *.R.pcm) had no size limit (2.4 GB in the temp folder of the PC LYNX is
+// Round 167e: the decoded copies (*.L.pcm / *.R.pcm) had no size limit (2.4 GB in the temp folder of the PC YW is
 // made on). Like the stretched copies: past the limit the least recently used go (oldest first) down to 3/4 of it, once
 // per session in the background. A copy mapped right now is not lost: Windows refuses to delete it, and elsewhere the
 // mapping keeps the data until it is unmapped. A copy found again is marked as used (its date), so it goes last.
@@ -1150,7 +1150,7 @@ std::shared_ptr<const SampleData> SampleLibrary::decode (const juce::String& pat
         file = wav;
     }
 
-    // FL's .speech files: spoken by LYNX's speech synthesizer, one slice (marker) per word (round 168b; FL's sample
+    // FL's .speech files: spoken by YW's speech synthesizer, one slice (marker) per word (round 168b; FL's sample
     // loader speaks them too and hands the words over as a Zero-X grid)
     if (file.hasFileExtension ("speech"))
     {
@@ -1231,4 +1231,4 @@ bool SampleLibrary::readForAnalysis (const juce::File& file, double seconds, Sam
     readWavExtras (file, out);
     return true;
 }
-} // namespace lynx
+} // namespace yw

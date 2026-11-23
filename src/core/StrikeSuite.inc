@@ -1,4 +1,4 @@
-// Round trans189d (issue #94): Strike Shaper, LYNX's level-independent transient designer — the Effect around
+// Round trans189d (issue #94): Strike Shaper, YW's level-independent transient designer — the Effect around
 // core/StrikeShaper.h. Included by core/MixSuite.cpp at namespace mixsuite level, after StripSuite.inc (it uses `fmt`).
 
 namespace

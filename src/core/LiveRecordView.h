@@ -2,7 +2,7 @@
 
 // Round 177d: what a recording in progress looks like before it is placed (the live display while recording).
 // MusicTech's FL Studio 2025 review: "MIDI is not shown in the Playlist while recording" and audio recording is
-// "unintuitive". LYNX draws the take as it grows: the notes still held (NoteRecorder::preview) in the Piano roll and
+// "unintuitive". YW draws the take as it grows: the notes still held (NoteRecorder::preview) in the Piano roll and
 // the Playlist, and every audio take as a growing clip with its waveform on the Playlist track it will land on.
 //
 // Nothing here runs unless a take records: the peaks are written by the recording thread (never the audio thread) as it
@@ -14,7 +14,7 @@
 #include <mutex>
 #include <vector>
 
-namespace lynx::liverec
+namespace yw::liverec
 {
 // The waveform outline of an audio take being recorded: the largest |sample| over every `framesPerPeak` frames, all
 // channels together. Writer: the recording thread (it may allocate; it is not the audio thread). Reader: the UI.
@@ -133,4 +133,4 @@ inline AudioSpan audioSpan (double startTick, std::int64_t frames, double ticksP
     }
     return s;
 }
-} // namespace lynx::liverec
+} // namespace yw::liverec

@@ -2,7 +2,7 @@
 
 TEST (rea146b_fl_time_knob_scale)
 {
-    using namespace lynx;
+    using namespace yw;
     // one step at 1024; FL's renders of Misc › Shift at 96 PPQ: 1000 → 22 ticks, 800 → 11, 512 → 4, 400 → 2, 200 → 1, 96 → 0
     CHECK (std::abs (channelmisc::flTimeKnobBeats (1024) - 0.25) < 1e-9);
     const std::pair<int, int> shifts[] = { { 1000, 22 }, { 800, 11 }, { 512, 4 }, { 400, 2 }, { 200, 1 }, { 96, 0 } };
@@ -15,7 +15,7 @@ TEST (rea146b_fl_time_knob_scale)
 
 TEST (rea146b_shift_and_gate_schedule)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song = Song::makeDefault();
     song.patterns[0].notes.clear();
     song.patterns[0].notes.push_back ({ 0, ppq, 0, 60, 0.8f });
@@ -23,7 +23,7 @@ TEST (rea146b_shift_and_gate_schedule)
     song.channels[0].misc.gateBeats = 0.125f; // at most half a step
     EventBuffer ev;
     const auto tps = ticksPerSample (120.0, 48000.0);
-    schedulePatternLoop (song.patterns[0], song.patterns[0].effectiveLength (lynx::Meter (4, 4)), 0.0, 48000, tps, ev, 0.0f, &song.channels);
+    schedulePatternLoop (song.patterns[0], song.patterns[0].effectiveLength (yw::Meter (4, 4)), 0.0, 48000, tps, ev, 0.0f, &song.channels);
     double on = -1, off = -1;
     for (const auto& e : ev)
         (e.type == NoteEvent::Type::on ? on : off) = e.sampleOffset * tps;
@@ -32,7 +32,7 @@ TEST (rea146b_shift_and_gate_schedule)
     // a porta note with Full porta keeps its length
     song.patterns[0].notes[0].porta = true;
     ev.clear();
-    schedulePatternLoop (song.patterns[0], song.patterns[0].effectiveLength (lynx::Meter (4, 4)), 0.0, 48000, tps, ev, 0.0f, &song.channels);
+    schedulePatternLoop (song.patterns[0], song.patterns[0].effectiveLength (yw::Meter (4, 4)), 0.0, 48000, tps, ev, 0.0f, &song.channels);
     for (const auto& e : ev)
         if (e.type == NoteEvent::Type::off)
             CHECK (std::abs (e.sampleOffset * tps - (ticksPerStep + ppq)) < 2.0);
@@ -40,7 +40,7 @@ TEST (rea146b_shift_and_gate_schedule)
 
 TEST (rea146b_echo_delay_events)
 {
-    using namespace lynx;
+    using namespace yw;
     EchoSettings s;
     s.feedback = 0.5f;
     s.echoes = 4;
@@ -99,7 +99,7 @@ TEST (rea146b_echo_delay_events)
 
 TEST (rea146b_tracking_pan)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelMisc m;
     m.key.pan = 1.0f; // FL 64
     // FL [EXEC]: ±12 semitones from C5 → ±0.25
@@ -116,9 +116,9 @@ TEST (rea146b_tracking_pan)
 
 namespace
 {
-std::vector<int> arpKeys (const lynx::ArpSettings& a, std::vector<int> chord, int startTick, double beats, std::vector<double>* times = nullptr)
+std::vector<int> arpKeys (const yw::ArpSettings& a, std::vector<int> chord, int startTick, double beats, std::vector<double>* times = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     Arpeggiator arp;
     const auto tps = ticksPerSample (120.0, 48000.0);
     std::vector<int> keys;
@@ -151,7 +151,7 @@ std::vector<int> arpKeys (const lynx::ArpSettings& a, std::vector<int> chord, in
 
 TEST (rea146b_arpeggiator_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     ArpSettings a;
     a.direction = 5; // FL's up-down "sticky": the ends twice [EXEC]
     a.stepBeats = 0.25f;
@@ -194,7 +194,7 @@ TEST (rea146b_arpeggiator_like_fl)
 
 TEST (rea146b_flp_misc_records)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     std::ifstream in (std::filesystem::path (realFlpDir) / "System" / "Render tests" / "Sampler.flp", std::ios::binary);
@@ -261,7 +261,7 @@ TEST (rea146b_flp_misc_records)
 
 TEST (rea146b_midi_import_selection)
 {
-    using namespace lynx;
+    using namespace yw;
     midiimport::ParsedMidi midi;
     midi.trackNames = { "Conductor", "Piano", "Drums" };
     auto ev = [&] (int track, std::int64_t tick, int status, int d1, int d2) {

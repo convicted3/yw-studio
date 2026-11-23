@@ -11,7 +11,7 @@
 
 #include "core/MissingFiles.h"
 
-namespace lynx
+namespace yw
 {
 // What the "Missing files" window shows for an opened project (core/MissingFiles.h).
 struct MissingFilesInfo
@@ -51,4 +51,4 @@ juce::String missingFilesSelfTest();
 
 // Sample content for the snapshots: a project with missing, located, skipped and relocated files and missing plugins.
 MissingFilesInfo missingFilesSnapshotInfo();
-} // namespace lynx
+} // namespace yw

@@ -16,7 +16,7 @@
 #include "platform/Paths.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -102,7 +102,7 @@ public:
         crossfadesNew.setEnabled (hooks.getGeneral != nullptr);
         crossfadesNew.setToggleState (hooks.getGeneral != nullptr ? hooks.getGeneral().crossfadesInNewProjects : true, juce::dontSendNotification);
         add (crossfadesNew);
-        // LYNX extra (round 190gz, issue #170): Playlist tracks linked to mixer tracks, for this project and new ones
+        // YW extra (round 190gz, issue #170): Playlist tracks linked to mixer tracks, for this project and new ones
         linkTracks.setButtonText (tr ("Link Playlist tracks to mixer tracks (Track N with insert N; mute, solo, volume and pan on linked track headers)"));
         // (round 190ib: switching on lists what it changes and asks first; Cancel leaves the box as the project is)
         linkTracks.onClick = [this] {
@@ -561,8 +561,8 @@ private:
 
     void add()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Add a folder"), juce::File::getSpecialLocation (juce::File::userHomeDirectory));
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+        chooser = yw::ui::makeFileChooser (tr ("Add a folder"), juce::File::getSpecialLocation (juce::File::userHomeDirectory));
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [safe = juce::Component::SafePointer<FolderList> (this)] (const juce::FileChooser& c) {
                                   if (safe == nullptr || ! c.getResult().isDirectory())
                                       return;
@@ -662,7 +662,7 @@ public:
                 host.setPluginFolders (path);
             }, persistent);
 
-        // Round 190fn (decision O1, LYNX's own): FL Studio Mobile's factory content for .flm projects, from the user's own
+        // Round 190fn (decision O1, YW's own): FL Studio Mobile's factory content for .flm projects, from the user's own
         // copy of the app's "Resources" folder (FL's copy, when FL is installed, is searched after these)
         flmResources = std::make_unique<FolderList> (
             tr ("FL Studio Mobile resources"), tr ("Factory sounds for .flm projects: the app's own Resources folder. YW Studio ships none."),
@@ -678,7 +678,7 @@ public:
                     PluginHost::settingsFolder().getChildFile ("flm-resources.txt").replaceWithText (list.joinIntoString ("\n"));
             }, persistent);
 
-        // Round 190pj (issue #241): JSFX scripts. Documents/LYNX/JSFX, the bundled pack and REAPER's Effects folder are
+        // Round 190pj (issue #241): JSFX scripts. Documents/YW/JSFX, the bundled pack and REAPER's Effects folder are
         // always searched; these are the user's other folders
         jsfxFolders = std::make_unique<FolderList> (
             tr ("JSFX folders"), tr ("JSFX scripts are also found in Documents/YW Studio/JSFX, the bundled pack and REAPER's Effects folder."),
@@ -726,7 +726,7 @@ private:
 };
 
 // Round 190jp (design190ia FW-19): FL's Settings tabs, their captions a step larger (type::title, was 7 px caps at
-// type::body) in a 30 px row; the LYNX identity stays (the selected tab lifted, the red underline). LYNX's own tabs come
+// type::body) in a 30 px row; the YW identity stays (the selected tab lifted, the red underline). YW's own tabs come
 // after a 12 px gap, as FL sets apart its Debug / Account / About.
 class SettingsTab final : public juce::TabBarButton
 {
@@ -781,7 +781,7 @@ public:
     }
 };
 
-// Issue #247 (round 190oq), a LYNX extra (FL 2026's Settings have no search): "Find a setting" along the bottom of the
+// Issue #247 (round 190oq), a YW extra (FL 2026's Settings have no search): "Find a setting" along the bottom of the
 // Settings window, as a browser's find bar — type and it jumps to the first setting whose caption, note, section title,
 // list item or tooltip holds the words (any order; the Browser's search syntax: OR, -word, "a phrase"), on whichever page;
 // Enter / F3 and the arrows step through the matches (Shift: back), "3 of 12" counts them, pages without a match dim
@@ -860,7 +860,7 @@ public:
 
     void paintOverChildren (juce::Graphics& g) override
     {
-        // a magnifier in the box and the two arrows (LYNX vectors)
+        // a magnifier in the box and the two arrows (YW vectors)
         const auto b = box.getBounds().toFloat();
         const auto c = juce::Point<float> (b.getX() + 13.0f, b.getCentreY() - 1.0f);
         g.setColour (theme::colour::textSecondary);
@@ -963,7 +963,7 @@ private:
                 t << combo->getItemText (i) << "\n";
         if (auto* tip = dynamic_cast<juce::SettableTooltipClient*> (&c))
             t << "\n" << tip->getTooltip();
-        if (const auto& own = c.getProperties()["lynxSearchText"]; own.isString())
+        if (const auto& own = c.getProperties()["ywSearchText"]; own.isString())
             t << "\n" << own.toString();
         return t;
     }
@@ -1061,7 +1061,7 @@ public:
     {
         tabs.setTabBarDepth (30);
         tabs.setOutline (0);
-        // FL's order (round 190jp, design190ia FW-19: MIDI, Audio, General, File, Theme, Project, Info), then LYNX's own
+        // FL's order (round 190jp, design190ia FW-19: MIDI, Audio, General, File, Theme, Project, Info), then YW's own
         // pages after a gap (Ableton Link, named in full as Ableton's Link integration guidelines ask of other apps)
         const std::pair<SettingsPage, juce::String> order[] = { { SettingsPage::midi, tr ("MIDI") },       { SettingsPage::audio, tr ("Audio") },
                                                                 { SettingsPage::general, tr ("General") }, { SettingsPage::files, tr ("Files") },
@@ -1225,4 +1225,4 @@ std::unique_ptr<juce::Component> makeSettingsPanel (AudioEngine& engine, Setting
 {
     return std::make_unique<SettingsPanel> (engine, page, persistent, std::move (hooks));
 }
-} // namespace lynx
+} // namespace yw

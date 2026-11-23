@@ -11,7 +11,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::chains
+namespace yw::chains
 {
 namespace
 {
@@ -217,4 +217,4 @@ MixerTrack stateOf (const MixerTrack& track, const std::string& name)
     state.chainPreset = name;
     return state;
 }
-} // namespace lynx::chains
+} // namespace yw::chains

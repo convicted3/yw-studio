@@ -4,24 +4,24 @@
 
 namespace p147
 {
-namespace m = lynx::dyn::prism;
+namespace m = yw::dyn::prism;
 inline double dbToGain (double db) { return std::pow (10.0, db / 20.0); }
 inline double gainToDb (double g) { return 20.0 * std::log10 (std::max (g, 1e-12)); }
 
 // a steady sine's gain (dB) through the effect
-inline double toneGain (const lynx::EffectParams& p, double hz)
+inline double toneGain (const yw::EffectParams& p, double hz)
 {
     std::vector<float> x (24000);
     for (std::size_t i = 0; i < x.size(); ++i)
         x[i] = (float) (0.25 * std::sin (2.0 * dyn108::pi * hz * (double) i / dyn108::sr));
-    const auto y = dyn108::run (lynx::EffectKind::prismMultiband, p, x);
+    const auto y = dyn108::run (yw::EffectKind::prismMultiband, p, x);
     return dyn108::rmsDb (y, 12000, 18000) - dyn108::rmsDb (x, 12000, 18000);
 }
 
 // two static bands split at `hz` (24 dB/oct): levels in dB (range 0: no dynamics)
-inline lynx::EffectParams twoBands (double lowDb, double highDb, double hz = 1000.0)
+inline yw::EffectParams twoBands (double lowDb, double highDb, double hz = 1000.0)
 {
-    auto p = dyn108::defaults (lynx::EffectKind::prismMultiband);
+    auto p = dyn108::defaults (yw::EffectKind::prismMultiband);
     p[m::bandCountParam] = m::bandCountValue (2);
     p[m::xover1] = m::crossoverValue (hz);
     for (int b = 0; b < 2; ++b)
@@ -34,7 +34,7 @@ inline lynx::EffectParams twoBands (double lowDb, double highDb, double hz = 100
 
 TEST (prism_measured_dynamic_phase_filters_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     using p147::dbToGain;
     using p147::gainToDb;
     namespace mp = minphase;
@@ -77,7 +77,7 @@ TEST (prism_measured_dynamic_phase_filters_round147)
 
 TEST (prism_measured_dynamic_phase_engine_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // new instances run the measured engine; the text of the switch
     const auto def = makeEffectSlot (EffectKind::prismMultiband).params;
@@ -144,7 +144,7 @@ TEST (prism_measured_dynamic_phase_engine_round147)
 
 TEST (prism_old_projects_keep_classic_dynamic_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // a project written now (every parameter saved) keeps the measured engine
     auto now = makeEffectSlot (EffectKind::prismMultiband);
@@ -166,23 +166,23 @@ TEST (prism_old_projects_keep_classic_dynamic_round147)
 namespace p147
 {
 // one band over the whole spectrum compressing: threshold, ratio, range −30, knee 0 (the trial's settings)
-inline lynx::EffectParams wholeBand (double thresholdDb, double ratio)
+inline yw::EffectParams wholeBand (double thresholdDb, double ratio)
 {
-    auto p = dyn108::defaults (lynx::EffectKind::prismMultiband);
+    auto p = dyn108::defaults (yw::EffectKind::prismMultiband);
     p[m::bandCountParam] = m::bandCountValue (1);
     p[(std::size_t) m::param (0, m::fThreshold)] = m::thresholdValue (thresholdDb);
-    p[(std::size_t) m::param (0, m::fRatio)] = lynx::dyn::crest::ratioValue (ratio);
+    p[(std::size_t) m::param (0, m::fRatio)] = yw::dyn::crest::ratioValue (ratio);
     p[(std::size_t) m::param (0, m::fRange)] = 0.0f; // −30 dB
     p[(std::size_t) m::param (0, m::fKnee)] = 0.0f;
     return p;
 }
 
 // steady gains (dB) of a 200 Hz tone of the given left / right amplitudes: { left, right, mid, side }
-inline std::array<double, 4> stereoGains (const lynx::EffectParams& p, double aL, double aR)
+inline std::array<double, 4> stereoGains (const yw::EffectParams& p, double aL, double aR)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::prismMultiband);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::prismMultiband);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (dyn108::sr);
     fx->reset();
     const int n = 72000;
@@ -212,7 +212,7 @@ inline std::array<double, 4> stereoGains (const lynx::EffectParams& p, double aL
 
 TEST (prism_stereo_link_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     CHECK (m::bandLink0 == 88 && m::count == 157 && (int) effectInfo (EffectKind::prismMultiband).params.size() == m::count);
     CHECK (formatEffectParam (EffectKind::prismMultiband, m::bandLink0, 0.25f, 120.0) == "50%");
@@ -243,7 +243,7 @@ TEST (prism_stereo_link_round147)
 
 TEST (prism_free_sidechain_filter_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // [EXEC] Pro-MB, one band, threshold −60, 2 : 1, range −30: the detector level of a −20 dB probe (from its gain)
     // with a free side-chain filter 2 – 4 kHz: 1 kHz −22.4, 2 kHz +2.1, 3 kHz +5.5, 8 kHz −23.5 dB (relative)
@@ -269,7 +269,7 @@ TEST (prism_free_sidechain_filter_round147)
 
 TEST (prism_promb_expert_translation_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     std::vector<std::pair<int, float>> mb { { 0, 1.0f }, { 1, (float) std::log2 (30.0) }, { 2, 0.5f }, { 3, (float) std::log2 (30000.0) }, { 4, 0.5f },
                                             { 6, 0.5f }, { 8, 0.6f }, { 133, 1.0f }, { 139, 1.0f },
@@ -305,7 +305,7 @@ TEST (prism_promb_expert_translation_round147)
 
 TEST (hush_energy_detector_meter_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     // DeEsser's Energy Detector: Hush's second meter slot carries the detector level the threshold is compared with
     auto slot = makeEffectSlot (EffectKind::hushDeEsser);
     auto fx = makeEffect (slot);
@@ -329,7 +329,7 @@ TEST (hush_energy_detector_meter_round147)
 
 TEST (prism_per_crossover_slopes_round147)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     namespace mp = minphase;
     CHECK (m::xoverSlope0 == 118 && m::count == 157); // (tp172b6: + Audition)
@@ -376,7 +376,7 @@ TEST (prism_per_crossover_slopes_round147)
 // below keeps the law it had, so a saved project only moves if its ratio sits at the very top.
 TEST (prism_ratio_top_is_a_true_limit_round172b6)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     CHECK (m::isInfiniteRatio (1.0f) && ! m::isInfiniteRatio (0.9999f));
     CHECK (dyn::paramText (EffectKind::prismMultiband, m::param (0, m::fRatio), 1.0f) == "\xe2\x88\x9e : 1");
@@ -403,7 +403,7 @@ TEST (prism_ratio_top_is_a_true_limit_round172b6)
 // round tp172b6 [EXEC]: Crest's ratio top limits as Pro-C 3's does; nothing below it moves
 TEST (crest_ratio_top_is_a_true_limit_round172b6)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace c = dyn::crest;
     CHECK (std::abs (c::ratioOf (0.9f) - std::exp (std::log (100.0) * std::pow (0.9f, 2.2))) < 1.0e-6);
     CHECK (c::ratioOf (0.9999f) < 100.0 && c::ratioOf (1.0f) > 1.0e6);
@@ -422,7 +422,7 @@ TEST (crest_ratio_top_is_a_true_limit_round172b6)
 // 24 dB/oct band), whatever its level, range and mix; the Output still applies; a switched-off band still sounds; off, nothing changes
 TEST (prism_audition_round172b6)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     auto p = dyn108::defaults (EffectKind::prismMultiband);
     p[m::bandCountParam] = m::bandCountValue (1);

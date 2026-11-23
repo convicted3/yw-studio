@@ -61,7 +61,7 @@ def translation(lid):
 def site_build():
     """website/_src/build.py as a module: its markdown and the digests of the English bodies."""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("lynx_site_build", BUILD)
+    spec = importlib.util.spec_from_file_location("yw_site_build", BUILD)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

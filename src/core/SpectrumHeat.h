@@ -4,7 +4,7 @@
 // Options › Heatmap › Enabled (REA_rodada166f §2, [SHOT] + [DECOMP]): every frequency column of the graph lit by the
 // long-term level there, through a cold → hot colour ramp (FL: dark violet → red → orange, a 512-colour gradient over
 // its analyser's −96 … 0 dB range), so a band's boost makes its region hotter and a cut colder (it shows the EQ's
-// output). Full height by default, or fading from the top / the bottom. LYNX's own colour ramp and averaging; header
+// output). Full height by default, or fading from the top / the bottom. YW's own colour ramp and averaging; header
 // only, no JUCE (tests/Eq166fTests.inc).
 
 #include <algorithm>
@@ -12,7 +12,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::spectrumheat
+namespace yw::spectrumheat
 {
 constexpr double floorDb = -96.0, topDb = 0.0; // the analyser's range (FL's scope: −96 dB over 96 dB)
 
@@ -23,7 +23,7 @@ inline double heat01 (double db) noexcept
     return std::clamp ((db - floorDb) / (topDb - floorDb), 0.0, 1.0);
 }
 
-// What the heatmap colours (LYNX's take on FL's look, where every column is lit and a tonal peak glows red against a
+// What the heatmap colours (YW's take on FL's look, where every column is lit and a tonal peak glows red against a
 // violet field): the column's level tilted by `dbPerOctave` around `pivotHz` (music falls about 4.5 dB per octave, so the
 // tilt evens it out, like FL's Histogram › Pivot slope), then placed 0 … 1 over `rangeDb` below the loudest column.
 // A +12 dB band therefore moves its region 12 / rangeDb hotter whatever the song's overall level.
@@ -40,7 +40,7 @@ inline double relative01 (double db, double loudestDb, double rangeDb = 48.0) no
 
 struct Rgb { std::uint8_t r, g, b; };
 
-// LYNX's cold → hot ramp: near black, indigo, violet, wine, crimson, orange, pale gold
+// YW's cold → hot ramp: near black, indigo, violet, wine, crimson, orange, pale gold
 inline Rgb colour (double h) noexcept
 {
     struct Stop { double at; double r, g, b; };
@@ -83,4 +83,4 @@ inline double strength (Position p, double y01) noexcept
     const double d = p == Position::top ? y01 : 1.0 - y01;
     return std::clamp (1.0 - d / 0.6, 0.0, 1.0);
 }
-} // namespace lynx::spectrumheat
+} // namespace yw::spectrumheat

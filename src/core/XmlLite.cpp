@@ -4,7 +4,7 @@
 #include <charconv>
 #include <cstdlib>
 
-namespace lynx::xml
+namespace yw::xml
 {
 namespace
 {
@@ -398,4 +398,4 @@ std::string escape (std::string_view text)
         }
     return out;
 }
-} // namespace lynx::xml
+} // namespace yw::xml

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""timbre_score.py - the TIMBRE SCORE of a single note (round 190ni, the quality gate of LYNX Model).
+"""timbre_score.py - the TIMBRE SCORE of a single note (round 190ni, the quality gate of YW Model).
 
 The waveform score (scripts/fxparity.py score(), untouched) needs a waveform null. A physical model never nulls
 against a different recording (phases, the room, the take's noise differ), so the wave score under-rates a good
@@ -332,7 +332,7 @@ def score_pair(ref, cand, sr, f0=None, dur=8.0, partials=16, wave=True):
 
 
 def wave_metrics(r, c, sr):
-    """LYNX's waveform-side measures (scripts/flref_compare.py, scripts/fxparity.py), read-only, when present"""
+    """YW's waveform-side measures (scripts/flref_compare.py, scripts/fxparity.py), read-only, when present"""
     scripts = os.path.normpath(os.path.join(HERE, '..', '..', 'scripts'))
     try:
         sys.path.insert(0, scripts)

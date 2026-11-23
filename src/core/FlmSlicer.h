@@ -1,14 +1,14 @@
 #pragma once
 
-// FL Studio Mobile's "Slicer" module (type 33) as LYNX plays an imported .flm (round 190de). Clean-room: written from
-// the behaviour described in docs/analise/FLM_FORMAT.md §7.7 (static analysis of FLM's FL plugin, laws in LYNX's own
+// FL Studio Mobile's "Slicer" module (type 33) as YW plays an imported .flm (round 190de). Clean-room: written from
+// the behaviour described in docs/analise/FLM_FORMAT.md §7.7 (static analysis of FLM's FL plugin, laws in YW's own
 // words); no Image-Line code, table or sample is used.
 //
 // One sample cut into slices where FLM's onset detector finds hits (or at the file's markers with sensitivity 0);
 // slice i plays on key firstKey + i, every note its own voice (no limit), FLM's drum-pad envelope laws, whole-semitone
 // transposition, linear interpolation, a linear balance and velocity, and an optional choke (MONO).
 //
-// In LYNX the channel is a Sampler channel with the sample and ChannelDef::modelParams = { marker, sensitivity, first
+// In YW the channel is a Sampler channel with the sample and ChannelDef::modelParams = { marker, sensitivity, first
 // key, the module's 7 values }; the rack slices the decoded sample and plays the engine below on it.
 
 #include <cstdint>
@@ -17,7 +17,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 struct SampleData;
@@ -39,4 +39,4 @@ std::vector<std::int64_t> slices (const SampleData& sample, float sensitivity);
 
 std::unique_ptr<Instrument> makeInstrument (std::shared_ptr<const SampleData> sample);
 } // namespace flmslicer
-} // namespace lynx
+} // namespace yw

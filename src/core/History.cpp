@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -296,4 +296,4 @@ std::string describeChangeText (const Song& before, const Song& after)
 
     return text;
 }
-} // namespace lynx
+} // namespace yw

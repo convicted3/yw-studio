@@ -1,6 +1,6 @@
 // Round 190li: the vocal pitch toolkit's CPU pass (core/VocalPitch.cpp: the YIN difference function, the full-rate
-// refinement and the pitch marks' correlation summed lag by lag over linear scratch copies; LYNX Tune's per-sample
-// coefficients once per block). The results are the same to the bit (checked offline with tools/lynxtunelab on the
+// refinement and the pitch marks' correlation summed lag by lag over linear scratch copies; YW Tune's per-sample
+// coefficients once per block). The results are the same to the bit (checked offline with tools/ywtunelab on the
 // vocal lab's phrases); these tests guard what the change could break: scratch buffers carrying state from one call,
 // one instance or one sample rate into the next, and the detector's tracking of a moving pitch.
 
@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "core/Effects.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 #include "core/VocalPitch.h"
 
 namespace t190li
@@ -52,7 +52,7 @@ struct Est
     bool operator== (const Est& o) const { return period == o.period && clarity == o.clarity && voiced == o.voiced; }
 };
 
-std::vector<Est> track (lynx::vocal::PitchDetector& det, const std::vector<float>& x)
+std::vector<Est> track (yw::vocal::PitchDetector& det, const std::vector<float>& x)
 {
     std::vector<Est> out;
     for (const auto v : x)
@@ -61,17 +61,17 @@ std::vector<Est> track (lynx::vocal::PitchDetector& det, const std::vector<float
     return out;
 }
 
-lynx::EffectParams tuneParams()
+yw::EffectParams tuneParams()
 {
-    lynx::EffectParams p {};
-    const auto& info = lynx::lynxtune::info();
+    yw::EffectParams p {};
+    const auto& info = yw::ywtune::info();
     for (std::size_t i = 0; i < info.params.size(); ++i)
         p[i] = info.params[i].defaultValue;
-    p[lynx::lynxtune::scale] = 0.0f; // chromatic
+    p[yw::ywtune::scale] = 0.0f; // chromatic
     return p;
 }
 
-std::vector<float> runTune (lynx::Effect& fx, const std::vector<float>& x, const lynx::EffectParams& p)
+std::vector<float> runTune (yw::Effect& fx, const std::vector<float>& x, const yw::EffectParams& p)
 {
     std::vector<float> l = x;
     for (int i = 0; i < (int) x.size(); i += 256)
@@ -89,7 +89,7 @@ TEST (vocal_pitch_scratch_buffers_keep_no_state_round190li)
     });
     const auto other = t190li::vowel (fs, (int) (0.5 * fs), [] (double) { return 523.0; });
     // the detector: fresh, after other material and a reset, after a prepare at another rate
-    lynx::vocal::PitchDetector a, b, c;
+    yw::vocal::PitchDetector a, b, c;
     a.prepare (fs, 80.0, 1000.0, 139);
     b.prepare (fs, 80.0, 1000.0, 139);
     c.prepare (96000.0, 55.0, 700.0, 278);
@@ -101,9 +101,9 @@ TEST (vocal_pitch_scratch_buffers_keep_no_state_round190li)
     CHECK (! ea.empty());
     CHECK (ea == eb);
     CHECK (ea == ec);
-    // LYNX Tune (detector + marks + grains): fresh, and after other material and a reset — the same output to the bit
+    // YW Tune (detector + marks + grains): fresh, and after other material and a reset — the same output to the bit
     const auto p = t190li::tuneParams();
-    auto f1 = lynx::lynxtune::make (&p), f2 = lynx::lynxtune::make (&p);
+    auto f1 = yw::ywtune::make (&p), f2 = yw::ywtune::make (&p);
     f1->prepare (fs);
     f2->prepare (fs);
     t190li::runTune (*f2, other, p);
@@ -124,7 +124,7 @@ TEST (vocal_pitch_detector_follows_a_glide_round190li)
     {
         auto f0 = [] (double t) { return 200.0 * std::pow (1.5, std::clamp ((t - 0.1) / 0.5, 0.0, 1.0)); };
         const auto x = t190li::vowel (fs, (int) (0.8 * fs), f0);
-        lynx::vocal::PitchDetector det;
+        yw::vocal::PitchDetector det;
         const auto hop = (int) std::lround (128.0 * fs / 44100.0);
         det.prepare (fs, 80.0, 1000.0, hop);
         det.setHarmonicGuard (true);

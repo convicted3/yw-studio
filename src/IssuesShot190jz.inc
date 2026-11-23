@@ -1,9 +1,9 @@
     // --issueshot190jz <prefix> (round 190jz, issues #192, #194, #195): the docked Browser and the maximize area in the three
     // layouts (left, closed, right, panels that follow the free area), the audio clip fade handles as the mouse shows them
     // (FL 2026: small triangles in the waveform's colour on hover, white when hovered, the tension circle), the fade hints,
-    // the tension menu and Settings › LYNX extras with the W switch. <prefix>-checks.txt lists what was checked. Included in
-    // the app class of Main.cpp (it uses savePng / saveMenus / writeWaveDemo / lookAndFeel). @150: LYNX_SHOT_SCALE=1.5 and
-    // LYNX_SHOT_SUFFIX=@150.
+    // the tension menu and Settings › YW extras with the W switch. <prefix>-checks.txt lists what was checked. Included in
+    // the app class of Main.cpp (it uses savePng / saveMenus / writeWaveDemo / lookAndFeel). @150: YW_SHOT_SCALE=1.5 and
+    // YW_SHOT_SUFFIX=@150.
     bool runIssuesShot190jz (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
@@ -13,7 +13,7 @@
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         using workspace::Panel;
         const auto text = [] (juce::Rectangle<int> r) { return r.toString(); };
 

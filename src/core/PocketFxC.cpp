@@ -13,7 +13,7 @@
 // (module 8) and Spreader (module 44), rebuilt from REA_rodada182c.md "F5 effects, round 189h" (clean-room: FLM's laws
 // restated as formulas, no Image-Line code or data). Single precision like FLM, except where FLM itself uses doubles.
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -829,4 +829,4 @@ std::string spreaderParamText (int param, float v)
         default: return base (v);
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

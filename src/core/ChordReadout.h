@@ -1,14 +1,14 @@
 #pragma once
 
 // The chord panel's names and timing (FL 2026's Chord detection toolbar panel; behaviour measured in
-// docs/analise/REA_rodada181b.md, LYNX's own code). No JUCE, no threads: the UI feeds it and shows what it says.
+// docs/analise/REA_rodada181b.md, YW's own code). No JUCE, no threads: the UI feeds it and shows what it says.
 
 #include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
 
-namespace lynx::chordread
+namespace yw::chordread
 {
 constexpr const char* noChord = "---";
 constexpr int minKeys = 2, maxKeys = 10;
@@ -64,4 +64,4 @@ private:
     std::string shown = noChord, next;
     std::array<std::vector<int>, channels> keys;
 };
-} // namespace lynx::chordread
+} // namespace yw::chordread

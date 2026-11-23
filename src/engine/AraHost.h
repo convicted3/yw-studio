@@ -23,7 +23,7 @@
 
 #include "core/AraLink.h"
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 class PluginHost;
@@ -85,7 +85,7 @@ private:
     std::unique_ptr<Impl> impl;
     juce::String error;
 };
-// LYNX --aratest (engine/AraTest.cpp, round 190kx): the ARA hosting end to end with `pluginFile`; "OK" or "ERROR ..."
+// YW --aratest (engine/AraTest.cpp, round 190kx): the ARA hosting end to end with `pluginFile`; "OK" or "ERROR ..."
 juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio, const juce::File& out, const juce::File& project,
                           const std::function<void (const juce::String&)>& log);
-} // namespace lynx
+} // namespace yw

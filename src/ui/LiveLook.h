@@ -3,7 +3,7 @@
 // Round 190jn (design190ia slices 13, 17, 19, 25): the small parts of Ableton Live 12.4's look that the Clip-launch
 // layout's views share — the open-ring knob, the power disc and the round title-bar wells. Measured in Live 12.4 (Dark
 // theme, 100 %) on design190ia/shots/ref/live-session.png (Utility card 1075..1213 × 807..995), round 190ei's
-// mn_drumrack-choke-menu.png (909 Core Kit) and round 183a's d02-utility-off.png. Drawn with LYNX vectors; only the
+// mn_drumrack-choke-menu.png (909 Core Kit) and round 183a's d02-utility-off.png. Drawn with YW vectors; only the
 // Clip-launch layout in Live's look (theme::livelook::active()) calls these.
 
 #include <cmath>
@@ -12,15 +12,15 @@
 
 #include "ui/Theme.h"
 
-namespace lynx::theme
+namespace yw::theme
 {
 // Live's knobs drawn from cached tiles (Theme.cpp, as theme::drawKnob: on Windows each arc drawn straight is a new
 // Direct2D path geometry): `direct` paints one (bounds, value, default) into the tile; `style` keeps the kinds apart.
 void drawLiveKnobTile (juce::Graphics& g, juce::Rectangle<float> bounds, float value01, float default01, int style,
                        void (*direct) (juce::Graphics&, juce::Rectangle<float>, float, float));
-} // namespace lynx::theme
+} // namespace yw::theme
 
-namespace lynx::theme::livelook
+namespace yw::theme::livelook
 {
 inline const juce::Colour knobValue { 0xff03c3d5 };  // a knob's value arc (909 Core Kit Low Gain / Tune / Decay)
 inline const juce::Colour needle { 0xff181818 };     // a knob's needle
@@ -147,4 +147,4 @@ inline juce::Colour drawWell (juce::Graphics& g, juce::Rectangle<float> r, bool 
     g.fillEllipse (r.reduced (1.0f));
     return ! enabled ? surface : lit ? ink : text;
 }
-} // namespace lynx::theme::livelook
+} // namespace yw::theme::livelook

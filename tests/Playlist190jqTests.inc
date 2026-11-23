@@ -7,9 +7,9 @@ namespace playlist190jq
 {
 // Lead on instrument track 1; its volume envelope as clips on track 5 (twice) and track 7; a tempo clip on track 6; the
 // Lead volume clip also on track 8 together with the tempo clip (a mixed track); a pattern clip on track 0
-inline lynx::Song songWithEnvelopes()
+inline yw::Song songWithEnvelopes()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.playlist.clear();
     s.channels.clear();
@@ -49,7 +49,7 @@ inline lynx::Song songWithEnvelopes()
 
 TEST (playlist190jq_header_width)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto saved = std::pair (headerwidth::draggable, headerwidth::extra);
     headerwidth::draggable = false;
     headerwidth::extra = 80;
@@ -75,7 +75,7 @@ TEST (playlist190jq_header_width)
 
 TEST (playlist190jq_pointer_click)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto saved = std::pair (pointerclick::buttonShown, pointerclick::on);
     using P = pointerclick::EmptyPress;
     // off: the Pencil and the Brush place the clip (FL)
@@ -101,7 +101,7 @@ TEST (playlist190jq_pointer_click)
 
 TEST (playlist190jq_clip_lanes_projection)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = playlist190jq::songWithEnvelopes();
     // off: every track on its own row
     {
@@ -147,7 +147,7 @@ TEST (playlist190jq_clip_lanes_projection)
 
 TEST (playlist190jq_clip_lanes_moves)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = playlist190jq::songWithEnvelopes();
     const auto p = cliplanes::project (s, 12, true);
     // rows: 0, 1, [5, 7], 2, 3, 4, 6, 8...

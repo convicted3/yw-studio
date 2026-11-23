@@ -5,7 +5,7 @@
 
 TEST (details190im_meter_bank_activity_peaks_are_a_reader_of_their_own)
 {
-    using namespace lynx;
+    using namespace yw;
     MeterBank bank;
     bank.accumulate (5, 0.5f, 0.25f);
     CHECK (bank.takePeak (5, 0) == 0.5f);         // the Mixer takes its peak...
@@ -19,7 +19,7 @@ TEST (details190im_meter_bank_activity_peaks_are_a_reader_of_their_own)
 
 TEST (details190im_deactivated_grid_clip_stays_silent)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace grid181a;
     CHECK (ClipGridSlot {}.active); // (the default: projects saved before stay active)
     auto song = patternSong();
@@ -51,7 +51,7 @@ TEST (details190im_deactivated_grid_clip_stays_silent)
 
 TEST (details190im_live_keys_0_and_ctrl_e_only_in_clip_launch)
 {
-    using namespace lynx;
+    using namespace yw;
     using layoutstyle::Style;
     using sessionkeys::Command;
     for (const auto c : { Command::gridDeactivateClip, Command::splitClips })

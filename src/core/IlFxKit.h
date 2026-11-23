@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::ilfx
+namespace yw::ilfx
 {
 constexpr float tiny9 = 1e-9f;
 
@@ -906,4 +906,4 @@ struct ReverbT
 using LpBiquad = LpBiquadT<PlainCrt>;
 using Reverb = ReverbT<PlainCrt>;
 using EqBand = EqBandT<PlainCrt>;
-} // namespace lynx::ilfx
+} // namespace yw::ilfx

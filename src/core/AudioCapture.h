@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class AudioCapture
 {
@@ -85,4 +85,4 @@ private:
     std::atomic<std::uint64_t> writeIndex { 0 }, readIndex { 0 };
     std::atomic<int> dropped { 0 };
 };
-} // namespace lynx
+} // namespace yw

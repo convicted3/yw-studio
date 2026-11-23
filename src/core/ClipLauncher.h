@@ -27,7 +27,7 @@
 #include "core/Scheduler.h"
 #include "core/Song.h"
 
-namespace lynx::launcher
+namespace yw::launcher
 {
 constexpr int maxTracks = 500;  // the Playlist's tracks
 constexpr int maxScenes = 1000;
@@ -301,4 +301,4 @@ public:
 // then the grid's passes; ends what was cut. `clock` advances. Audio thread; `index` the song's schedule index.
 void playBlock (Runtime& runtime, const Song& song, const ClipGrid& grid, const GridIndex& gridIndex, double startTick, int numSamples,
                 double tps, EventBuffer& out, bool resume, const ScheduleIndex* index, bool wrap, bool chase, ScheduledNotes& notes) noexcept;
-} // namespace lynx::launcher
+} // namespace yw::launcher

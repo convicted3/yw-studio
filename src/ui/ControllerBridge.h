@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX as a MIDI controller profile sees it (round 190aw): the app's side of controller::Surface
+// YW as a MIDI controller profile sees it (round 190aw): the app's side of controller::Surface
 // (core/ControllerSession.h). Values go through the same path as MIDI links (AudioEngine::applyTargetValues), buttons
 // through the main window's actions, so a controller does exactly what the mouse and the shortcuts do.
 
@@ -12,7 +12,7 @@
 #include "core/ValueMath.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 class ControllerBridge final : public controller::Surface
 {
@@ -77,4 +77,4 @@ private:
     int batch = 0;
     controls::TapTempo taps;
 };
-} // namespace lynx
+} // namespace yw

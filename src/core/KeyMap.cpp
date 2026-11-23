@@ -7,7 +7,7 @@
 #include <cstring>
 #include <iterator>
 
-namespace lynx::keys
+namespace yw::keys
 {
 namespace
 {
@@ -58,7 +58,7 @@ std::vector<Action> makeActions()
         // FL 2026 in round 190jz (shots fl-195-*): the Playlist and the Piano roll take Home, also while playing (the song
         // goes on from its start); with the Mixer or the Channel rack focused it does nothing. FL's ShortcutsModule has no
         // action for it: those two windows take the key themselves. The global action has no key of its own (bind one in
-        // the shortcut editor; LYNX's W extra runs it).
+        // the shortcut editor; YW's W extra runs it).
         { "transport.toStart", TR_NOOP ("Move the playback marker to the start of the song or pattern"), Context::global, {} },
         { "transport.toggleMode", TR_NOOP ("Pattern / song mode"), Context::global, { chord ('L') }, true },
         { "transport.nextMarker", TR_NOOP ("Jump to the next song marker (Quantize song jumps while playing)"), Context::global, { chord (numpadMultiply, alt) } },
@@ -95,7 +95,7 @@ std::vector<Action> makeActions()
         // F10 / F11 toggle like FL's (round 167o, settingsKeyPress): Settings on another page switches to this one
         { "view.midiSettings", TR_NOOP ("MIDI settings (press again to close)"), Context::global, { chord (f10) } },
         { "view.projectInfo", TR_NOOP ("Project info (press again to close)"), Context::global, { chord (f11) } },
-        // Issue #181 (LYNX's own, beside FL's F10 / F11): Ctrl+, (Cmd+, on macOS), the settings key of most apps. It opens
+        // Issue #181 (YW's own, beside FL's F10 / F11): Ctrl+, (Cmd+, on macOS), the settings key of most apps. It opens
         // Settings on the page shown last (General at first) and closes it when it is open.
         { "view.settings", TR_NOOP ("Settings (press again to close)"), Context::global, { chord (',', ctrl) } },
         { "view.closeWindows", TR_NOOP ("Close all windows (plugins, channel settings, tools)"), Context::global, { chord (f12) } },
@@ -116,10 +116,10 @@ std::vector<Action> makeActions()
         // FL's AlignAllChannelEditorsAction, ShortCut 8315 = Shift+F12 (round 169k)
         { "view.alignChannelEditors", TR_NOOP ("Align all channel editors"), Context::global, { chord (f12, shift) } },
         { "view.touchKeyboard", TR_NOOP ("Show or hide the Touch keyboard"), Context::global, { chord (f7, alt) } },
-        // round 190nw (0.1.31): LYNX's tracker editor (a view of the patterns' notes). Round 190ob: Shift+F7, beside FL's
+        // round 190nw (0.1.31): YW's tracker editor (a view of the patterns' notes). Round 190ob: Shift+F7, beside FL's
         // F7 (Piano roll), the other view of the same notes. FL 2026 has no Shift+F7: its ShortcutsModule binds none
         // (DFM dump of round 167j: F7 Piano roll, Alt+F7 Touch controller only) and FL did nothing on it in the live
-        // check (round 190ob, /mnt/e/lynx-work/190ob); no LYNX key uses it in any context.
+        // check (round 190ob, /mnt/e/yw-work/190ob); no YW key uses it in any context.
         { "view.tracker", TR_NOOP ("Show or hide the Tracker (the pattern's notes as rows and channels)"), Context::global, { chord (f7, shift) } },
         { "panel.maximisePlaylist", TR_NOOP ("Maximize or restore the Playlist"), Context::global, { chord (enter) } },
 
@@ -148,7 +148,7 @@ std::vector<Action> makeActions()
         { "record.punch", TR_NOOP ("Punch in/out on the loop region on/off"), Context::global, {} },
         { "record.quickAudio", TR_NOOP ("Record audio now: arm the selected insert and record (press again to stop)"), Context::global, { chord ('R', shift) } },
         { "record.captureMidi", TR_NOOP ("Capture MIDI: the notes just played without recording into the pattern"), Context::global, { chord ('R', ctrl | shift | alt) } },
-        // LYNX extra (round 190op, P7; Live 13's "Capture Automation"): no default key, FL's and Live 12's lists stay free
+        // YW extra (round 190op, P7; Live 13's "Capture Automation"): no default key, FL's and Live 12's lists stay free
         { "record.captureAutomation", TR_NOOP ("Capture automation: the moves just made without recording become automation"), Context::global, {} },
 
         // files and history
@@ -182,19 +182,19 @@ std::vector<Action> makeActions()
         { "edit.undoBackwards", TR_NOOP ("Undo backwards"), Context::global, { chord ('Z', ctrl | alt) } },
         { "edit.redo", TR_NOOP ("Redo"), Context::global, { chord ('Y', ctrl), chord ('Z', ctrl | shift) } },
         // FL's Tools › Macros › Stop sound (MacroStopSoundAction, Ctrl+H; round 170h2): the Undo history moved to
-        // Ctrl+Alt+H, free in FL and in LYNX
+        // Ctrl+Alt+H, free in FL and in YW
         { "edit.history", TR_NOOP ("Undo history"), Context::global, { chord ('H', ctrl | alt) } },
         { "tools.stopSound", TR_NOOP ("Stop sound (all notes off)"), Context::global, { chord ('H', ctrl) } },
         { "help.shortcuts", TR_NOOP ("Shortcut sheet (press again to close)"), Context::global, { chord (f1) } },
-        // #228 (round 190nq, LYNX extra): the action search. "?" opens it wherever the Clip-launch Info View (Live's "?")
+        // #228 (round 190nq, YW extra): the action search. "?" opens it wherever the Clip-launch Info View (Live's "?")
         // doesn't use the key (MainComponent::keyPressed); no other key until the user gives it one
         { "help.searchActions", TR_NOOP ("Search every YW Studio action and run it"), Context::global, {} },
-        // round 190on (research190oe P2, owner decision O-2): the command palette — the same box with the menus, the LYNX
+        // round 190on (research190oe P2, owner decision O-2): the command palette — the same box with the menus, the YW
         // extras, the Settings pages and the recent projects. O-2's keys are all taken: Ctrl+Shift+P is FL's "Open in
         // project browser" (its Patterns menu; live check 190on), Ctrl+Shift+Space starts FL's playback (live check) and
         // is Live 12's "Move Insert Marker to Playhead Position", Ctrl+Alt+P Live's "Hide/Show Open Plug-In Windows". The
         // first free one: Ctrl+Shift+Y — in no list of Live 12's (its manual's chapter 42), nothing in FL 2026 with the
-        // Playlist, Channel rack, Piano roll, Mixer or Browser focused (live check 190on), free in LYNX
+        // Playlist, Channel rack, Piano roll, Mixer or Browser focused (live check 190on), free in YW
         { "view.commandPalette", TR_NOOP ("Command palette: find and run any command, menu item, YW Studio extra or setting"), Context::global, { chord ('Y', ctrl | shift) } },
         { "browser.search", TR_NOOP ("Search the Browser"), Context::global, { chord ('F', ctrl) } },
 
@@ -260,7 +260,7 @@ std::vector<Action> makeActions()
         { "pianoRoll.articulate", TR_NOOP ("Articulate..."), Context::pianoRoll, { chord ('L', alt) } },
         { "pianoRoll.riffMachine", TR_NOOP ("Riff machine..."), Context::pianoRoll, { chord ('E', alt) } },
         { "pianoRoll.chordProgression", TR_NOOP ("Generate chord progression..."), Context::pianoRoll, { chord ('P', alt) } },
-        // LYNX's Chord helper (round 190mc, discussion #105): no key of its own (FL has no such tool; the user may give it one)
+        // YW's Chord helper (round 190mc, discussion #105): no key of its own (FL has no such tool; the user may give it one)
         { "pianoRoll.chordHelper", TR_NOOP ("Chord helper..."), Context::pianoRoll, {} },
         // FL's "Run last script again" (Piano roll scripts, round 190as)
         { "pianoRoll.runLastScript", TR_NOOP ("Run last script again"), Context::pianoRoll, { chord ('Y', ctrl | alt) } },
@@ -326,7 +326,7 @@ std::vector<Action> makeActions()
         { "pianoRoll.tool.zoom", TR_NOOP ("Tool: Zoom"), Context::pianoRoll, { chord ('Z') } },
         { "pianoRoll.tool.listen", TR_NOOP ("Tool: Playback"), Context::pianoRoll, { chord ('Y') } },
         { "pianoRoll.slide", TR_NOOP ("Slide notes on/off (new notes)"), Context::pianoRoll, { chord ('S') } },
-        // round 190an (LYNX's own option; FL has none, so no key by default): the Piano roll's Snap to scale switch
+        // round 190an (YW's own option; FL has none, so no key by default): the Piano roll's Snap to scale switch
         { "pianoRoll.scaleSnap", TR_NOOP ("Snap notes to the scale on/off"), Context::pianoRoll, {} },
         { "pianoRoll.previousChannel", TR_NOOP ("Previous channel"), Context::pianoRoll, { chord ('G') } },
         { "pianoRoll.nextChannel", TR_NOOP ("Next channel"), Context::pianoRoll, { chord ('K') } },
@@ -346,20 +346,20 @@ std::vector<Action> makeActions()
         { "playlist.ripple", TR_NOOP ("Ripple editing on/off"), Context::playlist, { chord ('S', shift) } },
         // FL's Playlist › Edit › "Automatic crossfades (current project)" (round 166e)
         { "playlist.autoCrossfades", TR_NOOP ("Automatic crossfades (current project) on/off"), Context::playlist, {} },
-        // LYNX extra (round 190gz, issue #170): Playlist tracks linked to mixer tracks
+        // YW extra (round 190gz, issue #170): Playlist tracks linked to mixer tracks
         { "playlist.linkTracks", TR_NOOP ("Link Playlist tracks to mixer tracks (current project) on/off"), Context::playlist, {} },
-        // LYNX extra (round 190ht, issue #154): the linked headers list their mixer track's insert effects
+        // YW extra (round 190ht, issue #154): the linked headers list their mixer track's insert effects
         { "playlist.trackInserts", TR_NOOP ("Show insert effects on linked tracks on/off"), Context::playlist, {} },
-        // LYNX extra (round 190op, P4): hidden Playlist tracks
+        // YW extra (round 190op, P4): hidden Playlist tracks
         { "playlist.showHiddenTracks", TR_NOOP ("Show hidden tracks on/off"), Context::playlist, {} },
         { "playlist.hideUnusedTracks", TR_NOOP ("Hide unused tracks"), Context::playlist, {} },
         // FL's legacy Pattern Blocks (round 170f, issue #60)
         { "playlist.patternBlocks", TR_NOOP ("Pattern blocks (current project) on/off"), Context::playlist, {} },
         { "playlist.automationLanes", TR_NOOP ("Automation lanes on/off"), Context::playlist, {} },
-        // LYNX extra (round 190iu, issue #186): the wheel scrolls over the track headers and zooms over the arrangement
+        // YW extra (round 190iu, issue #186): the wheel scrolls over the track headers and zooms over the arrangement
         { "playlist.wheelZones", TR_NOOP ("Wheel: scroll over the track headers, zoom over the arrangement on/off"), Context::playlist, {} },
         { "editing.tempTools", TR_NOOP ("Hold a tool key for a temporary tool on/off"), Context::playlist, {} },
-        // LYNX extras (round 190jq: issues #191, #191.3, #164)
+        // YW extras (round 190jq: issues #191, #191.3, #164)
         { "playlist.pointerClick", TR_NOOP ("Pointer click (a click on an empty spot selects and moves the song position) on/off"), Context::playlist, {} },
         { "playlist.clipLanes", TR_NOOP ("Automation clips as lanes under their tracks on/off"), Context::playlist, {} },
         { "playlist.headerWidth", TR_NOOP ("Drag the track header column's right edge to widen it on/off"), Context::playlist, {} },
@@ -375,7 +375,7 @@ std::vector<Action> makeActions()
         { "playlist.swipeSelectionToComp", TR_NOOP ("Send the time selection of the take lane to its comp"), Context::playlist, {} },
         { "playlist.timePrevious", TR_NOOP ("Select previous time"), Context::playlist, { chord (left, ctrl) } },
         { "playlist.timeNext", TR_NOOP ("Select next time"), Context::playlist, { chord (right, ctrl) } },
-        // round 190on (research190oe P8, core/TransientNav.h): Pro Tools' Tab to transient, a LYNX extra. No default key in
+        // round 190on (research190oe P8, core/TransientNav.h): Pro Tools' Tab to transient, a YW extra. No default key in
         // any layout: Tab is FL's (Pattern), Shift+Tab Live's clip / device switch (Clip-launch), Alt+Left / Right the
         // Playlist's nudge (Simple's tracks are the Playlist's); the user picks keys in the Shortcut manager
         { "playlist.nextTransient", TR_NOOP ("Song position to the next transient of the selected audio clips"), Context::playlist, {} },
@@ -747,7 +747,7 @@ struct TypingLayout
 
 // The printable keys of FL's .scr files, in their line order (FL reads a file's lines as the scan codes 2..0x35 of a US
 // keyboard: number row, Q row, A row with ` , \ then the Z row; the Backspace, Tab, Enter, Ctrl / Caps and Shift lines
-// are FREE in every file, so they are left out). LYNX matches the keys by character.
+// are FREE in every file, so they are left out). YW matches the keys by character.
 constexpr char layoutKeys[] = "1234567890-=QWERTYUIOP[]ASDFGHJKL;'`\\ZXCVBNM,./";
 
 // FL 2026's System/Config/Typing to piano/*.scr, written as data (note names converted with C5 = 60), in the order of
@@ -1206,4 +1206,4 @@ std::string KeyMap::overridesJson() const
     return out + (first ? "}\n" : "\n}\n");
 }
 
-} // namespace lynx::keys
+} // namespace yw::keys

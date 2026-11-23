@@ -43,8 +43,8 @@ inline std::vector<std::uint8_t> arrangementFile (int index, int zoom, float tra
 
 TEST (pat6_190oo_row_height_from_fl_vertical_zoom)
 {
-    using namespace lynx;
-    // the mapping: FL's new project and Thief, LYNX's limits, and back
+    using namespace yw;
+    // the mapping: FL's new project and Thief, YW's limits, and back
     CHECK (polish::flRowHeightForZoom (16) == 48 && polish::flRowHeightForZoom (5) == 26 && polish::flRowHeightForZoom (0) == 16);
     CHECK (polish::flRowHeightForZoom (-3) == 16 && polish::flRowHeightForZoom (100000) == polish::maxTrackHeight);
     CHECK (polish::flZoomForRowHeight (48) == 16 && polish::flZoomForRowHeight (26) == 5 && polish::flZoomForRowHeight (38) == 11);
@@ -76,7 +76,7 @@ TEST (pat6_190oo_row_height_from_fl_vertical_zoom)
         CHECK (flp::parseProject (bytes).arrangements[0].rowZoom == -1);
     }
 
-    // LYNX's export writes the song's row as FL's zoom (new songs: 16, FL 2026's own), and it comes back
+    // YW's export writes the song's row as FL's zoom (new songs: 16, FL 2026's own), and it comes back
     {
         auto song = Song::makeDefault();
         flpexport::Options options;

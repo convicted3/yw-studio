@@ -9,16 +9,16 @@
 #include "core/ScriptDialogPy.h"
 #include "pocketpy.h"
 
-namespace lynx::prscript
+namespace yw::prscript
 {
 namespace
 {
 // ---------------------------------------------------------------------------------------------------------------
 // The flpianoroll module (Python side), written from FL's published Piano roll script reference and the behaviour of
-// FL's engine (docs/analise/REA_rodada190as-pyscript.md); LYNX's own code. `_data` (the score as the run starts) is
+// FL's engine (docs/analise/REA_rodada190as-pyscript.md); YW's own code. `_data` (the score as the run starts) is
 // set by the host before this source runs; _export() hands the result back.
 constexpr const char* moduleSource = R"PY(
-import _lynxpr as _h
+import _ywpr as _h
 
 def _i(x):
     if isinstance(x, float):
@@ -205,7 +205,7 @@ class Pattern:
             index += 1
         return index
     def loadScoreFromFile(self, *args):
-        raise RuntimeError('loadScoreFromFile is not available in LYNX SHARE (scripts cannot read files)')
+        raise RuntimeError('loadScoreFromFile is not available in YW Studio (scripts cannot read files)')
 
 class TUtils:
     def ShowMessage(self, msg):
@@ -492,7 +492,7 @@ bool readResult (Score& sc, std::string& error)
 
 bool installModule (const Score& score, std::string& error)
 {
-    py_GlobalRef host = py_newmodule ("_lynxpr");
+    py_GlobalRef host = py_newmodule ("_ywpr");
     py_bindfunc (host, "msg", nMsg);
     py_bindfunc (host, "log", nLog);
     scriptform::bindExecute (host);
@@ -551,7 +551,7 @@ Outcome run (const std::string& source, Score& score, const std::vector<Form>& a
             {
                 // FL's preview style: the form createDialog() returns, then apply(form) with its values
                 const bool hasApply = py_getglobal (py_name ("apply")) != nullptr;
-                const std::string driver = std::string ("import flpianoroll as __lynx_fl\n__lynx_fl._drive(createDialog, ") + (hasApply ? "apply" : "None") + ")\n";
+                const std::string driver = std::string ("import flpianoroll as __yw_fl\n__yw_fl._drive(createDialog, ") + (hasApply ? "apply" : "None") + ")\n";
                 ok = py_exec (driver.c_str(), "<script>", EXEC_MODE, nullptr);
             }
             if (! ok)
@@ -677,7 +677,7 @@ std::vector<int> apply (Pattern& pattern, int channel, const Score& score)
         n.channel = channel;
         n.key = std::clamp (s.number, 0, 127);
         n.start = std::clamp<std::int64_t> (s.time, 0, INT32_MAX);
-        n.length = std::clamp<std::int64_t> (s.length, 1, INT32_MAX); // (FL keeps 0; a LYNX note is at least a tick long)
+        n.length = std::clamp<std::int64_t> (s.length, 1, INT32_MAX); // (FL keeps 0; a YW note is at least a tick long)
         n.group = std::clamp (s.group, 0, 0xffff);
         // FL stores pan, velocity and release as value * 128 in a byte, Mod X / Y as value * 255 (REA §4)
         n.pan = (float) (std::clamp (stored (s.pan, 128.0), 0.0, 1.0) * 2.0 - 1.0);
@@ -721,10 +721,10 @@ std::vector<int> apply (Pattern& pattern, int channel, const Score& score)
     return selected;
 }
 
-// ------------------------------------------------------------------------------------------------- LYNX's scripts
+// ------------------------------------------------------------------------------------------------- YW's scripts
 const std::vector<Builtin>& builtins()
 {
-    // LYNX's own small scripts (not FL's): examples of the API that also do something useful
+    // YW's own small scripts (not FL's): examples of the API that also do something useful
     static const std::vector<Builtin> list = {
         { "Velocity ramp", R"PY(import flpianoroll as flp
 
@@ -820,4 +820,4 @@ def apply(form):
     };
     return list;
 }
-} // namespace lynx::prscript
+} // namespace yw::prscript

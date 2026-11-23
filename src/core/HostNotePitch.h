@@ -12,9 +12,9 @@
 // - VST3 (0x84d0e0): the same key, and the rest as the note on's tuning, (pitch − key) · 100 cents — a note at +70
 //   cents goes out one key up, 30 cents flat;
 // - CLAP (0x85e160): the key is Trunc(pitch) (cvttsd2si), no tuning and no note expression event. (FL's CLAP note off,
-//   0x85e280, rounds instead, so a note at +50…+99 cents ends on another key than it started; LYNX ends it on its own.)
+//   0x85e280, rounds instead, so a note at +50…+99 cents ends on another key than it started; YW ends it on its own.)
 // Pan is never sent: no VST3 note expression, no CLAP expression, no MIDI pan per note (FL 2026).
-namespace lynx::hostpitch
+namespace yw::hostpitch
 {
 struct Sent
 {
@@ -100,8 +100,8 @@ struct SentKeys
             t.tuned = 0;
     }
 
-    // Round 190fg: which LYNX note (NoteEvent::noteId, 0 = none) each note on and note off that went out on MIDI
-    // channel 1 belongs to, per key sent, in the order they went out. The patched VST3 host (cmake/LynxPatchJuce.cmake
+    // Round 190fg: which YW note (NoteEvent::noteId, 0 = none) each note on and note off that went out on MIDI
+    // channel 1 belongs to, per key sent, in the order they went out. The patched VST3 host (cmake/YwPatchJuce.cmake
     // fix 26) converts the block's MIDI in the same order and takes one tag per note on / off, so a note off ends the
     // VST3 note id of its own note on: of a long note with a short one of the same key inside it, the short note's end
     // ends the short note (fix 14 alone gave it the long note's id). Every note on / off written on channel 1 queues
@@ -154,8 +154,8 @@ private:
 
 // Round 190ad: the MIDI velocity of a note on in a project with FL's levels (Song::flPluginLevels). Fruity Wrapper's
 // voice (0x879a00, REA_rodada190ad.md §2) sends Round(velocity · 128) (single precision product, ties to even),
-// clamped to 0…127: an FL note at velocity 100 (100 / 128) goes out as 100; LYNX's own law, JUCE's round(127 v), gives
-// 99. FL lets it reach 0; LYNX keeps a note on at 1 or more, as a velocity 0 note on is a note off on the wire (no
+// clamped to 0…127: an FL note at velocity 100 (100 / 128) goes out as 100; YW's own law, JUCE's round(127 v), gives
+// 99. FL lets it reach 0; YW keeps a note on at 1 or more, as a velocity 0 note on is a note off on the wire (no
 // .flp note gets there: its lowest velocity byte is 1).
 inline int flWrapperVelocity (float velocity) noexcept
 {
@@ -164,4 +164,4 @@ inline int flWrapperVelocity (float velocity) noexcept
     const auto v = (int) std::nearbyint ((double) (std::min (velocity, 1.0f) * 128.0f));
     return v < 1 ? 1 : (v > 127 ? 127 : v);
 }
-} // namespace lynx::hostpitch
+} // namespace yw::hostpitch

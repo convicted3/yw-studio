@@ -7,9 +7,9 @@
 
 namespace
 {
-lynx::Note n153 (std::int64_t start, std::int64_t length, int key, int colour = 0, bool muted = false)
+yw::Note n153 (std::int64_t start, std::int64_t length, int key, int colour = 0, bool muted = false)
 {
-    lynx::Note n;
+    yw::Note n;
     n.start = start;
     n.length = length;
     n.key = key;
@@ -35,7 +35,7 @@ TEST (rea153_flp_note_colour_is_imported)
         pat.notes.push_back (n);
     }
     p.patterns.push_back (pat);
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (song.patterns.size() == 1);
     if (song.patterns.size() == 1 && song.patterns[0].notes.size() == 3)
     {
@@ -48,8 +48,8 @@ TEST (rea153_flp_note_colour_is_imported)
 
 TEST (rea153_select_helpers_follow_fls_select_menu)
 {
-    using namespace lynx::notetools;
-    lynx::Pattern p;
+    using namespace yw::notetools;
+    yw::Pattern p;
     p.notes = { n153 (0, 96, 60, 1), n153 (0, 96, 64, 2), n153 (96, 96, 60, 1, true), n153 (192, 96, 60),
                 n153 (192, 96, 60),          // exact duplicate of note 3: stacked
                 n153 (200, 40, 60),          // inside note 3: stacked and overlapping
@@ -71,12 +71,12 @@ TEST (rea153_select_helpers_follow_fls_select_menu)
     setColour (p, { 3, 4 }, 9);
     CHECK (p.notes[3].colour == 9 && p.notes[4].colour == 9 && p.notes[5].colour == 0);
     setColour (p, { 0 }, 40);
-    CHECK (p.notes[0].colour == lynx::noteColourCount - 1);
+    CHECK (p.notes[0].colour == yw::noteColourCount - 1);
 }
 
 TEST (rea153_chord_detection_names_chords)
 {
-    using lynx::prtools::detectChord;
+    using yw::prtools::detectChord;
     auto name = [] (std::vector<int> keys, bool flats = false) {
         const auto c = detectChord (std::move (keys), flats);
         return c ? c->name : std::string ("-");
@@ -134,7 +134,7 @@ std::vector<float> drums153 (double bpm, double seconds, double rate, unsigned s
 
 TEST (rea153_detect_tempo_of_drum_loops)
 {
-    using namespace lynx::tempodetect;
+    using namespace yw::tempodetect;
     constexpr double rate = 44100.0;
     // free lengths (not whole beats): the tempo itself within 0.05 BPM
     for (const auto bpm : { 87.0, 100.0, 128.0, 140.0 })
@@ -172,9 +172,9 @@ TEST (rea153_detect_tempo_of_drum_loops)
 
 TEST (rea153_playlist_select_overlapping_and_stacked_clips)
 {
-    lynx::Song song;
+    yw::Song song;
     auto clip = [] (int track, std::int64_t start, std::int64_t length, bool muted = false) {
-        lynx::Clip c;
+        yw::Clip c;
         c.track = track;
         c.start = start;
         c.length = length;
@@ -185,29 +185,29 @@ TEST (rea153_playlist_select_overlapping_and_stacked_clips)
                       clip (0, 20, 30),                     // inside clip 0: stacked
                       clip (0, 80, 100, true),              // overlaps the end of clip 0
                       clip (1, 50, 10), clip (0, 300, 10) };
-    CHECK ((lynx::clipops::overlappingClips (song) == std::vector<int> { 1, 2, 3 }));
-    CHECK ((lynx::clipops::stackedClips (song) == std::vector<int> { 1, 2 }));
-    CHECK ((lynx::clipops::mutedClips (song) == std::vector<int> { 3 }));
+    CHECK ((yw::clipops::overlappingClips (song) == std::vector<int> { 1, 2, 3 }));
+    CHECK ((yw::clipops::stackedClips (song) == std::vector<int> { 1, 2 }));
+    CHECK ((yw::clipops::mutedClips (song) == std::vector<int> { 3 }));
 }
 
 TEST (rea153_general_midi_drum_names_for_key_labels)
 {
-    using lynx::notetools::generalMidiDrumName;
+    using yw::notetools::generalMidiDrumName;
     CHECK (generalMidiDrumName (34) == nullptr && generalMidiDrumName (82) == nullptr);
     CHECK (std::string (generalMidiDrumName (36)) == "Bass Drum 1");
     CHECK (std::string (generalMidiDrumName (38)) == "Acoustic Snare");
     CHECK (std::string (generalMidiDrumName (42)) == "Closed Hi-Hat");
     CHECK (std::string (generalMidiDrumName (49)) == "Crash Cymbal 1");
     CHECK (std::string (generalMidiDrumName (81)) == "Open Triangle");
-    lynx::ChannelDef a, b;
+    yw::ChannelDef a, b;
     b.keyLabels[36] = "Kick";
     CHECK (! (a == b)); // labels are part of the channel (undo history, project equality)
 }
 
 TEST (rea153_note_groups)
 {
-    using namespace lynx::notetools;
-    lynx::Pattern p;
+    using namespace yw::notetools;
+    yw::Pattern p;
     p.notes = { n153 (0, 96, 60), n153 (0, 96, 64), n153 (96, 96, 67), n153 (192, 96, 60) };
     p.notes[3].channel = 1;
     groupNotes (p, { 0, 1 });
@@ -238,7 +238,7 @@ TEST (rea153_note_groups)
     b.key = 64;
     pat.notes = { a, b };
     project.patterns.push_back (pat);
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     CHECK (song.patterns.size() == 1 && song.patterns[0].notes.size() == 2);
     if (song.patterns.size() == 1 && song.patterns[0].notes.size() == 2)
         CHECK (song.patterns[0].notes[0].group == 7 && song.patterns[0].notes[1].group == 7);
@@ -246,21 +246,21 @@ TEST (rea153_note_groups)
 
 TEST (rea153_audio_clip_pan)
 {
-    lynx::Song song = lynx::Song::makeDefault();
-    lynx::ChannelDef audio;
-    audio.instrument = lynx::InstrumentKind::audioClip;
+    yw::Song song = yw::Song::makeDefault();
+    yw::ChannelDef audio;
+    audio.instrument = yw::InstrumentKind::audioClip;
     song.channels.push_back (audio);
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::audio;
+    yw::Clip c;
+    c.kind = yw::ClipKind::audio;
     c.channel = (int) song.channels.size() - 1;
     c.length = 3840;
     song.playlist = { c };
-    lynx::clipprops::Props p;
-    CHECK (lynx::clipprops::read (song, 0, p) && p.pan == 0.0f);
+    yw::clipprops::Props p;
+    CHECK (yw::clipprops::read (song, 0, p) && p.pan == 0.0f);
     p.pan = -0.5f;
-    CHECK (lynx::clipprops::apply (song, 0, p));
+    CHECK (yw::clipprops::apply (song, 0, p));
     CHECK (song.playlist[0].pan == -0.5f);
     p.pan = 3.0f; // clamped
-    lynx::clipprops::apply (song, 0, p);
+    yw::clipprops::apply (song, 0, p);
     CHECK (song.playlist[0].pan == 1.0f);
 }

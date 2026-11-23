@@ -13,9 +13,9 @@
 #include "core/LoopStarter.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx::loopstarterui
+namespace yw::loopstarterui
 {
-// The configuration, presets and sample library (FL's when installed, else LYNX's own), read once.
+// The configuration, presets and sample library (FL's when installed, else YW's own), read once.
 const loopstarter::Sources& sources();
 
 void open (AudioEngine& engine);
@@ -30,4 +30,4 @@ void addChannelMenu (juce::PopupMenu& menu, AudioEngine& engine, int channel);
 
 // --snapshot: the window's content (after a "New loop" when `generate`)
 std::unique_ptr<juce::Component> makeForSnapshot (AudioEngine& engine, bool generate);
-} // namespace lynx::loopstarterui
+} // namespace yw::loopstarterui

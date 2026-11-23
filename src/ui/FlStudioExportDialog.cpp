@@ -9,7 +9,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -90,7 +90,7 @@ void showReport (const juce::File& target, const flstudio::Written& written)
 class FlExportThread final : public juce::ThreadWithProgressWindow
 {
 public:
-    FlExportThread (AudioEngine& engine, flpexport::LynxOnly mode, juce::File t, bool z)
+    FlExportThread (AudioEngine& engine, flpexport::YwOnly mode, juce::File t, bool z)
         : juce::ThreadWithProgressWindow (tr ("Exporting to FL Studio..."), true, true),
           song (engine.getSong()),
           options (flstudio::optionsFor (&engine.getPluginHost(), mode, song)),
@@ -154,7 +154,7 @@ public:
         : engine (e), suggestedFolder (std::move (folder)), projectName (std::move (name)), canExport (live)
     {
         // (the plugin lookups once: option A's plan)
-        renders = flpexport::planRenders (engine.getSong(), flstudio::optionsFor (&engine.getPluginHost(), flpexport::LynxOnly::renderAudio, engine.getSong()));
+        renders = flpexport::planRenders (engine.getSong(), flstudio::optionsFor (&engine.getPluginHost(), flpexport::YwOnly::renderAudio, engine.getSong()));
         auto heading = [this] (juce::Label& l, const juce::String& text) {
             l.setText (text, juce::dontSendNotification);
             l.setFont (theme::font (theme::type::body, true));
@@ -162,7 +162,7 @@ public:
             addAndMakeVisible (l);
         };
         heading (formatHeading, tr ("Save as"));
-        heading (lynxHeading, tr ("What FL Studio doesn't have"));
+        heading (ywHeading, tr ("What FL Studio doesn't have"));
         for (auto* b : { &flpButton, &zipButton })
         {
             b->setRadioGroupId (17101);
@@ -199,7 +199,7 @@ public:
         flpButton.setBounds (r.removeFromTop (24));
         zipButton.setBounds (r.removeFromTop (24));
         r.removeFromTop (10);
-        lynxHeading.setBounds (r.removeFromTop (22));
+        ywHeading.setBounds (r.removeFromTop (22));
         renderButton.setBounds (r.removeFromTop (24));
         substituteButton.setBounds (r.removeFromTop (24));
         auto buttons = r.removeFromBottom (28);
@@ -212,14 +212,14 @@ public:
     }
 
 private:
-    flpexport::LynxOnly mode() const { return substituteButton.getToggleState() ? flpexport::LynxOnly::substitute : flpexport::LynxOnly::renderAudio; }
+    flpexport::YwOnly mode() const { return substituteButton.getToggleState() ? flpexport::YwOnly::substitute : flpexport::YwOnly::renderAudio; }
 
     void update()
     {
         lastZip = zipButton.getToggleState();
         lastSubstitute = substituteButton.getToggleState();
         juce::String text;
-        if (mode() == flpexport::LynxOnly::renderAudio)
+        if (mode() == flpexport::YwOnly::renderAudio)
             text = renders.empty() ? tr ("Nothing needs rendering: everything goes over as FL Studio's own data.")
                                    : tr ("{0} channel(s) and {1} mixer insert(s) will be rendered to audio first.",
                                          { juce::String ((int) renders.channels.size()), juce::String ((int) renders.inserts.size()) });
@@ -234,8 +234,8 @@ private:
         const auto zip = zipButton.getToggleState();
         const auto ext = zip ? juce::String (".zip") : juce::String (".flp");
         const auto start = (lastFolder.isDirectory() ? lastFolder : suggestedFolder).getChildFile (juce::File::createLegalFileName (projectName) + ext);
-        chooser = lynx::ui::makeFileChooser (tr ("Export to FL Studio"), start, "*" + ext);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        chooser = yw::ui::makeFileChooser (tr ("Export to FL Studio"), start, "*" + ext);
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe = juce::Component::SafePointer<FlExportPanel> (this), zip, ext] (const juce::FileChooser& c) {
                                   auto file = c.getResult();
                                   if (safe == nullptr || file == juce::File())
@@ -261,7 +261,7 @@ private:
     juce::String projectName;
     bool canExport;
     flpexport::RenderPlan renders;
-    juce::Label formatHeading, lynxHeading, plan;
+    juce::Label formatHeading, ywHeading, plan;
     juce::ToggleButton flpButton { tr ("FL Studio project (.flp)") },
         zipButton { tr ("Zipped loop package (.zip, with every sample)") },
         renderButton { tr ("Render them to audio (sounds the same)") },
@@ -290,4 +290,4 @@ std::unique_ptr<juce::Component> makeFlStudioExportPanel (AudioEngine& engine)
 {
     return std::make_unique<FlExportPanel> (engine, juce::File(), "YW Studio", false);
 }
-} // namespace lynx
+} // namespace yw

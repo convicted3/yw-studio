@@ -1,6 +1,6 @@
 // M4A export on macOS (owner decision D5, round als190ka-export): AudioToolbox's ExtAudioFile writes an MPEG-4 audio
 // file (kAudioFileM4AType) through Apple's AAC encoder (kAudioFormatMPEG4AAC, AAC-LC), both part of macOS (see
-// engine/AacEncoder.h for why LYNX bundles no encoder). Plain C API: no Objective-C. Linked with AudioToolbox and
+// engine/AacEncoder.h for why YW bundles no encoder). Plain C API: no Objective-C. Linked with AudioToolbox and
 // CoreFoundation (CMakeLists.txt; JUCE's audio modules link them too).
 
 #include "engine/AacEncoder.h"
@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <vector>
 
-namespace lynx::aac
+namespace yw::aac
 {
 namespace
 {
@@ -90,7 +90,7 @@ bool encode (const std::string& utf8Path, const float* left, const float* right,
         return false;
     }
 
-    // what LYNX hands over: interleaved 32-bit float (the converter makes AAC of it)
+    // what YW hands over: interleaved 32-bit float (the converter makes AAC of it)
     AudioStreamBasicDescription client {};
     client.mSampleRate = sampleRate;
     client.mFormatID = kAudioFormatLinearPCM;
@@ -144,6 +144,6 @@ bool encode (const std::string& utf8Path, const float* left, const float* right,
     }
     return true;
 }
-} // namespace lynx::aac
+} // namespace yw::aac
 
 #endif

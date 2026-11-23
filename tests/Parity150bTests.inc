@@ -3,9 +3,9 @@
 namespace p150b
 {
 // a steady sine through Ember (512-sample blocks), left / right gains; returns both outputs
-inline std::pair<std::vector<float>, std::vector<float>> run (const lynx::EffectParams& p, double hz, double amp, float gl = 1.0f, float gr = 1.0f)
+inline std::pair<std::vector<float>, std::vector<float>> run (const yw::EffectParams& p, double hz, double amp, float gl = 1.0f, float gr = 1.0f)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::ember);
+    auto fx = yw::makeEffect (yw::EffectKind::ember);
     fx->prepare (48000.0);
     constexpr int n = 24000;
     std::vector<float> l (n), r (n);
@@ -37,7 +37,7 @@ inline double db (double x) { return 20.0 * std::log10 (std::max (x, 1e-12)); }
 
 TEST (ember_six_bands_pans_characters_block_round150b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     CHECK (em::count <= maxEffectParams);
     CHECK (effectInfo (EffectKind::ember).params.size() == (std::size_t) em::count);
@@ -77,7 +77,7 @@ TEST (ember_six_bands_pans_characters_block_round150b)
 
 TEST (ember_six_bands_sum_flat_round150b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto p = makeEffectSlot (EffectKind::ember).params;
     p[em::autoGain] = 0.0f;
@@ -104,11 +104,11 @@ TEST (ember_six_bands_sum_flat_round150b)
 
 TEST (ember_characters_match_the_measured_styles_round150b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto p = makeEffectSlot (EffectKind::ember).params;
     p[em::revision] = 0.0f; // round 190kw: round 150's measured characters (a new Ember runs the Saturn law)
-    // [EXEC] the trial, 1 kHz sine: the fundamental's gain (dB) at a level for (style, drive %) — D:\lynx-work\parity150\b\an1.json
+    // [EXEC] the trial, 1 kHz sine: the fundamental's gain (dB) at a level for (style, drive %) — D:\yw-work\parity150\b\an1.json
     struct Case { int style; double drive, inDb, gainDb; };
     // (an1.json's amplitudes read 1.76 dB high — the energy of five Hann bins — corrected here)
     static const Case cases[] { { 0, 1.0, -12.0, 0.74 }, { 0, 1.0, 0.0, -3.36 }, { 6, 0.4, -12.0, 1.34 }, { 6, 0.4, 0.0, -6.56 },
@@ -153,7 +153,7 @@ TEST (ember_characters_match_the_measured_styles_round150b)
 
 TEST (ember_input_output_pan_round150b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto p = makeEffectSlot (EffectKind::ember).params;
     p[em::autoGain] = 0.0f;
@@ -182,7 +182,7 @@ TEST (ember_input_output_pan_round150b)
 
 TEST (ember_saturn2_six_bands_styles_pans_translated_round150b)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.name = "FabFilter Saturn 2";
     // [EXEC] read back from the trial's state: 1 / 3 input / output pan (−1 … +1), 6 band count, band b at 7 + 17b:
@@ -209,16 +209,16 @@ TEST (ember_saturn2_six_bands_styles_pans_translated_round150b)
     CHECK (std::abs (e::panOf (slot.params[e::outputPan]) - 0.5) < 1e-4);
 }
 
-TEST (lynxtune_send_receive_round150b)
+TEST (ywtune_send_receive_round150b)
 {
-    using namespace lynx;
-    namespace lt = lynxtune;
+    using namespace yw;
+    namespace lt = ywtune;
     lt::clearPublishedScale();
     lt::SharedScale none;
     CHECK (! lt::publishedScale (none));
     Song song;
     song.mixer.resize (4);
-    for (int t = 1; t < 4; ++t) song.mixer[(std::size_t) t].effects.push_back (makeEffectSlot (EffectKind::lynxTune));
+    for (int t = 1; t < 4; ++t) song.mixer[(std::size_t) t].effects.push_back (makeEffectSlot (EffectKind::ywTune));
     song.mixer[2].effects.push_back (makeEffectSlot (EffectKind::eq));
     CHECK (song.mixer[1].effects[0].params[lt::receiveScale] == 1.0f); // Receive on by default
     CHECK (lt::paramText (lt::receiveScale, 1.0f) == "On");
@@ -235,11 +235,11 @@ TEST (lynxtune_send_receive_round150b)
     CHECK (song.mixer[3].effects[0].params == before3);
     lt::SharedScale got;
     CHECK (lt::publishedScale (got) && got == lt::captureScale (src.data()));
-    // not a LYNX Tune / out of range: nothing
+    // not a YW Tune / out of range: nothing
     CHECK (lt::sendScaleToAll (song, 2, 1) == 0);
     CHECK (lt::sendScaleToAll (song, 9, 0) == 0);
     // receiving applies the published scale
-    auto fresh = makeEffectSlot (EffectKind::lynxTune).params;
+    auto fresh = makeEffectSlot (EffectKind::ywTune).params;
     lt::applyScale (fresh.data(), got);
     CHECK (lt::rangeNote (fresh[lt::rangeLow]) == 40 && fresh[lt::noteC + 1] == 0.0f);
     lt::clearPublishedScale();

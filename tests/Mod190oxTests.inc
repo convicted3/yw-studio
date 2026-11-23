@@ -5,19 +5,19 @@
 namespace
 {
 // the song's master volume as the output level of a constant input, block by block from tick 0 (`blocks` of 256)
-std::vector<float> mod190oxLevels (const lynx::Song& song, int blocks, const std::vector<float>* input = nullptr,
-                                   const lynx::RackState::Factories* factories = nullptr)
+std::vector<float> mod190oxLevels (const yw::Song& song, int blocks, const std::vector<float>* input = nullptr,
+                                   const yw::RackState::Factories* factories = nullptr)
 {
-    auto state = factories != nullptr ? lynx::RackState::build (song, nullptr, 48000.0, *factories) : lynx::RackState::build (song, nullptr, 48000.0);
-    lynx::RackRenderer renderer;
+    auto state = factories != nullptr ? yw::RackState::build (song, nullptr, 48000.0, *factories) : yw::RackState::build (song, nullptr, 48000.0);
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 512);
-    lynx::LiveInput live;
+    yw::LiveInput live;
     renderer.setLiveInput (&live);
     std::vector<float> a (256, 0.5f), l (256), r (256);
     live.channels[0] = a.data();
     live.channels[1] = a.data();
     live.numChannels = 2;
-    const auto tps = song.bpm * lynx::ppq / 60.0 / 48000.0;
+    const auto tps = song.bpm * yw::ppq / 60.0 / 48000.0;
     std::vector<float> out;
     for (int b = 0; b < blocks; ++b)
     {
@@ -30,26 +30,26 @@ std::vector<float> mod190oxLevels (const lynx::Song& song, int blocks, const std
     return out;
 }
 
-lynx::Song mod190oxSong()
+yw::Song mod190oxSong()
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
-    song.mode = lynx::PlayMode::song;
+    song.mode = yw::PlayMode::song;
     song.bpm = 120.0;
-    song.mixer = lynx::Song::defaultMixer (2);
+    song.mixer = yw::Song::defaultMixer (2);
     song.mixer[0].inputChannel = 0;
-    song.mixer[0].monitor = lynx::InputMonitor::automatic;
+    song.mixer[0].monitor = yw::InputMonitor::automatic;
     song.mixer[0].volume = 0.3f;
     return song;
 }
 
 // a stand-in for a hosted plugin effect: it records the parameter values the host sends
-struct Mod190oxProbe final : lynx::Effect
+struct Mod190oxProbe final : yw::Effect
 {
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void process (float*, float*, int, const lynx::EffectParams&, double) noexcept override {}
+    void process (float*, float*, int, const yw::EffectParams&, double) noexcept override {}
     void setParameter (int index, float value) noexcept override
     {
         if (index == 0)
@@ -62,7 +62,7 @@ struct Mod190oxProbe final : lynx::Effect
 
 TEST (mod190ox_steps_random_reference)
 {
-    auto steps = lynx::Modulator::make (lynx::ModKind::steps);
+    auto steps = yw::Modulator::make (yw::ModKind::steps);
     CHECK (steps.steps.size() == 8 && steps.beats == 0.25 && steps.deterministic());
     steps.steps = { 1.0f, -1.0f, 0.5f };
     CHECK (steps.stepOutput (0.2) == 1.0f && steps.stepOutput (1.5) == -1.0f && steps.stepOutput (2.9) == 0.5f);
@@ -72,65 +72,65 @@ TEST (mod190ox_steps_random_reference)
     steps.unipolar = true;
     CHECK (steps.stepOutput (0.2) == 1.0f && std::abs (steps.stepOutput (1.2) - 0.0f) < 1.0e-6f);
 
-    auto random = lynx::Modulator::make (lynx::ModKind::random);
+    auto random = yw::Modulator::make (yw::ModKind::random);
     const auto a = random.stepOutput (5.1), b = random.stepOutput (5.9), c = random.stepOutput (6.1);
     CHECK (a == b && a != c && a >= -1.0f && a <= 1.0f); // sample and hold: one value a step, the same for the same step
-    lynx::Modulator again = random;
+    yw::Modulator again = random;
     CHECK (again.stepOutput (5.5) == a); // (by song position, whatever played before)
     random.smooth = 1.0f; // smooth: continuous over the step's edge
     CHECK (std::abs (random.stepOutput (6.0 - 1.0e-6) - random.stepOutput (6.0)) < 1.0e-3f);
     random.sync = false;
-    CHECK (! random.deterministic() && lynx::Modulator::make (lynx::ModKind::macro).deterministic());
-    CHECK (! lynx::Modulator::make (lynx::ModKind::follower).deterministic());
-    CHECK (std::string (lynx::Modulator::kindName (lynx::ModKind::envelope)) == "ADSR envelope");
+    CHECK (! random.deterministic() && yw::Modulator::make (yw::ModKind::macro).deterministic());
+    CHECK (! yw::Modulator::make (yw::ModKind::follower).deterministic());
+    CHECK (std::string (yw::Modulator::kindName (yw::ModKind::envelope)) == "ADSR envelope");
 }
 
 TEST (mod190ox_envelope_and_follower_reference)
 {
-    auto env = lynx::Modulator::make (lynx::ModKind::envelope);
+    auto env = yw::Modulator::make (yw::ModKind::envelope);
     env.attack = 10.0f;
     env.decay = 100.0f;
     env.sustain = 0.5f;
     env.release = 50.0f;
-    lynx::modenv::State s;
+    yw::modenv::State s;
     // attack: linear, 1 in 10 ms (here 1 ms steps)
-    lynx::modenv::envelope (env, s, true, true, 0.001);
+    yw::modenv::envelope (env, s, true, true, 0.001);
     CHECK (std::abs (s.level - 0.1f) < 1.0e-5f && s.stage == 1);
     for (int k = 0; k < 4; ++k)
-        lynx::modenv::envelope (env, s, true, false, 0.001);
+        yw::modenv::envelope (env, s, true, false, 0.001);
     CHECK (std::abs (s.level - 0.5f) < 1.0e-4f);
     for (int k = 0; k < 5; ++k)
-        lynx::modenv::envelope (env, s, true, false, 0.001);
+        yw::modenv::envelope (env, s, true, false, 0.001);
     CHECK (s.level == 1.0f && s.stage == 2);
     // decay: exponential towards the sustain, time constant 100 ms
-    lynx::modenv::envelope (env, s, true, false, 0.1);
+    yw::modenv::envelope (env, s, true, false, 0.1);
     CHECK (std::abs (s.level - (0.5f + 0.5f * std::exp (-1.0f))) < 1.0e-4f);
     for (int k = 0; k < 100; ++k)
-        lynx::modenv::envelope (env, s, true, false, 0.05);
+        yw::modenv::envelope (env, s, true, false, 0.05);
     CHECK (std::abs (s.level - 0.5f) < 1.0e-3f);
     // release: towards 0 with 50 ms; then idle
-    lynx::modenv::envelope (env, s, false, false, 0.05);
+    yw::modenv::envelope (env, s, false, false, 0.05);
     CHECK (s.stage == 4 && std::abs (s.level - 0.5f * std::exp (-1.0f)) < 2.0e-3f);
     for (int k = 0; k < 40; ++k)
-        lynx::modenv::envelope (env, s, false, false, 0.05);
+        yw::modenv::envelope (env, s, false, false, 0.05);
     CHECK (s.level == 0.0f && s.stage == 0);
     // a new note retriggers from where it is
-    lynx::modenv::envelope (env, s, true, true, 0.005);
+    yw::modenv::envelope (env, s, true, true, 0.005);
     CHECK (s.stage == 1 && std::abs (s.level - 0.5f) < 1.0e-4f);
 
-    auto f = lynx::Modulator::make (lynx::ModKind::follower);
+    auto f = yw::Modulator::make (yw::ModKind::follower);
     f.attack = 10.0f;
     f.release = 100.0f;
     f.gain = 6.0f; // (+6 dB: 0.25 reads ~0.5)
-    lynx::modenv::State fs;
-    lynx::modenv::follow (f, fs, 0.25f, 0.01);
+    yw::modenv::State fs;
+    yw::modenv::follow (f, fs, 0.25f, 0.01);
     const auto in = 0.25f * std::pow (10.0f, 6.0f / 20.0f);
     CHECK (std::abs (fs.level - in * (1.0f - std::exp (-1.0f))) < 1.0e-4f); // one attack time constant
     for (int k = 0; k < 50; ++k)
-        lynx::modenv::follow (f, fs, 0.25f, 0.01);
+        yw::modenv::follow (f, fs, 0.25f, 0.01);
     CHECK (std::abs (fs.level - in) < 1.0e-4f);
     const auto top = fs.level;
-    lynx::modenv::follow (f, fs, 0.0f, 0.1);
+    yw::modenv::follow (f, fs, 0.0f, 0.1);
     CHECK (std::abs (fs.level - top * std::exp (-1.0f)) < 1.0e-4f); // one release time constant
 }
 
@@ -140,15 +140,15 @@ TEST (mod190ox_follower_render_drives_a_target)
     auto song = mod190oxSong();
     song.mixer[0].inputChannel = -1;
     song.mixer[1].inputChannel = 0;
-    song.mixer[1].monitor = lynx::InputMonitor::on;
-    auto f = lynx::Modulator::make (lynx::ModKind::follower);
+    song.mixer[1].monitor = yw::InputMonitor::on;
+    auto f = yw::Modulator::make (yw::ModKind::follower);
     f.name = "Follower 1";
-    f.host = { lynx::AutomationTargetKind::mixerVolume, 1, 0, 0 };
+    f.host = { yw::AutomationTargetKind::mixerVolume, 1, 0, 0 };
     f.attack = 5.0f;
     f.release = 30.0f;
-    f.routes = { { { lynx::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.5f } };
+    f.routes = { { { yw::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.5f } };
     song.modulators.push_back (f);
-    const auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    const auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (state->modStateful && state->modFeeds.size() == 1 && state->modFeeds[0].track == 1 && state->followedTracks.size() >= 2
            && state->followedTracks[1] == 1);
 
@@ -172,33 +172,33 @@ TEST (mod190ox_envelope_keytrack_velocity_from_notes)
 {
     // a silent channel's notes (one bar at 1 beat, key 72, velocity 0.8) drive the Master's volume
     auto song = mod190oxSong();
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.name = "Notes";
-    c.instrument = lynx::InstrumentKind::sampler;
+    c.instrument = yw::InstrumentKind::sampler;
     c.volume = 0.0f;
     song.channels.push_back (c);
     song.patterns.clear();
     song.patterns.emplace_back();
-    lynx::Note n;
+    yw::Note n;
     n.channel = 0;
     n.key = 72;
     n.velocity = 0.8f;
-    n.start = lynx::ppq;
-    n.length = lynx::ppq;
+    n.start = yw::ppq;
+    n.length = yw::ppq;
     song.patterns[0].notes.push_back (n);
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.pattern = 0;
-    clip.length = 8 * lynx::ppq;
+    clip.length = 8 * yw::ppq;
     song.playlist.push_back (clip);
 
-    auto env = lynx::Modulator::make (lynx::ModKind::envelope);
+    auto env = yw::Modulator::make (yw::ModKind::envelope);
     env.name = "Envelope 1";
-    env.host = { lynx::AutomationTargetKind::channelVolume, 0, 0, 0 };
+    env.host = { yw::AutomationTargetKind::channelVolume, 0, 0, 0 };
     env.attack = 1.0f;
     env.decay = 1.0f;
     env.sustain = 1.0f;
     env.release = 20.0f;
-    env.routes = { { { lynx::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.5f } };
+    env.routes = { { { yw::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.5f } };
     song.modulators.push_back (env);
     // one beat = 24000 samples at 120 BPM (~94 blocks)
     const auto levels = mod190oxLevels (song, 300);
@@ -207,11 +207,11 @@ TEST (mod190ox_envelope_keytrack_velocity_from_notes)
     CHECK (std::abs (after - before) < before * 0.05f);
 
     // keytrack: key 72 = +0.2 of ±1; velocity: 0.8 (unipolar)
-    song.modulators[0] = lynx::Modulator::make (lynx::ModKind::keytrack);
-    song.modulators[0].host = { lynx::AutomationTargetKind::channelVolume, 0, 0, 0 };
-    song.modulators[0].routes = { { { lynx::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 1.0f } };
+    song.modulators[0] = yw::Modulator::make (yw::ModKind::keytrack);
+    song.modulators[0].host = { yw::AutomationTargetKind::channelVolume, 0, 0, 0 };
+    song.modulators[0].routes = { { { yw::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 1.0f } };
     const auto key = mod190oxLevels (song, 300);
-    song.modulators[0].kind = lynx::ModKind::velocity;
+    song.modulators[0].kind = yw::ModKind::velocity;
     song.modulators[0].unipolar = true;
     song.modulators[0].routes[0].depth = 0.5f;
     const auto vel = mod190oxLevels (song, 300);
@@ -223,34 +223,34 @@ TEST (mod190ox_envelope_keytrack_velocity_from_notes)
 TEST (mod190ox_macro_and_its_automation)
 {
     auto song = mod190oxSong();
-    auto m = lynx::Modulator::make (lynx::ModKind::macro);
+    auto m = yw::Modulator::make (yw::ModKind::macro);
     m.name = "Macro 1";
     m.macro = 0.0f;
-    m.routes = { { { lynx::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.5f } };
+    m.routes = { { { yw::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.5f } };
     song.modulators.push_back (m);
-    const lynx::AutomationTarget knob { lynx::AutomationTargetKind::modulatorMacro, 0, 0, 0 };
+    const yw::AutomationTarget knob { yw::AutomationTargetKind::modulatorMacro, 0, 0, 0 };
     CHECK (song.targetValue (knob) == 0.0f && song.setTargetValue (knob, 0.6f) && song.modulators[0].macro == 0.6f);
-    CHECK (! lynx::Modulator::canModulate (song, knob)); // (a modulator doesn't drive another)
+    CHECK (! yw::Modulator::canModulate (song, knob)); // (a modulator doesn't drive another)
     const auto at06 = mod190oxLevels (song, 8).back();
     song.modulators[0].macro = 0.0f;
     const auto at0 = mod190oxLevels (song, 8).back();
     CHECK (at06 > at0 * 1.3f);
 
     // an automation clip of the knob drives it (and its targets) instead of the saved value
-    lynx::Automation a;
+    yw::Automation a;
     a.target = knob;
-    a.points = { { 0, 0.6f, 0.0f }, { 16 * lynx::ppq, 0.6f, 0.0f } };
+    a.points = { { 0, 0.6f, 0.0f }, { 16 * yw::ppq, 0.6f, 0.0f } };
     song.automations.push_back (a);
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
-    clip.length = 16 * lynx::ppq;
+    clip.length = 16 * yw::ppq;
     song.playlist.push_back (clip);
     CHECK (std::abs (mod190oxLevels (song, 8).back() - at06) < at06 * 0.02f);
 
     // deleting the modulator unlinks what pointed at its knob
     song.removeModulator (0);
-    CHECK (song.modulators.empty() && song.automations[0].target.kind == lynx::AutomationTargetKind::none);
+    CHECK (song.modulators.empty() && song.automations[0].target.kind == yw::AutomationTargetKind::none);
 }
 
 TEST (mod190ox_hosted_plugin_parameter)
@@ -258,45 +258,45 @@ TEST (mod190ox_hosted_plugin_parameter)
     // a hosted effect on insert 1 (a probe standing in), its parameter 0 automated at 0.4 and modulated by a square
     // LFO of depth 0.3: the plugin gets clamp (0.4 ± 0.3), the automation's own binding sends nothing
     auto song = mod190oxSong();
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::plugin);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::plugin);
     slot.plugin.id = "probe";
     slot.plugin.name = "Probe";
     song.mixer[1].effects.push_back (slot);
-    const lynx::AutomationTarget param { lynx::AutomationTargetKind::effectParam, 1, 0, 0 };
-    CHECK (lynx::Modulator::isHostedTarget (song, param) && lynx::Modulator::canModulate (song, param));
-    CHECK (! lynx::Modulator::canModulate (song, { lynx::AutomationTargetKind::effectParam, 1, 0, lynx::midictl::ccBase + 1 }));
+    const yw::AutomationTarget param { yw::AutomationTargetKind::effectParam, 1, 0, 0 };
+    CHECK (yw::Modulator::isHostedTarget (song, param) && yw::Modulator::canModulate (song, param));
+    CHECK (! yw::Modulator::canModulate (song, { yw::AutomationTargetKind::effectParam, 1, 0, yw::midictl::ccBase + 1 }));
 
-    lynx::Modulator lfo;
+    yw::Modulator lfo;
     lfo.name = "LFO 1";
-    lfo.shape = lynx::ModShape::square;
+    lfo.shape = yw::ModShape::square;
     lfo.beats = 4.0;
     lfo.routes = { { param, 0.3f, 0.7f } };
     song.modulators.push_back (lfo);
 
     auto probe = std::make_shared<Mod190oxProbe>();
-    lynx::RackState::Factories factories;
-    factories.pluginEffects = [probe] (const lynx::PluginRef& ref, double) -> std::shared_ptr<lynx::Effect> {
+    yw::RackState::Factories factories;
+    factories.pluginEffects = [probe] (const yw::PluginRef& ref, double) -> std::shared_ptr<yw::Effect> {
         return ref.id == "probe" ? probe : nullptr;
     };
     {
-        const auto state = lynx::RackState::build (song, nullptr, 48000.0, factories);
+        const auto state = yw::RackState::build (song, nullptr, 48000.0, factories);
         CHECK (state->modRoutes.size() == 1 && state->modRoutes[0].hosted && state->modRoutes[0].base == 0.7f);
     }
     // no automation: around the route's own base, clamped (0.7 + 0.3 = 1.0 on the high half, 0.4 on the low)
     mod190oxLevels (song, 4, nullptr, &factories);
     CHECK (std::abs (probe->last - 1.0f) < 1.0e-6f);
 
-    lynx::Automation a;
+    yw::Automation a;
     a.target = param;
-    a.points = { { 0, 0.4f, 0.0f }, { 16 * lynx::ppq, 0.4f, 0.0f } };
+    a.points = { { 0, 0.4f, 0.0f }, { 16 * yw::ppq, 0.4f, 0.0f } };
     song.automations.push_back (a);
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
-    clip.length = 16 * lynx::ppq;
+    clip.length = 16 * yw::ppq;
     song.playlist.push_back (clip);
     {
-        const auto state = lynx::RackState::build (song, nullptr, 48000.0, factories);
+        const auto state = yw::RackState::build (song, nullptr, 48000.0, factories);
         const auto bound = std::count_if (state->pluginParams.begin(), state->pluginParams.end(), [] (const auto& b) { return b.track == 1 && b.param == 0; });
         CHECK (bound == 1 && state->modRoutes.size() == 1 && state->modRoutes[0].source == 0);
     }
@@ -306,11 +306,11 @@ TEST (mod190ox_hosted_plugin_parameter)
     // the second half (a bar is 96000 samples at 120 BPM): 0.4 − 0.3
     probe->last = -1.0f;
     {
-        auto state = lynx::RackState::build (song, nullptr, 48000.0, factories);
-        lynx::RackRenderer renderer;
+        auto state = yw::RackState::build (song, nullptr, 48000.0, factories);
+        yw::RackRenderer renderer;
         renderer.prepare (48000.0, 512);
         std::vector<float> l (256), r (256);
-        const auto tps = song.bpm * lynx::ppq / 60.0 / 48000.0;
+        const auto tps = song.bpm * yw::ppq / 60.0 / 48000.0;
         for (int b = 0; b < 4; ++b)
             renderer.process (state.get(), true, (60000 + b * 256) * tps, 256, l.data(), r.data());
     }
@@ -319,64 +319,64 @@ TEST (mod190ox_hosted_plugin_parameter)
     song.automations.clear();
     song.playlist.clear();
     song.modulators[0].routes[0].base = -1.0f;
-    CHECK (lynx::RackState::build (song, nullptr, 48000.0, factories)->modRoutes.empty());
+    CHECK (yw::RackState::build (song, nullptr, 48000.0, factories)->modRoutes.empty());
 }
 
 TEST (mod190ox_stage1_unchanged_and_lfo_only_costs_nothing_new)
 {
     // stage 1's LFO modulators render exactly as before: the same output as the formula, no stateful work
     auto song = mod190oxSong();
-    lynx::Modulator m;
-    m.shape = lynx::ModShape::triangle;
+    yw::Modulator m;
+    m.shape = yw::ModShape::triangle;
     m.beats = 1.0;
-    m.routes = { { { lynx::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.25f } };
+    m.routes = { { { yw::AutomationTargetKind::mixerVolume, 0, 0, 0 }, 0.25f } };
     song.modulators.push_back (m);
-    const auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    const auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (! state->modStateful && state->followedTracks.empty() && state->modRoutes.size() == 1 && ! state->modRoutes[0].hosted);
-    CHECK (m.kind == lynx::ModKind::lfo && m.host.kind == lynx::AutomationTargetKind::none && m.steps.empty());
+    CHECK (m.kind == yw::ModKind::lfo && m.host.kind == yw::AutomationTargetKind::none && m.steps.empty());
 }
 
 TEST (mod190ox_flp_export_bakes_what_fl_can_play)
 {
     auto song = mod190oxSong();
-    song.mixer = lynx::Song::defaultMixer (4);
+    song.mixer = yw::Song::defaultMixer (4);
     song.playlist.clear();
-    lynx::Clip pc; // a pattern clip so the song has a length
+    yw::Clip pc; // a pattern clip so the song has a length
     pc.pattern = 0;
-    pc.length = 16 * lynx::ppq;
+    pc.length = 16 * yw::ppq;
     song.patterns.resize (1);
     song.playlist.push_back (pc);
 
-    lynx::Modulator tri; // a synced triangle LFO on insert 1's pan: FL's clip LFO, exact
+    yw::Modulator tri; // a synced triangle LFO on insert 1's pan: FL's clip LFO, exact
     tri.name = "LFO 1";
-    tri.shape = lynx::ModShape::triangle;
+    tri.shape = yw::ModShape::triangle;
     tri.beats = 2.0;
-    tri.routes = { { { lynx::AutomationTargetKind::mixerPan, 1, 0, 0 }, 0.25f } };
+    tri.routes = { { { yw::AutomationTargetKind::mixerPan, 1, 0, 0 }, 0.25f } };
     song.modulators.push_back (tri);
-    auto steps = lynx::Modulator::make (lynx::ModKind::steps); // steps on insert 2's volume: points, Hold
+    auto steps = yw::Modulator::make (yw::ModKind::steps); // steps on insert 2's volume: points, Hold
     steps.name = "Steps 1";
-    steps.routes = { { { lynx::AutomationTargetKind::mixerVolume, 2, 0, 0 }, 0.2f } };
+    steps.routes = { { { yw::AutomationTargetKind::mixerVolume, 2, 0, 0 }, 0.2f } };
     song.modulators.push_back (steps);
-    auto macro = lynx::Modulator::make (lynx::ModKind::macro); // a macro: a flat clip
+    auto macro = yw::Modulator::make (yw::ModKind::macro); // a macro: a flat clip
     macro.name = "Macro 1";
     macro.macro = 0.5f;
-    macro.routes = { { { lynx::AutomationTargetKind::mixerVolume, 3, 0, 0 }, 0.2f } };
+    macro.routes = { { { yw::AutomationTargetKind::mixerVolume, 3, 0, 0 }, 0.2f } };
     song.modulators.push_back (macro);
-    auto follower = lynx::Modulator::make (lynx::ModKind::follower); // lost
+    auto follower = yw::Modulator::make (yw::ModKind::follower); // lost
     follower.name = "Follower 1";
-    follower.routes = { { { lynx::AutomationTargetKind::mixerPan, 2, 0, 0 }, 0.5f } };
+    follower.routes = { { { yw::AutomationTargetKind::mixerPan, 2, 0, 0 }, 0.5f } };
     song.modulators.push_back (follower);
 
     auto baked = song;
-    const auto result = lynx::modexport::bakeForFl (baked);
+    const auto result = yw::modexport::bakeForFl (baked);
     CHECK (result.clips == 3 && result.lost.size() == 1 && baked.modulators.empty() && baked.automations.size() == 3);
-    // the LFO clip plays what the modulator played (LYNX plays FL's clip LFO as FL does)
+    // the LFO clip plays what the modulator played (YW plays FL's clip LFO as FL does)
     const auto& lfoClip = baked.automations[0];
     CHECK (lfoClip.lfo.on && lfoClip.lfo.add && lfoClip.lfo.level == 64 && lfoClip.target == tri.routes[0].target);
     const auto base = song.modulationBase (tri.routes[0].target);
     for (const auto beat : { 0.1, 0.5, 0.9, 1.3, 1.77, 3.2, 7.5 })
     {
-        const auto tick = beat * lynx::ppq;
+        const auto tick = beat * yw::ppq;
         const auto want = std::clamp (base + 0.25f * tri.output (beat / 2.0), 0.0f, 1.0f);
         CHECK (std::abs (lfoClip.playAt (tick, tick) - want) < 2.0e-3f);
     }
@@ -384,90 +384,90 @@ TEST (mod190ox_flp_export_bakes_what_fl_can_play)
     const auto& stepClip = baked.automations[1];
     const auto stepBase = song.modulationBase (steps.routes[0].target);
     for (const auto step : { 0.5, 1.5, 5.5, 12.25 })
-        CHECK (std::abs (stepClip.valueAt (step * 0.25 * lynx::ppq) - std::clamp (stepBase + 0.2f * steps.stepOutput (step), 0.0f, 1.0f)) < 1.0e-5f);
+        CHECK (std::abs (stepClip.valueAt (step * 0.25 * yw::ppq) - std::clamp (stepBase + 0.2f * steps.stepOutput (step), 0.0f, 1.0f)) < 1.0e-5f);
     // the macro: base + 0.2 × 0.5 (unipolar)
-    CHECK (std::abs (baked.automations[2].valueAt (lynx::ppq) - std::clamp (song.modulationBase (macro.routes[0].target) + 0.1f, 0.0f, 1.0f)) < 1.0e-6f);
+    CHECK (std::abs (baked.automations[2].valueAt (yw::ppq) - std::clamp (song.modulationBase (macro.routes[0].target) + 0.1f, 0.0f, 1.0f)) < 1.0e-6f);
     // each on a free track over the song
-    CHECK (std::count_if (baked.playlist.begin(), baked.playlist.end(), [] (const lynx::Clip& c) { return c.kind == lynx::ClipKind::automation; }) == 3);
+    CHECK (std::count_if (baked.playlist.begin(), baked.playlist.end(), [] (const yw::Clip& c) { return c.kind == yw::ClipKind::automation; }) == 3);
 
     // the whole export: notes about it, the follower dropped by name
-    lynx::flpexport::Report report;
-    lynx::flpexport::toProject (song, {}, report);
+    yw::flpexport::Report report;
+    yw::flpexport::toProject (song, {}, report);
     CHECK (std::any_of (report.dropped.begin(), report.dropped.end(), [] (const std::string& d) { return d.find ("Follower 1") != std::string::npos; }));
     CHECK (std::any_of (report.notes.begin(), report.notes.end(), [] (const std::string& d) { return d.find ("3 route(s)") != std::string::npos; }));
-    CHECK (std::abs (lynx::modexport::sineTension()) <= 128);
+    CHECK (std::abs (yw::modexport::sineTension()) <= 128);
 }
 
 TEST (mod190ox_targets_follow_channel_and_insert_moves)
 {
     auto song = mod190oxSong();
-    song.mixer = lynx::Song::defaultMixer (3);
+    song.mixer = yw::Song::defaultMixer (3);
     song.channels.resize (2);
-    auto f = lynx::Modulator::make (lynx::ModKind::envelope);
-    f.host = { lynx::AutomationTargetKind::channelVolume, 1, 0, 0 };
-    f.input = { lynx::AutomationTargetKind::channelVolume, 1, 0, 0 };
+    auto f = yw::Modulator::make (yw::ModKind::envelope);
+    f.host = { yw::AutomationTargetKind::channelVolume, 1, 0, 0 };
+    f.input = { yw::AutomationTargetKind::channelVolume, 1, 0, 0 };
     song.modulators.push_back (f);
     song.removeChannel (0); // (channel 1 becomes 0)
     CHECK (song.modulators[0].host.index == 0 && song.modulators[0].input.index == 0);
     song.removeChannel (0);
-    CHECK (song.modulators[0].host.kind == lynx::AutomationTargetKind::none);
+    CHECK (song.modulators[0].host.kind == yw::AutomationTargetKind::none);
 }
 
 // Round 190ox: the cost of a block with modulators (run under `perf stat -e instructions` with
-// LYNX_MOD190OX_PERF=none|automation|lfo|follower|envelope|steps|eight): 60 s of a 2 Hz pulse through insert 1's Filter
+// YW_MOD190OX_PERF=none|automation|lfo|follower|envelope|steps|eight): 60 s of a 2 Hz pulse through insert 1's Filter
 // whose cutoff is automated / modulated, rendered in blocks of 256. Without the variable the test does nothing.
 TEST (mod190ox_perf_cpu)
 {
-    const char* variant = std::getenv ("LYNX_MOD190OX_PERF");
+    const char* variant = std::getenv ("YW_MOD190OX_PERF");
     if (variant == nullptr)
         return;
     const std::string v = variant;
     auto song = mod190oxSong();
     song.mixer[0].inputChannel = -1;
     song.mixer[1].inputChannel = 0;
-    song.mixer[1].monitor = lynx::InputMonitor::on;
-    song.mixer[1].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::filter));
-    const lynx::AutomationTarget cutoff { lynx::AutomationTargetKind::effectParam, 1, 0, 1 }; // (the Filter's Cutoff)
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    song.mixer[1].monitor = yw::InputMonitor::on;
+    song.mixer[1].effects.push_back (yw::makeEffectSlot (yw::EffectKind::filter));
+    const yw::AutomationTarget cutoff { yw::AutomationTargetKind::effectParam, 1, 0, 1 }; // (the Filter's Cutoff)
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
-    clip.length = 1000 * lynx::ppq;
+    clip.length = 1000 * yw::ppq;
     if (v == "automation")
     {
-        lynx::Automation a;
+        yw::Automation a;
         a.target = cutoff;
-        a.points = { { 0, 0.2f, 0.0f }, { 1000 * lynx::ppq, 0.9f, 0.0f } };
+        a.points = { { 0, 0.2f, 0.0f }, { 1000 * yw::ppq, 0.9f, 0.0f } };
         song.automations.push_back (a);
         song.playlist.push_back (clip);
     }
-    const auto route = std::vector<lynx::ModRoute> { { cutoff, 0.3f } };
-    const auto addKind = [&] (lynx::ModKind kind) {
-        auto m = lynx::Modulator::make (kind);
-        m.host = { lynx::AutomationTargetKind::mixerVolume, 1, 0, 0 };
+    const auto route = std::vector<yw::ModRoute> { { cutoff, 0.3f } };
+    const auto addKind = [&] (yw::ModKind kind) {
+        auto m = yw::Modulator::make (kind);
+        m.host = { yw::AutomationTargetKind::mixerVolume, 1, 0, 0 };
         m.routes = route;
         song.modulators.push_back (m);
     };
     if (v == "lfo")
-        addKind (lynx::ModKind::lfo);
+        addKind (yw::ModKind::lfo);
     else if (v == "follower")
-        addKind (lynx::ModKind::follower);
+        addKind (yw::ModKind::follower);
     else if (v == "envelope")
-        addKind (lynx::ModKind::envelope);
+        addKind (yw::ModKind::envelope);
     else if (v == "steps")
-        addKind (lynx::ModKind::steps);
+        addKind (yw::ModKind::steps);
     else if (v == "eight")
-        for (int k = 0; k < lynx::modKindCount; ++k)
-            addKind ((lynx::ModKind) k);
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
-    lynx::RackRenderer renderer;
+        for (int k = 0; k < yw::modKindCount; ++k)
+            addKind ((yw::ModKind) k);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 512);
-    lynx::LiveInput live;
+    yw::LiveInput live;
     renderer.setLiveInput (&live);
     std::vector<float> a (256), l (256), r (256);
     live.channels[0] = a.data();
     live.channels[1] = a.data();
     live.numChannels = 2;
-    const auto tps = song.bpm * lynx::ppq / 60.0 / 48000.0;
+    const auto tps = song.bpm * yw::ppq / 60.0 / 48000.0;
     double sum = 0.0;
     const auto t0 = std::chrono::steady_clock::now();
     for (int b = 0; b < 48000 * 60 / 256; ++b)

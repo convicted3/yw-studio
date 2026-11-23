@@ -13,7 +13,7 @@
 
 #include "core/Fpc.h"
 
-namespace lynx
+namespace yw
 {
 class FpcEnvelope
 {
@@ -69,4 +69,4 @@ public:
 private:
     std::shared_ptr<const Curve> curve;
 };
-} // namespace lynx
+} // namespace yw

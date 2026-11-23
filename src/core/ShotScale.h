@@ -3,15 +3,15 @@
 // Round 190bi: the pixel scale of the headless picture routes (--snapshot, --plugui, --pluginthumbs, --flextrashot,
 // --danceshot, --parityshot and the other *shot routes). The same layout is drawn at that many pixels per logical pixel
 // (vector and text drawn at the scale, as on a 150 % / 200 % display), so the website and the README get sharp
-// pictures on dense screens. Chosen with `--shot-scale <v>` or the environment variable LYNX_SHOT_SCALE (the older
-// LYNX_PARITYSHOT_SCALE of round 190ar still works); no option = 1, the pictures stay exactly as before.
+// pictures on dense screens. Chosen with `--shot-scale <v>` or the environment variable YW_SHOT_SCALE (the older
+// YW_PARITYSHOT_SCALE of round 190ar still works); no option = 1, the pictures stay exactly as before.
 // This part is plain C++ (no JUCE) so the core tests can check it; ui/ShotScale.h holds the drawing helpers.
 
 #include <cmath>
 #include <cstdlib>
 #include <string>
 
-namespace lynx::shotscale
+namespace yw::shotscale
 {
 constexpr float minScale = 1.0f, maxScale = 4.0f;
 
@@ -42,7 +42,7 @@ inline float parse (const std::string& text)
     return scale < minScale ? minScale : scale > maxScale ? maxScale : scale;
 }
 
-// the scale in force: the argument (--shot-scale) wins, then LYNX_SHOT_SCALE, then LYNX_PARITYSHOT_SCALE, else 1.
+// the scale in force: the argument (--shot-scale) wins, then YW_SHOT_SCALE, then YW_PARITYSHOT_SCALE, else 1.
 // `given` tells whether any of them was set (some routes change more than the pixel density when asked: --pluginthumbs
 // then draws the whole editor instead of the picker's small thumbnail)
 struct Choice
@@ -76,4 +76,4 @@ inline int pixels (int logical, float scale)
 {
     return (int) std::lround ((double) logical * (double) scale);
 }
-} // namespace lynx::shotscale
+} // namespace yw::shotscale

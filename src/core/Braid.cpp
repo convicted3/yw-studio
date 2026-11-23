@@ -1,6 +1,6 @@
 // Braid (round 190ko, core/Braid.h): the DSP — voices, the two engines' oscillators, filters, envelopes, LFOs, the
 // modulation matrix, the mix, drive and limiter — and the instrument. Laws measured black-box on Live 12.4's renders of
-// Meld (REA_rodada190ko §1; render sets m1 / m2 of /mnt/e/lynx-work/meld190ko); the algorithms are LYNX's own.
+// Meld (REA_rodada190ko §1; render sets m1 / m2 of /mnt/e/yw-work/meld190ko); the algorithms are YW's own.
 
 #include "core/Braid.h"
 
@@ -12,7 +12,7 @@
 #include "core/Song.h"
 #include "core/WavetableSynth.h"
 
-namespace lynx
+namespace yw
 {
 namespace braid
 {
@@ -1611,4 +1611,4 @@ private:
 } // namespace
 
 std::unique_ptr<Instrument> makeBraidInstrument() { return std::make_unique<BraidInstrument>(); }
-} // namespace lynx
+} // namespace yw

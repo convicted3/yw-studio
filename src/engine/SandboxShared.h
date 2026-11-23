@@ -1,7 +1,7 @@
 #pragma once
 
-// The plugin sandbox's wire format (round 176a: split out of PluginSandbox.cpp so the 32-bit bridge, LYNX-bridge32.exe,
-// builds the same child side). Every field has a fixed size, so a 64-bit LYNX and a 32-bit child share one layout.
+// The plugin sandbox's wire format (round 176a: split out of PluginSandbox.cpp so the 32-bit bridge, YW-bridge32.exe,
+// builds the same child side). Every field has a fixed size, so a 64-bit YW and a 32-bit child share one layout.
 
 #include <array>
 #include <atomic>
@@ -36,10 +36,10 @@
   #include <thread>
   #include <dlfcn.h>
  #endif
- #define LYNX_POSIX_SANDBOX 1
+ #define YW_POSIX_SANDBOX 1
 #endif
 
-namespace lynx::sandboxipc
+namespace yw::sandboxipc
 {
 inline int processTag()
 {
@@ -47,19 +47,19 @@ inline int processTag()
     return tag;
 }
 
-// diagnostics: LYNX_SANDBOX_LOG=file logs the steps (one file per process)
+// diagnostics: YW_SANDBOX_LOG=file logs the steps (one file per process)
 inline void trace (const juce::String& what)
 {
-    if (const auto path = juce::SystemStats::getEnvironmentVariable ("LYNX_SANDBOX_LOG", {}); path.isNotEmpty())
+    if (const auto path = juce::SystemStats::getEnvironmentVariable ("YW_SANDBOX_LOG", {}); path.isNotEmpty())
         juce::File (path + "." + juce::String (processTag())).appendText (juce::String (juce::Time::getMillisecondCounter()) + " " + what + "\n");
 }
 
-#if JUCE_WINDOWS || LYNX_POSIX_SANDBOX
-// Block shared between LYNX and the child. The parent writes the input and signals `request`; the child
+#if JUCE_WINDOWS || YW_POSIX_SANDBOX
+// Block shared between YW and the child. The parent writes the input and signals `request`; the child
 // processes in place and signals `response`.
 struct SharedBlock
 {
-    static constexpr std::uint32_t magicValue = 0x4C594E58; // "YW Studio"
+    static constexpr std::uint32_t magicValue = 0x59575354; // "YWST"
     // (32 channels: a bridged multi-output instrument keeps 16 stereo outputs for the wrapper's Connections, issue #114)
     static constexpr int maxChannels = 32, maxFrames = 4096 /* PluginHost::maxBlockSize */, maxMidi = 1024, maxParams = 512, maxTimed = 512;
 
@@ -98,13 +98,13 @@ struct SharedBlock
     Param timed[maxTimed];
     std::int32_t timedOffsets[maxTimed];
     // rollup 0.1.30: the MIDI the plugin sent out of this block (what its MidiBuffer holds after processBlock), so the
-    // parent's buffer holds the plugin's output as in LYNX's own process: an arpeggiator's notes for the note lights and
+    // parent's buffer holds the plugin's output as in YW's own process: an arpeggiator's notes for the note lights and
     // the wrapper's Output port, which also reaches hardware MIDI outputs (round 190jl). Before, the parent's buffer
     // still held what went in.
     std::int32_t midiOutCount;
     Midi midiOut[maxMidi];
 };
-// one layout for the 64-bit LYNX and the 32-bit bridge (x86 MinGW aligns doubles to 8 as x64 does; alignas pins it)
+// one layout for the 64-bit YW and the 32-bit bridge (x86 MinGW aligns doubles to 8 as x64 does; alignas pins it)
 static_assert (offsetof (SharedBlock, transport) == 40 && sizeof (SharedBlock::Transport) == 64, "SharedBlock layout");
 static_assert (offsetof (SharedBlock, midi) == 104 && sizeof (SharedBlock::Midi) == 8 && sizeof (SharedBlock::Param) == 8, "SharedBlock layout");
 
@@ -171,7 +171,7 @@ public:
         std::memset (shared, 0, sizeof (SharedBlock));
        #else
         const auto path = shmPath();
-        ::shm_unlink (path.toRawUTF8()); // a leftover of a crashed LYNX with the same pid
+        ::shm_unlink (path.toRawUTF8()); // a leftover of a crashed YW with the same pid
         const int fd = ::shm_open (path.toRawUTF8(), O_RDWR | O_CREAT | O_EXCL, 0600);
         if (fd < 0)
             return false;
@@ -187,7 +187,7 @@ public:
         for (const auto* suffix : { "-req", "-resp" })
         {
             const auto fifo = fifoPath (suffix);
-            ::unlink (fifo.toRawUTF8()); // (a leftover of a crashed LYNX with the same pid)
+            ::unlink (fifo.toRawUTF8()); // (a leftover of a crashed YW with the same pid)
             if (::mkfifo (fifo.toRawUTF8(), 0600) != 0)
                 return false;
         }
@@ -234,10 +234,10 @@ public:
         return shared != nullptr && shared->magic == SharedBlock::magicValue;
     }
 
-    // parent, once the child has mapped the block: the name is no longer needed (nothing left in /dev/shm if LYNX dies)
+    // parent, once the child has mapped the block: the name is no longer needed (nothing left in /dev/shm if YW dies)
     void unlinkName()
     {
-       #if LYNX_POSIX_SANDBOX
+       #if YW_POSIX_SANDBOX
         if (owner && ! unlinked)
         {
             unlinked = ::shm_unlink (shmPath().toRawUTF8()) == 0 || errno == ENOENT;
@@ -418,6 +418,6 @@ private:
 };
 
 // ---------------------------------------------------------------------------
-// LYNX side: connection to the child, shared memory and events.
+// YW side: connection to the child, shared memory and events.
 #endif
-} // namespace lynx::sandboxipc
+} // namespace yw::sandboxipc

@@ -34,7 +34,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 using namespace visualfx;
 namespace wc = visualfx::wavecandy;
@@ -204,7 +204,7 @@ private:
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// A knob bound to one of the slot's parameters (LYNX's control contract; automatable on a mixer slot)
+// A knob bound to one of the slot's parameters (YW's control contract; automatable on a mixer slot)
 // ---------------------------------------------------------------------------------------------------------------
 class ParamKnob final : public juce::Component
 {
@@ -1176,7 +1176,7 @@ struct SceneRenderer::State
             }
             // drawn every frame: kept as the window's kind of image (a software one becomes a new GPU bitmap on every
             // draw on Windows; round 190gv), the same pixels
-            entry.second = lynx::ui::forScreen (picture);
+            entry.second = yw::ui::forScreen (picture);
             entry.first = key;
         }
         return entry.second;
@@ -2483,14 +2483,14 @@ private:
 
     void chooseFfmpeg()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Locate ffmpeg"), juce::File(),
+        chooser = yw::ui::makeFileChooser (tr ("Locate ffmpeg"), juce::File(),
 #if JUCE_WINDOWS
                                                        "ffmpeg.exe");
 #else
                                                        "*");
 #endif
         juce::Component::SafePointer<VideoExportPanel> safe (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
             if (safe == nullptr || ! fc.getResult().existsAsFile())
                 return;
             setFfmpegLocation (fc.getResult());
@@ -2505,9 +2505,9 @@ private:
         const auto title = song.info.title.empty() ? juce::String ("YW Studio video") : juce::String::fromUTF8 (song.info.title.c_str());
         const auto start = juce::File::getSpecialLocation (juce::File::userMoviesDirectory).getChildFile (juce::File::createLegalFileName (title)
                                                                                                          + (ffmpeg.existsAsFile() ? ".mp4" : ""));
-        chooser = lynx::ui::makeFileChooser (tr ("Export video"), start, ffmpeg.existsAsFile() ? "*.mp4" : "*");
+        chooser = yw::ui::makeFileChooser (tr ("Export video"), start, ffmpeg.existsAsFile() ? "*.mp4" : "*");
         juce::Component::SafePointer<VideoExportPanel> safe (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe] (const juce::FileChooser& fc) {
             if (safe == nullptr || fc.getResult() == juce::File())
                 return;
             safe->start (fc.getResult());
@@ -3077,9 +3077,9 @@ private:
             });
         menu.addSeparator();
         menu.addItem (tr ("Import an FL ZGameEditor Visualizer preset (.fst)..."), [this] {
-            chooser = lynx::ui::makeFileChooser (tr ("ZGameEditor Visualizer preset"), juce::File(), "*.fst");
+            chooser = yw::ui::makeFileChooser (tr ("ZGameEditor Visualizer preset"), juce::File(), "*.fst");
             juce::Component::SafePointer<VisualizerEditor> safe (this);
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
                 if (safe == nullptr || ! fc.getResult().existsAsFile())
                     return;
                 juce::MemoryBlock data;
@@ -3115,9 +3115,9 @@ private:
 
     void pickImage()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Choose a picture"), juce::File(), "*.png;*.jpg;*.jpeg;*.gif");
+        chooser = yw::ui::makeFileChooser (tr ("Choose a picture"), juce::File(), "*.png;*.jpg;*.jpeg;*.gif");
         juce::Component::SafePointer<VisualizerEditor> safe (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
             if (safe == nullptr || ! fc.getResult().existsAsFile())
                 return;
             safe->changeLayer ([path = fc.getResult().getFullPathName().toStdString()] (scene::Layer& l) { l.path = path; });
@@ -3229,7 +3229,7 @@ public:
         centreWithSize (getWidth(), getHeight());
         setVisible (true);
         // (round 190jy: its GPU preview is a native OpenGL window of its own: never drawn by the main window)
-        getProperties().set ("lynxKeepOwnWindow", true);
+        getProperties().set ("ywKeepOwnWindow", true);
         dockOrKeepAbove (*this); // FL's docked plugin window (round 190ev)
         if (target.track >= 0 && target.engine != nullptr)
             gone = std::make_unique<ui::SlotGoneWatcher> (*target.engine, target.track, target.slot, [this] { closeButtonPressed(); });
@@ -3474,10 +3474,10 @@ public:
                 c.demo = false;
                 cases.push_back (c);
             }
-        if (juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALTEST_VIDEO_ONLY", {}).isNotEmpty())
+        if (juce::SystemStats::getEnvironmentVariable ("YW_VISUALTEST_VIDEO_ONLY", {}).isNotEmpty())
             cases.clear();
         // short checks (round 165e: a few seconds of GPU drawing in a small window): only some cases, shorter, smaller
-        if (const auto only = juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALTEST_ONLY", {}); only.isNotEmpty())
+        if (const auto only = juce::SystemStats::getEnvironmentVariable ("YW_VISUALTEST_ONLY", {}); only.isNotEmpty())
         {
             const auto wanted = juce::StringArray::fromTokens (only, ",", "");
             cases.erase (std::remove_if (cases.begin(), cases.end(), [&wanted] (const Case& c) {
@@ -3487,9 +3487,9 @@ public:
                              return true;
                          }), cases.end());
         }
-        seconds = juce::jlimit (0.5, 5.0, juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALTEST_SECONDS", "5").getDoubleValue());
-        noVideo = juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALTEST_NO_VIDEO", {}).isNotEmpty();
-        if (juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALTEST_SMALL", {}).isNotEmpty())
+        seconds = juce::jlimit (0.5, 5.0, juce::SystemStats::getEnvironmentVariable ("YW_VISUALTEST_SECONDS", "5").getDoubleValue());
+        noVideo = juce::SystemStats::getEnvironmentVariable ("YW_VISUALTEST_NO_VIDEO", {}).isNotEmpty();
+        if (juce::SystemStats::getEnvironmentVariable ("YW_VISUALTEST_SMALL", {}).isNotEmpty())
             for (auto& c : cases)
             {
                 c.w = c.w * 2 / 3;
@@ -3756,7 +3756,7 @@ private:
             v.height = 720;
             v.fps = 30;
             v.maxSeconds = withFfmpeg ? 12.0 : onMaster ? 0.5 : 2.0;
-            if (const auto cap = juce::SystemStats::getEnvironmentVariable ("LYNX_VISUALTEST_VIDEO_SECONDS", {}).getDoubleValue(); cap > 0.0)
+            if (const auto cap = juce::SystemStats::getEnvironmentVariable ("YW_VISUALTEST_VIDEO_SECONDS", {}).getDoubleValue(); cap > 0.0)
                 v.maxSeconds = juce::jmin (v.maxSeconds, cap);
             v.ffmpeg = withFfmpeg ? findFfmpeg() : juce::File();
             if (withFfmpeg && ! v.ffmpeg.existsAsFile())
@@ -3854,4 +3854,4 @@ void runVisualTest (const juce::File& folder, const juce::File& project, std::fu
         d (ok);
     });
 }
-} // namespace lynx
+} // namespace yw

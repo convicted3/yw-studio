@@ -1,4 +1,4 @@
-// Round 190ch (LYNX's own features in the roles BandLab offers; all local): the project's Lyrics / Notes
+// Round 190ch (YW's own features in the roles BandLab offers; all local): the project's Lyrics / Notes
 // (core/Lyrics.h), reference matching for mastering (core/ReferenceMatch.h) and the "Clean voice" chain
 // (core/CleanVoice.h).
 
@@ -51,11 +51,11 @@ inline void sine (std::vector<float>& out, std::size_t from, std::size_t to, dou
 }
 
 // a chain of slots run over a stereo buffer, in blocks
-inline void run (const std::vector<lynx::EffectSlot>& slots, std::vector<float>& l, std::vector<float>& r)
+inline void run (const std::vector<yw::EffectSlot>& slots, std::vector<float>& l, std::vector<float>& r)
 {
     for (const auto& slot : slots)
     {
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (rate);
         fx->reset();
         for (std::size_t at = 0; at < l.size(); at += 512)
@@ -75,7 +75,7 @@ inline double rmsDb (const std::vector<float>& x, std::size_t from, std::size_t 
 // --- Lyrics / Notes --------------------------------------------------------------------------------------------------
 TEST (bl190ch_lyrics_lines_headings_and_positions)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::string text = "[Verse 1]\n[5] Walking down the line\n  [5.3]   second half\nplain words\n[9] [Chorus]\n[12]\n[not closed\n[a] and more";
     const auto lines = lyrics::parse (text);
     CHECK (lines.size() == 8);
@@ -104,7 +104,7 @@ TEST (bl190ch_lyrics_lines_headings_and_positions)
 
 TEST (bl190ch_lyrics_positions_follow_the_songs_bars)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.beatsPerBar = 4;
     const auto bar = (std::int64_t) ppq * 4;
@@ -132,7 +132,7 @@ TEST (bl190ch_lyrics_positions_follow_the_songs_bars)
 
 TEST (bl190ch_lyrics_marker_at_playhead_and_jumps)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     const auto bar = (std::int64_t) ppq * 4;
     song.info.comments = "[Verse]\nFirst line of the verse that is rather long and keeps going on\n\n[Chorus]\nSing it";
@@ -186,12 +186,12 @@ TEST (bl190ch_lyrics_marker_at_playhead_and_jumps)
 
 TEST (bl190ch_lyrics_search_and_text_export)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::string text = "[Chorus]\nLove is LOVE, love\nCora\xc3\xa7\xc3\xa3o e amor";
     const auto hits = lyrics::find (text, "love");
     CHECK (hits.size() == 3);
     for (const auto& [a, b] : hits)
-        CHECK (b - a == 4 && lynx::lyrics::detail::sameText (text.substr (a, 4), "LOVE"));
+        CHECK (b - a == 4 && yw::lyrics::detail::sameText (text.substr (a, 4), "LOVE"));
     CHECK (lyrics::find (text, "cora\xc3\xa7\xc3\xa3o").size() == 1); // ASCII letters either case, other bytes as written
     CHECK (lyrics::find (text, "").empty() && lyrics::find (text, "nothing here").empty() && lyrics::find ("ab", "abc").empty());
     CHECK (lyrics::find ("aaaa", "aa").size() == 2); // (not overlapping)
@@ -208,7 +208,7 @@ TEST (bl190ch_lyrics_search_and_text_export)
     song.info.author.clear();
     song.info.comments = "one";
     CHECK (lyrics::exportText (song) == "one\n");
-    // the text is the project's Comments: nothing else holds it (one store, the field .lynx and .flp already carry)
+    // the text is the project's Comments: nothing else holds it (one store, the field .yw and .flp already carry)
     Song other = song;
     CHECK (other.info == song.info);
 }
@@ -216,7 +216,7 @@ TEST (bl190ch_lyrics_search_and_text_export)
 // --- Reference match ---------------------------------------------------------------------------------------------------
 TEST (bl190ch_reference_analysis_matches_ebu_r128_and_known_signals)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto second = (std::size_t) bl190ch::rate;
     // EBU Tech 3341 case 1 and 2: a stereo 1 kHz sine at −23 / −33 dBFS reads −23.0 / −33.0 LUFS (±0.1)
     for (const double level : { -23.0, -33.0 })
@@ -273,7 +273,7 @@ TEST (bl190ch_reference_analysis_matches_ebu_r128_and_known_signals)
 
 TEST (bl190ch_reference_match_pink_noise_with_a_known_tilt)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto frames = (std::size_t) (30.0 * bl190ch::rate);
     const auto songL = bl190ch::pink (frames, 1u), songR = bl190ch::pink (frames, 2u);
     // the reference: the same noise tilted by 0.6 dB per octave around 1 kHz (Facet's Flat Tilt: its gain is the level
@@ -334,7 +334,7 @@ TEST (bl190ch_reference_match_pink_noise_with_a_known_tilt)
 
 TEST (bl190ch_reference_match_limits_and_smoothing)
 {
-    using namespace lynx;
+    using namespace yw;
     // smoothing keeps a straight tilt as it is, up to both ends, and takes a zigzag out
     std::array<double, refmatch::bands> line {}, zigzag {};
     for (int k = 0; k < refmatch::bands; ++k)
@@ -407,7 +407,7 @@ TEST (bl190ch_reference_match_limits_and_smoothing)
 
 TEST (bl190ch_reference_match_is_two_editable_master_slots)
 {
-    using namespace lynx;
+    using namespace yw;
     refmatch::Analysis a, b;
     a.valid = b.valid = true;
     a.lufs = -18.0;
@@ -461,7 +461,7 @@ TEST (bl190ch_reference_match_is_two_editable_master_slots)
 // --- Clean voice -------------------------------------------------------------------------------------------------------
 TEST (bl190ch_clean_voice_chain_settings)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cv = cleanvoice;
     const auto plain = cv::chain();
     CHECK (plain.size() == 4);
@@ -515,7 +515,7 @@ TEST (bl190ch_clean_voice_chain_settings)
 
 TEST (bl190ch_clean_voice_goes_first_on_the_insert_and_comes_off_cleanly)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cv = cleanvoice;
     Song song;
     song.mixer = Song::defaultMixer (3);
@@ -568,7 +568,7 @@ TEST (bl190ch_clean_voice_goes_first_on_the_insert_and_comes_off_cleanly)
 
 TEST (bl190ch_clean_voice_cleans_a_noisy_take)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto second = (std::size_t) bl190ch::rate;
     // a "take": 1 s of room noise, 2 s of voice (a 220 Hz tone with harmonics) over the noise, 2 s of noise again; and
     // rumble at 35 Hz all the way through

@@ -5,7 +5,7 @@
 // puts the playhead on the nearest beat at each tap during playback, and the nudge buttons run the song a little
 // slower or faster while held, to drift the beat into place. The workflow follows FL Studio's tempo tapper
 // (REA_rodada132: its form has Tap, Apply tempo, Sync and the two nudge buttons; round 190my added FL's Mute and "now",
-// REA 190my R3); the window is LYNX's own.
+// REA 190my R3); the window is YW's own.
 
 #include <memory>
 
@@ -13,10 +13,10 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 void openTempoTapper (AudioEngine& engine);
 
 // --snapshot: the tapper's content, after `taps` taps at `bpm`.
 std::unique_ptr<juce::Component> makeTempoTapperForSnapshot (AudioEngine& engine, int taps, double bpm);
-} // namespace lynx
+} // namespace yw

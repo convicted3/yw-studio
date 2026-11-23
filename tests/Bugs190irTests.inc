@@ -1,5 +1,5 @@
 // Round 190ir: issue #189 (text size), the Discord recording report (takes on new tracks / new inserts).
-// (#188, a minimised window that kept the main window's clicks, is a JUCE/X11 fix: LYNX --minimizeclicktest.)
+// (#188, a minimised window that kept the main window's clicks, is a JUCE/X11 fix: YW --minimizeclicktest.)
 
 #include "core/FontMetrics.h"
 #include "core/TextSize.h"
@@ -41,25 +41,25 @@ inline std::vector<unsigned char> tinyFont (int upem, int ascent, int descent, b
     return d;
 }
 
-inline lynx::Song recordingSong (int inserts)
+inline yw::Song recordingSong (int inserts)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
     song.playlistTracks.clear();
-    song.mixer = lynx::Song::defaultMixer (inserts);
+    song.mixer = yw::Song::defaultMixer (inserts);
     return song;
 }
 
-inline int clipsOn (const lynx::Song& song, int track)
+inline int clipsOn (const yw::Song& song, int track)
 {
-    return (int) std::count_if (song.playlist.begin(), song.playlist.end(), [track] (const lynx::Clip& c) { return c.track == track; });
+    return (int) std::count_if (song.playlist.begin(), song.playlist.end(), [track] (const yw::Clip& c) { return c.track == track; });
 }
 } // namespace bugs190ir
 
 TEST (bugs190ir_font_metrics_set_the_extent_and_keep_the_ratio)
 {
-    using namespace lynx::fontmetrics;
+    using namespace yw::fontmetrics;
     const auto font = bugs190ir::tinyFont (2048, 2189, 600, true); // Open Sans
     const auto before = read (font.data(), font.size());
     CHECK (before.has_value() && before->unitsPerEm == 2048 && before->hheaAscent == 2189 && before->hheaDescent == -600 && before->useTypoMetrics);
@@ -86,15 +86,15 @@ TEST (bugs190ir_font_metrics_set_the_extent_and_keep_the_ratio)
 
 TEST (bugs190ir_bundled_open_sans_is_read)
 {
-    // the font LYNX brings (resources/fonts): Open Sans 2189 / -600 of 2048 with USE_TYPO_METRICS, as measured
+    // the font YW brings (resources/fonts): Open Sans 2189 / -600 of 2048 with USE_TYPO_METRICS, as measured
     std::ifstream in ("resources/fonts/OpenSans-Regular.ttf", std::ios::binary);
     const std::vector<unsigned char> data ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
     if (data.empty())
         return; // (run from elsewhere than the repository root)
-    const auto v = lynx::fontmetrics::read (data.data(), data.size());
+    const auto v = yw::fontmetrics::read (data.data(), data.size());
     CHECK (v.has_value() && v->unitsPerEm == 2048 && v->hheaAscent == 2189 && v->hheaDescent == -600 && v->useTypoMetrics);
-    const auto scaled = lynx::fontmetrics::withVerticalExtent (data.data(), data.size(), lynx::fontmetrics::dejaVuSansExtent);
-    const auto s = lynx::fontmetrics::read (scaled.data(), scaled.size());
+    const auto scaled = yw::fontmetrics::withVerticalExtent (data.data(), data.size(), yw::fontmetrics::dejaVuSansExtent);
+    const auto s = yw::fontmetrics::read (scaled.data(), scaled.size());
     CHECK (s.has_value() && s->hheaAscent == 1871 && s->hheaDescent == -513 && s->typoAscent == 1871 && s->typoDescent == -513);
     // (its win metrics are taller, 2302 + 651: scaled to the same 2384 units in their own ratio)
     CHECK (v.has_value() && v->winAscent == 2302 && v->winDescent == 651 && s.has_value() && s->winAscent + s->winDescent == 2384 && s->winAscent == 1858);
@@ -107,7 +107,7 @@ TEST (bugs190ir_bundled_open_sans_is_read)
 
 TEST (bugs190ir_text_size_per_role)
 {
-    using namespace lynx::textsize;
+    using namespace yw::textsize;
     CHECK (forRole (100, Role::body) == 100 && forRole (100, Role::caption) == 100);
     CHECK (forRole (150, Role::body) == 150 && forRole (150, Role::small) == 150 && forRole (150, Role::title) == 150);
     // the roles in boxes of a fixed size stop at 125 %
@@ -123,8 +123,8 @@ TEST (bugs190ir_text_size_per_role)
 
 TEST (bugs190ir_takes_land_where_fl_puts_them)
 {
-    using namespace lynx;
-    using namespace lynx::takes;
+    using namespace yw;
+    using namespace yw::takes;
     auto song = bugs190ir::recordingSong (8);
     const auto inserts = song.mixer.size();
     // a beat on Track 1, bars 1-2 (a pattern clip)
@@ -143,7 +143,7 @@ TEST (bugs190ir_takes_land_where_fl_puts_them)
     // take 2 over the same bars: the next free track (FL as well)
     placeTakeClips (song, { { "/rec/Insert 1_Take2.wav", "Insert 1_Take2", 0, 1 } }, { { 2 * bar, 2 * bar, 0, 0.0f } });
     CHECK (song.playlist.back().track == 1);
-    // take 3 later in the song: back on Track 1 (LYNX 0.1.29: a third new track, "after the last one used")
+    // take 3 later in the song: back on Track 1 (YW 0.1.29: a third new track, "after the last one used")
     placeTakeClips (song, { { "/rec/Insert 1_Take3.wav", "Insert 1_Take3", 0, 1 } }, { { 8 * bar, 2 * bar, 0, 0.0f } });
     CHECK (song.playlist.back().track == 0);
     // FL makes an audio clip channel per take; no take made an insert
@@ -158,8 +158,8 @@ TEST (bugs190ir_takes_land_where_fl_puts_them)
 
 TEST (bugs190ir_linked_audio_track_takes_go_to_its_sub_tracks)
 {
-    using namespace lynx;
-    using namespace lynx::takes;
+    using namespace yw;
+    using namespace yw::takes;
     auto song = bugs190ir::recordingSong (8);
     const auto inserts = song.mixer.size();
     const auto bar = (std::int64_t) 4 * ppq;

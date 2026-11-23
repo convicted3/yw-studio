@@ -6,7 +6,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::perfmon
+namespace yw::perfmon
 {
 namespace
 {
@@ -157,4 +157,4 @@ std::vector<Row> Monitor::rows (const std::string& find, SortBy sort) const
     });
     return out;
 }
-} // namespace lynx::perfmon
+} // namespace yw::perfmon

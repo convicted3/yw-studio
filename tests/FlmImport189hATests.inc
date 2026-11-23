@@ -9,10 +9,10 @@ struct Run
 {
     std::vector<float> l, r;
 };
-inline Run run (lynx::EffectKind kind, std::initializer_list<float> values, std::vector<float> l, std::vector<float> r,
+inline Run run (yw::EffectKind kind, std::initializer_list<float> values, std::vector<float> l, std::vector<float> r,
                 int pre = 0, int block = 0)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (48000.0);
     auto p = makeEffectSlot (kind).params;
@@ -29,7 +29,7 @@ inline Run run (lynx::EffectKind kind, std::initializer_list<float> values, std:
     for (int at = 0; at < (int) l.size();)
     {
         const auto n = std::min (block > 0 ? block : (int) l.size(), (int) l.size() - at);
-        fx->setSongPosition ((double) at * 0.04); // LYNX ticks (960 a beat): 24000 samples a beat
+        fx->setSongPosition ((double) at * 0.04); // YW ticks (960 a beat): 24000 samples a beat
         fx->process (l.data() + at, r.data() + at, n, p, 120.0);
         at += n;
     }
@@ -46,7 +46,7 @@ inline bool near (float a, double b, double tol = 1e-5) { return std::abs ((doub
 
 TEST (flm189ha_pocket_autoduck_envelope)
 {
-    using namespace lynx;
+    using namespace yw;
     auto p = makeEffectSlot (EffectKind::pocketAutoduck).params;
     // defaults: a = 0.5·0.1 + 0.001 = 0.051 beat, Time 1, Curve 0.501 → q = 0.7505 on the rise and on the fall
     CHECK (pocket::autoduckEnvelope (p, 0.0f) == 0.0f);
@@ -84,7 +84,7 @@ TEST (flm189ha_pocket_autoduck_envelope)
 
 TEST (flm189ha_pocket_autoduck_gain)
 {
-    using namespace lynx;
+    using namespace yw;
     // Ducking 0.25 → depth ½; Attack 0 (a = 0.001), Hold 1, Time 0.5: the gain heads for ½ over the first half beat and
     // back to 1 over the second, through the 0.01 one-pole
     const std::vector<float> ones (48000, 1.0f);
@@ -103,7 +103,7 @@ TEST (flm189ha_pocket_autoduck_gain)
 
 TEST (flm189ha_pocket_chorus)
 {
-    using namespace lynx;
+    using namespace yw;
     // defaults at 48 kHz: N = 480, Depth 0.6 → d = 0.256, Mix 0.6 → 0.36, Stereo 1: the left hears tap 1, the right tap 2.
     // An impulse in the left (sum = 1): tap 2 at once mixes (1 − u2) of the current sum, u2 = sin(2π·0.1)·d + ½
     const auto o = flm189ha::run (EffectKind::pocketChorus, {}, flm189ha::impulse (2000), std::vector<float> (2000, 0.0f));
@@ -130,7 +130,7 @@ TEST (flm189ha_pocket_chorus)
 
 TEST (flm189ha_pocket_spacer)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketSpacer;
     const auto in = flm189ha::impulse (20000, 10);
     const auto in2 = flm189ha::impulse (20000, 20);
@@ -164,7 +164,7 @@ TEST (flm189ha_pocket_spacer)
 
 TEST (flm189ha_pocket_stereoizer)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketStereoizer;
     const auto in = flm189ha::impulse (4000, 0);
     const std::vector<float> zero (4000, 0.0f);
@@ -185,7 +185,7 @@ TEST (flm189ha_pocket_stereoizer)
 
 TEST (flm189ha_pocket_import)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::pair<std::uint32_t, EffectKind> kinds[] { { 29, EffectKind::pocketAutoduck }, { 11, EffectKind::pocketChorus },
                                                          { 34, EffectKind::pocketSpacer }, { 15, EffectKind::pocketStereoizer } };
     for (const auto& [type, kind] : kinds)

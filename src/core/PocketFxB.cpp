@@ -15,7 +15,7 @@
 // All four share FLM's small LFO ("LFO-F" below). Like every Pocket engine that reads per-call values or the song
 // position, they run on FL's song-tick grid (core/PocketGrid.h): FL calls a hosted FLM rack in chunks of 1/96 beat.
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -133,7 +133,7 @@ struct Changes
 // Wow & Flutter (FLM module 43): a 100 % wet modulated delay. Two sine LFO-Fs set the delay: wow up to 142 ms × the
 // wow amount (an exponential law), flutter up to 3 ms on top; read with linear interpolation. Random re-picks the wow
 // rate (or its sync length) inside a window set by Random Amount, every Random Rate period.
-// FLM times the random picks with the wall clock; LYNX counts samples so that an export is the same at any speed
+// FLM times the random picks with the wall clock; YW counts samples so that an export is the same at any speed
 // (a deviation: FLM picks less often per audio second when it renders faster than real time).
 class WowFlutter final : public Effect
 {
@@ -700,4 +700,4 @@ std::string tremoloParamText (int param, float v)
         default: return percent (v);
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

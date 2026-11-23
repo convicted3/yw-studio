@@ -1,13 +1,13 @@
 // Round 165g flnewt165: Newtone's engine against FL's (grain size and gain, tremolo, pitch ramps), the editor's tools
-// (cut / glue, Center / Variation / Transition, snap to scale, score) and LYNX's format version 2.
+// (cut / glue, Center / Variation / Transition, snap to scale, score) and YW's format version 2.
 // docs/analise/REA_rodada165g-flnewt165.md
 
 namespace flnewt165
 {
 // a sung vowel: harmonics of f0 (1/k) through a resonance at 700 Hz, `seconds` long, 44.1 kHz
-lynx::SampleData vowel (double f0, double seconds)
+yw::SampleData vowel (double f0, double seconds)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = 44100.0;
     const auto n = (int) (seconds * 44100.0);
     s.left.assign ((std::size_t) n, 0.0f);
@@ -22,11 +22,11 @@ lynx::SampleData vowel (double f0, double seconds)
     return s;
 }
 
-lynx::newtonefx::Track oneNote (std::int64_t frames, double pitch)
+yw::newtonefx::Track oneNote (std::int64_t frames, double pitch)
 {
-    lynx::newtonefx::Track t;
+    yw::newtonefx::Track t;
     t.frames = frames;
-    lynx::newtonefx::Note p;
+    yw::newtonefx::Note p;
     p.origStart = p.curStart = 0;
     p.origEnd = p.curEnd = frames;
     p.origPitch = pitch;
@@ -44,20 +44,20 @@ double rmsDb (const float* x, int n)
     return 10.0 * std::log10 (std::max (1e-30, e / std::max (1, n)));
 }
 
-double noteAt (const lynx::SampleData& s, int from, int length)
+double noteAt (const yw::SampleData& s, int from, int length)
 {
-    for (const auto& f : lynx::vocal::analysePitch (s.leftData() + from, length, s.sampleRate, 512))
+    for (const auto& f : yw::vocal::analysePitch (s.leftData() + from, length, s.sampleRate, 512))
         if (f.hz > 0.0)
-            return lynx::vocal::hzToNote (f.hz);
+            return yw::vocal::hzToNote (f.hz);
     return 0.0;
 }
 } // namespace flnewt165
 
 TEST (flnewt165_newtone_levels_follow_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL keeps a shifted note's level within ~2 dB of the source (no gain correction, grains of two output periods;
-    // REA_rodada165g-flnewt165 §1.1): +12 st +0.5 dB, −12 st −2.2 dB, formant ×2 −3.6 dB on a steady vowel. LYNX's old
+    // REA_rodada165g-flnewt165 §1.1): +12 st +0.5 dB, −12 st −2.2 dB, formant ×2 −3.6 dB on a steady vowel. YW's old
     // engine gave −8.5, +2.3 and +2.3 dB there.
     const auto s = flnewt165::vowel (223.0, 1.0);
     const auto n = (int) s.frames();
@@ -84,7 +84,7 @@ TEST (flnewt165_newtone_levels_follow_fl)
 
 TEST (flnewt165_newtone_tremolo_and_ramps)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = flnewt165::vowel (220.0, 1.0);
     const auto n = (int) s.frames();
     // tremolo: gain 1 + T·sin(2π t / V) in step with the vibrato, whatever the vibrato's depth (FL [EXEC])
@@ -128,7 +128,7 @@ TEST (flnewt165_newtone_tremolo_and_ramps)
 
 TEST (flnewt165_newtone_fl_fields_and_native_v2)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace newtonetest;
     // FL's XML: the ramps and the analysed smooth times are read (and a ramp alone is an edit)
     const auto xml = "<NewToneProject NumOfTracks=\"1\"><Tracks><Trk_0 TrackNum=\"0\" Type=\"class CzplJPositionablePSOLASource\" FilePath=\"a.wav\">"
@@ -179,7 +179,7 @@ TEST (flnewt165_newtone_fl_fields_and_native_v2)
 
 TEST (flnewt165_newtone_editor_tools)
 {
-    using namespace lynx;
+    using namespace yw;
     using newtonefx::Note;
     newtonefx::Track t;
     t.frames = 30000;

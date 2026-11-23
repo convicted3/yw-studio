@@ -3,7 +3,7 @@
 namespace layer164
 {
 // a hosted "plugin" that records the notes it gets
-struct NoteSpy final : lynx::Instrument
+struct NoteSpy final : yw::Instrument
 {
     struct Got
     {
@@ -28,24 +28,24 @@ struct NoteSpy final : lynx::Instrument
 
 struct Rig
 {
-    lynx::Song song;
+    yw::Song song;
     std::vector<std::shared_ptr<NoteSpy>> spies; // [channel] (the Layer's own is unused)
-    std::unique_ptr<const lynx::RackState> state;
-    lynx::RackRenderer renderer;
-    lynx::LiveEventQueue live;
+    std::unique_ptr<const yw::RackState> state;
+    yw::RackRenderer renderer;
+    yw::LiveEventQueue live;
 
     // channel 0 = the Layer, channels 1…children = spies
-    explicit Rig (int children, std::function<void (lynx::Song&)> setup = {})
+    explicit Rig (int children, std::function<void (yw::Song&)> setup = {})
     {
-        song.mixer = lynx::Song::defaultMixer (2);
-        lynx::ChannelDef l;
+        song.mixer = yw::Song::defaultMixer (2);
+        yw::ChannelDef l;
         l.name = "Layer";
-        l.instrument = lynx::InstrumentKind::layer;
+        l.instrument = yw::InstrumentKind::layer;
         song.channels.push_back (l);
         for (int k = 0; k < children; ++k)
         {
-            lynx::ChannelDef c;
-            c.instrument = lynx::InstrumentKind::plugin;
+            yw::ChannelDef c;
+            c.instrument = yw::InstrumentKind::plugin;
             c.plugin.id = "spy" + std::to_string (k + 1);
             song.channels.push_back (c);
             song.channels[0].layer.children.push_back (k + 1);
@@ -54,20 +54,20 @@ struct Rig
         if (setup)
             setup (song);
         spies.resize (song.channels.size());
-        lynx::RackState::Factories f;
-        f.pluginInstruments = [this] (const lynx::PluginRef& ref, double) {
+        yw::RackState::Factories f;
+        f.pluginInstruments = [this] (const yw::PluginRef& ref, double) {
             const auto k = std::stoi (ref.id.substr (3));
             spies[(std::size_t) k] = std::make_shared<NoteSpy>();
-            return std::shared_ptr<lynx::Instrument> (spies[(std::size_t) k]);
+            return std::shared_ptr<yw::Instrument> (spies[(std::size_t) k]);
         };
-        state = lynx::RackState::build (song, nullptr, 44100.0, f);
+        state = yw::RackState::build (song, nullptr, 44100.0, f);
         renderer.prepare (44100.0, 256);
     }
 
     void play (int channel, int key, bool on = true)
     {
-        lynx::NoteEvent e;
-        e.type = on ? lynx::NoteEvent::Type::on : lynx::NoteEvent::Type::off;
+        yw::NoteEvent e;
+        e.type = on ? yw::NoteEvent::Type::on : yw::NoteEvent::Type::off;
         e.channel = channel;
         e.key = key;
         e.velocity = on ? 0.8f : 0.0f;
@@ -98,7 +98,7 @@ TEST (layer164_every_child_plays_the_layers_notes)
 
 TEST (layer164_random_plays_one_child_and_its_off_reaches_it)
 {
-    layer164::Rig rig (4, [] (lynx::Song& s) { s.channels[0].layer.random = true; });
+    layer164::Rig rig (4, [] (yw::Song& s) { s.channels[0].layer.random = true; });
     std::array<int, 5> count {};
     for (int n = 0; n < 200; ++n)
     {
@@ -119,7 +119,7 @@ TEST (layer164_random_plays_one_child_and_its_off_reaches_it)
 
 TEST (layer164_sequential_plays_the_children_in_turn)
 {
-    layer164::Rig rig (3, [] (lynx::Song& s) { s.channels[0].layer.sequential = true; });
+    layer164::Rig rig (3, [] (yw::Song& s) { s.channels[0].layer.sequential = true; });
     std::vector<int> order;
     for (int n = 0; n < 6; ++n)
     {
@@ -134,7 +134,7 @@ TEST (layer164_sequential_plays_the_children_in_turn)
 
 TEST (layer164_crossfade_gains)
 {
-    using lynx::layer::crossfadeGain;
+    using yw::layer::crossfadeGain;
     // three children: child 1 at 0, 1+2 at 0.25, child 2 at 0.5, 2+3 at 0.75, child 3 at 1
     CHECK (crossfadeGain (0, 3, 0.0f) == 1.0f && crossfadeGain (1, 3, 0.0f) == 0.0f);
     CHECK (std::abs (crossfadeGain (1, 3, 0.5f) - 1.0f) < 1e-6f && crossfadeGain (0, 3, 0.5f) == 0.0f && crossfadeGain (2, 3, 0.5f) == 0.0f);
@@ -142,18 +142,18 @@ TEST (layer164_crossfade_gains)
     CHECK (std::abs (crossfadeGain (0, 1, 0.7f) - 0.7f) < 1e-6f); // (one child: the Fade itself, as FL)
     CHECK (std::abs (crossfadeGain (0, 3, 0.25f) - 0.5f) < 1e-6f); // FL's linear triangle
     // a crossfaded Layer only plays the children with a level
-    layer164::Rig rig (3, [] (lynx::Song& s) { s.channels[0].layer.crossfade = true; s.channels[0].layer.fade = 1.0f; });
+    layer164::Rig rig (3, [] (yw::Song& s) { s.channels[0].layer.crossfade = true; s.channels[0].layer.fade = 1.0f; });
     rig.play (0, 60);
     CHECK (rig.spies[1]->ons() == 0 && rig.spies[2]->ons() == 0 && rig.spies[3]->ons() == 1);
     // FL scales the child by the Layer's channel gain (a plugin has no voice gain: the velocity carries it)
-    CHECK (std::abs (rig.spies[3]->got[0].velocity - 0.8f * lynx::channelGain (0.78f)) < 1e-5f);
+    CHECK (std::abs (rig.spies[3]->got[0].velocity - 0.8f * yw::channelGain (0.78f)) < 1e-5f);
 }
 
 TEST (layer164_key_region_and_split_children)
 {
-    layer164::Rig rig (3, [] (lynx::Song& s) {
+    layer164::Rig rig (3, [] (yw::Song& s) {
         s.channels[0].misc.rootNote = 36;
-        lynx::layer::splitChildren (s, 0);
+        yw::layer::splitChildren (s, 0);
     });
     CHECK (rig.song.channels[1].keyLow == 36 && rig.song.channels[1].keyHigh == 36);
     CHECK (rig.song.channels[3].keyLow == 38 && rig.song.channels[3].keyHigh == 38);
@@ -166,40 +166,40 @@ TEST (layer164_key_region_and_split_children)
     rig.play (3, 38);
     CHECK (rig.spies[3]->ons() == 1);
     // reset: the whole keyboard, root back on C5
-    lynx::layer::resetChildren (rig.song, 0);
+    yw::layer::resetChildren (rig.song, 0);
     CHECK (rig.song.channels[2].keyLow == 0 && rig.song.channels[2].keyHigh == 127 && rig.song.channels[2].misc.rootNote == 60
            && ! rig.song.channels[2].misc.addToKey);
 }
 
 TEST (layer164_split_keeps_a_samplers_pitch_on_its_key)
 {
-    lynx::Song s;
-    lynx::ChannelDef l, smp;
-    l.instrument = lynx::InstrumentKind::layer;
+    yw::Song s;
+    yw::ChannelDef l, smp;
+    l.instrument = yw::InstrumentKind::layer;
     l.misc.rootNote = 48;
-    smp.instrument = lynx::InstrumentKind::sampler;
+    smp.instrument = yw::InstrumentKind::sampler;
     s.channels = { l, smp, smp };
-    lynx::layer::setChildren (s, 0, { 2, 1, 0, 1, 7 });
+    yw::layer::setChildren (s, 0, { 2, 1, 0, 1, 7 });
     CHECK (s.channels[0].layer.children == std::vector<int> ({ 1, 2 }));
-    lynx::layer::splitChildren (s, 0);
+    yw::layer::splitChildren (s, 0);
     // key 49 plays the second sampler at its own pitch: root 49 → pitch +11 semitones over the C5 default
     CHECK (s.channels[2].misc.rootNote == 49 && std::abs (s.channels[2].sampler.pitch - 11.0f) < 1e-6f);
-    lynx::layer::resetChildren (s, 0);
+    yw::layer::resetChildren (s, 0);
     CHECK (s.channels[2].misc.rootNote == 60 && std::abs (s.channels[2].sampler.pitch) < 1e-6f);
 }
 
 TEST (layer164_children_follow_channel_edits)
 {
-    lynx::Song s;
-    lynx::ChannelDef l, c;
-    l.instrument = lynx::InstrumentKind::layer;
+    yw::Song s;
+    yw::ChannelDef l, c;
+    l.instrument = yw::InstrumentKind::layer;
     s.channels = { c, l, c, c, c };
     s.channels[1].layer.children = { 0, 2, 4 };
     s.removeChannel (2);
     CHECK (s.channels[1].layer.children == std::vector<int> ({ 0, 3 }));
-    CHECK (lynx::layer::parentsOf (s, 3) == std::vector<int> { 1 });
-    lynx::permuteChannels (s, { 3, 0, 1, 2 }); // channel 3 first
-    CHECK (s.channels[2].instrument == lynx::InstrumentKind::layer);
+    CHECK (yw::layer::parentsOf (s, 3) == std::vector<int> { 1 });
+    yw::permuteChannels (s, { 3, 0, 1, 2 }); // channel 3 first
+    CHECK (s.channels[2].instrument == yw::InstrumentKind::layer);
     CHECK (s.channels[2].layer.children == std::vector<int> ({ 1, 0 }));
 }
 
@@ -208,35 +208,35 @@ TEST (layer164_children_follow_channel_edits)
 TEST (xy164_shape_and_output)
 {
     // straight at 0.5, FL's tension bends it either way and keeps the ends
-    CHECK (std::abs (lynx::xy::shape (0.3, 0.5f) - 0.3) < 1e-9);
+    CHECK (std::abs (yw::xy::shape (0.3, 0.5f) - 0.3) < 1e-9);
     for (const auto t : { 0.0f, 0.25f, 0.75f, 1.0f })
-        CHECK (std::abs (lynx::xy::shape (0.0, t)) < 1e-9 && std::abs (lynx::xy::shape (1.0, t) - 1.0) < 1e-9);
-    CHECK (lynx::xy::shape (0.5, 1.0f) > 0.5 && lynx::xy::shape (0.5, 0.0f) < 0.5);
-    auto p = lynx::xy::defaults (lynx::EffectKind::xyController);
-    p[(std::size_t) lynx::xy::minimum (1)] = 0.2f;
-    p[(std::size_t) lynx::xy::maximum (1)] = 0.6f;
-    CHECK (std::abs (lynx::xy::output (lynx::EffectKind::xyController, p, 1, 0.5) - 0.4f) < 1e-6f);
+        CHECK (std::abs (yw::xy::shape (0.0, t)) < 1e-9 && std::abs (yw::xy::shape (1.0, t) - 1.0) < 1e-9);
+    CHECK (yw::xy::shape (0.5, 1.0f) > 0.5 && yw::xy::shape (0.5, 0.0f) < 0.5);
+    auto p = yw::xy::defaults (yw::EffectKind::xyController);
+    p[(std::size_t) yw::xy::minimum (1)] = 0.2f;
+    p[(std::size_t) yw::xy::maximum (1)] = 0.6f;
+    CHECK (std::abs (yw::xy::output (yw::EffectKind::xyController, p, 1, 0.5) - 0.4f) < 1e-6f);
     // min above max inverts the axis
-    p[(std::size_t) lynx::xy::minimum (1)] = 1.0f;
-    p[(std::size_t) lynx::xy::maximum (1)] = 0.0f;
-    CHECK (std::abs (lynx::xy::output (lynx::EffectKind::xyController, p, 1, 0.25) - 0.75f) < 1e-6f);
+    p[(std::size_t) yw::xy::minimum (1)] = 1.0f;
+    p[(std::size_t) yw::xy::maximum (1)] = 0.0f;
+    CHECK (std::abs (yw::xy::output (yw::EffectKind::xyController, p, 1, 0.25) - 0.75f) < 1e-6f);
 }
 
 TEST (xy164_effect_follows_goal)
 {
-    for (const auto kind : { lynx::EffectKind::xyController, lynx::EffectKind::xyzController })
+    for (const auto kind : { yw::EffectKind::xyController, yw::EffectKind::xyzController })
     {
-        auto slot = lynx::makeEffectSlot (kind);
-        CHECK ((int) lynx::effectInfo (kind).params.size() == lynx::xy::paramCount (kind));
-        CHECK (slot.params[(std::size_t) lynx::xy::level (0)] == 0.5f);
-        auto fx = lynx::makeEffect (slot);
+        auto slot = yw::makeEffectSlot (kind);
+        CHECK ((int) yw::effectInfo (kind).params.size() == yw::xy::paramCount (kind));
+        CHECK (slot.params[(std::size_t) yw::xy::level (0)] == 0.5f);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (44100.0);
         std::vector<float> l (512, 0.25f), r (512, -0.25f);
         fx->process (l.data(), r.data(), 512, slot.params, 120.0);
         CHECK (l[0] == 0.25f && r[0] == -0.25f); // no change to the sound
         CHECK (std::abs (fx->controlOutput (0) - 0.5f) < 1e-6f && fx->controlOutput (7) == 1.0f);
         // the goal jumps: the target moves there smoothly (never past it) and arrives
-        slot.params[(std::size_t) lynx::xy::level (0)] = 1.0f;
+        slot.params[(std::size_t) yw::xy::level (0)] = 1.0f;
         float last = 0.5f;
         int blocks = 0;
         bool monotonic = true;
@@ -253,9 +253,9 @@ TEST (xy164_effect_follows_goal)
     }
     // faster speed arrives sooner
     auto time = [] (float speed) {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::xyController);
-        slot.params[(std::size_t) lynx::xy::speed (slot.kind)] = speed;
-        auto fx = lynx::makeEffect (slot);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::xyController);
+        slot.params[(std::size_t) yw::xy::speed (slot.kind)] = speed;
+        auto fx = yw::makeEffect (slot);
         fx->prepare (44100.0);
         std::vector<float> l (256), r (256);
         fx->process (l.data(), r.data(), 256, slot.params, 120.0);
@@ -274,56 +274,56 @@ TEST (xy164_fl_state)
     std::vector<std::uint8_t> d (44, 0);
     const std::int32_t values[] = { 1, 16384, 0, 65536, 64, 65536, 6553, 58982, 0, 1536, 640 };
     std::memcpy (d.data(), values, sizeof (values));
-    const auto slot = lynx::xy::fromFl ("Fruity X-Y Controller", d);
+    const auto slot = yw::xy::fromFl ("Fruity X-Y Controller", d);
     CHECK (slot.has_value());
     if (! slot)
         return;
-    CHECK (slot->kind == lynx::EffectKind::xyController);
+    CHECK (slot->kind == yw::EffectKind::xyController);
     CHECK (std::abs (slot->params[0] - 0.25f) < 1e-4f && std::abs (slot->params[3] - 0.75f) < 1e-4f);
     CHECK (std::abs (slot->params[4] - 1.0f) < 1e-4f && std::abs (slot->params[5] - 0.1f) < 1e-3f);
     CHECK (std::abs (slot->params[8] - 0.5f) < 1e-4f && std::abs (slot->params[9] - 0.5f) < 1e-4f);
     // the output equals the constant value the old import applied (core/FlEffects.h controllerConstantOutput)
     for (int o = 0; o < 2; ++o)
     {
-        const auto constant = lynx::controllerConstantOutput ("Fruity X-Y Controller", d, o);
-        CHECK (constant && std::abs (*constant - lynx::xy::output (slot->kind, slot->params, o, slot->params[(std::size_t) lynx::xy::level (o)])) < 1e-3f);
+        const auto constant = yw::controllerConstantOutput ("Fruity X-Y Controller", d, o);
+        CHECK (constant && std::abs (*constant - yw::xy::output (slot->kind, slot->params, o, slot->params[(std::size_t) yw::xy::level (o)])) < 1e-3f);
     }
 }
 
 TEST (surface164_outputs_and_params)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::controlSurface);
-    lynx::SurfaceControl knob, pad, button;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::controlSurface);
+    yw::SurfaceControl knob, pad, button;
     knob.name = "Cutoff";
     knob.value = 0.3f;
-    pad.kind = lynx::SurfaceControl::Kind::xy;
+    pad.kind = yw::SurfaceControl::Kind::xy;
     pad.name = "Pad";
     pad.value = 0.1f;
     pad.valueY = 0.9f;
-    button.kind = lynx::SurfaceControl::Kind::button;
+    button.kind = yw::SurfaceControl::Kind::button;
     button.name = "Go";
-    CHECK (lynx::surface::add (slot, knob) == 0 && lynx::surface::add (slot, pad) == 1 && lynx::surface::add (slot, button) == 2);
-    CHECK (lynx::surface::firstOutput (slot.patcher.surface, 2) == 3);
-    CHECK (lynx::surface::outputName (slot.patcher.surface, 2) == "Pad Y" && lynx::surface::outputName (slot.patcher.surface, 3) == "Go");
+    CHECK (yw::surface::add (slot, knob) == 0 && yw::surface::add (slot, pad) == 1 && yw::surface::add (slot, button) == 2);
+    CHECK (yw::surface::firstOutput (slot.patcher.surface, 2) == 3);
+    CHECK (yw::surface::outputName (slot.patcher.surface, 2) == "Pad Y" && yw::surface::outputName (slot.patcher.surface, 3) == "Go");
     CHECK (slot.params[0] == 0.3f && slot.params[1] == 0.1f && slot.params[2] == 0.9f);
-    lynx::surface::setValue (slot, 2, 1.0f, 0.0f);
+    yw::surface::setValue (slot, 2, 1.0f, 0.0f);
     CHECK (slot.params[3] == 1.0f);
-    lynx::surface::remove (slot, 0); // the others move up
+    yw::surface::remove (slot, 0); // the others move up
     CHECK (slot.params[0] == 0.1f && slot.params[1] == 0.9f && slot.params[2] == 1.0f);
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (44100.0);
     std::vector<float> l (64), r (64);
     fx->process (l.data(), r.data(), 64, slot.params, 120.0);
     CHECK (fx->controlOutput (1) == 0.9f);
     // its Patcher node publishes one output per value
-    lynx::PatchNode node;
+    yw::PatchNode node;
     node.effect = slot;
-    CHECK (lynx::patcher::nodePorts (node).controlOuts == 3);
+    CHECK (yw::patcher::nodePorts (node).controlOuts == 3);
     // a Dashboard channel: the same from the channel's controls
-    lynx::ChannelDef dash;
-    dash.instrument = lynx::InstrumentKind::dashboard;
+    yw::ChannelDef dash;
+    dash.instrument = yw::InstrumentKind::dashboard;
     dash.patcher.surface = slot.patcher.surface;
-    auto instrument = lynx::makeInstrument (lynx::InstrumentKind::dashboard, nullptr);
+    auto instrument = yw::makeInstrument (yw::InstrumentKind::dashboard, nullptr);
     instrument->configure (dash, 120.0);
     CHECK (instrument->controlOutput (2) == 1.0f && instrument->controlOutput (0) == 0.1f);
 }
@@ -337,18 +337,18 @@ TEST (surface164_fl_demos)
         return;
     std::ifstream in (path, std::ios::binary);
     const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
-    lynx::FlpImportReport report;
-    lynx::FlpImportOptions options;
+    yw::FlpImportReport report;
+    yw::FlpImportOptions options;
     options.report = &report;
-    const auto song = lynx::importFlp (flp::parseProject (file), options);
+    const auto song = yw::importFlp (flp::parseProject (file), options);
     int surfaces = 0, controls = 0, links = 0;
     for (const auto& track : song.mixer)
         for (const auto& fx : track.effects)
-            if (fx.kind == lynx::EffectKind::controlSurface)
+            if (fx.kind == yw::EffectKind::controlSurface)
                 ++surfaces, controls += (int) fx.patcher.surface.size();
     for (const auto& a : song.automations)
         if (a.isLive() && a.source.channel < 0 && a.source.track >= 0
-            && song.mixer[(std::size_t) a.source.track].effects[(std::size_t) a.source.slot].kind == lynx::EffectKind::controlSurface)
+            && song.mixer[(std::size_t) a.source.track].effects[(std::size_t) a.source.slot].kind == yw::EffectKind::controlSurface)
             ++links;
     std::printf ("  Trap template: %d Control Surface(s), %d controls, %d live links\n", surfaces, controls, links);
     CHECK (surfaces >= 1 && controls >= 3 && links >= 1);
@@ -356,18 +356,18 @@ TEST (surface164_fl_demos)
 
 TEST (layer164_fl_flags_and_pitch)
 {
-    lynx::LayerSettings l;
-    lynx::applyFlLayerFlags (1, l);
+    yw::LayerSettings l;
+    yw::applyFlLayerFlags (1, l);
     CHECK (l.random && ! l.crossfade && ! l.sequential);
-    lynx::applyFlLayerFlags (2 | 4, l);
+    yw::applyFlLayerFlags (2 | 4, l);
     CHECK (! l.random && l.crossfade && l.sequential);
-    lynx::applyFlLayerFlags (1 | 4, l); // (FL checks Random first)
+    yw::applyFlLayerFlags (1 | 4, l); // (FL checks Random first)
     CHECK (l.random && ! l.sequential);
-    lynx::ChannelDef layer;
+    yw::ChannelDef layer;
     layer.misc.rootNote = 56; // RawFL's layer: its children play 4 semitones up
-    CHECK (std::abs (lynx::layer::pitchCents (layer) - 400.0f) < 1e-3f);
+    CHECK (std::abs (yw::layer::pitchCents (layer) - 400.0f) < 1e-3f);
     layer.sampler.pitch = -1.0f;
-    CHECK (std::abs (lynx::layer::pitchCents (layer) - 300.0f) < 1e-3f);
+    CHECK (std::abs (yw::layer::pitchCents (layer) - 300.0f) < 1e-3f);
 }
 
 namespace volt164
@@ -383,13 +383,13 @@ const std::vector<std::uint8_t> flState {
 
 struct Rig
 {
-    std::unique_ptr<lynx::Instrument> instrument = lynx::voltage::makeInstrument();
+    std::unique_ptr<yw::Instrument> instrument = yw::voltage::makeInstrument();
     std::vector<float> left, right;
-    explicit Rig (const lynx::voltage::Settings& s, double bpm = 120.0)
+    explicit Rig (const yw::voltage::Settings& s, double bpm = 120.0)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::voltage;
-        c.pluginState = lynx::voltage::write (s);
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::voltage;
+        c.pluginState = yw::voltage::write (s);
         instrument->prepare (44100.0);
         instrument->configure (c, bpm);
     }
@@ -406,26 +406,26 @@ struct Rig
 
 TEST (voltage164_fl_state)
 {
-    const auto s = lynx::voltage::parse (volt164::flState);
+    const auto s = yw::voltage::parse (volt164::flState);
     CHECK (s.has_value());
     if (! s)
         return;
     CHECK (s->enabled && s->range == 0 && s->pitchStandard == 0 && s->clockPpq == 24 && s->pulseLength == 15);
-    CHECK (s->source[0] == lynx::voltage::Source::pitch && s->source[1] == lynx::voltage::Source::gate);
-    CHECK (s->source[2] == lynx::voltage::Source::velocity && s->source[7] == lynx::voltage::Source::none);
+    CHECK (s->source[0] == yw::voltage::Source::pitch && s->source[1] == yw::voltage::Source::gate);
+    CHECK (s->source[2] == yw::voltage::Source::velocity && s->source[7] == yw::voltage::Source::none);
     CHECK (s->params[9] == 49152 && s->params[8] == 65536 && s->params[0] == 32768);
-    CHECK (std::abs (lynx::voltage::scaleOf (*s, 1) - 0.5f) < 1e-6f && std::abs (lynx::voltage::offsetOf (*s, 0)) < 1e-6f);
-    // LYNX writes version 3, which reads back the same
-    const auto again = lynx::voltage::parse (lynx::voltage::write (*s));
+    CHECK (std::abs (yw::voltage::scaleOf (*s, 1) - 0.5f) < 1e-6f && std::abs (yw::voltage::offsetOf (*s, 0)) < 1e-6f);
+    // YW writes version 3, which reads back the same
+    const auto again = yw::voltage::parse (yw::voltage::write (*s));
     CHECK (again.has_value() && *again == *s);
-    CHECK (! lynx::voltage::parse ({ 0x07, 0x00 }).has_value());
+    CHECK (! yw::voltage::parse ({ 0x07, 0x00 }).has_value());
 }
 
 TEST (voltage164_matches_fl_render)
 {
     // FL's render of the test project: C0, C1 … C10 one after the other, then C5 — main L steps −0.5 … +0.5 by 0.1
     // (1 V / octave at 10 V full scale) and holds after the note ends; main R is the gate × 0.5
-    volt164::Rig rig (*lynx::voltage::parse (volt164::flState));
+    volt164::Rig rig (*yw::voltage::parse (volt164::flState));
     for (int octave = 0; octave <= 10; ++octave)
     {
         rig.instrument->noteOn (12 * octave, 0.8f);
@@ -454,7 +454,7 @@ TEST (voltage164_matches_fl_render)
 
 TEST (voltage164_pulses_ranges_and_outputs)
 {
-    using namespace lynx::voltage;
+    using namespace yw::voltage;
     Settings s;
     s.enabled = true;
     s.source = { Source::trigger, Source::clock, Source::velocity, Source::none, Source::none, Source::none, Source::none, Source::none };

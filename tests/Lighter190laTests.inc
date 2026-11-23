@@ -13,7 +13,7 @@ TEST (lighter190la_cvwait_predicate_already_true)
     std::condition_variable cv;
     std::unique_lock<std::mutex> l (m);
     const auto t0 = std::chrono::steady_clock::now();
-    CHECK (lynx::cvwait::waitFor (cv, l, std::chrono::milliseconds (500), [] { return true; }));
+    CHECK (yw::cvwait::waitFor (cv, l, std::chrono::milliseconds (500), [] { return true; }));
     CHECK (std::chrono::steady_clock::now() - t0 < std::chrono::milliseconds (100));
     CHECK (l.owns_lock());
 }
@@ -26,14 +26,14 @@ TEST (lighter190la_cvwait_times_out_never_early)
     {
         std::unique_lock<std::mutex> l (m);
         const auto t0 = std::chrono::steady_clock::now();
-        CHECK (! lynx::cvwait::waitFor (cv, l, std::chrono::milliseconds (ms), [] { return false; }));
+        CHECK (! yw::cvwait::waitFor (cv, l, std::chrono::milliseconds (ms), [] { return false; }));
         CHECK (std::chrono::steady_clock::now() - t0 >= std::chrono::milliseconds (ms));
         CHECK (l.owns_lock());
     }
     // (a fractional timeout too: the SampleSimilarity pause)
     std::unique_lock<std::mutex> l (m);
     const auto t0 = std::chrono::steady_clock::now();
-    CHECK (! lynx::cvwait::waitFor (cv, l, std::chrono::duration<double> (0.0025), [] { return false; }));
+    CHECK (! yw::cvwait::waitFor (cv, l, std::chrono::duration<double> (0.0025), [] { return false; }));
     CHECK (std::chrono::steady_clock::now() - t0 >= std::chrono::microseconds (2500));
 }
 
@@ -52,14 +52,14 @@ TEST (lighter190la_cvwait_notify_wakes_it)
     });
     std::unique_lock<std::mutex> l (m);
     const auto t0 = std::chrono::steady_clock::now();
-    CHECK (lynx::cvwait::waitFor (cv, l, std::chrono::seconds (10), [&] { return ready; }));
+    CHECK (yw::cvwait::waitFor (cv, l, std::chrono::seconds (10), [&] { return ready; }));
     CHECK (std::chrono::steady_clock::now() - t0 < std::chrono::seconds (5));
     l.unlock();
     other.join();
     // the overload without a predicate returns after at most its timeout (it may return early, as std's may)
     std::unique_lock<std::mutex> l2 (m);
     const auto t1 = std::chrono::steady_clock::now();
-    lynx::cvwait::waitFor (cv, l2, std::chrono::milliseconds (5));
+    yw::cvwait::waitFor (cv, l2, std::chrono::milliseconds (5));
     CHECK (std::chrono::steady_clock::now() - t1 < std::chrono::seconds (5));
     CHECK (l2.owns_lock());
 }

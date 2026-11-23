@@ -6,8 +6,8 @@
 // printed the goldens below (define D190DM_HELPERS_ONLY to include the helpers alone).
 namespace d190dm
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 
 struct Case
 {
@@ -26,14 +26,14 @@ struct Render
 inline Render render (const Case& c)
 {
     constexpr double sr = 48000.0, pi = 3.141592653589793;
-    auto slot = lynx::makeEffectSlot (c.kind);
+    auto slot = yw::makeEffectSlot (c.kind);
     for (const auto& [k, v] : c.set)
         slot.params[(std::size_t) k] = v;
-    if (c.kind == lynx::EffectKind::hushDeEsser) // round 190js: a new Hush runs Single Vocal's revision; the base commit had none
-        slot.params[(std::size_t) lynx::mixsuite::hush::vocalRevision] = 0.0f;
-    if (c.kind == lynx::EffectKind::sentryGate) // round 190lp: … and a new Sentry the level gate's refit (revision 1)
-        slot.params[(std::size_t) lynx::dyn::sentry::revision] = 0.0f;
-    auto fx = lynx::makeEffect (slot);
+    if (c.kind == yw::EffectKind::hushDeEsser) // round 190js: a new Hush runs Single Vocal's revision; the base commit had none
+        slot.params[(std::size_t) yw::mixsuite::hush::vocalRevision] = 0.0f;
+    if (c.kind == yw::EffectKind::sentryGate) // round 190lp: … and a new Sentry the level gate's refit (revision 1)
+        slot.params[(std::size_t) yw::dyn::sentry::revision] = 0.0f;
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     const int n = (int) (1.5 * sr), block = 256;
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
@@ -142,8 +142,8 @@ inline double gainAt (const std::vector<float>& x, const std::vector<float>& y, 
 }
 inline EffectParams transientGate (float shape = 0.5f, double releaseMs = 500.0, double rangeDb = 100.0)
 {
-    namespace s = lynx::dyn::sentry;
-    auto p = lynx::makeEffectSlot (EffectKind::sentryGate).params;
+    namespace s = yw::dyn::sentry;
+    auto p = yw::makeEffectSlot (EffectKind::sentryGate).params;
     p[s::trigger] = 1.0f;
     p[s::threshold] = 0.0f; // −60 dB
     p[s::range] = (float) (rangeDb / 100.0);
@@ -170,30 +170,30 @@ TEST (dyn190dm_new_controls_off_sound_like_the_base_commit)
         CHECK (std::abs (r.a - g.a) < 2e-6);
         CHECK (std::abs (r.b - g.b) < 2e-6);
         same += r.hash == g.hash ? 1 : 0;
-        if (std::getenv ("LYNX_D190DM_VERBOSE") != nullptr)
+        if (std::getenv ("YW_D190DM_VERBOSE") != nullptr)
             std::printf ("    case %d: hash %016llx (golden %016llx)\n", (int) k, (unsigned long long) r.hash, (unsigned long long) g.hash);
     }
     std::printf ("  off: %d of %d renders hash-identical to the base commit\n", same, (int) cs.size());
     // bit for bit where the maths library is the one the goldens were made with (glibc 2.43 on x86-64: the local builds);
     // other libm versions may round transcendental calls differently, which says nothing about old projects
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (same == (int) cs.size());
    #endif
     // the new controls are appended, with the defaults that keep that sound
-    namespace s = lynx::dyn::sentry;
-    const auto sentry = lynx::makeEffectSlot (EffectKind::sentryGate).params;
+    namespace s = yw::dyn::sentry;
+    const auto sentry = yw::makeEffectSlot (EffectKind::sentryGate).params;
     CHECK (sentry[s::trigger] == 0.0f && ! s::transientTrigger (sentry));
-    const auto hush = lynx::makeEffectSlot (EffectKind::hushDeEsser).params;
-    CHECK (hush[lynx::mixsuite::hush::air] == 0.0f && hush[lynx::mixsuite::hush::mix] == 1.0f);
-    const auto glow = lynx::makeEffectSlot (EffectKind::glowLeveler).params;
-    CHECK (glow[lynx::mixsuite::glow::optoMemory] == 0.0f);
+    const auto hush = yw::makeEffectSlot (EffectKind::hushDeEsser).params;
+    CHECK (hush[yw::mixsuite::hush::air] == 0.0f && hush[yw::mixsuite::hush::mix] == 1.0f);
+    const auto glow = yw::makeEffectSlot (EffectKind::glowLeveler).params;
+    CHECK (glow[yw::mixsuite::glow::optoMemory] == 0.0f);
 }
 
 TEST (dyn190dm_transient_gate_opens_on_onsets_and_follows_its_curve)
 {
     using namespace d190dm;
-    namespace s = lynx::dyn::sentry;
+    namespace s = yw::dyn::sentry;
     // a 1 kHz tone at −40 dBFS that jumps to −6 dBFS at 1.5 s: open at once, hold, then the Mid curve (measured on the
     // reference within 0.2 dB rms) whatever the level does
     std::vector<float> x ((std::size_t) (3.0 * 48000.0));
@@ -244,7 +244,7 @@ TEST (dyn190dm_transient_gate_opens_on_onsets_and_follows_its_curve)
 TEST (dyn190dm_transient_gate_shapes_range_and_release)
 {
     using namespace d190dm;
-    namespace s = lynx::dyn::sentry;
+    namespace s = yw::dyn::sentry;
     // the curves: Smooth a straight line in dB, Sharp closes first, Mid in between; the time scales with the release
     CHECK (std::abs (s::transientCurveDb (s::Shape::smooth, 0.5, 0.5) + 16.1) < 1e-9);
     CHECK (s::transientCurveDb (s::Shape::sharp, 0.4, 0.5) < s::transientCurveDb (s::Shape::mid, 0.4, 0.5));
@@ -267,17 +267,17 @@ TEST (dyn190dm_transient_gate_shapes_range_and_release)
     p[s::oversampling] = 0.34f;
     for (const auto v : dyn108::run (EffectKind::sentryGate, p, x))
         CHECK (std::isfinite (v));
-    CHECK (lynx::dyn::paramText (EffectKind::sentryGate, s::trigger, 1.0f) == "transient");
-    CHECK (lynx::dyn::paramText (EffectKind::sentryGate, s::releaseShape, 1.0f) == "sharp");
+    CHECK (yw::dyn::paramText (EffectKind::sentryGate, s::trigger, 1.0f) == "transient");
+    CHECK (yw::dyn::paramText (EffectKind::sentryGate, s::releaseShape, 1.0f) == "sharp");
     CHECK (std::abs (s::sensitivityOf (s::sensitivityValue (5.0)) - 5.0) < 1e-6);
 }
 
 TEST (dyn190dm_hush_air_and_mix)
 {
     using namespace d190dm;
-    namespace h = lynx::mixsuite::hush;
+    namespace h = yw::mixsuite::hush;
     // Air: the measured shelf (8.15 kHz, S 0.5) on what Hush puts out; a quiet tone is not de-essed, so it shows the shelf
-    auto p = lynx::makeEffectSlot (EffectKind::hushDeEsser).params;
+    auto p = yw::makeEffectSlot (EffectKind::hushDeEsser).params;
     p[h::voicing] = 1.0f; // classic split voicing (no latency)
     const auto lowTone = toneAt (500.0, -40.0, 0.0, 1.0, 1.0), highTone = toneAt (16000.0, -40.0, 0.0, 1.0, 1.0);
     const auto g = [&] (const EffectParams& q, const std::vector<float>& x) { return gainAt (x, dyn108::run (EffectKind::hushDeEsser, q, x), 0.8); };
@@ -285,7 +285,7 @@ TEST (dyn190dm_hush_air_and_mix)
     auto a = p;
     a[h::air] = (float) (8.5 / 12.0);
     CHECK (std::abs (g (a, lowTone) - lowOff) < 0.1);
-    lynx::Biquad sh;
+    yw::Biquad sh;
     sh.shelf (48000.0, h::airHz, 8.5, true, h::airSlope);
     const double w = 2.0 * 3.141592653589793 * 16000.0 / 48000.0;
     // |H(e^jw)| of the shelf: numerator and denominator at z^-1 = e^-jw
@@ -297,7 +297,7 @@ TEST (dyn190dm_hush_air_and_mix)
     CHECK (std::abs ((g (a, highTone) - highOff) - 20.0 * std::log10 (mag)) < 0.2);
     CHECK (20.0 * std::log10 (mag) > 7.0);
     // Mix 0: the dry signal, aligned with the latency (the modern voicing has 2 ms of look-ahead)
-    auto m = lynx::makeEffectSlot (EffectKind::hushDeEsser).params;
+    auto m = yw::makeEffectSlot (EffectKind::hushDeEsser).params;
     m[h::mix] = 0.0f;
     m[h::range] = 1.0f;
     const auto x = toneAt (7000.0, -6.0, 0.0, 1.0, 1.0);
@@ -310,7 +310,7 @@ TEST (dyn190dm_hush_air_and_mix)
     }
     CHECK (10.0 * std::log10 (e / ex + 1e-30) < -100.0);
     // Mix 50 %: half the processed signal plus half the dry one, sample for sample (the dry aligned with the latency)
-    auto half = lynx::makeEffectSlot (EffectKind::hushDeEsser).params;
+    auto half = yw::makeEffectSlot (EffectKind::hushDeEsser).params;
     half[h::range] = 1.0f;
     const auto wet = dyn108::run (EffectKind::hushDeEsser, half, x);
     CHECK (gainAt (x, wet, 0.8) < -3.0);
@@ -320,14 +320,14 @@ TEST (dyn190dm_hush_air_and_mix)
     for (std::size_t i = 0; i + 4800 < x.size(); ++i)
         worst = std::max (worst, std::abs ((double) mixed[i] - (0.5 * wet[i] + 0.5 * x[i])));
     CHECK (worst < 1e-6);
-    CHECK (lynx::mixsuite::paramText (EffectKind::hushDeEsser, h::air, 0.0f) == "off");
+    CHECK (yw::mixsuite::paramText (EffectKind::hushDeEsser, h::air, 0.0f) == "off");
 }
 
 TEST (dyn190dm_glow_memory_recovers_fast_after_short_bursts_slowly_after_long_ones)
 {
     using namespace d190dm;
-    namespace gl = lynx::mixsuite::glow;
-    auto p = lynx::makeEffectSlot (EffectKind::glowLeveler).params;
+    namespace gl = yw::mixsuite::glow;
+    auto p = yw::makeEffectSlot (EffectKind::glowLeveler).params;
     p[gl::peakReduction] = 0.6f;
     p[gl::optoMemory] = 1.0f;
     // the reduction left 0.5 s after a 20 ms and after a 2 s burst at −6 dBFS (a −40 dBFS 1 kHz probe shows it)

@@ -4,7 +4,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -20,4 +20,4 @@ std::unique_ptr<juce::Component> makePluginMonitorPanel (AudioEngine& engine);
 // how many since the start, when the last one was, and why (the processing, naming the slowest call of that block, or
 // the driver / system while the load was low, with what to try).
 juce::String describeDropouts (AudioEngine& engine);
-} // namespace lynx
+} // namespace yw

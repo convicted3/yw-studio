@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::flcurve
+namespace yw::flcurve
 {
 namespace
 {
@@ -243,4 +243,4 @@ const char* modeName (int mode) noexcept
                                    "Single curve 2", "Double curve 2", "Half sine", "Smooth", "Single curve 3", "Double curve 3" };
     return names[std::clamp (mode, 0, modeCount - 1)];
 }
-} // namespace lynx::flcurve
+} // namespace yw::flcurve

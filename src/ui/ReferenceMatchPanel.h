@@ -1,6 +1,6 @@
 #pragma once
 
-// Reference match (round 190ch, LYNX's own; the measuring and the suggestion are core/ReferenceMatch.h): pick a
+// Reference match (round 190ch, YW's own; the measuring and the suggestion are core/ReferenceMatch.h): pick a
 // finished track you like, measure it and your song (loudness, true peak, third-octave spectrum, stereo width), see
 // both curves, and let Match put a suggested EQ curve and the loudness gain on the Master.
 //
@@ -18,7 +18,7 @@
 
 #include "core/ReferenceMatch.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -84,4 +84,4 @@ private:
     juce::Slider amount;
     bool updating = false;
 };
-} // namespace lynx
+} // namespace yw

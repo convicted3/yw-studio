@@ -11,7 +11,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 struct ChannelDef;
@@ -19,4 +19,4 @@ struct Song;
 
 // `channel`: the Channel Rack channel (−1 in a Patcher: `locate` finds the node)
 std::unique_ptr<juce::Component> makeFpcEditor (AudioEngine& engine, std::function<ChannelDef* (Song&)> locate, int channel);
-} // namespace lynx
+} // namespace yw

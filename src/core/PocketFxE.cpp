@@ -2,12 +2,12 @@
 
 // Pocket EQ, Pocket Graphic EQ and Pocket Filter: FL Studio Mobile's Equalizer ("Param EQ", module 3), Graphic EQ
 // (module 7) and Filter (module 9), rebuilt in round 190dw from FLM's laws (the study notes are
-// /mnt/e/lynx-work/flm190dw/rea/spec-eqfilter.md; summary in docs/analise/FLM_FORMAT.md §7). Clean-room: the formulas
+// /mnt/e/yw-work/flm190dw/rea/spec-eqfilter.md; summary in docs/analise/FLM_FORMAT.md §7). Clean-room: the formulas
 // and the processing order restated in our own words, no Image-Line code or data.
 //
 // FLM runs these modules as small four-lane filter pipelines in single precision, and the pipelines are part of the
 // sound: a band hands its output to the next one a step later, so the Equalizer is 1.5 samples late, the Graphic EQ 8
-// and the Filter one sample per pair of biquads. FLM reports no latency for them and neither does LYNX (a .flm mix
+// and the Filter one sample per pair of biquads. FLM reports no latency for them and neither does YW (a .flm mix
 // was made with these delays in it). Every value below is computed in the precision FLM uses; contraction into FMAs
 // stays off so the results match the module's sample for sample.
 #if defined(__clang__)
@@ -21,7 +21,7 @@
 #include <cmath>
 #include <cstdio>
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -548,4 +548,4 @@ std::string filterParamText (int param, float v)
         default: return {};
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::mp3
+namespace yw::mp3
 {
 struct Info
 {
@@ -48,7 +48,7 @@ bool looksLikeMp3 (const std::uint8_t* head, std::size_t size);
 
 enum class Timing
 {
-    flStudio, // FL's: raw stream, the Xing/Info frame as silence (what LYNX loads)
+    flStudio, // FL's: raw stream, the Xing/Info frame as silence (what YW loads)
     gapless   // the original's length and start (LAME/Lavc header)
 };
 
@@ -61,4 +61,4 @@ bool decodeReference (const std::uint8_t* data, std::size_t size, Decoded& out);
 
 // Name of this decoder for cache keys (bumped when the decoded samples of a file can change).
 inline constexpr const char* decoderId = "minimp3-fl-1";
-} // namespace lynx::mp3
+} // namespace yw::mp3

@@ -1,4 +1,4 @@
-// Round 190u: FL Studio Mobile's instrument modules on LYNX's engines (F4, after MiniSynth): Transistor Bass.
+// Round 190u: FL Studio Mobile's instrument modules on YW's engines (F4, after MiniSynth): Transistor Bass.
 // Uses the .flm builders of FlmImport182cTests.inc.
 
 namespace flm190u
@@ -18,10 +18,10 @@ inline flm182c::Bytes engineProject (std::uint32_t type, int params, const std::
     t::fixed (m, "", 2048);
     t::fixed (m, "2026-11-10 15:00:00", 256);
     const t::Bytes tdiv { 4, 4 };
-    auto bytes = t::cat ({ f, t::head ("Engines", 120.0), t::chunk ("META", m), t::chunk ("TDIV", tdiv), t::rack (lynx::flm::kindMaster, { t::module (28, 1) }),
-                           t::rack (lynx::flm::kindNormal, { t::module (type, 2, {}, "Default/Default", 0, 127, params, true) }),
-                           t::channel (lynx::flm::kindMaster, "MASTER", 0, {}),
-                           t::channel (lynx::flm::kindNormal, "Bass", 1, { t::lane (0, "Bass", { t::clip (0, 4, 4, 0, 1, { { 0, 2, 60 } }) }) }) });
+    auto bytes = t::cat ({ f, t::head ("Engines", 120.0), t::chunk ("META", m), t::chunk ("TDIV", tdiv), t::rack (yw::flm::kindMaster, { t::module (28, 1) }),
+                           t::rack (yw::flm::kindNormal, { t::module (type, 2, {}, "Default/Default", 0, 127, params, true) }),
+                           t::channel (yw::flm::kindMaster, "MASTER", 0, {}),
+                           t::channel (yw::flm::kindNormal, "Bass", 1, { t::lane (0, "Bass", { t::clip (0, 4, 4, 0, 1, { { 0, 2, 60 } }) }) }) });
     if ((int) values.size() == params) // the module's PRMS chunk is the only one of this size
     {
         const auto size = (std::uint32_t) (4 * params);
@@ -82,7 +82,7 @@ inline float peakOf (const std::vector<float>& y, int from, int to)
 
 TEST (flm190u_transistor_bass_plays_flms_build)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     std::string error;
     const auto song = importFlm (flm190u::engineProject (flm::module::transistorBass, 14), flm182c::options (&report), &error);
@@ -253,7 +253,7 @@ TEST (flm190u_transistor_bass_plays_flms_build)
 // of a state saved with 1 is this engine at 4×). Needs the installation's engine DLL.
 TEST (flm190u_transistor_bass_desktop_ignores_the_oversampling_field)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto dll = tbassDll();
     if (dll.empty() || ! transistorBassDllUsable (dll))
         return;
@@ -272,10 +272,10 @@ TEST (flm190u_transistor_bass_desktop_ignores_the_oversampling_field)
     CHECK (tbass::renderReference (s1, dll, { n }, 44100.0, 16000, flmBuild) != tbass::renderReference (s4, dll, { n }, 44100.0, 16000));
 }
 
-// FLM's 3x Osc on LYNX's 3x Osc engine and FL's channel settings: every parameter back to the raw value FL keeps
+// FLM's 3x Osc on YW's 3x Osc engine and FL's channel settings: every parameter back to the raw value FL keeps
 TEST (flm190u_three_osc_maps_the_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto import = [] (const std::vector<float>& values, FlpImportReport& report) {
         std::string error;
         auto song = importFlm (flm190u::engineProject (flm::module::threeOsc, 149, values), flm182c::options (&report), &error);
@@ -367,7 +367,7 @@ TEST (flm190u_three_osc_maps_the_parameters)
                && c->arp.chord == std::vector<int> { 0 } && c->arp.chordSustain && c->arp.stepBeats > 0.0f && c->arp.stepBeats < 0.25f);
         CHECK (report.unsupported.empty() && report.notReproduced.empty());
 
-        // what LYNX lacks is listed: Free Run
+        // what YW lacks is listed: Free Run
         p[146] = 1.0f;
         FlpImportReport listed;
         CHECK (import (p, listed).has_value() && listed.notReproduced.size() == 1 && listed.unsupported.empty());
@@ -410,7 +410,7 @@ TEST (flm190u_three_osc_maps_the_parameters)
 // steps of 1/58 stop just below 1) takes a 59th step to 1.0077, holds there for 13 ticks and the decay starts above 1
 TEST (flm190ab_three_osc_envelope_steps_as_flm)
 {
-    using namespace lynx;
+    using namespace yw;
     // the articulator alone: E1's volume record at PPQ 96 and 120 BPM
     {
         const std::int32_t r[17] = { 4, 1, 0, 16384, 6554, 26214, 64, 22938, 0, 100, 20000, 0, 32950, 0, 51, -51, 26 };

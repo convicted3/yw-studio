@@ -1,7 +1,7 @@
 #pragma once
 
-// When LYNX starts a full background plugin scan by itself (round 190fp). A scan loads every plugin, and on a PC with
-// expired licences each of those can open its own licence box (QA 190fd: 20+ in a row), so LYNX only scans by itself
+// When YW starts a full background plugin scan by itself (round 190fp). A scan loads every plugin, and on a PC with
+// expired licences each of those can open its own licence box (QA 190fd: 20+ in a row), so YW only scans by itself
 // when the user asked for it:
 //   - at start-up: the setup wizard was finished or skipped once, and "Look for new plugins in the background at every
 //     start" is on (the default);
@@ -10,7 +10,7 @@
 //     Scan button and the plugin menus' "Scan for plugins" still scan at once. Skip never scans.
 // (Our REA notes have no record of FL Studio's own first-run scan, so this follows the box's wording.)
 
-namespace lynx::autoscan
+namespace yw::autoscan
 {
 constexpr bool atStartup (bool persistentWindow, bool setupDone, bool scanAtEveryStart) noexcept
 {
@@ -21,4 +21,4 @@ constexpr bool onWizardFinish (bool scanAtEveryStartTicked, bool scanAlreadyStar
 {
     return scanAtEveryStartTicked && ! scanAlreadyStarted;
 }
-} // namespace lynx::autoscan
+} // namespace yw::autoscan

@@ -10,7 +10,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::clipprops
+namespace yw::clipprops
 {
 // What the Clip properties window shows and edits. Name and colour belong to the clip's source (the pattern, the audio
 // clip's channel or the automation), so they change every clip of that source; pitch and stretch are the audio
@@ -53,7 +53,7 @@ void changeMute (Song& song, const std::vector<int>& clips, MuteChange change);
 // Audio clips' gain: set to `value`, or multiply (`relative`).
 void changeGain (Song& song, const std::vector<int>& clips, float value, bool relative);
 
-// Positions and lengths as the window shows them, "bar:beat:tick" (ticks at LYNX's PPQ); a position counts from 1 ("1:1:000" is the start), a length from 0 ("2:0:000" = two bars). Time signature
+// Positions and lengths as the window shows them, "bar:beat:tick" (ticks at YW's PPQ); a position counts from 1 ("1:1:000" is the start), a length from 0 ("2:0:000" = two bars). Time signature
 // changes from markers are not applied (bars and beats of `meter`; round 190fg: 6/8 counts eighths).
 std::string formatPosition (std::int64_t ticks, Meter meter);
 std::string formatLength (std::int64_t ticks, Meter meter);
@@ -63,9 +63,9 @@ std::int64_t parseLength (const std::string& text, Meter meter);
 
 // Sources a clip of this kind can switch to: their names (patterns / audio channels / automations).
 std::vector<std::pair<int, std::string>> sourcesFor (const Song& song, ClipKind kind);
-} // namespace lynx::clipprops
+} // namespace yw::clipprops
 
-namespace lynx::arrangeops
+namespace yw::arrangeops
 {
 enum class MergeMode
 {
@@ -104,10 +104,10 @@ void rename (Song& song, int index, const std::string& name);
 
 // Duplicates arrangement `index` after itself (not selected); returns the new index.
 int duplicate (Song& song, int index);
-} // namespace lynx::arrangeops
+} // namespace yw::arrangeops
 
 // FL's Playlist track modes and "Consolidate track(s)" (REA round 146a).
-namespace lynx::trackmodes
+namespace yw::trackmodes
 {
 // A mixer track nothing uses yet (no channel routed to it, no track linked to it, no effects, nothing sent into it),
 // from insert 1 on; a new insert is added when there is none and the mixer has room. -1 when the mixer is full
@@ -136,7 +136,7 @@ bool linkToMixerTrack (Song& song, int track, int mixer);
 // colour and then (FUN_012e6010, audio tracks only: mode 1 with a mixer track > 0) gives its mixer track the track's
 // colour (FL's default track colour = the mixer's default), icon and name; a mixer track's name / colour / icon change
 // (FUN_012be6f0, called by every mixer rename, recolour, group, route...) is copied to the Playlist track linked to it
-// (FUN_012a7810) in every arrangement. Instrument tracks are not synced by FL (LYNX's "Link Playlist tracks to mixer
+// (FUN_012a7810) in every arrangement. Instrument tracks are not synced by FL (YW's "Link Playlist tracks to mixer
 // tracks" switch syncs them too: autolink::followNewContent).
 // AudioEngine::editSong takes `linkedNames` before an edit and `followLinkedNames` after it: whichever side the edit
 // changed (name or colour) is copied to the other; when both changed (a link that sets both) nothing is touched.
@@ -174,7 +174,7 @@ constexpr int newMixerTrack = -1;
 int assignAudioTracks (Song& song, const std::vector<int>& tracks, int mixer);
 // The Audio track submenu as FL builds it (FUN_0122eff0): "New mixer track(s)" (enabled while canAddMixerTrack), a
 // separator, then one entry per insert from 1 on: "N. <name>" ("N. Insert N" without a name), ticked when it is the
-// track's stored link, greyed when it is not and the insert is linked to another track (LYNX: or reserved for another
+// track's stored link, greyed when it is not and the insert is linked to another track (YW: or reserved for another
 // participant of an online session). The text of a greyed entry is not changed.
 struct AudioTrackMenuItem
 {
@@ -190,7 +190,7 @@ struct AudioTrackMenu
 AudioTrackMenu audioTrackMenu (const Song& song, int track);
 // "Track mode › Unassigned".
 void unassign (Song& song, int track);
-// --- FL's new audio / instrument tracks (round 190dx; FLEngine 2026 [DECOMP], /mnt/e/lynx-work/flpl190dx/FL-FACTS.md) ---
+// --- FL's new audio / instrument tracks (round 190dx; FLEngine 2026 [DECOMP], /mnt/e/yw-work/flpl190dx/FL-FACTS.md) ---
 // The first Playlist track that has no clip and is unassigned (FUN_012e8380: tracks 1..500 in FL's count), -1 when
 // all 500 are taken. New audio and instrument tracks go there.
 int firstFreeTrack (const Song& song);
@@ -279,9 +279,9 @@ bool dropOnHeader (Song& song, int track, const std::string& path, const std::st
                    bool lock);
 
 // "Consolidate track(s)" moved to core/QuickRender.h (round 168e: FL's new track above, the old one grouped and muted).
-} // namespace lynx::trackmodes
+} // namespace yw::trackmodes
 
-// LYNX extra (round 190gz, issue #170): "Link Playlist tracks to mixer tracks" (Song::linkTracksToMixer). FL keeps
+// YW extra (round 190gz, issue #170): "Link Playlist tracks to mixer tracks" (Song::linkTracksToMixer). FL keeps
 // Playlist tracks and mixer inserts apart; every other DAW pairs them. With the switch on, a Playlist track that holds
 // clips is made FL's own audio or instrument track (trackmodes), so nothing new is stored per track and an .flp export
 // stays an ordinary FL project. The rules never change how the song sounds:
@@ -294,7 +294,7 @@ bool dropOnHeader (Song& song, int track, const std::string& path, const std::st
 // - anything else (no clips, automation only, several channels' patterns, audio and patterns mixed, a route to an insert
 //   another track is linked to) stays unassigned, as in FL.
 // Tracks already linked are never changed.
-namespace lynx::autolink
+namespace yw::autolink
 {
 // The rule (round 190ib, issue #170 follow-up; it replaces round 190gz's "link where it changes nothing"): while the
 // switch is on, Playlist track N is mixer insert N.
@@ -372,16 +372,16 @@ Snapshot snapshot (const Song& song);
 int followNewContent (Song& song, const Snapshot& before);
 // Issue #235 (round 190ns): a project saved with the switch on by an older version can hold a linked track and insert
 // of two colours (links kept from older rules, or edits before the colours were synced). On open (MainComponent::
-// openLynxProject), while the switch is on, a pair where one side has the default colour takes the other's colour; two
+// openYwProject), while the switch is on, a pair where one side has the default colour takes the other's colour; two
 // different colours of their own are left as they are. Returns how many pairs changed.
 int matchLinkedColours (Song& song);
 // Recording (core/TakeRecording.h) while the switch is on: the Playlist track a take of insert `insert` goes to when no
 // audio track is linked to it yet — track insert − 1 when it is unassigned, ungrouped and holds no clip; -1 otherwise.
 int pairedTakeTrack (const Song& song, int insert);
-} // namespace lynx::autolink
+} // namespace yw::autolink
 
 // Audio clips and the channels they play (round 190ax).
-namespace lynx::audioclips
+namespace yw::audioclips
 {
 // A Playlist audio clip only sounds on an audio clip channel: its voice key (audioClipKey) is no note for a Sampler,
 // which drops it, so a clip that points at a Sampler channel showed its waveform and played nothing (a file dropped on
@@ -396,10 +396,10 @@ int repairChannels (Song& song);
 // `autoName`: FL's General › "Auto name channels" (on by default; round 190bx, core/FlSettings.h): off = the
 // channel keeps the name it has (a channel without one still takes the file's).
 void loadSampleInto (ChannelDef& channel, const std::string& path, const std::string& name, bool autoName = true);
-} // namespace lynx::audioclips
+} // namespace yw::audioclips
 
 // FL's "Create automation clip" placement (REA round 177b: FUN_01191a50 places it, FUN_00e50b50 picks the track).
-namespace lynx::autoclipplace
+namespace yw::autoclipplace
 {
 // FL's Options › General "Create automation clips at the playback position" (CreateAutoClipsAtCursorBox, checked in
 // FL's form [DFM]); an app setting, not saved in projects.
@@ -436,10 +436,10 @@ constexpr std::uint32_t colourFor (const AutomationTarget& target) noexcept
         default:                                  return 0;
     }
 }
-} // namespace lynx::autoclipplace
+} // namespace yw::autoclipplace
 
 // Round 177b: optional automation lanes under Playlist tracks (Song.h AutomationLane). Plain edits for editSong.
-namespace lynx::autolanes
+namespace yw::autolanes
 {
 // Playlist › "Automation lanes" (round 177b): whether lanes are shown under their tracks. Off by default (FL has no
 // lanes); an app setting, not saved in projects. The Ableton-style layout (round 175a) turns it on by default.
@@ -469,4 +469,4 @@ int clipToLane (Song& song, int clip, int track);
 int laneToClip (Song& song, int track, int lane);
 // Every lane to a clip (the .flp export: FL has no lanes). Returns how many.
 int lanesToClips (Song& song);
-} // namespace lynx::autolanes
+} // namespace yw::autolanes

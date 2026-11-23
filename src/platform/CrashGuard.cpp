@@ -41,11 +41,11 @@
  #endif
  #if defined(__GLIBC__) || defined(__APPLE__)
   #include <execinfo.h>
-  #define LYNX_EXECINFO 1
+  #define YW_EXECINFO 1
  #endif
 #endif
 
-namespace lynx::crashguard
+namespace yw::crashguard
 {
 #if defined(_WIN32) && (defined(_MSC_VER) || defined(__clang__))
 namespace
@@ -92,15 +92,15 @@ struct GuardFrame
 
 // The armed frame of this thread. The handler reads it, so it must not allocate on first use: Linux' thread_local
 // pointer in the executable is static TLS (initial-exec); macOS' thread_local may allocate lazily, so a pthread key.
-// LYNX's exported plugins (this file is in their runtime, cmake/LynxPlugins.cmake, the only build that defines
-// LYNX_EXPORT_VERSION) are modules a host loads with dlopen: there one initial-exec variable makes the module's whole
+// YW's exported plugins (this file is in their runtime, cmake/YwPlugins.cmake, the only build that defines
+// YW_EXPORT_VERSION) are modules a host loads with dlopen: there one initial-exec variable makes the module's whole
 // TLS block static (DF_STATIC_TLS), glibc keeps only a small reserve for that, and hosts on glibc 2.35 failed to load
 // the 0.1.27 Linux plugins ("cannot allocate memory in static TLS block", round 190fp). They use the key as well
 // (pthread_getspecific does not allocate; scripts/check-linux-compat.sh fails a plugin that asks for static TLS).
-#if defined(LYNX_EXPORT_VERSION)
- #define LYNX_GUARD_FRAME_KEY 1
+#if defined(YW_EXPORT_VERSION)
+ #define YW_GUARD_FRAME_KEY 1
 #endif
-#if defined(__APPLE__) || defined(LYNX_GUARD_FRAME_KEY)
+#if defined(__APPLE__) || defined(YW_GUARD_FRAME_KEY)
 pthread_key_t frameKey;
 GuardFrame* currentFrame() noexcept { return static_cast<GuardFrame*> (pthread_getspecific (frameKey)); }
 void setCurrentFrame (GuardFrame* f) noexcept { pthread_setspecific (frameKey, f); }
@@ -112,7 +112,7 @@ void setCurrentFrame (GuardFrame* f) noexcept { tlsFrame = f; }
 
 std::atomic<int> guardState { 0 }; // 0 = not installed, 1 = being installed, 2 = installed
 struct sigaction previousAction[guardedCount];
-const void* ownImage = nullptr; // where LYNX's executable (LYNX's and JUCE's code) is loaded
+const void* ownImage = nullptr; // where YW's executable (YW's and JUCE's code) is loaded
 
 // A fault the kernel raised for an instruction of this thread (not a signal sent by kill / raise / sigqueue)
 bool synchronousFault (const siginfo_t* info) noexcept
@@ -179,7 +179,7 @@ bool runtimeLibrary (const char* path) noexcept
     return false;
 }
 
-enum class Owner { unknown, lynx, runtime, other };
+enum class Owner { unknown, yw, runtime, other };
 
 Owner ownerOf (std::uintptr_t address) noexcept
 {
@@ -187,7 +187,7 @@ Owner ownerOf (std::uintptr_t address) noexcept
     if (address == 0 || dladdr (reinterpret_cast<const void*> (address), &info) == 0 || info.dli_fbase == nullptr)
         return Owner::unknown;
     if (info.dli_fbase == ownImage)
-        return Owner::lynx;
+        return Owner::yw;
     return runtimeLibrary (info.dli_fname) ? Owner::runtime : Owner::other;
 }
 
@@ -212,8 +212,8 @@ _Unwind_Reason_Code collectFrame (_Unwind_Context* context, void* arg)
 }
 
 // Whose fault it is: the first frame, from the faulting instruction outwards, that is neither the system's runtime
-// nor code outside every module decides. A plugin's module (or anything else LYNX did not build) = the plugin's;
-// LYNX's executable, or no frame that tells = LYNX's own (never caught).
+// nor code outside every module decides. A plugin's module (or anything else YW did not build) = the plugin's;
+// YW's executable, or no frame that tells = YW's own (never caught).
 bool faultIsAPlugins (std::uintptr_t pc, const void* context) noexcept
 {
     if (ownImage == nullptr)
@@ -242,7 +242,7 @@ bool faultIsAPlugins (std::uintptr_t pc, const void* context) noexcept
     for (int i = 0; i < count; ++i)
         switch (ownerOf (frames[i]))
         {
-            case Owner::lynx: return false;
+            case Owner::yw: return false;
             case Owner::other: return true;
             case Owner::unknown:
             case Owner::runtime: break;
@@ -250,10 +250,10 @@ bool faultIsAPlugins (std::uintptr_t pc, const void* context) noexcept
     return false;
 }
 
-#if ! defined(LYNX_EXPORT_VERSION)
- #define LYNX_PLUGIN_THREAD_GUARD 1
+#if ! defined(YW_EXPORT_VERSION)
+ #define YW_PLUGIN_THREAD_GUARD 1
 #endif
-#if defined(LYNX_PLUGIN_THREAD_GUARD)
+#if defined(YW_PLUGIN_THREAD_GUARD)
 // Round 190gg (B4): a fault on a hosted plugin's own thread (see CrashGuard.h, watchPluginModule). The app only: the
 // exported plugins' runtime never watches a module (nothing here would apply there), so it does not even have this.
 // Written by the message thread (one writer, slots never reused); the handler reads the slots that are ready.
@@ -317,9 +317,9 @@ _Unwind_Reason_Code collectLongFrame (_Unwind_Context* context, void* arg)
 }
 
 // A fault outside every guarded call, on a thread that is a watched plugin's own: from the faulting instruction to the
-// thread's first frame (which must be reached: the C library's thread start) there is no frame of LYNX's executable,
+// thread's first frame (which must be reached: the C library's thread start) there is no frame of YW's executable,
 // and the first frame that is not the system's runtime is in a watched module. Then the fault is noted and this thread
-// waits forever (it is the plugin's: nothing of LYNX's runs on it); the app switches that plugin off. Otherwise false.
+// waits forever (it is the plugin's: nothing of YW's runs on it); the app switches that plugin off. Otherwise false.
 bool parkPluginThread (int sig, const void* context) noexcept
 {
     if (ownImage == nullptr || watchedCount.load (std::memory_order_acquire) == 0)
@@ -424,7 +424,7 @@ void onFault (int sig, siginfo_t* info, void* context)
         }
         // (handling stays set: the crash handler below ends the process, and a fault inside it is not caught either)
     }
-#if defined(LYNX_PLUGIN_THREAD_GUARD)
+#if defined(YW_PLUGIN_THREAD_GUARD)
     else if (currentFrame() == nullptr && synchronousFault (info))
         parkPluginThread (sig, context); // (returns only when it is not a plugin's own thread)
 #endif
@@ -444,7 +444,7 @@ void installFaultGuard() noexcept
     Dl_info self {};
     if (dladdr (reinterpret_cast<const void*> (&installFaultGuard), &self) != 0)
         ownImage = self.dli_fbase;
-#if defined(__APPLE__) || defined(LYNX_GUARD_FRAME_KEY)
+#if defined(__APPLE__) || defined(YW_GUARD_FRAME_KEY)
     pthread_key_create (&frameKey, nullptr);
 #endif
     {
@@ -766,14 +766,14 @@ std::string narrow (const wchar_t* w)
     return s;
 }
 
-// the nearest exported / public symbol (dbghelp; a release LYNX.exe has none of its own, other modules have exports)
+// the nearest exported / public symbol (dbghelp; a release YW.exe has none of its own, other modules have exports)
 std::string symbolOf (DWORD64 address)
 {
     static std::once_flag once;
     static std::mutex lock;
     std::call_once (once, [] {
         SymSetOptions (SymGetOptions() | SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-        // the search path: the exe's folder first (a LYNX.pdb put next to LYNX.exe names LYNX's own frames)
+        // the search path: the exe's folder first (a YW.pdb put next to YW.exe names YW's own frames)
         wchar_t exe[MAX_PATH] = {};
         GetModuleFileNameW (nullptr, exe, MAX_PATH);
         std::wstring folder (exe);
@@ -789,7 +789,7 @@ std::string symbolOf (DWORD64 address)
     DWORD64 displacement = 0;
     if (! SymFromAddr (GetCurrentProcess(), address, &displacement, info))
         return {};
-    // LYNX.exe's own frames without its PDB: the nearest export is one of the few the exe has (pocketpy's py_*), not
+    // YW.exe's own frames without its PDB: the nearest export is one of the few the exe has (pocketpy's py_*), not
     // the function (issue #32 reports named main and the CRT start-up "py_tpbase + 0x18a9"); the offset says more alone
     if (info->ModBase == (DWORD64) (std::uintptr_t) GetModuleHandleW (nullptr))
     {
@@ -820,7 +820,7 @@ std::string formatFrames (const std::vector<std::uintptr_t>& frames)
     return text;
 }
 #if defined(_WIN32) && (defined(_M_X64) || defined(__x86_64__))
- #define LYNX_UNWIND 1
+ #define YW_UNWIND 1
 // Frames from a thread context, unwound with the modules' own unwind tables (no symbols, no allocation: the thread
 // being sampled may hold the heap lock)
 int unwind (CONTEXT context, std::uintptr_t* frames, int capacity)
@@ -954,7 +954,7 @@ bool insideExceptionDispatch (const EXCEPTION_RECORD& record, const CONTEXT& con
 
 // Whether a fault on a stack that does not walk is the app's own: the first of the fault address and the nearest
 // words on the stack that is in a module outside Windows' folder is in the app's .exe (the FPC fault: strcmp in
-// ucrtbase called from LYNX.exe). A fault in a plugin's module, or in code no module holds, is not.
+// ucrtbase called from YW.exe). A fault in a plugin's module, or in code no module holds, is not.
 bool faultIsTheApps (const EXCEPTION_RECORD& record, const CONTEXT& context) noexcept
 {
     const auto self = static_cast<void*> (GetModuleHandleW (nullptr));
@@ -1069,15 +1069,15 @@ std::vector<std::uintptr_t> sampleThread (HANDLE) { return {}; }
 
 } // namespace
 
-#if defined(LYNX_UNWIND) && ! defined(LYNX_EXPORT_VERSION)
- #define LYNX_WIN_THREAD_GUARD 1
+#if defined(YW_UNWIND) && ! defined(YW_EXPORT_VERSION)
+ #define YW_WIN_THREAD_GUARD 1
 // Round 190oh (plugin host review): round 190gg's guard for faults on a hosted plugin's OWN threads, on Windows. A thread
-// the plugin started (its renderer, a disk streamer, a licence check) runs no LYNX call, so call() cannot catch its
-// fault and it reached the crash handler: LYNX ended. Windows calls the top-level filter (JUCE's, then onCrash) only
+// the plugin started (its renderer, a disk streamer, a licence check) runs no YW call, so call() cannot catch its
+// fault and it reached the crash handler: YW ended. Windows calls the top-level filter (JUCE's, then onCrash) only
 // for a fault nobody handled — after the plugin's own handlers (copy protections that fault on purpose and handle it
 // are never touched here). parkWindowsPluginThread, the first thing onCrash does, then parks the thread for good when
 // ALL of: the fault is one that may be caught at all (crashreport::editorFaultCatchable: not a heap corruption, a stack
-// overflow or a fail-fast); the thread's frames walk to its first frame in ntdll; no frame is LYNX's executable; and the
+// overflow or a fail-fast); the thread's frames walk to its first frame in ntdll; no frame is YW's executable; and the
 // first frame outside Windows' own modules is in a module given to watchPluginModule (the plugin's file, or a file in
 // its bundle folder). The app then switches every instance of that plugin off (engine/PluginHost.h,
 // switchOffPluginsOfThreadFaults), as on Linux / macOS. Anything else goes on to the crash file as before.
@@ -1178,7 +1178,7 @@ bool parkWindowsPluginThread (EXCEPTION_POINTERS* ep) noexcept
         }
         if (module == self)
         {
-            watchedIndex = -1; // a LYNX frame anywhere on the thread: LYNX's own thread (or a LYNX call): a crash
+            watchedIndex = -1; // a YW frame anywhere on the thread: YW's own thread (or a YW call): a crash
             blamed = count;
             break;
         }
@@ -1232,7 +1232,7 @@ std::string describeAddress (const void* address)
     char offset[40];
     std::snprintf (offset, sizeof (offset), "+0x%llx", (unsigned long long) ((std::uintptr_t) address - (std::uintptr_t) module));
     return narrow (name) + offset;
-#elif defined(LYNX_EXECINFO)
+#elif defined(YW_EXECINFO)
     Dl_info info {};
     if (dladdr (address, &info) == 0 || info.dli_fname == nullptr)
     {
@@ -1266,7 +1266,7 @@ std::string moduleBacktrace (int skip)
         for (USHORT i = 0; i < n; ++i)
             frames.push_back ((std::uintptr_t) raw[i]);
         return formatFrames (frames);
-#elif defined(LYNX_EXECINFO)
+#elif defined(YW_EXECINFO)
         void* raw[96] = {};
         const auto n = backtrace (raw, 96);
         std::vector<std::uintptr_t> frames;
@@ -1285,7 +1285,7 @@ std::string exceptionBacktrace (void* exceptionPointers)
 {
     try
     {
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
         auto* ep = static_cast<EXCEPTION_POINTERS*> (exceptionPointers);
         if (ep == nullptr || ep->ContextRecord == nullptr)
             return {};
@@ -1313,7 +1313,7 @@ std::string exceptionBacktrace (void* exceptionPointers)
                 text += "--- the stack could not be walked to the thread's first frame; the words on it that point into modules "
                         "(the callers are among them)\n" + words;
         return text;
-#elif defined(LYNX_EXECINFO)
+#elif defined(YW_EXECINFO)
         // macOS / Linux (round 161): JUCE's crash handler passes the signal number; the frames are this thread's, the
         // signal handler's own first (exceptionBacktrace, onCrash, JUCE's handleCrash, the kernel's signal trampoline)
         const auto sig = (int) (std::intptr_t) exceptionPointers;
@@ -1336,7 +1336,7 @@ __attribute__ ((noinline))
 void faultForTest (bool unwalkable) noexcept
 {
     volatile std::uintptr_t marker = 0;
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     if (unwalkable)
     {
         // every word of the stack above this frame (the return addresses of all the callers): this never returns
@@ -1358,7 +1358,7 @@ __attribute__ ((noinline))
 #endif
 void copyFromNullForTest() noexcept
 {
-    // what nih-plug did in issue #155 (memcpy from a null pointer: the fault is in the C library), but called by LYNX
+    // what nih-plug did in issue #155 (memcpy from a null pointer: the fault is in the C library), but called by YW
     char to[64];
     const char* volatile from = nullptr;
     volatile std::size_t size = sizeof (to); // (a size the compiler can't see: a real call into the C library)
@@ -1379,7 +1379,7 @@ std::uint32_t faultInGuardedCallForTest (bool inCLibrary) noexcept
 
 void watchPluginModule (const std::string& fileUtf8) noexcept
 {
-#if defined(LYNX_PLUGIN_THREAD_GUARD)
+#if defined(YW_PLUGIN_THREAD_GUARD)
     if (fileUtf8.empty() || fileUtf8.front() != '/' || fileUtf8.size() >= sizeof (WatchedModule::path))
         return; // (an identifier such as an LV2 URI, or a path too long: not watched)
     auto path = fileUtf8;
@@ -1398,7 +1398,7 @@ void watchPluginModule (const std::string& fileUtf8) noexcept
     watchedCount.store (count + 1, std::memory_order_release);
     if (guardState.load (std::memory_order_acquire) != 2)
         installFaultGuard(); // (the handler that parks the thread; hardenSignals installs it in the app anyway)
-#elif defined(LYNX_WIN_THREAD_GUARD)
+#elif defined(YW_WIN_THREAD_GUARD)
     // round 190oh: Windows (an absolute path: a drive letter or a UNC path; the slashes kept as given)
     if (fileUtf8.size() < 3 || fileUtf8.size() >= sizeof (WinWatched::utf8) || ! (fileUtf8[1] == ':' || (fileUtf8[0] == '\\' && fileUtf8[1] == '\\')))
         return;
@@ -1427,7 +1427,7 @@ void watchPluginModule (const std::string& fileUtf8) noexcept
 
 bool parkFaultingPluginThread (void* exceptionPointers) noexcept
 {
-#if defined(LYNX_WIN_THREAD_GUARD)
+#if defined(YW_WIN_THREAD_GUARD)
     return parkWindowsPluginThread (static_cast<EXCEPTION_POINTERS*> (exceptionPointers)); // (returns only when it did not park)
 #else
     (void) exceptionPointers;
@@ -1437,7 +1437,7 @@ bool parkFaultingPluginThread (void* exceptionPointers) noexcept
 
 bool pluginThreadFaultsCaught() noexcept
 {
-#if (defined(LYNX_PLUGIN_THREAD_GUARD) && (defined(__x86_64__) || defined(__aarch64__))) || defined(LYNX_WIN_THREAD_GUARD)
+#if (defined(YW_PLUGIN_THREAD_GUARD) && (defined(__x86_64__) || defined(__aarch64__))) || defined(YW_WIN_THREAD_GUARD)
     return true;
 #else
     return false;
@@ -1446,9 +1446,9 @@ bool pluginThreadFaultsCaught() noexcept
 
 int pluginThreadFaultCount() noexcept
 {
-#if defined(LYNX_PLUGIN_THREAD_GUARD)
+#if defined(YW_PLUGIN_THREAD_GUARD)
     return threadFaultTotal.load (std::memory_order_acquire);
-#elif defined(LYNX_WIN_THREAD_GUARD)
+#elif defined(YW_WIN_THREAD_GUARD)
     return winThreadFaultTotal.load (std::memory_order_acquire);
 #else
     return 0;
@@ -1458,7 +1458,7 @@ int pluginThreadFaultCount() noexcept
 std::vector<PluginThreadFault> pluginThreadFaults()
 {
     std::vector<PluginThreadFault> list;
-#if defined(LYNX_PLUGIN_THREAD_GUARD)
+#if defined(YW_PLUGIN_THREAD_GUARD)
     const auto total = threadFaultTotal.load (std::memory_order_acquire);
     for (int i = std::max (0, total - threadFaultCapacity); i < total; ++i)
     {
@@ -1477,7 +1477,7 @@ std::vector<PluginThreadFault> pluginThreadFaults()
         f.where = name + offset;
         list.push_back (std::move (f));
     }
-#elif defined(LYNX_WIN_THREAD_GUARD)
+#elif defined(YW_WIN_THREAD_GUARD)
     const auto total = winThreadFaultTotal.load (std::memory_order_acquire);
     for (int i = std::max (0, total - winThreadFaultCapacity); i < total; ++i)
     {
@@ -1502,8 +1502,8 @@ std::vector<PluginThreadFault> pluginThreadFaults()
 
 void faultOnOwnThreadForTest (bool inCLibrary) noexcept
 {
-#if defined(LYNX_PLUGIN_THREAD_GUARD)
-    // the worst case: LYNX's own executable registered as if it were a plugin's module
+#if defined(YW_PLUGIN_THREAD_GUARD)
+    // the worst case: YW's own executable registered as if it were a plugin's module
     Dl_info self {};
     if (dladdr (reinterpret_cast<const void*> (&faultOnOwnThreadForTest), &self) != 0 && self.dli_fname != nullptr)
         watchPluginModule (self.dli_fname);
@@ -1532,7 +1532,7 @@ bool pluginFaultsCaught() noexcept
 
 void setUnwalkableFaultHandler (void (*handler) (void*)) noexcept
 {
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     static std::atomic<bool> installed { false };
     unwalkableFaultHandler = handler;
     if (handler != nullptr && ! installed.exchange (true))
@@ -1570,7 +1570,7 @@ std::int64_t nowMs()
     return std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-#if defined(LYNX_EXECINFO)
+#if defined(YW_EXECINFO)
 // the message thread records its own frames in a signal handler (backtrace() was called once beforehand, so it
 // allocates nothing here); the watcher waits for them
 std::atomic<int> sampledCount { -1 };
@@ -1698,7 +1698,7 @@ void watchLoop()
         }
         ++samples;
         std::string text;
-#if defined(_WIN32) || defined(LYNX_EXECINFO)
+#if defined(_WIN32) || defined(YW_EXECINFO)
         text = formatFrames (sampleThread (w.uiThread));
 #endif
         const auto header = "YW UI thread not responding for " + std::to_string (stalled) + " ms (sample " + std::to_string (samples) + ")\n";
@@ -1764,7 +1764,7 @@ void hardenSignals() noexcept
                     sigaction (sig, &action, nullptr);
                 }
             }
-        // round 190dt: the plugin-call guard (call()), on top of the crash handler it passes LYNX's own faults to
+        // round 190dt: the plugin-call guard (call()), on top of the crash handler it passes YW's own faults to
         installFaultGuard();
 
         if (endSignalPipe[0] < 0 && ::pipe (endSignalPipe) == 0)
@@ -1812,7 +1812,7 @@ void startHangWatch (const std::string& folderUtf8, int stallMs) noexcept
                          THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, 0);
 #else
         w.uiThread = pthread_self();
- #if defined(LYNX_EXECINFO)
+ #if defined(YW_EXECINFO)
         {
             void* warm[4];
             backtrace (warm, 4); // (loads the unwinder now, not inside the signal handler)
@@ -1923,15 +1923,15 @@ MainProfiler& mainProfiler()
     return p;
 }
 
-#if defined(LYNX_UNWIND)
-// LYNX_PROFILE_SYMBOLS=1: LYNX.exe's own frames named in the process (its PDB). Off by default (round 190kz): dbghelp
-// loads the whole ~750 MB LYNX.pdb on the first such frame, which took longer than a measurement run, so no window was
+#if defined(YW_UNWIND)
+// YW_PROFILE_SYMBOLS=1: YW.exe's own frames named in the process (its PDB). Off by default (round 190kz): dbghelp
+// loads the whole ~750 MB YW.pdb on the first such frame, which took longer than a measurement run, so no window was
 // ever written (rounds 190gr-190kr). The frames are written as "YW Studio.exe+0x<rva>" and in a raw section per window that
 // scripts/profile_symbolize.py names afterwards (llvm-symbolizer with the build's PDB). Other modules keep their exports.
 bool symbolizeOwnFrames()
 {
     static const bool on = [] {
-        const auto* v = std::getenv ("LYNX_PROFILE_SYMBOLS");
+        const auto* v = std::getenv ("YW_PROFILE_SYMBOLS");
         return v != nullptr && v[0] == '1';
     }();
     return on;
@@ -2017,7 +2017,7 @@ void writeProfileWindow (const std::string& file, double fromS, double toS, long
 }
 
 // One unwind step on a copied stack. The copy holds whatever the thread had: a frame register can point anywhere, so
-// the unwinder may read an unmapped address (an access violation in RtlVirtualUnwind killed LYNX at start-up, round 174f).
+// the unwinder may read an unmapped address (an access violation in RtlVirtualUnwind killed YW at start-up, round 174f).
 // A fault only ends this sample's stack. No C++ objects in this frame (SEH and C++ unwinding must not share one function).
 bool unwindStepGuarded (DWORD64 imageBase, DWORD64 rip, PRUNTIME_FUNCTION function, CONTEXT* context) noexcept
 {
@@ -2037,7 +2037,7 @@ bool unwindStepGuarded (DWORD64 imageBase, DWORD64 rip, PRUNTIME_FUNCTION functi
 // One sample of the message thread without unwinding it while it is suspended: suspended, only its registers and the
 // used part of its stack are copied (no locks, no allocation); resumed; then unwound on the copy. Unwinding needs the
 // loader's function tables, whose lock the suspended thread may hold (a profiler that unwound the suspended thread
-// hung LYNX at start-up while DLLs were loading).
+// hung YW at start-up while DLLs were loading).
 std::vector<std::uintptr_t> sampleByCopy (HANDLE thread, std::uintptr_t stackBase, std::vector<std::uint8_t>& copy)
 {
     constexpr std::size_t maxCopy = 256 * 1024;
@@ -2162,7 +2162,7 @@ void profileLoop()
 
 void startMainProfiler (const std::string& fileUtf8, int intervalUs, int windowS) noexcept
 {
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     try
     {
         auto& p = mainProfiler();
@@ -2192,7 +2192,7 @@ void startMainProfiler (const std::string& fileUtf8, int intervalUs, int windowS
 
 void stopMainProfiler() noexcept
 {
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     try
     {
         auto& p = mainProfiler();
@@ -2223,7 +2223,7 @@ struct StallSampler
     bool quit = false;
     int intervalUs = 2000;
     const std::atomic<int>* tag = nullptr;
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     struct Watched
     {
         HANDLE handle = nullptr;
@@ -2257,7 +2257,7 @@ StallSampler& stallSampler()
     return s;
 }
 
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
 double stallNowMs (const StallSampler& s)
 {
     LARGE_INTEGER c {};
@@ -2343,7 +2343,7 @@ void threadFacts (HANDLE thread, std::uintptr_t& stackBase, std::uintptr_t& star
 
 void startStallSampler (const std::vector<std::string>& stackNames, int intervalUs, const std::atomic<int>* tag) noexcept
 {
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     try
     {
         auto& s = stallSampler();
@@ -2421,7 +2421,7 @@ void startStallSampler (const std::vector<std::string>& stackNames, int interval
 
 void stopStallSampler (const std::string& fileUtf8) noexcept
 {
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
     try
     {
         auto& s = stallSampler();
@@ -2440,7 +2440,7 @@ void stopStallSampler (const std::string& fileUtf8) noexcept
         {
             // the format (perf190os/s/stalls.py reads it): R <cycles per ms>; H <index> <id> <stacks 0|1> <start> <name>;
             // S <ms> <tag> <process cycles> then the threads that ran "<index>:<cycles>"; K <index> <frames…> (hex);
-            // A <address> <LYNX.exe+0x… or module!export>
+            // A <address> <YW.exe+0x… or module!export>
             std::fprintf (out, "R %.3f\n", s.ms1 > s.ms0 ? (double) (s.tsc1 - s.tsc0) / (s.ms1 - s.ms0) : 0.0);
             for (std::size_t i = 0; i < s.threads.size(); ++i)
             {
@@ -2495,7 +2495,7 @@ bool windowFaultCatchable (std::uint32_t code) noexcept
     return crashreport::editorFaultCatchable (code);
 }
 
-#if defined(LYNX_UNWIND)
+#if defined(YW_UNWIND)
 namespace
 {
 WindowClaim windowClaim = nullptr;
@@ -2528,7 +2528,7 @@ bool isDead (HWND root) noexcept
     return false;
 }
 
-// the window, its top-level window or any window up its owner chain is a faulted editor (LYNX makes plugin windows
+// the window, its top-level window or any window up its owner chain is a faulted editor (YW makes plugin windows
 // owned by the main window, so GA_ROOTOWNER would always be the main window)
 bool underDeadWindow (HWND window) noexcept
 {
@@ -2575,7 +2575,7 @@ int windowFilter (const MSG* m, EXCEPTION_POINTERS* ep) noexcept
         wchar_t path[MAX_PATH] = {};
         if (GetModuleFileNameW (module, path, MAX_PATH) == 0 || systemModule (path))
             continue;
-        if (module != self) // LYNX's own fault stays a crash (its crash file and report)
+        if (module != self) // YW's own fault stays a crash (its crash file and report)
         {
             lstrcpynW (caught.module, path, MAX_PATH);
             if (auto* root = static_cast<HWND> (windowClaim (m->hwnd, path)))
@@ -2713,7 +2713,7 @@ void storeFolder (const std::string& folder) noexcept
 // The C library aborted on its own (its heap checks: "free(): invalid next size", "corrupted double-linked list"...; its
 // fortify checks): the function that called abort() is the C library's. glibc's allocator entry points jump to static
 // functions, so their names are not among the frames (seen with glibc 2.42: free -> ?? -> ?? -> abort); only the module
-// tells. macOS: any frame in libsystem_malloc. A C++ terminate (libstdc++), LYNX's or a plugin's abort() do not count.
+// tells. macOS: any frame in libsystem_malloc. A C++ terminate (libstdc++), YW's or a plugin's abort() do not count.
 bool inModule (const void* pc, const char* part, const char** symbol = nullptr) noexcept
 {
     Dl_info info {};
@@ -2774,7 +2774,7 @@ void writeAll (int fd, const char* text) noexcept
 
 void prepareCrashWatchdog (const std::string& crashFolder) noexcept
 {
-    if (const char* v = std::getenv ("LYNX_CRASH_WATCHDOG_S"))
+    if (const char* v = std::getenv ("YW_CRASH_WATCHDOG_S"))
         if (const auto s = std::atoi (v); s >= 1 && s <= 600)
             watchdogSeconds = s;
     storeFolder (crashFolder);
@@ -2786,7 +2786,7 @@ void prepareCrashWatchdog (const std::string& crashFolder) noexcept
             if (auto* t = CreateThread (nullptr, 64 * 1024, watchdogThread, nullptr, STACK_SIZE_PARAM_IS_A_RESERVATION, nullptr))
                 CloseHandle (t);
     }
-#elif defined(LYNX_EXECINFO)
+#elif defined(YW_EXECINFO)
     void* warm[4];
     (void) backtrace (warm, 4); // (its first call loads the unwinder: an allocation, here and not in the handler)
 #endif
@@ -2823,7 +2823,7 @@ bool heapCorruptionCrash (void* exceptionPointers) noexcept
 #if defined(_WIN32)
     const auto* ep = static_cast<const EXCEPTION_POINTERS*> (exceptionPointers);
     return ep != nullptr && ep->ExceptionRecord != nullptr && (std::uint32_t) ep->ExceptionRecord->ExceptionCode == 0xC0000374u;
-#elif defined(LYNX_EXECINFO)
+#elif defined(YW_EXECINFO)
     if ((int) reinterpret_cast<std::intptr_t> (exceptionPointers) != SIGABRT)
         return false;
     void* frames[64];
@@ -2879,7 +2879,7 @@ void writeHeapCrashFile (void* exceptionPointers) noexcept
     *h = 0;
     writeAll (fd, head);
     writeAll (fd, ", abort). The emergency save was skipped: the heap is broken.\n--- frames\n");
- #if defined(LYNX_EXECINFO)
+ #if defined(YW_EXECINFO)
     void* frames[64];
     const auto n = backtrace (frames, 64);
     backtrace_symbols_fd (frames, n, fd);
@@ -2926,4 +2926,4 @@ std::string lastHangFile()
     const std::lock_guard<std::mutex> l (w.lock);
     return w.lastFile;
 }
-} // namespace lynx::crashguard
+} // namespace yw::crashguard

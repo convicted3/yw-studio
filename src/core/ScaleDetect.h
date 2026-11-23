@@ -24,7 +24,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx::scaledetect
+namespace yw::scaledetect
 {
 constexpr int none = -1;    // fewer than 3 notes counted
 constexpr int minNotes = 3; // FL: `if (iVar6 < 3) return -1`
@@ -114,4 +114,4 @@ inline std::string name (int key)
     static constexpr std::array<const char*, 12> roots { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     return std::string (roots[(std::size_t) (key % 12)]) + " " + (isMinor (key) ? TR_NOOP ("Minor") : TR_NOOP ("Major"));
 }
-} // namespace lynx::scaledetect
+} // namespace yw::scaledetect

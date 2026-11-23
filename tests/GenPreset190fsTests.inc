@@ -1,4 +1,4 @@
-// Round 190fs: the user's own presets of LYNX's built-in generators (core/GeneratorPresets.h): the file round trip is
+// Round 190fs: the user's own presets of YW's built-in generators (core/GeneratorPresets.h): the file round trip is
 // bit-identical for every generator kind, a loaded preset sounds the same (null test), the channel keeps its own
 // settings, other preset files are told apart, and FL's .fst of a third-party plugin names its plugin.
 
@@ -9,7 +9,7 @@
 #include "core/FlpExport.h"
 #include "core/GeneratorPresets.h"
 #include "core/History.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/NativeEngines.h"
 #include "core/PluginPresets.h"
 #include "core/SynthPresets.h"
@@ -18,25 +18,25 @@
 namespace genpreset190fs
 {
 // One note (C5, velocity 0.8) on channel 0 of a song holding `c` alone: 0.3 s at 44.1 kHz, both sides interleaved
-std::vector<float> render (const lynx::ChannelDef& c)
+std::vector<float> render (const yw::ChannelDef& c)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     auto ch = c;
     ch.mixerTrack = 1;
     s.channels.push_back (ch);
     s.patterns.emplace_back();
     // (the engines' data files and the channel's sample as the app reads them)
-    auto samples = [] (const std::string& path) -> std::shared_ptr<const lynx::SampleData> {
+    auto samples = [] (const std::string& path) -> std::shared_ptr<const yw::SampleData> {
         auto p = path;
         std::replace (p.begin(), p.end(), '\\', '/');
-        return lynx::tools::readWav (lynx::existingPathIgnoringCase (p));
+        return yw::tools::readWav (yw::existingPathIgnoringCase (p));
     };
-    auto state = lynx::RackState::build (s, nullptr, 44100.0, samples);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 44100.0, samples);
+    yw::RackRenderer r;
     r.prepare (44100.0, 512);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.key = 60;
     on.velocity = 0.8f;
@@ -67,9 +67,9 @@ double peak (const std::vector<float>& a)
 
 // Save → load of `c` as a user preset named `name`, onto a channel of the same generator with other settings and
 // another sound: the sound comes back bit for bit, the channel keeps its own settings and takes the preset's name
-bool roundTrip (const lynx::ChannelDef& c, const std::string& name, lynx::ChannelDef* loaded = nullptr)
+bool roundTrip (const yw::ChannelDef& c, const std::string& name, yw::ChannelDef* loaded = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto text = genpresets::toText (name, c);
     const auto p = genpresets::fromText (text);
     if (! p || p->kind != c.instrument || p->name != name || ! genpresets::sameSound (p->sound, c))
@@ -113,7 +113,7 @@ bool roundTrip (const lynx::ChannelDef& c, const std::string& name, lynx::Channe
 
 TEST (genpreset190fs_generator_ids_round_trip_and_are_unique)
 {
-    using namespace lynx;
+    using namespace yw;
     std::set<std::string> seen;
     for (int k = 0; k <= (int) InstrumentKind::pocketSuperSaw; ++k)
     {
@@ -125,7 +125,7 @@ TEST (genpreset190fs_generator_ids_round_trip_and_are_unique)
         CHECK (! genpresets::engineName (kind).empty());
     }
     CHECK (! genpresets::kindFromId ("no-such-generator").has_value());
-    // the ids are the .lynx project's (engine/ProjectFile.cpp instrumentId)
+    // the ids are the .yw project's (engine/ProjectFile.cpp instrumentId)
     CHECK (genpresets::kindId (InstrumentKind::dx10) == "dx10" && genpresets::kindId (InstrumentKind::threeosc) == "threeosc"
            && genpresets::kindId (InstrumentKind::keplerExo) == "keplerexo" && genpresets::kindId (InstrumentKind::midiOut) == "midiOut");
     // folders: FL's plugin names (FL-native equivalents keep FL's names)
@@ -137,14 +137,14 @@ TEST (genpreset190fs_generator_ids_round_trip_and_are_unique)
 
 TEST (genpreset190fs_save_is_offered_where_the_window_has_a_preset_box)
 {
-    using namespace lynx;
+    using namespace yw;
     for (auto k : { InstrumentKind::threeosc, InstrumentKind::sytrus, InstrumentKind::harmor, InstrumentKind::gms, InstrumentKind::harmless,
                     InstrumentKind::minisynth, InstrumentKind::dx10, InstrumentKind::fruitkick, InstrumentKind::ogun, InstrumentKind::sakura,
                     InstrumentKind::synth, InstrumentKind::simsynth, InstrumentKind::toxic, InstrumentKind::poizone, InstrumentKind::drumsynth })
         CHECK (genpresets::canSave (k));
     for (auto k : { InstrumentKind::sampler, InstrumentKind::plugin, InstrumentKind::layer, InstrumentKind::patcher, InstrumentKind::audioClip })
         CHECK (! genpresets::canSave (k));
-    // every kind with a LYNX bank or an FL preset folder can save (the channel window's ◀ name ▶ box)
+    // every kind with a YW bank or an FL preset folder can save (the channel window's ◀ name ▶ box)
     for (const auto k : banks::kindsWithBanks())
         CHECK (genpresets::canSave (k));
     for (const auto& e : natives::instrumentEngines())
@@ -154,7 +154,7 @@ TEST (genpreset190fs_save_is_offered_where_the_window_has_a_preset_box)
 
 TEST (genpreset190fs_every_field_comes_back_bit_identical)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::directwave;
     c.samplePath = "C:\\Samples\\Pi\xc3\xa1no \\ new\nline.wav";
@@ -213,12 +213,12 @@ TEST (genpreset190fs_every_field_comes_back_bit_identical)
     CHECK (fromCrlf.has_value() && genpresets::sameSound (fromCrlf->sound, c));
 }
 
-TEST (genpreset190fs_lynx_banks_round_trip_and_null_test)
+TEST (genpreset190fs_yw_banks_round_trip_and_null_test)
 {
-    // every LYNX bank preset of every engine with a bank (DX10, Harmless, SimSynth, Toxic, PoiZone, Fruit Kick, Plucked!,
+    // every YW bank preset of every engine with a bank (DX10, Harmless, SimSynth, Toxic, PoiZone, Fruit Kick, Plucked!,
     // Drumpad, Sakura, Drumaxx, DrumSynth Live, BeepMap, Granulizer): bit-identical state; the first presets of each
     // bank also render bit-identical before and after (the null test)
-    using namespace lynx;
+    using namespace yw;
     int presets = 0, rendered = 0, audible = 0;
     for (const auto kind : banks::kindsWithBanks())
     {
@@ -255,9 +255,9 @@ TEST (genpreset190fs_lynx_banks_round_trip_and_null_test)
 
 TEST (genpreset190fs_native_engines_round_trip_and_null_test)
 {
-    // every FL engine LYNX adds: from LYNX's own default (3x Osc, Harmless, DX10, SimSynth, Plucked!, Slicex, FPC...) and,
+    // every FL engine YW adds: from YW's own default (3x Osc, Harmless, DX10, SimSynth, Plucked!, Slicex, FPC...) and,
     // with FL Studio's data, from FL's Default preset (Sytrus, Harmor, GMS, Ogun, MiniSynth, Sakura, Morphine...)
-    using namespace lynx;
+    using namespace yw;
     const auto fl = natives142::flAccess();
     int engines = 0, rendered = 0;
     for (const auto& e : natives::instrumentEngines())
@@ -285,9 +285,9 @@ TEST (genpreset190fs_native_engines_round_trip_and_null_test)
     CHECK (engines >= 8 && rendered >= 5);
 }
 
-TEST (genpreset190fs_lynx_synth_presets_round_trip_and_null_test)
+TEST (genpreset190fs_yw_synth_presets_round_trip_and_null_test)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     for (const auto& [name, settings] : synthPresets())
     {
@@ -308,13 +308,13 @@ TEST (genpreset190fs_lynx_synth_presets_round_trip_and_null_test)
 
 TEST (genpreset190fs_other_files_are_told_apart)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::dx10;
     c.pluginState = { 9, 8, 7 };
     const auto text = genpresets::toText ("Mine", c);
     CHECK (genpresets::looksLikePreset (text) && genpresets::looksLikePreset (text.substr (0, 30)));
-    // a hosted plugin's .lynxpreset and a mixer effect's are not generator presets, and those readers skip ours
+    // a hosted plugin's .ywpreset and a mixer effect's are not generator presets, and those readers skip ours
     pluginpresets::Preset pp;
     pp.name = "X", pp.pluginName = "Surge XT", pp.pluginId = "VST3-Surge", pp.state = { 1, 2 };
     const auto pluginText = pluginpresets::toText (pp);
@@ -347,7 +347,7 @@ TEST (genpreset190fs_load_is_one_step_and_browser_channel)
 {
     // the load is a single change of the song (one undo step: the history compares two songs), and the Browser's new
     // channel has the preset's generator, sound and name
-    using namespace lynx;
+    using namespace yw;
     const auto dx = banks::defaultChannel (InstrumentKind::dx10, "Fruity DX10");
     CHECK (dx.has_value());
     if (! dx)
@@ -373,7 +373,7 @@ TEST (genpreset190fs_load_is_one_step_and_browser_channel)
 TEST (genpreset190fs_fl_preset_of_a_third_party_plugin_names_it)
 {
     // the Browser's message for an FL .fst of another company's plugin names that plugin (FL's wrapper record)
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin f;
     f.format = ForeignPlugin::Format::vst2;
     f.vst2Id = pluginpresets::fourCC ("Syn1");

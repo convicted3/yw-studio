@@ -1,8 +1,8 @@
-// --- Live's own devices in a set → LYNX's own, lot 4 (round 190fm, core/AlsDevices.h): Hybrid Reverb, Roar, Grain Delay
+// --- Live's own devices in a set → YW's own, lot 4 (round 190fm, core/AlsDevices.h): Hybrid Reverb, Roar, Grain Delay
 // and Auto Filter's other filter types. The device elements are written by the tests with the member names Live saves.
 // Two tests read files of Live's own install when this machine has one (read-only, skipped otherwise): an impulse
 // response and Live's Core Library device presets, through the same translators. Which statements about Live are
-// [ASSUMED] is listed in the round's report (/mnt/e/lynx-work/realive190fm/sub-dev.md).
+// [ASSUMED] is listed in the round's report (/mnt/e/yw-work/realive190fm/sub-dev.md).
 
 #include "core/AlsDevices.h"
 #include "core/AlsImport.h"
@@ -13,7 +13,7 @@
 #include "core/FacetEq.h"
 #include "core/FlSamplers.h"
 #include "core/Gzip.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/MixSuite.h"
 #include "core/Patcher.h"
 #include "core/Rack.h"
@@ -29,14 +29,14 @@ using als190cf::on;
 
 inline std::string val (const std::string& name, double value) { return "<" + name + " Value=\"" + als190bq::num (value) + "\" />"; }
 
-inline std::optional<lynx::alsdev::Translated> translate (const std::string& text, std::function<std::string (const lynx::xml::Element&)> find = {}, double bpm = 120.0)
+inline std::optional<yw::alsdev::Translated> translate (const std::string& text, std::function<std::string (const yw::xml::Element&)> find = {}, double bpm = 120.0)
 {
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     doc.parse (text);
-    lynx::alsdev::Context context;
+    yw::alsdev::Context context;
     context.bpm = bpm;
     context.findFile = std::move (find);
-    return lynx::alsdev::effectFromLiveDevice (doc.root(), context);
+    return yw::alsdev::effectFromLiveDevice (doc.root(), context);
 }
 
 inline std::string hybrid (int routing, int algorithm, const std::string& extra, const std::string& irPath = "Samples/Test/ir.wav")
@@ -51,8 +51,8 @@ inline std::string roar (int routing, const std::string& extra)
     return "<Roar Id=\"8\">" + on() + val ("Input_RoutingMode", routing) + par ("Stage1_Shaper_Amount", 0.5) + extra + "</Roar>";
 }
 
-inline const lynx::RackDoc* rackOf (const lynx::alsdev::Translated& t) { return lynx::rack::isRack (t.slot) ? lynx::rack::rackOf (t.slot.patcher) : nullptr; }
-inline const lynx::EffectSlot& nodeOf (const lynx::PatcherDoc& doc, const lynx::RackDoc& r, int chain, int k)
+inline const yw::RackDoc* rackOf (const yw::alsdev::Translated& t) { return yw::rack::isRack (t.slot) ? yw::rack::rackOf (t.slot.patcher) : nullptr; }
+inline const yw::EffectSlot& nodeOf (const yw::PatcherDoc& doc, const yw::RackDoc& r, int chain, int k)
 {
     return doc.nodes[(std::size_t) r.chains[(std::size_t) chain].nodes[(std::size_t) k]].effect;
 }
@@ -60,14 +60,14 @@ inline const lynx::EffectSlot& nodeOf (const lynx::PatcherDoc& doc, const lynx::
 // a stereo float WAV in the temp folder (the user's own impulse response)
 inline std::string writeIr (const std::string& name, const std::vector<float>& l, const std::vector<float>& r, int rate)
 {
-    const auto path = (std::filesystem::temp_directory_path() / ("lynx190fm_" + processTempTag() + "_" + name)).string();
-    const auto bytes = lynx::makeWavFloat ({ l, r }, rate);
+    const auto path = (std::filesystem::temp_directory_path() / ("yw190fm_" + processTempTag() + "_" + name)).string();
+    const auto bytes = yw::makeWavFloat ({ l, r }, rate);
     std::ofstream (path, std::ios::binary).write ((const char*) bytes.data(), (std::streamsize) bytes.size());
     return path;
 }
 
 // the rack's output energy for a 0.25 sine at `hz` (after a settling half)
-inline double energyThrough (const lynx::PatcherDoc& doc, double hz = 200.0, bool* finite = nullptr)
+inline double energyThrough (const yw::PatcherDoc& doc, double hz = 200.0, bool* finite = nullptr)
 {
     auto g = als190ed::graphOf (doc);
     double energy = 0.0;
@@ -95,8 +95,8 @@ inline const char* liveRoot() { return "/mnt/c/ProgramData/Ableton/Live 12 Trial
 
 TEST (als190fm_hybrid_reverb_algorithm_rack)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190fm::near;
     using als190fm::par;
     using als190fm::flag;
@@ -183,8 +183,8 @@ TEST (als190fm_hybrid_reverb_algorithm_rack)
 
 TEST (als190fm_hybrid_reverb_convolution)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190fm::near;
     using als190fm::par;
     using als190fm::flag;
@@ -340,8 +340,8 @@ TEST (als190fm_hybrid_reverb_convolution)
 
 TEST (als190fm_roar_becomes_a_rack)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190fm::near;
     using als190fm::par;
     using als190fm::flag;
@@ -452,8 +452,8 @@ TEST (als190fm_roar_becomes_a_rack)
 
 TEST (als190fm_grain_delay_becomes_echoform)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190fm::near;
     using als190fm::par;
     using als190fm::flag;
@@ -478,8 +478,8 @@ TEST (als190fm_grain_delay_becomes_echoform)
 
 TEST (als190fm_auto_filter_other_types)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190fm::near;
     using als190fm::par;
     using als190fm::flag;
@@ -571,7 +571,7 @@ TEST (als190fm_auto_filter_other_types)
 
 TEST (als190fm_lot4_import_and_live_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190fm::par;
     using als190fm::flag;
     // through the importer: the three devices on a track become insert effects; the report lists the pairs as fitted
@@ -641,7 +641,7 @@ TEST (als190fm_lot4_import_and_live_presets)
 
 TEST (als190fm_live_device_presets_open_as_effects)
 {
-    using namespace lynx;
+    using namespace yw;
     // a preset written here: an .adv (gzip XML, AbletonDevicePreset) holding a Grain Delay → Echoform
     {
         const std::string text = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Ableton MajorVersion=\"5\" MinorVersion=\"12.0_12402\"><AbletonDevicePreset>"
@@ -660,7 +660,7 @@ TEST (als190fm_live_device_presets_open_as_effects)
         const std::string synth = "<?xml version=\"1.0\"?><Ableton><AbletonDevicePreset><Device><Operator Id=\"0\" /></Device></AbletonDevicePreset></Ableton>";
         CHECK (! importLiveDevicePreset (std::vector<std::uint8_t> (synth.begin(), synth.end()), options, &error).has_value() && error.find ("instrument") != std::string::npos);
         const std::string vocoder = "<?xml version=\"1.0\"?><Ableton><AbletonDevicePreset><Device><Vocoder Id=\"0\" /></Device></AbletonDevicePreset></Ableton>";
-        CHECK (! importLiveDevicePreset (std::vector<std::uint8_t> (vocoder.begin(), vocoder.end()), options, &error).has_value() && error.find ("no LYNX counterpart") != std::string::npos);
+        CHECK (! importLiveDevicePreset (std::vector<std::uint8_t> (vocoder.begin(), vocoder.end()), options, &error).has_value() && error.find ("no YW counterpart") != std::string::npos);
         const std::string set = "<?xml version=\"1.0\"?><Ableton><LiveSet /></Ableton>";
         CHECK (! importLiveDevicePreset (std::vector<std::uint8_t> (set.begin(), set.end()), options, &error).has_value());
     }

@@ -25,7 +25,7 @@
 // - the carrier × envelope products are summed on the x87 as well (one extended rounding, then float); the scalar
 //   mixes (hold, modulator and carrier levels) are plain float multiply-adds.
 
-namespace lynx::fvocoder
+namespace yw::fvocoder
 {
 namespace
 {
@@ -52,7 +52,7 @@ struct X87Extended
 constexpr std::array<int, controls> minimum { 0, 0, 0, 0, -1200, 5, 10, 10, 0, 0, 0, 0 };
 constexpr std::array<int, controls> maximum { 65536, 65536, 128, 1, 1200, 200, 1000, 1000, 1, 160, 160, 160 };
 // The plugin keeps whatever raw value a saved state or ProcessParam gives it (no clamp to the knob ranges above,
-// REA_rodada78 §1). LYNX does the same inside these wider bounds, which only keep the arithmetic finite and defined
+// REA_rodada78 §1). YW does the same inside these wider bounds, which only keep the arithmetic finite and defined
 // (a zero band width or time divides by zero, a huge scale overflows the integer rounding); invert and hold are
 // tests (> 0, != 0) and take any value.
 constexpr std::array<int, controls> guardMin { 0, 0, 0, INT_MIN, -120000, 1, 1, 1, INT_MIN, -1280, -1280, -1280 };
@@ -419,4 +419,4 @@ void Engine::processStereo (float* left, float* right, int n) noexcept
         done += len;
     }
 }
-} // namespace lynx::fvocoder
+} // namespace yw::fvocoder

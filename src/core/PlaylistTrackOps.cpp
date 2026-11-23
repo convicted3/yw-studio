@@ -12,7 +12,7 @@
 #include "core/PlaylistOps.h"
 #include "core/RackOps.h"
 
-namespace lynx::pltracks
+namespace yw::pltracks
 {
 namespace
 {
@@ -375,7 +375,7 @@ MergeResult mergePatternClips (Song& song, const std::vector<int>& clips, int* n
         topTrack = std::min (topTrack, c.track);
     }
 
-    // the content: what each clip shows of its pattern (FL copies the clip's window; LYNX repeats a pattern along a
+    // the content: what each clip shows of its pattern (FL copies the clip's window; YW repeats a pattern along a
     // clip longer than it, so every repetition inside the window is copied)
     Pattern merged;
     for (const auto i : list)
@@ -569,7 +569,7 @@ static std::vector<Clip> automationClipsInOrder (const Song& song, const std::ve
     return list;
 }
 
-// FL's clip with no window (−1, −1): the whole automation. A LYNX clip may also run on past its last point, which only
+// FL's clip with no window (−1, −1): the whole automation. A YW clip may also run on past its last point, which only
 // holds that point's value.
 static bool showsWholeAutomation (const Clip& c, const Automation& a)
 {
@@ -943,4 +943,4 @@ void stretchAudioClip (Song& song, const std::vector<Clip>& before, int index, s
         scale (c, from);
     }
 }
-} // namespace lynx::pltracks
+} // namespace yw::pltracks

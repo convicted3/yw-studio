@@ -4,9 +4,9 @@
 
 namespace slicer180c
 {
-lynx::SampleData ramp (int frames, double rate = 44100.0, bool stereo = false)
+yw::SampleData ramp (int frames, double rate = 44100.0, bool stereo = false)
 {
-    lynx::SampleData d;
+    yw::SampleData d;
     d.sampleRate = rate;
     for (int i = 0; i < frames; ++i)
         d.left.push_back (0.5f + 0.25f * (float) std::sin (i * 0.01));
@@ -15,13 +15,13 @@ lynx::SampleData ramp (int frames, double rate = 44100.0, bool stereo = false)
     return d;
 }
 
-lynx::fslicer::State threeSlices()
+yw::fslicer::State threeSlices()
 {
-    auto s = lynx::fslicer::fresh ("C:\\loops\\beat.wav", 44100);
+    auto s = yw::fslicer::fresh ("C:\\loops\\beat.wav", 44100);
     s.slices.clear();
     for (int p : { 0, 4410, 8820 })
     {
-        lynx::fslicer::Slice slice;
+        yw::fslicer::Slice slice;
         slice.position = p;
         s.slices.push_back (slice);
     }
@@ -32,7 +32,7 @@ lynx::fslicer::State threeSlices()
 
 TEST (slicer180c_state_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = slicer180c::threeSlices();
     s.fadeInMs = 3;
     s.fadeOutMs = 40;
@@ -56,8 +56,8 @@ TEST (slicer180c_state_round_trip)
 
 TEST (slicer180c_fl_demo_states_round_trip)
 {
-    // every Fruity Slicer state in FL's demo projects: LYNX reads it and writes the same bytes (version 16)
-    using namespace lynx;
+    // every Fruity Slicer state in FL's demo projects: YW reads it and writes the same bytes (version 16)
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto demos = std::filesystem::path (realFlpDir) / "Demo projects";
@@ -100,7 +100,7 @@ TEST (slicer180c_fl_demo_states_round_trip)
 
 TEST (slicer180c_slice_lengths_and_sampler_table)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = slicer180c::threeSlices();
     const auto lengths = fslicer::sliceLengths (s, 20000);
     CHECK ((lengths == std::vector<std::int64_t> { 4410, 4410, 20000 - 8820 }));
@@ -120,7 +120,7 @@ TEST (slicer180c_fades_follow_fl)
 {
     // FUN_00607ed0: t = (k − first + 1)/(n + 1); fade in linear above 50 ms, the fade out (11^(1−t) − 1)/10; at
     // 50 ms or less both are raised cosines
-    using namespace lynx;
+    using namespace yw;
     auto flat = [] (int n) {
         SampleData d;
         d.sampleRate = 1000.0; // 1 frame = 1 ms
@@ -146,7 +146,7 @@ TEST (slicer180c_fades_follow_fl)
 
 TEST (slicer180c_prepare_reverses_declicks_and_fades)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = slicer180c::threeSlices();
     s.declick = 0; // (a new Slicer has DECLICK on and DEC at 4 ms, as in FL: each step is switched on below)
     s.fadeOutMs = 0;
@@ -184,7 +184,7 @@ TEST (slicer180c_fill_gaps_stretch)
 {
     // FUN_0075b5d0: the slice's start stays, the grown part ping-pongs between the peaks of its second half and fades
     // out by 2× its length; a slice ending in silence is copied and padded with silence
-    using namespace lynx;
+    using namespace yw;
     const int n = 4410, grown = 6000;
     std::vector<std::int16_t> tone ((std::size_t) n), out ((std::size_t) grown, 0);
     for (int i = 0; i < n; ++i)
@@ -213,13 +213,13 @@ TEST (slicer180c_fill_gaps_stretch)
     CHECK ((std::int64_t) out2->frames() == (std::int64_t) std::nearbyint (13230.0 * (double) f));
     const auto starts = fslicer::playedStarts (s, 13230);
     CHECK (starts[1] == (std::int32_t) std::nearbyint (4410.0 * (double) f));
-    s.method = 4; // the licensed engine's modes: LYNX keeps the length
+    s.method = 4; // the licensed engine's modes: YW keeps the length
     CHECK (fslicer::prepare (sample, s)->frames() == 13230);
 }
 
 TEST (slicer180c_dump_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = slicer180c::threeSlices(); // 0, 4410, 8820 of 13230 frames = 3 beats → 1 beat each at PPQ 96
     s.lengthBeats = 3.0f;
     const auto none = [] (int) { return 0; };

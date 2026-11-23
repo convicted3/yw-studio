@@ -17,7 +17,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct PdcPlan
 {
@@ -89,4 +89,4 @@ private:
     int position = 0;
     int quiet = 0; // consecutive silent samples already written (up to delay)
 };
-} // namespace lynx
+} // namespace yw

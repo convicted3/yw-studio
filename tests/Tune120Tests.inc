@@ -1,4 +1,4 @@
-// --- Round 120: Waves Tune Real-Time's saved scale; LYNX Tune's retune timing ---------------------------------------
+// --- Round 120: Waves Tune Real-Time's saved scale; YW Tune's retune timing ---------------------------------------
 
 namespace tune120
 {
@@ -26,10 +26,10 @@ std::vector<std::uint8_t> wavesTuneComponent (int rootA, const std::string& note
 const std::string naturalMinor = "0x00x0x00x0x"; // [DATA] the statuses of her "Natural Minor" states
 const std::string major = "0x0x00x0x0x0";
 
-lynx::ForeignPlugin wavesTune (const std::vector<std::uint8_t>& component)
+yw::ForeignPlugin wavesTune (const std::vector<std::uint8_t>& component)
 {
-    lynx::ForeignPlugin wt;
-    wt.format = lynx::ForeignPlugin::Format::vst3;
+    yw::ForeignPlugin wt;
+    wt.format = yw::ForeignPlugin::Format::vst3;
     wt.name = "WaveShell1-VST3 16.0_x64";
     wt.state = substtest::flVst3State (component);
     return wt;
@@ -38,7 +38,7 @@ lynx::ForeignPlugin wavesTune (const std::vector<std::uint8_t>& component)
 
 TEST (waves_tune_scale_is_read_round120)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto eMinor = wavesTuneScale (tune120::wavesTuneComponent (4, tune120::naturalMinor, 4, tune120::naturalMinor));
     CHECK (eMinor && eMinor->key == 4 && eMinor->scale == (int) vocal::Scale::minor);
     CHECK (eMinor && eMinor->mask == vocal::scaleMask (vocal::Scale::minor, 4));
@@ -47,7 +47,7 @@ TEST (waves_tune_scale_is_read_round120)
     // the active setup's scale, not the first one
     const auto b = wavesTuneScale (tune120::wavesTuneComponent (5, tune120::major, 8, tune120::naturalMinor, "SETUP_B"));
     CHECK (b && b->key == 8 && b->scale == (int) vocal::Scale::minor);
-    // a note set LYNX Tune has no name for: custom, absolute pitch classes (root D: D, D#, A)
+    // a note set YW Tune has no name for: custom, absolute pitch classes (root D: D, D#, A)
     const auto odd = wavesTuneScale (tune120::wavesTuneComponent (2, "00xxxxx0xxxx", 2, tune120::major));
     CHECK (odd && odd->scale == (int) vocal::Scale::custom && odd->mask == ((1u << 2) | (1u << 3) | (1u << 9)));
     // every note: chromatic
@@ -63,8 +63,8 @@ TEST (waves_tune_scale_is_read_round120)
 
 TEST (waves_tune_substitute_takes_its_own_scale_round120)
 {
-    using namespace lynx;
-    // luisa sonsa's Waves Tune Real-Time (E natural minor) alone in a song: LYNX Tune in E minor, from its own state
+    using namespace yw;
+    // luisa sonsa's Waves Tune Real-Time (E natural minor) alone in a song: YW Tune in E minor, from its own state
     Song song;
     song.mixer = Song::defaultMixer (2);
     const auto wt = tune120::wavesTune (tune120::wavesTuneComponent (4, tune120::naturalMinor, 4, tune120::naturalMinor));
@@ -73,29 +73,29 @@ TEST (waves_tune_substitute_takes_its_own_scale_round120)
     CHECK (context.knowsKey() && context.key == 4 && context.scale == (int) vocal::Scale::minor);
     auto slot = song.mixer[1].effects[0];
     CHECK (substituteEffectSlot (slot, pluginIdentity (wt), SubstituteContext {}));
-    CHECK (slot.kind == EffectKind::lynxTune);
-    CHECK (lynxtune::keyIndex (slot.params[lynxtune::key]) == 4);
-    CHECK (vocal::Scale (lynxtune::scaleIndex (slot.params[lynxtune::scale])) == vocal::Scale::minor);
+    CHECK (slot.kind == EffectKind::ywTune);
+    CHECK (ywtune::keyIndex (slot.params[ywtune::key]) == 4);
+    CHECK (vocal::Scale (ywtune::scaleIndex (slot.params[ywtune::scale])) == vocal::Scale::minor);
     // its own scale wins over another project key
     SubstituteContext other;
     other.key = 7;
     other.scale = (int) vocal::Scale::major;
     auto again = song.mixer[1].effects[0];
     CHECK (substituteEffectSlot (again, pluginIdentity (wt), other));
-    CHECK (lynxtune::keyIndex (again.params[lynxtune::key]) == 4);
-    // a custom note set: LYNX Tune's custom scale with the same note switches
+    CHECK (ywtune::keyIndex (again.params[ywtune::key]) == 4);
+    // a custom note set: YW Tune's custom scale with the same note switches
     const auto oddWt = tune120::wavesTune (tune120::wavesTuneComponent (2, "00xxxxx0xxxx", 2, tune120::major));
     auto odd = subst113::pluginSlot (oddWt);
     CHECK (substituteEffectSlot (odd, pluginIdentity (oddWt), SubstituteContext {}));
-    CHECK (vocal::Scale (lynxtune::scaleIndex (odd.params[lynxtune::scale])) == vocal::Scale::custom);
+    CHECK (vocal::Scale (ywtune::scaleIndex (odd.params[ywtune::scale])) == vocal::Scale::custom);
     for (int k = 0; k < 12; ++k)
-        CHECK ((odd.params[(std::size_t) (lynxtune::noteC + k)] >= 0.5f) == (k == 2 || k == 3 || k == 9));
+        CHECK ((odd.params[(std::size_t) (ywtune::noteC + k)] >= 0.5f) == (k == 2 || k == 3 || k == 9));
 }
 
 TEST (waves_tune_note_transition_becomes_the_retune_round120)
 {
-    using namespace lynx;
-    // RealWorld 20 = Speed 21.4 ms, 21 = Note Transition 54.2 ms (her most common state): LYNX Tune's retune = 54.2 ms
+    using namespace yw;
+    // RealWorld 20 = Speed 21.4 ms, 21 = Note Transition 54.2 ms (her most common state): YW Tune's retune = 54.2 ms
     auto c = tune120::wavesTuneComponent (4, tune120::naturalMinor, 4, tune120::naturalMinor);
     const std::string from = "80 900 6 0 * 3 * 4 0 0\n", to = "80 900 6 0 * 3 * 4 0 0\n* * * * * 1 0 80 1 1\n21.4 54.2 100 0 0 0 600 0 0 30\n";
     const auto at = std::search (c.begin(), c.end(), from.begin(), from.end());
@@ -105,14 +105,14 @@ TEST (waves_tune_note_transition_becomes_the_retune_round120)
     const auto wt = tune120::wavesTune (c);
     auto slot = subst113::pluginSlot (wt);
     CHECK (substituteEffectSlot (slot, pluginIdentity (wt), SubstituteContext {}));
-    CHECK (std::abs (lynxtune::retuneMs (slot.params[lynxtune::retune]) - 54.2) < 0.5);
-    CHECK (slot.params[lynxtune::humanize] == 0.0f);
-    CHECK (lynxtune::keyIndex (slot.params[lynxtune::key]) == 4);
+    CHECK (std::abs (ywtune::retuneMs (slot.params[ywtune::retune]) - 54.2) < 0.5);
+    CHECK (slot.params[ywtune::humanize] == 0.0f);
+    CHECK (ywtune::keyIndex (slot.params[ywtune::key]) == 4);
 }
 
 namespace tune120
 {
-// output pitch minus the sung pitch (cents) around `t` seconds of a LYNX Tune run
+// output pitch minus the sung pitch (cents) around `t` seconds of a YW Tune run
 double correctionAt (const std::vector<float>& x, const std::vector<float>& y, int latency, double fs, double t)
 {
     const auto at = (int) (t * fs) - 512;
@@ -120,7 +120,7 @@ double correctionAt (const std::vector<float>& x, const std::vector<float>& y, i
 }
 } // namespace tune120
 
-TEST (lynx_tune_phrase_starts_without_the_last_correction_round120)
+TEST (yw_tune_phrase_starts_without_the_last_correction_round120)
 {
     // phrase 1: A3 +45 c (pulled down ~45 c); 0.3 s of silence; phrase 2: A3 −45 c. The second phrase starts at the sung
     // pitch and is pulled UP from there (it used to start with phrase 1's −45 c correction still applied)
@@ -129,8 +129,8 @@ TEST (lynx_tune_phrase_starts_without_the_last_correction_round120)
     for (int i = (int) (0.6 * fs); i < (int) (0.9 * fs); ++i)
         x[(std::size_t) i] = 0.0f;
     auto p = r95::tuneDefaults();
-    p[lynx::lynxtune::scale] = 0.0f;
-    p[lynx::lynxtune::retune] = (float) std::sqrt (120.0 / 400.0);
+    p[yw::ywtune::scale] = 0.0f;
+    p[yw::ywtune::retune] = (float) std::sqrt (120.0 / 400.0);
     int latency = 0;
     const auto y = r95::runTune (x, fs, p, latency);
     CHECK (tune120::correctionAt (x, y, latency, fs, 0.55) < -35.0); // phrase 1 corrected
@@ -139,17 +139,17 @@ TEST (lynx_tune_phrase_starts_without_the_last_correction_round120)
     CHECK (tune120::correctionAt (x, y, latency, fs, 1.5) > 38.0);
 }
 
-TEST (lynx_tune_retune_curve_matches_waves_tune_round120)
+TEST (yw_tune_retune_curve_matches_waves_tune_round120)
 {
     // [EXEC] Waves Tune Real-Time at Note Transition 54.2 ms on a held A3 +30 c from silence: 50 % of the correction at
-    // ~50 ms, 90 % at ~144 ms. LYNX Tune at retune 54.2 ms: the same first-order curve (onset at the sung pitch)
+    // ~50 ms, 90 % at ~144 ms. YW Tune at retune 54.2 ms: the same first-order curve (onset at the sung pitch)
     const double fs = 44100.0;
     auto x = r95::vowel (fs, (int) (fs * 1.0), [] (double) { return 220.0 * std::exp2 (30.0 / 1200.0); });
     for (int i = 0; i < (int) (0.2 * fs); ++i)
         x[(std::size_t) i] = 0.0f;
     auto p = r95::tuneDefaults();
-    p[lynx::lynxtune::scale] = 0.0f;
-    p[lynx::lynxtune::retune] = (float) std::sqrt (54.2 / 400.0);
+    p[yw::ywtune::scale] = 0.0f;
+    p[yw::ywtune::retune] = (float) std::sqrt (54.2 / 400.0);
     int latency = 0;
     const auto y = r95::runTune (x, fs, p, latency);
     const auto at60 = -tune120::correctionAt (x, y, latency, fs, 0.2 + 0.06);
@@ -160,15 +160,15 @@ TEST (lynx_tune_retune_curve_matches_waves_tune_round120)
     CHECK (late > 29.0 && late < 31.0);
 }
 
-TEST (lynx_tune_glide_is_not_pulled_back_round120)
+TEST (yw_tune_glide_is_not_pulled_back_round120)
 {
     // an octave glide in 2 s at retune 120 ms: the correction averages near zero (Waves Tune RT: −3 c), not ~−15 c
     // against the glide's direction (the 0.1 st target hysteresis did that)
     const double fs = 44100.0;
     const auto x = r95::vowel (fs, (int) (fs * 2.0), [] (double t) { return 196.0 * std::exp2 (t / 2.0); });
     auto p = r95::tuneDefaults();
-    p[lynx::lynxtune::scale] = 0.0f;
-    p[lynx::lynxtune::retune] = (float) std::sqrt (120.0 / 400.0);
+    p[yw::ywtune::scale] = 0.0f;
+    p[yw::ywtune::retune] = (float) std::sqrt (120.0 / 400.0);
     int latency = 0;
     const auto y = r95::runTune (x, fs, p, latency);
     double sum = 0.0;
@@ -225,7 +225,7 @@ std::vector<std::uint8_t> autoTuneState (int key, int scale, double retune, doub
 
 TEST (auto_tune_pro_params_are_read_round120)
 {
-    using namespace lynx;
+    using namespace yw;
     // her luisa sonsa state: E minor, Retune Speed 8.46 ms, Humanize 100, Flex-Tune 20
     const auto state = tune120::autoTuneState (4, 1, 8.46, 100.0, 20.0);
     const auto x = autoTuneProParams (state);
@@ -239,18 +239,18 @@ TEST (auto_tune_pro_params_are_read_round120)
     const auto at = subst113::autoTune (state);
     auto slot = subst113::pluginSlot (at);
     CHECK (substituteEffectSlot (slot, pluginIdentity (at)));
-    CHECK (lynxtune::keyIndex (slot.params[lynxtune::key]) == 4);
-    CHECK (vocal::Scale (lynxtune::scaleIndex (slot.params[lynxtune::scale])) == vocal::Scale::minor);
-    CHECK (std::abs (lynxtune::retuneMs (slot.params[lynxtune::retune]) - (1.36 * 8.46 - 3.0)) < 0.05);
-    CHECK (std::abs (slot.params[lynxtune::humanize] - 1.0f) < 1e-6f);
-    CHECK (std::abs (slot.params[lynxtune::flexTune] - 0.2f) < 1e-6f);
+    CHECK (ywtune::keyIndex (slot.params[ywtune::key]) == 4);
+    CHECK (vocal::Scale (ywtune::scaleIndex (slot.params[ywtune::scale])) == vocal::Scale::minor);
+    CHECK (std::abs (ywtune::retuneMs (slot.params[ywtune::retune]) - (1.36 * 8.46 - 3.0)) < 0.05);
+    CHECK (std::abs (slot.params[ywtune::humanize] - 1.0f) < 1e-6f);
+    CHECK (std::abs (slot.params[ywtune::flexTune] - 0.2f) < 1e-6f);
     // retune 0 (the hard effect) stays 0
     auto hard = subst113::pluginSlot (subst113::autoTune (tune120::autoTuneState (9, 1, 0.0, 0.0, 0.0)));
     CHECK (substituteEffectSlot (hard, pluginIdentity (hard.plugin.foreign)));
-    CHECK (lynxtune::retuneMs (hard.params[lynxtune::retune]) == 0.0);
+    CHECK (ywtune::retuneMs (hard.params[ywtune::retune]) == 0.0);
 }
 
-TEST (lynx_tune_flex_tune_round120)
+TEST (yw_tune_flex_tune_round120)
 {
     // [EXEC] Auto-Tune Pro, Flex-Tune 50, instant retune, chromatic: a note 10 c off is corrected fully, 30 c off by
     // 20 c (min (d, (50 − d))), 45 c off by 5 c
@@ -260,9 +260,9 @@ TEST (lynx_tune_flex_tune_round120)
     {
         const auto x = r95::vowel (fs, (int) (fs * 0.8), [&] (double) { return 220.0 * std::exp2 (offs[k] / 1200.0); });
         auto p = r95::tuneDefaults();
-        p[lynx::lynxtune::scale] = 0.0f;
-        p[lynx::lynxtune::retune] = 0.0f;
-        p[lynx::lynxtune::flexTune] = 0.5f;
+        p[yw::ywtune::scale] = 0.0f;
+        p[yw::ywtune::retune] = 0.0f;
+        p[yw::ywtune::flexTune] = 0.5f;
         int latency = 0;
         const auto y = r95::runTune (x, fs, p, latency);
         const auto out = r95::cents (r95::measureHz (y, (int) (0.5 * fs) + latency, 2048, fs), 220.0);
@@ -272,16 +272,16 @@ TEST (lynx_tune_flex_tune_round120)
     // Flex-Tune 50: corrected by (50 − 40) / 40 × 80 = 20 c toward F# (Auto-Tune Pro: 23 c)
     const auto x = r95::vowel (fs, (int) (fs * 0.8), [] (double) { return 174.6141 * std::exp2 (20.0 / 1200.0); });
     auto p = r95::tuneDefaults();
-    p[lynx::lynxtune::key] = 4.0f / 11.0f;
-    p[lynx::lynxtune::scale] = 2.0f / (float) (lynx::vocal::scaleCount - 1);
-    p[lynx::lynxtune::retune] = 0.0f;
-    p[lynx::lynxtune::flexTune] = 0.5f;
+    p[yw::ywtune::key] = 4.0f / 11.0f;
+    p[yw::ywtune::scale] = 2.0f / (float) (yw::vocal::scaleCount - 1);
+    p[yw::ywtune::retune] = 0.0f;
+    p[yw::ywtune::flexTune] = 0.5f;
     int latency = 0;
     const auto y = r95::runTune (x, fs, p, latency);
     CHECK (std::abs (r95::cents (r95::measureHz (y, (int) (0.5 * fs) + latency, 2048, fs), 174.6141) - 40.0) < 4.0);
 }
 
-TEST (lynx_tune_humanize_slows_only_sustained_notes_round120)
+TEST (yw_tune_humanize_slows_only_sustained_notes_round120)
 {
     // [EXEC] Auto-Tune Pro, retune 5 ms: a note held steady 0.8 s that then goes 30 c sharp is pulled back slowly with
     // Humanize 100 (50 % at ~104 ms), fast without it (4 ms) and fast when the note was not steady (a ±10 c vibrato)
@@ -291,9 +291,9 @@ TEST (lynx_tune_humanize_slows_only_sustained_notes_round120)
             return 220.0 * std::exp2 (((t < 0.8 ? 0.0 : 30.0) + vib * std::sin (2.0 * r95::pi * 5.5 * t)) / 1200.0);
         });
         auto p = r95::tuneDefaults();
-        p[lynx::lynxtune::scale] = 0.0f;
-        p[lynx::lynxtune::retune] = (float) std::sqrt ((1.36 * 5.0 - 3.0) / 400.0);
-        p[lynx::lynxtune::humanize] = human;
+        p[yw::ywtune::scale] = 0.0f;
+        p[yw::ywtune::retune] = (float) std::sqrt ((1.36 * 5.0 - 3.0) / 400.0);
+        p[yw::ywtune::humanize] = human;
         int latency = 0;
         const auto y = r95::runTune (x, fs, p, latency);
         return -tune120::correctionAt (x, y, latency, fs, 0.8 + 0.1); // correction 100 ms after the move (of 30 c)

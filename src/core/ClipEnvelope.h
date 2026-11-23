@@ -1,6 +1,6 @@
 #pragma once
 
-// Audio clip envelopes (round 190gi; the owner's #24 YES, roadmap "CE"; slice B3 of /mnt/e/lynx-work/pain190gc/REPORT.md).
+// Audio clip envelopes (round 190gi; the owner's #24 YES, roadmap "CE"; slice B3 of /mnt/e/yw-work/pain190gc/REPORT.md).
 // The model is ClipEnvelope in core/Song.h: per audio clip a volume and a pan breakpoint lane in clip time (the clip's
 // content ticks, Clip::offset's units), with FL's automation curve modes per segment (AutomationPoint, core/FlCurve).
 //
@@ -13,9 +13,9 @@
 //   VolumeModulationTarget) and the Mixer's "Track Panning" modulation, in clip beats, values −1…1 [SCHEMA
 //   realive190fm/schema-12402.txt AudioSequencer, ClipEnvelope{EnvelopeTarget/PointeeId, Automation/Events}; DATA: the
 //   12 Suite demo set's vocal clips: −1 where the clip is silent, 1 elsewhere]. Live's laws were measured in round
-//   190gu (1 kHz sine, /mnt/e/lynx-work/live190gu/s/ana/clipenv-g2.txt, the same in Re-Pitch and Complex) and are
+//   190gu (1 kHz sine, /mnt/e/yw-work/live190gu/s/ana/clipenv-g2.txt, the same in Re-Pitch and Complex) and are
 //   applied by toLive / fromLive (round 190gx): Clip Gain = liveGainDb below (gain never above unity), Track Panning
-//   = the constant-power law with +3 dB at the sides that LYNX's voicePan already is. Live ignores the clip envelopes
+//   = the constant-power law with +3 dB at the sides that YW's voicePan already is. Live ignores the clip envelopes
 //   of an UNWARPED clip (it renders at unity; its Clip View has no Envelopes tab): the .als import leaves them out.
 //
 // Cost: a clip without an envelope (index −1, or every lane flat) adds nothing to its voice; the renderer hands the
@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::clipenv
+namespace yw::clipenv
 {
 inline constexpr std::uint8_t volumeLane = 1, panLane = 2;
 inline constexpr float volumeNeutral = 1.0f, panNeutral = 0.5f;
@@ -248,7 +248,7 @@ inline double liveValueOfGain (double gain) noexcept
     const auto onLine = lineAt + (db - lineDb) / lineSlope;
     return std::clamp (std::min (onQuad, onLine), -1.0, kneeHigh);
 }
-// LYNX's volume lane value (0…1 on the Levels-adjustment law, gainOf) ↔ Live's Clip Gain value: the same gain
+// YW's volume lane value (0…1 on the Levels-adjustment law, gainOf) ↔ Live's Clip Gain value: the same gain
 inline double volumeToLive (float v) noexcept { return v >= 1.0f ? 1.0 : liveValueOfGain ((double) gainOf (v)); }
 inline float volumeFromLive (double L) noexcept
 {
@@ -257,14 +257,14 @@ inline float volumeFromLive (double L) noexcept
     const auto g = liveGain (L);
     return (float) std::clamp (std::log (10.0 * g + 1.0) / std::log (11.0), 0.0, 1.0);
 }
-// The pan lane: LYNX's offset (2v − 1) is Live's Track Panning value, and both use the same constant-power law with
+// The pan lane: YW's offset (2v − 1) is Live's Track Panning value, and both use the same constant-power law with
 // +3 dB at the sides (voicePan: L = √2·cos((p+1)·π/4), R = √2·sin((p+1)·π/4); Live 190gu: ±1 → +3.01 dB / −100 dB)
 inline double panToLive (float v) noexcept { return (double) std::clamp (v, 0.0f, 1.0f) * 2.0 - 1.0; }
 inline float panFromLive (double L) noexcept { return (float) std::clamp ((L + 1.0) * 0.5, 0.0, 1.0); }
 inline double toLive (std::uint8_t lane, float v) noexcept { return lane == panLane ? panToLive (v) : volumeToLive (v); }
 inline float fromLive (std::uint8_t lane, double L) noexcept { return lane == panLane ? panFromLive (L) : volumeFromLive (L); }
 
-// The two programs interpolate a lane in different units (Live: straight in its value; LYNX: straight in the lane's
+// The two programs interpolate a lane in different units (Live: straight in its value; YW: straight in the lane's
 // 0…1 value), so a volume ramp is cut into pieces until the two agree within `tolDb` at every piece's middle (gains
 // under −60 dB are not compared). `inner (t0, t1, f)` is the source value at fraction f of the segment in the source's
 // units, `mapped` turns it into the target's, `dbOfTarget` / `dbOfSource` give the gain of each. The pieces' ends after
@@ -370,4 +370,4 @@ inline int bakeToAutomation (Song& song)
     }
     return made;
 }
-} // namespace lynx::clipenv
+} // namespace yw::clipenv

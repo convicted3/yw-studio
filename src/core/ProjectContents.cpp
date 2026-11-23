@@ -6,7 +6,7 @@
 #include "core/PluginSubstitutes.h"
 #include "core/FlEffects.h"
 
-namespace lynx::projectcontents
+namespace yw::projectcontents
 {
 bool playsSampleFile (InstrumentKind kind) noexcept
 {
@@ -182,4 +182,4 @@ std::vector<Item> automations (const Song& song)
     }
     return list;
 }
-} // namespace lynx::projectcontents
+} // namespace yw::projectcontents

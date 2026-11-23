@@ -7,14 +7,14 @@
 //
 // [INFERENCE, REA_rodada166a §4] FL's voice model (the host owns each voice's Final pitch, the generator reads it every
 // tick) and FL 2026's what's new (16250 "MiniSynth: piano roll slides don't work", 18004 / 17811 "Repeated notes don't
-// slide correctly"): slides are a host feature every native generator follows. LYNX's sampler and synth glide the same way.
+// slide correctly"): slides are a host feature every native generator follows. YW's sampler and synth glide the same way.
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cmath>
 
-namespace lynx
+namespace yw
 {
 struct HostSlide
 {
@@ -206,4 +206,4 @@ struct LiveChannelPitch
     // a voice started with `knobUsed` (the engine's configured knob) + this block's fine tune and main pitch
     float ref (float knobUsed) const noexcept { return knobUsed + rest; }
 };
-} // namespace lynx
+} // namespace yw

@@ -8,9 +8,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
-import lynx_api as api
-import lynx_common as common
-import lynx_relay as relay
+import yw_api as api
+import yw_common as common
+import yw_relay as relay
 
 
 def request(ip):
@@ -117,7 +117,7 @@ class HandlerTests(unittest.IsolatedAsyncioTestCase):
             remote = "127.0.0.1"
 
             async def json(self):
-                return {"name": "test.lynxpack", "size": 4}
+                return {"name": "test.ywpack", "size": 4}
 
         with tempfile.TemporaryDirectory() as folder, \
                 patch.object(api, "DATA_DIR", folder), patch.object(api, "SHARES_DIR", folder), \

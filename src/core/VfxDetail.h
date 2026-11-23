@@ -10,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-namespace lynx::vfx::detail
+namespace yw::vfx::detail
 {
 
 struct Reader
@@ -87,4 +87,4 @@ private:
     std::atomic<T*> retired { nullptr };
 };
 
-} // namespace lynx::vfx::detail
+} // namespace yw::vfx::detail

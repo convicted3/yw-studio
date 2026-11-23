@@ -6,7 +6,7 @@
 // them shows in English in another language (site190ex note: ja showed "Stop time" where the site said 停止時間).
 TEST (follow190fg_pocket_knob_names_are_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace i18ntest;
     const EffectKind pocket[] = { EffectKind::pocketDistortion, EffectKind::pocketLimiterClassic, EffectKind::pocketLimiter,
                                   EffectKind::pocketLeveller, EffectKind::pocketGate, EffectKind::pocketTranceDelay,
@@ -41,12 +41,12 @@ TEST (follow190fg_pocket_knob_names_are_translated)
     CHECK (mixer.find ("drawFittedText (g, juce::String::fromUTF8 (info.params[(std::size_t) p].name)") == std::string::npos);
 }
 
-// VST3 note ids for nested same-key notes (fix 26, the 190ej follow-up): the LYNX note of every note on / off sent on
+// VST3 note ids for nested same-key notes (fix 26, the 190ej follow-up): the YW note of every note on / off sent on
 // MIDI channel 1 is queued per key in the order it went out; the host takes them in the same order. A model of the
 // patched host's pairing (fix 14 numbering + fix 26 tags) shows the inner note of a LIFO pair ending its own id.
 TEST (follow190fg_vst3_note_tags_pair_each_off_with_its_own_on)
 {
-    using namespace lynx::hostpitch;
+    using namespace yw::hostpitch;
     SentKeys k;
     // LIFO: C (note 7) then D (note 9) on key 64; D ends first, then C. A held key's release has no note (0).
     k.tag (true, 64, 7);
@@ -65,11 +65,11 @@ TEST (follow190fg_vst3_note_tags_pair_each_off_with_its_own_on)
     k.clear();
     CHECK (k.takeTag (true, 70) == 0);
 
-    // the host's side (cmake/LynxPatchJuce.cmake fixes 14 + 26), modelled: ids counted per note on; a tagged off ends
+    // the host's side (cmake/YwPatchJuce.cmake fixes 14 + 26), modelled: ids counted per note on; a tagged off ends
     // the on with its tag, an untagged one the oldest
     struct Key
     {
-        std::vector<std::pair<int, std::uint32_t>> sounding; // (VST3 id, LYNX tag), oldest first
+        std::vector<std::pair<int, std::uint32_t>> sounding; // (VST3 id, YW tag), oldest first
     };
     std::map<int, Key> keys;
     int nextId = 0;
@@ -119,7 +119,7 @@ TEST (follow190fg_vst3_note_tags_pair_each_off_with_its_own_on)
 // steps, bar = n beats, REA_rodada190ax [DECOMP FUN_010628b0 / FUN_01062880]); n/4 is what every project had before.
 TEST (follow190fg_meter_bar_and_beat_lengths)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (Meter (4, 4).bar() == 4 * ppq && Meter (4, 4).beat() == ppq);
     CHECK (Meter (3, 4).bar() == 3 * ppq);
     CHECK (Meter (6, 8).bar() == 3 * ppq && Meter (6, 8).beat() == ppq / 2);
@@ -140,7 +140,7 @@ TEST (follow190fg_meter_bar_and_beat_lengths)
 // bars (the scene launch of 190em gave the song a 3/4 bar: the same length, but three beats).
 TEST (follow190fg_song_bars_follow_the_meter)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = Song::makeDefault();
     s.beatsPerBar = 6;
     s.beatUnit = 8;
@@ -177,7 +177,7 @@ TEST (follow190fg_song_bars_follow_the_meter)
 // every quarter, the downbeat every n); a signature marker's bars with its own beats; a count-in runs backwards.
 TEST (follow190fg_metronome_clicks_the_meters_beats)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto clicks = [] (Meter meter, std::vector<metronome::Span> spans, double from, double to) {
         std::vector<std::pair<std::int64_t, bool>> out;
         bool has = false;
@@ -213,7 +213,7 @@ TEST (follow190fg_metronome_clicks_the_meters_beats)
 // .flp, .als and MIDI keep the denominator both ways; an n/4 song writes and reads exactly as before.
 TEST (follow190fg_meter_round_trips_through_flp_als_and_midi)
 {
-    using namespace lynx;
+    using namespace yw;
     Song six = Song::makeDefault();
     six.beatsPerBar = 6;
     six.beatUnit = 8;

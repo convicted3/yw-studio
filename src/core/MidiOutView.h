@@ -1,7 +1,7 @@
 #pragma once
 
 // How the MIDI Out editor draws one of its 3 x 3 knobs (round 167p, issue #17). Pure logic, no JUCE (unit-tested in
-// tests/tests.cpp). FL draws the cog at the knob's top-right and the name under the knob; LYNX keeps the cog there
+// tests/tests.cpp). FL draws the cog at the knob's top-right and the name under the knob; YW keeps the cog there
 // for every knob (it always opens "Configure..."), the name under it (a click switches the control on / off), and
 // makes the three states look different: unassigned (dimmed, no value), assigned but off, sending (value arc in the
 // accent colour).
@@ -11,7 +11,7 @@
 
 #include "core/MidiOut.h"
 
-namespace lynx::midiout::view
+namespace yw::midiout::view
 {
 struct Rect
 {
@@ -54,4 +54,4 @@ inline Look look (const Control& c) { return ! c.assigned() ? Look::unassigned :
 
 // The value shown inside the knob ("" when unassigned: an unset knob has no value to show)
 inline std::string readout (const Control& c, int value) { return c.assigned() ? std::to_string (value) : std::string(); }
-} // namespace lynx::midiout::view
+} // namespace yw::midiout::view

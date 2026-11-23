@@ -1,13 +1,13 @@
 #pragma once
 
-// LYNX Model's modal core (round 190ni): a bank of damped modes, each a rotating phasor z <- p z (+ d f), |p| < 1,
+// YW Model's modal core (round 190ni): a bank of damped modes, each a rotating phasor z <- p z (+ d f), |p| < 1,
 // whose imaginary part is the mode's output. Structure of arrays, 8 modes per lane group, run with SSE (x86-64
 // baseline; NEON through sse2neon on ARM64) or AVX where the CPU has it (core/CpuFeatures.h). Both paths do the same
 // IEEE operations in the same order per mode (no FMA, a fixed lane-sum order), so they render the same bits.
 
 #include <cstdint>
 
-namespace lynx::lm
+namespace yw::lm
 {
 constexpr int maxModes = 48;  // per voice: six groups of eight (round 190nl; 32 before: the bells' and the kalimba's
                               // long, quiet upper partials did not fit)
@@ -31,4 +31,4 @@ void runModesBaseline (ModalBank& bank, const float* force, float* out, int n) n
 bool modesUseAvx() noexcept;
 // The bank's energy (sum of |z|^2), in a fixed order
 float modalEnergy (const ModalBank& bank) noexcept;
-} // namespace lynx::lm
+} // namespace yw::lm

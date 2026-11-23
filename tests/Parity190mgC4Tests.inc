@@ -1,5 +1,5 @@
 // Round 190mg (coordinator): the Waves C4 on Prism Multiband's hidden C4 law (owner's permission of 2026-11-17 for
-// clean-room REA of third-party binaries; /mnt/e/lynx-work/waves3_190mg/HANDOFF.md, docs/analise/REA_rodada190mg.md §2).
+// clean-room REA of third-party binaries; /mnt/e/yw-work/waves3_190mg/HANDOFF.md, docs/analise/REA_rodada190mg.md §2).
 // - Prism gets a hidden C4 law ([157], with the crossover Q at [158]): 0 for new instances and every project saved before
 //   (bit for bit: waves3_190mg/lab/gold.sh); only the C4 translator sets it.
 // - C4 had no entry before (such projects lost the plug-in): it now stands in on Prism's four bands.
@@ -11,9 +11,9 @@
 
 namespace parity190mgc4
 {
-inline lynx::EffectSlot c4Slot()
+inline yw::EffectSlot c4Slot()
 {
-    using namespace lynx;
+    using namespace yw;
     namespace pr = dyn::prism;
     auto s = makeEffectSlot (EffectKind::prismMultiband);
     s.params[(std::size_t) pr::bandLayout] = 0.0f;
@@ -34,9 +34,9 @@ inline lynx::EffectSlot c4Slot()
     s.params[(std::size_t) pr::c4Law] = pr::c4LawValue (false);
     return s;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r, int& latency)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r, int& latency)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
@@ -47,7 +47,7 @@ inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l,
 
 TEST (parity190mg_c4_law_is_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace pr = dyn::prism;
     // (rollup 0.1.30 step 11: after round 190lg's hidden revision / lookaheadSwitch [count, count + 1])
     CHECK (effectInfo (EffectKind::prismMultiband).params.size() == (std::size_t) pr::count && pr::c4Law == pr::lookaheadSwitch + 1 && pr::c4Q == pr::c4Law + 1);
@@ -63,7 +63,7 @@ TEST (parity190mg_c4_law_is_hidden_and_off_for_new_and_old_instances)
 
 TEST (parity190mg_c4_is_translated_onto_prism_with_the_c4_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace pr = dyn::prism;
     int n = 0;
     // refcap182's X3: crossovers 250 / 2500 / 8000, the four bands' thresholds and ranges
@@ -80,7 +80,7 @@ TEST (parity190mg_c4_is_translated_onto_prism_with_the_c4_law)
 
 TEST (parity190mg_c4_crossovers_sum_to_an_all_pass_with_the_measured_look_ahead)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const double sr : { 44100.0, 48000.0, 96000.0 })
     {
         const auto s = parity190mgc4::c4Slot();
@@ -104,7 +104,7 @@ TEST (parity190mg_c4_crossovers_sum_to_an_all_pass_with_the_measured_look_ahead)
 
 TEST (parity190mg_c4_static_gain_follows_the_reference_stair)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace pr = dyn::prism;
     // the reference's 1 kHz stair, band 2 (threshold -30, range -12, knee 0.5, 0.5 / 50 ms): -1.66 dB at -36 dBFS peak,
     // -5.61 at -24, -9.72 at -9 (demo-mode probe sk05 of round 190mg)
@@ -132,7 +132,7 @@ TEST (parity190mg_c4_static_gain_follows_the_reference_stair)
 
 TEST (parity190mg_c4_release_follows_the_reference_after_a_long_burst)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace pr = dyn::prism;
     // the reference's 1 kHz burst probes (band 2: threshold -30, range -12, knee 0.5): -50 dBFS, 2 s at -10, back to -50;
     // the gain 100 ms after the burst is -3.12 dB (electro, attack 0.5 / release 50 ms) and 50 ms after it -3.08 dB

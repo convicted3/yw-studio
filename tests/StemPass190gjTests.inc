@@ -10,10 +10,10 @@ constexpr double rate = 48000.0;
 
 // the test song: drums and a synth on inserts 1-5, a bus (6) and a reverb return (7), delay compensation from manual
 // track latencies, a channel on the Master itself, an automated insert (its renders take 128-sample chunks)
-lynx::Song song()
+yw::Song song()
 {
-    auto s = lynx::Song::makeDefault();
-    s.mixer = lynx::Song::defaultMixer (7); // the Master and inserts 1-7
+    auto s = yw::Song::makeDefault();
+    s.mixer = yw::Song::defaultMixer (7); // the Master and inserts 1-7
     for (std::size_t i = 0; i < s.channels.size(); ++i)
         s.channels[i].mixerTrack = (int) i + 1;
     auto hat2 = s.channels[2];
@@ -27,69 +27,69 @@ lynx::Song song()
     for (int step : { 4, 12 })
         p.toggleStep (3, step); // the snare
     for (int k = 0; k < 4; ++k) // the synth: held chords under the kick
-        p.notes.push_back ({ (std::int64_t) k * lynx::ppq, lynx::ppq - 60, 4, 57 + 3 * k, 0.9f });
+        p.notes.push_back ({ (std::int64_t) k * yw::ppq, yw::ppq - 60, 4, 57 + 3 * k, 0.9f });
     p.sortNotes();
 
-    auto comp = lynx::makeEffectSlot (lynx::EffectKind::compressor);
+    auto comp = yw::makeEffectSlot (yw::EffectKind::compressor);
     s.mixer[1].effects.push_back (comp);
     s.mixer[2].toMaster = false;
-    s.mixer[2].sends = { lynx::MixerSend { 6, 1.0f } };
-    s.mixer[3].sends = { lynx::MixerSend { 7, 0.5f } };
+    s.mixer[2].sends = { yw::MixerSend { 6, 1.0f } };
+    s.mixer[3].sends = { yw::MixerSend { 7, 0.5f } };
     s.mixer[3].latencyMs = 3.0f;
     s.mixer[3].volume = 0.6f;
     s.mixer[3].pan = 0.3f;
-    lynx::EffectSlot delay;
-    delay.kind = lynx::EffectKind::delay;
+    yw::EffectSlot delay;
+    delay.kind = yw::EffectKind::delay;
     s.mixer[4].effects.push_back (delay);
     s.mixer[4].latencyMs = 5.0f;
-    s.mixer[4].sends = { lynx::MixerSend { 6, 0.7f } };
+    s.mixer[4].sends = { yw::MixerSend { 6, 0.7f } };
     s.mixer[4].masterLevel = 0.8f;
     auto keyed = comp;
     keyed.sidechain = 1; // the synth ducks under the kick: insert 1 does not feed insert 5
     keyed.params[0] = 0.1f; // (a low threshold and a high ratio: the ducking is heard)
     keyed.params[1] = 0.8f;
     s.mixer[5].effects.push_back (keyed);
-    lynx::EffectSlot drive;
-    drive.kind = lynx::EffectKind::distortion;
+    yw::EffectSlot drive;
+    drive.kind = yw::EffectKind::distortion;
     s.mixer[6].effects.push_back (drive);
-    lynx::EffectSlot verb;
-    verb.kind = lynx::EffectKind::reverb;
+    yw::EffectSlot verb;
+    verb.kind = yw::EffectKind::reverb;
     s.mixer[7].effects.push_back (verb);
 
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::mixerPan, 3 };
-    a.points = { { 0, 0.2f, 0.0f }, { 8 * lynx::ppq, 0.9f, 0.0f } };
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::mixerPan, 3 };
+    a.points = { { 0, 0.2f, 0.0f }, { 8 * yw::ppq, 0.9f, 0.0f } };
     s.automations.push_back (a);
     s.playlist.clear();
     for (int bar = 0; bar < 2; ++bar)
     {
-        lynx::Clip c;
+        yw::Clip c;
         c.pattern = 0;
-        c.start = bar * 4 * lynx::ppq;
-        c.length = 4 * lynx::ppq;
+        c.start = bar * 4 * yw::ppq;
+        c.length = 4 * yw::ppq;
         s.playlist.push_back (c);
     }
-    lynx::Clip ac;
-    ac.kind = lynx::ClipKind::automation;
+    yw::Clip ac;
+    ac.kind = yw::ClipKind::automation;
     ac.automation = 0;
-    ac.length = 8 * lynx::ppq;
+    ac.length = 8 * yw::ppq;
     ac.track = 1;
     s.playlist.push_back (ac);
-    s.mode = lynx::PlayMode::song;
+    s.mode = yw::PlayMode::song;
     return s;
 }
 
 // the Master's output of a render of `s` (blocks of 512 from the start, playing), with the taps of `taps` per block
-std::vector<float> render (const lynx::Song& s, int blocks, lynx::RackRenderer::RenderTaps* taps = nullptr,
+std::vector<float> render (const yw::Song& s, int blocks, yw::RackRenderer::RenderTaps* taps = nullptr,
                            const std::function<void (int)>& afterBlock = {})
 {
-    auto state = lynx::RackState::build (s, nullptr, rate);
-    lynx::RackRenderer rr;
+    auto state = yw::RackState::build (s, nullptr, rate);
+    yw::RackRenderer rr;
     rr.prepare (rate, 512);
     rr.setRenderTaps (taps);
     std::vector<float> out ((std::size_t) blocks * 1024);
     std::vector<float> l (512), r (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, rate);
+    const auto tps = yw::ticksPerSample (s.bpm, rate);
     for (int b = 0; b < blocks; ++b)
     {
         if (taps != nullptr)
@@ -112,16 +112,16 @@ TEST (stems190gj_plan_says_which_stems_one_render_makes)
     std::vector<std::vector<int>> slots (s.mixer.size());
     for (std::size_t t = 0; t < s.mixer.size(); ++t)
         slots[t].assign (s.mixer[t].effects.size(), 0);
-    auto plan = [&] (const lynx::Song& song, int t) { return lynx::exportopts::planStemTap (song, t, channels, slots, s190gj::rate); };
+    auto plan = [&] (const yw::Song& song, int t) { return yw::exportopts::planStemTap (song, t, channels, slots, s190gj::rate); };
 
     for (int t = 1; t <= 7; ++t)
         CHECK (plan (s, t).ok);
     // the synth's compressor listens to the kick: its stem render plays the kick unheard (owner decision 2026-11-14,
     // FL's split render: the stem stays ducked), so the one render makes it too, from the synth's insert alone
     CHECK (plan (s, 5).inputs.size() == 1 && plan (s, 5).inputs[0].track == 5);
-    const auto keyed = lynx::makeBounceSong (s, 5);
+    const auto keyed = yw::makeBounceSong (s, 5);
     CHECK (keyed.mixer[1].solo && ! keyed.mixer[1].toMaster && keyed.mixer[1].sends.empty());
-    CHECK (lynx::makeBounceSong (s, 2).mixer[1].solo == false); // (no key: as before)
+    CHECK (yw::makeBounceSong (s, 2).mixer[1].solo == false); // (no key: as before)
     CHECK (! plan (s, 0).ok && ! plan (s, 8).ok);
     // insert 1's stem: itself, at 0 dB, delayed to the Master's alignment (5 ms of insert 4's latency, at 48 kHz)
     const auto one = plan (s, 1);
@@ -142,16 +142,16 @@ TEST (stems190gj_plan_says_which_stems_one_render_makes)
     soloed.mixer[3].solo = true;
     CHECK (! plan (soloed, 1).ok);
     auto masterAuto = s;
-    masterAuto.automations[0].target = { lynx::AutomationTargetKind::mixerVolume, 0 };
+    masterAuto.automations[0].target = { yw::AutomationTargetKind::mixerVolume, 0 };
     CHECK (! plan (masterAuto, 1).ok); // (the only automation: the stem render's blocks would be cut otherwise)
     masterAuto.automations.push_back (s.automations[0]);
     CHECK (plan (masterAuto, 1).ok);
     auto routeAuto = s;
-    routeAuto.automations[0].target = { lynx::AutomationTargetKind::mixerSend, 1, 0 };
+    routeAuto.automations[0].target = { yw::AutomationTargetKind::mixerSend, 1, 0 };
     CHECK (! plan (routeAuto, 1).ok && plan (routeAuto, 3).ok);
     auto peakCtl = s;
-    lynx::EffectSlot peak;
-    peak.kind = lynx::EffectKind::peakController;
+    yw::EffectSlot peak;
+    peak.kind = yw::EffectKind::peakController;
     peakCtl.mixer[3].effects.push_back (peak);
     CHECK (! plan (peakCtl, 1).ok);   // insert 3 is silenced in insert 1's render: its controller would stop
     auto sources = s;
@@ -163,14 +163,14 @@ TEST (stems190gj_taps_of_one_render_equal_each_stems_own_render)
 {
     auto s = s190gj::song();
     // the Master's fader automated too (its stem renders leave it out)
-    lynx::Automation masterFader;
-    masterFader.target = { lynx::AutomationTargetKind::mixerVolume, 0 };
-    masterFader.points = { { 0, 0.8f, 0.0f }, { 8 * lynx::ppq, 0.3f, 0.0f } };
+    yw::Automation masterFader;
+    masterFader.target = { yw::AutomationTargetKind::mixerVolume, 0 };
+    masterFader.points = { { 0, 0.8f, 0.0f }, { 8 * yw::ppq, 0.3f, 0.0f } };
     s.automations.push_back (masterFader);
-    lynx::Clip fade;
-    fade.kind = lynx::ClipKind::automation;
+    yw::Clip fade;
+    fade.kind = yw::ClipKind::automation;
     fade.automation = (int) s.automations.size() - 1;
-    fade.length = 8 * lynx::ppq;
+    fade.length = 8 * yw::ppq;
     fade.track = 2;
     s.playlist.push_back (fade);
     const std::vector<int> channels (s.channels.size(), 0);
@@ -179,15 +179,15 @@ TEST (stems190gj_taps_of_one_render_equal_each_stems_own_render)
         slots[t].assign (s.mixer[t].effects.size(), 0);
     constexpr int blocks = 420; // 4.5 s: the two bars and the effects' tails
 
-    std::vector<lynx::exportopts::StemTap> plans;
+    std::vector<yw::exportopts::StemTap> plans;
     std::vector<int> stems;
-    lynx::RackRenderer::RenderTaps taps;
+    yw::RackRenderer::RenderTaps taps;
     taps.capacity = 512;
     taps.wanted.assign (s.mixer.size(), 0);
     taps.data.assign (s.mixer.size(), std::vector<float> (1024, 0.0f));
     taps.wanted[0] = 1;
     for (int t = 1; t < (int) s.mixer.size(); ++t)
-        if (auto p = lynx::exportopts::planStemTap (s, t, channels, slots, s190gj::rate); p.ok)
+        if (auto p = yw::exportopts::planStemTap (s, t, channels, slots, s190gj::rate); p.ok)
         {
             plans.push_back (p);
             stems.push_back (t);
@@ -196,7 +196,7 @@ TEST (stems190gj_taps_of_one_render_equal_each_stems_own_render)
         }
     CHECK (stems.size() == 7);
 
-    std::vector<lynx::exportopts::StemMixer> mixers;
+    std::vector<yw::exportopts::StemMixer> mixers;
     for (const auto& p : plans)
         mixers.emplace_back (p);
     std::vector<std::vector<float>> made (stems.size(), std::vector<float> ((std::size_t) blocks * 1024));
@@ -218,7 +218,7 @@ TEST (stems190gj_taps_of_one_render_equal_each_stems_own_render)
 
     for (std::size_t k = 0; k < stems.size(); ++k)
     {
-        const auto own = s190gj::render (lynx::makeBounceSong (s, stems[k]), blocks);
+        const auto own = s190gj::render (yw::makeBounceSong (s, stems[k]), blocks);
         std::size_t differ = 0, sounding = 0;
         for (std::size_t i = 0; i < own.size(); ++i)
         {
@@ -229,7 +229,7 @@ TEST (stems190gj_taps_of_one_render_equal_each_stems_own_render)
         CHECK (sounding > 1000);
         if (stems[k] == 5) // the stem is ducked by the kick, as in the mix: not what it is with the kick silenced
         {
-            auto unkeyed = lynx::makeBounceSong (s, 5);
+            auto unkeyed = yw::makeBounceSong (s, 5);
             unkeyed.mixer[5].effects[0].sidechain = -1; // (the compressor hears no key)
             const auto plain = s190gj::render (unkeyed, blocks);
             std::size_t other = 0;

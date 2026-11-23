@@ -1,11 +1,11 @@
 #pragma once
 
-// FL's MIDI Out generator as LYNX SHARE plays it (REA_rodada167i §1, from FL's own "MIDI Out_x64.dll": its state
+// FL's MIDI Out generator as YW Studio plays it (REA_rodada167i §1, from FL's own "MIDI Out_x64.dll": its state
 // reader/writer, its parameter handler and its editor form). 72 controls on 8 pages of 9 knobs; each control is a CC,
 // RPN, NRPN, channel aftertouch or note that its knob's value sends; the patch (program), bank and port; what a reset
 // sends. FL's parameter 0 is the patch, parameters 1…72 are the controls (automation clips, pattern events, links).
 //
-// The state is FL's own `0xD5` blob (any version FL wrote: 1…7), so .flp projects, FL's .fst presets and LYNX
+// The state is FL's own `0xD5` blob (any version FL wrote: 1…7), so .flp projects, FL's .fst presets and YW
 // projects share it.
 
 #include <array>
@@ -15,12 +15,12 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 }
 
-namespace lynx::midiout
+namespace yw::midiout
 {
 constexpr int controlCount = 72, pageCount = 8, knobsPerPage = 9;
 constexpr int programParam = 0; // FL's parameter 0: the patch; parameter 1 + i: control i
@@ -142,7 +142,7 @@ int bendValue (float cents) noexcept;
 
 // FL's own "MIDITrack.fst" (Data\System): the controls a MIDI Out made by "Import MIDI data" gets — page 1 "Basic
 // controllers" CC 1, 2, 4, 5, 91, 93; page 2 "Boolean controllers" CC 64…69 (knobs 10…15), all deactivated until
-// they get a value. LYNX builds the same layout itself (FL's file is used when the user has it).
+// they get a value. YW builds the same layout itself (FL's file is used when the user has it).
 State importTrackState();
 // FL's "Import MIDI data" with MIDI Out channels: the parameter a CC of the file goes to (1…72; −1 = not imported). FL
 // imports CC 1, 2, 4, 5, 91, 93, 64…69 onto those knobs (CC 7 / 10 go to the channel's volume / pan).
@@ -154,4 +154,4 @@ std::unique_ptr<Instrument> makeInstrument();
 // The editor's Reset button (`allControllersFirst`: CC 121 first) and "Send all control values now": the MIDI Out's
 // instrument sends a reset on its next block. Does nothing for another instrument.
 void requestReset (Instrument& instrument, bool allControllersFirst);
-} // namespace lynx::midiout
+} // namespace yw::midiout

@@ -10,7 +10,7 @@
 #include "ui/ParametricEqEditor.h"
 #include "ui/Theme.h"
 
-namespace lynx::dynui
+namespace yw::dynui
 {
 namespace
 {
@@ -433,4 +433,4 @@ float crossoverValueAt (const EffectSlot& fx, juce::Rectangle<float> r, float x)
     const auto hz = 20.0 * std::pow (1000.0, juce::jlimit (0.0, 1.0, (double) ((x - a.getX()) / a.getWidth())));
     return fx.kind == EffectKind::ember ? mixsuite::ember::crossoverValue (hz) : dyn::prism::crossoverValue (hz);
 }
-} // namespace lynx::dynui
+} // namespace yw::dynui

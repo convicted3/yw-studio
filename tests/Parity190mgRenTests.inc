@@ -1,6 +1,6 @@
 // Round 190mg (sub-round ren): REA of the Waves Renaissance Compressor's DSP and control code (owner's permission of
-// 2026-11-17; /mnt/e/lynx-work/waves3_190mg/ren/HANDOFF.md, docs/analise/REA_rodada190mg_ren.md).
-// - Compressor's vintage voicing gets a hidden law [20] (compressorRenLaw): 1 = the Renaissance law (LYNX's model of the
+// 2026-11-17; /mnt/e/yw-work/waves3_190mg/ren/HANDOFF.md, docs/analise/REA_rodada190mg_ren.md).
+// - Compressor's vintage voicing gets a hidden law [20] (compressorRenLaw): 1 = the Renaissance law (YW's model of the
 //   reference's structure, every constant fitted on our demo-mode probes). 0 for new instances and every project saved
 //   before (bit for bit: ren/lab/gold.sh); only the Renaissance Compressor translator sets it.
 // - The numbers below are the reference's, read from our probes (ren/cap/p1: 1 kHz stairs, 1 kHz bursts −40 → −10 dBFS).
@@ -13,7 +13,7 @@
 namespace parity190mgren
 {
 // a Renaissance Compressor state (its RealWorld list) through the product translator
-inline lynx::EffectSlot rcomp (double rel, double thr, double gain, double att, double ratio, bool smooth, bool manual, bool opto,
+inline yw::EffectSlot rcomp (double rel, double thr, double gain, double att, double ratio, bool smooth, bool manual, bool opto,
                                double mix, int& n)
 {
     char text[400];
@@ -21,9 +21,9 @@ inline lynx::EffectSlot rcomp (double rel, double thr, double gain, double att, 
                    att, ratio, smooth ? 1 : 0, manual ? 1 : 0, opto ? 1 : 0, mix);
     return vm123::wavesSlot ("RComp", text, n);
 }
-inline std::vector<float> render (const lynx::EffectSlot& s, const std::vector<float>& x, double sr = 48000.0)
+inline std::vector<float> render (const yw::EffectSlot& s, const std::vector<float>& x, double sr = 48000.0)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     std::vector<float> l = x, r = x;
     for (std::size_t off = 0; off < l.size(); off += 256)
@@ -56,7 +56,7 @@ inline double gainAt (const std::vector<float>& y, const std::vector<float>& x, 
 
 TEST (parity190mg_ren_law_is_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (effectInfo (EffectKind::compressor).params.size() == 20 && compressorRenLaw == 20); // hidden: no control, no string
     auto s = makeEffectSlot (EffectKind::compressor);
     CHECK (s.params[(std::size_t) compressorRenLaw] == 0.0f && savedEffectParamCount (s) == 20);
@@ -69,7 +69,7 @@ TEST (parity190mg_ren_law_is_hidden_and_off_for_new_and_old_instances)
 
 TEST (parity190mg_ren_rcomp_is_translated_with_the_law)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     const auto s = parity190mgren::rcomp (160.31, -24.0, 0.0, 16.03, 4.0, false, false, false, 100.0, n);
     CHECK (n == 6 && s.kind == EffectKind::compressor && s.params[8] == 1.0f && s.params[13] == 1.0f);
@@ -85,7 +85,7 @@ TEST (parity190mg_ren_rcomp_is_translated_with_the_law)
 
 TEST (parity190mg_ren_static_curve_matches_the_reference_stairs)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] steady 1 kHz gain (dB) of the reference (Manual, 0.5 / 50 ms, threshold −30, Warm) at −39 … −3 dBFS
     struct Row { double ratio; double db[7]; };
     static constexpr double levels[7] { -39, -33, -27, -21, -15, -9, -3 };
@@ -112,7 +112,7 @@ TEST (parity190mg_ren_static_curve_matches_the_reference_stairs)
 
 TEST (parity190mg_ren_release_follows_the_reference_bursts)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace t = parity190mgren;
     // [EXEC] the reference at 4 : 1, −30 dB, 16 / 160 ms: gain (dB) 5 / 50 / 200 ms after a burst's end
     struct Case { bool manual, opto; double ms; double db[3]; };
@@ -140,7 +140,7 @@ TEST (parity190mg_ren_release_follows_the_reference_bursts)
 
 TEST (parity190mg_ren_limiter_mix_and_gain)
 {
-    using namespace lynx;
+    using namespace yw;
     // 0.50 : 1 expands upward and its limiter holds the output at 0 dBFS (−9 dBFS in → +9 dB)
     int n = 0;
     const auto e = parity190mgren::rcomp (50.0, -30.0, 0.0, 0.5, 0.5, false, true, false, 100.0, n);

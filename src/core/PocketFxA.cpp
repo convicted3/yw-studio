@@ -12,7 +12,7 @@
 // as read in round 189h (REA_rodada182c.md "F5 effects, round 189h"). Clean-room: the formulas in our own words, no
 // Image-Line code. Single precision where FLM computes in single precision.
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -225,7 +225,7 @@ public:
         }
         reset();
     }
-    // FLM clears only part of a ring when it resets at the same rate; LYNX clears it all (no stale echo after a stop).
+    // FLM clears only part of a ring when it resets at the same rate; YW clears it all (no stale echo after a stop).
     // The glides are FLM's: never reset.
     void reset() noexcept override
     {
@@ -572,7 +572,7 @@ std::string spacerParamText (int param, float v)
         }
         case 5:
         {
-            // FLM reads the L/R inversion here (a display slip); LYNX shows the M/S inversion's own value
+            // FLM reads the L/R inversion here (a display slip); YW shows the M/S inversion's own value
             static const char* const names[] { "none", "mid", "side", "both" };
             return names[std::clamp ((int) std::round (3.0f * v), 0, 3)];
         }
@@ -591,4 +591,4 @@ std::string stereoizerParamText (int param, float v)
         return format ("%.0f", (double) (int) (100.0f * v));
     return format ("%.0f%%", (double) (int) (200.0f * v - 100.0f));
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

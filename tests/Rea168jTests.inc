@@ -100,7 +100,7 @@ TEST (rea168j_flp_events_parsed)
 // §1 the import: icons, PDC flags, time settings, scale, data folder, mixer count, pattern length, monitoring
 TEST (rea168j_flp_import)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = importFlp (flp::parseProject (rea168j::project (true)));
     CHECK (! song.autoPdc && ! song.compensateAutomations && song.timeSignatureMode);
     CHECK (song.scaleHighlight.scale == 10 && song.scaleHighlight.root == 5 && song.dataFolder == "D:\\Data");
@@ -121,7 +121,7 @@ TEST (rea168j_flp_import)
 // §1 0xA4: the pattern length selector's ticks (file PPQ) become the pattern's fixed length
 TEST (rea168j_flp_pattern_length)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpBuilder b (96);
     b.ascii (0xC7, "25.2.5.5319");
     b.u8 (0x40); b.u16 (0);
@@ -133,13 +133,13 @@ TEST (rea168j_flp_pattern_length)
     const auto song = importFlp (flp::parseProject (b.bytes));
     REA168J_REQUIRE (song.patterns.size() == 1);
     CHECK (song.patterns[0].lengthTicks == 16 * ppq);
-    CHECK (song.patterns[0].effectiveLength (lynx::Meter (4, 4)) == 16 * ppq);
+    CHECK (song.patterns[0].effectiveLength (yw::Meter (4, 4)) == 16 * ppq);
 }
 
-// §2 FL's reference scales: the 37 scales in FL's order; the ones LYNX lists map onto its own
+// §2 FL's reference scales: the 37 scales in FL's order; the ones YW lists map onto its own
 TEST (rea168j_reference_scales)
 {
-    namespace nt = lynx::notetools;
+    namespace nt = yw::notetools;
     const auto& fl = nt::flReferenceScales();
     CHECK (fl.size() == 37);
     CHECK (std::string (fl[10].name) == "Minor Natural (Aeolian)");
@@ -148,7 +148,7 @@ TEST (rea168j_reference_scales)
     CHECK (std::string (nt::scales()[(std::size_t) nt::scaleForFlReference (7)].name) == "Harmonic minor");
     CHECK (std::string (nt::scales()[(std::size_t) nt::scaleForFlReference (12)].name) == "Minor pentatonic");
     CHECK (nt::scaleForFlReference (-2) == 0 && nt::scaleForFlReference (-1) == 0 && nt::scaleForFlReference (37) == 0);
-    CHECK (nt::scaleForFlReference (2) == 0); // Major Bulgarian: not in LYNX's list
+    CHECK (nt::scaleForFlReference (2) == 0); // Major Bulgarian: not in YW's list
     for (const auto& s : fl)
         CHECK (! s.intervals.empty() && s.intervals[0] == 0 && std::is_sorted (s.intervals.begin(), s.intervals.end()));
 
@@ -184,7 +184,7 @@ TEST (rea168j_reference_scales)
 // §3 PDC Automatic off: the plan leaves out the instruments' and effects' latencies, the manual latencies stay
 TEST (rea168j_pdc_automatic_off)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = latency165::impulses (3, true);
     const std::vector<int> channels { 100, 0, 0 };
     const std::vector<std::vector<int>> slots { {}, { 50 } };
@@ -206,8 +206,8 @@ TEST (rea168j_pdc_automatic_off)
 // §3 Compensate automations: an automated effect behind a delayed input gets the value at its delayed position
 TEST (rea168j_compensate_automations)
 {
-    using namespace lynx;
-    // insert 1: a 4800-sample latent plugin, then a LYNX effect whose input waits for it
+    using namespace yw;
+    // insert 1: a 4800-sample latent plugin, then a YW effect whose input waits for it
     Song s = latency165::impulses (1, true);
     s.bpm = 120.0; // 1 beat = 24000 samples at 48 kHz: 4800 samples = 0.2 beat
     s.mode = PlayMode::song;
@@ -241,7 +241,7 @@ TEST (rea168j_compensate_automations)
 // §4 FL holds an audio clip's last sample as DC to the clip's end (FL renders r167l take 2, r167k c_base)
 TEST (rea168j_audio_clip_holds_its_last_value)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0; // 1 beat = 24000 samples at 48 kHz
     ChannelDef ch;

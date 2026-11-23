@@ -9,11 +9,11 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx::mapmode
+namespace yw::mapmode
 {
 namespace
 {
-constexpr const char* tagProperty = "lynxMapTarget";
+constexpr const char* tagProperty = "ywMapTarget";
 constexpr int headerHeight = 24, rowHeight = 20, titleHeight = 26;
 
 juce::String utf8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
@@ -716,7 +716,7 @@ juce::PopupMenu MappingBrowser::rowMenu (int r)
         reload();
     });
     menu.addItem (tr ("Delete") + "\t" + tr ("Del"), has, false, [this] { removeSelected(); });
-    // round 190hp (slice B9; LYNX's own, the reference keeps mappings with the set): the mapping for every project, in the
+    // round 190hp (slice B9; YW's own, the reference keeps mappings with the set): the mapping for every project, in the
     // settings, or back into this project only
     if (mode == remotemap::Mode::midi)
     {
@@ -773,4 +773,4 @@ bool MappingBrowser::keyPressed (const juce::KeyPress& key)
     }
     return false;
 }
-} // namespace lynx::mapmode
+} // namespace yw::mapmode

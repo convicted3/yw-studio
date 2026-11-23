@@ -1,5 +1,5 @@
-// Round 190ne (LYNX 0.1.31): track clips, "Clips own their notes" on FL's instrument tracks (core/TrackClips.h; design A
-// of round 190nd). The .lynx round trip, the engine's automatic deletion in one undo step and the copy for 0.1.28 are
+// Round 190ne (YW 0.1.31): track clips, "Clips own their notes" on FL's instrument tracks (core/TrackClips.h; design A
+// of round 190nd). The .yw round trip, the engine's automatic deletion in one undo step and the copy for 0.1.28 are
 // checked in the app's --selftest ("trackclips190ne"): they need the engine and ProjectFile.
 
 #include "core/AlsExport.h"
@@ -15,9 +15,9 @@ namespace trackclips190ne
 {
 // Patterns 0 ("Drums", ordinary) and 1 ("Chords", ordinary); channel 0 "Lead" on instrument track 1 with its clips owning
 // their notes; no clip yet
-inline lynx::Song song()
+inline yw::Song song()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (8);
     s.patterns.resize (2);
@@ -32,9 +32,9 @@ inline lynx::Song song()
     return s;
 }
 
-inline lynx::Clip clipOf (int pattern, int track, std::int64_t start, std::int64_t length = 4 * lynx::ppq)
+inline yw::Clip clipOf (int pattern, int track, std::int64_t start, std::int64_t length = 4 * yw::ppq)
 {
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = pattern;
     c.track = track;
     c.start = start;
@@ -42,19 +42,19 @@ inline lynx::Clip clipOf (int pattern, int track, std::int64_t start, std::int64
     return c;
 }
 
-inline lynx::Note noteOf (int channel, int key, std::int64_t start)
+inline yw::Note noteOf (int channel, int key, std::int64_t start)
 {
-    lynx::Note n;
+    yw::Note n;
     n.channel = channel;
     n.key = key;
     n.start = start;
-    n.length = lynx::ppq / 2;
+    n.length = yw::ppq / 2;
     return n;
 }
 
-inline int patternsNamed (const lynx::Song& s, const std::string& name)
+inline int patternsNamed (const yw::Song& s, const std::string& name)
 {
-    return (int) std::count_if (s.patterns.begin(), s.patterns.end(), [&name] (const lynx::Pattern& p) { return p.name == name; });
+    return (int) std::count_if (s.patterns.begin(), s.patterns.end(), [&name] (const yw::Pattern& p) { return p.name == name; });
 }
 } // namespace trackclips190ne
 
@@ -62,7 +62,7 @@ inline int patternsNamed (const lynx::Song& s, const std::string& name)
 // FL's own instrument track; on in Clip-launch and Simple); an existing instrument track keeps its switch
 TEST (trackclips190ne_switch_default_per_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto before = layoutstyle::current();
     Song s;
     s.mixer = Song::defaultMixer (8);
@@ -91,7 +91,7 @@ TEST (trackclips190ne_switch_default_per_layout)
 // unless shown; F4 / Numpad +/- / the selector's wheel never land on one
 TEST (trackclips190ne_new_clip_and_the_pattern_selector)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     const auto a = trackclips::newClip (s, 1, 2 * s.barTicks());
     const auto b = trackclips::newClip (s, 1, s.barTicks());
@@ -137,7 +137,7 @@ TEST (trackclips190ne_new_clip_and_the_pattern_selector)
 // not to the original); ordinary patterns keep FL's sharing; a linked copy is a plain copy of the clip
 TEST (trackclips190ne_unique_and_linked_copies)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     const auto a = trackclips::newClip (s, 1, 4 * ppq);
     s.patterns[(std::size_t) a].notes.push_back (trackclips190ne::noteOf (0, 60, 0));
@@ -176,7 +176,7 @@ TEST (trackclips190ne_unique_and_linked_copies)
 // patterns stay (FL); any clip list, a block or a Loop Starter channel counts as a use; the current pattern follows
 TEST (trackclips190ne_unused_track_clips_are_deleted)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     const auto a = trackclips::newClip (s, 1, 4 * ppq); // 2
     const auto b = trackclips::newClip (s, 1, 4 * ppq); // 3
@@ -208,7 +208,7 @@ TEST (trackclips190ne_unused_track_clips_are_deleted)
 // Cut + paste: the clipboard carries the track clip (cutting its last clip deletes it), and a paste brings a unique copy
 TEST (trackclips190ne_clipboard_carries_track_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     const auto a = trackclips::newClip (s, 1, 4 * ppq);
     s.patterns[(std::size_t) a].notes.push_back (trackclips190ne::noteOf (0, 64, ppq));
@@ -232,7 +232,7 @@ TEST (trackclips190ne_clipboard_carries_track_clips)
 // into the pattern list. A pattern shared with another track, a block, or several instruments stays ordinary.
 TEST (trackclips190ne_switch_adopts_and_releases)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     trackclips::setOwnClips (s, 1, false);
     s.channels.emplace_back().name = "Pad";
@@ -260,7 +260,7 @@ TEST (trackclips190ne_switch_adopts_and_releases)
 // ordinary patterns are never merged; more than 999 patterns are reported
 TEST (trackclips190ne_flp_export_merges_identical_track_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     s.patterns[0].notes = { trackclips190ne::noteOf (0, 36, 0) };
     s.patterns[1].notes = s.patterns[0].notes; // (ordinary twins: FL keeps both)
@@ -299,7 +299,7 @@ TEST (trackclips190ne_flp_export_merges_identical_track_clips)
 // pattern list stays clean; the export to Live and back keeps it so
 TEST (trackclips190ne_als_import_marks_clips_and_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     std::string error;
     const auto song = importAls (als175a::bytesOf (als175a::richSet()), als175a::options (&report), &error);
@@ -335,7 +335,7 @@ TEST (trackclips190ne_als_import_marks_clips_and_round_trips)
 // modifier, to the Playlist) is unique; a drag moves it with its pattern; a cut + paste works after the pattern is gone
 TEST (trackclips190ne_grid_slots_own_their_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     const auto p = session::insertEmptyClip (s, 1, 0);
     CHECK (p == 2 && s.patterns[2].trackClip);
@@ -365,7 +365,7 @@ TEST (trackclips190ne_grid_slots_own_their_clips)
 // Bus tracks: an audio track whose insert other inserts send into (the header's bus mark and hint)
 TEST (trackclips190ne_bus_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackclips190ne::song();
     CHECK (trackmodes::linkToMixerTrack (s, 4, 6));
     CHECK (! trackclips::isBusTrack (s, 4) && trackclips::busSources (s, 4) == 0);

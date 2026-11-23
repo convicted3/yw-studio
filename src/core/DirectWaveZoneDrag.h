@@ -9,7 +9,7 @@
 
 #include "core/DirectWave.h"
 
-namespace lynx::dw
+namespace yw::dw
 {
 enum class ZoneHandle
 {
@@ -45,4 +45,4 @@ inline Zone dragZone (const Zone& before, ZoneHandle handle, int dk, int dv, boo
     }
     return z;
 }
-} // namespace lynx::dw
+} // namespace yw::dw

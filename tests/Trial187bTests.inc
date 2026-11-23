@@ -1,5 +1,5 @@
 // --- Round trial187b: sound parity measured on the official trials before they end (black-box: the trials' renders of
-// LYNX's own test signals through the public parameter API; docs/PARITY.md "Round trial187b") ---------------------------
+// YW's own test signals through the public parameter API; docs/PARITY.md "Round trial187b") ---------------------------
 // Voice Shift (dual mono, the input itself at no shift, the right channel's lag, the level laws), Ember Classic's hot
 // models above drive 5, Crest's Upward / Classic refits, Pro-G's Expert-only wet / dry (Parity128bTests.inc).
 
@@ -11,11 +11,11 @@ namespace t187b
 {
 constexpr double sr = 48000.0;
 
-inline void run (lynx::EffectKind kind, const lynx::EffectParams& p, std::vector<float>& l, std::vector<float>& r)
+inline void run (yw::EffectKind kind, const yw::EffectParams& p, std::vector<float>& l, std::vector<float>& r)
 {
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (std::size_t off = 0; off < l.size(); off += 256)
@@ -66,7 +66,7 @@ inline int lagOf (const std::vector<float>& a, const std::vector<float>& b, std:
 
 TEST (voice_shift_no_shift_is_the_input_trial187b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     // Transpose at Pitch 0 / Formant 0: the input, delayed by the latency, at the wet trim (−2.7 dB) [EXEC trial: its
     // sung line nulls against 0.733 × input to −15 dB; the overlap-add here drifted up to half a period]
@@ -83,7 +83,7 @@ TEST (voice_shift_no_shift_is_the_input_trial187b)
 
 TEST (voice_shift_channels_are_independent_trial187b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voiceshift;
     // [EXEC trial: a voice on the left only leaves the right silent; the left is the same whatever plays on the right]
     auto p = makeEffectSlot (EffectKind::voiceShift).params;
@@ -112,7 +112,7 @@ TEST (voice_shift_channels_are_independent_trial187b)
 
 TEST (voice_shift_level_laws_trial187b)
 {
-    using namespace lynx::voiceshift;
+    using namespace yw::voiceshift;
     // [EXEC trial, its sung line] the voice gains 2.6 / 3.0 dB at +5 / +12 st against the formants, loses 0.43 dB per
     // semitone going down
     CHECK (std::abs (tiltDb (5.0) - 2.6) < 0.3 && std::abs (tiltDb (12.0) - 3.0) < 0.3);
@@ -126,7 +126,7 @@ TEST (voice_shift_level_laws_trial187b)
 
 TEST (ember_classic_hot_models_trial187b)
 {
-    using namespace lynx::emberclassic;
+    using namespace yw::emberclassic;
     // drive ≤ 5: the shipped table exactly; drive 10: the hot model (E came out 5 … 7 dB loud there)
     const auto render = [] (int style, double drive, bool tableOnly) {
         Engine e;
@@ -158,7 +158,7 @@ TEST (ember_classic_hot_models_trial187b)
 
 TEST (crest_upward_holds_less_trial187b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace c = dyn::crest;
     // [EXEC trial, Upward, threshold −24, ratio 4, auto gain off, 1 kHz at −10 dBFS]: it holds −2.8 dB over the
     // threshold; round tp172b2's fit held −6.2 dB, the refit about −5.3

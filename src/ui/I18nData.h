@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace lynx::i18n::data
+namespace yw::i18n::data
 {
 struct Table
 {
@@ -12,7 +12,7 @@ struct Table
     const unsigned char* zlib;      // the .txt file, zlib-compressed
     std::size_t zlibSize, textSize; // compressed / original size in bytes
 };
-} // namespace lynx::i18n::data
+} // namespace yw::i18n::data
 
 #include "ui/i18n/de.h"
 #include "ui/i18n/es.h"
@@ -29,7 +29,7 @@ struct Table
 #include "ui/i18n/zh-Hans.h"
 #include "ui/i18n/zh-Hant.h"
 
-namespace lynx::i18n::data
+namespace yw::i18n::data
 {
 inline constexpr Table tables[] = {
     { "de", t_de, 327791, 979212 },
@@ -47,4 +47,4 @@ inline constexpr Table tables[] = {
     { "zh-Hans", t_zh_Hans, 331526, 908461 },
     { "zh-Hant", t_zh_Hant, 332487, 912792 },
 };
-} // namespace lynx::i18n::data
+} // namespace yw::i18n::data

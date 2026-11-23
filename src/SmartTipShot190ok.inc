@@ -6,7 +6,7 @@
     bool runSmartTipShot190ok (const juce::String& folderPath, const juce::String& project)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         const juce::File folder (folderPath);
         folder.createDirectory();
         juce::String checks;
@@ -15,7 +15,7 @@
             checks << (ok ? "ok   " : "FAIL ") << what << "\n";
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         {
             AudioEngine offline (false);
             MainComponent ui (offline, false);
@@ -73,7 +73,7 @@
         }
         {
             // Settings › Audio with the round's two options: "Safe overloads" under "Auto close" (FL's Input / output panel,
-            // checked by default) and "Smart disable for new instrument plugins" under "Smart disable" (a LYNX extra)
+            // checked by default) and "Smart disable for new instrument plugins" under "Smart disable" (a YW extra)
             AudioEngine offline (false);
             auto page = makeSettingsPanel (offline, SettingsPage::audio);
             check ("the audio settings page", page != nullptr && page->getHeight() > 0);

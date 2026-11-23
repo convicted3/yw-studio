@@ -1,4 +1,4 @@
-// Round 190ix: Tetra (core/FmSynth.h) follows FL's host pitch features as the other LYNX generators do: a slide note
+// Round 190ix: Tetra (core/FmSynth.h) follows FL's host pitch features as the other YW generators do: a slide note
 // moves the held voices (issue #14), a Porta channel starts a note at the last one's pitch and glides (round 168l), a
 // Mono channel moves its voice legato. The FL-Data audits (issue14_pitch_audit_of_the_instruments,
 // mono168l_every_engine_plays_mono_legato_and_porta, ctlwake173d) check the same with every engine; these run without
@@ -6,11 +6,11 @@
 
 namespace tetra190ix
 {
-inline lynx::ChannelDef channel()
+inline yw::ChannelDef channel()
 {
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.name = "Tetra";
-    c.instrument = lynx::InstrumentKind::tetra;
+    c.instrument = yw::InstrumentKind::tetra;
     return c;
 }
 } // namespace tetra190ix
@@ -18,7 +18,7 @@ inline lynx::ChannelDef channel()
 // a slide note (C5 held, G5 slide note at beat 1 for a quarter beat): the held voice ends 7 semitones up, keeps sounding
 TEST (tetra190ix_follows_slide_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto c = tetra190ix::channel();
     Note held;
     held.key = 60;
@@ -49,7 +49,7 @@ TEST (tetra190ix_follows_slide_notes)
 // last note over the slide time and stays; a Mono channel moves its voice to the second note without a new attack
 TEST (tetra190ix_follows_channel_porta_and_mono)
 {
-    using namespace lynx;
+    using namespace yw;
     auto inst = makeInstrument (InstrumentKind::tetra);
     CHECK (inst != nullptr && inst->followsChannelPorta() && inst->followsSlides());
     if (inst == nullptr)
@@ -96,7 +96,7 @@ TEST (tetra190ix_follows_channel_porta_and_mono)
 // glide plays at its own pitch (the 190hs renders stay as they were)
 TEST (tetra190ix_engine_slide_moves_held_voices_only)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace f = fm;
     const double fs = 48000.0;
     auto s = tetra190hs::state();

@@ -1,5 +1,5 @@
 // Round 190mm (sub-round "scheps"): the Waves Scheps Omni Channel on Ridge Strip's hidden omni law (owner's permission
-// of 2026-11-17 for clean-room REA of third-party binaries; /mnt/e/lynx-work/waves4_190mm/scheps/HANDOFF.md,
+// of 2026-11-17 for clean-room REA of third-party binaries; /mnt/e/yw-work/waves4_190mm/scheps/HANDOFF.md,
 // docs/analise/REA_rodada190mm_scheps.md).
 // - Ridge gets a hidden omni law block at fixed indices 100 … 191 (MixSuite.h OmniParam): 0 for new instances and every
 //   project saved before (bit for bit: waves4_190mm/scheps/lab/gold.sh); only the Scheps translator sets it.
@@ -15,7 +15,7 @@
 
 namespace parity190mmscheps
 {
-namespace rg = lynx::mixsuite::ridge;
+namespace rg = yw::mixsuite::ridge;
 // a minimal state of the strip's form: the outer RealWorld list (order code at 57) and one slot per module
 inline std::vector<std::uint8_t> state (const std::string& order, const std::string (&modules)[5], const bool (&bypass)[5])
 {
@@ -47,16 +47,16 @@ inline std::string list (std::initializer_list<std::pair<int, double>> values, i
 // the bank's defaults (every module present, values of a full reset) with some changes
 inline std::string pre (std::initializer_list<std::pair<int, double>> c = {}) { auto s = list ({ { 15, 1 }, { 16, 20 }, { 17, 1 }, { 19, 1 }, { 20, 20000 }, { 21, 1 } }, 60); return c.size() ? list (c, 60) : s; }
 inline std::string compModule (std::initializer_list<std::pair<int, double>> c) { return list (c, 88); }
-inline lynx::EffectSlot translate (const std::vector<std::uint8_t>& st, int* n = nullptr)
+inline yw::EffectSlot translate (const std::vector<std::uint8_t>& st, int* n = nullptr)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst3;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst3;
     id.name = "WaveShell1-VST3 17.1_x64";
     id.state = st;
-    const auto* e = lynx::findPluginSubstitute (id, false);
-    if (e == nullptr) return lynx::makeEffectSlot (lynx::EffectKind::ridgeStrip);
+    const auto* e = yw::findPluginSubstitute (id, false);
+    if (e == nullptr) return yw::makeEffectSlot (yw::EffectKind::ridgeStrip);
     int k = 0;
-    auto s = lynx::makeSubstituteSlot (*e, &id, &k);
+    auto s = yw::makeSubstituteSlot (*e, &id, &k);
     if (n != nullptr) *n = k;
     return s;
 }
@@ -66,9 +66,9 @@ inline std::vector<float> sine (double sr, double hz, double db, int n)
     for (int i = 0; i < n; ++i) x[(std::size_t) i] = (float) (std::pow (10.0, db / 20) * std::sin (2 * 3.14159265358979 * hz * i / sr));
     return x;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
@@ -84,7 +84,7 @@ inline double rmsDb (const std::vector<float>& x, int from)
 
 TEST (parity190mm_scheps_omni_law_is_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace rg = mixsuite::ridge;
     CHECK (effectInfo (EffectKind::ridgeStrip).params.size() == (std::size_t) rg::count && rg::count <= 100 && rg::omniEnd <= maxEffectParams);
     auto s = makeEffectSlot (EffectKind::ridgeStrip);
@@ -107,7 +107,7 @@ TEST (parity190mm_scheps_omni_law_is_hidden_and_off_for_new_and_old_instances)
 
 TEST (parity190mm_scheps_law_off_is_ridge_bit_for_bit)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190mmscheps;
     // omni values present but the law off: Ridge's own engine, sample for sample
     auto a = makeEffectSlot (EffectKind::ridgeStrip);
@@ -124,7 +124,7 @@ TEST (parity190mm_scheps_law_off_is_ridge_bit_for_bit)
 
 TEST (parity190mm_scheps_state_translates_modules_order_and_bypass)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190mmscheps;
     namespace o = rg::omni;
     // the bank's X4 compressor (VCA 16 : 1, -35 dB, 0.84 / 88.9 ms, +6 dB, 40 %) with the other modules bypassed
@@ -149,7 +149,7 @@ TEST (parity190mm_scheps_state_translates_modules_order_and_bypass)
 
 TEST (parity190mm_scheps_bypassed_strip_passes_the_signal)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190mmscheps;
     const std::string mods[5] = { pre(), list ({}, 68), list ({}, 62), list ({ { 1, 1 } }, 71), compModule ({ { 38, 3.5 } }) };
     const bool bypass[5] = { true, true, true, true, true };
@@ -162,7 +162,7 @@ TEST (parity190mm_scheps_bypassed_strip_passes_the_signal)
 
 TEST (parity190mm_scheps_probe_based_behaviours)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190mmscheps;
     namespace o = rg::omni;
     auto strip = [] { auto s = makeEffectSlot (EffectKind::ridgeStrip); s.params[rg::omniLaw] = 1.0f; s.params[rg::omniIn] = o::dbValue (0); s.params[rg::omniOut] = o::dbValue (0); return s; };

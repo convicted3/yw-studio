@@ -1,8 +1,8 @@
 // --- Round 190mx: GitHub #198 follow-up — knobs turned in a plugin's own window while recording -------------------------
 // FL 2026.1.7 (live check 190mx, Surge XT, wrapper "Notify about parameter changes" on = its default; saves dumped in
-// /mnt/e/lynx-work/issues191_190mx/s198): Recording › "Notes and automation" writes a generator's own parameter into the
+// /mnt/e/yw-work/issues191_190mx/s198): Recording › "Notes and automation" writes a generator's own parameter into the
 // current pattern as event data in Song mode as in Pattern mode (event id 0x813f = channel 0's parameter 0x13f), one event
-// per change; no automation clip. Live: Arrangement Record → the track's automation (LYNX's lanes), Session Record → the
+// per change; no automation clip. Live: Arrangement Record → the track's automation (YW's lanes), Session Record → the
 // recorded clip's envelopes. Recorded hand moves are thinned (Ramer-Douglas-Peucker within 1/512 of the range).
 
 #include "core/ClipLauncher.h"
@@ -14,9 +14,9 @@
 namespace i198
 {
 // a 30 Hz sampling (at 120 BPM, 960 PPQ: 64 ticks per sample) of `f` over [from, to)
-inline std::vector<lynx::RecordedValue> sampled (double from, double to, const std::function<float (double)>& f)
+inline std::vector<yw::RecordedValue> sampled (double from, double to, const std::function<float (double)>& f)
 {
-    std::vector<lynx::RecordedValue> out;
+    std::vector<yw::RecordedValue> out;
     for (double t = from; t < to; t += 64.0)
         out.push_back ({ t, f (t) });
     return out;
@@ -25,7 +25,7 @@ inline std::vector<lynx::RecordedValue> sampled (double from, double to, const s
 
 TEST (i198_thin_keeps_the_shape_with_few_points)
 {
-    using namespace lynx;
+    using namespace yw;
     // a straight ramp: its two ends
     std::vector<AutomationPoint> ramp;
     for (int i = 0; i <= 60; ++i)
@@ -64,7 +64,7 @@ TEST (i198_thin_keeps_the_shape_with_few_points)
 
 TEST (i198_recorded_clip_is_thinned_and_follows_the_move)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
     song.playlist.clear();
@@ -88,7 +88,7 @@ TEST (i198_recorded_clip_is_thinned_and_follows_the_move)
 
 TEST (i198_where_a_take_writes_by_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     using D = AutomationDestination;
     const AutomationTarget pluginKnob { AutomationTargetKind::channelParam, 0, 0, 319 }; // (Surge's A Filter 1 Cutoff)
     const AutomationTarget pitchWheel { AutomationTargetKind::channelParam, 0, 0, midictl::pitchBendBase };
@@ -113,7 +113,7 @@ TEST (i198_where_a_take_writes_by_layout)
 
 TEST (i198_song_mode_plugin_knob_into_the_pattern)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL: the take's moves into the current pattern, where its clip plays them (inside a clip: the clip's pattern position)
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
@@ -139,7 +139,7 @@ TEST (i198_song_mode_plugin_knob_into_the_pattern)
 
 TEST (i198_arrangement_record_writes_the_track_lane)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
     song.automations.clear();
@@ -182,7 +182,7 @@ TEST (i198_arrangement_record_writes_the_track_lane)
 
 TEST (i198_session_record_writes_the_clip_envelope)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.patterns.resize (2);
     song.patterns[1].events.clear();
@@ -212,7 +212,7 @@ TEST (i198_session_record_writes_the_clip_envelope)
 
 TEST (i198_grid_clip_plays_its_envelope)
 {
-    using namespace lynx;
+    using namespace yw;
     // a pattern clip launched in the grid drives its pattern's event lane at its own position (Live's clip envelope)
     Song s;
     s.bpm = 120.0;

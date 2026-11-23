@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct DecodedAudio
 {
@@ -16,4 +16,4 @@ struct DecodedAudio
 
 // nullopt-equivalent: returns false if the file is not valid WavPack.
 bool decodeWavPack (const std::uint8_t* data, std::size_t size, DecodedAudio& out);
-} // namespace lynx
+} // namespace yw

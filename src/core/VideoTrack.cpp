@@ -7,7 +7,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::videotrack
+namespace yw::videotrack
 {
 namespace
 {
@@ -244,4 +244,4 @@ bool isVideoPath (const std::string& path) noexcept
             return true;
     return false;
 }
-} // namespace lynx::videotrack
+} // namespace yw::videotrack

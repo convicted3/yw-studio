@@ -4,7 +4,7 @@
 // film notes/q7-grossbeat-locator.txt): a 1 px line whose colour cycles once per beat — cream (#FFFCC1 … #FFFFEB) on the
 // beat, then warm orange (#E1B179 → #CD9D65 → #B07D5E) and dusty red (#8F5F5A → #764A5A) by the end of the beat — with a
 // trail of up to 3 px to its left that fades with it (grey-blue #5F6667 → #817C70 next to the cream line, 1 px or none
-// late in the beat). It moves in jumps at about 21 Hz. LYNX's own style (the playhead colour + a 6 px trail) stays the
+// late in the beat). It moves in jumps at about 21 Hz. YW's own style (the playhead colour + a 6 px trail) stays the
 // default (owner decision); this one is an option of the editor's Options menu.
 //
 // No JUCE: tested in tests/Livefix190jdTests.inc.
@@ -15,9 +15,9 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::gblocator
+namespace yw::gblocator
 {
-// the editor's style switch (ui-options "grossBeatFlLocator"; off = LYNX's playhead colour)
+// the editor's style switch (ui-options "grossBeatFlLocator"; off = YW's playhead colour)
 inline std::atomic<bool>& flStyleFlag() noexcept
 {
     static std::atomic<bool> on { false };
@@ -76,4 +76,4 @@ inline float trailAlpha (int px, double phase) noexcept
         return 0.0f;
     return (float) (base[(std::size_t) px - 1] * std::max (0.0, fresh));
 }
-} // namespace lynx::gblocator
+} // namespace yw::gblocator

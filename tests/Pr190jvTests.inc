@@ -5,13 +5,13 @@
 
 namespace pr190jv
 {
-inline std::vector<lynx::Note> notesOf (std::initializer_list<int> keys, int channel = 0)
+inline std::vector<yw::Note> notesOf (std::initializer_list<int> keys, int channel = 0)
 {
-    std::vector<lynx::Note> out;
+    std::vector<yw::Note> out;
     std::int64_t start = 0;
     for (const auto key : keys)
     {
-        lynx::Note n;
+        yw::Note n;
         n.key = key;
         n.channel = channel;
         n.start = start;
@@ -20,13 +20,13 @@ inline std::vector<lynx::Note> notesOf (std::initializer_list<int> keys, int cha
     }
     return out;
 }
-inline bool anyNote (const lynx::Note&) { return true; }
+inline bool anyNote (const yw::Note&) { return true; }
 inline bool noSelection (int) { return false; }
 } // namespace pr190jv
 
 TEST (pr190jv_auto_scale_fl_profiles_and_threshold)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace pr190jv;
     // FL counts 0.25 per note (not its length); fewer than 3 notes: no guess
     CHECK (scaledetect::detect (notesOf ({ 60, 64 }), anyNote, noSelection) == scaledetect::none);
@@ -48,7 +48,7 @@ TEST (pr190jv_auto_scale_fl_profiles_and_threshold)
 
 TEST (pr190jv_auto_scale_counts_the_edited_channel_and_the_selection)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace pr190jv;
     // channel 0: an A minor triad; channel 1: a D major line
     auto notes = notesOf ({ 57, 60, 64 }, 0);
@@ -71,7 +71,7 @@ TEST (pr190jv_auto_scale_counts_the_edited_channel_and_the_selection)
 
 TEST (pr190jv_auto_scale_highlighted_rows_are_fl_sets)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's out-of-scale sets (0xe504ac major 1 3 6 8 10, 0xe504cc minor 1 4 6 9 10): major, and the harmonic minor
     const int major[] = { 0, 2, 4, 5, 7, 9, 11 }, minor[] = { 0, 2, 3, 5, 7, 8, 11 };
     for (int root = 0; root < 12; ++root)

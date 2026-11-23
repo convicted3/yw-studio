@@ -12,7 +12,7 @@
 #include "ui/TextCache.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 PatternBlocksView::PatternBlocksView (AudioEngine& e, PlaylistComponent& p)
     : engine (e), playlist (p)
@@ -692,4 +692,4 @@ ui::Hint PatternBlocksView::hintAt (juce::Point<int> p)
         return { tr ("Pattern blocks: hold the button to play from there"), label };
     return { tr ("Pattern blocks: click or drag paints whole blocks of this row's pattern, right-click erases"), label };
 }
-} // namespace lynx
+} // namespace yw

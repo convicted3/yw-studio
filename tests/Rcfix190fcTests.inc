@@ -70,15 +70,15 @@ TEST (rcfix190fc_simple_clicks_leave_the_keys_with_the_main_window)
     CHECK (handler != std::string::npos);
     // text fields keep their keys; the overlays and knobs that keep theirs say so
     CHECK (source.find ("dynamic_cast<juce::TextEditor*> (c) != nullptr", handler) != std::string::npos);
-    CHECK (source.find ("\"lynxKeepsKeys\"", handler) != std::string::npos);
+    CHECK (source.find ("\"ywKeepsKeys\"", handler) != std::string::npos);
     CHECK (source.find ("juce::Component::getCurrentlyModalComponent() != nullptr", handler) != std::string::npos);
     CHECK (source.find ("addGlobalMouseListener (&simpleClickKeys)") != std::string::npos);
     CHECK (source.find ("removeGlobalMouseListener (&simpleClickKeys)") != std::string::npos);
     // an overlay that had the keys gives them back when it goes
     CHECK (source.find ("const auto hadKeys = old != nullptr && old != c && old->hasKeyboardFocus (true);") != std::string::npos);
-    CHECK (readFile ("src/ui/SimpleDock.cpp").find ("getProperties().set (\"lynxClickKeepsKeys\", true);") != std::string::npos);
+    CHECK (readFile ("src/ui/SimpleDock.cpp").find ("getProperties().set (\"ywClickKeepsKeys\", true);") != std::string::npos);
     for (const char* file : { "src/ui/StartFromPanel.cpp", "src/ui/FirstSongTour.cpp", "src/ui/SimpleWorkflow.cpp" })
-        CHECK (readFile (file).find ("getProperties().set (\"lynxKeepsKeys\", true);") != std::string::npos);
+        CHECK (readFile (file).find ("getProperties().set (\"ywKeepsKeys\", true);") != std::string::npos);
     const auto main = readFile ("src/Main.cpp");
     CHECK (main.find ("args.contains (\"--simplekeytest\")") != std::string::npos);
     // Windows: a key-down unused in an attached window is not also posted to the main window (it ran every shortcut twice)
@@ -98,5 +98,5 @@ TEST (rcfix190fc_edison_slot_window_docks)
     // --plugwintest clicks the docked editor where it can be seen (JUCE drops a button-down on a covered point)
     const auto main = readFile ("src/Main.cpp");
     CHECK (main.find ("editor_title_visible_at=") != std::string::npos);
-    CHECK (main.find ("lynx::nativechild::postClickForTest (h, { 60, 8 });") == std::string::npos);
+    CHECK (main.find ("yw::nativechild::postClickForTest (h, { 60, 8 });") == std::string::npos);
 }

@@ -1,15 +1,15 @@
 // Round 190dz: FL's audio clip menu layout (core/FlClipMenu.h) and the channel's Misc › Levels adjustment (pan offset,
 // volume multiplier, Mod X / Mod Y offsets; FL's channel parameters 0x10..0x14, .flp 0xE5), which Automate on an audio
-// clip now moves. FL facts: /mnt/e/lynx-work/flclip190dz/HANDOFF.md.
+// clip now moves. FL facts: /mnt/e/yw-work/flclip190dz/HANDOFF.md.
 #include "core/FlClipMenu.h"
 #include "core/LastTweaked.h"
 #include "core/SessionIds.h"
 
 namespace flclip190dz
 {
-inline std::vector<std::string> texts (const std::vector<lynx::flclipmenu::Entry>& entries)
+inline std::vector<std::string> texts (const std::vector<yw::flclipmenu::Entry>& entries)
 {
-    using K = lynx::flclipmenu::Entry::Kind;
+    using K = yw::flclipmenu::Entry::Kind;
     std::vector<std::string> out;
     for (const auto& e : entries)
         out.push_back (e.kind == K::separator ? std::string ("-")
@@ -22,9 +22,9 @@ inline std::vector<std::string> texts (const std::vector<lynx::flclipmenu::Entry
 }
 
 // one Synth channel on insert 1 of a plain mixer (no Master effects), a 4-beat note at C5 from the start
-inline lynx::Song synthSong()
+inline yw::Song synthSong()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.channels.clear();
     s.playlist.clear();
@@ -67,12 +67,12 @@ struct Render
     }
 };
 
-inline Render render (const lynx::Song& song, int blocks = 120)
+inline Render render (const yw::Song& song, int blocks = 120)
 {
     constexpr int rate = 44100, block = 256;
-    const auto tps = lynx::ticksPerSample (song.bpm, rate);
-    auto state = lynx::RackState::build (song, nullptr, rate);
-    lynx::RackRenderer renderer;
+    const auto tps = yw::ticksPerSample (song.bpm, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
+    yw::RackRenderer renderer;
     renderer.prepare (rate, block);
     Render out;
     out.l.assign ((std::size_t) (blocks * block), 0.0f);
@@ -89,7 +89,7 @@ inline Render render (const lynx::Song& song, int blocks = 120)
 
 TEST (flclip190dz_menu_model_is_fl_order_and_sections)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL 2026's menu, both columns ([SHOT] flgap189o FL-clipmenu-none-selected, [FORM] EEAUMenu)
     const std::vector<std::string> fl {
         "[Audio clip]", "Preview", "-", "(v) Muted", "-", "Rename and color...", "Change color...", "Random color", "Change icon...", "-",
@@ -116,8 +116,8 @@ TEST (flclip190dz_menu_model_is_fl_order_and_sections)
             CHECK (e.mnemonic == 'f');
     }
 
-    // what LYNX shows: FL's list (round 190jv: Deverb too, LYNX's own Deverb in the audio editor), Crossfade
-    // selected only when FL shows it (round 190gw: Pitch-correct / Time-warp = LYNX's Newtone / Newtime, Crossfade with
+    // what YW shows: FL's list (round 190jv: Deverb too, YW's own Deverb in the audio editor), Crossfade
+    // selected only when FL shows it (round 190gw: Pitch-correct / Time-warp = YW's Newtone / Newtime, Crossfade with
     // works and is greyed only while no other channel's clip overlaps)
     const std::vector<std::string> usual {
         "[Audio clip]", "Preview", "-", "(v) Muted", "-", "Rename and color...", "Change color...", "Random color", "Change icon...", "-",
@@ -133,8 +133,8 @@ TEST (flclip190dz_menu_model_is_fl_order_and_sections)
     for (const auto& e : flclipmenu::shown (true, true))
         CHECK (e.have != flclipmenu::Entry::Have::missing);
 
-    // LYNX's own items after FL's, in this order, none of them an FL label
-    const auto extras = flclipmenu::lynxExtras();
+    // YW's own items after FL's, in this order, none of them an FL label
+    const auto extras = flclipmenu::ywExtras();
     CHECK (extras.size() == 21 && extras[2] == "Split at silence..." && /* (round 190hp; 190lj: + Convert to MIDI (polyphonic)...; 190lk: + Edit notes (polyphonic)...) */ extras.front() == "Color palette" && extras.back() == "Paste here");
     for (const auto& x : extras)
         CHECK (std::none_of (fl.begin(), fl.end(), [&x] (const std::string& f) { return f == x || f == x + " >"; }));
@@ -147,7 +147,7 @@ TEST (flclip190dz_menu_model_is_fl_order_and_sections)
 
 TEST (flclip190dz_select_region_windows)
 {
-    using namespace lynx::flclipmenu;
+    using namespace yw::flclipmenu;
     // regions from the cue markers: each runs to the next (or the end); duplicates and markers past the end drop out
     const auto regions = sampleRegions ({ 30000, 0, 10000, 10000, 90000 }, 40000);
     CHECK ((regions == std::vector<Region> { { 0, 10000 }, { 10000, 30000 }, { 30000, 40000 } }));
@@ -157,7 +157,7 @@ TEST (flclip190dz_select_region_windows)
     CHECK (w.has_value() && w->offset == 500 && w->length == 2000);
     CHECK (! regionWindow ({ 0, 4000 }, 5000, 35000, 10.0).has_value()); // before the played part
     CHECK ((fullWindow (35000, 10.0) == ClipWindow { 0, 3500 }));
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.offset = 500;
     clip.length = 2001;
     CHECK (currentRegion ({ { 0, 500 }, { 500, 2000 } }, clip) == 1);
@@ -167,7 +167,7 @@ TEST (flclip190dz_select_region_windows)
 
 TEST (flclip190dz_level_adjustment_math)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's law (REA_rodada3 §2, FUN_00fe9d20): gain = f(volume)·f(multiplier), f(x) = (11^x − 1) / 10, f(1) = 1
     CHECK (levelAdjustGain (1.0f) == 1.0f);
     CHECK (levelAdjustGain (0.0f) == 0.0f);
@@ -189,7 +189,7 @@ TEST (flclip190dz_level_adjustment_math)
 
 TEST (flclip190dz_level_adjustment_automation_target)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = flclip190dz::synthSong();
     auto& levels = song.channels[0].misc.levels;
     const AutomationTarget pan { AutomationTargetKind::channelAdjust, 0, 0, leveladjust::pan };
@@ -219,7 +219,7 @@ TEST (flclip190dz_level_adjustment_automation_target)
 
 TEST (flclip190dz_level_adjustment_plays_as_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto base = flclip190dz::synthSong();
     const auto plain = flclip190dz::render (base);
     const auto level = plain.rms (plain.l);
@@ -269,7 +269,7 @@ TEST (flclip190dz_level_adjustment_plays_as_fl)
 
 TEST (flclip190dz_flp_round_trip_and_automate_ids)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = flclip190dz::synthSong();
     song.channels[0].misc.levels = { -0.25f, 1.5f, 0.5f, -0.75f };
     Automation a;

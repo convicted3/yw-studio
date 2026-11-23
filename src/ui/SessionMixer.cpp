@@ -18,7 +18,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -29,7 +29,7 @@ constexpr int maxSendRows = 6; // (more sends stay reachable in the Mixer)
 
 juce::String utf8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 
-// The reference's dB labels beside a Session meter: 0, 12 ... 60 below 0 dB [SHOT session1.png]; drawn on LYNX's own
+// The reference's dB labels beside a Session meter: 0, 12 ... 60 below 0 dB [SHOT session1.png]; drawn on YW's own
 // meter scale (-60 dB at the bottom, +6 dB at the top: core/MeterBallistics.h).
 constexpr int scaleLabels[] = { 0, 12, 24, 36, 48, 60 };
 
@@ -1313,7 +1313,7 @@ void SessionMixerComponent::paintStripLive (juce::Graphics& g, int column, int s
     };
     g.setFont (liveFont());
 
-    // In/Out and Track Options: Live's greys on LYNX's own layout (Live's In/Out section is hidden in the reference set:
+    // In/Out and Track Options: Live's greys on YW's own layout (Live's In/Out section is hidden in the reference set:
     // not captured; its lit monitor state in Live's orange)
     const auto box = [&] (Part part, const juce::String& t, bool arrow, bool dim = false) {
         const auto r = partBounds (column, part);
@@ -1980,7 +1980,7 @@ bool SessionMixerComponent::cueInEffect() const
 }
 
 // Round 190nc (DL-110): Live's Cue Out / Main Out choosers list the device's stereo pairs, then its single outputs, in
-// Live's own numbering (190mv B1: "1/2, 1, 2, Configure..."; LYNX has no Configure item: the outputs come from the device)
+// Live's own numbering (190mv B1: "1/2, 1, 2, Configure..."; YW has no Configure item: the outputs come from the device)
 juce::PopupMenu SessionMixerComponent::deviceOutputMenu (bool cue)
 {
     const auto& song = engine.getSong();
@@ -2033,4 +2033,4 @@ void SessionMixerComponent::showOutputMenu (int insert)
         });
     menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withMousePosition());
 }
-} // namespace lynx
+} // namespace yw

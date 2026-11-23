@@ -1,6 +1,6 @@
 #pragma once
 
-// The Harmor controls LYNX's channel window edits (round 172a): raw FL integers inside the saved state, read and written
+// The Harmor controls YW's channel window edits (round 172a): raw FL integers inside the saved state, read and written
 // through harmorParamOffset (core/Harmor.h). Part parameters exist for both parts (A = 0, B = 1; the window's A / B
 // tabs show one part at a time, as FL's), global ones once. Indices, laws and ranges from REA_rodada34 (§1.8–§1.19) and
 // the ranges FL's 325 factory presets use; the filter block is 51 + 12·f … 61 + 12·f (core/Harmor.cpp buildFilter).
@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::harmorui
+namespace yw::harmorui
 {
 struct Control
 {
@@ -87,4 +87,4 @@ inline const char* name (int part, int index)
             return c.name.c_str();
     return nullptr;
 }
-} // namespace lynx::harmorui
+} // namespace yw::harmorui

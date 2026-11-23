@@ -1,13 +1,13 @@
 #pragma once
 
-// Loop analysis (round 190kx; LYNX's own, clean-room): the key and the tempo of the USER'S OWN loops, for the Browser
+// Loop analysis (round 190kx; YW's own, clean-room): the key and the tempo of the USER'S OWN loops, for the Browser
 // (Simple workflow rows, the Sample browser's Loop Browser), the drop paths and the clip menu. No JUCE.
 //  - analyse(): the tempo (the WAV's ACID beats, the file name, else detected from the audio), whether the file is a
 //    loop of whole beats, and the key (the file name, else detected from the audio), each with where it came from and
 //    how sure it is;
 //  - Cache: results kept per file (path + size + modification time), shared by the Browser and the drop paths, so a file
 //    is analysed once per session; the analysis itself runs on a worker thread (the UI's job), never on idle.
-// The detectors are LYNX's own implementations of published methods (references at each function in LoopAnalysis.cpp);
+// The detectors are YW's own implementations of published methods (references at each function in LoopAnalysis.cpp);
 // keyfollow::detectKey and tempodetect::detect stay as they are (FL's "Detect tempo" dialog and Auto-warp use them).
 
 #include <atomic>
@@ -24,12 +24,12 @@
 
 #include "core/KeyFollow.h"
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 }
 
-namespace lynx::loopanalysis
+namespace yw::loopanalysis
 {
 enum class TempoSource : std::uint8_t
 {
@@ -122,7 +122,7 @@ std::string keyText (const Result& r, bool shortForm);
 
 // The Simple layout's drops (BandLab fits its loops to the project's tempo and key): a loop whose file and name say
 // nothing of its tempo or key also takes what the analysis finds in its audio — a loop of whole beats is fitted to the
-// tempo, a key it finds makes it follow the project key. On by default (BandLab's behaviour); Settings › LYNX extras
+// tempo, a key it finds makes it follow the project key. On by default (BandLab's behaviour); Settings › YW extras
 // and the Simple layout's Browser options have the switch (ui-options.txt "simpleLoopDetect").
 inline std::atomic<bool>& dropDetects() noexcept
 {
@@ -175,7 +175,7 @@ public:
         // the first `seconds` of the file as mono SampleData (with its ACID beats) and the whole file's length
         std::function<bool (const std::string& path, double seconds, SampleData& out, double& totalSeconds)> decode;
         std::function<void (const std::string& path)> analysed; // (the worker thread) a result is in the cache
-        std::function<bool()> shouldPause;                      // LYNX records or renders
+        std::function<bool()> shouldPause;                      // YW records or renders
         bool throttle = true;                                   // rest as long as each file took (tests: off)
     };
     explicit Service (Callbacks callbacks);
@@ -207,4 +207,4 @@ private:
     std::size_t analysedCount = 0;
     std::thread worker;
 };
-} // namespace lynx::loopanalysis
+} // namespace yw::loopanalysis

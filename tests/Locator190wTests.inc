@@ -3,10 +3,10 @@
 
 TEST (r190w_sampler_reports_its_play_position)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     data->left.assign (1001, 0.25f);
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     sampler->prepare (48000.0);
     CHECK (sampler->playPosition() < 0.0f); // silent
 
@@ -21,8 +21,8 @@ TEST (r190w_sampler_reports_its_play_position)
 
     // the start offset (a fraction of the region) is where the position starts; the reversed sample counts in play
     // order as well (the display draws it mirrored)
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.sampler.startOffset = 0.5f;
     c.sampler.reverse = true;
     sampler->configure (c, 120.0);
@@ -31,7 +31,7 @@ TEST (r190w_sampler_reports_its_play_position)
     CHECK (sampler->playPosition() > 0.55f && sampler->playPosition() < 0.65f);
 
     // engines other than the Sampler report none
-    auto synth = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto synth = yw::makeInstrument (yw::InstrumentKind::synth);
     synth->prepare (48000.0);
     synth->noteOn (60, 1.0f);
     synth->render (l.data(), r.data(), 100, 1.0f, 1.0f);

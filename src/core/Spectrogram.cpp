@@ -4,7 +4,7 @@
 #include <cmath>
 #include <complex>
 
-namespace lynx::spectrogram
+namespace yw::spectrogram
 {
 namespace
 {
@@ -109,4 +109,4 @@ std::uint32_t colourOf (float level) noexcept
         }
     return 0xFFFCEC4Au;
 }
-} // namespace lynx::spectrogram
+} // namespace yw::spectrogram

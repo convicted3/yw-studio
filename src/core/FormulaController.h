@@ -16,12 +16,12 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::formula
+namespace yw::formula
 {
 // What a formula can read besides its knobs.
 struct Inputs
@@ -80,7 +80,7 @@ struct State
     std::string formula = "a+b+c";
 };
 std::optional<State> parseState (const std::vector<std::uint8_t>& data);
-// The state LYNX saves (version 2, no description) — what FL's own reader takes.
+// The state YW saves (version 2, no description) — what FL's own reader takes.
 std::vector<std::uint8_t> writeState (const State& state);
 // The formula of a slot's state ("a+b+c" when it has none, as FL's default preset).
 std::string formulaOf (const std::vector<std::uint8_t>& state);
@@ -91,4 +91,4 @@ std::unique_ptr<Effect> makeEffect (const std::vector<std::uint8_t>& state);
 
 // The mouse position the formulas see (MouseX / MouseY, 0..1 of the screen); set by the UI.
 void setMousePosition (double x, double y) noexcept;
-} // namespace lynx::formula
+} // namespace yw::formula

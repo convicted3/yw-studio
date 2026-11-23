@@ -13,7 +13,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::goals
+namespace yw::goals
 {
 namespace
 {
@@ -258,4 +258,4 @@ bool active (const EffectSlot& slot) noexcept
     eachMove (slot.goal, slot.goalAmount, [&slot, &same] (int p, float v) { same = same && std::abs (slot.params[(std::size_t) p] - v) <= 1.0e-4f; });
     return same;
 }
-} // namespace lynx::goals
+} // namespace yw::goals

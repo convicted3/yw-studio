@@ -14,7 +14,7 @@ namespace juce
 class Component;
 }
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -24,4 +24,4 @@ void show (AudioEngine& engine);
 // The window's content on its own (the --videotrackshot screenshots)
 std::unique_ptr<juce::Component> makePanel (AudioEngine& engine);
 }
-} // namespace lynx
+} // namespace yw

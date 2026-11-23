@@ -15,7 +15,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::liveui
+namespace yw::liveui
 {
 using namespace theme;
 
@@ -30,7 +30,7 @@ void rememberName (const juce::String& name)
 
 juce::String offlineText()
 {
-    return tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection, so live sessions are off. "
+    return tr ("YW Studio is in offline mode (YW_OFFLINE or --offline) and opens no network connection, so live sessions are off. "
                "Send project... and Merge a part... still work: they use files you send yourself.");
 }
 
@@ -56,7 +56,7 @@ LiveSessionManager::Options optionsFor (const Context& c, const juce::String& na
     LiveSessionManager::Options o;
     o.name = name;
     o.projectFile = c.projectFile;
-    if (const auto relay = juce::SystemStats::getEnvironmentVariable ("LYNX_RELAY_URL", {}); relay.isNotEmpty())
+    if (const auto relay = juce::SystemStats::getEnvironmentVariable ("YW_RELAY_URL", {}); relay.isNotEmpty())
         o.relay = relay; // (tests: a local relay)
     return o;
 }
@@ -71,7 +71,7 @@ juce::String myName()
 void addMenuItems (juce::PopupMenu& menu, Context c)
 {
     const bool active = c.live.isActive();
-    const bool offline = lynx::offline::enabled(); // LYNX_OFFLINE=1 / --offline: no network, so no live sessions (a note says why)
+    const bool offline = yw::offline::enabled(); // YW_OFFLINE=1 / --offline: no network, so no live sessions (a note says why)
     menu.addItem (tr ("Start live session..."), ! active && ! offline, false, [c] { start (c); });
     menu.addItem (tr ("Join live session..."), ! active && ! offline, false, [c] { join (c); });
     if (offline)
@@ -95,7 +95,7 @@ void addMenuItems (juce::PopupMenu& menu, Context c)
 
 void start (Context c)
 {
-    if (lynx::offline::enabled())
+    if (yw::offline::enabled())
         return warn (tr ("Start live session"), offlineText());
     auto* w = new juce::AlertWindow (tr ("Start live session"),
                                      tr ("Up to {0} people join you and edit this project together over the internet, each on their own computer. "
@@ -129,7 +129,7 @@ void start (Context c)
 
 void join (Context c)
 {
-    if (lynx::offline::enabled())
+    if (yw::offline::enabled())
         return warn (tr ("Join live session"), offlineText());
     auto* w = new juce::AlertWindow (tr ("Join live session"),
                                      tr ("Type or paste the invite code the host sent you. The host's project opens here and every change "
@@ -221,7 +221,7 @@ std::unique_ptr<juce::AlertWindow> makeRejoinDialog (const juce::String& hostNam
 
 std::unique_ptr<juce::AlertWindow> makeMediaLimitDialog (const juce::String& name, juce::int64 used, juce::int64 limit)
 {
-    auto size = [] (juce::int64 bytes) { return juce::String::fromUTF8 (lynx::live::mediaSize (bytes).c_str()); };
+    auto size = [] (juce::int64 bytes) { return juce::String::fromUTF8 (yw::live::mediaSize (bytes).c_str()); };
     auto w = std::make_unique<ui::dialog::Alert> (
         tr ("Live session"),
         tr ("{0} has sent {1} of audio files into this session; the limit for one guest is {2}. Their newest files are waiting on their computer.",
@@ -235,14 +235,14 @@ std::unique_ptr<juce::AlertWindow> makeMediaLimitDialog (const juce::String& nam
 
 void offerResume (Context c)
 {
-    if (lynx::offline::enabled()) // (the journal stays for the next start without offline mode)
+    if (yw::offline::enabled()) // (the journal stays for the next start without offline mode)
         return;
     const auto journal = LiveSessionManager::defaultJournal();
     const auto info = LiveSessionManager::readJournal (journal);
     if (! info)
     {
         journal.deleteFile(); // (too old for the relay, or damaged)
-        // round 190ah: or this computer was a guest in someone's session when LYNX SHARE closed
+        // round 190ah: or this computer was a guest in someone's session when YW Studio closed
         const auto guestJournal = LiveSessionManager::defaultGuestJournal();
         const auto guest = LiveSessionManager::readGuestJournal (guestJournal);
         if (! guest)
@@ -304,7 +304,7 @@ void attach (LiveSessionManager& live)
             return juce::AlertWindow::showMessageBoxAsync (
                 juce::MessageBoxIconType::InfoIcon, tr ("Live session"),
                 tr ("This live session has moved {0} of audio files, its limit. New audio files are not sent any more; everything else goes on.",
-                    { juce::String::fromUTF8 (lynx::live::mediaSize (limit.limit).c_str()) })
+                    { juce::String::fromUTF8 (yw::live::mediaSize (limit.limit).c_str()) })
                     + " " + tr ("For a big project, File > Online session > Send project... sends everything in one package."));
         auto w = makeMediaLimitDialog (limit.name, limit.used, limit.limit);
         w.release()->enterModalState (true, juce::ModalCallbackFunction::create ([answer = limit.answer] (int r) {
@@ -414,4 +414,4 @@ int paintPresence (juce::Graphics& g, juce::Rectangle<int> area, const LiveSessi
     }
     return area.getWidth() - r.getWidth();
 }
-} // namespace lynx::liveui
+} // namespace yw::liveui

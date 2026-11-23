@@ -1,11 +1,11 @@
 #pragma once
 
-// LYNX's demo songs (round 190dv, owner decision O5 of cov190dq: "two more short LYNX-made genre demos offered on first
-// run"). Beside the showcase song (core/ShowcaseSong.h, Demo.lynx in the installers) there are two short songs in other
-// genres, built only from LYNX's own instruments (the built-in synth's presets) and Loop Starter's own kit and grooves
+// YW's demo songs (round 190dv, owner decision O5 of cov190dq: "two more short YW-made genre demos offered on first
+// run"). Beside the showcase song (core/ShowcaseSong.h, Demo.yw in the installers) there are two short songs in other
+// genres, built only from YW's own instruments (the built-in synth's presets) and Loop Starter's own kit and grooves
 // (its built-in configuration, never FL's or a sample library: the same notes on every computer), as Simple-workflow
-// tracks (core/SimpleTracks.h), with one-knob effects and a Master look. They are credited as LYNX-made in the
-// project's info and free to use. `LYNX --demosongs <folder>` writes them as .lynx files (resources/demos/ in the repo);
+// tracks (core/SimpleTracks.h), with one-knob effects and a Master look. They are credited as YW-made in the
+// project's info and free to use. `YW --demosongs <folder>` writes them as .yw files (resources/demos/ in the repo);
 // the Start from list and the Welcome screen open them from here. Render-checked in tests/FirstSongTour190dvTests.inc:
 // no clipping, integrated loudness about −14 LUFS.
 
@@ -29,7 +29,7 @@
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::demos
+namespace yw::demos
 {
 constexpr int count = 3; // 0 the showcase song, 1 hip hop, 2 pop
 
@@ -53,7 +53,7 @@ inline const char* genre (int demo) noexcept
     }
 }
 // the file name in resources/demos/
-inline std::string fileName (int demo) { return std::string ("YW Demo - ") + name (demo) + ".lynx"; }
+inline std::string fileName (int demo) { return std::string ("YW Demo - ") + name (demo) + ".yw"; }
 
 constexpr const char* credit = "Made by the YW Studio project with YW Studio's own instruments and Loop Starter kit. Free to use, change and share.";
 
@@ -185,7 +185,7 @@ inline Song base (double bpm, projectkey::Key key, int demo)
 // meter (the limiter's own BS.1770 estimator reads a little lower); at −1.1 dB the worst was −1.06 / −1.01
 constexpr float demoCeilingDb = -1.1f;
 
-// The Master look (its own true-peak stage included since round 190ea), then LYNX's Apex Limiter in true-peak mode
+// The Master look (its own true-peak stage included since round 190ea), then YW's Apex Limiter in true-peak mode
 // (ceiling demoCeilingDb) bringing the song to about −14 LUFS; the gain lives in this stage, so it stays when a look is
 // applied again
 inline void finish (Song& song, int look, float intensity, float inputDb, float limiterGainDb)
@@ -336,4 +336,4 @@ inline Song make (int demo)
         default: return makeShowcaseSong (0);
     }
 }
-} // namespace lynx::demos
+} // namespace yw::demos

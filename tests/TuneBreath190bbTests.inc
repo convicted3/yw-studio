@@ -1,6 +1,6 @@
-// Round 190bb (issue #103): LYNX Tune's Breathiness (docs/analise/REA_rodada190bb-tune.md) — aspiration noise with the
-// corrected voice's own formants, on voiced sounds only; LYNX's own addition, off (and skipped) by default. Synthetic
-// vowels and the helpers of LynxTuneTests95.inc (r95::).
+// Round 190bb (issue #103): YW Tune's Breathiness (docs/analise/REA_rodada190bb-tune.md) — aspiration noise with the
+// corrected voice's own formants, on voiced sounds only; YW's own addition, off (and skipped) by default. Synthetic
+// vowels and the helpers of YwTuneTests95.inc (r95::).
 
 namespace tb190
 {
@@ -57,15 +57,15 @@ std::vector<float> minus (const std::vector<float>& a, const std::vector<float>&
 }
 } // namespace tb190
 
-TEST (lynx_tune_round190bb_breathiness_law_and_default)
+TEST (yw_tune_round190bb_breathiness_law_and_default)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     CHECK (t::breathGain (0.0f) == 0.0 && std::abs (t::breathGain (1.0f) - t::breathFull) < 1e-12);
     CHECK (std::abs (t::breathGain (0.5f) - t::breathFull / 4.0) < 1e-12); // a square law: half travel = −12 dB
     CHECK (t::breathGain (-1.0f) == 0.0 && t::breathGain (2.0f) == t::breathFull);
     // appended after the round 166c parameters with a neutral default: an old project keeps its sound
     const auto& info = t::info();
-    CHECK ((int) info.params.size() == t::count && t::count <= lynx::maxEffectParams);
+    CHECK ((int) info.params.size() == t::count && t::count <= yw::maxEffectParams);
     CHECK (t::breathiness > t::scaleTranspose && t::scaleTranspose == t::throatLength + 5);
     CHECK (info.params[(std::size_t) t::breathiness].defaultValue == 0.0f);
     CHECK (std::string (info.params[(std::size_t) t::breathiness].name) == "Breathiness");
@@ -73,9 +73,9 @@ TEST (lynx_tune_round190bb_breathiness_law_and_default)
 
     // the band-pass bank: third-octaves from 250 Hz, as many as fit under 0.42 fs; the tilt is +6 dB per octave around
     // 2 kHz within −18 … +12 dB
-    lynx::vocal::BreathNoise b;
+    yw::vocal::BreathNoise b;
     b.prepare (44100.0);
-    CHECK (b.bands() == lynx::vocal::BreathNoise::maxBands && std::abs (b.bandHz (0) - 250.0) < 1e-9 && std::abs (b.bandHz (9) - 2000.0) < 1e-6);
+    CHECK (b.bands() == yw::vocal::BreathNoise::maxBands && std::abs (b.bandHz (0) - 250.0) < 1e-9 && std::abs (b.bandHz (9) - 2000.0) < 1e-6);
     CHECK (std::abs (b.bandWeight (9) - 1.0) < 1e-9 && std::abs (20.0 * std::log10 (b.bandWeight (12)) - 6.0) < 1e-6);
     CHECK (std::abs (20.0 * std::log10 (b.bandWeight (0)) + 18.0) < 1e-6 && std::abs (20.0 * std::log10 (b.bandWeight (18)) - 12.0) < 1e-6);
     b.prepare (8000.0);
@@ -142,9 +142,9 @@ TEST (lynx_tune_round190bb_breathiness_law_and_default)
     CHECK (b.process (0.0f, 1.0f) == 0.0f);
 }
 
-TEST (lynx_tune_round190bb_breathiness_off_is_the_old_path)
+TEST (yw_tune_round190bb_breathiness_off_is_the_old_path)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     const double fs = 44100.0;
     const auto x = r95::vowel (fs, (int) (fs * 1.5), [] (double s) { return 190.0 + 20.0 * s; });
     auto p = r95::tuneDefaults();
@@ -153,7 +153,7 @@ TEST (lynx_tune_round190bb_breathiness_off_is_the_old_path)
     const auto plain = r95::runTune (x, fs, p, latency);
     // an instance whose Breathiness was up for the first 0.4 s and then set to 0: once the level has faded the stage is
     // skipped and the output is bit-identical to the instance that never had it (the stage never feeds the corrector)
-    auto fx = lynx::lynxtune::make();
+    auto fx = yw::ywtune::make();
     fx->prepare (fs);
     std::vector<float> l = x, r = x;
     for (int i = 0; i < (int) x.size(); i += 256)
@@ -172,9 +172,9 @@ TEST (lynx_tune_round190bb_breathiness_off_is_the_old_path)
     CHECK (fx->latencySamples() == latency); // no latency of its own
 }
 
-TEST (lynx_tune_round190bb_breath_follows_the_formants_and_the_control)
+TEST (yw_tune_round190bb_breath_follows_the_formants_and_the_control)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     const double fs = 44100.0;
     const int n = (int) (fs * 1.6), from = 30000, len = 32768;
     struct V { double f1, f2, f3; };
@@ -229,9 +229,9 @@ TEST (lynx_tune_round190bb_breath_follows_the_formants_and_the_control)
     CHECK (std::abs (tiltOf[0] - tiltOf[1]) < 8.0); // the same tilt on both vowels: the envelope is the voice's
 }
 
-TEST (lynx_tune_round190bb_breath_only_on_voiced_sounds)
+TEST (yw_tune_round190bb_breath_only_on_voiced_sounds)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     const double fs = 44100.0;
     // a vowel, then a consonant (noise), then silence
     auto x = r95::vowel (fs, (int) (fs * 1.2), [] (double) { return 196.0; });
@@ -273,9 +273,9 @@ TEST (lynx_tune_round190bb_breath_only_on_voiced_sounds)
     CHECK (std::all_of (z.begin(), z.end(), [] (float v) { return v == 0.0f; }));
 }
 
-TEST (lynx_tune_round190bb_breath_is_stable_and_mono_compatible)
+TEST (yw_tune_round190bb_breath_is_stable_and_mono_compatible)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     // every sample rate, extreme settings with it, a huge and a non-finite input: finite output, bounded
     for (const double fs : { 8000.0, 44100.0, 96000.0, 192000.0 })
     {
@@ -309,7 +309,7 @@ TEST (lynx_tune_round190bb_breath_is_stable_and_mono_compatible)
     auto render = [&] (float breath, std::vector<float>& l, std::vector<float>& r) {
         auto q = p;
         q[t::breathiness] = breath;
-        auto fx = lynx::lynxtune::make();
+        auto fx = yw::ywtune::make();
         fx->prepare (fs);
         l = x;
         r = x;

@@ -5,7 +5,7 @@
 #include <cctype>
 #include <sstream>
 
-namespace lynx::browserview
+namespace yw::browserview
 {
 namespace
 {
@@ -29,7 +29,7 @@ bool isAudioExt (const std::string& ext) { return among (ext, { "wav", "flac", "
 // (and other samplers' instruments, opened as DirectWave channels: core/SamplerImport.h, round 190ii)
 bool isFontExt (const std::string& ext) { return among (ext, { "sf2", "sf3", "dwp", "dwb", "gig" }); }
 bool isPresetExt (const std::string& ext) { return among (ext, { "fst" }); }
-bool isProjectExt (const std::string& ext) { return among (ext, { "lynx", "flp", "mid", "midi" }); }
+bool isProjectExt (const std::string& ext) { return among (ext, { "yw", "flp", "mid", "midi" }); }
 } // namespace
 
 const char* contentFilterId (ContentFilter filter)
@@ -184,4 +184,4 @@ bool migrateMergedRoot (View& view, const std::string& rootId, const std::vector
         }
     return changed;
 }
-} // namespace lynx::browserview
+} // namespace yw::browserview

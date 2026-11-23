@@ -1,9 +1,9 @@
 #pragma once
 
-// Split at silence (round 190hp, slice B18 of the 0.1.28 pain report, complaint #32: "strip silence"). LYNX's own: FL
+// Split at silence (round 190hp, slice B18 of the 0.1.28 pain report, complaint #32: "strip silence"). YW's own: FL
 // strips silence inside Edison only (Tools › Trim side noise / Trim all noise & slice up, which edit the sample itself;
-// LYNX's audio editor has both, FL-exact) and the reference DAW has no such command. The Playlist's audio clip menu,
-// LYNX extras › "Split at silence...", cuts the clip where its audio stays below a threshold and leaves those quiet
+// YW's audio editor has both, FL-exact) and the reference DAW has no such command. The Playlist's audio clip menu,
+// YW extras › "Split at silence...", cuts the clip where its audio stays below a threshold and leaves those quiet
 // parts out: the clips that remain play the same audio at the same time; the file is not changed. One undo step.
 //   - threshold: the peak level (dB) below which the audio counts as quiet, measured in 5 ms windows (as Edison's tools);
 //   - minimum silence: a quieter stretch shorter than this stays inside the clip (pauses between words);
@@ -18,7 +18,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::stripsilence
+namespace yw::stripsilence
 {
 struct Options
 {
@@ -129,4 +129,4 @@ inline std::vector<int> splitClip (std::vector<Clip>& clips, int index, std::vec
     }
     return made;
 }
-} // namespace lynx::stripsilence
+} // namespace yw::stripsilence

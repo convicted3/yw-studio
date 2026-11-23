@@ -10,14 +10,14 @@
 // - Decay: towards EG S at EG D's rate, from the moment the level reaches 1.
 // - Release: towards 0 at EG R's rate — at the note's end on a lane that holds its notes, and Length × the sample's
 //   frames after the start when Length is not 0. A hit of a one-shot lane has no release at all.
-// FLM's rates are per output sample whatever the device's rate. LYNX takes them at 44.1 kHz (FL's default, the rate
+// FLM's rates are per output sample whatever the device's rate. YW takes them at 44.1 kHz (FL's default, the rate
 // the factory content was made at) and converts them, so a render does not change with the output rate: an
 // assumption, the only part of this page that is not read from the code.
 
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::flmpad
+namespace yw::flmpad
 {
 constexpr double referenceRate = 44100.0;
 
@@ -74,4 +74,4 @@ inline double decayTimeConstant (float v) noexcept
     const auto r = decayRate (v);
     return r >= 1.0f ? 0.0 : -1.0 / std::log (1.0 - (double) r) / referenceRate;
 }
-} // namespace lynx::flmpad
+} // namespace yw::flmpad

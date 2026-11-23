@@ -5,7 +5,7 @@
 namespace fltrans165
 {
 // FL's state 0xD5: version 3, the 42 raw controls, transient / sustain send tracks, sidechain input, editor value + bytes
-std::vector<std::uint8_t> flState (const std::array<int, lynx::transmitter::count>& raw, int transientSend, int sustainSend, int sidechain)
+std::vector<std::uint8_t> flState (const std::array<int, yw::transmitter::count>& raw, int transientSend, int sustainSend, int sidechain)
 {
     std::vector<std::uint8_t> out;
     auto put = [&out] (std::int32_t v) {
@@ -24,12 +24,12 @@ std::vector<std::uint8_t> flState (const std::array<int, lynx::transmitter::coun
     return out;
 }
 
-std::array<int, lynx::transmitter::count> defaultRaw()
+std::array<int, yw::transmitter::count> defaultRaw()
 {
-    std::array<int, lynx::transmitter::count> raw {};
-    const auto d = lynx::transmitter::defaults();
-    for (int k = 0; k < lynx::transmitter::count; ++k)
-        raw[(std::size_t) k] = lynx::transmitter::rawFromParam (k, d[(std::size_t) k]);
+    std::array<int, yw::transmitter::count> raw {};
+    const auto d = yw::transmitter::defaults();
+    for (int k = 0; k < yw::transmitter::count; ++k)
+        raw[(std::size_t) k] = yw::transmitter::rawFromParam (k, d[(std::size_t) k]);
     return raw;
 }
 
@@ -56,13 +56,13 @@ void input (std::vector<float>& l, std::vector<float>& r)
 }
 
 // the effect as a mixer slot runs it: blocks of 512 at 120 BPM
-void render (const std::array<int, lynx::transmitter::count>& raw, std::vector<float>& l, std::vector<float>& r)
+void render (const std::array<int, yw::transmitter::count>& raw, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::transmitter);
+    auto fx = yw::makeEffect (yw::EffectKind::transmitter);
     fx->prepare (44100.0);
-    lynx::EffectParams p {};
-    for (int k = 0; k < lynx::transmitter::count; ++k)
-        p[(std::size_t) k] = lynx::transmitter::paramFromRaw (k, raw[(std::size_t) k]);
+    yw::EffectParams p {};
+    for (int k = 0; k < yw::transmitter::count; ++k)
+        p[(std::size_t) k] = yw::transmitter::paramFromRaw (k, raw[(std::size_t) k]);
     input (l, r);
     for (int s = 0; s < 44100; s += 512)
         fx->process (l.data() + s, r.data() + s, std::min (512, 44100 - s), p, 120.0);
@@ -79,7 +79,7 @@ double rms (const std::vector<float>& x)
 
 TEST (fltrans165_controls_and_state)
 {
-    using namespace lynx::transmitter;
+    using namespace yw::transmitter;
     // FL's ranges and mappings (the front end's forward map, REA §1)
     CHECK (controlRange (sensitivity).hi == 10000 && controlRange (mode).hi == 2 && controlRange (sustainEffect).hi == 5
            && controlRange (lookahead).hi == 1);
@@ -110,23 +110,23 @@ TEST (fltrans165_controls_and_state)
     CHECK (! parse (wrong) && ! parse ({ 3, 0, 0, 0 }));
 
     // the import's slot
-    const auto fx = lynx::effectFromFl ("Transmitter", blob, 120.0);
-    CHECK (fx && fx->kind == lynx::EffectKind::transmitter);
+    const auto fx = yw::effectFromFl ("Transmitter", blob, 120.0);
+    CHECK (fx && fx->kind == yw::EffectKind::transmitter);
     if (fx)
         for (int k = 0; k < count; ++k)
             CHECK (rawFromParam (k, fx->params[(std::size_t) k]) == custom[(std::size_t) k]);
-    CHECK (lynx::effectForFlPlugin ("Transmitter") == lynx::EffectKind::transmitter);
-    CHECK (lynx::flPluginsForEffect (lynx::EffectKind::transmitter) == std::vector<std::string> { "Transmitter" });
-    CHECK (std::string (lynx::effectInfo (lynx::EffectKind::transmitter).name) == "Transmitter"
-           && lynx::effectInfo (lynx::EffectKind::transmitter).params.size() == (std::size_t) count);
+    CHECK (yw::effectForFlPlugin ("Transmitter") == yw::EffectKind::transmitter);
+    CHECK (yw::flPluginsForEffect (yw::EffectKind::transmitter) == std::vector<std::string> { "Transmitter" });
+    CHECK (std::string (yw::effectInfo (yw::EffectKind::transmitter).name) == "Transmitter"
+           && yw::effectInfo (yw::EffectKind::transmitter).params.size() == (std::size_t) count);
 }
 
 TEST (fltrans165_matches_fl_engine)
 {
     // FL's engine (Shared\ildsp_x64.dll, Transmitter_CreateInstance) run by the EXEC harness on the same input, blocks of
-    // 512 at 44.1 kHz, 120 BPM: RMS per channel and samples (REA §4). LYNX's engine nulls with FL's at −126 dB (Saturation:
+    // 512 at 44.1 kHz, 120 BPM: RMS per channel and samples (REA §4). YW's engine nulls with FL's at −126 dB (Saturation:
     // tanh) / −141 dB (Bounce: the tap sum's order) / bit-exact (Delay, Diffusion, the split, levels, tilt).
-    using namespace lynx::transmitter;
+    using namespace yw::transmitter;
     struct Golden
     {
         const char* name;
@@ -170,11 +170,11 @@ TEST (fltrans165_matches_fl_engine)
 
 TEST (fltrans165_latency_and_sidechain)
 {
-    using namespace lynx::transmitter;
-    auto fx = lynx::makeEffect (lynx::EffectKind::transmitter);
+    using namespace yw::transmitter;
+    auto fx = yw::makeEffect (yw::EffectKind::transmitter);
     fx->prepare (44100.0);
     auto raw = fltrans165::defaultRaw();
-    lynx::EffectParams p {};
+    yw::EffectParams p {};
     auto set = [&] {
         for (int k = 0; k < count; ++k)
             p[(std::size_t) k] = paramFromRaw (k, raw[(std::size_t) k]);
@@ -194,7 +194,7 @@ TEST (fltrans165_latency_and_sidechain)
     raw[transientEffect] = off;
     raw[sustainEffect] = off;
     auto run = [&] (bool side) {
-        auto e = lynx::makeEffect (lynx::EffectKind::transmitter);
+        auto e = yw::makeEffect (yw::EffectKind::transmitter);
         e->prepare (44100.0);
         set();
         std::vector<float> a, b;
@@ -230,7 +230,7 @@ TEST (fltrans165_flp_import)
 {
     // insert 1 holds a Transmitter whose sidechain is its first input (insert 2 routes into it) and whose transient goes to
     // a send track: the slot follows the sidechain, the transient is sent to insert 5 (round 167b)
-    using namespace lynx::transmitter;
+    using namespace yw::transmitter;
     flp::Project project;
     project.tempo = 120.0;
     flp::MixerInsert one, two;
@@ -246,15 +246,15 @@ TEST (fltrans165_flp_import)
     s.state = fltrans165::flState (raw, 5, 0, 1);
     one.slots.push_back (s);
     project.mixer = { one, two };
-    lynx::FlpImportReport report;
-    lynx::FlpImportOptions options;
+    yw::FlpImportReport report;
+    yw::FlpImportOptions options;
     options.report = &report;
-    const auto song = lynx::importFlp (project, options);
+    const auto song = yw::importFlp (project, options);
     CHECK (song.mixer.size() > 2 && song.mixer[1].effects.size() == 1);
     if (song.mixer.size() < 3 || song.mixer[1].effects.empty())
         return;
     const auto& fx = song.mixer[1].effects[0];
-    CHECK (fx.kind == lynx::EffectKind::transmitter && fx.sidechain == 2 && rawFromParam (sustainEffect, fx.params[sustainEffect]) == delay);
+    CHECK (fx.kind == yw::EffectKind::transmitter && fx.sidechain == 2 && rawFromParam (sustainEffect, fx.params[sustainEffect]) == delay);
     CHECK (fx.sendTracks[0] == 5 && fx.sendTracks[1] == 0);
     CHECK (report.partialEffects.empty());
     CHECK (report.droppedEffects.count ("Transmitter") == 0);

@@ -1,12 +1,12 @@
 #pragma once
 
-// FL Studio's Emphasis (the mastering limiter of FL 2024+) as an exact LYNX effect, rebuilt in
+// FL Studio's Emphasis (the mastering limiter of FL 2024+) as an exact YW effect, rebuilt in
 // docs/analise/REA_rodada167f.md (clean-room: the plug-in's layout, formulas and behaviour in our own words; no
 // Image-Line code or data in this repository). The DSP is core/EmphasisEngine.h (the shared library's limiter);
 // this file is the front end: FL's saved state, its controls and what it sends to the engine.
 //
 // Parameters (EffectKind::flEmphasis) are FL's controls over their range, value = (raw − min) / (max − min), so FL
-// automation and the LYNX editor drive what FL's ProcessParam receives:
+// automation and the YW editor drive what FL's ProcessParam receives:
 //   [0] Bypass 0/1   [1] Delta 0/1   [2] Envelope order 1…4   [3] True peak 0/1   [4] Channel mode 0 L/R, 1 M/S
 //   [5] Mode 0…3 (Versatile / Loud / Transient / Steady)   [6] Input gain 0…10000 (0…+24 dB, linear in dB)
 //   [7] Linking 0…10000 (0…100 %)   [8] Emphasis 0…10000 (0…100 %)   [9] Ceiling 0…10000 (FL's volume curve, 10000 = 0 dB)
@@ -23,7 +23,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::emphasis
+namespace yw::emphasis
 {
 constexpr int numParams = 16;
 constexpr std::array<int, numParams> rawMin { 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -53,4 +53,4 @@ std::unique_ptr<Effect> make (const EffectParams* initial = nullptr);
 // What the front end sends to the engine for control k at raw value v (dB for input gain and ceiling, the amount
 // for linking and emphasis, the 0-based order for the envelope, the raw switch / choice otherwise)
 float engineValue (int k, int raw) noexcept;
-} // namespace lynx::emphasis
+} // namespace yw::emphasis

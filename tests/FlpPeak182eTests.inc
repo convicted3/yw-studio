@@ -4,7 +4,7 @@ TEST (flp182e_patcher_peak_controller_outputs_keep_fl_numbers)
 {
     // FL's Peak Controller names its outputs from the table {"Peak+LFO", "Peak", "LFO"} and its tick computes them in that
     // order (REA_rodada17 §5.1 [DECOMP], same DLL hash in FL 2026 today). A Patcher cable from FL output k (port
-    // 0x10000000 + k) must leave LYNX's output k, as the mixer links do. Before, 0/1/2 became 1/2/0, so issue #111's
+    // 0x10000000 + k) must leave YW's output k, as the mixer links do. Before, 0/1/2 became 1/2/0, so issue #111's
     // wires from "Peak" read the unused LFO and the driven EQ bands stayed at their minimum.
     using namespace patcher141;
     FlBlob blob;
@@ -33,15 +33,15 @@ TEST (flp182e_patcher_peak_controller_outputs_keep_fl_numbers)
     s.state = blob.finish();
     insert.slots.push_back (s);
     project.mixer.push_back (insert);
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     CHECK (song.mixer.size() > 1 && song.mixer[1].effects.size() == 1);
     if (song.mixer.size() < 2 || song.mixer[1].effects.empty())
         return;
     const auto& doc = song.mixer[1].effects[0].patcher;
-    CHECK (doc.nodes.size() == 4 && doc.nodes[3].effect.kind == lynx::EffectKind::peakController);
+    CHECK (doc.nodes.size() == 4 && doc.nodes[3].effect.kind == yw::EffectKind::peakController);
     int found = 0;
     for (const auto& w : doc.wires)
-        if (w.kind == lynx::PatchWire::Kind::control && w.from == 3)
+        if (w.kind == yw::PatchWire::Kind::control && w.from == 3)
         {
             CHECK (w.fromPort == w.to); // Balance k is node k
             ++found;

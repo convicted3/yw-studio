@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::sampleprops
+namespace yw::sampleprops
 {
 namespace
 {
@@ -166,4 +166,4 @@ std::string noteName (int note)
     note = std::clamp (note, 0, 127);
     return std::string (names[note % 12]) + std::to_string (note / 12);
 }
-} // namespace lynx::sampleprops
+} // namespace yw::sampleprops

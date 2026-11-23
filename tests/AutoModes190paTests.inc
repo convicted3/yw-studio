@@ -1,6 +1,6 @@
-// Round 190pa (research190oe P21 / P14, LYNX extras): automation write modes (core/AutomationModes.h, core/Recorder.h)
+// Round 190pa (research190oe P21 / P14, YW extras): automation write modes (core/AutomationModes.h, core/Recorder.h)
 // and range edits on chosen tracks (core/RangeEdit.h, core/QuickRender.h planRange). The engine's take with each mode,
-// the .lynx round trip, the copies for 0.1.30 / 0.1.28, Capture automation with Latch / Write and undo of the range
+// the .yw round trip, the copies for 0.1.30 / 0.1.28, Capture automation with Latch / Write and undo of the range
 // commands are checked in the app's --selftest ("automodes190pa"): they need the engine and ProjectFile.
 
 #include "core/AutomationModes.h"
@@ -11,13 +11,13 @@
 
 namespace automodes190pa
 {
-constexpr double ticksPerMs = 120.0 * lynx::ppq / 60000.0; // (120 BPM)
-constexpr std::int64_t bar = 4 * lynx::ppq;
+constexpr double ticksPerMs = 120.0 * yw::ppq / 60000.0; // (120 BPM)
+constexpr std::int64_t bar = 4 * yw::ppq;
 
 // An automation clip over 16 bars on track 0 holding a flat 0.6 for insert 1's volume
-inline lynx::Song curveSong()
+inline yw::Song curveSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -39,9 +39,9 @@ inline lynx::Song curveSong()
 
 // AudioEngine::updateAutomationRecording's take, frame by frame (33 ms), with the same core calls: the control is grabbed
 // at 1000 ms (it jumps to 0.3), moved to 0.9 by 2000 ms and let go there; the take runs from 0 to 4000 ms.
-inline lynx::Song recordTake (lynx::automodes::Mode mode)
+inline yw::Song recordTake (yw::automodes::Mode mode)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = curveSong();
     AutomationWrite w;
     w.target = s.automations[0].target;
@@ -98,12 +98,12 @@ inline lynx::Song recordTake (lynx::automodes::Mode mode)
     return s;
 }
 
-inline float at (const lynx::Song& s, double ms) { return s.automations[0].valueAt (ms * ticksPerMs); }
+inline float at (const yw::Song& s, double ms) { return s.automations[0].valueAt (ms * ticksPerMs); }
 
-inline lynx::Clip clipOn (int track, std::int64_t start, std::int64_t length, int pattern = 0)
+inline yw::Clip clipOn (int track, std::int64_t start, std::int64_t length, int pattern = 0)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = pattern;
     c.track = track;
     c.start = start;
@@ -113,9 +113,9 @@ inline lynx::Clip clipOn (int track, std::int64_t start, std::int64_t length, in
 
 // Four tracks with one 16-bar clip each; tracks 1 and 3 each own an automation lane (a ramp 0 -> 1 over 16 bars, with a
 // point on it at bar 6)
-inline lynx::Song rangeSong()
+inline yw::Song rangeSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.patterns.resize (4);
     for (int t = 0; t < 4; ++t)
@@ -133,13 +133,13 @@ inline lynx::Song rangeSong()
     return s;
 }
 
-inline std::vector<lynx::Clip> clipsOf (const lynx::Song& s, int track)
+inline std::vector<yw::Clip> clipsOf (const yw::Song& s, int track)
 {
-    std::vector<lynx::Clip> out;
+    std::vector<yw::Clip> out;
     for (const auto& c : s.playlist)
         if (c.track == track)
             out.push_back (c);
-    std::sort (out.begin(), out.end(), [] (const lynx::Clip& a, const lynx::Clip& b) { return a.start < b.start; });
+    std::sort (out.begin(), out.end(), [] (const yw::Clip& a, const yw::Clip& b) { return a.start < b.start; });
     return out;
 }
 } // namespace automodes190pa
@@ -147,7 +147,7 @@ inline std::vector<lynx::Clip> clipsOf (const lynx::Song& s, int track)
 // The modes' rules: Read is FL's gesture (held, or moved within 350 ms), Latch / Write keep writing, ids round trip
 TEST (automodes190pa_rules)
 {
-    using namespace lynx::automodes;
+    using namespace yw::automodes;
     CHECK (stillWriting (Mode::read, true, 5000.0) && stillWriting (Mode::read, false, 349.0) && ! stillWriting (Mode::read, false, 351.0));
     CHECK (stillWriting (Mode::touch, false, 200.0) && ! stillWriting (Mode::touch, false, 400.0));
     CHECK (stillWriting (Mode::latch, false, 1.0e9) && stillWriting (Mode::write, false, 1.0e9));
@@ -156,19 +156,19 @@ TEST (automodes190pa_rules)
     for (auto m : { Mode::read, Mode::touch, Mode::latch, Mode::write })
         CHECK (fromId (idOf (m)) == m && fromInt ((int) m) == m);
     CHECK (fromId ("bogus") == Mode::read && fromInt (7) == Mode::read && fromInt (-1) == Mode::read);
-    CHECK (returnTicks (120.0, lynx::ppq) == 480); // (250 ms at 120 BPM: an eighth note)
-    CHECK (returnTicks (0.0, lynx::ppq) == 480 && returnTicks (120.0, lynx::ppq, 0.0) == 1);
+    CHECK (returnTicks (120.0, yw::ppq) == 480); // (250 ms at 120 BPM: an eighth note)
+    CHECK (returnTicks (0.0, yw::ppq) == 480 && returnTicks (120.0, yw::ppq, 0.0) == 1);
 
     // one frame: Write adds the take's start once, before the first point
-    std::vector<lynx::RecordedValue> pending;
+    std::vector<yw::RecordedValue> pending;
     bool started = false;
-    CHECK (lynx::automationTakeFrame ((int) Mode::write, true, 0.0, 1000.0, 0.4f, 100.0, started, pending));
+    CHECK (yw::automationTakeFrame ((int) Mode::write, true, 0.0, 1000.0, 0.4f, 100.0, started, pending));
     CHECK (pending.size() == 2 && pending[0].tick == 100.0 && pending[0].value == 0.4f && pending[1].tick == 1000.0 && started);
-    CHECK (lynx::automationTakeFrame ((int) Mode::write, false, 9999.0, 1100.0, 0.5f, 100.0, started, pending) && pending.size() == 3);
+    CHECK (yw::automationTakeFrame ((int) Mode::write, false, 9999.0, 1100.0, 0.5f, 100.0, started, pending) && pending.size() == 3);
     pending.clear();
     started = false;
-    CHECK (lynx::automationTakeFrame ((int) Mode::read, true, 0.0, 1000.0, 0.4f, 100.0, started, pending) && pending.size() == 1);
-    CHECK (! lynx::automationTakeFrame ((int) Mode::read, false, 400.0, 1100.0, 0.4f, 100.0, started, pending) && pending.size() == 1);
+    CHECK (yw::automationTakeFrame ((int) Mode::read, true, 0.0, 1000.0, 0.4f, 100.0, started, pending) && pending.size() == 1);
+    CHECK (! yw::automationTakeFrame ((int) Mode::read, false, 400.0, 1100.0, 0.4f, 100.0, started, pending) && pending.size() == 1);
 }
 
 // The brief's acceptance: a scripted gesture per mode, checked on the curve it leaves (an automation clip; the lanes take
@@ -177,7 +177,7 @@ TEST (automodes190pa_rules)
 TEST (automodes190pa_gestures_per_mode)
 {
     using namespace automodes190pa;
-    using lynx::automodes::Mode;
+    using yw::automodes::Mode;
     const auto read = recordTake (Mode::read);
     const auto touch = recordTake (Mode::touch);
     const auto latch = recordTake (Mode::latch);
@@ -222,7 +222,7 @@ TEST (automodes190pa_gestures_per_mode)
 // Touch's glide: nothing to return to on an automation the gesture made itself; a held old curve is returned to
 TEST (automodes190pa_glide_back)
 {
-    using namespace lynx;
+    using namespace yw;
     Automation fresh;
     AutomationWrite w;
     writeRecordedStretch (fresh, { { 100, 0.2f, 0.0f }, { 200, 0.8f, 0.0f } }, w);
@@ -242,7 +242,7 @@ TEST (automodes190pa_glide_back)
 // Capture automation's play passes (Latch / Write extend a captured gesture to them)
 TEST (automodes190pa_capture_passes)
 {
-    using namespace lynx::captureauto;
+    using namespace yw::captureauto;
     Buffer b;
     CHECK (b.currentPass() == 0 && b.pass (1) == nullptr);
     b.notePlaying (100.0);
@@ -268,7 +268,7 @@ TEST (automodes190pa_capture_passes)
 // tracks 1 and 4 (0 and 3) are unchanged; the lane of track 2 is cleared inside, track 4's lane is not
 TEST (rangeedit190pa_delete_on_chosen_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace automodes190pa;
     auto s = rangeSong();
     const auto before = s;
@@ -302,7 +302,7 @@ TEST (rangeedit190pa_delete_on_chosen_tracks)
 // Copy / cut / paste / duplicate keep to the range's tracks; a lane lands only in its own track
 TEST (rangeedit190pa_copy_paste_duplicate)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace automodes190pa;
     auto s = rangeSong();
     const auto r = rangeedit::fromCorners (4 * bar, 8 * bar, 1, 2);
@@ -345,7 +345,7 @@ TEST (rangeedit190pa_copy_paste_duplicate)
 // Split at the edges, move (in time keeps lanes along; to other tracks the lanes stay), one lane only, the render plan
 TEST (rangeedit190pa_split_move_lane_render)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace automodes190pa;
     auto s = rangeSong();
     const auto r = rangeedit::fromCorners (4 * bar, 8 * bar, 1, 2);

@@ -8,7 +8,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -426,4 +426,4 @@ std::unique_ptr<juce::Component> makePluginMonitorPanel (AudioEngine& engine)
     panel->fillWithSamples();
     return panel;
 }
-} // namespace lynx
+} // namespace yw

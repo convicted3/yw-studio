@@ -1,4 +1,4 @@
-// Round trans189d (issue #94): Strike Shaper, LYNX's level-independent transient designer (core/StrikeShaper.h).
+// Round trans189d (issue #94): Strike Shaper, YW's level-independent transient designer (core/StrikeShaper.h).
 // The role's public description: two envelopes compared by their difference, no threshold, attack ±15 dB, sustain
 // ±24 dB. Checked here: the gains on a drum hit at four levels 60 dB apart (the same within 0.2 dB), the neutral
 // setting bit for bit, steady tones untouched, Guard's ceiling, Mix, the laws' texts, no latency, the substitute.
@@ -24,9 +24,9 @@ inline std::vector<float> hits (double level, double bed, int count = 3)
     }
     return x;
 }
-inline std::vector<float> run (const std::vector<float>& in, const lynx::EffectParams& p, int* latency = nullptr)
+inline std::vector<float> run (const std::vector<float>& in, const yw::EffectParams& p, int* latency = nullptr)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::strikeShaper);
+    auto fx = yw::makeEffect (yw::EffectKind::strikeShaper);
     fx->prepare (48000.0);
     auto l = in, r = in;
     for (std::size_t at = 0; at < l.size(); at += 480)
@@ -49,7 +49,7 @@ inline double gainDb (const std::vector<float>& in, const std::vector<float>& ou
 
 TEST (strike189d_info_neutral_and_latency)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace strike189d;
     namespace s = strike;
     const auto& info = effectInfo (EffectKind::strikeShaper);
@@ -85,7 +85,7 @@ TEST (strike189d_info_neutral_and_latency)
 
 TEST (strike189d_attack_and_sustain_on_drum_hits_at_any_level)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace strike189d;
     namespace s = strike;
     const auto base = makeEffectSlot (EffectKind::strikeShaper).params;
@@ -120,7 +120,7 @@ TEST (strike189d_attack_and_sustain_on_drum_hits_at_any_level)
 
 TEST (strike189d_steady_tones_guard_and_extremes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace strike189d;
     namespace s = strike;
     auto p = makeEffectSlot (EffectKind::strikeShaper).params;
@@ -164,7 +164,7 @@ TEST (strike189d_steady_tones_guard_and_extremes)
 
 TEST (strike189d_stands_in_for_the_transient_designer)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto* name : { "SPL Transient Designer", "SPL Transient Designer Plus", "UAD SPL Transient Designer" })
     {
         PluginIdentity id;

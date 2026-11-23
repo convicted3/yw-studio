@@ -1,4 +1,4 @@
-// Runs LYNX's Vocodex engine (core/Vocodex.h) on raw signals, for comparison with the REA round-35 reference model.
+// Runs YW's Vocodex engine (core/Vocodex.h) on raw signals, for comparison with the REA round-35 reference model.
 // Usage: vocodexrender <state.bin> <mod.f32> <car.f32|-> <own.f32|-> <out.f32> <fs> <block> [modk=1] [cark=2] [draft=0|1]
 // mod/car/own: interleaved stereo float32. `mod` arrives on side input `modk`, `car` on `cark`, `own` is the track's
 // own input; the state's ModIn/CarIn select among them (0 = own input, CarIn < 0 = internal synth → silence).
@@ -34,7 +34,7 @@ int main (int argc, char** argv)
     }
     std::ifstream stateFile (argv[1], std::ios::binary);
     const std::vector<std::uint8_t> raw ((std::istreambuf_iterator<char> (stateFile)), std::istreambuf_iterator<char>());
-    const auto state = lynx::vocodex::parseState (raw);
+    const auto state = yw::vocodex::parseState (raw);
     if (! state)
     {
         std::fprintf (stderr, "not a Vocodex state\n");
@@ -60,7 +60,7 @@ int main (int argc, char** argv)
         }
     }
 
-    lynx::vocodex::Engine engine;
+    yw::vocodex::Engine engine;
     engine.prepare (*state, fs, block, draft >= 0 ? draft != 0 : state->draft());
     const auto frames = (long) mod.size() / 2;
     std::vector<float> out ((std::size_t) frames * 2), zero ((std::size_t) block * 2), lm (zero.size()), lc (zero.size());

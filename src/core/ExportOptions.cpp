@@ -22,7 +22,7 @@
 #include "core/SessionIds.h"
 #include "core/StandIns.h"
 
-namespace lynx::exportopts
+namespace yw::exportopts
 {
 const std::vector<int>& mp3Bitrates()
 {
@@ -330,7 +330,7 @@ Options withFlLastExported (Options o, std::uint32_t mask)
     for (const auto f : allFormats)
         if (flFormatBit (f) != 0 && (mask & flFormatBit (f)) != 0)
             chosen.push_back (f);
-    if (chosen.empty()) // only a format LYNX writes elsewhere (MIDI): WAV
+    if (chosen.empty()) // only a format YW writes elsewhere (MIDI): WAV
         chosen.push_back (Format::wav);
     o.format = chosen.front();
     o.moreFormats = 0;
@@ -364,7 +364,7 @@ std::vector<Note> midiExportNotes (const Song& original)
                 || c.pattern >= (int) song.patterns.size())
                 continue;
         {
-            // the pattern repeats along a clip longer than it (LYNX extra stretchedClipsLoop, issue #25)
+            // the pattern repeats along a clip longer than it (YW extra stretchedClipsLoop, issue #25)
             const auto& pattern = song.patterns[(std::size_t) c.pattern];
             const auto period = std::max<std::int64_t> (1, pattern.effectiveLength (song.meter()));
             const auto repeats = stretchedClipsLoop() && c.offset + c.length > period;
@@ -1537,4 +1537,4 @@ bool appendWavExtras (const std::string& path, const WavExtras& x, double sample
         return false;
     return appendWavChunks (path, wavExtraChunks (x, sampleRate, frames));
 }
-} // namespace lynx::exportopts
+} // namespace yw::exportopts

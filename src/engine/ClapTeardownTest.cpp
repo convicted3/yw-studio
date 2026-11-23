@@ -11,7 +11,7 @@
 #include "engine/ClapFormat.h"
 #include "engine/PluginHost.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -101,9 +101,9 @@ struct TeardownTest : std::enable_shared_from_this<TeardownTest>
         counters = juce::File (reportPath).getSiblingFile (juce::File (reportPath).getFileNameWithoutExtension() + "-plugin.txt");
         counters.deleteFile();
        #if JUCE_WINDOWS
-        _putenv_s ("LYNX_TEST_RESTART_REPORT", counters.getFullPathName().toRawUTF8());
+        _putenv_s ("YW_TEST_RESTART_REPORT", counters.getFullPathName().toRawUTF8());
        #else
-        setenv ("LYNX_TEST_RESTART_REPORT", counters.getFullPathName().toRawUTF8(), 1);
+        setenv ("YW_TEST_RESTART_REPORT", counters.getFullPathName().toRawUTF8(), 1);
        #endif
         runRound();
     }
@@ -237,4 +237,4 @@ void runClapTeardownTest (const juce::String& pluginPath, const juce::String& re
     test->done = std::move (done);
     juce::Timer::callAfterDelay (10, [test] { test->start(); });
 }
-} // namespace lynx
+} // namespace yw

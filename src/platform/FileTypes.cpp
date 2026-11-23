@@ -10,13 +10,13 @@
  #include <shellapi.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
 #if JUCE_LINUX || JUCE_BSD
-constexpr const char* entryName = "com.lynx_share.LYNX.desktop"; // = the AppStream id inside the AppImage
-constexpr const char* marker = "X-LYNX-AppImage=true";
+constexpr const char* entryName = "com.yw_studio.YW.desktop"; // = the AppStream id inside the AppImage
+constexpr const char* marker = "X-YW-AppImage=true";
 
 juce::File dataHome()
 {
@@ -30,7 +30,7 @@ juce::File appImageFile()
     return juce::File::isAbsolutePath (path) && juce::File (path).existsAsFile() ? juce::File (path) : juce::File();
 }
 
-// the mounted AppImage: $APPDIR, else two folders above usr/bin/LYNX
+// the mounted AppImage: $APPDIR, else two folders above usr/bin/YW
 juce::File appDir()
 {
     const auto env = juce::SystemStats::getEnvironmentVariable ("APPDIR", {});
@@ -40,8 +40,8 @@ juce::File appDir()
 }
 
 juce::File entryFile() { return dataHome().getChildFile ("applications").getChildFile (entryName); }
-juce::File mimeFile() { return dataHome().getChildFile ("mime/packages/lynx-mime.xml"); }
-juce::File iconFile() { return dataHome().getChildFile ("icons/hicolor/256x256/apps/lynx.png"); }
+juce::File mimeFile() { return dataHome().getChildFile ("mime/packages/yw-mime.xml"); }
+juce::File iconFile() { return dataHome().getChildFile ("icons/hicolor/256x256/apps/yw.png"); }
 
 // the Exec= value for one path: quoted with ", \\, ` and $ escaped, then backslashes doubled again (the desktop file's
 // own string escaping) and % doubled (field codes)
@@ -69,22 +69,22 @@ bool writeEntry (const juce::File& appImage)
 {
     auto text = appDir().getChildFile (entryName).loadFileAsString();
     if (text.isEmpty())
-        text = "[Desktop Entry]\nType=Application\nName=YW Studio\nIcon=lynx\nTerminal=false\nCategories=AudioVideo;Audio;Midi;Music;Sequencer;\n"
-               "MimeType=application/x-lynx-project;\n";
+        text = "[Desktop Entry]\nType=Application\nName=YW Studio\nIcon=yw\nTerminal=false\nCategories=AudioVideo;Audio;Midi;Music;Sequencer;\n"
+               "MimeType=application/x-yw-project;\n";
     juce::StringArray lines;
     lines.addLines (text);
     lines.removeEmptyStrings();
     for (int i = lines.size(); --i >= 0;)
-        if (lines[i].startsWith ("Exec=") || lines[i].startsWith ("TryExec=") || lines[i].startsWith ("X-LYNX-"))
+        if (lines[i].startsWith ("Exec=") || lines[i].startsWith ("TryExec=") || lines[i].startsWith ("X-YW-"))
             lines.remove (i);
     lines.insert (1, "Exec=" + quoted (appImage.getFullPathName()) + " %F");
     lines.insert (2, "TryExec=" + appImage.getFullPathName());
     lines.add (marker);
 
     const auto ok = entryFile().getParentDirectory().createDirectory() && entryFile().replaceWithText (lines.joinIntoString ("\n") + "\n");
-    if (const auto icon = appDir().getChildFile ("lynx.png"); icon.existsAsFile() && iconFile().getParentDirectory().createDirectory())
+    if (const auto icon = appDir().getChildFile ("yw.png"); icon.existsAsFile() && iconFile().getParentDirectory().createDirectory())
         icon.copyFileTo (iconFile());
-    if (const auto mime = appDir().getChildFile ("usr/share/mime/packages/lynx-mime.xml"); mime.existsAsFile() && mimeFile().getParentDirectory().createDirectory())
+    if (const auto mime = appDir().getChildFile ("usr/share/mime/packages/yw-mime.xml"); mime.existsAsFile() && mimeFile().getParentDirectory().createDirectory())
         mime.copyFileTo (mimeFile());
     refreshDesktopDatabases();
     return ok;
@@ -119,8 +119,8 @@ bool setAppImageMenuEntry (bool on)
         return true;
     entryFile().deleteFile();
     mimeFile().deleteFile();
-    // the icon stays when the .tar.gz's install.sh put LYNX in the menu too (it uses the same icon file)
-    if (! dataHome().getChildFile ("applications/lynx.desktop").existsAsFile())
+    // the icon stays when the .tar.gz's install.sh put YW in the menu too (it uses the same icon file)
+    if (! dataHome().getChildFile ("applications/yw.desktop").existsAsFile())
         iconFile().deleteFile();
     refreshDesktopDatabases();
     return true;
@@ -151,18 +151,18 @@ void registerFileTypes()
     const juce::String classes = "HKEY_CURRENT_USER\\Software\\Classes\\";
     const juce::String progId = "YW Studio.Project";
     const auto command = "\"" + exe + "\" \"%1\"";
-    const auto icon = "\"" + exe + "\",-2"; // resource id 2 in resources/LYNX.rc: the project-file icon
+    const auto icon = "\"" + exe + "\",-2"; // resource id 2 in resources/YW.rc: the project-file icon
 
-    if (WindowsRegistry::getValue (classes + ".lynx\\") == progId && WindowsRegistry::getValue (classes + ".lynxpack\\") == progId
+    if (WindowsRegistry::getValue (classes + ".yw\\") == progId && WindowsRegistry::getValue (classes + ".ywpack\\") == progId
         && WindowsRegistry::getValue (classes + progId + "\\shell\\open\\command\\") == command
         && WindowsRegistry::getValue (classes + progId + "\\DefaultIcon\\") == icon)
         return;
 
-    WindowsRegistry::setValue (classes + ".lynx\\", progId);
-    WindowsRegistry::setValue (classes + ".lynx\\Content Type", juce::String ("application/x-lynx-project"));
+    WindowsRegistry::setValue (classes + ".yw\\", progId);
+    WindowsRegistry::setValue (classes + ".yw\\Content Type", juce::String ("application/x-yw-project"));
     // Online Sessions' packages (round 168a): a project a friend sent, or a part sent back
-    WindowsRegistry::setValue (classes + ".lynxpack\\", progId);
-    WindowsRegistry::setValue (classes + ".lynxpack\\Content Type", juce::String ("application/x-lynx-package"));
+    WindowsRegistry::setValue (classes + ".ywpack\\", progId);
+    WindowsRegistry::setValue (classes + ".ywpack\\Content Type", juce::String ("application/x-yw-package"));
     WindowsRegistry::setValue (classes + progId + "\\", juce::String ("YW Studio Project"));
     WindowsRegistry::setValue (classes + progId + "\\DefaultIcon\\", icon);
     WindowsRegistry::setValue (classes + progId + "\\shell\\open\\command\\", command);
@@ -192,4 +192,4 @@ bool showFileProperties (const juce::File& file)
     return false;
    #endif
 }
-} // namespace lynx
+} // namespace yw

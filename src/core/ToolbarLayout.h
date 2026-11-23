@@ -3,7 +3,7 @@
 // The user's main-toolbar layout (no JUCE): which panel groups are shown and in which order, the icon size
 // and the global UI scale. Saved as one line of text in the UI options. Like FL Studio's toolbar editing
 // (docs/WORKFLOW_FL.md section 5.1), groups can be hidden and reordered; the menu with the hint bar under it
-// always comes first and cannot be hidden. LYNX keeps it simple: no free spacers or presets, but a
+// always comes first and cannot be hidden. YW keeps it simple: no free spacers or presets, but a
 // right-click menu on the toolbar and a "Customize toolbar" dialog.
 
 #include <algorithm>
@@ -19,7 +19,7 @@
 #define TR_NOOP(text) text // marks the names for translation (ui/I18n.h defines the same)
 #endif
 
-namespace lynx::toolbarlayout
+namespace yw::toolbarlayout
 {
 enum class Group
 {
@@ -33,7 +33,7 @@ enum class Group
     output,    // output scope and peak meter
     chord,     // FL's Chord detection panel: the chord being played (round 181b)
     multilink, // FL's Multilink controllers switch (MultiLinkBtn; round 177b-4): hidden by default, as in FL
-    key,       // the project key button (round 184a S11; LYNX's own): hidden by default; Simple and Clip-launch show it
+    key,       // the project key button (round 184a S11; YW's own): hidden by default; Simple and Clip-launch show it
     link,      // Ableton Link's toggle and peer count (round 190gl): the reference DAW shows it first in its control bar
                // ("Show Link Toggle", on there); FL has none, so the Pattern layout hides it until the user shows it
     count_
@@ -72,7 +72,7 @@ inline int groupPriority (Group g)
 inline bool rightAligned (Group g) { return g == Group::meters || g == Group::output || g == Group::chord; }
 
 // Shown on a new install: every group but the Multilink switch (FL keeps its MultiLinkBtn off the default toolbar; it
-// is shown from the toolbar's edit mode). Round 184a: the Key button is LYNX's own, so FL's Pattern workflow opens
+// is shown from the toolbar's edit mode). Round 184a: the Key button is YW's own, so FL's Pattern workflow opens
 // without it; the Simple and Clip-launch workflows show it (MainComponent::setLayoutStyle) until the user decides.
 // Round 190gl: the Ableton Link toggle likewise (the Clip-launch workflow shows it, as the reference DAW does).
 inline bool shownByDefault (Group g) { return g != Group::multilink && g != Group::key && g != Group::link; }
@@ -82,7 +82,7 @@ inline bool shownByDefault (Group g) { return g != Group::multilink && g != Grou
 inline const std::array<Group, groupCount>& defaultOrder()
 {
     // round 177b-4: FL's MultiLinkBtn sits in its bottom toolbar after the window, pattern and edit buttons (DFM:
-    // ... ParamCtrlBigBtn, DownloaderBtn, MultiLinkBtn, GopherBtn); LYNX's nearest neighbour is the window shortcuts
+    // ... ParamCtrlBigBtn, DownloaderBtn, MultiLinkBtn, GopherBtn); YW's nearest neighbour is the window shortcuts
     // round 190gl: the Link toggle comes first, left of the transport, as the reference DAW's control bar starts with it
     static constexpr std::array<Group, groupCount> order { Group::link, Group::transport, Group::master, Group::record, Group::snap, Group::windows,
                                                            Group::multilink, Group::file, Group::key, Group::chord, Group::meters, Group::output };
@@ -321,7 +321,7 @@ inline int dropBefore (const std::vector<std::pair<Group, int>>& shown, Group dr
     return groupCount;
 }
 
-// Ready-made layouts (LYNX's own, like FL's toolbar presets): which groups show, in the default order.
+// Ready-made layouts (YW's own, like FL's toolbar presets): which groups show, in the default order.
 enum class Preset
 {
     standard, // every group
@@ -404,7 +404,7 @@ inline std::array<bool, groupCount> fit (const Layout& layout, const std::array<
 // the left. The Simple layout keeps that frame with BandLab's landmarks (slice SG-A): the transport as one 40 px capsule
 // where FL's transport sits, a metronome / tempo / time signature capsule, the Key capsule, a "Last saved" status and
 // Finish at the right. The Clip-launch layout replaces it with Live's one-row control bar (slice CL-G): the menus on
-// their own 23 px row, then a 38 px band of 17 px boxes in Live's order; LYNX's own items go into a "⋯" menu.
+// their own 23 px row, then a 38 px band of 17 px boxes in Live's order; YW's own items go into a "⋯" menu.
 enum class Look
 {
     fl,     // Pattern layout: FL's two-row toolbar (the default, unchanged)
@@ -417,13 +417,13 @@ constexpr Look lookFor (layoutstyle::Style s) noexcept
     return s == layoutstyle::Style::simple ? Look::simple : s == layoutstyle::Style::clipLaunch ? Look::live : Look::fl;
 }
 
-// The id a toolbar widget keeps in its properties ("lynxToolbarLook"); the FL look sets none, so its paint is untouched.
+// The id a toolbar widget keeps in its properties ("ywToolbarLook"); the FL look sets none, so its paint is untouched.
 constexpr const char* lookId (Look l) noexcept { return l == Look::simple ? "simple" : l == Look::live ? "live" : ""; }
 
 // Which of round 190ih's transport live states (PLAN details190if R3: Play shows a green Pause while playing, Record blinks
 // while it records) a look shows. R3 found them in FL 2026 only; BandLab's and Live's captures keep their own (Play
 // lit, Record lit), so the Simple capsule and the Live bar draw "lit" from the same buttons' states. R3's code asks here
-// instead of testing for the Pattern layout (its merge note in /mnt/e/lynx-work/toolbar190iv/HANDOFF.md).
+// instead of testing for the Pattern layout (its merge note in /mnt/e/yw-work/toolbar190iv/HANDOFF.md).
 // Round 190jj (capture190ji §1d, shots/bl-d-transport-states.png): BandLab's capsule also turns Play into Pause while
 // it plays or counts in, and Back-to-start into Stop; its Record is steady (a red square in a dark-red disc while it
 // records), as Live's (§2). So Simple has the Pause and the Stop swap, and only FL blinks.
@@ -455,7 +455,7 @@ inline constexpr int timeWidth = 112, tempoWidth = 92, signatureWidth = 56, keyW
 inline constexpr int statusWidth = 172, statusHeight = 24, finishWidth = 92, moreWidth = 32;
 inline constexpr int gap = 12; // between capsules
 inline constexpr int chevronWidth = 28; // round 190ld (DS-1): BandLab's ▾ beside the metronome (B07: a 28 px segment)
-// glyphs (SG-1): play 14 x 16, stop 12 x 12, record ⌀ 14 (as icon boxes on LYNX's 24-unit grid)
+// glyphs (SG-1): play 14 x 16, stop 12 x 12, record ⌀ 14 (as icon boxes on YW's 24-unit grid)
 inline constexpr float playBox = 25.0f, stopBox = 22.0f, recordBox = 24.0f; // (round 190jj: Back-to-start in the stop box)
 
 enum class Part
@@ -512,7 +512,7 @@ enum class SaveState
 {
     fresh,    // a new project with nothing in it yet: nothing to save
     unsaved,  // changes not saved nor backed up ("Not saved yet")
-    backedUp, // changes kept by LYNX's own backup ("Backed up 2 min ago")
+    backedUp, // changes kept by YW's own backup ("Backed up 2 min ago")
     saved     // the file holds everything ("All changes saved")
 };
 constexpr SaveState saveState (bool modified, bool hasFile, bool backedUp) noexcept
@@ -604,4 +604,4 @@ inline std::array<bool, itemCount> fit (const std::array<int, itemCount>& widths
     return shown;
 }
 } // namespace livebar
-} // namespace lynx::toolbarlayout
+} // namespace yw::toolbarlayout

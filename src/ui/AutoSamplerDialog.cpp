@@ -8,7 +8,7 @@
 #include "engine/Exporter.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -242,4 +242,4 @@ void showAutoSamplerDialog (AudioEngine& engine, int channel)
         start (*engineRef, channel, lastOptions);
     }), true);
 }
-} // namespace lynx
+} // namespace yw

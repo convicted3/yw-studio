@@ -1,6 +1,6 @@
 // round 152 [EXEC] (REA_rodada152 §2): Pro-MB's Dynamic phase, a middle band with even-order sides (12 … 48 dB/oct):
 // the band is the linear shape 1 + (G − 1)·A with its edges moved out by k (ω_l / k, ω_h · k) and G = g + dG (dB).
-// Fitted per case to the trial's impulse responses (D:\lynx-work\parity152\mb, k_* / w_* renders, ktab*.json; worst
+// Fitted per case to the trial's impulse responses (D:\yw-work\parity152\mb, k_* / w_* renders, ktab*.json; worst
 // error 0.05 dB). Axes: slope {12, 24, 36, 48}, gain dB {-30, -24, -18, -12, -6, -3, -1, 0, 1, 3, 6, 12, 18, 24, 30}, r = ω_h / ω_l {1.75, 2, 2.5, 3, 4, 6, 10, 20, 40, 80}.
 constexpr int narrowSlopes = 4, narrowGains = 15, narrowRatios = 10;
 constexpr double narrowGainAxis[narrowGains] { -30.0, -24.0, -18.0, -12.0, -6.0, -3.0, -1.0, 0.0, 1.0, 3.0, 6.0, 12.0, 18.0, 24.0, 30.0 };

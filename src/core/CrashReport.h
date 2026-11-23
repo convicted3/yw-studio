@@ -1,7 +1,7 @@
 #pragma once
 
-// Crash / freeze reports (round 159). After LYNX closed unexpectedly (a crash, a freeze the user ended, a fail-fast),
-// the next start can send one report to lynx-share.com — only with the user's consent (Settings › General: Ask /
+// Crash / freeze reports (round 159). After YW closed unexpectedly (a crash, a freeze the user ended, a fail-fast),
+// the next start can send one report to yolo.su — only with the user's consent (Settings › General: Ask /
 // Always send / Never) — or open GitHub's bug form prefilled. This part is the platform-independent logic: consent,
 // anonymising, the report JSON (schema 1, website/api/crash.php checks it) and the GitHub URL. Collecting the system
 // facts, the dialog and the upload are in ui/CrashReporter.cpp.
@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::crashreport
+namespace yw::crashreport
 {
 // ---- consent -----------------------------------------------------------------------------------------------------
 enum class Consent
@@ -109,7 +109,7 @@ bool validId (std::string_view id);                 // lower-case UUID v4 (what 
 // is the process dying, not a frozen UI. Its hang file is the only stack such a crash leaves (a fail-fast skips the
 // crash handler), so the report says "crash".
 bool hangIsFatalReport (std::string_view hangText);
-// Issue #32 (round 174a): a fault inside a plugin's own editor window that LYNX caught (the editor was closed, LYNX went
+// Issue #32 (round 174a): a fault inside a plugin's own editor window that YW caught (the editor was closed, YW went
 // on) is a session step "plugin editor crashed: <name> (<what> at <module+offset>), trace in autosave\<file>". A later
 // report of the session carries that trace when it has no crash file of its own, and the start-up dialog offers that
 // plugin a separate process.
@@ -151,4 +151,4 @@ std::string githubKindOption (std::string_view kind);
 // The report's title from its kind and the last step (issue #115): "Crash: " only with a crash file; a session that
 // ended without one says so instead of naming its last step a crash.
 std::string githubTitle (std::string_view kind, const std::string& lastStep);
-} // namespace lynx::crashreport
+} // namespace yw::crashreport

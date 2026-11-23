@@ -11,7 +11,7 @@
 #include "core/AudioEdit.h"
 #include "core/FlpImport.h"
 
-namespace lynx::sfz
+namespace yw::sfz
 {
 namespace
 {
@@ -374,7 +374,7 @@ std::shared_ptr<const sf::Font> loadText (const std::string& text, const std::st
             return it->second;
         Loaded l;
         Audio audio;
-        // WAV by LYNX's own reader (it keeps the smpl loop), the other formats by the app's decoder
+        // WAV by YW's own reader (it keeps the smpl loop), the other formats by the app's decoder
         bool ok = decodeWavFile (path, audio);
         if (! ok && decode)
             ok = decode (path, audio);
@@ -612,4 +612,4 @@ std::shared_ptr<const sf::Font> loadFile (const std::string& path, std::string* 
         const_cast<sf::Font&> (*font).path = path;
     return font;
 }
-} // namespace lynx::sfz
+} // namespace yw::sfz

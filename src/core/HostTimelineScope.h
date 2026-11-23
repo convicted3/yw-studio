@@ -4,7 +4,7 @@
 // thread. A renderer that renders ahead of the song position sets its own around its units, so the hosted plugins it
 // runs see the position they are rendering; nullptr = the shared one (the song position). Defined in Instruments.cpp.
 
-namespace lynx
+namespace yw
 {
 struct HostTimeline;
 
@@ -27,4 +27,4 @@ struct ScopedHostTimeline
     const bool active;
     HostTimeline* const previous;
 };
-} // namespace lynx
+} // namespace yw

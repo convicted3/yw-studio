@@ -1,6 +1,6 @@
 // Round 190mg (sub-round ns1): Quell's NS1 law (hidden [6]) — an engine with the Waves NS1's own structure for 20 … 100 %
 // (REA of the NS1 trial's DSP for the structure, owner's permission of 2026-11-17; every number fitted on our probes and
-// renders: /mnt/e/lynx-work/waves3_190mg/ns1/HANDOFF.md, docs/analise/REA_rodada190mg_ns1.md). 0 for new instances and
+// renders: /mnt/e/yw-work/waves3_190mg/ns1/HANDOFF.md, docs/analise/REA_rodada190mg_ns1.md). 0 for new instances and
 // every project saved before (bit for bit: ns1/lab/gold.sh); the NS1 translator sets it. Amount 0 runs the NS1 engine's
 // own open all-pass pair (round 190mm, owner's decision of 11-19; was the zero law's pair).
 #include <cmath>
@@ -11,19 +11,19 @@
 
 namespace parity190mgns1
 {
-inline lynx::EffectSlot quell (double amount, bool ns1)
+inline yw::EffectSlot quell (double amount, bool ns1)
 {
-    namespace q = lynx::voicetools::quell;
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::quellDenoiser);
+    namespace q = yw::voicetools::quell;
+    auto s = yw::makeEffectSlot (yw::EffectKind::quellDenoiser);
     s.params[q::amount] = (float) amount;
     s.params[q::matched] = 1.0f;
     s.params[q::zeroLaw] = 1.0f;
     s.params[q::ns1Law] = ns1 ? 1.0f : 0.0f;
     return s;
 }
-inline void run (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void run (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     for (std::size_t off = 0; off < l.size(); off += 256)
         fx->process (l.data() + off, r.data() + off, (int) std::min<std::size_t> (256, l.size() - off), s.params, 120.0);
@@ -62,7 +62,7 @@ inline double distanceDb (const std::vector<float>& y, const std::vector<float>&
 
 TEST (parity190mg_ns1_law_is_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace q = voicetools::quell;
     CHECK (effectInfo (EffectKind::quellDenoiser).params.size() == 5 && q::ns1Law == 6); // hidden: no control, no string
     auto s = makeEffectSlot (EffectKind::quellDenoiser);
@@ -73,7 +73,7 @@ TEST (parity190mg_ns1_law_is_hidden_and_off_for_new_and_old_instances)
 
 TEST (parity190mg_ns1_is_translated_with_the_ns1_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace q = voicetools::quell;
     int n = 0;
     const auto s = parity190jh::waves ("NS1 Stereo", "NS1", parity190jh::list (253, { { 229, "35" } }), n);
@@ -83,7 +83,7 @@ TEST (parity190mg_ns1_is_translated_with_the_ns1_law)
 
 TEST (parity190mg_ns1_layout_follows_the_five_saved_states)
 {
-    namespace q = lynx::voicetools::quell;
+    namespace q = yw::voicetools::quell;
     // RealWorld 85 / 86 / 206 = 203 / 226 of NS1's states at 0 / 20 / 35 / 50 / 100 %
     const double at[] { 0.0, 0.2, 0.35, 0.5, 1.0 }, lo[] { 60, 60, 65, 70, 110 }, hi[] { 16000, 14000, 13500, 13000, 8000 };
     const double cut[] { 0, -10, -25, -40, -70 }, pos[] { 0, 0.02, 0.0325, 0.045, 0.8 };
@@ -105,7 +105,7 @@ TEST (parity190mg_ns1_layout_follows_the_five_saved_states)
 
 TEST (parity190mm_ns1_amount_zero_is_the_ns1_engines_open_pair)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const double sr : { 44100.0, 48000.0, 96000.0 })
     {
         std::vector<float> x ((std::size_t) sr), r ((std::size_t) sr);
@@ -124,7 +124,7 @@ TEST (parity190mm_ns1_amount_zero_is_the_ns1_engines_open_pair)
 
 TEST (parity190mg_ns1_takes_steady_noise_down_and_lets_a_tone_through)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const double sr : { 44100.0, 48000.0, 96000.0 })
     {
         const auto n = (std::size_t) (8.0 * sr);
@@ -148,7 +148,7 @@ TEST (parity190mg_ns1_takes_steady_noise_down_and_lets_a_tone_through)
 
 TEST (parity190mg_ns1_differs_from_round_124_above_zero)
 {
-    using namespace lynx;
+    using namespace yw;
     const double sr = 48000.0;
     std::vector<float> x (48000), r (48000);
     parity190mgns1::signal (x, r, sr, 0.01, 0.2, 0.3);

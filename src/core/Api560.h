@@ -1,21 +1,21 @@
 #pragma once
-// Round 190mt: LYNX's model of a ten-band graphic equaliser (the Waves API-560 stand-in on Facet EQ's hidden API-560 law;
+// Round 190mt: YW's model of a ten-band graphic equaliser (the Waves API-560 stand-in on Facet EQ's hidden API-560 law;
 // docs/analise/REA_rodada190mt.md §4). Structure from REA (the reference's DSP read for its structure only): the input
 // is zero-stuffed to about 192 kHz, two groups of five bands run as a graphic-EQ network — each band a second-order
 // resonator R_k fed by the group's node through one sample of delay, its slider a potentiometer p = 0.5 − g / B that
 // sends (1 − p) R_k forward and p R_k back, H = (1 + Σ (1 − p_k) z⁻¹ R_k) / (1 + Σ p_k z⁻¹ R_k), the resonator itself
 // loaded by the slider (R_k = a D_k / (N_k + p (1 − p) C a D_k)) — then a linear-phase low pass decimates back; the
-// whole path is 65 samples late at every rate and plain delay with every slider at 0. Every constant below is LYNX's
+// whole path is 65 samples late at every rate and plain delay with every slider at 0. Every constant below is YW's
 // own fit on our demo-mode impulse responses (eq/lab/g560c.py, gen560.py; −60 … −105 dB per probe); the low pass is
-// LYNX's own Kaiser design. Header-only; FacetEq.cpp owns the one instance per Facet.
+// YW's own Kaiser design. Header-only; FacetEq.cpp owns the one instance per Facet.
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <vector>
 
-#include "core/Api560Law.inc" // api560Group[2][5][6], api560Pot[2], api560Load[2] (generated, LYNX's fits)
+#include "core/Api560Law.inc" // api560Group[2][5][6], api560Pot[2], api560Load[2] (generated, YW's fits)
 
-namespace lynx::api560
+namespace yw::api560
 {
 constexpr int latency = 65;   // samples at every rate (the reference's)
 constexpr int groups = 2, perGroup = 5;
@@ -208,4 +208,4 @@ private:
     V2 lfMem[groups][2] {};
     bool designed = false, flat = true;
 };
-} // namespace lynx::api560
+} // namespace yw::api560

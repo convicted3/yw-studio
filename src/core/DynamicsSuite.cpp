@@ -31,7 +31,7 @@
 // Every constant that shapes a "style" was fitted by us to the black-box measurements (MEASURE_fabfilter.md); the
 // fitted values and their residuals are in REA_rodada108.md.
 
-namespace lynx::dyn
+namespace yw::dyn
 {
 namespace
 {
@@ -340,9 +340,9 @@ const StyleDef& defOf (const EffectParams& p) noexcept
 }
 
 // ---- round 190ky: the FET law (REA_rodada190ky §2–§3) ----
-// LYNX's own model of a FET feedback limiter's structure, learnt by REA of the Waves CLA-76 DSP (clean-room: the
+// YW's own model of a FET feedback limiter's structure, learnt by REA of the Waves CLA-76 DSP (clean-room: the
 // structure only; the vendor's transfer tables and time-constant tables are not read or used — every constant below is
-// fitted on our own black-box renders, /mnt/e/lynx-work/waves190ky/lab):
+// fitted on our own black-box renders, /mnt/e/yw-work/waves190ky/lab):
 //   - FEEDBACK detection: the detector hears the gained signal (the input level × the gain applied now), full-wave;
 //   - three parallel peak followers (attack / release one-poles) summed with weights into a control level (dB);
 //   - the gain (dB) = −S1·W1·softplus((L − T1) / W1) − S2·W2·softplus((L − T2) / W2), floored at −range: a knee and
@@ -378,7 +378,7 @@ double fetLawDb (double levelDb, double t1, double w1, double s1, const FetVoice
     return std::clamp (g, -range, 0.0);
 }
 // the wet path's static tone under the FET law: a first-order low shelf and a first-order high shelf (bilinear,
-// prewarped), fitted on the third-octave balance of refcap182's CLA-76 programme against LYNX without it (−0.35 dB at
+// prewarped), fitted on the third-octave balance of refcap182's CLA-76 programme against YW without it (−0.35 dB at
 // 60 Hz, −0.12 dB at 200 Hz; the probes' low-level response: −0.37 / −0.25 dB) [EXEC: lab/tone76.py, lab/fittone.py]
 constexpr double fetLowShelfDb = -0.423, fetLowShelfHz = 131.0, fetHighShelfDb = -0.816, fetHighShelfHz = 16906.0;
 // round 190mg: the output amplifier (the hidden fetAmp parameter) on the signal s at the amplifier's reference level
@@ -422,8 +422,8 @@ struct FetTone
 };
 
 // ---- round 190kt: the console law (REA_rodada190kt §2–§3) ----
-// LYNX's own model of a console bus compressor's structure, learnt by REA of the Waves SSLComp DSP (clean-room: the
-// structure only; every constant below is fitted on our own black-box renders, /mnt/e/lynx-work/rea190kt/lab):
+// YW's own model of a console bus compressor's structure, learnt by REA of the Waves SSLComp DSP (clean-room: the
+// structure only; every constant below is fitted on our own black-box renders, /mnt/e/yw-work/rea190kt/lab):
 //   - FEEDBACK detection: the detector hears the output, the input level × the gain it is applying now, clipped at
 //     full scale, in the log domain over a small floor;
 //   - the over-threshold amount o (nats) through the loop gain K = ratio − 1 and a rational soft knee
@@ -904,7 +904,7 @@ float characterCurve (Character c, float x) noexcept
 
 namespace
 {
-// ---- round 190kw (REA_rodada190kw §1, static analysis of the reference's binary; LYNX's own code): the three "V1"
+// ---- round 190kw (REA_rodada190kw §1, static analysis of the reference's binary; YW's own code): the three "V1"
 // styles of the reference (Clean, Classic, Opto) compute an instantaneous gain reduction from the side chain's sample
 // level in dB and smooth that reduction (not the level) with a two-stage, program-dependent follower.
 //  - Times: every follower step is c = 1 − exp(−ln 10 / T), T in samples (the time to cover 90 % of a step).
@@ -1004,7 +1004,7 @@ inline double v1Coef (double samples) noexcept
 }
 
 // ---- round 190kw (REA_rodada190kw §2): the reference's V2 styles (Vocal, Mastering, Bus, Punch, Pumping) are small
-// graphs of two generic elements, rebuilt here in LYNX's own code:
+// graphs of two generic elements, rebuilt here in YW's own code:
 //  - a gain computer (quadratic knee of the knob's width, × (1 − 1 / ratio) under 100 : 1, ≤ range, ≥ 0), in dB or as
 //    a reduction share 1 − 10^(−GR / 20);
 //  - a follower: y += (x − y) · c, c = 1 − exp(−ln 10 / (T · rate)); rising uses the attack time, blended towards
@@ -1141,7 +1141,7 @@ struct Boxcar
     }
 };
 
-// ---- round 190lg (REA_rodada190lg, Versatile): Pro-C 3's default style (LYNX's Allround), rebuilt from the reference's
+// ---- round 190lg (REA_rodada190lg, Versatile): Pro-C 3's default style (YW's Allround), rebuilt from the reference's
 // own graph of generic elements: two gain computers (the usual quadratic knee, ratio and range, as the reduction share
 // 1 − 10^(−GR / 20)) on two slightly different readings of the side chain's level,
 //  - slow: 0.979 × the level + 0.0203 × the level low-passed at 204 Hz → the gain computer → the knob-timed follower
@@ -1150,7 +1150,7 @@ struct Boxcar
 //  - fast: 0.91 × the level low-passed at 6.39 kHz → the gain computer → a slew limiter (the share rises by at most
 //    1 per T3 s and falls by at most 1 per T4 s, both from the knob times);
 //  the reduction is max (slow, w · fast), w = 0.9 + 0.0398 · fast (within 0.7 … 1.06). The reference drifts two mixer
-//  gains with slow random modulators: LYNX runs their mean. T3 / T4 are LYNX's own smooth fits of the reference's
+//  gains with slow random modulators: YW runs their mean. T3 / T4 are YW's own smooth fits of the reference's
 //  piecewise-linear knob curves; T4 runs at half that fit: round 108's measured burst (attack 10 / release 200 ms: the
 //  gain back half-way after 61.6 ms) reads 59.5 ms with it (120 ms with the full fit, 28 ms without the fast path), and
 //  the full fit held the fast path up on the bank's music files (0.3 … 0.6 dB too much reduction). The attack knob's two
@@ -1182,11 +1182,11 @@ inline double versT4 (const VersLaw& v, double s) noexcept
     return v.t4A + v.t4B * s + v.t4C * s * s;
 }
 
-#ifdef LYNX_CLAB
-// lab build only: LYNX_CLAB="key=value …" overrides a law constant (fitting on the bank; never in a product build)
+#ifdef YW_CLAB
+// lab build only: YW_CLAB="key=value …" overrides a law constant (fitting on the bank; never in a product build)
 inline double clab (const char* key, double def) noexcept
 {
-    const char* e = std::getenv ("LYNX_CLAB");
+    const char* e = std::getenv ("YW_CLAB");
     if (e == nullptr)
         return def;
     const std::string t (e), k = std::string (key) + "=";
@@ -1205,7 +1205,7 @@ inline double clab (const char* key, double def) noexcept
 constexpr double clab (const char*, double def) noexcept { return def; }
 #endif
 
-// ---- round 190lp (REA_rodada190lp, crest): Pro-C 3's Smooth (a voicing in LYNX), rebuilt from the reference's own
+// ---- round 190lp (REA_rodada190lp, crest): Pro-C 3's Smooth (a voicing in YW), rebuilt from the reference's own
 // graph of generic elements (the usual gain computer: quadratic knee, ratio, range, read as the reduction share
 // 1 − 10^(−GR / 20); followers y += (x − y)(1 − e^(−ln 10 / (T · rate))) on that share):
 //  - a feed-forward stand-in for a feedback design: a first gain computer E (threshold + 0.21 dB, its ratio as the knob's
@@ -1215,8 +1215,8 @@ constexpr double clab (const char*, double def) noexcept { return def; }
 //    the release × 0.43) and C1 (attack × 9, release × 2.25);
 //  - the reduction is max (A · C0, C1), A = 1.0081 − 0.0123 · (0.610 · C0 · F0).
 // Knob laws: attack 0.25 s · a³, release 0.02 s + 2.48 s · tan (1.2 r²) / tan (1.2); the auto release's constant
-// k = K (3.6 r² + 0.1) · 0.847, K LYNX's smooth fit of the reference's curve (identity up to 1.6, then rising faster).
-// The ratio factor, the ratio easing and K are LYNX's own smooth fits of the reference's piecewise-linear curves. The
+// k = K (3.6 r² + 0.1) · 0.847, K YW's smooth fit of the reference's curve (identity up to 1.6, then rising faster).
+// The ratio factor, the ratio easing and K are YW's own smooth fits of the reference's piecewise-linear curves. The
 // reference also low-shelves E's input by 0.12 dB around 880 Hz and can drift two values randomly (off by default):
 // neither is built.
 struct SmoothLaw
@@ -1248,13 +1248,13 @@ inline double smoothERatio (const SmoothLaw& s, double ratio) noexcept
     return ratio <= s.eRatTop ? ratio : s.eRatTop + s.eRatSpan * (1.0 - std::exp (-(ratio - s.eRatTop) / s.eRatTau));
 }
 
-// ---- round 190lp (REA_rodada190lp, crest): Pro-C 3's Op-El (a voicing in LYNX), rebuilt from the reference's own graph:
+// ---- round 190lp (REA_rodada190lp, crest): Pro-C 3's Op-El (a voicing in YW), rebuilt from the reference's own graph:
 // two gain computers on the side chain's level, read as the reduction share (see SmoothLaw): D1 with the knobs' knee,
 // ratio and range, D2 with the knob's ratio but a fixed 30 dB knee and 60 dB range. Each share is squared and followed:
 // D1's by A (attack 0.998 × the knob + 0.5 ms, release 0.596 × + 10 ms) and B (9.99 × + 2 ms, 1.788 × + 30 ms), D2's by
 // C (149.9 × + 15 ms, 4.768 × + 80 ms); the reduction share is √(0.8 A + 0.15 B + 0.05 C) — a fast, a slower and a very
 // slow memory, summed in power, as an opto cell. Knob laws: attack 0.25 s · a³, release 2.5 s · tan (1.2 r²) / tan (1.2).
-// D1 reads the side chain through the reference's wide high shelf (−11 dB around 26.7 kHz, Q 0.245): LYNX runs its own
+// D1 reads the side chain through the reference's wide high shelf (−11 dB around 26.7 kHz, Q 0.245): YW runs its own
 // second-order shelf (−11 dB, Q 0.245) at 26.7 kHz or 0.4167 × the rate, whichever is lower (20 kHz at 48 kHz: the
 // placement that matched the reference's 8 kHz stairs; it also takes the sampling dips off a high tone's level). The
 // reference can drift its threshold randomly (off by default): not built.
@@ -1284,9 +1284,9 @@ inline const OpElLaw& opElLaw() noexcept
 // further lowered by a constant, level-independent amount, (1 − 1 / ratio) · √a · (threshold + the upward range) dB when
 // positive (a = the attack knob's position 0 … 1): 0 / 2.63 / 5.26 / 10.53 dB at thresholds −48 / −30 / −24 / −12 (ratio 4,
 // attack 10 ms), 1.21 … 3.16 dB at threshold −30 over attacks 0.1 … 30 ms, within 0.02 dB on every capture. The
-// reference's graph does not show where it comes from (its loud-signal output is the lift minus this); LYNX applies it
+// reference's graph does not show where it comes from (its loud-signal output is the lift minus this); YW applies it
 // as measured.
-// Knob laws: attack 0.25 s · a³; release 0.2 s + 2.3 s · F (r), F LYNX's smooth fit of the reference's curve (0.625 r up
+// Knob laws: attack 0.25 s · a³; release 0.2 s + 2.3 s · F (r), F YW's smooth fit of the reference's curve (0.625 r up
 // to r = 0.8, then rising to 1 at r = 1); auto release T = k / (√y + 1), k = 9 r² + 1.
 struct UpLaw
 {
@@ -1325,9 +1325,9 @@ inline double upExpand (double under, double knee, double slope, double lim) noe
 //    goes through one follower (attack / release; auto release T = k / (√b + 1)); the bias is b = (r' − 1) × that follower,
 //    r' = (1 − 0.5 √(knee / 60)) × the ratio's own scale (1 at 1 : 1, 40 at 10 : 1, 80 at 100 : 1);
 //  - the reduction is −20 log10 of the gain, at most the range.
-// T (u) = 0.5 u + 0.5 Q (u), Q LYNX's own quintic fitted to the reference's curve over its working span (−11.4 … 18.03,
+// T (u) = 0.5 u + 0.5 Q (u), Q YW's own quintic fitted to the reference's curve over its working span (−11.4 … 18.03,
 // flat beyond: Q (0) = 0, slope 1 there, a little steeper below, bending to flat at the top; 0.055 worst over the span,
-// 0.009 within |u| < 8, its slope within 0.002); the ratio scale is LYNX's smooth fit of the reference's straight lines.
+// 0.009 within |u| < 8, its slope within 0.002); the ratio scale is YW's smooth fit of the reference's straight lines.
 // Knob laws: attack 0.249 (a² + a³ − a⁴) + 0.001 s (0.001 … 0.25), release 0.005 + 0.97 tan (1.2 r²) s, auto release's
 // constant 3.6 r² + 0.1.
 struct VmuLaw
@@ -1340,7 +1340,7 @@ struct VmuLaw
 };
 inline const VmuLaw& vmuLaw() noexcept
 {
-#ifdef LYNX_CLAB
+#ifdef YW_CLAB
     static const VmuLaw law = [] {
         VmuLaw v;
         v.q2 = clab ("vq2", v.q2); v.q3 = clab ("vq3", v.q3); v.q4 = clab ("vq4", v.q4); v.q5 = clab ("vq5", v.q5);
@@ -1381,7 +1381,7 @@ inline double vmuOver (double y, double thrDb, double thrLin, double knee) noexc
     return over <= 0.0 ? 0.0 : (1.0 - std::exp (-over * 0.1151292546497023)) * y;
 }
 
-// ---- round 190mj (REA_rodada190mj, crest): Pro-C 3's TTM (LYNX's Two-way), rebuilt from the reference's band processors.
+// ---- round 190mj (REA_rodada190mj, crest): Pro-C 3's TTM (YW's Two-way), rebuilt from the reference's band processors.
 // The three bands (fourth-order Linkwitz-Riley splits at the reference's own 2^6.4622 = 88.17 Hz and 2^11.2877 = 2.5 kHz:
 // round 190al's measured 88 Hz left a 0.3 degree phase error at 100 Hz) each run the same graph on their own band of the
 // side chain, and the band's audio is turned by that band's gain (a second split object of the reference, set to the same
@@ -1401,12 +1401,12 @@ inline double vmuOver (double y, double thrDb, double thrLin, double knee) noexc
 // [EXEC] The reference's output also carries a level-independent cut, the same in every band and knee-independent, as
 // Upward's (round 190mb): 0.6 · (1 − 1 / ratio) · √a · (threshold + the upward range) dB when positive (a = the attack knob's
 // position 0 … 1; trial190k's threshold × ratio × knee × attack grid on the 1 kHz / 100 Hz / 8 kHz stairs: the scale fits
-// 0.601, 0.04 dB rms over 189 settings × 4 regions). The graph does not show where it is applied; LYNX applies it as
+// 0.601, 0.04 dB rms over 189 settings × 4 regions). The graph does not show where it is applied; YW applies it as
 // measured, with the upward range (0.6 × the range: 36 dB at every capture's 60) as Upward's inference.
-// LYNX keeps issue #77's fade under −80 dBFS and its threshold bound (a lift never takes the input's peak past the threshold).
+// YW keeps issue #77's fade under −80 dBFS and its threshold bound (a lift never takes the input's peak past the threshold).
 struct TtmLaw
 {
-    // per band in LYNX's order (mid, low, high)
+    // per band in YW's order (mid, low, high)
     double attShare[3] { 0.25, 0.5, 0.125 }, relShare[3] { 0.25, 0.25, 0.1125 }, autoShare[3] { 1.0, 1.0, 0.45 };
     double downOffset[3] { 3.0, 0.0, -2.0 }, ratioScale[3] { 0.6667, 0.6667, 1.0 };
     double upOffset = -7.0, upKnee = 0.5, upSpan = 3.17, upRange = 0.6, rangeMax = 60.0, ratioMax = 100.0;
@@ -1421,7 +1421,7 @@ struct TtmLaw
 };
 inline const TtmLaw& ttmLaw() noexcept
 {
-#ifdef LYNX_CLAB
+#ifdef YW_CLAB
     static const TtmLaw law = [] {
         TtmLaw t;
         for (int b = 0; b < 3; ++b)
@@ -2160,7 +2160,7 @@ private:
             c.f2.att = o.cAtt * attS + o.cAttBase; c.f2.rel = o.cRel * relS + o.cRelBase;
             if (const auto gDb = clab ("oeShelf", o.shelfDb); gDb != 0.0)
             {
-                // a high shelf (RBJ cookbook form), LYNX's own reading of the reference's wide shelf
+                // a high shelf (RBJ cookbook form), YW's own reading of the reference's wide shelf
                 const auto A = std::pow (10.0, gDb / 40.0);
                 const auto w = 2.0 * 3.141592653589793 * std::min (clab ("oeHz", o.shelfHz), clab ("oeAt", o.shelfAtRate) * rate) / rate;
                 const auto cw = std::cos (w), al = std::sin (w) / (2.0 * clab ("oeQ", o.shelfQ)), sa = 2.0 * std::sqrt (A) * al;
@@ -2362,7 +2362,7 @@ private:
                 const auto ld = lev > 1e-10 ? std::max (-180.0, 20.0 * std::log10 (lev)) : -180.0;
                 const auto o = v2Step (d.q0, x.uSilence - upExpand (x.thr - ld, x.kn, x.uSlope, x.uLim), x.f0, rate, d.k0);
                 auto lift = x.uSilence - o - x.uCut;
-                // LYNX's own bound (issue #77, kept from the fitted law): a lift never takes the level (instant attack)
+                // YW's own bound (issue #77, kept from the fitted law): a lift never takes the level (instant attack)
                 // above the threshold, so a hit arriving in a lifted gap is not boosted past it. The reference lets the
                 // first attack time of every such hit through up to 30 dB louder; the bound costs the bank's Upward files
                 // 9.92 → 8.65 (round 190mb, owner decision). It does not act on a steady level (the lift stays under
@@ -3297,7 +3297,7 @@ constexpr double measuredRelease2[7] { 103.0, 104.0, 125.0, 176.0, 243.0, 681.0,
 
 // round 150 [EXEC] Pro-MB's linear-phase band shape for any slope: |high pass| = x^ml / (1 + x^ml) at the low edge,
 // |low pass| = 1 / (1 + x^mh) at the high edge, m = slope / 6 (continuous; every slope 6 … 48 matched within 0.01 dB);
-// x on LYNX's prewarped axis (the reference's analog axis differs by ≤ 0.35 dB at a 3 kHz crossover)
+// x on YW's prewarped axis (the reference's analog axis differs by ≤ 0.35 dB at a 3 kHz crossover)
 double linearShare (double wl, double wh, double ml, double mh, double w) noexcept
 {
     double a = 1.0;
@@ -3455,19 +3455,19 @@ double responseDb (const EffectParams& p, const double* bandGainDb, double sampl
 
 namespace
 {
-// ---- round 190lg (REA_rodada190lg §7, static REA of Pro-MB's BandCompander; LYNX's own code from the laws): revision 1.
+// ---- round 190lg (REA_rodada190lg §7, static REA of Pro-MB's BandCompander; YW's own code from the laws): revision 1.
 // Per band and detector channel: the level in dB → the gain computer (the usual quadratic knee and ratio, then a soft
 // range of width 0.6 × knee + 12 dB) → the maximum over a hold window → a low pass timed by the look-ahead → follower A
 // (slow: it sets a floor) → max (A, the low-passed reduction) → follower B (the knob times) = the band's reduction.
-#ifdef LYNX_MBLAB
-// lab build only: LYNX_MBLAB="key=value …" scales the laws (fitting on the bank; never in a product build)
+#ifdef YW_MBLAB
+// lab build only: YW_MBLAB="key=value …" scales the laws (fitting on the bank; never in a product build)
 struct MbLab
 {
     double aAtk = 1, aRel = 1, bAtk = 1, bRel = 1, p6 = 1, hold = 1, lead = 1, lpOrder = 2, soft = 1, oldSoft = 0;
     double inv = 1, invSlope = 0, invW = 1;
     MbLab()
     {
-        if (const char* e = std::getenv ("LYNX_MBLAB"))
+        if (const char* e = std::getenv ("YW_MBLAB"))
         {
             std::string t (e);
             std::size_t i = 0;
@@ -3496,7 +3496,7 @@ struct MbLab
 };
 const MbLab& mbLab() { static const MbLab l; return l; }
 #endif
-// the release knob (0 … 1) in seconds: LYNX's own smooth law fitted to the shape of the reference's curve (5 ms … 5 s:
+// the release knob (0 … 1) in seconds: YW's own smooth law fitted to the shape of the reference's curve (5 ms … 5 s:
 // a power-law rise, then a steep step around 88 % into the long times; fitted on 15 … 100 %, within 13 % there)
 double mbReleaseS (float v) noexcept
 {
@@ -3665,7 +3665,7 @@ struct ScFilter
 };
 
 // ---------------------------------------------------------------- round 190mg: the C4 law (REA_rodada190mg.md §2)
-// LYNX's own engine with the Waves C4's structure (static analysis of the structure, every number fitted on our demo-mode
+// YW's own engine with the Waves C4's structure (static analysis of the structure, every number fitted on our demo-mode
 // probes, no vendor table read):
 //  * crossover k: Q(s) = 1 + s / (q w) + (s / w)², w set so that the low and high outputs are both -6 dB at the nominal
 //    frequency (bilinear, warped there); low = 1 / Q(s)², all-pass = Q(-s) / Q(s), high = all-pass - low: the two are in
@@ -4328,7 +4328,7 @@ private:
             if (rev190 && laMs > 0.0) // round 190lg: the reference's lead (half a period of the band's centre + its own)
             {
                 bandLa = mbLeadMs (L.loHz[(std::size_t) b], L.hiHz[(std::size_t) b], lookaheadMs (p[(std::size_t) bandLookaheadParam (b)]));
-#ifdef LYNX_MBLAB
+#ifdef YW_MBLAB
                 bandLa = std::clamp (bandLa * mbLab().lead, 0.0, laMs);
 #endif
             }
@@ -4879,7 +4879,7 @@ private:
         // a downward compressor or an upward expander runs the graph on the detector's reduction; an upward compressor
         // or a downward expander on 36 dB − it (the detector then reads how far the level is under the threshold)
         m.inverted = expand != (rng > 0.0);
-#ifdef LYNX_MBLAB
+#ifdef YW_MBLAB
         if (m.inverted && mbLab().inv < 0.5)
             return;
 #endif
@@ -4909,7 +4909,7 @@ private:
         m.rel = rel;
         m.relA = m.inverted ? 0.007 : 0.0; // follower B's release grows with follower A (s per dB)
         m.lpOrder = 2;
-#ifdef LYNX_MBLAB
+#ifdef YW_MBLAB
         const auto& lab = mbLab();
         m.fa.att *= lab.aAtk;
         m.fa.rel *= lab.aRel;
@@ -5136,7 +5136,7 @@ struct GateLaw1
     double rmsMs = 0.0; // > 0: the level is the mean square over this time (× 2: a sine reads its peak), not the peak
     bool own = true;    // false: the style keeps revision 0's measured gate (Upward: its lift already matches)
 };
-#ifdef LYNX_LGLAB
+#ifdef YW_LGLAB
 GateLaw1 gateLaws1[styles] {
 #else
 constexpr GateLaw1 gateLaws1[styles] {
@@ -5150,13 +5150,13 @@ constexpr GateLaw1 gateLaws1[styles] {
     { 0.25, 0.2, 3.75, 0.4, 0.60, 20.0, 0.0, 2.3, 1.0, 50.0, 0.0 },   // guitar: waits ~2.3 × release, falls 50 dB per release
     { 0.0, 0.49, 273.0, 2.73, 0.50, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false }, // upward: revision 0's lift (it matches)
 };
-#ifdef LYNX_LGLAB
-// lab only: LYNX_LGLAB="g0.wait=30,g3.pole2=1,..." overrides the revision-1 table
+#ifdef YW_LGLAB
+// lab only: YW_LGLAB="g0.wait=30,g3.pole2=1,..." overrides the revision-1 table
 struct GateLab
 {
     GateLab()
     {
-        const char* e = std::getenv ("LYNX_LGLAB");
+        const char* e = std::getenv ("YW_LGLAB");
         if (e == nullptr) return;
         std::string str (e);
         std::size_t pos = 0;
@@ -6116,4 +6116,4 @@ std::string paramText (EffectKind kind, int param, float v)
     }
     return fmt ("%.2f", v);
 }
-} // namespace lynx::dyn
+} // namespace yw::dyn

@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::magiclasso
+namespace yw::magiclasso
 {
 struct Point
 {
@@ -187,4 +187,4 @@ inline Result decide (const std::vector<int>& enclosed, bool shift, int selected
         return Result::nothing;
     return std::all_of (enclosedSelected.begin(), enclosedSelected.end(), [] (bool b) { return b; }) ? Result::zoomToSelection : Result::nothing;
 }
-} // namespace lynx::magiclasso
+} // namespace yw::magiclasso

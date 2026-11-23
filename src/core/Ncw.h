@@ -1,9 +1,9 @@
 #pragma once
 
-// Native Instruments' NCW (Kontakt's lossless compressed WAV) decoder (round 190ii, issue #149). LYNX's own code,
+// Native Instruments' NCW (Kontakt's lossless compressed WAV) decoder (round 190ii, issue #149). YW's own code,
 // written from the format description in the "ncw" project's FORMAT.md (github.com/monomadic/ncw, MIT OR
 // Apache-2.0; see THIRD_PARTY.md). NCW is a compression, not a protection: the samples of encrypted Kontakt
-// libraries live in .nkx / .nkc containers, which LYNX does not open.
+// libraries live in .nkx / .nkc containers, which YW does not open.
 //
 // Layout: a 120-byte header (signature 01 A8 9E D6 31|30 01 00 00, channels, bits, rate, frames, block table and data
 // offsets), a table of block offsets (one per 512 frames, plus a sentinel), then per block one sub-block per channel
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::ncw
+namespace yw::ncw
 {
 struct Info
 {
@@ -40,4 +40,4 @@ bool decode (const std::uint8_t* data, std::size_t size, Decoded& out, std::int6
 
 // The file as a WAV (16 / 24-bit PCM as in the file, 32-bit floats for float files): what the importer stores
 std::vector<std::uint8_t> toWav (const std::uint8_t* data, std::size_t size, std::string* error = nullptr);
-} // namespace lynx::ncw
+} // namespace yw::ncw

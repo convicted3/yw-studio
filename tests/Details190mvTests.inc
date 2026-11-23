@@ -3,7 +3,7 @@
 // FL's General › Undo history › "Undo knob tweaks" (DF-134): on by default as in FL, kept in ui-options.txt
 TEST (details190mv_undo_knob_option)
 {
-    using namespace lynx::flsettings;
+    using namespace yw::flsettings;
     reset();
     CHECK (options().undoKnobTweaks.load());
     CHECK (parse ("flUndoKnobTweaks", "0"));
@@ -18,7 +18,7 @@ TEST (details190mv_undo_knob_option)
 // groups and the ungrouped channels keep theirs; again = the whole group plays
 TEST (details190mv_group_solo)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.channels.resize (6);
     s.channels[0].group = 0; // "Audio"
@@ -44,7 +44,7 @@ TEST (details190mv_group_solo)
 // before; exports (no source set) never hear it. The track stays the last one when inserts are added after it.
 TEST (details190mv_current_track)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = mixpre167q::synthSong ({ mixpre167q::clipAt (0, 4 * ppq) });
     const auto c = mixerops::addCurrentTrack (s);
     CHECK (c == (int) s.mixer.size() - 1 && mixerops::currentTrack (s) == c && ! s.mixer[(std::size_t) c].toMaster);
@@ -92,7 +92,7 @@ TEST (details190mv_current_track)
 // FL's Master pitch typed in Hz (DF-22, capture 190mv A6): A = 440 Hz is no shift; an octave is ±1200 cents
 TEST (details190mv_master_pitch_hz)
 {
-    using namespace lynx::masterpitch;
+    using namespace yw::masterpitch;
     CHECK (std::abs (hzOfCents (0.0) - 440.0) < 1.0e-9);
     CHECK (std::abs (hzOfCents (1200.0) - 880.0) < 1.0e-9 && std::abs (hzOfCents (-1200.0) - 220.0) < 1.0e-9);
     CHECK (std::abs (centsOfHz (432.0) - (-31.7667)) < 1.0e-3);
@@ -103,7 +103,7 @@ TEST (details190mv_master_pitch_hz)
 // Live's phase nudge (DL-51, capture 190mv B2): the two buttons right after the tempo box, in the left section
 TEST (details190mv_live_phase_nudge_items)
 {
-    using namespace lynx::toolbarlayout::livebar;
+    using namespace yw::toolbarlayout::livebar;
     CHECK ((int) Item::tempo + 1 == (int) Item::nudgeDown && (int) Item::nudgeDown + 1 == (int) Item::nudgeUp);
     CHECK (sectionOf (Item::nudgeDown) == Section::left && sectionOf (Item::nudgeUp) == Section::left);
     CHECK (defaultWidth (Item::nudgeDown) == 16 && defaultWidth (Item::nudgeUp) == 16);

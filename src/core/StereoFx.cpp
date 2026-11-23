@@ -17,7 +17,7 @@
  #pragma clang fp contract(off)
 #endif
 
-namespace lynx::stereofx
+namespace yw::stereofx
 {
 namespace
 {
@@ -1049,4 +1049,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> makeSpreader() { return std::make_unique<SpreaderEffect>(); }
-} // namespace lynx::stereofx
+} // namespace yw::stereofx

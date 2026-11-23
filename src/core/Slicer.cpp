@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx
+namespace yw
 {
 std::vector<float> detectSlices (const SampleData& sample, float sensitivity, int maxSlices)
 {
@@ -59,4 +59,4 @@ std::vector<float> detectSlices (const SampleData& sample, float sensitivity, in
 
     return slices;
 }
-} // namespace lynx
+} // namespace yw

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstring>
 
-namespace lynx
+namespace yw
 {
 bool PdcPlan::any() const noexcept
 {
@@ -338,4 +338,4 @@ void DelayLine::mixInto (const float* sl, const float* sr, float level, float* d
         position = (position + run) % delay;
     }
 }
-} // namespace lynx
+} // namespace yw

@@ -4,9 +4,9 @@
 
 namespace qafix190kq
 {
-inline lynx::PlaylistTrack row (const char* name, bool grouped = false, int nest = 0)
+inline yw::PlaylistTrack row (const char* name, bool grouped = false, int nest = 0)
 {
-    lynx::PlaylistTrack t;
+    yw::PlaylistTrack t;
     t.name = name;
     t.grouped = grouped;
     t.nest = nest;
@@ -18,7 +18,7 @@ inline lynx::PlaylistTrack row (const char* name, bool grouped = false, int nest
 TEST (qafix190kq_take_lanes_are_told_from_tracks)
 {
     using qafix190kq::row;
-    lynx::Song s;
+    yw::Song s;
     s.playlistTracks.clear();
     s.playlistTracks.push_back (row ("Vox"));                   // 0: comp track
     s.playlistTracks.push_back (row ("Lane", true));            // 1: its lanes
@@ -35,11 +35,11 @@ TEST (qafix190kq_take_lanes_are_told_from_tracks)
     s.playlistTracks[8].takeLane = true;
     const bool want[] { false, true, true, false, false, false, false, true, false };
     for (int t = 0; t < 9; ++t)
-        CHECK (lynx::comp::isTakeLane (s, t) == want[t]);
-    CHECK (! lynx::comp::isTakeLane (s, -1) && ! lynx::comp::isTakeLane (s, 9));
-    // a comp made in LYNX ("Comp these takes"): lanes without the import's flag are lanes too
+        CHECK (yw::comp::isTakeLane (s, t) == want[t]);
+    CHECK (! yw::comp::isTakeLane (s, -1) && ! yw::comp::isTakeLane (s, 9));
+    // a comp made in YW ("Comp these takes"): lanes without the import's flag are lanes too
     s.playlistTracks[1].takeLane = s.playlistTracks[2].takeLane = false;
-    CHECK (lynx::comp::isTakeLane (s, 1) && lynx::comp::isTakeLane (s, 2));
+    CHECK (yw::comp::isTakeLane (s, 1) && yw::comp::isTakeLane (s, 2));
 }
 
 // QA-2: an imported Live set's lanes carry the flag; the tracks do not
@@ -54,13 +54,13 @@ TEST (qafix190kq_imported_take_lanes_are_flagged)
                               "<TakeLane Id=\"1\">" + v ("Name", "") + "<ClipAutomation><Events>" + audioClip (0.0, 4.0, "E:/sets/take2.wav", true, 0.0, 4.0) +
                               "</Events></ClipAutomation></TakeLane></TakeLanes></TakeLanes>";
     text.insert (text.find ("<AutomationEnvelopes>"), lanes);
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     const auto s = load (text, &report, { "E:/sets/take1.wav", "E:/sets/take2.wav" });
     CHECK (s.has_value() && s->playlistTracks.size() == 4);
     if (! s || s->playlistTracks.size() != 4)
         return;
     CHECK (! s->playlistTracks[0].takeLane && s->playlistTracks[1].takeLane && s->playlistTracks[2].takeLane && ! s->playlistTracks[3].takeLane);
-    CHECK (! lynx::comp::isTakeLane (*s, 0) && lynx::comp::isTakeLane (*s, 1) && lynx::comp::isTakeLane (*s, 2) && ! lynx::comp::isTakeLane (*s, 3));
+    CHECK (! yw::comp::isTakeLane (*s, 0) && yw::comp::isTakeLane (*s, 1) && yw::comp::isTakeLane (*s, 2) && ! yw::comp::isTakeLane (*s, 3));
 }
 
 // QA-9: a silent --export says why (Live's lesson sets without any clip ended in "result=ERROR" and no message)
@@ -68,15 +68,15 @@ TEST (qafix190kq_imported_take_lanes_are_flagged)
 
 TEST (qafix190kq_silent_export_says_why)
 {
-    using lynx::exportsilence::reason;
+    using yw::exportsilence::reason;
     const auto starts = [] (const std::string& s, const char* head) { return s.rfind (head, 0) == 0; };
-    lynx::Song empty;
+    yw::Song empty;
     empty.playlist.clear();
     for (auto& p : empty.patterns)
         p.notes.clear();
     CHECK (starts (reason (empty, false), "nothing to render: the project holds no clip and no note"));
     // a Live set with tracks but no clip at all (the lesson sets' shape)
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     const auto set = als190ka::load (als190ka::set ({ als190ka::Track {}, als190ka::Track {} }), &report, {});
     CHECK (set.has_value());
     if (set)
@@ -85,16 +85,16 @@ TEST (qafix190kq_silent_export_says_why)
     auto patternOnly = empty;
     if (patternOnly.patterns.empty())
         patternOnly.patterns.emplace_back();
-    lynx::Note n;
-    n.length = lynx::ppq;
+    yw::Note n;
+    n.length = yw::ppq;
     patternOnly.patterns[0].notes.push_back (n);
     CHECK (starts (reason (patternOnly, false), "nothing to render: the song (Playlist / arrangement) is empty; the project's notes"));
     CHECK (starts (reason (patternOnly, true), "the render is silent"));
     // clips only in the clip grid
     auto grid = empty;
-    lynx::Clip c;
-    c.length = lynx::ppq;
-    lynx::launcher::setClip (grid, 0, 0, c);
+    yw::Clip c;
+    c.length = yw::ppq;
+    yw::launcher::setClip (grid, 0, 0, c);
     CHECK (starts (reason (grid, false), "nothing to render: the song (Playlist / arrangement) is empty; the project's clips are only in the clip grid"));
     // something in the song that plays nothing
     auto muted = empty;
@@ -109,34 +109,34 @@ TEST (qafix190kq_silent_export_says_why)
 TEST (qafix190kq_directwave_zones_are_shared_between_builds)
 {
     const auto make = [] (float l, float r, std::size_t n) {
-        auto s = std::make_shared<lynx::SampleData>();
+        auto s = std::make_shared<yw::SampleData>();
         s->sampleRate = 44100.0;
         s->left.assign (n, l);
         s->right.assign (n, r);
-        return std::shared_ptr<const lynx::SampleData> (s);
+        return std::shared_ptr<const yw::SampleData> (s);
     };
     const auto sample = make (0.25f, -0.25f, 1000);
-    auto a = lynx::dw::zoneSamplesShared ("C:/x/zone.wav", sample, false);
-    auto b = lynx::dw::zoneSamplesShared ("C:/x/zone.wav", sample, false);
+    auto a = yw::dw::zoneSamplesShared ("C:/x/zone.wav", sample, false);
+    auto b = yw::dw::zoneSamplesShared ("C:/x/zone.wav", sample, false);
     CHECK (a != nullptr && a == b);
     // the export engine decodes the file again (the rack keeps the zones, not the decoded sample): the same zones
     const auto decodedAgain = make (0.25f, -0.25f, 1000);
-    CHECK (lynx::dw::zoneSamplesShared ("C:/x/zone.wav", decodedAgain, false) == a);
+    CHECK (yw::dw::zoneSamplesShared ("C:/x/zone.wav", decodedAgain, false) == a);
     // the other format, another file, or the same file changed on disk: zones of their own
-    auto c = lynx::dw::zoneSamplesShared ("C:/x/zone.wav", sample, true);
+    auto c = yw::dw::zoneSamplesShared ("C:/x/zone.wav", sample, true);
     CHECK (c != nullptr && c != a && c->bits == 16 && a->bits == 32);
-    CHECK (lynx::dw::zoneSamplesShared ("C:/x/other.wav", sample, false) != a);
+    CHECK (yw::dw::zoneSamplesShared ("C:/x/other.wav", sample, false) != a);
     const auto changed = make (0.5f, -0.25f, 1000);
-    const auto d = lynx::dw::zoneSamplesShared ("C:/x/zone.wav", changed, false);
+    const auto d = yw::dw::zoneSamplesShared ("C:/x/zone.wav", changed, false);
     CHECK (d != nullptr && d != a && d->f32[0][256] == 0.5f);
     // the same content as the plain copy
-    const auto plain = lynx::dw::zoneSamples (*sample, false);
+    const auto plain = yw::dw::zoneSamples (*sample, false);
     CHECK (plain != nullptr && plain->f32 == a->f32 && plain->frames == a->frames && plain->channels == a->channels);
     // nothing is kept once no build holds it
-    std::weak_ptr<const lynx::dw::ZoneSamples> gone = c;
+    std::weak_ptr<const yw::dw::ZoneSamples> gone = c;
     c.reset();
     CHECK (gone.expired());
-    CHECK (lynx::dw::zoneSamplesShared ("C:/x/zone.wav", nullptr, false) == nullptr);
+    CHECK (yw::dw::zoneSamplesShared ("C:/x/zone.wav", nullptr, false) == nullptr);
 }
 
 // QA-6: the export's tail ends on a constant offset as on silence, not on sound or a slow decay
@@ -144,7 +144,7 @@ TEST (qafix190kq_directwave_zones_are_shared_between_builds)
 
 TEST (qafix190kq_tail_counts_dc_as_silence)
 {
-    using lynx::tailsilence::quietBlock;
+    using yw::tailsilence::quietBlock;
     constexpr float silence = 3.0e-5f;
     std::vector<float> l (512), r (512);
     const float* ch[] { l.data(), r.data() };
@@ -175,20 +175,20 @@ TEST (qafix190kq_tail_counts_dc_as_silence)
 // voice each, -73 dBFS of DC summed after the song
 TEST (qafix190kq_clip_channel_step_ends_with_its_sample)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = r190io::rate;
     data->left.assign ((std::size_t) (0.5 * r190io::rate), 0.0f);
     for (std::size_t i = 0; i < data->left.size(); ++i)
         data->left[i] = 0.2f + 0.1f * (float) std::sin (6.283185307179586 * 440.0 * (double) i / r190io::rate); // ends on ~0.2: a DC tail
     data->right = data->left;
-    const auto song = r190io::stepSong (lynx::InstrumentKind::audioClip, "dc");
-    auto state = lynx::RackState::build (song, nullptr, r190io::rate, [data] (const std::string&) -> std::shared_ptr<const lynx::SampleData> { return data; });
-    lynx::RackRenderer rr;
+    const auto song = r190io::stepSong (yw::InstrumentKind::audioClip, "dc");
+    auto state = yw::RackState::build (song, nullptr, r190io::rate, [data] (const std::string&) -> std::shared_ptr<const yw::SampleData> { return data; });
+    yw::RackRenderer rr;
     rr.prepare (r190io::rate, 480);
     const auto total = (int) (1.9 * r190io::rate);
     std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
     double tick = 0.0;
-    const auto tps = lynx::ticksPerSample (song.bpm, r190io::rate);
+    const auto tps = yw::ticksPerSample (song.bpm, r190io::rate);
     for (int at = 0; at < total; at += 480)
     {
         const auto n = std::min (480, total - at);

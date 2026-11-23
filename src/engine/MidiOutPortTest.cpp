@@ -14,7 +14,7 @@
 #include "engine/AudioEngine.h"
 #include "engine/ChannelRackProcessor.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -241,4 +241,4 @@ juce::String AudioEngine::midiOutPortSelfTest()
         return "ERROR " + errors.joinIntoString ("; ") + "\n" + report;
     return "OK\n" + report;
 }
-} // namespace lynx
+} // namespace yw

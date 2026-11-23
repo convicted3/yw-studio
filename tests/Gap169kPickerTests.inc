@@ -4,7 +4,7 @@
 
 TEST (gap169k_picker_tabs_and_wheel_like_fl)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     Tabs tabs;
     tabs.generators = { "Synth", "Sampler", "Drum" };
     tabs.effects = { "Delay & reverb", "Distortion", "Dynamics", "EQ & filter" };
@@ -18,14 +18,14 @@ TEST (gap169k_picker_tabs_and_wheel_like_fl)
     CHECK (stepTab (tabs, tabs.all(), 30) == 7);
     CHECK (stepTab (tabs, 1, -5) == 0);
     // F8 is the picker, the quick-add palette has no default key any more
-    lynx::keys::KeyMap map;
+    yw::keys::KeyMap map;
     CHECK (map.conflicts().empty());
-    CHECK (map.find ({ lynx::keys::f8 }, lynx::keys::Context::global, false) == "view.pluginPicker");
+    CHECK (map.find ({ yw::keys::f8 }, yw::keys::Context::global, false) == "view.pluginPicker");
 }
 
 TEST (gap169k_picker_tiles_fit)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     // few tiles: the biggest size
     auto f = fitTiles (4, 900, 600, 10, 70, 190, 0.55);
     CHECK (f.tileWidth == 190 && f.columns == 4 && f.rows == 1);

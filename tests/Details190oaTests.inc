@@ -4,7 +4,7 @@
 // (11^v − 1) / 10 on the output, skipped while rendering): the song keeps it as a fader position; .flp in and out.
 TEST (details190oa_main_volume_flp)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (Song::makeDefault().mainVolume == unityFader);
     auto song = Song::makeDefault();
     song.mainVolume = 0.5f;
@@ -24,23 +24,23 @@ TEST (details190oa_main_volume_flp)
     CHECK (std::abs (faderGain (unityFader) - 1.0f) < 1.0e-5f && std::abs (faderGain (1.0f) - 1.9028f) < 1.0e-3f);
 }
 
-// FL's wrapper menu › Help (DF-131): LYNX's wiki page of the built-in plugin (website/_src/build.py's ids)
+// FL's wrapper menu › Help (DF-131): YW's wiki page of the built-in plugin (website/_src/build.py's ids)
 TEST (details190oa_plugin_help_pages)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (pluginhelp::slug ("3x Osc") == "3x-osc" && pluginhelp::slug ("Plucked!") == "plucked" && pluginhelp::slug ("X-Y Controller") == "x-y-controller");
-    CHECK (pluginhelp::pageFor ("Sytrus", true) == "https://lynx-share.com/wiki/built-in/gen-sytrus/");
-    CHECK (pluginhelp::pageFor ("Fruity Limiter", false) == "https://lynx-share.com/wiki/built-in/fx-fruity-limiter/");
-    CHECK (pluginhelp::pageFor ("Toxic Biohazard", true) == "https://lynx-share.com/wiki/built-in/gen-toxic-biohazard/");
-    CHECK (pluginhelp::pageFor ("No such plugin", true) == "https://lynx-share.com/wiki/built-in/"); // (the index)
+    CHECK (pluginhelp::pageFor ("Sytrus", true) == "https://yolo.su/wiki/built-in/gen-sytrus/");
+    CHECK (pluginhelp::pageFor ("Fruity Limiter", false) == "https://yolo.su/wiki/built-in/fx-fruity-limiter/");
+    CHECK (pluginhelp::pageFor ("Toxic Biohazard", true) == "https://yolo.su/wiki/built-in/gen-toxic-biohazard/");
+    CHECK (pluginhelp::pageFor ("No such plugin", true) == "https://yolo.su/wiki/built-in/"); // (the index)
     CHECK (pluginhelp::hasPage ("fx-aether") && pluginhelp::hasPage ("gen-wave-traveller") && ! pluginhelp::hasPage ("fx-"));
 }
 
 // Gross Beat's scratch dial (DP-8; REA 190oa R5): parameter 8, FL raw 65536 = no offset, s = raw / 65536 − 1 added to
-// the time envelope after three smoothers; LYNX stores 1 − raw / 65536 so the old projects' 0 is no offset.
+// the time envelope after three smoothers; YW stores 1 − raw / 65536 so the old projects' 0 is no offset.
 TEST (details190oa_gross_beat_scratch_offset)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (grossbeat::paramFromRaw (grossbeat::scratchParam, 65536) == 0.0f && grossbeat::rawFromParam (grossbeat::scratchParam, 0.0f) == 65536);
     CHECK (grossbeat::rawFromParam (grossbeat::scratchParam, 0.5f) == 32768 && grossbeat::paramFromRaw (grossbeat::scratchParam, 0) == 1.0f);
     const auto state = grossBeatState ({ 0, 0, 256, 256, 0, 0, 0, 0, 0x10000 }, { 0, 0, 0, 0, 0, 0, 0, 1, 1 }, {});

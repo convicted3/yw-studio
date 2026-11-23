@@ -2,12 +2,12 @@
 
 // The icons of channels, mixer inserts and Playlist tracks (round 168h). The model keeps FL Studio's own icon index
 // (ChannelDef::icon, MixerTrack::icon, PlaylistTrack::icon: .flp 0x9B / 0x5F / 0xEE+8, REA round 168j) so a project
-// round-trips with FL; LYNX draws its own original icon set (src/ui/TrackIcons.cpp), never FL's artwork.
+// round-trips with FL; YW draws its own original icon set (src/ui/TrackIcons.cpp), never FL's artwork.
 //
 // FL's index i is a glyph of its icon font at U+F400 + i (REA round 168h: the 168 FL demo projects' 3 937 non-zero
 // icons against the names of FL's ILGlyphsEx font: 4 Snare_drum on "snare" 35x, 5 Kick_drum on "kick" 42x,
-// 20 Speech on "vocals", 239 Hi_Hat on "hi-hats" 27x...). Each LYNX icon carries the FL index it saves; an imported
-// index LYNX has no icon of its own for shows the closest one (and is kept as it is until the user picks another).
+// 20 Speech on "vocals", 239 Hi_Hat on "hi-hats" 27x...). Each YW icon carries the FL index it saves; an imported
+// index YW has no icon of its own for shows the closest one (and is kept as it is until the user picks another).
 // No JUCE: tested in isolation.
 
 #include <array>
@@ -21,7 +21,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::trackicons
+namespace yw::trackicons
 {
 enum class Icon : std::uint8_t
 {
@@ -41,7 +41,7 @@ enum class Icon : std::uint8_t
     // numbers 1..9
     number1, number2, number3, number4, number5, number6, number7, number8, number9,
     // misc
-    smile, fire, cloud, heart, clock, gear, folder, lock, tag // tag: an FL icon LYNX has no own one for
+    smile, fire, cloud, heart, clock, gear, folder, lock, tag // tag: an FL icon YW has no own one for
 };
 
 constexpr int iconCount = (int) Icon::tag + 1;
@@ -49,11 +49,11 @@ constexpr int iconCount = (int) Icon::tag + 1;
 struct Entry
 {
     Icon icon;
-    int flIndex;           // the index LYNX saves for this icon (FL's glyph U+F400 + flIndex)
+    int flIndex;           // the index YW saves for this icon (FL's glyph U+F400 + flIndex)
     std::string_view name; // English label (translated by the picker)
 };
 
-// The picker's icons in its order (no `tag`: that one only stands in for FL icons LYNX has no own one for).
+// The picker's icons in its order (no `tag`: that one only stands in for FL icons YW has no own one for).
 inline constexpr std::array<Entry, iconCount - 1> entries { {
     { Icon::none, 0, TR_NOOP ("None") },
     { Icon::kick, 5, TR_NOOP ("Kick") },
@@ -134,7 +134,7 @@ inline constexpr std::array<Entry, iconCount - 1> entries { {
     { Icon::lock, 92, TR_NOOP ("Lock") },
 } };
 
-// The FL index LYNX saves for `icon` (`tag` and unknown: 0).
+// The FL index YW saves for `icon` (`tag` and unknown: 0).
 constexpr int flIndexOf (Icon icon) noexcept
 {
     for (const auto& e : entries)
@@ -151,7 +151,7 @@ constexpr std::string_view nameOf (Icon icon) noexcept
     return TR_NOOP ("Other");
 }
 
-// The LYNX icon shown for FL's index `flIndex`: its own icon, else the closest one, else `tag` (any other non-zero
+// The YW icon shown for FL's index `flIndex`: its own icon, else the closest one, else `tag` (any other non-zero
 // index); 0 and negatives: none.
 constexpr Icon iconFor (int flIndex) noexcept
 {
@@ -160,7 +160,7 @@ constexpr Icon iconFor (int flIndex) noexcept
     for (const auto& e : entries)
         if (e.flIndex == flIndex)
             return e.icon;
-    switch (flIndex) // FL glyphs (U+F400 + index) LYNX draws with a near icon
+    switch (flIndex) // FL glyphs (U+F400 + index) YW draws with a near icon
     {
         case 10: return Icon::flute;           // pan flute
         case 31: return Icon::send;            // jack plug
@@ -251,4 +251,4 @@ std::vector<int> search (std::string_view query, Translate&& translate)
     }
     return found;
 }
-} // namespace lynx::trackicons
+} // namespace yw::trackicons

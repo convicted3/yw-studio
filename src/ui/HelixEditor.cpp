@@ -1,4 +1,4 @@
-// The Helix editor (ui/HelixEditor.h): Live's Wavetable layout (round 190ja shots), drawn by LYNX code.
+// The Helix editor (ui/HelixEditor.h): Live's Wavetable layout (round 190ja shots), drawn by YW code.
 
 #include "ui/HelixEditor.h"
 
@@ -21,7 +21,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -46,8 +46,8 @@ struct Look
 Look liveLook() { return { juce::Colour (0xff2a2a2a), juce::Colour (0xff363636), juce::Colour (0xff181818), juce::Colour (0xff464646),
                            juce::Colour (0xffb5b5b5), juce::Colour (0xff868686), juce::Colour (0xffffad56), juce::Colour (0xff03c3d5),
                            juce::Colour (0xff1e1e1e) }; }
-// LYNX's own (the channel window): its palette tokens, read when painting (user themes)
-Look lynxLook() { return { theme::colour::bg1, theme::colour::bg2, theme::colour::bg0, theme::colour::border, theme::colour::textPrimary,
+// YW's own (the channel window): its palette tokens, read when painting (user themes)
+Look ywLook() { return { theme::colour::bg1, theme::colour::bg2, theme::colour::bg0, theme::colour::border, theme::colour::textPrimary,
                            theme::colour::textSecondary, theme::colour::accent, theme::colour::automation, theme::colour::bg1 }; }
 
 enum class Curve { linear, freq, time, gain, rate, logRange };
@@ -95,7 +95,7 @@ struct Page
     int envView = 0;  // Time / Slope / Value
     std::function<void()> refresh;
 
-    Look look() const { return live ? liveLook() : lynxLook(); }
+    Look look() const { return live ? liveLook() : ywLook(); }
     const ChannelDef* def() const
     {
         const auto* c = locate ? locate (const_cast<Song&> (engine.getSong())) : nullptr;
@@ -304,7 +304,7 @@ public:
         const auto arcColour = page.live ? l.accent2 : l.accent; // (Live: cyan arcs [SHOT live-wt-preset-*])
         g.setColour (hot ? arcColour.brighter (0.2f) : arcColour);
         g.strokePath (arc, juce::PathStrokeType (2.5f));
-        // Helix+ (LYNX's look): the modulation on this knob as a thin outer ring from the value (round 190mi)
+        // Helix+ (YW's look): the modulation on this knob as a thin outer ring from the value (round 190mi)
         if (! page.live)
             if (const auto row = w::targetOfParam (index); row >= 0)
                 if (const auto amount = std::clamp (page.rowAmount (row), -1.0, 1.0); amount != 0.0)
@@ -369,7 +369,7 @@ public:
         }
     }
 
-    // a modulation source dropped on the knob (LYNX's look): the source modulates the knob's row by 50 %, or the
+    // a modulation source dropped on the knob (YW's look): the source modulates the knob's row by 50 %, or the
     // amount it already has; the knob shows the ring, the matrix the cell (round 190mi)
     static int sourceOf (const SourceDetails& d)
     {
@@ -511,7 +511,7 @@ public:
         if (page.refresh)
             page.refresh();
     }
-    // a modulation source (LYNX's look): drag it onto a knob (Helix+, round 190mi)
+    // a modulation source (YW's look): drag it onto a knob (Helix+, round 190mi)
     int dragSource = -1;
     void mouseDrag (const juce::MouseEvent& e) override
     {
@@ -620,7 +620,7 @@ class WaveDisplay final : public juce::Component, public juce::SettableTooltipCl
 {
 public:
     explicit WaveDisplay (Page& p) : page (p) { setTooltip (tr ("Wave table: drag up / down to move the position")); }
-    // Helix+ 2 (LYNX's look): an audio file dropped here becomes the oscillator's user table; a double-click opens the editor
+    // Helix+ 2 (YW's look): an audio file dropped here becomes the oscillator's user table; a double-click opens the editor
     bool isInterestedInFileDrag (const juce::StringArray& files) override { return ! page.live && files.size() == 1 && isAudioFile (files[0]); }
     void filesDropped (const juce::StringArray& files, int, int) override
     {
@@ -841,7 +841,7 @@ public:
         g.strokePath (path, juce::PathStrokeType (1.8f));
     }
 
-    // --- Helix+'s drawn LFO (round 190mi): one cycle, its points; LYNX's look edits it ---------------------------------
+    // --- Helix+'s drawn LFO (round 190mi): one cycle, its points; YW's look edits it ---------------------------------
     int lfo() const { return std::max (0, page.source - 3); }
     bool drawn() const { return page.source >= 3 && page.plusLive() && page.xv (w::ext::lfoDraw + lfo()) > 0.5; }
     int pointsBase() const { return w::extBase + w::ext::points + lfo() * w::ext::lfoPointsSize; }
@@ -1002,12 +1002,12 @@ public:
         switch (page.modTab)
         {
             case 1:
-                if (! page.live) // (LYNX's look: Helix+'s macros too, round 190mi)
+                if (! page.live) // (YW's look: Helix+'s macros too, round 190mi)
                     return { w::src::amp, w::src::env2, w::src::env3, w::src::lfo1, w::src::lfo2, w::src::macro1, w::src::macro1 + 1, w::src::macro1 + 2,
                              w::src::macro1 + 3 };
                 return { w::src::amp, w::src::env2, w::src::env3, w::src::lfo1, w::src::lfo2 };
             case 2: return { w::src::velocity, w::src::note, w::src::pitchBend, w::src::pressure, w::src::modWheel, w::src::random };
-            case 4: // (LYNX's look, Helix+ 2: the eight macros and the chaos sources)
+            case 4: // (YW's look, Helix+ 2: the eight macros and the chaos sources)
             {
                 std::vector<int> c;
                 for (int j = 0; j < w::macroCount; ++j)
@@ -1050,7 +1050,7 @@ public:
         }
         return r;
     }
-    int rowCount() const { return page.live ? w::targetCount : w::allTargetCount; } // (Helix+'s rows in LYNX's look)
+    int rowCount() const { return page.live ? w::targetCount : w::allTargetCount; } // (Helix+'s rows in YW's look)
     juce::String rowName (int t) const
     {
         return tr (u8 (w::targetName (t, (int) std::lround (page.value (w::oscBase (0) + w::osc::effectMode)),
@@ -1271,7 +1271,7 @@ public:
         static const char* modTabs[5] { "Mod Sources", "Matrix", "MIDI", "MPE", "Macros" };
         for (int t = 0; t < 5; ++t)
             modTab[(std::size_t) t] = tab (tr (modTabs[t]), [this, t] { return page.modTab == t; }, [this, t] { page.modTab = t; layoutMod(); });
-        modTab[4]->setVisible (! page.live); // (Helix+ 2, LYNX's look: the macros' and chaos sources' columns)
+        modTab[4]->setVisible (! page.live); // (Helix+ 2, YW's look: the macros' and chaos sources' columns)
         static const char* sources[5] { "Amp", "Env 2", "Env 3", "LFO 1", "LFO 2" };
         for (int s = 0; s < 5; ++s)
         {
@@ -1493,7 +1493,7 @@ private:
         for (int t = 0; t < 4; ++t)
             modTab[(std::size_t) t]->setBounds (x + wdt - 4 - (4 - t) * 62, y + 1, t == 0 ? 80 : 44, 15);
         modTab[0]->setBounds (x + wdt - 4 - 62 * 3 - 82, y + 1, 80, 15);
-        if (! page.live) // (LYNX's look: five tabs, Helix+ 2's "Macros" last)
+        if (! page.live) // (YW's look: five tabs, Helix+ 2's "Macros" last)
         {
             const int widths[5] { 74, 46, 40, 40, 52 };
             auto tx = x + wdt - 4 - (74 + 46 + 40 + 40 + 52 + 4 * 3);
@@ -1605,10 +1605,10 @@ private:
     std::array<Menu*, 2> fType {}, fCircuit {};
 };
 
-// --- Helix+ (round 190mi): LYNX's own strip under the device in the channel window --------------------------------------
+// --- Helix+ (round 190mi): YW's own strip under the device in the channel window --------------------------------------
 // The second warps, the noise oscillator, unison stacking, the extra filter types, the macros (drag their handle onto a
-// knob), the drawn LFOs' switches and the effects rack, in LYNX's look. The Live-look device above stays as it is.
-// --- Helix round 4 (round 190oc): the spectral oscillator's partials at its Position, as it plays them (LYNX's own view):
+// knob), the drawn LFOs' switches and the effects rack, in YW's look. The Live-look device above stays as it is.
+// --- Helix round 4 (round 190oc): the spectral oscillator's partials at its Position, as it plays them (YW's own view):
 // a log-frequency axis (20 Hz … 20 kHz), each partial a line as loud as it plays (0 … −60 dB of the frame's loudest), at the
 // root key + Semi with Stretch, Shift, Tilt and the band applied; the partials Partials keeps lit, the others dim; the band
 // (Band, Width) shaded; with unison, the outer voices' detune as thin lines beside each partial
@@ -2273,7 +2273,7 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
 };
 
-// --- Helix+ 2 (round 190ml): the table editor (LYNX's look): an oscillator's own table, drawn, typed as a formula,
+// --- Helix+ 2 (round 190ml): the table editor (YW's look): an oscillator's own table, drawn, typed as a formula,
 // edited by its harmonics or imported from audio. Every finished gesture is one undoable edit of the channel (its
 // pluginState); the editor follows the channel (undo, redo, another editor) between gestures.
 class TableEditor final : public juce::Component, public juce::FileDragAndDropTarget, private juce::ChangeListener
@@ -2370,7 +2370,7 @@ public:
 
     void paint (juce::Graphics& g) override
     {
-        const auto l = lynxLook();
+        const auto l = ywLook();
         g.fillAll (l.outer);
         g.setColour (l.bg);
         g.fillRoundedRectangle (view.toFloat().expanded (4.0f), 4.0f);
@@ -2745,7 +2745,7 @@ private:
 
 // --- Helix+ 2 (round 190ml): Helix+'s controls in the Clip-launch layout's Device View card, in Live's look (the card
 // rules of round 190jn: #363636 sections on #2A2A2A, Live's knob and power disc, orange values, #B5B5B5 captions). A
-// LYNX-own panel beside Live's device, shown by the card's title-bar well; Live's device itself stays as it was.
+// YW-own panel beside Live's device, shown by the card's title-bar well; Live's device itself stays as it was.
 class HelixPlusCardPanel final : public juce::Component, private juce::ChangeListener
 {
 public:
@@ -2956,7 +2956,7 @@ public:
         plus.setVisible (showPlus);
         well.isOn = [] { return showPlus; };
         well.onClick = [this] { setPlus (! showPlus); };
-        // (rollup 0.1.31 step 8: as a plugin in another host, LYNX Wavecoil, the well names the plugin, not the engine)
+        // (rollup 0.1.31 step 8: as a plugin in another host, YW Wavecoil, the well names the plugin, not the engine)
         if (plugui::hostedElsewhere)
             if (const auto* c = locator (channel) (const_cast<Song&> (e.getSong())); c != nullptr && ! c->name.empty())
                 well.setTooltip (tr ("{0}+: YW Studio's extra controls beside the device")
@@ -3059,4 +3059,4 @@ int showView (juce::Component& root, int modTab, int source, int osc)
     return found;
 }
 } // namespace helixcards
-} // namespace lynx
+} // namespace yw

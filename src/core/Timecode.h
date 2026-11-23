@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <string>
 
-namespace lynx::timecode
+namespace yw::timecode
 {
 struct Rate
 {
@@ -70,4 +70,4 @@ inline std::string format (double seconds, int rateIndex)
     std::snprintf (text, sizeof text, "%02d:%02d:%02d%c%02d", l.hours, l.minutes, l.seconds, rate.dropFrame ? ';' : ':', l.frames);
     return text;
 }
-} // namespace lynx::timecode
+} // namespace yw::timecode

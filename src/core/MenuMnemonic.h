@@ -5,17 +5,17 @@
 // "Cu&t", "C&opy", "&Paste", "&Clone", ...; the Piano roll / Playlist Edit actions "Cu&t", "&Copy", "&Paste",
 // "&Delete", "Delete &all"): with the menu open, that key picks the item.
 //
-// LYNX keeps the letter out of band of the translatable text: menu code wraps the translated caption with
+// YW keeps the letter out of band of the translatable text: menu code wraps the translated caption with
 // mnemonic (text, 'D'), which puts the mark character U+0001 before the first matching letter (a word's first
 // letter preferred). A translation without that letter gets it appended in brackets ("Excluir... (D)", as Windows
 // does in East Asian menus), so the key is FL's in every language. The LookAndFeel draws the marked letter
-// underlined and hides the mark; the patched juce::PopupMenu (cmake/LynxPatchJuce.cmake fix 13) picks the item when
+// underlined and hides the mark; the patched juce::PopupMenu (cmake/YwPatchJuce.cmake fix 13) picks the item when
 // the key is typed. Pure (no JUCE), UTF-8.
 
 #include <cctype>
 #include <string>
 
-namespace lynx::menumnemonic
+namespace yw::menumnemonic
 {
 inline constexpr char mark = '\x01';
 
@@ -77,4 +77,4 @@ inline char keyOf (const std::string& text)
     const auto at = text.find (mark);
     return at == std::string::npos || at + 1 >= text.size() ? 0 : (char) std::tolower ((unsigned char) text[at + 1]);
 }
-} // namespace lynx::menumnemonic
+} // namespace yw::menumnemonic

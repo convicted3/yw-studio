@@ -4,7 +4,7 @@
 //
 // JUCE puts a submenu right beside the item that opened it. In a two-column menu (the Channel Rack's channel menu,
 // the Playlist's, the Mixer's, the Piano Roll's) an item of the first column then opens its submenu OVER the second
-// column, and JUCE grows it upwards whenever the item is in the lower half of the screen, far from the item. LYNX puts
+// column, and JUCE grows it upwards whenever the item is in the lower half of the screen, far from the item. YW puts
 // it beside the parent menu's outer edge instead, its first item level with the item that opened it, growing
 // downwards; it moves up only as much as the screen needs, and goes to the left (of the parent, or of the item's column
 // when that is not the first one) when the right has no room.
@@ -15,7 +15,7 @@
 
 #include "core/WindowFit.h"
 
-namespace lynx::menuplace
+namespace yw::menuplace
 {
 using Box = windowfit::Box;
 
@@ -79,4 +79,4 @@ inline int displayFor (const std::vector<Box>& displays, Box root)
             best = i;
     return best;
 }
-} // namespace lynx::menuplace
+} // namespace yw::menuplace

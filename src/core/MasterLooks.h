@@ -4,14 +4,14 @@
 // own effects at the end of the Master insert, each slot marked with the look's id (EffectSlot::look):
 //   Fruity Parametric EQ 2 -> Fruity Multiband Compressor -> Fruity Stereo Enhancer or Fruity Soft Clipper -> Fruity Limiter
 //   -> Apex Limiter (true peak, round 190ea)
-// The first four run LYNX's exact engines of those plugins, so the chain plays without FL installed, stays editable in the
+// The first four run YW's exact engines of those plugins, so the chain plays without FL installed, stays editable in the
 // Mixer, and the FL export writes the four plugins with their settings (core/FlStateWrite.h). Fruity Limiter holds sample
 // peaks only: on bright mixes the peaks between the samples went up to +3.3 dBTP over its ceiling (round 190dv/190ea
-// measurements). The fifth slot, LYNX's Apex Limiter with True peak on at 0 dB gain, ends every look at
+// measurements). The fifth slot, YW's Apex Limiter with True peak on at 0 dB gain, ends every look at
 // trueCeilingDb (dBTP): it only touches those inter-sample overs. FL has no true-peak limiter of its own, so the FL
 // export leaves that slot out (and says so in its report). Looks applied before round 190ea keep their four saved
 // slots; applying a look again (another look, intensity, tone, Auto level) adds the fifth.
-// The values of each look are LYNX's own, set at Light (intensity 0.25) and Heavy (0.85) and interpolated; intensity 0
+// The values of each look are YW's own, set at Light (intensity 0.25) and Heavy (0.85) and interpolated; intensity 0
 // is a neutral chain. Tone = the EQ's low shelf, mid bell and high shelf (±6 dB). The input gain (Auto level) is the
 // EQ's main level. No JUCE.
 
@@ -21,7 +21,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::looks
+namespace yw::looks
 {
 enum Id : int { none = 0, balanced, loud, clarity, warmTape, gentle, punchy, wide, cinematic };
 constexpr int count = 8;     // ids 1…8
@@ -34,7 +34,7 @@ const char* name (int id) noexcept;        // English name (the UI translates it
 const char* description (int id) noexcept; // one short line for the tile's tooltip
 
 // The true-peak stage that ends every look (an ordinary slot here: `look` 0): Apex Limiter, 0 dB gain, True peak on,
-// ceiling trueCeilingDb − truePeakMarginDb. Also the last slot of LYNX's showcase song's Master (core/ShowcaseSong.h).
+// ceiling trueCeilingDb − truePeakMarginDb. Also the last slot of YW's showcase song's Master (core/ShowcaseSong.h).
 EffectSlot truePeakStage();
 
 // The look's five slots for these settings (each slot's `look` = settings.id). Empty for id 0.
@@ -56,4 +56,4 @@ void setBypassed (Song& song, bool off); // the A/B switch: all look slots off /
 // the level the looks are tuned for. Silence (or no measurement, lufs < −70) gives 0.
 constexpr double referenceLufs = -18.0;
 float autoInputGainDb (double inputLufs) noexcept;
-} // namespace lynx::looks
+} // namespace yw::looks

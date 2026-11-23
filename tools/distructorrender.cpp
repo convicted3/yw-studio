@@ -1,4 +1,4 @@
-// Renders an interleaved float32 stereo file through LYNX's Distructor engine (core/DistructorFx), the way FL calls
+// Renders an interleaved float32 stereo file through YW's Distructor engine (core/DistructorFx), the way FL calls
 // the plugin: state load, sample rate, then blocks. Used to compare against the installation's plugin (REA round 71).
 // usage: distructorrender <state.bin> <in.f32> <out.f32> [rate] [block] [module|plugin] [impulse folder]
 //   module: the state is a single Module_x64 state block instead of a whole Distructor state
@@ -29,11 +29,11 @@ int main (int argc, char** argv)
     const int blk = argc > 5 ? std::atoi (argv[5]) : 512;
     const bool module = argc > 6 && std::strcmp (argv[6], "module") == 0;
     if (argc > 7)
-        lynx::distructor::setImpulseFolder (argv[7]);
-    lynx::distructor::State s;
+        yw::distructor::setImpulseFolder (argv[7]);
+    yw::distructor::State s;
     if (module)
     {
-        auto m = lynx::distructor::parseModule (st.data(), st.size());
+        auto m = yw::distructor::parseModule (st.data(), st.size());
         if (! m)
             return 3;
         s.modules.push_back (*m);
@@ -41,12 +41,12 @@ int main (int argc, char** argv)
     }
     else
     {
-        auto p = lynx::distructor::parse (st);
+        auto p = yw::distructor::parse (st);
         if (! p)
             return 3;
         s = *p;
     }
-    lynx::distructor::Engine e;
+    yw::distructor::Engine e;
     // like the EXEC harness: the state is loaded before the host sets the rate (at 44100)
     e.prepare (rate, blk, std::getenv ("DISTRUCTOR_STATE_RATE") ? std::atof (std::getenv ("DISTRUCTOR_STATE_RATE")) : 0.0);
     e.set (s);

@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::livefader
+namespace yw::livefader
 {
 constexpr double step = 0.0125;
 // dB at position k·step, k = 0 … 32 (position 0 is −inf in Live; −70 dB here is only the inverse's end)
@@ -60,4 +60,4 @@ inline double gainAt (double p, bool send) noexcept
         return 0.0;
     return std::pow (10.0, (volumeDb (p) - (send ? sendOffsetDb : 0.0)) / 20.0);
 }
-} // namespace lynx::livefader
+} // namespace yw::livefader

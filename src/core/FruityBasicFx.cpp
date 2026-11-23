@@ -16,7 +16,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx::flbasic
+namespace yw::flbasic
 {
 namespace
 {
@@ -886,4 +886,4 @@ std::unique_ptr<Effect> makePanOMatic() { return std::make_unique<PanOMaticEffec
 std::unique_ptr<Effect> makeBalance() { return std::make_unique<BalanceEffect>(); }
 std::unique_ptr<Effect> makeBloodOverdrive() { return std::make_unique<BloodOverdriveEffect>(); }
 std::unique_ptr<Effect> makeSend() { return std::make_unique<SendEffect>(); }
-} // namespace lynx::flbasic
+} // namespace yw::flbasic

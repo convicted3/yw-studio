@@ -4,7 +4,7 @@
 
 #include "lame.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -123,4 +123,4 @@ Mp3Scan scanMp3 (const std::vector<std::uint8_t>& b)
         scan.kbps = 0;
     return scan;
 }
-} // namespace lynx
+} // namespace yw

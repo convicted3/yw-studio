@@ -4,14 +4,14 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class MainComponent;
 
 namespace dockpaint
 {
-// --uiperf with LYNX_UIPERF_DOCKCHECK=1 (round 190jy, queue item 44): the checks of a docked LYNX editor drawn by the main
+// --uiperf with YW_UIPERF_DOCKCHECK=1 (round 190jy, queue item 44): the checks of a docked YW editor drawn by the main
 // window, in the real main window with the loaded project (Windows; elsewhere every step says "not available"). The
 // project needs a Gross Beat insert (Ookay - Thief). `step (i)` runs step i (0 … count() - 1, a few hundred ms apart so
 // the system has moved and drawn the windows) and returns its report lines ("dockcheck_<name>=OK" / "=FAIL <why>"); the
@@ -30,4 +30,4 @@ private:
     std::unique_ptr<State> state;
 };
 } // namespace dockpaint
-} // namespace lynx
+} // namespace yw

@@ -31,13 +31,13 @@ inline Layout dvorak()
 }
 
 // The OS's answer for a layout: the scan code of the key that types `keyCode` (either case), 0 for none
-inline lynx::keys::typingpiano::ScanCodeLookup lookupOf (Layout layout)
+inline yw::keys::typingpiano::ScanCodeLookup lookupOf (Layout layout)
 {
     return [layout = std::move (layout)] (int keyCode) {
         const auto fold = [] (int c) { return c >= 'a' && c <= 'z' ? c - 'a' + 'A' : c; };
         for (std::size_t i = 0; i < layout.size(); ++i)
             if (fold (layout[i]) == fold (keyCode))
-                return lynx::keys::typingpiano::scanCodeOfUsKey (usKeys[i]);
+                return yw::keys::typingpiano::scanCodeOfUsKey (usKeys[i]);
         return 0;
     };
 }
@@ -45,7 +45,7 @@ inline lynx::keys::typingpiano::ScanCodeLookup lookupOf (Layout layout)
 
 TEST (typingplace190bm_scan_codes_are_the_us_keyboard)
 {
-    using namespace lynx::keys::typingpiano;
+    using namespace yw::keys::typingpiano;
     // PC set 1 (= evdev): 1 = 0x02, Q = 0x10, A = 0x1E, ` = 0x29, \ = 0x2B, Z = 0x2C, / = 0x35
     CHECK (usKeyOfScanCode (0x02) == '1' && usKeyOfScanCode (0x0D) == '=' && usKeyOfScanCode (0x10) == 'Q' && usKeyOfScanCode (0x1B) == ']');
     CHECK (usKeyOfScanCode (0x1E) == 'A' && usKeyOfScanCode (0x28) == '\'' && usKeyOfScanCode (0x29) == '`' && usKeyOfScanCode (0x2B) == '\\');
@@ -67,7 +67,7 @@ TEST (typingplace190bm_scan_codes_are_the_us_keyboard)
 
 TEST (typingplace190bm_every_layout_plays_as_the_us_keyboard)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     using namespace typingplace190bm;
     const std::pair<const char*, Layout> layouts[] = { { "US", us() }, { "QWERTZ", qwertz() }, { "AZERTY", azerty() }, { "Dvorak", dvorak() } };
     for (const auto& [name, layout] : layouts)
@@ -90,7 +90,7 @@ TEST (typingplace190bm_every_layout_plays_as_the_us_keyboard)
 
 TEST (typingplace190bm_german_keyboard_z_row_starts_left_of_x)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     using namespace typingplace190bm;
     const auto piano = typingpiano::pianoLayout();
     const auto play = [piano] (int keyCode, const typingpiano::ScanCodeLookup& lookup) {

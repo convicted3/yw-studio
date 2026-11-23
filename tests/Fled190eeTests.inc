@@ -1,19 +1,19 @@
 // Round 190ee: FL Gross Beat's MIDI control of the slots and Smooth points, Pitcher's MIDI port, Edison's region
-// trigger notes in the WAV (FL facts: /mnt/e/lynx-work/fled190ee/FL-FACTS.md; REA of Gross Beat_x64.dll and
+// trigger notes in the WAV (FL facts: /mnt/e/yw-work/fled190ee/FL-FACTS.md; REA of Gross Beat_x64.dll and
 // Edison_x64.dll, REA_rodada16 / 30 for Pitcher).
 
 namespace fled190ee
 {
 // a 4-beat-bar sine through an effect, the song moving (FL's "playing"), 120 BPM, blocks of 512
-inline std::vector<float> render (const lynx::EffectSlot& slot, const std::function<void (lynx::Effect&, int)>& beforeBlock, int blocks = 120)
+inline std::vector<float> render (const yw::EffectSlot& slot, const std::function<void (yw::Effect&, int)>& beforeBlock, int blocks = 120)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     std::vector<float> out;
     if (fx == nullptr)
         return out;
     fx->prepare (44100.0);
     std::vector<float> l (512), r (512);
-    const double bpm = 120.0, ticksPerSample = bpm / 60.0 * lynx::ppq / 44100.0;
+    const double bpm = 120.0, ticksPerSample = bpm / 60.0 * yw::ppq / 44100.0;
     double ticks = 0.0;
     std::int64_t n = 0;
     for (int b = 0; b < blocks; ++b)
@@ -64,7 +64,7 @@ inline std::vector<std::uint8_t> pitcherState (float port)
 // ---- Gross Beat: "Trigger slots from MIDI notes" in FL's state (0x83f890 load / save, 0x83fcf0 constructor) ---------
 TEST (gb190ee_midi_trigger_is_saved_in_version_9)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     // FL's bare instance: off, written as FL 2026 writes (version 9 + the byte)
     const auto bare = emptyState();
     CHECK (! bare.midiTrigger && bare.version == 9);
@@ -91,13 +91,13 @@ TEST (gb190ee_midi_trigger_is_saved_in_version_9)
     const auto offBytes = writeState (off);
     CHECK (offBytes[2] == 9 && offBytes.size() == v8.size() + 1 && offBytes.back() == 0);
     CHECK (! parseState (offBytes.data(), offBytes.size())->midiTrigger);
-    // a new LYNX Gross Beat (LYNX's bank in the role of FL's Default preset) is on
+    // a new YW Gross Beat (YW's bank in the role of FL's Default preset) is on
     CHECK (editableState (factoryContainer()).midiTrigger);
 }
 
 TEST (gb190ee_keys_select_slots)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     CHECK (slotForKey (60) == std::make_pair (0, 0) && slotForKey (95) == std::make_pair (0, 35));
     CHECK (slotForKey (24) == std::make_pair (1, 0) && slotForKey (59) == std::make_pair (1, 35));
     CHECK (slotForKey (23).first < 0 && slotForKey (96).first < 0 && slotForKey (0).first < 0 && slotForKey (127).first < 0);
@@ -106,7 +106,7 @@ TEST (gb190ee_keys_select_slots)
 // FL's MIDI handler 0x848330: Key-held slots stack up and go back on release
 TEST (gb190ee_key_held_goes_back_on_release)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     MidiSlots midi;
     std::array<int, 2> current { 3, 0 };
     auto held = [] (int kind, int slot) { return kind == 0 && (slot == 5 || slot == 6); };
@@ -139,11 +139,11 @@ TEST (gb190ee_key_held_goes_back_on_release)
 // a note selects a slot exactly as the slot's parameter does; with the option off it does nothing
 TEST (gb190ee_midi_note_selects_like_the_parameter)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::grossBeat);
     const auto none = fled190ee::render (slot, {});
     auto byParam = slot;
-    byParam.params[0] = grossbeat::paramFromRaw (0, 7); // time slot 8 of LYNX's bank (half speed)
+    byParam.params[0] = grossbeat::paramFromRaw (0, 7); // time slot 8 of YW's bank (half speed)
     const auto param = fled190ee::render (byParam, {});
     const auto midi = fled190ee::render (slot, [] (Effect& fx, int b) {
         if (b == 0)
@@ -176,7 +176,7 @@ TEST (gb190ee_midi_note_selects_like_the_parameter)
 // Smooth (type 10): the plugin's own preparation (0x784d60) and player (0x789a70) = FLEngine's law (flcurve)
 TEST (gb190ee_smooth_points_are_curved)
 {
-    using namespace lynx;
+    using namespace yw;
     grossbeat::Slot slot;
     grossbeat::setPoints (slot, { { 0.0, 1.0f, 0.0f, 2 }, { 2.0, 0.0f, 0.0f, 10 }, { 4.0, 1.0f, 0.0f, 10 } });
     // 1 → 0 over beats 0…2: no Smooth neighbour before, a Smooth one after whose end level equals this start, so both
@@ -199,7 +199,7 @@ TEST (gb190ee_smooth_points_are_curved)
     grossbeat::Slot flat;
     grossbeat::setPoints (flat, { { 0.0, 0.5f, 0.0f, 2 }, { 4.0, 0.5f, 0.3f, 10 } });
     CHECK (std::abs ((double) grossbeat::levelAt (flat, 2.0) - 0.5) < 1.0e-6);
-    // the bank LYNX ships has no Smooth point, so its sound is untouched by this round
+    // the bank YW ships has no Smooth point, so its sound is untouched by this round
     const auto bank = grossbeat::factoryState();
     bool anySmooth = false;
     for (const auto& s : bank.slots)
@@ -225,11 +225,11 @@ TEST (gb190ee_fl_demo_selected_slots_have_no_smooth)
                 for (const auto& insert : project.mixer)
                     for (const auto& s : insert.slots)
                         if (s.plugin == "Gross Beat")
-                            if (const auto st = lynx::grossbeat::parseState (s.state.data(), s.state.size()))
+                            if (const auto st = yw::grossbeat::parseState (s.state.data(), s.state.size()))
                             {
                                 ++states;
                                 CHECK (st->midiTrigger); // (version 8: on)
-                                for (const auto k : { st->params[0], lynx::grossbeat::slotsPerKind + st->params[1] })
+                                for (const auto k : { st->params[0], yw::grossbeat::slotsPerKind + st->params[1] })
                                     for (const auto& p : st->slots[(std::size_t) k].points)
                                         smoothSelected += p.type == 10 ? 1 : 0;
                             }
@@ -244,7 +244,7 @@ TEST (gb190ee_fl_demo_selected_slots_have_no_smooth)
 // ---- Pitcher: FL's MIDI port (parameter 33) ------------------------------------------------------------------------
 TEST (pitcher190ee_midi_port_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::pitchCorrect);
     CHECK (info.params.size() == 44 && info.params[42].name == std::string ("MIDI port") && info.params[43].name == std::string ("Port routing"));
     auto slot = makeEffectSlot (EffectKind::pitchCorrect);
@@ -280,7 +280,7 @@ TEST (pitcher190ee_midi_port_parameters)
 
 TEST (pitcher190ee_notes_come_from_the_port)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::pitchCorrect);
     slot.params[34] = 1.0f; // MIDI mode
     // a voice between A4 and A#4: MIDI mode pulls it to the held note
@@ -319,7 +319,7 @@ TEST (pitcher190ee_notes_come_from_the_port)
 // ---- the MIDI Out channels reach Gross Beat and Pitcher slots on their port --------------------------------------------
 TEST (rack190ee_midi_out_routes_to_effect_ports)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer.resize (4);
     song.channels.resize (1);
@@ -360,7 +360,7 @@ TEST (rack190ee_midi_out_routes_to_effect_ports)
 // ---- Edison: region trigger notes travel in the WAV ----------------------------------------------------------------------
 TEST (edison190ee_trigger_notes_round_trip)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     Document doc;
     doc.audio.sampleRate = 44100.0;
     doc.audio.channels = { std::vector<float> (4000, 0.1f) };
@@ -386,7 +386,7 @@ TEST (edison190ee_trigger_notes_round_trip)
 // Regions › Assign all to (0x86e370)
 TEST (edison190ee_assign_all_to_layouts)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     Document doc;
     doc.audio.channels = { std::vector<float> (100, 0.0f) };
     for (int i = 0; i < 6; ++i)

@@ -2,10 +2,10 @@
 
 TEST (prism_gain_stage_attack_round152)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
     // [EXEC] Pro-MB, one band over the whole spectrum, threshold −30, 4 : 1, knee 0, range −30, release 20 %: the gain
-    // after a 1 kHz step −30 → −6 dBFS (1 ms rms windows, D:\lynx-work\parity150\mb\att*.wav)
+    // after a 1 kHz step −30 → −6 dBFS (1 ms rms windows, D:\yw-work\parity150\mb\att*.wav)
     struct Case { float attack; int ms[4]; double want[4]; };
     const Case cases[] {
         { 0.5f, { 10, 20, 50, 100 }, { -7.71, -11.67, -15.81, -16.92 } },
@@ -47,9 +47,9 @@ TEST (prism_gain_stage_attack_round152)
 
 TEST (prism_dynamic_narrow_bands_round152)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace m = dyn::prism;
-    // [EXEC] Pro-MB Dynamic phase, one static band in the free layout (magnitude, dB, 48 kHz; D:\lynx-work\parity152\mb)
+    // [EXEC] Pro-MB Dynamic phase, one static band in the free layout (magnitude, dB, 48 kHz; D:\yw-work\parity152\mb)
     struct Case { std::array<double, 5> band; double hz[5]; double db[5]; };
     const Case cases[] {
         { { 300.0, 900.0, 24, 24, -30 }, { 150.0, 300.0, 520.0, 900.0, 1800.0 }, { -0.83, -7.28, -13.34, -7.28, -0.82 } },
@@ -84,7 +84,7 @@ TEST (prism_dynamic_narrow_bands_round152)
 
 TEST (foil_plate_view_round152)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 152: Foil Plate's appended View (Full | Plate): the Plate view is the Little Plate role's one-knob panel
     const auto& info = effectInfo (EffectKind::foilPlate);
     CHECK (info.params.size() == 17 && std::string (info.params[15].name) == "View" && info.params[15].defaultValue == 0.0f); // (16: Law, round 190bz)
@@ -110,9 +110,9 @@ TEST (foil_plate_view_round152)
 namespace p152
 {
 // Auto-pan's Rhythm voicing, digital, the full width, centred, with the round-152 trigger settings
-inline lynx::EffectParams triggerPan (float trigger, float thresholdV, int divider)
+inline yw::EffectParams triggerPan (float trigger, float thresholdV, int divider)
 {
-    using namespace lynx;
+    using namespace yw;
     auto p = makeEffectSlot (EffectKind::autoPan).params;
     constexpr int rb = autopan::count;
     p[rb] = 1.0f;          // the Rhythm voicing
@@ -126,9 +126,9 @@ inline lynx::EffectParams triggerPan (float trigger, float thresholdV, int divid
 }
 // a quiet 1 kHz bed (−40 dBFS) with bursts (−6 dBFS, 50 ms) every 400 ms from 0.2 s; the pan (degrees, −90 = left)
 // read from the bed 150 … 350 ms after each burst
-inline std::vector<double> burstPans (const lynx::EffectParams& p, int bursts, std::vector<float>* flipAt = nullptr)
+inline std::vector<double> burstPans (const yw::EffectParams& p, int bursts, std::vector<float>* flipAt = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (EffectKind::autoPan);
     fx->prepare (48000.0);
     const int n = (int) (48000.0 * (0.2 + 0.4 * bursts + 0.2));
@@ -167,7 +167,7 @@ inline std::vector<double> burstPans (const lynx::EffectParams& p, int bursts, s
 
 TEST (autopan_trigger_sources_round152)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr int rb = autopan::count;
     const auto& info = effectInfo (EffectKind::autoPan);
     CHECK (info.params.size() == (std::size_t) rb + 27 && std::string (info.params[rb + 26].name) == "Random steps");

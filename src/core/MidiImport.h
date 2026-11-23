@@ -1,6 +1,6 @@
 #pragma once
 
-// FL's "Import MIDI data" window as LYNX applies it (REA rounds 143, 146b; FL's TMIDIImportForm): which tracks, which
+// FL's "Import MIDI data" window as YW applies it (REA rounds 143, 146b; FL's TMIDIImportForm): which tracks, which
 // MIDI channels and which controller to import, zero-velocity notes, and the options of File › Import › MIDI file.
 // Platform-neutral: the MIDI file is read by engine/MidiFileIo (JUCE) into the raw events below.
 
@@ -10,12 +10,12 @@
 
 #include "core/Song.h"
 
-namespace lynx::midiimport
+namespace yw::midiimport
 {
 struct RawEvent
 {
     int track = 0;           // the file's track (0-based, every track of the file)
-    std::int64_t tick = 0;   // LYNX ticks
+    std::int64_t tick = 0;   // YW ticks
     std::uint8_t status = 0; // 0x80 note off, 0x90 note on, 0xB0 controller, 0xC0 program, 0xE0 pitch bend (low nibble = MIDI channel)
     std::uint8_t data1 = 0, data2 = 0;
 };
@@ -26,11 +26,11 @@ struct ParsedMidi
     std::vector<RawEvent> events;        // in time order per track
     double bpm = 120.0;                  // the first Set Tempo (FL's whole BPM, 10..522), 120 without one
     int numerator = 0, denominator = 4;  // the first time signature (0 = none)
-    // every Set Tempo, in time order (issue #86): LYNX ticks, FL's BPM (round half even of 60 000 000 / µs per quarter,
+    // every Set Tempo, in time order (issue #86): YW ticks, FL's BPM (round half even of 60 000 000 / µs per quarter,
     // 10..522, FUN_009864f0); File › Import writes them as the new pattern's Tempo events, as FL does
     std::vector<PatternEvent> tempos;    // value = valueFromTempo (bpm)
-    // round 190nu (core/KeyRegions.h): the key signatures, in time order (LYNX ticks); a "Key: <name>" marker meta event at
-    // the same tick (what LYNX writes) gives the exact scale, else the major / natural minor key the signature names
+    // round 190nu (core/KeyRegions.h): the key signatures, in time order (YW ticks); a "Key: <name>" marker meta event at
+    // the same tick (what YW writes) gives the exact scale, else the major / natural minor key the signature names
     struct KeyChange
     {
         std::int64_t tick = 0;
@@ -53,7 +53,7 @@ struct Options
     bool realign = false;         // Realign events (removes the silence before the first note)
     bool timeSignatures = true;   // Import time signatures
     bool mixerTracks = true;      // Set mixer tracks for new channels
-    bool midiOut = false;         // Channel type: MIDI Out (else LYNX's synth)
+    bool midiOut = false;         // Channel type: MIDI Out (else YW's synth)
     int track = -1;               // Which tracks to import? −1 = all, else the file's track
     std::uint16_t channels = 0xFFFF; // Which channels to import? bit c = MIDI channel c + 1
     int controller = -1;          // Which controller to import? −1 = none, else CC 0..127 (7 / 11 volume, 10 pan)
@@ -99,4 +99,4 @@ std::vector<PatternEvent> controllerEvents (const ParsedMidi& midi, const Option
 
 // The automation target for controller `cc` of `channel` (7 / 11 volume, 10 pan); kind none for the others.
 AutomationTarget controllerTarget (int cc, int channel) noexcept;
-} // namespace lynx::midiimport
+} // namespace yw::midiimport

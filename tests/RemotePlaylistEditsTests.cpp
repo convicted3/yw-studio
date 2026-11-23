@@ -3,8 +3,8 @@
 #include <limits>
 #include <stdexcept>
 
-using namespace lynx;
-using namespace lynx::remote_playlist;
+using namespace yw;
+using namespace yw::remote_playlist;
 
 void check (bool value, const char* message)
 {

@@ -11,11 +11,11 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-// --- each look's picture: LYNX's own simple line drawing in a 1×1 box -------------------------------------------------
+// --- each look's picture: YW's own simple line drawing in a 1×1 box -------------------------------------------------
 juce::Path lookGlyph (int id)
 {
     juce::Path p;
@@ -738,4 +738,4 @@ void FinishDock::resized()
             otherApps.setBounds (r.removeFromTop (30));
     }
 }
-} // namespace lynx
+} // namespace yw

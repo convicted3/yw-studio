@@ -4,13 +4,13 @@
 #include "core/TypeAhead.h"
 
 // #165 follow-up (karatmep232 on 0.1.28: "the pitch bend note doesn't do like the bending on the same note"). The guitar of
-// his rude buster v4.flp is an FL SoundFont Player channel. LYNX Soundfont queued note-ons until its render() but applied
+// his rude buster v4.flp is an FL SoundFont Player channel. YW Soundfont queued note-ons until its render() but applied
 // slides at once, so a slide note on the step of a note (the case 46a8b6a61 fixed in the scheduler) still found no voice
 // on that channel type and the note stayed flat.
 TEST (userfix190ib_soundfont_note_glides_to_a_slide_note_on_its_own_step)
 {
-    using namespace lynx;
-    const auto folder = std::filesystem::temp_directory_path() / ("lynx-190ib-sf-" + processTempTag());
+    using namespace yw;
+    const auto folder = std::filesystem::temp_directory_path() / ("yw-190ib-sf-" + processTempTag());
     std::filesystem::create_directories (folder);
     const auto path = (folder / "font.sf2").string();
     {
@@ -54,7 +54,7 @@ TEST (userfix190ib_soundfont_note_glides_to_a_slide_note_on_its_own_step)
 // F10 / F11, with no other binding on it.
 TEST (userfix190ib_ctrl_comma_opens_settings_everywhere)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     for (auto focus : { Context::global, Context::channelRack, Context::pianoRoll, Context::playlist, Context::mixer, Context::browser })
@@ -74,7 +74,7 @@ TEST (userfix190ib_ctrl_comma_opens_settings_everywhere)
 // plays, and sounds then too with the Piano roll's "Preview notes while playing" (off by default).
 TEST (userfix190ib_piano_roll_previews_edited_notes_only_when_stopped_by_default)
 {
-    using lynx::gesture::previewsEditedNote;
+    using yw::gesture::previewsEditedNote;
     CHECK (previewsEditedNote (false, false));
     CHECK (! previewsEditedNote (true, false));
     CHECK (previewsEditedNote (true, true));
@@ -85,7 +85,7 @@ TEST (userfix190ib_piano_roll_previews_edited_notes_only_when_stopped_by_default
 // Plugin manager key handlers)
 TEST (userfix190ib_type_to_jump_first_letter_prefix_and_cycling)
 {
-    using namespace lynx::typeahead;
+    using namespace yw::typeahead;
     // the Playlist's Edit menu of the issue's screenshot, as JUCE hands the items over (key text after a tab, an
     // accelerator mark before a letter)
     const std::vector<std::u32string> items = { U"Shift left\tShift+Left", U"Shift right\tShift+Right", U"Allow resizing from left",
@@ -130,9 +130,9 @@ TEST (userfix190ib_type_to_jump_first_letter_prefix_and_cycling)
 // in the Mixer), Snare kept playing through insert 4 (still sounding with Track 1 muted) and Tracks 2-4 stayed unlinked.
 namespace userfix190ib
 {
-inline lynx::Song yannik()
+inline yw::Song yannik()
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault(); // Kick 1, Clap 2, Hat 3, Snare 4, Synth 5
     song.bpm = 130.0;
     song.mode = PlayMode::song;
@@ -177,7 +177,7 @@ inline float peak (const std::vector<float>& x)
 
 TEST (userfix190ib_yannik_track_1_is_insert_1_and_its_mute_silences_what_it_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = userfix190ib::yannik();
     // the reported state: Track 1's M (insert 2) leaves the Snare sounding through insert 4
     CHECK (autolink::linkedInsertOf (song, 0) == 2 && song.channels[3].mixerTrack == 4);
@@ -236,7 +236,7 @@ TEST (userfix190ib_yannik_track_1_is_insert_1_and_its_mute_silences_what_it_play
 
 TEST (userfix190ib_names_follow_the_link_both_ways)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = userfix190ib::yannik();
     autolink::setOn (song, false);
     autolink::setOn (song, true);
@@ -260,7 +260,7 @@ TEST (userfix190ib_names_follow_the_link_both_ways)
 
 TEST (userfix190ib_routing_that_would_change_the_sound_is_listed_and_new_content_skips_it)
 {
-    using namespace lynx;
+    using namespace yw;
     trackauto190gz::Setup s;
     // Kick (Track 1) and Hat (Track 9) share insert 7, which carries an EQ
     s.song.mixer[7].effects.push_back (makeEffectSlot (EffectKind::parametricEq));
@@ -304,7 +304,7 @@ TEST (userfix190ib_routing_that_would_change_the_sound_is_listed_and_new_content
 
 TEST (userfix190ib_an_insert_with_settings_of_its_own_sends_into_the_track_s_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     trackauto190gz::Setup s;
     // Track 1 plays Kick (Master) and Hat on insert 7 (an EQ only Hat uses): insert 7 sends into insert 1
     s.song.mixer[7].effects.push_back (makeEffectSlot (EffectKind::parametricEq));
@@ -330,7 +330,7 @@ TEST (userfix190ib_an_insert_with_settings_of_its_own_sends_into_the_track_s_ins
 // #170, also reported: "Link ... in new projects" was saved but read back as off at the next start
 TEST (userfix190ib_new_projects_link_setting_is_read_back)
 {
-    using namespace lynx;
+    using namespace yw;
     NewProjectDefaults d;
     d.linkTracks = true;
     NewProjectDefaults back;
@@ -354,7 +354,7 @@ TEST (userfix190ib_new_projects_link_setting_is_read_back)
 // Track 2
 TEST (userfix190ib_selftest_default_song_case)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     Clip clip;
     clip.kind = ClipKind::pattern;

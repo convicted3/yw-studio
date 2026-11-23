@@ -5,7 +5,7 @@
 
 TEST (simple184a_project_key_get_set)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     CHECK (! projectkey::get (s)); // a new project: FL's "Black notes", no key
     CHECK (s.scaleHighlight.scale == projectkey::noKey);
@@ -30,7 +30,7 @@ TEST (simple184a_project_key_get_set)
 
 TEST (simple184a_project_key_scales)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& list = notetools::flReferenceScales();
     const auto order = projectkey::commonFirst();
     CHECK (order.size() == list.size());
@@ -44,7 +44,7 @@ TEST (simple184a_project_key_scales)
     CHECK (projectkey::contains (cMajor, 64) && ! projectkey::contains (cMajor, 61) && projectkey::contains (cMajor, 0));
     const projectkey::Key aMinor { 9, order[1] };
     CHECK (projectkey::contains (aMinor, 60) && projectkey::contains (aMinor, 69) && ! projectkey::contains (aMinor, 68));
-    CHECK (projectkey::lynxScale (cMajor) > 0); // LYNX's own list has Major (the Piano roll's snap)
+    CHECK (projectkey::ywScale (cMajor) > 0); // YW's own list has Major (the Piano roll's snap)
     CHECK (projectkey::intervals (projectkey::Key { 0, -1 }).empty());
     CHECK (projectkey::rootName (13) == "C#" && projectkey::rootName (-1) == "B");
 }

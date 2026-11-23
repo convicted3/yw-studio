@@ -1,11 +1,11 @@
-// Round 190x, issue #143: Surge XT channels of a project made in FL Studio were silent in LYNX. FL's default template
+// Round 190x, issue #143: Surge XT channels of a project made in FL Studio were silent in YW. FL's default template
 // puts every new channel in cut group 1, cut by 1 ("cut itself", 0x84 = 0x10001); FL never cuts a wrapped plugin
-// with it (Surge XT VST3 renders the same with and without it, REA_rodada190x), but LYNX choked the plugin right after
+// with it (Surge XT VST3 renders the same with and without it, REA_rodada190x), but YW choked the plugin right after
 // each note on at the same sample, so every note ended as it started.
 namespace s190x
 {
 // a fake hosted plugin: records what the rack asks of it, in order
-struct CallSpy final : lynx::Instrument
+struct CallSpy final : yw::Instrument
 {
     std::vector<std::string> calls;
     void prepare (double) noexcept override {}
@@ -19,10 +19,10 @@ struct CallSpy final : lynx::Instrument
 
 TEST (s190x_cut_itself_never_chokes_a_hosted_plugin)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer = Song::defaultMixer (2);
-    for (int k = 0; k < 2; ++k) // 0 = a hosted plugin, 1 = LYNX's synth: both "cut itself", as FL's template sets them
+    for (int k = 0; k < 2; ++k) // 0 = a hosted plugin, 1 = YW's synth: both "cut itself", as FL's template sets them
     {
         ChannelDef c;
         c.instrument = k == 0 ? InstrumentKind::plugin : InstrumentKind::synth;

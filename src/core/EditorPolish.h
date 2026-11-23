@@ -14,7 +14,7 @@
 #include "core/TrackClips.h"
 #include "core/Song.h"
 
-namespace lynx::polish
+namespace yw::polish
 {
 // --- Piano Roll: the selection's stretch handle (R5) -----------------------------------------------
 
@@ -78,7 +78,7 @@ inline std::int64_t songBarNumber (std::int64_t origin, std::int64_t bar, std::i
 
 // The notes of `channel` that play at the same time as the first Playlist clip of `pattern`, coming from
 // other pattern clips, mapped into `pattern`'s own time. FL draws these hollow. Muted clips are skipped; a clip longer
-// than its pattern loops it with stretchedClipsLoop() (LYNX extra), else plays it once (FL, round 168k). Empty when
+// than its pattern loops it with stretchedClipsLoop() (YW extra), else plays it once (FL, round 168k). Empty when
 // the pattern is not in the Playlist.
 inline std::vector<Note> clipGhostNotes (const Song& song, int pattern, int channel, std::size_t limit = 2000)
 {
@@ -108,7 +108,7 @@ inline std::vector<Note> clipGhostNotes (const Song& song, int pattern, int chan
         const auto& other = song.patterns[(std::size_t) c.pattern];
         const auto origin = c.start - c.offset;
         const auto length = std::max<std::int64_t> (1, other.effectiveLength (song.meter()));
-        // a stretched clip loops its pattern when stretchedClipsLoop() (LYNX extra, issue #25); off = FL: once from
+        // a stretched clip loops its pattern when stretchedClipsLoop() (YW extra, issue #25); off = FL: once from
         // the clip's offset (round 168k)
         const auto loops = stretchedClipsLoop() && c.offset + c.length > length;
         const auto firstPass = loops ? std::max<std::int64_t> (0, (from - origin) / length - 1) : 0;
@@ -154,7 +154,7 @@ inline int evenTrackHeight (int h)
     return clampTrackHeight (h) & ~1;
 }
 
-// FL's size factor (Size menu 0.333 … 2, a resize drag any value ≥ 0, the .flp's f32) ↔ LYNX's px at 100 % zoom.
+// FL's size factor (Size menu 0.333 … 2, a resize drag any value ≥ 0, the .flp's f32) ↔ YW's px at 100 % zoom.
 inline int heightForFlSize (double size, int base = defaultTrackHeight)
 {
     if (! (size >= 0.0))
@@ -171,7 +171,7 @@ inline float flSizeForHeight (int height, int base = defaultTrackHeight)
 
 // FL's Playlist vertical zoom (the .flp's event 0xF2 i32 at +24, round 190oo PAT-6) ↔ its row height at 100 % UI scale:
 // 16 + 2·v px (FL's vertical zoom setter 0xe83850 hands the row layout FUN_00ea0b30 the smallest row + 2·v; FL 2026's new
-// project v = 16 → 48 px, Ookay - Thief v = 5 → 26 px), within LYNX's row limits.
+// project v = 16 → 48 px, Ookay - Thief v = 5 → 26 px), within YW's row limits.
 inline int flRowHeightForZoom (int zoom)
 {
     return clampTrackHeight (minTrackHeight + 2 * std::max (0, zoom));
@@ -321,4 +321,4 @@ inline std::int64_t stopReturnTick (bool rememberSeek, std::int64_t seekTick)
 {
     return rememberSeek && seekTick > 0 ? seekTick : 0;
 }
-} // namespace lynx::polish
+} // namespace yw::polish

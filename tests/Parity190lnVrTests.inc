@@ -8,19 +8,19 @@
 #include <cstring>
 
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 
 namespace parity190lnvr
 {
 // RMS (dB) of the left channel over the last second of 3 s of a steady sine through Foil Plate at 48 kHz, blocks of 512
-inline double sineDb (const lynx::EffectSlot& slot, double hz)
+inline double sineDb (const yw::EffectSlot& slot, double hz)
 {
     const double sr = 48000.0;
     const int n = (int) (3.0 * sr);
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
     for (int i = 0; i < n; ++i)
         l[(std::size_t) i] = r[(std::size_t) i] = (float) (0.25 * std::sin (2.0 * M_PI * hz * i / sr));
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);
@@ -33,7 +33,7 @@ inline double sineDb (const lynx::EffectSlot& slot, double hz)
 
 TEST (parity190ln_vr_foil_rea_law_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace fo = verbs::foil;
     CHECK (effectInfo (EffectKind::foilPlate).params.size() == (std::size_t) fo::revision); // hidden: no control, no string
     CHECK (fo::reaLaw == fo::revision + 1);
@@ -56,9 +56,9 @@ TEST (parity190ln_vr_foil_rea_law_is_hidden_new_instances_run_it_old_projects_do
 
 TEST (parity190ln_vr_foil_revision1_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     // parity190it's gold input (1.6 s at 48 kHz in blocks of 512), revision 1 with the REA law off: FNV-1a of the float bits
-    // and the energy, from the base commit's objects (/mnt/e/lynx-work/rea3_190ln/vr/gold: gold_base.txt, 42 renders of
+    // and the energy, from the base commit's objects (/mnt/e/yw-work/rea3_190ln/vr/gold: gold_base.txt, 42 renders of
     // revisions 0 and 1 at 44.1 / 48 / 96 kHz; the round's objects print the same lines, gold_new.txt)
     struct Gold { float type, decay, lowGain, highGain, lowFreq, voicing; std::uint64_t hash; double energy; };
     const Gold gold[] = {
@@ -92,7 +92,7 @@ TEST (parity190ln_vr_foil_revision1_renders_as_the_base_commit_did)
 
 TEST (parity190ln_vr_foil_low_eq_is_the_references_first_order_shelf)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace fo = verbs::foil;
     // Low EQ at 218 Hz (0.1), +12 dB: the reference's first-order shelf (gLow + s/ω0) / (1 + s/ω0) still lifts 1 kHz by
     // 20·log10 |4 + j·4.59| / |1 + j·4.59| = +2.3 dB; the second-order shelf of revision 1 (half gain near 100 Hz) ~0 dB
@@ -113,7 +113,7 @@ TEST (parity190ln_vr_foil_low_eq_is_the_references_first_order_shelf)
 
 TEST (parity190ln_vr_foil_bass_decay_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace fo = verbs::foil;
     CHECK (fo::reaBassRtMult (1.0) == 1.0 && fo::reaBassRtMult (2.5) == 1.0);
     CHECK (std::abs (fo::reaBassRtMult (6.25) - 1.2) < 1e-12);

@@ -1,16 +1,16 @@
 #pragma once
 
-// Tempo markers on the Playlist ruler (round 190hq, slice B11; community complaint #22 "no tempo map"). LYNX extra: FL
+// Tempo markers on the Playlist ruler (round 190hq, slice B11; community complaint #22 "no tempo map"). YW extra: FL
 // Studio 2026 has no tempo marker (its ruler marker actions are 0…11, none of them a tempo: FLEngine's EEMarkerMode0…11
 // menus, docs/analise/REA_rodada165f-markers.md §1.1, rechecked in round 190hq) and changes the tempo with a tempo
 // automation clip; Live 12.4 changes it with the Main track's tempo automation in the Arrangement and with a scene's
 // tempo in the Session view (core/ClipLauncher.h, rounds 190ef / 190em).
 //
-// The markers ARE a tempo automation clip, so they write the tempo map every other part of LYNX already plays
+// The markers ARE a tempo automation clip, so they write the tempo map every other part of YW already plays
 // (core/TempoMap.h): one automation flagged `tempoMarkers`, one clip of it from the song's start, a point per marker.
 // The first point (tick 0) is the tempo before the first marker; each marker's point holds its tempo until the next
 // (FL's Hold curve), or the segment before it ramps into it ("glide", a straight Single curve). After the clip's end the
-// last tempo holds, as after any tempo clip. Older LYNX releases, the .flp export and FL itself read the clip as a plain
+// last tempo holds, as after any tempo clip. Older YW releases, the .flp export and FL itself read the clip as a plain
 // tempo automation clip, so a project plays the same there.
 // JUCE-free, header-only; UI thread (edits go through AudioEngine::editSong).
 
@@ -26,7 +26,7 @@
 #include "core/PlaylistOps.h"
 #include "core/Song.h"
 
-namespace lynx::tempomarkers
+namespace yw::tempomarkers
 {
 struct Mark
 {
@@ -290,4 +290,4 @@ inline std::string tempoText (double bpm)
         s.pop_back();
     return s + " BPM";
 }
-} // namespace lynx::tempomarkers
+} // namespace yw::tempomarkers

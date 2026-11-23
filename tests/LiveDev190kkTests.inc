@@ -1,5 +1,5 @@
 // --- round 190kk: Live 12 devices that were still dropped — Erosion → Corrode, Looper → Edison / muted Utility, MIDI
-// Effect Racks written into the notes. Laws measured on Live 12.4.16's renders (/mnt/e/lynx-work/livedev190kk RESULTS.md).
+// Effect Racks written into the notes. Laws measured on Live 12.4.16's renders (/mnt/e/yw-work/livedev190kk RESULTS.md).
 
 #include <complex>
 
@@ -24,9 +24,9 @@ inline std::string erosionLegacy (int mode, double hz, double amplitude, double 
     return "<Erosion Id=\"1\">" + on() + par ("Mode", mode) + par ("Freq", hz) + par ("Amplitude", amplitude) + par ("BandQ", q) + "</Erosion>";
 }
 // the carrier of a sine after the effect, relative to the input (lock-in over `seconds`), and the mean |L − R|
-inline double carrierAfter (const lynx::EffectSlot& slot, double hz, double seconds = 1.0)
+inline double carrierAfter (const yw::EffectSlot& slot, double hz, double seconds = 1.0)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     const auto lat = fx->latencySamples();
     const auto n = (int) (seconds * 48000.0) + lat;
@@ -45,7 +45,7 @@ inline double carrierAfter (const lynx::EffectSlot& slot, double hz, double seco
 
 TEST (livedev190kk_erosion_imports_onto_corrode_with_the_measured_depths)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace c = corrode;
     // Live 12's Erosion: one to one
     auto t = als190cf::translate (livedev190kk::erosion2 (0.5, 1000.0, 0.5, 0.0, 1.0));
@@ -83,7 +83,7 @@ TEST (livedev190kk_erosion_imports_onto_corrode_with_the_measured_depths)
 
 TEST (livedev190kk_looper_follows_its_monitor_setting)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto looper = [] (int monitor) {
         return "<Looper Id=\"1\">" + livedev190kk::on() + livedev190kk::par ("State", 0) + livedev190kk::par ("Feedback", 1.0) +
                livedev190kk::flag ("Reverse", false) + livedev190kk::par ("Monitor", monitor) + livedev190kk::par ("Pitch", 0.0) + "</Looper>";
@@ -99,8 +99,8 @@ TEST (livedev190kk_looper_follows_its_monitor_setting)
 
 TEST (livedev190kk_midi_effect_rack_chains_are_written_into_the_notes)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190cf::range;
     using als190cf::v;
     // a rack of two chains: keys 0…59 up an octave, 60…127 down an octave (Live 12.4's own MIDI Effect Rack shape)
@@ -179,7 +179,7 @@ TEST (livedev190kk_midi_effect_rack_chains_are_written_into_the_notes)
 
 TEST (livedev190kk_vinyl_distortion_imports_onto_platter)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace v = platter;
     const auto vinyl = [] (double drive, bool hard, double gain1) {
         return "<Vinyl Id=\"1\">" + livedev190kk::on() + livedev190kk::flag ("Band1On", true) + livedev190kk::par ("Gain1", gain1) +
@@ -229,7 +229,7 @@ TEST (livedev190kk_vinyl_distortion_imports_onto_platter)
 
 TEST (livedev190kk_corpus_imports_onto_soundboard_with_its_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace s = soundboard;
     const auto corpus = [] (int type, double tune) {
         std::string d = "<Corpus Id=\"1\">" + livedev190kk::on();

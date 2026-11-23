@@ -4,10 +4,10 @@
 
 namespace edscript167
 {
-lynx::audioedit::Document ramp (int frames, int channels = 2, double rate = 44100.0)
+yw::audioedit::Document ramp (int frames, int channels = 2, double rate = 44100.0)
 {
-    lynx::audioedit::Document d;
-    d.audio = lynx::audioedit::silence (channels, rate, frames);
+    yw::audioedit::Document d;
+    d.audio = yw::audioedit::silence (channels, rate, frames);
     for (int c = 0; c < channels; ++c)
         for (int i = 0; i < frames; ++i)
             d.audio.channels[(std::size_t) c][(std::size_t) i] = (float) (i % 100) / 100.0f * (c == 0 ? 1.0f : -1.0f);
@@ -15,11 +15,11 @@ lynx::audioedit::Document ramp (int frames, int channels = 2, double rate = 4410
 }
 
 // runs a script to its end, answering every form with its own defaults changed by `set` (name → value)
-lynx::audioedit::script::Outcome runAll (const std::string& src, lynx::audioedit::Document& doc, lynx::audioedit::Range sel,
+yw::audioedit::script::Outcome runAll (const std::string& src, yw::audioedit::Document& doc, yw::audioedit::Range sel,
                                          const std::map<std::string, double>& set = {}, int* forms = nullptr,
-                                         const lynx::audioedit::script::Host& host = {})
+                                         const yw::audioedit::script::Host& host = {})
 {
-    using namespace lynx::audioedit::script;
+    using namespace yw::audioedit::script;
     std::vector<Form> answers;
     for (int round = 0; round < 8; ++round)
     {
@@ -45,7 +45,7 @@ lynx::audioedit::script::Outcome runAll (const std::string& src, lynx::audioedit
 
 TEST (edscript167_preview_style_and_selection)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     // FL's Amp.pyscript shape: createDialog() + apply(form); the selection's frames, both ends included
     const std::string amp = "from enveditor import *\n"
                             "def createDialog():\n"
@@ -72,7 +72,7 @@ TEST (edscript167_preview_style_and_selection)
 
 TEST (edscript167_execute_style_regions_and_messages)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     // FL's Play to end.pyscript shape: a form at the top level (Execute), regions, Utils
     const std::string src = "from enveditor import *\n"
                             "form=ScriptDialog('Play To End','Converts markers.')\n"
@@ -110,7 +110,7 @@ TEST (edscript167_execute_style_regions_and_messages)
 
 TEST (edscript167_sample_api)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     // FL's generator / FX script idioms: an empty editor gets a length, temp samples, paste modes, rate changes
     const std::string gen = "from enveditor import *\n"
                             "if EditorSample.Length<=0:\n"
@@ -183,8 +183,8 @@ assert '''t''' + 'u' == 'tu' and 'it\'s' 'x' == "it'sx" and len('\\' 'n') == 2
 
 TEST (edscript167_builtins_and_form_memory)
 {
-    using namespace lynx::audioedit;
-    // LYNX's own scripts all run (their defaults) on a short stereo sample and on an empty editor
+    using namespace yw::audioedit;
+    // YW's own scripts all run (their defaults) on a short stereo sample and on an empty editor
     for (const auto& b : script::builtins())
     {
         auto doc = edscript167::ramp (2000);

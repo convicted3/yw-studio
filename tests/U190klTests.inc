@@ -1,4 +1,4 @@
-// Round 190kl (issue #197, Peak Controller): the live display scrolls by the clock (core/LiveHistory.h), LYNX's extra
+// Round 190kl (issue #197, Peak Controller): the live display scrolls by the clock (core/LiveHistory.h), YW's extra
 // LFO shapes (core/PeakShapes.h), and projects without them render and save exactly as before.
 #include "core/LiveHistory.h"
 #include "core/PeakShapes.h"
@@ -7,7 +7,7 @@
 
 namespace u190kl
 {
-using H = lynx::livehistory::History<3, 240>;
+using H = yw::livehistory::History<3, 240>;
 
 // calls at the given times (ms): the columns added in all
 inline int columnsFor (const std::vector<double>& times)
@@ -20,9 +20,9 @@ inline int columnsFor (const std::vector<double>& times)
 }
 
 // the Peak Controller's LFO output (2) after `blocks` blocks of silence, playing from bar 1 at 120 BPM
-inline std::vector<float> lfoTrace (const lynx::EffectSlot& slot, int blocks, bool playing)
+inline std::vector<float> lfoTrace (const yw::EffectSlot& slot, int blocks, bool playing)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     fx->reset();
     fx->setPlaying (playing);
@@ -76,7 +76,7 @@ inline double oldTension (double x, double t)
 }
 
 // the old LFO output (no Ramp) after each 256-sample block at 48 kHz, 120 BPM, free running from phase 0
-inline std::vector<float> oldFreeLfo (const lynx::EffectParams& p, int blocks)
+inline std::vector<float> oldFreeLfo (const yw::EffectParams& p, int blocks)
 {
     std::vector<float> out;
     double freePhase = 0.0;
@@ -151,7 +151,7 @@ TEST (u190kl_live_display_fills_a_late_call_with_a_straight_line)
 
 TEST (u190kl_extra_lfo_shapes_have_their_shape)
 {
-    namespace ps = lynx::peakshapes;
+    namespace ps = yw::peakshapes;
     for (int id = 1; id <= ps::count; ++id)
     {
         CHECK (std::string (ps::name (id)).size() > 0);
@@ -199,8 +199,8 @@ TEST (u190kl_extra_lfo_shapes_have_their_shape)
 TEST (u190kl_peak_controller_plays_the_extra_shape_and_fl_shapes_stay_bit_identical)
 {
     using namespace u190kl;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::peakController);
-    CHECK (slot.params[(std::size_t) lynx::peakshapes::extraShapeParam] == 0.0f);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::peakController);
+    CHECK (slot.params[(std::size_t) yw::peakshapes::extraShapeParam] == 0.0f);
     slot.params[5] = 0.9f; // LFO amount up
     slot.params[7] = 0.3f; // a fast LFO
     // every FL shape, free running (stopped), with and without tension: the LFO output equals the old code's exactly
@@ -220,7 +220,7 @@ TEST (u190kl_peak_controller_plays_the_extra_shape_and_fl_shapes_stay_bit_identi
     // an extra shape changes the LFO (and the sum), not the peak; FL's Shape value under it does not matter
     auto fl = slot;
     auto extra = slot;
-    extra.params[(std::size_t) lynx::peakshapes::extraShapeParam] = lynx::peakshapes::valueOf (lynx::peakshapes::rampDown);
+    extra.params[(std::size_t) yw::peakshapes::extraShapeParam] = yw::peakshapes::valueOf (yw::peakshapes::rampDown);
     auto extraOtherFl = extra;
     extraOtherFl.params[8] = 0.75f;
     const auto a = lfoTrace (fl, 300, true), b = lfoTrace (extra, 300, true), c = lfoTrace (extraOtherFl, 300, true);
@@ -252,22 +252,22 @@ TEST (u190kl_peak_controller_plays_the_extra_shape_and_fl_shapes_stay_bit_identi
 TEST (u190kl_projects_without_extra_shapes_save_as_before)
 {
     // the hidden parameter is not written while it is 0: a Peak Controller saves its twelve values, as before
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::peakController);
-    CHECK (lynx::savedEffectParamCount (slot) == 12);
-    slot.params[(std::size_t) lynx::peakshapes::extraShapeParam] = lynx::peakshapes::valueOf (lynx::peakshapes::steps8);
-    CHECK (lynx::savedEffectParamCount (slot) == 13);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::peakController);
+    CHECK (yw::savedEffectParamCount (slot) == 12);
+    slot.params[(std::size_t) yw::peakshapes::extraShapeParam] = yw::peakshapes::valueOf (yw::peakshapes::steps8);
+    CHECK (yw::savedEffectParamCount (slot) == 13);
     // and the stored value reads back as the same id through the file's 4-decimal rounding
-    const auto saved = (float) lynx::savedEffectParamValue (slot.params[12]);
-    CHECK (lynx::peakshapes::idOf (saved) == lynx::peakshapes::steps8);
-    for (int id = 1; id <= lynx::peakshapes::count; ++id)
-        CHECK (lynx::peakshapes::idOf ((float) (std::round (lynx::peakshapes::valueOf (id) * 10000.0) / 10000.0)) == id);
+    const auto saved = (float) yw::savedEffectParamValue (slot.params[12]);
+    CHECK (yw::peakshapes::idOf (saved) == yw::peakshapes::steps8);
+    for (int id = 1; id <= yw::peakshapes::count; ++id)
+        CHECK (yw::peakshapes::idOf ((float) (std::round (yw::peakshapes::valueOf (id) * 10000.0) / 10000.0)) == id);
     // FL's parameter list is unchanged (automation, links and the FL import see FL's twelve controls)
-    CHECK (lynx::effectInfo (lynx::EffectKind::peakController).params.size() == 12);
+    CHECK (yw::effectInfo (yw::EffectKind::peakController).params.size() == 12);
 }
 
 TEST (u190kl_a_docked_window_placed_again_keeps_a_size_within_a_pixel)
 {
-    using lynx::dockstack::keepsSize;
+    using yw::dockstack::keepsSize;
     // Gross Beat at 150 %: 1047 units = 1570.5 px; made at 1570 px, placed at 1571: kept (no resize on the first move)
     CHECK (keepsSize (1570, 1137, 1047, 758, 1.5));
     CHECK (keepsSize (1571, 1137, 1047, 758, 1.5));
@@ -280,18 +280,18 @@ TEST (u190kl_a_docked_window_placed_again_keeps_a_size_within_a_pixel)
     for (const auto scale : { 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 0.8, 0.9, 1.875 })
         for (int w = 50; w < 1300; w += 7)
         {
-            const auto p = lynx::dockstack::physicalPlace (0, 0, w, 211, scale);
+            const auto p = yw::dockstack::physicalPlace (0, 0, w, 211, scale);
             CHECK (keepsSize (p.w, p.h, w, 211, scale));
             CHECK (! keepsSize (p.w, p.h, w + 1, 211, scale) || scale < 1.5); // (from 150 % a unit is 1.5 px or more)
         }
     // a window resized unit by unit (its edge dragged) never lags its exact size by a pixel or more
     for (const auto scale : { 0.8, 0.9, 1.1, 1.25, 1.5, 1.75 })
     {
-        auto native = lynx::dockstack::physicalPlace (0, 0, 300, 200, scale).w;
+        auto native = yw::dockstack::physicalPlace (0, 0, 300, 200, scale).w;
         for (int w = 300; w < 700; ++w)
         {
             if (! keepsSize (native, (int) std::lround (200 * scale), w, 200, scale))
-                native = lynx::dockstack::physicalPlace (0, 0, w, 200, scale).w;
+                native = yw::dockstack::physicalPlace (0, 0, w, 200, scale).w;
             CHECK (std::abs (native - w * scale) < 1.0);
         }
     }

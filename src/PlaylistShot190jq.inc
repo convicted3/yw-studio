@@ -10,7 +10,7 @@
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         // (a fresh profile: every switch at its default)
         headerwidth::draggable = false;
@@ -351,7 +351,7 @@
             check ("1913_back_in_pattern_off", ! pl.projectionForSnapshot().any());
         }
 
-        // ================= Settings › LYNX extras =================
+        // ================= Settings › YW extras =================
         {
             auto page = makeSettingsPanel (engine, SettingsPage::extras);
             page->setSize (juce::jmax (page->getWidth(), 760), 1900);

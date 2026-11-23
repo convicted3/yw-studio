@@ -6,7 +6,7 @@
 
 namespace onboard190np
 {
-using namespace lynx;
+using namespace yw;
 
 inline Song empty()
 {
@@ -27,7 +27,7 @@ inline Clip audioClip (int track)
 
 TEST (onboard190np_fresh_profile_shows_the_welcome_card_an_upgrade_never_does)
 {
-    using namespace lynx::onboarding;
+    using namespace yw::onboarding;
     // a fresh profile: nothing in the settings folder
     CHECK (startAction (false, false, false) == StartAction::welcomeCard);
     // an upgrade: setup-done.txt from the old wizard -> nothing at all, whatever else is there
@@ -42,8 +42,8 @@ TEST (onboard190np_fresh_profile_shows_the_welcome_card_an_upgrade_never_does)
 
 TEST (onboard190np_each_choice_has_its_layout_starter_and_next3)
 {
-    using namespace lynx::onboarding;
-    using lynx::layoutstyle::Style;
+    using namespace yw::onboarding;
+    using yw::layoutstyle::Style;
     CHECK (choiceCount == 5);
     CHECK (layoutFor (Choice::mobile) == Style::simple);
     CHECK (layoutFor (Choice::fl) == Style::pattern);
@@ -76,9 +76,9 @@ TEST (onboard190np_each_choice_has_its_layout_starter_and_next3)
 
 TEST (onboard190np_skip_keeps_the_pattern_layout_and_changes_nothing)
 {
-    using namespace lynx::onboarding;
+    using namespace yw::onboarding;
     // Skip, the × button and Esc answer the card with no choice: the Pattern layout, nothing started
-    CHECK (layoutFor (Choice::none) == lynx::layoutstyle::Style::pattern);
+    CHECK (layoutFor (Choice::none) == yw::layoutstyle::Style::pattern);
     CHECK (starterFor (Choice::none) == Starter::none);
     CHECK (! showsMixer (Choice::none));
     CHECK (next3 (Choice::none).empty());
@@ -98,8 +98,8 @@ TEST (onboard190np_skip_keeps_the_pattern_layout_and_changes_nothing)
 
 TEST (onboard190np_next3_items_tick_from_the_song_and_stay_ticked)
 {
-    using namespace lynx::onboarding;
-    using namespace lynx;
+    using namespace yw::onboarding;
+    using namespace yw;
     auto song = onboard190np::empty();
     Context ctx;
     State s;
@@ -187,9 +187,9 @@ TEST (onboard190np_next3_items_tick_from_the_song_and_stay_ticked)
 
 TEST (onboard190np_empty_state_hints)
 {
-    using namespace lynx::onboarding;
-    using namespace lynx;
-    using lynx::layoutstyle::Style;
+    using namespace yw::onboarding;
+    using namespace yw;
+    using yw::layoutstyle::Style;
     auto song = onboard190np::empty();
     CHECK (playlistEmpty (song));
     CHECK (emptyHintFor (Style::pattern, song, false, true) == EmptyHint::playlist);
@@ -228,9 +228,9 @@ TEST (onboard190np_empty_state_hints)
 
 TEST (onboard190np_at_most_one_tip_per_session_only_on_a_signal)
 {
-    using namespace lynx::onboarding;
-    using namespace lynx;
-    using lynx::layoutstyle::Style;
+    using namespace yw::onboarding;
+    using namespace yw;
+    using yw::layoutstyle::Style;
     auto song = onboard190np::empty();
     // the signals
     CHECK (songModeEmptySignal (true, song, Style::pattern));
@@ -273,7 +273,7 @@ TEST (onboard190np_at_most_one_tip_per_session_only_on_a_signal)
 
 TEST (onboard190np_state_round_trips_and_ignores_junk)
 {
-    using namespace lynx::onboarding;
+    using namespace yw::onboarding;
     State s;
     CHECK (parse (serialize (s)) == s);
     s.choice = "timeline";

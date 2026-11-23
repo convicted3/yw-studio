@@ -3,25 +3,25 @@
 // blocks do, then two task-graph rounds: round A = the controllers' sources and every unit that feeds them, each source
 // writing its live values into the next piece's slot right after rendering a piece; round B = the rest. Anything where a
 // live value is read or written elsewhere (clips, links, lanes, modulators, a round-A unit's own controls...) stays piece
-// by piece. LYNX_POOL "live=0" = piece by piece as before. The samples must not change at all.
+// by piece. YW_POOL "live=0" = piece by piece as before. The samples must not change at all.
 
 namespace sched190lv
 {
 struct Guard
 {
-    int rounds = lynx::WorkerPool::tuning().blockRounds.load(), help = lynx::WorkerPool::tuning().helpPercent.load(),
-        live = lynx::WorkerPool::tuning().liveRounds.load();
+    int rounds = yw::WorkerPool::tuning().blockRounds.load(), help = yw::WorkerPool::tuning().helpPercent.load(),
+        live = yw::WorkerPool::tuning().liveRounds.load();
     ~Guard()
     {
-        lynx::WorkerPool::tuning().blockRounds = rounds;
-        lynx::WorkerPool::tuning().helpPercent = help;
-        lynx::WorkerPool::tuning().liveRounds = live;
+        yw::WorkerPool::tuning().blockRounds = rounds;
+        yw::WorkerPool::tuning().helpPercent = help;
+        yw::WorkerPool::tuning().liveRounds = live;
     }
 };
 
-lynx::Automation liveAutomation (lynx::AutomationTarget target, int track, int output, int channel = -1, int slot = 0)
+yw::Automation liveAutomation (yw::AutomationTarget target, int track, int output, int channel = -1, int slot = 0)
 {
-    lynx::Automation a;
+    yw::Automation a;
     a.target = target;
     a.source.track = track;
     a.source.slot = slot;
@@ -34,10 +34,10 @@ lynx::Automation liveAutomation (lynx::AutomationTarget target, int track, int o
 
 // round 190kz's test song (35 channels on 13 inserts with routes, automation clips on the 128 grid) with two Fruity Peak
 // Controllers: insert 3's (fed by its channel, routed on to 7 → 9 → 11) and insert 2's (its LFO), driving insert 11's
-// fader, the reverb's mix on insert 9, a channel's volume and a LYNX Synth knob (a binding) — all of them in round B
-lynx::Song song()
+// fader, the reverb's mix on insert 9, a channel's volume and a YW Synth knob (a binding) — all of them in round B
+yw::Song song()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = sched190kz::song (false);
     auto peak = makeEffectSlot (EffectKind::peakController);
     peak.params[1] = 0.9f; // (the peak moves its output)
@@ -57,9 +57,9 @@ lynx::Song song()
 // the same with round-A units that read live values exactly: insert 3's own pan from its own controller, and a third
 // controller on insert 9 (after 3 → 7 → 9: round A is now 3, 7, 9 and their channels) whose reverb mix insert 3's
 // controller drives (an upstream source); the channel volume moves to a channel on insert 12 (round B)
-lynx::Song songUpstream()
+yw::Song songUpstream()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = song();
     auto peak = makeEffectSlot (EffectKind::peakController);
     peak.params[1] = 0.8f;
@@ -80,20 +80,20 @@ struct Result
 };
 
 // the song from its start in device blocks of `block` samples: alone (threads 0) or with a pool of `threads` workers
-Result render (const lynx::Song& s, int block, int threads, const char* spec)
+Result render (const yw::Song& s, int block, int threads, const char* spec)
 {
     if (spec != nullptr)
-        lynx::WorkerPool::tuning().apply (spec);
-    lynx::WorkerPool::tuning().helpPercent = 0;
-    auto state = lynx::RackState::build (s, nullptr, 48000.0);
-    lynx::WorkerPool workers (std::max (1, threads));
-    lynx::RackRenderer r;
+        yw::WorkerPool::tuning().apply (spec);
+    yw::WorkerPool::tuning().helpPercent = 0;
+    auto state = yw::RackState::build (s, nullptr, 48000.0);
+    yw::WorkerPool workers (std::max (1, threads));
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     if (threads > 0)
         r.setWorkerPool (&workers);
     Result out;
     std::vector<float> l ((std::size_t) block), rr ((std::size_t) block);
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
     const auto before = workers.stats().rounds;
     double tick = 0.0;
     for (int done = 0; done < 2 * 48000; done += block, ++out.blocks)
@@ -107,7 +107,7 @@ Result render (const lynx::Song& s, int block, int threads, const char* spec)
     out.batched = r.batchedBlockCount();
     out.batchedRounds = r.batchedRoundCount();
     out.liveRounds = r.batchedLiveRoundCount();
-    out.liveRefusals = r.batchRefusedCount (lynx::RackRenderer::BatchRefusal::liveControllers);
+    out.liveRefusals = r.batchRefusedCount (yw::RackRenderer::BatchRefusal::liveControllers);
     return out;
 }
 } // namespace sched190lv
@@ -115,7 +115,7 @@ Result render (const lynx::Song& s, int block, int threads, const char* spec)
 TEST (sched190lv_tuning_parses_live)
 {
     const sched190lv::Guard guard;
-    auto& t = lynx::WorkerPool::tuning();
+    auto& t = yw::WorkerPool::tuning();
     t.apply ("live=0");
     CHECK (t.liveRounds.load() == 0);
     t.apply ("rounds=block,help=10");
@@ -133,7 +133,7 @@ TEST (sched190lv_live_controllers_batched_render_the_same)
     {
     const auto s = upstream ? sched190lv::songUpstream() : sched190lv::song();
     {
-        auto state = lynx::RackState::build (s, nullptr, 48000.0);
+        auto state = yw::RackState::build (s, nullptr, 48000.0);
         CHECK (state->liveAutomations.size() == (upstream ? 6u : 4u));
     }
     for (const auto block : { 480, 441, 256, 64 })
@@ -180,7 +180,7 @@ TEST (sched190lv_live_controllers_batched_render_the_same)
 TEST (sched190lv_live_controller_refusals_stay_piece_by_piece)
 {
     // each case keeps every block piece by piece (counted as "live controllers") and renders what it rendered alone
-    using namespace lynx;
+    using namespace yw;
     const sched190lv::Guard guard;
     const auto check = [] (const char* name, const Song& s) {
         const auto alone = sched190lv::render (s, 480, 0, "rounds=block,live=1");
@@ -241,7 +241,7 @@ TEST (sched190lv_live_controller_refusals_stay_piece_by_piece)
         s.automations.push_back (sched190lv::liveAutomation ({ AutomationTargetKind::mixerPan, 12, 0, 0 }, 0, 0));
         check ("Master source", s);
     }
-    // a live pitch bend on a LYNX instrument (applyLiveControl)
+    // a live pitch bend on a YW instrument (applyLiveControl)
     {
         auto s = sched190lv::song();
         s.automations.push_back (sched190lv::liveAutomation ({ AutomationTargetKind::channelParam, 10, 0, midictl::pitchBendBase }, 2, 2));
@@ -266,7 +266,7 @@ TEST (sched190lv_a_block_of_too_many_pieces_still_plays)
 {
     // pattern events every 2 ticks for a beat (about ten per 480-sample block): more than maxPieces pieces. Such a block
     // is not batched and plays piece by piece — before round 190lv it was counted and not rendered at all
-    using namespace lynx;
+    using namespace yw;
     const sched190lv::Guard guard;
     for (const auto live : { false, true })
     {

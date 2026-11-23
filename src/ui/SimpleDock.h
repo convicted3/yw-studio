@@ -1,10 +1,10 @@
 #pragma once
 
-// The Simple workflow's dock for the selected track (round 190bu; design: /mnt/e/lynx-work/simple184a/DESIGN.md §2.2,
+// The Simple workflow's dock for the selected track (round 190bu; design: /mnt/e/yw-work/simple184a/DESIGN.md §2.2,
 // §3.3, §3.4; slices S5, S6, S13, S14): a strip under the timeline with two tabs.
 //
-//   Instrument  the track's sound: ‹ name › steps through its category, and the list by category picks one — LYNX's
-//               own sounds (the synth's presets and LYNX's preset banks, core/SoundLibrary.h) or the presets of the
+//   Instrument  the track's sound: ‹ name › steps through its category, and the list by category picks one — YW's
+//               own sounds (the synth's presets and YW's preset banks, core/SoundLibrary.h) or the presets of the
 //               user's own SoundFont files. ▶ plays a sound without choosing it (AudioEngine::auditionSound).
 //   Keyboard    (round 190ds) the on-screen keyboard playing the track, with its modes Keys | Scale keys | Chord pad
 //               (ui/TouchKeyboard.h, core/ScaleKeys.h) and the scale selector (the project key).
@@ -17,7 +17,7 @@
 //               the instrument's parameters, the chain's effects, Reverb / Pan / Volume; Edit mapping re-points a knob.
 //   Effects     the track's insert as cards: one-knob effects (core/GoalKnobs.h) show one big knob, any other effect
 //               its Mix; on / off, move, remove, "Editor" opens the effect's own window. On the left the chain's
-//               preset (core/ChainPresets.h, the user's own in Documents/LYNX/Chain presets) and Blend, the dry/wet
+//               preset (core/ChainPresets.h, the user's own in Documents/YW/Chain presets) and Blend, the dry/wet
 //               of the whole chain.
 //
 // It is a VIEW of what exists: the cards are the insert's own slots and the sound is the channel's own instrument,
@@ -34,7 +34,7 @@
 #include "core/SoundFontIndex.h"
 #include "core/SoundLibrary.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -92,7 +92,7 @@ public:
     static int stripHeight();
     void lookChanged(); // round 190jc: View › Large controls changed
 
-    // The folder of the user's own chain presets (.lynxtrack files)
+    // The folder of the user's own chain presets (.ywtrack files)
     static juce::File userPresetFolder();
     // The favourite chain presets (factory or the user's, by name; round 190dg), kept in that folder's Favourites.txt
     static juce::File favouritesFile();
@@ -268,4 +268,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleDock)
 };
-} // namespace lynx
+} // namespace yw

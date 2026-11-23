@@ -4,9 +4,9 @@ namespace perfmode165
 {
 // A song with a performance zone of 4 bars (Start marker at bar 5), track 0: three one-bar pattern clips in the zone
 // (patterns 0, 1, 2, one note each on their first beat with keys 60, 62, 64) and track 1: one clip after the zone.
-inline lynx::Song zoneSong()
+inline yw::Song zoneSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.channels.resize (1);
@@ -47,18 +47,18 @@ inline lynx::Song zoneSong()
 
 struct Run
 {
-    lynx::Song song;
+    yw::Song song;
     std::vector<int> zone;
-    lynx::perf::Live live;
-    lynx::perf::Player player;
+    yw::perf::Live live;
+    yw::perf::Player player;
     double clock = 0.0;
     static constexpr double block = 120.0; // ticks per block
 
-    explicit Run (lynx::Song s) : song (std::move (s)), zone (lynx::perf::zoneClips (song)) {}
+    explicit Run (yw::Song s) : song (std::move (s)), zone (yw::perf::zoneClips (song)) {}
 
-    void command (lynx::perf::Command::Type type, int track, std::int64_t clipStart)
+    void command (yw::perf::Command::Type type, int track, std::int64_t clipStart)
     {
-        lynx::perf::Command c;
+        yw::perf::Command c;
         c.type = type;
         c.track = track;
         c.clipStart = clipStart;
@@ -79,7 +79,7 @@ struct Run
 
 TEST (perfmode165_zone_from_start_marker_and_song_skips_it)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = perfmode165::zoneSong();
     CHECK (s.performanceZoneEnd() == 16 * ppq);
     CHECK (perf::zoneClips (s).size() == 3);
@@ -99,7 +99,7 @@ TEST (perfmode165_zone_from_start_marker_and_song_skips_it)
 
 TEST (perfmode165_trigger_sync_tolerant_and_queue)
 {
-    using namespace lynx;
+    using namespace yw;
     using T = perf::Command::Type;
     {
         perfmode165::Run r (perfmode165::zoneSong()); // FL defaults: 4 beats, tolerant
@@ -148,7 +148,7 @@ TEST (perfmode165_trigger_sync_tolerant_and_queue)
 
 TEST (perfmode165_motions)
 {
-    using namespace lynx;
+    using namespace yw;
     using T = perf::Command::Type;
     using M = TrackPerformance::Motion;
     auto with = [] (M motion) {
@@ -215,7 +215,7 @@ TEST (perfmode165_motions)
 
 TEST (perfmode165_press_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     using T = perf::Command::Type;
     using P = TrackPerformance::Press;
     auto with = [] (P press, TrackPerformance::Motion motion = TrackPerformance::Motion::stay) {
@@ -264,7 +264,7 @@ TEST (perfmode165_press_modes)
 
 TEST (perfmode165_position_sync_and_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using T = perf::Command::Type;
     auto s = perfmode165::zoneSong();
     s.playlistTracks[0].performance.triggerSync = TrackPerformance::Sync::beat;
@@ -301,7 +301,7 @@ TEST (perfmode165_position_sync_and_notes)
 
 TEST (perfmode165_stop_and_recording)
 {
-    using namespace lynx;
+    using namespace yw;
     using T = perf::Command::Type;
     auto s = perfmode165::zoneSong();
     s.playlistTracks[0].performance.triggerSync = TrackPerformance::Sync::off;
@@ -352,8 +352,8 @@ TEST (perfmode165_flp_import_track_settings)
         return;
     std::ifstream in (path, std::ios::binary);
     const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
-    const auto song = lynx::importFlp (flp::parseProject (file));
-    using lynx::TrackPerformance;
+    const auto song = yw::importFlp (flp::parseProject (file));
+    using yw::TrackPerformance;
     CHECK (song.playlistTracks.size() >= 3);
     if (song.playlistTracks.size() >= 3)
     {
@@ -367,7 +367,7 @@ TEST (perfmode165_flp_import_track_settings)
     // the zone ends at the Start marker (bar 21)
     bool start = false;
     for (const auto& m : song.markers())
-        start = start || (m.action == lynx::Marker::songStart && m.tick == 1920 * 10);
+        start = start || (m.action == yw::Marker::songStart && m.tick == 1920 * 10);
     CHECK (start);
     CHECK (song.performanceMode); // [DATA] event 0x1F = 1 in every performance demo
 }
@@ -376,9 +376,9 @@ namespace perfmode165
 {
 // A synth channel on insert 1 with an effect chain (one effect at half dry/wet, one switched off), a short phrase in
 // pattern mode; rendered for `blocks` × 512 samples at 48 kHz (left + right interleaved per block).
-inline lynx::Song patcherizeSong()
+inline yw::Song patcherizeSong()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.mode = PlayMode::pattern;
     s.channels.resize (1);
@@ -412,14 +412,14 @@ inline lynx::Song patcherizeSong()
     return s;
 }
 
-inline std::vector<float> render (const lynx::Song& song, int blocks = 200)
+inline std::vector<float> render (const yw::Song& song, int blocks = 200)
 {
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> all, l (512), rr (512);
     double tick = 0.0;
-    for (int b = 0; b < blocks; ++b, tick += 512.0 * song.bpm * lynx::ppq / 60.0 / 48000.0)
+    for (int b = 0; b < blocks; ++b, tick += 512.0 * song.bpm * yw::ppq / 60.0 / 48000.0)
     {
         r.process (state.get(), true, tick, 512, l.data(), rr.data(), nullptr);
         all.insert (all.end(), l.begin(), l.end());
@@ -446,7 +446,7 @@ inline float peak (const std::vector<float>& a)
 
 TEST (perfmode165_patcherize_channel_nulls)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = perfmode165::patcherizeSong();
     const auto before = perfmode165::render (song);
     CHECK (perfmode165::peak (before) > 0.01f);
@@ -466,7 +466,7 @@ TEST (perfmode165_patcherize_channel_nulls)
 
 TEST (perfmode165_patcherize_slots_null_and_follow_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = perfmode165::patcherizeSong();
     // an automation of the chorus's first parameter and a controller link to the reverb's
     Automation a;
@@ -510,7 +510,7 @@ TEST (perfmode165_patcherize_slots_null_and_follow_automation)
 
 TEST (perfmode165_midi_channel_launches_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     // [DECOMP] 0x1181be1: an octave per track, a note per column; 120…124 navigate
     perf::MidiMapping m;
     perf::Command c;
@@ -538,7 +538,7 @@ TEST (perfmode165_midi_channel_launches_clips)
 
 TEST (perfmode165_midi_modifiers_and_prepare_macro)
 {
-    using namespace lynx;
+    using namespace yw;
     // [DECOMP] FUN_01221c00: 125 held → the clip's column on every track, 126 → only tracks playing, 127 → next bar
     perf::MidiMapping m;
     perf::Command c;

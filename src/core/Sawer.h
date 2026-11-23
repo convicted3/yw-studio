@@ -14,7 +14,7 @@
 //
 // The channel keeps the plugin's raw saved state (record 0xD5: "SSLF" + size + "1rwS" + 96 floats + modulation data +
 // name) in ChannelDef::pluginState and the path of the user's `data.saw` (the oscillator cycle, 8192 floats, read at run
-// time and never bundled) in ChannelDef::samplePath. Random numbers: the DLL's process-global generators; LYNX gives
+// time and never bundled) in ChannelDef::samplePath. Random numbers: the DLL's process-global generators; YW gives
 // every instance its own, started like a freshly loaded DLL.
 
 #include <cstdint>
@@ -26,7 +26,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this Sawer state ("SSLF" + "1rwS"/"DrwS" + at least the 96 parameters)
 bool sawerStateUsable (const std::vector<std::uint8_t>& state);
@@ -64,4 +64,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<float>& table, const std::vector<RefNote>& notes,
                                     double sampleRate, int length, int block = 512, double bpm = 120.0, int maxPoly = 0, bool panLaw = false);
 } // namespace sawer
-} // namespace lynx
+} // namespace yw

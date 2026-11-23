@@ -5,7 +5,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 // --- the hue/saturation wheel ----------------------------------------------------------------------------------------
 class ColourPicker::Wheel final : public juce::Component
@@ -330,7 +330,7 @@ public:
         area.removeFromTop (6);
         picker.setBounds (area.removeFromTop (picker.preferredHeight()));
         area.removeFromTop (10);
-        // (round 190oo, WG-6: the one button order of LYNX's dialogs: Reset on the left, Cancel, OK in the accent at the far right)
+        // (round 190oo, WG-6: the one button order of YW's dialogs: Reset on the left, Cancel, OK in the accent at the far right)
         auto buttons = area.removeFromTop (28);
         ok.setBounds (buttons.removeFromRight (90));
         buttons.removeFromRight (8);
@@ -373,7 +373,7 @@ juce::PopupMenu colourMenu (std::uint32_t current, std::function<void (std::uint
     juce::PopupMenu colours;
     colours.addItem (tr ("Default"), true, current == 0, [set] { set (0); });
     colours.addSeparator();
-    for (auto c : lynxPalette())
+    for (auto c : ywPalette())
     {
         juce::Image swatch (juce::Image::ARGB, 16, 16, true);
         juce::Graphics (swatch).fillAll (juce::Colour (c));
@@ -386,11 +386,11 @@ juce::PopupMenu colourMenu (std::uint32_t current, std::function<void (std::uint
         colours.addItem (std::move (item));
     }
     colours.addSeparator();
-    const auto custom = current != 0 && std::find (lynxPalette().begin(), lynxPalette().end(), current) == lynxPalette().end();
+    const auto custom = current != 0 && std::find (ywPalette().begin(), ywPalette().end(), current) == ywPalette().end();
     colours.addItem (tr ("Custom color..."), true, custom, [set, current, screenArea] {
-        showColourPickerPopup (screenArea, tr ("Custom color"), current != 0 ? juce::Colour (current) : juce::Colour (lynxPalette()[0]), {},
+        showColourPickerPopup (screenArea, tr ("Custom color"), current != 0 ? juce::Colour (current) : juce::Colour (ywPalette()[0]), {},
                                [set] (juce::Colour c) { set (c.getARGB()); });
     });
     return colours;
 }
-} // namespace lynx::ui
+} // namespace yw::ui

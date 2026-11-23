@@ -11,7 +11,7 @@
 #include "core/ModelParams.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 namespace braid
 {
@@ -19,7 +19,7 @@ namespace
 {
 struct Spec
 {
-    std::string name, live; // LYNX's English name, Live's element name
+    std::string name, live; // YW's English name, Live's element name
     float low, high;
     bool stepped;
     double value; // a new device's value (Live's default Meld)
@@ -118,7 +118,7 @@ std::string fmt (const char* f, double v)
     return b;
 }
 
-// [DATA 190ko: Live 12.4's menus, read from its device in the GUI session; LYNX's own names where they describe the same thing]
+// [DATA 190ko: Live 12.4's menus, read from its device in the GUI session; YW's own names where they describe the same thing]
 constexpr const char* oscNames[oscTypeCount] { "Basic Shapes", "Dual Basic Shapes", "Noisy Shapes", "Square Sync", "Square 5th", "Sub",
                                                "Swarm Sine", "Swarm Triangle", "Swarm Saw", "Swarm Square", "Harmonic Fm", "Fold Fm",
                                                "Squelch", "Simple Fm", "Chip", "Shepard's Pi", "Tarp", "Extratone", "Noise Loop",
@@ -329,4 +329,4 @@ bool setBraid (ChannelDef& c, const EngineParam& p, float raw)
 
 Table braidModelTable() { return { &braidEngineParams(), &getBraid, &setBraid }; }
 } // namespace modelparams
-} // namespace lynx
+} // namespace yw

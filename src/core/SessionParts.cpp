@@ -6,7 +6,7 @@
 
 #include "core/SessionIds.h"
 
-namespace lynx::parts
+namespace yw::parts
 {
 std::uint32_t ownerOfChannel (const ChannelDef& c) noexcept { return uids::tagOf (c.uid); }
 
@@ -784,4 +784,4 @@ Song keepOnlyPart (const Song& guest)
                              out.initialValues.end());
     return out;
 }
-} // namespace lynx::parts
+} // namespace yw::parts

@@ -19,7 +19,7 @@ float harmor165hFloat (std::uint32_t u)
 // mono samples of one held note (block 512, 44.1 kHz, 120 BPM)
 std::vector<float> harmor165hRender (const std::vector<std::uint8_t>& st, int length)
 {
-    const auto y = lynx::harmor::renderReference (st, { { 0, 60, 0.8, 1.0, 0.0, -1 } }, 44100.0, length);
+    const auto y = yw::harmor::renderReference (st, { { 0, 60, 0.8, 1.0, 0.0, -1 } }, 44100.0, length);
     std::vector<float> m ((std::size_t) length);
     for (int k = 0; k < length && 2 * (std::size_t) k < y.size(); ++k)
         m[(std::size_t) k] = y[2 * (std::size_t) k];
@@ -43,15 +43,15 @@ TEST (harmor165h_ipp_a11_models_match_the_dll)
         { 0x3e14dcea, 0x3f9409a6 }, { 0x3e11f757, 0x3f939e8b }, { 0xbdb80473, 0x3f6a0165 }, { 0x3b9bebe2, 0x3f809c50 } };
     for (const auto& [x, y] : ex)
     {
-        CHECK (harmor165hBits (lynx::harmor::ippExpA11Model (harmor165hFloat (x))) == y);
+        CHECK (harmor165hBits (yw::harmor::ippExpA11Model (harmor165hFloat (x))) == y);
         CHECK (harmor165hBits ((float) std::exp ((double) harmor165hFloat (x))) != y); // (not plain exp)
     }
     const std::pair<std::uint32_t, std::uint32_t> ln[] = { { 0x43e22d0b, 0x40c3a9a4 }, { 0x4465fea3, 0x40da6111 }, { 0x450882e0, 0x40f60c40 },
         { 0x456a93cf, 0x4103af9c }, { 0x4468c2f5, 0x40dac309 }, { 0x426b995d, 0x40826d41 }, { 0x7aa1bdca, 0x42a40cf6 } };
     for (const auto& [x, y] : ln)
-        CHECK (harmor165hBits (lynx::harmor::ippLnA11Model (harmor165hFloat (x))) == y);
-    CHECK (lynx::harmor::ippExpA11Model (0.0f) == 1.0f);
-    CHECK (std::isinf (lynx::harmor::ippLnA11Model (0.0f)) && lynx::harmor::ippLnA11Model (0.0f) < 0.0f);
+        CHECK (harmor165hBits (yw::harmor::ippLnA11Model (harmor165hFloat (x))) == y);
+    CHECK (yw::harmor::ippExpA11Model (0.0f) == 1.0f);
+    CHECK (std::isinf (yw::harmor::ippLnA11Model (0.0f)) && yw::harmor::ippLnA11Model (0.0f) < 0.0f);
 }
 
 TEST (harmor165h_precision_average_changes_the_sound_slightly)
@@ -59,7 +59,7 @@ TEST (harmor165h_precision_average_changes_the_sound_slightly)
     // global misc +28 = 0 (precision "Average") swaps in the 11-bit IPP functions and the nearest-entry table reads:
     // close to, but not exactly, the "High" sound
     auto st = harmorTestState (false);
-    const auto prec = lynx::harmorParamOffset (st, -1, 0) + 53 * 4 + 24 + 28;
+    const auto prec = yw::harmorParamOffset (st, -1, 0) + 53 * 4 + 24 + 28;
     CHECK (prec > 0 && prec + 4 <= (int) st.size());
     std::int32_t one = 1, zero = 0;
     std::memcpy (st.data() + prec, &one, 4);
@@ -78,7 +78,7 @@ TEST (harmor165h_note_start_delay)
     // §1: part parameter 2 delays every note: p ≥ 0 → p·0.3125/tempo s, p < 0 → (2^(−p/48) − 1)/255 s, then the
     // note plays as usual (FL: Harmony, Rotochip)
     auto st = harmorTestState (false);
-    const auto at = lynx::harmorParamOffset (st, 0, 2);
+    const auto at = yw::harmorParamOffset (st, 0, 2);
     CHECK (at > 0);
     const auto plain = harmor165hRender (st, 16384);
     CHECK (harmor165hRms (plain, 0, 2048) > 1e-4);
@@ -105,7 +105,7 @@ TEST (harmor165h_attack_fade)
     // §2: part misc +4 = v fades every record in over (v/1000)²·25 ms (a raised-cosine table), and the partials then
     // start at their levels instead of gliding up from silence (FL: Morning)
     auto st = harmorTestState (false);
-    const auto misc = lynx::harmorParamOffset (st, 0, 0) + 386 * 4 + 0x30;
+    const auto misc = yw::harmorParamOffset (st, 0, 0) + 386 * 4 + 0x30;
     std::int32_t v = 0;
     std::memcpy (&v, st.data() + misc + 4, 4);
     CHECK (v == 0);
@@ -123,12 +123,12 @@ TEST (harmor165h_velocity_speeds_up_the_volume_envelope)
 {
     // §5: part parameter 15 scales the volume envelope's time by 2 − 2·velocity at the note's start (FL: Old vox)
     auto st = harmorTestState (false);
-    const auto at = lynx::harmorParamOffset (st, 0, 15);
+    const auto at = yw::harmorParamOffset (st, 0, 15);
     CHECK (at > 0);
     auto render = [&] (std::int32_t p15, double vel) {
         auto s = st;
         std::memcpy (s.data() + at, &p15, 4);
-        const auto y = lynx::harmor::renderReference (s, { { 0, 60, vel, 1.0, 0.0, -1 } }, 44100.0, 8192);
+        const auto y = yw::harmor::renderReference (s, { { 0, 60, vel, 1.0, 0.0, -1 } }, 44100.0, 8192);
         std::vector<float> m (8192);
         for (std::size_t k = 0; k < m.size(); ++k)
             m[k] = y[2 * k];

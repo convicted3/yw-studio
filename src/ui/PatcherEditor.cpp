@@ -49,7 +49,7 @@
 #include "ui/VfxEditors.h"
 #include "ui/ShotScale.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -373,7 +373,7 @@ public:
         if (surfaceView)
             return;
         // round 190ld (DP-64): FL's navigation — the wheel scrolls the map (up / down; Shift or a sideways swipe: left /
-        // right); round 190oa (capture 190oa C8): Alt+wheel scrolls it sideways too, as FL's; Ctrl+wheel zooms (LYNX)
+        // right); round 190oa (capture 190oa C8): Alt+wheel scrolls it sideways too, as FL's; Ctrl+wheel zooms (YW)
         if (! e.mods.isCtrlDown() && ! e.mods.isCommandDown())
         {
             const auto sideways = e.mods.isShiftDown() || e.mods.isAltDown() || std::abs (wheel.deltaX) > std::abs (wheel.deltaY);
@@ -1146,7 +1146,7 @@ private:
             }
             if (patcher::fromNotesShown (d, target.channel)) // (a mixer slot has no notes of its own)
                 add (PatchWire::Kind::midi, 0, tr ("Notes"));
-            // what LYNX sends on MIDI port N (a MIDI Out on that port; FL's "MIDI port N" pins, round 162)
+            // what YW sends on MIDI port N (a MIDI Out on that port; FL's "MIDI port N" pins, round 162)
             for (const auto port : patcher::shownFromMidiPorts (d))
                 add (PatchWire::Kind::midi, patchMidiPortPin (port), tr ("MIDI port {0}", { juce::String (port) }));
         }
@@ -1745,7 +1745,7 @@ private:
         });
     }
 
-    // FL's Patcher › Add plugin (round 162, issue #7): every generator and effect LYNX has, by FL's categories, in
+    // FL's Patcher › Add plugin (round 162, issue #7): every generator and effect YW has, by FL's categories, in
     // columns; "Open plugin picker..." and "More..." (the installed VST / VST3 / CLAP plugins) on each side.
     void showAddMenu (juce::Point<float> at)
     {
@@ -1947,9 +1947,9 @@ private:
 
     void chooseSampleNode (juce::Point<float> at)
     {
-        sampleChooser = lynx::ui::makeFileChooser (tr ("Choose sample"), juce::File(), engine.getSampleLibrary().wildcard());
+        sampleChooser = yw::ui::makeFileChooser (tr ("Choose sample"), juce::File(), engine.getSampleLibrary().wildcard());
         juce::Component::SafePointer<PatcherEditor> safe (this);
-        lynx::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe, at] (const juce::FileChooser& chooser) {
+        yw::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe, at] (const juce::FileChooser& chooser) {
             const auto file = chooser.getResult();
             if (safe == nullptr || ! file.existsAsFile())
                 return;
@@ -2074,8 +2074,8 @@ private:
 public:
     // FL's node menu (round 171b, issue #65; Patcher_x64 FUN_0083bdc0): Rename..., Save preset as... (plugins),
     // Disconnect, Delete, Inputs ›, Outputs › (each: Audio / Events / Parameters / Controllers, FUN_00839fc0), with
-    // LYNX's own Open editor on top and Bypass at the end. FL's "Allow threaded processing" / "Align" are not here
-    // (LYNX runs a Patcher's nodes on one thread; no multi-selection yet).
+    // YW's own Open editor on top and Bypass at the end. FL's "Allow threaded processing" / "Align" are not here
+    // (YW runs a Patcher's nodes on one thread; no multi-selection yet).
     juce::PopupMenu nodeMenu (int n)
     {
         const auto* d = currentDoc();
@@ -2098,7 +2098,7 @@ public:
         });
         menu.addSeparator();
 
-        // Inputs › / Outputs ›: LYNX's audio and note ports are fixed (listed, ticked); the parameters are FL's
+        // Inputs › / Outputs ›: YW's audio and note ports are fixed (listed, ticked); the parameters are FL's
         auto fixed = [] (const std::vector<juce::String>& names) {
             juce::PopupMenu m;
             for (const auto& name : names)
@@ -2254,10 +2254,10 @@ private:
         const auto pluginName = plugin->getName();
         const auto folder = pluginpresetui::folderFor (pluginName);
         folder.createDirectory();
-        presetChooser = lynx::ui::makeFileChooser (tr ("Save preset as..."), folder.getChildFile (juce::String::fromUTF8 (patcher::nodeName (d->nodes[(std::size_t) n]).c_str()) + ".lynxpreset"),
+        presetChooser = yw::ui::makeFileChooser (tr ("Save preset as..."), folder.getChildFile (juce::String::fromUTF8 (patcher::nodeName (d->nodes[(std::size_t) n]).c_str()) + ".ywpreset"),
                                                              pluginpresetui::saveWildcard (*plugin));
         juce::Component::SafePointer<PatcherEditor> safe (this);
-        lynx::ui::launchChooser (presetChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe, n] (const juce::FileChooser& chooser) {
+        yw::ui::launchChooser (presetChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [safe, n] (const juce::FileChooser& chooser) {
             const auto file = chooser.getResult();
             if (safe == nullptr || file == juce::File())
                 return;
@@ -2296,7 +2296,7 @@ public:
             edit ([touches] (PatcherDoc& doc) { std::erase_if (doc.wires, touches); });
         });
 
-        // Events: Notes (From LYNX, a generator Patcher), MIDI port 0…255
+        // Events: Notes (From YW, a generator Patcher), MIDI port 0…255
         juce::PopupMenu events;
         const auto shown = input ? patcher::shownFromMidiPorts (*d) : patcher::shownToMidiPorts (*d);
         auto isMidiPin = [input] (const PatchWire& w, int pin) {
@@ -2668,7 +2668,7 @@ private:
                             title + " - " + tr ("Patcher"), target.key() + "-node-" + juce::String (n));
             return;
         }
-        // a built-in engine (LYNX's synth / sampler, FL's engines): the editor it has on a channel (round 164f)
+        // a built-in engine (YW's synth / sampler, FL's engines): the editor it has on a channel (round 164f)
         if (node.generator && hasNodeEditor (node.channel))
             if (auto frame = makeNodeChannelFrame (engine, locate))
             {
@@ -2924,4 +2924,4 @@ void shootNodeEditors (AudioEngine& engine, bool channel, int index, int slot, s
     }
 }
 } // namespace PatcherWindows
-} // namespace lynx
+} // namespace yw

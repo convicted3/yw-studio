@@ -14,12 +14,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::psfl
+namespace yw::psfl
 {
 // The plug-in's saved state (record 0xD5: 75 bytes for version 7, 69 for version 6)
 struct State
@@ -68,7 +68,7 @@ private:
     std::vector<float> io;
 };
 
-// The LYNX mixer effect (EffectKind::flPitchShifter): slot parameters [0…12] = FL's 13 knobs (raw − min) / range,
+// The YW mixer effect (EffectKind::flPitchShifter): slot parameters [0…12] = FL's 13 knobs (raw − min) / range,
 // [13] engine (≥ 0.5 = granular), [14] accurate detector, [15] delay tempo sync
 constexpr int numParams = 16;
 void toParams (const State& s, EffectParams& p) noexcept;
@@ -79,4 +79,4 @@ std::unique_ptr<Effect> make (const EffectParams* params = nullptr);
 
 // FL's MSVC run-time tanhf (the engines' soft-clip table is built from it); exposed for the tests
 float tanhfCrt (float x) noexcept;
-} // namespace lynx::psfl
+} // namespace yw::psfl

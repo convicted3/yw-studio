@@ -25,7 +25,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -166,7 +166,7 @@ public:
     }
 };
 
-// A tool button with a drawn icon (FL's TQuickBtn glyphs, drawn by LYNX)
+// A tool button with a drawn icon (FL's TQuickBtn glyphs, drawn by YW)
 class IconButton final : public juce::Button
 {
 public:
@@ -237,7 +237,7 @@ public:
                 g.drawEllipse (c.x - u * 1.1f, c.y - u * 1.1f, u * 1.6f, u * 1.6f, 1.5f);
                 g.drawLine (c.x + u * 0.3f, c.y + u * 0.3f, c.x + u * 1.1f, c.y + u * 1.1f, 1.8f);
                 break;
-            case freeze: // a six-armed star (FL's snowflake glyph, drawn by LYNX)
+            case freeze: // a six-armed star (FL's snowflake glyph, drawn by YW)
                 for (int k = 0; k < 3; ++k)
                 {
                     const auto a = juce::MathConstants<float>::pi * (float) k / 3.0f;
@@ -733,7 +733,7 @@ private:
 
     // FL's PointMenu (TMEnvEditor form, round 190hg): Delete; "Mode" (its 13 curve modes in the form's order); "ADSR
     // section" (decay, loop start, sustain: envelopes); Copy value / Paste value (the point's level as text on the
-    // clipboard; FL's paste sets the selected points, LYNX's the clicked one)
+    // clipboard; FL's paste sets the selected points, YW's the clicked one)
     void pointMenu (int i)
     {
         const auto* c = curve ? curve() : nullptr;
@@ -899,7 +899,7 @@ private:
 // scroll and by its edges to zoom; a tab is dragged to move the region's start, its right click opens the region's
 // menu, and so is the tab at its end (FL's second tag: the region's length). The wave carries FL's selection: a drag
 // makes one, with one the nearer edge goes to the mouse, a double click drops it (REA_rodada190aj §2); a plain click
-// without a selection picks the region under it and plays it (LYNX's own).
+// without a selection picks the region under it and plays it (YW's own).
 class DeckView final : public juce::Component
 {
 public:
@@ -1303,7 +1303,7 @@ public:
             return;
         }
         // the wave: FL's selection. Without one a drag makes it; with one the nearer edge goes to the mouse (a click
-        // alone moves it) and follows it. A plain click without a selection picks the region and plays it (LYNX).
+        // alone moves it) and follows it. A plain click without a selection picks the region and plays it (YW).
         const auto frame = snapped (std::clamp (frameAt (p.x), 0.0, frames()), e.mods);
         mode = Mode::select;
         moved = false;
@@ -1461,7 +1461,7 @@ private:
     // FL scrolls the deck by whole pixels of its own 714-pixel deck: a zoomed deck's left edge is the shown start
     // taken down to a whole number of those pixels at the current zoom (round 190aj: both ends of a selection dragged
     // in a deck shown from beat 0.5763 came out 0.12 pixel earlier than a plain linear map gives; one zoom measured).
-    // LYNX's deck is that deck scaled, so the step is 1/714 of the shown length whatever the width.
+    // YW's deck is that deck scaled, so the step is 1/714 of the shown length whatever the width.
     double originFrame() const
     {
         const auto step = shownLength() / 714.0;
@@ -2121,7 +2121,7 @@ public:
         engine.removeChangeListener (this);
     }
 
-    // ---- the editor test (LYNX --slicexedittest, round 190aj): one command on the current deck, its result as text.
+    // ---- the editor test (YW --slicexedittest, round 190aj): one command on the current deck, its result as text.
     // Mouse commands take positions as fractions of the deck's width, so a script can repeat what was done in FL's
     // 714-pixel deck: drag a b | click a | dclick a (in the wave), tabdrag a b (in the tag row); menu <entry>;
     // addregion <name> | addmarker <name>; key <pgup|pgdn|home|end|up|left|right|ctrl+left|ctrl+right|ctrl+a>;
@@ -2377,7 +2377,7 @@ public:
         const auto list = slicex::wavRegions (wav, joined);
         if (wav.empty() || list.size() <= oldCount)
             return false;
-        // the joined sample becomes the deck's file (LYNX/Edits, as Edison's edits), its regions in its cue points; the
+        // the joined sample becomes the deck's file (YW/Edits, as Edison's edits), its regions in its cue points; the
         // regions kept their settings, the added ones get the defaults
         const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
@@ -3121,7 +3121,7 @@ private:
         deckView[(std::size_t) deck].setSelection (shown.first, shown.second);
     }
 
-    // FL's "Zoom on selection": the selection fills the view; without one, the region shown (LYNX)
+    // FL's "Zoom on selection": the selection fills the view; without one, the region shown (YW)
     void zoomOnSelection (int deck)
     {
         auto& view = deckView[(std::size_t) deck];
@@ -3213,7 +3213,7 @@ private:
     }
 
     // the display mode selector's cells (FL's DispModeSelectPaintCell 0x895c30 draws a window outline with the rows the
-    // mode keeps: full = everything, then fewer rows down to the compact strip; LYNX's own drawing)
+    // mode keeps: full = everything, then fewer rows down to the compact strip; YW's own drawing)
     static void drawDisplayMode (juce::Graphics& g, int mode, juce::Rectangle<float> r)
     {
         const auto box = r.withSizeKeepingCentre (std::min (r.getWidth(), r.getHeight() * 1.2f), r.getHeight());
@@ -3330,7 +3330,7 @@ private:
         }, true);
         reload();
         // A sample that brings no regions of its own: FL slices it as it loads ("Marker #1…#n" on its hits, round
-        // 190ac). It is the framework's auto slicer LYNX already has (flslice, decoded in round 165g): on FL's own save
+        // 190ac). It is the framework's auto slicer YW already has (flslice, decoded in round 165g): on FL's own save
         // of such a load the markers are its output to the frame (round 190aj). The markers live in the deck's WAV, as
         // in FL, so only a WAV file gets them.
         if (sample->markerStarts.empty() && canEmbed (deck) && sample->left.size() == sample->frames())
@@ -3429,7 +3429,7 @@ private:
         m.addItem (std::move (item));
     }
 
-    // FL's Regions menu of the deck (the entries LYNX has; REA_rodada190ac lists the rest)
+    // FL's Regions menu of the deck (the entries YW has; REA_rodada190ac lists the rest)
     void regionsMenu()
     {
         const auto deck = currentDeck();
@@ -3734,7 +3734,7 @@ private:
     }
 
     // FL's "Add marker…" and "Add region…". The marker goes to the selection's start (without one: the place last
-    // clicked in the wave, LYNX; FL: the sample's start). The region is the selection: FL wrote 62259…96846 for
+    // clicked in the wave, YW; FL: the sample's start). The region is the selection: FL wrote 62259…96846 for
     // 1.41176…2.19608 beats, purpose "beat", in sample order, and left the region shown as it was (REA_rodada190aj §3).
     void addRegion (int deck, bool marker, const std::string* named = nullptr)
     {
@@ -3970,7 +3970,7 @@ private:
     IconButton kbButton { IconButton::keys };
     IconButton curveFreeze { IconButton::freeze }, curveSlide { IconButton::slide }, curveSnap { IconButton::magnet }; // (the articulator editor's own)
     TimeScroller timeScroller;
-    IconButton curveOptions { IconButton::arrow }; // (FL's EnvOptionsMenu; LYNX: its LFO flags)
+    IconButton curveOptions { IconButton::arrow }; // (FL's EnvOptionsMenu; YW: its LFO flags)
     Selector dispMode;
     struct Member
     {
@@ -4043,4 +4043,4 @@ std::unique_ptr<juce::Component> makeSlicexEditor (AudioEngine& engine, std::fun
     }
     return editor;
 }
-} // namespace lynx
+} // namespace yw

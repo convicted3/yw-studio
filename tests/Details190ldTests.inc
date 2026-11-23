@@ -8,7 +8,7 @@
 // state; a Ctrl/Alt+click solo of another slot leaves the locked one as it is, and doesn't count against "only this on"
 TEST (details190ld_a_locked_slot_keeps_its_state_under_a_slot_solo)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (2);
     song.mixer[1].effects.resize (4);
@@ -40,7 +40,7 @@ TEST (details190ld_a_locked_slot_keeps_its_state_under_a_slot_solo)
 // FL's Playlist track mute switch: Shift+click locks its state, a solo elsewhere leaves it alone
 TEST (details190ld_a_locked_playlist_track_is_not_muted_by_a_solo)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.playlistTracks.resize (4);
     song.playlistTracks[2].soloLock = true;
@@ -57,21 +57,21 @@ TEST (details190ld_a_locked_playlist_track_is_not_muted_by_a_solo)
 // Live's Shift+Space ("Continue Play") acts only in the Clip-launch layout; FL's Shift+Space stays in the others
 TEST (details190ld_live_continue_play_only_in_clip_launch)
 {
-    using namespace lynx::keys;
-    using lynx::livekeys::Command;
-    using lynx::layoutstyle::Style;
-    CHECK (lynx::livekeys::commandFor ({ space, shift }, Style::clipLaunch) == Command::continuePlay);
-    CHECK (lynx::livekeys::commandFor ({ space, shift }, Style::pattern) == Command::none);
-    CHECK (lynx::livekeys::commandFor ({ space, shift }, Style::simple) == Command::none);
-    CHECK (lynx::livekeys::commandFor ({ space, none }, Style::clipLaunch) == Command::none); // (plain Space: play / stop)
-    CHECK (std::string (lynx::livekeys::menuKey (Command::continuePlay, Style::clipLaunch)) == "\tShift+Space");
+    using namespace yw::keys;
+    using yw::livekeys::Command;
+    using yw::layoutstyle::Style;
+    CHECK (yw::livekeys::commandFor ({ space, shift }, Style::clipLaunch) == Command::continuePlay);
+    CHECK (yw::livekeys::commandFor ({ space, shift }, Style::pattern) == Command::none);
+    CHECK (yw::livekeys::commandFor ({ space, shift }, Style::simple) == Command::none);
+    CHECK (yw::livekeys::commandFor ({ space, none }, Style::clipLaunch) == Command::none); // (plain Space: play / stop)
+    CHECK (std::string (yw::livekeys::menuKey (Command::continuePlay, Style::clipLaunch)) == "\tShift+Space");
     CHECK (findAction ("transport.playFromStart") != nullptr && findAction ("transport.playFromStart")->defaults[0] == (Chord { space, shift }));
 }
 
 // Owner decision E1 (details DE-58): the editor tools carry FL's names; Live's Shift+Enter preview is a Browser key
 TEST (details190ld_tool_names_are_fl_names_and_the_browser_preview_key)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     CHECK (findAction ("pianoRoll.tool.pencil") != nullptr && std::string (findAction ("pianoRoll.tool.pencil")->description) == "Tool: Draw");
     CHECK (std::string (findAction ("playlist.tool.knife")->description) == "Tool: Slice");
     CHECK (std::string (findAction ("playlist.tool.listen")->description) == "Tool: Playback");

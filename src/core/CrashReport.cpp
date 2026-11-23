@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 
-namespace lynx::crashreport
+namespace yw::crashreport
 {
 // ================================================================================================================
 // consent
@@ -176,7 +176,7 @@ bool isCommonFolder (std::string_view segment)
         return true;
     static constexpr std::string_view common[] = {
         "users", "home", "documents and settings", "desktop", "documents", "my documents", "music", "my music", "downloads", "videos",
-        "pictures", "onedrive", "appdata", "roaming", "local", "localLow", "temp", "tmp", "library", "application support", "lynx",
+        "pictures", "onedrive", "appdata", "roaming", "local", "localLow", "temp", "tmp", "library", "application support", "yw",
         "autosave", "projects", "samples", "audio", "recordings", "recorded", "image-line", "data", "patches", "packs", "program files",
         "program files (x86)", "common files", "vst3", "vstplugins", "public", "volumes", "mnt", "media", "run", "var", "c", "d", "e",
         // pt-BR / es / fr / de desktop and documents folders (OneDrive shows the localised names)
@@ -190,7 +190,7 @@ bool isCommonFolder (std::string_view segment)
         || (segment.size() >= 11 && equalsNoCase (segment.substr (0, 11), "onedrive - ")); // (its organisation is <org> already)
 }
 
-// the known prefixes of LYNX's own session steps before a file name ("opening project NAME.flp")
+// the known prefixes of YW's own session steps before a file name ("opening project NAME.flp")
 constexpr std::string_view namePrefixes[] = { "project ", "opening ", "loading ", "saving ", "file ", "sample ", "exporting ", "export ", "recording " };
 
 // The start of the path whose file name begins at `nameStart` (just after a separator): a drive ("C:\"), a UNC share
@@ -312,9 +312,9 @@ void hideFileNames (std::string& s)
 bool isContentExtension (std::string_view e)
 {
     static constexpr std::string_view list[] = {
-        "flp", "lynx", "fst", "fsc", "zip", "rar", "7z", "wav", "wave", "mp3", "ogg", "oga", "opus", "flac", "aif", "aiff", "aifc", "m4a",
+        "flp", "yw", "fst", "fsc", "zip", "rar", "7z", "wav", "wave", "mp3", "ogg", "oga", "opus", "flac", "aif", "aiff", "aifc", "m4a",
         "aac", "wma", "wv", "caf", "mid", "midi", "rx2", "rex", "als", "ptx", "cpr", "rpp", "logicx", "song", "sf2", "sfz", "nki", "nkm",
-        "mp4", "mov", "mkv", "avi", "webm", "lynxpack",
+        "mp4", "mov", "mkv", "avi", "webm", "ywpack",
     };
     return std::find (std::begin (list), std::end (list), e) != std::end (list);
 }
@@ -854,4 +854,4 @@ std::string githubIssueUrl (const IssueFields& f, std::size_t maxLength)
         url = std::string (issueFormBase) + "?template=bug_report.yml";
     return url;
 }
-} // namespace lynx::crashreport
+} // namespace yw::crashreport

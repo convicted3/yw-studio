@@ -17,7 +17,7 @@
 #define TR_NOOP(text) text // marks the names for translation (ui/I18n.h defines the same)
 #endif
 
-namespace lynx::midigen
+namespace yw::midigen
 {
 namespace
 {
@@ -353,9 +353,9 @@ const std::vector<std::vector<int>>* ChordBank::rulesFor (int scaleSize) const n
     return best != nullptr ? &best->rules : nullptr;
 }
 
-const ChordBank& lynxChordBank()
+const ChordBank& ywChordBank()
 {
-    // LYNX's own rules (round 190fm), scale degrees above the chord's root; a scale of n notes repeats at degree n.
+    // YW's own rules (round 190fm), scale degrees above the chord's root; a scale of n notes repeats at degree n.
     static const ChordBank bank { {
         { 5, { // pentatonic (major pentatonic C D E G A: degrees 0 1 2 3 4)
                  { 0, 2, 3 },     // the triad inside the scale (C E G)
@@ -858,4 +858,4 @@ Settings decode (const std::string& text)
     s.stacksOptions.selected = std::clamp (s.stacksOptions.selected, 0, (int) s.stacksOptions.sequence.size() - 1);
     return s;
 }
-} // namespace lynx::midigen
+} // namespace yw::midigen

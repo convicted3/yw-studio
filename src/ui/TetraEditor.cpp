@@ -1,4 +1,4 @@
-// The Tetra editor (ui/TetraEditor.h): LYNX's own look, drawn by LYNX code.
+// The Tetra editor (ui/TetraEditor.h): YW's own look, drawn by YW code.
 
 #include "ui/TetraEditor.h"
 
@@ -15,7 +15,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -23,7 +23,7 @@ namespace f = fm;
 
 juce::String u8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 
-// the operators' own colours (LYNX's palette: the accent red, amber, teal, violet)
+// the operators' own colours (YW's palette: the accent red, amber, teal, violet)
 juce::Colour opColour (int k)
 {
     static const juce::Colour c[f::opCount] { juce::Colour (0xffe5383b), juce::Colour (0xfff2a33a), juce::Colour (0xff2ec4b6), juce::Colour (0xff9b7bff) };
@@ -766,4 +766,4 @@ std::unique_ptr<juce::Component> makeTetraEditor (AudioEngine& engine, std::func
 {
     return std::make_unique<TetraEditor> (engine, std::move (locate), channel);
 }
-} // namespace lynx
+} // namespace yw

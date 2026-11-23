@@ -2,7 +2,7 @@
 
 TEST (pianokeys190j_flat_style_plays_the_rows_key)
 {
-    using namespace lynx::pianokeys;
+    using namespace yw::pianokeys;
     for (int key = 0; key < 128; ++key)
         for (int x : { 0, 30, 59 })
             for (int y : { 0, 6, 13 })
@@ -11,7 +11,7 @@ TEST (pianokeys190j_flat_style_plays_the_rows_key)
 
 TEST (pianokeys190j_piano_style_white_keys_meet_behind_the_black_keys)
 {
-    using namespace lynx::pianokeys;
+    using namespace yw::pianokeys;
     const int rowHeight = 14, blackWidth = 36;
     // on a black key itself, and on any white key's own row: that key
     CHECK (keyAt (Style::piano, 61, 0, rowHeight, 0, blackWidth) == 61);
@@ -39,7 +39,7 @@ TEST (pianokeys190j_piano_style_white_keys_meet_behind_the_black_keys)
 
 TEST (pianokeys190j_lines_between_white_keys)
 {
-    using namespace lynx::pianokeys;
+    using namespace yw::pianokeys;
     // an octave has seven white keys and so seven borders: two along a row's bottom (C over B, F over E) and five
     // through the black keys' rows
     int along = 0, through = 0;
@@ -56,8 +56,8 @@ TEST (pianokeys190j_lines_between_white_keys)
 
 TEST (zoom190j_wheel_levels_and_anchor)
 {
-    using namespace lynx::gesture;
-    // two pixels a level, from LYNX's shortest key; out-of-range heights clamp
+    using namespace yw::gesture;
+    // two pixels a level, from YW's shortest key; out-of-range heights clamp
     CHECK (zoomLevel (minKeyHeight) == 1 && zoomLevel (minKeyHeight + 2) == 2);
     CHECK (zoomLevel (14) == 5 && zoomLevel (maxKeyHeight) == 56);
     CHECK (zoomLevel (0) == 1 && zoomLevel (1000) == 56);
@@ -83,7 +83,7 @@ TEST (zoom190j_wheel_levels_and_anchor)
 // do except that FL draws no line through the black keys' rows (the paint's business), and the saved number maps back
 TEST (pianokeys190oo_fl_style_default)
 {
-    using namespace lynx::pianokeys;
+    using namespace yw::pianokeys;
     CHECK (defaultStyle == Style::fl);
     CHECK (whiteKeysMeet (Style::fl) && whiteKeysMeet (Style::piano) && ! whiteKeysMeet (Style::flat));
     for (int key = 0; key < 128; ++key)

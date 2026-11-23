@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # paint-gate.sh: the paint gate of a UI change (round 190pb, after the rollup 0.1.31 step-5 regression: a design round
 # gated on Thief only, and Live's Patience then drew its Channel rack +44 % and its Clip-launch arrangement +72 %
-# instructions a frame). Two LYNX builds, before and after, each `--paintbench` on FL Studio's Thief AND Live's Patience
+# instructions a frame). Two YW builds, before and after, each `--paintbench` on FL Studio's Thief AND Live's Patience
 # (an .flp and an .als: the FL and the Live paths of every view), run alternately; per project, view and frame kind the
 # lowest instruction median of the runs is compared. Fails when a cell got more than GATE % dearer, or when a whole
 # frame's pixels changed (PIXELS=any accepts a change that was meant: a design change). Linux (the instruction counter).
 #
-# usage: scripts/paint-gate.sh <LYNX before> <LYNX after> [results dir]
+# usage: scripts/paint-gate.sh <YW before> <YW after> [results dir]
 # env:
-#   PROJECTS="thief patience"   which projects (also: exoplanet, or a path to an .flp / .als / .lynx)
+#   PROJECTS="thief patience"   which projects (also: exoplanet, or a path to an .flp / .als / .yw)
 #   RUNS=2                      runs per build and project (alternating before / after)
 #   GATE=1                      % allowed per cell (perf_gate.py holds main to 5 %; a single change gets 1 %)
 #   PIXELS=same|any             whole-frame pixel hashes must match (default) or may differ
-#   FRAMES=20                   frames per measurement (LYNX_PAINTBENCH_FRAMES)
-#   VIEWS="channel rack,..."    only these views (LYNX_PAINTBENCH_VIEWS)
+#   FRAMES=20                   frames per measurement (YW_PAINTBENCH_FRAMES)
+#   VIEWS="channel rack,..."    only these views (YW_PAINTBENCH_VIEWS)
 #   FL_ROOT, LIVE_DEMO          as scripts/perf-gate.sh
 # Needs a display for the app (DISPLAY, e.g. a private Xvfb); keep the results dir on a local disk.
 set -u
@@ -42,8 +42,8 @@ for run in $(seq 1 "$RUNS"); do
       app=$BEFORE; [ "$side" = after ] && app=$AFTER
       name=$(basename "$p" | tr -c 'A-Za-z0-9\n' '_')
       prof=$OUT/profile-$side-$name-$run; rm -rf "$prof"   # (a fresh profile: no stream cache of an earlier open)
-      views=(); [ -n "${VIEWS:-}" ] && views=(LYNX_PAINTBENCH_VIEWS="$VIEWS")
-      env LYNX_TEST_MODE=1 LYNX_PROFILE_DIR="$prof" XDG_CONFIG_HOME="$OUT/xdg-$side" LYNX_PAINTBENCH_FRAMES="${FRAMES:-20}" \
+      views=(); [ -n "${VIEWS:-}" ] && views=(YW_PAINTBENCH_VIEWS="$VIEWS")
+      env YW_TEST_MODE=1 YW_PROFILE_DIR="$prof" XDG_CONFIG_HOME="$OUT/xdg-$side" YW_PAINTBENCH_FRAMES="${FRAMES:-20}" \
         "${views[@]}" timeout 1500 "$app" --paintbench "$(project_file "$p")" "$OUT/paint-$side-$name-$run.txt" \
         > "$OUT/paint-$side-$name-$run.log" 2>&1
       grep -q '^result=OK' "$OUT/paint-$side-$name-$run.txt" 2> /dev/null || echo "paint-gate: $side $p run $run failed (see $OUT/paint-$side-$name-$run.log)" >&2

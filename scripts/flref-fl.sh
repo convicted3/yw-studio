@@ -8,7 +8,7 @@
 # env: FL_ROOT (default: /mnt/c/Program Files/Image-Line/FL Studio 2026), FLREF_TIMEOUT (seconds per project, 900)
 set -u
 LIST="$1"
-CACHE="${2:-/mnt/c/Users/kauan/lynx-test/flref}"
+CACHE="${2:-/mnt/c/Users/kauan/yw-test/flref}"
 FL_ROOT="${FL_ROOT:-/mnt/c/Program Files/Image-Line/FL Studio 2026}"
 TMO="${FLREF_TIMEOUT:-900}"
 LOG="$CACHE/fl/render.log"

@@ -20,7 +20,7 @@
 #include "platform/Paths.h"
 #include "ui/JsfxPanel.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -34,7 +34,7 @@ std::string utf8 (const juce::String& s) { return s.toStdString(); }
 juce::String fromUtf8 (const char* s) { return s != nullptr ? juce::String::fromUTF8 (s) : juce::String(); }
 
 // --- logs -------------------------------------------------------------------------------------------------------------
-// ysfx reports through its config's reporter; LYNX keeps the errors of a compile (they become the failure message)
+// ysfx reports through its config's reporter; YW keeps the errors of a compile (they become the failure message)
 struct Log
 {
     juce::StringArray errors, warnings;
@@ -128,7 +128,7 @@ void installPolicyOnce()
     static std::once_flag once;
     std::call_once (once, [] {
         refreshPolicy();
-        ysfx_lynx_set_path_filter (&policyAllows);
+        ysfx_yw_set_path_filter (&policyAllows);
     });
 }
 
@@ -273,12 +273,12 @@ int installPack()
     static std::mutex installing;
     const std::scoped_lock lock (installing);
     const auto folder = packFolder();
-    const auto stamp = folder.getChildFile (".lynx-pack");
+    const auto stamp = folder.getChildFile (".yw-pack");
     if (stamp.loadFileAsString().trim() == jsfxpack::hash)
         return 0;
     // what an earlier pack wrote and this one has no more is removed (only those files: the user's own stay)
     juce::StringArray before;
-    before.addLines (folder.getChildFile (".lynx-pack-files").loadFileAsString());
+    before.addLines (folder.getChildFile (".yw-pack-files").loadFileAsString());
     juce::StringArray now;
     auto written = 0;
     for (const auto& f : jsfxpack::files)
@@ -295,7 +295,7 @@ int installPack()
     for (const auto& old : before)
         if (old.isNotEmpty() && ! now.contains (old) && ! old.contains (".."))
             folder.getChildFile (old).deleteFile();
-    folder.getChildFile (".lynx-pack-files").replaceWithText (now.joinIntoString ("\n") + "\n");
+    folder.getChildFile (".yw-pack-files").replaceWithText (now.joinIntoString ("\n") + "\n");
     stamp.replaceWithText (juce::String (jsfxpack::hash) + "\n");
     return written;
 }
@@ -956,14 +956,14 @@ juce::PluginDescription describe (const juce::File& file, bool instrument)
     throw Failure ("not listed as " + std::string (instrument ? "a generator: " : "an effect: ") + file.getFullPathName().toStdString());
 }
 
-// LYNX's own test scripts (written for round 190od's probe; plain EEL2, no third-party code)
-const char* gainScript = R"(desc:LYNX test - gain + one-pole lowpass
+// YW's own test scripts (written for round 190od's probe; plain EEL2, no third-party code)
+const char* gainScript = R"(desc:YW test - gain + one-pole lowpass
 tags: utility test
 slider1:gain_db=0<-60,24,0.1>Gain (dB)
 slider2:cut=1000<20,20000,1:log>Cutoff (Hz)
 slider3:mode=0<0,2,1{Off,Lowpass,Highpass}>Mode
 slider4:hid=0<0,1,1>-Hidden
-import lynx_test_lib.jsfx-inc
+import yw_test_lib.jsfx-inc
 in_pin:left input
 in_pin:right input
 out_pin:left output
@@ -973,7 +973,7 @@ pdc_delay = 32;
 memo = 0;
 sl = sr = 0;
 @slider
-g = lynx_db2lin(gain_db);
+g = yw_db2lin(gain_db);
 a = exp(-2*$pi*cut/srate);
 memo += 1;
 @sample
@@ -988,9 +988,9 @@ mode == 0 ? (
 file_var(0, memo);
 )";
 const char* libScript = R"(@init
-function lynx_db2lin(db) ( exp(db*log(10)/20) );
+function yw_db2lin(db) ( exp(db*log(10)/20) );
 )";
-const char* synthScript = R"(desc:LYNX test - MIDI sine synth
+const char* synthScript = R"(desc:YW test - MIDI sine synth
 tags: instrument test
 slider1:vol=0.5<0,1,0.01>Volume
 in_pin:none
@@ -1015,7 +1015,7 @@ phase += 2*$pi*freq/srate; phase > 2*$pi ? phase -= 2*$pi;
 spl0 = s; spl1 = s;
 )";
 // reads one file (the path is put in below) and says whether it could
-const char* readerScript = R"(desc:LYNX test - file policy
+const char* readerScript = R"(desc:YW test - file policy
 in_pin:left input
 out_pin:left output
 @init
@@ -1036,7 +1036,7 @@ double readVar (juce::AudioPluginInstance& p, const char* name)
 juce::String selfTest (const juce::File& reportFolder)
 {
     juce::StringArray notes;
-    const auto temp = juce::File::createTempFile ("lynx-jsfx-test");
+    const auto temp = juce::File::createTempFile ("yw-jsfx-test");
     try
     {
         installPolicyOnce();
@@ -1079,7 +1079,7 @@ juce::String selfTest (const juce::File& reportFolder)
             require (found != nullptr && found->fileOrIdentifier == fx.fileOrIdentifier, "a script was not found by its portable id");
         }
 
-        // reference render: the slot (PluginEffect, LYNX's host path) against ysfx run directly, and against the
+        // reference render: the slot (PluginEffect, YW's host path) against ysfx run directly, and against the
         // upstream library's own output (tools/jsfx_ref.cpp)
         constexpr int block = 512, blocks = 64;
         juce::String error;
@@ -1159,9 +1159,9 @@ juce::String selfTest (const juce::File& reportFolder)
         require (! scriptChanged (*asJsfx (&restored.getInstance())), "the restored script counts as changed");
 
         // PDC from pdc_delay, @serialize, import, a log slider, a hidden slider (own test script)
-        const auto gainFile = temp.getChildFile ("lynx_test_gain.jsfx");
+        const auto gainFile = temp.getChildFile ("yw_test_gain.jsfx");
         gainFile.replaceWithText (gainScript);
-        temp.getChildFile ("lynx_test_lib.jsfx-inc").replaceWithText (libScript);
+        temp.getChildFile ("yw_test_lib.jsfx-inc").replaceWithText (libScript);
         auto gain = make (describe (gainFile, false), 48000.0, PluginHost::maxBlockSize, error);
         require (gain != nullptr, "the gain test script did not load: " + error);
         require (gain->getLatencySamples() == 32, "pdc_delay 32 is the plugin's latency (" + juce::String (gain->getLatencySamples()) + ")");
@@ -1199,7 +1199,7 @@ juce::String selfTest (const juce::File& reportFolder)
         }
 
         // MIDI in and out: a generator plays the note it gets (440 Hz for A4) and sends it on an octave up
-        const auto synthFile = temp.getChildFile ("lynx_test_synth.jsfx");
+        const auto synthFile = temp.getChildFile ("yw_test_synth.jsfx");
         synthFile.replaceWithText (synthScript);
         auto synth = make (describe (synthFile, true), 48000.0, 256, error);
         require (synth != nullptr, "the synth test script did not load: " + error);
@@ -1236,7 +1236,7 @@ juce::String selfTest (const juce::File& reportFolder)
         secretFolder.createDirectory();
         const auto secret = secretFolder.getChildFile ("secret.txt");
         secret.replaceWithText ("not for scripts\n");
-        const auto readerFile = temp.getChildFile ("lynx_test_reader.jsfx");
+        const auto readerFile = temp.getChildFile ("yw_test_reader.jsfx");
         readerFile.replaceWithText (juce::String (readerScript).replace ("%PATH%", secret.getFullPathName().replaceCharacter ('\\', '/')));
         require (mayRead (clipper) && ! mayRead (secret), "the policy's folders");
         {
@@ -1254,7 +1254,7 @@ juce::String selfTest (const juce::File& reportFolder)
 
         // a script that does not compile fails with the compiler's message
         {
-            const auto broken = temp.getChildFile ("lynx_test_broken.jsfx");
+            const auto broken = temp.getChildFile ("yw_test_broken.jsfx");
             broken.replaceWithText ("desc:YW Studio test - broken\n@sample\nspl0 = (;\n");
             auto none = make (describe (broken, false), 48000.0, 512, error);
             require (none == nullptr && error.startsWith ("JSFX"), "a broken script: " + error);
@@ -1276,13 +1276,13 @@ juce::String selfTest (const juce::File& reportFolder)
             song.channels.push_back (c);
             for (const auto* release : { "0.1.30", "0.1.28" })
             {
-                const auto copy = olderlynx::forRelease (song, release);
+                const auto copy = olderyw::forRelease (song, release);
                 require (copy.ok, "the copy for " + juce::String (release));
                 const auto json = juce::JSON::parse (copy.json);
                 require (json["mixer"][1]["effects"][0]["kind"].toString() == "utility" && ! (bool) json["mixer"][1]["effects"][0]["on"],
                          "the JSFX insert of the copy for " + juce::String (release));
                 require (json["channels"][0]["instrument"].toString() == "sampler", "the JSFX channel of the copy for " + juce::String (release));
-                const auto lines = std::count_if (copy.lost.begin(), copy.lost.end(), [] (const olderlynx::Loss& l) { return juce::String (l.text).contains ("JSFX"); });
+                const auto lines = std::count_if (copy.lost.begin(), copy.lost.end(), [] (const olderyw::Loss& l) { return juce::String (l.text).contains ("JSFX"); });
                 require (lines == 1, "one line about JSFX in the copy for " + juce::String (release));
             }
         }
@@ -1364,4 +1364,4 @@ juce::String bench (const juce::File& output)
     return "OK " + juce::String (files.size()) + " scripts";
 }
 } // namespace jsfx
-} // namespace lynx
+} // namespace yw

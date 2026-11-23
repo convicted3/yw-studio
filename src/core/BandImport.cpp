@@ -12,7 +12,7 @@
 #include "core/SimpleTracks.h"
 #include "core/SynthPresets.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -451,4 +451,4 @@ std::optional<Song> importBandPackage (const BandImportOptions& options, std::st
         project->title = name;
     return importBand (*project, options);
 }
-} // namespace lynx
+} // namespace yw

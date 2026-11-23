@@ -1,11 +1,11 @@
 // Round 190gm, issue #165 (karatmep232, Linux, video): a slide note that starts on the same step as a note. FL 2026
 // glides that note to the slide note's key over the slide note's length (the user's video, 0:04-0:08: B4 and a C#5
-// slide note on one step, the guitar bends up); LYNX sorted the slide before the note's "on", found no sounding voice
+// slide note on one step, the guitar bends up); YW sorted the slide before the note's "on", found no sounding voice
 // and dropped the slide, so the note stayed flat.
 
 TEST (issue165_a_slide_comes_after_the_notes_that_start_on_its_sample)
 {
-    using namespace lynx;
+    using namespace yw;
     EventBuffer b;
     auto add = [&b] (NoteEvent::Type type, int key, int offset) {
         NoteEvent e;
@@ -31,7 +31,7 @@ TEST (issue165_a_slide_comes_after_the_notes_that_start_on_its_sample)
 namespace issue165
 {
 // an instrument that writes down what the rack asks of it, in order
-struct Recorder final : lynx::Instrument
+struct Recorder final : yw::Instrument
 {
     std::vector<std::string> calls;
     void prepare (double) noexcept override {}
@@ -45,7 +45,7 @@ struct Recorder final : lynx::Instrument
 
 TEST (issue165_a_slide_note_on_the_step_of_a_note_reaches_the_instrument_after_it)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer = Song::defaultMixer (2);
     ChannelDef c;
@@ -87,7 +87,7 @@ TEST (issue165_a_slide_note_on_the_step_of_a_note_reaches_the_instrument_after_i
 // slide note that starts inside the note always did
 TEST (issue165_a_note_glides_to_a_slide_note_that_starts_with_it)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef synth;
     synth.instrument = InstrumentKind::synth;
     Note held;

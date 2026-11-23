@@ -1,6 +1,6 @@
 // Round 190is: Echoform's echo voicings (EchoBoy's style role) get revision 1, measured black-box on refcap030's EchoBoy
 // captures (styles × Saturation 4.8 / 12 / 19.2 dB, impulses at 0 / −20 / −40 dBFS and noise bursts; the parity bank of
-// round 190iq; /mnt/e/lynx-work/parity190is/HANDOFF.md): the saturation's make-up is heard once on the echoes (the
+// round 190iq; /mnt/e/yw-work/parity190is/HANDOFF.md): the saturation's make-up is heard once on the echoes (the
 // reference's repeats fall by the same dB per pass at every Saturation), the voicing's loop diffusion stays inside the
 // echo time, and the echoes sit 8 / 7.7 / 5 samples behind the dry at 44.1 / 48 / 96 kHz. The revision is a hidden
 // parameter: a new Echoform and a translated state run it, a project or preset saved before keeps rounds 147 / 150's
@@ -17,8 +17,8 @@
 
 namespace parity190is
 {
-namespace ef = lynx::echosuite::echoform;
-// the gold input (as /mnt/e/lynx-work/parity190is/gold/gold.cpp): 0.3 s of noise, a click every second, a 440 Hz tone
+namespace ef = yw::echosuite::echoform;
+// the gold input (as /mnt/e/yw-work/parity190is/gold/gold.cpp): 0.3 s of noise, a click every second, a 440 Hz tone
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 {
     unsigned s = 4242u;
@@ -33,9 +33,9 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
         r[(std::size_t) i] = (float) (0.8 * v);
     }
 }
-inline lynx::EffectSlot slot (int voicing, float drive, float fb, float style, float mix, bool diffusion)
+inline yw::EffectSlot slot (int voicing, float drive, float fb, float style, float mix, bool diffusion)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::echoform);
+    auto s = yw::makeEffectSlot (yw::EffectKind::echoform);
     s.params[ef::voicing] = ef::voicingValue (voicing);
     s.params[ef::drive] = drive;
     s.params[ef::feedback] = fb;
@@ -48,9 +48,9 @@ inline lynx::EffectSlot slot (int voicing, float drive, float fb, float style, f
         s.params[ef::diffusion] = 0.4f;
     return s;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int at = 0; at < n; at += 512)
@@ -74,7 +74,7 @@ inline std::uint64_t fnv (const std::vector<float>& l, const std::vector<float>&
 
 TEST (parity190is_echoform_revision_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ef = echosuite::echoform;
     CHECK (effectInfo (EffectKind::echoform).params.size() == (std::size_t) ef::revision); // hidden: no control, no string
     auto s = makeEffectSlot (EffectKind::echoform);
@@ -91,7 +91,7 @@ TEST (parity190is_echoform_revision_is_hidden_new_instances_run_it_old_projects_
 
 TEST (parity190is_revision0_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ef = echosuite::echoform;
     struct Case
     {
@@ -103,7 +103,7 @@ TEST (parity190is_revision0_renders_as_the_base_commit_did)
         double energy;
     };
     // 3 s of the gold input in blocks of 512: FNV-1a of the float bits and the energy, from the base commit's objects
-    // (/mnt/e/lynx-work/parity190is/gold: gold_base.txt; the round's objects with the revision forced to 0 print the same
+    // (/mnt/e/yw-work/parity190is/gold: gold_base.txt; the round's objects with the revision forced to 0 print the same
     // lines, gold_new.txt)
     const Case cases[] = {
         { 2, 0.00, 0.25, 0.10, 0.50, 48000, 0, 0xf51e09c3f25ef4a8ull, 1573.76017 },
@@ -134,7 +134,7 @@ TEST (parity190is_revision0_renders_as_the_base_commit_did)
 
 TEST (parity190is_revision1_keeps_the_loop_gain_and_the_echo_time)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ef = echosuite::echoform;
     // a −40 dBFS impulse into a voicing at Saturation 19.2 dB, feedback 50 %, 250 ms, mix 100 %: the energy of each repeat
     const double sr = 48000.0;
@@ -180,7 +180,7 @@ TEST (parity190is_revision1_keeps_the_loop_gain_and_the_echo_time)
 
 TEST (parity190is_soundtoys_echoes_play_their_own_defaults)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ef = echosuite::echoform;
     const auto slotFor = [] (const char* name) {
         PluginIdentity id;

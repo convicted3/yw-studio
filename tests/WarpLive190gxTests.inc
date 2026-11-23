@@ -1,5 +1,5 @@
-// Round 190gx: LYNX's Beats warp mode against Ableton Live 12.4's W1 renders (round 190gu; analysis in
-// /mnt/e/lynx-work/livefacts190gx/warp/REPORT.md): Transient Envelope = an exponential decay after a piece's own end
+// Round 190gx: YW's Beats warp mode against Ableton Live 12.4's W1 renders (round 190gu; analysis in
+// /mnt/e/yw-work/livefacts190gx/warp/REPORT.md): Transient Envelope = an exponential decay after a piece's own end
 // (Live: 0 → 0.560 dB/ms, 50 → 0.0886 dB/ms), Loop Off = a 10 ms fade ending at the piece's end, Back-and-forth and
 // Forward turn 20 ms before a transient piece's end and stay in the piece's second half, a Preserve grid piece turns at
 // its very end.
@@ -7,11 +7,11 @@
 namespace
 {
 // one 330 Hz tone piece per 0.5 s after a 0.1 s lead, each starting loud and decaying (the 190fm signal), at 44.1 kHz
-lynx::SampleData warp190gxPieces()
+yw::SampleData warp190gxPieces()
 {
     constexpr double rate = 44100.0;
     constexpr long piece = 22050, lead = 4410;
-    lynx::SampleData in;
+    yw::SampleData in;
     in.sampleRate = rate;
     in.left.assign ((std::size_t) (lead + 4 * piece), 0.0f);
     for (long k = 0; k < 4; ++k)
@@ -25,7 +25,7 @@ lynx::SampleData warp190gxPieces()
 
 TEST (warp190gx_transient_envelope_law)
 {
-    using lynx::stretchdetail::beatsEnvelopeGain;
+    using yw::stretchdetail::beatsEnvelopeGain;
     constexpr double sr = 48000.0;
     // unity up to the piece's own end, and with the knob at 100
     CHECK (beatsEnvelopeGain (0.0f, 0, sr) == 1.0f && beatsEnvelopeGain (0.0f, -100, sr) == 1.0f);
@@ -43,23 +43,23 @@ TEST (warp190gx_transient_envelope_law)
 TEST (warp190gx_beats_fill_laws)
 {
     const auto in = warp190gxPieces();
-    const auto attacks = lynx::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), in.sampleRate);
+    const auto attacks = yw::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), in.sampleRate);
     CHECK (attacks.size() == 4);
     if (attacks.size() != 4)
         return;
     const auto sr = in.sampleRate;
     const auto a = attacks[1], length = attacks[2] - a, o0 = (long) std::llround ((double) a * 1.5);
-    const auto turn = length - (long) std::lround (sr * lynx::stretchdetail::beatsTurnSeconds);
+    const auto turn = length - (long) std::lround (sr * yw::stretchdetail::beatsTurnSeconds);
     const auto mid = turn / 2;
-    lynx::StretchOptions off, fwd, env;
+    yw::StretchOptions off, fwd, env;
     off.modes.beatsLoop = 0;
     fwd.modes.beatsLoop = 1;
     env.modes.beatsEnvelope = 0.0f;
-    const auto backForth = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats);
-    const auto silent = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, off);
-    const auto forward = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, fwd);
-    const auto faded = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, env);
-    const auto at = [] (const lynx::SampleData& s, long i) { return (double) s.left[(std::size_t) i]; };
+    const auto backForth = yw::timeStretch (in, 1.5, yw::StretchMethod::beats);
+    const auto silent = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, off);
+    const auto forward = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, fwd);
+    const auto faded = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, env);
+    const auto at = [] (const yw::SampleData& s, long i) { return (double) s.left[(std::size_t) i]; };
     const auto src = [&] (long i) { return (double) in.left[(std::size_t) i]; };
     double err = 0.0;
     // Back-and-forth: straight up to the turn, then the reading mirrors there (inside the piece's second half)
@@ -107,12 +107,12 @@ TEST (warp190gx_grid_pieces_turn_at_their_end)
 {
     // Preserve 1/2 (grid cuts): Live fills from the piece's very end (no turn before it)
     const auto in = warp190gxPieces();
-    lynx::StretchOptions half;
+    yw::StretchOptions half;
     half.modes.beatsPreserve = 1;
     half.sourceBeats = (double) in.frames() / 44100.0 * 2.0;
-    const auto slow = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, half);
+    const auto slow = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, half);
     const auto toSource = [&] (double y) { return y * (double) in.frames() / (double) slow->frames(); };
-    const auto grid = lynx::stretchdetail::gridCuts ((long) in.frames(), (long) slow->frames(), half.sourceBeats, 2.0, toSource);
+    const auto grid = yw::stretchdetail::gridCuts ((long) in.frames(), (long) slow->frames(), half.sourceBeats, 2.0, toSource);
     CHECK (grid.size() >= 2);
     if (grid.size() < 2)
         return;

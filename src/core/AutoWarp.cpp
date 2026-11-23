@@ -8,7 +8,7 @@
 #include "core/TempoDetect.h"
 #include "core/TimeStretch.h"
 
-namespace lynx::autowarp
+namespace yw::autowarp
 {
 namespace
 {
@@ -22,8 +22,8 @@ std::vector<double> attacksOf (const std::vector<float>& mono, double sampleRate
 }
 
 // The tempo: known (the file name: Live's tempo for 148 of 156 named Core Library loops), else a loop up to a minute
-// is taken as a power of two of beats, the one nearest the song's tempo (Live: 33 of 47 unnamed loops; LYNX's own
-// tempo detection matched only 8), else (a long recording) detected [measured, /mnt/e/lynx-work/ableton175a/m2/warp.txt]
+// is taken as a power of two of beats, the one nearest the song's tempo (Live: 33 of 47 unnamed loops; YW's own
+// tempo detection matched only 8), else (a long recording) detected [measured, /mnt/e/yw-work/ableton175a/m2/warp.txt]
 double tempoOf (const SampleData& s, const Options& o, double seconds, bool& fromLength)
 {
     fromLength = false;
@@ -199,4 +199,4 @@ double bpmInName (const std::string& name)
     }
     return 0.0;
 }
-} // namespace lynx::autowarp
+} // namespace yw::autowarp

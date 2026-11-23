@@ -12,7 +12,7 @@
 #include "core/RemotePlugins.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class LiveSessionManager;
@@ -36,8 +36,8 @@ bool showHostedEditor (const remoteplug::Place& place);
 // Closes the windows above (the app quits).
 void closeRemoteWindows();
 
-// LYNX --remoteshot <prefix>: both panels off-screen with sample data, as <prefix>-share.png, <prefix>-editor.png,
+// YW --remoteshot <prefix>: both panels off-screen with sample data, as <prefix>-share.png, <prefix>-editor.png,
 // <prefix>-editor-updating.png and <prefix>-editor-away.png (the coordinator's review).
 void saveRemoteShots (const juce::String& prefix);
 } // namespace liveui
-} // namespace lynx
+} // namespace yw

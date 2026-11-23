@@ -27,7 +27,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1184,12 +1184,12 @@ public:
     }
 };
 
-// ------------------------------------------------------------------------------------------------------- LYNX front-end
+// ------------------------------------------------------------------------------------------------------- YW front-end
 //
 // Levels (§2.1, REA_rodada28 §4.1, as GMS in REA_rodada39 §3.1): Final.Vol = channel volume, Final.Pan = note pan +
 // channel pan, Final.Pitch = 100·(key − 60) + channel pitch + note cents; the wrapper turns them into the per-note
-// tables with the host's law A. LYNX's channel gains gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…) give V and p back, so
-// the channel volume/pan are not applied twice. Velocity: Init.Vol = (11^(1.28·vel) − 1)/10 from LYNX's velocity, then
+// tables with the host's law A. YW's channel gains gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…) give V and p back, so
+// the channel volume/pan are not applied twice. Velocity: Init.Vol = (11^(1.28·vel) − 1)/10 from YW's velocity, then
 // the wrapper's MIDI velocity. The tempo is the song tempo; the max-polyphony event is taken as value 0 (99 voices).
 // While the transport plays, the song position locks the LFO and the phaser LFO (§5, §6.3).
 
@@ -1522,4 +1522,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace minisynth
-} // namespace lynx
+} // namespace yw

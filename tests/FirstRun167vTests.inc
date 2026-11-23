@@ -1,9 +1,9 @@
-// Round 167v: the first-run window layout (a fresh LYNX SHARE opened with the Channel Rack covering the Playlist on
+// Round 167v: the first-run window layout (a fresh YW Studio opened with the Channel Rack covering the Playlist on
 // small/scaled screens, and the Browser over the Playlist after a restart). Included at the end of tests.cpp.
 
 TEST (firstrun167v_default_rack_leaves_the_track_names_visible)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
 
     // desktops of a maximized/88 % window at 1366x768 and 1920x1080 with 100/125/150 % Windows scaling
     for (const auto& [w, h] : std::vector<std::pair<int, int>> { { 945, 440 }, { 1093, 520 }, { 1186, 540 }, { 1280, 600 }, { 1350, 600 },
@@ -26,7 +26,7 @@ TEST (firstrun167v_default_rack_leaves_the_track_names_visible)
 
 TEST (firstrun167v_browser_and_playlist_stay_side_by_side)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
 
     // a layout moved by hand (not the pristine default) scaled down past the Browser's minimum width and back up:
     // the Browser used to keep 220 px while the Playlist's left edge scaled, covering its pattern picker
@@ -47,10 +47,10 @@ TEST (firstrun167v_browser_and_playlist_stay_side_by_side)
 
 TEST (firstrun167v_saved_layout_with_the_browser_over_the_playlist_is_repaired)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
 
     // workspace.txt as 0.1.21 saved it on a first run (Windows, 1705x947 window): Browser 0.1865 wide, Playlist at 0.1545
-    const std::string saved = "lynx-layout 1\n"
+    const std::string saved = "yw-layout 1\n"
                               "panel playlist 1 0 0 0.15453 0.00000 0.84547 1.00000 0 0 0 0\n"
                               "panel channelRack 1 0 0 0.30787 0.04621 0.39372 0.26185 0 0 0 0\n"
                               "panel pianoRoll 0 0 0 0.17288 0.03791 0.80876 0.46919 0 0 0 0\n"

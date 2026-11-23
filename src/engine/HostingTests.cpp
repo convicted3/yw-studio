@@ -39,7 +39,7 @@
 #endif
 
 // Round 190jg: see engine/HostingTests.h.
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -207,7 +207,7 @@ int runSandboxGroupTest (const juce::String& pluginPath, const juce::String& rep
                    peakC = runBlocks (*c, fc, 40, block, rate), peakO = runBlocks (*own, fo, 40, block, rate),
                    peakL = runBlocks (*local, fl, 40, block, rate);
         report << "peaks before a=" << peakA << " b=" << peakB << " c=" << peakC << " own=" << peakO << " local=" << peakL << "\n";
-        // rollup 0.1.30: after a block the buffer holds what the plugin sent out, in a separate process as in LYNX's own
+        // rollup 0.1.30: after a block the buffer holds what the plugin sent out, in a separate process as in YW's own
         // (SharedBlock::midiOut; before, the sandboxed buffer kept what went in whatever the plugin did with it)
         {
             auto midiAfter = [&] (juce::AudioPluginInstance& p) {
@@ -268,8 +268,8 @@ int runSandboxGroupTest (const juce::String& pluginPath, const juce::String& rep
         // a real crashing plugin in a group (round 190dt's test plugin: a null write in its 20th block)
         if (crashPluginPath.isNotEmpty())
         {
-            setEnv ("LYNX_TEST_CRASH", "process");
-            setEnv ("LYNX_TEST_CRASH_AFTER", "20");
+            setEnv ("YW_TEST_CRASH", "process");
+            setEnv ("YW_TEST_CRASH_AFTER", "20");
             PluginHost crashHost (false);
             const auto crashType = firstType (crashHost, crashPluginPath);
             check (crashType.has_value(), "crash plugin found");
@@ -298,7 +298,7 @@ int runSandboxGroupTest (const juce::String& pluginPath, const juce::String& rep
                     check (otherAfter > 1.0e-4f && ! isSandboxedPluginDead (*other), "the other group keeps playing; YW Studio is alive");
                 }
             }
-            setEnv ("LYNX_TEST_CRASH", {});
+            setEnv ("YW_TEST_CRASH", {});
         }
 
         // teardown: no wait on the freeing thread (issue #159)
@@ -395,7 +395,7 @@ int runSandboxBench (const juce::String& pluginPath, const juce::String& reportP
         double cpuBefore = 0, cpuAfter = 0;
         double wallSeconds = 0;
         std::thread audio ([&] {
-            const lynx::ScopedFlushDenormals noDenormals;
+            const yw::ScopedFlushDenormals noDenormals;
             power::becomeProAudioThread();
             juce::AudioBuffer<float> buffer (juce::jmax (2, chain[0]->getTotalNumInputChannels(), chain[0]->getTotalNumOutputChannels()), block);
             juce::MidiBuffer midi;
@@ -468,7 +468,7 @@ int runClapExtTest (const juce::String& pluginPath, const juce::String& reportPa
 {
     const auto logFile = juce::File (reportPath).getSiblingFile (juce::File (reportPath).getFileNameWithoutExtension() + "-plugin.txt");
     logFile.deleteFile();
-    setEnv ("LYNX_TEST_EXT_LOG", logFile.getFullPathName());
+    setEnv ("YW_TEST_EXT_LOG", logFile.getFullPathName());
     juce::String report;
     auto failures = 0;
     auto check = [&] (bool ok, const juce::String& what) {
@@ -583,8 +583,8 @@ int runAutomationTimingTest (const juce::String& pluginPath, const juce::String&
         setPluginSandboxMode (separateProcess ? SandboxMode::perPlugin : SandboxMode::inProcess);
         const juce::ScopeGuard modeBack { [modeBefore] { setPluginSandboxMode (modeBefore); } };
         logFile.deleteFile();
-        setEnv ("LYNX_TEST_EXT_LOG", logFile.getFullPathName());
-        setEnv ("LYNX_TEST_PARAM_LOG", logFile.getFullPathName());
+        setEnv ("YW_TEST_EXT_LOG", logFile.getFullPathName());
+        setEnv ("YW_TEST_PARAM_LOG", logFile.getFullPathName());
         const auto wavFile = juce::File (reportPath).getSiblingFile (juce::File (reportPath).getFileNameWithoutExtension() + (sampleAccurate ? "-on" : "-off")
                                                                      + (separateProcess ? "-sep.wav" : ".wav"));
         {
@@ -746,14 +746,14 @@ struct WorkCounter
 };
 
 // Linux: LD_PRELOAD=tools/pluginbench/libbenchcount.so counts malloc-family calls and mutex locks made by a thread
-// while it has counting on (lynxbench_counts); without it these columns are "-"
+// while it has counting on (ywbench_counts); without it these columns are "-"
 using CountFn = void (*) (int on, unsigned long* allocations, unsigned long* locks);
 CountFn countHook()
 {
    #if JUCE_WINDOWS
     return nullptr;
    #else
-    static const auto fn = (CountFn) dlsym (RTLD_DEFAULT, "lynxbench_counts");
+    static const auto fn = (CountFn) dlsym (RTLD_DEFAULT, "ywbench_counts");
     return fn;
    #endif
 }
@@ -833,7 +833,7 @@ Phase runPhase (int blocks, bool denormals, Process&& process)
     phase.wallUs.resize ((std::size_t) blocks);
     phase.peak.resize ((std::size_t) blocks);
     std::thread audio ([&] {
-        const lynx::ScopedFlushDenormals noDenormals;
+        const yw::ScopedFlushDenormals noDenormals;
        #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__)
         if (denormals)
             _mm_setcsr (_mm_getcsr() & ~0x8040u);
@@ -947,9 +947,9 @@ int runPluginBench (const juce::String& listOrPlugin, const juce::String& report
         {
             juce::String note;
             const auto mem0 = processMemoryMb();
-            // round 190ok: LYNX_PB_PREFAULT=1 pre-faults the memory the plugin mapped while it loaded and prepared
+            // round 190ok: YW_PB_PREFAULT=1 pre-faults the memory the plugin mapped while it loaded and prepared
             // (platform/PrefaultMemory.h), to compare its audio thread's page faults with and without
-            const auto prefaultOn = juce::SystemStats::getEnvironmentVariable ("LYNX_PB_PREFAULT", "0") == "1";
+            const auto prefaultOn = juce::SystemStats::getEnvironmentVariable ("YW_PB_PREFAULT", "0") == "1";
             const auto mapsBefore = prefaultOn ? prefault::mappings() : std::vector<prefault::Region> {};
             const auto t0 = juce::Time::getMillisecondCounterHiRes();
             juce::String error;
@@ -1020,8 +1020,8 @@ int runPluginBench (const juce::String& listOrPlugin, const juce::String& report
                 p.processBlock (buffer, midi);
                 return peakOut();
             });
-            // round 190ok: LYNX_PB_BLOCKS=<file> appends the signal phase's work per block (finding a period in spikes)
-            if (const auto dump = juce::SystemStats::getEnvironmentVariable ("LYNX_PB_BLOCKS", {}); dump.isNotEmpty())
+            // round 190ok: YW_PB_BLOCKS=<file> appends the signal phase's work per block (finding a period in spikes)
+            if (const auto dump = juce::SystemStats::getEnvironmentVariable ("YW_PB_BLOCKS", {}); dump.isNotEmpty())
             {
                 juce::String rows;
                 for (std::size_t b = 0; b < signal.work.size(); ++b)
@@ -1047,7 +1047,7 @@ int runPluginBench (const juce::String& listOrPlugin, const juce::String& report
             const auto latency = p.getLatencySamples();
             const auto tail = p.getTailLengthSeconds();
 
-            // LYNX's wrapper (the effect slot / channel instrument adapter) around the same instance: what LYNX adds
+            // YW's wrapper (the effect slot / channel instrument adapter) around the same instance: what YW adds
             double wrapMedian = 0.0, releaseMs = 0.0;
             {
                 std::vector<float> l ((std::size_t) block), r ((std::size_t) block);
@@ -1157,4 +1157,4 @@ int runPluginBench (const juce::String& listOrPlugin, const juce::String& report
     juce::File (reportPath).replaceWithText (out + "result=OK\n");
     return 0;
 }
-} // namespace lynx
+} // namespace yw

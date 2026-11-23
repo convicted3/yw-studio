@@ -1,7 +1,7 @@
 #pragma once
 
 // Round 190cm (the 0.1.27 rollup, coordinator's decision): the Ableton-style keys must not hide FL-layout globals.
-// Three of the reference DAW's keys clash with a global shortcut of LYNX's key map (core/KeyMap.cpp):
+// Three of the reference DAW's keys clash with a global shortcut of YW's key map (core/KeyMap.cpp):
 //   Ctrl+Shift+M  new empty MIDI clip in the clip grid (round 190bv)      × file.exportMidi
 //   Ctrl+I        insert warp markers in the audio editor (round 190cg)   × record.waitForInput
 //   Ctrl+U        quantize audio in the audio editor (round 190cg)        (free in the key map today)
@@ -27,7 +27,7 @@
 
 #include "core/LayoutStyle.h"
 
-namespace lynx::sessionkeys
+namespace yw::sessionkeys
 {
 enum class Command
 {
@@ -68,4 +68,4 @@ inline const char* menuKey (Command c, layoutstyle::Style style) noexcept
     return "";
 }
 inline const char* menuKey (Command c) noexcept { return menuKey (c, layoutstyle::current()); }
-} // namespace lynx::sessionkeys
+} // namespace yw::sessionkeys

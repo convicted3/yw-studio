@@ -11,7 +11,7 @@
 #include <limits>
 #include <type_traits>
 
-// LYNX (round 190kr): the per-band state is kept as structure-of-arrays and the spectral loops run four bands at a
+// YW (round 190kr): the per-band state is kept as structure-of-arrays and the spectral loops run four bands at a
 // time with SSE2 where available. Every value is computed by the same IEEE operations in the same order as the
 // original per-band code (no reassociation, no FMA, no approximations), so the output is bit-identical.
 #if defined(__SSE2__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
@@ -20,14 +20,14 @@
 #else
 #	define SIGNALSMITH_STRETCH_SSE2 0
 #endif
-// LYNX (round 190kz): the same loops eight bands at a time with AVX2 where the CPU has it (picked at run time:
-// src/core/CpuFeatures.h, LYNX_CPU=sse2 forces the four-at-a-time loops). The same IEEE operations per band in the
+// YW (round 190kz): the same loops eight bands at a time with AVX2 where the CPU has it (picked at run time:
+// src/core/CpuFeatures.h, YW_CPU=sse2 forces the four-at-a-time loops). The same IEEE operations per band in the
 // same order (no FMA), so all paths give the same bits; the remaining bands go through the SSE2 / scalar loops.
 #if SIGNALSMITH_STRETCH_SSE2 && (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__)) && defined(__has_include)
 #	if __has_include("core/CpuFeatures.h")
 #		include "core/CpuFeatures.h"
 #		include <immintrin.h>
-#		define SIGNALSMITH_STRETCH_AVX LYNX_CPU_DISPATCH
+#		define SIGNALSMITH_STRETCH_AVX YW_CPU_DISPATCH
 #	endif
 #endif
 #ifndef SIGNALSMITH_STRETCH_AVX
@@ -257,7 +257,7 @@ struct SignalsmithStretch {
 			prevCopiedInput = toIndex;
 		};
 
-		// LYNX (round 190kr): only `totalEnergy < noiseFloor` is used. Every term is >= 0 and float addition rounds
+		// YW (round 190kr): only `totalEnergy < noiseFloor` is used. Every term is >= 0 and float addition rounds
 		// monotonically, so one term that is not below the floor (or a NaN) decides it without the sum; otherwise the
 		// sum is taken as before.
 		bool loud = false;
@@ -332,7 +332,7 @@ struct SignalsmithStretch {
 				prevInputOffset = inputOffset;
 				
 				copyInput(inputOffset);
-				// LYNX (round 190kr): without split computation the analysis runs now, before any more input is written,
+				// YW (round 190kr): without split computation the analysis runs now, before any more input is written,
 				// so it reads stft.input itself (no copy of the whole input history, and no swaps)
 				if (_splitComputation) stashedInput = stft.input; // save the input state, since that's what we'll analyse later
 				if (_splitComputation) {
@@ -461,7 +461,7 @@ struct SignalsmithStretch {
 				++outputIndex;
 				continue;
 			}
-			// LYNX (round 190kr): without split computation nothing is synthesised until the next block is due, so the
+			// YW (round 190kr): without split computation nothing is synthesised until the next block is due, so the
 			// samples up to it are read in one run (the same divisions, then the same clearing of the output buffer)
 			int run = int(std::min<size_t>(size_t(outputSamples - outputIndex), stft.defaultInterval() - blockProcess.samplesSinceLast));
 			blockProcess.samplesSinceLast += run;
@@ -596,7 +596,7 @@ private:
 		return stft.freqToBin(f);
 	}
 	
-	// LYNX (round 190kr): the band state as structure-of-arrays (it was an array of {input, prevInput, output,
+	// YW (round 190kr): the band state as structure-of-arrays (it was an array of {input, prevInput, output,
 	// inputEnergy} structs). Each channel's bands are contiguous, with `bandPad` bands of zeros either side that are
 	// never written: a read just outside [0, bands) gives 0, as the original getBand() did.
 	static constexpr int bandPad = 4;
@@ -614,7 +614,7 @@ private:
 	std::vector<Sample> twistR, twistI, longTwistR, longTwistI; // per channel, bands (+ padding)
 	std::vector<Sample> selTwistR, selTwistI, selLongTwistR, selLongTwistI, selUpR, selUpI, selLongUpR, selLongUpI;
 	std::vector<Sample> drawDown, drawUp;
-	// LYNX (round 190lv, memory): the scratch above holds ONE chunk of the main prediction (its bands [startB, endB) and the
+	// YW (round 190lv, memory): the scratch above holds ONE chunk of the main prediction (its bands [startB, endB) and the
 	// twists up to endB + longVerticalStep), not all bands: each chunk's twists, selections and random draws are written
 	// and read inside that chunk's step (processSpectrum), so nothing of another chunk is ever read from them. 1/8 of
 	// the size (~0.15 MB less per voice pitch shifter: ~100 of them in FL's Thief). The `...p` pointers stand at band 0
@@ -785,7 +785,7 @@ private:
 		if (blockProcess.newSpectrum) processSpectrumSteps += 1; // .input -> .prevInput
 		if (blockProcess.processFormants) processSpectrumSteps += 3;
 	}
-	// LYNX (round 190kr): a mono source in both channels (a mono sample) has the same input in both: the second
+	// YW (round 190kr): a mono source in both channels (a mono sample) has the same input in both: the second
 	// channel's analysis step copies the first's spectrum instead of a second identical FFT
 	bool sameAnalysis(size_t step) const {
 		return !_splitComputation && channels == 2 && step == 1 && stft.inputChannelsEqual(0, 1);
@@ -861,7 +861,7 @@ private:
 		step -= channels;
 
 		if (step < splitMainPrediction) {
-			// Re-predict using phase differences between frequencies. LYNX (round 190kr): everything that does not
+			// Re-predict using phase differences between frequencies. YW (round 190kr): everything that does not
 			// depend on the outputs of the bands below is computed first, for the chunk's bands (prepareMainPrediction),
 			// so the band-to-band chain below does only the work on it, in the same order as before.
 			if (step == 0) {
@@ -1371,10 +1371,10 @@ private:
 	}
 #endif
 #if SIGNALSMITH_STRETCH_AVX
-	// LYNX (round 190kz): eight-band versions of the four-band loops above and below. Each one is the SSE2 loop with
+	// YW (round 190kz): eight-band versions of the four-band loops above and below. Each one is the SSE2 loop with
 	// the same operations on eight lanes (_mm_*_ps → _mm256_*_ps, compare predicates as the SSE2 ones: LE/GT, ordered
 	// signalling), run first; the bands it leaves go through the SSE2 loop and the scalar loop as before.
-	static bool avxOn() { return lynx::cpu::hasAvx2(); }
+	static bool avxOn() { return yw::cpu::hasAvx2(); }
 	static SIGNALSMITH_AVX2_INLINE void mulV8(__m256 aR, __m256 aI, __m256 bR, __m256 bI, __m256 &outR, __m256 &outI) {
 		outR = _mm256_sub_ps(_mm256_mul_ps(aR, bR), _mm256_mul_ps(aI, bI));
 		outI = _mm256_add_ps(_mm256_mul_ps(aR, bI), _mm256_mul_ps(aI, bR));

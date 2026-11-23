@@ -1,4 +1,4 @@
-// Round 124 (extras): her corpus' other third-party plugins measured on the official trials and their LYNX substitutes
+// Round 124 (extras): her corpus' other third-party plugins measured on the official trials and their YW substitutes
 // matched (docs/analise/REA_rodada124_extras.md). Golden curves are the references' own measured responses at her
 // saved settings.
 
@@ -27,22 +27,22 @@ inline std::vector<std::uint8_t> ffbs (const std::vector<float>& values)
     return b;
 }
 
-inline lynx::EffectSlot substitute (const char* name, const std::vector<std::uint8_t>& state, int& translated)
+inline yw::EffectSlot substitute (const char* name, const std::vector<std::uint8_t>& state, int& translated)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst3;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst3;
     id.name = name;
     id.state = state;
-    const auto* entry = lynx::findPluginSubstitute (id, false);
+    const auto* entry = yw::findPluginSubstitute (id, false);
     CHECK (entry != nullptr);
     translated = 0;
-    return entry != nullptr ? lynx::makeSubstituteSlot (*entry, &id, &translated) : lynx::EffectSlot {};
+    return entry != nullptr ? yw::makeSubstituteSlot (*entry, &id, &translated) : yw::EffectSlot {};
 }
 
 // |H(f)| in dB of an effect (left channel), from its impulse response
-inline std::vector<double> magnitudeDb (const lynx::EffectSlot& slot, const std::vector<double>& hz, int length = 1 << 15)
+inline std::vector<double> magnitudeDb (const yw::EffectSlot& slot, const std::vector<double>& hz, int length = 1 << 15)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     std::vector<float> l ((std::size_t) length, 0.0f), r ((std::size_t) length, 0.0f);
@@ -92,7 +92,7 @@ inline std::vector<float> proQGlobals()
 
 TEST (pro_q4_states_translate_onto_facet_and_match_the_reference_round124)
 {
-    using namespace lynx;
+    using namespace yw;
     // the reference's |H| in dB (official trial, impulse response, exact DTFT) at her four saved states
     const std::vector<double> hz { 29.297, 58.594, 99.609, 199.219, 498.047, 1001.953, 1998.047, 4998.047, 10001.953, 15000.0, 19001.953 };
     struct Case
@@ -126,7 +126,7 @@ TEST (pro_q4_states_translate_onto_facet_and_match_the_reference_round124)
             worst = std::max (worst, std::abs (mag[k] - c.ref[k]));
         CHECK (worst < 0.1);
         if (worst >= 0.1 || std::getenv ("M124X_VERBOSE"))
-            for (std::size_t k = 0; k < hz.size(); ++k) std::printf ("    %.0f Hz lynx %.3f ref %.3f\n", hz[k], mag[k], c.ref[k]);
+            for (std::size_t k = 0; k < hz.size(); ++k) std::printf ("    %.0f Hz yw %.3f ref %.3f\n", hz[k], mag[k], c.ref[k]);
         if (worst >= 0.1)
             std::printf ("  Pro-Q 4 %s: worst %.3f dB\n", c.what, worst);
     }
@@ -146,7 +146,7 @@ TEST (pro_q4_states_translate_onto_facet_and_match_the_reference_round124)
 
 TEST (waves_s1_imager_translates_onto_the_stereo_shaper_matrix_round124)
 {
-    using namespace lynx;
+    using namespace yw;
     // L → L, R → L, L → R, R → R of the official trial (white noise, least squares; REA_rodada124_extras §4)
     struct Case
     {

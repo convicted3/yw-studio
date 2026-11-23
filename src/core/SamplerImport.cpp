@@ -9,7 +9,7 @@
 #include "core/GigFile.h"
 #include "core/KontaktFile.h"
 
-namespace lynx::msimport
+namespace yw::msimport
 {
 namespace
 {
@@ -336,7 +336,7 @@ std::string findZoneSample (const std::string& savedPath, const std::string& pro
     // 2. DirectWave's own fallback (0x18001dc20): the folder named after the program file, next to it
     if (auto p = found (join (withoutExtension (programFile), name, access.separator)); ! p.empty())
         return p;
-    // 3. (LYNX, for FL's host-side search) the program's folder, the saved path's own folder inside it (FL 2026 moved
+    // 3. (YW, for FL's host-side search) the program's folder, the saved path's own folder inside it (FL 2026 moved
     //    its packs: "...\Packs\Guitar\Bass\FLStudio Bass 02\x.wav" lives in "Packs\Legacy\Instruments\Guitar\Bass\
     //    FLStudio Bass 02" next to the program), then below it
     const auto folder = folderOf (programFile);
@@ -508,4 +508,4 @@ std::string fileNameOf (const std::string& path)
     const auto sep = path.find_last_of ("\\/");
     return sep == std::string::npos ? path : path.substr (sep + 1);
 }
-} // namespace lynx::msimport
+} // namespace yw::msimport

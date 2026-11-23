@@ -7,7 +7,7 @@
 // Layout: docs/analise/FLM_FORMAT.md (round 182c). Every read is bounds-checked; a nested container that runs short
 // keeps what it read so far (the app's own reader does the same), only a top-level chunk past the end of the file fails.
 
-namespace lynx::flm
+namespace yw::flm
 {
 namespace
 {
@@ -597,10 +597,10 @@ std::optional<Project> parse (Bytes bytes, std::string* error, bool racksOnly)
         return fail ("the project has no channels");
     return p;
 }
-} // namespace lynx::flm
+} // namespace yw::flm
 
 // --- round 190og: the writer (FLM_FORMAT §1–6; the reader above is its inverse) ------------------------------------
-namespace lynx::flm
+namespace yw::flm
 {
 namespace
 {
@@ -954,5 +954,5 @@ float hueOfColour (std::uint32_t colour) noexcept
     }
     return best;
 }
-} // namespace lynx::flm
+} // namespace yw::flm
 // --- end of round 190og

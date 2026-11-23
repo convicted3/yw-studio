@@ -1,6 +1,6 @@
 #pragma once
 
-// The Simple workflow's Finish dock (round 189k, slice S8; design: /mnt/e/lynx-work/simple184a/DESIGN.md §2.3.1): the
+// The Simple workflow's Finish dock (round 189k, slice S8; design: /mnt/e/yw-work/simple184a/DESIGN.md §2.3.1): the
 // Master looks. Eight looks, an intensity slider (Light / Normal / Heavy), Tone (Low / Mid / High), Auto level and
 // "Hear without". A look is a short chain of FL's own effects on the Master (core/MasterLooks.h), so everything it does
 // is visible and editable in the Mixer and exports to FL Studio as those plugins.
@@ -13,7 +13,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -86,4 +86,4 @@ public:
 private:
     bool updating = false;
 };
-} // namespace lynx
+} // namespace yw

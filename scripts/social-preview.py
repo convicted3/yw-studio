@@ -10,7 +10,7 @@ Default: website/assets/img/hero@2x.webp, else hero.webp. scripts/site-shots.py 
 tools/make_logo.py (site) calls it with the default after a logo change.
 
 The words live in TEXT below: change them here, never in the picture (README, website and this card say the same:
-the formats LYNX opens and exports, the plugin formats per OS, the repository URL). The fonts are Segoe UI (bold,
+the formats YW opens and exports, the plugin formats per OS, the repository URL). The fonts are Segoe UI (bold,
 semibold, regular) as the card always had; where Windows' fonts are not found (C:\\Windows\\Fonts, also through
 /mnt/c in WSL) the app's own Open Sans (resources/fonts) is used instead, and the script says so.
 """
@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 
 # --- the words ---------------------------------------------------------------------------------------------------------
 TEXT = {
-    "title": "LYNX SHARE",
+    "title": "YW Studio",
     "headline": ["FL Studio-style patterns,", "Ableton Live-style clips."],
     "lines": [
         "Channel Rack · Piano Roll · Playlist · Mixer",
@@ -33,7 +33,7 @@ TEXT = {
         "VST3, CLAP, VST2, AU, LV2 · free and open source",
     ],
     "pills": ["Windows", "macOS", "Linux"],
-    "site": "lynx-share.com",
+    "site": "yolo.su",
     "url": "github.com/convicted3/yw-studio",
 }
 
@@ -124,7 +124,7 @@ def draw(win_src, out):
     while size > 40 and bold(size).getlength(TEXT["title"]) > WIN_X - 36 - TITLE_X:
         size -= 1
     f = bold(size)
-    top, bottom = f.getbbox("LYNX")[1], f.getbbox("LYNX")[3]
+    top, bottom = f.getbbox("YW")[1], f.getbbox("YW")[3]
     d.text((TITLE_X, TILE_XY[1] + TILE / 2 - (top + bottom) / 2), TEXT["title"], font=f, fill=INK["title"])
 
     for i, t in enumerate(TEXT["headline"]):

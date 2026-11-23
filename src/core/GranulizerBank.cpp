@@ -1,4 +1,4 @@
-// LYNX's own Fruity Granulizer bank (round 168q). Designed for LYNX — never converted from FL's preset files. The
+// YW's own Fruity Granulizer bank (round 168q). Designed for YW — never converted from FL's preset files. The
 // granulizer plays the channel's own sample (core/Granulizer.h), so these presets are settings only: they keep the
 // channel's sample and its channel-settings snapshot. Grain spacing against wave spacing is the playback speed
 // (equal = the sample's own speed, smaller wave spacing = stretched, negative = backwards; REA_rodada67 §2).
@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "core/Granulizer.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -79,4 +79,4 @@ std::vector<Preset> granulizerBank()
                           { { { attack, 60 }, { hold, 60 }, { grainSpacing, 611 }, { waveSpacing, 611 }, { transientHold, 320 } }, 2, 3, 0 }));
     return bank;
 }
-} // namespace lynx::banks
+} // namespace yw::banks

@@ -24,8 +24,8 @@ int main (int argc, char** argv)
     }
     std::ifstream sf (argv[1], std::ios::binary);
     const std::vector<std::uint8_t> bytes { std::istreambuf_iterator<char> (sf), {} };
-    lynx::wavetrav::State state;
-    if (! lynx::wavetrav::parseState (bytes, state))
+    yw::wavetrav::State state;
+    if (! yw::wavetrav::parseState (bytes, state))
     {
         std::fprintf (stderr, "state not parsed\n");
         return 1;
@@ -51,16 +51,16 @@ int main (int argc, char** argv)
             return 1;
         std::fclose (f);
     }
-    lynx::SampleData data;
+    yw::SampleData data;
     data.left.assign (planar.begin(), planar.begin() + length);
     if (chans > 1)
         data.right.assign (planar.begin() + length, planar.begin() + 2 * length);
     data.sampleRate = 44100.0;
-    const auto smp = lynx::wavetrav::sampleFrom (data);
-    std::vector<lynx::wavetrav::RefNote> notes;
+    const auto smp = yw::wavetrav::sampleFrom (data);
+    std::vector<yw::wavetrav::RefNote> notes;
     for (int i = 10; i < argc; ++i)
     {
-        lynx::wavetrav::RefNote n;
+        yw::wavetrav::RefNote n;
         int key = 60;
         float vol = 1, pan = 0, pofs = 0, ipan = 0;
         int id = 0, at = 0;
@@ -75,7 +75,7 @@ int main (int argc, char** argv)
         else if (std::sscanf (argv[i], "off=%d,%d", &at, &id) == 2 && id >= 0 && id < (int) notes.size())
             notes[(std::size_t) id].release = at;
     }
-    const auto out = lynx::wavetrav::renderReference (state, *smp, notes, rate, tempo, taps, frames);
+    const auto out = yw::wavetrav::renderReference (state, *smp, notes, rate, tempo, taps, frames);
     if (FILE* f = std::fopen (argv[9], "wb"))
     {
         std::fwrite (out.data(), 4, out.size(), f);

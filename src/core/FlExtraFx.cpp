@@ -10,7 +10,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::flextra
+namespace yw::flextra
 {
 namespace
 {
@@ -717,4 +717,4 @@ std::string inertPluginNote (const std::string& flPluginName)
         return flPluginName + " (its instruments are not reproduced; played with a YW Studio synth preset)";
     return {};
 }
-} // namespace lynx::flextra
+} // namespace yw::flextra

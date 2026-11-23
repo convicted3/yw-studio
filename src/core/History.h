@@ -11,7 +11,7 @@
  #define TR_NOOP(text) text
 #endif
 
-namespace lynx
+namespace yw
 {
 struct ChangeLabel
 {
@@ -24,4 +24,4 @@ ChangeLabel describeChange (const Song& before, const Song& after);
 
 // Same, already formatted in English ("Notes: Pattern 1"); used by the tests and logs.
 std::string describeChangeText (const Song& before, const Song& after);
-} // namespace lynx
+} // namespace yw

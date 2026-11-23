@@ -4,12 +4,12 @@
     //     look, then hovering F minor, the dominant key G chosen, the 7th extension; the same in the Clip-launch layout's
     //     Live look and in the Simple layout's look; the Tools menu with its item.
     //  2. Insert: F minor after the C, voice-led; the helper follows the new chord.
-    //  3. Transistor Bass from FL's "Factory programs" (needs FL Studio: LYNX_FL_INSTALL): the page with FL's program
+    //  3. Transistor Bass from FL's "Factory programs" (needs FL Studio: YW_FL_INSTALL): the page with FL's program
     //     row, another program chosen, the PATCH list (FL's right-click), WRITE lit after a knob edit.
     // <folder>/checks.txt lists what was checked.
     bool runModalShot190mc (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -169,7 +169,7 @@
             auto song = Song::makeDefault();
             const auto& fl = flStudioAccess();
             auto tb = natives::makeChannel (InstrumentKind::transistorbass, fl);
-            check ("tb_channel_needs_fl", tb.has_value(), tb ? juce::String() : juce::String ("no FL Studio: set LYNX_FL_INSTALL"));
+            check ("tb_channel_needs_fl", tb.has_value(), tb ? juce::String() : juce::String ("no FL Studio: set YW_FL_INSTALL"));
             if (tb)
             {
                 song.channels.push_back (*tb);

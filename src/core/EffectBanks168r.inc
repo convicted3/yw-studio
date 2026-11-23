@@ -1,10 +1,10 @@
-// LYNX's own preset banks for the FL effects that run without FL's files and for LYNX's simple built-ins (round 168r) —
+// YW's own preset banks for the FL effects that run without FL's files and for YW's simple built-ins (round 168r) —
 // included by core/EffectPresets.cpp after EffectPresetTable.inc and parsed with it (same format: "[engine]",
 // "folder <name>", "<preset> | <parameter> = <value>; …", values as the editor shows them or "#0.25" normalised).
-// Clean-room: settings designed for LYNX (own names and values), not taken or converted from FL's preset files; FL's
+// Clean-room: settings designed for YW (own names and values), not taken or converted from FL's preset files; FL's
 // factory presets stay listed beside them when FL Studio is installed. Every preset is rendered by the core tests
 // (tests/tests.cpp, design168r_*): no silence, no clipping, no NaN.
-namespace lynx::presets
+namespace yw::presets
 {
 namespace
 {

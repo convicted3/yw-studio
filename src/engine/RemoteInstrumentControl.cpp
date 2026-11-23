@@ -6,7 +6,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace lynx
+namespace yw
 {
 namespace
 {

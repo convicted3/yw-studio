@@ -1,26 +1,26 @@
 // Round 190hf (issue #152 point 6): plugins dropped from the Browser on the Playlist's track headers (FL) and on the
-// Clip-launch workflow's tracks (Live). Facts: /mnt/e/lynx-work/dnd190hf/DROP-FACTS.md.
+// Clip-launch workflow's tracks (Live). Facts: /mnt/e/yw-work/dnd190hf/DROP-FACTS.md.
 namespace plugindrop190hf
 {
-inline lynx::ChannelDef generator (const char* name)
+inline yw::ChannelDef generator (const char* name)
 {
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.name = name;
-    c.instrument = lynx::InstrumentKind::synth;
+    c.instrument = yw::InstrumentKind::synth;
     return c;
 }
 
-inline lynx::EffectSlot effect()
+inline yw::EffectSlot effect()
 {
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::eq;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::eq;
     return fx;
 }
 } // namespace plugindrop190hf
 
 TEST (plugindrop190hf_fl_targets_follow_the_selection)
 {
-    using namespace lynx::plugindrop;
+    using namespace yw::plugindrop;
     // a header outside the selection: that track alone (FL selects it first)
     CHECK (generatorTargets (5, { 1, 2 }) == std::vector<int> { 5 });
     // inside it: every selected track, in order
@@ -30,7 +30,7 @@ TEST (plugindrop190hf_fl_targets_follow_the_selection)
 
 TEST (plugindrop190hf_fl_generator_on_headers)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     const auto channels = song.channels.size();
     // an unassigned track becomes, in place, the instrument track of a new channel on a free mixer track
@@ -70,7 +70,7 @@ TEST (plugindrop190hf_fl_generator_on_headers)
 
 TEST (plugindrop190hf_fl_effect_on_headers)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     // an unassigned track: FL refuses ("Only generators can be used as instrument tracks.")
     CHECK (plugindrop::effectOnTrack (song, plugindrop190hf::effect(), 2).error == plugindrop::Error::onlyGenerators);
@@ -96,7 +96,7 @@ TEST (plugindrop190hf_fl_effect_on_headers)
 
 TEST (plugindrop190hf_live_devices_on_session_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     const auto channels = song.channels.size();
     // an empty track: an instrument makes it a MIDI track of a new channel (Live's drop area: a new MIDI track)

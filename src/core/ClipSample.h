@@ -17,7 +17,7 @@
 #include "core/Song.h"
 #include "core/WarpEdit.h"
 
-namespace lynx::clipsample
+namespace yw::clipsample
 {
 // Warp on: the sample follows the song's tempo (it lasts stretchBeats beats). Off: it plays at its own speed.
 inline bool isWarped (const SamplerSettings& s) noexcept { return s.stretchBeats > 0.0f; }
@@ -36,7 +36,7 @@ inline double warpedBeats (const SamplerSettings& s, double fileSeconds, double 
 }
 
 // The Warp switch on channel `channel`'s sample (a file of `fileSeconds`). The warp markers stay while it is off, as
-// Live keeps them. LYNX's warp belongs to the channel, so every clip of the channel (Playlist, other arrangements, the
+// Live keeps them. YW's warp belongs to the channel, so every clip of the channel (Playlist, other arrangements, the
 // grid) keeps playing the same stretch of the file: its offset and length scale with the content's new length.
 // Returns false when nothing changed.
 inline bool setWarp (Song& song, int channel, bool on, double fileSeconds)
@@ -99,7 +99,7 @@ inline bool setEndAt (Clip& c, std::int64_t tick) noexcept
     return true;
 }
 
-// Position (Live's Loop Position): the clip's part of its content moves to start at `tick`, keeping its length. LYNX's
+// Position (Live's Loop Position): the clip's part of its content moves to start at `tick`, keeping its length. YW's
 // loop starts where the clip starts, so this is the start marker moved together with the end. False for a negative tick.
 inline bool setPositionAt (Clip& c, std::int64_t tick) noexcept
 {
@@ -251,7 +251,7 @@ inline bool setFileBpm (Song& song, int channel, int track, int scene, double fi
 }
 
 // --- the Fade switch (Live's clip Fade: short fades at the clip's edges) ------------------------------------------------
-// LYNX uses the clip's own fade-in and fade-out, `ms` long at the song tempo (at least one tick).
+// YW uses the clip's own fade-in and fade-out, `ms` long at the song tempo (at least one tick).
 constexpr double edgeFadeMs = 4.0;
 inline bool hasEdgeFades (const Clip& c) noexcept { return c.fadeIn > 0 || c.fadeOut > 0; }
 inline void setEdgeFades (Clip& c, bool on, double bpm)
@@ -279,4 +279,4 @@ inline std::string infoText (const std::string& fileName, double sampleRate, int
         text += " \xc2\xb7 " + std::to_string (channels) + " Ch";
     return text;
 }
-} // namespace lynx::clipsample
+} // namespace yw::clipsample

@@ -1,5 +1,5 @@
-# Generates the LYNX project-file icon (a dark page with a folded corner, a red band and the LYNX badge).
-# Usage: python3 tools/make_doc_icon.py resources/lynx_icon_256.png resources/LYNX_doc.ico [preview.png]
+# Generates the YW project-file icon (a dark page with a folded corner, a red band and the YW badge).
+# Usage: python3 tools/make_doc_icon.py resources/yw_icon_256.png resources/YW_doc.ico [preview.png]
 import sys
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -38,7 +38,7 @@ d.line([(right - fold, top), (right, top + fold)], fill=(20, 20, 24, 255), width
 d.line(outline + [outline[0]], fill=(90, 90, 98, 255), width=8, joint="curve")
 page = Image.alpha_composite(page, body)
 
-# the LYNX badge in the middle of the page
+# the YW badge in the middle of the page
 size = 560
 b = badge.resize((size, size), Image.LANCZOS)
 page.alpha_composite(b, ((left + right - size) // 2, top + fold - 40))

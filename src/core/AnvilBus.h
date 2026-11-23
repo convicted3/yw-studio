@@ -1,8 +1,8 @@
 #pragma once
 
-// Anvil Bus (round 190fk): LYNX's drum-bus processor — one device that colours, drives, shapes and glues a drum group,
+// Anvil Bus (round 190fk): YW's drum-bus processor — one device that colours, drives, shapes and glues a drum group,
 // and the engine an imported Ableton Live "Drum Buss" opens on (owner decision O20). Clean-room: every law below comes
-// from LYNX's own measurements of Live 12.4's output on test signals (rounds 190ei / 190ek / 190fk: noise, a 1 kHz
+// from YW's own measurements of Live 12.4's output on test signals (rounds 190ei / 190ek / 190fk: noise, a 1 kHz
 // staircase, an impulse, a sweep and a drum loop through each setting); nothing of Live's code or content is used.
 //
 // Signal flow (one stereo path, every stage per channel):
@@ -29,7 +29,7 @@
 #include "core/MixSuite.h"
 #include "core/StrikeShaper.h"
 
-namespace lynx::anvil
+namespace yw::anvil
 {
 enum Param { drive, driveType, crunch, damp, transients, boom, boomFreq, boomDecay, comp, trim, output, dryWet, count };
 enum class Type { soft, medium, hard };
@@ -670,4 +670,4 @@ private:
     std::array<float, maxDry> dryL {}, dryR {};
     int dryPos = 0;
 };
-} // namespace lynx::anvil
+} // namespace yw::anvil

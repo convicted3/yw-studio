@@ -12,7 +12,7 @@
 #define TR_NOOP(text) text // marks the names for translation (ui/I18n.h defines the same)
 #endif
 
-namespace lynx::loopkeys
+namespace yw::loopkeys
 {
 namespace
 {
@@ -520,4 +520,4 @@ Layout Layout::fromText (const std::string& text)
     }
     return l;
 }
-} // namespace lynx::loopkeys
+} // namespace yw::loopkeys

@@ -8,7 +8,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -433,4 +433,4 @@ std::unique_ptr<juce::Component> makeAudioCheckForSnapshot (AudioEngine& engine,
     w->panel.showState (state);
     return w;
 }
-} // namespace lynx
+} // namespace yw

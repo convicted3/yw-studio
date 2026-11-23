@@ -8,7 +8,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 // Watches a mixer slot for a native effect window: when the slot is removed or now holds another kind of effect (the
 // effect was deleted or replaced, the track removed), `onGone` runs once and the window closes itself (issue #9: an
@@ -81,4 +81,4 @@ private:
     EffectKind kind {};
     std::function<void()> onGone;
 };
-} // namespace lynx::ui
+} // namespace yw::ui

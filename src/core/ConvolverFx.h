@@ -6,7 +6,7 @@
 // EQ curve (a flat level or a linear-phase FIR from the drawn curve), silence trimming and predelay — and runs input
 // matrix → convolution → dry + wet matrix with FL's per-block gain ramps. The effect's parameters are FL's 4
 // automatable controls (dry, wet, input and wet stereo separation) stored as (raw − min) / (max − min); the impulse
-// response travels in the slot's `state` blob, so a saved LYNX project keeps working without the FL installation.
+// response travels in the slot's `state` blob, so a saved YW project keeps working without the FL installation.
 
 #include <array>
 #include <cstdint>
@@ -18,7 +18,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int convolverParamCount = 4; // dry level, wet level, input stereo separation, wet stereo separation
 
@@ -128,4 +128,4 @@ float eqLevelGain (double level) noexcept; // (3^(2·level) − 1)/2
 void toParams (const std::array<int, 4>& raw, EffectParams& params) noexcept;
 std::array<int, 4> fromParams (const EffectParams& params) noexcept;
 } // namespace convolver
-} // namespace lynx
+} // namespace yw

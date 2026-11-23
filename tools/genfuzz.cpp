@@ -1,11 +1,11 @@
-// genfuzz: crash and stuck-note fuzzer for LYNX's built-in generators (round 170i2; the effects' twin is fxfuzz).
+// genfuzz: crash and stuck-note fuzzer for YW's built-in generators (round 170i2; the effects' twin is fxfuzz).
 //
 // Builds every instrument the way the rack does (RackState::build) and plays it hard: note storms over the whole key
 // range with extreme and random velocities, chords, pitch bend, the next note's pan / cents / porta, Mod X / Y,
 // release velocities, channel pitch moves, cuts, all-notes-off, odd block sizes (1…4096) and rates 22.05…192 kHz.
 // Sources of channels:
 //   - every FL engine a native project can add (natives::instrumentEngines(), from the FL installation's Default
-//     preset when --fl is given, LYNX's own defaults otherwise)
+//     preset when --fl is given, YW's own defaults otherwise)
 //   - every channel of every .flp under a directory (importFlp, --dir)
 // Reports non-finite output (NaN / inf), output that stays loud after every note was released and the tail had 20 s
 // (a stuck note; engines with a sustain loop in their release still decay because all notes are cut at the end) and,
@@ -56,12 +56,12 @@ std::vector<std::uint8_t> readFile (const fs::path& p)
 std::string local (std::string p)
 {
     std::replace (p.begin(), p.end(), '\\', '/');
-    return lynx::existingPathIgnoringCase (p);
+    return yw::existingPathIgnoringCase (p);
 }
 
-lynx::natives::FlAccess flAccess (const std::string& data)
+yw::natives::FlAccess flAccess (const std::string& data)
 {
-    lynx::natives::FlAccess fl;
+    yw::natives::FlAccess fl;
     if (data.empty())
         return fl;
     fl.roots.data = fs::path (data).string();
@@ -78,7 +78,7 @@ lynx::natives::FlAccess flAccess (const std::string& data)
         return out;
     };
     fl.saveEmbedded = [] (const std::vector<std::uint8_t>& wav, const std::string& name) {
-        const auto path = (fs::temp_directory_path() / ("lynx-genfuzz-" + std::to_string (wav.size()) + "-" + std::to_string (name.size()) + ".wav")).string();
+        const auto path = (fs::temp_directory_path() / ("yw-genfuzz-" + std::to_string (wav.size()) + "-" + std::to_string (name.size()) + ".wav")).string();
         std::ofstream (path, std::ios::binary).write ((const char*) wav.data(), (std::streamsize) wav.size());
         return path;
     };
@@ -102,21 +102,21 @@ double peak (const std::vector<float>& l, const std::vector<float>& r, int n)
 }
 
 // one channel alone in a rack: every round at another rate, a storm of events, then the release check
-void fuzzChannel (const lynx::ChannelDef& channel, const std::string& label)
+void fuzzChannel (const yw::ChannelDef& channel, const std::string& label)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     auto c = channel;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    auto samples = [] (const std::string& path) -> std::shared_ptr<const lynx::SampleData> { return lynx::tools::readWav (local (path)); };
+    auto samples = [] (const std::string& path) -> std::shared_ptr<const yw::SampleData> { return yw::tools::readWav (local (path)); };
     const double rates[] { 22050.0, 44100.0, 48000.0, 96000.0, 192000.0 };
     ++channelsTested;
     for (int round = 0; round < rounds; ++round)
     {
         const double rate = rates[(std::size_t) pick (0, 4)];
-        auto state = lynx::RackState::build (s, nullptr, rate, samples);
+        auto state = yw::RackState::build (s, nullptr, rate, samples);
         if (state == nullptr || state->instruments.empty() || state->instruments[0] == nullptr)
             return;
         auto& in = *state->instruments[0];
@@ -237,11 +237,11 @@ int main (int argc, char** argv)
         }
     }
     const auto fl = flAccess (flData);
-    for (const auto& e : lynx::natives::instrumentEngines())
+    for (const auto& e : yw::natives::instrumentEngines())
     {
         if (! only.empty() && only != e.name)
             continue;
-        if (const auto c = lynx::natives::makeChannel (e.kind, fl))
+        if (const auto c = yw::natives::makeChannel (e.kind, fl))
             fuzzChannel (*c, e.name);
         else if (verbose)
             std::printf ("  (%s: not available)\n", e.name);
@@ -255,14 +255,14 @@ int main (int argc, char** argv)
                 continue;
             try
             {
-                lynx::FlpImportOptions options;
+                yw::FlpImportOptions options;
                 if (! flData.empty())
                 {
                     options.roots = { fs::path (flData).parent_path().string(), flData, "" };
                     options.fileExists = [] (const std::string& p) { return fs::is_regular_file (local (p)); };
                     options.readFile = [] (const std::string& p) { return readFile (local (p)); };
                 }
-                const auto song = lynx::importFlp (flp::parseProject (readFile (f.path())), options);
+                const auto song = yw::importFlp (flp::parseProject (readFile (f.path())), options);
                 for (const auto& c : song.channels)
                     if (only.empty() || only == c.name)
                         fuzzChannel (c, f.path().filename().string() + ": " + c.name);

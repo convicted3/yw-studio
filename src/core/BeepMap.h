@@ -18,8 +18,8 @@
 // is the FL project's PPQ.
 //
 // Not modelled / not confirmed (REA_rodada65 §2.8): bitmaps taller than "Max height" (FL resamples them with its own
-// image scaler; LYNX picks rows by nearest neighbour), image formats other than uncompressed 24/32-bit BMP, FL's
-// process-global random seed (LYNX: one per instrument, so phases differ from any given FL render).
+// image scaler; YW picks rows by nearest neighbour), image formats other than uncompressed 24/32-bit BMP, FL's
+// process-global random seed (YW: one per instrument, so phases differ from any given FL render).
 
 #include <cstdint>
 #include <memory>
@@ -29,7 +29,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this BeepMap state (version 0/1 and a decodable bitmap at least 3 rows high)
 bool beepMapStateUsable (const std::vector<std::uint8_t>& state);
@@ -74,4 +74,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, int block = 512, std::uint32_t seed = 0, int maxPoly = 0);
 } // namespace beepmap
-} // namespace lynx
+} // namespace yw

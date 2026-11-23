@@ -1,6 +1,6 @@
 // --- GarageBand (.band) import, round 190ic (issue #184; core/BandFormat.h, core/BandImport.h). The songs here are
 // written by the tests, record by record as the reader's notes describe them; no GarageBand project is committed. Real
-// projects are imported only by the opt-in test at the end (LYNX_BAND_DIR).
+// projects are imported only by the opt-in test at the end (YW_BAND_DIR).
 
 #include "core/BandFormat.h"
 #include "core/BandImport.h"
@@ -282,9 +282,9 @@ inline Bytes binaryMetadata()
     return b;
 }
 
-inline lynx::BandImportOptions options (lynx::FlpImportReport* report, std::map<std::string, Bytes>* files)
+inline yw::BandImportOptions options (yw::FlpImportReport* report, std::map<std::string, Bytes>* files)
 {
-    lynx::BandImportOptions o;
+    yw::BandImportOptions o;
     o.packageFolder = "/songs/Jingle.band";
     o.common.report = report;
     o.common.fileExists = [files] (const std::string& p) { return files->count (p) > 0; };
@@ -298,7 +298,7 @@ inline lynx::BandImportOptions options (lynx::FlpImportReport* report, std::map<
 
 TEST (band190ic_reads_the_song)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bytes = band190ic::song();
     CHECK (band::isSongData (bytes.data(), bytes.size()));
     std::string error;
@@ -329,7 +329,7 @@ TEST (band190ic_reads_the_song)
 
 TEST (band190ic_projectdata_wrappers_and_legacy)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bytes = band190ic::song();
     // raw (GarageBand 10's Alternatives/000/ProjectData) and inside the iOS keyed archive
     CHECK (band::songFromProjectData (bytes) == bytes);
@@ -358,7 +358,7 @@ TEST (band190ic_projectdata_wrappers_and_legacy)
 
 TEST (band190ic_metadata_plists)
 {
-    using namespace lynx;
+    using namespace yw;
     band::Project p;
     band::applyMetadata (band190ic::metadata(), p);
     CHECK (p.keyRoot == 9 && p.keyMinor && p.numerator == 3 && p.denominator == 4);
@@ -370,7 +370,7 @@ TEST (band190ic_metadata_plists)
 
 TEST (band190ic_imports_simple_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     std::map<std::string, band190ic::Bytes> files;
     files["/songs/Jingle.band/projectData"] = band190ic::keyedArchive (band190ic::song());
     files["/songs/Jingle.band/Output/metadata.plist"] = band190ic::metadata();
@@ -438,7 +438,7 @@ TEST (band190ic_imports_simple_tracks)
         }
     CHECK (kick && snare);
     // the report: what was approximated and what wasn't converted
-    CHECK (report.approximated.count ("GarageBand instrument \"Grand Piano\" (LYNX's built-in synth, Bell preset)") == 1);
+    CHECK (report.approximated.count ("GarageBand instrument \"Grand Piano\" (YW's built-in synth, Bell preset)") == 1);
     CHECK (report.notReproduced.count ("GarageBand: tempo changes (the song plays at its first tempo)") == 1 && report.missingSamples == 0);
 
     // a missing file is listed; a located one (the Missing files window) is used on the next import
@@ -458,7 +458,7 @@ TEST (band190ic_imports_simple_tracks)
 
 TEST (band190ic_instrument_names)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (bandPresetFor ("Classical Grand") == "Bell" && bandPresetFor ("Hip Hop Sub Bass") == "808 Bass" && bandPresetFor ("Fingerstyle Bass") == "Reese Bass");
     CHECK (bandPresetFor ("String Ensemble") == "Pad" && bandPresetFor ("Steel String Acoustic Guitar") == "Pluck");
     CHECK (bandPresetFor ("Playful Melody") == "Lead" && bandPresetFor ("???") == "Default");
@@ -467,12 +467,12 @@ TEST (band190ic_instrument_names)
            && bandDrumFor (42) == InstrumentKind::hat);
 }
 
-// Opt-in (LYNX_BAND_DIR=folder): every .band below the folder is imported and summarised. Real projects stay on the
+// Opt-in (YW_BAND_DIR=folder): every .band below the folder is imported and summarised. Real projects stay on the
 // developer's disk; none is committed.
 TEST (band190ic_real_projects)
 {
-    using namespace lynx;
-    const char* dir = std::getenv ("LYNX_BAND_DIR");
+    using namespace yw;
+    const char* dir = std::getenv ("YW_BAND_DIR");
     if (dir == nullptr)
         return;
     for (const auto& entry : std::filesystem::recursive_directory_iterator (dir))

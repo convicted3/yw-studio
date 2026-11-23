@@ -7,7 +7,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // Quick-add palette (docs/WORKFLOW_FL.md P2, B9; F8): every instrument (built-in and scanned plugins) on
 // the left, every effect on the right, filtered as you type (the Browser's search syntax). Double-click
@@ -24,4 +24,4 @@ struct QuickAddTargets
 };
 
 std::unique_ptr<juce::Component> makeQuickAddPalette (AudioEngine& engine, QuickAddTargets targets);
-} // namespace lynx
+} // namespace yw

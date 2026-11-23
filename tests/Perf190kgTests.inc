@@ -23,7 +23,7 @@ struct Delay190ie
         buffer[1].assign ((std::size_t) (maxSeconds * 192000.0) + 4, 0.0f);
         glideK = 1.0 - std::pow (0.01, 1.0 / (glideSeconds * sr));
     }
-    void process (float* l, float* r, int n, const lynx::EffectParams& params, double bpm) noexcept
+    void process (float* l, float* r, int n, const yw::EffectParams& params, double bpm) noexcept
     {
         static constexpr std::array<double, 8> divisions { 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
         const auto index = std::clamp ((int) (params[0] * 8.0f), 0, 7);
@@ -107,13 +107,13 @@ TEST (perf190kg_delay_renders_round_190ie_bit_for_bit)
             for (int law = 0; law < 5; ++law)
                 for (int variant = 0; variant < 4; ++variant)
                 {
-                    auto slot = lynx::makeEffectSlot (lynx::EffectKind::delay);
+                    auto slot = yw::makeEffectSlot (yw::EffectKind::delay);
                     slot.params[0] = variant == 1 ? 0.0f : variant == 2 ? 0.9f : 0.4f;   // 1/16, 1 bar, 1/4 dot.
                     slot.params[1] = variant == 3 ? 0.98f : 0.6f;                        // feedback
                     slot.params[2] = 0.5f;                                               // mix
                     slot.params[3] = variant == 1 || variant == 3 ? 1.0f : 0.0f;         // ping-pong
                     slot.params[4] = variant == 2 ? 0.0f : 0.45f;                        // damping
-                    auto fx = lynx::makeEffect (slot);
+                    auto fx = yw::makeEffect (slot);
                     CHECK (fx != nullptr);
                     if (fx == nullptr)
                         return;

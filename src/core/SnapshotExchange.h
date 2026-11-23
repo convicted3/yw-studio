@@ -14,7 +14,7 @@
 #include <functional>
 #include <memory>
 
-namespace lynx
+namespace yw
 {
 template <typename T>
 class SnapshotExchange
@@ -135,4 +135,4 @@ private:
     std::array<std::atomic<const T*>, 8> retired {};
     const T* active = nullptr; // only the audio thread touches it
 };
-} // namespace lynx
+} // namespace yw

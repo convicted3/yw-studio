@@ -5,13 +5,13 @@
 // The reference DAW's browser gives every item up to seven colour labels at once and lists each colour as a
 // "collection" [docs/analise/REA_rodada190ce.md §1: its library settings hold seven label entries "colors=1..7", the
 // first named and switched on, the other six unnamed and switched off; its file index keeps the labels of an item as
-// one bit mask]. LYNX keeps FL's single Starred flag as collection 1 and adds the other six:
+// one bit mask]. YW keeps FL's single Starred flag as collection 1 and adds the other six:
 //   - an item (a file, a folder, a Plugin database entry) carries any of the seven, several at once;
 //   - a collection has a name of the user's (empty: "Starred" for the first, the colour's name for the others) and is
 //     shown in the STARRED tab or not; only Starred is shown at first, so the tab looks as it always did;
 //   - the search also finds items by the name of a collection they are in.
 // Stored as text in the settings folder (browser-collections.txt); the older browser-starred.txt (one path per line)
-// is read once when the new file does not exist and is still written, so an older LYNX keeps its stars.
+// is read once when the new file does not exist and is still written, so an older YW keeps its stars.
 // No JUCE: tested in isolation (tests/LiveBrowser190ceTests.inc).
 
 #include <algorithm>
@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::collections
+namespace yw::collections
 {
 constexpr int count = 7;
 
@@ -237,7 +237,7 @@ struct Store
     // "label|<1..7>|<shown 0/1>|<name>" and "item|<mask 1..127>|<item>", one per line; unknown lines are skipped.
     std::string toText() const
     {
-        std::string out = "lynx-browser-collections 1\n";
+        std::string out = "yw-browser-collections 1\n";
         for (int c = 0; c < count; ++c)
             out += "label|" + std::to_string (c + 1) + "|" + (labels[(std::size_t) c].shown ? "1" : "0") + "|" + labels[(std::size_t) c].name + "\n";
         for (const auto& [item, bits] : items)
@@ -303,4 +303,4 @@ struct Store
 
     bool operator== (const Store&) const = default;
 };
-} // namespace lynx::collections
+} // namespace yw::collections

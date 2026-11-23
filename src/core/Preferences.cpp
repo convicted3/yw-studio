@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <sstream>
 
-namespace lynx::prefs
+namespace yw::prefs
 {
 namespace
 {
@@ -150,7 +150,7 @@ std::string suggestedAsioDriver (const std::string& currentTypeName, const std::
     const auto isWrapper = [&] (const std::string& name) {
         const auto n = lower (name);
         return n.find ("asio4all") != std::string::npos || n.find ("fl studio asio") != std::string::npos
-               || n.find ("generic low latency") != std::string::npos || n.find ("yw asio") != std::string::npos || n.find ("lynx") != std::string::npos;
+               || n.find ("generic low latency") != std::string::npos || n.find ("yw asio") != std::string::npos || n.find ("yw") != std::string::npos;
     };
     for (const auto& d : asioDevices)
         if (! isWrapper (d))
@@ -174,7 +174,7 @@ DriverKind driverKind (const std::string& typeName)
     if (typeName == "ASIO")
         return DriverKind::asio;
     if (typeName == "YW ASIO")
-        return DriverKind::lynxAsio;
+        return DriverKind::ywAsio;
     if (typeName == "CoreAudio")
         return DriverKind::coreAudio;
     if (typeName == "ALSA")
@@ -877,4 +877,4 @@ int nextTypeAhead (const std::vector<std::string>& labels, const std::vector<boo
     }
     return -1;
 }
-} // namespace lynx::prefs
+} // namespace yw::prefs

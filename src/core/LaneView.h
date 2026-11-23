@@ -1,7 +1,7 @@
 #pragma once
 
 // Issue #191 point 3 (round 190iu): automation as foldable child lanes under the instrument's track instead of tracks of
-// their own. LYNX has had the lanes since round 177b (core/PlaylistOps.h autolanes: Playlist menu › Automation lanes, off
+// their own. YW has had the lanes since round 177b (core/PlaylistOps.h autolanes: Playlist menu › Automation lanes, off
 // in the Pattern layout, on in the Clip-launch layout as in Live's Arrangement; each track's lanes fold with its arrow;
 // "Automate in lane" on a control; "Move clip into lane" / "Lane to automation clip" on one clip; the .flp export turns
 // lanes into clips). What was missing for the issue: the automation clips a project already has (recorded envelopes,
@@ -16,7 +16,7 @@
 #include "core/PlaylistOps.h"
 #include "core/Song.h"
 
-namespace lynx::laneview
+namespace yw::laneview
 {
 // The track that owns `target`: one that already has a lane for it; the instrument track of its channel; a track
 // linked to its mixer insert (a channel's own insert counts). -1: none (tempo, the Master, an unlinked insert...).
@@ -112,4 +112,4 @@ inline int clipsToLanes (Song& song)
     }
     return moved;
 }
-} // namespace lynx::laneview
+} // namespace yw::laneview

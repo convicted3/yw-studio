@@ -3,8 +3,8 @@
 // Online Sessions, phase 2 (docs/design/ONLINE_SESSIONS.md §6.4 as built in round 169b): the invite code and the
 // end-to-end encryption of a live session.
 //
-// The invite code LYNX-ABCDE-FGHIJ-KLMN-OPQR-STUV-WXYZ is the relay room (10 characters the relay chose) and an 80-bit
-// secret the host's LYNX SHARE made (16 characters, never sent to any server). Argon2id (Monocypher, fixed salt) turns the
+// The invite code YW-ABCDE-FGHIJ-KLMN-OPQR-STUV-WXYZ is the relay room (10 characters the relay chose) and an 80-bit
+// secret the host's YW Studio made (16 characters, never sent to any server). Argon2id (Monocypher, fixed salt) turns the
 // secret into two values with different BLAKE2b domains: the session key (bound to the room too; XChaCha20-Poly1305, every frame) and the relay
 // room token (what the relay checks before it lets a peer into the room). The relay sees the token, never the key, and
 // cannot get one from the other. Every frame carries the sender's random id and a counter: a frame replayed by anyone
@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::livecrypto
+namespace yw::livecrypto
 {
 struct Invite
 {
@@ -98,4 +98,4 @@ template <std::size_t N>
 bool fromHex (const std::string& hex, std::array<std::uint8_t, N>& out) { return fromHex (hex, out.data(), N); }
 
 constexpr std::size_t overhead = 2 + 24 + 16 + 16; // magic + version, nonce, MAC, sender + counter
-} // namespace lynx::livecrypto
+} // namespace yw::livecrypto

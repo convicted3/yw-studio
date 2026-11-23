@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-namespace lynx::vtime
+namespace yw::vtime
 {
 // A frame rate as a fraction (frames per second = num / den) and whether its timecode drops frame numbers.
 struct Rate
@@ -56,4 +56,4 @@ std::string format (const Timecode& tc, const Rate& r);
 std::optional<Timecode> parse (const std::string& typed, const Rate& r);
 // Typed timecode → seconds
 std::optional<double> parseSeconds (const std::string& typed, const Rate& r);
-} // namespace lynx::vtime
+} // namespace yw::vtime

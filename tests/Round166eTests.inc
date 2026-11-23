@@ -3,10 +3,10 @@
 
 namespace round166e
 {
-inline lynx::Clip audioClip (int track, std::int64_t start, std::int64_t length)
+inline yw::Clip audioClip (int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::audio;
+    yw::Clip c;
+    c.kind = yw::ClipKind::audio;
     c.channel = 0;
     c.track = track;
     c.start = start;
@@ -15,38 +15,38 @@ inline lynx::Clip audioClip (int track, std::int64_t start, std::int64_t length)
 }
 
 // one audio channel playing a constant 1.0 for 10 s; clips A (beats 0-4) and B (beats 2-6) on track 0
-inline lynx::Song overlapSong (bool crossfades)
+inline yw::Song overlapSong (bool crossfades)
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0; // 1 beat = 24000 samples at 48 kHz
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.samplePath = "ones";
     c.volume = 1.0f;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    s.playlist.push_back (audioClip (0, 0, 4 * lynx::ppq));
-    s.playlist.push_back (audioClip (0, 2 * lynx::ppq, 4 * lynx::ppq));
-    s.mode = lynx::PlayMode::song;
+    s.playlist.push_back (audioClip (0, 0, 4 * yw::ppq));
+    s.playlist.push_back (audioClip (0, 2 * yw::ppq, 4 * yw::ppq));
+    s.mode = yw::PlayMode::song;
     s.autoCrossfades = crossfades;
-    lynx::clipops::updateCrossfades (s);
+    yw::clipops::updateCrossfades (s);
     return s;
 }
 
 // the left output at `beats` (rendered from the start in 256-sample blocks)
-inline float levelAt (const lynx::Song& s, double beats)
+inline float levelAt (const yw::Song& s, double beats)
 {
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.assign (48000 * 10, 1.0f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256);
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
     const auto blocks = (int) (beats * 24000.0 / 256.0);
     for (int b = 0; b <= blocks; ++b)
         r.process (state.get(), true, (double) b * 256.0 * tps, 256, l.data(), rr.data());
@@ -56,7 +56,7 @@ inline float levelAt (const lynx::Song& s, double beats)
 
 TEST (round166e_automatic_crossfades_over_the_overlap)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = round166e::overlapSong (true);
     const auto& a = s.playlist[0];
     const auto& b = s.playlist[1];
@@ -90,7 +90,7 @@ TEST (round166e_automatic_crossfades_over_the_overlap)
 
 TEST (round166e_crossfade_curve_and_scheduler_shape)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (clipops::crossfadeCurve (0.0f) == 0.0f && std::abs (clipops::crossfadeCurve (1.0f) - 1.0f) < 1e-6f);
     for (float x = 0.0f; x <= 1.0f; x += 0.125f) // the two sides add up to 1
         CHECK (std::abs (clipops::crossfadeCurve (x) + clipops::crossfadeCurve (1.0f - x) - 1.0f) < 1e-5f);
@@ -129,8 +129,8 @@ TEST (round166e_crossfade_keeps_the_level_through_the_overlap)
 
 TEST (round166e_gain_handle_range_and_gesture)
 {
-    using namespace lynx;
-    using namespace lynx::gesture;
+    using namespace yw;
+    using namespace yw::gesture;
     CHECK (std::abs (clipops::clipGainToDb (1.0f)) < 1e-9);
     CHECK (clipops::clipGainToDb (0.0f) == clipops::clipGainMinDb);
     CHECK (clipops::clipGainToDb (1.0e-9f) == clipops::clipGainMinDb);
@@ -147,7 +147,7 @@ TEST (round166e_gain_handle_range_and_gesture)
 
 TEST (round166e_new_projects_get_automatic_crossfades)
 {
-    using namespace lynx;
+    using namespace yw;
     NewProjectDefaults d;
     CHECK (d.autoCrossfades); // FL's "Enable automatic crossfades in new projects" is on by default
     auto song = Song::makeDefault();
@@ -167,7 +167,7 @@ TEST (round166e_new_projects_get_automatic_crossfades)
 
 TEST (round166e_disarm_on_stop_switches_recording_off)
 {
-    lynx::RecordOffOnStop sw;
+    yw::RecordOffOnStop sw;
     // on: recording while playing, then playback stops → the switch goes off once
     CHECK (! sw.update (false, true, true)); // armed, not playing yet
     CHECK (! sw.update (true, true, true));
@@ -185,7 +185,7 @@ TEST (round166e_disarm_on_stop_switches_recording_off)
 
 TEST (round166e_note_template_and_nearest_note)
 {
-    using namespace lynx;
+    using namespace yw;
     Note clicked;
     clicked.velocity = 0.3f;
     clicked.pan = -0.5f;

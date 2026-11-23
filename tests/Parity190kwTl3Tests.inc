@@ -1,4 +1,4 @@
-// Round 190kw (Timeless 3 translator): FabFilter Timeless 3 states on Echoform (/mnt/e/lynx-work/rea190kw/tl3).
+// Round 190kw (Timeless 3 translator): FabFilter Timeless 3 states on Echoform (/mnt/e/yw-work/rea190kw/tl3).
 // - Echoform gets a hidden line law (past the info's parameters, no control, no text; saved while non-zero): the clean
 //   digital line measured on refcap030's Timeless 3 captures (its dry / wet law, a short linear-phase read filter, a wide
 //   soft limit, whole-sample delays). Only a translated Timeless 3 state sets it; every project saved before keeps 0.
@@ -52,22 +52,22 @@ inline std::vector<std::uint8_t> ffbs (const std::vector<float>& values)
     }
     return b;
 }
-inline lynx::EffectSlot substitute (const std::vector<std::uint8_t>& state, int& translated)
+inline yw::EffectSlot substitute (const std::vector<std::uint8_t>& state, int& translated)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst3;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst3;
     id.name = "FabFilter Timeless 3";
     id.state = state;
-    const auto* entry = lynx::findPluginSubstitute (id, false);
+    const auto* entry = yw::findPluginSubstitute (id, false);
     CHECK (entry != nullptr);
     translated = 0;
-    return entry != nullptr ? lynx::makeSubstituteSlot (*entry, &id, &translated) : lynx::EffectSlot {};
+    return entry != nullptr ? yw::makeSubstituteSlot (*entry, &id, &translated) : yw::EffectSlot {};
 }
-inline float at (const lynx::EffectSlot& s, int k) { return s.params[(std::size_t) k]; }
+inline float at (const yw::EffectSlot& s, int k) { return s.params[(std::size_t) k]; }
 // the left channel's impulse response (an impulse of `amp` on both sides at sample 0)
-inline std::vector<float> impulse (const lynx::EffectSlot& s, double sr, int n, float amp = 0.5f)
+inline std::vector<float> impulse (const yw::EffectSlot& s, double sr, int n, float amp = 0.5f)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     fx->reset();
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
@@ -80,7 +80,7 @@ inline std::vector<float> impulse (const lynx::EffectSlot& s, double sr, int n, 
 
 TEST (parity190kw_echoform_line_law_is_hidden_off_by_default_and_reset_on_older_projects)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto& info = effectInfo (EffectKind::echoform);
     CHECK (info.params.size() == (std::size_t) e::paramCount); // no new control or string
@@ -101,7 +101,7 @@ TEST (parity190kw_echoform_line_law_is_hidden_off_by_default_and_reset_on_older_
 
 TEST (parity190kw_timeless3_delay_time_law)
 {
-    using lynx::fabfilter::timeless3DelayMs;
+    using yw::fabfilter::timeless3DelayMs;
     // the reference's own points (display texts and echo positions, refcap030)
     CHECK (std::abs (timeless3DelayMs (0.0f) - 5.0) < 1e-6);
     CHECK (std::abs (timeless3DelayMs (0.2f) - 174.8125) < 0.01);
@@ -122,7 +122,7 @@ TEST (parity190kw_timeless3_delay_time_law)
 
 TEST (parity190kw_timeless3_state_is_translated_onto_echoform)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     using namespace parity190kwtl3;
     int n = 0;
@@ -172,7 +172,7 @@ TEST (parity190kw_timeless3_state_is_translated_onto_echoform)
 
 TEST (parity190kw_timeless3_unknown_layouts_keep_the_preset)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     using namespace parity190kwtl3;
     int n = 0;
@@ -198,7 +198,7 @@ TEST (parity190kw_timeless3_unknown_layouts_keep_the_preset)
 
 TEST (parity190kw_line_law_echo_dry_at_unity_whole_samples_and_the_feedback_per_pass)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190kwtl3;
     int n = 0;
     // S1 of refcap030: 250 ms (0.247028 = 249.979 ms: 11999 samples at 48 kHz), feedback 50 %, mix 50 %

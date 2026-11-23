@@ -13,7 +13,7 @@
 // (clean-room: FLM's laws restated as formulas, no Image-Line code or data). Single precision like FLM, except where
 // FLM itself uses doubles (the tape's phase and speed).
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -814,4 +814,4 @@ std::string combParamText (int param, float v)
         default: return format ("%.0f %%", (double) (100.0f * v));
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

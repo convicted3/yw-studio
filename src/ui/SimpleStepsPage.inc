@@ -1,5 +1,5 @@
 // The Simple dock's Drum Machine tab (round 190lr, DS-39; included by ui/SimpleDock.cpp). BandLab's drum machine dock
-// (reference /mnt/e/lynx-work/bandlab190p/shots/09-drum-machine-dock.png): a top row with Length, Swing, the page's own
+// (reference /mnt/e/yw-work/bandlab190p/shots/09-drum-machine-dock.png): a top row with Length, Swing, the page's own
 // ▶ and the patterns A–H with "Add A"; a ruler of beats ("1.1 1.2 …", a bar's first beat in the track colour); the step
 // grid, one row per kit sound with its icon and the typing key that plays it; a step at the default velocity in the
 // track colour, a softer one darker. The model is core/SimpleSteps.h (a view of the Drums track: nothing new saved).
@@ -294,7 +294,7 @@ public:
         auto r = getLocalBounds().reduced (12, 6);
         topArea = r.removeFromTop (30);
         auto top = topArea;
-        // left: Length and Swing (BandLab: Edit, Length, Swing in the middle of the row; the kit picker LYNX has no
+        // left: Length and Swing (BandLab: Edit, Length, Swing in the middle of the row; the kit picker YW has no
         // equivalent of sits left of them there)
         editLabel = top.removeFromLeft (34);
         top.removeFromLeft (8);

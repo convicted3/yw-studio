@@ -4,7 +4,7 @@
 #include "ui/DemoMode.h"
 #include <optional>
 
-namespace lynx::remoteui
+namespace yw::remoteui
 {
 namespace
 {
@@ -16,11 +16,11 @@ juce::File settingsFile() { return platform::settingsFile ("remote-control.txt")
 }
 bool enabled()
 {
-    if (demo::active()) // (round 190np: --demo drives LYNX through the API)
+    if (demo::active()) // (round 190np: --demo drives YW through the API)
         return true;
     if (! requested)
     {
-        const auto forced = juce::SystemStats::getEnvironmentVariable ("LYNX_CONTROL_ENABLED", {}).trim();
+        const auto forced = juce::SystemStats::getEnvironmentVariable ("YW_CONTROL_ENABLED", {}).trim();
         requested = forced.isNotEmpty() ? forced == "1" : settingsFile().loadFileAsString().trim() == "1";
     }
     return *requested;

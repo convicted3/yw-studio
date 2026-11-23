@@ -1,4 +1,4 @@
-// Renders a SimSynth state with LYNX's engine exactly like the round-64 EXEC harness drives the DLL (verification
+// Renders a SimSynth state with YW's engine exactly like the round-64 EXEC harness drives the DLL (verification
 // harness, REA_rodada64 §7): simsynthrender <state.bin> <out.f32> <length> <rate> [blk=N]
 //   [note=start,key,finalVol,finalPan(int −64…64),pitchCents(int),release[,fcut,fres] ...]. Writes interleaved stereo float32 and prints
 // the random-table index after the set-up.
@@ -23,7 +23,7 @@ int main (int argc, char** argv)
     const int length = std::atoi (argv[3]);
     const double rate = std::atof (argv[4]);
     int blk = 512;
-    std::vector<lynx::simsynth::RefNote> notes;
+    std::vector<yw::simsynth::RefNote> notes;
     for (int i = 5; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -31,7 +31,7 @@ int main (int argc, char** argv)
             blk = std::atoi (a.c_str() + 4);
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::simsynth::RefNote n;
+            yw::simsynth::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%f,%d,%d,%d,%f,%f", &n.start, &n.key, &n.finalVol, &n.finalPan, &n.pitchCents,
                              &n.release, &n.fcut, &n.fres)
                 >= 6)
@@ -39,7 +39,7 @@ int main (int argc, char** argv)
         }
     }
     std::vector<std::int64_t> counters;
-    const auto out = lynx::simsynth::renderReference (state, notes, rate, length, blk, &counters);
+    const auto out = yw::simsynth::renderReference (state, notes, rate, length, blk, &counters);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

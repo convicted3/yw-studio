@@ -1,5 +1,5 @@
-// --- Live's own devices in a set → LYNX's own, lot 2 (round 190cf, core/AlsDevices.h): the unit laws of each
-// translation against LYNX's own engine laws, the import report, automation and rack macros carried onto the
+// --- Live's own devices in a set → YW's own, lot 2 (round 190cf, core/AlsDevices.h): the unit laws of each
+// translation against YW's own engine laws, the import report, automation and rack macros carried onto the
 // translated devices, and Live's MIDI effects. The device elements are written by the tests with the member names
 // Live saves; no file of Live's is used. Which statements about Live are [ASSUMED] is listed in the round's handoff.
 
@@ -64,15 +64,15 @@ inline std::string mapped (int macro, double lo, double hi)
 {
     return keyMidi (macro) + "<MidiControllerRange>" + v ("Min", als190bq::num (lo)) + v ("Max", als190bq::num (hi)) + "</MidiControllerRange>";
 }
-inline std::optional<lynx::alsdev::Translated> translate (const std::string& text, double bpm = 120.0)
+inline std::optional<yw::alsdev::Translated> translate (const std::string& text, double bpm = 120.0)
 {
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     doc.parse (text);
-    lynx::alsdev::Context context;
+    yw::alsdev::Context context;
     context.bpm = bpm;
-    return lynx::alsdev::effectFromLiveDevice (doc.root(), context);
+    return yw::alsdev::effectFromLiveDevice (doc.root(), context);
 }
-inline const lynx::alsdev::ParamLink* linkOf (const lynx::alsdev::Translated& t, const std::string& live)
+inline const yw::alsdev::ParamLink* linkOf (const yw::alsdev::Translated& t, const std::string& live)
 {
     for (const auto& l : t.links)
         if (l.live == live)
@@ -119,8 +119,8 @@ inline std::string delay (const std::string& extra)
 
 TEST (als190cf_shared_laws)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190cf::near;
     // the older Auto Filter's cutoff is a pitch: 69 = 440 Hz, its ends 20 / 135 = the manual's 26 Hz / 19.9 kHz
     CHECK (near (hzOfLiveNote (69.0), 440.0) && near (hzOfLiveNote (20.0), 25.96, 0.01) && near (hzOfLiveNote (135.0), 19912.1, 0.5));
@@ -143,7 +143,7 @@ TEST (als190cf_shared_laws)
         echosuite::equalPowerMix (echoformMixOf (0.25, false), dry, wet);
         CHECK (near (wet / dry, 0.25 / 0.75, 1.0e-4));
     }
-    // the basic effects' inverse laws, read back through the texts LYNX shows
+    // the basic effects' inverse laws, read back through the texts YW shows
     const auto shown = [] (EffectKind kind, int param, float value) { return formatEffectParam (kind, param, value, 120.0); };
     CHECK (shown (EffectKind::filter, 0, filterTypeValue (0)) == "Low-pass" && shown (EffectKind::filter, 0, filterTypeValue (1)) == "High-pass" &&
            shown (EffectKind::filter, 0, filterTypeValue (2)) == "Band-pass");
@@ -193,8 +193,8 @@ TEST (als190cf_shared_laws)
 
 TEST (als190cf_delay_and_echo_become_echoform)
 {
-    using namespace lynx;
-    using namespace lynx::echosuite::echoform;
+    using namespace yw;
+    using namespace yw::echosuite::echoform;
     using als190cf::near;
     using als190cf::par;
     using als190cf::flag;
@@ -214,7 +214,7 @@ TEST (als190cf_delay_and_echo_become_echoform)
         CHECK (modeOf (p[mode]) == Mode::clean && styleOf (p[style]) == Style::dual);
         // the times follow the tempo: 375 / 500 ms at 120 BPM, 750 / 1000 ms at 60
         CHECK (near (sideMs (p, false, 120.0), 375.0) && near (sideMs (p, true, 120.0), 500.0) && near (sideMs (p, false, 60.0), 750.0) && near (sideMs (p, true, 60.0), 1000.0));
-        CHECK (near (feedbackGain (p[feedback]), 0.5) && p[mix] == 0.3f && p[lynx::echosuite::echoform::freeze] == 0.0f && p[modDepth] == 0.0f && near (modRateHz (p[modRate]), 0.5, 1.0e-3));
+        CHECK (near (feedbackGain (p[feedback]), 0.5) && p[mix] == 0.3f && p[yw::echosuite::echoform::freeze] == 0.0f && p[modDepth] == 0.0f && near (modRateHz (p[modRate]), 0.5, 1.0e-3));
         // the band-pass: two octaves either side of 1 kHz
         CHECK (near (lowCutHz (p[lowCut]), 250.0, 0.5) && near (highCutHz (p[highCut]), 4000.0, 0.5));
         CHECK (als190cf::hasNote (synced->notes.approximated, "filter") && synced->notes.dropped.empty());
@@ -237,7 +237,7 @@ TEST (als190cf_delay_and_echo_become_echoform)
         const auto& p = five->slot.params;
         CHECK (styleOf (p[style]) == Style::pingPong && syncKind (p[syncL]) == 0 && syncKind (p[syncR]) == 0);
         CHECK (near (sideMs (p, false, 100.0), 750.0, 0.01) && near (sideMs (p, true, 100.0), 750.0, 0.01)); // 5 sixteenths at 100 BPM, both sides (Link)
-        CHECK (p[lynx::echosuite::echoform::freeze] == 1.0f && p[lowCut] == 0.0f && p[highCut] == 1.0f && p[modDepth] == 0.5f);
+        CHECK (p[yw::echosuite::echoform::freeze] == 1.0f && p[lowCut] == 0.0f && p[highCut] == 1.0f && p[modDepth] == 0.5f);
         float dry = 0.0f, wet = 0.0f;
         echosuite::equalPowerMix (p[mix], dry, wet);
         CHECK (near (wet / dry, 1.0 / 3.0, 1.0e-4));
@@ -278,8 +278,8 @@ TEST (als190cf_delay_and_echo_become_echoform)
 
 TEST (als190cf_multiband_dynamics_becomes_prism)
 {
-    using namespace lynx;
-    using namespace lynx::dyn::prism;
+    using namespace yw;
+    using namespace yw::dyn::prism;
     using als190cf::near;
     using als190cf::par;
     using als190cf::flag;
@@ -333,7 +333,7 @@ TEST (als190cf_multiband_dynamics_becomes_prism)
 
 TEST (als190cf_limiter_gate_and_expand)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190cf::near;
     using als190cf::par;
     using als190cf::flag;
@@ -405,7 +405,7 @@ TEST (als190cf_limiter_gate_and_expand)
 
 TEST (als190cf_filter_saturation_eq_chorus_pan_redux)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190cf::near;
     using als190cf::par;
     using als190cf::flag;
@@ -425,7 +425,7 @@ TEST (als190cf_filter_saturation_eq_chorus_pan_redux)
         const auto* cutoff = als190cf::linkOf (*filter, "Cutoff");
         CHECK (cutoff != nullptr && cutoff->param == 1 && formatEffectParam (EffectKind::filter, 1, cutoff->value (69.0), 120.0) == "440 Hz");
     }
-    // a notch has no LYNX Filter type: since round 190fm it becomes a Facet EQ notch band (AlsDevices190fmTests.inc)
+    // a notch has no YW Filter type: since round 190fm it becomes a Facet EQ notch band (AlsDevices190fmTests.inc)
     CHECK (als190cf::translate ("<AutoFilter Id=\"1\">" + als190cf::on() + par ("FilterType", 3) + par ("Cutoff", 81.0) + par ("Resonance", 0.0) + "</AutoFilter>")->slot.kind == EffectKind::facetEq);
     const auto filter2 = als190cf::translate ("<AutoFilter2 Id=\"1\">" + als190cf::on() + par ("Filter_Type", 0) + par ("Filter_Frequency", 8000.0) + par ("Filter_Resonance", 0.0) +
                                               par ("Lfo_Amount", 0.0) + par ("Envelope_Amount", 0.0) + par ("DryWet", 0.5) + "</AutoFilter2>");
@@ -511,8 +511,8 @@ TEST (als190cf_filter_saturation_eq_chorus_pan_redux)
 
 TEST (als190cf_midi_effects)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190cf::near;
     using als190cf::par;
     using als190cf::flag;
@@ -633,7 +633,7 @@ TEST (als190cf_midi_effects)
 
 TEST (als190cf_automation_and_macros_follow_the_translated_device)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190cf::near;
     using als190cf::par;
     using als190cf::flag;
@@ -644,7 +644,7 @@ TEST (als190cf_automation_and_macros_follow_the_translated_device)
     const auto eq = "<Eq8 Id=\"2\">" + als190cf::on() + v ("Mode", "0") + par ("GlobalGain", 0.0) + par ("Scale", 1.0) + "<Bands.0><ParameterA>" + flag ("IsOn", true) +
                     par ("Mode", 3) + par ("Freq", 1000.0) + als190cf::target ("Gain", 3.0, 556) + par ("Q", 1.0) + "</ParameterA></Bands.0></Eq8>";
     // an Audio Effect Rack: a Saturator whose Dry/Wet is on macro 1 over 20 … 80 %, its drive on macro 2 over 0 … 18 dB,
-    // and its On switch on macro 3 (no LYNX control: listed)
+    // and its On switch on macro 3 (no YW control: listed)
     const auto saturator = "<Saturator Id=\"0\">" + std::string ("<On>") + als190cf::keyMidi (2) + "<Manual Value=\"true\" /></On>" + v ("UserName", "") +
                            als190cf::target ("PreDrive", 6.0, 600, als190cf::mapped (1, 0.0, 18.0)) + par ("Type", 0) + par ("PostDrive", 0.0) +
                            als190cf::target ("DryWet", 1.0, 601, als190cf::mapped (0, 0.2, 0.8)) + "</Saturator>";
@@ -711,19 +711,19 @@ TEST (als190cf_automation_and_macros_follow_the_translated_device)
             CHECK (ember.kind == EffectKind::ember && near (ember.params[mixsuite::ember::mix], 0.8, 1.0e-5) && near (mixsuite::ember::driveDb (ember.params[mixsuite::ember::drive]), 0.5, 1.0e-4));
         }
     }
-    CHECK (als190cf::reportHas (report.partialEffects, "Macro mapping onto a setting of a converted Live device that has no LYNX control") &&
+    CHECK (als190cf::reportHas (report.partialEffects, "Macro mapping onto a setting of a converted Live device that has no YW control") &&
            ! als190cf::reportHas (report.partialEffects, "Macro mappings onto a converted Live device (not applied)"));
     CHECK (als190cf::reportHas (report.partialEffects, "Saturator -> Ember Saturator") && als190cf::reportHas (report.partialEffects, "Delay -> Echoform") &&
            report.converted.count ("EQ Eight -> Facet EQ") == 1 && report.droppedEffects.empty());
 }
 
 // (round 190cx) The Auto Filter law against Live 12.4's own renders (round 190cw: white noise through a low pass at
-// 1 kHz, resonance 0.5, 12 dB; the transfer function against the dry track, 48 kHz): LYNX's Filter as the importer sets
+// 1 kHz, resonance 0.5, 12 dB; the transfer function against the dry track, 48 kHz): YW's Filter as the importer sets
 // it, in dB at the same bins. The new tag's render had Output 0.5 (−6.02 dB at every bin); its curve is the older
 // tag's within 0.035 dB, so one law serves both.
 TEST (als190cx_auto_filter_matches_the_live_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190cf::par;
     using als190cf::flag;
     const double hz[8] { 123.047, 251.953, 498.047, 708.984, 1001.953, 1412.109, 2003.906, 4001.953 };
@@ -753,14 +753,14 @@ TEST (als190cx_auto_filter_matches_the_live_renders)
             std::complex<double> sum = 0.0;
             for (int n = 0; n < 8192; ++n)
                 sum += (double) l[(std::size_t) n] * std::polar (1.0, -2.0 * 3.14159265358979323846 * hz[k] * n / 48000.0);
-            const auto live = which == 0 ? legacy[k] : newer[k] + 6.0206; // (LYNX's Filter has no output gain: listed)
+            const auto live = which == 0 ? legacy[k] : newer[k] + 6.0206; // (YW's Filter has no output gain: listed)
             worst = std::max (worst, std::abs (20.0 * std::log10 (std::abs (sum)) - live));
         }
         std::printf ("  Auto Filter %s, LP 1 kHz, resonance 0.5: worst %.3f dB\n", which == 0 ? "(older)" : "(new)", worst);
         CHECK (worst < 0.1);
     }
     // EQ Eight's Q link (automation / macros) keeps a bell's Adaptive Q narrowing: Q 2 at +12 dB → Facet √2 · 3.948
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     std::string bands;
     for (int b = 0; b < 8; ++b)
         bands += als190bq::eqBand (b, b == 0, 3, 1000.0, b == 0 ? 12.0 : 0.0, 2.0);
@@ -775,12 +775,12 @@ TEST (als190cx_auto_filter_matches_the_live_renders)
 }
 
 // Round 190da: the importer's devices against Live 12.4.16's own renders of round 190cz (an impulse through one
-// device, the transfer function against the dry track, 48 kHz; the numbers are Live's dB at 8 frequencies). LYNX's
+// device, the transfer function against the dry track, 48 kHz; the numbers are Live's dB at 8 frequencies). YW's
 // effect is run on an impulse and read at the same frequencies. Saturator: the rms of the 100 Hz 0 dBFS sine and of
 // the 1 kHz −12 dBFS sine against Live's.
 TEST (als190da_laws_match_the_live_190cz_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190cf::par;
     using als190cf::flag;
     const double hz[8] { 123.047, 251.953, 498.047, 708.984, 1001.953, 1412.109, 2003.906, 4001.953 };

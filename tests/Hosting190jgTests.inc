@@ -1,11 +1,11 @@
 // Round 190jg (BUILD-LIST 18): sample-accurate automation for hosted plugins. The renderer hands a plugin slot that
 // takes timed changes (Effect / Instrument::setParameterAt) the automation's changes inside a chunk: a jump (Hold,
 // Stairs, a step drawn) at its own sample, a ramp every 16 samples of the export grid. A stand-in "plugin" here applies
-// them at their offsets and puts the parameter on its output, as LYNX's test plugins do (tools/testplugin/).
+// them at their offsets and puts the parameter on its output, as YW's test plugins do (tools/testplugin/).
 
 namespace hosting190jg
 {
-struct TimedDc final : lynx::Effect
+struct TimedDc final : yw::Effect
 {
     float level = 0.0f;
     struct Change
@@ -31,7 +31,7 @@ struct TimedDc final : lynx::Effect
             pending.push_back ({ offset, value });
         ++timedCalls;
     }
-    void process (float* left, float* right, int n, const lynx::EffectParams&, double) noexcept override
+    void process (float* left, float* right, int n, const yw::EffectParams&, double) noexcept override
     {
         std::size_t next = 0;
         for (int i = 0; i < n; ++i)
@@ -51,9 +51,9 @@ struct Render
 };
 
 // a song whose automation drives parameter 0 of a hosted effect on the master; rendered in device blocks of `block`
-Render render (const std::vector<lynx::AutomationPoint>& points, int block, bool timed, double seconds = 1.5)
+Render render (const std::vector<yw::AutomationPoint>& points, int block, bool timed, double seconds = 1.5)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.bpm = 120.0;
     song.mode = PlayMode::song;
@@ -97,9 +97,9 @@ Render render (const std::vector<lynx::AutomationPoint>& points, int block, bool
     return result;
 }
 
-lynx::AutomationPoint point (std::int64_t tick, float value, int mode)
+yw::AutomationPoint point (std::int64_t tick, float value, int mode)
 {
-    lynx::AutomationPoint p;
+    yw::AutomationPoint p;
     p.tick = tick;
     p.value = value;
     p.mode = (std::uint8_t) mode;
@@ -118,7 +118,7 @@ long firstChange (const std::vector<float>& x, long from)
 
 TEST (s190jg_a_step_reaches_a_timed_plugin_at_its_own_sample)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr std::int64_t t1 = ppq + 7, t2 = 2 * ppq + 5;
     const auto tps = ticksPerSample (120.0, 44100.0);
     const auto expected1 = (long) std::ceil ((double) t1 / tps - 1.0e-6), expected2 = (long) std::ceil ((double) t2 / tps - 1.0e-6);
@@ -147,7 +147,7 @@ TEST (s190jg_a_step_reaches_a_timed_plugin_at_its_own_sample)
 
 TEST (s190jg_timed_automation_is_the_same_whatever_the_device_block)
 {
-    using namespace lynx;
+    using namespace yw;
     // an export renders blocks of 512; playback the device's: a piece a block cuts goes on with what it began with
     const std::vector<AutomationPoint> curve { hosting190jg::point (0, 0.0f, 0), hosting190jg::point (2 * ppq + 11, 1.0f, flcurve::hold),
                                                hosting190jg::point (2 * ppq + 300, 0.3f, 0), hosting190jg::point (5 * ppq, 0.9f, 0) };
@@ -158,7 +158,7 @@ TEST (s190jg_timed_automation_is_the_same_whatever_the_device_block)
 
 TEST (s190jg_a_ramp_moves_every_16_samples_with_timed_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     // a straight ramp 0 -> 1 over two beats: the chunk's own value every 128 samples before, every 16 now
     const std::vector<AutomationPoint> ramp { hosting190jg::point (0, 0.0f, 0), hosting190jg::point (2 * ppq, 1.0f, 0) };
     const auto distinct = [] (const std::vector<float>& x, long from, long to) {
@@ -185,19 +185,19 @@ TEST (s190jg_a_ramp_moves_every_16_samples_with_timed_automation)
 
 namespace hosting190jg
 {
-struct TailedPlugin final : lynx::Effect
+struct TailedPlugin final : yw::Effect
 {
     int tail = -1;
     long processed = 0;
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
     int tailSamples() const noexcept override { return tail; }
-    void process (float*, float*, int n, const lynx::EffectParams&, double) noexcept override { processed += n; }
+    void process (float*, float*, int n, const yw::EffectParams&, double) noexcept override { processed += n; }
 };
 
 long processedSamples (int tail)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer = Song::defaultMixer (1);
     auto slot = makeEffectSlot (EffectKind::plugin);

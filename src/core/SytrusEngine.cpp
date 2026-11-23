@@ -33,7 +33,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace sytrus
 {
@@ -51,7 +51,7 @@ inline double rne (double x) noexcept
     if (! (std::abs (x) < 2251799813685248.0))
         return x;
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) // x86 SSE2, or ARM64 through core/Simd.h (sse2neon)
-    return (double) _mm_cvtsd_si64 (_mm_set_sd (x)); // cvtsd2si: the MXCSR mode, round-to-nearest-even in LYNX and FL
+    return (double) _mm_cvtsd_si64 (_mm_set_sd (x)); // cvtsd2si: the MXCSR mode, round-to-nearest-even in YW and FL
 #else
     volatile double big = 6755399441055744.0; // not folded by the optimiser
     const double b = big;
@@ -5090,12 +5090,12 @@ void Engine::overrideTable (int op, const std::vector<float>& table)
 
 void Engine::setRandSeed (std::uint32_t seed) noexcept { impl->randseed = seed; }
 } // namespace sytrus
-} // namespace lynx
+} // namespace yw
 
 // ------------------------------------------------------------------------------------------------------------------
-// LYNX instrument
+// YW instrument
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -5109,7 +5109,7 @@ public:
     }
 
     // FL plays Sytrus with the state's live settings and exports with its render settings (oversampling order and
-    // envelope tick, §1.2, §7.2); LYNX does the same: render settings while an offline render (export) is running
+    // envelope tick, §1.2, §7.2); YW does the same: render settings while an offline render (export) is running
     void prepare (double sr) noexcept override
     {
         take();
@@ -5173,7 +5173,7 @@ public:
         engine->setNextLiveRef (live.ref (knob));
         p.velocity = std::clamp (velocity, 0.0f, 1.0f);
         p.pan = nextPan;
-        // LYNX's per-note porta flag inverts the patch's PORTA button, as FL's note colour 14 does (§6.4; inference)
+        // YW's per-note porta flag inverts the patch's PORTA button, as FL's note colour 14 does (§6.4; inference)
         p.colour = nextPorta ? 14 : 0;
         if (engineRev.load() >= 3)
             p.fcut = nextFcut, p.fres = nextFres;
@@ -5250,7 +5250,7 @@ public:
     }
 
     // FL hands Sytrus Final.Vol (= the channel volume, "link velocity" off) and Final.Pan (channel + note pan) and the
-    // plugin applies them inside its own pan law (§6.1). LYNX's channel gains are gl = √2·V·cos((1 + p)π/4),
+    // plugin applies them inside its own pan law (§6.1). YW's channel gains are gl = √2·V·cos((1 + p)π/4),
     // gr = √2·V·sin(…), from which V and p are recovered exactly; the output is then added at unit gain.
     void render (float* left, float* right, int n, float gl, float gr) noexcept override
     {
@@ -5320,4 +5320,4 @@ private:
 } // namespace
 
 std::unique_ptr<Instrument> makeSytrusInstrument() { return std::make_unique<SytrusInstrument>(); }
-} // namespace lynx
+} // namespace yw

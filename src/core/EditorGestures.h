@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx
+namespace yw
 {
 // The editors' tools (the strip in their toolbar).
 enum class EditTool
@@ -328,12 +328,12 @@ inline double pinchZoomFactor (double scale)
 }
 
 // --- middle-drag zooms (round 167t, issue #26; FL 2026 evidence in docs/analise/REA_rodada167t.md) ---------------
-// Key height range of the Piano roll. FL's is 18..116 px (16 + 2 px per zoom level 1..50); LYNX also goes
+// Key height range of the Piano roll. FL's is 18..116 px (16 + 2 px per zoom level 1..50); YW also goes
 // shorter, down to 6 px.
 constexpr int minKeyHeight = 6, maxKeyHeight = 116;
 
 // The Piano roll's zoom wheel (round 190j; FL's VZoomSelect, REA round 167t: levels 1..50 = keys of 18..116 px, two
-// pixels a level). LYNX's keys go down to 6 px, so its levels start there: level 1 = 6 px ... 56 = 116 px.
+// pixels a level). YW's keys go down to 6 px, so its levels start there: level 1 = 6 px ... 56 = 116 px.
 constexpr int zoomLevel (int keyHeight) noexcept
 {
     const auto h = keyHeight < minKeyHeight ? minKeyHeight : keyHeight > maxKeyHeight ? maxKeyHeight : keyHeight;
@@ -447,7 +447,7 @@ inline float keyClickVelocity (double along, double length)
 
 // Issue #183: whether the Piano roll sounds a note the mouse places, drags, resizes or edits. While the song or pattern
 // plays it doesn't (FL leaves the notes you draw to the playback; the Channel rack's step clicks are silent either way),
-// unless the Piano roll's "Preview notes while playing" is on (LYNX's, off by default). Clicks on the Piano roll's own
+// unless the Piano roll's "Preview notes while playing" is on (YW's, off by default). Clicks on the Piano roll's own
 // keyboard always sound: they play the instrument, they don't edit a note.
 constexpr bool previewsEditedNote (bool playing, bool previewWhilePlaying) noexcept
 {
@@ -578,4 +578,4 @@ struct MuteSweep
     }
 };
 } // namespace gesture
-} // namespace lynx
+} // namespace yw

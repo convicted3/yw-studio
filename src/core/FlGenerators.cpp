@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -48,7 +48,7 @@ std::string lower (std::string s)
 
 // ---- GMS ----
 
-// LYNX waveform from the GMS .wav name (§1.4); `octaveUp` for waves with a dominant 2nd harmonic
+// YW waveform from the GMS .wav name (§1.4); `octaveUp` for waves with a dominant 2nd harmonic
 Waveform gmsWave (const std::string& path, bool& octaveUp)
 {
     auto name = path.substr (path.find_last_of ("\\/") == std::string::npos ? 0 : path.find_last_of ("\\/") + 1);
@@ -293,7 +293,7 @@ bool ogunSpectrum (const std::int32_t* p, const std::vector<std::uint8_t>& body,
     const auto morph = p[9] / 1000.0;
     const auto preDecay = std::max (0.001, p[5] / 1000.0);
     auto seedOf = [] (std::int32_t v) { return v - 1 < 0 ? -1 : ogunMix (v - 0x20cf, 0x1cfc); };
-    // Seed 1 per key: key 60 (C5) is used; Seed 2 = "Random" draws a new seed on every note in FL — LYNX keeps one
+    // Seed 1 per key: key 60 (C5) is used; Seed 2 = "Random" draws a new seed on every note in FL — YW keeps one
     // fixed draw (counter 0)
     const auto seed1 = perNoteSeed ? ogunMix (p[10] + 60 - 0x1f88, 0x1e42) : seedOf (p[10]);
     const auto seed2 = p[11] - 1 < 0 ? ogunMix (0 - 0x200e, 0x1dbc) : seedOf (p[11]);
@@ -503,7 +503,7 @@ bool synthFromGms (const std::vector<std::uint8_t>& state, double bpm, SynthSett
     // modulation osc2 -> osc1
     const auto modKind = std::clamp (truncf32 (2.0f * x[51]), 0, 2);
     const auto m = (double) x[50] * x[50];
-    if (m > 0.0 && modKind == 2) // AM: GMS osc 2 becomes the modulator (LYNX osc 3)
+    if (m > 0.0 && modKind == 2) // AM: GMS osc 2 becomes the modulator (YW osc 3)
     {
         auto osc3 = s.osc[2];
         auto modulator = s.osc[1];
@@ -512,7 +512,7 @@ bool synthFromGms (const std::vector<std::uint8_t>& state, double bpm, SynthSett
         s.osc[1] = osc3; // GMS osc 3 (if audible) takes the free slot
         s.osc[2] = modulator;
     }
-    else if (m > 0.0 && modKind == 1 && level[2] < 0.05) // FM/PM: GMS osc 2 becomes the modulator (LYNX osc 3)
+    else if (m > 0.0 && modKind == 1 && level[2] < 0.05) // FM/PM: GMS osc 2 becomes the modulator (YW osc 3)
     {
         auto modulator = s.osc[1];
         modulator.level = 1.0f;
@@ -565,7 +565,7 @@ bool synthFromGms (const std::vector<std::uint8_t>& state, double bpm, SynthSett
     s.decay = s.sustain >= 0.999f ? 0.0f : (float) std::min (20.0, 2.3 * td / 8.82);
     s.release = (float) std::clamp (2.3 * tr / 8.82, 0.003, 10.0);
 
-    // ladder filter -> LYNX SVF
+    // ladder filter -> YW SVF
     auto u = (double) x[12];
     if (velocityToCutoff) // velocity -> cutoff (with a typical velocity of 0.8)
         u += (2.0 * x[198] - 1.0) * 0.8;
@@ -652,7 +652,7 @@ bool synthFromGms (const std::vector<std::uint8_t>& state, double bpm, SynthSett
 
 // ---- Ogun / Autogun ----
 
-// LYNX synth resonance 0..1 for a Q (the SVF uses k = 1/Q = 2 − 1.9·res; Q < 0.5 becomes 0)
+// YW synth resonance 0..1 for a Q (the SVF uses k = 1/Q = 2 − 1.9·res; Q < 0.5 becomes 0)
 float synthResonanceForQ (double q)
 {
     return (float) std::clamp ((2.0 - 1.0 / std::max (q, 1e-3)) / 1.9, 0.0, 1.0);
@@ -712,7 +712,7 @@ bool synthFromOgun (const std::vector<std::uint8_t>& state, SynthSettings& synth
         }
     }
 
-    // spectral: the 40 dB fall of the whole spectrum → LYNX's 60 dB times (×1.5)
+    // spectral: the 40 dB fall of the whole spectrum → YW's 60 dB times (×1.5)
     // (with the per-harmonic decay in the spectrum, the volume envelope holds)
     const auto decay = spectral ? -1.0 : seconds (p[6]);
     const auto release = spectral ? 1.5 * spectrum.releaseSeconds : seconds (p[7]);
@@ -752,7 +752,7 @@ bool synthFromOgun (const std::vector<std::uint8_t>& state, SynthSettings& synth
         const auto type = std::clamp (p[49], 0, 3);
         const auto u = std::clamp (p[17], 0, 256) / 256.0;
         // REA_rodada21 §2.5: fc = 44100·(c + c₀) Hz (ω limited to 2.8495 rad); order = identical cascaded biquads
-        // (LYNX has only one: approximate slope); LP/HP with Q^(1/order) per stage, BP/BS with width in octaves
+        // (YW has only one: approximate slope); LP/HP with Q^(1/order) per stage, BP/BS with width in octaves
         double c = 0.0, c0 = 0.0;
         if (type == 0)
             c = 0.0006646667 * (std::pow (1501.0, u) - 1.0), c0 = 0.003;
@@ -805,7 +805,7 @@ bool synthFromSakura (const std::vector<std::uint8_t>& state, SynthSettings& syn
 
     // Sakura's strings are physical (exciter + waveguide): here they become a saw (string 1) + triangle
     // (string 2) — the model swap is an approximation. Confirmed (REA_rodada18 §10): Amp A = 35x⁵ + 0.001 s,
-    // D = 50x⁵ + 0.001 s and R = 10x⁵ + 0.1 s with poles of time constant T/8.82 (LYNX measures time down to −60 dB:
+    // D = 50x⁵ + 0.001 s and R = 10x⁵ + 0.1 s with poles of time constant T/8.82 (YW measures time down to −60 dB:
     // ×6.908/8.82), sustain x², Tune trunc(198x − 99)·0.01 semitone, linear String Mix (string 1 ∝ 1 − mix).
     // The string decay (feedback d^0.05 per period → T60 ≈ 60/(f·(−log10 d)) s) depends on the
     // note: the T60 of key 60 is used (approximation). Hi-Cut (REA_rodada19 §5): 4 first-order poles with
@@ -819,11 +819,11 @@ bool synthFromSakura (const std::vector<std::uint8_t>& state, SynthSettings& syn
     setPitch (s.osc[0], tune);
     setPitch (s.osc[1], tune);
     auto p5 = [] (float x) { return std::pow ((double) x, 5.0); };
-    constexpr double toLynx = 6.907755 / 8.82;
+    constexpr double toYw = 6.907755 / 8.82;
     s.attack = (float) (35.0 * p5 (t[2]) + 0.001);
-    s.decay = (float) ((50.0 * p5 (t[3]) + 0.001) * toLynx);
+    s.decay = (float) ((50.0 * p5 (t[3]) + 0.001) * toYw);
     s.sustain = t[4] * t[4];
-    s.release = (float) ((10.0 * p5 (t[5]) + 0.1) * toLynx);
+    s.release = (float) ((10.0 * p5 (t[5]) + 0.1) * toYw);
     const auto d = std::clamp ((double) t[6], 0.0, 0.999999);
     const auto stringT60 = d <= 0.0 ? 0.01 : 60.0 / (261.63 * -std::log10 (d));
     if (stringT60 < 30.0 && (s.sustain > 0.0f || stringT60 < s.decay))
@@ -948,7 +948,7 @@ bool synthFromKepler (const std::vector<std::uint8_t>& state, SynthSettings& syn
     else if (sub)
         s.osc[2] = { Waveform::square, std::max (-3, octave - 1), 0.0f, std::max (0.05f, k[16]) };
 
-    // Env1: attack reaches 1 at T_A (linear in LYNX); Kepler's decay/release are to −20 dB, LYNX's
+    // Env1: attack reaches 1 at T_A (linear in YW); Kepler's decay/release are to −20 dB, YW's
     // to −60 dB (exponential): × 3
     s.attack = (float) table (attackTable, k[26]);
     s.decay = (float) (3.0 * table (decayTable, k[27]));
@@ -1195,7 +1195,7 @@ bool synthFromBassDrum (const std::vector<std::uint8_t>& state, SynthSettings& s
     setPitch (s.osc[0], 12.0 * std::log2 (baseHz / 261.63));
     const auto duration = (float) (std::pow ((double) p[2], 3.0) + 0.001);
     s.attack = 0.0005f;
-    s.decay = duration;   // LYNX's decay reaches −60 dB in the given time (the BassDrum ramp reaches zero)
+    s.decay = duration;   // YW's decay reaches −60 dB in the given time (the BassDrum ramp reaches zero)
     s.sustain = 0.0f;
     s.release = duration; // no release: releasing the note does not cut it
     s.cutoff = 20000.0f;
@@ -1266,7 +1266,7 @@ bool synthFromToxic (const std::vector<std::uint8_t>& state, SynthSettings& synt
         const auto u = (double) p[15], kt = 0.09 * 12.0 * p[17]; // octaves per octave
         s.filterType = filterMode == 1 ? 0 : filterMode == 2 ? 1 : 2;
         s.keyTrack = (float) kt;
-        s.cutoff = (float) std::clamp (std::exp2 (9.0 * u + 5.0 - kt), 20.0, 20000.0); // LYNX measures at key 48
+        s.cutoff = (float) std::clamp (std::exp2 (9.0 * u + 5.0 - kt), 20.0, 20000.0); // YW measures at key 48
         s.ladder = true; // FL's 4-pole filter with its resonance scale (REA_rodada26 §2)
         s.resonance = std::clamp (p[16], 0.0f, 1.0f);
         const auto eg = 2.0 * p[23] - 1.0;
@@ -1471,4 +1471,4 @@ bool synthFromMorphine (const std::vector<std::uint8_t>& d, SynthSettings& synth
     synth = s;
     return true;
 }
-} // namespace lynx
+} // namespace yw

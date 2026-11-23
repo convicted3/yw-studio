@@ -5,7 +5,7 @@
 // optional drive) in any of the 24 processing orders — whose structure and constants were measured black-box on the
 // official SSL Native Vocalstrip 2 trial (Complete Access; hosted through the public VST3 API, fed tones, bursts,
 // impulses and her takes, outputs measured; nothing decompiled or copied), so that projects that used it sound the
-// same through LYNX (docs/analise/REA_rodada145.md §2). LYNX's own code.
+// same through YW (docs/analise/REA_rodada145.md §2). YW's own code.
 //
 // Measured structure [EXEC]:
 //  - compressor: a peak detector on the louder channel (one-pole branches exp(−1 / (t · fs)) for attack and
@@ -28,7 +28,7 @@
 
 #include "core/Biquad.h"
 
-namespace lynx::voxstrip
+namespace yw::voxstrip
 {
 // the original's control laws (normalised 0 … 1 values as its parameters use them)
 double dsFreqHz (float v) noexcept;      // 1 … 20 kHz (log)
@@ -143,4 +143,4 @@ private:
     double cAtt = 0, cRel = 0, cEnv = 0, xAtt = 0, xRel = 0, xEnv = 0, compGrDb = 0, makeup = 1;
     double inGain = 1, outGain = 1;
 };
-} // namespace lynx::voxstrip
+} // namespace yw::voxstrip

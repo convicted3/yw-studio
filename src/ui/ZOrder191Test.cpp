@@ -20,7 +20,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -50,7 +50,7 @@ struct ZOrderTest final : juce::Timer
     juce::AudioPluginInstance* plugin = nullptr;
     bool ok = true, finished = false;
     int stage = 0, wait = 0;
-    int holdMs = juce::SystemStats::getEnvironmentVariable ("LYNX_ZTEST_HOLD_MS", {}).getIntValue();
+    int holdMs = juce::SystemStats::getEnvironmentVariable ("YW_ZTEST_HOLD_MS", {}).getIntValue();
     std::set<juce::Component*> desktopBefore;
     bool heldFloating = false;
 
@@ -92,7 +92,7 @@ struct ZOrderTest final : juce::Timer
 
     // A press (and its release) at `local` in `c`, through the peer that holds `c`, as the system delivers a click.
     // Rollup 0.1.31 step 2 (190nr item 4): the press goes where JUCE finds `c` under the mouse. A peer's positions carry the
-    // Desktop's global scale (LYNX_ZTEST_SCALE runs); the first move that finds `c` (or a child) decides the factor. When a
+    // Desktop's global scale (YW_ZTEST_SCALE runs); the first move that finds `c` (or a child) decides the factor. When a
     // native window covers `local` on screen (at 150 % the docked Surge XT editor nearly fills the 1240 x 648 window),
     // `scanRow` tries the rest of that row of `c`, as a user clicks the part they see. Returns whether `c` took the press.
     bool click (juce::Component& c, juce::Point<int> local, bool scanRow = false)
@@ -164,7 +164,7 @@ struct ZOrderTest final : juce::Timer
                 return c;
         return nullptr;
     }
-    // the newest docked LYNX editor (the synth's channel window)
+    // the newest docked YW editor (the synth's channel window)
     juce::Component* newestDockedEditor() const
     {
         const auto list = dockedEditorWindows();
@@ -180,7 +180,7 @@ struct ZOrderTest final : juce::Timer
             return;
         finished = true;
         stopTimer();
-        line (juce::String ("fix191=") + (juce::SystemStats::getEnvironmentVariable ("LYNX_FIX191", {}).trim() == "0" ? "off" : "on"));
+        line (juce::String ("fix191=") + (juce::SystemStats::getEnvironmentVariable ("YW_FIX191", {}).trim() == "0" ? "off" : "on"));
         line (ok ? "result=OK" : "result=FAILED");
         juce::MessageManager::callAsync ([this] {
             PluginWindows::closeAll();
@@ -198,8 +198,8 @@ struct ZOrderTest final : juce::Timer
     void start()
     {
         engine = std::make_unique<AudioEngine> (false);
-        // LYNX_ZTEST_SCALE=1.5: the run at 150 % (the shots' @150)
-        if (const auto scale = juce::SystemStats::getEnvironmentVariable ("LYNX_ZTEST_SCALE", {}).getFloatValue(); scale > 0.5f && scale < 4.0f)
+        // YW_ZTEST_SCALE=1.5: the run at 150 % (the shots' @150)
+        if (const auto scale = juce::SystemStats::getEnvironmentVariable ("YW_ZTEST_SCALE", {}).getFloatValue(); scale > 0.5f && scale < 4.0f)
             juce::Desktop::getInstance().setGlobalScaleFactor (scale);
         if (lookAndFeel != nullptr)
             juce::LookAndFeel::setDefaultLookAndFeel (lookAndFeel);
@@ -298,7 +298,7 @@ struct ZOrderTest final : juce::Timer
                 expect (name + "_opened", h != nullptr);
                 expect (name + "_docked", h != nullptr && nativechild::parentOf (h) == window->getWindowHandle());
                 expect (name + "_above_playlist_when_opened", h != nullptr && nativechild::isAbove (h, playlistHandle()));
-                if (holdMs > 0) // (LYNX_ZTEST_HOLD_MS: time for a screen shot of the window in front)
+                if (holdMs > 0) // (YW_ZTEST_HOLD_MS: time for a screen shot of the window in front)
                 {
                     line ("hold " + name + " " + juce::String (juce::Time::currentTimeMillis()));
                     startTimer (holdMs);
@@ -492,4 +492,4 @@ void runZOrder191Test (const juce::String& reportPath, const juce::String& plugi
     test->done = std::move (done);
     test->start();
 }
-} // namespace lynx
+} // namespace yw

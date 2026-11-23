@@ -1,7 +1,7 @@
 #pragma once
 
 // The MIDI Tools panel (round 190s; docs/analise/REA_rodada190o.md §1, GAPMAP-0126 D7): Ableton Live 12's Transform
-// section of the Clip View as a LYNX addition beside FL's Piano roll tools (which stay as they are). One tool at a time
+// section of the Clip View as a YW addition beside FL's Piano roll tools (which stay as they are). One tool at a time
 // from a chooser, the tool's controls with Live's defaults, an Auto toggle (on by default) and a Transform button.
 //
 // Auto on: every control change runs the tool again on the notes as they were before the tool, so the notes always
@@ -29,12 +29,12 @@
 #include "core/MidiTools.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 class MidiToolsPanel final : public juce::Component
 {
 public:
-    // Live's Transform chooser, in its order (the tools LYNX has).
+    // Live's Transform chooser, in its order (the tools YW has).
     enum Tool { arpeggiate, chop, connect, ornament, quantize, recombine, span, strum, timeWarp, velocityShaper, toolCount };
     static const char* toolName (int tool) noexcept; // English, for tr()
 
@@ -150,4 +150,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiToolsPanel)
 };
-} // namespace lynx
+} // namespace yw

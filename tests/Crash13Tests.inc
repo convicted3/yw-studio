@@ -3,7 +3,7 @@
 
 TEST (crash13_serial_jobs_run_in_order_off_the_caller_thread)
 {
-    lynx::SerialJobs jobs;
+    yw::SerialJobs jobs;
     std::vector<int> order;
     std::mutex m;
     std::atomic<int> onCaller { 0 };
@@ -29,7 +29,7 @@ TEST (crash13_serial_jobs_post_returns_while_a_write_waits)
 {
     // the message thread posts the audio-device.xml write and goes on, even when the disk takes seconds (2 s measured
     // on Windows inside FlushFileBuffers); here a job that blocks until released stands for the slow flush
-    lynx::SerialJobs jobs;
+    yw::SerialJobs jobs;
     std::atomic<bool> release { false }, done { false };
     const auto start = std::chrono::steady_clock::now();
     jobs.post ([&] {
@@ -52,7 +52,7 @@ TEST (crash13_serial_jobs_destructor_writes_what_is_queued)
     // quitting right after a device change still leaves the newest setup on disk
     std::atomic<int> ran { 0 };
     {
-        lynx::SerialJobs jobs;
+        yw::SerialJobs jobs;
         for (int i = 0; i < 50; ++i)
             jobs.post ([&] {
                 std::this_thread::sleep_for (std::chrono::microseconds (200));
@@ -62,14 +62,14 @@ TEST (crash13_serial_jobs_destructor_writes_what_is_queued)
     CHECK (ran == 50);
 
     // after stop(), a post runs at once on the caller's thread (never lost, never queued forever)
-    lynx::SerialJobs stopped;
+    yw::SerialJobs stopped;
     stopped.stop();
     bool inline_ = false;
     const auto caller = std::this_thread::get_id();
     stopped.post ([&] { inline_ = std::this_thread::get_id() == caller; });
     CHECK (inline_);
     // a throwing job does not end the thread
-    lynx::SerialJobs jobs;
+    yw::SerialJobs jobs;
     int after = 0;
     jobs.post ([] { throw std::runtime_error ("disk full"); });
     jobs.post ([&] { after = 1; });

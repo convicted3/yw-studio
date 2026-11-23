@@ -1,10 +1,10 @@
-// --- Round 177a slice 2: folded mixer groups (LYNX's addition to FL's separator groups) --------------------------------
+// --- Round 177a slice 2: folded mixer groups (YW's addition to FL's separator groups) --------------------------------
 
 #include "core/MixerOps.h"
 
 TEST (mixer177a2_groups_fold_to_their_bus_or_a_tab)
 {
-    using namespace lynx;
+    using namespace yw;
     using mixerops::FoldShow;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (10);

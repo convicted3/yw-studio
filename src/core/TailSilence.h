@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-namespace lynx::tailsilence
+namespace yw::tailsilence
 {
 inline bool quietBlock (const float* const* channels, int numChannels, int n, float silence) noexcept
 {
@@ -28,4 +28,4 @@ inline bool quietBlock (const float* const* channels, int numChannels, int n, fl
     }
     return peak < silence || flat;
 }
-} // namespace lynx::tailsilence
+} // namespace yw::tailsilence

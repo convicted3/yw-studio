@@ -2,7 +2,7 @@
 
 namespace parity128
 {
-using namespace lynx::facet;
+using namespace yw::facet;
 
 // a stereo test signal: different sines left and right, `secs` long; processed in 480-sample blocks
 struct Stereo
@@ -23,7 +23,7 @@ Stereo tones (double fl, double fr, double secs, double amp = 0.25)
     return s;
 }
 
-Stereo run (const lynx::EffectParams& p, Stereo s)
+Stereo run (const yw::EffectParams& p, Stereo s)
 {
     auto e = make (&p);
     e->prepare (48000.0);
@@ -52,9 +52,9 @@ double rms (const std::vector<float>& a, std::size_t from)
 
 TEST (facet_round128_parameters_default_to_the_old_behaviour)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     const auto p = facet103::defaults();
-    CHECK (info().params.size() == (std::size_t) paramCount && paramCount >= 88 && characterParam == 88 && paramCount <= lynx::maxEffectParams); // round 135 appended Character
+    CHECK (info().params.size() == (std::size_t) paramCount && paramCount >= 88 && characterParam == 88 && paramCount <= yw::maxEffectParams); // round 135 appended Character
     for (int b = 0; b < bands; ++b)
     {
         CHECK (bandPower (p, b));
@@ -72,14 +72,14 @@ TEST (facet_round128_parameters_default_to_the_old_behaviour)
     for (int b = 0; b < bands; ++b) { explicitDefaults[(std::size_t) (powerParam0 + b)] = 0.0f; explicitDefaults[(std::size_t) (placementParam0 + b)] = 0.0f; }
     const auto in = parity128::tones (700.0, 1300.0, 0.3);
     CHECK (parity128::maxDiff (parity128::run (bellOnly, in).l, parity128::run (explicitDefaults, in).l) == 0.0);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::facetEq, placementParam0, placementValue (Placement::mid), 120.0) == "Mid");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::facetEq, powerParam0 + 2, 1.0f, 120.0) == "Off");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::facetEq, panParam, 0.25f, 120.0) == "L 50%");
+    CHECK (yw::formatEffectParam (yw::EffectKind::facetEq, placementParam0, placementValue (Placement::mid), 120.0) == "Mid");
+    CHECK (yw::formatEffectParam (yw::EffectKind::facetEq, powerParam0 + 2, 1.0f, 120.0) == "Off");
+    CHECK (yw::formatEffectParam (yw::EffectKind::facetEq, panParam, 0.25f, 120.0) == "L 50%");
 }
 
 TEST (facet_round128_band_power_keeps_settings_and_bypasses_the_band)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     const auto in = parity128::tones (1000.0, 1000.0, 0.3);
     auto off = facet103::bell (1000.0, 12.0, 1.0);
     off[(std::size_t) powerParam0] = 1.0f;
@@ -96,7 +96,7 @@ TEST (facet_round128_band_power_keeps_settings_and_bypasses_the_band)
 
 TEST (facet_round128_stereo_placement_left_right_mid_side)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     const auto in = parity128::tones (1000.0, 1000.0, 0.4);
     auto p = facet103::bell (1000.0, 12.0, 1.0);
     const auto stereo = parity128::run (p, in);
@@ -135,7 +135,7 @@ TEST (facet_round128_stereo_placement_left_right_mid_side)
 
 TEST (facet_round128_output_auto_gain_polarity_pan)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     const auto in = parity128::tones (1000.0, 1000.0, 0.3);
     auto p = facet103::defaults();
     p[(std::size_t) param (0, 0)] = shapeValue (Shape::highShelf);
@@ -173,10 +173,10 @@ TEST (facet_round128_output_auto_gain_polarity_pan)
 
 TEST (ember_round128_new_parameters_default_to_the_old_sound)
 {
-    using namespace lynx::mixsuite::ember;
-    const auto& in = lynx::effectInfo (lynx::EffectKind::ember);
-    CHECK ((int) in.params.size() == count && count == 163 && count <= lynx::maxEffectParams); // round 135 (7) + round 136 (the Classic voicing, 11) + round 147b (9) + round 150b (41) + round 152b (25) + round 165a (2) + round 190ar (Classic hot law, 1) + round 190fj (Law, Tape speed)
-    const auto p = mixsuite96::defaults (lynx::EffectKind::ember);
+    using namespace yw::mixsuite::ember;
+    const auto& in = yw::effectInfo (yw::EffectKind::ember);
+    CHECK ((int) in.params.size() == count && count == 163 && count <= yw::maxEffectParams); // round 135 (7) + round 136 (the Classic voicing, 11) + round 147b (9) + round 150b (41) + round 152b (25) + round 165a (2) + round 190ar (Classic hot law, 1) + round 190fj (Law, Tape speed)
+    const auto p = mixsuite96::defaults (yw::EffectKind::ember);
     CHECK (std::abs (inputDb (p[inputGain])) < 1e-9);
     for (int b = 0; b < maxBands; ++b)
     {
@@ -186,78 +186,78 @@ TEST (ember_round128_new_parameters_default_to_the_old_sound)
         CHECK (dynamicsAmount (p[(std::size_t) bandExtra (b, 8)]) == 0.0);
         CHECK (std::string (in.params[(std::size_t) bandExtra (b, 0)].name) == "B" + std::to_string (b + 1) + " on");
     }
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::ember, bandExtra (1, 1), 1.0f, 120.0) == "mute");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::ember, bandExtra (0, 2), 1.0f, 120.0) == "+18.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::ember, bandExtra (1, 1), 1.0f, 120.0) == "mute");
+    CHECK (yw::formatEffectParam (yw::EffectKind::ember, bandExtra (0, 2), 1.0f, 120.0) == "+18.0 dB");
 }
 
 TEST (ember_round128_band_power_mute_solo)
 {
-    using namespace lynx::mixsuite::ember;
+    using namespace yw::mixsuite::ember;
     using namespace mixsuite96;
     const auto x = sine (220.0, 0.3, 16384);
-    auto p = defaults (lynx::EffectKind::ember);
+    auto p = defaults (yw::EffectKind::ember);
     p[drive] = 0.7f;
     // switched off: the input comes out clean (delayed by the oversampler's latency)
     p[(std::size_t) bandExtra (0, 0)] = 0.0f;
-    const auto y = run (lynx::EffectKind::ember, p, x);
-    const auto lat = (std::size_t) lynx::mixsuite::Oversampler::latency();
+    const auto y = run (yw::EffectKind::ember, p, x);
+    const auto lat = (std::size_t) yw::mixsuite::Oversampler::latency();
     double d = 0.0;
     for (std::size_t i = 4096; i < y.size(); ++i) d = std::max (d, (double) std::abs (y[i] - x[i - lat]));
     CHECK (d < 1e-6);
     // muted: silence (mix 100 %)
     p[(std::size_t) bandExtra (0, 0)] = 1.0f;
     p[(std::size_t) bandExtra (0, 1)] = 1.0f;
-    const auto silent = run (lynx::EffectKind::ember, p, x);
+    const auto silent = run (yw::EffectKind::ember, p, x);
     CHECK (amplitude (silent, 220.0, 8192, 8192) < 1e-6);
     // two bands split at 1 kHz, the high one soloed: a 220 Hz tone (low band) nearly disappears
-    auto m = defaults (lynx::EffectKind::ember);
+    auto m = defaults (yw::EffectKind::ember);
     m[bands] = 1.0f / 3.0f;
     m[xover1] = crossoverValue (1000.0);
-    const auto both = amplitude (run (lynx::EffectKind::ember, m, x), 220.0, 8192, 8192);
+    const auto both = amplitude (run (yw::EffectKind::ember, m, x), 220.0, 8192, 8192);
     m[(std::size_t) bandExtra (1, 1)] = 0.5f; // solo
-    const auto solo = amplitude (run (lynx::EffectKind::ember, m, x), 220.0, 8192, 8192);
+    const auto solo = amplitude (run (yw::EffectKind::ember, m, x), 220.0, 8192, 8192);
     CHECK (db (solo / both) < -20.0);
 }
 
 TEST (ember_round128_tone_feedback_dynamics_input)
 {
-    using namespace lynx::mixsuite::ember;
+    using namespace yw::mixsuite::ember;
     using namespace mixsuite96;
     // clean drive (0 dB) on a quiet tone: the bass control moves a 60 Hz tone by its gain, a 3 kHz one hardly
-    auto p = defaults (lynx::EffectKind::ember);
+    auto p = defaults (yw::EffectKind::ember);
     const auto low = sine (60.0, 0.01, 16384), high = sine (3000.0, 0.01, 16384);
-    const auto a0 = amplitude (run (lynx::EffectKind::ember, p, low), 60.0, 8192, 8192);
-    const auto h0 = amplitude (run (lynx::EffectKind::ember, p, high), 3000.0, 8192, 8192);
+    const auto a0 = amplitude (run (yw::EffectKind::ember, p, low), 60.0, 8192, 8192);
+    const auto h0 = amplitude (run (yw::EffectKind::ember, p, high), 3000.0, 8192, 8192);
     p[(std::size_t) bandExtra (0, 2)] = 5.0f / 6.0f; // bass +12 dB
-    const auto a1 = amplitude (run (lynx::EffectKind::ember, p, low), 60.0, 8192, 8192);
-    const auto h1 = amplitude (run (lynx::EffectKind::ember, p, high), 3000.0, 8192, 8192);
+    const auto a1 = amplitude (run (yw::EffectKind::ember, p, low), 60.0, 8192, 8192);
+    const auto h1 = amplitude (run (yw::EffectKind::ember, p, high), 3000.0, 8192, 8192);
     std::printf ("  Ember bass +12 dB: 60 Hz %+.2f dB, 3 kHz %+.2f dB\n", db (a1 / a0), db (h1 / h0));
     CHECK (db (a1 / a0) > 10.0 && db (a1 / a0) < 12.5 && std::abs (db (h1 / h0)) < 0.5);
     // presence +12 dB lifts 6 kHz
     p[(std::size_t) bandExtra (0, 2)] = 0.5f;
     p[(std::size_t) bandExtra (0, 5)] = 5.0f / 6.0f;
-    const auto pres = amplitude (run (lynx::EffectKind::ember, p, sine (6000.0, 0.01, 16384)), 6000.0, 8192, 8192);
-    const auto pres0 = amplitude (run (lynx::EffectKind::ember, defaults (lynx::EffectKind::ember), sine (6000.0, 0.01, 16384)), 6000.0, 8192, 8192);
+    const auto pres = amplitude (run (yw::EffectKind::ember, p, sine (6000.0, 0.01, 16384)), 6000.0, 8192, 8192);
+    const auto pres0 = amplitude (run (yw::EffectKind::ember, defaults (yw::EffectKind::ember), sine (6000.0, 0.01, 16384)), 6000.0, 8192, 8192);
     CHECK (db (pres / pres0) > 10.0);
     // input gain +12 dB: a clean tone 12 dB louder (auto gain only follows the drive)
-    auto q = defaults (lynx::EffectKind::ember);
+    auto q = defaults (yw::EffectKind::ember);
     q[inputGain] = 0.75f;
-    CHECK (std::abs (db (amplitude (run (lynx::EffectKind::ember, q, low), 60.0, 8192, 8192) / a0) - 12.0) < 0.3);
+    CHECK (std::abs (db (amplitude (run (yw::EffectKind::ember, q, low), 60.0, 8192, 8192) / a0) - 12.0) < 0.3);
     // dynamics: expansion makes a loud tone louder than a soft one would be, compression the opposite
     auto dyn = [] (float amount, double amp) {
-        auto r = defaults (lynx::EffectKind::ember);
+        auto r = defaults (yw::EffectKind::ember);
         r[(std::size_t) bandExtra (0, 8)] = amount;
-        return amplitude (run (lynx::EffectKind::ember, r, sine (500.0, amp, 16384)), 500.0, 8192, 8192) / amp;
+        return amplitude (run (yw::EffectKind::ember, r, sine (500.0, amp, 16384)), 500.0, 8192, 8192) / amp;
     };
     const auto flat = dyn (0.5f, 0.5), expand = dyn (1.0f, 0.5), compress = dyn (0.0f, 0.5);
     CHECK (expand > flat * 1.5 && compress < flat / 1.5);
     // feedback: changes the sound and stays bounded at its maximum
-    auto f = defaults (lynx::EffectKind::ember);
+    auto f = defaults (yw::EffectKind::ember);
     f[drive] = 0.5f;
-    const auto plain = run (lynx::EffectKind::ember, f, sine (150.0, 0.5, 16384));
+    const auto plain = run (yw::EffectKind::ember, f, sine (150.0, 0.5, 16384));
     f[(std::size_t) bandExtra (0, 6)] = 1.0f;
     f[(std::size_t) bandExtra (0, 7)] = 0.5f; // 100 Hz
-    const auto fed = run (lynx::EffectKind::ember, f, sine (150.0, 0.5, 16384));
+    const auto fed = run (yw::EffectKind::ember, f, sine (150.0, 0.5, 16384));
     double diff = 0.0, peak = 0.0;
     for (std::size_t i = 0; i < fed.size(); ++i)
     {
@@ -270,7 +270,7 @@ TEST (ember_round128_tone_feedback_dynamics_input)
 
 TEST (ember_round128_saturn2_tone_and_state_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.name = "FabFilter Saturn 2";
     // one band: bass +6 dB, presence −3 dB, feedback 40 % at 200 Hz, dynamics +0.5, muted; input +3 dB

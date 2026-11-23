@@ -25,7 +25,7 @@
 #include "core/Song.h"
 #include "core/Vfx.h"
 
-namespace lynx::patcher
+namespace yw::patcher
 {
 // How the graph creates its nodes: the rack's own builders (plugins through the app's factories, nested Patchers…).
 // Null results become pass-through / silent nodes.
@@ -38,7 +38,7 @@ struct Factories
 // Default builders without plugins (tests, offline tools): built-in effects and instruments only.
 Factories builtInFactories (double sampleRate, double bpm = 140.0);
 
-// A node's audio output bus `bus` ≥ 1 that FL's splitting plugins provide: an imported BusHead, or LYNX's
+// A node's audio output bus `bus` ≥ 1 that FL's splitting plugins provide: an imported BusHead, or YW's
 // Frequency Splitter bands (1 low, 2 mid, 3 high). nullopt = the node has no such output (silence).
 std::optional<PatchNode::BusHead> busHeadOf (const PatchNode& node, int bus);
 
@@ -50,7 +50,7 @@ struct NodePorts
     bool midiOut = false; // a MIDI Out node: its notes leave on its MIDI output pin (round 162)
     int midiOuts = 0;     // MIDI output pins (a MIDI Out: 1; a VFX node: its voice outputs, round 164b)
 };
-// The voice outputs a VFX node shows (FL activates the first few; LYNX shows one free pin past the last cabled one)
+// The voice outputs a VFX node shows (FL activates the first few; YW shows one free pin past the last cabled one)
 int shownMidiOutputs (const PatcherDoc& doc, int node);
 NodePorts nodePorts (const PatchNode& node);
 
@@ -59,7 +59,7 @@ NodePorts nodePorts (const PatchNode& node);
 std::vector<int> shownFromMidiPorts (const PatcherDoc& doc);
 std::vector<int> shownToMidiPorts (const PatcherDoc& doc);
 bool fromNotesShown (const PatcherDoc& doc, bool generator);
-// The MIDI ports whose "From YW Studio" pin has an active cable: the Patcher takes what LYNX sends on those ports.
+// The MIDI ports whose "From YW Studio" pin has an active cable: the Patcher takes what YW sends on those ports.
 std::vector<int> midiInputPorts (const PatcherDoc& doc);
 // Where what enters on "From YW Studio" pin `fromPin` (0 Notes, patchMidiPortPin (N)) leaves on "To YW Studio" MIDI ports,
 // directly or through MIDI Out nodes (which set the MIDI channel; −1 = unchanged).
@@ -103,7 +103,7 @@ public:
     void noteOff (int key) noexcept;
     void noteOnMidi (int key, float velocity, int midiChannel) noexcept;
     void noteOffMidi (int key, int midiChannel) noexcept;
-    // what LYNX sends to the Patcher on MIDI port `port` (a MIDI Out on that port…): the nodes cabled to that pin
+    // what YW sends to the Patcher on MIDI port `port` (a MIDI Out on that port…): the nodes cabled to that pin
     void noteOnPort (int port, int key, float velocity, int midiChannel) noexcept;
     void noteOffPort (int port, int key, int midiChannel) noexcept;
     // The same at a sample of the next block(s) (round 164f): `offset` counts from the next sample process() renders,
@@ -119,7 +119,7 @@ public:
     int takeHostEvents (Instrument::PortEvent* out, int max) noexcept;
     // a controller's mod wheel, other CCs, channel pressure and pitch wheel played into the Patcher's channel (round
     // 164e): like FL's Patcher (it takes MIDI input and passes it on), the instruments cabled to "From YW Studio" notes get
-    // them as if they were the channel (hosted plugins the MIDI message, LYNX's samplers the bend)
+    // them as if they were the channel (hosted plugins the MIDI message, YW's samplers the bend)
     void midiMessage (const std::uint8_t* bytes, int size) noexcept;
     void pitchBend (float semitones) noexcept;
     void controlChange (int cc, float value) noexcept;
@@ -335,4 +335,4 @@ int publishedIndex (const PatcherDoc& doc, int node, int param);
 // FL's node menu › Disconnect: every cable of the node goes (its ports stay active)
 void disconnectNode (PatcherDoc& doc, int node);
 bool nodeHasCables (const PatcherDoc& doc, int node);
-} // namespace lynx::patcher
+} // namespace yw::patcher

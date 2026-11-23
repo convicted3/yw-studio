@@ -33,7 +33,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx::pitcher
+namespace yw::pitcher
 {
 // FL's raw parameter values (Pitcher parameter indices in brackets)
 struct Params
@@ -692,7 +692,7 @@ private:
     int timer[2][4] {};
     std::array<float, 256> hann256 {};
 };
-} // namespace lynx::pitcher
+} // namespace yw::pitcher
 
 #if defined(__clang__)
 #pragma float_control(pop)

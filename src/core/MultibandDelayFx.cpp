@@ -11,7 +11,7 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) // x86 SSE2, or ARM64 through core/Simd.h (sse2neon)
 #include "core/Simd.h"
-#define LYNX_MBD_MXCSR 1
+#define YW_MBD_MXCSR 1
 #endif
 
 // The plug-in's float arithmetic is reproduced operation by operation (REA_rodada71 §3): no contraction into FMA,
@@ -23,7 +23,7 @@
 #pragma GCC optimize("fp-contract=off", "rounding-math")
 #endif
 
-namespace lynx::mbdelay
+namespace yw::mbdelay
 {
 namespace
 {
@@ -176,7 +176,7 @@ constexpr float weightTime[8] = { 0.0f, 0.02f, 0.1f, 0.5f, 2.5f, 10.0f, 10.0f, 0
 
 struct RenderMode
 {
-#ifdef LYNX_MBD_MXCSR
+#ifdef YW_MBD_MXCSR
     unsigned saved;
     explicit RenderMode (unsigned bits) noexcept : saved (_mm_getcsr()) { _mm_setcsr ((saved & ~0x6000u) | bits); }
     ~RenderMode() { _mm_setcsr (saved); }
@@ -1058,7 +1058,7 @@ void Engine::process (float* left, float* right, int n) noexcept
 }
 int Engine::latencySamples() const noexcept { return d->latency; }
 
-// ------------------------------------------------------------------------------------------------ LYNX effect
+// ------------------------------------------------------------------------------------------------ YW effect
 namespace
 {
 class MultibandDelayEffect final : public Effect
@@ -1132,4 +1132,4 @@ std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& flState, const Ef
 {
     return std::make_unique<MultibandDelayEffect> (flState, params);
 }
-} // namespace lynx::mbdelay
+} // namespace yw::mbdelay

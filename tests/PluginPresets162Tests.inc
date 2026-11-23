@@ -1,9 +1,9 @@
-// Round 162d (issue #8): presets of hosted plugins — LYNX's own preset file and VST2's .fxp / .fxb.
+// Round 162d (issue #8): presets of hosted plugins — YW's own preset file and VST2's .fxp / .fxb.
 #include "core/PluginPresets.h"
 
 TEST (plugin_preset_text_round_trip_round162)
 {
-    namespace pp = lynx::pluginpresets;
+    namespace pp = yw::pluginpresets;
     pp::Preset p;
     p.name = "Warm pad\nsecond line";
     p.pluginName = "Surge XT";
@@ -12,20 +12,20 @@ TEST (plugin_preset_text_round_trip_round162)
     for (int i = 0; i < 300; ++i)
         p.state.push_back ((std::uint8_t) (i * 7));
     const auto text = pp::toText (p);
-    CHECK (text.rfind ("LYNX plugin preset 1\n", 0) == 0);
+    CHECK (text.rfind ("YW plugin preset 1\n", 0) == 0);
     const auto back = pp::fromText (text);
     CHECK (back.has_value());
     CHECK (back->name == "Warm pad second line"); // one line per value
     CHECK (back->pluginName == p.pluginName && back->pluginId == p.pluginId && back->format == "VST3");
     CHECK (back->state == p.state);
-    // a preset of one of LYNX's own engines is not a plugin preset (same extension, other first line)
-    CHECK (! pp::fromText ("LYNX preset 1\nengine = Facet EQ\nname = x\n").has_value());
-    CHECK (! pp::fromText ("LYNX plugin preset 1\nname = no state\n").has_value());
+    // a preset of one of YW's own engines is not a plugin preset (same extension, other first line)
+    CHECK (! pp::fromText ("YW preset 1\nengine = Facet EQ\nname = x\n").has_value());
+    CHECK (! pp::fromText ("YW plugin preset 1\nname = no state\n").has_value());
 }
 
 TEST (plugin_preset_folder_names_round162)
 {
-    namespace pp = lynx::pluginpresets;
+    namespace pp = yw::pluginpresets;
     CHECK (pp::folderNameFor ("Surge XT") == "Surge XT");
     CHECK (pp::folderNameFor ("A/B: \"x\"?") == "A_B_ _x__");
     CHECK (pp::folderNameFor ("  ...  ") == "Plugin");
@@ -35,7 +35,7 @@ TEST (plugin_preset_folder_names_round162)
 
 TEST (vst2_fxp_fxb_round_trip_round162)
 {
-    namespace pp = lynx::pluginpresets;
+    namespace pp = yw::pluginpresets;
     using K = pp::FxFile::Kind;
     // a parameter program, byte for byte as the VST 2.4 layout says
     pp::FxFile prog;

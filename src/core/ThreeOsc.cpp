@@ -23,7 +23,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -225,7 +225,7 @@ using ld = long double;
 // The "HQ" oscillators of engine_x64.dll (REA_rodada47 §2.6): each shape as 2048 analytic points (FUN_1800011f0),
 // upsampled ×16 by linear interpolation, then 44 band-limited tables of 32768 points keeping the harmonics 1…H with
 // H = floor(1024·2^(−k/4)) (FUN_180002d90 + FUN_180001be0: bins cut on an FFT). FL computes the FFT with its own SSE
-// code in single precision; LYNX with a double-precision radix-2 FFT (the tables agree to float rounding).
+// code in single precision; YW with a double-precision radix-2 FFT (the tables agree to float rounding).
 constexpr int hqSize = 32768, hqLevels = 44;
 
 struct HqSet
@@ -730,7 +730,7 @@ public:
     }
 
     Params P;
-    bool hostHq = false; // FL's "HQ render" host mode (P+0x1fd): set while LYNX exports, as FL's renders do
+    bool hostHq = false; // FL's "HQ render" host mode (P+0x1fd): set while YW exports, as FL's renders do
     flvp::Settings S;
     std::array<std::uint8_t, snapshotSize> snap = flvp::defaultSnapshot();
     std::shared_ptr<const std::vector<float>> custom; // the channel's sample as a custom wave (16384 points), if any
@@ -1144,7 +1144,7 @@ public:
     {
         take();
         engine.maxPoly = maxPoly.load();
-        // FL's channel volume/pan from LYNX's gains (gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)); FL recomputes the
+        // FL's channel volume/pan from YW's gains (gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)); FL recomputes the
         // voices' FinalLevels when the channel level changes
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
@@ -1479,4 +1479,4 @@ bool writeFlmParam (std::uint8_t* state, int k, double v, int stepsPerBeat, doub
 }
 // --- end of round 190fe
 } // namespace threeosc
-} // namespace lynx
+} // namespace yw

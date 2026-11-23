@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190mm (sub-round dyn): LYNX's models of two more members of the Renaissance dynamics family — the one-knob vocal
+// Round 190mm (sub-round dyn): YW's models of two more members of the Renaissance dynamics family — the one-knob vocal
 // compressor (Renaissance Vox role) and the split / wide-band de-esser (Renaissance DeEsser role). Clean-room: the
 // structure was read from the references' DSP (docs/analise/REA_rodada190mm_dyn.md §1, §2), written here in our own
 // words; every constant below was fitted on our own demo-mode probes of the references (§1.2, §2.2). Header-only and
@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace lynx::rendyn
+namespace yw::rendyn
 {
 // ---- constants (fitted, REA_rodada190mm_dyn.md §1.2)
 constexpr double voxAllPass[3] { 0.6303, 0.3583, 0.1607 }; // the detector's three first-order all-pass coefficients
@@ -413,4 +413,4 @@ private:
     int dp = 0;
     float last = 0.0f;
 };
-} // namespace lynx::rendyn
+} // namespace yw::rendyn

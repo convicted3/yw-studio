@@ -10,7 +10,7 @@
 
 #include "flp/Flp.h"
 
-namespace lynx::prtools
+namespace yw::prtools
 {
 namespace
 {
@@ -1385,7 +1385,7 @@ const std::vector<ProgressionPreset>& builtInProgressions()
 
 std::vector<Chord> generateProgression (int tonic, bool minor, int count, float adventure, std::uint32_t seed)
 {
-    // LYNX's own table of moves between scale degrees (0..6): the usual functional pulls, with weights; more
+    // YW's own table of moves between scale degrees (0..6): the usual functional pulls, with weights; more
     // "adventurous" settings flatten the weights and allow sevenths and borrowed chords.
     static const float moves[7][7] = {
         // to:  I    ii   iii  IV   V    vi   vii
@@ -1640,7 +1640,7 @@ ScoreNote scoreNote (std::int64_t start, std::int64_t length, int key, float vel
     return n;
 }
 
-// LYNX's own riff shapes: (step, length in steps, key offset from 60) over one bar
+// YW's own riff shapes: (step, length in steps, key offset from 60) over one bar
 struct Shape
 {
     const char* name;
@@ -1787,4 +1787,4 @@ std::vector<int> riffMachine (Pattern& pattern, const std::vector<int>& indices,
 
     return result;
 }
-} // namespace lynx::prtools
+} // namespace yw::prtools

@@ -20,7 +20,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::pluginhold
+namespace yw::pluginhold
 {
 // Which plugins are off: all of them while `active`, except the ones switched back on (by plugin, so every slot of
 // that plugin comes back together: the question is "which plugin breaks the project").
@@ -204,11 +204,11 @@ inline std::vector<std::string> pluginStates (const Song& song)
 {
     std::vector<std::string> out;
     eachPlugin (song, [&] (const PluginRef& ref, bool, const std::string& owner) { out.push_back (owner + "|" + ref.id + "|" + ref.name + "|" + ref.state); });
-    // (LYNX substitutes keep the original plugin's reference for when it is installed: its settings count too)
+    // (YW substitutes keep the original plugin's reference for when it is installed: its settings count too)
     for (const auto& track : song.mixer)
         for (const auto& fx : track.effects)
             if (fx.isSubstitute())
                 out.push_back ("substitute|" + fx.substituteFor.id + "|" + fx.substituteFor.name + "|" + fx.substituteFor.state);
     return out;
 }
-} // namespace lynx::pluginhold
+} // namespace yw::pluginhold

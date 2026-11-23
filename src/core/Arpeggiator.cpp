@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx
+namespace yw
 {
 void Arpeggiator::reset() noexcept
 {
@@ -295,4 +295,4 @@ void Arpeggiator::process (int channel, const NoteEvent* in, int inCount, double
         nextStep = boundary;
     }
 }
-} // namespace lynx
+} // namespace yw

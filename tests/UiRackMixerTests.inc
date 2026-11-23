@@ -4,7 +4,7 @@
 
 TEST (meter_peak_hold)
 {
-    lynx::meters::PeakHold m;
+    yw::meters::PeakHold m;
     m.tick (0.5f, 0.86f, 10);
     CHECK (m.level == 0.5f && m.peak == 0.5f && ! m.clipped);
 
@@ -35,7 +35,7 @@ TEST (meter_peak_hold)
     CHECK (! m.clipped && m.peak == m.level);
 
     // negative input is treated as silence
-    lynx::meters::PeakHold n;
+    yw::meters::PeakHold n;
     n.tick (-1.0f);
     CHECK (n.level == 0.0f && n.peak == 0.0f);
 }

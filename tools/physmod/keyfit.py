@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""keyfit.py - LYNX Model's mode tables across keys (round 190nl): mode families and smooth fits against key.
+"""keyfit.py - YW Model's mode tables across keys (round 190nl): mode families and smooth fits against key.
 
 A table holds one anchor per recorded key and velocity layer (calibrate.py). Between anchors the engine blends the two
-neighbours (src/core/physmod/LynxModel.cpp blend()); before round 190nl it paired modes by frequency ratio within 4 %,
+neighbours (src/core/physmod/YwModel.cpp blend()); before round 190nl it paired modes by frequency ratio within 4 %,
 so a mode whose ratio drifts across a 5-12 semitone gap (a glockenspiel's second mode moves 3.04 -> 2.88 over an
 octave) fell apart into two half-level modes at the wrong frequencies. This module:
 

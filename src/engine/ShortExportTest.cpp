@@ -16,7 +16,7 @@
 #include "engine/Mp3Format.h"
 #include "engine/StandInAudioDevice.h"
 
-namespace lynx::shortexport
+namespace yw::shortexport
 {
 namespace
 {
@@ -318,7 +318,7 @@ void run (bool everyUnit, int repeats, const juce::StringArray& pluginFiles, std
     runner->repeats = juce::jmax (1, repeats);
     runner->log = std::move (log);
     runner->done = std::move (done);
-    runner->folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-shortexport-" + juce::String (juce::Random::getSystemRandom().nextInt (1000000)));
+    runner->folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-shortexport-" + juce::String (juce::Random::getSystemRandom().nextInt (1000000)));
     runner->folder.createDirectory();
     // the sampler's one-shot: 1.5 s of a decaying 220 Hz tone that starts at full level on its first sample
     auto sampleFile = runner->folder.getChildFile ("one-shot.wav");
@@ -836,7 +836,7 @@ void stress (int count, std::int64_t seed, bool realtime, const juce::String& pl
     runner->allowRealtime = realtime;
     // (the log is called from the stress thread: lines go to the message thread in order)
     runner->log = [log] (const juce::String& line) { juce::MessageManager::callAsync ([log, line] { if (log) log (line); }); };
-    runner->folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-exportstress-" + juce::String (juce::Random::getSystemRandom().nextInt (1000000)));
+    runner->folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-exportstress-" + juce::String (juce::Random::getSystemRandom().nextInt (1000000)));
     runner->folder.createDirectory();
     std::thread ([runner, done] {
         auto result = runner->run();
@@ -848,7 +848,7 @@ void stress (int count, std::int64_t seed, bool realtime, const juce::String& pl
 juce::String formatsCheck()
 {
     // a sampler playing a decaying tone (the same samples on every render) for one bar, the Master without effects
-    const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-selftest-formats-" + juce::String (juce::Random::getSystemRandom().nextInt (1000000)));
+    const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-selftest-formats-" + juce::String (juce::Random::getSystemRandom().nextInt (1000000)));
     folder.createDirectory();
     struct Cleanup
     {
@@ -941,9 +941,9 @@ juce::String formatsCheck()
     }
     return "OK (" + done.joinIntoString ("; ") + ")";
 }
-} // namespace lynx::shortexport
+} // namespace yw::shortexport
 
-namespace lynx
+namespace yw
 {
 juce::String AudioEngine::openStandInDevice (double sampleRate, int blockSize)
 {
@@ -960,4 +960,4 @@ void AudioEngine::closeStandInDevice()
     deviceManager.removeAudioCallback (this);
     deviceManager.closeAudioDevice();
 }
-} // namespace lynx
+} // namespace yw

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace lynx::jsfx
+namespace yw::jsfx
 {
 namespace
 {
@@ -260,4 +260,4 @@ bool decodeState (const void* data, std::size_t size, SavedState& state)
     state = std::move (s);
     return true;
 }
-} // namespace lynx::jsfx
+} // namespace yw::jsfx

@@ -9,11 +9,11 @@
 #include <string>
 #include <vector>
 
-namespace lynx::gzip
+namespace yw::gzip
 {
 bool isGzip (const std::uint8_t* data, std::size_t size) noexcept;
 // The uncompressed bytes of the first member (nullopt: not gzip, corrupt or over `maxSize`; the CRC is checked).
 std::optional<std::vector<std::uint8_t>> decompress (const std::uint8_t* data, std::size_t size, std::size_t maxSize = 512u << 20);
 std::vector<std::uint8_t> compressStored (const std::uint8_t* data, std::size_t size);
 std::uint32_t crc32 (const std::uint8_t* data, std::size_t size, std::uint32_t crc = 0) noexcept;
-} // namespace lynx::gzip
+} // namespace yw::gzip

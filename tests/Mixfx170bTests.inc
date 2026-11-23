@@ -7,16 +7,16 @@
 
 namespace
 {
-lynx::Song mixfx170bSong (int inserts)
+yw::Song mixfx170bSong (int inserts)
 {
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (inserts);
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (inserts);
     return song;
 }
 
-lynx::EffectSlot mixfx170bFx (lynx::EffectKind kind)
+yw::EffectSlot mixfx170bFx (yw::EffectKind kind)
 {
-    lynx::EffectSlot s;
+    yw::EffectSlot s;
     s.kind = kind;
     return s;
 }
@@ -24,7 +24,7 @@ lynx::EffectSlot mixfx170bFx (lynx::EffectKind kind)
 
 TEST (mixfx170b_route_arrow_acts_on_every_selected_track)
 {
-    namespace mo = lynx::mixerops;
+    namespace mo = yw::mixerops;
     auto song = mixfx170bSong (5);
     // FL's plain click on the arrow under insert 4 with inserts 1, 2, 3 selected: all three route to 4
     CHECK (mo::switchSelectedRoute (song, { 1, 2, 3 }, 4, true) == 3);
@@ -51,8 +51,8 @@ TEST (mixfx170b_route_arrow_acts_on_every_selected_track)
 
 TEST (mixfx170b_effect_rows_follow_fl_slot_places)
 {
-    namespace mo = lynx::mixerops;
-    using K = lynx::EffectKind;
+    namespace mo = yw::mixerops;
+    using K = yw::EffectKind;
     auto song = mixfx170bSong (2);
     auto& fx = song.mixer[1].effects;
     fx.push_back (mixfx170bFx (K::compressor));
@@ -80,13 +80,13 @@ TEST (mixfx170b_effect_rows_follow_fl_slot_places)
 
 TEST (mixfx170b_moving_onto_an_effect_swaps_and_automations_follow)
 {
-    namespace mo = lynx::mixerops;
-    using K = lynx::EffectKind;
+    namespace mo = yw::mixerops;
+    using K = yw::EffectKind;
     auto song = mixfx170bSong (2);
     for (auto k : { K::eq, K::delay, K::reverb })
         song.mixer[1].effects.push_back (mixfx170bFx (k));
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::effectParam, 1, 0, 3 }; // the EQ's parameter 3
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::effectParam, 1, 0, 3 }; // the EQ's parameter 3
     song.automations = { a };
     // the EQ dragged onto the reverb's slot 3: the two swap places (FL), the delay stays in slot 2
     CHECK (mo::moveEffectToRow (song, 1, 0, 2));
@@ -106,28 +106,28 @@ TEST (mixfx170b_moving_onto_an_effect_swaps_and_automations_follow)
     CHECK ((mo::effectRows (song.mixer[1].effects) == std::vector<int> { 0, 5 }));
     // nothing moves onto its own slot or past the 10 slots
     CHECK (! mo::moveEffectToRow (song, 1, 0, 0));
-    CHECK (! mo::moveEffectToRow (song, 1, 0, lynx::maxEffectSlots));
+    CHECK (! mo::moveEffectToRow (song, 1, 0, yw::maxEffectSlots));
 }
 
 TEST (mixfx170b_effect_rows_stay_in_the_ten_slots)
 {
-    namespace mo = lynx::mixerops;
-    std::vector<lynx::EffectSlot> fx (3);
+    namespace mo = yw::mixerops;
+    std::vector<yw::EffectSlot> fx (3);
     fx[0].row = 4;
     fx[1].row = 2; // (out of order in a file: it follows the previous one)
     fx[2].row = -1;
     CHECK ((mo::effectRows (fx) == std::vector<int> { 4, 5, 6 }));
     fx[0].row = 9;
     CHECK ((mo::effectRows (fx) == std::vector<int> { 7, 8, 9 })); // (pulled up to fit)
-    std::vector<lynx::EffectSlot> full (lynx::maxEffectSlots);
+    std::vector<yw::EffectSlot> full (yw::maxEffectSlots);
     const auto rows = mo::effectRows (full);
-    for (int i = 0; i < lynx::maxEffectSlots; ++i)
+    for (int i = 0; i < yw::maxEffectSlots; ++i)
         CHECK (rows[(std::size_t) i] == i);
 }
 
 TEST (mixfx170b_trackpad_wheel_steps_add_up_and_ignore_inertia)
 {
-    using lynx::controls::slotWheelSteps;
+    using yw::controls::slotWheelSteps;
     double acc = 0.0;
     // a mouse wheel: one notch, one slot, whatever its size
     CHECK (slotWheelSteps (acc, 0.23, false, false) == 1);
@@ -145,41 +145,41 @@ TEST (mixfx170b_trackpad_wheel_steps_add_up_and_ignore_inertia)
     CHECK (slotWheelSteps (acc, -0.2, true, false) == -1);
 }
 
-TEST (mixfx170b_plugin_menus_group_by_fl_category_lynx_first)
+TEST (mixfx170b_plugin_menus_group_by_fl_category_yw_first)
 {
-    namespace pc = lynx::plugincatalog;
+    namespace pc = yw::plugincatalog;
     // FL Studio 2026's Plugin database folders
     CHECK (pc::flCategory ("Fruity Compressor", false) == "Dynamics");
     CHECK (pc::flCategory ("Fruity Limiter", false) == "Dynamics");
-    CHECK (pc::flCategory ("Reeverb 2", false) == "Delay reverb"); // (LYNX's name, without "Fruity ")
+    CHECK (pc::flCategory ("Reeverb 2", false) == "Delay reverb"); // (YW's name, without "Fruity ")
     CHECK (pc::flCategory ("Peak Controller", false) == "Controller");
     CHECK (pc::flCategory ("Wave Candy", false) == "Visual");
     CHECK (pc::flCategory ("EQUO", false) == "Filter");
     CHECK (pc::flCategory ("Sytrus", true) == "Synth classic");
     CHECK (pc::flCategory ("Fruity DrumSynth Live", true) == "Drum");
     CHECK (pc::flCategory ("Fruity Compressor", true).empty()); // (not a generator)
-    // LYNX's own generic Compressor is not FL's Fruity Compressor
+    // YW's own generic Compressor is not FL's Fruity Compressor
     CHECK (pc::flCategory ("Compressor", false, false).empty());
     CHECK (pc::flCategory ("Compressor", false, true) == "Dynamics");
 
     pc::Folders user;
     pc::addFolder (user, false, "My chain");
-    pc::moveToFolder (user, false, "lynx:fx:Fruity Limiter", "My chain");
+    pc::moveToFolder (user, false, "yw:fx:Fruity Limiter", "My chain");
     const std::vector<pc::BuiltinPlugin> builtins {
-        { "lynx:fx:Compressor", "Compressor", false, false },
-        { "lynx:fx:Halo", "Halo", false, false },
-        { "lynx:fx:Fruity Compressor", "Fruity Compressor", true, true },
-        { "lynx:fx:Fruity Limiter", "Fruity Limiter", true, true },
-        { "lynx:fx:Reeverb 2", "Reeverb 2", true, true },
-        { "lynx:fx:Oddity", "Oddity", true, true },
+        { "yw:fx:Compressor", "Compressor", false, false },
+        { "yw:fx:Halo", "Halo", false, false },
+        { "yw:fx:Fruity Compressor", "Fruity Compressor", true, true },
+        { "yw:fx:Fruity Limiter", "Fruity Limiter", true, true },
+        { "yw:fx:Reeverb 2", "Reeverb 2", true, true },
+        { "yw:fx:Oddity", "Oddity", true, true },
     };
     const auto folders = pc::withDefaultCategories (user, false, builtins);
-    CHECK (folders.of.at ("lynx:fx:Compressor") == pc::lynxCategory);
-    CHECK (folders.of.at ("lynx:fx:Halo") == pc::lynxCategory);
-    CHECK (folders.of.at ("lynx:fx:Fruity Compressor") == "Dynamics");
-    CHECK (folders.of.at ("lynx:fx:Fruity Limiter") == "My chain"); // the user's folder wins
-    CHECK (folders.of.at ("lynx:fx:Reeverb 2") == "Delay reverb");
-    CHECK (folders.of.at ("lynx:fx:Oddity") == "Misc"); // an FL plugin FL files nowhere
+    CHECK (folders.of.at ("yw:fx:Compressor") == pc::ywCategory);
+    CHECK (folders.of.at ("yw:fx:Halo") == pc::ywCategory);
+    CHECK (folders.of.at ("yw:fx:Fruity Compressor") == "Dynamics");
+    CHECK (folders.of.at ("yw:fx:Fruity Limiter") == "My chain"); // the user's folder wins
+    CHECK (folders.of.at ("yw:fx:Reeverb 2") == "Delay reverb");
+    CHECK (folders.of.at ("yw:fx:Oddity") == "Misc"); // an FL plugin FL files nowhere
     std::vector<std::string> keys;
     for (const auto& b : builtins)
         keys.push_back (b.key);
@@ -188,8 +188,8 @@ TEST (mixfx170b_plugin_menus_group_by_fl_category_lynx_first)
     std::vector<std::string> names;
     for (const auto& f : tree)
         names.push_back (f.name);
-    // LYNX SHARE first, then A-Z (FL's categories and the user's folders together)
-    CHECK ((names == std::vector<std::string> { pc::lynxCategory, "Delay reverb", "Dynamics", "Misc", "My chain" }));
+    // YW Studio first, then A-Z (FL's categories and the user's folders together)
+    CHECK ((names == std::vector<std::string> { pc::ywCategory, "Delay reverb", "Dynamics", "Misc", "My chain" }));
     CHECK (tree[0].items.size() == 2);
     CHECK (pc::allItems (tree).size() == builtins.size());
 }

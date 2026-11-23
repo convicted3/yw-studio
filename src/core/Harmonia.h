@@ -1,12 +1,12 @@
 #pragma once
 
-// Harmonia (round 190ko): LYNX's spectral resonator. The input's spectrum (core/SpectralCore.h, after an optional
+// Harmonia (round 190ko): YW's spectral resonator. The input's spectrum (core/SpectralCore.h, after an optional
 // shift of its pitch) excites a bank of partials — the harmonics of a frequency, stretched or squeezed, up to 256 of
 // them — that ring on with a decay, damped at the high and low ends; the partials can be chorused, made to wander, or
 // broken into random grains, doubled by detuned unison copies, and the result is limited and mixed with the dry
 // signal. It is the engine an imported Ableton Live "Spectral Resonator" opens on. Clean-room: every law below comes
-// from LYNX's own measurements of Live 12.4's output on impulses, tones and drums (round 190ko,
-// /mnt/e/lynx-work/meld190ko, set s1, RESULTS.md §3); nothing of Live's code or content is used. The partials are an
+// from YW's own measurements of Live 12.4's output on impulses, tones and drums (round 190ko,
+// /mnt/e/yw-work/meld190ko, set s1, RESULTS.md §3); nothing of Live's code or content is used. The partials are an
 // oscillator bank (complex rotators, amplitudes moved once a hop), so they sound at their exact frequencies whatever
 // the analysis size. Header-only DSP, no allocation in process().
 
@@ -18,7 +18,7 @@
 
 #include "core/SpectralCore.h"
 
-namespace lynx::harmonia
+namespace yw::harmonia
 {
 // (the Device View's card shows the first seven)
 enum Param
@@ -305,4 +305,4 @@ private:
     float limGain = 1.0f;
     spectral::Rand rng;
 };
-} // namespace lynx::harmonia
+} // namespace yw::harmonia

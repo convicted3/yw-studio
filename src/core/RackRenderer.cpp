@@ -4,7 +4,7 @@
 #include "core/SytrusEngine.h"
 #include "core/Harmor.h"
 #include "core/TrackStates.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/PolyEdit.h"
 #include "core/Dropouts.h"
 #include "core/HostTimelineScope.h"
@@ -74,7 +74,7 @@
 #include <mutex>
 #include <thread>
 
-namespace lynx
+namespace yw
 {
 namespace tempofollow
 {
@@ -258,7 +258,7 @@ std::shared_ptr<Instrument> buildInstrument (const ChannelDef& channel, double s
         return instrument;
     }
 
-    // LYNX Soundfont (REA_rodada158): the font is loaded on a background thread and shared by the channels playing it
+    // YW Soundfont (REA_rodada158): the font is loaded on a background thread and shared by the channels playing it
     if (kind == InstrumentKind::soundfont)
     {
         std::shared_ptr<Instrument> instrument = sf::makeInstrument (channel.samplePath.empty() ? nullptr : sf::FontLibrary::instance().get (channel.samplePath));
@@ -447,7 +447,7 @@ std::shared_ptr<Effect> buildEffect (const EffectSlot& slot, double sampleRate, 
     else if ((kind == EffectKind::newtone || kind == EffectKind::newtime))
     {
         // Newtone / Newtime: their source sample (loaded off the audio thread), REA_rodada73
-        // (Newtone: its note edits rendered by LYNX's engine, REA_rodada95)
+        // (Newtone: its note edits rendered by YW's engine, REA_rodada95)
         effect = newtonefx::make (factories.samples && ! slot.samplePath.empty() ? factories.samples (slot.samplePath) : nullptr,
                                   slot.state);
         effect->prepare (sampleRate);
@@ -467,7 +467,7 @@ std::shared_ptr<Effect> buildEffect (const EffectSlot& slot, double sampleRate, 
     }
     else
     {
-        const loadtrace::Scope timing ("rack_builtin_fx"); // (round 112: what the open spends on LYNX's own effects)
+        const loadtrace::Scope timing ("rack_builtin_fx"); // (round 112: what the open spends on YW's own effects)
         effect = makeEffect (slot);
         effect->prepare (sampleRate);
     }
@@ -476,7 +476,7 @@ std::shared_ptr<Effect> buildEffect (const EffectSlot& slot, double sampleRate, 
 }
 
 // Issue #134: hosted plugins are prepared when they are made, for the rate they are made at. A Patcher built again
-// for another sample rate (the audio device changed) keeps the running nodes of its old graph, and LYNX's own units
+// for another sample rate (the audio device changed) keeps the running nodes of its old graph, and YW's own units
 // follow the new rate, but a hosted plugin kept that way went on running at the old one (out of tune, its delays and
 // envelopes off). A Patcher that holds one, nested ones included, is built from nothing at a new rate.
 bool hostsPlugins (const PatcherDoc& doc) noexcept
@@ -728,7 +728,7 @@ void prepareKeyShifts (const std::vector<Instrument*>& list, double sampleRate)
         return;
     const loadtrace::Scope timing ("rack_keyshift");
     const auto threads = (std::size_t) std::clamp ((int) std::thread::hardware_concurrency() - 1, 1, 6);
-    const char* off = std::getenv ("LYNX_PARALLEL_KEYSHIFT"); // "0": one by one (A/B and the null test)
+    const char* off = std::getenv ("YW_PARALLEL_KEYSHIFT"); // "0": one by one (A/B and the null test)
     if (list.size() < 2 || threads < 2 || (off != nullptr && off[0] == '0'))
     {
         for (auto* i : list)
@@ -1256,7 +1256,7 @@ std::unique_ptr<const RackState> RackState::build (Song song,
             {
                 const auto source = song.mixer[t].effects[i].sidechain;
                 // (round 189j: with its Connections set, input 2 is fed unless inactive — its own input by default)
-                const auto connections = lynx::slotConnections (song, (int) t, song.mixer[t].effects[i]);
+                const auto connections = yw::slotConnections (song, (int) t, song.mixer[t].effects[i]);
                 state->effects[t][i]->setConnections (connections);
                 state->effects[t][i]->setSideInputActive ((source >= 0 && source != (int) t && source < (int) song.mixer.size())
                                                           || (connections.routed && connections.sideSource != -2));
@@ -1316,7 +1316,7 @@ std::unique_ptr<const RackState> RackState::build (Song song,
     // REA_rodada170i3 §2 (FL's renders with and without "cut itself" are the same; Ogun's tail in 169l's project).
     // Nor its wrapped third-party plugins (issue #143, REA_rodada190x): Surge XT (VST3) renders the same in FL with
     // and without "cut itself" — the group FL's default template gives every new channel (0x84 = 0x10001) — while
-    // LYNX's choke, landing after the note on at the same sample, ended every note as it started: silent channels.
+    // YW's choke, landing after the note on at the same sample, ended every note as it started: silent channels.
     const auto flCutsIt = [] (InstrumentKind k) {
         switch (k)
         {
@@ -1396,7 +1396,7 @@ void RackState::buildMixerGraph()
     {
         const auto& effects = song.mixer[(std::size_t) t].effects;
         for (std::size_t i = 0; i < effects.size(); ++i)
-            if (auto c = lynx::slotConnections (song, t, effects[i]); c.routed)
+            if (auto c = yw::slotConnections (song, t, effects[i]); c.routed)
             {
                 slotConnections[(std::size_t) t].resize (effects.size());
                 slotConnections[(std::size_t) t][i] = c;
@@ -1605,7 +1605,7 @@ void RackState::buildTaskGraph (const std::vector<int>& depth)
     // channels (the roots, most of the work) started later (measured: Exoplanet's overruns doubled)
     graphFused.assign ((std::size_t) tasks, -1);
     graphFusedCount = 0;
-    if (std::getenv ("LYNX_CHAINS") == nullptr || std::atoi (std::getenv ("LYNX_CHAINS")) != 0)
+    if (std::getenv ("YW_CHAINS") == nullptr || std::atoi (std::getenv ("YW_CHAINS")) != 0)
         for (int i = graphChannels; i < tasks; ++i)
             if (graphNextStart[(std::size_t) i + 1] - graphNextStart[(std::size_t) i] == 1)
                 if (const auto j = graphNext[(std::size_t) graphNextStart[(std::size_t) i]]; graphIndegree[(std::size_t) j] == 1)
@@ -2191,7 +2191,7 @@ void RackState::buildAutomationTables()
                 if (channelOk && (song.channels[(std::size_t) t.index].instrument == InstrumentKind::plugin
                                   || song.channels[(std::size_t) t.index].instrument == InstrumentKind::patcher // (its published parameters)
                                   || song.channels[(std::size_t) t.index].instrument == InstrumentKind::slayer
-                                  || song.channels[(std::size_t) t.index].instrument == InstrumentKind::soundfont // (LYNX Soundfont's knobs)
+                                  || song.channels[(std::size_t) t.index].instrument == InstrumentKind::soundfont // (YW Soundfont's knobs)
                                   || (song.channels[(std::size_t) t.index].instrument == InstrumentKind::midiOut
                                       && (midictl::isMidiParam (t.param) || (t.param >= 0 && t.param <= midiout::controlCount)))
                                   // a recorded / drawn pitch bend plays on any instrument (issue #12)
@@ -2214,7 +2214,7 @@ void RackState::buildAutomationTables()
                                   // Harmor's filter frequencies and Mod X / Y / Z (round 190pr; engine revision 3 on)
                                   || (song.channels[(std::size_t) t.index].instrument == InstrumentKind::harmor
                                       && song.channels[(std::size_t) t.index].engineRev >= 3 && harmor::automatable (t.param))
-                                  // LYNX Synth's knobs (issue #152, round 190he)
+                                  // YW Synth's knobs (issue #152, round 190he)
                                   || (song.channels[(std::size_t) t.index].instrument == InstrumentKind::synth && synthparam::valid (t.param))
                                   // FL Studio Mobile's DW Sampler: its own 34 values (round 190de)
                                   || (flmdw::isChannel (song.channels[(std::size_t) t.index]) && t.param >= flmdw::automationBase
@@ -2641,7 +2641,7 @@ MixerMatrix mixerMatrix (const MixerTrack& track, float volume, float pan, bool 
 
 MixerMatrix mixerMatrix (const MixerTrack& track, float volume, float pan, bool triangular, float stereo) noexcept
 {
-    // FL keeps the fader as an int (12800 = 0 dB), the pan ±6400 and the separation ±64; LYNX keeps them /16000,
+    // FL keeps the fader as an int (12800 = 0 dB), the pan ±6400 and the separation ±64; YW keeps them /16000,
     // /6400 and /64. Float arithmetic as FL's, the circular kernel in x87 extended precision (flvp::panLaw).
     const auto x = std::clamp (volume, 0.0f, 1.0f) * 1.25f;
     const auto p = std::clamp (pan, -1.0f, 1.0f);
@@ -2772,7 +2772,7 @@ float peakOf (const float* data, int n) noexcept
 {
     float peak = 0.0f;
     int i = 0;
-#if defined(LYNX_X86)
+#if defined(YW_X86)
     // round 190ge: four lanes at a time. The scalar form below stayed one serial chain of maxss on every compiler (it
     // runs for each insert and meter, every block). The same peak: a maximum is exact in any order, and a NaN is
     // skipped in both forms (max (NaN, m) keeps m, as `a > peak` is false for a NaN)
@@ -2832,7 +2832,7 @@ bool finiteBlock (const float* l, const float* r, int n) noexcept
 {
     int k = 0;
     auto bad = false;
-#if defined(LYNX_X86)
+#if defined(YW_X86)
     {
         const auto exponent = _mm_set1_epi32 (0x7f800000);
         auto acc = _mm_setzero_si128();
@@ -2858,7 +2858,7 @@ bool anyAbove (const float* l, const float* r, int n, float level) noexcept
     // in blocks of 32: the inner loop vectorizes; silent chunks (the ones that scan everything) stay cheap
     int i = 0;
 
-#if defined(LYNX_X86)
+#if defined(YW_X86)
     // round 190ge: explicitly four lanes at a time (the loop below stayed scalar on every compiler); the same answer:
     // true as soon as a 32-sample chunk holds a sample above `level` (a NaN is never above it, in both forms)
     {
@@ -2944,8 +2944,8 @@ namespace
 std::uint64_t nowNs() noexcept
 {
 #if defined(__linux__)
-    // diagnostics on a busy machine: LYNX_PROFILE_CPU=1 measures each unit in its thread's CPU time (renderwav)
-    static const bool threadCpu = std::getenv ("LYNX_PROFILE_CPU") != nullptr;
+    // diagnostics on a busy machine: YW_PROFILE_CPU=1 measures each unit in its thread's CPU time (renderwav)
+    static const bool threadCpu = std::getenv ("YW_PROFILE_CPU") != nullptr;
     if (threadCpu)
     {
         timespec ts {};
@@ -3390,7 +3390,7 @@ void RackRenderer::updateAutomation (const RackState& state, double startTick) n
                     if (tick < (double) c.start)
                         break;
 
-                    // a stretched clip loops its pattern (LYNX extra stretchedClipsLoop, issue #25), its events too
+                    // a stretched clip loops its pattern (YW extra stretchedClipsLoop, issue #25), its events too
                     const auto period = (std::size_t) lane.pattern < state.schedule.patternLength.size() ? state.schedule.patternLength[(std::size_t) lane.pattern] : 0;
                     value = events.valueAt (patternTickInClip (c, tick < (double) c.end() ? tick : (double) c.end() - 1.0, period));
                     from = (double) c.start;
@@ -3773,7 +3773,7 @@ void RackRenderer::applyPluginParam (const RackState& state, std::size_t index, 
         if (midictl::isPitchBend (b.param) && kind != InstrumentKind::plugin && kind != InstrumentKind::midiOut
             && b.channel < (int) state.instruments.size() && b.channel < maxChannels)
         {
-            // LYNX's own instruments: the bend as the controller's wheel plays it (applyLiveControl), when it changes
+            // YW's own instruments: the bend as the controller's wheel plays it (applyLiveControl), when it changes
             if (! automatedBendReset)
             {
                 automatedBend.fill (std::numeric_limits<float>::quiet_NaN());
@@ -3984,7 +3984,7 @@ float* RackRenderer::trackScratch (int track, int side) noexcept
 channelpoly::Mode RackRenderer::polyMode (const ChannelDef& c, const Instrument& instrument) const noexcept
 {
     channelpoly::Mode m;
-    // (the LYNX Synth plays its own Mono / Porta, the Sampler its own Porta: the layer leaves those to them)
+    // (the YW Synth plays its own Mono / Porta, the Sampler its own Porta: the layer leaves those to them)
     m.mono = c.instrument != InstrumentKind::synth && channelMono (c);
     m.porta = channelPortamento (c);
     m.portaBeats = channelPortamentoBeats (c);
@@ -4006,7 +4006,7 @@ namespace
 constexpr double flTickTicks = ppq / 96.0; // one tick of FL's default PPQ, in song ticks
 } // namespace
 
-// FL's native generators: the host steps their voices' pitch for a slide note (round 190jv, REA_rodada190jv §3). LYNX's
+// FL's native generators: the host steps their voices' pitch for a slide note (round 190jv, REA_rodada190jv §3). YW's
 // own generators (the drum and synth kinds, Tetra, Helix), FL Studio Mobile's SuperSaw and hosted plugins keep the glide.
 bool RackRenderer::stepsSlides (InstrumentKind k) noexcept
 {
@@ -4357,7 +4357,7 @@ void RackRenderer::renderChannel (const RackState& state, int i, int n) noexcept
             const auto inRegion = c.instrument == InstrumentKind::audioClip || c.inKeyRegion (list[index].key);
             if (! c.muted && inRegion)
             {
-                // (an audio clip follows its fine tune, not the main pitch: LYNX never moved clips with it)
+                // (an audio clip follows its fine tune, not the main pitch: YW never moved clips with it)
                 const auto noteCents = e.cents + c.misc.fineTune + instrument.wheelCents()
                                        + (c.misc.mainPitch && c.instrument != InstrumentKind::audioClip ? state.song.masterPitch : 0.0f);
                 // FL's channel Mono / Porta (round 168l): a Mono note over a held one moves the sounding voice instead
@@ -4576,7 +4576,7 @@ void RackRenderer::applyTrackEq (const MixerTrack& track, int t, bool bypassed, 
 static bool hasLiveMeters (EffectKind kind) noexcept
 {
     // round 129: the voice tools (Quell's reduction meter was never published) and the basic compressor's meters
-    return mixsuite::isSuiteKind (kind) || dyn::isDynKind (kind) || kind == EffectKind::lynxTune || kind == EffectKind::facetEq
+    return mixsuite::isSuiteKind (kind) || dyn::isDynKind (kind) || kind == EffectKind::ywTune || kind == EffectKind::facetEq
            || kind == EffectKind::apexLimiter || voicetools::isVoiceKind (kind) || kind == EffectKind::compressor
            || kind == EffectKind::echoform // round 135w: Echoform's output meter
            || kind == EffectKind::autoPan || kind == EffectKind::voiceShift // round 135: the pan position, the shifter's notes
@@ -5053,7 +5053,7 @@ void RackRenderer::runEffects (const RackState& state, int track, int n) noexcep
             tap.written.store (w + (std::uint32_t) n, std::memory_order_release);
         }
 
-        // live meters for the editor (the mixing suite's gain reduction, LYNX Tune's pitch, Facet EQ's dynamic gains)
+        // live meters for the editor (the mixing suite's gain reduction, YW Tune's pitch, Facet EQ's dynamic gains)
         if (plan.liveMeters && key < (std::size_t) maxMixerTracks * maxEffectSlots)
             for (int o = 0; o < ProcessTimes::meterOutputs; ++o)
                 times->effectMeters[key * ProcessTimes::meterOutputs + (std::size_t) o].store (effects[i]->controlOutput (o), std::memory_order_relaxed);
@@ -5820,7 +5820,7 @@ double RackRenderer::ticksToNextEvent (const RackState& state, double tick) noex
 void RackRenderer::applyLiveControl (const RackState& state, const NoteEvent& e) noexcept
 {
     // a controller's pitch wheel, mod wheel (CC 1), other CCs and channel pressure played into a channel (round 162,
-    // issue #9): hosted plugins (and the SoundFont player) get the MIDI message; LYNX's own instruments bend by the
+    // issue #9): hosted plugins (and the SoundFont player) get the MIDI message; YW's own instruments bend by the
     // channel's pitch range (FL's Misc › Pitch range, default ±2 semitones) and take the CCs they know
     // A Layer makes no sound: what is played into it goes to its children, as its notes do (issue #141: the sustain
     // pedal, the wheels and the other controllers stopped at the Layer)
@@ -6069,10 +6069,10 @@ constexpr std::uint64_t lightChunkNs = 60000; // 60 µs (about 1 % of a 256-samp
 // channel pass hands out clusters of about clusterWorkNs
 constexpr std::uint64_t serialWorkNs = 150000, layerSerialNs = 30000, clusterWorkNs = 20000;
 constexpr double parallelShare = 0.6; // (round 190gq, REA 190hc: a snapshot that guessed "serial" goes parallel past this)
-// LYNX_A7=0: the round 190ge dispatch (A/B measurements with one build, as LYNX_TASKGRAPH)
+// YW_A7=0: the round 190ge dispatch (A/B measurements with one build, as YW_TASKGRAPH)
 bool adaptiveThreads() noexcept
 {
-    static const bool on = [] { const char* e = std::getenv ("LYNX_A7"); return e == nullptr || std::atoi (e) != 0; }();
+    static const bool on = [] { const char* e = std::getenv ("YW_A7"); return e == nullptr || std::atoi (e) != 0; }();
     return on;
 }
 } // namespace
@@ -6402,7 +6402,7 @@ WorkerPool* RackRenderer::chunkSchedule (const RackState& state, int numSamples,
     // past their block when this rule took them too). The units' times are measured whenever workers are there, serial
     // or not, so the next chunk decides on fresh numbers.
     // Round 190gq (REA 190hc action 1): whether the work goes to the workers at all is measured too. The snapshot's
-    // guess (2+ hosted plugins or 24+ channels) left a set of LYNX's own devices (Live's "Patience", 15 tracks) on one
+    // guess (2+ hosted plugins or 24+ channels) left a set of YW's own devices (Live's "Patience", 15 tracks) on one
     // thread at 104-110 % of its deadline with every worker idle: a chunk whose units' work last time would fill most of
     // its real time runs in parallel whatever its plugin and channel counts.
     measureUnits = pool != nullptr && adaptiveThreads();
@@ -6846,8 +6846,8 @@ void RackRenderer::updatePdcBypass (const RackState& state, bool playing) noexce
 
 bool RackRenderer::runTaskGraph (const RackState& state, bool playing, int channels, int n, MeterBank* meters) noexcept
 {
-    // LYNX_TASKGRAPH=0: the layers only (A/B measurements)
-    static const bool enabled = [] { const char* e = std::getenv ("LYNX_TASKGRAPH"); return e == nullptr || std::atoi (e) != 0; }();
+    // YW_TASKGRAPH=0: the layers only (A/B measurements)
+    static const bool enabled = [] { const char* e = std::getenv ("YW_TASKGRAPH"); return e == nullptr || std::atoi (e) != 0; }();
     if (! enabled || ! state.graphOk || workers == nullptr || ! parallelChunk || state.graphChannels != channels)
         return false;
     const auto tracks = std::max<int> (1, (int) state.song.mixer.size());
@@ -6997,12 +6997,12 @@ bool RackRenderer::runTaskGraph (const RackState& state, bool playing, int chann
 // Channel rack's held notes, no sample-accurate plugin parameters, no launchers, no render-ahead split, no PDC "when
 // recording or not playing" switch, no generator extra outputs, no binding that reaches another unit; at most maxPieces
 // pieces and one mixer buffer of samples. Anything else plays piece by piece as before.
-// LYNX_POOL="rounds=chunk" (or rounds=0): one round per piece, as before (A/B); "rounds=block" (1, the default): batched.
+// YW_POOL="rounds=chunk" (or rounds=0): one round per piece, as before (A/B); "rounds=block" (1, the default): batched.
 namespace
 {
 bool taskGraphEnabled() noexcept
 {
-    static const bool enabled = [] { const char* e = std::getenv ("LYNX_TASKGRAPH"); return e == nullptr || std::atoi (e) != 0; }();
+    static const bool enabled = [] { const char* e = std::getenv ("YW_TASKGRAPH"); return e == nullptr || std::atoi (e) != 0; }();
     return enabled;
 }
 
@@ -7359,7 +7359,7 @@ bool RackRenderer::batchable (const RackState& state, int numSamples) noexcept
     if (numSamples > chunkCapacity || numSamples > buffers->frames || numSamples > (int) zeroBlock.size())
         return refuse (BatchRefusal::bigBlock);
     if (! state.liveAutomations.empty() && WorkerPool::tuning().liveRounds.load (std::memory_order_relaxed) == 0)
-        return refuse (BatchRefusal::liveControllers); // (round 190lv: LYNX_POOL live=0, piece by piece as before)
+        return refuse (BatchRefusal::liveControllers); // (round 190lv: YW_POOL live=0, piece by piece as before)
     if (state.hasMidiOutputs || ! state.portEventChannels.empty() || ! state.dashboardChannels.empty() || ! state.vfxChannels.empty()
         || state.hasEffectMidiRoutes || ! state.hardwareMidiChannels.empty())
         return refuse (BatchRefusal::midiBetweenUnits);
@@ -7861,7 +7861,7 @@ namespace
 bool isSilentBlock (const float* l, const float* r, int n) noexcept
 {
     int i = 0;
-#if defined(LYNX_X86)
+#if defined(YW_X86)
     // round 190ge: four lanes at a time (each idle insert scans its whole block); != 0 is true for a NaN, as below
     {
         const auto zero = _mm_setzero_ps();
@@ -7878,7 +7878,7 @@ bool isSilentBlock (const float* l, const float* r, int n) noexcept
 
 // Issue #144: a silenced insert (its mute, a solo elsewhere, a muted VCA) still shows its level, as in FL. Its effects
 // run for that only when nothing else can hear them: no slot reaches outside the insert (hardware I/O, controllers that
-// move other controls, sends into other inserts are cut below), so what comes out of LYNX stays the same.
+// move other controls, sends into other inserts are cut below), so what comes out of YW stays the same.
 bool canMeterSilenced (const MixerTrack& track) noexcept
 {
     for (const auto& slot : track.effects)
@@ -7959,7 +7959,7 @@ void RackRenderer::processTrack (const RackState& state, int t, int n, MeterBank
 
     const auto silent = track.muted || ! state.mixerAudible[(std::size_t) t];
     // issue #144: a silenced insert keeps its meter (FL): metered without being heard, while the meters are on
-    // (the LYNX option "Muted inserts don't process": the old cheap way, no effects, no meter)
+    // (the YW option "Muted inserts don't process": the old cheap way, no effects, no meter)
     const auto skip = silent && state.song.mutedInsertsSkip;
     const auto meterSilenced = ! skip && silent && meters != nullptr && canMeterSilenced (track);
     // FL (round 190y renders): a muted insert keeps running its effects, live and in exports; only its routes are cut
@@ -8425,4 +8425,4 @@ void RackRenderer::silenceChannels (const RackState& state, const char* channels
             state.echoes[c]->reset();
     }
 }
-} // namespace lynx
+} // namespace yw

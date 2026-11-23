@@ -71,17 +71,17 @@ inline std::string set (const std::vector<Track>& tracks, double bpm = 100.0, co
     return s;
 }
 
-inline std::optional<lynx::Song> load (const std::string& text, lynx::FlpImportReport* report = nullptr, std::vector<std::string> files = {})
+inline std::optional<yw::Song> load (const std::string& text, yw::FlpImportReport* report = nullptr, std::vector<std::string> files = {})
 {
-    lynx::AlsImportOptions o;
+    yw::AlsImportOptions o;
     o.common.projectFolder = "E:/sets";
     o.common.fileExists = [files] (const std::string& p) { return std::find (files.begin(), files.end(), p) != files.end(); };
     o.common.report = report;
     std::string error;
-    return lynx::importAls (bytesOf (text), o, &error);
+    return yw::importAls (bytesOf (text), o, &error);
 }
 
-inline const lynx::Automation* automationFor (const lynx::Song& s, lynx::AutomationTargetKind kind, int index, int slot = 0)
+inline const yw::Automation* automationFor (const yw::Song& s, yw::AutomationTargetKind kind, int index, int slot = 0)
 {
     for (const auto& a : s.automations)
         if (a.target.kind == kind && a.target.index == index && a.target.slot == slot)
@@ -90,17 +90,17 @@ inline const lynx::Automation* automationFor (const lynx::Song& s, lynx::Automat
 }
 
 // the value an automation has at `beats` (its clip starts at the first event)
-inline float valueAt (const lynx::Song& s, const lynx::Automation& a, double beats)
+inline float valueAt (const yw::Song& s, const yw::Automation& a, double beats)
 {
     for (const auto& c : s.playlist)
-        if (c.kind == lynx::ClipKind::automation && &s.automations[(std::size_t) c.automation] == &a)
-            return lynx::automationCurveAt (a.points, beats * lynx::ppq - (double) c.start);
+        if (c.kind == yw::ClipKind::automation && &s.automations[(std::size_t) c.automation] == &a)
+            return yw::automationCurveAt (a.points, beats * yw::ppq - (double) c.start);
     return -1.0f;
 }
 
 inline double dbOf (float faderPos)
 {
-    const auto g = lynx::faderGain (faderPos);
+    const auto g = yw::faderGain (faderPos);
     return g > 0.0f ? 20.0 * std::log10 ((double) g) : -200.0;
 }
 } // namespace als190ka
@@ -113,7 +113,7 @@ TEST (als190ka_automated_send_at_minus_inf_has_a_route)
     t.sends = { 0.000316 }; // −inf
     t.envelopes = envelope ("110", fe (-63072000, 0.000316) + fe (0, 0.000316) + fe (8, 1.0) + fe (8, 1.0) + fe (12, 0.000316));
     als190ka::Track quiet; // a send at −inf without an envelope: since round 190kc (rollup 0.1.30 step 6) a send at 0 too
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     const auto s = load (set ({ t, quiet }), &report);
     CHECK (s.has_value());
     if (! s)
@@ -125,7 +125,7 @@ TEST (als190ka_automated_send_at_minus_inf_has_a_route)
     for (const auto& send : s->mixer[1].sends)
         zero = zero || (send.target == ret && send.level == 0.0f);
     CHECK (zero);
-    const auto* a = automationFor (*s, lynx::AutomationTargetKind::mixerSend, 1, ret);
+    const auto* a = automationFor (*s, yw::AutomationTargetKind::mixerSend, 1, ret);
     CHECK (a != nullptr);
     if (a != nullptr)
     {
@@ -145,7 +145,7 @@ TEST (als190ka_jump_keeps_the_sets_order)
     CHECK (s.has_value());
     if (! s)
         return;
-    const auto* a = automationFor (*s, lynx::AutomationTargetKind::mixerVolume, 1);
+    const auto* a = automationFor (*s, yw::AutomationTargetKind::mixerVolume, 1);
     CHECK (a != nullptr);
     if (a != nullptr)
     {
@@ -170,7 +170,7 @@ TEST (als190ka_device_on_envelope_moves_the_slot_mix)
     if (s->mixer[1].effects.empty())
         return;
     CHECK (s->mixer[1].effects[0].enabled);
-    const auto* a = automationFor (*s, lynx::AutomationTargetKind::effectMix, 1, 0);
+    const auto* a = automationFor (*s, yw::AutomationTargetKind::effectMix, 1, 0);
     CHECK (a != nullptr);
     if (a != nullptr)
     {
@@ -190,10 +190,10 @@ TEST (als190ka_main_track_devices_on_the_master)
     if (! s)
         return;
     CHECK (s->mixer[0].effects.size() == 1);
-    CHECK (automationFor (*s, lynx::AutomationTargetKind::effectParam, 0, 0) != nullptr);
+    CHECK (automationFor (*s, yw::AutomationTargetKind::effectParam, 0, 0) != nullptr);
 }
 
-// The track's on / off switch under an envelope is named on its own (LYNX's mute is not automated)
+// The track's on / off switch under an envelope is named on its own (YW's mute is not automated)
 TEST (als190ka_track_on_off_automation_is_named)
 {
     using namespace als190ka;
@@ -204,7 +204,7 @@ TEST (als190ka_track_on_off_automation_is_named)
     text.replace (at, std::strlen ("<Speaker><Manual Value=\"true\" /></Speaker>"), "<Speaker><Manual Value=\"true\" /><AutomationTarget Id=\"177\" /></Speaker>");
     const auto close = text.find ("</Envelopes></AutomationEnvelopes></AudioTrack>");
     text.insert (close, envelope ("177", be (-63072000, true) + be (4, false)));
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     const auto s = load (text, &report);
     CHECK (s.has_value());
     bool named = false, generic = false;
@@ -217,7 +217,7 @@ TEST (als190ka_track_on_off_automation_is_named)
     CHECK (! generic);
 }
 
-// A Live video clip (an arrangement audio clip whose file is a video) → a LYNX video track with Live's trim, in
+// A Live video clip (an arrangement audio clip whose file is a video) → a YW video track with Live's trim, in
 // seconds; its sound stays an audio clip on the track's insert
 TEST (als190ka_video_clip_keeps_its_trim)
 {
@@ -225,7 +225,7 @@ TEST (als190ka_video_clip_keeps_its_trim)
     als190ka::Track t;
     // unwarped: the loop is in seconds; at 100 bpm beat 4 = 2.4 s, 6.6667 beats = 4 s; file seconds 5 … 9
     t.clips = audioClip (4.0, 4.0 * 100.0 / 60.0, "E:/sets/clock.mp4", false, 5.0, 9.0);
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     const auto s = load (set ({ t }), &report, { "E:/sets/clock.mp4" });
     CHECK (s.has_value());
     if (! s)
@@ -241,13 +241,13 @@ TEST (als190ka_video_clip_keeps_its_trim)
     CHECK (c.uid != 0);
     int audio = 0;
     for (const auto& p : s->playlist)
-        audio += p.kind == lynx::ClipKind::audio;
+        audio += p.kind == yw::ClipKind::audio;
     CHECK (audio == 1);
-    CHECK (lynx::videotrack::isVideoPath ("C:\\a\\b.MOV") && ! lynx::videotrack::isVideoPath ("x.wav") && ! lynx::videotrack::isVideoPath ("mp4.d/x"));
+    CHECK (yw::videotrack::isVideoPath ("C:\\a\\b.MOV") && ! yw::videotrack::isVideoPath ("x.wav") && ! yw::videotrack::isVideoPath ("mp4.d/x"));
 }
 
-// Live's take lanes → LYNX's take lanes: muted rows folded under the track, whose row becomes the comp track
-TEST (als190ka_take_lanes_become_lynx_take_lanes)
+// Live's take lanes → YW's take lanes: muted rows folded under the track, whose row becomes the comp track
+TEST (als190ka_take_lanes_become_yw_take_lanes)
 {
     using namespace als190ka;
     als190ka::Track t;
@@ -259,7 +259,7 @@ TEST (als190ka_take_lanes_become_lynx_take_lanes)
                               "</Events></ClipAutomation></TakeLane></TakeLanes></TakeLanes>";
     const auto at = text.find ("<AutomationEnvelopes>"); // (the first track's)
     text.insert (at, lanes);
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     const auto s = load (text, &report, { "E:/sets/take1.wav", "E:/sets/take2.wav" });
     CHECK (s.has_value());
     if (! s)
@@ -273,17 +273,17 @@ TEST (als190ka_take_lanes_become_lynx_take_lanes)
     CHECK (! s->playlistTracks[3].grouped && s->playlistTracks[3].name == "T2");
     int onRow[4] = {};
     for (const auto& c : s->playlist)
-        if (c.kind == lynx::ClipKind::audio && c.track >= 0 && c.track < 4)
+        if (c.kind == yw::ClipKind::audio && c.track >= 0 && c.track < 4)
             ++onRow[c.track];
     CHECK (onRow[0] == 1 && onRow[1] == 1 && onRow[2] == 1 && onRow[3] == 0);
     CHECK (s->playlistTracks[1].mixerTrack == s->playlistTracks[0].mixerTrack);
 }
 
-// .als export of automation (coverage arrangement-0115): a send's envelope goes to its return's send knob, and a LYNX
+// .als export of automation (coverage arrangement-0115): a send's envelope goes to its return's send knob, and a YW
 // curve (a bent segment) comes back from Live's straight pieces within 0.1 dB
 TEST (als190ka_send_and_curve_automation_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = Song::makeDefault();
     s.setRoute (1, 5, true);
     s.mixer[1].sends.back().level = 0.0f; // a throw: the send rests at −inf
@@ -368,16 +368,16 @@ TEST (als190ka_envelopes_follow_lives_curves)
         return;
     struct Case
     {
-        lynx::AutomationTargetKind kind;
+        yw::AutomationTargetKind kind;
         int index, slot;
         std::vector<std::pair<double, double>> measured; // (beat, dB in Live's render)
     };
     const auto ret = (int) s->mixer.size() - 1;
     const std::vector<Case> cases {
-        { lynx::AutomationTargetKind::mixerVolume, 1, 0, { { 1, -54.92 }, { 2, -44.64 }, { 4, -28.8 }, { 8, -14.0 }, { 12, -4.0 }, { 14, 1.0 } } },
-        { lynx::AutomationTargetKind::mixerVolume, 2, 0, { { 2, -1.01 }, { 4, -3.94 }, { 6, -9.3 }, { 10, -18.38 }, { 14, -6.11 } } },
-        { lynx::AutomationTargetKind::mixerVolume, 3, 0, { { 2, -0.63 }, { 4, -1.29 }, { 6, -2.75 }, { 7, -4.92 }, { 13, -4.1 }, { 14, -1.71 }, { 16, -0.31 } } },
-        { lynx::AutomationTargetKind::mixerSend, 4, ret, { { 2, -50.64 }, { 4, -34.8 }, { 8, -20.0 }, { 12, -10.0 } } },
+        { yw::AutomationTargetKind::mixerVolume, 1, 0, { { 1, -54.92 }, { 2, -44.64 }, { 4, -28.8 }, { 8, -14.0 }, { 12, -4.0 }, { 14, 1.0 } } },
+        { yw::AutomationTargetKind::mixerVolume, 2, 0, { { 2, -1.01 }, { 4, -3.94 }, { 6, -9.3 }, { 10, -18.38 }, { 14, -6.11 } } },
+        { yw::AutomationTargetKind::mixerVolume, 3, 0, { { 2, -0.63 }, { 4, -1.29 }, { 6, -2.75 }, { 7, -4.92 }, { 13, -4.1 }, { 14, -1.71 }, { 16, -0.31 } } },
+        { yw::AutomationTargetKind::mixerSend, 4, ret, { { 2, -50.64 }, { 4, -34.8 }, { 8, -20.0 }, { 12, -10.0 } } },
     };
     for (const auto& c : cases)
     {
@@ -394,7 +394,7 @@ TEST (als190ka_envelopes_follow_lives_curves)
     const auto sp = load (set ({ p }, 120.0));
     CHECK (sp.has_value());
     if (sp)
-        if (const auto* a = automationFor (*sp, lynx::AutomationTargetKind::mixerPan, 1); a != nullptr)
+        if (const auto* a = automationFor (*sp, yw::AutomationTargetKind::mixerPan, 1); a != nullptr)
         {
             // y(x) of the Bézier (0.9, 0.1), (1, 0): at x = 0.5 the curve is still near the start
             const auto v = valueAt (*sp, *a, 8.0);

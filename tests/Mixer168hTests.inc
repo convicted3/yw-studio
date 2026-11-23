@@ -6,7 +6,7 @@
 
 TEST (mixer168h_layouts_names_order_and_fl_widths)
 {
-    using namespace lynx::mixerlayout;
+    using namespace yw::mixerlayout;
     // FL's drop-down (TFXForm.FXViewModeSelect): its items in order, FL's FXViewMode index = the position
     const char* names[] { "Compact", "Compact 2", "Compact alt", "Wide", "Wide 2", "Wide 3", "Wide alt", "Extra large" };
     for (int i = 0; i < layoutCount; ++i)
@@ -27,7 +27,7 @@ TEST (mixer168h_layouts_names_order_and_fl_widths)
     CHECK (parse ("0") == Layout::compact && parse ("7") == Layout::extraLarge && parse (" 4 ") == Layout::wide2);
     CHECK (parse ("8") == Layout::wide && parse ("-1") == Layout::wide && parse ("abc") == Layout::wide && parse ("") == Layout::wide);
 
-    // LYNX's drawing of them: names up the strip except Extra large; the alt layouts put it low; widths = FL's
+    // YW's drawing of them: names up the strip except Extra large; the alt layouts put it low; widths = FL's
     for (int i = 0; i < layoutCount; ++i)
     {
         const auto l = (Layout) i;
@@ -44,15 +44,15 @@ TEST (mixer168h_layouts_names_order_and_fl_widths)
 
 TEST (mixer168h_track_icons_map_fl_indices)
 {
-    using namespace lynx::trackicons;
-    // every LYNX icon but `tag` is in the picker once, with a distinct FL index
+    using namespace yw::trackicons;
+    // every YW icon but `tag` is in the picker once, with a distinct FL index
     std::set<int> flSeen;
     std::set<int> iconSeen;
     for (const auto& e : entries)
     {
         CHECK (iconSeen.insert ((int) e.icon).second);
         CHECK (flSeen.insert (e.flIndex).second);
-        CHECK (iconFor (e.flIndex) == e.icon);     // what LYNX saves reads back as the same icon
+        CHECK (iconFor (e.flIndex) == e.icon);     // what YW saves reads back as the same icon
         CHECK (flIndexOf (e.icon) == e.flIndex);
         CHECK (! e.name.empty());
     }
@@ -64,7 +64,7 @@ TEST (mixer168h_track_icons_map_fl_indices)
     CHECK (iconFor (20) == Icon::vocals && iconFor (3) == Icon::strings && iconFor (14) == Icon::bass && iconFor (12) == Icon::piano);
     CHECK (iconFor (93) == Icon::sidechain && iconFor (116) == Icon::master && iconFor (119) == Icon::reverb && iconFor (132) == Icon::clap);
     CHECK (iconFor (59) == Icon::number1 && iconFor (67) == Icon::number9);
-    // FL icons LYNX has no own one for: the closest, else a label; 0 / negative: none
+    // FL icons YW has no own one for: the closest, else a label; 0 / negative: none
     CHECK (iconFor (10) == Icon::flute && iconFor (80) == Icon::cymbal && iconFor (90) == Icon::acousticGuitar && iconFor (74) == Icon::automation);
     CHECK (iconFor (200) == Icon::tag && iconFor (0xFFFF) == Icon::tag && iconFor (0) == Icon::none && iconFor (-3) == Icon::none);
     CHECK (flIndexOf (Icon::tag) == 0);
@@ -74,7 +74,7 @@ TEST (mixer168h_default_insert_names_follow_the_position)
 {
     // issue #47's screenshot: insert 16 moved to strip 8 kept "Insert 16". FL shows an unnamed track as "Insert <its
     // number>": the default name follows the move, a user's name stays with its track.
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer.resize (17);
     for (int t = 1; t < 17; ++t)

@@ -5,7 +5,7 @@
 
 #include <vorbis/codec.h>
 
-namespace lynx::oggvorbis
+namespace yw::oggvorbis
 {
 bool isOggWav (const std::uint8_t* d, std::size_t size)
 {
@@ -206,4 +206,4 @@ bool decode (const std::uint8_t* bytes, std::size_t size, Decoded& out)
 
     return out.channels > 0;
 }
-} // namespace lynx::oggvorbis
+} // namespace yw::oggvorbis

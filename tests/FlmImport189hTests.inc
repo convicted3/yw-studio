@@ -7,7 +7,7 @@ namespace flm189h
 // the host calls with blocks of `block` frames (0 = one call per tick) and gives the song position before each call
 inline std::vector<float> squareHp (int block)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (EffectKind::pocketMultiFx);
     fx->prepare (48000.0);
     auto p = makeEffectSlot (EffectKind::pocketMultiFx).params;
@@ -24,7 +24,7 @@ inline std::vector<float> squareHp (int block)
     for (int at = 0; at < (int) l.size();)
     {
         const auto n = std::min (block > 0 ? block : 250, (int) l.size() - at);
-        fx->setSongPosition ((double) at * 0.04); // LYNX ticks (960 a beat): 24000 samples a beat
+        fx->setSongPosition ((double) at * 0.04); // YW ticks (960 a beat): 24000 samples a beat
         fx->process (l.data() + at, r.data() + at, n, p, 120.0);
         at += n;
     }

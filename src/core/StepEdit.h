@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace lynx::stepedit
+namespace yw::stepedit
 {
 struct Played
 {
@@ -79,4 +79,4 @@ inline std::int64_t stepLength (std::int64_t mainSnapTicks, std::int64_t editorG
         return mainSnapTicks;
     return editorGridTicks > 1 ? editorGridTicks : (std::int64_t) ticksPerStep;
 }
-} // namespace lynx::stepedit
+} // namespace yw::stepedit

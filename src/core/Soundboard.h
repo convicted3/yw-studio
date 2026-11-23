@@ -1,9 +1,9 @@
 #pragma once
 
-// Soundboard (round 190kk): LYNX's resonant body — the input rings a bank of tuned modes laid out like one of seven
+// Soundboard (round 190kk): YW's resonant body — the input rings a bank of tuned modes laid out like one of seven
 // objects (beam, marimba bar, string, membrane, plate, pipe, tube). It is the engine an imported Ableton Live "Corpus"
-// opens on. Clean-room: the mode tables and laws below come from LYNX's own analysis of Live 12.4's impulse responses
-// (round 190kk, /mnt/e/lynx-work/livedev190kk RESULTS.md §3: 7 objects, Tune, Decay, Material, Brightness, Inharmonics,
+// opens on. Clean-room: the mode tables and laws below come from YW's own analysis of Live 12.4's impulse responses
+// (round 190kk, /mnt/e/yw-work/livedev190kk RESULTS.md §3: 7 objects, Tune, Decay, Material, Brightness, Inharmonics,
 // Ratio, Radius, Hit, Listening, Quality, Spread, Gain, Bleed, Dry/Wet, Width, Filter); textbook physics where it fits
 // (the free beam's modes, a rectangular membrane / plate), nothing of Live's code or content.
 //
@@ -28,7 +28,7 @@
 #include <cmath>
 #include <complex>
 
-namespace lynx::soundboard
+namespace yw::soundboard
 {
 enum Param
 {
@@ -420,4 +420,4 @@ private:
     Biquad bleedC, filterC;
     std::array<State, 2> inFilter {}, bleedFilter {};
 };
-} // namespace lynx::soundboard
+} // namespace yw::soundboard

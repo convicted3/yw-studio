@@ -4,9 +4,9 @@ namespace r180dtiming
 {
 // Renders `notes` eighth notes of a one-frame click on `instrument` in song mode, in blocks of `block` frames with the
 // transport's own tick accumulation (AudioEngine: position += n · ticksPerSample), and returns each note's first frame.
-inline std::vector<long> onsets (lynx::InstrumentKind instrument, int notes, int block, double rate, double bpm)
+inline std::vector<long> onsets (yw::InstrumentKind instrument, int notes, int block, double rate, double bpm)
 {
-    using namespace lynx;
+    using namespace yw;
     auto click = std::make_shared<SampleData>();
     click->sampleRate = rate;
     click->left.assign (4000, 0.0f);
@@ -62,7 +62,7 @@ inline std::vector<long> onsets (lynx::InstrumentKind instrument, int notes, int
 
 TEST (render180d_notes_start_on_their_exact_frame)
 {
-    using namespace lynx;
+    using namespace yw;
     // 120 BPM: an eighth note is 11025 frames at 44.1 kHz; 140 BPM at 48 kHz: 10285.714…, FL rounds each to its frame
     for (const auto& [rate, bpm] : { std::pair { 44100.0, 120.0 }, std::pair { 48000.0, 140.0 } })
         for (const auto block : { 512, 441, 64 })

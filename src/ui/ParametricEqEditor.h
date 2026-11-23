@@ -7,7 +7,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // 7-band parametric EQ (like FL's Parametric EQ 2). Its window is the native effect editor in FL's arrangement
 // (ui/PluginEditors.h, core/PluginLayout.cpp): the response curve with one handle per band (drag = frequency and gain,
@@ -55,7 +55,7 @@ juce::String bandText (const EffectParams& params, int band);
 
 // Round 166f (issue #16): FL's Parametric EQ 2 display — the spectrum of the EQ's output (FL's "histogram", on by
 // default) and the heatmap (Options › Heatmap: every frequency lit by its long-term level, cold → hot, so a boosted
-// region glows hotter and a cut one colder; off by default, Full / Top / Bottom). The settings are LYNX-wide
+// region glows hotter and a cut one colder; off by default, Full / Top / Bottom). The settings are YW-wide
 // (settings folder, peq2-display.txt).
 struct DisplaySettings
 {
@@ -87,4 +87,4 @@ private:
     bool any = false;
 };
 } // namespace peqview
-} // namespace lynx
+} // namespace yw

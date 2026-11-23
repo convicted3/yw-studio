@@ -4,7 +4,7 @@
 
 TEST (simple184a_layout_style_ids_round_trip)
 {
-    using namespace lynx::layoutstyle;
+    using namespace yw::layoutstyle;
     for (auto s : { Style::pattern, Style::clipLaunch, Style::simple })
     {
         CHECK (fromId (id (s)) == s);
@@ -23,7 +23,7 @@ TEST (simple184a_layout_style_ids_round_trip)
 
 TEST (simple184a_layout_style_workspace_files)
 {
-    using namespace lynx::layoutstyle;
+    using namespace yw::layoutstyle;
     // round 181a's two file names are kept, so the users' saved layouts still load
     CHECK (std::string (workspaceFile (Style::pattern)) == "workspace-pattern.txt");
     CHECK (std::string (workspaceFile (Style::clipLaunch)) == "workspace-cliplaunch.txt");
@@ -32,7 +32,7 @@ TEST (simple184a_layout_style_workspace_files)
 
 TEST (simple184a_layout_style_settings_keys)
 {
-    using namespace lynx::layoutstyle;
+    using namespace yw::layoutstyle;
     // a 181a settings file: only the old key
     {
         SettingsReader r;

@@ -4,12 +4,12 @@
 // Iconography): the selected track shows a downward arrow (its audio goes out); every other track an up-arrow that
 // is the Send switch from the selected track (hollow: available, lit: the selected track sends here); a track that
 // feeds the selected one shows a greyed switch (routing back would make a loop); a small up-arrow above the switch
-// says another track sends into this one ("Send in use"). LYNX keeps its "→ n" pill in the routing lane as well.
+// says another track sends into this one ("Send in use"). YW keeps its "→ n" pill in the routing lane as well.
 // No JUCE: the state only (ui/MixerComponent.cpp draws it).
 
 #include "core/Song.h"
 
-namespace lynx::routearrow
+namespace yw::routearrow
 {
 enum class State
 {
@@ -42,4 +42,4 @@ inline bool receives (const Song& song, int track) noexcept
             return true;
     return false;
 }
-} // namespace lynx::routearrow
+} // namespace yw::routearrow

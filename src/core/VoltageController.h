@@ -5,7 +5,7 @@
 // stereo pair (the channel's own audio) and three more pairs added to chosen mixer inserts — each carry one source
 // (pitch, gate, trigger, velocity, volume, pan, Mod X, Mod Y, clock or nothing) with its offset, scale and polarity:
 // out = range (scale · (source + offset)); full scale 1.0 = 10 V. Clean-room: our own code from FL's decompiled
-// behaviour and state format; LYNX keeps FL's state bytes as the channel's settings (ChannelDef::pluginState).
+// behaviour and state format; YW keeps FL's state bytes as the channel's settings (ChannelDef::pluginState).
 
 #include <array>
 #include <cstdint>
@@ -14,12 +14,12 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 }
 
-namespace lynx::voltage
+namespace yw::voltage
 {
 enum class Source : std::uint8_t { pitch, gate, trigger, velocity, volume, pan, modX, modY, clock, none };
 constexpr int sourceCount = 10;
@@ -40,12 +40,12 @@ struct Settings
     int clockPpq = 24;             // clock pulses per quarter note
     int pulseLength = 15;          // trigger / clock pulse length, samples (1…500)
     double pitchFactor = 1.0;      // pitch scaling (calibration)
-    std::array<std::uint8_t, outputs> voice {}; // FL v3 "mod source" per output (kept; LYNX follows the last note)
+    std::array<std::uint8_t, outputs> voice {}; // FL v3 "mod source" per output (kept; YW follows the last note)
 
     bool operator== (const Settings&) const = default;
 };
 
-// FL's state (versions 1…3; LYNX writes 3): nullopt when it does not parse.
+// FL's state (versions 1…3; YW writes 3): nullopt when it does not parse.
 std::optional<Settings> parse (const std::vector<std::uint8_t>& state);
 std::vector<std::uint8_t> write (const Settings& settings);
 
@@ -68,4 +68,4 @@ const char* sourceName (Source source) noexcept;
 const char* outputName (int output) noexcept; // "Main L", "Out 2 R"…
 
 std::unique_ptr<Instrument> makeInstrument();
-} // namespace lynx::voltage
+} // namespace yw::voltage

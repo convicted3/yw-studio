@@ -12,14 +12,14 @@
 #include "core/Vfx.h"
 #include <algorithm>
 
-namespace lynx::generators
+namespace yw::generators
 {
 std::vector<Entry> entries (AudioEngine& engine, bool withUnavailable)
 {
     std::vector<Entry> out;
     auto add = [&out] (std::string english, juce::String label, juce::String detail, int folder, int section, InstrumentKind kind,
                        std::function<std::optional<ChannelDef>()> make) {
-        out.push_back ({ "lynx:gen:" + english, std::move (label), std::move (detail), folder, std::move (make), section, kind });
+        out.push_back ({ "yw:gen:" + english, std::move (label), std::move (detail), folder, std::move (make), section, kind });
     };
     // a built-in whose channel is `kind` with the English name; `setup` fills its state
     auto builtIn = [&add] (const char* english, juce::String label, int section, InstrumentKind kind, std::function<void (ChannelDef&)> setup = nullptr) {

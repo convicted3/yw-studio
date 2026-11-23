@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace lynx::fpc
+namespace yw::fpc
 {
 namespace
 {
@@ -516,4 +516,4 @@ std::u16string fromUtf8 (const std::string& text)
 
     return out;
 }
-} // namespace lynx::fpc
+} // namespace yw::fpc

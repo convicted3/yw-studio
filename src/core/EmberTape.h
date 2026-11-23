@@ -9,7 +9,7 @@
 // of residual there, while any memoryless curve — with any EQ around it — keeps the fundamental's phase exactly. A
 // Jiles–Atherton magnetisation loop is the textbook element with memory (D. C. Jiles, D. L. Atherton, "Theory of
 // ferromagnetic hysteresis", J. Magn. Magn. Mater. 61, 1986; its use for tape: J. Chowdhury, "Real-time physical
-// modelling for analog tape machines", DAFx-19). LYNX's own implementation of the published differential equation,
+// modelling for analog tape machines", DAFx-19). YW's own implementation of the published differential equation,
 // solved per oversampled sample (midpoint Runge–Kutta on the field step, the Langevin function from a table), with a
 // slow creep back to the anhysteretic curve so that no remanent offset outlives the signal (the reference's tails are
 // exactly zero). Fitted on the renders, the loop stays narrow: its Langevin saturation, the record level law, the field
@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::embertape
+namespace yw::embertape
 {
 // one style's fitted constants at one speed (the tables live in MixSuite.cpp next to the style)
 struct Model
@@ -293,4 +293,4 @@ inline double smallSignalGain (const Model& md, double fieldGain, double rate) n
     const double g = sy / sx / amp;
     return g > 1.0e-9 ? g : 1.0;
 }
-} // namespace lynx::embertape
+} // namespace yw::embertape

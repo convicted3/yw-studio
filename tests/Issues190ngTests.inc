@@ -5,13 +5,13 @@
 #include "core/ExportNaming.h"
 #include "core/ExportOptions.h"
 #include "core/KeyMap.h"
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/TrackIconScale.h"
 #include "core/TrackIcons.h"
 
 TEST (issues190ng_217_esc_closes_the_focused_window)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (escclose::enabled()); // FL 2026: on by default
     CHECK (escclose::closesPanel (true, true, true));
     CHECK (! escclose::closesPanel (false, true, true));  // the switch off: windows stay
@@ -26,7 +26,7 @@ TEST (issues190ng_217_esc_closes_the_focused_window)
 
 TEST (issues190ng_219_fl_snap_key_in_the_key_map)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     // FL's Backspace (the main snap's hint "BkSp") in the Playlist and the Piano roll
@@ -41,7 +41,7 @@ TEST (issues190ng_219_fl_snap_key_in_the_key_map)
 
 TEST (issues190ng_220_icon_search_and_f3)
 {
-    using namespace lynx::trackicons;
+    using namespace yw::trackicons;
     const auto english = [] (std::string_view s) { return std::string (s); };
     CHECK (search ("", english).size() == entries.size());
     const auto hat = search ("hat", english);
@@ -56,7 +56,7 @@ TEST (issues190ng_220_icon_search_and_f3)
     const auto bumbo = search ("bum", portuguese);
     CHECK (bumbo.size() == 1 && entries[(std::size_t) bumbo.front()].icon == Icon::kick);
 
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.find ({ f3, none }, Context::playlist, false) == "playlist.changeIcon");
     CHECK (map.find ({ f3, none }, Context::mixer, false) == "mixer.changeIcon");
@@ -67,7 +67,7 @@ TEST (issues190ng_220_icon_search_and_f3)
 
 TEST (issues190ng_222_track_icons_grow_with_the_track)
 {
-    using namespace lynx::trackiconscale;
+    using namespace yw::trackiconscale;
     // FL 2026, measured: rows 56 / 68 / 80 px no big icon, 92 / 104 / 116 px half the row
     for (const auto h : { 14, 26, 56, 68, 80 })
         CHECK (bigIconSize (h, 100) == 0);
@@ -83,7 +83,7 @@ TEST (issues190ng_222_track_icons_grow_with_the_track)
 
 TEST (issues190ng_215_export_name_wildcards)
 {
-    using namespace lynx::exportnaming;
+    using namespace yw::exportnaming;
     Context c;
     c.project = "MySong";
     c.year = 2026;
@@ -121,8 +121,8 @@ TEST (issues190ng_215_export_name_wildcards)
     CHECK (resolve ("$project_$track", c, true) == "MySong_$track");
     CHECK (resolve ("$project_$track", c, false) == "MySong_Master");
     CHECK (hasStemWildcard ("x_$track") && hasStemWildcard ("$Insert") && ! hasStemWildcard ("$$track") && ! hasStemWildcard ("$project"));
-    CHECK (lynx::exportopts::stemFileName ("MySong_$track", 3, "Kick: 808", ".wav") == "MySong_Kick_ 808.wav");
-    CHECK (lynx::exportopts::stemFileName ("MySong", 3, "Kick", ".wav") == "MySong - 3 Kick.wav"); // (no wildcard: as before)
+    CHECK (yw::exportopts::stemFileName ("MySong_$track", 3, "Kick: 808", ".wav") == "MySong_Kick_ 808.wav");
+    CHECK (yw::exportopts::stemFileName ("MySong", 3, "Kick", ".wav") == "MySong - 3 Kick.wav"); // (no wildcard: as before)
     // safe names on every system
     CHECK (sanitise ("a/b\\c:d*e?f\"g<h>i|j") == "a_b_c_d_e_f_g_h_i_j");
     CHECK (sanitise ("  name. . ") == "name");
@@ -137,7 +137,7 @@ TEST (issues190ng_215_export_name_wildcards)
 
 TEST (issues190ng_215_template_is_kept_with_the_choices)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     Options o;
     CHECK (o.nameTemplate == "$project");
     o.nameTemplate = "$project_$date=v2";

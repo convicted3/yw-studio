@@ -38,8 +38,8 @@ TEST (flp182e_patcher_sidechain_pin_is_an_index_into_the_inputs)
             }
             project.mixer.push_back (insert);
         }
-        const auto song = lynx::importFlp (project);
-        const bool ok = song.mixer.size() > 5 && song.mixer[5].effects.size() == 1 && song.mixer[5].effects[0].kind == lynx::EffectKind::patcher;
+        const auto song = yw::importFlp (project);
+        const bool ok = song.mixer.size() > 5 && song.mixer[5].effects.size() == 1 && song.mixer[5].effects[0].kind == yw::EffectKind::patcher;
         return ok ? song.mixer[5].effects[0].sidechain : -100;
     };
     // the inputs of insert 5 are [5, 2, 4]

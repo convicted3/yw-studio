@@ -14,7 +14,7 @@
 #include "ui/ToolWindow.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -29,7 +29,7 @@ juce::String pitchClassName (int pc)
     return names[((pc % 12) + 12) % 12];
 }
 
-// A small knob with LYNX's control contract (drag, Ctrl = fine, wheel, Alt / middle-click / double-click reset,
+// A small knob with YW's control contract (drag, Ctrl = fine, wheel, Alt / middle-click / double-click reset,
 // right-click: type a value / reset)
 class Knob final : public juce::Component
 {
@@ -1485,7 +1485,7 @@ private:
     static juce::String keyText (double v)
     {
         const auto k = (int) std::lround (v) - 1; // (FL stores the key + 1)
-        return k < 0 ? juce::String ("-") : pitchClassName (k % 12) + juce::String (k / 12 - 1); // (LYNX's names: 60 = C4)
+        return k < 0 ? juce::String ("-") : pitchClassName (k % 12) + juce::String (k / 12 - 1); // (YW's names: 60 = C4)
     }
 
     E settings = vfx::defaultEnvelope();
@@ -1518,7 +1518,7 @@ private:
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// VFX Sequencer (FL's layout, LYNX's look): the sequence on top, a big grid that edits the chosen lane, the six lanes
+// VFX Sequencer (FL's layout, YW's look): the sequence on top, a big grid that edits the chosen lane, the six lanes
 // below (click one to edit it), the parameters on the right; 16 steps per page
 
 class SequencerBody final : public Body
@@ -2171,7 +2171,7 @@ private:
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// VFX Script: the script and the values of its controls, kept as FL saved them (LYNX does not run Python)
+// VFX Script: the script and the values of its controls, kept as FL saved them (YW does not run Python)
 
 // Python syntax colours for the script editor (keywords, strings, comments, numbers, builtins / decorators)
 class PythonTokeniser final : public juce::CodeTokeniser
@@ -2325,7 +2325,7 @@ juce::String errorSummary (const std::string& error)
 }
 
 // VFX Script (round 165d): FL's tabs — User interface (the controls the script declares), Script (the code),
-// Log (print() and errors), API reference. LYNX runs the script with its built-in Python.
+// Log (print() and errors), API reference. YW runs the script with its built-in Python.
 class ScriptBody final : public Body, private juce::Timer, private juce::CodeDocument::Listener
 {
 public:
@@ -2962,7 +2962,7 @@ private:
     juce::TextButton clearLog;
 };
 
-// A kind LYNX does not edit yet: says so (its notes pass through)
+// A kind YW does not edit yet: says so (its notes pass through)
 class PendingBody final : public Body
 {
 public:
@@ -3153,7 +3153,7 @@ private:
     struct PresetEntry
     {
         juce::String folder, name;
-        std::vector<std::uint8_t> fl; // LYNX's own
+        std::vector<std::uint8_t> fl; // YW's own
         juce::File file;              // FL's
     };
 
@@ -3298,4 +3298,4 @@ std::unique_ptr<juce::Component> makeVfxEditor (AudioEngine& engine, int channel
         },
         channel, [&engine, channel] { return engine.getChannelInstrument (channel); });
 }
-} // namespace lynx
+} // namespace yw

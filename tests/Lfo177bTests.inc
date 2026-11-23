@@ -1,5 +1,5 @@
 // Round 177b: FL's automation clip LFO ("LFO mode", REA FUN_00fe8640 / FUN_00ba1700 / FUN_00ba0710 / FUN_00ba03d0;
-// docs/analise/REA_rodada177b.md §LFO). Event 0xEA keeps the LFO after the points; LYNX reads it, plays it and writes
+// docs/analise/REA_rodada177b.md §LFO). Event 0xEA keeps the LFO after the points; YW reads it, plays it and writes
 // it back byte for byte.
 namespace lfo177b
 {
@@ -51,7 +51,7 @@ flp::AutomationLfo lifeLfo()
     lfo.speed = 35989;
     lfo.skew = -128;
     lfo.points = { { 0.0, 0.5, 0.0f, 7 }, { 64.0, 1.0, 0.0f, 7 } };
-    // the records as FL wrote them: Δx, y, tension, curve, then three bytes LYNX does not know (kept as read)
+    // the records as FL wrote them: Δx, y, tension, curve, then three bytes YW does not know (kept as read)
     auto record = [] (double dx, double y, std::uint8_t curve, std::uint8_t extra) {
         std::vector<std::uint8_t> r (24, 0);
         std::memcpy (r.data(), &dx, 8);
@@ -90,8 +90,8 @@ TEST (lfo177b_flp_round_trip_is_byte_exact)
     CHECK (f.points.size() == 2 && f.points[1].position == 64.0 && f.points[1].value == 1.0 && f.points[1].curve == 7);
     CHECK (f.rawPoints == lfo.rawPoints);
 
-    // through LYNX's song and back: the same event, byte for byte
-    using namespace lynx;
+    // through YW's song and back: the same event, byte for byte
+    using namespace yw;
     auto song = importFlp (back, fx171e::importOptions());
     CHECK (song.automations.size() == 1);
     const auto& a = song.automations[0];
@@ -117,8 +117,8 @@ TEST (lfo177b_export_scales_the_level_by_a_partial_range)
     // FL scales the LFO by the clip's range (amt = level/128 * range). Round 190ow: the export writes the clip's own range
     // (its MIN / MAX, the rack row's knobs) again, so the level stays as FL wrote it and the event comes back byte for
     // byte (before, the whole range was written and the range moved into the level: 128 * 3600 / 12800 = 36). A clip
-    // made in LYNX (the whole range) is written as before.
-    using namespace lynx;
+    // made in YW (the whole range) is written as before.
+    using namespace yw;
     const auto file = flp::writeProject (lfo177b::projectWith (lfo177b::lifeLfo(), 6400, 10000));
     const auto event = lfo177b::automationEvent (file);
     const auto song = importFlp (flp::parseProject (file), fx171e::importOptions());
@@ -137,7 +137,7 @@ TEST (lfo177b_export_scales_the_level_by_a_partial_range)
 
 TEST (lfo177b_rate_and_shape_match_fl)
 {
-    using L = lynx::AutomationLfo;
+    using L = yw::AutomationLfo;
     // FL's stored speeds [DATA + DECOMP FUN_00ba03d0]: 45819 = 1 beat, 40898 = 2, 26257 = 16, 65536 = 1/16
     CHECK (std::abs (1.0 / L::cyclesPerBeat (45819) - 1.0) < 0.001);
     CHECK (std::abs (1.0 / L::cyclesPerBeat (40898) - 2.0) < 0.002);
@@ -157,65 +157,65 @@ TEST (lfo177b_rate_and_shape_match_fl)
     CHECK (bent > 0.0f && std::abs (bent - straight) > 0.05f);
 
     // played: the LFO starts at 0 going up (FUN_00ba06a0), a quarter cycle later it is at its top
-    lynx::Automation a;
+    yw::Automation a;
     a.points = { { 0, 0.5f, 0.0f } };
     a.lfo.on = true;
     a.lfo.add = true;
     a.lfo.level = 64; // ± 0.25 · range: FL's renders show the swing at half the waveform (L = ±0.5)
     CHECK (std::abs (a.playAt (0.0, 0.0) - 0.5f) < 0.01f);
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.25, 0.0) - 0.75f) < 0.01f);
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.75, 0.0) - 0.25f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.25, 0.0) - 0.75f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.75, 0.0) - 0.25f) < 0.01f);
     // multiply (FL's usual): value · (1 + 2·L·level/128), L = ±0.5 at most
     a.lfo.add = false;
     a.lfo.level = 32;
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.25, 0.0) - 0.625f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.25, 0.0) - 0.625f) < 0.01f);
     // FL's level 128 in multiply mode reaches 0 only at the waveform's very bottom
     a.lfo.level = 128;
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.75, 0.0) - 0.0f) < 0.01f);
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.25, 0.0) - 1.0f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.75, 0.0) - 0.0f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.25, 0.0) - 1.0f) < 0.01f);
     // the amplitude points are bipolar (FL's renders): 0.5 = no swing, 0 = the swing inverted
     a.lfo.amp = { { 0, 0.5f, 0.0f } };
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.25, 0.0) - 0.5f) < 1.0e-4f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.25, 0.0) - 0.5f) < 1.0e-4f);
     a.lfo.amp = { { 0, 0.0f, 0.0f } };
     a.lfo.add = true;
     a.lfo.level = 64;
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.25, 0.0) - 0.25f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.25, 0.0) - 0.25f) < 0.01f);
     a.lfo.amp = { { 0, 1.0f, 0.0f } };
     a.lfo.add = false;
     a.lfo.level = 32;
     // frozen: no movement inside the clip
     a.lfo.flags = 1 | 8;
-    CHECK (std::abs (a.playAt (lynx::ppq * 0.25, 0.0) - 0.5f) < 0.01f);
+    CHECK (std::abs (a.playAt (yw::ppq * 0.25, 0.0) - 0.5f) < 0.01f);
     // off: only the points (and nothing computed)
     a.lfo.on = false;
-    CHECK (a.playAt (lynx::ppq * 0.25, 0.0) == 0.5f);
+    CHECK (a.playAt (yw::ppq * 0.25, 0.0) == 0.5f);
 }
 
 TEST (lfo177b_tempo_clip_lfo_moves_the_tempo)
 {
     // round 177b: the tempo map plays a tempo clip's LFO (unverified against FL: the next FL turn renders it)
-    auto song = lynx::Song::makeDefault();
-    song.mode = lynx::PlayMode::song;
+    auto song = yw::Song::makeDefault();
+    song.mode = yw::PlayMode::song;
     song.playlist.clear();
-    lynx::Automation a;
-    a.target.kind = lynx::AutomationTargetKind::tempo;
-    a.points = { { 0, 0.5f, 0.0f }, { lynx::ppq * 16, 0.5f, 0.0f } };
+    yw::Automation a;
+    a.target.kind = yw::AutomationTargetKind::tempo;
+    a.points = { { 0, 0.5f, 0.0f }, { yw::ppq * 16, 0.5f, 0.0f } };
     a.lfo.on = true;
     a.lfo.add = true;
     a.lfo.level = 64;
     song.automations.push_back (a);
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::automation;
+    yw::Clip c;
+    c.kind = yw::ClipKind::automation;
     c.automation = 0;
     c.start = 0;
-    c.length = lynx::ppq * 16;
+    c.length = yw::ppq * 16;
     c.track = 1;
     song.playlist.push_back (c);
-    const auto flat = lynx::tempoFromValue (0.5f);
-    const auto top = song.tempoAt (lynx::ppq * 0.25), bottom = song.tempoAt (lynx::ppq * 0.75);
+    const auto flat = yw::tempoFromValue (0.5f);
+    const auto top = song.tempoAt (yw::ppq * 0.25), bottom = song.tempoAt (yw::ppq * 0.75);
     CHECK (top > flat + 1.0 && bottom < flat - 1.0);                     // a quarter cycle up, three quarters down
     CHECK (std::abs (song.tempoAt (0.0) - flat) < 0.5);                  // the LFO starts at the middle
     a.lfo.on = false;
     song.automations[0] = a;
-    CHECK (std::abs (song.tempoAt (lynx::ppq * 0.25) - flat) < 1.0e-6); // off: the flat curve
+    CHECK (std::abs (song.tempoAt (yw::ppq * 0.25) - flat) < 1.0e-6); // off: the flat curve
 }

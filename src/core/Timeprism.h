@@ -1,12 +1,12 @@
 #pragma once
 
-// Timeprism (round 190ko): LYNX's spectral freezer and delay. The input is cut into overlapping spectra
+// Timeprism (round 190ko): YW's spectral freezer and delay. The input is cut into overlapping spectra
 // (core/SpectralCore.h); a freezer holds a spectrum and keeps playing it (by hand, every interval, or at each detected
 // onset; cross-faded or with its own fade in / out, up to eight at once), and a spectral delay sends every frequency
 // through its own delay time — tilted towards the highs or lows, sprayed at random, masked to one side of the spectrum,
 // spread between left and right — with feedback whose repeats move up or down in frequency. It is the engine an
-// imported Ableton Live "Spectral Time" opens on. Clean-room: every law below comes from LYNX's own measurements of
-// Live 12.4's output on test signals (round 190ko, /mnt/e/lynx-work/meld190ko, set s1, RESULTS.md §2); nothing of
+// imported Ableton Live "Spectral Time" opens on. Clean-room: every law below comes from YW's own measurements of
+// Live 12.4's output on test signals (round 190ko, /mnt/e/yw-work/meld190ko, set s1, RESULTS.md §2); nothing of
 // Live's code or content is used. Header-only DSP, no allocation in process().
 //
 // The parameters are 0…1 (EffectParams); the laws below turn them into Live's units, which the .als import maps back.
@@ -19,7 +19,7 @@
 
 #include "core/SpectralCore.h"
 
-namespace lynx::timeprism
+namespace yw::timeprism
 {
 // (the Device View's card shows the first seven: the delay's main controls and the mix)
 enum Param
@@ -505,4 +505,4 @@ private:
     bool manualHeld = false, everFrozen = false;
     spectral::Rand rng;
 };
-} // namespace lynx::timeprism
+} // namespace yw::timeprism

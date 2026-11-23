@@ -1,7 +1,7 @@
 #pragma once
 
 // Kepler Exo's reverb (REA_rodada167d, FX task B): the engine embeds class fxReverb at synth+0x1c290, the same plate
-// LYNX already ports as ilfx::ReverbT (GMS / Toxic Biohazard / Hardcore, REA_rodada39 §1.13, 45 §FX.5, 71). This
+// YW already ports as ilfx::ReverbT (GMS / Toxic Biohazard / Hardcore, REA_rodada39 §1.13, 45 §FX.5, 71). This
 // build of the class differs from those in two places, everything else (parameter quantisation, set-up, the
 // coefficient pass, the tank) being the same code:
 //  1. parameter 4 (unnamed, raw float at +0x28, absent from the older builds) is a feedback gain on the pre-delay line:
@@ -9,7 +9,7 @@
 //  2. the early reflections always sum the full 7 left / 8 right tap tables (as Hardcore's build), but the coefficient
 //     pass (FUN_18000ba00) gives a gain only to the first tap of each side; the others are multiplied by +0.
 // Behaviour written from the decompile/asm of FL's own engine_x64.dll (clean-room); checked bit for bit against the
-// DLL's fxReverb methods called directly (harness /mnt/e/lynx-work/exo167/fxb/).
+// DLL's fxReverb methods called directly (harness /mnt/e/yw-work/exo167/fxb/).
 //
 // DLL map: ctor FUN_18000a3d0; vtable 0x1800eaac8: +0x08 process FUN_18000d630 (in/out pointer pairs, n samples),
 // +0x28 setParam FUN_18000aaf0, +0x50 reset FUN_18000a8f0 (whole buffer ← 1e-30, filter states 0, level −1000),
@@ -35,7 +35,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace kepler_exo
 {
@@ -301,4 +301,4 @@ struct ReverbT
 
 using Reverb = ReverbT<>;
 } // namespace kepler_exo
-} // namespace lynx
+} // namespace yw

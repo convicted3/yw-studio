@@ -2,36 +2,36 @@
 // FL 2026 [EXEC round 185b, a channel volume knob with an automation clip over the whole song, moved with the mouse]:
 // stopped, the moved value stays (the clip does not pull it back); playback start puts the clip's value back; moved while
 // playing (a flat clip and a 0->1 ramp), the value stays for the rest of that playback; stopping keeps it.
-// LYNX: AudioEngine::noteTweaked releases the target (RackRenderer::setReleasedSlots); the renderer forgets the released
+// YW: AudioEngine::noteTweaked releases the target (RackRenderer::setReleasedSlots); the renderer forgets the released
 // slots when the transport starts.
 
 TEST (auto125_moved_control_leaves_its_automation_until_playback_starts)
 {
-    auto song = lynx::Song::makeDefault();
-    song.mode = lynx::PlayMode::song;
+    auto song = yw::Song::makeDefault();
+    song.mode = yw::PlayMode::song;
     song.channels.clear();
     song.playlist.clear();
     song.automations.clear();
-    song.mixer = lynx::Song::defaultMixer (2);
+    song.mixer = yw::Song::defaultMixer (2);
     song.mixer[0].inputChannel = 0; // a constant through the Master's input
-    song.mixer[0].monitor = lynx::InputMonitor::on; // (heard stopped as well as playing)
-    const lynx::AutomationTarget target { lynx::AutomationTargetKind::mixerVolume, 0 };
-    lynx::Automation a;
+    song.mixer[0].monitor = yw::InputMonitor::on; // (heard stopped as well as playing)
+    const yw::AutomationTarget target { yw::AutomationTargetKind::mixerVolume, 0 };
+    yw::Automation a;
     a.target = target;
-    a.points = { { 0, 0.0f, 0.0f }, { 4 * lynx::ppq, 0.0f, 0.0f } }; // the Master's fader automated down to silence
+    a.points = { { 0, 0.0f, 0.0f }, { 4 * yw::ppq, 0.0f, 0.0f } }; // the Master's fader automated down to silence
     song.automations.push_back (a);
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
-    clip.length = 64 * lynx::ppq;
+    clip.length = 64 * yw::ppq;
     song.playlist.push_back (clip);
     std::vector<int> slots;
-    lynx::RackState::slotsOfTarget (song, target, slots);
+    yw::RackState::slotsOfTarget (song, target, slots);
 
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
-    lynx::RackRenderer renderer;
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 512);
-    lynx::LiveInput input;
+    yw::LiveInput input;
     renderer.setLiveInput (&input);
     std::vector<float> in (512, 0.25f), l (512), r (512);
     input.channels[0] = in.data();

@@ -17,7 +17,7 @@
 #include "engine/ProjectFile.h"
 #include "engine/SessionPack.h"
 
-namespace lynx::livetest
+namespace yw::livetest
 {
 namespace
 {
@@ -147,7 +147,7 @@ juce::String selfTest (const Song* rich)
     }
     uids::normalize (song);
 
-    // 1. every entity through the .lynx JSON: what does not come back the same (fields the format rounds or does not
+    // 1. every entity through the .yw JSON: what does not come back the same (fields the format rounds or does not
     // keep) — reported, not an error: the replicas adopt the host's form (core/LiveSession.h)
     const Song empty;
     const auto all = live::diff (empty, song);
@@ -234,7 +234,7 @@ juce::String selfTest (const Song* rich)
     juce::String packReport;
     bool packOk = true;
     {
-        const auto tmp = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-livepack");
+        const auto tmp = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-livepack");
         tmp.deleteRecursively();
         tmp.createDirectory();
         auto make = [&] (const juce::String& name, int bits, int channels, int frames, bool floating) {
@@ -353,7 +353,7 @@ int run (const juce::StringArray& args)
         return good;
     };
 
-    const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-livetest");
+    const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-livetest");
     dir.deleteRecursively();
     const auto hostWav = dir.getChildFile ("host/kick.wav"), anaWav = dir.getChildFile ("ana/bass line.wav");
     writeWav (hostWav, 60.0f, 24000);
@@ -479,22 +479,22 @@ int run (const juce::StringArray& args)
                         }
                         const auto &x = hs.mixer[i], &y = ps.mixer[i];
                         juce::StringArray f;
-#define LYNX_FIELD(n) if (! (x.n == y.n)) f.add (#n);
-                        LYNX_FIELD (name) LYNX_FIELD (volume) LYNX_FIELD (pan) LYNX_FIELD (muted) LYNX_FIELD (solo) LYNX_FIELD (soloSources) LYNX_FIELD (effects)
-                        LYNX_FIELD (toMaster) LYNX_FIELD (masterLevel) LYNX_FIELD (stereo) LYNX_FIELD (colour) LYNX_FIELD (invertPhase) LYNX_FIELD (swapChannels)
-                        LYNX_FIELD (sends) LYNX_FIELD (eq) LYNX_FIELD (inputChannel) LYNX_FIELD (inputStereo) LYNX_FIELD (monitor) LYNX_FIELD (recordSafe)
-                        LYNX_FIELD (recordTo) LYNX_FIELD (recordSource) LYNX_FIELD (recordDryToo) LYNX_FIELD (flInput) LYNX_FIELD (outputChannel) LYNX_FIELD (outputMode)
-                        LYNX_FIELD (threaded) LYNX_FIELD (separator) LYNX_FIELD (dock) LYNX_FIELD (latencyMs) LYNX_FIELD (latencyBypass)
-                        LYNX_FIELD (compensateMasterLatency) LYNX_FIELD (standIns) LYNX_FIELD (icon)
-#undef LYNX_FIELD
+#define YW_FIELD(n) if (! (x.n == y.n)) f.add (#n);
+                        YW_FIELD (name) YW_FIELD (volume) YW_FIELD (pan) YW_FIELD (muted) YW_FIELD (solo) YW_FIELD (soloSources) YW_FIELD (effects)
+                        YW_FIELD (toMaster) YW_FIELD (masterLevel) YW_FIELD (stereo) YW_FIELD (colour) YW_FIELD (invertPhase) YW_FIELD (swapChannels)
+                        YW_FIELD (sends) YW_FIELD (eq) YW_FIELD (inputChannel) YW_FIELD (inputStereo) YW_FIELD (monitor) YW_FIELD (recordSafe)
+                        YW_FIELD (recordTo) YW_FIELD (recordSource) YW_FIELD (recordDryToo) YW_FIELD (flInput) YW_FIELD (outputChannel) YW_FIELD (outputMode)
+                        YW_FIELD (threaded) YW_FIELD (separator) YW_FIELD (dock) YW_FIELD (latencyMs) YW_FIELD (latencyBypass)
+                        YW_FIELD (compensateMasterLatency) YW_FIELD (standIns) YW_FIELD (icon)
+#undef YW_FIELD
                         for (std::size_t e = 0; e < x.effects.size() && e < y.effects.size(); ++e)
                         {
                             const auto &ex = x.effects[e], &ey = y.effects[e];
-#define LYNX_FIELD(n) if (! (ex.n == ey.n)) f.add ("fx" + juce::String ((int) e) + "." #n);
-                            LYNX_FIELD (kind) LYNX_FIELD (enabled) LYNX_FIELD (params) LYNX_FIELD (mix) LYNX_FIELD (plugin) LYNX_FIELD (sidechain) LYNX_FIELD (sidechain2)
-                            LYNX_FIELD (sendTracks) LYNX_FIELD (state) LYNX_FIELD (samplePath) LYNX_FIELD (substituteFor) LYNX_FIELD (presetName) LYNX_FIELD (abOther)
-                            LYNX_FIELD (abShowingB) LYNX_FIELD (patcher)
-#undef LYNX_FIELD
+#define YW_FIELD(n) if (! (ex.n == ey.n)) f.add ("fx" + juce::String ((int) e) + "." #n);
+                            YW_FIELD (kind) YW_FIELD (enabled) YW_FIELD (params) YW_FIELD (mix) YW_FIELD (plugin) YW_FIELD (sidechain) YW_FIELD (sidechain2)
+                            YW_FIELD (sendTracks) YW_FIELD (state) YW_FIELD (samplePath) YW_FIELD (substituteFor) YW_FIELD (presetName) YW_FIELD (abOther)
+                            YW_FIELD (abShowingB) YW_FIELD (patcher)
+#undef YW_FIELD
                             if (! (ex.params == ey.params))
                                 for (std::size_t q = 0; q < ex.params.size(); ++q)
                                     if (! (ex.params[q] == ey.params[q]))
@@ -1096,7 +1096,7 @@ int run (const juce::StringArray& args)
         }
     }
 
-    // the host's LYNX SHARE "crashes" and restarts: it resumes from its journal, the guests come back by themselves
+    // the host's YW Studio "crashes" and restarts: it resumes from its journal, the guests come back by themselves
     {
         pumpUntil ([] { return false; }, 2600); // (the journal is written at most every 2 s)
         const auto journal = dir.getChildFile ("host journal.json");
@@ -1169,7 +1169,7 @@ int run (const juce::StringArray& args)
         host.live->onMediaLimit = nullptr;
     }
 
-    // Ana's LYNX SHARE "crashes" with an edit the host has not confirmed, and restarts: she goes back in from her
+    // Ana's YW Studio "crashes" with an edit the host has not confirmed, and restarts: she goes back in from her
     // journal as herself (same tag, permissions, no question to the host), nothing lost
     {
         host.live->setPermissions (anaTag, [] { live::Permissions p; p.settings = true; return p; }(), false);
@@ -1225,7 +1225,7 @@ int run (const juce::StringArray& args)
                "after her restart: her tempo change (101 BPM) and new sample reached everyone, the host's new sample reached her");
         explain ({ &ana, &rui });
         host.live->setPermissions (anaTag, {}, false);
-        // her LYNX SHARE closes by itself (the window is closed): the journal stays, and the host keeps her place
+        // her YW Studio closes by itself (the window is closed): the journal stays, and the host keeps her place
         ana.live.reset();
         const auto closed = LiveSessionManager::readGuestJournal (journal);
         pumpUntil ([&] { return ! anaOnline(); }, 10000);
@@ -1237,7 +1237,7 @@ int run (const juce::StringArray& args)
         check (again && ana.live->myTag() == anaTag, "she opens it again and goes back in a second time (" + ana.live->getStatus() + ")");
     }
 
-    // Rui's LYNX SHARE restarts and he chooses not to go back: the host is told, his place is free again
+    // Rui's YW Studio restarts and he chooses not to go back: the host is told, his place is free again
     {
         pumpUntil ([] { return false; }, 2600);
         const auto journal = dir.getChildFile ("Rui guest journal.json");
@@ -1331,10 +1331,10 @@ int run (const juce::StringArray& args)
 
 // --- one peer of a session between two real computers (round 190ah) ---------------------------------------------------
 //
-// LYNX --livepeer host <folder> [--relay URL]             opens a session, writes <folder>/code.txt, then works through
+// YW --livepeer host <folder> [--relay URL]             opens a session, writes <folder>/code.txt, then works through
 //                                                         the script below with whoever joins; <folder>/host.txt
-// LYNX --livepeer guest <folder> --code <code|@file>      joins, edits, then "crashes" (exit code 7, journal kept)
-// LYNX --livepeer rejoin <folder>                         the same guest after its restart: goes back in from its journal
+// YW --livepeer guest <folder> --code <code|@file>      joins, edits, then "crashes" (exit code 7, journal kept)
+// YW --livepeer rejoin <folder>                         the same guest after its restart: goes back in from its journal
 //
 // The two sides talk through the session's own chat ("digest <step> <hash>@<rev>"): the host compares each digest the
 // guest reports with its own at that revision, so "ok" means both computers really hold the same song.
@@ -1523,4 +1523,4 @@ int runPeer (const juce::StringArray& args)
     line (ok ? "result=OK" : "result=FAILED");
     return ok ? 0 : 1;
 }
-} // namespace lynx::livetest
+} // namespace yw::livetest

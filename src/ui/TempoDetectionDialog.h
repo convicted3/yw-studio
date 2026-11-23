@@ -12,7 +12,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 struct TempoDetectionRequest
 {
@@ -30,4 +30,4 @@ void showTempoDetectionDialog (TempoDetectionRequest request);
 std::unique_ptr<juce::Component> makeTempoDetectionPanel (TempoDetectionRequest request);
 juce::String pressTempoDetectionButton (juce::Component& panel, int index);
 juce::String tempoDetectionTitle (const juce::String& name);
-} // namespace lynx::ui
+} // namespace yw::ui

@@ -13,7 +13,7 @@
 #include "core/NoteEdit.h"
 #include "core/Song.h"
 
-namespace lynx::stemsplit
+namespace yw::stemsplit
 {
 inline constexpr double sampleRate = 44100.0;
 inline constexpr std::int64_t segmentFrames = 343980; // the exported graph's fixed input (7.8 s)
@@ -26,7 +26,7 @@ using Stems = std::array<std::array<std::vector<float>, 2>, numStems>;
 // --- round 190jr (BUILD-LIST 14, B21): the Extract stems options ----------------------------------------------------
 // FL's "Extract stems from sample" form (TDEMUCSFORM, rea190bc/dfm): a tick per stem, Limit CPU usage, Safe mode, When
 // done (mute the source clip / track / nothing), Group playlist tracks, Assign to new mixer tracks; plus the model
-// (LYNX-own, BandLab's Splitter has 4 and 6 stems): Standard = HT-Demucs (4 stems), 6 stems = HT-Demucs 6s (adds
+// (YW-own, BandLab's Splitter has 4 and 6 stems): Standard = HT-Demucs (4 stems), 6 stems = HT-Demucs 6s (adds
 // guitar and piano), Fine-tuned = HT-Demucs ft (one fine-tuned model per stem: the best separation, one pass per stem).
 // Every graph takes the same 7.8 s stereo segment ("mix") and returns 4 or 6 stereo stems ("stems").
 inline constexpr int maxStems = 6;
@@ -40,7 +40,7 @@ struct Options
     std::array<bool, maxStems> stems { true, true, true, true, true, true }; // guitar / piano only with sixStems
     Model model = Model::standard;
     bool limitCpu = false;      // FL: "Limit separation to fewer CPU cores"
-    bool safeMode = false;      // FL: "Use this for troubleshooting" (LYNX: no graph optimisation, one thread)
+    bool safeMode = false;      // FL: "Use this for troubleshooting" (YW: no graph optimisation, one thread)
     WhenDone whenDone = WhenDone::muteClip;
     bool groupTracks = true;    // FL: "Group the playlist tracks for the separated stems" (under the source's track)
     bool newInserts = true;     // FL: "Assign each stem to a different mixer track"
@@ -332,4 +332,4 @@ inline bool addStemClips (Song& song, int clipIndex, const std::string& sourcePa
     }
     return true;
 }
-} // namespace lynx::stemsplit
+} // namespace yw::stemsplit

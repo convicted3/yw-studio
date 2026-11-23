@@ -5,7 +5,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 namespace wrappermenu
 {
@@ -38,8 +38,8 @@ bool samplerFileRowPress (juce::Component& root, int button);
 // "scroll"). False / empty: no sampler page.
 bool samplerPageTurn (juce::Component& root, const juce::String& what, double value, bool shift = false);
 juce::String samplerPageQuery (juce::Component& root, const juce::String& what);
-// Round 190fs (shots, tests): the preset box of the channel window `root` (the ◀ name ▶ bar of an FL engine or a LYNX
-// bank, LYNX's synth's "Presets..." box): its menu (nullopt: no box), "Save preset..." with `name` (no name box), and
+// Round 190fs (shots, tests): the preset box of the channel window `root` (the ◀ name ▶ bar of an FL engine or a YW
+// bank, YW's synth's "Presets..." box): its menu (nullopt: no box), "Save preset..." with `name` (no name box), and
 // the preset it shows ("" = none).
 std::optional<juce::PopupMenu> channelPresetMenu (juce::Component& root);
 bool channelPresetSave (juce::Component& root, const juce::String& name);
@@ -74,7 +74,7 @@ int channelFrameHeaderHeight() noexcept;
 // Round 190in (design190ia FW-7): FL's ON / PAN / VOL / PITCH / RANGE / TRACK strip of channel `channel` (the right part
 // of the channel window's header), for a hosted instrument's wrapper header; `channelHeaderControlsWidth` wide.
 std::unique_ptr<juce::Component> makeChannelHeaderControls (AudioEngine& engine, int channel);
-// Round 190in (shots): the channel window as it shows docked (LYNX's title bar with FL's ▸, the two-tone title and the
+// Round 190in (shots): the channel window as it shows docked (YW's title bar with FL's ▸, the two-tone title and the
 // presets), off the desktop, on tab `tab` (< 0 = Misc); and FL's ▸ wrapper menu of the channel window inside `root`.
 std::unique_ptr<juce::Component> makeChannelWindowForShot (AudioEngine& engine, int channel, int tab);
 std::optional<juce::PopupMenu> channelWrapperMenu (juce::Component& root);
@@ -94,4 +94,4 @@ int showChannelLayoutPage (juce::Component& frame, int page);
 // the synth and the sampler, the Envelope / instrument tab — editing the node `locate` finds. Null: no page for it.
 bool hasNodeEditor (const ChannelDef& channel) noexcept;
 std::unique_ptr<juce::Component> makeNodeChannelFrame (AudioEngine& engine, std::function<ChannelDef* (Song&)> locate);
-} // namespace lynx
+} // namespace yw

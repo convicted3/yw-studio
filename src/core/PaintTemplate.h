@@ -8,7 +8,7 @@
 // clip already in the Playlist makes THAT clip what the tools paint next, as it is (its length, where its content starts,
 // its stretch, pitch, fades, gain...), even while the Picker panel is shown; choosing an item in the Picker panel paints
 // the item's plain version again. A clip painted from such a template is a copy of it at the new place.
-namespace lynx::painttemplate
+namespace yw::painttemplate
 {
 // What a clicked clip leaves as the template: the clip itself, without what belongs to that one placed clip (its place,
 // its mute switch, its identity, its clip-launch slot, the crossfades the Playlist works out from its neighbours).
@@ -48,4 +48,4 @@ inline Clip paint (const Clip& t, int track, std::int64_t start)
     c.start = start < 0 ? 0 : start;
     return c;
 }
-} // namespace lynx::painttemplate
+} // namespace yw::painttemplate

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/PluginSubstitutes.h"
 
 namespace parity190mjhz
@@ -16,7 +16,7 @@ namespace parity190mjhz
 inline void run (std::initializer_list<std::pair<int, float>> set, float rea, double seconds, std::vector<float>& l, std::vector<float>& r,
                  const std::vector<float>* input = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::horizon);
     slot.params[0] = 1.0f;
     for (const auto& [i, v] : set)
@@ -35,7 +35,7 @@ inline void run (std::initializer_list<std::pair<int, float>> set, float rea, do
 
 TEST (parity190mj_horizon_rea_law_is_hidden_new_and_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hz = verbs::horizon;
     CHECK (hz::reaLaw == hz::revision + 1 && effectInfo (EffectKind::horizon).params.size() == (std::size_t) hz::paramCount);
     const auto s = makeEffectSlot (EffectKind::horizon);
@@ -55,12 +55,12 @@ TEST (parity190mj_horizon_rea_law_is_hidden_new_and_translated)
         CHECK (makeSubstituteSlot (*entry, &id).params[(std::size_t) hz::reaLaw] == 1.0f);
 }
 
-// Room / Chamber over Size: at Size 0 the first 100 ms come up (the reference's are 4 / 9 … 12 dB over LYNX's 0.1.30
+// Room / Chamber over Size: at Size 0 the first 100 ms come up (the reference's are 4 / 9 … 12 dB over YW's 0.1.30
 // revision), Chamber's tail at Size 50 % goes down; Size 100 % Chamber stays where it was (its knot is the mode's own)
 TEST (parity190mj_horizon_room_chamber_size_law)
 {
     using namespace parity190mjhz;
-    namespace hz = lynx::verbs::horizon;
+    namespace hz = yw::verbs::horizon;
     const auto win = [] (const std::vector<float>& l, const std::vector<float>& r, double a, double b) { return parity190ly::windowDb (l, r, 48000.0, a, b); };
     std::vector<float> l0, r0, l1, r1;
     const float decay3s = 0.2917f;

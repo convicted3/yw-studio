@@ -10,7 +10,7 @@
 #include <map>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -638,4 +638,4 @@ std::vector<SampleZone> flKeysZones (const std::string& wti, const std::string& 
 
     return zones;
 }
-} // namespace lynx
+} // namespace yw

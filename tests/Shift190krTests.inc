@@ -50,12 +50,12 @@ inline void makeSource (std::vector<float>& l, std::vector<float>& r, int frames
 
 // a voice's shifter as the sampler drives it: primed with primeLength (factor) frames of the transposed source, then
 // 128 output frames per call with n / factor input frames owed; a new note every 1.5 s (re-primed)
-inline std::uint64_t shifterRender (double rate, lynx::StretchMethod method, bool mono, double factor, double& energy)
+inline std::uint64_t shifterRender (double rate, yw::StretchMethod method, bool mono, double factor, double& energy)
 {
     std::vector<float> l, r;
     const int seconds = 4;
     makeSource (l, r, (int) (rate * seconds * 5) + 400000, rate, mono);
-    lynx::VoicePitchShifter shifter;
+    yw::VoicePitchShifter shifter;
     shifter.allocate (rate, method);
     std::uint64_t h = 1469598103934665603ull;
     energy = 0.0;
@@ -88,12 +88,12 @@ inline std::uint64_t shifterRender (double rate, lynx::StretchMethod method, boo
 // the offline stretch (Signalsmith's exact(): long process() calls, flush)
 inline std::uint64_t offlineRender (bool mono, double ratio, double& energy)
 {
-    lynx::SampleData in;
+    yw::SampleData in;
     in.sampleRate = 44100.0;
     makeSource (in.left, in.right, 44100 * 3 + 321, 44100.0, false);
     if (mono)
         in.right.clear();
-    const auto out = lynx::timeStretch (in, ratio);
+    const auto out = yw::timeStretch (in, ratio);
     std::uint64_t h = 1469598103934665603ull;
     energy = 0.0;
     hashFloats (h, out->left.data(), (int) out->left.size());
@@ -106,7 +106,7 @@ inline std::uint64_t offlineRender (bool mono, double ratio, double& energy)
 
 TEST (perf190kr_pitch_shifter_renders_as_the_base_commit_did)
 {
-    using lynx::StretchMethod;
+    using yw::StretchMethod;
     struct Case
     {
         double rate;

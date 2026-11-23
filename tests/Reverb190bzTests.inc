@@ -1,4 +1,4 @@
-// Round 190bz: the 0.1.27 engine law of LYNX's reverbs (core/LynxVerbs.h, law 1): per-band decay with a tone corrector
+// Round 190bz: the 0.1.27 engine law of YW's reverbs (core/YwVerbs.h, law 1): per-band decay with a tone corrector
 // after the loop, the diffusion-step onset, rotation scattering and matrix modulation. The classic engine (law 0) must
 // render as it did: its goldens below come from the base commit's build (the work folder's gold.cpp linked against the
 // objects of d141370db; the same program linked against this round's objects prints the same lines).
@@ -9,11 +9,11 @@
 
 #include "core/Biquad.h"
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 
 namespace rv190bz
 {
-using lynx::EffectKind;
+using yw::EffectKind;
 
 struct Stereo
 {
@@ -24,20 +24,20 @@ inline int lawIndex (EffectKind kind)
 {
     switch (kind)
     {
-        case EffectKind::epochVerb: return lynx::verbs::epoch::engineLaw;
-        case EffectKind::atrium: return lynx::verbs::atrium::engineLaw;
-        case EffectKind::foilPlate: return lynx::verbs::foil::engineLaw;
-        case EffectKind::halo: return lynx::verbs::halo::engineLaw;
-        default: return lynx::verbs::horizon::engineLaw;
+        case EffectKind::epochVerb: return yw::verbs::epoch::engineLaw;
+        case EffectKind::atrium: return yw::verbs::atrium::engineLaw;
+        case EffectKind::foilPlate: return yw::verbs::foil::engineLaw;
+        case EffectKind::halo: return yw::verbs::halo::engineLaw;
+        default: return yw::verbs::horizon::engineLaw;
     }
 }
 
 constexpr EffectKind kinds[] = { EffectKind::epochVerb, EffectKind::atrium, EffectKind::foilPlate, EffectKind::halo, EffectKind::horizon };
 
 // an impulse through the bare engine
-inline Stereo engineImpulse (const lynx::verbs::Settings& s, double seconds, double sr = 48000.0, int block = 512)
+inline Stereo engineImpulse (const yw::verbs::Settings& s, double seconds, double sr = 48000.0, int block = 512)
 {
-    lynx::verbs::Engine e (0.3, 0.6);
+    yw::verbs::Engine e (0.3, 0.6);
     e.prepare (sr);
     const auto n = (std::size_t) (seconds * sr);
     Stereo x { std::vector<float> (n, 0.0f), std::vector<float> (n, 0.0f) };
@@ -50,7 +50,7 @@ inline Stereo engineImpulse (const lynx::verbs::Settings& s, double seconds, dou
 // RT60 of one octave band (Schroeder curve of L and R, fitted between −5 and −25 dB)
 inline double bandRt (const Stereo& x, double hz, double sr)
 {
-    lynx::Biquad hp[2], lp[2];
+    yw::Biquad hp[2], lp[2];
     for (auto& b : hp)
         b.filter (sr, 1, hz / std::sqrt (2.0), 0.7071);
     for (auto& b : lp)
@@ -92,9 +92,9 @@ inline double energy (const Stereo& x, double from, double to, double sr = 48000
     return e;
 }
 
-inline lynx::verbs::Settings hall()
+inline yw::verbs::Settings hall()
 {
-    lynx::verbs::Settings s;
+    yw::verbs::Settings s;
     s.law = 1;
     s.shape = 0;
     s.rt60 = 2.0;
@@ -106,7 +106,7 @@ inline lynx::verbs::Settings hall()
 
 TEST (reverb190bz_new_instances_run_the_law_and_saved_projects_keep_the_classic_engine)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : rv190bz::kinds)
     {
         const auto law = (std::size_t) rv190bz::lawIndex (kind);
@@ -143,7 +143,7 @@ TEST (reverb190bz_new_instances_run_the_law_and_saved_projects_keep_the_classic_
 
 TEST (reverb190bz_classic_law_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     struct Case
     {
         EffectKind kind;
@@ -219,7 +219,7 @@ TEST (reverb190bz_classic_law_renders_as_the_base_commit_did)
     // libraries. The sound checks above hold everywhere.
     std::printf ("  classic law: %d of 10 renders hash-identical to the base commit\n", sameBits);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == 10);
    #endif
 }
@@ -252,7 +252,7 @@ TEST (reverb190bz_band_decay_follows_its_targets)
             for (int b = 0; b < 8; ++b)
                 s.bandRtMult[b] = row.mult[b];
             double want[8];
-            lynx::verbs::bandTargets (s, sr, 55.0, want);
+            yw::verbs::bandTargets (s, sr, 55.0, want);
             const auto x = engineImpulse (s, 2.2 * row.rt * 1.6, sr);
             double worst = 0.0;
             for (int b = 1; b < 8; ++b) // (63 Hz: too few modes in a 2 s tail for a steady slope)
@@ -262,7 +262,7 @@ TEST (reverb190bz_band_decay_follows_its_targets)
                 const auto tol = b == 7 ? 0.2 : b == 1 ? 0.18 : 0.12;
                 CHECK (got > 0.0 && std::abs (got / want[b] - 1.0) < tol);
                 worst = std::max (worst, std::abs (got / want[b] - 1.0));
-                if (std::getenv ("LYNX_VERB_VERBOSE") != nullptr)
+                if (std::getenv ("YW_VERB_VERBOSE") != nullptr)
                     std::printf ("    %.0f Hz at %.0f: %.2f s (target %.2f)\n", bands[b], sr, got, want[b]);
             }
             if (sr == 48000.0)
@@ -277,7 +277,7 @@ TEST (reverb190bz_band_decay_follows_its_targets)
         const auto lifted = engineImpulse (s, 5.0);
         const auto rt0 = bandRt (flat, 1000.0, 48000.0), rt1 = bandRt (lifted, 1000.0, 48000.0);
         CHECK (std::abs (rt1 / rt0 - 1.0) < 0.03);
-        lynx::Biquad bp;
+        yw::Biquad bp;
         auto band = [&] (Stereo v)
         {
             bp.filter (48000.0, 1, 1000.0, 0.7071);
@@ -363,7 +363,7 @@ TEST (reverb190bz_onset_density_and_matrix_modulation)
 
 TEST (reverb190bz_stable_at_extreme_settings_rates_and_in_silence)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace rv190bz;
     // the five effects on law 1: every control at 0, at 1 and at seeded random values, three rates
     unsigned seed = 4242u;
@@ -453,7 +453,7 @@ TEST (reverb190bz_stable_at_extreme_settings_rates_and_in_silence)
 
 TEST (reverb190bz_unfitted_modes_stay_close_to_the_classic_law)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace rv190bz;
     // a mode without fitted values runs law 1 with neutral numbers: the decay per band and the level of the classic law
     auto slot = makeEffectSlot (EffectKind::epochVerb);
@@ -481,7 +481,7 @@ TEST (reverb190bz_unfitted_modes_stay_close_to_the_classic_law)
 
 TEST (reverb190bz_fitted_voicings_wet_level_and_the_plate_decay_blend)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace rv190bz;
     const auto impulse = [] (EffectSlot slot, double seconds)
     {

@@ -1,7 +1,7 @@
 // Round 190as: "Find similar samples" (core/SampleSimilarity.h). Synthetic sounds only: kicks (a falling sine), hats
 // (short bright noise), pads (long chords) and loops (a kick/hat pattern); the analysis must put like with like, not
 // care about level, leading silence or sample rate, and the worker must index in the background, answer a query at
-// once (analysing the clicked file first when the pass has not reached it), wait while LYNX plays and never be killed.
+// once (analysing the clicked file first when the pass has not reached it), wait while YW plays and never be killed.
 
 #include "core/SampleSimilarity.h"
 
@@ -15,7 +15,7 @@
 
 namespace s190as
 {
-using lynx::similarity::Features;
+using yw::similarity::Features;
 
 struct Rng
 {
@@ -86,7 +86,7 @@ Features featuresOf (char kind, int v, double rate = 44100.0, float gain = 0.8f,
 {
     const auto audio = sound (kind, v, rate, gain, lead);
     Features f {};
-    CHECK (lynx::similarity::analyse (audio.data(), audio.size(), rate, f));
+    CHECK (yw::similarity::analyse (audio.data(), audio.size(), rate, f));
     return f;
 }
 
@@ -146,11 +146,11 @@ struct Disk
         }
     }
 
-    lynx::similarity::Service::Callbacks callbacks()
+    yw::similarity::Service::Callbacks callbacks()
     {
-        lynx::similarity::Service::Callbacks cb;
+        yw::similarity::Service::Callbacks cb;
         cb.fs.list = [this] (const std::string& folder) {
-            lynx::search::FolderListing l;
+            yw::search::FolderListing l;
             const std::lock_guard<std::mutex> g (m);
             const auto it = folders.find (folder);
             if (it == folders.end())
@@ -208,15 +208,15 @@ struct Disk
 struct Inbox
 {
     std::mutex m;
-    std::vector<lynx::similarity::Result> results;
-    std::function<void (const lynx::similarity::Result&)> sink()
+    std::vector<yw::similarity::Result> results;
+    std::function<void (const yw::similarity::Result&)> sink()
     {
-        return [this] (const lynx::similarity::Result& r) {
+        return [this] (const yw::similarity::Result& r) {
             const std::lock_guard<std::mutex> g (m);
             results.push_back (r);
         };
     }
-    std::vector<lynx::similarity::Result> take()
+    std::vector<yw::similarity::Result> take()
     {
         const std::lock_guard<std::mutex> g (m);
         return std::exchange (results, {});
@@ -227,11 +227,11 @@ struct Inbox
 TEST (similar190as_analysis_puts_like_with_like)
 {
     using namespace s190as;
-    lynx::similarity::Index index;
+    yw::similarity::Index index;
     for (const char kind : { 'k', 'h', 'p', 'l' })
         for (int v = 0; v < 8; ++v)
         {
-            lynx::similarity::Entry e;
+            yw::similarity::Entry e;
             e.path = std::string ("/lib/") + kind + std::to_string (v) + ".wav";
             e.valid = true;
             e.features = featuresOf (kind, v);
@@ -259,19 +259,19 @@ TEST (similar190as_analysis_puts_like_with_like)
     CHECK (index.rank (k3->features, k3->path, { "/elsewhere" }, 7).empty());
     CHECK (index.rank (k3->features, k3->path, { "/lib" }, 100).size() == 31);
     // the percentage: 100 for the same sound, falling with the distance
-    CHECK (lynx::similarity::percent (0.0f) == 100);
-    CHECK (lynx::similarity::percent (1.0f) < 100 && lynx::similarity::percent (1.0f) > lynx::similarity::percent (4.0f));
-    CHECK (lynx::similarity::percent (1000.0f) == 0);
+    CHECK (yw::similarity::percent (0.0f) == 100);
+    CHECK (yw::similarity::percent (1.0f) < 100 && yw::similarity::percent (1.0f) > yw::similarity::percent (4.0f));
+    CHECK (yw::similarity::percent (1000.0f) == 0);
 }
 
 TEST (similar190as_level_silence_and_sample_rate_do_not_matter)
 {
     using namespace s190as;
-    lynx::similarity::Index index;
+    yw::similarity::Index index;
     for (const char kind : { 'k', 'h', 'p', 'l' })
         for (int v = 0; v < 6; ++v)
         {
-            lynx::similarity::Entry e;
+            yw::similarity::Entry e;
             e.path = std::string ("/lib/") + kind + std::to_string (v) + ".wav";
             e.valid = true;
             e.features = featuresOf (kind, v);
@@ -292,23 +292,23 @@ TEST (similar190as_level_silence_and_sample_rate_do_not_matter)
     // nothing to analyse: silence, almost nothing, nonsense rates, NaN-only audio
     Features f {};
     const std::vector<float> silence (44100, 0.0f);
-    CHECK (! lynx::similarity::analyse (silence.data(), silence.size(), 44100.0, f));
-    CHECK (! lynx::similarity::analyse (silence.data(), 4, 44100.0, f));
-    CHECK (! lynx::similarity::analyse (nullptr, 0, 44100.0, f));
+    CHECK (! yw::similarity::analyse (silence.data(), silence.size(), 44100.0, f));
+    CHECK (! yw::similarity::analyse (silence.data(), 4, 44100.0, f));
+    CHECK (! yw::similarity::analyse (nullptr, 0, 44100.0, f));
     const auto kick = sound ('k', 0);
-    CHECK (! lynx::similarity::analyse (kick.data(), kick.size(), 0.0, f));
-    CHECK (! lynx::similarity::analyse (kick.data(), kick.size(), std::nan (""), f));
+    CHECK (! yw::similarity::analyse (kick.data(), kick.size(), 0.0, f));
+    CHECK (! yw::similarity::analyse (kick.data(), kick.size(), std::nan (""), f));
     const std::vector<float> bad (4096, std::nanf (""));
-    CHECK (! lynx::similarity::analyse (bad.data(), bad.size(), 44100.0, f));
+    CHECK (! yw::similarity::analyse (bad.data(), bad.size(), 44100.0, f));
     // a click of a few samples and a file with NaNs in it still give finite numbers
     std::vector<float> click (64, 0.0f);
     click[3] = 1.0f;
     click[30] = -0.5f;
-    CHECK (lynx::similarity::analyse (click.data(), click.size(), 44100.0, f));
+    CHECK (yw::similarity::analyse (click.data(), click.size(), 44100.0, f));
     auto holes = kick;
     holes[100] = std::nanf ("");
     holes[200] = std::numeric_limits<float>::infinity();
-    CHECK (lynx::similarity::analyse (holes.data(), holes.size(), 44100.0, f));
+    CHECK (yw::similarity::analyse (holes.data(), holes.size(), 44100.0, f));
     for (const auto v : f)
         CHECK (std::isfinite (v));
 }
@@ -316,8 +316,8 @@ TEST (similar190as_level_silence_and_sample_rate_do_not_matter)
 TEST (similar190as_index_file_and_limits)
 {
     using namespace s190as;
-    lynx::similarity::Index index;
-    lynx::similarity::Entry a, b, c;
+    yw::similarity::Index index;
+    yw::similarity::Entry a, b, c;
     a.path = "/lib/a/k0.wav";
     a.size = 10;
     a.time = 20;
@@ -331,7 +331,7 @@ TEST (similar190as_index_file_and_limits)
     CHECK (index.size() == 3 && index.validCount() == 2);
 
     const auto bytes = index.toBytes();
-    lynx::similarity::Index read;
+    yw::similarity::Index read;
     CHECK (read.fromBytes (bytes));
     CHECK (read.size() == 3 && read.validCount() == 2);
     const auto* ra = read.find ("/lib/a/k0.wav");
@@ -342,15 +342,15 @@ TEST (similar190as_index_file_and_limits)
     // a cut or foreign file never crashes: what was whole is kept, the rest dropped
     for (std::size_t cut = 0; cut < bytes.size(); cut += 7)
     {
-        lynx::similarity::Index partial;
+        yw::similarity::Index partial;
         partial.fromBytes (bytes.substr (0, cut));
         CHECK (partial.size() <= 3);
     }
-    lynx::similarity::Index other;
+    yw::similarity::Index other;
     CHECK (! other.fromBytes ("not an index file at all"));
     CHECK (! other.fromBytes (""));
     auto wrong = bytes;
-    wrong[8] = 7; // another feature count (an older or newer LYNX): not read
+    wrong[8] = 7; // another feature count (an older or newer YW): not read
     CHECK (! other.fromBytes (wrong) && other.size() == 0);
 
     // replace, remove, prune (the folder was listed again: files gone from it are dropped, subfolders stay)
@@ -363,7 +363,7 @@ TEST (similar190as_index_file_and_limits)
     CHECK (index.rank (b.features, "", {}, 10).empty());
     // bounded: about 300 bytes per file, so the largest index is about 45 MB
     CHECK (bytes.size() < 3 * 330);
-    CHECK (lynx::similarity::maxIndexedFiles * 330 < 64u * 1024 * 1024);
+    CHECK (yw::similarity::maxIndexedFiles * 330 < 64u * 1024 * 1024);
 }
 
 TEST (similar190as_worker_indexes_and_answers)
@@ -372,7 +372,7 @@ TEST (similar190as_worker_indexes_and_answers)
     Disk disk;
     Inbox inbox;
     {
-        lynx::similarity::Service service (disk.callbacks());
+        yw::similarity::Service service (disk.callbacks());
         service.refresh ({ "/lib" });
         CHECK (service.waitIdle (60000));
         auto st = service.status();
@@ -421,7 +421,7 @@ TEST (similar190as_worker_indexes_and_answers)
         CHECK (service.waitIdle (20000));
         got = inbox.take();
         bool hasGone = false, hasNew = false;
-        for (const auto& m : got.empty() ? std::vector<lynx::similarity::Match>() : got[0].matches)
+        for (const auto& m : got.empty() ? std::vector<yw::similarity::Match>() : got[0].matches)
         {
             hasGone = hasGone || m.path == "/lib/kicks/k0.wav";
             hasNew = hasNew || m.path == "/lib/kicks/k9.wav";
@@ -431,7 +431,7 @@ TEST (similar190as_worker_indexes_and_answers)
     // the index was saved when the service closed: the next session starts with it and decodes nothing
     CHECK (! disk.saved.empty());
     const auto before = disk.decodes.load();
-    lynx::similarity::Service again (disk.callbacks());
+    yw::similarity::Service again (disk.callbacks());
     again.refresh ({ "/lib" });
     CHECK (again.waitIdle (60000));
     CHECK (again.status().files == 24 && disk.decodes == before);
@@ -445,7 +445,7 @@ TEST (similar190as_query_first_pause_and_close)
     disk.hold = "/lib/kicks/k1.wav";
     Inbox inbox;
     {
-        lynx::similarity::Service service (disk.callbacks());
+        yw::similarity::Service service (disk.callbacks());
         service.refresh ({ "/lib" });
         CHECK (service.status().busy); // (at once, before the worker starts)
         // (the pass is lowest priority: on a busy machine it may start late; no answer below depends on when)
@@ -454,7 +454,7 @@ TEST (similar190as_query_first_pause_and_close)
         // at once: not after the file being analysed (still held here) nor after a slow lowest-priority thread
         const auto id = service.findSimilar ("/lib/loops/l3.wav", {}, 3, inbox.sink());
         const auto began = std::chrono::steady_clock::now();
-        std::vector<lynx::similarity::Result> got;
+        std::vector<yw::similarity::Result> got;
         while (got.empty() && std::chrono::steady_clock::now() - began < std::chrono::seconds (10))
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (5));
@@ -478,18 +478,18 @@ TEST (similar190as_query_first_pause_and_close)
         CHECK (got.size() == 1 && ! got[0].partial && got[0].matches.size() == 3 && got[0].searched == 24);
     }
 
-    // while LYNX plays, the pass waits; it goes on when playback stops; a query is still answered
+    // while YW plays, the pass waits; it goes on when playback stops; a query is still answered
     {
         Disk second;
         second.playing = true;
-        lynx::similarity::Service service (second.callbacks());
+        yw::similarity::Service service (second.callbacks());
         service.refresh ({ "/lib" });
         std::this_thread::sleep_for (std::chrono::milliseconds (300));
         CHECK (second.decodes == 0);
         CHECK (service.status().busy);
         service.findSimilar ("/lib/kicks/k1.wav", {}, 3, inbox.sink());
         const auto began = std::chrono::steady_clock::now();
-        std::vector<lynx::similarity::Result> got;
+        std::vector<yw::similarity::Result> got;
         while (got.empty() && std::chrono::steady_clock::now() - began < std::chrono::seconds (10))
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (5));
@@ -508,7 +508,7 @@ TEST (similar190as_query_first_pause_and_close)
         Disk third;
         third.decodeMs = 40;
         third.hold = "/lib/kicks/k2.wav";
-        auto service = std::make_unique<lynx::similarity::Service> (third.callbacks());
+        auto service = std::make_unique<yw::similarity::Service> (third.callbacks());
         service->refresh ({ "/lib" });
         CHECK (third.waitHeld (60000)); // the pass is in the middle of its third file
         std::atomic<bool> closed { false };
@@ -524,7 +524,7 @@ TEST (similar190as_query_first_pause_and_close)
         const auto took = std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - began).count();
         CHECK (took < 5000.0); // (the whole pass would take over a second even on an idle machine)
         CHECK (third.decodes >= 3 && third.decodes < 28);
-        lynx::similarity::Index saved;
+        yw::similarity::Index saved;
         CHECK (saved.fromBytes (third.saved) && saved.size() >= 3 && saved.size() < 28);
         const auto* k2 = saved.find ("/lib/kicks/k2.wav");
         CHECK (k2 != nullptr && k2->valid); // the file being analysed when closing was asked was finished and saved

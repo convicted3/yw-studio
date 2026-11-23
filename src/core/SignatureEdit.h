@@ -1,7 +1,7 @@
 #pragma once
 
-// Time signature changes for the Simple layout (round 190ol, P6 of /mnt/e/lynx-work/research190oe/TOP25.md: GarageBand's
-// most common complaint, G1, is one time signature per project). LYNX's core has signature changes since the FL
+// Time signature changes for the Simple layout (round 190ol, P6 of /mnt/e/yw-work/research190oe/TOP25.md: GarageBand's
+// most common complaint, G1, is one time signature per project). YW's core has signature changes since the FL
 // Playlist's time signature markers (Marker with numerator > 0: Song::barsBetween, the metronome's table, the bar
 // numbers); this is the Simple layout's way to set them:
 //  - the ruler's right-click "Change time signature here..." at the bar under the pointer, and its "Delete" item;
@@ -17,11 +17,11 @@
 
 #include "core/Song.h"
 
-namespace lynx::signatureedit
+namespace yw::signatureedit
 {
 // The Simple ruler dialog's choices: numerator 1-16, denominator 2, 4, 8 or 16 (research190oe P6). BandLab's top bar (live
 // check 190ol, s/ANSWERS.md) offers numerators 1-6 and denominators 1, 2, 4, 8 in two separate lists: topBarNumerators /
-// topBarDenominators; LYNX adds 7-16 and 16 after a separator there.
+// topBarDenominators; YW adds 7-16 and 16 after a separator there.
 inline constexpr int minNumerator = 1, maxNumerator = 16;
 inline constexpr int denominators[] = { 2, 4, 8, 16 };
 inline constexpr int bandlabMaxNumerator = 6;
@@ -110,4 +110,4 @@ inline std::int64_t set (Song& song, std::int64_t tick, int numerator, int denom
 
 // "n / d" as the top bar shows it ("7 / 8")
 inline std::string text (std::pair<int, int> sig) { return std::to_string (sig.first) + " / " + std::to_string (sig.second); }
-} // namespace lynx::signatureedit
+} // namespace yw::signatureedit

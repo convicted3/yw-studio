@@ -1,11 +1,11 @@
-// LYNX --aratest <plugin.vst3> <audio.wav> <out folder> [project.lynx] (round 190kx): ARA 2 hosting end to end, no window.
+// YW --aratest <plugin.vst3> <audio.wav> <out folder> [project.yw] (round 190kx): ARA 2 hosting end to end, no window.
 //  1. the plugin file is scanned (in a child process, as every scan) and must list an ARA main factory;
 //  2. a song with one audio clip channel playing the whole file is exported twice: as a plain audio clip ("plain.wav") and
 //     edited in the ARA plugin without any edit ("ara.wav"): the plugin must play the clip where it is (an untouched
 //     Melodyne region plays the audio back as it was: level and timing match, the difference is reported);
 //  3. the ARA document is archived as a save does, given to a new engine as an open does, and exported again
 //     ("restored.wav"): the archive must be read back and play the same;
-//  4. with a project (a .lynx whose audio clips were edited in the plugin's own window), that project is exported
+//  4. with a project (a .yw whose audio clips were edited in the plugin's own window), that project is exported
 //     ("project.wav"): what the edits made, for the round's comparisons.
 //  5. (round 190oq) the plugin as an ARA insert on the channel's mixer track: "insert.wav" = "ara.wav"; bypassed =
 //     "plain.wav"; the insert's ARA mode saved and read back;
@@ -23,7 +23,7 @@
 namespace juce::detail { bool dispatchNextMessageOnSystemQueue (bool returnIfNoPendingMessages); } // (juce_Messaging_*.cpp)
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -208,13 +208,13 @@ juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio,
             errors.add ("no ARA document archived");
         // the session as a project (the round opens it in the app to edit the clip in the plugin's own window)
         juce::String saveError;
-        if (! ProjectFile::save (saved, out.getChildFile ("ara-session.lynx"), saveError))
-            errors.add ("can't save ara-session.lynx: " + saveError);
-        else if (auto back = ProjectFile::load (out.getChildFile ("ara-session.lynx"), saveError);
+        if (! ProjectFile::save (saved, out.getChildFile ("ara-session.yw"), saveError))
+            errors.add ("can't save ara-session.yw: " + saveError);
+        else if (auto back = ProjectFile::load (out.getChildFile ("ara-session.yw"), saveError);
                  ! back || back->channels.empty() || back->channels[0].ara != saved.channels[0].ara || back->araDocuments != saved.araDocuments)
-            errors.add ("ara-session.lynx did not read back the ARA link and document");
+            errors.add ("ara-session.yw did not read back the ARA link and document");
         else
-            say ("ara-session.lynx: the ARA link and the document read back");
+            say ("ara-session.yw: the ARA link and the document read back");
         const auto restored = render (saved, "restored");
         compare (araOut, restored, "ARA vs restored", 0.98);
     }
@@ -239,13 +239,13 @@ juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio,
             if (n != 1)
                 errors.add ("ARA insert: " + juce::String (n) + " instances (1 expected)");
             juce::String saveError;
-            if (! ProjectFile::save (ins, out.getChildFile ("ara-insert.lynx"), saveError))
-                errors.add ("can't save ara-insert.lynx: " + saveError);
-            else if (auto back = ProjectFile::load (out.getChildFile ("ara-insert.lynx"), saveError);
+            if (! ProjectFile::save (ins, out.getChildFile ("ara-insert.yw"), saveError))
+                errors.add ("can't save ara-insert.yw: " + saveError);
+            else if (auto back = ProjectFile::load (out.getChildFile ("ara-insert.yw"), saveError);
                      ! back || back->mixer.size() < 2 || back->mixer[1].effects.empty() || ! back->mixer[1].effects[0].ara)
-                errors.add ("ara-insert.lynx did not read back the ARA insert");
+                errors.add ("ara-insert.yw did not read back the ARA insert");
             else
-                say ("ara-insert.lynx: the ARA insert reads back");
+                say ("ara-insert.yw: the ARA insert reads back");
         }
         const auto insOut = render (ins, "insert");
         compare (araOut, insOut, "ARA on the channel vs ARA insert", 0.98);
@@ -285,9 +285,9 @@ juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio,
                 errors.add ("tempo map: the ARA render is " + juce::String (lag) + " samples off");
         }
 
-        // (round 190oq) LYNX_ARATEST_SHOW=<seconds>: the plugin's editor of an ARA insert in this tempo-map song (and a 3/4
+        // (round 190oq) YW_ARATEST_SHOW=<seconds>: the plugin's editor of an ARA insert in this tempo-map song (and a 3/4
         // marker at bar 5) on screen for that long, for a screenshot of its bar ruler; no input is needed
-        const auto show = juce::SystemStats::getEnvironmentVariable ("LYNX_ARATEST_SHOW", {}).getIntValue();
+        const auto show = juce::SystemStats::getEnvironmentVariable ("YW_ARATEST_SHOW", {}).getIntValue();
         if (show > 0)
         {
             auto shown = tempoSong;
@@ -306,7 +306,7 @@ juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio,
             three.name = "3/4";
             shown.markers().push_back (three);
             juce::String saveError;
-            ProjectFile::save (shown, out.getChildFile ("ara-insert-tempo.lynx"), saveError);
+            ProjectFile::save (shown, out.getChildFile ("ara-insert-tempo.yw"), saveError);
             AudioEngine live (false);
             live.getTransport().sampleRate.store (48000.0);
             live.setSong (shown);
@@ -357,4 +357,4 @@ juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio,
     }
     return errors.isEmpty() ? juce::String ("OK") : "ERROR " + errors.joinIntoString ("; ");
 }
-} // namespace lynx
+} // namespace yw

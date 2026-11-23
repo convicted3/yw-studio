@@ -10,11 +10,11 @@
 // FL 2026): 0x2E the root (0 = C), 0xA8 FL's reference-scale index, 0x65 the out-of-scale keys as 12 bits (bit 11 − pitch
 // class, root included: 1322 = C major's C# D# F# G# A#), 0xCD the name.
 //
-// LYNX keeps the key on the Marker (keyRoot, keyFlScale: an index into notetools::flReferenceScales(), or −1 Default = the
+// YW keeps the key on the Marker (keyRoot, keyFlScale: an index into notetools::flReferenceScales(), or −1 Default = the
 // Piano roll's own scale from here, −2 Black notes = no scale from here). Before the first key marker the Piano roll's own
-// scale applies (the toolbar's, the project key). LYNX extras on top: a key region over a time selection (a key marker at
+// scale applies (the toolbar's, the project key). YW extras on top: a key region over a time selection (a key marker at
 // its start and one at its end that brings back what was there), the regions in MIDI files (key signature meta events,
-// with a marker meta event "Key: <name>" that keeps the exact scale for LYNX), and the Chord stamp's "Scale degree chord"
+// with a marker meta event "Key: <name>" that keeps the exact scale for YW), and the Chord stamp's "Scale degree chord"
 // that builds the clicked degree's chord in the region's key (diatonicChord below).
 //
 // Header only, no JUCE.
@@ -30,7 +30,7 @@
 #include "core/ProjectKey.h"
 #include "core/Song.h"
 
-namespace lynx::keyregions
+namespace yw::keyregions
 {
 using Key = projectkey::Key;
 
@@ -175,7 +175,7 @@ inline int addKeyMarker (Pattern& p, std::int64_t tick, const State& s)
     return -1;
 }
 
-// LYNX extra: the key `s` over [from, to) only. The key markers inside go, a key marker at `from` sets `s`, and at `to`
+// YW extra: the key `s` over [from, to) only. The key markers inside go, a key marker at `from` sets `s`, and at `to`
 // one brings back what applied there before (unless a key marker is already at `to`, or `s` already applied there).
 inline void addKeyRegion (Pattern& p, std::int64_t from, std::int64_t to, const State& s)
 {
@@ -277,7 +277,7 @@ inline Key keyFromMidiSignature (int sharps, int minor)
     return minor != 0 ? Key { (major + 9) % 12, minorScale() } : Key { major, majorScale() };
 }
 
-// The marker meta event LYNX writes next to each key signature, "Key: C Minor Harmonic", and its key when read back
+// The marker meta event YW writes next to each key signature, "Key: C Minor Harmonic", and its key when read back
 // (nullopt for any other text).
 inline std::string midiKeyText (const Key& k) { return "Key: " + projectkey::name (k); }
 inline std::optional<Key> keyFromMidiText (const std::string& text)
@@ -351,7 +351,7 @@ inline std::vector<Marker> songKeyMarkers (const Song& song)
     return out;
 }
 
-// --- the Chord stamp's "Scale degree chord" (LYNX extra; esiowry's rule in #105: in C Ionian C gives I = C major, D gives
+// --- the Chord stamp's "Scale degree chord" (YW extra; esiowry's rule in #105: in C Ionian C gives I = C major, D gives
 // ii = D minor, E gives iii = E minor...) ------------------------------------------------------------------------------
 enum class DegreeSize
 {
@@ -462,4 +462,4 @@ inline std::string degreeNumeral (const Degrees& scale, int rootKey, const std::
     s += size == DegreeSize::ninth ? "9" : size == DegreeSize::seventh ? "7" : size == DegreeSize::sixth ? "6" : "";
     return s;
 }
-} // namespace lynx::keyregions
+} // namespace yw::keyregions

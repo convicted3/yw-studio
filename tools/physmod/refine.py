@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""refine.py - LYNX Model's strike refinement through the real engine (round 190nl).
+"""refine.py - YW Model's strike refinement through the real engine (round 190nl).
 
 calibrate.py fits the strike (the contact time constant, the resonator build-up, the strike noise's level, centre, Q
 and decay) through a closed-form emulation of the engine's first 150 ms. That emulation leaves the contact at the
@@ -14,7 +14,7 @@ interpolable between recorded keys).
             [--smooth L] [--report OUT.json] [--work DIR] [--inc-dir DIR] [--level]
         --level (round 190nm): then each anchor's level matched through the engine (its first 2 s against its recording,
         as the timbre score's level part measures them)
-        --inc-dir: also write <instrument>.inc there (src/core/physmod/tables/, the table LYNX compiles in)
+        --inc-dir: also write <instrument>.inc there (src/core/physmod/tables/, the table YW compiles in)
 
 Only parameters change; modes stay as fitted. The output table keeps the input's header (position mapping, level
 offset, provenance hash), with the noise order set.

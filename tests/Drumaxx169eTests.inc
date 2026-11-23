@@ -1,9 +1,9 @@
-// Round 169e: where a new Drumaxx (and LYNX's other drum banks) sound — FL's own key layout (REA_rodada169e)
+// Round 169e: where a new Drumaxx (and YW's other drum banks) sound — FL's own key layout (REA_rodada169e)
 
 #include "core/BankStates.h"
 #include "core/Drumaxx.h"
 #include "core/DrumSynthLive.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/NativeEngines.h"
 
 namespace drumaxx169e
@@ -17,10 +17,10 @@ inline const std::vector<int>& flDefaultKitKeys()
 
 // one channel in Pattern mode (120 BPM, 48 kHz): `steps` from the step sequencer (FL's steps play the channel's
 // root note, C5 = 60), `keys` as Piano roll notes, one every beat after them; the output's peak per beat
-inline std::vector<float> beatPeaks (const lynx::ChannelDef& channel, const std::vector<int>& steps, const std::vector<int>& keys)
+inline std::vector<float> beatPeaks (const yw::ChannelDef& channel, const std::vector<int>& steps, const std::vector<int>& keys)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
     auto c = channel;
     c.mixerTrack = 1;
@@ -28,24 +28,24 @@ inline std::vector<float> beatPeaks (const lynx::ChannelDef& channel, const std:
     s.patterns.emplace_back();
     auto& p = s.patterns[0];
     for (const auto step : steps)
-        p.toggleStep (0, step * lynx::stepsPerBeat); // (one step on each of these beats)
+        p.toggleStep (0, step * yw::stepsPerBeat); // (one step on each of these beats)
     for (std::size_t i = 0; i < keys.size(); ++i)
     {
-        lynx::Note n;
+        yw::Note n;
         n.channel = 0;
         n.key = keys[i];
-        n.start = (std::int64_t) ((steps.size() + i) * lynx::ppq);
-        n.length = lynx::ppq / 2;
+        n.start = (std::int64_t) ((steps.size() + i) * yw::ppq);
+        n.length = yw::ppq / 2;
         p.notes.push_back (n);
     }
     p.sortNotes();
     const auto beats = (int) (steps.size() + keys.size());
-    p.lengthTicks = (std::int64_t) (lynx::ppq * std::max (4, beats + 1));
-    s.mode = lynx::PlayMode::pattern;
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, [] (const std::string&) { return std::shared_ptr<const lynx::SampleData>(); });
-    lynx::RackRenderer r;
+    p.lengthTicks = (std::int64_t) (yw::ppq * std::max (4, beats + 1));
+    s.mode = yw::PlayMode::pattern;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, [] (const std::string&) { return std::shared_ptr<const yw::SampleData>(); });
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
-    const auto tps = 120.0 / 60.0 * lynx::ppq / 48000.0;
+    const auto tps = 120.0 / 60.0 * yw::ppq / 48000.0;
     const int perBeat = 24000; // samples per beat at 120 BPM, 48 kHz
     std::vector<float> peaks ((std::size_t) beats, 0.0f);
     for (int done = 0; done < beats * perBeat; done += 512)
@@ -66,9 +66,9 @@ inline std::vector<int> padKeys (const std::vector<std::uint8_t>& state)
 {
     std::vector<int> keys;
     for (int k = 0; k < 16; ++k)
-        if (lynx::drumaxxParam (state, 44 * k) > 0.0f && lynx::drumaxxParam (state, 44 * k + 2) == 0.0f
-            && lynx::drumaxxParam (state, 44 * k + 4) > 0.0f) // volume, not muted, a key (FL's spare pads sit on key 0)
-            keys.push_back ((int) lynx::drumaxxParam (state, 44 * k + 4));
+        if (yw::drumaxxParam (state, 44 * k) > 0.0f && yw::drumaxxParam (state, 44 * k + 2) == 0.0f
+            && yw::drumaxxParam (state, 44 * k + 4) > 0.0f) // volume, not muted, a key (FL's spare pads sit on key 0)
+            keys.push_back ((int) yw::drumaxxParam (state, 44 * k + 4));
     std::sort (keys.begin(), keys.end());
     keys.erase (std::unique (keys.begin(), keys.end()), keys.end());
     return keys;
@@ -77,8 +77,8 @@ inline std::vector<int> padKeys (const std::vector<std::uint8_t>& state)
 
 TEST (drumaxx169e_fresh_drumaxx_without_fl_sounds_on_fl_keys)
 {
-    using namespace lynx;
-    // without FL Studio: a new Drumaxx is LYNX's first kit, its pads on FL's Default Kit keys; like FL's, it is
+    using namespace yw;
+    // without FL Studio: a new Drumaxx is YW's first kit, its pads on FL's Default Kit keys; like FL's, it is
     // silent on the step sequencer's C5 (60) and on C4 (48) (FL's command-line render, REA_rodada169e §2)
     natives::FlAccess none;
     const auto c = natives::makeChannel (InstrumentKind::drumaxx, none);
@@ -100,7 +100,7 @@ TEST (drumaxx169e_fresh_drumaxx_without_fl_sounds_on_fl_keys)
             std::printf ("  pad key %d: peak %g\n", drumaxx169e::flDefaultKitKeys()[i - 3], (double) peaks[i]);
     }
 
-    // every LYNX kit sounds exactly on those keys (each key one pad role: kick 36, snare 38, hats 42 / 44...)
+    // every YW kit sounds exactly on those keys (each key one pad role: kick 36, snare 38, hats 42 / 44...)
     const auto& bank = banks::bankOf (InstrumentKind::drumaxx);
     CHECK (bank.size() >= 3);
     for (int i = 0; i < (int) bank.size(); ++i)
@@ -115,10 +115,10 @@ TEST (drumaxx169e_fresh_drumaxx_without_fl_sounds_on_fl_keys)
     }
 }
 
-TEST (drumaxx169e_lynx_drum_banks_play_from_the_step_sequencer)
+TEST (drumaxx169e_yw_drum_banks_play_from_the_step_sequencer)
 {
-    using namespace lynx;
-    // the single-voice LYNX banks (Fruit Kick, Drumpad, Sakura, Plucked!) play any key: a fresh one sounds from the
+    using namespace yw;
+    // the single-voice YW banks (Fruit Kick, Drumpad, Sakura, Plucked!) play any key: a fresh one sounds from the
     // step sequencer's C5, as FL's does
     natives::FlAccess none;
     for (const auto kind : { InstrumentKind::fruitkick, InstrumentKind::drumpad, InstrumentKind::sakura, InstrumentKind::plucked })
@@ -133,7 +133,7 @@ TEST (drumaxx169e_lynx_drum_banks_play_from_the_step_sequencer)
             std::printf ("  silent step: kind %d (%g)\n", (int) kind, (double) peaks[0]);
     }
 
-    // DrumSynth Live: LYNX's one-octave kits repeat every 12 keys over the 120 keys (FL's kits fill every key:
+    // DrumSynth Live: YW's one-octave kits repeat every 12 keys over the 120 keys (FL's kits fill every key:
     // its default repeats its 24 patches), so C5 plays the kit's C
     const auto& bank = banks::bankOf (InstrumentKind::drumsynth);
     CHECK (bank.size() >= 2);
@@ -172,7 +172,7 @@ TEST (drumaxx169e_lynx_drum_banks_play_from_the_step_sequencer)
 
 TEST (drumaxx169e_fresh_drumaxx_with_fl_is_fl_default_kit)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     // with FL Studio: a new Drumaxx is FL's own fresh one, the Plugin database's "Default Kit" (FL ships no

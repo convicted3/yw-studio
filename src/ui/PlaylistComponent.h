@@ -31,7 +31,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 struct SampleData; // (core/Instruments.h)
 namespace loopinfo
@@ -125,14 +125,14 @@ public:
     // FL's Playlist menu › View › "Hide collapsed grouped tracks" (EEHideCollapsedAction, HideCollapsedSubTracks; FL manual:
     // "Collapsed grouped tracks will be hidden"; round 190jf): the members of a collapsed group get no row at all
     static inline bool hideCollapsedGroups = false;
-    // Round 190op (P4, LYNX extra): the Playlist menu's "Show hidden tracks": hidden tracks (PlaylistTrack::hidden) get
+    // Round 190op (P4, YW extra): the Playlist menu's "Show hidden tracks": hidden tracks (PlaylistTrack::hidden) get
     // their rows back, drawn dimmed with a crossed eye, so they can be shown again; the Clip-launch grid shows their
     // columns. A view preference (saved with the UI settings).
     static inline bool showHiddenTracks = false;
     // #230 (round 190nq): FL 2026's Playlist menu › View › "Show fade previews" (EEEnablePreviewFadesAction, on by default,
     // [SHOT] 190nq f08c / f12c / f13c): an audio clip's waveform is drawn with its fades applied
     static inline bool showFadePreviews = true;
-    // round 190oo (design review O-1, a LYNX extra, off by default): Playlist › View › "Shade faded audio (YW Studio)" — the
+    // round 190oo (design review O-1, a YW extra, off by default): Playlist › View › "Shade faded audio (YW Studio)" — the
     // Pattern layout also shades what a fade takes away, as the Clip-launch layout and issue #230's reference (Live) do;
     // FL 2026 draws only the curve (and the fade preview). Kept with the UI settings ("shadeFadedAudio").
     static inline bool shadeFadedAudio = false;
@@ -232,7 +232,7 @@ public:
     bool isInterestedInFileDrag (const juce::StringArray& files) override;
     void filesDropped (const juce::StringArray& files, int x, int y) override;
 
-    // files dragged from the LYNX browser
+    // files dragged from the YW browser
     bool isInterestedInDragSource (const SourceDetails& details) override;
     void itemDropped (const SourceDetails& details) override;
     // (round 190im: the drop ghost; round 190jc: the Simple drop lane lights while it is under the drag)
@@ -320,7 +320,7 @@ public:
     // to strip); `why` gets the hint shown. `canSplitAtSilence`: the clip is audio, its sample loaded and not warped.
     int splitClipsAtSilence (const std::vector<int>& targets, const stripsilence::Options& options, juce::String* why = nullptr);
     bool canSplitAtSilence (int index);
-    static stripsilence::Options& splitSilenceOptions(); // the dialog's last values (this run of LYNX)
+    static stripsilence::Options& splitSilenceOptions(); // the dialog's last values (this run of YW)
     std::unique_ptr<juce::Component> makeSplitSilenceDialogForSnapshot (int index);
     juce::PopupMenu getAutomationPointMenuForSnapshot (int clip, int point); // FL's point menu of an automation clip's point (round 190bw)
     std::vector<int> selectedPointsForTests() const { return selectedPoints; } // issue #207 (round 190lw)
@@ -344,7 +344,7 @@ public:
     bool flHeaders() const noexcept;
     bool liveHeaders() const; // round 190jn: Live's header row (the Live look, not the Simple or the linked headers)
     std::vector<char> activityShown; // round 190ig (FM-28): [track] its activity strip lit (FL's Pattern layout, while playing)
-    // Issue #154 (round 190ht; core/TrackInserts.h), a LYNX extra, off by default (FL keeps an insert's effects in the
+    // Issue #154 (round 190ht; core/TrackInserts.h), a YW extra, off by default (FL keeps an insert's effects in the
     // Mixer): the linked headers get a column listing their mixer track's insert effects, and are this much wider.
     static inline bool showTrackInserts = false; // ui-options.txt trackInserts, action playlist.trackInserts
     static constexpr int insertsColumnWidth = 104;
@@ -398,7 +398,7 @@ public:
     static constexpr int rulerTop = toolbarHeight + overviewHeight;
     static constexpr int headerHeight = rulerTop + timelineHeight;
     // the default row (each track can be resized: P18): the song's (FL's 48 px since round 190gw; 38 in older projects);
-    // the Clip-launch layout keeps LYNX's 38, the Simple layout its own
+    // the Clip-launch layout keeps YW's 38, the Simple layout its own
     static constexpr int liveTrackHeight = 38;
     int baseRowHeight() const;
     static constexpr int foldedHeight = 7; // a member of a collapsed group: a thin row of clip bars (as FL)
@@ -430,11 +430,11 @@ public:
     static constexpr int liveFoldedHeight = 17; // a folded track: its title bar's height
     // Round 190jn (design190ia CL-17, CL-18, owner decision CL-17): the Arrangement in Live 12.4's look while the
     // Clip-launch layout shows it (theme::livelook::active(); the classic look keeps round 190cg's): Live's 19 px collapsed
-    // lanes (17 px + a 2 px separator) by default, LYNX's 38 px with View › "Tall Arrangement lanes"
+    // lanes (17 px + a 2 px separator) by default, YW's 38 px with View › "Tall Arrangement lanes"
     // (playlistTallLiveLanes()); clips as colour blocks with dark names and waveforms; Live's track header row.
     static constexpr int liveCollapsedHeight = 19;
     // the Live headers: Live's 2 px separator, its 103 px name box in the track colour, a 2 px separator, then the
-    // controls panel (#363636) with the 46 px activator, and LYNX's 9 px selection / meter column
+    // controls panel (#363636) with the 46 px activator, and YW's 9 px selection / meter column
     static constexpr int liveHeaderWidth = 170;
     bool liveArrangeLook() const noexcept;
     // round 190mk (DL-70): Live's insert marker after a click on an empty spot of a lane (the line, the status bar text)
@@ -480,7 +480,7 @@ public:
     int tracksTop() const { return headerHeight + sectionsLaneHeight() + chordLaneHeight() + videoSectionHeight(); } // the clip tracks' top edge
     // The Sections lane (round 190ol, core/Sections.h; owner decision O-1): a thin lane under the ruler with the song's
     // sections. Simple: shown once the song has a section (the title bar's "Sections" button adds the first one, or hides
-    // and shows it again); Pattern: the LYNX extra "Sections lane" (Playlist menu › View), off by default; Clip-launch: off.
+    // and shows it again); Pattern: the YW extra "Sections lane" (Playlist menu › View), off by default; Clip-launch: off.
     bool sectionsLaneShown() const;
     int sectionsLaneHeight() const; // 0 when hidden
     static constexpr int sectionsLaneFlHeight = 18, sectionsLaneSimpleHeight = 44;
@@ -488,7 +488,7 @@ public:
     void sectionsLaneChanged();    // the extra switched, a layout change: lay the lane out again
     SectionsLaneView* getSectionsLaneForSnapshot() { return sectionsLane.get(); }
     // The Chord lane (round 190pf, core/ChordLane.h): chords over the song under the ruler (under the Sections lane when it
-    // shows). A LYNX extra in every layout, off by default (Playlist menu › View, Settings › LYNX extras; the Simple ruler's
+    // shows). A YW extra in every layout, off by default (Playlist menu › View, Settings › YW extras; the Simple ruler's
     // menu too).
     bool chordLaneShown() const;
     int chordLaneHeight() const; // 0 when hidden
@@ -553,8 +553,8 @@ private:
     void setStretchOnResize (bool on);           // the STRETCH switch (Shift+M)
     std::vector<Clip> stretchOriginals;          // the clips when a stretching resize started
     IconButton stretchButton { "stretch", Icon::stretch };
-    // Round 190jq (core/PlaylistViewOptions.h, all LYNX extras). #191: the pointer-click switch beside Stretch (shown with
-    // its Settings › LYNX extras switch); a pointer press on empty space (its release moves the song position); a double
+    // Round 190jq (core/PlaylistViewOptions.h, all YW extras). #191: the pointer-click switch beside Stretch (shown with
+    // its Settings › YW extras switch); a pointer press on empty space (its release moves the song position); a double
     // click that placed a clip (its double-click action, opening the clip, is skipped).
     IconButton pointerButton { "pointerClick", Icon::pointer };
     bool pointerPress = false, placedByDoubleClick = false;
@@ -613,7 +613,7 @@ private:
     double perfRepaintMs = 0.0;
     // The view kept as an image, the playhead drawn over it (round 174e): a playhead frame only blits its column of the
     // image and draws the line, instead of painting the lanes, clips and waveforms under it again 144 times a second.
-    // Any other repaint (an edit, a scroll, a child) refreshes its area of the image. LYNX_PLAYLIST_CACHE=0: off.
+    // Any other repaint (an edit, a scroll, a child) refreshes its area of the image. YW_PLAYLIST_CACHE=0: off.
     class PlayheadCache;
     bool playheadOverlay = false;      // the cache is on: the playhead's own repaints keep its image
     bool playheadRepaintOnly = false;  // set around the playhead's own repaints: the image stays valid
@@ -766,7 +766,7 @@ private:
     int fadeSide = 0;                 // Drag::fadeTension: 0 = the fade in, 1 = the fade out
     double fadeTensionStart = 0.0;    // its handle value (-1..1) when the drag started
     int fadeTensionStartY = 0;
-    // warp markers (round 175a, M3; a LYNX extra, the user's choice: Live edits them only in its Clip View): an audio
+    // warp markers (round 175a, M3; a YW extra, the user's choice: Live edits them only in its Clip View): an audio
     // clip whose channel has markers that bend the tempo shows them as small flags on its top edge, to drag sideways
     std::vector<WarpPoint> clipWarpMarkers (int clip) const; // as played (warpedit::playedMarkers); empty: none
     double clipFileSeconds (int clip) const;
@@ -791,7 +791,7 @@ private:
     int markerTagAt (int x, int y) const;                 // the marker whose tag is under (x, y), or -1
     void editMarkerName (std::int64_t tick, int existing); // existing = index, or -1 to create
     void askSimpleSignature (std::int64_t bar);            // round 190ol (P6): the Simple ruler's time signature dialog
-    // Round 190hq (B11, core/TempoMarkers.h): the tempo markers' tags on the ruler (LYNX extra): the one under (x, y), or
+    // Round 190hq (B11, core/TempoMarkers.h): the tempo markers' tags on the ruler (YW extra): the one under (x, y), or
     // -1; the dialog that adds one at `tick` (existing −1) or edits marker `existing`; the tag being dragged
     int tempoTagAt (int x, int y) const;
     void editTempoMarker (std::int64_t tick, int existing);
@@ -826,7 +826,7 @@ public:
     static const trackclips::Carried& copiedPatterns() noexcept { return clipboardPatterns; }
     static std::uint64_t copiedStamp() noexcept { return clipboardStamp; }
     // issue #232 stage 2 (round 190nz, ui/WindowClipboard.h): the clipboard's clips, with what they play, on the system
-    // clipboard for another LYNX SHARE window (the clip grid's copies too); and whether a paste has something (this
+    // clipboard for another YW Studio window (the clip grid's copies too); and whether a paste has something (this
     // window's copy or another window's)
     static void publishCopiedClips (AudioEngine& engine);
     static bool canPasteClips();
@@ -841,7 +841,7 @@ private:
     void addKeyFollowItems (juce::PopupMenu& menu, int index, const std::vector<int>& targets); // round 190ds
     void addGrooveItems (juce::PopupMenu& menu, int index, const std::vector<int>& targets); // round 190fm: Playlist clip grooves
 
-    // FL's audio clip menu (round 190dz, core/FlClipMenu.h): FL's two columns and sections, LYNX's own items after them
+    // FL's audio clip menu (round 190dz, core/FlClipMenu.h): FL's two columns and sections, YW's own items after them
     juce::PopupMenu buildAudioClipMenu (int index, int mouseX);
     std::function<void (float, bool)> clipFitter (int index, std::shared_ptr<const SampleData> sample);
     juce::PopupMenu fitToTempoMenu (int index, std::shared_ptr<const SampleData> sample);
@@ -861,7 +861,7 @@ private:
     void paintLiveGrid (juce::Graphics& g, juce::Rectangle<int> grid) const;
     // Round 190jn (the coordinator's follow-up): Live's lane backgrounds, grid and separators from one cached image, made
     // again only when the view's size, scroll, zoom, rows or bars change (false: draw them straight; whole-pixel scales
-    // only). LYNX_LIVEGRID_CACHE=0 turns it off (checks).
+    // only). YW_LIVEGRID_CACHE=0 turns it off (checks).
     bool paintLiveLanesCached (juce::Graphics& g, juce::Rectangle<int> grid, int rows);
     juce::Image liveLaneImage;
     std::uint64_t liveLaneKey = 0;
@@ -989,7 +989,7 @@ private:
     juce::Rectangle<int> trackSharedMark (int track) const; // the "shared" mark left of M (empty: none)
     mutable std::vector<simplehdr::HeaderTarget> headerTargetList;
     mutable std::uint64_t headerTargetStamp = ~(std::uint64_t) 0;
-    // LYNX's "Link Playlist tracks to mixer tracks" (round 190gz, issue #170): with FL's headers, the project's switch is
+    // YW's "Link Playlist tracks to mixer tracks" (round 190gz, issue #170): with FL's headers, the project's switch is
     // on. The headers are then wider and a linked track's header carries its mixer track's M, S, volume and pan (the
     // Simple headers' controls, laid out for FL's row heights: one row of buttons, the volume bar and pan from 34 px).
     bool linkedHeaders() const;
@@ -1021,7 +1021,7 @@ private:
     bool anyHiddenTracks = false; // round 190op (P4): the song holds hidden tracks (updateProjection)
     void addDeactivateTrackItem (juce::PopupMenu& menu, int track); // round 190op (P4)
 public:
-    // round 190pe (P20, LYNX extra; core/TrackVersions.h): the track's versions, as the track menu's submenu and the
+    // round 190pe (P20, YW extra; core/TrackVersions.h): the track's versions, as the track menu's submenu and the
     // header's version chip (a click opens the same menu). Nothing is drawn or looked up while no track has versions.
     juce::PopupMenu buildTrackVersionMenu (int track);
     juce::Rectangle<int> trackVersionChip (int track) const;
@@ -1090,7 +1090,7 @@ private:
     gesture::MuteSweep muteSweep;        // the mute drag takes its target (mute / unmute) from the first clip crossed
     // inline automation editing: points of automation clips are dragged, added on the curve, deleted by right-click
     int autoClip = -1, autoPoint = -1;
-    // Issue #207 (round 190lw, LYNX extras; core/AutoPointEdit.h). One curve's points selected together — an automation
+    // Issue #207 (round 190lw, YW extras; core/AutoPointEdit.h). One curve's points selected together — an automation
     // clip's, an audio clip's envelope lane's or an automation lane's: the Select tool's rubber band
     // selects them; a drag on a selected point moves the group; Delete deletes them, Ctrl+C / Ctrl+X copy /
     // cut, Ctrl+V pastes at the mouse on a curve; Esc or a click elsewhere drops the selection. In the Clip-launch layout a
@@ -1129,7 +1129,7 @@ private:
     bool pointKeyPressed (const juce::KeyPress& key);             // true: handled
     // round 190pa (research190oe P14, core/RangeEdit.h; PlaylistRange190pa.inc): a range on chosen tracks (REAPER's razor
     // edit). A plain drag on empty space draws it in the Clip-launch Arrangement (Live's time selection, rollup 0.1.31 step 7);
-    // Ctrl+Alt+drag in the Pattern layout with Settings › LYNX extras "Range edits on chosen tracks"; a drag inside it moves its content, Delete / Ctrl+X / C / V / B / D / E act on it,
+    // Ctrl+Alt+drag in the Pattern layout with Settings › YW extras "Range edits on chosen tracks"; a drag inside it moves its content, Delete / Ctrl+X / C / V / B / D / E act on it,
     // a right-click opens its menu, Esc or a press elsewhere clears it. Song::trackRange holds it.
 public:
     enum class RangeCommand { cut, copy, paste, clear, duplicate, split, render, deselect };
@@ -1371,7 +1371,7 @@ public:
 
     // Round 177d (pain point 31a): FL's Playlist menu › Picker panel › Tools items "Select unused › Patterns" and
     // "Sort › Patterns › By name / By color" (EEPickerSelectUnusedPatternsMenu, EEPickerSortPatternsBy*Menu; FL's Audio
-    // and Automations entries are left out: the LYNX picker selects patterns only), then LYNX's own "Delete unused
+    // and Automations entries are left out: the YW picker selects patterns only), then YW's own "Delete unused
     // patterns" and "Merge identical patterns".
     juce::PopupMenu pickerMenu();
 
@@ -1621,7 +1621,7 @@ private:
     std::function<int (int)> detailHeightFor;
 };
 // Round 190jn (design190ia CL-17, owner decision): View › "Tall Arrangement lanes" in the Clip-launch layout's Live look
-// (a preference, off by default: Live's 19 px collapsed lanes; on: LYNX's 38 px rows). PlaylistComponent::liveLanesChanged
+// (a preference, off by default: Live's 19 px collapsed lanes; on: YW's 38 px rows). PlaylistComponent::liveLanesChanged
 // after a change.
 bool& playlistTallLiveLanes();
-} // namespace lynx
+} // namespace yw

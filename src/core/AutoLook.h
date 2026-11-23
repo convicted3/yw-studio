@@ -1,13 +1,13 @@
 #pragma once
 
-// Issue #239 (round 190od, LYNX extra; like REAPER's SWS Auto Color/Icon): rules that colour a Playlist track, a mixer
+// Issue #239 (round 190od, YW extra; like REAPER's SWS Auto Color/Icon): rules that colour a Playlist track, a mixer
 // track or a channel, and give it an icon, by its name. "Kick" → blue and the kick drum icon, "REC" → the microphone.
 // A rule acts when an item gets a name it matches (a rename, a new channel or track with that name); "Apply to this
 // project" runs every rule on every item once. The rules are the user's (one list for every project, kept in the
 // settings folder), so a template-free start gets the same colours.
 //
 // FL 2026 has no name rules: it colours by content (a Playlist track takes a dropped clip's colour, Auto name / Lock to
-// content take the source's name and colour, core/PlaylistTrackOps.h), which LYNX already does. No JUCE.
+// content take the source's name and colour, core/PlaylistTrackOps.h), which YW already does. No JUCE.
 
 #include <algorithm>
 #include <cctype>
@@ -20,7 +20,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::autolook
+namespace yw::autolook
 {
 enum class Match : int { contains = 0, startsWith, is };
 enum Target : int { playlistTracks = 1, mixerTracks = 2, channels = 4, everything = 7 };
@@ -175,7 +175,7 @@ inline int applyAll (Song& song, const Rules& rules = current())
 inline std::string toText (const Rules& rules)
 {
     std::ostringstream out;
-    out << "lynx-auto-look 1\non " << (rules.on ? 1 : 0) << "\n";
+    out << "yw-auto-look 1\non " << (rules.on ? 1 : 0) << "\n";
     for (const auto& r : rules.list)
     {
         char colour[16];
@@ -191,7 +191,7 @@ inline Rules fromText (const std::string& text)
     Rules rules;
     std::istringstream in (text);
     std::string line;
-    if (! std::getline (in, line) || line.rfind ("lynx-auto-look", 0) != 0)
+    if (! std::getline (in, line) || line.rfind ("yw-auto-look", 0) != 0)
         return rules;
     while (std::getline (in, line))
     {
@@ -220,4 +220,4 @@ inline Rules fromText (const std::string& text)
     }
     return rules;
 }
-} // namespace lynx::autolook
+} // namespace yw::autolook

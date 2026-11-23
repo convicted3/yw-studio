@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::precompute
+namespace yw::precompute
 {
 // FL's region declick (FUN_006a0760): from the edge's first non-zero frame inward over `len` frames, a one-pole
 // follower whose coefficient sweeps from 2/rate·1 Hz up to 1 (22050^(k/len)) is subtracted from the signal, and the
@@ -323,7 +323,7 @@ inline std::shared_ptr<SampleData> apply (const SampleData& in, const SamplerSet
     const auto rate = in.sampleRate > 0.0 ? in.sampleRate : 44100.0;
 
     // 1. the region (FL: s0 = round(start·(N−1)), s1 = s0 + round(end'·(1−start)·(N−1)) with FL's relative end' —
-    // LYNX's End knob is absolute, end − start is the same span); regions shorter than 41 frames grow by 41
+    // YW's End knob is absolute, end − start is the same span); regions shorter than 41 frames grow by 41
     // (FUN_00ff0db0)
     const auto start = (double) std::clamp (std::min (s.regionStart, s.regionEnd), 0.0f, 1.0f);
     const auto end = (double) std::clamp (s.regionEnd, 0.0f, 1.0f);
@@ -643,4 +643,4 @@ inline std::int64_t stretchedFrames (const std::shared_ptr<const SampleData>& in
 {
     return playedSpan (in, s, wholeRegion).frames;
 }
-} // namespace lynx::precompute
+} // namespace yw::precompute

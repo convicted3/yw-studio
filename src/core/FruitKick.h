@@ -7,7 +7,7 @@
 // Voice: the host's 16384-point sine table read with a 32-bit phase (start phase = Click << 24), a per-sample
 // multiplicative pitch fall from Max freq (+ half the note offset) down to the Min freq floor and an amplitude that
 // starts at 1.5 and falls by a per-sample factor until it is below 0.0002; Distortion runs FL's host waveshaper (curve
-// set 0, curve 10; FL's x87 routines: interpolating while LYNX exports, the live one otherwise — REA_rodada55 §2.3).
+// set 0, curve 10; FL's x87 routines: interpolating while YW exports, the live one otherwise — REA_rodada55 §2.3).
 // Around it, FL's plugin voice framework: five channel-envelope/LFO targets stepped
 // once per sequencer tick (pan, volume, cutoff, resonance; the pitch target never reaches this plugin), the channel
 // filter, the sin/cos pan law on (Final.Pan, Final.Vol), level ramps of at most 0.001 per sample, and a 10 ms
@@ -19,7 +19,7 @@
 // records as that snapshot (FL hands them to the plugin when it has none, REA_rodada43 §1.6 — inference).
 //
 // Host side as FL's: link velocity on, so Final.Vol = Init.Vol × channel volume with Init.Vol = (11^(1.28·v) − 1)/10;
-// Final.Pan = note pan + channel pan; Final.Pitch = 100·(key − 60) + channel pitch + note cents. LYNX's channel gains
+// Final.Pan = note pan + channel pan; Final.Pitch = 100·(key − 60) + channel pitch + note cents. YW's channel gains
 // are turned back into those values and applied once, inside the engine. Ticks run at 96 PPQ of the song tempo from
 // the instrument's start (FL's tick grid follows the song position: not reproduced).
 
@@ -30,7 +30,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the engine can read this Fruit Kick state (version 0 or 1, the six parameters present)
 bool fruitKickStateUsable (const std::vector<std::uint8_t>& state);
@@ -66,4 +66,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
                                     int length, int block = 512, const std::vector<int>& ticks = {}, double tempo = 140.0,
                                     int ppq = 96);
 } // namespace fruitkick
-} // namespace lynx
+} // namespace yw

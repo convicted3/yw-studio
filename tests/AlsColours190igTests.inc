@@ -3,7 +3,7 @@
 
 TEST (als190ig_live_colour_table)
 {
-    using namespace lynx;
+    using namespace yw;
     // the colours round 190ia measured on screen in Live's "Patience" demo set, by their indices in the set
     const std::pair<int, std::uint32_t> measured[] = { { 2, 0xffcc9927 }, { 3, 0xfff7f47c }, { 25, 0xffb677c6 }, { 32, 0xffd2e498 },
                                                        { 33, 0xffbad074 }, { 34, 0xff9bc48d }, { 35, 0xffd4fde1 }, { 36, 0xffcdf1f8 },
@@ -24,7 +24,7 @@ TEST (als190ig_live_colour_table)
 
 TEST (als190ig_import_colours_follow_the_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto before = layoutstyle::current();
     const auto colourOf = [] (const Song& s, const std::string& name) {
         for (const auto& m : s.mixer)

@@ -5,7 +5,7 @@
 
 namespace ra190gq
 {
-using namespace lynx;
+using namespace yw;
 
 Note note (int channel, double beat, double beats, int key, float velocity)
 {
@@ -185,8 +185,8 @@ double energy (const float* x, int n)
 
 TEST (render_ahead_plans_blocks_as_the_callback_does)
 {
-    using namespace lynx;
-    using namespace lynx::renderahead;
+    using namespace yw;
+    using namespace yw::renderahead;
     TransportModel m;
     m.sampleRate = 44100.0;
     m.deviceBlock = 64;
@@ -234,7 +234,7 @@ TEST (render_ahead_plans_blocks_as_the_callback_does)
 
 TEST (render_ahead_partition_keeps_the_live_path_real_time)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (2);
     song.mixer[5].inputChannel = 0; // an insert with an audio input: live
     auto state = RackState::build (song, nullptr, 44100.0);
@@ -267,7 +267,7 @@ TEST (render_ahead_partition_keeps_the_live_path_real_time)
 
 TEST (render_ahead_is_bit_exact_with_the_real_time_path)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = ra190gq::makeSong (8);
     const int blocks = 900; // ~1.3 s at 64 samples
     for (const auto loopEnd : { 0.0, (double) (2 * 4 * ppq) + 37.0 }) // linear, and a loop region that wraps mid-block
@@ -308,7 +308,7 @@ TEST (render_ahead_is_bit_exact_with_the_real_time_path)
 // export: the rare export_parity miss of 190hn / 190ip (-70 dBFS, "first apart at 3.56 s").
 TEST (render_ahead_engaging_mid_song_keeps_the_automation_grid)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (4);
     Automation a;
     a.name = "Insert 4 volume";
@@ -354,7 +354,7 @@ TEST (render_ahead_engaging_mid_song_keeps_the_automation_grid)
 
 TEST (render_ahead_meters_show_what_is_heard)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = ra190gq::makeSong (4);
     const int blocks = 400;
     std::vector<float> l0, r0, m0, l1, r1, m1;
@@ -371,7 +371,7 @@ TEST (render_ahead_meters_show_what_is_heard)
 
 TEST (render_ahead_edits_reach_the_part_rendered_ahead_within_the_window)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (8);
     for (auto& c : song.channels)
         c.volume = 0.0f;
@@ -446,7 +446,7 @@ TEST (render_ahead_edits_reach_the_part_rendered_ahead_within_the_window)
 
 TEST (render_ahead_live_edits_and_master_stay_exact)
 {
-    using namespace lynx;
+    using namespace yw;
     // an edit of the live part (the Master's fader) is taken by the live part at once: the output stays identical to the
     // real-time path's through the edit
     auto song = ra190gq::makeSong (6);
@@ -501,7 +501,7 @@ TEST (render_ahead_live_edits_and_master_stay_exact)
 
 TEST (render_ahead_stop_and_jumps_leave_no_note_sounding)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (8);
     for (auto& t : song.mixer)
         t.effects.clear(); // (no reverb or delay tail: after Stop the output must fall to silence)
@@ -528,7 +528,7 @@ TEST (render_ahead_stop_and_jumps_leave_no_note_sounding)
 
 TEST (render_ahead_live_note_into_the_part_rendered_ahead)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (8);
     for (auto& c : song.channels)
         c.volume = 0.0f;
@@ -563,7 +563,7 @@ TEST (render_ahead_live_note_into_the_part_rendered_ahead)
 
 TEST (render_ahead_offline_renders_never_use_it)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = ra190gq::makeSong (4);
     std::vector<float> l0, r0, l1, r1;
     ra190gq::renderPlain (song, 300, 256, 0.0, 0, l0, r0);
@@ -591,7 +591,7 @@ TEST (render_ahead_offline_renders_never_use_it)
 
 TEST (render_ahead_tempo_change_waits_for_both_parts)
 {
-    using namespace lynx;
+    using namespace yw;
     // a tempo edit changes the timeline: the ring drains, both parts take the new tempo at one block, nothing is dropped
     // and nothing stops sounding (one held chord on an insert rendered ahead)
     auto song = ra190gq::makeSong (8);

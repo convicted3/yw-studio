@@ -8,7 +8,7 @@
 
 TEST (gen169l_probe_new_generator_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();
@@ -35,9 +35,9 @@ TEST (gen169l_probe_new_generator_presets)
 namespace gen169l
 {
 // one Drumaxx instrument (settled output gain), silence for `lead` samples, then key 36 at Init.Vol 1; L/R interleaved
-inline std::vector<float> playInstrument (const lynx::ChannelDef& c, float gl, float gr, int lead, int length)
+inline std::vector<float> playInstrument (const yw::ChannelDef& c, float gl, float gr, int lead, int length)
 {
-    auto in = lynx::makeDrumaxxInstrument();
+    auto in = yw::makeDrumaxxInstrument();
     in->prepare (44100.0);
     in->configure (c, 120.0);
     std::vector<float> l ((std::size_t) length, 0.0f), r ((std::size_t) length, 0.0f);
@@ -53,10 +53,10 @@ inline std::vector<float> playInstrument (const lynx::ChannelDef& c, float gl, f
 } // namespace gen169l
 
 // FL hands Drumaxx's per-key tables the host's ComputeLRVol of (Final.Pan, Final.Vol): Vol·cos/sin((1 + pan)π/4), so a
-// centred channel plays at 0.7071·Vol per side (REA_rodada169l §1; LYNX was +3.0 dB over FL's render)
+// centred channel plays at 0.7071·Vol per side (REA_rodada169l §1; YW was +3.0 dB over FL's render)
 TEST (gen169l_drumaxx_through_fl_host_pan_law)
 {
-    using namespace lynx;
+    using namespace yw;
     auto c = banks::defaultChannel (InstrumentKind::drumaxx, "Drumaxx");
     CHECK (c.has_value());
     if (! c)
@@ -77,7 +77,7 @@ TEST (gen169l_drumaxx_through_fl_host_pan_law)
         }
         return peak > 1e-3 ? err / peak : 1.0;
     };
-    // the centre: LYNX's channel gains are √2·V·cos/sin((1 + p)π/4) = V at p = 0 (V = 0.55, FL's default channel volume)
+    // the centre: YW's channel gains are √2·V·cos/sin((1 + p)π/4) = V at p = 0 (V = 0.55, FL's default channel volume)
     const auto V = (double) channelGain (0.78125f);
     const auto centre = gen169l::playInstrument (*c, (float) V, (float) V, lead, length);
     const auto half = reference (V * 0.70710678);
@@ -90,11 +90,11 @@ TEST (gen169l_drumaxx_through_fl_host_pan_law)
     CHECK (compare (left, reference (V * std::sin (t / 2.0)), 1) < 1e-6);
 }
 
-// FL renders a Drumaxx channel with no state (the DLL's own defaults) silent (REA_rodada169e §2): LYNX imports it as a
+// FL renders a Drumaxx channel with no state (the DLL's own defaults) silent (REA_rodada169e §2): YW imports it as a
 // Drumaxx without a kit, silent, not as the stand-in synth; an unreadable non-empty state stays unsupported
 TEST (gen169l_stateless_fl_drumaxx_is_silent)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpBuilder b;
     b.ascii (0xC7, "25.2.5.5319");
     for (std::uint16_t i = 0; i < 2; ++i)
@@ -130,7 +130,7 @@ TEST (gen169l_stateless_fl_drumaxx_is_silent)
 // then 0xf4 − 1 (v < 11) − 1 (v < 12) − 6 (v < 13) bytes of the parameter block, the rest set by FUN_00864d00
 TEST (gen169l_ogun_old_state_versions)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto state = ogunTestState(); // (version 18: a one-byte comment count, 0)
     const auto body = inflateZlib (state.data() + 4, state.size() - 4, false, 16u << 20);
     CHECK (body.has_value() && body->size() > 0x110 && (*body)[0x10f] == 0);
@@ -190,7 +190,7 @@ TEST (gen169l_ogun_old_state_versions)
 // the entry's .fst into the new channel, REA_rodada169l §3), like Drumaxx, Drumpad and BassDrum (round 169e)
 TEST (gen169l_new_generators_are_fl_plugin_database_state)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();

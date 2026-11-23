@@ -9,11 +9,11 @@
 
 // Bit-exactness with FL's plugins needs every float operation in the plugin's order and precision: no contraction
 // into fused multiply-adds, and the x87 extended precision of Delay 2's loops kept (long double; 80-bit on every x86
-// target LYNX is built for).
+// target YW is built for).
 #pragma GCC optimize ("fp-contract=off")
 #pragma STDC FP_CONTRACT OFF
 
-namespace lynx::fldelay
+namespace yw::fldelay
 {
 namespace
 {
@@ -24,7 +24,7 @@ std::int32_t i32At (const std::vector<std::uint8_t>& d, std::size_t o) noexcept
     return v;
 }
 
-// cvtsd2si: round to nearest, ties to even (the default SSE mode in FL and in LYNX)
+// cvtsd2si: round to nearest, ties to even (the default SSE mode in FL and in YW)
 int roundEven (double x) noexcept { return (int) std::nearbyint (x); }
 } // namespace
 
@@ -1198,7 +1198,7 @@ void Delay3Engine::process (float* left, float* right, int n) noexcept
 }
 
 // =====================================================================================================================
-// The LYNX effects
+// The YW effects
 // =====================================================================================================================
 
 namespace
@@ -1357,4 +1357,4 @@ std::string delay3ParamText (int i, float v, double bpm)
     }
     return t;
 }
-} // namespace lynx::fldelay
+} // namespace yw::fldelay

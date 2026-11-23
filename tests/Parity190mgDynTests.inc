@@ -13,7 +13,7 @@
 
 TEST (parity190mg_dyn_laws_are_hidden_and_off_for_new_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     auto facetSlot = makeEffectSlot (EffectKind::facetEq);
     CHECK (facetSlot.params[(std::size_t) facet::puigLawParam] == 0.0f && facet::puigLaw (facetSlot.params[(std::size_t) facet::puigLawParam]) == 0);
     const auto saved = savedEffectParamCount (facetSlot);
@@ -28,7 +28,7 @@ TEST (parity190mg_dyn_laws_are_hidden_and_off_for_new_instances)
 
 TEST (parity190mg_dyn_puigtec_and_l2_translate_their_new_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ll = limiterlaw;
     int n = 0;
     // PuigTec with Mains off (16 = 0): the stage only; Mains 1 = 60 Hz

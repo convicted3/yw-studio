@@ -5,14 +5,14 @@
 #include <functional>
 
 #include "core/Effects.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 #include "core/VocalPitch.h"
 #include "core/ParametricEqFl.h"
 #include "core/PocketFx.h"
 
 // The laws below are FLM's, read in round 188f (REA_rodada182c.md "F5, round 188f"); the addresses are in that text.
 
-namespace lynx::flmfx
+namespace yw::flmfx
 {
 namespace
 {
@@ -31,7 +31,7 @@ float reserved (const flm::Module& m, int i, float fallback) noexcept
 }
 
 // A cookbook band's bandwidth in octaves at normalised frequency w (radians per sample) → its Q (peaks), and the
-// shelf slope S that gives the same α for a shelf of linear amplitude a (LYNX's shelves take the cookbook's S)
+// shelf slope S that gives the same α for a shelf of linear amplitude a (YW's shelves take the cookbook's S)
 double bandwidthTerm (double octaves, double w) noexcept
 {
     const auto s = std::sin (w);
@@ -45,7 +45,7 @@ double shelfSlope (double octaves, double w, double a) noexcept
     return inverse > 1e-9 ? 1.0 / inverse : 1e9;
 }
 
-// One band of a LYNX parametric EQ slot
+// One band of a YW parametric EQ slot
 struct Band
 {
     peq::BandType type = peq::BandType::off;
@@ -65,7 +65,7 @@ EffectSlot eqSlot (const std::vector<Band>& bands, double outputDb)
         slot.params[(std::size_t) (peq::slopeParam + b)] = peq::slopeValue (1);
     }
     slot.params[(std::size_t) peq::outputParam] = peq::gainValue (outputDb);
-    slot.params[(std::size_t) peqfl::lawParam] = 0.0f; // LYNX's own EQ law (cookbook biquads)
+    slot.params[(std::size_t) peqfl::lawParam] = 0.0f; // YW's own EQ law (cookbook biquads)
     return slot;
 }
 
@@ -96,7 +96,7 @@ Band cookbookBand (int kind, double hz, double shown, double octaves, double w, 
     return band;
 }
 
-// FL Studio Mobile's own effects that LYNX runs exactly as Pocket engines (core/PocketFx.h, round 188h): the slot's
+// FL Studio Mobile's own effects that YW runs exactly as Pocket engines (core/PocketFx.h, round 188h): the slot's
 // parameter k is the module's parameter k + 1 (its Enable is the slot's on switch), copied as it is; a value the file
 // doesn't hold keeps the engine's default (FLM's)
 void pocket (const flm::Module& m, EffectKind kind, const char* label, Mapped& out)
@@ -148,7 +148,7 @@ void tunedEq (const flm::Module& m, bool live, Mapped& out)
         auto band = cookbookBand (kind, hz, shown, octaves, w, out);
         if (band.type != peq::BandType::off)
         {
-            // the Bandwidth reaches shapes LYNX's EQ does not (0.1 … 10.1 octaves): say so once
+            // the Bandwidth reaches shapes YW's EQ does not (0.1 … 10.1 octaves): say so once
             const auto raw = kind == 1 ? peakQ (octaves, w) : shelfSlope (octaves, w, std::pow (10.0, band.db / 40.0));
             if (! outOfRange && (raw < (kind == 1 ? 0.1 : 0.1) || raw > (kind == 1 ? 18.0 : 4.0) || ! std::isfinite (raw)))
             {
@@ -186,16 +186,16 @@ int rawControl (float v, float lo, float hi) noexcept
     return (int) std::floor ((hi - lo) * c + lo + 0.5f);
 }
 
-// --- round 190de (FLM_FORMAT §7.6): Pitcher (25) and Pitcher 2 (45) → LYNX Tune with a custom scale. Both correct the
+// --- round 190de (FLM_FORMAT §7.6): Pitcher (25) and Pitcher 2 (45) → YW Tune with a custom scale. Both correct the
 // sung pitch towards the nearest of twelve allowed pitch classes (Pitcher: a 12-byte mask in its CSTM; Pitcher 2: its
 // parameters 1…12), so Scale = Custom with the same note switches is exact; the rest is mapped law by law.
 namespace
 {
 EffectSlot tuneSlot (std::uint16_t allowed)
 {
-    namespace lt = lynxtune;
-    auto slot = makeEffectSlot (EffectKind::lynxTune);
-    slot.params[lt::scale] = 1.0f; // Custom (the last of LYNX Tune's 14 scales)
+    namespace lt = ywtune;
+    auto slot = makeEffectSlot (EffectKind::ywTune);
+    slot.params[lt::scale] = 1.0f; // Custom (the last of YW Tune's 14 scales)
     for (int k = 0; k < 12; ++k)
         slot.params[(std::size_t) (lt::noteC + k)] = (allowed >> k) & 1u ? 1.0f : 0.0f;
     slot.params[lt::humanize] = 0.0f;
@@ -209,7 +209,7 @@ float retuneValue (double ms) noexcept { return (float) std::sqrt (std::clamp (m
 
 void pitcher (const flm::Module& m, Mapped& out)
 {
-    namespace lt = lynxtune;
+    namespace lt = ywtune;
     out.label = "FL Studio Mobile: Pitcher (YW Tune)";
     const auto v = [&m] (int i, float fallback) { return param (m, i, fallback); };
     // CSTM: 12 bytes (pitch class C … B allowed when not 0), then the Key and Scale menus (the mask is what plays)
@@ -220,7 +220,7 @@ void pitcher (const flm::Module& m, Mapped& out)
     else
         allowed = 0x0AB5; // (no mask saved: the menus' default, C major)
     auto slot = tuneSlot (allowed);
-    // Speed: a one-pole at τ = (3(1 − v)³ + 0.001) / 8.82 s, instant from 0.99 — LYNX's retune is the same one-pole
+    // Speed: a one-pole at τ = (3(1 − v)³ + 0.001) / 8.82 s, instant from 0.99 — YW's retune is the same one-pole
     const auto u = 1.0 - (double) v (1, 0.0f);
     slot.params[lt::retune] = u < 0.01 ? 0.0f : retuneValue (1000.0 * (3.0 * u * u * u + 0.001) / 8.82);
     const auto st = (int) ((v (2, 0.5f) - 0.5f) * 24.0f);
@@ -233,7 +233,7 @@ void pitcher (const flm::Module& m, Mapped& out)
         slot.params[lt::formantShift] = v (5, 0.5f);
         out.partial.push_back ("FL Studio Mobile: Pitcher formant shift (YW Tune's formant shift)");
     }
-    // Base Freq A4 = 440·2^((2v − 1)/12), the fine tune folded into it (LYNX Tune's reference: 430…450 Hz)
+    // Base Freq A4 = 440·2^((2v − 1)/12), the fine tune folded into it (YW Tune's reference: 430…450 Hz)
     const auto a4 = 440.0 * std::exp2 ((2.0 * (double) v (7, 0.5f) - 1.0) / 12.0) * std::exp2 ((double) cents / 1200.0);
     slot.params[lt::reference] = (float) std::clamp ((a4 - 430.0) / 20.0, 0.0, 1.0);
     if (a4 < 430.0 || a4 > 450.0)
@@ -245,7 +245,7 @@ void pitcher (const flm::Module& m, Mapped& out)
         slot.params[(std::size_t) (lt::bypassC + k)] = v (10 + k, 0.0f) >= 1.0f ? 1.0f : 0.0f;
     if (v (22, 0.0f) != 0.0f)
         slot.params[lt::correction] = 0.0f; // Bypass snapping: transpose only
-    slot.params[lt::range] = 1.0f; // (FLM's detector: 55…1500 Hz; LYNX Tune's widest range)
+    slot.params[lt::range] = 1.0f; // (FLM's detector: 55…1500 Hz; YW Tune's widest range)
     if (v (8, 0.0f) > 1e-4f)
         out.partial.push_back ("FL Studio Mobile: Pitcher Stability (not reproduced)");
     out.partial.push_back ("FL Studio Mobile: Pitcher (YW Tune's detector and shifter)");
@@ -254,7 +254,7 @@ void pitcher (const flm::Module& m, Mapped& out)
 
 void pitcher2 (const flm::Module& m, Mapped& out)
 {
-    namespace lt = lynxtune;
+    namespace lt = ywtune;
     out.label = "FL Studio Mobile: Pitcher 2 (YW Tune)";
     const auto v = [&m] (int i, float fallback) { return param (m, i, fallback); };
     static constexpr std::uint16_t cMinor = 0x05AD; // C, D, Eb, F, G, Ab, Bb: the module's defaults
@@ -266,7 +266,7 @@ void pitcher2 (const flm::Module& m, Mapped& out)
     // round 190jv [EXEC: FL's render of the Rack generator, rea flm.md §4]: Pitcher 2 looks for the allowed notes in the
     // sung note's own octave (C … B) — with only D allowed, A4 and B4 land on D4, not on the nearer D5 (Pitcher does take
     // D5). So a pitch class with allowed notes only below it in its octave goes down, one with allowed notes only above
-    // it goes up (LYNX Tune's per-note direction); with both, the nearest is the octave's own
+    // it goes up (YW Tune's per-note direction); with both, the nearest is the octave's own
     for (int k = 0; k < 12; ++k)
         if (((allowed >> k) & 1u) == 0)
         {
@@ -275,7 +275,7 @@ void pitcher2 (const flm::Module& m, Mapped& out)
         }
     // Speed: four one-poles at (200^v − 0.9)·2.29896 Hz on the target. Round 190jv [EXEC: FL's renders at Speed 0, 0.1,
     // 0.25, 0.5, 1, rea flm.md §4]: FL lands a target change at the cascade's 90 % time (5.32 stage τ) plus ~25 ms of
-    // detection, and never faster than ~45 ms; LYNX's one pole (90 % at 2.30 τ) is matched there — τ = 2.31 stage τ,
+    // detection, and never faster than ~45 ms; YW's one pole (90 % at 2.30 τ) is matched there — τ = 2.31 stage τ,
     // at least 9 ms (round 190de matched the half-way time, 5.30 stage τ: up to 2.3× too slow, too fast at Speed 1)
     const auto fc = (std::pow (200.0, (double) v (13, 0.5f)) - 0.9) * 2.29896;
     slot.params[lt::retune] = retuneValue (std::max (1000.0 * 2.31 / (2.0 * 3.14159265358979 * std::max (fc, 1.0e-3)), 9.0));
@@ -290,8 +290,8 @@ void pitcher2 (const flm::Module& m, Mapped& out)
     slot.params[lt::mix] = std::clamp (v (22, 1.0f), 0.0f, 1.0f);
     slot.params[lt::lowLatency] = v (25, 0.0f) != 0.0f ? 1.0f : 0.0f;
     // round 190jv [EXEC: FL's renders of a held sine, rea flm.md §4.3]: Pitcher 2's output is 1/√2 of its input when
-    // nothing is shifted (−3.02 dB, both formant modes), ~1.4 dB less while it shifts; LYNX Tune passes at 0 dB: the
-    // structural −3.01 dB as LYNX Tune's output trim (−24 … +24 dB)
+    // nothing is shifted (−3.02 dB, both formant modes), ~1.4 dB less while it shifts; YW Tune passes at 0 dB: the
+    // structural −3.01 dB as YW Tune's output trim (−24 … +24 dB)
     slot.params[lt::outputTrim] = (float) ((24.0 - 20.0 * std::log10 (std::sqrt (2.0))) / 48.0);
     slot.params[lt::range] = 1.0f;
     out.partial.push_back ("FL Studio Mobile: Pitcher 2 (YW Tune's detector, shifter and retune curve)");
@@ -353,13 +353,13 @@ Mapped map (const flm::Module& m, bool live, bool postGainLive)
         case 45: pitcher2 (m, out); break; // round 190de
         default: return out;
     }
-    // FLM's module wrapper (PROVEN, REA_rodada182c "F5 effects, round 188h"): Mix is a linear dry/wet blend (a LYNX
+    // FLM's module wrapper (PROVEN, REA_rodada182c "F5 effects, round 188h"): Mix is a linear dry/wet blend (a YW
     // slot's mix); Post Gain = 10^(2g − 1) (40g − 20 dB) on the module's output before the blend; Wet Pan a linear
     // balance of the wet amount. Enable ([0] below 0.5) bypasses the module.
     const auto enabled = param (m, 0, 1.0f) >= 0.5f;
     const auto mix = std::clamp (reserved (m, 1, 1.0f), 0.0f, 1.0f);
     const auto postDb = 40.0 * (double) reserved (m, 0, 0.5f) - 20.0;
-    // round 190fe: a Mix below 100% on a module that takes several LYNX slots, or with a Post Gain, is FLM's blend
+    // round 190fe: a Mix below 100% on a module that takes several YW slots, or with a Post Gain, is FLM's blend
     // itself — dry × (1 − Mix) + Post Gain × wet × Mix — as a parallel container: a dry branch and the module's slots
     // in a branch (exact for every module whose slots need no side input). Automated modules keep the plain slots
     // (their lanes address the slots one by one).
@@ -414,8 +414,8 @@ std::vector<LaneTarget> automate (const flm::Module& m, int param, const std::ve
     if (values.empty())
         return {};
     // Round 190fn (automation-0010): Enable. Below 0.5 FLM's wrapper does not call the module, so the rack's buffer
-    // passes as it is (FLM_FORMAT §7.4, PROVEN-REA 0x180799750): on LYNX, every slot of the module at its own mix while
-    // on and at mix 0 (dry) while off. (FLM also freezes the module's state while it is off; LYNX's slots keep running
+    // passes as it is (FLM_FORMAT §7.4, PROVEN-REA 0x180799750): on YW, every slot of the module at its own mix while
+    // on and at mix 0 (dry) while off. (FLM also freezes the module's state while it is off; YW's slots keep running
     // on the input, so a reverb switched back on starts from the current tail, not the frozen one.)
     if (param == 0)
     {
@@ -485,4 +485,4 @@ std::vector<LaneTarget> automate (const flm::Module& m, int param, const std::ve
     }
     return out;
 }
-} // namespace lynx::flmfx
+} // namespace yw::flmfx

@@ -16,7 +16,7 @@
 #include "core/SimpleTracks.h"
 #include "core/SynthPresets.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -403,7 +403,7 @@ void note (FlpImportReport* report, std::map<std::string, int> FlpImportReport::
         (report->*list)[what] += n;
 }
 
-// BandLab's linear fader (1 = unity, 2 ≈ +6 dB) → LYNX's fader position (capped at its +5.6 dB)
+// BandLab's linear fader (1 = unity, 2 ≈ +6 dB) → YW's fader position (capped at its +5.6 dB)
 float faderOf (double linear) noexcept
 {
     return faderPosition ((float) std::clamp (linear, 0.0, (double) maxFaderGain));
@@ -411,7 +411,7 @@ float faderOf (double linear) noexcept
 
 float pan01 (double pan) noexcept { return (float) std::clamp ((pan + 1.0) * 0.5, 0.0, 1.0); }
 
-// the laws of LYNX's basic effects (core/Effects.cpp), inverted
+// the laws of YW's basic effects (core/Effects.cpp), inverted
 float logValue (double v, double lo, double hi) noexcept
 {
     v = std::clamp (v, lo, hi);
@@ -427,7 +427,7 @@ struct Mapped
     bool partial = false;
 };
 
-// One BandLab effect → LYNX slots. Empty: no equivalent.
+// One BandLab effect → YW slots. Empty: no equivalent.
 Mapped mapEffect (const blx::Effect& fx)
 {
     Mapped m;
@@ -452,7 +452,7 @@ Mapped mapEffect (const blx::Effect& fx)
         s.params[1] = compRatioValue (param ("ratio", 4.0));
         s.params[2] = logValue (param ("attack", 0.01) * 1000.0, 0.1, 100.0);  // seconds → ms
         s.params[3] = logValue (param ("release", 0.1) * 1000.0, 10.0, 1000.0);
-        m.partial = fx.params.count ("knee") != 0; // (LYNX's compressor has its own knee)
+        m.partial = fx.params.count ("knee") != 0; // (YW's compressor has its own knee)
         return m;
     }
     if (slug == "threebandeq")
@@ -892,7 +892,7 @@ Song importBlx (const blx::Project& project, const BlxImportOptions& options)
     if (project.hasLyrics)
         note (report, &FlpImportReport::notReproduced, "BandLab: lyrics / notes");
 
-    // seconds and quarter notes → LYNX ticks (BandLab's tempo is in quarter notes, as LYNX's)
+    // seconds and quarter notes → YW ticks (BandLab's tempo is in quarter notes, as YW's)
     const auto ticksPerSecond = song.bpm / 60.0 * ppq;
     const auto toTicks = [ticksPerSecond] (double seconds) { return (std::int64_t) std::llround (std::max (0.0, seconds) * ticksPerSecond); };
     std::map<std::string, const blx::Sample*> samples;
@@ -1078,7 +1078,7 @@ Song importBlx (const blx::Project& project, const BlxImportOptions& options)
                     c.colour = colour;
                     if (std::abs (rate - 1.0) > 1.0e-4)
                     {
-                        // BandLab's playback rate: the file plays `rate` times faster; LYNX keeps its pitch and gives it
+                        // BandLab's playback rate: the file plays `rate` times faster; YW keeps its pitch and gives it
                         // the length in beats it then lasts at the song's tempo
                         auto seconds = sample != nullptr ? sample->duration : 0.0;
                         if (seconds <= 0.0 && options.common.sampleSeconds)
@@ -1219,4 +1219,4 @@ std::optional<Song> importBlxBytes (const std::vector<std::uint8_t>& bytes, cons
         return std::nullopt;
     return importBlx (*project, options);
 }
-} // namespace lynx
+} // namespace yw

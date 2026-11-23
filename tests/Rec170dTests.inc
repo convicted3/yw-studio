@@ -6,29 +6,29 @@
 
 namespace rec170d
 {
-constexpr double bar = 4.0 * lynx::ppq; // 4/4
+constexpr double bar = 4.0 * yw::ppq; // 4/4
 
 // a take the way AudioEngine::updateRecording runs it: each event through the count-in catch, then the NoteRecorder,
 // every finished batch committed by commitNoteBatch inside one edit
 struct Take
 {
-    lynx::Song& song;
-    lynx::CountInCatch catcher;
-    lynx::NoteRecorder recorder;
+    yw::Song& song;
+    yw::CountInCatch catcher;
+    yw::NoteRecorder recorder;
     std::vector<int> cleared;
     bool first = true;
-    lynx::TakeQuantize q {};
+    yw::TakeQuantize q {};
 
-    Take (lynx::Song& s, std::int64_t start, std::int64_t window, std::int64_t countIn) : song (s)
+    Take (yw::Song& s, std::int64_t start, std::int64_t window, std::int64_t countIn) : song (s)
     {
         q.grid = 0;
         const auto loop = song.patterns[(std::size_t) song.currentPattern].effectiveLength (song.meter());
         catcher.start = start;
         catcher.window = window;
-        catcher.songMode = song.mode == lynx::PlayMode::song;
-        catcher.wrap = lynx::countInWrap (countIn, loop);
+        catcher.songMode = song.mode == yw::PlayMode::song;
+        catcher.wrap = yw::countInWrap (countIn, loop);
         recorder.begin (loop);
-        if (song.mode == lynx::PlayMode::song && ! song.hasLoop())
+        if (song.mode == yw::PlayMode::song && ! song.hasLoop())
             recorder.setLinear (true);
     }
     void flush()
@@ -36,15 +36,15 @@ struct Take
         auto notes = recorder.takeFinished();
         if (notes.empty())
             return;
-        const auto before = lynx::patternLengths (song);
-        lynx::commitNoteBatch (song, recorder, std::move (notes), lynx::RecordMode::overdub, q, cleared, true, first);
-        lynx::followPatternLengths (before, song);
+        const auto before = yw::patternLengths (song);
+        yw::commitNoteBatch (song, recorder, std::move (notes), yw::RecordMode::overdub, q, cleared, true, first);
+        yw::followPatternLengths (before, song);
         first = false;
     }
     void event (double tick, int key, bool on)
     {
-        lynx::RecordedEvent e { tick, 0, key, on ? 0.8f : 0.0f, on };
-        if (lynx::catchEarlyNote (e, catcher))
+        yw::RecordedEvent e { tick, 0, key, on ? 0.8f : 0.0f, on };
+        if (yw::catchEarlyNote (e, catcher))
             recorder.add (song, e);
         flush();
     }
@@ -55,9 +55,9 @@ struct Take
     }
 };
 
-lynx::Song emptySong (lynx::PlayMode mode)
+yw::Song emptySong (yw::PlayMode mode)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.bpm = 120.0;
     s.mode = mode;
     for (auto& p : s.patterns)
@@ -67,7 +67,7 @@ lynx::Song emptySong (lynx::PlayMode mode)
     return s;
 }
 
-const lynx::Note* find (const lynx::Pattern& p, int key)
+const yw::Note* find (const yw::Pattern& p, int key)
 {
     for (const auto& n : p.notes)
         if (n.key == key)
@@ -75,10 +75,10 @@ const lynx::Note* find (const lynx::Pattern& p, int key)
     return nullptr;
 }
 
-const lynx::Clip* clipOf (const lynx::Song& s, int pattern)
+const yw::Clip* clipOf (const yw::Song& s, int pattern)
 {
     for (const auto& c : s.playlist)
-        if (c.kind == lynx::ClipKind::pattern && c.pattern == pattern)
+        if (c.kind == yw::ClipKind::pattern && c.pattern == pattern)
             return &c;
     return nullptr;
 }
@@ -87,87 +87,87 @@ const lynx::Clip* clipOf (const lynx::Song& s, int pattern)
 TEST (rec170d_live_clock_uses_the_event_time_and_the_output_latency)
 {
     // 120 bpm at 48 kHz: 1.92 ticks a millisecond
-    lynx::LiveClock c;
+    yw::LiveClock c;
     c.tick = 7680.0;
     c.timeMs = 10000.0;
     c.ticksPerMs = 960.0 * 2.0 / 1000.0;
     c.running = true;
     // an event stamped 5 ms after the block, 16 ms of output latency: heard 11 ms before the clock's position
-    CHECK (std::abs (lynx::liveTickAt (c, 10005.0, 16.0) - (7680.0 - 11.0 * 1.92)) < 1e-9);
+    CHECK (std::abs (yw::liveTickAt (c, 10005.0, 16.0) - (7680.0 - 11.0 * 1.92)) < 1e-9);
     // without compensation: sample-accurate against the block, not "now"
-    CHECK (std::abs (lynx::liveTickAt (c, 10005.0, 0.0) - (7680.0 + 5.0 * 1.92)) < 1e-9);
+    CHECK (std::abs (yw::liveTickAt (c, 10005.0, 0.0) - (7680.0 + 5.0 * 1.92)) < 1e-9);
     // a stamp before the block (the device stamped it while the callback ran)
-    CHECK (std::abs (lynx::liveTickAt (c, 9998.0, 0.0) - (7680.0 - 2.0 * 1.92)) < 1e-9);
+    CHECK (std::abs (yw::liveTickAt (c, 9998.0, 0.0) - (7680.0 - 2.0 * 1.92)) < 1e-9);
     // a stamp from another clock is held to a quarter second
-    CHECK (std::abs (lynx::liveTickAt (c, 99999.0, 0.0) - (7680.0 + 250.0 * 1.92)) < 1e-9);
+    CHECK (std::abs (yw::liveTickAt (c, 99999.0, 0.0) - (7680.0 + 250.0 * 1.92)) < 1e-9);
     // a stopped clock: its position, whatever the time
     c.running = false;
-    CHECK (lynx::liveTickAt (c, 10500.0, 16.0) == 7680.0);
+    CHECK (yw::liveTickAt (c, 10500.0, 16.0) == 7680.0);
 }
 
 TEST (rec170d_count_in_catch_rules)
 {
-    using lynx::RecordedEvent;
-    lynx::CountInCatch c;
+    using yw::RecordedEvent;
+    yw::CountInCatch c;
     c.start = 7680;
-    c.window = lynx::ppq / 4; // a 1/16 note
+    c.window = yw::ppq / 4; // a 1/16 note
     c.songMode = true;
 
     RecordedEvent on { 7600.0, 0, 60, 0.8f, true };
-    CHECK (lynx::catchEarlyNote (on, c) && on.tick == 7680.0); // a hair early: onto the start
+    CHECK (yw::catchEarlyNote (on, c) && on.tick == 7680.0); // a hair early: onto the start
     RecordedEvent off { 7650.0, 0, 60, 0.0f, false };
-    CHECK (lynx::catchEarlyNote (off, c) && off.tick == 7730.0); // released before the start: its played length (50)
+    CHECK (yw::catchEarlyNote (off, c) && off.tick == 7730.0); // released before the start: its played length (50)
     RecordedEvent held { 7590.0, 0, 64, 0.8f, true }, heldOff { 8000.0, 0, 64, 0.0f, false };
-    CHECK (lynx::catchEarlyNote (held, c) && held.tick == 7680.0);
-    CHECK (lynx::catchEarlyNote (heldOff, c) && heldOff.tick == 8000.0); // released after the start: kept
+    CHECK (yw::catchEarlyNote (held, c) && held.tick == 7680.0);
+    CHECK (yw::catchEarlyNote (heldOff, c) && heldOff.tick == 8000.0); // released after the start: kept
     RecordedEvent early { 4800.0, 0, 62, 0.8f, true };
-    CHECK (lynx::catchEarlyNote (early, c) && early.tick == 4800.0); // earlier in the count-in: its real song position
+    CHECK (yw::catchEarlyNote (early, c) && early.tick == 4800.0); // earlier in the count-in: its real song position
     RecordedEvent late { 9000.0, 0, 65, 0.8f, true };
-    CHECK (lynx::catchEarlyNote (late, c) && late.tick == 9000.0); // after the start: untouched
+    CHECK (yw::catchEarlyNote (late, c) && late.tick == 9000.0); // after the start: untouched
 
     // the song start: nothing before it
-    lynx::CountInCatch z;
+    yw::CountInCatch z;
     z.start = 0;
-    z.window = lynx::ppq / 4;
+    z.window = yw::ppq / 4;
     RecordedEvent before { -1000.0, 0, 60, 0.8f, true };
-    CHECK (! lynx::catchEarlyNote (before, z));
+    CHECK (! yw::catchEarlyNote (before, z));
     RecordedEvent hair { -100.0, 0, 60, 0.8f, true };
-    CHECK (lynx::catchEarlyNote (hair, z) && hair.tick == 0.0);
+    CHECK (yw::catchEarlyNote (hair, z) && hair.tick == 0.0);
 
     // pattern mode: the count-in is the loop's previous pass
-    lynx::CountInCatch p;
+    yw::CountInCatch p;
     p.start = 0;
-    p.window = lynx::ppq / 4;
+    p.window = yw::ppq / 4;
     p.songMode = false;
-    p.wrap = lynx::countInWrap (3840, 3840);
-    CHECK (p.wrap == 3840 && lynx::countInWrap (7680, 3840) == 7680 && lynx::countInWrap (3840, 7680) == 7680);
+    p.wrap = yw::countInWrap (3840, 3840);
+    CHECK (p.wrap == 3840 && yw::countInWrap (7680, 3840) == 7680 && yw::countInWrap (3840, 7680) == 7680);
     RecordedEvent beat4 { -960.0, 0, 67, 0.8f, true }, beat4Off { -500.0, 0, 67, 0.0f, false };
-    CHECK (lynx::catchEarlyNote (beat4, p) && beat4.tick == 2880.0);
-    CHECK (lynx::catchEarlyNote (beat4Off, p) && beat4Off.tick == 3340.0);
+    CHECK (yw::catchEarlyNote (beat4, p) && beat4.tick == 2880.0);
+    CHECK (yw::catchEarlyNote (beat4Off, p) && beat4Off.tick == 3340.0);
     RecordedEvent over { -960.0, 0, 69, 0.8f, true }, overOff { 500.0, 0, 69, 0.0f, false };
-    CHECK (lynx::catchEarlyNote (over, p) && lynx::catchEarlyNote (overOff, p) && overOff.tick == 3840.0); // to the loop's end
+    CHECK (yw::catchEarlyNote (over, p) && yw::catchEarlyNote (overOff, p) && overOff.tick == 3840.0); // to the loop's end
 
     // no count-in: nothing changes
-    lynx::CountInCatch none;
+    yw::CountInCatch none;
     RecordedEvent any { -5.0, 0, 60, 0.8f, true };
-    CHECK (lynx::catchEarlyNote (any, none) && any.tick == -5.0);
+    CHECK (yw::catchEarlyNote (any, none) && any.tick == -5.0);
 }
 
 TEST (rec170d_the_video_chord_on_the_downbeat_after_the_count_in_is_recorded)
 {
     // Song mode, a 1-bar count-in before bar 3: the chord played 15 ms early (29 ticks), held a beat; then a note a bar
     // for 6 bars ("it stopped after two bars", round 168k): everything is kept, the chord on bar 3
-    auto s = rec170d::emptySong (lynx::PlayMode::song);
+    auto s = rec170d::emptySong (yw::PlayMode::song);
     const auto start = (std::int64_t) (2 * rec170d::bar);
-    rec170d::Take take (s, start, lynx::ppq / 4, (std::int64_t) rec170d::bar);
+    rec170d::Take take (s, start, yw::ppq / 4, (std::int64_t) rec170d::bar);
     for (int key : { 60, 64, 67 })
         take.event ((double) start - 29.0, key, true);
     for (int key : { 60, 64, 67 })
-        take.event ((double) start + lynx::ppq, key, false);
+        take.event ((double) start + yw::ppq, key, false);
     for (int b = 1; b <= 6; ++b)
     {
         take.event ((double) start + b * rec170d::bar, 70 + b, true);
-        take.event ((double) start + b * rec170d::bar + lynx::ppq / 2, 70 + b, false);
+        take.event ((double) start + b * rec170d::bar + yw::ppq / 2, 70 + b, false);
     }
     take.stop ((double) start + 7 * rec170d::bar);
 
@@ -176,7 +176,7 @@ TEST (rec170d_the_video_chord_on_the_downbeat_after_the_count_in_is_recorded)
     for (int key : { 60, 64, 67 })
     {
         const auto* n = rec170d::find (p, key);
-        CHECK (n != nullptr && n->start == 0 && n->length == lynx::ppq); // on the take's first beat, its clip at bar 3
+        CHECK (n != nullptr && n->start == 0 && n->length == yw::ppq); // on the take's first beat, its clip at bar 3
     }
     for (int b = 1; b <= 6; ++b)
     {
@@ -190,18 +190,18 @@ TEST (rec170d_the_video_chord_on_the_downbeat_after_the_count_in_is_recorded)
 TEST (rec170d_count_in_notes_keep_their_real_time_and_the_window_can_be_off)
 {
     // a note in the count-in bar (beat 2 of bar 2) and the chord 15 ms early, catch window off: both where played
-    auto s = rec170d::emptySong (lynx::PlayMode::song);
+    auto s = rec170d::emptySong (yw::PlayMode::song);
     const auto start = (std::int64_t) (2 * rec170d::bar);
     rec170d::Take take (s, start, 0, (std::int64_t) rec170d::bar);
-    take.event ((double) rec170d::bar + lynx::ppq, 62, true);
-    take.event ((double) rec170d::bar + 1.5 * lynx::ppq, 62, false);
+    take.event ((double) rec170d::bar + yw::ppq, 62, true);
+    take.event ((double) rec170d::bar + 1.5 * yw::ppq, 62, false);
     take.event ((double) start - 29.0, 60, true);
-    take.event ((double) start + lynx::ppq, 60, false);
+    take.event ((double) start + yw::ppq, 60, false);
     take.stop ((double) start + rec170d::bar);
     const auto& p = s.patterns[0];
     const auto* pickup = rec170d::find (p, 62);
     const auto* chord = rec170d::find (p, 60);
-    CHECK (pickup != nullptr && pickup->start == lynx::ppq); // the take's origin is bar 2 now
+    CHECK (pickup != nullptr && pickup->start == yw::ppq); // the take's origin is bar 2 now
     CHECK (chord != nullptr && chord->start == (std::int64_t) rec170d::bar - 29);
     const auto* clip = rec170d::clipOf (s, 0);
     CHECK (clip != nullptr && clip->start == (std::int64_t) rec170d::bar);
@@ -209,9 +209,9 @@ TEST (rec170d_count_in_notes_keep_their_real_time_and_the_window_can_be_off)
 
 TEST (rec170d_pattern_mode_count_in_is_the_previous_loop_pass)
 {
-    auto s = rec170d::emptySong (lynx::PlayMode::pattern);
+    auto s = rec170d::emptySong (yw::PlayMode::pattern);
     s.patterns[0].lengthTicks = (std::int64_t) rec170d::bar; // a 1-bar pattern
-    rec170d::Take take (s, 0, lynx::ppq / 4, (std::int64_t) rec170d::bar);
+    rec170d::Take take (s, 0, yw::ppq / 4, (std::int64_t) rec170d::bar);
     take.event (-20.0, 60, true); // a hair early: beat 1
     take.event (400.0, 60, false);
     take.event (-960.0, 67, true); // beat 4 of the count-in: beat 4 of the pattern
@@ -232,8 +232,8 @@ TEST (rec170d_pattern_mode_count_in_is_the_previous_loop_pass)
 
 TEST (rec170d_capture_midi_played_while_playing_lands_where_played)
 {
-    auto s = rec170d::emptySong (lynx::PlayMode::song);
-    lynx::scorelog::Log log;
+    auto s = rec170d::emptySong (yw::PlayMode::song);
+    yw::scorelog::Log log;
     // an old phrase (stopped), then a phrase played while the song played (bars 5–6), not recorded
     log.noteOn (1000.0, 0, 50, 0.7f);
     log.noteOff (1200.0, 0, 50);
@@ -241,13 +241,13 @@ TEST (rec170d_capture_midi_played_while_playing_lands_where_played)
     for (int i = 0; i < 4; ++i)
     {
         const auto ms = 60000.0 + i * barMs / 2;
-        log.noteOn (ms, 0, 60 + i, 0.8f, 4 * rec170d::bar + i * 2 * lynx::ppq);
+        log.noteOn (ms, 0, 60 + i, 0.8f, 4 * rec170d::bar + i * 2 * yw::ppq);
         log.noteOff (ms + 250.0, 0, 60 + i);
     }
-    lynx::CaptureOptions o;
+    yw::CaptureOptions o;
     o.nowMs = 70000.0;
     o.gapMs = 4000.0;
-    const auto r = lynx::captureMidi (s, log.snapshot(), o);
+    const auto r = yw::captureMidi (s, log.snapshot(), o);
     CHECK (r.notes == 4 && r.played && r.newestMs == 60000.0 + 3 * barMs / 2);
     const auto& p = s.patterns[0];
     CHECK (p.notes.size() == 4 && rec170d::find (p, 50) == nullptr);
@@ -256,18 +256,18 @@ TEST (rec170d_capture_midi_played_while_playing_lands_where_played)
     for (int i = 0; i < 4; ++i)
     {
         const auto* n = rec170d::find (p, 60 + i);
-        CHECK (n != nullptr && n->start == i * 2 * lynx::ppq && n->length == lynx::ppq / 2); // 250 ms = half a beat
+        CHECK (n != nullptr && n->start == i * 2 * yw::ppq && n->length == yw::ppq / 2); // 250 ms = half a beat
     }
     // captured once: the next capture finds nothing new
     o.afterMs = r.newestMs;
-    CHECK (lynx::capturePhrase (s, log.snapshot(), o).empty());
+    CHECK (yw::capturePhrase (s, log.snapshot(), o).empty());
 }
 
 TEST (rec170d_capture_midi_while_stopped_keeps_the_timing_from_the_start)
 {
     // Pattern mode, stopped: the last phrase (after a 10 s pause) from the pattern start, at the project tempo
-    auto s = rec170d::emptySong (lynx::PlayMode::pattern);
-    lynx::scorelog::Log log;
+    auto s = rec170d::emptySong (yw::PlayMode::pattern);
+    yw::scorelog::Log log;
     log.noteOn (1000.0, 0, 40, 0.5f);
     log.noteOff (1100.0, 0, 40);
     log.noteOn (20000.0, 0, 60, 0.8f);
@@ -277,50 +277,50 @@ TEST (rec170d_capture_midi_while_stopped_keeps_the_timing_from_the_start)
     log.noteOn (22000.0, 0, 67, 0.8f); // a bar after the first
     // (67 still held: it ends now)
     log.noteOn (22100.0, 0, 72, 0.8f, -1.0, true); // went into a take: never captured
-    lynx::CaptureOptions o;
+    yw::CaptureOptions o;
     o.nowMs = 22500.0;
     o.gapMs = 4000.0;
-    const auto r = lynx::captureMidi (s, log.snapshot(), o);
+    const auto r = yw::captureMidi (s, log.snapshot(), o);
     CHECK (r.notes == 3 && ! r.played);
     const auto& p = s.patterns[0];
     CHECK (p.notes.size() == 3);
-    CHECK (rec170d::find (p, 60) != nullptr && rec170d::find (p, 60)->start == 0 && rec170d::find (p, 60)->length == lynx::ppq / 2);
-    CHECK (rec170d::find (p, 64) != nullptr && rec170d::find (p, 64)->start == lynx::ppq);
+    CHECK (rec170d::find (p, 60) != nullptr && rec170d::find (p, 60)->start == 0 && rec170d::find (p, 60)->length == yw::ppq / 2);
+    CHECK (rec170d::find (p, 64) != nullptr && rec170d::find (p, 64)->start == yw::ppq);
     CHECK (rec170d::find (p, 67) != nullptr && rec170d::find (p, 67)->start == (std::int64_t) rec170d::bar
-           && rec170d::find (p, 67)->length == lynx::ppq); // held: to now (500 ms)
+           && rec170d::find (p, 67)->length == yw::ppq); // held: to now (500 ms)
     CHECK (rec170d::find (p, 40) == nullptr && rec170d::find (p, 72) == nullptr);
 
     // Song mode, stopped with the playhead in bar 3: from bar 3, a clip placed there
-    auto song = rec170d::emptySong (lynx::PlayMode::song);
+    auto song = rec170d::emptySong (yw::PlayMode::song);
     o.playhead = (std::int64_t) (2 * rec170d::bar + 500);
-    const auto r2 = lynx::captureMidi (song, log.snapshot(), o);
+    const auto r2 = yw::captureMidi (song, log.snapshot(), o);
     CHECK (r2.notes == 3);
     const auto* clip = rec170d::clipOf (song, 0);
     CHECK (clip != nullptr && clip->start == (std::int64_t) (2 * rec170d::bar));
-    CHECK (rec170d::find (song.patterns[0], 64) != nullptr && rec170d::find (song.patterns[0], 64)->start == lynx::ppq);
+    CHECK (rec170d::find (song.patterns[0], 64) != nullptr && rec170d::find (song.patterns[0], 64)->start == yw::ppq);
 
     // nothing played: nothing captured, nothing changed
-    auto quiet = rec170d::emptySong (lynx::PlayMode::pattern);
-    CHECK (lynx::captureMidi (quiet, {}, o).notes == 0 && quiet.patterns[0].notes.empty());
+    auto quiet = rec170d::emptySong (yw::PlayMode::pattern);
+    CHECK (yw::captureMidi (quiet, {}, o).notes == 0 && quiet.patterns[0].notes.empty());
 }
 
 TEST (rec170d_score_log_dump_ignores_the_capture_fields)
 {
     // FL's "Dump score log" (round 165f) is unchanged by the new fields
-    lynx::scorelog::Log log;
+    yw::scorelog::Log log;
     log.noteOn (0.0, 0, 60, 0.8f, 1234.0, true);
     log.noteOff (500.0, 0, 60);
-    lynx::scorelog::DumpOptions d;
+    yw::scorelog::DumpOptions d;
     d.bpm = 120.0;
-    const auto notes = lynx::scorelog::dump (log.snapshot(), d);
-    CHECK (notes.size() == 1 && notes[0].start == 0 && notes[0].length == lynx::ppq);
+    const auto notes = yw::scorelog::dump (log.snapshot(), d);
+    CHECK (notes.size() == 1 && notes[0].start == 0 && notes[0].length == yw::ppq);
 }
 
 TEST (rec170d_loopback_audio_take_lands_on_the_played_click)
 {
     // (c) audio: a click played at song tick 7680 comes back through a loopback `delay` samples later; the ping measures
     // the loopback, the take is placed with the measured round trip (+ a manual offset): the recorded click sits on 7680
-    using namespace lynx::takes;
+    using namespace yw::takes;
     const auto delay = 731; // e.g. 512 buffer + converters
     LatencyPing ping;
     ping.start (8, 4800, 0.5f);

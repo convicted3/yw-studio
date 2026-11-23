@@ -10,7 +10,7 @@
 
 #include "core/WavPack.h"
 
-namespace lynx
+namespace yw
 {
 namespace convolver
 {
@@ -1886,4 +1886,4 @@ std::string convolverParamText (int param, float value01)
         default: return {};
     }
 }
-} // namespace lynx
+} // namespace yw

@@ -30,7 +30,7 @@
 #include "core/SimpleTracks.h"
 #include "core/Song.h"
 
-namespace lynx::simplehdr
+namespace yw::simplehdr
 {
 struct HeaderTarget
 {
@@ -206,4 +206,4 @@ inline bool setLevel (Song& song, const HeaderTarget& h, float volume, float pan
     m.pan = std::clamp (pan, -1.0f, 1.0f);
     return true;
 }
-} // namespace lynx::simplehdr
+} // namespace yw::simplehdr

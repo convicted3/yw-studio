@@ -1,4 +1,4 @@
-// Round 190ah: Online Sessions (docs/design/ONLINE_SESSIONS.md "As built (190ah)"): a guest whose own LYNX SHARE
+// Round 190ah: Online Sessions (docs/design/ONLINE_SESSIONS.md "As built (190ah)"): a guest whose own YW Studio
 // restarts comes back as itself from its journal (the confirmed state its working song stood on, the working song,
 // the revision, the host's epoch and its proposal counter), with what it had changed and the host never confirmed;
 // the limits on a session's audio files; more participant records than people online. No network: the in-process
@@ -14,14 +14,14 @@ struct Live190ahNet : Live169jNet
     // what LiveSessionManager::writeGuestJournal keeps
     struct Journal
     {
-        lynx::Song base, working;
+        yw::Song base, working;
         std::uint64_t rev = 0, epoch = 0;
         std::uint32_t seq = 0;
     };
     std::vector<Journal> journals;
     int guestRestarts = 0;
 
-    Live190ahNet (lynx::Song song, int guestCount, lynx::live::Codec c = {}) : Live169jNet (std::move (song), guestCount, std::move (c))
+    Live190ahNet (yw::Song song, int guestCount, yw::live::Codec c = {}) : Live169jNet (std::move (song), guestCount, std::move (c))
     {
         journals.resize (guests.size());
         for (int g = 0; g < (int) guests.size(); ++g)
@@ -34,7 +34,7 @@ struct Live190ahNet : Live169jNet
         journals[(std::size_t) g] = { p.replica->base(), p.working, p.replica->baseRevision(), p.replica->epoch, p.replica->sequence() };
     }
 
-    // The guest's LYNX SHARE closes or crashes and starts again from its journal: everything since the journal is gone
+    // The guest's YW Studio closes or crashes and starts again from its journal: everything since the journal is gone
     // from that computer. `sentArrives`: what it had sent still reaches the host (it was on the wire) — or is lost too.
     void restartGuest (int g, bool sentArrives)
     {
@@ -42,13 +42,13 @@ struct Live190ahNet : Live169jNet
         if (sentArrives && online[(std::size_t) g])
             while (! p.outbox.empty())
             {
-                auto sent = codec ? lynx::live::Proposal { p.outbox.front().seq, p.outbox.front().baseRev, codec (p.outbox.front().patch) } : p.outbox.front();
+                auto sent = codec ? yw::live::Proposal { p.outbox.front().seq, p.outbox.front().baseRev, codec (p.outbox.front().patch) } : p.outbox.front();
                 p.outbox.pop_front();
                 broadcast (authority->propose ((std::uint32_t) g + 2, sent));
             }
         drop (g);
         const auto& j = journals[(std::size_t) g];
-        p.replica = std::make_unique<lynx::live::Replica> (j.base, j.rev, (std::uint32_t) g + 2, codec);
+        p.replica = std::make_unique<yw::live::Replica> (j.base, j.rev, (std::uint32_t) g + 2, codec);
         p.replica->epoch = j.epoch;
         p.replica->restored (j.seq + 1000u);
         p.working = j.working;
@@ -86,7 +86,7 @@ struct Live190ahNet : Live169jNet
 
 TEST (live190ah_guest_restart_comes_back_as_itself)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (5);
     Live190ahNet net (live169bSong(), 2);
     auto& ana = net.guests[0];
@@ -102,7 +102,7 @@ TEST (live190ah_guest_restart_comes_back_as_itself)
     // after the journal: one more pattern (never written down: lost with the crash unless the host got it)
     const auto afterJournal = live169jNewPattern (ana.working, "Ana after the journal");
     net.poll (1);
-    // her LYNX SHARE closes; what was on the wire reaches the host. Meanwhile the others go on
+    // her YW Studio closes; what was on the wire reaches the host. Meanwhile the others go on
     net.restartGuest (0, true);
     net.host.working.bpm = 141.0;
     net.poll (0);
@@ -141,7 +141,7 @@ TEST (live190ah_guest_restart_comes_back_as_itself)
 
 TEST (live190ah_guest_restart_judged_on_the_journal_base)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (9);
     Live190ahNet net (live169bSong(), 1);
     live::Permissions all;
@@ -169,7 +169,7 @@ TEST (live190ah_guest_restart_judged_on_the_journal_base)
 
 TEST (live190ah_guest_restart_while_the_host_restarted_too)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (13);
     Live190ahNet net (live169bSong(), 2);
     auto& ana = net.guests[0];
@@ -197,7 +197,7 @@ TEST (live190ah_guest_restart_while_the_host_restarted_too)
 
 TEST (live190ah_replicas_converge_with_guest_restarts)
 {
-    using namespace lynx;
+    using namespace yw;
     int sessions = 0, converged = 0, guestRestarts = 0, hostRestarts = 0, kept = 0, marked = 0, replays = 0, snapshots = 0;
     for (unsigned seed = 1; seed <= 24; ++seed)
     {
@@ -206,7 +206,7 @@ TEST (live190ah_replicas_converge_with_guest_restarts)
         // patterns a guest made that its journal knows (or that it made after its last restart): none may be lost
         std::vector<std::uint64_t> marks;
         std::vector<std::vector<std::uint64_t>> notWritten (net.guests.size());
-        lynx::Song journal = net.authority->confirmed();
+        yw::Song journal = net.authority->confirmed();
         std::uint64_t journalRev = 0;
         auto journalChanges = net.authority->changes();
         auto writeGuest = [&] (int g) {
@@ -246,7 +246,7 @@ TEST (live190ah_replicas_converge_with_guest_restarts)
                 writeGuest (g); // (the journal is written every 2 s: often)
             else if (r <= 14)
             {
-                // a guest's LYNX SHARE restarts: what it made since its journal is gone from that computer
+                // a guest's YW Studio restarts: what it made since its journal is gone from that computer
                 notWritten[(std::size_t) g].clear();
                 net.restartGuest (g, rng() % 2 == 0);
             }
@@ -291,7 +291,7 @@ TEST (live190ah_replicas_converge_with_guest_restarts)
 
 TEST (live190ah_media_budget)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::int64_t mb = 1 << 20;
     live::MediaBudget b;
     CHECK (b.guestLimit == live::guestMediaBytes && b.sessionLimit == live::sessionMediaBytes && live::guestMediaBytes < live::sessionMediaBytes);
@@ -326,7 +326,7 @@ TEST (live190ah_media_budget)
 
 TEST (live190ah_more_participant_records_than_people_online)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = live169bSong();
     // packages (P1) keep the user's limit of 4 participants in all
     CHECK (parts::invite (song, "Host", "Ana", 0, false) != nullptr && parts::invite (song, "Host", "Pedro", 0, false) != nullptr

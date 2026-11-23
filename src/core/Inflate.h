@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 // `data` starts at the zlib header (78 xx) or, with `raw`, directly at the DEFLATE stream. `maxSize` caps the
 // output (protection against corrupted blobs). Nothing if the stream is invalid.
@@ -17,4 +17,4 @@ std::optional<std::vector<std::uint8_t>> inflateZlib (const std::uint8_t* data, 
 // The inverse for edited plugin states: a zlib stream (header, stored blocks, Adler-32) that inflateZlib and the
 // plugins' own zlib readers accept.
 std::vector<std::uint8_t> zlibStored (const std::vector<std::uint8_t>& data);
-} // namespace lynx
+} // namespace yw

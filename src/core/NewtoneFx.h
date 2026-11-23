@@ -1,13 +1,13 @@
 #pragma once
 
-// FL Studio's Newtone (pitch editor) and Newtime (time warper) as LYNX mixer effects, described in
+// FL Studio's Newtone (pitch editor) and Newtime (time warper) as YW mixer effects, described in
 // docs/analise/REA_rodada73.md (clean-room: layouts and behaviour in our own words; no Image-Line or zplane code or data
 // in this repository).
 //
 // Both plugins are editors: the user loads a sample into them, edits it, and exports the result. On a mixer insert their
 // render passes the insert's input through unchanged, and only when the plugin's "slave to host playback" switch is on
 // AND FL is playing does the plugin's engine add the edited sample, positioned at the song time (REA_rodada73 §3).
-// LYNX reproduces the pass-through exactly and, in slave mode, adds the source sample as it is (the edits themselves —
+// YW reproduces the pass-through exactly and, in slave mode, adds the source sample as it is (the edits themselves —
 // zplane's pitch/time engines — are not reproduced; see §5).
 //
 // Parameters (EffectKind::newtone / EffectKind::newtime):  [0] slave to host playback (0/1).
@@ -21,7 +21,7 @@
 #include "core/Effects.h"
 #include "core/TimeStretch.h"
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 namespace audioedit
@@ -30,7 +30,7 @@ struct Document;
 }
 }
 
-namespace lynx::newtonefx
+namespace yw::newtonefx
 {
 constexpr int paramCount = 1;
 
@@ -54,7 +54,7 @@ struct Note
     // the whole note), fOrigVelocity = its analysed level 0..1 (-1 = not known)
     std::int64_t validEnd = -1;
     double velocity = -1.0;
-    // round 190li (LYNX extras, as Melodyne's Pitch Modulation / Pitch Drift tools): the sung deviation from the note's
+    // round 190li (YW extras, as Melodyne's Pitch Modulation / Pitch Drift tools): the sung deviation from the note's
     // centre split into its slow part (drift, under ~2.5 Hz) and its fast part (vibrato, modulation), each scaled on its
     // own on top of `drift` (FL's Variation, which scales both). 1 = as sung.
     double modulation = 1.0, pitchDrift = 1.0;
@@ -81,12 +81,12 @@ struct Track
     bool edited = false;          // a note or a global setting differs from the analysis (pitch, time, volume, formant...)
     std::vector<Note> pitches;    // the notes, in order
     double globalFormant = 1.0;   // GlobalFormantShift (the one global the render reads)
-    // the editor's global knobs as last set (FL folds them into the notes when it saves; so does LYNX): Center 0..1
+    // the editor's global knobs as last set (FL folds them into the notes when it saves; so does YW): Center 0..1
     // (pull toward the note's semitone), Variation 0..1 (the notes' drift), Transition 0..2 (× the analysed times)
     double centre = 0.0, variation = 1.0, transition = 1.0;
     int key = -1; // FL's KeyIdx (the sample's detected key: 0-11 C..B major, 12-23 C..B minor); -1 = not known
     // round 190li: the render engine's revision. 0 = the engine as built up to round 190kx (FL's transitions, plain
-    // TD-PSOLA; every older project and FL import keeps it, bit for bit); 1 = LYNX's natural engine (round 190li,
+    // TD-PSOLA; every older project and FL import keeps it, bit for bit); 1 = YW's natural engine (round 190li,
     // scored against Melodyne 5: tools/vocallab): a voicing-aware pitch-synchronous resynthesis, smooth note joins,
     // the drift / modulation split. A new Newtone slot gets `latestEngine`.
     int engine = 0;
@@ -125,22 +125,22 @@ std::unique_ptr<Effect> make (std::shared_ptr<const SampleData> source);
 // instead of the plain source (renderEdits; Newtime's warping is still not reproduced).
 std::unique_ptr<Effect> make (std::shared_ptr<const SampleData> source, const std::vector<std::uint8_t>& state);
 
-// LYNX's Newtone engine (REA_rodada95 §2-3): renders a track's note edits over its source sample — pitch offsets with
+// YW's Newtone engine (REA_rodada95 §2-3): renders a track's note edits over its source sample — pitch offsets with
 // the note transitions, drift, vibrato, formant factor, volume and fades, timing (moved / stretched notes),
-// disabled notes — with LYNX's own pitch analysis (YIN) and TD-PSOLA (core/VocalPitch.h). Unedited notes are copied
+// disabled notes — with YW's own pitch analysis (YIN) and TD-PSOLA (core/VocalPitch.h). Unedited notes are copied
 // sample for sample. nullptr when nothing differs from the source.
 std::shared_ptr<SampleData> renderEdits (const SampleData& source, const Track& track);
 
 // ------------------------------------------------------------------------------------------------------------------
-// LYNX's own Newtone / Newtime projects (round 142, issue #5): a slot made in a LYNX project keeps its edits in its
+// YW's own Newtone / Newtime projects (round 142, issue #5): a slot made in a YW project keeps its edits in its
 // own format in EffectSlot::state (FL's XML project is only read). The source sample is EffectSlot::samplePath.
 
-// LYNX's note analysis of a sample (YIN pitch track, core/VocalPitch.h): voiced stretches of steady pitch become
+// YW's note analysis of a sample (YIN pitch track, core/VocalPitch.h): voiced stretches of steady pitch become
 // notes (nothing edited). Newtone: timeWarp = false. Round 190kj, as FL's Newtone analyses (measured on its own DLL,
 // REA_rodada190kj): the notes tile the file back to back (a lead-in note from 0 to the first one, each note owns the
 // silence after it, validEnd = where its voice ends), origPitch from whole-sample periods (fs / floor(fs / f0)), volume
 // fades 0.2 x the note's length, pitch smooth-in / out times measured from the glides (FL's ~73 ms after silence).
-// Round 190kx (LYNX extra, off by default = FL's analysis above): `fineSplit` also ends a note where the pitch steps
+// Round 190kx (YW extra, off by default = FL's analysis above): `fineSplit` also ends a note where the pitch steps
 // by a third of a semitone or more and holds (FL: 0.7), and where the level dips between two voiced stretches (a new
 // attack on the same breath). Melodyne 5 (its Melodic algorithm, round 190kx's reference captures) separates notes 45
 // cents apart; FL's analysis joins them into one note between the two pitches, which Center then moves to the wrong
@@ -155,14 +155,14 @@ struct AnalyseOptions
     bool octaveGuard = true;
 };
 Track analyseNotes (const SampleData& source, const AnalyseOptions& options = {});
-// The analysis a NEW Newtone slot gets (owner, 2026-11-18): with LYNX's natural engine (latestEngine ≥ 1)
+// The analysis a NEW Newtone slot gets (owner, 2026-11-18): with YW's natural engine (latestEngine ≥ 1)
 // "Separate close notes" is on; FL imports, older projects and any other analysis keep FL's (AnalyseOptions {}).
 AnalyseOptions newSlotAnalyseOptions() noexcept;
 // A new slot's notes: newSlotAnalyseOptions()'s analysis, rendered with `latestEngine`
 Track analyseNewSlot (const SampleData& source);
 
 // ------------------------------------------------------------------------------------------------------------------
-// LYNX's Newtone editor tools (round 165g, FL's workflow interpreted: Cut mode / glue, the Center / Variation /
+// YW's Newtone editor tools (round 165g, FL's workflow interpreted: Cut mode / glue, the Center / Variation /
 // Transition knobs, snap to scale, score export). `which` = the notes to change; empty = every note.
 
 // Cut mode: note k becomes two at output sample `at` (strictly inside it); the halves keep every edit. `pitchOf`
@@ -177,7 +177,7 @@ bool glueNote (Track& track, std::size_t k);
 void applyCentre (Track& track, double amount, const std::vector<int>& which = {});
 void applyVariation (Track& track, double amount, const std::vector<int>& which = {});
 void applyTransition (Track& track, double factor, const std::vector<int>& which = {});
-// Round 190li (LYNX extras): the chosen notes' pitch modulation (vibrato: the fast deviation) and pitch drift (the slow
+// Round 190li (YW extras): the chosen notes' pitch modulation (vibrato: the fast deviation) and pitch drift (the slow
 // one), 0 = removed, 1 = as sung, 2 = doubled — Melodyne's Pitch Modulation / Pitch Drift tools; FL's Variation scales
 // both together. Correct pitch (Melodyne's macro): centre `centre` and drift `drift` amounts, 0..1, vibrato kept.
 void applyModulation (Track& track, double amount, const std::vector<int>& which = {});
@@ -201,7 +201,7 @@ std::vector<ScoreNote> score (const Track& track, double sampleRate);
 
 // Edison's "Convert to score and dump to piano roll" (round 167c, REA_rodada167c.md §4): FL runs its pitch analyser
 // (the one Newtone uses) on the whole sample and takes each note it finds: key = round(pitch - the sample's overall
-// detune), only keys 0..127; volume = 0.5 + 0.5 x the note's level. LYNX: analyseNotes(), the detune = the notes'
+// detune), only keys 0..127; volume = 0.5 + 0.5 x the note's level. YW: analyseNotes(), the detune = the notes'
 // length-weighted mean offset from their semitones, the level = the note's RMS over the loudest note's (0..1).
 // Times in source frames, [start, end).
 struct DetectedNote
@@ -213,7 +213,7 @@ struct DetectedNote
 std::vector<DetectedNote> detectScore (const SampleData& source, double* detune = nullptr);
 // FL hands them to the Piano roll of the selected channel in the current pattern, replacing that channel's notes
 // there (the plugin SDK's note list: piano roll, flags "empty first" + "use selection", pattern -1, channel -1):
-// position = frames / rate x tempo / 60 x PPQ (rounded), notes of 3 ticks or less at FL's PPQ 96 (LYNX: 30 ticks)
+// position = frames / rate x tempo / 60 x PPQ (rounded), notes of 3 ticks or less at FL's PPQ 96 (YW: 30 ticks)
 // are left out. Returns how many notes went in.
 int dumpScore (Song& song, int channel, const std::vector<DetectedNote>& notes, double sampleRate);
 
@@ -253,7 +253,7 @@ inline std::uint32_t nativeVersionOf (const std::vector<std::uint8_t>& state)
                : 0u;
 }
 std::optional<Track> parseNative (const std::vector<std::uint8_t>& state);
-// The track a slot's state describes: LYNX's own, or the first Newtone track of FL's state (nullopt: none)
+// The track a slot's state describes: YW's own, or the first Newtone track of FL's state (nullopt: none)
 std::optional<Track> trackOf (const std::vector<std::uint8_t>& state);
 
 // Newtime: warp markers (source sample → output sample), in increasing order on both axes; between two markers the
@@ -281,13 +281,13 @@ std::shared_ptr<SampleData> renderWarp (const SampleData& source, const WarpMap&
 // FL's Newtime warp (round 167b): a TimelineWarp track's segments become the markers (each segment's source start →
 // its output start, and the last one's end); nullopt = not a Newtime track
 std::optional<WarpMap> warpFromTrack (const Track& track);
-// The warp a slot's state describes: LYNX's own ("LXNW") or the first Newtime track of FL's state
+// The warp a slot's state describes: YW's own ("LXNW") or the first Newtime track of FL's state
 std::optional<WarpMap> warpOf (const std::vector<std::uint8_t>& state);
 
 // FL Newtone / Newtime's Snap to grid (Beat, 1/2 ... 1/8 beat, Off): a sample position moved to the nearest line
 // of a grid of beat / division at the song tempo, counted from the sample's start; division <= 0 = Off
 std::int64_t snapToBeatGrid (std::int64_t position, double sampleRate, double bpm, int division);
 
-// What a slot plays in slave mode: the source with its edits (Newtone notes / Newtime warp; LYNX's or FL's state)
+// What a slot plays in slave mode: the source with its edits (Newtone notes / Newtime warp; YW's or FL's state)
 std::shared_ptr<const SampleData> renderedSource (std::shared_ptr<const SampleData> source, const std::vector<std::uint8_t>& state);
-} // namespace lynx::newtonefx
+} // namespace yw::newtonefx

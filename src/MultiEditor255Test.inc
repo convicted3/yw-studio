@@ -1,14 +1,14 @@
-    // LYNX --multieditor255test report.txt <plugin>[::Name] ... (round 190ou, issue #255: "2 or more plugin editors open and
-    // used: the audio goes silent, then LYNX crashes"). The plugins go into one song (instruments: a channel each, into
-    // insert 1; effects: insert 1's slots), every editor is opened, and for `LYNX_ME_SECONDS` (default 45):
+    // YW --multieditor255test report.txt <plugin>[::Name] ... (round 190ou, issue #255: "2 or more plugin editors open and
+    // used: the audio goes silent, then YW crashes"). The plugins go into one song (instruments: a channel each, into
+    // insert 1; effects: insert 1's slots), every editor is opened, and for `YW_ME_SECONDS` (default 45):
     //  - an audio thread runs the engine's device callback in real time (512 frames at 48 kHz) and records each
     //    callback's duration and output level;
     //  - a MIDI thread plays a keyboard into the engine (injectMidiInput: notes, a sustain pedal, pitch bend), the
     //    selected channel moving from one instrument to the next every 2 s;
     //  - the message thread "uses" the editors: on X11, XTest mouse moves and drags over every editor window (plugins in
-    //    LYNX's own process), and parameter changes from the UI (setValueNotifyingHost) on every plugin, 20 times a second.
+    //    YW's own process), and parameter changes from the UI (setValueNotifyingHost) on every plugin, 20 times a second.
     // The audio must keep running: no callback over 250 ms and no second-long stretch without sound while the keyboard
-    // plays (after the first 3 s). LYNX_ME_SEPARATE=1: every plugin in a separate process; LYNX_ME_DEVICE=1: the real
+    // plays (after the first 3 s). YW_ME_SEPARATE=1: every plugin in a separate process; YW_ME_DEVICE=1: the real
     // audio device instead of the timed thread (Linux: PipeWire when its daemon answers). Included in the app class.
     void runMultiEditor255Test (const juce::String& reportPath, const juce::StringArray& pluginArgs)
     {
@@ -51,7 +51,7 @@
                 std::shared_ptr<void> owner;
             };
             juce::String reportPath, report;
-            std::unique_ptr<lynx::AudioEngine> engine;
+            std::unique_ptr<yw::AudioEngine> engine;
             std::vector<Unit> units;
             Device device;
             std::unique_ptr<juce::DocumentWindow> mainWindow;
@@ -79,7 +79,7 @@
             int xMoves = 0, paramChanges = 0;
             std::map<std::pair<const void*, int>, float> firstValues;
             // the message thread's pulse: a watchdog thread notes a stall over 1.5 s in <report>.stall (pid, when, how
-            // long) while it lasts, so a debugger can be attached from outside (LYNX_ME_PTRACE=1 allows it)
+            // long) while it lasts, so a debugger can be attached from outside (YW_ME_PTRACE=1 allows it)
             std::atomic<std::int64_t> lastUiMs { 0 };
             double worstUiGapMs = 0.0;
             std::thread watchdog;
@@ -117,9 +117,9 @@
             }
 
             static std::int64_t nowMs() { return (std::int64_t) juce::Time::getMillisecondCounterHiRes(); }
-            static int processId() { return lynx::windows::processId(); } // (ui/LynxWindows: Windows has no getpid here; rollup 0.1.31 step 6)
+            static int processId() { return yw::windows::processId(); } // (ui/YwWindows: Windows has no getpid here; rollup 0.1.31 step 6)
 
-            // LYNX_ME_DEVICE=1: the real audio device (on Linux PipeWire when its daemon answers, as the app picks it);
+            // YW_ME_DEVICE=1: the real audio device (on Linux PipeWire when its daemon answers, as the app picks it);
             // a second callback on the device marks the device thread's blocks, the engine's scope gives the level
             struct Monitor final : juce::AudioIODeviceCallback
             {
@@ -149,7 +149,7 @@
 
             void startAudio()
             {
-                if (juce::SystemStats::getEnvironmentVariable ("LYNX_ME_DEVICE", {}) == "1")
+                if (juce::SystemStats::getEnvironmentVariable ("YW_ME_DEVICE", {}) == "1")
                 {
                     realDevice = true;
                     engine->openAudioDevice();
@@ -309,7 +309,7 @@
                 if (u.channel >= 0)
                 {
                     auto instrument = engine->getChannelInstrument (u.channel);
-                    if (auto* p = dynamic_cast<lynx::PluginInstrument*> (instrument.get()))
+                    if (auto* p = dynamic_cast<yw::PluginInstrument*> (instrument.get()))
                     {
                         u.owner = instrument;
                         return &p->getInstance();
@@ -317,7 +317,7 @@
                     return nullptr;
                 }
                 auto effect = engine->getEffect (1, u.slot);
-                if (auto* p = dynamic_cast<lynx::PluginEffect*> (effect.get()))
+                if (auto* p = dynamic_cast<yw::PluginEffect*> (effect.get()))
                 {
                     u.owner = effect;
                     return &p->getInstance();
@@ -348,14 +348,14 @@
                         if (u.instance == nullptr)
                             continue;
                         const auto channel = u.channel, slot = u.slot;
-                        lynx::PluginWindows::open (u.owner, *u.instance, u.instance->getName(),
-                                                   { engine.get(), [channel, slot] (lynx::Song& song) -> lynx::PluginRef* {
+                        yw::PluginWindows::open (u.owner, *u.instance, u.instance->getName(),
+                                                   { engine.get(), [channel, slot] (yw::Song& song) -> yw::PluginRef* {
                                                         if (channel >= 0)
                                                             return channel < (int) song.channels.size() ? &song.channels[(std::size_t) channel].plugin : nullptr;
                                                         return song.mixer.size() > 1 && slot < (int) song.mixer[1].effects.size() ? &song.mixer[1].effects[(std::size_t) slot].plugin : nullptr;
                                                     }, channel >= 0 });
                         u.owner.reset();
-                        step ("window " + u.type.name + "=" + juce::String ((int) lynx::PluginWindows::isOpen (*u.instance)));
+                        step ("window " + u.type.name + "=" + juce::String ((int) yw::PluginWindows::isOpen (*u.instance)));
                     }
                     startMidi();
                     startWatchdog();
@@ -402,7 +402,7 @@
                                 for (auto& u : units)
                                     names << " " << u.type.name.removeCharacters (" ") << (u.instance == nullptr ? "=gone" : "=ok");
                                 step ("silent second t=" + juce::String (secondsChecked) + " selected=" + juce::String (selectedFrom.load())
-                                      + " offline_renders=" + juce::String (lynx::AudioEngine::offlineRendersRunning().load()) + names);
+                                      + " offline_renders=" + juce::String (yw::AudioEngine::offlineRendersRunning().load()) + names);
                             }
                             longestSilence = juce::jmax (longestSilence, silentSeconds);
                         }
@@ -425,9 +425,9 @@
                     step ("seconds_heard=" + juce::String (secondsHeard) + "/" + juce::String (checked) + " longest_silence_s=" + juce::String (longestSilence)
                           + " worst_callback_ms=" + juce::String (worstMs.load(), 1) + " worst_gap_ms=" + juce::String (worstGapMs, 1)
                           + " callbacks=" + juce::String (callbacks.load()) + " worst_ui_gap_ms=" + juce::String (worstUiGapMs, 0) + " ui_stalls="
-                          + juce::String (stallsSeen.load()) + " editor_crashes=" + juce::String (lynx::PluginWindows::editorCrashCount()));
+                          + juce::String (stallsSeen.load()) + " editor_crashes=" + juce::String (yw::PluginWindows::editorCrashCount()));
                     step (ok ? "result=OK" : "result=FAILED");
-                    lynx::PluginWindows::closeAll();
+                    yw::PluginWindows::closeAll();
                     if (display != nullptr && closeDisplay != nullptr)
                         closeDisplay (display);
                     done (ok);
@@ -437,28 +437,28 @@
 
         auto* test = new Test();
         test->reportPath = reportPath;
-        if (const auto s = juce::SystemStats::getEnvironmentVariable ("LYNX_ME_SECONDS", {}).getIntValue(); s > 0)
+        if (const auto s = juce::SystemStats::getEnvironmentVariable ("YW_ME_SECONDS", {}).getIntValue(); s > 0)
             test->seconds = s;
         test->done = [this, test] (bool ok) {
             setApplicationReturnValue (ok ? 0 : 1);
             juce::MessageManager::callAsync ([this, test] {
                 if (! test->realDevice)
                     test->engine->deviceCallback().audioDeviceStopped();
-                lynx::setMainWindowForOwnership (nullptr);
+                yw::setMainWindowForOwnership (nullptr);
                 test->mainWindow = nullptr;
                 test->engine = nullptr;
                 delete test;
                 quit();
             });
         };
-        test->engine = std::make_unique<lynx::AudioEngine> (true, -1, false, true); // (the app's engine; its device stays closed)
+        test->engine = std::make_unique<yw::AudioEngine> (true, -1, false, true); // (the app's engine; its device stays closed)
         test->mainWindow = std::make_unique<juce::DocumentWindow> ("YW Studio test main window", juce::Colours::darkgrey, 0);
         test->mainWindow->setBounds (20, 20, 300, 200);
         test->mainWindow->setVisible (true);
-        lynx::setMainWindowForOwnership (test->mainWindow.get());
+        yw::setMainWindowForOwnership (test->mainWindow.get());
 
         auto& host = test->engine->getPluginHost();
-        const auto separate = juce::SystemStats::getEnvironmentVariable ("LYNX_ME_SEPARATE", {}) == "1";
+        const auto separate = juce::SystemStats::getEnvironmentVariable ("YW_ME_SEPARATE", {}) == "1";
         for (const auto& arg : pluginArgs)
         {
             const auto path = arg.upToFirstOccurrenceOf ("::", false, false);
@@ -479,18 +479,18 @@
             }
             Test::Unit u;
             u.type = *chosen;
-            lynx::PluginRef ref;
+            yw::PluginRef ref;
             ref.separateProcess = separate;
             ref.id = chosen->createIdentifierString().toStdString();
             ref.name = chosen->name.toStdString();
-            test->engine->editSong ([&] (lynx::Song& song) {
+            test->engine->editSong ([&] (yw::Song& song) {
                 while (song.mixer.size() < 2)
                     song.mixer.emplace_back();
                 if (chosen->isInstrument)
                 {
-                    lynx::ChannelDef c;
+                    yw::ChannelDef c;
                     c.name = ref.name;
-                    c.instrument = lynx::InstrumentKind::plugin;
+                    c.instrument = yw::InstrumentKind::plugin;
                     c.plugin = ref;
                     c.mixerTrack = 1;
                     u.channel = (int) song.channels.size();
@@ -498,8 +498,8 @@
                 }
                 else
                 {
-                    lynx::EffectSlot slot;
-                    slot.kind = lynx::EffectKind::plugin;
+                    yw::EffectSlot slot;
+                    slot.kind = yw::EffectKind::plugin;
                     slot.plugin = ref;
                     u.slot = (int) song.mixer[1].effects.size();
                     song.mixer[1].effects.push_back (slot);
@@ -509,13 +509,13 @@
             test->units.push_back (u);
         }
         // (the default song's own channels: muted, so the sound heard is the plugins')
-        test->engine->editSong ([] (lynx::Song& song) {
+        test->engine->editSong ([] (yw::Song& song) {
             for (auto& c : song.channels)
-                if (c.instrument != lynx::InstrumentKind::plugin)
+                if (c.instrument != yw::InstrumentKind::plugin)
                     c.muted = true;
         });
        #if JUCE_LINUX
-        if (juce::SystemStats::getEnvironmentVariable ("LYNX_ME_PTRACE", {}) == "1")
+        if (juce::SystemStats::getEnvironmentVariable ("YW_ME_PTRACE", {}) == "1")
             prctl (PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0); // (a debugger may attach to take the stacks of a stall)
        #endif
         test->openXTest();

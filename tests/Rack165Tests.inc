@@ -2,11 +2,11 @@
 
 namespace rack165
 {
-using lynx::ChannelLoop;
-using lynx::Note;
-using lynx::Pattern;
-namespace loops = lynx::channelloops;
-constexpr std::int64_t step = lynx::ticksPerStep, beat = lynx::ppq, bar = 4 * lynx::ppq;
+using yw::ChannelLoop;
+using yw::Note;
+using yw::Pattern;
+namespace loops = yw::channelloops;
+constexpr std::int64_t step = yw::ticksPerStep, beat = yw::ppq, bar = 4 * yw::ppq;
 
 Note stepNote (int channel, int s)
 {
@@ -35,20 +35,20 @@ TEST (rack165_loop_lengths_follow_fl_rules)
     p.notes = { stepNote (0, 0), stepNote (0, 4) };
     // FUN_012cfd20: the next step / beat / bar after the last tick the notes cover
     CHECK (loops::lastTick (p, 0) == 5 * step - 1);
-    CHECK (loops::loopLength (p, 0, ChannelLoop::nextStep, 2 * bar, lynx::Meter (4, 4)) == 5 * step);
-    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBeat, 2 * bar, lynx::Meter (4, 4)) == 2 * beat);
-    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBar, 2 * bar, lynx::Meter (4, 4)) == bar);
-    CHECK (loops::loopLength (p, 0, 3, 2 * bar, lynx::Meter (4, 4)) == 3 * step);           // N steps
-    CHECK (loops::loopLength (p, 0, 99, 2 * bar, lynx::Meter (4, 4)) == 2 * bar);           // at most the pattern
-    CHECK (loops::loopLength (p, 0, ChannelLoop::dontLoop, 2 * bar, lynx::Meter (4, 4)) == 0);
-    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBar, 2 * bar, lynx::Meter (3, 4)) == 3 * beat); // 3/4 bars
+    CHECK (loops::loopLength (p, 0, ChannelLoop::nextStep, 2 * bar, yw::Meter (4, 4)) == 5 * step);
+    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBeat, 2 * bar, yw::Meter (4, 4)) == 2 * beat);
+    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBar, 2 * bar, yw::Meter (4, 4)) == bar);
+    CHECK (loops::loopLength (p, 0, 3, 2 * bar, yw::Meter (4, 4)) == 3 * step);           // N steps
+    CHECK (loops::loopLength (p, 0, 99, 2 * bar, yw::Meter (4, 4)) == 2 * bar);           // at most the pattern
+    CHECK (loops::loopLength (p, 0, ChannelLoop::dontLoop, 2 * bar, yw::Meter (4, 4)) == 0);
+    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBar, 2 * bar, yw::Meter (3, 4)) == 3 * beat); // 3/4 bars
     // "Set to next beat / bar": a fixed loop point in steps
-    CHECK (loops::nextBoundarySteps (p, 0, ChannelLoop::nextBeat, lynx::Meter (4, 4)) == 8);
-    CHECK (loops::nextBoundarySteps (p, 0, ChannelLoop::nextBar, lynx::Meter (4, 4)) == 16);
+    CHECK (loops::nextBoundarySteps (p, 0, ChannelLoop::nextBeat, yw::Meter (4, 4)) == 8);
+    CHECK (loops::nextBoundarySteps (p, 0, ChannelLoop::nextBar, yw::Meter (4, 4)) == 16);
     // muted notes don't count
     p.notes.push_back (stepNote (0, 20));
     p.notes.back().muted = true;
-    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBar, 2 * bar, lynx::Meter (4, 4)) == bar);
+    CHECK (loops::loopLength (p, 0, ChannelLoop::nextBar, 2 * bar, yw::Meter (4, 4)) == bar);
     CHECK (loops::settingText (ChannelLoop::dontLoop) == "..." && loops::settingText (-3) == "Bar" && loops::settingText (12) == "12");
 }
 
@@ -65,17 +65,17 @@ TEST (rack165_loop_types_pick_the_channels)
 
     CHECK (loops::effectiveSetting (p, 0) == ChannelLoop::dontLoop); // looping off
     p.loopOn = true;
-    p.loopMode = lynx::RackLoopMode::steps;
+    p.loopMode = yw::RackLoopMode::steps;
     CHECK (loops::effectiveSetting (p, 0) == ChannelLoop::nextBar);
     CHECK (loops::effectiveSetting (p, 1) == ChannelLoop::dontLoop); // not a step channel
-    p.loopMode = lynx::RackLoopMode::all;
+    p.loopMode = yw::RackLoopMode::all;
     CHECK (loops::effectiveSetting (p, 1) == ChannelLoop::nextBar);
-    p.loopMode = lynx::RackLoopMode::advanced;
+    p.loopMode = yw::RackLoopMode::advanced;
     CHECK (loops::effectiveSetting (p, 0) == ChannelLoop::dontLoop);
     loops::setSetting (p, 0, 3);
     loops::setSetting (p, 0, 6); // replaces
     CHECK (p.channelLoops.size() == 1 && loops::effectiveSetting (p, 0) == 6);
-    p.loopMode = lynx::RackLoopMode::steps; // a stored point wins in every type
+    p.loopMode = yw::RackLoopMode::steps; // a stored point wins in every type
     CHECK (loops::effectiveSetting (p, 0) == 6);
 }
 
@@ -85,12 +85,12 @@ TEST (rack165_expand_plays_polyrhythms)
     Pattern p;
     p.lengthTicks = bar;
     p.loopOn = true;
-    p.loopMode = lynx::RackLoopMode::advanced;
+    p.loopMode = yw::RackLoopMode::advanced;
     p.notes = { stepNote (0, 0), stepNote (0, 5), stepNote (1, 0) };
     loops::setSetting (p, 0, 3); // every 3 steps: the step at 5 is past the loop point and doesn't play
     loops::setSetting (p, 1, 5);
     auto played = p;
-    loops::expandPattern (played, lynx::Meter (4, 4));
+    loops::expandPattern (played, yw::Meter (4, 4));
     CHECK ((startsOf (played, 0) == std::vector<std::int64_t> { 0, 3 * step, 6 * step, 9 * step, 12 * step, 15 * step }));
     CHECK ((startsOf (played, 1) == std::vector<std::int64_t> { 0, 5 * step, 10 * step, 15 * step }));
     CHECK (played.lengthTicks == bar && ! played.loopOn);
@@ -100,7 +100,7 @@ TEST (rack165_expand_plays_polyrhythms)
     // automatic length: a 1-bar drum loop under a 3-bar bass line repeats to the end; the length stays 3 bars
     Pattern q;
     q.loopOn = true;
-    q.loopMode = lynx::RackLoopMode::all;
+    q.loopMode = yw::RackLoopMode::all;
     q.notes = { stepNote (0, 0), stepNote (0, 8) };
     Note bass;
     bass.channel = 1;
@@ -108,21 +108,21 @@ TEST (rack165_expand_plays_polyrhythms)
     bass.length = 3 * bar - step;
     bass.key = 36;
     q.notes.push_back (bass);
-    CHECK (q.effectiveLength (lynx::Meter (4, 4)) == 3 * bar);
-    loops::expandPattern (q, lynx::Meter (4, 4));
+    CHECK (q.effectiveLength (yw::Meter (4, 4)) == 3 * bar);
+    loops::expandPattern (q, yw::Meter (4, 4));
     CHECK (startsOf (q, 0).size() == 6 && startsOf (q, 1).size() == 1);
-    CHECK (q.effectiveLength (lynx::Meter (4, 4)) == 3 * bar);
+    CHECK (q.effectiveLength (yw::Meter (4, 4)) == 3 * bar);
 
     // a repeat that would run past the pattern's end is cut there
     Pattern r;
     r.lengthTicks = bar;
     r.loopOn = true;
-    r.loopMode = lynx::RackLoopMode::advanced;
+    r.loopMode = yw::RackLoopMode::advanced;
     Note longNote;
     longNote.length = 3 * step;
     r.notes = { longNote };
     loops::setSetting (r, 0, 6);
-    loops::expandPattern (r, lynx::Meter (4, 4));
+    loops::expandPattern (r, yw::Meter (4, 4));
     CHECK (r.notes.size() == 3 && r.notes.back().start == 12 * step && r.notes.back().length == 3 * step);
     loops::setSetting (r, 0, 7);
 }
@@ -133,29 +133,29 @@ TEST (rack165_burn_to_pattern)
     Pattern p;
     p.lengthTicks = bar;
     p.loopOn = true;
-    p.loopMode = lynx::RackLoopMode::advanced;
+    p.loopMode = yw::RackLoopMode::advanced;
     p.notes = { stepNote (0, 0), stepNote (1, 0), stepNote (2, 0) };
     loops::setSetting (p, 0, 4);
     loops::setSetting (p, 1, 8);
-    CHECK ((loops::loopingChannels (p, lynx::Meter (4, 4)) == std::vector<int> { 0, 1 }));
-    CHECK (loops::burnChannel (p, 0, lynx::Meter (4, 4)));
+    CHECK ((loops::loopingChannels (p, yw::Meter (4, 4)) == std::vector<int> { 0, 1 }));
+    CHECK (loops::burnChannel (p, 0, yw::Meter (4, 4)));
     CHECK (startsOf (p, 0).size() == 4 && loops::storedSetting (p, 0) == ChannelLoop::dontLoop);
-    CHECK (! loops::burnChannel (p, 2, lynx::Meter (4, 4))); // not looping
-    CHECK (loops::burnChannels (p, {}, lynx::Meter (4, 4)) == 1); // the rest: channel 1
-    CHECK (startsOf (p, 1).size() == 2 && loops::loopingChannels (p, lynx::Meter (4, 4)).empty());
+    CHECK (! loops::burnChannel (p, 2, yw::Meter (4, 4))); // not looping
+    CHECK (loops::burnChannels (p, {}, yw::Meter (4, 4)) == 1); // the rest: channel 1
+    CHECK (startsOf (p, 1).size() == 2 && loops::loopingChannels (p, yw::Meter (4, 4)).empty());
     // what plays is the same before and after
     auto before = p;
     loops::setSetting (before, 2, 2);
     auto played = before;
-    loops::expandPattern (played, lynx::Meter (4, 4));
-    loops::burnChannels (before, {}, lynx::Meter (4, 4));
+    loops::expandPattern (played, yw::Meter (4, 4));
+    loops::burnChannels (before, {}, yw::Meter (4, 4));
     CHECK (startsOf (played, 2) == startsOf (before, 2));
 }
 
 TEST (rack165_loop_points_follow_channel_edits)
 {
     using namespace rack165;
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (3);
     song.patterns.resize (1);
     auto& p = song.patterns[0];
@@ -163,12 +163,12 @@ TEST (rack165_loop_points_follow_channel_edits)
     p.channelLoops = { { 0, 4 }, { 1, 5 }, { 2, 6 } };
     song.removeChannel (1);
     CHECK ((song.patterns[0].channelLoops == std::vector<ChannelLoop> { { 0, 4 }, { 1, 6 } }));
-    lynx::permuteChannels (song, { 1, 0 });
+    yw::permuteChannels (song, { 1, 0 });
     CHECK (loops::storedSetting (song.patterns[0], 0) == 6 && loops::storedSetting (song.patterns[0], 1) == 4);
     // the history names it
     auto after = song;
     after.patterns[0].loopOn = true;
-    CHECK (std::string (lynx::describeChange (song, after).text) == "Channel looping: {0}");
+    CHECK (std::string (yw::describeChange (song, after).text) == "Channel looping: {0}");
 }
 
 TEST (rack165_flp_loop_events_import)
@@ -190,12 +190,12 @@ TEST (rack165_flp_loop_events_import)
     const auto project = flp::parseProject (b.bytes);
     CHECK (project.patterns.size() == 1 && project.patterns[0].loopOn && project.patterns[0].loopMode == 3);
     CHECK ((project.patterns[0].channelLoops == std::vector<std::pair<int, int>> { { 0, -3 }, { 1, 12 } }));
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     const auto* pat = &song.patterns.back();
     for (const auto& q : song.patterns)
         if (! q.notes.empty())
             pat = &q;
-    CHECK (pat->loopOn && pat->loopMode == lynx::RackLoopMode::advanced);
+    CHECK (pat->loopOn && pat->loopMode == yw::RackLoopMode::advanced);
     CHECK (loops::effectiveSetting (*pat, 0) == ChannelLoop::nextBar && loops::effectiveSetting (*pat, 1) == 12);
 }
 
@@ -215,7 +215,7 @@ TEST (rack165_fl_demo_song_loops)
         if (p.loopOn)
             looped = &p;
     CHECK (looped != nullptr && looped->index == 10 && looped->loopMode == 1 && looped->channelLoops.size() >= 10);
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     int on = 0;
     for (const auto& p : song.patterns)
         on += p.loopOn;
@@ -225,7 +225,7 @@ TEST (rack165_fl_demo_song_loops)
 TEST (rack165_burn_midi_bakes_echo_swing_and_time)
 {
     using namespace rack165;
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (1);
     song.patterns.resize (1);
     song.patterns[0].lengthTicks = 2 * bar;
@@ -236,8 +236,8 @@ TEST (rack165_burn_midi_bakes_echo_swing_and_time)
     c.misc.echo.feedback = 0.5f;
     c.misc.echo.echoes = 3;
     c.misc.echo.timeBeats = 0.75f;
-    CHECK (lynx::channelburn::whatBurns (song, 0, 0).echo);
-    auto played = lynx::channelburn::playedNotes (song, 0, 0);
+    CHECK (yw::channelburn::whatBurns (song, 0, 0).echo);
+    auto played = yw::channelburn::playedNotes (song, 0, 0);
     CHECK (played.size() == 4);
     if (played.size() == 4)
     {
@@ -246,7 +246,7 @@ TEST (rack165_burn_midi_bakes_echo_swing_and_time)
         CHECK (played[1].length == step);
     }
     // swing and Misc › Time: the step at 1 moves half a step at full swing, then the shift; the gate cuts it
-    lynx::Song s2;
+    yw::Song s2;
     s2.channels.resize (1);
     s2.patterns.resize (1);
     s2.patterns[0].lengthTicks = bar;
@@ -255,19 +255,19 @@ TEST (rack165_burn_midi_bakes_echo_swing_and_time)
     s2.swing = 1.0f;
     s2.channels[0].misc.shiftBeats = 0.25f;
     s2.channels[0].misc.gateBeats = 0.125f;
-    played = lynx::channelburn::playedNotes (s2, 0, 0);
+    played = yw::channelburn::playedNotes (s2, 0, 0);
     CHECK (played.size() == 1 && played[0].start == step + step / 2 + step && played[0].length == step / 2);
-    CHECK (lynx::channelburn::burnMidi (s2, 0, false, {}));
+    CHECK (yw::channelburn::burnMidi (s2, 0, false, {}));
     CHECK (s2.patterns[0].notes.size() == 1 && s2.channels[0].swingMix == 0.0f && s2.channels[0].misc.shiftBeats == 0.0f);
     // nothing to burn
     s2.patterns[0].notes.clear();
-    CHECK (! lynx::channelburn::burnMidi (s2, 0, false, {}));
+    CHECK (! yw::channelburn::burnMidi (s2, 0, false, {}));
 }
 
 TEST (rack165_burn_midi_arpeggio_and_new_pattern)
 {
     using namespace rack165;
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (2);
     song.patterns.resize (1);
     song.patterns[0].lengthTicks = bar;
@@ -285,7 +285,7 @@ TEST (rack165_burn_midi_arpeggio_and_new_pattern)
     c.arp.range = 1;
     c.arp.stepBeats = 0.25f;
     c.arp.gate = 0.5f;
-    const auto played = lynx::channelburn::playedNotes (song, 0, 0);
+    const auto played = yw::channelburn::playedNotes (song, 0, 0);
     CHECK (played.size() == 16);
     bool grid = true, keys = true;
     for (std::size_t i = 0; i < played.size(); ++i)
@@ -296,7 +296,7 @@ TEST (rack165_burn_midi_arpeggio_and_new_pattern)
     CHECK (grid);
     CHECK (keys);
     // into a new pattern: the original keeps its chord, the arpeggiator is reset
-    CHECK (lynx::channelburn::burnMidi (song, 0, true, {}));
+    CHECK (yw::channelburn::burnMidi (song, 0, true, {}));
     CHECK (song.patterns.size() == 2 && song.currentPattern == 1 && song.patterns[1].notes.size() == 16);
     CHECK (startsOf (song.patterns[0], 0).size() == 3 && ! song.channels[0].arp.enabled());
     CHECK (song.patterns[1].lengthTicks == bar);
@@ -305,14 +305,14 @@ TEST (rack165_burn_midi_arpeggio_and_new_pattern)
 // "Create DirectWave instrument..." (TDWPRenderForm): the plan follows FL's defaults
 TEST (rack165_autosampler_plan)
 {
-    namespace as = lynx::autosample;
+    namespace as = yw::autosample;
     as::Options o; // 36..83, 4 keys per zone, root offset 2, 1 layer
     auto p = as::plan (o, 120.0);
     CHECK (p.takes.size() == 12);
     CHECK (p.takes[0].key == 38 && p.takes[0].lowKey == 36 && p.takes[0].highKey == 39 && p.takes[0].velocity == 127);
     CHECK (p.takes[11].lowKey == 80 && p.takes[11].highKey == 83 && p.takes[11].lowVelocity == 0 && p.takes[11].highVelocity == 127);
-    CHECK (p.holdTicks == 2 * 2 * lynx::ppq);                 // 2 s at 120 BPM = 4 beats
-    CHECK (p.slotTicks == 6 * 2 * lynx::ppq);                 // hold + max = 6 s
+    CHECK (p.holdTicks == 2 * 2 * yw::ppq);                 // 2 s at 120 BPM = 4 beats
+    CHECK (p.slotTicks == 6 * 2 * yw::ppq);                 // hold + max = 6 s
     CHECK (p.takes[1].startTick == p.slotTicks);
     CHECK (std::abs (as::renderSeconds (p) - 72.0) < 1e-9);
 
@@ -334,8 +334,8 @@ TEST (rack165_autosampler_plan)
 
 TEST (rack165_autosampler_render_song_and_cuts)
 {
-    namespace as = lynx::autosample;
-    lynx::Song song;
+    namespace as = yw::autosample;
+    yw::Song song;
     song.bpm = 120.0;
     song.channels.resize (3);
     song.channels[1].volume = 0.5f;
@@ -353,12 +353,12 @@ TEST (rack165_autosampler_render_song_and_cuts)
     const auto r = as::makeRenderSong (song, 1, p, o);
     CHECK (r.channels[0].muted && r.channels[2].muted && ! r.channels[1].muted);
     CHECK (r.channels[1].volume == 1.0f && r.channels[1].pan == 0.0f && r.channels[1].mixerTrack == 0);
-    CHECK (r.currentPattern == 1 && r.mode == lynx::PlayMode::pattern && r.patterns[1].notes.size() == 2);
+    CHECK (r.currentPattern == 1 && r.mode == yw::PlayMode::pattern && r.patterns[1].notes.size() == 2);
     CHECK (r.patterns[1].notes[1].start == p.slotTicks && r.patterns[1].notes[1].key == 66 && r.patterns[1].lengthTicks == 2 * p.slotTicks);
 
     // a render: take 1 rings 0.2 s, take 2 0.6 s (at 1 kHz)
     const double rate = 1000.0;
-    const int slot = (int) std::lround ((double) p.slotTicks / lynx::ppq * 0.5 * rate);
+    const int slot = (int) std::lround ((double) p.slotTicks / yw::ppq * 0.5 * rate);
     std::vector<float> left ((std::size_t) (2 * slot), 0.0f), right = left;
     for (int i = 0; i < 200; ++i)
         left[(std::size_t) i] = 0.25f;
@@ -381,6 +381,6 @@ TEST (rack165_autosampler_render_song_and_cuts)
     CHECK ((int) cuts[0].left.size() == slot);
 
     const auto c = as::makeSamplerChannel (song.channels[1], as::zones (p, { "x.wav", "y.wav" }), o);
-    CHECK (c.name == "Lead (sampled)" && c.instrument == lynx::InstrumentKind::sampler && c.zones.size() == 2 && c.mixerTrack == 3);
+    CHECK (c.name == "Lead (sampled)" && c.instrument == yw::InstrumentKind::sampler && c.zones.size() == 2 && c.mixerTrack == 3);
     CHECK (c.volume == 0.5f && c.pan == 0.4f && c.samplePath == "x.wav");
 }

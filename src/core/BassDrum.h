@@ -18,7 +18,7 @@
 //
 // Host side as FL's wrapper (same CFLWrapper as GMS, REA_rodada39 §1.11): velocity from Init.Vol, per-note L/R levels
 // from FL's ComputeLRVol(Final.Pan, Final.Vol) (x87 sin/cos law), Final.Vol = channel volume (link velocity off);
-// LYNX's channel gains are turned back into those values and applied once, inside the engine.
+// YW's channel gains are turned back into those values and applied once, inside the engine.
 
 #include <cstdint>
 #include <memory>
@@ -27,7 +27,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the engine can read this BassDrum state ("SSLF", tag 1kiK/2kiK, 23 parameters)
 bool bassDrumStateUsable (const std::vector<std::uint8_t>& state);
@@ -58,4 +58,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, const std::string& pluginDir, int block = 512, bool noise = true);
 } // namespace bassdrum
-} // namespace lynx
+} // namespace yw

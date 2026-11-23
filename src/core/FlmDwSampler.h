@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio Mobile's "DW Sampler" module (type 1) as LYNX plays an imported .flm (round 190de). Clean-room: written
+// FL Studio Mobile's "DW Sampler" module (type 1) as YW plays an imported .flm (round 190de). Clean-room: written
 // from the behaviour described in docs/analise/FLM_FORMAT.md §7.5 (static analysis of FLM's FL plugin, laws in our own
 // words); no Image-Line code, table or sample is used.
 //
@@ -9,11 +9,11 @@
 // ladder low-pass, a band-pass, a high-pass), one-pole filter and pitch envelopes, one LFO per voice, mono / legato
 // with a glide. Velocity sets the level linearly.
 //
-// In LYNX the channel is a Sampler channel (InstrumentKind::sampler) whose ChannelDef::zones hold the zones (path,
+// In YW the channel is a Sampler channel (InstrumentKind::sampler) whose ChannelDef::zones hold the zones (path,
 // root, key and velocity ranges, gain, loop points; loopMode 1 = FLM's mode 2) and whose ChannelDef::modelParams start
 // with `marker`: { marker, PB Range, smooth attack, the 34 module values, then per zone 1 when its decay is used }.
-// The rack builds the engine below for such a channel instead of LYNX's own sampler voice. Editing the Sampler's
-// envelope by hand turns it back into a plain LYNX sampler (the module's values are dropped), as FL's imported voices.
+// The rack builds the engine below for such a channel instead of YW's own sampler voice. Editing the Sampler's
+// envelope by hand turns it back into a plain YW sampler (the module's values are dropped), as FL's imported voices.
 
 #include <cstdint>
 #include <memory>
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 struct SampleData;
@@ -103,4 +103,4 @@ struct EngineZone
 };
 std::unique_ptr<Instrument> makeInstrument (std::vector<EngineZone> zones);
 } // namespace flmdw
-} // namespace lynx
+} // namespace yw

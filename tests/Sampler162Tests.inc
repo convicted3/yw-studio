@@ -3,9 +3,9 @@
 namespace s162
 {
 // a mono sine sample
-std::shared_ptr<lynx::SampleData> sine (double freq, double seconds, double rate = 44100.0)
+std::shared_ptr<yw::SampleData> sine (double freq, double seconds, double rate = 44100.0)
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     s->sampleRate = rate;
     const auto n = (std::size_t) (seconds * rate);
     for (std::size_t i = 0; i < n; ++i)
@@ -49,14 +49,14 @@ Heard analyse (const std::vector<float>& x, double rate)
 
 // a sampler channel playing `sample` with `settings`: one live note (key, cents of fine tune), the transport
 // stopped, rendered until it ends (at most `seconds`)
-Heard playLive (const lynx::SamplerSettings& settings, std::shared_ptr<lynx::SampleData> sample, int key, float fineCents = 0.0f,
+Heard playLive (const yw::SamplerSettings& settings, std::shared_ptr<yw::SampleData> sample, int key, float fineCents = 0.0f,
                 double seconds = 6.0, float bend = 0.0f, int range = 2)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "sine.wav";
     c.sampler = settings;
     c.misc.fineTune = fineCents;
@@ -64,26 +64,26 @@ Heard playLive (const lynx::SamplerSettings& settings, std::shared_ptr<lynx::Sam
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::RackState::Factories f;
-    f.samples = [sample] (const std::string&) { return std::shared_ptr<const lynx::SampleData> (sample); };
-    f.stretchedSamples = [sample] (const std::string&, double ratio, lynx::StretchMethod m, double, const lynx::StretchMap&, const lynx::StretchOptions&) {
-        return std::shared_ptr<const lynx::SampleData> (lynx::timeStretch (*sample, ratio, m));
+    yw::RackState::Factories f;
+    f.samples = [sample] (const std::string&) { return std::shared_ptr<const yw::SampleData> (sample); };
+    f.stretchedSamples = [sample] (const std::string&, double ratio, yw::StretchMethod m, double, const yw::StretchMap&, const yw::StretchOptions&) {
+        return std::shared_ptr<const yw::SampleData> (yw::timeStretch (*sample, ratio, m));
     };
     constexpr double rate = 44100.0;
-    auto state = lynx::RackState::build (s, nullptr, rate, f);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, rate, f);
+    yw::RackRenderer r;
     r.prepare (rate, 441);
-    lynx::LiveEventQueue live;
+    yw::LiveEventQueue live;
     if (bend != 0.0f)
     {
-        lynx::NoteEvent b;
-        b.type = lynx::NoteEvent::Type::control;
+        yw::NoteEvent b;
+        b.type = yw::NoteEvent::Type::control;
         b.channel = 0;
-        b.key = lynx::NoteEvent::controlPitchBend;
+        b.key = yw::NoteEvent::controlPitchBend;
         b.velocity = bend;
         live.push (b);
     }
-    lynx::NoteEvent e;
+    yw::NoteEvent e;
     e.channel = 0;
     e.key = key;
     e.velocity = 0.8f;
@@ -100,7 +100,7 @@ Heard playLive (const lynx::SamplerSettings& settings, std::shared_ptr<lynx::Sam
 
 TEST (s162_a_channel_routes_to_any_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     CHECK (s.mixer.size() == 17); // Master + 16, as before
     s.channels.resize (std::max<std::size_t> (s.channels.size(), 1));
@@ -132,7 +132,7 @@ TEST (s162_a_channel_routes_to_any_insert)
 
 TEST (s162_the_rack_mixes_a_channel_routed_past_insert_16_into_that_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (16);
     ChannelDef c;
@@ -147,7 +147,7 @@ TEST (s162_the_rack_mixes_a_channel_routed_past_insert_16_into_that_insert)
 
 TEST (s162_sampler_fine_tune_changes_live_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto sample = s162::sine (440.0, 1.0);
     SamplerSettings st;
     const auto plain = s162::playLive (st, sample, 60);
@@ -162,7 +162,7 @@ TEST (s162_sampler_fine_tune_changes_live_notes)
 
 TEST (s162_resample_stretch_follows_the_keys)
 {
-    using namespace lynx;
+    using namespace yw;
     // a 1 s sample stretched (Resample) to 4 beats = 2 s at 120 BPM: an octave down at the root key
     const auto sample = s162::sine (440.0, 1.0);
     SamplerSettings st;
@@ -170,7 +170,7 @@ TEST (s162_resample_stretch_follows_the_keys)
     const auto root = s162::playLive (st, sample, 60);
     CHECK (std::abs (root.freq - 220.0) < 1.0);
     CHECK (std::abs (root.length - 88200) < 400);
-    // FL's Resample: pitch and length change together, like tape (LYNX played every key at the root's pitch)
+    // FL's Resample: pitch and length change together, like tape (YW played every key at the root's pitch)
     const auto fifth = s162::playLive (st, sample, 67);
     CHECK (std::abs (fifth.freq - 220.0 * std::exp2 (7.0 / 12.0)) < 1.5);
     CHECK (std::abs (fifth.length - 88200.0 / std::exp2 (7.0 / 12.0)) < 400);
@@ -180,7 +180,7 @@ TEST (s162_resample_stretch_follows_the_keys)
 
 TEST (s162_stretch_keeping_pitch_transposes_and_keeps_the_length)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto sample = s162::sine (440.0, 1.0);
     SamplerSettings st;
     st.stretchBeats = 4.0f; // 2 s at 120 BPM
@@ -203,7 +203,7 @@ TEST (s162_stretch_keeping_pitch_transposes_and_keeps_the_length)
 
 TEST (s162_pitch_wheel_bends_native_instruments_by_the_pitch_range)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto sample = s162::sine (440.0, 1.0);
     SamplerSettings st;
     // full wheel up with FL's default range (2 semitones): 440 · 2^(2/12)
@@ -234,7 +234,7 @@ TEST (s162_pitch_wheel_bends_native_instruments_by_the_pitch_range)
 namespace s162
 {
 // a fake hosted plugin: records the MIDI messages it gets
-struct MidiSpy final : lynx::Instrument
+struct MidiSpy final : yw::Instrument
 {
     std::vector<std::vector<std::uint8_t>> got;
     void prepare (double) noexcept override {}
@@ -248,7 +248,7 @@ struct MidiSpy final : lynx::Instrument
 
 TEST (s162_pitch_and_mod_wheel_reach_a_hosted_plugin)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (2);
     ChannelDef c;

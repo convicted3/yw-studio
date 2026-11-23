@@ -13,12 +13,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class DelayLine;
 }
 
-namespace lynx::exportopts
+namespace yw::exportopts
 {
 enum class Format : int
 {
@@ -29,7 +29,7 @@ enum class Format : int
     // owner decision D5 (round als190ka-export): AIFF (16 / 24-bit integer, JUCE's writer) and AAC in an MPEG-4 (.m4a)
     // container, encoded by the operating system's own AAC encoder (engine/AacEncoder.h: Media Foundation on Windows,
     // AudioToolbox on macOS; none on Linux, where M4A is not offered). FL's render window has an M4A box (bit 9 of its
-    // LastExportedFormats mask, REA round 139); AIFF is LYNX's own. Appended, so the remembered numbers stay what they were.
+    // LastExportedFormats mask, REA round 139); AIFF is YW's own. Appended, so the remembered numbers stay what they were.
     aiff,
     aac
 };
@@ -54,7 +54,7 @@ enum class Stems : int
     none,
     mixerTracks, // one file per insert that gets sound (FL's "Split mixer tracks")
     channels,    // one file per Channel Rack channel that plays something (each heard through its mixer path)
-    channelsDry  // round 177d (pain point 35, LYNX's own): the same, but each channel's insert goes straight to the
+    channelsDry  // round 177d (pain point 35, YW's own): the same, but each channel's insert goes straight to the
                  // Master: no sends, no group/bus inserts after it (the "instruments only" stems)
 };
 
@@ -108,7 +108,7 @@ struct Options
     // FL's "Disable maximum polyphony" (on by default; REA round 139, FLEngine FUN_00d1a…: every channel's Max
     // polyphony is set to 0 for the render): the channels' polyphony limits are lifted in the exported song
     bool disableMaxPolyphony = true;
-    // more formats written from the same render (FL's WAV / MP3 / OGG / FLAC / M4A boxes can be ticked together, LYNX adds
+    // more formats written from the same render (FL's WAV / MP3 / OGG / FLAC / M4A boxes can be ticked together, YW adds
     // AIFF): a mask of `1 << Format`, besides `format` (whose settings window shows); 0 = only `format`
     std::uint32_t moreFormats = 0;
     Channels channels = Channels::stereo;
@@ -118,16 +118,16 @@ struct Options
     bool saveTempo = false;
     bool loopMarkers = true;
     bool playlistMarkers = true;
-    // File › Export › "Master..." (Ctrl+Alt+M; round 168e: LYNX's own mastering where FL sends the render to FL Cloud):
+    // File › Export › "Master..." (Ctrl+Alt+M; round 168e: YW's own mastering where FL sends the render to FL Cloud):
     // the render is brought to `masterLufs` integrated under a −1 dBTP ceiling (core/Mastering.h). `master` is set by
     // that item only (not remembered); the target is remembered.
     bool master = false;
     double masterLufs = -14.0;
-    // Round 190ap (LYNX's own, off by default): "One file per marker section" — the song is cut at its Playlist
+    // Round 190ap (YW's own, off by default): "One file per marker section" — the song is cut at its Playlist
     // markers and each section becomes a file named after its marker ("<name> - 02 Verse"); with stems, each section
     // gets its stems. Song range only (markerSections).
     bool sections = false;
-    // Round 190ol (LYNX's own, off by default): "One file per section" — the same, cut at the Sections lane's sections
+    // Round 190ol (YW's own, off by default): "One file per section" — the same, cut at the Sections lane's sections
     // (core/Sections.h) instead of the markers; each file is named after its section. Wins over `sections` when both are on.
     bool songSections = false;
     // Issue #215 (round 190ng): the file name's template with wildcards (core/ExportNaming.h; "$project" = as before)
@@ -237,7 +237,7 @@ Song makeChannelStemSong (const Song& song, int channel, bool dry = false);
 std::string stemFileName (const std::string& base, int number, const std::string& name, const char* ext);
 
 // --- "Split mixer tracks" in one render (round 190gj, P9) -----------------------------------------------------------
-// FL renders the split mixer tracks in one pass (TRENDERFORM, REA_rodada84 §1). LYNX's stem of an insert is the render
+// FL renders the split mixer tracks in one pass (TRENDERFORM, REA_rodada84 §1). YW's stem of an insert is the render
 // of makeBounceSong (song, insert): that insert alone (soloed with its sources), straight to a neutral Master. The same
 // samples come out of one render of the whole song when that render's insert outputs are tapped: the stem render's
 // Master adds up its own channels and the routes that carry sound into it — the insert, and whatever feeds it that
@@ -395,4 +395,4 @@ bool appendWavChunks (const std::string& path, const std::vector<std::uint8_t>& 
 std::int64_t wavDataFrames (const std::string& path);
 // What the export does after writing a WAV file: the chunks of `x` appended (nothing to do = true).
 bool appendWavExtras (const std::string& path, const WavExtras& x, double sampleRate);
-} // namespace lynx::exportopts
+} // namespace yw::exportopts

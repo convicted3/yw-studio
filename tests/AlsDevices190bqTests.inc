@@ -1,4 +1,4 @@
-// --- Live's own devices in a set → LYNX's own (round 190bq, core/AlsDevices.h): the unit laws of each translation
+// --- Live's own devices in a set → YW's own (round 190bq, core/AlsDevices.h): the unit laws of each translation
 // (frequency, Q, gain, ratio, times, dry/wet) against the values the device stores, and the import report. The device
 // elements are written by the tests with the member names Live saves; no file of Live's is used. What these tests
 // prove is each conversion as stated in AlsDevices.h; which statements about Live are [ASSUMED] is listed in the
@@ -11,7 +11,7 @@
 #include "core/DynamicsSuite.h"
 #include "core/Effects.h"
 #include "core/FacetEq.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/XmlLite.h"
 
 namespace als190bq
@@ -39,7 +39,7 @@ inline std::string eqBand (int b, bool on, int mode, double hz, double gain, dou
            "</Bands." + std::to_string (b) + ">";
 }
 
-inline lynx::xml::Element parse (lynx::xml::Document& doc, const std::string& text)
+inline yw::xml::Element parse (yw::xml::Document& doc, const std::string& text)
 {
     doc.parse (text);
     return doc.root();
@@ -52,7 +52,7 @@ inline double analogDb (double b2, double b1, double b0, double a2, double a1, d
     return 20.0 * std::log10 (std::abs ((b2 * s * s + b1 * s + b0) / (a2 * s * s + a1 * s + a0)));
 }
 
-// LYNX's Utility laws (core/Effects.cpp): gain ±24 dB, matrix coefficients −2 … 2
+// YW's Utility laws (core/Effects.cpp): gain ±24 dB, matrix coefficients −2 … 2
 inline float utilDb (float v) { return (v - 0.5f) * 48.0f; }
 inline float utilCoef (float v) { return v * 4.0f - 2.0f; }
 
@@ -105,7 +105,7 @@ inline std::string deviceSet (const std::string& devices, const std::string& aud
 
 TEST (als190bq_eq_eight_q_laws_match_the_analog_prototypes)
 {
-    using namespace lynx;
+    using namespace yw;
     using alsdev::Eq8Mode;
     // the Q conversions (rounds 190cx / 190da, measured in Live 12.4): bell, notch and 12 dB cuts √2·Q; shelves through
     // the cookbook Q of Live's table (190cz); 48 dB cuts = the scale of all four Butterworth section Qs, 1 + 0.2632·ln(Q / 0.7071)
@@ -235,7 +235,7 @@ TEST (als190bq_eq_eight_q_laws_match_the_analog_prototypes)
 // transfer function against the dry track, 48 kHz): Facet EQ's digital response at the same bins, in dB
 TEST (als190cx_eq_eight_matches_the_live_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     const double hz[8] { 123.047, 251.953, 498.047, 708.984, 1001.953, 1412.109, 2003.906, 4001.953 };
     struct Render
     {
@@ -281,7 +281,7 @@ TEST (als190cx_eq_eight_matches_the_live_renders)
 
 TEST (als190bq_eq_eight_becomes_facet_eq)
 {
-    using namespace lynx;
+    using namespace yw;
     xml::Document doc;
     std::string bands;
     bands += als190bq::eqBand (0, true, 1, 40.0, 0.0, 0.7071);       // low cut 12
@@ -356,8 +356,8 @@ TEST (als190bq_eq_eight_becomes_facet_eq)
 
 TEST (als190bq_compressor_becomes_crest)
 {
-    using namespace lynx;
-    using namespace lynx::dyn::crest;
+    using namespace yw;
+    using namespace yw::dyn::crest;
     using als190bq::flag;
     using als190bq::par;
     xml::Document doc;
@@ -443,7 +443,7 @@ TEST (als190bq_compressor_becomes_crest)
 
 TEST (als190bq_utility_is_the_same_maths)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190bq::flag;
     using als190bq::par;
     // the matrix: out L = ll·L + rl·R, out R = lr·L + rr·R
@@ -457,9 +457,9 @@ TEST (als190bq_utility_is_the_same_maths)
     u = {};
     u.width = 0.0;
     CHECK (is (alsdev::utilityMatrix (u), 0.5, 0.5, 0.5, 0.5) && alsdev::utilityIsExact (u));
-    u.width = 2.0; // side doubled: L' = 1.5 L − 0.5 R (Live's law, measured; fits LYNX's matrix)
+    u.width = 2.0; // side doubled: L' = 1.5 L − 0.5 R (Live's law, measured; fits YW's matrix)
     CHECK (is (alsdev::utilityMatrix (u), 1.5, -0.5, -0.5, 1.5) && alsdev::utilityIsExact (u));
-    u.width = 4.0; // 2.5 / −1.5: beyond LYNX's ±2 coefficients
+    u.width = 4.0; // 2.5 / −1.5: beyond YW's ±2 coefficients
     CHECK (! alsdev::utilityIsExact (u));
     u = {};
     u.phaseL = true;
@@ -515,7 +515,7 @@ TEST (als190bq_utility_is_the_same_maths)
     u.bassMono = true;
     CHECK (! alsdev::utilityIsExact (u));
 
-    // the device → LYNX's Utility, and LYNX's Utility doing what Live's settings say, sample for sample
+    // the device → YW's Utility, and YW's Utility doing what Live's settings say, sample for sample
     xml::Document doc;
     const auto device = [] (double gain, bool mute, bool pl, bool pr, int mode, double width, bool mono, double balance, bool bass = false) {
         return "<StereoGain Id=\"4\"><On><Manual Value=\"true\" /></On>" + flag ("PhaseInvertL", pl) + flag ("PhaseInvertR", pr) + par ("ChannelMode", mode) +
@@ -592,7 +592,7 @@ TEST (als190bq_utility_is_the_same_maths)
             CHECK (back->mute || std::abs (back->gain / live.gain - 1.0) < 1e-5);
         }
     }
-    std::printf ("  Utility through LYNX's effect vs the device's maths: worst %.2e\n", worst);
+    std::printf ("  Utility through YW's effect vs the device's maths: worst %.2e\n", worst);
     CHECK (worst < 1e-6);
 
     // outside the exact part: kept, and listed
@@ -602,11 +602,11 @@ TEST (als190bq_utility_is_the_same_maths)
     CHECK (t && t->slot.params[0] > 0.0f && als190bq::hasNote (t->notes.approximated, "gain -40.0 dB")); // (never the knob's "mute")
     t = alsdev::effectFromLiveDevice (als190bq::parse (doc, device (1.0, false, false, false, 1, 4.0, false, -0.5, true)));
     CHECK (t && als190bq::hasNote (t->notes.approximated, "width 400 % with a balance") && als190bq::hasNote (t->notes.dropped, "Bass Mono (below 120 Hz)"));
-    CHECK (t && std::abs (t->slot.params[1] - 0.5f) < 1e-6); // the balance is in the matrix, LYNX's own stays centred
+    CHECK (t && std::abs (t->slot.params[1] - 0.5f) < 1e-6); // the balance is in the matrix, YW's own stays centred
     t = alsdev::effectFromLiveDevice (als190bq::parse (doc, device (1.0, false, false, false, 1, 0.5, false, 0.0)));
     CHECK (t && t->notes.approximated.empty() && std::abs (als190bq::utilCoef (t->slot.params[2]) - 0.75f) < 1e-6 &&
            std::abs (als190bq::utilCoef (t->slot.params[3]) - 0.25f) < 1e-6);
-    // a LYNX Utility with a balance or a free matrix has no exact Live form: not exported
+    // a YW Utility with a balance or a free matrix has no exact Live form: not exported
     auto slot = makeEffectSlot (EffectKind::utility);
     CHECK (alsdev::liveUtilityOf (slot).has_value());
     slot.params[1] = 0.7f;
@@ -618,7 +618,7 @@ TEST (als190bq_utility_is_the_same_maths)
 
 TEST (als190bq_reverb_becomes_atrium)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190bq::flag;
     using als190bq::par;
     CHECK (std::abs (alsdev::atriumSizeOf (100.0) - 0.5f) < 1e-6 && alsdev::atriumSizeOf (0.222) == 0.0f && alsdev::atriumSizeOf (500.0) == 1.0f);
@@ -662,7 +662,7 @@ TEST (als190bq_reverb_becomes_atrium)
 
 TEST (als190bq_simpler_settings)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190bq::flag;
     using als190bq::par;
     using als190bq::v;
@@ -765,9 +765,9 @@ TEST (als190bq_simpler_settings)
     }
 }
 
-TEST (als190bq_a_set_with_live_devices_opens_on_lynx_effects)
+TEST (als190bq_a_set_with_live_devices_opens_on_yw_effects)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190bq::flag;
     using als190bq::par;
     using als190bq::v;
@@ -818,7 +818,7 @@ TEST (als190bq_a_set_with_live_devices_opens_on_lynx_effects)
     CHECK (als190bq::reportHas (report.partialEffects, "Compressor -> Crest Compressor") && als190bq::reportHas (report.partialEffects, "Reverb -> Atrium"));
     CHECK (report.droppedEffects.count ("Erosion") == 1 && report.droppedEffects.size() == 1 && report.notReproduced.count ("MidiArpeggiator") == 1);
     CHECK (als190bq::reportHas (report.approximated, "Simpler: Slice mode") && als190bq::reportHas (report.approximated, "Simpler: velocity sensitivity"));
-    // the Simpler: −6 dB, 4 slices, and its notes moved from C1 up to LYNX's slice keys
+    // the Simpler: −6 dB, 4 slices, and its notes moved from C1 up to YW's slice keys
     const ChannelDef* sampler = nullptr;
     for (const auto& c : song->channels)
         if (c.name == "Keys")

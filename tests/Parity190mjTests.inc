@@ -1,4 +1,4 @@
-// Round 190mj (Valhalla → LYNX stand-ins, part 4). Included after Parity190mbTests.inc (uses Parity190lyTests.inc's helpers).
+// Round 190mj (Valhalla → YW stand-ins, part 4). Included after Parity190mbTests.inc (uses Parity190lyTests.inc's helpers).
 // ValhallaSpaceModulator → Orbit: the reference's own voices (hidden orbit::voiceLaw, set only by the SpaceModulator
 // translator), measured black-box on click-train and still probes: one sweep phase that runs on from load (a reset does
 // not restart it) at 10 |2 v − 1|^(10/3) Hz, first-order all-pass (Thiran) fractional delays, the through-zero pair
@@ -14,10 +14,10 @@
 
 namespace parity190mj
 {
-inline lynx::EffectSlot orbitSlot (lynx::echosuite::orbit::Mode m, float rate, float fb, float law)
+inline yw::EffectSlot orbitSlot (yw::echosuite::orbit::Mode m, float rate, float fb, float law)
 {
-    using namespace lynx;
-    namespace ob = lynx::echosuite::orbit;
+    using namespace yw;
+    namespace ob = yw::echosuite::orbit;
     auto slot = makeEffectSlot (EffectKind::orbit);
     slot.params[(std::size_t) ob::mix] = 1.0f;
     slot.params[(std::size_t) ob::rate] = rate;
@@ -31,7 +31,7 @@ inline lynx::EffectSlot orbitSlot (lynx::echosuite::orbit::Mode m, float rate, f
     return slot;
 }
 // the impulse response (both sides) of a slot to a unit impulse on the left (`right`: on the right) at 0.1 s
-inline void impulse (const lynx::EffectSlot& slot, std::vector<float>& l, std::vector<float>& r, bool right = false, double secs = 0.4)
+inline void impulse (const yw::EffectSlot& slot, std::vector<float>& l, std::vector<float>& r, bool right = false, double secs = 0.4)
 {
     const double sr = 48000.0;
     l.assign ((std::size_t) (secs * sr), 0.0f);
@@ -44,8 +44,8 @@ inline double energy (const std::vector<float>& x) { double e = 0.0; for (auto v
 
 TEST (parity190mj_orbit_voice_law_is_hidden_and_translator_only)
 {
-    using namespace lynx;
-    namespace ob = lynx::echosuite::orbit;
+    using namespace yw;
+    namespace ob = yw::echosuite::orbit;
     CHECK ((int) ob::voiceLaw == (int) ob::smLaw + 1 && effectInfo (EffectKind::orbit).params.size() == (std::size_t) ob::paramCount);
     CHECK (makeEffectSlot (EffectKind::orbit).params[(std::size_t) ob::voiceLaw] == 0.0f);
     PluginIdentity id;
@@ -67,7 +67,7 @@ TEST (parity190mj_orbit_voice_law_is_hidden_and_translator_only)
 TEST (parity190mj_orbit_voice_law_still_taps)
 {
     using namespace parity190mj;
-    namespace ob = lynx::echosuite::orbit;
+    namespace ob = yw::echosuite::orbit;
     std::vector<float> l, r;
     // Through-zero +: both taps at 1.75 × Depth (17.5 ms + 0.42 samples), 1/√2 each: one tap of gain √2 there
     impulse (orbitSlot (ob::Mode::throughZeroPlus, 0.5f, 0.5f, 1.0f), l, r);
@@ -92,9 +92,9 @@ TEST (parity190mj_orbit_voice_law_still_taps)
 // the sweep runs on across a reset (the reference's does), at 10 |2 v − 1|^(10/3) Hz; the masked modes keep round 190mb's voices
 TEST (parity190mj_orbit_voice_law_sweep_and_masked_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190mj;
-    namespace ob = lynx::echosuite::orbit;
+    namespace ob = yw::echosuite::orbit;
     const double sr = 48000.0;
     auto slot = orbitSlot (ob::Mode::octo, 0.75f, 0.5f, 1.0f);
     auto fx = makeEffect (slot);

@@ -9,7 +9,7 @@
 #include "ui/ToolWindow.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::loopstarterui
+namespace yw::loopstarterui
 {
 namespace
 {
@@ -55,7 +55,7 @@ Data& data()
                     if (f.getFileName().equalsIgnoreCase (juce::String::fromUTF8 (loopstarter::presetFileName (g.id).c_str())))
                         out.sources.presets[g.id] = loopstarter::parsePresets (readText (f));
         }
-        // the local library: FL's installed packs (LYNX's built-in drums play the categories it has none of)
+        // the local library: FL's installed packs (YW's built-in drums play the categories it has none of)
         const juce::File packs (juce::String::fromUTF8 (roots.data.c_str()));
         if (! roots.data.empty())
             for (const auto& f : packs.getChildFile ("Patches/Packs").findChildFiles (juce::File::findFiles, true, "*.wav;*.wv;*.flac;*.ogg;*.mp3;*.aif;*.aiff"))
@@ -516,4 +516,4 @@ std::unique_ptr<juce::Component> makeForSnapshot (AudioEngine& engine, bool gene
     panel->setSize (520, panel->idealHeight());
     return panel;
 }
-} // namespace lynx::loopstarterui
+} // namespace yw::loopstarterui

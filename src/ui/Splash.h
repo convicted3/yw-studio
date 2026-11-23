@@ -12,8 +12,8 @@
 // The start-up splash screen: the app icon (logo by w3teal) drops in with a bounce on a dark card, "YW Studio" and the
 // version slide in, a thin accent bar fills while the app initialises, then it fades out. It is shown
 // only by the normal UI start (never in the command-line modes) and can be turned off, as can the
-// start-up sound, in Options (stored in %APPDATA%\LYNX\ui-options.txt).
-namespace lynx
+// start-up sound, in Options (stored in %APPDATA%\YW\ui-options.txt).
+namespace yw
 {
 struct StartupOptions
 {
@@ -23,11 +23,11 @@ struct StartupOptions
     static StartupOptions load(); // from ui-options.txt (keys "splash" and "startupSound")
 };
 
-// LYNX's start-up sound (core/StartupSound.h) as a sample the preview player can play.
+// YW's start-up sound (core/StartupSound.h) as a sample the preview player can play.
 std::shared_ptr<const SampleData> makeStartupSample();
 
 // What Main drives during the start-up (round 190hd): the card on the message thread (SplashScreen, a JUCE window: Linux,
-// macOS, LYNX_SPLASH_THREAD=0) or, on Windows, a layered window of its own drawn by a thread of its own with the same
+// macOS, YW_SPLASH_THREAD=0) or, on Windows, a layered window of its own drawn by a thread of its own with the same
 // drawing code (makeStartupSplash): the message thread can then start the engine, open the audio device and build the
 // main window while the card is up and while the logo drops, without stopping a single frame of the drop.
 class StartupSplash
@@ -74,7 +74,7 @@ public:
     std::function<void()> onFirstFrame;
 };
 
-// The card for this start: Windows draws it on a thread of its own (round 190hd), unless LYNX_SPLASH_THREAD=0.
+// The card for this start: Windows draws it on a thread of its own (round 190hd), unless YW_SPLASH_THREAD=0.
 std::unique_ptr<StartupSplash> makeStartupSplash();
 
 // One frame of the card (SplashScreen::width x height, the logical size): the same drawing for both kinds of card
@@ -90,7 +90,7 @@ struct SplashFrame
 void drawSplashFrame (juce::Graphics& g, const SplashFrame& frame);
 // The fonts drawSplashFrame uses, resolved (their typefaces looked up) on the calling thread.
 std::array<juce::Font, 4> makeSplashFonts();
-// LYNX --splashshot <folder> (round 190hd): the card at a few moments of its clock, drawn as the JUCE card is (the
+// YW --splashshot <folder> (round 190hd): the card at a few moments of its clock, drawn as the JUCE card is (the
 // platform's renderer: Direct2D on Windows; "-gpu") and as the card on its own thread is (the CPU; "-cpu"), at 100 %
 // and 150 %, as PNGs for a side by side. Returns the files written.
 juce::Array<juce::File> writeSplashShots (const juce::File& folder);
@@ -144,4 +144,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SplashScreen)
 };
-} // namespace lynx
+} // namespace yw

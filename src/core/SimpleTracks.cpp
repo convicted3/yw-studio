@@ -22,7 +22,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::simpletracks
+namespace yw::simpletracks
 {
 namespace
 {
@@ -290,7 +290,7 @@ const char* defaultName (Kind kind) noexcept
 
 std::uint32_t defaultColour (Kind kind) noexcept
 {
-    // LYNX's own track colours, one per kind (muted tones that read on the dark theme next to the red accent)
+    // YW's own track colours, one per kind (muted tones that read on the dark theme next to the red accent)
     switch (kind)
     {
         case Kind::voice: return 0xFFD0645Au;
@@ -829,7 +829,7 @@ std::vector<FolderItem> folderPlan (std::vector<std::string> paths)
         if (midi && lower (stem).find ("(all tracks)") != std::string::npos)
             continue;
         if (! midi && lower (stem).size() >= 9 && lower (stem).rfind ("- mixdown") == lower (stem).size() - 9)
-            continue; // (LYNX's export puts the whole song beside the stems)
+            continue; // (YW's export puts the whole song beside the stems)
         FolderItem item;
         item.path = p;
         item.name = stemTrackName (stem);
@@ -917,4 +917,4 @@ int insertOf (const Song& song, int track)
         return t.mixerTrack;
     return -1;
 }
-} // namespace lynx::simpletracks
+} // namespace yw::simpletracks

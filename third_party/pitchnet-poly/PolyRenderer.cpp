@@ -687,7 +687,7 @@ std::vector<std::vector<float>> synthesize(const Analysis& A, const std::vector<
     std::vector<std::vector<float>> out(static_cast<size_t>(numCh), std::vector<float>(static_cast<size_t>(to - from), 0.0f));
     std::vector<float> frame(static_cast<size_t>(N));
     std::vector<Complex> spec(static_cast<size_t>(K));
-    // LYNX modification (round 190lo): overlap-aware moves (Params::overlapAwareMoves). A moved note's copy comes
+    // YW modification (round 190lo): overlap-aware moves (Params::overlapAwareMoves). A moved note's copy comes
     // from another frame; in bins the note shares with other notes that copy carries their sound too, from that
     // other frame, and its complex sum with what stays here partly cancels (the two frames' phases differ): the
     // shared partials of a sustained chord lose level. The copy is collected on its own and joined with what stays
@@ -950,7 +950,7 @@ std::vector<std::vector<float>> synthesize(const Analysis& A, const std::vector<
                     }
                 }
                 const Complex rot = std::polar(1.0f, static_cast<float>(phase)) * binShiftSign(shift);
-                // (LYNX, round 190lo: a pure move's copy is joined by joinMoved())
+                // (YW, round 190lo: a pure move's copy is joined by joinMoved())
                 const bool apart = p.overlapAwareMoves && !soloMode && st.moves && !st.shifts && !st.stretches;
                 movedPending = movedPending || apart;
                 for (int c = 0; c < numCh; ++c)

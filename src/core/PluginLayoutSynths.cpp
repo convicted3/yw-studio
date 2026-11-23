@@ -9,7 +9,7 @@
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::plugui
+namespace yw::plugui
 {
 namespace
 {
@@ -427,7 +427,7 @@ Layout simSynthLayout()
     return std::move (p.l);
 }
 // --- Ogun / Autogun (Ogun_x64.dll TSynthEditorForm, 560 × 640): master, modulation X/Y, timbre, unison, filter, the
-// output EQ and the effects row (the articulator editor's curves are not edited in LYNX) ------------------------------
+// output EQ and the effects row (the articulator editor's curves are not edited in YW) ------------------------------
 
 Layout ogunLayout (bool autogun)
 {
@@ -468,7 +468,7 @@ Layout ogunLayout (bool autogun)
     p.knob (414, 130, 46, "Filter frequency", TR_NOOP ("Freq"), big);
     p.knob (488, 136, 36, "Filter resonance", TR_NOOP ("Res"));
     // EQ: three bands (level fader, frequency and width knobs), a strip across the page where FL has the articulator
-    // editor and the EQ column (round 172a: the articulators' curves are not editable in LYNX, so no panel for them)
+    // editor and the EQ column (round 172a: the articulators' curves are not editable in YW, so no panel for them)
     p.section (4, 220, 552, 98, TR_NOOP ("EQ"));
     static const char* const lv[3] = { "EQ band 1 level", "EQ band 2 level", "EQ band 3 level" };
     static const char* const fq[3] = { "EQ band 1 freq", "EQ band 2 freq", "EQ band 3 freq" };
@@ -805,7 +805,7 @@ Layout gmsLayout()
 
 // --- Morphine (its skin, 886 × 552): the top bar (polyphony / transpose / fine, glide, velocity curve, the master
 // envelope, drive and level), the noise generator, the 8-band EQ and the effects row (chorus, delay, reverb); the
-// generators, morph line and modulation pages are not edited in LYNX ------------------------------------------------
+// generators, morph line and modulation pages are not edited in YW ------------------------------------------------
 
 Layout morphineLayout()
 {
@@ -828,7 +828,7 @@ Layout morphineLayout()
     p.knob (820, 30, 34, "Master level", TR_NOOP ("Level"));
 
     // round 172a: the noise generator and the 8-band EQ under the top bar, the effects row under them (the generators'
-    // pages are not editable in LYNX, so no panel for them)
+    // pages are not editable in YW, so no panel for them)
     p.section (4, 104, 300, 128, TR_NOOP ("Noise"));
     p.knob (20, 132, 40, "Noise mix", TR_NOOP ("Mix"));
     p.knob (86, 132, 40, "Noise pan", TR_NOOP ("Pan"), bipolar);
@@ -868,7 +868,7 @@ Layout morphineLayout()
 // part crossfade, legato / porta, the volumes before and after the effects, pitch, LFO and the X / Y / Z controls.
 // The part panel shows part A or part B (the tabs are the layout's two pages); every control is a raw FL integer of
 // the saved state (core/HarmorControls.h). FL's timbre / filter shape menus, EQ, envelopes and image pages are not
-// editable in LYNX, so they are left out instead of shown empty.
+// editable in YW, so they are left out instead of shown empty.
 
 Layout harmorLayout()
 {
@@ -1027,4 +1027,4 @@ const std::vector<InstrumentKind>& synthGroupLayoutKinds()
                                                      InstrumentKind::autogun, InstrumentKind::minisynth, InstrumentKind::gms, InstrumentKind::morphine };
     return kinds;
 }
-} // namespace lynx::plugui
+} // namespace yw::plugui

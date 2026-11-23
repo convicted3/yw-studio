@@ -4,7 +4,7 @@
 
 TEST (stems190jr_passes_and_downloads)
 {
-    using namespace lynx::stemsplit;
+    using namespace yw::stemsplit;
     Options o;
     // standard: one pass of the 4-stem graph, every stem; guitar / piano are ignored without the 6-stem model
     auto passes = passesFor (o);
@@ -38,7 +38,7 @@ TEST (stems190jr_passes_and_downloads)
 
 TEST (stems190jr_options_text_and_threads)
 {
-    using namespace lynx::stemsplit;
+    using namespace yw::stemsplit;
     Options o;
     CHECK (optionsFromText (toText (o)) == o);
     o.stems = { true, false, true, false, true, false };
@@ -63,8 +63,8 @@ TEST (stems190jr_options_text_and_threads)
 
 TEST (stems190jr_six_outputs_and_placement)
 {
-    using namespace lynx;
-    using namespace lynx::stemsplit;
+    using namespace yw;
+    using namespace yw::stemsplit;
     // a fake 6-stem graph: stem s = input × (s + 1)
     std::vector<float> left ((std::size_t) segmentFrames + 5, 0.25f), right ((std::size_t) segmentFrames + 5, -0.5f);
     std::vector<std::array<std::vector<float>, 2>> stems (6);

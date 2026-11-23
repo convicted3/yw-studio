@@ -5,19 +5,19 @@
 
 TEST (pedal187a_only_cc64_and_cc66_are_pedals)
 {
-    CHECK (lynx::PedalHold::modeFor (64, 127) == 1);
-    CHECK (lynx::PedalHold::modeFor (64, 64) == 1);
-    CHECK (lynx::PedalHold::modeFor (64, 63) == 0);
-    CHECK (lynx::PedalHold::modeFor (66, 100) == 2);
-    CHECK (lynx::PedalHold::modeFor (66, 0) == 0);
-    CHECK (lynx::PedalHold::modeFor (65, 127) == -1); // (FL's mask 0x05 over CC 64..71: 64 and 66 only)
-    CHECK (lynx::PedalHold::modeFor (67, 127) == -1);
-    CHECK (lynx::PedalHold::modeFor (1, 127) == -1);
+    CHECK (yw::PedalHold::modeFor (64, 127) == 1);
+    CHECK (yw::PedalHold::modeFor (64, 64) == 1);
+    CHECK (yw::PedalHold::modeFor (64, 63) == 0);
+    CHECK (yw::PedalHold::modeFor (66, 100) == 2);
+    CHECK (yw::PedalHold::modeFor (66, 0) == 0);
+    CHECK (yw::PedalHold::modeFor (65, 127) == -1); // (FL's mask 0x05 over CC 64..71: 64 and 66 only)
+    CHECK (yw::PedalHold::modeFor (67, 127) == -1);
+    CHECK (yw::PedalHold::modeFor (1, 127) == -1);
 }
 
 TEST (pedal187a_sustain_holds_note_offs_until_the_pedal_comes_up)
 {
-    lynx::PedalHold h;
+    yw::PedalHold h;
     std::vector<int> released;
     auto rel = [&released] (int k) { released.push_back (k); };
 
@@ -41,7 +41,7 @@ TEST (pedal187a_sustain_holds_note_offs_until_the_pedal_comes_up)
 
 TEST (pedal187a_sostenuto_holds_only_keys_down_when_pressed)
 {
-    lynx::PedalHold h;
+    yw::PedalHold h;
     std::vector<int> released;
     auto rel = [&released] (int k) { released.push_back (k); };
     // C held, then the sostenuto pedal, then E played and released, then C released
@@ -59,10 +59,10 @@ TEST (pedal187a_sostenuto_holds_only_keys_down_when_pressed)
 TEST (pedal187a_option_is_on_by_default_and_saved)
 {
     // FL: KbHoldSupportBox "Checked": true; an old settings file (no key) reads as on
-    lynx::prefs::MidiPrefs p;
+    yw::prefs::MidiPrefs p;
     CHECK (p.footPedalNoteOff);
-    CHECK (lynx::prefs::MidiPrefs::fromText ("velocity=hard").footPedalNoteOff);
+    CHECK (yw::prefs::MidiPrefs::fromText ("velocity=hard").footPedalNoteOff);
     p.footPedalNoteOff = false;
-    const auto back = lynx::prefs::MidiPrefs::fromText (p.toText());
+    const auto back = yw::prefs::MidiPrefs::fromText (p.toText());
     CHECK (back == p && ! back.footPedalNoteOff);
 }

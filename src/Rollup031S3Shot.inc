@@ -1,11 +1,11 @@
     // --rollup031s3shot <prefix> (rollup 0.1.31 step 3, round 190ny): the texts of the step drawn off screen at 100 % and
     // @150 through the real code — View › Layout style (English: "… layout"), the live session's Start dialog and, with a
-    // relay (LYNX_RELAY_URL, a local server/app/lynx_relay.py), its invite code with Copy; then offline mode (190nx):
+    // relay (YW_RELAY_URL, a local server/app/yw_relay.py), its invite code with Copy; then offline mode (190nx):
     // File › Online session with its note, the live session's and Help › Check for updates' messages. Run it with
     // --lang pt-BR for the Portuguese pictures. <prefix>-checks.txt lists the checks. Included in the app class of Main.cpp.
     bool runRollup031S3Shot (const juce::String& prefix)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         juce::String checks;
         bool allOk = true;
@@ -107,7 +107,7 @@
         if (! offline::enabled())
         {
             liveui::start (ctx);
-            const auto relay = juce::SystemStats::getEnvironmentVariable ("LYNX_RELAY_URL", {});
+            const auto relay = juce::SystemStats::getEnvironmentVariable ("YW_RELAY_URL", {});
             const auto buttons = modal ("live-start", tr ("Start live session"), relay.isNotEmpty() ? 1 : 0);
             check ("Start live session: its button is the verb (" + trc ("@action button: Start") + ")", buttons.startsWith (trc ("@action button: Start") + "|"));
             if (relay.isNotEmpty())
@@ -133,7 +133,7 @@
                 }
             }
             else
-                line ("no LYNX_RELAY_URL: the invite code's window (Copy) is not drawn");
+                line ("no YW_RELAY_URL: the invite code's window (Copy) is not drawn");
         }
 
         // --- offline mode (round 190nx) -----------------------------------------------------------------------------------

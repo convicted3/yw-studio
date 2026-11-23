@@ -1,7 +1,7 @@
 // The generators' themes of the "Themed" plugin style (see PluginArt.inc for the framework and the rules; the art
 // directions and the style guide are in the tracker's plugin-art-0.1.24.md). One block per theme: its drawing
 // hooks, then its Theme record; then the registry and artForInstrument. Ids: PluginArtGeneratorIds.inc (1..127).
-// LYNX's own procedural drawings only — never a copied, traced or extracted bitmap, logo or skin.
+// YW's own procedural drawings only — never a copied, traced or extracted bitmap, logo or skin.
 
 namespace artkit
 {
@@ -2612,7 +2612,7 @@ inline const Theme& waspTheme()
     return t;
 }
 
-// === LYNX Soundfont: a sound library — deep navy, shelves of preset cartridges, azure and mint ======================
+// === YW Soundfont: a sound library — deep navy, shelves of preset cartridges, azure and mint ======================
 
 inline void canvasSoundFont (juce::Graphics& g, Rectangle<float> a, bool display)
 {
@@ -2674,9 +2674,9 @@ inline const Theme& soundFontTheme()
     return t;
 }
 
-// === LYNX Synth: the LYNX lab — graphite, LYNX crimson, three oscillator rings and a filter sweep ===================
+// === YW Synth: the YW lab — graphite, YW crimson, three oscillator rings and a filter sweep ===================
 
-inline void canvasLynxSynth (juce::Graphics& g, Rectangle<float> a, bool display)
+inline void canvasYwSynth (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
     fillBackdrop (g, a);
@@ -2708,7 +2708,7 @@ inline void canvasLynxSynth (juce::Graphics& g, Rectangle<float> a, bool display
     g.strokePath (sweep, stroke (1.3f));
 }
 
-inline void lynxSynthEmblem (juce::Graphics& g, Point<float> c, float r)
+inline void ywSynthEmblem (juce::Graphics& g, Point<float> c, float r)
 {
     const auto& p = pal();
     for (int k = 0; k < 3; ++k)
@@ -2718,7 +2718,7 @@ inline void lynxSynthEmblem (juce::Graphics& g, Point<float> c, float r)
     }
 }
 
-inline const Theme& lynxSynthTheme()
+inline const Theme& ywSynthTheme()
 {
     static const Theme t = []
     {
@@ -2728,8 +2728,8 @@ inline const Theme& lynxSynthTheme()
         x.pal = { Colour (0xff1e1f25), Colour (0xff0a0a0d), Colour (0xffe5383b), Colour (0xffff9f80), Colour (0xd0202128), Colour (0xe40e0e12),
                   Colour (0xff6a5a60), Colour (0xfff3eeee), Colour (0xff070709), Colour (0xff3a3b42), Colour (0xff17181c), Colour (0xff2e2f36),
                   Colour (0xfffff2ee), Colour (0xff24252c) };
-        x.canvas = canvasLynxSynth;
-        x.titleEmblem = lynxSynthEmblem;
+        x.canvas = canvasYwSynth;
+        x.titleEmblem = ywSynthEmblem;
         x.drawCap = machinedCap;
         x.arcGlow = 0.25f;
         return x;
@@ -2825,7 +2825,7 @@ const Theme* generatorTheme (Art a)
         case Art::fruitKick: return &fruitKickTheme();
         case Art::wasp: return &waspTheme();
         case Art::soundFont: return &soundFontTheme();
-        case Art::lynxSynth: return &lynxSynthTheme();
+        case Art::ywSynth: return &ywSynthTheme();
         case Art::waveTraveller: return &waveTravellerTheme();
         default: return nullptr;
     }
@@ -2867,7 +2867,7 @@ Art artForInstrument (InstrumentKind kind)
         case InstrumentKind::fruitkick: return Art::fruitKick;
         case InstrumentKind::wasp: return Art::wasp;
         case InstrumentKind::soundfont: return Art::soundFont;
-        case InstrumentKind::synth: return Art::lynxSynth;
+        case InstrumentKind::synth: return Art::ywSynth;
         case InstrumentKind::wavetraveller: return Art::waveTraveller;
         default: return Art::none;
     }

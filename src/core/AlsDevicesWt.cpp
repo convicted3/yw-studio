@@ -1,5 +1,5 @@
-// Live's Wavetable → Helix, LYNX's own wavetable synth (round 190ja, core/WavetableSynth.h). Helix keeps Wavetable's
-// units, so every parameter is copied as Live stores it; Live's wave tables (Live's content) map onto the closest LYNX
+// Live's Wavetable → Helix, YW's own wavetable synth (round 190ja, core/WavetableSynth.h). Helix keeps Wavetable's
+// units, so every parameter is copied as Live stores it; Live's wave tables (Live's content) map onto the closest YW
 // table and the report says so; the rest is listed. Evidence tags as in core/AlsDevices.h: [DATA] read in saved sets
 // (271 Core Library presets, the 19 shipped sets, 190ja's render sets), [MEASURED] Live renders.
 
@@ -12,7 +12,7 @@
 #include "core/WavetableSynth.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 using xml::Element;
 
@@ -108,7 +108,7 @@ bool wavetableToHelix (const Element& device, ChannelDef& channel, Notes& notes)
             notes.approximated.push_back ("filter " + std::to_string (k + 1) + " type " + std::to_string ((int) t) + " (played as Morph)");
             t = 4.0f;
         }
-    // the tables: Live's own content, mapped onto LYNX's (SpriteName = the table's name in Live's browser) [DATA]
+    // the tables: Live's own content, mapped onto YW's (SpriteName = the table's name in Live's browser) [DATA]
     for (int k = 0; k < 2; ++k)
     {
         const auto name = device.value ("SpriteName" + std::to_string (k + 1));
@@ -124,7 +124,7 @@ bool wavetableToHelix (const Element& device, ChannelDef& channel, Notes& notes)
         else if (! m.note.empty())
             notes.approximated.push_back ("oscillator " + std::to_string (k + 1) + ": " + m.note);
     }
-    // a set LYNX exported names its LYNX tables in the device's info text: they come back exactly (round 190ja)
+    // a set YW exported names its YW tables in the device's info text: they come back exactly (round 190ja)
     if (const auto info = device.value ("Annotation"); info.rfind ("YW Helix tables: ", 0) == 0)
     {
         const auto list = info.substr (19);
@@ -151,7 +151,7 @@ bool wavetableToHelix (const Element& device, ChannelDef& channel, Notes& notes)
                 state[(std::size_t) wt::matrixIndex (row, s)] = (float) c.number ("ModulationAmounts." + std::to_string (s), 0.0);
             ++row;
         }
-    // the wheel: Pitch ← Pitch Bend is Live's bend range (1 = 48 semitones [DATA: default 1/24 = 2 st]); LYNX's channel
+    // the wheel: Pitch ← Pitch Bend is Live's bend range (1 = 48 semitones [DATA: default 1/24 = 2 st]); YW's channel
     // range carries it
     const auto bend = state[(std::size_t) wt::matrixIndex (wt::tgt::pitch, wt::src::pitchBend)];
     if (std::abs (bend) > 1.0e-6f)
@@ -170,4 +170,4 @@ bool wavetableToHelix (const Element& device, ChannelDef& channel, Notes& notes)
     channel.samplePath.clear();
     return true;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

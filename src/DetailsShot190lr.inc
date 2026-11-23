@@ -1,11 +1,11 @@
     // --details190lrshot <prefix> <project.flp> [set.als] (round 190lr, details pass 3): the Simple dock's Drum Machine
     // (BandLab's step grid, DS-39), Live's scene follow actions (DL-14: the striped Scene Launch button, the menu, the
-    // .lynx round trip), Live's metronome "Enable Only While Recording" (DL-47) and Tap menu (DL-49), FL's F3 search step
+    // .yw round trip), Live's metronome "Enable Only While Recording" (DL-47) and Tap menu (DL-49), FL's F3 search step
     // (DF-97). <prefix>-checks.txt lists the checks. Included in the app class of Main.cpp.
     bool runDetailsShot190lr (const juce::String& prefix, const juce::String& project, const juce::String& set)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -13,7 +13,7 @@
             allOk = allOk && ok;
         };
         const auto line = [&checks] (const juce::String& what) { checks << "     " << what << "\n"; };
-        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (lynx::shot::snapshot (c), prefix + "-" + name + ".png"); };
+        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (yw::shot::snapshot (c), prefix + "-" + name + ".png"); };
         const auto menuShot = [&prefix] (const juce::PopupMenu& menu, const juce::String& title, const juce::String& name) {
             saveMenus (juce::StringArray { title }, std::vector<juce::PopupMenu> { menu }, prefix + "-" + name + ".png");
         };
@@ -23,7 +23,7 @@
                 all.add (it.getItem().text);
             return all;
         };
-        using namespace lynx;
+        using namespace yw;
         if (project.isNotEmpty())
         {
             // ---- Pattern layout, the FL demo: the Mixer's View › Waveforms and FL's polarity / swap icons
@@ -119,7 +119,7 @@
                     // Length: 2 bars → 32 steps; the menu lists BandLab's choices
                     const auto lengths = texts (dock->stepsLengthMenuForSnapshot());
                     line ("Length menu: " + lengths.joinIntoString (" | "));
-                    check ("Length: 1 bar / 2 bars / 4 bars", lengths.size() == 3 && lengths[0] == lynx::tr ("1 bar"));
+                    check ("Length: 1 bar / 2 bars / 4 bars", lengths.size() == 3 && lengths[0] == yw::tr ("1 bar"));
                     menuShot (dock->stepsLengthMenuForSnapshot(), "Length", "simple-drum-length-menu");
                     dock->stepsLengthForCheck (2);
                     offline.dispatchPendingMessages();
@@ -184,7 +184,7 @@
             }
         }
         {
-            // ---- Clip-launch layout: a scene follow action (striped Scene Launch button, the menu, the .lynx round trip),
+            // ---- Clip-launch layout: a scene follow action (striped Scene Launch button, the menu, the .yw round trip),
             // Live's metronome menu and Tap menu
             AudioEngine offline (false);
             MainComponent ui (offline, false);
@@ -218,11 +218,11 @@
                 savePng (gridView->createComponentSnapshot (cell.expanded (0, cell.getHeight()), true, 4.0f), prefix + "-scene-follow-striped@4x.png");
                 write (*gridView, "grid-scene-follow");
                 const auto items = texts (clipGridSceneMenu (*gridView, 1));
-                check ("the scene menu has Follow Action", items.contains (lynx::tr ("Follow Action")));
+                check ("the scene menu has Follow Action", items.contains (yw::tr ("Follow Action")));
                 menuShot (clipGridSceneMenu (*gridView, 1), "Scene", "grid-scene-menu-follow");
                 juce::String error;
                 const auto back = ProjectFile::fromJson (ProjectFile::toJson (offline.getSong()), error);
-                check (".lynx keeps the scene follow action", back && back->clipGrid && back->clipGrid->scenes.size() >= 2
+                check (".yw keeps the scene follow action", back && back->clipGrid && back->clipGrid->scenes.size() >= 2
                                                                   && back->clipGrid->scenes[1].follow == offline.getSong().clipGrid->scenes[1].follow
                                                                   && back->clipGrid->scenes[0].follow == ClipFollow {});
             }
@@ -302,10 +302,10 @@
             }
             const auto metronome = texts (ui.metronomeMenuForSnapshot());
             line ("metronome menu: " + metronome.joinIntoString (" | "));
-            check ("Clip-launch metronome menu: Enable Only While Recording", metronome.contains (lynx::tr ("Enable Only While Recording")));
+            check ("Clip-launch metronome menu: Enable Only While Recording", metronome.contains (yw::tr ("Enable Only While Recording")));
             menuShot (ui.metronomeMenuForSnapshot(), "Metronome", "live-metronome-menu");
             const auto tap = texts (ui.liveTapMenuForSnapshot());
-            check ("Tap menu: Start Playback with Tap Tempo", tap.contains (lynx::tr ("Start Playback with Tap Tempo")));
+            check ("Tap menu: Start Playback with Tap Tempo", tap.contains (yw::tr ("Start Playback with Tap Tempo")));
             menuShot (ui.liveTapMenuForSnapshot(), "Tap", "live-tap-menu");
         }
         juce::File (prefix + "-checks.txt").replaceWithText (checks + (allOk ? "result=OK\n" : "result=FAIL\n"));

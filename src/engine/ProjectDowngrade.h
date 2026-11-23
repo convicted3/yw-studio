@@ -1,9 +1,9 @@
 #pragma once
 
 // File › "Save a copy for an older YW Studio..." (round 190hq, slice B20; community complaint #35 "a project from a newer
-// version won't open in an older one", FL's KB 515). LYNX extra: FL Studio and Live 12 save only for themselves.
+// version won't open in an older one", FL's KB 515). YW extra: FL Studio and Live 12 save only for themselves.
 //
-// A .lynx keeps format version 1, so every release reads every newer file and skips what it does not know. That is not
+// A .yw keeps format version 1, so every release reads every newer file and skips what it does not know. That is not
 // enough on its own: a newer effect the older release does not know is dropped, which moves every later slot of that
 // insert (automation, side-chains and links point at slots by position), and the older release cannot say what it lost.
 // This writes the project as the chosen release reads it, step by step from the newest format down: what the release
@@ -18,7 +18,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::olderlynx
+namespace yw::olderyw
 {
 // The releases a copy can be saved for, newest first ("0.1.30", "0.1.28", "0.1.27").
 juce::StringArray releases();
@@ -48,4 +48,4 @@ Copy forRelease (const juce::String& projectJson, const juce::String& release);
 
 // "<name> (for YW 0.1.27)": the copy's suggested file name, without extension.
 juce::String copyName (const juce::String& projectName, const juce::String& release);
-} // namespace lynx::olderlynx
+} // namespace yw::olderyw

@@ -95,7 +95,7 @@ body:
         - **Windows:** `%APPDATA%\YW Studio\autosave\crash *.txt` and `hang *.txt`, plus `%APPDATA%\YW Studio\crash-history.log`
         - **macOS:** `~/Library/Application Support/YW Studio/autosave/` (crash / hang files) and `crash-history.log`
         - **Linux:** `~/.config/YW Studio/autosave/` (crash / hang files) and `~/.config/YW Studio/crash-history.log`
-        For slowness, start YW Studio with `LYNX_TRACE_UI=1` and attach `ui.log` from the same folder.
+        For slowness, start YW Studio with `YW_TRACE_UI=1` and attach `ui.log` from the same folder.
       placeholder: Attach the files or paste their contents.
 
   - type: textarea

@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190gg (B5, LYNX-own): dropouts counted and explained. Users report crackles "while the meter reads low" and
+// Round 190gg (B5, YW-own): dropouts counted and explained. Users report crackles "while the meter reads low" and
 // cannot tell a plugin that is too slow from a driver or a system that is late (forums.steinberg.net 820816, 955503;
 // round 190gc's complaint #6). The CPU meter already showed FL's underrun count (RtStats::underrunCount); this keeps,
 // on the message thread, how many there were since the start, when the last one happened and why:
@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace lynx::dropouts
+namespace yw::dropouts
 {
 // The slowest call of a block, in one atomic word: nanoseconds (40 bits) and the unit (24 bits).
 // Units: 0 = none, channel c = c + 1, mixer slot `key` (track * maxEffectSlots + slot) = effectBase + key.
@@ -69,7 +69,7 @@ class Log
 {
 public:
     // Returns how many dropouts this poll added (0: none). The count is FL's underrun count (the driver's when it reports
-    // one, else LYNX's estimate), kept from growing backwards when the driver's restarts with a new device.
+    // one, else YW's estimate), kept from growing backwards when the driver's restarts with a new device.
     int update (const Poll& p) noexcept
     {
         const auto raw = RtStats::underrunCount (p.overBudget, p.lateCalls, p.deviceXruns);
@@ -118,4 +118,4 @@ private:
     double lastAtMs = 0.0, lastLoad = 0.0, previousWindow = 0.0;
     Cause lastCause = Cause::none;
 };
-} // namespace lynx::dropouts
+} // namespace yw::dropouts

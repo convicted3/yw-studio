@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace gmsmobile
 {
@@ -1740,4 +1740,4 @@ bool gmsIsFlm (const ChannelDef& channel) noexcept
 {
     return channel.instrument == InstrumentKind::gms && ! channel.modelParams.empty() && channel.modelParams[0] >= 0.5f;
 }
-} // namespace lynx
+} // namespace yw

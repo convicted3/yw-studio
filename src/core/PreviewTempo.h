@@ -1,14 +1,14 @@
 #pragma once
 
-// The Browser's "Preview in time" (LYNX extra, round 190aq; TOP-20 item 6 of round 190ak). Off by default.
+// The Browser's "Preview in time" (YW extra, round 190aq; TOP-20 item 6 of round 190ak). Off by default.
 //
-// A loop auditioned in the Browser plays stretched to the project's tempo (LYNX's own stretcher, core/TimeStretch,
+// A loop auditioned in the Browser plays stretched to the project's tempo (YW's own stretcher, core/TimeStretch,
 // pitch kept) and, while the transport plays, starts on the next beat; with the transport stopped it starts at once.
 // The file's tempo comes from, in this order:
 //   1. the WAV's ACID beat count (its length in beats);
 //   2. the file name: "… 98 bpm …" / "bpm98", or a number from 60 to 200 standing alone between separators when the
 //      file is a whole number of beats long at that tempo ("Loop_128_Am");
-//   3. LYNX's tempo detection (core/TempoDetect), for files from 2 to 70 seconds that it finds to be a loop of whole
+//   3. YW's tempo detection (core/TempoDetect), for files from 2 to 70 seconds that it finds to be a loop of whole
 //      beats (4 or more) with a clear pulse.
 // A file with no usable tempo (a one-shot, a voice take, a whole song) plays as it always did. Matching the song's key
 // is not part of this.
@@ -24,14 +24,14 @@
 #include "core/Song.h"
 #include "core/TempoDetect.h"
 
-namespace lynx::previewtempo
+namespace yw::previewtempo
 {
 enum class Source
 {
     none,
     acid,     // the file's ACID beat count
     name,     // the file name
-    detected  // LYNX's tempo detection
+    detected  // YW's tempo detection
 };
 
 struct Found
@@ -138,7 +138,7 @@ inline bool worthDetecting (const SampleData& sample) noexcept
     return seconds >= minDetectSeconds && seconds <= maxLoopSeconds;
 }
 
-// LYNX's tempo detection, kept only for a loop of whole beats with a clear pulse (reads the audio: a worker thread).
+// YW's tempo detection, kept only for a loop of whole beats with a clear pulse (reads the audio: a worker thread).
 inline Found detect (const SampleData& sample)
 {
     if (! worthDetecting (sample))
@@ -195,4 +195,4 @@ inline double samplesToNextBeat (double positionTicks, double ticksPerSample, in
         return 0.0;
     return ((double) ppq - phase) / ticksPerSample;
 }
-} // namespace lynx::previewtempo
+} // namespace yw::previewtempo

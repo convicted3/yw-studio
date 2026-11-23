@@ -1,11 +1,11 @@
 // Round 190ec: Live's Slice to Drum Rack / Slice to New MIDI Track (core/Rack.h): one Drum Rack pad per slice from C1,
-// LYNX's two slicing templates (gated with choke group 1 after the facts of Live's Default slicing; one-shot), and the
+// YW's two slicing templates (gated with choke group 1 after the facts of Live's Default slicing; one-shot), and the
 // helpers behind the Playlist command (slices in the played part, a grid of slices, the notes that replay them, the new
 // track under the clip).
 
 namespace drumrackslice190ec
 {
-using namespace lynx;
+using namespace yw;
 
 bool near (float a, float b, float tol = 1.0e-5f) { return std::abs (a - b) <= tol; }
 

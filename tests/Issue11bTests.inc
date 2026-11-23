@@ -2,7 +2,7 @@
 
 TEST (issue11b_shift_space_plays_from_the_start_everywhere)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     // FL 2026 (checked in FL): Space = play / stop back to where playback started, Ctrl+Space = pause,
@@ -20,7 +20,7 @@ TEST (issue11b_shift_space_plays_from_the_start_everywhere)
 // the automated parameters at their automation's value while the song plays; the Song keeps its own values.
 TEST (issue11b_effect_editor_shows_its_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     const AutomationTarget gain { AutomationTargetKind::effectParam, 1, 0, 2 };
     auto song = issue12c::songWithClip (gain);
     EffectSlot fx;

@@ -1,12 +1,12 @@
 #pragma once
 
-// LYNX's start-up sound, synthesised procedurally (no audio files): an airy whoosh that drops onto a
+// YW's start-up sound, synthesised procedurally (no audio files): an airy whoosh that drops onto a
 // soft "pop" when the logo lands on the splash screen, then a short plucked chime (root, fifth and
 // octave) with a light stereo echo. An original sound; about 1.6 s long. No JUCE.
 
 #include <vector>
 
-namespace lynx::startup
+namespace yw::startup
 {
 struct StereoSound
 {
@@ -22,4 +22,4 @@ constexpr double soundLength = 1.6;
 constexpr float peakLevel = 0.45f;
 
 StereoSound makeSound (double sampleRate);
-} // namespace lynx::startup
+} // namespace yw::startup

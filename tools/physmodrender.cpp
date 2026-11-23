@@ -1,4 +1,4 @@
-// physmodrender: LYNX Model's renders and cost per voice, headless (round 190ni).
+// physmodrender: YW Model's renders and cost per voice, headless (round 190ni).
 //
 //   physmodrender note <out.wav> <model 0-5 | table.lpm> <key> <velocity 0-1> <seconds> [--rate R] [--set index=value ...]
 //         [--release S]        one note (mono 32-bit float WAV), the model's own preset values unless --set
@@ -35,9 +35,9 @@
 #endif
 
 #include "core/CpuFeatures.h"
-#include "core/physmod/LynxModel.h"
+#include "core/physmod/YwModel.h"
 
-using namespace lynx;
+using namespace yw;
 
 namespace
 {

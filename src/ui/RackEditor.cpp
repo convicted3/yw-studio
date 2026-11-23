@@ -32,14 +32,14 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-// Layout from Live 12.4's rack (REA_rodada183c §8 [SHOT] live/ref-live-rack-deviceview.png), drawn in LYNX's style:
+// Layout from Live 12.4's rack (REA_rodada183c §8 [SHOT] live/ref-live-rack-deviceview.png), drawn in YW's style:
 // view column | variations | macros (2 rows) | chain list | zone editor | the selected chain's devices.
 // A Drum Rack (round 190ec, docs/analise/REA_rodada190ec.md) adds its pad view between the macros and the chain list (the
 // 4 × 4 pads and the overview of all 128 at their left, Live's ArePadsVisible / PadScrollPosition [DATA]) and, in the
 // chain list, the I-O (Receive, Play, Choke, Audio To), S (a send per return chain) and R (the return chains) sections
 // (Live's IsMidiSectionVisible / AreSendsVisible / IsReturnBranchesListVisible [DATA]).
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -58,7 +58,7 @@ juce::String str (const std::string& s) { return juce::String::fromUTF8 (s.c_str
 
 // Round 190nc (DL-95): Live 12.4's rack in the Device View with the selected chain's devices inline, and its Macro Map
 // overlay, measured in 190my raw/l8.png (Map on, Glue Compressor's Attack picked) and 190mv raw/mm6.png (Map on). Only
-// in the Clip-launch layout's Live look (the Device View card; a rack's own window keeps LYNX's devices pane).
+// in the Clip-launch layout's Live look (the Device View card; a rack's own window keeps YW's devices pane).
 //  - a chain device: Live's device chrome as the Device View's cards (17 px #464646 title bar, the 13 px power disc, the
 //    name, round wells), its body #363636; devices 2 px apart on #242424 (l8 x 379..381, 676..678), no meters between;
 //  - the rack's own title bar spans only its own part (rack x 249..378 title, Glue Compressor's title from x 381);
@@ -96,7 +96,7 @@ juce::String volumeText (float gain)
     return juce::String (20.0f * std::log10 (gain), 1) + " dB";
 }
 
-// a chain's colour: its own (ARGB), else LYNX's hue wheel by its place (Live colours its chains [SHOT])
+// a chain's colour: its own (ARGB), else YW's hue wheel by its place (Live colours its chains [SHOT])
 juce::Colour chainColour (const RackChain& c, int index)
 {
     return c.colour >= 0 ? juce::Colour ((juce::uint32) c.colour).withAlpha (1.0f) : theme::noteGroupHue (1 + (index * 5) % 15);
@@ -190,7 +190,7 @@ struct RackView::Impl
     float dragStartValue = 0.0f;
     juce::Point<int> dragStart;
     RackZone dragZone;
-    // a variation launched with LYNX's glide (decision D6): the macros move from `from` to `to` over glideMs
+    // a variation launched with YW's glide (decision D6): the macros move from `from` to `to` over glideMs
     struct Glide
     {
         std::array<float, rackMacroCount> from {}, to {};
@@ -506,7 +506,7 @@ struct RackView::Impl
 
     // a chain list row's cells: the name, the chain's volume, pan, activator and solo; a Drum Rack's in Live's column
     // order with its Receive / Play / Choke, sends and Audio To (empty when hidden; a return chain has no Receive / Play
-    // / Choke and LYNX has no sends between return chains)
+    // / Choke and YW has no sends between return chains)
     struct RowCells
     {
         juce::Rectangle<int> name, receive, play, choke, vol, pan, led, solo, audioTo;
@@ -551,7 +551,7 @@ struct RackView::Impl
             x.audioTo = cells.removeFromLeft (audioToWidth).withTrimmedLeft (2);
         return x;
     }
-    // a Drum Rack's zone editor buttons (Vel / Chain / Hide, LYNX's: Live's Drum Rack has none) sit in a strip under its
+    // a Drum Rack's zone editor buttons (Vel / Chain / Hide, YW's: Live's Drum Rack has none) sit in a strip under its
     // chain list, the column titles taking the strip above it
     juce::Rectangle<int> chainsFooter() const { return chains.withTrimmedTop (std::max (0, chains.getHeight() - headerStrip)); }
     juce::Rectangle<int> chainRowsArea (const RackDoc& r) const
@@ -795,7 +795,7 @@ struct RackView::Impl
     }
     // the view column's buttons, top to bottom. An Instrument / Audio Effect / MIDI Effect Rack: M C D V + −. A Drum
     // Rack in Live's order (round 190el, 190ei B1c: macros, + / − while the macros show, variations, pads, chain list,
-    // then I-O / S / R while the chain list shows), then LYNX's devices toggle (D) last
+    // then I-O / S / R while the chain list shows), then YW's devices toggle (D) last
     enum class ColumnItem { macros, chains, devices, variations, more, fewer, pads, io, sends, returns };
     std::vector<ColumnItem> columnItems() const
     {
@@ -984,7 +984,7 @@ struct RackView::Impl
         {
             const auto b = columnButton (k).toFloat();
             const auto lit = columnLit (*r, items[(std::size_t) k]);
-            if (r->drum && items[(std::size_t) k] == ColumnItem::devices) // (LYNX's own toggle: set apart from Live's)
+            if (r->drum && items[(std::size_t) k] == ColumnItem::devices) // (YW's own toggle: set apart from Live's)
             {
                 g.setColour (col::border);
                 g.drawHorizontalLine (juce::roundToInt (b.getY()) - 2, b.getX() + 2.0f, b.getRight() - 2.0f);
@@ -1070,7 +1070,7 @@ struct RackView::Impl
             g.setColour (col::textDisabled);
             g.drawText (tr ("Macro Variations"), variations.withTrimmedTop (30), juce::Justification::centred);
         }
-        if (r.morphOn) // LYNX's own morph (decision D6): A → B
+        if (r.morphOn) // YW's own morph (decision D6): A → B
         {
             const auto s = morphSlider().toFloat();
             g.setColour (col::bg4);
@@ -1384,7 +1384,7 @@ struct RackView::Impl
                 {
                     // Live 12.4's pad (round 190jn; 190ei mn_drumrack-choke-menu.png 645..860 × 828..990): a #242424 frame,
                     // the name area #B5B5B5 (selected #637E86) with #070707 ink, the M ▶ S strip in #363636 cells with
-                    // #B5B5B5 letters; lit buttons keep LYNX's colours (Live's lit pad buttons were not captured)
+                    // #B5B5B5 letters; lit buttons keep YW's colours (Live's lit pad buttons were not captured)
                     namespace ll = theme::livelook;
                     const auto& chain = r.chains[(std::size_t) chainIndex];
                     g.setColour (ll::separator);
@@ -1874,7 +1874,7 @@ struct RackView::Impl
             for (int m = 0; m < r->shownMacros; ++m)
                 if (macroCell (m).withTrimmedTop (macroCell (m).getHeight() - 15).contains (p))
                 {
-                    // round 190nc (Live, 190my B2): a parameter picked first goes to this macro; nothing picked: LYNX's
+                    // round 190nc (Live, 190my B2): a parameter picked first goes to this macro; nothing picked: YW's
                     // menu of what it can drive
                     if (picked && ! e.mods.isPopupMenu())
                         return mapPicked (m);
@@ -2443,7 +2443,7 @@ struct RackView::Impl
                 emptyPadKey = had ? -1 : to;
             }
             // (a click on an empty pad only selects it, as Live [190ei B7a]: its instrument comes from the devices pane's
-            // "+", a drop, or LYNX's right-click menu)
+            // "+", a drop, or YW's right-click menu)
             owner.repaint();
             return;
         }
@@ -2599,7 +2599,7 @@ struct RackView::Impl
             menu.addItem (tr ("Duplicate"), [this, v] { edit ([v] (PatcherDoc& d) { rack::duplicateVariation (d, v); }); });
             menu.addItem (tr ("Delete"), [this, v] { edit ([v] (PatcherDoc& d) { rack::deleteVariation (d, v); }); });
         }
-        // LYNX's own (decision D6): morph between two variations, off by default
+        // YW's own (decision D6): morph between two variations, off by default
         menu.addSeparator();
         menu.addItem (tr ("Variation morph (YW Studio)"), true, r->morphOn, [this] {
             edit ([] (PatcherDoc& d) {
@@ -2610,7 +2610,7 @@ struct RackView::Impl
                 rack::compile (d);
             });
         });
-        juce::PopupMenu glideMenu; // LYNX's own (decision D6): a launch moves the macros over a time instead of jumping
+        juce::PopupMenu glideMenu; // YW's own (decision D6): a launch moves the macros over a time instead of jumping
         for (const auto ms : { 0, 100, 250, 500, 1000, 2000, 4000 })
             glideMenu.addItem (ms == 0 ? tr ("Off") : juce::String (ms) + " ms", true, std::abs (r->glideMs - (float) ms) < 0.5f, [this, ms] {
                 edit ([ms] (PatcherDoc& d) { rack::rackOf (d)->glideMs = (float) ms; });
@@ -2624,7 +2624,7 @@ struct RackView::Impl
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&owner).withMousePosition());
     }
 
-    // a variation's launch: Live's instant jump, or LYNX's glide when one is set
+    // a variation's launch: Live's instant jump, or YW's glide when one is set
     void launch (int v)
     {
         const auto* r = rack();
@@ -2682,7 +2682,7 @@ struct RackView::Impl
         menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&owner).withMousePosition());
     }
 
-    // Map: what macro m can drive (LYNX: a menu of the rack's devices and their parameters, the chains' volume / pan and
+    // Map: what macro m can drive (YW: a menu of the rack's devices and their parameters, the chains' volume / pan and
     // the chain selector; Live highlights the parameters themselves [MAN] 25.7.1)
     void showMapMenu (int m)
     {
@@ -2977,7 +2977,7 @@ struct RackView::Impl
     // --- Drum Rack pads (round 190ec) ---------------------------------------------------------------------------------
     // a pad's menu (round 190el, decision 3 of 190ei): Live's items in Live's order (shots/live-drumrack-pad-context-menu
     // .png: Rename Ctrl+R, Delete Del | Save as Default Pad | Next Similar Ctrl+Right, Previous Similar Ctrl+Left, Save as
-    // Similarity Reference Ctrl+Up, Return to Reference Ctrl+Down), then LYNX's own below a line (Duplicate, Choke)
+    // Similarity Reference Ctrl+Up, Return to Reference Ctrl+Down), then YW's own below a line (Duplicate, Choke)
     // written as Live's menu writes them ("Ctrl+R", "Del", "Ctrl+→"; Cmd on a Mac)
     static juce::String shortcut (int key, bool command)
     {
@@ -3031,7 +3031,7 @@ struct RackView::Impl
         addMenuItem (menu, tr ("Previous Similar"), shortcut (juce::KeyPress::leftKey, true), canSwap (key, -1), [this, key] { swapSimilar (key, -1); });
         addMenuItem (menu, tr ("Save as Similarity Reference"), shortcut (juce::KeyPress::upKey, true), awayFromReference (key), [this, key] { saveReference (key); });
         addMenuItem (menu, tr ("Return to Reference"), shortcut (juce::KeyPress::downKey, true), awayFromReference (key), [this, key] { returnToReference (key); });
-        menu.addSeparator(); // (LYNX's own)
+        menu.addSeparator(); // (YW's own)
         menu.addItem (tr ("Duplicate"), [this, c] { edit ([c] (PatcherDoc& d) { rack::duplicateChain (d, c); }); });
         juce::PopupMenu choke;
         for (int group = 0; group <= rack::drumChokeGroups; ++group)
@@ -3085,7 +3085,7 @@ struct RackView::Impl
 
     // --- Save as Default Pad (Live: the pad saved as the default pad preset; a sample dropped on an empty pad then gets
     // that pad's devices and settings, its Sampler playing the sample). One per user, in the settings folder.
-    static juce::File defaultPadFile() { return platform::settingsFile ("drum-default-pad.lynx"); }
+    static juce::File defaultPadFile() { return platform::settingsFile ("drum-default-pad.yw"); }
 
     void saveDefaultPad (int c)
     {
@@ -3319,9 +3319,9 @@ struct RackView::Impl
 
     void chooseSample (int key)
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
+        chooser = yw::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
         juce::Component::SafePointer<RackView> safe (&owner);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe, key] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe, key] (const juce::FileChooser& fc) {
             if (safe != nullptr && fc.getResult().existsAsFile())
                 safe->impl->loadSampleOnPad (key, fc.getResult());
         });
@@ -3966,8 +3966,8 @@ void saveLivePreset (AudioEngine& engine, RackLocator locate, const juce::String
     const auto folder = platform::settingsFile ("Presets").getChildFile ("Racks");
     folder.createDirectory();
     const auto stem = juce::File::createLegalFileName (name.isNotEmpty() ? name : juce::String ("Rack"));
-    chooser = lynx::ui::makeFileChooser (tr ("Save as Live rack preset (.adg)..."), folder.getChildFile (stem + ".adg"), "*.adg");
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+    chooser = yw::ui::makeFileChooser (tr ("Save as Live rack preset (.adg)..."), folder.getChildFile (stem + ".adg"), "*.adg");
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                              [&engine, locate, name] (const juce::FileChooser& c) {
         auto file = c.getResult();
         if (file == juce::File())
@@ -4060,4 +4060,4 @@ void install()
     };
 }
 } // namespace rackcards
-} // namespace lynx
+} // namespace yw

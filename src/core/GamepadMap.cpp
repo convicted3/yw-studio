@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::gamepad
+namespace yw::gamepad
 {
 namespace
 {
@@ -197,4 +197,4 @@ double volumeStepDb (const State& s, double dt) noexcept
 {
     return (axis (s, Axis::rightTrigger) - axis (s, Axis::leftTrigger)) * volumeDbPerSecond * std::max (0.0, dt);
 }
-} // namespace lynx::gamepad
+} // namespace yw::gamepad

@@ -10,7 +10,7 @@ TEST (perf190kr_maximus_kernels_match_the_plain_loops)
 {
     int same = 0;
     for (std::uint32_t seed = 1; seed <= 40; ++seed)
-        if (lynx::hlfx::kernelsMatchReference (seed * 2654435761u))
+        if (yw::hlfx::kernelsMatchReference (seed * 2654435761u))
             ++same;
         else
             std::printf ("  Maximus kernels differ from the plain loops (seed %u)\n", seed);
@@ -21,7 +21,7 @@ TEST (perf190kr_parametric_eq_cascade_matches_the_plain_loop)
 {
     int same = 0;
     for (std::uint32_t seed = 1; seed <= 40; ++seed)
-        if (lynx::peqfl::stagesMatchReference (seed * 2246822519u))
+        if (yw::peqfl::stagesMatchReference (seed * 2246822519u))
             ++same;
         else
             std::printf ("  Parametric EQ 2 cascade differs from the plain loop (seed %u)\n", seed);

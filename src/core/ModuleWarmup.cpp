@@ -9,7 +9,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (ui/I18n.h defines the same)
 #endif
 
-namespace lynx::modulewarm
+namespace yw::modulewarm
 {
 namespace
 {
@@ -159,4 +159,4 @@ std::string waitTemplate (const Waiting& w)
     return w.seconds >= Registry::slowSeconds ? TR_NOOP ("{0} is slow to start ({1} s): its vendor's service is starting. You can wait or continue without it.")
                                               : TR_NOOP ("Starting {0}...");
 }
-} // namespace lynx::modulewarm
+} // namespace yw::modulewarm

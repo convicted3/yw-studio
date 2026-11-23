@@ -6,7 +6,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::ui
+namespace yw::ui
 {
 inline bool& showingForShots() noexcept
 {
@@ -14,4 +14,4 @@ inline bool& showingForShots() noexcept
     return on;
 }
 inline bool showingOrShot (const juce::Component& c) { return c.isShowing() || showingForShots(); }
-} // namespace lynx::ui
+} // namespace yw::ui

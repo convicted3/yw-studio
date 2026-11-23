@@ -40,9 +40,9 @@ struct SlowDisk
         }
     }
 
-    lynx::search::FileSystem fs()
+    yw::search::FileSystem fs()
     {
-        lynx::search::FileSystem f;
+        yw::search::FileSystem f;
         f.folderTime = [this] (const std::string& p) {
             ++times;
             const std::lock_guard<std::mutex> g (m);
@@ -53,7 +53,7 @@ struct SlowDisk
             ++lists;
             if (listUs > 0)
                 std::this_thread::sleep_for (std::chrono::microseconds (listUs));
-            lynx::search::FolderListing l;
+            yw::search::FolderListing l;
             const std::lock_guard<std::mutex> g (m);
             if (auto i = disk.find (p); i != disk.end())
                 l.exists = true, l.time = i->second.time, l.files = i->second.files, l.subfolders = i->second.subs;
@@ -66,15 +66,15 @@ struct SlowDisk
 struct Inbox
 {
     std::mutex m;
-    std::vector<lynx::search::SearchResult> results;
-    std::function<void (const lynx::search::SearchResult&)> sink()
+    std::vector<yw::search::SearchResult> results;
+    std::function<void (const yw::search::SearchResult&)> sink()
     {
-        return [this] (const lynx::search::SearchResult& r) {
+        return [this] (const yw::search::SearchResult& r) {
             const std::lock_guard<std::mutex> g (m);
             results.push_back (r);
         };
     }
-    std::vector<lynx::search::SearchResult> take()
+    std::vector<yw::search::SearchResult> take()
     {
         const std::lock_guard<std::mutex> g (m);
         return std::exchange (results, {});
@@ -93,12 +93,12 @@ TEST (browser162_typing_fast_during_a_slow_first_index)
     b162::SlowDisk disk (31, 1000);
     std::string saved;
     std::mutex savedLock;
-    lynx::search::Service::Callbacks cb;
+    yw::search::Service::Callbacks cb;
     cb.save = [&] (const std::string& t) {
         const std::lock_guard<std::mutex> g (savedLock);
         saved = t;
     };
-    lynx::search::Service service (disk.fs(), cb);
+    yw::search::Service service (disk.fs(), cb);
     b162::Inbox inbox;
 
     // the user types "k", "ki", "kic", "kick 3" while the folders are being indexed for the first time
@@ -137,16 +137,16 @@ TEST (browser162_typing_fast_during_a_slow_first_index)
     CHECK (st.loaded && ! st.busy && st.folders == 993 && st.files == 961 * 20);
     {
         const std::lock_guard<std::mutex> g (savedLock);
-        CHECK (saved.rfind ("LYNX browser index 1\n", 0) == 0);
+        CHECK (saved.rfind ("YW browser index 1\n", 0) == 0);
     }
 }
 
 TEST (browser162_closing_mid_walk_is_quick)
 {
-    // 60 x 60 = 3661 folders at 2 ms each (~7 s): closing LYNX (or the Browser) must not wait for it, nor kill it
+    // 60 x 60 = 3661 folders at 2 ms each (~7 s): closing YW (or the Browser) must not wait for it, nor kill it
     b162::SlowDisk disk (60, 2000);
     b162::Inbox inbox;
-    auto service = std::make_unique<lynx::search::Service> (disk.fs(), lynx::search::Service::Callbacks {});
+    auto service = std::make_unique<yw::search::Service> (disk.fs(), yw::search::Service::Callbacks {});
     service->search ("kick", { "/lib" }, 500, inbox.sink());
     std::this_thread::sleep_for (std::chrono::milliseconds (300));
     CHECK (service->status().busy);
@@ -163,9 +163,9 @@ TEST (browser162_index_persists_and_follows_changes)
     std::string saved;
     std::atomic<int> changed { 0 };
     {
-        lynx::search::Service::Callbacks cb;
+        yw::search::Service::Callbacks cb;
         cb.save = [&] (const std::string& t) { saved = t; };
-        lynx::search::Service service (disk.fs(), cb);
+        yw::search::Service service (disk.fs(), cb);
         service.refresh ({ "/lib" });
         CHECK (service.waitIdle (10000));
         CHECK (service.status().folders == 43 && service.status().checkedAt > 0);
@@ -176,12 +176,12 @@ TEST (browser162_index_persists_and_follows_changes)
 
     // the next session reads the index file: searching lists nothing, and the result is there at once
     std::int64_t clock = 1000000;
-    lynx::search::Service::Callbacks cb;
+    yw::search::Service::Callbacks cb;
     cb.load = [&] { return saved; };
     cb.save = [&] (const std::string& t) { saved = t; };
     cb.indexChanged = [&] { ++changed; };
     cb.now = [&] { return clock; };
-    lynx::search::Service service (disk.fs(), cb);
+    yw::search::Service service (disk.fs(), cb);
     b162::Inbox inbox;
     service.search ("kick?2-*", { "/lib" }, 500, inbox.sink());
     CHECK (service.waitIdle (10000));
@@ -197,7 +197,7 @@ TEST (browser162_index_persists_and_follows_changes)
         disk.disk["/lib/a2/b1"].files.push_back ("kick 2-new.wav");
         disk.disk["/lib/a2/b1"].time = 2;
     }
-    clock += lynx::search::Service::recheckAfterMs;
+    clock += yw::search::Service::recheckAfterMs;
     service.search ("kick?2-*", { "/lib" }, 500, inbox.sink());
     CHECK (service.waitIdle (10000));
     r = inbox.take();
@@ -224,8 +224,8 @@ TEST (browser162_search_is_served_before_a_background_pass)
 {
     // a big background pass (a manual "Rebuild") of a slow tree, and a search of a small, indexed folder meanwhile
     b162::SlowDisk big (50, 1000);
-    lynx::search::FileSystem fs = big.fs();
-    lynx::search::Service service (fs, {});
+    yw::search::FileSystem fs = big.fs();
+    yw::search::Service service (fs, {});
     b162::Inbox inbox;
     service.search ("kick", { "/lib/a1" }, 500, inbox.sink()); // indexes /lib/a1 (51 folders)
     CHECK (service.waitIdle (10000));
@@ -250,7 +250,7 @@ TEST (browser164_rebuild_keeps_the_index_readable_and_drops_what_is_gone)
     // "Rebuild search index" lists every folder again even when its time did not change, without forgetting the index
     // first (searches meanwhile read it); folders the rebuild no longer reaches are dropped at its end
     b162::SlowDisk disk (5, 0);
-    lynx::search::Service service (disk.fs(), {});
+    yw::search::Service service (disk.fs(), {});
     b162::Inbox inbox;
     service.search ("kick", { "/lib" }, 500, inbox.sink());
     CHECK (service.waitIdle (10000));

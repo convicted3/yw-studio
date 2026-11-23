@@ -1,19 +1,19 @@
 // Round 190cd: the audio editor as a mixer-slot plugin (core/EdisonFx.h) — FL's Edison. The record modes' state
 // machine, the effect (pass-through, mute input, the take, playback), the session that keeps a slot's audio, the WAV
-// file of a project and FL's saved state. The project file's side is in LYNX --edisonslottest (engine/ProjectFile.cpp).
+// file of a project and FL's saved state. The project file's side is in YW --edisonslottest (engine/ProjectFile.cpp).
 
 namespace edison190cd
 {
-namespace ef = lynx::edisonfx;
-namespace ae = lynx::audioedit;
+namespace ef = yw::edisonfx;
+namespace ae = yw::audioedit;
 
-inline lynx::EffectParams defaults()
+inline yw::EffectParams defaults()
 {
-    return lynx::makeEffectSlot (lynx::EffectKind::edison).params;
+    return yw::makeEffectSlot (yw::EffectKind::edison).params;
 }
 
 // `blocks` blocks of `n` frames of a constant `level` through the processor (returns the last block's left output)
-inline std::vector<float> run (ef::Processor& p, const lynx::EffectParams& params, float level, int blocks, int n = 441)
+inline std::vector<float> run (ef::Processor& p, const yw::EffectParams& params, float level, int blocks, int n = 441)
 {
     std::vector<float> l, r;
     for (int b = 0; b < blocks; ++b)
@@ -88,9 +88,9 @@ inline std::vector<std::uint8_t> flState (const std::vector<std::uint8_t>& wav, 
 
 TEST (edison190cd_the_plugin_is_a_slot_kind_with_fl_defaults)
 {
-    namespace ef = lynx::edisonfx;
-    const auto slot = lynx::makeEffectSlot (lynx::EffectKind::edison);
-    CHECK (slot.kind == lynx::EffectKind::edison);
+    namespace ef = yw::edisonfx;
+    const auto slot = yw::makeEffectSlot (yw::EffectKind::edison);
+    CHECK (slot.kind == yw::EffectKind::edison);
     // FL: the mode list opens on "On input", Append is on, the longest recording is 30 minutes (the sixth choice; live FL
     // check 190cq, shot edison190cd-05e), threshold 0.02
     CHECK (ef::modeOf (slot.params) == ef::Mode::onInput);
@@ -118,7 +118,7 @@ TEST (edison190cd_the_plugin_is_a_slot_kind_with_fl_defaults)
 
 TEST (edison190cd_gate_now_writes_every_block)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Gate g;
     g.prepare (44100.0);
     CHECK (g.phase() == ef::Phase::off);
@@ -137,7 +137,7 @@ TEST (edison190cd_gate_now_writes_every_block)
 
 TEST (edison190cd_gate_on_input_starts_with_the_first_sound_and_never_stops)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Gate g;
     g.prepare (44100.0);
     CHECK (g.holdFrames() == 44100);   // 1 s
@@ -165,7 +165,7 @@ TEST (edison190cd_gate_on_input_starts_with_the_first_sound_and_never_stops)
 
 TEST (edison190cd_gate_input_pauses_after_the_hold_and_resumes_with_pre_roll)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Gate g;
     g.prepare (48000.0);
     CHECK (g.holdFrames() == 48000);
@@ -199,7 +199,7 @@ TEST (edison190cd_gate_input_pauses_after_the_hold_and_resumes_with_pre_roll)
 
 TEST (edison190cd_gate_on_play_follows_the_transport_and_marks_song_jumps)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Gate g;
     g.prepare (44100.0);
     g.arm (ef::Mode::onPlay);
@@ -222,7 +222,7 @@ TEST (edison190cd_gate_on_play_follows_the_transport_and_marks_song_jumps)
 
 TEST (edison190cd_idle_passes_the_audio_through_bit_exact)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Processor p;
     p.prepare (48000.0);
     const auto params = edison190cd::defaults();
@@ -263,8 +263,8 @@ TEST (edison190cd_idle_passes_the_audio_through_bit_exact)
 
 TEST (edison190cd_mute_input_silences_the_slot_but_still_records_and_plays)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
     ef::Processor p;
     p.prepare (44100.0);
     auto params = edison190cd::defaults();
@@ -314,7 +314,7 @@ TEST (edison190cd_mute_input_silences_the_slot_but_still_records_and_plays)
 
 TEST (edison190cd_on_input_keeps_the_pre_roll_and_the_take_is_the_input)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Processor p;
     p.prepare (44100.0);
     const auto params = edison190cd::defaults(); // On input, threshold 0.02
@@ -341,13 +341,13 @@ TEST (edison190cd_on_input_keeps_the_pre_roll_and_the_take_is_the_input)
 
 TEST (edison190cd_on_play_records_only_while_the_song_plays_and_notes_jumps)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Processor p;
     p.prepare (44100.0);
     auto params = edison190cd::defaults();
     params[ef::recordMode] = ef::modeValue (ef::Mode::onPlay);
     p.setRecording (true);
-    const auto ticksPerBlock = 441.0 / 44100.0 * (120.0 / 60.0) * (double) lynx::ppq;
+    const auto ticksPerBlock = 441.0 / 44100.0 * (120.0 / 60.0) * (double) yw::ppq;
     double tick = 0.0;
     auto block = [&] (bool playing, float level) {
         p.setSongPosition (tick);
@@ -362,7 +362,7 @@ TEST (edison190cd_on_play_records_only_while_the_song_plays_and_notes_jumps)
     for (int i = 0; i < 10; ++i)
         block (true, 0.25f);
     CHECK (p.phase() == ef::Phase::recording);
-    tick = 4.0 * lynx::ppq * 8; // the song jumps eight bars on
+    tick = 4.0 * yw::ppq * 8; // the song jumps eight bars on
     for (int i = 0; i < 10; ++i)
         block (true, 0.75f);
     for (int i = 0; i < 5; ++i)
@@ -381,7 +381,7 @@ TEST (edison190cd_on_play_records_only_while_the_song_plays_and_notes_jumps)
 
 TEST (edison190cd_the_maximum_recording_time_ends_the_take)
 {
-    namespace ef = lynx::edisonfx;
+    namespace ef = yw::edisonfx;
     ef::Processor p;
     p.prepare (1000.0); // (a low rate: one minute is 60000 frames)
     auto params = edison190cd::defaults();
@@ -409,8 +409,8 @@ TEST (edison190cd_the_maximum_recording_time_ends_the_take)
 
 TEST (edison190cd_a_take_is_appended_or_replaces_the_audio)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
     auto base = edison190cd::ramp (1000);
     base.title = "Take";
     ae::addMarker (base, 100, "here");
@@ -451,9 +451,9 @@ TEST (edison190cd_a_take_is_appended_or_replaces_the_audio)
 
 TEST (edison190cd_a_session_records_through_the_slot_effect_with_the_window_closed)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::edison);
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::edison);
     slot.params[ef::recordMode] = ef::modeValue (ef::Mode::now);
     const auto fx = ef::make (slot, 44100.0);
     CHECK (fx != nullptr);
@@ -515,9 +515,9 @@ TEST (edison190cd_a_session_records_through_the_slot_effect_with_the_window_clos
 
 TEST (edison190cd_slave_playback_plays_the_content_at_the_song_time)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::edison);
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::edison);
     slot.params[ef::slave] = 1.0f;
     const auto fx = ef::make (slot, 44100.0);
     const auto p = std::dynamic_pointer_cast<ef::Processor> (fx);
@@ -544,7 +544,7 @@ TEST (edison190cd_slave_playback_plays_the_content_at_the_song_time)
     // the song jumps to 0.5 s (one beat at 120): the content follows
     std::fill (l.begin(), l.end(), 0.0f);
     std::fill (r.begin(), r.end(), 0.0f);
-    p->setSongPosition ((double) lynx::ppq);
+    p->setSongPosition ((double) yw::ppq);
     p->process (l.data(), r.data(), 441, slot.params, 120.0);
     CHECK (std::abs (l[0] - doc.audio.channels[0][22050]) < 1.0e-6f);
     CHECK (std::abs (r[440] - doc.audio.channels[1][22050 + 440]) < 1.0e-6f);
@@ -563,7 +563,7 @@ TEST (edison190cd_slave_playback_plays_the_content_at_the_song_time)
     CHECK (std::abs (l[7] - doc.audio.channels[0][7]) < 1.0e-6f);
     // past the end of the content: silence
     std::fill (l.begin(), l.end(), 0.0f);
-    p->setSongPosition (16.0 * lynx::ppq);
+    p->setSongPosition (16.0 * yw::ppq);
     p->process (l.data(), r.data(), 441, slot.params, 120.0);
     CHECK (l[0] == 0.0f && l[440] == 0.0f);
     // Slave off: the song plays, the content does not
@@ -576,12 +576,12 @@ TEST (edison190cd_slave_playback_plays_the_content_at_the_song_time)
 
 TEST (edison190cd_the_audio_of_a_slot_round_trips_through_its_project_file)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
-    const auto path = (std::filesystem::temp_directory_path() / "lynx-edison190cd-take.wav").string();
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
+    const auto path = (std::filesystem::temp_directory_path() / "yw-edison190cd-take.wav").string();
     std::remove (path.c_str());
 
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::edison);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::edison);
     {
         const auto session = ef::sessionFor (slot);
         auto doc = edison190cd::ramp (5000, 48000.0);
@@ -616,7 +616,7 @@ TEST (edison190cd_the_audio_of_a_slot_round_trips_through_its_project_file)
 
     // the path changes under a running effect (a song undo past the recording, a relocation): an editor that holds
     // audio keeps it; an empty one reads what the slot names
-    const auto other = (std::filesystem::temp_directory_path() / "lynx-edison190cd-other.wav").string();
+    const auto other = (std::filesystem::temp_directory_path() / "yw-edison190cd-other.wav").string();
     CHECK (ef::writeWavFile (edison190cd::ramp (700), other));
     loaded.samplePath = other;
     ef::followPath (loaded);
@@ -629,7 +629,7 @@ TEST (edison190cd_the_audio_of_a_slot_round_trips_through_its_project_file)
     loaded.samplePath = other;
     ef::followPath (loaded);
     CHECK (session->document().audio.frames() == 700 && session->path() == other && ! session->dirty());
-    loaded.samplePath = (std::filesystem::temp_directory_path() / "lynx-edison190cd-missing.wav").string();
+    loaded.samplePath = (std::filesystem::temp_directory_path() / "yw-edison190cd-missing.wav").string();
     ef::followPath (loaded);
     CHECK (session->document().audio.frames() == 700);
 
@@ -643,8 +643,8 @@ TEST (edison190cd_the_audio_of_a_slot_round_trips_through_its_project_file)
 
 TEST (edison190cd_fl_state_keeps_the_slot_as_the_plugin_with_settings_and_audio)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
     auto source = edison190cd::ramp (3000);
     ae::addMarker (source, 1500, "drop");
     const auto wav = ae::encodeWav (source, ae::WavFormat::float32);
@@ -661,11 +661,11 @@ TEST (edison190cd_fl_state_keeps_the_slot_as_the_plugin_with_settings_and_audio)
     CHECK (std::abs (parsed->noiseThreshold - 0.05f) < 1.0e-7f);
     CHECK (parsed->wavSize == wav.size());
 
-    const auto slot = lynx::effectFromFl ("Edison", state, 140.0);
+    const auto slot = yw::effectFromFl ("Edison", state, 140.0);
     CHECK (slot.has_value());
     if (! slot)
         return;
-    CHECK (slot->kind == lynx::EffectKind::edison);
+    CHECK (slot->kind == yw::EffectKind::edison);
     CHECK (ef::modeOf (slot->params) == ef::Mode::onPlay);
     CHECK (slot->params[ef::append] < 0.5f);
     CHECK (slot->params[ef::loopPlay] >= 0.5f);
@@ -690,11 +690,11 @@ TEST (edison190cd_fl_state_keeps_the_slot_as_the_plugin_with_settings_and_audio)
     }
 
     // FL's defaults (an empty plugin as FL saves it): On input, Append on, 30 minutes (index 5)
-    const auto fresh = lynx::effectFromFl ("Edison", edison190cd::flState ({}, 1, false, false, false, 5, false, false, 0.02f), 140.0);
+    const auto fresh = yw::effectFromFl ("Edison", edison190cd::flState ({}, 1, false, false, false, 5, false, false, 0.02f), 140.0);
     CHECK (fresh.has_value());
     if (fresh)
     {
-        const auto plain = lynx::makeEffectSlot (lynx::EffectKind::edison);
+        const auto plain = yw::makeEffectSlot (yw::EffectKind::edison);
         CHECK (fresh->params == plain.params);
         const auto fx2 = ef::make (*fresh, 44100.0);
         const auto s2 = ef::findSession (fresh->instance.id);
@@ -703,28 +703,28 @@ TEST (edison190cd_fl_state_keeps_the_slot_as_the_plugin_with_settings_and_audio)
 
     // garbage is not a reason to lose the slot
     CHECK (! ef::parseFlState ({}).has_value());
-    const auto broken = lynx::effectFromFl ("Edison", { 1, 2, 3 }, 140.0);
-    CHECK (broken.has_value() && broken->kind == lynx::EffectKind::edison);
+    const auto broken = yw::effectFromFl ("Edison", { 1, 2, 3 }, 140.0);
+    CHECK (broken.has_value() && broken->kind == yw::EffectKind::edison);
     std::vector<std::uint8_t> cut (state.begin(), state.begin() + 40);
-    const auto fxCut = lynx::effectFromFl ("Edison", cut, 140.0);
-    CHECK (fxCut.has_value() && fxCut->kind == lynx::EffectKind::edison);
+    const auto fxCut = yw::effectFromFl ("Edison", cut, 140.0);
+    CHECK (fxCut.has_value() && fxCut->kind == yw::EffectKind::edison);
 }
 
 TEST (edison190cd_other_slots_and_old_projects_are_untouched)
 {
     // the new kind is the last one: every earlier kind keeps its number (project files name kinds, FL import maps to them)
-    CHECK ((int) lynx::EffectKind::edison == (int) lynx::EffectKind::rackMixer + 1);
+    CHECK ((int) yw::EffectKind::edison == (int) yw::EffectKind::rackMixer + 1);
     // no session appears for other kinds
-    const auto reverb = lynx::makeEffectSlot (lynx::EffectKind::newtone);
-    CHECK (lynx::edisonfx::findSession (reverb.instance.id) == nullptr);
+    const auto reverb = yw::makeEffectSlot (yw::EffectKind::newtone);
+    CHECK (yw::edisonfx::findSession (reverb.instance.id) == nullptr);
     // the generic factory makes the effect too (a slot without the renderer: thumbnails, tools)
-    const auto fx = lynx::makeEffect (lynx::EffectKind::edison);
+    const auto fx = yw::makeEffect (yw::EffectKind::edison);
     CHECK (fx != nullptr);
     if (fx != nullptr)
     {
         fx->prepare (44100.0);
         std::vector<float> l (64, 0.5f), r (64, 0.25f);
-        fx->process (l.data(), r.data(), 64, lynx::makeEffectSlot (lynx::EffectKind::edison).params, 120.0);
+        fx->process (l.data(), r.data(), 64, yw::makeEffectSlot (yw::EffectKind::edison).params, 120.0);
         CHECK (l[0] == 0.5f && r[63] == 0.25f);
     }
 }
@@ -734,8 +734,8 @@ TEST (edison190cd_other_slots_and_old_projects_are_untouched)
 // (05c / 05d). Old slots keep what they saved.
 TEST (edison190ct_open_and_record_preset_and_fresh_defaults)
 {
-    namespace ef = lynx::edisonfx;
-    const auto fresh = lynx::makeEffectSlot (lynx::EffectKind::edison);
+    namespace ef = yw::edisonfx;
+    const auto fresh = yw::makeEffectSlot (yw::EffectKind::edison);
     auto armed = fresh;
     ef::setOpenAndRecord (armed.params);
     CHECK (ef::modeOf (armed.params) == ef::Mode::onPlay);
@@ -761,15 +761,15 @@ TEST (edison190ct_open_and_record_preset_and_fresh_defaults)
 // — frame 0 of a replacing take, the join of an appended one — and where the song starts again while armed.
 TEST (edison190ct_on_play_marks_the_start_of_each_take)
 {
-    namespace ef = lynx::edisonfx;
-    namespace ae = lynx::audioedit;
+    namespace ef = yw::edisonfx;
+    namespace ae = yw::audioedit;
     ef::Processor p;
     p.prepare (44100.0);
     auto params = edison190cd::defaults();
     params[ef::recordMode] = ef::modeValue (ef::Mode::onPlay);
     p.setRecording (true);
     double tick = 0.0;
-    const auto ticksPerBlock = 441.0 / 44100.0 * (120.0 / 60.0) * (double) lynx::ppq;
+    const auto ticksPerBlock = 441.0 / 44100.0 * (120.0 / 60.0) * (double) yw::ppq;
     auto block = [&] (bool playing) {
         p.setSongPosition (tick);
         p.setPlaying (playing);
@@ -815,15 +815,15 @@ TEST (edison190ct_on_play_marks_the_start_of_each_take)
 // question comes first, in the UI); the other effects keep their rows.
 TEST (edison190ct_remove_all_edison_instances)
 {
-    lynx::Song song;
+    yw::Song song;
     song.mixer.resize (3);
-    song.mixer[1].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::edison));
-    song.mixer[1].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::newtone));
+    song.mixer[1].effects.push_back (yw::makeEffectSlot (yw::EffectKind::edison));
+    song.mixer[1].effects.push_back (yw::makeEffectSlot (yw::EffectKind::newtone));
     song.mixer[1].effects.back().row = 3;
-    song.mixer[2].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::edison));
-    song.mixer[2].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::edison));
-    CHECK (lynx::mixerops::removeEffectsOfKind (song, lynx::EffectKind::edison) == 3);
-    CHECK (song.mixer[1].effects.size() == 1 && song.mixer[1].effects[0].kind == lynx::EffectKind::newtone && song.mixer[1].effects[0].row == 3);
+    song.mixer[2].effects.push_back (yw::makeEffectSlot (yw::EffectKind::edison));
+    song.mixer[2].effects.push_back (yw::makeEffectSlot (yw::EffectKind::edison));
+    CHECK (yw::mixerops::removeEffectsOfKind (song, yw::EffectKind::edison) == 3);
+    CHECK (song.mixer[1].effects.size() == 1 && song.mixer[1].effects[0].kind == yw::EffectKind::newtone && song.mixer[1].effects[0].row == 3);
     CHECK (song.mixer[2].effects.empty());
-    CHECK (lynx::mixerops::removeEffectsOfKind (song, lynx::EffectKind::edison) == 0); // none left: nothing happens
+    CHECK (yw::mixerops::removeEffectsOfKind (song, yw::EffectKind::edison) == 0); // none left: nothing happens
 }

@@ -3,7 +3,7 @@
 #include "core/AlsExport.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // File › Export › "Live set (.als)..." (round 175a, N2): the song as a Live set for Live 12 or Live 11, written the way
 // Live keeps its own sets: "<name> Project/<name>.als", with the samples copied into "Samples/Imported" next to it
@@ -17,4 +17,4 @@ juce::File writeAlsProject (const Song& song, PluginHost* host, AlsVersion versi
 
 // The panel only (--snapshot); nothing is written.
 std::unique_ptr<juce::Component> makeAlsExportPanel (AudioEngine& engine);
-} // namespace lynx
+} // namespace yw

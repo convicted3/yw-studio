@@ -1,4 +1,4 @@
-// LYNX Soundfont: parameters, categories, the background font library and the voice engine (round 158). See
+// YW Soundfont: parameters, categories, the background font library and the voice engine (round 158). See
 // core/SoundFont.h and docs/analise/REA_rodada158.md.
 
 #include "core/SoundFont.h"
@@ -14,7 +14,7 @@
 
 #include "core/Denormals.h"
 
-namespace lynx::sf
+namespace yw::sf
 {
 // --- font -------------------------------------------------------------------------------------------------------------
 
@@ -418,7 +418,7 @@ std::vector<float> paramsFromFl (const FlPlayerState& fl, const std::vector<Pres
     p[pChorusBuiltIn] = fl.chorusBuiltIn ? 1.0f : 0.0f;
     p[pReverbTrack] = (float) std::clamp (fl.reverbTarget >= 0 ? fl.reverbTarget + 1 : -1, -1, 125);
     p[pChorusTrack] = (float) std::clamp (fl.chorusTarget >= 0 ? fl.chorusTarget + 1 : -1, -1, 125);
-    // envelope / LFO / cut-off overrides (FL's minimum = the preset's: 0 here), FL's units → LYNX's knob curves
+    // envelope / LFO / cut-off overrides (FL's minimum = the preset's: 0 here), FL's units → YW's knob curves
     for (int k = 4; k <= 12; ++k)
         if (const auto mapped = paramFromFl (k, v[(std::size_t) k]))
             p[(std::size_t) mapped->first] = mapped->second;
@@ -807,7 +807,7 @@ struct Voice
     bool active = false, released = false, held = false /* by the pedal */, dying = false;
     const Region* region = nullptr;
     int key = 60, velocity = 100, presetIndex = -1;
-    std::uint32_t noteId = 0; // the LYNX note that started it (round 190ej)
+    std::uint32_t noteId = 0; // the YW note that started it (round 190ej)
     std::uint64_t age = 0;
     double pos = 0;
     bool looping = false, loopUntilRelease = false;
@@ -1730,4 +1730,4 @@ int activeVoices (const Instrument& instrument) noexcept
         return s->voiceCount();
     return -1;
 }
-} // namespace lynx::sf
+} // namespace yw::sf

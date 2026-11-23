@@ -5,7 +5,7 @@
 
 #include "core/SamplerImport.h"
 
-namespace lynx::ncw
+namespace yw::ncw
 {
 namespace
 {
@@ -225,4 +225,4 @@ std::vector<std::uint8_t> toWav (const std::uint8_t* data, std::size_t size, std
         }
     return msimport::wavFile (pcm.data(), pcm.size(), info.channels, info.isFloat ? -32 : info.bits, info.sampleRate);
 }
-} // namespace lynx::ncw
+} // namespace yw::ncw

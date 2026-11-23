@@ -8,7 +8,7 @@
 #include "core/PluginDrop.h"
 #include "ui/I18n.h"
 
-namespace lynx::plugindropui
+namespace yw::plugindropui
 {
 inline juce::String message (plugindrop::Error error)
 {
@@ -33,4 +33,4 @@ inline juce::String title (plugindrop::Error error)
 {
     return error == plugindrop::Error::noMixerTrack ? tr ("Can't create instrument/audio track") : tr ("Error");
 }
-} // namespace lynx::plugindropui
+} // namespace yw::plugindropui

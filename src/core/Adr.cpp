@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-namespace lynx::adr
+namespace yw::adr
 {
 namespace
 {
@@ -405,4 +405,4 @@ void setCompRange (AdrCue& cue, double from, double to, int take)
             merged.push_back (p);
     cue.comp = std::move (merged);
 }
-} // namespace lynx::adr
+} // namespace yw::adr

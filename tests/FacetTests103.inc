@@ -2,17 +2,17 @@
 
 namespace facet103
 {
-using namespace lynx::facet;
+using namespace yw::facet;
 
-lynx::EffectParams defaults()
+yw::EffectParams defaults()
 {
-    lynx::EffectParams p {};
+    yw::EffectParams p {};
     const auto& in = info();
     for (std::size_t i = 0; i < in.params.size(); ++i) p[i] = in.params[i].defaultValue;
     return p;
 }
 
-lynx::EffectParams bell (double f, double g, double qq)
+yw::EffectParams bell (double f, double g, double qq)
 {
     auto p = defaults();
     p[(std::size_t) param (0, 0)] = shapeValue (Shape::bell);
@@ -23,7 +23,7 @@ lynx::EffectParams bell (double f, double g, double qq)
 }
 
 // level (dB re `amp`) of the tone `f` in the last 0.2 s of the processed signal, phase-aligned to the latency
-double toneDb (lynx::Effect& e, const lynx::EffectParams& p, double f, double amp, double secs, const std::vector<float>* side = nullptr,
+double toneDb (yw::Effect& e, const yw::EffectParams& p, double f, double amp, double secs, const std::vector<float>* side = nullptr,
                double sideAmp = 0.0, double sideHz = 0.0)
 {
     const double sr = 48000.0;
@@ -56,10 +56,10 @@ double toneDb (lynx::Effect& e, const lynx::EffectParams& p, double f, double am
 
 TEST (facet_eq_new_parameters_keep_old_behaviour_round103)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // the 22 appended controls default to the round-99 behaviour, so older projects load unchanged
     const auto p = facet103::defaults();
-    CHECK (info().params.size() == (std::size_t) paramCount && paramCount >= 64 && paramCount <= lynx::maxEffectParams);
+    CHECK (info().params.size() == (std::size_t) paramCount && paramCount >= 64 && paramCount <= yw::maxEffectParams);
     for (int b = 0; b < bands; ++b)
     {
         CHECK (std::abs (rangeDb (p[(std::size_t) (rangeParam0 + b)])) < 1e-6);
@@ -77,8 +77,8 @@ TEST (facet_eq_new_parameters_keep_old_behaviour_round103)
     CHECK (soloBand (soloValue (3)) == 3 && soloBand (soloValue (-1)) == -1);
     for (int m = 0; m < phaseCount; ++m) CHECK ((int) phase (phaseValue ((Phase) m)) == m);
     CHECK (std::abs (attackMs (0.5f) - 3.54) < 0.05 && std::abs (releaseMs (0.5f) - 282.8) < 1.0);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::facetEq, phaseParam, phaseValue (Phase::linear), 120.0) == "Linear Phase");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::facetEq, rangeParam0 + 2, rangeValue (-6.0), 120.0) == "-6.00 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::facetEq, phaseParam, phaseValue (Phase::linear), 120.0) == "Linear Phase");
+    CHECK (yw::formatEffectParam (yw::EffectKind::facetEq, rangeParam0 + 2, rangeValue (-6.0), 120.0) == "-6.00 dB");
 }
 
 TEST (facet_eq_dynamic_gain_law_matches_measured_reference_round103)
@@ -87,15 +87,15 @@ TEST (facet_eq_dynamic_gain_law_matches_measured_reference_round103)
     const std::pair<double, double> measured[] = { { -40, 0.0 }, { -34, -0.1 }, { -32, -0.5 }, { -30, -1.3 }, { -28, -2.5 }, { -26, -4.1 },
                                                    { -24, -6.0 }, { -22, -8.0 }, { -20, -10.0 }, { -18, -12.0 }, { -6, -12.0 } };
     for (const auto& [level, gain] : measured)
-        CHECK (std::abs (lynx::facet::dynamicGainDb (level, -30.0, -12.0) - gain) < 0.12);
+        CHECK (std::abs (yw::facet::dynamicGainDb (level, -30.0, -12.0) - gain) < 0.12);
     // a positive range mirrors it; the range clamps
-    CHECK (std::abs (lynx::facet::dynamicGainDb (-24.0, -30.0, 12.0) - 6.0) < 1e-9);
-    CHECK (std::abs (lynx::facet::dynamicGainDb (0.0, -30.0, -6.0) + 6.0) < 1e-9);
+    CHECK (std::abs (yw::facet::dynamicGainDb (-24.0, -30.0, 12.0) - 6.0) < 1e-9);
+    CHECK (std::abs (yw::facet::dynamicGainDb (0.0, -30.0, -6.0) + 6.0) < 1e-9);
 }
 
 TEST (facet_eq_dynamic_band_in_every_phase_mode_round103)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto p = facet103::bell (1000.0, 0.0, 1.0);
     p[(std::size_t) rangeParam0] = rangeValue (-12.0);
     p[(std::size_t) thresholdParam0] = thresholdValue (-30.0);
@@ -126,7 +126,7 @@ TEST (facet_eq_dynamic_band_in_every_phase_mode_round103)
 
 TEST (facet_eq_sidechain_detector_round103)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto p = facet103::bell (1000.0, 0.0, 1.0);
     p[(std::size_t) rangeParam0] = rangeValue (-12.0);
     p[(std::size_t) thresholdParam0] = thresholdValue (-30.0);
@@ -148,7 +148,7 @@ TEST (facet_eq_sidechain_detector_round103)
 
 TEST (facet_eq_phase_modes_round103)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // magnitude: the analog prototype in both FIR modes (also near Nyquist, where zero latency deviates)
     auto p = facet103::bell (10000.0, 6.0, 2.0);
     p[(std::size_t) param (1, 0)] = shapeValue (Shape::lowCut);
@@ -224,7 +224,7 @@ TEST (facet_eq_phase_modes_round103)
 
 TEST (facet_eq_solo_band_round103)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto p = facet103::bell (1000.0, 6.0, 2.0);
     p[(std::size_t) soloParam] = soloValue (0);
     auto e = make (&p);
@@ -242,12 +242,12 @@ TEST (facet_eq_solo_band_round103)
 
 TEST (live_meters_cover_facet_and_tune_round103)
 {
-    // Facet EQ publishes 8 dynamic gains, LYNX Tune 3 pitch values; the analyser tap ring is a power of two
-    CHECK (lynx::ProcessTimes::meterOutputs >= 8);
-    CHECK ((lynx::ProcessTimes::AnalyzerTap::size & (lynx::ProcessTimes::AnalyzerTap::size - 1)) == 0);
-    const auto& l = lynx::plugui::layoutFor (lynx::EffectKind::lynxTune);
+    // Facet EQ publishes 8 dynamic gains, YW Tune 3 pitch values; the analyser tap ring is a power of two
+    CHECK (yw::ProcessTimes::meterOutputs >= 8);
+    CHECK ((yw::ProcessTimes::AnalyzerTap::size & (yw::ProcessTimes::AnalyzerTap::size - 1)) == 0);
+    const auto& l = yw::plugui::layoutFor (yw::EffectKind::ywTune);
     bool graph = false;
     for (const auto& item : l.items)
-        graph = graph || (item.type == lynx::plugui::Item::display && item.display != nullptr && (std::string (item.display) == "pitchgraph" || std::string (item.display) == "pitchtrace")); // round 120: graph + ring
+        graph = graph || (item.type == yw::plugui::Item::display && item.display != nullptr && (std::string (item.display) == "pitchgraph" || std::string (item.display) == "pitchtrace")); // round 120: graph + ring
     CHECK (graph);
 }

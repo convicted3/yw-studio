@@ -1,6 +1,6 @@
 #pragma once
 
-// Apex Limiter — LYNX's mastering brickwall limiter.
+// Apex Limiter — YW's mastering brickwall limiter.
 //
 // Gain → look-ahead peak limiter with a guaranteed ceiling: the required gain of every sample (ceiling / peak, the
 // peak optionally including inter-sample peaks estimated by 4× interpolation) is held for the look-ahead window and
@@ -35,7 +35,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::apex
+namespace yw::apex
 {
 constexpr int paramCount = 24;
 enum Param { pGain, pCeiling, pLookahead, pRelease, pStyle, pTruePeak, pLink, pAttack, pLinkRelease, pDither, pShaping,
@@ -82,4 +82,4 @@ int latencyFor (double sampleRate, int factor, bool truePeak = true) noexcept;
 int guardLatency (double sampleRate) noexcept;
 
 std::unique_ptr<Effect> make (const EffectParams* initial = nullptr);
-} // namespace lynx::apex
+} // namespace yw::apex

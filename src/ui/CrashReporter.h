@@ -1,14 +1,14 @@
 #pragma once
 
 // Crash / freeze reports (round 159), the app side of core/CrashReport.h:
-// - after LYNX closed unexpectedly, the next start asks once (Send / Show what will be sent / Don't send, "Always send
+// - after YW closed unexpectedly, the next start asks once (Send / Show what will be sent / Don't send, "Always send
 //   without asking", "Report on GitHub instead", "Open the folder with the report") — or sends unasked / never,
 //   as Settings › General › "Crash reports" says (default: ask);
 // - Help › "Report a problem…" sends a manual report (a description, an optional e-mail, the newest crash / freeze
 //   files and this session's steps);
-// - reports go by HTTPS POST (gzip JSON) to lynx-share.com/api/crash.php on a background thread; a report that could
+// - reports go by HTTPS POST (gzip JSON) to yolo.su/api/crash.php on a background thread; a report that could
 //   not be sent (offline) is tried once more at the next start, then dropped. Sent ids are listed in
-//   %APPDATA%\LYNX\crash-reports\sent.log (to ask for a report's deletion).
+//   %APPDATA%\YW\crash-reports\sent.log (to ask for a report's deletion).
 
 #include <functional>
 
@@ -17,7 +17,7 @@
 
 #include "core/CrashReport.h"
 
-namespace lynx::crashreporter
+namespace yw::crashreporter
 {
 crashreport::Consent consent();
 void setConsent (crashreport::Consent);
@@ -30,7 +30,7 @@ struct Session
     juce::StringArray plugins; // "name|vendor|format|version[|separate process]"
     juce::StringPairArray info; // info.<key> lines (audio)
     juce::File crashFile, hangFile;
-    // the newest fault in a plugin's editor window that LYNX caught and went on (issue #32, round 174a)
+    // the newest fault in a plugin's editor window that YW caught and went on (issue #32, round 174a)
     juce::String editorCrashPlugin;
     juce::File editorCrashFile;
     // "crash" (crash file, or a hang file sampled inside Windows' fatal-error report), "hang" (ended while frozen),
@@ -52,14 +52,14 @@ void send (const juce::String& json, const juce::String& id, std::function<void 
 void retryPending();
 // Shutdown: give an upload in flight a moment, never block for long
 void shutdown();
-// Synchronous upload, for `LYNX.exe --send-test-report` (returns "" on success, else the error)
+// Synchronous upload, for `YW.exe --send-test-report` (returns "" on success, else the error)
 juce::String sendNow (const juce::String& json);
-juce::String endpoint(); // https://lynx-share.com/api/crash.php (LYNX_CRASH_ENDPOINT overrides, for tests)
+juce::String endpoint(); // https://yolo.su/api/crash.php (YW_CRASH_ENDPOINT overrides, for tests)
 
 // Keeps the session file's "info.audio" line up to date with the open audio device.
 void watchAudioDevice (juce::AudioDeviceManager& devices);
 
-// The start-up question after an unclean end. `notice` is the "closed unexpectedly" text (with what LYNX did about
+// The start-up question after an unclean end. `notice` is the "closed unexpectedly" text (with what YW did about
 // it); when `separatePlugin` is not empty the dialog also offers to run that plugin in its own process
 // (`onSeparate` applies it).
 void showStartupDialog (const Session& session, const juce::String& notice, const juce::String& separatePlugin,
@@ -68,4 +68,4 @@ void showStartupDialog (const Session& session, const juce::String& notice, cons
 void showManualReport (juce::AudioDeviceManager* devices);
 // For --snapshot: the two dialogs' contents
 std::unique_ptr<juce::Component> makeDialogForSnapshot (bool manual);
-} // namespace lynx::crashreporter
+} // namespace yw::crashreporter

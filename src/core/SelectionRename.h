@@ -7,7 +7,7 @@
 // name, color & icon. [...] For a selection of tracks - The name/icon will only apply to unnamed tracks."): the colour
 // goes to every selected track; the typed name to the track the dialog belongs to and to the selected tracks that have
 // no name of their own. FL's manual says nothing for Playlist tracks or channels (only the Picker's clips and Color
-// selected act on several): LYNX colours every selected one there too and renames only the one the dialog was opened on.
+// selected act on several): YW colours every selected one there too and renames only the one the dialog was opened on.
 //
 // Only what the dialog changed is spread: renaming alone keeps the other tracks' colours, a new colour alone keeps
 // their names.
@@ -19,10 +19,10 @@
 
 #include "core/Song.h"
 
-namespace lynx::selrename
+namespace yw::selrename
 {
 // What a menu / dialog opened on `item` acts on: the selection when the item is in it, else the item alone (FL's rule
-// for the Mixer's "selected track(s)" items; LYNX's for the Playlist's and the Channel Rack's)
+// for the Mixer's "selected track(s)" items; YW's for the Playlist's and the Channel Rack's)
 inline std::vector<int> targets (int item, const std::vector<int>& selection)
 {
     if (std::find (selection.begin(), selection.end(), item) == selection.end())
@@ -112,4 +112,4 @@ inline void colourChannels (Song& song, const std::vector<int>& list, std::uint3
         if (t >= 0 && t < (int) song.channels.size())
             song.channels[(std::size_t) t].colour = colour;
 }
-} // namespace lynx::selrename
+} // namespace yw::selrename

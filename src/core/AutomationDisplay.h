@@ -19,7 +19,7 @@
 #include <optional>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class AutomationDisplay
 {
@@ -260,4 +260,4 @@ private:
     bool built = false;
     std::uint32_t generation = 0;
 };
-} // namespace lynx
+} // namespace yw

@@ -4,9 +4,9 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::ui
+namespace yw::ui
 {
-// LYNX's colour picker (round 162d, issues #8 / #9): a hue/saturation wheel, a brightness strip, H / S / V sliders, a
+// YW's colour picker (round 162d, issues #8 / #9): a hue/saturation wheel, a brightness strip, H / S / V sliders, a
 // hex field and a before/after preview. Used by Options › Theme (accent, background, workspace) and by the
 // "Rename and color" dialogs of mixer tracks, channels, patterns and playlist tracks.
 class ColourPicker final : public juce::Component
@@ -53,7 +53,7 @@ void showColourPickerPopup (juce::Rectangle<int> screenArea, const juce::String&
                             std::function<void (juce::Colour)> onDone, std::function<void()> onCancel = {},
                             std::function<void()> onReset = {}); // (given: a Reset button, as FL's colour selector)
 
-// The "Change color" submenu of mixer tracks, channels, patterns, playlist tracks and clips: Default, LYNX's palette and
+// The "Change color" submenu of mixer tracks, channels, patterns, playlist tracks and clips: Default, YW's palette and
 // "Custom color..." (the picker in a pop-up at `screenArea`). `set` gets the chosen colour (0 = default).
 juce::PopupMenu colourMenu (std::uint32_t current, std::function<void (std::uint32_t)> set, juce::Rectangle<int> screenArea);
-} // namespace lynx::ui
+} // namespace yw::ui

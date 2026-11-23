@@ -1,6 +1,6 @@
 #pragma once
 
-// Online Sessions, phase 2 (round 169b): one WebSocket to the LYNX SHARE relay (docs/design/SHARE_API.md §3) with the
+// Online Sessions, phase 2 (round 169b): one WebSocket to the YW Studio relay (docs/design/SHARE_API.md §3) with the
 // operating system's own TLS, no new library: WinHTTP's WebSocket API on Windows, the system libcurl (loaded at run
 // time, 7.86 or later) on Linux and macOS. A thread per connection reads; sends are queued and written by another
 // (Windows) or the same (curl) thread, so the message thread never waits for the network.
@@ -15,7 +15,7 @@
 #include <thread>
 #include <vector>
 
-namespace lynx::livelink
+namespace yw::livelink
 {
 struct Event
 {
@@ -83,4 +83,4 @@ struct HttpAnswer
 bool httpAvailable();
 HttpAnswer http (const std::string& method, const std::string& url, const std::vector<std::string>& headers, const std::string& body,
                  const std::string& userAgent, int timeoutSeconds);
-} // namespace lynx::livelink
+} // namespace yw::livelink

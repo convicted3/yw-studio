@@ -13,7 +13,7 @@
 #include "core/SoundFont.h"
 #include "core/SynthParams.h"
 
-namespace lynx::smartcontrols
+namespace yw::smartcontrols
 {
 namespace
 {
@@ -457,4 +457,4 @@ bool reset (Song& song, const Owner& owner)
     song.mixer[(std::size_t) owner.insert].smartControls.clear();
     return true;
 }
-} // namespace lynx::smartcontrols
+} // namespace yw::smartcontrols

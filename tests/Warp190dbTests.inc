@@ -12,13 +12,13 @@ namespace warp190db
 {
 inline bool near (double a, double b, double tolerance = 1.0e-9) { return std::abs (a - b) <= tolerance; }
 // 2 s at 1000 Hz; the first beat played faster than the rest (beat 1 at 0.4 s), then 120 bpm
-inline std::vector<lynx::WarpPoint> bent() { return { { 0.0, 0.0 }, { 0.4, 1.0 }, { 1.0, 2.0 }, { 2.0, 4.0 } }; }
-inline std::vector<lynx::WarpPoint> even() { return { { 0.0, 0.0 }, { 0.5, 1.0 }, { 1.0, 2.0 }, { 2.0, 4.0 } }; }
+inline std::vector<yw::WarpPoint> bent() { return { { 0.0, 0.0 }, { 0.4, 1.0 }, { 1.0, 2.0 }, { 2.0, 4.0 } }; }
+inline std::vector<yw::WarpPoint> even() { return { { 0.0, 0.0 }, { 0.5, 1.0 }, { 1.0, 2.0 }, { 2.0, 4.0 } }; }
 } // namespace warp190db
 
 TEST (warp190db_beat_axis_maps_file_time_through_the_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto w = warp190db::bent();
     const auto axis = warpview::makeAxis (w, 2000.0, 1000.0);
     CHECK (axis.valid());
@@ -57,7 +57,7 @@ TEST (warp190db_beat_axis_maps_file_time_through_the_markers)
 
 TEST (warp190db_ruler_labels_and_steps_as_live)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live's Clip View ruler: "1", "1.2", "1.3", "1.4", "2" … and sixteenths as "1.2.3"
     CHECK (warpview::beatLabel (0.0, 4) == "1");
     CHECK (warpview::beatLabel (1.0, 4) == "1.2");
@@ -88,7 +88,7 @@ TEST (warp190db_ruler_labels_and_steps_as_live)
 
 TEST (warp190db_drags_draw_stretch_and_slide_as_live)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto before = warp190db::even();
     const auto axis = warpview::makeAxis (before, 2000.0, 1000.0); // 500 units a beat
     // a plain drag of marker 1 (0.5 s, beat 1) to beat 1.5: its audio goes with it, both segments around it stretch
@@ -139,7 +139,7 @@ TEST (warp190db_drags_draw_stretch_and_slide_as_live)
 
 TEST (warp190db_drag_redraw_on_a_five_minute_clip_is_cheap)
 {
-    using namespace lynx;
+    using namespace yw;
     // five minutes at 44.1 kHz with an attack on every beat, warped with a marker on each of its 600 beats (a little
     // off 120 bpm, as an auto-warp of a played take leaves them)
     const double rate = 44100.0;

@@ -22,9 +22,9 @@ std::vector<std::uint8_t> flState (std::uint32_t version, std::initializer_list<
 }
 
 // a stereo sine of `cycles` periods over `frames` frames, on the 16-bit grid
-std::shared_ptr<lynx::SampleData> sine (int frames, int cycles, float amp = 0.5f)
+std::shared_ptr<yw::SampleData> sine (int frames, int cycles, float amp = 0.5f)
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     s->left.resize ((std::size_t) frames);
     s->right.resize ((std::size_t) frames);
     for (int i = 0; i < frames; ++i)
@@ -45,16 +45,16 @@ double risingPerSecond (const std::vector<float>& x, double rate)
     return n * rate / (double) x.size();
 }
 
-lynx::EffectParams params (std::initializer_list<std::pair<int, float>> set)
+yw::EffectParams params (std::initializer_list<std::pair<int, float>> set)
 {
-    auto p = lynx::makeEffectSlot (lynx::EffectKind::scratcher).params;
+    auto p = yw::makeEffectSlot (yw::EffectKind::scratcher).params;
     for (const auto& [k, v] : set)
         p[(std::size_t) k] = v;
     return p;
 }
 
 // runs the effect for `blocks` blocks of 256 on a silent input; returns the last `keep` samples (left, right)
-std::pair<std::vector<float>, std::vector<float>> run (lynx::Effect& e, const lynx::EffectParams& p, int blocks, int keep)
+std::pair<std::vector<float>, std::vector<float>> run (yw::Effect& e, const yw::EffectParams& p, int blocks, int keep)
 {
     std::vector<float> l, r;
     for (int b = 0; b < blocks; ++b)
@@ -79,7 +79,7 @@ double rms (const std::vector<float>& x)
 
 TEST (flscr165_controls_and_state)
 {
-    using namespace lynx::scratcher;
+    using namespace yw::scratcher;
     // FL's control ranges (the editor's DFM) and their steps
     CHECK (controlRange (wavePos).hi == 30000 && controlRange (pan).lo == -128 && controlRange (volume).hi == 255);
     CHECK (rawOfValue (volume, 0.78f) == 199 && rawOfValue (wavePos, 0.111f) == 3330 && rawOfValue (pan, 0.5f) == 0);
@@ -100,7 +100,7 @@ TEST (flscr165_controls_and_state)
         CHECK (st->values[wavePos] == valueOfRaw (wavePos, 3330) && st->values[mute] == 0.0f && st->values[hold] == 1.0f);
         CHECK (st->values[volume] == valueOfRaw (volume, 199) && transportOf (st->values[transport]) == 0 && rotationsOf (st->values[rotations]) == 9);
         CHECK (st->samplePath == "%FLStudioFactoryData%\\Data\\Patches\\Packs\\Loops\\DL Breaker.wav" && st->timecode == -1);
-        // LYNX writes FL 2026's version; reading it back gives the same values
+        // YW writes FL 2026's version; reading it back gives the same values
         const auto again = parse (toFl (st->values, st->samplePath));
         CHECK (again && again->values == st->values && again->samplePath == st->samplePath && again->version == 0xF462Au);
     }
@@ -110,14 +110,14 @@ TEST (flscr165_controls_and_state)
     CHECK (! parse (flscr165::flState (0xF4627u, {}, "")) && ! parse ({ 1, 2, 3 }));
 
     // the import's slot: kind, parameters
-    const auto fx = lynx::effectFromFl ("Fruity Scratcher", blob, 140.0);
-    CHECK (fx && fx->kind == lynx::EffectKind::scratcher && st && fx->params[wavePos] == st->values[wavePos] && fx->params[hold] == 1.0f);
-    CHECK (lynx::effectForFlPlugin ("Fruity Scratcher") == lynx::EffectKind::scratcher);
+    const auto fx = yw::effectFromFl ("Fruity Scratcher", blob, 140.0);
+    CHECK (fx && fx->kind == yw::EffectKind::scratcher && st && fx->params[wavePos] == st->values[wavePos] && fx->params[hold] == 1.0f);
+    CHECK (yw::effectForFlPlugin ("Fruity Scratcher") == yw::EffectKind::scratcher);
 }
 
 TEST (flscr165_sample_as_fl_hosts_it)
 {
-    using namespace lynx::scratcher;
+    using namespace yw::scratcher;
     // 16-bit values stay; others are rounded as round(x · 32767) / 32768; the extra frame is frame 0's right side
     const float l[3] = { 0.5f, -0.25f, 0.1f }, r[3] = { 0.125f, 0.0f, 0.3f };
     const auto t = prepareSample (l, r, 3, 44100.0);
@@ -138,7 +138,7 @@ TEST (flscr165_sample_as_fl_hosts_it)
 
 TEST (flscr165_motor_mode)
 {
-    using namespace lynx::scratcher;
+    using namespace yw::scratcher;
     // a 441 Hz sine (100 cycles over 0.1 s · 10): Speed 0.5 = 1×, Speed 1 = 2× (2 · Speed / (n − 1) turns per sample)
     const auto smp = flscr165::sine (44100, 441);
     for (const auto& [spd, want] : std::vector<std::pair<float, double>> { { 0.5f, 441.0 }, { 1.0f, 882.0 }, { 0.25f, 220.5 } })
@@ -184,7 +184,7 @@ TEST (flscr165_motor_mode)
 
 TEST (flscr165_hold_mute_pan)
 {
-    using namespace lynx::scratcher;
+    using namespace yw::scratcher;
     const auto smp = flscr165::sine (44100, 441);
     // Hold: a still platter is silent (DC blocker); moving Wave position plays the sample
     {
@@ -227,29 +227,29 @@ TEST (flscr165_render_test_import)
         return;
     const auto local = [] (std::string p) {
         std::replace (p.begin(), p.end(), '\\', '/');
-        return lynx::existingPathIgnoringCase (p);
+        return yw::existingPathIgnoringCase (p);
     };
-    lynx::FlpImportReport report;
-    lynx::FlpImportOptions options;
+    yw::FlpImportReport report;
+    yw::FlpImportOptions options;
     options.report = &report;
     options.roots.data = fs::path (realFlpDir).string();
     options.roots.factoryData = fs::path (realFlpDir).parent_path().string();
     options.fileExists = [local] (const std::string& p) { return fs::is_regular_file (local (p)); };
-    const auto song = lynx::importFlp (flp::parseProject (file), options);
+    const auto song = yw::importFlp (flp::parseProject (file), options);
     CHECK (song.mixer.size() > 1 && ! song.mixer[1].effects.empty());
     if (song.mixer.size() < 2 || song.mixer[1].effects.empty())
         return;
     const auto& fx = song.mixer[1].effects[0];
-    using namespace lynx::scratcher;
+    using namespace yw::scratcher;
     // the state holds Wave position 3330, but the song's start values (0xD8) set it to 0, as FL does when the song starts
-    CHECK (fx.kind == lynx::EffectKind::scratcher && fx.params[hold] == 1.0f && rawOfValue (wavePos, fx.params[wavePos]) == 0);
+    CHECK (fx.kind == yw::EffectKind::scratcher && fx.params[hold] == 1.0f && rawOfValue (wavePos, fx.params[wavePos]) == 0);
     CHECK (fx.samplePath.find ("DL Breaker.wav") != std::string::npos);
     CHECK (report.converted["Fruity Scratcher"] == 1 && report.droppedEffects.count ("Fruity Scratcher") == 0);
     // the platter's events: a lane on parameter 0 in the wheel's scale (the highest, 131, is 131 / 30000)
-    const lynx::PatternEvents* lane = nullptr;
+    const yw::PatternEvents* lane = nullptr;
     for (const auto& p : song.patterns)
         for (const auto& l : p.events)
-            if (l.target.kind == lynx::AutomationTargetKind::effectParam && l.target.index == 1 && l.target.slot == 0 && l.target.param == 0)
+            if (l.target.kind == yw::AutomationTargetKind::effectParam && l.target.index == 1 && l.target.slot == 0 && l.target.param == 0)
                 lane = &l;
     CHECK (lane != nullptr);
     if (lane != nullptr)
@@ -263,9 +263,9 @@ TEST (flscr165_render_test_import)
 
 TEST (flscr165_editor_takes_sample_drops)
 {
-    // the editor loads a dropped sample (OS drop or LYNX's Browser) instead of letting it fall to the Playlist: the
+    // the editor loads a dropped sample (OS drop or YW's Browser) instead of letting it fall to the Playlist: the
     // same list as SampleLibrary::isSampleFile (core/SampleFiles.h), FL's .wv packs included, any case
-    using lynx::scratcher::loadsDroppedFile;
+    using yw::scratcher::loadsDroppedFile;
     for (const char* ok : { "C:\\Samples\\DL Breaker.wav", "/home/u/loop.WAV", "kick.aiff", "pad.flac", "x.ogg", "y.mp3", "C:\\FL\\Packs\\a.wv", "b.aif" })
         CHECK (loadsDroppedFile (ok));
     for (const char* no : { "song.flp", "beat.mid", "C:\\dir.wav\\readme", "noext", "trailing.", "preset.fst", "" })

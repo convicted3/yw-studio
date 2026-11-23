@@ -5,7 +5,7 @@
 #include "engine/PluginHost.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -40,7 +40,7 @@ msimport::Access diskAccess (const juce::File& source)
             out.clear();
         return out;
     };
-    // the audio inside an imported file: %APPDATA%\LYNX\imported-samples\<file>\<name>-<hash>.wav (kept by content)
+    // the audio inside an imported file: %APPDATA%\YW\imported-samples\<file>\<name>-<hash>.wav (kept by content)
     const auto folder = PluginHost::settingsFolder().getChildFile ("imported-samples")
                             .getChildFile (juce::File::createLegalFileName (source.getFileNameWithoutExtension()));
     a.saveWav = [folder] (const std::vector<std::uint8_t>& wav, const std::string& name) -> std::string {
@@ -160,4 +160,4 @@ void openSamplerInstrumentFile (AudioEngine& engine, const juce::File& file, int
             importInstrument (engine, file, chosen - 1, channel);
     });
 }
-} // namespace lynx
+} // namespace yw

@@ -9,7 +9,7 @@
 #include "engine/AudioEngine.h"
 #include "ui/I18n.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 // Applies (or replaces) the chain on `insert`; a message when the insert has no room. True when it is on the insert.
 inline bool applyCleanVoice (AudioEngine& engine, int insert, bool noiseReduction)
@@ -38,4 +38,4 @@ inline juce::PopupMenu cleanVoiceMenu (AudioEngine& engine, int insert)
     menu.addItem (tr ("Remove Clean voice"), has, false, [e, insert] { e->editSongStructural ([insert] (Song& s) { cleanvoice::remove (s, insert); }); });
     return menu;
 }
-} // namespace lynx::ui
+} // namespace yw::ui

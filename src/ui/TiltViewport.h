@@ -10,7 +10,7 @@
 #include "core/EditorGestures.h"
 #include "ui/FlMods.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 class TiltViewport : public juce::Viewport
 {
@@ -29,4 +29,4 @@ public:
         juce::Viewport::mouseWheelMove (e, wheel);
     }
 };
-} // namespace lynx::ui
+} // namespace yw::ui

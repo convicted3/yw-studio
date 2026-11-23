@@ -12,7 +12,7 @@
 #include <cstring>
 #include <map>
 
-namespace lynx::formula
+namespace yw::formula
 {
 namespace
 {
@@ -651,4 +651,4 @@ std::unique_ptr<Effect> makeEffect (const std::vector<std::uint8_t>& state)
 {
     return std::make_unique<FormulaEffect> (Program::compile (formulaOf (state)));
 }
-} // namespace lynx::formula
+} // namespace yw::formula

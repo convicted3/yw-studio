@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstring>
 
-namespace lynx::dw
+namespace yw::dw
 {
 namespace
 {
@@ -839,4 +839,4 @@ Program programFromSfz (const sfz::Parsed& parsed, const std::string& folder, co
     }
     return p;
 }
-} // namespace lynx::dw
+} // namespace yw::dw

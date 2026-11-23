@@ -6,18 +6,18 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
-// The plugin picker (REA round 151): FL Studio's "More plugins..." list and Plugin picker categories, in LYNX's
+// The plugin picker (REA round 151): FL Studio's "More plugins..." list and Plugin picker categories, in YW's
 // look, for the scanned plugins (VST3 / VST / CLAP). Instruments and effects are two tabs; categories down the left
 // (All, Favourites, the categories of core/PluginCatalog.h, then the vendors) with their counts; the list shows the
 // favourite star (click it), name, vendor, format and category; typing filters (every word must match). Double-click
 // or Enter adds the highlighted plugin; "Manage plugins..." opens the Plugin manager, "Scan" looks for new ones.
 // One picker at a time (a tool window); `onChosen` runs once, then the picker closes.
-// `onBuiltIn` (instruments only): LYNX's built-in note effects (FL's VFX, round 164b) are listed too, as "YW Studio"
+// `onBuiltIn` (instruments only): YW's built-in note effects (FL's VFX, round 164b) are listed too, as "YW Studio"
 // entries; choosing one hands over a new channel of it.
 void showPluginPicker (AudioEngine& engine, bool instruments, std::function<void (PluginRef)> onChosen,
                        std::function<void (ChannelDef)> onBuiltIn = nullptr);
 // --pickertime (issue #209): the time each plugin list takes to open (first / second), report lines "name=ms"
 juce::String pluginPickerTimings (AudioEngine& engine);
-} // namespace lynx
+} // namespace yw

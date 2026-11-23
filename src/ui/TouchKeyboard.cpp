@@ -18,7 +18,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1227,4 +1227,4 @@ void refreshKeyboardPanel (juce::Component& panel)
 void setTypingKeyLetters (std::function<std::string (int)> letterOfKey) { typingLetterSource() = std::move (letterOfKey); }
 
 void setKeyboardSettingsListener (std::function<void()> listener) { TouchKeyboardPanel::onSettingsChanged = std::move (listener); }
-} // namespace lynx
+} // namespace yw

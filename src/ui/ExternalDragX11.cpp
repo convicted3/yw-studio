@@ -1,5 +1,5 @@
 // Issue #174, Linux / BSD: another program's window at a point of the screen (ui/ExternalDrag.cpp's placeAt). A file of
-// its own: X11's headers define Status, None, Bool... as macros, which clash with LYNX's own names.
+// its own: X11's headers define Status, None, Bool... as macros, which clash with YW's own names.
 #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -9,13 +9,13 @@
  #include <vector>
  #include <unistd.h>
 
-namespace lynx::externaldrag
+namespace yw::externaldrag
 {
-// X11 tells no program which windows of OTHER programs are in front of its own (JUCE's peers only test LYNX's own
-// windows against each other), so another program's window over a LYNX window (a plugin's window in a separate
+// X11 tells no program which windows of OTHER programs are in front of its own (JUCE's peers only test YW's own
+// windows against each other), so another program's window over a YW window (a plugin's window in a separate
 // process, a file manager) is found here: the top-most window at the point among the root's children, then among its
 // children, and so on; the first that carries _NET_WM_PID (JUCE sets it on every window it makes, other toolkits on
-// their top-level windows) names its process. LYNX's own windows that let the mouse through (the drag image under the
+// their top-level windows) names its process. YW's own windows that let the mouse through (the drag image under the
 // pointer) are passed over.
 bool otherProgramAt (juce::Point<int> screenPos)
 {
@@ -76,5 +76,5 @@ bool otherProgramAt (juce::Point<int> screenPos)
     }
     return false;
 }
-} // namespace lynx::externaldrag
+} // namespace yw::externaldrag
 #endif

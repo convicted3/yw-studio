@@ -4,7 +4,7 @@
 
 TEST (score_log_ring_pairs_note_offs_and_drops_held_notes)
 {
-    using namespace lynx::scorelog;
+    using namespace yw::scorelog;
     Log log (4);
     log.noteOn (0, 1, 60, 0.5f);
     log.noteOn (100, 1, 64, 0.6f);
@@ -22,8 +22,8 @@ TEST (score_log_ring_pairs_note_offs_and_drops_held_notes)
 
 TEST (score_log_dump_follows_fl)
 {
-    using namespace lynx;
-    using namespace lynx::scorelog;
+    using namespace yw;
+    using namespace yw::scorelog;
     // at 120 BPM a beat is 500 ms = 960 ticks
     std::vector<Entry> log {
         { 10000, 10250, 0, 60, 0.8f },  // first note -> tick 0
@@ -57,7 +57,7 @@ TEST (score_log_dump_follows_fl)
 
 TEST (smpte_timecode_labels)
 {
-    using namespace lynx::timecode;
+    using namespace yw::timecode;
     CHECK (format (0.0, 5) == "00:00:00:00");
     CHECK (format (3723.5, 2) == "01:02:03:12");  // 25 fps: half a second = frame 12
     CHECK (format (1.0, 1) == "00:00:01:00");
@@ -82,7 +82,7 @@ TEST (smpte_timecode_labels)
 
 TEST (note_names_english_germanic_solfege)
 {
-    using namespace lynx::notenames;
+    using namespace yw::notenames;
     CHECK (pitchName (10, Style::english, false) == "A#" && pitchName (10, Style::english, true) == "Bb");
     CHECK (pitchName (11, Style::germanic, false) == "H" && pitchName (10, Style::germanic, true) == "B");
     CHECK (pitchName (0, Style::solfege, false) == "Do" && pitchName (7, Style::solfege, false) == "Sol" && pitchName (3, Style::solfege, true) == "Mib");

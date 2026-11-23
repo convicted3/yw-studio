@@ -635,7 +635,7 @@ struct Host
                 }
                 juce::String err;
                 plugin = formats.createPluginInstance (*types[pick], rate, block, err);
-                // round 170c: a Waves shell's first instance in a process comes up as another of its plugins (LYNX's
+                // round 170c: a Waves shell's first instance in a process comes up as another of its plugins (YW's
                 // createRightInstance, PluginHost.cpp): created again it is the right one (the wrong ones stay alive
                 // until then). Without this every Waves measurement ran a surround meter (bit-identical output).
                 {

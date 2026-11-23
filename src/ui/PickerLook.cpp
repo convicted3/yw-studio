@@ -12,7 +12,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::pickerlook
+namespace yw::pickerlook
 {
 // (FL's form is see-through: the desktop and FL show through its veil)
 juce::Image captureScreen (juce::Rectangle<int> physical)
@@ -116,7 +116,7 @@ juce::Rectangle<float> highlight (juce::Rectangle<int> b, int rowHeight, bool is
 void paintHighlight (juce::Graphics& g, juce::Rectangle<float> box, bool pressed)
 {
     // FL (measured on its hover): a cool tint, strongest under the top edge, a bright glow at the middle of the top
-    // edge and of each side, and a thin rim. Held down, it takes the warm press colour (LYNX: the accent).
+    // edge and of each side, and a thin rim. Held down, it takes the warm press colour (YW: the accent).
     using namespace theme;
     const auto base = pressed ? colour::accent : juce::Colour (0xff6cc4e8);
     const auto light = pressed ? colour::accent.brighter (0.7f) : juce::Colour (0xffb3ffff);
@@ -143,4 +143,4 @@ void paintHighlight (juce::Graphics& g, juce::Rectangle<float> box, bool pressed
     g.fillRect (box.getX(), box.getY(), box.getWidth(), 1.5f);
 }
 
-} // namespace lynx::pickerlook
+} // namespace yw::pickerlook

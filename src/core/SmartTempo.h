@@ -1,18 +1,18 @@
 #pragma once
 
-// Smart Tempo (round 190pf, research190oe P12): the project's tempo follows a free recording. A LYNX extra in the
+// Smart Tempo (round 190pf, research190oe P12): the project's tempo follows a free recording. A YW extra in the
 // manner of Logic Pro's Smart Tempo "Adapt" (Apple's guide: the project tempo adapts to a recording made without the
 // metronome; the recording keeps its timing and the bar and beat grid bends to it). FL users ask for "a real tempo lane
 // that recalibrates the grid" (research190oe F6). The audio clip menu's YW Studio extras › "Make the project tempo follow this
 // clip..." tracks the clip's beats, shows the bars and their tempo in a preview with a Smooth amount, then writes tempo
-// markers (core/TempoMarkers.h: a tempo automation clip, so .flp exports, older LYNX and FL play the same tempo map), one
+// markers (core/TempoMarkers.h: a tempo automation clip, so .flp exports, older YW and FL play the same tempo map), one
 // per bar, glide off, and leaves the clip unwarped so its audio plays exactly as recorded. MIDI recorded afterwards lands
 // on the bent grid like any other tempo map. Live's "Keep" counterpart (the project keeps its tempo, the audio is
-// warped) is LYNX's Auto-warp (core/AutoWarp.h).
+// warped) is YW's Auto-warp (core/AutoWarp.h).
 //
-// Clean-room: the beat tracker is LYNX's own (Ellis 2007 dynamic programming over core/TempoDetect's onset curve, as
+// Clean-room: the beat tracker is YW's own (Ellis 2007 dynamic programming over core/TempoDetect's onset curve, as
 // core/AutoWarp does, run twice: a loose pass for the local tempo, then a tight one that follows it; each beat moved onto
-// the attack under it, core/TimeStretch's detector). Patent desk check (/mnt/e/lynx-work/190pf/HANDOFF.md): Apple's
+// the attack under it, core/TimeStretch's detector). Patent desk check (/mnt/e/yw-work/190pf/HANDOFF.md): Apple's
 // US 11,625,216 B2 claims tempo / downbeat analysis of a chosen subset of several tracks summed DURING a multitrack
 // recording, its result stored for every track; Apple's US 7,952,012 B2 claims an audio file with its own variable tempo
 // (a ramp) independent of the global tempo. Design rules kept here: ONE clip, analysed after it was recorded; the clip
@@ -31,7 +31,7 @@
 #include "core/TempoMarkers.h"
 #include "core/TimeStretch.h"
 
-namespace lynx::smarttempo
+namespace yw::smarttempo
 {
 // --- the analysis --------------------------------------------------------------------------------------------------------
 struct Options
@@ -426,4 +426,4 @@ inline bool apply (Song& song, int clipIndex, const Plan& p)
     }
     return true;
 }
-} // namespace lynx::smarttempo
+} // namespace yw::smarttempo

@@ -12,7 +12,7 @@
 #include "ui/Theme.h"
 #include "ui/Toolbar.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -38,7 +38,7 @@ public:
         engine.stop();
         skipButton.setButtonText (tr ("Continue without it"));
         skipButton.onClick = [this] {
-            PluginHost::skipStartingModules(); // its plugins become missing: LYNX substitutes play their slots
+            PluginHost::skipStartingModules(); // its plugins become missing: YW substitutes play their slots
             skipButton.setVisible (false);
         };
         addChildComponent (skipButton);
@@ -112,7 +112,7 @@ private:
         return juce::Rectangle<int> (0, 0, juce::jmin (480, getWidth() - 32), slowWait ? 158 : 104).withCentre (getLocalBounds().getCentre());
     }
 
-    // 1. the project's plugins LYNX doesn't know yet, and has not searched for already: a scan of just their files
+    // 1. the project's plugins YW doesn't know yet, and has not searched for already: a scan of just their files
     void startScan()
     {
         std::vector<FlpPluginUse> uses;
@@ -388,4 +388,4 @@ void writeLoadLog()
     text << ")\n\n";
     log.replaceWithText (text);
 }
-} // namespace lynx
+} // namespace yw

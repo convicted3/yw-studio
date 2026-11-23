@@ -1,12 +1,12 @@
 // --- round qafix190kq (QA of 0.1.30, QA-5): the import report's lists. `unsupported` ("No equivalent (played with a synth
-// preset)") holds only instruments a LYNX synth preset plays instead; automation, note effects, project info... go to
+// preset)") holds only instruments a YW synth preset plays instead; automation, note effects, project info... go to
 // `notReproduced` ("Not reproduced (left out or played differently)"). A hand-written DAWproject (core/DawProject.h).
 
 #include "core/DawProject.h"
 
 TEST (qafix190kq_report_instrument_stays_unsupported_the_rest_is_not_reproduced)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dawproject190jf;
     const std::string project = R"(<?xml version="1.0" encoding="UTF-8"?>
 <Project version="1.0">
@@ -42,9 +42,9 @@ TEST (qafix190kq_report_instrument_stays_unsupported_the_rest_is_not_reproduced)
     std::string err;
     const auto song = importDawProject (file, io, &err);
     CHECK (song.has_value());
-    // the instrument LYNX has no counterpart for: played with the built-in synth, under "played with a synth preset"
-    CHECK (report.unsupported.count ("Instrument: Mystery Synth (LYNX's synth plays the notes)") == 1);
-    CHECK (report.notReproduced.count ("Instrument: Mystery Synth (LYNX's synth plays the notes)") == 0);
+    // the instrument YW has no counterpart for: played with the built-in synth, under "played with a synth preset"
+    CHECK (report.unsupported.count ("Instrument: Mystery Synth (YW's synth plays the notes)") == 1);
+    CHECK (report.notReproduced.count ("Instrument: Mystery Synth (YW's synth plays the notes)") == 0);
     // a note effect, the marker colours and the album are no instruments: listed as not reproduced, not as synth presets
     CHECK (reported (report.notReproduced, "Note effect: Some Arp") && ! reported (report.unsupported, "Note effect"));
     CHECK (reported (report.notReproduced, "Marker colours") && ! reported (report.unsupported, "Marker colours"));

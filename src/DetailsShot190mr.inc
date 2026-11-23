@@ -6,7 +6,7 @@
     bool runDetailsShot190mr (const juce::String& prefix, const juce::String& project)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -33,7 +33,7 @@
             savePng (c.createComponentSnapshot (c.getLocalBounds(), true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (c.getLocalBounds(), true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
+        using namespace yw;
         if (project.isEmpty())
             return false;
         flsettings::reset();
@@ -112,8 +112,8 @@
                         if (key == avoid || key < 1 || key > 126)
                             continue;
                         const auto at = pr.pointForTests (0, key);
-                        const auto clear = std::none_of (before.begin(), before.end(), [key] (const Note& n) { return n.key == key && n.start < 2 * lynx::ppq; });
-                        if (clear && pr.getLocalBounds().reduced (0, 40).contains (at) && pr.getLocalBounds().contains (pr.pointForTests (2 * lynx::ppq, key)))
+                        const auto clear = std::none_of (before.begin(), before.end(), [key] (const Note& n) { return n.key == key && n.start < 2 * yw::ppq; });
+                        if (clear && pr.getLocalBounds().reduced (0, 40).contains (at) && pr.getLocalBounds().contains (pr.pointForTests (2 * yw::ppq, key)))
                             return key;
                     }
                 return -1;
@@ -181,8 +181,8 @@
                 a.key = b.key = key;
                 a.channel = b.channel = offline.getSelectedChannel();
                 a.start = 0;
-                a.length = b.length = lynx::ppq;
-                b.start = lynx::ppq;
+                a.length = b.length = yw::ppq;
+                b.start = yw::ppq;
                 offline.editSong ([pattern, a, b] (Song& s) {
                     s.patterns[(std::size_t) pattern].notes.push_back (a);
                     s.patterns[(std::size_t) pattern].notes.push_back (b);
@@ -195,7 +195,7 @@
                 check ("a press at the right edge of a note touching the next: the glue is armed", pr.holdPendingForSnapshot());
                 pr.fireHoldForSnapshot();
                 const auto now = notes();
-                const auto glued = std::any_of (now.begin(), now.end(), [key] (const Note& n) { return n.key == key && n.start == 0 && n.length == 2 * lynx::ppq; });
+                const auto glued = std::any_of (now.begin(), now.end(), [key] (const Note& n) { return n.key == key && n.start == 0 && n.length == 2 * yw::ppq; });
                 check ("hold (750 ms): the two notes are one", now.size() == with - 1 && glued);
                 zoomShot (pr, juce::Rectangle<int> (260, 40).withPosition (pr.pointForTests (0, key).x - 10, at.y - 20), 3.0f, "pr-hold-glue-after");
                 pr.releaseForSnapshot (at);
@@ -248,7 +248,7 @@
 
         // ---- the window layout saved with the project (DF-141)
         {
-            const auto file = juce::File (prefix + "-layout-check.lynx");
+            const auto file = juce::File (prefix + "-layout-check.yw");
             ui.showPanelsForSnapshot ({ workspace::Panel::mixer, workspace::Panel::channelRack });
             offline.dispatchPendingMessages();
             const auto saved = ui.layoutTextForSnapshot();
@@ -355,7 +355,7 @@
                 if (c.track < (int) s.playlistTracks.size())
                     s.playlistTracks[(std::size_t) c.track].height = 96; // (a tall lane: Live draws fades on an open lane only)
                 c.start = 0;
-                c.length = 8 * lynx::ppq;
+                c.length = 8 * yw::ppq;
                 s.playlist.push_back (c);
                 a = (int) s.playlist.size() - 1;
             });
@@ -384,17 +384,17 @@
                 const auto edgeX = pl.clipBoundsForSnapshot (b).getX();
                 const auto view = juce::Rectangle<int> (edgeX - 200, both.getY() - 6, 400, both.getHeight() + 12); // (the boundary ± 1¼ beats)
                 zoomShot (pl, view, 2.0f, "pl-crossfade-before");
-                const auto made = pl.crossfadeDragForSnapshot (a, boundary + lynx::ppq / 2);
+                const auto made = pl.crossfadeDragForSnapshot (a, boundary + yw::ppq / 2);
                 offline.dispatchPendingMessages();
                 const auto& ca = song.playlist[(std::size_t) a];
                 const auto& cb = song.playlist[(std::size_t) b];
                 line ("A " + juce::String (ca.start) + "+" + juce::String (ca.length) + " fade out " + juce::String (ca.fadeOut) + ", B " + juce::String (cb.start)
                       + " fade in " + juce::String (cb.fadeIn));
                 check ("the fade-out handle dragged half a beat over B: A goes on under B, both fades = the overlap",
-                       made && ca.end() == boundary + lynx::ppq / 2 && ca.fadeOut == lynx::ppq / 2 && cb.fadeIn == lynx::ppq / 2 && cb.start == boundary);
+                       made && ca.end() == boundary + yw::ppq / 2 && ca.fadeOut == yw::ppq / 2 && cb.fadeIn == yw::ppq / 2 && cb.start == boundary);
                 zoomShot (pl, view, 2.0f, "pl-crossfade-after");
                 zoomShot (pl, view, 1.5f, "pl-crossfade-after@150");
-                pl.crossfadeDragForSnapshot (a, boundary - lynx::ppq / 4, false, false); // (the same drag, back left)
+                pl.crossfadeDragForSnapshot (a, boundary - yw::ppq / 4, false, false); // (the same drag, back left)
                 pl.setBounds (shownAt);
                 check ("back over its own edge: the crossfade is gone, A as before", song.playlist[(std::size_t) a].end() == boundary
                                                                                        && song.playlist[(std::size_t) b].fadeIn == 0);
@@ -402,7 +402,7 @@
             ui.setLayoutStyle (layoutstyle::Style::pattern);
             offline.dispatchPendingMessages();
             check ("the Pattern layout: a fade handle stops at the clip's edge (FL)", ! theme::livelook::active()
-                                                                                      && (a < 0 || ! pl.crossfadeDragForSnapshot (a, song.playlist[(std::size_t) a].end() + lynx::ppq)));
+                                                                                      && (a < 0 || ! pl.crossfadeDragForSnapshot (a, song.playlist[(std::size_t) a].end() + yw::ppq)));
             wav.deleteFile();
         }
 

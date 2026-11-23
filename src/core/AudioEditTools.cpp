@@ -7,7 +7,7 @@
 #include <tuple>
 #include <utility>
 
-namespace lynx::audioedit
+namespace yw::audioedit
 {
 namespace
 {
@@ -1667,7 +1667,7 @@ void vocalDenoise (Document& doc, Range r, double mix, Progress* progress)
 }
 
 // --- deverb (round 167c) -------------------------------------------------------------------------------------------
-// LYNX's own dereverberation (FL's Deverb is a downloaded neural module, REA_rodada167c.md §3): the late reverberation's
+// YW's own dereverberation (FL's Deverb is a downloaded neural module, REA_rodada167c.md §3): the late reverberation's
 // spectrum is predicted from the signal itself one "early" time ago, decayed by the room's reverberation time (Lebart,
 // Boucher & Denbigh 2001; Habets 2007), and subtracted (a gain per bin with a floor and smoothing).
 double estimateReverbTime (const Audio& audio, Range r)
@@ -2438,4 +2438,4 @@ void tuneLoop (Document& doc, Range r, const LoopTuneSettings& s, Progress* prog
     doc.loopEnd = loop.end;
     report (progress, 1.0);
 }
-} // namespace lynx::audioedit
+} // namespace yw::audioedit

@@ -3,9 +3,9 @@
 
 namespace c190aw
 {
-using namespace lynx::controller;
+using namespace yw::controller;
 
-// LYNX as the layer sees it, with a log of what was asked of it.
+// YW as the layer sees it, with a log of what was asked of it.
 struct FakeSurface final : Surface
 {
     struct Track
@@ -366,16 +366,16 @@ TEST (controller190aw_detects_by_port_name_and_follows_the_setting)
 TEST (controller190aw_motor_faders_vpots_leds_and_lcd_round_trip)
 {
     using namespace c190aw;
-    FakeSurface lynx;
-    lynx.tracks[2].mute = true;
-    lynx.tracks[3].pan = 0.0f;
-    lynx.selectedTrack = 4;
+    FakeSurface yw;
+    yw.tracks[2].mute = true;
+    yw.tracks[3].pan = 0.0f;
+    yw.selectedTrack = 4;
     Shared shared;
     Session s (profileOf (motorProfile, "motor"), 0);
     Wire wire;
 
     // opening: the init message, then every fader, ring, LED and display cell
-    s.open (lynx, shared, wire.send());
+    s.open (yw, shared, wire.send());
     CHECK (! wire.messages.empty() && wire.messages[0] == "F0 00 00 66 14 00 F7");
     // insert 1 at 0.8: 0.8 × 1023 = 818 → << 4 = 13088 = 0x3320 → LSB 0x20, MSB 0x66
     CHECK (wire.has ("E0 20 66") && wire.has ("E7 20 66") && wire.has ("E8 20 66"));
@@ -397,68 +397,68 @@ TEST (controller190aw_motor_faders_vpots_leds_and_lcd_round_trip)
 
     // nothing changed: nothing is sent
     wire.clear();
-    s.refresh (lynx, shared, wire.send());
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.messages.empty());
 
-    // a fader moves on the device (touch, move, release): LYNX follows, sends nothing while it is held and the
+    // a fader moves on the device (touch, move, release): YW follows, sends nothing while it is held and the
     // position once it is let go
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 104, 127 }));
-    CHECK (feed (s, lynx, shared, { 0xE0, 0x00, 0x40 })); // 8192 / 16383
-    CHECK (lynx.did ("volume 1 0.500") && std::abs (lynx.tracks[1].volume - 0.50003f) < 1e-3f);
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 104, 127 }));
+    CHECK (feed (s, yw, shared, { 0xE0, 0x00, 0x40 })); // 8192 / 16383
+    CHECK (yw.did ("volume 1 0.500") && std::abs (yw.tracks[1].volume - 0.50003f) < 1e-3f);
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.messages.empty());
-    CHECK (feed (s, lynx, shared, { 0x90, 104, 0 }));
-    s.refresh (lynx, shared, wire.send());
+    CHECK (feed (s, yw, shared, { 0x90, 104, 0 }));
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.messages.size() == 1 && wire.messages[0] == "E0 00 40"); // 0.50003 × 1023 = 512 → 8192
 
-    // a fader moved in LYNX (mouse, automation): the motor follows; the master too
+    // a fader moved in YW (mouse, automation): the motor follows; the master too
     wire.clear();
-    lynx.tracks[5].volume = 1.0f;
-    lynx.tracks[0].volume = 0.0f;
-    s.refresh (lynx, shared, wire.send());
+    yw.tracks[5].volume = 1.0f;
+    yw.tracks[0].volume = 0.0f;
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.messages.size() == 2 && wire.has ("E4 70 7F") && wire.has ("E8 00 00"));
-    CHECK (feed (s, lynx, shared, { 0xE8, 0x7F, 0x7F }) && lynx.did ("volume 0 1.000"));
+    CHECK (feed (s, yw, shared, { 0xE8, 0x7F, 0x7F }) && yw.did ("volume 0 1.000"));
 
     // V-Pot: 3 ticks clockwise, then 1 counter-clockwise (bit 6), on strip 2: the pan moves by its step, the ring follows
     wire.clear();
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 17, 0x03 }));
-    CHECK (std::abs (lynx.tracks[2].pan - 0.56f) < 1e-5f);
-    CHECK (feed (s, lynx, shared, { 0xB0, 17, 0x41 }));
-    CHECK (std::abs (lynx.tracks[2].pan - 0.54f) < 1e-5f);
-    lynx.tracks[2].pan = 1.0f;
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 17, 0x03 }));
+    CHECK (std::abs (yw.tracks[2].pan - 0.56f) < 1e-5f);
+    CHECK (feed (s, yw, shared, { 0xB0, 17, 0x41 }));
+    CHECK (std::abs (yw.tracks[2].pan - 0.54f) < 1e-5f);
+    yw.tracks[2].pan = 1.0f;
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("B0 31 1B")); // hard right: 0x10 | 11
     CHECK (wire.count ("F0 00 00 66 14 12 3F") == 1 && lcdText (wire.messages.back(), 7) == "R100   "); // row 2, cell 2: 56 + 7
 
-    // buttons: press toggles, release does nothing; the LED shows LYNX's state, also when LYNX changed it
+    // buttons: press toggles, release does nothing; the LED shows YW's state, also when YW changed it
     wire.clear();
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 16, 127 }) && feed (s, lynx, shared, { 0x90, 16, 0 }) && feed (s, lynx, shared, { 0x80, 16, 64 }));
-    CHECK (lynx.log.size() == 1 && lynx.did ("mute 1 on"));
-    CHECK (feed (s, lynx, shared, { 0x90, 8 + 2, 127 }) && lynx.did ("solo 3 on"));
-    CHECK (feed (s, lynx, shared, { 0x90, 0 + 7, 127 }) && lynx.did ("arm 8 on"));
-    CHECK (feed (s, lynx, shared, { 0x90, 24 + 5, 127 }) && lynx.did ("select track 6"));
-    lynx.tracks[2].mute = false; // (unmuted with the mouse)
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 16, 127 }) && feed (s, yw, shared, { 0x90, 16, 0 }) && feed (s, yw, shared, { 0x80, 16, 64 }));
+    CHECK (yw.log.size() == 1 && yw.did ("mute 1 on"));
+    CHECK (feed (s, yw, shared, { 0x90, 8 + 2, 127 }) && yw.did ("solo 3 on"));
+    CHECK (feed (s, yw, shared, { 0x90, 0 + 7, 127 }) && yw.did ("arm 8 on"));
+    CHECK (feed (s, yw, shared, { 0x90, 24 + 5, 127 }) && yw.did ("select track 6"));
+    yw.tracks[2].mute = false; // (unmuted with the mouse)
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("90 10 7F") && wire.has ("90 11 00") && wire.has ("90 0A 7F") && wire.has ("90 07 7F") && wire.has ("90 1D 7F") && wire.has ("90 1B 00"));
     CHECK (wire.messages.size() == 6);
 
     // transport
     wire.clear();
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 94, 127 }) && feed (s, lynx, shared, { 0x90, 95, 127 }) && feed (s, lynx, shared, { 0x90, 89, 127 })
-           && feed (s, lynx, shared, { 0x90, 86, 127 }));
-    CHECK (lynx.playing && lynx.recording && lynx.click && ! lynx.patternMode);
-    CHECK (feed (s, lynx, shared, { 0xB0, 60, 0x01 }) && feed (s, lynx, shared, { 0xB0, 60, 0x42 }) && lynx.did ("jog 1") && lynx.did ("jog -2"));
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 94, 127 }) && feed (s, yw, shared, { 0x90, 95, 127 }) && feed (s, yw, shared, { 0x90, 89, 127 })
+           && feed (s, yw, shared, { 0x90, 86, 127 }));
+    CHECK (yw.playing && yw.recording && yw.click && ! yw.patternMode);
+    CHECK (feed (s, yw, shared, { 0xB0, 60, 0x01 }) && feed (s, yw, shared, { 0xB0, 60, 0x42 }) && yw.did ("jog 1") && yw.did ("jog -2"));
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("90 5E 7F") && wire.has ("90 5D 00") && wire.has ("90 5F 7F") && wire.has ("90 59 7F") && wire.has ("90 56 00") && wire.messages.size() == 5);
-    CHECK (feed (s, lynx, shared, { 0x90, 93, 127 }) && ! lynx.playing);
+    CHECK (feed (s, yw, shared, { 0x90, 93, 127 }) && ! yw.playing);
 
     // what the profile does not name is not taken (it plays as before)
-    CHECK (! feed (s, lynx, shared, { 0x90, 60, 100 }) && ! feed (s, lynx, shared, { 0xB0, 1, 64 }) && ! feed (s, lynx, shared, { 0xD0, 50 })
-           && ! feed (s, lynx, shared, { 0xEA, 0, 64 }));
+    CHECK (! feed (s, yw, shared, { 0x90, 60, 100 }) && ! feed (s, yw, shared, { 0xB0, 1, 64 }) && ! feed (s, yw, shared, { 0xD0, 50 })
+           && ! feed (s, yw, shared, { 0xEA, 0, 64 }));
     const Claims claims (s.profile());
     const std::uint8_t note60[] { 0x90, 60, 100 }, play[] { 0x90, 94, 127 }, playOff[] { 0x80, 94, 0 }, bend1[] { 0xE0, 0, 64 }, bend11[] { 0xEA, 0, 64 },
         pot[] { 0xB0, 16, 1 }, potOther[] { 0xB1, 16, 1 }, pressure[] { 0xD0, 9 };
@@ -471,72 +471,72 @@ TEST (controller190aw_motor_faders_vpots_leds_and_lcd_round_trip)
     CHECK (wire.has ("90 10 00") && wire.has ("90 5F 00") && wire.has ("B0 31 00") && wire.count ("E") == 0);
     CHECK (wire.count ("F0 00 00 66 14 12") == 16 && wire.messages.back() == "F0 00 00 66 14 08 F7");
     wire.clear();
-    s.refresh (lynx, shared, wire.send());
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.messages.empty());
 }
 
 TEST (controller190aw_bank_switching_layers_and_pages)
 {
     using namespace c190aw;
-    FakeSurface lynx (20, 4, 20);
-    lynx.tracks[9].mute = true;
-    lynx.tracks[9].name = "Voz L\xC3\xAD" "der \xE2\x99\xAA"; // "Voz Líder ♪": an accent and a sign no display has
+    FakeSurface yw (20, 4, 20);
+    yw.tracks[9].mute = true;
+    yw.tracks[9].name = "Voz L\xC3\xAD" "der \xE2\x99\xAA"; // "Voz Líder ♪": an accent and a sign no display has
     Shared shared;
     Session s (profileOf (motorProfile, "motor"), 0);
     Wire wire;
-    s.open (lynx, shared, wire.send());
+    s.open (yw, shared, wire.send());
 
     // bank right: the strips are inserts 9…16; LEDs and names follow
     wire.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 47, 127 }) && shared.mixerBank == 8);
-    s.refresh (lynx, shared, wire.send());
+    CHECK (feed (s, yw, shared, { 0x90, 47, 127 }) && shared.mixerBank == 8);
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("90 10 7F")); // strip 1 = insert 9, muted
     CHECK (wire.count ("F0 00 00 66 14 12 00") == 1);
     for (const auto& m : wire.messages)
         if (m.rfind ("F0 00 00 66 14 12 00", 0) == 0)
             CHECK (lcdText (m, 7) == "Voz Li ");
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 16 + 1, 127 }) && lynx.did ("mute 10 on"));
-    CHECK (feed (s, lynx, shared, { 0xE2, 0x7F, 0x7F }) && lynx.did ("volume 11 1.000"));
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 16 + 1, 127 }) && yw.did ("mute 10 on"));
+    CHECK (feed (s, yw, shared, { 0xE2, 0x7F, 0x7F }) && yw.did ("volume 11 1.000"));
 
     // bank right again: inserts 17…20, the other strips are empty (off, blank, and do nothing)
     wire.clear();
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 47, 127 }) && shared.mixerBank == 16);
-    CHECK (feed (s, lynx, shared, { 0x90, 47, 127 }) && shared.mixerBank == 16); // (no further bank)
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 47, 127 }) && shared.mixerBank == 16);
+    CHECK (feed (s, yw, shared, { 0x90, 47, 127 }) && shared.mixerBank == 16); // (no further bank)
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("B0 34 00") && wire.has ("E4 00 00")); // strip 5: ring off, fader down
-    CHECK (feed (s, lynx, shared, { 0x90, 16 + 4, 127 }) && feed (s, lynx, shared, { 0xE4, 0, 64 }) && lynx.log.empty());
-    CHECK (feed (s, lynx, shared, { 0x90, 16 + 3, 127 }) && lynx.did ("mute 20 on"));
+    CHECK (feed (s, yw, shared, { 0x90, 16 + 4, 127 }) && feed (s, yw, shared, { 0xE4, 0, 64 }) && yw.log.empty());
+    CHECK (feed (s, yw, shared, { 0x90, 16 + 3, 127 }) && yw.did ("mute 20 on"));
 
     // one strip left, bank left twice, and no further
-    CHECK (feed (s, lynx, shared, { 0x90, 48, 127 }) && shared.mixerBank == 15);
-    CHECK (feed (s, lynx, shared, { 0x90, 46, 127 }) && shared.mixerBank == 7 && feed (s, lynx, shared, { 0x90, 46, 127 }) && shared.mixerBank == 0);
-    CHECK (feed (s, lynx, shared, { 0x90, 49, 127 }) && shared.mixerBank == 1 && feed (s, lynx, shared, { 0x90, 48, 127 })
-           && feed (s, lynx, shared, { 0x90, 48, 127 }) && shared.mixerBank == 0);
+    CHECK (feed (s, yw, shared, { 0x90, 48, 127 }) && shared.mixerBank == 15);
+    CHECK (feed (s, yw, shared, { 0x90, 46, 127 }) && shared.mixerBank == 7 && feed (s, yw, shared, { 0x90, 46, 127 }) && shared.mixerBank == 0);
+    CHECK (feed (s, yw, shared, { 0x90, 49, 127 }) && shared.mixerBank == 1 && feed (s, yw, shared, { 0x90, 48, 127 })
+           && feed (s, yw, shared, { 0x90, 48, 127 }) && shared.mixerBank == 0);
 
     // the plug-in layer: the V-Pots turn the focused plugin's parameters, the rings and the display show them
     wire.clear();
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 43, 127 }) && shared.layer == 1);
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 43, 127 }) && shared.layer == 1);
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("90 2B 7F") && wire.has ("90 2A 00"));
     CHECK (wire.has ("B0 30 24")); // 0.25: wrap mode 0x20 | (1 + round (2.5) = 4)
     CHECK (wire.count ("F0 00 00 66 14 12") == 16);
-    CHECK (feed (s, lynx, shared, { 0xB0, 18, 0x05 }) && lynx.did ("param 2 0.300") && lynx.tracks[3].pan == 0.5f);
+    CHECK (feed (s, yw, shared, { 0xB0, 18, 0x05 }) && yw.did ("param 2 0.300") && yw.tracks[3].pan == 0.5f);
     // next page: parameters 9…16, then 17…20, and no fourth page
-    CHECK (feed (s, lynx, shared, { 0x90, 45, 127 }) && shared.page == 1);
-    CHECK (feed (s, lynx, shared, { 0xB0, 16, 0x41 }) && lynx.did ("param 8 0.240"));
-    CHECK (feed (s, lynx, shared, { 0x90, 45, 127 }) && shared.page == 2 && feed (s, lynx, shared, { 0x90, 45, 127 }) && shared.page == 2);
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 16 + 5, 0x01 }) && lynx.log.empty()); // (parameter 22 does not exist)
+    CHECK (feed (s, yw, shared, { 0x90, 45, 127 }) && shared.page == 1);
+    CHECK (feed (s, yw, shared, { 0xB0, 16, 0x41 }) && yw.did ("param 8 0.240"));
+    CHECK (feed (s, yw, shared, { 0x90, 45, 127 }) && shared.page == 2 && feed (s, yw, shared, { 0x90, 45, 127 }) && shared.page == 2);
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 16 + 5, 0x01 }) && yw.log.empty()); // (parameter 22 does not exist)
     wire.clear();
-    s.refresh (lynx, shared, wire.send());
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("B0 35 00"));
-    CHECK (feed (s, lynx, shared, { 0x90, 44, 127 }) && feed (s, lynx, shared, { 0x90, 44, 127 }) && feed (s, lynx, shared, { 0x90, 44, 127 }) && shared.page == 0);
+    CHECK (feed (s, yw, shared, { 0x90, 44, 127 }) && feed (s, yw, shared, { 0x90, 44, 127 }) && feed (s, yw, shared, { 0x90, 44, 127 }) && shared.page == 0);
     // back to pan
-    CHECK (feed (s, lynx, shared, { 0x90, 42, 127 }) && shared.layer == 0);
-    CHECK (feed (s, lynx, shared, { 0xB0, 18, 0x05 }) && std::abs (lynx.tracks[3].pan - 0.6f) < 1e-5f);
+    CHECK (feed (s, yw, shared, { 0x90, 42, 127 }) && shared.layer == 0);
+    CHECK (feed (s, yw, shared, { 0xB0, 18, 0x05 }) && std::abs (yw.tracks[3].pan - 0.6f) < 1e-5f);
 
     CHECK (displayAscii ("A\xC3\xA7\xC3\xA3o \xC3\xA9 \xC3\xB1", 8) == "Acao e n" && displayAscii ("abc", 5) == "abc  " && displayAscii ("\xE6\x97\xA5\xE6\x9C\xAC", 3) == "?? " && displayAscii ("x", 0).empty());
     CHECK (panText (0.5f) == "C" && panText (0.0f) == "L100" && panText (0.75f) == "R50" && volumeText (0.8f) == "80%");
@@ -545,9 +545,9 @@ TEST (controller190aw_bank_switching_layers_and_pages)
 TEST (controller190aw_extender_takes_the_next_strips_and_shares_the_bank)
 {
     using namespace c190aw;
-    FakeSurface lynx (40);
-    for (std::size_t i = 1; i < lynx.tracks.size(); ++i)
-        lynx.tracks[i].name = "T" + std::to_string (i);
+    FakeSurface yw (40);
+    for (std::size_t i = 1; i < yw.tracks.size(); ++i)
+        yw.tracks[i].name = "T" + std::to_string (i);
     Library lib;
     lib.add (motorProfile, "motor", false);
     lib.add ("[device]\nname = Motor XT\nmatch = *Control XT*\nextends = motor\n", "motor-xt", false);
@@ -560,42 +560,42 @@ TEST (controller190aw_extender_takes_the_next_strips_and_shares_the_bank)
         std::vector<std::uint8_t> b;
         for (const auto v : bytes)
             b.push_back ((std::uint8_t) v);
-        return hub.input (device, b.data(), b.size(), lynx);
+        return hub.input (device, b.data(), b.size(), yw);
     };
 
     hub.configure ({ { "Test Control", lib.detect ("Test Control") }, { "Test Control XT", lib.detect ("Test Control XT") }, { "Piano", lib.detect ("Piano") },
                      { "Knob Box", lib.detect ("Knob Box") } },
-                   lynx, send);
+                   yw, send);
     CHECK (hub.has ("Test Control") && hub.has ("Test Control XT") && hub.has ("Knob Box") && ! hub.has ("Piano"));
     CHECK (hub.session ("Test Control")->unitOffset() == 0 && hub.session ("Test Control XT")->unitOffset() == 8);
     CHECK (hub.shared ("test") != nullptr && hub.shared ("test")->strips == 16);
     CHECK (wires["Test Control"].has ("F0 00 00 66 14 00 F7") && wires["Test Control XT"].has ("F0 00 00 66 14 00 F7") && wires["Piano"].messages.empty());
 
     // a device without a profile (generic) is not taken
-    CHECK (! feedHub ("Piano", { 0x90, 94, 127 }) && ! feedHub ("Piano", { 0xB0, 16, 1 }) && lynx.log.empty());
+    CHECK (! feedHub ("Piano", { 0x90, 94, 127 }) && ! feedHub ("Piano", { 0xB0, 16, 1 }) && yw.log.empty());
 
     // the extender's strip 1 is insert 9
-    CHECK (feedHub ("Test Control XT", { 0x90, 16, 127 }) && lynx.did ("mute 9 on"));
-    CHECK (feedHub ("Test Control", { 0x90, 16, 127 }) && lynx.did ("mute 1 on"));
+    CHECK (feedHub ("Test Control XT", { 0x90, 16, 127 }) && yw.did ("mute 9 on"));
+    CHECK (feedHub ("Test Control", { 0x90, 16, 127 }) && yw.did ("mute 1 on"));
     // bank right on the main unit moves both by 16
     for (auto& [name, w] : wires)
         w.clear();
-    lynx.log.clear();
+    yw.log.clear();
     CHECK (feedHub ("Test Control", { 0x90, 47, 127 }) && hub.shared ("test")->mixerBank == 16);
-    CHECK (feedHub ("Test Control XT", { 0x90, 16 + 7, 127 }) && lynx.did ("mute 32 on"));
-    hub.refresh (lynx, send);
+    CHECK (feedHub ("Test Control XT", { 0x90, 16 + 7, 127 }) && yw.did ("mute 32 on"));
+    hub.refresh (yw, send);
     CHECK (wires["Test Control XT"].has ("90 17 7F") && wires["Test Control"].count ("F0 00 00 66 14 12") == 8);
     // the knob box has its own bank
-    CHECK (feedHub ("Knob Box", { 0xB0, 32, 127 }) && lynx.did ("solo 1 on"));
+    CHECK (feedHub ("Knob Box", { 0xB0, 32, 127 }) && yw.did ("solo 1 on"));
 
     // the extender is unplugged: it gets its closing messages, the main unit keeps its bank
     for (auto& [name, w] : wires)
         w.clear();
-    hub.configure ({ { "Test Control", lib.find ("motor") }, { "Knob Box", lib.find ("knobs") } }, lynx, send);
+    hub.configure ({ { "Test Control", lib.find ("motor") }, { "Knob Box", lib.find ("knobs") } }, yw, send);
     CHECK (! hub.has ("Test Control XT") && wires["Test Control XT"].messages.back() == "F0 00 00 66 14 08 F7" && wires["Test Control"].messages.empty());
     CHECK (hub.shared ("test")->mixerBank == 16 && hub.shared ("test")->strips == 8);
     // the setting changes to "Generic controller": the session goes
-    hub.configure ({ { "Knob Box", lib.find ("knobs") } }, lynx, send);
+    hub.configure ({ { "Knob Box", lib.find ("knobs") } }, yw, send);
     CHECK (! hub.has ("Test Control") && wires["Test Control"].messages.back() == "F0 00 00 66 14 08 F7" && hub.shared ("test") == nullptr);
     hub.closeAll (send);
     CHECK (! hub.has ("Knob Box"));
@@ -604,83 +604,83 @@ TEST (controller190aw_extender_takes_the_next_strips_and_shares_the_bank)
 TEST (controller190aw_soft_takeover_for_knobs_and_sliders_without_motors)
 {
     using namespace c190aw;
-    FakeSurface lynx;
+    FakeSurface yw;
     Shared shared;
     Session s (profileOf (knobProfile, "knobs"), 0);
     Wire wire;
-    s.open (lynx, shared, wire.send());
+    s.open (yw, shared, wire.send());
 
     // slider 1 sits at 20 while insert 1 is at 0.8 (102): it moves nothing until it reaches the value
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 20 }) && feed (s, lynx, shared, { 0xB0, 0, 60 }) && feed (s, lynx, shared, { 0xB0, 0, 90 }));
-    CHECK (lynx.log.empty() && lynx.tracks[1].volume == 0.8f);
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 104 })); // crossed 0.8: caught
-    CHECK (lynx.did ("volume 1 0.819"));
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 30 }) && std::abs (lynx.tracks[1].volume - 30.0f / 127.0f) < 1e-5f); // and it stays caught
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 20 }) && feed (s, yw, shared, { 0xB0, 0, 60 }) && feed (s, yw, shared, { 0xB0, 0, 90 }));
+    CHECK (yw.log.empty() && yw.tracks[1].volume == 0.8f);
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 104 })); // crossed 0.8: caught
+    CHECK (yw.did ("volume 1 0.819"));
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 30 }) && std::abs (yw.tracks[1].volume - 30.0f / 127.0f) < 1e-5f); // and it stays caught
 
-    // the value moved in LYNX: the slider has to reach it again
-    lynx.tracks[1].volume = 0.9f;
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 31 }) && lynx.log.empty());
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 115 }) && lynx.did ("volume 1 0.906"));
+    // the value moved in YW: the slider has to reach it again
+    yw.tracks[1].volume = 0.9f;
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 31 }) && yw.log.empty());
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 115 }) && yw.did ("volume 1 0.906"));
 
     // bank right: slider 1 is now insert 9 (0.8) and must be caught again; a slider that lands on the value is caught at once
-    CHECK (feed (s, lynx, shared, { 0xB0, 59, 127 }) && shared.mixerBank == 8);
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 120 }) && lynx.log.empty() && lynx.tracks[9].volume == 0.8f);
-    CHECK (feed (s, lynx, shared, { 0xB0, 0, 101 }) && lynx.did ("volume 9 0.795"));
-    CHECK (feed (s, lynx, shared, { 0xB0, 1, 102 }) && lynx.did ("volume 10 0.803")); // 102 / 127 is within a step of 0.8
+    CHECK (feed (s, yw, shared, { 0xB0, 59, 127 }) && shared.mixerBank == 8);
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 120 }) && yw.log.empty() && yw.tracks[9].volume == 0.8f);
+    CHECK (feed (s, yw, shared, { 0xB0, 0, 101 }) && yw.did ("volume 9 0.795"));
+    CHECK (feed (s, yw, shared, { 0xB0, 1, 102 }) && yw.did ("volume 10 0.803")); // 102 / 127 is within a step of 0.8
 
     // knobs on the focused plugin's parameters (0.25 = 32): the same rule
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 16, 100 }) && lynx.log.empty());
-    CHECK (feed (s, lynx, shared, { 0xB0, 16, 31 }) && lynx.did ("param 0 0.244"));
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 16, 100 }) && yw.log.empty());
+    CHECK (feed (s, yw, shared, { 0xB0, 16, 31 }) && yw.did ("param 0 0.244"));
     // the selected channel's volume, from any MIDI channel
-    lynx.selected = 2;
-    CHECK (feed (s, lynx, shared, { 0xB5, 70, 102 }) && lynx.did ("channel volume 2 0.803"));
+    yw.selected = 2;
+    CHECK (feed (s, yw, shared, { 0xB5, 70, 102 }) && yw.did ("channel volume 2 0.803"));
 
     // CC buttons with LEDs, pads as steps and as notes, a value filter
     wire.clear();
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 41, 127 }) && feed (s, lynx, shared, { 0xB0, 41, 0 }) && lynx.playing);
-    CHECK (feed (s, lynx, shared, { 0x99, 36 + 4, 90 }) && feed (s, lynx, shared, { 0x89, 36 + 4, 0 }) && lynx.did ("step 4 on") && lynx.stepsOn[4]);
-    CHECK (feed (s, lynx, shared, { 0x99, 62, 127 }) && lynx.did ("note on 38 1.000") && feed (s, lynx, shared, { 0x89, 62, 0 }) && lynx.did ("note off 38 0.000"));
-    CHECK (feed (s, lynx, shared, { 0xBF, 9, 1 }) && ! lynx.recording && feed (s, lynx, shared, { 0xBF, 9, 2 }) && lynx.recording);
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 41, 127 }) && feed (s, yw, shared, { 0xB0, 41, 0 }) && yw.playing);
+    CHECK (feed (s, yw, shared, { 0x99, 36 + 4, 90 }) && feed (s, yw, shared, { 0x89, 36 + 4, 0 }) && yw.did ("step 4 on") && yw.stepsOn[4]);
+    CHECK (feed (s, yw, shared, { 0x99, 62, 127 }) && yw.did ("note on 38 1.000") && feed (s, yw, shared, { 0x89, 62, 0 }) && yw.did ("note off 38 0.000"));
+    CHECK (feed (s, yw, shared, { 0xBF, 9, 1 }) && ! yw.recording && feed (s, yw, shared, { 0xBF, 9, 2 }) && yw.recording);
     // ignored controls are taken (they do not play) and do nothing; the first matching line wins
-    lynx.log.clear();
-    CHECK (feed (s, lynx, shared, { 0x90, 98, 127 }) && feed (s, lynx, shared, { 0xBF, 74, 127 }) && lynx.log.empty());
-    CHECK (Claims (s.profile()).has (std::array<std::uint8_t, 3> { 0x90, 98, 127 }.data(), 3) && ! feed (s, lynx, shared, { 0x91, 98, 127 }));
-    s.refresh (lynx, shared, wire.send());
+    yw.log.clear();
+    CHECK (feed (s, yw, shared, { 0x90, 98, 127 }) && feed (s, yw, shared, { 0xBF, 74, 127 }) && yw.log.empty());
+    CHECK (Claims (s.profile()).has (std::array<std::uint8_t, 3> { 0x90, 98, 127 }.data(), 3) && ! feed (s, yw, shared, { 0x91, 98, 127 }));
+    s.refresh (yw, shared, wire.send());
     CHECK (wire.has ("B0 29 7F") && wire.has ("99 28 03") && wire.messages.size() == 2);
 }
 
 TEST (controller190aw_links_made_by_hand_come_first)
 {
     using namespace c190aw;
-    FakeSurface lynx;
+    FakeSurface yw;
     Shared shared;
     Session s (profileOf (knobProfile, "knobs"), 0);
     Wire wire;
-    s.open (lynx, shared, wire.send());
+    s.open (yw, shared, wire.send());
 
     // CC 16 on channel 1 is linked by hand (Link to MIDI controller): the profile leaves it to the link
-    lynx.links.insert ({ 16, 0 });
-    lynx.log.clear();
-    CHECK (! feed (s, lynx, shared, { 0xB0, 16, 32 }) && lynx.log.empty());
+    yw.links.insert ({ 16, 0 });
+    yw.log.clear();
+    CHECK (! feed (s, yw, shared, { 0xB0, 16, 32 }) && yw.log.empty());
     // the next knob still belongs to the profile
-    CHECK (feed (s, lynx, shared, { 0xB0, 17, 32 }) && lynx.did ("param 1 0.252"));
+    CHECK (feed (s, yw, shared, { 0xB0, 17, 32 }) && yw.did ("param 1 0.252"));
     // a link on any channel
-    lynx.links.insert ({ 41, -1 });
-    CHECK (! feed (s, lynx, shared, { 0xB0, 41, 127 }) && ! lynx.playing);
+    yw.links.insert ({ 41, -1 });
+    CHECK (! feed (s, yw, shared, { 0xB0, 41, 127 }) && ! yw.playing);
     // the link is removed: the profile has the control again
-    lynx.links.clear();
-    CHECK (feed (s, lynx, shared, { 0xB0, 41, 127 }) && lynx.playing);
+    yw.links.clear();
+    CHECK (feed (s, yw, shared, { 0xB0, 41, 127 }) && yw.playing);
 }
 
 TEST (controller190aw_old_settings_and_generic_devices_behave_as_before)
 {
     using namespace c190aw;
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
 
     // a settings file written before controller types existed: every device detects, nothing else changes
     const std::string old = "velocity=soft\npickup=1\nfootPedal=1\ninput=1|2|4|Keystation 49\ninput=0|0|-1|Pads | MPD=218\nlink=7|-1|4|0|0|0\n";
@@ -711,7 +711,7 @@ TEST (controller190aw_old_settings_and_generic_devices_behave_as_before)
     CHECK (MidiPrefs::fromText ("controller=knobs|Dev\ninput=1|3|-1|Dev\n").input ("Dev").controller == "knobs"
            && MidiPrefs::fromText ("controller=knobs|Dev\ninput=1|3|-1|Dev\n").input ("Dev").midiChannel == 3);
 
-    // LYNX ships no profile that takes a plain keyboard: with the built-in library a device nobody knows is generic
+    // YW ships no profile that takes a plain keyboard: with the built-in library a device nobody knows is generic
     const auto builtIn = Library::builtIn();
     CHECK (builtIn.errors.empty());
     CHECK (builtIn.resolve ("", "Keystation 49") == nullptr && builtIn.resolve ("", "USB MIDI Interface") == nullptr && builtIn.resolve ("", "") == nullptr);
@@ -728,11 +728,11 @@ TEST (controller190aw_old_settings_and_generic_devices_behave_as_before)
     CHECK (! knobs.takes (cc70, 3, 0, std::uint64_t { 1 } << (70 - 64)) && knobs.takes (cc70, 3, std::uint64_t { 1 } << 6, 0));
 
     // a Hub without devices, or with generic ones only, takes nothing and sends nothing
-    FakeSurface lynx;
+    FakeSurface yw;
     Hub hub;
     auto sentAny = false;
     Hub::DeviceSend send = [&] (const std::string&, const std::uint8_t*, std::size_t) { sentAny = true; };
-    hub.configure ({ { "Keystation 49", nullptr }, { "Pads", builtIn.resolve ("", "Pads") } }, lynx, send);
-    hub.refresh (lynx, send);
-    CHECK (! hub.has ("Keystation 49") && ! hub.input ("Keystation 49", cc7, 3, lynx) && ! hub.input ("Pads", note, 3, lynx) && lynx.log.empty() && ! sentAny);
+    hub.configure ({ { "Keystation 49", nullptr }, { "Pads", builtIn.resolve ("", "Pads") } }, yw, send);
+    hub.refresh (yw, send);
+    CHECK (! hub.has ("Keystation 49") && ! hub.input ("Keystation 49", cc7, 3, yw) && ! hub.input ("Pads", note, 3, yw) && yw.log.empty() && ! sentAny);
 }

@@ -2,9 +2,9 @@
 
 namespace report159
 {
-inline lynx::crashreport::Anonymiser kauan (bool keepNames = false)
+inline yw::crashreport::Anonymiser kauan (bool keepNames = false)
 {
-    lynx::crashreport::Anonymiser a;
+    yw::crashreport::Anonymiser a;
     a.userNames = { "kauan", "Kauan Ferreira" };
     a.homeDirs = { "C:\\Users\\kauan" };
     a.machineNames = { "KAUAN-PC" };
@@ -16,7 +16,7 @@ inline bool has (const std::string& text, const char* what) { return text.find (
 
 TEST (report159_consent)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     CHECK (parseConsent ("always") == Consent::always);
     CHECK (parseConsent ("never\n") == Consent::never);
     CHECK (parseConsent ("ask") == Consent::ask);
@@ -35,8 +35,8 @@ TEST (report159_anonymise_windows)
     using report159::has;
     const auto a = report159::kauan();
     // the home folder, any case and slash style
-    CHECK (a.apply ("C:\\Users\\kauan\\AppData\\Roaming\\LYNX\\crash-history.log") == "C:\\Users\\<user>\\AppData\\Roaming\\LYNX\\crash-history.log");
-    CHECK (a.apply ("c:/users/KAUAN/AppData/Roaming/LYNX") == "c:/users/<user>/AppData/Roaming/LYNX");
+    CHECK (a.apply ("C:\\Users\\kauan\\AppData\\Roaming\\YW\\crash-history.log") == "C:\\Users\\<user>\\AppData\\Roaming\\YW\\crash-history.log");
+    CHECK (a.apply ("c:/users/KAUAN/AppData/Roaming/YW") == "c:/users/<user>/AppData/Roaming/YW");
     // another account and another drive
     CHECK (a.apply ("D:\\Users\\maria.souza\\Music\\x.dll") == "D:\\Users\\<user>\\Music\\x.dll");
     CHECK (a.apply ("C:\\Users\\Public\\Documents\\VST3") == "C:\\Users\\Public\\Documents\\VST3");
@@ -51,7 +51,7 @@ TEST (report159_anonymise_windows)
     // UNC shares
     CHECK (a.apply ("\\\\STUDIO-NAS\\samples\\kick.wav") == "\\\\<host>\\samples\\<file>.wav");
     // the frames of a crash file are untouched
-    const std::string frames = "10: RegisterProcTableCallback + 0x18f073\nLYNX.exe+0x1a2b3c  (juce::Timer::callTimers)\n";
+    const std::string frames = "10: RegisterProcTableCallback + 0x18f073\nYW.exe+0x1a2b3c  (juce::Timer::callTimers)\n";
     CHECK (a.apply (frames) == frames);
     // keepFileNames: names and folders stay, the user still goes
     CHECK (report159::kauan (true).apply ("C:\\Users\\kauan\\Music\\Cliente Jose\\beat.flp") == "C:\\Users\\<user>\\Music\\Cliente Jose\\beat.flp");
@@ -75,13 +75,13 @@ TEST (report159_anonymise_onedrive_accents)
 
 TEST (report159_anonymise_macos_linux)
 {
-    lynx::crashreport::Anonymiser a;
+    yw::crashreport::Anonymiser a;
     a.userNames = { "kauan" };
     a.homeDirs = { "/home/kauan" };
-    CHECK (a.apply ("/home/kauan/opt/LYNX/LYNX(+0x1234) [0x55d1]") == "/home/<user>/opt/LYNX/LYNX(+0x1234) [0x55d1]");
+    CHECK (a.apply ("/home/kauan/opt/YW/YW(+0x1234) [0x55d1]") == "/home/<user>/opt/YW/YW(+0x1234) [0x55d1]");
     CHECK (a.apply ("/Users/someone/Library/Audio/Plug-Ins/VST3/X.vst3") == "/Users/<user>/Library/Audio/Plug-Ins/VST3/X.vst3");
     CHECK (a.apply ("open /home/kauan/My Music/demo take.wav") == "open /home/<user>/My Music/<file>.wav");
-    CHECK (a.apply ("saved ~/Projetos/Bandas/song.lynx") == "saved ~/Projetos/<dir>/<file>.lynx");
+    CHECK (a.apply ("saved ~/Projetos/Bandas/song.yw") == "saved ~/Projetos/<dir>/<file>.yw");
     CHECK (a.apply ("/mnt/d/Beats (old)/x [final].mp3") == "/mnt/d/<dir>/<file>.mp3");
     // prose after a home folder stays
     CHECK (a.apply ("/home/x is gone") == "/home/<user> is gone");
@@ -96,13 +96,13 @@ TEST (report159_anonymise_steps)
     CHECK (a.apply ("00:08:00 crashed: backtrace in autosave\\crash 2026-10-25 00-07-59.txt")
            == "00:08:00 crashed: backtrace in autosave\\crash 2026-10-25 00-07-59.txt");
     CHECK (a.apply ("Last step: RODEIOS.mp3") == "Last step: <file>.mp3");
-    CHECK (lynx::crashreport::isContentExtension ("flp") && lynx::crashreport::isContentExtension ("wav") && ! lynx::crashreport::isContentExtension ("dll")
-           && ! lynx::crashreport::isContentExtension ("txt"));
+    CHECK (yw::crashreport::isContentExtension ("flp") && yw::crashreport::isContentExtension ("wav") && ! yw::crashreport::isContentExtension ("dll")
+           && ! yw::crashreport::isContentExtension ("txt"));
 }
 
 TEST (report159_payload)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     using report159::has;
     std::uint8_t bytes[16];
     for (int i = 0; i < 16; ++i)
@@ -176,7 +176,7 @@ TEST (report159_payload)
 
 TEST (report159_size_cap)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     using report159::has;
     ReportInput in;
     in.id = "0f8b6a52-1c2d-4e3f-9a0b-1234567890ab";
@@ -184,7 +184,7 @@ TEST (report159_size_cap)
     in.version = "0.1.16";
     std::string big;
     for (int i = 0; i < 40000; ++i)
-        big += "LYNX.exe+0x" + std::to_string (100000 + i) + "  (frame " + std::to_string (i) + ")\n"; // ~1.4 MB
+        big += "YW.exe+0x" + std::to_string (100000 + i) + "  (frame " + std::to_string (i) + ")\n"; // ~1.4 MB
     in.crashText = big;
     in.hangText = big;
     for (int i = 0; i < 400; ++i)
@@ -204,13 +204,13 @@ TEST (report159_size_cap)
 
 TEST (report159_github_url)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     using report159::has;
     CHECK (percentEncode ("a b&c=d/é~_.-") == "a%20b%26c%3Dd%2F%C3%A9~_.-");
     CHECK (githubOsOption ("Windows 11") == "Windows 11" && githubOsOption ("Windows 10") == "Windows 10");
     CHECK (githubOsOption ("Mac OSX 15.1", "arm64") == "macOS (Apple silicon)" && githubOsOption ("Mac OSX 15.1", "x86_64") == "macOS (Intel)");
     CHECK (githubOsOption ("Linux", {}, true) == "Linux (AppImage)" && githubOsOption ("Linux") == "Linux (tar.gz)" && githubOsOption ("BeOS").empty());
-    CHECK (githubKindOption ("crash") == "LYNX SHARE closed (crash)" && githubKindOption ("hang") == "LYNX SHARE froze (not responding)"
+    CHECK (githubKindOption ("crash") == "YW Studio closed (crash)" && githubKindOption ("hang") == "YW Studio froze (not responding)"
            && githubKindOption ("manual") == "Other");
 
     IssueFields f;
@@ -218,17 +218,17 @@ TEST (report159_github_url)
     f.version = "0.1.16";
     f.os = "Windows 11";
     f.kind = githubKindOption ("crash");
-    f.steps = "1. Open the editor\n2. LYNX closes";
+    f.steps = "1. Open the editor\n2. YW closes";
     const auto url = githubIssueUrl (f);
-    CHECK (url.rfind ("https://github.com/Ka1-S/LYNX-SHARE/issues/new?template=bug_report.yml&", 0) == 0);
-    CHECK (has (url, "&os=Windows%2011") && has (url, "&kind=LYNX%20SHARE%20closed%20%28crash%29") && has (url, "&version=0.1.16"));
-    CHECK (has (url, "&steps=1.%20Open%20the%20editor%0A2.%20LYNX%20closes"));
+    CHECK (url.rfind ("https://github.com/convicted3/yw-studio/issues/new?template=bug_report.yml&", 0) == 0);
+    CHECK (has (url, "&os=Windows%2011") && has (url, "&kind=YW%20SHARE%20closed%20%28crash%29") && has (url, "&version=0.1.16"));
+    CHECK (has (url, "&steps=1.%20Open%20the%20editor%0A2.%20YW%20closes"));
     CHECK (! has (url, "&logs=")); // empty fields are left out
 
     // a huge log is cut to fit, with an ellipsis, never inside an escape or a character
     std::string log;
     for (int i = 0; i < 3000; ++i)
-        log += "ação LYNX.exe+0x" + std::to_string (i) + "\n";
+        log += "ação YW.exe+0x" + std::to_string (i) + "\n";
     f.logs = log;
     f.plugins = std::string (5000, 'p');
     const auto cut = githubIssueUrl (f, 8000);
@@ -246,29 +246,29 @@ TEST (report159_github_url)
 // found a damaged block while a Song snapshot was disposed) — the process was dying: it is reported as a crash
 TEST (report174a_fatal_hang_is_crash)
 {
-    using lynx::crashreport::hangIsFatalReport;
-    const std::string dying = "LYNX UI thread not responding for 14862 ms (sample 1)\n"
+    using yw::crashreport::hangIsFatalReport;
+    const std::string dying = "YW UI thread not responding for 14862 ms (sample 1)\n"
                               "0: ntdll.dll+0x1628a4  (ZwWaitForMultipleObjects + 0x14)\n"
                               "1: ntdll.dll+0x80d66  (LdrShutdownProcess + 0xc66)\n"
                               "3: ntdll.dll+0x81a48  (RtlReportException + 0x78)\n"
                               "8: ntdll.dll+0x19f3d  (RtlRaiseException + 0x18d)\n"
                               "13: ntdll.dll+0x2796a  (RtlFreeHeap + 0x6da)\n"
                               "14: ucrtbase.dll+0x12d7b  (free_base + 0x1b)\n"
-                              "15: LYNX.exe+0x65a771\n";
+                              "15: YW.exe+0x65a771\n";
     CHECK (hangIsFatalReport (dying));
-    const std::string frozen = "LYNX UI thread not responding for 4012 ms (sample 1)\n"
+    const std::string frozen = "YW UI thread not responding for 4012 ms (sample 1)\n"
                                "0: ntdll.dll+0x1628a4  (ZwWaitForSingleObject + 0x14)\n"
                                "1: KERNELBASE.dll+0x3a1f0  (WaitForSingleObjectEx + 0x9e)\n"
-                               "2: LYNX.exe+0x281b71\n";
+                               "2: YW.exe+0x281b71\n";
     CHECK (! hangIsFatalReport (frozen));
     CHECK (! hangIsFatalReport (""));
-    CHECK (lynx::crashreport::githubKindOption ("crash") == "LYNX SHARE closed (crash)");
+    CHECK (yw::crashreport::githubKindOption ("crash") == "YW Studio closed (crash)");
 }
 
-// Issue #32 (round 174a): a fault in a plugin's own editor window that LYNX caught (the editor closed, LYNX went on)
+// Issue #32 (round 174a): a fault in a plugin's own editor window that YW caught (the editor closed, YW went on)
 TEST (report174a_editor_crash_step)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     const auto step = std::string ("04:42:18 ") + editorCrashStepPrefix
                     + "Synth (x64) (access violation at Synth.dll+0x4be460), trace in autosave\\editor-crash 2026-11-06 04-42-18.txt";
     const auto parsed = parseEditorCrashStep (step);
@@ -296,7 +296,7 @@ TEST (report174a_editor_crash_step)
 
 TEST (report190ci_processor_faults_are_the_ones_reported_from_an_unwalkable_stack)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     // round 190ci: the FPC fault of the 0.1.26 release candidate was an access violation on a stack Windows could not
     // walk (a lambda without its return ran into the next function), so the crash handler never ran
     CHECK (processorFault (0xC0000005u));   // access violation
@@ -316,7 +316,7 @@ TEST (report190ci_processor_faults_are_the_ones_reported_from_an_unwalkable_stac
 
 TEST (report115_title_says_crash_only_with_a_crash_file)
 {
-    using namespace lynx::crashreport;
+    using namespace yw::crashreport;
     // issue #115: a session that ended without a crash file was titled "Crash: UI responding again after 6 s"
     CHECK (githubTitle ("unclean", "UI responding again after 6 s") == "Closed unexpectedly (no crash report) after: UI responding again after 6 s");
     CHECK (githubTitle ("unclean", "") == "Closed unexpectedly (no crash report)");

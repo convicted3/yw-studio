@@ -1,6 +1,6 @@
 #pragma once
 
-// Hardware insert (round 164d, LYNX extra; the role of Pro Tools' H/W Insert and Nuendo's External FX): a mixer effect
+// Hardware insert (round 164d, YW extra; the role of Pro Tools' H/W Insert and Nuendo's External FX): a mixer effect
 // that sends the insert's signal at its place in the chain out to chosen device outputs (an outboard compressor, a
 // tape machine, a guitar amp…) and reads it back from chosen device inputs, inside the mixer.
 //
@@ -31,7 +31,7 @@
 #include "core/LiveInput.h"
 #include "core/TakeRecording.h"
 
-namespace lynx::hwinsert
+namespace yw::hwinsert
 {
 enum Param : int
 {
@@ -366,4 +366,4 @@ private:
     takes::LatencyPing pinger;
     std::array<float, 8> meters {};
 };
-} // namespace lynx::hwinsert
+} // namespace yw::hwinsert

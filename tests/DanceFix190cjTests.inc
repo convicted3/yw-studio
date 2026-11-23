@@ -3,8 +3,8 @@
 
 TEST (dancefix190cj_submenu_next_to_its_item)
 {
-    using lynx::menuplace::Box;
-    using lynx::menuplace::placeSubmenu;
+    using yw::menuplace::Box;
+    using yw::menuplace::placeSubmenu;
     const Box screen { 0, 0, 1920, 1040 };
     // the Mixer's insert menu in a long language: two columns of 520 at x 760..1808; "Disk recording" in the second
     // column (x 1284); its submenu is 560 wide, so the right has no room (1808 + 560 > 1920)

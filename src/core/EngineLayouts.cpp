@@ -4,14 +4,14 @@
 #include <vector>
 
 // Positions: FL's editor forms at 100 % (the SynthPanel of each plugin's TSynthEditorForm, docs/analise/REA_rodada168q.md
-// §1), one design unit = one pixel. Section frames and captions are LYNX's (FL paints its own in the background art).
+// §1), one design unit = one pixel. Section frames and captions are YW's (FL paints its own in the background art).
 
 // (the i18n test scans the sources for TR_NOOP: captions below are translated by the editor)
 #ifndef TR_NOOP
 #define TR_NOOP(text) text
 #endif
 
-namespace lynx::plugui
+namespace yw::plugui
 {
 namespace
 {
@@ -579,7 +579,7 @@ Layout transistorBassLayout()
     // FL's program row under the logo (round 190mc, discussion #202; TSynthEditorForm at y 45: ProgramAutoFollowCheckBox
     // 10, ProgramDigiWheel 95, PatternDigiWheel 185 + PatternNameEdit 215 + its shared indicator 320,
     // PatternTransposeDigiWheel 383, ParamPatchDigiWheel 452 + ParamPatchNameEdit 482 + its shared indicator 590, READ 620,
-    // WRITE 653): the same order, LYNX's steppers a little wider for their arrows
+    // WRITE 653): the same order, YW's steppers a little wider for their arrows
     v.push_back (toggle (10, 43, 36, 14, "Auto follow", "AF"));
     v.push_back (label (48, 40, 46, 20, TR_NOOP ("Program"), dim | alignLeft));
     v.push_back (stepper (95, 40, 38, 20, "Program", nullptr));
@@ -606,7 +606,7 @@ Layout transistorBassLayout()
     v.push_back (toggle (20, 436, 96, 14, "Sequencer", TR_NOOP ("Sequencer")));
     v.push_back (label (500, 434, 80, 18, TR_NOOP ("Length"), dim | alignLeft));
     v.push_back (stepper (580, 433, 50, 20, "Sequence length", nullptr));
-    // round 190nr (GitHub discussion #202, a LYNX extra): the sequence as notes for the Piano roll / a MIDI file
+    // round 190nr (GitHub discussion #202, a YW extra): the sequence as notes for the Piano roll / a MIDI file
     v.push_back (display (290, 433, 100, 20, "tbseqmidicopy"));
     v.push_back (display (394, 433, 100, 20, "tbseqmidiexport"));
     static const char* const rows[] = { TR_NOOP ("Pitch"), TR_NOOP ("Octave"), TR_NOOP ("Gate"), TR_NOOP ("Slide"), TR_NOOP ("Accent") };
@@ -755,7 +755,7 @@ Layout granulizerLayout()
 
 // --- Wasp / Wasp XT -------------------------------------------------------------------------------------------
 // FL 2026 ships Wasp and Wasp XT as a 64-bit placeholder (its "Dummy x64" form, 356 × 201: the plugin's name and three
-// lines saying it has no 64-bit version, the settings are kept, and the project opens in 32-bit FL). LYNX keeps the
+// lines saying it has no 64-bit version, the settings are kept, and the project opens in 32-bit FL). YW keeps the
 // state the same way and says so.
 Layout waspLayout()
 {
@@ -770,4 +770,4 @@ Layout waspLayout()
     v.push_back (label (5, 112, 346, 16, TR_NOOP ("Open the project in 32-bit FL Studio to play it."), dim));
     return l;
 }
-} // namespace lynx::plugui
+} // namespace yw::plugui

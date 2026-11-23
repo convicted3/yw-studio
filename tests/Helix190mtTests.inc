@@ -5,7 +5,7 @@
 
 namespace helix190mt
 {
-namespace w = lynx::wt;
+namespace w = yw::wt;
 using helix190ja::db;
 using helix190ja::rms;
 using helix190mi::finite;
@@ -116,7 +116,7 @@ inline double foldOverDb (const std::vector<float>& x, int from, double f0, doub
 
 TEST (helix190mt_layout_and_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // the third block follows Helix+ 2's; every (target, source) pair has its own value, none inside another's
     CHECK (w::ext3Base == w::ext2Base + w::ext2::count && w::ext4Base == w::ext3Base + w::ext3::count); // (190oc: round 4's block follows)
@@ -407,7 +407,7 @@ TEST (helix190mt_sample_band_limit)
 
 TEST (helix190mt_state_and_instrument)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // the data round trip (sample, partials, a table) and the instrument: it makes the levels and the partials from its
     // pluginState and values (UI thread), plays the grains and the partials, and takes new data while notes play
@@ -459,7 +459,7 @@ TEST (helix190mt_state_and_instrument)
 
 TEST (helix190mt_factory_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& bank = banks::bankOf (InstrumentKind::helix);
     int found = 0;
     for (int i = 0; i < (int) bank.size(); ++i)

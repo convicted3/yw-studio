@@ -1,14 +1,14 @@
-    // --loopinfo190kxshot <folder> (round 190kx, loop analysis): LYNX's own synthetic loops (tests/LoopCorpus190kx.h)
+    // --loopinfo190kxshot <folder> (round 190kx, loop analysis): YW's own synthetic loops (tests/LoopCorpus190kx.h)
     // written as WAVs with names that say nothing of their tempo or key, then drawn offscreen:
     //  - the Simple layout's Browser rows with the bars, tempo and key found (BandLab's loop rows);
     //  - the Pattern layout's Browser on the same folder (FL's rows: nothing added);
     //  - the Sample browser's Loop Browser with its Tempo / Key columns filled by the analysis;
-    //  - an audio clip's menu with the LYNX extras (Follow the project key, Loop key with "Detect from the audio", Fit to
+    //  - an audio clip's menu with the YW extras (Follow the project key, Loop key with "Detect from the audio", Fit to
     //    the project tempo).
     // <folder>/checks.txt lists what was checked, with the paint times. Included in the app class of Main.cpp.
     bool runLoopInfoShot190kx (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -145,7 +145,7 @@
             browser.setLoopsShown (false);
         }
 
-        // 4. an audio clip's menu: LYNX extras with the key items and the one-click fit (every layout)
+        // 4. an audio clip's menu: YW extras with the key items and the one-click fit (every layout)
         {
             layoutstyle::setCurrent (layoutstyle::Style::pattern);
             auto song = Song::makeDefault();
@@ -182,7 +182,7 @@
             check ("menu_follow_key", follow);
             check ("menu_loop_key", loopKey);
             check ("menu_fit_project_tempo", fit);
-            savePng (columnMenuImage (menu), folder.getChildFile ("kx-05-clip-menu-lynx-extras.png").getFullPathName());
+            savePng (columnMenuImage (menu), folder.getChildFile ("kx-05-clip-menu-yw-extras.png").getFullPathName());
         }
         layoutstyle::setCurrent (before);
         folder.getChildFile ("checks.txt").replaceWithText (report.joinIntoString ("\n") + "\n");

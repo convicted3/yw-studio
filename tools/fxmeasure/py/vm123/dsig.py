@@ -22,7 +22,7 @@ def pink(n, seed=0):
 def takes(sec=17):
     out={}
     for k in ['go','kwe','lu']:
-        x,_=sig.read_wav('/mnt/c/Users/kauan/lynx-test/w119/ns3/in_%s.wav'%k); out[k]=x[:int(sec*sr)]
+        x,_=sig.read_wav('/mnt/c/Users/kauan/yw-test/w119/ns3/in_%s.wav'%k); out[k]=x[:int(sec*sr)]
     return out
 def all_sigs():
     S={'st1k':stairs(1000),'st100':stairs(100),'st6k':stairs(6000),'bu':bursts(),'bu2':bursts(top=-20,base=-50)}

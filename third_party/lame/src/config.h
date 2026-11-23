@@ -1,7 +1,7 @@
-/* LYNX: hand-written configuration for building libmp3lame without autoconf (encoder only, no mpglib decoder,
+/* YW: hand-written configuration for building libmp3lame without autoconf (encoder only, no mpglib decoder,
    no assembly or SSE paths). Not part of the LAME distribution. */
-#ifndef LYNX_LAME_CONFIG_H
-#define LYNX_LAME_CONFIG_H
+#ifndef YW_LAME_CONFIG_H
+#define YW_LAME_CONFIG_H
 #define STDC_HEADERS 1
 #define HAVE_STDINT_H 1
 #define HAVE_INTTYPES_H 1

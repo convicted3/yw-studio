@@ -17,13 +17,13 @@
 #include "ui/NumBox.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-// The warp modes in Live's order with Live's names, each on the LYNX engine that does that job (round 190dr-2):
-// Beats, Tones, Texture and Complex are LYNX's own engines of those names, Re-Pitch is LYNX's resampling (speed and pitch
-// together). Live's Complex Pro has no engine of its own in LYNX and is left out. The FL modes a channel may carry
+// The warp modes in Live's order with Live's names, each on the YW engine that does that job (round 190dr-2):
+// Beats, Tones, Texture and Complex are YW's own engines of those names, Re-Pitch is YW's resampling (speed and pitch
+// together). Live's Complex Pro has no engine of its own in YW and is left out. The FL modes a channel may carry
 // (General, Drums / transients, Vocal / mono) follow below a line, so its mode always shows.
 struct ModeItem
 {
@@ -37,14 +37,14 @@ const ModeItem flModes[] = { { TR_NOOP ("General"), (int) StretchMethod::general
                              { TR_NOOP ("Vocal / mono"), (int) StretchMethod::mono } };
 
 // The Clip View's Envelopes tab of an audio clip (round 190gi; Live 12's audio Clip View has the tabs Sample | Envelopes
-// [SHOT ableton175a/live/m3-live-clipview2.png] and the envelope choosers Device / Control [MANUAL clip envelopes]). LYNX
+// [SHOT ableton175a/live/m3-live-clipview2.png] and the envelope choosers Device / Control [MANUAL clip envelopes]). YW
 // keeps two of Live's audio clip envelopes: Clip › Gain and Mixer › Track Panning (core/ClipEnvelope.h; the .als maps
 // them both ways). Live's editing [MANUAL]: a click on the line adds a breakpoint, a click on a breakpoint deletes it, a
 // drag moves it, Alt + drag on a segment bends it. Clip time across the clip's content (its start to its end).
 // Round 190gx [LIVE 190gu clipenv/live-clipview-envelopes-*.png]: the Device and Control choosers sit at the bottom left
 // under the envelope, and the Gain axis is straight in Live's own Clip Gain value (its −1…1 staircase draws as even
 // steps), so a lane's height reads as in Live; the value under the line is filled. Live's "Linked" loop switch is left
-// out (LYNX's envelopes always follow the clip's loop).
+// out (YW's envelopes always follow the clip's loop).
 class ClipEnvelopeView final : public juce::Component, private juce::ChangeListener
 {
 public:
@@ -370,7 +370,7 @@ private:
 
 // Beats' Transient Loop Mode chooser as Live draws it [LIVE 190gu warp/live-beats-loop-mode-menu.png]: a small box with
 // the mode's icon only (Off: an arrow to a bar, Forward: two arrows, Back-and-Forth: an arrow each way) and a down
-// arrow; its list shows the three icons (LYNX adds each name beside its icon, and the box's tooltip names the mode).
+// arrow; its list shows the three icons (YW adds each name beside its icon, and the box's tooltip names the mode).
 class LoopModeChooser final : public juce::Component, public juce::SettableTooltipClient
 {
 public:
@@ -971,7 +971,7 @@ private:
                 bpmLabel = left.removeFromBottom (row);
             }
             left.removeFromBottom (3);
-            // the mode's own settings, as LYNX's look lays them out, in 13 px rows; a row that doesn't fit folds away
+            // the mode's own settings, as YW's look lays them out, in 13 px rows; a row that doesn't fit folds away
             {
                 const auto first = preserve.isVisible() || grainTones->isVisible() || grainTexture->isVisible() || proFormants->isVisible();
                 const auto beatsRow = loopMode.isVisible() || envelope->isVisible();
@@ -1268,4 +1268,4 @@ std::unique_ptr<juce::Component> makeClipAudioPanel (AudioEngine& engine, int tr
         return {};
     return std::make_unique<ClipAudioPanel> (engine, track, scene, clip->channel);
 }
-} // namespace lynx
+} // namespace yw

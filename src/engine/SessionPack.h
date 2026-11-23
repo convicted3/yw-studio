@@ -2,11 +2,11 @@
 
 // Online Sessions, phase 1 (docs/design/ONLINE_SESSIONS.md §9 P1, round 168a): project packages without a network.
 //
-// File › Send project…: a .lynxpack (a zip) with the project, every sample and recording it uses, the stand-in renders
-// of its third-party plugin parts and a manifest (format, LYNX SHARE version, who it is from and for, what the friend
-// may keep, the media with their SHA-256, the plugins used). The friend opens it in his LYNX SHARE: it plays the same,
+// File › Send project…: a .ywpack (a zip) with the project, every sample and recording it uses, the stand-in renders
+// of its third-party plugin parts and a manifest (format, YW Studio version, who it is from and for, what the friend
+// may keep, the media with their SHA-256, the plugins used). The friend opens it in his YW Studio: it plays the same,
 // a part whose plugin he lacks plays its render with a badge. He records his part and uses File › Send my part back: a
-// .lynxpack of kind "part" with only his area (core/SessionParts.h) and his media / stand-ins. The host's
+// .ywpack of kind "part" with only his area (core/SessionParts.h) and his media / stand-ins. The host's
 // File › Merge a part… brings it into his project in one undo step.
 
 #include <functional>
@@ -18,9 +18,9 @@
 #include "core/Song.h"
 #include "engine/PluginHost.h"
 
-namespace lynx::sessionpack
+namespace yw::sessionpack
 {
-constexpr const char* extension = ".lynxpack";
+constexpr const char* extension = ".ywpack";
 constexpr int formatVersion = 1;
 
 struct MediaEntry
@@ -34,7 +34,7 @@ struct MediaEntry
 struct Manifest
 {
     bool part = false;         // "part" (a guest's area sent back) or "project"
-    juce::String lynxVersion;  // the LYNX SHARE that made it
+    juce::String ywVersion;  // the YW Studio that made it
     juce::String projectName, projectId, created;
     SessionParticipant from, to; // who made it / who it is for (project packages); to.keepFull = decision 1
     std::vector<MediaEntry> media;
@@ -76,7 +76,7 @@ bool render (const Song& song, const std::vector<RenderItem>& items, double samp
 // Puts the renders on the song (by uid for channels).
 void apply (Song& song, const std::vector<Rendered>& rendered);
 
-// Freeze (round 190ay; core/StandIns.h, lynx::freeze): renders `channel` alone, before its volume, pan and insert, with
+// Freeze (round 190ay; core/StandIns.h, yw::freeze): renders `channel` alone, before its volume, pan and insert, with
 // a private engine holding only that channel's instrument — the whole song (the Song-mode stem) and one loop pass per
 // pattern it plays in (the Pattern-mode stems) — into 32-bit float WAVs in `folder`. Same threads as render().
 // insert > 0 (round 190ff, track freeze): the channel with its volume and pan through that insert's effects
@@ -110,7 +110,7 @@ struct WriteResult
     juce::int64 bytes = 0;
     juce::StringArray missing;  // not on this PC
 };
-// Writes the package (replaced only when complete): the song as "project.lynx" with its sample paths pointing into
+// Writes the package (replaced only when complete): the song as "project.yw" with its sample paths pointing into
 // "media/", the media and the manifest. manifest.media / plugins / missing / standIns are filled here.
 bool write (const Song& song, Manifest manifest, PluginHost& host, const juce::File& file, WriteResult& result, juce::String& error);
 
@@ -136,10 +136,10 @@ struct PluginReport
 };
 PluginReport resolvePlugins (Song& song, const Manifest& manifest, PluginHost& host, bool useOtherVersions);
 
-juce::File receivedRoot(); // Documents/LYNX/Projects/Received
-// Where a project's stand-ins are written: "<project folder>/Stand-ins", or Documents/LYNX/Stand-ins/<projectId>.
+juce::File receivedRoot(); // Documents/YW/Projects/Received
+// Where a project's stand-ins are written: "<project folder>/Stand-ins", or Documents/YW/Stand-ins/<projectId>.
 juce::File standInFolder (const juce::File& projectFile, const Song& song);
-// Where a merged part's media go: "<project folder>/Session media/<guest>", or Documents/LYNX/Session media/<projectId>/<guest>.
+// Where a merged part's media go: "<project folder>/Session media/<guest>", or Documents/YW/Session media/<projectId>/<guest>.
 juce::File sessionMediaFolder (const juce::File& projectFile, const Song& song, const juce::String& guest);
 // A received song may only read its own media: every sample outside `folder`, and every other path the engine reads
 // (effect samples, Patcher graphs) outside `folder` and `engineFiles` (FL Studio's own data: FL Keys' wavetables, the
@@ -150,4 +150,4 @@ void confine (Song& song, const juce::File& folder, const juce::File& engineFile
 juce::String hashFile (const juce::File& file);
 // Copies the part's media into `folder` (by hash: a file already there is reused) and points the song at the copies.
 bool adoptMedia (Song& song, const juce::File& folder, juce::String& error);
-} // namespace lynx::sessionpack
+} // namespace yw::sessionpack

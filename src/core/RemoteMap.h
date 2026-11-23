@@ -23,7 +23,7 @@
 #include "core/Preferences.h"
 #include "core/Song.h"
 
-namespace lynx::remotemap
+namespace yw::remotemap
 {
 enum class Mode : std::uint8_t { off, midi, key };
 
@@ -133,7 +133,7 @@ std::vector<Fire> keyFires (const Song& song, int key, bool down);
 // instead of the instruments.
 void usedNumbers (const Song& song, std::uint64_t ccs[2], std::uint64_t notes[2]) noexcept;
 
-// --- for every project (round 190hp, slice B9 of the 0.1.28 pain report; LYNX's own) ------------------------------------
+// --- for every project (round 190hp, slice B9 of the 0.1.28 pain report; YW's own) ------------------------------------
 // The reference keeps MIDI mappings with each set; the Mapping Browser's "In every project (YW Studio)" moves a MIDI mapping
 // into the settings. A parameter's mapping becomes FL's global link (prefs::GlobalLink, the same list FL's "Override
 // global link..." makes, so both layouts share them); the transport switches, Stop all clips and a scene's launch
@@ -158,4 +158,4 @@ Assigned midiOf (const Song& song, const prefs::MidiPrefs& prefs, const Target& 
 // midiFires / usedNumbers with the global mappings that act in this project too.
 std::vector<Fire> midiFires (const Song& song, const std::vector<RemoteMapping>& global, int channel, int number, int value, int previous, int port);
 void usedNumbers (const std::vector<RemoteMapping>& global, std::uint64_t ccs[2], std::uint64_t notes[2]) noexcept;
-} // namespace lynx::remotemap
+} // namespace yw::remotemap

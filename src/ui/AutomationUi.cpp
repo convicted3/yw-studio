@@ -30,7 +30,7 @@
 #include "ui/ControllerKnob.h"
 #include "ui/ModRing.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -545,7 +545,7 @@ private:
     void showPointMenu (int point)
     {
         // FL's point menu [RES FLEngine EEACPointMenu; the look: the envelope editor's menu, shot fl-lp-point-menu]:
-        // Delete, the Mode block, then Copy value / Paste value / Type in value...; LYNX's own commands follow
+        // Delete, the Mode block, then Copy value / Paste value / Type in value...; YW's own commands follow
         const auto* a = current();
         const auto value = editedPoints (*a)[(std::size_t) point].value;
         juce::PopupMenu menu;
@@ -1243,7 +1243,7 @@ std::unique_ptr<juce::Component> makeAutomationEditor (AudioEngine& engine, int 
     return std::make_unique<AutomationEditor> (engine, automation);
 }
 
-// --- modulators (round 177b; LYNX's own, relative: docs/analise/REA_rodada177b.md slice 4) ------------------------
+// --- modulators (round 177b; YW's own, relative: docs/analise/REA_rodada177b.md slice 4) ------------------------
 // Round 190ox (stage 2, research 190oe P9): every kind (LFO, envelope follower, ADSR envelope, steps, random, macro,
 // keytrack, velocity), placed on a channel or an insert, hosted plugins' parameters as targets, drag-to-assign from a
 // row's handle, Assign mode (drag a knob to set the depth), the knobs' rings (ui/ModRing.h).
@@ -2220,7 +2220,7 @@ void addAutomationItem (juce::PopupMenu& menu, AudioEngine& engine, const Automa
 {
     if (headers)
         menu.addSectionHeader (tr ("Automation"));
-    // (the tempo too, issue #86: "Edit events" as in FL; "Edit events in piano roll" is a LYNX addition, FL greyed it in our tests)
+    // (the tempo too, issue #86: "Edit events" as in FL; "Edit events in piano roll" is a YW addition, FL greyed it in our tests)
     menu.addItem (tr ("Edit events in the pattern"), [&engine, target] { openEventEditor (engine, target); });
     if (onEditEventsInPianoRoll)
         menu.addItem (tr ("Edit events in piano roll"), [target] {
@@ -2279,7 +2279,7 @@ void addAutomationItem (juce::PopupMenu& menu, AudioEngine& engine, const Automa
     if (const auto global = engine.globalLinkOf (target))
         menu.addItem (tr ("Remove global link (CC {0})", { juce::String (global->cc) }), [&engine, target] { engine.removeGlobalLink (target); });
 
-    addModulationItems (menu, engine, target); // round 177b: LYNX's modulators (after FL's items; LYNX's own controls only)
+    addModulationItems (menu, engine, target); // round 177b: YW's modulators (after FL's items; YW's own controls only)
 }
 
 juce::String midiParamLabel (int param)
@@ -2381,4 +2381,4 @@ void addPatcherParameterItems (juce::PopupMenu& menu, AudioEngine& engine, const
     if (params.getNumItems() > 0)
         menu.addSubMenu (tr ("Automate Patcher parameter"), params);
 }
-} // namespace lynx
+} // namespace yw

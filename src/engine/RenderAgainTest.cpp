@@ -12,7 +12,7 @@
 #include "engine/Exporter.h"
 #include "engine/SessionPack.h"
 
-namespace lynx::renderagain
+namespace yw::renderagain
 {
 namespace
 {
@@ -199,7 +199,7 @@ juce::String check (std::function<void (const juce::String&)> log)
         if (! first.audible() || ! again.audible() || d > 0.0)
             problems.add (what + " (first " + first.describe() + ", again " + again.describe() + ", max diff " + juce::String (d, 9) + ")");
     };
-    const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-renderagain190ou-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
+    const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-renderagain190ou-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
     dir.createDirectory();
 
     // 1. the same engine, three renders (the bug: the second one started where the first had stopped: past the song's end
@@ -358,4 +358,4 @@ juce::String check (std::function<void (const juce::String&)> log)
     dir.deleteRecursively();
     return problems.isEmpty() ? juce::String ("OK (6 flows)") : "ERROR " + problems.joinIntoString ("; ");
 }
-} // namespace lynx::renderagain
+} // namespace yw::renderagain

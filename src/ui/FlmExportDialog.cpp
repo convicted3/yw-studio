@@ -7,7 +7,7 @@
 #include "ui/HintBar.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -147,4 +147,4 @@ void showFlmExportDialog (AudioEngine& engine, juce::Component* parent, const ju
                            });
     }), true);
 }
-} // namespace lynx
+} // namespace yw

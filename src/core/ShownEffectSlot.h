@@ -10,7 +10,7 @@
 
 #include "core/AutomationDisplay.h"
 
-namespace lynx
+namespace yw
 {
 class ShownEffectSlot
 {
@@ -63,4 +63,4 @@ private:
     const EffectSlot* cachedFrom = nullptr;
     std::uint32_t generation = 0, seenGeneration = 0;
 };
-} // namespace lynx
+} // namespace yw

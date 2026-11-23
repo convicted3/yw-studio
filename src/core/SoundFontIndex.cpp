@@ -10,7 +10,7 @@
 
 #include "core/SearchQuery.h"
 
-namespace lynx::sf
+namespace yw::sf
 {
 namespace
 {
@@ -393,4 +393,4 @@ std::size_t PresetIndex::presetCount() const
         n += f.presets.size();
     return n;
 }
-} // namespace lynx::sf
+} // namespace yw::sf

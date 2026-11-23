@@ -1,4 +1,4 @@
-// LYNX ASIO — the input side of a full-duplex stream (REA round 106).
+// YW ASIO — the input side of a full-duplex stream (REA round 106).
 //
 // The capture device delivers packets on its own clock; the host's blocks are paced by the playback device. Two
 // clocks never run at exactly the same speed (two devices, or Windows' own rate conversion), so a plain FIFO between
@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynxasio
+namespace ywasio
 {
 class InputDrift
 {
@@ -242,4 +242,4 @@ private:
     double lastPushTime = -1.0;
     int lastPacket = 0;
 };
-} // namespace lynxasio
+} // namespace ywasio

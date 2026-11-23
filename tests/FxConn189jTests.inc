@@ -4,19 +4,19 @@
 
 namespace fxconn189j
 {
-// A stand-in for tools/testplugin/lynx_test_sc_vst2.c inside the renderer: output pair 1 = input 1, output pair 2 =
+// A stand-in for tools/testplugin/yw_test_sc_vst2.c inside the renderer: output pair 1 = input 1, output pair 2 =
 // input 2 (its side input), routed as engine/PluginEffect routes them
-struct SidePass final : lynx::Effect
+struct SidePass final : yw::Effect
 {
-    lynx::SlotConnections c;
+    yw::SlotConnections c;
     bool mainSet = false;
     const float *mL = nullptr, *mR = nullptr, *sL = nullptr, *sR = nullptr;
-    float* xL[lynx::maxPluginConnections] {};
-    float* xR[lynx::maxPluginConnections] {};
+    float* xL[yw::maxPluginConnections] {};
+    float* xR[yw::maxPluginConnections] {};
     int configured = 0;
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void setConnections (const lynx::SlotConnections& x) override
+    void setConnections (const yw::SlotConnections& x) override
     {
         c = x;
         ++configured;
@@ -34,13 +34,13 @@ struct SidePass final : lynx::Effect
     }
     void setExtraOutput (int o, float* l, float* r) noexcept override
     {
-        if (o >= 0 && o < lynx::maxPluginConnections)
+        if (o >= 0 && o < yw::maxPluginConnections)
         {
             xL[o] = l;
             xR[o] = r;
         }
     }
-    void process (float* l, float* r, int n, const lynx::EffectParams&, double) noexcept override
+    void process (float* l, float* r, int n, const yw::EffectParams&, double) noexcept override
     {
         std::vector<float> in[4];
         for (auto& v : in)
@@ -79,7 +79,7 @@ struct SidePass final : lynx::Effect
 };
 
 // A channel that plays a constant level (its plugin id "DC <level>")
-struct Dc final : lynx::Instrument
+struct Dc final : yw::Instrument
 {
     float level = 0.0f;
     void prepare (double) noexcept override {}
@@ -98,15 +98,15 @@ struct Dc final : lynx::Instrument
 
 // the experiments' mixer (py/gen.py): insert 1 = own 1, the SidePass; inserts 2 (2) and 3 (4) routed to 1 at level 0
 // only; 4 = a reference (8) on the Master; 1 routed to the Master and at level 0 to 5 (panned left) and 6 (right)
-lynx::Song song (std::vector<lynx::PluginOutputRoute> inputs, std::vector<lynx::PluginOutputRoute> outputs)
+yw::Song song (std::vector<yw::PluginOutputRoute> inputs, std::vector<yw::PluginOutputRoute> outputs)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.channels.clear();
     const float levels[] = { 1.0f, 2.0f, 4.0f, 8.0f };
     for (int k = 0; k < 4; ++k)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::plugin;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::plugin;
         c.plugin.id = "DC " + std::to_string (levels[k]);
         c.mixerTrack = k + 1;
         s.channels.push_back (c);
@@ -120,8 +120,8 @@ lynx::Song song (std::vector<lynx::PluginOutputRoute> inputs, std::vector<lynx::
         t.toMaster = true;
         t.pan = 0.0f;
     }
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::plugin;
     fx.plugin.id = "VST-SidePass";
     fx.plugin.inputs = std::move (inputs);
     fx.plugin.outputs = std::move (outputs);
@@ -141,17 +141,17 @@ struct Lr
 {
     float l = 0.0f, r = 0.0f;
 };
-Lr master (const lynx::Song& song, std::shared_ptr<SidePass> fake)
+Lr master (const yw::Song& song, std::shared_ptr<SidePass> fake)
 {
-    lynx::RackState::Factories f;
-    f.pluginInstruments = [] (const lynx::PluginRef& ref, double) -> std::shared_ptr<lynx::Instrument> {
+    yw::RackState::Factories f;
+    f.pluginInstruments = [] (const yw::PluginRef& ref, double) -> std::shared_ptr<yw::Instrument> {
         auto dc = std::make_shared<Dc>();
         dc->level = 0.01f * std::stof (ref.id.substr (3));
         return dc;
     };
-    f.pluginEffects = [fake] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { return fake; };
-    auto state = lynx::RackState::build (song, nullptr, 48000.0, f);
-    lynx::RackRenderer r;
+    f.pluginEffects = [fake] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { return fake; };
+    auto state = yw::RackState::build (song, nullptr, 48000.0, f);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
     std::vector<float> l (256), rr (256);
     for (int b = 0; b < 4; ++b)
@@ -166,52 +166,52 @@ TEST (fxconn189j_lists_and_indexes_as_fl)
     // the inputs list [1, 2, 3] and the outputs list [1, Master, 5, 6] (ascending, the Master first) [EXEC e02 e05 e11
     // e18]; routes at level 0 count
     const auto s = song ({}, {});
-    CHECK ((lynx::insertInputList (s, 1) == std::vector<int> { 1, 2, 3 }));
-    CHECK ((lynx::insertOutputList (s, 1) == std::vector<int> { 1, 0, 5, 6 }));
-    CHECK ((lynx::insertInputList (s, 1) == lynx::mixerops::insertInputs (s, 1)));
+    CHECK ((yw::insertInputList (s, 1) == std::vector<int> { 1, 2, 3 }));
+    CHECK ((yw::insertOutputList (s, 1) == std::vector<int> { 1, 0, 5, 6 }));
+    CHECK ((yw::insertInputList (s, 1) == yw::mixerops::insertInputs (s, 1)));
 
-    // untouched Connections: LYNX as before (not routed)
-    CHECK (! lynx::slotConnections (s, 1, s.mixer[1].effects[0]).routed);
+    // untouched Connections: YW as before (not routed)
+    CHECK (! yw::slotConnections (s, 1, s.mixer[1].effects[0]).routed);
     // input 1 at 1 / 2 = inserts 2 / 3; at 5 (past the list) the slot's own input [EXEC e01 e02 e10]
     for (const auto& [k, source] : { std::pair { 1, 2 }, { 2, 3 }, { 5, -1 }, { 0, -1 } })
     {
         const auto t = song ({ { k, 1 } }, {});
-        const auto c = lynx::slotConnections (t, 1, t.mixer[1].effects[0]);
+        const auto c = yw::slotConnections (t, 1, t.mixer[1].effects[0]);
         CHECK (c.routed && c.mainSource == source && c.sideSource == -1 && c.outputs[0] == -1 && c.outputs[1] == -1);
     }
     // output 2 at 1 / 2 / 3 / 4 / 5: the Master, 5, 6, then the last one [EXEC e04 e05 e11 e12 e07]
     for (const auto& [k, target] : { std::pair { 1, 0 }, { 2, 5 }, { 3, 6 }, { 4, 6 }, { 5, 6 } })
     {
         const auto t = song ({ { 0, 1 }, { 1, 1 } }, { { 0, 1 }, { k, 1 } });
-        CHECK (lynx::slotConnections (t, 1, t.mixer[1].effects[0]).outputs[1] == target);
+        CHECK (yw::slotConnections (t, 1, t.mixer[1].effects[0]).outputs[1] == target);
     }
     // (a negative index, out of FL's wheel: the Master [EXEC e17 e23])
     const auto negative = song ({ { 0, 1 }, { 1, 1 } }, { { 0, 1 }, { -1, 1 } });
-    CHECK (lynx::slotConnections (negative, 1, negative.mixer[1].effects[0]).outputs[1] == 0);
+    CHECK (yw::slotConnections (negative, 1, negative.mixer[1].effects[0]).outputs[1] == 0);
     // no route to the Master: index 1 = insert 5 [EXEC e13]
     auto noMaster = song ({}, { { 0, 1 }, { 1, 1 } });
     noMaster.mixer[1].toMaster = false;
-    CHECK (lynx::slotConnections (noMaster, 1, noMaster.mixer[1].effects[0]).outputs[1] == 5);
+    CHECK (yw::slotConnections (noMaster, 1, noMaster.mixer[1].effects[0]).outputs[1] == 5);
     // inactive: played while "Process inactive inputs and outputs" is on (FL's default), else silent [EXEC e09 e15 e16
     // e22]
     auto inactive = song ({ { 1, 0 }, { 0, 0 } }, { { 0, 1 }, { 0, 0 } });
-    auto c = lynx::slotConnections (inactive, 1, inactive.mixer[1].effects[0]);
+    auto c = yw::slotConnections (inactive, 1, inactive.mixer[1].effects[0]);
     CHECK (c.mainSource == 2 && c.sideSource == -1 && c.outputs[1] == -1);
     inactive.mixer[1].effects[0].plugin.processInactive = false;
-    c = lynx::slotConnections (inactive, 1, inactive.mixer[1].effects[0]);
+    c = yw::slotConnections (inactive, 1, inactive.mixer[1].effects[0]);
     CHECK (c.mainSource == -2 && c.sideSource == -2 && c.outputs[1] == -2 && c.outputs[0] == -1);
-    // input 2 follows the slot's side input source (its index set it, or LYNX's SC picker)
+    // input 2 follows the slot's side input source (its index set it, or YW's SC picker)
     auto side = song ({ { 0, 1 }, { 2, 1 } }, {});
     side.mixer[1].effects[0].sidechain = 3;
-    CHECK (lynx::slotConnections (side, 1, side.mixer[1].effects[0]).sideSource == 3);
+    CHECK (yw::slotConnections (side, 1, side.mixer[1].effects[0]).sideSource == 3);
 
     // a routed output is a slot tap after the slot, the Master too; a built-in effect is never routed
     const auto routed = song ({ { 0, 1 }, { 1, 1 } }, { { 1, 1 }, { 2, 1 } });
-    const auto taps = lynx::fruitySendsOf (routed, 1);
+    const auto taps = yw::fruitySendsOf (routed, 1);
     CHECK (taps.size() == 2 && taps[0].target == 0 && taps[0].output == 0 && taps[1].target == 5 && taps[1].output == 1 && taps[1].afterSlot);
-    lynx::EffectSlot eq;
+    yw::EffectSlot eq;
     eq.plugin.outputs = { { 1, 1 } };
-    CHECK (! lynx::slotConnections (routed, 1, eq).routed);
+    CHECK (! yw::slotConnections (routed, 1, eq).routed);
 }
 
 TEST (fxconn189j_renderer_plays_the_connections_as_fl)
@@ -226,7 +226,7 @@ TEST (fxconn189j_renderer_plays_the_connections_as_fl)
     const auto unit = master (alone, fake).l / 0.08f;
     CHECK (unit > 0.1f);
     auto near = [unit] (float a, float b) { return std::abs (a - b * unit) < 1e-3f * unit; };
-    // untouched: input in, output 1 out (LYNX as before; FL would also feed input 2 its own audio, e00)
+    // untouched: input in, output 1 out (YW as before; FL would also feed input 2 its own audio, e00)
     auto m = master (song ({}, {}), fake);
     CHECK (near (m.l, 0.09f) && near (m.r, 0.09f));
     CHECK (fake->configured > 0);
@@ -266,8 +266,8 @@ TEST (fxconn189j_renderer_plays_the_connections_as_fl)
 
 TEST (fxconn189j_flp_export_writes_the_picked_side_input_as_fl_index)
 {
-    using namespace lynx;
-    // a side input picked with LYNX's SC picker is FL's input 2 index on export: its place in [insert, inserts routed
+    using namespace yw;
+    // a side input picked with YW's SC picker is FL's input 2 index on export: its place in [insert, inserts routed
     // to it ascending] as written (the picker's level-0 route included)
     auto song = Song::makeDefault();
     if (song.mixer.size() < 6)
@@ -285,7 +285,7 @@ TEST (fxconn189j_flp_export_writes_the_picked_side_input_as_fl_index)
         ForeignPlugin p;
         p.format = ForeignPlugin::Format::vst2;
         p.vst2Id = 0x4C585343;
-        p.name = "LYNX Test SC";
+        p.name = "YW Test SC";
         return p;
     };
     auto exported = [&options] (const Song& s) {
@@ -300,7 +300,7 @@ TEST (fxconn189j_flp_export_writes_the_picked_side_input_as_fl_index)
     auto back = exported (song);
     CHECK (back.hasRoutes && back.inputRoutes.size() == 2 && back.inputRoutes[1].offset == 2 && back.inputRoutes[1].active == 1);
     CHECK (back.inputRoutes[0].offset == 0 && back.outputRoutes.size() == 1 && back.outputRoutes[0].offset == 0);
-    // an index left over from an earlier pick names what LYNX plays now
+    // an index left over from an earlier pick names what YW plays now
     song.mixer[1].effects[0].plugin.inputs = { { 0, -1 }, { 1, -1 } };
     back = exported (song);
     CHECK (back.inputRoutes.size() == 2 && back.inputRoutes[1].offset == 2);

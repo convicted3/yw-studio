@@ -14,7 +14,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::flslice
+namespace yw::flslice
 {
 namespace
 {
@@ -441,4 +441,4 @@ std::vector<std::int64_t> autoSlice (const float* left, const float* right, std:
     }
     return slices;
 }
-} // namespace lynx::flslice
+} // namespace yw::flslice

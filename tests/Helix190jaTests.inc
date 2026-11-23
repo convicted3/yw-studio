@@ -1,4 +1,4 @@
-// Round 190ja: Helix (core/WavetableSynth.h), LYNX's own wavetable synth, its tables (core/WavetableTables.cpp), Live's
+// Round 190ja: Helix (core/WavetableSynth.h), YW's own wavetable synth, its tables (core/WavetableTables.cpp), Live's
 // Wavetable imported onto it (core/AlsDevicesWt.cpp) and exported back (core/AlsExport.cpp). Uses the .als builders of
 // AlsDevices190edTests.inc. No data file is needed.
 
@@ -10,7 +10,7 @@
 
 namespace helix190ja
 {
-namespace w = lynx::wt;
+namespace w = yw::wt;
 
 inline double rms (const std::vector<float>& x, int from, int to, int stride = 2, int offset = 0)
 {
@@ -91,7 +91,7 @@ inline double frequency (const std::vector<float>& x, int from, int to, double f
 
 TEST (helix190ja_parameters_and_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // the automatable table: every parameter once, unique English names, defaults inside their ranges
     const auto& table = helixEngineParams();
@@ -143,9 +143,9 @@ TEST (helix190ja_parameters_and_laws)
     CHECK (helixState (c)[(std::size_t) (w::filterBase (1) + w::flt::freq)] == 1234.0);
 }
 
-TEST (helix190ja_tables_are_band_limited_and_lynx_own)
+TEST (helix190ja_tables_are_band_limited_and_yw_own)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     CHECK (w::tableCount() >= 40);
     const auto cats = w::tableCategories();
@@ -196,9 +196,9 @@ TEST (helix190ja_tables_are_band_limited_and_lynx_own)
     w::tableSpectrum (w::tableByName ("Shapes"), 0, a.data(), ph.data(), 16);
     w::tableSpectrum (w::tableByName ("Shapes"), 0, b.data(), nullptr, 16);
     CHECK (a == b && a[0] > 0.9f && a[1] < 1e-6f && a[2] < 1e-6f);
-    // Live's names map onto LYNX tables (never Live's data): the match and its note
+    // Live's names map onto YW tables (never Live's data): the match and its note
     const auto m = w::matchLiveTable ("Basic Shapes");
-    CHECK (std::string (w::tableName (m.table)) == "Shapes" && m.note.find ("LYNX's own table") != std::string::npos);
+    CHECK (std::string (w::tableName (m.table)) == "Shapes" && m.note.find ("YW's own table") != std::string::npos);
     const auto unknown = w::matchLiveTable ("Some Unknown Sync Thing");
     CHECK (std::string (w::tableName (unknown.table)) == "Sync Sweep" && ! unknown.note.empty());
     CHECK (w::tableByName ("Shapes") >= 0 && w::tableByName ("No Such Table") == -1);
@@ -209,7 +209,7 @@ TEST (helix190ja_tables_are_band_limited_and_lynx_own)
 // floats one array per mip held: renders and every frame checked identical against the old layout); RAM per table
 TEST (helix190js_tables_keep_equal_frames_once)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     std::size_t full = 0; // one array per mip, as before 190js
     for (int m = 0; m < w::mipCount; ++m)
@@ -240,7 +240,7 @@ TEST (helix190js_tables_keep_equal_frames_once)
 
 TEST (helix190ja_tuning_and_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace helix190ja;
     const double fs = 48000.0;
     // A4 on the sine frame: 440 Hz to a hundredth of a cent, at 44.1 / 48 / 96 kHz
@@ -289,7 +289,7 @@ TEST (helix190ja_tuning_and_levels)
 
 TEST (helix190ja_no_aliasing_at_high_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace helix190ja;
     const double fs = 48000.0;
     // the saw frame (Shapes at 2/3) up to C8: everything outside the harmonics stays below −55 dB (C4) / −70 dB (C7, C8)
@@ -328,7 +328,7 @@ TEST (helix190ja_no_aliasing_at_high_notes)
 
 TEST (helix190ja_deterministic_and_state_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace helix190ja;
     // the same state and notes give the same samples, bit for bit (unison with random phases and Random Note included)
     auto s = base();
@@ -358,7 +358,7 @@ TEST (helix190ja_deterministic_and_state_round_trip)
 
 TEST (helix190ja_modulation_mpe_and_voices)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace helix190ja;
     const double fs = 48000.0;
     // Pitch ← Velocity: 1 = 48 semitones (the Pitch row's unit [DATA: Pitch ← Pitch Bend 1/24 = 2 st])
@@ -435,8 +435,8 @@ TEST (helix190ja_modulation_mpe_and_voices)
 
 TEST (helix190ja_wavetable_imports_and_round_trips)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     namespace w = wt;
     // a Wavetable as Live stores it: parameters (Manual), menus (Value), tables by name, the 52 × 13 matrix
     auto par = [] (const std::string& n, const std::string& v) { return "<" + n + "><Manual Value=\"" + v + "\" /></" + n + ">"; };

@@ -3,7 +3,7 @@
 #include <random>
 #include <unordered_set>
 
-namespace lynx::uids
+namespace yw::uids
 {
 std::uint64_t next (Song& song)
 {
@@ -51,7 +51,7 @@ bool normalize (Song& song)
     }
 
     // nextUid past every counter this participant already used (a project whose counter was lost, or edited by an
-    // older LYNX that dropped it, never hands out an existing uid again)
+    // older YW that dropped it, never hands out an existing uid again)
     const auto me = song.session.me;
     auto see = [&] (std::uint64_t uid) {
         if (uid != 0 && tagOf (uid) == me)
@@ -111,9 +111,9 @@ bool normalize (Song& song)
     }
     return changed;
 }
-} // namespace lynx::uids
+} // namespace yw::uids
 
-namespace lynx::refs
+namespace yw::refs
 {
 bool targetsChannel (const AutomationTarget& t) noexcept
 {
@@ -232,4 +232,4 @@ void forEachRowRef (Song& song, const IndexFn& fn)
             fn (c.track);
     });
 }
-} // namespace lynx::refs
+} // namespace yw::refs

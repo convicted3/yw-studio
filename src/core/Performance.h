@@ -23,7 +23,7 @@
 #include "core/Scheduler.h"
 #include "core/Song.h"
 
-namespace lynx::perf
+namespace yw::perf
 {
 constexpr int maxTracks = 500; // FL's Playlist tracks
 
@@ -175,4 +175,4 @@ bool recordedClip (const Song& song, const RecordedPass& pass, Clip& out);
 // song — `count` columns `spacing` ticks wide are inserted at the start (everything moves right), a marker at each
 // column, a "Start" marker where the song now begins, and Performance mode on (song mode).
 void prepareForPerformance (Song& song, int count, std::int64_t spacing);
-} // namespace lynx::perf
+} // namespace yw::perf

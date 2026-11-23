@@ -38,18 +38,18 @@
 #include <cstring>
 #include <cassert>
 #include <cmath>
-#include <cfenv> // LYNX (ysfx_lynx_fp_guard)
+#include <cfenv> // YW (ysfx_yw_fp_guard)
 
-// LYNX: a script's code leaves the calling thread's floating-point control register changed on aarch64 (FPCR 0 -> 0x2800000,
-// i.e. rounding toward minus infinity and default NaN; LYNX's Linux arm64 self-test, rollup 0.1.31 step 7), and the host's
+// YW: a script's code leaves the calling thread's floating-point control register changed on aarch64 (FPCR 0 -> 0x2800000,
+// i.e. rounding toward minus infinity and default NaN; YW's Linux arm64 self-test, rollup 0.1.31 step 7), and the host's
 // own float work on that thread (parsing, rendering, drawing) then rounds differently. Every entry that compiles or runs
 // EEL code puts the caller's environment back when it returns.
-struct ysfx_lynx_fp_guard {
+struct ysfx_yw_fp_guard {
     std::fenv_t env;
-    ysfx_lynx_fp_guard() { std::fegetenv(&env); }
-    ~ysfx_lynx_fp_guard() { std::fesetenv(&env); }
-    ysfx_lynx_fp_guard(const ysfx_lynx_fp_guard &) = delete;
-    ysfx_lynx_fp_guard &operator=(const ysfx_lynx_fp_guard &) = delete;
+    ysfx_yw_fp_guard() { std::fegetenv(&env); }
+    ~ysfx_yw_fp_guard() { std::fesetenv(&env); }
+    ysfx_yw_fp_guard(const ysfx_yw_fp_guard &) = delete;
+    ysfx_yw_fp_guard &operator=(const ysfx_yw_fp_guard &) = delete;
 };
 
 
@@ -445,7 +445,7 @@ bool ysfx_load_file(ysfx_t *fx, const char *filepath, uint32_t loadopts)
 
 bool ysfx_compile(ysfx_t *fx, uint32_t compileopts)
 {
-    ysfx_lynx_fp_guard lynx_fp_guard; // LYNX
+    ysfx_yw_fp_guard yw_fp_guard; // YW
     ysfx_unload_code(fx);
 
     if (!fx->source.main) {
@@ -613,7 +613,7 @@ void ysfx_unload_source(ysfx_t *fx)
 
 void ysfx_unload_code(ysfx_t *fx)
 {
-    ysfx_lynx_fp_guard lynx_fp_guard; // LYNX
+    ysfx_yw_fp_guard yw_fp_guard; // YW
 #if !defined(YSFX_NO_GFX)
     // get rid of gfx first, to prevent a UI thread from trying
     // to access VM and invoke code
@@ -1292,7 +1292,7 @@ void ysfx_delayed_init(ysfx_t *fx)
 
 void ysfx_init(ysfx_t *fx)
 {
-    ysfx_lynx_fp_guard lynx_fp_guard; // LYNX
+    ysfx_yw_fp_guard yw_fp_guard; // YW
     if (!fx->code.compiled)
         return;
 
@@ -1503,7 +1503,7 @@ uint64_t ysfx_get_slider_visibility(ysfx_t *fx, uint8_t slider_group_index)
 template <class Real>
 void ysfx_process_generic(ysfx_t *fx, const Real *const *ins, Real *const *outs, uint32_t num_ins, uint32_t num_outs, uint32_t num_frames)
 {
-    ysfx_lynx_fp_guard lynx_fp_guard; // LYNX
+    ysfx_yw_fp_guard yw_fp_guard; // YW
     ysfx_set_thread_id(ysfx_thread_id_dsp);
 
     // prepare MIDI input for reading, output for writing
@@ -1800,7 +1800,7 @@ bool ysfx_is_state_equal(ysfx_state_t *state1, ysfx_state_t *state2)
 
 void ysfx_serialize(ysfx_t *fx)
 {
-    ysfx_lynx_fp_guard lynx_fp_guard; // LYNX
+    ysfx_yw_fp_guard yw_fp_guard; // YW
     if (fx->code.serialize) {
         if (fx->must_compute_init)
             ysfx_init(fx);
@@ -1930,8 +1930,8 @@ bool ysfx_find_data_file(ysfx_t *fx, EEL_F *file, std::string &result)
 
     for (const std::string &filepath : filecandidates) {
         if (ysfx::exists(filepath.c_str())) {
-            // LYNX: the host's file policy (the script's own folders only, by default) decides whether it may be read
-            if (ysfx_lynx_path_filter && !ysfx_lynx_path_filter(filepath.c_str()))
+            // YW: the host's file policy (the script's own folders only, by default) decides whether it may be read
+            if (ysfx_yw_path_filter && !ysfx_yw_path_filter(filepath.c_str()))
                 continue;
             result.assign(filepath);
             return true;
@@ -1941,12 +1941,12 @@ bool ysfx_find_data_file(ysfx_t *fx, EEL_F *file, std::string &result)
     return false;
 }
 
-// LYNX: the file policy for scripts' file_open / file sliders / gfx_loadimg (nullptr = every existing file, as upstream)
-ysfx_lynx_path_filter_t *ysfx_lynx_path_filter = nullptr;
+// YW: the file policy for scripts' file_open / file sliders / gfx_loadimg (nullptr = every existing file, as upstream)
+ysfx_yw_path_filter_t *ysfx_yw_path_filter = nullptr;
 
-void ysfx_lynx_set_path_filter(ysfx_lynx_path_filter_t *filter)
+void ysfx_yw_set_path_filter(ysfx_yw_path_filter_t *filter)
 {
-    ysfx_lynx_path_filter = filter;
+    ysfx_yw_path_filter = filter;
 }
 
 ysfx_file_type_t ysfx_detect_file_type(ysfx_t *fx, const char *path, void **fmtobj)

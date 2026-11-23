@@ -7,14 +7,14 @@ inline double value (const std::string& text, double input)
 {
     std::string error;
     int at = 0;
-    const auto f = lynx::linkformula::Formula::compile (text, &error, &at);
+    const auto f = yw::linkformula::Formula::compile (text, &error, &at);
     return at == -1 ? f.evaluate (input) : -12345.0;
 }
 } // namespace link190bt
 
 TEST (link190bt_default_mapping_is_one_to_one)
 {
-    using namespace lynx::linkformula;
+    using namespace yw::linkformula;
     std::string error = "x";
     int at = 0;
     for (const char* text : { "", "   ", "Input", "input", "INPUT", "  Input  " })
@@ -30,7 +30,7 @@ TEST (link190bt_default_mapping_is_one_to_one)
 
 TEST (link190bt_formula_presets_are_fls_and_all_compile)
 {
-    using namespace lynx::linkformula;
+    using namespace yw::linkformula;
     const auto& list = presets();
     int formulas = 0, headers = 0;
     for (const auto& p : list)
@@ -77,15 +77,15 @@ TEST (link190bt_preset_formulas_give_fls_curves)
     CHECK (close (value ("(Frac(Input*7.875+0.001)-0.001)*1.142857142857143", 0.0), 0.0, 1.0e-12));
 
     // what the control gets: the result limited to 0...1
-    const auto f = lynx::linkformula::Formula::compile ("Input*4-1");
+    const auto f = yw::linkformula::Formula::compile ("Input*4-1");
     CHECK (f.map (0.0f) == 0.0f && f.map (1.0f) == 1.0f && std::abs (f.map (0.375f) - 0.5f) < 1.0e-6f);
-    CHECK (lynx::linkformula::Formula::compile ("Ln(Input-1)").map (0.5f) == 0.0f); // (not a number: the bottom)
+    CHECK (yw::linkformula::Formula::compile ("Ln(Input-1)").map (0.5f) == 0.0f); // (not a number: the bottom)
 }
 
 TEST (link190bt_tension_is_fls_curve)
 {
     using link190bt::close;
-    using lynx::linkformula::tension;
+    using yw::linkformula::tension;
     CHECK (tension (0.3, 0.0) == 0.3);
     // t > 0 ("Log scale", Tension(Input,10)): fast at the bottom; 1 - (11^(1-x) - 1) / 10
     CHECK (close (tension (0.0, 10.0), 0.0) && close (tension (1.0, 10.0), 1.0));
@@ -129,7 +129,7 @@ TEST (link190bt_formula_functions)
 
 TEST (link190bt_formula_mistakes_are_reported)
 {
-    using lynx::linkformula::Formula;
+    using yw::linkformula::Formula;
     const auto wrong = [] (const char* text, int expectedAt) {
         std::string error;
         int at = -5;
@@ -153,7 +153,7 @@ TEST (link190bt_formula_mistakes_are_reported)
 
 TEST (link190bt_smoothing_slider_reads_as_fl)
 {
-    using namespace lynx::linkformula;
+    using namespace yw::linkformula;
     // the hint's time: (11 ^ (|position| / 1024) - 1) * 100 ms; negative positions 1 pole, positive ones 3 poles
     CHECK (smoothingMs (0) == 0.0);
     CHECK (std::abs (smoothingMs (1024) - 1000.0) < 1.0e-6 && std::abs (smoothingMs (-1024) - 1000.0) < 1.0e-6);
@@ -183,7 +183,7 @@ TEST (link190bt_smoothing_slider_reads_as_fl)
 
 TEST (link190bt_link_settings_and_conflicts)
 {
-    using namespace lynx;
+    using namespace yw;
     const AutomationTarget volume { AutomationTargetKind::channelVolume, 2 }, pan { AutomationTargetKind::channelPan, 2 },
         insert { AutomationTargetKind::mixerVolume, 4 }, slot { AutomationTargetKind::effectParam, 3, 1, 5 };
     // a learned link has no settings; FL's defaults
@@ -247,7 +247,7 @@ TEST (link190bt_link_settings_and_conflicts)
 
 TEST (link190bt_midi_settings_text_keeps_ports_and_global_link_settings)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     // settings written by an older version: read as before, with the new fields at FL's defaults
     const std::string old = "velocity=linear\npickup=0\nfootPedal=1\ninput=1|0|-1|My Keys\nlink=7|0|4|2|0|0\nlink=10|-1|5|2|0|0\n";
     const auto p = MidiPrefs::fromText (old);

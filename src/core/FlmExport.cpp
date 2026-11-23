@@ -22,7 +22,7 @@
 // exported here and imported again keeps its notes, levels, instruments and effects; where FLM has no place for
 // something the loss is listed instead.
 
-namespace lynx
+namespace yw
 {
 float flmFaderValue (double gain) noexcept
 {
@@ -50,14 +50,14 @@ float flmSpeedValue (int semitones) noexcept
 
 namespace
 {
-constexpr double tpb = (double) ppq;                 // LYNX ticks per beat
+constexpr double tpb = (double) ppq;                 // YW ticks per beat
 constexpr double flmTpb = (double) flm::ticksPerBeat; // FLM's
 
-std::uint32_t flmTicks (std::int64_t lynxTicks) noexcept
+std::uint32_t flmTicks (std::int64_t ywTicks) noexcept
 {
-    return (std::uint32_t) std::max<std::int64_t> (0, std::llround ((double) lynxTicks * flmTpb / tpb));
+    return (std::uint32_t) std::max<std::int64_t> (0, std::llround ((double) ywTicks * flmTpb / tpb));
 }
-double beats (std::int64_t lynxTicks) noexcept { return (double) lynxTicks / tpb; }
+double beats (std::int64_t ywTicks) noexcept { return (double) ywTicks / tpb; }
 
 std::string fileName (const std::string& path)
 {
@@ -147,7 +147,7 @@ const PocketModule* pocketModule (EffectKind k) noexcept
 }
 
 // FLM's key locker for a project key (FlmImport's scalekeys::flmKeyLocker turned around: the FLM scale index whose
-// degrees are the key's; 0 = none) and LYNX's chord set as FLM's KEYB JSON (the shape parseFlmChordSet reads)
+// degrees are the key's; 0 = none) and YW's chord set as FLM's KEYB JSON (the shape parseFlmChordSet reads)
 std::pair<std::uint32_t, std::uint32_t> flmKeyLockerOf (const projectkey::Key& key)
 {
     const auto& want = projectkey::intervals (key);
@@ -561,7 +561,7 @@ bool pocketSlotModule (const EffectSlot& slot, flm::Module& m)
     auto n = std::min<int> ((int) info.params.size(), pm->count - 1);
     if (slot.kind == EffectKind::pocketTranceDelay)
     {
-        n = std::min (n, 6); // (LYNX's 7th value is FLM's saved flag, one byte of CSTM)
+        n = std::min (n, 6); // (YW's 7th value is FLM's saved flag, one byte of CSTM)
         m.custom = { (std::uint8_t) (slot.params[6] >= 0.5f ? 1 : 0) };
     }
     for (int k = 0; k < n; ++k)
@@ -728,10 +728,10 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
     {
         flm::Rack rack;
         flm::Channel channel;
-        int insert = 0;              // the LYNX insert it stands for (its own) or plays into
+        int insert = 0;              // the YW insert it stands for (its own) or plays into
         bool drums = false;
-        std::vector<int> pads;       // drums: the LYNX channels of its kit, kit order
-        int instrument = -1;         // note channel: the LYNX channel (a Layer: its children are the rack's instruments)
+        std::vector<int> pads;       // drums: the YW channels of its kit, kit order
+        int instrument = -1;         // note channel: the YW channel (a Layer: its children are the rack's instruments)
         std::vector<int> children;
         int audioTrack = -1;         // audio channel: the Playlist track
         bool bus = false;
@@ -739,7 +739,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
     };
     std::vector<Out> outs;
     std::map<int, int> drumOutOfInsert; // insert → the drum channel its pads join
-    std::map<int, int> outOfChannel;    // LYNX channel → out
+    std::map<int, int> outOfChannel;    // YW channel → out
 
     // a Layer is one FLM rack with several instruments (each its key range): the .flm import's own reading of such a rack
     std::map<int, int> layerOf; // child → its Layer
@@ -1215,7 +1215,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
             const auto seconds = options.sampleSeconds && ! c.samplePath.empty() ? options.sampleSeconds (c.samplePath) : 0.0;
             const auto sourceBeats = seconds > 0.0 ? seconds * song.bpm / 60.0 * clip.stretch : 0.0;
             fc.sourceLength = sourceBeats > 0.0 ? sourceBeats : fc.offset + fc.length;
-            fc.loopLength = std::max (fc.sourceLength, fc.offset + fc.length); // (a LYNX audio clip does not repeat)
+            fc.loopLength = std::max (fc.sourceLength, fc.offset + fc.length); // (a YW audio clip does not repeat)
             auto s = sampleRef (ctx, c.samplePath, fileStem (c.samplePath));
             namespace sp = flm::samplepad;
             s.params.assign (sp::defaults, sp::defaults + sp::count);
@@ -1260,7 +1260,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
     // straight segment is two points; a curved one is sampled every 1/32 beat (FLM draws straight lines through them).
     {
         int unsupported = 0;
-        // out index (−1 = the master) and the FLM lane target for a LYNX target, with the value law
+        // out index (−1 = the master) and the FLM lane target for a YW target, with the value law
         struct LaneOf
         {
             int out = -2;
@@ -1312,7 +1312,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
                         const auto o = outOfChannel.find (t.index);
                         const auto dw = flmdw::isChannel (c) && t.param >= flmdw::automationBase && t.param < flmdw::automationBase + flmdw::paramCount;
                         const auto gm = c.instrument == InstrumentKind::gms && flmBuild (c) && t.param >= 0 && t.param < gmsmobile::paramCount;
-                        // MiniSynth / SuperSaw (FLM's engines in LYNX): engine value k is FLM's parameter k + 1, through the
+                        // MiniSynth / SuperSaw (FLM's engines in YW): engine value k is FLM's parameter k + 1, through the
                         // engine's parameter range (the import's generatorLaneTarget turned around)
                         const auto* ep = (c.instrument == InstrumentKind::minisynth || c.instrument == InstrumentKind::pocketSuperSaw)
                                              ? modelparams::find (c.instrument, t.param)
@@ -1423,7 +1423,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
         p.channels.push_back (std::move (o.channel));
     }
     result.bytes = flm::write (p);
-    // the LYNX chunk (FlmExport.h): which FLM content was which LYNX pattern, names and colours, and a checksum
+    // the YW chunk (FlmExport.h): which FLM content was which YW pattern, names and colours, and a checksum
     {
         std::string text = "YW Studio flm extras 1\n";
         text += "check " + flmexport::checksum (result.bytes) + "\n";
@@ -1440,7 +1440,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
         }
         for (const auto& [key, id] : contentOf)
             text += "content " + std::to_string (key.first + 1) + " " + std::to_string (id) + " " + std::to_string (key.second) + "\n";
-        const char tag[4] = { 'L', 'Y', 'N', 'X' };
+        const char tag[4] = { 'Y', 'W', 'S', 'T' };
         result.bytes.insert (result.bytes.end(), tag, tag + 4);
         const auto size = (std::uint32_t) text.size();
         result.bytes.insert (result.bytes.end(), (const std::uint8_t*) &size, (const std::uint8_t*) &size + 4);
@@ -1468,27 +1468,27 @@ std::string checksum (const std::vector<std::uint8_t>& bytes)
 
 std::optional<Extras> readExtras (const std::vector<std::uint8_t>& bytes)
 {
-    // the top-level chunks after "10LF": the last one must be "YW Studio"
-    std::size_t at = 4, lynxAt = 0, lynxSize = 0;
+    // the top-level chunks after "10LF": the last one must be "YWST"
+    std::size_t at = 4, ywAt = 0, ywSize = 0;
     while (at + 8 <= bytes.size())
     {
         std::uint32_t size;
         std::memcpy (&size, bytes.data() + at + 4, 4);
         if ((std::size_t) size > bytes.size() - at - 8)
             return std::nullopt;
-        if (std::memcmp (bytes.data() + at, "LYNX", 4) == 0)
+        if (std::memcmp (bytes.data() + at, "YWST", 4) == 0)
         {
-            lynxAt = at;
-            lynxSize = size;
+            ywAt = at;
+            ywSize = size;
         }
         at += 8 + (std::size_t) size;
     }
-    if (lynxAt == 0 || lynxAt + 8 + lynxSize != bytes.size())
+    if (ywAt == 0 || ywAt + 8 + ywSize != bytes.size())
         return std::nullopt;
-    const std::string text ((const char*) bytes.data() + lynxAt + 8, lynxSize);
+    const std::string text ((const char*) bytes.data() + ywAt + 8, ywSize);
     if (text.rfind ("YW Studio flm extras 1\n", 0) != 0)
         return std::nullopt;
-    const std::vector<std::uint8_t> before (bytes.begin(), bytes.begin() + (std::ptrdiff_t) lynxAt);
+    const std::vector<std::uint8_t> before (bytes.begin(), bytes.begin() + (std::ptrdiff_t) ywAt);
     Extras e;
     bool checked = false;
     std::size_t pos = 0;
@@ -1528,7 +1528,7 @@ std::optional<Extras> readExtras (const std::vector<std::uint8_t>& bytes)
 
 void regroupPatterns (Song& song, const Extras& extras, const std::map<std::pair<int, std::uint32_t>, int>& contentPatterns)
 {
-    // imported pattern → the LYNX pattern it was part of
+    // imported pattern → the YW pattern it was part of
     std::map<int, int> groupOf;
     for (const auto& [key, imported] : contentPatterns)
         if (const auto it = extras.contents.find (key); it != extras.contents.end() && imported >= 0 && imported < (int) song.patterns.size())
@@ -1589,4 +1589,4 @@ void regroupPatterns (Song& song, const Extras& extras, const std::map<std::pair
     song.currentPattern = 0;
 }
 } // namespace flmexport
-} // namespace lynx
+} // namespace yw

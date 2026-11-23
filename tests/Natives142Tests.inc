@@ -1,22 +1,22 @@
-// Round 142 (issue #5): FL engines usable in native LYNX projects (core/NativeEngines.h, REA_rodada142)
+// Round 142 (issue #5): FL engines usable in native YW projects (core/NativeEngines.h, REA_rodada142)
 
 #include "../tools/WavReader.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/NativeEngines.h"
 #include "core/VocalPitch.h"
 
 namespace natives142
 {
 // the user's FL installation as the tests see it (WSL / POSIX): FL's backslashes become '/', names matched ignoring case
-lynx::natives::FlAccess flAccess()
+yw::natives::FlAccess flAccess()
 {
     namespace fs = std::filesystem;
-    lynx::natives::FlAccess fl;
+    yw::natives::FlAccess fl;
     if (realFlpDir.empty())
         return fl;
     const auto local = [] (std::string p) {
         std::replace (p.begin(), p.end(), '\\', '/');
-        return lynx::existingPathIgnoringCase (p);
+        return yw::existingPathIgnoringCase (p);
     };
     fl.roots.data = fs::path (realFlpDir).string();
     fl.roots.factoryData = fs::path (realFlpDir).parent_path().string();
@@ -35,7 +35,7 @@ lynx::natives::FlAccess flAccess()
         return out;
     };
     fl.saveEmbedded = [] (const std::vector<std::uint8_t>& wav, const std::string& name) {
-        const auto path = (fs::temp_directory_path() / ("lynx-natives142-" + processTempTag() + "-" + std::to_string (wav.size()) + "-" + std::to_string (name.size()) + ".wav")).string();
+        const auto path = (fs::temp_directory_path() / ("yw-natives142-" + processTempTag() + "-" + std::to_string (wav.size()) + "-" + std::to_string (name.size()) + ".wav")).string();
         std::ofstream (path, std::ios::binary).write ((const char*) wav.data(), (std::streamsize) wav.size());
         return path;
     };
@@ -43,28 +43,28 @@ lynx::natives::FlAccess flAccess()
 }
 
 // one channel alone in the rack, a note held for `seconds`: the output's RMS
-double renderChannel (const lynx::ChannelDef& channel, const lynx::natives::FlAccess& fl, int key = 60, double seconds = 1.0,
-                      std::shared_ptr<const lynx::SampleData> given = nullptr)
+double renderChannel (const yw::ChannelDef& channel, const yw::natives::FlAccess& fl, int key = 60, double seconds = 1.0,
+                      std::shared_ptr<const yw::SampleData> given = nullptr)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     auto c = channel;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    auto samples = [&fl, given] (const std::string& path) -> std::shared_ptr<const lynx::SampleData> {
+    auto samples = [&fl, given] (const std::string& path) -> std::shared_ptr<const yw::SampleData> {
         if (given != nullptr)
             return given;
         auto p = path;
         std::replace (p.begin(), p.end(), '\\', '/');
         (void) fl;
-        return lynx::tools::readWav (lynx::existingPathIgnoringCase (p));
+        return yw::tools::readWav (yw::existingPathIgnoringCase (p));
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, samples);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, samples);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.key = key;
     on.velocity = 0.8f;
@@ -83,19 +83,19 @@ double renderChannel (const lynx::ChannelDef& channel, const lynx::natives::FlAc
 // The channel the pitch / voice-layer tests were written with: the engine's `Default.*` preset when FL ships one (a new
 // channel until round 169l2, which made it FL's Plugin database patch: unison saws, delay echoes and arpeggios the
 // autocorrelation pitch estimate can't read), otherwise the new channel
-std::optional<lynx::ChannelDef> writtenWith (lynx::InstrumentKind kind, const lynx::natives::FlAccess& fl)
+std::optional<yw::ChannelDef> writtenWith (yw::InstrumentKind kind, const yw::natives::FlAccess& fl)
 {
-    for (const auto& path : lynx::natives::presetCandidates (lynx::natives::presetFolderOf (kind), true, fl))
+    for (const auto& path : yw::natives::presetCandidates (yw::natives::presetFolderOf (kind), true, fl))
         if (path.find ("Plugin presets") != std::string::npos && std::filesystem::path (path).stem().string() == "Default")
-            if (auto c = lynx::natives::channelFromPresetFile (kind, path, fl))
+            if (auto c = yw::natives::channelFromPresetFile (kind, path, fl))
                 return c;
-    return lynx::natives::makeChannel (kind, fl);
+    return yw::natives::makeChannel (kind, fl);
 }
 } // namespace natives142
 
 TEST (natives142_lists_and_no_fl_installation)
 {
-    using namespace lynx;
+    using namespace yw;
     // every engine once; the effect engines are not plain parameter effects
     std::set<int> seen;
     for (const auto& e : natives::instrumentEngines())
@@ -106,13 +106,13 @@ TEST (natives142_lists_and_no_fl_installation)
     CHECK (natives::instrumentEngine (InstrumentKind::sytrus) != nullptr && natives::instrumentEngine (InstrumentKind::synth) == nullptr);
     CHECK (natives::effectEngine (EffectKind::newtone) != nullptr && natives::effectEngine (EffectKind::eq) == nullptr);
 
-    // without FL: the engines with LYNX's own defaults or a LYNX preset bank (round 168n) are made and play, the
+    // without FL: the engines with YW's own defaults or a YW preset bank (round 168n) are made and play, the
     // others are not available
     natives::FlAccess none;
     for (const auto& e : natives::instrumentEngines())
     {
         const auto c = natives::makeChannel (e.kind, none);
-        const auto own = e.needs == natives::Needs::nothing || lynx::banks::hasBank (e.kind);
+        const auto own = e.needs == natives::Needs::nothing || yw::banks::hasBank (e.kind);
         CHECK (natives::available (e, none) == own);
         CHECK (c.has_value() == own);
         if (c)
@@ -136,10 +136,10 @@ TEST (natives142_lists_and_no_fl_installation)
 
 TEST (natives167m_sample_engines_play_a_sample_without_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 167m (PR #19): on a PC without FL Studio (the macOS / Linux CI, the contributor's Mac) a new Wave Traveller
     // or Granulizer has no sample and is silent, which the app's --selftest counted as a broken engine. Given a
-    // sample (what --selftest now generates), both play with LYNX's own default state.
+    // sample (what --selftest now generates), both play with YW's own default state.
     auto tone = std::make_shared<SampleData>();
     tone->sampleRate = 48000.0;
     tone->left.resize (48000);
@@ -149,7 +149,7 @@ TEST (natives167m_sample_engines_play_a_sample_without_fl)
     for (const auto kind : { InstrumentKind::wavetraveller, InstrumentKind::granulizer })
     {
         auto c = natives::makeChannel (kind, none);
-        if (kind == InstrumentKind::granulizer) // (round 168q: LYNX's bank gives it a default state without FL)
+        if (kind == InstrumentKind::granulizer) // (round 168q: YW's bank gives it a default state without FL)
             CHECK (c.has_value() && granulizerStateUsable (c->pluginState));
         CHECK (c.has_value() && c->samplePath.empty());
         CHECK (natives142::renderChannel (*c, none) < 1.0e-6); // no sample: silent, as FL
@@ -172,20 +172,20 @@ TEST (natives142_fl_keys_default_wavetable)
     };
     auto existing = [] (const std::string& p) { return p; };
     // FL Keys' state: its wavetable name "Piano" (REA_rodada69 §8 layout, see flkeys::parseState)
-    lynx::flkeys::State st;
+    yw::flkeys::State st;
     st.wavetable = "Piano";
-    const auto state = lynx::flkeys::writeState (st);
-    lynx::ChannelDef def;
-    CHECK (lynx::flkeys::importChannel (def, state, "W", read, existing, {}));
-    CHECK (def.instrument == lynx::InstrumentKind::flkeys && def.zones.size() == 1 && def.zones[0].path == "W\\a.wav");
+    const auto state = yw::flkeys::writeState (st);
+    yw::ChannelDef def;
+    CHECK (yw::flkeys::importChannel (def, state, "W", read, existing, {}));
+    CHECK (def.instrument == yw::InstrumentKind::flkeys && def.zones.size() == 1 && def.zones[0].path == "W\\a.wav");
     files.erase ("W\\default.wti");
-    lynx::ChannelDef none;
-    CHECK (! lynx::flkeys::importChannel (none, state, "W", read, existing, {}));
+    yw::ChannelDef none;
+    CHECK (! yw::flkeys::importChannel (none, state, "W", read, existing, {}));
 }
 
 TEST (natives142_engines_from_the_fl_installation)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();
@@ -225,8 +225,8 @@ TEST (natives142_engines_from_the_fl_installation)
             {
                 auto p = z.path;
                 std::replace (p.begin(), p.end(), '\\', '/');
-                const auto local = lynx::existingPathIgnoringCase (p);
-                const auto data = lynx::tools::readWav (local);
+                const auto local = yw::existingPathIgnoringCase (p);
+                const auto data = yw::tools::readWav (local);
                 if (data == nullptr || data->frames() == 0)
                     std::printf ("    unreadable now: %s (%s, exists %d)\n", z.path.c_str(), local.c_str(), (int) std::filesystem::exists (local));
             }
@@ -273,7 +273,7 @@ TEST (natives142_engines_from_the_fl_installation)
 
 TEST (natives142_newtone_and_newtime_native_projects)
 {
-    using namespace lynx;
+    using namespace yw;
     // a "sung" line: four notes (A3, B3, C4, rest, E4) with a light vibrato
     SampleData s;
     s.sampleRate = 44100.0;
@@ -302,7 +302,7 @@ TEST (natives142_newtone_and_newtime_native_projects)
     }
     CHECK (newtonefx::renderEdits (s, t) == nullptr); // (unedited: the source plays as it is)
 
-    // LYNX's own state round-trips; trackOf reads it
+    // YW's own state round-trips; trackOf reads it
     auto state = newtonefx::writeNative (t);
     auto back = newtonefx::parseNative (state);
     CHECK (back && back->pitches.size() == t.pitches.size() && ! back->edited);

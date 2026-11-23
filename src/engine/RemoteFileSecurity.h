@@ -17,7 +17,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::remote_files
+namespace yw::remote_files
 {
 [[noreturn]] inline void fail (const char* message) { throw std::runtime_error (message); }
 

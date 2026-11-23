@@ -1,6 +1,6 @@
 #pragma once
 
-// The Audio logger's memory (FL 2026's Tools › Audio logger, measured in docs/analise/REA_rodada181b.md; LYNX's own
+// The Audio logger's memory (FL 2026's Tools › Audio logger, measured in docs/analise/REA_rodada181b.md; YW's own
 // implementation): the last 1, 2, 5 or 10 minutes of the Master, kept in RAM, nothing on disk until a dump.
 //
 // Real-time rules:
@@ -25,7 +25,7 @@
 #include <mutex>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class RollingAudioLog
 {
@@ -114,4 +114,4 @@ private:
     int seconds = defaultSeconds;
     double rate = 0.0;
 };
-} // namespace lynx
+} // namespace yw

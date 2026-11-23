@@ -1,8 +1,8 @@
 #pragma once
 
-// Round 190df (WHAT-LYNX-LACKS items 22 and 30): the FL facts behind three small FL pieces, kept free of UI so the
+// Round 190df (WHAT-YW-LACKS items 22 and 30): the FL facts behind three small FL pieces, kept free of UI so the
 // tests can check them. Facts from static study of FLEngine_x64.dll (FL Studio 2026 study install), handler addresses
-// in /mnt/e/lynx-work/flctl190df/FL-FACTS.md; facts in our own words.
+// in /mnt/e/yw-work/flctl190df/FL-FACTS.md; facts in our own words.
 //  - mlmenu: FL's multilink menu (MLWheelMenu, right-click on the toolbar's Multilink button): its entries for a
 //    state, its caption, and the value laws of Randomize and Humanize.
 //  - samplehistory: FL's "Sample history" (the Load button of a sampler channel: right-click lists it, the mouse
@@ -24,7 +24,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace mlmenu
 {
@@ -100,9 +100,9 @@ inline std::vector<Entry> build (bool multilinkOn, int count)
 // Live check 190ew CTL-1 (FL 2026): with multilink off the Multilink button's menu has two columns, the last tweaked
 // control's own menu on the left (captioned with the control's name), this menu on the right; on, this menu alone.
 inline bool showsOwnColumn (bool multilinkOn, bool hasLastTweaked) noexcept { return ! multilinkOn && hasLastTweaked; }
-// LYNX's own one-step "Link to controller" / "Override global links" (round 177b-4) act on the queued controls: shown
+// YW's own one-step "Link to controller" / "Override global links" (round 177b-4) act on the queued controls: shown
 // only while multilink is on (FL's menu has no such greyed lines when it is off)
-inline bool showsLynxOneStepItems (bool multilinkOn) noexcept { return multilinkOn; }
+inline bool showsYwOneStepItems (bool multilinkOn) noexcept { return multilinkOn; }
 
 // Whether the action ends multilink: every item does, except Randomize and Humanize while multilink is on (FL keeps
 // the queue so they can be repeated) [0x12349a0, 0x12343f0: the end call is skipped while multilink is on].
@@ -171,7 +171,7 @@ inline bool initPattern (Song& song, int pattern, const AutomationTarget& target
 namespace samplehistory
 {
 // FL keeps one list for every channel, newest first, at most 30 paths; a path already in it stays where it is
-// [0x1231030, called by the sampler's sample loader]. LYNX keeps it for the session (whether FL saves it is a live
+// [0x1231030, called by the sampler's sample loader]. YW keeps it for the session (whether FL saves it is a live
 // check).
 constexpr std::size_t capacity = 30;
 
@@ -338,4 +338,4 @@ inline Store& shared()
     return s;
 }
 } // namespace sparestate
-} // namespace lynx
+} // namespace yw

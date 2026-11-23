@@ -1,15 +1,15 @@
 // --- Round 152b: parity items (docs/PARITY.md, REA_rodada152b) ----------------------------------------------------
 // Ember Saturator ← Saturn 2: each crossover's own slope, linear phase, modulation, the Collapse character's measured
-// pitch drop; LYNX Tune ← Waves Tune Real-Time: Group Octaves off (each key its own status).
+// pitch drop; YW Tune ← Waves Tune Real-Time: Group Octaves off (each key its own status).
 
 namespace p152b
 {
 // a block through Ember (512-sample blocks), the same signal on both channels
-inline std::vector<float> run (const lynx::EffectParams& p, std::vector<float> x, int* latency = nullptr)
+inline std::vector<float> run (const yw::EffectParams& p, std::vector<float> x, int* latency = nullptr)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::ember);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::ember);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     fx->reset();
     auto r = x;
@@ -31,10 +31,10 @@ inline double responseDb (const std::vector<float>& h, int at, double hz)
     }
     return 20.0 * std::log10 (std::max (std::sqrt (c * c + s * s), 1e-12));
 }
-inline lynx::EffectParams twoBands (int slopeDbOct, bool linear)
+inline yw::EffectParams twoBands (int slopeDbOct, bool linear)
 {
-    using namespace lynx::mixsuite::ember;
-    auto p = lynx::makeEffectSlot (lynx::EffectKind::ember).params;
+    using namespace yw::mixsuite::ember;
+    auto p = yw::makeEffectSlot (yw::EffectKind::ember).params;
     p[bands] = 1.0f / 3.0f;
     p[xover1] = crossoverValue (1000.0);
     p[crossSlope1] = ownSlopeValue (slopeDbOct);
@@ -47,7 +47,7 @@ inline lynx::EffectParams twoBands (int slopeDbOct, bool linear)
 
 TEST (ember_round152_parameter_block_and_upgrade)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     CHECK (em::count <= maxEffectParams);
     CHECK (effectInfo (EffectKind::ember).params.size() == (std::size_t) em::count);
@@ -88,7 +88,7 @@ TEST (ember_round152_parameter_block_and_upgrade)
 
 TEST (ember_round152_own_slopes_match_the_trial_minimum_phase)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     std::vector<float> imp (16384, 0.0f);
     imp[100] = 1.0f;
@@ -119,12 +119,12 @@ TEST (ember_round152_own_slopes_match_the_trial_minimum_phase)
 
 TEST (ember_round152_linear_phase_bands_and_latency)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     std::vector<float> imp (24000, 0.0f);
     imp[100] = 1.0f;
     // [EXEC] the trial's linear-phase low band (crossover 1 kHz): 6 dB/oct −0.82 dB at 100 Hz, −6.02 at 1 kHz,
-    // −20.82 at 10 kHz; 24 dB/oct −0.52 at 500 Hz, −24.59 at 2 kHz; the sum is the delayed input; latency 3072 + LYNX's
+    // −20.82 at 10 kHz; 24 dB/oct −0.52 at 500 Hz, −24.59 at 2 kHz; the sum is the delayed input; latency 3072 + YW's
     // oversampler
     for (const auto& [slope, f, db] : std::vector<std::tuple<int, double, double>> { { 6, 100.0, -0.82 }, { 6, 1000.0, -6.02 }, { 6, 10000.0, -20.82 },
                                                                                        { 24, 500.0, -0.52 }, { 24, 2000.0, -24.59 } })
@@ -159,7 +159,7 @@ TEST (ember_round152_linear_phase_bands_and_latency)
 
 TEST (ember_round152_lfo_and_follower_modulate_the_band_level)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     constexpr int n = 96000;
     std::vector<float> tone (n);
@@ -194,7 +194,7 @@ TEST (ember_round152_lfo_and_follower_modulate_the_band_level)
 
 TEST (ember_round152_collapse_pitches_down_with_the_drive)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     constexpr int n = 48000;
     std::vector<float> tone (n);
@@ -228,7 +228,7 @@ TEST (ember_round152_collapse_pitches_down_with_the_drive)
 
 TEST (ember_round152_saturn2_slopes_processing_modulation_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.name = "FabFilter Saturn 2";
     // [EXEC] read back from the trial's state: band b's crossover slope at 7 + 17b + 16 (0 … 4 = 6 … 48), 696 the
@@ -267,14 +267,14 @@ TEST (ember_round152_saturn2_slopes_processing_modulation_translated)
     CHECK (e::modSourceOf (p[e::mod3Source]) == e::ModSource::off);
 }
 
-TEST (lynxtune_round152_group_octaves_off)
+TEST (ywtune_round152_group_octaves_off)
 {
-    using namespace lynx;
-    namespace lt = lynxtune;
-    auto slot = makeEffectSlot (EffectKind::lynxTune);
+    using namespace yw;
+    namespace lt = ywtune;
+    auto slot = makeEffectSlot (EffectKind::ywTune);
     auto& p = slot.params;
     CHECK (lt::count <= maxEffectParams);
-    CHECK (effectInfo (EffectKind::lynxTune).params.size() == (std::size_t) lt::count);
+    CHECK (effectInfo (EffectKind::ywTune).params.size() == (std::size_t) lt::count);
     CHECK (lt::groupOctavesOn (p.data()) && ! lt::anyKeyOverride (p.data()));
     CHECK (lt::paramText (lt::groupOctaves, 1.0f) == "On");
     // the key map: exact round trips for every key and status
@@ -310,20 +310,20 @@ TEST (lynxtune_round152_group_octaves_off)
     CHECK (lt::nextRemoveStatus (lt::KeyStatus::removedDown) == lt::KeyStatus::legal);
     // Send carries Group octaves and the key map
     const auto sh = lt::captureScale (p.data());
-    auto other = makeEffectSlot (EffectKind::lynxTune).params;
+    auto other = makeEffectSlot (EffectKind::ywTune).params;
     lt::applyScale (other.data(), sh);
     CHECK (! lt::groupOctavesOn (other.data()) && lt::keyOverride (other.data(), 52) == lt::KeyStatus::bypass);
     lt::clearKeyOverrides (p.data());
     CHECK (! lt::anyKeyOverride (p.data()));
 }
 
-TEST (lynxtune_round152_group_octaves_off_corrects_per_key)
+TEST (ywtune_round152_group_octaves_off_corrects_per_key)
 {
-    using namespace lynx;
-    namespace lt = lynxtune;
+    using namespace yw;
+    namespace lt = ywtune;
     // a steady 330 Hz (E4 + ~3 cents) in a chromatic scale: corrected to E4 with octaves grouped; with E4 removed
     // (pitch up) on its own key, pulled to F4 (349.2 Hz)
-    auto slot = makeEffectSlot (EffectKind::lynxTune);
+    auto slot = makeEffectSlot (EffectKind::ywTune);
     auto& p = slot.params;
     p[lt::scale] = 0.0f;
     p[lt::retune] = 0.0f;
@@ -357,11 +357,11 @@ TEST (lynxtune_round152_group_octaves_off_corrects_per_key)
     CHECK (std::abs (hz - 349.2) < 3.0);
 }
 
-TEST (lynxtune_round152_midi_reference_tone)
+TEST (ywtune_round152_midi_reference_tone)
 {
-    using namespace lynx;
-    namespace lt = lynxtune;
-    auto slot = makeEffectSlot (EffectKind::lynxTune);
+    using namespace yw;
+    namespace lt = ywtune;
+    auto slot = makeEffectSlot (EffectKind::ywTune);
     auto& p = slot.params;
     CHECK (p[lt::referenceTone] == 0.0f && std::abs (lt::referenceToneDb (p[lt::referenceToneLevel])) < 1e-9);
     p[lt::midiChannel] = 1.0f / 128.0f; // channel 1

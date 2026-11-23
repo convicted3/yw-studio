@@ -12,7 +12,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::audioclipboard
+namespace yw::audioclipboard
 {
 audioedit::Audio& editor()
 {
@@ -76,4 +76,4 @@ juce::File save (const juce::String& baseName, const juce::String& extension, co
     const auto file = dir.getNonexistentChildFile (baseName, extension, false);
     return file.replaceWithData (data, size) ? file : juce::File();
 }
-} // namespace lynx::audioclipboard
+} // namespace yw::audioclipboard

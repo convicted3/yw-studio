@@ -1,4 +1,4 @@
-// Round 190nz: issue #232 stage 2, copy in one LYNX SHARE window and paste in another (core/CrossPaste.h).
+// Round 190nz: issue #232 stage 2, copy in one YW Studio window and paste in another (core/CrossPaste.h).
 #include "core/CrossPaste.h"
 #include "core/Groove.h"
 
@@ -6,9 +6,9 @@ namespace crosspaste190nz
 {
 // a song with: Kick (0), Clap (1), "Lead" plugin channel (2), "Vox" audio clip channel (3); pattern 0 with Kick and Lead
 // notes, pattern 1 with Clap notes; an automation clip on Lead's volume, one on mixer insert 4's pan
-inline lynx::Song source()
+inline yw::Song source()
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.resize (2); // Kick, Clap
     ChannelDef lead;
@@ -98,7 +98,7 @@ inline lynx::Song source()
 // the fragment holds only what the clips need, with every index into the fragment
 TEST (crosspaste190nz_clips_fragment_holds_what_the_clips_play)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = crosspaste190nz::source();
     const auto f = crosspaste::clipsFragment (song, song.playlist);
     // channels: Kick and Lead (pattern 0's notes, Lead's loop point and pan lane, the volume automation) and Vox (audio)
@@ -126,7 +126,7 @@ TEST (crosspaste190nz_clips_fragment_holds_what_the_clips_play)
 // into another project: its own channels where it has the same ones, the rest added; a second paste adds nothing new
 TEST (crosspaste190nz_import_clips_matches_channels_and_reuses_what_it_added)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = crosspaste190nz::source();
     const auto f = crosspaste::clipsFragment (song, song.playlist);
 
@@ -172,7 +172,7 @@ TEST (crosspaste190nz_import_clips_matches_channels_and_reuses_what_it_added)
 // differs is not the same channel
 TEST (crosspaste190nz_track_clips_and_channel_identity)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = crosspaste190nz::source();
     song.patterns[1].trackClip = true;
     Clip c;
@@ -210,7 +210,7 @@ TEST (crosspaste190nz_track_clips_and_channel_identity)
 // Channel Rack › Copy channels / Paste channels: copies at the place asked, the rest of the song follows
 TEST (crosspaste190nz_channels_paste_as_copies_and_keep_the_song_consistent)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = crosspaste190nz::source();
     song.channels[2].instrument = InstrumentKind::layer;
     song.channels[2].layer.children = { 0, 3 };

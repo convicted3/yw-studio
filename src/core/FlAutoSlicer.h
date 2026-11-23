@@ -12,9 +12,9 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::flslice
+namespace yw::flslice
 {
 // Slice starts (frames of the sample, ascending). `right` = nullptr for a mono sample. Data are the sample's frames as
 // FL reads them (16-bit samples as value / 32768).
 std::vector<std::int64_t> autoSlice (const float* left, const float* right, std::int64_t frames, double sampleRate);
-} // namespace lynx::flslice
+} // namespace yw::flslice

@@ -8,19 +8,19 @@
 // usage: perfbench <scenario> [--block N] [--threads N] [--seconds S] [--reps R] [--offline] [--nometers] [--raw path]
 //                              [--stopped] [--ahead] [--live C] [--paced] [--apptransport]
 // scenarios:
-//   demo            the showcase song (Demo.lynx), whole song
-//   hiphop | pop    the two LYNX demo songs
+//   demo            the showcase song (Demo.yw), whole song
+//   hiphop | pop    the two YW demo songs
 //   synth100        100 built-in synth channels (presets in turn, chords + an arpeggio line) into 50 inserts with
-//                   3 LYNX effects each (EQ / dynamics / space)
+//                   3 YW effects each (EQ / dynamics / space)
 //   inserts50       one synth into 50 inserts in a chain of sends, 4 effects each: the mixer and effects alone
 //   stream          24 audio-clip channels playing 60 s takes (long audio streaming)
 //   idle            the synth100 project with the transport stopped and nothing playing (the cost of an idle project)
 //   afterstop       the synth100 project played for --warmup seconds (not measured), then stopped (round 190gp: the
 //                   seconds after Stop, while the effects' tails die away and smart disable takes them out)
-//   big200          200 channels, 120 inserts with LYNX's own effects, 2,000 clips, 200 automation clips (round
+//   big200          200 channels, 120 inserts with YW's own effects, 2,000 clips, 200 automation clips (round
 //                   perfgate190id; this and the next: core/PerfProjects.h, the big-project performance gate)
 //   automation      32 synths, 16 inserts, 400 dense automation clips and a tempo clip
-//   calibrate       a fixed piece of work no LYNX change touches: the machine's speed (the gate divides by it)
+//   calibrate       a fixed piece of work no YW change touches: the machine's speed (the gate divides by it)
 //   flp:<path>      an FL Studio project, whole song (FL's own data from FL_ROOT, as renderwav)
 // --gate: one machine-readable "GATE key=value ..." line at the end (CPU, instructions, import / build / rebuild / edit time,
 // peak memory, hash; dropouts with --paced) for scripts/perf_gate.py.
@@ -84,9 +84,9 @@
 #include <sstream>
 
 // round 190gp: A/B switches of this round's changes, looked up weakly (the same tool links with the objects from before
-// them, which do not have them): LYNX_DECLARED_TAILS=0 (smart disable's fixed hold), LYNX_SYNTH_LANES=0 (the synth's
+// them, which do not have them): YW_DECLARED_TAILS=0 (smart disable's fixed hold), YW_SYNTH_LANES=0 (the synth's
 // voices one by one)
-namespace lynx
+namespace yw
 {
 void setDeclaredTails (bool on) noexcept __attribute__ ((weak));
 void setSynthVoiceLanes (bool on) noexcept __attribute__ ((weak));
@@ -94,15 +94,15 @@ void setSynthVoiceLanes (bool on) noexcept __attribute__ ((weak));
 
 namespace
 {
-using namespace lynx;
+using namespace yw;
 
 void applySwitches()
 {
     auto off = [] (const char* name) { const char* v = std::getenv (name); return v != nullptr && std::atoi (v) == 0; };
     if (setDeclaredTails != nullptr)
-        setDeclaredTails (! off ("LYNX_DECLARED_TAILS"));
+        setDeclaredTails (! off ("YW_DECLARED_TAILS"));
     if (setSynthVoiceLanes != nullptr)
-        setSynthVoiceLanes (! off ("LYNX_SYNTH_LANES"));
+        setSynthVoiceLanes (! off ("YW_SYNTH_LANES"));
 }
 
 #if defined(_WIN32) // (no thread CPU clock here: the process' CPU time)
@@ -196,7 +196,7 @@ double peakRssMb()
 }
 
 // perfgate190id: a fixed piece of DSP-like work (biquads, a soft clip, an interpolated table read over 256 KB) that no
-// LYNX change touches. The gate divides its CPU times by this one's, so a faster or slower machine (CI runners differ)
+// YW change touches. The gate divides its CPU times by this one's, so a faster or slower machine (CI runners differ)
 // moves both alike; median of 7 runs, ms of thread CPU.
 double calibrationMs()
 {
@@ -302,7 +302,7 @@ int main (int argc, char** argv)
             stopped = true;
         else if (a == "--warmup") // seconds rendered first and not measured (an idle project: past the effects' smart disable hold)
             warmup = std::max (0.0, std::atof (next()));
-        else if (a == "--units") // the renderer's own per-channel / per-slot CPU (as renderwav's LYNX_PROFILE)
+        else if (a == "--units") // the renderer's own per-channel / per-slot CPU (as renderwav's YW_PROFILE)
             units = true;
         else if (a == "--ahead")
             aheadMode = appTransport = true;
@@ -379,8 +379,8 @@ int main (int argc, char** argv)
     }
 
     const auto importMs = std::chrono::duration<double, std::milli> (std::chrono::steady_clock::now() - import0).count();
-    // round 190of: LYNX_PB_SMARTALL=1 = FL's Tools > Macros > "Switch smart disable for all plugins" (every slot on), and
-    // LYNX_PB_SLOTS=1 lists how many slots have it on as imported
+    // round 190of: YW_PB_SMARTALL=1 = FL's Tools > Macros > "Switch smart disable for all plugins" (every slot on), and
+    // YW_PB_SLOTS=1 lists how many slots have it on as imported
     {
         int on = 0, all = 0;
         for (auto& track : song.mixer)
@@ -388,15 +388,15 @@ int main (int argc, char** argv)
             {
                 ++all;
                 on += slot.smartDisable ? 1 : 0;
-                if (std::getenv ("LYNX_PB_SMARTALL") != nullptr)
+                if (std::getenv ("YW_PB_SMARTALL") != nullptr)
                     slot.smartDisable = true;
             }
-        if (std::getenv ("LYNX_PB_SLOTS") != nullptr)
-            std::printf ("slots: %d, smart disable on in %d%s\n", all, on, std::getenv ("LYNX_PB_SMARTALL") != nullptr ? " (now all on)" : "");
+        if (std::getenv ("YW_PB_SLOTS") != nullptr)
+            std::printf ("slots: %d, smart disable on in %d%s\n", all, on, std::getenv ("YW_PB_SMARTALL") != nullptr ? " (now all on)" : "");
     }
-    // round 190ok: LYNX_PB_REV=n gives every effect slot (inside Patchers and parallel branches too) engine revision n:
-    // LYNX_PB_REV=1 renders as a project saved before round 190ok (the gold renders' check that those are bit for bit)
-    if (const char* rev = std::getenv ("LYNX_PB_REV"))
+    // round 190ok: YW_PB_REV=n gives every effect slot (inside Patchers and parallel branches too) engine revision n:
+    // YW_PB_REV=1 renders as a project saved before round 190ok (the gold renders' check that those are bit for bit)
+    if (const char* rev = std::getenv ("YW_PB_REV"))
     {
         const auto n = std::atoi (rev);
         std::function<void (EffectSlot&)> slotRev;
@@ -477,7 +477,7 @@ int main (int argc, char** argv)
         renderer->prepare (sampleRate, std::max (2048, blockSize));
         renderer->setProfiling (units);
         auto bank = std::make_unique<MeterBank>();
-        const auto levels = std::getenv ("LYNX_PB_LEVELS") != nullptr; // (round 190of)
+        const auto levels = std::getenv ("YW_PB_LEVELS") != nullptr; // (round 190of)
         std::vector<float> trackPeaks (song.mixer.size(), 0.0f);
         auto live = std::make_unique<LiveEventQueue>();
         auto midiLive = std::make_unique<LiveEventQueue>();
@@ -618,7 +618,7 @@ int main (int argc, char** argv)
                 if ((pos / (std::size_t) blockSize) % std::max<std::size_t> (1, (std::size_t) (sampleRate / 60 / blockSize)) == 0)
                 {
                     counter.pause();
-                    // round 190of: LYNX_PB_LEVELS=1 keeps each insert's highest peak over the last 2 s of rep 0 (what keeps a
+                    // round 190of: YW_PB_LEVELS=1 keeps each insert's highest peak over the last 2 s of rep 0 (what keeps a
                     // stopped project's chains awake: smart disable needs -96 dB)
                     const auto lastSeconds = rep == 0 && levels && (double) pos >= (double) totalSamples - 2.0 * sampleRate;
                     for (int t = 0; t < (int) song.mixer.size(); ++t)
@@ -695,7 +695,7 @@ int main (int argc, char** argv)
         const auto p99 = blockCpu[std::min (blockCpu.size() - 1, (std::size_t) (0.99 * (double) blockCpu.size()))];
         const auto budget = 1000.0 * blockSize / sampleRate;
         const auto h = hashSamples (left, right);
-        if (const char* dump = std::getenv ("LYNX_PB_DUMP"); dump != nullptr && rep == 0) // (round 190lv: the samples, for a diff)
+        if (const char* dump = std::getenv ("YW_PB_DUMP"); dump != nullptr && rep == 0) // (round 190lv: the samples, for a diff)
             if (auto* f = std::fopen (dump, "wb"); f != nullptr)
             {
                 std::fwrite (left.data(), sizeof (float), left.size(), f);
@@ -736,8 +736,8 @@ int main (int argc, char** argv)
             for (const auto& r : rows)
                 total += r.first;
             std::printf ("units: %.1f ms in channels and slots (%.1f%% of this rep's CPU)\n", total * 1e-6, 100.0 * total * 1e-6 / used);
-            // round 190kr: LYNX_PB_ALLUNITS=1 lists every unit (else the top 20)
-            const auto shownRows = std::getenv ("LYNX_PB_ALLUNITS") != nullptr ? rows.size() : (std::size_t) 20;
+            // round 190kr: YW_PB_ALLUNITS=1 lists every unit (else the top 20)
+            const auto shownRows = std::getenv ("YW_PB_ALLUNITS") != nullptr ? rows.size() : (std::size_t) 20;
             for (std::size_t i = 0; i < rows.size() && i < shownRows; ++i)
                 std::printf ("  %6.2f%% of a core  %s\n", 100.0 * rows[i].first * 1e-6 / audioMs, rows[i].second.c_str());
         }

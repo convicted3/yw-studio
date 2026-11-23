@@ -6,12 +6,12 @@ namespace spin190kb
 // restores the process-wide tuning after a test
 struct TuningGuard
 {
-    int spin = lynx::WorkerPool::tuning().workerSpinMicros.load(), dry = lynx::WorkerPool::tuning().drySpinMicros.load(),
-        wait = lynx::WorkerPool::tuning().waitMode.load(), waitSpin = lynx::WorkerPool::tuning().waitSpinMicros.load();
-    bool adaptive = lynx::WorkerPool::tuning().adaptiveSpin.load();
+    int spin = yw::WorkerPool::tuning().workerSpinMicros.load(), dry = yw::WorkerPool::tuning().drySpinMicros.load(),
+        wait = yw::WorkerPool::tuning().waitMode.load(), waitSpin = yw::WorkerPool::tuning().waitSpinMicros.load();
+    bool adaptive = yw::WorkerPool::tuning().adaptiveSpin.load();
     ~TuningGuard()
     {
-        auto& t = lynx::WorkerPool::tuning();
+        auto& t = yw::WorkerPool::tuning();
         t.workerSpinMicros = spin;
         t.drySpinMicros = dry;
         t.waitMode = wait;
@@ -23,7 +23,7 @@ struct TuningGuard
 // a dependency graph run as the renderer's task graph runs it: the positions are taken in order and each waits for
 // the task pushed into it; a finished task pushes the successors it completed into the next free position. Five chains
 // of six tasks, then a fan-in of four and a last task after them. Returns the positions that ran other than once.
-int runGraph (lynx::WorkerPool& pool, int rounds)
+int runGraph (yw::WorkerPool& pool, int rounds)
 {
     constexpr int n = 40;
     std::vector<std::vector<int>> next (n);
@@ -81,7 +81,7 @@ int runGraph (lynx::WorkerPool& pool, int rounds)
 TEST (spin190kb_tuning_parses_specs_and_keeps_missing_keys)
 {
     const spin190kb::TuningGuard guard;
-    auto& t = lynx::WorkerPool::tuning();
+    auto& t = yw::WorkerPool::tuning();
     t.apply ("spin=20,dry=2,adaptive=0,wait=0,waitspin=5");
     CHECK (t.workerSpinMicros.load() == 20 && t.drySpinMicros.load() == 2 && ! t.adaptiveSpin.load() && t.waitMode.load() == 0 && t.waitSpinMicros.load() == 5);
     t.apply ("wait=1"); // the others stay
@@ -99,15 +99,15 @@ TEST (spin190kb_task_graph_waits_run_every_position_once_in_every_mode)
     // the old spin-and-yield wait, the bounded spin then sleep (also sleeping at once: waitspin=0, the hardest case for
     // the wake-up handshake), with and without the adaptive spin
     const spin190kb::TuningGuard guard;
-    lynx::WorkerPool pool (4);
+    yw::WorkerPool pool (4);
     for (const char* spec : { "wait=0,adaptive=0", "wait=1,waitspin=0,adaptive=1,dry=0", "wait=1,waitspin=30,adaptive=1,dry=4", "wait=1,waitspin=2,adaptive=0" })
     {
-        lynx::WorkerPool::tuning().apply (spec);
+        yw::WorkerPool::tuning().apply (spec);
         const auto before = pool.stats();
         CHECK (spin190kb::runGraph (pool, 400) == 0);
         const auto after = pool.stats();
         CHECK (after.rounds - before.rounds == 400);
-        if (lynx::WorkerPool::tuning().waitMode.load() == 0)
+        if (yw::WorkerPool::tuning().waitMode.load() == 0)
             CHECK (after.waitSleeps == before.waitSleeps); // (the old wait never sleeps)
         else
             CHECK (after.waitYields == before.waitYields); // (the new one never yields)
@@ -119,7 +119,7 @@ TEST (spin190kb_task_graph_waits_run_every_position_once_in_every_mode)
     // alone, every position already pushed when taken: no wait at all, so nothing could sleep (1 failure in 5 runs).
     // So batches run until the statistics have seen waits that slept (bounded: 40 batches of 100 rounds, about a
     // second even when loaded); every batch must still run every position exactly once.
-    lynx::WorkerPool::tuning().apply ("wait=1,waitspin=0");
+    yw::WorkerPool::tuning().apply ("wait=1,waitspin=0");
     const auto before = pool.stats();
     auto wrongRuns = 0;
     for (int batch = 0; batch < 40; ++batch)
@@ -138,8 +138,8 @@ TEST (spin190kb_task_graph_waits_run_every_position_once_in_every_mode)
 TEST (spin190kb_stats_count_rounds_spins_and_sleeps)
 {
     const spin190kb::TuningGuard guard;
-    lynx::WorkerPool::tuning().apply ("spin=60,adaptive=1,dry=4,wait=1,waitspin=30");
-    lynx::WorkerPool pool (3);
+    yw::WorkerPool::tuning().apply ("spin=60,adaptive=1,dry=4,wait=1,waitspin=30");
+    yw::WorkerPool pool (3);
     std::atomic<int> sum { 0 };
     auto add = [&sum] (int i) { sum.fetch_add (i + 1); };
     const auto before = pool.stats();
@@ -168,44 +168,44 @@ TEST (spin190kb_task_graph_renders_the_same_in_every_wait_mode)
     // waits and hand-offs this test checks would not happen)
     struct Help
     {
-        int before = lynx::WorkerPool::tuning().helpPercent.load();
-        Help() { lynx::WorkerPool::tuning().helpPercent = 0; }
-        ~Help() { lynx::WorkerPool::tuning().helpPercent = before; }
+        int before = yw::WorkerPool::tuning().helpPercent.load();
+        Help() { yw::WorkerPool::tuning().helpPercent = 0; }
+        ~Help() { yw::WorkerPool::tuning().helpPercent = before; }
     } help;
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (16);
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (16);
     for (int i = 5; i < 40; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = i % 3 == 0 ? lynx::InstrumentKind::hat : lynx::InstrumentKind::synth;
+        yw::ChannelDef c;
+        c.instrument = i % 3 == 0 ? yw::InstrumentKind::hat : yw::InstrumentKind::synth;
         c.mixerTrack = i % 7 == 0 ? 0 : 1 + i % 13;
         c.volume = 0.25f;
         song.channels.push_back (c);
         for (int step = i % 5; step < 16; step += 2)
-            song.patterns[0].notes.push_back ({ (std::int64_t) step * lynx::ticksPerStep, 150, i, 40 + i, 0.6f });
+            song.patterns[0].notes.push_back ({ (std::int64_t) step * yw::ticksPerStep, 150, i, 40 + i, 0.6f });
     }
     song.patterns[0].sortNotes();
     song.setRoute (3, 7, true, 0.6f);
     song.setRoute (7, 9, true, 0.5f);
     song.setRoute (9, 11, true, 0.5f);
-    song.mixer[9].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
+    song.mixer[9].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
     auto render = [&song] (const char* spec, bool pool, bool& graph) {
         if (spec != nullptr)
-            lynx::WorkerPool::tuning().apply (spec);
-        auto state = lynx::RackState::build (song, nullptr, 48000.0);
+            yw::WorkerPool::tuning().apply (spec);
+        auto state = yw::RackState::build (song, nullptr, 48000.0);
         graph = state->graphOk;
-        lynx::WorkerPool workers (4);
+        yw::WorkerPool workers (4);
         struct Count
         {
-            lynx::WorkerPool& pool;
+            yw::WorkerPool& pool;
             ~Count() { spin190kbHandOffs += pool.stats().waitSleeps; }
         } count { workers };
-        lynx::RackRenderer r;
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         if (pool)
             r.setWorkerPool (&workers);
         std::vector<float> out, l (256), rr (256);
-        const auto tps = lynx::ticksPerSample (song.bpm, 48000.0);
+        const auto tps = yw::ticksPerSample (song.bpm, 48000.0);
         for (int block = 0; block < 200; ++block)
         {
             r.process (state.get(), true, block * 256 * tps, 256, l.data(), rr.data());

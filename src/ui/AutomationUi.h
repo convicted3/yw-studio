@@ -2,7 +2,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // Readable name of what an automation controls ("Kick - Volume", "Insert 3 - Pan"...).
 juce::String describeAutomationTarget (AudioEngine& engine, const AutomationTarget& target);
@@ -26,7 +26,7 @@ void createUnlinkedAutomationClip (AudioEngine& engine);
 // Round 165: shared by the point editor and the Playlist's in-clip editing — a point's value as text (percent, or BPM
 // for the tempo), the copied value of FL's "Copy value" (< 0 = none) and FL's "Type in value..." dialog.
 juce::String automationPointValueText (const AutomationTarget& target, float value);
-// Round 190em: a target's value `value` (0..1) in the unit its control shows (dB, pan, BPM, a LYNX effect's own unit, a
+// Round 190em: a target's value `value` (0..1) in the unit its control shows (dB, pan, BPM, a YW effect's own unit, a
 // hosted plugin's own text); "" when there is none.
 juce::String targetValueTextAt (AudioEngine& engine, const AutomationTarget& target, float value);
 float& copiedAutomationValue();
@@ -34,7 +34,7 @@ void typeAutomationPointValue (AudioEngine& engine, int automation, int point);
 
 // Round 190bw, FL's per-point curve modes. FL's envelope editor remembers the mode and the tension last used and gives
 // them to the next new point [DECOMP FLEngine 0xcce3b0: new point; 0xcd79f0: "change point curve"; 0xcc9790: tension
-// drag; 0xccfd0c: "default tension"]. One memory for the point editor and the Playlist's in-clip editing (LYNX's
+// drag; 0xccfd0c: "default tension"]. One memory for the point editor and the Playlist's in-clip editing (YW's
 // tension sign).
 struct AutomationPointMemory
 {
@@ -71,8 +71,8 @@ void automationLineTo (juce::Path& path, float x0, float y0, float x1, float y1,
 void openAutomationEditor (AudioEngine& engine, int automation);
 void closeAutomationEditors();
 
-// Round 177b: LYNX's modulators window (one list: shape, rate, phase, routes with their depth), and the parameter
-// menu's "Modulate" submenu (LYNX's own controls only; after FL's items).
+// Round 177b: YW's modulators window (one list: shape, rate, phase, routes with their depth), and the parameter
+// menu's "Modulate" submenu (YW's own controls only; after FL's items).
 void openModulators (AudioEngine& engine);
 void closeModulators();
 std::unique_ptr<juce::Component> makeModulatorsPanel (AudioEngine& engine); // (--snapshot mode)
@@ -121,4 +121,4 @@ void addPluginParameterItems (juce::PopupMenu& menu, AudioEngine& engine, juce::
 // Submenu with a Patcher's published parameters (round 171b, issue #65: the parameter inputs activated inside it,
 // FL's record 1100), each with the automation / link items. Nothing when it publishes none.
 void addPatcherParameterItems (juce::PopupMenu& menu, AudioEngine& engine, const PatcherDoc& doc, const AutomationTarget& base);
-} // namespace lynx
+} // namespace yw

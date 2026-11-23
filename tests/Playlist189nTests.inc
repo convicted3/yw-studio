@@ -1,15 +1,15 @@
 // --- Round 189n: FL's Create crossfade (fade handle menu Tag 100) and Normalize / Normalize selection as a group (gain
 // handle menu Tags 110 / 111). FLEngine 2026 [DECOMP] FUN_00d02410 / FUN_00d02310 / FUN_00cf9930 / FUN_00cfd680 /
-// FUN_00cfaf80 and FUN_00d029b0 / FUN_01064dc0 / FUN_00d026f0; notes in /mnt/e/lynx-work/flgap189n ----
+// FUN_00cfaf80 and FUN_00d029b0 / FUN_01064dc0 / FUN_00d026f0; notes in /mnt/e/yw-work/flgap189n ----
 
 #include "core/ClipOps.h"
 
 namespace
 {
-lynx::Clip audio189n (std::int64_t start, std::int64_t length, int track = 0)
+yw::Clip audio189n (std::int64_t start, std::int64_t length, int track = 0)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::audio;
+    yw::Clip c;
+    c.kind = yw::ClipKind::audio;
     c.start = start;
     c.length = length;
     c.track = track;
@@ -19,7 +19,7 @@ lynx::Clip audio189n (std::int64_t start, std::int64_t length, int track = 0)
 
 TEST (playlist189n_crossfade_neighbour_follows_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // 0: 0..1000, 1: 800..1800 (overlaps 0 by 200), 2: 1800..2400 (touches 1), 3: other track, 4: 3000..3500 (alone)
     std::vector<Clip> clips { audio189n (0, 1000), audio189n (800, 1000), audio189n (1800, 600), audio189n (900, 500, 1), audio189n (3000, 500) };
     CHECK (clipops::crossfadeNeighbour (clips, 1, 0) == 0);
@@ -36,7 +36,7 @@ TEST (playlist189n_crossfade_neighbour_follows_fl)
 
 TEST (playlist189n_create_crossfade_sets_the_overlap_on_both_sides)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips { audio189n (0, 1000), audio189n (800, 1000), audio189n (1800, 600) };
     clips[0].fadeIn = 300;
     clips[1].fadeOut = 100;
@@ -72,7 +72,7 @@ TEST (playlist189n_create_crossfade_sets_the_overlap_on_both_sides)
 
 TEST (playlist189n_create_crossfade_on_a_selection)
 {
-    using namespace lynx;
+    using namespace yw;
     // three overlapping clips, all selected: each crosses with the one after it, the last with the one before it
     std::vector<Clip> clips { audio189n (0, 1000), audio189n (900, 1000), audio189n (1700, 1000) };
     const std::vector<int> selection { 0, 1, 2 };
@@ -89,10 +89,10 @@ TEST (playlist189n_create_crossfade_on_a_selection)
 
 TEST (playlist189n_normalize_gains_follow_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (std::abs (clipops::normalizeGain (0.5f, 1.0f) - 2.0f) < 1e-6f);
     CHECK (clipops::normalizeGain (0.0f, 0.7f) == 0.7f); // silent: unchanged
-    CHECK (clipops::normalizeGain (1.0e-6f, 1.0f) == clipops::normalizeGainMax); // +36 dB at most (LYNX had +24)
+    CHECK (clipops::normalizeGain (1.0e-6f, 1.0f) == clipops::normalizeGainMax); // +36 dB at most (YW had +24)
     CHECK (clipops::normalizeGain (1.0e6f, 1.0f) == clipops::normalizeGainMin);
     CHECK (std::abs (20.0 * std::log10 (clipops::normalizeGainMax) - 36.0) < 0.001);
     CHECK (std::abs (20.0 * std::log10 (clipops::normalizeGainMin) + 96.1) < 0.01);
@@ -106,7 +106,7 @@ TEST (playlist189n_normalize_gains_follow_fl)
 // action 0x15 -> FUN_00d02580 with handle kind 0; shown per FUN_01236e30 / FUN_00cfc9b0) ----
 TEST (playlist189o_crossfade_selected_follows_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // 0: 0..1000, 1: 800..1800 (overlaps 0 by 200), 2: 1700..2300 (overlaps 1 by 100), 3: 5000..5500 (alone)
     std::vector<Clip> clips { audio189n (0, 1000), audio189n (800, 1000), audio189n (1700, 600), audio189n (5000, 500) };
     // shown only when the clicked clip is selected...
@@ -133,7 +133,7 @@ TEST (playlist189o_crossfade_selected_follows_fl)
 #include "core/NoteEdit.h"
 TEST (pianoroll189o_monophonic_painting_option_inverts_shift)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! noteedit::monophonicPaint (false, false)); // FL's default: plain strokes layer notes
     CHECK (noteedit::monophonicPaint (true, false));    // Shift paints monophonically
     CHECK (noteedit::monophonicPaint (false, true));    // the option on: plain strokes are monophonic
@@ -145,7 +145,7 @@ TEST (pianoroll189o_monophonic_painting_option_inverts_shift)
 #include "core/EditorLimit.h"
 TEST (editors189o_limit_closes_the_oldest_past_25)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<std::pair<int, std::uint64_t>> open;
     for (int i = 0; i < 25; ++i)
         open.push_back ({ i, (std::uint64_t) (100 - i) }); // window 24 is the oldest

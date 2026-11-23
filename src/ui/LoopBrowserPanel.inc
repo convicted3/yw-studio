@@ -1,15 +1,15 @@
-// Round gaps190kf (item 3; included by ui/BrowserComponent.cpp inside namespace lynx, after BrowserTagsLive.inc): the
+// Round gaps190kf (item 3; included by ui/BrowserComponent.cpp inside namespace yw, after BrowserTagsLive.inc): the
 // Loop Browser of the Sample browser window — GarageBand's Loop Browser [GUIDE "Find loops" picture
-// gaps190kf/loops/ev/gb-loop-browser.png]: the Sound Packs line (LYNX: Places), the category buttons Instrument / Genre
+// gaps190kf/loops/ev/gb-loop-browser.png]: the Sound Packs line (YW: Places), the category buttons Instrument / Genre
 // / Descriptors between the reset button and the Favorites button, the grid of keyword buttons (4 columns; picked = lit,
-// several = all of them; dimmed = no loop matches), then Scale (Any / Minor / Major / Neither / Good for Both), LYNX's
+// several = all of them; dimmed = no loop matches), then Scale (Any / Minor / Major / Neither / Good for Both), YW's
 // Tempo menu and the results header with the Loop Types button (the colour bars: All / Audio / MIDI / Pattern loops).
 // Everything is drawn by this one component (no child components, no timer): it paints only when something changed.
-// Logic in core/LoopKeywords.h. LYNX vectors; nothing of Apple's artwork.
+// Logic in core/LoopKeywords.h. YW vectors; nothing of Apple's artwork.
 
 namespace loopicons
 {
-// GarageBand's Loop Types button: three stacked colour bars (audio / MIDI / pattern), LYNX's colours
+// GarageBand's Loop Types button: three stacked colour bars (audio / MIDI / pattern), YW's colours
 inline void drawTypeBars (juce::Graphics& g, juce::Rectangle<float> r, int types)
 {
     const juce::Colour colours[] { juce::Colour (0xff3d7fd9), juce::Colour (0xff45b05a), juce::Colour (0xffd9a62e) };
@@ -92,7 +92,7 @@ class BrowserComponent::LoopPanel final : public juce::Component, public ui::Hin
 public:
     explicit LoopPanel (BrowserComponent& b) : browser (b) { setRepaintsOnMouseActivity (true); }
 
-    // GarageBand's proportions at LYNX's sizes: rows of 20 px, the category buttons 24 px, keyword buttons 15 px on a
+    // GarageBand's proportions at YW's sizes: rows of 20 px, the category buttons 24 px, keyword buttons 15 px on a
     // 17 px pitch, 4 columns
     static constexpr int pad = 4, rowH = 20, catH = 24, keyH = 15, keyPitch = 17, columns = 4, headerH = 18;
 

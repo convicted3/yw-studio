@@ -18,9 +18,9 @@ struct Stereo
 };
 
 // `seconds` of an input through a fresh Echoform (blocks of 256)
-inline Stereo render (const lynx::EffectSlot& slot, Stereo x, double sr = 48000.0)
+inline Stereo render (const yw::EffectSlot& slot, Stereo x, double sr = 48000.0)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (std::size_t off = 0; off < x.l.size(); off += 256)
         fx->process (x.l.data() + off, x.r.data() + off, (int) std::min<std::size_t> (256, x.l.size() - off), slot.params, 120.0);
@@ -58,10 +58,10 @@ inline std::size_t peakIn (const std::vector<float>& v, std::size_t from, std::s
 }
 
 // Tape, 300 ms, Mix 100 %, Wow / Flutter 0 (the bank's deterministic setting)
-inline lynx::EffectSlot tape300 (float law)
+inline yw::EffectSlot tape300 (float law)
 {
-    namespace e = lynx::echosuite::echoform;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::echoform);
+    namespace e = yw::echosuite::echoform;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::echoform);
     slot.params[e::mix] = 1.0f;
     slot.params[e::syncL] = slot.params[e::syncR] = 0.0f;
     slot.params[e::timeL] = slot.params[e::timeR] = e::timeValue (300.0);
@@ -73,7 +73,7 @@ inline lynx::EffectSlot tape300 (float law)
 
 TEST (echo190dl_new_instances_run_the_measured_law_and_saved_projects_keep_the_classic_one)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto& info = effectInfo (EffectKind::echoform);
     CHECK ((int) info.params.size() == e::paramCount && e::modClock == e::paramCount - 1);
@@ -101,7 +101,7 @@ TEST (echo190dl_new_instances_run_the_measured_law_and_saved_projects_keep_the_c
 
 TEST (echo190dl_classic_law_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     struct Case
     {
@@ -173,7 +173,7 @@ TEST (echo190dl_classic_law_renders_as_the_base_commit_did)
     // bit for bit where the maths library is the one the goldens were made with (glibc 2.43 on x86-64, as round 190bz)
     std::printf ("  classic law: %d of 10 renders hash-identical to the base commit\n", sameBits);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == 10);
    #endif
 }
@@ -206,7 +206,7 @@ TEST (echo190dl_measured_tape_follows_the_measured_tones)
 TEST (echo190dl_measured_tape_hiss_while_it_runs_and_silence_when_idle)
 {
     using namespace echo190dl;
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     const double sr = 48000.0;
     // no input at all: not a single non-zero sample (an idle insert stays silent)
     Stereo quiet { std::vector<float> ((std::size_t) sr, 0.0f), std::vector<float> ((std::size_t) sr, 0.0f) };
@@ -246,9 +246,9 @@ TEST (echo190dl_measured_tape_hiss_while_it_runs_and_silence_when_idle)
 TEST (echo190dl_mod_clock_swings_the_time_by_a_fraction_of_itself)
 {
     using namespace echo190dl;
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     const double sr = 48000.0;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::echoform);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::echoform);
     slot.params[e::mode] = e::modeValue (e::Mode::clean);
     slot.params[e::mix] = 1.0f;
     slot.params[e::feedback] = 0.0f;
@@ -272,7 +272,7 @@ TEST (echo190dl_mod_clock_swings_the_time_by_a_fraction_of_itself)
 
 TEST (echo190dl_hdelay_modulation_translates_to_the_clock_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;
@@ -298,11 +298,11 @@ TEST (echo190dl_hdelay_modulation_translates_to_the_clock_law)
 TEST (echo190dl_measured_law_and_clock_stay_finite_at_the_extremes)
 {
     using namespace echo190dl;
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     for (const double sr : { 44100.0, 48000.0, 96000.0 })
         for (const float v : { 0.0f, 1.0f })
         {
-            auto slot = lynx::makeEffectSlot (lynx::EffectKind::echoform);
+            auto slot = yw::makeEffectSlot (yw::EffectKind::echoform);
             slot.params[e::feedback] = v > 0.5f ? 1.0f : 0.6f;
             slot.params[e::drive] = v;
             slot.params[e::timeL] = slot.params[e::timeR] = v;

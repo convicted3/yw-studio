@@ -4,7 +4,7 @@
     bool runDetailsShot190my (const juce::String& prefix, const juce::String& project)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -19,7 +19,7 @@
             savePng (c.createComponentSnapshot (area, true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (area, true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
+        using namespace yw;
         if (project.isEmpty())
             return false;
         flsettings::reset();
@@ -49,7 +49,7 @@
                 o.range = exportopts::Range::selection;
                 o.tail = exportopts::TailMode::cut;
                 o.wavBits = 32;
-                const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190my-" + name + ".wav");
+                const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190my-" + name + ".wav");
                 juce::String error;
                 ExportJob job (song, o, file);
                 if (! job.run ([] (double) { return true; }, error))

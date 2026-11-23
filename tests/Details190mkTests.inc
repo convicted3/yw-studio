@@ -8,7 +8,7 @@
 // Live's insert marker (capture 190mf B1): cyan -> white -> cyan in 1200 ms, never off; Live's status bar texts
 TEST (details190mk_insert_mark_pulse_and_texts)
 {
-    using namespace lynx::insertmark;
+    using namespace yw::insertmark;
     CHECK (colourAt (0.0) == cyan);
     CHECK (colourAt (600.0) == white);
     CHECK (colourAt (1200.0) == cyan);
@@ -26,7 +26,7 @@ TEST (details190mk_insert_mark_pulse_and_texts)
 // FL's zipped channels (capture 190mf A4): neighbours share one half-row strip, bars side by side
 TEST (details190mk_rack_zip_layout)
 {
-    using namespace lynx::rackzip;
+    using namespace yw::rackzip;
     // rows: 0 normal, 1 + 2 zipped (one strip), 3 normal, 4 zipped alone, add row
     const std::vector<bool> zipped { false, true, true, false, true };
     const std::vector<bool> shown (5, true);
@@ -63,7 +63,7 @@ TEST (details190mk_rack_zip_layout)
 // end 4 / -0.75; level L shows as y = 1 + L / 8)
 TEST (details190mk_grossbeat_point_clipboard)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     const std::vector<EditPoint> basic4 { { 0.0, 1.0f, 0.0f, 2 }, { 1.5, 0.8125f, 0.0f, 2 }, { 3.0, 1.0f, 0.0f, 2 },
                                           { 3.5, 0.90625f, 0.0f, 2 }, { 4.0, 0.90625f, 0.0f, 2 } };
     const auto clip = copyPoints (basic4, { 1, 2 });
@@ -89,7 +89,7 @@ TEST (details190mk_grossbeat_point_clipboard)
         const auto [pts, sel] = duplicatePoints (basic4, { 1, 2 });
         CHECK (pts[3].x == 3.0 && sel == std::vector<int> ({ 3 }));
     }
-    // Cut: the gap closes (P3 onto P0's time), the end stays at the bar's end in LYNX
+    // Cut: the gap closes (P3 onto P0's time), the end stays at the bar's end in YW
     {
         const auto pts = cutPoints (basic4, { 1, 2 });
         CHECK (pts.size() == 3 && pts[1].x == 0.0 && pts[1].y == 0.90625f && pts[2].x == 4.0);
@@ -109,7 +109,7 @@ TEST (details190mk_grossbeat_point_clipboard)
 // FL's envelope state file (*.fnv): "Env filter - default" (a triangle over 1.0, stretched to the bar); write / read round trip
 TEST (details190mk_grossbeat_envelope_file)
 {
-    using namespace lynx::grossbeat;
+    using namespace yw::grossbeat;
     std::vector<std::uint8_t> fnv;
     const auto put32 = [&fnv] (std::int32_t v) { for (int i = 0; i < 4; ++i) fnv.push_back ((std::uint8_t) ((std::uint32_t) v >> (8 * i))); };
     const auto putD = [&fnv] (double v) { std::uint8_t b[8]; std::memcpy (b, &v, 8); fnv.insert (fnv.end(), b, b + 8); };

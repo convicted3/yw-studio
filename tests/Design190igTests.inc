@@ -6,7 +6,7 @@
 
 TEST (design190ig_automation_colour_flp_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const std::uint32_t colour : { 0xce2925u, 0u }) // (Thief's TEMPO channel; none)
     {
         flp::Project p;
@@ -43,6 +43,6 @@ TEST (design190ig_automation_colour_flp_round_trip)
 
 TEST (design190ig_automation_colour_default_is_none)
 {
-    lynx::Automation a;
+    yw::Automation a;
     CHECK (a.colour == 0u); // (an older project's clip, and a new one before a colour is chosen)
 }

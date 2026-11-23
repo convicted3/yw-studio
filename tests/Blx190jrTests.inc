@@ -98,9 +98,9 @@ inline std::string revision()
 })";
 }
 
-inline lynx::BlxImportOptions options (lynx::FlpImportReport* report, std::map<std::string, Bytes>* files)
+inline yw::BlxImportOptions options (yw::FlpImportReport* report, std::map<std::string, Bytes>* files)
 {
-    lynx::BlxImportOptions o;
+    yw::BlxImportOptions o;
     o.folder = "/dl/Scratch";
     for (const auto& [path, b] : *files)
         if (path.rfind (o.folder + "/", 0) == 0)
@@ -127,7 +127,7 @@ inline std::map<std::string, Bytes> folder()
 
 TEST (blx190jr_json_and_keys)
 {
-    using namespace lynx;
+    using namespace yw;
     std::string error;
     const auto p = blx::parse (blx190jr::bytesOf (blx190jr::revision()), &error);
     CHECK (p.has_value());
@@ -155,7 +155,7 @@ TEST (blx190jr_json_and_keys)
 
 TEST (blx190jr_midi_reader)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto notes = blx::readMidi (blx190jr::midiFile ({ { 0.0, 1.0, 60, 100 }, { 0.5, 0.25, 64, 70 } }));
     CHECK (notes.has_value() && notes->size() == 2);
     if (notes && notes->size() == 2)
@@ -171,7 +171,7 @@ TEST (blx190jr_midi_reader)
 
 TEST (blx190jr_imports_simple_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto files = blx190jr::folder();
     FlpImportReport report;
     std::string error;
@@ -253,7 +253,7 @@ TEST (blx190jr_imports_simple_tracks)
 
 TEST (blx190jr_missing_and_found_files)
 {
-    using namespace lynx;
+    using namespace yw;
     auto files = blx190jr::folder();
     files.erase ("/dl/Scratch/Audio/s-vox.wav");
     files["/dl/Scratch/Take 1.flac"] = { 0 }; // (found by the region's name)
@@ -286,7 +286,7 @@ TEST (blx190jr_missing_and_found_files)
 
 TEST (blx190jr_region_loop)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.playlist.clear();
     song.patterns.assign (2, Pattern {});

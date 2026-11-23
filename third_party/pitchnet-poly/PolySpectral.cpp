@@ -159,7 +159,7 @@ void analyzeSpectra(Context& ctx, const std::atomic<bool>* cancel, int frameLo, 
     const float overNoise = std::pow(10.0f, p.peakOverNoiseDb / 20.0f);
     const float ifScale = static_cast<float>(p.fftSize / (2.0 * kPi * p.hop));
 
-    // LYNX modification (round 190lk): peaks for frames [frameLo, frameHi) only (the others stay empty), so the
+    // YW modification (round 190lk): peaks for frames [frameLo, frameHi) only (the others stay empty), so the
     // masks of a few NMF blocks can be built on demand without a pass over the whole recording. Each frame's peaks
     // depend only on that frame and its neighbours, so they are the same as in a whole pass.
     const int tLo = std::clamp(frameLo, 0, T);

@@ -1,4 +1,4 @@
-// Round 190ln (Kilohearts sub-round): the kHs snapins / Faturator / Disperser states translated onto LYNX stand-ins
+// Round 190ln (Kilohearts sub-round): the kHs snapins / Faturator / Disperser states translated onto YW stand-ins
 // (core/KiloheartsStates.inc, docs/PLUGIN_FALLBACK.md "Kilohearts", docs/analise/REA_rodada190ln.md).
 // The states here are built the way the plug-ins save them: u32 1, u32 size, a ZIP holding state.json whose "model"
 // keeps every setting in the plug-in's own units as strings.
@@ -21,8 +21,8 @@ inline std::vector<std::uint8_t> state (const std::string& modelFields)
                              "\"preset\": {\"path\": \"\", \"name\": \"\", \"edited\": \"true\"}, \"model\": {\"defaults\": {\"enabled\": \"true\"}, "
                              "\"globals\": {\"numModulations\": \"0\", \"modulations\": [{\"target\": {}, \"amount\": \"0\"}]}, "
                              + modelFields + "}}";
-    std::vector<lynx::zip::NewEntry> entries { { "state.json", std::vector<std::uint8_t> (json.begin(), json.end()) } };
-    const auto archive = lynx::zip::write (entries);
+    std::vector<yw::zip::NewEntry> entries { { "state.json", std::vector<std::uint8_t> (json.begin(), json.end()) } };
+    const auto archive = yw::zip::write (entries);
     std::vector<std::uint8_t> out (8, 0);
     const std::uint32_t one = 1, size = (std::uint32_t) archive.size();
     std::memcpy (out.data(), &one, 4);
@@ -30,22 +30,22 @@ inline std::vector<std::uint8_t> state (const std::string& modelFields)
     out.insert (out.end(), archive.begin(), archive.end());
     return out;
 }
-inline lynx::EffectSlot load (const char* plugin, const std::vector<std::uint8_t>& st, int& translated)
+inline yw::EffectSlot load (const char* plugin, const std::vector<std::uint8_t>& st, int& translated)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst3;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst3;
     id.name = plugin;
     id.state = st;
     translated = -1;
-    const auto* entry = lynx::findPluginSubstitute (id, false);
+    const auto* entry = yw::findPluginSubstitute (id, false);
     if (entry == nullptr)
-        return lynx::makeEffectSlot (lynx::EffectKind::eq);
-    return lynx::makeSubstituteSlot (*entry, &id, &translated);
+        return yw::makeEffectSlot (yw::EffectKind::eq);
+    return yw::makeSubstituteSlot (*entry, &id, &translated);
 }
-inline std::string text (const lynx::EffectSlot& s, int p) { return lynx::formatEffectParam (s.kind, p, s.params[(std::size_t) p], 120.0, s.params); }
-inline int named (const lynx::EffectSlot& s, const char* name)
+inline std::string text (const yw::EffectSlot& s, int p) { return yw::formatEffectParam (s.kind, p, s.params[(std::size_t) p], 120.0, s.params); }
+inline int named (const yw::EffectSlot& s, const char* name)
 {
-    const auto& info = lynx::effectInfo (s.kind);
+    const auto& info = yw::effectInfo (s.kind);
     for (std::size_t i = 0; i < info.params.size(); ++i)
         if (std::strcmp (info.params[i].name, name) == 0)
             return (int) i;
@@ -55,7 +55,7 @@ inline int named (const lynx::EffectSlot& s, const char* name)
 
 TEST (parity190lnkhs_states_are_read_and_mapped_in_the_plugins_units)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     // kHs Gain: the stored gain is linear (5.623 = +15 dB)
@@ -86,7 +86,7 @@ TEST (parity190lnkhs_states_are_read_and_mapped_in_the_plugins_units)
 
 TEST (parity190lnkhs_delay_time_and_synced_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     auto d = load ("kHs Delay", state ("\"pan\": \"0\", \"delay_numerator\": \"3\", \"delay_time\": \"0.25\", \"delay_denominator\": \"denominator_16\", "
@@ -109,7 +109,7 @@ TEST (parity190lnkhs_delay_time_and_synced_notes)
 
 TEST (parity190lnkhs_trance_gate_pattern_on_volume_gate) // (round 190nh: on Effector's Trance Gate law)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     std::string steps;
     for (int i = 0; i < 16; ++i)
@@ -127,7 +127,7 @@ TEST (parity190lnkhs_trance_gate_pattern_on_volume_gate) // (round 190nh: on Eff
 
 TEST (parity190lnkhs_disperser_is_an_all_pass_cascade_on_facet_and_off_by_default)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     auto d = load ("Disperser", state ("\"order\": \"16\", \"cutoff\": \"200\", \"q\": \"0.5\", \"$type\": \"disperser\""), n);

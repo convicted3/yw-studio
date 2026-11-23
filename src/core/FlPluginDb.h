@@ -6,7 +6,7 @@
 // FL keeps a "plugin database" in its user data folder (Presets\Plugin database\Installed\...), one entry per
 // plugin it found when it scanned: a text .nfo (key=value lines) and an .fst preset that holds the same Fruity
 // Wrapper record a project stores (plugin name, file path, VST3 class ID / CLAP id / VST2 id). Reading those
-// lets LYNX map a project's plugins to the very files FL uses, without scanning. Formats: docs/FL_INTEGRATION.md.
+// lets YW map a project's plugins to the very files FL uses, without scanning. Formats: docs/FL_INTEGRATION.md.
 // Does not depend on JUCE so it can be tested in isolation.
 
 #include <functional>
@@ -17,7 +17,7 @@
 #include "core/FlpImport.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct FlPluginDbEntry
 {
@@ -86,4 +86,4 @@ std::vector<FlpPluginUse> flpForeignPlugins (const flp::Project& project);
 // project (the project folder, then its sub-folders named in the original path). Empty when none exists.
 std::string locateFlSample (const std::string& flPath, const FlPathRoots& roots, const std::string& projectFolder,
                             const std::function<bool (const std::string&)>& fileExists);
-} // namespace lynx
+} // namespace yw

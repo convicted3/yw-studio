@@ -1,13 +1,13 @@
 #pragma once
 
 // The Chord lane (round 190pf, research190oe P13): chords over the song as blocks on a lane under the Playlist's ruler
-// (Cubase's Chord Track, Logic's Chord track, Studio Pro's Chord track; Live users ask for one, research190oe L9). A LYNX
+// (Cubase's Chord Track, Logic's Chord track, Studio Pro's Chord track; Live users ask for one, research190oe L9). A YW
 // extra: FL Studio and Live have no chord track. The lane's chords
 //  - name the harmony of each stretch of the song (drawn by hand, picked from the key's degree chords, detected from the
 //    notes of the clips under a range or from an audio clip, made from the key regions);
 //  - make the channels that follow them (ChannelDef::followChords) play their notes moved onto the chord under them while
 //    the song plays: the pattern keeps its notes (Cubase's "Follow Chord Track" / Studio Pro's "Follow chords" re-pitch
-//    what plays; LYNX does it in the scheduler, so a pattern placed under four chords plays four ways);
+//    what plays; YW does it in the scheduler, so a pattern placed under four chords plays four ways);
 //  - light the Piano roll's rows of the chord under the song position (an option of its menu), feed the Simple layout's
 //    Chord pad (its chord set), and leave as MIDI notes or .flp markers.
 // The model is Song::chords() (SongChord in Song.h): per arrangement, sorted by start, no overlaps, gaps allowed. The
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::chordlane
+namespace yw::chordlane
 {
 inline int wrap12 (int n) noexcept { return ((n % 12) + 12) % 12; }
 
@@ -427,8 +427,8 @@ inline Highlight highlightAt (const Song& song, std::int64_t tick) noexcept
     return { list[(std::size_t) i].root, pitchClasses (list[(std::size_t) i]) };
 }
 
-// --- the lane's visibility (a LYNX extra in every layout, off by default: Playlist menu › View › "Chord lane", Settings ›
-// LYNX extras, ui-options.txt "chordLane"; the Simple layout's ruler menu has it too) ------------------------------------
+// --- the lane's visibility (a YW extra in every layout, off by default: Playlist menu › View › "Chord lane", Settings ›
+// YW extras, ui-options.txt "chordLane"; the Simple layout's ruler menu has it too) ------------------------------------
 inline bool& laneOn() noexcept
 {
     static bool on = false;
@@ -441,4 +441,4 @@ inline bool& pianoRollHighlight() noexcept
     static bool on = false;
     return on;
 }
-} // namespace lynx::chordlane
+} // namespace yw::chordlane

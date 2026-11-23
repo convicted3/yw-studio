@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::audiocheck
+namespace yw::audiocheck
 {
 // Above this peak (−40 dBFS) the tone reached the device: the sound goes out, just not where the user listens.
 constexpr float reachedPeak = 0.01f;
@@ -37,4 +37,4 @@ struct Choice
 // with no device are skipped. `available`: each type with its devices, as the system lists them (default first).
 std::vector<Choice> alternatives (const std::string& os, const Choice& current,
                                   const std::vector<std::pair<std::string, std::vector<std::string>>>& available, int maxCount = 4);
-} // namespace lynx::audiocheck
+} // namespace yw::audiocheck

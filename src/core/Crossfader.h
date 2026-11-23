@@ -22,7 +22,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::crossfader
+namespace yw::crossfader
 {
 constexpr int curveCount = 7;
 constexpr int defaultCurve = 2; // Constant Power (Live's default set)
@@ -71,4 +71,4 @@ inline float spotPosition (Spot s) noexcept { return s == Spot::left ? -1.0f : s
 // The automation / MIDI value of a position (AutomationTargetKind::crossfader: 0..1) and back.
 inline float valueOf (float position) noexcept { return std::clamp ((position + 1.0f) * 0.5f, 0.0f, 1.0f); }
 inline float positionOf (float value) noexcept { return std::clamp (value * 2.0f - 1.0f, -1.0f, 1.0f); }
-} // namespace lynx::crossfader
+} // namespace yw::crossfader

@@ -15,9 +15,9 @@ namespace r190io
 constexpr double rate = 48000.0;
 
 // a long sine (0.25, 440 Hz) the audio clip channel plays
-std::shared_ptr<lynx::SampleData> sine (double seconds)
+std::shared_ptr<yw::SampleData> sine (double seconds)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     d->left.resize ((std::size_t) (seconds * rate));
     for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -28,39 +28,39 @@ std::shared_ptr<lynx::SampleData> sine (double seconds)
 
 // Song mode, 120 BPM: channel 0 = an audio clip channel (or a Sampler) on the sine, one step at the pattern's start,
 // the pattern once on the Playlist at bar 1
-lynx::Song stepSong (lynx::InstrumentKind kind, const std::string& path)
+yw::Song stepSong (yw::InstrumentKind kind, const std::string& path)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
-    lynx::ChannelDef c;
+    s.mode = yw::PlayMode::song;
+    yw::ChannelDef c;
     c.instrument = kind;
-    c.name = kind == lynx::InstrumentKind::audioClip ? "Sine clip" : "Sine sampler";
+    c.name = kind == yw::InstrumentKind::audioClip ? "Sine clip" : "Sine sampler";
     c.samplePath = path;
-    c.volume = lynx::audioClipUnityVolume;
+    c.volume = yw::audioClipUnityVolume;
     s.channels = { c };
-    lynx::Pattern p;
+    yw::Pattern p;
     p.name = "Steps";
     p.toggleStep (0, 0);
     s.patterns = { p };
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::pattern;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::pattern;
     clip.pattern = 0;
-    clip.length = 4 * lynx::ppq;
+    clip.length = 4 * yw::ppq;
     s.playlist = { clip };
     return s;
 }
 
 // how long the render is above -60 dBFS, in seconds (10 ms windows)
-double soundingSeconds (const lynx::Song& song, std::shared_ptr<lynx::SampleData> data, double seconds)
+double soundingSeconds (const yw::Song& song, std::shared_ptr<yw::SampleData> data, double seconds)
 {
-    auto state = lynx::RackState::build (song, nullptr, rate, [data] (const std::string&) -> std::shared_ptr<const lynx::SampleData> { return data; });
-    lynx::RackRenderer rr;
+    auto state = yw::RackState::build (song, nullptr, rate, [data] (const std::string&) -> std::shared_ptr<const yw::SampleData> { return data; });
+    yw::RackRenderer rr;
     rr.prepare (rate, 480);
     const auto total = (int) (seconds * rate);
     std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
     double tick = 0.0;
-    const auto tps = lynx::ticksPerSample (song.bpm, rate);
+    const auto tps = yw::ticksPerSample (song.bpm, rate);
     for (int at = 0; at < total; at += 480)
     {
         const auto n = std::min (480, total - at);
@@ -79,7 +79,7 @@ double soundingSeconds (const lynx::Song& song, std::shared_ptr<lynx::SampleData
     return (double) last / rate;
 }
 
-void writeWav16 (const std::string& path, const lynx::SampleData& d)
+void writeWav16 (const std::string& path, const yw::SampleData& d)
 {
     std::ofstream f (path, std::ios::binary);
     const auto frames = (std::uint32_t) d.left.size();
@@ -96,7 +96,7 @@ void writeWav16 (const std::string& path, const lynx::SampleData& d)
 // FM-14: FL's middle ellipsis keeps the start and the end ("Titey..m #2"); the two parts take about half the room each
 TEST (rackmix190io_middle_ellipsis)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto fixed = [] (int, int count) { return (float) count * 7.0f; }; // 7 px per character
     // fits: unchanged
     CHECK ((middleellipsis::split (12, 84.0f, 8.0f, fixed) == std::pair<int, int> { 12, 0 }));
@@ -127,11 +127,11 @@ TEST (rackmix190io_middle_ellipsis)
 }
 
 // FM-12: an audio clip channel plays from its steps, as FL's manual says ("If desired, Audio Clips can be triggered from
-// the Step Sequencer or the Piano roll"); FL's own render of the same project settles how long (env LYNX_190IO_FLDIR
+// the Step Sequencer or the Piano roll"); FL's own render of the same project settles how long (env YW_190IO_FLDIR
 // writes the .flp and the sample for FL's command-line render, round 190io)
 TEST (rackmix190io_audio_clip_channel_plays_from_a_step)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto data = r190io::sine (2.0);
     const auto clipSong = r190io::stepSong (InstrumentKind::audioClip, "sine");
     const auto samplerSong = r190io::stepSong (InstrumentKind::sampler, "sine");
@@ -145,11 +145,11 @@ TEST (rackmix190io_audio_clip_channel_plays_from_a_step)
     CHECK (clipSecs > 1.85);
     CHECK (samplerSecs > 1.85); // (a Sampler step plays its sample out too)
 
-    if (const char* dir = std::getenv ("LYNX_190IO_FLDIR"); dir != nullptr && *dir != 0)
+    if (const char* dir = std::getenv ("YW_190IO_FLDIR"); dir != nullptr && *dir != 0)
     {
         const std::string base (dir);
         r190io::writeWav16 (base + "/sine2s.wav", *data);
-        const auto winBase = std::getenv ("LYNX_190IO_FLDIR_WIN") != nullptr ? std::string (std::getenv ("LYNX_190IO_FLDIR_WIN")) : base;
+        const auto winBase = std::getenv ("YW_190IO_FLDIR_WIN") != nullptr ? std::string (std::getenv ("YW_190IO_FLDIR_WIN")) : base;
         for (const auto& [name, song] : std::map<std::string, Song> { { "clipstep", clipSong }, { "samplerstep", samplerSong } })
         {
             auto s = song;
@@ -166,7 +166,7 @@ TEST (rackmix190io_audio_clip_channel_plays_from_a_step)
 // selected track sends there), greyed where routing would loop; "Send in use" on tracks others send into
 TEST (rackmix190io_route_arrow_states)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     while (s.mixer.size() < 6)
         s.mixer.emplace_back();
@@ -185,10 +185,10 @@ TEST (rackmix190io_route_arrow_states)
     CHECK (routearrow::receives (s, 3) && routearrow::receives (s, 4) && ! routearrow::receives (s, 2));
 }
 
-// #154 part 2: the Mixer view that lists each strip's insert effects (a LYNX extra, off by default): its rows and hits
+// #154 part 2: the Mixer view that lists each strip's insert effects (a YW extra, off by default): its rows and hits
 TEST (rackmix190io_strip_inserts_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! stripinserts::defaultOn);
     CHECK (stripinserts::shownIn (mixerlayout::Layout::wide) && stripinserts::shownIn (mixerlayout::Layout::extraLarge));
     CHECK (! stripinserts::shownIn (mixerlayout::Layout::compact) && ! stripinserts::shownIn (mixerlayout::Layout::compactAlt));

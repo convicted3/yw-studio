@@ -4,7 +4,7 @@
     bool runDetailsShot190lx (const juce::String& prefix, const juce::String& project, const juce::String& set)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -12,11 +12,11 @@
             allOk = allOk && ok;
         };
         const auto line = [&checks] (const juce::String& what) { checks << "     " << what << "\n"; };
-        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (lynx::shot::snapshot (c), prefix + "-" + name + ".png"); };
+        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (yw::shot::snapshot (c), prefix + "-" + name + ".png"); };
         const auto zoomShot = [&prefix] (juce::Component& c, juce::Rectangle<int> r, float k, const juce::String& name) {
             savePng (c.createComponentSnapshot (r.getIntersection (c.getLocalBounds()), true, k), prefix + "-" + name + ".png");
         };
-        using namespace lynx;
+        using namespace yw;
         const auto mouseOn = [] (juce::Component& target, juce::Point<int> p, juce::Point<int> down, juce::ModifierKeys mods, bool dragged) {
             auto source = juce::Desktop::getInstance().getMainMouseSource();
             const auto now = juce::Time::getCurrentTime();

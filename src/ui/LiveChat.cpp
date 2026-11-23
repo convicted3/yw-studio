@@ -7,7 +7,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx::liveui
+namespace yw::liveui
 {
 using namespace theme;
 
@@ -223,4 +223,4 @@ void showPermissions (LiveSessionManager& live)
                         }),
                         true);
 }
-} // namespace lynx::liveui
+} // namespace yw::liveui

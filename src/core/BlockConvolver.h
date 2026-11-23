@@ -10,7 +10,7 @@
 #include <complex>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class BlockConvolver
 {
@@ -135,4 +135,4 @@ private:
     std::vector<int> bitrev;
     std::vector<float> input, output;
 };
-} // namespace lynx
+} // namespace yw

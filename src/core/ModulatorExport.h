@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190ox (modulators stage 2): LYNX's modulators in an .flp. FL Studio has no modulators; what it has that plays
+// Round 190ox (modulators stage 2): YW's modulators in an .flp. FL Studio has no modulators; what it has that plays
 // the same is an automation clip, with FL's own clip LFO (TACArticulator, core/Song.h AutomationLfo) for a tempo-synced
 // LFO. So each route whose modulator follows the song position alone becomes one automation clip over the song on a
 // free Playlist track:
@@ -16,7 +16,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::modexport
+namespace yw::modexport
 {
 struct Result
 {
@@ -30,4 +30,4 @@ Result bakeForFl (Song& song);
 
 // The clip LFO's tension (−128..128) whose bent triangle is closest to a sine (the largest gap over a cycle).
 int sineTension() noexcept;
-} // namespace lynx::modexport
+} // namespace yw::modexport

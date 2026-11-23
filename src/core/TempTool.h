@@ -1,10 +1,10 @@
 #pragma once
 
-// Issue #191 point 1 (round 190iu), a LYNX extra: temporary tools. In the Playlist and the Piano roll a tool key held
+// Issue #191 point 1 (round 190iu), a YW extra: temporary tools. In the Playlist and the Piano roll a tool key held
 // down switches to that tool while it is down; letting go goes back to the tool that was active before. A quick tap
 // still switches for good. FL Studio 2026 has no such switch (docs/analise/REA_rodada190iu.md: its tool keys only select;
 // its temporary tools are the right button, Ctrl = select, Shift = paint/draw, the right button + wheel, and 26.1's
-// "hold A" resize/stretch for audio clips), so it is off by default (Settings › LYNX extras, the Playlist menu); an app
+// "hold A" resize/stretch for audio clips), so it is off by default (Settings › YW extras, the Playlist menu); an app
 // setting kept in ui-options.txt ("tempTools").
 //
 // The state of one hold, driven by the key's press (and its auto-repeats) and its release. Times are milliseconds from
@@ -15,7 +15,7 @@
 
 #include "core/EditorGestures.h"
 
-namespace lynx::temptool
+namespace yw::temptool
 {
 inline std::atomic<bool>& enabledFlag() noexcept
 {
@@ -85,4 +85,4 @@ struct Hold
 
     void cancel() noexcept { *this = {}; }
 };
-} // namespace lynx::temptool
+} // namespace yw::temptool

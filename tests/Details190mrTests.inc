@@ -5,7 +5,7 @@
 // channels or a gap
 TEST (details190mr_touching_neighbour)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     auto note = [&p] (std::int64_t start, std::int64_t length, int key, int channel = 0) {
         Note n;
@@ -35,7 +35,7 @@ TEST (details190mr_touching_neighbour)
 // FL's click-and-hold cycle while adding a note (DE-63): plain → slide → porta → plain
 TEST (details190mr_hold_cycle)
 {
-    using namespace lynx;
+    using namespace yw;
     Note n;
     details190mr::setHoldCycle (n, 1);
     CHECK (n.slide && ! n.porta);
@@ -49,7 +49,7 @@ TEST (details190mr_hold_cycle)
 // and (instruments) a sounding key in their key zone; a Drum Rack pad by its Receive note
 TEST (details190mr_rack_processing_chains)
 {
-    using namespace lynx;
+    using namespace yw;
     RackDoc r;
     r.kind = RackDoc::Kind::instrument;
     r.chains.resize (3);
@@ -99,7 +99,7 @@ TEST (details190mr_rack_processing_chains)
 // FL's options of this round (core/FlSettings.h): defaults, the options file, the data size choices
 TEST (details190mr_fl_options)
 {
-    using namespace lynx;
+    using namespace yw;
     flsettings::reset();
     auto& o = flsettings::options();
     CHECK (! o.historyOnUndo.load() && o.projectSizeWarnMb.load() == 100 && o.projectWindowLayout.load());

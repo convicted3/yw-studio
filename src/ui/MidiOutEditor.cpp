@@ -1,7 +1,7 @@
-// FL's MIDI Out editor as LYNX SHARE draws it (round 167i, issue #17; REA_rodada167i §1: FL's TSynthEditorForm and
+// FL's MIDI Out editor as YW Studio draws it (round 167i, issue #17; REA_rodada167i §1: FL's TSynthEditorForm and
 // TCtrlSetForm in "MIDI Out_x64.dll"): channel, patch, bank MSB / LSB and port; 8 pages of 3 × 3 knobs, each a CC,
 // RPN, NRPN, aftertouch or note set up by its cog ("Configure..."); Reset, Deactivate all, "Send pan, volume and
-// pitch", "Map note color to MIDI channel", the Options menu (what a reset sends) and FL's presets. LYNX's own extras
+// pitch", "Map note color to MIDI channel", the Options menu (what a reset sends) and FL's presets. YW's own extras
 // stay: "Send to a plugin...", "Automate MIDI controller..." and the list of the plugins its port plays.
 
 #include "ui/ControllerEditors.h"
@@ -22,7 +22,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -438,7 +438,7 @@ public:
         mapColour.setBounds (buttons);
         area.removeFromTop (8);
 
-        // LYNX's own: send to a plugin's MIDI input, automate a controller, who plays this port
+        // YW's own: send to a plugin's MIDI input, automate a controller, who plays this port
         auto extra = area.removeFromTop (30);
         if (connect.isVisible())
         {
@@ -509,7 +509,7 @@ private:
                 g.setColour (look == Look::sending ? (hover ? theme::colour::accent.brighter (0.25f) : theme::colour::accent)
                                                    : (hover ? theme::colour::textSecondary : theme::colour::textDisabled));
                 g.strokePath (arc, juce::PathStrokeType (3.5f));
-                // the pointer from the centre, like the other LYNX knobs
+                // the pointer from the centre, like the other YW knobs
                 const auto angle = -sweep * 0.5f + sweep * (float) v;
                 const auto inner = box.getCentre() + juce::Point<float> (std::sin (angle), -std::cos (angle)) * (radius - 9.0f);
                 const auto outer = box.getCentre() + juce::Point<float> (std::sin (angle), -std::cos (angle)) * (radius - 4.0f);
@@ -658,7 +658,7 @@ private:
         o.escapeKeyTriggersCloseButton = true;
         o.useNativeTitleBar = true;
         o.resizable = false;
-        // like LYNX's other dialogs (Export, Customize toolbar...): modal, above the LYNX windows, LYNX title bar
+        // like YW's other dialogs (Export, Customize toolbar...): modal, above the YW windows, YW title bar
         if (auto* w = o.launchAsync())
         {
             keepAboveMainWindow (*w);
@@ -754,16 +754,16 @@ private:
         if (menu.getNumItems() > 0)
             menu.addSeparator();
         menu.addItem (tr ("Load preset..."), [this] {
-            chooser = lynx::ui::makeFileChooser (tr ("Load preset..."), flPresetFolder().isDirectory() ? flPresetFolder() : userPresetFolder(), "*.fst");
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [this] (const juce::FileChooser& fc) {
+            chooser = yw::ui::makeFileChooser (tr ("Load preset..."), flPresetFolder().isDirectory() ? flPresetFolder() : userPresetFolder(), "*.fst");
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [this] (const juce::FileChooser& fc) {
                 if (fc.getResult().existsAsFile())
                     loadPreset (fc.getResult());
             });
         });
         menu.addItem (tr ("Save preset as..."), [this] {
             userPresetFolder().createDirectory();
-            chooser = lynx::ui::makeFileChooser (tr ("Save preset as..."), userPresetFolder().getChildFile ("MIDI Out.fst"), "*.fst");
-            lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [this] (const juce::FileChooser& fc) {
+            chooser = yw::ui::makeFileChooser (tr ("Save preset as..."), userPresetFolder().getChildFile ("MIDI Out.fst"), "*.fst");
+            yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting, [this] (const juce::FileChooser& fc) {
                 auto file = fc.getResult();
                 if (file == juce::File())
                     return;
@@ -903,4 +903,4 @@ std::unique_ptr<juce::Component> makeMidiOutEditor (AudioEngine& engine, std::fu
 {
     return std::make_unique<MidiOutEditor> (engine, std::move (locate), -1);
 }
-} // namespace lynx
+} // namespace yw

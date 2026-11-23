@@ -10,7 +10,7 @@
 // FL's hold: the tick stays 2.6 s, then falls with acceleration (~3.2 dB in the first 1.3 s, ~4.5-5 dB/s by then)
 TEST (livefix190jd_fl_peak_hold_law)
 {
-    using namespace lynx::meters;
+    using namespace yw::meters;
     CHECK (flPeakFallDb (0.0) == 0.0 && flPeakFallDb (2599.0) == 0.0);
     CHECK (flPeakFallDb (2600.0 + 1300.0) > 2.9 && flPeakFallDb (2600.0 + 1300.0) < 3.5);
     // accelerating: the second 0.65 s falls three times the first
@@ -54,32 +54,32 @@ TEST (livefix190jd_fl_peak_hold_law)
     CHECK (! dirtyRows (x, y, 400, [] (float) { return 0.5f; }).empty()); // (same row, the colour changes)
 }
 
-// FL's Extra large list: only the used slots, 23 px rows, no dots, no "add" row; shown in Extra large unless the LYNX view
+// FL's Extra large list: only the used slots, 23 px rows, no dots, no "add" row; shown in Extra large unless the YW view
 TEST (livefix190jd_extra_large_effects_list)
 {
-    using namespace lynx;
-    using namespace lynx::stripinserts;
+    using namespace yw;
+    using namespace yw::stripinserts;
     CHECK (flListShown (mixerlayout::Layout::extraLarge, false));
-    CHECK (! flListShown (mixerlayout::Layout::extraLarge, true)); // the LYNX view (under the band) replaces it
+    CHECK (! flListShown (mixerlayout::Layout::extraLarge, true)); // the YW view (under the band) replaces it
     CHECK (! flListShown (mixerlayout::Layout::wide, false) && ! flListShown (mixerlayout::Layout::compact, false));
     CHECK (flExtraLarge.rowHeight == 23 && ! flExtraLarge.addRow && ! flExtraLarge.dots);
     CHECK (itemCount (flExtraLarge, 0) == 0 && itemCount (flExtraLarge, 3) == 3); // Master with one effect: one row
-    CHECK (itemCount (lynxView, 3) == 4);
+    CHECK (itemCount (ywView, 3) == 4);
     CHECK (rowsThatFit (flExtraLarge, 6 * 23) == 6);
     CHECK (itemAt (flExtraLarge, 2, 0, 6, 0) == 0 && itemAt (flExtraLarge, 2, 0, 6, 23) == 1);
     CHECK (itemAt (flExtraLarge, 2, 0, 6, 2 * 23) == -1); // (no "add" row)
-    CHECK (itemAt (lynxView, 2, 0, 6, 2 * trackinserts::rowHeight) == trackinserts::addRow);
+    CHECK (itemAt (ywView, 2, 0, 6, 2 * trackinserts::rowHeight) == trackinserts::addRow);
     // more effects than rows: it scrolls, the last rows fill the column
     CHECK (clampFirst (flExtraLarge, 9, 8, 6) == 2);
     CHECK (dropPosition (flExtraLarge, 4, 0, 6, 23 + 12) == 2);
-    // the LYNX view keeps 190io's geometry
-    CHECK (height (lynxView, 4) == height (4));
+    // the YW view keeps 190io's geometry
+    CHECK (height (ywView, 4) == height (4));
 }
 
 // FL's scrolling Limiter display / Maximus Monitor: ~87 columns a second of playback, the level axis, the gain line
 TEST (livefix190jd_dynamics_history)
 {
-    using namespace lynx::dynhistory;
+    using namespace yw::dynhistory;
     CHECK (std::abs (axis (1.0f) - 0.5f) < 1.0e-5f); // 0 dBFS at half height
     CHECK (std::abs (axis (4.0f) - 1.0f) < 1.0e-5f); // +12 dB at the top (the Limiter's ceiling range)
     CHECK (axis (0.0f) == 0.0f && axis (-1.0f) == 0.0f);

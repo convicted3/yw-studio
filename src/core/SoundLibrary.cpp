@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/NativeEngines.h"
 #include "core/PresetCycle.h"
 #include "core/SoundFont.h"
@@ -13,7 +13,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::soundlib
+namespace yw::soundlib
 {
 namespace
 {
@@ -381,4 +381,4 @@ std::vector<int> auditionKeys (const Sound& sound)
         return { 36, 43, 48 };
     return { 60, 64, 67 };
 }
-} // namespace lynx::soundlib
+} // namespace yw::soundlib

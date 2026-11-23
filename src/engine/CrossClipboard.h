@@ -9,12 +9,12 @@
 #include "core/RackOps.h"
 #include "core/Song.h"
 
-// Issue #232, stage 2 (round 190nz, docs/design/PROJECT_TABS.md): what one LYNX SHARE window copies, as text another
-// window (another process, or a later session) can paste. LYNX's own versioned JSON on the system clipboard, after a
+// Issue #232, stage 2 (round 190nz, docs/design/PROJECT_TABS.md): what one YW Studio window copies, as text another
+// window (another process, or a later session) can paste. YW's own versioned JSON on the system clipboard, after a
 // first line that names it; a copy larger than `inlineLimit` (plugin states, many patterns) goes to a file and the
 // clipboard holds its path (the "side channel"). The project parts are written by the project's own JSON code
-// (ProjectFile), so whatever a .lynx keeps, a copy keeps. juce_core only (tests/CrossClipboardTests.cpp).
-namespace lynx::crossclipboard
+// (ProjectFile), so whatever a .yw keeps, a copy keeps. juce_core only (tests/CrossClipboardTests.cpp).
+namespace yw::crossclipboard
 {
 // What was copied:
 // notes       Piano roll notes (Ctrl+C / Copy ghost notes)
@@ -45,7 +45,7 @@ constexpr int formatVersion = 1;
 // The first line of the clipboard text.
 constexpr const char* magic = "YW Studio clipboard";
 
-// The payload as one JSON document, and back (nullopt: not a LYNX clipboard document, a newer format, or damaged).
+// The payload as one JSON document, and back (nullopt: not a YW clipboard document, a newer format, or damaged).
 juce::String toJson (const Payload& payload);
 std::optional<Payload> fromJson (const juce::String& json);
 
@@ -64,11 +64,11 @@ struct Envelope
 // written to a temporary file then moved, so a reader never sees half of it) and the text points at it. Empty when
 // that file cannot be written.
 juce::String clipboardText (const Payload& payload, const juce::File& sideFolder, std::size_t limit = inlineLimit);
-// The envelope of a clipboard text (nullopt: not LYNX's). Cheap: the document is neither parsed nor read.
+// The envelope of a clipboard text (nullopt: not YW's). Cheap: the document is neither parsed nor read.
 std::optional<Envelope> envelopeOf (const juce::String& text);
 // The payload of an envelope (the file read when it is in one; nullopt when it is gone or damaged).
 std::optional<Payload> open (const Envelope& envelope);
 // Removes the side files but the `keepNewest` newest (the system clipboard only ever points at the newest; the folder is
 // shared by every window, so a copy made at the same moment in another window stays too).
 void prune (const juce::File& sideFolder, int keepNewest = 4);
-} // namespace lynx::crossclipboard
+} // namespace yw::crossclipboard

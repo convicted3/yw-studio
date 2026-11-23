@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Fills Partner Center's exported Store-listing CSV with LYNX's listings in every language (round 165n).
+"""Fills Partner Center's exported Store-listing CSV with YW's listings in every language (round 165n).
 
 Usage: scripts/store-listing-csv.py <exported.csv> <output folder>
 
-1. Partner Center › LYNX SHARE › app overview › Store listings › **Export listing** → a .csv (UTF-8) whose Field / ID /
+1. Partner Center › YW Studio › app overview › Store listings › **Export listing** → a .csv (UTF-8) whose Field / ID /
    Type columns must stay as they are (the IDs are Partner Center's).
 2. This script writes <output folder>/listings.csv (the same rows, a column per language from store/listings/*.md,
    the shared fields from store/listings/common.md in the "default" column) and copies the screenshots and logos into

@@ -1,10 +1,10 @@
-// Live's own devices → LYNX's, lot 4 (round 190fm; core/AlsDevices.h has the list and the evidence tags). The same rules
+// Live's own devices → YW's, lot 4 (round 190fm; core/AlsDevices.h has the list and the evidence tags). The same rules
 // as lots 1 – 3: each conversion is a law in a unit, what is fitted or has no counterpart becomes a note for the import
-// report, only the device's saved state is read, and each translator records which Live parameter drives which LYNX
+// report, only the device's saved state is read, and each translator records which Live parameter drives which YW
 // parameter (ParamLink) so automation and rack macros follow. No Live render of these devices exists yet: every law that
 // is not plain unit maths is [ASSUMED] and listed in the round's report with the settings to render. Menu orders come from
 // Live's own Core Library presets read on this machine ([DATA]: a preset's name against the value it stores); nothing of
-// those files (or of Live's impulse responses) is in LYNX: an impulse response is read at import time from the user's own
+// those files (or of Live's impulse responses) is in YW: an impulse response is read at import time from the user's own
 // files only.
 
 #include "core/AlsDevices.h"
@@ -25,12 +25,12 @@
 #include "core/Effects.h"
 #include "core/FacetEq.h"
 #include "core/FlSamplers.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/MixSuite.h"
 #include "core/Rack.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 namespace
 {
@@ -236,7 +236,7 @@ int hybridEqSlopeDb (int index) noexcept { return 6 * (std::clamp (index, 0, 9) 
 
 float haloSizeForDecay (double decaySec, double feedback, double shiftSemis, double diffusion) noexcept
 {
-    // Halo (core/LynxVerbs.cpp HaloFx, its Wide mode: RT scale 1): RT = (1.5 + 12.5 · size) · (plain + (shifted − plain) ·
+    // Halo (core/YwVerbs.cpp HaloFx, its Wide mode: RT scale 1): RT = (1.5 + 12.5 · size) · (plain + (shifted − plain) ·
     // f) · (0.55 + 0.45 · d³), plain = 1 + 3.3 · fb³, shifted = 1 + 1.2 · fb^2.5, f = min (1, |shift| / 2), d = diffusion / 0.92
     const auto fb = std::clamp (feedback, 0.0, 1.0), f = std::min (1.0, std::abs (shiftSemis) / 2.0);
     const auto mult = (1.0 + 3.3 * fb * fb * fb) + ((1.0 + 1.2 * std::pow (fb, 2.5)) - (1.0 + 3.3 * fb * fb * fb)) * f;
@@ -754,7 +754,7 @@ RoarShaperFit roarShaperFit (int type) noexcept
 }
 
 // Round qafix190kq (QA-1 of 0.1.30): the laws below are fitted to Live 12.4's renders of Roar (probe set
-// /mnt/e/lynx-work/qafix190kq/sets/roarprobe-a.als: music at -17 dB RMS and pink noise at -30 / -20 / -12 dB RMS through
+// /mnt/e/yw-work/qafix190kq/sets/roarprobe-a.als: music at -17 dB RMS and pink noise at -30 / -20 / -12 dB RMS through
 // Roar at single settings). They were assumed before (drive 0 … 36 dB, compression 4 : 1 from −36 dB × amount) and the
 // Main track of Live's Patience demo (Roar at 79 % compression) came out 11.6 dB quieter than Live's.
 double roarDriveDb (double amount) noexcept { return roarDrivePerUnitDb * std::clamp (amount, 0.0, 1.0); }
@@ -764,7 +764,7 @@ double roarCompRatio (double amount) noexcept { return 1.0 + roarCompRatioPerUni
 
 namespace
 {
-// Roar's stage filter as LYNX devices (empty = none or no counterpart); `name` for the report
+// Roar's stage filter as YW devices (empty = none or no counterpart); `name` for the report
 std::vector<EffectSlot> roarFilter (const Element& device, const std::string& stem, Notes& notes)
 {
     std::vector<EffectSlot> out;
@@ -787,8 +787,8 @@ std::vector<EffectSlot> roarFilter (const Element& device, const std::string& st
     if (type <= (int) RoarFilter::highPass)
     {
         auto f = makeEffectSlot (EffectKind::filter);
-        static constexpr int lynxType[3] { 0, 2, 1 }; // low, band, high → the Filter's 0 low, 1 high, 2 band
-        f.params[0] = filterTypeValue (lynxType[type]);
+        static constexpr int ywType[3] { 0, 2, 1 }; // low, band, high → the Filter's 0 low, 1 high, 2 band
+        f.params[0] = filterTypeValue (ywType[type]);
         f.params[1] = filterCutoffValue (hz);
         f.params[2] = filterQValue (std::min (q, 12.0));
         f.params[3] = 1.0f;
@@ -932,7 +932,7 @@ bool roarToRack (const Element& device, Translated& out)
         const auto lowMid = std::clamp (manual (device, "Input_LowMidCrossover", 200.0), 30.0, 18000.0);
         const auto midHigh = std::clamp (manual (device, "Input_MidHighCrossover", 2000.0), lowMid, 18000.0);
         const auto xover = [] (double hpHz, double lpHz) {
-            // LYNX's crossover band (Linkwitz-Riley 24 dB/oct [ASSUMED Live's split]): 30 · 2^(9.0589 v) Hz
+            // YW's crossover band (Linkwitz-Riley 24 dB/oct [ASSUMED Live's split]): 30 · 2^(9.0589 v) Hz
             auto x = makeEffectSlot (EffectKind::crossover);
             const auto v = [] (double hz) { return unit (std::log2 (hz / 30.0) / 9.0589); };
             x.params[0] = hpHz > 0.0 ? 1.0f : 0.0f;
@@ -1245,4 +1245,4 @@ void autoFilterDrive (const Element& device, Translated& out)
     out.to = "Auto Filter rack (Ember Saturator, " + out.to + ")";
     out.notes.approximated.push_back (text ("drive %.1f dB as Ember's soft clipping in front of the filter (circuit %.0f's own character not carried)", driveDb, circuit));
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

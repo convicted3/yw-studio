@@ -8,7 +8,7 @@
     // with --lang pt-BR too. Files go to <prefix>-files/. Included in the app class of Main.cpp.
     bool runDemoCheck190pl (const juce::String& prefix)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         juce::String checks;
         bool allOk = true;
@@ -121,7 +121,7 @@
 
         // --- file.save + Versions ------------------------------------------------------------------------------------------------
         check ("file.save without a file or path is refused", ! ok (op ("file.save", json ("{}"))));
-        const auto project = files.getChildFile ("Demo song.lynx");
+        const auto project = files.getChildFile ("Demo song.yw");
         r = op ("file.save", json ("{\"path\":" + quoted (files.getChildFile ("Demo song")) + "}"));
         settle();
         check ("file.save path saves as " + project.getFileName() + why (r), ok (r) && project.existsAsFile() && r["file"].toString() == project.getFullPathName());
@@ -131,14 +131,14 @@
         check ("file.save saves over it (not modified after)", ok (r) && ! (bool) r["modified"]);
         r = op ("file.save", json (R"({"newVersion":true})"));
         settle();
-        check ("file.save newVersion writes Demo song_2: " + r["name"].toString(), ok (r) && files.getChildFile ("Demo song_2.lynx").existsAsFile());
-        r = op ("file.save", json ("{\"path\":" + quoted (files.getChildFile ("armed.lynx")) + ",\"run\":false}"));
-        check ("file.save run false only arms it", ok (r) && ! files.getChildFile ("armed.lynx").existsAsFile());
+        check ("file.save newVersion writes Demo song_2: " + r["name"].toString(), ok (r) && files.getChildFile ("Demo song_2.yw").existsAsFile());
+        r = op ("file.save", json ("{\"path\":" + quoted (files.getChildFile ("armed.yw")) + ",\"run\":false}"));
+        check ("file.save run false only arms it", ok (r) && ! files.getChildFile ("armed.yw").existsAsFile());
         op ("ui.click", json (R"({"target":"menu:File"})")); // (File › Save as..., the real menu: the armed file, no dialog)
         settle();
         r = op ("ui.click", json (R"({"target":"menu:Save as..."})"));
         settleFor (300);
-        check ("then File › Save as... writes the armed file" + why (r), ok (r) && files.getChildFile ("armed.lynx").existsAsFile());
+        check ("then File › Save as... writes the armed file" + why (r), ok (r) && files.getChildFile ("armed.yw").existsAsFile());
         juce::PopupMenu::dismissAllActiveMenus();
         r = op ("ui.show", json (R"({"panel":"versions"})"));
         settleFor (300);
@@ -215,7 +215,7 @@
             juce::TextEditor* box = nullptr;
             for (int i = 0; i < juce::Desktop::getInstance().getNumComponents() && box == nullptr; ++i)
                 if (auto* top = juce::Desktop::getInstance().getComponent (i))
-                    box = dynamic_cast<juce::TextEditor*> (lynx::onboardui::findShowing (*top, "pluginManager.search"));
+                    box = dynamic_cast<juce::TextEditor*> (yw::onboardui::findShowing (*top, "pluginManager.search"));
             check ("ui.type types into the Plugin manager's search box" + why (r), ok (r) && box != nullptr && box->getText() == "xyz");
         }
         check ("ui.type refuses a control that is not a text field", ! ok (op ("ui.type", json (R"({"target":"pluginManager.scanNew","text":"a"})"))));

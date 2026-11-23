@@ -1,10 +1,10 @@
 #pragma once
 
-// Layouts of LYNX's native plugin editors (no JUCE: the data is tested in tests/tests.cpp).
+// Layouts of YW's native plugin editors (no JUCE: the data is tested in tests/tests.cpp).
 //
 // Each native plugin that is compatible with an FL Studio plugin gets an editor window with the same
 // controls, sections, labels and arrangement as that plugin, so FL users find everything where they
-// expect it; the drawing is LYNX's own (src/ui/PluginEditors.cpp). The positions below were measured on
+// expect it; the drawing is YW's own (src/ui/PluginEditors.cpp). The positions below were measured on
 // the FL Studio 2026 windows (docs/analise/UI_STUDY_plugins93.md): one design unit = one pixel of FL's
 // window at 100 % zoom, body only (FL's wrapper title bar excluded). The editor scales them.
 //
@@ -16,7 +16,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::plugui
+namespace yw::plugui
 {
 enum class Item : std::uint8_t
 {
@@ -63,13 +63,13 @@ enum : std::uint32_t
     rotarySelector = 1 << 19, // tabs: a black pointer knob with its options printed round it (a VU DISPLAY selector, round tp172d)
     bigCaption = 1 << 20, // label: a large plain caption sized to its box (a hardware strip's ANALOG / MIX / TRIM); with
                           // `big`, a heavy name plate (the opto leveler's model name under its meter), round tp172d
-    compactKeys = 1 << 21, // tabs: small muted keys (full only while hovered; the chosen one lit) — LYNX's own extras
+    compactKeys = 1 << 21, // tabs: small muted keys (full only while hovered; the chosen one lit) — YW's own extras
                            // tucked into a hardware face (the opto leveler's voicing keys), round tp172d
     enginePlate = 1 << 22, // label: the engine's name printed on its panel; a plugin in another host prints the plugin's name
 };
 
 // Round 180b: the editors run as a plugin inside another host: there is no mixer or FL Studio around them, and they show
-// the exported plugin's name (plugin/plugins.def), never the engine's name inside LYNX. Set once, before any editor opens.
+// the exported plugin's name (plugin/plugins.def), never the engine's name inside YW. Set once, before any editor opens.
 inline bool hostedElsewhere = false;
 
 struct LayoutItem
@@ -123,7 +123,7 @@ bool displayTakesMouse (const char* display);
 // The kinds that have an FL arrangement (in the order of docs/analise/UI_STUDY_plugins93.md).
 const std::vector<EffectKind>& flLayoutKinds();
 
-// LYNX's own effects with a designed panel (not an FL arrangement: `fl` is ""), e.g. the mixing suite of round 96.
+// YW's own effects with a designed panel (not an FL arrangement: `fl` is ""), e.g. the mixing suite of round 96.
 const std::vector<EffectKind>& ownLayoutKinds();
 
 // Generators: FL's arrangement of the channel's plugin page (nullptr = the plain grid of knobs). Value items name
@@ -161,4 +161,4 @@ bool isValueControl (Item type) noexcept;
 bool isShown (EffectKind kind, const LayoutItem& item, int page, const EffectParams& params, const std::vector<std::uint8_t>* state = nullptr);
 // round 170c: the control has no effect with the current settings (another mode bypasses it): drawn dimmed
 bool isIdle (EffectKind kind, const LayoutItem& item, const EffectParams& params);
-} // namespace lynx::plugui
+} // namespace yw::plugui

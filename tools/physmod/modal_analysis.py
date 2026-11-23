@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""modal_analysis.py - shared signal analysis for LYNX Model (round 190ni): the timbre score (timbre_score.py) and the
+"""modal_analysis.py - shared signal analysis for YW Model (round 190ni): the timbre score (timbre_score.py) and the
 auto-calibration (calibrate.py) both read notes through these functions. numpy only, so it runs wherever the other
-LYNX scoring scripts run (scripts/taillab.py, scripts/fxparity.py).
+YW scoring scripts run (scripts/taillab.py, scripts/fxparity.py).
 
   read_wav / write_wav    PCM 16 / 24 / 32-bit float WAV, mixed to mono (float64)
   onset                   the first sample of the note (1 ms envelope rises above a fraction of its peak)

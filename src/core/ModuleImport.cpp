@@ -20,9 +20,9 @@
  #define LIBXMP_STATIC 1 // (the library is linked in: no dllimport on Windows)
 #endif
 #include "../../third_party/libxmp-lite/include/libxmp-lite/xmp.h"
-#include "../../third_party/libxmp-lite/src/lynx_xmp_extra.h"
+#include "../../third_party/libxmp-lite/src/yw_xmp_extra.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -293,7 +293,7 @@ Flow walk (Context& ctx, const xmp_module& mod, double maxSeconds)
                         r.key = e->note - 1;
                         r.porta = tonePorta (*e);
                     }
-                    // what ends the note that sounds: a new note (also a porta note: LYNX starts one), an off / cut /
+                    // what ends the note that sounds: a new note (also a porta note: YW starts one), an off / cut /
                     // fade, an ECx cut, a Kxx off — the earliest
                     auto end = isKey (e->note) || isEnd (e->note) ? start : -1;
                     for (auto f : { extendedFrame (*e, exCut), keyOffFrame (*e) })
@@ -308,16 +308,16 @@ Flow walk (Context& ctx, const xmp_module& mod, double maxSeconds)
         }
         const auto frame = current->frames;
         ++current->frames;
-        current->ms += lynx_xmp_frame_ms (ctx.c);
+        current->ms += yw_xmp_frame_ms (ctx.c);
         for (int c = 0; c < chn; ++c)
         {
             auto& r = current->ch[(std::size_t) c];
             const auto& info = fi.channel_info[c];
             // (a channel whose sample has played to its end: silent whatever its volume, marked as no volume at all)
-            current->volumes.push_back (lynx_xmp_sample_ended (ctx.c, c) != 0 ? ended : (std::uint8_t) std::clamp ((int) info.volume, 0, 64));
+            current->volumes.push_back (yw_xmp_sample_ended (ctx.c, c) != 0 ? ended : (std::uint8_t) std::clamp ((int) info.volume, 0, 64));
             double pitch = 0.0, position = 0.0;
             int sample = -1;
-            const auto voiced = lynx_xmp_channel_pitch (ctx.c, c, &pitch, &sample, &position) != 0;
+            const auto voiced = yw_xmp_channel_pitch (ctx.c, c, &pitch, &sample, &position) != 0;
             current->pitches.push_back (voiced ? (float) pitch : std::nanf (""));
             current->samples.push_back ((std::int16_t) (voiced ? std::clamp (sample, -1, 32767) : -1));
             current->positions.push_back (voiced ? (float) position : -1.0f);
@@ -331,7 +331,7 @@ Flow walk (Context& ctx, const xmp_module& mod, double maxSeconds)
             if (r.triggerFrame >= 0 && frame >= r.triggerFrame)
                 r.maxVolume = std::max (r.maxVolume, (int) info.volume);
         }
-        flow.seconds += lynx_xmp_frame_ms (ctx.c) / 1000.0;
+        flow.seconds += yw_xmp_frame_ms (ctx.c) / 1000.0;
         if (flow.seconds > maxSeconds)
             break;
     }
@@ -378,7 +378,7 @@ WrittenSample writeSample (Context& ctx, const xmp_module& mod, int sid, const M
 
     std::int64_t ls = -1, le = -1;
     int sus = 0, sue = 0;
-    if (lynx_xmp_sustain_loop (ctx.c, sid, &sus, &sue) != 0 && sue > sus && sue <= frames)
+    if (yw_xmp_sustain_loop (ctx.c, sid, &sus, &sue) != 0 && sue > sus && sue <= frames)
     {
         ls = sus;
         le = sue;
@@ -394,7 +394,7 @@ WrittenSample writeSample (Context& ctx, const xmp_module& mod, int sid, const M
     if (ls >= 0)
     {
         const auto bidi = (s.flg & (out.sustainLoop ? XMP_SAMPLE_SLOOP_BIDIR : XMP_SAMPLE_LOOP_BIDIR)) != 0;
-        // the sample up to its loop's end, the loop played backwards after it when it is a ping-pong loop (LYNX's zones
+        // the sample up to its loop's end, the loop played backwards after it when it is a ping-pong loop (YW's zones
         // loop forwards: the unrolled loop plays the same frames)
         body.assign (pcm.begin(), pcm.begin() + (std::ptrdiff_t) (le * channels));
         if (bidi && le - ls > 2)
@@ -405,7 +405,7 @@ WrittenSample writeSample (Context& ctx, const xmp_module& mod, int sid, const M
                     body.push_back (frameAt (f, ch));
             le = (std::int64_t) body.size() / channels;
         }
-        // a tiny loop (a chip sound's few frames) is repeated to 64 frames at least: LYNX's zones need more than 16
+        // a tiny loop (a chip sound's few frames) is repeated to 64 frames at least: YW's zones need more than 16
         const auto loopLength = le - ls;
         if (loopLength > 0 && loopLength < 64)
         {
@@ -424,7 +424,7 @@ WrittenSample writeSample (Context& ctx, const xmp_module& mod, int sid, const M
     else
         body = std::move (pcm);
 
-    const auto rate = std::clamp ((int) std::lround (lynx_xmp_sample_rate (ctx.c, sid)), 1000, 384000);
+    const auto rate = std::clamp ((int) std::lround (yw_xmp_sample_rate (ctx.c, sid)), 1000, 384000);
     const auto wav = msimport::wavFile (reinterpret_cast<const std::uint8_t*> (body.data()), body.size() * sizeof (std::int16_t), channels, 16,
                                         (double) rate, out.loopStart, out.loopEnd >= 0 ? out.loopEnd - 1 : -1);
     char number[16];
@@ -445,21 +445,21 @@ void count (FlpImportReport* report, std::map<std::string, int> FlpImportReport:
 // volume, tremolo, tremor, the volume envelope while the note is held — libxmp's final volume on every frame) becomes the
 // automation of its channel's Levels adjustment "Volume multiplier" (FL's channel parameter 0x11): gain = the volume now
 // / the note's velocity, one point where the multiplier changes. The note keeps its velocity (its start's volume), so a
-// note without a change plays as before. Per channel, not per note (LYNX's notes have no volume curve, and FL's none),
+// note without a change plays as before. Per channel, not per note (YW's notes have no volume curve, and FL's none),
 // so an instrument that sounds in two module channels at once with its own changes gets a channel per module channel.
-// The values are kept on the 1/10000 steps a .lynx project stores, so they come back unchanged through .lynx and .flp.
+// The values are kept on the 1/10000 steps a .yw project stores, so they come back unchanged through .yw and .flp.
 
 // one played note: where it starts (song tick, played row and frame) and which note of which pattern it is
 struct Instance
 {
-    int pattern = -1, note = -1; // the LYNX pattern and the note's index in notesOf
+    int pattern = -1, note = -1; // the YW pattern and the note's index in notesOf
     int moduleChannel = 0;
     std::int64_t row = 0; // in flow.rows
     int frame = 0;
     std::int64_t start = 0;
 };
 
-// The automation's value in steps of 1/10000 (the steps a .lynx project stores an automation point's value in): 0..10000
+// The automation's value in steps of 1/10000 (the steps a .yw project stores an automation point's value in): 0..10000
 // = the multiplier 0..200 %, 5000 = 100 %
 constexpr int unityRaw = 5000, maxRaw = 10000;
 
@@ -484,8 +484,8 @@ int multiplierRawOfGain (double gain) noexcept
     return std::clamp ((int) std::lround (x * unityRaw), 0, maxRaw);
 }
 
-// Round 190om: libxmp's pan law is linear (a side gets 128 ∓ pan of 128: twice the centre's level panned hard), LYNX's
-// channel pan constant power (√2·cos / √2·sin of (1 + pan)·π/4, unity at the centre). A note played at LYNX's centre
+// Round 190om: libxmp's pan law is linear (a side gets 128 ∓ pan of 128: twice the centre's level panned hard), YW's
+// channel pan constant power (√2·cos / √2·sin of (1 + pan)·π/4, unity at the centre). A note played at YW's centre
 // with the channel's pan offset at atan2 (128 + pan, 128 − pan) / (π/4) − 1 and its level times √((128 − pan)² +
 // (128 + pan)²) / (√2·128) gives libxmp's left and right exactly. `pan` = libxmp's final pan − 128 (−128…127).
 double panLevel (int pan) noexcept
@@ -735,7 +735,7 @@ VolumeAutomationResult volumeAutomation (Song& song, const Flow& flow, int chn, 
         const auto& list = channels[channel];
         if (changing == 0)
             continue;
-        std::map<int, PatternEvents> lanes, panLanes; // LYNX pattern → its lane (round 190om: and its pan offset's)
+        std::map<int, PatternEvents> lanes, panLanes; // YW pattern → its lane (round 190om: and its pan offset's)
         bool exact = rowTicks > 0 && asPatternEvents;
         const auto pans = pm[list.front()] != 0;
         // each instance's frames up to the next one's start: (pattern tick, multiplier, pan offset, the note's start)
@@ -932,7 +932,7 @@ PitchCurveResult pitchCurves (const Song& song, const Flow& flow, int chn, std::
 {
     PitchCurveResult result;
     const auto n = (std::int64_t) flow.rows.size();
-    // the pitch (libxmp's note scale) LYNX plays the note at without a curve: its zone's root and tune
+    // the pitch (libxmp's note scale) YW plays the note at without a curve: its zone's root and tune
     auto plainPitch = [&] (const Note& note) -> double {
         if (note.channel < 0 || note.channel >= (int) song.channels.size())
             return std::nan ("");
@@ -967,7 +967,7 @@ PitchCurveResult pitchCurves (const Song& song, const Flow& flow, int chn, std::
                 // so a step lands 0…63 samples late — centred, it lands within ±32 of libxmp's frame
                 const auto early = r.ms > 0.0 ? (32.0 / 44.1) * (double) rt / r.ms : 0.0;
                 const auto rel = (double) (tick - i.start) - (f == i.frame && k == i.row ? 0.0 : early);
-                // (on the steps a .lynx project keeps a curve point in: 1/100 tick, 1/100 cent — the save keeps it exactly)
+                // (on the steps a .yw project keeps a curve point in: 1/100 tick, 1/100 cent — the save keeps it exactly)
                 out.emplace_back ((double) std::llround (std::max (0.0, rel) * 100.0) / 100.0,
                                   (float) std::llround (10000.0 * ((double) pitch - plain)) / 100.0f);
             }
@@ -1009,7 +1009,7 @@ PitchCurveResult pitchCurves (const Song& song, const Flow& flow, int chn, std::
                 continue;
             if (std::abs (cents) <= 120.0f)
             {
-                note.finePitch = (float) std::lround (cents * 10.0f) / 10.0f; // (the 1/10 cent a .lynx keeps)
+                note.finePitch = (float) std::lround (cents * 10.0f) / 10.0f; // (the 1/10 cent a .yw keeps)
                 ++result.fineTuned;
                 continue;
             }
@@ -1143,7 +1143,7 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
         }
         // the level libxmp mixes a voice at (a quarter of full scale per side at the centre: 4 full-scale channels
         // without clipping), as the Sampler's Gain with the channel at FL's default volume; the module's volumes are the
-        // notes' velocities. (LYNX's pan law is constant power, libxmp's linear: round 190ob adapts the pans and this gain below.)
+        // notes' velocities. (YW's pan law is constant power, libxmp's linear: round 190ob adapts the pans and this gain below.)
         channel.volume = ChannelDef {}.volume;
         channel.sampler.gainDb = (float) (20.0 * std::log10 (0.25 / (double) channelGain (channel.volume)));
         channel.sampler.release = 0.003f; // a note ends where its channel's next note, off or cut is (not one-shot)
@@ -1218,21 +1218,21 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
     count (report, &FlpImportReport::notReproduced, "IT new note actions (a new note in a channel ends the one before)", newNoteActions);
 
     // ---- patterns
-    std::vector<int> lynxPattern ((std::size_t) std::max (0, mod.pat), -1);
+    std::vector<int> ywPattern ((std::size_t) std::max (0, mod.pat), -1);
     auto patternFor = [&] (int p) {
         if (p < 0 || p >= mod.pat || mod.xxp[p] == nullptr)
             return -1;
-        if (lynxPattern[(std::size_t) p] < 0)
+        if (ywPattern[(std::size_t) p] < 0)
         {
             Pattern pattern;
             char name[32];
             std::snprintf (name, sizeof name, "Pattern %02d", p);
             pattern.name = name;
             pattern.lengthTicks = std::max (1, mod.xxp[p]->rows) * rt;
-            lynxPattern[(std::size_t) p] = (int) song.patterns.size();
+            ywPattern[(std::size_t) p] = (int) song.patterns.size();
             song.patterns.push_back (std::move (pattern));
         }
-        return lynxPattern[(std::size_t) p];
+        return ywPattern[(std::size_t) p];
     };
     // in the order list's order (the patterns the song never plays too, after them)
     for (int o = 0; o < mod.len && o < XMP_MAX_MOD_LENGTH; ++o)
@@ -1276,7 +1276,7 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
         const auto frac = r.frames > 0 ? (double) frame / (double) r.frames : 0.0;
         return k * rt + (std::int64_t) std::llround (frac * (double) rt);
     };
-    std::map<std::tuple<int, int, int>, int> noteOf; // (module pattern, row, channel) → index in its LYNX pattern's notes
+    std::map<std::tuple<int, int, int>, int> noteOf; // (module pattern, row, channel) → index in its YW pattern's notes
     std::vector<std::vector<Note>> notesOf (song.patterns.size());
     std::vector<std::vector<std::int64_t>> lengthOf (song.patterns.size());
     std::set<std::tuple<int, int, int>> heldOver;
@@ -1286,20 +1286,20 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
     int silent = 0, continuedPortas = 0;
     std::set<std::tuple<int, int, int>> slidOn; // round 190om: (pattern, row, channel) of the tone portamentos a note slides on through
     std::vector<Instance> instances; // round 190ob: every played note (for the volume automation)
-    const auto itRules = lynx_xmp_player_mode (ctx.c) == 3; // (libxmp's READ_EVENT_IT)
+    const auto itRules = yw_xmp_player_mode (ctx.c) == 3; // (libxmp's READ_EVENT_IT)
     // (an S3M or IT module: its volume changes stay round 190ob's automation clips — measured against libxmp's renders,
     // kj_jose.s3m and alonely.it play closer with the clips' ramps than with the pattern events' steps)
-    const auto st3OrIt = itRules || lynx_xmp_player_mode (ctx.c) == 2;
+    const auto st3OrIt = itRules || yw_xmp_player_mode (ctx.c) == 2;
     for (int c = 0; c < chn; ++c)
     {
         if ((mod.xxc[c].flg & XMP_CHANNEL_MUTE) != 0)
             continue;
         // round 190om: a tone portamento on a sounding note of the same instrument (in the same clip) starts no note in
-        // libxmp: its sample plays on and slides to the new key. LYNX does the same: the sounding note goes on (its pitch
+        // libxmp: its sample plays on and slides to the new key. YW does the same: the sounding note goes on (its pitch
         // curve slides), only a cut / off in that row ends it.
         std::vector<char> continued ((std::size_t) n, 0);
         // (not for an Impulse Tracker module: its tone portamento meets IT's new note actions, envelopes and fadeouts,
-        // which LYNX does not play — measured against libxmp's render, alonely.it plays closer as new notes, 190om)
+        // which YW does not play — measured against libxmp's render, alonely.it plays closer as new notes, 190om)
         if (! itRules)
         {
             bool sounding = false;
@@ -1374,11 +1374,11 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
             }
             if (r.triggerFrame < 0 || r.key < 0 || continued[(std::size_t) k] != 0)
                 continue;
-            const auto lp = lynxPattern[(std::size_t) row.pattern];
+            const auto lp = ywPattern[(std::size_t) row.pattern];
             const auto ins = r.instrument;
             if (lp < 0 || ins < 0 || ins >= mod.ins || channelOfInstrument[(std::size_t) ins] < 0)
             {
-                // an instrument without a sample LYNX can play (an S3M AdLib instrument, an empty slot): left out
+                // an instrument without a sample YW can play (an S3M AdLib instrument, an empty slot): left out
                 if (silentNotes.insert ({ row.pattern, row.row, c }).second)
                     ++silent;
                 continue;
@@ -1429,7 +1429,7 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
     int unplayed = 0;
     for (int p = 0; p < mod.pat; ++p)
     {
-        const auto lp = p < (int) lynxPattern.size() ? lynxPattern[(std::size_t) p] : -1;
+        const auto lp = p < (int) ywPattern.size() ? ywPattern[(std::size_t) p] : -1;
         if (lp < 0 || mod.xxp[p] == nullptr)
             continue;
         const auto rows = mod.xxp[p]->rows;
@@ -1521,7 +1521,7 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
            volume.splitChannels);
     count (report, &FlpImportReport::notReproduced, "Module notes whose volume changes while they sound (too many channels to give each its own)", volume.leftOut);
     // ---- round 190ob: libxmp pans linearly (a voice panned hard is twice as loud on its side as at the centre: 0x80 ∓ pan
-    // per side), LYNX's voices with constant power (√2 at the side, 1 at the centre). A channel whose played notes all
+    // per side), YW's voices with constant power (√2 at the side, 1 at the centre). A channel whose played notes all
     // have one pan level (a MOD's or S3M's channel: its module channel's pan) gets that level as its Sampler gain and
     // each note the pan with libxmp's left / right balance: exact. Notes of several pan levels on one channel (XM / IT pan
     // commands), and an instrument whose pan envelope moves the pan after the start, stay as they were (one gain cannot be
@@ -1633,4 +1633,4 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
         *options.summary = summary;
     return song;
 }
-} // namespace lynx
+} // namespace yw

@@ -19,7 +19,7 @@ struct Live169jNet : Live169bNet
     int replays = 0, snapshots = 0;
     std::uint64_t epochs = 0;
 
-    Live169jNet (lynx::Song song, int guestCount, lynx::live::Codec c = {}) : Live169bNet (std::move (song), guestCount, std::move (c))
+    Live169jNet (yw::Song song, int guestCount, yw::live::Codec c = {}) : Live169bNet (std::move (song), guestCount, std::move (c))
     {
         online.assign (guests.size(), true);
     }
@@ -51,15 +51,15 @@ struct Live169jNet : Live169bNet
         }
     }
 
-    // the host's LYNX restarts from its journal (`journal`: the confirmed song, revision and conflict record it last
+    // the host's YW restarts from its journal (`journal`: the confirmed song, revision and conflict record it last
     // wrote): every link drops, the host's own unconfirmed edits are gone, the replay log too
-    void restartHost (const lynx::Song& journal, std::uint64_t rev, const std::map<lynx::live::Key, lynx::live::Authority::Change>& changes)
+    void restartHost (const yw::Song& journal, std::uint64_t rev, const std::map<yw::live::Key, yw::live::Authority::Change>& changes)
     {
         for (int g = 0; g < (int) guests.size(); ++g)
             drop (g);
-        authority = std::make_unique<lynx::live::Authority> (journal, codec, rev, ++epochs);
+        authority = std::make_unique<yw::live::Authority> (journal, codec, rev, ++epochs);
         authority->restoreChanges (changes);
-        host.replica = std::make_unique<lynx::live::Replica> (journal, rev, 1, codec);
+        host.replica = std::make_unique<yw::live::Replica> (journal, rev, 1, codec);
         host.working = journal;
     }
 
@@ -78,22 +78,22 @@ struct Live169jNet : Live169bNet
     }
 };
 
-std::uint64_t live169jNewPattern (lynx::Song& s, const std::string& name)
+std::uint64_t live169jNewPattern (yw::Song& s, const std::string& name)
 {
     s.patterns.emplace_back().name = name;
     live169bPublish (s);
     return s.patterns.back().uid;
 }
 
-bool live169jHasPattern (const lynx::Song& s, std::uint64_t uid)
+bool live169jHasPattern (const yw::Song& s, std::uint64_t uid)
 {
-    return std::any_of (s.patterns.begin(), s.patterns.end(), [&] (const lynx::Pattern& p) { return p.uid == uid; });
+    return std::any_of (s.patterns.begin(), s.patterns.end(), [&] (const yw::Pattern& p) { return p.uid == uid; });
 }
 } // namespace
 
 TEST (live169j_replay_log_since)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = live169bSong();
     live::Authority a (song, {});
     CHECK (a.since (0).has_value() && a.since (0)->empty());
@@ -138,7 +138,7 @@ TEST (live169j_replay_log_since)
 
 TEST (live169j_resume_by_replay_keeps_pending_edits)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (7);
     Live169jNet net (live169bSong(), 2);
     auto& ana = net.guests[0];
@@ -170,7 +170,7 @@ TEST (live169j_resume_by_replay_keeps_pending_edits)
 
 TEST (live169j_resume_conflict_judged_on_the_old_base)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (3);
     Live169jNet net (live169bSong(), 1);
     // "Edit everything" for Ana: she renames the host's pattern; the proposal is lost; the host renames it too
@@ -194,7 +194,7 @@ TEST (live169j_resume_conflict_judged_on_the_old_base)
 
 TEST (live169j_resume_by_snapshot_and_host_restart)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (11);
     Live169jNet net (live169bSong(), 2);
     auto& ana = net.guests[0];
@@ -235,14 +235,14 @@ TEST (live169j_resume_by_snapshot_and_host_restart)
 
 TEST (live169j_replicas_converge_over_links_that_drop)
 {
-    using namespace lynx;
+    using namespace yw;
     int sessions = 0, converged = 0, replays = 0, snapshots = 0, restarts = 0, markersKept = 0, markers = 0;
     for (unsigned seed = 1; seed <= 24; ++seed)
     {
         std::mt19937 rng (seed * 7919u);
         Live169jNet net (live169bSong(), 1 + (int) (seed % 3));
         std::vector<std::uint64_t> marks; // patterns guests made while their link was down: none may be lost
-        lynx::Song journal = net.authority->confirmed();
+        yw::Song journal = net.authority->confirmed();
         std::uint64_t journalRev = 0;
         auto journalChanges = net.authority->changes();
         for (int i = 0; i < 160; ++i)
@@ -305,7 +305,7 @@ TEST (live169j_replicas_converge_over_links_that_drop)
 
 TEST (live169j_permissions_change_during_the_session)
 {
-    using namespace lynx;
+    using namespace yw;
     std::mt19937 rng (5);
     Live169jNet net (live169bSong(), 1);
     auto& ana = net.guests[0];
@@ -351,7 +351,7 @@ TEST (live169j_permissions_change_during_the_session)
 
 TEST (live169j_host_identity)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto seed = livecrypto::newSeed();
     const auto pub = livecrypto::publicKeyOf (seed);
     const auto sig = livecrypto::signHost (seed, "abcdefghij", "nonce-1");
@@ -369,7 +369,7 @@ TEST (live169j_host_identity)
 
 TEST (live169j_chat_text)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (live::cleanChat ("  hello  ") == "hello");
     CHECK (live::cleanChat ("a\tb\x01" "c\r\nd") == "a b c\nd");
     CHECK (live::cleanChat (" \n \t ").empty());
@@ -382,7 +382,7 @@ TEST (live169j_chat_text)
 
 TEST (live169j_follow_the_host_transport)
 {
-    using namespace lynx;
+    using namespace yw;
     using T = live::FollowAction::Type;
     live::HostTransport h;
     h.playing = true;
@@ -403,7 +403,7 @@ TEST (live169j_follow_the_host_transport)
 
 TEST (live169j_who_renders_live_stand_ins)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = live169bSong();
     auto* ana = parts::invite (song, "Host", "Ana", 0xFF3D9BE9, false);
     const auto anaInsert = ana->insertFirst;
@@ -413,7 +413,7 @@ TEST (live169j_who_renders_live_stand_ins)
     PluginRef valhalla;
     valhalla.id = "VST3-Valhalla-2";
     valhalla.name = "ValhallaRoom";
-    // Ana's channel plays Serum; her insert has ValhallaRoom; the host's Kick is LYNX's own synth
+    // Ana's channel plays Serum; her insert has ValhallaRoom; the host's Kick is YW's own synth
     ChannelDef c;
     c.name = "Ana lead";
     c.instrument = InstrumentKind::plugin;

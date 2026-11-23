@@ -1,14 +1,14 @@
 #pragma once
 
-// FL Studio's Gross Beat as a LYNX mixer effect: the plugin's own time-travel and volume engine, rebuilt from the
+// FL Studio's Gross Beat as a YW mixer effect: the plugin's own time-travel and volume engine, rebuilt from the
 // installation's DLL in docs/analise/REA_rodada53.md (clean-room: behaviour and formulas only, no Image-Line code).
 //
 // The effect slot carries FL's saved state (plugin record 0xD5: parameters, options and the 72 envelope slots) inside
-// LYNX's own small container in EffectSlot::state:
+// YW's own small container in EffectSlot::state:
 //
 //   "LXGB", u8 container version (1), u8 0, u16 0, i32 project PPQ (FL's ticks per beat), then FL's state bytes.
 //
-// The eight FL parameters live in EffectSlot::params (0..1, see paramFromRaw) so the LYNX UI and automation can change
+// The eight FL parameters live in EffectSlot::params (0..1, see paramFromRaw) so the YW UI and automation can change
 // them: 0 time slot, 1 volume slot, 2 time mix, 3 volume mix, 4 attack, 5 release, 6 volume tension, 7 hold.
 
 #include <array>
@@ -22,11 +22,11 @@
 
 #include "core/Effects.h"
 
-namespace lynx::grossbeat
+namespace yw::grossbeat
 {
 constexpr int paramCount = 9;
 // round 190oa (DP-8; REA 190oa R5, FL's TScratchWheel / ProcessParam case 8): parameter 8 is the scratch dial's "Time
-// offset (scratching)", FL raw 0 … 65536 with 65536 = no offset (s = raw / 65536 − 1, −1 = two bars back). LYNX keeps it
+// offset (scratching)", FL raw 0 … 65536 with 65536 = no offset (s = raw / 65536 − 1, −1 = two bars back). YW keeps it
 // as 1 − raw / 65536 (0 = no offset), so every project saved before it (8 parameters) is unchanged.
 constexpr int scratchParam = 8;
 constexpr int slotsPerKind = 36;
@@ -162,7 +162,7 @@ std::vector<std::uint8_t> writeState (const State& state);
 // defaults (high quality and declick on).
 State emptyState();
 
-// LYNX's own factory bank (round 168m): empty slot 1 on both sides, then time and volume slots made for LYNX from the
+// YW's own factory bank (round 168m): empty slot 1 on both sides, then time and volume slots made for YW from the
 // behaviour FL documents (stutters, half speed, tape stop, reverse, gates, pumps, fades); nothing copied from FL's files.
 State factoryState();
 // factoryState() packed in the LXGB container (PPQ 96): what a new Gross Beat starts with.
@@ -216,7 +216,7 @@ std::vector<EditPoint> prepareForSmoothEditing (const Slot& slot);
 // (at its last point's x; none selected: at `at`) and every later point moves right by the copy's length. Replace: the
 // selected points go, the copy starts where they started, later points move by the length difference. Duplicate: an
 // insert of the selection itself; the copy becomes the selection. Cut: the selected points go and the later points close
-// the gap (they move left by the time from the point before the selection to the point after it). LYNX keeps the bar's
+// the gap (they move left by the time from the point before the selection to the point after it). YW keeps the bar's
 // end point at the bar's end (its level kept; a point pushed past the end is dropped, the end then takes the level the
 // envelope had there) — FL lets an envelope run past or stop short of the bar while it is edited.
 struct PointClip
@@ -245,7 +245,7 @@ std::vector<std::uint8_t> pack (const std::vector<std::uint8_t>& flState, int pp
 bool unpack (const std::vector<std::uint8_t>& container, std::vector<std::uint8_t>& flState, int& ppq);
 void setPpq (std::vector<std::uint8_t>& container, int ppq);
 
-// FL raw parameter value ↔ LYNX's 0..1 parameter
+// FL raw parameter value ↔ YW's 0..1 parameter
 float paramFromRaw (int index, int raw) noexcept;
 int rawFromParam (int index, float value) noexcept;
 
@@ -316,4 +316,4 @@ MidiPicks* midiPicksOf (Effect* effect); // nullptr: not a running Gross Beat
 // The parameter changes that bring a slot's Time slot / Volume slot parameters (`params`, 0..1) to the picked slots,
 // as (parameter index, value) pairs; empty when they already match (message thread).
 std::vector<std::pair<int, float>> paramsForPicks (const MidiPicks& picks, const EffectParams& params);
-} // namespace lynx::grossbeat
+} // namespace yw::grossbeat

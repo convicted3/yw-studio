@@ -2,7 +2,7 @@
 
 // The laws of FL's Sampler page (Channel settings › Sampler, round 190dh) that the page's controls apply, kept apart from
 // the UI so they can be tested. FL facts: FLEngine_x64.dll handlers of TChanForm (headless Ghidra, read-only; notes in
-// /mnt/e/lynx-work/sampler190dh/FL-FACTS.md), form resource TPluginForm.SmpSheet (rea190bc dfm dump), REA rounds 3,
+// /mnt/e/yw-work/sampler190dh/FL-FACTS.md), form resource TPluginForm.SmpSheet (rea190bc dfm dump), REA rounds 3,
 // 167h and 181b. Header-only, no JUCE.
 
 #include "core/Song.h"
@@ -19,7 +19,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::samplerpage
+namespace yw::samplerpage
 {
 // ---- Time stretching ----
 
@@ -51,7 +51,7 @@ inline void setStretchTime (SamplerSettings& s, float timeBeats) noexcept
 }
 
 // MUL turned: TIME stays, the length follows the factor. Without a TIME FL stretches the sample itself by the factor
-// (REA round 3 §5.1); LYNX's length is in beats, so that is the sample's own length at the project tempo
+// (REA round 3 §5.1); YW's length is in beats, so that is the sample's own length at the project tempo
 // (`sampleBeats`, as the .flp import does it) times the factor. MUL back at 0 with no TIME: no length.
 inline void setStretchMul (SamplerSettings& s, int mul, double sampleBeats) noexcept
 {
@@ -65,8 +65,8 @@ inline void setStretchMul (SamplerSettings& s, int mul, double sampleBeats) noex
 }
 
 // The Mode list. FL 2026 lists Realtime (Resample, Stretch, Stretch Pro), Elastique (e3 generic, e3 mono), Special
-// (Slice stretch, Slice map) and Legacy (Auto, e2 ×4) (REA round 181b, runtime shot). LYNX has none of those engines:
-// as in Tools › "Switch audio clip channels to" (round 181b, the user's decision) the list holds FL's Resample and LYNX's
+// (Slice stretch, Slice map) and Legacy (Auto, e2 ×4) (REA round 181b, runtime shot). YW has none of those engines:
+// as in Tools › "Switch audio clip channels to" (round 181b, the user's decision) the list holds FL's Resample and YW's
 // own engines. An FL project's mode is kept (flStretchMode) and goes back to the .flp while it maps to the engine shown.
 struct ModeItem
 {
@@ -114,7 +114,7 @@ inline void selectMode (SamplerSettings& s, int index) noexcept
 // Time stretching › PITCH (FL's PitchShiftWheel, cents -1200…1200, default 0): FL's stretch pitch, kept in
 // flStretchPitch. SamplerSettings::pitch holds the channel's whole pitch (the header's PITCH knob) with that part in it,
 // as the .flp import adds it, so a turn moves both by the same step. FL (StretchTimeWheelRelease 0xf67130 for the PITCH
-// wheel): in Resample mode a PITCH away from 0 switches the mode to Auto (FL mode 5) — LYNX's General engine, FL's Auto
+// wheel): in Resample mode a PITCH away from 0 switches the mode to Auto (FL mode 5) — YW's General engine, FL's Auto
 // on the way back to a .flp.
 inline void turnStretchPitch (SamplerSettings& s, int cents) noexcept
 {
@@ -291,8 +291,8 @@ inline std::string sampleSummary (double sampleRate, int bits, bool floatData, b
     return text;
 }
 
-// The waveform's right-click menu (live check 190ew SMP-7, FL 2026 shot), in FL's order. `have` = whether LYNX performs
-// it; the page shows only those (no dead stubs) and keeps FL's lines between the groups. (The ones LYNX leaves out are
+// The waveform's right-click menu (live check 190ew SMP-7, FL 2026 shot), in FL's order. `have` = whether YW performs
+// it; the page shows only those (no dead stubs) and keeps FL's lines between the groups. (The ones YW leaves out are
 // not marked for translation: they are never shown.)
 struct WaveMenuEntry
 {
@@ -309,14 +309,14 @@ inline std::vector<WaveMenuEntry> waveMenu()
              { TR_NOOP ("Paste audio from clipboard"), true, "Ctrl+V" },
              { nullptr },
              { TR_NOOP ("Edit in audio editor"), true, "Ctrl+E" },
-             // round 190gw: FL's Newtone / Newtime with the sample (live check 190gu B3: on the Master); LYNX's own
+             // round 190gw: FL's Newtone / Newtime with the sample (live check 190gu B3: on the Master); YW's own
              { TR_NOOP ("Edit in pitch corrector") },
              { TR_NOOP ("Edit in time warper") },
              { nullptr },
              { TR_NOOP ("Open in new sampler channel") },
              { TR_NOOP ("Open in new Fruity Granulizer channel") },
              // round 190gk: Fruity Slicer / Slicex load it as their editors' Load does (REA 190fl: SBONewMenuClick
-             // 0x11f8330, Tag 1 Fruity Slicer, 3 Slicex); LYNX has no Slicer 2
+             // 0x11f8330, Tag 1 Fruity Slicer, 3 Slicex); YW has no Slicer 2
              { TR_NOOP ("Open in new Fruity Slicer channel") },
              { "Open in new Fruity Slicer 2 channel", false },
              { TR_NOOP ("Open in new Slicex channel") },
@@ -331,7 +331,7 @@ inline std::vector<WaveMenuEntry> waveMenu()
              { TR_NOOP ("Multichannel waveform view") } };
 }
 
-// The two view switches (global, kept in LYNX's UI settings as FL keeps them in its own).
+// The two view switches (global, kept in YW's UI settings as FL keeps them in its own).
 struct WaveViews
 {
     bool spectrum = false, multichannel = false;
@@ -373,4 +373,4 @@ inline bool keepOnDiskAvailable (const SamplerSettings& s, bool sampleHasLoop) n
 {
     return ! (s.useLoopPoints && (sampleHasLoop || s.hasLoopOverride()));
 }
-} // namespace lynx::samplerpage
+} // namespace yw::samplerpage

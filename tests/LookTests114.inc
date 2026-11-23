@@ -6,7 +6,7 @@
 
 TEST (look114_apex_limiter_publishes_its_meters)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::apexLimiter);
     slot.params[0] = 0.4f; // +12 dB into a −0.1 dB ceiling
     auto fx = makeEffect (slot);
@@ -34,7 +34,7 @@ TEST (look114_apex_limiter_publishes_its_meters)
 
 TEST (look114_reverb_panels_write_captions_above_their_knobs)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : { EffectKind::epochVerb, EffectKind::atrium, EffectKind::foilPlate, EffectKind::nebula, EffectKind::halo, EffectKind::horizon,
                              EffectKind::echoform, EffectKind::spiralEcho, EffectKind::orbit, EffectKind::latticeMod })
     {
@@ -56,7 +56,7 @@ TEST (look114_reverb_panels_write_captions_above_their_knobs)
 
 TEST (look114_ridge_strip_reads_top_to_bottom_like_a_channel_strip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& l = plugui::layoutFor (EffectKind::ridgeStrip);
     const auto at = [&l] (const char* param) -> const plugui::LayoutItem* {
         for (const auto& item : l.items)

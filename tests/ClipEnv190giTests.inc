@@ -11,40 +11,40 @@
 namespace clipenv190gi
 {
 // one audio clip channel playing a DC sample of 1.0 (4 s at 48 kHz) from tick 0 for 4 beats at 120 BPM (2 s)
-inline lynx::Song dcSong()
+inline yw::Song dcSong()
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
-    s.mixer = lynx::Song::defaultMixer (1);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    s.mode = yw::PlayMode::song;
+    s.mixer = yw::Song::defaultMixer (1);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.samplePath = "dc.wav";
     c.volume = 1.0f;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::audio;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::audio;
     clip.channel = 0;
-    clip.length = lynx::ppq * 4;
+    clip.length = yw::ppq * 4;
     s.playlist = { clip };
     return s;
 }
 
 // the left output, `frames` samples from tick 0
-inline std::vector<float> render (const lynx::Song& s, int frames, std::vector<float>* rightOut = nullptr)
+inline std::vector<float> render (const yw::Song& s, int frames, std::vector<float>* rightOut = nullptr)
 {
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (48000 * 4, 1.0f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> all, right, l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
     for (int done = 0; done < frames; done += 512)
     {
         r.process (state.get(), true, done * tps, 512, l.data(), rr.data());
@@ -58,20 +58,20 @@ inline std::vector<float> render (const lynx::Song& s, int frames, std::vector<f
     return all;
 }
 
-inline lynx::AutomationPoint point (std::int64_t tick, float value)
+inline yw::AutomationPoint point (std::int64_t tick, float value)
 {
-    lynx::AutomationPoint p;
+    yw::AutomationPoint p;
     p.tick = tick;
     p.value = value;
     return p;
 }
 
 // a volume envelope from 1 (unity) at the clip's start down to 0.4 at its end, straight
-inline lynx::Song rampSong()
+inline yw::Song rampSong()
 {
     auto s = dcSong();
-    lynx::ClipEnvelope e;
-    e.volume = { point (0, 1.0f), point (lynx::ppq * 4, 0.4f) };
+    yw::ClipEnvelope e;
+    e.volume = { point (0, 1.0f), point (yw::ppq * 4, 0.4f) };
     s.clipEnvelopes.push_back (e);
     s.playlist[0].envelope = 0;
     return s;
@@ -80,7 +80,7 @@ inline lynx::Song rampSong()
 
 TEST (clipenv190gi_gain_law_is_fl_levels_adjustment)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (clipenv::gainOf (1.0f) == 1.0f && clipenv::gainOf (0.0f) == 0.0f);
     CHECK (std::abs (clipenv::gainOf (0.5f) - (std::pow (11.0f, 0.5f) - 1.0f) / 10.0f) < 1.0e-6f);
     CHECK (clipenv::gainOf (0.5f) == levelAdjustGain (0.5f));
@@ -98,7 +98,7 @@ TEST (clipenv190gi_gain_law_is_fl_levels_adjustment)
 TEST (clipenv190gi_render_follows_the_volume_envelope)
 {
     // rendered with the envelope / rendered without = the envelope's gain at each sample (16-sample ramps between reads)
-    using namespace lynx;
+    using namespace yw;
     const auto plain = clipenv190gi::render (clipenv190gi::dcSong(), 48000);
     const auto song = clipenv190gi::rampSong();
     const auto shaped = clipenv190gi::render (song, 48000);
@@ -121,7 +121,7 @@ TEST (clipenv190gi_render_follows_the_volume_envelope)
 
 TEST (clipenv190gi_flat_or_missing_envelope_renders_bit_identical)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto plain = clipenv190gi::render (clipenv190gi::dcSong(), 24000);
     auto flat = clipenv190gi::dcSong();
     ClipEnvelope e;
@@ -139,7 +139,7 @@ TEST (clipenv190gi_flat_or_missing_envelope_renders_bit_identical)
 
 TEST (clipenv190gi_pan_envelope_moves_the_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = clipenv190gi::dcSong();
     ClipEnvelope e;
     e.pan = { clipenv190gi::point (0, 0.0f) }; // hard left all along
@@ -154,7 +154,7 @@ TEST (clipenv190gi_pan_envelope_moves_the_clip)
 
 TEST (clipenv190gi_envelope_stays_on_its_audio_when_trimmed_split_or_stretched)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = clipenv190gi::rampSong();
     const auto& e = song.clipEnvelopes[0];
     const auto at = clipenv::gainAt (e, clipenv::clipTick (song.playlist[0], ppq * 3.0));
@@ -183,7 +183,7 @@ TEST (clipenv190gi_envelope_stays_on_its_audio_when_trimmed_split_or_stretched)
 
 TEST (clipenv190gi_show_reset_and_save_order)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = clipenv190gi::dcSong();
     clipenv::show (song, song.playlist[0], clipenv::panLane);
     CHECK (song.playlist[0].envelope == 0 && song.clipEnvelopes[0].shown == clipenv::panLane);
@@ -208,8 +208,8 @@ TEST (clipenv190gi_show_reset_and_save_order)
 TEST (clipenv190gi_flp_export_writes_fl_automate_clips_that_sound_the_same)
 {
     // FL has no clip envelope: the export writes FL's Automate › Volume / Panning (an automation clip of the clip
-    // channel's Levels adjustment over the clip), the same curve, and LYNX plays that the same
-    using namespace lynx;
+    // channel's Levels adjustment over the clip), the same curve, and YW plays that the same
+    using namespace yw;
     auto song = clipenv190gi::rampSong();
     song.clipEnvelopes[0].pan = { clipenv190gi::point (0, 0.5f), clipenv190gi::point (ppq * 4, 0.25f) };
     auto baked = song;
@@ -221,7 +221,7 @@ TEST (clipenv190gi_flp_export_writes_fl_automate_clips_that_sound_the_same)
     CHECK (std::abs (vol.points[vol.points.size() - 2].value - 0.2f) < 1.0e-6f && vol.points.back().value == 0.5f); // (unity after the clip)
     CHECK (baked.automations[1].target.param == leveladjust::pan && std::abs (baked.automations[1].points[1].value - 0.25f) < 1.0e-6f);
     CHECK (baked.playlist[1].kind == ClipKind::automation && baked.playlist[1].start == 0 && baked.playlist[1].length == ppq * 4);
-    // LYNX plays the baked automation as it plays the envelope (the channel's Levels adjustment per block)
+    // YW plays the baked automation as it plays the envelope (the channel's Levels adjustment per block)
     auto volumeOnly = clipenv190gi::rampSong();
     auto bakedVolume = volumeOnly;
     clipenv::bakeToAutomation (bakedVolume);
@@ -249,12 +249,12 @@ TEST (clipenv190gi_flp_export_writes_fl_automate_clips_that_sound_the_same)
 
 TEST (clipenv190gi_als_round_trip_of_clip_gain_and_track_panning)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = clipenv190gi::rampSong();
     song.clipEnvelopes[0].pan = { clipenv190gi::point (0, 0.5f), clipenv190gi::point (ppq * 2, 0.0f) };
     const auto out = exportAls (song);
     CHECK (out.xml.find ("<ClipEnvelope") != std::string::npos);
-    CHECK (out.xml.find ("@lynx-clip") == std::string::npos); // (every placeholder became the track's target id)
+    CHECK (out.xml.find ("@yw-clip") == std::string::npos); // (every placeholder became the track's target id)
     // the Clip Gain envelope points at the track's MainSequencer/VolumeModulationTarget
     xml::Document doc;
     CHECK (doc.parse (out.xml));
@@ -282,7 +282,7 @@ TEST (clipenv190gi_als_round_trip_of_clip_gain_and_track_panning)
     if (audio == nullptr || clipenv::of (*back, *audio) == nullptr)
         return;
     const auto& e = *clipenv::of (*back, *audio);
-    // the same curve at the same song ticks (Live's clip beats ↔ LYNX's content ticks)
+    // the same curve at the same song ticks (Live's clip beats ↔ YW's content ticks)
     for (const auto t : { 0.0, ppq * 1.0, ppq * 2.5, ppq * 3.9 })
     {
         // (round 190gx: the two programs' ramps differ in shape, so the volume is cut into pieces both ways: the same gain
@@ -300,7 +300,7 @@ TEST (clipenv190gi_playlist_warp_commands)
 {
     // Auto-warp, Quantize audio and a marker added on the flag strip, on a clip (core/ClipWarp.h): one channel edited, a
     // shared channel copied first
-    using namespace lynx;
+    using namespace yw;
     auto song = clipenv190gi::dcSong();
     SampleData clicks;
     clicks.sampleRate = 48000.0;

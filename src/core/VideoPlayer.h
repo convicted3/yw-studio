@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX Video Player (round 165g, docs/analise/REA_rodada165g.md §7): FL's Fruity Video Player — a generator channel that
+// YW Video Player (round 165g, docs/analise/REA_rodada165g.md §7): FL's Fruity Video Player — a generator channel that
 // shows a video in sync with the song (and plays its sound). The video is decoded by the user's own ffmpeg (ui/VideoPlayer
 // View); this part holds FL's saved state, the clock that turns the song position into the video's time, and the
 // instrument that plays the video's sound track. No JUCE here (tests/VideoPlayer165Tests.inc).
@@ -15,8 +15,8 @@
 //   (int64, 100 ns units).
 // - FL's default state (Default.fst): flags 0x92 (Keep aspect ratio, Enable audio, Slave playback to host), time display
 //   0, Volume 100.
-// - "Delay playback until that time" (form +0x770) is not part of FL's state: LYNX appends it after FL's fields
-//   ("LYNXvp1" + int64), where FL's reader stops.
+// - "Delay playback until that time" (form +0x770) is not part of FL's state: YW appends it after FL's fields
+//   ("YWvp1" + int64), where FL's reader stops.
 
 #include <atomic>
 #include <cstdint>
@@ -26,17 +26,17 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 }
 
-namespace lynx
+namespace yw
 {
 struct Song;
 }
 
-namespace lynx::video
+namespace yw::video
 {
 constexpr std::int64_t unitsPerSecond = 10000000; // FL's times (100 ns)
 
@@ -70,12 +70,12 @@ struct Settings
     bool play = false;           // the Play parameter (when not slaved)
     int width = 375, height = 0; // FL's video window size (kept for FL)
     std::int64_t start = 0, end = 0; // 100 ns; end 0 = the video's end
-    std::int64_t delay = 0;      // LYNX: the song time where the video starts (100 ns)
+    std::int64_t delay = 0;      // YW: the song time where the video starts (100 ns)
 
     bool operator== (const Settings&) const = default;
 };
 
-std::vector<std::uint8_t> write (const Settings& s); // FL's version-3 state + LYNX's tail
+std::vector<std::uint8_t> write (const Settings& s); // FL's version-3 state + YW's tail
 std::optional<Settings> read (const std::vector<std::uint8_t>& state); // nullopt: not a Video Player state
 Settings readOrDefault (const std::vector<std::uint8_t>& state);
 
@@ -136,4 +136,4 @@ public:
     virtual void ownPause() noexcept = 0;
     virtual void ownStop() noexcept = 0;
 };
-} // namespace lynx::video
+} // namespace yw::video

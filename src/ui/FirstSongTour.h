@@ -1,7 +1,7 @@
 #pragma once
 
 // The Simple workflow's Welcome screen and first-song tour (round 190dv; core/FirstSongTour.h has the steps and the
-// state machine). LYNX's own design: dark card, red accent, LYNX's words.
+// state machine). YW's own design: dark card, red accent, YW's words.
 //
 //  - Welcome screen: over the Playlist (the New track chooser's place) the first time the Simple workflow opens on an
 //    empty project, and from Help › Welcome screen: "Make my first song" (the tour), "Open a demo song" (the Start from
@@ -20,7 +20,7 @@
 
 #include "core/FirstSongTour.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -100,4 +100,4 @@ private:
     juce::Component::SafePointer<juce::Component> shownIn; // the window the card and the ring are in (while shown)
     int shownStep = -1; // round 190jc: the step the ring last pulsed for
 };
-} // namespace lynx
+} // namespace yw

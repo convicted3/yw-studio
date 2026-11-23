@@ -1,7 +1,7 @@
-// Live's own devices → LYNX's, lot 2 (round 190cf; core/AlsDevices.h has the list and the evidence tags). Same rules
+// Live's own devices → YW's, lot 2 (round 190cf; core/AlsDevices.h has the list and the evidence tags). Same rules
 // as lot 1: each conversion is a law in a unit, what is fitted or has no counterpart becomes a note for the import
 // report, and only the device's saved state is read. Every translator also records which Live parameter drives which
-// LYNX parameter (ParamLink), so automation and rack macros can follow.
+// YW parameter (ParamLink), so automation and rack macros can follow.
 
 #include "core/AlsDevices.h"
 
@@ -17,7 +17,7 @@
 #include "core/Rack.h"
 #include "core/XmlLite.h"
 
-namespace lynx::alsdev
+namespace yw::alsdev
 {
 namespace
 {
@@ -41,7 +41,7 @@ double manual (const Element& device, const std::string& name, double fallback) 
 bool manualBool (const Element& device, const std::string& name, bool fallback) { return device.boolean (name + "/Manual", fallback); }
 bool has (const Element& device, const std::string& name) { return (bool) device.path (name + "/Manual"); }
 
-// Sets a LYNX parameter from a Live parameter through its law and records the route
+// Sets a YW parameter from a Live parameter through its law and records the route
 struct Put
 {
     const Element& device;
@@ -492,7 +492,7 @@ bool autoFilterToFilter (const Element& device, Translated& out)
     const auto newer = device.name() == "AutoFilter2";
     if (! has (device, newer ? "Filter_Frequency" : "Cutoff"))
         return false;
-    // the filter type [DOC: low-pass, high-pass, band-pass, notch, morph, …; DATA old 0 … 4, new 0 … 9]: LYNX's Filter has
+    // the filter type [DOC: low-pass, high-pass, band-pass, notch, morph, …; DATA old 0 … 4, new 0 … 9]: YW's Filter has
     // the first three; (round 190fm, autoFilterPlan) the notch on Facet EQ, Morph at its nearest corner, DJ as a low / high
     // pass; the rest (comb, resampling, notch + low pass, vowel) stay listed
     const auto liveType = (int) manual (device, newer ? "Filter_Type" : "FilterType", 0);
@@ -570,7 +570,7 @@ const SaturatorFit& saturatorFit (int type) noexcept
     // drive and output offsets with the least curve error that is no worse than the old mapping in any of these
     // numbers at any drive 0 … 12 dB; Analog Clip alone has no such fit (the old tube curve is 4.8 dB too loud at
     // +12 dB, the fit below at most 0.7 dB off, but 0.6 dB louder than the old one on −12 dBFS signals at low drive).
-    // residual errors in /mnt/e/lynx-work/als190cf/HANDOFF.md § Round 190da]
+    // residual errors in /mnt/e/yw-work/als190cf/HANDOFF.md § Round 190da]
     static constexpr SaturatorFit fits[8] {
         { "Analog Clip", 2, 0, 0.5, 0.2 },   // transistor
         { "Soft Sine", 2, 0, 4.0, 0.2 },     // transistor
@@ -837,7 +837,7 @@ bool autoPanToAutoPan (const Element& device, const Context& context, Translated
     if (! has (device, "Lfo/Frequency") || ! has (device, "Lfo/LfoAmount"))
         return false;
     // Phase [DATA 0 … 360°]: the right channel's LFO against the left's. 180° is a panner; near 0° / 360° both sides
-    // move together (a tremolo), which LYNX's Auto-pan cannot do: the device then stays untranslated
+    // move together (a tremolo), which YW's Auto-pan cannot do: the device then stays untranslated
     const auto phase = manual (device, "Lfo/Phase", 180.0);
     if (std::abs (phase - 180.0) > 1.0)
         return false;
@@ -1116,4 +1116,4 @@ std::optional<NoteEffect> noteEffectFromLiveDevice (const Element& device, const
     }
     return std::nullopt;
 }
-} // namespace lynx::alsdev
+} // namespace yw::alsdev

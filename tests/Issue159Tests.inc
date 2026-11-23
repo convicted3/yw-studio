@@ -1,4 +1,4 @@
-// Issue #159: searching folders for a project's missing file (GenesiSF.sf2) on a slow HDD froze LYNX and it closed.
+// Issue #159: searching folders for a project's missing file (GenesiSF.sf2) on a slow HDD froze YW and it closed.
 // The window's search hands its matches over as they are found, and a later, better match replaces an earlier one; the
 // SoundFont index's folder walk stops when asked, at once, and passes over folders it can't read.
 
@@ -30,7 +30,7 @@ auto lister (const Tree& tree, int* calls = nullptr)
 
 TEST (issue159_missing_file_search_streams_its_matches)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<MissingFile> missing;
     addMissingFile (missing, "C:\\Sounds\\Genesis\\GenesiSF.sf2", "Soundfont player");
     addMissingFile (missing, "C:\\Drums\\kick.wav", "Kick");
@@ -67,28 +67,28 @@ TEST (issue159_missing_file_search_streams_its_matches)
 TEST (issue159_soundfont_folder_walk_stops_and_skips_unreadable_folders)
 {
     namespace fs = std::filesystem;
-    const auto root = fs::temp_directory_path() / ("lynx-iss159-" + std::to_string ((long long) std::chrono::steady_clock::now().time_since_epoch().count()));
+    const auto root = fs::temp_directory_path() / ("yw-iss159-" + std::to_string ((long long) std::chrono::steady_clock::now().time_since_epoch().count()));
     fs::create_directories (root / "a" / "deep");
     fs::create_directories (root / "locked" / "inside");
     for (const auto& p : { root / "a" / "one.sf2", root / "a" / "deep" / "two.SF2", root / "a" / "not.wav", root / "locked" / "inside" / "three.sf2" })
         std::ofstream (p) << "x";
 
-    auto all = lynx::sf::findFontFiles (root.string());
+    auto all = yw::sf::findFontFiles (root.string());
     CHECK (all.size() == 3);
 
    #if ! defined(_WIN32)
     // a folder the user can't read (as on another user's or the system's folders of a big drive): passed over, no throw
     fs::permissions (root / "locked", fs::perms::none);
-    const auto readable = lynx::sf::findFontFiles (root.string());
+    const auto readable = yw::sf::findFontFiles (root.string());
     CHECK ((readable.size() == 2 || getuid() == 0)); // (root reads everything)
     fs::permissions (root / "locked", fs::perms::owner_all);
    #endif
 
     // asked to stop: nothing more is walked
     std::atomic<bool> stop { true };
-    CHECK (lynx::sf::findFontFiles (root.string(), 20000, &stop).empty());
+    CHECK (yw::sf::findFontFiles (root.string(), 20000, &stop).empty());
     // a bound on the entries looked at
-    CHECK (lynx::sf::findFontFiles (root.string(), 20000, nullptr, 1).size() <= 1);
+    CHECK (yw::sf::findFontFiles (root.string(), 20000, nullptr, 1).size() <= 1);
 
     std::error_code ec;
     fs::remove_all (root, ec);

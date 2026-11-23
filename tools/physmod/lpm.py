@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lpm.py - the LYNX Model parameter table file (.lpm, version 1; round 190ni). Read by src/core/physmod/LynxModel.cpp.
+"""lpm.py - the YW Model parameter table file (.lpm, version 1; round 190ni). Read by src/core/physmod/YwModel.cpp.
 
 Little endian. Fitted parameters only: no audio, no recorded attack (owner decision: synthesised excitation only).
 

@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1919,10 +1919,10 @@ public:
     }
 };
 
-// --------------------------------------------------------------------------------------------- LYNX front-end
+// --------------------------------------------------------------------------------------------- YW front-end
 //
 // Levels as for GMS (REA_rodada39 §1.11): FL hands the plugin Final.Vol = channel volume, Final.Pan = note pan + channel
-// pan and Final.Pitch = 100·(key − 60) + channel pitch; the wrapper turns them into the per-note tables. LYNX's channel
+// pan and Final.Pitch = 100·(key − 60) + channel pitch; the wrapper turns them into the per-note tables. YW's channel
 // gains gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…) give V and p back, so they are not applied a second time.
 // Velocity: Init.Vol = (11^(1.28·vel) − 1)/10 (as GMS), then the wrapper's MIDI velocity. Max polyphony: 1 when the
 // channel is mono, else the event value 0 (→ 64 voices); FL's value for other settings is not confirmed. While the
@@ -2345,4 +2345,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace poizone
-} // namespace lynx
+} // namespace yw

@@ -9,12 +9,12 @@
 #include "core/StateHandoff.h"
 
 // Bit-exactness with FL's plugin needs every float operation in the plugin's order and precision: no contraction into
-// fused multiply-adds, and the x87 extended precision of its pan law kept (long double; 80-bit on every x86 target LYNX
+// fused multiply-adds, and the x87 extended precision of its pan law kept (long double; 80-bit on every x86 target YW
 // is built for).
 #pragma GCC optimize ("fp-contract=off")
 #pragma STDC FP_CONTRACT OFF
 
-namespace lynx::fldbank
+namespace yw::fldbank
 {
 namespace
 {
@@ -25,7 +25,7 @@ std::int32_t i32At (const std::vector<std::uint8_t>& d, std::size_t o) noexcept
     return v;
 }
 
-// cvtsd2si: round to nearest, ties to even (the default SSE mode in FL and in LYNX)
+// cvtsd2si: round to nearest, ties to even (the default SSE mode in FL and in YW)
 int roundEven (double x) noexcept { return (int) std::nearbyint (x); }
 
 std::uint32_t bitsOf (float f) noexcept
@@ -63,7 +63,7 @@ float signedVolume (int raw) noexcept
 // ---- 2×2 gain matrices: c = {LL, RR, RL, LR}: outL = L·c0 + R·c2, outR = R·c1 + L·c3 -----------------------------
 
 // sin/cos pan law (x87): L = cos((1 + pan)·π/4)·v√2, R = sin(…)·v√2, in extended precision, stored as floats. The
-// plugin uses the FPU's own fsincos under a 64-bit-precision control word; LYNX does the same where it can (the
+// plugin uses the FPU's own fsincos under a 64-bit-precision control word; YW does the same where it can (the
 // library cosl/sinl differ from fsincos near π/2 by ~1e-20, i.e. only in the cross term of a hard pan)
 void panLaw (float pan, float vol, float& l, float& r) noexcept
 {
@@ -1212,4 +1212,4 @@ std::string controlText (const State& s, int index, int raw)
     }
     return text;
 }
-} // namespace lynx::fldbank
+} // namespace yw::fldbank

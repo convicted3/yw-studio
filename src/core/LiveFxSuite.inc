@@ -1,4 +1,4 @@
-// Round 190kk: LYNX's own engines that Live's still-dropped devices open on — the Effects around core/Corrode.h (Live's
+// Round 190kk: YW's own engines that Live's still-dropped devices open on — the Effects around core/Corrode.h (Live's
 // Erosion) core/Soundboard.h (Live's Corpus) and core/Platter.h (Live's Vinyl Distortion). Included by core/MixSuite.cpp at namespace mixsuite level, after AnvilSuite.inc (it uses `fmt` and `hzText`).
 
 namespace

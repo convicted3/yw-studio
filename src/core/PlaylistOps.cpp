@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <limits>
 
-namespace lynx::clipprops
+namespace yw::clipprops
 {
 namespace
 {
@@ -224,9 +224,9 @@ std::vector<std::pair<int, std::string>> sourcesFor (const Song& song, ClipKind 
             out.emplace_back (i, song.automations[(std::size_t) i].name);
     return out;
 }
-} // namespace lynx::clipprops
+} // namespace yw::clipprops
 
-namespace lynx::arrangeops
+namespace yw::arrangeops
 {
 const std::vector<Clip>& clipsOf (const Song& song, int index)
 {
@@ -387,9 +387,9 @@ int duplicate (Song& song, int index)
             ++t.versionArrangement;
     return index + 1;
 }
-} // namespace lynx::arrangeops
+} // namespace yw::arrangeops
 
-namespace lynx::trackmodes
+namespace yw::trackmodes
 {
 namespace
 {
@@ -640,12 +640,12 @@ int assignAudioTracks (Song& song, const std::vector<int>& tracks, int mixer)
             if (next < 0)
                 break;
         }
-        // a refused track (LYNX: the pick is linked to another selected track, e.g. the menu's own) leaves the insert
+        // a refused track (YW: the pick is linked to another selected track, e.g. the menu's own) leaves the insert
         // to the next one
         if (! linkToMixerTrack (song, tracks[i], next))
             continue;
         ++linked;
-        // FL: the next insert no Playlist track is linked to (LYNX: nor reserved for another participant)
+        // FL: the next insert no Playlist track is linked to (YW: nor reserved for another participant)
         do
             ++next;
         while (next < (int) song.mixer.size() && (linkedElsewhere (song, next, -1) || song.session.reservedForOther (true, next)));
@@ -1012,9 +1012,9 @@ bool dropOnHeader (Song& song, int track, const std::string& path, const std::st
     return true;
 }
 
-} // namespace lynx::trackmodes
+} // namespace yw::trackmodes
 
-namespace lynx::audioclips
+namespace yw::audioclips
 {
 int repairChannels (Song& song)
 {
@@ -1069,9 +1069,9 @@ void loadSampleInto (ChannelDef& channel, const std::string& path, const std::st
     if (autoName || channel.name.empty())
         channel.name = name;
 }
-} // namespace lynx::audioclips
+} // namespace yw::audioclips
 
-namespace lynx::autoclipplace
+namespace yw::autoclipplace
 {
 Place forNewClip (const Song& song, bool atPlayback, std::int64_t playTick)
 {
@@ -1103,9 +1103,9 @@ Place forNewClip (const Song& song, bool atPlayback, std::int64_t playTick)
         ++place.track;
     return place;
 }
-} // namespace lynx::autoclipplace
+} // namespace yw::autoclipplace
 
-namespace lynx::autolanes
+namespace yw::autolanes
 {
 int ownerTrack (const Song& song, int automation)
 {
@@ -1293,9 +1293,9 @@ int lanesToClips (Song& song)
                 ++n;
     return n;
 }
-} // namespace lynx::autolanes
+} // namespace yw::autolanes
 
-namespace lynx::autolink
+namespace yw::autolink
 {
 namespace
 {
@@ -1758,4 +1758,4 @@ int pairedTakeTrack (const Song& song, int insert)
     });
     return used ? -1 : track;
 }
-} // namespace lynx::autolink
+} // namespace yw::autolink

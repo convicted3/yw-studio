@@ -1,5 +1,5 @@
 // M4A export on Windows (owner decision D5, round als190ka-export): Media Foundation's Sink Writer with the MPEG-4 file
-// sink and Microsoft's AAC encoder MFT, both part of Windows (see engine/AacEncoder.h for why LYNX bundles no encoder).
+// sink and Microsoft's AAC encoder MFT, both part of Windows (see engine/AacEncoder.h for why YW bundles no encoder).
 // The encoder takes 16-bit PCM, mono or stereo, at 44.1 or 48 kHz and writes AAC-LC at 96 / 128 / 160 / 192 kbps
 // (MF_MT_AUDIO_AVG_BYTES_PER_SECOND 12000 / 16000 / 20000 / 24000; "AAC Encoder", Microsoft Learn).
 
@@ -26,7 +26,7 @@
  #pragma comment(lib, "ole32.lib")
 #endif
 
-namespace lynx::aac
+namespace yw::aac
 {
 namespace
 {
@@ -226,6 +226,6 @@ bool encode (const std::string& utf8Path, const float* left, const float* right,
         return error = failed ("finishing the file (Finalize)", hr), false;
     return true;
 }
-} // namespace lynx::aac
+} // namespace yw::aac
 
 #endif

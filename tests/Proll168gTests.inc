@@ -2,13 +2,13 @@
 // Insert / Slice & insert / Delete space, Trim, Open / Save score (.fsc), and the keys of the key map
 namespace proll168g
 {
-lynx::Pattern pattern (std::initializer_list<std::pair<std::int64_t, std::int64_t>> notes, int channel = 0)
+yw::Pattern pattern (std::initializer_list<std::pair<std::int64_t, std::int64_t>> notes, int channel = 0)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     int key = 60;
     for (const auto& [start, length] : notes)
     {
-        lynx::Note n;
+        yw::Note n;
         n.start = start;
         n.length = length;
         n.channel = channel;
@@ -18,7 +18,7 @@ lynx::Pattern pattern (std::initializer_list<std::pair<std::int64_t, std::int64_
     return p;
 }
 
-std::vector<int> all (const lynx::Pattern& p)
+std::vector<int> all (const yw::Pattern& p)
 {
     std::vector<int> out;
     for (int i = 0; i < (int) p.notes.size(); ++i)
@@ -31,46 +31,46 @@ TEST (proll168g_select_random_adds_one_or_half_of_the_channel)
 {
     // FUN_00eb2510: Shift+R adds one not-yet-selected note, Shift+M adds count / 2 of them; the selection grows
     const auto p = proll168g::pattern ({ { 0, 10 }, { 100, 10 }, { 200, 10 }, { 300, 10 }, { 400, 10 }, { 500, 10 }, { 600, 10 } });
-    const auto one = lynx::noteedit::selectRandomMore (p, proll168g::all (p), { 2 }, false, 7);
+    const auto one = yw::noteedit::selectRandomMore (p, proll168g::all (p), { 2 }, false, 7);
     CHECK (one.size() == 2 && std::find (one.begin(), one.end(), 2) != one.end());
-    const auto more = lynx::noteedit::selectRandomMore (p, proll168g::all (p), { 2 }, true, 7);
+    const auto more = yw::noteedit::selectRandomMore (p, proll168g::all (p), { 2 }, true, 7);
     CHECK (more.size() == 1 + 3); // 7 / 2 = 3 rounds
     // every note already selected: nothing to add
-    CHECK (lynx::noteedit::selectRandomMore (p, proll168g::all (p), proll168g::all (p), true, 3).size() == 7);
+    CHECK (yw::noteedit::selectRandomMore (p, proll168g::all (p), proll168g::all (p), true, 3).size() == 7);
     // only the channel's notes are candidates
-    const auto some = lynx::noteedit::selectRandomMore (p, { 0, 1 }, {}, true, 11);
+    const auto some = yw::noteedit::selectRandomMore (p, { 0, 1 }, {}, true, 11);
     CHECK (some.size() == 1 && some[0] <= 1);
 }
 
 TEST (proll168g_select_odd_takes_the_notes_on_odd_steps)
 {
     // FUN_00eb2b70: ((start + step / 2) / step) odd, added to the selection
-    const auto s = lynx::ticksPerStep;
+    const auto s = yw::ticksPerStep;
     const auto p = proll168g::pattern ({ { 0, 10 }, { s, 10 }, { 2 * s, 10 }, { 3 * s - s / 4, 10 }, { 3 * s + s / 2, 10 } });
-    const auto odd = lynx::noteedit::selectOddSteps (p, proll168g::all (p), { 0 }, s);
+    const auto odd = yw::noteedit::selectOddSteps (p, proll168g::all (p), { 0 }, s);
     CHECK ((odd == std::vector<int> { 0, 1, 3 })); // 3s+s/2 rounds to step 4 (even)
 }
 
 TEST (proll168g_insert_and_delete_space_move_the_later_notes)
 {
-    const auto s = lynx::ticksPerStep;
+    const auto s = yw::ticksPerStep;
     // insert [4s, 6s): notes at or after 4s move right by 2s; a note crossing 4s stays (no slice)
     auto p = proll168g::pattern ({ { 0, s }, { 3 * s, 2 * s }, { 4 * s, s }, { 8 * s, s } });
-    auto moved = lynx::noteedit::insertSpace (p, proll168g::all (p), 4 * s, 6 * s, false);
+    auto moved = yw::noteedit::insertSpace (p, proll168g::all (p), 4 * s, 6 * s, false);
     CHECK ((moved == std::vector<int> { 2, 3 }));
     CHECK (p.notes[1].start == 3 * s && p.notes[1].length == 2 * s);
     CHECK (p.notes[2].start == 6 * s && p.notes[3].start == 10 * s);
 
     // Slice & insert: the crossing note is cut at 4s and its tail moves too
     p = proll168g::pattern ({ { 3 * s, 2 * s } });
-    moved = lynx::noteedit::insertSpace (p, proll168g::all (p), 4 * s, 6 * s, true);
+    moved = yw::noteedit::insertSpace (p, proll168g::all (p), 4 * s, 6 * s, true);
     CHECK (p.notes.size() == 2 && moved.size() == 1);
     CHECK (p.notes[0].start == 3 * s && p.notes[0].length == s);
     CHECK (p.notes[1].start == 6 * s && p.notes[1].length == s && p.notes[1].key == p.notes[0].key);
 
     // Delete [2s, 4s): cut at both edges, the inside removed, the rest moves left by 2s
     p = proll168g::pattern ({ { 0, s }, { s, 2 * s }, { 2 * s, s }, { 3 * s, 2 * s }, { 6 * s, s } });
-    moved = lynx::noteedit::deleteSpace (p, proll168g::all (p), 2 * s, 4 * s);
+    moved = yw::noteedit::deleteSpace (p, proll168g::all (p), 2 * s, 4 * s);
     p.sortNotes();
     std::vector<std::pair<std::int64_t, std::int64_t>> got;
     for (const auto& n : p.notes)
@@ -80,7 +80,7 @@ TEST (proll168g_insert_and_delete_space_move_the_later_notes)
 
     // Trim [2s, 4s): only the selection is left, at the start
     p = proll168g::pattern ({ { 0, s }, { 2 * s, s }, { 3 * s, s }, { 5 * s, s } });
-    lynx::noteedit::trimToSelection (p, 0, 2 * s, 4 * s, 16 * s);
+    yw::noteedit::trimToSelection (p, 0, 2 * s, 4 * s, 16 * s);
     p.sortNotes();
     CHECK (p.notes.size() == 2 && p.notes[0].start == 0 && p.notes[1].start == s);
 
@@ -88,7 +88,7 @@ TEST (proll168g_insert_and_delete_space_move_the_later_notes)
     p = proll168g::pattern ({ { 4 * s, s } });
     p.notes.push_back (p.notes[0]);
     p.notes[1].channel = 3;
-    lynx::noteedit::insertSpace (p, { 0 }, 0, s, false);
+    yw::noteedit::insertSpace (p, { 0 }, 0, s, false);
     CHECK (p.notes[0].start == 5 * s && p.notes[1].start == 4 * s);
 }
 
@@ -96,18 +96,18 @@ TEST (proll168g_score_round_trips_through_an_fsc)
 {
     // Save score as / Open score: an .fsc as FL writes it from the piano roll (format 0x10, 0x41 = 0, 24-byte 0xE0
     // records with channel 0), read back by the same reader as FL's own scores
-    std::vector<lynx::Note> notes (3);
+    std::vector<yw::Note> notes (3);
     notes[0].start = 0, notes[0].length = 480, notes[0].key = 60, notes[0].velocity = 100.0f / 128.0f;
     notes[1].start = 960, notes[1].length = 240, notes[1].key = 67, notes[1].pan = -0.5f, notes[1].slide = true, notes[1].colour = 3;
     notes[2].start = 1920, notes[2].length = 960, notes[2].key = 72, notes[2].muted = true, notes[2].porta = true, notes[2].finePitch = 30.0f;
     for (auto& n : notes)
         n.channel = 5;
-    const auto bytes = lynx::prtools::writeScore (notes);
+    const auto bytes = yw::prtools::writeScore (notes);
     REA167K_REQUIRE (bytes.size() > 22 && bytes[0] == 'F' && bytes[1] == 'L' && bytes[2] == 'h' && bytes[3] == 'd');
     CHECK (bytes[8] == 0x10 && bytes[9] == 0); // the header's format: score
-    const auto score = lynx::prtools::parseScore (bytes);
+    const auto score = yw::prtools::parseScore (bytes);
     REA167K_REQUIRE (score.has_value() && score->notes.size() == 3);
-    const auto back = lynx::prtools::notesFromScore (*score, 2);
+    const auto back = yw::prtools::notesFromScore (*score, 2);
     REA167K_REQUIRE (back.size() == 3);
     for (std::size_t i = 0; i < 3; ++i)
     {
@@ -144,11 +144,11 @@ TEST (proll168g_fl_scores_open_as_notes)
         ++files;
         std::ifstream in (entry.path(), std::ios::binary);
         std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-        const auto score = lynx::prtools::parseScore (bytes);
+        const auto score = yw::prtools::parseScore (bytes);
         if (! score.has_value())
             continue;
-        const auto notes = lynx::prtools::notesFromScore (*score, 1);
-        if (notes.size() == score->notes.size() && std::all_of (notes.begin(), notes.end(), [] (const lynx::Note& n) { return n.channel == 1; }))
+        const auto notes = yw::prtools::notesFromScore (*score, 1);
+        if (notes.size() == score->notes.size() && std::all_of (notes.begin(), notes.end(), [] (const yw::Note& n) { return n.channel == 1; }))
             ++read;
     }
     CHECK (files > 500 && read == files);
@@ -156,7 +156,7 @@ TEST (proll168g_fl_scores_open_as_notes)
 
 TEST (proll168g_piano_roll_keys_are_fl_s)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     const auto pr = Context::pianoRoll;
     CHECK (map.find ({ 'B', alt }, pr, false) == "pianoRoll.gridHighlights");
@@ -210,35 +210,35 @@ TEST (proll168g_flp_pattern_markers_stay_with_their_pattern)
     CHECK (it->markers[0].type == 11 && it->markers[0].position == 384 && it->markers[0].name.find ("Loop: Bar") == 0);
     CHECK (it->markers[1].type == 8 && it->markers[1].numerator == 3 && it->markers[1].denominator == 4);
 
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (song.markers().size() == 1);
-    const auto pit = std::find_if (song.patterns.begin(), song.patterns.end(), [] (const lynx::Pattern& x) { return x.name == "Halftime"; });
+    const auto pit = std::find_if (song.patterns.begin(), song.patterns.end(), [] (const yw::Pattern& x) { return x.name == "Halftime"; });
     REA167K_REQUIRE (pit != song.patterns.end() && pit->markers.size() == 2);
-    CHECK (pit->markers[0].tick == 384 * lynx::ppq / 96 && pit->markers[0].action == 11 && pit->markers[0].name == "Loop: Bar");
-    CHECK (pit->markers[1].tick == 768 * lynx::ppq / 96 && pit->markers[1].isSignature() && pit->markers[1].numerator == 3);
+    CHECK (pit->markers[0].tick == 384 * yw::ppq / 96 && pit->markers[0].action == 11 && pit->markers[0].name == "Loop: Bar");
+    CHECK (pit->markers[1].tick == 768 * yw::ppq / 96 && pit->markers[1].isSignature() && pit->markers[1].numerator == 3);
 }
 
 TEST (proll168g_pattern_markers_add_auto_signature_and_follow_the_space)
 {
-    using namespace lynx::noteedit;
-    lynx::Pattern p;
-    const auto bar = 4 * lynx::ppq;
+    using namespace yw::noteedit;
+    yw::Pattern p;
+    const auto bar = 4 * yw::ppq;
     CHECK (addPatternAutoMarker (p, bar) == 0 && p.markers[0].name == "Auto");
     CHECK (addPatternAutoMarker (p, bar) == 0 && p.markers.size() == 1); // one already there: kept
     addPatternAutoMarker (p, 0);
     CHECK (p.markers.size() == 2 && p.markers[0].tick == 0 && p.markers[0].name == "Auto #2");
 
     // a 3/4 change over [bar, 2 bars): the old 4/4 comes back at its end; names are FL's "%d/%d"
-    addPatternSignatureChange (p, bar + 10, 2 * bar, 3, 4, lynx::Meter (4, 4));
+    addPatternSignatureChange (p, bar + 10, 2 * bar, 3, 4, yw::Meter (4, 4));
     REA167K_REQUIRE (p.markers.size() == 4);
-    CHECK (patternSignatureAt (p, bar + lynx::ppq, lynx::Meter (4, 4)) == std::make_pair (3, 4));
-    CHECK (patternSignatureAt (p, 2 * bar, lynx::Meter (4, 4)) == std::make_pair (4, 4));
-    CHECK (patternSignatureAt (p, 0, lynx::Meter (4, 4)) == std::make_pair (4, 4));
-    const auto sig = std::find_if (p.markers.begin(), p.markers.end(), [] (const lynx::Marker& m) { return m.isSignature() && m.numerator == 3; });
+    CHECK (patternSignatureAt (p, bar + yw::ppq, yw::Meter (4, 4)) == std::make_pair (3, 4));
+    CHECK (patternSignatureAt (p, 2 * bar, yw::Meter (4, 4)) == std::make_pair (4, 4));
+    CHECK (patternSignatureAt (p, 0, yw::Meter (4, 4)) == std::make_pair (4, 4));
+    const auto sig = std::find_if (p.markers.begin(), p.markers.end(), [] (const yw::Marker& m) { return m.isSignature() && m.numerator == 3; });
     CHECK (sig != p.markers.end() && sig->tick == bar && sig->name == "3/4");
 
     // Insert / Delete space move the markers like the notes (FUN_00e3b2b0); the ones inside a deleted space go
-    lynx::Pattern q;
+    yw::Pattern q;
     addPatternMarker (q, { bar, "A", 0, 4 });
     addPatternMarker (q, { 3 * bar, "B", 0, 4 });
     insertSpace (q, {}, bar, 2 * bar, false);

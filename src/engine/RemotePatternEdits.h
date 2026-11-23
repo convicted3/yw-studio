@@ -5,10 +5,10 @@
 #include <optional>
 #include <stdexcept>
 
-namespace lynx::remote_patterns
+namespace yw::remote_patterns
 {
 constexpr std::int64_t maxLength = 1000000000; // (a bound on what a request may carry before its bars are checked)
-// The lengths LYNX's own pattern length box can set (round 190ha): 0 = automatic, else whole bars of the song's meter
+// The lengths YW's own pattern length box can set (round 190ha): 0 = automatic, else whole bars of the song's meter
 constexpr int maxBars = 999;
 constexpr int maxPatterns = 100000;
 struct Result { Song song; int index; };

@@ -9,7 +9,7 @@
 #include <tuple>
 #include <string_view>
 
-namespace lynx::notetools
+namespace yw::notetools
 {
 namespace
 {
@@ -574,7 +574,7 @@ void randomise (Pattern& pattern, const std::vector<int>& indices, const Randomi
 
         // FL's law (live FL checks 190cq and 190ew PR-1): at 100 % a level moves at most HALF its lane, ±0.5 of the
         // 0…1 range (velocity from 78 % reached ~30 %, pan from the centre reached both ends, Mod X / Mod Y / Release
-        // from the centre or 0 piled at the cap); amount × 0.5 × r (round 190ez; LYNX moved twice as far before)
+        // from the centre or 0 piled at the cap); amount × 0.5 × r (round 190ez; YW moved twice as far before)
         n.velocity = std::clamp (n.velocity + 0.5f * o.velocity * way (rv), 0.0f, 1.0f);
         n.pan = std::clamp (n.pan + o.pan * way (rp), -1.0f, 1.0f); // (pan's lane is −1…1: half of it = ±1)
         n.finePitch = std::clamp (n.finePitch + 120.0f * o.finePitch * way (rf), -120.0f, 120.0f);
@@ -849,7 +849,7 @@ std::array<bool, 132> limitAllowedKeys (int root, int restriction)
     return allowed;
 }
 
-// --- LYNX's script-like tools (REA round 143) --------------------------------------------------------
+// --- YW's script-like tools (REA round 143) --------------------------------------------------------
 
 bool euclideanHit (int steps, int pulses, int rotation, int step) noexcept
 {
@@ -1223,4 +1223,4 @@ void setColour (Pattern& pattern, const std::vector<int>& indices, int colour)
     for (auto i : validSorted (pattern, indices))
         pattern.notes[(std::size_t) i].colour = c;
 }
-} // namespace lynx::notetools
+} // namespace yw::notetools

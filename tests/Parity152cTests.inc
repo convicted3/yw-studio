@@ -2,9 +2,9 @@
 
 namespace p152c
 {
-using namespace lynx::facet;
+using namespace yw::facet;
 // a dynamic bell at 1 kHz, Q 1, range −12 dB, threshold `thr`, spectral on
-inline lynx::EffectParams spectralBell (double thr, bool spectral = true)
+inline yw::EffectParams spectralBell (double thr, bool spectral = true)
 {
     auto p = facet103::bell (1000.0, 0.0, 1.0);
     p[(std::size_t) rangeParam0] = rangeValue (-12.0);
@@ -13,7 +13,7 @@ inline lynx::EffectParams spectralBell (double thr, bool spectral = true)
     return p;
 }
 // the steady level change (dB) of each tone of a mix of sines through the effect, read with a long FFT after the latency
-inline std::vector<double> toneGains (const lynx::EffectParams& p, const std::vector<double>& hz, const std::vector<double>& db)
+inline std::vector<double> toneGains (const yw::EffectParams& p, const std::vector<double>& hz, const std::vector<double>& db)
 {
     const double sr = 48000.0;
     const int n = (int) (sr * 3.0);
@@ -51,8 +51,8 @@ inline std::vector<double> toneGains (const lynx::EffectParams& p, const std::ve
 
 TEST (facet_spectral_params_round152c)
 {
-    using namespace lynx::facet;
-    CHECK ((int) info().params.size() == paramCount && paramCount >= 114 && paramCount <= lynx::maxEffectParams);
+    using namespace yw::facet;
+    CHECK ((int) info().params.size() == paramCount && paramCount >= 114 && paramCount <= yw::maxEffectParams);
     auto p = facet103::defaults();
     for (int b = 0; b < bands; ++b)
         CHECK (p[(std::size_t) (spectralParam0 + b)] == 0.0f && p[(std::size_t) (densityParam0 + b)] == 0.5f && ! isSpectral (p, b));
@@ -69,8 +69,8 @@ TEST (facet_spectral_params_round152c)
 
 TEST (facet_spectral_law_round152c)
 {
-    using namespace lynx::facet;
-    // [EXEC] Pro-Q 4 (D:\lynx-work\parity152\c): partials at −60 dBFS every ¼ octave from 250 Hz, a loud tone at
+    using namespace yw::facet;
+    // [EXEC] Pro-Q 4 (D:\yw-work\parity152\c): partials at −60 dBFS every ¼ octave from 250 Hz, a loud tone at
     // 1 kHz; threshold −40, range −12, Q 1. The loud tone is cut 12 dB, the quieter partials are left alone.
     const std::vector<double> f { 707.1, 841.0, 1000.0, 1189.0, 1414.0 };
     for (const double loud : { -40.0, -30.0, -10.0 })
@@ -100,7 +100,7 @@ TEST (facet_spectral_law_round152c)
 
 TEST (facet_spectral_render_round152c)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // rendered: a loud 1 kHz tone with a quiet 1.41 kHz partial — the spectral band cuts only the loud one; the plain
     // dynamic band (the same settings, Spectral off) pulls the partial down with it (Pro-Q 4: −12.0 / 0.0 vs −11.9 / −9.2)
     const std::vector<double> f { 1000.0, 1414.0 }, db { -10.0, -60.0 };
@@ -119,7 +119,7 @@ TEST (facet_spectral_render_round152c)
 
 TEST (facet_eq_match_round152c)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // the reference = the current spectrum + a +6 dB bell at 2 kHz and a −4 dB low shelf at 120 Hz: the match puts
     // bands that rebuild that difference within 1 dB (rms, 40 Hz … 16 kHz)
     auto want = facet103::defaults();

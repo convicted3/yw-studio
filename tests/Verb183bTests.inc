@@ -7,9 +7,9 @@
 
 namespace verb183b
 {
-using lynx::EffectKind;
+using yw::EffectKind;
 
-inline lynx::EffectParams horizon()
+inline yw::EffectParams horizon()
 {
     auto p = verbs100::defaults (EffectKind::horizon);
     p[0] = 1.0f; // 100 % wet
@@ -37,7 +37,7 @@ inline double powerAt (const std::vector<float>& x, double hz, std::size_t from,
 // energy (dB) of the response above 6 kHz in [from, to) samples
 inline double highBandDb (const verbs100::Stereo& s, std::size_t from, std::size_t to)
 {
-    lynx::Biquad hp;
+    yw::Biquad hp;
     hp.filter (48000.0, 1, 6000.0, 0.7071);
     auto l = s.l, r = s.r;
     hp.processBlock (l.data(), r.data(), (int) l.size());
@@ -62,7 +62,7 @@ TEST (horizon_echo_is_the_predelay_verb183b)
     // Level sets only the echo heard: a 300 ms echo at Level 0 is silent before the reverb starts; at Level 100 % it is
     // there at 300 ms
     for (float v = 0.0f; v <= 1.0f; v += 0.0005f)
-        if (lynx::verbs::horizon::echoMs (v) >= 300.0)
+        if (yw::verbs::horizon::echoMs (v) >= 300.0)
         {
             p[4] = v;
             break;
@@ -115,15 +115,15 @@ TEST (horizon_mode_steps_and_loud_programme_verb183b)
 {
     // the reference's reverb modes sit at (k + 1) / 24 and switch exactly there: 0.0833 still plays Room (measured)
     auto translate = [] (const std::string& element) {
-        lynx::ForeignPlugin fp;
-        fp.format = lynx::ForeignPlugin::Format::vst3;
+        yw::ForeignPlugin fp;
+        fp.format = yw::ForeignPlugin::Format::vst3;
         fp.name = "ValhallaFutureVerb";
         fp.path = "C:\\Program Files\\Common Files\\VST3\\ValhallaFutureVerb.vst3";
         fp.state = substtest::flVst3State (substtest::juceXmlComponent (element));
-        const auto id = lynx::pluginIdentity (fp);
-        const auto* entry = lynx::findPluginSubstitute (id, false);
+        const auto id = yw::pluginIdentity (fp);
+        const auto* entry = yw::findPluginSubstitute (id, false);
         int translated = -1;
-        return entry != nullptr ? lynx::verbs::choice (lynx::makeSubstituteSlot (*entry, &id, &translated).params[22], 8) : -1;
+        return entry != nullptr ? yw::verbs::choice (yw::makeSubstituteSlot (*entry, &id, &translated).params[22], 8) : -1;
     };
     CHECK (translate ("<ValhallaFutureVerb ReverbMode=\"0.0833\"/>") == 0);
     CHECK (translate ("<ValhallaFutureVerb ReverbMode=\"0.0833333358168602\"/>") == 1);
@@ -133,7 +133,7 @@ TEST (horizon_mode_steps_and_loud_programme_verb183b)
     // loud programme is compressed gently: a 1 kHz tone at −6 dBFS comes out ~4 dB below the same tone at −40 dBFS
     // scaled up (the reference: 1 … 2 dB on music at −15 dBFS RMS, more on a loud burst)
     auto wetDb = [] (float amp) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::horizon);
+        auto fx = yw::makeEffect (yw::EffectKind::horizon);
         fx->prepare (48000.0);
         auto p = verb183b::horizon();
         const int n = 96000;
@@ -157,8 +157,8 @@ TEST (horizon_studio_colour_keeps_index_three_verb183b)
     using namespace verbs100;
     // round 183b: the fourth colour is relabelled "Studio" (the reference's name); a saved project keeps the index,
     // so value 1.0 (index 3, formerly "Vintage") still loads as the fourth colour and plays its steep 560 Hz cut
-    CHECK (std::string (lynx::formatEffectParam (EffectKind::horizon, 23, 1.0f, 120.0)) == "Studio");
-    CHECK (lynx::verbs::choice (1.0f, 4) == 3);
+    CHECK (std::string (yw::formatEffectParam (EffectKind::horizon, 23, 1.0f, 120.0)) == "Studio");
+    CHECK (yw::verbs::choice (1.0f, 4) == 3);
     auto p = verb183b::horizon();
     const auto neutral = impulse (EffectKind::horizon, p, 1.0);
     p[23] = 1.0f;

@@ -30,10 +30,10 @@
 #include "core/ModelParams.h"
 #include "core/ScaleKeys.h"
 
-// FL Studio Mobile → LYNX, round 182c (docs/analise/FLM_FORMAT.md, REA_rodada182c.md §5). Times: FLM clips and events
-// count 128 ticks per beat and their lengths in beats; LYNX counts `ppq` (960) ticks per beat.
+// FL Studio Mobile → YW, round 182c (docs/analise/FLM_FORMAT.md, REA_rodada182c.md §5). Times: FLM clips and events
+// count 128 ticks per beat and their lengths in beats; YW counts `ppq` (960) ticks per beat.
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -243,7 +243,7 @@ struct Ctx
         return resolvedOrFlagged (resolve (candidates, user), s.root);
     }
 
-    // round 190fn (O1): a factory file ("@R@") that was not found → the report says where to point LYNX at the app's
+    // round 190fn (O1): a factory file ("@R@") that was not found → the report says where to point YW at the app's
     // resources (once per import)
     bool resourceMissing = false;
     std::string resolvedOrFlagged (std::string found, const std::string& root)
@@ -298,7 +298,7 @@ float flmGain (float v) noexcept
     return (float) std::pow (10.0, 3.3 * std::pow ((double) v, 0.6) - 3.0);
 }
 
-// LYNX's channel volume for a linear gain up to 1: the inverse of channelGain, (11^v − 1) / 10
+// YW's channel volume for a linear gain up to 1: the inverse of channelGain, (11^v − 1) / 10
 float channelVolumeFor (double gain) noexcept
 {
     return (float) std::clamp (std::log (10.0 * std::max (0.0, gain) + 1.0) / std::log (11.0), 0.0, 1.0);
@@ -310,7 +310,7 @@ float slotParam (const flm::SampleRef& s, int index) noexcept
     return std::clamp (s.param (index, flm::samplepad::defaults[index]), 0.0f, 1.0f);
 }
 
-// FLM's 3x Osc against LYNX's 3x Osc at the same velocity (A/B inside FL, round 190u): the level is the same
+// FLM's 3x Osc against YW's 3x Osc at the same velocity (A/B inside FL, round 190u): the level is the same
 // (0.00 dB on the default patch) and FLM sounds one octave below the desktop plugin (key 60 with coarse 0 = 261.6 Hz,
 // the desktop's 523.3 Hz), so the channel's pitch carries −12 semitones
 constexpr double threeOscFlmLevel = 1.0;
@@ -335,7 +335,7 @@ float panOf (const flm::Event& e) noexcept
 //   (W = 1/4 + swing / 8 beats on even steps, 1/4 − swing / 8 on odd ones; swing = the lane's own, 0 on note lanes in
 //   every file seen). FLM sends one note-off, at the note's end: the extra notes end there too;
 // - slide (byte 19, note lanes only: a drum lane plays it as a hit): no note-on; the held note (the highest plain note
-//   sounding at the slide's start) glides to the slide's key over the slide's length — LYNX's slide note. A slide
+//   sounding at the slide's start) glides to the slide's key over the slide's length — YW's slide note. A slide
 //   with no held note plays nothing in FLM and is dropped. Not converted: FLM also glides the velocity and the pan.
 // Round 190bs: `fx` = the rack's note effects, run over a note lane's notes before `channelFor` (core/FlmNoteFx.h);
 // `shifts` = a drum lane's time shift per kit sample, in beats (a note never starts before the clip does).
@@ -453,7 +453,7 @@ void addPatternClips (Ctx& ctx, const flm::Clip& clip, int pattern, int row)
     }
 }
 
-// FLM's MiniSynth → LYNX's MiniSynth engine (F4). FLM's parameters 1…43 are the desktop plugin's 0…42, in the same
+// FLM's MiniSynth → YW's MiniSynth engine (F4). FLM's parameters 1…43 are the desktop plugin's 0…42, in the same
 // order (the two parameter-name tables, FLM_FORMAT §7.1 and REA_rodada41 §1.2; PROVEN-REA setter 0x1806af050 and
 // A/B inside FL, round 190n); FLM's 0 is the module's Enable. The
 // state is written the way the desktop plugin saves it ("SSLF" + its .flms preset: signature, HEAD with the name, DATA
@@ -519,7 +519,7 @@ bool miniSynthState (Ctx& ctx, const flm::Module& m, ChannelDef& c)
     return true;
 }
 
-// FLM's Transistor Bass → LYNX's Transistor Bass engine in FLM's build (F4, round 190u): the module is the desktop
+// FLM's Transistor Bass → YW's Transistor Bass engine in FLM's build (F4, round 190u): the module is the desktop
 // plugin's "V1 legacy" engine at 1× oversampling inside its own note layer, with 13 knobs. The state is a desktop one
 // holding the equivalent patch (core/TransistorBass.h: transistorBassFlmState); the channel needs no file of an FL
 // installation.
@@ -692,16 +692,16 @@ void applyGeneratorWrapper (Ctx& ctx, const flm::Module& m, ChannelDef& c, bool 
         c.volume = 0.0f; // silent until the lane switches it on (generatorLaneTarget's "on" level is the wrapper's)
 }
 
-// An automation lane on a generator's parameter (round 190de, FLM_FORMAT §7.4): the LYNX target on channel `index`
+// An automation lane on a generator's parameter (round 190de, FLM_FORMAT §7.4): the YW target on channel `index`
 // and the law from FLM's stored value (0…1) to the target's 0…1, or nullopt (`why` = the report's line). Every FLM
-// engine LYNX has keeps FLM's own values, so the laws are the import's own:
-// - Enable (0) on any generator: the channel's volume, on or silent (FLM stops rendering the module; LYNX's voices run
+// engine YW has keeps FLM's own values, so the laws are the import's own:
+// - Enable (0) on any generator: the channel's volume, on or silent (FLM stops rendering the module; YW's voices run
 //   on silently: approximate in that a note held across the switch resumes where it would be, not where it stopped);
 // - Pocket SuperSaw: FLM k → engine k − 1, as is; MiniSynth (FLM build): FLM k → desktop k − 1, as is (MW Dest with
 //   the import's two-step fold); GMSynth (FLM): FLM k → the engine's P[k], as is; Transistor Bass: the 13 knobs through
 //   transistorBassFlmState's map.
 // --- round 190dw item 4: SoundFont Player's envelope knob k (1 Attack, 2 Decay, 3 Sustain, 4 Release) at value v as
-// LYNX Soundfont's knob value — the laws of soundFontState below
+// YW Soundfont's knob value — the laws of soundFontState below
 float soundFontEnvelopeValue (int k, float v) noexcept
 {
     v = std::isfinite (v) ? std::clamp (v, 0.0f, 1.0f) : 0.0f;
@@ -774,7 +774,7 @@ std::optional<GeneratorLaneTarget> generatorLaneTarget (const Song& song, int in
         // --- round 190dw item 4
         case InstrumentKind::soundfont:
             // SoundFont Player's Attack / Decay / Sustain / Release (FLM_FORMAT §7.3) through the import's own laws onto
-            // LYNX Soundfont's envelope knobs; they act only with Envelope = Custom, as in FLM (approximate: LYNX's
+            // YW Soundfont's envelope knobs; they act only with Envelope = Custom, as in FLM (approximate: YW's
             // envelope shape, and FLM's voices may take a new value at another moment)
             if (m.type == flm::module::soundFont && param >= 1 && param <= 4 && m.params.size() > 5 && m.params[5] > 0.5f)
             {
@@ -884,7 +884,7 @@ std::string flmCustomPath (Ctx& ctx, const flm::Module& m, const std::string& ow
 }
 // --- end of round 190dw item 4
 
-// FLM's 3x Osc → LYNX's 3x Osc engine and FL's channel settings (F4, round 190u). FLM's module is the desktop
+// FLM's 3x Osc → YW's 3x Osc engine and FL's channel settings (F4, round 190u). FLM's module is the desktop
 // plugin plus the channel's voice processor, echo delay, arpeggiator, polyphony and tracking as 148 parameters 0…1,
 // and it carries its own converter from the desktop's raw values (REA spec of round 190n), so every parameter goes
 // back to the raw value FL keeps and from there to the field the .flp import fills. The state is version 14
@@ -1035,7 +1035,7 @@ bool threeOscState (Ctx& ctx, const flm::Module& m, ChannelDef& c)
         a.chordSustain = chord != -2;
         if (chord == 0)
             a.chord = { 0 };
-        partial = chord > 0 || v (140) >= 1.0 || rnd (6.0 * v (142)) == 0 || rnd (6.0 * v (142)) > 4; // a named chord, Hold, ranges LYNX lacks
+        partial = chord > 0 || v (140) >= 1.0 || rnd (6.0 * v (142)) == 0 || rnd (6.0 * v (142)) > 4; // a named chord, Hold, ranges YW lacks
     }
     for (std::size_t k = 0; k < 3; ++k) // a custom shape without a file (round 190dw item 4: else it is read), Free Run
         partial = partial || (rnd (6.0 * v (1 + k)) == 6 && c.samplePath.empty()) || v (146 + k) > 0.5;
@@ -1046,13 +1046,13 @@ bool threeOscState (Ctx& ctx, const flm::Module& m, ChannelDef& c)
     return true;
 }
 
-// FLM's SoundFont Player (type 52) → LYNX Soundfont (round 190bs; FLM_FORMAT §7.3, PROVEN-REA unless noted). The
+// FLM's SoundFont Player (type 52) → YW Soundfont (round 190bs; FLM_FORMAT §7.3, PROVEN-REA unless noted). The
 // module's own state (CSTM) is one chunk "SF2D": the font's path (u32 length + text) and the chosen preset's index in
 // the font (i32). Parameters: 1 Attack, 2 Decay, 3 Sustain, 4 Release, 5 Envelope (above 0.5 = Custom: the four knobs
 // replace the font's envelope; else Original).
 // Custom times: T = max(0.005, (0.95·v + 0.05)³ · 10) seconds. FLM's attack reaches the top after T; its decay and
-// release are exponential and fall 40 dB in T. LYNX Soundfont's decay and release knobs are SoundFont times (100 dB),
-// so they get 2.5·T: the same slope, an approximation where LYNX's envelope shape differs. Sustain: the gain
+// release are exponential and fall 40 dB in T. YW Soundfont's decay and release knobs are SoundFont times (100 dB),
+// so they get 2.5·T: the same slope, an approximation where YW's envelope shape differs. Sustain: the gain
 // 10^(−5 + 5·(n / 127)^0.2), n = round(127·v) kept in 1…127. FLM plays velocities linearly: the linear velocity curve.
 bool soundFontState (Ctx& ctx, const flm::Module& m, ChannelDef& c)
 {
@@ -1138,7 +1138,7 @@ bool soundFontState (Ctx& ctx, const flm::Module& m, ChannelDef& c)
 // silent, as in FLM. The zones' files: "@R@" = FLM's resources (FL's copy, then its "… EXP" content-pack folders),
 // "@L@" = the user's library (the project's folder in a share-zip); a program's zones next to the program.
 // A stand-in for a DW Sampler whose every sample is missing on this PC (FLM's content packs are not in FL's copy of
-// FLM; coordinator's decision, round 190de): the closest of LYNX's own sounds (core/SoundLibrary.h) in the category
+// FLM; coordinator's decision, round 190de): the closest of YW's own sounds (core/SoundLibrary.h) in the category
 // the program's name, folder and the channel's name give (a "Grand Piano" → keys, preferring a piano), on an engine
 // that needs no file. A song never goes silent because a content pack is absent; the import report names the
 // missing files and the stand-in. The module's Pitch and Fine Tune stay on the channel's pitch.
@@ -1509,7 +1509,7 @@ int bakeTimeline (Ctx& ctx, const flm::Channel& ch, const std::vector<const flm:
 // --- end of round 190de --------------------------------------------------------------------------------------------
 
 // The channel playing one of a rack's generators (F1: FLM's DW Sampler with one sample → a sampler, F3; any other
-// generator → its LYNX engine, or the built-in synth listed in the report until its engine is mapped, F4).
+// generator → its YW engine, or the built-in synth listed in the report until its engine is mapped, F4).
 ChannelDef instrumentChannel (Ctx& ctx, const flm::Module* gen, const flm::Channel& ch, int insert)
 {
     ChannelDef c;
@@ -1569,13 +1569,13 @@ void addAutomationClips (Ctx& ctx, const flm::Lane& lane, AutomationTarget targe
 
 // An audio clip (round 190bs: FLM_FORMAT §6.1, PROVEN-REA). The clip's sample is a slot like a drum pad's, with the
 // same eleven parameters, and the clip's own events move them (|key| − 1 = the parameter, value u16 / 65534):
-// - Level → the clip's gain; a Level that moves → the clip's gain is its top and LYNX automates the volume of a
+// - Level → the clip's gain; a Level that moves → the clip's gain is its top and YW automates the volume of a
 //   channel the clip has to itself; Pan likewise;
 // - Speed (whole semitones, a resampling) → the channel's pitch; the sample's own pitch (whole semitones, the length
 //   stays) → the clip's pitch; its stretch (a length ratio, used only with a stretch mode other than 0) → the clip's
 //   stretch on a channel that keeps the pitch;
 // - Mute, reverse → the clip's;
-// - a clip longer than its loop starts the sample again at every loop length: one LYNX clip per pass.
+// - a clip longer than its loop starts the sample again at every loop length: one YW clip per pass.
 // `envelopeRow` = the Playlist row of this lane's clip envelopes (−1 until one is needed).
 void addAudioClip (Ctx& ctx, const flm::Clip& clip, int row, int insert, const std::string& user, int& envelopeRow)
 {
@@ -1780,9 +1780,9 @@ void applyPad (Ctx& ctx, const flm::SampleRef& s, ChannelDef& c, bool soloElsewh
         ctx.note (&FlpImportReport::converted, "FL Studio Mobile: drum pad settings (level, pan, speed, mute, envelope)");
     // (a pad's output link is applied once every channel's insert exists: round 190dw item 4, importFlmProject)
     // round 190de: the slot's stretch and pitch (STR1 / legacy STRC, FLM_FORMAT §6): FLM plays a copy of the file
-    // ratio × as long (only with a stretch mode other than 0) shifted by whole semitones at the same length. LYNX: the
+    // ratio × as long (only with a stretch mode other than 0) shifted by whole semitones at the same length. YW: the
     // sampler's stretch to a fixed length with "keep pitch", whose pitch knob then shifts without changing the length;
-    // the pad's Speed (a resampling) becomes the same shift plus a length of 2^(−st/12): equal in effect. LYNX's own
+    // the pad's Speed (a resampling) becomes the same shift plus a length of 2^(−st/12): equal in effect. YW's own
     // stretcher (FLM's modes are not named): approximate in sound, exact in length and pitch.
     const auto stretched = s.stretchMode != 0 && s.stretch > 0.0 && std::abs (s.stretch - 1.0) > 1e-6;
     const auto shift = std::round (s.pitch);
@@ -1803,9 +1803,9 @@ void applyPad (Ctx& ctx, const flm::SampleRef& s, ChannelDef& c, bool soloElsewh
             ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: drum pad time-stretch or pitch shift (played as recorded)");
     }
 }
-// An automation lane on the rack itself (module 0) that LYNX has a target for: Level, Pan and the send levels
+// An automation lane on the rack itself (module 0) that YW has a target for: Level, Pan and the send levels
 // (FLM_FORMAT §3, the rack's parameter names PROVEN-REA 0x18059eb20). A module's parameters wait for their engines
-// (F4/F5); Mute, Solo, Pitch Bend, Aftertouch, the MIDI CCs and the send switches have no LYNX automation target.
+// (F4/F5); Mute, Solo, Pitch Bend, Aftertouch, the MIDI CCs and the send switches have no YW automation target.
 // --- round 190dw item 4: the rack's setter (0x18059e0c0) gives CC #7 the Level's storage and law and CC #8 / #10 the
 // Pan's: such a lane is that rack lane (−1 = no alias)
 int rackCcAlias (int param) noexcept
@@ -1849,8 +1849,8 @@ std::string skippedLaneLabel (const flm::Lane& lane)
     return "FL Studio Mobile: automation of an unknown rack parameter";
 }
 
-// One importable rack lane (F6) as LYNX automation clips on Playlist row `rowIndex`. `target` is the clip's target;
-// `fader` = the values go through FLM's fader law onto LYNX's fader position (Level, send levels), else they are
+// One importable rack lane (F6) as YW automation clips on Playlist row `rowIndex`. `target` is the clip's target;
+// `fader` = the values go through FLM's fader law onto YW's fader position (Level, send levels), else they are
 // direct (Pan). Each FLM clip becomes one clip, its points repeated over the clip's loop passes. FLM saves an
 // automation clip as its drawn curve already sampled: a point every value step of 512 (1/128 of the range) or less,
 // the user's control points among them, with two points on one tick for a jump (FLM_FORMAT §4, PROVEN-FILE over the
@@ -1897,14 +1897,14 @@ void addAutomationClips (Ctx& ctx, const flm::Lane& lane, AutomationTarget targe
     }, rowIndex, name);
 }
 
-// An effect module mapped onto LYNX slots (F5): where its slots are on the insert
+// An effect module mapped onto YW slots (F5): where its slots are on the insert
 struct MappedModule
 {
     const flm::Module* module = nullptr;
     int insert = 0, firstSlot = 0, slotCount = 0;
 };
 
-// The automation lanes of an effect module's parameter (F5): one target per LYNX parameter the FLM parameter moves
+// The automation lanes of an effect module's parameter (F5): one target per YW parameter the FLM parameter moves
 // (an EQ band's knobs, every band of a steep Filter), each through FLM's own law (core/FlmEffects.h). The first target
 // takes the lane's row, the others rows of their own right after it.
 bool addEffectLane (Ctx& ctx, const flm::Lane& lane, const MappedModule& mm, int rowIndex)
@@ -2002,9 +2002,9 @@ bool addGeneratorLane (Ctx& ctx, const flm::Lane& lane, const flm::Module& modul
 }
 
 // The rack's Pitch Bend lane (FLM_FORMAT §7.4, PROVEN-REA 0x18059e0c0: the rack hands 4v − 2 to every module's bend
-// input and plays its drum slots at 2^(4v − 2)) on every channel the rack plays whose bend range is known: LYNX's
-// pitch-bend automation, value v as it is, which LYNX plays as (2v − 1) × the channel's bend range — the range the
-// import set to the module's own (bendRangeOf; 24 semitones on drum slots). The voices follow the bend as LYNX's
+// input and plays its drum slots at 2^(4v − 2)) on every channel the rack plays whose bend range is known: YW's
+// pitch-bend automation, value v as it is, which YW plays as (2v − 1) × the channel's bend range — the range the
+// import set to the module's own (bendRangeOf; 24 semitones on drum slots). The voices follow the bend as YW's
 // engines follow the channel's pitch.
 bool addBendLane (Ctx& ctx, const flm::Lane& lane, const std::vector<int>& channels, const std::string& rackName, std::string& why)
 {
@@ -2025,7 +2025,7 @@ bool addBendLane (Ctx& ctx, const flm::Lane& lane, const std::vector<int>& chann
 // --- round 190dw item 4 ----------------------------------------------------------------------------------------------
 // The mod wheel (FLM_FORMAT §7.4): the rack hands a CC #1 value as it is to every module's slot 74 (0x18059e0c0). Only
 // MiniSynth (0x1806aea00), GMSynth (0x18064db80) and SuperSaw (0x1807f8d20) keep their own; every other module has the
-// base's empty one. LYNX: the channel's CC #1 parameter on those engines' FLM builds (core/MiniSynth, GmsMobile,
+// base's empty one. YW: the channel's CC #1 parameter on those engines' FLM builds (core/MiniSynth, GmsMobile,
 // PocketSuperSaw take it as the module's raw wheel).
 bool takesFlmModWheel (const ChannelDef& c) noexcept
 {
@@ -2093,8 +2093,8 @@ std::optional<Song> importFlm (const std::vector<std::uint8_t>& fileBytes, const
     auto project = flm::parse ({ fileBytes.data(), fileBytes.size() }, error);
     if (! project)
         return std::nullopt;
-    // round 190og: a file LYNX exported carries its patterns' grouping and names in a chunk FLM skips (FlmExport.h); it
-    // counts only while the rest of the file is the one LYNX wrote (FLM drops the chunk when it saves the song again)
+    // round 190og: a file YW exported carries its patterns' grouping and names in a chunk FLM skips (FlmExport.h); it
+    // counts only while the rest of the file is the one YW wrote (FLM drops the chunk when it saves the song again)
     const auto extras = flmexport::readExtras (fileBytes);
     if (! extras)
         return importFlmProject (*project, options);
@@ -2364,20 +2364,20 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
     song.info.created = flmDateSeconds (project.created);
     if (std::isfinite (project.editSeconds) && project.editSeconds > 0.0 && project.editSeconds < 1.0e9)
         song.info.workSeconds = project.editSeconds;
-    // HEAD's app version (format-0018): FLM warns about a song from a newer app; LYNX's reader was last checked against
+    // HEAD's app version (format-0018): FLM warns about a song from a newer app; YW's reader was last checked against
     // the files of FLM 5.0.4, so a newer one is named in the report (its new fields, if any, are not read)
     if (flmVersionNewer (project.appVersion, "5.0.4"))
         ctx.note (&FlpImportReport::notReproduced, "FL Studio Mobile " + project.appVersion + " (newer than this import knows: new settings may be missing)");
     song.bpm = std::clamp (project.tempo > 0.0 ? project.tempo : 120.0, minTempo, maxTempo);
     // round 190og (format-0012): HEAD's play loop (+272 / +280, beats). FLM keeps whether it loops at run time only and
-    // starts with it off (FLM-FACTS §1), so the range comes in as LYNX's stored range with looping off (Song::loopOff)
+    // starts with it off (FLM-FACTS §1), so the range comes in as YW's stored range with looping off (Song::loopOff)
     if (std::isfinite (project.loopStart) && std::isfinite (project.loopEnd) && project.loopEnd > project.loopStart + 1e-9 && project.loopStart >= 0.0)
     {
         song.loopStart = ticksOf (project.loopStart);
         song.loopEnd = ticksOf (project.loopEnd);
         song.loopOff = true;
     }
-    // KEYB: the keyboard's chord set becomes the project's chord set for LYNX's Chord pad (round 190ds, core/ScaleKeys.h)
+    // KEYB: the keyboard's chord set becomes the project's chord set for YW's Chord pad (round 190ds, core/ScaleKeys.h)
     if (! project.chordSetJson.empty())
     {
         int dropped = 0;
@@ -2389,7 +2389,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
     if (const auto key = scalekeys::flmKeyLocker (project.root, project.scale))
         projectkey::set (song, key);
     // TDIV: beats per bar and the grid's steps per beat (FLM_FORMAT §TDIV, round 190ab: the second byte is not a note
-    // value; LYNX's own grid stays at four steps per beat)
+    // value; YW's own grid stays at four steps per beat)
     ctx.stepsPerBeat = project.denominator;
     song.beatsPerBar = std::clamp (project.numerator, 1, 32);
     // FLM pans by balance — the rack's pan (RPRM [1]) and a drum pad's note pan (gain w·min(1, 2(1 − p)) left,
@@ -2416,7 +2416,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
     };
     std::vector<RackLane> rackLanes; // importable rack automation lanes (F6), filled after the routing
     std::deque<flm::Lane> linkedLanes; // round 190dw item 4: a CC lane's copies on the parameters CCLK links to it
-    std::vector<std::pair<int, int>> outputLinks; // round 190dw item 4: (LYNX channel, FLM channel id) of linked drum pads
+    std::vector<std::pair<int, int>> outputLinks; // round 190dw item 4: (YW channel, FLM channel id) of linked drum pads
     std::map<int, int> insertOfId;                          // FLM channel id → insert
     std::vector<std::pair<int, const flm::Channel*>> routes; // insert, channel (its SEND chunks)
     for (const auto i : order)
@@ -2425,7 +2425,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
         const auto& rack = i < project.racks.size() ? project.racks[i] : noRack;
         const auto name = ch.name.empty() ? ch.typeName : ch.name;
         // round 190fn (mixer-0016): the channel's colour (CHHD's hue, FLM's own HSL law) on everything this FLM channel
-        // becomes — its channels, Playlist rows and inserts (the Master keeps LYNX's) — once the channel is done
+        // becomes — its channels, Playlist rows and inserts (the Master keeps YW's) — once the channel is done
         struct Colours
         {
             Song& song;
@@ -2453,7 +2453,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
         } colours { song, song.channels.size(), song.playlistTracks.size(), song.mixer.size(),
                     ch.hue >= 0.0f && ch.kind != flm::kindMaster ? flm::channelColour (ch.hue) : 0u };
 
-        // the insert: FLM's master is LYNX's Master; every other channel (bus/AUX tracks too) gets one
+        // the insert: FLM's master is YW's Master; every other channel (bus/AUX tracks too) gets one
         int insert = 0;
         if (ch.kind != flm::kindMaster && (int) song.mixer.size() < maxMixerTracks)
         {
@@ -2476,7 +2476,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
         }
         // [2] Mute and [3] Solo (the names PROVEN-REA; stored as switches, on = above the middle: INFERRED, every sample
         // has 0); [4] Pitch Bend: FLM's setter plays the rack's voices at a ratio of 2^(4v − 2), i.e. 48·v − 24
-        // semitones (PROVEN-REA 0x18059e0c0), which a LYNX sampler takes on its pitch knob (−24…24); [5] Aftertouch
+        // semitones (PROVEN-REA 0x18059e0c0), which a YW sampler takes on its pitch knob (−24…24); [5] Aftertouch
         // goes to the modules and isn't imported
         float bendSemitones = 0.0f;
         {
@@ -2503,7 +2503,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
         // Round 190bs (PROVEN-REA: the rack's note dispatch 0x18059bfa0 and render 0x18059d3b0). Every generator of the
         // rack plays every note inside its key range: they all become channels, under a Layer when there are two or
         // more. The rack's note effects run over its notes first, wherever they sit (core/FlmNoteFx.h). The rack's audio
-        // is one buffer the modules work on in order, so an effect only hears the generators before it: on a LYNX
+        // is one buffer the modules work on in order, so an effect only hears the generators before it: on a YW
         // insert it hears them all, which is listed.
         std::vector<const flm::Module*> generators;
         flmnotefx::Chain noteFx;
@@ -2647,14 +2647,14 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
                 return l.kind() == flm::LaneKind::automation && l.targetModule == (int) g.instanceId && l.targetParam == 0 && ! l.clips.empty();
             });
         };
-        std::map<std::uint32_t, std::vector<int>> generatorChannels; // module instance → its LYNX channel(s)
+        std::map<std::uint32_t, std::vector<int>> generatorChannels; // module instance → its YW channel(s)
         std::vector<int> bendChannels;                               // every channel the rack's pitch bend moves
 
         // the rack's held pitch bend on a channel it creates (round 190de: a Pitch Bend lane plays it instead, below)
         // Round 190de (FLM_FORMAT §7.4): the rack hands its Pitch Bend 4v − 2 to every module's bend input, which bends by
         // its own range (half the value × the range); its drum slots play at 2^(4v − 2). `range` = the semitones of the
         // full throw 2v − 1 for this channel (−1: a module whose bend was not traced). The held value moves the channel's
-        // PITCH knob (every LYNX engine transposes its voices by it); a Pitch Bend lane plays as LYNX's bend, whose range
+        // PITCH knob (every YW engine transposes its voices by it); a Pitch Bend lane plays as YW's bend, whose range
         // is set to the same semitones.
         const auto bendThrow = bendSemitones / 24.0f;
         const auto bend = [&] (ChannelDef& c, float range) {
@@ -2887,7 +2887,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
                     continue;
                 if (lane.targetModule > 0)
                 {
-                    // an effect module's parameter (F5): its LYNX slots exist now
+                    // an effect module's parameter (F5): its YW slots exist now
                     const auto mm = mappedModules.find ((std::uint32_t) lane.targetModule);
                     if (mm == mappedModules.end())
                     {
@@ -3046,14 +3046,14 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
     }
     // routing (F2): a SEND is (target channel id, …, linear gain capped at 1, …, …, level 0…1 on FLM's fader law)
     // [FLM_FORMAT §4]; the master's id is its route to the Master, another channel's a send to that insert. A channel
-    // with SENDs but none to the master doesn't reach it directly; one without any keeps LYNX's default route.
+    // with SENDs but none to the master doesn't reach it directly; one without any keeps YW's default route.
     int masterId = -1;
     for (const auto& c : project.channels)
         if (c.kind == flm::kindMaster)
             masterId = c.channelId < 0 ? 0 : c.channelId;
     // --- round 190dw item 4: a drum pad's output link (LINk's fourth word, FLM_FORMAT §6): FLM renders a linked pad
     // into the target channel's buffer, with the sounds that channel receives (0x18075ba30, called from the channel
-    // mix 0x180778520), and not into its own rack (0x180747e56). LYNX: the pad's channel plays into the target's insert
+    // mix 0x180778520), and not into its own rack (0x180747e56). YW: the pad's channel plays into the target's insert
     for (const auto& [k, id] : outputLinks)
     {
         auto target = -1;
@@ -3154,11 +3154,11 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
         song.patterns.push_back (std::move (first));
     }
     song.currentPattern = 0;
-    // round 190fn (O1): factory files missing → say where LYNX looks for them (it never ships Image-Line content)
+    // round 190fn (O1): factory files missing → say where YW looks for them (it never ships Image-Line content)
     if (ctx.resourceMissing)
         ctx.note (&FlpImportReport::notReproduced, ctx.options.userResourceRoots.empty()
                                                      ? "FL Studio Mobile factory content not found: add the app's Resources folder in Settings > Files"
                                                      : "FL Studio Mobile factory content not found in the Resources folders of Settings > Files");
     return std::move (ctx.song);
 }
-} // namespace lynx
+} // namespace yw

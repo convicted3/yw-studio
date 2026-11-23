@@ -10,7 +10,7 @@
 #include "core/AudioEdit.h"
 #include "core/NoteEdit.h"
 
-namespace lynx::a2m
+namespace yw::a2m
 {
 // --- Basic Pitch ---------------------------------------------------------------------------------------------------
 bool runModel (const std::vector<float>& mono, int framesPerWindow,
@@ -772,7 +772,7 @@ int addPattern (Song& song, Mode mode, const std::vector<Note>& notes, const std
             std::swap (from, to); // (a clip that plays backwards)
         if (to <= 0.0 || from >= limit)
             continue;
-        lynx::Note note;
+        yw::Note note;
         note.start = (std::int64_t) std::llround (std::max (0.0, from));
         note.channel = drums ? firstChannel + (n.key == kickKey ? 0 : n.key == snareKey ? 1 : 2) : firstChannel;
         note.key = drums ? 60 : n.key;
@@ -867,4 +867,4 @@ int addClipPattern (Song& song, int clipIndex, const std::string& sourcePath, Mo
     song.playlist.push_back (clip);
     return patternIndex;
 }
-} // namespace lynx::a2m
+} // namespace yw::a2m

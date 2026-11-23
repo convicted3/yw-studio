@@ -9,10 +9,10 @@ namespace vocal190li
 {
 // a sung tone: harmonics of f0 (optionally with vibrato, cents) through a vowel resonance, 20 ms fades; `spec` =
 // (MIDI note or 0 for a rest, seconds); `formant` = the resonance's centre (Hz)
-lynx::SampleData line (const std::vector<std::pair<double, double>>& spec, double vibratoCents = 0.0, double formant = 700.0,
+yw::SampleData line (const std::vector<std::pair<double, double>>& spec, double vibratoCents = 0.0, double formant = 700.0,
                        double sampleRate = 48000.0)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = sampleRate;
     double ph = 0.0;
     for (const auto& [midi, seconds] : spec)
@@ -42,14 +42,14 @@ lynx::SampleData line (const std::vector<std::pair<double, double>>& spec, doubl
 }
 
 // the median pitch (MIDI) of x over [a, b) seconds, and the spread (cents, standard deviation)
-std::pair<double, double> pitchOver (const lynx::SampleData& x, double a, double b)
+std::pair<double, double> pitchOver (const yw::SampleData& x, double a, double b)
 {
     const auto fs = x.sampleRate;
-    const auto frames = lynx::vocal::analysePitch (x.leftData(), (int) x.frames(), fs, 128);
+    const auto frames = yw::vocal::analysePitch (x.leftData(), (int) x.frames(), fs, 128);
     std::vector<double> v;
     for (std::size_t k = 0; k < frames.size(); ++k)
         if (const auto t = (double) k * 128 / fs; t >= a && t < b && frames[k].hz > 0.0)
-            v.push_back (lynx::vocal::hzToNote (frames[k].hz));
+            v.push_back (yw::vocal::hzToNote (frames[k].hz));
     if (v.empty())
         return { 0.0, 0.0 };
     auto sorted = v;
@@ -62,7 +62,7 @@ std::pair<double, double> pitchOver (const lynx::SampleData& x, double a, double
     return { sorted[sorted.size() / 2], 100.0 * std::sqrt (var) };
 }
 
-double rmsOver (const lynx::SampleData& x, double a, double b)
+double rmsOver (const yw::SampleData& x, double a, double b)
 {
     double s = 0.0;
     int n = 0;
@@ -72,7 +72,7 @@ double rmsOver (const lynx::SampleData& x, double a, double b)
 }
 
 // the voiced note that holds time t (seconds)
-int noteAt (const lynx::newtonefx::Track& t, double seconds, double fs)
+int noteAt (const yw::newtonefx::Track& t, double seconds, double fs)
 {
     const auto at = (std::int64_t) (seconds * fs);
     for (int k = 0; k < (int) t.pitches.size(); ++k)
@@ -84,7 +84,7 @@ int noteAt (const lynx::newtonefx::Track& t, double seconds, double fs)
 
 TEST (vocal190li_native_layout_4_only_when_used)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = vocal190li::line ({ { 0, 0.15 }, { 57, 0.4 }, { 60, 0.4 }, { 0, 0.1 } });
     auto t = newtonefx::analyseNotes (s);
     CHECK (t.engine == 0); // (an analysis alone: FL's engine; the editor gives a new slot the natural one)
@@ -123,7 +123,7 @@ TEST (vocal190li_native_layout_4_only_when_used)
 
 TEST (vocal190li_sung_pitch_and_octave_guard)
 {
-    using namespace lynx;
+    using namespace yw;
     // a low voice with a strong first formant: YIN's loose threshold (FL's voicing) can take a formant's sub-period;
     // the guard keeps the strict estimate's octave, so the notes read where they were sung
     const auto s = vocal190li::line ({ { 0, 0.2 }, { 45, 0.6 }, { 0, 0.15 }, { 50, 0.6 }, { 0, 0.2 } }, 0.0, 730.0);
@@ -145,7 +145,7 @@ TEST (vocal190li_sung_pitch_and_octave_guard)
 
 TEST (vocal190li_natural_engine_reproduces_and_shifts)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = vocal190li::line ({ { 0, 0.15 }, { 57, 0.5 }, { 0, 0.15 }, { 62, 0.5 }, { 0, 0.15 } });
     auto t = newtonefx::analyseNotes (s);
     t.engine = 1;
@@ -184,7 +184,7 @@ TEST (vocal190li_natural_engine_reproduces_and_shifts)
 
 TEST (vocal190li_modulation_and_drift_split)
 {
-    using namespace lynx;
+    using namespace yw;
     // a held note with a 40-cent vibrato
     const auto s = vocal190li::line ({ { 0, 0.15 }, { 60, 1.6 }, { 0, 0.15 } }, 40.0);
     auto t = newtonefx::analyseNotes (s);

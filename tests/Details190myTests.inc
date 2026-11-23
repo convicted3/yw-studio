@@ -6,7 +6,7 @@
 // track's fader acts before C (levelLag and the take's effects latency leave C out).
 TEST (details190my_current_track_pdc)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = latency165::impulses (2, false);
     const auto c = mixerops::addCurrentTrack (s);
     CHECK (c == 3);

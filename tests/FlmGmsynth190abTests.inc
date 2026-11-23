@@ -47,13 +47,13 @@ inline flm182c::Bytes gmsProject (const flm182c::Bytes& module)
     t::fixed (m, "", 2048);
     t::fixed (m, "2026-11-10 15:00:00", 256);
     const t::Bytes tdiv { 4, 4 };
-    return t::cat ({ f, t::head ("GMSynth", 120.0), t::chunk ("META", m), t::chunk ("TDIV", tdiv), t::rack (lynx::flm::kindMaster, { t::module (28, 1) }),
-                     t::rack (lynx::flm::kindNormal, { module }), t::channel (lynx::flm::kindMaster, "MASTER", 0, {}),
-                     t::channel (lynx::flm::kindNormal, "Keys", 1, { t::lane (0, "Keys", { t::clip (0, 4, 4, 0, 1, { { 0, 2, 60 } }) }) }) });
+    return t::cat ({ f, t::head ("GMSynth", 120.0), t::chunk ("META", m), t::chunk ("TDIV", tdiv), t::rack (yw::flm::kindMaster, { t::module (28, 1) }),
+                     t::rack (yw::flm::kindNormal, { module }), t::channel (yw::flm::kindMaster, "MASTER", 0, {}),
+                     t::channel (yw::flm::kindNormal, "Keys", 1, { t::lane (0, "Keys", { t::clip (0, 4, 4, 0, 1, { { 0, 2, 60 } }) }) }) });
 }
 
 // the import options with FLM's GMSynth data files "present" under the test's resource root
-inline lynx::FlmImportOptions optionsWithData (lynx::FlpImportReport* report)
+inline yw::FlmImportOptions optionsWithData (yw::FlpImportReport* report)
 {
     auto o = flm182c::options (report);
     o.common.fileExists = [] (const std::string& p) {
@@ -87,7 +87,7 @@ inline double rmsOf (const std::vector<float>& stereo, int from, int to, int cha
 
 TEST (flm190ab_gmsynth_imports_its_parameters_and_waves)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace gm = gmsmobile;
     // the defaults, without a CSTM chunk: Sine / Sine
     {
@@ -171,7 +171,7 @@ TEST (flm190ab_gmsynth_imports_its_parameters_and_waves)
 
 TEST (flm190ab_gmsynth_laws)
 {
-    namespace gm = lynx::gmsmobile;
+    namespace gm = yw::gmsmobile;
     const double fs = 44100.0;
     const auto near = [] (double a, double b) { return std::fabs (a - b) <= 1e-6 * std::fabs (b); };
     // envelope followers x += (target − x)·c: attack 8.82 / (100·v⁴·fs) (v = 0: at once), decay 8.82 / ((200·v⁷ + 0.001)·fs),
@@ -203,7 +203,7 @@ TEST (flm190ab_gmsynth_laws)
 
 TEST (flm190ab_gmsynth_engine_with_flms_data)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace gm = gmsmobile;
     const auto root = flm190ab::realResources();
     if (root.empty())
@@ -325,7 +325,7 @@ TEST (flm190ab_gmsynth_engine_with_flms_data)
 
 TEST (flm190ab_gmsynth_plays_through_the_instrument_and_leaves_the_desktop_gms_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace gm = gmsmobile;
     // a desktop GMS channel is not FLM's, whatever its state
     {

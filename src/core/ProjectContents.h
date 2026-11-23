@@ -10,7 +10,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::projectcontents
+namespace yw::projectcontents
 {
 enum class Kind
 {
@@ -50,8 +50,8 @@ std::vector<Item> generators (const Song& song);
 std::vector<Item> effects (const Song& song);
 std::vector<Item> automations (const Song& song);
 
-// The name an effect slot shows (plugin name, the original plugin's for a LYNX substitute, else the built-in name).
+// The name an effect slot shows (plugin name, the original plugin's for a YW substitute, else the built-in name).
 std::string effectSlotName (const EffectSlot& slot);
 // The insert's name ("Master", or "Insert N" when unnamed).
 std::string insertName (const Song& song, int track);
-} // namespace lynx::projectcontents
+} // namespace yw::projectcontents

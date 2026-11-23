@@ -8,39 +8,39 @@
 
 namespace live190ce
 {
-inline lynx::EffectSlot fx (lynx::EffectKind kind)
+inline yw::EffectSlot fx (yw::EffectKind kind)
 {
-    lynx::EffectSlot s;
+    yw::EffectSlot s;
     s.kind = kind;
     return s;
 }
 // two channels (a synth on insert 1, a sampler on insert 2) and insert 1 with an EQ and a compressor (off, half mix, row 3)
-inline lynx::Song song()
+inline yw::Song song()
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (2);
     s.channels[0].name = "Lead";
-    s.channels[0].instrument = lynx::InstrumentKind::synth;
+    s.channels[0].instrument = yw::InstrumentKind::synth;
     s.channels[0].mixerTrack = 1;
     s.channels[0].volume = 0.5f;
     s.channels[0].pan = -0.25f;
     s.channels[1].name = "Kick";
-    s.channels[1].instrument = lynx::InstrumentKind::sampler;
+    s.channels[1].instrument = yw::InstrumentKind::sampler;
     s.channels[1].samplePath = "/samples/kick.wav";
     s.channels[1].mixerTrack = 2;
     if (s.mixer.size() < 3)
         s.mixer.resize (3);
     s.mixer[1].effects.clear();
-    s.mixer[1].effects.push_back (fx (lynx::EffectKind::eq));
+    s.mixer[1].effects.push_back (fx (yw::EffectKind::eq));
     s.mixer[1].effects[0].row = 0;
-    s.mixer[1].effects.push_back (fx (lynx::EffectKind::compressor));
+    s.mixer[1].effects.push_back (fx (yw::EffectKind::compressor));
     s.mixer[1].effects[1].row = 3;
     s.mixer[1].effects[1].enabled = false;
     s.mixer[1].effects[1].mix = 0.5f;
     s.mixer[1].effects[1].sidechain = 2;
     if (s.patterns.empty())
         s.patterns.emplace_back();
-    lynx::Note n;
+    yw::Note n;
     n.channel = 0;
     n.key = 60;
     s.patterns[0].notes = { n };
@@ -52,7 +52,7 @@ inline lynx::Song song()
 
 TEST (live190ce_collections_start_as_the_one_starred_flag)
 {
-    using namespace lynx::collections;
+    using namespace yw::collections;
     Store s;
     CHECK (count == 7);
     CHECK (s.shown() == std::vector<int> { 0 }); // only Starred is listed at first: the tab looks as it always did
@@ -66,7 +66,7 @@ TEST (live190ce_collections_start_as_the_one_starred_flag)
 
 TEST (live190ce_an_item_carries_several_collections_at_once)
 {
-    using namespace lynx::collections;
+    using namespace yw::collections;
     Store s;
     CHECK (s.set ("/a.wav", 0, true));
     CHECK (! s.set ("/a.wav", 0, true)); // nothing changed
@@ -86,14 +86,14 @@ TEST (live190ce_an_item_carries_several_collections_at_once)
     // nothing odd gets in
     CHECK (! s.set ("", 0, true) && ! s.set ("/x", 7, true) && ! s.set ("/x", -1, true) && ! s.set ("a\nb", 0, true));
     // a Plugin database entry is an item too
-    CHECK (s.set (pluginItem ("lynx:fx:Reverb"), 1, true));
-    CHECK (isPluginItem (pluginItem ("lynx:fx:Reverb")) && ! isPluginItem ("/plugin:x") && pluginKeyOf (pluginItem ("lynx:fx:Reverb")) == "lynx:fx:Reverb");
+    CHECK (s.set (pluginItem ("yw:fx:Reverb"), 1, true));
+    CHECK (isPluginItem (pluginItem ("yw:fx:Reverb")) && ! isPluginItem ("/plugin:x") && pluginKeyOf (pluginItem ("yw:fx:Reverb")) == "yw:fx:Reverb");
 }
 
 TEST (live190cy_labelling_with_a_hidden_collection_shows_it)
 {
     // Live 12.4.16 (live check 190cw): the key of a hidden colour labels the item and the collection appears
-    using namespace lynx::collections;
+    using namespace yw::collections;
     Store s;
     CHECK (s.shown() == std::vector<int> { 0 });
     CHECK (s.toggle ("/a.wav", 4)); // key 5: in, and Blue is listed from now on
@@ -113,7 +113,7 @@ TEST (live190cy_labelling_with_a_hidden_collection_shows_it)
 
 TEST (live190ce_collections_round_trip_through_the_settings_file)
 {
-    using namespace lynx::collections;
+    using namespace yw::collections;
     Store s;
     s.set ("C:\\Samples\\Kick 01.wav", 0, true);
     s.set ("C:\\Samples\\Kick 01.wav", 3, true);
@@ -140,20 +140,20 @@ TEST (live190ce_collections_round_trip_through_the_settings_file)
 
 TEST (live190ce_the_old_starred_file_becomes_collection_one)
 {
-    using namespace lynx::collections;
+    using namespace yw::collections;
     const auto s = Store::fromStarred ({ "/a/kick.wav", "/a/Loops", "/a/kick.wav" });
     CHECK (s.items.size() == 2 && s.has ("/a/kick.wav", 0) && s.has ("/a/Loops", 0));
     CHECK (s.shown() == std::vector<int> { 0 });
-    // what an older LYNX still reads: the starred paths, without Plugin database entries
+    // what an older YW still reads: the starred paths, without Plugin database entries
     auto t = s;
-    t.set (pluginItem ("lynx:gen:Synth"), 0, true);
+    t.set (pluginItem ("yw:gen:Synth"), 0, true);
     t.set ("/b/only-blue.wav", 4, true);
     CHECK (t.starredPaths() == (std::vector<std::string> { "/a/Loops", "/a/kick.wav" }));
 }
 
 TEST (live190ce_labels_follow_a_moved_file_or_folder)
 {
-    using namespace lynx::collections;
+    using namespace yw::collections;
     Store s;
     s.set ("/lib/Drums", 1, true);
     s.set ("/lib/Drums/kick.wav", 0, true);
@@ -167,13 +167,13 @@ TEST (live190ce_labels_follow_a_moved_file_or_folder)
 
 TEST (live190ce_search_finds_items_by_the_name_of_their_collection)
 {
-    using namespace lynx::collections;
+    using namespace yw::collections;
     Store s;
     s.set ("/s/Kick Hard.wav", 0, true);
     s.set ("/s/Snare.wav", 0, true);
     s.set ("/s/Kick Soft.wav", 3, true);
     s.set ("/s/Pad.wav", 3, true);
-    s.set (pluginItem ("lynx:fx:Reverb"), 3, true);
+    s.set (pluginItem ("yw:fx:Reverb"), 3, true);
     s.rename (3, "Favourite Textures");
     // a collection's name alone: everything in it
     CHECK (s.search ("starred") == (std::vector<std::string> { "/s/Kick Hard.wav", "/s/Snare.wav" }));
@@ -196,7 +196,7 @@ TEST (live190ce_search_finds_items_by_the_name_of_their_collection)
 
 TEST (live190ce_hot_swap_replaces_the_device_in_place)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ce::song();
     const auto eqInstance = s.mixer[1].effects[0].instance.id;
     const auto target = hotswap::targetOfEffect (s, 1, 1);
@@ -229,7 +229,7 @@ TEST (live190ce_hot_swap_replaces_the_device_in_place)
 
 TEST (live190ce_hot_swap_follows_the_device_through_the_chain)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ce::song();
     const auto target = hotswap::targetOfEffect (s, 1, 1); // the compressor
     CHECK (mixerops::moveEffectSlot (s, 1, 1, 0));         // dragged before the EQ
@@ -245,7 +245,7 @@ TEST (live190ce_hot_swap_follows_the_device_through_the_chain)
 
 TEST (live190ce_hot_swap_preset_changes_only_the_settings)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ce::song();
     const auto target = hotswap::targetOfEffect (s, 1, 0); // the EQ
     EffectParams params {};
@@ -277,7 +277,7 @@ TEST (live190ce_hot_swap_preset_changes_only_the_settings)
 
 TEST (live190ce_hot_swap_of_a_channel_keeps_its_place_notes_and_levels)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ce::song();
     const auto target = hotswap::targetOfChannel (s, 0);
     CHECK (target.kind == hotswap::Kind::channel && hotswap::findChannel (s, target.instance) == 0);
@@ -307,17 +307,17 @@ TEST (live190ce_hot_swap_of_a_channel_keeps_its_place_notes_and_levels)
 
 TEST (live190ce_hot_swap_candidates_by_file_type)
 {
-    using namespace lynx;
+    using namespace yw;
     using hotswap::Candidate;
     const auto s = live190ce::song();
     const auto effect = hotswap::targetOfEffect (s, 1, 0), synth = hotswap::targetOfChannel (s, 0), sampler = hotswap::targetOfChannel (s, 1);
     CHECK (hotswap::candidateFor (s, effect, "Big Hall.FST") == Candidate::effectPreset);
-    CHECK (hotswap::candidateFor (s, effect, "/p/My EQ.lynxpreset") == Candidate::effectPreset);
+    CHECK (hotswap::candidateFor (s, effect, "/p/My EQ.ywpreset") == Candidate::effectPreset);
     CHECK (hotswap::candidateFor (s, effect, "kick.wav") == Candidate::none);
     CHECK (hotswap::candidateFor (s, synth, "Lead.fst") == Candidate::synthPreset && hotswap::candidateFor (s, synth, "x.gmsynth") == Candidate::synthPreset);
     CHECK (hotswap::candidateFor (s, synth, "kick.wav") == Candidate::none); // a synth takes no sample
     CHECK (hotswap::candidateFor (s, sampler, "C:\\s\\Kick.WAV") == Candidate::sample && hotswap::candidateFor (s, sampler, "a.flac") == Candidate::sample);
-    CHECK (hotswap::candidateFor (s, sampler, "song.lynx") == Candidate::none && hotswap::candidateFor (s, sampler, "noext") == Candidate::none);
+    CHECK (hotswap::candidateFor (s, sampler, "song.yw") == Candidate::none && hotswap::candidateFor (s, sampler, "noext") == Candidate::none);
     CHECK (hotswap::candidateFor (s, sampler, "/folder.wav/noext") == Candidate::none);
     CHECK (hotswap::candidateFor (s, {}, "kick.wav") == Candidate::none);
     CHECK (hotswap::candidateFor (s, { hotswap::Kind::effect, 123456789 }, "a.fst") == Candidate::none); // the device is gone
@@ -325,7 +325,7 @@ TEST (live190ce_hot_swap_candidates_by_file_type)
 
 TEST (live190ce_hot_swap_session_restores_the_browser_and_follows_undo)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ce::song();
     hotswap::Session session;
     CHECK (! session.active() && session.stillValid (s));
@@ -378,7 +378,7 @@ TEST (live190ce_hot_swap_session_restores_the_browser_and_follows_undo)
 
 TEST (live190ce_duplicate_and_paste_make_new_devices)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190ce::song();
     const auto original = s.mixer[1].effects[1].instance.id;
     // Duplicate: right after the device, the same settings, a new running instance
@@ -411,7 +411,7 @@ TEST (live190ce_duplicate_and_paste_make_new_devices)
 
 TEST (live190ce_collection_and_hot_swap_keys)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     for (int c = 1; c <= 7; ++c)
     {
         const auto* a = findAction ("browser.collection" + std::to_string (c));

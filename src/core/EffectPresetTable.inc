@@ -1,11 +1,11 @@
-// LYNX's factory presets (REA round 129) — included by core/EffectPresets.cpp only.
+// YW's factory presets (REA round 129) — included by core/EffectPresets.cpp only.
 //
 // Format: "[<engine name>]" starts an engine, "folder <name>" starts a sub-menu (until the next folder / engine),
 // "<preset name> | <parameter> = <value>; …" one preset. Values are written as the editor shows them ("2.5 s",
 // "40 %", "Concert Hall"; "#0.25" = a normalised value); parameters not named keep the engine's default, except
 // the ones an engine lists in "keep = a; b; …" (they keep the slot's current value: a tuner's key and scale).
-// These are LYNX's own starting points (own names and settings), not copies of any third-party preset library.
-namespace lynx::presets
+// These are YW's own starting points (own names and settings), not copies of any third-party preset library.
+namespace yw::presets
 {
 namespace
 {
@@ -65,7 +65,7 @@ Wide chorus        | V1 delay = 20 ms; V2 delay = 27 ms; V1 detune = +10 c; V2 d
 Stereo slap        | V1 delay = 78 ms; V2 delay = 100 ms; V1 detune = 0 c; V2 detune = 0 c; V1 feedback = 39 %; V2 feedback = 39 %
 Octave under       | V1 octave = on; V2 on = off; V1 pan = 0°; V1 gain = -12 dB; V1 delay = 10 ms; V1 detune = 0 c
 
-[LYNX Tune]
+[YW Tune]
 keep = Key; Scale; Reference; Range; MIDI; C; C#; D; D#; E; F; F#; G; G#; A; A#; B
 Natural            | Retune = 50 ms; Humanize = 50 %; Flex-Tune = 20 %
 Pop vocal          | Retune = 20 ms; Humanize = 25 %

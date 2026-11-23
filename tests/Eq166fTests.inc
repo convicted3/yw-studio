@@ -5,7 +5,7 @@
 
 TEST (eq166f_facet_press_on_a_node_moves_the_band_not_its_range)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // band 0 static at (100, 100) — its "range handle" would sit on the node; band 1 dynamic at (300, 100), handle at (300, 160)
     const float nx[] = { 100.0f, 300.0f }, ny[] = { 100.0f, 100.0f };
     const float rx[] = { 100.0f, 300.0f }, ry[] = { 100.0f, 160.0f };
@@ -38,7 +38,7 @@ TEST (eq166f_facet_press_on_a_node_moves_the_band_not_its_range)
 
 TEST (eq166f_plugin_folders_model_round_trip_and_menu_groups)
 {
-    namespace pc = lynx::plugincatalog;
+    namespace pc = yw::plugincatalog;
     CHECK (pc::cleanFolder ("  Stock // EQ / ") == "Stock/EQ");
     CHECK (pc::cleanFolder ("a/b/c/d/e/f") == "a/b/c/d");
     CHECK (pc::cleanFolder (" / \t ") == "");
@@ -47,12 +47,12 @@ TEST (eq166f_plugin_folders_model_round_trip_and_menu_groups)
     pc::Folders f;
     CHECK (pc::addFolder (f, false, "Stock/EQ") == "Stock/EQ");
     CHECK (f.effects.count ("Stock") == 1 && f.effects.count ("Stock/EQ") == 1 && f.generators.empty());
-    pc::moveToFolder (f, false, "lynx:fx:Fruity Parametric EQ 2", "Stock/EQ");
-    pc::moveToFolder (f, false, "lynx:fx:Fruity Limiter", "Stock");
+    pc::moveToFolder (f, false, "yw:fx:Fruity Parametric EQ 2", "Stock/EQ");
+    pc::moveToFolder (f, false, "yw:fx:Fruity Limiter", "Stock");
     pc::moveToFolder (f, false, "VST3-Pro-Q 4-abc", "Third party/EQ");
     pc::moveToFolder (f, false, "VST3-Valhalla-xyz", "Third party/Reverb");
     pc::addFolder (f, false, "Empty one");
-    pc::moveToFolder (f, true, "lynx:gen:Sytrus", "Synths");
+    pc::moveToFolder (f, true, "yw:gen:Sytrus", "Synths");
 
     // saved and read back the same (keys may hold spaces; a key with a tab can't be written)
     const auto text = pc::formatFolders (f);
@@ -63,8 +63,8 @@ TEST (eq166f_plugin_folders_model_round_trip_and_menu_groups)
     // the menus' folder tree (FL's Categories / Tree views): empty folders and the other kind left out, natural A-Z
     f.view = (int) pc::MenuView::tree;
     CHECK (pc::parseFolders (pc::formatFolders (f)).view == 2);
-    const std::vector<std::string> keys { "VST3-Valhalla-xyz", "lynx:fx:Fruity Limiter", "lynx:fx:Fruity Parametric EQ 2", "lynx:fx:Nothing",
-                                          "VST3-Pro-Q 4-abc", "lynx:gen:Sytrus" };
+    const std::vector<std::string> keys { "VST3-Valhalla-xyz", "yw:fx:Fruity Limiter", "yw:fx:Fruity Parametric EQ 2", "yw:fx:Nothing",
+                                          "VST3-Pro-Q 4-abc", "yw:gen:Sytrus" };
     const auto tree = pc::menuTree (f, false, keys);
     CHECK (tree.size() == 2);
     if (tree.size() == 2)
@@ -93,24 +93,24 @@ TEST (eq166f_plugin_folders_model_round_trip_and_menu_groups)
     CHECK (! pc::renameFolder (f, false, "Stock", "Stock/Inner"));
     // remove: the folder and its subfolders go, their plugins go back to no folder
     pc::removeFolder (f, false, "Stock", keys);
-    CHECK (f.effects.count ("Stock") == 0 && f.effects.count ("Stock/EQ") == 0 && f.of.count ("lynx:fx:Fruity Limiter") == 0
-           && f.of.count ("lynx:fx:Fruity Parametric EQ 2") == 0 && f.of.count ("VST3-Pro-Q 4-abc") == 1);
+    CHECK (f.effects.count ("Stock") == 0 && f.effects.count ("Stock/EQ") == 0 && f.of.count ("yw:fx:Fruity Limiter") == 0
+           && f.of.count ("yw:fx:Fruity Parametric EQ 2") == 0 && f.of.count ("VST3-Pro-Q 4-abc") == 1);
     pc::moveToFolder (f, false, "VST3-Pro-Q 4-abc", "");
     CHECK (f.of.count ("VST3-Pro-Q 4-abc") == 0);
 }
 
 TEST (eq166f_plugin_folders_from_fl_plugin_database)
 {
-    namespace pc = lynx::plugincatalog;
+    namespace pc = yw::plugincatalog;
     pc::Folders f;
     const std::vector<std::string> files { "Stock/EQ/Fruity Parametric EQ 2.fst", "Stock/Dynamics/Fruity limiter.fst", "Delay reverb/LuxeVerb.fst",
                                            "Top level.fst", "Third party/Unknown Plugin.fst" };
-    const std::vector<std::pair<std::string, std::string>> names { { "lynx:fx:Fruity Parametric EQ 2", "Fruity Parametric EQ 2" },
-                                                                   { "lynx:fx:Fruity Limiter", "Fruity Limiter" },
-                                                                   { "lynx:fx:LuxeVerb", "LuxeVerb" }, { "lynx:fx:Top level", "Top level" } };
+    const std::vector<std::pair<std::string, std::string>> names { { "yw:fx:Fruity Parametric EQ 2", "Fruity Parametric EQ 2" },
+                                                                   { "yw:fx:Fruity Limiter", "Fruity Limiter" },
+                                                                   { "yw:fx:LuxeVerb", "LuxeVerb" }, { "yw:fx:Top level", "Top level" } };
     CHECK (pc::importFlFolders (f, false, files, names) == 3);
-    CHECK (f.of["lynx:fx:Fruity Parametric EQ 2"] == "Stock/EQ" && f.of["lynx:fx:Fruity Limiter"] == "Stock/Dynamics" && f.of["lynx:fx:LuxeVerb"] == "Delay reverb");
-    CHECK (f.of.count ("lynx:fx:Top level") == 0 && f.effects.count ("Third party") == 0);
+    CHECK (f.of["yw:fx:Fruity Parametric EQ 2"] == "Stock/EQ" && f.of["yw:fx:Fruity Limiter"] == "Stock/Dynamics" && f.of["yw:fx:LuxeVerb"] == "Delay reverb");
+    CHECK (f.of.count ("yw:fx:Top level") == 0 && f.effects.count ("Third party") == 0);
 }
 
 namespace eq166f
@@ -118,9 +118,9 @@ namespace eq166f
 // runs `secs` of a source tone (fs Hz, as) and a sidechain tone (ft Hz, at) through Facet in 480-sample blocks;
 // returns the output's left channel and the input / sidechain copies
 struct Run { std::vector<float> out, src, tgt; int latency = 0; };
-Run run (const lynx::EffectParams& p, double secs, double fs, double as, double ft, double at, bool side = true, int phaseMode = 0)
+Run run (const yw::EffectParams& p, double secs, double fs, double as, double ft, double at, bool side = true, int phaseMode = 0)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto params = p;
     params[(std::size_t) phaseParam] = phaseValue ((Phase) phaseMode);
     auto e = make (&params);
@@ -155,10 +155,10 @@ double rms (const std::vector<float>& v, int from, int to)
 
 TEST (eq166f_facet_comparative_eq_listens_to_source_and_target)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     auto p = facet103::bell (1000.0, 12.0, 1.0); // a loud boost: the EQ's output is clearly not the source
     CHECK (listen (p[(std::size_t) listenParam]) == Listen::eq && p[(std::size_t) targetLevelParam] >= 0.5f);
-    CHECK (std::string (lynx::formatEffectParam (lynx::EffectKind::facetEq, listenParam, listenValue (Listen::target), 120.0)) == "Target");
+    CHECK (std::string (yw::formatEffectParam (yw::EffectKind::facetEq, listenParam, listenValue (Listen::target), 120.0)) == "Target");
     const int n = 48000;
     for (const int mode : { 0, 2 }) // zero latency and linear phase (the switch keeps the latency)
     {
@@ -194,7 +194,7 @@ TEST (eq166f_facet_comparative_eq_listens_to_source_and_target)
 
 TEST (eq166f_facet_listen_switch_is_click_free)
 {
-    using namespace lynx::facet;
+    using namespace yw::facet;
     // the same signal on both sides at the same level: switching EQ ↔ target mid-stream must not jump
     auto p = facet103::defaults(); // a flat EQ: output == input
     p[(std::size_t) targetLevelParam] = 0.0f;
@@ -219,7 +219,7 @@ TEST (eq166f_facet_listen_switch_is_click_free)
 
 TEST (eq166f_peq2_heatmap_colours_follow_the_level)
 {
-    namespace sh = lynx::spectrumheat;
+    namespace sh = yw::spectrumheat;
     CHECK (sh::heat01 (-96.0) == 0.0 && sh::heat01 (0.0) == 1.0 && std::abs (sh::heat01 (-48.0) - 0.5) < 1e-12 && sh::heat01 (-200.0) == 0.0);
     // hotter = brighter and redder: the ramp's brightness and its red rise with the level
     int lastSum = -1, lastRed = -1;
@@ -260,7 +260,7 @@ TEST (eq166f_peq2_heatmap_colours_follow_the_level)
 // it overflowed. Every parameter at 0 / 1 / random, three rates, noise in: the output stays finite.
 TEST (eq166f_echoform_stays_finite_with_extreme_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::echoform);
     std::mt19937 rng (166);
     std::uniform_real_distribution<float> u (0.0f, 1.0f);

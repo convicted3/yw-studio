@@ -1,9 +1,9 @@
 #pragma once
 
-// Piano roll scripts (FL Studio's Piano roll › Tools › Scripts: Python ".pyscript" files), run by LYNX's embedded Python
+// Piano roll scripts (FL Studio's Piano roll › Tools › Scripts: Python ".pyscript" files), run by YW's embedded Python
 // (core/Python.h) on the Piano roll's notes and time markers (round 190as, docs/analise/REA_rodada190as-pyscript.md).
 //
-// LYNX's own `flpianoroll` module is written from FL Studio's published "Piano roll script reference" (the text file FL
+// YW's own `flpianoroll` module is written from FL Studio's published "Piano roll script reference" (the text file FL
 // ships next to its scripts, and the manual's API page) plus the behaviour read from FL's engine (REA: what the script
 // sees, defaults, what is kept when the notes are written back); clean-room, our own code. Scripts written for FL run
 // unmodified:
@@ -18,7 +18,7 @@
 // As in FL: the script sees the notes of the Piano roll's channel, and only the selected ones when notes are selected;
 // getNote() hands out the live note (changing it changes the score), addNote() takes the object itself (changes after
 // the call still count); integer members refuse floats and the True/False members refuse anything but a bool (FL's
-// members are typed). A script either runs straight through or defines createDialog() and apply(form): LYNX shows the
+// members are typed). A script either runs straight through or defines createDialog() and apply(form): YW shows the
 // form and calls apply() with the values (again on a fresh copy of the notes whenever a control changes: the preview).
 //
 // Sandbox: no files, no programs, no network, no modules from disk (core/Python.h); a script that runs too long is
@@ -32,7 +32,7 @@
 #include "core/ScriptDialog.h"
 #include "core/Song.h"
 
-namespace lynx::prscript
+namespace yw::prscript
 {
 using Control = scriptform::Control;
 using Form = scriptform::Form;
@@ -51,7 +51,7 @@ struct ScriptNote
     double fres = 128.0 / 255.0;    // 0..1 (Mod Y)
     int pitchofs = 0;               // -120..120 (10 cents each)
     bool slide = false, porta = false, muted = false, selected = false;
-    int repeats = 0;                // 0..14 (FL's note repeats; LYNX has none: kept for the script only)
+    int repeats = 0;                // 0..14 (FL's note repeats; YW has none: kept for the script only)
     int origin = -1;                // the source note it came from (Score::source index; clone() keeps it), -1 = new
 };
 
@@ -67,7 +67,7 @@ struct ScriptMarker
 
 struct Score
 {
-    int ppq = lynx::ppq, tsnum = 4, tsden = 4;
+    int ppq = yw::ppq, tsnum = 4, tsden = 4;
     std::vector<ScriptNote> notes;       // what the script sees
     bool hasSelection = false;           // notes were selected when the script started (then `notes` are those)
     std::vector<ScriptMarker> markers;
@@ -107,15 +107,15 @@ Score scoreOf (const Pattern& pattern, int channel, const std::vector<int>& sele
                std::int64_t timeFrom, std::int64_t timeTo, const Note& drawDefaults);
 
 // Writes a script's result back: the notes the script saw are replaced by the score's (values clamped as FL does when
-// it stores them; LYNX-only note data survives through ScriptNote::origin), the markers by its markers. Returns the
+// it stores them; YW-only note data survives through ScriptNote::origin), the markers by its markers. Returns the
 // indices (into pattern.notes, sorted) of the notes the script left selected.
 std::vector<int> apply (Pattern& pattern, int channel, const Score& score);
 
-// The scripts LYNX ships (its own, written for LYNX): name / source
+// The scripts YW ships (its own, written for YW): name / source
 struct Builtin
 {
     const char* name;
     const char* source;
 };
 const std::vector<Builtin>& builtins();
-} // namespace lynx::prscript
+} // namespace yw::prscript

@@ -1,9 +1,9 @@
-// Round 190ba, issue #121: sprite sheets for LYNX Dance in FL's Fruity Dance format (a picture of 8 frames across and
+// Round 190ba, issue #121: sprite sheets for YW Dance in FL's Fruity Dance format (a picture of 8 frames across and
 // one row per move + a names file). The rules are FL's, read in its plugin (docs/analise/REA_rodada190ba-121.md).
 
 TEST (dance190ba_sheet_names_and_layout)
 {
-    using namespace lynx::dance;
+    using namespace yw::dance;
     // the names file: one name per line, CR LF / LF / CR, no ending needed on the last line (FL's own Dance.txt has none)
     const auto fl = sheetNames ("Waiting\r\nStepping\r\nJumping\r\nZombie\r\nWaving\r\nHula\r\nWindmill\r\nZitabata\r\nDervish\r\nHeld");
     CHECK (fl.size() == 10 && fl == defaultSheetNames());
@@ -62,14 +62,14 @@ TEST (dance190ba_sheet_names_and_layout)
         CHECK (actionForKey (low, n).move == 48 - low && actionForKey (low, n).mirrored);
         CHECK (low == 0 || actionForKey (low - 1, n).kind == KeyAction::Kind::none);
     }
-    // LYNX's own dancer: as before
+    // YW's own dancer: as before
     for (int key = 0; key < 128; ++key)
         CHECK (actionForKey (key).kind == actionForKey (key, moveCount).kind && actionForKey (key).move == actionForKey (key, moveCount).move);
 }
 
 TEST (dance190ba_sheet_state)
 {
-    using namespace lynx::dance;
+    using namespace yw::dance;
     // a dancer without a sheet keeps the state text it had (no new lines)
     {
         Settings s;
@@ -78,7 +78,7 @@ TEST (dance190ba_sheet_state)
         const std::string text (bytes.begin(), bytes.end());
         CHECK (text.find ("sheet=") == std::string::npos && text.find ("blend=") == std::string::npos && text.find ("move=hula") != std::string::npos);
     }
-    // with a sheet: the path, the blend and a move beyond LYNX's own eleven
+    // with a sheet: the path, the blend and a move beyond YW's own eleven
     {
         Settings s;
         s.sheet = "C:\\Users\\Me\\Sprites\\Boyfriend = cool.png";
@@ -144,7 +144,7 @@ TEST (dance190ba_sheet_state)
         auto cutLong = flState (2, 4, 128, "x", true);
         cutLong.resize (43);
         CHECK (fromFl (cutLong) && fromFl (cutLong)->sheet.empty());
-        // LYNX writes FL's state for an exported .flp (round 190ba: before, an edited dancer went out as LYNX's text)
+        // YW writes FL's state for an exported .flp (round 190ba: before, an edited dancer went out as YW's text)
         Settings out;
         out.move = 4;
         out.mirrored = true;
@@ -162,8 +162,8 @@ TEST (dance190ba_sheet_state)
         CHECK (toFl (out).size() == 41 && fromFl (toFl (out)) && *fromFl (toFl (out)) == out);
         out.sheet = "C:\\" + std::string (400, 'y') + ".png";
         CHECK (fromFl (toFl (out)) && fromFl (toFl (out))->sheet == out.sheet);
-        CHECK (! fromState (toFl (out))); // (not mistaken for LYNX's text)
-        // a move beyond LYNX's own moves is kept (the sheet's rows decide), and survives LYNX's state
+        CHECK (! fromState (toFl (out))); // (not mistaken for YW's text)
+        // a move beyond YW's own moves is kept (the sheet's rows decide), and survives YW's state
         const auto far = fromFl (flState (2, 23, 64, "C:\\Sprites\\Many.png"));
         CHECK (far && far->move == 23 && read (toState (*far)) == *far);
     }
@@ -171,7 +171,7 @@ TEST (dance190ba_sheet_state)
 
 TEST (dance190ba_sheet_animation)
 {
-    using namespace lynx::dance;
+    using namespace yw::dance;
     // a set move: its row (value - 1), the 8 frames in order over one cycle, no blending below 1 - blend of a frame
     {
         SheetAnimator a (7);

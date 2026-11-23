@@ -16,8 +16,8 @@
 //
 // Host interface as FL's wrapper (§2): MIDI velocity from Init.Vol, per-note L/R level tables from
 // ComputeLRVol(Final.Pan, Final.Vol) and the pitch-offset table; FL's channel volume/pan/pitch reach MiniSynth only
-// through those tables, so LYNX recovers them from its channel gains and does not apply them a second time. Random draws:
-// MiniSynth uses one process-global generator shared by every instance (§3.6); LYNX gives every instance its own,
+// through those tables, so YW recovers them from its channel gains and does not apply them a second time. Random draws:
+// MiniSynth uses one process-global generator shared by every instance (§3.6); YW gives every instance its own,
 // started like a freshly created plugin, so noise, dither, drift and the random phases differ from any given FL render
 // by design.
 
@@ -28,7 +28,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this MiniSynth state ("SSLF" + the .flms preset: HEAD name, DATA "0rev" floats)
 bool miniSynthStateUsable (const std::vector<std::uint8_t>& state);
@@ -67,4 +67,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
                                     int length, const std::string& oscdataPath, int block = 512, double bpm = 120.0, int maxPoly = 0,
                                     double songPos = -1.0, bool panLawA = false, bool flm = false);
 } // namespace minisynth
-} // namespace lynx
+} // namespace yw

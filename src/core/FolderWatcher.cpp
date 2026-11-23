@@ -25,7 +25,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::folderwatch
+namespace yw::folderwatch
 {
 namespace
 {
@@ -337,4 +337,4 @@ std::string Watcher::method() const
 {
     return impl->how;
 }
-} // namespace lynx::folderwatch
+} // namespace yw::folderwatch

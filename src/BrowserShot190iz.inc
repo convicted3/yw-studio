@@ -1,11 +1,11 @@
-    // --browsershot190iz <folder> (round 190iz): the Browser drawn offscreen for the reference | LYNX
+    // --browsershot190iz <folder> (round 190iz): the Browser drawn offscreen for the reference | YW
     // pairs — FL's six icon tabs (each one selected), the Current project tree with FL's guides, the hover star, the
     // tags (the TAGS panel with picked tags and its filtered list, the row menu's Tags section), the preview strip with
     // a part played from the middle, and the Clip-launch layout's Live-style browser (Samples, Instruments,
     // Collections, the tag chips). <folder>/checks.txt lists what was checked. Included in the app class of Main.cpp.
     bool runBrowserShot190iz (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -51,7 +51,7 @@
             check (name.toRawUTF8(), ok && image.getWidth() > 0);
         };
 
-        // 1. FL layout: the six icon tabs, each selected (FL's order), 260 px wide as LYNX's default Browser panel
+        // 1. FL layout: the six icon tabs, each selected (FL's order), 260 px wide as YW's default Browser panel
         browser.setSize (260, 700);
         for (const auto t : browserplaces::tabOrder)
         {

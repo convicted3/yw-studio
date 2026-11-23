@@ -15,10 +15,10 @@
 #include "core/Song.h"
 #include "core/SynthParams.h"
 
-namespace lynx::lasttweak
+namespace yw::lasttweak
 {
 // The value of `target` at `value01` (its 0..1 automation value) in the unit its control shows: channel volume and
-// mixes in %, mixer volume in dB, pans as FL writes them (L50 / C / R50), tempo in BPM, LYNX effect parameters in their
+// mixes in %, mixer volume in dB, pans as FL writes them (L50 / C / R50), tempo in BPM, YW effect parameters in their
 // own unit. Hosted plugin parameters return "" (the plugin itself formats them).
 inline std::string valueText (const Song& song, const AutomationTarget& t, float value01)
 {
@@ -78,7 +78,7 @@ inline std::string valueText (const Song& song, const AutomationTarget& t, float
         }
         case AutomationTargetKind::channelParam:
         {
-            // LYNX Synth's knobs (issue #152, round 190he): the page's units
+            // YW Synth's knobs (issue #152, round 190he): the page's units
             if (t.index >= 0 && t.index < (int) song.channels.size() && song.channels[(std::size_t) t.index].instrument == InstrumentKind::synth
                 && synthparam::valid (t.param))
             {
@@ -182,4 +182,4 @@ private:
     std::vector<int> pending, held;
     bool pendingOverflow = false;
 };
-} // namespace lynx::lasttweak
+} // namespace yw::lasttweak

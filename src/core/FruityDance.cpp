@@ -8,7 +8,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx::dance
+namespace yw::dance
 {
 namespace
 {
@@ -291,12 +291,12 @@ std::optional<Settings> fromFl (const std::vector<std::uint8_t>& state, const st
         return std::nullopt;
     Settings s;
     // params 0 … 6 (FL: move, mirrored, shown, blend /256, speed, x, y). The move is 0 = Freestyle, then the sheet's
-    // rows; it is kept as it is (LYNX's own dancer clamps it when it draws).
+    // rows; it is kept as it is (YW's own dancer clamps it when it draws).
     s.move = std::clamp ((int) i32 (4), 0, maxMoves - 1);
     s.mirrored = i32 (8) > 0;
     s.visible = i32 (12) > 0;
     s.blend = std::clamp ((float) i32 (16) / 256.0f, 0.0f, 1.0f);
-    // FL's speed: 0.5 × (1 + |v| × 3 / 96) (or divided by it): LYNX keeps the ratio to the default 0.5
+    // FL's speed: 0.5 × (1 + |v| × 3 / 96) (or divided by it): YW keeps the ratio to the default 0.5
     const auto v = i32 (20);
     const auto d = 1.0f + (float) std::abs (v) * 3.0f / 96.0f;
     s.speed = std::clamp (v < 0 ? 1.0f / d : d, 0.125f, 4.0f);
@@ -329,7 +329,7 @@ std::optional<Settings> fromFl (const std::vector<std::uint8_t>& state, const st
                 path.pop_back();
             // FL writes UTF-8 (fl190be: "Dançé.png" as C3 A7 / C3 A9, the length counting bytes) and a file inside its
             // own folder as %FLStudioFactoryData%\... (expanded with FL's folder; without one the path stays as it is,
-            // a file that cannot be found: LYNX's dancer stands in)
+            // a file that cannot be found: YW's dancer stands in)
             s.sheet = expandFlSheetPath (validUtf8OnlyText (path), flFactoryData);
         }
     }
@@ -788,4 +788,4 @@ Signals* signalsOf (Instrument* instrument) noexcept
     auto* d = dynamic_cast<DanceInstrument*> (instrument);
     return d != nullptr ? &d->signals : nullptr;
 }
-} // namespace lynx::dance
+} // namespace yw::dance

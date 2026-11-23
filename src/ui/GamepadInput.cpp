@@ -10,7 +10,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -103,7 +103,7 @@ void GamepadInput::apply (const gamepad::State& now, double seconds)
 
 namespace
 {
-// The hints overlay: the pad, drawn by LYNX, with each control's action written next to it. Every label sits on the
+// The hints overlay: the pad, drawn by YW, with each control's action written next to it. Every label sits on the
 // side of its control (left half → left column, right half → right column, shoulders and triggers at the top, Back
 // and Start under the pad) with a short leader that crosses no other leader or control.
 class GamepadHints final : public juce::Component
@@ -240,4 +240,4 @@ public:
 } // namespace
 
 std::unique_ptr<juce::Component> makeGamepadHints() { return std::make_unique<GamepadHints>(); }
-} // namespace lynx
+} // namespace yw

@@ -8,7 +8,7 @@ namespace p152a
 constexpr double sr = 48000.0;
 
 // up-going 1 kHz stairs (peak dBFS), `seconds` per step; returns the median-free mean gain (dB) of each step's last third
-inline std::vector<double> stairGains (const lynx::EffectSlot& slot, const std::vector<double>& levels, double seconds)
+inline std::vector<double> stairGains (const yw::EffectSlot& slot, const std::vector<double>& levels, double seconds)
 {
     const auto per = (std::size_t) (seconds * sr);
     const auto n = per * levels.size();
@@ -16,7 +16,7 @@ inline std::vector<double> stairGains (const lynx::EffectSlot& slot, const std::
     for (std::size_t i = 0; i < n; ++i)
         l[i] = r[i] = (float) (std::pow (10.0, levels[i / per] / 20.0) * std::sin (2.0 * 3.141592653589793 * 1000.0 * (double) i / sr));
     const auto x = l;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (std::size_t off = 0; off < n; off += 256)
@@ -41,7 +41,7 @@ inline double rcRatioV (double ratio) { return 0.625 * (1.0 - std::log (ratio) /
 
 TEST (compressor_measured_vintage_curve_round152a)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::compressor);
     CHECK (info.params.size() >= 19 && std::string (info.params[18].name) == "Vintage curve" && info.params[18].defaultValue == 1.0f);
     CHECK (formatEffectParam (EffectKind::compressor, 18, 1.0f, 120.0) == "measured" && formatEffectParam (EffectKind::compressor, 18, 0.0f, 120.0) == "round 150");
@@ -99,7 +99,7 @@ TEST (compressor_measured_vintage_curve_round152a)
 
 TEST (compressor_bipolar_gain_change_meter_round152a)
 {
-    using namespace lynx;
+    using namespace yw;
     // control output 5 = the signed gain change (dB): negative while compressing, positive for the expansion below 1 : 1
     const auto change = [] (int voicing, double ratio) {
         auto s = makeEffectSlot (EffectKind::compressor);
@@ -135,7 +135,7 @@ TEST (compressor_bipolar_gain_change_meter_round152a)
 
 TEST (glow_cla2a_defaults_limit_automakeup_analog_round152a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     const auto& info = effectInfo (EffectKind::glowLeveler);
     CHECK (info.params.size() == (std::size_t) g::count && g::analog == 9); // round 165w: + Opto release
@@ -217,7 +217,7 @@ TEST (glow_cla2a_defaults_limit_automakeup_analog_round152a)
 
 TEST (glow_cla2a_translation_round152a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     // the trial's RealWorld list (208 values) at its defaults, then Mix 37 %, Auto Makeup on, Analog 60 Hz — read back
     // through its own parameters (REA_rodada152a §2): 204 Mix, 207 Auto Makeup, 140 Analog (0 = 50 Hz, 1 = 60, 2 = off)

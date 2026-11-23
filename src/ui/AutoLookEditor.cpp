@@ -7,7 +7,7 @@
 #include "ui/Theme.h"
 #include "ui/TrackIcons.h"
 
-namespace lynx
+namespace yw
 {
 namespace autolookui
 {
@@ -294,4 +294,4 @@ void AutoLookEditor::resized()
     buttons.removeFromLeft (10);
     status.setBounds (buttons);
 }
-} // namespace lynx
+} // namespace yw

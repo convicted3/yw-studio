@@ -1,9 +1,9 @@
 #pragma once
 
-// FL Studio's Fruity Phaser as a LYNX mixer effect (EffectKind::fruityPhaser), exact engine rebuilt in
+// FL Studio's Fruity Phaser as a YW mixer effect (EffectKind::fruityPhaser), exact engine rebuilt in
 // docs/analise/REA_rodada105_phaser.md (clean-room: layouts, formulas and behaviour in our own words; no Image-Line
 // code or data in this repository). FL's saved state is only its nine controls, which become the slot parameters
-// (value = raw / max) so the LYNX editor and automation can change them.
+// (value = raw / max) so the YW editor and automation can change them.
 //
 // Controls (all from 0; max, a new instance's default):
 //   [0] sweep freq. (5000, 2500)  [1] min depth (1000, 100)  [2] max depth (1000, 800)  [3] freq. range (1024, 0)
@@ -19,7 +19,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::phaserfx
+namespace yw::phaserfx
 {
 constexpr int params = 9;
 constexpr int maxStages = 23;
@@ -59,4 +59,4 @@ private:
 };
 
 std::unique_ptr<Effect> make();
-} // namespace lynx::phaserfx
+} // namespace yw::phaserfx

@@ -10,10 +10,10 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // .dwp, .dwb, .gig, .nki
 bool isSamplerInstrumentFile (const juce::File& file);
 // Into DirectWave channel `channel` when it is one (its mixer track, levels and notes stay), else a new channel
 void openSamplerInstrumentFile (AudioEngine& engine, const juce::File& file, int channel = -1);
-} // namespace lynx
+} // namespace yw

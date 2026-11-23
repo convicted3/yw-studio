@@ -1,6 +1,6 @@
 #pragma once
 
-// Calls into code LYNX does not control (hosted VST3 / CLAP / VST2 plugins) behind a structured-exception guard, so a
+// Calls into code YW does not control (hosted VST3 / CLAP / VST2 plugins) behind a structured-exception guard, so a
 // plugin that crashes (access violation, division by zero, a C++ exception escaping it) is caught at the call instead
 // of taking the whole app down. On Windows this is SEH (__try / __except in CrashGuard.cpp, the only unit built with
 // -fms-extensions).
@@ -12,14 +12,14 @@
 //     handler as before: the crash file and the emergency save);
 //   - the kernel raised it for an instruction (not a signal sent by kill / raise);
 //   - the first frame from the faulting instruction outwards that is not the C / C++ runtime or the system's own
-//     libraries (libc, libstdc++, libgcc_s, ld.so, libsystem_*, libobjc...) belongs to a module that is not LYNX's
-//     executable: a plugin's memcpy from a null pointer faults in libc but is the plugin's; a fault in LYNX's or
-//     JUCE's code (a host callback the plugin made, JUCE's VST3 wrapper) is LYNX's own and is never caught, nor is
-//     one whose frames cannot tell (code outside every module called from LYNX, an unwinder that finds nothing).
+//     libraries (libc, libstdc++, libgcc_s, ld.so, libsystem_*, libobjc...) belongs to a module that is not YW's
+//     executable: a plugin's memcpy from a null pointer faults in libc but is the plugin's; a fault in YW's or
+//     JUCE's code (a host callback the plugin made, JUCE's VST3 wrapper) is YW's own and is never caught, nor is
+//     one whose frames cannot tell (code outside every module called from YW, an unwinder that finds nothing).
 // C++ exceptions leaving the call are caught there too (code 0xE06D7363, as on Windows).
-// What it cannot make safe (as with SEH, the caller then never touches that instance again, and LYNX goes on):
+// What it cannot make safe (as with SEH, the caller then never touches that instance again, and YW goes on):
 //   - the jump skips the destructors of the frames between call() and the fault: what they held stays held (JUCE's
-//     per-instance VST3 process lock, LYNX's per-instance CLAP gate; both only guard that dead instance), and what
+//     per-instance VST3 process lock, YW's per-instance CLAP gate; both only guard that dead instance), and what
 //     the plugin held stays held (its own locks; a lock of the C library, e.g. malloc's when it faulted inside
 //     malloc: then a later allocation of another thread may block, as the heap may be damaged anyway);
 //   - finding out whose fault it is runs in the signal handler (dladdr, the unwinder): not async-signal-safe by the
@@ -38,7 +38,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace lynx::crashguard
+namespace yw::crashguard
 {
 // Runs fn (context); returns 0 when it returned normally, otherwise the exception code (Windows' NTSTATUS, e.g.
 // 0xC0000005 = access violation).
@@ -55,14 +55,14 @@ bool pluginFaultsCaught() noexcept;
 // Round 190gg (B4): faults on a hosted plugin's OWN threads (Linux / macOS on x86-64 / ARM64; Windows x64 since round
 // 190oh, see parkFaultingPluginThread; the app only, not the
 // exported plugins' runtime; nothing on Windows). A thread the plugin started (its GUI renderer, a disk streamer, a
-// licence check) runs no LYNX call, so call() cannot catch its fault. The handler of call() now also looks at a fault
+// licence check) runs no YW call, so call() cannot catch its fault. The handler of call() now also looks at a fault
 // outside every guarded call: when, from the faulting instruction to the thread's first frame (which the walk must
-// reach: the C library's thread start), no frame is LYNX's executable, and the first frame that is not the system's
+// reach: the C library's thread start), no frame is YW's executable, and the first frame that is not the system's
 // runtime belongs to a module given to watchPluginModule (the plugin's file, or a file in its bundle folder), the
 // fault is noted (pluginThreadFaults) and that thread is parked for good (it waits with every signal blocked; whatever
 // it held stays held). The app then switches every instance of that plugin off (engine/PluginHost.h,
 // switchOffPluginsOfThreadFaults), as after a crash inside a call. Anything else goes to the crash handler as before:
-// a fault on a LYNX thread (even inside a plugin's code it called), on a thread whose frames cannot be walked to its
+// a fault on a YW thread (even inside a plugin's code it called), on a thread whose frames cannot be walked to its
 // start, in a module nobody watches, or while another fault is being looked at.
 // watchPluginModule: message thread, after the module was loaded in this process (an absolute path; at most 128).
 void watchPluginModule (const std::string& fileUtf8) noexcept;
@@ -81,18 +81,18 @@ struct PluginThreadFault
 };
 int pluginThreadFaultCount() noexcept;            // only grows
 std::vector<PluginThreadFault> pluginThreadFaults(); // the last 16, oldest first
-// --faulttest thread / thread-libc: a fault on a thread of LYNX's own with LYNX's executable watched as if it were a
+// --faulttest thread / thread-libc: a fault on a thread of YW's own with YW's executable watched as if it were a
 // plugin's module: it must still end the process through the crash handler (a return = the thread was parked)
 void faultOnOwnThreadForTest (bool inCLibrary) noexcept;
 
 // Plugin editor windows (issue #32, round 174a; Windows x64 only, elsewhere these do nothing). A hosted plugin's own
-// window procedure runs outside every LYNX call (DispatchMessageW calls it from the message loop), so a fault in it
-// ended LYNX (the reporter's synth editor: access violation under DispatchMessageW). The JUCE patch
-// (cmake/LynxPatchJuce.cmake fix 15) sends each message through dispatchGuarded, which dispatches it inside an SEH
+// window procedure runs outside every YW call (DispatchMessageW calls it from the message loop), so a fault in it
+// ended YW (the reporter's synth editor: access violation under DispatchMessageW). The JUCE patch
+// (cmake/YwPatchJuce.cmake fix 15) sends each message through dispatchGuarded, which dispatches it inside an SEH
 // guard. A fault is caught only when
 //   - it is not a debugger event, a heap corruption, a stack overflow or a fail-fast (those still end the process:
 //     going on with a damaged heap or stack is not safe), and
-//   - the first frame outside Windows' own modules is not LYNX.exe (a bug in LYNX stays a crash with its report), and
+//   - the first frame outside Windows' own modules is not YW.exe (a bug in YW stays a crash with its report), and
 //   - `claim` (set by the app) says the message's window or that module belongs to an open plugin editor: it returns
 //     that editor's top-level window, else nullptr.
 // Then the editor's window is hidden at once, the messages for it are dropped (a WM_PAINT is validated) until
@@ -127,7 +127,7 @@ void quietCrashReports() noexcept;
 
 // Session breadcrumb (round 111). A fail-fast (0xC0000409, e.g. a GPU driver aborting inside a plugin's editor) ends
 // the process without running any crash handler, so nothing tells what happened. While the UI runs, a small file
-// (%APPDATA%\LYNX\sessions\session-<pid>.txt) holds a header and the last few steps (plugin being loaded, editor being
+// (%APPDATA%\YW\sessions\session-<pid>.txt) holds a header and the last few steps (plugin being loaded, editor being
 // opened, project being opened...). A clean exit removes it; the next start finds the file of a session whose process
 // is gone and reports it (Main.cpp). Steps are written synchronously (the file survives the process dying right after);
 // never call note() from the audio thread.
@@ -147,7 +147,7 @@ bool processRunning (std::uint32_t pid, std::uint64_t startTime) noexcept;
 const char* describe (std::uint32_t code) noexcept;
 
 // The calling thread's stack as "module+0xoffset" lines, every frame (round 157a): JUCE's backtrace leaves out frames
-// it has no symbol for — every frame of a release LYNX.exe — so a crash file could not say where LYNX was. With the
+// it has no symbol for — every frame of a release YW.exe — so a crash file could not say where YW was. With the
 // build's map / PDB the offsets give the functions. Empty where not supported.
 std::string moduleBacktrace (int skip = 0);
 // The faulting thread's frames from a crash handler's exception pointers (Windows: EXCEPTION_POINTERS*, what JUCE's
@@ -176,8 +176,8 @@ void setUnwalkableFaultHandler (void (*handler) (void* exceptionPointers)) noexc
 // `unwalkable` = with the thread's stack above the fault overwritten first, so that it cannot be walked (Windows x64;
 // elsewhere a plain fault).
 [[noreturn]] void faultForTest (bool unwalkable) noexcept;
-// --faulttest guarded / guarded-libc (round 190dt): a fault in LYNX's own code inside a guarded call (`inCLibrary`:
-// a memcpy from a null pointer that LYNX makes, so the faulting instruction is in the C library). It must NOT be
+// --faulttest guarded / guarded-libc (round 190dt): a fault in YW's own code inside a guarded call (`inCLibrary`:
+// a memcpy from a null pointer that YW makes, so the faulting instruction is in the C library). It must NOT be
 // caught: the process ends through the crash handler; a return (with the code) means it was swallowed.
 std::uint32_t faultInGuardedCallForTest (bool inCLibrary) noexcept;
 // "module+0xoffset" of one code address ("" when unknown)
@@ -188,7 +188,7 @@ std::string describeAddress (const void* address);
 // arena's lock) the first allocation waits for that lock for ever, so a crash became a hang (25 minutes until a test's
 // timeout). Now:
 // - prepareCrashWatchdog (startup, message thread, after the crash handler is installed): the folder the handler writes
-//   to, the time limit (60 s; LYNX_CRASH_WATCHDOG_S = 1 … 600 for tests), Windows' idle watchdog thread, a first
+//   to, the time limit (60 s; YW_CRASH_WATCHDOG_S = 1 … 600 for tests), Windows' idle watchdog thread, a first
 //   backtrace() (the C library loads its unwinder then, which allocates). setCrashFolder: another folder (--faulttest).
 // - armCrashWatchdog: the FIRST thing the crash handler does. Linux / macOS: alarm() with SIGALRM back at its default
 //   action and unblocked on this thread (the kernel ends the process; async-signal-safe); Windows: wakes the thread
@@ -197,7 +197,7 @@ std::string describeAddress (const void* address);
 // - heapCorruptionCrash: the crash is the C library's own abort — Linux: SIGABRT whose abort() was called from inside
 //   libc itself (its heap checks; also its fortify checks, which mean a damaged memory too), macOS: SIGABRT with a frame
 //   in libsystem_malloc; Windows: STATUS_HEAP_CORRUPTION (0xC0000374). Allocation-free (backtrace + dladdr on a fixed
-//   array). A C++ terminate, LYNX's or a plugin's own abort() keep the usual handling.
+//   array). A C++ terminate, YW's or a plugin's own abort() keep the usual handling.
 // - writeHeapCrashFile: for that case, the crash file without the heap: "crash heap-corruption <time>.txt" in the
 //   prepared folder, written with open / write and the frames by backtrace_symbols_fd (Windows: CreateFileW / WriteFile,
 //   the exception code only). The caller then skips everything that allocates (the usual crash file, the session note,
@@ -216,7 +216,7 @@ void setHangInCrashHandlerForTest() noexcept;
 bool hangInCrashHandlerForTest() noexcept;
 
 // UI hang watch (round 157a). A frozen message thread leaves no crash file: Windows shows "not responding" and the
-// user closes LYNX. startHangWatch (on the message thread) starts a watcher thread; heartbeat() (the message thread,
+// user closes YW. startHangWatch (on the message thread) starts a watcher thread; heartbeat() (the message thread,
 // from a timer, several times a second) proves the UI is alive. When no heartbeat arrives for `stallMs`, the watcher
 // samples the message thread's stack (Windows x64: suspended for a moment, unwound without symbols;
 // Linux / macOS: SIGPROF to that thread, which records its own frames), writes it to
@@ -227,31 +227,31 @@ void startHangWatch (const std::string& folderUtf8, int stallMs = 2000) noexcept
 // setApplicationCrashHandler), on the message thread:
 // - an alternate signal stack for this thread, and the crash handler's signals moved onto it, so a stack overflow on the
 //   message thread still writes its crash file;
-// - SIGTERM / SIGHUP (the session logging out, the terminal that started LYNX closed, `kill`) leave a session step
-//   ("ended by SIGTERM ...") before LYNX ends as it did before. Without them the report could only say "closed".
+// - SIGTERM / SIGHUP (the session logging out, the terminal that started YW closed, `kill`) leave a session step
+//   ("ended by SIGTERM ...") before YW ends as it did before. Without them the report could only say "closed".
 // - round 190dt: the plugin-call guard of call() (see the top of this file), on top of the crash handler.
 void hardenSignals() noexcept;
 void heartbeat() noexcept;
 void stopHangWatch() noexcept;
-// --symbolize: the "YW Studio.exe+0x…" frames of a crash / hang file named with this very build's symbols (LYNX.pdb of
-// the same build next to LYNX.exe; CI keeps it as the "YW-symbols" artifact). Other lines unchanged.
+// --symbolize: the "YW Studio.exe+0x…" frames of a crash / hang file named with this very build's symbols (YW.pdb of
+// the same build next to YW.exe; CI keeps it as the "YW-symbols" artifact). Other lines unchanged.
 std::string symbolizeOwnFrames (const std::string& text);
 // Test: the last hang file written by this process ("" when none)
 std::string lastHangFile();
 
-// Message-thread sampling profiler (round 174f; LYNX_PROFILE_MAIN=<file>). Called on the message thread: a thread samples
+// Message-thread sampling profiler (round 174f; YW_PROFILE_MAIN=<file>). Called on the message thread: a thread samples
 // it every `intervalUs` (Windows x64: suspended for a moment and unwound, as the hang watch does) and only counts the
 // samples where the thread ran since the last one (its cycle counter moved), so waiting in the message loop does not
-// count. Every `windowS` seconds it appends that window's functions by self and by total samples to the file (LYNX.exe
-// named with LYNX.pdb next to it; system DLLs by their nearest export or module). Other platforms: nothing.
+// count. Every `windowS` seconds it appends that window's functions by self and by total samples to the file (YW.exe
+// named with YW.pdb next to it; system DLLs by their nearest export or module). Other platforms: nothing.
 void startMainProfiler (const std::string& fileUtf8, int intervalUs = 1000, int windowS = 5) noexcept;
 void stopMainProfiler() noexcept;
 
-// Round 190os (--uiperf with LYNX_UIPERF_STALLS=<folder>): a wall-clock sampler for frame stalls. Called on the message
+// Round 190os (--uiperf with YW_UIPERF_STALLS=<folder>): a wall-clock sampler for frame stalls. Called on the message
 // thread: every `intervalUs` a time-critical thread records the CPU cycles every thread of this process ran since the
 // last sample, the stacks of the message thread and of the threads whose name contains one of `stackNames` (sampled
 // by copy, as the profiler above, whether they run or wait), and `*tag` (the safe-overload guard's state).
 // stopStallSampler writes them to the file (format in CrashGuard.cpp). Windows x64 only; elsewhere nothing.
 void startStallSampler (const std::vector<std::string>& stackNames, int intervalUs, const std::atomic<int>* tag) noexcept;
 void stopStallSampler (const std::string& fileUtf8) noexcept;
-} // namespace lynx::crashguard
+} // namespace yw::crashguard

@@ -3,12 +3,12 @@
 //   Snap to grid (1, the default) · Snap to regions (2) · Snap to samples (3) · Snap to zero-crossing (4) ·
 //   Snap to pitch period (5)
 // (the digits are its shortcuts). It acts on the deck's selection edges; a region tag still moves by the mouse's
-// distance exactly (REA_rodada190ac §2). Alt held: no snap while dragging (LYNX; FL's Alt-bypass convention).
+// distance exactly (REA_rodada190ac §2). Alt held: no snap while dragging (YW; FL's Alt-bypass convention).
 //
 // What each mode does here:
 //  - grid: the selection follows the mouse to the pixel. FL's deck draws no beat grid, and its own selection drags with
 //    "Snap to grid" on (the default) came out unsnapped, to the pixel (REA_rodada190aj §2, aj_4 / aj_12…20): kept so;
-//  - regions: the nearest region start or end within 12 px (as LYNX's Edison);
+//  - regions: the nearest region start or end within 12 px (as YW's Edison);
 //  - samples: whole samples;
 //  - zero-crossing: the nearest frame where the (mono sum of the) wave changes sign;
 //  - pitch period: the nearest rising zero crossing (where a period of a pitched sound starts), looked for within the
@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::slicex
+namespace yw::slicex
 {
 enum class DeckSnap
 {
@@ -136,4 +136,4 @@ inline double snapDeckFrame (DeckSnap mode, double frame, const DeckWave& w, dou
     }
     return frame;
 }
-} // namespace lynx::slicex
+} // namespace yw::slicex

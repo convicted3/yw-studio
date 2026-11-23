@@ -1,8 +1,8 @@
 #pragma once
 
-// Import tracks from another project (round 190pe, P11 of research190oe; a LYNX extra). Pro Tools' "Import Session
+// Import tracks from another project (round 190pe, P11 of research190oe; a YW extra). Pro Tools' "Import Session
 // Data", Cubase's "Import Tracks from Project" and Studio One's "Import Song Data", across formats: the other project is
-// read by the importer of its format (.lynx, .flp, .als, .flm, .band, .blx, DAWproject...) into a Song of its own, and
+// read by the importer of its format (.yw, .flp, .als, .flm, .band, .blx, DAWproject...) into a Song of its own, and
 // the chosen Playlist tracks come into the open project with what they play:
 //   - their clips (pattern, audio and automation clips) and, in the Clip-launch layout's grid, their clip slots;
 //   - the channels those clips play, with their instruments, plugin states and samples;
@@ -22,7 +22,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::trackimport
+namespace yw::trackimport
 {
 // One Playlist track of the other project, for the picker.
 struct SourceTrack
@@ -76,4 +76,4 @@ Result importTracks (Song& song, const Song& source, const std::vector<int>& tra
 // the path goes back on the source's channel named in the list, so the open project's Missing files window can find
 // it a new place. Returns how many paths went back.
 int restoreMissingPaths (Song& source, const std::vector<std::pair<std::string, std::vector<std::string>>>& missing);
-} // namespace lynx::trackimport
+} // namespace yw::trackimport

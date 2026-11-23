@@ -1,8 +1,8 @@
 // Round 190do: deterministic modulation laws of Spiral Echo, Orbit, Lattice Mod and Gemini Doubler, measured black-box
-// on the tp172d reference renders (/mnt/e/lynx-work/mod190do/HANDOFF.md). Each effect gets an appended law parameter:
+// on the tp172d reference renders (/mnt/e/yw-work/mod190do/HANDOFF.md). Each effect gets an appended law parameter:
 // new instances run the measured law, a project or preset saved before keeps the classic one. What is checked: the
 // parameters and their load rule, that the classic laws still render what the base commit rendered (fingerprints from
-// the base commit's objects, /mnt/e/lynx-work/mod190do/gold), the measured laws' own behaviour, and their stability.
+// the base commit's objects, /mnt/e/yw-work/mod190do/gold), the measured laws' own behaviour, and their stability.
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -13,7 +13,7 @@
 
 namespace mod190do
 {
-using lynx::EffectKind;
+using yw::EffectKind;
 
 struct Stereo
 {
@@ -28,16 +28,16 @@ struct LawOf
 };
 
 inline const LawOf laws[] = {
-    { EffectKind::spiralEcho, (std::size_t) lynx::echosuite::spiral::law, "Law" },
-    { EffectKind::orbit, (std::size_t) lynx::echosuite::orbit::law, "Law" },
-    { EffectKind::latticeMod, (std::size_t) lynx::echosuite::lattice::law, "Law" },
-    { EffectKind::geminiDoubler, (std::size_t) lynx::voicetools::gemini::headLaw, "Head law" },
+    { EffectKind::spiralEcho, (std::size_t) yw::echosuite::spiral::law, "Law" },
+    { EffectKind::orbit, (std::size_t) yw::echosuite::orbit::law, "Law" },
+    { EffectKind::latticeMod, (std::size_t) yw::echosuite::lattice::law, "Law" },
+    { EffectKind::geminiDoubler, (std::size_t) yw::voicetools::gemini::headLaw, "Head law" },
 };
 
 // `seconds` of the effect's answer to `in` (both channels), from a fresh instance, in blocks
-inline Stereo render (EffectKind kind, const lynx::EffectParams& p, const Stereo& in, double sr = 48000.0, int block = 256)
+inline Stereo render (EffectKind kind, const yw::EffectParams& p, const Stereo& in, double sr = 48000.0, int block = 256)
 {
-    auto fx = lynx::makeEffect (kind);
+    auto fx = yw::makeEffect (kind);
     fx->prepare (sr);
     auto out = in;
     const auto n = (int) out.l.size();
@@ -66,7 +66,7 @@ inline bool finite (const Stereo& s)
 
 TEST (mod190do_new_instances_run_the_measured_laws_and_saved_projects_keep_the_classic_ones)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& law : mod190do::laws)
     {
         const auto& info = effectInfo (law.kind).params;
@@ -98,7 +98,7 @@ TEST (mod190do_new_instances_run_the_measured_laws_and_saved_projects_keep_the_c
 
 TEST (mod190do_gemini_measured_head_reads_one_tap_that_drifts_and_jumps_back)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace gm = voicetools::gemini;
     // voice 1 alone (left), direct off, its default delay (9.4 ms) and +6 cents; impulses every 0.25 s
     auto p = makeEffectSlot (EffectKind::geminiDoubler).params;
@@ -163,7 +163,7 @@ namespace mod190do
 // the delay (samples) of the strongest tap of an Orbit's answer to impulses every `every` samples, mix 100 %, per channel
 inline std::array<std::vector<double>, 2> orbitTaps (float mode, float law, int pulses, int every)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ob = echosuite::orbit;
     auto p = makeEffectSlot (EffectKind::orbit).params;
     p[ob::mix] = 1.0f;
@@ -196,7 +196,7 @@ inline std::array<std::vector<double>, 2> orbitTaps (float mode, float law, int 
 // (an answer above 0.05 to the 0.5 impulses), over the whole run
 inline std::pair<double, double> orbitReach (float law, int pulses, int every)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ob = echosuite::orbit;
     auto p = makeEffectSlot (EffectKind::orbit).params;
     p[ob::mix] = 1.0f, p[ob::feedback] = 0.5f, p[ob::rate] = 0.75f, p[ob::depth] = 0.371f, p[ob::mode] = 1.0f / 11.0f;
@@ -233,7 +233,7 @@ inline double moving (const std::vector<double>& at, bool down)
 TEST (mod190do_orbit_measured_rise_sweeps_the_whole_depth_and_rise_fall_splits_the_channels)
 {
     using namespace mod190do;
-    const auto depth = lynx::echosuite::orbit::depthMs (0.371f) * 48.0; // about 240 samples
+    const auto depth = yw::echosuite::orbit::depthMs (0.371f) * 48.0; // about 240 samples
     // Rise, measured: two taps sweep the whole depth (classic: half of it, above a 0.25 ms base); with sin² weights a
     // tap reads at 10 % or more over 0.1 … 0.9 of its sweep
     for (const float law : { 1.0f, 0.0f })
@@ -255,7 +255,7 @@ TEST (mod190do_orbit_measured_rise_sweeps_the_whole_depth_and_rise_fall_splits_t
 
 TEST (mod190do_spiral_measured_loop_limits_lower_and_glides_slower)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     const double sr = 48000.0;
     auto p = makeEffectSlot (EffectKind::spiralEcho).params;
@@ -333,7 +333,7 @@ TEST (mod190do_spiral_measured_loop_limits_lower_and_glides_slower)
 
 TEST (mod190do_lattice_measured_detune_reaches_the_reference_spread)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace lt = echosuite::lattice;
     // the default (one tap, 10 ms, detune 50 % of 50 % depth): impulses every 50 ms, the strongest tap of each answer.
     // The reference's taps spread over about ±200 samples there (refcap0124 one-parameter captures: 340 … 739 samples);
@@ -368,7 +368,7 @@ TEST (mod190do_lattice_measured_detune_reaches_the_reference_spread)
 
 TEST (mod190do_measured_laws_stay_finite_at_every_extreme)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& law : mod190do::laws)
         for (const double sr : { 44100.0, 48000.0, 96000.0 })
             for (int variant = 0; variant < 6; ++variant)
@@ -391,7 +391,7 @@ TEST (mod190do_measured_laws_stay_finite_at_every_extreme)
 
 TEST (mod190do_classic_laws_render_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     struct Case
     {
         EffectKind kind;
@@ -405,7 +405,7 @@ TEST (mod190do_classic_laws_render_as_the_base_commit_did)
         double energy, a, b;
     };
     // an impulse (0.5 / −0.25) and a noise burst, 1.5 s in blocks of 256: FNV-1a of the float bits, the energy, two
-    // samples. The goldens come from the base commit's objects (/mnt/e/lynx-work/mod190do/gold: gold_base, without the
+    // samples. The goldens come from the base commit's objects (/mnt/e/yw-work/mod190do/gold: gold_base, without the
     // law parameters, prints the same lines as gold_new, the round's objects at law = Classic)
     namespace es = echosuite;
     namespace gm = voicetools::gemini;
@@ -468,14 +468,14 @@ TEST (mod190do_classic_laws_render_as_the_base_commit_did)
     // builds); other libm versions round some transcendental calls differently (round 190bz's note)
     std::printf ("  classic laws: %d of 8 renders hash-identical to the base commit\n", sameBits);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == 8);
    #endif
 }
 
 TEST (mod190do_measured_spiral_loop_gain_and_orbit_manual_delay)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     namespace ob = echosuite::orbit;
     const double sr = 48000.0;

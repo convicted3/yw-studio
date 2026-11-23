@@ -24,7 +24,7 @@
 //    Chorus", JAES 45(10), 1997; doubling by short, slightly detuned delays: the same paper (doubler / chorus);
 //  - shelving filters: R. Bristow-Johnson, "Cookbook formulae for audio EQ biquad filter coefficients".
 
-namespace lynx::voicetools
+namespace yw::voicetools
 {
 namespace
 {
@@ -1465,4 +1465,4 @@ std::string paramText (EffectKind kind, int param, float v)
     }
     return fmt ("%.2f", v);
 }
-} // namespace lynx::voicetools
+} // namespace yw::voicetools

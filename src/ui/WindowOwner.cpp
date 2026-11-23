@@ -37,7 +37,7 @@
  #include <CoreFoundation/CoreFoundation.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -289,7 +289,7 @@ struct DialogTextFocus final : juce::FocusChangeListener
         if (dialog == nullptr || ! dialog->isShowing())
             return;
         auto& props = dialog->getProperties();
-        static const juce::Identifier done ("lynxTextFocused");
+        static const juce::Identifier done ("ywTextFocused");
         if (props.contains (done)) // only the dialog's first focus: Tab and clicks move it freely afterwards
             return;
         props.set (done, true);
@@ -362,7 +362,7 @@ juce::Image logoAt (int px)
 {
     px = juce::jlimit (8, 512, px);
     static std::map<int, juce::Image> cache;
-    static const bool registered = lynx::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
     auto& img = cache[px];
     if (img.isNull())
     {
@@ -378,7 +378,7 @@ juce::Image logoAt (int px)
 void applyWindowChrome (juce::Component& window)
 {
    #if JUCE_WINDOWS
-    // dark native title bar (Windows 10 1809+), tinted with the LYNX background on Windows 11
+    // dark native title bar (Windows 10 1809+), tinted with the YW background on Windows 11
     auto* hwnd = (HWND) window.getWindowHandle();
     if (hwnd == nullptr)
         return;
@@ -430,7 +430,7 @@ void applyOwnership (juce::Component& window)
 
 // JUCE recreates a window's native peer when its style changes (setResizable, setUsingNativeTitleBar...
 // after it is on screen). The new native window has no owner, so it fell behind the main window
-// (issue #4: the Audio editor opened behind LYNX). This re-applies the ownership to every new peer.
+// (issue #4: the Audio editor opened behind YW). This re-applies the ownership to every new peer.
 class OwnershipKeeper final : public juce::ComponentListener
 {
 public:
@@ -449,7 +449,7 @@ public:
 
     // round 170h: an owned window that goes away while it is the active one (closed, hidden, deleted) gives the
     // activation back to the main window, not to whatever program Windows picks next (the shortcuts and Space did
-    // nothing after closing a dialog until a click in LYNX). Windows that do it themselves first are not affected.
+    // nothing after closing a dialog until a click in YW). Windows that do it themselves first are not affected.
     void componentVisibilityChanged (juce::Component& c) override
     {
         if (! c.isVisible())
@@ -619,7 +619,7 @@ int scanCodeOfKeyCode (int juceKeyCode)
 {
     // JUCE's code is the key's character without modifiers. Back to the key: the virtual key code (a place on the
     // keyboard: kVK_ANSI_*) whose character in the current layout is that one, asked from the Text Input Sources /
-    // UCKeyTranslate. Those live in Carbon's HIToolbox, which LYNX does not link: looked up at run time, and when
+    // UCKeyTranslate. Those live in Carbon's HIToolbox, which YW does not link: looked up at run time, and when
     // anything is missing the answer is 0 (the typing keyboard then goes by character, as before).
     if (juceKeyCode <= ' ' || juceKeyCode > 0xffff)
         return 0;
@@ -752,7 +752,7 @@ void setGpuRenderingEnabled (bool on)
     for (int i = juce::ComponentPeer::getNumPeers(); --i >= 0;)
         if (auto* peer = juce::ComponentPeer::getPeer (i))
         {
-            applyToPeer (*peer, on && ! peer->getComponent().getProperties()["lynxGdi"]); // (plugin windows stay on GDI)
+            applyToPeer (*peer, on && ! peer->getComponent().getProperties()["ywGdi"]); // (plugin windows stay on GDI)
             peer->getComponent().repaint();
         }
 }
@@ -797,14 +797,14 @@ struct SecondaryKeyForwarder final : juce::KeyListener
 
     bool keyPressed (const juce::KeyPress& key, juce::Component* window) override
     {
-        if (window != nullptr && (bool) window->getProperties().getWithDefault ("lynxOwnKeys", false))
+        if (window != nullptr && (bool) window->getProperties().getWithDefault ("ywOwnKeys", false))
             return false;
         if (key == juce::KeyPress::escapeKey)
             return closeOnEscape (window);
         // a plain key a plugin's window got back: its view left it unused (issue #96). Plugins pass them up to their parent
         // window, which is this one, so nothing inside the window saw them.
         const auto mods = key.getModifiers();
-        if (window != nullptr && (bool) window->getProperties().getWithDefault ("lynxPluginWindow", false) && plainKeyLeftHandler != nullptr
+        if (window != nullptr && (bool) window->getProperties().getWithDefault ("ywPluginWindow", false) && plainKeyLeftHandler != nullptr
             && ! mods.isCtrlDown() && ! mods.isAltDown() && plainKeyLeftHandler (key))
             return true;
         if (handler == nullptr)
@@ -814,7 +814,7 @@ struct SecondaryKeyForwarder final : juce::KeyListener
 };
 
 // FL closes the focused plugin / channel / tool window with Esc (round 170h, FL 2026 driven: a 808 HiHat channel
-// window, Sawer, Fruity Parametric EQ 2). LYNX's own editors that use Esc (a text field, a selection) take it first;
+// window, Sawer, Fruity Parametric EQ 2). YW's own editors that use Esc (a text field, a selection) take it first;
 // only an Esc nothing in the window used closes it. Async: the window may delete itself in closeButtonPressed.
 bool closeOnEscape (juce::Component* window)
 {
@@ -877,14 +877,14 @@ int juceKeyCodeOf (WPARAM vk)
     }
 }
 
-// The window holding the focus when it is in a hosted plugin's view inside one of LYNX's secondary windows (not the
+// The window holding the focus when it is in a hosted plugin's view inside one of YW's secondary windows (not the
 // main window); nullptr otherwise
 juce::Component* windowOfFocusedPluginView()
 {
     const auto focus = GetFocus();
     if (focus == nullptr)
         return nullptr;
-    // the nearest LYNX window up from the focus: a secondary top-level window, or a docked plugin frame (a native child
+    // the nearest YW window up from the focus: a secondary top-level window, or a docked plugin frame (a native child
     // of the main window, issue #116); the main window itself (its panels) is not a plugin view
     auto* main = mainWindow().getComponent();
     juce::Component* window = nullptr;
@@ -897,11 +897,11 @@ juce::Component* windowOfFocusedPluginView()
                 root = h;
             }
     if (window == nullptr)
-        return nullptr; // (not a LYNX window)
+        return nullptr; // (not a YW window)
     if (window == main)
         return nullptr;
-    // a native child panel (the Channel rack, issue #116) is LYNX's own, not a plugin's view
-    if (GetAncestor (root, GA_ROOT) != root && ! (bool) window->getProperties().getWithDefault ("lynxPluginWindow", false))
+    // a native child panel (the Channel rack, issue #116) is YW's own, not a plugin's view
+    if (GetAncestor (root, GA_ROOT) != root && ! (bool) window->getProperties().getWithDefault ("ywPluginWindow", false))
         return nullptr;
     if (focus != root)
     {
@@ -956,7 +956,7 @@ bool hostTakesPlainKey (WPARAM vk, juce::Component& window)
     return plainKeysAllowed (window) && plainKeyHandler (juce::KeyPress (keyCode, juce::ModifierKeys (mods), 0));
 }
 
-// A press of a key that runs one of LYNX's global actions (Space plays, F-keys open the panels...); plain letters and
+// A press of a key that runs one of YW's global actions (Space plays, F-keys open the panels...); plain letters and
 // digits stay the plugin's
 bool hostTakesShortcut (WPARAM vk)
 {
@@ -1085,8 +1085,8 @@ LinkedFocusListener& linkedFocusListener()
 
 void markLinkedWindow (juce::Component& window, int channel, int insert)
 {
-    window.getProperties().set ("lynxLinkChannel", channel);
-    window.getProperties().set ("lynxLinkInsert", insert);
+    window.getProperties().set ("ywLinkChannel", channel);
+    window.getProperties().set ("ywLinkInsert", insert);
 }
 
 void setLinkedWindowFocusHandler (std::function<void (int, int)> handler)
@@ -1101,7 +1101,7 @@ void setLinkedWindowFocusHandler (std::function<void (int, int)> handler)
 void linkedWindowFocused (juce::Component& window)
 {
     auto& listener = linkedFocusListener();
-    if (! window.getProperties().contains ("lynxLinkInsert"))
+    if (! window.getProperties().contains ("ywLinkInsert"))
     {
         listener.last = nullptr; // (another window: coming back to this one is a new focus)
         return;
@@ -1111,7 +1111,7 @@ void linkedWindowFocused (juce::Component& window)
     if (listener.last.getComponent() == &window) // (the same window again: a click inside it, not a new focus)
         return;
     listener.last = &window;
-    linkedFocusHandler ((int) window.getProperties()["lynxLinkChannel"], (int) window.getProperties()["lynxLinkInsert"]);
+    linkedFocusHandler ((int) window.getProperties()["ywLinkChannel"], (int) window.getProperties()["ywLinkInsert"]);
 }
 
 void keepAboveMainWindow (juce::Component& window)
@@ -1194,7 +1194,7 @@ juce::Rectangle<int> usableScreen()
 }
 
 // a window's frame (title bar and borders, logical px): this window's own once it is on the screen, else another
-// LYNX window's (the same window manager draws them), else a typical native title bar
+// YW window's (the same window manager draws them), else a typical native title bar
 juce::BorderSize<int> windowFrame (juce::Component* window)
 {
     auto frameOf = [] (juce::Component* c) -> std::optional<juce::BorderSize<int>> {
@@ -1292,7 +1292,7 @@ void matchWindowOrderToScreen()
     // the windows above the main window, from the lowest up (raising them in that order keeps their order). Issue #188
     // (round 190ir): a minimised window is not on the screen, so it is not put back above the main window in JUCE's list
     // (isShowing: visible and not minimised). Up there it counted as covering the main window where it had been: on
-    // X11 JUCE asks the windows above in its list, and those clicks were lost (cmake/LynxPatchJuce.cmake, fix 38).
+    // X11 JUCE asks the windows above in its list, and those clicks were lost (cmake/YwPatchJuce.cmake, fix 38).
     std::vector<juce::Component*> above;
     auto& desktop = juce::Desktop::getInstance();
     for (int i = 0; i < desktop.getNumComponents(); ++i)
@@ -1345,7 +1345,7 @@ void matchWindowOrderToScreen()
 }
 
 
-// --- round 190ev: LYNX's own editor windows docked like FL's plugin windows -------------------------------------
+// --- round 190ev: YW's own editor windows docked like FL's plugin windows -------------------------------------
 
 namespace
 {
@@ -1353,7 +1353,7 @@ Workspace* editorDock = nullptr;
 bool editorsDetached = false;
 
 // Round 190jy: Settings › General › "Draw docked YW Studio editors in the main window" (off by default); the environment's
-// LYNX_EDITORS_IN_MAIN=1 / 0 wins (measurements, tests)
+// YW_EDITORS_IN_MAIN=1 / 0 wins (measurements, tests)
 bool& editorsInMainSetting()
 {
     static bool on = false;
@@ -1363,14 +1363,14 @@ bool& editorsInMainSetting()
 bool editorsInMainNow()
 {
    #if JUCE_WINDOWS
-    static const auto forced = juce::SystemStats::getEnvironmentVariable ("LYNX_EDITORS_IN_MAIN", {}).trim();
+    static const auto forced = juce::SystemStats::getEnvironmentVariable ("YW_EDITORS_IN_MAIN", {}).trim();
     return forced == "1" || (forced != "0" && editorsInMainSetting());
    #else
     return false; // (no holes elsewhere: the docked editors stay native child windows there)
    #endif
 }
 
-// The docked LYNX editor windows (native children or drawn by the main window), oldest first
+// The docked YW editor windows (native children or drawn by the main window), oldest first
 std::vector<juce::Component::SafePointer<juce::DocumentWindow>>& dockedEditors()
 {
     static std::vector<juce::Component::SafePointer<juce::DocumentWindow>> list;
@@ -1382,7 +1382,7 @@ std::vector<juce::Component::SafePointer<juce::DocumentWindow>>& dockedEditors()
 // plugin's view, an OpenGL preview: they would be windows of the main window drawn over everything)
 bool mainWindowCanDraw (juce::DocumentWindow& window)
 {
-    if ((bool) window.getProperties().getWithDefault ("lynxKeepOwnWindow", false) || window.isAlwaysOnTop())
+    if ((bool) window.getProperties().getWithDefault ("ywKeepOwnWindow", false) || window.isAlwaysOnTop())
         return false;
     std::function<bool (juce::Component&)> plain = [&plain] (juce::Component& c) {
         if (dynamic_cast<juce::AudioProcessorEditor*> (&c) != nullptr)
@@ -1481,7 +1481,7 @@ EditorKeys& editorKeys()
     return keys;
 }
 
-// LYNX's title bar for a docked window (a child window has no native one): the close button alone, no shadow
+// YW's title bar for a docked window (a child window has no native one): the close button alone, no shadow
 void useDockedLook (juce::DocumentWindow& window)
 {
     auto* content = window.getContentComponent();
@@ -1535,7 +1535,7 @@ bool dockInMainWindow (juce::DocumentWindow& window, Workspace& area, juce::Rect
 
 void listenAsDocked (juce::DocumentWindow& window)
 {
-    window.getProperties().set ("lynxDockedWindow", true);
+    window.getProperties().set ("ywDockedWindow", true);
     window.addMouseListener (&dockClickRaise(), true);
     window.addComponentListener (&dockPlaceKeeper());
     auto& list = dockedEditors();
@@ -1588,7 +1588,7 @@ std::vector<juce::DocumentWindow*> dockedEditorWindows()
 juce::Component* editorWindowOf (juce::Component* c)
 {
     for (auto* p = c; p != nullptr; p = p->getParentComponent())
-        if ((bool) p->getProperties().getWithDefault ("lynxEditorInMainWindow", false))
+        if ((bool) p->getProperties().getWithDefault ("ywEditorInMainWindow", false))
             return p;
     return c != nullptr ? c->getTopLevelComponent() : nullptr;
 }
@@ -1665,7 +1665,7 @@ bool dockOrKeepAbove (juce::DocumentWindow& window)
     const auto screen = window.getScreenBounds();
     const auto visible = window.isVisible();
 
-    // off the desktop first, so no top-level window is made again on the way: LYNX's title bar (a child window has no
+    // off the desktop first, so no top-level window is made again on the way: YW's title bar (a child window has no
     // native one) with the close button alone (no minimise / maximise of the system's kind for a child window), and no
     // drop shadow (JUCE's shadow is a set of top-level windows)
     window.setVisible (false);
@@ -1697,7 +1697,7 @@ namespace
 {
 bool fix191On()
 {
-    static const bool on = juce::SystemStats::getEnvironmentVariable ("LYNX_FIX191", {}).trim() != "0";
+    static const bool on = juce::SystemStats::getEnvironmentVariable ("YW_FIX191", {}).trim() != "0";
     return on;
 }
 
@@ -1725,7 +1725,7 @@ std::optional<juce::Time> pressNow()
 bool isFloatingPanelWindow (const juce::Component* c)
 {
     const auto* top = c != nullptr ? c->getTopLevelComponent() : nullptr;
-    return top != nullptr && top != mainWindow().getComponent() && (bool) top->getProperties().getWithDefault ("lynxPanel", false);
+    return top != nullptr && top != mainWindow().getComponent() && (bool) top->getProperties().getWithDefault ("ywPanel", false);
 }
 } // namespace
 
@@ -1793,4 +1793,4 @@ void setWindowScreenPosition (juce::Component& window, juce::Point<int> screenTo
     window.setTopLeftPosition (screenTopLeft);
 }
 
-} // namespace lynx
+} // namespace yw

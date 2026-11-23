@@ -13,9 +13,9 @@ struct Rng
     bool chance (int percent) noexcept { return below (100) < percent; }
 };
 
-inline lynx::Song randomSong (Rng& g)
+inline yw::Song randomSong (Rng& g)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.bpm = 90.0 + g.below (80);
     const auto channels = 1 + g.below (6);
@@ -63,7 +63,7 @@ inline lynx::Song randomSong (Rng& g)
     return song;
 }
 
-inline bool sameEvents (const lynx::EventBuffer& a, const lynx::EventBuffer& b)
+inline bool sameEvents (const yw::EventBuffer& a, const yw::EventBuffer& b)
 {
     if (a.size() != b.size())
         return false;
@@ -82,7 +82,7 @@ inline bool sameEvents (const lynx::EventBuffer& a, const lynx::EventBuffer& b)
 
 TEST (s190gp_schedule_buckets_same_events)
 {
-    using namespace lynx;
+    using namespace yw;
     int blocks = 0, withEvents = 0, mismatches = 0;
     for (std::uint32_t seed = 1; seed <= 120; ++seed)
     {

@@ -1,4 +1,4 @@
-// LYNX's own PoiZone bank (round 168n). Designed for LYNX — never converted from FL's preset files. PoiZone's engine
+// YW's own PoiZone bank (round 168n). Designed for YW — never converted from FL's preset files. PoiZone's engine
 // is self-contained (two naive saw / pulse oscillators, noise, a 4-pole filter, two envelopes, an LFO, delay, chorus,
 // gate and arpeggiator; REA_rodada44), so these presets play without FL Studio. Values follow the laws of §1.3.
 
@@ -6,10 +6,10 @@
 #include <cmath>
 #include <cstring>
 
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/PoiZone.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -292,4 +292,4 @@ std::vector<Preset> poizoneBank()
         }),
     };
 }
-} // namespace lynx::banks
+} // namespace yw::banks

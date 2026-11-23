@@ -6,7 +6,7 @@
 #include "engine/SampleLibrary.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 // Thread that reads ahead from disk the part of mapped samples (the long ones, see
 // SampleLibrary) that will play in the next few seconds, so the audio thread almost never
@@ -39,4 +39,4 @@ private:
     double bpm = 120.0;
     bool songMode = false;
 };
-} // namespace lynx
+} // namespace yw

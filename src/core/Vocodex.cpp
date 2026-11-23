@@ -18,7 +18,7 @@
 #pragma STDC FP_CONTRACT OFF
 #endif
 
-namespace lynx::vocodex
+namespace yw::vocodex
 {
 namespace
 {
@@ -1295,7 +1295,7 @@ std::optional<std::array<std::pair<std::size_t, std::size_t>, 13>> mapRecords (c
     return out;
 }
 
-// FL's state and LYNX's install-data trailer that follows it
+// FL's state and YW's install-data trailer that follows it
 std::pair<std::vector<std::uint8_t>, std::vector<std::uint8_t>> splitTrailer (const std::vector<std::uint8_t>& slotState)
 {
     auto fl = splitInstallData (slotState).first;
@@ -2484,7 +2484,7 @@ void Engine::reconfigure (const State& state) noexcept
 int Engine::latencySamples() const noexcept { return impl->draft ? fifoFrames : 0; }
 int Engine::maxBlock() const noexcept { return impl->maxBlock; }
 
-// --- install data (LYNX's trailer after FL's state) ------------------------------------------------------------------
+// --- install data (YW's trailer after FL's state) ------------------------------------------------------------------
 namespace
 {
 constexpr char dataTag[8] { 'L', 'X', 'V', 'X', 'D', 'A', 'T', 'A' };
@@ -2934,4 +2934,4 @@ void controlsToParams (const State& state, EffectParams& params) noexcept
     }
     params[(std::size_t) liveControls] = 1.0f;
 }
-} // namespace lynx::vocodex
+} // namespace yw::vocodex

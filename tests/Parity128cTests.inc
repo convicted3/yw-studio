@@ -1,4 +1,4 @@
-// --- Round 128 (parity128c): LYNX Tune's parity with the auto-mode corrector it stands in for -----------------------
+// --- Round 128 (parity128c): YW Tune's parity with the auto-mode corrector it stands in for -----------------------
 // Natural vibrato, per-note Bypass vs Remove, created vibrato, ignore vibrato, auto key, the extra scales and the
 // Auto-Tune Pro translation of them. Synthetic vowels (r95::vowel) so pitch can be measured against a known truth.
 
@@ -22,11 +22,11 @@ double pitchSpan (const std::vector<float>& y, int latency, double fs, double re
     return hi - lo;
 }
 
-lynx::EffectParams chromatic (double retuneMs)
+yw::EffectParams chromatic (double retuneMs)
 {
     auto p = r95::tuneDefaults();
-    p[lynx::lynxtune::scale] = 0.0f; // chromatic
-    p[lynx::lynxtune::retune] = (float) std::sqrt (retuneMs / 400.0);
+    p[yw::ywtune::scale] = 0.0f; // chromatic
+    p[yw::ywtune::retune] = (float) std::sqrt (retuneMs / 400.0);
     return p;
 }
 
@@ -49,23 +49,23 @@ std::vector<std::uint8_t> autoTuneStateWithEdits (const std::string& extraParams
 }
 } // namespace p128c
 
-TEST (lynx_tune_round128_params_are_neutral_by_default)
+TEST (yw_tune_round128_params_are_neutral_by_default)
 {
-    using namespace lynx;
-    const auto& info = effectInfo (EffectKind::lynxTune);
-    CHECK ((int) info.params.size() == lynxtune::count && lynxtune::count <= maxEffectParams);
-    auto slot = makeEffectSlot (EffectKind::lynxTune);
-    CHECK (lynxtune::naturalVibratoDb (slot.params[lynxtune::naturalVibrato]) == 0.0);
-    CHECK (lynxtune::vibratoShapeIndex (slot.params[lynxtune::vibratoShape]) == 0);
-    CHECK (std::abs (lynxtune::vibratoRateHz (slot.params[lynxtune::vibratoRate]) - 5.5) < 1e-4);
-    CHECK (std::abs (lynxtune::vibratoDepthCents (slot.params[lynxtune::vibratoDepth]) - 18.0) < 1e-3);
-    CHECK (std::abs (lynxtune::vibratoOnsetMs (slot.params[lynxtune::vibratoDelay]) - 500.0) < 1e-3);
+    using namespace yw;
+    const auto& info = effectInfo (EffectKind::ywTune);
+    CHECK ((int) info.params.size() == ywtune::count && ywtune::count <= maxEffectParams);
+    auto slot = makeEffectSlot (EffectKind::ywTune);
+    CHECK (ywtune::naturalVibratoDb (slot.params[ywtune::naturalVibrato]) == 0.0);
+    CHECK (ywtune::vibratoShapeIndex (slot.params[ywtune::vibratoShape]) == 0);
+    CHECK (std::abs (ywtune::vibratoRateHz (slot.params[ywtune::vibratoRate]) - 5.5) < 1e-4);
+    CHECK (std::abs (ywtune::vibratoDepthCents (slot.params[ywtune::vibratoDepth]) - 18.0) < 1e-3);
+    CHECK (std::abs (ywtune::vibratoOnsetMs (slot.params[ywtune::vibratoDelay]) - 500.0) < 1e-3);
     for (int k = 0; k < 12; ++k)
-        CHECK (slot.params[(std::size_t) (lynxtune::bypassC + k)] == 0.0f);
-    CHECK (slot.params[lynxtune::ignoreVibrato] == 0.0f && slot.params[lynxtune::moreScales] == 0.0f);
-    CHECK (formatEffectParam (EffectKind::lynxTune, lynxtune::naturalVibrato, 0.75f, 120.0) == "+6.0 dB");
-    CHECK (formatEffectParam (EffectKind::lynxTune, lynxtune::vibratoShape, 1.0f / 3.0f, 120.0) == "Sine");
-    CHECK (formatEffectParam (EffectKind::lynxTune, lynxtune::moreScales, 1.0f, 120.0) == "Diminished");
+        CHECK (slot.params[(std::size_t) (ywtune::bypassC + k)] == 0.0f);
+    CHECK (slot.params[ywtune::ignoreVibrato] == 0.0f && slot.params[ywtune::moreScales] == 0.0f);
+    CHECK (formatEffectParam (EffectKind::ywTune, ywtune::naturalVibrato, 0.75f, 120.0) == "+6.0 dB");
+    CHECK (formatEffectParam (EffectKind::ywTune, ywtune::vibratoShape, 1.0f / 3.0f, 120.0) == "Sine");
+    CHECK (formatEffectParam (EffectKind::ywTune, ywtune::moreScales, 1.0f, 120.0) == "Diminished");
 
     // an old project (no round-128 values saved) plays exactly as before: the defaults leave the output untouched by
     // any of the new stages (bypass flags on notes outside the scale, a vibrato rate with shape "none", 0 dB)
@@ -74,25 +74,25 @@ TEST (lynx_tune_round128_params_are_neutral_by_default)
     auto p = r95::tuneDefaults();
     int latency = 0;
     const auto a = r95::runTune (x, fs, p, latency);
-    p[lynxtune::vibratoRate] = 0.9f;
-    p[lynxtune::vibratoDepth] = 1.0f;
-    p[(std::size_t) (lynxtune::bypassC + 1)] = 1.0f; // C#: not in C major
+    p[ywtune::vibratoRate] = 0.9f;
+    p[ywtune::vibratoDepth] = 1.0f;
+    p[(std::size_t) (ywtune::bypassC + 1)] = 1.0f; // C#: not in C major
     const auto b = r95::runTune (x, fs, p, latency);
     CHECK (a == b);
 }
 
-TEST (lynx_tune_round128_extra_scales)
+TEST (yw_tune_round128_extra_scales)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (vocal::scaleMask (vocal::Scale::wholeTone, 0) == 0b010101010101);
     CHECK (vocal::scaleMask (vocal::Scale::diminished, 0) == 0b101101101101);
-    CHECK (lynxtune::effectiveScale (0.0f, 0.5f) == (int) vocal::Scale::wholeTone);
-    CHECK (lynxtune::effectiveScale (0.0f, 1.0f) == (int) vocal::Scale::diminished);
-    CHECK (lynxtune::effectiveScale (1.0f / 13.0f, 0.0f) == (int) vocal::Scale::major);
+    CHECK (ywtune::effectiveScale (0.0f, 0.5f) == (int) vocal::Scale::wholeTone);
+    CHECK (ywtune::effectiveScale (0.0f, 1.0f) == (int) vocal::Scale::diminished);
+    CHECK (ywtune::effectiveScale (1.0f / 13.0f, 0.0f) == (int) vocal::Scale::major);
     CHECK (std::string (vocal::scaleName (vocal::Scale::wholeTone)) == "Whole tone");
 }
 
-TEST (lynx_tune_round128_natural_vibrato)
+TEST (yw_tune_round128_natural_vibrato)
 {
     // a held A3 with a ±40 c, 5.5 Hz vibrato and a slow retune (the vibrato survives): round 138 measured the reference:
     // +6 dB makes it about 1.5 times wider, −12 dB keeps about two thirds
@@ -103,7 +103,7 @@ TEST (lynx_tune_round128_natural_vibrato)
     for (int k = 0; k < 3; ++k)
     {
         auto p = p128c::chromatic (400.0);
-        p[lynx::lynxtune::naturalVibrato] = values[k];
+        p[yw::ywtune::naturalVibrato] = values[k];
         int latency = 0;
         const auto y = r95::runTune (x, fs, p, latency);
         span[k] = p128c::pitchSpan (y, latency, fs, 220.0, 0.6, 1.5);
@@ -113,15 +113,15 @@ TEST (lynx_tune_round128_natural_vibrato)
     CHECK (span[2] / span[0] > 0.5 && span[2] / span[0] < 0.85);
 }
 
-TEST (lynx_tune_round128_bypass_and_remove)
+TEST (yw_tune_round128_bypass_and_remove)
 {
     // A3 +40 c, instant retune, chromatic: corrected to A; A bypassed: left at +40 c; A removed: retargets to A# (+100 c)
     const double fs = 44100.0;
     const auto x = r95::vowel (fs, (int) (fs * 0.8), [] (double) { return 220.0 * std::exp2 (40.0 / 1200.0); });
     auto out = [&] (int bypassA, int onA) {
         auto p = p128c::chromatic (0.0);
-        p[(std::size_t) (lynx::lynxtune::bypassC + 9)] = (float) bypassA;
-        p[(std::size_t) (lynx::lynxtune::noteC + 9)] = (float) onA;
+        p[(std::size_t) (yw::ywtune::bypassC + 9)] = (float) bypassA;
+        p[(std::size_t) (yw::ywtune::noteC + 9)] = (float) onA;
         int latency = 0;
         const auto y = r95::runTune (x, fs, p, latency);
         return r95::cents (r95::measureHz (y, (int) (0.5 * fs) + latency, 2048, fs), 220.0);
@@ -132,7 +132,7 @@ TEST (lynx_tune_round128_bypass_and_remove)
     CHECK (std::abs (out (1, 0) - 100.0) < 4.0); // a removed note is not a target, bypassed or not
 }
 
-TEST (lynx_tune_round128_created_vibrato)
+TEST (yw_tune_round128_created_vibrato)
 {
     // a steady A3, instant retune, a 5 Hz sine vibrato of 50 c from the note's start: ~100 c peak to peak once it is in
     const double fs = 44100.0;
@@ -141,18 +141,18 @@ TEST (lynx_tune_round128_created_vibrato)
     int latency = 0;
     const auto plain = r95::runTune (x, fs, p, latency);
     CHECK (p128c::pitchSpan (plain, latency, fs, 220.0, 0.5, 1.3) < 8.0);
-    p[lynx::lynxtune::vibratoShape] = 1.0f / 3.0f;
-    p[lynx::lynxtune::vibratoRate] = (float) ((5.0 - 0.1) / 9.9);
-    p[lynx::lynxtune::vibratoDepth] = 0.5f;
-    p[lynx::lynxtune::vibratoDelay] = 0.2f;  // 300 ms
-    p[lynx::lynxtune::vibratoOnset] = 0.1f;  // 150 ms
+    p[yw::ywtune::vibratoShape] = 1.0f / 3.0f;
+    p[yw::ywtune::vibratoRate] = (float) ((5.0 - 0.1) / 9.9);
+    p[yw::ywtune::vibratoDepth] = 0.5f;
+    p[yw::ywtune::vibratoDelay] = 0.2f;  // 300 ms
+    p[yw::ywtune::vibratoOnset] = 0.1f;  // 150 ms
     const auto y = r95::runTune (x, fs, p, latency);
     CHECK (p128c::pitchSpan (y, latency, fs, 220.0, 0.08, 0.25) < 10.0); // before the onset delay
     const auto span = p128c::pitchSpan (y, latency, fs, 220.0, 0.7, 1.3);
     CHECK (span > 75.0 && span < 115.0);
 }
 
-TEST (lynx_tune_round128_ignore_vibrato)
+TEST (yw_tune_round128_ignore_vibrato)
 {
     // A3 +20 c with a ±45 c vibrato: its peaks (+65 c) cross toward A#; the instant retune follows them unless the target
     // is chosen from the pitch with its vibrato smoothed away
@@ -162,15 +162,15 @@ TEST (lynx_tune_round128_ignore_vibrato)
     int latency = 0;
     double hiPlain = 0.0, hiIgnore = 0.0;
     p128c::pitchSpan (r95::runTune (x, fs, p, latency), latency, fs, 220.0, 0.6, 1.5, &hiPlain);
-    p[lynx::lynxtune::ignoreVibrato] = 1.0f;
+    p[yw::ywtune::ignoreVibrato] = 1.0f;
     p128c::pitchSpan (r95::runTune (x, fs, p, latency), latency, fs, 220.0, 0.6, 1.5, &hiIgnore);
     CHECK (hiPlain > 70.0);
     CHECK (hiIgnore < 30.0);
 }
 
-TEST (lynx_tune_round128_auto_key)
+TEST (yw_tune_round128_auto_key)
 {
-    using namespace lynx;
+    using namespace yw;
     // time per pitch class of a melody in A minor (tonic and fifth longer) and one in E major
     std::array<double, 12> aMinor {}, eMajor {};
     for (const int pc : { 9, 11, 0, 2, 4, 5, 7 })
@@ -185,9 +185,9 @@ TEST (lynx_tune_round128_auto_key)
     CHECK (vocal::detectKey ({}).first == -1);
 }
 
-TEST (lynx_tune_round128_auto_tune_pro_translation)
+TEST (yw_tune_round128_auto_tune_pro_translation)
 {
-    using namespace lynx;
+    using namespace yw;
     // A minor; Natural Vibrato +3 dB, Ignore Vibrato on, Create Vibrato square 4 Hz 30 c, onset 250 / 750 ms; the minor
     // scale's root bypassed and its 4th degree (D) removed
     const auto state = p128c::autoTuneStateWithEdits (
@@ -200,14 +200,14 @@ TEST (lynx_tune_round128_auto_tune_pro_translation)
     const auto at = subst113::autoTune (state);
     auto slot = subst113::pluginSlot (at);
     CHECK (substituteEffectSlot (slot, pluginIdentity (at)));
-    CHECK (std::abs (lynxtune::naturalVibratoDb (slot.params[lynxtune::naturalVibrato]) - 3.0) < 1e-3);
-    CHECK (slot.params[lynxtune::ignoreVibrato] == 1.0f);
-    CHECK (lynxtune::vibratoShapeIndex (slot.params[lynxtune::vibratoShape]) == 2);
-    CHECK (std::abs (lynxtune::vibratoRateHz (slot.params[lynxtune::vibratoRate]) - 4.0) < 1e-3);
-    CHECK (std::abs (lynxtune::vibratoDepthCents (slot.params[lynxtune::vibratoDepth]) - 30.0) < 1e-3);
-    CHECK (std::abs (lynxtune::vibratoOnsetMs (slot.params[lynxtune::vibratoDelay]) - 250.0) < 1e-2);
-    CHECK (std::abs (lynxtune::vibratoOnsetMs (slot.params[lynxtune::vibratoOnset]) - 750.0) < 1e-2);
-    CHECK (slot.params[(std::size_t) (lynxtune::bypassC + 9)] == 1.0f && slot.params[(std::size_t) (lynxtune::noteC + 9)] == 1.0f);
-    CHECK (slot.params[(std::size_t) (lynxtune::noteC + 2)] == 0.0f && slot.params[(std::size_t) (lynxtune::bypassC + 2)] == 0.0f);
-    CHECK (slot.params[(std::size_t) (lynxtune::noteC + 4)] == 1.0f);
+    CHECK (std::abs (ywtune::naturalVibratoDb (slot.params[ywtune::naturalVibrato]) - 3.0) < 1e-3);
+    CHECK (slot.params[ywtune::ignoreVibrato] == 1.0f);
+    CHECK (ywtune::vibratoShapeIndex (slot.params[ywtune::vibratoShape]) == 2);
+    CHECK (std::abs (ywtune::vibratoRateHz (slot.params[ywtune::vibratoRate]) - 4.0) < 1e-3);
+    CHECK (std::abs (ywtune::vibratoDepthCents (slot.params[ywtune::vibratoDepth]) - 30.0) < 1e-3);
+    CHECK (std::abs (ywtune::vibratoOnsetMs (slot.params[ywtune::vibratoDelay]) - 250.0) < 1e-2);
+    CHECK (std::abs (ywtune::vibratoOnsetMs (slot.params[ywtune::vibratoOnset]) - 750.0) < 1e-2);
+    CHECK (slot.params[(std::size_t) (ywtune::bypassC + 9)] == 1.0f && slot.params[(std::size_t) (ywtune::noteC + 9)] == 1.0f);
+    CHECK (slot.params[(std::size_t) (ywtune::noteC + 2)] == 0.0f && slot.params[(std::size_t) (ywtune::bypassC + 2)] == 0.0f);
+    CHECK (slot.params[(std::size_t) (ywtune::noteC + 4)] == 1.0f);
 }

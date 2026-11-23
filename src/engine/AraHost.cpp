@@ -25,17 +25,17 @@
 #include <set>
 
 #if JUCE_PLUGINHOST_ARA && (JUCE_PLUGINHOST_VST3 || JUCE_PLUGINHOST_AU) && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
- #define LYNX_ARA 1
+ #define YW_ARA 1
  #include <ARA_Library/Dispatch/ARAHostDispatch.h>
 #else
- #define LYNX_ARA 0
+ #define YW_ARA 0
 #endif
 
-namespace lynx
+namespace yw
 {
 bool AraHost::isAra (const juce::PluginDescription& d) noexcept
 {
-#if LYNX_ARA
+#if YW_ARA
     return d.hasARAExtension;
 #else
     juce::ignoreUnused (d);
@@ -53,7 +53,7 @@ std::vector<juce::PluginDescription> AraHost::araPlugins (PluginHost& plugins)
     return out;
 }
 
-#if ! LYNX_ARA
+#if ! YW_ARA
 // ---- a build without the ARA SDK: nothing is hosted -----------------------------------------------------------------
 struct AraHost::Impl
 {
@@ -1114,4 +1114,4 @@ int AraHost::instanceCount() const
     return n;
 }
 #endif
-} // namespace lynx
+} // namespace yw

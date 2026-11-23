@@ -102,11 +102,11 @@ YSFX_API void ysfx_set_user_data(ysfx_config_t *config, intptr_t userdata);
 // get a string which textually represents the log level
 YSFX_API const char *ysfx_log_level_string(ysfx_log_level level);
 
-// LYNX: a host filter for the files a script may read (file_open, file sliders, gfx_loadimg): called with the resolved
+// YW: a host filter for the files a script may read (file_open, file sliders, gfx_loadimg): called with the resolved
 // path of an existing file; false = the script cannot open it. nullptr (the default) = every file, as upstream.
 // Process-wide; set it before any effect runs.
-typedef bool (ysfx_lynx_path_filter_t)(const char *path);
-YSFX_API void ysfx_lynx_set_path_filter(ysfx_lynx_path_filter_t *filter);
+typedef bool (ysfx_yw_path_filter_t)(const char *path);
+YSFX_API void ysfx_yw_set_path_filter(ysfx_yw_path_filter_t *filter);
 
 //------------------------------------------------------------------------------
 // YSFX effect

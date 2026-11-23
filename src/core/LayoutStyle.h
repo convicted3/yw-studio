@@ -2,14 +2,14 @@
 
 // The main window's layout style (View › Layout style, Settings › General › Workflow): FL's Pattern workflow (the
 // default), the Clip-launch workflow (round 181a) and the Simple workflow (round 184a, design in
-// /mnt/e/lynx-work/simple184a/DESIGN.md: one window with the tracks, the timeline and a dock for the selected track).
+// /mnt/e/yw-work/simple184a/DESIGN.md: one window with the tracks, the timeline and a dock for the selected track).
 // A style is a preference of the user, not part of a project: switching moves panels only. No JUCE here.
 
 #include <atomic>
 #include <string>
 #include <string_view>
 
-namespace lynx::layoutstyle
+namespace yw::layoutstyle
 {
 enum class Style : int
 {
@@ -90,4 +90,4 @@ struct SettingsReader
         sawStyle = true;
     }
 };
-} // namespace lynx::layoutstyle
+} // namespace yw::layoutstyle

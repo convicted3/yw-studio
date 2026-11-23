@@ -6,7 +6,7 @@
 // The Cue Out must be an output other than the Main Out's; with one shared pair the switch stays on Solo (190mv B1)
 TEST (rack190nc_cue_needs_a_separate_output)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (4);
     song.clipGrid.emplace();
@@ -46,7 +46,7 @@ TEST (rack190nc_cue_needs_a_separate_output)
 // The Cue switches behave as the Solo switches: exclusive, Ctrl-click adds; they never touch the solos
 TEST (rack190nc_cue_switches)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (5);
     song.mixer[3].solo = true;
@@ -70,7 +70,7 @@ TEST (rack190nc_cue_switches)
 // there while Cue mode is off or the Cue Out shares the Main Out
 TEST (rack190nc_cue_routes_render)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
@@ -125,7 +125,7 @@ TEST (rack190nc_cue_routes_render)
 // Live's Macro Map: a picked parameter given to a macro is mapped once (a parameter belongs to one macro), full range
 TEST (rack190nc_pick_then_map)
 {
-    using namespace lynx;
+    using namespace yw;
     auto doc = rack::makeRack (RackDoc::Kind::audioEffect);
     PatchNode fx;
     fx.effect = makeEffectSlot (EffectKind::delay);

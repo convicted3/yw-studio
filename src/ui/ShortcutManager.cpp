@@ -6,7 +6,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx
+namespace yw
 {
 juce::File keyMapFile()
 {
@@ -546,4 +546,4 @@ std::unique_ptr<juce::Component> makeShortcutManagerPanel (bool persistent, std:
 {
     return std::make_unique<ShortcutPanel> (persistent, std::move (onChanged));
 }
-} // namespace lynx
+} // namespace yw

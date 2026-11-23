@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::remote_playlist
+namespace yw::remote_playlist
 {
 constexpr std::int64_t maxTick = 1000000000;
 constexpr int maxTrack = 499;
@@ -174,4 +174,4 @@ inline Transaction apply (const Song& original, const std::vector<Edit>& edits)
     }
     return result;
 }
-} // namespace lynx::remote_playlist
+} // namespace yw::remote_playlist

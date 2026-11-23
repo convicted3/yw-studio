@@ -1,7 +1,7 @@
 #pragma once
 
-// LYNX Dance (round 165e, docs/analise/REA_rodada165e.md): FL's Fruity Dance role — an animated dancer over the
-// workspace whose moves the channel's notes pick — with LYNX's own procedural character (no FL artwork). No sound.
+// YW Dance (round 165e, docs/analise/REA_rodada165e.md): FL's Fruity Dance role — an animated dancer over the
+// workspace whose moves the channel's notes pick — with YW's own procedural character (no FL artwork). No sound.
 //
 // FL's behaviour, read in its plugin (REA round 68 §8 and round 165e): a note picks a move (the keys from B4 up: 0 =
 // Freestyle, then the moves in order), the keys from C4 down play the same moves mirrored, F4 hides the dancer and F#4
@@ -12,7 +12,7 @@
 //
 // Sprite sheets (issue #121, docs/analise/REA_rodada190ba-121.md): FL's dancer is a picture file of 8 frames across
 // and one row per move, with the moves' names in a text file beside it (the picture's name with ".txt" in place of
-// its extension, one name per line). A channel with such a sheet shows its frames instead of LYNX's character; the
+// its extension, one name per line). A channel with such a sheet shows its frames instead of YW's character; the
 // rules below (`sheet…`, `SheetAnimator`) are FL's, read in its plugin.
 // No JUCE here (tests/Visual165Tests.inc, tests/Dance190baTests.inc).
 
@@ -24,12 +24,12 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Instrument;
 }
 
-namespace lynx::dance
+namespace yw::dance
 {
 enum Move : int { freestyle, waiting, stepping, jumping, zombie, waving, hula, windmill, flail, spin, held };
 constexpr int moveCount = 11;
@@ -45,11 +45,11 @@ struct Settings
     int x = 412, y = 500;    // the dancer's bottom centre in the main window, in pixels (FL's defaults)
     std::uint32_t colour = 0xffff3048; // the outfit (ARGB)
     float blend = 0.25f;     // a sprite sheet's "Blend" (FL's motion blending: the part of each frame that fades to the next)
-    std::string sheet;       // a sprite sheet's picture file (UTF-8; empty: LYNX's own dancer)
+    std::string sheet;       // a sprite sheet's picture file (UTF-8; empty: YW's own dancer)
     // FL's display options (round 190bf, FL's editor: Sync changes, Solid, Keep in front, On desktop, Reflect; all on and
     // Reflect 64 / 256 in a new Fruity Dance). sync: a move changes at the next cycle's start (off: at once); solid:
     // the dancer takes the mouse (off: clicks go through it); keepInFront: kept in front of the panels and docked
-    // plugins; onDesktop: FL's "Don't minimize window along with application" (kept for FL; LYNX's dancers live in the
+    // plugins; onDesktop: FL's "Don't minimize window along with application" (kept for FL; YW's dancers live in the
     // main window); reflect: the opacity of the faded mirror image under the dancer.
     bool sync = true, solid = true, keepInFront = true, onDesktop = true;
     float reflect = 0.25f;
@@ -57,7 +57,7 @@ struct Settings
     bool operator== (const Settings&) const = default;
 };
 
-// LYNX's own state ("YW Studio dance 1", key=value lines)
+// YW's own state ("YW Studio dance 1", key=value lines)
 std::vector<std::uint8_t> toState (const Settings& s);
 std::optional<Settings> fromState (const std::vector<std::uint8_t>& state);
 // FL's Fruity Dance state (40 bytes or more); nullopt = not one. `flFactoryData`: FL's install folder (what FL's
@@ -73,7 +73,7 @@ std::vector<std::uint8_t> toFl (const Settings& s, const std::string& flFactoryD
 extern const char* const flFactoryToken; // "%FLStudioFactoryData%"
 std::string expandFlSheetPath (const std::string& stored, const std::string& flFactoryData);
 std::string flSheetPath (const std::string& path, const std::string& flFactoryData);
-// either (LYNX's text first, then FL's bytes); the defaults when neither
+// either (YW's text first, then FL's bytes); the defaults when neither
 Settings read (const std::vector<std::uint8_t>& state);
 
 // What a note does (FL's key map)
@@ -84,7 +84,7 @@ struct KeyAction
     int move = 0;
     bool mirrored = false;
 };
-KeyAction actionForKey (int key) noexcept;           // LYNX's own dancer (moveCount moves)
+KeyAction actionForKey (int key) noexcept;           // YW's own dancer (moveCount moves)
 KeyAction actionForKey (int key, int moves) noexcept; // a dancer with that many moves, Freestyle included
 constexpr int firstMoveKey = 59;   // B4: Freestyle; C5 … A5: the moves
 constexpr int firstMirrorKey = 48; // C4: Freestyle mirrored; down to D#3
@@ -206,4 +206,4 @@ private:
 };
 std::unique_ptr<Instrument> makeInstrument();
 Signals* signalsOf (Instrument* instrument) noexcept; // nullptr: not a dance channel
-} // namespace lynx::dance
+} // namespace yw::dance

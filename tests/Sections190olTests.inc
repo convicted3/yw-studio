@@ -15,12 +15,12 @@
 
 namespace sections190ol
 {
-constexpr std::int64_t bar = 4 * (std::int64_t) lynx::ppq;
+constexpr std::int64_t bar = 4 * (std::int64_t) yw::ppq;
 
-inline lynx::Clip clip (int track, int pattern, std::int64_t start, std::int64_t length, std::int64_t offset = 0)
+inline yw::Clip clip (int track, int pattern, std::int64_t start, std::int64_t length, std::int64_t offset = 0)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = pattern;
     c.track = track;
     c.start = start;
@@ -31,9 +31,9 @@ inline lynx::Clip clip (int track, int pattern, std::int64_t start, std::int64_t
 
 // Three sections of two bars, A B C. Track 0: one clip per section (patterns 0, 1, 2); track 1: one long clip over all
 // three; track 0's lane: a different level in each section; a plain marker inside B.
-inline lynx::Song threeSections()
+inline yw::Song threeSections()
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.bpm = 120.0;
     song.mixer = Song::defaultMixer (2);
@@ -54,7 +54,7 @@ inline lynx::Song threeSections()
     return song;
 }
 
-inline const lynx::Clip* at (const lynx::Song& s, int track, std::int64_t start)
+inline const yw::Clip* at (const yw::Song& s, int track, std::int64_t start)
 {
     for (const auto& c : s.playlist)
         if (c.track == track && c.start == start)
@@ -62,7 +62,7 @@ inline const lynx::Clip* at (const lynx::Song& s, int track, std::int64_t start)
     return nullptr;
 }
 
-inline std::string names (const lynx::Song& s)
+inline std::string names (const yw::Song& s)
 {
     std::string out;
     for (const auto& x : s.sections())
@@ -70,7 +70,7 @@ inline std::string names (const lynx::Song& s)
     return out;
 }
 
-inline bool contiguous (const lynx::Song& s)
+inline bool contiguous (const yw::Song& s)
 {
     std::int64_t next = 0;
     for (const auto& x : s.sections())
@@ -85,7 +85,7 @@ inline bool contiguous (const lynx::Song& s)
 
 TEST (sections190ol_model_add_names_and_time)
 {
-    using namespace lynx;
+    using namespace yw;
     using sections190ol::bar;
     Song song;
     song.bpm = 120.0;
@@ -127,7 +127,7 @@ TEST (sections190ol_model_add_names_and_time)
 
 TEST (sections190ol_move_swaps_clips_lanes_and_markers_tick_exact)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace sections190ol;
     const auto original = threeSections();
     auto song = original;
@@ -161,7 +161,7 @@ TEST (sections190ol_move_swaps_clips_lanes_and_markers_tick_exact)
 
 TEST (sections190ol_copy_duplicate_remove_clear_resize)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace sections190ol;
     const auto original = threeSections();
     // copy A before C: the song grows by A's length, the copy has A's clips and level; the marker in B stays single
@@ -199,7 +199,7 @@ TEST (sections190ol_copy_duplicate_remove_clear_resize)
 
 TEST (sections190ol_replace_swap_and_meters)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace sections190ol;
     const auto original = threeSections();
     // Command-drag A onto C: C holds A's content and keeps its name
@@ -237,7 +237,7 @@ TEST (sections190ol_replace_swap_and_meters)
 
 TEST (sections190ol_markers_exports_and_scenes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace sections190ol;
     auto song = threeSections();
     // sections -> markers (once per name and place) and markers -> sections
@@ -304,7 +304,7 @@ TEST (sections190ol_markers_exports_and_scenes)
 
 TEST (sections190ol_simple_time_signature_changes)
 {
-    using namespace lynx;
+    using namespace yw;
     using sections190ol::bar;
     // 4/4 -> 7/8 at bar 3 -> 4/4 at bar 5: the bars, their numbers and lengths follow
     Song song;

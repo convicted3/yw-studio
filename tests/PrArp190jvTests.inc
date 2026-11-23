@@ -5,7 +5,7 @@
 
 namespace prarp190jv
 {
-using namespace lynx;
+using namespace yw;
 constexpr std::int64_t sixteenth = ppq / 4; // FL's 24 ticks at PPQ 96
 
 // a pattern as FL's arpeggiator files hold them: keys 60 + rank, one sixteenth each (FL's Default.fsc: 1 2 3)
@@ -246,7 +246,7 @@ TEST (prarp190jv_only_the_chosen_notes_and_groups)
 TEST (prarp190jv_reads_fl_arpeggiator_scores)
 {
     using namespace prarp190jv;
-    // an .fsc as FL writes it (prtools::writeScore), read back and prepared: FL's 1 2 3 at LYNX's PPQ
+    // an .fsc as FL writes it (prtools::writeScore), read back and prepared: FL's 1 2 3 at YW's PPQ
     std::vector<Note> notes;
     for (int k = 0; k < 3; ++k)
     {

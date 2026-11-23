@@ -1,8 +1,8 @@
-// Round 190jh: plugin parity, the Waves roles and Pro-Q 4's dynamic bands (black-box; /mnt/e/lynx-work/parity190jh).
+// Round 190jh: plugin parity, the Waves roles and Pro-Q 4's dynamic bands (black-box; /mnt/e/yw-work/parity190jh).
 // - Facet EQ gets an automatic threshold per band (hidden: past the info's parameters, no control, no text), measured on
 //   refcap030's Pro-Q 4 captures; the Pro-Q 4 translator now carries a band's dynamics (range, auto / manual threshold,
 //   attack / release). A project saved before has the automatic threshold off and renders bit for bit as the base commit
-//   (fingerprints from its objects, /mnt/e/lynx-work/parity190jh/gold).
+//   (fingerprints from its objects, /mnt/e/yw-work/parity190jh/gold).
 // - Waves states translated (refcap182's programme captures): L2 -> Limiter, SuperTap -> Echoform (was Fruity Delay 3 at FL's
 //   default), SSLComp -> Compressor, CLA-76's single ratio buttons re-levelled.
 #include <cmath>
@@ -32,9 +32,9 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
         r[(std::size_t) i] = (float) (0.8 * v);
     }
 }
-inline lynx::EffectSlot facetBand (int band, float shape, float gain, float range, float threshold, float attack, float release, float phase)
+inline yw::EffectSlot facetBand (int band, float shape, float gain, float range, float threshold, float attack, float release, float phase)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = makeEffectSlot (EffectKind::facetEq);
     s.params[(std::size_t) facet::param (band, 0)] = shape;
     s.params[(std::size_t) facet::param (band, 1)] = facet::hzValue (1000.0);
@@ -46,15 +46,15 @@ inline lynx::EffectSlot facetBand (int band, float shape, float gain, float rang
     s.params[(std::size_t) facet::phaseParam] = phase;
     return s;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r, int block = 256)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r, int block = 256)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += block)
         fx->process (l.data() + off, r.data() + off, std::min (block, n - off), s.params, 120.0);
 }
-inline lynx::EffectSlot waves (const char* name, const char* plugin, const std::string& list, int& translated)
+inline yw::EffectSlot waves (const char* name, const char* plugin, const std::string& list, int& translated)
 {
     return m124x::substitute (name, substtest::wavesComponent (plugin, list), translated);
 }
@@ -71,7 +71,7 @@ inline std::string list (int n, std::initializer_list<std::pair<int, const char*
 
 TEST (parity190jh_facet_auto_threshold_is_hidden_and_off_in_old_projects)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::facetEq);
     CHECK (info.params.size() == (std::size_t) facet::paramCount);          // hidden: no new control or string
     // (+ round 190lg's revision [125]; round 190ln: three more hidden parameters after it, the all-pass cascade of the Disperser role;
@@ -90,7 +90,7 @@ TEST (parity190jh_facet_auto_threshold_is_hidden_and_off_in_old_projects)
 
 TEST (parity190jh_facet_manual_dynamics_render_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     struct Case
     {
         int band;
@@ -100,7 +100,7 @@ TEST (parity190jh_facet_manual_dynamics_render_as_the_base_commit_did)
         double energy, a, b;
     };
     // 1.2 s of the gold input in blocks of 256: FNV-1a of the float bits, the energy, two samples. From the base commit's
-    // objects (/mnt/e/lynx-work/parity190jh/gold: gold_base.txt; the round's objects print the same lines, gold_new.txt)
+    // objects (/mnt/e/yw-work/parity190jh/gold: gold_base.txt; the round's objects print the same lines, gold_new.txt)
     const Case cases[] = {
 #include "Parity190jhGold.inc"
     };
@@ -131,7 +131,7 @@ TEST (parity190jh_facet_manual_dynamics_render_as_the_base_commit_did)
 
 TEST (parity190jh_facet_auto_threshold_follows_the_loudest_recent_level)
 {
-    using namespace lynx;
+    using namespace yw;
     // a +6 dB bell at 1 kHz with a -15 dB dynamic range, automatic threshold: a 1 kHz tone at -12 dBFS gets the whole range
     // (the top is the tone itself); after it falls to -40 dBFS the band recovers (the threshold sits ~27 dB over it) and then
     // creeps down by ~1.7 dB/s as the top falls; never more than the range, and the total gain stays within +-30 dB
@@ -172,7 +172,7 @@ TEST (parity190jh_facet_auto_threshold_follows_the_loudest_recent_level)
 
 TEST (parity190jh_pro_q4_dynamic_bands_are_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     // band 0: a +6 dB bell at 1 kHz, Q 1, stereo, dynamics on, range -30 dB, Auto, attack / release 50 %; band 1: a -3 dB
     // bell at 4 kHz, dynamics on, range +12 dB, manual threshold 0.5 (-30 dB); band 2: static (dynamics off, range -10)
     std::vector<float> v (600, 0.0f);
@@ -205,7 +205,7 @@ TEST (parity190jh_pro_q4_dynamic_bands_are_translated)
 
 TEST (parity190jh_waves_l2_sslcomp_supertap_are_translated)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // L2: release 100 ms (ARC off), threshold -6, ceiling -1
     auto l2 = parity190jh::waves ("L2 Stereo", "L2", "100 -6 -1 * * * * * 0 0\n0 1 2 0 0 0.1", n);

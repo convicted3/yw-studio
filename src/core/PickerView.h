@@ -3,7 +3,7 @@
 
 // FL Studio's Plugin picker view (View › Plugin picker, F8), without JUCE (tests/Gap169kPickerTests.inc).
 //
-// FL evidence (docs/analise/REA_rodada169k.md §2.5, one FL session, shots C:\Users\kauan\lynx-test\r169k\p1–p6.png):
+// FL evidence (docs/analise/REA_rodada169k.md §2.5, one FL session, shots C:\Users\kauan\yw-test\r169k\p1–p6.png):
 // the picker covers the main window with a dark veil; a strip of tabs along the bottom holds the generator categories,
 // a large "All" in the middle, then the effect categories. "All" shows two halves, "Generators" on the left and
 // "Effects" on the right, every plugin as a tile; a category tab shows only its plugins, centred. The mouse wheel
@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::pickerview
+namespace yw::pickerview
 {
 // The tab strip: generator categories, "All", effect categories (each list in the picker's order, empty ones left out
 // by the caller).
@@ -74,7 +74,7 @@ inline Flow fitTiles (int n, int width, int height, int gap, int minWidth, int m
 
 // --- round 171c (discussion #10): FL's category tabs, search and keyboard -----------------------------------------
 
-// The tabs of one side in the picker's order: `first` (LYNX's own plugins) at the start, `last` (installed plugins in
+// The tabs of one side in the picker's order: `first` (YW's own plugins) at the start, `last` (installed plugins in
 // no folder) at the end, the rest A-Z ignoring case as FL lists its Plugin database folders. Duplicates dropped.
 inline std::vector<std::string> orderTabs (std::vector<std::string> names, const std::string& first, const std::string& last)
 {
@@ -324,4 +324,4 @@ inline std::pair<int, int> pictureSize (int editorW, int editorH, int maxW = 258
     const auto k = std::min ({ 0.5, (double) maxW / editorW, (double) maxH / editorH });
     return { std::max (1, (int) std::lround (editorW * k)), std::max (1, (int) std::lround (editorH * k)) };
 }
-} // namespace lynx::pickerview
+} // namespace yw::pickerview

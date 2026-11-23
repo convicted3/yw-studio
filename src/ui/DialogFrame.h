@@ -10,12 +10,12 @@
 #include "core/DialogRules.h"
 #include "ui/Theme.h"
 
-// One dialog system for LYNX's own dialogs (round 190jp, design190ia slice 20 X-DIALOG = SG-20/21/22 + FW-17).
+// One dialog system for YW's own dialogs (round 190jp, design190ia slice 20 X-DIALOG = SG-20/21/22 + FW-17).
 //
 // Before it there were four dialog frames (the Setup wizard's red outline, About / Support's 3 px top strip, the Simple
 // cards' red divider, the tour's red outline), three title sizes and a primary button that was sometimes the accent and
 // sometimes not. Now:
-//  - every LYNX-own modal is a bg2 body in a 1 px borderStrong frame with the brand's 3 px accent strip on top, a 44 px
+//  - every YW-own modal is a bg2 body in a 1 px borderStrong frame with the brand's 3 px accent strip on top, a 44 px
 //    title row (the title in type::title bold, centred) over a 1 px divider; a card inside the main window (Kind::overlay)
 //    also gets rounded corners and a soft shadow, a top-level dialog window (Kind::window) is square;
 //  - the tour's coachmark (Kind::coach) keeps its accent outline: it must stand out on the dimmed window;
@@ -24,7 +24,7 @@
 //    every button has an underlined letter that presses it (FL's Y / N also answer Save / Discard).
 // Header-only: Dialog is an AlertWindow (so the shot routes and modal helpers that take one keep working) that draws and
 // lays itself out. Static paints only: no timer, nothing animates.
-namespace lynx::ui::dialog
+namespace yw::ui::dialog
 {
 inline constexpr int titleRowHeight = 44; // the strip, the title, the divider
 inline constexpr int accentStrip = 3;
@@ -95,7 +95,7 @@ inline void paintFrame (juce::Graphics& g, juce::Rectangle<float> card, Kind kin
         g.setColour (border);
         fillBand (g, card.getX() + 1.0f, std::round (card.getY()) + (float) titleRowHeight, card.getWidth() - 2.0f, 1.0f);
     }
-    g.setColour (accent); // the brand's strip (Support's, now on every LYNX-own modal), over the frame's top line
+    g.setColour (accent); // the brand's strip (Support's, now on every YW-own modal), over the frame's top line
     fillBand (g, card.getX(), card.getY(), card.getWidth(), (float) accentStrip);
 }
 
@@ -160,7 +160,7 @@ inline juce::AttributedString plainSentence (const juce::String& text)
     return s;
 }
 
-// The sentence of a dialog in `area` (laid out in `layout`), after LYNX's round sign when the dialog has an icon.
+// The sentence of a dialog in `area` (laid out in `layout`), after YW's round sign when the dialog has an icon.
 inline void paintSentence (juce::Graphics& g, juce::Rectangle<int> area, const juce::TextLayout& layout, juce::MessageBoxIconType icon)
 {
     if (area.isEmpty())
@@ -168,7 +168,7 @@ inline void paintSentence (juce::Graphics& g, juce::Rectangle<int> area, const j
     auto text = area.toFloat();
     if (icon != juce::MessageBoxIconType::NoIcon)
     {
-        // LYNX's round sign (as every alert of the app): ? i !
+        // YW's round sign (as every alert of the app): ? i !
         const auto box = text.removeFromLeft (32.0f).withHeight (32.0f);
         text.removeFromLeft (14.0f);
         const auto tint = icon == juce::MessageBoxIconType::WarningIcon ? theme::colour::warning
@@ -229,7 +229,7 @@ public:
     }
 };
 
-// A LYNX dialog window. Add the buttons (and any content) then call `layout()`. `enterModalState` as for any
+// A YW dialog window. Add the buttons (and any content) then call `layout()`. `enterModalState` as for any
 // AlertWindow; the modal result is the pressed button's result.
 class Dialog : public juce::AlertWindow
 {
@@ -418,7 +418,7 @@ private:
     bool buttonsCentred = false;
 };
 
-// A LYNX dialog made of JUCE's AlertWindow parts (round 190oo, design review 2 WG-6): the windows built with addButton /
+// A YW dialog made of JUCE's AlertWindow parts (round 190oo, design review 2 WG-6): the windows built with addButton /
 // addTextEditor / addComboBox / addCustomComponent, and JUCE's own message boxes (showMessageBoxAsync, showOkCancelBox,
 // showAsync: theme::LookAndFeel::createAlertWindow makes them as one), on the one dialog frame: the strip and the 44 px
 // title row, the sentence after the round sign, the parts one under the other (centred; a field as wide as the
@@ -426,14 +426,14 @@ private:
 // without a Return button, the first one: the keyboard focus and so Return go there, as in JUCE's own layout).
 // The AlertWindow API stays as it was (getTextEditorContents, getButton, every button's shortcuts and result).
 // The add* calls and setMessage below hide AlertWindow's own (they also lay the window out again): call them on the Alert
-// or its subclass. Order::lynx puts the other buttons first, then the Escape one (Cancel), the Return one (the primary)
+// or its subclass. Order::yw puts the other buttons first, then the Escape one (Cancel), the Return one (the primary)
 // at the far right; Order::asAdded keeps the order the buttons were added in (FL's message windows: Yes | No).
 class Alert : public juce::AlertWindow
 {
 public:
     enum class Order
     {
-        lynx,
+        yw,
         asAdded
     };
 
@@ -670,7 +670,7 @@ private:
     juce::MessageBoxIconType icon;
     juce::Component* around;
     int minWidth;
-    Order order = Order::lynx;
+    Order order = Order::yw;
     bool ready = false;
     juce::AttributedString sentenceText;
     juce::String sentenceSource; // (the plain text of a sentence made from a string: its longest word sizes the window)
@@ -678,4 +678,4 @@ private:
     juce::Rectangle<int> textArea;
     std::vector<Field> fields;
 };
-} // namespace lynx::ui::dialog
+} // namespace yw::ui::dialog

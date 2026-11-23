@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio plugins LYNX lacked until round 165g (docs/analise/REA_rodada165g.md), rebuilt clean-room from FL's
+// FL Studio plugins YW lacked until round 165g (docs/analise/REA_rodada165g.md), rebuilt clean-room from FL's
 // manual and the behaviour decoded from the installation's DLLs (no Image-Line code or data in this repository):
 //
 //  - Fruity Mute 2 (EffectKind::fruityMute2), exact: [0] Mute — FL's control value, sound passes at ≥ 0.5 and is
@@ -9,9 +9,9 @@
 //  - Fruity Big Clock (EffectKind::bigClock): no sound; shows the song position in big digits. [0] Display: Bar:Beat:Tick,
 //    Min:Sec:Hundredths or Bar:Step:Tick.
 //  - Tuner (EffectKind::tuner): no sound; a chromatic tuner for monophonic input. [0] Reference 400–480 Hz,
-//    [1] Reactivity (slow … fast), [2] Bass (one octave lower, slower), [3] Visual (Basic, Dial). The detection is LYNX's
+//    [1] Reactivity (slow … fast), [2] Bass (one octave lower, slower), [3] Visual (Basic, Dial). The detection is YW's
 //    own (YIN, core/VocalPitch.h) and runs on the UI thread from the slot's tap: the audio thread only copies the signal.
-//  - Fruity HTML NoteBook (EffectKind::htmlNotebook): no sound; shows a page (FL's state: the page's address). LYNX shows
+//  - Fruity HTML NoteBook (EffectKind::htmlNotebook): no sound; shows a page (FL's state: the page's address). YW shows
 //    local .html files as formatted text and opens web addresses in the user's browser (it never fetches pages itself).
 //
 // No JUCE here (tests/FlPlugins165Tests.inc).
@@ -24,12 +24,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::flextra
+namespace yw::flextra
 {
 // ------------------------------------------------------------------------------------------------ Fruity Mute 2
 namespace mute2
@@ -58,7 +58,7 @@ Display displayOf (float value) noexcept;
 float displayValue (Display d) noexcept;
 const char* displayName (Display d) noexcept; // English, for the menus
 std::string paramText (int param, float value);
-// The clock's digits at song position `ticks` (LYNX ticks, ppq per quarter note). Ticks are shown in FL's default
+// The clock's digits at song position `ticks` (YW ticks, ppq per quarter note). Ticks are shown in FL's default
 // resolution (96 per quarter note): Bar:Beat:Tick → "bar:beat:tick" (tick 0–95 of the beat), Bar:Step:Tick →
 // "bar:step:tick" (tick 0–23 of the sixteenth), Min:Sec:Hundredths → "m:ss:cc". Bars follow the song's time signature
 // changes in song mode; `meter` applies otherwise.
@@ -118,7 +118,7 @@ std::string address (const std::vector<std::uint8_t>& state);
 std::vector<std::uint8_t> stateFor (const std::string& address);
 bool isWebAddress (const std::string& address);
 
-// A page as LYNX shows it: blocks of text (headings, paragraphs, list items, preformatted) with links
+// A page as YW shows it: blocks of text (headings, paragraphs, list items, preformatted) with links
 struct Block
 {
     enum class Kind { heading1, heading2, heading3, paragraph, listItem, preformatted, rule } kind = Kind::paragraph;
@@ -142,4 +142,4 @@ Page parse (const std::string& html);
 // FL plugins imported as inert slots / channels (no sound to reproduce here): the import report's note
 // ("" = not one of them)
 std::string inertPluginNote (const std::string& flPluginName);
-} // namespace lynx::flextra
+} // namespace yw::flextra

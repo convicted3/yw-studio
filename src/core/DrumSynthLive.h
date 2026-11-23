@@ -16,7 +16,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int drumSynthPatches = 120;
 constexpr int drumSynthPatchParams = 38;
@@ -33,4 +33,4 @@ std::unique_ptr<Instrument> makeDrumSynthInstrument();
 
 // true if `path` is the decoded drumsynth_eng_x64.dll build (its recorded waveforms can be read)
 bool drumSynthDllUsable (const std::string& path);
-} // namespace lynx
+} // namespace yw

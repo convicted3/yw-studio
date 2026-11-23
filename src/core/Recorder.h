@@ -11,7 +11,7 @@
 #include "core/ScoreLog.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct RecordedEvent
 {
@@ -371,7 +371,7 @@ private:
     std::vector<Note> finished;
 };
 
-// --- Capture MIDI (round 170d, LYNX's own; Ableton "Capture MIDI", Logic "Capture as Recording", Cubase "Retrospective
+// --- Capture MIDI (round 170d, YW's own; Ableton "Capture MIDI", Logic "Capture as Recording", Cubase "Retrospective
 // Record") ----------------------------------------------------------------------------------------------------------------
 // The score log keeps every note played (scorelog::Entry::startTick = the transport position when it was played while
 // playing, -1 when stopped; `recorded` = it went into a take). captureMidi() puts the last phrase played and not
@@ -399,4 +399,4 @@ struct CaptureResult
 // The phrase captureMidi() would take (oldest first; empty: nothing to capture).
 std::vector<scorelog::Entry> capturePhrase (const Song& song, const std::vector<scorelog::Entry>& log, const CaptureOptions& options);
 CaptureResult captureMidi (Song& song, const std::vector<scorelog::Entry>& log, const CaptureOptions& options);
-} // namespace lynx
+} // namespace yw

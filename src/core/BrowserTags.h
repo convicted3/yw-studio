@@ -10,10 +10,10 @@
 //   - the search row's "Tags" button shows the tags as a grid; the ones picked filter the content, with "Any" (items
 //     that carry one of them) or "All" (items that carry every one); a tab remembers its picked tags ("FilterTags");
 //   - the tags live in one tag database of the user, not in a project: "FL Studio was unable to read the tag database.
-//     Tags and Favourites cannot be changed." (Favourite is FL's Starred, LYNX's collection 1).
-// LYNX keeps them in the settings folder (browser-tags.txt), one store for every Browser of the process, as the
+//     Tags and Favourites cannot be changed." (Favourite is FL's Starred, YW's collection 1).
+// YW keeps them in the settings folder (browser-tags.txt), one store for every Browser of the process, as the
 // collections (core/BrowserCollections.h); a tag name keeps the case it was first typed in and is matched ignoring
-// ASCII case. Live's browser search takes "#tag" too (Live 12 manual 4.2); LYNX's search box does both.
+// ASCII case. Live's browser search takes "#tag" too (Live 12 manual 4.2); YW's search box does both.
 // No JUCE: tested in isolation (tests/Browser190izTests.inc).
 
 #include <algorithm>
@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::browsertags
+namespace yw::browsertags
 {
 namespace detail
 {
@@ -268,7 +268,7 @@ struct Store
     // "tag|<name>" and "item|<names joined by tabs>|<item>", one per line; unknown lines are skipped.
     std::string toText() const
     {
-        std::string out = "lynx-browser-tags 1\n";
+        std::string out = "yw-browser-tags 1\n";
         for (const auto& [k, name] : names)
             out += "tag|" + name + "\n";
         for (const auto& [item, tags] : items)
@@ -340,4 +340,4 @@ inline bool nameHasWords (const std::string& name, const std::string& text)
             return false;
     return true;
 }
-} // namespace lynx::browsertags
+} // namespace yw::browsertags

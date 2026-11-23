@@ -1,8 +1,8 @@
 // Round 168n (docs/analise/REA_rodada168n.md): designed editors of Toxic Biohazard and PoiZone, their automatable
-// parameters (core/ModelParams.h), LYNX's own preset banks (core/LynxBanks.h) and the live parameter queue.
+// parameters (core/ModelParams.h), YW's own preset banks (core/YwBanks.h) and the live parameter queue.
 
 #include "core/EngineParams.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParams.h"
 #include "core/PluginLayout.h"
 #include "core/PoiZone.h"
@@ -53,7 +53,7 @@ std::vector<Note> phrase (bool chord)
 
 TEST (design168n_engine_param_tables)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto* table : { &toxicParams(), &poizoneParams() })
     {
         CHECK (table->size() >= 80);
@@ -76,7 +76,7 @@ TEST (design168n_engine_param_tables)
 
 TEST (design168n_layouts_name_real_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     // every value control of the two designed pages edits a listed parameter of its engine
     for (const auto kind : { InstrumentKind::toxic, InstrumentKind::poizone })
     {
@@ -109,7 +109,7 @@ TEST (design168n_layouts_name_real_parameters)
 
 TEST (design168n_model_params_read_and_write_the_state)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::toxic;
     c.pluginState = toxicDefaultState();
@@ -137,7 +137,7 @@ TEST (design168n_model_params_read_and_write_the_state)
 
 TEST (design168n_live_param_queue)
 {
-    lynx::LiveParamQueue q;
+    yw::LiveParamQueue q;
     CHECK (q.space() == 1023);
     for (int i = 0; i < 1023; ++i)
         CHECK (q.push (i, (float) i));
@@ -150,7 +150,7 @@ TEST (design168n_live_param_queue)
 
 TEST (design168n_banks_play_clean)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace design168n;
     for (const auto kind : { InstrumentKind::toxic, InstrumentKind::poizone })
     {
@@ -185,13 +185,13 @@ TEST (design168n_banks_play_clean)
             const auto level = measure (out);
             const auto clean = level.finite && level.peak < 1.0f && level.rms > 1.0e-3;
             CHECK (clean);
-            if (! clean || std::getenv ("LYNX_BANK_LEVELS") != nullptr)
+            if (! clean || std::getenv ("YW_BANK_LEVELS") != nullptr)
                 std::printf ("  %s / %s: peak %.3f rms %.4f\n", kind == InstrumentKind::toxic ? "Toxic" : "PoiZone", preset.name.c_str(),
                              level.peak, level.rms);
         }
         for (const auto* category : { "Bass", "Lead", "Pad", "Pluck", "Keys", "FX" })
             CHECK (categories.count (category) == 1);
     }
-    CHECK (banks::indexOfPath (banks::pathOf (17)) == 17 && banks::indexOfPath ("C:/x.fst") == -1 && banks::indexOfPath ("lynxbank:") == -1);
-    CHECK (banks::relativeOf (banks::bankOf (InstrumentKind::poizone)[1]) == "LYNX/Bass/Acid Line");
+    CHECK (banks::indexOfPath (banks::pathOf (17)) == 17 && banks::indexOfPath ("C:/x.fst") == -1 && banks::indexOfPath ("ywbank:") == -1);
+    CHECK (banks::relativeOf (banks::bankOf (InstrumentKind::poizone)[1]) == "YW/Bass/Acid Line");
 }

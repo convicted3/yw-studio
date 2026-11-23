@@ -1,6 +1,6 @@
 #pragma once
 
-// Audio logger (FL 2026's Tools > Audio Logger, behaviour from its release notes; LYNX's own implementation,
+// Audio logger (FL 2026's Tools > Audio Logger, behaviour from its release notes; YW's own implementation,
 // REA round 153): while it is on, everything the Master plays is written to a WAV file in the background, so an
 // idea played live is never lost. The audio thread only copies the Master's block into a lock-free ring
 // (MeterBank::logTap); a background thread empties it into the file.
@@ -9,7 +9,7 @@
 
 #include "core/AudioCapture.h"
 
-namespace lynx
+namespace yw
 {
 class AudioLogger final : private juce::Thread
 {
@@ -25,7 +25,7 @@ public:
     juce::File currentFile() const { return file; }
     double secondsWritten() const noexcept { return rate > 0.0 ? (double) framesWritten.load() / rate : 0.0; }
 
-    static juce::File defaultFolder(); // Documents/LYNX/Audio logger
+    static juce::File defaultFolder(); // Documents/YW/Audio logger
 
 private:
     void run() override;
@@ -39,4 +39,4 @@ private:
     std::vector<float> left, right;
     juce::CriticalSection writing;
 };
-} // namespace lynx
+} // namespace yw

@@ -7,7 +7,7 @@
 #include <atomic>
 #include <string>
 
-namespace lynx::notenames
+namespace yw::notenames
 {
 enum class Style
 {
@@ -18,7 +18,7 @@ enum class Style
 
 inline std::atomic<int> currentStyle { 0 };
 inline std::atomic<bool> currentFlats { false };
-// LYNX (Busy Works Beats' video, round 170a): the Piano roll can name every key, not only the Cs; Settings › General and
+// YW (Busy Works Beats' video, round 170a): the Piano roll can name every key, not only the Cs; Settings › General and
 // the Piano roll's menu switch it. Round 190jo (design190ia FM-17, FL-exact): off by default, FL names only the Cs (saved
 // as pianoRollEveryKeyName; the old noteNamesEveryKey line, written for everybody with the old default, is not read).
 inline std::atomic<bool> everyKey { false };
@@ -49,4 +49,4 @@ inline std::string pitchName (int pitchClass) { return pitchName (pitchClass, st
 
 // "C5" for key 60 (FL's octave numbering), in the current style.
 inline std::string keyName (int key) { return pitchName (key) + std::to_string (key / 12); }
-} // namespace lynx::notenames
+} // namespace yw::notenames

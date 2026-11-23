@@ -1,4 +1,4 @@
-// Kilohearts plug-in states → LYNX stand-ins (round 190ln; included by core/PluginSubstitutes.cpp, inside its anonymous
+// Kilohearts plug-in states → YW stand-ins (round 190ln; included by core/PluginSubstitutes.cpp, inside its anonymous
 // namespace). docs/PLUGIN_FALLBACK.md "Kilohearts", docs/analise/REA_rodada190ln.md.
 //
 // [DATA] A Kilohearts component state (VST3; the VST2 chunk holds the same block) is u32 1, u32 the size of what follows,
@@ -8,7 +8,7 @@
 // "quick_eq" …). Read on the states the plug-ins save through their public parameters (refcap030/Kilohearts/<plug-in>/
 // st/, round 190ln: every control at five values or every step), whose texts give each control's unit and range.
 // What each control does is the plug-ins' public manuals' (Snapins / Faturator operator's manuals); the stand-ins are
-// LYNX's own effects set to the same units. Nothing from the plug-ins' code or presets.
+// YW's own effects set to the same units. Nothing from the plug-ins' code or presets.
 
 namespace khs
 {
@@ -839,7 +839,7 @@ int translateKilohearts (const std::vector<std::uint8_t>& state, EffectSlot& slo
         unit ("Release", 1000.0 * m.num ("release", 0.02));
         return n + volumeGateSteps;
     }
-    // round 190nb: the five snapins without a LYNX effect of their own play Kilohearts laws hidden in FL's Effector
+    // round 190nb: the five snapins without a YW effect of their own play Kilohearts laws hidden in FL's Effector
     // (core/KiloheartsDsp.h; structures read statically in HeartCore 2.4, measured on kHs Essentials): the visible Type
     // names the nearest Effector algorithm, Wet is the snapin's mix, the law and its values sit in the hidden [12 …]
     if (kind == EffectKind::effector

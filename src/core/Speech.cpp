@@ -1,5 +1,5 @@
-// LYNX's speech synthesizer (round 168b): see core/Speech.h. The .speech format, the defaults, the text syntax and the
-// pitch rules follow FL's own code (docs/analise/REA_rodada168b.md §A); the voice is LYNX's own formant synthesizer.
+// YW's speech synthesizer (round 168b): see core/Speech.h. The .speech format, the defaults, the text syntax and the
+// pitch rules follow FL's own code (docs/analise/REA_rodada168b.md §A); the voice is YW's own formant synthesizer.
 
 #include "core/Speech.h"
 
@@ -16,7 +16,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::speech
+namespace yw::speech
 {
 namespace
 {
@@ -32,7 +32,7 @@ const char* const personalityHints[personalityCount] = {
     "Alien", "The voice of the Colossus computer", "Fast talking voice", "Elderly woman", "Dwarf",
     "A little larger than a dwarf", "Nerdish male", "Whiney male", "Drunken male", "High pitched, sung voice" };
 
-// ---- LYNX's voices: how each personality colours the synthesizer ----
+// ---- YW's voices: how each personality colours the synthesizer ----
 struct Voice
 {
     double formantScale = 1.0;   // vocal tract length (higher = smaller speaker)
@@ -866,4 +866,4 @@ Rendered render (const Settings& settings, double sampleRate)
     }
     return r;
 }
-} // namespace lynx::speech
+} // namespace yw::speech

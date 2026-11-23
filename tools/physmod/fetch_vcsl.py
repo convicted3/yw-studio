@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""fetch_vcsl.py - downloads the CC0 reference notes LYNX Model is calibrated on (round 190ni) and writes their manifest.
+"""fetch_vcsl.py - downloads the CC0 reference notes YW Model is calibrated on (round 190ni) and writes their manifest.
 
   fetch_vcsl.py <tree.json> <LICENSE> <out-dir> <commit>
 

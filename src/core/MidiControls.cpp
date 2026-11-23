@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
-namespace lynx::midictl
+namespace yw::midictl
 {
 const char* ccName (int cc) noexcept
 {
@@ -134,4 +134,4 @@ void writeMidiOut (std::vector<std::uint8_t>& d, const MidiOutSettings& s)
     state.bankLsb = std::clamp (s.bankLsb, -1, 127);
     d = midiout::write (state);
 }
-} // namespace lynx::midictl
+} // namespace yw::midictl

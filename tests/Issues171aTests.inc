@@ -17,13 +17,13 @@ std::vector<std::uint8_t> flEffectPreset (const char* folder, const char* file)
 }
 
 // what a project save + reload does to a slot's parameters (engine/ProjectFile.cpp effectToVar / effectFromVar)
-lynx::EffectSlot savedAndReloaded (const lynx::EffectSlot& slot)
+yw::EffectSlot savedAndReloaded (const yw::EffectSlot& slot)
 {
-    auto loaded = lynx::makeEffectSlot (slot.kind);
-    const auto count = lynx::savedEffectParamCount (slot);
+    auto loaded = yw::makeEffectSlot (slot.kind);
+    const auto count = yw::savedEffectParamCount (slot);
     for (std::size_t i = 0; i < count; ++i)
-        loaded.params[i] = std::clamp ((float) lynx::savedEffectParamValue (slot.params[i]), 0.0f, 1.0f);
-    lynx::upgradeLoadedEffectParams (loaded, count);
+        loaded.params[i] = std::clamp ((float) yw::savedEffectParamValue (slot.params[i]), 0.0f, 1.0f);
+    yw::upgradeLoadedEffectParams (loaded, count);
     return loaded;
 }
 
@@ -48,19 +48,19 @@ std::vector<std::uint8_t> peq2State()
     return d;
 }
 
-bool sameSettings (const lynx::peqfl::Settings& a, const lynx::peqfl::Settings& b)
+bool sameSettings (const yw::peqfl::Settings& a, const yw::peqfl::Settings& b)
 {
     return a.law == b.law && a.gain == b.gain && a.freq == b.freq && a.width == b.width && a.type == b.type && a.order == b.order
            && a.main == b.main && a.processing == b.processing && a.linearPhase == b.linearPhase && a.mask == b.mask;
 }
 } // namespace issues171a
 
-// #67: "40Hz + 18kHz cut" (Steep 8 low cut at 32 Hz, Steep 8 high cut) read back as LYNX's own EQ after a reload: the
+// #67: "40Hz + 18kHz cut" (Steep 8 low cut at 32 Hz, Steep 8 high cut) read back as YW's own EQ after a reload: the
 // FL law marker [36] and the processing / mask / linear fields after the 36 named parameters were not saved.
 TEST (issues171a_parametric_eq_fl_law_survives_save_and_reload)
 {
     using namespace issues171a;
-    using namespace lynx;
+    using namespace yw;
     const auto state = peq2State();
     const auto settings = peqfl::parsePeq2 (state);
     CHECK (settings.has_value());
@@ -92,7 +92,7 @@ TEST (issues171a_parametric_eq_fl_law_survives_save_and_reload)
     CHECK (text.find ("#36 = 0.5") != std::string::npos);
     const auto preset = presets::fromText (EffectKind::parametricEq, text);
     CHECK (preset && preset->params == slot.params);
-    // a LYNX-law EQ saves no hidden fields
+    // a YW-law EQ saves no hidden fields
     CHECK (savedEffectParamCount (makeEffectSlot (EffectKind::parametricEq)) == effectInfo (EffectKind::parametricEq).params.size());
 }
 
@@ -101,7 +101,7 @@ TEST (issues171a_parametric_eq_fl_law_survives_save_and_reload)
 TEST (issues171a_parametric_eq_fl_presets_round_trip_exactly)
 {
     using namespace issues171a;
-    using namespace lynx;
+    using namespace yw;
     const auto cut = flEffectPreset ("Fruity Parametric EQ 2", "40Hz + 18kHz cut.fst");
     if (cut.empty())
         return; // (no FL installation)
@@ -142,7 +142,7 @@ TEST (issues171a_parametric_eq_fl_presets_round_trip_exactly)
 TEST (issues171a_every_effect_param_survives_save_and_reload)
 {
     using namespace issues171a;
-    using namespace lynx;
+    using namespace yw;
     int presetMismatches = 0;
     for (int k = 0; k <= (int) lastEffectKind; ++k)
     {
@@ -186,7 +186,7 @@ TEST (issues171a_every_effect_param_survives_save_and_reload)
 // channel's Cut and By groups the same)
 TEST (issues171a_cut_itself_is_one_state)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     CHECK (! channelCutsItself (c));
     setChannelCutsItself (c, 3, true); // the rack menu / the Misc page
@@ -206,7 +206,7 @@ TEST (issues171a_cut_itself_is_one_state)
 // Clap, Hat and Snare): it was ignored, the drums played every note in the middle
 TEST (issues171a_note_pan_reaches_the_drums)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : { InstrumentKind::snare, InstrumentKind::kick, InstrumentKind::hat, InstrumentKind::clap })
     {
         auto render = [kind] (float pan, float cents, std::vector<float>& l, std::vector<float>& r) {
@@ -286,7 +286,7 @@ TEST (issues171a_note_pan_reaches_the_drums)
 // for the editor, and on a silent insert it was smart-disabled (its LFO stopped)
 TEST (issues171a_peak_controller_publishes_its_outputs)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
@@ -335,7 +335,7 @@ TEST (issues171a_peak_controller_publishes_its_outputs)
 // file written while the C locale used a decimal comma (a plugin's GTK switches it; the file then did not load at all)
 TEST (issues171a_detached_windows_survive_a_restart)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
     auto layout = Layout::makeDefault (1600, 900);
     for (const auto p : { Panel::mixer, Panel::channelRack, Panel::pianoRoll, Panel::playlist, Panel::browser })
     {

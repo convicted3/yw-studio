@@ -25,7 +25,7 @@
  #pragma GCC diagnostic pop
 #endif
 
-namespace lynx::mp3
+namespace yw::mp3
 {
 namespace
 {
@@ -298,4 +298,4 @@ bool decodeReference (const std::uint8_t* data, std::size_t size, Decoded& out)
     out.info.frames = (std::int64_t) frames;
     return frames > 0;
 }
-} // namespace lynx::mp3
+} // namespace yw::mp3

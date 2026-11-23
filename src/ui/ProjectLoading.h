@@ -7,7 +7,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // Opening an FL Studio project behind a progress panel (round 112, docs/analise/REA_rodada112.md).
 //
@@ -19,7 +19,7 @@ namespace lynx
 //   3. create the hosted plugins one per message-loop turn ("Loading Auto-Tune Pro... 3/12");
 //   4. build the rack (message thread, everything is ready by then).
 // The panel covers the main window (input goes nowhere meanwhile), its bar only moves forward and it says what is
-// loading. Phase times are written to %APPDATA%\LYNX\load.log (core/LoadTrace.h).
+// loading. Phase times are written to %APPDATA%\YW\load.log (core/LoadTrace.h).
 //
 // `done (ok, error)` runs on the message thread once the project is in (or failed). The panel deletes itself.
 void openFlpWithProgress (juce::Component& parent, AudioEngine& engine, const juce::File& file,
@@ -31,6 +31,6 @@ bool projectLoadRunning();
 // Drops an open in progress (the main window is closing): its thread is joined before the engine goes away.
 void cancelProjectLoad();
 
-// Writes the finished trace to %APPDATA%\LYNX\load.log (also used by the synchronous opens).
+// Writes the finished trace to %APPDATA%\YW\load.log (also used by the synchronous opens).
 void writeLoadLog();
-} // namespace lynx
+} // namespace yw

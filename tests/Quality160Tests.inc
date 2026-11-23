@@ -2,9 +2,9 @@
 
 namespace q160
 {
-lynx::SampleData sineOf (double freq, double seconds, double rate = 44100.0, bool stereo = false)
+yw::SampleData sineOf (double freq, double seconds, double rate = 44100.0, bool stereo = false)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = rate;
     const auto n = (std::size_t) (seconds * rate);
     for (std::size_t i = 0; i < n; ++i)
@@ -15,9 +15,9 @@ lynx::SampleData sineOf (double freq, double seconds, double rate = 44100.0, boo
 }
 
 // one 3-sample click every `gap` seconds, from 0.1 s
-lynx::SampleData clicksOf (int count, double gap, double rate = 44100.0)
+yw::SampleData clicksOf (int count, double gap, double rate = 44100.0)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = rate;
     s.left.assign ((std::size_t) ((0.1 + gap * count + 0.3) * rate), 0.0f);
     for (int k = 0; k < count; ++k)
@@ -32,7 +32,7 @@ lynx::SampleData clicksOf (int count, double gap, double rate = 44100.0)
 }
 
 // signal-to-(noise + distortion) of a steady sine, dB (least-squares fit of the known frequency per 4096 frames)
-double sinadDb (const lynx::SampleData& d, double freq)
+double sinadDb (const yw::SampleData& d, double freq)
 {
     std::vector<double> ratios;
     const auto n = (long) d.frames();
@@ -61,7 +61,7 @@ TEST (q160_stretch_near_unity_is_a_clean_resample)
     // rebuilt them from overlapping windows anyway (null vs the ideal −1 dB); now they are resampled.
     const auto in = q160::sineOf (1000.0, 2.0, 44100.0, true);
     const auto ratio = 0.99998;
-    const auto out = lynx::timeStretch (in, ratio, lynx::StretchMethod::general);
+    const auto out = yw::timeStretch (in, ratio, yw::StretchMethod::general);
     const auto m = (long) std::llround ((double) in.frames() * ratio);
     CHECK ((long) out->frames() == m && out->isStereo());
 
@@ -76,7 +76,7 @@ TEST (q160_stretch_near_unity_is_a_clean_resample)
     CHECK (10.0 * std::log10 (err / ref) < -80.0);
 
     // exactly 1 = a copy
-    const auto same = lynx::timeStretch (in, 1.0);
+    const auto same = yw::timeStretch (in, 1.0);
     CHECK (same->frames() == in.frames() && same->left[12345] == in.left[12345]);
 }
 
@@ -85,10 +85,10 @@ TEST (q160_stretch_keeps_clicks_sharp_and_on_time)
     // a click train stretched by 1.5: every click lands where the time map puts it, without pre-echo or smear
     // (old WSOLA: lost/moved clicks; plain spectral stretch: −27 dB pre-echo)
     const auto in = q160::clicksOf (10, 0.25);
-    for (auto method : { lynx::StretchMethod::general, lynx::StretchMethod::transients })
+    for (auto method : { yw::StretchMethod::general, yw::StretchMethod::transients })
         for (double ratio : { 0.8, 1.5, 2.0 })
         {
-            const auto out = lynx::timeStretch (in, ratio, method);
+            const auto out = yw::timeStretch (in, ratio, method);
             CHECK (std::abs ((double) out->frames() - (double) in.frames() * ratio) < 1.5);
             int onTime = 0;
             double worstPre = -200.0;
@@ -119,15 +119,15 @@ TEST (q160_stretch_keeps_clicks_sharp_and_on_time)
 TEST (q160_stretch_tonal_purity)
 {
     // a steady 1 kHz tone stretched by 1.25 / 0.8 stays clean (old WSOLA ≈ 148 dB on a pure sine, but the plain
-    // Signalsmith preset gave 57 dB; LYNX's 120 ms / 20 ms configuration ≈ 100 dB)
+    // Signalsmith preset gave 57 dB; YW's 120 ms / 20 ms configuration ≈ 100 dB)
     const auto in = q160::sineOf (1000.0, 3.0);
-    for (auto method : { lynx::StretchMethod::general, lynx::StretchMethod::mono })
+    for (auto method : { yw::StretchMethod::general, yw::StretchMethod::mono })
         for (double ratio : { 0.8, 1.25 })
         {
-            const auto out = lynx::timeStretch (in, ratio, method);
+            const auto out = yw::timeStretch (in, ratio, method);
             CHECK (q160::sinadDb (*out, 1000.0) > 75.0);
         }
-    const auto drums = lynx::timeStretch (in, 1.25, lynx::StretchMethod::transients);
+    const auto drums = yw::timeStretch (in, 1.25, yw::StretchMethod::transients);
     CHECK (q160::sinadDb (*drums, 1000.0) > 45.0);
 }
 
@@ -137,29 +137,29 @@ TEST (q160_stretch_short_sounds_and_mapping)
     auto hit = q160::sineOf (200.0, 0.04);
     for (std::size_t i = 0; i < hit.left.size(); ++i)
         hit.left[i] *= (float) std::exp (-(double) i / 300.0);
-    const auto out = lynx::timeStretch (hit, 1.5);
+    const auto out = yw::timeStretch (hit, 1.5);
     CHECK (std::abs ((double) out->frames() - (double) hit.frames() * 1.5) < 1.5);
     float peak = 0.0f;
     for (auto v : out->left)
         peak = std::max (peak, std::abs (v));
     CHECK (peak > 0.25f);
 
-    // FL's stretch modes (REA_rodada3 §5.2) → LYNX's methods
-    CHECK (lynx::stretchMethodForFlMode (-2) == lynx::StretchMethod::general); // Stretch Pro
-    CHECK (lynx::stretchMethodForFlMode (5) == lynx::StretchMethod::general);  // Auto
-    CHECK (lynx::stretchMethodForFlMode (2) == lynx::StretchMethod::mono);     // E3 mono
-    CHECK (lynx::stretchMethodForFlMode (9) == lynx::StretchMethod::mono);     // E2 speech
-    CHECK (lynx::stretchMethodForFlMode (7) == lynx::StretchMethod::transients); // E2 transient
-    CHECK (lynx::stretchMethodForFlMode (3) == lynx::StretchMethod::transients); // slice stretch
+    // FL's stretch modes (REA_rodada3 §5.2) → YW's methods
+    CHECK (yw::stretchMethodForFlMode (-2) == yw::StretchMethod::general); // Stretch Pro
+    CHECK (yw::stretchMethodForFlMode (5) == yw::StretchMethod::general);  // Auto
+    CHECK (yw::stretchMethodForFlMode (2) == yw::StretchMethod::mono);     // E3 mono
+    CHECK (yw::stretchMethodForFlMode (9) == yw::StretchMethod::mono);     // E2 speech
+    CHECK (yw::stretchMethodForFlMode (7) == yw::StretchMethod::transients); // E2 transient
+    CHECK (yw::stretchMethodForFlMode (3) == yw::StretchMethod::transients); // slice stretch
 
     // attack detection: one attack per click, on the click's sample
     const auto clicks = q160::clicksOf (4, 0.3);
-    const auto attacks = lynx::stretchdetail::detectAttacks (clicks.left.data(), (long) clicks.frames(), 44100.0, 9.0);
+    const auto attacks = yw::stretchdetail::detectAttacks (clicks.left.data(), (long) clicks.frames(), 44100.0, 9.0);
     CHECK (attacks.size() == 4);
     CHECK (attacks.size() == 4 && attacks[0] == 4410 && attacks[3] == (long) std::llround (1.0 * 44100.0));
     // a steady tone has none
     const auto tone = q160::sineOf (440.0, 1.0);
-    CHECK (lynx::stretchdetail::detectAttacks (tone.left.data(), (long) tone.frames(), 44100.0, 9.0).size() <= 1);
+    CHECK (yw::stretchdetail::detectAttacks (tone.left.data(), (long) tone.frames(), 44100.0, 9.0).size() <= 1);
 }
 
 TEST (q160_master_protection_distortion_before_and_after)
@@ -171,8 +171,8 @@ TEST (q160_master_protection_distortion_before_and_after)
         a[i] = (float) (amp * std::sin (2.0 * 3.141592653589793 * 1000.0 * (double) i / 44100.0));
     b = a;
     auto legacy = a;
-    lynx::legacySoftClip (legacy.data(), (int) legacy.size());
-    lynx::clipOvers (b.data(), (int) b.size());
+    yw::legacySoftClip (legacy.data(), (int) legacy.size());
+    yw::clipOvers (b.data(), (int) b.size());
     CHECK (b == a);
     double diff = 0.0, ref = 0.0;
     for (std::size_t i = 0; i < a.size(); ++i)
@@ -189,7 +189,7 @@ TEST (q160_dither_survives_the_writer_conversion)
     // for both signs and up to full scale (before round 160 positive values above −6 dBFS came out 1 LSB low).
     for (int bits : { 16, 24 })
     {
-        lynx::Dither d (bits, false);
+        yw::Dither d (bits, false);
         const auto scale = (double) (1 << (bits - 1));
         const int shift = 32 - bits;
         int wrong = 0;
@@ -212,14 +212,14 @@ TEST (q160_dither_survives_the_writer_conversion)
 
 TEST (q160_event_sort_is_stable_and_allocation_free)
 {
-    lynx::EventBuffer b;
+    yw::EventBuffer b;
     // offsets out of order, an "off" after an "on" on the same sample, equal events keep their order (keys)
     const int offsets[] = { 30, 10, 10, 20, 10, 0 };
     for (int i = 0; i < 6; ++i)
     {
-        lynx::NoteEvent e;
+        yw::NoteEvent e;
         e.sampleOffset = offsets[i];
-        e.type = i == 4 ? lynx::NoteEvent::Type::off : lynx::NoteEvent::Type::on;
+        e.type = i == 4 ? yw::NoteEvent::Type::off : yw::NoteEvent::Type::on;
         e.key = i;
         b.add (e);
     }
@@ -233,21 +233,21 @@ TEST (q160_sampler_uses_render_quality_when_export_starts_after_prepare)
 {
     // the export engine prepares its instruments first and switches to offline rendering afterwards: the note must
     // still get FL's render interpolation (32-point sinc), i.e. sound like an instrument prepared during the export
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     for (int i = 0; i < 20000; ++i)
         data->left.push_back ((float) std::sin ((double) i * 0.9) * 0.5f); // bright: the kernels differ
     auto render = [&] (bool offlineBeforePrepare) {
-        lynx::setOfflineRendering (offlineBeforePrepare);
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        yw::setOfflineRendering (offlineBeforePrepare);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         inst->configure (c, 120.0);
-        lynx::setOfflineRendering (true);
+        yw::setOfflineRendering (true);
         inst->noteOn (63, 1.0f);
         std::vector<float> l (4000), r (4000);
         inst->render (l.data(), r.data(), 4000, 1.0f, 1.0f);
-        lynx::setOfflineRendering (false);
+        yw::setOfflineRendering (false);
         return l;
     };
     CHECK (render (false) == render (true));
@@ -255,13 +255,13 @@ TEST (q160_sampler_uses_render_quality_when_export_starts_after_prepare)
 
 TEST (q160_asio_suggestion)
 {
-    using lynx::prefs::suggestedAsioDriver;
+    using yw::prefs::suggestedAsioDriver;
     const std::vector<std::string> laptop { "ASIO4ALL v2", "FL Studio ASIO", "SSL ASIO Driver 1" };
     CHECK (suggestedAsioDriver ("Windows Audio", laptop) == "SSL ASIO Driver 1");
     CHECK (suggestedAsioDriver ("DirectSound", laptop) == "SSL ASIO Driver 1");
     CHECK (suggestedAsioDriver ("ASIO", laptop).empty());
     CHECK (suggestedAsioDriver ("Windows Audio (Exclusive Mode)", laptop).empty());
-    CHECK (suggestedAsioDriver ("Windows Audio", { "ASIO4ALL v2", "LYNX ASIO" }) == "LYNX ASIO");
+    CHECK (suggestedAsioDriver ("Windows Audio", { "ASIO4ALL v2", "YW ASIO" }) == "YW ASIO");
     CHECK (suggestedAsioDriver ("Windows Audio", { "ASIO4ALL v2" }) == "ASIO4ALL v2");
     CHECK (suggestedAsioDriver ("Windows Audio", {}).empty());
 }
@@ -274,24 +274,24 @@ TEST (q160_preview_interpolation_44k1_file_on_48k_device)
     std::vector<float> x ((std::size_t) fi * 2);
     for (std::size_t i = 0; i < x.size(); ++i)
         x[i] = (float) (0.5 * std::sin (2.0 * 3.141592653589793 * f * (double) i / fi));
-    lynx::flrs::Kernel k;
-    k.setQuality (lynx::flrs::liveQuality);
+    yw::flrs::Kernel k;
+    k.setQuality (yw::flrs::liveQuality);
     k.setSpeed (fi / fo);
     const auto half = (std::int64_t) k.halfWidth;
-    lynx::SampleData out;
+    yw::SampleData out;
     out.sampleRate = fo;
     for (long j = 0; j < (long) fo; ++j)
     {
         const auto pos = (double) j * fi / fo + 100.0;
-        const auto whole = lynx::flrs::wholeFrames (pos);
+        const auto whole = yw::flrs::wholeFrames (pos);
         float yl = 0.0f, yr = 0.0f;
-        lynx::flrs::interpolate (k, x.data() + (whole - half + 1), x.data() + (whole - half + 1), pos - (double) whole, yl, yr);
+        yw::flrs::interpolate (k, x.data() + (whole - half + 1), x.data() + (whole - half + 1), pos - (double) whole, yl, yr);
         out.left.push_back (yl);
     }
     const auto sinad = q160::sinadDb (out, f);
     CHECK (sinad > 60.0);
     // the linear read it replaces, for the record
-    lynx::SampleData lin;
+    yw::SampleData lin;
     lin.sampleRate = fo;
     for (long j = 0; j < (long) fo; ++j)
     {
@@ -319,7 +319,7 @@ TEST (q160_audio_thread_allocations_and_cost_of_builtin_units)
 {
     // Real-time audit (REA_rodada160 §6): every built-in effect and instrument, steady state at 48 kHz / 512 frames —
     // heap allocations inside process()/render() (each is a potential dropout) and the CPU cost per block.
-    using namespace lynx;
+    using namespace yw;
     constexpr int block = 512;
     constexpr double rate = 48000.0;
     std::mt19937 rng (160);

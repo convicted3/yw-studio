@@ -1,4 +1,4 @@
-// Round 190fk: Anvil Bus, LYNX's drum-bus processor — the Effect around core/AnvilBus.h. Included by core/MixSuite.cpp at
+// Round 190fk: Anvil Bus, YW's drum-bus processor — the Effect around core/AnvilBus.h. Included by core/MixSuite.cpp at
 // namespace mixsuite level, after StrikeSuite.inc (it uses `fmt` and `hzText`).
 
 namespace

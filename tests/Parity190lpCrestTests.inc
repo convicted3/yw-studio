@@ -5,8 +5,8 @@
 // revision-0 fingerprints below are the base's).
 namespace parity190lp
 {
-namespace cr = lynx::dyn::crest;
-inline lynx::EffectSlot crest (cr::Style st, float thr, float ratio, float knee, float rev)
+namespace cr = yw::dyn::crest;
+inline yw::EffectSlot crest (cr::Style st, float thr, float ratio, float knee, float rev)
 {
     return parity190kw::crest (cr::styleValue (st), cr::voicingValue (st), thr, ratio, knee, 0.3f, 0.3f, rev);
 }
@@ -16,7 +16,7 @@ inline double grOf (double share) { return -20.0 * std::log10 (1.0 - share); }
 
 TEST (parity190lp_crest_smooth_static_law_and_editor_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // threshold −30 dB, 4 : 1, hard knee, a steady −10 dBFS square (a constant level: every follower settles)
     const auto r4 = cr::ratioValue (4.0);
@@ -40,7 +40,7 @@ TEST (parity190lp_crest_smooth_static_law_and_editor_curve)
 
 TEST (parity190lp_crest_opel_static_law_and_editor_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // threshold −30 dB, 4 : 1, knee 18 dB, a steady −10 dBFS square: D1 (the knobs) and D2 (knee 30, range 60) both read
     // 20 dB over → 15 dB; the shares' power sum √(0.95 s1² + 0.05 s2²) = the same share → 15 dB
@@ -66,7 +66,7 @@ TEST (parity190lp_crest_opel_static_law_and_editor_curve)
 
 TEST (parity190lp_crest_translated_states_run_the_new_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // Pro-C 3 states (FFBS v1, 100 values): style 2 Smooth, 6 Op-El → the matching Crest voicing, revision 1
     const std::pair<int, cr::Style> map[] { { 2, cr::Style::smooth }, { 6, cr::Style::opEl } };
@@ -95,7 +95,7 @@ TEST (parity190lp_crest_translated_states_run_the_new_laws)
 
 TEST (parity190lp_crest_fingerprints_revision_0_unchanged_revision_1_pinned)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     struct Case { float rev; cr::Style st; float threshold, ratio, knee, attack, release; double sr; std::uint64_t hash; };
     static const Case cases[] {

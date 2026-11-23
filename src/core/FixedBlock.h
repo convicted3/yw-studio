@@ -1,7 +1,7 @@
 #pragma once
 
 // FL's wrapper option "Use fixed size buffers" (REA_rodada118 Part B): the plugin is always called with the same
-// block length, whatever the host's chunk sizes are (LYNX splits its blocks at every event, so without this a plugin
+// block length, whatever the host's chunk sizes are (YW splits its blocks at every event, so without this a plugin
 // sees variable, sometimes tiny, blocks). Input is collected until a whole block is there; the processed block is
 // played back while the next one fills, so the output is the input delayed by exactly `block` samples — reported to
 // PDC as extra latency. JUCE-free; real-time safe after construction (no allocation in `run`).
@@ -11,11 +11,11 @@
 #include <type_traits>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 // The block FL's wrapper uses (Fruity Wrapper FUN_00870670, REA round 134): "Use fixed size buffers" alone = 2 ms
 // of audio rounded up to a multiple of 4 samples (88 at 44.1 kHz, 96 at 48 kHz); with "Process maximum size buffers"
-// the host's maximum block (LYNX: the audio device's buffer) - more latency.
+// the host's maximum block (YW: the audio device's buffer) - more latency.
 inline int flFixedBlockSize (double sampleRate, int deviceBlock, bool maximumSize) noexcept
 {
     if (maximumSize)
@@ -93,4 +93,4 @@ private:
     std::vector<float> input, output;
     std::vector<float*> pointers;
 };
-} // namespace lynx
+} // namespace yw

@@ -2,7 +2,7 @@
 import os, struct, subprocess
 import numpy as np
 
-WIN = os.environ.get('FXMEASURE_DIR', '/mnt/c/Users/kauan/lynx-test/ffmeas')  # Windows folder holding fxmeasure.exe
+WIN = os.environ.get('FXMEASURE_DIR', '/mnt/c/Users/kauan/yw-test/ffmeas')  # Windows folder holding fxmeasure.exe
 DATA = os.environ.get('FXMEASURE_DATA', '../data')  # where the reduced results go (not the repository)
 VST = r'C:\Program Files\Common Files\VST3'
 

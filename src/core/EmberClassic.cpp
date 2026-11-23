@@ -4,7 +4,7 @@
 #include <cmath>
 #include <complex>
 
-namespace lynx::emberclassic
+namespace yw::emberclassic
 {
 namespace
 {
@@ -460,4 +460,4 @@ void Engine::block (float* left, float* right, int n) noexcept
         }
     }
 }
-} // namespace lynx::emberclassic
+} // namespace yw::emberclassic

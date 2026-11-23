@@ -9,7 +9,7 @@
 #include "ui/MixerComponent.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::mixerbasics
+namespace yw::mixerbasics
 {
 inline juce::String run()
 {
@@ -101,4 +101,4 @@ inline juce::String run()
 
     return failures.isEmpty() ? juce::String ("OK") : "ERROR " + failures.joinIntoString ("; ");
 }
-} // namespace lynx::mixerbasics
+} // namespace yw::mixerbasics

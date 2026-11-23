@@ -6,7 +6,7 @@ TEST (render180d_export_trims_automation_clips_shorter_than_their_content)
 {
     // FL reads -1 as "the whole content", whatever the item's length says: a short clip of a long automation made
     // Thief 208 bars long. A clip showing all its content stays -1, as in FL's own files.
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     Automation a;
     a.target = { AutomationTargetKind::tempo, 0, 0, 0 };
@@ -45,7 +45,7 @@ TEST (render180d_export_trims_automation_clips_shorter_than_their_content)
 
 TEST (render180d_export_writes_fl_stretch_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto writtenMode = [] (const SamplerSettings& sampler) {
         auto song = Song::makeDefault();
         song.channels.resize (1);
@@ -69,17 +69,17 @@ TEST (render180d_export_writes_fl_stretch_modes)
         CHECK (writtenMode (s) == mode);
     }
 
-    // made in LYNX: General is FL's Stretch (−1, not Stretch Pro's −2); no keepPitch is Resample
-    SamplerSettings lynxMade;
-    lynxMade.keepPitch = true;
-    lynxMade.stretchBeats = 4.0f;
-    CHECK (writtenMode (lynxMade) == -1);
-    lynxMade.stretchMethod = StretchMethod::mono;
-    CHECK (writtenMode (lynxMade) == 2);
-    lynxMade.stretchMethod = StretchMethod::transients;
-    CHECK (writtenMode (lynxMade) == 7);
-    lynxMade.keepPitch = false;
-    CHECK (writtenMode (lynxMade) == 0);
+    // made in YW: General is FL's Stretch (−1, not Stretch Pro's −2); no keepPitch is Resample
+    SamplerSettings ywMade;
+    ywMade.keepPitch = true;
+    ywMade.stretchBeats = 4.0f;
+    CHECK (writtenMode (ywMade) == -1);
+    ywMade.stretchMethod = StretchMethod::mono;
+    CHECK (writtenMode (ywMade) == 2);
+    ywMade.stretchMethod = StretchMethod::transients;
+    CHECK (writtenMode (ywMade) == 7);
+    ywMade.keepPitch = false;
+    CHECK (writtenMode (ywMade) == 0);
 
     // the channel's method changed after the import: the method wins over the remembered mode
     SamplerSettings changed;
@@ -95,7 +95,7 @@ TEST (render180d_export_writes_fl_stretch_modes)
 
 TEST (render180d_export_puts_fl_stretch_pitch_back_on_its_knob)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.resize (1);
     auto& def = song.channels[0];
@@ -117,7 +117,7 @@ TEST (render180d_export_puts_fl_stretch_pitch_back_on_its_knob)
 
 TEST (render180d_export_keeps_a_channels_fl_plugin_flags)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.resize (1);
     song.channels[0].instrument = InstrumentKind::sampler;

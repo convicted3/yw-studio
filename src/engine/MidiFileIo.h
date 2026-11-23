@@ -7,7 +7,7 @@
 #include "core/MidiImport.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // MIDI files (.mid): import as a project, import notes into a channel, and export patterns.
 namespace MidiFileIo
@@ -18,13 +18,13 @@ std::optional<Song> loadSong (const juce::File& file, juce::String& error);
 // FL's File › Import › "MIDI file..." (REA round 143: the "Import MIDI data" window, TMIDIImportForm): the file's
 // notes into a new pattern of `song` (it becomes the current one), one new channel per MIDI track, or per MIDI
 // channel. FL's options and defaults: Start new project (off), Create one channel per track (on), Realign events
-// (off: removes the silence at the start), Import time signatures (on; LYNX: the project's time signature, new
-// project only), Set mixer tracks for new channels (on), Channel type (LYNX: its synth, or MIDI Out on the note's
+// (off: removes the silence at the start), Import time signatures (on; YW: the project's time signature, new
+// project only), Set mixer tracks for new channels (on), Channel type (YW: its synth, or MIDI Out on the note's
 // MIDI channel).
 // (REA round 146b: also the tracks / MIDI channels / controller to import and zero-velocity notes; core/MidiImport.h)
 using ImportOptions = midiimport::Options;
 
-// The file's raw events (notes, controllers; ticks at LYNX's PPQ), track names, first tempo and time signature.
+// The file's raw events (notes, controllers; ticks at YW's PPQ), track names, first tempo and time signature.
 std::optional<midiimport::ParsedMidi> parseFile (const juce::File& file, juce::String& error);
 // The same from a Standard MIDI File in memory (the Piano roll's "Paste from MIDI clipboard", round 168g).
 std::optional<midiimport::ParsedMidi> parseBytes (const void* data, std::size_t size, juce::String& error);
@@ -45,4 +45,4 @@ bool savePattern (const Song& song, int pattern, const juce::File& file, juce::S
 // in pattern mode or with an empty Playlist, the current pattern. Tempo and time signature at the start.
 bool saveSong (const Song& song, const juce::File& file, juce::String& error);
 } // namespace MidiFileIo
-} // namespace lynx
+} // namespace yw

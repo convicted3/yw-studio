@@ -1,7 +1,7 @@
 #pragma once
 
-// Track clips (round 190ne, LYNX 0.1.31; design A of round 190nd, /mnt/e/lynx-work/study190nd/tracks/DESIGN-tracks.md).
-// A LYNX extra on FL's instrument track, asked for on Discord ("keep the rack, just add special tracks where you draw
+// Track clips (round 190ne, YW 0.1.31; design A of round 190nd, /mnt/e/yw-work/study190nd/tracks/DESIGN-tracks.md).
+// A YW extra on FL's instrument track, asked for on Discord ("keep the rack, just add special tracks where you draw
 // MIDI clips without cluttering the pattern list"). A per-track switch, "Clips own their notes"
 // (PlaylistTrack::ownClips), makes an instrument track behave like a Live / Bitwig note-clip track:
 //  - the pencil on empty space draws a NEW empty clip of the track (FL places the same pattern on every click);
@@ -26,7 +26,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::trackclips
+namespace yw::trackclips
 {
 // FL Studio's pattern limit (the controller API's patterns.patternMax = 999; the toolbar's PatSelect stops at 999)
 inline constexpr int flPatternLimit = 999;
@@ -126,4 +126,4 @@ int mergeIdentical (Song& song);
 bool isBusTrack (const Song& song, int track) noexcept;
 // How many inserts send into a bus track's insert (0: not a bus track).
 int busSources (const Song& song, int track) noexcept;
-} // namespace lynx::trackclips
+} // namespace yw::trackclips

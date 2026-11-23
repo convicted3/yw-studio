@@ -2,7 +2,7 @@
 
 // Auto-pan's "Rhythm" voicing (round 136, vox136): a step-pattern auto-panner whose laws were measured black-box on the
 // official Soundtoys PanMan trial (hosted through the VST3 API, fed steady tones and her takes, outputs measured;
-// nothing decompiled or copied), so that her projects that used it pan the same through LYNX
+// nothing decompiled or copied), so that her projects that used it pan the same through YW
 // (docs/analise/REA_rodada136.md §2).
 //
 // Measured structure [EXEC]: a pattern of N step values per period (2 steps: left / right; 8 steps: a stepped ramp;
@@ -17,7 +17,7 @@
 
 #include <array>
 
-namespace lynx::rhythmpan
+namespace yw::rhythmpan
 {
 constexpr int maxSteps = 8;
 
@@ -104,4 +104,4 @@ private:
     bool manualSeen = false;
     unsigned long long rng = 0x9E3779B97F4A7C15ull;
 };
-} // namespace lynx::rhythmpan
+} // namespace yw::rhythmpan

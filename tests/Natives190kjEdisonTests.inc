@@ -1,15 +1,15 @@
 // Round natives190kj (Edison): FL Edison's view laws from Edison_x64.dll (core/EdisonView.h) — Dual view strengths
 // (0x854030), the time grid step (0x84c470 / 0x84c890 / 0x84c7e0), Snap to grid / to pitch period (0x855d20, period
 // 0x62c1e0), grid-slicing (0x8636d0), the Scrub button's speed (0x88c9d0 / 0x8827c0), Detect pitch regions (0x869100 /
-// 0x7a9a10) on LYNX's note analysis.
+// 0x7a9a10) on YW's note analysis.
 
 #include "core/EdisonView.h"
 #include "core/NewtoneFx.h"
 
 namespace natives190kjedison
 {
-namespace ev = lynx::edisonview;
-namespace ae = lynx::audioedit;
+namespace ev = yw::edisonview;
+namespace ae = yw::audioedit;
 
 inline ae::Document tone (double seconds, double rate, double hz)
 {
@@ -25,7 +25,7 @@ inline ae::Document tone (double seconds, double rate, double hz)
 
 TEST (natives190kj_edison_dual_view_strengths)
 {
-    namespace ev = lynx::edisonview;
+    namespace ev = yw::edisonview;
     // no Dual view: one view alone
     CHECK (ev::layers (false, false, 100.0).spectrum == 0 && ev::layers (false, false, 100.0).wave == 256);
     CHECK (ev::layers (true, false, 100.0).spectrum == 256 && ev::layers (true, false, 100.0).wave == 0);
@@ -42,7 +42,7 @@ TEST (natives190kj_edison_dual_view_strengths)
 
 TEST (natives190kj_edison_grid_step_law)
 {
-    namespace ev = lynx::edisonview;
+    namespace ev = yw::edisonview;
     // seconds: units of half a second; small 0.1 s, medium 1 s, no large
     const auto sec = ev::secondsBase();
     CHECK (std::abs (sec.small - 0.2) < 1e-12 && sec.medium == 2.0 && sec.large == 0.0);
@@ -70,7 +70,7 @@ TEST (natives190kj_edison_grid_step_law)
     g = ev::grid (beats, 2.0); // a bar = 8 px → doubled to 2 bars (16 px)
     CHECK (g.step == 8.0 && g.largeEvery == 1);
     // a tempo-synced sample of 10 … 999 BPM runs in beats
-    lynx::audioedit::SampleProps p;
+    yw::audioedit::SampleProps p;
     CHECK (! ev::beatMode (p));
     p.tempoSync = true;
     p.tempo = 128.0;
@@ -84,7 +84,7 @@ TEST (natives190kj_edison_grid_step_law)
 
 TEST (natives190kj_edison_snap_to_pitch_period)
 {
-    namespace ev = lynx::edisonview;
+    namespace ev = yw::edisonview;
     // Edison's note 57 ("A4") = 440 Hz: 44100 / 440 = 100.227 frames
     CHECK (std::abs (ev::pitchPeriodFrames (44100.0, 57, 0.0) - 44100.0 / 440.0) < 1e-9);
     // the default middle note C5 (60) = 523.25 Hz; +100 cents = one semitone higher
@@ -97,8 +97,8 @@ TEST (natives190kj_edison_snap_to_pitch_period)
 
 TEST (natives190kj_edison_grid_slicing)
 {
-    namespace ev = lynx::edisonview;
-    namespace ae = lynx::audioedit;
+    namespace ev = yw::edisonview;
+    namespace ae = yw::audioedit;
     const auto sec = ev::secondsBase();
     CHECK (std::abs (ev::sliceStep (sec, 0) - 0.2) < 1e-12 && ev::sliceStep (sec, 1) == 2.0 && ev::sliceStep (sec, 2) == 2.0); // (no large: medium)
     const auto beats = ev::beatsBase (16, 4);
@@ -123,7 +123,7 @@ TEST (natives190kj_edison_grid_slicing)
 
 TEST (natives190kj_edison_scrub_speed)
 {
-    namespace ev = lynx::edisonview;
+    namespace ev = yw::edisonview;
     // a press starts paused; 40 px right = normal speed forward; left goes backward; held in ±16
     auto s = ev::scrubSpeed (0.0, 40.0);
     CHECK (std::abs (s - 1.0) < 1e-12);
@@ -138,8 +138,8 @@ TEST (natives190kj_edison_scrub_speed)
 
 TEST (natives190kj_edison_pitch_regions)
 {
-    namespace ev = lynx::edisonview;
-    namespace ae = lynx::audioedit;
+    namespace ev = yw::edisonview;
+    namespace ae = yw::audioedit;
     CHECK (ev::regionNoteName (60) == "C5" && ev::regionNoteName (69) == "A5" && ev::regionNoteName (0) == "C0" && ev::regionNoteName (61) == "C#5");
     // segments → named regions; out-of-range pitches skipped; every old marker goes
     ae::Document d = natives190kjedison::tone (1.0, 1000.0, 50.0);
@@ -148,8 +148,8 @@ TEST (natives190kj_edison_pitch_regions)
     CHECK (n == 2 && d.markers.size() == 2);
     CHECK (d.markers[0].name == "A5" && d.markers[0].start == 0 && d.markers[0].end == 400);
     CHECK (d.markers[1].name == "C6" && d.markers[1].start == 400);
-    // on LYNX's note analysis: two sung-like notes (A3 then C4, 0.6 s each) give two regions named after them
-    lynx::SampleData s;
+    // on YW's note analysis: two sung-like notes (A3 then C4, 0.6 s each) give two regions named after them
+    yw::SampleData s;
     s.sampleRate = 44100.0;
     const auto len = (std::size_t) (1.2 * 44100.0);
     s.left.resize (len);
@@ -160,7 +160,7 @@ TEST (natives190kj_edison_pitch_regions)
         phase += 2.0 * 3.141592653589793 * hz / 44100.0;
         s.left[i] = (float) (0.4 * std::sin (phase) + 0.2 * std::sin (2.0 * phase) + 0.1 * std::sin (3.0 * phase));
     }
-    const auto track = lynx::newtonefx::analyseNotes (s);
+    const auto track = yw::newtonefx::analyseNotes (s);
     std::vector<ev::PitchSegment> seg;
     for (const auto& note : track.pitches)
         seg.push_back ({ note.origStart, note.origEnd, note.origPitch });

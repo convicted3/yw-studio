@@ -1,4 +1,4 @@
-// Round 168p: the designed pages of FL's drum and physical-model generators and LYNX's own banks for them.
+// Round 168p: the designed pages of FL's drum and physical-model generators and YW's own banks for them.
 
 #include "core/BankStates.h"
 #include "core/DrumControls.h"
@@ -6,14 +6,14 @@
 
 namespace design168p
 {
-const lynx::InstrumentKind kinds[] = { lynx::InstrumentKind::fruitkick, lynx::InstrumentKind::plucked, lynx::InstrumentKind::drumpad,
-                                       lynx::InstrumentKind::drumaxx, lynx::InstrumentKind::bassdrum, lynx::InstrumentKind::drumsynth,
-                                       lynx::InstrumentKind::sakura, lynx::InstrumentKind::slayer };
+const yw::InstrumentKind kinds[] = { yw::InstrumentKind::fruitkick, yw::InstrumentKind::plucked, yw::InstrumentKind::drumpad,
+                                       yw::InstrumentKind::drumaxx, yw::InstrumentKind::bassdrum, yw::InstrumentKind::drumsynth,
+                                       yw::InstrumentKind::sakura, yw::InstrumentKind::slayer };
 } // namespace design168p
 
 TEST (design168p_every_drum_engine_has_fl_arrangement)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : design168p::kinds)
     {
         const auto* layout = plugui::instrumentLayout (kind);
@@ -35,7 +35,7 @@ TEST (design168p_every_drum_engine_has_fl_arrangement)
 
 TEST (design168p_layout_controls_match_the_engine_tables)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : design168p::kinds)
     {
         const auto* layout = plugui::instrumentLayout (kind);
@@ -72,7 +72,7 @@ TEST (design168p_layout_controls_match_the_engine_tables)
 
 TEST (design168p_controls_read_and_write_their_storage)
 {
-    using namespace lynx;
+    using namespace yw;
     // Fruit Kick (version-0 state built by the bank code)
     auto kick = bankstates::channelFor ("fruitkick", { 100, -500, 70, 130, 20, 5 });
     CHECK (kick && kick->instrument == InstrumentKind::fruitkick && fruitKickStateUsable (kick->pluginState));
@@ -95,9 +95,9 @@ TEST (design168p_controls_read_and_write_their_storage)
     pads[2].voice[29] = 0.75f; // pitch
     ChannelDef maxx;
     maxx.instrument = InstrumentKind::drumaxx;
-    maxx.pluginState = bankstates::drumaxxState ("LYNX test", pads);
+    maxx.pluginState = bankstates::drumaxxState ("YW test", pads);
     CHECK (drumaxxStateUsable (maxx.pluginState));
-    CHECK (drumaxxKitName (maxx.pluginState) == "LYNX test");
+    CHECK (drumaxxKitName (maxx.pluginState) == "YW test");
     const auto* pitch = drumcontrols::find (InstrumentKind::drumaxx, "Pitch");
     CHECK (pitch != nullptr && pitch->perPart);
     CHECK (drumcontrols::value (maxx, *pitch, 2) == 0.75f);
@@ -121,10 +121,10 @@ TEST (design168p_controls_read_and_write_their_storage)
 
 namespace design168p
 {
-lynx::drumranges::Range rangeOf (lynx::InstrumentKind kind, int index)
+yw::drumranges::Range rangeOf (yw::InstrumentKind kind, int index)
 {
-    using K = lynx::InstrumentKind;
-    namespace r = lynx::drumranges;
+    using K = yw::InstrumentKind;
+    namespace r = yw::drumranges;
     switch (kind)
     {
         case K::fruitkick: return r::fruitKick (index);
@@ -141,7 +141,7 @@ lynx::drumranges::Range rangeOf (lynx::InstrumentKind kind, int index)
 
 TEST (design168p_automation_tables_match_the_engines)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : design168p::kinds)
     {
         const auto* table = modelparams::tableOf (kind);
@@ -177,7 +177,7 @@ TEST (design168p_automation_tables_match_the_engines)
 
 TEST (design168p_engines_take_automation_while_playing)
 {
-    using namespace lynx;
+    using namespace yw;
     // a Fruit Kick hit keeps sounding when its knobs move (live parameter, no engine restart)
     auto def = *bankstates::channelFor ("fruitkick", { 600, -300, 90, 140, 16, 0 });
     auto inst = makeInstrument (InstrumentKind::fruitkick);
@@ -211,8 +211,8 @@ TEST (design168p_engines_take_automation_while_playing)
 
 TEST (design168p_banks_play_clean)
 {
-    using namespace lynx;
-    // LYNX's own banks of the drum / physical-model engines: every preset loads, keeps the channel's own settings and
+    using namespace yw;
+    // YW's own banks of the drum / physical-model engines: every preset loads, keeps the channel's own settings and
     // sounds (not silent, no clipping) at the channel's default volume
     for (const auto kind : { InstrumentKind::fruitkick, InstrumentKind::plucked, InstrumentKind::drumpad, InstrumentKind::sakura,
                              InstrumentKind::drumaxx, InstrumentKind::drumsynth })

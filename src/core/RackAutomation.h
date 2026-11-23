@@ -5,13 +5,13 @@
 // FL keeps every automation clip as a channel of the rack (.flp channel type 5, "automation clip"): a row among the other
 // channels, its button in the clip's colour, a curve glyph where the mixer track box is, the two knobs (the clip's range),
 // the steps; its button opens the clip (Thief: "Volume Duck", "GROSS..w Bass", "CRASH REVERB" between YELP and
-// "Riser..Metal", design190ia shots/ref/fl-channelrack.png). LYNX keeps automation clips apart from the channels
+// "Riser..Metal", design190ia shots/ref/fl-channelrack.png). YW keeps automation clips apart from the channels
 // (Song::automations), so the rack shows them as rows of their own between the channel rows and never as channels: no
 // audio, no notes, no mixer insert, not in the channel selection, the channel indices unchanged.
 //
 // Where a row sits is Automation::rackSlot, the gap it fills: above channel row `rackSlot` (FL's channel order from the
-// .flp); −1 = after the last channel. The model's choice: −1 is what every automation of an older LYNX project and every
-// clip made in LYNX has, so a project without automation clips keeps its rack row for row, and one with clips shows them
+// .flp); −1 = after the last channel. The model's choice: −1 is what every automation of an older YW project and every
+// clip made in YW has, so a project without automation clips keeps its rack row for row, and one with clips shows them
 // after its channels, where FL appends a channel made last (FL lists every automation clip in the rack). Inside one gap
 // the rows follow the automations' order. No JUCE: tests/RackAutomation190ooTests.inc.
 
@@ -24,7 +24,7 @@
 #include "core/RackFilter.h"
 #include "core/Song.h"
 
-namespace lynx::rackauto
+namespace yw::rackauto
 {
 // FL's built-in filter group of the automation clip channels (REA_rodada168t §3: FL files an automation clip channel
 // under "Automation clips"; an imported .flp keeps the group's name)
@@ -287,4 +287,4 @@ inline bool passRow (Song& song, const std::vector<int>& selection, int delta)
     song.automations[(std::size_t) automation].rackSlot = slot;
     return true;
 }
-} // namespace lynx::rackauto
+} // namespace yw::rackauto

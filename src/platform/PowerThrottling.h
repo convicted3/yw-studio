@@ -1,5 +1,5 @@
 #pragma once
-// Windows power throttling (EcoQoS) and LYNX's audio threads (round toolchain190gt; research round 190gs Q6).
+// Windows power throttling (EcoQoS) and YW's audio threads (round toolchain190gt; research round 190gs Q6).
 //
 // Windows 11 gives a process it considers in the background (window minimised or covered, and not heard through the
 // Windows audio engine: an ASIO driver bypasses that engine, so a DAW playing through ASIO counts as silent) Low QoS /
@@ -8,7 +8,7 @@
 //  - The threads that render audio (the device's callback thread, the render workers, the stream prefetcher, the
 //    sandbox's and the 32-bit bridge's audio thread) opt out, one call per thread at its start.
 //  - While an audio device is open the whole process opts out too (execution speed and the timer resolution: the UI,
-//    MIDI sync and the plugins' own threads keep running at full speed when LYNX is minimised); closing the device gives
+//    MIDI sync and the plugins' own threads keep running at full speed when YW is minimised); closing the device gives
 //    the choice back to the system.
 //
 // Header-only. Elsewhere (macOS, Linux) it does nothing.
@@ -23,7 +23,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::power
+namespace yw::power
 {
 #if defined(_WIN32)
 namespace detail
@@ -55,7 +55,7 @@ inline bool optOutOfPowerThrottling() noexcept
     return set != nullptr && set (GetCurrentThread(), detail::threadPowerThrottling, &state, sizeof (state)) != 0;
 }
 
-// The calling thread joins MMCSS "Pro Audio" at critical priority (the class of LYNX's own render workers, AudioEngine.cpp)
+// The calling thread joins MMCSS "Pro Audio" at critical priority (the class of YW's own render workers, AudioEngine.cpp)
 // and opts out of power throttling. For audio threads outside the engine (the plugin sandbox, the 32-bit bridge).
 inline void becomeProAudioThread() noexcept
 {
@@ -67,7 +67,7 @@ inline void becomeProAudioThread() noexcept
     DWORD task = 0;
     if (auto* handle = avSet != nullptr ? avSet (L"Pro Audio", &task) : nullptr)
     {
-        if (avPriority != nullptr && avPriority (handle, 2 /* AVRT_PRIORITY_CRITICAL, as LYNX's own audio threads */) == 0)
+        if (avPriority != nullptr && avPriority (handle, 2 /* AVRT_PRIORITY_CRITICAL, as YW's own audio threads */) == 0)
             avPriority (handle, 1 /* AVRT_PRIORITY_HIGH */);
     }
     else
@@ -111,4 +111,4 @@ inline void becomeProAudioThread() noexcept {}
 inline bool holdProcessFullSpeed (bool) noexcept { return false; }
 inline int powerThrottlingOptOut() noexcept { return -1; }
 #endif
-} // namespace lynx::power
+} // namespace yw::power

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent standard-library client for the opt-in LYNX Remote Control API.
+"""Independent standard-library client for the opt-in YW Remote Control API.
 
 Defaults to read-only status. An edit requires an explicitly saved project
 snapshot and a JSON Patch file; writes are sent once and are never retried.
@@ -16,7 +16,7 @@ import socket
 import stat
 import sys
 
-PROTOCOL = "lynx-control/1"
+PROTOCOL = "yw-control/1"
 MAX_FRAME = 1024 * 1024
 MAX_DOCUMENT = 64 * 1024 * 1024
 
@@ -27,20 +27,20 @@ def require(condition, message):
 
 
 def default_discovery():
-    if os.environ.get("LYNX_CONTROL_DISCOVERY"):
-        return Path(os.environ["LYNX_CONTROL_DISCOVERY"])
-    if os.environ.get("LYNX_PROFILE_DIR"):
-        return Path(os.environ["LYNX_PROFILE_DIR"]) / "LYNX/control/connection.json"
+    if os.environ.get("YW_CONTROL_DISCOVERY"):
+        return Path(os.environ["YW_CONTROL_DISCOVERY"])
+    if os.environ.get("YW_PROFILE_DIR"):
+        return Path(os.environ["YW_PROFILE_DIR"]) / "YW/control/connection.json"
     if os.name == "nt":
         require(bool(os.environ.get("APPDATA")), "Set --discovery when APPDATA is unavailable")
-        folder = Path(os.environ["APPDATA"]) / "LYNX"
+        folder = Path(os.environ["APPDATA"]) / "YW"
     elif sys.platform == "darwin":
-        folder = Path.home() / "Library/Application Support/LYNX"
+        folder = Path.home() / "Library/Application Support/YW"
     else:
         config = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
         if not config.is_absolute():
             config = Path.home() / ".config"
-        folder = config / "LYNX"
+        folder = config / "YW"
     return folder / "control/connection.json"
 
 

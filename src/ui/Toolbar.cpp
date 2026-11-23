@@ -20,7 +20,7 @@
 #include "ui/Theme.h"
 #include "ui/TextCache.h"
 
-namespace lynx::toolbar
+namespace yw::toolbar
 {
 namespace
 {
@@ -442,7 +442,7 @@ void TimeDisplay::paint (juce::Graphics& g)
     g.setColour (colour::textPrimary);
     // round 170e3: the song position is the toolbar's centre (FL users look there first): a larger readout
     const auto readout = shown.isEmpty() ? text() : shown;
-    // round 190jo (design190ia FM-6): FL's digits are 26 px tall (cap) in its 33 px panel; LYNX's cap 12 becomes cap 20
+    // round 190jo (design190ia FM-6): FL's digits are 26 px tall (cap) in its 33 px panel; YW's cap 12 becomes cap 20
     // (font 40 in the 46 px box) with FL's mode caption at the top right ("B:S:T", "M:S:CS") instead of the line under it
     if (mode != Mode::beats)
     {
@@ -513,7 +513,7 @@ void TimeDisplay::showMenu()
         update();
         repaint();
     };
-    if (look == toolbarlayout::Look::fl) // (round 190jo: FL's B:S:T first, LYNX's bar : beat : step kept)
+    if (look == toolbarlayout::Look::fl) // (round 190jo: FL's B:S:T first, YW's bar : beat : step kept)
     {
         menu.addItem (tr ("Bar : Step : Tick"), true, mode == Mode::bars, [set] { set (Mode::bars, -1); });
         menu.addItem (tr ("Bar : Beat : Step"), true, mode == Mode::beats, [set] { set (Mode::beats, -1); });
@@ -608,7 +608,7 @@ ui::ValueSpec MasterKnob::spec() const
         return number.getDoubleValue();
     };
     // FL's Master pitch › "Type in value..." (round 190mv, DF-22; capture 190mv A6: a box "Master pitch (Hz)" showing 440):
-    // the tuning of A in Hz, 440 = no shift; LYNX's range ±1200 cents = 220…880 Hz
+    // the tuning of A in Hz, 440 = no shift; YW's range ±1200 cents = 220…880 Hz
     auto hz = std::make_shared<ui::ValueSpec>();
     hz->name = tr ("Master pitch (Hz)");
     hz->minimum = 220.0;
@@ -688,7 +688,7 @@ void MasterKnob::paintSlider (juce::Graphics& g)
     const auto rail = sliderRail();
     const auto ink = available() ? (isMouseOver() || drag.isActive() || sliderDrag ? colour::textPrimary : colour::textSecondary) : colour::textDisabled;
 
-    // the speaker (a LYNX vector: a box, a cone and two waves)
+    // the speaker (a YW vector: a box, a cone and two waves)
     {
         const auto s = juce::Rectangle<float> (area.getX() + 3.0f, area.getCentreY() - 8.0f, 16.0f, 16.0f);
         juce::Path body;
@@ -1372,7 +1372,7 @@ void LinkToggle::showMenu()
 
 juce::PopupMenu LinkToggle::makeMenu()
 {
-    // the reference DAW's drop-down: Link on / off and "Configure Link..." (its Link Audio items: LYNX has no Link Audio)
+    // the reference DAW's drop-down: Link on / off and "Configure Link..." (its Link Audio items: YW has no Link Audio)
     juce::PopupMenu menu;
     const auto linkOn = engine.getLink().isEnabled();
     menu.addItem (trc ("@Ableton Link: Link"), true, linkOn, [this, linkOn] {
@@ -1442,7 +1442,7 @@ void KeyPanel::mouseMove (const juce::MouseEvent& e)
 
 // Round 190oo (O-5): Live 12's scale switch, root and mode (live-arrangement-audiolane.png at 100 %: #363636 boxes, the
 // switch's glyph #b5b5b5; the choosers' text and arrows dimmed while the switch is off — Live's #696969 reads 2.4:1 on
-// #363636, so LYNX dims to #9e9e9e, 4.5:1). The switch on: Live's lit #ffad56 with the dark glyph.
+// #363636, so YW dims to #9e9e9e, 4.5:1). The switch on: Live's lit #ffad56 with the dark glyph.
 void KeyPanel::paintThreeParts (juce::Graphics& g)
 {
     const auto parts = livescale::split (getWidth());
@@ -1453,7 +1453,7 @@ void KeyPanel::paintThreeParts (juce::Graphics& g)
     paintLiveBox (g, root, over && hoveredPart == 1);
     paintLiveBox (g, mode, over && hoveredPart == 2);
 
-    // "♭#": a flat at the lower left, a sharp raised at the upper right (LYNX vectors)
+    // "♭#": a flat at the lower left, a sharp raised at the upper right (YW vectors)
     {
         const auto ink = scaleOn ? live::onLit : live::text;
         const auto side = juce::jmin ((float) toggle.getWidth() - 4.0f, (float) h - 4.0f, 13.0f);
@@ -1493,7 +1493,7 @@ void KeyPanel::paintThreeParts (juce::Graphics& g)
 void KeyPanel::paint (juce::Graphics& g)
 {
     using namespace theme;
-    if (threeParts()) // round 190oo (O-5, LYNX extra): Live's scale switch + root + mode
+    if (threeParts()) // round 190oo (O-5, YW extra): Live's scale switch + root + mode
     {
         paintThreeParts (g);
         return;
@@ -1806,7 +1806,7 @@ void OutputMonitor::frameChanged()
 {
     static const bool wanted = [] {
 #if JUCE_WINDOWS
-        const auto* v = std::getenv ("LYNX_SCOPE_OVERLAY");
+        const auto* v = std::getenv ("YW_SCOPE_OVERLAY");
         return v == nullptr || juce::String (v) != "0";
 #else
         return false; // (the X11 / macOS overlays send a whole picture per frame: no gain over the repaint there)
@@ -1987,9 +1987,9 @@ void OutputMonitor::paintDisplay (juce::Graphics& g, bool software)
     const auto stroke = juce::PathStrokeType (1.3f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded);
     // round 174e2: the same stroke drawn by the software renderer into a small image, then the image to the window.
     // Direct2D builds and tessellates a new path geometry (and stroke style) for every strokePath: at the display's
-    // rate that was the toolbar's biggest cost. LYNX_SCOPE_IMAGE=0: the direct stroke, for comparisons.
+    // rate that was the toolbar's biggest cost. YW_SCOPE_IMAGE=0: the direct stroke, for comparisons.
     static const bool viaImage = [] {
-        const auto* v = std::getenv ("LYNX_SCOPE_IMAGE");
+        const auto* v = std::getenv ("YW_SCOPE_IMAGE");
         return v == nullptr || juce::String (v) != "0";
     }();
     if (! viaImage || software) // (software: the overlay's picture, already drawn by the CPU)
@@ -2783,7 +2783,7 @@ juce::PopupMenu SignatureBox::makeMenu()
 
 // Round 190ol (P6, BandLab live check s/ANSWERS.md): BandLab's "4 / 4" is two controls — a click on the top number opens a
 // list of numerators (1-6), one on the bottom number a list of denominators (1, 2, 4, 8); the "/" does nothing. They set
-// the signature at the song's start (core/SignatureEdit.h: a change at bar 1 is updated instead). LYNX's own values follow
+// the signature at the song's start (core/SignatureEdit.h: a change at bar 1 is updated instead). YW's own values follow
 // after a separator: numerators 7-16 and the denominator 16. Changes from a bar on are on the ruler's right-click.
 juce::PopupMenu SignatureBox::simpleMenu (bool numerator)
 {
@@ -2951,7 +2951,7 @@ ui::Hint SaveStatus::hintAt (juce::Point<int>)
 {
     return { tr ("YW Studio backs your work up by itself. Click to save the project (Ctrl+S)"), {}, false, false };
 }
-} // namespace lynx::toolbar
+} // namespace yw::toolbar
 
 // The process memory comes from the OS; its headers go last (windows.h defines macros such as `small`).
 #if JUCE_WINDOWS
@@ -2964,7 +2964,7 @@ ui::Hint SaveStatus::hintAt (juce::Point<int>)
  #include <tlhelp32.h>
 #endif
 
-std::int64_t lynx::toolbar::PerformanceMeter::processPrivateBytes()
+std::int64_t yw::toolbar::PerformanceMeter::processPrivateBytes()
 {
 #if JUCE_WINDOWS
     PROCESS_MEMORY_COUNTERS_EX counters {};
@@ -2976,7 +2976,7 @@ std::int64_t lynx::toolbar::PerformanceMeter::processPrivateBytes()
 #endif
 }
 
-int lynx::toolbar::PerformanceMeter::threadCount()
+int yw::toolbar::PerformanceMeter::threadCount()
 {
 #if JUCE_WINDOWS
     const auto snap = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
@@ -3001,7 +3001,7 @@ int lynx::toolbar::PerformanceMeter::threadCount()
 #endif
 }
 
-std::pair<int, int> lynx::toolbar::PerformanceMeter::guiHandles()
+std::pair<int, int> yw::toolbar::PerformanceMeter::guiHandles()
 {
 #if JUCE_WINDOWS
     return { (int) GetGuiResources (GetCurrentProcess(), 0 /* GR_GDIOBJECTS */), (int) GetGuiResources (GetCurrentProcess(), 1 /* GR_USEROBJECTS */) };
@@ -3010,7 +3010,7 @@ std::pair<int, int> lynx::toolbar::PerformanceMeter::guiHandles()
 #endif
 }
 
-std::int64_t lynx::toolbar::PerformanceMeter::processMemoryBytes()
+std::int64_t yw::toolbar::PerformanceMeter::processMemoryBytes()
 {
 #if JUCE_WINDOWS
     PROCESS_MEMORY_COUNTERS counters {};

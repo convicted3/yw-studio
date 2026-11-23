@@ -25,7 +25,7 @@
  #pragma comment(lib, "propsys.lib")
 #endif
 
-namespace lynx::media
+namespace yw::media
 {
 namespace
 {
@@ -346,6 +346,6 @@ std::shared_ptr<const video::AudioTrack> decodeNativeAudio (const juce::File& fi
     }
     return track;
 }
-} // namespace lynx::media
+} // namespace yw::media
 
 #endif

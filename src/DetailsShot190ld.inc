@@ -6,7 +6,7 @@
     bool runDetailsShot190ld (const juce::String& prefix, const juce::String& project, const juce::String& set)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -14,7 +14,7 @@
             allOk = allOk && ok;
         };
         const auto line = [&checks] (const juce::String& what) { checks << "     " << what << "\n"; };
-        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (lynx::shot::snapshot (c), prefix + "-" + name + ".png"); };
+        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (yw::shot::snapshot (c), prefix + "-" + name + ".png"); };
         const auto menuShot = [&prefix] (const juce::PopupMenu& menu, const juce::String& title, const juce::String& name) {
             saveMenus (juce::StringArray { title }, std::vector<juce::PopupMenu> { menu }, prefix + "-" + name + ".png");
         };
@@ -24,8 +24,8 @@
                 all.add (it.getItem().text);
             return all;
         };
-        const auto size = juce::StringArray::fromTokens (juce::SystemStats::getEnvironmentVariable ("LYNX_SNAPSHOT_SIZE", "1920x1080"), "x", "");
-        using namespace lynx;
+        const auto size = juce::StringArray::fromTokens (juce::SystemStats::getEnvironmentVariable ("YW_SNAPSHOT_SIZE", "1920x1080"), "x", "");
+        using namespace yw;
         {
             // ---- Pattern layout, the FL demo
             AudioEngine offline (false);
@@ -44,8 +44,8 @@
             // FL's CPU panel Misc: View voice count / View FPS and the info lines
             const auto cpuMenu = texts (cpu.makeMenu());
             line ("CPU menu: " + cpuMenu.joinIntoString (" | "));
-            check ("CPU menu: Misc with View voice count and View FPS", cpuMenu.contains (lynx::tr ("View voice count")) && cpuMenu.contains (lynx::tr ("View FPS")));
-            check ("CPU menu: the thread count", cpuMenu.joinIntoString ("|").contains (lynx::tr ("Threads: {0}", { "" }).trimEnd()));
+            check ("CPU menu: Misc with View voice count and View FPS", cpuMenu.contains (yw::tr ("View voice count")) && cpuMenu.contains (yw::tr ("View FPS")));
+            check ("CPU menu: the thread count", cpuMenu.joinIntoString ("|").contains (yw::tr ("Threads: {0}", { "" }).trimEnd()));
             menuShot (cpu.makeMenu(), "CPU", "tb-cpu-menu");
             for (int k = 0; k < 40; ++k)
                 cpu.setValues (0.12, 910ll * 1024 * 1024, 9);
@@ -88,10 +88,10 @@
             // FL's Count-in and Wait for input right-click menus
             {
                 const auto countIn = texts (ui.countInMenuForSnapshot());
-                check ("Count-in right-click: the bar lengths (" + countIn.joinIntoString (", ") + ")", countIn.size() == 4 && countIn.contains (lynx::tr ("2 bars")));
+                check ("Count-in right-click: the bar lengths (" + countIn.joinIntoString (", ") + ")", countIn.size() == 4 && countIn.contains (yw::tr ("2 bars")));
                 menuShot (ui.countInMenuForSnapshot(), "Count-in", "countin-menu");
                 const auto wait = texts (ui.waitInputMenuForSnapshot());
-                check ("Wait for input right-click: FL's two options", wait.contains (lynx::tr ("Only when recording")) && wait.contains (lynx::tr ("Respect recording filter")));
+                check ("Wait for input right-click: FL's two options", wait.contains (yw::tr ("Only when recording")) && wait.contains (yw::tr ("Respect recording filter")));
                 menuShot (ui.waitInputMenuForSnapshot(), "Wait for input", "wait-menu");
             }
 
@@ -147,8 +147,8 @@
                 check ("Playlist: the track lock is saved with the project", back.has_value() && back->playlistTracks.size() > 1 && back->playlistTracks[1].soloLock
                                                                          && ! back->playlistTracks[0].soloLock);
             }
-            const auto tools = juce::StringArray { lynx::tr (editTools()[0].name), lynx::tr (editTools()[1].name), lynx::tr (editTools()[3].name),
-                                                   lynx::tr (editTools()[5].name), lynx::tr (editTools()[6].name), lynx::tr (editTools()[8].name) };
+            const auto tools = juce::StringArray { yw::tr (editTools()[0].name), yw::tr (editTools()[1].name), yw::tr (editTools()[3].name),
+                                                   yw::tr (editTools()[5].name), yw::tr (editTools()[6].name), yw::tr (editTools()[8].name) };
             line ("tools: " + tools.joinIntoString (", "));
             check ("FL's tool names (owner E1)", juce::String (editTools()[0].name) == "Draw" && juce::String (editTools()[5].name) == "Slice"
                                                      && juce::String (editTools()[8].name) == "Playback");
@@ -277,8 +277,8 @@
                             items.removeEmptyStrings(); // (the separators)
                             line ("clip menu: " + items.joinIntoString (" | "));
                             check ("clip menu starts with Live's Cut / Copy / Duplicate / Delete, then Rename",
-                                   items.size() > 5 && items[0].startsWith (lynx::tr ("Cut")) && items[3].startsWith (lynx::tr ("Delete"))
-                                       && items[4].startsWith (lynx::tr ("Rename")));
+                                   items.size() > 5 && items[0].startsWith (yw::tr ("Cut")) && items[3].startsWith (yw::tr ("Delete"))
+                                       && items[4].startsWith (yw::tr ("Rename")));
                             menuShot (clipGridSlotMenu (*gridView, t, r), "Clip", "grid-clip-menu");
                             done = 1;
                         }
@@ -286,13 +286,13 @@
                     const auto items = texts (clipGridSceneMenu (*gridView, 0));
                     line ("scene menu: " + items.joinIntoString (" | "));
                     check ("scene menu in Live's order (Duplicate first, Cancel Scene Launch, the two prefs)",
-                           items.size() > 6 && items[0].startsWith (lynx::tr ("Duplicate")) && items.contains (lynx::tr ("Cancel Scene Launch"))
-                               && items.contains (lynx::tr ("Trigger Recording on Launch (Pref)")));
+                           items.size() > 6 && items[0].startsWith (yw::tr ("Duplicate")) && items.contains (yw::tr ("Cancel Scene Launch"))
+                               && items.contains (yw::tr ("Trigger Recording on Launch (Pref)")));
                     menuShot (clipGridSceneMenu (*gridView, 0), "Scene", "grid-scene-menu");
                 }
                 // Live's count-in: the position field filled #03c3d5 with dark digits (2 bars of 4/4, a beat and an eighth in)
                 {
-                    offline.getTransport().countIn.store (2.0 * (double) song.barTicks() - 1.5 * (double) lynx::ppq);
+                    offline.getTransport().countIn.store (2.0 * (double) song.barTicks() - 1.5 * (double) yw::ppq);
                     ui.transportTickForSnapshot();
                     if (auto* position = ui.toolbarPartForSnapshot ("position"))
                     {
@@ -382,7 +382,7 @@
                     const auto items = texts (menu);
                     int setValues = 0;
                     for (juce::PopupMenu::MenuItemIterator it (menu); it.next();)
-                        if (it.getItem().text == lynx::tr ("Set") && it.getItem().subMenu != nullptr)
+                        if (it.getItem().text == yw::tr ("Set") && it.getItem().subMenu != nullptr)
                             setValues = it.getItem().subMenu->getNumItems();
                     line ("Delay 3 Time menu: " + items.joinIntoString (" | "));
                     check ("Delay 3: the synced Time menu has Set with 14 values", setValues == 14);
@@ -454,7 +454,7 @@
                 const auto view = PatcherWindows::viewMenuForSnapshot (*editor);
                 line ("Patcher View menu: " + texts (view).joinIntoString (" | "));
                 check ("Patcher: View menu has Activity, Latency and Performance",
-                       texts (view).contains (lynx::tr ("Activity")) && texts (view).contains (lynx::tr ("Latency")) && texts (view).contains (lynx::tr ("Performance")));
+                       texts (view).contains (yw::tr ("Activity")) && texts (view).contains (yw::tr ("Latency")) && texts (view).contains (yw::tr ("Performance")));
                 menuShot (view, "View", "plug-patcher-view-menu");
             }
 
@@ -485,7 +485,7 @@
                 const auto items = texts (menu);
                 line ("PEQ2 display menu: " + items.joinIntoString (" | "));
                 check ("PEQ2: display menu has Monitor input (pre) / output (post)",
-                       items.contains (lynx::tr ("Input (pre EQ)")) && items.contains (lynx::tr ("Output (post EQ)")));
+                       items.contains (yw::tr ("Input (pre EQ)")) && items.contains (yw::tr ("Output (post EQ)")));
                 menuShot (menu, "Display", "plug-peq2-menu");
             }
 

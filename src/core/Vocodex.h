@@ -6,7 +6,7 @@
 // filter banks with 2× / octave-level multirate, PEAK/RMS followers, gate, saturation, smoother, unison, carrier
 // noise, consonant/carrier contour, pass-through and the gain ramps. Draft re-blocks into 16-frame chunks (16 samples
 // of latency, reported to PDC). The Soundgoodizer stage (SG > 0) is FL's Maximus engine (core/HarmlessFx) loaded with
-// the installation's Vocodex/Data/SG.dat, band mix = SG (REA_rodada40 §4); the internal carrier is LYNX's Sytrus engine
+// the installation's Vocodex/Data/SG.dat, band mix = SG (REA_rodada40 §4); the internal carrier is YW's Sytrus engine
 // playing the installation's Synthesizer preset. Both files are read at import from the user's FL installation and
 // travel with the slot (InstallData); without them the stage falls back to the Soundgoodizer approximation and the
 // internal carrier is unavailable.
@@ -21,7 +21,7 @@
 #include "core/Effects.h"
 #include "core/HarmlessFx.h"
 
-namespace lynx::vocodex
+namespace yw::vocodex
 {
 // One of the 13 maps as FL stores it (an FL envelope record: kind 3, version 3, n points of Δx f64, level f64, tension
 // f32, curve mode u8 + 3 bytes, then flags / on / decay / loop / sustain). x is accumulated from the stored deltas.
@@ -91,7 +91,7 @@ std::optional<State> parseState (const std::vector<std::uint8_t>& bytes);
 
 // --- map editing (FL's own layout, so FL export/import stay valid; the slot state may carry the install-data trailer)
 std::vector<MapPoint> mapPoints (const Map& map);
-// The 13 maps of a slot state (FL's state + LYNX's trailer), or nullopt when it is not a Vocodex state
+// The 13 maps of a slot state (FL's state + YW's trailer), or nullopt when it is not a Vocodex state
 std::optional<std::array<std::vector<MapPoint>, 13>> readMaps (const std::vector<std::uint8_t>& slotState);
 // The slot state with map `map` replaced by `points` (sorted by x; the first point is moved to x = 0 and the last to
 // x = 1, as FL's editor keeps them; levels clamped to 0…1, modes to 0…12, tensions to −1…1; at least two points). The
@@ -154,7 +154,7 @@ public:
 std::unique_ptr<Carrier> makeInternalCarrier (const State& state);
 std::unique_ptr<Carrier> makeInternalCarrier (const State& state, const std::vector<std::uint8_t>& sytrusState);
 
-// Data files of the user's FL installation that Vocodex loads at run time, appended by LYNX after FL's state in
+// Data files of the user's FL installation that Vocodex loads at run time, appended by YW after FL's state in
 // EffectSlot::state (our own trailer: records, then their byte count and the tag "LXVXDATA")
 struct InstallData
 {
@@ -183,4 +183,4 @@ std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& state, const Effe
 // test hook (round beatfl190kr): the band followers' sliding maximum (window W: the current input and the W − 1 before
 // it) run over the input in blocks of the given length, from a cleared state
 std::vector<float> slidingMaxForTest (int window, const std::vector<float>& input, int block);
-} // namespace lynx::vocodex
+} // namespace yw::vocodex

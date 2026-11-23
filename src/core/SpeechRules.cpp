@@ -1,7 +1,7 @@
-// LYNX's speech synthesizer: the text front end (round 168b). Numbers spelled out, a small dictionary of common words
+// YW's speech synthesizer: the text front end (round 168b). Numbers spelled out, a small dictionary of common words
 // English letter-to-sound rules do not get right, and context rules in the style of the public-domain US Naval
 // Research Laboratory report "Automatic translation of English text to phonetics by means of letter-to-sound rules"
-// (Elovitz, Johnson, McHugh & Shore, NRL Report 7948, 1976), written out for LYNX. Nothing here comes from FL Studio or
+// (Elovitz, Johnson, McHugh & Shore, NRL Report 7948, 1976), written out for YW. Nothing here comes from FL Studio or
 // from the third-party engine FL uses (see core/Speech.h).
 
 #include "core/Speech.h"
@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::speech
+namespace yw::speech
 {
 namespace
 {
@@ -76,7 +76,7 @@ const Entry dictionary[] = {
     { "problem", "P R AA1 B L AX M" }, { "future", "F Y UW1 CH ER" }, { "the", "DH AX" }, { "this", "DH IH1 S" },
     { "that", "DH AE1 T" }, { "then", "DH EH1 N" }, { "than", "DH AE1 N" }, { "them", "DH EH1 M" },
     { "these", "DH IY1 Z" }, { "those", "DH OW1 Z" }, { "thus", "DH AH1 S" }, { "though", "DH OW1" },
-    { "through", "TH R UW1" }, { "lynx", "L IH1 NG K S" }, { "share", "SH EH1 R" }, { "zed", "Z EH1 D" },
+    { "through", "TH R UW1" }, { "yw", "L IH1 NG K S" }, { "share", "SH EH1 R" }, { "zed", "Z EH1 D" },
     { "fruity", "F R UW1 T IY" }, { "loops", "L UW1 P S" }, { "synth", "S IH1 N TH" }, { "video", "V IH1 D IY OW" },
     { "audio", "AO1 D IY OW" }, { "radio", "R EY1 D IY OW" }, { "ladies", "L EY1 D IY Z" }, { "house", "HH AW1 S" },
     { "mouth", "M AW1 TH" }, { "sound", "S AW1 N D" }, { "sounds", "S AW1 N D Z" }, { "down", "D AW1 N" },
@@ -496,4 +496,4 @@ std::string toPhonemes (std::string_view text)
     }
     return out;
 }
-} // namespace lynx::speech
+} // namespace yw::speech

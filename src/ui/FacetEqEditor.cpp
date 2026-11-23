@@ -22,7 +22,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -34,7 +34,7 @@ constexpr int fftOrder = 13, fftSize = 1 << fftOrder;
 
 juce::Colour bandColour (int band)
 {
-    // one hue per band at the same lightness; the first is LYNX's red
+    // one hue per band at the same lightness; the first is YW's red
     static const juce::Colour colours[] = { juce::Colour (0xffef5b5f), juce::Colour (0xfff2a46b), juce::Colour (0xffe8cf6a),
                                             juce::Colour (0xff86d993), juce::Colour (0xff62cfd0), juce::Colour (0xff7aa9f5),
                                             juce::Colour (0xffb59af2), juce::Colour (0xffef7fc0) };
@@ -83,12 +83,12 @@ void drawPowerGlyph (juce::Graphics& g, juce::Rectangle<float> r, juce::Colour c
 
 class FacetEqEditor final : public juce::Component,
                             public ui::HintSource,
-                            public ::lynx::demo::CellSource,
+                            public ::yw::demo::CellSource,
                             private juce::ChangeListener,
                             private juce::Timer
 {
 public:
-    friend void ::lynx::tickFacetEqEditor (juce::Component&); // round 166f (--eq166fshot)
+    friend void ::yw::tickFacetEqEditor (juce::Component&); // round 166f (--eq166fshot)
     FacetEqEditor (AudioEngine& e, int t, int s, bool demoSpectrum)
         : engine (e),
           track (t),
@@ -2055,4 +2055,4 @@ void closeAll()
     windows().clear();
 }
 } // namespace FacetEqWindows
-} // namespace lynx
+} // namespace yw

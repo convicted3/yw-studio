@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checks that a Linux LYNX binary runs on the oldest supported distribution (default: Ubuntu 22.04, glibc 2.35):
+# Checks that a Linux YW binary runs on the oldest supported distribution (default: Ubuntu 22.04, glibc 2.35):
 # no glibc symbol version above MAX_GLIBC, and no dependency on the system's C++ runtime (libstdc++/libgcc_s are
 # linked statically, see CMakeLists.txt). The AppImage catalog tests on the oldest Ubuntu LTS still supported.
 #

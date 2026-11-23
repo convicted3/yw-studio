@@ -1,6 +1,6 @@
 // Round tp172c8: the panels of Fret Channel (guitar / bass channel strip) and Shell Channel (drum channel strip), drawn
 // here from scratch in the layout of their roles' originals (SSL Guitarstrip, SSL Native Drumstrip: the same sections,
-// controls and read-outs in the same places), with LYNX's own names, marks and drawing — no bitmap, logo or type of
+// controls and read-outs in the same places), with YW's own names, marks and drawing — no bitmap, logo or type of
 // theirs. Included by ProEditors.cpp inside its anonymous namespace.
 
 // the shared hardware-panel kit: knobs with a printed dot scale and end labels, lit square power keys, text keys, menus,
@@ -419,7 +419,7 @@ protected:
             text (g, { tx, y - 5.5f, 24.0f, 11.0f }, juce::String (m), 6.5f, false, panelText.withAlpha (0.85f));
         }
     }
-    // the plugin's top band: the power key and the name on the left, LYNX's mark on the right
+    // the plugin's top band: the power key and the name on the left, YW's mark on the right
     void topBand (juce::Graphics& g, juce::Rectangle<float> band, const juce::String& name, juce::Colour fill, juce::Colour ink, juce::Colour markInk) const
     {
         g.setGradientFill (juce::ColourGradient (fill.brighter (0.08f), 0.0f, band.getY(), fill.darker (0.12f), 0.0f, band.getBottom(), false));
@@ -430,7 +430,7 @@ protected:
         g.setColour (ink);
         g.setFont (juce::Font (theme::font (21.0f, true)).withExtraKerningFactor (0.01f));
         g.drawText (name, nameR, juce::Justification::centredLeft, false);
-        // LYNX's mark: the word, small caps, tracked out
+        // YW's mark: the word, small caps, tracked out
         text (g, { band.getRight() - 300.0f, band.getY(), 280.0f, band.getHeight() }, juce::String (juce::CharPointer_UTF8 ("L Y N X  \xc2\xb7  ")) + caps (tr ("Channel strips")), 10.5f, false,
               markInk.withAlpha (0.9f), juce::Justification::centredRight, 0.06f);
     }

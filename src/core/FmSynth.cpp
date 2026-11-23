@@ -1,4 +1,4 @@
-// Tetra: LYNX's own 4-operator FM synthesizer (core/FmSynth.h). Laws: docs/analise/REA_rodada190hs.md.
+// Tetra: YW's own 4-operator FM synthesizer (core/FmSynth.h). Laws: docs/analise/REA_rodada190hs.md.
 
 #include "core/FmSynth.h"
 
@@ -11,22 +11,22 @@
 #include <optional>
 
 #include "core/HostSlide.h"
-#if (defined(__SSE2__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64)) && ! defined(LYNX_FM_FORCE_SCALAR)
+#if (defined(__SSE2__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64)) && ! defined(YW_FM_FORCE_SCALAR)
  #include "core/Simd.h"
- #define LYNX_FM_SIMD 1
+ #define YW_FM_SIMD 1
 // the four phases phase + {0, 1, 2, 3}·inc (32-bit wrap)
 inline __m128i phaseRamp4 (std::uint32_t inc) noexcept
 {
     return _mm_setr_epi32 (0, (int) inc, (int) (inc * 2u), (int) (inc * 3u));
 }
 #else
- #define LYNX_FM_SIMD 0
+ #define YW_FM_SIMD 0
 #endif
 #include "core/MidiControls.h"
 #include "core/ModelParams.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 namespace fm
 {
@@ -382,11 +382,11 @@ void buildUserWave (const float* partials, float* table) noexcept
     table[waveTableSize] = table[0];
 }
 } // namespace fm
-} // namespace lynx
+} // namespace yw
 
 // =====================================================================================================================
 // the engine
-namespace lynx
+namespace yw
 {
 namespace fm
 {
@@ -1018,7 +1018,7 @@ struct Engine::Impl
             const auto fb = from != 0 ? 0.0f
                                       : 2.4f * std::tanh (0.02f * (float) p[(std::size_t) (opBase (k) + op::feedback)]) / (float) laws.pmRadians;
             const bool noise = wave (k) == 21;
-#if LYNX_FM_SIMD
+#if YW_FM_SIMD
             if (fb <= 0.0f && ! noise && n == controlRate)
             {
                 const auto* t = o.table;
@@ -1342,11 +1342,11 @@ std::vector<float> renderReference (const std::vector<double>& state, const std:
     return out;
 }
 } // namespace fm
-} // namespace lynx
+} // namespace yw
 
 // =====================================================================================================================
 // parameters, texts, the channel's values and the instrument
-namespace lynx
+namespace yw
 {
 namespace fm
 {
@@ -1792,4 +1792,4 @@ private:
 } // namespace
 
 std::unique_ptr<Instrument> makeTetraInstrument() { return std::make_unique<TetraInstrument>(); }
-} // namespace lynx
+} // namespace yw

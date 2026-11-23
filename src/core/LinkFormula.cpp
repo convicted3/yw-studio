@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace lynx::linkformula
+namespace yw::linkformula
 {
 namespace
 {
@@ -941,4 +941,4 @@ std::optional<float> linkModeValue (int mode, const Formula& formula, float inpu
         default: return formula.map (input);
     }
 }
-} // namespace lynx::linkformula
+} // namespace yw::linkformula

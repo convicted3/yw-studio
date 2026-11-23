@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace lynx::remote_json
+namespace yw::remote_json
 {
 inline bool canonicalUtf8 (std::string_view text) noexcept
 {

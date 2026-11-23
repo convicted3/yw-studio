@@ -12,22 +12,22 @@ inline std::vector<std::uint8_t> le32 (std::initializer_list<std::int32_t> v)
     return out;
 }
 // an FL VST2 state (version −9, no flags, no chunk, current program 0) holding these parameter floats
-inline lynx::ForeignPlugin wrappedFruity (const std::string& name, std::initializer_list<float> params)
+inline yw::ForeignPlugin wrappedFruity (const std::string& name, std::initializer_list<float> params)
 {
-    lynx::FlVst2State s;
+    yw::FlVst2State s;
     s.params.assign (params.begin(), params.end());
     s.programNames = { "Default" };
-    lynx::ForeignPlugin p;
-    p.format = lynx::ForeignPlugin::Format::vst2;
+    yw::ForeignPlugin p;
+    p.format = yw::ForeignPlugin::Format::vst2;
     p.name = name;
-    p.state = lynx::writeFlVst2State (s);
+    p.state = yw::writeFlVst2State (s);
     return p;
 }
 } // namespace flq170i
 
 TEST (flq170i_wrapped_fruity_vst2_states)
 {
-    using namespace lynx;
+    using namespace yw;
     using flq170i::wrappedFruity;
     using flq170i::le32;
     // the floats of FL's render tests (System/Render tests/*.flp) → the native states FL 2026 plays them with
@@ -78,7 +78,7 @@ TEST (flq170i_wrapped_fruity_vst2_states)
 TEST (flq170i_render_tests_wrapped_fruity_effects)
 {
     // FL's own render tests: every VST2-wrapped Fruity effect opens on its exact engine (none on the approximations)
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const std::pair<const char*, EffectKind> cases[] {
@@ -116,7 +116,7 @@ TEST (flq170i_granulizer_and_3xosc_samples_on_posix_roots)
     // FL's render test "Fruity Granulizer" with the installation on a POSIX path (macOS / Linux, as renderwav and the
     // app there): the channel keeps its sample (it was prefixed with \Data again because the resolved path starts with
     // '/', and the Granulizer played nothing)
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const std::filesystem::path data (realFlpDir);
@@ -144,7 +144,7 @@ TEST (flq170i_granulizer_and_3xosc_samples_on_posix_roots)
 TEST (flq170i_old_data_relative_plugin_sample_still_found)
 {
     // an old preset's "\Patches\…" sample (relative to FL's Data folder) is still looked up there, on Windows roots
-    using namespace lynx;
+    using namespace yw;
     flp::Project p;
     flp::Channel c;
     c.index = 0;
@@ -171,8 +171,8 @@ TEST (flq170i_old_data_relative_plugin_sample_still_found)
 TEST (flq170i_hardcore_box_type_and_cabinet_truncate)
 {
     // Hardcore reads the box types and the cabinet with (int)v, as FL's plugin: FL's render test "Hardcore" stores box 5
-    // as type 0.5 (on): an empty box in FL (its render nulls at −75 dB with it empty), a distortion in LYNX before
-    using namespace lynx;
+    // as type 0.5 (on): an empty box in FL (its render nulls at −75 dB with it empty), a distortion in YW before
+    using namespace yw;
     for (int b = 0; b < hardcore::numBoxes; ++b)
     {
         const int p = hardcore::pBoxType + b;
@@ -213,9 +213,9 @@ TEST (flq170i_hardcore_box_type_and_cabinet_truncate)
 TEST (flq170i_slicex_velocity_reaches_the_level_through_fl_init_vol)
 {
     // FL's host hands a plugin generator the note velocity as Init.Vol = (11^(v·0.01) − 1)/10 (unity at 100,
-    // REA_rodada76 §1); FL's render test "Slicex" (every note at velocity 100) plays 2.14 dB louder than LYNX's linear
+    // REA_rodada76 §1); FL's render test "Slicex" (every note at velocity 100) plays 2.14 dB louder than YW's linear
     // velocity did, and nulls in level with the law (REA_rodada170i §6)
-    using namespace lynx;
+    using namespace yw;
     auto smp = std::make_shared<SampleData>();
     smp->sampleRate = 44100.0;
     smp->left.assign (44100, 0.25f);

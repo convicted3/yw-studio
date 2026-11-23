@@ -10,7 +10,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::autopoints
+namespace yw::autopoints
 {
 // The points (indices, ascending) whose tick lies in [t0, t1] and value in [v0, v1] (the ends may come either way round).
 std::vector<int> inBox (const std::vector<AutomationPoint>& points, std::int64_t t0, std::int64_t t1, float v0, float v1);
@@ -49,4 +49,4 @@ std::vector<int> paste (std::vector<AutomationPoint>& points, const Clipboard& c
 // Peucker). Kept always: the first and last point of the range, bent / moded points, and both points of a step (two
 // points on one tick). Returns how many were removed.
 int thin (std::vector<AutomationPoint>& points, std::int64_t from, std::int64_t to, float tolerance = 0.01f);
-} // namespace lynx::autopoints
+} // namespace yw::autopoints

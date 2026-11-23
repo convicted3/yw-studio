@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Puts ONNX Runtime's library for one platform into a folder, checksum verified. LYNX loads it at run time for
+# Puts ONNX Runtime's library for one platform into a folder, checksum verified. YW loads it at run time for
 # "Extract stems from sample". 1.23.2 is the last release with a universal macOS build (Intel Macs are still supported).
 #
 # usage: scripts/fetch-onnxruntime.sh <windows|linux|linux-aarch64|macos> <output folder>   (linux = x86_64)
@@ -9,12 +9,12 @@
 #   1. Microsoft's release archive on GitHub (archive SHA-256 pinned below).
 #   2. Microsoft's NuGet package Microsoft.ML.OnnxRuntime 1.23.2 from nuget.org (package and library SHA-256 pinned).
 #      Its win-x64 onnxruntime.dll and linux-x64 libonnxruntime.so are byte for byte the libraries of the GitHub
-#      archives (the same hashes LYNX 0.1.24-0.1.30 shipped). It has no universal macOS library: the arm64 and x86_64
+#      archives (the same hashes YW 0.1.24-0.1.30 shipped). It has no universal macOS library: the arm64 and x86_64
 #      ones are joined with lipo (macOS only; package-macos.sh re-signs the bundle ad hoc anyway).
-#   3. LYNX SHARE 0.1.30's release package, which holds the same 1.23.2 libraries (hashes checked: Windows / Linux =
+#   3. YW Studio 0.1.30's release package, which holds the same 1.23.2 libraries (hashes checked: Windows / Linux =
 #      Microsoft's files; macOS = the universal library 0.1.24-0.1.30 shipped).
 # linux-aarch64 (Linux arm64, round 190oy) comes from the NuGet package only (its runtimes/linux-arm64 library, pinned
-# below): GitHub's archive answered 404 when it was added, so its hash could not be pinned, and no LYNX release before
+# below): GitHub's archive answered 404 when it was added, so its hash could not be pinned, and no YW release before
 # 0.1.31 had an arm64 package to fall back on.
 set -euo pipefail
 PLATFORM="$1"; OUT="$2"
@@ -36,20 +36,20 @@ case "$PLATFORM" in
 runtimes/osx-x64/native/libonnxruntime.dylib=8c9c78de65ea3786f987c0d980e9c1b13a3a5fbc6b3e2965ba05b450e6e4c054" ;;
 esac
 FB_VER=0.1.30-alpha
-FB_URL="https://github.com/Ka1-S/LYNX-SHARE/releases/download/v$FB_VER"
+FB_URL="https://github.com/convicted3/yw-studio/releases/download/v$FB_VER"
 case "$PLATFORM" in
-    windows) FB_ASSET=LYNX-$FB_VER-windows-x64.zip;    FB_LIB=LYNX-$FB_VER-windows-x64/onnxruntime.dll
+    windows) FB_ASSET=YW-$FB_VER-windows-x64.zip;    FB_LIB=YW-$FB_VER-windows-x64/onnxruntime.dll
              FB_SHA=dec964ab1ee36cc9b0ae247d13b376627992fc57dec0454354017ab8fd84f1ea ;;
-    linux)   FB_ASSET=LYNX-$FB_VER-linux-x86_64.tar.gz; FB_LIB="LYNX-$FB_VER-linux-x86_64/libonnxruntime.so.$VERSION"
+    linux)   FB_ASSET=YW-$FB_VER-linux-x86_64.tar.gz; FB_LIB="YW-$FB_VER-linux-x86_64/libonnxruntime.so.$VERSION"
              FB_SHA=13ab8084954fa4a47c777880180b90810d6020f021441395712b48a75b74c68b ;;
-    macos)   FB_ASSET=LYNX-$FB_VER-macos-universal.dmg; FB_LIB="LYNX.app/Contents/Frameworks/libonnxruntime.$VERSION.dylib"
+    macos)   FB_ASSET=YW-$FB_VER-macos-universal.dmg; FB_LIB="YW.app/Contents/Frameworks/libonnxruntime.$VERSION.dylib"
              FB_SHA=2e33c254d60eb81dbf3417a9f27d843cef8cd34344dbdd483e7bcd7d185ec909 ;;
 esac
 sha_ok() { if command -v sha256sum > /dev/null; then echo "$1  $2" | sha256sum -c -; else echo "$1  $2" | shasum -a 256 -c -; fi; }
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$OUT"
-# The library's file name inside LYNX's package (what src/ui/OnnxRuntime.h loads).
+# The library's file name inside YW's package (what src/ui/OnnxRuntime.h loads).
 DEST="$(basename "$LIB")"
 # 2. Microsoft's NuGet package: prints "ok" and installs when it worked; any failure falls through to 3.
 from_nuget() {
@@ -78,8 +78,8 @@ if [ -z "$ASSET" ]; then
 fi
 if ! curl -fsSL --retry 3 -o "$WORK/$ASSET" "https://github.com/microsoft/onnxruntime/releases/download/v$VERSION/$ASSET"; then
     echo "::warning::fetch-onnxruntime: Microsoft's $ASSET can't be downloaded from GitHub; trying Microsoft's NuGet package"
-    if [ -z "${LYNX_ORT_SKIP_NUGET:-}" ] && from_nuget; then exit 0; fi
-    echo "::warning::fetch-onnxruntime: taking ONNX Runtime $VERSION from LYNX SHARE $FB_VER's $FB_ASSET"
+    if [ -z "${YW_ORT_SKIP_NUGET:-}" ] && from_nuget; then exit 0; fi
+    echo "::warning::fetch-onnxruntime: taking ONNX Runtime $VERSION from YW Studio $FB_VER's $FB_ASSET"
     curl -fsSL --retry 3 -o "$WORK/$FB_ASSET" "$FB_URL/$FB_ASSET"
     lib="$WORK/$(basename "$FB_LIB")"
     case "$FB_ASSET" in
@@ -89,7 +89,7 @@ if ! curl -fsSL --retry 3 -o "$WORK/$ASSET" "https://github.com/microsoft/onnxru
         *.dmg)    if command -v hdiutil > /dev/null; then
                       hdiutil attach -nobrowse -readonly -mountpoint "$WORK/mnt" "$WORK/$FB_ASSET" > /dev/null
                       cp "$WORK/mnt/$FB_LIB" "$lib"; hdiutil detach "$WORK/mnt" > /dev/null
-                  else 7zz e -y -o"$WORK" "$WORK/$FB_ASSET" "LYNX SHARE $FB_VER/$FB_LIB" > /dev/null; fi ;;
+                  else 7zz e -y -o"$WORK" "$WORK/$FB_ASSET" "YW Studio $FB_VER/$FB_LIB" > /dev/null; fi ;;
     esac
     sha_ok "$FB_SHA" "$lib"
     install -m 755 "$lib" "$OUT/"

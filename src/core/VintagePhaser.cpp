@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -756,4 +756,4 @@ std::optional<EffectSlot> vintagePhaserFromFl (const std::vector<std::uint8_t>& 
     }
     return slot;
 }
-} // namespace lynx
+} // namespace yw

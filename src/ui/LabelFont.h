@@ -2,7 +2,7 @@
 
 #include <juce_graphics/juce_graphics.h>
 
-namespace lynx::theme
+namespace yw::theme
 {
 // Settings › General › "Condensed labels (FL style)" (round 190je, design190ia FM-5 / FM-S8). FL's landmark text is a
 // condensed face; with the option on, the FL-landmark roles (menu bar, menus, Browser tree, Playlist track names, Mixer
@@ -14,4 +14,4 @@ void setCondensedLabels (bool on);
 bool condensedLabels();
 bool savedCondensedLabels();
 void saveCondensedLabels (bool on);
-} // namespace lynx::theme
+} // namespace yw::theme

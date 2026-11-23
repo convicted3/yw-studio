@@ -9,11 +9,11 @@
 // One step per UI frame (the rack's 30 Hz timer). `strikes` is the engine's per-channel counter of blocks that struck a
 // note (AudioEngine::noteStrikes): a change is a new note-on, even one shorter than a frame. With Settings ›
 // Animations off the light is steady: on while a note sounds (or for the one frame of a short note), off otherwise.
-// The decay constants are LYNX's reading of the capture (FL's exact timing is REA question Q-3, still open).
+// The decay constants are YW's reading of the capture (FL's exact timing is REA question Q-3, still open).
 
 #include <cstdint>
 
-namespace lynx::activity
+namespace yw::activity
 {
 constexpr float peak = 1.0f;        // at note-on
 constexpr float held = 0.4f;        // a held note dims to this
@@ -47,4 +47,4 @@ inline float step (Light& light, std::uint32_t strikes, bool sounding, bool fade
 
 // the drawn shade (a repaint only when it changes)
 inline int shade (float level) noexcept { return (int) (level * 24.0f + 0.5f); }
-} // namespace lynx::activity
+} // namespace yw::activity

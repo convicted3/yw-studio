@@ -54,7 +54,7 @@
 #include "core/TransporterFl.h"
 #include "flp/Flp.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -200,7 +200,7 @@ bool reeverb2Approx (const std::vector<std::uint8_t>& d, EffectSlot& slot, doubl
     const auto dry = curve (11.0, param (10) / 128.0);
     const auto wet = curve (11.0, param (12) / 256.0);
 
-    // LYNX's Freeverb: comb feedback for the requested decay (~30 ms combs)
+    // YW's Freeverb: comb feedback for the requested decay (~30 ms combs)
     const auto feedback = std::pow (10.0, -3.0 * 0.03 / decay);
     slot.params[0] = clamp01 ((feedback - 0.7) / 0.28);
     slot.params[1] = clamp01 (1.0 - std::log (dampingKhz / 0.5) / std::log (22.0 / 0.5)); // more damping with a lower cutoff
@@ -299,7 +299,7 @@ bool maximus (const std::vector<std::uint8_t>& d, EffectSlot& slot)
     const auto version = header > 0xFFFFu ? (int) (header >> 16) : (int) header;
     auto param = [&] (int i) { return i32At (d, 4 + 4 * (std::size_t) i); };
 
-    // the master section (band 3) represents the effect; the bands are multiband (LYNX has none)
+    // the master section (band 3) represents the effect; the bands are multiband (YW has none)
     constexpr int master = 7 + 13 * 3;
     const auto mode = param (master);
     const auto preDb = toDb (curve (7.0, param (master + 1) / 1000.0));
@@ -794,7 +794,7 @@ bool transporterApprox (const std::vector<std::uint8_t>& d, EffectSlot& slot)
     return true;
 }
 
-// Effector: LYNX's Effector effect (core/Effector.h) receives FL's 12 raw parameters
+// Effector: YW's Effector effect (core/Effector.h) receives FL's 12 raw parameters
 std::optional<EffectSlot> effector (const std::vector<std::uint8_t>& d, double)
 {
     // "SSLF" + size + "10XF" + 64 reserved floats + the 12 parameters
@@ -1302,7 +1302,7 @@ std::optional<EffectSlot> effectFromFl (const std::string& pluginName, const std
         slot.state = flextra::htmlnotebook::stateFor (flextra::htmlnotebook::address (state));
         return slot;
     }
-    if (pluginName == "Wave Candy") // REA_rodada164c: LYNX's analyser in its role, in the display mode FL's state shows
+    if (pluginName == "Wave Candy") // REA_rodada164c: YW's analyser in its role, in the display mode FL's state shows
     {
         auto slot = makeEffectSlot (EffectKind::waveCandy);
         visualfx::wavecandy::fromFl (state, slot);
@@ -1310,14 +1310,14 @@ std::optional<EffectSlot> effectFromFl (const std::string& pluginName, const std
     }
     if (pluginName == "Fruity dB Meter" || pluginName == "Fruity Spectroman")
     {
-        // round 167f: FL's legacy level meter and spectrum analyser (no audio change) as LYNX's analyser in their
+        // round 167f: FL's legacy level meter and spectrum analyser (no audio change) as YW's analyser in their
         // role, in the matching view, so the slot (and what it shows) is kept instead of dropped
         auto slot = makeEffectSlot (EffectKind::waveCandy);
         slot.params[0] = visualfx::wavecandy::modeValue (pluginName == "Fruity dB Meter" ? visualfx::wavecandy::Mode::peakMeter
                                                                                          : visualfx::wavecandy::Mode::spectrum);
         return slot;
     }
-    if (pluginName == "ZGameEditor Visualizer") // REA_rodada164c: its layers mapped to LYNX Visualizer layers
+    if (pluginName == "ZGameEditor Visualizer") // REA_rodada164c: its layers mapped to YW Visualizer layers
     {
         auto slot = makeEffectSlot (EffectKind::visualizer);
         if (const auto scene = visualfx::scene::fromZge (state))
@@ -1407,7 +1407,7 @@ std::optional<EffectSlot> effectFromFl (const std::string& pluginName, const std
             flangerfx::toParams (*s, slot.params.data());
             return slot;
         }
-    if (pluginName == "Fruity Phaser") // the exact engine (REA_rodada105_phaser); LYNX's generic chorus otherwise
+    if (pluginName == "Fruity Phaser") // the exact engine (REA_rodada105_phaser); YW's generic chorus otherwise
         if (const auto s = phaserfx::parse (state))
         {
             auto slot = makeEffectSlot (EffectKind::fruityPhaser);
@@ -1423,7 +1423,7 @@ std::optional<EffectSlot> effectFromFl (const std::string& pluginName, const std
     if (pluginName == "Fruity Love Philter") // FL's own engine (REA_rodada66); lovePhilterEffects' conversion otherwise
         if (auto exact = philter::slotFromFl (state))
             return exact;
-    if (pluginName == "Pitch Shifter") // the exact engines (REA_rodada61); LYNX's generic pitch shifter otherwise
+    if (pluginName == "Pitch Shifter") // the exact engines (REA_rodada61); YW's generic pitch shifter otherwise
         if (psfl::State ps; psfl::parsePitchShifter (state.data(), state.size(), ps))
         {
             auto slot = makeEffectSlot (EffectKind::flPitchShifter);
@@ -1449,7 +1449,7 @@ std::optional<EffectSlot> effectFromFl (const std::string& pluginName, const std
             equofx::toParams (*s, slot.params);
             return slot;
         }
-    if (pluginName == "Multiband Delay") // the exact engine (REA_rodada71); LYNX's generic delay otherwise
+    if (pluginName == "Multiband Delay") // the exact engine (REA_rodada71); YW's generic delay otherwise
         if (const auto s = mbdelay::parse (state))
         {
             auto slot = makeEffectSlot (EffectKind::multibandDelay);
@@ -1677,9 +1677,9 @@ std::vector<std::string> flPluginsForEffect (EffectKind kind)
         case EffectKind::quellDenoiser:
         case EffectKind::geminiDoubler:
         case EffectKind::apexLimiter: return {};
-        case EffectKind::formulaController: return { "Fruity Formula Controller" }; // LYNX's own effects: no FL counterpart
-        case EffectKind::voiceShift: return {}; // LYNX's own effect: no FL counterpart
-        case EffectKind::hardwareInsert: return {}; // LYNX's own effect (round 164d): FL has none
+        case EffectKind::formulaController: return { "Fruity Formula Controller" }; // YW's own effects: no FL counterpart
+        case EffectKind::voiceShift: return {}; // YW's own effect: no FL counterpart
+        case EffectKind::hardwareInsert: return {}; // YW's own effect (round 164d): FL has none
         case EffectKind::emphasizer: return { "Emphasizer" };
         case EffectKind::flEmphasis: return { "Emphasis" };
         case EffectKind::flFrequencyShifter: return { "Frequency Shifter" };
@@ -1759,7 +1759,7 @@ std::optional<FlParamMap> effectParamFromFl (const std::string& pluginName, int 
     // Vocodex (round 190pt): its 20 controls, (raw − min) / (max − min) over the DLL's ranges (core/Vocodex.h liveControls)
     if (is ("Vocodex") && k >= 0 && k < vocodex::paramCount)
         return FlParamMap { k, [] (float v) { return std::clamp (v, 0.0f, 1.0f); } };
-    // X-Y-Z Controller (round 190pt): FL's parameters 0…2 are the X / Y / Z levels (0…65536, sent 0…1), LYNX's level (axis)
+    // X-Y-Z Controller (round 190pt): FL's parameters 0…2 are the X / Y / Z levels (0…65536, sent 0…1), YW's level (axis)
     // = 4 × axis; a Patcher cable into them moves the axis' target (Stroll Up's Patchers: Control Surface → X-Y-Z
     // "mappers" → effect parameters)
     if (is ("Fruity X-Y-Z Controller") && k >= 0 && k < 3)
@@ -2524,4 +2524,4 @@ PatcherBranchHead patcherBranchHead (const std::string& plugin, const std::vecto
 
     return head;
 }
-} // namespace lynx
+} // namespace yw

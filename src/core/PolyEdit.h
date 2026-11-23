@@ -1,8 +1,8 @@
 #pragma once
 
 // Round 190lk: "Edit notes (polyphonic)" — per-note editing of chords and polyphonic audio clips (pitch, timing, length,
-// level, mute of single notes inside a chord). A LYNX extra: FL Studio has no polyphonic note editor (its Newtone is
-// monophonic); Melodyne's DNA does this as a plugin (LYNX hosts it through ARA, round 190kx). No JUCE.
+// level, mute of single notes inside a chord). A YW extra: FL Studio has no polyphonic note editor (its Newtone is
+// monophonic); Melodyne's DNA does this as a plugin (YW hosts it through ARA, round 190kx). No JUCE.
 //
 // The engine is PitchNet's polyphonic engine (third_party/pitchnet-poly, AGPL-3.0, Session Loops and contributors;
 // docs in its folder): multi-pitch estimation by harmonic summation with iterative estimation and cancellation
@@ -16,12 +16,12 @@
 // EP 2 099 024 in DE/FR/GB to 2029-02-05); round 190lh's research and round 190lk's STUDY.md have the comparison with
 // a harmonic+noise design-around that was measured and not chosen.
 //
-// What LYNX keeps and does around it:
+// What YW keeps and does around it:
 // - ChannelDef::polyEdit (an audio clip channel; its clips share the edits, as a channel's sample in Edison / Newtone /
 //   an ARA plugin): the analysed notes (pitch track per frame, inharmonicity, level, score) and the edits, in a compact
 //   binary blob saved with the project ("LXPE"). Reopening a project does not analyse again.
 // - The masks (the NMF shares) are not kept or saved: the blocks an edit reaches are rebuilt when the edited clip is
-//   rendered (third_party/pitchnet-poly/PolyLazy.cpp, a LYNX change) — memory follows the edited spans, not the length
+//   rendered (third_party/pitchnet-poly/PolyLazy.cpp, a YW change) — memory follows the edited spans, not the length
 //   of the clip (PitchNet keeps ~0.6 MB of masks per second of dense chords).
 // - Playback: the clip channel plays the edited render of its sample (renderedFor), made once per edit state and cached;
 //   nothing of this runs on the audio thread, and a channel without polyEdit costs nothing.
@@ -41,7 +41,7 @@ struct Analysis;
 struct NoteEvidence;
 } // namespace polyphonic
 
-namespace lynx
+namespace yw
 {
 struct SampleData;
 
@@ -109,7 +109,7 @@ enum class Detector
     harmonic, // PitchNet's harmonic-sum detector and note filter (with Basic Pitch's posteriorgram as evidence when given)
     guided,   // PitchNet's Basic Pitch-guided detector everywhere (needs evidence)
     fallback  // harmonic, then the guided detector in the regions where Basic Pitch hears notes the harmonic one missed
-              // (LYNX, round 190lo: pads / detuned saws); = harmonic without evidence
+              // (YW, round 190lo: pads / detuned saws); = harmonic without evidence
 };
 struct AnalyseOptions
 {
@@ -173,7 +173,7 @@ void clearCache();
 
 // --- round 190lo (UI): analyses prepared ahead of time ---------------------------------------------------------------------
 // The editor needs PitchNet's analysis object with the masks of the edited notes' blocks (built on demand, 0.5–1.6 s per
-// edited span) before it can render or let a dragged note be heard. "Prepare edited clips when a project opens" (a LYNX
+// edited span) before it can render or let a dragged note be heard. "Prepare edited clips when a project opens" (a YW
 // extra, off by default) builds them on a background thread for the clips that already have edits; the editor takes the
 // prepared object when it opens. At most 4 objects / ~256 MB of masks are kept; the oldest go first.
 // Builds the masks of every edited note's span of `model` in `analysis` (an object from toAnalysis (model)); false when
@@ -187,4 +187,4 @@ void clearPrepared();
 // Two models with the same analysed notes (their `active` flags may differ: a note assignment)
 bool sameNotes (const Model& a, const Model& b);
 } // namespace polyedit
-} // namespace lynx
+} // namespace yw

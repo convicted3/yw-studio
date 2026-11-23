@@ -15,7 +15,7 @@ extern "C" __declspec (dllimport) unsigned int __stdcall timeBeginPeriod (unsign
 extern "C" __declspec (dllimport) unsigned int __stdcall timeEndPeriod (unsigned int);
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -244,7 +244,7 @@ void MidiSyncIo::sendNow (Slot& slot, const std::uint8_t* bytes, int size, doubl
     sentCount.fetch_add (1, std::memory_order_relaxed);
 }
 
-// (a LYNX safety net: FL relies on the MIDI Out's own note offs; "Send all notes off" stays FL's CC 123 bursts,
+// (a YW safety net: FL relies on the MIDI Out's own note offs; "Send all notes off" stays FL's CC 123 bursts,
 // requestTransportNotesOff / sendAllNotesOff)
 void MidiSyncIo::releasePortNotes (Slot& slot)
 {
@@ -389,7 +389,7 @@ void MidiSyncIo::beginBlock (Transport& transport, double callbackMs, int numSam
     if (bpm > 0.0 && clockIn.running() && transport.playing.load (std::memory_order_relaxed))
     {
         // phase lock: the block's first sample is heard `latencyMs` from now; it should then be where the master is
-        // (plus the user's offset: positive = LYNX later)
+        // (plus the user's offset: positive = YW later)
         // (round 190hq: heard after the rack's delay compensation too)
         const auto target = clockIn.ticksAt (nowSeconds + (heardLatencyMs() - clockOffsetMs.load (std::memory_order_relaxed)) * 0.001);
         const auto position = transport.positionTicks.load (std::memory_order_relaxed);
@@ -891,4 +891,4 @@ juce::String MidiSyncIo::selfTest (const juce::String& outputName, const juce::S
         report << "input=" << inputName << " not found\n";
     return report;
 }
-} // namespace lynx
+} // namespace yw

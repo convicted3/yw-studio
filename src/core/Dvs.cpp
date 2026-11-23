@@ -5,7 +5,7 @@
 #include <cmath>
 #include <thread>
 
-namespace lynx::dvs
+namespace yw::dvs
 {
 namespace
 {
@@ -259,4 +259,4 @@ void Decoder::process (float left, float right) noexcept
     // [DECOMP 0x180003f10] the running position follows the speed
     pos += velocity / rate;
 }
-} // namespace lynx::dvs
+} // namespace yw::dvs

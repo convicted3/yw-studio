@@ -1,4 +1,4 @@
-// REA_rodada108: LYNX's dynamics suite (core/DynamicsSuite.h: Crest Compressor, Prism Multiband, Sentry Gate),
+// REA_rodada108: YW's dynamics suite (core/DynamicsSuite.h: Crest Compressor, Prism Multiband, Sentry Gate),
 // Ember's multiband mode and the FabFilter state translation (core/FabFilterStates.h). The targets are our black-box
 // measurements of the reference plugins (docs/analise/MEASURE_fabfilter.md §2, §6, §7, §12); tolerances are wide
 // enough for any IEEE compiler (gcc / clang / zig, -O2) — the checks compare levels in dB, never bit patterns, except
@@ -9,21 +9,21 @@
 
 namespace dyn108
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 constexpr double sr = 48000.0;
 constexpr double pi = 3.141592653589793;
 
-inline EffectParams defaults (EffectKind kind) { return lynx::makeEffectSlot (kind).params; }
+inline EffectParams defaults (EffectKind kind) { return yw::makeEffectSlot (kind).params; }
 
 // runs a slot-built effect (latency known before the first block) on a dual-mono signal; returns the left output
 // with the latency removed (the tail is zero-padded)
 inline std::vector<float> run (EffectKind kind, const EffectParams& p, const std::vector<float>& x, int* latency = nullptr,
                                const std::vector<float>* sidechain = nullptr)
 {
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     auto l = x, r = x;
@@ -147,7 +147,7 @@ inline std::vector<std::uint8_t> fabf (std::uint32_t count, const std::vector<st
     return b;
 }
 
-// JUCE's MemoryBlock::toBase64Encoding (the format LYNX's VST3 host saves)
+// JUCE's MemoryBlock::toBase64Encoding (the format YW's VST3 host saves)
 inline std::string juceBase64 (const std::vector<std::uint8_t>& data)
 {
     static const char* alphabet = ".ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+";
@@ -168,7 +168,7 @@ inline std::string juceBase64 (const std::vector<std::uint8_t>& data)
 TEST (dyn108_crest_static_curves_follow_the_measurements)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // MEASURE_fabfilter §2.1 (threshold −18 dB, attack 10 ms, release 200 ms, knee 0, ratio 4): gain at −16 … 0 dBFS
     struct Row { c::Style style; double knee, ratio; double gain[6]; };
     const Row rows[] {
@@ -220,7 +220,7 @@ TEST (dyn108_crest_static_curves_follow_the_measurements)
 TEST (dyn108_crest_timing_follows_the_measurements)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // §2.2: a 1 kHz burst −40 → −6 → −40 dBFS, threshold −30, ratio 4: 50 % attack and release times (ms)
     struct Row { c::Style style; double att, rel, att50, rel50; };
     const Row rows[] { { c::Style::clean, 10, 200, 4.08, 83.9 },  { c::Style::clean, 10, 1500, 4.42, 348.0 },
@@ -254,7 +254,7 @@ TEST (dyn108_crest_timing_follows_the_measurements)
 TEST (dyn108_crest_latency_transparency_and_lookahead)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // below the threshold, without character / oversampling / look-ahead / auto gain: the input, exactly
     auto p = defaults (EffectKind::crestCompressor);
     p[c::autoGain] = 0.0f;
@@ -271,9 +271,9 @@ TEST (dyn108_crest_latency_transparency_and_lookahead)
     // measured), plus the oversampler when on; known as soon as the slot's effect exists
     p[c::maxLookahead] = 1.0f;
     p[c::lookahead] = 0.25f;
-    auto slot = lynx::makeEffectSlot (EffectKind::crestCompressor);
+    auto slot = yw::makeEffectSlot (EffectKind::crestCompressor);
     slot.params = p;
-    CHECK (lynx::makeEffect (slot)->latencySamples() == 960);
+    CHECK (yw::makeEffect (slot)->latencySamples() == 960);
     y = run (EffectKind::crestCompressor, p, x, &latency);
     CHECK (latency == 960);
     err = 0.0;
@@ -282,7 +282,7 @@ TEST (dyn108_crest_latency_transparency_and_lookahead)
     CHECK (err == 0.0);
     p[c::oversampling] = 2.0f / 3.0f;
     run (EffectKind::crestCompressor, p, x, &latency);
-    CHECK (latency == 960 + lynx::mixsuite::Oversampler::latency());
+    CHECK (latency == 960 + yw::mixsuite::Oversampler::latency());
 
     // look-ahead: the gain is already down when a step arrives (fast attack, 5 ms ahead)
     p = defaults (EffectKind::crestCompressor);
@@ -304,7 +304,7 @@ TEST (dyn108_crest_latency_transparency_and_lookahead)
 TEST (dyn108_crest_side_chain_eq_shapes_the_detector)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // §12.1: the side-chain EQ applies Pro-Q prototypes to the detector: a 12 dB/oct low cut at 1 kHz keeps a 100 Hz
     // tone 20 dB over the threshold uncompressed; a +12 dB bell at 1 kHz moves the onset 12 dB lower for a 1 kHz tone
     auto p = defaults (EffectKind::crestCompressor);
@@ -312,9 +312,9 @@ TEST (dyn108_crest_side_chain_eq_shapes_the_detector)
     p[c::autoGain] = 0.0f;
     p[c::attack] = c::attackValue (1.0);
     p[c::release] = c::releaseValue (50.0);
-    p[c::scParam (0, 0)] = lynx::facet::shapeValue (lynx::facet::Shape::lowCut);
-    p[c::scParam (0, 1)] = lynx::facet::hzValue (1000.0);
-    p[c::scParam (0, 4)] = lynx::facet::slopeValue (12);
+    p[c::scParam (0, 0)] = yw::facet::shapeValue (yw::facet::Shape::lowCut);
+    p[c::scParam (0, 1)] = yw::facet::hzValue (1000.0);
+    p[c::scParam (0, 4)] = yw::facet::slopeValue (12);
     auto x = tone (100.0, -10.0, 0.6);
     auto y = run (EffectKind::crestCompressor, p, x);
     const auto lowGain = rmsDb (y, 19200, 28800) - rmsDb (x, 19200, 28800);
@@ -325,9 +325,9 @@ TEST (dyn108_crest_side_chain_eq_shapes_the_detector)
     CHECK (lowGain > -0.3 && flatGain < -10.0);
 
     // bell +12 dB, Q 1 at 1 kHz: a 1 kHz tone at −30 dBFS reduces as a −18 dBFS one does without it
-    p[c::scParam (0, 0)] = lynx::facet::shapeValue (lynx::facet::Shape::bell);
-    p[c::scParam (0, 2)] = lynx::facet::gainValue (12.0);
-    p[c::scParam (0, 3)] = lynx::facet::qValue (1.0);
+    p[c::scParam (0, 0)] = yw::facet::shapeValue (yw::facet::Shape::bell);
+    p[c::scParam (0, 2)] = yw::facet::gainValue (12.0);
+    p[c::scParam (0, 3)] = yw::facet::qValue (1.0);
     x = tone (1000.0, -30.0, 0.6);
     y = run (EffectKind::crestCompressor, p, x);
     const auto bellGain = rmsDb (y, 19200, 28800) - rmsDb (x, 19200, 28800);
@@ -356,7 +356,7 @@ TEST (dyn108_crest_side_chain_eq_shapes_the_detector)
 TEST (dyn108_crest_character_and_oversampling)
 {
     using namespace dyn108;
-    namespace c = lynx::dyn::crest;
+    namespace c = yw::dyn::crest;
     // the character stage, with no compression: clean warm at moderate levels, crisp = odd (H3) growing with the
     // square of the level, bright = second harmonic from low levels (§12.2)
     const auto measure = [] (c::Character ch, double driveDb, double level, double& h2, double& h3, double& fund) {
@@ -417,7 +417,7 @@ TEST (dyn108_crest_character_and_oversampling)
 TEST (dyn108_prism_transparent_at_rest_and_band_dynamics)
 {
     using namespace dyn108;
-    namespace m = lynx::dyn::prism;
+    namespace m = yw::dyn::prism;
     // with every band's range at 0 dB the output is the input, exactly (the bands only add their gain change)
     auto p = defaults (EffectKind::prismMultiband);
     for (int b = 0; b < m::bands; ++b)
@@ -446,7 +446,7 @@ TEST (dyn108_prism_transparent_at_rest_and_band_dynamics)
     p[m::xover2] = m::crossoverValue (3000.0);
     p[m::xover3] = m::crossoverValue (12000.0);
     p[(std::size_t) m::param (1, m::fThreshold)] = m::thresholdValue (-30.0);
-    p[(std::size_t) m::param (1, m::fRatio)] = lynx::dyn::crest::ratioValue (4.0);
+    p[(std::size_t) m::param (1, m::fRatio)] = yw::dyn::crest::ratioValue (4.0);
     p[(std::size_t) m::param (1, m::fRange)] = 0.0f; // −30 dB
     p[(std::size_t) m::param (1, m::fKnee)] = 0.0f;
     const std::vector<double> levels { -40, -28, -22, -16, -10, -4 };
@@ -483,8 +483,8 @@ TEST (dyn108_prism_transparent_at_rest_and_band_dynamics)
     p[(std::size_t) m::param (1, m::fRange)] = 0.5f;
     p[(std::size_t) m::param (1, m::fLevel)] = (float) ((-12.0 + 30.0) / 60.0);
     const double gains[m::bands] { 0.0, -12.0, 0.0, 0.0 };
-    const auto mid = lynx::dyn::prism::responseDb (p, gains, sr, 1000.0);
-    const auto lo = lynx::dyn::prism::responseDb (p, gains, sr, 60.0), hi = lynx::dyn::prism::responseDb (p, gains, sr, 15000.0);
+    const auto mid = yw::dyn::prism::responseDb (p, gains, sr, 1000.0);
+    const auto lo = yw::dyn::prism::responseDb (p, gains, sr, 60.0), hi = yw::dyn::prism::responseDb (p, gains, sr, 15000.0);
     std::printf ("  band level -12 dB: %.2f dB at 1 kHz, %.2f at 60 Hz, %.2f at 15 kHz\n", mid, lo, hi);
     CHECK (mid < -10.0 && mid > -12.5 && lo > -1.0 && hi > -1.0);
     x = tone (1000.0, -20.0, 0.5);
@@ -495,14 +495,14 @@ TEST (dyn108_prism_transparent_at_rest_and_band_dynamics)
 TEST (dyn108_prism_attack_release_and_lookahead)
 {
     using namespace dyn108;
-    namespace m = lynx::dyn::prism;
+    namespace m = yw::dyn::prism;
     auto p = defaults (EffectKind::prismMultiband);
     for (int b = 0; b < m::bands; ++b)
         p[(std::size_t) m::param (b, m::fEnabled)] = b == 1 ? 1.0f : 0.0f;
     p[m::xover1] = m::crossoverValue (300.0);
     p[m::xover2] = m::crossoverValue (3000.0);
     p[(std::size_t) m::param (1, m::fThreshold)] = m::thresholdValue (-30.0);
-    p[(std::size_t) m::param (1, m::fRatio)] = lynx::dyn::crest::ratioValue (4.0);
+    p[(std::size_t) m::param (1, m::fRatio)] = yw::dyn::crest::ratioValue (4.0);
     p[(std::size_t) m::param (1, m::fRange)] = 0.0f;
     p[(std::size_t) m::param (1, m::fKnee)] = 0.0f;
     // attack 50 %: a −50 → −10 dBFS step; half the reduction after ~11 ms (measured 11.3)
@@ -541,7 +541,7 @@ TEST (dyn108_prism_attack_release_and_lookahead)
 TEST (dyn108_sentry_gate_curves_and_timing)
 {
     using namespace dyn108;
-    namespace s = lynx::dyn::sentry;
+    namespace s = yw::dyn::sentry;
     // §7: threshold −30, ratio 100, range 100: full range below the threshold, unity above; range 20 caps at −20
     auto p = defaults (EffectKind::sentryGate);
     const std::vector<double> levels { -50, -40, -20, -10 };
@@ -556,7 +556,7 @@ TEST (dyn108_sentry_gate_curves_and_timing)
 
     // ratio 2 expands 1 dB per dB below a point that depends on the style: Classic −37.9, Clean −34.3 dB (setting −30)
     p = defaults (EffectKind::sentryGate);
-    p[s::ratio] = lynx::dyn::crest::ratioValue (2.0);
+    p[s::ratio] = yw::dyn::crest::ratioValue (2.0);
     const std::vector<double> exp { -36, -44, -50 };
     x = stair (exp, 0.6, 1000.0, per);
     g = stairGains (x, run (EffectKind::sentryGate, p, x), per, exp.size());
@@ -580,7 +580,7 @@ TEST (dyn108_sentry_gate_curves_and_timing)
     std::vector<float> burst ((std::size_t) (3 * sr));
     for (std::size_t i = 0; i < burst.size(); ++i)
         burst[i] = (float) (std::pow (10.0, (i >= (std::size_t) sr && i < (std::size_t) (2 * sr) ? -10.0 : -60.0) / 20.0) * std::sin (2.0 * pi * 1000.0 * (double) i / sr));
-    const auto closeAfter = [&] (const lynx::EffectParams& q, double db) {
+    const auto closeAfter = [&] (const yw::EffectParams& q, double db) {
         const auto y = run (EffectKind::sentryGate, q, burst);
         for (std::size_t i = (std::size_t) (2 * sr); i + 48 < burst.size(); i += 24)
             if (rmsDb (y, i, i + 48) - rmsDb (burst, i, i + 48) < db)
@@ -616,7 +616,7 @@ TEST (dyn108_sentry_gate_curves_and_timing)
 TEST (dyn108_ember_multiband_mode)
 {
     using namespace dyn108;
-    namespace e = lynx::mixsuite::ember;
+    namespace e = yw::mixsuite::ember;
     // one band: Ember as before (the new parameters at their defaults change nothing)
     auto p = defaults (EffectKind::ember);
     CHECK (e::bandCount (p[e::bands]) == 1);
@@ -668,7 +668,7 @@ TEST (dyn108_ember_multiband_mode)
 TEST (dyn108_fabfilter_states_translate_to_the_suite)
 {
     using namespace dyn108;
-    using namespace lynx;
+    using namespace yw;
     // Pro-C 3 (FFBS, 100 values): Punch, −30 dB, ratio 8 (norm 0.8), knee 6, range 40, attack norm 0.3 (6.755 ms),
     // release norm 0.5 (309.5 ms), hold norm 0.5 (40 ms), crisp (diode) pre, drive +6, side-chain band 2 used:
     // low cut 1 kHz 24 dB/oct; mix 1, output level 0.2 (+7.2 dB), oversampling 4x, maximum look-ahead 5 ms
@@ -706,7 +706,7 @@ TEST (dyn108_fabfilter_states_translate_to_the_suite)
         CHECK (c::oversamplingOf (slot.params[c::oversampling]) == 4);
         CHECK (std::abs (c::maxLookaheadMs (slot.params[c::maxLookahead]) - 5.0) < 0.01);
 
-        // the same state inside a JUCE host state (LYNX's own VST3 host) reads the same
+        // the same state inside a JUCE host state (YW's own VST3 host) reads the same
         const auto xml = "VC2!....<?xml version=\"1.0\" encoding=\"UTF-8\"?> <VST3PluginState><IComponent>" + juceBase64 (proc)
                          + "</IComponent><IEditController>4.....</IEditController></VST3PluginState>";
         PluginIdentity wrapped = id;

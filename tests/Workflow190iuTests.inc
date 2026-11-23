@@ -10,18 +10,18 @@
 namespace workflow190iu
 {
 // a two-track MIDI file: "Bass" (C2, one bar long) and an unnamed track (E4 at beat 2, MIDI channel 10)
-inline lynx::midiimport::ParsedMidi twoTracks()
+inline yw::midiimport::ParsedMidi twoTracks()
 {
-    using namespace lynx;
+    using namespace yw;
     midiimport::ParsedMidi m;
     m.trackNames = { "Bass", "" };
     m.events = { { 0, 0, 0x90, 36, 100 }, { 0, 4 * ppq, 0x80, 36, 0 }, { 1, ppq, 0x99, 64, 90 }, { 1, 2 * ppq, 0x89, 64, 0 } };
     return m;
 }
 
-inline lynx::midiimport::ParsedMidi oneTrack()
+inline yw::midiimport::ParsedMidi oneTrack()
 {
-    using namespace lynx;
+    using namespace yw;
     midiimport::ParsedMidi m;
     m.trackNames = { "" };
     m.events = { { 0, 0, 0x90, 60, 100 }, { 0, ppq / 2, 0x80, 60, 0 }, { 0, ppq, 0x90, 62, 100 }, { 0, 3 * ppq / 2, 0x80, 62, 0 } };
@@ -31,7 +31,7 @@ inline lynx::midiimport::ParsedMidi oneTrack()
 
 TEST (workflow190iu_wheel_zones_scroll_over_headers_zoom_over_arrangement)
 {
-    using namespace lynx::wheelzones;
+    using namespace yw::wheelzones;
     // off (the default, FL and Live): Ctrl zooms, the plain wheel scrolls, wherever the pointer is
     CHECK (! enabled());
     CHECK (! zooms (false, true, false) && ! zooms (false, false, false));
@@ -51,7 +51,7 @@ TEST (workflow190iu_wheel_zones_scroll_over_headers_zoom_over_arrangement)
 
 TEST (workflow190iu_temporary_tool_hold_tap_repeat_and_mouse)
 {
-    using namespace lynx;
+    using namespace yw;
     using temptool::Editor;
     temptool::Hold h;
     EditTool back = EditTool::pencil;
@@ -76,13 +76,13 @@ TEST (workflow190iu_temporary_tool_hold_tap_repeat_and_mouse)
     // the key of the tool already in use: nothing to go back to
     CHECK (! h.press (Editor::playlist, 'P', EditTool::pencil, EditTool::pencil, 8000));
     CHECK (! h.release (9000, EditTool::pencil, back));
-    // the switch is off by default (a LYNX extra: FL's tool keys only select)
+    // the switch is off by default (a YW extra: FL's tool keys only select)
     CHECK (! temptool::enabled());
 }
 
 TEST (workflow190iu_midi_drop_on_the_playlist_pattern_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! mididrop::playlistDrop() && mididrop::playlistTakes (true) && ! mididrop::playlistTakes (false));
     // an unassigned track: one pattern named after the file, a new channel per MIDI track, the clip at the drop
     {
@@ -129,7 +129,7 @@ TEST (workflow190iu_midi_drop_on_the_playlist_pattern_layout)
 
 TEST (workflow190iu_midi_drop_live_style_arrangement_and_slots)
 {
-    using namespace lynx;
+    using namespace yw;
     // the Clip-launch arrangement: an empty track becomes an instrument track of a new channel; each further MIDI track
     // of the file on its own track below (Live)
     {
@@ -175,7 +175,7 @@ TEST (workflow190iu_midi_drop_live_style_arrangement_and_slots)
 
 TEST (workflow190iu_take_cleanup_deletes_takes_and_envelopes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.playlist.clear();
     // two takes (audio clip channels), one placed; two recorded envelopes, one placed
@@ -234,7 +234,7 @@ TEST (workflow190iu_take_cleanup_deletes_takes_and_envelopes)
 
 TEST (workflow190iu_track_only_mode_gives_each_new_instrument_a_track)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! trackonly::enabled()); // off by default
     auto s = Song::makeDefault();
     s.playlist.clear();
@@ -266,7 +266,7 @@ TEST (workflow190iu_track_only_mode_gives_each_new_instrument_a_track)
 
 TEST (workflow190iu_automation_clips_move_into_their_tracks_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.playlist.clear();
     s.channels.clear();

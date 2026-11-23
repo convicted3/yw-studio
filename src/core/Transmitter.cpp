@@ -11,7 +11,7 @@
 
 // Transmitter: own implementation of the behaviour described in docs/analise/REA_rodada165g-fltrans165.md.
 
-namespace lynx::transmitter
+namespace yw::transmitter
 {
 namespace
 {
@@ -896,7 +896,7 @@ public:
         hasSide = false;
         sideL = sideR = nullptr;
         // FL's transient / sustain sends: each part after its tilt and section effect, before its level and on switch
-        // (FL copies them into the destination's buffer; LYNX's send buffer is the slot's own, so adding is the same)
+        // (FL copies them into the destination's buffer; YW's send buffer is the slot's own, so adding is the same)
         for (int o = 0; o < 2; ++o)
             if (sendL[o] != nullptr && sendR[o] != nullptr)
             {
@@ -971,4 +971,4 @@ const EnvelopeView* envelopeOf (const Effect* effect)
 }
 
 std::unique_ptr<Effect> make (const EffectParams* params) { return std::make_unique<TransmitterEffect> (params); }
-} // namespace lynx::transmitter
+} // namespace yw::transmitter

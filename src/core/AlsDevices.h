@@ -1,14 +1,14 @@
 #pragma once
 
-// Live's own devices in a set (.als) → LYNX's own instruments and effects, with their settings (round 190bq; the
+// Live's own devices in a set (.als) → YW's own instruments and effects, with their settings (round 190bq; the
 // "N3 table" of docs/analise/ALS_FORMAT.md §8). Clean-room: only the device's saved state is read (member names,
-// values and each parameter's own range, `MidiControllerRange`, as the sets on this machine hold them); the LYNX
+// values and each parameter's own range, `MidiControllerRange`, as the sets on this machine hold them); the YW
 // engines have their own names and DSP. Every conversion is a law in a unit (Hz, dB, ms, ratio, Q), written here
 // so the tests can pin it; what has no counterpart is returned as a note for the import report, never dropped
 // silently. Evidence tags: [DATA] read in saved sets, [DOC] Ableton's manual, [ASSUMED] not confirmed in Live (the
 // handoff lists each one for an A/B in Live).
 //
-//   Simpler (OriginalSimpler)      → the LYNX Sampler channel (what the zones / envelope import did not read)
+//   Simpler (OriginalSimpler)      → the YW Sampler channel (what the zones / envelope import did not read)
 //   EQ Eight (Eq8)                 → Facet EQ
 //   Compressor (Compressor2)       → Crest Compressor, Clean style
 //   Glue Compressor                → Crest Compressor, Bus style
@@ -29,7 +29,7 @@
 //   Redux                          → Lo-fi
 //   Arpeggiator                    → the channel arpeggiator
 //   Pitch, Velocity, Chord, Note Length → written into the notes of the track's clips
-// and, for every translated device, which Live parameter drives which LYNX parameter (automation, rack macros).
+// and, for every translated device, which Live parameter drives which YW parameter (automation, rack macros).
 // Lot 3 (round 190ed):
 //   EQ Three                       → Prism Multiband (3 bands, crossover sum, no dynamics)
 //   Drum Buss                      → an Audio Effect Rack "Drum Buss": Ember Saturator → Facet EQ → (Crest Compressor) →
@@ -46,16 +46,16 @@
 //   Auto Filter's other types      → notch (Facet EQ), Morph at its four corners, DJ as a low / high pass; Drive as an Ember
 //                                    stage in a rack in front of the filter
 // Lot 5 (round 190kk, AlsDevicesLot5.cpp), each fitted to Live 12.4's own renders:
-//   Erosion (both generations)     → Corrode (LYNX's own engine)
-//   Corpus                         → Soundboard (LYNX's own engine)
-//   Vinyl Distortion               → Platter (LYNX's own engine)
+//   Erosion (both generations)     → Corrode (YW's own engine)
+//   Corpus                         → Soundboard (YW's own engine)
+//   Vinyl Distortion               → Platter (YW's own engine)
 //   Looper                         → an empty Edison (the slot recorder) or, when Live's empty Looper is silent, a muted Utility
 //   MIDI Effect Rack               → its chains, zones and macro values written into the notes (or, one plain chain, its
 //                                    devices one by one as on the track)
 // Lot 6 (round 190ko, AlsDevicesLot6.cpp), each fitted to Live 12.4's own renders:
-//   Meld (an instrument)           → Braid (LYNX's own two-engine macro synth; AlsImport places it)
-//   Spectral Time                  → Timeprism (LYNX's own spectral freezer / delay)
-//   Spectral Resonator             → Harmonia (LYNX's own spectral resonator)
+//   Meld (an instrument)           → Braid (YW's own two-engine macro synth; AlsImport places it)
+//   Spectral Time                  → Timeprism (YW's own spectral freezer / delay)
+//   Spectral Resonator             → Harmonia (YW's own spectral resonator)
 
 #include <array>
 #include <functional>
@@ -66,7 +66,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 namespace xml
 {
@@ -79,7 +79,7 @@ namespace alsdev
 struct Notes
 {
     std::vector<std::string> approximated; // kept, but not the same law / range (clamped, fitted, nearest choice)
-    std::vector<std::string> dropped;      // a setting with no LYNX counterpart (the device itself is kept)
+    std::vector<std::string> dropped;      // a setting with no YW counterpart (the device itself is kept)
 };
 
 // ---- shared laws ------------------------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ double glueRatio (int index) noexcept;
 // Compressor's look-ahead choices [DOC]: 0, 1, 10 ms
 double compressorLookaheadMs (int index) noexcept;
 // A side-chain input the device names: the set's track id (−1 = none or not a track), and whether Live taps it
-// somewhere LYNX cannot (LYNX's side chain is the insert's post-fader output)
+// somewhere YW cannot (YW's side chain is the insert's post-fader output)
 struct SideInput
 {
     bool on = false;
@@ -173,13 +173,13 @@ std::pair<double, double> utilityBalanceGains (double balance) noexcept;
 // M ± width·S; mid/side balance m: M·min(1, 2 − m) ± S·min(1, m)), then the balance gains on the outputs. All measured
 // (rounds 190cw r13–r17, 190cz u00–u13: balance after width / mono / mid-side, exact)
 StereoMatrix utilityMatrix (const LiveUtility& u) noexcept;
-// True when LYNX's Utility does exactly what these settings say: plain gain within ±24 dB or mute, phase switches,
-// channel mode, Mono, any width, mid/side balance and balance whose matrix fits LYNX's ±2 coefficients, no Bass Mono /
+// True when YW's Utility does exactly what these settings say: plain gain within ±24 dB or mute, phase switches,
+// channel mode, Mono, any width, mid/side balance and balance whose matrix fits YW's ±2 coefficients, no Bass Mono /
 // DC filter
 bool utilityIsExact (const LiveUtility& u) noexcept;
 LiveUtility readUtility (const xml::Element& device);
 bool utilityToUtility (const xml::Element& device, EffectSlot& slot, Notes& notes);
-// The other way, for the export (decision D: only what is exact): a LYNX Utility slot as Live's settings, nullopt
+// The other way, for the export (decision D: only what is exact): a YW Utility slot as Live's settings, nullopt
 // when it holds anything Live's device cannot say exactly (a balance, a free matrix)
 std::optional<LiveUtility> liveUtilityOf (const EffectSlot& slot) noexcept;
 
@@ -204,7 +204,7 @@ bool reverbToAtrium (const xml::Element& device, EffectSlot& slot, Notes& notes)
 // What a translation may need from the set
 struct Context
 {
-    double bpm = 120.0; // the set's tempo: a synced time LYNX can only hold in ms is fixed at this tempo (and reported)
+    double bpm = 120.0; // the set's tempo: a synced time YW can only hold in ms is fixed at this tempo (and reported)
     // (190fm) a file the device references (Hybrid Reverb's impulse response, a `SampleRef` element): the path where it
     // is on this machine, "" = not there (empty function = no lookup: the convolution half is listed)
     std::function<std::string (const xml::Element& sampleRef)> findFile;
@@ -213,8 +213,8 @@ struct Context
     // macro's value through its mapping (liveValue); nullptr = not in a rack
     const std::array<double, 16>* macros = nullptr;
 };
-// One Live parameter that drives one LYNX parameter: `live` is the parameter's element path inside the device
-// ("Feedback", "Lfo/Frequency"), `value` turns Live's own unit into LYNX's 0..1. Automation envelopes and rack macro
+// One Live parameter that drives one YW parameter: `live` is the parameter's element path inside the device
+// ("Feedback", "Lfo/Frequency"), `value` turns Live's own unit into YW's 0..1. Automation envelopes and rack macro
 // mappings on that Live parameter are carried onto `param` through it.
 struct ParamLink
 {
@@ -244,12 +244,12 @@ float echoformMixOf (double dryWet, bool equalLoudness) noexcept;
 // Auto Filter's resonance r as the cookbook Q of its 12 dB stage [MEASURED 190cz, low pass at 1 kHz, 14 + 27 renders,
 // ≤ 0.003 dB; 200 Hz / 5 kHz, high and band pass at 0.5 the same]: Q = 0.5 + 2x / (1 − x) with an inner x — the older
 // device (`AutoFilter`, up to Live 12.1, LegacyQ 0.82 as in every shipped set) x = min(r, 0.9) (Q 0.5 … 18.5); the new
-// one (`AutoFilter2`) x from its measured table (Q 0.5 at r 0, 2.49 at 0.5, 35.8 at 1; r over 1 acts as 1). LYNX's
+// one (`AutoFilter2`) x from its measured table (Q 0.5 at r 0, 2.49 at 0.5, 35.8 at 1; r over 1 acts as 1). YW's
 // Filter takes Q 0.5 … 12: above that it is listed. Its 24 dB/oct slope adds the second stage of Live's pair
 // (filterSecondStageQ).
 double autoFilterX (double resonance, bool legacy) noexcept;
 double filterQOfResonance (double resonance, bool legacy) noexcept;
-// LYNX's basic effects keep their laws inside Effects.cpp; the inverses used here, each pinned by a test against
+// YW's basic effects keep their laws inside Effects.cpp; the inverses used here, each pinned by a test against
 // formatEffectParam: Filter (type 0 low-pass, 1 high-pass, 2 band-pass; cutoff 20 Hz … 20 kHz log; Q 0.5 … 12 log),
 // Lo-fi (rate = 44100 / (⌊128 v³⌋ + 1) Hz; 65536 / (2048 v² + 1) levels), EQ (±18 dB; mid 200 Hz … 5 kHz log),
 // Chorus (0.05 … 5 Hz log; 0 … 8 ms), Distortion (0 … 36 dB)
@@ -317,7 +317,7 @@ bool reduxToLofi (const xml::Element& device, Translated& out);
 // ---- MIDI effects -----------------------------------------------------------------------------------------------
 // Arpeggiator → the channel arpeggiator (false: the element holds no arpeggiator data)
 bool arpeggiatorToArp (const xml::Element& device, const Context& context, ArpSettings& arp, Notes& notes);
-// The MIDI effects LYNX has no live note processor for in a channel, written into the notes instead: what one note
+// The MIDI effects YW has no live note processor for in a channel, written into the notes instead: what one note
 // becomes. Pitch: transposed. Velocity: the input range onto Out Low … Out Hi (Clip / Gate / Fixed). Chord: the note
 // plus up to six shifted copies. Note Length: a fixed length.
 struct NoteEdit
@@ -373,7 +373,7 @@ struct Translated
     bool approximate = false; // the pair is fitted, not the same maths (the report lists it under "approximated")
     Notes notes;
     SideInput side;
-    int sideParam = -1;            // (190cf) the LYNX parameter that switches the external side chain on (−1 = none)
+    int sideParam = -1;            // (190cf) the YW parameter that switches the external side chain on (−1 = none)
     std::vector<ParamLink> links;  // (190cf) automation / macro routes
     // (190ed) a modulation the effect needs from outside itself: a Peak Controller slot (FL's internal-controller link;
     // its output 0 = peak + LFO) in front of the effect on the same insert — or, `onSideChain`, at the end of the
@@ -392,12 +392,12 @@ struct Translated
     std::optional<Modulator> modulator;
 };
 // ================================================================================================ lot 5 (190kk)
-// Erosion (Live 12's and the legacy one) → Corrode, LYNX's degrader (core/Corrode.h has the measured laws). Legacy Mode 0 /
+// Erosion (Live 12's and the legacy one) → Corrode, YW's degrader (core/Corrode.h has the measured laws). Legacy Mode 0 /
 // 1 / 2 = noise / wide noise / sine [MEASURED]; the legacy Amplitude onto Corrode's Amount through the measured depths.
 bool erosionToCorrode (const xml::Element& device, Translated& out);
-// Corpus → Soundboard, LYNX's resonant body (core/Soundboard.h has the measured laws)
+// Corpus → Soundboard, YW's resonant body (core/Soundboard.h has the measured laws)
 bool corpusToSoundboard (const xml::Element& device, Translated& out);
-// Vinyl Distortion → Platter, LYNX's record-wear effect (core/Platter.h has the measured laws)
+// Vinyl Distortion → Platter, YW's record-wear effect (core/Platter.h has the measured laws)
 bool vinylToPlatter (const xml::Element& device, Translated& out);
 // Looper → an empty Edison slot (Monitor 0 / 3: the input passes) or a muted Utility (Monitor 1 / 2) [MEASURED]
 bool looperToSlot (const xml::Element& device, Translated& out);
@@ -420,7 +420,7 @@ std::optional<Translated> effectFromLiveDevice (const xml::Element& device, cons
 // gain at Live's floor (−70 dB, shown as −inf) is a killed band [DATA: GainLo / GainMid / GainHi 0.000316 … 1.995]
 bool eqThreeToPrism (const xml::Element& device, Translated& out);
 // ---- Drum Buss → a rack -----------------------------------------------------------------------------------------
-// The generated rack's macros, in order (each mapped over the whole range of its LYNX control)
+// The generated rack's macros, in order (each mapped over the whole range of its YW control)
 enum DrumBussMacro { dbDrive, dbCrunch, dbDamping, dbTransients, dbBoom, dbBoomFreq, dbTrim, dbOutput, dbDryWet, dbMacros };
 // (round 190ek) fitted to Live 12.4's renders (round 190ei): the rack's chain is Ember (trim, drive, damping) → Facet EQ
 // (the device's own colour, Crunch's band, Boom) → Crest Compressor (only with Comp on) → Shell Channel (transients,
@@ -472,7 +472,7 @@ BoomBands drumBussBoom (double amount, double hz, double decay) noexcept;
 // Crunch's lift of its band in dB (the shelves cut the same outside it)
 double drumBussCrunchDb (double crunch) noexcept;
 bool drumBussToRack (const xml::Element& device, Translated& out);
-// (round 190fk) Drum Buss onto Anvil Bus, LYNX's drum-bus engine (core/AnvilBus.h): the import's default
+// (round 190fk) Drum Buss onto Anvil Bus, YW's drum-bus engine (core/AnvilBus.h): the import's default
 bool drumBussToEngine (const xml::Element& device, Translated& out);
 // ---- Auto Filter's modulation → a Peak Controller ---------------------------------------------------------------
 // The Peak Controller's controls for an amount (its laws, core/Effects.cpp PeakController): the peak's amount k (−2 … 2,
@@ -510,11 +510,11 @@ double autoFilter2LfoBeats (int timeMode, double hz, double seconds, int syncedR
 void autoFilterModulation (const xml::Element& device, const Context& context, Translated& out);
 
 // ---- Live's synths → the built-in synth -------------------------------------------------------------------------
-// Operator → Tetra, LYNX's own FM synth (round 190hs, core/AlsDevicesFm.cpp): every parameter Tetra has, in Operator's
+// Operator → Tetra, YW's own FM synth (round 190hs, core/AlsDevicesFm.cpp): every parameter Tetra has, in Operator's
 // units; `notes` lists what has no place. False: not an Operator device
 bool operatorToTetra (const xml::Element& device, ChannelDef& channel, Notes& notes);
-// Wavetable → Helix, LYNX's own wavetable synth (round 190ja, core/AlsDevicesWt.cpp): every parameter in Wavetable's
-// units, the modulation matrix, Live's tables mapped onto LYNX's own; `notes` lists what differs. False: not a Wavetable
+// Wavetable → Helix, YW's own wavetable synth (round 190ja, core/AlsDevicesWt.cpp): every parameter in Wavetable's
+// units, the modulation matrix, Live's tables mapped onto YW's own; `notes` lists what differs. False: not a Wavetable
 bool wavetableToHelix (const xml::Element& device, ChannelDef& channel, Notes& notes);
 // Live's element names of Helix's automatable values, in Helix's parameter order
 const std::vector<std::string>& helixLiveNames();
@@ -534,7 +534,7 @@ struct SimplerRegion
 SimplerRegion simplerRegion (double sampleStart, double sampleEnd, double start, double length, double loopLength) noexcept;
 struct SimplerResult
 {
-    int keyShift = 0;     // Slice mode: Live's first slice plays on C1 (36), LYNX's on key 60 — the notes move by this
+    int keyShift = 0;     // Slice mode: Live's first slice plays on C1 (36), YW's on key 60 — the notes move by this
     bool loop = false;    // Classic mode with Loop on: `loopStart` / `loopEnd` (frames) go on the zone
     std::int64_t loopStart = 0, loopEnd = 0;
 };
@@ -562,7 +562,7 @@ enum HybridMacro { hrDryWet, hrDecay, hrSize, hrDiffusion, hrModulation, hrDampi
 double hybridPredelayMs (bool synced, double seconds, double sixteenths, double bpm) noexcept;
 // the EQ section's cut slope (Eq_LowBandSlope / Eq_HighBandSlope 0 … 9) in dB/oct [ASSUMED 6 per step from 6]
 int hybridEqSlopeDb (int index) noexcept;
-// Halo's Size for a decay (s): Halo's RT is (1.5 + 12.5 · size) × its feedback / diffusion factors (core/LynxVerbs.cpp)
+// Halo's Size for a decay (s): Halo's RT is (1.5 + 12.5 · size) × its feedback / diffusion factors (core/YwVerbs.cpp)
 float haloSizeForDecay (double decaySec, double feedback, double shiftSemis, double diffusion) noexcept;
 // An impulse response read from a file the user has (WAV through the Convolver's reader, AIFF / AIFC here)
 struct ImpulseAudio
@@ -586,7 +586,7 @@ bool hybridToRack (const xml::Element& device, const Context& context, Translate
 // presets "Drums Moving Crusher" / "Circuit Bent Toy" on 2, "Diode Treatment" on 3, "VHS Mild" / "Drums Noisy Clarity"
 // on 10, "Tape Saturation" stage 2 / "Bass Fuzz" on 3 / 4]
 const char* roarShaperName (int type) noexcept;
-// the LYNX stage for a shaper: Ember style (0 tube, 1 tape, 2 transistor) or character (1 … 28), or Lo-fi (bit crusher);
+// the YW stage for a shaper: Ember style (0 tube, 1 tape, 2 transistor) or character (1 … 28), or Lo-fi (bit crusher);
 // none = no counterpart (the stage's shaper is listed)
 struct RoarShaperFit
 {
@@ -620,7 +620,7 @@ bool roarToRack (const xml::Element& device, Translated& out);
 bool grainDelayToEchoform (const xml::Element& device, const Context& context, Translated& out);
 
 // ---- Auto Filter's other types ----------------------------------------------------------------------------------
-// What LYNX plays for the filter type: 0 low pass, 1 high pass, 2 band pass (the Filter), 3 notch (Facet EQ); −1 = no
+// What YW plays for the filter type: 0 low pass, 1 high pass, 2 band pass (the Filter), 3 notch (Facet EQ); −1 = no
 // counterpart (comb, resampling, notch + low pass, vowel). The new device's Filter_Type [DATA, Core Library preset names:
 // 0 "Cut-O-Move LPF", 1 "Cut-O-Move HPF", 2 "Band-pass Spinner", 3 "Notch Slide Crunch", 5 "DJ Filter Soft Clip",
 // 6 "Comb Envelope", 7 "Resampling Filter S&H", 9 "Vowel Quivver"; 4 Morph and 8 "Notch + LP" by the STR names left]; the
@@ -646,4 +646,4 @@ void autoFilterDrive (const xml::Element& device, Translated& out);
 // Moves a Filter-cutoff modulation curve (Filter units, 20 Hz … 20 kHz) onto Facet's frequency units (10 Hz … 30 kHz)
 float facetHzOfFilterCutoff (float filterValue) noexcept;
 } // namespace alsdev
-} // namespace lynx
+} // namespace yw

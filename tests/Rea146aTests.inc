@@ -5,7 +5,7 @@
 
 TEST (rea146a_mixer_separators_groups_and_docks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer.resize (9);
 
@@ -62,21 +62,21 @@ TEST (rea146a_flp_insert_flags_dock_and_separator)
     for (int i = 0; i < 14; ++i)
         insert (0x4C);
     insert (0x0C);         // the last one is FL's "Current" track: stays in the middle
-    const auto song = lynx::importFlp (flp::parseProject (b.bytes));
+    const auto song = yw::importFlp (flp::parseProject (b.bytes));
     CHECK (song.mixer.size() >= 5);
     if (song.mixer.size() >= 5)
     {
-        CHECK (song.mixer[0].dock == lynx::MixerDock::left && song.mixer[1].dock == lynx::MixerDock::middle);
-        CHECK (song.mixer[2].separator && ! song.mixer[1].separator && song.mixer[3].dock == lynx::MixerDock::right);
-        CHECK (song.mixer[4].dock == lynx::MixerDock::left);
+        CHECK (song.mixer[0].dock == yw::MixerDock::left && song.mixer[1].dock == yw::MixerDock::middle);
+        CHECK (song.mixer[2].separator && ! song.mixer[1].separator && song.mixer[3].dock == yw::MixerDock::right);
+        CHECK (song.mixer[4].dock == yw::MixerDock::left);
     }
     if (song.mixer.size() > 19)
-        CHECK (song.mixer[19].dock == lynx::MixerDock::middle);
+        CHECK (song.mixer[19].dock == yw::MixerDock::middle);
 }
 
 TEST (rea146a_playlist_track_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault(); // channels 0..4 on inserts 1..5
     song.channels.push_back ({});
     song.channels.back().name = "Vox";
@@ -161,12 +161,12 @@ TEST (rea146a_flp_playlist_track_modes)
     track (1, 1, 3, -1);
     track (2, 3, -1, 7);
     track (3, 0, -1, -1);
-    const auto song = lynx::importFlp (flp::parseProject (b.bytes));
+    const auto song = yw::importFlp (flp::parseProject (b.bytes));
     CHECK (song.playlistTracks.size() >= 2);
     if (song.playlistTracks.size() >= 2)
     {
-        CHECK (song.playlistTracks[0].mode == lynx::PlaylistTrackMode::audio && song.playlistTracks[0].mixerTrack == 3);
-        CHECK (song.playlistTracks[1].mode == lynx::PlaylistTrackMode::instrument && song.playlistTracks[1].channel == 1);
+        CHECK (song.playlistTracks[0].mode == yw::PlaylistTrackMode::audio && song.playlistTracks[0].mixerTrack == 3);
+        CHECK (song.playlistTracks[1].mode == yw::PlaylistTrackMode::instrument && song.playlistTracks[1].channel == 1);
     }
 }
 
@@ -178,24 +178,24 @@ TEST (rea146a_wrapper_settings_page_options)
 {
     // FL's wrapper settings (round 149: in its form's order): Processing options, then Compatibility; the buffer
     // sub-options need fixed buffers
-    const auto& o = lynx::wrapperOptions();
+    const auto& o = yw::wrapperOptions();
     // round 151 added the MIDI ones and two Compatibility ones; round 188d "Process inactive inputs and outputs" (index 4);
-    // round 190bb (issue #108) "MPE" (index 8, a LYNX addition after the other per-note MIDI options); round 190ks
-    // (GitHub #198) "Record notes from the plugin window" (index 10, a LYNX addition, on by default)
+    // round 190bb (issue #108) "MPE" (index 8, a YW addition after the other per-note MIDI options); round 190ks
+    // (GitHub #198) "Record notes from the plugin window" (index 10, a YW addition, on by default)
     CHECK (o.size() >= 16); // (round 190oh appended FL's Settings › GUI pair: Host190ohTests.inc)
     if (o.size() >= 16)
     {
-        CHECK (std::string (o[0].label) == "Notify about rendering mode" && o[0].member == &lynx::PluginRef::notifyRender && ! o[0].recreates);
-        CHECK (std::string (o[4].label) == "Process inactive inputs and outputs" && o[4].member == &lynx::PluginRef::processInactive && ! o[4].recreates);
-        CHECK (std::string (o[13].label) == "Use fixed size buffers" && o[13].member == &lynx::PluginRef::fixedBuffers && o[13].recreates);
+        CHECK (std::string (o[0].label) == "Notify about rendering mode" && o[0].member == &yw::PluginRef::notifyRender && ! o[0].recreates);
+        CHECK (std::string (o[4].label) == "Process inactive inputs and outputs" && o[4].member == &yw::PluginRef::processInactive && ! o[4].recreates);
+        CHECK (std::string (o[13].label) == "Use fixed size buffers" && o[13].member == &yw::PluginRef::fixedBuffers && o[13].recreates);
         CHECK (o[14].needsFixed && o[15].needsFixed && ! o[13].needsFixed && ! o[1].needsFixed);
-        CHECK (std::string (o[8].label) == "MPE" && o[8].member == &lynx::PluginRef::mpe && o[8].recreates && std::string (o[8].section) == "MIDI");
-        CHECK (std::string (o[10].label) == "Record notes from the plugin window" && o[10].member == &lynx::PluginRef::recordOwnNotes
+        CHECK (std::string (o[8].label) == "MPE" && o[8].member == &yw::PluginRef::mpe && o[8].recreates && std::string (o[8].section) == "MIDI");
+        CHECK (std::string (o[10].label) == "Record notes from the plugin window" && o[10].member == &yw::PluginRef::recordOwnNotes
                && ! o[10].recreates && std::string (o[10].section) == "MIDI");
         CHECK (! o[1].recreates && ! o[3].recreates && o[2].recreates && std::string (o[2].section) == "Processing"
                && std::string (o[4].section) == "Processing" && std::string (o[13].section) == "Compatibility" && std::string (o[5].section) == "MIDI");
-        lynx::PluginRef ref;
-        // FL's defaults (MPE off); LYNX's recording of the window's notes on
+        yw::PluginRef ref;
+        // FL's defaults (MPE off); YW's recording of the window's notes on
         CHECK (ref.*(o[0].member) && ref.*(o[1].member) && ref.*(o[3].member) && ! (ref.*(o[13].member)) && ! (ref.*(o[8].member))
                && ref.*(o[10].member));
     }

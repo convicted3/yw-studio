@@ -20,10 +20,10 @@ struct Stereo
 };
 
 // `channel` playing `notes` (start / length in FL ticks) in one Playlist clip, the project's slide law on; 1.6 s at 48 kHz
-Stereo render (const lynx::ChannelDef& channel, const std::vector<lynx::Note>& notes, int block = 256,
-               std::shared_ptr<const lynx::SampleData> sample = nullptr)
+Stereo render (const yw::ChannelDef& channel, const std::vector<yw::Note>& notes, int block = 256,
+               std::shared_ptr<const yw::SampleData> sample = nullptr)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -55,9 +55,9 @@ Stereo render (const lynx::ChannelDef& channel, const std::vector<lynx::Note>& n
     return out;
 }
 
-lynx::Note note (int start, int length, int key, float velocity, bool slide = false, float pan = 0.0f)
+yw::Note note (int start, int length, int key, float velocity, bool slide = false, float pan = 0.0f)
 {
-    lynx::Note n;
+    yw::Note n;
     n.start = start, n.length = length, n.key = key, n.velocity = velocity, n.slide = slide, n.pan = pan;
     return n;
 }
@@ -93,7 +93,7 @@ double initVolume (double v) { return (std::pow (11.0, 1.28 * v) - 1.0) / 10.0; 
 TEST (flparity190pi_sytrus_follows_slide_velocity_and_pan)
 {
     using namespace flparity190pi;
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto channel = natives::channelFromPresetFile (
@@ -122,7 +122,7 @@ TEST (flparity190pi_sytrus_follows_slide_velocity_and_pan)
 // voice to velocity 0 since #236's slide of the note properties), and the voice has the first held note's velocity
 TEST (flparity190pi_arpeggiator_slide_glides_the_pitch_only)
 {
-    using namespace lynx;
+    using namespace yw;
     ArpSettings s;
     s.direction = 1;
     s.stepBeats = 0.25f;
@@ -167,7 +167,7 @@ TEST (flparity190pi_arpeggiator_slide_glides_the_pitch_only)
 TEST (flparity190pi_slide_over_a_chord_moves_by_one_interval)
 {
     using namespace flparity190pi;
-    using namespace lynx;
+    using namespace yw;
     {
         // a voice of key 60 (the engine's target, 0 cents from it, reads back as key 60) in the moving keys takes the
         // interval; one of key 67 (−700 cents from the slide note's key) outside them keeps its pitch
@@ -205,7 +205,7 @@ TEST (flparity190pi_slide_over_a_chord_moves_by_one_interval)
     CHECK (tone (single.l, f (67), 240 * tick, 380 * tick) > 10.0 * tone (single.l, f (60), 240 * tick, 380 * tick));
     // colours (FL 2026: a slide note moves the held notes of its own colour only): C5 colour 0 + G5 colour 1, a slide note
     // to D5 in colour 0 → D5 and G5; a slide note of a colour no held note has moves nothing
-    const auto coloured = [] (lynx::Note n, int colour) { n.colour = colour; return n; };
+    const auto coloured = [] (yw::Note n, int colour) { n.colour = colour; return n; };
     const auto two = render (c, { coloured (note (0, 384, 60, 0.8f), 0), coloured (note (0, 384, 67, 0.8f), 1),
                                   coloured (note (96, 48, 62, 0.8f, true), 0) }, 256, data);
     const auto two62 = tone (two.l, f (62), 240 * tick, 380 * tick), two67 = tone (two.l, f (67), 240 * tick, 380 * tick);
@@ -219,7 +219,7 @@ TEST (flparity190pi_slide_over_a_chord_moves_by_one_interval)
 TEST (flparity190pi_ogun_link_velocity)
 {
     using namespace flparity190pi;
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto channel = natives::channelFromPresetFile (
@@ -234,7 +234,7 @@ TEST (flparity190pi_ogun_link_velocity)
     const auto soft = render (*channel, { note (0, 96, 60, 50.0f / 128.0f) });
     const auto ratio = rms (soft.l, 0, 90 * tick) / rms (loud.l, 0, 90 * tick);
     // rollup 0.1.31 step 7: the law from engine revision 2 on (new channels, .flp imports); a channel of a project saved
-    // before (revision 0 / 1) plays as LYNX did: velocity 50 renders as 100 does, bit for bit (a slide too)
+    // before (revision 0 / 1) plays as YW did: velocity 50 renders as 100 does, bit for bit (a slide too)
     {
         auto older = *channel;
         older.engineRev = 1;
@@ -251,7 +251,7 @@ TEST (flparity190pi_ogun_link_velocity)
     if (std::abs (ratio - expected) < 0.06 * expected)
     {
         // a slide note at velocity 50 over a note at 100: the host's Final.Vol moves to Init.Vol (50) (FL 2026, def_vo:
-        // FL and LYNX within 0.01 dB per 48 ticks); the patch's own velocity (read at note on) stays
+        // FL and YW within 0.01 dB per 48 ticks); the patch's own velocity (read at note on) stays
         const auto down = render (*channel, { note (0, 384, 60, 0.78125f), note (48, 48, 60, 50.0f / 128.0f, true) });
         const auto held = render (*channel, { note (0, 384, 60, 0.78125f) });
         CHECK (std::abs (rms (down.l, 0, 40 * tick) / rms (held.l, 0, 40 * tick) - 1.0) < 1.0e-6);
@@ -285,7 +285,7 @@ TEST (flparity190pi_fl11_plugin_parameter_numbers)
 // sounding notes; Mod X / Y (18 / 19) are taken; the others are not Sytrus' main page
 TEST (flparity190pi_sytrus_main_page_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (sytrus::automatable (0) && sytrus::automatable (18) && sytrus::automatable (19) && ! sytrus::automatable (3) && ! sytrus::automatable (20));
     if (realFlpDir.empty())
         return;

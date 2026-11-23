@@ -27,7 +27,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -2138,10 +2138,10 @@ bool Synth::idle() const noexcept
     return std::none_of (pool.begin(), pool.end(), [] (const Voice& v) { return v.alive; });
 }
 
-// ------------------------------------------------------------------------------------------------------- LYNX front-end
+// ------------------------------------------------------------------------------------------------------- YW front-end
 //
 // Levels (§2.3, REA_rodada28 §4.1): as GMS — Final.Vol = chan.Vol, Final.Pan = note pan + chan.Pan, Final.Pitch =
-// 100·(key − 60) + channel pitch, law A per note; LYNX recovers V and pan from its channel gains (gl = √2·V·cos(…))
+// 100·(key − 60) + channel pitch, law A per note; YW recovers V and pan from its channel gains (gl = √2·V·cos(…))
 // and does not apply them again. Velocity → Init.Vol = (11^(1.28·vel) − 1)/10 (round 28 inference). The effects
 // (chorus, delay, reverb, EQ) run after the voices whether or not a voice sounds (no bypass), so the instrument only
 // reports idle once no voice is alive and the output has been silent for 30 s of effect tails.
@@ -2478,4 +2478,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace morphine
-} // namespace lynx
+} // namespace yw

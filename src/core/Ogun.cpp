@@ -27,7 +27,7 @@
 #pragma clang fp contract(off)
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1950,9 +1950,9 @@ struct Voice
     // identity / host
     bool used = false, dead = false;
     long long id = 0;
-    int lynxKey = -1;
-    std::uint32_t lynxNote = 0; // the note id that started it (round 190ej)
-    bool lynxReleased = false;
+    int ywKey = -1;
+    std::uint32_t ywNote = 0; // the note id that started it (round 190ej)
+    bool ywReleased = false;
     double notePan = 0;
     double fvol = 1, fpan = 0, fcutH = 0, fresH = 0, FP = 0, relvel = 0, note = 0, vel = 0;
     // FL's host: Final.Vol = Init.Vol · channel volume while the voice's "link velocity" is on (round 190pi: Ogun leaves it
@@ -2049,7 +2049,7 @@ public:
 
     // An automated parameter (FL's ProcessParam FUN_008684e0 with the "set" flag, REA_rodada169h §1): P[index] takes
     // the integer `value` and only what FL recomputes for it changes; the sounding voices go on. Indices 0…48 (FL's
-    // automatable P range; 49…88 in FL are the articulators' knobs, not listed in LYNX) and, for Autogun, 63 (Magic dust:
+    // automatable P range; 49…88 in FL are the articulators' knobs, not listed in YW) and, for Autogun, 63 (Magic dust:
     // the stage's on/off test only, the band mix stays the loaded one, REA_rodada57 §1.4). Audio thread.
     void setParam (int index, int value) noexcept
     {
@@ -2086,7 +2086,7 @@ public:
 
     // (key, velocity, Final.Vol, Final.Pan, Final.Pitch offset cents, FCut, FRes, release velocity) → voice id
     long long noteOn (int key, double vel, double fvol, double fpan, double pofs, double fcut = 0, double fres = 0,
-                      double relvel = 0, int j0shift = 0, int lynxKey = -1, double notePan = 0) noexcept
+                      double relvel = 0, int j0shift = 0, int ywKey = -1, double notePan = 0) noexcept
     {
         const auto& p = *pt;
         if (0 < maxpoly && maxpoly <= nlisted)
@@ -2114,10 +2114,10 @@ public:
         v->hostVol = nextHostVol;
         nextHostVol = 1.0;
         v->id = ++serial;
-        v->lynxKey = lynxKey;
-        v->lynxNote = nextLynxNote;
-        nextLynxNote = 0;
-        v->lynxReleased = false;
+        v->ywKey = ywKey;
+        v->ywNote = nextYwNote;
+        nextYwNote = 0;
+        v->ywReleased = false;
         v->notePan = notePan;
         v->used = true;
         order.push_back (v);
@@ -2134,19 +2134,19 @@ public:
                 voiceRelease (*v);
     }
 
-    // LYNX: releases the oldest held note of a key; `note` ≠ 0 (round 190ej): that note's own voice — FL's Voice_Release of
+    // YW: releases the oldest held note of a key; `note` ≠ 0 (round 190ej): that note's own voice — FL's Voice_Release of
     // one note, whatever the other notes of the key do [EXEC: /R render of Ogun, two overlapping notes of one key]
     void releaseKey (int key, std::uint32_t note = 0) noexcept
     {
         for (auto* v : order)
-            if (v->lynxKey == key && ! v->lynxReleased && (note == 0 || v->lynxNote == note))
+            if (v->ywKey == key && ! v->ywReleased && (note == 0 || v->ywNote == note))
             {
-                v->lynxReleased = true;
+                v->ywReleased = true;
                 voiceRelease (*v);
                 return;
             }
     }
-    std::uint32_t nextLynxNote = 0; // (the next noteOn's note id)
+    std::uint32_t nextYwNote = 0; // (the next noteOn's note id)
 
     void killAll() noexcept
     {
@@ -2170,7 +2170,7 @@ public:
     void setNoteLevels (int key, double hostVol, double notePan, double channelVol, double channelPan) noexcept
     {
         for (auto* v : order)
-            if (v->lynxKey == key && ! v->lynxReleased && ! v->dead)
+            if (v->ywKey == key && ! v->ywReleased && ! v->dead)
             {
                 if (hostVol >= 0.0)
                     v->hostVol = hostVol, v->fvol = channelVol * hostVol;
@@ -2196,7 +2196,7 @@ public:
     void slideTo (double to, float samples) noexcept
     {
         for (auto* v : order)
-            if (! v->lynxReleased && ! v->dead)
+            if (! v->ywReleased && ! v->dead)
                 v->slide.start ((float) (to - (v->FP - (double) v->slide.cents)), samples);
     }
 
@@ -3685,13 +3685,13 @@ private:
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// LYNX front-end
+// YW front-end
 //
 // Levels (§1.12/§1.13, REA_rodada28 §4.1): FL hands Ogun Final.Vol = the channel volume and Final.Pan = note pan +
 // channel pan, and Ogun applies Final.Vol × master × volume articulator through its own pan matrix (no host
-// ComputeLRVol). LYNX's channel gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…), so V = √((gl² + gr²)/2) and p
+// ComputeLRVol). YW's channel gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…), so V = √((gl² + gr²)/2) and p
 // are recovered exactly and Ogun's law is applied once. Final.Pitch = 100·(key − 60) + channel pitch + note cents;
-// velocity = LYNX velocity (FL velocity / 128); release velocity 0.5; Mod X/Y (Final.FCut/FRes) 0.
+// velocity = YW velocity (FL velocity / 128); release velocity 0.5; Mod X/Y (Final.FCut/FRes) 0.
 // Seed 2 "Random": the per-note counter starts at 0 for every instance (FL: from the RTL random seed).
 // Autogun (REA_rodada57): the same engine on Autogun's state variant, master × 0.25, then the Magic Dust stage, whose
 // preset SG.dat is read from the user's installation (ChannelDef::samplePath); without it the stage is skipped.
@@ -3759,7 +3759,7 @@ public:
         channelCents.store (channel.sampler.pitch * 100.0f);
         // rollup 0.1.31 step 7 (coordinator): FL's link velocity (round 190pi) from engine revision 2 on, as SimSynth's
         // velocity law (ChannelDef::engineRev: new channels and .flp imports); a project saved before keeps its revision
-        // and plays every note at the channel's level, as LYNX did
+        // and plays every note at the channel's level, as YW did
         linkVelocity.store (channel.engineRev >= 2);
         mono.store (channel.maxPolyphony == 1); // FL tells the generator its Max polyphony, never the Mono box (round 168l: 0xf6f240 → 0xfed7c0)
         const bool render = offlineRendering();
@@ -3822,13 +3822,13 @@ public:
         const auto knob = channelCents.load();
         const auto pofs = (double) knob + (double) nextCents;
         engine->nextLiveRef = live.ref (knob);
-        engine->nextLynxNote = startingNoteId();
+        engine->nextYwNote = startingNoteId();
         const auto vel = std::clamp ((double) velocity, 0.0, 1.0);
         const auto hostVol = linkVelocity.load() && engine->linksVelocity() ? initVolume (vel) : 1.0; // (round 190pi: FL's link velocity)
         engine->nextHostVol = hostVol;
         engine->noteOn (key, vel, channelVol * hostVol, (double) nextPan + channelPan, pofs, 0.0, 0.0,
                         0.5, 0, key, (double) nextPan);
-        engine->nextLynxNote = 0;
+        engine->nextYwNote = 0;
         nextPan = 0.0f, nextCents = 0.0f;
     }
 
@@ -4205,4 +4205,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace ogun
-} // namespace lynx
+} // namespace yw

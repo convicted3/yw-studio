@@ -12,7 +12,7 @@ namespace toolchain190gt
 {
 // runs parallelFor rounds until every worker has done `want` refreshes (a sleeping worker refreshes when it wakes), for
 // at most `rounds` rounds or 10 s (a loaded CI runner may not schedule a worker for a while)
-inline bool waitForRefreshes (lynx::WorkerPool& pool, const std::map<std::thread::id, int>& counts, std::mutex& m, int want,
+inline bool waitForRefreshes (yw::WorkerPool& pool, const std::map<std::thread::id, int>& counts, std::mutex& m, int want,
                               int rounds = 1000000)
 {
     auto fn = [] (int i) {
@@ -41,7 +41,7 @@ inline bool waitForRefreshes (lynx::WorkerPool& pool, const std::map<std::thread
 
 TEST (toolchain190gt_worker_refresh_runs_once_per_request_on_every_worker)
 {
-    lynx::WorkerPool pool (3);
+    yw::WorkerPool pool (3);
     std::mutex m;
     std::map<std::thread::id, int> counts;
     pool.setThreadRefresh ([&] {
@@ -75,7 +75,7 @@ TEST (toolchain190gt_worker_refresh_runs_once_per_request_on_every_worker)
 TEST (toolchain190gt_workers_run_with_flush_to_zero_and_denormals_are_zero)
 {
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64)
-    lynx::WorkerPool pool (3);
+    yw::WorkerPool pool (3);
     const auto caller = std::this_thread::get_id();
     std::atomic<int> byWorkers { 0 }, withoutFlush { 0 };
     std::atomic<float> sink { 0.0f };
@@ -121,7 +121,7 @@ TEST (toolchain190gt_audio_threads_opt_out_of_ecoqos_and_join_the_device_workgro
     CHECK (readFile ("src/engine/StreamPrefetcher.cpp").find ("power::optOutOfPowerThrottling();") != std::string::npos);
     // the plugin sandbox's / 32-bit bridge's audio thread: MMCSS + no EcoQoS
     const auto sandbox = readFile ("src/engine/SandboxWorker.cpp");
-    CHECK (sandbox.find ("lynx::power::becomeProAudioThread();", sandbox.find ("void run() override")) != std::string::npos);
+    CHECK (sandbox.find ("yw::power::becomeProAudioThread();", sandbox.find ("void run() override")) != std::string::npos);
     // the whole process out of EcoQoS while a device is open (held on start, given back on stop)
     CHECK (engine.find ("power::holdProcessFullSpeed (true);", engine.find ("void AudioEngine::audioDeviceAboutToStart")) < engine.find ("void AudioEngine::audioDeviceStopped"));
     CHECK (engine.find ("power::holdProcessFullSpeed (false);", engine.find ("void AudioEngine::audioDeviceStopped")) != std::string::npos);

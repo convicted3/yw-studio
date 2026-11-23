@@ -6,7 +6,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 namespace scalekeys
@@ -41,4 +41,4 @@ void refreshKeyboardPanel (juce::Component& panel);
 void setTypingKeyLetters (std::function<std::string (int)> letterOfKey);
 // Called when a keyboard changes the shared settings (scalekeys::current): the main window saves them
 void setKeyboardSettingsListener (std::function<void()> listener);
-} // namespace lynx
+} // namespace yw

@@ -19,7 +19,7 @@
 #include <limits>
 #include <set>
 
-namespace lynx
+namespace yw
 {
 void Pattern::sortNotes()
 {
@@ -690,7 +690,7 @@ SlotConnections slotConnections (const Song& song, int track, const EffectSlot& 
     };
     const auto in1 = at (ref.inputs, 0), in2 = at (ref.inputs, 1);
     c.mainSource = on (in1) ? source (in1.offset) : -2;
-    // input 2: the slot's side input source (LYNX's SC picker, or its index, which sets it: core/MixerOps.h), else
+    // input 2: the slot's side input source (YW's SC picker, or its index, which sets it: core/MixerOps.h), else
     // its index; without either the slot's own input [EXEC e00: FL feeds an input at index 0 the insert's audio]
     if (! on (in2))
         c.sideSource = -2;
@@ -1420,10 +1420,10 @@ float Song::targetValue (const AutomationTarget& t) const noexcept
             // the Sampler's knobs (issue #12)
             if (channels[(std::size_t) t.index].instrument == InstrumentKind::sampler && t.param >= 0 && t.param < samplerparam::count)
                 return samplerparam::get (channels[(std::size_t) t.index].sampler, t.param);
-            // LYNX Soundfont's knobs (issue #152, round 190he: a linked controller moved nothing)
+            // YW Soundfont's knobs (issue #152, round 190he: a linked controller moved nothing)
             if (channels[(std::size_t) t.index].instrument == InstrumentKind::soundfont && sf::automatable (t.param))
                 return sf::normalise (t.param, sf::readParams (channels[(std::size_t) t.index].modelParams)[(std::size_t) t.param]);
-            // LYNX Synth's knobs (issue #152, round 190he; core/SynthParams.h)
+            // YW Synth's knobs (issue #152, round 190he; core/SynthParams.h)
             if (channels[(std::size_t) t.index].instrument == InstrumentKind::synth && synthparam::valid (t.param))
                 return synthparam::get (channels[(std::size_t) t.index].synth, synthparam::indexOf (t.param));
             // a MIDI Out's patch and knobs (round 167i)
@@ -1693,7 +1693,7 @@ double automationSegmentShape (const std::vector<AutomationPoint>& points, std::
         return x;
     const auto& a = points[k];
     const auto& b = points[k + 1];
-    if (a.mode == AutomationPoint::legacyCurve) // LYNX's law before round 190bw: a power curve
+    if (a.mode == AutomationPoint::legacyCurve) // YW's law before round 190bw: a power curve
         return a.tension != 0.0f ? std::pow (x, std::pow (2.0, (double) a.tension * 3.0)) : x;
     if (a.mode != flcurve::smooth)
         return flcurve::shape (a.mode, -a.tension, x);
@@ -2107,7 +2107,7 @@ bool Modulator::canModulate (const Song& song, const AutomationTarget& t) noexce
             return false;
         return true;
     }
-    // LYNX's own controls: not the tempo
+    // YW's own controls: not the tempo
     if (t.kind == AutomationTargetKind::none || t.kind == AutomationTargetKind::tempo || song.targetValue (t) < 0.0f)
         return false;
     if (t.kind == AutomationTargetKind::effectParam && t.index >= 0 && t.index < (int) song.mixer.size() && t.slot >= 0
@@ -2511,4 +2511,4 @@ int firstChannelWithNotes (const Song& song, int pattern) noexcept
     return first;
 }
 
-} // namespace lynx
+} // namespace yw

@@ -17,7 +17,7 @@
 // control, 128/12 octaves per unit; Final.FRes adds to the resonance in V1); Final.Vol is not read. Differences from FL / not
 // modelled: the library's pow/powf/exp results are not bit-identical to the DLL's (single-ulp differences, −108 dB worst
 // case on the factory programs, median −131 dB); parameter automation (the plugin's 16-sample smoother), MIDI CC7
-// volume and pitch-bend events, the "MIDI channel 13" sequence transpose (no note channel in LYNX); the order of the
+// volume and pitch-bend events, the "MIDI channel 13" sequence transpose (no note channel in YW); the order of the
 // host's sample-rate call and the state load is FL's own (the reference follows the EXEC harness: state, then rate).
 
 #include <cstdint>
@@ -30,7 +30,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true for a Transistor Bass state the engine can read (wrapper version 1–2, engine stream version 1…5)
 bool transistorBassStateUsable (const std::vector<std::uint8_t>& state);
@@ -70,7 +70,7 @@ struct TransistorBassProgram
     std::array<Step, 32> steps {};
 };
 std::optional<TransistorBassProgram> transistorBassProgram (const std::vector<std::uint8_t>& state);
-// Round 190nr (GitHub discussion #202, a LYNX extra: FL's Transistor Bass copies a sequence only to another Transistor
+// Round 190nr (GitHub discussion #202, a YW extra: FL's Transistor Bass copies a sequence only to another Transistor
 // Bass, as its own "TransistorBass_Pattern" clipboard data): the shown program's sequence as notes, the way its
 // sequencer plays it while a key is held (stepEvent / clockSequencer): one note per step whose gate is on, at the
 // step's start (16th notes at `songTempo`, or at the sequence's own BPM when it has one; the sequence's shuffle delays
@@ -156,4 +156,4 @@ struct RefOptions
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::string& dll, const std::vector<RefNote>& notes,
                                     double sampleRate, int length, const RefOptions& options = {});
 } // namespace tbass
-} // namespace lynx
+} // namespace yw

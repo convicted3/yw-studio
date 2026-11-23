@@ -1,7 +1,7 @@
 #pragma once
 
 // Range edits on chosen tracks (round 190pa, research190oe P14; REAPER's razor edits, Live's time selection over some
-// tracks). A LYNX extra: a time range that covers only some Playlist tracks (or one automation lane of a track) and the
+// tracks). A YW extra: a time range that covers only some Playlist tracks (or one automation lane of a track) and the
 // commands on just that part of the arrangement: cut, copy, paste, delete, duplicate, split at its edges, move, and the
 // plan of a render to audio (core/QuickRender.h). FL's own time selection (Song::loopStart / loopEnd, every track) and
 // its commands stay as they are.
@@ -22,7 +22,7 @@
 #include "core/ArrangeOps.h"
 #include "core/Song.h"
 
-namespace lynx::rangeedit
+namespace yw::rangeedit
 {
 using Range = TrackRange; // (core/Song.h: Song::trackRange)
 
@@ -338,10 +338,10 @@ inline std::vector<int> renderClips (const Song& song, const Range& r)
 // --- The Playlist's switch ----------------------------------------------------------------------------------------
 // Ctrl+Alt+drag in the Playlist grid draws a range (FL 2026's Playlist gives Ctrl+Alt+drag no action of its own: Ctrl+
 // drag selects, Alt only turns snap off; checked against FL's online manual's Playlist page, round 190pa). The Pattern
-// layout offers it as a LYNX extra (Settings › LYNX extras, off by default); the Clip-launch layout's Arrangement always.
+// layout offers it as a YW extra (Settings › YW extras, off by default); the Clip-launch layout's Arrangement always.
 inline bool& patternLayoutOn()
 {
     static bool on = false;
     return on;
 }
-} // namespace lynx::rangeedit
+} // namespace yw::rangeedit

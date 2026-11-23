@@ -1,5 +1,5 @@
-    // LYNX --foldersshot190jf <prefix> <thief.flp> (round 190jf, slice B17): the Playlist's folders off-screen, with checks
-    // in prefix-checks.txt — FL's groups as imported (for the FL | LYNX pair), a collapsed group (thin rows), FL's View ›
+    // YW --foldersshot190jf <prefix> <thief.flp> (round 190jf, slice B17): the Playlist's folders off-screen, with checks
+    // in prefix-checks.txt — FL's groups as imported (for the FL | YW pair), a collapsed group (thin rows), FL's View ›
     // "Hide collapsed grouped tracks", a nested folder (open / collapsed), an Alt+drag into a group (the drop line), FL's
     // Alt+click group mute and Alt+right-click group solo through the real mouse handlers, the track menu with the
     // nesting items, and the same project in the Clip-launch layout.
@@ -16,7 +16,7 @@
             juce::File (prefix + "-checks.txt").replaceWithText (report.joinIntoString ("\n") + "\nresult=" + (allOk ? "OK" : "FAIL") + "\n");
             return allOk;
         };
-        using namespace lynx;
+        using namespace yw;
         AudioEngine engine (false);
         MainComponent ui (engine, false);
         ui.setSize (1600, 900);
@@ -89,7 +89,7 @@
             auto collapsed = song;
             pltracks::setAllGroupsCollapsed (collapsed, true);
             juce::String saveError;
-            check ("collapsed_copy_saved", ProjectFile::save (collapsed, juce::File (prefix + "-collapsed.lynx"), saveError), saveError);
+            check ("collapsed_copy_saved", ProjectFile::save (collapsed, juce::File (prefix + "-collapsed.yw"), saveError), saveError);
         }
 
         // a collapsed group: its members are 7 px rows of clip bars (FL)
@@ -107,7 +107,7 @@
         PlaylistComponent::hideCollapsedGroups = false;
         edit ([h0] (Song& s) { noteedit::setGroupCollapsed (s, h0, false); });
 
-        // a group in the group (LYNX): the second member nested under the first
+        // a group in the group (YW): the second member nested under the first
         const auto m1 = members[0], m2 = members[1];
         edit ([m2] (Song& s) { noteedit::nestTrack (s, m2); });
         check ("nested_under_the_member_above", noteedit::folderDepth (song, m2) == 2 && noteedit::isGroupHeader (song, m1)
@@ -193,14 +193,14 @@
             check ("alt_right_click_again_unsolos", ! song.isTrackMuted (headers[1]));
         }
 
-        // the .lynx round trip keeps the nesting
+        // the .yw round trip keeps the nesting
         {
-            const auto file = juce::File (prefix + "-nested.lynx");
+            const auto file = juce::File (prefix + "-nested.yw");
             juce::String saveError;
             const auto saved = ProjectFile::save (song, file, saveError);
             juce::String loadError;
             const auto back = saved ? ProjectFile::load (file, loadError) : std::optional<Song>();
-            check ("lynx_round_trip_keeps_nesting", back.has_value() && noteedit::folderDepth (*back, m2) == 2,
+            check ("yw_round_trip_keeps_nesting", back.has_value() && noteedit::folderDepth (*back, m2) == 2,
                    saveError + loadError);
             file.deleteFile();
         }
@@ -215,7 +215,7 @@
         return finish();
     }
 
-    // LYNX --dawprojcheck190jf <out-prefix> <project> (round 190jf, slice B22): the project (any LYNX can open) through the
+    // YW --dawprojcheck190jf <out-prefix> <project> (round 190jf, slice B22): the project (any YW can open) through the
     // app's File › Export › DAWproject path and back through File › Open: the counts that must survive, the export's notes
     // and the import's report in prefix-checks.txt; the .dawproject stays as prefix.dawproject.
     bool runDawProjectCheck190jf (const juce::String& prefix, const juce::File& input)
@@ -230,7 +230,7 @@
             juce::File (prefix + "-checks.txt").replaceWithText (report.joinIntoString ("\n") + "\nresult=" + (allOk ? "OK" : "FAIL") + "\n");
             return allOk;
         };
-        using namespace lynx;
+        using namespace yw;
         struct Counts
         {
             int tracks = 0, groups = 0, nested = 0, clips = 0, audioClips = 0, notes = 0, automations = 0, points = 0, markers = 0;
@@ -272,7 +272,7 @@
 
         AudioEngine engine (false);
         juce::String error;
-        const auto loaded = input.hasFileExtension ("lynx") ? [&] {
+        const auto loaded = input.hasFileExtension ("yw") ? [&] {
             auto song = ProjectFile::load (input, error);
             if (song)
                 engine.setSong (std::move (*song));
@@ -313,7 +313,7 @@
         check ("same_tempo", std::abs (after.bpm - before.bpm) < 0.001);
         check ("same_markers", after.markers >= before.markers, juce::String (before.markers) + " -> " + juce::String (after.markers));
         {
-            // LYNX's own devices keep every parameter (the project file's state inside the DAWproject file): the effects
+            // YW's own devices keep every parameter (the project file's state inside the DAWproject file): the effects
             // (kind + parameters) of every insert and the native instruments (kind + model parameters), as multisets
             const auto effects = [] (const Song& s) {
                 std::multiset<std::string> out;

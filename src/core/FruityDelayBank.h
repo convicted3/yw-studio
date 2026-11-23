@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Fruity Delay Bank as an exact LYNX mixer effect (docs/analise/REA_rodada56.md; clean-room: rebuilt from
+// FL Studio's Fruity Delay Bank as an exact YW mixer effect (docs/analise/REA_rodada56.md; clean-room: rebuilt from
 // the observed behaviour of the plugin, no Image-Line code).
 //
 // Eight delay banks. Each bank: input pan/volume matrix, an optional send from the previous bank, a biquad cascade
@@ -9,8 +9,8 @@
 // raised-cosine gain pattern, and an output pan/volume matrix. Global dry, output, input and feedback levels, a bank
 // solo and an optional 2× oversampling.
 //
-// The LYNX slot keeps FL's own saved state in EffectSlot::state (the plugin has 131 automatable controls plus per-bank
-// options, far more than an effect slot's parameters); the four global controls are also the slot's LYNX parameters
+// The YW slot keeps FL's own saved state in EffectSlot::state (the plugin has 131 automatable controls plus per-bank
+// options, far more than an effect slot's parameters); the four global controls are also the slot's YW parameters
 // (raw / 128), so they stay editable and automatable.
 
 #include <array>
@@ -20,12 +20,12 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::fldbank
+namespace yw::fldbank
 {
 constexpr int banks = 8;
 constexpr int stateControls = 133; // 0…3 global, 4 + 16·b + k bank controls (131 automatable), 131 solo, 132 oversampling
@@ -79,10 +79,10 @@ private:
     std::unique_ptr<Impl> d;
 };
 
-// LYNX effect: the slot state is FL's state bytes; params 0…3 = the global controls / 128
+// YW effect: the slot state is FL's state bytes; params 0…3 = the global controls / 128
 std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& slotState);
 const char* globalName (int index) noexcept;
 std::string globalText (int index, float value);
 // A control (0…130) as the editor shows it; `s` gives the bank's context (tempo sync for the time, filter types)
 std::string controlText (const State& s, int index, int raw);
-} // namespace lynx::fldbank
+} // namespace yw::fldbank

@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-namespace lynx { class AudioEngine; }
-namespace lynx::generators
+namespace yw { class AudioEngine; }
+namespace yw::generators
 {
 // The shared generator list and factories for menus and control clients. Labels are
 // English data here; UI callers translate them. No UI components or plugin scanning.
@@ -16,7 +16,7 @@ struct Entry
 {
     std::string key;
     juce::String label, detail;
-    int folder = 0; // 0 LYNX, 1 FL engines, 2 VFX, 3 scanned hosted plugins
+    int folder = 0; // 0 YW, 1 FL engines, 2 VFX, 3 scanned hosted plugins
     std::function<std::optional<ChannelDef>()> make;
     int section = 1;
     InstrumentKind kind = InstrumentKind::synth;

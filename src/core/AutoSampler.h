@@ -1,7 +1,7 @@
 #pragma once
 
 // FL's "Create DirectWave instrument..." (the channel menu, form TDWPRenderForm; REA_rodada165f-rack §4): a sampling robot
-// that plays a channel's instrument (any plugin or LYNX engine) key by key and velocity by velocity, records each note
+// that plays a channel's instrument (any plugin or YW engine) key by key and velocity by velocity, records each note
 // and makes a multisampled sampler channel of the takes. This is the pure part — the plan of the notes, the song that
 // plays them, cutting the render into takes and the sampler zones; the UI renders it with the export engine off the
 // audio thread. Our own code from FL's form and options. No JUCE.
@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::autosample
+namespace yw::autosample
 {
 struct Options
 {
@@ -78,4 +78,4 @@ ChannelDef makeSamplerChannel (const ChannelDef& source, std::vector<SampleZone>
 
 // A file name for a take: "<base> <key name><octave> v<velocity>" (keys as FL names them, C5 = 60).
 std::string takeFileName (const std::string& base, const Take& take);
-} // namespace lynx::autosample
+} // namespace yw::autosample

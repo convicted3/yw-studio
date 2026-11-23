@@ -5,7 +5,7 @@
     // pictures. Included in the app class of Main.cpp.
     bool runOnboardShot190np (const juce::String& prefix)
     {
-        using namespace lynx;
+        using namespace yw;
         using onboarding::Choice;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         const juce::ScopedValueSetter<bool> shown (ui::showingForShots(), true);

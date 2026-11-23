@@ -5,7 +5,7 @@
 
 namespace
 {
-namespace ae = lynx::audioedit;
+namespace ae = yw::audioedit;
 
 // stereo ramp: left[i] = i, right[i] = -i (exact values make positions easy to check)
 ae::Document rampDoc (std::int64_t frames, double rate = 1000.0)
@@ -479,7 +479,7 @@ TEST (fl_auto_slicer_matches_fl)
         x[(std::size_t) i] = (float) acc[(std::size_t) i] / 32768.0f;
     const std::vector<std::int64_t> fl { 0, 9000, 21000, 30480, 46980 };
     std::vector<float> r = x;
-    CHECK (lynx::flslice::autoSlice (x.data(), r.data(), n, 44100.0) == fl);
-    CHECK (lynx::flslice::autoSlice (x.data(), nullptr, n, 48000.0) == fl);
-    CHECK (lynx::flslice::autoSlice (nullptr, nullptr, 0, 44100.0).empty());
+    CHECK (yw::flslice::autoSlice (x.data(), r.data(), n, 44100.0) == fl);
+    CHECK (yw::flslice::autoSlice (x.data(), nullptr, n, 48000.0) == fl);
+    CHECK (yw::flslice::autoSlice (nullptr, nullptr, 0, 44100.0).empty());
 }

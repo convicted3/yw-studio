@@ -9,7 +9,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 class Workspace;
 
@@ -49,7 +49,7 @@ void setAllDetached (AudioEngine& engine, bool detached);
 // --plugwintest (issue #116): whether the open editor is docked, and the native window that holds it.
 bool isDocked (const juce::AudioPluginInstance& plugin);
 void* hostWindowHandle (const juce::AudioPluginInstance& plugin);
-// Round 190ao, LYNX's "Pin on top" (pain point 11; FL has no pin): a detached plugin window that stays above LYNX's
+// Round 190ao, YW's "Pin on top" (pain point 11; FL has no pin): a detached plugin window that stays above YW's
 // other secondary windows (not above other programs: like them it is owned by the main window; on Linux, where there
 // are no owner windows, the window manager's "always on top"). The header's pin and the plugin menu's item set it; it
 // is saved with the plugin in the project (PluginRef::pinned). Not for a docked window or a plugin in a separate
@@ -64,7 +64,7 @@ void closeOrphans();
 std::vector<juce::AudioPluginInstance*> openPlugins();
 bool isOpen (const juce::AudioPluginInstance& plugin);
 void close (const juce::AudioPluginInstance& plugin);
-// Faults inside a plugin's own editor window (issue #32, round 174a; Windows): the editor was closed and LYNX went on.
+// Faults inside a plugin's own editor window (issue #32, round 174a; Windows): the editor was closed and YW went on.
 // The main window shows each new one once (save the project, run the plugin in a separate process).
 struct EditorCrash
 {
@@ -79,9 +79,9 @@ std::vector<EditorCrash> editorCrashes();
 // could not be started. Returns how many run again.
 int reload (AudioEngine& engine, const std::vector<AudioEngine::HostedSlot>& which);
 // The user asked for the window of a plugin that is down: "<name> crashed and was switched off" with Reload (and, for a
-// plugin that ran inside LYNX, "Reload in a separate process"). `reopen` runs after a reload that worked.
+// plugin that ran inside YW, "Reload in a separate process"). `reopen` runs after a reload that worked.
 void promptReload (AudioEngine& engine, AudioEngine::HostedSlot where, std::function<void()> reopen);
-// Round 190gg (B1, LYNX-own; FL has no sandbox): after a plugin crashed inside LYNX, "Always run <plugin> in a separate
+// Round 190gg (B1, YW-own; FL has no sandbox): after a plugin crashed inside YW, "Always run <plugin> in a separate
 // process". Offered unless every plugin already runs in one (Options) or this plugin is already on the list.
 bool canAlwaysRunSeparately (const juce::String& plugin);
 // Puts the plugin on the "always in a separate process" list (by its name, so new instances and other projects follow,
@@ -91,7 +91,7 @@ bool canAlwaysRunSeparately (const juce::String& plugin);
 void alwaysRunSeparately (AudioEngine& engine, const juce::String& plugin);
 // The hint that goes with the choice (the dialogs' message and the buttons' tooltips)
 juce::String alwaysSeparateHint();
-// The main window's "Plugin crashed" prompt for a plugin that crashed inside LYNX (MainComponent): its text and buttons
+// The main window's "Plugin crashed" prompt for a plugin that crashed inside YW (MainComponent): its text and buttons
 // (`reload`: the first button is Reload; `separate`: then "Always run <plugin> in a separate process"; Close is last).
 // `onLoad`: it crashed on its saved settings (no Reload: they would crash it again).
 struct CrashPrompt
@@ -121,8 +121,8 @@ std::optional<std::pair<juce::Rectangle<int>, juce::Rectangle<int>>> showWindowP
 bool showPresetMenu (const juce::AudioPluginInstance& plugin);
 } // namespace PluginWindows
 
-// The wrapper settings page of a hosted plugin drawn offscreen (round 188d: FL | LYNX shots of Processing ›
-// Connections, LYNX --wrappershot): `tab` 0 Settings, 1 Processing, 2 Troubleshooting; no window is opened.
+// The wrapper settings page of a hosted plugin drawn offscreen (round 188d: FL | YW shots of Processing ›
+// Connections, YW --wrappershot): `tab` 0 Settings, 1 Processing, 2 Troubleshooting; no window is opened.
 juce::Image wrapperSettingsSnapshot (AudioEngine& engine, std::function<PluginRef* (Song&)> find, juce::AudioPluginInstance& plugin,
                                      bool channel, int tab, float scale = 1.0f, int track = -1, int slot = -1);
 
@@ -146,7 +146,7 @@ std::vector<AutomationTarget> allPluginParameterTargets (juce::AudioPluginInstan
 // Menus of known plugins (instruments or effects): the favourites, then "More plugins..." (the plugin picker) and
 // the scan. `onChosen` receives the reference; from the picker (a window of its own, chosen later) it is only
 // called while `owner` (the component whose menu this is) still exists.
-// `onBuiltIn`: the picker lists LYNX's built-in note effects too (core/Vfx.h) and hands a new channel of one over.
+// `onBuiltIn`: the picker lists YW's built-in note effects too (core/Vfx.h) and hands a new channel of one over.
 void addPluginItems (juce::PopupMenu& menu, AudioEngine& engine, bool instruments, std::function<void (PluginRef)> onChosen,
                      juce::Component* owner = nullptr, std::function<void (ChannelDef)> onBuiltIn = nullptr);
-} // namespace lynx
+} // namespace yw

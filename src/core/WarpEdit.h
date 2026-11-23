@@ -14,7 +14,7 @@
 #include "core/TimeStretch.h"
 #include "core/Song.h"
 
-namespace lynx::warpedit
+namespace yw::warpedit
 {
 constexpr double minBeatGap = 1.0 / 64.0; // markers stay at least a 64th of a beat apart
 constexpr double minSecondGap = 0.001;
@@ -164,4 +164,4 @@ inline int channelForClipEdit (Song& song, int clip)
     });
     return shared > 1 ? clipops::makeAudioUnique (song, { clip }) : channel;
 }
-} // namespace lynx::warpedit
+} // namespace yw::warpedit

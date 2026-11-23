@@ -5,7 +5,7 @@
 #include "core/ProjectSafety.h"
 #include "engine/ProjectFile.h"
 
-namespace lynx::ProjectPackage
+namespace yw::ProjectPackage
 {
 namespace
 {
@@ -22,7 +22,7 @@ bool exportZip (const Song& song, const juce::String& projectName, const juce::F
 {
     result = {};
     // FL's zipped loop package (round 190oq, REA FUN_011dc560): the project and its files side by side, flat, by name
-    // (FL warns when two have one name and may lose one; LYNX gives the second a unique name instead)
+    // (FL warns when two have one name and may lose one; YW gives the second a unique name instead)
     const auto plan = safety::packagePlan (song, "");
 
     Song packed = song;
@@ -195,7 +195,7 @@ juce::File extractZip (const juce::File& zipFile, const juce::File& destinationR
             hasProject = true;
     if (! hasProject)
     {
-        error = "the package has no project file (.lynx, .flp or .flm)";
+        error = "the package has no project file (.yw, .flp or .flm)";
         return {};
     }
 
@@ -216,7 +216,7 @@ juce::File extractZip (const juce::File& zipFile, const juce::File& destinationR
     }
 
     // (an FL Studio Mobile share-zip, round 182c: the .flm with its library tree, "My Samples/…", beside it)
-    for (const auto* pattern : { "*.lynx", "*.flp", "*.flm", "*.blx" })
+    for (const auto* pattern : { "*.yw", "*.flp", "*.flm", "*.blx" })
     {
         auto found = folder.findChildFiles (juce::File::findFiles, true, pattern);
         found.sort();
@@ -243,7 +243,7 @@ juce::File extractZip (const juce::File& zipFile, const juce::File& destinationR
     for (const auto& band : bands)
         if (garageBandPackage (band) == band)
             return band;
-    error = "the package has no project file (.lynx, .flp or .flm)";
+    error = "the package has no project file (.yw, .flp or .flm)";
     return {};
 }
 
@@ -258,6 +258,6 @@ juce::File garageBandPackage (const juce::File& file)
 
 juce::File defaultExtractRoot()
 {
-    return lynx::platform::documentsFolder().getChildFile ("YW Studio/Projects/Unpacked");
+    return yw::platform::documentsFolder().getChildFile ("YW Studio/Projects/Unpacked");
 }
-} // namespace lynx::ProjectPackage
+} // namespace yw::ProjectPackage

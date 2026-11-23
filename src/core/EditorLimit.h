@@ -4,7 +4,7 @@
 // "LimitEditors" is read with default 1 = on, FUN_011a5800; the box's click FUN_013559c0 warns before it is
 // turned off; FUN_012babb0, run when a plugin window is shown, calls FUN_012baae0 while the option is on: the plugin
 // windows with an open editor, sorted by their wrapper's +0x18 stamp, newest first, and while more than 25 (0x19) are
-// open the last one, the oldest, is closed). LYNX stamps a window when it opens and whenever it becomes the active window.
+// open the last one, the oldest, is closed). YW stamps a window when it opens and whenever it becomes the active window.
 // Header-only; the UI registers its editor windows here.
 
 #include <algorithm>
@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::editorlimit
+namespace yw::editorlimit
 {
 inline constexpr int maxOpen = 25;
 
@@ -95,4 +95,4 @@ inline void opened (const void* key, std::function<void()> close)
     entries().push_back ({ key, nextStamp(), std::move (close) });
     enforce();
 }
-} // namespace lynx::editorlimit
+} // namespace yw::editorlimit

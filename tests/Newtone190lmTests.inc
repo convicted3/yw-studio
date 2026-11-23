@@ -1,10 +1,10 @@
-// Rollup 0.1.30 step 8 (round 190lm, owner decision 2026-11-18): a NEW Newtone slot, which renders with LYNX's natural
+// Rollup 0.1.30 step 8 (round 190lm, owner decision 2026-11-18): a NEW Newtone slot, which renders with YW's natural
 // engine (round 190li), is analysed with "Separate close notes" (round 190kx) on. FL imports, older projects and every
 // other analysis keep FL's analysis, and their saved states stay byte for byte as before. (Uses ara190kx::sung.)
 
 TEST (rollup030_step8_new_newtone_slot_separates_close_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     // the defaults: FL's analysis for an analysis as such, the fine split for a new slot (natural engine)
     CHECK (! newtonefx::AnalyseOptions {}.fineSplit);
     CHECK (newtonefx::latestEngine >= 1 && newtonefx::newSlotAnalyseOptions().fineSplit);

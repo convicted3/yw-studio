@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Settings options that LYNX honours since round 190bx (FLEngine 2026, the Settings form's resource and
+// FL Studio's Settings options that YW honours since round 190bx (FLEngine 2026, the Settings form's resource and
 // its option handlers; docs/analise/REA_rodada190bx.md). App-wide, as in FL: kept in ui-options.txt, not in a
 // project. Each default is FL's. The values are atomics: the audio thread reads some of them.
 //
@@ -8,9 +8,9 @@
 //   Audio › CPU      multithreadGenerators   "Multithreaded generator processing"
 //                    multithreadMixer        "Multithreaded mixer processing"
 //                    smartDisable            "Smart disable"
-//                    smartDisableNewPlugins  LYNX extra (round 190ok, off): new hosted-instrument channels get FL's
+//                    smartDisableNewPlugins  YW extra (round 190ok, off): new hosted-instrument channels get FL's
 //                                            generator "Smart disable" on (FL's default for a new generator: off)
-//   Audio › Output   autoCloseDevice         "Auto close": the audio device is free for other programs while LYNX is
+//   Audio › Output   autoCloseDevice         "Auto close": the audio device is free for other programs while YW is
 //                                            not the program in front
 //                    safeOverloads           "Safe overloads" (round 190ok, core/OverloadGuard.h): in a real overload
 //                                            with the UI starving, the audio gives up a slice of the CPU (FL: checked)
@@ -27,7 +27,7 @@
 #include <string_view>
 #include <vector>
 
-namespace lynx::flsettings
+namespace yw::flsettings
 {
 // FL's interpolation index (core/FlResampler.h): 1 linear, 2 Hermite, 3…9 sinc with 16, 24, 32, 64, 128, 256, 512 points
 inline constexpr int interpolationMin = 1, interpolationMax = 9, interpolationDefault = 4;
@@ -70,7 +70,7 @@ struct Options
     std::atomic<bool> multithreadGenerators { true };
     std::atomic<bool> multithreadMixer { true };
     std::atomic<bool> smartDisable { true };
-    std::atomic<bool> smartDisableNewPlugins { false }; // round 190ok (LYNX extra)
+    std::atomic<bool> smartDisableNewPlugins { false }; // round 190ok (YW extra)
     std::atomic<bool> autoCloseDevice { false };
     std::atomic<bool> safeOverloads { true }; // round 190ok (FL's SafeOverloadBox: Checked)
     std::atomic<bool> restoreStateAfterSolo { false };
@@ -194,7 +194,7 @@ inline std::string serialise()
 }
 
 // --- Audio › Output › "Auto close" --------------------------------------------------------------------------------
-// FL frees the audio device for other programs (the box's hint). LYNX lets go of it while it is not the program in
+// FL frees the audio device for other programs (the box's hint). YW lets go of it while it is not the program in
 // front and has no use for it (nothing playing, recording, exporting or armed), and opens it again when it comes back
 // to the front or needs it.
 struct DeviceUse
@@ -249,7 +249,7 @@ inline void forgetSolos() noexcept
 }
 
 // --- General › Advanced › "Read sample tempo information" ---------------------------------------------------------
-// The beat count a sample file carries (its ACID chunk), as the rest of LYNX sees it: 0 = none, which is also the
+// The beat count a sample file carries (its ACID chunk), as the rest of YW sees it: 0 = none, which is also the
 // answer while the option is off (FL then does not treat the sample as tempo-synced; FUN_006764f0).
 inline float sampleTempoBeats (float storedBeats) noexcept
 {
@@ -260,4 +260,4 @@ inline float sampleTempoBeats (float storedBeats) noexcept
 // The history step shown on a list row, and back (`count` steps; oldest first unless `newestFirst`).
 constexpr int historyStepForRow (int row, int count, bool newestFirst) noexcept { return newestFirst ? count - 1 - row : row; }
 constexpr int historyRowForStep (int step, int count, bool newestFirst) noexcept { return newestFirst ? count - 1 - step : step; }
-} // namespace lynx::flsettings
+} // namespace yw::flsettings

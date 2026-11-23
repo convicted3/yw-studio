@@ -10,7 +10,7 @@ extern "C"
 #include <wavpack.h> // third_party/wavpack (angle brackets: core/WavPack.h has the same name on case-insensitive file systems)
 }
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -134,4 +134,4 @@ bool decodeWavPack (const std::uint8_t* data, std::size_t size, DecodedAudio& ou
         ch.resize ((std::size_t) done);
     return done > 0;
 }
-} // namespace lynx
+} // namespace yw

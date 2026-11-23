@@ -12,7 +12,7 @@
 #include "core/FlpImport.h"
 #include "core/Fpc.h"
 
-namespace lynx
+namespace yw
 {
 // FPC pads that have a sample (paths still with FL's variables, e.g. %FLStudioData%).
 std::optional<std::vector<DrumPad>> fpcPads (const std::vector<std::uint8_t>& state);
@@ -66,4 +66,4 @@ std::vector<std::uint8_t> makeWavFloat (const std::vector<std::vector<float>>& c
 
 // "cue" points (frames) of a WAV, in order; `frames` receives the length when the audio is PCM/float.
 std::vector<std::int64_t> wavCuePoints (const std::vector<std::uint8_t>& wav, std::int64_t& frames);
-} // namespace lynx
+} // namespace yw

@@ -14,20 +14,20 @@ std::vector<std::uint8_t> state (int pan, int vol, int dry, int track)
     return d;
 }
 
-lynx::EffectSlot sendSlot (int pan, int vol, int dry, int track)
+yw::EffectSlot sendSlot (int pan, int vol, int dry, int track)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::fruitySend);
-    lynx::flbasic::sendToParams ({ pan, vol, dry, track }, slot.params.data());
+    auto slot = yw::makeEffectSlot (yw::EffectKind::fruitySend);
+    yw::flbasic::sendToParams ({ pan, vol, dry, track }, slot.params.data());
     return slot;
 }
 
 // channel 0 on insert `from` plays an impulse of 1 at sample 0 (both sides) then a DC of 0.25 from sample 16
-std::pair<std::vector<float>, std::vector<float>> render (const std::function<void (lynx::Song&)>& tweak, int from, int n = 600)
+std::pair<std::vector<float>, std::vector<float>> render (const std::function<void (yw::Song&)>& tweak, int from, int n = 600)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (4);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (4);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "imp";
     c.volume = 1.0f;
     c.mixerTrack = from;
@@ -35,19 +35,19 @@ std::pair<std::vector<float>, std::vector<float>> render (const std::function<vo
     s.patterns.emplace_back();
     tweak (s);
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.assign (48000, 0.25f);
         for (int i = 1; i < 16; ++i)
             d->left[(std::size_t) i] = 0.0f;
         d->left[0] = 1.0f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto st = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto st = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.key = 60;
     on.velocity = 1.0f;
@@ -68,7 +68,7 @@ int firstAbove (const std::vector<float>& x, float level)
 
 TEST (fruity_send_state_import_and_texts)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto slot = effectFromFl ("Fruity Send", send105::state (-54, 256, 197, 2), 120.0);
     CHECK (slot && slot->kind == EffectKind::fruitySend);
     if (slot)
@@ -92,7 +92,7 @@ TEST (fruity_send_state_import_and_texts)
 
 TEST (fruity_send_engine_law)
 {
-    using namespace lynx;
+    using namespace yw;
     // centre pan, volume 256 (L11 law: exactly 1): the send is the input; dry 0 (L11: 0) silences the insert
     {
         flbasic::SendEngine e;
@@ -145,7 +145,7 @@ TEST (fruity_send_engine_law)
 
 TEST (fruity_send_routes_mid_chain_in_the_same_block)
 {
-    using namespace lynx;
+    using namespace yw;
     // insert 1 → Fruity Send (dry 0) → insert 3 (not routed to the Master from 1): the signal comes out of
     // insert 3 at the same sample, at the send level
     const auto [l, r] = send105::render ([] (Song& s) { s.mixer[1].effects.push_back (send105::sendSlot (0, 256, 0, 3)); }, 1);
@@ -195,7 +195,7 @@ TEST (fruity_send_routes_mid_chain_in_the_same_block)
 
 TEST (fruity_send_pdc_counts_the_slots_before_it)
 {
-    using namespace lynx;
+    using namespace yw;
     // insert 1: [latent 100][Fruity Send → 2][latent 50]; channel 1 on insert 2. The send leaves after 100 samples,
     // so insert 2's input aligns at 100 and the channel on it is delayed by 100; insert 1's output (150) is the total.
     Song s;
@@ -214,7 +214,7 @@ TEST (fruity_send_pdc_counts_the_slots_before_it)
 
 TEST (fruity_send_window_menu_values)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& item : plugui::layoutFor (EffectKind::fruitySend).items)
         if (item.type == plugui::Item::menu)
         {

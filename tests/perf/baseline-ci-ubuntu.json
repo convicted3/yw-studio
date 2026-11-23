@@ -16,11 +16,11 @@
   "hash/synth100@128": "3be4e1af898a5e05",
   "hash/synth100@256": "25f3f268b2f55e94",
   "hash/synth100@64": "adeb6ecc25ef34d3",
-  "lynx_hash/automation": "7b8ab05a26792d48",
-  "lynx_hash/big200": "33f2b6b7a8c2730e",
-  "lynx_hash/inserts50": "1d8f7a9e3941d635",
-  "lynx_hash/stream": "7e79cdc290a66a5a",
-  "lynx_hash/synth100": "e5704a3b23be8d1e"
+  "yw_hash/automation": "7b8ab05a26792d48",
+  "yw_hash/big200": "33f2b6b7a8c2730e",
+  "yw_hash/inserts50": "1d8f7a9e3941d635",
+  "yw_hash/stream": "7e79cdc290a66a5a",
+  "yw_hash/synth100": "e5704a3b23be8d1e"
  },
  "machine": "Linux x86_64, AMD EPYC 9V45 96-Core Processor, 4 threads, e42789b",
  "machines": {

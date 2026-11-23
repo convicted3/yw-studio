@@ -7,7 +7,7 @@
 
 #include "core/NoteEdit.h"
 
-namespace lynx::comp
+namespace yw::comp
 {
 namespace
 {
@@ -432,4 +432,4 @@ int compTakes (Song& song, int track)
     swipe (song, last, from, to);
     return g.comp;
 }
-} // namespace lynx::comp
+} // namespace yw::comp

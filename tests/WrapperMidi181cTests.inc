@@ -2,7 +2,7 @@
 
 namespace wrappermidi181c
 {
-struct Silent final : lynx::Instrument
+struct Silent final : yw::Instrument
 {
     void prepare (double) noexcept override {}
     void noteOn (int, float) noexcept override {}
@@ -10,21 +10,21 @@ struct Silent final : lynx::Instrument
     void allNotesOff() noexcept override {}
     void render (float*, float*, int, float, float) noexcept override {}
 };
-struct Pass final : lynx::Effect
+struct Pass final : yw::Effect
 {
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void process (float*, float*, int, const lynx::EffectParams&, double) noexcept override {}
+    void process (float*, float*, int, const yw::EffectParams&, double) noexcept override {}
 };
-inline lynx::Song song()
+inline yw::Song song()
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     auto& c = s.channels[0];
-    c.instrument = lynx::InstrumentKind::plugin;
+    c.instrument = yw::InstrumentKind::plugin;
     c.plugin = {};
     c.plugin.id = "VST-Test";
-    lynx::EffectSlot slot;
-    slot.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot slot;
+    slot.kind = yw::EffectKind::plugin;
     slot.plugin.id = "VST-Effect";
     s.mixer[1].effects.clear();
     s.mixer[1].effects.push_back (slot);
@@ -36,36 +36,36 @@ TEST (wrapper181c_midi_options_reach_a_new_instance_of_the_plugin)
 {
     using namespace wrappermidi181c;
     int instruments = 0, effects = 0;
-    lynx::RackState::Factories f;
-    f.pluginInstruments = [&] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Instrument> { ++instruments; return std::make_shared<Silent>(); };
-    f.pluginEffects = [&] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { ++effects; return std::make_shared<Pass>(); };
-    const std::function<void (lynx::PluginRef&)> changes[] = {
-        [] (lynx::PluginRef& r) { r.releaseVelocity = ! r.releaseVelocity; },
-        [] (lynx::PluginRef& r) { r.sendBendRange = ! r.sendBendRange; },
-        [] (lynx::PluginRef& r) { r.bendRange = 24; },
-        [] (lynx::PluginRef& r) { r.modXAftertouch = ! r.modXAftertouch; },
-        [] (lynx::PluginRef& r) { r.allNotesOffOnStop = ! r.allNotesOffOnStop; },
-        [] (lynx::PluginRef& r) { r.resetOnFlush = ! r.resetOnFlush; },
-        [] (lynx::PluginRef& r) { r.sendLoopPosition = ! r.sendLoopPosition; },
+    yw::RackState::Factories f;
+    f.pluginInstruments = [&] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Instrument> { ++instruments; return std::make_shared<Silent>(); };
+    f.pluginEffects = [&] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { ++effects; return std::make_shared<Pass>(); };
+    const std::function<void (yw::PluginRef&)> changes[] = {
+        [] (yw::PluginRef& r) { r.releaseVelocity = ! r.releaseVelocity; },
+        [] (yw::PluginRef& r) { r.sendBendRange = ! r.sendBendRange; },
+        [] (yw::PluginRef& r) { r.bendRange = 24; },
+        [] (yw::PluginRef& r) { r.modXAftertouch = ! r.modXAftertouch; },
+        [] (yw::PluginRef& r) { r.allNotesOffOnStop = ! r.allNotesOffOnStop; },
+        [] (yw::PluginRef& r) { r.resetOnFlush = ! r.resetOnFlush; },
+        [] (yw::PluginRef& r) { r.sendLoopPosition = ! r.sendLoopPosition; },
     };
     auto s = song();
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, f);
+    auto state = yw::RackState::build (s, nullptr, 48000.0, f);
     CHECK (instruments == 1 && effects == 1);
     // nothing changed: the running plugins stay
-    state = lynx::RackState::build (s, state.get(), 48000.0, f);
+    state = yw::RackState::build (s, state.get(), 48000.0, f);
     CHECK (instruments == 1 && effects == 1);
     int wantedInstruments = 1, wantedEffects = 1;
     for (const auto& change : changes)
     {
         change (s.channels[0].plugin);
-        state = lynx::RackState::build (s, state.get(), 48000.0, f);
+        state = yw::RackState::build (s, state.get(), 48000.0, f);
         CHECK (instruments == ++wantedInstruments && effects == wantedEffects);
         change (s.mixer[1].effects[0].plugin);
-        state = lynx::RackState::build (s, state.get(), 48000.0, f);
+        state = yw::RackState::build (s, state.get(), 48000.0, f);
         CHECK (instruments == wantedInstruments && effects == ++wantedEffects);
     }
     // an option read while the plugin runs doesn't cost a re-creation
     s.channels[0].plugin.notifyRender = ! s.channels[0].plugin.notifyRender;
-    state = lynx::RackState::build (s, state.get(), 48000.0, f);
+    state = yw::RackState::build (s, state.get(), 48000.0, f);
     CHECK (instruments == wantedInstruments && effects == wantedEffects);
 }

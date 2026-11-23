@@ -12,10 +12,10 @@
 #include "core/Instruments.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // The instrument of an InstrumentKind::fpc channel (FlSamplers.h fpcChannelPads: its state and the layers' files).
 // `samples` decodes a file (null = no file plays). Not prepared, not configured.
 std::unique_ptr<Instrument> makeFpcInstrument (const ChannelDef& channel,
                                                const std::function<std::shared_ptr<const SampleData> (const std::string& path)>& samples);
-} // namespace lynx
+} // namespace yw

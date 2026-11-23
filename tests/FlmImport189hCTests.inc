@@ -4,10 +4,10 @@
 namespace flm189hc
 {
 // `n` frames of the stereo signal f(i) through a fresh engine at 48 kHz, one call
-inline std::vector<std::array<float, 2>> run (lynx::EffectKind kind, std::initializer_list<std::pair<int, float>> values, int n,
+inline std::vector<std::array<float, 2>> run (yw::EffectKind kind, std::initializer_list<std::pair<int, float>> values, int n,
                                               std::array<float, 2> (*f) (int))
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (48000.0);
     auto p = makeEffectSlot (kind).params;
@@ -31,7 +31,7 @@ inline bool near (double a, double b, double tol) { return std::abs (a - b) <= t
 
 TEST (flm189h_pocket_waveshaper_curves)
 {
-    using lynx::pocket::waveshaperCurve;
+    using yw::pocket::waveshaperCurve;
     // (FLM's float glides stall short of their targets: Y = 5.5 settles about 2e−4 below, hence the tolerances)
     // Soft (k = Y = 9·0.5 + 1, b = X = 0 → 1e−4): ≈ kx/√((kx)² + 1)
     CHECK (flm189hc::near (waveshaperCurve (0, 0.2f, 0.5f, 0.5f), 0.7399769, 2e-5));
@@ -57,7 +57,7 @@ TEST (flm189h_pocket_waveshaper_curves)
 
 TEST (flm189h_pocket_waveshaper_engine)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketWaveshaper;
     const auto tone = [] (int i) -> std::array<float, 2> {
         const auto v = 0.5f * (float) std::sin (6.283185307179586 * 440.0 * i / 48000.0);
@@ -91,7 +91,7 @@ TEST (flm189h_pocket_waveshaper_engine)
 
 TEST (flm189h_pocket_compressor)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto K = EffectKind::pocketCompressor;
     const auto half = [] (int) -> std::array<float, 2> { return { 0.5f, -0.25f }; };
     // defaults: Ratio 1:1 (slope 1, make-up 1); Level 0.5001 with Auto gain → 10^(2·0.5001 − 1)
@@ -138,7 +138,7 @@ TEST (flm189h_pocket_compressor)
 
 TEST (flm189h_pocket_spreader)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto tone = [] (int i) -> std::array<float, 2> {
         return { 0.5f * (float) std::sin (6.283185307179586 * 300.0 * i / 48000.0), 0.3f * (float) std::sin (6.283185307179586 * 2100.0 * i / 48000.0) };
     };
@@ -168,7 +168,7 @@ TEST (flm189h_pocket_spreader)
 
 TEST (flm189h_pocket_c_import)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto w = flmfx::map (flm188f::moduleOf (41, { 1.0f, 0.5f, 0.0f, 0.3f, 0.7f, 0.4f }));
     CHECK (w.slots.size() == 1 && w.slots[0].kind == EffectKind::pocketWaveshaper && w.slots[0].params[0] == 0.5f
            && w.slots[0].params[4] == 0.4f && w.slots[0].params[7] == 1.0f);

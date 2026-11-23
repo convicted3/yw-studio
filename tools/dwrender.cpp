@@ -1,4 +1,4 @@
-// Renders a DirectWave state through LYNX's engine (src/core/DirectWave) for comparison with the DLL (REA round 72).
+// Renders a DirectWave state through YW's engine (src/core/DirectWave) for comparison with the DLL (REA round 72).
 // usage: dwrender <state.bin> <zonedump.bin|-> <out.f32> <fs> <frames> <block> [prog=<i>] [seed=<n>] [on=n,key,vel,fvol,fpan,cents] [off=n,id]
 // zonedump: what r72/run/dw.exe dumpzones= writes (program record, then per zone the 0x41a record and its samples)
 #include <cstdio>
@@ -11,7 +11,7 @@
 
 #include "core/DirectWave.h"
 
-using namespace lynx;
+using namespace yw;
 
 static std::vector<std::uint8_t> readAll (const char* p)
 {

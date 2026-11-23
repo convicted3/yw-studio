@@ -1,22 +1,22 @@
 #pragma once
 
 // The settings of Ableton Live 12's MIDI Tools *generators* (round 190fm, LIVE-FACTS §4: miditools-002, -005, -007,
-// -066…-079) as LYNX keeps them: one struct per generator with Live's defaults (Live's own set file holds them in
+// -066…-079) as YW keeps them: one struct per generator with Live's defaults (Live's own set file holds them in
 // `NoteAlgorithms`, one element per tool [DATA DefaultLiveSet; SCHEMA 12402 RhythmAlgorithm / SeedAlgorithm /
 // ShapeAlgorithm / StacksAlgorithm]). Song::midiGenerate holds them, so they are saved with the project like Live's.
 // Pure data (no Song, no JUCE): Song.h includes it. What the values do is core/MidiGenerate.h.
 //
 // Tags: [DATA] Live's default value; [SHOT] the Generate panels' picture (ableton190o/shots/live-04-generate-panels.png);
-// [INFERRED] LYNX's reading where neither says (each one is "needs live check" in docs/analise/REA_rodada190fm-mt.md).
+// [INFERRED] YW's reading where neither says (each one is "needs live check" in docs/analise/REA_rodada190fm-mt.md).
 
 #include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
 
-namespace lynx::midigen
+namespace yw::midigen
 {
-// The note values LYNX's Rhythm "Step Duration" and Shape "Rate" step through, shortest first. [INFERRED] Live saves
+// The note values YW's Rhythm "Step Duration" and Shape "Rate" step through, shortest first. [INFERRED] Live saves
 // Step Duration as an enum whose default 7 reads "1/8" in the picture; the list 1/64T, 1/64, 1/32T, 1/32, 1/16T, 1/16,
 // 1/8T, 1/8, 1/4T, 1/4, 1/2T, 1/2, 1/1 puts 1/8 at 7 (and starts where Seed's duration range starts, at 1/64).
 constexpr int noteValueCount = 13;
@@ -27,7 +27,7 @@ struct RhythmOptions // [DATA] RhythmAlgorithm's defaults
 {
     int pitch = 36;          // the key every hit plays (Live's C1)
     int steps = 8;           // PatternLength: steps per pattern, 1..32 [range INFERRED]
-    int pattern = 14;        // which of the C(steps, density) rhythms, in LYNX's own order (rhythmHits()) [order INFERRED]
+    int pattern = 14;        // which of the C(steps, density) rhythms, in YW's own order (rhythmHits()) [order INFERRED]
     int density = 4;         // hits per pattern, 0..steps
     int stepDuration = 7;    // noteValueTicks() index: 1/8
     float split = 0.0f;      // 0..1: share of the hits played as two notes of half a step [INFERRED]
@@ -53,8 +53,8 @@ struct SeedOptions // [DATA] SeedAlgorithm's defaults
 struct ShapeOptions // [DATA] ShapeAlgorithm's defaults
 {
     static constexpr int levelCount = 21; // [DATA] 21 ShapeLevels
-    // LYNX's presets [STR: Live names Flat, Arc Up, Arc Down, Bounce Up, Bounce Down; Up / Down from the picture]. The
-    // formulas are LYNX's (shapePreset()); Live's order is unknown, LYNX's puts Up at Live's default index 2.
+    // YW's presets [STR: Live names Flat, Arc Up, Arc Down, Bounce Up, Bounce Down; Up / Down from the picture]. The
+    // formulas are YW's (shapePreset()); Live's order is unknown, YW's puts Up at Live's default index 2.
     enum Preset { custom, flat, up, down, arcUp, arcDown, bounceUp, bounceDown, presetCount };
     std::array<float, levelCount> levels {};  // 0..1, filled from the preset by the constructor
     int preset = up;
@@ -63,7 +63,7 @@ struct ShapeOptions // [DATA] ShapeAlgorithm's defaults
     float density = 1.0f;    // 0..1: chance each step gets its note
     int minPitch = 60, maxPitch = 84;
     float jitter = 0.0f;     // PitchVariation 0..1: random pitch offset up to ± jitter × half the range [INFERRED]
-    int velocity = 100;      // LYNX: Live's Shape panel shows no velocity; 100 like Rhythm's default
+    int velocity = 100;      // YW: Live's Shape panel shows no velocity; 100 like Rhythm's default
     ShapeOptions();
     bool operator== (const ShapeOptions&) const = default;
 };
@@ -86,12 +86,12 @@ struct StackChord // [DATA] StacksAlgorithm Sequence/Chord defaults
 struct StacksOptions
 {
     std::vector<StackChord> sequence { StackChord {} };
-    int selected = 0;        // the chord the panel edits (LYNX)
-    std::string bankFile;    // a user's .stacks chord bank (read at run time; empty = LYNX's own bank)
+    int selected = 0;        // the chord the panel edits (YW)
+    std::string bankFile;    // a user's .stacks chord bank (read at run time; empty = YW's own bank)
     bool operator== (const StacksOptions&) const = default;
 };
 
-// LYNX addition beside Live's Max for Live "Euclidean" generator: one voice of core/NoteTools.h's euclideanHit().
+// YW addition beside Live's Max for Live "Euclidean" generator: one voice of core/NoteTools.h's euclideanHit().
 struct EuclidOptions
 {
     int steps = 16, density = 8, rotation = 0; // [SHOT] Steps 16, Density 8
@@ -116,7 +116,7 @@ struct Settings
 const char* toolName (int tool) noexcept; // English, for tr()
 
 // The settings as text (key=value lines) and back; unknown keys are skipped and missing ones keep their defaults, so
-// newer and older LYNX read each other's projects. ProjectFile stores the text as the project's "midiGenerate".
+// newer and older YW read each other's projects. ProjectFile stores the text as the project's "midiGenerate".
 std::string encode (const Settings& settings);
 Settings decode (const std::string& text);
-} // namespace lynx::midigen
+} // namespace yw::midigen

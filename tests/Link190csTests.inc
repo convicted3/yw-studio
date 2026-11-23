@@ -7,14 +7,14 @@ inline double value (const std::string& text, double input)
 {
     std::string error;
     int at = 0;
-    const auto f = lynx::linkformula::Formula::compile (text, &error, &at);
+    const auto f = yw::linkformula::Formula::compile (text, &error, &at);
     return at == -1 ? f.evaluate (input) : -12345.0;
 }
 inline std::string error (const std::string& text)
 {
     std::string e;
     int at = 0;
-    lynx::linkformula::Formula::compile (text, &e, &at);
+    yw::linkformula::Formula::compile (text, &e, &at);
     return at >= 0 ? e : std::string();
 }
 inline bool near (double a, double b, double tolerance = 1.0e-9) { return std::abs (a - b) <= tolerance; }
@@ -88,12 +88,12 @@ TEST (link190cs_inter_internoswap_fold_warp_map)
     // map (x, lo, hi) = lo + (hi - lo) x
     CHECK (near (value ("map(Input,0.2,0.6)", 0.5), 0.4) && near (value ("map(Input,1,0)", 0.25), 0.75));
     // names in any letter case, the default mapping untouched
-    CHECK (near (value ("MAP(Input,0,0.5)", 1.0), 0.5) && lynx::linkformula::Formula::compile ("Input").isDefault());
+    CHECK (near (value ("MAP(Input,0,0.5)", 1.0), 0.5) && yw::linkformula::Formula::compile ("Input").isDefault());
 }
 
 TEST (link190cs_link_modes)
 {
-    using namespace lynx::linkformula;
+    using namespace yw::linkformula;
     const Formula oneToOne;
     const auto is = [] (std::optional<float> v, float expected) { return v.has_value() && std::abs (*v - expected) < 1.0e-6f; };
     // Default and Hold: every event as it is (a key: velocity / 127, its release 0), the formula applied
@@ -120,7 +120,7 @@ TEST (link190cs_link_modes)
 
 TEST (link190cs_key_links_and_modes_in_the_settings_text)
 {
-    using namespace lynx;
+    using namespace yw;
     const AutomationTarget volume { AutomationTargetKind::channelVolume, 0 }, insert { AutomationTargetKind::mixerVolume, 1 };
     CHECK (isNoteLink (linkNoteBase) && isNoteLink (linkNoteBase + 127) && ! isNoteLink (127) && ! isNoteLink (linkNoteBase + 128));
     MidiLink key { linkNoteBase + 60, 0, volume };
@@ -151,6 +151,6 @@ TEST (link190cs_key_links_and_modes_in_the_settings_text)
     CHECK (older.globalLinks.size() == 1 && older.globalLinks[0] == c);
     CHECK (prefs::MidiPrefs::fromText ("linkmode=2\n").globalLinks.empty()); // (no link before it)
 
-    // (the project file's key links, modes and "Record automation" round trip are checked by --linkshot: the .lynx
+    // (the project file's key links, modes and "Record automation" round trip are checked by --linkshot: the .yw
     // writer lives in the engine, outside this core test binary)
 }

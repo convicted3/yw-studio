@@ -11,7 +11,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::patternblocks
+namespace yw::patternblocks
 {
 // The track the clips made from blocks carry: no Playlist track (never muted by one, not drawn in the clip area).
 constexpr int blockTrack = -1;
@@ -120,4 +120,4 @@ int toClipsInEveryArrangement (Song& song);
 void removePattern (Song& song, int index);              // its blocks go, later rows move up
 void shiftPatterns (Song& song, int index, int delta);   // rows at or after `index` move by `delta`
 void swapPatterns (Song& song, int a, int b);
-} // namespace lynx::patternblocks
+} // namespace yw::patternblocks

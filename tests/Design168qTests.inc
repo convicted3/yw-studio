@@ -1,23 +1,23 @@
 // Round 168q (docs/analise/REA_rodada168q.md): designed editors of Kepler, Kepler Exo, Transistor Bass, Sawer, BeepMap,
-// Fruity Granulizer and the Wasp placeholder, their automatable parameters (core/ModelParams.h) and LYNX's own BeepMap
-// and Granulizer banks (core/LynxBanks.h).
+// Fruity Granulizer and the Wasp placeholder, their automatable parameters (core/ModelParams.h) and YW's own BeepMap
+// and Granulizer banks (core/YwBanks.h).
 
 #include "core/BeepMap.h"
 #include "core/EngineLayouts.h"
 #include "core/EngineParams.h"
 #include "core/Granulizer.h"
 #include "core/Kepler.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParams.h"
 #include "core/PluginLayout.h"
 #include "core/Sawer.h"
 #include "core/TransistorBass.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 std::vector<Preset> beepMapBank();   // core/BeepMapBank.cpp
 std::vector<Preset> granulizerBank(); // core/GranulizerBank.cpp
-} // namespace lynx::banks
+} // namespace yw::banks
 
 namespace design168q
 {
@@ -61,9 +61,9 @@ std::vector<Note> phrase (std::initializer_list<int> keys, int release)
 }
 
 // a test sample: 2 s of a decaying chord with a few clicks (transients), 44.1 kHz mono
-std::shared_ptr<lynx::SampleData> testSample()
+std::shared_ptr<yw::SampleData> testSample()
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     const int n = 88200;
     s->sampleRate = 44100.0;
     s->left.resize ((std::size_t) n);
@@ -81,13 +81,13 @@ std::shared_ptr<lynx::SampleData> testSample()
 
 struct Engine
 {
-    lynx::InstrumentKind kind;
-    const std::vector<lynx::EngineParam>* params;
+    yw::InstrumentKind kind;
+    const std::vector<yw::EngineParam>* params;
 };
 
 std::vector<Engine> engines()
 {
-    using namespace lynx;
+    using namespace yw;
     return { { InstrumentKind::kepler, &keplerParams() },          { InstrumentKind::keplerExo, &keplerExoParams() },
              { InstrumentKind::transistorbass, &transistorBassParams() }, { InstrumentKind::sawer, &sawerParams() },
              { InstrumentKind::beepmap, &beepMapEngineParams() },  { InstrumentKind::granulizer, &granulizerEngineParams() } };
@@ -96,7 +96,7 @@ std::vector<Engine> engines()
 
 TEST (design168q_engine_param_tables)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& e : design168q::engines())
     {
         const auto& table = *e.params;
@@ -126,7 +126,7 @@ TEST (design168q_engine_param_tables)
 
 TEST (design168q_layouts_name_real_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     struct Page { InstrumentKind kind; plugui::Layout (*make)(); int controls; };
     const Page pages[] = { { InstrumentKind::kepler, &plugui::keplerLayout, 34 },
                            { InstrumentKind::keplerExo, &plugui::keplerExoLayout, 120 },
@@ -173,7 +173,7 @@ TEST (design168q_layouts_name_real_parameters)
 
 TEST (design168q_model_params_read_and_write_the_state)
 {
-    using namespace lynx;
+    using namespace yw;
     // BeepMap: the int32 settings, whole numbers in their ranges
     ChannelDef b;
     b.instrument = InstrumentKind::beepmap;
@@ -217,7 +217,7 @@ TEST (design168q_model_params_read_and_write_the_state)
 
 TEST (design168q_live_changes_keep_the_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     // a BeepMap knob moved while a note plays: the voice goes on (only a new bitmap stops the voices, as FL)
     ChannelDef c;
     c.instrument = InstrumentKind::beepmap;
@@ -246,7 +246,7 @@ TEST (design168q_live_changes_keep_the_notes)
 
 TEST (design168q_banks_play_clean)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace design168q;
     // BeepMap: a held note, then a three-note chord (each preset is drawn to stay under 0.55 per note)
     const auto& beeps = banks::beepMapBank();
@@ -267,7 +267,7 @@ TEST (design168q_banks_play_clean)
             const auto level = measure (out);
             const auto clean = level.finite && level.peak < 1.0f && level.rms > 2.0e-3;
             CHECK (clean);
-            if (! clean || std::getenv ("LYNX_BANK_LEVELS") != nullptr)
+            if (! clean || std::getenv ("YW_BANK_LEVELS") != nullptr)
                 std::printf ("  BeepMap / %s (%d keys): peak %.3f rms %.4f\n", preset.name.c_str(), (int) keys.size(), level.peak, level.rms);
         }
     }
@@ -292,7 +292,7 @@ TEST (design168q_banks_play_clean)
         const auto level = measure (out);
         const auto clean = level.finite && level.peak < 1.0f && level.rms > 2.0e-3;
         CHECK (clean);
-        if (! clean || std::getenv ("LYNX_BANK_LEVELS") != nullptr)
+        if (! clean || std::getenv ("YW_BANK_LEVELS") != nullptr)
             std::printf ("  Granulizer / %s: peak %.3f rms %.4f\n", preset.name.c_str(), level.peak, level.rms);
     }
     // a preset keeps the channel's channel-settings snapshot and replaces every knob
@@ -378,7 +378,7 @@ std::vector<std::uint8_t> tbassState (std::int16_t stepVersion)
 
 TEST (design168q2_transistor_bass_sequence_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const std::int16_t version : { (std::int16_t) 1, (std::int16_t) 0 })
     {
         ChannelDef c;
@@ -425,7 +425,7 @@ TEST (design168q2_transistor_bass_sequence_parameters)
 
 TEST (design168q2_transistor_bass_sequence_edits_play_live)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto dll = tbassDll();
     if (dll.empty() || ! transistorBassDllUsable (dll))
         return; // (no FL installation)

@@ -4,7 +4,7 @@
 
 TEST (render180d_fl_clip_fades_play_only_when_their_bit_is_on)
 {
-    using namespace lynx;
+    using namespace yw;
     flp::Project p;
     p.tempo = 120.0;
     flp::Channel channel;
@@ -48,7 +48,7 @@ TEST (render180d_fl_clip_fades_play_only_when_their_bit_is_on)
 
 TEST (render180d_export_turns_on_the_clip_fades_it_writes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     ChannelDef audio;
     audio.instrument = InstrumentKind::audioClip;
@@ -84,40 +84,40 @@ TEST (render180d_export_turns_on_the_clip_fades_it_writes)
 TEST (render180d_new_clips_fade_on_fl_s_curve_and_linear_ones_stay_linear)
 {
     // FL's measured fade-in: 58.33 ms, 0.158 at 15 ms and 0.506 at 29 ms
-    using namespace lynx;
+    using namespace yw;
     CHECK (std::abs (clipops::crossfadeCurve (15.5f / 58.33f) - 0.158f) < 0.02f);
     CHECK (std::abs (clipops::crossfadeCurve (29.5f / 58.33f) - 0.506f) < 0.02f);
 
     auto levelAt = [] (bool linear) {
-        lynx::Song s;
+        yw::Song s;
         s.bpm = 120.0;
-        s.mode = lynx::PlayMode::song;
-        s.mixer = lynx::Song::defaultMixer (1);
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::audioClip;
+        s.mode = yw::PlayMode::song;
+        s.mixer = yw::Song::defaultMixer (1);
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::audioClip;
         c.samplePath = "x.wav";
         c.volume = 1.0f;
         c.mixerTrack = 1;
         s.channels.push_back (c);
         s.patterns.emplace_back();
-        lynx::Clip clip;
-        clip.kind = lynx::ClipKind::audio;
+        yw::Clip clip;
+        clip.kind = yw::ClipKind::audio;
         clip.channel = 0;
-        clip.length = lynx::ppq * 4;
-        clip.fadeIn = lynx::ppq; // 0.5 s at 120 BPM
+        clip.length = yw::ppq * 4;
+        clip.fadeIn = yw::ppq; // 0.5 s at 120 BPM
         clip.linearFades = linear ? 3 : 0;
         s.playlist = { clip };
         auto provider = [] (const std::string&) {
-            auto d = std::make_shared<lynx::SampleData>();
+            auto d = std::make_shared<yw::SampleData>();
             d->left.assign (48000 * 4, 1.0f);
-            return std::shared_ptr<const lynx::SampleData> (d);
+            return std::shared_ptr<const yw::SampleData> (d);
         };
-        auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-        lynx::RackRenderer r;
+        auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         std::vector<float> all, l (512), rr (512);
-        const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
-        for (double tick = 0.0; tick < lynx::ppq * 1.0; tick += 512 * tps)
+        const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
+        for (double tick = 0.0; tick < yw::ppq * 1.0; tick += 512 * tps)
         {
             r.process (state.get(), true, tick, 512, l.data(), rr.data());
             all.insert (all.end(), l.begin(), l.end());
@@ -131,7 +131,7 @@ TEST (render180d_new_clips_fade_on_fl_s_curve_and_linear_ones_stay_linear)
 
 TEST (render180d_fade_tension_matches_fl_render)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (clipops::fadeTensionCurve (0.3f, 0.0f) == 0.3f);
     CHECK (clipops::fadeTensionCurve (0.3f, 0.001f) == 0.3f); // FL rounds it to 0.01
     for (const auto t : { -5000.0f, -50.0f, 50.0f, 5000.0f })

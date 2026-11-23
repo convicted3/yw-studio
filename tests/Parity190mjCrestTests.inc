@@ -6,8 +6,8 @@
 // 2.5 kHz). Revision 0 keeps the fitted law (the revision-0 fingerprints below are the base's).
 namespace parity190mj
 {
-namespace cr = lynx::dyn::crest;
-inline lynx::EffectSlot crest (float thr, float ratio, float knee, float rev, float att, float rel, float range = 1.0f)
+namespace cr = yw::dyn::crest;
+inline yw::EffectSlot crest (float thr, float ratio, float knee, float rev, float att, float rel, float range = 1.0f)
 {
     auto s = parity190kw::crest (cr::styleValue (cr::Style::twoWay), cr::voicingValue (cr::Style::twoWay), thr, ratio, knee, att, rel, rev);
     s.params[(std::size_t) cr::range] = range;
@@ -48,7 +48,7 @@ inline double threeBandDb (double hz, double rmsDb, double thr, double ratio, do
     return 20.0 * std::log10 (sum);
 }
 // a steady sine of `rmsDb` dBFS RMS at `hz` through a slot: the output's RMS gain (dB) over the last 0.5 s
-inline double sineGainDb (const lynx::EffectSlot& s, double hz, double rmsDb, double seconds = 3.0)
+inline double sineGainDb (const yw::EffectSlot& s, double hz, double rmsDb, double seconds = 3.0)
 {
     const double sr = 48000.0;
     std::vector<float> l ((std::size_t) (sr * seconds)), r;
@@ -70,7 +70,7 @@ inline double sineGainDb (const lynx::EffectSlot& s, double hz, double rmsDb, do
 
 TEST (parity190mj_crest_ttm_static_law_by_hand)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // threshold −40 dB (no cut under −36 dB), 4 : 1, knee 18 dB, range 60
     const auto s = parity190mj::crest (1.0f / 3.0f, cr::ratioValue (4.0), 0.25f, 1.0f, 0.3f, 0.5f);
@@ -102,7 +102,7 @@ TEST (parity190mj_crest_ttm_static_law_by_hand)
 
 TEST (parity190mj_crest_ttm_bands_settle_on_the_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // equal attack and release (50 ms): the follower settles on the sine's mean power, so the band reads its RMS level.
     // A 10 dB range keeps the other bands' lift (≤ 6 dB on their small share of the tone) out of the way
@@ -125,7 +125,7 @@ TEST (parity190mj_crest_ttm_bands_settle_on_the_law)
 
 TEST (parity190mj_crest_translated_ttm_state_runs_the_new_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // a Pro-C 3 TTM state (FFBS v1, style 5): threshold −24 dB, 4 : 1, knee 0, range 60, attack 10 ms, release 200 ms
     fabfilter::State st;
@@ -151,7 +151,7 @@ TEST (parity190mj_crest_translated_ttm_state_runs_the_new_law)
     CHECK (t.params[(std::size_t) cr::revision] == 1.0f);
     t.params[(std::size_t) cr::autoGain] = 0.0f;
     // the reference's 1 kHz stairs at this setting (refcap030 G1 knee 0, the last 140 ms of each step): 0 dBFS −14.9 dB,
-    // −24 dBFS −2.7 dB, −48 dBFS +3.8 dB, −60 dBFS +8.1 dB (peak levels: RMS 3 dB lower). At −60 dBFS LYNX stays 0.6 dB
+    // −24 dBFS −2.7 dB, −48 dBFS +3.8 dB, −60 dBFS +8.1 dB (peak levels: RMS 3 dB lower). At −60 dBFS YW stays 0.6 dB
     // under it: issue #77's fade holds the tone's small high-band share (−92 dBFS) out of its full lift (owner decision)
     const std::pair<double, double> ref[] { { 0.0, -14.9 }, { -24.0, -2.7 }, { -48.0, 3.8 }, { -60.0, 8.1 - 0.6 } };
     for (const auto& [peak, want] : ref)
@@ -164,7 +164,7 @@ TEST (parity190mj_crest_translated_ttm_state_runs_the_new_law)
 
 TEST (parity190mj_crest_ttm_lookahead_hold_and_safety)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     // the look-ahead (its hold and smoothing) and the hold processor run, stay finite and never boost a burst after
     // silence past its own peak (issue #77's threshold bound)
@@ -201,7 +201,7 @@ TEST (parity190mj_crest_ttm_lookahead_hold_and_safety)
 
 TEST (parity190mj_crest_fingerprints_revision_0_unchanged_revision_1_pinned)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     struct Case { float rev; cr::Style st; float threshold, ratio, knee, attack, release; double sr; std::uint64_t hash; };
     static const Case cases[] {

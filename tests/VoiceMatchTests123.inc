@@ -1,4 +1,4 @@
-// Round 123: matched voicings — LYNX's substitutes against golden curves measured on the official trials at her
+// Round 123: matched voicings — YW's substitutes against golden curves measured on the official trials at her
 // settings (docs/analise/REA_rodada123.md). The golden numbers are the real plug-ins' responses (black-box renders).
 
 
@@ -7,9 +7,9 @@ namespace vm123
 {
 constexpr double sr = 48000.0;
 
-inline lynx::EffectSlot wavesSlot (const char* waves, const char* values, int& translated)
+inline yw::EffectSlot wavesSlot (const char* waves, const char* values, int& translated)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;
     id.name = "WaveShell1-VST3 16.0_x64";
@@ -20,14 +20,14 @@ inline lynx::EffectSlot wavesSlot (const char* waves, const char* values, int& t
 }
 
 // steady gain (dB) of an effect for a 1 kHz sine at `db` dBFS peak (last 150 ms of 0.6 s)
-inline double sineGainDb (const lynx::EffectSlot& slot, double hz, double db)
+inline double sineGainDb (const yw::EffectSlot& slot, double hz, double db)
 {
     const auto n = (std::size_t) (0.6 * sr);
     std::vector<float> l (n), r (n);
     for (std::size_t i = 0; i < n; ++i)
         l[i] = r[i] = (float) (std::pow (10.0, db / 20.0) * std::sin (2.0 * 3.141592653589793 * hz * (double) i / sr));
     const auto x = l;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (std::size_t off = 0; off < n; off += 256)
@@ -46,7 +46,7 @@ constexpr const char* herSsl = "-1.3 1.8 1 0.35 * -30 0 0 0 0.2 * 0 0 0 -6 60 0 
 
 TEST (ssl_e_channel_matched_voicing_round123)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     int n = 0;
     auto s = vm123::wavesSlot ("SSLChannel", vm123::herSsl, n);
@@ -89,7 +89,7 @@ TEST (ssl_e_channel_matched_voicing_round123)
 
 TEST (deesser_matched_voicing_round123)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     int n = 0;
     auto s = vm123::wavesSlot ("DeEsser", "5506 2 -24.2 7 0.5 10 * * * * 0 3.98 32 1 0", n);
@@ -109,7 +109,7 @@ TEST (deesser_matched_voicing_round123)
 
 TEST (opto_and_program_compressor_voicings_round123)
 {
-    using namespace lynx;
+    using namespace yw;
     // her CLA-2A: gain 48.96, peak reduction 62.6, compress, Hi Freq 50 -> Glow Leveler "opto classic", dials 1:1
     std::string values;
     for (int i = 0; i < 208; ++i)

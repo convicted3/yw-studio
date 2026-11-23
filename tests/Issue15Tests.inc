@@ -7,11 +7,11 @@ namespace issue15
 // tracks: 0 = audio track → insert 14, 1 = audio track → insert 10, 2 = unassigned; channel "take" on insert 14
 struct Setup
 {
-    lynx::Song song = lynx::Song::makeDefault();
+    yw::Song song = yw::Song::makeDefault();
     int take = -1;
     Setup()
     {
-        using namespace lynx;
+        using namespace yw;
         while (song.mixer.size() < 16)
             song.mixer.emplace_back();
         song.playlistTracks.resize (3);
@@ -28,8 +28,8 @@ struct Setup
     }
     int clip (int track, std::int64_t start, int channel = -1)
     {
-        lynx::Clip c;
-        c.kind = lynx::ClipKind::audio;
+        yw::Clip c;
+        c.kind = yw::ClipKind::audio;
         c.channel = channel < 0 ? take : channel;
         c.track = track;
         c.start = start;
@@ -42,7 +42,7 @@ struct Setup
 
 TEST (issue15_only_placed_audio_clips_follow_an_audio_track)
 {
-    using namespace lynx;
+    using namespace yw;
     issue15::Setup s;
     const auto a = s.clip (0, 0);
     const auto b = s.clip (0, 384);
@@ -71,7 +71,7 @@ TEST (issue15_only_placed_audio_clips_follow_an_audio_track)
 
 TEST (issue15_shared_channel_asks_to_make_the_clip_unique)
 {
-    using namespace lynx;
+    using namespace yw;
     issue15::Setup s;
     const auto a = s.clip (0, 0);   // on the audio track of insert 14
     const auto b = s.clip (1, 384); // moved onto the audio track of insert 10

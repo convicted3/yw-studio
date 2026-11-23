@@ -1,19 +1,19 @@
 // Round 168o (docs/analise/REA_rodada168o.md): designed editors of the synth group (Harmless, Fruity DX10, SimSynth,
-// Ogun / Autogun, MiniSynth, GMS, Morphine), their automatable parameters (core/ModelParamsSynths.h) and LYNX's own
+// Ogun / Autogun, MiniSynth, GMS, Morphine), their automatable parameters (core/ModelParamsSynths.h) and YW's own
 // preset banks of Harmless, DX10 and SimSynth.
 
 #include "core/Dx10.h"
 #include "core/Harmless.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParamsSynths.h"
 #include "core/PluginLayoutSynths.h"
 #include "core/SimSynth.h"
 
 namespace design168o
 {
-const std::vector<lynx::EngineParam>& tableOf (lynx::InstrumentKind kind)
+const std::vector<yw::EngineParam>& tableOf (yw::InstrumentKind kind)
 {
-    using namespace lynx;
+    using namespace yw;
     switch (kind)
     {
         case InstrumentKind::harmless: return harmlessEngineParams();
@@ -27,9 +27,9 @@ const std::vector<lynx::EngineParam>& tableOf (lynx::InstrumentKind kind)
     }
 }
 
-std::unique_ptr<lynx::Instrument> make (lynx::InstrumentKind kind)
+std::unique_ptr<yw::Instrument> make (yw::InstrumentKind kind)
 {
-    using namespace lynx;
+    using namespace yw;
     switch (kind)
     {
         case InstrumentKind::harmless: return makeHarmlessInstrument();
@@ -46,9 +46,9 @@ struct Level
 
 // the preset's phrase: a held note (a chord for pads / keys) for 1 s, released, 0.5 s of tail at 44.1 kHz, on a channel
 // at FL's default volume (78 %: channelGain 0.549)
-Level play (lynx::Instrument& inst, const std::string& category)
+Level play (yw::Instrument& inst, const std::string& category)
 {
-    const auto gain = lynx::channelGain (0.78f);
+    const auto gain = yw::channelGain (0.78f);
     const int sr = 44100, len = sr * 3 / 2, offAt = sr;
     std::vector<int> keys { 60 };
     if (category == "Bass")
@@ -83,7 +83,7 @@ Level play (lynx::Instrument& inst, const std::string& category)
 
 TEST (design168o_engine_param_tables)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : plugui::synthGroupLayoutKinds())
     {
         const auto& table = design168o::tableOf (kind);
@@ -107,7 +107,7 @@ TEST (design168o_engine_param_tables)
 
 TEST (design168o_layouts_name_real_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : plugui::synthGroupLayoutKinds())
     {
         const auto* layout = plugui::synthGroupLayout (kind);
@@ -137,7 +137,7 @@ TEST (design168o_layouts_name_real_parameters)
 
 TEST (design168o_banks_play_clean)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto kind : { InstrumentKind::harmless, InstrumentKind::dx10, InstrumentKind::simsynth })
     {
         const auto& bank = banks::bankOf (kind);
@@ -163,7 +163,7 @@ TEST (design168o_banks_play_clean)
 
 TEST (design168o_state_parameter_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     // SimSynth: FL's host parameters read back what was set, the rest of the state untouched
     auto s = simsynth::defaultState();
     const auto before = s;
@@ -193,7 +193,7 @@ TEST (design168o_state_parameter_round_trip)
 
 TEST (design168o_automation_changes_the_sound_live)
 {
-    using namespace lynx;
+    using namespace yw;
     // an automation clip on a knob (Instrument::setParameter, 0..1) changes the held note without restarting it
     // (DX10's modulator envelopes are taken at the note's start, as in FL: its waveform knob is a live one)
     for (const auto& [kind, index, value] : { std::tuple { InstrumentKind::harmless, 54, 0.05f }, std::tuple { InstrumentKind::dx10, 11, 0.9f },

@@ -248,7 +248,7 @@ struct DynamicSTFT {
 		output.pos = (output.pos + samples)%_blockSamples;
 		_samplesSinceSynthesis += samples;
 	}
-	// LYNX (round 190kr): `samples` times moveOutput(1) (which zeroes each passed position and its window product and
+	// YW (round 190kr): `samples` times moveOutput(1) (which zeroes each passed position and its window product and
 	// leaves samplesSinceSynthesis() alone), in one pass
 	void clearOutput(size_t samples) {
 		for (size_t i = 0; i < samples; ++i) {
@@ -332,13 +332,13 @@ struct DynamicSTFT {
 		norm = mode;
 	}
 	
-	// LYNX (round 190kr): whether two analysis channels hold the same input, bit for bit (then their analyses are equal)
+	// YW (round 190kr): whether two analysis channels hold the same input, bit for bit (then their analyses are equal)
 	bool inputChannelsEqual(size_t channelA, size_t channelB) const {
 		const Sample *a = input.buffer.data() + channelA*_inputLengthSamples;
 		const Sample *b = input.buffer.data() + channelB*_inputLengthSamples;
 		return std::memcmp(a, b, sizeof(Sample)*_inputLengthSamples) == 0;
 	}
-	// LYNX (round 190kr): a channel's analysis taken from another one's (for the same input: the same spectrum, and the
+	// YW (round 190kr): a channel's analysis taken from another one's (for the same input: the same spectrum, and the
 	// same analysis state as analyseStep leaves)
 	void copyAnalysis(size_t fromChannel, size_t toChannel, size_t samplesInPast=0) {
 		_samplesSinceAnalysis = samplesInPast;

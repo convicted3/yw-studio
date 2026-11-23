@@ -7,7 +7,7 @@
 
 TEST (rack170a_cut_copy_paste_selected_channels)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     auto add = [&p] (int channel, std::int64_t start, int key = 60) {
         Note n;
@@ -69,7 +69,7 @@ TEST (rack170a_cut_copy_paste_selected_channels)
 
 TEST (rack170a_menu_mnemonics)
 {
-    namespace mm = lynx::menumnemonic;
+    namespace mm = yw::menumnemonic;
     CHECK (mm::apply ("Delete...", 'D') == std::string ("\x01") + "Delete...");
     CHECK (mm::apply ("Cut\tCtrl+X", 't') == std::string ("Cu\x01t\tCtrl+X"));
     CHECK (mm::apply ("Copy", 'o') == std::string ("C\x01opy"));
@@ -93,7 +93,7 @@ TEST (rack170a_menu_mnemonics)
 
 TEST (rack170a_pattern_selector_drag_and_wheel)
 {
-    using namespace lynx::patterndrag;
+    using namespace yw::patterndrag;
     CHECK (steps (0.0f) == 0);
     CHECK (steps (-(pixelsPerPattern - 1.0f)) == 0);
     CHECK (steps (-pixelsPerPattern) == 1);   // up: the next pattern
@@ -108,7 +108,7 @@ TEST (rack170a_pattern_selector_drag_and_wheel)
 
 TEST (rack170a_pattern_selector_past_the_last)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.patterns.resize (2);
     s.patterns[0].name = "Pattern 1";
@@ -127,7 +127,7 @@ TEST (rack170a_pattern_selector_past_the_last)
 
 TEST (rack170a_playhead_in_song_mode_and_note_names)
 {
-    using namespace lynx;
+    using namespace yw;
     // the rack's playhead uses the Piano Roll's rule: Song mode shows it while a clip of the shown pattern plays
     Song s;
     s.patterns.resize (2);
@@ -148,7 +148,7 @@ TEST (rack170a_playhead_in_song_mode_and_note_names)
 
 TEST (rack170a_step_groups_clearly_apart)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     // Busy Works Beats: "too close of a color ... dramatically different" — FL's groups are grey / red-tinted
     const auto& d = defaultPalette();
     CHECK (d.stepOffAlt != d.stepOff);
@@ -178,8 +178,8 @@ TEST (rack170a_step_groups_clearly_apart)
 
 TEST (rack170a2_lit_steps_in_the_channel_colour)
 {
-    using namespace lynx::themes;
-    // LYNX: a lit step takes its channel's colour, lifted until it stands clear of both empty-step greys
+    using namespace yw::themes;
+    // YW: a lit step takes its channel's colour, lifted until it stands clear of both empty-step greys
     for (const auto bg : { 0xff1c1e23u, 0xfff2f3f5u })
     {
         const auto p = derivePalette (0xffe5383bu, bg);

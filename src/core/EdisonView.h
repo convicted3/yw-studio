@@ -20,7 +20,7 @@
 
 #include "core/AudioEdit.h"
 
-namespace lynx::edisonview
+namespace yw::edisonview
 {
 // --- Dual view --------------------------------------------------------------------------------------------------------
 // The strength (0 … 256, 256 = opaque) the spectrogram and the waveform are drawn with. Without Dual view the chosen
@@ -85,7 +85,7 @@ int gridSlice (audioedit::Document& doc, std::int64_t start, std::int64_t end, d
 // Release: back to normal playback (and the playback stops).
 constexpr double scrubMaxSpeed = 16.0;
 double scrubSpeed (double speed, double pixelsRight, double uiScale = 1.0) noexcept;
-// FL's hint: "Paused" at 0, else the direction, |speed| with one decimal and " x" (LYNX: ▶ / ◀ for FL's glyphs)
+// FL's hint: "Paused" at 0, else the direction, |speed| with one decimal and " x" (YW: ▶ / ◀ for FL's glyphs)
 std::string scrubText (double speed);
 
 // --- Detect pitch regions -----------------------------------------------------------------------------------------
@@ -99,4 +99,4 @@ struct PitchSegment
 // Every marker goes, then one region per segment whose rounded pitch lies in 0 … 127, named after it (0x7a9a10 with
 // option 1). Returns the number of regions.
 int pitchRegions (audioedit::Document& doc, const std::vector<PitchSegment>& segments);
-} // namespace lynx::edisonview
+} // namespace yw::edisonview

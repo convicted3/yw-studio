@@ -46,7 +46,7 @@
     float gbScratchValue() const { return current() != nullptr ? current()->params[(std::size_t) grossbeat::scratchParam] : 0.0f; }
     void gbScratchDrag (const juce::MouseEvent& e)
     {
-        // down = further back in time (FL's raw falls from 65536, LYNX's value rises from 0)
+        // down = further back in time (FL's raw falls from 65536, YW's value rises from 0)
         setValue (grossbeat::scratchParam, juce::jlimit (0.0f, 1.0f, gbScratchFrom + (e.position.y - gbScratchFromY) / (gbScratchPixels * scale())));
         repaintGbDial();
     }
@@ -85,7 +85,7 @@
     // host is playing"; (Time Slots and Volume Slots) "Green rectangle = Queued for playback. Green filled = Playing".
     // Captured in FL 2026 (details190if raw/c22, c24, c25): a 1 px line with a short fading trail behind it, and the
     // playing slot of each grid filling from the left as its envelope plays; stopped, neither shows. The colour is
-    // LYNX's playhead (owner decision PL1). The engine publishes the state (GrossBeatEffect::controlOutput); the
+    // YW's playhead (owner decision PL1). The engine publishes the state (GrossBeatEffect::controlOutput); the
     // editor's 30 Hz timer reads it and repaints only the locator's old and new columns and the playing cells.
     struct GbLive
     {
@@ -136,8 +136,8 @@
     // then moves at every tick of the editor's 30 Hz timer and the window presents no frame for it (round 190ih measured a
     // fixed cost per frame the window presents, whatever is drawn). The slot fills stay on the frame budget below: they are
     // drawn under each slot's thumbnail and name (a picture over them would cover both) and grow from the cell's left edge
-    // (not a picture that moves). Fallback (Linux / macOS, LYNX_OVERLAY=0, Draw with the GPU off, a window over the mark):
-    // the locator moves with the fills, as before. LYNX_GB_DIAG bit 2: never on the overlay (A/B measurements).
+    // (not a picture that moves). Fallback (Linux / macOS, YW_OVERLAY=0, Draw with the GPU off, a window over the mark):
+    // the locator moves with the fills, as before. YW_GB_DIAG bit 2: never on the overlay (A/B measurements).
     std::unique_ptr<ui::MotionOverlay> gbOverlay;
     bool gbLocatorOnGpu() const noexcept { return gbOverlay != nullptr && gbOverlay->isShowing(); }
     const LayoutItem* gbEditorItem() const
@@ -195,7 +195,7 @@
             // --uiperf: 25-30 fallbacks a second, no overlay frame). It is ignored now: a mote of the art that drifts
             // across the envelope editor shows under the locator instead of over it (rollup 0.1.30, recommended)
             if (artLayer != nullptr)
-                artLayer->getProperties().set ("lynxOverlayIgnores", true);
+                artLayer->getProperties().set ("ywOverlayIgnores", true);
             gbOverlay->onHidden = [this] { // (it hid itself: the locator is painted again, where the fills' frame has it)
                 if (const auto* it = gbEditorItem(); it != nullptr && gbLive.playing)
                     repaint (gbLocatorBounds (*it, gbLive));
@@ -226,7 +226,7 @@
     }
     // 15 a second by default: measured in one process against the static window (round 190ih, Thief, interleaved
     // 2.5 s steps), 30 a second cost +5 … +13 points of process CPU, 15 or fewer stayed inside the measurement's own
-    // noise; LYNX_GB_DIAG's high byte overrides it for measurements
+    // noise; YW_GB_DIAG's high byte overrides it for measurements
     // (round 190jd: FL's colours move at FL's ~21 Hz)
     static double gbMaxHz() { const auto hz = gbDiag() >> 8; return hz > 0 ? (double) hz : gblocator::flStyle() ? gblocator::flRateHz : 15.0; }
 
@@ -972,7 +972,7 @@
     // Round 190lx (DP-4, capture 190lx GB2 fl-gb-slot-menu.png): FL's right-click menu of a time / volume slot — Reset,
     // Edit slot name..., Move slot left, Move slot right, then the slot selector's parameter menu (Automation: Edit events,
     // Init song with this position, Create automation clip...; Remote control: Link to controller...; Value: Copy value,
-    // Paste value, Type in value...). LYNX's own slot items (copy / paste the slot, flip, factory slots) follow under a line.
+    // Paste value, Type in value...). YW's own slot items (copy / paste the slot, flip, factory slots) follow under a line.
     void gbSlotMenu (juce::Rectangle<float> at)
     {
         juce::PopupMenu menu;
@@ -987,7 +987,7 @@
         selector.steps = grossbeat::slotsPerKind - 1;
         if (const auto param = paramOf (selector); param >= 0)
         {
-            // (LYNX's parameter menu starts with its own "Reset (value)": FL's slot menu has the slot's Reset above instead)
+            // (YW's parameter menu starts with its own "Reset (value)": FL's slot menu has the slot's Reset above instead)
             juce::PopupMenu items;
             ui::addValueItems (items, *this, node.locate ? nullptr : &engine, specFor (selector), param01 (selector.param),
                                [this, param] (double v) { setParams ({ { param, (float) v } }); });
@@ -1023,10 +1023,10 @@
     // Round 190mf (DP-7, capture 190lx GB3 fl-gb-mapping-menu.png): FL's mapping options menu (the ▾ at the top of the
     // tool column), two columns as FL's: [State] Reset, Copy state, Paste state; [Tools] Insert point at locator, Flip
     // vertically, Scale levels..., Normalize levels, Decimate points..., Filter..., Smooth up..., Turn all points
-    // smooth, Create sequence... (the forms are LYNX's Edison envelope tools, core/AudioEditTools.h: FL opens the same
+    // smooth, Create sequence... (the forms are YW's Edison envelope tools, core/AudioEditTools.h: FL opens the same
     // TMEnvEditor tool forms). Round 190mk (capture 190mk A1) added the rest: State › Presets / Open / Save state file /
     // Prepare for smooth editing, the point clipboard items, Analyze audio file..., Options › Focus on click, View ›
-    // Background gradient / Invert grid. LYNX's own items (rename, factory slots, the locator's colours) follow under a line.
+    // Background gradient / Invert grid. YW's own items (rename, factory slots, the locator's colours) follow under a line.
     void gbOptionsMenu (juce::Rectangle<float> at)
     {
         gbBuildOptionsMenu().showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withTargetScreenArea (localAreaToGlobal (at.toNearestInt())));
@@ -1127,7 +1127,7 @@
         menu.addItem (tr ("Rename..."), [this] { gbRename(); });
         menu.addSubMenu (tr ("Factory slots"), gbFactorySlots());
         menu.addItem (tr ("Load YW Studio's factory slots (keeps the selected slots)"), [this] { gbWriteState (gbWithFactory()); });
-        // round 190jd: the playback locator in FL's colours (cream on the beat, fading to red) instead of LYNX's playhead
+        // round 190jd: the playback locator in FL's colours (cream on the beat, fading to red) instead of YW's playhead
         menu.addItem (tr ("Playback locator in FL's colours"), true, gblocator::flStyle(), [this] {
             gblocator::setFlStyle (! gblocator::flStyle()); // (kept in ui-options "grossBeatFlLocator")
             repaint();
@@ -1149,7 +1149,7 @@
         gbWritePoints (points);
     }
 
-    // The envelope tool forms on the selected slot (round 190mf): LYNX's Edison tool windows (ui/AudioEditorTools) see the
+    // The envelope tool forms on the selected slot (round 190mf): YW's Edison tool windows (ui/AudioEditorTools) see the
     // slot's points as an envelope over 0…1 = the 4 beats; every change is written back to the slot (the window's Cancel
     // puts the slot back). Points the tool kept keep their point mode; new ones are FL's "Single curve".
     struct GbToolHost final : audiotools::Host
@@ -1388,7 +1388,7 @@
         return name.empty() ? tr ("Slot {0}", { juce::String (slot + 1) }) : juce::String::fromUTF8 (name.c_str());
     }
 
-    // the factory slot browser: LYNX SHARE's slots of the shown kind; the one picked replaces the selected slot
+    // the factory slot browser: YW Studio's slots of the shown kind; the one picked replaces the selected slot
     juce::PopupMenu gbFactorySlots()
     {
         static const auto factory = grossbeat::factoryState();
@@ -1542,7 +1542,7 @@
     // offset, HQ resampling | View scratching clock. Each item sets one of the plugin's option bytes (round 190ez, REA of
     // Gross Beat_x64.dll: CenterMenuClick 0x845640 writes +0x16c DC (byte 4), +0x16d compensation (5), +0x16e HQ (6) and
     // the Click reduction radio index at +0x170 (8); ViewScratchMenuClick 0x8459b0 writes +0x16f (7)). FL's last item,
-    // About (its splash), is left out. Below a separator, LYNX's own extra: the MIDI input port the trigger notes come
+    // About (its splash), is left out. Below a separator, YW's own extra: the MIDI input port the trigger notes come
     // from (FL 2026 has no port setting for Gross Beat; owner decision D1, live FL check 190ew).
     void gbPluginOptionsMenu (juce::Rectangle<float> at)
     {
@@ -1586,7 +1586,7 @@
 
     juce::String gbHint (const LayoutItem& item, juce::Point<float> p) const
     {
-        if (isGbItem (item, "gbjog")) // round 190oa (DP-8): FL's hint, with LYNX's gestures
+        if (isGbItem (item, "gbjog")) // round 190oa (DP-8): FL's hint, with YW's gestures
             return tr ("Time offset (scratching)") + "  " + tr ("[LMB] drag up / down to scratch (released, it springs back)  [Wheel] step");
         if (isGbItem (item, "gbopts"))
             return tr ("Options: trigger slots from MIDI notes (time slots: keys C5 to B7, volume slots: C2 to B4), click reduction, attack compensation, DC offset, HQ resampling, scratching clock; MIDI input port");
@@ -1714,7 +1714,7 @@
             cell (8, gbEditKind == 0, "T");
             cell (9, gbEditKind == 1, "V");
             // round 190mf: Step editing (a stepped line with a pen dot), Slide remaining points (an arrow to the right),
-            // Freeze editing (a six-armed star): FL's glyphs, drawn by LYNX
+            // Freeze editing (a six-armed star): FL's glyphs, drawn by YW
             for (int part = 10; part <= 12; ++part)
             {
                 const auto lit = part == 10 ? gbStepEdit : part == 11 ? gbSlide : gbFrozen;
@@ -1919,7 +1919,7 @@
         // at its end, the slope of a pause): above it the audio is buffered even in the song's first bar. Time slots only.
         if (gbEditKind == 0)
         {
-            g.setColour (juce::Colours::black.withAlpha (0.32f)); // (LYNX's darker ground: the same visible step as FL's)
+            g.setColour (juce::Colours::black.withAlpha (0.32f)); // (YW's darker ground: the same visible step as FL's)
             g.drawLine (juce::Line<float> (gbPos (inner, 0.0, 1.0f), gbPos (inner, grossbeat::barBeats, 1.0f - (float) (grossbeat::barBeats / 8.0))), 1.0f);
         }
 

@@ -1,4 +1,4 @@
-// Round 119: LYNX's voice tools (Quell Denoiser, Gemini Doubler), Echoform's output / pairs, and the Waves H-Delay /
+// Round 119: YW's voice tools (Quell Denoiser, Gemini Doubler), Echoform's output / pairs, and the Waves H-Delay /
 // NS1 / Doubler translations (docs/analise/REA_rodada119.md).
 
 
@@ -13,11 +13,11 @@ struct Stereo
     std::vector<float> l, r;
 };
 
-inline Stereo run (lynx::EffectKind kind, const lynx::EffectParams& p, Stereo x)
+inline Stereo run (yw::EffectKind kind, const yw::EffectParams& p, Stereo x)
 {
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (std::size_t off = 0; off < x.l.size(); off += 256)
@@ -78,7 +78,7 @@ inline double frequency (const std::vector<float>& v, std::size_t from, std::siz
 
 TEST (quell_denoiser_cuts_quiet_noise_and_keeps_the_voice)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace q = voicetools::quell;
     auto p = makeEffectSlot (EffectKind::quellDenoiser).params;
     p[q::amount] = 0.23f; // her most common setting
@@ -120,7 +120,7 @@ TEST (quell_denoiser_cuts_quiet_noise_and_keeps_the_voice)
 
 TEST (gemini_doubler_voices_follow_the_measured_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     auto base = makeEffectSlot (EffectKind::geminiDoubler).params;
     base[g::lowOn] = base[g::highOn] = 0.0f; // round 165: new instances start with the reference's shelves on
@@ -183,7 +183,7 @@ TEST (gemini_doubler_voices_follow_the_measured_laws)
 
 TEST (echoform_pairs_and_output_round119)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     auto p = makeEffectSlot (EffectKind::echoform).params;
     CHECK (p[e::output] == 0.5f && p[e::pairs] == 0.0f); // older projects load these defaults: unchanged sound
@@ -214,7 +214,7 @@ TEST (echoform_pairs_and_output_round119)
 
 TEST (waves_h_delay_ns1_doubler_translate_round119)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slotFor = [] (const char* waves, const std::string& values, int& translated) {
         PluginIdentity id;
         id.format = ForeignPlugin::Format::vst3;

@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190kx (loop analysis): a corpus of LYNX's OWN synthetic loops with known tempo and key, to measure the key and
+// Round 190kx (loop analysis): a corpus of YW's OWN synthetic loops with known tempo and key, to measure the key and
 // tempo detectors (core/KeyFollow detectKey, core/TempoDetect detect, core/LoopAnalysis). Nothing here comes from a
 // commercial sample: drums are synthesised (a pitched sine kick, noise snares and hats), tonal parts are additive tones
 // playing chord progressions, bass lines, melodies and arpeggios in a known key. Deterministic (a fixed PRNG per item).
@@ -52,7 +52,7 @@ struct Item
     int keyRoot = -1;        // -1: no key
     bool minor = false;
     double beats = 0.0;      // the loop's length in beats at `bpm`
-    std::shared_ptr<lynx::SampleData> audio;
+    std::shared_ptr<yw::SampleData> audio;
 };
 
 // --- voices --------------------------------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ inline void tonalPart (std::vector<float>& out, const std::string& part, int roo
     }
 }
 
-inline std::shared_ptr<lynx::SampleData> finish (std::vector<float> mono, bool stereo)
+inline std::shared_ptr<yw::SampleData> finish (std::vector<float> mono, bool stereo)
 {
     float peak = 0.0f;
     for (auto v : mono)
@@ -319,7 +319,7 @@ inline std::shared_ptr<lynx::SampleData> finish (std::vector<float> mono, bool s
     if (peak > 0.0f)
         for (auto& v : mono)
             v *= 0.8f / peak;
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     s->sampleRate = rate;
     s->left = mono;
     if (stereo)

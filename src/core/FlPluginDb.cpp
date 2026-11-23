@@ -7,7 +7,7 @@
 
 #include "core/FlWrapper.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -423,4 +423,4 @@ std::string locateFlSample (const std::string& flPath, const FlPathRoots& roots,
             return c;
     return {};
 }
-} // namespace lynx
+} // namespace yw

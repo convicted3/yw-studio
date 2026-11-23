@@ -1,11 +1,11 @@
 #pragma once
 
-// Export to FL Studio (round 171e, idea by Tookolld): a LYNX song as an FL Studio 2026 project (.flp), the inverse of
+// Export to FL Studio (round 171e, idea by Tookolld): a YW song as an FL Studio 2026 project (.flp), the inverse of
 // FlpImport. What FL has itself goes over as FL's own data: samplers and audio clips with their settings, FL's native
 // generators and effects with their saved state, third-party plugins (VST2 / VST3 / CLAP) inside Fruity Wrapper, the
 // patterns and notes, the Playlist (pattern, audio and automation clips, tracks, markers, arrangements), the mixer
-// (names, colours, routes, sends, levels, the track EQ) and the automation links. What only LYNX has is either
-// rendered to audio first (option A, the default: an instrument becomes an audio clip, an insert holding a LYNX-only
+// (names, colours, routes, sends, levels, the track EQ) and the automation links. What only YW has is either
+// rendered to audio first (option A, the default: an instrument becomes an audio clip, an insert holding a YW-only
 // effect is bounced) or replaced by the nearest FL plugin where a clean mapping exists (option B); the report says
 // which. Formats: docs/analise/REA_rodada171e.md. No JUCE (the renders and the plugin lookups are the caller's).
 
@@ -19,17 +19,17 @@
 #include "flp/Flp.h"
 #include "flp/FlpWrite.h"
 
-namespace lynx::flpexport
+namespace yw::flpexport
 {
-enum class LynxOnly
+enum class YwOnly
 {
-    renderAudio, // option A: LYNX-only instruments and inserts with LYNX-only effects become audio first
+    renderAudio, // option A: YW-only instruments and inserts with YW-only effects become audio first
     substitute   // option B: the nearest FL plugin where a clean mapping exists, the rest is left out
 };
 
 struct Options
 {
-    LynxOnly lynxOnly = LynxOnly::renderAudio;
+    YwOnly ywOnly = YwOnly::renderAudio;
     // the path written for a sample, a plugin's data file... (the zipped package: a path relative to the project);
     // empty = as it is
     std::function<std::string (const std::string&)> samplePath;
@@ -52,7 +52,7 @@ struct Report
 {
     std::vector<std::string> exact;       // as FL's own data (settings, states)
     std::vector<std::string> rendered;    // rendered to audio first (option A)
-    std::vector<std::string> substituted; // an FL plugin in place of a LYNX-only one (option B)
+    std::vector<std::string> substituted; // an FL plugin in place of a YW-only one (option B)
     std::vector<std::string> dropped;     // left out (no FL equivalent, nothing rendered)
     std::vector<std::string> notes;       // approximations worth knowing (e.g. a setting FL does not have)
 };
@@ -60,8 +60,8 @@ struct Report
 // --- option A: what has to be rendered before the conversion ---
 struct RenderPlan
 {
-    std::vector<int> channels; // LYNX-only instruments: frozen (their output before the mixer) to an audio clip
-    std::vector<int> inserts;  // inserts holding LYNX-only effects: bounced (their output after the fader), downstream first
+    std::vector<int> channels; // YW-only instruments: frozen (their output before the mixer) to an audio clip
+    std::vector<int> inserts;  // inserts holding YW-only effects: bounced (their output after the fader), downstream first
     bool empty() const noexcept { return channels.empty() && inserts.empty(); }
 };
 RenderPlan planRenders (const Song& song, const Options& options);
@@ -69,7 +69,7 @@ RenderPlan planRenders (const Song& song, const Options& options);
 // The song copy that renders a frozen channel: only `channel` plays (the patterns and Playlist as they are, in Song mode),
 // straight to a clean Master (no effects, unity, centre) — its own volume, pan and their automation are in the render.
 Song makeFreezeSong (const Song& song, int channel);
-// The song copy that renders insert `track` for the export: lynx::makeBounceSong, but the inserts feeding it reach the
+// The song copy that renders insert `track` for the export: yw::makeBounceSong, but the inserts feeding it reach the
 // Master only through it (their own Master route is cut), so the render is that insert's output alone and the exported
 // file doesn't play its sources twice (they keep their own inserts).
 Song makeInsertRenderSong (const Song& song, int track);
@@ -77,7 +77,7 @@ Song makeInsertRenderSong (const Song& song, int track);
 // that plays the render from tick 0 on a new Playlist track; its notes leave the patterns and the automation of its
 // volume / pan / parameters stops (it is in the audio).
 void applyFreeze (Song& song, int channel, const std::string& wav, std::int64_t length);
-// Inserts: lynx::makeBounceSong renders one; after the render applyInsertRender = lynx::applyBounce (a new insert with
+// Inserts: yw::makeBounceSong renders one; after the render applyInsertRender = yw::applyBounce (a new insert with
 // an audio clip, the original muted), then the original's slots FL can't have are switched off (their sound is in the
 // render) with their automation, and the report says so. Returns the new insert (−1 = none: the mixer is full).
 int applyInsertRender (Song& song, int track, const std::string& wav, std::int64_t length, const Options& options, Report& report);
@@ -109,16 +109,16 @@ flp::Project toProject (const Song& song, const Options& options, Report& report
 // toProject + flp::writeProject
 std::vector<std::uint8_t> exportFlp (const Song& song, const Options& options, Report& report);
 
-// FL 2026's default Fruity Limiter state (option B's substitute for LYNX's Limiter)
+// FL 2026's default Fruity Limiter state (option B's substitute for YW's Limiter)
 std::vector<std::uint8_t> fruityLimiterDefaultState();
 // A fresh FL 2026 Fruity Parametric EQ 2 (version 8, 354 bytes), as FL saves a new instance (round 189k capture)
 std::vector<std::uint8_t> parametricEq2DefaultState();
 // The FL plugin and state a Master look's slot (EffectSlot::look) is written as; nullopt for any other slot
 std::optional<std::pair<std::string, std::vector<std::uint8_t>>> nativeLookState (const EffectSlot& slot);
-// LYNX's 3x Osc with no state, as FL's own version-14 state
+// YW's 3x Osc with no state, as FL's own version-14 state
 std::vector<std::uint8_t> defaultThreeOscState();
 
 // FL value helpers (exposed for tests)
 int envelopeTimeValue (double seconds) noexcept; // inverse of flp::Channel::envelopeTime (v ≥ 101)
 int slideTimeValue (float beats) noexcept;       // inverse of the porta time n = round((27^(v/1024) − 1)·48/26)/192
-} // namespace lynx::flpexport
+} // namespace yw::flpexport

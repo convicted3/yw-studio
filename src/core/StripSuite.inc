@@ -1,4 +1,4 @@
-// Round tp172c8: Fret Channel (a guitar / bass channel strip) and Shell Channel (a drum channel strip), LYNX's own
+// Round tp172c8: Fret Channel (a guitar / bass channel strip) and Shell Channel (a drum channel strip), YW's own
 // plugins for those two roles. Included by core/MixSuite.cpp at namespace mixsuite level (it uses Ridge's engine, the
 // DRIVE section's measured amp models and the suite's helpers). The originals (SSL Guitarstrip, SSL Native Drumstrip)
 // were measured black-box on their trials (REA-free: their outputs only, GS_bank / GS_x / GS_y, DS_bank / DS_y in the

@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Frequency Shifter as a LYNX mixer effect: the plugin's own engine (Engine_x64.dll next to the plugin),
+// FL Studio's Frequency Shifter as a YW mixer effect: the plugin's own engine (Engine_x64.dll next to the plugin),
 // rebuilt in docs/analise/REA_rodada154.md (clean-room: layouts, formulas and behaviour in our own words; no Image-Line
 // code or data in this repository).
 //
@@ -30,7 +30,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::fsfl
+namespace yw::fsfl
 {
 constexpr int numParams = 10;
 constexpr std::array<int, numParams> rawMin { 0, 0, -70000, 0, 0, 0, 0, 0, 0, 0 };
@@ -107,4 +107,4 @@ private:
     Bank banks[5]; // 0x390 split, 0x8a0 / 0xdb0 the two halves, 0x12c0 / 0x17d0 the dry path
     Biquad hpL, hpR, lpL, lpR;
 };
-} // namespace lynx::fsfl
+} // namespace yw::fsfl

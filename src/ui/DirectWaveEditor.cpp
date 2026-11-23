@@ -16,7 +16,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -369,7 +369,7 @@ public:
 
     ~DirectWaveEditor() override { engine.removeChangeListener (this); }
 
-    // ---- the editor test (LYNX --dwedittest): "page zone|sample|program", "tab main|time|trigger|filter1|filter2|amp|
+    // ---- the editor test (YW --dwedittest): "page zone|sample|program", "tab main|time|trigger|filter1|filter2|amp|
     // env1|env2|lfo1|lfo2|matrix1…4", "side browser|options", "select <i>", "add <file>", "automap", "drumkit",
     // "delete", "duplicate", "set <field> <value>" (root, low, high, lowvel, highvel, gain, pan, pitch, loop), "program
     // <next|prev|n>", "name <text>", "save <file.dwp>", "open <file>", "state" (what the state holds), "mapdrag <key> <vel>
@@ -1148,7 +1148,7 @@ private:
         lastParams = d->modelParams;
         auto parsed = dw::readDoc (d->pluginState);
         doc = parsed ? std::move (*parsed) : dw::freshDoc();
-        // the files LYNX plays: the played program's zones are the channel's zones, in order
+        // the files YW plays: the played program's zones are the channel's zones, in order
         programFiles.assign ((std::size_t) dw::programCount (doc), {});
         const auto state = dw::parseState (dw::writeDoc (doc));
         played = -1;
@@ -1307,7 +1307,7 @@ private:
         if (count <= 0)
             return;
         shown = ((index % count) + count) % count;
-        // FL's program arrows set the current MIDI channel's program (here MIDI channel 1, the one LYNX plays)
+        // FL's program arrows set the current MIDI channel's program (here MIDI channel 1, the one YW plays)
         dw::setSlotProgram (doc, 0, shown);
         currentZone = 0;
         loadShown();
@@ -1500,7 +1500,7 @@ private:
         return file.replaceWithData (bytes.data(), bytes.size());
     }
 
-    // Open program / bank...: a .dwp into the shown program, a .dwb as the whole bank, an .sfz as a program (LYNX's mapping)
+    // Open program / bank...: a .dwp into the shown program, a .dwb as the whole bank, an .sfz as a program (YW's mapping)
     bool openFile (const juce::File& file)
     {
         if (file.hasFileExtension ("sfz"))
@@ -1598,7 +1598,7 @@ private:
 
     void diskMenu()
     {
-        // FL's Options menu (OptionsMenu in the form): what LYNX performs of it
+        // FL's Options menu (OptionsMenu in the form): what YW performs of it
         juce::PopupMenu m;
         m.addItem (1, tr ("Open program / bank..."));
         m.addSectionHeader (tr ("Program"));
@@ -1642,8 +1642,8 @@ private:
 
     void choose (const juce::String& title, const juce::String& pattern, bool save, std::function<void (const juce::File&)> done)
     {
-        chooser = lynx::ui::makeFileChooser (title, lastSaved != juce::File() ? lastSaved : folder, pattern);
-        lynx::ui::launchChooser (chooser, (save ? juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting
+        chooser = yw::ui::makeFileChooser (title, lastSaved != juce::File() ? lastSaved : folder, pattern);
+        yw::ui::launchChooser (chooser, (save ? juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting
                                                 : juce::FileBrowserComponent::openMode) | juce::FileBrowserComponent::canSelectFiles,
                                  [done] (const juce::FileChooser& fc) {
                                      if (fc.getResult() != juce::File())
@@ -1653,9 +1653,9 @@ private:
 
     void chooseSamples (bool replace)
     {
-        chooser = lynx::ui::makeFileChooser (replace ? tr ("Replace sample(s)...") : tr ("Add sample(s)..."), folder, "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
+        chooser = yw::ui::makeFileChooser (replace ? tr ("Replace sample(s)...") : tr ("Add sample(s)..."), folder, "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
         juce::Component::SafePointer<DirectWaveEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::canSelectMultipleItems,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::canSelectMultipleItems,
                                  [self, replace] (const juce::FileChooser& fc) {
                                      if (self == nullptr)
                                          return;
@@ -1668,9 +1668,9 @@ private:
 
     void chooseFolder()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Browse for folder"), folder, {});
+        chooser = yw::ui::makeFileChooser (tr ("Browse for folder"), folder, {});
         juce::Component::SafePointer<DirectWaveEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [self] (const juce::FileChooser& fc) {
             if (self != nullptr && fc.getResult().isDirectory())
                 self->browseTo (fc.getResult());
         });
@@ -2522,7 +2522,7 @@ private:
     dw::Program prog;
     int shown = -1, played = -1, currentZone = 0, page = pageProgram; // (FL opens on the Program page)
     std::vector<bool> selected;
-    std::vector<std::vector<std::string>> programFiles; // per program record, per zone: the file LYNX reads
+    std::vector<std::vector<std::string>> programFiles; // per program record, per zone: the file YW reads
     std::vector<std::uint8_t> lastState;
     std::vector<SampleZone> lastZones;
     std::vector<float> lastParams;
@@ -2579,4 +2579,4 @@ juce::String directWaveEditorTest (juce::Component& root, const juce::String& co
     auto* editor = find (root);
     return editor != nullptr ? editor->test (command) : juce::String ("no DirectWave editor");
 }
-} // namespace lynx
+} // namespace yw

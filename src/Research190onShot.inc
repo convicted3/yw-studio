@@ -6,7 +6,7 @@
     bool runResearchShot190on (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -21,14 +21,14 @@
             savePng (c.createComponentSnapshot (area, true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (area, true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
+        using namespace yw;
         using workspace::Panel;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
 
         // a drum loop: 8 sharp hits, 0.25 s apart from 0.05 s (2.1 s, 44.1 kHz mono)
         constexpr double firstHit = 0.05, hitPeriod = 0.25;
-        const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190on-drums.wav");
+        const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190on-drums.wav");
         {
             wav.deleteFile();
             juce::WavAudioFormat format;

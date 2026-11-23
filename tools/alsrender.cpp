@@ -1,8 +1,8 @@
 // alsrender: imports a Live set (.als) and renders each MIDI track alone, like Live's "All Individual Tracks" export
-// (round 190hs: the LYNX side of the Operator / Tetra quality gate). 48 kHz float WAVs, one per track, named
+// (round 190hs: the YW side of the Operator / Tetra quality gate). 48 kHz float WAVs, one per track, named
 // "<prefix> <track name>.wav", the song from its start for `seconds`.
 // Usage: alsrender set.als out-folder [prefix] [seconds] [track-name-filter]
-// LYNX_BLOCK=n: block size (default 256). Prints each channel's instrument kind and the render time per track.
+// YW_BLOCK=n: block size (default 256). Prints each channel's instrument kind and the render time per track.
 
 #include <chrono>
 #include <cmath>
@@ -49,12 +49,12 @@ int main (int argc, char** argv)
     const std::string out = argv[2], prefix = argc > 3 ? argv[3] : "t";
     const double seconds = argc > 4 ? std::atof (argv[4]) : 12.0;
     const std::string filter = argc > 5 ? argv[5] : "";
-    lynx::AlsImportOptions options;
-    lynx::FlpImportReport report;
+    yw::AlsImportOptions options;
+    yw::FlpImportReport report;
     options.common.report = &report;
     options.common.fileExists = [] (const std::string& p) { return std::filesystem::exists (p); };
     std::string error;
-    auto song = lynx::importAls (bytes, options, &error);
+    auto song = yw::importAls (bytes, options, &error);
     if (! song)
     {
         std::fprintf (stderr, "error: %s\n", error.c_str());
@@ -63,7 +63,7 @@ int main (int argc, char** argv)
     for (const auto& n : report.unsupported)
         std::printf ("unsupported: %s (%d)\n", n.first.c_str(), n.second);
     constexpr int rate = 48000;
-    const int block = std::getenv ("LYNX_BLOCK") ? std::max (16, std::atoi (std::getenv ("LYNX_BLOCK"))) : 256;
+    const int block = std::getenv ("YW_BLOCK") ? std::max (16, std::atoi (std::getenv ("YW_BLOCK"))) : 256;
     const auto total = (std::size_t) (seconds * rate);
     std::filesystem::create_directories (out);
     for (std::size_t c = 0; c < song->channels.size(); ++c)
@@ -75,14 +75,14 @@ int main (int argc, char** argv)
         for (std::size_t j = 0; j < solo.channels.size(); ++j)
             solo.channels[j].muted = j != c;
         std::int64_t songTicks = 0;
-        solo = lynx::makeExportSong (solo, true, (std::int64_t) std::ceil (lynx::ticksPerSample (solo.bpm, rate) * rate), songTicks);
-        lynx::RackState::Factories factories;
-        factories.samples = [] (const std::string& p) { return lynx::tools::readWav (p); };
-        auto state = lynx::RackState::build (solo, nullptr, rate, factories);
-        lynx::RackRenderer renderer;
+        solo = yw::makeExportSong (solo, true, (std::int64_t) std::ceil (yw::ticksPerSample (solo.bpm, rate) * rate), songTicks);
+        yw::RackState::Factories factories;
+        factories.samples = [] (const std::string& p) { return yw::tools::readWav (p); };
+        auto state = yw::RackState::build (solo, nullptr, rate, factories);
+        yw::RackRenderer renderer;
         renderer.prepare (rate, std::max (2048, block));
         std::vector<float> l (total), r (total);
-        const auto tps = lynx::ticksPerSample (solo.bpm, rate);
+        const auto tps = yw::ticksPerSample (solo.bpm, rate);
         double tick = 0.0;
         const auto t0 = std::chrono::steady_clock::now();
         for (std::size_t pos = 0; pos < total; pos += (std::size_t) block)

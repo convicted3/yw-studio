@@ -1,7 +1,7 @@
-// OmniStrip.inc (included by MixSuite.cpp inside namespace lynx::mixsuite::ridge, anonymous namespace) — round 190mm
+// OmniStrip.inc (included by MixSuite.cpp inside namespace yw::mixsuite::ridge, anonymous namespace) — round 190mm
 // (scheps): Ridge Strip's hidden "omni" law. A five-module channel strip — Pre (saturation, thump, high- / low-pass),
 // Gate / expander, DS2 (two dynamic bands), EQ (four bands) and a compressor with four detector types, auto make-up,
-// mix and output — run in a stored order between an input and an output stage. LYNX's own model of the structure the
+// mix and output — run in a stored order between an input and an output stage. YW's own model of the structure the
 // reference's manual and our demo-mode probes show (docs/analise/REA_rodada190mm_scheps.md): every constant below was
 // fitted on our own probe renders (the lab scripts and fit/*.json of round 190mm "scheps"); no vendor code or table.
 
@@ -9,7 +9,7 @@ namespace omnistrip
 {
 constexpr double pi = 3.14159265358979323846;
 
-// ---- filter designs (b0 b1 b2 / a0 a1 a2 into lynx::Biquad) ----
+// ---- filter designs (b0 b1 b2 / a0 a1 a2 into yw::Biquad) ----
 void flat (Biquad& f) noexcept { f.set (1, 0, 0, 1, 0, 0); }
 // RBJ forms (bilinear, pre-warped at f0)
 void rbjHp2 (Biquad& f, double sr, double hz, double q) noexcept

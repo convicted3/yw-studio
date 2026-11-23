@@ -144,7 +144,7 @@
 #include "ui/AudioCheck.h"
 #include "ui/AlsExportDialog.h"
 #include "ui/ActionSearch.h" // round 190nq (#228)
-#include "core/LynxExtras.h" // round 190on (P2: the command palette lists the extras)
+#include "core/YwExtras.h" // round 190on (P2: the command palette lists the extras)
 #include "ui/SettingsPages.h"
 #include "ui/DawProjectExport.h" // round 190jf (B22)
 #include "ui/FlmExportDialog.h" // round 190og (app-0003)
@@ -169,20 +169,20 @@
 #include "core/SongStats.h"
 #include "core/TrackClips.h"
 #include "core/TrackStates.h"
-#include "ui/LynxWindows.h"     // issue #232 stage 2 (round 190nz)
+#include "ui/YwWindows.h"     // issue #232 stage 2 (round 190nz)
 #include "ui/WindowClipboard.h"
 
 #if JUCE_PLUGINHOST_VST3
 namespace juce
 {
-// cmake/LynxPatchJuce.cmake fix 20 (round 177b): LYNX's items at the top of a VST3 plugin's parameter context menu
-extern void (*lynxVst3ParamMenuHook) (AudioPluginInstance&, int, PopupMenu&);
+// cmake/YwPatchJuce.cmake fix 20 (round 177b): YW's items at the top of a VST3 plugin's parameter context menu
+extern void (*ywVst3ParamMenuHook) (AudioPluginInstance&, int, PopupMenu&);
 } // namespace juce
 #endif
 
-namespace lynx
+namespace yw
 {
-// round 177b: the engine LYNX's VST3 parameter-menu hook uses (set while the main window lives)
+// round 177b: the engine YW's VST3 parameter-menu hook uses (set while the main window lives)
 static AudioEngine*& vst3MenuEngine()
 {
     static AudioEngine* engine = nullptr;
@@ -240,7 +240,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     helixcards::install(); // (round 190ja: Helix shows as Live's Wavetable in the Device View)
     heldKeys.setSender ([this] (int channel, int key, float velocity, bool on) { engine.sendLiveNote (channel, key, velocity, on, true); });
     connectBrowser (browser);
-    if (restoreUserSettings) // (issue #104: the Plugin database folder on disk; changes made in LYNX are written to it)
+    if (restoreUserSettings) // (issue #104: the Plugin database folder on disk; changes made in YW are written to it)
     {
         quickpick::installPluginDatabase (engine);
         // round 190bf: and a change made to it in the file manager shows in the Browser by itself, about a second
@@ -264,7 +264,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     remoteControlBar.setColour (juce::Label::textColourId, theme::colour::textPrimary);
     remoteControlBar.setJustificationType (juce::Justification::centredLeft);
     updateBar.onVisibilityChanged = [this] { resized(); };
-    // issue #232 stage 2 (round 190nz): the other LYNX SHARE windows (Window menu, the audio device only one may use)
+    // issue #232 stage 2 (round 190nz): the other YW Studio windows (Window menu, the audio device only one may use)
     addChildComponent (windowAudioBar);
     windowAudio = std::make_unique<windowaudio::Link> (engine, windowAudioBar, [this] { resized(); }, [this] { engine.stop(); });
     if (restoreUserSettings && windows::enabled())
@@ -327,8 +327,8 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
         if (safe != nullptr)
             showExportDialogForTracks (safe->engine, safe->currentFile.getParentDirectory(), safe->projectName, tracks, std::move (done));
     };
-    // round 190np: LYNX_EMPTY_HINTS=1 shows the empty-state hints in an off-screen window too (--paintbench measures them)
-    onboardingOn = ! persistent && juce::SystemStats::getEnvironmentVariable ("LYNX_EMPTY_HINTS", {}) == "1";
+    // round 190np: YW_EMPTY_HINTS=1 shows the empty-state hints in an off-screen window too (--paintbench measures them)
+    onboardingOn = ! persistent && juce::SystemStats::getEnvironmentVariable ("YW_EMPTY_HINTS", {}) == "1";
     if (persistent)
     {
         engine.getRollingLog().setEnabled (true); // on by default, as in FL (Tools › Audio logger)
@@ -348,7 +348,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
         };
         loadKeyMap();
         startSession();
-        if (BrowserComponent::sampleBrowserWasOpen()) // it was open when LYNX closed (round 163)
+        if (BrowserComponent::sampleBrowserWasOpen()) // it was open when YW closed (round 163)
             juce::Timer::callAfterDelay (800, [safe = juce::Component::SafePointer<MainComponent> (this)] {
                 if (safe != nullptr && findToolWindow ("sampleBrowser") == nullptr)
                     safe->openSampleBrowser();
@@ -412,7 +412,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     audioEditorButton.setTooltip (tr ("Open audio editor / New audio editor"));
     audioEditorButton.onClick = [this] { openMasterAudioEditor (false); };
     audioEditorButton.onRightClick = [this] { openMasterAudioEditor (true); };
-    // FL's toolbar picker button (round 171c): a click opens the Plugin picker (F8); a right-click LYNX's quick-add palette
+    // FL's toolbar picker button (round 171c): a click opens the Plugin picker (F8); a right-click YW's quick-add palette
     pluginPickerButton.setTooltip (withKey (tr ("Plugin picker: every plugin as a picture; drag one onto the Channel Rack or the Mixer (right-click: quick-add palette)"),
                                             "view.pluginPicker"));
     pluginPickerButton.onClick = [this] { togglePluginPicker(); };
@@ -572,7 +572,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     // round 190oo (PAT-18): the snap and pattern boxes keep one font size; a name too long for a narrow box (1280 px:
     // "Line (follows zoom)") ends in "..." instead of shrinking (Theme.cpp positionComboBoxText)
     for (auto* box : std::initializer_list<juce::ComboBox*> { &gridBox, &patternBox })
-        box->getProperties().set ("lynxComboEllipsis", true);
+        box->getProperties().set ("ywComboEllipsis", true);
     patternBox.onChange = [this]
     {
         const auto index = patternBox.getSelectedId() - 1; // (round 190ne: ids are pattern indices + 1)
@@ -654,7 +654,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
         if (! file.existsAsFile())
             return;
         // round 190gk: "... Fruity Slicer channel" / "... Slicex channel": FL loads the plugin's template channel, then
-        // the sample into it (SBONewMenuClick 0x11f8330, REA 190fl); LYNX's new channel of that kind, and its editor
+        // the sample into it (SBONewMenuClick 0x11f8330, REA 190fl); YW's new channel of that kind, and its editor
         // loads the file as its own Load does (slices / regions as on a load)
         if (kind == InstrumentKind::fruityslicer || kind == InstrumentKind::slicex)
         {
@@ -800,7 +800,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     };
     workspace.onKeyInDetachedWindow = [this] (const juce::KeyPress& key) { return keyPressed (key); };
     PluginWindows::setDockWorkspace (&workspace); // FL's docked plugin windows float there (issue #116, developer switch)
-    setEditorDock (&workspace); // and LYNX's own editor windows (round 190ev)
+    setEditorDock (&workspace); // and YW's own editor windows (round 190ev)
     workspace.onTitleWheel = [this] (Panel panel, const juce::MouseEvent& ev, const juce::MouseWheelDetails& wheel) {
         if (panel == Panel::channelRack && ev.mods.isShiftDown())
             selectPattern (stepPattern (engine.getSong(), (wheel.deltaY != 0.0f ? wheel.deltaY : -wheel.deltaX) > 0.0f ? -1 : 1));
@@ -844,7 +844,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     ui::setHint (pianoRoll, tr ("Piano Roll: [LMB] add a note, drag to move  [RMB] delete  [Ctrl][LMB] drag to select  [Ctrl][Wheel] zoom"));
     ui::setHint (playlist, tr ("Playlist: [LMB] paint the current pattern  [RMB] delete  [Ctrl][LMB] drag to select  [Ctrl][Wheel] zoom"));
 
-    // recent files (stored in %APPDATA%\LYNX)
+    // recent files (stored in %APPDATA%\YW)
     recent.setMaxNumberOfItems (50); // (FL keeps up to 50: File › Recent projects › More; round 190ih)
     recent.restoreFromString (PluginHost::settingsFolder().getChildFile ("recentes.txt").loadFileAsString());
     addAndMakeVisible (menuBar);
@@ -955,9 +955,9 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     ui::installTypeAhead(); // issue #182: type-to-jump in menus, dropdowns and lists (JUCE fix 37)
    #if JUCE_PLUGINHOST_VST3
     // round 177b: a right-click on a VST3 plugin's knob (when the plugin asks the host for the parameter's menu) offers
-    // LYNX's parameter items first: Create automation clip, Edit events, Link to MIDI / internal controller...
+    // YW's parameter items first: Create automation clip, Edit events, Link to MIDI / internal controller...
     vst3MenuEngine() = &engine;
-    juce::lynxVst3ParamMenuHook = [] (juce::AudioPluginInstance& plugin, int param, juce::PopupMenu& menu) {
+    juce::ywVst3ParamMenuHook = [] (juce::AudioPluginInstance& plugin, int param, juce::PopupMenu& menu) {
         if (auto* e = vst3MenuEngine())
             if (const auto t = e->targetOfPlugin (plugin, param))
             {
@@ -979,7 +979,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     };
     addAndMakeVisible (snapToggleButton);
     engine.addChangeListener (this);
-    // MIDI controller profiles (round 190aw): LYNX as the controllers see it
+    // MIDI controller profiles (round 190aw): YW as the controllers see it
     controllerBridge = std::make_unique<ControllerBridge> (engine, ControllerBridge::Window {
         [this] (const std::string& action) { return runAction (action); },
         [this] { return mixer.getSelectedTrack(); },
@@ -1041,8 +1041,8 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     installDialogTextFocus(); // dialogs open with their text field focused (round 165q)
     // issue #218 (round 190ng): the toolbar's drop-downs (Pattern, snap) never keep the PC keyboard; any drop-down or button
     // of this window or a panel window that gets it hands it back (ui/KeyFocus.h)
-    // (LYNX_FIX218=0: as before, for the before / after check of --focus218shot190ng)
-    if (juce::SystemStats::getEnvironmentVariable ("LYNX_FIX218", "1") != "0")
+    // (YW_FIX218=0: as before, for the before / after check of --focus218shot190ng)
+    if (juce::SystemStats::getEnvironmentVariable ("YW_FIX218", "1") != "0")
     {
         for (auto* box : std::initializer_list<juce::Component*> { &patternBox, &gridBox })
         {
@@ -1105,7 +1105,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
         safe->projectName = hostName.isNotEmpty() ? tr ("Live session with {0}", { hostName }) : tr ("Live session");
         safe->updateTitle();
     };
-    // round 169j: the host's LYNX SHARE restarted during a session: its journal's song becomes the open project again
+    // round 169j: the host's YW Studio restarted during a session: its journal's song becomes the open project again
     live->onResumed = [safe = juce::Component::SafePointer<MainComponent> (this)] (Song song) {
         if (safe == nullptr)
             return;
@@ -1118,7 +1118,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
         }
         safe->updateTitle();
     };
-    // round 190ah: a guest's LYNX SHARE restarted during a session: the project it had is open again
+    // round 190ah: a guest's YW Studio restarted during a session: the project it had is open again
     live->onRejoined = [safe = juce::Component::SafePointer<MainComponent> (this)] (Song song) {
         if (safe == nullptr)
             return;
@@ -1131,7 +1131,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     engine.onSessionUndoSkipped = [] (const juce::StringArray& skipped) {
         ui::postHint ({ tr ("Undo left alone what someone else changed since: {0}", { skipped.joinIntoString (", ") }), {} }, 4000);
     };
-    // round 190gh (B8): a MIDI device plugged in or out while LYNX SHARE runs (FL: "New MIDI device detected")
+    // round 190gh (B8): a MIDI device plugged in or out while YW Studio runs (FL: "New MIDI device detected")
     engine.onMidiDevicesChanged = [] (const juce::StringArray& added, const juce::StringArray& removed) {
         juce::StringArray lines;
         if (! added.isEmpty())
@@ -1172,7 +1172,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     setSecondaryWindowKeyHandler ([safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::KeyPress& key) {
         return safe != nullptr && safe->keyFromSecondaryWindow (key);
     });
-    // keys over a focused plugin (rounds 181c/187a, issue #96): what it passes back plays, and with its "Typing keyboard priority" off LYNX goes first
+    // keys over a focused plugin (rounds 181c/187a, issue #96): what it passes back plays, and with its "Typing keyboard priority" off YW goes first
     setPluginViewPlainKeyHandler ([] (juce::Component& window) { return PluginWindows::letsHostProcessKeys (window); },
                                   [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::KeyPress& key) {
                                       return safe != nullptr && safe->keyFromPluginView (key, true);
@@ -1254,7 +1254,7 @@ MainComponent::~MainComponent()
     modring::setArmed (-1);
     modring::setEngine (nullptr);
    #if JUCE_PLUGINHOST_VST3
-    juce::lynxVst3ParamMenuHook = nullptr;
+    juce::ywVst3ParamMenuHook = nullptr;
     vst3MenuEngine() = nullptr;
    #endif
     removeDialogTextFocus();
@@ -1388,13 +1388,13 @@ void MainComponent::resized()
             w += lf.getMenuBarItemWidth (menuBar, 0, name);
         return w;
     };
-    menuBar.getProperties().set ("lynxTightMenuBar", false);
-    menuBar.getProperties().set ("lynxCondensedMenuBar", false); // (round 190oo WG-11: set again below when needed)
-    menuBar.getProperties().set ("lynxMenuBarScale", 1.0);
+    menuBar.getProperties().set ("ywTightMenuBar", false);
+    menuBar.getProperties().set ("ywCondensedMenuBar", false); // (round 190oo WG-11: set again below when needed)
+    menuBar.getProperties().set ("ywMenuBarScale", 1.0);
     int menuWidth = measureMenu();
     if (menuWidth > 390) // translated menu titles (German, Russian...): English stays as it was
     {
-        menuBar.getProperties().set ("lynxTightMenuBar", true);
+        menuBar.getProperties().set ("ywTightMenuBar", true);
         menuWidth = measureMenu();
     }
 
@@ -1482,12 +1482,12 @@ void MainComponent::resized()
         tighter[(std::size_t) Group::snap] -= 16;
         tighter[(std::size_t) Group::chord] = 88;
         const auto tightMenuWidth = [&] {
-            menuBar.getProperties().set ("lynxTightMenuBar", true);
+            menuBar.getProperties().set ("ywTightMenuBar", true);
             const auto w = measureMenu();
-            menuBar.getProperties().set ("lynxTightMenuBar", false);
+            menuBar.getProperties().set ("ywTightMenuBar", false);
             return w;
         };
-        const auto alreadyTight = (bool) menuBar.getProperties().getWithDefault ("lynxTightMenuBar", false);
+        const auto alreadyTight = (bool) menuBar.getProperties().getWithDefault ("ywTightMenuBar", false);
         // Round 190oo (design review 2, WG-11): in German and Russian (and French, Portuguese, Turkish, Dutch... by
         // measure) the translated menu titles set the hint column's width: at 1920 px the panels need ~1550 px, which
         // leaves ~350 px for the menu, and de's eight titles take ~395-440 px even with the tight padding, so the Chord
@@ -1497,13 +1497,13 @@ void MainComponent::resized()
         // menus only: English (and an English menu at any width) keeps its layout to the pixel.
         const auto mayCondense = i18n::current() != "en";
         const auto condensedMenuWidth = [&] (double scale) {
-            menuBar.getProperties().set ("lynxTightMenuBar", true);
-            menuBar.getProperties().set ("lynxCondensedMenuBar", true);
-            menuBar.getProperties().set ("lynxMenuBarScale", scale);
+            menuBar.getProperties().set ("ywTightMenuBar", true);
+            menuBar.getProperties().set ("ywCondensedMenuBar", true);
+            menuBar.getProperties().set ("ywMenuBarScale", scale);
             const auto w = measureMenu();
-            menuBar.getProperties().set ("lynxTightMenuBar", alreadyTight);
-            menuBar.getProperties().set ("lynxCondensedMenuBar", false);
-            menuBar.getProperties().set ("lynxMenuBarScale", 1.0);
+            menuBar.getProperties().set ("ywTightMenuBar", alreadyTight);
+            menuBar.getProperties().set ("ywCondensedMenuBar", false);
+            menuBar.getProperties().set ("ywMenuBarScale", 1.0);
             return w;
         };
         const auto menuItems = getMenuBarNames().size();
@@ -1565,9 +1565,9 @@ void MainComponent::resized()
             minHint = best->minHint;
             if (best->tightMenu)
             {
-                menuBar.getProperties().set ("lynxTightMenuBar", true);
-                menuBar.getProperties().set ("lynxCondensedMenuBar", best->condensedMenu); // (round 190oo WG-11)
-                menuBar.getProperties().set ("lynxMenuBarScale", best->menuScale);
+                menuBar.getProperties().set ("ywTightMenuBar", true);
+                menuBar.getProperties().set ("ywCondensedMenuBar", best->condensedMenu); // (round 190oo WG-11)
+                menuBar.getProperties().set ("ywMenuBarScale", best->menuScale);
                 menuWidth = measureMenu();
             }
         }
@@ -1625,11 +1625,11 @@ void MainComponent::resized()
     }
     // round 190nr: a panel that 0.1.29 kept still dropped (1280 px: the window buttons) while the menu bar sets the hint
     // column's width (0.1.30's FL-look menu text is wider): the menu's tight item padding, if that keeps more panels
-    if (toolbarLayout.visible && ! (bool) menuBar.getProperties().getWithDefault ("lynxTightMenuBar", false) && minHint >= menuWidth + 8
+    if (toolbarLayout.visible && ! (bool) menuBar.getProperties().getWithDefault ("ywTightMenuBar", false) && minHint >= menuWidth + 8
         && minHint > 320 && std::any_of (toolbarLayout.entries.begin(), toolbarLayout.entries.end(),
                                          [&] (const auto& e) { return e.shown && ! visible[(std::size_t) e.group]; }))
     {
-        menuBar.getProperties().set ("lynxTightMenuBar", true);
+        menuBar.getProperties().set ("ywTightMenuBar", true);
         const auto tightWidth = measureMenu();
         const auto tightHint = juce::jmax (tightWidth + 8, minHint == menuWidth + 8 ? tightWidth + 8 : 320);
         if (const auto fits = toolbarlayout::fit (toolbarLayout, widths, gap, room, tightHint); shownCount (fits) > shownCount (visible))
@@ -1639,7 +1639,7 @@ void MainComponent::resized()
             minHint = tightHint;
         }
         else
-            menuBar.getProperties().set ("lynxTightMenuBar", false);
+            menuBar.getProperties().set ("ywTightMenuBar", false);
     }
     if (! toolbarLayout.visible) // Ctrl+F11: only the menu and the hint bar, on one row
         visible.fill (false);
@@ -1737,12 +1737,12 @@ void MainComponent::resized()
     // change; a new padding, face or squeeze at the same bounds would keep the titles where the old ones were
     {
         auto& props = menuBar.getProperties();
-        const auto menuLook = juce::String ((bool) props.getWithDefault ("lynxTightMenuBar", false) ? "t" : "-")
-                              + ((bool) props.getWithDefault ("lynxCondensedMenuBar", false) ? "c" : "-")
-                              + juce::String ((double) props.getWithDefault ("lynxMenuBarScale", 1.0), 3);
-        if (props.getWithDefault ("lynxMenuLaidOut", juce::var()).toString() != menuLook)
+        const auto menuLook = juce::String ((bool) props.getWithDefault ("ywTightMenuBar", false) ? "t" : "-")
+                              + ((bool) props.getWithDefault ("ywCondensedMenuBar", false) ? "c" : "-")
+                              + juce::String ((double) props.getWithDefault ("ywMenuBarScale", 1.0), 3);
+        if (props.getWithDefault ("ywMenuLaidOut", juce::var()).toString() != menuLook)
         {
-            props.set ("lynxMenuLaidOut", menuLook);
+            props.set ("ywMenuLaidOut", menuLook);
             menuBar.resized();
             menuBar.repaint();
         }
@@ -2016,7 +2016,7 @@ juce::PopupMenu MainComponent::makeToolbarMenu()
 {
     using toolbarlayout::Group;
     juce::PopupMenu menu;
-    // FL's toolbar menu (Edit, Separators, Hide, Presets), then LYNX's direct switches per panel
+    // FL's toolbar menu (Edit, Separators, Hide, Presets), then YW's direct switches per panel
     menu.addSectionHeader (tr ("Toolbar"));
     menu.addItem (tr ("Edit toolbar (drag panels to move, add or remove them)"), toolbarLook == toolbarlayout::Look::fl, toolbarEditor != nullptr,
                   [this] { setToolbarEditing (toolbarEditor == nullptr); });
@@ -2368,7 +2368,7 @@ bool MainComponent::keyPressed (const juce::KeyPress& key)
     if (panelShown && focused == Panel::playlist && ! pianoRollKeysHere() && playlist.handleKey (key))
         return true;
 
-    // issue #195, LYNX extra (off by default): REAPER's W = Home, where nothing above took the key (the typing keyboard
+    // issue #195, YW extra (off by default): REAPER's W = Home, where nothing above took the key (the typing keyboard
     // and the user's own keys come first; core/TransportEdit.h)
     if (transportedit::wKeyGoesToStart (transportedit::wGoesToStart(), key.getKeyCode(), key.getModifiers().isAnyModifierKeyDown(), false,
                                         dynamic_cast<juce::TextEditor*> (juce::Component::getCurrentlyFocusedComponent()) != nullptr)
@@ -2379,7 +2379,7 @@ bool MainComponent::keyPressed (const juce::KeyPress& key)
     if (const auto action = keyMap.find (chord, focusContext(), pianoKeys); ! action.empty() && runAction (action))
         return true;
 
-    // #228 (round 190nq, LYNX extra): "?" (on any keyboard layout) that nothing above used — the Clip-launch Info View
+    // #228 (round 190nq, YW extra): "?" (on any keyboard layout) that nothing above used — the Clip-launch Info View
     // keeps it in Live's look — opens the action search
     if (key.getTextCharacter() == '?' && ! key.getModifiers().isCommandDown() && ! key.getModifiers().isAltDown()
         && dynamic_cast<juce::TextEditor*> (juce::Component::getCurrentlyFocusedComponent()) == nullptr)
@@ -2470,7 +2470,7 @@ void MainComponent::releaseTypingLaunches (bool all)
 
 bool MainComponent::keyFromSecondaryWindow (const juce::KeyPress& key)
 {
-    // Issue #179: while a modal dialog is open (Rename pattern, Export, a question...) LYNX is blocked as FL is: the keys the
+    // Issue #179: while a modal dialog is open (Rename pattern, Export, a question...) YW is blocked as FL is: the keys the
     // dialog leaves unused don't run the main window's shortcuts. F4 in "Rename pattern" opened one more rename window on
     // every press (FL's dialog takes the key and nothing happens).
     if (modalDialogOpen())
@@ -2478,7 +2478,7 @@ bool MainComponent::keyFromSecondaryWindow (const juce::KeyPress& key)
     // (round 165q / issue #12) a text field keeps its typing keys; the rest runs the global actions
     const auto typingIntoText = dynamic_cast<juce::TextEditor*> (juce::Component::getCurrentlyFocusedComponent()) != nullptr;
     const auto chord = chordFromKeyPress (key);
-    // issue #117: the typing piano plays from Sytrus's window (any LYNX window) too; its release is polled (timer)
+    // issue #117: the typing piano plays from Sytrus's window (any YW window) too; its release is polled (timer)
     if (keys::KeyMap::secondaryWindowPlaysNote (typingKey (key).taken, typingIntoText))
         return keyPressed (key);
     const auto action = keyMap.findFromSecondaryWindow (chord, typingIntoText, typingPiano && (! isPlainKey (chord) || typingKey (key).taken));
@@ -2488,7 +2488,7 @@ bool MainComponent::keyFromSecondaryWindow (const juce::KeyPress& key)
 bool MainComponent::keyFromPluginView (const juce::KeyPress& key, bool optionOn)
 {
     // the typing piano as over the main window (its release is polled, MainComponent::keyStateChanged). With the
-    // plugin's "Typing keyboard priority" off (LYNX first) the shortcuts run too; keys that do nothing here stay the plugin's.
+    // plugin's "Typing keyboard priority" off (YW first) the shortcuts run too; keys that do nothing here stay the plugin's.
     if (typingKey (key).taken)
         return keyPressed (key);
     return optionOn && keyFromSecondaryWindow (key);
@@ -2496,7 +2496,7 @@ bool MainComponent::keyFromPluginView (const juce::KeyPress& key, bool optionOn)
 
 // #228 (round 190nq): the action search over the main window ("?"); Enter runs the action as its keys would.
 // Round 190on (research190oe P2): the command palette (Ctrl+Shift+Y, "?" and the toolbar's magnifier) — the same box
-// with the main menus' items, the LYNX extras' switches, the Settings pages and the recent projects too. Built on every
+// with the main menus' items, the YW extras' switches, the Settings pages and the recent projects too. Built on every
 // open (menus show what can run now; nothing is kept while the box is closed).
 std::vector<PaletteItem> MainComponent::commandPaletteItems()
 {
@@ -2524,8 +2524,8 @@ std::vector<PaletteItem> MainComponent::commandPaletteItems()
             addMenuItems (items, menu, names[i], tr ("Recent projects"));
         }
     }
-    menuBar.getProperties().set ("lynxOneColumnMenu", false); // (getMenuForIndex set it for the View menu)
-    // 3. the LYNX extras' switches, as Settings › LYNX extras switches them
+    menuBar.getProperties().set ("ywOneColumnMenu", false); // (getMenuForIndex set it for the View menu)
+    // 3. the YW extras' switches, as Settings › YW extras switches them
     for (const auto& x : extras::items)
     {
         PaletteItem p;
@@ -2534,14 +2534,14 @@ std::vector<PaletteItem> MainComponent::commandPaletteItems()
         p.entry.english = std::string (x.title);
         p.entry.text = tr (std::string (x.title).c_str()).toStdString();
         p.entry.where = tr (std::string (x.section).c_str()).toStdString();
-        p.entry.state = (lynxExtraOn (engine, settingsHooks(), x.id) ? tr ("on") : tr ("off")).toStdString();
+        p.entry.state = (ywExtraOn (engine, settingsHooks(), x.id) ? tr ("on") : tr ("off")).toStdString();
         p.run = [safe, id = std::string (x.id), title = juce::String (p.entry.text)] {
             if (safe == nullptr)
                 return false;
             const auto hooks = safe->settingsHooks();
-            const auto on = ! lynxExtraOn (safe->engine, hooks, id);
-            setLynxExtra (safe->engine, hooks, id, on, true);
-            ui::postHint ({ tr ("{0}: {1}", { title, lynxExtraOn (safe->engine, hooks, id) ? tr ("on") : tr ("off") }) }, 3000);
+            const auto on = ! ywExtraOn (safe->engine, hooks, id);
+            setYwExtra (safe->engine, hooks, id, on, true);
+            ui::postHint ({ tr ("{0}: {1}", { title, ywExtraOn (safe->engine, hooks, id) ? tr ("on") : tr ("off") }) }, 3000);
             return true;
         };
         items.push_back (std::move (p));
@@ -2618,7 +2618,7 @@ bool MainComponent::runAction (const std::string& id)
 {
     auto is = [&id] (const char* name) { return id == name; };
 
-    if (id == "simple.projectName") // round 190oo (O-4, LYNX extra): View › Project name at the top (Simple layout)
+    if (id == "simple.projectName") // round 190oo (O-4, YW extra): View › Project name at the top (Simple layout)
     {
         ui::simplelook::projectNameShown() = ! ui::simplelook::projectNameShown();
         resized();
@@ -2808,7 +2808,7 @@ bool MainComponent::runAction (const std::string& id)
         else
             ui::postHint ({ tr ("Capture MIDI: nothing to capture (play some notes first, without recording)"), {}, false, false }, 4000);
     }
-    else if (is ("record.captureAutomation")) // round 190op (P7, LYNX extra; Live 13's announced Capture Automation)
+    else if (is ("record.captureAutomation")) // round 190op (P7, YW extra; Live 13's announced Capture Automation)
     {
         const auto r = engine.captureAutomation();
         if (r.controls > 0)
@@ -2864,7 +2864,7 @@ bool MainComponent::runAction (const std::string& id)
     else if (is ("channel.soloSelected")) rack.solo (engine.getSelectedChannel());
     else if (is ("automation.lastTweaked"))
     {
-        // FL's Add › Automation for last tweaked parameter (round 143) from a key (round 190an): LYNX's own controls
+        // FL's Add › Automation for last tweaked parameter (round 143) from a key (round 190an): YW's own controls
         // and a hosted plugin's parameters alike (AudioEngine::noteTweaked keeps the last moved one)
         if (const auto t = engine.getLastTweaked (0))
             createAutomationClip (engine, *t);
@@ -2913,7 +2913,7 @@ bool MainComponent::runAction (const std::string& id)
     {
         PluginWindows::closeAll();
         ParametricEqWindows::closeAll(); // every native effect / controller editor
-        if (is ("view.closeWindows")) // FL's F12: the editors and tool windows too (LYNX's docked panels stay)
+        if (is ("view.closeWindows")) // FL's F12: the editors and tool windows too (YW's docked panels stay)
         {
             closeAutomationEditors();
             closeChannelSettings();
@@ -3552,11 +3552,11 @@ void MainComponent::loadUiSettings()
         else if (key == "detachNewPlugins") // FL's General › "Detach all new plugins" (issue #116)
         {
             engine.setDetachNewPlugins (on);
-            setEditorsDetached (on); // (round 190ev: LYNX's own editor windows follow FL's option too)
+            setEditorsDetached (on); // (round 190ev: YW's own editor windows follow FL's option too)
         }
         else if (key == "autoSelectLinked")
             ChannelRackComponent::autoSelectLinked = on;
-        else if (key == "editorsInMain") // round 190jy: Settings › General › Draw docked LYNX editors in the main window
+        else if (key == "editorsInMain") // round 190jy: Settings › General › Draw docked YW editors in the main window
             setEditorsInMainWindow (on);
         else if (key == "muteRemovedSteps")
             ChannelRackComponent::muteRemovedSteps = on;
@@ -3580,7 +3580,7 @@ void MainComponent::loadUiSettings()
             PlaylistComponent::showHiddenTracks = on;
         else if (key == "fadePreviews") // #230 (round 190nq): Playlist › View › Show fade previews
             PlaylistComponent::showFadePreviews = on;
-        else if (key == "shadeFadedAudio") // round 190oo (O-1): Playlist › View › Shade faded audio (LYNX)
+        else if (key == "shadeFadedAudio") // round 190oo (O-1): Playlist › View › Shade faded audio (YW)
             PlaylistComponent::shadeFadedAudio = on;
         else if (key == "automationLanes") // round 177b: Playlist › Automation lanes
             autolanes::setShown (on);
@@ -3639,7 +3639,7 @@ void MainComponent::loadUiSettings()
             ChannelRackComponent::stepsChannelColour.store (on);
         else if (key == "rackCompletePreview")
             ChannelRackComponent::completePreview.store (on);
-        else if (key == "rememberSeekTime") // (issue #169: the old "rememberSeek" key held LYNX's old default, off; FL's is on)
+        else if (key == "rememberSeekTime") // (issue #169: the old "rememberSeek" key held YW's old default, off; FL's is on)
             EditorGlobals::get().rememberSeek = on;
         else if (key == "createVariants")
             EditorGlobals::get().createVariants = on;
@@ -3690,7 +3690,7 @@ void MainComponent::loadUiSettings()
             PianoRollComponent::stackedLanesExtra = on;
         else if (key == "prStackedLanes")
             PianoRollComponent::stackedLanesSaved = line.fromFirstOccurrenceOf ("=", false, false).trim().toStdString();
-        else if (key == "polyPrepareOnOpen") // (round 190lo: a LYNX extra, ui/PolyEditor.h)
+        else if (key == "polyPrepareOnOpen") // (round 190lo: a YW extra, ui/PolyEditor.h)
             PolyEditorWindows::prepareOnOpen = on;
         else if (key == "prKeyStyle") // (round 190j: 0 = flat, the default then; 1 = piano keys)
         {
@@ -3783,7 +3783,7 @@ void MainComponent::loadUiSettings()
             AudioEngine::alsSessionOnPlaylist = on;
         else if (key == "simpleLargeControls") // round 190jc: View › Large controls (Simple layout)
             ui::simplelook::largeControls() = on;
-        else if (key == "simpleProjectName") // round 190oo (O-4, LYNX extra): the project name centred at the top (Simple)
+        else if (key == "simpleProjectName") // round 190oo (O-4, YW extra): the project name centred at the top (Simple)
             ui::simplelook::projectNameShown() = on;
         else if (key == "followPlaylist" || key == "followPianoRoll")
             EditorGlobals::get().setFollowing (key == "followPianoRoll", on, false);
@@ -3827,7 +3827,7 @@ void MainComponent::loadUiSettings()
             hoverValues = on;
         else if (key == "autosaveKeep")
             autosaveKeep = prefs::clampAutosaveKeep (line.fromFirstOccurrenceOf ("=", false, false).trim().getIntValue());
-        else if (key == "metronomeSound" && ! flMetronomeSound) // (before 0.1.20: 0 LYNX click, 1..5 hi-hat..pulse)
+        else if (key == "metronomeSound" && ! flMetronomeSound) // (before 0.1.20: 0 YW click, 1..5 hi-hat..pulse)
             engine.getTransport().metronomeSound.store (metronome::soundFromLegacy (line.fromFirstOccurrenceOf ("=", false, false).trim().getIntValue()));
         else if (key == "tapStartsPlayback") // round 190lr (DL-49)
             tapStartsPlayback = line.fromFirstOccurrenceOf ("=", false, false).trim().getIntValue() != 0;
@@ -4352,7 +4352,7 @@ void MainComponent::showStopMenu()
     menu.addSeparator();
     menu.addItem (tr ("All notes off (panic)") + "\t" + tr ("double-click"), [this] { engine.panic(); });
     menu.addItem (tr ("Back to the start"), [this] { stopAndRewind (true); });
-    // issue #195: the LYNX extra beside FL's Home (Settings › LYNX extras, the same switch)
+    // issue #195: the YW extra beside FL's Home (Settings › YW extras, the same switch)
     menu.addSeparator();
     menu.addItem (tr ("W moves the playback marker to the start (as Home)"), true, transportedit::wGoesToStart(),
                   [] { workflowextras::setExtra ("transport.wToStart", ! transportedit::wGoesToStart()); });
@@ -4715,7 +4715,7 @@ void MainComponent::setLayoutStyle (layoutstyle::Style style, bool swapLayout)
         host.undockPianoRoll = [this] { undockPianoRoll(); };
         host.setFoldToKey = [this] (bool on) {
             if (const auto key = projectkey::get (engine.getSong()); on && key) // (the rows show the project key, then fold)
-                pianoRoll.setScale (key->root, projectkey::lynxScale (*key));
+                pianoRoll.setScale (key->root, projectkey::ywScale (*key));
             pianoRoll.setFoldToScale (on);
         };
         host.foldedToKey = [this] { return pianoRoll.isFoldedToScale(); };
@@ -4948,7 +4948,7 @@ void MainComponent::addLayoutStyleItems (juce::PopupMenu& menu)
             saveUiSettings();
         });
     // round 190jn (design190ia CL-17, owner decision "go with recommended"): Live's 19 px Arrangement lanes are the
-    // default of Live's look; LYNX's 38 px lanes stay as this option
+    // default of Live's look; YW's 38 px lanes stay as this option
     if (isClipLaunchWorkflow() && ! clipGridClassicLook())
         menu.addItem (tr ("Tall Arrangement lanes"), true, playlistTallLiveLanes(), [this] {
             playlistTallLiveLanes() = ! playlistTallLiveLanes();
@@ -5072,8 +5072,8 @@ void MainComponent::toggleHotSwap (const hotswap::Target& target)
 // dock's sound search box or the Lyrics text, where Space typed a space; the Finish looks and the chooser's tiles also
 // take Space as a click. FL's rule (issue #9): a click anywhere but in a text field leaves the keys with the main window,
 // so Space plays. So after each click in the main window or one of its panels: unless the click was in a text field, or
-// in a part that keeps its own keys (the overlays with their list and tile keys: property "lynxKeepsKeys"; a dock knob
-// just clicked, for its arrow keys: "lynxClickKeepsKeys"), the main window takes the keys back from a text field, from a
+// in a part that keeps its own keys (the overlays with their list and tile keys: property "ywKeepsKeys"; a dock knob
+// just clicked, for its arrow keys: "ywClickKeepsKeys"), the main window takes the keys back from a text field, from a
 // panel's control, or from nobody.
 // Plugin windows, dialogs and menus are left alone.
 void MainComponent::simpleClickEnded (juce::Component* clicked)
@@ -5090,7 +5090,7 @@ void MainComponent::simpleClickEnded (juce::Component* clicked)
         return;
     const auto keepsKeys = [] (juce::Component* c) {
         for (; c != nullptr; c = c->getParentComponent())
-            if ((bool) c->getProperties().getWithDefault ("lynxKeepsKeys", false))
+            if ((bool) c->getProperties().getWithDefault ("ywKeepsKeys", false))
                 return true;
         return false;
     };
@@ -5100,7 +5100,7 @@ void MainComponent::simpleClickEnded (juce::Component* clicked)
                 return true;
         return false;
     };
-    if (inTextField (clicked) || keepsKeys (clicked) || (bool) clicked->getProperties().getWithDefault ("lynxClickKeepsKeys", false))
+    if (inTextField (clicked) || keepsKeys (clicked) || (bool) clicked->getProperties().getWithDefault ("ywClickKeepsKeys", false))
         return; // (a knob clicked keeps the arrow keys until the next click elsewhere)
     // now (the clicked control has acted: this listener runs after its own mouseUp, where a button's click and the Lyrics
     // panel's text focus happen), and once more after what the click posted has run
@@ -5429,7 +5429,7 @@ void MainComponent::addPanelMenuItems (Panel panel, juce::PopupMenu& menu)
             action (menu, "playlist.blocksToClips", tr ("Turn pattern blocks into clips"), ! engine.getSong().blocks.empty());
             action (menu, "playlist.automationLanes", tr ("Automation lanes"), true, autolanes::shown()); // round 177b
             action (menu, "playlist.trackInserts", tr ("Show insert effects on linked tracks"), true, PlaylistComponent::showTrackInserts); // round 190ht
-            // round 190op (P4, LYNX extra; always offered while the project holds hidden tracks)
+            // round 190op (P4, YW extra; always offered while the project holds hidden tracks)
             if (const auto hidden = trackstates::hiddenCount (engine.getSong());
                 hidden > 0 || trackstates::patternMenus() || layoutStyle != layoutstyle::Style::pattern)
             {
@@ -5498,15 +5498,15 @@ void MainComponent::addPanelMenuItems (Panel panel, juce::PopupMenu& menu)
                     playlist.headerOptionsChanged();
                     saveUiSettings();
                 });
-                // round 190ol (research190oe P1, owner decision O-1): LYNX's Sections lane, off by default in this layout (the
+                // round 190ol (research190oe P1, owner decision O-1): YW's Sections lane, off by default in this layout (the
                 // Simple layout has its title bar button, the Clip-launch layout none)
                 view.addSeparator();
                 view.addItem (tr ("Sections lane") + " (YW Studio)", layoutStyle == layoutstyle::Style::pattern, sections::patternLaneOn(),
                               [] { workflowextras::setExtra ("playlist.sectionsLane", ! sections::patternLaneOn()); });
-                // round 190pf (research190oe P13): LYNX's Chord lane, off by default, in every layout
+                // round 190pf (research190oe P13): YW's Chord lane, off by default, in every layout
                 view.addItem (tr ("Chord lane") + " (YW Studio)", true, chordlane::laneOn(),
                               [] { workflowextras::setExtra ("playlist.chordLane", ! chordlane::laneOn()); });
-                // round 190oo (design review O-1, a LYNX extra): shade the faded part as the Clip-launch layout does
+                // round 190oo (design review O-1, a YW extra): shade the faded part as the Clip-launch layout does
                 view.addItem (tr ("Shade faded audio (YW Studio)"), true, PlaylistComponent::shadeFadedAudio, [this] {
                     PlaylistComponent::shadeFadedAudio = ! PlaylistComponent::shadeFadedAudio;
                     playlist.headerOptionsChanged();
@@ -5872,7 +5872,7 @@ void MainComponent::warnIfProjectTooBig (const juce::File& file)
 }
 
 // FL's toolbar (manual, Toolbar shortcut icons: "drag a sample onto the Channel Rack button to automatically reveal it";
-// round 190mr, DF-34): while something is dragged inside LYNX (a Browser file, a clip, a channel), the window button under
+// round 190mr, DF-34): while something is dragged inside YW (a Browser file, a clip, a channel), the window button under
 // it shows its window in front, once each time the drag enters a button. Nothing is read while no drag runs.
 void MainComponent::showExtendedHint (bool on)
 {
@@ -5932,7 +5932,7 @@ ProjectFile::WindowLayout MainComponent::currentWindowLayout() const
 
 void MainComponent::applyProjectWindowLayout (const ProjectFile::WindowLayout& layout)
 {
-    // FL opens a project with the windows where they were saved; LYNX does so for the layout style the project was saved
+    // FL opens a project with the windows where they were saved; YW does so for the layout style the project was saved
     // in (each style keeps a layout of its own), and only when the option is on (on, as FL)
     if ((! persistent && ! layoutInSaves) || ! flsettings::options().projectWindowLayout.load())
         return;
@@ -6103,7 +6103,7 @@ juce::PopupMenu MainComponent::makeWaitInputMenu()
     return menu;
 }
 
-// round 190pa (research190oe P21, LYNX extra): Pro Tools' / Logic's / Cubase's automation write modes; Read is FL's
+// round 190pa (research190oe P21, YW extra): Pro Tools' / Logic's / Cubase's automation write modes; Read is FL's
 // Record automation and stays the default (core/AutomationModes.h)
 juce::PopupMenu MainComponent::makeAutomationModeMenu()
 {
@@ -6198,10 +6198,10 @@ void MainComponent::addRecordOptions (juce::PopupMenu& menu)
                   [set] { set ([] (AudioEngine::RecordOptions& r) { r.compensateOutput = ! r.compensateOutput; }); });
     menu.addItem (tr ("Capture MIDI: the notes just played without recording into the pattern") + shortcutText ("record.captureMidi"),
                   [this] { runAction ("record.captureMidi"); });
-    // round 190op (P7, LYNX extra): the knob and fader moves just made, as automation
+    // round 190op (P7, YW extra): the knob and fader moves just made, as automation
     menu.addItem (tr ("Capture automation: the moves just made without recording become automation") + shortcutText ("record.captureAutomation"),
                   [this] { runAction ("record.captureAutomation"); });
-    // round 190pa (P21, LYNX extra): Touch / Latch / Write; Read (FL's) stays the default
+    // round 190pa (P21, YW extra): Touch / Latch / Write; Read (FL's) stays the default
     menu.addSubMenu (tr ("Automation write mode (YW Studio)"), makeAutomationModeMenu());
     // round 163: punch in/out on the loop region, pre-roll and post-roll (bars)
     {
@@ -6310,7 +6310,7 @@ void MainComponent::quickRecordAudio()
 
 void MainComponent::oneClickRecord (int into)
 {
-    // FL: FUN_0120d380 (round 190dx, /mnt/e/lynx-work/flpl190dx/FL-FACTS.md item 20)
+    // FL: FUN_0120d380 (round 190dx, /mnt/e/yw-work/flpl190dx/FL-FACTS.md item 20)
     const auto plan = oneclick::plan (engine.getSong(), engine.getArmedInserts(), this->mixer.getStripsForSnapshot().getSelectedTrack(),
                                       (oneclick::Into) into);
     if (plan.insert > 0)
@@ -6641,10 +6641,10 @@ juce::PopupMenu MainComponent::buildRecordMenu()
                   [set] { set ([] (AudioEngine::RecordOptions& r) { r.startsPlayback = ! r.startsPlayback; }); });
     menu.addItem (tr ("Disarm on stop (recording switches off when playback stops)"), true, o.recordOffOnStop,
                   [set] { set ([] (AudioEngine::RecordOptions& r) { r.recordOffOnStop = ! r.recordOffOnStop; }); });
-    // LYNX's own (issue #16; FL has no such option): also in Mixer › Disk recording
+    // YW's own (issue #16; FL has no such option): also in Mixer › Disk recording
     menu.addItem (tr ("Disarm the inserts when recording stops"), true, o.disarmOnStop,
                   [set] { set ([] (AudioEngine::RecordOptions& r) { r.disarmOnStop = ! r.disarmOnStop; }); });
-    // LYNX's own (round 190aq, core/LowLatency.h; FL has no such switch): also in Mixer › Disk recording
+    // YW's own (round 190aq, core/LowLatency.h; FL has no such switch): also in Mixer › Disk recording
     menu.addItem (tr ("Low latency while recording (bypasses effects that add latency on armed or monitored inserts)"), true, o.lowLatencyRecording,
                   [set] { set ([] (AudioEngine::RecordOptions& r) { r.lowLatencyRecording = ! r.lowLatencyRecording; }); });
     menu.addItem (tr ("Enable recording markers (Start / Stop recording markers in the Playlist)"), true, o.recordingMarkers,
@@ -7097,7 +7097,7 @@ juce::PopupMenu MainComponent::makePatternMenu (std::vector<int> picked)
                             }); });
 
     menu.addSubMenu (tr ("Song time signature"), signatures);
-    // round 190nw (LYNX's own, after FL's items): the pattern's notes in the tracker
+    // round 190nw (YW's own, after FL's items): the pattern's notes in the tracker
     menu.addItem (tr ("Edit in tracker") + shortcutText ("view.tracker"), [this] { openTracker (engine); });
     menu.addSeparator();
     menu.addItem (tr ("Delete pattern") + shortcutText ("pattern.delete"), song.patterns.size() > 1, false,
@@ -7530,7 +7530,7 @@ juce::PopupMenu MainComponent::TempoDisplay::buildMenu()
         menu.addItem (juce::String (t) + " BPM", [this, t] { setBpm ((double) t); });
     // FL's "Half speed" (round 190mp, DF-16; capture 190mp A4, fl-tempo-menu.png): the last item of FL's column, after a
     // line; ticked while on. The song plays at half its tempo and the display keeps showing the tempo (FL: "a temporary
-    // state"). LYNX's Half / Double (which change the tempo) follow under a line.
+    // state"). YW's Half / Double (which change the tempo) follow under a line.
     menu.addSeparator();
     menu.addItem (tr ("Half speed"), true, engine.isHalfSpeed(), [this] { engine.setHalfSpeed (! engine.isHalfSpeed()); });
     menu.addSeparator();
@@ -7600,7 +7600,7 @@ void MainComponent::setControlHints()
     };
 
     ui::setHint (newButton, with (tr ("New project"), "file.new"));
-    ui::setHint (openButton, with (tr ("Open a project (.lynx, FL Studio .flp, Ableton Live .als, FL Studio Mobile .flm, DAWproject, GarageBand .band, BandLab .blx, MIDI)"), "file.open"));
+    ui::setHint (openButton, with (tr ("Open a project (.yw, FL Studio .flp, Ableton Live .als, FL Studio Mobile .flm, DAWproject, GarageBand .band, BandLab .blx, MIDI)"), "file.open"));
     ui::setHint (saveButton, with (tr ("Save the project"), "file.save") + "  " + tr ("save as:") + " " + keyMarkup ("file.saveAs"));
     ui::setHint (exportButton, with (tr ("Export audio: WAV, FLAC or OGG"), "file.export"));
     ui::setHint (undoButton, with (tr ("Undo the last edit"), "edit.undo") + "  " + tr ("[RMB] undo history"), true);
@@ -7798,7 +7798,7 @@ void MainComponent::refreshChordOptions()
         chordNotes[(std::size_t) pc] = name.toStdString();
     }
     options.notes = &chordNotes;
-    // Roman (a LYNX choice, FL's item changes nothing): against the Piano Roll's scale, when one is set
+    // Roman (a YW choice, FL's item changes nothing): against the Piano Roll's scale, when one is set
     const auto& highlight = engine.getSong().scaleHighlight;
     options.tonic = pianoRoll.scaleTonic() >= 0 ? pianoRoll.scaleTonic() : highlight.scale >= 0 ? highlight.root : -1;
     chordReadout.setOptions (options);
@@ -8025,7 +8025,7 @@ juce::PopupMenu MainComponent::makeKeyMenu()
     menu.addSubMenu (tr ("More scales"), more);
     menu.addSeparator();
     menu.addItem (tr ("None"), true, ! current, [this] { setProjectKey (std::nullopt); });
-    if (layoutStyle == layoutstyle::Style::clipLaunch) // round 190oo (O-5, LYNX extra; also in Settings › LYNX extras)
+    if (layoutStyle == layoutstyle::Style::clipLaunch) // round 190oo (O-5, YW extra; also in Settings › YW extras)
     {
         menu.addSeparator();
         menu.addItem (tr ("Live's scale control: switch, root and mode (YW Studio)"), true, livescale::shown, [this] { setLiveScaleControl (! livescale::shown); });
@@ -8130,7 +8130,7 @@ void MainComponent::readPluginDatabaseAgain()
 }
 
 // FL's Settings › Audio › "Auto close" (round 190bx, core/FlSettings.h): the audio device is free for other programs
-// while LYNX is not in front and has no use for it; it opens again when LYNX comes back or needs it.
+// while YW is not in front and has no use for it; it opens again when YW comes back or needs it.
 void MainComponent::autoCloseDevice()
 {
     if (! persistent)
@@ -8191,7 +8191,7 @@ void MainComponent::timerCallback()
         updateTitle();
     }
 
-    // the Browser's "Project folder" follows the project's file (.lynx, or the .flp it was imported from)
+    // the Browser's "Project folder" follows the project's file (.yw, or the .flp it was imported from)
     const uitrace::Scope partFolders ("timer: project folder / recording target", false);
     browser.setProjectFile (currentFile != juce::File() ? currentFile : importedFlpFile);
     // and so does where audio is recorded ("<project folder>/Audio/Recorded", FL-like take names)
@@ -8232,7 +8232,7 @@ void MainComponent::timerCallback()
     // of the plugin is switched off now (counted as crashes: the prompt below)
     switchOffPluginsOfThreadFaults();
 
-    // a hosted plugin crashed inside a call: it was switched off (bypassed / silent) and LYNX kept running
+    // a hosted plugin crashed inside a call: it was switched off (bypassed / silent) and YW kept running
     if (const auto crashes = pluginCrashCount(); crashes != pluginCrashesSeen)
     {
         pluginCrashesSeen = crashes;
@@ -8252,7 +8252,7 @@ void MainComponent::timerCallback()
         // crash it again, so no Reload; the project keeps them for the save
         const auto all = pluginCrashes();
         const auto onLoad = ! all.empty() && all.back().onLoad;
-        // round 190gg (B1): Reload, or from now on in a process of its own, where its next crash cannot reach LYNX
+        // round 190gg (B1): Reload, or from now on in a process of its own, where its next crash cannot reach YW
         const auto prompt = PluginWindows::crashPrompt (crashedName, onLoad);
         auto options = juce::MessageBoxOptions().withIconType (juce::MessageBoxIconType::WarningIcon).withTitle (prompt.title).withMessage (prompt.message);
         for (const auto& button : prompt.buttons)
@@ -8291,7 +8291,7 @@ void MainComponent::timerCallback()
         }
     }
 
-    // issue #32 (round 174a): a plugin's own editor window faulted; LYNX closed that editor and kept running
+    // issue #32 (round 174a): a plugin's own editor window faulted; YW closed that editor and kept running
     if (const auto crashes = PluginWindows::editorCrashCount(); crashes != editorCrashesSeen)
     {
         editorCrashesSeen = crashes;
@@ -8440,10 +8440,10 @@ void MainComponent::timerCallback()
         }
         // Linux: the first dropouts without real-time priority explain how to get it, once per installation (round 161)
         if (device != nullptr && ! realtimeHintChecked && (rt.overBudget > 0 || device->getXRunCount() > 0)
-            && lynx::rt::status() == lynx::rt::Status::denied)
+            && yw::rt::status() == yw::rt::Status::denied)
         {
             realtimeHintChecked = true;
-            if (lynx::rt::shouldShowHint (PluginHost::settingsFolder().getChildFile ("realtime-hint-shown")))
+            if (yw::rt::shouldShowHint (PluginHost::settingsFolder().getChildFile ("realtime-hint-shown")))
                 juce::AlertWindow::showMessageBoxAsync (
                     juce::MessageBoxIconType::InfoIcon, tr ("Real-time priority"),
                     tr ("The sound broke up, and Linux runs YW Studio's audio thread at normal priority. Real-time priority makes dropouts much rarer:\n\n"
@@ -8473,7 +8473,7 @@ void MainComponent::timerCallback()
         syncLightBeat = std::numeric_limits<std::int64_t>::min();
 
     // If a closed dialog left the main window without a focused component, take it back so the PC keyboard
-    // keeps playing. Only while the main window itself is the active one: another LYNX window (Audio editor,
+    // keeps playing. Only while the main window itself is the active one: another YW window (Audio editor,
     // Quick-add palette, a plugin's editor, a detached panel) keeps its focus (issue #4: grabbing it here, 30
     // times a second, pulled the main window to the front and closed the plugins' drop-down menus).
     if (shouldReclaimKeyboardFocus())
@@ -8549,7 +8549,7 @@ void MainComponent::confirmDiscard (std::function<void()> then)
 
 juce::File MainComponent::recordingFolderFor (const juce::File& projectFile) const
 {
-    // FL records into the project data folder's "Audio\Recorded" (REA round 134); LYNX's data folder is the folder of
+    // FL records into the project data folder's "Audio\Recorded" (REA round 134); YW's data folder is the folder of
     // the project file. Unsaved projects record into the global recordings folder.
     return projectFile == juce::File() ? AudioEngine::defaultRecordingFolder()
                                        : projectFile.getParentDirectory().getChildFile (safety::recordedSubfolder);
@@ -8688,7 +8688,7 @@ void MainComponent::autosave()
 {
     commitSongNotes(); // (round 190ch: notes still being typed are part of what is saved)
     // backup copy of the open project, so work isn't lost if something crashes ("Song (autosaved on 2026-10-20 at
-    // 14h19).lynx" in the backup folder, like FL's Backup folder); only the newest few of each project are kept
+    // 14h19).yw" in the backup folder, like FL's Backup folder); only the newest few of each project are kept
     // The plugins' settings are read here (they answer on the message thread); writing the file (the big part:
     // every plugin's state, encoded) runs on a thread of its own, so the timed backup no longer freezes the screen
     // (round 151: 180 ms every two minutes on a project with 71 plugins). One at a time.
@@ -8724,7 +8724,7 @@ void MainComponent::autosave()
     });
 }
 
-// The Simple workflow's line beside "+ Add track" (round 190t): what a beginner needs to know about their work — LYNX
+// The Simple workflow's line beside "+ Add track" (round 190t): what a beginner needs to know about their work — YW
 // backs it up by itself. Empty when there is nothing to say (a new project with nothing in it yet).
 juce::String MainComponent::simpleSaveStatus() const
 {
@@ -8758,7 +8758,7 @@ void MainComponent::rotateBackups (const juce::String& stem)
 
 void MainComponent::keepOverwrittenCopy (const juce::File& file)
 {
-    // FL moves the file a save replaces into its Backup folder as "Song (overwritten on ... at ...)"; LYNX copies it
+    // FL moves the file a save replaces into its Backup folder as "Song (overwritten on ... at ...)"; YW copies it
     // (the save itself still goes through a temporary file and a rename)
     const auto folder = autosaveFolder();
     if (! file.existsAsFile() || file.isAChildOf (folder))
@@ -8902,7 +8902,7 @@ sessionui::Context MainComponent::sessionContext()
 {
     return { engine, currentFile, projectName, [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::File& project) {
                 if (safe != nullptr)
-                    safe->openLynxProject (project);
+                    safe->openYwProject (project);
             } };
 }
 
@@ -9066,8 +9066,8 @@ void MainComponent::exportPackage()
     const auto start = (currentFile != juce::File() ? currentFile.getParentDirectory()
                                                      : juce::File::getSpecialLocation (juce::File::userDocumentsDirectory))
                            .getChildFile (stem + ".zip");
-    fileChooser = lynx::ui::makeFileChooser (tr ("Zipped loop package"), start, "*.zip");
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+    fileChooser = yw::ui::makeFileChooser (tr ("Zipped loop package"), start, "*.zip");
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::FileChooser& chooser) {
                                   const auto zip = chooser.getResult();
                                   if (safe != nullptr && zip != juce::File())
@@ -9096,10 +9096,10 @@ void MainComponent::exportDataFiles()
     // FL's File › Export › Project data files... (REA round 190oq, FUN_011ec0f0: "Collect project data files", "Copy the %d
     // files this project is currently using to..."): copies only; the project keeps using its own files
     const auto count = (int) safety::referencedSamples (engine.getSong()).size();
-    fileChooser = lynx::ui::makeFileChooser (tr ("Copy the {0} files this project is currently using to...", { juce::String (count) }),
+    fileChooser = yw::ui::makeFileChooser (tr ("Copy the {0} files this project is currently using to...", { juce::String (count) }),
                                              currentFile != juce::File() ? currentFile.getParentDirectory()
                                                                          : juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::FileChooser& chooser) {
                                   const auto folder = chooser.getResult();
                                   if (safe == nullptr || folder == juce::File())
@@ -9120,7 +9120,7 @@ void MainComponent::exportDataFiles()
 
 void MainComponent::collectAllAndSave()
 {
-    // Live's File › Collect All and Save (issue #251, round 190oq; LYNX extra): every file outside the project's folder is
+    // Live's File › Collect All and Save (issue #251, round 190oq; YW extra): every file outside the project's folder is
     // copied into <project folder>/Samples/Imported, the project uses the copies, then it is saved. A project never saved
     // is first saved to a new project folder (FL's command), then collected.
     if (currentFile == juce::File() || currentFile.isAChildOf (autosaveFolder()) || ! currentFile.hasFileExtension (ProjectFile::extension))
@@ -9157,10 +9157,10 @@ void MainComponent::collectAllAndSave()
 void MainComponent::collectSamples()
 {
     // FL's "Export project data files": copy the samples the project uses into one folder (and use the copies)
-    fileChooser = lynx::ui::makeFileChooser (tr ("Copy the project's samples to..."),
+    fileChooser = yw::ui::makeFileChooser (tr ("Copy the project's samples to..."),
                                                        currentFile != juce::File() ? currentFile.getParentDirectory()
                                                                                    : juce::File::getSpecialLocation (juce::File::userDocumentsDirectory));
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::FileChooser& chooser) {
                                   const auto folder = chooser.getResult();
                                   if (safe == nullptr || folder == juce::File())
@@ -9183,16 +9183,16 @@ void MainComponent::collectSamples()
 
 void MainComponent::saveToNewProjectFolder()
 {
-    // FL's "Save to new project folder...": <chosen name>/<name>.lynx, so the project gets its own data folder (its
+    // FL's "Save to new project folder...": <chosen name>/<name>.yw, so the project gets its own data folder (its
     // recordings go to <name>/Audio/Recorded). This session's takes still in the global recordings folder move along
     // (copied there, the project uses the copies; the originals are then offered for deletion as unused).
     const auto start = currentFile != juce::File() ? currentFile.getParentDirectory()
-                                                   : lynx::platform::documentsFolder().getChildFile ("YW Studio/Projects");
+                                                   : yw::platform::documentsFolder().getChildFile ("YW Studio/Projects");
     start.createDirectory();
-    fileChooser = lynx::ui::makeFileChooser (tr ("Save to new project folder"),
+    fileChooser = yw::ui::makeFileChooser (tr ("Save to new project folder"),
                                                        start.getChildFile (projectName.isNotEmpty() ? juce::File::createLegalFileName (projectName) : juce::String ("untitled")),
                                                        juce::String ("*") + ProjectFile::extension);
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode, [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::FileChooser& chooser) {
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode, [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::FileChooser& chooser) {
         const auto chosen = chooser.getResult();
         if (safe == nullptr || chosen == juce::File())
             return;
@@ -9243,15 +9243,15 @@ void MainComponent::saveToNewProjectFolder()
 
 void MainComponent::startSession()
 {
-    // Like FL's backup on crash: a marker exists while LYNX runs; finding one at start means the last session
+    // Like FL's backup on crash: a marker exists while YW runs; finding one at start means the last session
     // ended without closing (crash, power loss), so the newest backup written during it is offered.
     sessionLock = std::make_unique<juce::InterProcessLock> ("YW-ui-session");
     if (! sessionLock->enter (0))
     {
-        sessionLock.reset(); // another LYNX window is running: it owns the marker
+        sessionLock.reset(); // another YW window is running: it owns the marker
         return;
     }
-    sessionMarker = lynx::platform::settingsFile ("session-running.txt");
+    sessionMarker = yw::platform::settingsFile ("session-running.txt");
     if (sessionMarker.existsAsFile())
     {
         const auto previousStart = juce::Time (sessionMarker.loadFileAsString().trim().getLargeIntValue());
@@ -9262,7 +9262,7 @@ void MainComponent::startSession()
     }
     sessionMarker.getParentDirectory().createDirectory();
     sessionMarker.replaceWithText (juce::String (juce::Time::getCurrentTime().toMilliseconds()));
-    // takes that were recording when LYNX stopped (crash, power loss, closed while recording): after the backup offer
+    // takes that were recording when YW stopped (crash, power loss, closed while recording): after the backup offer
     juce::Timer::callAfterDelay (4000, [safe = juce::Component::SafePointer<MainComponent> (this)] {
         if (safe != nullptr)
             safe->checkInterruptedTakes();
@@ -9341,7 +9341,7 @@ void MainComponent::checkPreviousSession (juce::Time sessionStart)
                             if (result == 1)
                                 safe->confirmDiscard ([safe, backup] {
                                     if (safe != nullptr)
-                                        safe->openLynxProject (backup);
+                                        safe->openYwProject (backup);
                                 });
                             else if (result == 2)
                                 folder.startAsProcess();
@@ -9391,10 +9391,10 @@ void MainComponent::openStartupProject()
         case StartupProject::defaultTemplate:
             break;
     }
-    if (defaultTemplate().isLynxDefault())
+    if (defaultTemplate().isYwDefault())
     {
         engine.markCreatedNow(); // issue #231: the start-up song is a new project, started now (FL dates every new one)
-        return; // (the start-up song is LYNX's default already)
+        return; // (the start-up song is YW's default already)
     }
     bool missing = false;
     auto song = makeDefaultTemplateProject (&missing);
@@ -9406,7 +9406,7 @@ void MainComponent::openStartupProject()
     startNewProject (std::move (song), {});
 }
 
-// Round 190oo (design review CS O-2, a LYNX extra, off by default): a new, empty project made while the Clip-launch
+// Round 190oo (design review CS O-2, a YW extra, off by default): a new, empty project made while the Clip-launch
 // layout shows links Track N to insert N (core/Templates.h linkClipLaunchStrips), so the Session mixer shows a strip on
 // every column as a new Live set does. Demos and starter songs (they have clips) and the other layouts are unchanged.
 Song MainComponent::withClipLaunchStrips (Song song)
@@ -9483,7 +9483,7 @@ void MainComponent::reloadCrashedPlugins (const juce::String& plugin)
         PluginWindows::reload (engine, which);
 }
 
-// Round 176a: round 174a's "Plugin crashed" prompt for a plugin whose separate process died. LYNX itself is unharmed
+// Round 176a: round 174a's "Plugin crashed" prompt for a plugin whose separate process died. YW itself is unharmed
 // (the plugin ran in its own process), so it offers the save and says how to get the plugin back.
 void MainComponent::announceSeparateProcessCrash (const juce::String& plugin, bool crashed, bool bits32, const juce::StringArray& withIt)
 {
@@ -9537,7 +9537,7 @@ void MainComponent::saveAsTemplate()
 juce::AlertWindow* MainComponent::buildSaveCopyWindow (const juce::String& json, std::shared_ptr<juce::TextEditor> list)
 {
     // round 190hq (B20): the release, and what the copy loses there (worked out again for each release)
-    const auto releases = olderlynx::releases();
+    const auto releases = olderyw::releases();
     auto* w = new juce::AlertWindow (tr ("Save a copy for an older YW Studio"),
                                      tr ("The copy opens in the release you pick. The open project stays as it is."), juce::MessageBoxIconType::NoIcon);
     juce::StringArray names;
@@ -9552,7 +9552,7 @@ juce::AlertWindow* MainComponent::buildSaveCopyWindow (const juce::String& json,
     w->addCustomComponent (list.get());
     auto* combo = w->getComboBoxComponent ("release");
     auto update = [json, releases, combo, list] {
-        const auto copy = olderlynx::forRelease (json, releases[juce::jmax (0, combo->getSelectedItemIndex())]);
+        const auto copy = olderyw::forRelease (json, releases[juce::jmax (0, combo->getSelectedItemIndex())]);
         juce::String sound, other;
         for (const auto& l : copy.lost)
             (l.sound ? sound : other) << "- " << tr (l.text, { l.detail }) << "\n";
@@ -9579,7 +9579,7 @@ void MainComponent::saveCopyForOlder()
     // project and its file are not touched.
     engine.capturePluginStates();
     const auto json = ProjectFile::toJson (engine.getSong());
-    const auto releases = olderlynx::releases();
+    const auto releases = olderyw::releases();
     auto list = std::make_shared<juce::TextEditor>();
     auto* w = buildSaveCopyWindow (json, list);
     w->enterModalState (true, juce::ModalCallbackFunction::create ([w, list, json, releases, safe = juce::Component::SafePointer<MainComponent> (this)] (int result) {
@@ -9588,15 +9588,15 @@ void MainComponent::saveCopyForOlder()
             return;
         const auto start = (safe->currentFile != juce::File() ? safe->currentFile.getParentDirectory()
                                                               : juce::File::getSpecialLocation (juce::File::userDocumentsDirectory))
-                               .getChildFile (olderlynx::copyName (projectStem (safe->projectName), release) + ProjectFile::extension);
-        safe->fileChooser = lynx::ui::makeFileChooser (tr ("Save a copy for YW Studio {0}", { release }), start, juce::String ("*") + ProjectFile::extension);
-        lynx::ui::launchChooser (safe->fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+                               .getChildFile (olderyw::copyName (projectStem (safe->projectName), release) + ProjectFile::extension);
+        safe->fileChooser = yw::ui::makeFileChooser (tr ("Save a copy for YW Studio {0}", { release }), start, juce::String ("*") + ProjectFile::extension);
+        yw::ui::launchChooser (safe->fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                                   [json, release] (const juce::FileChooser& chooser) {
                                       auto file = chooser.getResult();
                                       if (file == juce::File())
                                           return;
                                       file = ProjectFile::withProjectExtension (file);
-                                      const auto copy = olderlynx::forRelease (json, release);
+                                      const auto copy = olderyw::forRelease (json, release);
                                       juce::TemporaryFile temp (file);
                                       if (! copy.ok || ! temp.getFile().replaceWithText (copy.json, false, false, nullptr) || ! temp.overwriteTargetFileWithTemporary()
                                           || file.loadFileAsString() != copy.json)
@@ -9617,12 +9617,12 @@ void MainComponent::chooseFileToOpen()
 
 void MainComponent::chooseFileToOpenNow()
 {
-    fileChooser = lynx::ui::makeFileChooser (tr ("Open project"), currentFile.getParentDirectory(),
+    fileChooser = yw::ui::makeFileChooser (tr ("Open project"), currentFile.getParentDirectory(),
                                                        juce::String ("*") + ProjectFile::extension
-                                                           + ";*.dawproj;*.dawproject;*.flp;*.als;*.flm;*.band;projectData;ProjectData;*.blx;*.zip;*.lynxpack;*.mid;*.midi;*.mod;*.xm;*.s3m;*.it");
+                                                           + ";*.dawproj;*.dawproject;*.flp;*.als;*.flm;*.band;projectData;ProjectData;*.blx;*.zip;*.ywpack;*.mid;*.midi;*.mod;*.xm;*.s3m;*.it");
 
     // (a GarageBand .band is a folder: macOS's dialog shows it as one file; elsewhere its "projectData" is picked)
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [this] (const juce::FileChooser& chooser) {
                                   const auto result = chooser.getResult();
                                   if (result.existsAsFile() || ProjectPackage::garageBandPackage (result) != juce::File())
@@ -9693,7 +9693,7 @@ void MainComponent::openFile (const juce::File& file)
         engine.stop();
         engine.rewind();
         engine.setSong (std::move (*song));
-        currentFile = juce::File(); // imported: "Save" asks where to write the .lynx
+        currentFile = juce::File(); // imported: "Save" asks where to write the .yw
         projectName = file.getFileNameWithoutExtension();
         rememberRecent (file);
 
@@ -9736,7 +9736,7 @@ void MainComponent::openFile (const juce::File& file)
         return;
     }
 
-    openLynxProject (file);
+    openYwProject (file);
 }
 
 void MainComponent::importFlp (const juce::File& file)
@@ -9764,7 +9764,7 @@ void MainComponent::flpImported (const juce::File& file)
         smartTip.armedAt = smartTip.since = juce::Time::getMillisecondCounterHiRes();
     }
     {
-        currentFile = juce::File(); // imported: "Save" asks where to write the .lynx
+        currentFile = juce::File(); // imported: "Save" asks where to write the .yw
         importedFlpFile = file;
         projectName = file.getFileNameWithoutExtension();
         rememberRecent (file);
@@ -9825,10 +9825,10 @@ bool MainComponent::openInNewWindow (const juce::File& file)
 
 void MainComponent::chooseFileToOpenInNewWindow()
 {
-    fileChooser = lynx::ui::makeFileChooser (tr ("Open in new window"), currentFile.getParentDirectory(),
+    fileChooser = yw::ui::makeFileChooser (tr ("Open in new window"), currentFile.getParentDirectory(),
                                              juce::String ("*") + ProjectFile::extension
-                                                 + ";*.dawproj;*.dawproject;*.flp;*.als;*.flm;*.band;projectData;ProjectData;*.blx;*.zip;*.lynxpack;*.mid;*.midi;*.mod;*.xm;*.s3m;*.it");
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                                                 + ";*.dawproj;*.dawproject;*.flp;*.als;*.flm;*.band;projectData;ProjectData;*.blx;*.zip;*.ywpack;*.mid;*.midi;*.mod;*.xm;*.s3m;*.it");
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                              [safe = juce::Component::SafePointer<MainComponent> (this)] (const juce::FileChooser& chooser) {
                                  if (const auto result = chooser.getResult(); safe != nullptr && (result.existsAsFile() || result.isDirectory()))
                                      safe->openInNewWindow (result);
@@ -9838,13 +9838,13 @@ void MainComponent::chooseFileToOpenInNewWindow()
 void MainComponent::chooseFileToOpenWithoutPlugins()
 {
     confirmDiscard ([this] {
-        fileChooser = lynx::ui::makeFileChooser (tr ("Open without third-party plugins"), currentFile.getParentDirectory(), juce::String ("*") + ProjectFile::extension);
-        lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        fileChooser = yw::ui::makeFileChooser (tr ("Open without third-party plugins"), currentFile.getParentDirectory(), juce::String ("*") + ProjectFile::extension);
+        yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                   [this] (const juce::FileChooser& chooser) {
                                       if (chooser.getResult().existsAsFile())
                                       {
                                           crashguard::note (("opening project without plugins " + chooser.getResult().getFileName()).toStdString());
-                                          openLynxProject (chooser.getResult(), true);
+                                          openYwProject (chooser.getResult(), true);
                                       }
                                   });
     });
@@ -9861,7 +9861,7 @@ void MainComponent::showPluginsOff()
         window->setResizable (true, false);
 }
 
-void MainComponent::openLynxProject (const juce::File& file, bool withoutPlugins)
+void MainComponent::openYwProject (const juce::File& file, bool withoutPlugins)
 {
     juce::String error, savedBy;
     ProjectFile::WindowLayout layout; // round 190mr (DF-141)
@@ -9887,7 +9887,7 @@ void MainComponent::openLynxProject (const juce::File& file, bool withoutPlugins
     }
     else
     {
-        // missing plugins get their LYNX substitute; substitutes whose original is installed now go back to it
+        // missing plugins get their YW substitute; substitutes whose original is installed now go back to it
         engine.getPluginHost().applySubstitutes (*song);
         engine.setSong (std::move (*song));
     }
@@ -9897,7 +9897,7 @@ void MainComponent::openLynxProject (const juce::File& file, bool withoutPlugins
     engine.markCreatedFrom (file);
     importedFlpFile = juce::File();
     projectName = file.getFileNameWithoutExtension();
-    // round 190lo (LYNX extra, off by default): clips with polyphonic note edits get their analysis ready in the background
+    // round 190lo (YW extra, off by default): clips with polyphonic note edits get their analysis ready in the background
     if (const auto queued = PolyEditorWindows::prepareEditedClips (engine); queued > 0)
         platform::testModeLog ("polyphonic edits prepared in the background: " + juce::String (queued) + " clips");
     importedSuffix = {};
@@ -9906,7 +9906,7 @@ void MainComponent::openLynxProject (const juce::File& file, bool withoutPlugins
     playlist.showSongAfterOpen();
     applyProjectWindowLayout (layout); // round 190mr (DF-141)
 
-    // pain point 37 (round 177d): a project from a newer LYNX SHARE opens, but saving it here would drop what that
+    // pain point 37 (round 177d): a project from a newer YW Studio opens, but saving it here would drop what that
     // version added, so say so once (FL warns about a project from a more recent version too)
     if (safety::savedByNewerVersion (savedBy.toStdString(), JUCE_APPLICATION_VERSION_STRING))
     {
@@ -9942,7 +9942,7 @@ void MainComponent::openSettings (int page)
     showSettings (engine, (SettingsPage) juce::jlimit (0, (int) SettingsPage::link, page), settingsHooks()); // (Theme was clamped to MIDI)
 }
 
-// (round 190on: also the command palette's, which switches the LYNX extras as the Settings page does)
+// (round 190on: also the command palette's, which switches the YW extras as the Settings page does)
 SettingsHooks MainComponent::settingsHooks()
 {
     const juce::Component::SafePointer<MainComponent> safe (this);
@@ -10158,7 +10158,7 @@ SettingsHooks MainComponent::settingsHooks()
 
 void MainComponent::showPluginManager()
 {
-    lynx::showPluginManager (engine, [safe = juce::Component::SafePointer<MainComponent> (this)] {
+    yw::showPluginManager (engine, [safe = juce::Component::SafePointer<MainComponent> (this)] {
         if (safe != nullptr)
             safe->openSettings ((int) SettingsPage::files);
     });
@@ -10166,7 +10166,7 @@ void MainComponent::showPluginManager()
 
 void MainComponent::showShortcutManager()
 {
-    lynx::showShortcutManager ([safe = juce::Component::SafePointer<MainComponent> (this)] {
+    yw::showShortcutManager ([safe = juce::Component::SafePointer<MainComponent> (this)] {
         if (safe == nullptr)
             return;
         safe->loadKeyMap();
@@ -10177,7 +10177,7 @@ void MainComponent::showShortcutManager()
 
 void MainComponent::showMissingFiles (bool afterOpening)
 {
-    if (afterOpening && platform::testMode()) // (LYNX_TEST_MODE: nothing waits for a click)
+    if (afterOpening && platform::testMode()) // (YW_TEST_MODE: nothing waits for a click)
     {
         platform::testModeLog ("Missing files dialog after opening " + projectName);
         return;
@@ -10219,7 +10219,7 @@ void MainComponent::showMissingFiles (bool afterOpening)
                 if (fx.kind == EffectKind::plugin && ! fx.plugin.id.empty() && host.find (juce::String::fromUTF8 (fx.plugin.id.c_str())) == nullptr)
                     addPlugin (fx.plugin, song.mixer[t].name.empty() ? (t == 0 ? std::string ("Master") : "Insert " + std::to_string (t)) : song.mixer[t].name,
                                "Bypassed: the slot keeps the plugin's settings until it is installed");
-        // played by a LYNX substitute until the original is installed
+        // played by a YW substitute until the original is installed
         for (std::size_t t = 0; t < song.mixer.size(); ++t)
             for (const auto& fx : song.mixer[t].effects)
                 if (fx.isSubstitute())
@@ -10275,7 +10275,7 @@ void MainComponent::showMissingFiles (bool afterOpening)
 
 juce::PopupMenu MainComponent::makeSwitchAudioClipsMenu (bool selectedOnly)
 {
-    // FL's groups where LYNX has a match (Realtime: Resample), LYNX's stretch engine, and its Ableton-style warp modes
+    // FL's groups where YW has a match (Realtime: Resample), YW's stretch engine, and its Ableton-style warp modes
     juce::PopupMenu m;
     auto item = [this, &m, selectedOnly] (const char* name, bool keepPitch, StretchMethod method) {
         m.addItem (tr (name), [this, selectedOnly, keepPitch, method, name] { switchAudioClips (selectedOnly, keepPitch, method, tr (name)); });
@@ -10354,7 +10354,7 @@ void MainComponent::saveClipboardToBrowser (bool midi)
 
 void MainComponent::confirmPrepareForMidiExport()
 {
-    // FL's text, without its "(no undo)": this edit can be undone in LYNX
+    // FL's text, without its "(no undo)": this edit can be undone in YW
     auto options = juce::MessageBoxOptions()
                        .withIconType (juce::MessageBoxIconType::QuestionIcon)
                        .withTitle (tr ("Confirm"))
@@ -10443,7 +10443,7 @@ void MainComponent::switchSmartDisableForAll()
 {
     perfMeter.setSmartDisableTip ({}); // (round 190ok: the tip's advice taken)
     // FL's Tools › Macros › "Switch smart disable for all plugins" (FLEngine FUN_0124d430, REA round 139): every
-    // effect slot of every insert is set to smart disable, and so is every plugin channel (round 190ok, D2: LYNX's hosted
+    // effect slot of every insert is set to smart disable, and so is every plugin channel (round 190ok, D2: YW's hosted
     // instruments now sleep through silence as FL's generators do)
     engine.editSong ([] (Song& s) {
         for (auto& track : s.mixer)
@@ -10475,9 +10475,9 @@ void MainComponent::exportForOtherApps()
 void MainComponent::importMidiFile()
 {
     const auto folder = currentFile.existsAsFile() ? currentFile.getParentDirectory() : juce::File::getSpecialLocation (juce::File::userMusicDirectory);
-    fileChooser = lynx::ui::makeFileChooser (tr ("Import MIDI file"), folder, "*.mid;*.midi");
+    fileChooser = yw::ui::makeFileChooser (tr ("Import MIDI file"), folder, "*.mid;*.midi");
     juce::Component::SafePointer<MainComponent> safe (this);
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
         const auto file = fc.getResult();
         if (safe == nullptr || file == juce::File())
             return;
@@ -10500,11 +10500,11 @@ void MainComponent::importMidiFile()
 void MainComponent::importTracksFromProject()
 {
     const auto folder = currentFile.existsAsFile() ? currentFile.getParentDirectory() : juce::File::getSpecialLocation (juce::File::userMusicDirectory);
-    fileChooser = lynx::ui::makeFileChooser (tr ("Import tracks from another project"), folder,
+    fileChooser = yw::ui::makeFileChooser (tr ("Import tracks from another project"), folder,
                                              juce::String ("*") + ProjectFile::extension
                                                  + ";*.flp;*.als;*.flm;*.songtmpl;*.band;projectData;ProjectData;*.blx;*.dawproject;*.mod;*.xm;*.s3m;*.it");
     juce::Component::SafePointer<MainComponent> safe (this);
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
         if (const auto file = fc.getResult(); safe != nullptr && (file.existsAsFile() || file.isDirectory()))
             safe->importTracksFrom (file);
     });
@@ -10627,9 +10627,9 @@ void MainComponent::exportMidiFile()
     // FL's File › Export › "MIDI file...": the arrangement's notes (or the current pattern's) as a Standard MIDI File
     const auto folder = currentFile.existsAsFile() ? currentFile.getParentDirectory() : juce::File::getSpecialLocation (juce::File::userMusicDirectory);
     const auto name = projectName.isNotEmpty() ? projectName : juce::String ("YW Studio");
-    fileChooser = lynx::ui::makeFileChooser (tr ("Export MIDI file"), folder.getChildFile (name + ".mid"), "*.mid");
+    fileChooser = yw::ui::makeFileChooser (tr ("Export MIDI file"), folder.getChildFile (name + ".mid"), "*.mid");
     juce::Component::SafePointer<MainComponent> safe (this);
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe] (const juce::FileChooser& fc) {
                                   auto file = fc.getResult();
                                   if (safe == nullptr || file == juce::File())
@@ -10689,9 +10689,9 @@ void MainComponent::save (bool askForFile, std::function<void()> afterSaved)
     const auto startFolder = currentFile.isAChildOf (autosaveFolder()) ? juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
                                                                        : currentFile.getParentDirectory();
     // (issue #251: FL's Save as also offers its zipped loop package, "Zipped song file (*.zip)")
-    fileChooser = lynx::ui::makeFileChooser (tr ("Save project"), startFolder, juce::String ("*") + ProjectFile::extension + ";*.zip");
+    fileChooser = yw::ui::makeFileChooser (tr ("Save project"), startFolder, juce::String ("*") + ProjectFile::extension + ";*.zip");
 
-    lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+    yw::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [this, write] (const juce::FileChooser& chooser) {
                                   const auto chosen = chooser.getResult();
                                   if (chosen == juce::File())
@@ -10781,7 +10781,7 @@ void MainComponent::updateHoverValue (juce::Component* hovered, const ui::Hint& 
     const auto at = juce::Desktop::getInstance().getMainMouseSource().getScreenPosition().roundToInt();
     const auto show = hovered != nullptr && hint.value.isNotEmpty() && ! juce::ModifierKeys::currentModifiers.isAnyMouseButtonDown()
                       && (hovered->getTopLevelComponent() == getTopLevelComponent()
-                          || (bool) hovered->getTopLevelComponent()->getProperties().getWithDefault ("lynxNativeChild", false));
+                          || (bool) hovered->getTopLevelComponent()->getProperties().getWithDefault ("ywNativeChild", false));
     if (! show)
     {
         if (hoverTipShown)
@@ -10828,7 +10828,7 @@ juce::PopupMenu MainComponent::makeLastTweakedMenu (int which)
 
 juce::PopupMenu MainComponent::getMultilinkMenuForSnapshot()
 {
-    // (round 190df: FL's menu, then LYNX's own items; round 190ey: with multilink off, the last tweaked control's own
+    // (round 190df: FL's menu, then YW's own items; round 190ey: with multilink off, the last tweaked control's own
     // menu as FL's left column, captioned with its name)
     return multilinkButtonMenu (engine, [this] (juce::PopupMenu& column) {
         if (const auto target = engine.getLastTweaked (0))
@@ -10881,7 +10881,7 @@ void MainComponent::setTweakedValue (const AutomationTarget& target, float value
 }
 
 // Round gap190og (coverage live4:deviceview-0012): the Clip-launch layout's Edit menu has Live's second block, Cut Ctrl+X,
-// Copy Ctrl+C, Paste Ctrl+V, Duplicate Ctrl+D, Delete Del [SHOT /mnt/e/lynx-work/live190gu/screens-live/live-edit-menu.png].
+// Copy Ctrl+C, Paste Ctrl+V, Duplicate Ctrl+D, Delete Del [SHOT /mnt/e/yw-work/live190gu/screens-live/live-edit-menu.png].
 // They act where the keyboard is, as the keys do: on the Device View's selected device ("Edit menu commands such as cut,
 // copy, paste, and duplicate can be used on devices. Pasted devices are inserted in front of the selected device", Live 12
 // manual) — also when nothing in the window has the keyboard and the Device View shows — otherwise on the focused view
@@ -10929,7 +10929,7 @@ void MainComponent::addLiveEditItems (juce::PopupMenu& menu)
 juce::StringArray MainComponent::getMenuBarNames()
 {
     // FL's menu bar order (REA round 139): FILE EDIT ADD PATTERNS VIEW OPTIONS TOOLS HELP
-    // issue #232 stage 2 (round 190nz, LYNX extra): WINDOW before HELP while other LYNX SHARE windows are open
+    // issue #232 stage 2 (round 190nz, YW extra): WINDOW before HELP while other YW Studio windows are open
     // round 190pb (WG-11): the ADD title has its own key ("Add" is also every Add button): German takes Live's term for
     // this menu, "Erzeugen", so the German toolbar keeps every panel at 1920 px; the other languages keep their "Add"
     const auto add = trc ("@menu bar: Add");
@@ -10938,7 +10938,7 @@ juce::StringArray MainComponent::getMenuBarNames()
     return { tr ("File"), tr ("Edit"), add, tr ("Patterns"), tr ("View"), tr ("Options"), tr ("Tools"), tr ("Help") };
 }
 
-// The open LYNX SHARE windows (this one ticked): a click brings that window to the front (ui/LynxWindows.h)
+// The open YW Studio windows (this one ticked): a click brings that window to the front (ui/YwWindows.h)
 juce::PopupMenu MainComponent::windowMenu()
 {
     juce::PopupMenu menu;
@@ -11014,11 +11014,11 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
     // submenu opened beside the menu's outer edge (issue #18, core/MenuPlacement.h), beyond the second column. Live's and
     // BandLab's View menus are one column; it stays one column while it fits on the screen (JUCE fix 42 reads this
     // property of the menu's target: the menu bar opens the menu built here right away). The Pattern layout keeps FL's split.
-    menuBar.getProperties().set ("lynxOneColumnMenu", index == 2 && layoutStyle != layoutstyle::Style::pattern);
+    menuBar.getProperties().set ("ywOneColumnMenu", index == 2 && layoutStyle != layoutstyle::Style::pattern);
 
     if (index == 10)
     {
-        // FL's ADD menu: a channel (LYNX's instruments and the installed plugins), a pattern, the plugin tools
+        // FL's ADD menu: a channel (YW's instruments and the installed plugins), a pattern, the plugin tools
         // (round 190on: not while the command palette lists the menus — every generator's preset folders are read for it,
         // seconds on a big install; the palette's user adds channels with the Plugin picker)
         if (! indexingMenusForPalette)
@@ -11043,7 +11043,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
 
     if (index == 11)
     {
-        // FL's TOOLS menu, with the tools LYNX has (REA round 139)
+        // FL's TOOLS menu, with the tools YW has (REA round 139)
         menu.addItem (tr ("Browser find") + shortcutText ("browser.search"), [this] {
             showPanel (Panel::browser);
             browser.focusSearch();
@@ -11067,7 +11067,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             pianoRoll.runAction ("pianoRoll.chordProgression");
         });
         menu.addItem (tr ("Plugin performance monitor..."), [this] { showPluginMonitor (engine); });
-        menu.addItem (tr ("Modulators..."), [this] { openModulators (engine); }); // round 177b: LYNX's own (FL has none)
+        menu.addItem (tr ("Modulators..."), [this] { openModulators (engine); }); // round 177b: YW's own (FL has none)
         // FL's Clipboard and Score logger sections, in FL's place (round 181b)
         menu.addSectionHeader (tr ("Clipboard"));
         menu.addItem (tr ("Save audio clipboard to browser"), audioclipboard::hasAudio(), false, [this] { saveClipboardToBrowser (false); });
@@ -11112,7 +11112,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         });
         menu.addItem (tr ("Purge unused audio clips"), [this] { playlist.runAction ("playlist.purgeUnusedAudio"); });
         menu.addItem (tr ("Switch smart disable for all plugins"), [this] { switchSmartDisableForAll(); });
-        // FL's two Switch items, with LYNX's own modes inside (user's decision, round 181b)
+        // FL's two Switch items, with YW's own modes inside (user's decision, round 181b)
         menu.addSubMenu (tr ("Switch all audio clip channels to"), makeSwitchAudioClipsMenu (false));
         menu.addSubMenu (tr ("Switch selected audio clip channels to"), makeSwitchAudioClipsMenu (true));
         menu.addItem (tr ("Lock all playlist tracks to content"), [this] { playlist.runAction ("playlist.lockAllToContent"); });
@@ -11120,7 +11120,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         menu.addItem (tr ("Reset empty playlist tracks"), [this] { playlist.runAction ("playlist.resetEmptyTracks"); });
         // FL's next item (round 190cd; FL's main menu, rea190bc mainmenu_toolbar-0262): every audio editor loaded in a
         // mixer slot is taken out, its slot left empty. FL asks first and keeps the item enabled with no instance (live
-        // check 190cq, shots edison190cd-07a / 07b); LYNX keeps it one undo step.
+        // check 190cq, shots edison190cd-07a / 07b); YW keeps it one undo step.
         menu.addItem (tr ("Remove all Edison instances"), [this] { askRemoveAllEdisonInstances (engine); });
         // greyed until the project has a file, as in FL 2026 (seen in an unsaved project, round 181b)
         menu.addItem (tr ("Delete unused files and save project"), currentFile != juce::File(), false, [this] { deleteUnusedRecordingsAndSave(); });
@@ -11150,19 +11150,19 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
 
     if (index == 0)
     {
-        // FL names the default template in the item ("New (Basic with limiter)", REA_rodada186a); LYNX's own default: "New"
+        // FL names the default template in the item ("New (Basic with limiter)", REA_rodada186a); YW's own default: "New"
         const auto startTemplate = defaultTemplate();
-        menu.addItem ((startTemplate.isLynxDefault() ? tr ("New") : tr ("New") + " (" + templateChoiceName (startTemplate) + ")") + shortcutText ("file.new"),
+        menu.addItem ((startTemplate.isYwDefault() ? tr ("New") : tr ("New") + " (" + templateChoiceName (startTemplate) + ")") + shortcutText ("file.new"),
                       [this] { newProject(); });
         menu.addItem (tr ("New project..."), [this] { newProject (true); });
 
-        // FL's File › New from template (REA_rodada186a): the templates, the user's after LYNX's own, then "Change default
+        // FL's File › New from template (REA_rodada186a): the templates, the user's after YW's own, then "Change default
         // template..." (FL's last item; it opens Settings › General where the default is chosen)
         juce::PopupMenu templates;
         bool userSection = false;
         for (const auto& choice : availableTemplates())
         {
-            if (choice.isLynxDefault())
+            if (choice.isYwDefault())
                 continue;
             if (choice.kind == TemplateChoice::Kind::user && ! userSection)
             {
@@ -11189,7 +11189,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         // round 190ap: a project that will not open, or crashes while it loads: its plugins stay off until switched on
         menu.addItem (tr ("Open without third-party plugins..."), [this] { chooseFileToOpenWithoutPlugins(); });
         {
-            // issue #232 (round 190ns, LYNX extra; FL Studio opens one project at a time): another project beside this one,
+            // issue #232 (round 190ns, YW extra; FL Studio opens one project at a time): another project beside this one,
             // in a window of its own, without closing this one; the recent projects one click away
             juce::PopupMenu newWindow;
             newWindow.addItem (tr ("Open..."), [this] { chooseFileToOpenInNewWindow(); });
@@ -11204,7 +11204,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             }
             menu.addSubMenu (tr ("Open in new window"), newWindow);
         }
-        // issue #252 (round 190oq, LYNX extra): the recent projects and templates on one page
+        // issue #252 (round 190oq, YW extra): the recent projects and templates on one page
         menu.addItem (tr ("Start page..."), [this] { showStartPage(); });
         if (engine.pluginsOff())
             menu.addItem (tr ("Switch plugins back on..."), [this] { showPluginsOff(); });
@@ -11215,11 +11215,11 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         menu.addItem (tr ("Save as...") + shortcutText ("file.saveAs"), [this] { save (true); });
         menu.addItem (tr ("Save new version") + shortcutText ("file.saveNewVersion"), [this] { saveNewVersion(); });
         menu.addItem (tr ("Save to new project folder..."), [this] { saveToNewProjectFolder(); });
-        // issue #251 (round 190oq, LYNX extra): Live's Collect All and Save
+        // issue #251 (round 190oq, YW extra): Live's Collect All and Save
         menu.addItem (tr ("Collect all and save"), [this] { collectAllAndSave(); });
         menu.addItem (tr ("Save as template..."), [this] { saveAsTemplate(); });
-        menu.addItem (tr ("Save a copy for an older YW Studio..."), [this] { saveCopyForOlder(); }); // (round 190hq, LYNX extra)
-        // round 190og (FLM coverage app-0003, LYNX extra: FL Studio writes no .flm): the song for FL Studio Mobile, with
+        menu.addItem (tr ("Save a copy for an older YW Studio..."), [this] { saveCopyForOlder(); }); // (round 190hq, YW extra)
+        // round 190og (FLM coverage app-0003, YW extra: FL Studio writes no .flm): the song for FL Studio Mobile, with
         // what the copy loses listed first (ui/FlmExportDialog.h)
         menu.addItem (tr ("Save a copy as FL Studio Mobile project (.flm)..."), [this] {
             showFlmExportDialog (engine, this,
@@ -11233,7 +11233,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             // FL's File › Import (ImportMenu › ImportMIDIMenu → FileImportMIDIFileAction, REA round 143)
             juce::PopupMenu imports;
             imports.addItem (tr ("MIDI file..."), [this] { importMidiFile(); });
-            // round 190pe (P11, LYNX extra: FL Studio's File › Import holds MIDI file only; Pro Tools' Import Session Data,
+            // round 190pe (P11, YW extra: FL Studio's File › Import holds MIDI file only; Pro Tools' Import Session Data,
             // Cubase's Import Tracks from Project, Studio One's Import Song Data)
             imports.addItem (tr ("Tracks from another project..."), [this] { importTracksFromProject(); });
             imports.addItem (tr ("Video file..."), [this] { videotracks::chooseAndImport (engine, this); }); // round 174d
@@ -11246,7 +11246,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             exports.addItem (tr ("MP3 file...") + shortcutText ("file.exportMp3"), [this] { exportAudio (1); });
             exports.addItem (tr ("OGG file..."), [this] { exportAudio (2); });
             exports.addItem (tr ("FLAC file..."), [this] { exportAudio (3); });
-            exports.addItem (tr ("AIFF file..."), [this] { exportAudio (4); }); // (LYNX's own; owner decision D5)
+            exports.addItem (tr ("AIFF file..."), [this] { exportAudio (4); }); // (YW's own; owner decision D5)
             exports.addItem (tr ("MIDI file...") + shortcutText ("file.exportMidi"), [this] { exportMidiFile(); });
             // FL's "M4A file..." (after MIDI, as FL lists it): only where the system has an AAC encoder (engine/AacEncoder.h)
             if (aac::available())
@@ -11293,7 +11293,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         }
         {
             // Online Sessions, phase 1 (docs/design/ONLINE_SESSIONS.md, round 168a): a project goes to a friend as a
-            // .lynxpack, his part comes back the same way
+            // .ywpack, his part comes back the same way
             const auto guestCopy = engine.getSong().session.isGuestCopy();
             juce::PopupMenu online;
             online.addItem (tr ("Send project..."), ! guestCopy, false, [this] { sessionui::sendProject (sessionContext()); });
@@ -11422,12 +11422,12 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         rare.addItem (tr ("Plugin database (in the Browser)") + shortcutText ("view.pluginDatabase"), [this] { runAction ("view.pluginDatabase"); });
         rare.addItem (tr ("Project picker") + shortcutText ("view.projectPicker"), [this] { toggleProjectPicker(); }); // (round 190my, FL's View menu; Windows and tools in Clip-launch / Simple)
         menu.addItem (tr ("Audio editor") + shortcutText ("view.audioEditor"), [this] { openAudioEditorForSelection(); });
-        // round 190nw: the tracker editor (LYNX's own; FL has none): Windows and tools in Clip-launch / Simple
+        // round 190nw: the tracker editor (YW's own; FL has none): Windows and tools in Clip-launch / Simple
         rare.addItem (tr ("Tracker") + shortcutText ("view.tracker"), true, isTrackerOpen(), [this] { runAction ("view.tracker"); });
         rare.addItem (tr ("Tempo tapper") + shortcutText ("view.tempoTapper"), [this] { openTempoTapper (engine); });
         rare.addItem (tr ("Sample browser (separate window)") + shortcutText ("view.sampleBrowser"), true, findToolWindow ("sampleBrowser") != nullptr,
                       [this] { toggleSampleBrowser(); });
-        // round 190ch (LYNX's own): the project's lyrics / notes beside the Playlist, and matching a reference track
+        // round 190ch (YW's own): the project's lyrics / notes beside the Playlist, and matching a reference track
         menu.addItem (tr ("Lyrics and notes"), true, isLyricsShowing(), [this] { toggleLyrics(); });
         rare.addItem (tr ("Reference match..."), [this] { showReferenceMatch(); });
         menu.addSeparator();
@@ -11438,7 +11438,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         if (layoutStyle == layoutstyle::Style::simple) // round 190jc (owner decision 9): touch-size controls, Simple only
             menu.addItem (tr ("Large controls (touch size)"), true, ui::simplelook::largeControls(),
                           [this] { setSimpleLargeControls (! ui::simplelook::largeControls()); });
-        if (layoutStyle == layoutstyle::Style::simple) // round 190oo (O-4, LYNX extra, off by default): BandLab's centred name
+        if (layoutStyle == layoutstyle::Style::simple) // round 190oo (O-4, YW extra, off by default): BandLab's centred name
             menu.addItem (tr ("Project name at the top (BandLab)"), true, ui::simplelook::projectNameShown(), [this] { runAction ("simple.projectName"); });
         {
             // FL's View › Background (audit round 165z-a): the workspace image and colour of Options › Theme
@@ -11466,7 +11466,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         // the Settings window's pages (Settings › General gathers the app options that were menu items here)
         menu.addItem (tr ("Audio settings..."), [this] { openSettings ((int) SettingsPage::audio); });
         menu.addItem (tr ("MIDI settings...") + shortcutText ("view.midiSettings"), [this] { openSettings ((int) SettingsPage::midi); });
-        // round 190gl: Ableton Link (LYNX's own in FL's menu: FL has no Link), the switch and its settings page
+        // round 190gl: Ableton Link (YW's own in FL's menu: FL has no Link), the switch and its settings page
         menu.addItem (tr ("Ableton Link"), true, engine.getLink().isEnabled(), [this] { engine.setLinkEnabled (! engine.getLink().isEnabled()); });
         menu.addItem (tr ("Ableton Link settings..."), [this] { openSettings ((int) SettingsPage::link); });
         menu.addItem (tr ("General settings...") + shortcutText ("view.settings"), [this] { openSettings ((int) SettingsPage::general); });
@@ -11487,7 +11487,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             if (scanning)
                 engine.getPluginHost().cancelBackgroundScan();
             else
-                engine.getPluginHost().startBackgroundScan(); // progress in the hint bar; LYNX stays usable
+                engine.getPluginHost().startBackgroundScan(); // progress in the hint bar; YW stays usable
         });
         menu.addItem (tr ("Manage shortcuts..."), [this] { showShortcutManager(); });
         menu.addItem (tr ("Plugin performance monitor..."), [this] { showPluginMonitor (engine); });
@@ -11535,10 +11535,10 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             addRecordOptions (recording);
             menu.addSubMenu (tr ("Recording"), recording);
         }
-        // LYNX's own ADR (round 174d, issue #83): cues, the record cycle with streamers and beeps, takes, comp, Align
+        // YW's own ADR (round 174d, issue #83): cues, the record cycle with streamers and beeps, takes, comp, Align
         menu.addItem (tr ("ADR (dialogue replacement)..."), [this] { adrwindow::show (engine); });
         {
-            // LYNX's own (REA round 153): everything the Master plays, after the fader, goes to a WAV in the background
+            // YW's own (REA round 153): everything the Master plays, after the fader, goes to a WAV in the background
             auto& logger = engine.getAudioLogger();
             menu.addItem (tr ("Record the Master to a file"), true, logger.isLogging(), [this] {
                 auto& log = engine.getAudioLogger();
@@ -11617,7 +11617,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
             menu.addItem (previous.isNotEmpty() ? tr ("Go back to {0}...", { previous }) : tr ("Go back to the previous version..."),
                           [] { updater::goBack(); });
         }
-        // round 190fq (LYNX's own): an optional way to donate, next to About in every layout; it never unlocks anything
+        // round 190fq (YW's own): an optional way to donate, next to About in every layout; it never unlocks anything
         menu.addItem (tr ("Support YW Studio..."), [] { support::showSupportWindow(); });
         menu.addItem (tr ("About YW Studio"), [] {
             auto* window = makeAboutWindow().release();
@@ -11660,7 +11660,7 @@ void MainComponent::startSupportNote (bool quietRun)
 
 std::unique_ptr<juce::AlertWindow> MainComponent::makeAboutWindow()
 {
-    // round 190jp (design190ia SG-22): LYNX's own layout, every block on the dialog's centre line (JUCE's AlertWindow put
+    // round 190jp (design190ia SG-22): YW's own layout, every block on the dialog's centre line (JUCE's AlertWindow put
     // the logo 56 px left of it and wrapped the donation line to a lone word); the version on a quiet line under the
     // title, the logo 128 px, the texts in balanced centred lines; OK is the accent default, Support the secondary
     static constexpr int width = 432, logoSize = 128; // (a local class can't have static members)
@@ -11687,7 +11687,7 @@ std::unique_ptr<juce::AlertWindow> MainComponent::makeAboutWindow()
                      // round 190gl: Ableton Link's credit (GPL-2.0-or-later; THIRD_PARTY.md lists every component)
                      + "\n" + tr ("Ableton Link by Ableton AG (GPL 2.0 or later). Every open-source component and its licence: THIRD_PARTY.md"),
                  theme::font (theme::type::small), quiet);
-            // round 190fq: one short line under the logo, and a button to the Support window (Help › Support LYNX SHARE...)
+            // round 190fq: one short line under the logo, and a button to the Support window (Help › Support YW Studio...)
             add (support, tr ("YW Studio is free and open source. Donations are optional and help it keep going."), theme::font (theme::type::body), quiet);
             setSize (width, top (version) + 14 + logoSize + 14 + height (about) + 10 + height (credits) + 14 + height (support));
         }
@@ -11757,7 +11757,7 @@ void MainComponent::showLanguageChoice (const juce::String& id)
     i18n::save (id);
     const auto restart = [this] {
         confirmDiscard ([] {
-            lynx::platform::relaunchApp(); // through the package in the Store build (platform/Package.h)
+            yw::platform::relaunchApp(); // through the package in the Store build (platform/Package.h)
             juce::JUCEApplication::quit();
         });
     };
@@ -11922,7 +11922,7 @@ std::unique_ptr<juce::Component> MainComponent::makeHelpContent (const keys::Key
         Sheet (std::vector<std::pair<juce::String, juce::String>> f, std::function<void()> onManage) : fkeys (std::move (f))
         {
             // issue #234 (round 190ns): the way to change these keys, in the free space under the first columns (FL's
-            // shortcut list and its Manage shortcuts window are apart too; LYNX's sheet links them so the keys are found)
+            // shortcut list and its Manage shortcuts window are apart too; YW's sheet links them so the keys are found)
             if (onManage)
             {
                 manageNote.setText (tr ("Every shortcut can be changed:"), juce::dontSendNotification);
@@ -12078,14 +12078,14 @@ void MainComponent::closeHelp()
 
 void MainComponent::closeUnfocusedWindows()
 {
-    // FL's Ctrl+F12 (CloseAllUnfocusedWindowsAction, round 167o): every window but the focused one closes. LYNX's
+    // FL's Ctrl+F12 (CloseAllUnfocusedWindowsAction, round 167o): every window but the focused one closes. YW's
     // docked or detached panels and dialogs that wait for an answer stay, as for F12.
     auto* focused = juce::TopLevelWindow::getActiveTopLevelWindow();
     auto* main = getTopLevelComponent();
     juce::Array<juce::Component::SafePointer<juce::DocumentWindow>> close;
     for (int i = 0; i < juce::TopLevelWindow::getNumTopLevelWindows(); ++i)
         if (auto* w = dynamic_cast<juce::DocumentWindow*> (juce::TopLevelWindow::getTopLevelWindow (i)))
-            if (w != focused && w != main && w->isVisible() && ! w->isCurrentlyModal() && ! (bool) w->getProperties()["lynxPanel"])
+            if (w != focused && w != main && w->isVisible() && ! w->isCurrentlyModal() && ! (bool) w->getProperties()["ywPanel"])
                 close.add (w);
     for (auto& w : close)
         if (w != nullptr)
@@ -12098,7 +12098,7 @@ void MainComponent::showSetupWizard()
     if (setupOverlay != nullptr)
         return;
     auto safe = juce::Component::SafePointer<MainComponent> (this);
-    setupOverlay = lynx::makeSetupWizardOverlay (
+    setupOverlay = yw::makeSetupWizardOverlay (
         engine,
         [safe] (const juce::String& language) {
             if (safe != nullptr)
@@ -12127,7 +12127,7 @@ void MainComponent::showSetupWizard()
 
 void MainComponent::showImportReport()
 {
-    // summary of what the .flp had that LYNX doesn't reproduce exactly (only when there is something to say)
+    // summary of what the .flp had that YW doesn't reproduce exactly (only when there is something to say)
     const auto& r = engine.getImportReport();
     const auto& missing = engine.getMissingPlugins();
     auto list = [] (const std::map<std::string, int>& items) {
@@ -12237,7 +12237,7 @@ void MainComponent::FilterBox::paint (juce::Graphics& g)
 }
 // FL's Tools › Macros › Prepare for performance mode ([DECOMP] FUN_0122d010, its "Marker settings" dialog: marker count
 // 4 / 8 / 16 / 32 / 64, default 16; spacing 1…128 steps, default 16 = a bar): room for a launch grid before the song,
-// a marker per column, a Start marker, Performance mode on, the zone in view. FL warns it can't be undone; in LYNX it
+// a marker per column, a Start marker, Performance mode on, the zone in view. FL warns it can't be undone; in YW it
 // is one undo step.
 void MainComponent::prepareForPerformance()
 {
@@ -12267,11 +12267,11 @@ void MainComponent::prepareForPerformance()
     keepAboveMainWindow (*window);
 }
 
-} // namespace lynx
+} // namespace yw
 
 // --- the game controller (round 184a, S16) ---------------------------------------------------------------------------
 
-namespace lynx
+namespace yw
 {
 void MainComponent::updateGamepad()
 {
@@ -12383,7 +12383,7 @@ void MainComponent::gamepadChanges (const gamepad::Changes& c, const gamepad::St
     if (const auto pan = axis (s, Axis::leftX); pan != 0.0f)
         engine.editLevels ([insert, pan] (Song& song) { song.mixer[(std::size_t) insert].pan = juce::jlimit (-1.0f, 1.0f, pan); });
 }
-} // namespace lynx
+} // namespace yw
 
 // round 190iv: the toolbar per layout style (Simple capsules, Live control bar); kept in its own file
 #include "ui/ToolbarLooks.inc"

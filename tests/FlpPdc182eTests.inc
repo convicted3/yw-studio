@@ -3,7 +3,7 @@
 namespace flp182e
 {
 // where the impulse put in at `at` comes out (the largest |sample|), through `fx` in blocks of 512
-int measuredDelay (lynx::Effect& fx, const lynx::EffectParams& params = {}, int at = 64, int frames = 16384)
+int measuredDelay (yw::Effect& fx, const yw::EffectParams& params = {}, int at = 64, int frames = 16384)
 {
     std::vector<float> l ((std::size_t) frames, 0.0f), r ((std::size_t) frames, 0.0f);
     l[(std::size_t) at] = r[(std::size_t) at] = 1.0f;
@@ -22,7 +22,7 @@ TEST (flp182e_patcher_reports_the_delay_it_adds)
     // Issue #113 (a reporter-like Patcher: FL-mode Parametric EQ 2 nodes in series): every processing mode, alone in a
     // slot and 14 in series inside a Patcher. What the effect reports must be the delay it adds, or the mixer's PDC
     // leaves the track late by the difference.
-    using namespace lynx;
+    using namespace yw;
     const auto state = issues171a::peq2State();
     const auto parsed = peqfl::parsePeq2 (state);
     CHECK (parsed.has_value());

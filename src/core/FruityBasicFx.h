@@ -1,11 +1,11 @@
 #pragma once
 
-// FL Studio's Fruity PanOMatic, Fruity Balance and Fruity Blood Overdrive as LYNX mixer effects, exact engines rebuilt
+// FL Studio's Fruity PanOMatic, Fruity Balance and Fruity Blood Overdrive as YW mixer effects, exact engines rebuilt
 // in docs/analise/REA_rodada58.md (clean-room: layouts, formulas and behaviour in our own words; no Image-Line code or
 // data in this repository). The only installation-independent tables they need (FL's host sine/triangle/square LFO
 // tables, the overdrive's sine shaper) are computed here from their formulas.
 //
-// Every parameter is FL's control over its range (value = (raw − min) / (max − min)), so the LYNX editor and FL
+// Every parameter is FL's control over its range (value = (raw − min) / (max − min)), so the YW editor and FL
 // automation drive the same values FL's ProcessParam receives:
 //
 //   PanOMatic (EffectKind::fruityPanOMatic):  [0] pan 0…256 (128 = centre), [1] volume 0…320 (256 = 0 dB),
@@ -33,7 +33,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::flbasic
+namespace yw::flbasic
 {
 constexpr int panOMaticParams = 6, balanceParams = 2, bloodOverdriveParams = 6;
 
@@ -64,10 +64,10 @@ int sendTrack (float value) noexcept;      // and back
 constexpr int legacySendSpan = 127;
 float rescaleSendTrackValue (float value, int savedSpan) noexcept;
 // Round 167a: the other way, for saving. A "Send to" value (today's span) written over `span` (127 for files older
-// LYNX versions read the same insert from; inserts past 127 need today's span).
+// YW versions read the same insert from; inserts past 127 need today's span).
 float sendTrackValueInSpan (float value, int span) noexcept;
 // The span a file stores "Send to" values in: the legacy 0..127 when every one of them targets an insert ≤ 127 (any
-// LYNX version reads them right), else today's span.
+// YW version reads them right), else today's span.
 int saveSendSpan (std::initializer_list<float> values) noexcept;
 // The Fruity Send whose "Send to" an automation target moves (mixer slot, parameter 3), else nullptr.
 const EffectSlot* sendToTargetOf (const Song& song, const AutomationTarget& target) noexcept;
@@ -95,7 +95,7 @@ public:
     void prepare (int sampleRate) noexcept;                // FL's sample-rate notification
     void set (const PanOMaticState& s) noexcept;           // FL's ProcessParam for every control that changed
     void flush() noexcept;                                 // FL's flush: gains snap to their targets, LFO phase 0
-    void prime() noexcept;                                 // LYNX's start: one silent frame, then a flush
+    void prime() noexcept;                                 // YW's start: one silent frame, then a flush
     void process (float* left, float* right, int n) noexcept; // one FL render call (any n; no splitting here)
 
 private:
@@ -167,4 +167,4 @@ std::unique_ptr<Effect> makePanOMatic();
 std::unique_ptr<Effect> makeSend();
 std::unique_ptr<Effect> makeBalance();
 std::unique_ptr<Effect> makeBloodOverdrive();
-} // namespace lynx::flbasic
+} // namespace yw::flbasic

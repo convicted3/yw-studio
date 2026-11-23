@@ -4,7 +4,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx::startpageui
+namespace yw::startpageui
 {
 namespace
 {
@@ -155,7 +155,7 @@ public:
 
     void paintOverChildren (juce::Graphics& g) override
     {
-        // the magnifier in the search box (LYNX vector)
+        // the magnifier in the search box (YW vector)
         const auto b = search.getBounds().toFloat();
         const auto c = juce::Point<float> (b.getX() + 14.0f, b.getCentreY() - 1.0f);
         g.setColour (theme::colour::textSecondary);
@@ -450,4 +450,4 @@ juce::TextEditor* searchBoxForSnapshot (juce::Component& c)
     auto* card = cardOf (c);
     return card != nullptr ? &card->searchBox() : nullptr;
 }
-} // namespace lynx::startpageui
+} // namespace yw::startpageui

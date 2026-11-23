@@ -1,8 +1,8 @@
 #pragma once
 
-// FL Studio's Fruity Limiter and Fruity Compressor as LYNX mixer effects: exact engines rebuilt from the plugins'
+// FL Studio's Fruity Limiter and Fruity Compressor as YW mixer effects: exact engines rebuilt from the plugins'
 // behaviour (docs/analise/REA_rodada48.md; clean-room, no Image-Line code). Both keep FL's raw integer controls as
-// their LYNX parameters (raw value normalised over the control's range), so the slot stays editable and an imported
+// their YW parameters (raw value normalised over the control's range), so the slot stays editable and an imported
 // state round-trips exactly.
 //
 // Fruity Limiter: gain → compressor section (RMS detector, optional sidechain) → limiter (peak window, lookahead,
@@ -19,12 +19,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::fldyn
+namespace yw::fldyn
 {
 // --- Fruity Limiter -------------------------------------------------------------------------------------------
 
@@ -58,7 +58,7 @@ struct CompressorState
 // u32 version (1…3), 6 × i32 controls, u32 flags (v ≥ 2; bit 0 = look-ahead), i32 side input (v3)
 std::optional<CompressorState> parseCompressor (const std::vector<std::uint8_t>& state);
 
-// --- LYNX parameters (0..1) -----------------------------------------------------------------------------------
+// --- YW parameters (0..1) -----------------------------------------------------------------------------------
 
 float normalised (int raw, int min, int max) noexcept;
 int raw (float value, int min, int max) noexcept;
@@ -80,4 +80,4 @@ std::string compressorParamText (int index, float value);
 // `initial` (may be null): the slot's parameters, so the latency is known after prepare(), before the first block
 std::unique_ptr<Effect> makeLimiter (const EffectParams* initial = nullptr);
 std::unique_ptr<Effect> makeCompressor (const EffectParams* initial = nullptr);
-} // namespace lynx::fldyn
+} // namespace yw::fldyn

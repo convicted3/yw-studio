@@ -5,15 +5,15 @@
 namespace keyguess184a
 {
 // One pattern on channel 0: `keys` in turn, each `len` ticks; channel 1 plays a kick on one key (percussion).
-inline lynx::Song songOf (std::initializer_list<int> keys, std::int64_t len = lynx::ppq)
+inline yw::Song songOf (std::initializer_list<int> keys, std::int64_t len = yw::ppq)
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (2);
     s.patterns.resize (1);
     std::int64_t t = 0;
     for (auto k : keys)
     {
-        lynx::Note n;
+        yw::Note n;
         n.channel = 0;
         n.key = k;
         n.start = t;
@@ -23,11 +23,11 @@ inline lynx::Song songOf (std::initializer_list<int> keys, std::int64_t len = ly
     }
     for (int i = 0; i < 16; ++i) // a four-on-the-floor kick on C5, never a pitch
     {
-        lynx::Note n;
+        yw::Note n;
         n.channel = 1;
         n.key = 61; // C#: would pull every guess off if it counted
-        n.start = i * lynx::ppq;
-        n.length = lynx::ppq / 4;
+        n.start = i * yw::ppq;
+        n.length = yw::ppq / 4;
         s.patterns[0].notes.push_back (n);
     }
     return s;
@@ -35,7 +35,7 @@ inline lynx::Song songOf (std::initializer_list<int> keys, std::int64_t len = ly
 
 inline int scaleIndex (const char* name)
 {
-    const auto& list = lynx::notetools::flReferenceScales();
+    const auto& list = yw::notetools::flReferenceScales();
     for (int i = 0; i < (int) list.size(); ++i)
         if (std::string (list[(std::size_t) i].name) == name)
             return i;
@@ -45,7 +45,7 @@ inline int scaleIndex (const char* name)
 
 TEST (simple184a_keyguess_major_minor_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     using keyguess184a::scaleIndex;
     using keyguess184a::songOf;
     const auto major = scaleIndex ("Major (Ionian)"), minor = scaleIndex ("Minor Natural (Aeolian)");
@@ -84,7 +84,7 @@ TEST (simple184a_keyguess_major_minor_modes)
 
 TEST (simple184a_keyguess_edges)
 {
-    using namespace lynx;
+    using namespace yw;
     using keyguess184a::songOf;
     // nothing pitched: no guess
     Song empty;
@@ -104,10 +104,10 @@ TEST (simple184a_keyguess_edges)
         if (n.channel == 0 && n.key == 72)
             n.muted = true;
     CHECK (keyguess::histogram (s).keys.size() == 4);
-    s = songOf ({ 57, 60, 64, 57, 62, 65, 57, 59, 64 }, lynx::ppq / 4);
+    s = songOf ({ 57, 60, 64, 57, 62, 65, 57, 59, 64 }, yw::ppq / 4);
     for (auto& n : s.patterns[0].notes)
         if (n.channel == 0 && n.key == 57)
-            n.length = 4 * lynx::ppq;
+            n.length = 4 * yw::ppq;
     g = keyguess::guess (s);
     CHECK (g[0].key.root == 9);
     // the guess never changes the song
@@ -120,7 +120,7 @@ TEST (simple184a_keyguess_edges)
 
 TEST (simple184a_key_short_names)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto order = projectkey::commonFirst();
     CHECK (projectkey::shortScaleName (order[0]) == "major");
     CHECK (projectkey::shortScaleName (order[1]) == "minor");

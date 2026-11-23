@@ -2,7 +2,7 @@
 
 // FL Studio Mobile's note effects (round 190bs): Transpose, Scale and Randomizer as FLM plays them, so that an imported
 // song's notes are the ones FLM sends to its instruments. Clean-room: the laws below were worked out from the behaviour
-// of FLM's FL plugin (static analysis, docs/analise/FLM_FORMAT.md §7.2) and are written in LYNX's own words; no
+// of FLM's FL plugin (static analysis, docs/analise/FLM_FORMAT.md §7.2) and are written in YW's own words; no
 // Image-Line code or table file was copied.
 //
 // A rack runs its note effects over every note of its note lanes before the instruments see them, in the rack's module
@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::flmnotefx
+namespace yw::flmnotefx
 {
 constexpr std::uint32_t noteEcho = 47, transpose = 48, randomizer = 49, scale = 50, arpeggiator = 51;
 
@@ -101,12 +101,12 @@ struct TimedNote
 };
 // The Arpeggiator (type 51): both arps over the notes the rack receives (all of them, in song time from 0 at `bpm`,
 // `beatsPerBar` beats a bar); the input notes are replaced by what the arps play. `random` = a random mode was used
-// (LYNX draws with its own seed; FLM's draws change at every playback).
+// (YW draws with its own seed; FLM's draws change at every playback).
 std::vector<TimedNote> arpeggiate (std::span<const float> params, const std::vector<TimedNote>& in, double bpm, int beatsPerBar, bool& random);
 // Note Echo (type 47): the dry notes (a dry note still held at its first echo ends there) and their echoes.
-// `random` = Delay Rand. is above 0 (LYNX draws with its own seed).
+// `random` = Delay Rand. is above 0 (YW draws with its own seed).
 std::vector<TimedNote> echo (std::span<const float> params, const std::vector<TimedNote>& in, double bpm, bool& random);
 // The module does something to the notes: Note Echo with repetitions, an Arpeggiator (a module switched off passes
 // them; an Arpeggiator with both arps off is silent)
 bool timeEffectActive (std::uint32_t type, std::span<const float> params) noexcept;
-} // namespace lynx::flmnotefx
+} // namespace yw::flmnotefx

@@ -27,7 +27,7 @@
 #pragma GCC optimize("fp-contract=off", "rounding-math")
 #endif
 
-namespace lynx::philter
+namespace yw::philter
 {
 namespace
 {
@@ -2079,7 +2079,7 @@ public:
         if (! state)
             return;
         engine = std::make_unique<Engine> (state);
-        // controls edited in LYNX since the import (the state keeps FL's original values)
+        // controls edited in YW since the import (the state keeps FL's original values)
         for (int i = 0; i < paramCount; ++i)
         {
             const int k = flIndexOf (i);
@@ -2119,7 +2119,7 @@ public:
             render = ! render;
             engine->setRenderMode (render);
         }
-        // a control moved in LYNX (or automated): FL's raw value from the slot parameter; untouched controls keep the
+        // a control moved in YW (or automated): FL's raw value from the slot parameter; untouched controls keep the
         // state's own raw values
         for (int i = 0; i < paramCount; ++i)
             if (p[(std::size_t) i] != last[(std::size_t) i])
@@ -2133,7 +2133,7 @@ public:
             lastBpm = bpm;
             engine->setTempo (bpm);
         }
-        // LYNX's transport: a moving song position is FL's "playing"; a position that does not follow the previous
+        // YW's transport: a moving song position is FL's "playing"; a position that does not follow the previous
         // block is a jump (FL re-syncs the envelopes and LFOs to the song position)
         const double beats = songTicks / 960.0;
         const bool moving = lastTicks >= 0.0 && songTicks != lastTicks;
@@ -2600,4 +2600,4 @@ void upgradeParams (EffectSlot& slot, std::size_t savedCount) noexcept
         slot.params[(std::size_t) i] = s ? valueFromRaw (k, rawParam (*s, k)) : info().params[(std::size_t) i].defaultValue;
     }
 }
-} // namespace lynx::philter
+} // namespace yw::philter

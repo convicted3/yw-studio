@@ -4,7 +4,7 @@
 
 TEST (qa190kp_pause_counts_only_where_pausing_is_on)
 {
-    using namespace lynx::followpause;
+    using namespace yw::followpause;
     State s;
     s.noteTransport (true);
     // Clip-launch layout (pausing): a scroll by hand pauses the Playlist's Follow
@@ -23,7 +23,7 @@ TEST (qa190kp_pause_counts_only_where_pausing_is_on)
 
 TEST (qa190kp_layout_switch_lifts_pauses_and_its_scrolls_pause_nothing)
 {
-    using namespace lynx::followpause;
+    using namespace yw::followpause;
     State s;
     s.noteTransport (true);
     s.pause (playlist, true, true);
@@ -40,7 +40,7 @@ TEST (qa190kp_layout_switch_lifts_pauses_and_its_scrolls_pause_nothing)
 
 TEST (qa190kp_play_or_stop_lifts_pauses_and_a_click_resumes)
 {
-    using namespace lynx::followpause;
+    using namespace yw::followpause;
     State s;
     s.noteTransport (true);
     s.pause (audioEditor, true, true);

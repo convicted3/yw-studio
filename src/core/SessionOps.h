@@ -19,7 +19,7 @@
 #include "core/ScoreLog.h"
 #include "core/Song.h"
 
-namespace lynx::session
+namespace yw::session
 {
 // --- recording: when ---------------------------------------------------------------------------------------------------
 // The next point of a grid of `quant` ticks at or after `now` (quant 0: now itself, on a whole tick).
@@ -135,7 +135,7 @@ int duplicateScene (Song& song, int scene);
 int captureScene (Song& song, int below, const std::vector<int>& playing, std::vector<int>* moved = nullptr);
 
 // A scene's own tempo and time signature (the reference's Scene Tempo / Scene Time Signature fields). A value <= 0
-// switches the field off (the reference's "Return to Default"); others are clamped to LYNX's tempo range, 1..32 beats
+// switches the field off (the reference's "Return to Default"); others are clamped to YW's tempo range, 1..32 beats
 // and the denominators 1, 2, 4, 8, 16. False: no such scene.
 constexpr int sceneBeatsMin = 1, sceneBeatsMax = 32;
 bool setSceneTempo (Song& song, int scene, double bpm);
@@ -163,7 +163,7 @@ std::vector<Note> phraseNotes (const std::vector<scorelog::Entry>& phrase, doubl
 
 // --- Capture MIDI in the Clip-launch layout (round 190em; Live 12.4.16, live check 190ei) ---------------------------
 // Played with the transport stopped, the reference sets the song tempo from the phrase (a s d f a s d f played evenly:
-// 148.00). LYNX's own estimate: the onsets (chords merged within 40 ms), the median gap between them refined by a least-
+// 148.00). YW's own estimate: the onsets (chords merged within 40 ms), the median gap between them refined by a least-
 // squares fit to its grid, as a tempo folded into [80, 160) BPM, to 0.01 BPM. Fewer than three onsets: `fallback`.
 double phraseTempo (const std::vector<scorelog::Entry>& phrase, double fallback);
 // The phrase on the unwrapped timeline of a clip that plays: a note played at song tick T lands at T + `shift` (shift =
@@ -176,4 +176,4 @@ std::vector<Note> clipTimeNotes (const std::vector<scorelog::Entry>& phrase, dou
 bool captureIntoClip (Song& song, int track, int scene, const std::vector<Note>& notes);
 // The notes' channel becomes the track's instrument channel (`channel` ≥ 0).
 void setNotesChannel (std::vector<Note>& notes, int channel) noexcept;
-} // namespace lynx::session
+} // namespace yw::session

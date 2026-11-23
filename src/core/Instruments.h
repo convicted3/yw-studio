@@ -16,13 +16,13 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct LiveInput;
 struct HardwareOutput;
 }
 
-namespace lynx
+namespace yw
 {
 namespace vfx
 {
@@ -137,7 +137,7 @@ public:
     virtual bool followsSlides() const noexcept { return followsChannelPorta(); }
     // Round 190w (FL 2026's playback locator in the channel settings' sample display, What's New 21138): where the
     // newest sounding voice reads, as a fraction 0..1 of its played region in play order (a reversed voice from the
-    // region's end); -1 when no voice sounds. Any thread. Only LYNX's Sampler reports it.
+    // region's end); -1 when no voice sounds. Any thread. Only YW's Sampler reports it.
     virtual float playPosition() const noexcept { return -1.0f; }
     // Audio clip: fades and in-clip position of the next note (before noteOn), in samples.
     // FL 2026's clip pitch (round 167k): the next audio clip note's own transposition, shifted keeping its length;
@@ -375,7 +375,7 @@ struct SampleData
 void setOfflineRendering (bool on) noexcept;
 bool offlineRendering() noexcept;
 // An export is rendering, at whatever quality (issue #138): setOfflineRendering() is only on with the Export window's
-// "HQ for all plugins", so an instrument that must wait for data another thread is still loading (LYNX Soundfont's
+// "HQ for all plugins", so an instrument that must wait for data another thread is still loading (YW Soundfont's
 // font) asks this instead. Set for the whole of an offline render; never while playing live.
 void setRenderInProgress (bool on) noexcept;
 bool renderInProgress() noexcept;
@@ -395,8 +395,8 @@ bool synthVoiceLanes() noexcept;
 // transport): the renderer publishes it at the start of each chunk it renders.
 struct HostTimeline
 {
-    std::atomic<double> tick { 0.0 };          // song position in LYNX ticks (ppq per quarter note)
-    std::atomic<double> loopStart { 0.0 }, loopEnd { 0.0 }; // the playback loop in LYNX ticks (round 151: "Send loop position")
+    std::atomic<double> tick { 0.0 };          // song position in YW ticks (ppq per quarter note)
+    std::atomic<double> loopStart { 0.0 }, loopEnd { 0.0 }; // the playback loop in YW ticks (round 151: "Send loop position")
     std::atomic<bool> looping { false };
     std::atomic<double> bpm { 120.0 };
     std::atomic<double> sampleRate { 44100.0 };
@@ -518,4 +518,4 @@ struct Noise
         return (float) (std::int32_t) state * (1.0f / 2147483648.0f);
     }
 };
-} // namespace lynx
+} // namespace yw

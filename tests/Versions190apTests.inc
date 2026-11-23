@@ -2,7 +2,7 @@
 
 TEST (versions190ap_family_follows_save_new_version)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     int n = 0;
     CHECK (versions::familyOf ("Song", &n) == "Song" && n == 1);
     CHECK (versions::familyOf ("Song_2", &n) == "Song" && n == 2);
@@ -18,7 +18,7 @@ TEST (versions190ap_family_follows_save_new_version)
 
 TEST (versions190ap_list_has_versions_and_backups_newest_first)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     const std::vector<versions::FileInfo> project { { "Song", 100, 10 }, { "Song_2", 300, 20 }, { "Song_3", 500, 30 }, { "Songs", 900, 1 },
                                                     { "Song_v2", 901, 1 }, { "Other_2", 902, 1 } };
     const std::vector<versions::FileInfo> backups { { "Song_3 (autosaved on 2026-10-20 at 14h19)", 600, 31 },
@@ -49,7 +49,7 @@ TEST (versions190ap_list_has_versions_and_backups_newest_first)
 
 TEST (versions190ap_labels_live_beside_the_files)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     CHECK (versions::labelsFileName ("Song") == "Song.version-labels.txt");
     CHECK (versions::cleanLabel ("  two\tlines\nhere \r\n") == "two lines here");
     CHECK (versions::cleanLabel (" \t ").empty());
@@ -80,7 +80,7 @@ TEST (versions190ap_labels_live_beside_the_files)
 
 TEST (versions190ap_a_labelled_backup_is_not_rotated_away)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     const std::vector<BackupFile> files { { "Song (autosaved on 2026-10-20 at 10h00)", 100 },
                                           { "Song (autosaved on 2026-10-20 at 09h00)", 90 },
                                           { "Song (autosaved on 2026-10-20 at 08h00)", 80 },
@@ -94,7 +94,7 @@ TEST (versions190ap_a_labelled_backup_is_not_rotated_away)
 
 TEST (versions190ap_copy_names_and_ages)
 {
-    using namespace lynx::safety;
+    using namespace yw::safety;
     versions::Entry e;
     e.name = "Song_2";
     CHECK (versions::copyName (e, "Song_3") == "Song_2 (copy)");

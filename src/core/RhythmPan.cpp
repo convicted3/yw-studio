@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::rhythmpan
+namespace yw::rhythmpan
 {
 namespace
 {
@@ -253,4 +253,4 @@ void Engine::process (float* left, float* right, int n, double beatPos, double b
         current = (float) std::clamp (theta * 2.0 / pi, 0.0, 1.0);
     }
 }
-} // namespace lynx::rhythmpan
+} // namespace yw::rhythmpan

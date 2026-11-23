@@ -25,7 +25,7 @@
 #include "ui/WindowOwner.h"
 #include "platform/ThreadInstructions.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -2409,8 +2409,8 @@ juce::Image TrackerComponent::frameForCheck (bool cached)
         paint (g);
     }
     impl->useChunks = was;
-    // (diagnostics: LYNX_TRACKER_DUMP=<prefix> writes each compared frame)
-    if (const auto* dump = std::getenv ("LYNX_TRACKER_DUMP"); dump != nullptr && *dump != 0)
+    // (diagnostics: YW_TRACKER_DUMP=<prefix> writes each compared frame)
+    if (const auto* dump = std::getenv ("YW_TRACKER_DUMP"); dump != nullptr && *dump != 0)
     {
         static int frame = 0;
         juce::FileOutputStream out (juce::File (juce::String (dump) + "-" + juce::String (frame++) + (cached ? "-cached" : "-straight") + ".png"));
@@ -2476,4 +2476,4 @@ void closeTracker()
 bool isTrackerOpen() { return findToolWindow ("tracker") != nullptr; }
 
 std::unique_ptr<TrackerComponent> makeTracker (AudioEngine& engine, bool compact) { return std::make_unique<TrackerComponent> (engine, compact); }
-} // namespace lynx
+} // namespace yw

@@ -10,13 +10,13 @@ struct Out
     double rmsDb, h2Dbc, h3Dbc;
 };
 // a 1 kHz sine at `db` dBFS through `slot` (stereo), measured over the last half: RMS and the 2nd / 3rd harmonics
-inline Out sineThrough (const lynx::EffectSlot& slot, double db)
+inline Out sineThrough (const yw::EffectSlot& slot, double db)
 {
     const int n = 24000;
     std::vector<float> l (n), r (n);
     for (int i = 0; i < n; ++i)
         l[(size_t) i] = r[(size_t) i] = (float) (std::pow (10.0, db / 20.0) * std::sin (2.0 * 3.141592653589793 * 1000.0 * i / sr));
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     fx->reset();
     for (int off = 0; off < n; off += 512)
@@ -36,10 +36,10 @@ inline Out sineThrough (const lynx::EffectSlot& slot, double db)
     auto mag = [&] (int h) { return std::hypot (re[(size_t) h], im[(size_t) h]); };
     return { 10.0 * std::log10 (e / (n / 2)), 20.0 * std::log10 (mag (2) / mag (1)), 20.0 * std::log10 (mag (3) / mag (1)) };
 }
-inline lynx::EffectSlot classicEmber (float drive, float tone, float highCut, float mix, float output)
+inline yw::EffectSlot classicEmber (float drive, float tone, float highCut, float mix, float output)
 {
-    namespace e = lynx::mixsuite::ember;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::ember);
+    namespace e = yw::mixsuite::ember;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::ember);
     slot.params[(size_t) e::voicing] = 1.0f;
     slot.params[(size_t) e::classicDrive] = drive;
     slot.params[(size_t) e::classicTone] = tone;
@@ -52,7 +52,7 @@ inline lynx::EffectSlot classicEmber (float drive, float tone, float highCut, fl
 
 TEST (ember_classic_voicing_keeps_embers_latency_round136)
 {
-    using namespace lynx;
+    using namespace yw;
     auto own = makeEffectSlot (EffectKind::ember);
     auto classic = v136::classicEmber (0.2f, 0.5f, 1.0f, 1.0f, 1.0f);
     auto a = makeEffect (own), b = makeEffect (classic);
@@ -88,7 +88,7 @@ TEST (ember_classic_matches_the_trial_at_her_state_round136)
     for (const auto& g : golden)
     {
         const auto o = v136::sineThrough (v136::classicEmber (g.drive, g.tone, g.hc, g.mix, g.out), g.in);
-        if (std::getenv ("LYNX_TEST_VERBOSE"))
+        if (std::getenv ("YW_TEST_VERBOSE"))
             std::printf ("  classic drive %.1f in %.0f: rms %.3f (%.3f) h2 %.1f (%.1f) h3 %.1f (%.1f)\n", g.drive * 10.0, g.in, o.rmsDb, g.rms, o.h2Dbc, g.h2, o.h3Dbc, g.h3);
         // interim tolerances (REA_rodada136 §1.5: the even harmonics at low level are still under the trial's)
         CHECK (std::abs (o.rmsDb - g.rms) < 0.6);
@@ -100,7 +100,7 @@ TEST (ember_classic_matches_the_trial_at_her_state_round136)
 
 TEST (soundtoys_states_are_recognised_by_their_preset_hash_round136)
 {
-    using namespace lynx;
+    using namespace yw;
     // FNV-1a 64 of the payload after "PRESET =" (the trailing ';' excluded)
     const std::string text = "WIDGET = Decapitator;\rPRESET =abc;\r";
     const std::vector<std::uint8_t> st (text.begin(), text.end());
@@ -124,7 +124,7 @@ TEST (soundtoys_states_are_recognised_by_their_preset_hash_round136)
 
 TEST (rhythm_pan_follows_the_trials_pattern_round136)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] her most used PanMan state: a 2-step left / right pattern, 3.560 Hz, width 150.6 degrees, glide 99 % of a
     // step, start phase 0.9917 — the pan angle measured on the trial at 25 ms steps from the start (1 kHz tone)
     auto slot = makeEffectSlot (EffectKind::autoPan);
@@ -151,36 +151,36 @@ TEST (rhythm_pan_follows_the_trials_pattern_round136)
     // (the trial's first ~200 ms after a reset glide in from hard left: not modelled, REA_rodada136 §2.5)
     for (int k = 6; k < 14; ++k)
     {
-        if (std::getenv ("LYNX_TEST_VERBOSE"))
+        if (std::getenv ("YW_TEST_VERBOSE"))
             std::printf ("  pan t %d: %.1f (%.1f)\n", 2400 + k * 1200, theta (2400 + k * 1200), measured[k]);
         CHECK (std::abs (theta (2400 + k * 1200) - measured[k]) < 2.0);
     }
     // equal power: the two gains' squares add up to one
     double a = 0, b = 0;
     for (int k = 24000; k < 24480; ++k) { a += l[(size_t) k] * l[(size_t) k]; b += r[(size_t) k] * r[(size_t) k]; }
-    if (std::getenv ("LYNX_TEST_VERBOSE"))
+    if (std::getenv ("YW_TEST_VERBOSE"))
         std::printf ("  pan power %.4f\n", std::sqrt (2.0 * (a + b) / 480.0) / 0.25);
     CHECK (std::abs (std::sqrt (2.0 * (a + b) / 480.0) / 0.25 - 1.0) < 0.02);
 }
 
 TEST (alterboy_substitute_plays_her_usual_setting_round136)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst2;
     id.name = "Little AlterBoy";
     const auto* e = findPluginSubstitute (id, false);
-    CHECK (e != nullptr && e->effect == EffectKind::lynxTune);
+    CHECK (e != nullptr && e->effect == EffectKind::ywTune);
     if (e == nullptr)
         return;
     auto slot = makeSubstituteSlot (*e);
-    CHECK (slot.params[(size_t) lynxtune::driveStage] > 0.5f);
-    CHECK (std::abs (lynxtune::formantSemitones (slot.params[(size_t) lynxtune::formantShift]) - 1.2) < 0.01);
+    CHECK (slot.params[(size_t) ywtune::driveStage] > 0.5f);
+    CHECK (std::abs (ywtune::formantSemitones (slot.params[(size_t) ywtune::formantShift]) - 1.2) < 0.01);
     // [EXEC] the reference's Drive 4.6 (Transpose mode, pitch / formant 0): a 200 Hz sine at −20 dBFS comes out
-    // +5.1 dB, at −8 dBFS +0.9 dB (the drive's output compensation); LYNX Tune with every note bypassed + the stage
+    // +5.1 dB, at −8 dBFS +0.9 dB (the drive's output compensation); YW Tune with every note bypassed + the stage
     for (int k = 0; k < 12; ++k)
-        slot.params[(size_t) (lynxtune::bypassC + k)] = 1.0f;
-    slot.params[(size_t) lynxtune::formantShift] = 0.5f;
+        slot.params[(size_t) (ywtune::bypassC + k)] = 1.0f;
+    slot.params[(size_t) ywtune::formantShift] = 0.5f;
     for (const auto [in, gain] : { std::pair { -20.0, 5.1 }, std::pair { -8.0, 0.9 } })
     {
         const int n = 48000;
@@ -194,7 +194,7 @@ TEST (alterboy_substitute_plays_her_usual_setting_round136)
         double a = 0;
         for (int i = n / 2; i < n; ++i) a += l[(size_t) i] * (double) l[(size_t) i];
         const auto outDb = 10.0 * std::log10 (a / (n / 2)) - (in - 3.0103);
-        if (std::getenv ("LYNX_TEST_VERBOSE"))
+        if (std::getenv ("YW_TEST_VERBOSE"))
             std::printf ("  alterboy drive 4.6 in %.0f: %+.2f dB (%+.1f)\n", in, outDb, gain);
         CHECK (std::abs (outDb - gain) < 1.0);
     }
@@ -202,7 +202,7 @@ TEST (alterboy_substitute_plays_her_usual_setting_round136)
 
 TEST (echoform_tape_voicing_matches_the_trials_echo_round136)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] her EchoBoy state 20 (studio tape, 1/8 note, no feedback, mix 50 %) at 120 BPM, a left impulse: the dry
     // 0.708 at 0 and one echo 0.407 at 11 816 samples (the trial's 32-sample latency removed); nothing on the right

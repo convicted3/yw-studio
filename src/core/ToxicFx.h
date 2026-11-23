@@ -10,7 +10,7 @@
 
 #include <memory>
 
-namespace lynx
+namespace yw
 {
 // the plug-in's own CRT powf (MSVC SSE2 path at 0x180057f90, not correctly rounded; REA_rodada45 §FX.8), shared with
 // the voice engine (core/Toxic.cpp)
@@ -48,4 +48,4 @@ public:
 private:
     std::unique_ptr<Impl> impl;
 };
-} // namespace lynx
+} // namespace yw

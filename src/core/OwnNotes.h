@@ -7,7 +7,7 @@
 #include <array>
 #include <cstdint>
 
-namespace lynx::ownnotes
+namespace yw::ownnotes
 {
 // how long after a note on went in the same key coming out is its echo (50 ms)
 constexpr double echoSeconds = 0.05;
@@ -42,4 +42,4 @@ private:
     std::array<std::int64_t, 128> inAt {}; // 1 + the sample the key's last note on went in (0: never)
     std::array<bool, 128> ownOn {};        // the key's last note on out was the plugin's own (its note off is too)
 };
-} // namespace lynx::ownnotes
+} // namespace yw::ownnotes

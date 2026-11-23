@@ -7,7 +7,7 @@
 
 namespace rack190hr
 {
-using namespace lynx;
+using namespace yw;
 
 bool approx (float a, float b, float tol = 1.0e-4f) { return std::abs (a - b) <= tol; }
 constexpr const char* liveRoot = "/mnt/c/ProgramData/Ableton/Live 12 Trial/Resources";
@@ -356,8 +356,8 @@ TEST (rack190hr_write_presets_for_the_live_check)
     rack::map (aer, 1, vol);
     rack::setMacro (aer, 1, 90.0f);
     rack::storeVariation (aer);
-    save (aer, "LYNX AER 190hr");
-    // an Instrument Rack: two key-split chains (empty: LYNX's own instruments have no Live device), a selector macro
+    save (aer, "YW AER 190hr");
+    // an Instrument Rack: two key-split chains (empty: YW's own instruments have no Live device), a selector macro
     auto inst = rack::makeRack (RackDoc::Kind::instrument);
     rack::addChain (inst, "High");
     rack::rackOf (inst)->chains[0].key = { 0, 59, 0, 59 };
@@ -366,7 +366,7 @@ TEST (rack190hr_write_presets_for_the_live_check)
     RackMapping sel;
     sel.target = RackMapping::Target::selector;
     rack::map (inst, 0, sel);
-    save (inst, "LYNX Instrument Rack 190hr");
+    save (inst, "YW Instrument Rack 190hr");
     // a Drum Rack: a pad with kHs Gain into a return chain, choke group 1
     auto drums = rack::makeDrumRack();
     const auto pad = rack::addPad (drums, 36, "Kick");
@@ -374,9 +374,9 @@ TEST (rack190hr_write_presets_for_the_live_check)
     rack::addReturn (drums, "Verb");
     rack::setChoke (drums, pad, 1);
     rack::setAudioTo (drums, pad, 0);
-    save (drums, "LYNX Drum Rack 190hr");
+    save (drums, "YW Drum Rack 190hr");
     // a MIDI Effect Rack with two chains
     auto midi = rack::makeRack (RackDoc::Kind::midiEffect);
     rack::addChain (midi, "Up");
-    save (midi, "LYNX MIDI Rack 190hr");
+    save (midi, "YW MIDI Rack 190hr");
 }

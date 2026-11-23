@@ -1,11 +1,11 @@
 // --- FL Studio Mobile (.flm) import, round 187d: slices F2 (mixer: the rack's Mute/Solo/Pitch Bend, AUX routes) and
 // F6 (the rack's automation lanes: Level, Pan, send levels; the other lanes listed). The projects are written by the
-// test with flm182c's helpers (FlmImport182cTests.inc); real projects only through the opt-in test (LYNX_FLM_DIR).
+// test with flm182c's helpers (FlmImport182cTests.inc); real projects only through the opt-in test (YW_FLM_DIR).
 
 namespace flm187d
 {
 // the flm182c helpers by name (a using-directive would make Bytes ambiguous with tests.cpp's own)
-namespace flm = lynx::flm;
+namespace flm = yw::flm;
 using flm182c::Bytes;
 using flm182c::put;
 using flm182c::u8;
@@ -82,7 +82,7 @@ inline Bytes autoClip (double startBeat, double length, double loop, std::uint32
     return chunk ("CLIP", cat ({ b, chunk ("CLHd", hd), chunk ("EVN2", evn) }));
 }
 
-namespace rp = lynx::flm::rackparam;
+namespace rp = yw::flm::rackparam;
 
 // master; "Keys" (a sampler: muted, soloed, bend held at +9 semitones) with Pan, Mute and module lanes; "Vocal" routed to the Master and the
 // "Reverb Bus" (id 3) with a send-level lane to the bus, one to the master, one to a channel it has no route to, and a
@@ -117,7 +117,7 @@ inline Bytes project()
 
 TEST (flm187d_mixer_and_rack_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     std::string error;
     const auto song = importFlm (flm187d::project(), flm182c::options (&report), &error);
@@ -169,7 +169,7 @@ TEST (flm187d_mixer_and_rack_automation)
     }
     if (toBus >= 0)
     {
-        // a send level on FLM's fader law: 65535 = +5.6 dB, capped at LYNX's top; the clip is one 2-beat loop
+        // a send level on FLM's fader law: 65535 = +5.6 dB, capped at YW's top; the clip is one 2-beat loop
         const auto& p = s.automations[(std::size_t) toBus].points;
         CHECK (p.size() == 2 && p[0].value == 0.0f && std::abs (p[1].value - faderPosition (maxFaderGain)) < 1e-4f && p[1].tick == ppq);
         const auto clip = std::find_if (s.playlist.begin(), s.playlist.end(), [toBus] (const Clip& c) { return c.kind == ClipKind::automation && c.automation == toBus; });
@@ -177,7 +177,7 @@ TEST (flm187d_mixer_and_rack_automation)
     }
     CHECK (report.converted.count ("FL Studio Mobile: Pan automation") == 1 && report.converted.count ("FL Studio Mobile: send level automation") == 1
            && report.converted.at ("FL Studio Mobile: send level automation") == 2);
-    CHECK (report.notReproduced.count ("FL Studio Mobile: Mute/Solo automation (LYNX automates neither)") == 1
+    CHECK (report.notReproduced.count ("FL Studio Mobile: Mute/Solo automation (YW automates neither)") == 1
            && report.notReproduced.count ("FL Studio Mobile: automation of module parameters (not imported yet)") == 0
            && report.converted.count ("FL Studio Mobile: instrument parameter automation") == 1
            && report.notReproduced.count ("FL Studio Mobile: send level automation without that route") == 1
@@ -192,15 +192,15 @@ TEST (flm187d_mixer_and_rack_automation)
     CHECK (rows == 3);
 }
 
-// Opt-in (LYNX_FLM_DIR, LYNX_FLM_REPORT=1): the import report of every real project below the folder, so a round can
+// Opt-in (YW_FLM_DIR, YW_FLM_REPORT=1): the import report of every real project below the folder, so a round can
 // read what each one skips
 TEST (flm187d_real_project_reports)
 {
-    using namespace lynx;
-    const char* dir = std::getenv ("LYNX_FLM_DIR");
-    if (dir == nullptr || std::getenv ("LYNX_FLM_REPORT") == nullptr)
+    using namespace yw;
+    const char* dir = std::getenv ("YW_FLM_DIR");
+    if (dir == nullptr || std::getenv ("YW_FLM_REPORT") == nullptr)
         return;
-    const char* resources = std::getenv ("LYNX_FLM_RESOURCES");
+    const char* resources = std::getenv ("YW_FLM_RESOURCES");
     for (const auto& entry : std::filesystem::recursive_directory_iterator (dir))
     {
         const auto ext = entry.path().extension().string();

@@ -20,7 +20,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -61,7 +61,7 @@ struct Env
 
 struct FpcEnvelope::Curve
 {
-    lynx::Curve c;
+    yw::Curve c;
     float kA = 1.0f, kD = 1.0f, kS = 0.0f, kR = 1.0f;
 
     // FUN_00788470: the point's level, lifted by the sustain shift × its weight (clipped to 0…1 when lifted), less the
@@ -297,4 +297,4 @@ std::vector<float> FpcEnvelope::trace (double rate, int heldTicks, int maxTicks)
     }
     return out;
 }
-} // namespace lynx
+} // namespace yw

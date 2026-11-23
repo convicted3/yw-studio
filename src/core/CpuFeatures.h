@@ -1,25 +1,25 @@
 #pragma once
 // Runtime CPU dispatch for the hottest DSP loops (round 190kz, codegen). The release builds keep the x86-64 baseline
-// (SSE2) so every 64-bit CPU runs LYNX; a few loops also have AVX / AVX2 variants compiled with
+// (SSE2) so every 64-bit CPU runs YW; a few loops also have AVX / AVX2 variants compiled with
 // __attribute__ ((target (...))) and picked here at run time. Rules for such a variant (docs/PLATFORMS.md "Runtime
 // CPU dispatch"): the same IEEE operations in the same order per element, only in wider vectors: never "fma" in the
 // target list (a fused multiply-add rounds once instead of twice), no reassociated sums, no approximations. So every
 // path renders the same bits; tests pin that for each dispatched loop.
 //
 // cpu::level() is computed once: what the CPU and the OS support (CPUID, and XGETBV for the AVX register state),
-// capped by the environment variable LYNX_CPU=sse2|sse4|avx|avx2 (tests and benchmarks: hash both paths on one
+// capped by the environment variable YW_CPU=sse2|sse4|avx|avx2 (tests and benchmarks: hash both paths on one
 // machine). cpu::setLevelForTest caps it from code (tests); it never raises it above the hardware.
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
  #include <cpuid.h>
- #define LYNX_CPU_DISPATCH 1
+ #define YW_CPU_DISPATCH 1
 #else
- #define LYNX_CPU_DISPATCH 0
+ #define YW_CPU_DISPATCH 0
 #endif
 
-namespace lynx::cpu
+namespace yw::cpu
 {
 enum Level : int
 {
@@ -33,7 +33,7 @@ enum Level : int
 // what the hardware and the OS support (no environment cap)
 inline int detectLevel() noexcept
 {
-#if LYNX_CPU_DISPATCH
+#if YW_CPU_DISPATCH
     unsigned a = 0, b = 0, c = 0, d = 0;
     if (! __get_cpuid (1, &a, &b, &c, &d))
         return sse2;
@@ -61,10 +61,10 @@ inline int detectLevel() noexcept
 #endif
 }
 
-// LYNX_CPU=sse2|sse4|avx|avx2 (also baseline / scalar = no dispatched path at all); unset or unknown: no cap
+// YW_CPU=sse2|sse4|avx|avx2 (also baseline / scalar = no dispatched path at all); unset or unknown: no cap
 inline int environmentCap() noexcept
 {
-    const char* v = std::getenv ("LYNX_CPU");
+    const char* v = std::getenv ("YW_CPU");
     if (v == nullptr || *v == 0)
         return avx2;
     if (std::strcmp (v, "baseline") == 0 || std::strcmp (v, "scalar") == 0)
@@ -107,7 +107,7 @@ inline bool hasSse41() noexcept { return level() >= sse41; }
 inline bool hasAvx() noexcept { return level() >= avx; }
 inline bool hasAvx2() noexcept { return level() >= avx2; }
 
-// tests: run the dispatched loops at most at `cap` (never above the hardware); -1 = back to the hardware / LYNX_CPU
+// tests: run the dispatched loops at most at `cap` (never above the hardware); -1 = back to the hardware / YW_CPU
 inline void setLevelForTest (int cap) noexcept
 {
     levelSlot().store (-1, std::memory_order_relaxed);
@@ -128,15 +128,15 @@ inline const char* levelName (int l) noexcept
         default: return "baseline";
     }
 }
-} // namespace lynx::cpu
+} // namespace yw::cpu
 
-// LYNX_TARGET_AVX2 / LYNX_TARGET_AVX: the attribute of a dispatched variant (empty where there is no dispatch)
-#if LYNX_CPU_DISPATCH
- #define LYNX_TARGET_AVX2 __attribute__ ((target ("avx2")))
- #define LYNX_TARGET_AVX __attribute__ ((target ("avx")))
- #define LYNX_TARGET_SSE41 __attribute__ ((target ("sse4.1")))
+// YW_TARGET_AVX2 / YW_TARGET_AVX: the attribute of a dispatched variant (empty where there is no dispatch)
+#if YW_CPU_DISPATCH
+ #define YW_TARGET_AVX2 __attribute__ ((target ("avx2")))
+ #define YW_TARGET_AVX __attribute__ ((target ("avx")))
+ #define YW_TARGET_SSE41 __attribute__ ((target ("sse4.1")))
 #else
- #define LYNX_TARGET_AVX2
- #define LYNX_TARGET_AVX
- #define LYNX_TARGET_SSE41
+ #define YW_TARGET_AVX2
+ #define YW_TARGET_AVX
+ #define YW_TARGET_SSE41
 #endif

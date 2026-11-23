@@ -4,7 +4,7 @@
 
 TEST (slicex190aj_selection_and_view_are_saved_in_beats)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = slicex::fresh();
     CHECK (! s.decks[0].hasSelection() && s.decks[0].selectionStart() == -1.0 && s.decks[0].selectionEnd() == -1.0);
     // FL's save after a drag over the wave: 1.78309…3.31693 beats, the view 0.57633…7.42109
@@ -28,7 +28,7 @@ TEST (slicex190aj_selection_and_view_are_saved_in_beats)
 
 TEST (slicex190aj_a_selection_becomes_frames_as_in_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     // "Add region" on 1.4117647…2.1960784 beats (44 100 frames a beat): FL wrote the region 62259…96846
     auto r = slicex::framesOf (1.411764705882353, 2.196078431372549, 44100.0, 352800);
     CHECK (r.first == 62259 && r.end == 96847);
@@ -53,7 +53,7 @@ TEST (slicex190aj_a_selection_becomes_frames_as_in_fl)
 
 TEST (slicex190aj_set_loop_writes_the_sampler_chunk)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto wav = slicex190h::wavWith (1000, { { 1, 0, 0, "Kick", -1 }, { 2, 250, 100, "Snare", 61 } });
     std::int64_t a = -1, b = -1, frames = 0;
     CHECK (! slicex::wavLoop (wav, a, b));
@@ -76,10 +76,10 @@ TEST (slicex190aj_set_loop_writes_the_sampler_chunk)
 }
 
 // The saved range of a deck is the editor's zoom (FL writes it zoomed and scrolled), so a deck by reference takes its
-// beat count from its file; LYNX's own states have the file's count there, so nothing changes for them
+// beat count from its file; YW's own states have the file's count there, so nothing changes for them
 TEST (slicex190aj_deck_by_reference_takes_its_beats_from_the_file)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = slicex::fresh();
     slicex::setDeckFile (s, 0, "loop.wav", 4);
     slicex::setDeckBeats (s, 0, 0.0, 8.0);             // as the editor writes it on load: the file's beat count
@@ -98,7 +98,7 @@ TEST (slicex190aj_deck_by_reference_takes_its_beats_from_the_file)
 // tag drag differ there, and the rewritten file is FL's byte for byte only with it (p/sxprove on aj_23…aj_29.flp)
 TEST (slicex190aj_region_edits_rewrite_the_slice_list)
 {
-    using namespace lynx;
+    using namespace yw;
     auto wav = slicex190h::wavWith (1000, { { 1, 0, 0, "Kick", -1 }, { 2, 250, 100, "Snare", 61 } });
     auto put32 = [&wav] (std::uint32_t v) {
         for (int i = 0; i < 4; ++i)

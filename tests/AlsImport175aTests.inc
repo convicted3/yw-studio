@@ -117,9 +117,9 @@ inline std::string richSet (const std::string& liveVersion = "12.0_12117", bool 
     return s;
 }
 
-inline lynx::AlsImportOptions options (lynx::FlpImportReport* report)
+inline yw::AlsImportOptions options (yw::FlpImportReport* report)
 {
-    lynx::AlsImportOptions o;
+    yw::AlsImportOptions o;
     o.common.projectFolder = "E:/sets/Song Project";
     o.common.fileExists = [] (const std::string& p) { return p == "E:/sets/Song Project/Samples/Imported/vocal.wav"; };
     o.common.report = report;
@@ -127,7 +127,7 @@ inline lynx::AlsImportOptions options (lynx::FlpImportReport* report)
     return o;
 }
 
-inline const lynx::Marker* markerNamed (const lynx::Song& s, const std::string& n)
+inline const yw::Marker* markerNamed (const yw::Song& s, const std::string& n)
 {
     for (const auto& m : s.markers())
         if (m.name == n)
@@ -138,7 +138,7 @@ inline const lynx::Marker* markerNamed (const lynx::Song& s, const std::string& 
 
 TEST (als175a_xml_reader)
 {
-    using namespace lynx::xml;
+    using namespace yw::xml;
     Document d;
     CHECK (d.parse ("<?xml version=\"1.0\"?><!-- c --><A x=\"1 &amp; 2\"><B Value=\"3.5\" /><B Value=\"no\"/><C>t&lt;x<![CDATA[<raw>]]></C><D><E Value=\"true\"/></D></A>"));
     const auto a = d.root();
@@ -160,7 +160,7 @@ TEST (als175a_xml_reader)
 
 TEST (als175a_gzip_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     std::string text (200000, 'x');
     for (std::size_t i = 0; i < text.size(); ++i)
         text[i] = (char) ('a' + (i * 7919) % 26);
@@ -178,7 +178,7 @@ TEST (als175a_gzip_round_trip)
 
 TEST (als175a_format_helpers)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0, d = 0;
     CHECK (alsTimeSignature (201, n, d) && n == 4 && d == 4);
     CHECK (alsTimeSignature (2, n, d) && n == 3 && d == 1 * 1); // 3/1 (code 2 = 3 / 2^0)
@@ -210,7 +210,7 @@ TEST (als175a_format_helpers)
 
 TEST (als175a_detects_sets)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto xmlBytes = als175a::bytesOf (als175a::richSet());
     const auto packed = gzip::compressStored (xmlBytes.data(), xmlBytes.size());
     CHECK (isAlsData (packed.data(), packed.size()));
@@ -227,7 +227,7 @@ TEST (als175a_detects_sets)
 
 TEST (als175a_imports_a_set)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     const auto xmlBytes = als175a::bytesOf (als175a::richSet());
     const auto packed = gzip::compressStored (xmlBytes.data(), xmlBytes.size());
@@ -343,18 +343,18 @@ TEST (als175a_imports_a_set)
 
 TEST (als175a_reads_live11_sets)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live 11 names the main track MasterTrack [BIN: the 11 → 12 upgrade table]
     const auto song = importAls (als175a::bytesOf (als175a::richSet ("11.0_11300", true)), als175a::options (nullptr));
     CHECK (song && std::abs (song->bpm - 128.0) < 1e-9 && song->beatsPerBar == 3 && song->mixer.size() == 5);
 }
 
-// Opt-in (LYNX_ALS_DIR=folder): every .als / .xml set below the folder is imported and summarised. Real sets (the ones
+// Opt-in (YW_ALS_DIR=folder): every .als / .xml set below the folder is imported and summarised. Real sets (the ones
 // Live ships, sets from public repositories) stay on the developer's disk; none is committed.
 TEST (als175a_real_sets)
 {
-    using namespace lynx;
-    const char* dir = std::getenv ("LYNX_ALS_DIR");
+    using namespace yw;
+    const char* dir = std::getenv ("YW_ALS_DIR");
     if (dir == nullptr)
         return;
     for (const auto& entry : std::filesystem::recursive_directory_iterator (dir))
@@ -395,7 +395,7 @@ TEST (als175a_real_sets)
     }
 }
 
-// --- .als export (round 175a, N2): LYNX → .als → LYNX keeps what the format holds, for Live 12 and Live 11 sets
+// --- .als export (round 175a, N2): YW → .als → YW keeps what the format holds, for Live 12 and Live 11 sets
 
 #include "core/AlsExport.h"
 #include "flp/FlpWrite.h"
@@ -405,7 +405,7 @@ namespace als175a
 // every pointee id unique and below NextPointeeId; SendsPre and each track's clip slots sized right [ALS_FORMAT §9]
 inline bool loaderRulesHold (const std::string& xmlText, int returns, std::string& why)
 {
-    lynx::xml::Document d;
+    yw::xml::Document d;
     if (! d.parse (xmlText))
     {
         why = "unparsable";
@@ -414,7 +414,7 @@ inline bool loaderRulesHold (const std::string& xmlText, int returns, std::strin
     std::set<std::string> ids;
     long maxId = 0;
     bool unique = true;
-    std::function<void (const lynx::xml::Element&)> walk = [&] (const lynx::xml::Element& e) {
+    std::function<void (const yw::xml::Element&)> walk = [&] (const yw::xml::Element& e) {
         const auto n = std::string (e.name());
         if (e.hasAttr ("Id"))
             maxId = std::max (maxId, std::strtol (e.attr ("Id").c_str(), nullptr, 10));
@@ -468,7 +468,7 @@ inline bool loaderRulesHold (const std::string& xmlText, int returns, std::strin
 
 TEST (als175a_export_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto original = importAls (als175a::bytesOf (als175a::richSet()), als175a::options (nullptr));
     CHECK (original.has_value());
     if (! original)
@@ -571,8 +571,8 @@ TEST (als175a_export_round_trip)
 
 TEST (als175a_flp_to_als)
 {
-    using namespace lynx;
-    // an .flp (written by LYNX's .flp writer) → LYNX → .als → LYNX: the notes and the tempo arrive
+    using namespace yw;
+    // an .flp (written by YW's .flp writer) → YW → .als → YW: the notes and the tempo arrive
     flp::Project p;
     p.tempo = 97.5;
     flp::Channel c;
@@ -626,14 +626,14 @@ TEST (als175a_flp_to_als)
     CHECK (before.size() == 4 && before == after);
 }
 
-// --- slice N4: LYNX's Beats warp mode (Live's Beats, measured) --------------------------------------------------------
+// --- slice N4: YW's Beats warp mode (Live's Beats, measured) --------------------------------------------------------
 
 TEST (als175a_beats_warp_mode)
 {
     // four 0.5 s pieces, each a 330 Hz tone that starts loud (an attack) and decays
     constexpr double rate = 44100.0;
     constexpr long piece = 22050, lead = 4410;
-    lynx::SampleData in;
+    yw::SampleData in;
     in.sampleRate = rate;
     in.left.assign ((std::size_t) (lead + 4 * piece), 0.0f);
     for (long k = 0; k < 4; ++k)
@@ -642,7 +642,7 @@ TEST (als175a_beats_warp_mode)
                                                                     * std::sin (2.0 * 3.141592653589793 * 330.0 * (double) i / rate));
     in.right = in.left;
     // the cuts: one per piece, at most 12 ms before its attack (the 10 ms before the steepest rise)
-    const auto attacks = lynx::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate);
+    const auto attacks = yw::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate);
     CHECK (attacks.size() == 4);
     for (std::size_t k = 0; k < attacks.size() && k < 4; ++k)
         CHECK (attacks[k] <= lead + (long) k * piece && attacks[k] >= lead + (long) k * piece - (long) (rate * 0.012));
@@ -650,13 +650,13 @@ TEST (als175a_beats_warp_mode)
     // round 190gx: the Classic law (projects saved before 190gx) keeps 175a's behaviour exactly: cuts 10 ms before the
     // steepest rise, the reversed fill from the piece's end
     {
-        lynx::StretchOptions classic;
-        classic.modes.beatsLaw = lynx::WarpModeSettings::beatsLawClassic;
-        const auto oldCuts = lynx::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate, false);
+        yw::StretchOptions classic;
+        classic.modes.beatsLaw = yw::WarpModeSettings::beatsLawClassic;
+        const auto oldCuts = yw::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate, false);
         CHECK (oldCuts.size() == 4);
         for (std::size_t k = 0; k < oldCuts.size() && k < attacks.size(); ++k)
             CHECK (oldCuts[k] == attacks[k] - (long) std::lround (rate * 0.010) || std::abs (oldCuts[k] - (attacks[k] - (long) std::lround (rate * 0.010))) <= 1);
-        const auto slowClassic = lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats, 0.0, classic);
+        const auto slowClassic = yw::timeStretch (in, 1.25, yw::StretchMethod::beats, 0.0, classic);
         int fwdOk = 0, backOk = 0;
         for (std::size_t k = 0; k + 1 < oldCuts.size(); ++k)
         {
@@ -673,11 +673,11 @@ TEST (als175a_beats_warp_mode)
         }
         CHECK (fwdOk == 3);
         CHECK (backOk == 3);
-        CHECK (slowClassic->left != lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats)->left); // (the two laws differ)
+        CHECK (slowClassic->left != yw::timeStretch (in, 1.25, yw::StretchMethod::beats)->left); // (the two laws differ)
     }
 
     // slower (1.25×): each piece plays at its own speed from where the time map puts its attack, then backwards
-    const auto slow = lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats);
+    const auto slow = yw::timeStretch (in, 1.25, yw::StretchMethod::beats);
     CHECK (std::abs ((double) slow->frames() - (double) in.frames() * 1.25) < 1.5);
     int exactForward = 0, exactBackward = 0;
     for (std::size_t k = 0; k + 1 < attacks.size(); ++k)
@@ -686,7 +686,7 @@ TEST (als175a_beats_warp_mode)
         const auto o0 = (long) std::llround ((double) a * 1.25);
         const auto fade = (long) std::lround (rate * 0.016);
         // (round 190gx, Live's W1 renders: the reversed reading turns 20 ms before the piece's end)
-        const auto turn = length - (long) std::lround (rate * lynx::stretchdetail::beatsTurnSeconds);
+        const auto turn = length - (long) std::lround (rate * yw::stretchdetail::beatsTurnSeconds);
         double fwd = 0.0, back = 0.0;
         for (long i = fade; i < turn; ++i)
             fwd = std::max (fwd, (double) std::abs (slow->left[(std::size_t) (o0 + i)] - in.left[(std::size_t) (a + i)]));
@@ -699,7 +699,7 @@ TEST (als175a_beats_warp_mode)
     CHECK (exactBackward == 3); // the gap: the piece's end played backwards (from the turn)
 
     // faster (0.8×): each piece is cut where the next begins, still unstretched
-    const auto fast = lynx::timeStretch (in, 0.8, lynx::StretchMethod::beats);
+    const auto fast = yw::timeStretch (in, 0.8, yw::StretchMethod::beats);
     CHECK (std::abs ((double) fast->frames() - (double) in.frames() * 0.8) < 1.5);
     int exactCut = 0;
     for (std::size_t k = 1; k + 1 < attacks.size(); ++k)
@@ -715,9 +715,9 @@ TEST (als175a_beats_warp_mode)
     CHECK (exactCut == 2);
 
     // Tones, Texture, Complex: the spectral stretcher with their own presets, right length, level kept
-    for (auto method : { lynx::StretchMethod::tones, lynx::StretchMethod::texture, lynx::StretchMethod::complex })
+    for (auto method : { yw::StretchMethod::tones, yw::StretchMethod::texture, yw::StretchMethod::complex })
     {
-        const auto out = lynx::timeStretch (in, 1.25, method);
+        const auto out = yw::timeStretch (in, 1.25, method);
         CHECK (std::abs ((double) out->frames() - (double) in.frames() * 1.25) < 1.5);
         double ein = 0.0, eout = 0.0;
         for (auto v : in.left)
@@ -732,7 +732,7 @@ TEST (als175a_warped_clip_stretches_offline)
 {
     // the same set with the file length recorded (Live always writes it): 96000 frames at 48 kHz = 2 s = 8 content beats.
     // The channel stretches the whole file to 8 beats with the clip's warp mode (Complex); the clip plays it unstretched
-    using namespace lynx;
+    using namespace yw;
     auto xml = als175a::richSet();
     const std::string from = "</FileRef></SampleRef></AudioClip>";
     const auto at = xml.find (from);
@@ -767,7 +767,7 @@ TEST (als175a_beats_transpose_resamples_each_piece)
     // source frame every half output frame) and, done after half its length, fills the rest back and forth
     constexpr double rate = 44100.0;
     constexpr long piece = 22050, lead = 4410;
-    lynx::SampleData in;
+    yw::SampleData in;
     in.sampleRate = rate;
     in.left.assign ((std::size_t) (lead + 4 * piece), 0.0f);
     for (long k = 0; k < 4; ++k)
@@ -775,15 +775,15 @@ TEST (als175a_beats_transpose_resamples_each_piece)
             in.left[(std::size_t) (lead + k * piece + i)] = (float) (0.8 * std::exp (-3.0 * (double) i / piece)
                                                                     * std::sin (2.0 * 3.141592653589793 * 330.0 * (double) i / rate));
     in.right = in.left;
-    const auto attacks = lynx::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate);
+    const auto attacks = yw::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate);
     CHECK (attacks.size() == 4);
 
     // round 190gx: the Classic law keeps 175a's transposed fill (back and forth from the piece's end)
     {
-        lynx::StretchOptions classic;
-        classic.modes.beatsLaw = lynx::WarpModeSettings::beatsLawClassic;
-        const auto oldCuts = lynx::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate, false);
-        const auto upClassic = lynx::timeStretch (in, 1.0, lynx::StretchMethod::beats, 12.0, classic);
+        yw::StretchOptions classic;
+        classic.modes.beatsLaw = yw::WarpModeSettings::beatsLawClassic;
+        const auto oldCuts = yw::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), rate, false);
+        const auto upClassic = yw::timeStretch (in, 1.0, yw::StretchMethod::beats, 12.0, classic);
         const auto fade = (long) std::lround (rate * 0.016);
         int exactOld = 0, mirroredOld = 0;
         for (std::size_t k = 1; k + 1 < oldCuts.size(); ++k)
@@ -801,7 +801,7 @@ TEST (als175a_beats_transpose_resamples_each_piece)
         CHECK (exactOld == 2);
         CHECK (mirroredOld == 2);
     }
-    const auto up = lynx::timeStretch (in, 1.0, lynx::StretchMethod::beats, 12.0);
+    const auto up = yw::timeStretch (in, 1.0, yw::StretchMethod::beats, 12.0);
     CHECK (up->frames() == in.frames()); // the length follows the stretch only
     const auto fade = (long) std::lround (rate * 0.016);
     int exact = 0, mirrored = 0;
@@ -811,7 +811,7 @@ TEST (als175a_beats_transpose_resamples_each_piece)
         double fwd = 0.0, back = 0.0;
         const auto played = (length - 1) / 2 + 1;
         // (round 190gx: the reversed reading turns 20 ms before the piece's end, Live's W1 renders)
-        const auto turn = played - (long) std::lround (rate * lynx::stretchdetail::beatsTurnSeconds);
+        const auto turn = played - (long) std::lround (rate * yw::stretchdetail::beatsTurnSeconds);
         for (long i = fade; i < turn; ++i) // output frame i = source frame a + 2i (an even read: no interpolation)
             fwd = std::max (fwd, (double) std::abs (up->left[(std::size_t) (a + i)] - in.left[(std::size_t) (a + 2 * i)]));
         for (long j = 0; j < played / 2 - fade; ++j) // then backwards from the turn
@@ -823,11 +823,11 @@ TEST (als175a_beats_transpose_resamples_each_piece)
     CHECK (mirrored == 2);
 
     // other methods ignore the transpose (they transpose in real time); 0 st is the plain Beats stretch
-    const auto tones = lynx::timeStretch (in, 1.25, lynx::StretchMethod::tones, 12.0);
-    const auto tonesPlain = lynx::timeStretch (in, 1.25, lynx::StretchMethod::tones);
+    const auto tones = yw::timeStretch (in, 1.25, yw::StretchMethod::tones, 12.0);
+    const auto tonesPlain = yw::timeStretch (in, 1.25, yw::StretchMethod::tones);
     CHECK (tones->left == tonesPlain->left);
-    const auto zero = lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats, 0.0);
-    const auto plain = lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats);
+    const auto zero = yw::timeStretch (in, 1.25, yw::StretchMethod::beats, 0.0);
+    const auto plain = yw::timeStretch (in, 1.25, yw::StretchMethod::beats);
     CHECK (zero->left == plain->left);
 }
 
@@ -835,7 +835,7 @@ TEST (als175a_beats_clip_transpose_is_rendered_offline)
 {
     // the rich set's clip, in Beats (WarpMode 0) with its +2 st and the file length recorded: the channel bakes the +2 st
     // into its stretched sample (stretchPitch) and the clip plays untransposed; exported again, the transpose is back
-    using namespace lynx;
+    using namespace yw;
     auto xml = als175a::richSet();
     const std::string from = "</FileRef></SampleRef></AudioClip>";
     const auto at = xml.find (from);
@@ -875,7 +875,7 @@ TEST (als175a_beats_clip_transpose_is_rendered_offline)
 
 TEST (als175a_leaving_beats_moves_the_baked_transpose_to_the_pitch_knob)
 {
-    using namespace lynx;
+    using namespace yw;
     SamplerSettings s;
     s.keepPitch = true;
     s.stretchMethod = StretchMethod::beats;
@@ -905,7 +905,7 @@ TEST (als175a_leaving_beats_moves_the_baked_transpose_to_the_pitch_knob)
 
 TEST (als175a_warp_map_from_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     // markers in a straight line (one tempo): no map, the plain stretch
     CHECK (warpStretchMap ({ { 0.0, 0.0 }, { 1.0, 2.0 }, { 2.0, 4.0 } }, 96000.0, 48000.0, 192000.0).empty());
     CHECK (warpStretchMap ({ { 0.0, 0.0 } }, 96000.0, 48000.0, 192000.0).empty());
@@ -931,9 +931,9 @@ TEST (als175a_warp_map_from_markers)
 namespace als175a
 {
 // 2 s of silence with 20 ms 1 kHz bursts at the given seconds (44.1 kHz stereo)
-inline lynx::SampleData bursts (const std::vector<double>& at)
+inline yw::SampleData bursts (const std::vector<double>& at)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = 44100.0;
     s.left.assign (88200, 0.0f);
     for (auto t : at)
@@ -943,7 +943,7 @@ inline lynx::SampleData bursts (const std::vector<double>& at)
     return s;
 }
 // the frame where the 2 ms RMS envelope peaks within ±60 ms of `around`
-inline long envelopePeak (const lynx::SampleData& s, long around)
+inline long envelopePeak (const yw::SampleData& s, long around)
 {
     const long w = 88, from = std::max (0L, around - 2646), to = std::min ((long) s.frames() - w, around + 2646);
     long best = from;
@@ -967,7 +967,7 @@ TEST (als175a_warp_markers_place_the_audio)
 {
     // bursts at 0.25, 0.75, 1.25 and 1.75 s; markers: the first second plays over 0.5 s, the second over 1.5 s (2 s in all).
     // Every warp mode puts each burst where the map says (within 8 ms of the peak the source's own burst has)
-    using namespace lynx;
+    using namespace yw;
     const std::vector<double> at { 0.25, 0.75, 1.25, 1.75 };
     const auto in = als175a::bursts (at);
     const StretchMap map { { 0.0, 0.0 }, { 44100.0, 22050.0 }, { 88200.0, 88200.0 } };
@@ -1012,7 +1012,7 @@ TEST (als175a_warp_markers_import_and_export)
     // the rich set's clip with the file length recorded and markers that bend: 1 s → 2 beats, then 1 s → 6 beats. The
     // channel keeps them (8 beats in all), the clip starts at the file's start, and nothing is reported as approximated;
     // exported, the same three markers come back
-    using namespace lynx;
+    using namespace yw;
     auto xml = als175a::richSet();
     const std::string from = "</FileRef></SampleRef></AudioClip>";
     const std::string markers = "<WarpMarkers><WarpMarker Id=\"0\" SecTime=\"0\" BeatTime=\"0\" /><WarpMarker Id=\"1\" SecTime=\"2\" BeatTime=\"8\" /></WarpMarkers>";
@@ -1050,7 +1050,7 @@ TEST (als175a_warp_markers_import_and_export)
     CHECK (als.xml.find ("SecTime=\"1\" BeatTime=\"2\"") != std::string::npos);
     CHECK (als.xml.find ("SecTime=\"2\" BeatTime=\"8\"") != std::string::npos);
 
-    // back into LYNX (LYNX writes no file length: the file's own, from sampleSeconds): the markers again
+    // back into YW (YW writes no file length: the file's own, from sampleSeconds): the markers again
     auto again = als175a::options (nullptr);
     again.common.sampleSeconds = [] (const std::string&) { return 2.0; };
     again.common.fileExists = [] (const std::string&) { return true; };
@@ -1070,9 +1070,9 @@ TEST (als175a_warp_markers_import_and_export)
 namespace als175a
 {
 // a mono 44.1 kHz performance: a kick on every beat (louder on the bar), a hat between; `beatAt` gives each beat's time
-inline lynx::SampleData performance (const std::vector<double>& beatAt, double seconds, double lead = 0.0)
+inline yw::SampleData performance (const std::vector<double>& beatAt, double seconds, double lead = 0.0)
 {
-    lynx::SampleData s;
+    yw::SampleData s;
     s.sampleRate = 44100.0;
     s.left.assign ((std::size_t) std::lround ((seconds + lead) * 44100.0), 0.0f);
     std::uint32_t noise = 7;
@@ -1095,18 +1095,18 @@ inline lynx::SampleData performance (const std::vector<double>& beatAt, double s
     return s;
 }
 // where the markers put `beat` (piecewise linear, the end segments continued)
-inline double markerTime (const std::vector<lynx::WarpPoint>& m, double beat)
+inline double markerTime (const std::vector<yw::WarpPoint>& m, double beat)
 {
-    lynx::StretchMap map;
+    yw::StretchMap map;
     for (const auto& p : m)
         map.push_back ({ p.beats, p.seconds });
-    return lynx::stretchMapOutput (map, beat);
+    return yw::stretchMapOutput (map, beat);
 }
 } // namespace als175a
 
 TEST (als175a_auto_warp_tempo_in_names)
 {
-    using lynx::autowarp::bpmInName;
+    using yw::autowarp::bpmInName;
     CHECK (bpmInName ("Clapping Flamenco 120 bpm.aif") == 120.0);
     CHECK (bpmInName ("loop_128BPM.wav") == 128.0);
     CHECK (bpmInName ("Break-87.5-bpm") == 87.5);
@@ -1118,7 +1118,7 @@ TEST (als175a_auto_warp_tempo_in_names)
 
 TEST (als175a_auto_warp_loops)
 {
-    using namespace lynx;
+    using namespace yw;
     // a 4 s loop of 8 beats named 120 bpm: one tempo, from the file's start to its last whole beat
     std::vector<double> beats;
     for (int k = 0; k < 8; ++k)
@@ -1143,7 +1143,7 @@ TEST (als175a_auto_warp_follows_a_drifting_performance)
 {
     // 70 s that speed up from 118 to 124 bpm, after 1 s of silence: the markers start on the first kick and put every
     // beat within a few ms of where it is played (one tempo for the whole file would be a second off by the end)
-    using namespace lynx;
+    using namespace yw;
     std::vector<double> beats;
     for (double t = 0.0; t < 70.0;)
     {
@@ -1175,7 +1175,7 @@ TEST (als175a_auto_warp_follows_a_drifting_performance)
 
 TEST (als175a_warp_marker_editing)
 {
-    using namespace lynx;
+    using namespace yw;
     SamplerSettings s;
     CHECK (! warpedit::ensureMarkers (s, 0.0, 120.0));
     CHECK (warpedit::ensureMarkers (s, 4.0, 120.0)); // a 4 s file at 120 bpm: 8 beats, start and end markers
@@ -1207,7 +1207,7 @@ TEST (als175a_warp_marker_editing)
 TEST (als175a_warp_edits_one_clip_only)
 {
     // two clips of one audio channel: editing the first one's markers gives it its own copy of the channel
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef ch;
     ch.instrument = InstrumentKind::audioClip;
@@ -1234,7 +1234,7 @@ TEST (als175a_warp_edits_one_clip_only)
 TEST (als175a_warp_markers_as_played)
 {
     // markers 0 → 0, 1 s → 2, 2 s → 8 on a 2 s file: played as they are (8 beats); the inverse finds the file time
-    using namespace lynx;
+    using namespace yw;
     SamplerSettings s;
     s.keepPitch = true;
     s.stretchBeats = 8.0f;
@@ -1255,12 +1255,12 @@ TEST (als175a_warp_markers_as_played)
     CHECK (std::abs (warpedit::clipTickOfBeat (c, 2.0) - 4800.0) < 1e-9);
 }
 
-// Round 182b: Live 12.4 crashed loading a LYNX export of FL's "Africa's Calling" demo; its log listed samples that were
+// Round 182b: Live 12.4 crashed loading a YW export of FL's "Africa's Calling" demo; its log listed samples that were
 // "not a valid WAV file". FL ships raw Ogg Vorbis streams named .wav, and the export copied them as they were. Live picks
 // the decoder by the extension, so every file whose content doesn't match its extension is written as a plain WAV.
 TEST (als182b_raw_ogg_named_wav_goes_to_live_as_a_real_wav)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::uint8_t rawOgg[] = { 'O', 'g', 'g', 'S', 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x91, 0x41, 0xf2, 0x21, 1, 0x1e, 1, 'v', 'o', 'r', 'b', 'i', 's' };
     const std::uint8_t pcmWav[] = { 'R', 'I', 'F', 'F', 36, 0, 0, 0, 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ', 16, 0, 0, 0, 1, 0, 2, 0 };
     const std::uint8_t floatWav[] = { 'R', 'I', 'F', 'F', 36, 0, 0, 0, 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ', 16, 0, 0, 0, 3, 0, 2, 0 };

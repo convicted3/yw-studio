@@ -5,7 +5,7 @@ TEST (flp182e_clip_mute_flag_round_trips_for_every_clip_kind)
     // Issue #110: FL's clip mute is bit 0x2000 of the playlist item flags (+0x12). FL tests bit 0x20 of byte +0x13 on the
     // record it keeps as loaded (REA round 182e). Muted pattern, audio and automation clips must stay muted on import,
     // and the export writes the bit back instead of leaving the clip out.
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.playlist.clear();
 

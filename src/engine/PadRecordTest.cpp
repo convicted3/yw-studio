@@ -1,7 +1,7 @@
 // Round 190ks (GitHub #198: "the pads I click in my drum plugin's window are not recorded"). AudioEngine::padRecordSelfTest
-// is `LYNX --padrectest "<YW Test Pads.vst3>" report.txt`: the live engine on a stand-in audio device (real-time blocks
-// of 256 at 48 kHz) records a take while a hosted drum plugin with a MIDI output (tools/testplugin/lynx_test_pads_vst3.cpp)
-// "is clicked" (its scripted hits, LYNX_TEST_PADS_AUTO) and passes the notes it is sent on (LYNX_TEST_PADS_ECHO):
+// is `YW --padrectest "<YW Test Pads.vst3>" report.txt`: the live engine on a stand-in audio device (real-time blocks
+// of 256 at 48 kHz) records a take while a hosted drum plugin with a MIDI output (tools/testplugin/yw_test_pads_vst3.cpp)
+// "is clicked" (its scripted hits, YW_TEST_PADS_AUTO) and passes the notes it is sent on (YW_TEST_PADS_ECHO):
 //  1. channel 0, its window open: the two hits are recorded on its channel, at their velocity, where they were heard;
 //  2. the pattern's own note that the plugin echoes back is not recorded a second time;
 //  3. channel 1, the same plugin with its window closed: nothing of it is recorded;
@@ -12,7 +12,7 @@
 #include "engine/AudioEngine.h"
 #include "engine/ChannelRackProcessor.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -124,8 +124,8 @@ juce::String AudioEngine::padRecordSelfTest (const juce::String& pluginPath)
         return "ERROR no plugin at " + pluginPath;
     // the hits "clicked" in its window: at its 150th process() call key 36 at 100, at its 230th key 40 at 50 (each held
     // 10 calls), whatever the host sends it goes back out (a MIDI thru plugin). Read by each instance when it is made.
-    setVariable ("LYNX_TEST_PADS_AUTO", "150:36:100:10,230:40:50:10");
-    setVariable ("LYNX_TEST_PADS_ECHO", "1");
+    setVariable ("YW_TEST_PADS_AUTO", "150:36:100:10,230:40:50:10");
+    setVariable ("YW_TEST_PADS_ECHO", "1");
 
     AudioEngine live (false);
     live.player.setProcessor (&live.graph);
@@ -258,10 +258,10 @@ juce::String AudioEngine::padRecordSelfTest (const juce::String& pluginPath)
     live.setEditorOpen (&editorKey, {}, -1, false);
     live.deviceManager.removeAudioCallback (&live);
     live.deviceManager.closeAudioDevice();
-    setVariable ("LYNX_TEST_PADS_AUTO", "");
-    setVariable ("LYNX_TEST_PADS_ECHO", "");
+    setVariable ("YW_TEST_PADS_AUTO", "");
+    setVariable ("YW_TEST_PADS_ECHO", "");
     if (! errors.isEmpty())
         return "ERROR " + errors.joinIntoString ("; ") + "\n" + report;
     return "OK\n" + report;
 }
-} // namespace lynx
+} // namespace yw

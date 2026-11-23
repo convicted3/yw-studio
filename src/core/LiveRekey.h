@@ -15,7 +15,7 @@
 
 #include "core/LiveCrypto.h"
 
-namespace lynx::liverekey
+namespace yw::liverekey
 {
 // The next invite: the same relay room, a new secret.
 inline livecrypto::Invite rotated (const livecrypto::Invite& now)
@@ -35,4 +35,4 @@ inline std::string kickBody (int relayPeer, bool ban, const std::string& newRela
     return out + "}";
 }
 
-} // namespace lynx::liverekey
+} // namespace yw::liverekey

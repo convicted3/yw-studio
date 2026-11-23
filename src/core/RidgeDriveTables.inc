@@ -1,5 +1,5 @@
 // round tp172c6: the DRIVE section's models (generated from the tp172c fits: ana/nodefit.py, ana/tonefit.py, ana/cabfit.py, the amps' tone: ana/ampfit.py on the drive-0 sweeps;
-// /mnt/e/lynx-work/tp172c). Per measured position: T (dBFS), p, k, o (dB), a (dB), c2, the bell's and the shelf's gain (dB).
+// /mnt/e/yw-work/tp172c). Per measured position: T (dBFS), p, k, o (dB), a (dB), c2, the bell's and the shelf's gain (dB).
 // Order = enum DriveModel.
 constexpr DriveNode kDrive0[] { // Saturate
     { -4.0f, 1.7f, 0.9906f, 0.9f, 0.0f, 0.0f, 0.0f, 0.0f },

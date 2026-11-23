@@ -39,7 +39,7 @@
 #include "core/SessionOps.h"
 #include "engine/Text.h"
 
-namespace lynx::ProjectFile
+namespace yw::ProjectFile
 {
 namespace
 {
@@ -174,7 +174,7 @@ const char* instrumentId (InstrumentKind k)
         case InstrumentKind::tetra: return "tetra";
         case InstrumentKind::helix: return "helix";
         case InstrumentKind::braid: return "braid"; // round 190ko
-        case InstrumentKind::lynxModel: return "lynxmodel"; // round 190ni
+        case InstrumentKind::ywModel: return "ywmodel"; // round 190ni
     }
     return "synth";
 }
@@ -189,7 +189,7 @@ InstrumentKind instrumentFromId (const juce::String& id)
                     InstrumentKind::fruitkick, InstrumentKind::bassdrum, InstrumentKind::toxic,
                     InstrumentKind::threeosc, InstrumentKind::autogun, InstrumentKind::transistorbass,
                     InstrumentKind::simsynth, InstrumentKind::wasp, InstrumentKind::plucked, InstrumentKind::beepmap, InstrumentKind::sawer, InstrumentKind::flkeys,
-                    InstrumentKind::granulizer, InstrumentKind::drumaxx, InstrumentKind::slayer, InstrumentKind::fruitydance, InstrumentKind::directwave, InstrumentKind::midiOut, InstrumentKind::patcher, InstrumentKind::soundfont, InstrumentKind::layer, InstrumentKind::dashboard, InstrumentKind::voltage, InstrumentKind::vfx, InstrumentKind::videoplayer, InstrumentKind::keplerExo, InstrumentKind::wavetraveller, InstrumentKind::fruityslicer, InstrumentKind::slicex, InstrumentKind::fpc, InstrumentKind::pocketSuperSaw, InstrumentKind::tetra, InstrumentKind::helix, InstrumentKind::braid, InstrumentKind::lynxModel })
+                    InstrumentKind::granulizer, InstrumentKind::drumaxx, InstrumentKind::slayer, InstrumentKind::fruitydance, InstrumentKind::directwave, InstrumentKind::midiOut, InstrumentKind::patcher, InstrumentKind::soundfont, InstrumentKind::layer, InstrumentKind::dashboard, InstrumentKind::voltage, InstrumentKind::vfx, InstrumentKind::videoplayer, InstrumentKind::keplerExo, InstrumentKind::wavetraveller, InstrumentKind::fruityslicer, InstrumentKind::slicex, InstrumentKind::fpc, InstrumentKind::pocketSuperSaw, InstrumentKind::tetra, InstrumentKind::helix, InstrumentKind::braid, InstrumentKind::ywModel })
         if (id == instrumentId (k))
             return k;
 
@@ -315,7 +315,7 @@ const char* effectId (EffectKind k)
         case EffectKind::platter: return "platter"; // round 190kk
         case EffectKind::timeprism: return "timeprism"; // round 190ko
         case EffectKind::harmonia: return "harmonia"; // round 190ko
-        case EffectKind::lynxTune: return "lynxTune";
+        case EffectKind::ywTune: return "ywTune";
         case EffectKind::fruityPhaser: return "fruityPhaser";
         case EffectKind::epochVerb: return "epochVerb";
         case EffectKind::atrium: return "atrium";
@@ -367,7 +367,7 @@ juce::var pluginToVar (const PluginRef& p)
     o->setProperty ("id", str (p.id));
     o->setProperty ("name", str (p.name));
     o->setProperty ("state", str (p.state));
-    // an .flp plugin reference not resolved here (kept by a LYNX substitute): every field, the state byte for byte
+    // an .flp plugin reference not resolved here (kept by a YW substitute): every field, the state byte for byte
     if (p.foreign.format != ForeignPlugin::Format::none)
         o->setProperty ("foreign", str (foreignToText (p.foreign)));
     if (p.fixedBuffers)
@@ -600,7 +600,7 @@ juce::var rackToVar (const RackDoc& r)
         (list == &r.chains ? chains : returns).add (juce::var (v.release()));
     }
     o->setProperty ("chains", chains);
-    if (r.drum) // (round 190ec; a LYNX without Drum Racks reads an Instrument Rack: kind 1, its pads key-split)
+    if (r.drum) // (round 190ec; a YW without Drum Racks reads an Instrument Rack: kind 1, its pads key-split)
     {
         o->setProperty ("drum", true);
         if (! returns.isEmpty())
@@ -1051,7 +1051,7 @@ PatcherDoc patcherFromVar (const juce::var& v, const Song& song)
 
 namespace
 {
-// Round 167a: Fruity Send's "Send to" is normalised over 0..500 inserts since round 166d; older LYNX versions read it
+// Round 167a: Fruity Send's "Send to" is normalised over 0..500 inserts since round 166d; older YW versions read it
 // over 0..127. A file stores every "Send to" value of a slot (its parameter, its A/B other side, the automation clips
 // and event lanes that move it) over 0..127 when all of them target an insert up to 127 — older versions then read the
 // same insert — and over today's span only when one of them needs more. "sendSpan" says which, on the slot and on each
@@ -1251,7 +1251,7 @@ juce::var effectToVar (const EffectSlot& slot)
         e->setProperty ("plugin", pluginToVar (slot.plugin));
     else if (slot.kind == EffectKind::grossBeat && slot.plugin.midiInPort >= 0) // round 190ee: FL's wrapper MIDI port
         e->setProperty ("midiInPort", slot.plugin.midiInPort);
-    else if (slot.isSubstitute()) // a LYNX substitute: the original plugin travels with it, unchanged
+    else if (slot.isSubstitute()) // a YW substitute: the original plugin travels with it, unchanged
         e->setProperty ("substituteFor", pluginToVar (slot.substituteFor));
 
     if (slot.kind == EffectKind::patcher || slot.kind == EffectKind::controlSurface) // (a Control Surface's controls: round 164)
@@ -1397,7 +1397,7 @@ std::optional<EffectKind> effectFromId (const juce::String& id)
                     EffectKind::fruityFastLP, EffectKind::fruityFreeFilter, EffectKind::fruityFilter, EffectKind::hardcore, EffectKind::distructor, EffectKind::multibandDelay,
                     EffectKind::lovePhilter,
                     EffectKind::newtone, EffectKind::newtime, EffectKind::facetEq, EffectKind::apexLimiter,
-                    EffectKind::ridgeStrip, EffectKind::glowLeveler, EffectKind::hushDeEsser, EffectKind::aether, EffectKind::ember, EffectKind::lynxTune, EffectKind::fruityPhaser,
+                    EffectKind::ridgeStrip, EffectKind::glowLeveler, EffectKind::hushDeEsser, EffectKind::aether, EffectKind::ember, EffectKind::ywTune, EffectKind::fruityPhaser,
                     EffectKind::epochVerb, EffectKind::atrium, EffectKind::foilPlate, EffectKind::nebula, EffectKind::halo, EffectKind::horizon,
                     EffectKind::echoform, EffectKind::spiralEcho, EffectKind::orbit, EffectKind::latticeMod,
                     EffectKind::fruitySend,
@@ -1464,7 +1464,7 @@ juce::var uidVar (std::uint64_t uid) { return str (uids::toHex (uid)); }
 std::uint64_t uidFrom (const juce::var& v) { return uids::fromHex (v.toString().toStdString()); }
 
 // A saved automation point's curve mode (round 190bw): the fourth element when present; without it a bent segment
-// comes from a project saved before FL's curve modes and keeps LYNX's older law, a straight one is a Single curve.
+// comes from a project saved before FL's curve modes and keeps YW's older law, a straight one is a Single curve.
 std::uint8_t savedPointMode (const juce::var& pt)
 {
     if (pt.size() >= 4)
@@ -2283,7 +2283,7 @@ juce::var channelToVar (const ChannelDef& c)
             sampler->setProperty ("useLoopPoints", false);
         if (c.sampler.flVelocityLaw)
             sampler->setProperty ("flVelocityLaw", true);
-        if (c.sampler.clipNoteLegacy) // round 190lq: an audio clip channel's notes on LYNX's pre-0.1.30 law
+        if (c.sampler.clipNoteLegacy) // round 190lq: an audio clip channel's notes on YW's pre-0.1.30 law
             sampler->setProperty ("clipNoteLegacy", true);
         if (c.sampler.declickMode != 0)
             sampler->setProperty ("declickMode", c.sampler.declickMode);
@@ -2347,7 +2347,7 @@ juce::var channelToVar (const ChannelDef& c)
         auto f = std::make_unique<juce::DynamicObject>();
         f->setProperty ("stems", standInsToVar (c.freeze.stems));
         f->setProperty ("source", str (c.freeze.source));
-        // a track freeze (round 190ff) goes under a key of its own: a LYNX SHARE from before it would play its stems
+        // a track freeze (round 190ff) goes under a key of its own: a YW Studio from before it would play its stems
         // through the insert's effects a second time; not knowing the key, it plays the channel live instead
         if (c.freeze.insert != 0)
             f->setProperty ("insert", c.freeze.insert);
@@ -2449,7 +2449,7 @@ ChannelDef channelFromVar (const juce::var& c, const Song& song)
         }
     }
     def.icon = juce::jlimit (0, 0xFFFF, (int) c.getProperty ("icon", 0));
-    if (const auto scale = (int) c.getProperty ("editorScale", 0); scale > 0) // (0 / missing = Host, LYNX's default size)
+    if (const auto scale = (int) c.getProperty ("editorScale", 0); scale > 0) // (0 / missing = Host, YW's default size)
         def.editorScale = editorscale::storedFor (scale);
     def.flWrapperFlags = (int) c.getProperty ("flWrapperFlags", -1);
     def.smartDisable = (bool) c.getProperty ("smartDisable", false); // (round 190ok)
@@ -2748,7 +2748,7 @@ ChannelDef channelFromVar (const juce::var& c, const Song& song)
         }
     def.deactivated = (bool) c.getProperty ("deactivated", false); // round 190op (P4)
     // projects saved before round 168l: an FL engine's (or another generator's) Mono / Porta, imported from FL, was
-    // only in the LYNX Synth's settings (the Mono box came from FL's Mono flag or a Max of 1; a Max of 1 is not Mono)
+    // only in the YW Synth's settings (the Mono box came from FL's Mono flag or a Max of 1; a Max of 1 is not Mono)
     if (const auto& misc = c["misc"]; def.instrument != InstrumentKind::synth && ! misc.hasProperty ("mono") && ! misc.hasProperty ("porta"))
     {
         def.misc.mono = def.synth.mono && def.maxPolyphony != 1;
@@ -2803,7 +2803,7 @@ juce::var mixerTrackToVar (const MixerTrack& t)
         if (! t.inputStereo)
             o->setProperty ("inputMono", true);
     }
-    if (monitorKeyWritten (t.monitor)) // (no key = "Auto": LYNX's default before round 190ev)
+    if (monitorKeyWritten (t.monitor)) // (no key = "Auto": YW's default before round 190ev)
         o->setProperty ("monitor", (int) t.monitor);
     if (t.recordSafe)
         o->setProperty ("recordSafe", true);
@@ -2857,7 +2857,7 @@ juce::var mixerTrackToVar (const MixerTrack& t)
             sends.add (juce::Array<juce::var> { send.target, projectNumber (send.level, 10000.0f) });
 
         o->setProperty ("sends", sends);
-        // LYNX's pre-fader sends (round 190aq): their targets, written only when one is used. A version from before
+        // YW's pre-fader sends (round 190aq): their targets, written only when one is used. A version from before
         // ignores the list and plays those sends post-fader (its loader takes "sends" entries of two values only).
         juce::Array<juce::var> pre;
         for (const auto& send : t.sends)
@@ -2990,7 +2990,7 @@ MixerTrack mixerTrackFromVar (const juce::var& t)
 juce::String toJson (const Song& song, bool stampVersion)
 {
     auto root = std::make_unique<juce::DynamicObject>();
-    root->setProperty ("format", "lynx-project");
+    root->setProperty ("format", "yw-project");
     root->setProperty ("version", currentVersion);
     if (stampVersion)
         root->setProperty ("savedBy", JUCE_APPLICATION_VERSION_STRING); // the build that wrote it (round 177d, pain point 37)
@@ -3037,7 +3037,7 @@ juce::String toJson (const Song& song, bool stampVersion)
         root->setProperty ("performanceMode", true);
     if (song.autoCrossfades)
         root->setProperty ("autoCrossfades", true);
-    if (song.linkTracksToMixer) // round 190gz (issue #170): LYNX's "Link Playlist tracks to mixer tracks"
+    if (song.linkTracksToMixer) // round 190gz (issue #170): YW's "Link Playlist tracks to mixer tracks"
         root->setProperty ("linkTracksToMixer", true);
     if (! song.tracker.isDefault()) // round 190nw: the tracker editor's view settings (only when changed)
     {
@@ -3079,14 +3079,14 @@ juce::String toJson (const Song& song, bool stampVersion)
         root->setProperty ("fastDeclick", true);
     if (song.panTriangular)
         root->setProperty ("panLaw", "triangular");
-    if (song.flPluginLevels) // (round 190ad: absent = LYNX's own law, as every project saved before)
+    if (song.flPluginLevels) // (round 190ad: absent = YW's own law, as every project saved before)
         root->setProperty ("pluginLevels", "fl");
     // FL's mixer › Plugin delay compensation, Time settings, Piano Roll scale highlighting, data folder (round 168j)
     if (! song.autoPdc)
         root->setProperty ("autoPdc", false);
     if (! song.compensateAutomations)
         root->setProperty ("compensateAutomations", false);
-    if (song.compensateMixerLevels) // round 190hq: LYNX's fader / route automation compensation (absent = before 190hq: off)
+    if (song.compensateMixerLevels) // round 190hq: YW's fader / route automation compensation (absent = before 190hq: off)
         root->setProperty ("mixerLevelPdc190hq", true);
     if (song.timeSignatureMode)
         root->setProperty ("timeSettings", "signature");
@@ -3155,7 +3155,7 @@ juce::String toJson (const Song& song, bool stampVersion)
         // the Channel Rack's looping (round 165f-rack): on, type, and the loop points [channel, setting]
         if (p.loopOn)
             o->setProperty ("loopOn", true);
-        if (p.trackClip) // round 190ne: a track clip (core/TrackClips.h); an older LYNX lists it as an ordinary pattern
+        if (p.trackClip) // round 190ne: a track clip (core/TrackClips.h); an older YW lists it as an ordinary pattern
             o->setProperty ("trackClip", true);
         if (! p.loopStarterGenre.empty()) // FL's Loop Starter genre (round 168b)
             o->setProperty ("loopStarterGenre", str (p.loopStarterGenre));
@@ -3261,7 +3261,7 @@ juce::String toJson (const Song& song, bool stampVersion)
             o->setProperty ("heldNotes", held);
 
         // round 190ow (DE-123): FL's steps / notes of the automation clip rows, [start, length, automation, key, velocity
-        // (, muted)]; absent = none, as older files (an older LYNX does not read the key)
+        // (, muted)]; absent = none, as older files (an older YW does not read the key)
         if (! p.autoNotes.empty())
         {
             juce::Array<juce::var> autoNotes;
@@ -3309,7 +3309,7 @@ juce::String toJson (const Song& song, bool stampVersion)
         o->setProperty ("target", juce::Array<juce::var> { targetKindName (a.target.kind), a.target.index, a.target.slot, a.target.param });
         juce::Array<juce::var> points;
 
-        // [tick, value, tension] is a straight segment or an older project's bend (LYNX's own law); a fourth element is
+        // [tick, value, tension] is a straight segment or an older project's bend (YW's own law); a fourth element is
         // FL's curve mode of the segment (round 190bw), with the tension then kept whole for the .flp round trip
         for (const auto& pt : a.points)
         {
@@ -3395,7 +3395,7 @@ juce::String toJson (const Song& song, bool stampVersion)
     if (! automations.isEmpty())
         root->setProperty ("automations", automations);
 
-    // round 177b: LYNX's modulators. Round 190ox (stage 2): the LFOs stay in "modulators" as before; the other kinds go
+    // round 177b: YW's modulators. Round 190ox (stage 2): the LFOs stay in "modulators" as before; the other kinds go
     // in "modulators190ox", which older releases do not read (they would play them as LFOs), each with "at", its place
     // in the list (then the LFOs carry theirs too). A hosted plugin route adds its base as a sixth value.
     if (! song.modulators.empty())
@@ -3773,7 +3773,7 @@ juce::String toJson (const Song& song, bool stampVersion)
             root->setProperty ("playlistTrackGroups", groups);
 
         // round 190jf (B17): nested folders, [index, nest] for the grouped tracks deeper than one level. Kept apart from
-        // the rows above so a LYNX before 0.1.30 still reads the groups (one level deep)
+        // the rows above so a YW before 0.1.30 still reads the groups (one level deep)
         juce::Array<juce::var> nests;
         for (std::size_t i = 0; i < song.playlistTracks.size(); ++i)
             if (song.playlistTracks[i].grouped && song.playlistTracks[i].nest > 0)
@@ -3883,7 +3883,7 @@ juce::String toJson (const Song& song, bool stampVersion)
 
         // track versions (round 190pe, P20; core/TrackVersions.h): per track with versions {track, active, arrangement,
         // versions: [{name, clips, lanes [[automation, height]...], chain [effects]}]}; the active one holds only its name
-        // (its content is the track's). A project without any has no such property; older LYNX skips it (the track then
+        // (its content is the track's). A project without any has no such property; older YW skips it (the track then
         // keeps its active version)
         juce::Array<juce::var> versionRows;
         for (std::size_t i = 0; i < song.playlistTracks.size(); ++i)
@@ -3963,7 +3963,7 @@ juce::String toJson (const Song& song, bool stampVersion)
                 o->setProperty ("markers", markers);
             }
 
-            // round 190ol: the Sections lane, [start, length, name, colour, uid] (colour 0 = automatic); older LYNX skips it
+            // round 190ol: the Sections lane, [start, length, name, colour, uid] (colour 0 = automatic); older YW skips it
             if (! a.sections.empty())
             {
                 juce::Array<juce::var> list;
@@ -3974,7 +3974,7 @@ juce::String toJson (const Song& song, bool stampVersion)
             }
 
             // round 190pf: the Chord lane, [start, length, root, quality, [extensions], bass, uid] (bass -1 = the root);
-            // older LYNX skips it
+            // older YW skips it
             if (! a.chords.empty())
             {
                 juce::Array<juce::var> list;
@@ -4002,7 +4002,7 @@ juce::String toJson (const Song& song, bool stampVersion)
 
     root->setProperty ("mixer", mixer);
     if (! exactNumbers)
-        storeSendSpans (song, *root); // round 167a: "Send to" over 0..127 when it fits (older LYNX versions)
+        storeSendSpans (song, *root); // round 167a: "Send to" over 0..127 when it fits (older YW versions)
     root->setProperty ("mode", song.mode == PlayMode::song ? "song" : "pattern");
 
     if (song.hasLoop())
@@ -4098,8 +4098,8 @@ std::optional<Song> fromJsonImpl (const juce::String& json, juce::String& error,
     if (layout != nullptr) // round 190mr (DF-141)
         *layout = windowLayoutOf (root);
 
-    // "daw-project" = projects saved before the project was named LYNX
-    if (root["format"].toString() != "lynx-project" && root["format"].toString() != "daw-project")
+    // "daw-project" = projects saved before the project was named YW
+    if (root["format"].toString() != "yw-project" && root["format"].toString() != "daw-project")
     {
         error = utf8 ("not a project from this DAW");
         return std::nullopt;
@@ -4169,10 +4169,10 @@ std::optional<Song> fromJsonImpl (const juce::String& json, juce::String& error,
     song.slideNoteProps = (bool) root.getProperty ("slideNoteProps", false);   // (issue #236; older projects: off)
     song.exportMarkers = (bool) root.getProperty ("exportMarkers", false); // (round 190pr; older projects: off)
     song.patternClipTakeover = (bool) root.getProperty ("patternClipTakeover", false); // (issue #158; older projects: off)
-    song.mutedInsertsSkip = (bool) root.getProperty ("mutedInsertsSkip", false); // (LYNX option, round 190y)
+    song.mutedInsertsSkip = (bool) root.getProperty ("mutedInsertsSkip", false); // (YW option, round 190y)
     song.fastDeclick = (bool) root.getProperty ("fastDeclick", false);
     song.panTriangular = root.getProperty ("panLaw", "circular").toString() == "triangular";
-    song.flPluginLevels = root.getProperty ("pluginLevels", "lynx").toString() == "fl";
+    song.flPluginLevels = root.getProperty ("pluginLevels", "yw").toString() == "fl";
     song.autoPdc = (bool) root.getProperty ("autoPdc", true);
     song.compensateAutomations = (bool) root.getProperty ("compensateAutomations", true);
     song.compensateMixerLevels = root.hasProperty ("mixerLevelPdc190hq"); // (round 190hq; a project from before: off, as it played)
@@ -4750,7 +4750,7 @@ std::optional<Song> fromJsonImpl (const juce::String& json, juce::String& error,
                 song.playlistTracks[index] = { t[1].toString().toStdString(), (bool) t[2] };
             }
 
-    // round 190gw: FL's 48 px default row for new projects; a project saved before has no key and keeps LYNX's old 38
+    // round 190gw: FL's 48 px default row for new projects; a project saved before has no key and keeps YW's old 38
     song.playlistRowHeight = juce::jlimit (polish::minTrackHeight, polish::maxTrackHeight,
                                            (int) root.getProperty ("playlistRowHeight", Song::legacyRowHeight));
     if (auto* heights = root["playlistTrackHeights"].getArray())
@@ -4816,7 +4816,7 @@ std::optional<Song> fromJsonImpl (const juce::String& json, juce::String& error,
 
     song.soundfontModBaseReal = root.hasProperty ("sfModBase190he"); // (round 190he; a project from before: 0.5, as then)
     {
-        // round 177b: LYNX's modulators; round 190ox: the other kinds from "modulators190ox", each at its place ("at")
+        // round 177b: YW's modulators; round 190ox: the other kinds from "modulators190ox", each at its place ("at")
         std::vector<std::pair<int, Modulator>> read;
         const auto targetOf = [] (const juce::var& t) {
             AutomationTarget out;
@@ -5208,7 +5208,7 @@ std::optional<Song> fromJsonImpl (const juce::String& json, juce::String& error,
             w.warpLaw = WarpModeSettings::warpLawClassic;
         }
     // Round 190lq (issue #204): a project saved before FL's law for the notes of an audio clip channel (no
-    // "clipNotes190lq" mark) keeps LYNX's earlier one on its audio clip channels: each note cut at its end, every key at
+    // "clipNotes190lq" mark) keeps YW's earlier one on its audio clip channels: each note cut at its end, every key at
     // the clip's own pitch (core/Song.h SamplerSettings::clipNoteLegacy)
     if (! (bool) root.getProperty ("clipNotes190lq", false))
         for (auto& c : song.channels)
@@ -5314,7 +5314,7 @@ juce::String mixerTrackStateToJson (const MixerTrack& track)
     state.muted = state.solo = false;
     state.standIns.clear(); // (renders of this project's parts)
     auto root = std::make_unique<juce::DynamicObject>();
-    root->setProperty ("format", "lynx-mixer-track");
+    root->setProperty ("format", "yw-mixer-track");
     root->setProperty ("version", 1);
     root->setProperty ("track", mixerTrackToVar (state));
     return juce::JSON::toString (juce::var (root.release()));
@@ -5323,7 +5323,7 @@ juce::String mixerTrackStateToJson (const MixerTrack& track)
 std::optional<MixerTrack> mixerTrackStateFromJson (const juce::String& json, juce::String& error)
 {
     const auto root = juce::JSON::parse (json);
-    if (root["format"].toString() != "lynx-mixer-track" || ! root["track"].isObject())
+    if (root["format"].toString() != "yw-mixer-track" || ! root["track"].isObject())
     {
         error = utf8 ("not a YW Studio mixer track state");
         return std::nullopt;
@@ -5351,12 +5351,12 @@ void applyMixerTrackState (MixerTrack& target, const MixerTrack& state, bool tak
     target.smartControls = state.smartControls; // (round 190ke)
 }
 
-// Round 190jf (B22): one channel / effect slot as the project stores it, for a LYNX device inside a DAWproject file
-// (core/DawProject.h's nativeInstrumentState / nativeEffectState): LYNX → DAWproject → LYNX keeps every field
+// Round 190jf (B22): one channel / effect slot as the project stores it, for a YW device inside a DAWproject file
+// (core/DawProject.h's nativeInstrumentState / nativeEffectState): YW → DAWproject → YW keeps every field
 std::vector<std::uint8_t> channelStateBytes (const ChannelDef& channel)
 {
     auto* root = new juce::DynamicObject();
-    root->setProperty ("format", "lynx-channel");
+    root->setProperty ("format", "yw-channel");
     root->setProperty ("channel", channelToVar (channel));
     const auto json = juce::JSON::toString (juce::var (root), true).toStdString();
     return std::vector<std::uint8_t> (json.begin(), json.end());
@@ -5365,7 +5365,7 @@ std::vector<std::uint8_t> channelStateBytes (const ChannelDef& channel)
 std::optional<ChannelDef> channelFromStateBytes (const std::vector<std::uint8_t>& bytes)
 {
     const auto root = juce::JSON::parse (juce::String::fromUTF8 ((const char*) bytes.data(), (int) bytes.size()));
-    if (root["format"].toString() != "lynx-channel" || ! root["channel"].isObject())
+    if (root["format"].toString() != "yw-channel" || ! root["channel"].isObject())
         return std::nullopt;
     return channelFromVar (root["channel"], Song {});
 }
@@ -5373,7 +5373,7 @@ std::optional<ChannelDef> channelFromStateBytes (const std::vector<std::uint8_t>
 std::vector<std::uint8_t> effectStateBytes (const EffectSlot& slot)
 {
     auto* root = new juce::DynamicObject();
-    root->setProperty ("format", "lynx-effect");
+    root->setProperty ("format", "yw-effect");
     root->setProperty ("effect", effectToVar (slot));
     const auto json = juce::JSON::toString (juce::var (root), true).toStdString();
     return std::vector<std::uint8_t> (json.begin(), json.end());
@@ -5382,8 +5382,8 @@ std::vector<std::uint8_t> effectStateBytes (const EffectSlot& slot)
 std::optional<EffectSlot> effectFromStateBytes (const std::vector<std::uint8_t>& bytes)
 {
     const auto root = juce::JSON::parse (juce::String::fromUTF8 ((const char*) bytes.data(), (int) bytes.size()));
-    if (root["format"].toString() != "lynx-effect" || ! root["effect"].isObject())
+    if (root["format"].toString() != "yw-effect" || ! root["effect"].isObject())
         return std::nullopt;
     return effectFromVar (root["effect"]);
 }
-} // namespace lynx::ProjectFile
+} // namespace yw::ProjectFile

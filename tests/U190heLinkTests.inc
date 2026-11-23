@@ -1,6 +1,6 @@
 // Round 190he, issue #152 (Nuelka, 0.1.27, item 2): "a MIDI link on FL-engine plugins changes the sound but the knob
-// doesn't move; LYNX SHARE's own plugins can't be linked". LYNX Synth's knobs are automation targets now
-// (core/SynthParams.h: right-click = FL's parameter menu, MIDI links, automation clips); LYNX Soundfont's knobs take a
+// doesn't move; YW Studio's own plugins can't be linked". YW Synth's knobs are automation targets now
+// (core/SynthParams.h: right-click = FL's parameter menu, MIDI links, automation clips); YW Soundfont's knobs take a
 // linked controller (Song::setTargetValue had no case for them, so a link moved nothing). The FL engines' knobs follow
 // the channel's state and their automation in ui/ChannelSettings.cpp (ModelPanel); here the state side they read.
 #include "core/SynthParams.h"
@@ -15,7 +15,7 @@
 
 TEST (u190he_link_synth_param_table_follows_the_knobs)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (synthparam::count == 30);
     for (int k = 0; k < synthparam::count; ++k)
     {
@@ -41,7 +41,7 @@ TEST (u190he_link_synth_param_table_follows_the_knobs)
     CHECK (synthparam::toNatural (synthparam::oscParam (0, synthparam::octave), 0.6f) == 1.0f); // (-3 + 3.6 = 0.6 -> 1)
     CHECK (synthparam::toNatural (synthparam::oscParam (2, synthparam::semitones), 1.0f) == 11.0f);
     CHECK (synthparam::oscOf (synthparam::oscParam (2, synthparam::pan)) == 3 && synthparam::oscOf (synthparam::cutoff) == 0);
-    // the numbers sit apart from an FL plugin's (an FL 3x Osc converted to LYNX Synth keeps its automation dead), the
+    // the numbers sit apart from an FL plugin's (an FL 3x Osc converted to YW Synth keeps its automation dead), the
     // MIDI controls (0x1000…) and the other engines' bases
     CHECK (! synthparam::valid (5) && ! synthparam::valid (midictl::ccBase + 1) && ! synthparam::valid (midictl::pitchBendBase));
     CHECK (! synthparam::valid (synthparam::base - 1) && ! synthparam::valid (synthparam::base + synthparam::count));
@@ -49,7 +49,7 @@ TEST (u190he_link_synth_param_table_follows_the_knobs)
 
 TEST (u190he_link_synth_targets_read_and_write_the_song)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels[0].instrument = InstrumentKind::synth;
     const AutomationTarget cutoff { AutomationTargetKind::channelParam, 0, 0, synthparam::target (synthparam::cutoff) };
@@ -71,7 +71,7 @@ TEST (u190he_link_synth_targets_read_and_write_the_song)
     song.channels[0].instrument = InstrumentKind::sampler;
     CHECK (! song.setTargetValue (cutoff, 0.2f) || song.channels[0].synth == before);
     song.channels[0].instrument = InstrumentKind::synth;
-    // a modulator may drive them (LYNX's own controls)
+    // a modulator may drive them (YW's own controls)
     CHECK (Modulator::canModulate (song, cutoff));
     // Last tweaked: the page's units
     CHECK (lasttweak::valueText (song, cutoff, 0.5f) == "1.0 kHz");
@@ -81,8 +81,8 @@ TEST (u190he_link_synth_targets_read_and_write_the_song)
 
 TEST (u190he_link_a_midi_link_moves_the_synth_and_its_sound)
 {
-    using namespace lynx;
-    // the engine's link path for LYNX's own controls (AudioEngine::applyMidiLinks -> applyTargetValues): the
+    using namespace yw;
+    // the engine's link path for YW's own controls (AudioEngine::applyMidiLinks -> applyTargetValues): the
     // controller's position through the link's mode and formula, then Song::setTargetValue; the instrument takes the
     // Song's settings (configure) as for a knob turned by hand
     auto song = Song::makeDefault();
@@ -121,7 +121,7 @@ TEST (u190he_link_a_midi_link_moves_the_synth_and_its_sound)
 
 TEST (u190he_link_synth_automation_plays_and_a_hand_move_takes_over)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     c.instrument = InstrumentKind::synth;
     c.synth.osc[0] = { Waveform::saw, 0, 0.0f, 1.0f };
@@ -185,7 +185,7 @@ TEST (u190he_link_synth_automation_plays_and_a_hand_move_takes_over)
 
 TEST (u190he_link_soundfont_knobs_take_a_linked_controller)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels[0] = sf::makeChannel();
     const AutomationTarget attack { AutomationTargetKind::channelParam, 0, 0, sf::pAttack };
@@ -208,7 +208,7 @@ TEST (u190he_link_soundfont_knobs_take_a_linked_controller)
 
 TEST (u190he_link_fl_engine_knob_reads_what_a_link_wrote)
 {
-    using namespace lynx;
+    using namespace yw;
     // the FL engines' page (ModelPanel) shows modelparams::rawValue of the channel's state; a linked controller writes
     // it through Song::setTargetValue -> modelparams::setValue01, and the page now reads it again on the engine's change
     // message (it read the state only when it opened: the sound changed, the knob did not)
@@ -229,12 +229,12 @@ TEST (u190he_link_fl_engine_knob_reads_what_a_link_wrote)
     CHECK (std::abs (p->normalised (p->raw (0.3f)) - 0.3f) < 1.0e-5f);
 }
 
-// Coordinator's gate (owner rule: saved projects keep sounding the same). A LYNX Modulation route on a Soundfont knob
+// Coordinator's gate (owner rule: saved projects keep sounding the same). A YW Modulation route on a Soundfont knob
 // centred on 0.5 before round 190he (Song::targetValue had no Soundfont case); a project saved before keeps that start,
 // new songs centre on the knob's real position. RackState binds the centre (ModPlay::base) once per build.
 TEST (u190he_link_soundfont_modulation_of_old_projects_keeps_the_old_centre)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     CHECK (song.soundfontModBaseReal); // a new song
     song.channels[0] = sf::makeChannel();

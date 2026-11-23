@@ -61,23 +61,23 @@ def svg(tile):
 
 
 def main():
-    save(icon(1024), "resources", "lynx_badge.png")
-    save(icon(256), "resources", "lynx_icon_256.png")
-    save(mark(1024), "resources", "lynx_logo.png")
-    save(icon(1024, 0.78), "resources", "brand", "lynx-share-logo-small.png")
-    save(icon(1024, 0.78), "resources", "brand", "lynx-share-logo-tiny.png")
-    save(mark(1024, 0.92), "resources", "brand", "lynx-share-mark-small.png")
+    save(icon(1024), "resources", "yw_badge.png")
+    save(icon(256), "resources", "yw_icon_256.png")
+    save(mark(1024), "resources", "yw_logo.png")
+    save(icon(1024, 0.78), "resources", "brand", "yw-studio-logo-small.png")
+    save(icon(1024, 0.78), "resources", "brand", "yw-studio-logo-tiny.png")
+    save(mark(1024, 0.92), "resources", "brand", "yw-studio-mark-small.png")
     save(icon(512), "docs", "img", "logo.png")
-    save(placed(1024, 824 / 1024), "resources", "macos", "lynx-icon-1024.png")
-    save(placed(256, 824 / 1024), "resources", "macos", "lynx-icon-256.png")
+    save(placed(1024, 824 / 1024), "resources", "macos", "yw-icon-1024.png")
+    save(placed(256, 824 / 1024), "resources", "macos", "yw-icon-256.png")
     sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
     ico = [icon(s) for s in sizes]
-    for name in ("LYNX.ico", "LYNX_doc.ico"):
+    for name in ("YW.ico", "YW_doc.ico"):
         ico[-1].save(os.path.join(ROOT, "resources", name), format="ICO", sizes=[(s, s) for s in sizes], append_images=ico[:-1])
         print("  resources/" + name)
     for s in (16, 22, 24, 32, 48, 64, 128, 256, 512):
-        save(icon(s), "resources", "linux", "icons", "hicolor", "%dx%d" % (s, s), "apps", "lynx.png")
-    for name, tile in (("lynx-share-logo.svg", True), ("lynx-share-logo-small.svg", True), ("lynx-share-mark.svg", False)):
+        save(icon(s), "resources", "linux", "icons", "hicolor", "%dx%d" % (s, s), "apps", "yw.png")
+    for name, tile in (("yw-studio-logo.svg", True), ("yw-studio-logo-small.svg", True), ("yw-studio-mark.svg", False)):
         with open(os.path.join(ROOT, "resources", "brand", name), "w") as f:
             f.write(svg(tile))
         print("  resources/brand/" + name)

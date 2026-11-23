@@ -6,7 +6,7 @@
     bool runIssuesShot190oq (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -47,7 +47,7 @@
                 }
             return false;
         };
-        using namespace lynx;
+        using namespace yw;
 
         // ================= #244: the search windows open with the caret in their search box =================
         {
@@ -230,7 +230,7 @@
             }
         }
 
-        // ================= #252: the start page (LYNX extra) =================
+        // ================= #252: the start page (YW extra) =================
         {
             check ("#252 on by default (owner decision: FL shows its Welcome window at every start)", startpage::enabled());
             startpageui::Host host;
@@ -241,7 +241,7 @@
                                       "/home/me/Music/YW Studio/Beats", "/media/usb/Old projects", "/home/me/Music/YW Studio/House", "/home/me/Music/YW Studio/Beats" };
             const int ages[] = { 0, 1, 2, 5, 40, 12, 90 };
             for (int i = 0; i < 7; ++i)
-                host.recent.push_back ({ std::string (folders[i]) + "/" + names[i] + ".lynx", names[i], folders[i], host.nowMs - ages[i] * day - (i + 1) * 3700000LL, i != 4,
+                host.recent.push_back ({ std::string (folders[i]) + "/" + names[i] + ".yw", names[i], folders[i], host.nowMs - ages[i] * day - (i + 1) * 3700000LL, i != 4,
                                          (std::int64_t) (60 + 37 * i) * 1024 });
             for (const auto& e : startfrom::entries())
                 host.templates.push_back (e.name);
@@ -259,7 +259,7 @@
             check ("#252 typing filters (name and folder)", startpageui::shownRowsForSnapshot (*card) == 3);
             write (*card, card->getLocalBounds(), "252-start-page-search");
             startpageui::selectRowForSnapshot (*card, 1);
-            check ("#252 Enter opens the selected project", startpageui::openSelectedForSnapshot (*card) && opened.endsWith ("Lo-fi Sunday.lynx"));
+            check ("#252 Enter opens the selected project", startpageui::openSelectedForSnapshot (*card) && opened.endsWith ("Lo-fi Sunday.yw"));
             {
                 bool other = false;
                 auto withOther = host;
@@ -406,7 +406,7 @@
             workflowextras::setExtra ("layout.trackOnly", was);
         }
 
-        // ================= #249: FL's Alt+M only mutes; the LYNX extra makes it toggle =================
+        // ================= #249: FL's Alt+M only mutes; the YW extra makes it toggle =================
         {
             Song song = Song::makeDefault();
             for (int i = 0; i < 3; ++i)
@@ -448,7 +448,7 @@
 
         // ================= #251: FL's zipped loop package, Project data files, Live's Collect All =================
         {
-            const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-190oq-251");
+            const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-190oq-251");
             dir.deleteRecursively();
             const auto lib = dir.getChildFile ("Library");
             lib.createDirectory();
@@ -493,7 +493,7 @@
             }
             line ("#251 zip entries: " + names.joinIntoString (", "));
             check ("#251 Zipped loop package (FL): the project named after the zip, its files beside it, flat",
-                   zipped && r.files == 3 && names.contains ("Beat Package.lynx") && names.contains ("Kick.wav") && names.contains ("Kick_2.wav")
+                   zipped && r.files == 3 && names.contains ("Beat Package.yw") && names.contains ("Kick.wav") && names.contains ("Kick_2.wav")
                        && names.contains ("Take 1.wav"));
             const auto unpacked = ProjectPackage::extractZip (zip, dir.getChildFile ("Unpacked"), error);
             const auto reopened = unpacked.existsAsFile() ? ProjectFile::load (unpacked, error) : std::nullopt;
@@ -508,7 +508,7 @@
             const auto copied = ProjectPackage::copyDataFiles (song, dataDir, r, error);
             check ("#251 Project data files (FL): every file copied flat, nothing re-pointed, no project file",
                    copied && r.files == 3 && dataDir.getChildFile ("Kick.wav").existsAsFile() && dataDir.getChildFile ("Kick_2.wav").existsAsFile()
-                       && song.channels.back().samplePath == before.channels.back().samplePath && song.channels.size() == before.channels.size() && dataDir.findChildFiles (juce::File::findFiles, false, "*.lynx").isEmpty());
+                       && song.channels.back().samplePath == before.channels.back().samplePath && song.channels.size() == before.channels.size() && dataDir.findChildFiles (juce::File::findFiles, false, "*.yw").isEmpty());
             // Collect all and save (Live): the files outside the project folder go to Samples/Imported, the recording stays
             std::map<std::string, std::string> relink;
             const auto collected = ProjectPackage::collectIntoProject (song, projectDir, relink, r, error);

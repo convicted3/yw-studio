@@ -5,7 +5,7 @@
 
 TEST (gesture_zones_follow_item_width)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     // a wide note: 6 px edge zones, the body in between
     CHECK (zoneAt (99.0, 100.0, 200.0) == Zone::outside);
     CHECK (zoneAt (100.0, 100.0, 200.0) == Zone::leftEdge);
@@ -29,8 +29,8 @@ TEST (gesture_zones_follow_item_width)
 
 TEST (gesture_left_press_actions)
 {
-    using namespace lynx::gesture;
-    using lynx::EditTool;
+    using namespace yw::gesture;
+    using yw::EditTool;
     const Mods none, shift { true, false, false }, ctrl { false, true, false }, alt { false, false, true }, altShift { true, false, true };
 
     // Pencil: draws on empty space, moves bodies, resizes edges, Shift copies, Alt is only "no snap"
@@ -72,8 +72,8 @@ TEST (gesture_left_press_actions)
 
 TEST (gesture_cursors)
 {
-    using namespace lynx::gesture;
-    using lynx::EditTool;
+    using namespace yw::gesture;
+    using yw::EditTool;
     CHECK (cursorFor (Action::create, EditTool::pencil) == Cursor::draw);
     CHECK (cursorFor (Action::paint, EditTool::brush) == Cursor::paint);
     CHECK (cursorFor (Action::move, EditTool::pencil) == Cursor::move);
@@ -93,7 +93,7 @@ TEST (gesture_cursors)
 
 TEST (gesture_view_maths)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     // zooming keeps the tick under the mouse in place
     const auto scroll = 960.0, ppt = 0.25, anchor = 300.0;
     const auto tickUnderMouse = scroll + anchor / ppt;
@@ -129,7 +129,7 @@ TEST (gesture_view_maths)
 
 TEST (gesture_lane_values)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     CHECK (lineValue (0.0, 0.2, 100.0, 0.8, 0.0) == 0.2);
     CHECK (std::abs (lineValue (0.0, 0.2, 100.0, 0.8, 50.0) - 0.5) < 1e-12);
     CHECK (lineValue (100.0, 0.8, 0.0, 0.2, 100.0) == 0.8); // drawn right to left

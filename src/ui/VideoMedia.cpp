@@ -11,7 +11,7 @@
 #include "ui/I18n.h"
 #include "ui/VisualEditors.h"
 
-namespace lynx::media
+namespace yw::media
 {
 namespace
 {
@@ -736,4 +736,4 @@ std::unique_ptr<Reader> openNative (const juce::File&) { return nullptr; }
 std::shared_ptr<const video::AudioTrack> decodeNativeAudio (const juce::File&, double) { return nullptr; }
 juce::String nativeBackendName() { return {}; }
 #endif
-} // namespace lynx::media
+} // namespace yw::media

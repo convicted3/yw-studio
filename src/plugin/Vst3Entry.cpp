@@ -1,9 +1,9 @@
-// One VST3 plugin: JUCE's wrapper around the catalog entry LYNX_EXPORT_INDEX (compiled once per plugin, round 180b)
+// One VST3 plugin: JUCE's wrapper around the catalog entry YW_EXPORT_INDEX (compiled once per plugin, round 180b)
 
-// No LYNX or JUCE header before JUCE's wrapper below: it has to include juce_gui_basics itself (with the X11 headers on Linux)
+// No YW or JUCE header before JUCE's wrapper below: it has to include juce_gui_basics itself (with the X11 headers on Linux)
 
-#ifndef LYNX_EXPORT_INDEX
- #error "LYNX_EXPORT_INDEX: the plugin's index in plugin/ExportCatalog.h"
+#ifndef YW_EXPORT_INDEX
+ #error "YW_EXPORT_INDEX: the plugin's index in plugin/ExportCatalog.h"
 #endif
 
 #undef JUCE_STANDALONE_APPLICATION
@@ -28,21 +28,21 @@
 #define JucePlugin_IsMidiEffect 0
 #define JucePlugin_VSTNumMidiInputs 16
 #define JucePlugin_VSTNumMidiOutputs 16
-#define JucePlugin_AAXIdentifier com.ka1-s.lynx
-#define JucePlugin_CFBundleIdentifier com.ka1-s.lynx
+#define JucePlugin_AAXIdentifier su.yolo.yw
+#define JucePlugin_CFBundleIdentifier su.yolo.yw
 #define JucePlugin_Vst3ComponentFlags 0
 #define JucePlugin_VersionCode 0x00000100
 #define JucePlugin_Version 0.1.0
-#define JucePlugin_VersionString LYNX_EXPORT_VERSION
+#define JucePlugin_VersionString YW_EXPORT_VERSION
 // (identity: the build passes it from plugin/plugins.def)
 #define JucePlugin_VSTUniqueID JucePlugin_PluginCode
 #define JucePlugin_WantsMidiInput JucePlugin_IsSynth
 
 #include <juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp>
 
-namespace lynx::plugexport { juce::AudioProcessor* makeProcessorAt (int catalogIndex); } // plugin/ExportProcessor.h
+namespace yw::plugexport { juce::AudioProcessor* makeProcessorAt (int catalogIndex); } // plugin/ExportProcessor.h
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return lynx::plugexport::makeProcessorAt (LYNX_EXPORT_INDEX);
+    return yw::plugexport::makeProcessorAt (YW_EXPORT_INDEX);
 }

@@ -3,12 +3,12 @@
 #include <string_view>
 
 // FL's "Countdown before recording" (Ctrl+P, the toolbar's PrecountBtn, Options › Recording precount) and its
-// right-click "Precount duration" (PrecountPopup: 1 bar / 2 bars, radio items; LYNX also offers 4). The switch and the
+// right-click "Precount duration" (PrecountPopup: 1 bar / 2 bars, radio items; YW also offers 4). The switch and the
 // length are two settings: turning the countdown off keeps its length, and both are kept between sessions. FL stores
 // them in its settings (HKCU\Software\Image-Line\FL Studio 26\General\ToolbarForm "PrecountBtn" = on/off and
-// General "Precount time" = the length, read 2026-11-12; DFM TFruityLoopsMainForm PrecountPopup). Issue #152: LYNX
+// General "Precount time" = the length, read 2026-11-12; DFM TFruityLoopsMainForm PrecountPopup). Issue #152: YW
 // saved neither, and Ctrl+P / the button turned a 2- or 4-bar count-in into 1 bar.
-namespace lynx::countin
+namespace yw::countin
 {
 constexpr int maxBars = 4;
 
@@ -21,8 +21,8 @@ inline int toggled (int bars, int length) noexcept { return bars > 0 ? 0 : clamp
 inline int lengthFor (int bars, int length) noexcept { return clampLength (bars > 0 ? bars : length); }
 
 // What the count-in starts as before the settings are read: a new install as FL's factory form does (the action
-// OptionsRecordingPrecountAction is "Checked" in FL's DFM, REA_rodada177c; 1 bar). A settings file from an older LYNX,
-// which never saved the count-in, keeps LYNX's old start (off) until the user sets it.
+// OptionsRecordingPrecountAction is "Checked" in FL's DFM, REA_rodada177c; 1 bar). A settings file from an older YW,
+// which never saved the count-in, keeps YW's old start (off) until the user sets it.
 constexpr int startingBars (bool settingsFileExists) noexcept { return settingsFileExists ? 0 : 1; }
 
 // The settings file's two keys (MainComponent's ui settings): "recordCountIn" = 0/1, "recordCountInBars" = the
@@ -80,4 +80,4 @@ inline LivePosition livePosition (double ticksLeft, int beatsPerBar, int beatUni
     p.sixteenth = (int) ((into - (double) (p.beat - 1) * beat) / ((double) ppqn / 4.0)) + 1;
     return p;
 }
-} // namespace lynx::countin
+} // namespace yw::countin

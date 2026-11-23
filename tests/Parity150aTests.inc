@@ -1,13 +1,13 @@
 // --- Round 150a: Echoform's voicings in EchoBoy's stereo modes, the L/R offset, the measured wobble shapes -----------
-// The reference numbers below were measured black-box on the official EchoBoy trial (D:\lynx-work\parity150\a,
+// The reference numbers below were measured black-box on the official EchoBoy trial (D:\yw-work\parity150\a,
 // docs/analise/REA_rodada150a.md).
 
 namespace p150a
 {
 // an impulse (left, right amplitudes) through Echoform at 48 kHz; returns the wet left / right
-inline void impulse (lynx::EffectParams p, std::vector<float>& l, std::vector<float>& r, float al, float ar, double seconds = 1.5)
+inline void impulse (yw::EffectParams p, std::vector<float>& l, std::vector<float>& r, float al, float ar, double seconds = 1.5)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::echoform);
+    auto fx = yw::makeEffect (yw::EffectKind::echoform);
     fx->prepare (48000.0);
     l.assign ((std::size_t) (48000.0 * seconds), 0.0f);
     r = l;
@@ -35,9 +35,9 @@ inline std::vector<std::pair<double, float>> peaks (const std::vector<float>& x,
     return out;
 }
 
-inline lynx::EffectParams voiced (int echoBoyStyle, lynx::echosuite::echoform::Style style, float feedback01)
+inline yw::EffectParams voiced (int echoBoyStyle, yw::echosuite::echoform::Style style, float feedback01)
 {
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     auto p = p135w::cleanEcho (250.0, feedback01);
     p[e::voicing] = e::voicingValue (e::voicingForEchoBoyStyle (echoBoyStyle));
     p[e::drive] = 0.0f;
@@ -49,7 +49,7 @@ inline lynx::EffectParams voiced (int echoBoyStyle, lynx::echosuite::echoform::S
 
 TEST (echoform_voicing_stereo_params_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     CHECK ((int) effectInfo (EffectKind::echoform).params.size() == e::paramCount);
     CHECK (e::voicingStereo == e::multiply + 1 && e::lrOffset + 1 == e::engineLaw); // appended after round 147's (round 190dl appends after them)
@@ -72,7 +72,7 @@ TEST (echoform_voicing_stereo_params_round150a)
 
 TEST (echoform_voicing_lr_offset_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] EchoBoy, Single, 250 ms, the digital style, feedback 0.75: left 246.2 / 506.2 / 746.2 / 1006.2 ms, right
     // 254.2 / 494.2 / 754.2 / 994.2 ms (0.2 ms = the measured tone's peak), each repeat −2.6 dB
@@ -113,7 +113,7 @@ TEST (echoform_voicing_lr_offset_round150a)
 
 TEST (echoform_voicing_ping_pong_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] EchoBoy Ping-Pong (250 / 375 ms, feedback 0.5): left at 250 ms, right at 625 ms with exactly the left echo
     // (same level and tone), left again at 875 ms 6 dB down; the input is (L + R) / √2: +3 dB for L = R against Single,
@@ -154,7 +154,7 @@ TEST (echoform_voicing_ping_pong_round150a)
 
 TEST (echoform_voicing_wobble_shapes_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] the CE-1-like style's delay swings as a triangle (1.63 Hz, ±1.0 ms): the echo's pitch is nearly constant
     // (±11.3 cents) between the turns, so its peak deviation is close to its rms (a sine: √2 × the rms)
@@ -184,9 +184,9 @@ TEST (echoform_voicing_wobble_shapes_round150a)
 namespace p150a
 {
 // Auto-pan's Rhythm voicing, digital, width 0, centred: only the Tweak modulation moves the pan
-inline lynx::EffectParams tweakPan (double offsetModDeg, double offsetDeg = 0.0)
+inline yw::EffectParams tweakPan (double offsetModDeg, double offsetDeg = 0.0)
 {
-    using namespace lynx;
+    using namespace yw;
     auto p = makeEffectSlot (EffectKind::autoPan).params;
     constexpr int rb = autopan::count;
     p[rb] = 1.0f;                                          // the Rhythm voicing
@@ -198,9 +198,9 @@ inline lynx::EffectParams tweakPan (double offsetModDeg, double offsetDeg = 0.0)
 }
 // a 1 kHz tone (both inputs) of `seconds`, peak `db`; returns the rms of left / right (signed correlation in `corr`)
 // over the last `tail` seconds
-inline void panTone (const lynx::EffectParams& p, double db, double seconds, double tail, double& l, double& r, double* corr = nullptr)
+inline void panTone (const yw::EffectParams& p, double db, double seconds, double tail, double& l, double& r, double* corr = nullptr)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::autoPan);
+    auto fx = yw::makeEffect (yw::EffectKind::autoPan);
     fx->prepare (48000.0);
     const int n = (int) (48000.0 * seconds);
     std::vector<float> a ((std::size_t) n), b;
@@ -227,7 +227,7 @@ inline double panDeg (double l, double r) { return 2.0 * std::atan2 (r, l) * 180
 
 TEST (autopan_tweak_params_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr int rb = autopan::count;
     const auto& info = effectInfo (EffectKind::autoPan);
     CHECK ((int) info.params.size() == rb + 27);
@@ -243,7 +243,7 @@ TEST (autopan_tweak_params_round150a)
 
 TEST (autopan_tweak_envelope_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] PanMan, OffsetMod +90°, Width 0: a 1 kHz tone at −30 / −15 / −12 / −6 dBFS (peak) pans to 0 / 28 / 54 / 90°
     const double levels[4] = { -30.0, -15.0, -12.0, -6.0 }, want[4] = { 0.0, 28.0, 54.0, 90.0 };
     for (int k = 0; k < 4; ++k)
@@ -268,7 +268,7 @@ TEST (autopan_tweak_envelope_round150a)
 
 TEST (foil_measured_plate_voicing_round150a)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace verbs100;
     // [EXEC] Little Plate: the plate speaks after 0.7 ms; Decay 3 s / 10 s give a broadband T20 of 2.6 / 11.1 s
     auto p = defaults (EffectKind::foilPlate);

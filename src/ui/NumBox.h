@@ -1,7 +1,7 @@
 #pragma once
 
 // A number field dragged up and down (round 190s; the value boxes of Live's Clip View panels): Ctrl = fine, wheel,
-// double-click / Alt-click = default. LYNX's control contract through ui::ValueSpec / ui::ValueDrag.
+// double-click / Alt-click = default. YW's control contract through ui::ValueSpec / ui::ValueDrag.
 
 #include <functional>
 
@@ -11,7 +11,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 // A number field dragged up and down (Live's value boxes): Ctrl = fine, wheel, double-click / Alt-click = default.
 class NumBox final : public juce::Component
@@ -71,4 +71,4 @@ private:
     std::function<void (double)> setter;
     ValueDrag drag;
 };
-} // namespace lynx::ui
+} // namespace yw::ui

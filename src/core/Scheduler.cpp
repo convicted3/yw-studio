@@ -11,7 +11,7 @@
 #include <cmath>
 #include <limits>
 
-namespace lynx
+namespace yw
 {
 void EventBuffer::add (const NoteEvent& e) noexcept
 {
@@ -804,7 +804,7 @@ void scheduleClip (const Song& song, const Clip& clip, std::size_t clipIndex, do
     const auto stopsAt = takeoverZoneEnd != nullptr ? stopsAtFor (song, clipIndex, index, *takeoverZoneEnd) : std::numeric_limits<std::int64_t>::max();
     const auto& pattern = song.patterns[(std::size_t) clip.pattern];
     const auto& notes = pattern.notes;
-    // LYNX extra (stretchedClipsLoop(), default on; issue #25): a pattern clip longer than its pattern loops it (FL
+    // YW extra (stretchedClipsLoop(), default on; issue #25): a pattern clip longer than its pattern loops it (FL
     // plays it once, round 168k; the Playlist draws what plays): pass k plays the pattern's notes k·L later, L = the
     // pattern's length. A clip within its pattern, or the option off, is one pass of the notes in [offset, offset + length).
     const auto period = index != nullptr && (std::size_t) clip.pattern < index->patternLength.size()
@@ -1053,4 +1053,4 @@ void scheduleSongAround (const Song& song, const TrackMask& taken, const TrackMa
     });
     out.sortByOffset();
 }
-} // namespace lynx
+} // namespace yw

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reads a LYNX Test Synth log (tools/testplugin/lynx_test_synth_vst3.cpp) and reports, per plugin instance:
+"""Reads a YW Test Synth log (tools/testplugin/yw_test_synth_vst3.cpp) and reports, per plugin instance:
 - play head: process calls while playing whose position is not where the previous block ended (repeats / jumps)
 - notes: note ons, note offs, keys left sounding, note ons of a key that already sounds (a doubled voice), and the
   shortest / longest note in samples (counted from the blocks, independent of the reported position)

@@ -81,20 +81,20 @@ TEST (rollup030_directwave_short_format_record_keeps_its_loop)
     // FL's version-36 record: 36 bytes, no bit depth → the loop is read, bits = 32 (DirectWave's record starts with 32)
     {
         const auto body = zoneBody (formatRecord (36, 2, 300, 800));
-        const auto z = lynx::dw::parseZone (body.data(), body.size());
+        const auto z = yw::dw::parseZone (body.data(), body.size());
         CHECK (z.loopMode == 2 && z.loopA == 300 && z.loopB == 800 && z.frames == 1000 && z.rate == 44100.0f);
         CHECK (z.bits == 32 && z.offset == 0 && z.root == 45 && z.lowKey == 44 && z.highKey == 46);
     }
     // the full 40-byte record keeps its own bit depth
     {
         const auto body = zoneBody (formatRecord (40, 1, 10, 900));
-        const auto z = lynx::dw::parseZone (body.data(), body.size());
+        const auto z = yw::dw::parseZone (body.data(), body.size());
         CHECK (z.loopMode == 1 && z.loopA == 10 && z.loopB == 900 && z.bits == 24);
     }
     // shorter still: what is there is read, the rest is DirectWave's zeros (no loop end, offset 0), bits 32
     {
         const auto body = zoneBody (formatRecord (28, 2, 300, 800));
-        const auto z = lynx::dw::parseZone (body.data(), body.size());
+        const auto z = yw::dw::parseZone (body.data(), body.size());
         CHECK (z.loopMode == 2 && z.loopA == 300 && z.loopB == 0 && z.offset == 0 && z.bits == 32 && z.frames == 1000);
     }
 }
@@ -103,55 +103,55 @@ TEST (rollup030_directwave_v36_state_loops_on_every_path)
 {
     using namespace rollup030;
     const auto state = stateWith (36, zoneBody (formatRecord (36, 2, 300, 800)));
-    const auto loopKept = [] (const lynx::dw::Zone& z) { return z.loopMode == 2 && z.loopA == 300 && z.loopB == 800 && z.bits == 32; };
+    const auto loopKept = [] (const yw::dw::Zone& z) { return z.loopMode == 2 && z.loopA == 300 && z.loopB == 800 && z.bits == 32; };
 
     // an old .flp project's DirectWave state, as stored (no importer in between)
-    const auto st = lynx::dw::parseState (state);
-    CHECK (st && lynx::dw::playedProgram (*st) != nullptr);
-    if (st && lynx::dw::playedProgram (*st) != nullptr)
-        CHECK (loopKept (lynx::dw::playedProgram (*st)->zones.at (0)));
+    const auto st = yw::dw::parseState (state);
+    CHECK (st && yw::dw::playedProgram (*st) != nullptr);
+    if (st && yw::dw::playedProgram (*st) != nullptr)
+        CHECK (loopKept (yw::dw::playedProgram (*st)->zones.at (0)));
 
     // dwave190hz's editor, "Open program" on a version-36 .dwp
     auto file = std::vector<std::uint8_t> { 'D', 'w', 'P', 'r' };
     file.insert (file.end(), state.begin(), state.end());
-    const auto opened = lynx::dw::readProgramFile (file);
+    const auto opened = yw::dw::readProgramFile (file);
     CHECK (opened && ! opened->zones.empty());
     if (opened && ! opened->zones.empty())
         CHECK (loopKept (opened->zones[0]));
 
     // formats190ii's importer: the state it keeps is the file's own, and it reads the same
-    const auto imported = lynx::msimport::stateOfFile (file);
+    const auto imported = yw::msimport::stateOfFile (file);
     CHECK (imported && *imported == state);
     if (imported)
-        if (const auto again = lynx::dw::parseState (*imported); again && lynx::dw::playedProgram (*again) != nullptr)
-            CHECK (loopKept (lynx::dw::playedProgram (*again)->zones.at (0)));
+        if (const auto again = yw::dw::parseState (*imported); again && yw::dw::playedProgram (*again) != nullptr)
+            CHECK (loopKept (yw::dw::playedProgram (*again)->zones.at (0)));
 }
 
 TEST (rollup030_directwave_copy_for_an_older_release_completes_short_records)
 {
-    // File › "Save a copy for an older LYNX" (0.1.28, whose readZone skipped a short record): the document's short zone
+    // File › "Save a copy for an older YW" (0.1.28, whose readZone skipped a short record): the document's short zone
     // records get their full size as DirectWave reads them; nothing else changes
     using namespace rollup030;
     const auto state = stateWith (36, zoneBody (formatRecord (36, 2, 300, 800)));
-    auto doc = lynx::dw::readDoc (state);
+    auto doc = yw::dw::readDoc (state);
     CHECK (doc.has_value());
     if (! doc)
         return;
-    CHECK (lynx::dw::completeShortZoneRecords (*doc) == 1);
-    CHECK (lynx::dw::completeShortZoneRecords (*doc) == 0);
-    const auto written = lynx::dw::writeDoc (*doc);
+    CHECK (yw::dw::completeShortZoneRecords (*doc) == 1);
+    CHECK (yw::dw::completeShortZoneRecords (*doc) == 0);
+    const auto written = yw::dw::writeDoc (*doc);
     CHECK (written.size() == state.size() + 4);
-    const auto st = lynx::dw::parseState (written);
-    CHECK (st && lynx::dw::playedProgram (*st) != nullptr);
-    if (st && lynx::dw::playedProgram (*st) != nullptr)
+    const auto st = yw::dw::parseState (written);
+    CHECK (st && yw::dw::playedProgram (*st) != nullptr);
+    if (st && yw::dw::playedProgram (*st) != nullptr)
     {
-        const auto& z = lynx::dw::playedProgram (*st)->zones.at (0);
+        const auto& z = yw::dw::playedProgram (*st)->zones.at (0);
         CHECK (z.loopMode == 2 && z.loopA == 300 && z.loopB == 800 && z.bits == 32 && z.root == 45);
     }
     // a state with full records is written back byte for byte
     const auto full = stateWith (38, zoneBody (formatRecord (40, 1, 10, 900)));
-    auto fullDoc = lynx::dw::readDoc (full);
-    CHECK (fullDoc && lynx::dw::completeShortZoneRecords (*fullDoc) == 0 && lynx::dw::writeDoc (*fullDoc) == full);
+    auto fullDoc = yw::dw::readDoc (full);
+    CHECK (fullDoc && yw::dw::completeShortZoneRecords (*fullDoc) == 0 && yw::dw::writeDoc (*fullDoc) == full);
 }
 
 // Rollup 0.1.30 step 3 (round 190jk): Helix (round 190ja) follows FL's host pitch features as round 190ix made Tetra do: a
@@ -159,18 +159,18 @@ TEST (rollup030_directwave_copy_for_an_older_release_completes_short_records)
 // 168l), a Mono channel moves its voice legato. The FL-Data audits check every engine; these run without FL's Data (CI).
 namespace rollup030
 {
-inline lynx::ChannelDef helixChannel()
+inline yw::ChannelDef helixChannel()
 {
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.name = "Helix";
-    c.instrument = lynx::InstrumentKind::helix;
+    c.instrument = yw::InstrumentKind::helix;
     return c;
 }
 } // namespace rollup030
 
 TEST (rollup030_helix_follows_slide_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto c = rollup030::helixChannel();
     Note held;
     held.key = 60;
@@ -198,7 +198,7 @@ TEST (rollup030_helix_follows_slide_notes)
 
 TEST (rollup030_helix_follows_channel_porta_and_mono)
 {
-    using namespace lynx;
+    using namespace yw;
     auto inst = makeInstrument (InstrumentKind::helix);
     CHECK (inst != nullptr && inst->followsChannelPorta() && inst->followsSlides());
     if (inst == nullptr)
@@ -244,7 +244,7 @@ TEST (rollup030_helix_follows_channel_porta_and_mono)
 // switched back on unmutes its linked inserts too, so every LED of the group goes out together.
 TEST (rollup030_group_mute_on_linked_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer.resize (6);
     s.playlistTracks.resize (4);
@@ -266,14 +266,14 @@ TEST (rollup030_group_mute_on_linked_tracks)
     CHECK (s.playlistTracks[0].muted && s.mixer[1].muted);
 }
 
-// Rollup 0.1.30 step 6 (round 190km): the Loop Browser (gaps190kf) lists LYNX's own beats and sounds (190ke's tagged
+// Rollup 0.1.30 step 6 (round 190km): the Loop Browser (gaps190kf) lists YW's own beats and sounds (190ke's tagged
 // content, core/FactoryLoops.h): a beat is a pattern loop at its genre's tempo with the genre keyword, a sound a MIDI
 // loop's instrument; effect chains are not listed; the row's path is the tag store's item and finds its item again.
 #include "core/FactoryLoops.h"
 
-TEST (rollup030_loop_browser_lists_lynx_content)
+TEST (rollup030_loop_browser_lists_yw_content)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto all = factoryloops::loops();
     int beats = 0, sounds = 0, trapBeats = 0, trapWord = 0, bassSounds = 0;
     for (const auto& info : all)
@@ -309,7 +309,7 @@ TEST (rollup030_loop_browser_lists_lynx_content)
     }
     CHECK (beats > 0 && sounds > 0 && trapBeats > 0 && bassSounds > 0);
     CHECK ((int) all.size() == beats + sounds);
-    // the Loop Browser's own filter: Trap + Loop Type pattern gives exactly the trap beats; a plain file path is not LYNX's
+    // the Loop Browser's own filter: Trap + Loop Type pattern gives exactly the trap beats; a plain file path is not YW's
     loopkeys::Filter f;
     f.keywords = { "trap" };
     f.types = loopkeys::pattern;

@@ -1,6 +1,6 @@
 // --- Round 189g: FL's Playlist Edit / Select options: Magic lasso, Allow resizing from left, wheel nudging ----------
 // (FLEngine 2026 [DECOMP] FUN_00e6ff80 / FUN_00e6f330 magic lasso, FUN_00e8e840 left resizing, FUN_00e82270 nudging;
-// REA notes in /mnt/e/lynx-work/flgap189g/NOTES.md)
+// REA notes in /mnt/e/yw-work/flgap189g/NOTES.md)
 
 #include "core/ClipOps.h"
 #include "core/EditorGestures.h"
@@ -10,9 +10,9 @@
 namespace
 {
 // a circle of `n` trail points around (cx, cy), one every 20 ms
-std::vector<lynx::magiclasso::Point> lasso189gCircle (double cx, double cy, double radius, int n)
+std::vector<yw::magiclasso::Point> lasso189gCircle (double cx, double cy, double radius, int n)
 {
-    std::vector<lynx::magiclasso::Point> pts;
+    std::vector<yw::magiclasso::Point> pts;
     for (int i = 0; i < n; ++i)
     {
         const auto a = 6.283185307179586 * (double) i / (double) (n - 4); // a little past one turn
@@ -24,7 +24,7 @@ std::vector<lynx::magiclasso::Point> lasso189gCircle (double cx, double cy, doub
 
 TEST (playlist189g_magic_lasso_closes_a_loop_and_ignores_pauses)
 {
-    using namespace lynx::magiclasso;
+    using namespace yw::magiclasso;
     Trail trail;
     std::vector<Point> loop;
     std::uint32_t ms = 1000;
@@ -54,7 +54,7 @@ TEST (playlist189g_magic_lasso_closes_a_loop_and_ignores_pauses)
 
 TEST (playlist189g_magic_lasso_needs_the_clip_middle_inside)
 {
-    using namespace lynx::magiclasso;
+    using namespace yw::magiclasso;
     const std::vector<Point> square { { 0, 0 }, { 300, 0 }, { 300, 200 }, { 0, 200 } };
     // FL's inset: 200 x 40 px clip -> 24 px at the sides ((200 - 6) / 8), 8 px top and bottom
     const auto inner = innerRect ({ 50, 50, 250, 90 });
@@ -71,7 +71,7 @@ TEST (playlist189g_magic_lasso_needs_the_clip_middle_inside)
 
 TEST (playlist189g_magic_lasso_selects_two_clips_or_zooms_to_the_selection)
 {
-    using namespace lynx::magiclasso;
+    using namespace yw::magiclasso;
     // nothing selected: two enclosed clips are selected, one is not enough without Shift
     CHECK (decide ({ 3, 4 }, false, 0, { false, false }) == Result::select);
     CHECK (decide ({ 3 }, false, 0, { false }) == Result::nothing);
@@ -84,7 +84,7 @@ TEST (playlist189g_magic_lasso_selects_two_clips_or_zooms_to_the_selection)
 
 TEST (playlist189g_left_resizing_off_makes_the_left_edge_move_the_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     gesture::EdgeRules rules;
     rules.minimumForLeft = 24.0;
     CHECK (gesture::zoneAt (101.0, 100.0, 300.0, rules) == gesture::Zone::leftEdge);
@@ -95,7 +95,7 @@ TEST (playlist189g_left_resizing_off_makes_the_left_edge_move_the_clip)
 
 TEST (playlist189g_left_resizing_key_is_fl_ctrl_alt_home)
 {
-    using namespace lynx;
+    using namespace yw;
     keys::KeyMap map;
     CHECK (map.find (keys::Chord { keys::home, (std::uint8_t) (keys::ctrl | keys::alt) }, keys::Context::playlist, false) == "playlist.leftResizing");
     for (const char* id : { "playlist.makeUniqueAsSample", "playlist.wheelNudging", "playlist.manualFades", "playlist.snapFadeHandles", "playlist.magicLasso" })
@@ -104,7 +104,7 @@ TEST (playlist189g_left_resizing_key_is_fl_ctrl_alt_home)
 
 TEST (playlist189g_wheel_nudge_shifts_the_content_not_the_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips (3);
     clips[0].start = 384; clips[0].length = 384; clips[0].offset = 10;
     clips[1].start = 768; clips[1].length = 384; clips[1].offset = 50;

@@ -1,9 +1,9 @@
 // Round 190iq: Hush De-esser's measured single-vocal / Allround engine (vmatch::vocalds) gets timing revision 1, fitted
 // black-box on refcap030's Pro-DS captures (the `ess` probe: a 500 Hz body under sibilant bursts, 35 settings; the gain
-// on the body at 0.25 ms steps; /mnt/e/lynx-work/parity190iq/HANDOFF.md). The revision is a hidden parameter: a new Hush
+// on the body at 0.25 ms steps; /mnt/e/yw-work/parity190iq/HANDOFF.md). The revision is a hidden parameter: a new Hush
 // and a translated Pro-DS state run it, a project or preset saved before keeps round 148 / tp172b's timing bit for bit.
 // Checked: the parameter and its load rules, the translation, revision 0 against the base commit's renders (fingerprints
-// from its objects, /mnt/e/lynx-work/parity190iq/gold), and revision 1's own timing.
+// from its objects, /mnt/e/yw-work/parity190iq/gold), and revision 1's own timing.
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -13,7 +13,7 @@
 
 namespace parity190iq
 {
-namespace hu = lynx::mixsuite::hush;
+namespace hu = yw::mixsuite::hush;
 // the gold input: a 500 Hz body (-14 dBFS) with resonant 7 kHz hiss bursts of rising level (as gold/gold.cpp)
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 {
@@ -35,18 +35,18 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
         r[(std::size_t) i] = (float) (0.9 * v);
     }
 }
-inline lynx::EffectSlot slot (bool vocal)
+inline yw::EffectSlot slot (bool vocal)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::hushDeEsser);
+    auto s = yw::makeEffectSlot (yw::EffectKind::hushDeEsser);
     s.params[hu::rangeLaw] = 1.0f;
     s.params[hu::vocalVoicing] = vocal ? 1.0f : 0.0f;
     s.params[hu::allround] = vocal ? 0.0f : 1.0f;
     s.params[hu::lookaheadTime] = 10.0f / 15.0f;
     return s;
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size(), block = 256;
     for (int off = 0; off < n; off += block)
@@ -74,7 +74,7 @@ inline std::vector<double> bodyGainDb (const std::vector<float>& in, const std::
 
 TEST (parity190iq_hush_timing_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hu = mixsuite::hush;
     const auto& info = effectInfo (EffectKind::hushDeEsser);
     CHECK (info.params.size() == (std::size_t) hu::timing); // hidden: not in the info, so no new control or string
@@ -94,7 +94,7 @@ TEST (parity190iq_hush_timing_is_hidden_new_instances_run_it_old_projects_do_not
 
 TEST (parity190iq_pro_ds_translation_runs_the_measured_timing)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hu = mixsuite::hush;
     // her first state's values (round 165x's test state)
     std::vector<float> st { 0.0f, 0.2715f, 6.0f, 0.0f, 0.75f, 1.0f, 12.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
@@ -109,7 +109,7 @@ TEST (parity190iq_pro_ds_translation_runs_the_measured_timing)
 
 TEST (parity190iq_hush_timing0_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hu = mixsuite::hush;
     struct Case
     {
@@ -122,7 +122,7 @@ TEST (parity190iq_hush_timing0_renders_as_the_base_commit_did)
         double energy, a, b;
     };
     // 1.6 s of the gold input in blocks of 256: FNV-1a of the float bits, the energy, two samples. From the base commit's
-    // objects (/mnt/e/lynx-work/parity190iq/gold: gold_base.txt; the round's objects with the timing forced to 0 print the
+    // objects (/mnt/e/yw-work/parity190iq/gold: gold_base.txt; the round's objects with the timing forced to 0 print the
     // same lines, gold_new.txt)
     const Case cases[] = {
         { 1, -1, 0.00000000f, -1, 0.00000000f, 48000.0, 0xcb2091111d13551cull, 2776.64223, 0.173205078, 0 },
@@ -162,7 +162,7 @@ TEST (parity190iq_hush_timing0_renders_as_the_base_commit_did)
 
 TEST (parity190iq_hush_timing1_moves_the_gain_later_and_releases_slower)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hu = mixsuite::hush;
     // Allround, wide band, look-ahead 10 ms, at 48 kHz: a 500 Hz body (-14 dBFS) with a -6 dBFS 7 kHz burst at 0.5 … 0.7 s;
     // the gain on the body in 2 ms windows, 0.5 ms steps

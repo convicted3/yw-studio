@@ -1,4 +1,4 @@
-// round 190kw: the revision-0 gold cases (shared with /mnt/e/lynx-work/rea190kw/r2/gold/gold.cpp)
+// round 190kw: the revision-0 gold cases (shared with /mnt/e/yw-work/rea190kw/r2/gold/gold.cpp)
 namespace p190kwr2
 {
 // LuxeVerb Space engine settings (index from luxeVerbSpaceFirst = 53 → value), revision 0
@@ -29,7 +29,7 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 }
 inline void fingerprint (int k, double sr, std::uint64_t& h, double& e)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::luxeVerb);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::luxeVerb);
     for (int i = 0; i < 15; ++i) slot.params[(std::size_t) (53 + i)] = cases[k].v[i];
     slot.params[68] = cases[k].duck;
     slot.params[69] = 0.0f; // the Space engine's revision 0 (round 190kw; on the base commit an unused slot)
@@ -37,7 +37,7 @@ inline void fingerprint (int k, double sr, std::uint64_t& h, double& e)
     const int n = (int) (1.6 * sr);
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
     signal (l, r, sr);
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);

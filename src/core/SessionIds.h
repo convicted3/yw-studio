@@ -15,7 +15,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::uids
+namespace yw::uids
 {
 constexpr int tagShift = 40;
 constexpr std::uint64_t counterMask = (std::uint64_t (1) << tagShift) - 1;
@@ -36,12 +36,12 @@ bool normalize (Song& song);
 // A random 128-bit id as 32 hex digits.
 std::string newProjectId();
 
-// uid as 16 hex digits (the .lynx and package form) and back (0 when invalid).
+// uid as 16 hex digits (the .yw and package form) and back (0 when invalid).
 std::string toHex (std::uint64_t uid);
 std::uint64_t fromHex (const std::string& hex) noexcept;
-} // namespace lynx::uids
+} // namespace yw::uids
 
-namespace lynx::refs
+namespace yw::refs
 {
 // Every index reference of the song to one kind of entity, so a part can be moved into another song with its
 // references renumbered (the "forEachIndexRef" of the design). `fn` may change the index; -1 / 0 "none" values are
@@ -57,4 +57,4 @@ void forEachRowRef (Song& song, const IndexFn& fn);        // clips' Playlist ro
 // The target's index refers to a channel / an insert (and, for mixerSend, its slot to an insert too).
 bool targetsChannel (const AutomationTarget& t) noexcept;
 bool targetsInsert (const AutomationTarget& t) noexcept;
-} // namespace lynx::refs
+} // namespace yw::refs

@@ -13,7 +13,7 @@
 //   - Velocity: how far the template's accents change the velocities, −100…+100 % (negative: loud becomes quiet);
 //   - the pool's Amount (0…130 %) scales Timing, Random and Velocity of every groove, not Quantize;
 //   - Commit writes the result into the clip's notes and takes the groove off the clip.
-// The grooves LYNX ships are its own (factoryBank(): made by the formulas below, no file of another program);
+// The grooves YW ships are its own (factoryBank(): made by the formulas below, no file of another program);
 // a groove file the user owns can be read (parseAgr).
 //
 // Everything here is pure: no allocation in apply() (the scheduler calls it on the audio thread).
@@ -25,7 +25,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::groove
+namespace yw::groove
 {
 constexpr float maxAmount = 1.3f;
 
@@ -97,7 +97,7 @@ struct BankEntry
     const char* folder; // "Swing", "Classic swing", "Feel", "Accent", "Utility"
     Groove groove;
 };
-// LYNX's own grooves, generated: straight swing in steps, triplet shuffles, pushed and laid-back feels, accent
+// YW's own grooves, generated: straight swing in steps, triplet shuffles, pushed and laid-back feels, accent
 // shapes and the plain quantise grids. Round 190fm: "Classic swing", 8ths / 16ths / 32nds at the swing steps drum
 // machines publish (50, 54, 58, 62, 63, 66, 67, 71, 75 %: the second note of each pair that far through the pair).
 const std::vector<BankEntry>& factoryBank();
@@ -105,19 +105,19 @@ const std::vector<BankEntry>& factoryBank();
 const std::vector<int>& classicSwingSteps();
 
 // Reads a groove file (.agr: XML, the template is a MIDI clip inside it). Only for files the user owns: nothing of
-// another program ships with LYNX. False (and `error`) when the text is not such a file.
+// another program ships with YW. False (and `error`) when the text is not such a file.
 bool parseAgr (std::string text, Groove& out, std::string* error = nullptr);
-} // namespace lynx::groove
+} // namespace yw::groove
 
-namespace lynx::xml
+namespace yw::xml
 {
 class Element;
 }
 
-namespace lynx::groove
+namespace yw::groove
 {
 // Round 190fm: one <Groove> element (of a groove file, or of a Live set's GroovePool): Name, the template clip
 // (Clip/Value/MidiClip: its notes inside its loop), Grid → base, the four amounts in percent. False (and `error`) when
 // the element has no template or its template no notes.
 bool fromGrooveElement (const xml::Element& node, Groove& out, std::string* error = nullptr);
-} // namespace lynx::groove
+} // namespace yw::groove

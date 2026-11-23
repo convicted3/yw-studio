@@ -1,34 +1,34 @@
 // Round 190oh (Online Sessions + plugin host review, P3): FL's wrapper Settings › GUI — "DPI aware (requires reloading
 // the plugin)" and "Scale editor dimensions" (Fruity Wrapper's DFM VisualPanel; FL 2026 saves with each box toggled:
-// E:\lynx-work\online_host_190oh\fl\b0.flp / d1.flp / s1.flp, wrapper flags 0xB4007D8C / 0xB0007D8C / 0xF4007D8C)
+// E:\yw-work\online_host_190oh\fl\b0.flp / d1.flp / s1.flp, wrapper flags 0xB4007D8C / 0xB0007D8C / 0xF4007D8C)
 
 TEST (host190oh_wrapper_gui_flags_from_fl)
 {
-    lynx::ForeignPlugin f;
+    yw::ForeignPlugin f;
     f.hasWrapperOptions = true;
     f.wrapperVersion = 12;
-    lynx::PluginRef ref;
+    yw::PluginRef ref;
     // FL's defaults: DPI aware on, Scale editor dimensions off (as a new PluginRef)
     CHECK (ref.dpiAware && ! ref.scaleEditorDimensions);
     f.wrapperFlags = 0xB4007D8Cu;
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (ref.dpiAware && ! ref.scaleEditorDimensions);
     f.wrapperFlags = 0xB0007D8Cu; // "DPI aware" off
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (! ref.dpiAware && ! ref.scaleEditorDimensions && ref.hostKeysFirst == false && ref.allowSmartDisable);
     f.wrapperFlags = 0xF4007D8Cu; // "Scale editor dimensions" on (DPI aware on again)
-    lynx::applyFlWrapperOptions (f, ref);
+    yw::applyFlWrapperOptions (f, ref);
     CHECK (ref.dpiAware && ref.scaleEditorDimensions);
     // FL's "defaults" flag: nothing taken from the word
-    lynx::PluginRef fresh;
+    yw::PluginRef fresh;
     f.wrapperFlags = 0x400000u;
-    lynx::applyFlWrapperOptions (f, fresh);
+    yw::applyFlWrapperOptions (f, fresh);
     CHECK (fresh.dpiAware && ! fresh.scaleEditorDimensions);
 }
 
 TEST (host190oh_wrapper_gui_flags_round_trip_through_flp_export)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin p;
     p.format = ForeignPlugin::Format::vst2;
     p.name = "Verb";
@@ -57,18 +57,18 @@ TEST (host190oh_wrapper_gui_flags_round_trip_through_flp_export)
 
 TEST (host190oh_wrapper_settings_gui_section)
 {
-    const auto& o = lynx::wrapperOptions();
+    const auto& o = yw::wrapperOptions();
     CHECK (o.size() == 18);
     if (o.size() == 18)
     {
         CHECK (std::string (o[16].section) == "GUI" && std::string (o[16].label) == "DPI aware (requires reloading the plugin)"
-               && o[16].member == &lynx::PluginRef::dpiAware && o[16].recreates && ! o[16].needsFixed);
+               && o[16].member == &yw::PluginRef::dpiAware && o[16].recreates && ! o[16].needsFixed);
         CHECK (std::string (o[17].section) == "GUI" && std::string (o[17].label) == "Scale editor dimensions"
-               && o[17].member == &lynx::PluginRef::scaleEditorDimensions && o[17].recreates);
+               && o[17].member == &yw::PluginRef::scaleEditorDimensions && o[17].recreates);
         CHECK (std::string (o[16].hint) == "For plugins that appear too big or small");
     }
     // the two fields count in the plugin's equality (undo / the session's patches see a change)
-    lynx::PluginRef a, b;
+    yw::PluginRef a, b;
     b.dpiAware = false;
     CHECK (! (a == b));
     b = a;
@@ -79,7 +79,7 @@ TEST (host190oh_wrapper_settings_gui_section)
 // Online Sessions review (round 190oh): the anti-replay window of the session's Opener
 TEST (online190oh_replay_window)
 {
-    using namespace lynx::livecrypto;
+    using namespace yw::livecrypto;
     const Invite invite { "2syq75e66t", newSecret() };
     const auto keys = derive (invite);
     Sealer host (keys.key);

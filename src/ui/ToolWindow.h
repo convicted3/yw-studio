@@ -4,7 +4,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 // A small non-modal window that owns `content`, stays above the main window and deletes itself when
 // closed (close button or Esc). Used by the note tool dialogs, the undo history and the quick-add palette.
@@ -28,4 +28,4 @@ void closeAllToolWindows();
 
 // The open tool window with this key, or nullptr.
 juce::DocumentWindow* findToolWindow (const juce::String& key);
-} // namespace lynx
+} // namespace yw

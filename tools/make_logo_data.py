@@ -1,7 +1,7 @@
-# Generates src/ui/LogoData.h: the LYNX SHARE logo (by w3teal) embedded in the exe: the app icon (the mark on its dark
-# tile) for the window/taskbar icon, LYNX-drawn title bars and the About box, and the mark alone for the plugin-editor
+# Generates src/ui/LogoData.h: the YW Studio logo (by w3teal) embedded in the exe: the app icon (the mark on its dark
+# tile) for the window/taskbar icon, YW-drawn title bars and the About box, and the mark alone for the plugin-editor
 # header button.
-# Source of truth: resources/brand/lynx-share-logo.svg (+ its small-size form lynx-share-logo-small.svg);
+# Source of truth: resources/brand/yw-studio-logo.svg (+ its small-size form yw-studio-logo-small.svg);
 # tools/make_logo.py renders them to the PNGs read here. Embedded: the icon at 512 px, its small-size form at 128 px with
 # the stem (drawn at 21-32 physical pixels) and without it (20 px and less), the mark at 512 px and its small-size form
 # at 128 px, and where the mark's ring sits in the mark pictures.
@@ -9,11 +9,11 @@
 import hashlib, io
 from PIL import Image
 
-SRC = "resources/lynx_badge.png"
-SMALL = "resources/brand/lynx-share-logo-small.png"
-TINY = "resources/brand/lynx-share-logo-tiny.png"
-MARK = "resources/lynx_logo.png"
-MARK_SMALL = "resources/brand/lynx-share-mark-small.png"
+SRC = "resources/yw_badge.png"
+SMALL = "resources/brand/yw-studio-logo-small.png"
+TINY = "resources/brand/yw-studio-logo-tiny.png"
+MARK = "resources/yw_logo.png"
+MARK_SMALL = "resources/brand/yw-studio-mark-small.png"
 
 
 def png(path, size):
@@ -50,7 +50,7 @@ lines = ["#pragma once", "",
          "// tiny-sha256: " + sha(TINY),
          "// mark-sha256: " + sha(MARK),
          "// mark-small-sha256: " + sha(MARK_SMALL), "",
-         "namespace lynx::logo", "{",
+         "namespace yw::logo", "{",
          "// where the mark's ring sits in markPng512 and markSmall (fractions of the side): centre x, centre y, radius",
          "inline constexpr float discX = %.4ff, discY = %.4ff, discR = %.4ff;" % disc]
 sizes = {}
@@ -59,6 +59,6 @@ for name, path, size in (("png512", SRC, 512), ("pngSmall", SMALL, 128), ("pngTi
     data = png(path, size)
     sizes[name] = len(data)
     lines += array(name, data)
-lines += ["} // namespace lynx::logo", ""]
+lines += ["} // namespace yw::logo", ""]
 open("src/ui/LogoData.h", "w").write("\n".join(lines))
 print(sizes, "disc", disc)

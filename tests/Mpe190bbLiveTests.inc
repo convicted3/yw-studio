@@ -23,27 +23,27 @@ inline double frequency (const std::vector<float>& x, std::size_t from, std::siz
 inline std::pair<double, double> playLive (bool expression, float cents, float laterCents, bool sendLater, float fineTune = 0.0f)
 {
     auto sample = s162::sine (440.0, 4.0);
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     s.bpm = 120.0;
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "sine.wav";
     c.misc.fineTune = fineTune;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::RackState::Factories f;
-    f.samples = [sample] (const std::string&) { return std::shared_ptr<const lynx::SampleData> (sample); };
-    f.stretchedSamples = [sample] (const std::string&, double ratio, lynx::StretchMethod m, double, const lynx::StretchMap&, const lynx::StretchOptions&) {
-        return std::shared_ptr<const lynx::SampleData> (lynx::timeStretch (*sample, ratio, m));
+    yw::RackState::Factories f;
+    f.samples = [sample] (const std::string&) { return std::shared_ptr<const yw::SampleData> (sample); };
+    f.stretchedSamples = [sample] (const std::string&, double ratio, yw::StretchMethod m, double, const yw::StretchMap&, const yw::StretchOptions&) {
+        return std::shared_ptr<const yw::SampleData> (yw::timeStretch (*sample, ratio, m));
     };
     constexpr double rate = 44100.0;
-    auto state = lynx::RackState::build (s, nullptr, rate, f);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, rate, f);
+    yw::RackRenderer r;
     r.prepare (rate, 441);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent e;
+    yw::LiveEventQueue live;
+    yw::NoteEvent e;
     e.channel = 0;
     e.key = 60;
     e.velocity = 0.8f;
@@ -55,12 +55,12 @@ inline std::pair<double, double> playLive (bool expression, float cents, float l
     {
         if (b == 50 && sendLater)
         {
-            lynx::NoteEvent x;
-            x.type = lynx::NoteEvent::Type::voiceProp;
+            yw::NoteEvent x;
+            x.type = yw::NoteEvent::Type::voiceProp;
             x.expression = true;
             x.channel = 0;
             x.key = 60;
-            x.prop = (std::uint8_t) lynx::vfx::Prop::pitch;
+            x.prop = (std::uint8_t) yw::vfx::Prop::pitch;
             x.velocity = laterCents;
             live.push (x);
         }

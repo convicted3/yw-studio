@@ -8,13 +8,13 @@
 // of those two (FUN_01003d80); the .flp loader translates the two names (FUN_00f46490, event 0xE7). So in FL, picking
 // "Unsorted" in the rack's dropdown hides the audio clip channels — what the YouTube review missed ("the channel rack
 // stuff ... it's hard to tell what is what", 168d #10). FL's own projects carry these groups (all 80 demo projects
-// have "Audio clips"), LYNX's own projects do not.
+// have "Audio clips"), YW's own projects do not.
 //
 // Round 190oq (issue #246, REA_rodada190oq §3): FL 2026 shows these groups as "Audio" and "Automation" — its .flp loader
 // renames an older project's "Audio clips" / "Automation clips" (event 0xE7) — and lists "All", a line, then every group
 // A–Z. Both names count here.
 //
-// LYNX offers the same two views for every project without touching the song: "Audio clips" = the audio clip
+// YW offers the same two views for every project without touching the song: "Audio clips" = the audio clip
 // channels (InstrumentKind::audioClip, or in a group named "Audio clips"), "Unsorted" = the other channels that are in
 // no group (or in FL's "Unsorted" group). Groups named like these two are not listed again.
 
@@ -22,7 +22,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::rackfilter
+namespace yw::rackfilter
 {
 constexpr int all = -1;
 constexpr int audioClips = -2;
@@ -85,4 +85,4 @@ inline int groupForNewChannel (int filter)
 {
     return filter >= 0 ? filter : -1;
 }
-} // namespace lynx::rackfilter
+} // namespace yw::rackfilter

@@ -4,7 +4,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -164,7 +164,7 @@ public:
         const auto author = jsfx::scriptAuthor (instance);
         g.drawFittedText ((author.isNotEmpty() ? author + "  ·  " : juce::String()) + "JSFX  ·  " + jsfx::relativeId (instance), text,
                           juce::Justification::centredLeft, 1, 0.8f);
-        // one line under the header: the script changed since the project was saved / it has a display LYNX does not draw yet
+        // one line under the header: the script changed since the project was saved / it has a display YW does not draw yet
         if (const auto note = noteText(); note.isNotEmpty())
         {
             auto line = getLocalBounds().withTrimmedTop (headerHeight).removeFromTop (noteHeight).reduced (pad, 0);
@@ -258,4 +258,4 @@ juce::AudioProcessorEditor* makeJsfxPanel (juce::AudioProcessor& processor)
         return new Panel (processor, *instance);
     return nullptr;
 }
-} // namespace lynx
+} // namespace yw

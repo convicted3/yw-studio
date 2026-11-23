@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Distructor as an exact LYNX mixer effect, rebuilt in docs/analise/REA_rodada71.md (clean-room: layouts,
+// FL Studio's Distructor as an exact YW mixer effect, rebuilt in docs/analise/REA_rodada71.md (clean-room: layouts,
 // formulas and behaviour described in our own words; no Image-Line code or data in this repository).
 //
 // Distructor is a chain of up to four "modules" (each one an instance of the plugin's Module_x64.dll: distortion,
@@ -19,12 +19,12 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::distructor
+namespace yw::distructor
 {
 constexpr int maxModules = 4;
 constexpr int moduleParams = 49;
@@ -64,12 +64,12 @@ struct State
     std::array<int, maxModules> order { 0, 1, 2, 3 };
 };
 
-// --- the LYNX effect slot -------------------------------------------------------------------------------------------
+// --- the YW effect slot -------------------------------------------------------------------------------------------
 // Slot parameters: per module m (0…3) [3m] input volume, [3m+1] mix, [3m+2] output volume (FL's 0…10000 / 10000),
 // [12] the final soft clipper (on at ≥ 0.5)
 constexpr int effectParams = 13;
 // EffectSlot::state holds FL's state plus the cabinet impulse files it uses (read from the user's installation at
-// import, so a saved LYNX project keeps working without it)
+// import, so a saved YW project keeps working without it)
 std::vector<std::uint8_t> packBlob (const std::vector<std::uint8_t>& flState, const std::map<int, std::vector<std::uint8_t>>& impulses);
 // the state of a blob (or of a bare FL state), with the impulse files attached to the amp/cabinet modules
 std::optional<State> parseBlob (const std::vector<std::uint8_t>& blob);
@@ -136,4 +136,4 @@ private:
 };
 
 std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& state);
-} // namespace lynx::distructor
+} // namespace yw::distructor

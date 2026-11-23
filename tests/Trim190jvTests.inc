@@ -9,14 +9,14 @@ namespace trim190jv
 //  1 a channel plays into it            (linked)
 //  2 fader, pan, mute, colour, input    (FL ignores them: unlinked, empty)
 //  3 named "Drums bus"                  (unlinked, non-empty)
-//  4 a Fruity Send to 6                 (unlinked, non-empty; 6 is side-routed: linked in LYNX)
+//  4 a Fruity Send to 6                 (unlinked, non-empty; 6 is side-routed: linked in YW)
 //  5 routes to 6                        (linked, and 6 too)
-//  7 a compressor on 8 side-chains from 7 (7 linked in LYNX; 8 unlinked, non-empty)
+//  7 a compressor on 8 side-chains from 7 (7 linked in YW; 8 unlinked, non-empty)
 //  9 a Playlist audio track             (linked)
 // 10 default, automated volume          (FL ignores automation: unlinked, empty)
-inline lynx::Song song()
+inline yw::Song song()
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = Song::makeDefault();
     s.mixer = Song::defaultMixer (10);
     s.channels.resize (2);
@@ -53,7 +53,7 @@ inline lynx::Song song()
 
 TEST (trim190jv_which_tracks_count_as_unused)
 {
-    using namespace lynx;
+    using namespace yw;
     using mixerops::TrimUnused;
     const auto s = trim190jv::song();
     CHECK (mixerops::insertLinked (s, 0)); // the Master never goes
@@ -77,7 +77,7 @@ TEST (trim190jv_which_tracks_count_as_unused)
 
 TEST (trim190jv_unlinked_only_removes_and_renumbers_every_reference)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trim190jv::song();
     CHECK (mixerops::trimUnusedTracks (s, mixerops::TrimUnused::unlinkedOnly) == 2);
     // 2 and 10 went: the mixer is shorter (unlike Delete, which keeps the count); 3…9 moved down by one
@@ -99,7 +99,7 @@ TEST (trim190jv_unlinked_only_removes_and_renumbers_every_reference)
 
 TEST (trim190jv_unlinked_and_non_empty_also_removes_effects_and_names)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trim190jv::song();
     CHECK (mixerops::trimUnusedTracks (s, mixerops::TrimUnused::unlinkedAndNonEmpty) == 5);
     // left: Master, 1, 5, 6, 7, 9 → 0…5
@@ -113,7 +113,7 @@ TEST (trim190jv_unlinked_and_non_empty_also_removes_effects_and_names)
 
 TEST (trim190jv_one_edit_master_kept_and_empty_project)
 {
-    using namespace lynx;
+    using namespace yw;
     // the menu runs trimUnusedTracks inside one editSongStructural (one undo step): the result is the same as removing
     // the listed tracks at once, and the state before is untouched by the listing
     const auto before = trim190jv::song();

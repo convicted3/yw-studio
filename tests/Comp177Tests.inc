@@ -8,9 +8,9 @@ namespace comp177
 {
 // three passes of a loop recording over [1000, 2000) on insert 2 ("Vox"), after "Comp these takes": comp track 0, lanes
 // 1..3 (take 1..3)
-inline lynx::Song loopTakes()
+inline yw::Song loopTakes()
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
     song.bpm = 120.0; // 5 ms = 10 ticks
@@ -26,23 +26,23 @@ inline lynx::Song loopTakes()
     return song;
 }
 
-inline std::vector<lynx::Clip> onTrack (const lynx::Song& song, int track)
+inline std::vector<yw::Clip> onTrack (const yw::Song& song, int track)
 {
-    std::vector<lynx::Clip> out;
+    std::vector<yw::Clip> out;
     for (const auto& c : song.playlist)
         if (c.track == track)
             out.push_back (c);
-    std::sort (out.begin(), out.end(), [] (const lynx::Clip& a, const lynx::Clip& b) { return a.start < b.start; });
+    std::sort (out.begin(), out.end(), [] (const yw::Clip& a, const yw::Clip& b) { return a.start < b.start; });
     return out;
 }
 
 // the audio-to-song alignment of a clip (which take it plays)
-inline std::int64_t alignment (const lynx::Clip& c) { return c.offset - c.start; }
+inline std::int64_t alignment (const yw::Clip& c) { return c.offset - c.start; }
 } // namespace comp177
 
 TEST (comp177_groups_and_loop_takes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = comp177::loopTakes();
     const auto g = comp::groupOf (song, 2);
     CHECK (g.valid() && g.comp == 0 && g.first == 1 && g.last == 3 && g.lanes() == 3);
@@ -64,7 +64,7 @@ TEST (comp177_groups_and_loop_takes)
 
 TEST (comp177_swipe_crossfades_and_back)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = comp177::loopTakes();
     const auto original = comp177::onTrack (song, 0);
 
@@ -114,7 +114,7 @@ TEST (comp177_swipe_crossfades_and_back)
 
 TEST (comp177_crossfade_limits_and_gaps)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = comp177::loopTakes();
     // a 4-tick piece gets at most a 2-tick crossfade on each side
     CHECK (comp::swipe (song, 1, 1300, 1304));
@@ -141,7 +141,7 @@ TEST (comp177_crossfade_limits_and_gaps)
 
 TEST (comp177_equal_power_render)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int k = 0; k <= 10; ++k)
     {
         const auto x = (float) k / 10.0f;
@@ -178,7 +178,7 @@ TEST (comp177_equal_power_render)
 
 TEST (comp177_audition_flatten_and_more_takes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = comp177::loopTakes();
     const auto tps = ticksPerSample (120.0, 48000.0);
     auto playing = [&] (const Song& s) {
@@ -213,7 +213,7 @@ TEST (comp177_audition_flatten_and_more_takes)
 
 TEST (comp177_fl_loop_take_layout)
 {
-    using namespace lynx;
+    using namespace yw;
     // what FL 26 leaves after a loop recording (REA round 177c §2.1)
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
@@ -370,7 +370,7 @@ TEST (comp177_fl_loop_take_layout)
 
 TEST (comp177_comp_these_takes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
     song.bpm = 120.0;
@@ -450,7 +450,7 @@ TEST (comp177_comp_these_takes)
 
 TEST (comp177_existing_projects_do_not_change)
 {
-    using namespace lynx;
+    using namespace yw;
     // a project saved before round 177c: loop takes in round 163's layout, with no comp mark
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
@@ -486,7 +486,7 @@ TEST (comp177_existing_projects_do_not_change)
 
 TEST (comp177_a_take_never_replaces_clips_of_an_ordinary_group)
 {
-    using namespace lynx;
+    using namespace yw;
     // a track group the user made: the header's clip is on no lane, so a take recorded over it must not touch it
     auto song = Song::makeDefault();
     song.mode = PlayMode::song;
@@ -523,9 +523,9 @@ TEST (comp177_a_take_never_replaces_clips_of_an_ordinary_group)
 
 TEST (comp177_fl_clip_mute_survives_import_and_export)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's item flag 0x2000 = muted clip (FL's Mute tool toggled it, and FL leaves loop-recorded takes muted when "Blend
-    // recorded notes" is off): such a clip must stay silent in LYNX and come back muted in FL
+    // recorded notes" is off): such a clip must stay silent in YW and come back muted in FL
     auto song = comp177::loopTakes();
     int muted = 0, playing = 0;
     for (const auto& c : song.playlist)
@@ -552,20 +552,20 @@ TEST (comp177_fl_clip_mute_survives_import_and_export)
 
 TEST (comp177_blend_starts_off_only_for_new_installs)
 {
-    using lynx::RecordMode;
+    using yw::RecordMode;
     // a new install: FL's factory default
-    CHECK (lynx::startingRecordMode (false, false, false) == RecordMode::replace);
+    CHECK (yw::startingRecordMode (false, false, false) == RecordMode::replace);
     // (the engine's own default, AudioEngine::RecordOptions, is not in the test binary: the guarded GUI session checked it)
     // settings from before 0.1.25 have no answer, and those sessions always started on: nothing changes for them
-    CHECK (lynx::startingRecordMode (true, false, false) == RecordMode::overdub);
+    CHECK (yw::startingRecordMode (true, false, false) == RecordMode::overdub);
     // from then on, the saved answer is what counts
-    CHECK (lynx::startingRecordMode (true, true, true) == RecordMode::overdub);
-    CHECK (lynx::startingRecordMode (true, true, false) == RecordMode::replace);
+    CHECK (yw::startingRecordMode (true, true, true) == RecordMode::overdub);
+    CHECK (yw::startingRecordMode (true, true, false) == RecordMode::replace);
 }
 
 TEST (comp177_audition_ends_when_rows_move_and_before_a_render)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.playlistTracks.resize (4);
     song.playlistTracks[0].compTrack = true;
@@ -621,7 +621,7 @@ TEST (comp177_audition_ends_when_rows_move_and_before_a_render)
 
 TEST (comp177_undo_labels_for_the_comp_steps)
 {
-    using namespace lynx;
+    using namespace yw;
     Song before;
     before.playlistTracks.resize (3);
     before.playlistTracks[0].compTrack = true;
@@ -650,7 +650,7 @@ TEST (comp177_undo_labels_for_the_comp_steps)
 
 TEST (comp177_three_ways_to_swipe)
 {
-    using namespace lynx;
+    using namespace yw;
     // the user's choice (2026-11-07): every way works
     CHECK (comp::swipeStyle == comp::SwipeStyle::both);
     // 1. a plain drag (the pencil) and 2. a Draw-mode drag (the brush) both swipe

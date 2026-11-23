@@ -47,7 +47,7 @@ inline std::vector<std::pair<std::string, std::vector<std::uint8_t>>> statesIn (
 
 TEST (fpc190m_empty_kit_reads_back_as_written)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto kit = fpc::emptyKit();
     CHECK (kit.pads.size() == 32);
     const auto bytes = fpc::write (kit);
@@ -65,7 +65,7 @@ TEST (fpc190m_empty_kit_reads_back_as_written)
 
 TEST (fpc190m_an_edit_is_what_the_state_carries)
 {
-    using namespace lynx;
+    using namespace yw;
     auto kit = fpc::emptyKit();
     auto& pad = kit.pads[1];
     pad.name = fpc::fromUtf8 ("Kick \xC3\xA9 \xF0\x9F\x98\x80");
@@ -106,9 +106,9 @@ TEST (fpc190m_an_edit_is_what_the_state_carries)
     CHECK (std::abs (p.layers[1].tune + 1.125f) < 1e-6f);
 }
 
-TEST (fpc190m_chunks_lynx_does_not_know_stay_in_place)
+TEST (fpc190m_chunks_yw_does_not_know_stay_in_place)
 {
-    using namespace lynx;
+    using namespace yw;
     using fpc190m::chunk;
     using fpc190m::put32;
     // a state with a chunk of a later version in each list: the kit, a pad and a layer; and an envelope with another layout
@@ -158,7 +158,7 @@ TEST (fpc190m_chunks_lynx_does_not_know_stay_in_place)
 
 TEST (fpc190m_versions_and_broken_states)
 {
-    using namespace lynx;
+    using namespace yw;
     auto kit = fpc::emptyKit();
     kit.pads[0].layers[0].path = u"k.wav";
     // the versions in FL's own files: 2,000,100, 2,000,014 and FL Mobile's 1,000,011 (text of one byte per character)
@@ -204,7 +204,7 @@ TEST (fpc190m_versions_and_broken_states)
 
 TEST (fpc190m_fl_kits_and_projects_round_trip_byte_for_byte)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::filesystem::path data (realFlpDir);
     auto states = fpc190m::statesIn (data / "Patches" / "Plugin presets" / "Generators" / "FPC");
     const auto kits = states.size();
@@ -239,7 +239,7 @@ TEST (fpc190m_fl_kits_and_projects_round_trip_byte_for_byte)
     std::printf ("  FPC: %d states (%d kits) with %d pads and %d layers, %d written back byte for byte\n", (int) states.size(), (int) kits, pads, layers, exact);
     CHECK (exact == (int) states.size());
     CHECK (kits >= 21);
-    // FL's Empty kit is LYNX's empty kit
+    // FL's Empty kit is YW's empty kit
     std::ifstream in (data / "Patches" / "Plugin presets" / "Generators" / "FPC" / "Empty.fst", std::ios::binary);
     const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
     if (file.empty())

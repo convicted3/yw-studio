@@ -17,7 +17,7 @@
 #include "engine/Text.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 using namespace exportopts;
 
@@ -42,7 +42,7 @@ Options ExportSettings::toOptions() const
         case Format::flac24: o.format = exportopts::Format::flac; o.flacBits = 24; o.flacLevel = 0; break;
         case Format::ogg: o.format = exportopts::Format::ogg; o.oggKbps = 256; break;
     }
-    o.dither = format == Format::wav16 ? DitherMode::shaped : DitherMode::none; // as LYNX always did
+    o.dither = format == Format::wav16 ? DitherMode::shaped : DitherMode::none; // as YW always did
     o.sampleRate = sampleRate;
     o.range = wholeSong ? Range::song : Range::pattern;
     o.tail = TailMode::leave;
@@ -204,7 +204,7 @@ bool LiveExportHold::fitRate (double sampleRate, PluginInstrument* instrument, P
     auto& plugin = instrument != nullptr ? instrument->getInstance() : effect->getInstance();
     if (plugin.getSampleRate() == sampleRate)
         return true;
-    // (LYNX's own extra: an export at another rate than the device's; FL renders at the device's. The running instance
+    // (YW's own extra: an export at another rate than the device's; FL renders at the device's. The running instance
     // is prepared at the export's rate and back afterwards; one that does not take it is not lent)
     const auto before = plugin.getSampleRate();
     if (instrument != nullptr ? instrument->changeRate (sampleRate) : effect->changeRate (sampleRate))
@@ -704,7 +704,7 @@ bool ExportJob::writeBuffered (std::vector<float>& left, std::vector<float>& rig
     }
     writtenFrames = (std::int64_t) left.size();
 
-    if (options.master) // round 168e: File › Export › Master... (LYNX's own mastering, core/Mastering.h)
+    if (options.master) // round 168e: File › Export › Master... (YW's own mastering, core/Mastering.h)
     {
         mastering::Settings m;
         m.targetLufs = options.masterLufs;
@@ -921,7 +921,7 @@ struct StemPass::Shared final : AudioEngine::RenderOptions::Shared
         taps.wanted.assign ((std::size_t) tracks, 0);
         taps.data.assign ((std::size_t) tracks, {});
 
-        // hosted plugins see the size of the blocks they are given; LYNX's own units do not (round 190gh: a render is
+        // hosted plugins see the size of the blocks they are given; YW's own units do not (round 190gh: a render is
         // the same in blocks of any size)
         for (const auto& c : song.channels)
             hosted = hosted || c.instrument == InstrumentKind::plugin || c.instrument == InstrumentKind::patcher;
@@ -1004,7 +1004,7 @@ struct StemPass::Shared final : AudioEngine::RenderOptions::Shared
                     least = least == 0 ? n : std::min (least, n);
                 }
         // a file whose own render ends inside a block that the others still need whole: its render's last block is
-        // shorter. LYNX's own units make the same samples in it (round 190gh); hosted plugins may not: with them, that
+        // shorter. YW's own units make the same samples in it (round 190gh); hosted plugins may not: with them, that
         // file gets its own render
         if (least != most && hosted)
             for (auto& o : pass.outs)
@@ -1467,4 +1467,4 @@ int runStemExport (const StemPlan& plan, std::function<void (std::function<void(
     }
     return written;
 }
-} // namespace lynx
+} // namespace yw

@@ -11,7 +11,7 @@
 
 TEST (simple184a_empty_song_rule)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     CHECK (simpletracks::isEmptySong (s));
     // a template's channels without notes and its inserts don't count
@@ -42,7 +42,7 @@ TEST (simple184a_empty_song_rule)
 
 TEST (simple184a_starter_beat_becomes_a_drums_track)
 {
-    using namespace lynx;
+    using namespace yw;
     loopstarter::Plan plan;
     plan.genre = "test";
     plan.bpm = 92.0;
@@ -101,7 +101,7 @@ TEST (simple184a_starter_beat_becomes_a_drums_track)
 // Round 190t, slice A: a starter beat is placed for four bars (whole clips of its pattern), in the same edit.
 TEST (simple190t_touch_keyboard_note_sounds_on_a_new_instrument_track)
 {
-    using namespace lynx;
+    using namespace yw;
     // The Instrument tile's track, then a key of the Touch keyboard (ui/TouchKeyboard.cpp: AudioEngine::sendLiveNote
     // pushes this NoteEvent on the selected channel into the live queue the renderer reads): the note is heard at the
     // Master and on the track's own insert, with the transport stopped, and ends after the key is let go.
@@ -158,7 +158,7 @@ TEST (simple190t_touch_keyboard_note_sounds_on_a_new_instrument_track)
 
 TEST (simple190t_starter_tempo_is_the_one_on_the_button)
 {
-    using namespace lynx;
+    using namespace yw;
     // every starter: with "Use the suggested tempo" the project gets the BPM written on the button (Lo-fi 84 -> 84),
     // whatever tempo the generated plan drew from the genre's range
     const auto config = loopstarter::builtinConfig();
@@ -192,13 +192,13 @@ TEST (simple190t_starter_tempo_is_the_one_on_the_button)
         }
     }
     CHECK (drewAnother > 0); // the plan's own tempo does differ: the old code took that one
-    loopstarter::Sources none; // no configuration, unknown genre: LYNX's own default genre
+    loopstarter::Sources none; // no configuration, unknown genre: YW's own default genre
     CHECK (loopstarter::suggestedTempo (none, "no-such-genre") == loopstarter::suggestedTempo (*config.find (config.defaultGenre)));
 }
 
 TEST (simple190t_a_starter_beat_fills_four_bars)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) 16 * ticksPerStep;
     auto add = [bar] (Song& s, int patternBars, int fillBars) {
         s.mixer.resize (4);
@@ -256,7 +256,7 @@ TEST (simple190t_a_starter_beat_fills_four_bars)
 
 TEST (simple184a_imported_audio_is_a_track_with_its_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer.resize (3);
     simpletracks::Request q;
@@ -284,7 +284,7 @@ TEST (simple184a_imported_audio_is_a_track_with_its_clip)
 
 TEST (simple190p_a_loop_keeps_time)
 {
-    using namespace lynx;
+    using namespace yw;
     using simpletracks::loopBeats;
     // the tempo in the name
     bool said = false;
@@ -298,21 +298,21 @@ TEST (simple190p_a_loop_keeps_time)
     CHECK (simpletracks::tempoInName ("120.wav") == 120.0);
     CHECK (simpletracks::tempoInName ("Take 1200.wav") == 0.0);
     // whole bars at the name's tempo: 4 bars at 102 BPM last 9.412 s
-    CHECK (loopBeats ("DL1_102_Dm_Regulators_Stack_Verse.wav", 16.0 * 60.0 / 102.0, 0.0f, lynx::Meter (4, 4)) == 16.0f);
-    CHECK (loopBeats ("Funky Guitar 98.wav", 8.0 * 60.0 / 98.0 + 0.05, 0.0f, lynx::Meter (4, 4)) == 8.0f); // a little padding
-    CHECK (loopBeats ("Waltz 90.wav", 6.0 * 60.0 / 90.0, 0.0f, lynx::Meter (3, 4)) == 6.0f);
-    CHECK (loopBeats ("Hat 120.wav", 0.5, 0.0f, lynx::Meter (4, 4)) == 1.0f);  // one beat
-    CHECK (loopBeats ("Hat 120.wav", 1.0, 0.0f, lynx::Meter (4, 4)) == 2.0f);  // half a bar
+    CHECK (loopBeats ("DL1_102_Dm_Regulators_Stack_Verse.wav", 16.0 * 60.0 / 102.0, 0.0f, yw::Meter (4, 4)) == 16.0f);
+    CHECK (loopBeats ("Funky Guitar 98.wav", 8.0 * 60.0 / 98.0 + 0.05, 0.0f, yw::Meter (4, 4)) == 8.0f); // a little padding
+    CHECK (loopBeats ("Waltz 90.wav", 6.0 * 60.0 / 90.0, 0.0f, yw::Meter (3, 4)) == 6.0f);
+    CHECK (loopBeats ("Hat 120.wav", 0.5, 0.0f, yw::Meter (4, 4)) == 1.0f);  // one beat
+    CHECK (loopBeats ("Hat 120.wav", 1.0, 0.0f, yw::Meter (4, 4)) == 2.0f);  // half a bar
     // a number that doesn't make whole bars is not a tempo: a take, a song
-    CHECK (loopBeats ("Take 90.wav", 13.7, 0.0f, lynx::Meter (4, 4)) == 0.0f);
-    CHECK (loopBeats ("Lead vocal.wav", 8.0, 0.0f, lynx::Meter (4, 4)) == 0.0f);
-    CHECK (loopBeats ("My song 120.wav", 180.0, 0.0f, lynx::Meter (4, 4)) == 0.0f);
+    CHECK (loopBeats ("Take 90.wav", 13.7, 0.0f, yw::Meter (4, 4)) == 0.0f);
+    CHECK (loopBeats ("Lead vocal.wav", 8.0, 0.0f, yw::Meter (4, 4)) == 0.0f);
+    CHECK (loopBeats ("My song 120.wav", 180.0, 0.0f, yw::Meter (4, 4)) == 0.0f);
     // "bpm" in the name keeps a loop with a tail; the ACID beat count wins; long files are left alone
-    CHECK (std::abs (loopBeats ("Pad 100 bpm.wav", 10.5, 0.0f, lynx::Meter (4, 4)) - 17.5f) < 1.0e-4f);
-    CHECK (loopBeats ("Pad 100 bpm.wav", 10.5, 8.0f, lynx::Meter (4, 4)) == 8.0f);
-    CHECK (loopBeats ("anything.wav", 4.0, 8.0f, lynx::Meter (4, 4)) == 8.0f);
-    CHECK (loopBeats ("Song 100 bpm.wav", 200.0, 0.0f, lynx::Meter (4, 4)) == 0.0f);
-    CHECK (loopBeats ("anything.wav", 0.0, 8.0f, lynx::Meter (4, 4)) == 0.0f);
+    CHECK (std::abs (loopBeats ("Pad 100 bpm.wav", 10.5, 0.0f, yw::Meter (4, 4)) - 17.5f) < 1.0e-4f);
+    CHECK (loopBeats ("Pad 100 bpm.wav", 10.5, 8.0f, yw::Meter (4, 4)) == 8.0f);
+    CHECK (loopBeats ("anything.wav", 4.0, 8.0f, yw::Meter (4, 4)) == 8.0f);
+    CHECK (loopBeats ("Song 100 bpm.wav", 200.0, 0.0f, yw::Meter (4, 4)) == 0.0f);
+    CHECK (loopBeats ("anything.wav", 0.0, 8.0f, yw::Meter (4, 4)) == 0.0f);
 
     // the track: the channel is stretched to the beats with its pitch kept, and the clip is that long
     Song s;
@@ -340,7 +340,7 @@ TEST (simple190p_a_loop_keeps_time)
 
 TEST (simple184a_imported_midi_track_is_an_instrument_with_its_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer.resize (3);
     simpletracks::Request q;
@@ -375,7 +375,7 @@ TEST (simple184a_imported_midi_track_is_an_instrument_with_its_notes)
 
 TEST (simple184a_dropped_files_start_where_they_land_and_recolour)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer.resize (4);
     simpletracks::Request q;

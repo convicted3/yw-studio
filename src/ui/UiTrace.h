@@ -1,6 +1,6 @@
 #pragma once
 
-// UI responsiveness diagnostics (REA round 151). With LYNX_TRACE_UI set, %APPDATA%\LYNX\ui.log receives
+// UI responsiveness diagnostics (REA round 151). With YW_TRACE_UI set, %APPDATA%\YW\ui.log receives
 //  - every message-thread stall above 16 ms (a watchdog thread pings the message loop every 4 ms and measures how
 //    long the answer took), with the slowest paint / step named by uitrace::Scope seen during it;
 //  - each Scope (a paint of a big view, a heavy UI step) that took longer than 8 ms;
@@ -16,11 +16,11 @@
 #include <functional>
 #include <memory>
 
-namespace lynx::uitrace
+namespace yw::uitrace
 {
 inline bool enabled()
 {
-    static const bool on = std::getenv ("LYNX_TRACE_UI") != nullptr;
+    static const bool on = std::getenv ("YW_TRACE_UI") != nullptr;
     return on;
 }
 
@@ -53,11 +53,11 @@ inline void frame (double nowMs)
     s.lastFrameMs = nowMs;
 }
 
-// Scopes slower than this are logged (LYNX_TRACE_UI_MIN=<ms>, default 8)
+// Scopes slower than this are logged (YW_TRACE_UI_MIN=<ms>, default 8)
 inline double logThresholdMs()
 {
     static const double ms = [] {
-        const auto* v = std::getenv ("LYNX_TRACE_UI_MIN");
+        const auto* v = std::getenv ("YW_TRACE_UI_MIN");
         return v != nullptr ? juce::jmax (0.0, juce::String (v).getDoubleValue()) : 8.0;
     }();
     return ms;
@@ -250,4 +250,4 @@ private:
         }
     }
 };
-} // namespace lynx::uitrace
+} // namespace yw::uitrace

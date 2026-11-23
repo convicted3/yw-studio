@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::channelloops
+namespace yw::channelloops
 {
 // The channel's stored loop point in the pattern (ChannelLoop::dontLoop when it has none).
 int storedSetting (const Pattern& pattern, int channel) noexcept;
@@ -57,4 +57,4 @@ std::string settingText (int setting);
 // (newIndexOf[old] = new index).
 void removeChannel (Pattern& pattern, int channel);
 void remapChannels (Pattern& pattern, const std::vector<int>& newIndexOf);
-} // namespace lynx::channelloops
+} // namespace yw::channelloops

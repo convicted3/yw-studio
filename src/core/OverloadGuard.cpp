@@ -16,7 +16,7 @@
  #include <time.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 void OverloadGuard::sleepFor (double ms) noexcept
 {
@@ -56,4 +56,4 @@ void OverloadGuard::sleepFor (double ms) noexcept
     }
 #endif
 }
-} // namespace lynx
+} // namespace yw

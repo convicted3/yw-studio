@@ -5,7 +5,7 @@
 #include "core/Song.h"
 #include "core/ValueMath.h"
 
-namespace lynx
+namespace yw
 {
 std::array<metronome::Sample, metronome::soundCount> Metronome::loadSounds (const juce::File& flDataFolder)
 {
@@ -128,4 +128,4 @@ bool Metronome::render (float* outLeft, float* outRight, int numSamples) noexcep
     }
     return any;
 }
-} // namespace lynx
+} // namespace yw

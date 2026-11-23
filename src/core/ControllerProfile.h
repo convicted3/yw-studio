@@ -1,7 +1,7 @@
 #pragma once
 
 // MIDI controller profiles (round 190aw, phases A and B of REA_rodada190as §3.3; docs/CONTROLLERS.md has the file
-// format). A profile is a small text file that says what a device's buttons, knobs, faders and pads do and what LYNX
+// format). A profile is a small text file that says what a device's buttons, knobs, faders and pads do and what YW
 // sends back (LEDs, motor faders, display text). It is data only: no code per device, so users add their own files.
 // This header is the file's model and its parser; core/ControllerSession.h runs a profile against a Surface.
 // No JUCE.
@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::controller
+namespace yw::controller
 {
 // What a button can do (Surface::command) and what a transport LED can show (Surface::lit).
 enum class Command : std::uint8_t
@@ -48,7 +48,7 @@ enum class ValueMode : std::uint8_t
 
 enum class Action : std::uint8_t
 {
-    none,             // "ignore": the message is taken and does nothing (a button LYNX has no use for must not play a note)
+    none,             // "ignore": the message is taken and does nothing (a button YW has no use for must not play a note)
     command,          // arg = Command
     jog,              // relative: the song position
     mixerVolume, mixerPan, mixerMute, mixerSolo, mixerArm, mixerSelect, mixerTouch, // strip
@@ -192,7 +192,7 @@ ParseResult parseProfile (const std::string& text, const std::string& id, const 
 // pattern without its wildcards (0 = no match), so the most specific profile wins.
 int matchScore (const std::vector<std::string>& patterns, const std::string& portName);
 
-// The profiles LYNX knows: the built-in ones (resources/controllers, compiled in) and the user's.
+// The profiles YW knows: the built-in ones (resources/controllers, compiled in) and the user's.
 struct Library
 {
     std::vector<std::shared_ptr<const Profile>> profiles;
@@ -215,4 +215,4 @@ constexpr const char* genericChoice = "generic";
 // The output port that belongs to an input port: the same name, or the system's usual pairs ("MIDIIN2 (X)" /
 // "MIDIOUT2 (X)", "… DAW Out" / "… DAW In", "… MIDI Out" / "… MIDI In", "… In" / "… Out"). Empty when there is none.
 std::string pairedOutput (const std::string& inputName, const std::vector<std::string>& outputNames);
-} // namespace lynx::controller
+} // namespace yw::controller

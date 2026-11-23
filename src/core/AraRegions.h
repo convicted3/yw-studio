@@ -3,10 +3,10 @@
 // Round 190kx (core/AraLink.h): the ARA model of an audio clip channel edited in an ARA plugin, worked out from the song.
 // Header only, no JUCE (the app's engine/AraHost.cpp turns it into ARA objects; tests check it on any platform).
 //
-// LYNX's model → ARA's model (ARA 2 "model graph", Celemony's ARA SDK documentation):
+// YW's model → ARA's model (ARA 2 "model graph", Celemony's ARA SDK documentation):
 //   the song's tempo and meter          → one MusicalContext (tempo entries + bar signatures)
-//   an ARA channel's sample             → one AudioSource (persistent id "lynx-ch-<channel uid>")
-//   that channel                        → one AudioModification ("lynx-mod-<channel uid>") and one RegionSequence: the
+//   an ARA channel's sample             → one AudioSource (persistent id "yw-ch-<channel uid>")
+//   that channel                        → one AudioModification ("yw-mod-<channel uid>") and one RegionSequence: the
 //                                         channel is FL's "sample", so its clips share the edits, as editing a channel's
 //                                         sample in Edison or Newtone changes every clip of it (FL's "Make unique"
 //                                         gives a clip a channel, and so edits, of its own)
@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::ara
+namespace yw::ara
 {
 struct Region
 {
@@ -53,8 +53,8 @@ inline double secondsPerTick (const Song& song) noexcept
     return 60.0 / (bpm * (double) ppq);
 }
 
-inline std::string sourceId (const ChannelDef& c) { return "lynx-ch-" + std::to_string (c.uid); }
-inline std::string modificationId (const ChannelDef& c) { return "lynx-mod-" + std::to_string (c.uid); }
+inline std::string sourceId (const ChannelDef& c) { return "yw-ch-" + std::to_string (c.uid); }
+inline std::string modificationId (const ChannelDef& c) { return "yw-mod-" + std::to_string (c.uid); }
 
 // --- ARA on a mixer insert (round 190oq, issue #243) -------------------------------------------------------------------
 // The slot of mixer track `track` that is an ARA insert (a plugin slot with `ara` on, switched on), or -1. The first one
@@ -322,4 +322,4 @@ inline std::vector<BarSignature> barSignatures (const Song& song)
     }
     return out;
 }
-} // namespace lynx::ara
+} // namespace yw::ara

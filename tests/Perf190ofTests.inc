@@ -4,8 +4,8 @@
 
 TEST (perf190of_monitor_longest_and_spikes)
 {
-    using namespace lynx;
-    using namespace lynx::perfmon;
+    using namespace yw;
+    using namespace yw::perfmon;
     auto song = Song::makeDefault();
     song.channels[2].instrument = InstrumentKind::plugin;
     song.channels[2].plugin.name = "Heavy Synth";
@@ -47,7 +47,7 @@ TEST (perf190of_monitor_longest_and_spikes)
 
 TEST (perf190of_process_times_count_calls)
 {
-    using namespace lynx;
+    using namespace yw;
     auto times = std::make_unique<ProcessTimes>();
     // 1 ms of audio: a call of 0.4 ms is no spike, 0.6 ms is one
     times->addCall (true, 5, 400'000, 1'000'000);
@@ -67,7 +67,7 @@ TEST (perf190of_process_times_count_calls)
 
 TEST (perf190of_renderer_feeds_the_monitor_while_it_is_open)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = ra190gq::makeSong (2);
     auto state = RackState::build (song, nullptr, 44100.0);
     RackRenderer renderer;
@@ -102,7 +102,7 @@ TEST (perf190of_renderer_feeds_the_monitor_while_it_is_open)
 
 TEST (perf190of_split_meter_counts_the_live_part_and_the_part_rendered_ahead)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = ra190gq::makeSong (8);
     const int blocks = 600;
     ra190gq::AheadRig rig (song, 0, {});
@@ -133,7 +133,7 @@ TEST (perf190of_split_meter_counts_the_live_part_and_the_part_rendered_ahead)
 
 TEST (perf190of_latencies_differ_without_making_the_list)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     const auto state = RackState::build (song, nullptr, 44100.0);
     const auto list = state->currentLatencies();

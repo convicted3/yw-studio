@@ -1,6 +1,6 @@
 #pragma once
 
-// Settings › General › Text size (issue #189, round 190ir): LYNX's text roles (ui/Theme.h theme::type) scaled per role.
+// Settings › General › Text size (issue #189, round 190ir): YW's text roles (ui/Theme.h theme::type) scaled per role.
 // JUCE-free, so the rules are tested in the core tests.
 //
 // Every role takes the chosen percentage, except the two that sit in boxes of a fixed size that a larger text would
@@ -13,7 +13,7 @@
 #include <array>
 #include <string>
 
-namespace lynx::textsize
+namespace yw::textsize
 {
 enum class Role : int { caption = 0, small = 1, body = 2, title = 3, display = 4 };
 
@@ -57,7 +57,7 @@ inline int parse (const std::string& text) noexcept
 }
 
 // Settings › General › Bold text (round 190jp, a Discord request): the text roles drawn in the bold face, chosen per role
-// as the size is, applied at the next start as the font and the size are. Off: LYNX's own weights. Labels: the small and
+// as the size is, applied at the next start as the font and the size are. Off: YW's own weights. Labels: the small and
 // body roles (labels, buttons, menus, lists). All: every role.
 enum class Bold : int { off = 0, labels = 1, all = 2 };
 
@@ -88,4 +88,4 @@ inline Role roleOf (float size, const std::array<float, 5>& sizes) noexcept
             return (Role) i;
     return Role::display;
 }
-} // namespace lynx::textsize
+} // namespace yw::textsize

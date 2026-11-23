@@ -1,7 +1,7 @@
 #pragma once
 
-// Online Sessions, phase 2 (docs/design/ONLINE_SESSIONS.md, round 169b): a live session of this LYNX SHARE — as the
-// host (the authority: core/LiveSession.h's Authority, and the room on the relay) or as a guest — over the LYNX SHARE
+// Online Sessions, phase 2 (docs/design/ONLINE_SESSIONS.md, round 169b): a live session of this YW Studio — as the
+// host (the authority: core/LiveSession.h's Authority, and the room on the relay) or as a guest — over the YW Studio
 // relay (engine/LiveLink.h, end-to-end encrypted with the invite code's key, core/LiveCrypto.h).
 //
 // The wire (inside the relay's [peer] frames): [1][sealed frame] or [2][u32 id][u16 index][u16 count][part of a
@@ -9,7 +9,7 @@
 // chunk]. The JSON messages: hello / welcome / deny / snapshot / propose / commit / people / presence / want / bye /
 // end / resync; round 169j adds seek / host / back / resume / resumed (reconnect, §1.5), perms, chat, transport, need /
 // needs (live stand-ins) and 'F' frames (a medium as a lossless FLAC pack, engine/MediaPack.h); round 190ai adds
-// shared / rbusy (P5-A1 remote plugins, engine/LiveRemotePlugins.cpp). Sample paths travel as "lynx-media:<sha256>/<name>"; a received change may only point at this
+// shared / rbusy (P5-A1 remote plugins, engine/LiveRemotePlugins.cpp). Sample paths travel as "yw-media:<sha256>/<name>"; a received change may only point at this
 // session's media folder (sessionpack::confine), and media are only sent when the sender's own song uses them.
 
 #include <deque>
@@ -35,7 +35,7 @@ namespace juce
 class AudioPluginInstance;
 }
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -54,7 +54,7 @@ public:
         loading,    // guest: the project is arriving
         live,
         reconnecting, // this computer's connection dropped: it connects again by itself (edits wait, nothing is lost)
-        waitingHost,  // guest: the host's connection dropped (or its LYNX SHARE restarts): waiting for it to come back
+        waitingHost,  // guest: the host's connection dropped (or its YW Studio restarts): waiting for it to come back
         ended
     };
 
@@ -67,10 +67,10 @@ public:
         bool guestsKeepFull = false;          // host: a guest keeps a full copy at the end (the user's decision 1)
         juce::File projectFile;               // host: the open project (where guests' media go)
         juce::File folder;                    // where this session's received media go (default: the profile's cache)
-        // host: the journal a restarted LYNX SHARE resumes the session from (default: the profile's
+        // host: the journal a restarted YW Studio resumes the session from (default: the profile's
         // "Live session/journal.json"; tests: their own)
         juce::File journal;
-        // guest (round 190ah): the journal a restarted LYNX SHARE comes back into the session from, as the same guest
+        // guest (round 190ah): the journal a restarted YW Studio comes back into the session from, as the same guest
         // (default: the profile's "Live session/guest.json")
         juce::File guestJournal;
         // host: what one guest may send before the host is asked, and what the session may move in all (§8.4)
@@ -95,7 +95,7 @@ public:
     static std::optional<JournalInfo> readJournal (const juce::File& journal);
     static void discardJournal (const juce::File& journal, const juce::String& relay); // (and closes its room)
 
-    // A guest's journal (round 190ah): the session this LYNX SHARE was in when it closed or crashed.
+    // A guest's journal (round 190ah): the session this YW Studio was in when it closed or crashed.
     struct GuestJournalInfo
     {
         juce::String name, hostName;
@@ -128,17 +128,17 @@ public:
     };
 
     // The host: opens a room on the relay (background) and waits for guests; the invite code is ready when the state is
-    // live. Needs nothing saved: guests' media then go under Documents/LYNX/Session media.
+    // live. Needs nothing saved: guests' media then go under Documents/YW/Session media.
     void start (const Options& options);
     // A guest: joins with the invite code (the project replaces the open one when it has arrived — the caller asked
     // about unsaved changes first).
     void join (const juce::String& code, const Options& options);
     // The guest leaves (keeps his part, or a copy if the host allowed it); the host ends the session for everybody.
     void leave();
-    // The host's LYNX SHARE restarted: the session goes on from its journal (`onResumed` gets the song first); the
+    // The host's YW Studio restarted: the session goes on from its journal (`onResumed` gets the song first); the
     // guests, waiting, reconnect by themselves.
     bool resumeHost (const juce::File& journal, const Options& options);
-    // A guest's LYNX SHARE restarted (round 190ah): it goes back into the session as the same guest — same tag, area,
+    // A guest's YW Studio restarted (round 190ah): it goes back into the session as the same guest — same tag, area,
     // colour and permissions, no new question to the host — with the project as it had it (`onRejoined` gets that
     // song first); what it had changed and the host never confirmed is proposed again.
     bool resumeGuest (const juce::File& journal, const Options& options);
@@ -198,7 +198,7 @@ public:
     std::function<bool (juce::AudioPluginInstance&)> hostedEditorOpen;
 
     // tests: the connection drops as if the network went away (the manager reconnects by itself); abandon() stops
-    // everything without a word to anyone, keeping the journal (what a crash of LYNX SHARE does)
+    // everything without a word to anyone, keeping the journal (what a crash of YW Studio does)
     void dropConnection();
     void abandon();
 
@@ -256,7 +256,7 @@ public:
     // the confirmed revision (host: the authority's)
     std::uint64_t revision() const;
 
-    // the serialiser's round trip (the .lynx JSON): what every peer receives (also used by the tests)
+    // the serialiser's round trip (the .yw JSON): what every peer receives (also used by the tests)
     static live::Patch roundTrip (const live::Patch& patch);
     static juce::var patchToVar (const live::Patch& patch);
     static live::Patch patchFromVar (const juce::var& v);
@@ -489,4 +489,4 @@ private:
     void endHosted (bool wasHost);              // the session is over
     void captureHostedValuesAt (const remoteplug::Place& place);
 };
-} // namespace lynx
+} // namespace yw

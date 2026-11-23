@@ -3,9 +3,9 @@
 // HMF ×3; 4K B: Brown, its stepped compressor read as the 4K's, slice 4); the editor's three columns fit the window.
 namespace tp172c
 {
-inline lynx::EffectSlot sslSlot (const std::string& plugin, const std::string& params)
+inline yw::EffectSlot sslSlot (const std::string& plugin, const std::string& params)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin fp;
     fp.format = ForeignPlugin::Format::vst3;
     fp.name = plugin;
@@ -26,7 +26,7 @@ inline lynx::EffectSlot sslSlot (const std::string& plugin, const std::string& p
 
 TEST (ridge_channel_strip_2_state_translated_tp172c)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     auto p = tp172c::sslSlot ("SSL Native Channel Strip 2",
                               "<PARAM id=\"EqE\" value=\"0.0\"/><PARAM id=\"HighPassFreq\" value=\"20.0\"/><PARAM id=\"LowPassFreq\" value=\"35.0\"/>"
@@ -63,7 +63,7 @@ TEST (ridge_channel_strip_2_state_translated_tp172c)
 // measured ratio nodes (a 10:1 dial acted like ~100:1: the 4K E's S4 setting was 6 dB too deep)
 TEST (ridge_4k_b_steps_and_ratio_blend_tp172c4)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     auto p = tp172c::sslSlot ("SSL 4K B", "<PARAM id=\"CompRatio\" value=\"2.0\"/><PARAM id=\"CompThreshold\" value=\"-15.0\"/>"
                                          "<PARAM id=\"CompAutoMakeUp\" value=\"1.0\"/><PARAM id=\"CompRelease\" value=\"3.0\"/>").params;
@@ -93,7 +93,7 @@ TEST (ridge_4k_b_steps_and_ratio_blend_tp172c4)
 
 TEST (ridge_three_column_layout_fits_tp172c)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& l = plugui::layoutFor (EffectKind::ridgeStrip);
     CHECK (l.width == 780);
     for (const auto& it : l.items)
@@ -105,7 +105,7 @@ TEST (ridge_three_column_layout_fits_tp172c)
 // its 3rd-order high-pass at 200 Hz is -63 dB at 20 Hz; the engine is silent in, silent out and stays finite
 TEST (ridge_modern_voicing_laws_tp172c)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace s2 = vmatch::strip2;
     s2::Settings s;
     s.lmfGain = 12.0; s.lmfKHz = 0.8; s.lmfQ = 1.5;
@@ -140,11 +140,11 @@ TEST (ridge_modern_voicing_laws_tp172c)
 TEST (aether_issue77_default_model_and_levels_tp172c)
 {
     using namespace mixsuite96;
-    namespace air = lynx::mixsuite::aether;
+    namespace air = yw::mixsuite::aether;
     auto p = defaults (EffectKind::aether);
     CHECK (p[air::dynamic] == 1.0f);
     const double sr = 48000.0;
-    auto gainDb = [&] (const lynx::EffectParams& q, double hz, double amp) {
+    auto gainDb = [&] (const yw::EffectParams& q, double hz, double amp) {
         const auto y = run (EffectKind::aether, q, sine (hz, amp, 48000, sr), sr);
         return 20.0 * std::log10 (amplitude (y, hz, 24000, 16384, sr) / amp);
     };
@@ -159,20 +159,20 @@ TEST (aether_issue77_default_model_and_levels_tp172c)
     CHECK (std::abs (gainDb (p, 1000.0, 0.25) - 1.0) < 0.6);
     CHECK (gainDb (p, 12000.0, 0.01) > 15.0); // a quiet 12 kHz tone: the dynamic lift (vocal air +20 dB on the trial)
     // a project saved before the dynamic model existed keeps the shelf + exciter it was set up with
-    lynx::EffectSlot old = lynx::makeEffectSlot (EffectKind::aether);
-    lynx::upgradeLoadedEffectParams (old, (std::size_t) air::dynamic);
+    yw::EffectSlot old = yw::makeEffectSlot (EffectKind::aether);
+    yw::upgradeLoadedEffectParams (old, (std::size_t) air::dynamic);
     CHECK (old.params[air::dynamic] == 0.0f);
-    lynx::EffectSlot now = lynx::makeEffectSlot (EffectKind::aether);
-    lynx::upgradeLoadedEffectParams (now, (std::size_t) air::count);
+    yw::EffectSlot now = yw::makeEffectSlot (EffectKind::aether);
+    yw::upgradeLoadedEffectParams (now, (std::size_t) air::count);
     CHECK (now.params[air::dynamic] == 1.0f);
 }
 
 // slice 5: Harrison 32Classic and MPC channel strip states -> Ridge's own engine (laws fitted on their trials)
 namespace tp172c
 {
-inline lynx::EffectSlot harrisonSlot (const std::string& plugin, const std::string& xml)
+inline yw::EffectSlot harrisonSlot (const std::string& plugin, const std::string& xml)
 {
-    using namespace lynx;
+    using namespace yw;
     ForeignPlugin fp;
     fp.format = ForeignPlugin::Format::vst3;
     fp.name = plugin;
@@ -189,7 +189,7 @@ inline std::string p32 (const char* id, double v) { return std::string ("<PARAM 
 
 TEST (ridge_harrison_strips_translated_tp172c5)
 {
-    using namespace lynx;
+    using namespace yw;
     using tp172c::p32;
     namespace r = mixsuite::ridge;
     const std::string base = p32 ("bypass", 0) + p32 ("compressor_in", 1) + p32 ("compressor_mode", 1) + p32 ("compressor_attack", 20)
@@ -259,7 +259,7 @@ TEST (ridge_harrison_strips_translated_tp172c5)
 // (Harrison 32C saturator, SSL Guitarstrip; the VCC Channel moved to Kiln Channel in slice 7)
 TEST (ridge_drive_section_tp172c6)
 {
-    using namespace lynx;
+    using namespace yw;
     using tp172c::p32;
     namespace r = mixsuite::ridge;
     auto p = makeEffectSlot (EffectKind::ridgeStrip).params;
@@ -305,11 +305,11 @@ TEST (ridge_drive_section_tp172c6)
     CHECK (std::abs (r::driveAmountUnits (r::driveSaturate, s.params[r::driveAmount]) - 12.0) < 1e-3);
 }
 
-// slice 8: Fret Channel and Shell Channel, LYNX's guitar / bass and drum channel strips — their laws, latencies, process
+// slice 8: Fret Channel and Shell Channel, YW's guitar / bass and drum channel strips — their laws, latencies, process
 // order, DSP sanity and the Guitarstrip / Drumstrip states translated 1:1 onto them
 TEST (fret_shell_channels_tp172c8)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace f = mixsuite::fret;
     namespace d = mixsuite::shell;
     namespace r = mixsuite::ridge;
@@ -478,11 +478,11 @@ TEST (fret_shell_channels_tp172c8)
     CHECK (std::abs (d::hfHz (s.params[d::hfFreq]) - 8000.0) < 0.5 && d::orderIndex (s.params[d::processOrder]) == 119);
 }
 
-// slice 7: Kiln Channel, LYNX's console channel — the six console models on the measured drive stages, its noise floor,
+// slice 7: Kiln Channel, YW's console channel — the six console models on the measured drive stages, its noise floor,
 // group bypass shared by the group's members, the meters, and the VCC Channel state translated onto it
 TEST (kiln_channel_tp172c7)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace k = mixsuite::kiln;
     namespace r = mixsuite::ridge;
     const auto& info = effectInfo (EffectKind::kilnChannel);

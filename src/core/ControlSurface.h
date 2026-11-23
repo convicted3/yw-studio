@@ -2,7 +2,7 @@
 
 // FL's Control Surface (an effect slot) and Dashboard (a Channel Rack generator), REA_rodada164a §5: a panel the user
 // builds from knobs, sliders, buttons, check boxes and XY pads; each control is a control output any parameter can be
-// linked to ("Link to internal controller", Patcher cables). LYNX keeps both on the Patcher's Surface model
+// linked to ("Link to internal controller", Patcher cables). YW keeps both on the Patcher's Surface model
 // (SurfaceControl, round 151): the controls live in the slot's / channel's `patcher.surface`.
 //
 //  - Control Surface (EffectKind::controlSurface): output k's value is params[k] (automatable like any effect
@@ -17,13 +17,13 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 class Instrument;
 }
 
-namespace lynx::surface
+namespace yw::surface
 {
 // A panel publishes at most this many outputs (an XY pad counts two): a Dashboard up to FL's 1024 (round 165;
 // REA_rodada164a §5), a Control Surface one effect parameter per output (round 165: up to maxEffectParams).
@@ -61,10 +61,10 @@ struct DashboardMidi
     int bankLsb = -1;  // CC 32 (FL's header word 3)
     bool operator== (const DashboardMidi&) const = default;
 };
-// A Dashboard channel's settings from its state (FL's Dashboard state, or the short one LYNX writes for a new one);
+// A Dashboard channel's settings from its state (FL's Dashboard state, or the short one YW writes for a new one);
 // FL's defaults when the state is empty or does not parse.
 DashboardMidi dashboardMidi (const std::vector<std::uint8_t>& state) noexcept;
-// Writes the settings into the state (FL's layout; a short state of LYNX's when it holds none).
+// Writes the settings into the state (FL's layout; a short state of YW's when it holds none).
 void writeDashboardMidi (std::vector<std::uint8_t>& state, const DashboardMidi& settings);
 // The MIDI messages (status, data 1, data 2; size 2 or 3) control `c` sends for its value 0..1, as FL's Dashboard does:
 // CC (14-bit when the range passes 127: the high 7 bits, then the low ones on the same CC), RPN / NRPN (parameter
@@ -79,14 +79,14 @@ int midiOf (const SurfaceControl& c, float value, int channel, MidiBytes out[6])
 // The raw value FL's Dashboard sends for a control's value 0..1 (its range low…high, rounded).
 int midiValueOf (const SurfaceControl& c, float value) noexcept;
 
-// A new panel with a few controls to start from (FL's default Control Surface is empty; LYNX's new one has two knobs).
+// A new panel with a few controls to start from (FL's default Control Surface is empty; YW's new one has two knobs).
 std::vector<SurfaceControl> starterControls();
 
 // FL's Control Surface state (0xD5, REA_rodada15 §11.2 / REA_rodada164a §5): the controls with their kind, name, place
 // and value(s), in output order; nullopt when the state does not parse.
 std::optional<std::vector<SurfaceControl>> parseFlControlSurface (const std::vector<std::uint8_t>& state);
-// The LYNX output of FL's published output `flOutput` (FL numbers them freely; LYNX in panel order).
-std::optional<int> flOutputToLynx (const std::vector<std::uint8_t>& state, int flOutput);
+// The YW output of FL's published output `flOutput` (FL numbers them freely; YW in panel order).
+std::optional<int> flOutputToYw (const std::vector<std::uint8_t>& state, int flOutput);
 
 // FL's Dashboard state (0xD5, REA_rodada164f-flimport): a list of "records" (one per value control, in the panel's
 // order of value controls: record k = parameter k + 1 = the k-th control that holds a value) and the skinned panel.
@@ -94,9 +94,9 @@ std::optional<int> flOutputToLynx (const std::vector<std::uint8_t>& state, int f
 struct FlDashboard
 {
     std::vector<SurfaceControl> controls; // the value controls (knob, slider, check box) with FL's names and values
-    std::vector<int> flOutputs;           // [LYNX output] FL's output number (−1: the record sends MIDI, no output)
+    std::vector<int> flOutputs;           // [YW output] FL's output number (−1: the record sends MIDI, no output)
 };
 std::optional<FlDashboard> parseFlDashboard (const std::vector<std::uint8_t>& state);
-// The LYNX output (Dashboard channel) of FL's Dashboard output `flOutput`
-std::optional<int> flDashboardOutputToLynx (const std::vector<std::uint8_t>& state, int flOutput);
-} // namespace lynx::surface
+// The YW output (Dashboard channel) of FL's Dashboard output `flOutput`
+std::optional<int> flDashboardOutputToYw (const std::vector<std::uint8_t>& state, int flOutput);
+} // namespace yw::surface

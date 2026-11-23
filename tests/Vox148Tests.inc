@@ -1,4 +1,4 @@
-// Round 148 (vox148): LYNX Tune's held notes in noise — the PSOLA marks follow the waveform's repetition (period
+// Round 148 (vox148): YW Tune's held notes in noise — the PSOLA marks follow the waveform's repetition (period
 // cross-correlation, sub-sample peak) instead of the single highest peak (docs/analise/REA_rodada148.md §1)
 
 namespace vox148
@@ -60,18 +60,18 @@ double wobbleCents (const std::vector<float>& y, double hz, double sr, double fr
 }
 } // namespace vox148
 
-TEST (lynx_tune_held_note_in_noise_round148)
+TEST (yw_tune_held_note_in_noise_round148)
 {
-    using namespace lynx;
+    using namespace yw;
     // [EXEC] Auto-Tune Pro (official trial, retune 0 and 50, chromatic): held notes with white noise 20 dB under them
-    // come out within 0.1–0.6 c rms; LYNX Tune wobbled 2–5 c on the low notes (the marks jumped between noise peaks).
+    // come out within 0.1–0.6 c rms; YW Tune wobbled 2–5 c on the low notes (the marks jumped between noise peaks).
     // Now the marks follow the waveform's repetition: a 110 Hz and a 220 Hz note in noise stay within about a cent.
     for (const double hz : { 110.0, 220.0 })
         for (const float retune : { 0.0f, 0.5f })
         {
-            auto slot = makeEffectSlot (EffectKind::lynxTune);
-            slot.params[lynxtune::scale] = 0.0f; // chromatic (the notes are in tune)
-            slot.params[lynxtune::retune] = retune;
+            auto slot = makeEffectSlot (EffectKind::ywTune);
+            slot.params[ywtune::scale] = 0.0f; // chromatic (the notes are in tune)
+            slot.params[ywtune::retune] = retune;
             auto fx = makeEffect (slot);
             const double sr = 48000.0;
             fx->prepare (sr);
@@ -81,8 +81,8 @@ TEST (lynx_tune_held_note_in_noise_round148)
                 fx->process (&l[(std::size_t) i], &r[(std::size_t) i], std::min (256, n - i), slot.params, 120.0);
             const auto dry = vox148::wobbleCents (vox148::noisyNote (hz, 20.0, 2.0, sr), hz, sr, 0.5, 1.9);
             const auto wet = vox148::wobbleCents (l, hz, sr, 0.5, 1.9);
-            std::printf ("  lynx tune %.0f Hz retune %.0f ms, noise 20 dB under: wobble %.2f c (dry %.2f c)\n", hz,
-                         lynxtune::retuneMs (retune), wet, dry);
+            std::printf ("  yw tune %.0f Hz retune %.0f ms, noise 20 dB under: wobble %.2f c (dry %.2f c)\n", hz,
+                         ywtune::retuneMs (retune), wet, dry);
             CHECK (wet < 1.2);
         }
 }
@@ -90,10 +90,10 @@ TEST (lynx_tune_held_note_in_noise_round148)
 // Round 148 §2: Ridge Strip's 4K voicing — the console measured on the SSL 4K E trial (core/VoiceMatch.h, model 1)
 namespace vox148
 {
-lynx::EffectParams k4 ()
+yw::EffectParams k4 ()
 {
-    namespace r = lynx::mixsuite::ridge;
-    auto p = lynx::makeEffectSlot (lynx::EffectKind::ridgeStrip).params;
+    namespace r = yw::mixsuite::ridge;
+    auto p = yw::makeEffectSlot (yw::EffectKind::ridgeStrip).params;
     p[r::console4k] = 1.0f;
     p[r::analog] = 0.0f;
     p[r::autoMakeup] = 0.0f;
@@ -101,11 +101,11 @@ lynx::EffectParams k4 ()
 }
 
 // steady level change (dB) of a 1 kHz sine through Ridge over the last 0.1 s of `sec` seconds (the 4K's slow attack)
-double gainDb (const lynx::EffectParams& p, double dbfs, double sec = 2.5)
+double gainDb (const yw::EffectParams& p, double dbfs, double sec = 2.5)
 {
     const double sr = 48000.0;
     const auto in = mixsuite96::sine (1000.0, std::pow (10.0, dbfs / 20.0), (int) (sec * sr), sr);
-    const auto out = mixsuite96::run (lynx::EffectKind::ridgeStrip, p, in, sr);
+    const auto out = mixsuite96::run (yw::EffectKind::ridgeStrip, p, in, sr);
     double a = 0, b = 0;
     for (std::size_t i = in.size() - (std::size_t) (0.1 * sr); i < in.size(); ++i)
     {
@@ -118,7 +118,7 @@ double gainDb (const lynx::EffectParams& p, double dbfs, double sec = 2.5)
 
 TEST (ridge_4k_voicing_eq_round148)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = vmatch::echannel;
     namespace r = mixsuite::ridge;
     // [EXEC] the trial's impulse responses at 48 kHz (VCA and auto make-up off): the same dial, three colours
@@ -153,7 +153,7 @@ TEST (ridge_4k_voicing_eq_round148)
 
 TEST (ridge_4k_voicing_dynamics_round148)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     auto comp = [] (double ratio, double thr, bool makeup) {
         auto p = vox148::k4();
@@ -185,7 +185,7 @@ TEST (ridge_4k_voicing_dynamics_round148)
 
 TEST (ridge_4k_state_translated_round148)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     // an SSL 4K E state (XML in the original's units; the A setting plays): Orange, LF bell 75 Hz -4.5 dB, LMF 0.65 kHz
     // +3.5 dB Q 2.2, HPF 85 Hz, LPF 9 kHz, 23.3:1 at -7.5, release 1.11 s, mix 70 %, make-up offset +3, the expander,
@@ -264,7 +264,7 @@ const std::vector<float> herProDs { 0.0f, 0.2715f, 6.0f, 0.0f, 0.5f, 0.0f, 12.0f
 
 TEST (pro_ds_translates_onto_hush_vocal_voicing_round148)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     int n = 0;
     const auto slot = m124x::substitute ("FabFilter Pro-DS", vox148::fabf (vox148::herProDs), n);
@@ -317,7 +317,7 @@ TEST (pro_ds_translates_onto_hush_vocal_voicing_round148)
 // Round 148 §4: Echoform's ping-pong tape voicing plays EchoBoy's measured kernels
 TEST (echoform_ping_pong_kernels_round148)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // [EXEC] her EchoBoy ping-pong state (1/4 note, feedback 0.52 = loop gain 0.356) at 120 BPM: a left impulse of 0.003
     // comes back on the left one beat + 38 samples later (its tap 0.389 of the summed input, with the diffusion around

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Linux packages of a built LYNX binary: an AppImage (one file, runs on most distributions) and a .tar.gz
-# (folder with install.sh for a per-user install). Both carry the .desktop entry, the icon and the .lynx file type.
+# Linux packages of a built YW binary: an AppImage (one file, runs on most distributions) and a .tar.gz
+# (folder with install.sh for a per-user install). Both carry the .desktop entry, the icon and the .yw file type.
 #
-# usage: scripts/package-linux.sh <LYNX binary> <label> <output folder> [Demo.lynx]
+# usage: scripts/package-linux.sh <YW binary> <label> <output folder> [Demo.yw]
 # Variables: APPIMAGETOOL (path to appimagetool; downloaded into ~/opt when missing), ARCH (default x86_64; aarch64 for
 # the Linux arm64 build, made on an arm64 machine: appimagetool runs on the machine that packages)
 set -euo pipefail
@@ -10,9 +10,9 @@ cd "$(dirname "$0")/.."
 
 BIN="$1"; LABEL="$2"; OUTDIR="$3"; DEMO="${4:-}"
 ARCH="${ARCH:-x86_64}"
-NAME="LYNX-$LABEL-linux-$ARCH"            # .tar.gz
-APPIMAGE="LYNX-$LABEL-$ARCH.AppImage"     # AppImage names leave out "linux" (all AppImages are for Linux)
-APPID=com.lynx_share.LYNX                 # AppStream component id = desktop file name inside the AppImage
+NAME="YW-$LABEL-linux-$ARCH"            # .tar.gz
+APPIMAGE="YW-$LABEL-$ARCH.AppImage"     # AppImage names leave out "linux" (all AppImages are for Linux)
+APPID=com.yw_studio.YW                 # AppStream component id = desktop file name inside the AppImage
 APPIMAGETOOL_VERSION=1.9.0
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -21,41 +21,41 @@ mkdir -p "$OUTDIR"
 # --- folder for the .tar.gz --------------------------------------------------------------------------------
 PKG="$WORK/$NAME"
 mkdir -p "$PKG"
-install -m 755 "$BIN" "$PKG/LYNX"
-strip --strip-unneeded "$PKG/LYNX" 2> /dev/null || true
+install -m 755 "$BIN" "$PKG/YW"
+strip --strip-unneeded "$PKG/YW" 2> /dev/null || true
 case "$ARCH" in
     x86_64) ./scripts/fetch-onnxruntime.sh linux "$PKG" ;;
     aarch64) ./scripts/fetch-onnxruntime.sh linux-aarch64 "$PKG" ;;
     *) echo "package-linux: unknown ARCH '$ARCH' (x86_64 or aarch64)" >&2; exit 1 ;;
 esac
-install -m 644 resources/linux/lynx.desktop resources/linux/lynx-mime.xml LICENSE THIRD_PARTY.md PRIVACY.md "$PKG/"
+install -m 644 resources/linux/yw.desktop resources/linux/yw-mime.xml LICENSE THIRD_PARTY.md PRIVACY.md "$PKG/"
 ./scripts/collect-licenses.sh "$PKG/licenses"   # third-party licence texts (round 190nk)
-install -m 644 resources/lynx_icon_256.png "$PKG/lynx.png"
+install -m 644 resources/yw_icon_256.png "$PKG/yw.png"
 cp -r resources/linux/icons "$PKG/icons"     # hicolor 16-512 px (tools/make_logo.py; 16 and 24 px: the small-size form)
 install -m 755 resources/linux/install.sh "$PKG/install.sh"
-[[ -n "$DEMO" && -f "$DEMO" ]] && install -m 644 "$DEMO" "$PKG/Demo.lynx"
+[[ -n "$DEMO" && -f "$DEMO" ]] && install -m 644 "$DEMO" "$PKG/Demo.yw"
 tar -C "$WORK" -czf "$OUTDIR/$NAME.tar.gz" "$NAME"
 
 # --- AppImage ----------------------------------------------------------------------------------------------
-APPDIR="$WORK/LYNX.AppDir"
+APPDIR="$WORK/YW.AppDir"
 mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons" \
     "$APPDIR/usr/share/mime/packages" "$APPDIR/usr/share/metainfo"
-install -m 755 "$PKG/LYNX" "$PKG"/libonnxruntime.so.* "$APPDIR/usr/bin/"
-install -m 644 resources/linux/lynx.desktop "$APPDIR/usr/share/applications/$APPID.desktop"
-install -m 644 resources/linux/lynx.desktop "$APPDIR/$APPID.desktop"
+install -m 755 "$PKG/YW" "$PKG"/libonnxruntime.so.* "$APPDIR/usr/bin/"
+install -m 644 resources/linux/yw.desktop "$APPDIR/usr/share/applications/$APPID.desktop"
+install -m 644 resources/linux/yw.desktop "$APPDIR/$APPID.desktop"
 # AppStream metadata with this build's version and date (validated by appimagetool when appstreamcli is installed)
 RELDATE="$(git log -1 --format=%cs 2> /dev/null || date -u +%F)"
 sed -e "s/@VERSION@/$LABEL/" -e "s/@DATE@/$RELDATE/" resources/linux/$APPID.appdata.xml > "$APPDIR/usr/share/metainfo/$APPID.appdata.xml"
 cp -r resources/linux/icons/hicolor "$APPDIR/usr/share/icons/hicolor"
-install -m 644 resources/lynx_icon_256.png "$APPDIR/lynx.png"
-ln -sf lynx.png "$APPDIR/.DirIcon"
-install -m 644 resources/linux/lynx-mime.xml "$APPDIR/usr/share/mime/packages/lynx-mime.xml"
+install -m 644 resources/yw_icon_256.png "$APPDIR/yw.png"
+ln -sf yw.png "$APPDIR/.DirIcon"
+install -m 644 resources/linux/yw-mime.xml "$APPDIR/usr/share/mime/packages/yw-mime.xml"
 for f in LICENSE THIRD_PARTY.md PRIVACY.md; do install -m 644 "$f" "$APPDIR/usr/share/$f"; done
 cp -r "$PKG/licenses" "$APPDIR/usr/share/licenses"
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/bin/sh
 here="$(dirname "$(readlink -f "$0")")"
-exec "$here/usr/bin/LYNX" "$@"
+exec "$here/usr/bin/YW" "$@"
 EOF
 chmod 755 "$APPDIR/AppRun"
 
@@ -67,10 +67,10 @@ if [[ ! -x "$TOOL" ]]; then
     chmod +x "$TOOL"
 fi
 # no FUSE needed to run the tool itself (containers, CI)
-# update information (Gear Lever, AppImageUpdate): a fixed address on lynx-share.com, no GitHub API (issue #48: its
+# update information (Gear Lever, AppImageUpdate): a fixed address on yolo.su, no GitHub API (issue #48: its
 # anonymous limit of 60 requests an hour shows up as "no updates"). scripts/publish-appimage-update.sh points that address
 # at a published release's .zsync. Its URL line is absolute, because readers resolve a relative one against the fixed address.
-UPDATE_INFO="${UPDATE_INFO-zsync|https://lynx-share.com/update/LYNX-$ARCH.AppImage.zsync}"
+UPDATE_INFO="${UPDATE_INFO-zsync|https://yolo.su/update/YW-$ARCH.AppImage.zsync}"
 APPIMAGE_URL="${APPIMAGE_URL-https://github.com/convicted3/yw-studio/releases/download/v$LABEL/$APPIMAGE}"
 APPIMAGE_EXTRACT_AND_RUN=1 ARCH="$ARCH" "$TOOL" ${UPDATE_INFO:+-u "$UPDATE_INFO"} "$APPDIR" "$OUTDIR/$APPIMAGE" \
     > "$WORK/appimagetool.log" 2>&1 || { cat "$WORK/appimagetool.log"; exit 1; }
@@ -92,7 +92,7 @@ if [[ -n "$UPDATE_INFO" ]]; then
         embedded="$(readelf --string-dump=.upd_info --wide "$OUTDIR/$APPIMAGE" | sed -n 's/^ *\[ *0\] *//p' | sed 's/ *$//')"
         [[ "$embedded" == "$UPDATE_INFO" ]] || { echo "update information is '$embedded', not '$UPDATE_INFO'"; exit 1; }
     fi
-    case "$APPIMAGE.zsync" in LYNX-*-$ARCH.AppImage.zsync) ;; *) echo "$APPIMAGE.zsync does not match LYNX-*-$ARCH.AppImage.zsync"; exit 1 ;; esac
+    case "$APPIMAGE.zsync" in YW-*-$ARCH.AppImage.zsync) ;; *) echo "$APPIMAGE.zsync does not match YW-*-$ARCH.AppImage.zsync"; exit 1 ;; esac
     if [[ -f "$OUTDIR/$APPIMAGE.zsync" ]]; then
         url="$(head -c 4096 "$OUTDIR/$APPIMAGE.zsync" | sed -n 's/^URL: //p' | head -1)"
         [[ "$url" == "$APPIMAGE_URL" ]] || { echo "$APPIMAGE.zsync points at '$url'"; exit 1; }

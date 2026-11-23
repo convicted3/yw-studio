@@ -9,15 +9,15 @@
 
 namespace parity190mm
 {
-inline double peakDb (const lynx::EffectSlot& s, double hz)
+inline double peakDb (const yw::EffectSlot& s, double hz)
 {
-    return lynx::facet::responseDb (s.params, 48000.0, hz) - lynx::facet::outputDb (s.params[(std::size_t) lynx::facet::outputParam]);
+    return yw::facet::responseDb (s.params, 48000.0, hz) - yw::facet::outputDb (s.params[(std::size_t) yw::facet::outputParam]);
 }
 } // namespace parity190mm
 
 TEST (parity190mm_facet_waves_law_is_hidden_and_saved_only_while_set)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (effectInfo (EffectKind::facetEq).params.size() == (std::size_t) facet::paramCount);
     CHECK (facet::storedParamCount <= maxEffectParams);
     auto s = makeEffectSlot (EffectKind::facetEq);
@@ -39,7 +39,7 @@ TEST (parity190mm_facet_waves_law_is_hidden_and_saved_only_while_set)
 
 TEST (parity190mm_req_bell_and_shelf_follow_the_measured_structure)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = makeEffectSlot (EffectKind::facetEq);
     s.params[(std::size_t) facet::wavesLawParam] = 1.0f;
     const auto set = [&s] (facet::WaveCode c, double hz, double db, double q) {
@@ -78,7 +78,7 @@ TEST (parity190mm_req_bell_and_shelf_follow_the_measured_structure)
 
 TEST (parity190mm_req_q10_api_and_ssl_g_translate)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // REQ 6: band 3 on, bell, −3 dB at 300 Hz, Q 1; band 1 on, high pass 80 Hz; output −1 dB
     auto r = parity190jh::waves ("REQ 6 Stereo", "REQ", parity190jh::list (140, { { 0, "1" }, { 1, "2" }, { 3, "80" }, { 4, "0.92" },
@@ -110,7 +110,7 @@ TEST (parity190mm_req_q10_api_and_ssl_g_translate)
 
 TEST (parity190mm_rchannel_eq_runs_on_the_renaissance_law)
 {
-    using namespace lynx;
+    using namespace yw;
     int n = 0;
     // RChannel: EQ on (20), band 3 bell +6 dB at 1 kHz Q 1; compressor threshold 0 dB, ratio 1 (nothing compressed)
     auto s = parity190jh::waves ("RChannel Stereo", "RChannel", parity190jh::list (137, { { 10, "1" }, { 11, "0" }, { 12, "6" }, { 13, "1000" },

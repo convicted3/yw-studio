@@ -4,31 +4,31 @@
 
 TEST (flui115_project_samples_once_with_colour_and_uses)
 {
-    lynx::Song song;
-    lynx::ChannelDef kick;
+    yw::Song song;
+    yw::ChannelDef kick;
     kick.name = "Kick";
-    kick.instrument = lynx::InstrumentKind::sampler;
+    kick.instrument = yw::InstrumentKind::sampler;
     kick.samplePath = "C:\\Samples\\Kick 01.wav";
     kick.colour = 0xFFAA2233u;
     song.channels.push_back (kick);
 
-    lynx::ChannelDef clip;
+    yw::ChannelDef clip;
     clip.name = "Vox";
-    clip.instrument = lynx::InstrumentKind::audioClip;
+    clip.instrument = yw::InstrumentKind::audioClip;
     clip.samplePath = "/home/u/vox.take2.wav";
     song.channels.push_back (clip);
 
-    lynx::ChannelDef again = kick; // the same file on another channel
+    yw::ChannelDef again = kick; // the same file on another channel
     again.colour = 0xFF00FF00u;
     song.channels.push_back (again);
 
-    lynx::ChannelDef engineFile; // a path that is an engine file, not audio
-    engineFile.instrument = lynx::InstrumentKind::slayer;
+    yw::ChannelDef engineFile; // a path that is an engine file, not audio
+    engineFile.instrument = yw::InstrumentKind::slayer;
     engineFile.samplePath = "C:\\FL\\Slayer_Engine.dll";
     song.channels.push_back (engineFile);
 
-    lynx::ChannelDef zones;
-    zones.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef zones;
+    zones.instrument = yw::InstrumentKind::sampler;
     zones.zones.push_back ({ "/z/a.wav" });
     zones.zones.push_back ({ "/z/b.wav" });
     zones.samplePath = "/ignored-when-zones.wav";
@@ -36,11 +36,11 @@ TEST (flui115_project_samples_once_with_colour_and_uses)
 
     song.mixer.resize (2);
     song.mixer[1].colour = 0xFF0000FFu;
-    lynx::EffectSlot newtone;
+    yw::EffectSlot newtone;
     newtone.samplePath = "/fx/source.wav";
     song.mixer[1].effects.push_back (newtone);
 
-    const auto list = lynx::projectcontents::samples (song);
+    const auto list = yw::projectcontents::samples (song);
     CHECK (list.size() == 5);
     CHECK (list[0].name == "Kick 01" && list[0].uses == 2 && list[0].colour == 0xFFAA2233u && list[0].index == 0);
     CHECK (list[0].detail == "2x");
@@ -51,31 +51,31 @@ TEST (flui115_project_samples_once_with_colour_and_uses)
 
 TEST (flui115_project_generators_effects_patterns_automation)
 {
-    lynx::Song song;
+    yw::Song song;
     song.mixer.resize (3);
     song.mixer[2].name = "VOCALS";
     song.mixer[2].colour = 0xFF112233u;
-    song.mixer[2].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
-    lynx::EffectSlot plugin;
-    plugin.kind = lynx::EffectKind::plugin;
+    song.mixer[2].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
+    yw::EffectSlot plugin;
+    plugin.kind = yw::EffectKind::plugin;
     plugin.plugin.name = "Some EQ";
     song.mixer[0].effects.push_back (plugin);
 
-    lynx::ChannelDef a;
+    yw::ChannelDef a;
     a.name = "Lead";
     a.mixerTrack = 2;
     a.colour = 0xFF445566u;
     song.channels.push_back (a);
-    lynx::ChannelDef b;
+    yw::ChannelDef b;
     b.mixerTrack = 1; // unnamed insert
     song.channels.push_back (b);
 
-    const auto gens = lynx::projectcontents::generators (song);
+    const auto gens = yw::projectcontents::generators (song);
     CHECK (gens.size() == 2);
     CHECK (gens[0].name == "Lead" && gens[0].detail == "VOCALS" && gens[0].colour == 0xFF445566u);
     CHECK (gens[1].name == "Channel 2" && gens[1].detail == "Insert 1");
 
-    const auto fx = lynx::projectcontents::effects (song);
+    const auto fx = yw::projectcontents::effects (song);
     CHECK (fx.size() == 2);
     CHECK (fx[0].index == 0 && fx[0].detail == "Master" && fx[0].name == "Some EQ" && fx[0].plugin);
     CHECK (fx[1].index == 2 && fx[1].slot == 0 && fx[1].detail == "VOCALS" && fx[1].colour == 0xFF112233u && ! fx[1].plugin);
@@ -84,30 +84,30 @@ TEST (flui115_project_generators_effects_patterns_automation)
     song.patterns.resize (2);
     song.patterns[0].name = "Drums";
     song.patterns[1].colour = 0xFF778899u;
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
     song.playlist.push_back (c);
     song.playlist.push_back (c);
-    const auto pats = lynx::projectcontents::patterns (song);
+    const auto pats = yw::projectcontents::patterns (song);
     CHECK (pats.size() == 2 && pats[0].name == "Drums" && pats[0].uses == 2);
     CHECK (pats[1].name == "Pattern 2" && pats[1].uses == 0 && pats[1].colour == 0xFF778899u);
 
-    lynx::Automation au;
+    yw::Automation au;
     au.name = "Cutoff";
-    au.target.kind = lynx::AutomationTargetKind::mixerVolume;
+    au.target.kind = yw::AutomationTargetKind::mixerVolume;
     au.target.index = 2;
     song.automations.push_back (au);
-    lynx::Clip ac;
-    ac.kind = lynx::ClipKind::automation;
+    yw::Clip ac;
+    ac.kind = yw::ClipKind::automation;
     ac.automation = 0;
     song.playlist.push_back (ac);
-    const auto autos = lynx::projectcontents::automations (song);
+    const auto autos = yw::projectcontents::automations (song);
     CHECK (autos.size() == 1 && autos[0].uses == 1 && autos[0].colour == 0xFF112233u);
 }
 
 TEST (flui115_toolbar_drop_and_place)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     // drop "file" before "master": transport, file, master, ...
     const auto master = Group::master;
@@ -127,7 +127,7 @@ TEST (flui115_toolbar_drop_and_place)
 
 TEST (flui115_toolbar_presets_and_flags)
 {
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     auto l = Layout::makeDefault();
     CHECK (matchingPreset (l) == (int) Preset::standard);
     l.iconSize = IconSize::large;
@@ -147,28 +147,28 @@ TEST (flui115_toolbar_presets_and_flags)
 
 TEST (flui115_mixer_insert_one_and_delete)
 {
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (4); // Master + Insert 1..4
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (4); // Master + Insert 1..4
     song.mixer[2].name = "bass";
     song.channels.resize (2);
     song.channels[0].mixerTrack = 2;
     song.channels[1].mixerTrack = 3;
     song.setRoute (2, 4, true, 0.5f);
-    lynx::EffectSlot comp;
-    comp.kind = lynx::EffectKind::compressor;
+    yw::EffectSlot comp;
+    comp.kind = yw::EffectKind::compressor;
     comp.sidechain = 2;
     song.mixer[4].effects = { comp };
 
-    CHECK (lynx::mixerops::insertTrack (song, 2) && song.mixer.size() == 6);
+    CHECK (yw::mixerops::insertTrack (song, 2) && song.mixer.size() == 6);
     CHECK (song.mixer[2].name == "Insert 2" && song.mixer[3].name == "bass" && song.mixer[4].name == "Insert 4"); // old Insert 3 renumbered
     CHECK (song.mixer[1].name == "Insert 1" && song.mixer[5].name == "Insert 5");
     CHECK (song.channels[0].mixerTrack == 3 && song.channels[1].mixerTrack == 4);
     CHECK (song.routes (3, 5) && song.mixer[5].effects[0].sidechain == 3);
-    CHECK (! lynx::mixerops::insertTrack (song, 0) && ! lynx::mixerops::insertTrack (song, 7));
+    CHECK (! yw::mixerops::insertTrack (song, 0) && ! yw::mixerops::insertTrack (song, 7));
 
-    CHECK (lynx::mixerops::deleteTrack (song, 3) && song.mixer.size() == 6); // "bass" goes, a blank takes the end
+    CHECK (yw::mixerops::deleteTrack (song, 3) && song.mixer.size() == 6); // "bass" goes, a blank takes the end
     CHECK (song.channels[0].mixerTrack == 0 && song.channels[1].mixerTrack == 3);
     CHECK (song.mixer[3].name == "Insert 3" && song.mixer[5].name == "Insert 5" && song.mixer[5].effects.empty());
     CHECK (song.mixer[4].effects.size() == 1 && song.mixer[4].effects[0].sidechain == -1); // (round 177a: none, not the Master)
-    CHECK (! lynx::mixerops::deleteTrack (song, 0) && ! lynx::mixerops::deleteTrack (song, 6));
+    CHECK (! yw::mixerops::deleteTrack (song, 0) && ! yw::mixerops::deleteTrack (song, 6));
 }

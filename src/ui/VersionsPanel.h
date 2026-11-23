@@ -7,18 +7,18 @@
 
 #include "core/ProjectSafety.h"
 
-namespace lynx
+namespace yw
 {
 // The Versions panel (round 190ap): one list of the open project's saved versions ("Save new version": Song, Song_2,
 // Song_3... next to the project) and of its backups (the timed autosaves and the copies a save replaced, in the
-// backup folder), newest first, with date, size and an optional label. It only reads what LYNX already writes: the
+// backup folder), newest first, with date, size and an optional label. It only reads what YW already writes: the
 // files' names, format and place are untouched, and the labels are kept in "<name>.version-labels.txt" beside them.
 struct VersionsContext
 {
     juce::File projectFile;    // the open project's file; File() while it was never saved (or was imported)
     juce::String projectStem;  // the name its backups are filed under
     juce::File backupFolder;
-    juce::String extension;    // ".lynx"
+    juce::String extension;    // ".yw"
 };
 
 struct VersionsActions
@@ -46,4 +46,4 @@ juce::String versionAgo (juce::int64 fileTimeMs, juce::int64 nowMs);
 // --selftest: versions and backups written to a temporary folder are listed, labelled, relabelled and the labels
 // survive on disk beside the files, which stay byte for byte as they were. "OK" or what failed.
 juce::String versionsSelfTest();
-} // namespace lynx
+} // namespace yw

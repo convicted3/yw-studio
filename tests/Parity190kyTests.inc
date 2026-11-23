@@ -1,7 +1,7 @@
-// Round 190ky: REA on the Waves DSP binaries, second pass (owner's permission of 2026-11-17; /mnt/e/lynx-work/waves190ky/
+// Round 190ky: REA on the Waves DSP binaries, second pass (owner's permission of 2026-11-17; /mnt/e/yw-work/waves190ky/
 // HANDOFF.md, docs/analise/REA_rodada190ky.md).
 // - Crest Compressor gets a FET law (hidden fetLaw): a feedback limiter with three parallel peak followers and a two-term
-//   soft gain law, LYNX's own model of the structure REA showed in the Waves CLA-76 DSP, fitted on our demo-mode probes.
+//   soft gain law, YW's own model of the structure REA showed in the Waves CLA-76 DSP, fitted on our demo-mode probes.
 //   Off for new instances and every project saved before (bit for bit: lab/gold.sh).
 // - Waves CLA-76 translates onto it (was Crest's Bus style around one factory state, rounds 127 / 148 / 190jh), with the
 //   Input / Output knobs' measured gains.
@@ -12,10 +12,10 @@
 
 namespace parity190ky
 {
-namespace cr = lynx::dyn::crest;
-inline lynx::EffectSlot fet (int voice, double thrDb, double ratio, double kneeDb, double attMs, double relMs)
+namespace cr = yw::dyn::crest;
+inline yw::EffectSlot fet (int voice, double thrDb, double ratio, double kneeDb, double attMs, double relMs)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::crestCompressor);
+    auto s = yw::makeEffectSlot (yw::EffectKind::crestCompressor);
     s.params[(std::size_t) cr::style] = cr::styleValue (cr::Style::bus);
     s.params[(std::size_t) cr::fetLaw] = cr::fetLawValue (voice);
     s.params[(std::size_t) cr::threshold] = (float) ((thrDb + 60.0) / 60.0);
@@ -35,7 +35,7 @@ inline lynx::EffectSlot fet (int voice, double thrDb, double ratio, double kneeD
 
 TEST (parity190ky_crest_fet_law_is_hidden_and_off_for_new_and_old_crests)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     const auto& info = effectInfo (EffectKind::crestCompressor);
     CHECK (info.params.size() == (std::size_t) cr::count && cr::fetLaw == cr::count + 1); // hidden: no control, no string
@@ -53,7 +53,7 @@ TEST (parity190ky_crest_fet_law_is_hidden_and_off_for_new_and_old_crests)
 
 TEST (parity190ky_fet_law_is_a_feedback_curve)
 {
-    namespace cr = lynx::dyn::crest;
+    namespace cr = yw::dyn::crest;
     // nothing far below the knee; a hard-ish knee with slope S settles at ratio 1 + S well over it
     const auto s = parity190ky::fet (0, -30.0, 11.0, 0.5, 0.05, 60.0);
     CHECK (cr::fetSteadyDb (s.params, -60.0) > -0.2);
@@ -79,7 +79,7 @@ TEST (parity190ky_crest_fet_law_renders_its_curve_and_timing)
     parity190kt::tone (l, r, sr, { { 0.0, -6.0 } });
     auto s = parity190ky::fet (3, -24.0, 7.0, 6.0, 0.05, 60.0);
     parity190kt::render (s, sr, l, r);
-    const auto want = lynx::dyn::crest::fetSteadyDb (s.params, -6.0);
+    const auto want = yw::dyn::crest::fetSteadyDb (s.params, -6.0);
     CHECK (want < -8.0 && std::abs (parity190kt::gainDb (l, sr, 1.5, 2.9, -6.0) - want) < 0.6);
     // release: after the level drops the reduction recovers, slower with the longer knob
     const auto recovered = [&] (double relMs) {
@@ -102,7 +102,7 @@ TEST (parity190ky_crest_fet_law_renders_its_curve_and_timing)
 
 TEST (parity190ky_waves_cla76_translates_onto_crest_fet_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace cr = dyn::crest;
     int n = 0;
     // refcap182's X3: Input -12, Output -30, attack 7, release 7, Blacky, all buttons, mix 40 %

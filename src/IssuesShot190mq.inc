@@ -12,7 +12,7 @@
             report.add (name + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         auto source = juce::Desktop::getInstance().getMainMouseSource();
         const auto now = juce::Time::getCurrentTime();

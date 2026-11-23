@@ -13,7 +13,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::dmath
+namespace yw::dmath
 {
 namespace
 {
@@ -442,4 +442,4 @@ double tanh (double x) noexcept
     }
     return neg ? -r : r;
 }
-} // namespace lynx::dmath
+} // namespace yw::dmath

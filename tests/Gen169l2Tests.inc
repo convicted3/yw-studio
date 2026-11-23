@@ -3,7 +3,7 @@
 namespace gen169l2
 {
 // the channel's sound data, as the engines keep it
-inline bool sameSound (const lynx::ChannelDef& a, const lynx::ChannelDef& b)
+inline bool sameSound (const yw::ChannelDef& a, const yw::ChannelDef& b)
 {
     return a.instrument == b.instrument && a.pluginState == b.pluginState && a.modelParams == b.modelParams
            && a.samplePath == b.samplePath && a.zones.size() == b.zones.size();
@@ -14,7 +14,7 @@ inline bool sameSound (const lynx::ChannelDef& a, const lynx::ChannelDef& b)
 // the database entry (FL's picker / "+" load it), not the Default preset
 TEST (gen169l2_new_generators_are_the_plugin_database_entry)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();
@@ -48,7 +48,7 @@ TEST (gen169l2_new_generators_are_the_plugin_database_entry)
             CHECK (! made->pluginState.empty() || ! made->modelParams.empty());
             // ... which is not the Default preset (FL's files differ: REA_rodada169l §3)
             if (fromDefault && gen169l2::sameSound (*made, *fromDefault))
-                std::printf ("  %s: database = Default as LYNX imports them\n", e->name);
+                std::printf ("  %s: database = Default as YW imports them\n", e->name);
         }
     }
     // where the Default preset IS the database state, a new channel sounds the same as before (Kepler, DX10, SimSynth)
@@ -66,11 +66,11 @@ TEST (gen169l2_new_generators_are_the_plugin_database_entry)
     }
 }
 
-// Without FL every generator keeps LYNX's bank default (round 168n), and an engine whose database entry LYNX can't
+// Without FL every generator keeps YW's bank default (round 168n), and an engine whose database entry YW can't
 // read falls through to its Default preset / folder (Wave Traveller)
-TEST (gen169l2_without_fl_the_lynx_bank_and_unreadable_entries_fall_through)
+TEST (gen169l2_without_fl_the_yw_bank_and_unreadable_entries_fall_through)
 {
-    using namespace lynx;
+    using namespace yw;
     natives::FlAccess none;
     for (const auto kind : { InstrumentKind::sytrus, InstrumentKind::harmor, InstrumentKind::poizone, InstrumentKind::toxic })
     {
@@ -92,7 +92,7 @@ TEST (gen169l2_without_fl_the_lynx_bank_and_unreadable_entries_fall_through)
 // A new Granulizer / Wave Traveller is FL's database entry, which names no sample: silent, as FL renders it
 TEST (gen169l2_new_granulizer_and_wave_traveller_have_no_sample_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();
@@ -114,7 +114,7 @@ TEST (gen169l2_new_granulizer_and_wave_traveller_have_no_sample_like_fl)
 // nor replays a stale delay line when the channel wakes up later (the burst at other channels' notes, round 169l2)
 TEST (gen169l2_poizone_delay_tail_rings_out_before_idle)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();

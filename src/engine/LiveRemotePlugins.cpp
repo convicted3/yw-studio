@@ -20,7 +20,7 @@
 #include "engine/SessionPack.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -513,4 +513,4 @@ void LiveSessionManager::endHosted (bool wasHost)
     }
     engine.getPluginHost().setSessionTag (0);
 }
-} // namespace lynx
+} // namespace yw

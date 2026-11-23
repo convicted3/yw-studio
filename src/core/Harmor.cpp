@@ -27,7 +27,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -213,8 +213,8 @@ struct StateData
     std::array<std::int32_t, 6> order { 0, 1, 2, 3, 4, 5 }; // effects-rack unit order
     std::array<std::uint8_t, 0x3d> gmisc {};
     std::size_t globalOffset = 0;
-    // LYNX's engine revision for this channel (ChannelDef::engineRev): 0 = a project saved before round natives190kj
-    // (resynthesis-mode images ignored, as LYNX played them then), 1 = resynthesis played (FL's)
+    // YW's engine revision for this channel (ChannelDef::engineRev): 0 = a project saved before round natives190kj
+    // (resynthesis-mode images ignored, as YW played them then), 1 = resynthesis played (FL's)
     int engineRev = 1;
 
     std::int32_t GI (int o) const noexcept { std::int32_t v; std::memcpy (&v, gmisc.data() + o, 4); return v; }
@@ -4040,7 +4040,7 @@ struct NoteRec
     double initVol = 1; // FL's Init.Vol of the note (round 190pr: Final.Vol = Init.Vol × channel volume; 1 before)
     float liveRef = NAN; // the channel pitch it started with (round 167a: its records follow the live knob)
     long long st = 0, seq = 0;
-    std::uint32_t lynxNote = 0; // the LYNX note id that started it (round 190ej)
+    std::uint32_t ywNote = 0; // the YW note id that started it (round 190ej)
     std::array<int, 18> voices {};
 };
 
@@ -4224,7 +4224,7 @@ public:
             }
         }
         nt.group = ++gcount;
-        // records needed: steal the oldest ones when the pool is short (LYNX's voice limit)
+        // records needed: steal the oldest ones when the pool is short (YW's voice limit)
         int need = 0;
         for (int i = 0; i < P->actCount; ++i)
             need += P->parts[(std::size_t) P->act[(std::size_t) i]].nuni;
@@ -4313,21 +4313,21 @@ public:
         maybeFree (slot);
     }
 
-    // the LYNX note id a note was started with (round 190ej)
-    void setLynxNote (int slot, std::uint32_t note) noexcept
+    // the YW note id a note was started with (round 190ej)
+    void setYwNote (int slot, std::uint32_t note) noexcept
     {
         if (slot >= 0 && slot < maxNotes)
-            notes[(std::size_t) slot].lynxNote = note;
+            notes[(std::size_t) slot].ywNote = note;
     }
 
-    // the newest pressed note of a key; `note` ≠ 0: the one that LYNX note started (round 190ej)
+    // the newest pressed note of a key; `note` ≠ 0: the one that YW note started (round 190ej)
     int findPressed (int key, std::uint32_t note = 0) const noexcept
     {
         int best = -1;
         for (int i = 0; i < maxNotes; ++i)
         {
             const auto& nt = notes[(std::size_t) i];
-            if (nt.used && nt.pressed && nt.key == key && (note == 0 || nt.lynxNote == note)
+            if (nt.used && nt.pressed && nt.key == key && (note == 0 || nt.ywNote == note)
                 && (best < 0 || nt.seq > notes[(std::size_t) best].seq))
                 best = i;
         }
@@ -6658,16 +6658,16 @@ private:
     }
 };
 
-constexpr std::uint32_t fixedSeed = 0x6A09E667u; // LYNX's per-instance Mersenne-Twister seed (FL seeds from the clock)
+constexpr std::uint32_t fixedSeed = 0x6A09E667u; // YW's per-instance Mersenne-Twister seed (FL seeds from the clock)
 
 // ---------------------------------------------------------------------------------------------------------------
-// LYNX front-end
+// YW front-end
 //
 // Levels (§1.17, REA_rodada28 §4.1). FL hands the plugin Final.Vol = chan.Vol (Harmor's velocity reaches the sound
 // through its articulators' velocity maps), Final.Pan = note pan + chan.Pan and Final.Pitch = 100·(key − 60) + channel
 // pitch; Harmor applies its own record gain g_part·(Final.Vol + offset)·g_unison and pan law √2·g·cos/sin((1 + pan)π/4).
-// LYNX's channel gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…), so V = √((gl² + gr²)/2) and p are recovered
-// exactly and Harmor's law is applied once (the channel volume and pan are not applied a second time). Velocity = LYNX
+// YW's channel gains are gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…), so V = √((gl² + gr²)/2) and p are recovered
+// exactly and Harmor's law is applied once (the channel volume and pan are not applied a second time). Velocity = YW
 // velocity (FL velocity / 128); X/Y/Z (Final.FCut/FRes, global mod knobs) as in the state.
 // Random sources: the plugin's Mersenne Twister is seeded with a fixed value per instance, so every render is
 // deterministic; FL's is clock-seeded, so random unison, free/spectral phases and random maps differ from any given
@@ -6775,9 +6775,9 @@ public:
         engine.nextLiveRef = live.ref (knob);
         // round 190pr: Harmor never asks the host to unlink the velocity (no voice event 6 at TriggerVoice [EXEC: hm.exe's
         // host log]), so FL's Final.Vol is Init.Vol × the channel volume (Lightning's "sub bass": velocity 128 / 88 notes
-        // +6.3 / −2.8 dB against 100 in FL's render, LYNX before: the same level); engine revision < 3: Init.Vol 1
+        // +6.3 / −2.8 dB against 100 in FL's render, YW before: the same level); engine revision < 3: Init.Vol 1
         const auto initVol = engineRev >= 3 ? (std::pow (11.0, 1.28 * vel) - 1.0) / 10.0 : 1.0;
-        engine.setLynxNote (engine.noteOn (key, vel, channelVol * initVol, (double) nextPan + channelPan, fpitch, (double) nextPan, initVol),
+        engine.setYwNote (engine.noteOn (key, vel, channelVol * initVol, (double) nextPan + channelPan, fpitch, (double) nextPan, initVol),
                             startingNoteId());
         nextPan = 0.0f;
         nextCents = 0.0f;
@@ -7131,4 +7131,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace harmor
-} // namespace lynx
+} // namespace yw

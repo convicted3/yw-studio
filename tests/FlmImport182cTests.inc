@@ -1,6 +1,6 @@
 // --- FL Studio Mobile (.flm) import, round 182c (docs/analise/FLM_FORMAT.md). The projects here are written by the
 // tests, field by field as the format page describes them; no file of Image-Line's or of a user is committed. Real
-// projects (FL's FLM demos, a user's share-zip) are imported only by the opt-in test at the end (LYNX_FLM_DIR).
+// projects (FL's FLM demos, a user's share-zip) are imported only by the opt-in test at the end (YW_FLM_DIR).
 
 #include "core/FlmDwSampler.h"
 #include "core/FlmFormat.h"
@@ -9,7 +9,7 @@
 
 namespace flm182c
 {
-namespace flm = lynx::flm;
+namespace flm = yw::flm;
 using Bytes = std::vector<std::uint8_t>;
 
 inline void put (Bytes& b, const void* p, std::size_t n) { b.insert (b.end(), (const std::uint8_t*) p, (const std::uint8_t*) p + n); }
@@ -299,9 +299,9 @@ inline Bytes project()
                   channel (flm::kindBus, "Reverb Bus", 5, {}) });
 }
 
-inline lynx::FlmImportOptions options (lynx::FlpImportReport* report)
+inline yw::FlmImportOptions options (yw::FlpImportReport* report)
 {
-    lynx::FlmImportOptions o;
+    yw::FlmImportOptions o;
     o.common.projectFolder = "E:/flm/Song";
     o.resourceRoot = "C:/FL/Plugins/Fruity/Generators/FL Studio Mobile/Installed";
     o.common.fileExists = [] (const std::string& p) {
@@ -313,7 +313,7 @@ inline lynx::FlmImportOptions options (lynx::FlpImportReport* report)
     return o;
 }
 
-inline const lynx::ChannelDef* channelNamed (const lynx::Song& s, const std::string& n)
+inline const yw::ChannelDef* channelNamed (const yw::Song& s, const std::string& n)
 {
     for (const auto& c : s.channels)
         if (c.name == n)
@@ -324,7 +324,7 @@ inline const lynx::ChannelDef* channelNamed (const lynx::Song& s, const std::str
 
 TEST (flm182c_reads_the_structure)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bytes = flm182c::project();
     CHECK (flm::isFlmData (bytes.data(), bytes.size()));
     CHECK (! flm::isFlmData (bytes.data(), 3));
@@ -365,7 +365,7 @@ TEST (flm182c_reads_the_structure)
 
 TEST (flm182c_rejects_damaged_files)
 {
-    using namespace lynx;
+    using namespace yw;
     std::string error;
     const flm182c::Bytes flp { 'F', 'L', 'h', 'd', 6, 0, 0, 0, 0, 0, 0, 0 };
     CHECK (! flm::parse ({ flp.data(), flp.size() }, &error) && ! error.empty());
@@ -398,7 +398,7 @@ TEST (flm182c_rejects_damaged_files)
 
 TEST (flm182c_imports_a_project)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     std::string error;
     const auto song = importFlm (flm182c::project(), flm182c::options (&report), &error);
@@ -437,7 +437,7 @@ TEST (flm182c_imports_a_project)
     CHECK (snare != nullptr && snare->instrument == InstrumentKind::sampler && snare->samplePath.empty());
     CHECK (report.missingSamples == 1 && report.missingFiles.size() == 1
            && report.missingFiles[0].path == "C:/FL/Plugins/Fruity/Generators/FL Studio Mobile/Installed/Drum Samples/Snare/Gone.wav");
-    // MiniSynth (F4): LYNX's MiniSynth engine, FLM's parameters 1…43 as the desktop plugin's 0…42, oscdata.dat from FLM's resources
+    // MiniSynth (F4): YW's MiniSynth engine, FLM's parameters 1…43 as the desktop plugin's 0…42, oscdata.dat from FLM's resources
     const auto* lead = flm182c::channelNamed (s, "Lead");
     CHECK (lead != nullptr && lead->instrument == InstrumentKind::minisynth && lead->mixerTrack == 4
            && lead->samplePath == "C:/FL/Plugins/Fruity/Generators/FL Studio Mobile/Installed/oscdata.dat");
@@ -551,16 +551,16 @@ TEST (flm182c_imports_a_project)
            && report.missingSamples == 0);
 }
 
-// Opt-in (LYNX_FLM_DIR=folder): every .flm / .songtmpl below the folder is imported and summarised, its samples looked
-// for next to it and in FL's FLM resources (LYNX_FLM_RESOURCES). FL's demos and users' projects stay on the developer's
+// Opt-in (YW_FLM_DIR=folder): every .flm / .songtmpl below the folder is imported and summarised, its samples looked
+// for next to it and in FL's FLM resources (YW_FLM_RESOURCES). FL's demos and users' projects stay on the developer's
 // disk; none is committed.
 TEST (flm182c_real_projects)
 {
-    using namespace lynx;
-    const char* dir = std::getenv ("LYNX_FLM_DIR");
+    using namespace yw;
+    const char* dir = std::getenv ("YW_FLM_DIR");
     if (dir == nullptr)
         return;
-    const char* resources = std::getenv ("LYNX_FLM_RESOURCES");
+    const char* resources = std::getenv ("YW_FLM_RESOURCES");
     for (const auto& entry : std::filesystem::recursive_directory_iterator (dir))
     {
         const auto ext = entry.path().extension().string();
@@ -611,13 +611,13 @@ TEST (flm182c_real_projects)
     }
 }
 
-// Opt-in (LYNX_FLM_RESOURCES = FL's "…/FL Studio Mobile/Installed"): a DW Sampler playing one of the DirectWave programs
+// Opt-in (YW_FLM_RESOURCES = FL's "…/FL Studio Mobile/Installed"): a DW Sampler playing one of the DirectWave programs
 // FL ships there plays the program's zones (slice F3; since round 190de on FLM's own DW Sampler voice, which reads the
 // program itself, core/FlmDwSampler.h)
 TEST (flm182c_directwave_program)
 {
-    using namespace lynx;
-    const char* resources = std::getenv ("LYNX_FLM_RESOURCES");
+    using namespace yw;
+    const char* resources = std::getenv ("YW_FLM_RESOURCES");
     if (resources == nullptr)
         return;
     namespace t = flm182c;

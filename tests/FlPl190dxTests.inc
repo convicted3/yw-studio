@@ -1,24 +1,24 @@
 // Round 190dx: FL's audio clip menu Automate › Panning / Volume and Preview, new instrument / audio tracks (Channel rack
 // "Assign to new instrument track", the Playlist's "+" menu, Track mode › Instrument track), Tools › One-click audio
-// recording and Mixer › Disk recording › Latency compensation. FL facts in /mnt/e/lynx-work/flpl190dx/FL-FACTS.md.
+// recording and Mixer › Disk recording › Latency compensation. FL facts in /mnt/e/yw-work/flpl190dx/FL-FACTS.md.
 namespace flpl190dx
 {
-inline std::vector<std::string> texts (const std::vector<lynx::fltrackmenus::Entry>& entries)
+inline std::vector<std::string> texts (const std::vector<yw::fltrackmenus::Entry>& entries)
 {
     std::vector<std::string> out;
     for (const auto& e : entries)
-        out.push_back (e.kind == lynx::fltrackmenus::Entry::Kind::separator ? std::string ("-")
-                       : e.kind == lynx::fltrackmenus::Entry::Kind::caption ? "[" + e.text + "]"
-                       : e.kind == lynx::fltrackmenus::Entry::Kind::submenu ? e.text + " >"
-                       : e.kind == lynx::fltrackmenus::Entry::Kind::list    ? "<" + e.text + ">"
+        out.push_back (e.kind == yw::fltrackmenus::Entry::Kind::separator ? std::string ("-")
+                       : e.kind == yw::fltrackmenus::Entry::Kind::caption ? "[" + e.text + "]"
+                       : e.kind == yw::fltrackmenus::Entry::Kind::submenu ? e.text + " >"
+                       : e.kind == yw::fltrackmenus::Entry::Kind::list    ? "<" + e.text + ">"
                                                                             : e.text + (e.isDefault ? " (default)" : ""));
     return out;
 }
 
 // Song::makeDefault (channels 0..4 on inserts 1..5) plus an audio clip channel "Vox" and its clip on track 3
-inline lynx::Song songWithAudioClip (int& vox)
+inline yw::Song songWithAudioClip (int& vox)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.push_back ({});
     song.channels.back().name = "Vox";
@@ -39,7 +39,7 @@ inline lynx::Song songWithAudioClip (int& vox)
 
 TEST (flpl190dx_menu_models_are_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     // Tools › One-click audio recording ([FORM] OneClickRecMenu; live 190cq): Edison first and FL's default item
     CHECK (flpl190dx::texts (fltrackmenus::oneClickRecording())
            == std::vector<std::string> ({ "[I want to record audio...]", "Into Edison audio editor/recorder (default)", "Into playlist as an audio clip" }));
@@ -61,7 +61,7 @@ TEST (flpl190dx_menu_models_are_fls)
 
 TEST (flpl190dx_automate_volume_and_panning_of_an_audio_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     int vox = -1;
     auto song = flpl190dx::songWithAudioClip (vox);
     const auto automations = song.automations.size();
@@ -108,7 +108,7 @@ TEST (flpl190dx_automate_volume_and_panning_of_an_audio_clip)
 
 TEST (flpl190dx_add_audio_track_takes_the_first_free_track_and_mixer_track)
 {
-    using namespace lynx;
+    using namespace yw;
     int vox = -1;
     auto song = flpl190dx::songWithAudioClip (vox); // a clip on track 3
     Clip p;
@@ -141,7 +141,7 @@ TEST (flpl190dx_add_audio_track_takes_the_first_free_track_and_mixer_track)
 
 TEST (flpl190dx_assign_and_unassign_a_new_instrument_track)
 {
-    using namespace lynx;
+    using namespace yw;
     int vox = -1;
     auto song = flpl190dx::songWithAudioClip (vox); // a clip on track 3
     // FL: generators only
@@ -162,7 +162,7 @@ TEST (flpl190dx_assign_and_unassign_a_new_instrument_track)
 
 TEST (flpl190dx_new_instrument_track_with_a_new_channel)
 {
-    using namespace lynx;
+    using namespace yw;
     int vox = -1;
     auto song = flpl190dx::songWithAudioClip (vox);
     const auto channels = song.channels.size();
@@ -192,7 +192,7 @@ TEST (flpl190dx_new_instrument_track_with_a_new_channel)
 
 TEST (flpl190dx_one_click_recording_targets)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     CHECK (song.mixer.size() > 6);
     if (song.mixer.size() <= 6)
@@ -208,7 +208,7 @@ TEST (flpl190dx_one_click_recording_targets)
     // ... inserts already armed: they record as they are, nothing else is armed
     p = oneclick::plan (song, { 5, 6 }, 2, oneclick::Into::playlist);
     CHECK (p.record == std::vector<int> ({ 5, 6 }) && ! p.armInsert && p.recordOn);
-    // ... the Master selected (LYNX): the first insert with an input
+    // ... the Master selected (YW): the first insert with an input
     p = oneclick::plan (song, {}, 0, oneclick::Into::playlist);
     CHECK (p.insert == 4 && ! p.askInput);
     // Into Edison: Edison recording on play on the selected insert, then Play; no Record switch, no Song mode
@@ -220,7 +220,7 @@ TEST (flpl190dx_one_click_recording_targets)
 
 TEST (flpl190dx_latency_compensation_switch_in_samples)
 {
-    using namespace lynx;
+    using namespace yw;
     takes::Latency l;
     l.driverInput = 128;
     l.driverOutput = 256;

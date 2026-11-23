@@ -16,7 +16,7 @@
 #include "ui/I18n.h"
 #include "ui/OnnxRuntime.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -535,7 +535,7 @@ void convertAudio (AudioEngine& engine, std::vector<float> mono, double sampleRa
 }
 
 // --- the options dialog (round 190lj) -----------------------------------------------------------------------------
-// FL-style key names (C5 = MIDI 60, as LYNX's Piano roll shows them)
+// FL-style key names (C5 = MIDI 60, as YW's Piano roll shows them)
 juce::String keyName (int key)
 {
     return juce::MidiMessage::getMidiNoteName (key, true, true, 5);
@@ -795,4 +795,4 @@ juce::String convertFileToMidiCsv (AudioEngine& engine, const juce::File& input,
 {
     return fileToCsv (engine, input, requestOf (options), csv, timing);
 }
-} // namespace lynx
+} // namespace yw

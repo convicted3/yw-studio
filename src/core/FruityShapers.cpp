@@ -23,7 +23,7 @@
 #pragma GCC optimize("fp-contract=off", "rounding-math")
 #endif
 
-namespace lynx::flshape
+namespace yw::flshape
 {
 namespace
 {
@@ -1322,4 +1322,4 @@ std::unique_ptr<Effect> makeWaveShaper (const std::vector<std::uint8_t>& flState
         points = s->points;
     return std::make_unique<WaveShaperEffect> (points);
 }
-} // namespace lynx::flshape
+} // namespace yw::flshape

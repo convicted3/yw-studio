@@ -3,8 +3,8 @@
 // that falls by G / tail + G² / (10 dB · release) per second.
 namespace p190arfet
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 using namespace dyn108;
 constexpr int law = 19;
 
@@ -38,7 +38,7 @@ inline EffectParams settings (bool fet)
 TEST (p190ar_fet_law_is_off_by_default_and_changes_only_the_classic_compression)
 {
     using namespace p190arfet;
-    const auto info = lynx::effectInfo (EffectKind::compressor);
+    const auto info = yw::effectInfo (EffectKind::compressor);
     CHECK (info.params.size() == 20 && std::string (info.params[law].name) == "Classic law" && info.params[law].defaultValue == 0.0f);
     CHECK (defaults (EffectKind::compressor)[law] == 0.0f);
     const auto x = burstThenQuiet (-3.0, 0.3, 0.6);

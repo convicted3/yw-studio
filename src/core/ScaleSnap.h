@@ -1,6 +1,6 @@
 #pragma once
 
-// Snap to scale (round 190an; LYNX's own option, off by default: FL's Piano roll only highlights the scale and its
+// Snap to scale (round 190an; YW's own option, off by default: FL's Piano roll only highlights the scale and its
 // free drawing stays the default). One place for what the option means, for every note editor front-end (the FL-style
 // Piano roll and the Clip View's note editor share it):
 //  - a drawn note lands on the in-scale key nearest to the mouse (a tie goes down);
@@ -10,7 +10,7 @@
 //  - the arrow keys' "one up / one down" is one scale step;
 //  - notes that are already off the scale are left alone until they are moved in pitch: a drag along the time axis,
 //    a resize, a paste or switching the option on never changes them (Bitwig keeps "Quantize to Key" a separate
-//    command; LYNX's is Piano roll menu › Move the notes onto the scale). An off-scale note that is moved in pitch
+//    command; YW's is Piano roll menu › Move the notes onto the scale). An off-scale note that is moved in pitch
 //    reaches the scale with its first step.
 // Header only, no JUCE. Tests: tests/ScaleSnap190anTests.inc.
 
@@ -21,7 +21,7 @@
 #include "core/NoteTools.h"
 #include "core/Song.h"
 
-namespace lynx::scalesnap
+namespace yw::scalesnap
 {
 struct Scale
 {
@@ -106,4 +106,4 @@ inline int moveBySteps (Pattern& pattern, const std::vector<int>& indices, int s
                 pattern.notes[(std::size_t) i].key = stepKey (s, pattern.notes[(std::size_t) i].key, possible);
     return possible;
 }
-} // namespace lynx::scalesnap
+} // namespace yw::scalesnap

@@ -1,4 +1,4 @@
-// Round 190mb (Valhalla → LYNX stand-ins, part 3). Included after Parity190lyTests.inc (its render helpers).
+// Round 190mb (Valhalla → YW stand-ins, part 3). Included after Parity190lyTests.inc (its render helpers).
 // 1. ValhallaSupermassive → Nebula: the classic networks' per-mode tone and level (hidden nebula::toneLaw, set only by the
 //    Supermassive translator's `replaced` items; law 0's loop gets law 1's octave-band tone corrector), from Feedback 65 %
 //    to its full value at 80 %; the cloud networks, a new Nebula and every project saved before keep their sound.
@@ -6,12 +6,12 @@
 #include <string>
 
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/PluginSubstitutes.h"
 
 TEST (parity190mb_nebula_supermassive_tone_law_is_hidden_and_translator_only)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace nb = verbs::nebula;
     CHECK (nb::toneLaw == nb::law + 1 && effectInfo (EffectKind::nebula).params.size() == (std::size_t) nb::toneLaw);
     const auto fresh = makeEffectSlot (EffectKind::nebula);
@@ -67,7 +67,7 @@ TEST (parity190mb_nebula_supermassive_tone_law_is_hidden_and_translator_only)
 //    reference's own level change per rate octave; nothing at 48 kHz, a new Epoch untouched
 TEST (parity190mb_epoch_rate_law_is_translator_only_and_zero_at_48k)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ep = verbs::epoch;
     CHECK (ep::rateLaw == ep::shortTrim + 1 && effectInfo (EffectKind::epochVerb).params.size() == (std::size_t) ep::paramCount);
     CHECK (makeEffectSlot (EffectKind::epochVerb).params[(std::size_t) ep::rateLaw] == 0.0f);
@@ -109,7 +109,7 @@ TEST (parity190mb_epoch_rate_law_is_translator_only_and_zero_at_48k)
 //    mode, scaled by |feedback| (none at Feedback 0); the plug-in's own mode order is Orbit's, so the Mode map stays direct
 TEST (parity190mb_orbit_spacemodulator_level_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ob = echosuite::orbit;
     CHECK ((int) ob::smLaw == (int) ob::paramCount && effectInfo (EffectKind::orbit).params.size() == (std::size_t) ob::paramCount);
     CHECK (makeEffectSlot (EffectKind::orbit).params[(std::size_t) ob::smLaw] == 0.0f);
@@ -158,7 +158,7 @@ TEST (parity190mb_orbit_spacemodulator_level_law)
 //    from 100 % to 120 % and eases to 0 by 160 %; up to 100 % the law is round 190ly's
 TEST (parity190mb_echoform_valhalla_loop_law_over_feedback)
 {
-    using namespace lynx::echosuite::echoform;
+    using namespace yw::echosuite::echoform;
     CHECK (std::abs (valhallaLoopDb (0.35f)) < 1e-5 && std::abs (valhallaLoopDb (0.5f) + 1.1) < 1e-5);
     CHECK (std::abs (valhallaLoopDb (0.425f) + 1.1 * 0.5) < 1e-6);             // 85 %: on round 190ly's line
     CHECK (std::abs (valhallaLoopDb (0.6f) + 1.1) < 1e-5 && std::abs (valhallaLoopDb (0.7f) + 0.5) < 1e-5); // (float knob values)
@@ -169,7 +169,7 @@ TEST (parity190mb_echoform_valhalla_loop_law_over_feedback)
 //    level per reverb mode; a project saved before keeps the 0.1.27 law; Room and Chamber (the default) are untouched
 TEST (parity190mb_horizon_revision_per_mode_trim)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace hz = verbs::horizon;
     CHECK (hz::revision == hz::paramCount && effectInfo (EffectKind::horizon).params.size() == (std::size_t) hz::paramCount);
     const auto s = makeEffectSlot (EffectKind::horizon);

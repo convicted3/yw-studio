@@ -16,7 +16,7 @@
 //
 // Host side: the note's velocity (0…1) is the voice's linear gain as it is, the note pan a linear balance; the
 // channel's volume and pan (a linear balance too) are applied to the module's output, the channel's pitch is added to
-// every voice. Random draws: FLM uses one process-global generator; LYNX gives every instance its own, started at 0,
+// every voice. Random draws: FLM uses one process-global generator; YW gives every instance its own, started at 0,
 // so the dither, the noise and the start phases of fresh voices differ from any given FLM render by design.
 
 #include <array>
@@ -28,7 +28,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // true when the channel asks for FL Studio Mobile's GMSynth (instrument gms, modelParams[0] ≥ 0.5)
 bool gmsIsFlm (const ChannelDef& channel) noexcept;
@@ -144,4 +144,4 @@ struct RefNote
 std::vector<float> renderReference (const Patch& patch, const std::vector<RefNote>& notes, double sampleRate, int length,
                                     const std::string& resourceRoot, int block = 512, double bpm = 120.0, double songPos = -1.0);
 } // namespace gmsmobile
-} // namespace lynx
+} // namespace yw

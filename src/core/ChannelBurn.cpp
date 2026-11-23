@@ -11,7 +11,7 @@
 #include "core/RackOps.h"
 #include "core/Scheduler.h"
 
-namespace lynx::channelburn
+namespace yw::channelburn
 {
 namespace
 {
@@ -288,4 +288,4 @@ bool burnMidi (Song& song, int channel, bool toNewPattern, const Reset& reset)
         c.misc.shiftBeats = c.misc.gateBeats = 0.0f;
     return true;
 }
-} // namespace lynx::channelburn
+} // namespace yw::channelburn

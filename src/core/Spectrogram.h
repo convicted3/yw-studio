@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::spectrogram
+namespace yw::spectrogram
 {
 struct Cells
 {
@@ -24,4 +24,4 @@ Cells compute (const float* left, const float* right, std::int64_t frames, doubl
 
 // The heat colour (0xAARRGGBB) of a level 0…1.
 std::uint32_t colourOf (float level) noexcept;
-} // namespace lynx::spectrogram
+} // namespace yw::spectrogram

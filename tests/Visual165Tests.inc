@@ -1,10 +1,10 @@
-// --- The Visualizer's GPU layers (core/VisualFx.h scene) and LYNX Dance (core/FruityDance.h) - round 165e ------------
+// --- The Visualizer's GPU layers (core/VisualFx.h scene) and YW Dance (core/FruityDance.h) - round 165e ------------
 
 #include "core/FruityDance.h"
 
 TEST (visual165_shader_layers_round_trip)
 {
-    using namespace lynx::visualfx::scene;
+    using namespace yw::visualfx::scene;
     // every shader type has effects with unique ids; the 2D types none
     for (int t = 0; t < layerTypeCount; ++t)
     {
@@ -37,10 +37,10 @@ TEST (visual165_shader_layers_round_trip)
     }
     const auto back = parse (write (s));
     CHECK (back && *back == s);
-    const auto odd = parse ("LYNX visualizer 1\nlayer=postprocess\neffect=nonsense\nblend=weird\n");
+    const auto odd = parse ("YW visualizer 1\nlayer=postprocess\neffect=nonsense\nblend=weird\n");
     CHECK (odd && odd->layers.size() == 1 && odd->layers[0].effect == 0 && odd->layers[0].blend == Blend::normal);
     // a 0.1.19 scene (no effect / blend keys) reads as before
-    const auto old = parse ("LYNX visualizer 1\nlayer=bars\ncount=32\n");
+    const auto old = parse ("YW visualizer 1\nlayer=bars\ncount=32\n");
     CHECK (old && old->layers[0].blend == Blend::normal && old->layers[0].effect == 0);
     // the built-in GPU scenes: each has a shader layer and starts with a background
     int gpuScenes = 0;
@@ -51,7 +51,7 @@ TEST (visual165_shader_layers_round_trip)
 
 TEST (visual165_zgameeditor_gpu_mapping)
 {
-    using namespace lynx::visualfx::scene;
+    using namespace yw::visualfx::scene;
     const std::string ini = "[General]\r\nLayerCount=8\r\n"
                             "[AppSet0]\r\nApp=Background\\SolidColor\r\nFParamValues=0,0.5,1,0.5\r\nEnabled=1\r\n"
                             "[AppSet1]\r\nApp=Canvas effects\\Electric\r\nEnabled=1\r\n"
@@ -106,8 +106,8 @@ TEST (visual165_zgameeditor_gpu_mapping)
 
 TEST (dance165_state_keys_and_poses)
 {
-    using namespace lynx::dance;
-    // LYNX's own state round trip
+    using namespace yw::dance;
+    // YW's own state round trip
     Settings s;
     s.move = hula;
     s.mirrored = true;
@@ -184,7 +184,7 @@ TEST (dance165_state_keys_and_poses)
 
 TEST (dance165_silent_channel_signals)
 {
-    using namespace lynx;
+    using namespace yw;
     auto inst = dance::makeInstrument();
     auto* sig = dance::signalsOf (inst.get());
     CHECK (sig != nullptr);

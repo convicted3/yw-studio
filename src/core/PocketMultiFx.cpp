@@ -16,7 +16,7 @@
 // one after the other on the same buffer while they sound. In order: Flanger, Phaser, LP Filter, HP Filter, Delay,
 // Reverb, Panner, Vox.
 
-namespace lynx::pocket
+namespace yw::pocket
 {
 namespace
 {
@@ -343,7 +343,7 @@ public:
         }
     }
 
-    // Reverb: FLM's plate (FL's Reeverb 2 plate, LYNX's exact engine at FLM's levels), wet only: decay 0.75·X³ (0.1…15 s),
+    // Reverb: FLM's plate (FL's Reeverb 2 plate, YW's exact engine at FLM's levels), wet only: decay 0.75·X³ (0.1…15 s),
     // damping Y², the wet level 0.5 + 0.2·decay, a full room and diffusion, low cut 317 Hz; the input × the fade level
     void runReverb (Sub& s, float* l, float* r, int n) noexcept
     {
@@ -619,4 +619,4 @@ std::string multiFxParamText (int param, float v)
         default: std::snprintf (text, sizeof (text), "%d", (int) (v * 100.0f)); return text;
     }
 }
-} // namespace lynx::pocket
+} // namespace yw::pocket

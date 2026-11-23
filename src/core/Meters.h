@@ -10,7 +10,7 @@
 #include "core/RollingAudioLog.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Peaks per mixer track, written by the audio thread and read by the UI.
 // Audio accumulates the maximum; the UI reads and resets (takePeak), so no peak is lost
@@ -169,4 +169,4 @@ private:
     std::array<TrackPeaks, maxMixerTracks> tracks {};
     std::array<std::atomic<float>, 2> masterBar {};
 };
-} // namespace lynx
+} // namespace yw

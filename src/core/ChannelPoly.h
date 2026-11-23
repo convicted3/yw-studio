@@ -2,8 +2,8 @@
 
 // FL's channel polyphony layer (Channel settings › Misc › Polyphony: Mono, Porta, Slide; REA_rodada168l). FL applies it
 // in its channel's voice code for every generator, before the generator sees a voice (FLEngine 0xd293d0 / 0xd237e0 /
-// 0xd236d0 / 0xd23c00 / 0xfeaf70 / 0xd26460), so LYNX's rack does it the same way in front of every instrument that
-// does not do it itself (the LYNX Synth: its own Mono / Porta; the Sampler: its own Porta).
+// 0xd236d0 / 0xd23c00 / 0xfeaf70 / 0xd26460), so YW's rack does it the same way in front of every instrument that
+// does not do it itself (the YW Synth: its own Mono / Porta; the Sampler: its own Porta).
 //
 // - Porta (the channel's box, inverted by a note's porta flag): a new voice starts at the pitch of the last note
 //   triggered in its colour group and goes linearly (in cents) to its own over FL's glide time. Not with the
@@ -20,7 +20,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::channelpoly
+namespace yw::channelpoly
 {
 // FL's porta ticks for a Slide time (`portaBeats` = the knob's n / 192 beat, n = round((27^(v/1024) − 1)·48/26),
 // REA_rodada6 §4.2): ticks = n · (PPQ / 4) / 48 at FL's 96 PPQ, integer division (FLEngine 0x1312200)
@@ -205,4 +205,4 @@ private:
         return a;
     }
 };
-} // namespace lynx::channelpoly
+} // namespace yw::channelpoly

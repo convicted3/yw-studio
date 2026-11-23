@@ -7,19 +7,19 @@
 #include <cstring>
 
 #include "core/Effects.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 
 namespace parity190kwvv
 {
 // 4 s of a lone impulse (0.5 at 0.05 s), Epoch rendered at 48 kHz in blocks of 512; returns the energy from sample `from`
 // over `count` samples (all when count < 0)
-inline double impulseEnergy (const lynx::EffectSlot& slot, int from = 0, int count = -1)
+inline double impulseEnergy (const yw::EffectSlot& slot, int from = 0, int count = -1)
 {
     const double sr = 48000.0;
     const int n = (int) (4.0 * sr);
     std::vector<float> l ((std::size_t) n, 0.0f), r ((std::size_t) n, 0.0f);
     l[(std::size_t) (0.05 * sr)] = r[(std::size_t) (0.05 * sr)] = 0.5f;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (sr);
     for (int off = 0; off < n; off += 512)
         fx->process (l.data() + off, r.data() + off, std::min (512, n - off), slot.params, 120.0);
@@ -33,7 +33,7 @@ inline double impulseEnergy (const lynx::EffectSlot& slot, int from = 0, int cou
 
 TEST (parity190kw_vv_loop_law_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ep = verbs::epoch;
     CHECK (effectInfo (EffectKind::epochVerb).params.size() == (std::size_t) ep::revision); // hidden: no control, no string
     CHECK (ep::loopLaw == ep::revision + 1);
@@ -56,9 +56,9 @@ TEST (parity190kw_vv_loop_law_is_hidden_new_instances_run_it_old_projects_do_not
 
 TEST (parity190kw_vv_revision1_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     // as parity190it's gold (its input, 1.6 s at 48 kHz in blocks of 512), revision 1 with the loop law off: FNV-1a of the
-    // float bits and the energy, from the base commit's objects (/mnt/e/lynx-work/rea190kw/vvimpl/gold: gold_base.txt, 72
+    // float bits and the energy, from the base commit's objects (/mnt/e/yw-work/rea190kw/vvimpl/gold: gold_base.txt, 72
     // renders of revisions 0 and 1 at 44.1 / 48 / 96 kHz; the round's objects print the same lines)
     struct Gold { float mode, decay, size, colour; std::uint64_t hash; double energy; };
     const Gold gold[] = {
@@ -91,7 +91,7 @@ TEST (parity190kw_vv_revision1_renders_as_the_base_commit_did)
 
 TEST (parity190kw_vv_concert_hall_level_follows_the_loop_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ep = verbs::epoch;
     // the reference's Concert Hall against revision 1 (refcap030 pairs / sr48, impulse): +2.0 dB at Decay 0.51 s, −1.2 …
     // −1.3 dB at 7 s, −1.3 … −1.9 dB at 33 s (its loop gain sees Decay only after the first half-lap)

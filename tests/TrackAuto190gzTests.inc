@@ -1,4 +1,4 @@
-// Round 190gz (issue #170): LYNX's "Link Playlist tracks to mixer tracks" (core/PlaylistOps.h autolink): an optional
+// Round 190gz (issue #170): YW's "Link Playlist tracks to mixer tracks" (core/PlaylistOps.h autolink): an optional
 // project switch that makes every Playlist track holding content of its own FL's own audio / instrument track of mixer
 // insert N (round 190ib's rule: Track N = insert N), followed by new content, recording and the file formats.
 
@@ -6,7 +6,7 @@
 
 #include "core/FlpExport.h"
 #include "core/FlpImport.h"
-#include "core/LynxExtras.h"
+#include "core/YwExtras.h"
 #include "core/PlaylistOps.h"
 #include "core/RackRenderer.h"
 #include "core/TakeRecording.h"
@@ -21,10 +21,10 @@ namespace trackauto190gz
 // linked to insert 6 (Pad on it), 6 Synth's pattern, 7 audio + pattern, 8 empty, 9 Bell (insert 10 carries an effect)
 struct Setup
 {
-    lynx::Song song;
+    yw::Song song;
     Setup()
     {
-        using namespace lynx;
+        using namespace yw;
         song.bpm = 120.0;
         song.mode = PlayMode::song;
         song.mixer = Song::defaultMixer (16);
@@ -74,29 +74,29 @@ struct Setup
         song.playlistTracks[5].mixerTrack = 6;
         song.playlistTracks[5].name = "Pads";
     }
-    int clip (int track, lynx::ClipKind kind, int source, std::int64_t start = 0)
+    int clip (int track, yw::ClipKind kind, int source, std::int64_t start = 0)
     {
-        lynx::Clip c;
+        yw::Clip c;
         c.kind = kind;
         c.track = track;
         c.start = start;
-        c.length = 4 * lynx::ppq;
-        if (kind == lynx::ClipKind::pattern)
+        c.length = 4 * yw::ppq;
+        if (kind == yw::ClipKind::pattern)
             c.pattern = source;
-        else if (kind == lynx::ClipKind::audio)
+        else if (kind == yw::ClipKind::audio)
             c.channel = source;
         else
             c.automation = source;
         song.playlist.push_back (c);
         return (int) song.playlist.size() - 1;
     }
-    const lynx::PlaylistTrack& track (int t) const { return song.playlistTracks[(std::size_t) t]; }
+    const yw::PlaylistTrack& track (int t) const { return song.playlistTracks[(std::size_t) t]; }
 };
 
 // renders the song (a sine for every audio file) and returns the left channel
-inline std::vector<float> render (const lynx::Song& song, double seconds = 2.0)
+inline std::vector<float> render (const yw::Song& song, double seconds = 2.0)
 {
-    using namespace lynx;
+    using namespace yw;
     auto data = std::make_shared<SampleData>();
     const int total = 44100 * 3;
     data->left.resize ((std::size_t) total);
@@ -119,7 +119,7 @@ inline std::vector<float> render (const lynx::Song& song, double seconds = 2.0)
 
 TEST (trackauto190gz_off_by_default_and_new_projects)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (! Song().linkTracksToMixer && ! Song::makeDefault().linkTracksToMixer);
     // the new projects' default: off, kept in ui-options.txt as newLinkTracks
     NewProjectDefaults d;
@@ -138,7 +138,7 @@ TEST (trackauto190gz_off_by_default_and_new_projects)
     auto linked = Song::makeDefault();
     applyNewProjectDefaults (linked, d);
     CHECK (linked.linkTracksToMixer);
-    // the LYNX extras page lists it under the key it is kept with
+    // the YW extras page lists it under the key it is kept with
     bool listed = false;
     for (const auto& item : extras::items)
         listed = listed || (item.id == "project.linkTracks" && item.settingsKey == "ui-options.txt:newLinkTracks");
@@ -148,7 +148,7 @@ TEST (trackauto190gz_off_by_default_and_new_projects)
 TEST (trackauto190gz_switch_on_links_tracks_by_their_content)
 {
     // (round 190ib: the rule is now "Track N = insert N" for every track with content of its own, core/PlaylistOps.h)
-    using namespace lynx;
+    using namespace yw;
     trackauto190gz::Setup s;
     CHECK (autolink::isNeutralFree (s.song, 1) && ! autolink::isNeutralFree (s.song, 9) && ! autolink::isNeutralFree (s.song, 10)
            && ! autolink::isNeutralFree (s.song, 6) && ! autolink::isNeutralFree (s.song, 0));
@@ -205,11 +205,11 @@ TEST (trackauto190gz_switching_on_keeps_the_sound)
     // channel where it is): the mix is the same
     trackauto190gz::Setup s;
     s.song.playlist.erase (std::remove_if (s.song.playlist.begin(), s.song.playlist.end(),
-                                           [] (const lynx::Clip& c) { return c.kind == lynx::ClipKind::automation; }),
+                                           [] (const yw::Clip& c) { return c.kind == yw::ClipKind::automation; }),
                            s.song.playlist.end());
     s.song.automations.clear();
     const auto before = trackauto190gz::render (s.song);
-    CHECK (lynx::autolink::setOn (s.song, true) == 5);
+    CHECK (yw::autolink::setOn (s.song, true) == 5);
     const auto after = trackauto190gz::render (s.song);
     CHECK (before.size() == after.size() && ! before.empty());
     float peak = 0.0f, worst = 0.0f;
@@ -225,7 +225,7 @@ TEST (trackauto190gz_switching_on_keeps_the_sound)
 
 TEST (trackauto190gz_new_content_follows_and_unassigned_stays)
 {
-    using namespace lynx;
+    using namespace yw;
     trackauto190gz::Setup s;
     autolink::setOn (s.song, true);
     // a first clip on empty Track 9 (Hat's pattern, Hat on the Master): Hat's instrument track on insert 9 (Synth left it)
@@ -291,7 +291,7 @@ TEST (trackauto190gz_new_content_follows_and_unassigned_stays)
 
 TEST (trackauto190gz_refusals)
 {
-    using namespace lynx;
+    using namespace yw;
     // an insert reserved for another participant of an online session is never taken: Tracks 1 and 2 stay unassigned
     trackauto190gz::Setup t;
     SessionParticipant host, guest;
@@ -318,7 +318,7 @@ TEST (trackauto190gz_refusals)
 
 TEST (trackauto190gz_recording_goes_to_the_paired_track)
 {
-    using namespace lynx;
+    using namespace yw;
     trackauto190gz::Setup s;
     autolink::setOn (s.song, true);
     s.song.mixer[14].name = "Mic";
@@ -346,14 +346,14 @@ TEST (trackauto190gz_recording_goes_to_the_paired_track)
 
 TEST (trackauto190gz_flp_keeps_the_links)
 {
-    using namespace lynx;
+    using namespace yw;
     trackauto190gz::Setup s;
     autolink::setOn (s.song, true);
     CHECK (autolink::repeatedTracks (s.song)[6] == 2);
     flpexport::Options options;
     flpexport::Report report;
     const auto back = importFlp (flp::parseProject (flpexport::exportFlp (s.song, options, report)));
-    CHECK (! back.linkTracksToMixer); // (the switch is LYNX's: .lynx only)
+    CHECK (! back.linkTracksToMixer); // (the switch is YW's: .yw only)
     CHECK (back.playlistTracks.size() >= 10);
     if (back.playlistTracks.size() >= 10)
     {

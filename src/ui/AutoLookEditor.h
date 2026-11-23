@@ -8,10 +8,10 @@
 
 #include "core/AutoLook.h"
 
-// Issue #239 (round 190od, LYNX extra): Settings › LYNX extras › "Automatic colors and icons": the user's rules
+// Issue #239 (round 190od, YW extra): Settings › YW extras › "Automatic colors and icons": the user's rules
 // (core/AutoLook.h) — the switch, one row per rule (how the name is compared, the text, the colour, the icon, what it
 // colours), Add rule and Apply to this project. Every change is saved at once (autolookui::save).
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -51,4 +51,4 @@ private:
     std::vector<std::unique_ptr<Row>> rows;
     static constexpr int rowHeight = 30, gap = 6;
 };
-} // namespace lynx
+} // namespace yw

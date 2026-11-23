@@ -1,9 +1,9 @@
-// The Visualizer's GLSL (round 165e). LYNX's own shaders, written for this renderer (no ZGameEditor / Shadertoy code):
+// The Visualizer's GLSL (round 165e). YW's own shaders, written for this renderer (no ZGameEditor / Shadertoy code):
 // GLSL 1.10-style (attribute / varying / gl_FragColor / texture2D), translated by JUCE when the context is v3.
 // Every fragment shader writes premultiplied colour. Loops have fixed small bounds (the GPU is never asked for more
 // than a few dozen steps a pixel).
 
-namespace lynx::glsl
+namespace yw::glsl
 {
 constexpr const char* vertex = R"(
 attribute vec2 position;
@@ -810,4 +810,4 @@ void main()
     gl_FragColor = vec4 (texture2D (uSrc, uv).rgb, 1.0);
 }
 )";
-} // namespace lynx::glsl
+} // namespace yw::glsl

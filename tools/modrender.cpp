@@ -1,7 +1,7 @@
 // modrender: renders a tracker module (.mod .xm .s3m .it) with libxmp-lite's own player (round 190nw), the reference the
-// module import's renders are compared with (scripts/flref_compare.py pair <this.wav> <LYNX's export.wav>).
+// module import's renders are compared with (scripts/flref_compare.py pair <this.wav> <YW's export.wav>).
 // Usage: modrender <module> <out.wav> [--rate 44100] [--mix 100] [--interp nearest|linear|spline]
-// 16-bit stereo PCM; the song once (stops where it would loop), as LYNX's export plays it.
+// 16-bit stereo PCM; the song once (stops where it would loop), as YW's export plays it.
 
 #include <cstdint>
 #include <cstdio>

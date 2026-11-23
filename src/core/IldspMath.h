@@ -8,21 +8,21 @@
 #include <cstdint>
 #include <cstring>
 #include "core/Simd.h"
-#if LYNX_X86
+#if YW_X86
  #include <cpuid.h>
 #endif
 
 #pragma clang fp contract(off)
 #pragma STDC FENV_ACCESS ON
 
-namespace lynx::ildsp
+namespace yw::ildsp
 {
 inline std::uint64_t dbits (double v) { std::uint64_t u; std::memcpy (&u, &v, 8); return u; }
 inline double dfrom (std::uint64_t u) { double v; std::memcpy (&v, &u, 8); return v; }
 inline std::uint32_t fbits (float v) { std::uint32_t u; std::memcpy (&u, &v, 4); return u; }
 inline float ffrom (std::uint32_t u) { float v; std::memcpy (&v, &u, 4); return v; }
 
-#if LYNX_X86
+#if YW_X86
 inline bool cpuHasFma()
 {
     static const bool f = [] {
@@ -41,7 +41,7 @@ inline bool cpuHasFma() { return true; } // ARM64 always has a fused multiply-ad
 extern bool forceNoFma; // test switch (false: follow the CPU)
 inline bool useFma() { return cpuHasFma() && ! forceNoFma; }
 
-#if LYNX_X86
+#if YW_X86
 __attribute__ ((target ("fma"))) inline double fmaD (double a, double b, double c)
 { return _mm_cvtsd_f64 (_mm_fmadd_sd (_mm_set_sd (a), _mm_set_sd (b), _mm_set_sd (c))); }
 __attribute__ ((target ("fma"))) inline float fmaF (float a, float b, float c)
@@ -662,4 +662,4 @@ inline float logf_ (float xf)
     }
     return f + t;
 }
-} // namespace lynx::ildsp
+} // namespace yw::ildsp

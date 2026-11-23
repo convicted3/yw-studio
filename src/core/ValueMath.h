@@ -1,6 +1,6 @@
 #pragma once
 
-// The arithmetic of LYNX's control contract (docs/WORKFLOW_FL.md, P1 items 7 and 15): how a drag,
+// The arithmetic of YW's control contract (docs/WORKFLOW_FL.md, P1 items 7 and 15): how a drag,
 // a fine drag or a wheel notch changes a value, the tempo display's digit drag, and tap tempo.
 // Header-only, no JUCE.
 
@@ -11,10 +11,10 @@
 
 #include "core/Song.h"
 
-namespace lynx::controls
+namespace yw::controls
 {
 constexpr double fineFactor = 0.1;      // Ctrl+drag / Ctrl+wheel move 10x less
-constexpr double ultraFineFactor = 0.01; // Ctrl+Shift: 100x less (round 177d, LYNX's own: precise thresholds and gains)
+constexpr double ultraFineFactor = 0.01; // Ctrl+Shift: 100x less (round 177d, YW's own: precise thresholds and gains)
 
 // How much a drag or wheel step is scaled by the modifiers held: Ctrl = fine, Ctrl+Shift = ultra-fine.
 inline double fineScale (bool ctrl, bool shift) noexcept { return ! ctrl ? 1.0 : shift ? ultraFineFactor : fineFactor; }
@@ -35,7 +35,7 @@ inline double dragValue (double start, double pixelsUp, double minimum, double m
 // How many wheel notches a wheel event moved (never 0 for a move). `notchSize` is what one notch of a plain mouse wheel
 // gives (JUCE's deltaY: 120 × 0.5 / 256 on Windows, 50 / 256 on Linux / X11; macOS lines are smaller): a notch moves
 // a control by one wheel step, as in FL (round 168s, issue #32: one notch over an FL fader = 2 % [SHOT] r168s c_f07;
-// LYNX counted 1.95 notches on Windows and the faders jumped twice as far).
+// YW counted 1.95 notches on Windows and the faders jumped twice as far).
 inline double wheelNotches (double delta, double notchSize) noexcept
 {
     if (delta == 0.0)
@@ -81,7 +81,7 @@ inline double wheelValue (double value, double notches, double minimum, double m
 }
 
 // A wheel that scrolls a view keeps scrolling it (round 169c, issue #32: "the mixer faders react to the mouse wheel
-// accidentally while scrolling"). LYNX's mixer scrolls its strips with the wheel over the parts that are no control
+// accidentally while scrolling"). YW's mixer scrolls its strips with the wheel over the parts that are no control
 // (FL's mixer does not scroll there at all [SHOT] r169c f03–f05), so a spin that started on a strip's blank part and
 // then passed over a fader, knob or the EQ moved that control. The scroll goes on while the wheel keeps turning (events
 // less than `holdMs` apart); a wheel over a control after a pause changes it, as in FL.
@@ -215,4 +215,4 @@ inline double clampUtilityVolume (double volume) noexcept
 {
     return std::isfinite (volume) ? std::clamp (volume, 0.0, maxUtilityVolume) : 1.0;
 }
-} // namespace lynx::controls
+} // namespace yw::controls

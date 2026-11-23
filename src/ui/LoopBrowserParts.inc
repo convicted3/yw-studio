@@ -1,4 +1,4 @@
-// Round gaps190kf (item 3; included at the end of ui/BrowserComponent.cpp inside namespace lynx): the Browser's Loop
+// Round gaps190kf (item 3; included at the end of ui/BrowserComponent.cpp inside namespace yw): the Browser's Loop
 // Browser members (the panel itself is in ui/LoopBrowserPanel.inc; the logic in core/LoopKeywords.h).
 
 // --- the loops' lengths (round 190mf, DS-41) ---------------------------------------------------------------------------
@@ -310,7 +310,7 @@ void BrowserComponent::showLoopTypesMenu()
 
 juce::PopupMenu BrowserComponent::buildLoopTypesMenu()
 {
-    // GarageBand's Loop Types: All Loops, Audio Loops, MIDI Loops, Drummer Loops (LYNX: pattern loops), each ticked
+    // GarageBand's Loop Types: All Loops, Audio Loops, MIDI Loops, Drummer Loops (YW: pattern loops), each ticked
     juce::PopupMenu menu;
     auto safe = juce::Component::SafePointer<BrowserComponent> (this);
     menu.addSectionHeader (tr ("Loop Types"));
@@ -335,8 +335,8 @@ juce::PopupMenu BrowserComponent::buildLoopTypesMenu()
     return menu;
 }
 
-// Rollup 0.1.30 step 6 (the owner's yes to gaps190kf's question): LYNX's own beats and sounds (round 190ke,
-// core/FactoryLoops.h) are listed with the places' loops under Show All, where the Browser shows LYNX content (the Simple
+// Rollup 0.1.30 step 6 (the owner's yes to gaps190kf's question): YW's own beats and sounds (round 190ke,
+// core/FactoryLoops.h) are listed with the places' loops under Show All, where the Browser shows YW content (the Simple
 // layout, round 190ke's rule) — also when no sample folder is there yet.
 static bool factoryLoopsShown (int placeIndex)
 {
@@ -380,7 +380,7 @@ void BrowserComponent::runLoopSearch()
     scope = withMerged (scope);
     if (scope.isEmpty())
     {
-        loopsAnswered (loopSearchId, {}, false, false); // (no place: LYNX's own loops only, where shown)
+        loopsAnswered (loopSearchId, {}, false, false); // (no place: YW's own loops only, where shown)
         return;
     }
     if (loopInfos.empty())
@@ -430,7 +430,7 @@ void BrowserComponent::loopsAnswered (std::uint64_t id, std::vector<loopkeys::Lo
 {
     if (id != loopSearchId || ! loopsShown)
         return;
-    if (factoryLoopsShown (loopPlaceIndex)) // (rollup step 6: LYNX's own beats and sounds, round 190ke)
+    if (factoryLoopsShown (loopPlaceIndex)) // (rollup step 6: YW's own beats and sounds, round 190ke)
     {
         auto own = factoryloops::loops();
         infos.insert (infos.end(), std::make_move_iterator (own.begin()), std::make_move_iterator (own.end()));
@@ -500,7 +500,7 @@ void BrowserComponent::applyLoopFilter()
         if (! loopkeys::matches (info, f, favourite (i)))
             continue;
         std::unique_ptr<FileTree::Node> n;
-        if (const auto* own = factoryloops::itemOf (info.path)) // (rollup step 6: a LYNX beat or sound, 190ke's row)
+        if (const auto* own = factoryloops::itemOf (info.path)) // (rollup step 6: a YW beat or sound, 190ke's row)
         {
             if ((n = FileTree::makeFactoryItem (*this, own->key)) == nullptr)
                 continue;

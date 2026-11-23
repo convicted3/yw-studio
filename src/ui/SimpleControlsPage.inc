@@ -1,17 +1,17 @@
 // Round 190ke (owner decision D4 of coverage190jw): the Simple dock's Controls tab, GarageBand's Smart Controls as a
-// LYNX-own screen (design kind (d)). Included by ui/SimpleDock.cpp after its helpers (DockKnob, styleCaption, utf8).
+// YW-own screen (design kind (d)). Included by ui/SimpleDock.cpp after its helpers (DockKnob, styleCaption, utf8).
 //
 // GarageBand's landmarks kept (Apple's guide, "Intro to Smart Controls"; ref/img/gb-smartcontrols-pane.png): the
 // inspector column on the left (what the controls drive, Compare-like actions), the screen controls on the right as
 // big labelled knobs with the label ABOVE each knob, knobs gathered in framed sections with their title above the frame
-// (GarageBand's "TWEED", "DISTORTION", "ECHO", "REVERB"), a 0…10 scale around each knob. LYNX's own: dark panel and red
+// (GarageBand's "TWEED", "DISTORTION", "ECHO", "REVERB"), a 0…10 scale around each knob. YW's own: dark panel and red
 // accent, the value under the knob, one knob = one existing control (core/SmartControls.h), "Edit mapping" (a ▾ under
 // each label picks what the knob turns; GarageBand's Mac app has no user mapping) and "Reset to default".
 // Performance: static paint, no timer; a turned knob repaints itself only; the page follows the song on refresh().
 
 namespace
 {
-// A big knob of the Controls tab: LYNX vector (a dark body with a lit pointer, the arc from 0 to the value in the
+// A big knob of the Controls tab: YW vector (a dark body with a lit pointer, the arc from 0 to the value in the
 // accent, eleven scale marks with 0 / 5 / 10 numbers around it). Drag up / down (Shift: fine), wheel, arrow keys,
 // double-click = the control's default.
 class BigKnob final : public juce::Component,
@@ -26,7 +26,7 @@ public:
     BigKnob()
     {
         setWantsKeyboardFocus (true);
-        getProperties().set ("lynxClickKeepsKeys", true);
+        getProperties().set ("ywClickKeepsKeys", true);
         setMouseCursor (juce::MouseCursor::UpDownResizeCursor);
     }
     float value() const noexcept { return shown; }

@@ -1,4 +1,4 @@
-// Round 190iz (included by ui/BrowserComponent.cpp inside namespace lynx, after the Browser's other parts): FL's tab
+// Round 190iz (included by ui/BrowserComponent.cpp inside namespace yw, after the Browser's other parts): FL's tab
 // icons, the search row's TAGS button and the tags panel (FL's Browser tagging), and the Clip-launch layout's Live-style
 // sidebar (Collections / Library / Places). Everything here is drawn statically: no timer, nothing painted while idle.
 // docs/analise/REA_rodada190iz.md.
@@ -7,7 +7,7 @@ juce::File userTemplatesFolder(); // (ui/NewProjectDialog.h: Live's Templates pl
 
 namespace browsertabicons
 {
-// LYNX vectors for FL's six tab icons (reference fl-playlist.png 0,104,205,140: a waveform, two documents, a plug, a
+// YW vectors for FL's six tab icons (reference fl-playlist.png 0,104,205,140: a waveform, two documents, a plug, a
 // globe, a cloud, a star), drawn for a box of `area` in `colour`; nothing of FL's artwork is used.
 inline void draw (juce::Graphics& g, browserplaces::Tab tab, juce::Rectangle<float> area, juce::Colour colour)
 {
@@ -167,7 +167,7 @@ public:
     explicit TagsPanel (BrowserComponent& b) : browser (b) { setRepaintsOnMouseActivity (true); }
 
     static constexpr int chipHeight = 18, gap = 3, pad = 4, maxRows = 4;
-    // round 190ke: the Simple layout lists LYNX content's tags too (GarageBand's Loop Browser shows its keyword buttons
+    // round 190ke: the Simple layout lists YW content's tags too (GarageBand's Loop Browser shows its keyword buttons
     // as a grid of up to seven rows): more rows there, and the picked tags first so a pick never falls off the panel
     static int rowsAllowed() { return layoutstyle::current() == layoutstyle::Style::simple ? 9 : maxRows; }
 
@@ -310,7 +310,7 @@ private:
         place ({ ChipKind::any, {}, tr ("Any"), 0, {} });
         place ({ ChipKind::all, {}, tr ("All"), 0, {} });
         x += 4;
-        const auto all = BrowserComponent::shownTags().all(); // (round 190ke: LYNX content's tags in Simple)
+        const auto all = BrowserComponent::shownTags().all(); // (round 190ke: YW content's tags in Simple)
         const auto simple = layoutstyle::current() == layoutstyle::Style::simple;
         for (int pass = simple ? 0 : 1; pass < 2; ++pass)
             for (const auto& t : all)
@@ -376,7 +376,7 @@ public:
         std::vector<std::pair<int, std::string>> collections;
         for (const auto c : collectionStore().shown())
         {
-            // Live names its first collection "Favorites" (LYNX's Pattern layout calls it Starred)
+            // Live names its first collection "Favorites" (YW's Pattern layout calls it Starred)
             const auto name = c == 0 && ! collectionStore().hasOwnName (0) ? tr ("Favorites") : collectionName (c);
             collections.emplace_back (c, name.toStdString());
         }
@@ -550,7 +550,7 @@ private:
         }
     }
 
-    // LYNX's vector icons in the places of Live's 12 px line icons
+    // YW's vector icons in the places of Live's 12 px line icons
     static Icon iconOf (browserplaces::Category c)
     {
         using browserplaces::Category;

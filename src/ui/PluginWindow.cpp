@@ -43,12 +43,12 @@
 #if JUCE_WINDOWS
 namespace juce
 {
-// cmake/LynxPatchJuce.cmake fix 15 (juce_events, Windows): the message loop's DispatchMessage through this hook
-extern void (*lynxDispatchMessageHook) (const void*);
+// cmake/YwPatchJuce.cmake fix 15 (juce_events, Windows): the message loop's DispatchMessage through this hook
+extern void (*ywDispatchMessageHook) (const void*);
 } // namespace juce
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -282,7 +282,7 @@ private:
     }
 };
 
-// FL's plugin wrapper settings page (REA rounds 146a / 149), in LYNX's style with the tabs and groups of FL's wrapper
+// FL's plugin wrapper settings page (REA rounds 146a / 149), in YW's style with the tabs and groups of FL's wrapper
 // form (Fruity Wrapper's DFM [DATA], FL 2026's page [EXEC]): Settings (Info with the latency, MIDI ports), Processing
 // (Options) and Troubleshooting (Compatibility: the fixed buffers; Location). Options that re-create the plugin keep
 // its state and close this window (open it again from the channel or the slot).
@@ -335,7 +335,7 @@ public:
         for (int t = 0; t < 3; ++t)
         {
             auto* b = tabs.add (new juce::TextButton (tr (tabNames[t])));
-            b->setClickingTogglesState (false); // LYNX's tab look (as the channel window's): the shown one filled
+            b->setClickingTogglesState (false); // YW's tab look (as the channel window's): the shown one filled
             b->onClick = [this, t] { showTab (t); };
             addAndMakeVisible (b);
         }
@@ -378,7 +378,7 @@ public:
             });
         };
         addChildComponent (bendRange);
-        // round 190ao (pain point 12; LYNX's own, FL's wrapper has no velocity setting): how notes played into this
+        // round 190ao (pain point 12; YW's own, FL's wrapper has no velocity setting): how notes played into this
         // instrument from MIDI devices reach it. The first item follows Settings › MIDI › Velocity (the default)
         velocityMode.addItem (tr ("Follow the MIDI settings"), 1);
         velocityMode.addItem (tr ("As played"), 2);
@@ -440,7 +440,7 @@ public:
         // Processing › Connections (round 188d): a generator's outputs, each to the insert its offset from the
         // channel's says. FL's header: Reset, Auto map outputs, the outputs glyph and Refresh at the right [UI fl188d].
         // An effect on an insert (FL [UI fl188d k65]): its inputs column too, each input's sidechain index into the
-        // insert's inputs list (core/MixerOps.h insertInputs); input 2 is the side input LYNX feeds from the slot's
+        // insert's inputs list (core/MixerOps.h insertInputs); input 2 is the side input YW feeds from the slot's
         // sidechain, which the index sets. Header: inputs glyph, Auto map inputs, Reset, Auto map outputs, outputs glyph.
         effectSlot = ! channel && mixerTrack > 0 && mixerSlot >= 0;
         connections = (channel && plugin.getTotalNumOutputChannels() > 0) || (effectSlot && plugin.getBusCount (true) > 0);
@@ -662,7 +662,7 @@ public:
                         show (bendRange, row.removeFromRight (70).reduced (0, 2));
                     show (*toggles[(int) i], row);
                 }
-            if (instrumentChannel) // LYNX's own per-plugin velocity, under FL's MIDI options (round 190ao)
+            if (instrumentChannel) // YW's own per-plugin velocity, under FL's MIDI options (round 190ao)
             {
                 auto row = midi.removeFromTop (rowHeight);
                 label (row.removeFromLeft (80), tr ("Velocity"));
@@ -678,7 +678,7 @@ public:
                 show (bitSize, row.removeFromLeft (110).reduced (0, 2));
             }
             // FL's Settings › GUI (round 190oh, P3): "DPI aware", "Scale editor dimensions" (FL's other GUI boxes have
-            // no LYNX behaviour and are left out, as the Processing / Troubleshooting tabs do)
+            // no YW behaviour and are left out, as the Processing / Troubleshooting tabs do)
             int guiRows = 0;
             for (const auto& o : wrapperOptions())
                 guiRows += juce::String (o.section) == "GUI" ? 1 : 0;
@@ -823,7 +823,7 @@ private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override { refresh(); }
 
     // An effect's input k as the page shows it: the stored route; input 2 without a stored index shows the slot's
-    // sidechain source (picked with LYNX's "SC" picker) as its index in the insert's inputs list
+    // sidechain source (picked with YW's "SC" picker) as its index in the insert's inputs list
     PluginOutputRoute inputRoute (int k) const
     {
         const auto& song = engine.getSong();
@@ -930,7 +930,7 @@ private:
     juce::OwnedArray<juce::ToggleButton> toggles;
     juce::ComboBox inPort, outPort, bendRange, bitSize, velocityMode, fixedVelocity;
     juce::TextButton latency, locate;
-    const bool instrumentChannel; // a Channel rack instrument: the MIDI group has LYNX's Velocity row
+    const bool instrumentChannel; // a Channel rack instrument: the MIDI group has YW's Velocity row
     // Processing › Connections (round 188d)
     bool connections = false;
     int mixerTrack = -1, mixerSlot = -1; // an effect's insert and slot (−1: a channel's generator)
@@ -949,7 +949,7 @@ private:
 
 // FL's Typing keyboard priority button in the plugin window's caption (FLEngine PluginForm.NewCaption.KeyboardFocusBtn,
 // round 187a [UI shots/fl a00-a06]): a keyboard glyph left of the presets, bright while the plugin handles keys first
-// (FL's default for a new plugin), dim when LYNX goes first; outlined under the mouse.
+// (FL's default for a new plugin), dim when YW goes first; outlined under the mouse.
 class KeyboardPriorityButton final : public juce::Button
 {
 public:
@@ -976,7 +976,7 @@ public:
     }
 };
 
-// Round 190ao (pain point 11, LYNX's own; FL has no pin): "Pin on top" at the right end of the wrapper header of a
+// Round 190ao (pain point 11, YW's own; FL has no pin): "Pin on top" at the right end of the wrapper header of a
 // detached plugin window. A pushpin: upright and in the accent colour while the window is pinned, tilted and dim when not.
 class PinButton final : public juce::Button
 {
@@ -1463,9 +1463,9 @@ const PluginRef* editorRef (const PluginWindows::WrapperContext& context)
     return context.engine != nullptr && context.find ? context.find (const_cast<Song&> (context.engine->getSong())) : nullptr;
 }
 
-// "DPI aware" off (Windows; a plugin in LYNX's own process): the editor and the window around it are made in a
+// "DPI aware" off (Windows; a plugin in YW's own process): the editor and the window around it are made in a
 // DPI-unaware context, so Windows draws them at 96 dpi and stretches them to the display's scale — the whole window,
-// as JUCE's plugin host does it (a DPI-unaware child inside LYNX's per-monitor-aware windows would need every
+// as JUCE's plugin host does it (a DPI-unaware child inside YW's per-monitor-aware windows would need every
 // container window made for mixed hosting). Such a window is always a window of its own (it can't dock).
 bool dpiUnawareEditor (const juce::AudioPluginInstance& plugin, const PluginWindows::WrapperContext& context)
 {
@@ -1520,7 +1520,7 @@ public:
         if (c.engine != nullptr && c.find) // FL's wrapper header and settings page (round 146a)
         {
             auto* wrapped = new WrappedEditor (editor, *c.engine, c.find, plugin, c.channel, c.track, c.slot);
-            // FL's plugin menu ends with "Detached" (issue #116); a detached window then has LYNX's "Pin on top"
+            // FL's plugin menu ends with "Detached" (issue #116); a detached window then has YW's "Pin on top"
             wrapped->setMenuExtension ([this] (juce::PopupMenu& menu) {
                 if (canDock (this->plugin))
                     addDetachedItem (menu);
@@ -1621,7 +1621,7 @@ public:
         auto* p = &plugin;
         if (engine != nullptr)
         {
-            // FL's "Add to plugin database (flag as favorite)": LYNX's favourites (the picker's stars)
+            // FL's "Add to plugin database (flag as favorite)": YW's favourites (the picker's stars)
             const auto id = plugin.getPluginDescription().createIdentifierString().toStdString();
             spec.addToDatabase = [engine, id] {
                 auto& host = engine->getPluginHost();
@@ -1745,7 +1745,7 @@ private:
             // round 190ao: the plugin went down while its window is open: the notice with "Reload" (only on request)
             if (context.reload && ! wrapped->isDown() && (isSandboxedPluginDead (plugin) || (context.down && context.down())))
             {
-                // round 190gg (B1): a plugin that crashed inside LYNX may run in a process of its own from now on
+                // round 190gg (B1): a plugin that crashed inside YW may run in a process of its own from now on
                 std::function<void()> separate;
                 juce::String name;
                 if (const auto* ref = context.engine != nullptr && context.find ? context.find (const_cast<Song&> (context.engine->getSong())) : nullptr)
@@ -1789,7 +1789,7 @@ private:
 void closeHostOf (const juce::AudioPluginInstance* plugin);
 void pinnedWindowsChanged();
 
-// FL's "Detached": the editor in a top-level window of its own, kept above the main window (LYNX's only kind so far).
+// FL's "Detached": the editor in a top-level window of its own, kept above the main window (YW's only kind so far).
 class PluginWindow final : public juce::DocumentWindow, public EditorHost
 {
 public:
@@ -1800,7 +1800,7 @@ public:
         setUsingNativeTitleBar (true);
         useClassicRendering();
         if (keysFromPluginView)
-            getProperties().set ("lynxPluginWindow", true);
+            getProperties().set ("ywPluginWindow", true);
         shownContent = content.get();
         setContentOwned (content.release(), true);
         setResizable (editorResizable, false);
@@ -1808,7 +1808,7 @@ public:
         setVisible (true);
         keepAboveMainWindow (*this);
         startHost();
-        // round 190ao: LYNX's "Pin on top", remembered with the plugin in the project
+        // round 190ao: YW's "Pin on top", remembered with the plugin in the project
         if (auto* wrapped = dynamic_cast<WrappedEditor*> (shownContent))
         {
             wrapped->setPin ([this] (bool on) { setPinned (on, true); }, pinnable());
@@ -1819,7 +1819,7 @@ public:
         }
     }
 
-    // A plugin in a separate process shows its editor in a window of that process: LYNX can't keep that one in front.
+    // A plugin in a separate process shows its editor in a window of that process: YW can't keep that one in front.
     bool pinnable() const { return ! isSandboxedPlugin (*key()); }
     // (round 190oh: FL's "DPI aware" off. The first native window is made inside PluginWindows::open's DPI-unaware
     // scope; this keeps a native window made again later unaware too)
@@ -1857,7 +1857,7 @@ public:
         });
     }
 
-    // round 157a: the window that holds a third-party editor draws LYNX's few pixels with GDI, not Direct2D (JUCE 8's
+    // round 157a: the window that holds a third-party editor draws YW's few pixels with GDI, not Direct2D (JUCE 8's
     // default). A plugin's OpenGL child window then sits in a classic redirected top-level window, as in every other
     // host — a Direct2D / DXGI swap-chain parent is where Intel's OpenGL driver crashed in SetPixelFormat (her
     // Auto-Tune Pro editor, 2026-10-25). (Re-applied whenever the native window is re-created.)
@@ -1873,7 +1873,7 @@ public:
 
     void useClassicRendering()
     {
-        getProperties().set ("lynxGdi", true);
+        getProperties().set ("ywGdi", true);
        #if JUCE_WINDOWS
         if (auto* peer = getPeer())
             if (const auto engines = peer->getAvailableRenderingEngines(); engines.size() > 1 && peer->getCurrentRenderingEngine() != 0)
@@ -1884,8 +1884,8 @@ public:
     ~PluginWindow() override
     {
         // round 165q: closing the active plugin window (its X, F12, Alt+F12, removing the plugin) let Windows hand the
-        // activation to another program (seen: a terminal on the second screen) instead of LYNX, so Space and the
-        // shortcuts went there. The main window takes it first, while LYNX is still the foreground program.
+        // activation to another program (seen: a terminal on the second screen) instead of YW, so Space and the
+        // shortcuts went there. The main window takes it first, while YW is still the foreground program.
         if (isActiveWindow())
             activateMainWindow();
         stopHost();
@@ -2018,7 +2018,7 @@ public:
             editorlimit::touch (key());
             focusLinked();
         });
-        getProperties().set ("lynxPluginWindow", true);
+        getProperties().set ("ywPluginWindow", true);
         useClassicRendering();
         setVisible (true);
         toFront (false);
@@ -2271,11 +2271,11 @@ void closeHostOf (const juce::AudioPluginInstance* plugin)
     juce::MessageManager::callAsync ([plugin] { windows().erase (const_cast<juce::AudioPluginInstance*> (plugin)); });
 }
 
-// Round 190ao, "Pin on top": pinned plugin windows stay above LYNX's other secondary windows. Like them they are owned by
-// the main window (WindowOwner: above LYNX, not above other programs); when another of those windows is brought in
+// Round 190ao, "Pin on top": pinned plugin windows stay above YW's other secondary windows. Like them they are owned by
+// the main window (WindowOwner: above YW, not above other programs); when another of those windows is brought in
 // front of a pinned one, the pinned one is put back in front without being activated, so the keyboard stays where it
 // is. Checked a few times a second while a window is pinned. Not while a dialog is open (it must stay reachable) or
-// while LYNX is in the background.
+// while YW is in the background.
 void raisePinnedWindows()
 {
     if (juce::Component::getNumCurrentlyModalComponents() > 0 || ! juce::Process::isForegroundProcess())
@@ -2422,8 +2422,8 @@ void* claimEditorWindow (void* window, const wchar_t* faultModule)
                 return w->nativeHandle();
         return nullptr;
     }
-    // a message for one of the plugin's windows: a child of the editor's window, or a popup up its owner chain (LYNX
-    // makes the editor window itself owned by the main window, so the walk stops at the first editor window). LYNX's
+    // a message for one of the plugin's windows: a child of the editor's window, or a popup up its owner chain (YW
+    // makes the editor window itself owned by the main window, so the walk stops at the first editor window). YW's
     // own frame window around the editor is not the plugin's.
     // a docked editor's frame is a child window of the main window (issue #116): its parents first
     for (auto p = static_cast<HWND> (window); p != nullptr && p != GetDesktopWindow(); p = GetAncestor (p, GA_PARENT))
@@ -2467,7 +2467,7 @@ void onEditorFault (const crashguard::WindowFault& fault)
 
     // close the editor from a message of its own (not inside the dispatch that faulted). Its teardown calls into the
     // plugin again (editor close): when that faults too, the window object is left behind (hidden) rather than
-    // taking LYNX down
+    // taking YW down
     auto* root = fault.rootWindow;
     juce::MessageManager::callAsync ([faulted, root] {
         auto& open = windows();
@@ -2492,7 +2492,7 @@ void installEditorGuard()
         return;
     installed = true;
     crashguard::setWindowGuard (claimEditorWindow, onEditorFault);
-    juce::lynxDispatchMessageHook = crashguard::dispatchGuarded;
+    juce::ywDispatchMessageHook = crashguard::dispatchGuarded;
    #endif
 }
 
@@ -2604,7 +2604,7 @@ void open (std::shared_ptr<void> owner, juce::AudioPluginInstance& plugin, const
         return;
     }
 
-    installEditorGuard(); // (issue #32: a fault in the plugin's own window closes the editor, not LYNX)
+    installEditorGuard(); // (issue #32: a fault in the plugin's own window closes the editor, not YW)
     // round 190gg (B4): the editor is made under the crash guard before any window exists (the host below then takes
     // the same one). A plugin that crashes making it is switched off like after a crash while playing, and the
     // "Plugin crashed" prompt says so; no window opens.
@@ -2799,7 +2799,7 @@ void promptReload (AudioEngine& engine, AudioEngine::HostedSlot where, std::func
     if (ref == nullptr || instance == nullptr)
         return;
     const auto name = juce::String::fromUTF8 (ref->name.c_str());
-    // a plugin that ran inside LYNX can come back in a process of its own, where its next crash can't reach LYNX
+    // a plugin that ran inside YW can come back in a process of its own, where its next crash can't reach YW
     const auto offerSeparate = ! isSandboxedPlugin (*instance) && ! pluginSandboxEnabled() && ! ref->separateProcess && ! pluginAlwaysSeparate (name);
     auto options = juce::MessageBoxOptions()
                        .withIconType (juce::MessageBoxIconType::WarningIcon)
@@ -2981,7 +2981,7 @@ juce::PopupMenu pluginProcessingMenu (AudioEngine& engine, const PluginRef& curr
     if (! bits32)
         menu.addItem (all ? tr ("Run in a separate process (on for all plugins in Options)") : tr ("Run in a separate process"), ! all,
                       all || current.separateProcess, [toggle] { toggle (&PluginRef::separateProcess); });
-    // round 157a: this plugin always in its own process, in every project (e.g. after its editor crashed LYNX)
+    // round 157a: this plugin always in its own process, in every project (e.g. after its editor crashed YW)
     if (! all && ! bits32 && ! current.name.empty())
     {
         const auto name = juce::String::fromUTF8 (current.name.c_str());
@@ -3079,9 +3079,9 @@ void addPluginItems (juce::PopupMenu& menu, AudioEngine& engine, bool instrument
     menu.addSeparator();
     menu.addItem (tr ("Scan for plugins ({0})...", { platform::pluginFormatNames() }), [&engine] { engine.getPluginHost().startBackgroundScan(); });
 }
-} // namespace lynx
+} // namespace yw
 
-namespace lynx
+namespace yw
 {
 std::vector<AutomationTarget> allPluginParameterTargets (juce::AudioPluginInstance& plugin, const AutomationTarget& base)
 {
@@ -3105,7 +3105,7 @@ void addPluginWrapperItems (juce::PopupMenu& menu, AudioEngine& engine, juce::Au
     menu.addSectionHeader (tr ("Spare state"));
     menu.addItem (tr ("Store in spare state"), [&plugin] { storeSpareState (plugin); });
     menu.addItem (tr ("Flip with spare state"), has, false, [&engine, &plugin] { flipSpareState (engine, plugin); });
-    // FL's "Parameters" section [PluginMenu N51]: Link all parameters... (Browse parameters is left out: LYNX's
+    // FL's "Parameters" section [PluginMenu N51]: Link all parameters... (Browse parameters is left out: YW's
     // Browser does not list a plugin's parameters)
     const auto targets = allPluginParameterTargets (plugin, base);
     if (base.kind == AutomationTargetKind::none)
@@ -3125,4 +3125,4 @@ void addPluginWrapperItems (juce::PopupMenu& menu, AudioEngine& engine, juce::Au
         });
     }
 }
-} // namespace lynx
+} // namespace yw

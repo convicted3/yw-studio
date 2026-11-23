@@ -27,12 +27,12 @@ std::vector<float> waveNoise (float amplitude, std::size_t frames)
     return v;
 }
 
-lynx::wave::BandMix waveMixOf (const std::vector<float>& v)
+yw::wave::BandMix waveMixOf (const std::vector<float>& v)
 {
-    const auto s = lynx::wave::analyse (v.data(), nullptr, v.size(), 48000.0);
+    const auto s = yw::wave::analyse (v.data(), nullptr, v.size(), 48000.0);
     // skip the first 0.1 s (filter settling)
     const auto p = s.query (4800.0, (double) v.size(), -1);
-    return lynx::wave::bandMix (p.low, p.mid, p.high);
+    return yw::wave::bandMix (p.low, p.mid, p.high);
 }
 } // namespace
 
@@ -60,13 +60,13 @@ TEST (wave_band_mix_follows_the_spectrum)
     CHECK (both.low > 0.6f && both.high > 0.1f && both.high < 0.3f); // measured: 0.84 / 0.01 / 0.15
 
     // silence is neutral, never NaN
-    const auto silent = lynx::wave::bandMix (0.0f, 0.0f, 0.0f);
+    const auto silent = yw::wave::bandMix (0.0f, 0.0f, 0.0f);
     CHECK (silent.mid == 1.0f && silent.low == 0.0f && silent.high == 0.0f);
 }
 
 TEST (wave_spectral_colours_are_warm_to_cool)
 {
-    using namespace lynx::wave;
+    using namespace yw::wave;
     const auto warm = spectralColour (BandMix { 1.0f, 0.0f, 0.0f });
     const auto neutral = spectralColour (BandMix { 0.0f, 1.0f, 0.0f });
     const auto cool = spectralColour (BandMix { 0.0f, 0.0f, 1.0f });
@@ -87,7 +87,7 @@ TEST (wave_spectral_colours_are_warm_to_cool)
 
 TEST (wave_peaks_rms_and_levels)
 {
-    using namespace lynx::wave;
+    using namespace yw::wave;
     const auto frames = (std::size_t) 200000;
     const auto v = waveSine (440.0, 0.5f, frames);
     const auto s = analyse (v.data(), nullptr, frames, 48000.0);
@@ -128,7 +128,7 @@ TEST (wave_peaks_rms_and_levels)
 
 TEST (wave_stereo_and_loud_float_files)
 {
-    using namespace lynx::wave;
+    using namespace yw::wave;
     const auto frames = (std::size_t) 20000;
     const std::vector<float> silent (frames, 0.0f);
     auto loud = waveSine (100.0, 2.0f, frames); // float file over 0 dBFS
@@ -150,7 +150,7 @@ TEST (wave_stereo_and_loud_float_files)
 
 TEST (wave_disk_cache_round_trip)
 {
-    using namespace lynx::wave;
+    using namespace yw::wave;
     const auto v = waveNoise (0.7f, 77777);
     const auto s = analyse (v.data(), nullptr, v.size(), 44100.0);
     const auto bytes = serialise (s);

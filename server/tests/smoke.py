@@ -1,6 +1,6 @@
-"""End-to-end smoke test of the LYNX SHARE server (share links + relay).
+"""End-to-end smoke test of the YW Studio server (share links + relay).
 
-    python3 server/tests/smoke.py                          # the live server (api./relay.lynx-share.com)
+    python3 server/tests/smoke.py                          # the live server (api./relay.yolo.su)
     python3 server/tests/smoke.py http://127.0.0.1:8081 ws://127.0.0.1:8082    # local services
 
 Needs aiohttp (pip install aiohttp, or apt install python3-aiohttp). Creates one small share and one room, checks
@@ -18,8 +18,8 @@ import zipfile
 
 import aiohttp
 
-API = sys.argv[1] if len(sys.argv) > 1 else "https://api.lynx-share.com"
-RELAY = sys.argv[2] if len(sys.argv) > 2 else "wss://relay.lynx-share.com"
+API = sys.argv[1] if len(sys.argv) > 1 else "https://api.yolo.su"
+RELAY = sys.argv[2] if len(sys.argv) > 2 else "wss://relay.yolo.su"
 RELAY_HTTP = RELAY.replace("wss://", "https://").replace("ws://", "http://")
 failures = 0
 
@@ -34,7 +34,7 @@ def check(cond: bool, what: str) -> None:
 def make_pack(size: int) -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
-        z.writestr("project.lynx", json.dumps({"smoke": True}))
+        z.writestr("project.yw", json.dumps({"smoke": True}))
         z.writestr("Samples/noise.bin", os.urandom(size))
     return buf.getvalue()
 
@@ -42,7 +42,7 @@ def make_pack(size: int) -> bytes:
 async def shares(s: aiohttp.ClientSession) -> None:
     async with s.get(f"{API}/health") as r:
         h = await r.json()
-        check(r.status == 200 and h.get("ok") and h.get("service") == "lynx-api", f"api /health {r.status} {h}")
+        check(r.status == 200 and h.get("ok") and h.get("service") == "yw-api", f"api /health {r.status} {h}")
 
     pack = make_pack(3 * 1024 * 1024 + 123)
     sha = hashlib.sha256(pack).hexdigest()
@@ -50,10 +50,10 @@ async def shares(s: aiohttp.ClientSession) -> None:
     # bad requests are refused
     async with s.post(f"{API}/v1/shares", json={"name": "x.exe", "size": 10}) as r:
         check(r.status == 400, f"wrong extension refused ({r.status})")
-    async with s.post(f"{API}/v1/shares", json={"name": "big.lynxpack", "size": 3 * 1024 ** 3}) as r:
+    async with s.post(f"{API}/v1/shares", json={"name": "big.ywpack", "size": 3 * 1024 ** 3}) as r:
         check(r.status == 413, f"over 2 GB refused ({r.status})")
 
-    async with s.post(f"{API}/v1/shares", json={"name": "Smoke test.lynxpack", "size": len(pack), "days": 1,
+    async with s.post(f"{API}/v1/shares", json={"name": "Smoke test.ywpack", "size": len(pack), "days": 1,
                                                  "sha256": sha}) as r:
         c = await r.json()
         check(r.status == 201 and len(c["id"]) == 26 and c["token"], f"create {r.status}")
@@ -90,7 +90,7 @@ async def shares(s: aiohttp.ClientSession) -> None:
         check(r.status == 206 and body == pack[10:20], f"range request ({r.status})")
     async with s.get(j["url"]) as r:
         text = await r.text()
-        check(r.status == 200 and "Smoke test.lynxpack" in text and "Download" in text, f"link page ({r.status})")
+        check(r.status == 200 and "Smoke test.ywpack" in text and "Download" in text, f"link page ({r.status})")
     async with s.get(f"{API}/v1/shares/{'a' * 26}") as r:
         check(r.status == 404, f"unknown id 404 ({r.status})")
     async with s.get(f"{API}/v1/shares/") as r:
@@ -107,7 +107,7 @@ async def shares(s: aiohttp.ClientSession) -> None:
 async def relay(s: aiohttp.ClientSession) -> None:
     async with s.get(f"{RELAY_HTTP}/health") as r:
         h = await r.json()
-        check(r.status == 200 and h.get("service") == "lynx-relay", f"relay /health {r.status} {h}")
+        check(r.status == 200 and h.get("service") == "yw-relay", f"relay /health {r.status} {h}")
         limits = h.get("limits", {})
         check(limits.get("frame", 0) >= 1024 * 1024 and limits.get("roomBytes", 0) > 8 * 1024 ** 3
               and limits.get("clientBytesDay", 0) >= limits.get("roomBytes", 0) and 1 <= limits.get("roomsPerClient", 0) <= 20
@@ -128,9 +128,9 @@ async def relay(s: aiohttp.ClientSession) -> None:
     peers = []
     for i in range(4):
         if i == 3:  # the browser way: token as a second subprotocol
-            ws = await s.ws_connect(url, protocols=("lynx-relay.v1", "token." + room["token"]))
+            ws = await s.ws_connect(url, protocols=("yw-relay.v1", "token." + room["token"]))
         else:
-            ws = await s.ws_connect(url, headers=auth, protocols=("lynx-relay.v1",))
+            ws = await s.ws_connect(url, headers=auth, protocols=("yw-relay.v1",))
         w = await ws.receive_json(timeout=5)
         check(w["type"] == "welcome" and w["peer"] == i + 1, f"peer {i + 1} welcome {w}")
         peers.append(ws)
@@ -169,8 +169,8 @@ async def relay(s: aiohttp.ClientSession) -> None:
             break
     check(m["t"] == 7, "ping/pong")
 
-    # a room whose token the host chose (LYNX derives it from the invite code): not echoed back, and it works
-    chosen = "lynx-smoke-" + os.urandom(24).hex()
+    # a room whose token the host chose (YW derives it from the invite code): not echoed back, and it works
+    chosen = "yw-smoke-" + os.urandom(24).hex()
     async with s.post(f"{RELAY_HTTP}/v1/rooms", json={"token": "short"}) as r:
         check(r.status == 400, f"a too short chosen token refused ({r.status})")
     async with s.post(f"{RELAY_HTTP}/v1/rooms", json={"token": chosen}) as r:
@@ -182,7 +182,7 @@ async def relay(s: aiohttp.ClientSession) -> None:
             check(False, "the other room's token refused")
     except aiohttp.WSServerHandshakeError as e:
         check(e.status == 401, f"the other room's token refused ({e.status})")
-    ws2 = await s.ws_connect(url2, headers={"Authorization": f"Bearer {chosen}"}, protocols=("lynx-relay.v1",))
+    ws2 = await s.ws_connect(url2, headers={"Authorization": f"Bearer {chosen}"}, protocols=("yw-relay.v1",))
     w = await ws2.receive_json(timeout=5)
     check(w["type"] == "welcome" and w["peer"] == 1, f"chosen token connects {w}")
     async with s.delete(f"{RELAY_HTTP}/v1/rooms/{room2['room']}",
@@ -196,8 +196,8 @@ async def relay(s: aiohttp.ClientSession) -> None:
         check(r.status == 201, f"room 3 created ({r.status})")
     url3 = f"{RELAY}/v1/rooms/{room3['room']}/ws"
     auth3 = {"Authorization": f"Bearer {room3['token']}"}
-    a = await s.ws_connect(url3, headers=auth3, protocols=("lynx-relay.v1",), max_msg_size=8 * 1024 * 1024)
-    b = await s.ws_connect(url3, headers=auth3, protocols=("lynx-relay.v1",), max_msg_size=8 * 1024 * 1024)
+    a = await s.ws_connect(url3, headers=auth3, protocols=("yw-relay.v1",), max_msg_size=8 * 1024 * 1024)
+    b = await s.ws_connect(url3, headers=auth3, protocols=("yw-relay.v1",), max_msg_size=8 * 1024 * 1024)
     await a.receive_json(timeout=5)
     await b.receive_json(timeout=5)
     await a.send_bytes(bytes([0]) + os.urandom(1024 * 1024 + 4096))

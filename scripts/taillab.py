@@ -7,11 +7,11 @@ measures what a tail *is* — decay per octave band, early decay, echo-density b
 stereo correlation over time, time variance (modulation) — and scores two renders on those, blind to phase and to
 the modulators' phase. Both scores are always reported side by side; the tail score never replaces the old one.
 
-Black box only: the inputs are WAV renders (tools/fxrender for LYNX, recorded host renders for references).
+Black box only: the inputs are WAV renders (tools/fxrender for YW, recorded host renders for references).
 
-  taillab.py pair <ref.wav> <lynx.wav> [--stim <stimulus.wav>] [--kind verb|delay|mod] [--dry <gL>,<gR>,<latency>]
+  taillab.py pair <ref.wav> <yw.wav> [--stim <stimulus.wav>] [--kind verb|delay|mod] [--dry <gL>,<gR>,<latency>]
         one pair: the measurements, the sub-scores and the tail score of that file (JSON)
-  taillab.py dir <ref-dir> <lynx-dir> --stim <stim-dir> [--kind verb|delay|mod] [--json out.json]
+  taillab.py dir <ref-dir> <yw-dir> --stim <stim-dir> [--kind verb|delay|mod] [--json out.json]
         every <setting>_<signal>.wav present in both: wave score (fxparity) and tail score per file, per setting
         and for the row. A setting's dry gain is read off its impulse render and removed from all its files.
   taillab.py stats <render.wav> [--stim <stimulus.wav>]     measurements of one impulse render (JSON)
@@ -19,7 +19,7 @@ Black box only: the inputs are WAV renders (tools/fxrender for LYNX, recorded ho
   taillab.py probes <out-dir> [rate]                        writes the lab's stimuli (impulses at three levels each
                                                             followed by a noise burst, pilot tones, pink noise)
   taillab.py engine <fxrender> <effect> <probe-dir> <out-dir> [fxrender options...]
-        renders the probes through one LYNX effect and prints its decay / density / stereo / modulation table
+        renders the probes through one YW effect and prints its decay / density / stereo / modulation table
   taillab.py selftest                                       unit tests of the metric code (synthetic signals)
 
 Impulse stimulus layout (tp172b/c/d `impulse.wav` and `probes`): one sample impulse, silence, then a noise burst.
@@ -52,7 +52,7 @@ linearly to 0 at the distance `FULL[part]`; a half is 10 minus the quadratic mea
       motion (kind mod only) modulation spectrum 0.25-16 Hz of the band transfer and of the L/R level difference
 Every distance of the diffuse-tail parts first loses its dead zone (DZ): the amount two phase-realisations of one
 reverb differ by on that estimator, so that a dense reverb scores >= 9.5 against its own second render (measured:
-LYNX against itself at another modulator phase 9.6 ... 10; sparse cloud modes, whose response is a handful of
+YW against itself at another modulator phase 9.6 ... 10; sparse cloud modes, whose response is a handful of
 echoes rather than a diffuse field, repeat only to 7.7 ... 9.1 - on the reference as well).
 """
 import json
@@ -332,7 +332,7 @@ def _pairs(a, b):
 
 
 def impulse_score(A, B):
-    """Sub-scores and their mean for LYNX's impulse stats B against the reference's A."""
+    """Sub-scores and their mean for YW's impulse stats B against the reference's A."""
     if A.get('silent') or B.get('silent'):
         return {'score': 0.0 if B.get('silent') and not A.get('silent') else None, 'parts': {}}
     d = {}
@@ -648,29 +648,29 @@ def _clean(o):
     return o
 
 
-def pair(ref, lynx, stim, kind='verb', g_ref=None, g_lynx=None):
+def pair(ref, yw, stim, kind='verb', g_ref=None, g_yw=None):
     """Tail score of one file pair. An impulse stimulus gives the impulse half, anything else a programme file."""
     a, sr = fxparity.read_wav(ref)
-    b, _ = fxparity.read_wav(lynx)
+    b, _ = fxparity.read_wav(yw)
     s, _ = fxparity.read_wav(stim)
     probe = find_probe(s, sr)
     if probe is not None:
-        A, B = impulse_stats(a, s, sr, g_ref), impulse_stats(b, s, sr, g_lynx)
+        A, B = impulse_stats(a, s, sr, g_ref), impulse_stats(b, s, sr, g_yw)
         r = impulse_score(A, B)
         r['type'] = 'impulse'
-        r['ref'], r['lynx'] = _clean(A), _clean(B)
+        r['ref'], r['yw'] = _clean(A), _clean(B)
     else:
         A = programme_stats(a, s, sr, g_ref or (0.0, 0.0, 0), kind)
-        B = programme_stats(b, s, sr, g_lynx or (0.0, 0.0, 0), kind)
+        B = programme_stats(b, s, sr, g_yw or (0.0, 0.0, 0), kind)
         r = programme_score(A, B, kind)
         r['type'] = 'programme'
     return r
 
 
-def score_dir(refdir, lynxdir, stimdir, kind='verb', wave=True):
+def score_dir(refdir, ywdir, stimdir, kind='verb', wave=True):
     """Every <setting>_<signal>.wav of both folders. Returns {'files': {...}, 'settings': {...}, 'tail', 'wave',
     'parts': mean sub-scores, 'loss': points each part costs on the row's tail score}."""
-    names = sorted(f[:-4] for f in os.listdir(refdir) if f.endswith('.wav') and os.path.exists(os.path.join(lynxdir, f)))
+    names = sorted(f[:-4] for f in os.listdir(refdir) if f.endswith('.wav') and os.path.exists(os.path.join(ywdir, f)))
     sets = {}
     for nm in names:
         s, _, sig = nm.partition('_')
@@ -683,10 +683,10 @@ def score_dir(refdir, lynxdir, stimdir, kind='verb', wave=True):
         if imp and kind != 'mod':
             st, sr = fxparity.read_wav(os.path.join(stimdir, imp[0] + '.wav'))
             gr = dry_path(fxparity.read_wav(os.path.join(refdir, f'{s}_{imp[0]}.wav'))[0], st, sr)
-            gl = dry_path(fxparity.read_wav(os.path.join(lynxdir, f'{s}_{imp[0]}.wav'))[0], st, sr)
+            gl = dry_path(fxparity.read_wav(os.path.join(ywdir, f'{s}_{imp[0]}.wav'))[0], st, sr)
         half = {'impulse': [], 'programme': []}
         for sig in sigs:
-            a, b = os.path.join(refdir, f'{s}_{sig}.wav'), os.path.join(lynxdir, f'{s}_{sig}.wav')
+            a, b = os.path.join(refdir, f'{s}_{sig}.wav'), os.path.join(ywdir, f'{s}_{sig}.wav')
             r = pair(a, b, os.path.join(stimdir, sig + '.wav'), kind, gr, gl)
             if wave:
                 w = fxparity.pair(a, b)
@@ -699,7 +699,7 @@ def score_dir(refdir, lynxdir, stimdir, kind='verb', wave=True):
         res['settings'][s] = {'tail': round(float(np.mean(hs)), 3) if hs else None,
                               'impulse': round(float(np.mean(half['impulse'])), 3) if half['impulse'] else None,
                               'programme': round(float(np.mean(half['programme'])), 3) if half['programme'] else None,
-                              'dry_ref': gr, 'dry_lynx': gl}
+                              'dry_ref': gr, 'dry_yw': gl}
     ts = [v['tail'] for v in res['settings'].values() if v['tail'] is not None]
     res['tail'] = round(float(np.mean(ts)), 2) if ts else None
     ws = [r['wave'] for r in res['files'].values() if r.get('wave') is not None]
@@ -751,7 +751,7 @@ def make_probes(outdir, sr=48000):
 
 
 def engine_table(fxr, effect, probedir, outdir, opts):
-    """Renders the probes through one LYNX effect (tools/fxrender) and returns its lab measurements."""
+    """Renders the probes through one YW effect (tools/fxrender) and returns its lab measurements."""
     import subprocess
     os.makedirs(outdir, exist_ok=True)
     names = ['imp06', 'imp20', 'imp40', 'pilot1000', 'pilot5000', 'pink']

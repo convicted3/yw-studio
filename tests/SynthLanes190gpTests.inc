@@ -1,4 +1,4 @@
-// Round 190gp (A1): the built-in synth renders up to four voices side by side (lynx::setSynthVoiceLanes). The same
+// Round 190gp (A1): the built-in synth renders up to four voices side by side (yw::setSynthVoiceLanes). The same
 // notes, settings and blocks through both ways must give the same samples, bit for bit: random settings (every
 // oscillator shape, AM / ring, envelopes, LFOs, key tracking, vibrato, sweep, the 3-band tone, porta, mono, filter
 // types), random notes, odd block sizes, settings changed while notes sound, the pitch wheel.
@@ -16,10 +16,10 @@ struct Rng
     bool chance (float p) noexcept { return unit() < p; }
 };
 
-inline lynx::SynthSettings randomSettings (Rng& g)
+inline yw::SynthSettings randomSettings (Rng& g)
 {
-    using lynx::Waveform;
-    lynx::SynthSettings s;
+    using yw::Waveform;
+    yw::SynthSettings s;
     const Waveform shapes[] = { Waveform::sine, Waveform::triangle, Waveform::saw, Waveform::square, Waveform::noise };
     for (auto& o : s.osc)
     {
@@ -82,12 +82,12 @@ inline lynx::SynthSettings randomSettings (Rng& g)
 // a run of random notes and blocks; the outputs' bits hashed (every sample of both sides)
 inline std::uint64_t run (std::uint32_t seed, bool laneOn, int& lanesBlocks)
 {
-    lynx::setSynthVoiceLanes (laneOn);
+    yw::setSynthVoiceLanes (laneOn);
     Rng g { seed };
-    auto in = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto in = yw::makeInstrument (yw::InstrumentKind::synth);
     in->prepare (44100.0);
-    lynx::ChannelDef ch;
-    ch.instrument = lynx::InstrumentKind::synth;
+    yw::ChannelDef ch;
+    ch.instrument = yw::InstrumentKind::synth;
     ch.synth = randomSettings (g);
     in->configure (ch, 128.0);
     std::uint64_t h = 1469598103934665603ull;
@@ -130,7 +130,7 @@ inline std::uint64_t run (std::uint32_t seed, bool laneOn, int& lanesBlocks)
             }
         lanesBlocks += n;
     }
-    lynx::setSynthVoiceLanes (true);
+    yw::setSynthVoiceLanes (true);
     return h;
 }
 } // namespace synthlanes190gp
@@ -155,12 +155,12 @@ TEST (s190gp_synth_voice_lanes_bit_identical)
 // the synth presets (the perfbench scenarios' channels) take the lanes, and still sound
 TEST (s190gp_synth_presets_render_with_lanes)
 {
-    for (const auto& [name, preset] : lynx::synthPresets())
+    for (const auto& [name, preset] : yw::synthPresets())
     {
-        auto in = lynx::makeInstrument (lynx::InstrumentKind::synth);
+        auto in = yw::makeInstrument (yw::InstrumentKind::synth);
         in->prepare (44100.0);
-        lynx::ChannelDef ch;
-        ch.instrument = lynx::InstrumentKind::synth;
+        yw::ChannelDef ch;
+        ch.instrument = yw::InstrumentKind::synth;
         ch.synth = preset;
         in->configure (ch, 120.0);
         for (int k : { 48, 52, 55, 60, 64 })

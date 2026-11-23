@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190mm (sub-round dyn): LYNX's model of a feed-forward / feedback VCA bus compressor with "thrust" (the API-2500
+// Round 190mm (sub-round dyn): YW's model of a feed-forward / feedback VCA bus compressor with "thrust" (the API-2500
 // role). Clean-room: the reference's DSP was read for its structure only (docs/analise/REA_rodada190mm_dyn.md §4: a
 // side-chain high-pass, a mean-square detector in the log domain, a soft knee, dB-domain ballistics, the feedback
 // option that detects the compressed output, an automatic make-up from the threshold); this engine is our own, much
@@ -10,7 +10,7 @@
 #include <array>
 #include <cmath>
 
-namespace lynx::buscomp
+namespace yw::buscomp
 {
 // ---- fitted constants (REA_rodada190mm_dyn.md §4; lab/fitapi.py on 18 bank renders (ESR −8.9 → −18.9 dB), then
 // lab/fitapi2.py on all 25 with a level term and the feedback loop gain, lab/fitapi3.py with the threshold's slope)
@@ -109,4 +109,4 @@ private:
     double ms = 0.0, env = 0.0, lp[2] {}, prev[2] {};
     float last = 0.0f;
 };
-} // namespace lynx::buscomp
+} // namespace yw::buscomp

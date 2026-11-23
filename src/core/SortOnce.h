@@ -1,6 +1,6 @@
 #pragma once
 
-// Sorting by a key that can change while the sort runs (issue #12's crash, LYNX 0.1.18): std::sort with a comparator
+// Sorting by a key that can change while the sort runs (issue #12's crash, YW 0.1.18): std::sort with a comparator
 // that reads a file's access time on every comparison is undefined behaviour when the times change during the sort —
 // and they do (reading a cache file updates its access time, other threads touch / delete files) — and libc++'s
 // introsort then ran past the array. Here every key is read exactly once, and the sort runs on those copies.
@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::sortonce
+namespace yw::sortonce
 {
 // Sorts `items` by key (ascending; `descending`: the other way). `key (item)` is called exactly once per item; equal
 // keys are ordered by `tie (a, b)` (a strict weak order on the items), so the result is deterministic.
@@ -31,4 +31,4 @@ void byKey (Container& items, KeyFn key, TieLess tie, bool descending = false)
     for (auto& item : items)
         item = std::move (keyed[i++].second);
 }
-} // namespace lynx::sortonce
+} // namespace yw::sortonce

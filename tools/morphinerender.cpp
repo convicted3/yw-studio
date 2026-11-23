@@ -1,4 +1,4 @@
-// Renders a Morphine state with LYNX's engine exactly like our round-39 reference model drives it (verification
+// Renders a Morphine state with YW's engine exactly like our round-39 reference model drives it (verification
 // harness, REA_rodada39 §3.2): morphinerender <state.bin> <out.f32> <length> <rate> <noise.wav|-> [blk=N] [bpm=X]
 //   [ratechange] [note=start,key,initVol,finalVol,finalPan,pitchCents,release ...]. Writes interleaved stereo float32.
 #include <cstdio>
@@ -26,7 +26,7 @@ int main (int argc, char** argv)
     int blk = 512;
     double bpm = 120.0;
     bool rateChange = false;
-    std::vector<lynx::morphine::RefNote> notes;
+    std::vector<yw::morphine::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -38,14 +38,14 @@ int main (int argc, char** argv)
             rateChange = true;
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::morphine::RefNote n;
+            yw::morphine::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%lf,%d", &n.start, &n.key, &n.initVol, &n.finalVol, &n.finalPan, &n.pitchCents,
                              &n.release)
                 >= 6)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::morphine::renderReference (state, notes, rate, length, noise, blk, bpm, rateChange);
+    const auto out = yw::morphine::renderReference (state, notes, rate, length, noise, blk, bpm, rateChange);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

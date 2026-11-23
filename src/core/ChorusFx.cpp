@@ -14,7 +14,7 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__) || defined(_M_ARM64) // x86 SSE, or ARM64 through core/Simd.h (sse2neon)
 #include "core/Simd.h"
-#define LYNX_CHORUS_MXCSR 1
+#define YW_CHORUS_MXCSR 1
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
 #include <cpuid.h>
 #include "core/Simd.h"
@@ -28,7 +28,7 @@
 #pragma GCC optimize("fp-contract=off", "rounding-math")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -36,7 +36,7 @@ namespace
 // 0xE040 = the same with rounding toward zero)
 struct CsrMode
 {
-#ifdef LYNX_CHORUS_MXCSR
+#ifdef YW_CHORUS_MXCSR
     unsigned saved;
     explicit CsrMode (unsigned bits) noexcept : saved (_mm_getcsr()) { _mm_setcsr ((saved & ~0x6000u) | bits); }
     ~CsrMode() { _mm_setcsr (saved); }
@@ -71,7 +71,7 @@ inline int truncI (double v) noexcept { return (int) (long long) v; }
 // float square root as one SSE instruction, rounded in the current mode (a library sqrtf may not be)
 inline float sqrtF (float v) noexcept
 {
-#ifdef LYNX_CHORUS_MXCSR
+#ifdef YW_CHORUS_MXCSR
     return _mm_cvtss_f32 (_mm_sqrt_ss (_mm_set_ss (v)));
 #else
     return std::sqrt (v);
@@ -306,7 +306,7 @@ public:
         engine.setRate ((int) std::lround (sampleRate));
         engine.load (engine.raw()); // the rate-dependent values for this rate (as if FL had set it before the state)
     }
-    // LYNX's reset = FL's "enabled" notification; the start phases FL draws at random are taken as 0
+    // YW's reset = FL's "enabled" notification; the start phases FL draws at random are taken as 0
     void reset() noexcept override { engine.reset(); }
     void process (float* left, float* right, int n, const EffectParams& params, double) noexcept override
     {
@@ -442,7 +442,7 @@ constexpr double exp2Table[64] {
 // double → int32 in the current rounding mode (the library's cvtpd2dq)
 inline int roundCurrent (double v) noexcept
 {
-#ifdef LYNX_CHORUS_MXCSR
+#ifdef YW_CHORUS_MXCSR
     return _mm_cvtsd_si32 (_mm_set_sd (v));
 #else
     return (int) std::nearbyint (v);
@@ -879,7 +879,7 @@ namespace vintagechorusfx
 namespace
 {
 // fused multiply-add: the engine's library runs its FMA variant on processors that have FMA (§3.7)
-#if defined(LYNX_CHORUS_MXCSR) && (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+#if defined(YW_CHORUS_MXCSR) && (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
 __attribute__ ((target ("fma"))) double fmaHw (double a, double b, double c) noexcept
 {
     return _mm_cvtsd_f64 (_mm_fmadd_sd (_mm_set_sd (a), _mm_set_sd (b), _mm_set_sd (c)));
@@ -1403,7 +1403,7 @@ public:
         if (! started && changed)
             engine.settle();
         started = true;
-        const double beats = songTicks / (double) lynx::ppq;
+        const double beats = songTicks / (double) yw::ppq;
         for (int o = 0; o < n; o += 512)
         {
             const int m = std::min (512, n - o);
@@ -1495,4 +1495,4 @@ std::optional<EffectSlot> chorusFromFl (const std::string& pluginName, const std
         }
     return std::nullopt;
 }
-} // namespace lynx
+} // namespace yw

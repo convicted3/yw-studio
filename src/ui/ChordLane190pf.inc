@@ -1,9 +1,9 @@
 // Round 190pf (research190oe P13): the Playlist's side of the Chord lane (ui/ChordLane190pf.h). Included in
-// PlaylistComponent.cpp (namespace lynx).
+// PlaylistComponent.cpp (namespace yw).
 
 bool PlaylistComponent::chordLaneShown() const
 {
-    return chordlane::laneOn(); // (a LYNX extra in every layout, off by default)
+    return chordlane::laneOn(); // (a YW extra in every layout, off by default)
 }
 
 int PlaylistComponent::chordLaneHeight() const

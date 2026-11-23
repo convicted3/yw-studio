@@ -1,6 +1,6 @@
 #pragma once
 
-// Audio editor core (round 86; the feature set follows FL's Edison, docs/analise/REA_rodada86.md, the code is LYNX's
+// Audio editor core (round 86; the feature set follows FL's Edison, docs/analise/REA_rodada86.md, the code is YW's
 // own). A Document is audio + markers/regions + a loop; every edit works on a frame range and keeps the markers
 // and the loop in place relative to the audio. History keeps whole states (one per edit) for undo/redo and the
 // undo history list. Also: a spectrogram, zero-crossing snap, onset detection (auto-slice) and WAV encoding and
@@ -13,7 +13,7 @@
 #include <functional>
 #include <vector>
 
-namespace lynx::audioedit
+namespace yw::audioedit
 {
 struct Audio
 {
@@ -316,4 +316,4 @@ struct WavExtras
     int sliceMarkers = 0; // round 190ey: the entries of FL's "strc" slice list after its first (0 = no list)
 };
 WavExtras decodeWavExtras (const std::uint8_t* data, std::size_t size, std::int64_t frames);
-} // namespace lynx::audioedit
+} // namespace yw::audioedit

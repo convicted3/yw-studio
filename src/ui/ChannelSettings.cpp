@@ -49,7 +49,7 @@
 #include "core/Dx10.h"
 #include "core/Kepler.h"
 #include "core/PoiZone.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParams.h"
 #include "core/SynthParams.h"
 #include "core/BassDrum.h"
@@ -91,7 +91,7 @@
 #include "ui/DirectWaveEditor.h"
 #include "ui/FpcEditor.h"
 #include "ui/TetraEditor.h"
-#include "ui/LynxModelEditor.h"
+#include "ui/YwModelEditor.h"
 #include "ui/HelixEditor.h"
 #include "ui/FruitySlicerEditor.h"
 #include "ui/FlVoicePanel.h"
@@ -103,7 +103,7 @@
 #include "core/SampleFiles.h"
 #include "core/ProjectContents.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -226,9 +226,9 @@ private:
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
-        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the YW Studio lab"), or the forced plugin style
-        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
-        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
+        // round 170j: the plugin kit's knobs in YW Synth's own art ("the YW Studio lab"), or the forced plugin style
+        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::ywSynth).getARGB());
+        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::ywSynth));
         s.setRange (lo, hi, step);
         s.setTextValueSuffix (suffix);
         s.onValueChange = [this] {
@@ -366,9 +366,9 @@ private:
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
-        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the YW Studio lab"), or the forced plugin style
-        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
-        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
+        // round 170j: the plugin kit's knobs in YW Synth's own art ("the YW Studio lab"), or the forced plugin style
+        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::ywSynth).getARGB());
+        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::ywSynth));
         s.setRange (lo, hi, step);
         s.setTextValueSuffix (suffix);
         s.onValueChange = [this] { changed(); };
@@ -447,7 +447,7 @@ private:
         if (auto* w = findParentComponentOfClass<juce::DocumentWindow>();
             w != nullptr && (w->getContentComponent() == this
                              || (getParentComponent() == w->getContentComponent() && getParentComponent() != nullptr
-                                 && (bool) getParentComponent()->getProperties().getWithDefault ("lynxScaledContent", false))))
+                                 && (bool) getParentComponent()->getProperties().getWithDefault ("ywScaledContent", false))))
             w->setName (tr ("Modulation - {0}", { juce::String::fromUTF8 (c->name.c_str()) }));
     }
 
@@ -572,8 +572,8 @@ public:
         // DrumSynth Live: the patch on the key selected in FL's editor (raw FL values)
         if (drumsynth)
         {
-            if (lynx::drumSynthEditorKeyIndex < (int) def.modelParams.size())
-                editorKey = (int) def.modelParams[(std::size_t) lynx::drumSynthEditorKeyIndex];
+            if (yw::drumSynthEditorKeyIndex < (int) def.modelParams.size())
+                editorKey = (int) def.modelParams[(std::size_t) yw::drumSynthEditorKeyIndex];
             if (drumSynthKeyToSlot (editorKey) < 0)
                 editorKey = 60;
             wavesFound = ! def.samplePath.empty();
@@ -1156,8 +1156,8 @@ public:
                 juce::StringArray patterns;
                 for (const auto e : sampleFileExtensions)
                     patterns.add ("*." + juce::String (std::string (e)));
-                chooser = lynx::ui::makeFileChooser (tr ("Sample"), juce::File(), patterns.joinIntoString (";"));
-                lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                chooser = yw::ui::makeFileChooser (tr ("Sample"), juce::File(), patterns.joinIntoString (";"));
+                yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                       [safe = juce::Component::SafePointer<ModelPanel> (this)] (const juce::FileChooser& fc) {
                                           if (safe == nullptr || fc.getResult() == juce::File())
                                               return;
@@ -1442,7 +1442,7 @@ public:
         knobs.push_back (std::move (knob));
     }
 
-    // the pad remembered for each Drumaxx channel while LYNX runs (FL's editor keeps it, not the state)
+    // the pad remembered for each Drumaxx channel while YW runs (FL's editor keeps it, not the state)
     static int& drumaxxPadOf (int channel)
     {
         static std::map<int, int> pads;
@@ -1462,8 +1462,8 @@ public:
         {
             editorKey = part;
             ref.edit (engine, [part] (ChannelDef& d) { // FL keeps the selected key in the state
-                if (lynx::drumSynthEditorKeyIndex < (int) d.modelParams.size())
-                    d.modelParams[(std::size_t) lynx::drumSynthEditorKeyIndex] = (float) part;
+                if (yw::drumSynthEditorKeyIndex < (int) d.modelParams.size())
+                    d.modelParams[(std::size_t) yw::drumSynthEditorKeyIndex] = (float) part;
             });
         }
         for (const auto& [k, c] : partKnobs)
@@ -2591,8 +2591,8 @@ private:
                 juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, juce::String ("BeepMap"), tr ("Copy a .bmp file's path first, or use Open."));
             return;
         }
-        chooser = lynx::ui::makeFileChooser (tr ("Open a bitmap"), juce::File(), "*.bmp");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        chooser = yw::ui::makeFileChooser (tr ("Open a bitmap"), juce::File(), "*.bmp");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer<ModelPanel> (this)] (const juce::FileChooser& fc) {
                                   juce::MemoryBlock data;
                                   if (safe == nullptr || ! fc.getResult().loadFileAsData (data))
@@ -2894,7 +2894,7 @@ private:
         return -1;
     }
 
-    // Round 190nr (GitHub discussion #202, a LYNX extra: FL's Transistor Bass copies a sequence only to another
+    // Round 190nr (GitHub discussion #202, a YW extra: FL's Transistor Bass copies a sequence only to another
     // Transistor Bass): the shown program's sequence as notes (core: transistorBassSequenceNotes) for the Piano roll's
     // note clipboard and the MIDI clipboard, or a MIDI file
     void paintTransistorBassMidi (juce::Graphics& g, const juce::String& which, juce::Rectangle<float> r, float f)
@@ -2939,9 +2939,9 @@ private:
         const auto* c = channelNow();
         const auto name = c != nullptr && ! c->name.empty() ? juce::File::createLegalFileName (juce::String::fromUTF8 (c->name.c_str())) : juce::String ("Transistor Bass");
         auto smf = std::make_shared<juce::MemoryBlock> (MidiFileIo::writeNotes (engine.getSong(), notes, c != nullptr ? c->name : std::string()));
-        chooser = lynx::ui::makeFileChooser (tr ("Export the sequence as a MIDI file"),
+        chooser = yw::ui::makeFileChooser (tr ("Export the sequence as a MIDI file"),
                                              juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile (name + ".mid"), "*.mid");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                                  [smf] (const juce::FileChooser& fc) {
                                      auto file = fc.getResult();
                                      if (file == juce::File())
@@ -3405,9 +3405,9 @@ class SettingsPanel final : public juce::Component,
                             private juce::Timer
 {
 public:
-    // the page in FL's form units (FL's 561 x 399 sheet, then LYNX's extras below it)
+    // the page in FL's form units (FL's 561 x 399 sheet, then YW's extras below it)
     static constexpr int designWidth = 558, designHeight = 524;
-    static constexpr int clipDesignHeight = 390; // an audio clip's page: FL's sheet without LYNX's extras under it
+    static constexpr int clipDesignHeight = 390; // an audio clip's page: FL's sheet without YW's extras under it
     static constexpr float defaultScale = 1.25f;
 
     SettingsPanel (AudioEngine& e, ChannelRef c)
@@ -3585,7 +3585,7 @@ public:
         waveScroll.addListener (this);
         addAndMakeVisible (waveScroll);
 
-        // ---- LYNX extras ----
+        // ---- YW extras ----
         knob (gain, gainLabel, TR_NOOP ("Gain"), nullptr, -24.0, 24.0, 0.1, 0.0);
         gain.textFromValueFunction = [] (double v) { return (v > 0.04 ? "+" : "") + juce::String (std::abs (v) < 0.05 ? 0.0 : v, 1) + " dB"; };
         gain.valueFromTextFunction = [] (const juce::String& t) { return t.retainCharacters ("+-0123456789.,").replaceCharacter (',', '.').getDoubleValue(); };
@@ -3639,8 +3639,8 @@ public:
 
         // An audio clip's channel (live check 190ew, shot PL-x-audio-clip-channel-page-variants): FL's page has no
         // Playback box (start offset, loop points) and nothing under the waveform. A Playlist clip plays its whole
-        // sample in LYNX too (SamplerInstrument clip mode skips the start offset, the loop knobs and the envelope /
-        // filter / portamento of LYNX's extras), so those controls are left out of it.
+        // sample in YW too (SamplerInstrument clip mode skips the start offset, the loop knobs and the envelope /
+        // filter / portamento of YW's extras), so those controls are left out of it.
         if (clipChannel)
             for (auto* hidden : std::initializer_list<juce::Component*> { &startOffsetKnob, &startOffsetLabel, &loopStartKnob, &loopStartLabel,
                                                                          &loopEndKnob, &loopEndLabel, &useLoops, &pingPong, &gain, &gainLabel,
@@ -3848,7 +3848,7 @@ public:
         wave.setBounds (R (7, 255, 544, 112));
         waveScroll.setBounds (R (7, 368, 544, 14));
 
-        // LYNX extras (FL's page has no place for them)
+        // YW extras (FL's page has no place for them)
         if (! clipChannel)
             groups.push_back ({ R (7, 390, 544, 128), extrasLabel.getText(), 0 });
         {
@@ -4069,9 +4069,9 @@ private:
     {
         const auto* c = current();
         const juce::File now (c != nullptr ? juce::String::fromUTF8 (c->samplePath.c_str()) : juce::String());
-        sampleChooser = lynx::ui::makeFileChooser (tr ("Load sample file..."), now.existsAsFile() ? now : juce::File(),
+        sampleChooser = yw::ui::makeFileChooser (tr ("Load sample file..."), now.existsAsFile() ? now : juce::File(),
                                                    "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
-        lynx::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        yw::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                                  [safe = juce::Component::SafePointer<SettingsPanel> (this)] (const juce::FileChooser& fc) {
                                      if (safe != nullptr && fc.getResult() != juce::File())
                                          safe->replaceSample (fc.getResult());
@@ -4116,7 +4116,7 @@ private:
         ref.edit (engine, [] (ChannelDef& d) { samplerpage::removeSample (d); });
     }
 
-    // FL's waveform menu (live check 190ew SMP-7, samplerpage::waveMenu): the items LYNX performs, in FL's order and groups
+    // FL's waveform menu (live check 190ew SMP-7, samplerpage::waveMenu): the items YW performs, in FL's order and groups
     juce::PopupMenu waveMenu()
     {
         juce::PopupMenu menu;
@@ -4169,7 +4169,7 @@ private:
                     const auto wav = audioclipboard::wav();
                     if (safe == nullptr || wav.empty())
                         return;
-                    // (FL loads the clipboard's audio as the channel's sample: LYNX writes it to the clipboard files first)
+                    // (FL loads the clipboard's audio as the channel's sample: YW writes it to the clipboard files first)
                     const auto saved = audioclipboard::save ("Audio clipboard", ".wav", wav.data(), wav.size());
                     if (saved.existsAsFile())
                         safe->replaceSample (saved);
@@ -4242,8 +4242,8 @@ private:
         if (sample == nullptr)
             return;
         const juce::File now (juce::String::fromUTF8 (c->samplePath.c_str()));
-        sampleChooser = lynx::ui::makeFileChooser (tr ("Save as..."), now.getParentDirectory().getChildFile (now.getFileNameWithoutExtension() + ".wav"), "*.wav");
-        lynx::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+        sampleChooser = yw::ui::makeFileChooser (tr ("Save as..."), now.getParentDirectory().getChildFile (now.getFileNameWithoutExtension() + ".wav"), "*.wav");
+        yw::ui::launchChooser (sampleChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
                                                     | juce::FileBrowserComponent::warnAboutOverwriting,
                                  [sample] (const juce::FileChooser& fc) {
                                      auto target = fc.getResult();
@@ -4381,7 +4381,7 @@ private:
         stereoDelay.setValue (p.stereoDelay, juce::dontSendNotification);
         pogo.setValue (p.pogo, juce::dontSendNotification);
         clip.setToggleState (p.clip, juce::dontSendNotification);
-        // LYNX extras
+        // YW extras
         gain.setValue (s.gainDb, juce::dontSendNotification);
         attack.setValue (s.attack, juce::dontSendNotification);
         decay.setValue (s.decay, juce::dontSendNotification);
@@ -4618,7 +4618,7 @@ private:
     };
     std::vector<Group> groups;
     juce::Rectangle<int> loopGlyph;
-    bool clipChannel = false; // an audio clip's channel: FL's audio clip page (no Playback box, no LYNX extras)
+    bool clipChannel = false; // an audio clip's channel: FL's audio clip page (no Playback box, no YW extras)
 
     // FL's TIME knob menu (r168s c_f20): (none), Autodetect, Project tempo, 1 beat, 2 beats, 1 bar, 2 bars, 3 bars, 4 bars
     struct StretchMenu final : juce::MouseListener
@@ -4709,7 +4709,7 @@ private:
     SampleDragOut waveDrag;
     juce::String wavePath;
     juce::ScrollBar waveScroll { false };
-    // LYNX extras
+    // YW extras
     MenuSlider gain, attack, decay, sustain, release, cutoff, resonance;
     juce::Label gainLabel, attackLabel, decayLabel, sustainLabel, releaseLabel, cutoffLabel, resonanceLabel, extrasLabel;
     juce::ComboBox filterType;
@@ -4893,8 +4893,8 @@ public:
 
     void paint (juce::Graphics& g) override // round 170j: the art's canvas behind the controls
     {
-        const skin::StyleScope styleScope (skin::resolve (skin::Style::themed, skin::Art::lynxSynth), skin::Art::lynxSynth);
-        skin::canvas (g, getLocalBounds().toFloat(), skin::artAccent (skin::Art::lynxSynth));
+        const skin::StyleScope styleScope (skin::resolve (skin::Style::themed, skin::Art::ywSynth), skin::Art::ywSynth);
+        skin::canvas (g, getLocalBounds().toFloat(), skin::artAccent (skin::Art::ywSynth));
     }
 
     void resized() override
@@ -4961,7 +4961,7 @@ private:
     juce::ToggleButton mono, am, portaOn;
     juce::TextButton flPresets;
 
-    // menu with the presets from the FL install for the synths LYNX converts: the 3x Osc channel .fst
+    // menu with the presets from the FL install for the synths YW converts: the 3x Osc channel .fst
     // files (by letter) and, per generator, the "Plugin presets" folders (Sytrus, Harmor, GMS...)
     void showFlPresets()
     {
@@ -5103,9 +5103,9 @@ private:
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
-        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the YW Studio lab"), or the forced plugin style
-        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
-        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
+        // round 170j: the plugin kit's knobs in YW Synth's own art ("the YW Studio lab"), or the forced plugin style
+        s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::ywSynth).getARGB());
+        s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::ywSynth));
         s.setRange (lo, hi, step);
         s.setTextValueSuffix (suffix);
         s.onValueChange = [this] { apply(); };
@@ -5226,8 +5226,8 @@ private:
     MenuSlider attack, decay, sustain, release, cutoff, resonance, fm, fmDecay, keyTrack, sweep, sweepTime, bandLow, bandMid, bandHigh;
     juce::ToggleButton ring;
     std::array<juce::Label, 20> labels;
-    // round 190fs: the box lists LYNX's synth presets, then the user's own ("Your presets") and the preset items of
-    // LYNX's other preset menus (Save preset..., Delete preset, Show the presets folder)
+    // round 190fs: the box lists YW's synth presets, then the user's own ("Your presets") and the preset items of
+    // YW's other preset menus (Save preset..., Delete preset, Show the presets folder)
     struct PresetBox final : public juce::ComboBox
     {
         std::function<void()> beforePopup;
@@ -5322,11 +5322,11 @@ private:
 // --- FL's channel window frame (REA round 143b) --------------------------------------------------------------
 // FL 2026 draws every channel's settings window the same way: a header strip with the channel's tabs on the left
 // (the instrument / plugin page, the wrench "Miscellaneous functions" page) and ON, PAN, VOL and TRACK on the right
-// [EXEC: FL 2026 build 5654, "Detailed settings" of a generator and of a sampler]. LYNX does the same around its own
+// [EXEC: FL 2026 build 5654, "Detailed settings" of a generator and of a sampler]. YW does the same around its own
 // instrument pages, in its own style; the envelopes and LFOs of the synth and the sampler are the "Envelope /
 // instrument" tab instead of a second window.
 
-// A small rotary control with LYNX's control contract (drag, Ctrl = fine, wheel, Alt / middle-click / double-click
+// A small rotary control with YW's control contract (drag, Ctrl = fine, wheel, Alt / middle-click / double-click
 // reset, right-click menu with automation items when the spec has a target); the hint bar shows its name and value.
 class FrameKnob final : public juce::Component,
                         public ui::HintSource,
@@ -5606,10 +5606,10 @@ ui::ValueSpec countSpec (const juce::String& name, int maximum, int defaultValue
     return spec;
 }
 
-// The wrench tab: FL's "Miscellaneous functions" with what LYNX's channels have (Levels, Polyphony, Time, Group,
+// The wrench tab: FL's "Miscellaneous functions" with what YW's channels have (Levels, Polyphony, Time, Group,
 // Arpeggiator).
 // FL's Root note keyboard (Misc tab, REA round 149): every key 0…127 (C0…G10, C5 = 60), the channel's root marked;
-// a click sets it. LYNX's own drawing.
+// a click sets it. YW's own drawing.
 class RootKeyboard final : public juce::Component, public juce::SettableTooltipClient
 {
 public:
@@ -6241,7 +6241,7 @@ public:
     }
 
 private:
-    // LYNX's chord choices for the arpeggiator (the piano roll's chord stamps)
+    // YW's chord choices for the arpeggiator (the piano roll's chord stamps)
     static const std::vector<std::pair<const char*, std::vector<int>>>& arpChords()
     {
         static const std::vector<std::pair<const char*, std::vector<int>>> chords {
@@ -6446,7 +6446,7 @@ public:
         pressedPart = partAt (e.getPosition());
         armed = true;
         if (auto* window = findParentComponentOfClass<juce::DocumentWindow>())
-            if (const auto at = (juce::uint32) (juce::int64) window->getProperties().getWithDefault ("lynxFrontAt", 0); at != 0)
+            if (const auto at = (juce::uint32) (juce::int64) window->getProperties().getWithDefault ("ywFrontAt", 0); at != 0)
                 armed = juce::Time::getMillisecondCounter() - at > 300;
     }
 
@@ -6487,7 +6487,7 @@ private:
             const auto folder = natives::presetFolderOf (kind);
             presets = folder.empty() ? std::vector<presetcycle::Preset>()
                                      : presetcycle::listPresets (presetcycle::pluginPresetFolders (flStudioAccess().roots, true, folder));
-            // LYNX's own bank after FL's presets (round 168n): the only presets without FL Studio
+            // YW's own bank after FL's presets (round 168n): the only presets without FL Studio
             const auto& bank = banks::bankOf (kind);
             for (int i = 0; i < (int) bank.size(); ++i)
                 presets.push_back ({ banks::pathOf (i), banks::relativeOf (bank[(std::size_t) i]), bank[(std::size_t) i].name });
@@ -6507,7 +6507,7 @@ private:
     {
         const auto& all = list();
         const auto count = (int) all.size();
-        // FL's next index; a preset LYNX can't read (an unknown or damaged state) is passed over in the same
+        // FL's next index; a preset YW can't read (an unknown or damaged state) is passed over in the same
         // direction, so the arrows keep going
         auto at = presetcycle::step (current, delta, count);
         for (int tries = 0; at >= 0 && tries < count; ++tries)
@@ -6592,8 +6592,8 @@ public:
 
     // Round 190fs: the user's own presets of this generator, with the items the hosted plugins' and the mixer effects'
     // preset menus have (Save preset..., Your presets, Delete preset, Show the presets folder). FL's wrapper saves a
-    // generator's settings with "Save preset as..." (PluginMenu SaveStateMenu); LYNX's channel window has no wrapper
-    // menu, so the item is in the preset box, as in the other LYNX preset menus.
+    // generator's settings with "Save preset as..." (PluginMenu SaveStateMenu); YW's channel window has no wrapper
+    // menu, so the item is in the preset box, as in the other YW preset menus.
     void addUserItems (juce::PopupMenu& menu)
     {
         const auto& all = list();
@@ -6888,7 +6888,7 @@ private:
 // The frame: header strip (tabs on the left; ON, PAN, VOL, TRACK on the right) over the page of the selected tab.
 // Round 190in (design190ia FW-1, FW-5): FL's 46 px strip — the tabs are FL's 44 px icon tabs flush at the left (the
 // shown one raised, its icon green), the preset ◀ name ▶ and FL's ▸ menu go to the window's title bar when the window
-// has LYNX's own (docked), else they sit in the strip (▸ at the far left, the presets after the tabs).
+// has YW's own (docked), else they sit in the strip (▸ at the far left, the presets after the tabs).
 class ChannelFrame final : public juce::Component
 {
 public:
@@ -7041,7 +7041,7 @@ public:
         }
     }
 
-    // Round 190in: the window's title bar shows the ▸ menu and the presets (docked: LYNX's own title bar); the strip
+    // Round 190in: the window's title bar shows the ▸ menu and the presets (docked: YW's own title bar); the strip
     // gives them up. The window calls this once it knows.
     void movePresetsToTitleBar (juce::Component& titleBarOwner)
     {
@@ -7077,7 +7077,7 @@ public:
             }
             if (controls != nullptr)
                 controls->setBounds (getWidth() - ChannelHeaderControls::preferredWidth, 0, ChannelHeaderControls::preferredWidth, hh - 1);
-            if (presetBar != nullptr && ! presetsInTitle) // one row after the tabs (FW-5: where there is no title bar of LYNX's)
+            if (presetBar != nullptr && ! presetsInTitle) // one row after the tabs (FW-5: where there is no title bar of YW's)
             {
                 strip.removeFromLeft (8);
                 const auto room = (controls != nullptr ? controls->getX() : getWidth()) - 8 - strip.getX();
@@ -7190,7 +7190,7 @@ juce::PopupMenu ChannelFrame::buildWrapperMenu()
             if (locateInBrowserHandler())
                 locateInBrowserHandler() (folder);
         };
-    // round 190oa (DF-131): FL's Help opens the plugin's manual page; LYNX opens its wiki page (a sample channel: the
+    // round 190oa (DF-131): FL's Help opens the plugin's manual page; YW opens its wiki page (a sample channel: the
     // Channel rack's page, as FL's channel settings help)
     if (const auto* d = channel >= 0 && channel < (int) engine.getSong().channels.size() ? &engine.getSong().channels[(std::size_t) channel] : nullptr;
         d != nullptr && d->instrument != InstrumentKind::plugin)
@@ -7235,12 +7235,12 @@ bool hasEnvelopeTab (InstrumentKind kind) noexcept
     return kind == InstrumentKind::synth || kind == InstrumentKind::sampler;
 }
 
-// The channel's Envelope / instrument settings page: LYNX's own for the synth and the sampler; FL's (the plugin voice
+// The channel's Envelope / instrument settings page: YW's own for the synth and the sampler; FL's (the plugin voice
 // processor's block in the generator's state) for Fruity Slicer (issue #129)
 std::unique_ptr<juce::Component> makeEnvelopePage (AudioEngine& engine, const ChannelRef& ref, InstrumentKind kind)
 {
     // round 190df: a sampler that runs FL's voice (an FL project's sampler: SamplerSettings::flChannel) gets FL's own
-    // page, with the three tensions, the predelay and the envelope presets; its edits keep FL's voice (LYNX's page
+    // page, with the three tensions, the predelay and the envelope presets; its edits keep FL's voice (YW's page
     // would replace it)
     if (const auto* def = ref.get (engine); kind == InstrumentKind::sampler && def != nullptr && flsamplervoice::has (def->sampler))
         return makeFlVoicePanel (
@@ -7324,8 +7324,8 @@ std::unique_ptr<juce::Component> makeInstrumentPage (AudioEngine& engine, const 
         return makeFpcEditor (engine, ref.locate, ref.index); // round 190q
     if (kind == InstrumentKind::tetra)
         return makeTetraEditor (engine, ref.locate, ref.index); // round 190hs
-    if (kind == InstrumentKind::lynxModel)
-        return makeLynxModelEditor (engine, ref.locate, ref.index); // round 190ni
+    if (kind == InstrumentKind::ywModel)
+        return makeYwModelEditor (engine, ref.locate, ref.index); // round 190ni
     if (kind == InstrumentKind::directwave)
         return makeDirectWaveEditor (engine, ref.locate, ref.index); // round 190hz
     if (kind == InstrumentKind::helix)
@@ -7358,7 +7358,7 @@ public:
         : inner (std::move (page)),
           stored (storedScale)
     {
-        getProperties().set ("lynxScaledContent", true);
+        getProperties().set ("ywScaledContent", true);
         addAndMakeVisible (*inner);
         fitToPage();
     }
@@ -7501,7 +7501,7 @@ std::vector<std::unique_ptr<SettingsWindow>>& windows();
 class SettingsWindow final : public juce::DocumentWindow, private juce::ChangeListener
 {
 public:
-    // `shot` (round 190in): off the desktop, in the docked look (LYNX's title bar), for the snapshot routes
+    // `shot` (round 190in): off the desktop, in the docked look (YW's title bar), for the snapshot routes
     SettingsWindow (AudioEngine& engine, int c, bool modulationWindow, bool shot = false)
         : juce::DocumentWindow (tr ("Channel settings"), theme::colour::bg2, DocumentWindow::closeButton, ! shot),
           channel (c),
@@ -7546,7 +7546,7 @@ public:
         setResizable (true, false);
 
         auto docked = shot;
-        if (shot) // (as dockOrKeepAbove makes a docked window: LYNX's title bar, the close button alone)
+        if (shot) // (as dockOrKeepAbove makes a docked window: YW's title bar, the close button alone)
         {
             setTitleBarButtonsRequired (juce::DocumentWindow::closeButton, false);
             setTitleBarHeight (26);
@@ -7563,7 +7563,7 @@ public:
             docked = dockOrKeepAbove (*this); // FL's docked plugin window (round 190ev)
         }
         // Round 190in (design190ia FW-5, details190if R8): FL's title bar — ▸ menu at the left, "Name (target)" in two
-        // tones, the preset ◀ name ▶ at the right. Only LYNX's own title bar (docked) can hold them; a system title bar
+        // tones, the preset ◀ name ▶ at the right. Only YW's own title bar (docked) can hold them; a system title bar
         // leaves them in the frame's strip.
         if (auto* frame = dynamic_cast<ChannelFrame*> (&scaled->page()))
         {
@@ -7579,8 +7579,8 @@ public:
             if (docked)
             {
                 setTitleBarTextCentred (false);
-                getProperties().set ("lynxTitleTwoTone", true);
-                getProperties().set ("lynxTitleLeft", 44); // room for both titleMenu and headerToggle
+                getProperties().set ("ywTitleTwoTone", true);
+                getProperties().set ("ywTitleLeft", 44); // room for both titleMenu and headerToggle
                 titleMenu.onClick = [this, frame] { frame->showWrapperMenu (titleMenu); };
                 Component::addAndMakeVisible (titleMenu);
                 // the gear (PR #248): the header shows until it hides it; each channel's window keeps the choice (rollup
@@ -7596,7 +7596,7 @@ public:
                 frame->setHeaderCollapsed (headerToggle.getToggleState());
                 frame->movePresetsToTitleBar (*this);
                 titlePresets = frame->presetComponent();
-                getProperties().set ("lynxTitleRight", titlePresets != nullptr ? titlePresetsWidth + 6 : 0);
+                getProperties().set ("ywTitleRight", titlePresets != nullptr ? titlePresetsWidth + 6 : 0);
                 resized();
             }
         }
@@ -7654,7 +7654,7 @@ public:
     // (round 190mc: when this window came to the front — the preset arrows in its title bar ignore that click)
     void broughtToFront() override
     {
-        getProperties().set ("lynxFrontAt", (juce::int64) juce::Time::getMillisecondCounter());
+        getProperties().set ("ywFrontAt", (juce::int64) juce::Time::getMillisecondCounter());
         juce::DocumentWindow::broughtToFront();
     }
 
@@ -7694,7 +7694,7 @@ public:
         juce::PopupMenu sizes;
         const auto stored = scaled->storedScale();
         const juce::Component::SafePointer<SettingsWindow> safe (this);
-        // FL's items (System is left out: LYNX's whole interface already follows the display's scale)
+        // FL's items (System is left out: YW's whole interface already follows the display's scale)
         sizes.addItem (tr ("Host"), true, stored == 0, [safe] {
             if (safe != nullptr)
                 safe->setStoredScale (0);
@@ -7733,7 +7733,7 @@ private:
     std::uint64_t instanceId = 0; // the channel's runtime identity (round 190mc)
     PageAspectConstrainer aspect;
     ScaledContent* scaled = nullptr; // (owned by the window: its content)
-    wrappermenu::MenuArrow titleMenu;               // FL's ▸ in LYNX's title bar (docked)
+    wrappermenu::MenuArrow titleMenu;               // FL's ▸ in YW's title bar (docked)
     juce::Component* titlePresets = nullptr;        // the frame's preset bar, moved into the title bar (owned by the frame)
     HeaderToggle headerToggle; // shows/hides the frame's own header strip (docked only; lit while it is hidden)
     juce::String headerMemory; // (its key in windowplaces' hidden headers; empty: not remembered)
@@ -7877,7 +7877,7 @@ bool hasChannelSettings (InstrumentKind kind) noexcept
         case InstrumentKind::tetra:
         case InstrumentKind::helix:
         case InstrumentKind::braid:
-        case InstrumentKind::lynxModel:
+        case InstrumentKind::ywModel:
             return true;
         default:
             return false;
@@ -8050,8 +8050,8 @@ std::unique_ptr<juce::Component> makeChannelSettingsPanel (AudioEngine& engine, 
         return makeTetraEditor (engine, [channel] (Song& s) -> ChannelDef* {
             return channel >= 0 && channel < (int) s.channels.size() ? &s.channels[(std::size_t) channel] : nullptr;
         }, channel); // round 190hs
-    if (engine.getSong().channels[(std::size_t) channel].instrument == InstrumentKind::lynxModel)
-        return makeLynxModelEditor (engine, [channel] (Song& s) -> ChannelDef* {
+    if (engine.getSong().channels[(std::size_t) channel].instrument == InstrumentKind::ywModel)
+        return makeYwModelEditor (engine, [channel] (Song& s) -> ChannelDef* {
             return channel >= 0 && channel < (int) s.channels.size() ? &s.channels[(std::size_t) channel] : nullptr;
         }, channel); // round 190ni
     if (engine.getSong().channels[(std::size_t) channel].instrument == InstrumentKind::directwave)
@@ -8062,7 +8062,7 @@ std::unique_ptr<juce::Component> makeChannelSettingsPanel (AudioEngine& engine, 
         return makeHelixEditor (engine, [channel] (Song& s) -> ChannelDef* {
             return channel >= 0 && channel < (int) s.channels.size() ? &s.channels[(std::size_t) channel] : nullptr;
         }, channel); // round 190ja
-    // (round 190pq: isModelKind, the one list; this copy of it missed Braid, whose channel window and LYNX Duoloom's
+    // (round 190pq: isModelKind, the one list; this copy of it missed Braid, whose channel window and YW Duoloom's
     // plugin editor showed the Sampler's page instead of round 190ko's knob list)
     if (isModelKind (engine.getSong().channels[(std::size_t) channel].instrument))
         return std::make_unique<ModelPanel> (engine, ChannelRef::rack (channel));
@@ -8074,7 +8074,7 @@ bool hasNodeEditor (const ChannelDef& channel) noexcept
 {
     return channel.instrument == InstrumentKind::synth || channel.instrument == InstrumentKind::sampler || isModelKind (channel.instrument)
            || channel.instrument == InstrumentKind::tetra || channel.instrument == InstrumentKind::helix // rounds 190hs, 190ja
-           || channel.instrument == InstrumentKind::lynxModel; // round 190ni
+           || channel.instrument == InstrumentKind::ywModel; // round 190ni
 }
 
 std::unique_ptr<juce::Component> makeNodeChannelFrame (AudioEngine& engine, std::function<ChannelDef* (Song&)> locate)
@@ -8212,4 +8212,4 @@ bool samplerFileRowPress (juce::Component& root, int button)
     p->pressFileRow (button);
     return true;
 }
-} // namespace lynx
+} // namespace yw

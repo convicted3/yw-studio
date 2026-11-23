@@ -1,6 +1,6 @@
 #ifndef __CONFIG_TYPES_H__
 #define __CONFIG_TYPES_H__
-/* LYNX: hand-written replacement for libogg's configure-generated header (fixed-width types from <stdint.h>) */
+/* YW: hand-written replacement for libogg's configure-generated header (fixed-width types from <stdint.h>) */
 #include <stdint.h>
 #define INCLUDE_INTTYPES_H 1
 #define INCLUDE_STDINT_H 1

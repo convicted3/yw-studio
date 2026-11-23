@@ -9,14 +9,14 @@
 // under the new place saved, the mark's picture composited there (XRender, Over, a sub-pixel translation sampled
 // bilinearly), a flush. No paint of the view, no image sent: the picture of the mark was sent once.
 //
-// JUCE's blits (cmake/LynxPatchJuce.cmake fix 41, lynxX11AfterBlitHook) replace the window's pixels in their rectangles:
+// JUCE's blits (cmake/YwPatchJuce.cmake fix 41, ywX11AfterBlitHook) replace the window's pixels in their rectangles:
 // where they meet a mark, the pixels under it are saved again (they are new) and the mark is drawn over them again.
 // The X server clips the drawing to what of the window is visible: under a native child window (a plugin editor) or a
 // sibling window the mark is hidden, as the painted one is.
 
 #include <cstdint>
 
-namespace lynx::ui::x11overlay
+namespace yw::ui::x11overlay
 {
 struct Rect
 {
@@ -24,9 +24,9 @@ struct Rect
     bool empty() const noexcept { return w <= 0 || h <= 0; }
 };
 
-// JUCE's display connection (juce::lynxX11Display, fix 41), given once by MotionOverlay.cpp before ready()
+// JUCE's display connection (juce::ywX11Display, fix 41), given once by MotionOverlay.cpp before ready()
 void setDisplay (void* display);
-// libX11 + libXrender loaded, JUCE's display open, the Render extension there with an ARGB32 format. LYNX_OVERLAY=0 is
+// libX11 + libXrender loaded, JUCE's display open, the Render extension there with an ARGB32 format. YW_OVERLAY=0 is
 // MotionOverlay's business.
 bool ready();
 // --selftest: why not, when ready() is false
@@ -87,4 +87,4 @@ struct BlitStats
     std::int64_t blits = 0, pixels = 0;
 };
 BlitStats blitStats();
-} // namespace lynx::ui::x11overlay
+} // namespace yw::ui::x11overlay

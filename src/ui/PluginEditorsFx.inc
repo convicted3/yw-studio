@@ -150,7 +150,7 @@
     // The heard taps on the pattern's time axis (slot 0 = the input, at 0): drag a tap up / down for its level and
     // sideways for its time (Free / Grid; a sideways drag in Even turns the even pattern into Free taps first);
     // double-click empty space = a new tap there, double-click a tap = remove it (Free / Grid) or its level back to
-    // 100 % (Even); the Patterns button loads one of LYNX's own tap patterns.
+    // 100 % (Even); the Patterns button loads one of YW's own tap patterns.
 
     static bool isRhythmEdit (const LayoutItem& item)
     {
@@ -481,7 +481,7 @@
                 g.setColour (colour::bg2);
                 g.fillRect (cell);
                 // FL 2026 (capture 190ld B4, fl-vocoder-playing-*): a light fill per band rising with the band's level
-                // while the signal plays (LYNX: its curve colour, translucent); frozen while HOLD is held
+                // while the signal plays (YW: its curve colour, translucent); frozen while HOLD is held
                 if (const auto level = vocoderBandLevel (i); level > 0.0f)
                 {
                     g.setColour (curveColour.withAlpha (0.42f));

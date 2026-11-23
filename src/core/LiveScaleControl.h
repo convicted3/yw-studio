@@ -1,7 +1,7 @@
 #pragma once
 
-// Round 190oo (O-5, design review CS-8's full form; LYNX extra, off by default): Live 12's three-part scale control in the
-// Clip-launch control bar instead of the one key box — the scale switch ("♭#", drawn as LYNX vectors), the root chooser
+// Round 190oo (O-5, design review CS-8's full form; YW extra, off by default): Live 12's three-part scale control in the
+// Clip-launch control bar instead of the one key box — the scale switch ("♭#", drawn as YW vectors), the root chooser
 // ("C ▾") and the mode chooser ("Major ▾"), the two choosers dimmed while the switch is off
 // (design190ia/shots/ref/live-arrangement-audiolane.png: 17 + 44 + 66 px with 2 px gaps at Live's 100 %). It edits the
 // one project key (core/ProjectKey.h): the switch on = a key is set; off = none. While it is off the choosers keep the
@@ -10,9 +10,9 @@
 
 #include <algorithm>
 
-namespace lynx::livescale
+namespace yw::livescale
 {
-inline bool shown = false; // ui-options.txt liveScaleControl (Settings › LYNX extras, the Key menu)
+inline bool shown = false; // ui-options.txt liveScaleControl (Settings › YW extras, the Key menu)
 
 inline constexpr int toggleWidth = 18, gap = 2;
 inline constexpr int rootShare = 52, modeShare = 70; // (the choosers split the rest as Live's 44 : 66, rounded up)
@@ -49,4 +49,4 @@ inline Part partAt (int x, int width) noexcept
         return Part::root;
     return Part::mode;
 }
-} // namespace lynx::livescale
+} // namespace yw::livescale

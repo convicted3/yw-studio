@@ -17,7 +17,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx
+namespace yw
 {
 constexpr int luxeVerbControlCount = 49;
 constexpr int luxeVerbParamCount = luxeVerbControlCount + 4; // + sync of predelay, feedback delay, feed-forward 1 / 2
@@ -109,4 +109,4 @@ private:
     double curBpm = 0.0;
 };
 } // namespace luxeverb
-} // namespace lynx
+} // namespace yw

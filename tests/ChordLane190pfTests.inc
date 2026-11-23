@@ -15,30 +15,30 @@
 
 namespace chordlane190pf
 {
-constexpr std::int64_t bar = 4 * (std::int64_t) lynx::ppq;
+constexpr std::int64_t bar = 4 * (std::int64_t) yw::ppq;
 
-inline lynx::SongChord chordOf (int root, const char* suffix, std::int64_t start = 0, std::int64_t length = bar)
+inline yw::SongChord chordOf (int root, const char* suffix, std::int64_t start = 0, std::int64_t length = bar)
 {
-    lynx::SongChord c;
-    lynx::chordlane::fromSuffix (root, suffix, -1, c);
+    yw::SongChord c;
+    yw::chordlane::fromSuffix (root, suffix, -1, c);
     c.start = start;
     c.length = length;
     return c;
 }
 
-inline std::string names (const std::vector<lynx::SongChord>& list)
+inline std::string names (const std::vector<yw::SongChord>& list)
 {
     std::string s;
     for (const auto& c : list)
-        s += (s.empty() ? "" : " ") + lynx::chordlane::name (c);
+        s += (s.empty() ? "" : " ") + yw::chordlane::name (c);
     return s;
 }
 
 // A song with a piano channel (0), a kick (1) and a pad that follows the lane (2); pattern 0 = a four-chord loop over
 // four bars (C, Am, F, G7 as whole notes, the bass an octave down), kicks on every beat on channel 1; one clip of it at 0
-inline lynx::Song fourChords()
+inline yw::Song fourChords()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -90,9 +90,9 @@ struct Heard
     int channel, key, type;
 };
 
-inline std::vector<Heard> play (const lynx::Song& song)
+inline std::vector<Heard> play (const yw::Song& song)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto tps = ticksPerSample (song.bpm, 48000.0);
     const auto index = makeScheduleIndex (song);
     std::vector<Heard> out;
@@ -144,7 +144,7 @@ inline std::vector<float> accelerando (double rate, std::vector<double>& downbea
 
 TEST (chordlane190pf_names_shapes_and_follow)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     CHECK (names ({ chordOf (0, ""), chordOf (9, "m7"), chordOf (10, "maj7"), chordOf (7, "7"), chordOf (11, "m7b5"), chordOf (2, "sus4") })
            == "C Am7 A#maj7 G7 Bm7b5 Dsus4");
@@ -172,7 +172,7 @@ TEST (chordlane190pf_names_shapes_and_follow)
 
 TEST (chordlane190pf_list_edits_and_time)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     std::vector<SongChord> list;
     CHECK (chordlane::put (list, chordOf (0, "", 0, 4 * bar)) == 0);
@@ -205,7 +205,7 @@ TEST (chordlane190pf_list_edits_and_time)
 
 TEST (chordlane190pf_arrange_and_sections_carry_chords)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     auto song = fourChords();
     song.chords() = { chordOf (0, "", 0, bar), chordOf (9, "m", bar, bar), chordOf (5, "", 2 * bar, bar), chordOf (7, "7", 3 * bar, bar) };
@@ -230,7 +230,7 @@ TEST (chordlane190pf_arrange_and_sections_carry_chords)
 
 TEST (chordlane190pf_detect_four_chord_loop)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     const auto song = fourChords();
     const auto notes = chordlane::songNotes (song, 0, 4 * bar);
@@ -261,7 +261,7 @@ TEST (chordlane190pf_detect_four_chord_loop)
 
 TEST (chordlane190pf_key_regions_degrees_pad_and_midi)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     // the degree chords of C major and A minor (the picker's list; round 190nu's degree stamp)
     std::string c, a;
@@ -295,7 +295,7 @@ TEST (chordlane190pf_key_regions_degrees_pad_and_midi)
 
 TEST (chordlane190pf_follow_plays_moved_notes_and_highlight)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     // the pad (channel 2) holds E4 (64) and B3 (59) in every bar of a one-bar pattern placed four times; the lane is
     // C | F | G | (none)
@@ -353,7 +353,7 @@ TEST (chordlane190pf_follow_plays_moved_notes_and_highlight)
 
 TEST (chordlane190pf_flp_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     auto song = fourChords();
     song.addMarker ({ 0, "Start", 0, 4 });
@@ -380,7 +380,7 @@ TEST (chordlane190pf_flp_markers)
 
 TEST (smarttempo190pf_accelerando_bars_and_plan)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     const double rate = 44100.0;
     std::vector<double> truth;
@@ -459,7 +459,7 @@ TEST (smarttempo190pf_accelerando_bars_and_plan)
 
 TEST (smarttempo190pf_half_double_shift_and_map)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace chordlane190pf;
     const double rate = 44100.0;
     std::vector<double> truth;

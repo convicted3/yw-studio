@@ -3,7 +3,7 @@
 namespace l190b
 {
 // a fake hosted plugin: records the MIDI messages and the controller changes it gets
-struct ControlSpy final : lynx::Instrument
+struct ControlSpy final : yw::Instrument
 {
     std::vector<std::vector<std::uint8_t>> got;
     std::vector<std::pair<int, float>> controls;
@@ -19,24 +19,24 @@ struct ControlSpy final : lynx::Instrument
 // channel 0 = a Layer over channels 1 and 2; channel 3 = a plugin outside the Layer; `setup` may change the song
 struct Rig
 {
-    lynx::Song song;
+    yw::Song song;
     std::vector<std::shared_ptr<ControlSpy>> spies; // [channel]
-    std::unique_ptr<const lynx::RackState> state;
-    lynx::RackRenderer renderer;
-    lynx::LiveEventQueue live;
+    std::unique_ptr<const yw::RackState> state;
+    yw::RackRenderer renderer;
+    yw::LiveEventQueue live;
 
-    explicit Rig (std::function<void (lynx::Song&)> setup = {})
+    explicit Rig (std::function<void (yw::Song&)> setup = {})
     {
-        song.mixer = lynx::Song::defaultMixer (2);
-        lynx::ChannelDef l;
+        song.mixer = yw::Song::defaultMixer (2);
+        yw::ChannelDef l;
         l.name = "Layer";
-        l.instrument = lynx::InstrumentKind::layer;
+        l.instrument = yw::InstrumentKind::layer;
         l.layer.children = { 1, 2 };
         song.channels.push_back (l);
         for (int k = 1; k <= 3; ++k)
         {
-            lynx::ChannelDef c;
-            c.instrument = lynx::InstrumentKind::plugin;
+            yw::ChannelDef c;
+            c.instrument = yw::InstrumentKind::plugin;
             c.plugin.id = "spy" + std::to_string (k);
             song.channels.push_back (c);
         }
@@ -44,20 +44,20 @@ struct Rig
         if (setup)
             setup (song);
         spies.resize (song.channels.size());
-        lynx::RackState::Factories f;
-        f.pluginInstruments = [this] (const lynx::PluginRef& ref, double) {
+        yw::RackState::Factories f;
+        f.pluginInstruments = [this] (const yw::PluginRef& ref, double) {
             const auto k = (std::size_t) std::stoi (ref.id.substr (3));
             spies[k] = std::make_shared<ControlSpy>();
-            return std::shared_ptr<lynx::Instrument> (spies[k]);
+            return std::shared_ptr<yw::Instrument> (spies[k]);
         };
-        state = lynx::RackState::build (song, nullptr, 44100.0, f);
+        state = yw::RackState::build (song, nullptr, 44100.0, f);
         renderer.prepare (44100.0, 256);
     }
 
     void control (int channel, int controller, float value)
     {
-        lynx::NoteEvent e;
-        e.type = lynx::NoteEvent::Type::control;
+        yw::NoteEvent e;
+        e.type = yw::NoteEvent::Type::control;
         e.channel = channel;
         e.key = controller;
         e.velocity = value;
@@ -115,9 +115,9 @@ TEST (l190b_layer_passes_wheels_and_controllers_to_its_children)
     CHECK (rig.spies[1] != nullptr && rig.spies[2] != nullptr);
     if (! (rig.spies[1] != nullptr && rig.spies[2] != nullptr))
         return;
-    rig.control (0, lynx::NoteEvent::controlPitchBend, 1.0f);
+    rig.control (0, yw::NoteEvent::controlPitchBend, 1.0f);
     rig.control (0, 1, 64.0f / 127.0f);                       // mod wheel
-    rig.control (0, lynx::NoteEvent::controlPressure, 1.0f);
+    rig.control (0, yw::NoteEvent::controlPressure, 1.0f);
     rig.control (0, 66, 1.0f);                                // sostenuto
     rig.run();
     const std::vector<Bytes> expected { { 0xE0, 127, 127 }, { 0xB0, 1, 64 }, { 0xD0, 127 }, { 0xB0, 66, 127 } };
@@ -130,8 +130,8 @@ TEST (l190b_layer_passes_wheels_and_controllers_to_its_children)
 TEST (l190b_layer_controls_skip_itself_and_nested_layers)
 {
     // children: itself, another Layer (FL's Layers don't nest), an index past the rack, and one real child
-    l190b::Rig rig ([] (lynx::Song& s) {
-        s.channels[2].instrument = lynx::InstrumentKind::layer;
+    l190b::Rig rig ([] (yw::Song& s) {
+        s.channels[2].instrument = yw::InstrumentKind::layer;
         s.channels[2].layer.children = { 0, 3 };
         s.channels[0].layer.children = { 0, 2, 99, -1, 1 };
     });

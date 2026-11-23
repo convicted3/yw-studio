@@ -1,10 +1,10 @@
 #pragma once
 
-// Round 190ko: the short-time Fourier frame both of LYNX's spectral effects run on (core/Timeprism.h, core/Harmonia.h).
+// Round 190ko: the short-time Fourier frame both of YW's spectral effects run on (core/Timeprism.h, core/Harmonia.h).
 // A stereo pair is transformed as one complex signal (left = real, right = imaginary), so one complex FFT per hop
 // gives both channels' spectra. Hann analysis and synthesis windows, a hop of a quarter frame (the windows' squared sum
 // is constant, 1.5, and is divided out), frame sizes 256 … 4096. All memory is taken in prepare(); process() does not
-// allocate. LYNX's own code.
+// allocate. YW's own code.
 
 #include <algorithm>
 #include <cmath>
@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::spectral
+namespace yw::spectral
 {
 using cpx = std::complex<float>;
 constexpr double pi = 3.14159265358979323846;
@@ -197,4 +197,4 @@ struct Rand
     float uni() noexcept { return (float) (next() >> 8) * (1.0f / 16777216.0f); } // 0 … 1
     float bi() noexcept { return 2.0f * uni() - 1.0f; }
 };
-} // namespace lynx::spectral
+} // namespace yw::spectral

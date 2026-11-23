@@ -1,7 +1,7 @@
 #pragma once
 
-// Round 190ik (BUILD-LIST 8): the warp engines LYNX lacked, measured black-box against Ableton Live 12.4's renders
-// (/mnt/e/lynx-work/warp190ik, sets W1 of round 190gu and W2 of this round; docs/analise/REA_rodada190ik.md). LYNX's own
+// Round 190ik (BUILD-LIST 8): the warp engines YW lacked, measured black-box against Ableton Live 12.4's renders
+// (/mnt/e/yw-work/warp190ik, sets W1 of round 190gu and W2 of this round; docs/analise/REA_rodada190ik.md). YW's own
 // code (clean room: Live's renders were only listened to by numbers, no code or content of Live is used):
 //  - Complex Pro: the clip's transposition rendered offline (a spectral stretch to the transposed length, then a band-limited
 //    resampling) followed by a formant correction that moves the spectral envelope back (Formants 0…100 % of the shift;
@@ -16,7 +16,7 @@
 #include <functional>
 #include <vector>
 
-namespace lynx::warpengine
+namespace yw::warpengine
 {
 using Channels = std::vector<std::vector<float>>;
 
@@ -55,4 +55,4 @@ PitchTrack pitchTrack (const float* mono, long frames, double sampleRate);
 // explains, plus the legato pitch steps of pitched sound (a step of ≥ 0.8 semitone that happens within 60 ms and lasts).
 // Sorted, at least 50 ms apart, inside (0, frames).
 std::vector<long> pitchAwareCuts (const float* mono, long frames, double sampleRate, const std::vector<long>& levelCuts);
-} // namespace lynx::warpengine
+} // namespace yw::warpengine

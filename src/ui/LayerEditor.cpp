@@ -8,7 +8,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -526,4 +526,4 @@ std::unique_ptr<juce::Component> makeLayerEditor (AudioEngine& engine, std::func
     s.children = std::move (children);
     return std::make_unique<LayerEditor> (engine, std::move (s));
 }
-} // namespace lynx
+} // namespace yw

@@ -1,41 +1,41 @@
 #pragma once
 
-// Per-OS folders (docs/PLATFORMS.md). Everything platform-specific about *where* LYNX keeps or looks for files
+// Per-OS folders (docs/PLATFORMS.md). Everything platform-specific about *where* YW keeps or looks for files
 // lives here, so the rest of the code asks for "the settings folder" instead of spelling out %APPDATA%.
 
 #include <juce_core/juce_core.h>
 
-namespace lynx::platform
+namespace yw::platform
 {
-// LYNX's settings folder (created on first use):
-//   Windows  %APPDATA%\LYNX
-//   macOS    ~/Library/Application Support/LYNX
-//   Linux    $XDG_CONFIG_HOME/LYNX (default ~/.config/LYNX)
+// YW's settings folder (created on first use):
+//   Windows  %APPDATA%\YW
+//   macOS    ~/Library/Application Support/YW
+//   Linux    $XDG_CONFIG_HOME/YW (default ~/.config/YW)
 juce::File settingsFolder();
 
-// LYNX_PROFILE_DIR (core/TestProfile.h): the folder that replaces every user-data location, or an empty File.
+// YW_PROFILE_DIR (core/TestProfile.h): the folder that replaces every user-data location, or an empty File.
 juce::File profileOverride();
-// LYNX_TEST_MODE: no prompts (they are logged to test-mode.log in the settings folder instead).
+// YW_TEST_MODE: no prompts (they are logged to test-mode.log in the settings folder instead).
 bool testMode();
 void testModeLog (const juce::String& what);
 
-// The user's Documents folder for what LYNX writes there (Documents/LYNX/...): <profile>/Documents under a test profile.
+// The user's Documents folder for what YW writes there (Documents/YW/...): <profile>/Documents under a test profile.
 juce::File documentsFolder();
 
 // A file or sub-folder inside the settings folder, e.g. settingsFile ("autosave").
 juce::File settingsFile (const juce::String& relativePath);
 
 // Rebuildable caches (waveform peaks):
-//   Windows  %APPDATA%\LYNX\<name>   (unchanged from earlier versions)
-//   macOS    ~/Library/Caches/LYNX/<name>
-//   Linux    $XDG_CACHE_HOME/LYNX/<name> (default ~/.cache/LYNX/<name>)
+//   Windows  %APPDATA%\YW\<name>   (unchanged from earlier versions)
+//   macOS    ~/Library/Caches/YW/<name>
+//   Linux    $XDG_CACHE_HOME/YW/<name> (default ~/.cache/YW/<name>)
 juce::File cacheFolder (const juce::String& name);
 
 // The standard plugin folders of this OS, in scan order (they need not exist yet: plugins installed later land
-// there): VST3, VST2, CLAP (+ AU components on macOS, LV2 on Linux) and LYNX's own Plugins folder.
+// there): VST3, VST2, CLAP (+ AU components on macOS, LV2 on Linux) and YW's own Plugins folder.
 juce::FileSearchPath standardPluginFolders();
 
-// The plugin formats LYNX scans for on this OS, for the UI ("VST, VST3, CLAP, LV2" on Linux).
+// The plugin formats YW scans for on this OS, for the UI ("VST, VST3, CLAP, LV2" on Linux).
 juce::String pluginFormatNames();
 
 // A file named by a path stored in a project or written by the FL import: on Windows as it is; on macOS/Linux FL's
@@ -44,9 +44,9 @@ juce::String pluginFormatNames();
 juce::File localFile (const juce::String& path);
 juce::File localFile (const std::string& utf8Path);
 
-// Windows: when LYNX.exe sits in a folder whose path has non-ASCII characters ("Área de Trabalho"), some plugins
+// Windows: when YW.exe sits in a folder whose path has non-ASCII characters ("Área de Trabalho"), some plugins
 // crash opening their editor (Waves 17's WebView builds a path from the host's module name and throws on it). This
-// starts LYNX again through the folder's 8.3 short name (plain ASCII), waits for it and returns true with its exit
+// starts YW again through the folder's 8.3 short name (plain ASCII), waits for it and returns true with its exit
 // code: the caller then quits. False (nothing done) when the path is ASCII, has no short name, or on other systems.
 bool relaunchFromAsciiPath (int& exitCode);
 
@@ -65,4 +65,4 @@ void allowMainThreadStack (std::size_t bytes);
 // creation time; macOS: st_birthtime; Linux: statx's STATX_BTIME (ext4, Btrfs, XFS, tmpfs keep it; JUCE's
 // getCreationTime gives st_ctime there, the last change of the file's inode).
 double fileBirthSeconds (const juce::File& file);
-} // namespace lynx::platform
+} // namespace yw::platform

@@ -38,7 +38,7 @@
 // documentation (the Java classes' comments and README.md of github.com/bitwig/dawproject, MIT), [README] the example
 // project in that README (Bitwig Studio 5.0), [ASSUMED] not confirmed by a file from another DAW yet.
 
-namespace lynx
+namespace yw
 {
 // ---------------------------------------------------------------------------------------------------------------------
 // Shared helpers (public for the tests)
@@ -506,7 +506,7 @@ std::string numText (double v)
     if (! std::isfinite (v) || v == 0.0)
         return "0";
    #if defined (__APPLE__)
-    // (rollup 0.1.30: floating-point std::to_chars needs macOS 13.3 and LYNX targets 11.0, as AlsExport.cpp's num(): the
+    // (rollup 0.1.30: floating-point std::to_chars needs macOS 13.3 and YW targets 11.0, as AlsExport.cpp's num(): the
     // shortest precision that reads back as the same double)
     for (int precision = 15;; ++precision)
     {
@@ -965,7 +965,7 @@ struct Imp
         return v.v;
     }
 
-    // DAWproject's generic built-in devices → LYNX's own effects [XSD: equalizer, compressor, noiseGate, limiter]
+    // DAWproject's generic built-in devices → YW's own effects [XSD: equalizer, compressor, noiseGate, limiter]
     bool builtinEffect (const Element& d, EffectSlot& slot)
     {
         const auto tag = d.name();
@@ -1075,9 +1075,9 @@ struct Imp
         return false;
     }
 
-    bool lynxDevice (const Element& d, std::string_view kind) const
+    bool ywDevice (const Element& d, std::string_view kind) const
     {
-        return d.attr ("deviceVendor") == "YW Studio" && d.attr ("deviceID").rfind (std::string ("lynx.") + std::string (kind) + ".", 0) == 0;
+        return d.attr ("deviceVendor") == "YW Studio" && d.attr ("deviceID").rfind (std::string ("yw.") + std::string (kind) + ".", 0) == 0;
     }
 
     // The devices of a Channel: the first instrument into `instrument` (when given), audio effects onto the insert
@@ -1100,7 +1100,7 @@ struct Imp
                     continue;
                 }
                 haveInstrument = true;
-                if (lynxDevice (d, "instrument"))
+                if (ywDevice (d, "instrument"))
                 {
                     const auto bytes = stateOf (d);
                     std::optional<ChannelDef> made;
@@ -1160,7 +1160,7 @@ struct Imp
             }
             EffectSlot slot;
             bool made = false, isVst3 = false;
-            if (lynxDevice (d, "effect"))
+            if (ywDevice (d, "effect"))
             {
                 const auto bytes = stateOf (d);
                 std::optional<EffectSlot> s;
@@ -1797,7 +1797,7 @@ struct Imp
         }
         if (param == tempoParam)
         {
-            // (LYNX writes the tempo in the arrangement's TempoAutomation and again in the lane of the Playlist row its clip
+            // (YW writes the tempo in the arrangement's TempoAutomation and again in the lane of the Playlist row its clip
             // was on: that row gets the tempo markers' clip back; the points themselves are read once)
             if (rowOf (s.track) >= 0 && tempoRow < 0)
                 tempoRow = rowOf (s.track);
@@ -1866,7 +1866,7 @@ struct Imp
             note (&FlpImportReport::notReproduced, "Marker colours");
     }
 
-    // Scenes (the clip launcher) → LYNX's clip grid, as the .als import's Session view [XSD: Scene → a timeline whose
+    // Scenes (the clip launcher) → YW's clip grid, as the .als import's Session view [XSD: Scene → a timeline whose
     // ClipSlots (track, hasStop) hold one Clip each]: one grid scene per Scene, a slot's clip on its track's row. A clip
     // with a loop plays its loop region with the slot's Loop on (the Start marker where playStart falls inside it).
     void readScenes (const Element& scenesElement)
@@ -2375,7 +2375,7 @@ struct Exp
         device.add ("State").set ("path", addFile ("plugins/", name, std::move (bytes)));
     }
 
-    // A hosted plug-in. `params` (LYNX automation index → the Parameters entry's id), filled for the automated ones
+    // A hosted plug-in. `params` (YW automation index → the Parameters entry's id), filled for the automated ones
     bool pluginDevice (Node& devices, const PluginRef& ref, bool instrument, bool enabled, const std::vector<int>& automated,
                        std::map<int, std::string>& paramIds)
     {
@@ -2461,7 +2461,7 @@ struct Exp
         const auto kindId = genpresets::kindId (c.instrument);
         auto& d = devices.add ("Device");
         d.set ("id", newId()).set ("name", c.name).set ("deviceName", "YW Studio " + genpresets::engineName (c.instrument)).set ("deviceRole", "instrument");
-        d.set ("deviceVendor", "YW Studio").set ("deviceID", "lynx.instrument." + kindId).set ("loaded", "true");
+        d.set ("deviceVendor", "YW Studio").set ("deviceID", "yw.instrument." + kindId).set ("loaded", "true");
         std::vector<int> automated;
         for (const auto& [ch, p] : automatedCh)
             if (ch == channelIndex)
@@ -2487,7 +2487,7 @@ struct Exp
             if (c.instrument == InstrumentKind::sampler || c.instrument == InstrumentKind::patcher || c.instrument == InstrumentKind::layer)
                 note ("YW Studio instrument settings beyond its sound (sampler page, Patcher graph, Layer children) not in the core state: " + c.name);
         }
-        stateFile (d, (c.name.empty() ? kindId : c.name) + ".lynxpreset", std::move (state));
+        stateFile (d, (c.name.empty() ? kindId : c.name) + ".ywpreset", std::move (state));
     }
 
     void instrumentDevice (Node& devices, const ChannelDef& c, int channelIndex, const std::string& trackId)
@@ -2538,7 +2538,7 @@ struct Exp
                 auto& d = devices.add ("Device");
                 const auto name = natives::effectMenuName (slot.kind);
                 d.set ("id", newId()).set ("name", name).set ("deviceName", "YW Studio " + name).set ("deviceRole", "audioFX");
-                d.set ("deviceVendor", "YW Studio").set ("deviceID", "lynx.effect." + std::to_string ((int) slot.kind)).set ("loaded", "true");
+                d.set ("deviceVendor", "YW Studio").set ("deviceID", "yw.effect." + std::to_string ((int) slot.kind)).set ("loaded", "true");
                 if (! automated.empty())
                 {
                     auto& params = d.add ("Parameters");
@@ -2563,7 +2563,7 @@ struct Exp
                     if (slot.sidechain >= 0 || slot.sidechain2 >= 0)
                         note ("Side-chain inputs of YW Studio effects (not written)");
                 }
-                stateFile (d, name + ".lynxfx", std::move (state));
+                stateFile (d, name + ".ywfx", std::move (state));
             }
             for (const auto& [k, id] : ids)
             {
@@ -2690,7 +2690,7 @@ int depthOf (const Song& song, int row)
 DawProjectExportResult exportDawProject (const Song& input, const DawProjectExportOptions& opt)
 {
     DawProjectExportResult res;
-    // track versions (round 190pe, a LYNX extra): DAWproject has none; each track goes over as the version it plays
+    // track versions (round 190pe, a YW extra): DAWproject has none; each track goes over as the version it plays
     std::optional<Song> stripped;
     if (trackversions::any (input))
     {
@@ -3383,4 +3383,4 @@ DawProjectExportResult exportDawProject (const Song& input, const DawProjectExpo
         x.note ("The project could not be written: " + err);
     return res;
 }
-} // namespace lynx
+} // namespace yw

@@ -2,7 +2,7 @@
 
 // The game controller poller (round 184a, slice S16): while Settings › MIDI › "Use a game controller" is on, the first
 // connected XInput pad is read 60 times a second and each change goes to `onChanges` (core/GamepadMap.h). Windows only
-// for now (design D18): xinput1_4.dll (or xinput9_1_0.dll) is loaded at run time, so LYNX has no new link dependency;
+// for now (design D18): xinput1_4.dll (or xinput9_1_0.dll) is loaded at run time, so YW has no new link dependency;
 // elsewhere the pad always reads as not connected. The object exists only while the option is on: no timer otherwise.
 // Also the hints overlay: the pad with what each button does, shown while Back is held.
 
@@ -12,7 +12,7 @@
 
 #include "core/GamepadMap.h"
 
-namespace lynx
+namespace yw
 {
 class GamepadInput final : private juce::Timer
 {
@@ -43,6 +43,6 @@ private:
     GetState getState = nullptr;
 };
 
-// The hints overlay: the pad drawn by LYNX with the current map.
+// The hints overlay: the pad drawn by YW with the current map.
 std::unique_ptr<juce::Component> makeGamepadHints();
-} // namespace lynx
+} // namespace yw

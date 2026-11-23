@@ -13,7 +13,7 @@
 #include <map>
 #include <mutex>
 
-namespace lynx::harmor
+namespace yw::harmor
 {
 namespace
 {
@@ -577,4 +577,4 @@ bool readWavMono (const std::string& path, SampleData& out)
     const std::vector<std::uint8_t> b ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
     return readWavMono (b, out);
 }
-} // namespace lynx::harmor
+} // namespace yw::harmor

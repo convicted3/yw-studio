@@ -1,6 +1,6 @@
 // FL Studio's Sawer (REA_rodada65 §3). See Sawer.h.
 //
-// The framework parts (wrapper, note allocation, arpeggiator, master gain, chorus, delay) follow LYNX's PoiZone port
+// The framework parts (wrapper, note allocation, arpeggiator, master gain, chorus, delay) follow YW's PoiZone port
 // (core/PoiZone.cpp, REA_rodada44), whose DLL functions are instruction-for-instruction those of Sawer's engine; the
 // rest is ported from Sawer's own machine code. Float/double types and the operation order of every expression are the
 // DLL's, so contraction stays off. Clean-room: behaviour described in our own words; no Image-Line code.
@@ -24,7 +24,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1077,7 +1077,7 @@ public:
     }
     void retune() noexcept { pitchOfs = (fine + transp) + uniShift; }
 
-    // FUN_180037910: the parameter plus the modulation matrix (velocity is the only source LYNX feeds)
+    // FUN_180037910: the parameter plus the modulation matrix (velocity is the only source YW feeds)
     float modulated (int i, float v) const noexcept
     {
         for (int s = 0; s < 6; ++s)
@@ -2474,10 +2474,10 @@ public:
             }
     }
 };
-// --------------------------------------------------------------------------------------------- LYNX front-end
+// --------------------------------------------------------------------------------------------- YW front-end
 //
 // As PoiZone (REA_rodada44 §1.4): FL hands the plugin Final.Vol = channel volume, Final.Pan = note pan + channel pan and
-// Final.Pitch = 100·(key − 60) + channel pitch; the wrapper turns them into the per-note tables, so LYNX's channel
+// Final.Pitch = 100·(key − 60) + channel pitch; the wrapper turns them into the per-note tables, so YW's channel
 // gains are not applied a second time. Velocity: Init.Vol = (11^(1.28·vel) − 1)/10, then the wrapper's MIDI velocity.
 // Max polyphony: 1 when the channel is mono, else the event value 0 (→ 24 voices). The song tempo drives the
 // arpeggiator and the tempo-synced LFO and delay.
@@ -2864,4 +2864,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace sawer
-} // namespace lynx
+} // namespace yw

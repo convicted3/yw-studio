@@ -1,29 +1,29 @@
-// Round 190fm: Live 12's MIDI Tools generators (core/MidiGenerate.h): Rhythm, Seed, Shape, Stacks and LYNX's one-voice
+// Round 190fm: Live 12's MIDI Tools generators (core/MidiGenerate.h): Rhythm, Seed, Shape, Stacks and YW's one-voice
 // Euclidean; their settings saved with the project (core/MidiGenerateOptions.h). Live's defaults are [DATA] (LIVE-FACTS
-// §4); what the controls do is LYNX's reading (the header's [INFERRED] notes), tested here as LYNX defines it.
+// §4); what the controls do is YW's reading (the header's [INFERRED] notes), tested here as YW defines it.
 
 #include "core/MidiGenerate.h"
 
 namespace mg190fm
 {
-inline lynx::midigen::Context bar (int bars = 1)
+inline yw::midigen::Context bar (int bars = 1)
 {
-    lynx::midigen::Context c;
+    yw::midigen::Context c;
     c.from = 0;
-    c.to = (std::int64_t) bars * 4 * lynx::ppq;
+    c.to = (std::int64_t) bars * 4 * yw::ppq;
     c.channel = 0;
-    c.grid = lynx::ppq / 4;
+    c.grid = yw::ppq / 4;
     c.seed = 7;
     return c;
 }
-inline lynx::midigen::ScaleRef aMinor() { return { 9, { 0, 2, 3, 5, 7, 8, 10 } }; }
-inline lynx::midigen::ScaleRef cMajor() { return { 0, { 0, 2, 4, 5, 7, 9, 11 } }; }
-inline bool inScale (const lynx::midigen::ScaleRef& s, int key)
+inline yw::midigen::ScaleRef aMinor() { return { 9, { 0, 2, 3, 5, 7, 8, 10 } }; }
+inline yw::midigen::ScaleRef cMajor() { return { 0, { 0, 2, 4, 5, 7, 9, 11 } }; }
+inline bool inScale (const yw::midigen::ScaleRef& s, int key)
 {
     const auto pc = ((key - s.root) % 12 + 12) % 12;
     return std::find (s.intervals.begin(), s.intervals.end(), pc) != s.intervals.end();
 }
-inline std::vector<int> keysOf (const lynx::midigen::Notes& notes)
+inline std::vector<int> keysOf (const yw::midigen::Notes& notes)
 {
     std::vector<int> k;
     for (const auto& n : notes)
@@ -34,7 +34,7 @@ inline std::vector<int> keysOf (const lynx::midigen::Notes& notes)
 
 TEST (mg190fm_defaults_are_lives)
 {
-    using namespace lynx::midigen;
+    using namespace yw::midigen;
     const Settings s;
     CHECK (s.isDefault() && s.tool == Settings::rhythm);
     const auto& r = s.rhythmOptions; // [DATA] RhythmAlgorithm
@@ -53,13 +53,13 @@ TEST (mg190fm_defaults_are_lives)
     CHECK (k.sequence[0].rule == 0 && k.sequence[0].duration == 1.0f && k.sequence[0].offset == 0.0f);
     CHECK (std::string (toolName (Settings::rhythm)) == "Rhythm" && std::string (toolName (Settings::euclidean)) == "Euclidean");
     // the project: never used = default (old projects are unchanged)
-    CHECK (lynx::Song {}.midiGenerate.isDefault());
+    CHECK (yw::Song {}.midiGenerate.isDefault());
 }
 
 TEST (mg190fm_note_values)
 {
-    using namespace lynx::midigen;
-    using lynx::ppq;
+    using namespace yw::midigen;
+    using yw::ppq;
     CHECK (std::string (noteValueName (7)) == "1/8" && noteValueTicks (7) == ppq / 2); // Live's default Step Duration 7 [SHOT]
     CHECK (std::string (noteValueName (5)) == "1/16" && noteValueTicks (5) == ppq / 4);
     CHECK (std::string (noteValueName (0)) == "1/64T" && noteValueTicks (0) == ppq / 16 * 2 / 3);
@@ -71,7 +71,7 @@ TEST (mg190fm_note_values)
 
 TEST (mg190fm_rhythm_patterns)
 {
-    using namespace lynx::midigen;
+    using namespace yw::midigen;
     CHECK (rhythmCount (8, 4) == 70 && rhythmCount (16, 8) == 12870 && rhythmCount (32, 16) == 601080390 && rhythmCount (8, 0) == 1);
     // pattern 0 is the Euclidean rhythm; the order wraps at C(steps, density)
     CHECK ((rhythmHits (8, 4, 0) == std::vector<int> { 0, 2, 4, 6 }));
@@ -79,7 +79,7 @@ TEST (mg190fm_rhythm_patterns)
     CHECK (rhythmHits (8, 4, 70) == rhythmHits (8, 4, 0) && rhythmHits (8, 4, -1) == rhythmHits (8, 4, 69));
     // pattern 1 swaps the last Euclidean hit for the first other step
     CHECK ((rhythmHits (8, 4, 1) == std::vector<int> { 0, 1, 2, 4 }));
-    CHECK ((rhythmHits (8, 4, 14) == std::vector<int> { 0, 2, 5, 7 })); // Live's default Pattern 14 in LYNX's order: x.x..x.x
+    CHECK ((rhythmHits (8, 4, 14) == std::vector<int> { 0, 2, 5, 7 })); // Live's default Pattern 14 in YW's order: x.x..x.x
     // every pattern is a different set of `density` hits
     std::set<std::vector<int>> seen;
     for (int p = 0; p < 70; ++p)
@@ -94,8 +94,8 @@ TEST (mg190fm_rhythm_patterns)
 
 TEST (mg190fm_rhythm_writes_the_pattern)
 {
-    using namespace lynx::midigen;
-    using lynx::ppq;
+    using namespace yw::midigen;
+    using yw::ppq;
     RhythmOptions o; // the defaults: 8 steps of 1/8, 4 hits, pattern 14, C1, accent every 4th hit
     auto out = rhythm (o, mg190fm::bar());
     const auto hits = rhythmHits (8, 4, 14);
@@ -115,7 +115,7 @@ TEST (mg190fm_rhythm_writes_the_pattern)
     o.offset = 0;
     o.period = 0; // no accents
     out = rhythm (o, mg190fm::bar());
-    CHECK (std::all_of (out.begin(), out.end(), [] (const lynx::Note& n) { return n.velocity < 1.0f; }));
+    CHECK (std::all_of (out.begin(), out.end(), [] (const yw::Note& n) { return n.velocity < 1.0f; }));
     // Shift rotates the steps later
     o = {};
     o.pattern = 0;
@@ -155,8 +155,8 @@ TEST (mg190fm_rhythm_writes_the_pattern)
 
 TEST (mg190fm_seed_random_notes)
 {
-    using namespace lynx::midigen;
-    using lynx::ppq;
+    using namespace yw::midigen;
+    using yw::ppq;
     SeedOptions o;
     const auto c = mg190fm::bar (4);
     const auto a = seed (o, c), b = seed (o, c);
@@ -208,9 +208,9 @@ TEST (mg190fm_seed_random_notes)
 
 TEST (mg190fm_shape_follows_the_levels)
 {
-    using namespace lynx::midigen;
-    using lynx::ppq;
-    // the presets: LYNX's formulas
+    using namespace yw::midigen;
+    using yw::ppq;
+    // the presets: YW's formulas
     const auto up = shapePreset (ShapeOptions::up), arc = shapePreset (ShapeOptions::arcUp), arcDown = shapePreset (ShapeOptions::arcDown);
     const auto bounce = shapePreset (ShapeOptions::bounceDown), bounceUp = shapePreset (ShapeOptions::bounceUp), flat = shapePreset (ShapeOptions::flat);
     CHECK (up[0] == 0.0f && up[20] == 1.0f && std::abs (up[5] - 0.25f) < 1e-6f);
@@ -223,7 +223,7 @@ TEST (mg190fm_shape_follows_the_levels)
     CHECK (shapeAt (o, 0.0) == 0.0 && shapeAt (o, 1.0) == 1.0 && std::abs (shapeAt (o, 0.5) - 0.5) < 1e-6);
     auto out = shape (o, mg190fm::bar());
     CHECK (out.size() == 16 && out[0].key == 60 && out[0].start == 0 && out[0].length == ppq / 4);
-    CHECK (out[8].key == 72 && out[15].key >= 82 && std::is_sorted (out.begin(), out.end(), [] (const lynx::Note& a, const lynx::Note& b) { return a.key < b.key; }));
+    CHECK (out[8].key == 72 && out[15].key >= 82 && std::is_sorted (out.begin(), out.end(), [] (const yw::Note& a, const yw::Note& b) { return a.key < b.key; }));
     // Rate: a note value instead of the grid
     o.rate = 1 + 7; // 1/8
     out = shape (o, mg190fm::bar());
@@ -265,9 +265,9 @@ TEST (mg190fm_shape_follows_the_levels)
 
 TEST (mg190fm_stacks_chords)
 {
-    using namespace lynx::midigen;
-    using lynx::ppq;
-    const auto& bank = lynxChordBank();
+    using namespace yw::midigen;
+    using yw::ppq;
+    const auto& bank = ywChordBank();
     CHECK (bank.sets.size() == 3);
     for (const auto& s : bank.sets)
         CHECK ((s.scaleSize == 5 || s.scaleSize == 6 || s.scaleSize == 7) && s.rules.size() == 16);
@@ -320,8 +320,8 @@ TEST (mg190fm_stacks_chords)
 
 TEST (mg190fm_stacks_user_chord_bank)
 {
-    using namespace lynx::midigen;
-    // the layout of a user's .stacks file (LYNX's own test content, not Live's bank)
+    using namespace yw::midigen;
+    // the layout of a user's .stacks file (YW's own test content, not Live's bank)
     const std::string json = R"({ "name": "test", "chord_rulesets": [
         { "scale_cardinality": 7, "rules": [ [0, 2, 4, 6, 8], [0, 4] ] },
         { "scale_cardinality": 12, "other": "x", "rules": [ [0, 4, 7], [0, -12, 7] ] },
@@ -348,8 +348,8 @@ TEST (mg190fm_stacks_user_chord_bank)
 
 TEST (mg190fm_euclid_and_generate)
 {
-    using namespace lynx::midigen;
-    using lynx::ppq;
+    using namespace yw::midigen;
+    using yw::ppq;
     EuclidOptions e; // 16 steps, 8 hits of 1/16
     auto out = euclid (e, mg190fm::bar());
     CHECK (out.size() == 8 && out[1].start == ppq / 2 && out[0].length == ppq / 4 && out[0].key == 36);
@@ -358,21 +358,21 @@ TEST (mg190fm_euclid_and_generate)
     out = euclid (e, mg190fm::bar());
     CHECK (out.size() == 5);
     for (const auto& n : out)
-        CHECK (lynx::notetools::euclideanHit (16, 5, 0, (int) (n.start / (ppq / 4))));
+        CHECK (yw::notetools::euclideanHit (16, 5, 0, (int) (n.start / (ppq / 4))));
     // the chooser's tool runs
     Settings s;
     s.tool = Settings::shape;
-    CHECK (generate (s, mg190fm::bar(), lynxChordBank()) == shape (s.shapeOptions, mg190fm::bar()));
+    CHECK (generate (s, mg190fm::bar(), ywChordBank()) == shape (s.shapeOptions, mg190fm::bar()));
     s.tool = Settings::stacks;
-    CHECK (generate (s, mg190fm::bar(), lynxChordBank()).size() == 3);
+    CHECK (generate (s, mg190fm::bar(), ywChordBank()).size() == 3);
     s.tool = 99;
-    CHECK (generate (s, mg190fm::bar(), lynxChordBank()).empty());
+    CHECK (generate (s, mg190fm::bar(), ywChordBank()).empty());
 }
 
 TEST (mg190fm_generate_replaces_the_range)
 {
-    using namespace lynx;
-    using namespace lynx::midigen;
+    using namespace yw;
+    using namespace yw::midigen;
     Pattern p;
     const auto add = [&p] (std::int64_t start, int channel, int key) {
         Note n;
@@ -414,7 +414,7 @@ TEST (mg190fm_generate_replaces_the_range)
 
 TEST (mg190fm_settings_text_round_trip)
 {
-    using namespace lynx::midigen;
+    using namespace yw::midigen;
     Settings s;
     CHECK (decode (encode (s)) == s && decode ("") == s && decode ("nonsense\nfoo=1\n") == s);
     s.tool = Settings::seed;

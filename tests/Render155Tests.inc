@@ -7,7 +7,7 @@
 namespace render155
 {
 // A source that is always on (a hosted instrument holding a drone): 0.25 on both sides whatever the notes.
-struct Drone final : lynx::Instrument
+struct Drone final : yw::Instrument
 {
     void prepare (double) noexcept override {}
     void noteOn (int, float) noexcept override {}
@@ -26,7 +26,7 @@ struct Drone final : lynx::Instrument
 // An effect whose saved state (output gain 0.5) only takes effect after `blocks` processed blocks, or once a clock
 // reaches `atTime` — as a bridged plugin applies a state forwarded over IPC a few blocks / milliseconds later. Before
 // that it runs with its default gain (1.0): the "half-loaded effect".
-struct LateState final : lynx::Effect
+struct LateState final : yw::Effect
 {
     int blocks = 0;
     double atTime = -1.0;
@@ -37,7 +37,7 @@ struct LateState final : lynx::Effect
 
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void process (float* l, float* r, int n, const lynx::EffectParams&, double) noexcept override
+    void process (float* l, float* r, int n, const yw::EffectParams&, double) noexcept override
     {
         ++processed;
         const auto landed = (blocks > 0 && processed > blocks) || (atTime >= 0.0 && clock != nullptr && *clock >= atTime) || (blocks == 0 && atTime < 0.0);
@@ -53,18 +53,18 @@ struct LateState final : lynx::Effect
     }
 };
 
-lynx::Song droneSong()
+yw::Song droneSong()
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (1);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::plugin;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (1);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::plugin;
     c.plugin.id = "drone";
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::plugin;
     fx.plugin.id = "late-state";
     s.mixer[1].effects.push_back (fx);
     return s;
@@ -73,18 +73,18 @@ lynx::Song droneSong()
 struct Rig
 {
     std::shared_ptr<LateState> effect = std::make_shared<LateState>();
-    std::unique_ptr<const lynx::RackState> state;
-    lynx::RackRenderer renderer;
+    std::unique_ptr<const yw::RackState> state;
+    yw::RackRenderer renderer;
     static constexpr int block = 512;
     std::vector<float> l = std::vector<float> (block), r = std::vector<float> (block);
 
     Rig()
     {
-        lynx::RackState::Factories f;
-        f.pluginInstruments = [] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Instrument> { return std::make_shared<Drone>(); };
+        yw::RackState::Factories f;
+        f.pluginInstruments = [] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Instrument> { return std::make_shared<Drone>(); };
         auto fx = effect;
-        f.pluginEffects = [fx] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { return fx; };
-        state = lynx::RackState::build (droneSong(), nullptr, 48000.0, f);
+        f.pluginEffects = [fx] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { return fx; };
+        state = yw::RackState::build (droneSong(), nullptr, 48000.0, f);
         renderer.prepare (48000.0, block);
     }
 
@@ -123,15 +123,15 @@ TEST (render155_warm_up_waits_for_a_state_applied_after_n_blocks)
     Rig warm;
     warm.effect->blocks = 60; // ~0.64 s at 48 kHz / 512
     double clock = 0.0;
-    lynx::warmup::Settings settings;
-    const auto result = lynx::warmup::run (
-        settings, 48000.0, [&] { clock += 0.0005; return warm.discard(); }, [&] { lynx::warmup::Hash h; h.addValue (warm.effect->gain); return h.value; },
+    yw::warmup::Settings settings;
+    const auto result = yw::warmup::run (
+        settings, 48000.0, [&] { clock += 0.0005; return warm.discard(); }, [&] { yw::warmup::Hash h; h.addValue (warm.effect->gain); return h.value; },
         [&] { return clock; }, [&] (double s) { clock += s; });
     CHECK (! result.timedOut && ! result.cancelled);
     CHECK (result.blocks > 60);
     CHECK (result.audioSeconds >= settings.minAudioSeconds);
     CHECK (result.signatureChanges == 1);
-    warm.renderer.prepare (48000.0, Rig::block); // as the engine does: LYNX's own units start clean
+    warm.renderer.prepare (48000.0, Rig::block); // as the engine does: YW's own units start clean
     const auto warmFirst = warm.firstSample();
     CHECK (std::abs (warmFirst - expected) < 1.0e-6f);
     // and every sample of the first block
@@ -149,9 +149,9 @@ TEST (render155_warm_up_waits_for_a_state_applied_late_in_real_time)
     warm.effect->atTime = 2.0;
     warm.effect->firstNewsAt = 0.3;
     warm.effect->clock = &clock;
-    lynx::warmup::Settings settings;
-    const auto result = lynx::warmup::run (
-        settings, 48000.0, [&] { clock += 0.001; return warm.discard(); }, [&] { lynx::warmup::Hash h; h.addValue (warm.effect->gain); return h.value; },
+    yw::warmup::Settings settings;
+    const auto result = yw::warmup::run (
+        settings, 48000.0, [&] { clock += 0.001; return warm.discard(); }, [&] { yw::warmup::Hash h; h.addValue (warm.effect->gain); return h.value; },
         [&] { return clock; }, [&] (double s) { clock += s; });
     CHECK (! result.timedOut);
     CHECK (result.signatureChanges >= 5); // (one per value that arrived)
@@ -172,9 +172,9 @@ TEST (render155_warm_up_minimum_time_covers_a_silent_late_load)
     double clock = 0.0;
     warm.effect->atTime = 0.8;
     warm.effect->clock = &clock;
-    const auto result = lynx::warmup::run (
-        lynx::warmup::Settings {}, 48000.0, [&] { clock += 0.001; return warm.discard(); },
-        [&] { lynx::warmup::Hash h; h.addValue (warm.effect->gain); return h.value; }, [&] { return clock; }, [&] (double s) { clock += s; });
+    const auto result = yw::warmup::run (
+        yw::warmup::Settings {}, 48000.0, [&] { clock += 0.001; return warm.discard(); },
+        [&] { yw::warmup::Hash h; h.addValue (warm.effect->gain); return h.value; }, [&] { return clock; }, [&] (double s) { clock += s; });
     CHECK (result.wallSeconds >= 1.0);
     Rig ready;
     const auto expected = ready.firstSample();
@@ -188,8 +188,8 @@ TEST (render155_warm_up_minimums_timeout_and_cancel)
     {
         double clock = 0.0;
         int blocks = 0;
-        lynx::warmup::Settings s;
-        const auto r = lynx::warmup::run (
+        yw::warmup::Settings s;
+        const auto r = yw::warmup::run (
             s, 48000.0, [&] { ++blocks; clock += 0.0001; return 512; }, [] { return std::uint64_t { 7 }; }, [&] { return clock; },
             [&] (double d) { clock += d; });
         CHECK (! r.timedOut && r.signatureChanges == 0);
@@ -200,9 +200,9 @@ TEST (render155_warm_up_minimums_timeout_and_cancel)
     {
         double clock = 0.0;
         std::uint64_t n = 0;
-        lynx::warmup::Settings s;
+        yw::warmup::Settings s;
         s.maxWallSeconds = 2.0;
-        const auto r = lynx::warmup::run (
+        const auto r = yw::warmup::run (
             s, 48000.0, [&] { clock += 0.001; return 512; }, [&] { return ++n; }, [&] { return clock; }, [&] (double d) { clock += d; });
         CHECK (r.timedOut && r.wallSeconds >= 2.0 && r.wallSeconds < 2.1);
     }
@@ -210,13 +210,13 @@ TEST (render155_warm_up_minimums_timeout_and_cancel)
     {
         double clock = 0.0;
         int blocks = 0;
-        const auto r = lynx::warmup::run (
-            lynx::warmup::Settings {}, 48000.0, [&] { clock += 0.001; return ++blocks > 5 ? -1 : 512; }, [] { return std::uint64_t { 1 }; },
+        const auto r = yw::warmup::run (
+            yw::warmup::Settings {}, 48000.0, [&] { clock += 0.001; return ++blocks > 5 ? -1 : 512; }, [] { return std::uint64_t { 1 }; },
             [&] { return clock; }, [&] (double d) { clock += d; });
         CHECK (r.cancelled && r.blocks == 5);
     }
     // quantised: float noise in a cached parameter value is not a change
-    lynx::warmup::Hash a, b, c;
+    yw::warmup::Hash a, b, c;
     a.addValue (0.5f);
     b.addValue (0.5f + 1.0e-7f);
     c.addValue (0.51f);
@@ -225,11 +225,11 @@ TEST (render155_warm_up_minimums_timeout_and_cancel)
 
 TEST (render155_export_option_plugin_warm_up)
 {
-    lynx::exportopts::Options o;
+    yw::exportopts::Options o;
     CHECK (o.pluginWarmUp); // on by default
-    CHECK (lynx::exportopts::fromText ("").pluginWarmUp);
+    CHECK (yw::exportopts::fromText ("").pluginWarmUp);
     o.pluginWarmUp = false;
-    CHECK (! lynx::exportopts::fromText (lynx::exportopts::toText (o)).pluginWarmUp);
+    CHECK (! yw::exportopts::fromText (yw::exportopts::toText (o)).pluginWarmUp);
     o.pluginWarmUp = true;
-    CHECK (lynx::exportopts::fromText (lynx::exportopts::toText (o)).pluginWarmUp);
+    CHECK (yw::exportopts::fromText (yw::exportopts::toText (o)).pluginWarmUp);
 }

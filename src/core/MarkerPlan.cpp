@@ -6,7 +6,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -333,4 +333,4 @@ const char* actionTag (int action) noexcept
     }
 }
 } // namespace markers
-} // namespace lynx
+} // namespace yw

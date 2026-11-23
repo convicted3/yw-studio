@@ -7,9 +7,9 @@
 // the product of the two bands' −4.1 dB, not a flat −12). So at rest (g = 1) the effect is exactly transparent,
 // and only a working band shifts the phase.
 //
-// Construction (LYNX's own, textbook spectral factorisation): with Linkwitz-Riley crossovers of order 2n,
+// Construction (YW's own, textbook spectral factorisation): with Linkwitz-Riley crossovers of order 2n,
 // |L| = 1 / (1 + x_h), |H| = x_l / (1 + x_l), x = (Ω / Ωc)^{2n}, Ω = tan (πf / fs) (the bilinear
-// transform's prewarped axis, so the digital magnitudes are exactly those of LYNX's digital crossovers). Then
+// transform's prewarped axis, so the digital magnitudes are exactly those of YW's digital crossovers). Then
 //   |F| = Num (u) / ((1 + x_l)(1 + x_h)),  u = Ω^{2n},  Num = (1 + x_l)(1 + x_h) + (g − 1)·x_l   (middle band)
 // and F = S², |S|² = |F|: S's poles are the two Butterworth sets of the crossovers, its zeros the left-half-plane
 // roots of Num (−s²): Num is a quadratic in u, so each of its roots t gives the 2n solutions of s^{2n} = (−1)^n u_t
@@ -23,7 +23,7 @@
 #include <complex>
 #include <vector>
 
-namespace lynx::minphase
+namespace yw::minphase
 {
 inline constexpr double pi = 3.14159265358979323846;
 
@@ -554,4 +554,4 @@ private:
     int count = 0;
     double gain = 1.0;
 };
-} // namespace lynx::minphase
+} // namespace yw::minphase

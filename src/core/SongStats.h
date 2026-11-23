@@ -8,7 +8,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::songstats
+namespace yw::songstats
 {
 // Notes of `pattern` that sound at `localTick` (a step note lasts at least one step).
 inline int notesAt (const Song& song, const Pattern& pattern, double localTick)
@@ -74,4 +74,4 @@ inline int automationClipsAt (const Song& song, double tick)
             ++count;
     return count;
 }
-} // namespace lynx::songstats
+} // namespace yw::songstats

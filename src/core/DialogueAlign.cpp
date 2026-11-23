@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace lynx::align
+namespace yw::align
 {
 namespace
 {
@@ -304,4 +304,4 @@ std::vector<float> warp (const std::vector<float>& take, double sr, const Map& m
             out[k] /= norm[k];
     return out;
 }
-} // namespace lynx::align
+} // namespace yw::align

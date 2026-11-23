@@ -20,7 +20,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -136,7 +136,7 @@ bool parse (const std::vector<std::uint8_t>& d, Params& out, std::size_t* settin
     auto img = std::make_shared<Image>();
     if (! decodeBmp (d.data() + at, (std::size_t) len, *img) || img->height <= 2)
         return false;
-    // FUN_007300d0: taller than "Max height": FL scales the image down (its image scaler, not decoded) — LYNX keeps
+    // FUN_007300d0: taller than "Max height": FL scales the image down (its image scaler, not decoded) — YW keeps
     // every row by nearest neighbour
     const auto maxH = p.P[14];
     if (img->height > maxH && maxH > 2)
@@ -523,7 +523,7 @@ public:
     std::vector<float> bufA, bufB;
 };
 
-// ------------------------------------------------------------------------------------------------------- LYNX front-end
+// ------------------------------------------------------------------------------------------------------- YW front-end
 //
 // As 3x Osc (REA_rodada47 §2.1): Final.Vol = channel volume × Init.Vol, Final.Pan = note pan + channel pan, Final.Pitch =
 // 100·(key − 60) + channel pitch + note cents; FL's sequencer ticks step the processor's articulators.
@@ -952,4 +952,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace beepmap
-} // namespace lynx
+} // namespace yw

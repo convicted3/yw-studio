@@ -2,7 +2,7 @@
 
 // FL Studio Mobile project files (.flm, also .songtmpl templates): the file's structure as data, round 182c (format:
 // docs/analise/FLM_FORMAT.md). Clean-room: written from that page's description of the layout; no Image-Line code
-// was used. Nothing here knows LYNX's Song; core/FlmImport turns a Project into one.
+// was used. Nothing here knows YW's Song; core/FlmImport turns a Project into one.
 //
 // A file is "10LF" followed by little-endian chunks (4-byte tag, u32 body size, body). Containers inside start with a
 // versioned 4-byte magic ("10KR" rack, "20HC" channel, "20LC" clip, "20LS" sample) and hold chunks of their own. Fields
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::flm
+namespace yw::flm
 {
 constexpr int ticksPerBeat = 128; // clip starts and event times (FLM_FORMAT §4)
 
@@ -226,4 +226,4 @@ namespace module
 constexpr std::uint32_t miniSynth = 0, dwSampler = 1, gmSynth = 2, transistorBass = 19, superSaw = 23, slicer = 33, threeOsc = 39,
                         soundFont = 52, tuner = 24, analyzer = 26;
 }
-} // namespace lynx::flm
+} // namespace yw::flm

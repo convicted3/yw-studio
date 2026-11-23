@@ -8,7 +8,7 @@
 // FL's Fruity Phaser (docs/analise/REA_rodada105_phaser.md). Single-precision arithmetic in the order FL's plugin
 // performs it; the coefficients that FL computes in double are computed in double here too.
 
-namespace lynx::phaserfx
+namespace yw::phaserfx
 {
 namespace
 {
@@ -279,4 +279,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> make() { return std::make_unique<PhaserEffect>(); }
-} // namespace lynx::phaserfx
+} // namespace yw::phaserfx

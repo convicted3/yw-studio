@@ -10,7 +10,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::midiclipboard
+namespace yw::midiclipboard
 {
 namespace
 {
@@ -87,4 +87,4 @@ bool hasMidi()
     return local().getSize() > 0;
 #endif
 }
-} // namespace lynx::midiclipboard
+} // namespace yw::midiclipboard

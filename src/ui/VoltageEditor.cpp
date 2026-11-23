@@ -5,11 +5,11 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-// The Voltage Controller's settings page (LYNX's own layout of FL's controls, REA_rodada164a §6): the global switches
+// The Voltage Controller's settings page (YW's own layout of FL's controls, REA_rodada164a §6): the global switches
 // on top, then one row per output — its source, offset, scale and polarity, and for each extra pair the mixer insert
 // it feeds.
 class VoltageEditor final : public juce::Component,
@@ -259,4 +259,4 @@ std::unique_ptr<juce::Component> makeVoltageControllerEditor (AudioEngine& engin
                    : nullptr;
     }, channel);
 }
-} // namespace lynx
+} // namespace yw

@@ -21,7 +21,7 @@
 #include "platform/Paths.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -34,7 +34,7 @@ constexpr std::size_t maxJsonBytes = 64u << 20;
 // so an edit made during an upload waits for at most two media pieces, ~0.5 s at 1 Mbit/s instead of ~10 s; the queue
 // still refills before it runs dry at the relay's 4 MiB/s)
 constexpr std::size_t uploadBacklog = 256u << 10;
-const juce::String tokenPrefix = "lynx-media:";
+const juce::String tokenPrefix = "yw-media:";
 constexpr juce::int64 inlineHashBytes = 1 << 20; // files above this are hashed off the message thread
 constexpr int chatShown = 60;                    // chat lines a late guest gets
 constexpr juce::int64 silenceMs = 35000;         // nothing at all from the relay for this long: the connection is dead
@@ -274,7 +274,7 @@ LiveSessionManager::~LiveSessionManager()
     if (! host && ! abandoned && replica && guestJournalFile != juce::File()
         && (state == State::live || state == State::waitingHost || state == State::reconnecting))
     {
-        // a guest's LYNX SHARE closes during the session (round 190ah): no goodbye — the host keeps its place, and the
+        // a guest's YW Studio closes during the session (round 190ah): no goodbye — the host keeps its place, and the
         // next start offers to go back in as the same guest, with the project as it is now
         quitting = true;
         writeGuestJournal (true);
@@ -422,7 +422,7 @@ void LiveSessionManager::start (const Options& o)
     renderer = std::make_unique<Worker> (options.inlineWork, true);
     std::string why;
     if (offline::enabled())
-        return setState (State::ended, tr ("Live sessions are off: YW Studio is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection."));
+        return setState (State::ended, tr ("Live sessions are off: YW Studio is in offline mode (YW_OFFLINE or --offline) and opens no network connection."));
     if (! livelink::Connection::available (&why))
         return setState (State::ended, tr ("Live sessions need a newer libcurl on this computer ({0})", { str (why) }));
 
@@ -444,7 +444,7 @@ void LiveSessionManager::start (const Options& o)
         },
         false);
     {
-        // the song in the form the guests receive it (the .lynx JSON rounds a few values, e.g. floats a computation
+        // the song in the form the guests receive it (the .yw JSON rounds a few values, e.g. floats a computation
         // made): from now on every copy, this one included, holds exactly the same values
         Song rounded = engine.getSong();
         live::apply (rounded, roundTrip (live::diff (Song(), rounded)));
@@ -536,7 +536,7 @@ void LiveSessionManager::join (const juce::String& code, const Options& o)
     renderer = std::make_unique<Worker> (options.inlineWork, true);
     std::string why;
     if (offline::enabled())
-        return setState (State::ended, tr ("Live sessions are off: YW Studio is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection."));
+        return setState (State::ended, tr ("Live sessions are off: YW Studio is in offline mode (YW_OFFLINE or --offline) and opens no network connection."));
     if (! livelink::Connection::available (&why))
         return setState (State::ended, tr ("Live sessions need a newer libcurl on this computer ({0})", { str (why) }));
     const auto parsed = livecrypto::parseCode (utf8 (code));
@@ -891,7 +891,7 @@ void LiveSessionManager::handleEvent (const livelink::Event& e)
             const int peer = (int) ctl["peer"];
             if (! host && peer == hostPeer && hostPeer != 0 && state == State::live)
             {
-                // the host's connection dropped (or its LYNX SHARE closed without ending): wait for it, edits wait too
+                // the host's connection dropped (or its YW Studio closed without ending): wait for it, edits wait too
                 hostPeer = 0;
                 droppedAtMs = juce::Time::currentTimeMillis();
                 uploads.clear();
@@ -1053,7 +1053,7 @@ void LiveSessionManager::handleMessage (int from, const juce::var& m)
             return onResume (from, m);
         if (t == "bye" && m["token"].toString().isNotEmpty())
         {
-            // a guest whose LYNX SHARE restarted chose not to come back (round 190ah): its place is free again
+            // a guest whose YW Studio restarted chose not to come back (round 190ah): its place is free again
             const auto tag = (std::uint32_t) (int) m["tag"];
             if (auto gone = away.find (tag); gone != away.end() && gone->second.token == m["token"].toString())
             {
@@ -2152,7 +2152,7 @@ void LiveSessionManager::handleMediaChunk (int from, const std::uint8_t* data, s
     if (w.got == 0 && index != 0)
         return;
     // round 190oh: we asked to go on from piece `got` (reroute) but the sender starts again (it no longer has what it
-    // sent before, or an older LYNX SHARE): start again too
+    // sent before, or an older YW Studio): start again too
     if (index == 0 && w.got > 0 && w.resumeAsked)
     {
         part.deleteFile();
@@ -3442,4 +3442,4 @@ void LiveSessionManager::maybeRenderStandIns()
         };
     });
 }
-} // namespace lynx
+} // namespace yw

@@ -4,7 +4,7 @@
 
 namespace pg190id
 {
-using namespace lynx;
+using namespace yw;
 
 int clipsOf (const Song& song, ClipKind kind)
 {
@@ -40,7 +40,7 @@ std::vector<float> render (const Song& song, const perfprojects::Samples& sample
 
 TEST (perfgate_projects_have_the_promised_size)
 {
-    using namespace lynx;
+    using namespace yw;
     perfprojects::Samples samples;
     const auto big = perfprojects::big200 (samples);
     CHECK (big.channels.size() == 200);
@@ -48,10 +48,10 @@ TEST (perfgate_projects_have_the_promised_size)
     CHECK (pg190id::clipsOf (big, ClipKind::pattern) + pg190id::clipsOf (big, ClipKind::audio) == 2000);
     CHECK (pg190id::clipsOf (big, ClipKind::automation) == 200);
     CHECK (big.automations.size() == 200);
-    int lynxEffects = 0;
+    int ywEffects = 0;
     for (const auto& m : big.mixer)
-        lynxEffects += (int) m.effects.size();
-    CHECK (lynxEffects == 100 * 2 + 25 + 20 * 3 + 2);
+        ywEffects += (int) m.effects.size();
+    CHECK (ywEffects == 100 * 2 + 25 + 20 * 3 + 2);
     CHECK (samples.size() == 8 + 40); // the samplers' one-shots and the audio channels' loops
     const auto automation = perfprojects::automation();
     CHECK (automation.automations.size() == 401);
@@ -74,7 +74,7 @@ TEST (perfgate_projects_have_the_promised_size)
 
 TEST (perfgate_projects_are_the_same_every_time_and_play)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto* name : { "big200", "automation" })
     {
         Song a, b;
@@ -112,7 +112,7 @@ TEST (perfgate_tempo_scan_reads_only_the_tempo_clips_and_gives_the_same_tempo)
     // the shifter plan scans the song's tempo every 16th; it now reads only the clips tempoAt can use
     // (tempomap::tempoClips): the same tempo everywhere, with automation clips (two overlapping, one muted) and pattern
     // Tempo events
-    using namespace lynx;
+    using namespace yw;
     auto song = perfprojects::automation(); // (400 automation clips of other targets + one tempo clip)
     AutomationTarget tempo;
     tempo.kind = AutomationTargetKind::tempo;
@@ -138,7 +138,7 @@ TEST (render_ahead_probe_keeps_four_times_fewer_overruns_for_up_to_five_percent_
 {
     // owner decision 0.1.30 (round perfgate190id): with 4x fewer overruns or better, up to +5 % CPU keeps render-ahead
     // on; the 0.1.28 rule (fewer overruns at up to +2 %) and the CPU-win rule stay as they were
-    using namespace lynx;
+    using namespace yw;
     const auto v = [] (double cpuOff, double cpuOn, double overOff, double overOn) {
         return RenderAhead::probeVerdict (cpuOff, cpuOn, overOff / 60.0, overOn / 60.0); // (per minute -> per second)
     };

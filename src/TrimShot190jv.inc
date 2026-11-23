@@ -1,11 +1,11 @@
-    // --trimshot190jv <folder> (round 190jv): FL's Mixer menu › "Trim unused tracks" drawn offscreen for the FL | LYNX
+    // --trimshot190jv <folder> (round 190jv): FL's Mixer menu › "Trim unused tracks" drawn offscreen for the FL | YW
     // pairs — the mixer menu with the item, FL's two questions ("Remove unused tracks" with its two choices, then the
     // "This will delete N unused mixer track(s)" confirmation), and the mixer of a small project before and after each
     // choice (one undo step brings it back). Run it again with "--shot-scale 1.5 --shot-suffix @150" for the 150 %
     // pictures. <folder>/checks.txt lists what was checked. Included in the app class of Main.cpp.
     bool runTrimShot190jv (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -68,7 +68,7 @@
             write (shot::snapshot (mixerView), name);
         };
 
-        // 1. the menu: FL's Options section has it after View / Detached and a separator; LYNX's Mixer section after
+        // 1. the menu: FL's Options section has it after View / Detached and a separator; YW's Mixer section after
         //    Disk recording, Plugin delay compensation and Mixer layout
         const auto menu = strips.buildMenu (1);
         juce::StringArray items;
@@ -78,7 +78,7 @@
         check ("menu_item", at > 0, juce::String (at));
         check ("menu_after_layout_and_separator", at > 1 && items[at - 1] == "-" && items[at - 2] == tr ("Mixer layout"),
                items[at - 2] + " | " + items[at - 1]);
-        check ("menu_before_the_lynx_options", items[at + 1] == "-");
+        check ("menu_before_the_yw_options", items[at + 1] == "-");
         saveMenus (juce::StringArray { "Mixer track" }, std::vector<juce::PopupMenu> { menu }, shot::fileName (folder.getChildFile ("trim-01-menu.png").getFullPathName()));
 
         // 2. FL's questions

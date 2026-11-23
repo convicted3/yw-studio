@@ -1,5 +1,5 @@
 // Round 190kw (Saturn 2 -> Ember): Ember's characters that are the reference's styles run the reference's own laws when
-// the hidden revision is on (/mnt/e/lynx-work/rea190kw/sat/HANDOFF.md; docs/PARITY.md "Round 190kw").
+// the hidden revision is on (/mnt/e/yw-work/rea190kw/sat/HANDOFF.md; docs/PARITY.md "Round 190kw").
 // - Each style = a curve (arctan, x / (1 + x), tanh, sine, 2nd / 3rd order, tube, rectifier) with a power and a negative-side
 //   scale, a drive range (pre-gain lo … hi dB over the reference's 0 … 100 %) and the level compensation that keeps a sine
 //   at the style's reference level at its peak-to-peak level, its EQ before / after the curve and the band tone stack.
@@ -14,7 +14,7 @@
 
 namespace parity190kwSat
 {
-namespace em = lynx::mixsuite::ember;
+namespace em = yw::mixsuite::ember;
 // a 220 Hz tone with a 3.1 kHz partial, rising from -40 to 0 dBFS over the render, and a decaying noise burst each 0.4 s
 inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
 {
@@ -33,9 +33,9 @@ inline void signal (std::vector<float>& l, std::vector<float>& r, double sr)
         r[(std::size_t) i] = (float) (0.8 * v);
     }
 }
-inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void render (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     const int n = (int) l.size();
     for (int off = 0; off < n; off += 256)
@@ -45,7 +45,7 @@ inline void render (const lynx::EffectSlot& s, double sr, std::vector<float>& l,
 
 TEST (parity190kw_ember_saturn_law_is_hidden_new_and_translated_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     const auto& info = effectInfo (EffectKind::ember);
     CHECK (info.params.size() == (std::size_t) em::count && em::revision == em::count && em::lawRate == em::count + 1);
@@ -80,7 +80,7 @@ TEST (parity190kw_ember_saturn_law_is_hidden_new_and_translated_run_it_old_proje
 
 TEST (parity190kw_ember_saturn_curves_drive_and_level_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     constexpr double halfPi = 1.5707963267948966;
     // arctan with a negative-side scale (style 12: B = 0.2)
@@ -136,7 +136,7 @@ TEST (parity190kw_ember_saturn_curves_drive_and_level_laws)
 
 TEST (parity190kw_ember_revision0_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     struct Case
     {
@@ -148,7 +148,7 @@ TEST (parity190kw_ember_revision0_renders_as_the_base_commit_did)
     };
     // 1.6 s of parity190kwSat::signal in blocks of 256: FNV-1a of the float bits and the energy, revision 0 (a project saved
     // before the round). Taken with the round's objects; fxrender renders of the same settings through the base commit's
-    // and the round's binaries are byte-identical (/mnt/e/lynx-work/rea190kw/sat/ident.sh: 0 of 48 files differ)
+    // and the round's binaries are byte-identical (/mnt/e/yw-work/rea190kw/sat/ident.sh: 0 of 48 files differ)
     const Case cases[] = {
 #include "Parity190kwSatGold.inc" // (rollup step 9: relative to this file; CMake has no repository root on the include path)
     };
@@ -190,7 +190,7 @@ TEST (parity190kw_ember_revision0_renders_as_the_base_commit_did)
 namespace parity190kwSat
 {
 // the gain (dB) of a law band at small signal: a sine of `hz` at −40 dBFS through Ember (rms of the last half vs the input's)
-inline double sineGainDb (const lynx::EffectSlot& s, double hz, double dbfs = -40.0, double sr = 48000.0)
+inline double sineGainDb (const yw::EffectSlot& s, double hz, double dbfs = -40.0, double sr = 48000.0)
 {
     const int n = (int) (1.2 * sr);
     const double a = std::pow (10.0, dbfs / 20.0) * std::sqrt (2.0);
@@ -205,7 +205,7 @@ inline double sineGainDb (const lynx::EffectSlot& s, double hz, double dbfs = -4
 
 TEST (parity190lg_ember_saturn_channel_clipper_butterworth_cuts_and_dc)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     // the reference's channel soft clipper (threshold 0 dB): small-signal slope 9/8, ceiling 1 from |x| = 4/3, odd, smooth
     CHECK (std::abs (em::saturnClip (1e-4f) / 1e-4f - 1.125f) < 1e-4f);

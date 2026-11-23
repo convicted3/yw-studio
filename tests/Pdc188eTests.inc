@@ -9,7 +9,7 @@
 namespace pdc188e
 {
 // where an impulse put in at `at` comes out (the largest |sample|), through `fx` in blocks of 512
-int delayOf (lynx::Effect& fx, const lynx::EffectParams& params, int at = 64, int frames = 8192)
+int delayOf (yw::Effect& fx, const yw::EffectParams& params, int at = 64, int frames = 8192)
 {
     std::vector<float> l ((std::size_t) frames, 0.0f), r ((std::size_t) frames, 0.0f);
     l[(std::size_t) at] = r[(std::size_t) at] = 0.25f; // (under the limiter's threshold)
@@ -23,16 +23,16 @@ int delayOf (lynx::Effect& fx, const lynx::EffectParams& params, int at = 64, in
 }
 
 // FL's Fruity Limiter with an ~11 ms look-ahead (979 samples at 44.1 kHz: the delay the reporter measured)
-lynx::EffectSlot limiter()
+yw::EffectSlot limiter()
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::fruityLimiter);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::fruityLimiter);
     slot.params[3] = 0.401f; // the look-ahead control (raw 4010 of 0 … 10000)
     return slot;
 }
 
-lynx::PatchWire wire (int from, int to, int fromPort = 0, int toPort = 0)
+yw::PatchWire wire (int from, int to, int fromPort = 0, int toPort = 0)
 {
-    lynx::PatchWire w;
+    yw::PatchWire w;
     w.from = from;
     w.to = to;
     w.fromPort = fromPort;
@@ -43,9 +43,9 @@ lynx::PatchWire wire (int from, int to, int fromPort = 0, int toPort = 0)
 // The audio path of FL's "Multiband Sidechain" Patcher template, as the reporter describes it: a wet path through
 // Parametric EQ 2 → Fruity Limiter → a "Wet" level node, a dry path through a "Dry" level node, both to the output,
 // and a Peak Controller on the side-chain input (it only measures)
-lynx::EffectSlot multibandSidechain (const lynx::EffectSlot& limiterNode)
+yw::EffectSlot multibandSidechain (const yw::EffectSlot& limiterNode)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::patcher);
     slot.patcher.nodes.clear();
     slot.patcher.wires.clear();
@@ -67,13 +67,13 @@ lynx::EffectSlot multibandSidechain (const lynx::EffectSlot& limiterNode)
 }
 
 // An effect that delays by `samples` but reports it only once it has run (a plugin that reports late)
-class LateReporting final : public lynx::Effect
+class LateReporting final : public yw::Effect
 {
 public:
     explicit LateReporting (int samples) : latency (samples), line (samples) {}
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void process (float* l, float* r, int n, const lynx::EffectParams&, double) noexcept override
+    void process (float* l, float* r, int n, const yw::EffectParams&, double) noexcept override
     {
         line.process (l, r, n);
         ran.store (true);
@@ -82,18 +82,18 @@ public:
 
 private:
     int latency;
-    lynx::DelayLine line;
+    yw::DelayLine line;
     std::atomic<bool> ran { false };
 };
 
 // Two channels playing an impulse, channel k on insert k + 1; renders channel `which` alone through `state` and
 // returns where its impulse lands on the master
-int masterPeak (const lynx::RackState& state, int which, int frames = 4096)
+int masterPeak (const yw::RackState& state, int which, int frames = 4096)
 {
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (state.sampleRate, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = which;
     on.key = 60;
     on.velocity = 1.0f;
@@ -108,14 +108,14 @@ int masterPeak (const lynx::RackState& state, int which, int frames = 4096)
     return best;
 }
 
-lynx::Song twoTracks (const lynx::EffectSlot& onInsert1, const lynx::EffectSlot& onInsert2)
+yw::Song twoTracks (const yw::EffectSlot& onInsert1, const yw::EffectSlot& onInsert2)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (3);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (3);
     for (int i = 0; i < 2; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.samplePath = "impulse";
         c.volume = 1.0f;
         c.mixerTrack = i + 1;
@@ -127,14 +127,14 @@ lynx::Song twoTracks (const lynx::EffectSlot& onInsert1, const lynx::EffectSlot&
     return s;
 }
 
-lynx::RackState::Factories impulseFactories()
+yw::RackState::Factories impulseFactories()
 {
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     f.samples = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (64, 0.0f);
         d->left[0] = 0.25f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
     return f;
 }
@@ -142,7 +142,7 @@ lynx::RackState::Factories impulseFactories()
 
 TEST (pdc188e_fruity_limiter_reports_its_lookahead_before_the_first_block)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const double rate : { 44100.0, 48000.0 })
     {
         const auto slot = pdc188e::limiter();
@@ -171,7 +171,7 @@ TEST (pdc188e_effects_report_their_latency_before_the_first_block)
     // Every built-in effect, at its defaults and at random settings (look-ahead / mode / oversampling switches among
     // them): what it reports after prepare(), before any block, is what it reports once it has run with those settings.
     // A Patcher plans its compensation from the first value (issue #113 found the Fruity Limiter reporting 0 there).
-    using namespace lynx;
+    using namespace yw;
     std::uint32_t seed = 0x188e113u;
     auto next = [&seed] {
         seed ^= seed << 13;
@@ -212,7 +212,7 @@ TEST (pdc188e_effects_report_their_latency_before_the_first_block)
 
 TEST (pdc188e_patcher_with_a_limiter_aligns_to_the_sample)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto slot = pdc188e::multibandSidechain (pdc188e::limiter());
     auto graph = patcher::makeEffect (slot, 44100.0, patcher::builtInFactories (44100.0));
     graph->prepare (44100.0);
@@ -250,7 +250,7 @@ TEST (pdc188e_track_with_the_patcher_matches_the_bypassed_track)
 {
     // The reporter's measurement: the track through the Patcher against the same track with the Patcher bypassed,
     // offset 0 samples (it was 979)
-    using namespace lynx;
+    using namespace yw;
     for (const double rate : { 44100.0, 48000.0 })
     {
         const auto patch = pdc188e::multibandSidechain (pdc188e::limiter());
@@ -277,7 +277,7 @@ TEST (pdc188e_patcher_replans_when_a_node_reports_its_latency_late)
 {
     // A node that only reports its latency once it runs (a hosted plugin can): the Patcher's reported latency follows
     // it, the mixer sees the change, and the rack's next build plans the graph again with the running node kept
-    using namespace lynx;
+    using namespace yw;
     auto patch = makeEffectSlot (EffectKind::patcher);
     patch.patcher.nodes.clear();
     patch.patcher.wires.clear();
@@ -322,7 +322,7 @@ TEST (pdc188e_dynamics_suite_sound_unchanged_by_the_early_latency)
     // Crest / Prism / Sentry now keep the slot's settings through prepare() (their latency is known before the first
     // block). The sound must not move: an instance built with the settings renders bit-identical to one built without
     // them that gets them on its first block (what every slot did before)
-    using namespace lynx;
+    using namespace yw;
     std::uint32_t seed = 0x188e0d1u;
     auto next = [&seed] {
         seed ^= seed << 13;

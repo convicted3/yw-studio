@@ -105,7 +105,7 @@
  #include <sched.h>
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -200,7 +200,7 @@ const natives::FlAccess& flStudioAccess()
             listings[folder] = { out, juce::Time::getMillisecondCounter() };
             return out;
         };
-        // (FL Keys' raw wavetables become WAV files of LYNX's settings folder, like an .flp's embedded samples)
+        // (FL Keys' raw wavetables become WAV files of YW's settings folder, like an .flp's embedded samples)
         access.saveEmbedded = [] (const std::vector<std::uint8_t>& wav, const std::string& name) -> std::string {
             const auto folder = PluginHost::settingsFolder().getChildFile ("flp-embedded");
             folder.createDirectory();
@@ -267,7 +267,7 @@ void lowerWorkerThread()
 void enableCompositorMmcss() noexcept
 {
    #if JUCE_WINDOWS
-    if (juce::SystemStats::getEnvironmentVariable ("LYNX_DWM_MMCSS", {}) == "0")
+    if (juce::SystemStats::getEnvironmentVariable ("YW_DWM_MMCSS", {}) == "0")
         return;
     using EnableMmcss = HRESULT (WINAPI*) (BOOL);
     if (auto* dwm = LoadLibraryW (L"dwmapi.dll"))
@@ -280,21 +280,21 @@ void enableCompositorMmcss() noexcept
 namespace
 {
 #if JUCE_WINDOWS
-// what the audio threads reached (round toolchain190gt, REA 190hc: LYNX's were seen at dynamic priority 15 in some runs
+// what the audio threads reached (round toolchain190gt, REA 190hc: YW's were seen at dynamic priority 15 in some runs
 // and 24-25 in others, Live's always at 26): threads raised, how many joined MMCSS at CRITICAL, their thread priority
 std::atomic<int> rtThreadsRaised { 0 }, rtThreadsMmcss { 0 }, rtThreadsCritical { 0 };
 std::atomic<int> rtPriorityMin { 1000 }, rtPriorityMax { -1000 };
 
 // The process priority class (round toolchain190gt, REA 190hb): Windows' WinMM driver (wdmaud2.drv) raises a process
-// that opens a WinMM device to HIGH (and asks REALTIME), FL's and LYNX's alike, so the UI, decoders, prefetch and plugin
-// scans ran above every normal program; FL itself asks ABOVE_NORMAL. LYNX_PRIORITY_CLASS=above asks ABOVE_NORMAL when a
+// that opens a WinMM device to HIGH (and asks REALTIME), FL's and YW's alike, so the UI, decoders, prefetch and plugin
+// scans ran above every normal program; FL itself asks ABOVE_NORMAL. YW_PRIORITY_CLASS=above asks ABOVE_NORMAL when a
 // device starts (and again 2 s later, after the MIDI ports), relying on MMCSS for the audio threads. Default: left as
 // Windows sets it — measured with --rtstress (Exoplanet, 10 ms buffer, 3 x 3000 callbacks each, loaded PC): HIGH 0
 // callbacks over the deadline, ABOVE_NORMAL 1, the same average load; a 64-sample run was not possible on this PC.
 std::atomic<unsigned long> priorityClassFound { 0 }, priorityClassNow { 0 };
 void choosePriorityClass() noexcept
 {
-    static const auto keep = juce::SystemStats::getEnvironmentVariable ("LYNX_PRIORITY_CLASS", {}) != "above";
+    static const auto keep = juce::SystemStats::getEnvironmentVariable ("YW_PRIORITY_CLASS", {}) != "above";
     const auto found = GetPriorityClass (GetCurrentProcess());
     if (priorityClassFound.load (std::memory_order_relaxed) == 0 || found != ABOVE_NORMAL_PRIORITY_CLASS)
         priorityClassFound.store (found, std::memory_order_relaxed);
@@ -329,7 +329,7 @@ void raiseAudioThreadPriority()
         return nullptr;
     }();
     // FL's audio worker threads raise their MMCSS priority to "high" (FLEngine_x64.dll, REA round 87); Live's to "critical"
-    // (REA round 190hc: its 22 audio threads sat at dynamic priority 26 in every snapshot), which LYNX uses since round
+    // (REA round 190hc: its 22 audio threads sat at dynamic priority 26 in every snapshot), which YW uses since round
     // toolchain190gt
     using AvPriority = int (__stdcall*) (void*, int);
     static const auto avPriority = [] () -> AvPriority {
@@ -349,7 +349,7 @@ void raiseAudioThreadPriority()
     }
     else
         SetThreadPriority (GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-    // and full speed while LYNX is in the background (no EcoQoS: platform/PowerThrottling.h, round toolchain190gt)
+    // and full speed while YW is in the background (no EcoQoS: platform/PowerThrottling.h, round toolchain190gt)
     power::optOutOfPowerThrottling();
     const auto reached = GetThreadPriority (GetCurrentThread());
     rtThreadsRaised.fetch_add (1, std::memory_order_relaxed);
@@ -475,8 +475,8 @@ int performanceCores()
 
 int workerCount()
 {
-    // diagnostics: LYNX_WORKERS=n fixes the number of extra threads
-    if (const auto forced = juce::SystemStats::getEnvironmentVariable ("LYNX_WORKERS", {}); forced.isNotEmpty())
+    // diagnostics: YW_WORKERS=n fixes the number of extra threads
+    if (const auto forced = juce::SystemStats::getEnvironmentVariable ("YW_WORKERS", {}); forced.isNotEmpty())
         return juce::jlimit (0, 31, forced.getIntValue());
 
     // round 190gq (190gs Q7): the audio thread and the workers on the performance cores, one per physical core, the
@@ -569,7 +569,7 @@ AudioEngine::AudioEngine (bool openAudioDevice, int workerThreads, bool userPlug
         const auto path = locateFlSample (saved, fl.roots, {}, fl.fileExists);
         return ! path.empty() && fl.readFile && harmor::readWavMono (fl.readFile (path), out);
     });
-    boostDeviceThread = juce::SystemStats::getEnvironmentVariable ("LYNX_DEVICE_BOOST", {}) != "0";
+    boostDeviceThread = juce::SystemStats::getEnvironmentVariable ("YW_DEVICE_BOOST", {}) != "0";
     inputSlot.fill (-1);
     outputSlot.fill (-1);
     // VFX Script (round 165d): the audio thread waits a bounded time for the Python thread (exports wait for it)
@@ -610,12 +610,12 @@ void AudioEngine::openAudioDevice()
         return;
     const auto mark = [] (const char* step) { if (startupMark != nullptr) startupMark (step); };
 
-    // LYNX ASIO without installation: lynx-asio.dll next to LYNX.exe, when it is not registered (REA round 106)
+    // YW ASIO without installation: yw-asio.dll next to YW.exe, when it is not registered (REA round 106)
     deviceManager.getAvailableDeviceTypes(); // the standard types first (round 190hd: its own trace line)
     mark ("  engine: standard device types (the prewarmed ASIO device handed over)");
-    if (auto lynxAsio = makeBuiltInLynxAsioType())
-        deviceManager.addAudioDeviceType (std::move (lynxAsio));
-    // LYNX's own PipeWire client on Linux (round 161), listed when a PipeWire daemon answers
+    if (auto ywAsio = makeBuiltInYwAsioType())
+        deviceManager.addAudioDeviceType (std::move (ywAsio));
+    // YW's own PipeWire client on Linux (round 161), listed when a PipeWire daemon answers
     if (auto pipeWire = makePipeWireDeviceType())
     {
         deviceManager.getAvailableDeviceTypes();
@@ -625,7 +625,7 @@ void AudioEngine::openAudioDevice()
 
     // 0 inputs, 2 outputs; the device of the last session (Settings › Audio) if it is still there, else the default.
     const auto saved = juce::XmlDocument::parse (audioDeviceFile());
-    // (round 190go) the MIDI ports the saved setup names open with the MIDI devices (openMidiDevices: LYNX's MIDI
+    // (round 190go) the MIDI ports the saved setup names open with the MIDI devices (openMidiDevices: YW's MIDI
     // settings decide which inputs are open anyway), not on the audio device's way: JUCE opened them here (~0.1-0.2 s)
     if (saved != nullptr)
     {
@@ -765,7 +765,7 @@ void AudioEngine::buildInitialGraph()
         rackProcessor->getRenderer().setHardwareMidiPorts (hardwareMidiPorts); // (round 190jl)
         rackProcessor->getRenderer().setOwnNoteChannels (ownNoteChannels); // (round 190ks)
         rackProcessor->getRenderer().setCurrentSource (currentSource); // (round 190mv)
-        // FL's own metronome sounds from its install (Data\System), LYNX's stand-ins without it (round 165z-a2)
+        // FL's own metronome sounds from its install (Data\System), YW's stand-ins without it (round 165z-a2)
         const auto& flData = flStudioAccess().roots.data;
         rackProcessor->setMetronome (std::make_unique<Metronome> (transport, flData.empty() ? juce::File() : platform::localFile (flData)));
     }
@@ -811,7 +811,7 @@ RenderStream::Setup AudioEngine::streamSetup (const RenderOptions& options, int 
 
 float AudioEngine::renderOffline (const RenderOptions& options)
 {
-    // round 190po: the render's thread (the main thread of `LYNX --export`, an Export window's or a bounce's own thread)
+    // round 190po: the render's thread (the main thread of `YW --export`, an Export window's or a bounce's own thread)
     // at the x87's 64-bit precision, as the rack's workers: the same samples whichever thread renders (core/Denormals.h)
     const ScopedExtendedPrecision precision;
     offlineRendersRunning().fetch_add (1, std::memory_order_acq_rel);
@@ -827,7 +827,7 @@ float AudioEngine::renderOffline (const RenderOptions& options)
     // "HQ for all plugins" (REA round 134): engines with FL render-quality settings use them (Sytrus) and HQ switches
     // are forced on; without it the export keeps the playback quality
     setOfflineRendering (options.hqAllPlugins);
-    setRenderInProgress (true); // (whatever the quality: LYNX Soundfont waits for a font that is still loading, issue #138)
+    setRenderInProgress (true); // (whatever the quality: YW Soundfont waits for a font that is still loading, issue #138)
     setHqForAllPlugins (options.hqAllPlugins);
     setPluginsRenderMode (true); // and hosted plugins are told an export is running (FL: "notify about rendering mode")
     transport.sampleRate.store (sampleRate);
@@ -988,7 +988,7 @@ warmup::Result AudioEngine::warmUpPlugins (const warmup::Settings& settings, dou
     std::vector<juce::AudioPluginInstance*> hosted;
     forEachHostedPlugin ([&hosted] (juce::AudioPluginInstance& p, bool) { hosted.push_back (&p); });
     if (hosted.empty())
-        return {}; // LYNX's own engines are ready as soon as they are created: nothing to wait for
+        return {}; // YW's own engines are ready as soon as they are created: nothing to wait for
 
     // Issue #138 (round 190hn): a hosted instrument gets at least `hostedInstrumentSeconds` of audio. The export's
     // instances are new ones (FL renders with the instances that have been playing since the project opened), and a
@@ -1088,7 +1088,7 @@ warmup::Result AudioEngine::warmUpPlugins (const warmup::Settings& settings, dou
         latency = reply->latency.load();
     }
 
-    // LYNX's own units start the render from a clean state, as without the warm-up (free-running LFOs, the delay
+    // YW's own units start the render from a clean state, as without the warm-up (free-running LFOs, the delay
     // compensation's lines); the hosted plugins are not reset: they keep what they settled on (a reset re-activates
     // them, which is what they had to settle from)
     if (rackProcessor != nullptr)
@@ -1387,7 +1387,7 @@ void AudioEngine::startOnInput (WaitInput kind) noexcept
     if (! waitingForInput.load (std::memory_order_relaxed))
         return;
     // FL's "Respect recording filter" (round 190ld; REA 190oa R4): only while recording; Audio in the filter lets any
-    // input start it, the tapper always does. (FL's own test for clips never matches — a slip in FL; LYNX follows the
+    // input start it, the tapper always does. (FL's own test for clips never matches — a slip in FL; YW follows the
     // filter's Clips switch.)
     if (waitRespects.load (std::memory_order_relaxed) && transport.recording.load (std::memory_order_relaxed) && kind != WaitInput::tapper)
     {
@@ -1552,7 +1552,7 @@ void AudioEngine::previewFile (const juce::File& file, double startFraction, boo
     }
 
     // "Preview in time" (round 190aq, core/PreviewTempo.h): the file's tempo from its ACID beats or its name (cheap,
-    // here), else from LYNX's tempo detection (on the worker); a file that can have none plays as it always did
+    // here), else from YW's tempo detection (on the worker); a file that can have none plays as it always did
     const auto path = file.getFullPathName();
     const auto name = file.getFileName().toStdString();
     const auto external = transport.overrideBpm(); // (an external clock's or the Link session's tempo)
@@ -2019,7 +2019,7 @@ CaptureResult AudioEngine::captureMidi()
     if (capturePhrase (song, log, o).empty()) // (nothing to capture: no undo step)
         return {};
     CaptureResult result;
-    editSong ([&] (Song& s) { result = lynx::captureMidi (s, log, o); });
+    editSong ([&] (Song& s) { result = yw::captureMidi (s, log, o); });
     if (result.newestMs > lastCaptureMs)
         lastCaptureMs = result.newestMs;
     return result;
@@ -2080,7 +2080,7 @@ CaptureResult AudioEngine::captureMidiToSlot (int track, int scene, int& placed,
         {
             placed = row;
             if (auto* slot = launcher::settingsAt (*s.clipGrid, track, row))
-                slot->blankName = true; // (Live's captured clip has no name; the pattern keeps LYNX's default one)
+                slot->blankName = true; // (Live's captured clip has no name; the pattern keeps YW's default one)
         }
     });
     if (placed < 0)
@@ -2395,7 +2395,7 @@ void AudioEngine::startAudioTake()
     // one take per armed insert that has an input source; without armed inserts (Settings' "Record input audio"),
     // the first two input channels into a new insert
     // round 168x (issue #41): FL's "Record" position of each insert. "External input only" records the device input;
-    // the other positions tap the insert (stereo, after the render) and need no input of their own; LYNX's "also the
+    // the other positions tap the insert (stereo, after the render) and need no input of their own; YW's "also the
     // dry input" adds the device input as a second take
     struct Wanted
     {
@@ -2506,7 +2506,7 @@ void AudioEngine::startAudioTake()
             recordTo = juce::File (recordTo).getSiblingFile (juce::File (recordTo).getFileNameWithoutExtension() + " DI.wav").getFullPathName();
         if (recordTo.isNotEmpty() && juce::File::isAbsolutePath (recordTo))
         {
-            // FL's "Record <insert> to" file (round 167a): that file; LYNX never overwrites an earlier take, the next
+            // FL's "Record <insert> to" file (round 167a): that file; YW never overwrites an earlier take, the next
             // ones get "_2", "_3"... (its own choice)
             const auto target = juce::File (recordTo).withFileExtension (".wav");
             target.getParentDirectory().createDirectory();
@@ -2661,7 +2661,7 @@ void AudioEngine::finishAudioTake()
         }
     }
 
-    if (recordOptions.disarmOnStop) // LYNX's "Disarm the inserts when recording stops" (not FL's "Disarm on stop")
+    if (recordOptions.disarmOnStop) // YW's "Disarm the inserts when recording stops" (not FL's "Disarm on stop")
         for (const auto t : std::vector<int> (armedInserts))
             setInsertArmed (t, false);
 
@@ -2777,7 +2777,7 @@ std::vector<takes::Journal> AudioEngine::recoverInterruptedTakes (const std::vec
     auto where = folders;
     where.push_back (defaultRecordingFolder());
     for (const auto& folder : where)
-        for (const auto& f : folder.findChildFiles (juce::File::findFiles, false, "*.lynxrec"))
+        for (const auto& f : folder.findChildFiles (juce::File::findFiles, false, "*.ywrec"))
             journals.addIfNotAlreadyThere (f.getFullPathName());
     journals.removeEmptyStrings();
 
@@ -3054,7 +3054,7 @@ void AudioEngine::handleMidiInput (juce::MidiInput* source, const std::string& d
     if (! device.enabled)
         return;
 
-    // the external clock LYNX follows (round 165f): clock, start / stop / continue, song position
+    // the external clock YW follows (round 165f): clock, start / stop / continue, song position
     if (m.getRawDataSize() > 0 && (m.getRawData()[0] >= 0xf2) && source != nullptr && midiSync.handleInput (source->getName(), m))
         return;
 
@@ -3166,7 +3166,7 @@ void AudioEngine::handleMidiInput (juce::MidiInput* source, const std::string& d
         return;
 
     // the pitch wheel, the mod wheel and the other controllers play into the channels the notes go to (round 162,
-    // issue #9: they did nothing unless linked): hosted plugins get the MIDI message, LYNX's instruments bend by the
+    // issue #9: they did nothing unless linked): hosted plugins get the MIDI message, YW's instruments bend by the
     // channel's pitch range. A CC with a MIDI link only moves its parameter.
     const auto recordBend = transport.recording.load() && transport.playing.load();
     const auto bendTick = recordBend ? estimatedPositionNow() : 0.0;
@@ -3530,7 +3530,7 @@ int AudioEngine::restretchAll()
 {
     // (round 190mp) the file read again and its stretched copies dropped, then the rack built anew: the copies come from
     // the file as it is now (an edit made elsewhere included), at the tempo of the song now
-    const auto count = lynx::restretchableChannels (song);
+    const auto count = yw::restretchableChannels (song);
     if (count == 0)
         return 0;
     for (const auto& c : song.channels)
@@ -3603,7 +3603,7 @@ bool AudioEngine::cancelRecording()
     if (! transport.recording.load())
         return false;
     // FL [DECOMP 0xf1d7e0]: the recorded-event buffers are emptied, every disk-recording take is dropped and its track
-    // re-armed, the record button is released; playback is not stopped. LYNX writes a take into the song as it goes, so
+    // re-armed, the record button is released; playback is not stopped. YW writes a take into the song as it goes, so
     // the pass's edits are undone instead (one undo step per take; a step the user made while recording goes too).
     updateRecording(); // (what was played up to now, and the start of this pass if the timer hasn't seen it yet)
     const auto armed = armedInserts;
@@ -3950,7 +3950,7 @@ void AudioEngine::setSong (Song newSong)
         setInsertArmed (t, false);
     followProjectOnDevice();
 
-    // (round perfgate190id: a .lynx with 24 one-minute takes froze the window for 5-50 s while the rack build decoded
+    // (round perfgate190id: a .yw with 24 one-minute takes froze the window for 5-50 s while the rack build decoded
     // them one after the other into the stream cache)
     const auto decoded = parallelSampleDecode ? decodeSamplesInParallel (samples, song) : std::vector<std::shared_ptr<const SampleData>> {};
     publishSong();
@@ -4122,7 +4122,7 @@ void AudioEngine::editSong (const std::function<void (Song&)>& edit, bool undoab
     auto lengthsBefore = patternLengths (song);
     const auto auditioned = comp::auditionedTrack (song);
     const auto pluginsBefore = detachNewPluginsOn ? freshPluginCounts (song) : std::map<std::string, int>();
-    // LYNX's "Link Playlist tracks to mixer tracks" (rounds 190gz, 190ib): each instrument's home track and the linked
+    // YW's "Link Playlist tracks to mixer tracks" (rounds 190gz, 190ib): each instrument's home track and the linked
     // tracks' names before the edit
     const auto linkBefore = autolink::snapshot (song);
     const auto namesBefore = trackmodes::linkedNames (song); // (round 190ns, issue #235: FL's audio track ⇄ mixer track)
@@ -4800,7 +4800,7 @@ void AudioEngine::prepareFlpImport (const juce::File& file, const std::map<std::
             decoded->push_back (sample);
             return (double) sample->frames() / sample->sampleRate;
         };
-        // WAV that only exists inside the .flp (Slicex): goes to %APPDATA%\LYNX\flp-embedded, keyed by content
+        // WAV that only exists inside the .flp (Slicex): goes to %APPDATA%\YW\flp-embedded, keyed by content
         options.saveEmbedded = [] (const std::vector<std::uint8_t>& wav, const std::string& name) -> std::string {
             const auto folder = PluginHost::settingsFolder().getChildFile ("flp-embedded");
             folder.createDirectory();
@@ -4856,7 +4856,7 @@ void AudioEngine::prepareFlpImport (const juce::File& file, const std::map<std::
             {
                 DawProjectImportOptions dawOptions;
                 dawOptions.common = options;
-                // LYNX's own devices with every field (the project file's JSON); a file from the core writer still opens
+                // YW's own devices with every field (the project file's JSON); a file from the core writer still opens
                 dawOptions.nativeInstrument = [] (const std::string&, const std::vector<std::uint8_t>& bytes) -> std::optional<ChannelDef> {
                     if (auto c = ProjectFile::channelFromStateBytes (bytes))
                         return c;
@@ -4881,7 +4881,7 @@ void AudioEngine::prepareFlpImport (const juce::File& file, const std::map<std::
             else if (module)
             {
                 // the samples become WAV files in "<module> samples" beside the module (as an FL Studio Mobile share's
-                // samples sit beside its .flm); where that folder can't be written, in LYNX's settings folder
+                // samples sit beside its .flm); where that folder can't be written, in YW's settings folder
                 ModuleImportOptions moduleOptions;
                 moduleOptions.report = &out.report;
                 auto folder = file.getParentDirectory().getChildFile (file.getFileNameWithoutExtension() + " samples");
@@ -5195,7 +5195,7 @@ bool AudioEngine::finishFlpImport (PreparedFlp&& prepared, bool asEdit)
             }
         missingPluginDetails.push_back (std::move (m));
     }
-    // missing, played by a LYNX substitute that keeps the original for when it is installed
+    // missing, played by a YW substitute that keeps the original for when it is installed
     for (std::size_t t = 0; t < imported.mixer.size(); ++t)
         for (const auto& fx : imported.mixer[t].effects)
             if (fx.isSubstitute())
@@ -5357,7 +5357,7 @@ RackState::Factories AudioEngine::rackFactories()
 
 bool AudioEngine::auditionSound (const ChannelDef& channel, const std::vector<int>& keys, double* seconds)
 {
-    auto audio = lynx::renderAudition (channel, keys, 0.32, 0.9, song.bpm, transport.sampleRate.load(), rackFactories());
+    auto audio = yw::renderAudition (channel, keys, 0.32, 0.9, song.bpm, transport.sampleRate.load(), rackFactories());
     if (seconds != nullptr)
         *seconds = audio.sampleRate > 0.0 ? (double) audio.left.size() / audio.sampleRate : 0.0;
     if (audio.left.empty())
@@ -5372,7 +5372,7 @@ bool AudioEngine::auditionSound (const ChannelDef& channel, const std::vector<in
 
 ClipAudio AudioEngine::renderClipAudio (std::size_t clipIndex)
 {
-    return lynx::renderClipAudio (song, clipIndex, transport.sampleRate.load(), rackFactories());
+    return yw::renderClipAudio (song, clipIndex, transport.sampleRate.load(), rackFactories());
 }
 
 void AudioEngine::setMainVolume (float position)
@@ -5429,8 +5429,8 @@ void AudioEngine::publishSong()
         video::publishTempo (song);
     // pasted / duplicated channels and effect slots get their own instance (round 168s: instances follow their channel)
     song.uniqueInstances();
-    // diagnostics (round 149): with LYNX_TRACE_EDITS set, each publish's time goes to %APPDATA%\LYNX\edits.log
-    static const bool traceEdits = std::getenv ("LYNX_TRACE_EDITS") != nullptr;
+    // diagnostics (round 149): with YW_TRACE_EDITS set, each publish's time goes to %APPDATA%\YW\edits.log
+    static const bool traceEdits = std::getenv ("YW_TRACE_EDITS") != nullptr;
     const auto publishStart = juce::Time::getMillisecondCounterHiRes();
     const juce::ScopeGuard traceEnd { [&] {
         if (traceEdits)
@@ -5556,7 +5556,7 @@ void AudioEngine::publishSong()
     const Song& unprojected = thawedSong ? *thawedSong : song;
     if (standins::hasAny (unprojected))
         projectedSong = standins::project (unprojected, [this] (const PluginRef& ref) { return ! plugins.isInstalled (ref); }, &projected);
-    // round 190op (P4, LYNX extra): deactivated channels and inserts are not loaded; the engine plays silent placeholders
+    // round 190op (P4, YW extra): deactivated channels and inserts are not loaded; the engine plays silent placeholders
     // in their places (core/TrackStates.h deactivate::project). Nothing changes for a project without any.
     {
         auto off = deactivate::effective (unprojected);
@@ -5640,7 +5640,7 @@ void AudioEngine::publishSong()
     lastPublishedShape.channelDelays = state->channelDelays;
     lastPublishedShape.sendDelays = state->sendDelays;
     lastPublishedShape.sideLines = state->sideLines; // (round 190hq: the side inputs' lines carry over as the sends' do)
-    // round 190hq (B13): what the Master hears is this much later than what the rack renders (the clocks LYNX sends and
+    // round 190hq (B13): what the Master hears is this much later than what the rack renders (the clocks YW sends and
     // follows, Link and played notes count it, as they count the output buffer)
     masterPdcSamples.store (state->pdc.total, std::memory_order_relaxed);
     lastPublishedShape.shifterStock = state->shifterStock; // (round 190gn: the next build keeps the rack's shifter stock)
@@ -5712,7 +5712,7 @@ void AudioEngine::removeGlobalLink (const AutomationTarget& target)
 
 void AudioEngine::setTargetLinks (const AutomationTarget& target, std::vector<MidiLink> links, bool removeConflicts)
 {
-    editSong ([&] (Song& s) { lynx::setTargetLinks (s.midiLinks, target, std::move (links), removeConflicts); });
+    editSong ([&] (Song& s) { yw::setTargetLinks (s.midiLinks, target, std::move (links), removeConflicts); });
     linkSmoothing.clear();
     sendChangeMessage();
 }
@@ -5926,7 +5926,7 @@ std::optional<AutomationTarget> AudioEngine::getLastTweaked (int which) const
 
 float AudioEngine::currentTargetValue (const AutomationTarget& t) const
 {
-    // a controller's pitch wheel being recorded (any instrument: LYNX's own have no such parameter)
+    // a controller's pitch wheel being recorded (any instrument: YW's own have no such parameter)
     if (t.kind == AutomationTargetKind::channelParam && midictl::isPitchBend (t.param))
         if (const auto it = liveBends.find (t.index); it != liveBends.end())
             return it->second;
@@ -6704,7 +6704,7 @@ bool AudioEngine::showDriverPanel (juce::AudioDeviceManager& devices)
     devices.closeAudioDevice(); // deletes `device`
     device = nullptr;
     // 0 = the new device's default, i.e. the preferred size the driver now reports (ASIO4ALL / FL ASIO: its panel's
-    // buffer); a driver that keeps no preferred size gets LYNX's usual default
+    // buffer); a driver that keeps no preferred size gets YW's usual default
     setup.bufferSize = 0;
     devices.setAudioDeviceSetup (setup, true);
     return true;
@@ -6819,7 +6819,7 @@ juce::String AudioEngine::driverPanelSelfTest()
     juce::AudioDeviceManager::AudioDeviceSetup setup;
     setup.outputDeviceName = "Panel test device";
     setup.sampleRate = 44100.0;
-    setup.bufferSize = 272; // chosen in LYNX's own buffer box
+    setup.bufferSize = 272; // chosen in YW's own buffer box
     setup.useDefaultOutputChannels = true;
     if (const auto error = devices.setAudioDeviceSetup (setup, true); error.isNotEmpty())
         return "open: " + error;
@@ -6827,7 +6827,7 @@ juce::String AudioEngine::driverPanelSelfTest()
     if (before == nullptr || before->getCurrentBufferSizeSamples() != 272)
         return "open: buffer " + juce::String (before != nullptr ? before->getCurrentBufferSizeSamples() : -1);
 
-    // a panel that changes nothing: the same device keeps running with LYNX's buffer
+    // a panel that changes nothing: the same device keeps running with YW's buffer
     state.panelResult = 0;
     if (showDriverPanel (devices) || devices.getCurrentAudioDevice() != before || before->getCurrentBufferSizeSamples() != 272)
         return "unchanged panel reopened the device";
@@ -6987,7 +6987,7 @@ AudioEngine::DropoutInfo AudioEngine::dropoutInfo() const
         d.slowest = unitDisplayName (dropouts::unitOf (slowest));
         d.slowestMs = (double) dropouts::nanosecondsOf (slowest) * 1.0e-6;
     }
-    if (auto* device = const_cast<LynxDeviceManager&> (deviceManager).getCurrentAudioDevice())
+    if (auto* device = const_cast<YwDeviceManager&> (deviceManager).getCurrentAudioDevice())
         if (device->getCurrentSampleRate() > 0.0)
             d.bufferMs = 1000.0 * device->getCurrentBufferSizeSamples() / device->getCurrentSampleRate();
     return d;
@@ -7015,7 +7015,7 @@ void AudioEngine::setRenderAheadAlways (bool always) noexcept
 juce::String AudioEngine::describeRealtime (bool withUnits) const
 {
     juce::String text;
-    if (auto* device = const_cast<LynxDeviceManager&> (deviceManager).getCurrentAudioDevice())
+    if (auto* device = const_cast<YwDeviceManager&> (deviceManager).getCurrentAudioDevice())
     {
         const auto rate = device->getCurrentSampleRate();
         const auto buffer = device->getCurrentBufferSizeSamples();
@@ -7029,7 +7029,7 @@ juce::String AudioEngine::describeRealtime (bool withUnits) const
         if (const auto before = deviceThreadPriorityBefore.load (std::memory_order_relaxed); before > -100)
             text << "  device thread priority " << before << (deviceThreadPriorityAfter.load (std::memory_order_relaxed) != before
                                                                 ? " -> " + juce::String (deviceThreadPriorityAfter.load (std::memory_order_relaxed)) + " (raised to MMCSS Pro Audio)"
-                                                                : juce::String (boostDeviceThread ? " (kept)" : " (kept: LYNX_DEVICE_BOOST=0)")) << "\n";
+                                                                : juce::String (boostDeviceThread ? " (kept)" : " (kept: YW_DEVICE_BOOST=0)")) << "\n";
         if (const auto raised = rtThreadsRaised.load (std::memory_order_relaxed); raised > 0)
             text << "  audio threads raised " << raised << ": MMCSS Pro Audio " << rtThreadsMmcss.load (std::memory_order_relaxed)
                  << " (critical " << rtThreadsCritical.load (std::memory_order_relaxed) << "), thread priority "
@@ -7250,7 +7250,7 @@ double AudioEngine::workSecondsNow() const
 void AudioEngine::resetWorkTime()
 {
     const auto now = (double) juce::Time::currentTimeMillis();
-    lynx::resetWorkTime (song.info, now / 1000.0);
+    yw::resetWorkTime (song.info, now / 1000.0);
     workSince = now;
     modified = true;
     sendChangeMessage(); // (the Info page; nothing the audio thread plays changed)
@@ -8404,8 +8404,8 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
 void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
 {
     rtStats.deviceRestarted();
-    // (round 190ok: LYNX_SAFE_OVERLOADS="share=…,max=…,window=…,late=…,ui=0|1": the guard's numbers for an A/B)
-    if (const auto spec = juce::SystemStats::getEnvironmentVariable ("LYNX_SAFE_OVERLOADS", {}); spec.isNotEmpty())
+    // (round 190ok: YW_SAFE_OVERLOADS="share=…,max=…,window=…,late=…,ui=0|1": the guard's numbers for an A/B)
+    if (const auto spec = juce::SystemStats::getEnvironmentVariable ("YW_SAFE_OVERLOADS", {}); spec.isNotEmpty())
         overloadGuard.configure (spec.toRawUTF8());
     overloadGuard.restart();
     rt::resetForNewDevice();
@@ -8460,7 +8460,7 @@ void AudioEngine::audioDeviceStopped()
 // macOS (round toolchain190gt): the render workers join the device's audio workgroup (os_workgroup, macOS 11+), so the
 // scheduler runs them with the device's I/O thread as one real-time job with the buffer's deadline: on Apple silicon,
 // on the performance cores. Each worker joins on its own thread (WorkerPool::setThreadRefresh) the next time it wakes,
-// first becoming a time-constraint thread. A stopped device: the workers leave. LYNX_WORKGROUP=0 turns it off.
+// first becoming a time-constraint thread. A stopped device: the workers leave. YW_WORKGROUP=0 turns it off.
 // Elsewhere this does nothing (Windows: MMCSS "Pro Audio" and no EcoQoS; Linux: SCHED_FIFO / RealtimeKit, round 161).
 struct AudioEngine::DeviceWorkgroup
 {
@@ -8472,7 +8472,7 @@ struct AudioEngine::DeviceWorkgroup
 void AudioEngine::joinDeviceWorkgroup ([[maybe_unused]] juce::AudioIODevice* device)
 {
    #if JUCE_MAC
-    static const auto off = juce::SystemStats::getEnvironmentVariable ("LYNX_WORKGROUP", {}) == "0";
+    static const auto off = juce::SystemStats::getEnvironmentVariable ("YW_WORKGROUP", {}) == "0";
     if (off || workers == nullptr || workers->workers() == 0)
         return;
     auto wanted = device != nullptr ? device->getWorkgroup() : juce::AudioWorkgroup {};
@@ -8798,7 +8798,7 @@ void AudioEngine::applyHardwareInsertPings()
     const auto refs = getHardwareInserts();
     const auto key = currentSetupKey();
 
-    // the device setup changed: the inserts measured for the old one (or, measured before LYNX kept the setup, for the
+    // the device setup changed: the inserts measured for the old one (or, measured before YW kept the setup, for the
     // one that was running) want a new ping — a notice for the UI, nothing pinged by itself
     if (key != lastSetupKey)
     {
@@ -8901,4 +8901,4 @@ void AudioEngine::finishRealtimeBounce()
     seek (bounceReturnTick);
     sendChangeMessage();
 }
-} // namespace lynx
+} // namespace yw

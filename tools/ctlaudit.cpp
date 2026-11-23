@@ -1,4 +1,4 @@
-// ctlaudit (round 170i3): which controls of the FL-native generators' LYNX editors change the sound — through a new
+// ctlaudit (round 170i3): which controls of the FL-native generators' YW editors change the sound — through a new
 // instrument (state), the running one (live: the editor's path) and automation (setParameter). See tools/CtlAudit.h.
 // Usage: ctlaudit --fl <FL Studio's Data folder> [--only <engine name>] [--all]   (--all: list every control, not only
 // the ones that don't move)
@@ -27,12 +27,12 @@ std::vector<std::uint8_t> readFile (const fs::path& p)
 std::string local (std::string p)
 {
     std::replace (p.begin(), p.end(), '\\', '/');
-    return lynx::existingPathIgnoringCase (p);
+    return yw::existingPathIgnoringCase (p);
 }
 
-lynx::natives::FlAccess flAccess (const std::string& data)
+yw::natives::FlAccess flAccess (const std::string& data)
 {
-    lynx::natives::FlAccess fl;
+    yw::natives::FlAccess fl;
     fl.roots.data = fs::path (data).string();
     fl.roots.factoryData = fs::path (data).parent_path().string();
     fl.fileExists = [] (const std::string& p) { return fs::is_regular_file (local (p)); };
@@ -47,14 +47,14 @@ lynx::natives::FlAccess flAccess (const std::string& data)
         return out;
     };
     fl.saveEmbedded = [] (const std::vector<std::uint8_t>& wav, const std::string& name) {
-        const auto path = (fs::temp_directory_path() / ("lynx-ctlaudit-" + std::to_string (wav.size()) + "-" + std::to_string (name.size()) + ".wav")).string();
+        const auto path = (fs::temp_directory_path() / ("yw-ctlaudit-" + std::to_string (wav.size()) + "-" + std::to_string (name.size()) + ".wav")).string();
         std::ofstream (path, std::ios::binary).write ((const char*) wav.data(), (std::streamsize) wav.size());
         return path;
     };
     return fl;
 }
 
-const char* mark (double db, double noise) { return lynx::ctlaudit::moved (db, noise) ? "  ok " : " DEAD"; }
+const char* mark (double db, double noise) { return yw::ctlaudit::moved (db, noise) ? "  ok " : " DEAD"; }
 } // namespace
 
 int main (int argc, char** argv)
@@ -91,41 +91,41 @@ int main (int argc, char** argv)
         }
     }
     const auto fl = flAccess (flData);
-    lynx::ctlaudit::flAccess = &fl;
-    const lynx::ctlaudit::Samples samples = [] (const std::string& p) { return lynx::tools::readWav (local (p)); };
-    for (const auto& e : lynx::natives::instrumentEngines())
+    yw::ctlaudit::flAccess = &fl;
+    const yw::ctlaudit::Samples samples = [] (const std::string& p) { return yw::tools::readWav (local (p)); };
+    for (const auto& e : yw::natives::instrumentEngines())
     {
         if (! only.empty() && only != e.name)
             continue;
-        auto c = lynx::natives::makeChannel (e.kind, fl);
+        auto c = yw::natives::makeChannel (e.kind, fl);
         // a new Granulizer has no sample (silent, as in FL): give it one of FL's loops
-        if (c && e.kind == lynx::InstrumentKind::granulizer && c->samplePath.empty())
+        if (c && e.kind == yw::InstrumentKind::granulizer && c->samplePath.empty())
             c->samplePath = (fs::path (flData) / "Patches" / "Packs" / "Loops" / "DL Pendulus.wav").string();
         if (! c)
         {
             std::printf ("== %s: no channel\n", e.name);
             continue;
         }
-        auto controls = lynx::ctlaudit::editorControls (*c);
+        auto controls = yw::ctlaudit::editorControls (*c);
         for (const auto& [index, raw] : sets)
             for (const auto& k : controls)
                 if (k.index == index)
                     k.set (*c, raw);
         if (! pick.empty())
             controls.erase (std::remove_if (controls.begin(), controls.end(),
-                                            [&pick] (const lynx::ctlaudit::Control& k) { return std::find (pick.begin(), pick.end(), k.index) == pick.end(); }),
+                                            [&pick] (const yw::ctlaudit::Control& k) { return std::find (pick.begin(), pick.end(), k.index) == pick.end(); }),
                             controls.end());
         if (controls.empty())
         {
             std::printf ("== %s: no editor controls\n", e.name);
             continue;
         }
-        const auto p = lynx::ctlaudit::patternFor (e.kind);
-        const auto rep = lynx::ctlaudit::audit (*c, controls, p, samples);
+        const auto p = yw::ctlaudit::patternFor (e.kind);
+        const auto rep = yw::ctlaudit::audit (*c, controls, p, samples);
         int dead = 0;
         for (const auto& r : rep.results)
-            dead += ! lynx::ctlaudit::moved (r.state, rep.noise) || ! lynx::ctlaudit::moved (r.live, rep.noise)
-                    || (r.automatable && ! lynx::ctlaudit::moved (r.automation, rep.noise));
+            dead += ! yw::ctlaudit::moved (r.state, rep.noise) || ! yw::ctlaudit::moved (r.live, rep.noise)
+                    || (r.automatable && ! yw::ctlaudit::moved (r.automation, rep.noise));
         int rebuilt = 0;
         for (const auto& r : rep.results)
             rebuilt += r.rebuilt;
@@ -133,8 +133,8 @@ int main (int argc, char** argv)
                      rep.results.size(), rep.basePeak, rep.noise, dead, rebuilt);
         for (const auto& r : rep.results)
         {
-            const bool bad = ! lynx::ctlaudit::moved (r.state, rep.noise) || ! lynx::ctlaudit::moved (r.live, rep.noise)
-                             || (r.automatable && ! lynx::ctlaudit::moved (r.automation, rep.noise));
+            const bool bad = ! yw::ctlaudit::moved (r.state, rep.noise) || ! yw::ctlaudit::moved (r.live, rep.noise)
+                             || (r.automatable && ! yw::ctlaudit::moved (r.automation, rep.noise));
             if (bad || all)
                 std::printf ("  %4d %-28s %9.3f -> %9.3f  state%s %6.0f  live%s %6.0f  auto%s %6.0f\n", r.index, r.name.c_str(), r.from, r.to,
                              mark (r.state, rep.noise), r.state, mark (r.live, rep.noise), r.live,
@@ -146,11 +146,11 @@ int main (int argc, char** argv)
         std::vector<int> silent;
         for (std::size_t i = 0; i < controls.size(); ++i)
             for (const auto& r : rep.results)
-                if (r.index == controls[i].index && r.name == controls[i].name && ! lynx::ctlaudit::moved (r.state, rep.noise))
+                if (r.index == controls[i].index && r.name == controls[i].name && ! yw::ctlaudit::moved (r.state, rep.noise))
                     silent.push_back ((int) i);
         if (! silent.empty())
         {
-            const auto left = lynx::ctlaudit::stillDead (*c, controls, silent, p, samples);
+            const auto left = yw::ctlaudit::stillDead (*c, controls, silent, p, samples);
             std::printf ("  context pass: %zu of %zu silent controls move with other settings; never moved:", silent.size() - left.size(), silent.size());
             for (const auto i : left)
                 std::printf (" %d %s;", controls[(std::size_t) i].index, controls[(std::size_t) i].name.c_str());

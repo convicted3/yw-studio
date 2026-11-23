@@ -7,7 +7,7 @@
 #include "core/TakeCleanup.h"
 #include "core/TrackStates.h"
 
-namespace lynx::trackversions
+namespace yw::trackversions
 {
 namespace
 {
@@ -391,4 +391,4 @@ int laneUses (const Song& song, int index) noexcept
                                              [index] (const AutomationLane& l) { return l.automation == index; });
     return uses;
 }
-} // namespace lynx::trackversions
+} // namespace yw::trackversions

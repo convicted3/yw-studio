@@ -19,7 +19,7 @@ inline const Measured clipGain[] = {
 inline std::vector<std::pair<double, double>> volumeEvents (const std::string& xmlText)
 {
     std::vector<std::pair<double, double>> out;
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     if (! doc.parse (xmlText))
         return out;
     for (const auto& t : doc.root().child ("LiveSet").child ("Tracks").children ("AudioTrack"))
@@ -50,21 +50,21 @@ inline double liveAt (const std::vector<std::pair<double, double>>& ev, double b
         }
     return ev.back().second;
 }
-inline std::optional<lynx::Song> reimport (const std::string& xmlText, lynx::FlpImportReport* report = nullptr)
+inline std::optional<yw::Song> reimport (const std::string& xmlText, yw::FlpImportReport* report = nullptr)
 {
-    lynx::xml::Document doc;
+    yw::xml::Document doc;
     if (! doc.parse (xmlText))
         return std::nullopt;
-    lynx::AlsImportOptions o;
+    yw::AlsImportOptions o;
     o.common.projectFolder = "E:/sets";
     o.common.fileExists = [] (const std::string&) { return true; };
     o.common.report = report;
-    return lynx::importAlsXml (doc, o);
+    return yw::importAlsXml (doc, o);
 }
-inline const lynx::Clip* firstAudio (const lynx::Song& s)
+inline const yw::Clip* firstAudio (const yw::Song& s)
 {
     for (const auto& c : s.playlist)
-        if (c.kind == lynx::ClipKind::audio)
+        if (c.kind == yw::ClipKind::audio)
             return &c;
     return nullptr;
 }
@@ -84,7 +84,7 @@ inline std::string withVolumeEvents (std::string text, const std::string& events
 
 TEST (livefacts190gx_clip_gain_law_matches_lives_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     float worst = 0.0f;
     for (const auto& m : livefacts190gx::clipGain)
         worst = std::max (worst, (float) std::abs (clipenv::liveGainDb (m.value) - m.db));
@@ -108,7 +108,7 @@ TEST (livefacts190gx_clip_gain_law_matches_lives_renders)
 
 TEST (livefacts190gx_lane_values_and_lives_values_are_the_same_gain)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live → lane → the lane's own gain law (Levels adjustment) = Live's gain
     float worstDb = 0.0f;
     for (const auto& m : livefacts190gx::clipGain)
@@ -128,9 +128,9 @@ TEST (livefacts190gx_lane_values_and_lives_values_are_the_same_gain)
 
 TEST (livefacts190gx_track_panning_law_is_constant_power_plus_3_db)
 {
-    // Live's Track Panning renders (190gu e3): p → L, R gains; LYNX renders a pan envelope at Live's value p with the same
+    // Live's Track Panning renders (190gu e3): p → L, R gains; YW renders a pan envelope at Live's value p with the same
     // gains (its voice pan law, against the same clip without the envelope)
-    using namespace lynx;
+    using namespace yw;
     const std::array<std::array<double, 3>, 6> live { { { -1.0, 1.41421, 0.0 }, { -0.5, 1.30656, 0.54120 }, { -0.2, 1.14412, 0.83125 },
                                                         { 0.0, 1.0, 1.0 }, { 0.3, 0.73892, 1.20582 }, { 0.9, 0.11096, 1.40985 } } };
     std::vector<float> plainR;
@@ -153,7 +153,7 @@ TEST (livefacts190gx_track_panning_law_is_constant_power_plus_3_db)
 
 TEST (livefacts190gx_als_unwarped_clip_envelopes_are_left_out)
 {
-    using namespace lynx;
+    using namespace yw;
     auto text = exportAls (clipenv190gi::rampSong()).xml;
     // every exported audio clip is warped, so Live plays its envelope
     CHECK (text.find ("<IsWarped Value=\"true\"") != std::string::npos);
@@ -174,9 +174,9 @@ TEST (livefacts190gx_als_unwarped_clip_envelopes_are_left_out)
 
 TEST (livefacts190gx_als_import_follows_lives_ramp)
 {
-    // a Live ramp from 1 to −1 over 4 beats (straight in Live's value): LYNX's imported curve keeps Live's gain within
+    // a Live ramp from 1 to −1 over 4 beats (straight in Live's value): YW's imported curve keeps Live's gain within
     // 0.1 dB wherever it is above −60 dB, and a step at 0.5 lands on −10 dB
-    using namespace lynx;
+    using namespace yw;
     const auto base = exportAls (clipenv190gi::rampSong()).xml;
     const auto text = livefacts190gx::withVolumeEvents (base, "<FloatEvent Id=\"0\" Time=\"-63072000\" Value=\"1\" />"
                                                               "<FloatEvent Id=\"1\" Time=\"0\" Value=\"1\" />"
@@ -198,8 +198,8 @@ TEST (livefacts190gx_als_import_follows_lives_ramp)
         const auto beats = k / 100.0, live = clipenv::liveGainDb (1.0 - beats / 2.0);
         if (! (live > -60.0))
             continue;
-        const auto lynxDb = clipenv::laneDb (clipenv::valueAt (*e, clipenv::volumeLane, clipenv::clipTick (*audio, beats * ppq)));
-        worst = std::max (worst, std::abs (lynxDb - live));
+        const auto ywDb = clipenv::laneDb (clipenv::valueAt (*e, clipenv::volumeLane, clipenv::clipTick (*audio, beats * ppq)));
+        worst = std::max (worst, std::abs (ywDb - live));
         ++compared;
     }
     CHECK (compared > 300);
@@ -207,11 +207,11 @@ TEST (livefacts190gx_als_import_follows_lives_ramp)
     CHECK (e->volume.size() > 3 && e->volume.size() < 200); // (cut into pieces, not one per tick)
 }
 
-TEST (livefacts190gx_als_export_keeps_lynxs_gain_curve)
+TEST (livefacts190gx_als_export_keeps_yws_gain_curve)
 {
-    // LYNX ramps (straight in the lane's value) → Live events: Live's straight lines in its own value on Live's law stay
-    // within 0.1 dB of LYNX's gain wherever it is above −60 dB; then back again
-    using namespace lynx;
+    // YW ramps (straight in the lane's value) → Live events: Live's straight lines in its own value on Live's law stay
+    // within 0.1 dB of YW's gain wherever it is above −60 dB; then back again
+    using namespace yw;
     for (const auto end : { 0.4f, 0.0f })
     {
         auto song = clipenv190gi::rampSong();
@@ -223,10 +223,10 @@ TEST (livefacts190gx_als_export_keeps_lynxs_gain_curve)
         for (int k = 0; k <= 400; ++k)
         {
             const auto beats = k / 100.0;
-            const auto lynxDb = clipenv::laneDb (clipenv::valueAt (song.clipEnvelopes[0], clipenv::volumeLane, beats * ppq));
-            if (lynxDb < -60.0)
+            const auto ywDb = clipenv::laneDb (clipenv::valueAt (song.clipEnvelopes[0], clipenv::volumeLane, beats * ppq));
+            if (ywDb < -60.0)
                 continue;
-            worst = std::max (worst, std::abs (clipenv::liveDb (livefacts190gx::liveAt (ev, beats)) - lynxDb));
+            worst = std::max (worst, std::abs (clipenv::liveDb (livefacts190gx::liveAt (ev, beats)) - ywDb));
         }
         if (! (worst < 0.1))
             std::printf ("  export to %.1f: worst %.3f dB\n", (double) end, worst);
@@ -254,8 +254,8 @@ TEST (livefacts190gx_als_export_keeps_lynxs_gain_curve)
 
 TEST (livefacts190gx_render_of_a_live_clip_gain_step)
 {
-    // Live's 0.5 renders at −10.0 dB (190gu e1): the imported value renders there in LYNX too
-    using namespace lynx;
+    // Live's 0.5 renders at −10.0 dB (190gu e1): the imported value renders there in YW too
+    using namespace yw;
     const auto plain = clipenv190gi::render (clipenv190gi::dcSong(), 24000);
     auto song = clipenv190gi::dcSong();
     ClipEnvelope e;

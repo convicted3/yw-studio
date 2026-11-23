@@ -17,12 +17,12 @@
  #include <mutex>
  #include <vector>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
-// LYNX ASIO's class id (asio/LynxAsio.cpp)
-constexpr const wchar_t* lynxAsioClsid = L"{5957A510-2026-4E57-9A1C-796F6C6F7375}";
+// YW ASIO's class id (asio/YwAsio.cpp)
+constexpr const wchar_t* ywAsioClsid = L"{5957A510-2026-4E57-9A1C-796F6C6F7375}";
 
 class DllAsioDevice;
 std::atomic<DllAsioDevice*> activeDevice { nullptr }; // ASIO callbacks carry no user pointer: one open device at a time
@@ -42,7 +42,7 @@ public:
         using GetClassObject = HRESULT (WINAPI*) (REFCLSID, REFIID, void**);
         auto get = (GetClassObject) (void*) GetProcAddress (module, "DllGetClassObject");
         CLSID clsid {};
-        if (get == nullptr || FAILED (CLSIDFromString ((LPCOLESTR) (clsidText.isEmpty() ? juce::String (lynxAsioClsid) : clsidText).toWideCharPointer(), &clsid)))
+        if (get == nullptr || FAILED (CLSIDFromString ((LPCOLESTR) (clsidText.isEmpty() ? juce::String (ywAsioClsid) : clsidText).toWideCharPointer(), &clsid)))
         {
             lastError = "not an ASIO driver DLL";
             return;
@@ -343,7 +343,7 @@ private:
                 if (auto* d = activeDevice.load())
                     d->requestReset();
                 return 1;
-            case kAsioLatenciesChanged: // e.g. LYNX ASIO raised its input FIFO after late packets
+            case kAsioLatenciesChanged: // e.g. YW ASIO raised its input FIFO after late packets
                 if (auto* d = activeDevice.load(); d != nullptr && d->driver != nullptr)
                 {
                     long in = 0, out = 0;
@@ -414,22 +414,22 @@ std::unique_ptr<juce::AudioIODeviceType> makeDllAsioDeviceType (const juce::Stri
     return std::make_unique<DllAsioDeviceType> (spec, typeName, deviceName);
 }
 
-std::unique_ptr<juce::AudioIODeviceType> makeBuiltInLynxAsioType()
+std::unique_ptr<juce::AudioIODeviceType> makeBuiltInYwAsioType()
 {
-    const auto dll = juce::File::getSpecialLocation (juce::File::currentExecutableFile).getSiblingFile ("lynx-asio.dll");
+    const auto dll = juce::File::getSpecialLocation (juce::File::currentExecutableFile).getSiblingFile ("yw-asio.dll");
     if (! dll.existsAsFile() || juce::WindowsRegistry::keyExists ("HKEY_LOCAL_MACHINE\\SOFTWARE\\ASIO\\YW ASIO"))
         return nullptr;
-    return makeDllAsioDeviceType (dll.getFullPathName(), lynxAsioTypeName, lynxAsioTypeName);
+    return makeDllAsioDeviceType (dll.getFullPathName(), ywAsioTypeName, ywAsioTypeName);
 }
 
-} // namespace lynx
+} // namespace yw
 
 namespace juce
 {
-extern std::atomic<bool> lynxAsioQuickInit; // cmake/LynxPatchJuce.cmake fix 31
+extern std::atomic<bool> ywAsioQuickInit; // cmake/YwPatchJuce.cmake fix 31
 }
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -530,7 +530,7 @@ private:
 
 void prewarmAsioDevice (const juce::File& savedSetup)
 {
-    if (juce::SystemStats::getEnvironmentVariable ("LYNX_ASIO_THREAD", {}) == "0") // (no ASIO thread: nothing ahead)
+    if (juce::SystemStats::getEnvironmentVariable ("YW_ASIO_THREAD", {}) == "0") // (no ASIO thread: nothing ahead)
         return;
     const auto xml = juce::XmlDocument::parse (savedSetup);
     if (xml == nullptr || xml->getStringAttribute ("deviceType") != "ASIO")
@@ -558,10 +558,10 @@ void prewarmAsioDevice (const juce::File& savedSetup)
             if (type->getDeviceNames().contains (name))
             {
                 // (round 190hd) without JUCE's start / sleep 80 ms / stop at init: ~0.27 s with "FL Studio ASIO"
-                const auto quick = juce::SystemStats::getEnvironmentVariable ("LYNX_ASIO_QUICK_INIT", {}) != "0";
-                juce::lynxAsioQuickInit = quick;
+                const auto quick = juce::SystemStats::getEnvironmentVariable ("YW_ASIO_QUICK_INIT", {}) != "0";
+                juce::ywAsioQuickInit = quick;
                 device.reset (type->createDevice (name, name)); // (the driver is made and opened on the ASIO thread)
-                juce::lynxAsioQuickInit = false;
+                juce::ywAsioQuickInit = false;
                 const std::lock_guard<std::mutex> l (w.lock);
                 w.quickInit = quick && device != nullptr;
             }
@@ -588,7 +588,7 @@ bool asioPrewarmQuickInit()
     return p.quickInit && p.taken;
 }
 
-void LynxDeviceManager::createAudioDeviceTypes (juce::OwnedArray<juce::AudioIODeviceType>& types)
+void YwDeviceManager::createAudioDeviceTypes (juce::OwnedArray<juce::AudioIODeviceType>& types)
 {
     juce::AudioDeviceManager::createAudioDeviceTypes (types);
     auto& p = prewarm();
@@ -596,7 +596,7 @@ void LynxDeviceManager::createAudioDeviceTypes (juce::OwnedArray<juce::AudioIODe
     if (! p.started || std::exchange (p.taken, true))
         return;
     // (round 190hd) the other types' device lists while the ASIO device is still being made (else after it, below)
-    if (! p.done && juce::SystemStats::getEnvironmentVariable ("LYNX_SCAN_AHEAD", {}) != "0")
+    if (! p.done && juce::SystemStats::getEnvironmentVariable ("YW_SCAN_AHEAD", {}) != "0")
     {
         l.unlock();
         for (int i = 0; i < types.size(); ++i)
@@ -629,18 +629,18 @@ void LynxDeviceManager::createAudioDeviceTypes (juce::OwnedArray<juce::AudioIODe
             return;
         }
 }
-} // namespace lynx
+} // namespace yw
 
 #else
 
-namespace lynx
+namespace yw
 {
 std::unique_ptr<juce::AudioIODeviceType> makeDllAsioDeviceType (const juce::String&, const juce::String&, const juce::String&) { return nullptr; }
-std::unique_ptr<juce::AudioIODeviceType> makeBuiltInLynxAsioType() { return nullptr; }
+std::unique_ptr<juce::AudioIODeviceType> makeBuiltInYwAsioType() { return nullptr; }
 void prewarmAsioDevice (const juce::File&) {}
 juce::String asioPrewarmReport() { return {}; }
 bool asioPrewarmQuickInit() { return false; }
-void LynxDeviceManager::createAudioDeviceTypes (juce::OwnedArray<juce::AudioIODeviceType>& types) { juce::AudioDeviceManager::createAudioDeviceTypes (types); }
-} // namespace lynx
+void YwDeviceManager::createAudioDeviceTypes (juce::OwnedArray<juce::AudioIODeviceType>& types) { juce::AudioDeviceManager::createAudioDeviceTypes (types); }
+} // namespace yw
 
 #endif

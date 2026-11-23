@@ -6,7 +6,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -17,7 +17,7 @@ std::unique_ptr<juce::Component> makeGroovePool (AudioEngine& engine);
 // The height the pool wants for its rows (title and column heads included), at most `maxRows` rows.
 int groovePoolHeight (const AudioEngine& engine, int maxRows = 5);
 
-// The "add a groove" menu, shared with the slot menu's groove chooser: LYNX's own grooves by folder, and a groove file
+// The "add a groove" menu, shared with the slot menu's groove chooser: YW's own grooves by folder, and a groove file
 // of the user's. `added`: the id of the groove now in the pool.
 void addGrooveMenuItems (juce::PopupMenu& menu, AudioEngine& engine, juce::Component* owner, std::function<void (std::uint32_t)> added);
-} // namespace lynx
+} // namespace yw

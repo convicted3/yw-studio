@@ -7,7 +7,7 @@
 
 TEST (perf190ok_overload_guard_engages_only_when_audio_and_ui_both_starve)
 {
-    using namespace lynx;
+    using namespace yw;
     // 64 samples at 48 kHz: a callback every 1.333 ms
     constexpr double budget = 64.0 / 48.0;
     auto run = [&] (OverloadGuard& g, double& now, double seconds, double used, bool uiOk) {
@@ -97,7 +97,7 @@ TEST (perf190ok_overload_guard_engages_only_when_audio_and_ui_both_starve)
         CHECK (! g.engaged());
     }
     {
-        // LYNX_SAFE_OVERLOADS's spec
+        // YW_SAFE_OVERLOADS's spec
         OverloadGuard g;
         g.configure ("share=1,max=8,bogus,window=100,late=50");
         CHECK (g.params().yieldShare == 1.0 && g.params().maxYieldMs == 8.0 && g.params().windowMs == 100.0 && g.params().uiLateMs == 50.0
@@ -119,7 +119,7 @@ TEST (perf190ok_overload_guard_engages_only_when_audio_and_ui_both_starve)
 
 TEST (perf190ok_generator_smart_disable_sleeps_after_4_s_of_silence_and_wakes_on_events)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto hold = gensmart::holdSamples (48000.0);
     CHECK (hold == 192000);
     gensmart::State s;
@@ -154,7 +154,7 @@ TEST (perf190ok_generator_smart_disable_sleeps_after_4_s_of_silence_and_wakes_on
 
 TEST (perf190ok_channel_smart_disable_keeps_the_fl_flags_in_step)
 {
-    using namespace lynx;
+    using namespace yw;
     ChannelDef c;
     CHECK (! c.smartDisable); // FL's default for a new generator, and every project before round 190ok
     c.setSmartDisable (true);
@@ -174,7 +174,7 @@ TEST (perf190ok_channel_smart_disable_keeps_the_fl_flags_in_step)
 
 TEST (perf190ok_smart_disable_tip_only_for_heavy_projects_with_most_slots_off)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     for (auto& t : song.mixer) // (the default project's own effects out of the way)
         t.effects.clear();
@@ -198,12 +198,12 @@ TEST (perf190ok_smart_disable_tip_only_for_heavy_projects_with_most_slots_off)
     CHECK (smarttip::due ({ 116, 118 }, 0.161));
 }
 
-// ---- D3: fast maths for LYNX's own devices (core/FastMath.h), from EffectSlot::engineRev 2
+// ---- D3: fast maths for YW's own devices (core/FastMath.h), from EffectSlot::engineRev 2
 #include "core/FastMath.h"
 
 TEST (perf190ok_fastmath_is_as_accurate_as_the_c_library)
 {
-    using namespace lynx;
+    using namespace yw;
     double worst = 0.0;
     for (int i = -1200000; i <= 1200000; ++i)
     {
@@ -232,7 +232,7 @@ TEST (perf190ok_fastmath_is_as_accurate_as_the_c_library)
 
 TEST (perf190ok_ember_fast_curve_stays_within_float_rounding_of_the_old_one)
 {
-    using namespace lynx::mixsuite::ember;
+    using namespace yw::mixsuite::ember;
     for (const auto s : { Style::tube, Style::tubeBiased, Style::fuzz, Style::tape, Style::console })
     {
         double worst = 0.0;
@@ -247,8 +247,8 @@ TEST (perf190ok_ember_fast_curve_stays_within_float_rounding_of_the_old_one)
 
 TEST (perf190ok_new_slots_take_revision_2_old_ones_render_as_before)
 {
-    using namespace lynx;
-    // revision 2 reaches LYNX's own devices through makeEffect (slot); 0 and 1 (projects saved before) are the C library's
+    using namespace yw;
+    // revision 2 reaches YW's own devices through makeEffect (slot); 0 and 1 (projects saved before) are the C library's
     // maths, the same samples; 2 is within float rounding of them
     for (const auto kind : { EffectKind::ember, EffectKind::prismMultiband, EffectKind::crestCompressor })
     {

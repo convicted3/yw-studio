@@ -2,10 +2,10 @@
 
 // The Browser's search, run by one background worker that owns the search index (round 162, issue #9).
 //
-// LYNX 0.1.17 started a new thread for every search and, when the user typed the next letter, waited 3 s for the old
+// YW 0.1.17 started a new thread for every search and, when the user typed the next letter, waited 3 s for the old
 // one and then killed it (juce::Thread::stopThread's time-out ends in TerminateThread on Windows). A search thread
 // that was walking a big folder tree (a slow or sleeping drive, a folder with thousands of files) was killed in the
-// middle of a heap allocation or while it changed the index, which froze or crashed LYNX a little later. Here nothing
+// middle of a heap allocation or while it changed the index, which froze or crashed YW a little later. Here nothing
 // is ever killed: one worker serves the newest search first, every walk stops between two folders when a newer search
 // arrives or the service closes, and the index is only locked while it is read or changed, never while the disk is.
 //
@@ -29,7 +29,7 @@
 
 #include "core/SearchIndex.h"
 
-namespace lynx::search
+namespace yw::search
 {
 struct IndexStatus
 {
@@ -148,4 +148,4 @@ private:
 
     std::thread worker; // (last: started when everything else exists)
 };
-} // namespace lynx::search
+} // namespace yw::search

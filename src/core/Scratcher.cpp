@@ -1,7 +1,7 @@
 #include "core/Scratcher.h"
 
 // Fruity Scratcher (docs/analise/REA_rodada165g-flscratch165.md). The [DECOMP addr] notes name the function of FL's
-// Fruity Scratcher_x64.dll whose behaviour each part reproduces; the code is LYNX's own.
+// Fruity Scratcher_x64.dll whose behaviour each part reproduces; the code is YW's own.
 
 #include <algorithm>
 #include <atomic>
@@ -13,7 +13,7 @@
 #include "core/Instruments.h"
 #include "core/SampleFiles.h"
 
-namespace lynx::scratcher
+namespace yw::scratcher
 {
 namespace
 {
@@ -436,7 +436,7 @@ void Engine::processDvs (float* left, float* right, int n) noexcept
         const auto place = decoder.active() ? decoder.position() : -1.0;
         if (place >= 0.0)
         {
-            // FL compares the places exactly; LYNX's speed tracker settles to ±1e-12-ish instead of an exact 0 after
+            // FL compares the places exactly; YW's speed tracker settles to ±1e-12-ish instead of an exact 0 after
             // the needle lifts, so "the same place" is within 1e-7 s (0.004 frames at 44.1 kHz)
             dvsStuck = std::abs (place - dvsLast) < 1.0e-7 ? dvsStuck + 1 : 0;
             if (dvsStuck < holdLimit)
@@ -637,4 +637,4 @@ std::unique_ptr<Effect> make (std::shared_ptr<const SampleData> sample)
 {
     return std::make_unique<ScratcherEffect> (std::move (sample));
 }
-} // namespace lynx::scratcher
+} // namespace yw::scratcher

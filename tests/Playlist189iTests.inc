@@ -1,6 +1,6 @@
 // --- Round 189i: FL's per-clip edge declicker (PLFadeHandleMenu: Manual, Declicker Automatic / Disabled / Enabled) ----
 // (FLEngine 2026 [DECOMP] FUN_00d01bc0 / FUN_00cfc020 / FUN_00cfbf60 menu, FUN_00d27cf0 / FUN_00d253d0 / FUN_00d24400
-// voice, FUN_012c6ae0 / FUN_00977870 declicker tables; notes in /mnt/e/lynx-work/flgap189i; FL /R renders round 189l)
+// voice, FUN_012c6ae0 / FUN_00977870 declicker tables; notes in /mnt/e/yw-work/flgap189i; FL /R renders round 189l)
 
 #include "core/ClipOps.h"
 #include "core/Instruments.h"
@@ -16,16 +16,16 @@ struct Edge189i
 };
 Edge189i edge189i (int mode, std::uint16_t shape, float fadeIn = 0.0f, float fadeOut = 0.0f, float elapsed = 0.0f)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 44100.0;
     data->left.assign (44100 * 2, 0.5f);
-    auto clip = lynx::makeInstrument (lynx::InstrumentKind::audioClip, data);
+    auto clip = yw::makeInstrument (yw::InstrumentKind::audioClip, data);
     clip->prepare (44100.0);
-    lynx::ChannelDef def;
-    def.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef def;
+    def.instrument = yw::InstrumentKind::audioClip;
     def.sampler.declickMode = mode;
     clip->configure (def, 120.0);
-    const auto key = lynx::audioClipKey (3);
+    const auto key = yw::audioClipKey (3);
     clip->setNextClipFades (elapsed, 20000.0f, fadeIn, fadeOut, shape);
     clip->noteOnAt (key, 1.0f, 0.1);
     Edge189i e;
@@ -87,7 +87,7 @@ TEST (playlist189i_clip_start_declick)
 // The menu's data: FL's bits (manual 0 / 1, choice >> 2 / >> 14), Manual off zeroes the fade
 TEST (playlist189i_declick_choice_bits)
 {
-    using namespace lynx;
+    using namespace yw;
     Clip a;
     a.kind = ClipKind::audio;
     a.channel = 2;

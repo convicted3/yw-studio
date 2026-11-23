@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's key map: every keyboard shortcut lives in one remappable table (docs/WORKFLOW_FL.md,
+// YW's key map: every keyboard shortcut lives in one remappable table (docs/WORKFLOW_FL.md,
 // P1 item 14). Platform-neutral (no JUCE): the UI converts its key events into a Chord, asks
 // the map which action it triggers in the focused panel, and runs it.
 //
@@ -19,7 +19,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::keys
+namespace yw::keys
 {
 // Key codes: printable keys use their upper-case ASCII code ('A', '1', '+'); the others these values.
 enum Key : int
@@ -70,7 +70,7 @@ struct Action
     bool whilePiano = false; // a plain printable key that keeps working while the typing piano is on
 };
 
-// The built-in actions with LYNX's default chords.
+// The built-in actions with YW's default chords.
 const std::vector<Action>& actions();
 const Action* findAction (const std::string& id);
 
@@ -160,7 +160,7 @@ public:
     // the focus, so its unmodified letters, Space, arrows, Enter... stay text editing).
     std::string findFromSecondaryWindow (const Chord& chord, bool typingIntoText, bool typingPiano) const;
     // Issue #117: a key the typing piano takes (`pianoTakes`: typing keyboard to piano on and the layout plays it) plays
-    // its note from a secondary window too (a LYNX instrument's or effect's window, a tool window), as over the main
+    // its note from a secondary window too (a YW instrument's or effect's window, a tool window), as over the main
     // window and as FL does; only a focused text field keeps it.
     static bool secondaryWindowPlaysNote (bool pianoTakes, bool typingIntoText) noexcept { return pianoTakes && ! typingIntoText; }
 
@@ -208,4 +208,4 @@ constexpr SettingsKey settingsKeyPress (bool windowOpen, int shownPage, int aske
 {
     return ! windowOpen ? SettingsKey::open : (shownPage == askedPage ? SettingsKey::close : SettingsKey::switchPage);
 }
-} // namespace lynx::keys
+} // namespace yw::keys

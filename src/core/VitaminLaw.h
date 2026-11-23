@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190mm (sub-round dyn): LYNX's model of a five-band harmonic enhancer (the Waves Vitamin role). Clean-room: the
+// Round 190mm (sub-round dyn): YW's model of a five-band harmonic enhancer (the Waves Vitamin role). Clean-room: the
 // reference's control code was read for its crossover design only (the in-phase squared-biquad crossover with a Q, the
 // same structure as Prism's C4 law; docs/analise/REA_rodada190mm_dyn.md §6); the five bands are split as a tree whose
 // sum is the product of the four crossovers' all-passes (each band carries the all-passes of the crossovers above it).
@@ -13,7 +13,7 @@
 #include <array>
 #include <cmath>
 
-namespace lynx::vitamin
+namespace yw::vitamin
 {
 struct Fit
 {
@@ -150,4 +150,4 @@ private:
     std::array<std::array<Crossover, 4>, 2> xo {};
     std::array<std::array<Crossover, 6>, 2> comp {};
 };
-} // namespace lynx::vitamin
+} // namespace yw::vitamin

@@ -25,13 +25,13 @@
 #include "ui/SimpleLook.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
 using simpletracks::Kind;
 
-// --- the tiles' pictures: LYNX's own simple line drawings in a 1×1 box ------------------------------------------------
+// --- the tiles' pictures: YW's own simple line drawings in a 1×1 box ------------------------------------------------
 enum class Glyph { voice, instrument, drums, sampler, guitar, import, loops };
 
 juce::Path glyphPath (Glyph glyph)
@@ -219,8 +219,8 @@ private:
 juce::Colour kindColour (Kind kind) { return juce::Colour (simpletracks::defaultColour (kind)); }
 
 // Round 190jp (owner follow-up to 190jc's SG-14): the New-track chooser's squares nearer BandLab's saturated ones (its
-// voice #f12c18 is s 0.90 v 0.95; LYNX's track colours are muted, s 0.43-0.71): the kind's hue, saturation and brightness
-// raised most of the way. Only the chooser's pictures: the tracks keep LYNX's own colours.
+// voice #f12c18 is s 0.90 v 0.95; YW's track colours are muted, s 0.43-0.71): the kind's hue, saturation and brightness
+// raised most of the way. Only the chooser's pictures: the tracks keep YW's own colours.
 juce::Colour chooserColour (Kind kind)
 {
     const auto c = kindColour (kind);
@@ -261,7 +261,7 @@ public:
           loops (Glyph::loops, theme::colour::bg6, tr ("Loops"), tr ("Browse loops and drag them onto the timeline."))
     {
         setWantsKeyboardFocus (true);
-        getProperties().set ("lynxKeepsKeys", true); // (round 190fc: its tiles' keys while it is up)
+        getProperties().set ("ywKeepsKeys", true); // (round 190fc: its tiles' keys while it is up)
         title.setText (tr ("New track"), juce::dontSendNotification);
         ui::dialog::styleTitle (title); // (round 190jp: the one dialog title, design190ia SG-20)
         footer.setText (tr ("Each track gets its own channel and mixer track."), juce::dontSendNotification);
@@ -271,7 +271,7 @@ public:
         close.setButtonText (juce::String::fromUTF8 ("\xc3\x97"));
         close.setTooltip (tr ("Close"));
         close.onClick = [this] { owner.closeByHand(); };
-        // round 190ch: a new project from LYNX's demo song or a template, with a preview
+        // round 190ch: a new project from YW's demo song or a template, with a preview
         startFrom.setButtonText (tr ("Start from a demo song or a template..."));
         startFrom.onClick = [this] { owner.showStartFrom(); };
         // round 190dv: the first-song tour (continues a paused one)
@@ -285,7 +285,7 @@ public:
         loops.setComponentID ("simple.tile.loops");
 
         voice.onClick = [this] { owner.addAudio (Kind::voice); };
-        // one click gives a sound to play at once (LYNX's own synth); "More..." lists every instrument, plugin and Soundfont
+        // one click gives a sound to play at once (YW's own synth); "More..." lists every instrument, plugin and Soundfont
         instrument.onClick = [this] { owner.addDefaultInstrument(); };
         moreInstruments.setButtonText (tr ("More..."));
         moreInstruments.onClick = [this] { owner.chooseInstrument (moreInstruments); };
@@ -301,7 +301,7 @@ public:
         sampler.addAndMakeVisible (samplerKeys);
         guitar.onClick = [this] { owner.addAudio (bassButton.getToggleState() ? Kind::bass : Kind::guitar); };
         import.onClick = [this] { owner.importFiles(); };
-        // round 190fo: a whole folder of stems and MIDI files (another app's "download stems", LYNX's own export)
+        // round 190fo: a whole folder of stems and MIDI files (another app's "download stems", YW's own export)
         importFolder.setButtonText (tr ("Folder..."));
         importFolder.setTooltip (tr ("A folder of stems and MIDI files: one track each, all from the start"));
         importFolder.onClick = [this] { owner.importFolder(); };
@@ -346,7 +346,7 @@ public:
     {
         if (genreButtons.empty())
         {
-            // Empty, then Loop Starter's genres (FL's when installed, else LYNX's own) with their suggested tempo
+            // Empty, then Loop Starter's genres (FL's when installed, else YW's own) with their suggested tempo
             genreIds.push_back ({});
             genreButtons.push_back (std::make_unique<StarterRow> (tr ("Empty grid"), juce::String()));
             if (const auto* config = loopstarterui::sources().config)
@@ -1152,7 +1152,7 @@ void SimpleWorkflow::addAudio (Kind kind)
 
 void SimpleWorkflow::addDefaultInstrument()
 {
-    // LYNX's own synth (what an imported MIDI track plays too), ready for the computer keys and the on-screen keyboard
+    // YW's own synth (what an imported MIDI track plays too), ready for the computer keys and the on-screen keyboard
     ChannelDef synth;
     synth.instrument = InstrumentKind::synth;
     simpletracks::Request q;
@@ -1303,7 +1303,7 @@ void SimpleWorkflow::addFiles (const juce::Array<juce::File>& files, std::int64_
 {
     juce::StringArray failed;
     std::optional<keyfollow::LoopKey> firstKey; // the first keyed loop (a project without a key is offered its key)
-    // round 190fo: a folder of stems and MIDI files (BandLab's "Download Stems", LYNX's own export for other apps): its
+    // round 190fo: a folder of stems and MIDI files (BandLab's "Download Stems", YW's own export for other apps): its
     // files, one track each, all from `start`, named without their numbers; stems play at their own speed and key
     struct One
     {
@@ -1330,7 +1330,7 @@ void SimpleWorkflow::addFiles (const juce::Array<juce::File>& files, std::int64_
         {
             const auto f = entry.getFile();
             if (f.getParentDirectory() != file && f.getParentDirectory().getParentDirectory() != file)
-                continue; // (the folder and its sub-folders one level down: LYNX's "Stems/" and "MIDI/")
+                continue; // (the folder and its sub-folders one level down: YW's "Stems/" and "MIDI/")
             relative.push_back (f.getRelativePathFrom (file).replaceCharacter ('\\', '/').toStdString());
         }
         for (const auto& item : simpletracks::folderPlan (relative))
@@ -1350,7 +1350,7 @@ void SimpleWorkflow::addFiles (const juce::Array<juce::File>& files, std::int64_
         const auto& file = one.file;
         if (file.hasFileExtension ("mid;midi"))
         {
-            // one instrument track (LYNX's synth) per MIDI track with notes, from `start`
+            // one instrument track (YW's synth) per MIDI track with notes, from `start`
             juce::String error;
             const auto midi = MidiFileIo::parseFile (file, error);
             if (! midi)
@@ -1416,7 +1416,7 @@ void SimpleWorkflow::addFiles (const juce::Array<juce::File>& files, std::int64_
         // beats at the project's tempo, at its own pitch, and follows the tempo from then on (round 190p)
         q.audioBeats = simpletracks::loopBeats (file.getFileName().toStdString(), seconds, data->acidBeats, engine.getSong().meter());
         // round 190kx: a loop whose name and file don't say its tempo or key takes what the analysis finds in its audio
-        // (as BandLab's loops keep the project's tempo and key; Settings › LYNX extras "simple.loopDetect"): from the
+        // (as BandLab's loops keep the project's tempo and key; Settings › YW extras "simple.loopDetect"): from the
         // cache when the Browser showed it, else analysed on a worker after it is placed (applyLoopAnalysis)
         const auto detects = loopanalysis::dropDetects().load() && seconds <= loopanalysis::maxSeconds;
         bool analyseLater = false;
@@ -1484,13 +1484,13 @@ void SimpleWorkflow::offerProjectKey (int root, bool minor)
 
 void SimpleWorkflow::addDrums (const std::string& genre, bool steps, bool useTempo)
 {
-    // a Loop Starter plan for the genre (FL's configuration and presets when installed, else LYNX's own); an empty grid
+    // a Loop Starter plan for the genre (FL's configuration and presets when installed, else YW's own); an empty grid
     // takes the default genre's kit without its steps
     const auto& sources = loopstarterui::sources();
     if (sources.config == nullptr)
         return;
     const auto id = genre.empty() ? sources.config->defaultGenre : genre;
-    // (round 190np: LYNX --demo records tutorials in several languages: the same starter beat in every take)
+    // (round 190np: YW --demo records tutorials in several languages: the same starter beat in every take)
     const auto seed = demo::active() ? (std::uint64_t) 190 : (std::uint64_t) juce::Random::getSystemRandom().nextInt64();
     const auto plan = loopstarter::generate (sources, id, seed);
     simpletracks::Request q;
@@ -1561,4 +1561,4 @@ void SimpleWorkflow::applyLoopAnalysis (const juce::File& file, std::shared_ptr<
         });
     });
 }
-} // namespace lynx
+} // namespace yw

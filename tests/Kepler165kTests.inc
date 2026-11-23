@@ -19,10 +19,10 @@ TEST (kepler_chorus_like_the_dll)
     const float chorus1 = 0.33f;
     std::memcpy (st.data() + 0x21 + 4 * 30, &chorus1, 4);
     const auto dll = keplerDll();
-    if (dll.empty() || ! lynx::keplerDllUsable (dll))
+    if (dll.empty() || ! yw::keplerDllUsable (dll))
         return;
-    const std::vector<lynx::kepler::RefNote> notes { { 0, 60, 1.0, 0.0, 0.0, 20000 }, { 8000, 67, 0.6, 0.0, 0.0, 26000 }, { 16000, 55, 0.95, 0.0, 0.0, 30000 } };
-    const auto y = lynx::kepler::renderReference (st, dll, notes, 44100.0, 39690);
+    const std::vector<yw::kepler::RefNote> notes { { 0, 60, 1.0, 0.0, 0.0, 20000 }, { 8000, 67, 0.6, 0.0, 0.0, 26000 }, { 16000, 55, 0.95, 0.0, 0.0, 30000 } };
+    const auto y = yw::kepler::renderReference (st, dll, notes, 44100.0, 39690);
     CHECK (y.size() == 2 * 39690);
     if (y.size() != 2 * 39690)
         return;
@@ -45,7 +45,7 @@ TEST (kepler_channel_levels_as_midi_events)
     // 6.309) × target / 6.309.
     const auto st = keplerTestState();
     const auto dll = keplerDll();
-    if (dll.empty() || ! lynx::keplerDllUsable (dll))
+    if (dll.empty() || ! yw::keplerDllUsable (dll))
         return;
     const auto cubic = [] (double v) { return (6.210264205932617 * v * v * v - 1.4609940052032471 * v * v + 1.5597299337387085 * v) * 1.4144271612167358; };
     struct Case
@@ -55,15 +55,15 @@ TEST (kepler_channel_levels_as_midi_events)
     };
     for (const auto& k : { Case { 0.78125f, 0.0f, 100, 0 }, Case { 9050.0f / 12800.0f, 0.0f, 90, 0 }, Case { 0.78125f, -0.5f, 100, -32 } })
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::kepler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::kepler;
         c.pluginState = st;
         c.samplePath = dll;
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::kepler);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::kepler);
         inst->configure (c, 125.0);
         inst->prepare (44100.0);
-        // LYNX's channel gains: channelGain(volume) on the cos/sin pan law (RackRenderer panGains)
-        const auto g = lynx::channelGain (k.volume);
+        // YW's channel gains: channelGain(volume) on the cos/sin pan law (RackRenderer panGains)
+        const auto g = yw::channelGain (k.volume);
         const auto angle = (k.pan + 1.0f) * 0.25f * 3.14159265f;
         const auto gl = g * std::cos (angle) * 1.41421356f, gr = g * std::sin (angle) * 1.41421356f;
         inst->noteOn (60, 0.78125f);
@@ -71,7 +71,7 @@ TEST (kepler_channel_levels_as_midi_events)
         inst->render (l.data(), r.data(), 8192, gl, gr);
         // the reference: the same note (the instrument's Init.Vol, Final.Pan = the channel pan)
         const auto initVol = (std::pow (11.0, 1.28 * (double) 0.78125f) - 1.0) / 10.0;
-        const auto y = lynx::kepler::renderReference (st, dll, { { 0, 60, initVol, (double) k.pan, 0.0, -1 } }, 44100.0, 8192, { 125.0, 8192 });
+        const auto y = yw::kepler::renderReference (st, dll, { { 0, 60, initVol, (double) k.pan, 0.0, -1 } }, 44100.0, 8192, { 125.0, 8192 });
         CHECK (y.size() == 2 * 8192);
         if (y.size() != 2 * 8192)
             continue;
@@ -92,13 +92,13 @@ TEST (kepler_ignores_cut_groups)
 {
     // FL's renders of a Kepler channel with "cut itself" equal the ones without (REA_rodada165g-flbeta165k §3): the
     // schedule never chokes a Kepler channel, while a sampler channel in the same group is still cut
-    lynx::Song song;
+    yw::Song song;
     song.channels.resize (2);
-    song.channels[0].instrument = lynx::InstrumentKind::kepler;
-    song.channels[1].instrument = lynx::InstrumentKind::sampler;
+    song.channels[0].instrument = yw::InstrumentKind::kepler;
+    song.channels[1].instrument = yw::InstrumentKind::sampler;
     for (auto& c : song.channels)
         c.cutGroup = c.cutBy = 1;
-    const auto state = lynx::RackState::build (song, nullptr, 44100.0);
+    const auto state = yw::RackState::build (song, nullptr, 44100.0);
     CHECK (state != nullptr);
     if (state == nullptr)
         return;

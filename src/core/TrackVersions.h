@@ -1,6 +1,6 @@
 #pragma once
 
-// Track versions (round 190pe, P20 of research190oe; a LYNX extra: FL Studio and Live have none). Named alternate versions
+// Track versions (round 190pe, P20 of research190oe; a YW extra: FL Studio and Live have none). Named alternate versions
 // of a whole Playlist track, as Cubase's Track Versions and Pro Tools' playlists: a version is the track's clips, its
 // automation lanes and its device chain (the effects of the track's own insert). One version is active and is the
 // track itself, so playback, the editors, the exports and older files see an ordinary track; the others are kept in
@@ -23,9 +23,9 @@
 
 #include "core/Song.h"
 
-namespace lynx::trackversions
+namespace yw::trackversions
 {
-// Settings › LYNX extras "Track versions in the Playlist track menu" (ui-options.txt "trackVersions"): the Pattern layout's
+// Settings › YW extras "Track versions in the Playlist track menu" (ui-options.txt "trackVersions"): the Pattern layout's
 // track menu offers "Track versions" only while it is on (FL's menu stays FL's), or for a track that already has some;
 // the Clip-launch layout always does; the Simple layout has none.
 inline bool& patternMenus() noexcept
@@ -70,11 +70,11 @@ bool remove (Song& song, int track, int version);
 // that part of the active version (clips cut at the range's edges; a gap in the version clears the active there).
 // Returns how many clips were copied in; -1 when nothing changed.
 int promote (Song& song, int track, int version, std::int64_t from, std::int64_t to);
-// Every track keeps only its active version (the .flp / .als / DAWproject exports and a copy for an older LYNX): the
+// Every track keeps only its active version (the .flp / .als / DAWproject exports and a copy for an older YW): the
 // other versions' clips go, and the automations only their lanes used. Returns how many versions were left out.
 int keepActiveOnly (Song& song);
 // How many lanes of versions that are not active play automation `index` (core/TakeCleanup.h counts them as uses).
 int laneUses (const Song& song, int index) noexcept;
 // A version name that no other version of the track has: `base`, else "base 2", "base 3"...
 std::string freeName (const Song& song, int track, const std::string& base);
-} // namespace lynx::trackversions
+} // namespace yw::trackversions

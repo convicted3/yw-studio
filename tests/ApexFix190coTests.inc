@@ -1,7 +1,7 @@
 // Round 190co: Apex Limiter's true-peak ceiling and the true-peak meter (core/Loudness.h TruePeak).
 //
 // Round 190cn measured the 0.1.26 limiter with True peak on and the ceiling at −1 dB: up to +1.07 dBTP with
-// oversampling off and −0.76 dBTP at 2× … 8× on a 16× reference meter, while LYNX's own meter read the same files up to
+// oversampling off and −0.76 dBTP at 2× … 8× on a 16× reference meter, while YW's own meter read the same files up to
 // 1.35 dB low (its four points sat between the samples and its 12-tap filter was short). These tests carry that
 // reference meter (16×, 128 taps per phase, Kaiser β = 10, the sample peak folded in) and hold both to it.
 
@@ -23,7 +23,7 @@ inline double reference16x (const std::vector<float>& x, std::size_t from, std::
         for (int k = 0; k < n; ++k)
         {
             const double t = (k - (n - 1) / 2.0) / L;
-            c[(std::size_t) k] = (std::abs (t) < 1e-12 ? 1.0 : std::sin (pi * t) / (pi * t)) * lynx::loudness::kaiser ((k - (n - 1) / 2.0) / ((n - 1) / 2.0), 10.0);
+            c[(std::size_t) k] = (std::abs (t) < 1e-12 ? 1.0 : std::sin (pi * t) / (pi * t)) * yw::loudness::kaiser ((k - (n - 1) / 2.0) / ((n - 1) / 2.0), 10.0);
             sum[(std::size_t) (k % L)] += c[(std::size_t) k];
         }
         for (int k = 0; k < n; ++k) c[(std::size_t) k] /= sum[(std::size_t) (k % L)]; // every phase passes DC at unity
@@ -110,21 +110,21 @@ inline void fade (std::vector<float>& x, double rate)
     }
 }
 
-inline lynx::EffectParams defaults()
+inline yw::EffectParams defaults()
 {
-    lynx::EffectParams p {};
-    const auto& inf = lynx::apex::info();
+    yw::EffectParams p {};
+    const auto& inf = yw::apex::info();
     for (std::size_t i = 0; i < inf.params.size(); ++i) p[i] = inf.params[i].defaultValue;
     return p;
 }
-inline void process (lynx::Effect& fx, std::vector<float>& l, std::vector<float>& r, const lynx::EffectParams& p, int block = 512)
+inline void process (yw::Effect& fx, std::vector<float>& l, std::vector<float>& r, const yw::EffectParams& p, int block = 512)
 {
     for (std::size_t i = 0; i < l.size(); i += (std::size_t) block)
         fx.process (l.data() + i, r.data() + i, (int) std::min ((std::size_t) block, l.size() - i), p, 120.0);
 }
 inline double meterDb (std::vector<float> x, double rate)
 {
-    lynx::loudness::Meter m;
+    yw::loudness::Meter m;
     m.prepare (rate);
     auto r = x;
     for (std::size_t i = 0; i < x.size(); i += 512) m.process (x.data() + i, r.data() + i, (int) std::min ((std::size_t) 512, x.size() - i));
@@ -138,7 +138,7 @@ inline double meterDb (std::vector<float> x, double rate)
 // around x[n − delay].
 TEST (apexfix190co_true_peak_estimator_is_the_plain_cascade)
 {
-    using lynx::loudness::TruePeak;
+    using yw::loudness::TruePeak;
     constexpr int n = 6000, T1 = TruePeak::taps, T2 = TruePeak::taps2;
     CHECK (TruePeak::delay == 68 && TruePeak::phases == 4);
     std::vector<double> x ((std::size_t) n, 0.0);
@@ -151,7 +151,7 @@ TEST (apexfix190co_true_peak_estimator_is_the_plain_cascade)
         for (int j = 0; j < count; ++j)
         {
             const double t = j - (count - 1) / 2.0;
-            c[(std::size_t) j] = std::sin (apexfix190co::pi * t) / (apexfix190co::pi * t) * lynx::loudness::kaiser (t / ((count - 1) / 2.0), beta);
+            c[(std::size_t) j] = std::sin (apexfix190co::pi * t) / (apexfix190co::pi * t) * yw::loudness::kaiser (t / ((count - 1) / 2.0), beta);
             sum += c[(std::size_t) j];
         }
         for (auto& v : c) v /= sum;
@@ -227,7 +227,7 @@ TEST (apexfix190co_true_peak_meter_matches_the_16x_reference)
     {
         fade (c.x, rate);
         const double ref = reference16x (c.x, 0, c.x.size()), got = meterDb (c.x, rate);
-        std::printf ("  true-peak meter, %-32s reference %7.3f dBTP, LYNX %7.3f (%+.3f)\n", c.name, ref, got, got - ref);
+        std::printf ("  true-peak meter, %-32s reference %7.3f dBTP, YW %7.3f (%+.3f)\n", c.name, ref, got, got - ref);
         CHECK (std::abs (got - ref) < 0.1);
     }
 }
@@ -240,9 +240,9 @@ TEST (apexfix190co_true_peak_is_never_under_the_sample_peak)
         std::vector<float> l (4800, 0.0f), r (4800, 0.0f);
         l[(std::size_t) at] = 0.9f;
         double lufs = 0.0, tp = 0.0;
-        lynx::mastering::measure (l, r, 48000.0, lufs, tp);
+        yw::mastering::measure (l, r, 48000.0, lufs, tp);
         CHECK (std::abs (tp - 20.0 * std::log10 (0.9)) < 0.01);
-        lynx::loudness::Meter m;
+        yw::loudness::Meter m;
         m.prepare (48000.0);
         m.process (l.data(), r.data(), 4800);
         CHECK (m.truePeakDb() >= m.samplePeakDb() && m.takeBlockTruePeak() >= 0.9 - 1e-6);
@@ -261,7 +261,7 @@ TEST (apexfix190co_true_peak_is_never_under_the_sample_peak)
 TEST (apexfix190co_limiter_holds_the_true_peak_ceiling)
 {
     using namespace apexfix190co;
-    using namespace lynx::apex;
+    using namespace yw::apex;
     struct Setting { double rate; int os; };
     const Setting settings[] = { { 44100.0, 0 }, { 44100.0, 2 }, { 48000.0, 0 }, { 48000.0, 1 }, { 48000.0, 2 }, { 48000.0, 3 }, { 96000.0, 0 }, { 96000.0, 1 } };
     double worst = -100.0;
@@ -306,7 +306,7 @@ TEST (apexfix190co_limiter_holds_the_true_peak_ceiling)
 TEST (apexfix190co_limiter_holds_the_ceiling_at_extreme_settings)
 {
     using namespace apexfix190co;
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double rate = 48000.0;
     const int n = 48000;
     struct Case { const char* name; float look, style, ceiling, unity, gainDb; double limit; };
@@ -339,7 +339,7 @@ TEST (apexfix190co_limiter_holds_the_ceiling_at_extreme_settings)
 TEST (apexfix190co_limiter_holds_the_ceiling_on_treble_only_peaks)
 {
     using namespace apexfix190co;
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double rate = 48000.0;
     const int n = 96000;
     for (const float gainDb : { 12.0f, 18.0f })
@@ -375,7 +375,7 @@ TEST (apexfix190co_limiter_holds_the_ceiling_on_treble_only_peaks)
 // off the latency is the one of 0.1.26. Under the ceiling the guard is a delay and nothing else, bit for bit.
 TEST (apexfix190co_latency_is_reported_and_exact)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     CHECK (guardLatency (48000.0) == 85 && guardLatency (44100.0) == 85 && guardLatency (96000.0) == 97);
     CHECK (latencyAt (48000.0, false) == 244 && latencyAt (44100.0, false) == 225 && latencyAt (96000.0, false) == 484);
     CHECK (latencyAt (48000.0) == 244 + 85 && latencyFor (48000.0, 4, false) - latencyFor (48000.0, 1, false) == latencyFor (48000.0, 4) - latencyFor (48000.0, 1));
@@ -438,7 +438,7 @@ TEST (apexfix190co_latency_is_reported_and_exact)
 // together. Unity gain is the same output ÷ gain.
 TEST (apexfix190co_audition_and_unity_include_the_guard)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double rate = 48000.0;
     const int n = 24000;
     for (const int os : { 0, 2 })
@@ -447,7 +447,7 @@ TEST (apexfix190co_audition_and_unity_include_the_guard)
         auto p = apexfix190co::defaults();
         p[pGain] = 12.0f / 30.0f;
         p[pOversampling] = (float) os / 3.0f;
-        auto render = [&] (lynx::EffectParams q, bool truePeak, int param) {
+        auto render = [&] (yw::EffectParams q, bool truePeak, int param) {
             q[pTruePeak] = truePeak ? 1.0f : 0.0f;
             if (param >= 0) q[(std::size_t) param] = 1.0f;
             auto fx = make (&q);
@@ -481,7 +481,7 @@ TEST (apexfix190co_audition_and_unity_include_the_guard)
 // True peak off is the limiter of 0.1.26: the same latency and the same samples (values taken from a 0.1.26 build).
 TEST (apexfix190co_true_peak_off_is_the_0126_limiter)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double rate = 48000.0;
     const int n = 24000;
     const int at[] = { 300, 1234, 5000, 9999, 12345, 17000, 23999 };
@@ -521,7 +521,7 @@ TEST (apexfix190co_true_peak_off_is_the_0126_limiter)
 // loses nothing: a loud burst after a long silence is held like any other.
 TEST (apexfix190co_guard_sleeps_and_wakes)
 {
-    using namespace lynx::apex;
+    using namespace yw::apex;
     const double rate = 48000.0;
     auto p = apexfix190co::defaults();
     p[pGain] = 12.0f / 30.0f;

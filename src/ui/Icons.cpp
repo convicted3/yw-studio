@@ -11,7 +11,7 @@
 
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace icons
 {
@@ -830,7 +830,7 @@ Shape make (Icon icon)
             st.addEllipse (3.5f, 8.0f, 8.0f, 8.0f);
             fi.addEllipse (13.0f, 8.0f, 8.0f, 8.0f);
             break;
-        case Icon::toStart: // a bar, then a triangle pointing at it (LYNX vector; reads like BandLab's ⏮)
+        case Icon::toStart: // a bar, then a triangle pointing at it (YW vector; reads like BandLab's ⏮)
         {
             fi.addRoundedRectangle (5.5f, 5.0f, 3.0f, 14.0f, 1.0f);
             juce::Path tri;
@@ -839,7 +839,7 @@ Shape make (Icon icon)
             break;
         }
 
-        // --- round 190jo (design190ia FW-22): the audio editor's tools, LYNX shapes on Edison's metaphors ---
+        // --- round 190jo (design190ia FW-22): the audio editor's tools, YW shapes on Edison's metaphors ---
         case Icon::copy: // two sheets, one over the other
             polyline (st, { { 9.0f, 6.5f }, { 9.0f, 3.5f }, { 20.0f, 3.5f }, { 20.0f, 15.5f }, { 17.0f, 15.5f } });
             roundRect (st, 4.0f, 8.0f, 11.5f, 12.5f, 1.5f);
@@ -1005,14 +1005,14 @@ Shape make (Icon icon)
                 fi.addRoundedRectangle (xs[i], 20.5f - hs[i], 2.5f, hs[i], 0.75f);
             break;
         }
-        case Icon::pointer: // round 190jq: a mouse pointer, outlined (the system arrow's shape, LYNX's 24-unit grid)
+        case Icon::pointer: // round 190jq: a mouse pointer, outlined (the system arrow's shape, YW's 24-unit grid)
         {
             juce::Path p;
             polyline (p, { { 6.0f, 3.5f }, { 6.0f, 18.5f }, { 10.0f, 14.75f }, { 12.75f, 20.5f }, { 15.25f, 19.25f }, { 12.5f, 13.5f }, { 18.0f, 13.5f } }, true);
             st.addPath (p.createPathWithRoundedCorners (1.0f));
             break;
         }
-        case Icon::scrub: // a film reel (LYNX vector; reads like FL Edison's Scrub button): a ring, four holes, a hub
+        case Icon::scrub: // a film reel (YW vector; reads like FL Edison's Scrub button): a ring, four holes, a hub
         {
             st.addEllipse (4.5f, 4.5f, 15.0f, 15.0f);
             for (const auto a : { 0.785398f, 2.356194f, 3.926991f, 5.497787f })
@@ -1253,7 +1253,7 @@ void IconButton::paintLook (juce::Graphics& g, bool highlighted, bool down)
     else if (look == Look::liveSelector)
     {
         // (ref/live-session.png x 1870..1900: the shown view's glyph #ffad56; Live's other glyph is #464646, 1.5:1 on the
-        // band; LYNX keeps it at 3.4:1, the contrast floor of design190ia G1)
+        // band; YW keeps it at 3.4:1, the contrast floor of design190ia G1)
         fg = on ? juce::Colour (0xffffad56) : juce::Colour (0xff7a7a7a).interpolatedWith (juce::Colour (0xffb5b5b5), h);
     }
     else // liveGlyph: the bare transport glyphs on the band
@@ -1288,7 +1288,7 @@ void IconButton::paintLook (juce::Graphics& g, bool highlighted, bool down)
     g.drawFittedText (text, content.toNearestInt(), icon == Icon::none ? juce::Justification::centred : juce::Justification::centredLeft, 1, 0.8f);
 }
 
-// Round 190ki: whether the FL tiles' bodies come from the parent's atlas. LYNX_TILE_MODE=2: everywhere (opt-in on the
+// Round 190ki: whether the FL tiles' bodies come from the parent's atlas. YW_TILE_MODE=2: everywhere (opt-in on the
 // native renderers), 0: nowhere, unset: on JUCE's software renderer only (round 190mh). The atlas gives the toolbar's own
 // pixels, but Direct2D anti-aliases a later path a little differently when the frame's draw calls change (the Piano
 // roll's 4/4 flag: 8 pixels, up to 44 levels, --paintbench Thief), so it stays opt-in there; it saves ~0.25 ms more per
@@ -1298,7 +1298,7 @@ namespace
 int& tileModeSetting()
 {
     static int mode = [] {
-        const auto v = juce::SystemStats::getEnvironmentVariable ("LYNX_TILE_MODE", {});
+        const auto v = juce::SystemStats::getEnvironmentVariable ("YW_TILE_MODE", {});
         return v.isEmpty() ? -1 : v.getIntValue() == 2 ? 2 : 0;
     }();
     return mode;
@@ -1393,7 +1393,7 @@ static const std::pair<juce::Path, juce::Path>& flTileBodyPaths (juce::Rectangle
 }
 
 // Round 190jo (design190ia FM-1/FM-2/FM-3, decision (d) with FL's metrics; the Pattern toolbar only): FL's tile. FL's
-// buttons are 30x33 tiles at a 33 px pitch with a 1 px dark edge (ref/fl-toolbar-hover-hint.png 1184,4,1214,37); LYNX's
+// buttons are 30x33 tiles at a 33 px pitch with a 1 px dark edge (ref/fl-toolbar-hover-hint.png 1184,4,1214,37); YW's
 // 31 px buttons give a 30x30 tile at the same pitch. The edge and the tile sit on whole device pixels at any scale.
 // Round 190ki (perf): at rest, hovered, pressed, on or disabled the tile comes from a picture of the backdrop with the
 // tile drawn over it (setFlTileBackdrop); the fade between two states paints straight.
@@ -1469,7 +1469,7 @@ void IconButton::paintFlTile (juce::Graphics& g, bool highlighted, bool down)
     };
     const auto drawGlyph = [&] (juce::Graphics& k) { icons::draw (k, icon, area.withSizeKeepingCentre (box, box), fg); };
 
-    // Round 190ki (perf, opt-in: LYNX_TILE_MODE=2): the body from the parent's tile atlas, the glyph straight over it. The atlas is the parent's
+    // Round 190ki (perf, opt-in: YW_TILE_MODE=2): the body from the parent's tile atlas, the glyph straight over it. The atlas is the parent's
     // band at the parent's own coordinates, each button's region holding its current state: the backdrop and the body
     // drawn there by the same calls, at the same device pixels and under the same clip as in the frame, so a blit gives
     // the frame's pixels. (The glyph stays straight: Direct2D anti-aliases a path drawn into another target a little
@@ -1758,8 +1758,8 @@ juce::String flTileCacheSelfTest()
             }
         return n;
     };
-    // LYNX_TILE_DEBUG=<folder>: the pictures as PNGs there
-    const auto debugFolder = juce::SystemStats::getEnvironmentVariable ("LYNX_TILE_DEBUG", {});
+    // YW_TILE_DEBUG=<folder>: the pictures as PNGs there
+    const auto debugFolder = juce::SystemStats::getEnvironmentVariable ("YW_TILE_DEBUG", {});
     const auto save = [&debugFolder] (const juce::Image& image, const juce::String& name) {
         if (debugFolder.isEmpty())
             return;
@@ -1816,7 +1816,7 @@ juce::String flTileCacheSelfTest()
             save (IconButton::tileAtlasFor (parent, 35, scale, ! native).image, "tile-" + tag + "-atlas");
             // (rollup 0.1.30 step 7: the exact match is required of Direct2D, which round 190ki measured the atlas on;
             // macOS's CoreGraphics came out 1 level apart at 2 pixels of native-x1 on CI, so there the difference is only
-            // reported — the atlas is opt-in there, LYNX_TILE_MODE=2, and the app paints straight. Round 190mh: required of
+            // reported — the atlas is opt-in there, YW_TILE_MODE=2, and the app paints straight. Round 190mh: required of
             // JUCE's software renderer too, where the atlas is on by default)
            #if JUCE_WINDOWS
             constexpr bool nativeExactRequired = true;
@@ -1834,4 +1834,4 @@ juce::String flTileCacheSelfTest()
         return "ERROR cached FL tiles differ from the tiles painted straight: " + failures;
     return "OK";
 }
-} // namespace lynx
+} // namespace yw

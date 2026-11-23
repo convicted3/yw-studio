@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 class RemoteError final : public std::runtime_error
 {

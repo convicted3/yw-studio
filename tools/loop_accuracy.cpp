@@ -1,4 +1,4 @@
-// Round 190kx: the loop analysis accuracy table — key and tempo detection over LYNX's own synthetic corpus
+// Round 190kx: the loop analysis accuracy table — key and tempo detection over YW's own synthetic corpus
 // (tests/LoopCorpus190kx.h). Build (from the repo root; the linker flag skips the parts of AudioEditTools it never calls):
 //   g++ -std=c++20 -O2 -Isrc -Itests tools/loop_accuracy.cpp src/core/KeyFollow.cpp src/core/TempoDetect.cpp \
 //       src/core/LoopAnalysis.cpp src/core/AudioEditTools.cpp src/core/NoteTools.cpp src/core/AutoWarp.cpp \
@@ -74,7 +74,7 @@ int main (int argc, char** argv)
         for (const auto& it : items)
             if (it.bpm > 0.0)
             {
-                const auto r = lynx::tempodetect::detect (it.audio->leftData(), it.audio->isStereo() ? it.audio->rightData() : nullptr, it.audio->frames(), it.audio->sampleRate);
+                const auto r = yw::tempodetect::detect (it.audio->leftData(), it.audio->isStereo() ? it.audio->rightData() : nullptr, it.audio->frames(), it.audio->sampleRate);
                 legacyExact[(it.name.substr (0, it.name.find ('-', it.name.find ('-') + 1)))] += std::string (tempoClass (r.bpm, it.bpm)) == "exact";
             }
         int legacyTotal = 0;
@@ -86,14 +86,14 @@ int main (int argc, char** argv)
                 for (double ratio : { 1.5 })
                     for (double level : { 2.0 })
                     {
-                        auto& o = lynx::loopanalysis::tempoOptions();
+                        auto& o = yw::loopanalysis::tempoOptions();
                         o.loopShare = share, o.priorSigma = sigma, o.backbeatRatio = ratio, o.kickRatio = level;
                         std::map<std::string, int> exact;
                         int total = 0;
                         for (const auto& it : items)
                             if (it.bpm > 0.0)
                             {
-                                const auto t = lynx::loopanalysis::detectTempo (*it.audio);
+                                const auto t = yw::loopanalysis::detectTempo (*it.audio);
                                 const auto ok = t.confidence >= o.minConfidence && std::string (tempoClass (t.bpm, it.bpm)) == "exact";
                                 exact[(it.name.substr (0, it.name.find ('-', it.name.find ('-') + 1)))] += ok;
                                 total += ok;
@@ -113,7 +113,7 @@ int main (int argc, char** argv)
         struct Try
         {
             const char* label;
-            lynx::loopanalysis::KeyOptions o;
+            yw::loopanalysis::KeyOptions o;
         };
         std::vector<Try> tries;
         for (int frames : { 1, 2 })
@@ -121,7 +121,7 @@ int main (int argc, char** argv)
                 for (double startSeconds : { 0.5 })
                     for (double margin : { 0.05 })
                     {
-                        lynx::loopanalysis::KeyOptions o;
+                        yw::loopanalysis::KeyOptions o;
                         o.hpssFrames = frames;
                         o.tonicStart = startWeight, o.startSeconds = startSeconds, o.minMargin = margin;
                         tries.push_back ({ "", o });
@@ -131,17 +131,17 @@ int main (int argc, char** argv)
         for (const auto& it : items)
             if (it.keyRoot >= 0)
             {
-                const auto d = lynx::keyfollow::detectKey (*it.audio);
+                const auto d = yw::keyfollow::detectKey (*it.audio);
                 legacyExact[it.name.substr (0, it.name.find ('-', it.name.find ('-') + 1))] += d.key && d.key->root == it.keyRoot && d.key->minor == it.minor;
             }
         for (const auto& t : tries)
         {
-            lynx::loopanalysis::keyOptions() = t.o;
+            yw::loopanalysis::keyOptions() = t.o;
             int exact = 0, relative = 0, fifth = 0, other = 0, none = 0, falseKey = 0, keyed = 0, unkeyed = 0;
             std::map<std::string, int> classExact;
             for (const auto& it : items)
             {
-                const auto d = lynx::loopanalysis::detectKey (*it.audio);
+                const auto d = yw::loopanalysis::detectKey (*it.audio);
                 const auto c = std::string (keyClass (d.key ? d.key->root : -1, d.key && d.key->minor, d.key.has_value(), it.keyRoot, it.minor));
                 if (it.keyRoot >= 0)
                     classExact[it.name.substr (0, it.name.find ('-', it.name.find ('-') + 1))] += c == "exact";
@@ -172,17 +172,17 @@ int main (int argc, char** argv)
         bool whole = false;
         if (legacy)
         {
-            const auto d = lynx::keyfollow::detectKey (*it.audio);
+            const auto d = yw::keyfollow::detectKey (*it.audio);
             if (d.key)
                 kr = d.key->root, km = d.key->minor, kg = true;
-            const auto r = lynx::tempodetect::detect (it.audio->leftData(), it.audio->isStereo() ? it.audio->rightData() : nullptr, it.audio->frames(),
+            const auto r = yw::tempodetect::detect (it.audio->leftData(), it.audio->isStereo() ? it.audio->rightData() : nullptr, it.audio->frames(),
                                                             it.audio->sampleRate);
             bpm = r.bpm;
             whole = r.beats >= 3.9 && std::abs (r.beats - std::round (r.beats)) <= 0.04 && r.confidence >= 0.35;
         }
         else
         {
-            const auto a = lynx::loopanalysis::analyse (*it.audio, it.name + ".wav", false);
+            const auto a = yw::loopanalysis::analyse (*it.audio, it.name + ".wav", false);
             if (a.key)
                 kr = a.key->root, km = a.key->minor, kg = true;
             bpm = a.bpm;

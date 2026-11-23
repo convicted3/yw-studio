@@ -15,7 +15,7 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -542,7 +542,7 @@ public:
         grid.muted = [this] (int pad) { return kit.pads[(std::size_t) (bank() * 16 + pad)].muted(); };
         grid.selected = [this] { return selectedPad % 16; };
         // a click on a pad selects it and plays it on the channel, at the velocity of where it was hit (FL's FPC), and
-        // while recording it is recorded (GitHub #198: a LYNX extra, FL's FPC only plays it); in a Patcher, where the
+        // while recording it is recorded (GitHub #198: a YW extra, FL's FPC only plays it); in a Patcher, where the
         // node has no channel of its own, it previews the pad's sample
         grid.onPad = [this] (int pad) { selectPad (bank() * 16 + pad, channel < 0); };
         grid.onPadDown = [this] (int pad, float velocity) {
@@ -788,9 +788,9 @@ private:
 
     void chooseSample()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
+        chooser = yw::ui::makeFileChooser (tr ("Load sample..."), juce::File(), "*.wav;*.aif;*.aiff;*.flac;*.ogg;*.mp3");
         juce::Component::SafePointer<FpcEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
             if (self != nullptr && fc.getResult().existsAsFile())
                 self->loadSample (fc.getResult().getFullPathName());
         });
@@ -994,4 +994,4 @@ std::unique_ptr<juce::Component> makeFpcEditor (AudioEngine& engine, std::functi
 {
     return std::make_unique<FpcEditor> (engine, std::move (locate), channel);
 }
-} // namespace lynx
+} // namespace yw

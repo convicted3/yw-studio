@@ -5,7 +5,7 @@
 
 namespace helix190ml
 {
-namespace w = lynx::wt;
+namespace w = yw::wt;
 using helix190ja::db;
 using helix190ja::rms;
 using helix190mi::finite;
@@ -41,7 +41,7 @@ inline w::SampleBuffer sine (double hz, double seconds, double rate = 44100.0)
 
 TEST (helix190ml_layout_and_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // the second block follows Helix+'s; every (target, source) pair has its own value, none inside another's
     CHECK (w::ext2Base == w::extBase + w::ext::count && w::stateSize >= w::ext2Base + w::ext2::count); // (190mt: round 3's block follows)
@@ -220,7 +220,7 @@ TEST (helix190ml_sample_oscillator)
     w::HelixUserData tiny;
     tiny.sample.l = { 0.1f, 0.2f, 0.3f };
     CHECK (finite (note (s, 60, 0.2, &tiny)));
-    lynx::wt::Engine e;
+    yw::wt::Engine e;
     e.prepare (48000.0);
     e.setSample (&d.sample);
     e.setState (s.data());
@@ -432,7 +432,7 @@ TEST (helix190ml_effects_rack)
     for (int on : { w::ext2::shiftOn, w::ext2::eqOn, w::ext2::mbOn })
         x2 (all, on, 1.0);
     all[(std::size_t) w::envBase (0) + w::env::release] = 0.01;
-    lynx::wt::Engine e;
+    yw::wt::Engine e;
     e.prepare (48000.0);
     e.setState (all.data());
     std::vector<float> l (48000 * 12, 0.0f), r (48000 * 12, 0.0f);
@@ -446,7 +446,7 @@ TEST (helix190ml_effects_rack)
 
 TEST (helix190ml_instrument_user_data)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace w = wt;
     // the instrument builds the channel's tables and sample from its pluginState (UI thread) and plays them; new data
     // replaces the old while notes play
@@ -482,7 +482,7 @@ TEST (helix190ml_instrument_user_data)
 
 TEST (helix190ml_factory_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& bank = banks::bankOf (InstrumentKind::helix);
     int newOnes = 0;
     for (int i = 0; i < (int) bank.size(); ++i)

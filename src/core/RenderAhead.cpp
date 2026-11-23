@@ -10,7 +10,7 @@
 #include "core/Rack.h"
 #include "core/WorkerPool.h"
 
-namespace lynx
+namespace yw
 {
 std::atomic<bool>& renderAheadOption() noexcept
 {
@@ -1443,4 +1443,4 @@ void RenderAhead::processBlock (SnapshotExchange<RackState>& exchange, const Blo
     if (claimed || fill <= target / 2)
         wakeThread();
 }
-} // namespace lynx
+} // namespace yw

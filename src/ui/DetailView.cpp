@@ -55,7 +55,7 @@
 #include "ui/TimerWhileShowing.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 using namespace theme;
 
@@ -63,7 +63,7 @@ namespace
 {
 juce::String utf8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 
-// A size in LYNX's look and in Live's (round 190jn, design190ia CL-21: the Clip-launch layout's Live look); reads as an int.
+// A size in YW's look and in Live's (round 190jn, design190ia CL-21: the Clip-launch layout's Live look); reads as an int.
 struct LookMetric
 {
     int classic, live;
@@ -154,7 +154,7 @@ void drawSwapGlyph (juce::Graphics& g, juce::Rectangle<int> r, bool hot, bool li
     g.strokePath (p, juce::PathStrokeType (1.0f));
 }
 
-// Round 190jn (CL-21): Live's title-bar wells (theme::livelook::drawWell) and the LYNX vector glyphs drawn in them.
+// Round 190jn (CL-21): Live's title-bar wells (theme::livelook::drawWell) and the YW vector glyphs drawn in them.
 void drawLiveWellGlyph (juce::Graphics& g, juce::Rectangle<int> r, int kind, bool hot, bool lit)
 {
     namespace ll = theme::livelook;
@@ -684,7 +684,7 @@ public:
                 select (juce::jlimit (0, last, (i < 0 ? 0 : i + step)));
             return true;
         }
-        // LYNX extra (off by default): W shows or hides the selected card's window
+        // YW extra (off by default): W shows or hides the selected card's window
         if (DetailView::extraWindowKey && ! key.getModifiers().isAnyModifierKeyDown() && i >= 0
             && (key.getKeyCode() == 'W' || juce::CharacterFunctions::toUpperCase (key.getTextCharacter()) == 'W'))
         {
@@ -1272,14 +1272,14 @@ private:
             hooks.toggleHotSwap (t);
         repaint();
     }
-    // LYNX's own effects save their settings as presets (ui/PluginHeader.h); a plugin saves in its own window, a rack
+    // YW's own effects save their settings as presets (ui/PluginHeader.h); a plugin saves in its own window, a rack
     // or a Patcher in its editor.
     bool canSavePreset (int slot) const
     {
         const auto* fx = effectAt (slot);
         if (fx != nullptr && rack::isRack (*fx)) // (round 190hr: a rack saves as Live's rack preset, .adg)
             return true;
-        return fx != nullptr && fx->kind != EffectKind::plugin && fx->kind != EffectKind::patcher && pluginheader::PresetBar (engine, insert, slot).hasLynxPresets();
+        return fx != nullptr && fx->kind != EffectKind::plugin && fx->kind != EffectKind::patcher && pluginheader::PresetBar (engine, insert, slot).hasYwPresets();
     }
     void savePreset (int slot)
     {
@@ -1687,7 +1687,7 @@ private:
     {
         const auto& song = engine.getSong();
         auto r = juce::Rectangle<int> (0, 0, contextWidth - 6, getHeight());
-        const auto live = theme::livelook::active(); // (round 190jn: Live's greys; Live has no such panel, LYNX keeps it)
+        const auto live = theme::livelook::active(); // (round 190jn: Live's greys; Live has no such panel, YW keeps it)
         g.setColour (live ? theme::livelook::surface : colour::bg2);
         g.fillRect (r);
         g.setColour (live ? theme::livelook::separator : colour::border);
@@ -1937,7 +1937,7 @@ private:
         }
     }
 
-    // The Plugin picker's key of a LYNX generator kind ("lynx:gen:<English name>"), from its entries once per run; ""
+    // The Plugin picker's key of a YW generator kind ("yw:gen:<English name>"), from its entries once per run; ""
     // for a hosted plugin or a kind the picker doesn't list.
     std::string generatorKeyOf (InstrumentKind kind)
     {
@@ -1947,7 +1947,7 @@ private:
         {
             filled = true;
             for (const auto& e : quickpick::generatorEntries (engine))
-                if (e.folder == 0 && e.key.rfind ("lynx:gen:", 0) == 0)
+                if (e.folder == 0 && e.key.rfind ("yw:gen:", 0) == 0)
                     keys.emplace ((int) e.kind, e.key); // (the first entry of a kind)
         }
         if (kind == InstrumentKind::plugin)
@@ -2181,9 +2181,9 @@ private:
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Slice 2b: the Clip page's left column, the reference's Clip / Launch / Notes panels [SHOT d08, m3-live-clipview2] over
-// LYNX's existing model: the grid clip's offset and length, its slot's loop and launch settings, and the pattern's
+// YW's existing model: the grid clip's offset and length, its slot's loop and launch settings, and the pattern's
 // notes through the Piano roll's own note tools. No new model: Signature is the project's, Scale is the project key
-// (core/ProjectKey.h; round 190o), Groove has no LYNX model (listed as missing in REA_rodada183a.md).
+// (core/ProjectKey.h; round 190o), Groove has no YW model (listed as missing in REA_rodada183a.md).
 // The clip's colour and activator in one square, as the reference's clip title bar [LIVE 12.4 Clip View] (round 190s,
 // GAPMAP-0126 D15): filled = the clip plays, hollow = deactivated. Click switches it; right-click picks the colour.
 // Round 190kc: the Clip box's Commit button. Live 12.4 draws it as a 13 px round well with an arrow beside the Groove
@@ -2383,7 +2383,7 @@ public:
             ed->onEscapeKey = [this] { load(); };
         }
         // round 190dr-2: Live's fields [SHOT live-clipview-audio-panel.png] in bars. beats. sixteenths ("1. 1. 1"; lengths
-        // "8. 0. 0"), seconds for an unwarped audio clip; LYNX's loop starts where the clip starts, so Position is the start
+        // "8. 0. 0"), seconds for an unwarped audio clip; YW's loop starts where the clip starts, so Position is the start
         // moved with the end and Length is the clip's length (core/ClipSample.h)
         start.setTooltip (tr ("Start: where the clip starts in its source (bar. beat. sixteenth; seconds for unwarped audio)"));
         end.setTooltip (tr ("End: where the clip ends in its source"));
@@ -2406,7 +2406,7 @@ public:
         start.setTooltip (tr ("Start: where the clip starts playing in its source (with Loop on, a marker inside the loop; bar. beat. sixteenth; seconds for unwarped audio)"));
         setLength.setTooltip (tr ("Set: the loop ends where the clip plays now"));
         showingTimer = std::make_unique<ui::TimerWhileShowing> (*this, static_cast<juce::Timer&> (*this), 10);
-        // the Groove chooser: the project's Groove Pool (round 190bv), for MIDI clips (LYNX's grooves act on MIDI clips)
+        // the Groove chooser: the project's Groove Pool (round 190bv), for MIDI clips (YW's grooves act on MIDI clips)
         groove.onChange = [this] {
             if (loading)
                 return;
@@ -2564,7 +2564,7 @@ public:
             b->setConnectedEdges (0);
             addAndMakeVisible (*b);
         }
-        // LYNX's Chord helper (round 190mc, discussion #105): the docked editor's selection, in Live's look
+        // YW's Chord helper (round 190mc, discussion #105): the docked editor's selection, in Live's look
         chordHelper.setButtonText (tr ("Chord helper"));
         chordHelper.setTooltip (tr ("Select a chord: related keys and borrowed chords to insert after it"));
         chordHelper.setConnectedEdges (0);
@@ -2590,8 +2590,8 @@ public:
         divideTwo.onClick = [stretch] { stretch (false); };
         fitScale.onClick = [this] {
             notes ([key = clipKeyOf (engine.getSong())] (Pattern& p, const std::vector<int>& all, const Song&) {
-                if (key && projectkey::lynxScale (*key) > 0)
-                    notetools::snapNotesToScale (p, all, key->root, projectkey::lynxScale (*key));
+                if (key && projectkey::ywScale (*key) > 0)
+                    notetools::snapNotesToScale (p, all, key->root, projectkey::ywScale (*key));
             });
         };
 
@@ -2798,8 +2798,8 @@ public:
     // --- round 190jn (design190ia CL-20a / CL-20b): Live 12.4's Clip View column ----------------------------------------
     // A 170 px column (live-clipview-audio.png 249..418, live-01-clipview-notes.png 9..178): the 17 px title bar in the
     // clip's colour (the activator square, the name in colour × 0.24) stays; under it Live's sections, each a 17 px #464646
-    // header (click: fold / unfold) over its rows — Clip; Launch (with LYNX's Follow Action, as Live 12 puts it there;
-    // folded at first, as Live shows it); for MIDI clips Pitch & Time (LYNX's note tools). Rows are 13 px fields and pills.
+    // header (click: fold / unfold) over its rows — Clip; Launch (with YW's Follow Action, as Live 12 puts it there;
+    // folded at first, as Live shows it); for MIDI clips Pitch & Time (YW's note tools). Rows are 13 px fields and pills.
     // When the open sections are taller than the view, the wheel scrolls them under the title bar (Live does the same).
     // The fold states are UI state, not saved. The MIDI Tools (Transform / Generate) stay at the column's right.
     static inline bool clipOpen = true, launchOpen = false, notesOpen = true;
@@ -3018,7 +3018,7 @@ private:
         else
             hide ({ &modeLabel, &mode, &quantLabel, &quant, &legato, &followOn, &followA, &followB, jumpA.get(), chanceA.get(), jumpB.get(), chanceB.get(),
                     &linked, multiplier.get(), &followTime });
-        // Pitch & Time (MIDI clips): LYNX's note tools, two columns of 13 px pills
+        // Pitch & Time (MIDI clips): YW's note tools, two columns of 13 px pills
         headerY[2] = hasNotes ? y : -1;
         if (hasNotes)
         {
@@ -3081,7 +3081,7 @@ private:
             if (b->isEnabled() != (on && loop.getToggleState()))
                 b->setEnabled (on && loop.getToggleState());
     }
-    // 0 Start, 1 End, 2 Position, 3 Length (Length's Set ends the loop there: LYNX's loop ends where the clip does)
+    // 0 Start, 1 End, 2 Position, 3 Length (Length's Set ends the loop there: YW's loop ends where the clip does)
     // round 190kc: Commit (the Clip box's button)
     void commitClipGroove()
     {
@@ -3204,7 +3204,7 @@ private:
                     if (pool[(std::size_t) i].id == slot->groove)
                         selected = i + 2;
             groove.setSelectedId (selected, n);
-            // (round 190kc: audio clips take a groove too, for Commit: LYNX plays grooves live on MIDI clips only)
+            // (round 190kc: audio clips take a groove too, for Commit: YW plays grooves live on MIDI clips only)
             groove.setEnabled (c->kind == ClipKind::pattern || c->kind == ClipKind::audio);
             groove.setTooltip (c->kind == ClipKind::pattern ? tr ("The groove this clip plays through (the Groove Pool)")
                                                             : tr ("The groove for this audio clip: Commit writes it as warp markers (YW Studio plays grooves live on MIDI clips only)"));
@@ -3312,13 +3312,13 @@ private:
         if (auto* roll = editorOf != nullptr ? editorOf() : nullptr; roll != nullptr && pattern && key != shownKey)
         {
             shownKey = key;
-            roll->setScale (key ? key->root : 0, key ? projectkey::lynxScale (*key) : 0);
+            roll->setScale (key ? key->root : 0, key ? projectkey::ywScale (*key) : 0);
         }
         tools.setVisible (pattern && ! toolsFolded);
         foldTools.setVisible (pattern);
         foldTools.setButtonText (toolsFolded ? juce::String ("+") : juce::String::fromUTF8 ("\xe2\x88\x92")); // (+ / minus sign)
         foldTools.toFront (false);
-        fitScale.setEnabled (key && projectkey::lynxScale (*key) > 0);
+        fitScale.setEnabled (key && projectkey::ywScale (*key) > 0);
         timerCallback(); // (the Set buttons)
     }
 
@@ -3769,7 +3769,7 @@ private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override { update(); }
 
     // round 190jn: the tabs in Live's colours (the shown one #464646, the others #363636, text #B5B5B5) and square, or
-    // LYNX's back; follows the layout's switch
+    // YW's back; follows the layout's switch
     bool liveTabs = false;
     juce::Rectangle<int> tabBar;
     void applyLook()
@@ -4173,7 +4173,7 @@ ui::InfoView& DetailView::infoViewForSnapshot() { return *info; }
 
 // Live 12.4's status bar (live-session.png y 1004..1022): the (i) button 15 px at x 11 (orange: the Info View shows),
 // the status text in a #363636 field from x 42; at the right the selected track's name and the view selector
-// (here: a Clip glyph and a Device glyph, 17 px, the shown one lit #FFAD56); LYNX's "..." options last.
+// (here: a Clip glyph and a Device glyph, 17 px, the shown one lit #FFAD56); YW's "..." options last.
 juce::Rectangle<int> DetailView::infoButtonArea() const
 {
     return { 11, getHeight() - stripHeight + (stripHeight - 15) / 2, 15, 15 };
@@ -4329,7 +4329,7 @@ void DetailView::deviceLevelsForSnapshot (float left, float right) { chain->devi
 // Round 190dr: the description of a device card dragged out of the Device View
 namespace
 {
-constexpr const char* deviceDragTag = "lynx-device";
+constexpr const char* deviceDragTag = "yw-device";
 }
 
 juce::String deviceDragDescription (int insert, int slot)
@@ -4346,4 +4346,4 @@ bool detailDeviceDrag (const juce::var& description, int& insert, int& slot)
     slot = parts[2].getIntValue();
     return insert >= 0 && slot >= 0;
 }
-} // namespace lynx
+} // namespace yw

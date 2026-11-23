@@ -10,10 +10,10 @@ struct Stereo
 };
 
 // `input` through a fresh engine at `fs`, in blocks of 256
-inline Stereo run (lynx::EffectKind kind, std::initializer_list<std::pair<int, float>> values, const Stereo& input, double fs = 48000.0,
-                   const lynx::NoteMask* held = nullptr, double bpm = 120.0)
+inline Stereo run (yw::EffectKind kind, std::initializer_list<std::pair<int, float>> values, const Stereo& input, double fs = 48000.0,
+                   const yw::NoteMask* held = nullptr, double bpm = 120.0)
 {
-    using namespace lynx;
+    using namespace yw;
     auto fx = makeEffect (kind);
     fx->prepare (fs);
     auto p = makeEffectSlot (kind).params;
@@ -86,10 +86,10 @@ inline flm182c::Bytes module (int type, const std::vector<float>& values)
 }
 
 // a one-channel .flm: a SuperSaw followed by the effect module; the imported song's effect slots of that channel's insert
-inline std::vector<lynx::EffectSlot> importedSlots (int type, const std::vector<float>& values, lynx::FlpImportReport* report = nullptr)
+inline std::vector<yw::EffectSlot> importedSlots (int type, const std::vector<float>& values, yw::FlpImportReport* report = nullptr)
 {
     namespace t = flm182c;
-    using namespace lynx;
+    using namespace yw;
     t::Bytes f, m;
     t::tag (f, "10LF");
     t::fixed (m, "2025-07-06 11-39-10", 256);
@@ -118,7 +118,7 @@ inline std::vector<lynx::EffectSlot> importedSlots (int type, const std::vector<
 
 TEST (pocket190by_comb_laws_and_texts)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (pocket::combMode (0.0f) == 0 && pocket::combMode (0.5f) == 1 && pocket::combMode (1.0f) == 2 && pocket::combMode (0.49f) == 0);
     CHECK (pocket::combFreeHz (0.0f) == 1.0f && pocket::combFreeHz (1.0f) == 2500.0f);
     CHECK (std::fabs (pocket::combFreeHz (0.5f) - 157.1875f) < 1e-3f);
@@ -159,7 +159,7 @@ TEST (pocket190by_comb_laws_and_texts)
 
 TEST (pocket190by_comb_tuning_level_and_sample_rates)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     const auto K = EffectKind::pocketComb;
     for (const auto fs : { 44100.0, 48000.0, 96000.0 })
@@ -200,7 +200,7 @@ TEST (pocket190by_comb_tuning_level_and_sample_rates)
 
 TEST (pocket190by_comb_polarity_asymmetry_and_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     const auto K = EffectKind::pocketComb;
     const double fs = 48000.0;
@@ -284,7 +284,7 @@ TEST (pocket190by_comb_polarity_asymmetry_and_modes)
 
 TEST (pocket190by_comb_silence_glide_and_stability)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     const auto K = EffectKind::pocketComb;
     for (const auto fs : { 44100.0, 96000.0 })
@@ -329,7 +329,7 @@ TEST (pocket190by_comb_silence_glide_and_stability)
 
 TEST (pocket190by_comb_flm_import)
 {
-    using namespace lynx;
+    using namespace yw;
     // FLM's 12 values → the slot's 11 (FLM k + 1 at k); Enable is the slot's switch
     const std::vector<float> values { 1.0f, 0.5f, 0.21f, 0.62f, 0.9f, 0.755f, 0.74f, 0.0f, 1.0f / 3.0f, 0.5675f, 0.0f, 1.0f };
     const auto m = flmfx::map (flm188f::moduleOf (40, values));
@@ -378,13 +378,13 @@ inline double rms (const std::vector<float>& x, int from, int to)
 }
 inline double db (double v) { return 20.0 * std::log10 (std::max (v, 1e-12)); }
 // a chain of mapped slots at `fs`, blocks of 256
-inline Stereo runSlots (const std::vector<lynx::EffectSlot>& slots, const Stereo& input, double fs = 48000.0)
+inline Stereo runSlots (const std::vector<yw::EffectSlot>& slots, const Stereo& input, double fs = 48000.0)
 {
     auto out = input;
     const int n = (int) out.l.size();
     for (const auto& slot : slots)
     {
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (fs);
         for (int at = 0; at < n; at += 256)
             fx->process (out.l.data() + at, out.r.data() + at, std::min (256, n - at), slot.params, 120.0);
@@ -395,7 +395,7 @@ inline Stereo runSlots (const std::vector<lynx::EffectSlot>& slots, const Stereo
 
 TEST (pocket190by_multiband_laws_and_texts)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (std::fabs (pocket::multibandGain (0.5f) - 1.0f) < 1e-6f && std::fabs (pocket::multibandGain (1.0f) - 15.8489f) < 1e-3f
            && std::fabs (pocket::multibandGain (0.0f) - 0.0630957f) < 1e-6f);
     CHECK (std::fabs (pocket::multibandCrossoverHz (0.3f) - 129.96f) < 0.01f && std::fabs (pocket::multibandCrossoverHz (0.7f) - 1575.9f) < 0.1f
@@ -443,7 +443,7 @@ TEST (pocket190by_multiband_laws_and_texts)
 
 TEST (pocket190by_multiband_split_level_and_sample_rates)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     const auto K = EffectKind::pocketMultiband;
     for (const auto fs : { 44100.0, 48000.0, 96000.0 })
@@ -492,7 +492,7 @@ TEST (pocket190by_multiband_split_level_and_sample_rates)
 
 TEST (pocket190by_multiband_detector_dry_width_and_states)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     const auto K = EffectKind::pocketMultiband;
     const double fs = 44100.0;
@@ -551,7 +551,7 @@ TEST (pocket190by_multiband_detector_dry_width_and_states)
         const auto muted = mid ({ { 18, 1.0f } }, 0.5f);
         CHECK (peakOf (muted.l) < 1e-5);
     }
-    // LYNX's Solo: the same as muting the other two bands
+    // YW's Solo: the same as muting the other two bands
     {
         auto p = makeEffectSlot (K).params;
         p[3] = 2.0f / 3.0f;
@@ -582,7 +582,7 @@ TEST (pocket190by_multiband_detector_dry_width_and_states)
 
 TEST (pocket190by_tape_stop)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     const auto K = EffectKind::pocketTapeStop;
     // laws
@@ -710,7 +710,7 @@ TEST (pocket190by_tape_stop)
 
 TEST (pocket190by_reverb32_and_tuned_eq_mappings)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fx190by;
     // --- Reverb (module 32): the plate of modules 12 and 35 behind module 12's knobs and its own dry / wet mix
     const std::vector<float> defaults { 1.0f, 0.4f, 0.8f, 0.4f, 0.5f, 0.25f, 0.0f, 1.0f, 1.0f, 0.5f, 0.0f, 1.0f, 0.499f, 0.0f, 1.0f, 1.0f };
@@ -791,11 +791,11 @@ TEST (pocket190by_reverb32_and_tuned_eq_mappings)
         for (const auto hz : { 40.0, 110.0, 1000.0, 14080.0, 18000.0 })
         {
             const auto z = runSlots (s.slots, sine (24000, hz, 44100.0, 0.25f, 0.25f), 44100.0);
-            // the low shelf is FLM's own; LYNX's high shelf this close to the top of the band differs by under 1 dB
+            // the low shelf is FLM's own; YW's high shelf this close to the top of the band differs by under 1 dB
             CHECK (std::fabs (db (rms (z.l, 12000, 24000) / (0.25 / std::sqrt (2.0))) - flm188f::magnitudeDb ({ lowBand, highBand }, hz, 44100.0)) < (hz < 2000.0 ? 0.1 : 1.0));
         }
         CHECK (s.partial.empty());
-        // a Bandwidth whose shape LYNX's EQ cannot make is reported
+        // a Bandwidth whose shape YW's EQ cannot make is reported
         auto narrow = shelves, wide = shelves;
         narrow[10] = 0.2f, wide[10] = 0.9f;
         CHECK (flmfx::map (flm188f::moduleOf (30, narrow)).partial.size() == 1 && flmfx::map (flm188f::moduleOf (30, wide)).partial.size() == 1);

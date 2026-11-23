@@ -5,7 +5,7 @@
 
 namespace simple184a
 {
-using namespace lynx;
+using namespace yw;
 
 // A project as a new one starts: Master and a few free inserts (more are added when they run out)
 inline Song freshSong (int inserts = 4)
@@ -320,7 +320,7 @@ TEST (simple184a_kind_of_other_tracks)
 
 TEST (simple184a_kinds_names_and_colours)
 {
-    using namespace lynx::simpletracks;
+    using namespace yw::simpletracks;
     const Kind all[] { Kind::voice, Kind::instrument, Kind::drums, Kind::sampler, Kind::guitar, Kind::bass, Kind::audio };
     for (auto a : all)
     {

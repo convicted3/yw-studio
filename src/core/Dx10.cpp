@@ -21,7 +21,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -90,7 +90,7 @@ public:
         update();
         // end-fade table (FUN_0071e060, mode 3, 10 ms): 0.5·(1 + cos((i + 1)·π/(L + 1))), built by the constructor while
         // the plugin's rate object still holds 44 100 Hz, so L = 441 at every rate (EXEC); FL computes the cosine with
-        // IPP's ippsCos_32f_A11, which LYNX restates (REA_rodada74 §1)
+        // IPP's ippsCos_32f_A11, which YW restates (REA_rodada74 §1)
         const auto L = roundEven (10.0 * 0.001 * 44100.0);
         endTable.resize ((std::size_t) L);
         ippcos::endFadeTable (endTable.data(), (long) L);
@@ -672,7 +672,7 @@ public:
     {
         take();
         engine.maxPoly = maxPoly.load();
-        // FL's channel volume/pan from LYNX's gains (gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)); FL recomputes the
+        // FL's channel volume/pan from YW's gains (gl = √2·V·cos((1 + p)π/4), gr = √2·V·sin(…)); FL recomputes the
         // voices' FinalLevels when the channel level changes
         const auto vol = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
         auto pan = vol > 0.0 ? std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0 : 0.0;
@@ -829,4 +829,4 @@ std::vector<float> renderReference (const std::vector<std::uint8_t>& state, cons
     return out;
 }
 } // namespace dx10
-} // namespace lynx
+} // namespace yw

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <optional>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -160,7 +160,7 @@ std::string TemplateChoice::toText() const
     {
         case Kind::builtIn: return "builtin:" + name;
         case Kind::user: return "user:" + name;
-        case Kind::lynxDefault: break;
+        case Kind::ywDefault: break;
     }
     return {};
 }
@@ -257,7 +257,7 @@ void NewProjectDefaults::readKey (const std::string& key, const std::string& val
     if (key == "newInserts")
         inserts = std::clamp (number (defaultInserts), 0, maxMixerTracks - 1);
     else if (key == "newMasterChain")
-        master = value == "empty" ? MasterChain::empty : value == "clipper" ? MasterChain::clipper : MasterChain::lynxDefault;
+        master = value == "empty" ? MasterChain::empty : value == "clipper" ? MasterChain::clipper : MasterChain::ywDefault;
     else if (key == "newCleanMixer")
         cleanMixer = value == "1";
     else if (key == "playlistTracks")
@@ -303,7 +303,7 @@ void applyNewProjectDefaults (Song& song, const NewProjectDefaults& defaults)
             master.clear();
             master.push_back (makeEffectSlot (EffectKind::fruitySoftClipper));
             break;
-        case MasterChain::lynxDefault: break; // the template's own chain
+        case MasterChain::ywDefault: break; // the template's own chain
     }
 
     song.cleanMixer = defaults.cleanMixer;
@@ -366,4 +366,4 @@ bool adoptFlPluginLevels (Song& song)
         song.flPluginLevels = true;
     return song.flPluginLevels;
 }
-} // namespace lynx
+} // namespace yw

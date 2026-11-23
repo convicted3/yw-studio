@@ -11,9 +11,9 @@
 
 namespace gap190og
 {
-inline lynx::Note note (std::int64_t start, std::int64_t length, int key, float velocity = 0.78f)
+inline yw::Note note (std::int64_t start, std::int64_t length, int key, float velocity = 0.78f)
 {
-    lynx::Note n;
+    yw::Note n;
     n.start = start;
     n.length = length;
     n.key = key;
@@ -21,24 +21,24 @@ inline lynx::Note note (std::int64_t start, std::int64_t length, int key, float 
     return n;
 }
 // pattern 0 with these notes (the clip below plays it)
-inline lynx::Song song (std::vector<lynx::Note> notes)
+inline yw::Song song (std::vector<yw::Note> notes)
 {
-    lynx::Song s;
+    yw::Song s;
     s.patterns.clear();
     s.patterns.emplace_back();
     s.patterns[0].notes = std::move (notes);
     s.patterns[0].sortNotes();
     return s;
 }
-inline lynx::Clip clip (std::int64_t offset, std::int64_t length)
+inline yw::Clip clip (std::int64_t offset, std::int64_t length)
 {
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
     c.offset = offset;
     c.length = length;
     return c;
 }
-inline std::string starts (const lynx::Pattern& p)
+inline std::string starts (const yw::Pattern& p)
 {
     std::string out;
     for (const auto& n : p.notes)
@@ -57,56 +57,56 @@ inline std::string fileText (const char* path)
 TEST (gap190og_duplicate_loop_copies_the_loop_and_moves_what_follows)
 {
     using namespace gap190og;
-    const auto bar = 4 * lynx::ppq;
+    const auto bar = 4 * yw::ppq;
     // a one-bar loop at the start: notes at 0 and beat 2 inside, one at bar 1 beat 2 right of the loop
-    auto s = song ({ note (0, 240, 60), note (2 * lynx::ppq, 240, 62), note (bar + lynx::ppq, 240, 64) });
+    auto s = song ({ note (0, 240, 60), note (2 * yw::ppq, 240, 62), note (bar + yw::ppq, 240, 64) });
     auto c = clip (0, bar);
-    CHECK (lynx::cliploop::duplicateLoop (s, c));
+    CHECK (yw::cliploop::duplicateLoop (s, c));
     // "duplicate the loop's length and its contents": copies a bar later; "any notes to the right of the loop will be
     // moved, so that they maintain their position relative to the end of the loop"
     CHECK (starts (s.patterns[0]) == "0:60,1920:62,3840:60,5760:62,8640:64");
     CHECK (c.offset == 0 && c.length == 2 * bar);
     // a loop that does not start the pattern: what lies before it stays, a note crossing the loop's end is copied whole
-    auto s2 = song ({ note (0, 240, 48), note (bar, 240, 60), note (bar + 3 * lynx::ppq, 2 * lynx::ppq, 61), note (2 * bar, 240, 70) });
+    auto s2 = song ({ note (0, 240, 48), note (bar, 240, 60), note (bar + 3 * yw::ppq, 2 * yw::ppq, 61), note (2 * bar, 240, 70) });
     auto c2 = clip (bar, bar);
     s2.patterns[0].lengthTicks = 3 * bar;
-    CHECK (lynx::cliploop::duplicateLoop (s2, c2));
+    CHECK (yw::cliploop::duplicateLoop (s2, c2));
     CHECK (starts (s2.patterns[0]) == "0:48,3840:60,6720:61,7680:60,10560:61,11520:70");
-    CHECK (s2.patterns[0].notes[2].length == 2 * lynx::ppq && s2.patterns[0].notes[4].length == 2 * lynx::ppq);
+    CHECK (s2.patterns[0].notes[2].length == 2 * yw::ppq && s2.patterns[0].notes[4].length == 2 * yw::ppq);
     CHECK (c2.offset == bar && c2.length == 2 * bar && s2.patterns[0].lengthTicks == 4 * bar);
     // a pattern's events go the same way (one per tick)
     auto s3 = song ({ note (0, 240, 60) });
-    lynx::PatternEvents lane;
-    lane.events = { { 0, 0.1f }, { lynx::ppq, 0.2f }, { bar + 10, 0.9f } };
+    yw::PatternEvents lane;
+    lane.events = { { 0, 0.1f }, { yw::ppq, 0.2f }, { bar + 10, 0.9f } };
     s3.patterns[0].events.push_back (lane);
     auto c3 = clip (0, bar);
-    CHECK (lynx::cliploop::duplicateLoop (s3, c3));
+    CHECK (yw::cliploop::duplicateLoop (s3, c3));
     const auto& ev = s3.patterns[0].events[0].events;
-    CHECK (ev.size() == 5 && ev[0].tick == 0 && ev[1].tick == lynx::ppq && ev[2].tick == bar && ev[2].value == 0.1f
-           && ev[3].tick == bar + lynx::ppq && ev[4].tick == 2 * bar + 10 && ev[4].value == 0.9f);
+    CHECK (ev.size() == 5 && ev[0].tick == 0 && ev[1].tick == yw::ppq && ev[2].tick == bar && ev[2].value == 0.1f
+           && ev[3].tick == bar + yw::ppq && ev[4].tick == 2 * bar + 10 && ev[4].value == 0.9f);
     // twice: four bars, the right note moved on again
-    CHECK (lynx::cliploop::duplicateLoop (s, c) && c.length == 4 * bar && s.patterns[0].notes.size() == 9 && s.patterns[0].notes.back().start == 4 * bar + lynx::ppq);
+    CHECK (yw::cliploop::duplicateLoop (s, c) && c.length == 4 * bar && s.patterns[0].notes.size() == 9 && s.patterns[0].notes.back().start == 4 * bar + yw::ppq);
     // not a MIDI clip: nothing changes
     auto audio = clip (0, bar);
-    audio.kind = lynx::ClipKind::audio;
+    audio.kind = yw::ClipKind::audio;
     const auto before = s.patterns[0].notes;
-    CHECK (! lynx::cliploop::duplicateLoop (s, audio) && s.patterns[0].notes == before && audio.length == bar);
+    CHECK (! yw::cliploop::duplicateLoop (s, audio) && s.patterns[0].notes == before && audio.length == bar);
     auto missing = clip (0, bar);
     missing.pattern = 7;
-    CHECK (! lynx::cliploop::duplicateLoop (s, missing));
+    CHECK (! yw::cliploop::duplicateLoop (s, missing));
 }
 
 TEST (gap190og_crop_clip_keeps_only_the_loop)
 {
     using namespace gap190og;
-    const auto bar = 4 * lynx::ppq;
+    const auto bar = 4 * yw::ppq;
     // loop = bar 2 (ticks 3840..7680): a note before it, one inside, one running past its end, one after it
     auto s = song ({ note (0, 240, 48), note (bar - 240, 480, 49), note (bar + 480, 240, 60), note (2 * bar - 240, 960, 62), note (2 * bar, 240, 70) });
-    lynx::PatternEvents lane;
+    yw::PatternEvents lane;
     lane.events = { { 10, 0.1f }, { bar + 20, 0.5f }, { 2 * bar, 0.9f } };
     s.patterns[0].events.push_back (lane);
     auto c = clip (bar, bar);
-    CHECK (lynx::cliploop::cropClip (s, c));
+    CHECK (yw::cliploop::cropClip (s, c));
     // "MIDI data that is outside of the loop brace can be deleted using the Crop Clip command"
     CHECK (starts (s.patterns[0]) == "480:60,3600:62");
     CHECK (s.patterns[0].notes[1].length == 240); // (cut at the loop's end)
@@ -114,23 +114,23 @@ TEST (gap190og_crop_clip_keeps_only_the_loop)
     CHECK (c.offset == 0 && c.length == bar && s.patterns[0].lengthTicks == bar);
     // cropping again changes nothing
     const auto once = s.patterns[0].notes;
-    CHECK (lynx::cliploop::cropClip (s, c) && s.patterns[0].notes == once && c.offset == 0 && c.length == bar);
+    CHECK (yw::cliploop::cropClip (s, c) && s.patterns[0].notes == once && c.offset == 0 && c.length == bar);
     auto audio = clip (0, bar);
-    audio.kind = lynx::ClipKind::audio;
-    CHECK (! lynx::cliploop::cropClip (s, audio));
+    audio.kind = yw::ClipKind::audio;
+    CHECK (! yw::cliploop::cropClip (s, audio));
 }
 
 TEST (gap190og_velocity_randomize_moves_by_at_most_the_amount)
 {
     using namespace gap190og;
-    lynx::Pattern p;
+    yw::Pattern p;
     for (int i = 0; i < 64; ++i)
         p.notes.push_back (note (i * 240, 240, 60, (float) (1 + (i * 2) % 127) / 127.0f));
     const auto before = p.notes;
     std::vector<int> all (64);
     for (int i = 0; i < 64; ++i)
         all[(std::size_t) i] = i;
-    lynx::cliploop::randomizeVelocity (p, all, 10, 7u);
+    yw::cliploop::randomizeVelocity (p, all, 10, 7u);
     auto moved = 0;
     for (int i = 0; i < 64; ++i)
     {
@@ -141,23 +141,23 @@ TEST (gap190og_velocity_randomize_moves_by_at_most_the_amount)
     }
     CHECK (moved > 40);
     // the same seed gives the same result; the amount 0 changes nothing; only the notes asked for change
-    auto q = lynx::Pattern();
+    auto q = yw::Pattern();
     q.notes = before;
-    lynx::cliploop::randomizeVelocity (q, all, 10, 7u);
+    yw::cliploop::randomizeVelocity (q, all, 10, 7u);
     CHECK (q.notes == p.notes);
     q.notes = before;
-    lynx::cliploop::randomizeVelocity (q, all, 0, 7u);
+    yw::cliploop::randomizeVelocity (q, all, 0, 7u);
     CHECK (q.notes == before);
-    lynx::cliploop::randomizeVelocity (q, { 3, 5 }, 127, 1u);
+    yw::cliploop::randomizeVelocity (q, { 3, 5 }, 127, 1u);
     for (int i = 0; i < 64; ++i)
         if (i != 3 && i != 5)
             CHECK (q.notes[(std::size_t) i] == before[(std::size_t) i]);
     // the extremes stay on 1..127 with the largest amount
-    lynx::Pattern edge;
+    yw::Pattern edge;
     edge.notes = { note (0, 240, 60, 1.0f / 127.0f), note (240, 240, 60, 1.0f) };
     for (std::uint32_t seed = 1; seed < 50; ++seed)
     {
-        lynx::cliploop::randomizeVelocity (edge, { 0, 1 }, 127, seed);
+        yw::cliploop::randomizeVelocity (edge, { 0, 1 }, 127, seed);
         for (const auto& n : edge.notes)
             CHECK (n.velocity >= 1.0f / 127.0f - 1e-6f && n.velocity <= 1.0f + 1e-6f);
     }
@@ -165,14 +165,14 @@ TEST (gap190og_velocity_randomize_moves_by_at_most_the_amount)
 
 TEST (gap190og_transport_switches_are_mappable)
 {
-    using namespace lynx::remotemap;
-    using lynx::RemoteAction;
+    using namespace yw::remotemap;
+    using yw::RemoteAction;
     // appended after round 190kc's actions: saved projects and settings keep their numbers
     CHECK ((int) RemoteAction::launchSelectedClip == 17 && (int) RemoteAction::overdub == 18 && (int) RemoteAction::loopSwitch == 19
            && (int) RemoteAction::punchIn == 20 && (int) RemoteAction::punchOut == 21);
     for (const auto a : { RemoteAction::overdub, RemoteAction::loopSwitch, RemoteAction::punchIn, RemoteAction::punchOut })
     {
-        lynx::Song s;
+        yw::Song s;
         CHECK (canBeGlobal (Target::of (a)));
         assignKey (s, Target::of (a), 'P');
         CHECK (s.remoteMappings.size() == 1 && s.remoteMappings[0].action == a);
@@ -183,14 +183,14 @@ TEST (gap190og_transport_switches_are_mappable)
     }
     // the settings keep a mapping of them for every project (and round 190kc's crossfader / relative strip ones), not a
     // track's clip
-    const auto kept = lynx::prefs::MidiPrefs::fromText ("globalmap=18|0|20|-1|-1\nglobalmap=21|0|21|-1|-1\nglobalmap=10|0|22|-1|-1\nglobalmap=17|0|23|-1|-1\nglobalmap=22|0|24|-1|-1\n").globalMappings;
+    const auto kept = yw::prefs::MidiPrefs::fromText ("globalmap=18|0|20|-1|-1\nglobalmap=21|0|21|-1|-1\nglobalmap=10|0|22|-1|-1\nglobalmap=17|0|23|-1|-1\nglobalmap=22|0|24|-1|-1\n").globalMappings;
     CHECK (kept.size() == 3 && kept[0].action == 18 && kept[1].action == 21 && kept[2].action == 10);
 }
 
 TEST (gap190og_crop_clip_key_and_live_edit_menu_wiring)
 {
-    using namespace lynx::sessionkeys;
-    using lynx::layoutstyle::Style;
+    using namespace yw::sessionkeys;
+    using yw::layoutstyle::Style;
     // Live's Crop Clip key (its clip menu: "Crop Clip  Ctrl+Shift+J"), only in the Clip-launch layout
     CHECK (std::string (menuKey (Command::gridCropClip, Style::clipLaunch)) == "\tCtrl+Shift+J");
     CHECK (std::string (menuKey (Command::gridCropClip, Style::pattern)).empty() && ! defaultKeyActs (Command::gridCropClip, Style::pattern));

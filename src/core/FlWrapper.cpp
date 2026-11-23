@@ -6,7 +6,7 @@
 #include <cstring>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -408,10 +408,10 @@ const std::vector<WrapperOption>& wrapperOptions()
         { "MIDI", "Send note release velocity", "Send release velocity in note off messages", &PluginRef::releaseVelocity, true, false },
         { "MIDI", "Send pitch bend range (semitones)", "Send a pitch bend range MIDI RPN", &PluginRef::sendBendRange, true, false },
         { "MIDI", "Send MOD X as polyphonic aftertouch", "Send each note's Modulation X as polyphonic aftertouch", &PluginRef::modXAftertouch, true, false },
-        // issue #108 (a LYNX addition; FL's wrapper has no MPE switch): beside the other per-note MIDI options
+        // issue #108 (a YW addition; FL's wrapper has no MPE switch): beside the other per-note MIDI options
         { "MIDI", "MPE", "MIDI Polyphonic Expression: each note on its own MIDI channel with its fine pitch, Mod X (timbre) and Mod Y (pressure)", &PluginRef::mpe, true, false },
         { "MIDI", "Send All Notes Off when playback stops", "Off: only the notes still held get their note off", &PluginRef::allNotesOffOnStop, true, false },
-        // GitHub #198 (round 190ks; a LYNX addition): the notes the plugin plays from its own window are recorded
+        // GitHub #198 (round 190ks; a YW addition): the notes the plugin plays from its own window are recorded
         { "MIDI", "Record notes from the plugin window", "While recording, the notes the plugin plays from its own window (pads or keys clicked in it) are recorded on its channel", &PluginRef::recordOwnNotes, false, false },
         { "Compatibility", "Reset plugin when YW Studio resets", "Reset the plugin before an export and on panic (clears its tails and held notes)", &PluginRef::resetOnFlush, true, false },
         { "Compatibility", "Send loop position", "Let the plugin know about loop start and end points", &PluginRef::sendLoopPosition, true, false },
@@ -471,4 +471,4 @@ bool foreignFromFlPreset (const std::vector<std::uint8_t>& fileBytes, ForeignPlu
         return false;
     }
 }
-} // namespace lynx
+} // namespace yw

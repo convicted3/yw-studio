@@ -1,6 +1,6 @@
 #include "engine/FlStudio.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -58,14 +58,14 @@ juce::File existingFolder (const juce::String& path)
 FlStudioInstall findFlStudio()
 {
     FlStudioInstall fl;
-    // test hook (round 169g): LYNX_NO_FL=1 = a computer without FL Studio, even where it is installed (0 / empty = FL
+    // test hook (round 169g): YW_NO_FL=1 = a computer without FL Studio, even where it is installed (0 / empty = FL
     // as found; round 169g2)
-    if (const auto noFl = juce::SystemStats::getEnvironmentVariable ("LYNX_NO_FL", {}).trim(); noFl.isNotEmpty() && noFl != "0")
+    if (const auto noFl = juce::SystemStats::getEnvironmentVariable ("YW_NO_FL", {}).trim(); noFl.isNotEmpty() && noFl != "0")
         return fl;
 
     // installation: where FL says it is, else the newest "FL Studio*" under Program Files\Image-Line
-    // LYNX_FL_INSTALL=<folder> points at an installation anywhere (another Wine prefix, a copy, tests)
-    fl.installDir = existingFolder (juce::SystemStats::getEnvironmentVariable ("LYNX_FL_INSTALL", {}));
+    // YW_FL_INSTALL=<folder> points at an installation anywhere (another Wine prefix, a copy, tests)
+    fl.installDir = existingFolder (juce::SystemStats::getEnvironmentVariable ("YW_FL_INSTALL", {}));
     if (! fl.installDir.getChildFile ("Data").isDirectory())
         fl.installDir = existingFolder (registryValue ("Software\\Image-Line\\Shared\\Paths\\Install path"));
     if (! fl.installDir.getChildFile ("Data").isDirectory())
@@ -76,8 +76,8 @@ FlStudioInstall findFlStudio()
                 fl.installDir = dir;
     }
 
-    // test hook: LYNX_FL_USER_DATA=<folder> stands in for FL's user data folder (synthetic plugin databases)
-    if (const auto testFolder = existingFolder (juce::SystemStats::getEnvironmentVariable ("LYNX_FL_USER_DATA", {})); testFolder.exists())
+    // test hook: YW_FL_USER_DATA=<folder> stands in for FL's user data folder (synthetic plugin databases)
+    if (const auto testFolder = existingFolder (juce::SystemStats::getEnvironmentVariable ("YW_FL_USER_DATA", {})); testFolder.exists())
         fl.userData = testFolder;
 
     // user data: "Shared data" (e.g. ...\Documents\Image-Line\, possibly under OneDrive) + "FL Studio"
@@ -158,4 +158,4 @@ FlPluginDb readFlPluginDatabase (const FlStudioInstall& fl, int* files)
         *files = count;
     return db;
 }
-} // namespace lynx
+} // namespace yw

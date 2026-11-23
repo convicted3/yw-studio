@@ -32,7 +32,7 @@ std::filesystem::path demos()
 
 TEST (flparity190pr_harmor_fl_parameter_numbers_and_ranges)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's numbering [DECOMP FUN_00879380]: parts A / B 386 parameters each, then the 53 global ones
     CHECK (harmor::flParamSlot (52) == std::make_optional (std::pair { 0, 52 }));
     CHECK (harmor::flParamSlot (438) == std::make_optional (std::pair { 1, 52 }));
@@ -59,11 +59,11 @@ TEST (flparity190pr_harmor_fl_parameter_numbers_and_ranges)
 
 TEST (flparity190pr_harmor_follows_filter_and_xyz_automation)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     // Lightning's "pling riser" (FL channel 50, no rack compressor): DLL renders of a held note with ProcessParam changes
-    // match LYNX's reference renderer within −87 dB (EXEC, rea/hm: p_cut); here the reference renderer's own laws
+    // match YW's reference renderer within −87 dB (EXEC, rea/hm: p_cut); here the reference renderer's own laws
     const auto song = flparity190pr::demos() / "Product demos" / "Square a Saw - Lightning (VEELA Vocals Resynthesized).flp";
     if (! std::filesystem::exists (song))
         return;
@@ -148,7 +148,7 @@ TEST (flparity190pr_harmor_follows_filter_and_xyz_automation)
 
 TEST (flparity190pr_song_start_values_of_harmor_and_sytrus)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     // Lightning: "saw chords" (FL channel 32) is saved with its filter shut (0) and FL starts the song at 8192 (0xD8): the
@@ -190,7 +190,7 @@ TEST (flparity190pr_song_start_values_of_harmor_and_sytrus)
 
 TEST (flparity190pr_fl_effect_raw_ranges)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     // FL's own effects' song-start values (0xD8) now reach the effects: none of the demos keeps a "value scale not known"
@@ -226,48 +226,48 @@ TEST (flparity190pr_export_follows_start_skip_and_pause_markers)
     // made a plain marker: bar 1), Raubana – LIFE jumps over its Marker skip sections; a Marker pause does not stop it
     using namespace markers165;
     auto song = eightBars();
-    song.addMarker (marker (bar (2), lynx::Marker::start, "Start"));
-    song.addMarker (marker (bar (3), lynx::Marker::markerSkip, "Skip"));
-    song.addMarker (marker (bar (5), lynx::Marker::none, "Here"));
-    song.addMarker (marker (bar (6), lynx::Marker::markerLoop, "Loop"));
-    song.addMarker (marker (bar (7), lynx::Marker::markerPause, "Pause"));
+    song.addMarker (marker (bar (2), yw::Marker::start, "Start"));
+    song.addMarker (marker (bar (3), yw::Marker::markerSkip, "Skip"));
+    song.addMarker (marker (bar (5), yw::Marker::none, "Here"));
+    song.addMarker (marker (bar (6), yw::Marker::markerLoop, "Loop"));
+    song.addMarker (marker (bar (7), yw::Marker::markerPause, "Pause"));
     using Spans = std::vector<std::pair<std::int64_t, std::int64_t>>;
     // off (a project saved before 0.1.32): the whole song, straight through, as before
-    CHECK (lynx::exportopts::exportSpans (song) == (Spans { { 0, bar (9) } }));
+    CHECK (yw::exportopts::exportSpans (song) == (Spans { { 0, bar (9) } }));
     std::int64_t music = 0, loop = 0;
-    const auto before = lynx::exportopts::makeRenderSong (song, {}, 0, music, loop);
+    const auto before = yw::exportopts::makeRenderSong (song, {}, 0, music, loop);
     CHECK (music == song.songLength() && ! before.playlist.empty());
     // on: bars 2…3, then 5 to the end (the marker loop at 6 and the pause at 7 are not followed: FL's render goes on)
     song.exportMarkers = true;
-    CHECK (lynx::exportopts::exportSpans (song) == (Spans { { bar (2), bar (3) }, { bar (5), bar (9) } }));
-    const auto render = lynx::exportopts::makeRenderSong (song, {}, 0, music, loop);
+    CHECK (yw::exportopts::exportSpans (song) == (Spans { { bar (2), bar (3) }, { bar (5), bar (9) } }));
+    const auto render = yw::exportopts::makeRenderSong (song, {}, 0, music, loop);
     CHECK (music == bar (2) + bar (5) - bar (1)); // 1 + 4 bars
-    CHECK (std::any_of (render.playlist.begin(), render.playlist.end(), [] (const lynx::Clip& c) { return c.start == 0 && c.offset == bar (2); }));
-    CHECK (std::any_of (render.playlist.begin(), render.playlist.end(), [] (const lynx::Clip& c) { return c.start == bar (2) && c.offset == bar (5); }));
-    CHECK (lynx::makeMarkerPlan (render).count == 0);
+    CHECK (std::any_of (render.playlist.begin(), render.playlist.end(), [] (const yw::Clip& c) { return c.start == 0 && c.offset == bar (2); }));
+    CHECK (std::any_of (render.playlist.begin(), render.playlist.end(), [] (const yw::Clip& c) { return c.start == bar (2) && c.offset == bar (5); }));
+    CHECK (yw::makeMarkerPlan (render).count == 0);
     // skips chain: a skip that lands on another skip marker follows it too (Raubana – LIFE: 30720 → 43008 → 49152 → 52224)
     auto chained = eightBars();
     chained.exportMarkers = true;
-    chained.addMarker (marker (bar (2), lynx::Marker::markerSkip, "S1"));
-    chained.addMarker (marker (bar (3), lynx::Marker::markerSkip, "S2"));
-    chained.addMarker (marker (bar (5), lynx::Marker::none, "Here"));
-    CHECK (lynx::exportopts::exportSpans (chained) == (Spans { { 0, bar (2) }, { bar (5), bar (9) } }));
+    chained.addMarker (marker (bar (2), yw::Marker::markerSkip, "S1"));
+    chained.addMarker (marker (bar (3), yw::Marker::markerSkip, "S2"));
+    chained.addMarker (marker (bar (5), yw::Marker::none, "Here"));
+    CHECK (yw::exportopts::exportSpans (chained) == (Spans { { 0, bar (2) }, { bar (5), bar (9) } }));
     // a Start marker alone: from there to the end; none: bar 1 (the selection range is unchanged by the switch)
     auto start = eightBars();
     start.exportMarkers = true;
-    start.addMarker (marker (bar (4), lynx::Marker::start, "Start"));
-    CHECK (lynx::exportopts::exportSpans (start) == (Spans { { bar (4), bar (9) } }));
+    start.addMarker (marker (bar (4), yw::Marker::start, "Start"));
+    CHECK (yw::exportopts::exportSpans (start) == (Spans { { bar (4), bar (9) } }));
     auto plain = eightBars();
     plain.exportMarkers = true;
-    plain.addMarker (marker (bar (4), lynx::Marker::none, "Here"));
-    CHECK (lynx::exportopts::exportSpans (plain) == (Spans { { 0, bar (9) } }));
-    // .lynx: saved only when on; a project without the key loads with it off
-    CHECK (lynx::Song {}.exportMarkers == false);
+    plain.addMarker (marker (bar (4), yw::Marker::none, "Here"));
+    CHECK (yw::exportopts::exportSpans (plain) == (Spans { { 0, bar (9) } }));
+    // .yw: saved only when on; a project without the key loads with it off
+    CHECK (yw::Song {}.exportMarkers == false);
 }
 
 TEST (flparity190pr_sytrus_takes_the_notes_mod_x_and_y)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     // Overcome's "Vinyl Click" (FL channel 82): 1111 four-tick notes whose Mod Y (FL's Final.FRes) sets each click's level

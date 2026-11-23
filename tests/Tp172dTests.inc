@@ -5,7 +5,7 @@ namespace tp172d
 // the pan angle (0 = left, 90 = right) of a steady 1 kHz tone through the Rhythm voicing, read over 50 ms at `at` (s)
 inline std::vector<double> rampAngles (float smoothing, const std::vector<double>& at, float pattern = 0.5f)
 {
-    using namespace lynx;
+    using namespace yw;
     auto p = makeEffectSlot (EffectKind::autoPan).params;
     constexpr int rb = autopan::count;
     p[rb] = 1.0f;                    // the Rhythm voicing
@@ -43,7 +43,7 @@ inline std::vector<double> rampAngles (float smoothing, const std::vector<double
 
 TEST (autopan_ramp_pattern_tp172d)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr int rb = autopan::count;
     CHECK (formatEffectParam (EffectKind::autoPan, rb + 7, 0.0f, 120.0) == "left / right");
     CHECK (formatEffectParam (EffectKind::autoPan, rb + 7, 0.5f, 120.0) == "ramp");
@@ -69,7 +69,7 @@ TEST (autopan_ramp_pattern_tp172d)
 // Input (-24 … +24 dB; the default 0 dB leaves it as it was)
 TEST (autopan_rhythm_input_tp172d)
 {
-    using namespace lynx;
+    using namespace yw;
     auto level = [] (float input)
     {
         auto p = makeEffectSlot (EffectKind::autoPan).params;
@@ -101,7 +101,7 @@ TEST (autopan_rhythm_input_tp172d)
 // as the original does (round 172d), and the 1 kHz law the earlier rounds fitted stays where it was
 TEST (glow_opto_side_chain_tp172d)
 {
-    using namespace lynx;
+    using namespace yw;
     auto level = [] (double hz)
     {
         vmatch::opto::Settings s;
@@ -131,7 +131,7 @@ TEST (glow_opto_side_chain_tp172d)
 // Foil Plate's measured plate voicing (the Little Plate role): no sub-bass, as the original (round 172d slice 10)
 TEST (foil_plate_voicing_sub_bass_tp172d)
 {
-    using namespace lynx;
+    using namespace yw;
     auto level = [] (double hz)
     {
         auto p = makeEffectSlot (EffectKind::foilPlate).params;
@@ -161,7 +161,7 @@ TEST (foil_plate_voicing_sub_bass_tp172d)
 // slice 11); a shift still goes through the overlap-add
 TEST (voice_shift_unity_passes_through_tp172d)
 {
-    using namespace lynx;
+    using namespace yw;
     auto run = [] (float pitchValue, double& residualDb)
     {
         auto p = makeEffectSlot (EffectKind::voiceShift).params;

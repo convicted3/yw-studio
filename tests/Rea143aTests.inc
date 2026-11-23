@@ -6,7 +6,7 @@
 
 TEST (rea143_piano_roll_tools_have_fls_keys)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     // FL's Tools menu keys (EXEC capture of FL 2026's piano roll): Alt+Q quantize, Alt+U chop, Alt+F flam, Alt+W claw,
     // Alt+O LFO, Alt+L articulate, Alt+E riff machine, Alt+P chord progression (Alt+A/S/Y/R/X/K were there already)
@@ -22,7 +22,7 @@ TEST (rea143_piano_roll_tools_have_fls_keys)
 
 TEST (rea143_euclidean_humanize_repeat_and_select_by_velocity)
 {
-    using namespace lynx::notetools;
+    using namespace yw::notetools;
     // the Euclidean rhythm: E(3,8) = x..x..x. ; E(5,16) has 5 hits; rotation moves the pattern
     std::string e38;
     for (int s = 0; s < 8; ++s)
@@ -34,31 +34,31 @@ TEST (rea143_euclidean_humanize_repeat_and_select_by_velocity)
     CHECK (hits == 5 && ! euclideanHit (8, 0, 0, 0) && euclideanHit (4, 9, 0, 3)); // no pulses: silence; pulses > steps: every step
     CHECK (euclideanHit (8, 3, 1, 2) && ! euclideanHit (8, 3, 1, 0));
 
-    lynx::Pattern p;
-    lynx::Note old;
+    yw::Pattern p;
+    yw::Note old;
     old.channel = 2;
     old.key = 38;
     p.notes.push_back (old);
     EuclideanOptions o;
     o.steps = 8;
     o.pulses = 3;
-    o.stepTicks = lynx::ticksPerStep;
-    o.length = 16 * lynx::ticksPerStep; // two cycles
+    o.stepTicks = yw::ticksPerStep;
+    o.length = 16 * yw::ticksPerStep; // two cycles
     o.channel = 2;
     o.key = 38;
     o.accent = 0.2f;
     const auto made = euclidean (p, { 0 }, o);
     CHECK (made.size() == 6 && p.notes.size() == 6); // the replaced note is gone
-    CHECK (p.notes[0].start == 0 && p.notes[1].start == 3 * lynx::ticksPerStep && p.notes[3].start == 8 * lynx::ticksPerStep);
+    CHECK (p.notes[0].start == 0 && p.notes[1].start == 3 * yw::ticksPerStep && p.notes[3].start == 8 * yw::ticksPerStep);
     CHECK (p.notes[0].velocity > p.notes[1].velocity && p.notes[3].velocity > p.notes[4].velocity); // accent per cycle
-    CHECK (p.notes[2].key == 38 && p.notes[2].channel == 2 && p.notes[2].length == lynx::ticksPerStep);
+    CHECK (p.notes[2].key == 38 && p.notes[2].channel == 2 && p.notes[2].length == yw::ticksPerStep);
 
     // humanize: a chord moves together, never before 0, velocities stay in range; the same seed gives the same result
-    lynx::Pattern h;
+    yw::Pattern h;
     for (int k : { 60, 64, 67 })
     {
-        lynx::Note n;
-        n.start = lynx::ppq;
+        yw::Note n;
+        n.start = yw::ppq;
         n.key = k;
         h.notes.push_back (n);
     }
@@ -69,27 +69,27 @@ TEST (rea143_euclidean_humanize_repeat_and_select_by_velocity)
     humanize (h, { 0, 1, 2 }, ho);
     humanize (h2, { 0, 1, 2 }, ho);
     CHECK (h.notes[0].start == h.notes[1].start && h.notes[1].start == h.notes[2].start);
-    CHECK (std::abs (h.notes[0].start - lynx::ppq) <= 40 && h.notes[0].start == h2.notes[0].start && h.notes[2].velocity == h2.notes[2].velocity);
+    CHECK (std::abs (h.notes[0].start - yw::ppq) <= 40 && h.notes[0].start == h2.notes[0].start && h.notes[2].velocity == h2.notes[2].velocity);
 
     // note repeater: a beat-long note at 1/16 becomes four, each softer
-    lynx::Pattern r;
-    lynx::Note n;
-    n.length = lynx::ppq;
+    yw::Pattern r;
+    yw::Note n;
+    n.length = yw::ppq;
     n.velocity = 1.0f;
     r.notes.push_back (n);
     RepeatOptions ro;
-    ro.rate = lynx::ppq / 4;
+    ro.rate = yw::ppq / 4;
     ro.decay = 0.5f;
     ro.pitchStep = 1;
     const auto all = repeatNotes (r, { 0 }, ro);
-    CHECK (all.size() == 4 && r.notes.size() == 4 && r.notes[0].length == lynx::ppq / 8);
-    CHECK (r.notes[3].start == 3 * lynx::ppq / 4 && std::abs (r.notes[3].velocity - 0.125f) < 1.0e-6f && r.notes[3].key == 63);
+    CHECK (all.size() == 4 && r.notes.size() == 4 && r.notes[0].length == yw::ppq / 8);
+    CHECK (r.notes[3].start == 3 * yw::ppq / 4 && std::abs (r.notes[3].velocity - 0.125f) < 1.0e-6f && r.notes[3].key == 63);
 
     // select by velocity
-    lynx::Pattern v;
+    yw::Pattern v;
     for (float vel : { 0.1f, 0.4f, 0.6f, 0.9f })
     {
-        lynx::Note x;
+        yw::Note x;
         x.velocity = vel;
         v.notes.push_back (x);
     }
@@ -101,7 +101,7 @@ TEST (rea143_euclidean_humanize_repeat_and_select_by_velocity)
 
 TEST (rea143_playlist_track_merge_and_clip_source)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.patterns.resize (2);
     auto clip = [&s] (int track, std::int64_t start, std::int64_t length, std::int64_t offset, int pattern) {
@@ -141,7 +141,7 @@ TEST (rea143_playlist_track_merge_and_clip_source)
 
 TEST (rea143_mixer_track_menu_operations)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (8);
     auto& a = s.mixer[2];

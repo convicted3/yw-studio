@@ -3,7 +3,7 @@
 #include "core/QuickRender.h"
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 // "Export audio" window: format, sample rate and what to export; then asks for the file and
 // renders on a background thread with a progress bar. `suggestedName` = name without extension. `format`: −1 = the
@@ -17,7 +17,7 @@ juce::String exportAudioNow (AudioEngine& engine, int format, const juce::File& 
 // File › Export › "Master..." (Ctrl+Alt+M; round 168e): the Export window with the render mastered on the computer
 // (core/Mastering.h: a loudness target, −1 dBTP ceiling) where FL sends it to FL Cloud; "<project> (mastered)".
 // File › Export › "Project bones..." (REA round 168e, FUN_011edb50): the project's parts as files in a sub-folder of a
-// chosen folder named after the project (core/QuickRender.h projectBones: Mixer *.lynxtrack, Effects *.lynxpreset,
+// chosen folder named after the project (core/QuickRender.h projectBones: Mixer *.ywtrack, Effects *.ywpreset,
 // Scores *.mid). `writeProjectBones` writes them into `dir` (returns how many; the failed ones in `failed`).
 void exportProjectBones (AudioEngine& engine, const juce::File& suggestedFolder, const juce::String& projectName);
 int writeProjectBones (const Song& song, const juce::File& dir, juce::StringArray& failed);
@@ -38,7 +38,7 @@ void bounceInsertToAudio (AudioEngine& engine, int track);
 // The same on the calling (message) thread, the file in `folder` (tests). liveInstances: with the hold as the menu's
 // (false: new instances, as the command line and the remote renderer do). Empty = done.
 juce::String bounceInsertToAudioNow (AudioEngine& engine, int track, bool liveInstances, const juce::File& folder);
-// Freeze (round 190ay; core/StandIns.h lynx::freeze — LYNX's own, FL has none): the channel's own sound (after its
+// Freeze (round 190ay; core/StandIns.h yw::freeze — YW's own, FL has none): the channel's own sound (after its
 // instrument, before its volume, pan and insert) is rendered next to the project and plays in the channel's place while
 // the instrument / plugin is not loaded at all: its CPU and RAM are free, the channel's insert effects stay live. The
 // channel keeps its plugin and settings as they are, so Unfreeze brings back the same sound. A frozen channel is
@@ -52,7 +52,7 @@ void freezeChannel (AudioEngine& engine, int channel, std::function<void (bool)>
 juce::String freezeRefusal (AudioEngine& engine, int channel);
 // The instrument plays again and the frozen audio is deleted.
 void unfreezeChannel (AudioEngine& engine, int channel);
-// Live's Freeze Track (round 190ff, the Clip-launch workflow; core/StandIns.h lynx::freeze track freeze): the channel
+// Live's Freeze Track (round 190ff, the Clip-launch workflow; core/StandIns.h yw::freeze track freeze): the channel
 // with its volume and pan through its insert's effects (the track's devices) is rendered and plays in their place; the
 // instrument and the insert's effects are not loaded; the insert's EQ, fader, pan and sends stay live. Unfreeze with
 // unfreezeChannel. Refused, with the reason, when something else plays into the insert or an effect reaches out of it.
@@ -109,4 +109,4 @@ std::unique_ptr<juce::Component> makeExportPanelForTracks (AudioEngine& engine, 
 // The render window of "Render as audio clip" (a pattern render: WAV, no file dialog; round 190gk's shot of FL's
 // Start button). Nothing renders.
 std::unique_ptr<juce::Component> makeClipRenderPanel (AudioEngine& engine);
-} // namespace lynx
+} // namespace yw

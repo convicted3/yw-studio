@@ -1,4 +1,4 @@
-// LYNX's own Toxic Biohazard bank (round 168n). Designed for LYNX — never converted from FL's preset files — and
+// YW's own Toxic Biohazard bank (round 168n). Designed for YW — never converted from FL's preset files — and
 // playing only the operators' own drawn spectra (wave 0, written here from simple harmonic recipes) and the sine
 // (wave 1), so every preset works without FL Studio's files. Values follow the parameter laws of REA_rodada45 §2.2.
 
@@ -7,10 +7,10 @@
 #include <cstring>
 #include <functional>
 
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/Toxic.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -390,4 +390,4 @@ std::vector<Preset> toxicBank()
         }),
     };
 }
-} // namespace lynx::banks
+} // namespace yw::banks

@@ -9,9 +9,9 @@
 namespace issue160
 {
 // four slices of 11025 frames, slice i a sine at amplitude 0.1 · (i + 1)
-std::shared_ptr<const lynx::SampleData> steps()
+std::shared_ptr<const yw::SampleData> steps()
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = 44100.0;
     for (int i = 0; i < 4 * 11025; ++i)
         d->left.push_back (0.1f * (float) (i / 11025 + 1) * (float) std::sin (i * 0.05));
@@ -19,13 +19,13 @@ std::shared_ptr<const lynx::SampleData> steps()
     return d;
 }
 
-lynx::fslicer::State fourSlices()
+yw::fslicer::State fourSlices()
 {
-    auto state = lynx::fslicer::fresh ("C:\\loops\\steps.wav", 44100);
+    auto state = yw::fslicer::fresh ("C:\\loops\\steps.wav", 44100);
     state.slices.clear();
     for (int i = 0; i < 4; ++i)
     {
-        lynx::fslicer::Slice s;
+        yw::fslicer::Slice s;
         s.name = "s" + std::to_string (i + 1);
         s.position = i * 11025;
         state.slices.push_back (s);
@@ -33,28 +33,28 @@ lynx::fslicer::State fourSlices()
     return state;
 }
 
-lynx::Song song (const lynx::fslicer::State& state, float volume)
+yw::Song song (const yw::fslicer::State& state, float volume)
 {
-    lynx::Song s;
-    lynx::ChannelDef c;
+    yw::Song s;
+    yw::ChannelDef c;
     c.name = "Slicer";
-    c.instrument = lynx::InstrumentKind::fruityslicer;
+    c.instrument = yw::InstrumentKind::fruityslicer;
     c.samplePath = "C:\\loops\\steps.wav";
-    c.pluginState = lynx::fslicer::write (state);
+    c.pluginState = yw::fslicer::write (state);
     c.volume = volume;
     s.channels.push_back (c);
     return s;
 }
 
-lynx::RackState::Factories factories()
+yw::RackState::Factories factories()
 {
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     f.samples = [] (const std::string&) { return steps(); };
     return f;
 }
 
 // the peak of the first 2000 frames a key plays (0 = silent), the note then released and rung out
-float keyPeak (lynx::Instrument& instrument, int key)
+float keyPeak (yw::Instrument& instrument, int key)
 {
     std::vector<float> left (2000, 0.0f), right (2000, 0.0f);
     instrument.noteOn (key, 0.78125f);
@@ -72,7 +72,7 @@ float keyPeak (lynx::Instrument& instrument, int key)
 
 TEST (issue160_slicer_key_table_is_fls)
 {
-    using namespace lynx;
+    using namespace yw;
     auto state = issue160::fourSlices();
     auto table = fslicer::keyTable (state);
     CHECK (table.size() == 125);
@@ -92,7 +92,7 @@ TEST (issue160_slicer_key_table_is_fls)
 
 TEST (issue160_slicer_keys_play_their_slices_after_an_edit)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto state = issue160::fourSlices();
     const auto f = issue160::factories();
     auto first = RackState::build (issue160::song (state, 0.78f), nullptr, 44100.0, f);

@@ -17,7 +17,7 @@
  #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::flmb
+namespace yw::flmb
 {
 //                                               0      1  2  3   4      5      6      7      8   9      10     11 12     13
 const std::array<int, controls> controlMin {     0,     0, 0, 0, 20,     0,     0,     0,    1, 100,     0,     0, 20,    20,
@@ -945,7 +945,7 @@ private:
 
     std::array<Band, 3> bands {};   // high, mid, low
     std::array<Detector, 2> limiter {};
-    float limiterFactor = 1.0f;     // FL keeps this one value for the whole process (all instances); LYNX per instance
+    float limiterFactor = 1.0f;     // FL keeps this one value for the whole process (all instances); YW per instance
     std::array<float, 3> enable { 1.0f, 1.0f, 1.0f };
     float master = 1.0f, rate = 44100.0f;
     bool limiterOn = false, configured = false;
@@ -1121,4 +1121,4 @@ std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& flState, const Ef
 {
     return std::make_unique<MultibandEffect> (parse (flState), params);
 }
-} // namespace lynx::flmb
+} // namespace yw::flmb

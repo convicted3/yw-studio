@@ -36,7 +36,7 @@
 
 #include <thread>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -228,12 +228,12 @@ private:
 
 juce::File exportSettingsFile()
 {
-    return lynx::platform::settingsFile ("export-settings.txt");
+    return yw::platform::settingsFile ("export-settings.txt");
 }
 
 // round 190ap: the named export presets, and what the last export was made with and where it went
-juce::File exportPresetsFile() { return lynx::platform::settingsFile ("export-presets.txt"); }
-juce::File exportLastFile() { return lynx::platform::settingsFile ("export-last.txt"); }
+juce::File exportPresetsFile() { return yw::platform::settingsFile ("export-presets.txt"); }
+juce::File exportLastFile() { return yw::platform::settingsFile ("export-last.txt"); }
 
 // The formats this window offers, in exportopts::Format order: M4A (the last) only where the system has an AAC encoder
 // (engine/AacEncoder.h; not on Linux)
@@ -325,7 +325,7 @@ struct ClipRenderMode
 
 juce::File clipRenderSettingsFile()
 {
-    return lynx::platform::settingsFile ("clip-render-settings.txt");
+    return yw::platform::settingsFile ("clip-render-settings.txt");
 }
 
 // The choices a render to an audio clip starts from: the last ones of such a render (else the Export window's), with
@@ -334,7 +334,7 @@ exportopts::Options clipRenderOptions (bool pattern)
 {
     using namespace exportopts;
     const auto clipFile = clipRenderSettingsFile();
-    auto o = fromText ((clipFile.existsAsFile() ? clipFile : lynx::platform::settingsFile ("export-settings.txt")).loadFileAsString().toStdString());
+    auto o = fromText ((clipFile.existsAsFile() ? clipFile : yw::platform::settingsFile ("export-settings.txt")).loadFileAsString().toStdString());
     o = withSingleFormat (o, Format::wav);
     o.stems = Stems::none;
     o.stemsIncludeMaster = false;
@@ -348,7 +348,7 @@ exportopts::Options clipRenderOptions (bool pattern)
 }
 
 // The Export window (FL's "WAV rendering", interpreted; REA_rodada84): what to render on the left, the file format on
-// the right, mix options below; the choices are remembered (%APPDATA%\LYNX\export-settings.txt).
+// the right, mix options below; the choices are remembered (%APPDATA%\YW\export-settings.txt).
 class ExportPanel final : public juce::Component
 {
 public:
@@ -1508,8 +1508,8 @@ private:
         // folder, so the file dialog opens there; folders made for a dialog that is cancelled are taken away again
         const auto target = folder.getChildFile (name + extension);
         const auto made = makeFoldersFor (target, folder);
-        chooser = lynx::ui::makeFileChooser (tr ("Export audio"), target, "*" + extension);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        chooser = yw::ui::makeFileChooser (tr ("Export audio"), target, "*" + extension);
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [this, extension, made] (const juce::FileChooser& fc) {
                                   auto file = fc.getResult();
 
@@ -1649,7 +1649,7 @@ private:
 
 namespace
 {
-// Render to audio's job: the insert's sound into `file` (Music/LYNX/Renders), and the clip's length (the song + the
+// Render to audio's job: the insert's sound into `file` (Music/YW/Renders), and the clip's length (the song + the
 // tail, at the ending tempo). Round 190jx: with `hold` open (FL renders with the plugin instances that play, as its
 // export does) the job takes the live engine's plugins.
 struct InsertRender
@@ -2145,7 +2145,7 @@ void unfreezeChannel (AudioEngine& engine, int channel)
 
 namespace
 {
-// FL's default render folder (FUN_011bf050): LYNX renders into Music/LYNX/Renders
+// FL's default render folder (FUN_011bf050): YW renders into Music/YW/Renders
 juce::File renderFolder()
 {
     const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Renders");
@@ -2313,9 +2313,9 @@ void consolidatePlaylistTrack (AudioEngine& engine, int track, bool fromSongStar
         consolidate (engine, plan, renderFolder());
         return;
     }
-    auto chooser = lynx::ui::makeSharedFileChooser (tr ("Select a folder to consolidate to"), renderFolder());
+    auto chooser = yw::ui::makeSharedFileChooser (tr ("Select a folder to consolidate to"), renderFolder());
     auto* engineRef = &engine;
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [engineRef, plan, chooser] (const juce::FileChooser& fc) {
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [engineRef, plan, chooser] (const juce::FileChooser& fc) {
         if (fc.getResult().isDirectory())
             consolidate (*engineRef, plan, fc.getResult());
     });
@@ -2474,9 +2474,9 @@ void renderPatternsAsAudioClips (AudioEngine& engine, const std::vector<int>& pa
 void exportAllPlaylistTracks (AudioEngine& engine, const juce::String& projectName, quickrender::Start start, bool groups)
 {
     // FL (FUN_012fd7a0): first the folder ("Select rendering folder"), then the render window once for every track
-    auto chooser = lynx::ui::makeSharedFileChooser (tr ("Select the folder where output should be rendered..."), renderFolder());
+    auto chooser = yw::ui::makeSharedFileChooser (tr ("Select the folder where output should be rendered..."), renderFolder());
     auto* engineRef = &engine;
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                           [engineRef, projectName, start, groups, chooser] (const juce::FileChooser& fc) {
         const auto folder = fc.getResult();
         if (! folder.isDirectory())
@@ -2573,10 +2573,10 @@ int writeProjectBones (const Song& song, const juce::File& dir, juce::StringArra
 void exportProjectBones (AudioEngine& engine, const juce::File& suggestedFolder, const juce::String& projectName)
 {
     // FL (FUN_011edb50): "Export project bones", a folder in which the bones go to a sub-folder named after the project
-    auto chooser = lynx::ui::makeSharedFileChooser (tr ("Save project bones (channel / effect presets & scores) subdirectory in..."),
+    auto chooser = yw::ui::makeSharedFileChooser (tr ("Save project bones (channel / effect presets & scores) subdirectory in..."),
                                                         suggestedFolder.isDirectory() ? suggestedFolder : renderFolder());
     auto* engineRef = &engine;
-    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+    yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                           [engineRef, projectName, chooser] (const juce::FileChooser& fc) {
         const auto folder = fc.getResult();
         if (! folder.isDirectory())
@@ -2716,4 +2716,4 @@ void showExportDialog (AudioEngine& engine, const juce::File& suggestedFolder, c
     if (auto* dialog = options.launchAsync())
         keepAboveMainWindow (*dialog);
 }
-} // namespace lynx
+} // namespace yw

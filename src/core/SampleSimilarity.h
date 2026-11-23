@@ -4,7 +4,7 @@
 //
 // FL Studio's "Find similar samples" lives in the Sounds tab (FL Cloud's online library) and in Loop Starter's channel
 // menu: FL sends a query to the FL Cloud service, which ranks its own catalogue ("the similarity search includes
-// both tone and rhythm", FL's manual). FL analyses nothing on the user's disk and keeps no local index. LYNX gives
+// both tone and rhythm", FL's manual). FL analyses nothing on the user's disk and keeps no local index. YW gives
 // the same workflow for the files in the Browser's folders, with its own analysis, computed on this machine:
 //
 //  - analyse(): one fixed vector of 49 numbers per file from its first 20 s (after leading silence): tone (12 MFCC
@@ -13,7 +13,7 @@
 //  - Index: the vectors of the analysed files, by path, kept in one bounded binary file between sessions.
 //  - rank(): every dimension is scaled by its spread over the index, groups are weighted (tone and shape most), the
 //    nearest files come first. Fixed and precomputed, so a query is instant once the files are analysed.
-//  - Service: one background worker (lowest priority, at most half of one core, paused while LYNX plays or renders)
+//  - Service: one background worker (lowest priority, at most half of one core, paused while YW plays or renders)
 //    analyses the Browser's folders; a query is served before the pass goes on and analyses the clicked file first
 //    when the pass did not reach it yet. Nothing is ever killed: the worker stops between two files.
 //    Queries are answered by a second thread at normal priority (round 190dc): an answer never waits for the
@@ -37,7 +37,7 @@
 
 #include "core/SearchIndex.h"
 
-namespace lynx::similarity
+namespace yw::similarity
 {
 inline constexpr int featureCount = 49;
 inline constexpr double analysedSeconds = 20.0;     // of each file, after its leading silence
@@ -83,7 +83,7 @@ public:
     // The files most like `query` (never `exclude`), nearest first, at most `max`; only those under `roots` when given
     std::vector<Match> rank (const Features& query, const std::string& exclude, const std::vector<std::string>& roots, std::size_t max) const;
 
-    // The index file: "LYNXSIM1", then the entries (little-endian)
+    // The index file: "YWSTSIM1", then the entries (little-endian)
     std::string toBytes() const;
     bool fromBytes (const std::string& bytes);
 
@@ -101,7 +101,7 @@ struct Status
     std::size_t files = 0;     // analysed files in the index (usable ones)
     bool loaded = false;       // the index file was read (or there was none)
     bool busy = false;         // a pass is analysing
-    bool paused = false;       // ... but waits while LYNX plays / renders
+    bool paused = false;       // ... but waits while YW plays / renders
     bool full = false;         // the index reached maxIndexedFiles
     std::size_t analysed = 0;  // files analysed by the running pass
     std::string current;       // the folder the pass is in
@@ -127,11 +127,11 @@ public:
         // The file's first `seconds` as mono; false when it can't be read. Called on the worker and the answering
         // thread, at the same time when a query comes in while the pass analyses a file.
         std::function<bool (const std::string& path, double seconds, std::vector<float>& mono, double& sampleRate)> decode;
-        std::function<bool (const std::string& fileName)> accepts; // an audio file LYNX can analyse (by name)
+        std::function<bool (const std::string& fileName)> accepts; // an audio file YW can analyse (by name)
         std::function<std::string()> load;                         // the index file's bytes ("" when there is none)
         std::function<void (const std::string&)> save;
         std::function<void()> statusChanged;                       // (worker threads)
-        std::function<bool()> shouldPause;                         // LYNX is playing, recording or rendering
+        std::function<bool()> shouldPause;                         // YW is playing, recording or rendering
         bool throttle = true;                                      // rest as long as each file took (tests: off)
     };
 
@@ -193,4 +193,4 @@ private:
 
     std::thread asker, worker; // (last: started when everything else exists)
 };
-} // namespace lynx::similarity
+} // namespace yw::similarity

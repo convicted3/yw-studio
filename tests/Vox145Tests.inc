@@ -4,18 +4,18 @@
 
 namespace vox145
 {
-using lynx::EffectKind;
-namespace r = lynx::mixsuite::ridge;
+using yw::EffectKind;
+namespace r = yw::mixsuite::ridge;
 
-lynx::EffectParams vocal()
+yw::EffectParams vocal()
 {
-    auto p = lynx::makeEffectSlot (EffectKind::ridgeStrip).params;
+    auto p = yw::makeEffectSlot (EffectKind::ridgeStrip).params;
     p[r::vocal] = 1.0f;
     return p;
 }
 
 // steady-state level change (dB) of a sine through Ridge with `p`, measured over the last 0.1 s of 0.5 s
-double gainDb (const lynx::EffectParams& p, double hz, double dbfs, double sr = 48000.0)
+double gainDb (const yw::EffectParams& p, double hz, double dbfs, double sr = 48000.0)
 {
     const auto in = mixsuite96::sine (hz, std::pow (10.0, dbfs / 20.0), (int) (0.5 * sr), sr);
     const auto out = mixsuite96::run (EffectKind::ridgeStrip, p, in, sr);
@@ -38,7 +38,7 @@ std::vector<std::uint8_t> state (const std::string& a)
 
 TEST (vocal_strip_voicing_laws_round145)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voxstrip;
     namespace r = mixsuite::ridge;
     // [EXEC] the reference's control laws (its own parameter texts at 0 / 0.5 / 1)
@@ -57,7 +57,7 @@ TEST (vocal_strip_voicing_laws_round145)
 
 TEST (vocal_strip_voicing_compander_round145)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voxstrip;
     namespace r = mixsuite::ridge;
     auto p = vox145::vocal();
@@ -95,7 +95,7 @@ TEST (vocal_strip_voicing_compander_round145)
 
 TEST (vocal_strip_voicing_de_esser_eq_latency_round145)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voxstrip;
     namespace r = mixsuite::ridge;
     // [EXEC] the de-esser is level-independent: a 10 kHz tone (all of it above 5 kHz) is turned down 2/3 of the
@@ -133,7 +133,7 @@ TEST (vocal_strip_voicing_de_esser_eq_latency_round145)
 
 TEST (ssl_vocalstrip_2_state_translates_round145)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace vs = voxstrip;
     namespace r = mixsuite::ridge;
     // her state (11 slots of okkk): EQ / de-esser / de-ploser off, a heavy soft-knee 10.5:1 compressor
@@ -162,7 +162,7 @@ TEST (ssl_vocalstrip_2_state_translates_round145)
     CHECK (slot.params[r::vDpLookahead] == 1.0f && slot.params[r::vDpOn] == 0.0f);
     CHECK (std::abs (vs::highGainDb (slot.params[r::vHighGain]) - 6.5) < 0.01);
     // her raw state from the project (when this machine has the round's extraction)
-    const std::filesystem::path f = "/mnt/d/lynx-work/vox145/vs/states/her0.bin";
+    const std::filesystem::path f = "/mnt/d/yw-work/vox145/vs/states/her0.bin";
     if (std::filesystem::exists (f))
     {
         std::ifstream in (f, std::ios::binary);

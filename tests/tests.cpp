@@ -1,4 +1,4 @@
-// Core tests (no JUCE). Usage: lynx_tests [folder-with-flp-files] [--list] [--filter a,b] [--exclude a,b] [--shard i/n] [--weights f] [--times f] [--no-times]
+// Core tests (no JUCE). Usage: yw_tests [folder-with-flp-files] [--list] [--filter a,b] [--exclude a,b] [--shard i/n] [--weights f] [--times f] [--no-times]
 
 #include <algorithm>
 #include <optional>
@@ -240,14 +240,14 @@ struct Register
 
 // Engines that compute in x87 80-bit long double (FL's own arithmetic) match their goldens to the last bit on x86. On
 // ARM64 (Apple Silicon) long double is not the x87 format, so there they hold to a looser bound (round 117).
-// LYNX_X87_TOL overrides it (measuring).
+// YW_X87_TOL overrides it (measuring).
 inline float armTolerance (float x86, float arm)
 {
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
     (void) arm;
     return x86;
 #else
-    if (const char* t = std::getenv ("LYNX_X87_TOL"))
+    if (const char* t = std::getenv ("YW_X87_TOL"))
         return (float) std::atof (t);
     return arm;
 #endif
@@ -485,12 +485,12 @@ TEST (flp_native_88_byte_playlist_items_with_clip_gain_and_fades)
         CHECK (it[3].position == 1536 && it[3].track == 3);
         CHECK (std::abs (it[1].gain - 1.65f) < 1e-6f && std::abs (it[1].fadeInMs - 923.0769f) < 1e-3f);
 
-        const auto song = lynx::importFlp (p);
+        const auto song = yw::importFlp (p);
         CHECK (song.playlist.size() == 4);
 
         if (song.playlist.size() == 4)
         {
-            const auto beat = (std::int64_t) lynx::ppq;
+            const auto beat = (std::int64_t) yw::ppq;
             CHECK (song.playlist[0].gain == 1.0f && song.playlist[0].fadeIn == 0 && song.playlist[0].fadeOut == 0);
             CHECK (std::abs (song.playlist[1].gain - 1.65f) < 1e-6f);
             CHECK (std::llabs (song.playlist[1].fadeIn - 2 * beat) <= 1 && std::llabs (song.playlist[1].fadeOut - beat) <= 1);
@@ -551,21 +551,21 @@ TEST (flp_channel_level_adjustments_and_stretched_clip_start)
         return;
     CHECK (p.channels[0].hasLevelAdjust && p.channels[0].panAdj == 3200 && p.channels[0].volAdj == 7286);
 
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (song.channels.size() == 1 && song.playlist.size() == 1);
     if (song.channels.size() != 1 || song.playlist.size() != 1)
         return;
     // gain = f(volume)·f(volAdj), pan = pan + panAdj (round 190dz: the adjustments are the channel's own Levels
     // adjustment, the knobs read as in FL)
-    const auto expected = lynx::channelGain (10000.0f / 12800.0f) * lynx::channelGain (7286.0f / 12800.0f);
-    CHECK (std::abs (lynx::channelGain (song.channels[0].volume) * lynx::levelAdjustGain (song.channels[0].misc.levels.volume) - expected) < 1e-5f);
+    const auto expected = yw::channelGain (10000.0f / 12800.0f) * yw::channelGain (7286.0f / 12800.0f);
+    CHECK (std::abs (yw::channelGain (song.channels[0].volume) * yw::levelAdjustGain (song.channels[0].misc.levels.volume) - expected) < 1e-5f);
     CHECK (std::abs (song.channels[0].volume - 10000.0f / 12800.0f) < 1e-6f);
-    CHECK (std::abs (lynx::adjustedPan (song.channels[0].pan, song.channels[0].misc.levels.pan) - 0.5f) < 1e-6f);
+    CHECK (std::abs (yw::adjustedPan (song.channels[0].pan, song.channels[0].misc.levels.pan) - 0.5f) < 1e-6f);
     // 788.46 sample ms / 1.056892 = 746.0 ms = 1.6164 beats into the clip
     CHECK (song.channels[0].sampler.stretchBeats > 0.0f);
-    CHECK (std::llabs (song.playlist[0].offset - (std::int64_t) std::llround (1.61638 * lynx::ppq)) <= 1);
+    CHECK (std::llabs (song.playlist[0].offset - (std::int64_t) std::llround (1.61638 * yw::ppq)) <= 1);
     // REA_rodada110 §1: the sub-tick rest is kept (offset + fraction = the exact position, to the sample)
-    const auto exact = 788.4615 / ((double) (788.4615f + 31218.92f - 788.4615f) / (64.0 * 60000.0 / 130.0)) / 1000.0 * 130.0 / 60.0 * lynx::ppq;
+    const auto exact = 788.4615 / ((double) (788.4615f + 31218.92f - 788.4615f) / (64.0 * 60000.0 / 130.0)) / 1000.0 * 130.0 / 60.0 * yw::ppq;
     CHECK (std::abs ((double) song.playlist[0].offset + (double) song.playlist[0].offsetFraction - exact) < 1e-3);
     CHECK (std::abs (song.playlist[0].offsetFraction) <= 0.5f);
 }
@@ -672,14 +672,14 @@ TEST (flp_fuzz_corrupted_files_do_not_crash)
         try
         {
             const auto project = flp::parseProject (bytes);
-            const auto song = lynx::importFlp (project);
+            const auto song = yw::importFlp (project);
             ++parsed;
 
             for (const auto& p : song.patterns)
                 for (const auto& n : p.notes)
                     CHECK (n.channel >= 0 && n.channel < (int) song.channels.size());
             for (const auto& c : song.playlist)
-                CHECK (c.kind != lynx::ClipKind::pattern || (c.pattern >= 0 && c.pattern < (int) song.patterns.size()));
+                CHECK (c.kind != yw::ClipKind::pattern || (c.pattern >= 0 && c.pattern < (int) song.patterns.size()));
         }
         catch (const flp::Error&)
         {
@@ -712,44 +712,44 @@ TEST (plugin_state_decoders_survive_garbage)
             std::memcpy (blob.data(), &v, 4);
         }
 
-        if (auto fx = lynx::effectFromFl (plugins[rnd() % 10], blob))
+        if (auto fx = yw::effectFromFl (plugins[rnd() % 10], blob))
         {
             ++decoded;
             for (auto v : fx->params)
                 CHECK (std::isfinite (v) && v >= 0.0f && v <= 1.0f);
         }
 
-        lynx::SynthSettings synth;
-        if (lynx::synthFrom3xOsc (blob, synth))
+        yw::SynthSettings synth;
+        if (yw::synthFrom3xOsc (blob, synth))
             for (const auto& o : synth.osc)
                 CHECK (std::isfinite (o.level) && o.level >= 0.0f && o.level <= 1.0f);
 
         float harmlessGain = 1.0f;
-        if (lynx::synthFromHarmless (blob, 120.0, synth, harmlessGain))
+        if (yw::synthFromHarmless (blob, 120.0, synth, harmlessGain))
             CHECK (std::isfinite (harmlessGain) && std::isfinite (synth.cutoff) && std::isfinite (synth.attack));
-        if (lynx::synthFromFruitKick (blob, synth))
+        if (yw::synthFromFruitKick (blob, synth))
             CHECK (std::isfinite (synth.decay) && std::isfinite (synth.pitchEnv.amount));
-        if (lynx::synthFromGms (blob, 120.0, synth, harmlessGain) || lynx::synthFromHarmor (blob, synth, harmlessGain) || lynx::synthFromOgun (blob, synth, harmlessGain)
-            || lynx::synthFromSakura (blob, synth) || lynx::synthFromKepler (blob, synth, harmlessGain))
+        if (yw::synthFromGms (blob, 120.0, synth, harmlessGain) || yw::synthFromHarmor (blob, synth, harmlessGain) || yw::synthFromOgun (blob, synth, harmlessGain)
+            || yw::synthFromSakura (blob, synth) || yw::synthFromKepler (blob, synth, harmlessGain))
             CHECK (std::isfinite (synth.cutoff) && std::isfinite (synth.attack) && std::isfinite (harmlessGain));
-        if (auto sound = lynx::drumSynthLiveSound (blob))
+        if (auto sound = yw::drumSynthLiveSound (blob))
             CHECK (sound->size() < 256);
-        if (lynx::wavetrav::State wt; lynx::wavetrav::parseState (blob, wt))
-            CHECK (wt.patches[60].waveN >= 0 && wt.patches[60].waveN < lynx::wavetrav::tableCapacity);
-        lynx::synthFromBooBass (blob, synth);
-        lynx::gmsStateUsable (blob); // (the exact engines' parsers reject garbage without crashing)
-        lynx::morphineStateUsable (blob);
-        lynx::poizoneStateUsable (blob);
-        if (lynx::synthFromPoiZone (blob, synth, harmlessGain) || lynx::synthFromBassDrum (blob, synth, harmlessGain) || lynx::synthFromToxic (blob, synth, harmlessGain)
-            || lynx::synthFromMorphine (blob, synth, harmlessGain))
+        if (yw::wavetrav::State wt; yw::wavetrav::parseState (blob, wt))
+            CHECK (wt.patches[60].waveN >= 0 && wt.patches[60].waveN < yw::wavetrav::tableCapacity);
+        yw::synthFromBooBass (blob, synth);
+        yw::gmsStateUsable (blob); // (the exact engines' parsers reject garbage without crashing)
+        yw::morphineStateUsable (blob);
+        yw::poizoneStateUsable (blob);
+        if (yw::synthFromPoiZone (blob, synth, harmlessGain) || yw::synthFromBassDrum (blob, synth, harmlessGain) || yw::synthFromToxic (blob, synth, harmlessGain)
+            || yw::synthFromMorphine (blob, synth, harmlessGain))
             CHECK (std::isfinite (synth.cutoff) && std::isfinite (harmlessGain));
-        if (auto patch = lynx::drumpadPatchName (blob))
-            CHECK (patch->size() <= 0x30 && std::isfinite (lynx::drumToneForName (*patch).decay));
-        if (auto flex = lynx::flexPresetName (blob))
+        if (auto patch = yw::drumpadPatchName (blob))
+            CHECK (patch->size() <= 0x30 && std::isfinite (yw::drumToneForName (*patch).decay));
+        if (auto flex = yw::flexPresetName (blob))
             CHECK ((! flex->first.empty() || ! flex->second.empty()) && flex->second.size() <= 1024);
-        if (lynx::synthFromSytrus (blob, 120.0, synth, harmlessGain))
+        if (yw::synthFromSytrus (blob, 120.0, synth, harmlessGain))
             CHECK (std::isfinite (synth.cutoff) && std::isfinite (synth.attack));
-        if (lynx::synthFromDX10 (blob, synth))
+        if (yw::synthFromDX10 (blob, synth))
             CHECK (std::isfinite (synth.decay) && std::isfinite (synth.release) && std::isfinite (synth.osc[1].level));
         if (blob.size() >= 4 && round % 5 == 0) // MiniSynth header followed by garbage
         {
@@ -760,20 +760,20 @@ TEST (plugin_state_decoders_survive_garbage)
                 std::memcpy (blob.data() + 48, "0rev", 4);
             }
         }
-        if (lynx::synthFromMiniSynth (blob, 120.0, synth))
+        if (yw::synthFromMiniSynth (blob, 120.0, synth))
             CHECK (std::isfinite (synth.cutoff) && std::isfinite (synth.decay) && std::isfinite (synth.attack));
-        if (lynx::miniSynthStateUsable (blob)) // the exact engine's parser and a short render with silent tables
+        if (yw::miniSynthStateUsable (blob)) // the exact engine's parser and a short render with silent tables
         {
-            const auto params = lynx::miniSynthParams (blob);
+            const auto params = yw::miniSynthParams (blob);
             CHECK (params.size() == 43u && std::all_of (params.begin(), params.end(), [] (float v) { return v >= 0.0f && v <= 1.0f; }));
-            const auto y = lynx::minisynth::renderReference (blob, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 64 } }, 44100.0, 128, "");
+            const auto y = yw::minisynth::renderReference (blob, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 64 } }, 44100.0, 128, "");
             CHECK (y.size() == 256u && std::all_of (y.begin(), y.end(), [] (float v) { return std::isfinite (v); }));
         }
 
-        lynx::ForeignPlugin foreign;
-        lynx::parseFlWrapper (blob, foreign);
+        yw::ForeignPlugin foreign;
+        yw::parseFlWrapper (blob, foreign);
         std::vector<std::uint8_t> component, controller;
-        lynx::splitFlVst3State (blob, component, controller);
+        yw::splitFlVst3State (blob, component, controller);
     }
 
     CHECK (decoded == 3000); // every known name yields an effect (default when the blob is unusable)
@@ -783,19 +783,19 @@ TEST (inflate_zlib)
 {
     // fixed Huffman with back-references
     const std::uint8_t fixed[] = { 0x78, 0xda, 0x4b, 0x4c, 0x4a, 0x4e, 0xc4, 0x86, 0x22, 0x00, 0x7c, 0x69, 0x09, 0x89 };
-    const auto a = lynx::inflateZlib (fixed, sizeof (fixed));
+    const auto a = yw::inflateZlib (fixed, sizeof (fixed));
     CHECK (a && std::string (a->begin(), a->end()) == "abcabcabcabcabcabcabcabcX");
 
     // stored (uncompressed) block
     const std::uint8_t stored[] = { 0x78, 0x01, 0x01, 0x03, 0x00, 0xfc, 0xff, 'L', 'Y', 'N', 0x00, 0x00, 0x00, 0x00 };
-    const auto b = lynx::inflateZlib (stored, sizeof (stored));
+    const auto b = yw::inflateZlib (stored, sizeof (stored));
     CHECK (b && std::string (b->begin(), b->end()) == "LYN");
 
     // truncated, bad header and size limit
-    CHECK (! lynx::inflateZlib (fixed, 6));
+    CHECK (! yw::inflateZlib (fixed, 6));
     const std::uint8_t bad[] = { 0x12, 0x34, 0x00 };
-    CHECK (! lynx::inflateZlib (bad, sizeof (bad)));
-    CHECK (! lynx::inflateZlib (fixed, sizeof (fixed), false, 10));
+    CHECK (! yw::inflateZlib (bad, sizeof (bad)));
+    CHECK (! yw::inflateZlib (fixed, sizeof (fixed), false, 10));
 }
 
 TEST (fl_round15_effects_convert_known_values)
@@ -807,46 +807,46 @@ TEST (fl_round15_effects_convert_known_values)
     };
     // Frequency Shifter "+800 Hz": frequency 51542 in the 20 kHz range, 100% wet — FL's own engine since round 154
     // (its controls as (raw − min) / range); unreadable states keep the generic shifter
-    const auto fs = lynx::effectFromFl ("Frequency Shifter", blob ({ 4, 10000, 0, 51542, 0, 10000, 10000, 5000, 10000, 0, 5000, 0, 0 }));
-    CHECK (fs && fs->kind == lynx::EffectKind::flFrequencyShifter);
+    const auto fs = yw::effectFromFl ("Frequency Shifter", blob ({ 4, 10000, 0, 51542, 0, 10000, 10000, 5000, 10000, 0, 5000, 0, 0 }));
+    CHECK (fs && fs->kind == yw::EffectKind::flFrequencyShifter);
     if (fs)
     {
         CHECK (std::abs (fs->params[0] - 1.0f) < 1e-6f && fs->params[1] == 0.0f);
         CHECK (std::abs (fs->params[2] - (51542.0f + 70000.0f) / 140000.0f) < 1e-6f);
     }
-    const auto fsOld = lynx::effectFromFl ("Frequency Shifter", blob ({ 4, 10000, 0 }));
-    CHECK (fsOld && fsOld->kind == lynx::EffectKind::freqShift);
+    const auto fsOld = yw::effectFromFl ("Frequency Shifter", blob ({ 4, 10000, 0 }));
+    CHECK (fsOld && fsOld->kind == yw::EffectKind::freqShift);
     // Emphasis (Bien Duro's Master): FL's own engine since round 167f, its controls as (raw − min) / range: input 625
     // (+1.5 dB), ceiling 9308 (−1.60 dB), envelope order 2, true peak; an unreadable state keeps the limiter
-    const auto em = lynx::effectFromFl ("Emphasis", blob ({ 8, 0, 0, 2, 1, 0, 0, 625, 10000, 10000, 9308, 0, 2, 7, 0 }));
-    CHECK (em && em->kind == lynx::EffectKind::flEmphasis && em->enabled);
+    const auto em = yw::effectFromFl ("Emphasis", blob ({ 8, 0, 0, 2, 1, 0, 0, 625, 10000, 10000, 9308, 0, 2, 7, 0 }));
+    CHECK (em && em->kind == yw::EffectKind::flEmphasis && em->enabled);
     if (em)
     {
         CHECK (std::abs (em->params[6] - 0.0625f) < 1e-6f && std::abs (em->params[9] - 0.9308f) < 1e-6f);
         CHECK (std::abs (em->params[2] - 1.0f / 3.0f) < 1e-6f && em->params[3] == 1.0f && std::abs (em->params[11] - 0.5f) < 1e-6f);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::flEmphasis, 6, em->params[6], 120.0) == "+1.5 dB");
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::flEmphasis, 9, em->params[9], 120.0) == "-1.60 dB");
+        CHECK (yw::formatEffectParam (yw::EffectKind::flEmphasis, 6, em->params[6], 120.0) == "+1.5 dB");
+        CHECK (yw::formatEffectParam (yw::EffectKind::flEmphasis, 9, em->params[9], 120.0) == "-1.60 dB");
         CHECK (em->params[14] == 0.0f && em->params[15] == 0.0f); // a version-8 state has no option bytes: off
     }
-    const auto emOld = lynx::effectFromFl ("Emphasis", blob ({ 8, 0, 0, 2 }));
-    CHECK (emOld && emOld->kind == lynx::EffectKind::limiter);
-    // round 167f: FL's legacy dB Meter / Spectroman keep their slot as LYNX's analyser in the matching view
-    const auto dbm = lynx::effectFromFl ("Fruity dB Meter", {});
-    CHECK (dbm && dbm->kind == lynx::EffectKind::waveCandy
-           && dbm->params[0] == lynx::visualfx::wavecandy::modeValue (lynx::visualfx::wavecandy::Mode::peakMeter));
-    const auto spm = lynx::effectFromFl ("Fruity Spectroman", {});
-    CHECK (spm && spm->kind == lynx::EffectKind::waveCandy
-           && spm->params[0] == lynx::visualfx::wavecandy::modeValue (lynx::visualfx::wavecandy::Mode::spectrum));
+    const auto emOld = yw::effectFromFl ("Emphasis", blob ({ 8, 0, 0, 2 }));
+    CHECK (emOld && emOld->kind == yw::EffectKind::limiter);
+    // round 167f: FL's legacy dB Meter / Spectroman keep their slot as YW's analyser in the matching view
+    const auto dbm = yw::effectFromFl ("Fruity dB Meter", {});
+    CHECK (dbm && dbm->kind == yw::EffectKind::waveCandy
+           && dbm->params[0] == yw::visualfx::wavecandy::modeValue (yw::visualfx::wavecandy::Mode::peakMeter));
+    const auto spm = yw::effectFromFl ("Fruity Spectroman", {});
+    CHECK (spm && spm->kind == yw::EffectKind::waveCandy
+           && spm->params[0] == yw::visualfx::wavecandy::modeValue (yw::visualfx::wavecandy::Mode::spectrum));
     // Pitch Shifter +12 st, mix 100%
-    const auto ps = lynx::effectFromFl ("Pitch Shifter", blob ({ 7, 1200, 0, 0, 2400, 8500, 200, 0, 0, 768, 0, 0, 65536, 0, 65536, 0, 0, 0, 0 }));
-    CHECK (ps && ps->kind == lynx::EffectKind::flPitchShifter && ps->params[0] == 1.0f && ps->params[3] == 1.0f); // REA_rodada61
+    const auto ps = yw::effectFromFl ("Pitch Shifter", blob ({ 7, 1200, 0, 0, 2400, 8500, 200, 0, 0, 768, 0, 0, 65536, 0, 65536, 0, 0, 0, 0 }));
+    CHECK (ps && ps->kind == yw::EffectKind::flPitchShifter && ps->params[0] == 1.0f && ps->params[3] == 1.0f); // REA_rodada61
 }
 
 TEST (frequency_shifter_moves_spectrum_by_hz)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::freqShift);
+    auto fx = yw::makeEffect (yw::EffectKind::freqShift);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::freqShift);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::freqShift);
     // +200 Hz: x·|x|·2000 = 200 -> x = sqrt(0.1)
     slot.params[0] = (float) (0.5 + std::sqrt (0.1) / 2.0);
     std::vector<float> l (48000), r (48000);
@@ -872,9 +872,9 @@ TEST (frequency_shifter_moves_spectrum_by_hz)
 
 TEST (pitch_shift_moves_frequency_keeps_length)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::pitchShift);
+    auto fx = yw::makeEffect (yw::EffectKind::pitchShift);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::pitchShift);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::pitchShift);
     auto crossingsAfter = [&] (float semitoneParam) {
         fx->reset();
         slot.params[0] = semitoneParam;
@@ -935,12 +935,12 @@ std::vector<std::uint8_t> grossBeatState (const std::array<int, 9>& params, cons
     return b;
 }
 
-std::vector<float> renderGrossBeat (const lynx::EffectSlot& slot, const std::vector<float>& in, double rate, double bpm)
+std::vector<float> renderGrossBeat (const yw::EffectSlot& slot, const std::vector<float>& in, double rate, double bpm)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (rate);
     auto l = in, r = in;
-    const auto tps = bpm / 60.0 * lynx::ppq / rate;
+    const auto tps = bpm / 60.0 * yw::ppq / rate;
     for (std::size_t done = 0; done < l.size(); done += 512)
     {
         const auto n = (int) std::min<std::size_t> (512, l.size() - done);
@@ -954,23 +954,23 @@ std::vector<float> renderGrossBeat (const lynx::EffectSlot& slot, const std::vec
 TEST (gross_beat_state_container_and_parameters)
 {
     const auto state = grossBeatState ({ 3, 40, 128, 256, 1765, 5000, -77, 0, 0x10000 }, { 0, 0, 0, 0, 0, 0, 0, 1, 1 }, {});
-    const auto parsed = lynx::grossbeat::parseState (state.data(), state.size());
+    const auto parsed = yw::grossbeat::parseState (state.data(), state.size());
     CHECK (parsed.has_value());
     CHECK (parsed && parsed->version == 8 && parsed->params[6] == -77 && parsed->slots[0].flat && parsed->slots[71].flat);
-    const auto slot = lynx::grossbeat::slotFromFl (state, 960);
-    CHECK (slot && slot->kind == lynx::EffectKind::grossBeat);
+    const auto slot = yw::grossbeat::slotFromFl (state, 960);
+    CHECK (slot && slot->kind == yw::EffectKind::grossBeat);
     std::vector<std::uint8_t> fl;
     int ppq = 0;
-    CHECK (slot && lynx::grossbeat::unpack (slot->state, fl, ppq) && fl == state && ppq == 960);
+    CHECK (slot && yw::grossbeat::unpack (slot->state, fl, ppq) && fl == state && ppq == 960);
     // every raw FL value survives the 0..1 parameter
     const int lo[8] { 0, 0, 0, 0, 0, 0, -256, 0 }, hi[8] { 35, 35, 256, 256, 10000, 10000, 256, 1 };
     bool roundTrip = true;
     for (int i = 0; i < 8; ++i)
         for (int raw = lo[i]; raw <= hi[i]; ++raw)
-            roundTrip = roundTrip && lynx::grossbeat::rawFromParam (i, lynx::grossbeat::paramFromRaw (i, raw)) == raw;
+            roundTrip = roundTrip && yw::grossbeat::rawFromParam (i, yw::grossbeat::paramFromRaw (i, raw)) == raw;
     CHECK (roundTrip);
-    CHECK (slot && slot->params[1] == lynx::grossbeat::paramFromRaw (1, 35)); // the volume slot 40 is clamped to 35
-    CHECK (! lynx::grossbeat::parseState (state.data(), 100).has_value());
+    CHECK (slot && slot->params[1] == yw::grossbeat::paramFromRaw (1, 35)); // the volume slot 40 is clamped to 35
+    CHECK (! yw::grossbeat::parseState (state.data(), 100).has_value());
 }
 
 TEST (gross_beat_volume_slot_gates_the_bar)
@@ -978,7 +978,7 @@ TEST (gross_beat_volume_slot_gates_the_bar)
     // volume slot 1: open for two beats, closed for two (hold segments); no smoothing; dry path 15 samples late
     const std::vector<GbPoint> gate { { 0.0, 1.0, 0 }, { 2.0, 1.0, 2 }, { 0.0, 0.0, 0 }, { 2.0, 0.0, 2 } };
     const auto state = grossBeatState ({ 0, 1, 256, 256, 0, 0, 0, 0, 0x10000 }, { 0, 0, 0, 0, 0, 0, 0, 1, 1 }, { { 37, gate } });
-    const auto slot = lynx::grossbeat::slotFromFl (state);
+    const auto slot = yw::grossbeat::slotFromFl (state);
     CHECK (slot.has_value());
     if (! slot)
         return;
@@ -994,7 +994,7 @@ TEST (gross_beat_time_slot_reads_the_past_bar)
     // time slot 1 at level 0.5: the buffer is read one bar back (two bars = level 0), plus the 15-sample latency
     const std::vector<GbPoint> half { { 0.0, 0.5, 0 }, { 4.0, 0.5, 2 } };
     const auto state = grossBeatState ({ 1, 0, 256, 256, 0, 0, 0, 0, 0x10000 }, { 0, 0, 0, 0, 0, 0, 0, 1, 1 }, { { 1, half } });
-    const auto slot = lynx::grossbeat::slotFromFl (state);
+    const auto slot = yw::grossbeat::slotFromFl (state);
     CHECK (slot.has_value());
     if (! slot)
         return;
@@ -1016,9 +1016,9 @@ TEST (gross_beat_time_slot_reads_the_past_bar)
 
 TEST (volume_gate_follows_bar_position)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::volumeGate);
+    auto fx = yw::makeEffect (yw::EffectKind::volumeGate);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::volumeGate);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::volumeGate);
     for (int i = 0; i < 32; ++i)
         slot.params[(std::size_t) i] = i < 16 ? 1.0f : 0.0f; // first two beats open, two closed
     slot.params[33] = slot.params[34] = 0.0f;                // no smoothing
@@ -1034,14 +1034,14 @@ TEST (volume_gate_follows_bar_position)
     // starting mid-bar (beat 3): already closed
     std::vector<float> l2 (4800, 1.0f), r2 (4800, 1.0f);
     fx->reset();
-    fx->setSongPosition (2.0 * lynx::ppq);
+    fx->setSongPosition (2.0 * yw::ppq);
     fx->process (l2.data(), r2.data(), 4800, slot.params, 120.0);
     CHECK (l2[4000] < 0.01f);
 
     // mix 0: transparent
     slot.params[32] = 0.0f;
     std::vector<float> l3 (4800, 1.0f), r3 (4800, 1.0f);
-    fx->setSongPosition (2.0 * lynx::ppq);
+    fx->setSongPosition (2.0 * yw::ppq);
     fx->process (l3.data(), r3.data(), 4800, slot.params, 120.0);
     CHECK (l3[4000] > 0.99f);
 }
@@ -1064,48 +1064,48 @@ TEST (patcher_branch_heads_follow_rea)
     fs[16] = 2;
     fs[17] = 3;
     const auto split = words (fs);
-    const auto low = lynx::patcherBranchHead ("Frequency Splitter", split, 1);
+    const auto low = yw::patcherBranchHead ("Frequency Splitter", split, 1);
     CHECK (low.valid && low.slot && low.note.empty());
     if (low.slot)
     {
         // the exact engine (REA_rodada62): the low band's send, 24 dB/oct
-        CHECK (low.slot->kind == lynx::EffectKind::frequencySplitter && low.slot->params[26] == 1.0f && low.slot->params[27] == 0.0f);
+        CHECK (low.slot->kind == yw::EffectKind::frequencySplitter && low.slot->params[26] == 1.0f && low.slot->params[27] == 0.0f);
         CHECK (low.slot->params[2] == 3.0f / 7.0f);
     }
-    const auto mid = lynx::patcherBranchHead ("Frequency Splitter", split, 2);
+    const auto mid = yw::patcherBranchHead ("Frequency Splitter", split, 2);
     CHECK (mid.valid && mid.slot && mid.slot->params[27] == 1.0f && mid.slot->params[5] == 0.0f); // 2 bands: the engine's mid is silent
-    const auto high = lynx::patcherBranchHead ("Frequency Splitter", split, 3);
+    const auto high = yw::patcherBranchHead ("Frequency Splitter", split, 3);
     CHECK (high.valid && high.slot && high.slot->params[28] == 1.0f && high.slot->params[10] == (float) (1200.0 / 3600.0));
-    CHECK (! lynx::patcherBranchHead ("Frequency Splitter", split, 7).valid);
+    CHECK (! yw::patcherBranchHead ("Frequency Splitter", split, 7).valid);
 
     // Stereo Shaper: the difference destination (4) is the exact engine with its difference output (REA_rodada54)
     const auto shaper = words ({ 3, 0, 12800, 12800, 0, 0, 0, 4, 0 });
-    const auto diff = lynx::patcherBranchHead ("Fruity Stereo Shaper", shaper, 4);
-    CHECK (diff.valid && diff.slot && diff.slot->kind == lynx::EffectKind::stereoShaper && diff.slot->params[7] == 1.0f);
-    CHECK (! lynx::patcherBranchHead ("Fruity Stereo Shaper", shaper, 2).valid);
+    const auto diff = yw::patcherBranchHead ("Fruity Stereo Shaper", shaper, 4);
+    CHECK (diff.valid && diff.slot && diff.slot->kind == yw::EffectKind::stereoShaper && diff.slot->params[7] == 1.0f);
+    CHECK (! yw::patcherBranchHead ("Fruity Stereo Shaper", shaper, 2).valid);
 }
 
 TEST (parallel_container_sums_branches)
 {
     // two branches: dry with gain 0.5 and a utility that flips phase (matrix −1) with gain 0.5 -> silence
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::parallel);
-    lynx::EffectBranch dry;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::parallel);
+    yw::EffectBranch dry;
     dry.gain = 0.5f;
-    lynx::EffectBranch inverted;
+    yw::EffectBranch inverted;
     inverted.gain = 0.5f;
-    auto flip = lynx::makeEffectSlot (lynx::EffectKind::utility);
+    auto flip = yw::makeEffectSlot (yw::EffectKind::utility);
     flip.params[2] = flip.params[5] = 0.25f; // (−1 + 2)/4
     inverted.chain.push_back (flip);
     slot.branches = { dry, inverted };
-    auto fx = lynx::makeParallelEffect (slot);
+    auto fx = yw::makeParallelEffect (slot);
     fx->prepare (48000.0);
     std::vector<float> l (9000, 0.8f), r (9000, -0.4f);
     fx->process (l.data(), r.data(), 9000, slot.params, 120.0);
     CHECK (std::abs (l[100]) < 1e-5f && std::abs (r[8999]) < 1e-5f);
 
     // only the dry branch with gain 2: doubles
-    slot.branches = { lynx::EffectBranch { {}, 2.0f } };
-    auto doubler = lynx::makeParallelEffect (slot);
+    slot.branches = { yw::EffectBranch { {}, 2.0f } };
+    auto doubler = yw::makeParallelEffect (slot);
     doubler->prepare (48000.0);
     std::fill (l.begin(), l.end(), 0.25f);
     doubler->process (l.data(), r.data(), 9000, slot.params, 120.0);
@@ -1117,8 +1117,8 @@ TEST (fl_controller_constant_outputs)
     std::vector<std::int32_t> xy { 2, 32768, 0, 65536, 0, 16384, 0, 65536, 0, 1024, 256 };
     std::vector<std::uint8_t> blob (xy.size() * 4 + 8, 0);
     std::memcpy (blob.data(), xy.data(), xy.size() * 4);
-    CHECK (std::abs (lynx::controllerConstantOutput ("Fruity X-Y Controller", blob, 0).value_or (-1.0f) - 0.5f) < 1e-4f);
-    CHECK (std::abs (lynx::controllerConstantOutput ("Fruity X-Y Controller", blob, 1).value_or (-1.0f) - 0.25f) < 1e-4f);
+    CHECK (std::abs (yw::controllerConstantOutput ("Fruity X-Y Controller", blob, 0).value_or (-1.0f) - 0.5f) < 1e-4f);
+    CHECK (std::abs (yw::controllerConstantOutput ("Fruity X-Y Controller", blob, 1).value_or (-1.0f) - 0.25f) < 1e-4f);
 
     // Control Surface: version + group { 0x836: value 0.75, -, output 2 }
     std::vector<std::uint8_t> cs (4, 0);
@@ -1137,8 +1137,8 @@ TEST (fl_controller_constant_outputs)
     std::vector<std::uint8_t> group;
     chunk (group, 0x836, value);
     chunk (cs, 0, group);
-    CHECK (std::abs (lynx::controllerConstantOutput ("Control Surface", cs, 2).value_or (-1.0f) - 0.75f) < 1e-6f);
-    CHECK (! lynx::controllerConstantOutput ("Control Surface", cs, 0).has_value());
+    CHECK (std::abs (yw::controllerConstantOutput ("Control Surface", cs, 2).value_or (-1.0f) - 0.75f) < 1e-6f);
+    CHECK (! yw::controllerConstantOutput ("Control Surface", cs, 0).has_value());
 }
 
 TEST (flp_midi_out_notes_reach_wrapper_on_same_port)
@@ -1178,11 +1178,11 @@ TEST (flp_midi_out_notes_reach_wrapper_on_same_port)
     pattern.notes.push_back (note);
     p.patterns.push_back (pattern);
 
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     // round 133: the MIDI Out channel stays a live route (its notes are sent at play time, with its MIDI channel)
-    CHECK (song.channels.size() == 2 && song.channels[0].instrument == lynx::InstrumentKind::midiOut && ! song.channels[0].muted);
+    CHECK (song.channels.size() == 2 && song.channels[0].instrument == yw::InstrumentKind::midiOut && ! song.channels[0].muted);
     CHECK (song.channels[1].plugin.foreign.midiInPort == 3 && song.channels[1].plugin.midiInPort == 3);
-    CHECK (lynx::midictl::parseMidiOut (song.channels[0].pluginState).port == 3);
+    CHECK (yw::midictl::parseMidiOut (song.channels[0].pluginState).port == 3);
     int toWrapper = 0;
     for (const auto& pat : song.patterns)
         for (const auto& n : pat.notes)
@@ -1214,20 +1214,20 @@ TEST (flp_effect_automation_follows_slots_and_params)
     clip (2, mixer (1, 0, 0x8000));     // parameter of the dropped effect
     clip (3, mixer (1, 2, 0x8000 + 21)); // band type: no equivalent
 
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (song.automations.size() == 4);
-    CHECK (song.mixer[1].effects.size() == 1 && song.mixer[1].effects[0].kind == lynx::EffectKind::parametricEq);
+    CHECK (song.mixer[1].effects.size() == 1 && song.mixer[1].effects[0].kind == yw::EffectKind::parametricEq);
 
     const auto& freq = song.automations[0];
-    CHECK (freq.target.kind == lynx::AutomationTargetKind::effectParam && freq.target.index == 1 && freq.target.slot == 0);
-    CHECK (freq.target.param == lynx::peq::param (0, 1));
+    CHECK (freq.target.kind == yw::AutomationTargetKind::effectParam && freq.target.index == 1 && freq.target.slot == 0);
+    CHECK (freq.target.param == yw::peq::param (0, 1));
     // FL's 0..1 (20 Hz..20 kHz) becomes our frequency scale
-    CHECK (std::abs (freq.points.front().value - lynx::peq::hzValue (20.0)) < 1e-4f);
-    CHECK (std::abs (freq.points.back().value - lynx::peq::hzValue (20000.0)) < 1e-4f);
+    CHECK (std::abs (freq.points.front().value - yw::peq::hzValue (20.0)) < 1e-4f);
+    CHECK (std::abs (freq.points.back().value - yw::peq::hzValue (20000.0)) < 1e-4f);
 
-    CHECK (song.automations[1].target.kind == lynx::AutomationTargetKind::effectMix && song.automations[1].target.slot == 0);
-    CHECK (song.automations[2].target.kind == lynx::AutomationTargetKind::none);
-    CHECK (song.automations[3].target.kind == lynx::AutomationTargetKind::none);
+    CHECK (song.automations[1].target.kind == yw::AutomationTargetKind::effectMix && song.automations[1].target.slot == 0);
+    CHECK (song.automations[2].target.kind == yw::AutomationTargetKind::none);
+    CHECK (song.automations[3].target.kind == yw::AutomationTargetKind::none);
 
     // the automated mix is read/written through the target
     auto copy = song;
@@ -1274,7 +1274,7 @@ TEST (flp_real_files)
     int fastDistSlots = 0, fastDistExact = 0, flangusSlots = 0, flangusExact = 0, flangerSlots = 0, flangerExact = 0; // REA_rodada55
     int phaserSlots = 0, phaserExact = 0; // REA_rodada105_phaser
     // import with the installation's samples (realFlpDir is ...\Data): for DirectWave/FPC
-    lynx::FlpImportOptions withFiles;
+    yw::FlpImportOptions withFiles;
     const auto flRoot = std::filesystem::path (realFlpDir).parent_path().string();
     withFiles.roots = { flRoot, realFlpDir, "" };
     withFiles.fileExists = [] (const std::string& path) {
@@ -1310,11 +1310,11 @@ TEST (flp_real_files)
             CHECK (! p.version.empty());
             CHECK (p.tempo > 10.0 && p.tempo < 1000.0);
 
-            const auto song = lynx::importFlp (p);
+            const auto song = yw::importFlp (p);
             CHECK (! song.patterns.empty());
 
             {
-                const auto full = lynx::importFlp (p, withFiles);
+                const auto full = yw::importFlp (p, withFiles);
                 bool hasFpc = false;
                 for (const auto& c : p.channels)
                     hasFpc = hasFpc || c.pluginName == "FPC";
@@ -1323,22 +1323,22 @@ TEST (flp_real_files)
                 for (const auto& c : p.channels)
                 {
                     if (c.pluginName == "GMS")
-                        ++gms, gmsUsable += lynx::gmsStateUsable (c.pluginState) ? 1 : 0;
+                        ++gms, gmsUsable += yw::gmsStateUsable (c.pluginState) ? 1 : 0;
                     if (c.pluginName == "Morphine")
-                        ++morphine, morphineUsable += lynx::morphineStateUsable (c.pluginState) ? 1 : 0;
+                        ++morphine, morphineUsable += yw::morphineStateUsable (c.pluginState) ? 1 : 0;
                 }
                 // Kepler: every state in the demos plays on the exact engine (REA_rodada46) when the engine DLL is installed
                 for (const auto& c : p.channels)
                     if (c.pluginName == "Kepler")
                     {
                         ++kepler;
-                        keplerUsable += lynx::keplerStateUsable (c.pluginState) ? 1 : 0;
+                        keplerUsable += yw::keplerStateUsable (c.pluginState) ? 1 : 0;
                     }
                 for (const auto& c : full.channels)
-                    if (c.instrument == lynx::InstrumentKind::kepler)
+                    if (c.instrument == yw::InstrumentKind::kepler)
                     {
                         ++keplerKind;
-                        const auto y = lynx::kepler::renderReference (c.pluginState, c.samplePath, { { 0, 60, 1.0, 0.0, 0.0, 6000 }, { 2000, 67, 0.6, 0.0, 0.0, 8000 } },
+                        const auto y = yw::kepler::renderReference (c.pluginState, c.samplePath, { { 0, 60, 1.0, 0.0, 0.0, 6000 }, { 2000, 67, 0.6, 0.0, 0.0, 8000 } },
                                                                       44100.0, 11025);
                         double e = 0.0;
                         bool finite = ! y.empty();
@@ -1350,7 +1350,7 @@ TEST (flp_real_files)
                 const auto file = entry.path().filename().string();
                 for (const auto& c : full.channels)
                 {
-                    const auto isGms = c.instrument == lynx::InstrumentKind::gms, isMorphine = c.instrument == lynx::InstrumentKind::morphine;
+                    const auto isGms = c.instrument == yw::InstrumentKind::gms, isMorphine = c.instrument == yw::InstrumentKind::morphine;
                     if (! isGms && ! isMorphine)
                         continue;
                     (isGms ? gmsKind : morphineKind)++;
@@ -1359,12 +1359,12 @@ TEST (flp_real_files)
                                         || (isMorphine && c.name == "Morphine" && file.find ("SHINE") != std::string::npos);
                     std::vector<float> y;
                     if (isGms)
-                        y = lynx::gms::renderReference (c.pluginState,
+                        y = yw::gms::renderReference (c.pluginState,
                                                         { { 0, 60, (float) iv (100), 1.0, 0.0, 0.0, 30000 }, { 11025, 64, (float) iv (80), 1.0, 0.0, 0.0, 40000 },
                                                           { 22050, 67, (float) iv (110), 1.0, 0.0, 0.0, 52000 }, { 60000, 48, (float) iv (127), 1.0, 0.0, 0.0, 70000 } },
                                                         44100.0, golden ? 88200 : 22050, c.samplePath);
                     else
-                        y = lynx::morphine::renderReference (c.pluginState, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 30000 }, { 11025, 64, 0.5, 1.0, 0.0, 0.0, 50000 }, { 22050, 67, 2.0, 1.0, 0.0, 0.0, 70000 } },
+                        y = yw::morphine::renderReference (c.pluginState, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 30000 }, { 11025, 64, 0.5, 1.0, 0.0, 0.0, 50000 }, { 22050, 67, 2.0, 1.0, 0.0, 0.0, 70000 } },
                                                              44100.0, golden ? 100000 : 22050, c.samplePath);
                     double e = 0.0;
                     bool finite = ! y.empty();
@@ -1389,16 +1389,16 @@ TEST (flp_real_files)
                 // renders of the installation's DLL for these states)
                 for (const auto& c : p.channels)
                     if (c.pluginName == "MiniSynth")
-                        ++miniSynth, miniSynthUsable += lynx::miniSynthStateUsable (c.pluginState) ? 1 : 0;
+                        ++miniSynth, miniSynthUsable += yw::miniSynthStateUsable (c.pluginState) ? 1 : 0;
                 for (const auto& c : full.channels)
                 {
-                    if (c.instrument != lynx::InstrumentKind::minisynth)
+                    if (c.instrument != yw::InstrumentKind::minisynth)
                         continue;
                     ++miniSynthKind;
                     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
                     const auto exo = file.find ("Exoplanet") != std::string::npos;
                     const auto golden = exo && (c.name == "Main Lead 1" || c.name == "Riser");
-                    const auto y = lynx::minisynth::renderReference (c.pluginState,
+                    const auto y = yw::minisynth::renderReference (c.pluginState,
                                                                      { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 }, { 11025, 64, iv (80), 1.0, 0.0, 0.0, 40000 },
                                                                        { 22050, 67, iv (110), 1.0, 0.0, 0.0, 52000 }, { 60000, 48, iv (127), 1.0, 0.0, 0.0, 70000 } },
                                                                      44100.0, golden ? 88200 : 22050, c.samplePath);
@@ -1424,15 +1424,15 @@ TEST (flp_real_files)
                 // samples of our round-44 model
                 for (const auto& c : p.channels)
                     if (c.pluginName == "PoiZone")
-                        ++poizone, poizoneUsable += lynx::poizoneStateUsable (c.pluginState) ? 1 : 0;
+                        ++poizone, poizoneUsable += yw::poizoneStateUsable (c.pluginState) ? 1 : 0;
                 for (const auto& c : full.channels)
                 {
-                    if (c.instrument != lynx::InstrumentKind::poizone)
+                    if (c.instrument != yw::InstrumentKind::poizone)
                         continue;
                     ++poizoneKind;
                     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
                     const auto golden = c.name == "PoiZone" && file.find ("NIGHT TERROR") != std::string::npos;
-                    const auto y = lynx::poizone::renderReference (c.pluginState,
+                    const auto y = yw::poizone::renderReference (c.pluginState,
                                                                    { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 }, { 11025, 64, iv (80), 1.0, 0.0, 0.0, 40000 },
                                                                      { 22050, 67, iv (110), 1.0, 0.0, 0.0, 52000 }, { 60000, 48, iv (127), 1.0, 0.0, 0.0, 70000 } },
                                                                    44100.0, golden ? 88200 : 22050);
@@ -1456,15 +1456,15 @@ TEST (flp_real_files)
                 // installation's DLL and sounds; the "Bombs Away" channel matches golden samples of our round-45 model
                 for (const auto& c : p.channels)
                     if (c.pluginName == "Toxic Biohazard")
-                        ++toxic, toxicUsable += lynx::toxicStateUsable (c.pluginState) ? 1 : 0;
+                        ++toxic, toxicUsable += yw::toxicStateUsable (c.pluginState) ? 1 : 0;
                 for (const auto& c : full.channels)
                 {
-                    if (c.instrument != lynx::InstrumentKind::toxic)
+                    if (c.instrument != yw::InstrumentKind::toxic)
                         continue;
                     ++toxicKind;
                     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
                     const auto golden = file.find ("Bombs Away") != std::string::npos;
-                    const auto y = lynx::toxic::renderReference (
+                    const auto y = yw::toxic::renderReference (
                         c.pluginState,
                         { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 }, { 11025, 64, iv (80), 1.0, 0.0, 0.0, 40000 },
                           { 22050, 67, iv (110), 1.0, 0.0, 0.0, 52000 }, { 60000, 48, iv (127), 1.0, 0.0, 0.0, 70000 } },
@@ -1487,18 +1487,18 @@ TEST (flp_real_files)
                 }
                 for (const auto& c : full.channels)
                 {
-                    if (c.instrument == lynx::InstrumentKind::harmless && c.modelParams.size() >= (std::size_t) lynx::harmlessParamCount
-                        && c.modelParams[(std::size_t) lynx::harmlessComboIndex + 3] > 0.5f)
+                    if (c.instrument == yw::InstrumentKind::harmless && c.modelParams.size() >= (std::size_t) yw::harmlessParamCount
+                        && c.modelParams[(std::size_t) yw::harmlessComboIndex + 3] > 0.5f)
                     {
                         ++harmlessCompWanted;
-                        harmlessCompLoaded += c.modelParams.size() > (std::size_t) lynx::harmlessCompIndex + 1000 ? 1 : 0;
+                        harmlessCompLoaded += c.modelParams.size() > (std::size_t) yw::harmlessCompIndex + 1000 ? 1 : 0;
                     }
                     flKeysChannels += c.zones.size() == 30 && c.zones.front().path.find ("CHANGPIANO") != std::string::npos ? 1 : 0;
                     // a Slicex channel is its own instrument since round 190l (no sampler slices): its regions are the
                     // region records of its decks, counted here so the bar below still means "sliced channels import"
                     std::size_t slicexRegions = 0;
-                    if (c.instrument == lynx::InstrumentKind::slicex)
-                        if (const auto state = lynx::slicex::parse (c.pluginState))
+                    if (c.instrument == yw::InstrumentKind::slicex)
+                        if (const auto state = yw::slicex::parse (c.pluginState))
                             for (const auto& deck : state->decks)
                                 slicexRegions += deck.empty() ? 0 : deck.regions.size();
                     if (c.sampler.slices.size() >= 4 || slicexRegions >= 4)
@@ -1508,15 +1508,15 @@ TEST (flp_real_files)
                         CHECK (std::is_sorted (c.sampler.slices.begin(), c.sampler.slices.end()));
                         CHECK (c.sampler.slices.back() < 1.0f);
                     }
-                    dwExact += c.instrument == lynx::InstrumentKind::directwave ? 1 : 0;
-                    if (! c.zones.empty() && c.name.find (" - ") == std::string::npos && c.instrument != lynx::InstrumentKind::fpc)
+                    dwExact += c.instrument == yw::InstrumentKind::directwave ? 1 : 0;
+                    if (! c.zones.empty() && c.name.find (" - ") == std::string::npos && c.instrument != yw::InstrumentKind::fpc)
                     {
                         ++dwChannels;
                         dwZones += (int) c.zones.size();
                     }
-                    padChannels += c.name.find (" - ") != std::string::npos && c.instrument == lynx::InstrumentKind::sampler ? 1 : 0;
-                    if (c.instrument == lynx::InstrumentKind::fpc) // (round 190q: a kit on one channel; its pads that play)
-                        padChannels += (int) lynx::fpcChannelPads (c).size();
+                    padChannels += c.name.find (" - ") != std::string::npos && c.instrument == yw::InstrumentKind::sampler ? 1 : 0;
+                    if (c.instrument == yw::InstrumentKind::fpc) // (round 190q: a kit on one channel; its pads that play)
+                        padChannels += (int) yw::fpcChannelPads (c).size();
                 }
                 fpcKits += hasFpc;
                 // Maximus / Soundgoodizer become the exact engine (REA_rodada40); Vocodex carries SG.dat (and its
@@ -1538,15 +1538,15 @@ TEST (flp_real_files)
                         clipperSlots += slot.plugin == "Fruity Soft Clipper";
                         basicSlots += slot.plugin == "Fruity PanOMatic" || slot.plugin == "Fruity Balance" || slot.plugin == "Fruity Blood Overdrive";
                         filterSlots += slot.plugin == "Fruity Fast LP" || slot.plugin == "Fruity Free Filter" || slot.plugin == "Fruity Filter";
-                        chorusSlots += lynx::chorusControls (slot.plugin) > 0 && slot.state.size() >= 4 ? 1 : 0;
+                        chorusSlots += yw::chorusControls (slot.plugin) > 0 && slot.state.size() >= 4 ? 1 : 0;
                         fastDistSlots += slot.plugin == "Fruity Fast Dist";
                         flangusSlots += slot.plugin == "Fruity Flangus";
                         flangerSlots += slot.plugin == "Fruity Flanger";
                         phaserSlots += slot.plugin == "Fruity Phaser";
                     }
                 // (the slots and the nodes of the Patcher graphs, as when Patchers were flattened into slots)
-                std::vector<const lynx::EffectSlot*> allSlots;
-                std::function<void (const lynx::EffectSlot&)> collect = [&] (const lynx::EffectSlot& fx) {
+                std::vector<const yw::EffectSlot*> allSlots;
+                std::function<void (const yw::EffectSlot&)> collect = [&] (const yw::EffectSlot& fx) {
                     allSlots.push_back (&fx);
                     for (const auto& n : fx.patcher.nodes)
                         if (! n.generator)
@@ -1558,39 +1558,39 @@ TEST (flp_real_files)
                 for (const auto* slotPointer : allSlots)
                     {
                         const auto& fx = *slotPointer;
-                        if (fx.kind == lynx::EffectKind::maximus)
+                        if (fx.kind == yw::EffectKind::maximus)
                         {
-                            const auto blob = lynx::maximusfx::unpack (fx.state);
-                            CHECK (blob && lynx::maximusfx::presetOf (*blob) != nullptr);
+                            const auto blob = yw::maximusfx::unpack (fx.state);
+                            CHECK (blob && yw::maximusfx::presetOf (*blob) != nullptr);
                             if (blob)
-                                (blob->build == lynx::hlfx::MaximusBuild::soundgoodizer ? sgzExact : maximusExact) += 1;
+                                (blob->build == yw::hlfx::MaximusBuild::soundgoodizer ? sgzExact : maximusExact) += 1;
                         }
-                        fastDistExact += fx.kind == lynx::EffectKind::fruityFastDist;
-                        flangusExact += fx.kind == lynx::EffectKind::fruityFlangus;
-                        flangerExact += fx.kind == lynx::EffectKind::fruityFlanger;
-                        phaserExact += fx.kind == lynx::EffectKind::fruityPhaser;
-                        if (fx.kind == lynx::EffectKind::vocodex)
-                            vocodexWithData += ! lynx::vocodex::splitInstallData (fx.state).second.sgDat.empty();
-                        if (fx.kind == lynx::EffectKind::fruityWaveShaper)
-                            shaperExact += lynx::flshape::parseWaveShaper (fx.state).has_value() ? 1 : 0;
-                        clipperExact += fx.kind == lynx::EffectKind::fruitySoftClipper;
-                        flPeqExact += fx.kind == lynx::EffectKind::parametricEq && lynx::peq::flLaw (fx.params);
-                        basicExact += fx.kind == lynx::EffectKind::fruityPanOMatic || fx.kind == lynx::EffectKind::fruityBalance
-                                      || fx.kind == lynx::EffectKind::fruityBloodOverdrive;
-                        equoExact += fx.kind == lynx::EffectKind::equo && lynx::equofx::parse (fx.state).has_value();
-                        if (fx.kind == lynx::EffectKind::distructor)
-                            if (const auto d = lynx::distructor::parseBlob (fx.state))
+                        fastDistExact += fx.kind == yw::EffectKind::fruityFastDist;
+                        flangusExact += fx.kind == yw::EffectKind::fruityFlangus;
+                        flangerExact += fx.kind == yw::EffectKind::fruityFlanger;
+                        phaserExact += fx.kind == yw::EffectKind::fruityPhaser;
+                        if (fx.kind == yw::EffectKind::vocodex)
+                            vocodexWithData += ! yw::vocodex::splitInstallData (fx.state).second.sgDat.empty();
+                        if (fx.kind == yw::EffectKind::fruityWaveShaper)
+                            shaperExact += yw::flshape::parseWaveShaper (fx.state).has_value() ? 1 : 0;
+                        clipperExact += fx.kind == yw::EffectKind::fruitySoftClipper;
+                        flPeqExact += fx.kind == yw::EffectKind::parametricEq && yw::peq::flLaw (fx.params);
+                        basicExact += fx.kind == yw::EffectKind::fruityPanOMatic || fx.kind == yw::EffectKind::fruityBalance
+                                      || fx.kind == yw::EffectKind::fruityBloodOverdrive;
+                        equoExact += fx.kind == yw::EffectKind::equo && yw::equofx::parse (fx.state).has_value();
+                        if (fx.kind == yw::EffectKind::distructor)
+                            if (const auto d = yw::distructor::parseBlob (fx.state))
                             {
                                 ++distructorExact;
                                 for (const auto& m : d->modules)
                                     distructorImpulses += m.type == 3 && ! m.impulseFile.empty();
                             }
-                        pitchShifterExact += fx.kind == lynx::EffectKind::flPitchShifter;
-                        filterExact += fx.kind == lynx::EffectKind::fruityFastLP || fx.kind == lynx::EffectKind::fruityFreeFilter
-                                       || fx.kind == lynx::EffectKind::fruityFilter;
-                        delay2Exact += fx.kind == lynx::EffectKind::fruityDelay2;
-                        delay3Exact += fx.kind == lynx::EffectKind::fruityDelay3;
-                        chorusExact += fx.kind == lynx::EffectKind::fruityChorus || fx.kind == lynx::EffectKind::hyperChorus || fx.kind == lynx::EffectKind::vintageChorus ? 1 : 0;
+                        pitchShifterExact += fx.kind == yw::EffectKind::flPitchShifter;
+                        filterExact += fx.kind == yw::EffectKind::fruityFastLP || fx.kind == yw::EffectKind::fruityFreeFilter
+                                       || fx.kind == yw::EffectKind::fruityFilter;
+                        delay2Exact += fx.kind == yw::EffectKind::fruityDelay2;
+                        delay3Exact += fx.kind == yw::EffectKind::fruityDelay3;
+                        chorusExact += fx.kind == yw::EffectKind::fruityChorus || fx.kind == yw::EffectKind::hyperChorus || fx.kind == yw::EffectKind::vintageChorus ? 1 : 0;
                     }
                 if (basicSlots - basicSlots0 != basicExact - basicExact0)
                     std::printf ("  %s: %d PanOMatic/Balance/Blood Overdrive slots, %d exact effects\n", file.c_str(),
@@ -1600,30 +1600,30 @@ TEST (flp_real_files)
                     {
                         CHECK (n.channel >= 0 && n.channel < (int) full.channels.size());
                         padNotes += full.channels[(std::size_t) n.channel].name.find (" - ") != std::string::npos
-                                    || full.channels[(std::size_t) n.channel].instrument == lynx::InstrumentKind::fpc ? 1 : 0;
+                                    || full.channels[(std::size_t) n.channel].instrument == yw::InstrumentKind::fpc ? 1 : 0;
                     }
             }
 
-            const auto peqDefaults = lynx::makeEffectSlot (lynx::EffectKind::parametricEq).params;
+            const auto peqDefaults = yw::makeEffectSlot (yw::EffectKind::parametricEq).params;
             for (const auto& t : song.mixer)
                 for (const auto& fx : t.effects)
                 {
-                    if (fx.kind == lynx::EffectKind::parametricEq)
+                    if (fx.kind == yw::EffectKind::parametricEq)
                     {
                         ++peqSlots;
                         peqShaped += fx.params != peqDefaults;
                         for (double hz : { 50.0, 1000.0, 10000.0 })
-                            CHECK (std::isfinite (lynx::peq::responseDb (fx.params, 48000.0, hz)));
+                            CHECK (std::isfinite (yw::peq::responseDb (fx.params, 48000.0, hz)));
                     }
-                    if (fx.kind == lynx::EffectKind::reverb)
+                    if (fx.kind == yw::EffectKind::reverb)
                     {
                         ++reverbs;
                         reverbsDryless += fx.params[4] < 0.01f;
                         reverbsLowCut += fx.params[5] > 0.0f;
                     }
-                    if (fx.kind == lynx::EffectKind::reeverb2) // FL's exact Reeverb 2 (REA_rodada49): FL's own controls
+                    if (fx.kind == yw::EffectKind::reeverb2) // FL's exact Reeverb 2 (REA_rodada49): FL's own controls
                     {
-                        const auto r2 = lynx::reeverb2::fromParams (fx.params);
+                        const auto r2 = yw::reeverb2::fromParams (fx.params);
                         ++reverbs;
                         reverbsDryless += r2.p[10] == 0;
                         reverbsLowCut += r2.p[0] >= 20;
@@ -1659,19 +1659,19 @@ TEST (flp_real_files)
                 if (plugin != "Fruity Wrapper")
                     return;
                 ++wrapped;
-                lynx::ForeignPlugin f;
-                wrappedParsed += lynx::parseFlWrapper (state, f) && f.format != lynx::ForeignPlugin::Format::none && ! f.name.empty();
-                if (f.format == lynx::ForeignPlugin::Format::vst2)
+                yw::ForeignPlugin f;
+                wrappedParsed += yw::parseFlWrapper (state, f) && f.format != yw::ForeignPlugin::Format::none && ! f.name.empty();
+                if (f.format == yw::ForeignPlugin::Format::vst2)
                 {
                     // VST2 state (REA_rodada89 §2): every one decodes, and writes back to the same bytes — except the
                     // wrapped Fruity effects of the FL 11 render tests (their mixer slots are read since round 80):
                     // those decode but do not write back byte-identical (not confirmed why)
                     ++wrappedVst2;
-                    lynx::FlVst2State st;
-                    if (lynx::parseFlVst2State (f.state, st) && st.version == -9)
+                    yw::FlVst2State st;
+                    if (yw::parseFlVst2State (f.state, st) && st.version == -9)
                     {
                         ++wrappedVst2State;
-                        wrappedVst2Old += lynx::writeFlVst2State (st) != f.state;
+                        wrappedVst2Old += yw::writeFlVst2State (st) != f.state;
                     }
                 }
             };
@@ -1686,31 +1686,31 @@ TEST (flp_real_files)
                 if (c.pluginName == "Harmless")
                 {
                     ++harmless;
-                    lynx::SynthSettings hs;
+                    yw::SynthSettings hs;
                     float g = 1.0f;
-                    if (lynx::synthFromHarmless (c.pluginState, 128.0, hs, g))
+                    if (yw::synthFromHarmless (c.pluginState, 128.0, hs, g))
                     {
                         ++harmlessDecoded;
                         CHECK (std::isfinite (g) && hs.cutoff >= 20.0f && hs.cutoff <= 20000.0f && std::isfinite (hs.decay) && std::isfinite (hs.release));
                     }
-                    if (const auto hp = lynx::harmlessParams (c.pluginState))
-                        harmlessParsed += (int) hp->size() == lynx::harmlessParamCount ? 1 : 0;
+                    if (const auto hp = yw::harmlessParams (c.pluginState))
+                        harmlessParsed += (int) hp->size() == yw::harmlessParamCount ? 1 : 0;
                 }
             for (const auto& c : song.channels)
-                harmlessKind += c.instrument == lynx::InstrumentKind::harmless ? 1 : 0;
+                harmlessKind += c.instrument == yw::InstrumentKind::harmless ? 1 : 0;
 
             // Harmor: every state in the demos plays on the exact engine (REA_rodada34) and sounds, with finite samples
             for (const auto& c : p.channels)
                 if (c.pluginName == "Harmor")
                 {
                     ++harmor;
-                    harmorUsable += lynx::harmorStateUsable (c.pluginState) ? 1 : 0;
+                    harmorUsable += yw::harmorStateUsable (c.pluginState) ? 1 : 0;
                 }
             for (const auto& c : song.channels)
-                if (c.instrument == lynx::InstrumentKind::harmor)
+                if (c.instrument == yw::InstrumentKind::harmor)
                 {
                     ++harmorKind;
-                    const auto y = lynx::harmor::renderReference (c.pluginState, { { 0, 60, 0.8, 1.0, 0.0, 6000 }, { 2000, 67, 0.6, 1.0, 0.0, 8000 } }, 44100.0, 11025);
+                    const auto y = yw::harmor::renderReference (c.pluginState, { { 0, 60, 0.8, 1.0, 0.0, 6000 }, { 2000, 67, 0.6, 1.0, 0.0, 8000 } }, 44100.0, 11025);
                     double e = 0.0;
                     bool finite = ! y.empty();
                     for (auto v : y)
@@ -1724,13 +1724,13 @@ TEST (flp_real_files)
                 if (c.pluginName == "Ogun")
                 {
                     ++ogun;
-                    ogunUsable += lynx::ogunStateUsable (c.pluginState) ? 1 : 0;
+                    ogunUsable += yw::ogunStateUsable (c.pluginState) ? 1 : 0;
                 }
             for (const auto& c : song.channels)
-                if (c.instrument == lynx::InstrumentKind::ogun)
+                if (c.instrument == yw::InstrumentKind::ogun)
                 {
                     ++ogunKind;
-                    const auto y = lynx::ogun::renderReference (c.pluginState, { { 0, 60, 0.8, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 6000 },
+                    const auto y = yw::ogun::renderReference (c.pluginState, { { 0, 60, 0.8, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 6000 },
                                                                                  { 2000, 67, 0.6, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 8000 } }, 44100.0, 11025);
                     double e = 0.0;
                     bool finite = ! y.empty();
@@ -1746,13 +1746,13 @@ TEST (flp_real_files)
                 bool any = false;
                 for (const auto& c : p.channels)
                     if (c.pluginName == "Autogun")
-                        ++autogun, autogunUsable += lynx::autogunStateUsable (c.pluginState) ? 1 : 0, any = true;
+                        ++autogun, autogunUsable += yw::autogunStateUsable (c.pluginState) ? 1 : 0, any = true;
                 if (any)
-                    for (const auto& c : lynx::importFlp (p, withFiles).channels)
-                        if (c.instrument == lynx::InstrumentKind::autogun)
+                    for (const auto& c : yw::importFlp (p, withFiles).channels)
+                        if (c.instrument == yw::InstrumentKind::autogun)
                         {
                             ++autogunKind;
-                            lynx::ogun::RefOptions opt;
+                            yw::ogun::RefOptions opt;
                             opt.autogun = true;
                             if (! c.samplePath.empty())
                             {
@@ -1762,7 +1762,7 @@ TEST (flp_real_files)
                                 opt.sgState.assign ((std::istreambuf_iterator<char> (sg)), std::istreambuf_iterator<char>());
                                 autogunWithSg += opt.sgState.size() == 1342 ? 1 : 0;
                             }
-                            const auto y = lynx::ogun::renderReference (c.pluginState, { { 0, 48, 0.8, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 6000 } },
+                            const auto y = yw::ogun::renderReference (c.pluginState, { { 0, 48, 0.8, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 6000 } },
                                                                         44100.0, 11025, opt);
                             double e = 0.0;
                             bool finite = ! y.empty();
@@ -1776,12 +1776,12 @@ TEST (flp_real_files)
             // Fruity DX10: every state plays on the exact engine when its channel processor is neutral (REA_rodada42)
             for (const auto& c : p.channels)
                 if (c.pluginName == "Fruity DX10" || c.pluginName == "DX10")
-                    ++dx10, dx10Usable += lynx::dx10StateUsable (c.pluginState) ? 1 : 0;
+                    ++dx10, dx10Usable += yw::dx10StateUsable (c.pluginState) ? 1 : 0;
             for (const auto& c : song.channels)
-                if (c.instrument == lynx::InstrumentKind::dx10)
+                if (c.instrument == yw::InstrumentKind::dx10)
                 {
                     ++dx10Kind;
-                    const auto y = lynx::dx10::renderReference (c.pluginState, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 6000 }, { 2000, 67, 0.6, 1.0, 0.0, 0.0, 8000 } },
+                    const auto y = yw::dx10::renderReference (c.pluginState, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 6000 }, { 2000, 67, 0.6, 1.0, 0.0, 0.0, 8000 } },
                                                                 44100.0, 11025);
                     double e = 0.0;
                     bool finite = ! y.empty();
@@ -1793,10 +1793,10 @@ TEST (flp_real_files)
 
             // 3x Osc: every channel plays on the exact engine (REA_rodada47)
             for (const auto& c : song.channels)
-                if (c.instrument == lynx::InstrumentKind::threeosc)
+                if (c.instrument == yw::InstrumentKind::threeosc)
                 {
                     ++threeOscKind;
-                    const auto y = lynx::threeosc::renderReference (c.pluginState, { { 0, 60, 1.0, 0.0, 0.0, 6000 }, { 2000, 67, 0.6, 0.0, 0.0, 8000 } },
+                    const auto y = yw::threeosc::renderReference (c.pluginState, { { 0, 60, 1.0, 0.0, 0.0, 6000 }, { 2000, 67, 0.6, 0.0, 0.0, 8000 } },
                                                                     44100.0, 11025);
                     double e = 0.0;
                     bool finite = ! y.empty();
@@ -1811,19 +1811,19 @@ TEST (flp_real_files)
                 if (c.pluginName == "Sytrus")
                 {
                     ++sytrus;
-                    lynx::SynthSettings ss;
+                    yw::SynthSettings ss;
                     float g = 1.0f;
                     // the Sytrus engine (REA_rodada31) reads every demo state; the first 24 play a short note (render settings)
-                    if (lynx::sytrus::stateUsable (c.pluginState))
+                    if (yw::sytrus::stateUsable (c.pluginState))
                     {
                         ++sytrusEngine;
                         if (sytrusRendered < 24)
                         {
                             ++sytrusRendered;
-                            lynx::sytrus::Engine e;
+                            yw::sytrus::Engine e;
                             e.prepare (44100.0, true, 512);
-                            e.setPatch (lynx::sytrus::parsePatch (c.pluginState));
-                            lynx::sytrus::NoteParams note;
+                            e.setPatch (yw::sytrus::parsePatch (c.pluginState));
+                            yw::sytrus::NoteParams note;
                             e.noteOn (note);
                             std::vector<float> l (8192), r (8192);
                             e.render (l.data(), r.data(), 8192, 0.551f, 0.0f);
@@ -1835,7 +1835,7 @@ TEST (flp_real_files)
                             sytrusSounding += energy > 1e-6;
                         }
                     }
-                    if (lynx::synthFromSytrus (c.pluginState, 128.0, ss, g))
+                    if (yw::synthFromSytrus (c.pluginState, 128.0, ss, g))
                     {
                         ++sytrusDecoded;
                         CHECK (std::isfinite (g) && ss.cutoff >= 20.0f && ss.cutoff <= 20000.0f && std::isfinite (ss.attack) && std::isfinite (ss.decay)
@@ -1848,12 +1848,12 @@ TEST (flp_real_files)
             // round 12 generators
             for (const auto& c : p.channels)
             {
-                lynx::SynthSettings gs;
+                yw::SynthSettings gs;
                 float g = 1.0f;
                 int decoded = -1;
                 if (c.pluginName == "Harmor")
                 {
-                    decoded = lynx::synthFromHarmor (c.pluginState, gs, g);
+                    decoded = yw::synthFromHarmor (c.pluginState, gs, g);
                     if (decoded)
                     {
                         // REA_rodada25 §4: most resonant settings stay below Q ≈ 3, a few saturate
@@ -1865,7 +1865,7 @@ TEST (flp_real_files)
                             std::printf ("  Harmor resonance: %d with a peak, %d with Q > ~5 (of %d)\n", resonant, strong, total);
                     }
                     static int saw = 0, square = 0, other = 0, total = 0;
-                    if (decoded && std::any_of (gs.osc.begin(), gs.osc.end(), [] (const lynx::SynthOscillator& o) { return o.wave == lynx::Waveform::spectral; }))
+                    if (decoded && std::any_of (gs.osc.begin(), gs.osc.end(), [] (const yw::SynthOscillator& o) { return o.wave == yw::Waveform::spectral; }))
                     {
                         auto isSaw = true, isSquare = true;
                         for (int n = 1; n <= 16; ++n)
@@ -1879,13 +1879,13 @@ TEST (flp_real_files)
                     }
                 }
                 else if (c.pluginName == "GMS")
-                    decoded = lynx::synthFromGms (c.pluginState, 128.0, gs, g);
+                    decoded = yw::synthFromGms (c.pluginState, 128.0, gs, g);
                 else if (c.pluginName == "Ogun" || c.pluginName == "Autogun")
                 {
-                    decoded = lynx::synthFromOgun (c.pluginState, gs, g);
+                    decoded = yw::synthFromOgun (c.pluginState, gs, g);
                     // REA_rodada24 §1.9: the "Trumpet" preset (richness 7, no seeds) has partials 0.9087, 0.8610,
                     // 0.8151… at the fixed seed-3 phases 0.919, 0.380, 0.130
-                    if (decoded && gs.osc[0].wave == lynx::Waveform::spectral)
+                    if (decoded && gs.osc[0].wave == yw::Waveform::spectral)
                     {
                         CHECK (std::all_of (gs.spectrum.begin(), gs.spectrum.end(), [] (float a) { return std::isfinite (a) && a >= 0.0f; }));
                         static constexpr float trumpet[3] { 0.9087f, 0.8610f, 0.8151f }, phases[3] { 0.919f, 0.380f, 0.130f };
@@ -1896,29 +1896,29 @@ TEST (flp_real_files)
                     }
                 }
                 else if (c.pluginName == "Sakura")
-                    decoded = lynx::synthFromSakura (c.pluginState, gs);
+                    decoded = yw::synthFromSakura (c.pluginState, gs);
                 else if (c.pluginName == "Kepler")
-                    decoded = lynx::synthFromKepler (c.pluginState, gs, g);
+                    decoded = yw::synthFromKepler (c.pluginState, gs, g);
                 else if (c.pluginName == "Wave Traveller")
-                    decoded = lynx::waveTravellerStateUsable (c.pluginState) ? 2 : 0;
+                    decoded = yw::waveTravellerStateUsable (c.pluginState) ? 2 : 0;
                 else if (c.pluginName == "PoiZone")
-                    decoded = lynx::synthFromPoiZone (c.pluginState, gs, g);
+                    decoded = yw::synthFromPoiZone (c.pluginState, gs, g);
                 else if (c.pluginName == "BassDrum")
-                    decoded = lynx::synthFromBassDrum (c.pluginState, gs, g);
+                    decoded = yw::synthFromBassDrum (c.pluginState, gs, g);
                 else if (c.pluginName == "Toxic Biohazard")
-                    decoded = lynx::synthFromToxic (c.pluginState, gs, g);
+                    decoded = yw::synthFromToxic (c.pluginState, gs, g);
                 else if (c.pluginName == "Morphine")
-                    decoded = lynx::synthFromMorphine (c.pluginState, gs, g);
+                    decoded = yw::synthFromMorphine (c.pluginState, gs, g);
                 else if (c.pluginName == "BooBass")
-                    decoded = lynx::synthFromBooBass (c.pluginState, gs);
+                    decoded = yw::synthFromBooBass (c.pluginState, gs);
                 else if (c.pluginName == "Drumpad" || c.pluginName == "DrumPad")
-                    decoded = lynx::drumpadPatchName (c.pluginState).has_value() ? 2 : 0;
+                    decoded = yw::drumpadPatchName (c.pluginState).has_value() ? 2 : 0;
                 else if (c.pluginName == "Fruity Envelope Controller" && c.pluginState.size() >= 4 && c.pluginState[2] >= 6) // v >= 6
-                    decoded = lynx::parseEnvelopeController (c.pluginState).has_value() ? 2 : 0;
+                    decoded = yw::parseEnvelopeController (c.pluginState).has_value() ? 2 : 0;
                 else if (c.pluginName == "FLEX")
-                    decoded = lynx::flexPresetName (c.pluginState).has_value() ? 2 : 0;
+                    decoded = yw::flexPresetName (c.pluginState).has_value() ? 2 : 0;
                 else if (c.pluginName == "Fruity DrumSynth Live")
-                    decoded = lynx::drumSynthLiveParams (c.pluginState).has_value() ? 2 : 0;
+                    decoded = yw::drumSynthLiveParams (c.pluginState).has_value() ? 2 : 0;
                 if (decoded < 0)
                     continue;
                 auto& counter = generators[c.pluginName];
@@ -1927,7 +1927,7 @@ TEST (flp_real_files)
                 if (decoded == 1 && c.pluginName != "Fruity DrumSynth Live")
                 {
                     CHECK (std::isfinite (g) && g >= 0.0f && gs.cutoff >= 20.0f && gs.cutoff <= 20000.0f && gs.sustain >= 0.0f && gs.sustain <= 1.0f);
-                    CHECK (std::isfinite (gs.attack) && std::isfinite (gs.decay) && std::isfinite (gs.release) && std::isfinite (gs.filterEnv.amount) && std::isfinite (gs.lfo[lynx::lfoCutoff].amount));
+                    CHECK (std::isfinite (gs.attack) && std::isfinite (gs.decay) && std::isfinite (gs.release) && std::isfinite (gs.filterEnv.amount) && std::isfinite (gs.lfo[yw::lfoCutoff].amount));
                     for (const auto& o : gs.osc)
                         CHECK (o.level >= 0.0f && o.level <= 4.0f && std::isfinite (o.detune) && std::isfinite (o.pan));
                 }
@@ -1938,9 +1938,9 @@ TEST (flp_real_files)
                 if (c.pluginName == "3x Osc")
                 {
                     ++threeOsc;
-                    lynx::SynthSettings s;
+                    yw::SynthSettings s;
 
-                    if (lynx::synthFrom3xOsc (c.pluginState, s))
+                    if (yw::synthFrom3xOsc (c.pluginState, s))
                     {
                         ++threeOscDecoded;
                         // with AM, osc 3 is the modulation depth and is left out of the sum
@@ -1967,14 +1967,14 @@ TEST (flp_real_files)
                 CHECK (clip.pattern >= 0 && clip.pattern < (int) song.patterns.size());
                 CHECK (clip.length > 0 && clip.offset >= 0);
 
-                if (clip.kind == lynx::ClipKind::automation)
+                if (clip.kind == yw::ClipKind::automation)
                     CHECK (clip.automation >= 0 && clip.automation < (int) song.automations.size());
             }
 
             for (auto& a : song.automations)
             {
                 ++automations;
-                automationsWithTarget += a.target.kind != lynx::AutomationTargetKind::none;
+                automationsWithTarget += a.target.kind != yw::AutomationTargetKind::none;
                 CHECK (a.isLive() || ! a.points.empty());
 
                 for (std::size_t i = 1; i < a.points.size(); ++i)
@@ -2032,17 +2032,17 @@ TEST (flp_real_files)
                             if (slot.plugin == "Gross Beat")
                             {
                                 // FL's own engine (REA_rodada53): every demo state is read
-                                const auto fx = lynx::effectFromFl (slot.plugin, slot.state);
-                                CHECK (fx && fx->kind == lynx::EffectKind::grossBeat);
+                                const auto fx = yw::effectFromFl (slot.plugin, slot.state);
+                                CHECK (fx && fx->kind == yw::EffectKind::grossBeat);
                                 ++gates;
-                                if (fx && fx->kind == lynx::EffectKind::grossBeat && lynx::grossbeat::slotNames (fx->state, true).size() == 36)
+                                if (fx && fx->kind == yw::EffectKind::grossBeat && yw::grossbeat::slotNames (fx->state, true).size() == 36)
                                     ++shaped;
                             }
                             else if (slot.plugin == "Fruity Love Philter")
                             {
                                 ++lovePhilters;
-                                lovePhiltersRead += lynx::parseLovePhilter (slot.state).has_value();
-                                if (const auto conv = lynx::lovePhilterEffects (slot.state))
+                                lovePhiltersRead += yw::parseLovePhilter (slot.state).has_value();
+                                if (const auto conv = yw::lovePhilterEffects (slot.state))
                                 {
                                     ++lovePhiltersConverted;
                                     CHECK (! conv->slots.empty());
@@ -2053,12 +2053,12 @@ TEST (flp_real_files)
                                         for (const auto& link : fx.links)
                                         {
                                             const auto& chain = fx.branches[(std::size_t) link.branch].chain;
-                                            CHECK (link.source < (int) chain.size() && chain[(std::size_t) link.target].kind == lynx::EffectKind::parametricEq);
-                                            lovePhilterLinks[2 + (link.param == lynx::peq::param (0, 3) ? 1 : 0)]++;
+                                            CHECK (link.source < (int) chain.size() && chain[(std::size_t) link.target].kind == yw::EffectKind::parametricEq);
+                                            lovePhilterLinks[2 + (link.param == yw::peq::param (0, 3) ? 1 : 0)]++;
                                         }
                                     for (const auto& link : conv->links)
                                     {
-                                        lovePhilterLinks[link.param == lynx::peq::param (0, 3) ? 1 : 0]++;
+                                        lovePhilterLinks[link.param == yw::peq::param (0, 3) ? 1 : 0]++;
                                         CHECK (link.curve.size() == 33);
                                         for (auto v : link.curve)
                                             CHECK (std::isfinite (v) && v >= 0.0f && v <= 1.0f);
@@ -2067,16 +2067,16 @@ TEST (flp_real_files)
                             }
                             else if (slot.plugin == "Vocodex")
                             {
-                                const auto v = lynx::vocodexEffect (slot.state);
+                                const auto v = yw::vocodexEffect (slot.state);
                                 CHECK (v.has_value());
                                 vocodexes += v.has_value();
                                 vocodexSides += v && (v->modIn > 0 || v->carIn > 0);
                             }
                             else if (slot.plugin == "Effector")
-                                effectors += lynx::effectFromFl (slot.plugin, slot.state).has_value();
+                                effectors += yw::effectFromFl (slot.plugin, slot.state).has_value();
                             else if (slot.plugin == "Patcher")
                             {
-                                const auto graph = lynx::parsePatcher (slot.state);
+                                const auto graph = yw::parsePatcher (slot.state);
                                 CHECK (graph.has_value());
                                 ++patchers;
                                 if (graph && ! graph->serialChain.empty())
@@ -2086,7 +2086,7 @@ TEST (flp_real_files)
                             }
                     for (const auto& c : project.channels)
                         if (c.pluginName == "DirectWave")
-                            if (const auto program = lynx::directWaveProgram (c.pluginState))
+                            if (const auto program = yw::directWaveProgram (c.pluginState))
                                 for (const auto& wav : program->embeddedWav)
                                     if (! wav.empty())
                                     {
@@ -2096,7 +2096,7 @@ TEST (flp_real_files)
                     for (const auto& c : project.channels)
                         if (c.pluginName == "Patcher")
                         {
-                            const auto graph = lynx::parsePatcher (c.pluginState);
+                            const auto graph = yw::parsePatcher (c.pluginState);
                             CHECK (graph.has_value());
                             generatorPatchers += graph && graph->mainGenerator >= 0;
                         }
@@ -2126,15 +2126,15 @@ TEST (flp_real_files)
         {
             std::ifstream in (path, std::ios::binary);
             const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
-            const auto song = lynx::importFlp (flp::parseProject (file));
-            const lynx::ChannelDef* controller = nullptr;
+            const auto song = yw::importFlp (flp::parseProject (file));
+            const yw::ChannelDef* controller = nullptr;
             for (const auto& c : song.channels)
-                if (c.instrument == lynx::InstrumentKind::controller)
+                if (c.instrument == yw::InstrumentKind::controller)
                     controller = &c;
             CHECK (controller != nullptr);
             if (controller != nullptr)
             {
-                auto inst = lynx::makeInstrument (lynx::InstrumentKind::controller);
+                auto inst = yw::makeInstrument (yw::InstrumentKind::controller);
                 inst->prepare (48000.0);
                 inst->configure (*controller, song.bpm);
                 std::vector<float> l (480), r (480);
@@ -2187,28 +2187,28 @@ TEST (flp_real_files)
                     for (int k = 0; k < 1 + (int) (rnd() % 8) && ! blob.empty(); ++k)
                         blob[rnd() % blob.size()] = (std::uint8_t) rnd();
                 ++mutations;
-                lynx::SynthSettings synth;
+                yw::SynthSettings synth;
                 float gain = 1.0f;
-                lynx::synthFromSytrus (blob, 120.0, synth, gain);
-                lynx::synthFromHarmor (blob, synth, gain);
-                lynx::synthFromGms (blob, 120.0, synth, gain);
-                lynx::synthFromOgun (blob, synth, gain);
-                lynx::synthFromMorphine (blob, synth, gain);
-                lynx::synthFromKepler (blob, synth, gain);
-                lynx::synthFromPoiZone (blob, synth, gain);
-                lynx::synthFromToxic (blob, synth, gain);
-                lynx::synthFromBassDrum (blob, synth, gain);
-                lynx::synthFromHarmless (blob, 120.0, synth, gain);
-                lynx::harmlessParams (blob);
-                if (lynx::harmorStateUsable (blob))
-                    lynx::harmorFallbacks (blob);
-                lynx::parseEnvelopeController (blob);
-                lynx::parseKeyboardController (blob);
-                lynx::parseLovePhilter (blob);
-                lynx::parsePatcher (blob);
-                lynx::effectFromFl (name, blob);
-                lynx::fpcPads (blob);
-                lynx::directWaveProgram (blob);
+                yw::synthFromSytrus (blob, 120.0, synth, gain);
+                yw::synthFromHarmor (blob, synth, gain);
+                yw::synthFromGms (blob, 120.0, synth, gain);
+                yw::synthFromOgun (blob, synth, gain);
+                yw::synthFromMorphine (blob, synth, gain);
+                yw::synthFromKepler (blob, synth, gain);
+                yw::synthFromPoiZone (blob, synth, gain);
+                yw::synthFromToxic (blob, synth, gain);
+                yw::synthFromBassDrum (blob, synth, gain);
+                yw::synthFromHarmless (blob, 120.0, synth, gain);
+                yw::harmlessParams (blob);
+                if (yw::harmorStateUsable (blob))
+                    yw::harmorFallbacks (blob);
+                yw::parseEnvelopeController (blob);
+                yw::parseKeyboardController (blob);
+                yw::parseLovePhilter (blob);
+                yw::parsePatcher (blob);
+                yw::effectFromFl (name, blob);
+                yw::fpcPads (blob);
+                yw::directWaveProgram (blob);
                 CHECK (std::isfinite (gain) && std::isfinite (synth.cutoff));
             }
         std::printf ("  mutation fuzz: %d blobs from %d plugins\n", mutations, (int) samples.size());
@@ -2224,8 +2224,8 @@ TEST (flp_real_files)
                 std::ifstream in (entry.path(), std::ios::binary);
                 const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
                 ++files;
-                lynx::DecodedAudio audio;
-                if (! lynx::decodeWavPack (file.data(), file.size(), audio))
+                yw::DecodedAudio audio;
+                if (! yw::decodeWavPack (file.data(), file.size(), audio))
                     continue;
                 ++decoded;
                 float peak = 0.0f;
@@ -2257,13 +2257,13 @@ TEST (flp_real_files)
                 const auto n = (std::uint32_t) file.size();
                 blob.insert (blob.end(), reinterpret_cast<const std::uint8_t*> (&n), reinterpret_cast<const std::uint8_t*> (&n) + 4);
                 blob.insert (blob.end(), file.begin(), file.end());
-                lynx::SynthSettings gs;
+                yw::SynthSettings gs;
                 float g = 1.0f;
                 ++gmsPresets;
-                if (lynx::synthFromGms (blob, 120.0, gs, g))
+                if (yw::synthFromGms (blob, 120.0, gs, g))
                 {
                     ++gmsDecoded;
-                    CHECK (std::isfinite (g) && gs.cutoff >= 20.0f && std::isfinite (gs.pitchEnv.amount) && std::isfinite (gs.lfo[lynx::lfoPitch].period));
+                    CHECK (std::isfinite (g) && gs.cutoff >= 20.0f && std::isfinite (gs.pitchEnv.amount) && std::isfinite (gs.lfo[yw::lfoPitch].period));
                 }
             }
     std::printf ("  GMS presets: %d, %d decoded\n", gmsPresets, gmsDecoded);
@@ -2282,7 +2282,7 @@ TEST (flp_real_files)
                 std::ifstream in (entry.path(), std::ios::binary);
                 const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
                 ++presetFiles;
-                presetsRead += lynx::synthFromFlPreset (file).has_value();
+                presetsRead += yw::synthFromFlPreset (file).has_value();
             }
     }
     std::printf ("  FL synth presets: %d files, %d read\n", presetFiles, presetsRead);
@@ -2366,7 +2366,7 @@ TEST (flp_real_files)
                 ++presets;
                 std::ifstream in (entry.path(), std::ios::binary);
                 std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-                if (auto synth = lynx::synthFromFlPreset (bytes))
+                if (auto synth = yw::synthFromFlPreset (bytes))
                 {
                     ++presetsDecoded;
                     CHECK (synth->osc[0].level + synth->osc[1].level + (synth->am ? 0.0f : synth->osc[2].level) <= 1.001f);
@@ -2377,9 +2377,9 @@ TEST (flp_real_files)
 
     // FL effect presets that become built-in effects
     int fxPresets = 0, fxDecoded = 0;
-    for (auto kind : { lynx::EffectKind::parametricEq, lynx::EffectKind::limiter, lynx::EffectKind::reverb, lynx::EffectKind::delay,
-                       lynx::EffectKind::utility })
-        for (const auto& plugin : lynx::flPluginsForEffect (kind))
+    for (auto kind : { yw::EffectKind::parametricEq, yw::EffectKind::limiter, yw::EffectKind::reverb, yw::EffectKind::delay,
+                       yw::EffectKind::utility })
+        for (const auto& plugin : yw::flPluginsForEffect (kind))
         {
             const auto dir = std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / plugin;
             if (! std::filesystem::is_directory (dir))
@@ -2390,7 +2390,7 @@ TEST (flp_real_files)
                     ++fxPresets;
                     std::ifstream in (entry.path(), std::ios::binary);
                     std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-                    fxDecoded += lynx::effectFromFlPreset (bytes).has_value();
+                    fxDecoded += yw::effectFromFlPreset (bytes).has_value();
                 }
         }
     std::printf ("  %d FL effect presets, %d read\n", fxPresets, fxDecoded);
@@ -2427,21 +2427,21 @@ TEST (flp_real_files)
 
 TEST (pattern_toggle_step_and_length)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     CHECK (! p.hasStep (0, 4));
     p.toggleStep (0, 4);
     CHECK (p.hasStep (0, 4));
-    CHECK (p.notes.size() == 1 && p.notes[0].start == 4 * lynx::ticksPerStep);
-    CHECK (p.effectiveLength (lynx::Meter (4, 4)) == 4 * lynx::ppq); // one bar
+    CHECK (p.notes.size() == 1 && p.notes[0].start == 4 * yw::ticksPerStep);
+    CHECK (p.effectiveLength (yw::Meter (4, 4)) == 4 * yw::ppq); // one bar
     p.toggleStep (1, 20);                            // second bar
-    CHECK (p.effectiveLength (lynx::Meter (4, 4)) == 8 * lynx::ppq);
+    CHECK (p.effectiveLength (yw::Meter (4, 4)) == 8 * yw::ppq);
     p.toggleStep (0, 4);
     CHECK (! p.hasStep (0, 4) && p.notes.size() == 1);
 }
 
 TEST (pattern_mute_removed_steps)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     p.toggleStep (0, 2);
     p.notes[0].velocity = 0.3f;
     p.toggleStep (0, 2, true); // off: muted, kept
@@ -2470,19 +2470,19 @@ TEST (pattern_mute_removed_steps)
 
 TEST (scheduler_places_events_at_exact_samples)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     p.toggleStep (0, 0);
     p.toggleStep (0, 4); // tick 960 = 1 beat
 
     const double sr = 48000.0, bpm = 120.0; // 1 beat = 0.5 s = 24000 samples
-    const auto tps = lynx::ticksPerSample (bpm, sr);
-    lynx::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (bpm, sr);
+    yw::EventBuffer ev;
 
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 23900.0 * tps, 512, tps, ev);
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 23900.0 * tps, 512, tps, ev);
     // the beat-2 note starts at sample 24000 -> offset 100 in this block
     int ons = 0;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on)
+        if (e.type == yw::NoteEvent::Type::on)
         {
             ++ons;
             CHECK (e.sampleOffset == 100);
@@ -2492,20 +2492,20 @@ TEST (scheduler_places_events_at_exact_samples)
 
 TEST (scheduler_wraps_the_loop)
 {
-    lynx::Pattern p;
+    yw::Pattern p;
     p.toggleStep (2, 0);
-    const auto len = p.effectiveLength (lynx::Meter (4, 4)); // 3840 ticks
+    const auto len = p.effectiveLength (yw::Meter (4, 4)); // 3840 ticks
     const double sr = 48000.0;
-    const auto tps = lynx::ticksPerSample (120.0, sr);
-    lynx::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (120.0, sr);
+    yw::EventBuffer ev;
 
     // block that crosses the loop end: starts 10 samples before
     const auto start = (double) len - 10.0 * tps;
-    lynx::schedulePatternLoop (p, len, start, 64, tps, ev);
+    yw::schedulePatternLoop (p, len, start, 64, tps, ev);
 
     bool found = false;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on && e.channel == 2)
+        if (e.type == yw::NoteEvent::Type::on && e.channel == 2)
         {
             found = true;
             CHECK (e.sampleOffset == 10);
@@ -2515,19 +2515,19 @@ TEST (scheduler_wraps_the_loop)
 
 TEST (scheduler_off_before_on_at_same_sample)
 {
-    lynx::Pattern p;
-    lynx::Note a;
+    yw::Pattern p;
+    yw::Note a;
     a.start = 0; a.length = 240; a.channel = 0;
-    lynx::Note b = a;
+    yw::Note b = a;
     b.start = 240;
     p.notes = { a, b };
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::EventBuffer ev;
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 200.0, 4000, tps, ev);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::EventBuffer ev;
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 200.0, 4000, tps, ev);
 
     CHECK (ev.size() >= 2);
-    CHECK (ev[0].type == lynx::NoteEvent::Type::off);
-    CHECK (ev[1].type == lynx::NoteEvent::Type::on);
+    CHECK (ev[0].type == yw::NoteEvent::Type::off);
+    CHECK (ev[1].type == yw::NoteEvent::Type::on);
     CHECK (ev[0].sampleOffset == ev[1].sampleOffset);
 }
 
@@ -2543,7 +2543,7 @@ TEST (snapshot_exchange_hands_over_and_recycles)
 
     int alive = 0;
     {
-        lynx::SnapshotExchange<Counted> x;
+        yw::SnapshotExchange<Counted> x;
         CHECK (x.acquire() == nullptr);
 
         x.publish (std::make_unique<Counted> (1, &alive));
@@ -2569,12 +2569,12 @@ TEST (snapshot_exchange_hands_over_and_recycles)
 
 TEST (rack_renderer_makes_sound_and_reuses_instruments)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
     const double sr = 48000.0;
-    auto state = lynx::RackState::build (song, nullptr, sr);
+    auto state = yw::RackState::build (song, nullptr, sr);
 
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (sr);
     std::vector<float> l (512), rr (512);
 
@@ -2586,22 +2586,22 @@ TEST (rack_renderer_makes_sound_and_reuses_instruments)
     {
         r.process (state.get(), true, tick, 512, l.data(), rr.data());
         for (auto& e : r.lastEvents())
-            if (e.type == lynx::NoteEvent::Type::on && e.channel == 0)
+            if (e.type == yw::NoteEvent::Type::on && e.channel == 0)
                 ++kicks;
         for (int i = 0; i < 512; ++i)
         {
             CHECK (std::isfinite (l[(std::size_t) i]));
             peak = std::max (peak, std::abs (l[(std::size_t) i]));
         }
-        tick += 512 * lynx::ticksPerSample (song.bpm, sr);
+        tick += 512 * yw::ticksPerSample (song.bpm, sr);
     }
 
     CHECK (peak > 0.1f && peak < 4.0f);
     CHECK (kicks == 2); // 120 BPM: beats at 0 and 0.5 s
 
     // editing the song keeps the instruments of channels whose type didn't change
-    song.channels[4].instrument = lynx::InstrumentKind::kick;
-    auto next = lynx::RackState::build (song, state.get(), sr);
+    song.channels[4].instrument = yw::InstrumentKind::kick;
+    auto next = yw::RackState::build (song, state.get(), sr);
     CHECK (next->instruments[0] == state->instruments[0]);
     CHECK (next->instruments[4] != state->instruments[4]);
 
@@ -2629,28 +2629,28 @@ TEST (flp_import_maps_channels_and_rescales)
     pat.notes.push_back (n);
     p.patterns.push_back (pat);
 
-    const auto s = lynx::importFlp (p);
+    const auto s = yw::importFlp (p);
     CHECK (s.bpm == 150.0);
     CHECK (s.channels.size() == 3); // audio clip channels stay in the rack, as in FL
-    CHECK (s.channels[0].instrument == lynx::InstrumentKind::kick);
-    CHECK (s.channels[1].instrument == lynx::InstrumentKind::audioClip);
-    CHECK (s.channels[2].instrument == lynx::InstrumentKind::synth);
+    CHECK (s.channels[0].instrument == yw::InstrumentKind::kick);
+    CHECK (s.channels[1].instrument == yw::InstrumentKind::audioClip);
+    CHECK (s.channels[2].instrument == yw::InstrumentKind::synth);
     CHECK (s.patterns.size() == 1);
-    CHECK (s.patterns[0].notes[0].start == lynx::ppq);           // 96 @ PPQ 96 = 1 beat
+    CHECK (s.patterns[0].notes[0].start == yw::ppq);           // 96 @ PPQ 96 = 1 beat
     CHECK (s.patterns[0].notes[0].channel == 2);
-    CHECK (s.patterns[0].notes[0].length == lynx::ticksPerStep); // step note
+    CHECK (s.patterns[0].notes[0].length == yw::ticksPerStep); // step note
     CHECK (std::abs (s.patterns[0].notes[0].velocity - 0.5f) < 1e-6f);
 }
 
 TEST (live_queue_is_fifo_and_bounded)
 {
-    lynx::LiveEventQueue q;
-    lynx::NoteEvent e;
+    yw::LiveEventQueue q;
+    yw::NoteEvent e;
     CHECK (! q.pop (e));
 
     for (int i = 0; i < 10; ++i)
     {
-        lynx::NoteEvent in;
+        yw::NoteEvent in;
         in.key = i;
         CHECK (q.push (in));
     }
@@ -2661,7 +2661,7 @@ TEST (live_queue_is_fifo_and_bounded)
     int pushed = 0;
     while (q.push (e))
         ++pushed;
-    CHECK (pushed == (int) lynx::LiveEventQueue::capacity - 1); // one slot stays free to tell full from empty
+    CHECK (pushed == (int) yw::LiveEventQueue::capacity - 1); // one slot stays free to tell full from empty
 }
 
 // Whether this CPU's RCPPS (the ~12-bit reciprocal estimate, whose table is implementation-defined: Intel and AMD
@@ -2718,11 +2718,11 @@ TEST (fl_sampler_interpolators_match_fl)
         { 5, 1.37, { 0x3f19d373, 0x3ea9b6a3, 0xbdcbe56e, 0x3e2af6c6, 0xbf476f7a, 0xbe566a13, 0xbe9f166a, 0x3f52b5ad, 0x3f27ad16, 0xbce48792, 0x3f27960a, 0xbce01ebe, 0x3e1b96be, 0x3e163fd8, 0x3f042e42, 0x3ec4be83 } },
         { 3, 9.5, { 0xbd97308e, 0x3dd8783c, 0xbd911374, 0x3e162a41, 0xbd8a959e, 0x3e38b220, 0xbd7e6785, 0x3e58895c, 0xbd380c4f, 0x3e7e3008, 0xbd380e4e, 0x3e7e2696, 0x3d00c6d0, 0xbd627d87, 0x3e308cb8, 0xbcece918 } },
     };
-    const lynx::flvp::X87Extended precision;
+    const yw::flvp::X87Extended precision;
     const bool exactRcp = rcpLikeReferenceCpu();
     for (const auto& c : cases)
     {
-        lynx::flrs::Kernel k;
+        yw::flrs::Kernel k;
         k.setQuality (c.quality);
         k.setSpeed (c.speed);
         int same = 0;
@@ -2730,7 +2730,7 @@ TEST (fl_sampler_interpolators_match_fl)
         {
             const auto lo = pad + positions[p].first - k.halfWidth + 1;
             float a, b;
-            lynx::flrs::interpolate (k, l.data() + lo, r.data() + lo, positions[p].second, a, b);
+            yw::flrs::interpolate (k, l.data() + lo, r.data() + lo, positions[p].second, a, b);
             std::uint32_t ba, bb;
             std::memcpy (&ba, &a, 4);
             std::memcpy (&bb, &b, 4);
@@ -2741,19 +2741,19 @@ TEST (fl_sampler_interpolators_match_fl)
         }
         CHECK (same == 16);
     }
-    CHECK (lynx::flrs::halfWidthFor (4) == 12 && lynx::flrs::halfWidthFor (5) == 16 && lynx::flrs::halfWidthFor (9) == 256);
-    CHECK (lynx::flrs::speedFor (0.0f, 1.0) == 1.0 && std::abs (lynx::flrs::speedFor (1200.0f, 0.5) - 1.0) < 1e-12);
+    CHECK (yw::flrs::halfWidthFor (4) == 12 && yw::flrs::halfWidthFor (5) == 16 && yw::flrs::halfWidthFor (9) == 256);
+    CHECK (yw::flrs::speedFor (0.0f, 1.0) == 1.0 && std::abs (yw::flrs::speedFor (1200.0f, 0.5) - 1.0) < 1e-12);
 }
 
 // The sampler at the original rate copies the sample (FL's copy path), and plays until the read position passes the
 // last frame
 TEST (fl_sampler_copies_at_original_rate)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     for (int i = 0; i < 300; ++i)
         data->left.push_back (std::sin (0.05f * (float) i) * 0.5f);
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     sampler->prepare (48000.0);
     sampler->noteOn (60, 1.0f);
     std::vector<float> l (400), r (400);
@@ -2770,13 +2770,13 @@ TEST (fl_sampler_copies_at_original_rate)
 // ramps linearly to each tick's value; 96 PPQ at 120 BPM and 48 kHz = 250 samples per tick, attack 20000 = 89 ticks
 TEST (fl_sampler_volume_envelope_steps_per_tick)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     data->left.assign (96000, 0.5f);
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     sampler->prepare (48000.0);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.sampler.flVolumeEnvelope = { 0, 1, 100, 20000, 0, 30000, 128, 20000, 0, 100, 20000, 0, 32950, 0, 0, 0, 0, 96 };
     sampler->configure (c, 120.0);
     sampler->noteOn (60, 1.0f);
@@ -2798,10 +2798,10 @@ TEST (fl_sampler_volume_envelope_steps_per_tick)
 // FL's native sampler voice (REA_rodada76): FL's own command-line renders of crafted projects (one sampler channel,
 // our noise sample, notes at ticks 0/192/384 of 96 PPQ at 120 BPM, 16-bit output) — the fast LP with resonance and a
 // note pan/velocity set; the 12 dB LP with volume, cutoff and pitch envelopes and their releases. FL's int16 codes at
-// a few frames; LYNX within one code. Also the velocity law and the pan law with the channel's levels inside the voice.
+// a few frames; YW within one code. Also the velocity law and the pan law with the channel's levels inside the voice.
 TEST (fl_native_sampler_voice_matches_fl_renders)
 {
-    auto noise = std::make_shared<lynx::SampleData>();
+    auto noise = std::make_shared<yw::SampleData>();
     noise->sampleRate = 44100.0;
     {
         std::uint32_t seed = 1;
@@ -2813,15 +2813,15 @@ TEST (fl_native_sampler_voice_matches_fl_renders)
     }
     struct Ev { int on, off; float vel, pan; };
     auto render = [&] (std::vector<std::int32_t> recs, std::array<int, 3> filter, const std::vector<Ev>& notes,
-                       std::shared_ptr<lynx::SampleData> data, float chanGain) {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+                       std::shared_ptr<yw::SampleData> data, float chanGain) {
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.sampler.flChannel = recs;
         c.sampler.flChannel.insert (c.sampler.flChannel.end(), { filter[0], filter[1], filter[2], 96 });
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
-        lynx::setOfflineRendering (true); // FL's render dialog: 32-point sinc (the pitch envelope interpolates)
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, data);
+        yw::setOfflineRendering (true); // FL's render dialog: 32-point sinc (the pitch envelope interpolates)
         inst->prepare (44100.0);
-        lynx::setOfflineRendering (false);
+        yw::setOfflineRendering (false);
         inst->configure (c, 120.0);
         inst->setSongPosition (0.0);
         std::vector<std::pair<int, int>> events; // (sample, index ≥ 0 on / < 0 off)
@@ -2853,7 +2853,7 @@ TEST (fl_native_sampler_voice_matches_fl_renders)
         return all;
     };
     const auto volPlain = std::vector<std::int32_t> { 4, 0, 100, 20000, 20000, 30000, 50, 20000, 0, 100, 20000, 0, 32950, 0, 0, 0, -101 };
-    const auto chan = lynx::channelGain (10000.0f / 12800.0f); // the rack's gain at pan 0 (panGains: gain·√2·cos(π/4))
+    const auto chan = yw::channelGain (10000.0f / 12800.0f); // the rack's gain at pan 0 (panGains: gain·√2·cos(π/4))
     const int at[] = { 5, 300, 2000, 9000, 11500, 15000, 22100, 26000 };
     auto check = [&] (const std::pair<std::vector<float>, std::vector<float>>& out, const int* goldL, const int* goldR) {
         int bad = 0;
@@ -2905,7 +2905,7 @@ TEST (fl_native_sampler_voice_matches_fl_renders)
     {
         // a sample with its own loop (WAV smpl 4410…8819): FL loops it while the note lasts and fades it out over 10 ms
         // after the note-off (no volume envelope)
-        auto looped = std::make_shared<lynx::SampleData>();
+        auto looped = std::make_shared<yw::SampleData>();
         looped->sampleRate = 44100.0;
         for (int i = 0; i < 8820; ++i)
             looped->left.push_back ((float) ((0.5 * (1.0 - 0.5 * i / 8820.0)) * std::sin (2.0 * 3.141592653589793 * 441.0 * i / 44100.0)));
@@ -2922,7 +2922,7 @@ TEST (fl_native_sampler_voice_matches_fl_renders)
     {
         // a constant sample: velocity law (FL: vel 100 → 0.389608, 128 → 0.799753, 64 → 0.141805 at the default
         // channel volume, pan centre) and a hard-left note (0.550997 / 0)
-        auto dc = std::make_shared<lynx::SampleData>();
+        auto dc = std::make_shared<yw::SampleData>();
         dc->sampleRate = 44100.0;
         dc->left.assign (20000, 0.5f);
         auto level = [&] (float vel, float pan, bool right) {
@@ -2942,17 +2942,17 @@ TEST (fl_native_sampler_voice_matches_fl_renders)
 TEST (fl_fpc_cycle_layers_and_slicex_master_volume)
 {
     auto level = [] (float v) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.assign (4800, v);
         return d;
     };
     // A covers 0…63, B 32…95, C 64…127 (all keys)
-    auto inst = lynx::makeZonedSampler ({ { { "a.wav", 60, 0, 127, 0, 63 }, level (0.1f) },
+    auto inst = yw::makeZonedSampler ({ { { "a.wav", 60, 0, 127, 0, 63 }, level (0.1f) },
                                           { { "b.wav", 60, 0, 127, 32, 95 }, level (0.2f) },
                                           { { "c.wav", 60, 0, 127, 64, 127 }, level (0.3f) } });
     inst->prepare (48000.0);
-    inst->configure (lynx::ChannelDef {}, 120.0);
+    inst->configure (yw::ChannelDef {}, 120.0);
     auto play = [&] (float velocity) {
         inst->allNotesOff();
         std::vector<float> l (2000), r (2000);
@@ -2978,14 +2978,14 @@ TEST (fl_fpc_cycle_layers_and_slicex_master_volume)
     state.push_back (5);
     for (char ch : std::string ("x.wav"))
         state.push_back ((std::uint8_t) ch);
-    const auto sliced = lynx::slicexSample (state);
+    const auto sliced = yw::slicexSample (state);
     CHECK (sliced.has_value() && sliced->path == "x.wav");
     CHECK (sliced && std::abs (sliced->gain - (float) ((std::pow (11.0, 1.25) - 1.0) / 10.0)) < 1e-5f);
 }
 
 TEST (fl_keys_state_wti_and_loader)
 {
-    using namespace lynx::flkeys;
+    using namespace yw::flkeys;
     // state: u32 1, the wavetable name, 15 int32 knobs
     State st;
     st.wavetable = "Grand Piano";
@@ -3072,7 +3072,7 @@ TEST (fl_keys_state_wti_and_loader)
 
 TEST (ogg_vorbis_decodes_like_fl)
 {
-    using namespace lynx::oggvorbis;
+    using namespace yw::oggvorbis;
     const std::uint8_t wavHeader[] = { 'R', 'I', 'F', 'F', 30, 0, 0, 0, 'W', 'A', 'V', 'E', 'f', 'm', 't', ' ', 2, 0, 0, 0, 0x4F, 0x67 };
     CHECK (isOggWav (wavHeader, sizeof wavHeader));
     CHECK (! isOggStream (wavHeader, sizeof wavHeader));
@@ -3118,7 +3118,7 @@ TEST (ogg_vorbis_decodes_like_fl)
 
 TEST (directwave_crt_math_and_state)
 {
-    using namespace lynx::dw;
+    using namespace yw::dw;
     auto f = [] (std::uint32_t b) { float x; std::memcpy (&x, &b, 4); return x; };
     auto u = [] (float x) { std::uint32_t b; std::memcpy (&b, &x, 4); return b; };
     // the plugin's own run-time (r72/run/mt.exe on DirectWave_x64.dll): values where the libm result differs
@@ -3140,7 +3140,7 @@ TEST (directwave_matches_fl_with_demo_programs)
     // FNV-1a 64 of DirectWave_x64.dll's output (r72/py/synth.py + cmp.py: 44.1 kHz, host blocks of 512, tempo 120)
     if (realFlpDir.empty())
         return;
-    using namespace lynx::dw;
+    using namespace yw::dw;
     auto readAll = [] (const std::filesystem::path& p) {
         std::ifstream in (p, std::ios::binary);
         return std::vector<std::uint8_t> { std::istreambuf_iterator<char> (in), {} };
@@ -3216,7 +3216,7 @@ TEST (fl_keys_matches_fl_with_the_installation)
     // 44.1 kHz): FNV-1a 64 of the interleaved float bits of 24 000 frames
     if (realFlpDir.empty())
         return;
-    using namespace lynx::flkeys;
+    using namespace yw::flkeys;
     const auto folder = std::filesystem::path (realFlpDir).parent_path() / "Plugins" / "Fruity" / "Generators" / "FL Keys" / "Wavtables";
     if (! std::filesystem::exists (folder / "mda Piano.wti"))
         return;
@@ -3306,12 +3306,12 @@ TEST (fl_keys_matches_fl_with_the_installation)
 TEST (sampler_plays_pitched_one_shot)
 {
     // 1000-frame ramp sample: the position can be measured from the amplitude
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     for (int i = 0; i < 1000; ++i)
         data->left.push_back (1.0f);
 
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     sampler->prepare (48000.0);
     std::vector<float> l (2048, 0.0f), r (2048, 0.0f);
 
@@ -3332,7 +3332,7 @@ TEST (sampler_plays_pitched_one_shot)
     CHECK (sounding >= 495 && sounding <= 500);
     CHECK (r[10] > 0.5f); // mono goes to both sides
 
-    auto silent = lynx::makeInstrument (lynx::InstrumentKind::sampler, nullptr);
+    auto silent = yw::makeInstrument (yw::InstrumentKind::sampler, nullptr);
     silent->prepare (48000.0);
     silent->noteOn (60, 1.0f);
     std::fill (l.begin(), l.end(), 0.0f);
@@ -3342,30 +3342,30 @@ TEST (sampler_plays_pitched_one_shot)
 
 TEST (rack_live_notes_and_sample_provider)
 {
-    lynx::Song song;
-    lynx::ChannelDef c;
+    yw::Song song;
+    yw::ChannelDef c;
     c.name = "Smp";
-    c.instrument = lynx::InstrumentKind::sampler;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "a.wav";
     song.channels.push_back (c);
     song.patterns.emplace_back();
 
     int loads = 0;
-    auto provider = [&] (const std::string& path) -> std::shared_ptr<const lynx::SampleData> {
+    auto provider = [&] (const std::string& path) -> std::shared_ptr<const yw::SampleData> {
         ++loads;
         CHECK (path == "a.wav");
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (4800, 0.5f);
         return d;
     };
 
-    auto state = lynx::RackState::build (song, nullptr, 48000.0, provider);
+    auto state = yw::RackState::build (song, nullptr, 48000.0, provider);
     CHECK (loads == 1);
 
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.velocity = 1.0f;
     live.push (on);
@@ -3375,58 +3375,58 @@ TEST (rack_live_notes_and_sample_provider)
     CHECK (l[0] > 0.1f);
 
     // same sample: reused; different sample: reloaded
-    auto same = lynx::RackState::build (song, state.get(), 48000.0, provider);
+    auto same = yw::RackState::build (song, state.get(), 48000.0, provider);
     CHECK (loads == 1 && same->instruments[0] == state->instruments[0]);
     song.channels[0].samplePath = "b.wav";
-    auto other = lynx::RackState::build (song, state.get(), 48000.0, [&] (const std::string&) { ++loads; return nullptr; });
+    auto other = yw::RackState::build (song, state.get(), 48000.0, [&] (const std::string&) { ++loads; return nullptr; });
     CHECK (loads == 2 && other->instruments[0] != state->instruments[0]);
 }
 
 TEST (flp_paths_resolve_and_samplers_import)
 {
-    lynx::FlPathRoots roots { "C:\\FL", "C:\\FL\\Data", "D:\\User" };
-    CHECK (lynx::resolveFlPath ("%FLStudioFactoryData%\\Data\\x.wav", roots) == "C:\\FL\\Data\\x.wav");
-    CHECK (lynx::resolveFlPath ("%FLStudioData%\\Patches\\y.wav", roots) == "C:\\FL\\Data\\Patches\\y.wav");
-    CHECK (lynx::resolveFlPath ("%FLStudioUserData%\\z.wav", roots) == "D:\\User\\z.wav");
-    CHECK (lynx::resolveFlPath ("E:\\abs.wav", roots) == "E:\\abs.wav");
-    CHECK (lynx::resolveFlPath ("%FLStudioUserData%\\z.wav", {}) == "");
+    yw::FlPathRoots roots { "C:\\FL", "C:\\FL\\Data", "D:\\User" };
+    CHECK (yw::resolveFlPath ("%FLStudioFactoryData%\\Data\\x.wav", roots) == "C:\\FL\\Data\\x.wav");
+    CHECK (yw::resolveFlPath ("%FLStudioData%\\Patches\\y.wav", roots) == "C:\\FL\\Data\\Patches\\y.wav");
+    CHECK (yw::resolveFlPath ("%FLStudioUserData%\\z.wav", roots) == "D:\\User\\z.wav");
+    CHECK (yw::resolveFlPath ("E:\\abs.wav", roots) == "E:\\abs.wav");
+    CHECK (yw::resolveFlPath ("%FLStudioUserData%\\z.wav", {}) == "");
     {
         // POSIX roots (macOS, Linux, Wine prefix): backslashes become '/', letter case follows the disk (round 117)
         namespace fs = std::filesystem;
-        const auto base = fs::temp_directory_path() / ("lynx-case-test-" + processTempTag());
+        const auto base = fs::temp_directory_path() / ("yw-case-test-" + processTempTag());
         fs::remove_all (base);
         fs::create_directories (base / "Data" / "Patches" / "Packs");
         { std::ofstream (base / "Data" / "Patches" / "Packs" / "Kick.WAV") << "x"; }
-        lynx::FlPathRoots posix;
+        yw::FlPathRoots posix;
         posix.factoryData = base.string();
-        CHECK (lynx::resolveFlPath ("%FLStudioFactoryData%\\Data\\Patches\\Packs\\Kick.WAV", posix) == (base / "Data/Patches/Packs/Kick.WAV").string());
-        const auto lowerCase = lynx::resolveFlPath ("%FLStudioFactoryData%\\data\\patches\\packs\\kick.wav", posix);
+        CHECK (yw::resolveFlPath ("%FLStudioFactoryData%\\Data\\Patches\\Packs\\Kick.WAV", posix) == (base / "Data/Patches/Packs/Kick.WAV").string());
+        const auto lowerCase = yw::resolveFlPath ("%FLStudioFactoryData%\\data\\patches\\packs\\kick.wav", posix);
         if (fs::exists (base / "data")) // case-insensitive file system (macOS): any spelling opens the file
             CHECK (fs::exists (lowerCase));
         else
             CHECK (lowerCase == (base / "Data/Patches/Packs/Kick.WAV").string());
-        CHECK (lynx::resolveFlPath ("%FLStudioFactoryData%\\Data\\missing.wav", posix) == (base / "Data/missing.wav").string());
+        CHECK (yw::resolveFlPath ("%FLStudioFactoryData%\\Data\\missing.wav", posix) == (base / "Data/missing.wav").string());
         fs::remove_all (base);
     }
 
     flp::Project p;
     p.channels = { { 0, flp::ChannelType::sampler, "Kick", "", "%FLStudioData%\\k.wav", 1 },
                    { 1, flp::ChannelType::sampler, "Hat", "", "%FLStudioData%\\missing.wav", 1 } };
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.roots = roots;
     options.fileExists = [] (const std::string& path) { return path == "C:\\FL\\Data\\k.wav"; };
 
-    const auto s = lynx::importFlp (p, options);
-    CHECK (s.channels[0].instrument == lynx::InstrumentKind::sampler);
+    const auto s = yw::importFlp (p, options);
+    CHECK (s.channels[0].instrument == yw::InstrumentKind::sampler);
     CHECK (s.channels[0].samplePath == "C:\\FL\\Data\\k.wav");
-    CHECK (s.channels[1].instrument == lynx::InstrumentKind::hat); // no file: built-in instrument
+    CHECK (s.channels[1].instrument == yw::InstrumentKind::hat); // no file: built-in instrument
 }
 
 TEST (output_protection_is_transparent_up_to_full_scale)
 {
     // round 160: no more soft knee at 0.9 — FL leaves the mix untouched up to 0 dBFS
     float s[] = { 0.5f, -0.89f, 1.5f, -3.0f, 0.95f, 0.999f, std::nanf (""), -1.0f };
-    lynx::clipOvers (s, 8);
+    yw::clipOvers (s, 8);
     CHECK (s[0] == 0.5f && s[1] == -0.89f && s[4] == 0.95f && s[5] == 0.999f && s[7] == -1.0f);
     CHECK (s[2] == 1.0f && s[3] == -1.0f);
     CHECK (s[6] == 0.0f);
@@ -3434,53 +3434,53 @@ TEST (output_protection_is_transparent_up_to_full_scale)
 
 TEST (song_scheduler_plays_clips_with_offset_and_cut)
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (1);
     auto& p = s.patterns.emplace_back();
     for (int step : { 0, 4, 8, 12 }) // one note per beat
         p.toggleStep (0, step);
 
     // clip at bar 2 playing only the second half of the pattern (beats 3 and 4)
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
-    c.start = 4 * lynx::ppq;
-    c.length = 2 * lynx::ppq;
-    c.offset = 2 * lynx::ppq;
+    c.start = 4 * yw::ppq;
+    c.length = 2 * yw::ppq;
+    c.offset = 2 * yw::ppq;
     s.playlist.push_back (c);
-    CHECK (s.songLength() == 6 * lynx::ppq); // FL: the song ends where the last clip ends
+    CHECK (s.songLength() == 6 * yw::ppq); // FL: the song ends where the last clip ends
 
     const double sr = 48000.0;
-    const auto tps = lynx::ticksPerSample (120.0, sr); // 1 beat = 24000 samples
-    lynx::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (120.0, sr); // 1 beat = 24000 samples
+    yw::EventBuffer ev;
 
     // whole song in a single block (8 beats = 192000 samples)
-    lynx::scheduleSong (s, 0.0, 192000, tps, ev);
+    yw::scheduleSong (s, 0.0, 192000, tps, ev);
     std::vector<int> ons;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on)
+        if (e.type == yw::NoteEvent::Type::on)
             ons.push_back (e.sampleOffset);
     CHECK (ons.size() == 2);
     CHECK (ons.size() == 2 && ons[0] == 4 * 24000 && ons[1] == 5 * 24000);
 
     // crossing the loop: bar 1 is empty, so nothing at the start of the second pass
     ev.clear();
-    lynx::scheduleSong (s, 8.0 * lynx::ppq - 100 * tps, 200, tps, ev);
+    yw::scheduleSong (s, 8.0 * yw::ppq - 100 * tps, 200, tps, ev);
     CHECK (ev.size() == 0);
 
     // a note longer than the clip is cut at the clip end
-    p.notes[3].length = 4 * lynx::ppq;
+    p.notes[3].length = 4 * yw::ppq;
     ev.clear();
-    lynx::scheduleSong (s, 0.0, 192000, tps, ev);
+    yw::scheduleSong (s, 0.0, 192000, tps, ev);
     int lastOff = -1;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::off)
+        if (e.type == yw::NoteEvent::Type::off)
             lastOff = std::max (lastOff, e.sampleOffset);
     CHECK (lastOff == 6 * 24000);
 }
 
 TEST (remove_pattern_fixes_clips)
 {
-    lynx::Song s;
+    yw::Song s;
     s.patterns.resize (3);
     s.currentPattern = 2;
     s.playlist = { { 0, 0, 0, 100, 0 }, { 1, 0, 100, 100, 0 }, { 2, 1, 0, 100, 0 } };
@@ -3507,38 +3507,38 @@ TEST (flp_import_3x_osc_state_and_channel_filter)
     put (0x38, 32);   // osc 3 mix
     put (0x40, 2);    // osc 3 square
     put (0x44, -19);  // osc 3 coarse: -1 octave and -7 semitones
-    lynx::SynthSettings s;
-    CHECK (lynx::synthFrom3xOsc (blob, s));
+    yw::SynthSettings s;
+    CHECK (yw::synthFrom3xOsc (blob, s));
     CHECK (std::abs (s.osc[0].level - 0.375f) < 1e-4f && std::abs (s.osc[1].level - 0.375f) < 1e-4f && std::abs (s.osc[2].level - 0.25f) < 1e-4f);
-    CHECK (s.osc[0].wave == lynx::Waveform::saw && s.osc[0].detune == 7.0f && s.osc[0].pan == -0.5f);
-    CHECK (s.osc[1].wave == lynx::Waveform::sine && s.osc[1].octave == -1 && s.osc[1].semitones == 0);
-    CHECK (s.osc[2].wave == lynx::Waveform::square && s.osc[2].octave == -1 && s.osc[2].semitones == -7);
-    CHECK (! lynx::synthFrom3xOsc (std::vector<std::uint8_t> (40, 0), s));
+    CHECK (s.osc[0].wave == yw::Waveform::saw && s.osc[0].detune == 7.0f && s.osc[0].pan == -0.5f);
+    CHECK (s.osc[1].wave == yw::Waveform::sine && s.osc[1].octave == -1 && s.osc[1].semitones == 0);
+    CHECK (s.osc[2].wave == yw::Waveform::square && s.osc[2].octave == -1 && s.osc[2].semitones == -7);
+    CHECK (! yw::synthFrom3xOsc (std::vector<std::uint8_t> (40, 0), s));
 
     // channel filter: open by default; LP with Mod X 128 ~ 2.71 kHz; Fast LP with Mod X 128 ~ 280 Hz
     float hz = 0.0f, res = 1.0f;
     int mode = -1;
-    lynx::synthFilterFromChannel (256, 0, 0, hz, res, mode);
+    yw::synthFilterFromChannel (256, 0, 0, hz, res, mode);
     CHECK (hz >= 19999.0f && res == 0.0f);
-    lynx::synthFilterFromChannel (128, 0, 1, hz, res, mode);
+    yw::synthFilterFromChannel (128, 0, 1, hz, res, mode);
     CHECK (std::abs (hz - 2710.0f) < 30.0f && res == 0.0f);
-    lynx::synthFilterFromChannel (128, 0, 0, hz, res, mode);
+    yw::synthFilterFromChannel (128, 0, 0, hz, res, mode);
     CHECK (hz > 240.0f && hz < 320.0f);
-    lynx::synthFilterFromChannel (128, 256, 1, hz, res, mode);
+    yw::synthFilterFromChannel (128, 256, 1, hz, res, mode);
     CHECK (res > 0.8f);
     CHECK (mode == 0);
-    lynx::synthFilterFromChannel (64, 0, 3, hz, res, mode); // high-pass at ~840 Hz
+    yw::synthFilterFromChannel (64, 0, 3, hz, res, mode); // high-pass at ~840 Hz
     CHECK (mode == 2 && std::abs (hz - 840.0f) < 40.0f);
-    lynx::synthFilterFromChannel (128, 0, 2, hz, res, mode); // band-pass
+    yw::synthFilterFromChannel (128, 0, 2, hz, res, mode); // band-pass
     CHECK (mode == 1);
 }
 
 TEST (synth_pitch_and_filter_envelopes)
 {
-    auto render = [] (const lynx::SynthSettings& s, int frames) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto render = [] (const yw::SynthSettings& s, int frames) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         inst->configure (c, 120.0);
         inst->noteOn (45, 1.0f); // A2 = 110 Hz
@@ -3554,8 +3554,8 @@ TEST (synth_pitch_and_filter_envelopes)
     };
 
     // 3x Osc "kick": sine with a +24 st pitch envelope falling fast
-    lynx::SynthSettings kick;
-    kick.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings kick;
+    kick.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     kick.cutoff = 20000.0f;
     kick.pitchEnv = { 24.0f, 0.0f, 0.0f, 0.05f, 0.0f, 0.05f };
     const auto k = render (kick, 48000);
@@ -3565,7 +3565,7 @@ TEST (synth_pitch_and_filter_envelopes)
     CHECK (std::abs (late - 110) < 4);
 
     // cutoff envelope: saw closed at 200 Hz opens +5 octaves on attack and closes again
-    lynx::SynthSettings pluck;
+    yw::SynthSettings pluck;
     pluck.cutoff = 200.0f;
     pluck.filterEnv = { 5.0f, 0.0f, 0.0f, 0.1f, 0.0f, 0.1f };
     const auto p = render (pluck, 48000);
@@ -3579,7 +3579,7 @@ TEST (synth_pitch_and_filter_envelopes)
 
     // Toxic Biohazard's envelope (REA_rodada33 §2): exponential towards 5 clipped at 1, so the cutoff is still near
     // its base early in the attack, fully open at A = 0.2 s and back down after the exponential decay
-    lynx::SynthSettings toxic = pluck;
+    yw::SynthSettings toxic = pluck;
     toxic.filterEnv = { 5.0f, 0.2f, 0.0f, 0.1f, 0.0f, 0.1f, 1 };
     const auto t = render (toxic, 48000);
     auto thf = [&] (int from, int to) {
@@ -3594,10 +3594,10 @@ TEST (synth_pitch_and_filter_envelopes)
 
 TEST (synth_mono_reuses_the_sounding_voice)
 {
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
-    c.synth.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::ChannelDef c;
+    c.synth.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     c.synth.cutoff = 20000.0f;
     c.synth.mono = true;
     inst->configure (c, 120.0);
@@ -3624,10 +3624,10 @@ TEST (synth_mono_reuses_the_sounding_voice)
 
 TEST (synth_porta_glides_and_am_modulates)
 {
-    auto make = [] (const lynx::SynthSettings& s) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto make = [] (const yw::SynthSettings& s) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         inst->configure (c, 120.0);
         return inst;
@@ -3640,8 +3640,8 @@ TEST (synth_porta_glides_and_am_modulates)
     };
 
     // mono + 1-beat porta (0.5 s at 120 BPM): from A3 to A4, halfway ~E4 (329.6 Hz)
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     s.cutoff = 20000.0f;
     s.mono = true;
     s.porta = true;
@@ -3657,9 +3657,9 @@ TEST (synth_porta_glides_and_am_modulates)
     CHECK (std::abs (crossings (l, 48000, 96000) - 880) < 4);                    // reached A4 (1 s = 880 crossings)
 
     // AM: osc 3 at level 1.0, slow sine, modulates osc 1 (the average level drops, the sum doesn't gain osc 3)
-    lynx::SynthSettings am;
-    am.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
-    am.osc[2] = { lynx::Waveform::sine, -3, 0.0f, 1.0f };
+    yw::SynthSettings am;
+    am.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
+    am.osc[2] = { yw::Waveform::sine, -3, 0.0f, 1.0f };
     am.cutoff = 20000.0f;
     am.am = true;
     auto modulated = make (am);
@@ -3674,10 +3674,10 @@ TEST (synth_porta_glides_and_am_modulates)
 
 TEST (channel_lfo_vibrato_and_tremolo)
 {
-    auto render = [] (const lynx::SynthSettings& s) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto render = [] (const yw::SynthSettings& s) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         inst->configure (c, 120.0);
         inst->noteOn (69, 1.0f);
@@ -3685,13 +3685,13 @@ TEST (channel_lfo_vibrato_and_tremolo)
         inst->render (l.data(), r.data(), 48000, 1.0f, 1.0f);
         return l;
     };
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     s.cutoff = 20000.0f;
 
     // tremolo: 100% volume LFO at 4 Hz (0.25 s period) -> the amplitude envelope goes from ~0 to ~2x
     auto tremolo = s;
-    tremolo.lfo[lynx::lfoVolume] = { 1.0f, 0.25f, false, 0, 0.0f, 0.0f };
+    tremolo.lfo[yw::lfoVolume] = { 1.0f, 0.25f, false, 0, 0.0f, 0.0f };
     const auto t = render (tremolo);
     float lowest = 1.0f, highest = 0.0f;
     for (std::size_t w = 4800; w + 480 <= 48000; w += 480) // 10 ms windows (4.4 cycles of 440 Hz)
@@ -3706,7 +3706,7 @@ TEST (channel_lfo_vibrato_and_tremolo)
 
     // synced vibrato: ±1 semitone, 1-beat period (0.5 s at 120 BPM); the average stays at 440 Hz
     auto vibrato = s;
-    vibrato.lfo[lynx::lfoPitch] = { 1.0f, 1.0f, true, 0, 0.0f, 0.0f };
+    vibrato.lfo[yw::lfoPitch] = { 1.0f, 1.0f, true, 0, 0.0f, 0.0f };
     const auto v = render (vibrato);
     int crossings = 0;
     for (std::size_t i = 1; i < 48000; ++i)
@@ -3720,14 +3720,14 @@ TEST (channel_lfo_vibrato_and_tremolo)
 
 TEST (sampler_porta_glides_from_previous_note)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     data->left.resize (96000);
     for (std::size_t i = 0; i < data->left.size(); ++i)
         data->left[i] = 0.5f * (float) std::sin (6.283185307 * 220.0 * (double) i / 48000.0);
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.sampler.cut = true;
     c.sampler.porta = true;
     c.sampler.portaBeats = 1.0f; // 0.5 s at 120 BPM
@@ -3753,7 +3753,7 @@ TEST (sampler_porta_glides_from_previous_note)
 TEST (zoned_sampler_picks_zone_by_key_and_velocity)
 {
     auto sine = [] (double hz, float amp) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.resize (48000);
         for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -3762,14 +3762,14 @@ TEST (zoned_sampler_picks_zone_by_key_and_velocity)
     };
     // lows: 220 Hz sine recorded as A3 (57), up to key 69; highs: 880 Hz as A5 (81)
     // hard layer on the highs: same tuning, louder
-    std::vector<lynx::LoadedZone> zones {
+    std::vector<yw::LoadedZone> zones {
         { { "graves.wav", 57, 0, 69, 0, 127, 0.0f, 1.0f }, sine (220.0, 0.5f) },
         { { "agudos.wav", 81, 70, 127, 0, 99, 0.0f, 1.0f }, sine (880.0, 0.25f) },
         { { "agudos forte.wav", 81, 70, 127, 100, 127, 0.0f, 1.0f }, sine (880.0, 0.9f) },
     };
-    auto inst = lynx::makeZonedSampler (zones);
+    auto inst = yw::makeZonedSampler (zones);
     inst->prepare (48000.0);
-    inst->configure (lynx::ChannelDef {}, 120.0);
+    inst->configure (yw::ChannelDef {}, 120.0);
     auto play = [&] (int key, float velocity) {
         inst->allNotesOff();
         std::vector<float> l (24000), r (24000);
@@ -3794,9 +3794,9 @@ TEST (zoned_sampler_picks_zone_by_key_and_velocity)
     CHECK (hard.second > soft.second * 2.0f);
 
     // overlapping layers round-robin: two identical zones at different levels, notes alternate
-    auto rr = lynx::makeZonedSampler ({ { { "a.wav", 60 }, sine (440.0, 0.2f) }, { { "b.wav", 60 }, sine (440.0, 0.8f) } });
+    auto rr = yw::makeZonedSampler ({ { { "a.wav", 60 }, sine (440.0, 0.2f) }, { { "b.wav", 60 }, sine (440.0, 0.8f) } });
     rr->prepare (48000.0);
-    rr->configure (lynx::ChannelDef {}, 120.0);
+    rr->configure (yw::ChannelDef {}, 120.0);
     float peaks[2] {};
     for (int k = 0; k < 2; ++k)
     {
@@ -3816,18 +3816,18 @@ TEST (zoned_sampler_loops_while_held)
 {
     // 0.1 s sample with a loop in the middle: holding the note it keeps sounding well past the end of the file;
     // on release, it leaves the loop and ends
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     data->left.resize (4800);
     for (std::size_t i = 0; i < data->left.size(); ++i)
         data->left[i] = 0.5f * (float) std::sin (6.283185307 * 480.0 * (double) i / 48000.0); // 100 frames per cycle
-    lynx::SampleZone zone { "loop.wav", 60 };
+    yw::SampleZone zone { "loop.wav", 60 };
     zone.loopStart = 1000;
     zone.loopEnd = 3000;
     zone.loopMode = 2;
-    auto inst = lynx::makeZonedSampler ({ { zone, data } });
+    auto inst = yw::makeZonedSampler ({ { zone, data } });
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.sampler.release = 0.01f;
     inst->configure (c, 120.0);
     inst->noteOn (60, 1.0f);
@@ -3850,12 +3850,12 @@ TEST (global_lfo_follows_song_position)
     // global volume LFO (1-beat period): a note mid-cycle starts mid-wave; the
     // same note with a per-note LFO starts at phase 0
     auto first = [] (bool global, double songTicks) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
-        c.synth.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+        yw::ChannelDef c;
+        c.synth.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
         c.synth.cutoff = 20000.0f;
-        c.synth.lfo[lynx::lfoVolume] = { 1.0f, 1.0f, true, 2, 0.0f, 0.0f, global }; // pulse: +1 in the first half
+        c.synth.lfo[yw::lfoVolume] = { 1.0f, 1.0f, true, 2, 0.0f, 0.0f, global }; // pulse: +1 in the first half
         inst->configure (c, 120.0);
         inst->setSongPosition (songTicks);
         inst->noteOn (69, 1.0f);
@@ -3867,8 +3867,8 @@ TEST (global_lfo_follows_song_position)
         return peak;
     };
     // mid-cycle (phase 0.6) the pulse is at −1: volume ~0; per note (phase 0) it is at +1: ~2x
-    const auto globalLate = first (true, 0.6 * lynx::ppq);
-    const auto perNote = first (false, 0.6 * lynx::ppq);
+    const auto globalLate = first (true, 0.6 * yw::ppq);
+    const auto perNote = first (false, 0.6 * yw::ppq);
     CHECK (globalLate < 0.05f);
     CHECK (perNote > 0.4f);
 }
@@ -3876,7 +3876,7 @@ TEST (global_lfo_follows_song_position)
 TEST (sampler_channel_filter_darkens_and_bypasses_when_open)
 {
     // white noise in the sampler: with a 300 Hz cutoff the energy drops a lot; open passes unchanged
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     data->left.resize (48000);
     std::uint32_t seed = 7;
@@ -3887,9 +3887,9 @@ TEST (sampler_channel_filter_darkens_and_bypasses_when_open)
     }
     data->right = data->left;
     auto energy = [&] (float cutoff) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.sampler.cutoff = cutoff;
         inst->configure (c, 120.0);
         inst->noteOn (60, 1.0f);
@@ -3903,9 +3903,9 @@ TEST (sampler_channel_filter_darkens_and_bypasses_when_open)
     const auto open = energy (20000.0f), dark = energy (300.0f);
     {
         // high-pass at 10 kHz: also removes most of the noise energy, but from the other side
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         inst->prepare (48000.0);
-        lynx::ChannelDef hp;
+        yw::ChannelDef hp;
         hp.sampler.cutoff = 10000.0f;
         hp.sampler.filterType = 2;
         inst->configure (hp, 120.0);
@@ -3928,9 +3928,9 @@ TEST (sampler_channel_filter_darkens_and_bypasses_when_open)
 
     // +12 st pitch envelope with sustain 1: the sample runs at double speed
     // and ends in half the time (1 s of sample -> 0.5 s)
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, data);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.sampler.pitchEnv = { 12.0f, 0.0f, 0.0f, 0.1f, 1.0f, 0.1f };
     inst->configure (c, 120.0);
     inst->noteOn (60, 1.0f);
@@ -3947,10 +3947,10 @@ TEST (sampler_channel_filter_darkens_and_bypasses_when_open)
 
 TEST (synth_oscillator_pan_and_semitones)
 {
-    auto render = [] (lynx::SynthSettings s, std::vector<float>& l, std::vector<float>& r) {
-        auto synth = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto render = [] (yw::SynthSettings s, std::vector<float>& l, std::vector<float>& r) {
+        auto synth = yw::makeInstrument (yw::InstrumentKind::synth);
         synth->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         synth->configure (c, 120.0);
         synth->noteOn (69, 1.0f);
@@ -3958,8 +3958,8 @@ TEST (synth_oscillator_pan_and_semitones)
         r.assign (24000, 0.0f);
         synth->render (l.data(), r.data(), 24000, 1.0f, 1.0f);
     };
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f, 7, 1.0f }; // a fifth up, fully right
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f, 7, 1.0f }; // a fifth up, fully right
     s.cutoff = 20000.0f;
     std::vector<float> l, r;
     render (s, l, r);
@@ -4011,42 +4011,42 @@ TEST (fl_wrapper_state_parses_records_and_vst3_state)
     record (blob, 0x37, bytes ("C:/Program Files/Common Files/VST3/Surge XT.vst3"));
     record (blob, 0x35, vst3State);
 
-    lynx::ForeignPlugin p;
-    CHECK (lynx::parseFlWrapper (blob, p));
-    CHECK (p.format == lynx::ForeignPlugin::Format::vst3);
+    yw::ForeignPlugin p;
+    CHECK (yw::parseFlWrapper (blob, p));
+    CHECK (p.format == yw::ForeignPlugin::Format::vst3);
     CHECK (p.hasClassId && p.classId[0] == 0xA0 && p.classId[15] == 0xAF);
     CHECK (p.name == "Surge XT" && p.path.find ("Surge XT.vst3") != std::string::npos);
     std::vector<std::uint8_t> component, controller;
-    CHECK (lynx::splitFlVst3State (p.state, component, controller));
+    CHECK (yw::splitFlVst3State (p.state, component, controller));
     CHECK (component == bytes ("COMPONENTE") && controller == bytes ("CONTROLADOR"));
-    const auto saved = lynx::flVst3ParamSlots (p.state);
+    const auto saved = yw::flVst3ParamSlots (p.state);
     CHECK (saved == (std::vector<std::int32_t> { 700, -1, (std::int32_t) 0xFFFFFF01u }));
 
     // FL's slot assignment: saved slots keep their ParamID wherever it now sits; the empty slot stays empty;
     // a vanished ParamID (0xFFFFFF01) leaves its slot dead; parameters without a slot get slots 3, 4… in list order
-    const auto positions = lynx::flVst3SlotPositions (saved, { 5u, 700u, 9u });
+    const auto positions = yw::flVst3SlotPositions (saved, { 5u, 700u, 9u });
     CHECK (positions == (std::vector<int> { 1, -1, -1, 0, 2 }));
-    CHECK (lynx::flVst3SlotPositions ({}, { 5u, 6u }) == (std::vector<int> { 0, 1 })); // new instance: slot = position
+    CHECK (yw::flVst3SlotPositions ({}, { 5u, 6u }) == (std::vector<int> { 0, 1 })); // new instance: slot = position
 
     // VST2 state (REA_rodada89 §2): chunk and raw-parameter layouts, current (−9) and older versions
     {
-        lynx::FlVst2State st;
+        yw::FlVst2State st;
         st.flags = 8;
         st.currentProgram = 3;
         st.chunk = bytes ("BANKCHUNK");
-        const auto withChunk = lynx::writeFlVst2State (st);
-        lynx::FlVst2State back;
-        CHECK (lynx::parseFlVst2State (withChunk, back));
+        const auto withChunk = yw::writeFlVst2State (st);
+        yw::FlVst2State back;
+        CHECK (yw::parseFlVst2State (withChunk, back));
         CHECK (back.version == -9 && back.flags == 8 && back.currentProgram == 3 && back.chunk == bytes ("BANKCHUNK") && back.params.empty());
         CHECK (! back.chunkIsProgram());
 
-        lynx::FlVst2State raw;
+        yw::FlVst2State raw;
         raw.flags = 1;
         raw.params = { 0.25f, 0.5f, 1.0f };
         raw.programNames = { "Init" };
-        const auto withParams = lynx::writeFlVst2State (raw);
+        const auto withParams = yw::writeFlVst2State (raw);
         CHECK (withParams.size() == 4 + 1 + 4 + 8 + 4 + 4 + 12 + 4 + 25);
-        CHECK (lynx::parseFlVst2State (withParams, back));
+        CHECK (yw::parseFlVst2State (withParams, back));
         CHECK (back.chunk.empty() && back.params == raw.params && back.allPrograms() && back.programNames == std::vector<std::string> { "Init" });
 
         // version −5: no flags, i32 size, then i32 program; −6 without "all programs": the chunk is one program
@@ -4055,7 +4055,7 @@ TEST (fl_wrapper_state_parses_records_and_vst3_state)
             u32 (v5, v);
         for (auto c : bytes ("ABCD"))
             v5.push_back (c);
-        CHECK (lynx::parseFlVst2State (v5, back) && back.version == -5 && back.currentProgram == 7 && back.chunk == bytes ("ABCD"));
+        CHECK (yw::parseFlVst2State (v5, back) && back.version == -5 && back.currentProgram == 7 && back.chunk == bytes ("ABCD"));
         std::vector<std::uint8_t> v6;
         u32 (v6, 0xFFFFFFFAu);
         v6.push_back (0);
@@ -4063,29 +4063,29 @@ TEST (fl_wrapper_state_parses_records_and_vst3_state)
             u32 (v6, v);
         v6.push_back ('x');
         v6.push_back ('y');
-        CHECK (lynx::parseFlVst2State (v6, back) && back.chunkIsProgram() && back.chunk == bytes ("xy"));
+        CHECK (yw::parseFlVst2State (v6, back) && back.chunkIsProgram() && back.chunk == bytes ("xy"));
 
         // nothing to restore (123456), unknown old layouts, truncated chunks
         std::vector<std::uint8_t> marker;
         u32 (marker, 123456u);
-        CHECK (! lynx::parseFlVst2State (marker, back));
+        CHECK (! yw::parseFlVst2State (marker, back));
         auto cut = withChunk;
         cut.pop_back();
-        CHECK (! lynx::parseFlVst2State (cut, back));
-        CHECK (! lynx::parseFlVst2State ({}, back));
+        CHECK (! yw::parseFlVst2State (cut, back));
+        CHECK (! yw::parseFlVst2State ({}, back));
     }
 
     // version out of range or no type: not a usable wrapper
     blob[0] = 13;
-    CHECK (! lynx::parseFlWrapper (blob, p));
-    CHECK (! lynx::parseFlWrapper ({ 12, 0, 0, 0 }, p));
+    CHECK (! yw::parseFlWrapper (blob, p));
+    CHECK (! yw::parseFlWrapper ({ 12, 0, 0, 0 }, p));
 }
 
 TEST (schedule_index_matches_full_scan)
 {
     // random song (long notes, swing, clips with offset); indexed scheduling must yield
     // exactly the same events as the full scan, including in the block that wraps around
-    lynx::Song s = lynx::Song::makeDefault();
+    yw::Song s = yw::Song::makeDefault();
     s.swing = 0.6f;
     std::uint32_t seed = 12345;
     auto rnd = [&] (int n) { seed = seed * 1664525u + 1013904223u; return (int) ((seed >> 8) % (std::uint32_t) n); };
@@ -4095,9 +4095,9 @@ TEST (schedule_index_matches_full_scan)
         p.notes.clear();
         for (int i = 0; i < 60; ++i)
         {
-            lynx::Note n;
-            n.start = rnd (16 * lynx::ppq);
-            n.length = rnd (5) == 0 ? rnd (12 * lynx::ppq) + 1 : rnd (lynx::ppq) + 1;
+            yw::Note n;
+            n.start = rnd (16 * yw::ppq);
+            n.length = rnd (5) == 0 ? rnd (12 * yw::ppq) + 1 : rnd (yw::ppq) + 1;
             n.channel = rnd (4);
             n.key = 40 + rnd (40);
             n.slide = rnd (20) == 0;
@@ -4108,17 +4108,17 @@ TEST (schedule_index_matches_full_scan)
     s.playlist.clear();
     for (int i = 0; i < 12; ++i)
     {
-        lynx::Clip c;
+        yw::Clip c;
         c.pattern = rnd (3);
         c.track = rnd (4);
-        c.start = rnd (40) * lynx::ppq;
-        c.length = (rnd (12) + 1) * lynx::ppq;
-        c.offset = rnd (4) * lynx::ppq;
+        c.start = rnd (40) * yw::ppq;
+        c.length = (rnd (12) + 1) * yw::ppq;
+        c.offset = rnd (4) * yw::ppq;
         s.playlist.push_back (c);
     }
-    s.mode = lynx::PlayMode::song;
-    const auto index = lynx::makeScheduleIndex (s);
-    const auto tps = lynx::ticksPerSample (140.0, 48000.0);
+    s.mode = yw::PlayMode::song;
+    const auto index = yw::makeScheduleIndex (s);
+    const auto tps = yw::ticksPerSample (140.0, 48000.0);
     const auto loop = (double) s.songLength();
     int mismatches = 0, events = 0;
 
@@ -4126,9 +4126,9 @@ TEST (schedule_index_matches_full_scan)
     {
         const auto start = block == 0 ? loop - 100.0 * tps : (double) rnd ((int) loop * 2);
         const auto samples = 64 + rnd (24000); // up to ~1 beat per block
-        lynx::EventBuffer a, b;
-        lynx::scheduleSong (s, start, samples, tps, a, false, nullptr);
-        lynx::scheduleSong (s, start, samples, tps, b, false, &index);
+        yw::EventBuffer a, b;
+        yw::scheduleSong (s, start, samples, tps, a, false, nullptr);
+        yw::scheduleSong (s, start, samples, tps, b, false, &index);
         events += a.size();
         if (a.size() != b.size())
         {
@@ -4150,26 +4150,26 @@ TEST (schedule_index_matches_full_scan)
 TEST (mixer_track_eq_defaults_and_boost)
 {
     // FL defaults: 90 Hz, 1.5 kHz and 8 kHz; peak Q 0.632; shelf slope 0.607
-    lynx::TrackEq eq;
-    CHECK (std::abs (lynx::TrackEq::peakQ (eq.width[1]) - 0.632) < 0.01);
-    CHECK (std::abs (lynx::TrackEq::shelfSlope (eq.width[0]) - 0.607) < 0.01);
+    yw::TrackEq eq;
+    CHECK (std::abs (yw::TrackEq::peakQ (eq.width[1]) - 0.632) < 0.01);
+    CHECK (std::abs (yw::TrackEq::shelfSlope (eq.width[0]) - 0.607) < 0.01);
     CHECK (! eq.active());
 
     // +12 dB peak at 1.5 kHz on a track: a 1.5 kHz sine rises ~4x
-    lynx::Song song = lynx::Song::makeDefault();
+    yw::Song song = yw::Song::makeDefault();
     song.mixer[1].eq.gainDb[1] = 12.0f;
     for (auto& c : song.channels)
         c.mixerTrack = 1;
-    song.channels[4].instrument = lynx::InstrumentKind::synth;
+    song.channels[4].instrument = yw::InstrumentKind::synth;
     song.channels[4].synth = {};
-    song.channels[4].synth.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    song.channels[4].synth.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     song.channels[4].synth.cutoff = 20000.0f;
-    auto render = [] (const lynx::Song& s) {
-        auto state = lynx::RackState::build (s, nullptr, 48000.0);
-        lynx::RackRenderer renderer;
+    auto render = [] (const yw::Song& s) {
+        auto state = yw::RackState::build (s, nullptr, 48000.0);
+        yw::RackRenderer renderer;
         renderer.prepare (48000.0);
-        lynx::LiveEventQueue live;
-        lynx::NoteEvent on; // 1.5 kHz ~ key 90.6: use 91 (1568 Hz), still within the wide peak
+        yw::LiveEventQueue live;
+        yw::NoteEvent on; // 1.5 kHz ~ key 90.6: use 91 (1568 Hz), still within the wide peak
         on.channel = 4;
         on.key = 91;
         on.velocity = 1.0f;
@@ -4191,45 +4191,45 @@ TEST (mixer_track_eq_defaults_and_boost)
 
 TEST (bars_follow_time_signature_markers)
 {
-    lynx::Song song;
+    yw::Song song;
     song.beatsPerBar = 4;
-    const auto bar4 = (std::int64_t) lynx::ppq * 4;
+    const auto bar4 = (std::int64_t) yw::ppq * 4;
     auto bars = song.barsBetween (0, bar4 * 3);
     CHECK (bars.size() == 3 && bars[2].tick == bar4 * 2 && bars[2].number == 3);
 
     // 7/4 from bar 3, and 3/4 in the middle of a 7 bar (cuts and restarts)
     song.addMarker ({ bar4 * 2, "Verso", 7, 4 });
     song.addMarker ({ bar4, "Nome só", 0, 4 });
-    const auto seven = (std::int64_t) lynx::ppq * 7;
-    song.addMarker ({ bar4 * 2 + seven + lynx::ppq * 2, "", 3, 4 });
+    const auto seven = (std::int64_t) yw::ppq * 7;
+    song.addMarker ({ bar4 * 2 + seven + yw::ppq * 2, "", 3, 4 });
     bars = song.barsBetween (0, bar4 * 2 + seven * 2);
     CHECK (bars.size() >= 5);
     CHECK (bars[1].length == bar4 && bars[2].tick == bar4 * 2 && bars[2].length == seven);
-    CHECK (bars[3].length == lynx::ppq * 2);                                // cut short by the change
-    CHECK (bars[4].length == lynx::ppq * 3 && bars[4].number == 5);
+    CHECK (bars[3].length == yw::ppq * 2);                                // cut short by the change
+    CHECK (bars[4].length == yw::ppq * 3 && bars[4].number == 5);
     CHECK (song.markers()[0].name == "Nome só");                            // sorted by tick
 
     // from far away: starts at the right bar without losing the numbering
-    const auto far = song.barsBetween (lynx::ppq * 3000, lynx::ppq * 3001);
-    CHECK (far.size() == 1 && far[0].length == lynx::ppq * 3);
-    CHECK (song.barAt (lynx::ppq * 3000).number == far[0].number);
-    CHECK ((lynx::ppq * 3000 - far[0].tick) < far[0].length);
+    const auto far = song.barsBetween (yw::ppq * 3000, yw::ppq * 3001);
+    CHECK (far.size() == 1 && far[0].length == yw::ppq * 3);
+    CHECK (song.barAt (yw::ppq * 3000).number == far[0].number);
+    CHECK ((yw::ppq * 3000 - far[0].tick) < far[0].length);
 }
 
 TEST (split_drum_channel_moves_notes_to_pads)
 {
-    lynx::Song song = lynx::Song::makeDefault();
+    yw::Song song = yw::Song::makeDefault();
     const auto channels = (int) song.channels.size();
     song.patterns[0].notes.clear();
     song.patterns[0].notes.push_back ({ 0, 240, 1, 36, 0.9f });   // kit kick (channel 1)
     song.patterns[0].notes.push_back ({ 240, 240, 1, 38, 0.8f }); // snare
     song.patterns[0].notes.push_back ({ 480, 240, 1, 50, 0.8f }); // key without a pad: dropped
     song.patterns[0].notes.push_back ({ 480, 240, 3, 60, 0.8f }); // other channel: shifts by 1 position
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::channelVolume, 3, 0, 0 };
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::channelVolume, 3, 0, 0 };
     song.automations.push_back (a);
 
-    std::vector<lynx::DrumPad> pads (2);
+    std::vector<yw::DrumPad> pads (2);
     pads[0].name = "Kick";
     pads[0].key = 36;
     pads[0].layers = { { "kick.wav" } };
@@ -4238,10 +4238,10 @@ TEST (split_drum_channel_moves_notes_to_pads)
     pads[1].layers = { { "snare soft.wav", 60, 0, 127, 0, 90 }, { "snare hard.wav", 60, 0, 127, 91, 127 } };
     pads[1].cutGroup = 2;
     pads[1].cutBy = 2;
-    lynx::splitDrumChannel (song, 1, pads);
+    yw::splitDrumChannel (song, 1, pads);
 
     CHECK ((int) song.channels.size() == channels + 1);
-    CHECK (song.channels[1].samplePath == "kick.wav" && song.channels[1].instrument == lynx::InstrumentKind::sampler);
+    CHECK (song.channels[1].samplePath == "kick.wav" && song.channels[1].instrument == yw::InstrumentKind::sampler);
     CHECK (song.channels[2].zones.size() == 2 && song.channels[2].cutGroup == song.channels[2].cutBy && song.channels[2].cutGroup != 0);
     const auto& notes = song.patterns[0].notes;
     CHECK (notes.size() == 3);
@@ -4280,31 +4280,31 @@ TEST (flp_import_brings_playlist)
     a.items.push_back (item);
     p.arrangements.push_back (a);
 
-    const auto s = lynx::importFlp (p);
-    CHECK (s.mode == lynx::PlayMode::song);
+    const auto s = yw::importFlp (p);
+    CHECK (s.mode == yw::PlayMode::song);
     CHECK (s.playlist.size() == 1);
     CHECK (s.playlist[0].pattern == 0 && s.playlist[0].track == 3);
-    CHECK (s.playlist[0].start == 4 * lynx::ppq && s.playlist[0].length == 2 * lynx::ppq && s.playlist[0].offset == lynx::ppq);
+    CHECK (s.playlist[0].start == 4 * yw::ppq && s.playlist[0].length == 2 * yw::ppq && s.playlist[0].offset == yw::ppq);
 }
 
 TEST (rack_releases_notes_on_position_jump)
 {
-    lynx::Song s;
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::synth;
+    yw::Song s;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::synth;
     s.channels.push_back (c);
     auto& p = s.patterns.emplace_back();
-    lynx::Note n;
+    yw::Note n;
     n.start = 0;
-    n.length = 4 * lynx::ppq; // long note
+    n.length = 4 * yw::ppq; // long note
     p.notes.push_back (n);
     s.bpm = 120.0;
 
-    auto state = lynx::RackState::build (s, nullptr, 48000.0);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0);
+    yw::RackRenderer r;
     r.prepare (48000.0);
     std::vector<float> l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
 
     double tick = 0.0;
     for (int i = 0; i < 20; ++i, tick += 512 * tps)
@@ -4328,15 +4328,15 @@ float juce_db (float gain)
     return 20.0f * std::log10 (gain);
 }
 
-float renderMixerCase (const std::function<void (lynx::Song&)>& tweak, lynx::MeterBank* meters = nullptr)
+float renderMixerCase (const std::function<void (yw::Song&)>& tweak, yw::MeterBank* meters = nullptr)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (4);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (4);
 
     for (int i = 0; i < 2; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.samplePath = "dc";
         c.volume = 1.0f;
         c.mixerTrack = i + 1;
@@ -4347,19 +4347,19 @@ float renderMixerCase (const std::function<void (lynx::Song&)>& tweak, lynx::Met
     tweak (s);
 
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (48000, 0.5f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
 
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
+    yw::LiveEventQueue live;
 
     for (int ch = 0; ch < 2; ++ch)
     {
-        lynx::NoteEvent on;
+        yw::NoteEvent on;
         on.channel = ch;
         on.velocity = 1.0f;
         live.push (on);
@@ -4374,36 +4374,36 @@ float renderMixerCase (const std::function<void (lynx::Song&)>& tweak, lynx::Met
 TEST (mixer_routes_mutes_solos_and_meters)
 {
     // two 0.5 channels summed on the Master at 0 dB
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song&) {}) - 1.0f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song&) {}) - 1.0f) < 1e-4f);
 
     // insert 1 muted: only channel 2 remains
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.mixer[1].muted = true; }) - 0.5f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.mixer[1].muted = true; }) - 0.5f) < 1e-4f);
 
     // solo on insert 2: same
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.mixer[2].solo = true; }) - 0.5f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.mixer[2].solo = true; }) - 0.5f) < 1e-4f);
 
     // FL fader curve: 0.8 = 0 dB, max ≈ +5.6 dB, half travel ≈ -12.7 dB
-    CHECK (std::abs (lynx::faderGain (0.8f) - 1.0f) < 1e-5f);
-    CHECK (std::abs (juce_db (lynx::faderGain (1.0f)) - 5.59f) < 0.05f);
-    CHECK (lynx::faderGain (0.0f) == 0.0f);
+    CHECK (std::abs (yw::faderGain (0.8f) - 1.0f) < 1e-5f);
+    CHECK (std::abs (juce_db (yw::faderGain (1.0f)) - 5.59f) < 0.05f);
+    CHECK (yw::faderGain (0.0f) == 0.0f);
 
     // Master fader at max
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.mixer[0].volume = 1.0f; }) - lynx::faderGain (1.0f)) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.mixer[0].volume = 1.0f; }) - yw::faderGain (1.0f)) < 1e-4f);
 
     // both channels on the same insert, insert fader at 0.4
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) {
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) {
                s.channels[1].mixerTrack = 1;
                s.mixer[1].volume = 0.4f;
-           }) - lynx::faderGain (0.4f)) < 1e-4f);
+           }) - yw::faderGain (0.4f)) < 1e-4f);
 
     // a route outside the mixer falls to the last existing insert, without crashing
-    CHECK (renderMixerCase ([] (lynx::Song& s) { s.channels[0].mixerTrack = 100; }) > 0.9f);
+    CHECK (renderMixerCase ([] (yw::Song& s) { s.channels[0].mixerTrack = 100; }) > 0.9f);
 
     // no mixer: everything straight to the output at 0 dB
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.mixer.clear(); }) - 1.0f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.mixer.clear(); }) - 1.0f) < 1e-4f);
 
-    lynx::MeterBank meters;
-    renderMixerCase ([] (lynx::Song&) {}, &meters);
+    yw::MeterBank meters;
+    renderMixerCase ([] (yw::Song&) {}, &meters);
     // (the 24-point sinc's ringing at the sample start: its x87 kernel table rounds differently on ARM64)
     CHECK (std::abs (meters.takePeak (1, 0) - 0.5f) < armTolerance (1e-4f, 2e-4f));
     CHECK (std::abs (meters.takePeak (0, 1) - 1.0f) < armTolerance (1e-4f, 4e-4f));
@@ -4413,14 +4413,14 @@ TEST (mixer_routes_mutes_solos_and_meters)
 
 TEST (next_free_insert_and_flp_mixer_import)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     CHECK (s.mixer.size() == 17 && s.mixer[0].name == "Master");
     CHECK (s.nextFreeInsert() == 6); // the 5 default channels take 1..5
 
     flp::Project p;
     p.channels = { { 0, flp::ChannelType::sampler, "Kick", "", "", 30 } };
     p.mixer = { { 0, "" }, { 30, "Drums" } };
-    const auto song = lynx::importFlp (p);
+    const auto song = yw::importFlp (p);
     CHECK (song.channels[0].mixerTrack == 30);
     CHECK (song.mixer.size() == 31);
     CHECK (song.mixer[30].name == "Drums" && song.mixer[0].name == "Master");
@@ -4428,12 +4428,12 @@ TEST (next_free_insert_and_flp_mixer_import)
 
 namespace
 {
-float runEffectOnSine (lynx::EffectKind kind, const std::function<void (lynx::EffectSlot&)>& tweak, double hz, float amp,
+float runEffectOnSine (yw::EffectKind kind, const std::function<void (yw::EffectSlot&)>& tweak, double hz, float amp,
                        int frames = 48000)
 {
-    auto fx = lynx::makeEffect (kind);
+    auto fx = yw::makeEffect (kind);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     tweak (slot);
     std::vector<float> l ((std::size_t) frames), r ((std::size_t) frames);
     for (int i = 0; i < frames; ++i)
@@ -4453,35 +4453,35 @@ float runEffectOnSine (lynx::EffectKind kind, const std::function<void (lynx::Ef
 TEST (parametric_eq_bands_and_response)
 {
     // default: transparent
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::parametricEq);
-    CHECK (std::abs (lynx::peq::responseDb (slot.params, 48000.0, 1000.0)) < 0.01);
-    CHECK (std::abs (runEffectOnSine (lynx::EffectKind::parametricEq, [] (auto&) {}, 1000.0, 0.5f) - 0.5f) < 0.005f);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::parametricEq);
+    CHECK (std::abs (yw::peq::responseDb (slot.params, 48000.0, 1000.0)) < 0.01);
+    CHECK (std::abs (runEffectOnSine (yw::EffectKind::parametricEq, [] (auto&) {}, 1000.0, 0.5f) - 0.5f) < 0.005f);
 
     // +12 dB peak at 1 kHz on band 4: the response and the signal agree
-    auto boost = [] (lynx::EffectSlot& s) {
-        s.params[(std::size_t) lynx::peq::param (3, 1)] = lynx::peq::hzValue (1000.0);
-        s.params[(std::size_t) lynx::peq::param (3, 2)] = lynx::peq::gainValue (12.0);
+    auto boost = [] (yw::EffectSlot& s) {
+        s.params[(std::size_t) yw::peq::param (3, 1)] = yw::peq::hzValue (1000.0);
+        s.params[(std::size_t) yw::peq::param (3, 2)] = yw::peq::gainValue (12.0);
     };
     boost (slot);
-    CHECK (std::abs (lynx::peq::responseDb (slot.params, 48000.0, 1000.0) - 12.0) < 0.2);
-    CHECK (std::abs (lynx::peq::responseDb (slot.params, 48000.0, 100.0)) < 1.0);
-    const auto peak = runEffectOnSine (lynx::EffectKind::parametricEq, boost, 1000.0, 0.1f);
+    CHECK (std::abs (yw::peq::responseDb (slot.params, 48000.0, 1000.0) - 12.0) < 0.2);
+    CHECK (std::abs (yw::peq::responseDb (slot.params, 48000.0, 100.0)) < 1.0);
+    const auto peak = runEffectOnSine (yw::EffectKind::parametricEq, boost, 1000.0, 0.1f);
     CHECK (std::abs (peak - 0.1f * std::pow (10.0f, 12.0f / 20.0f)) < 0.01f);
 
     // low cut at 48 dB/oct at 200 Hz: 50 Hz (2 octaves below) drops ~96 dB; 2 kHz passes
-    auto cut = lynx::makeEffectSlot (lynx::EffectKind::parametricEq);
-    cut.params[(std::size_t) lynx::peq::param (0, 0)] = lynx::peq::typeValue (lynx::peq::BandType::lowCut);
-    cut.params[(std::size_t) lynx::peq::param (0, 1)] = lynx::peq::hzValue (200.0);
-    cut.params[(std::size_t) lynx::peq::param (0, 3)] = lynx::peq::qValue (0.70710678); // Butterworth
-    cut.params[(std::size_t) (lynx::peq::slopeParam + 0)] = 1.0f;
-    CHECK (lynx::peq::responseDb (cut.params, 48000.0, 50.0) < -80.0);
-    CHECK (std::abs (lynx::peq::responseDb (cut.params, 48000.0, 200.0) + 3.0) < 0.5); // -3 dB at the cutoff (Butterworth)
-    CHECK (std::abs (lynx::peq::responseDb (cut.params, 48000.0, 2000.0)) < 0.1);
+    auto cut = yw::makeEffectSlot (yw::EffectKind::parametricEq);
+    cut.params[(std::size_t) yw::peq::param (0, 0)] = yw::peq::typeValue (yw::peq::BandType::lowCut);
+    cut.params[(std::size_t) yw::peq::param (0, 1)] = yw::peq::hzValue (200.0);
+    cut.params[(std::size_t) yw::peq::param (0, 3)] = yw::peq::qValue (0.70710678); // Butterworth
+    cut.params[(std::size_t) (yw::peq::slopeParam + 0)] = 1.0f;
+    CHECK (yw::peq::responseDb (cut.params, 48000.0, 50.0) < -80.0);
+    CHECK (std::abs (yw::peq::responseDb (cut.params, 48000.0, 200.0) + 3.0) < 0.5); // -3 dB at the cutoff (Butterworth)
+    CHECK (std::abs (yw::peq::responseDb (cut.params, 48000.0, 2000.0)) < 0.1);
 
     // round-trip conversions
-    CHECK (std::abs (lynx::peq::hz (lynx::peq::hzValue (440.0)) - 440.0) < 0.5);
-    CHECK (std::abs (lynx::peq::q (lynx::peq::qValue (2.5)) - 2.5) < 0.01);
-    CHECK (lynx::peq::type (lynx::peq::typeValue (lynx::peq::BandType::notch)) == lynx::peq::BandType::notch);
+    CHECK (std::abs (yw::peq::hz (yw::peq::hzValue (440.0)) - 440.0) < 0.5);
+    CHECK (std::abs (yw::peq::q (yw::peq::qValue (2.5)) - 2.5) < 0.01);
+    CHECK (yw::peq::type (yw::peq::typeValue (yw::peq::BandType::notch)) == yw::peq::BandType::notch);
 }
 
 TEST (fl_parametric_eq2_state_maps_to_bands)
@@ -4505,32 +4505,32 @@ TEST (fl_parametric_eq2_state_maps_to_bands)
     param (35, -300);           // main level −3 dB
     put (0x13E, 0x7F);
 
-    const auto slot = lynx::effectFromFl ("Fruity Parametric EQ 2", blob);
-    CHECK (slot.has_value() && slot->kind == lynx::EffectKind::parametricEq);
+    const auto slot = yw::effectFromFl ("Fruity Parametric EQ 2", blob);
+    CHECK (slot.has_value() && slot->kind == yw::EffectKind::parametricEq);
     const auto& p = slot->params;
-    CHECK (lynx::peq::type (p[(std::size_t) lynx::peq::param (0, 0)]) == lynx::peq::BandType::lowCut);
-    CHECK (lynx::peq::flLaw (p) && lynx::peqfl::fromParams (p).order[0] == -3); // FL's own order (REA_rodada50)
-    CHECK (lynx::peq::type (p[(std::size_t) lynx::peq::param (3, 0)]) == lynx::peq::BandType::peak);
-    CHECK (lynx::peq::type (p[(std::size_t) lynx::peq::param (1, 0)]) == lynx::peq::BandType::off);
-    CHECK (std::abs (lynx::peq::responseDb (p, 48000.0, 1000.0) - 3.0) < 0.3);   // +6 from the peak −3 from the output
-    CHECK (lynx::peq::responseDb (p, 48000.0, 30.0) < -40.0);                     // 48 dB/oct below 100 Hz
-    CHECK (std::abs (lynx::peq::responseDb (p, 48000.0, 8000.0) + 3.0) < 0.3);
+    CHECK (yw::peq::type (p[(std::size_t) yw::peq::param (0, 0)]) == yw::peq::BandType::lowCut);
+    CHECK (yw::peq::flLaw (p) && yw::peqfl::fromParams (p).order[0] == -3); // FL's own order (REA_rodada50)
+    CHECK (yw::peq::type (p[(std::size_t) yw::peq::param (3, 0)]) == yw::peq::BandType::peak);
+    CHECK (yw::peq::type (p[(std::size_t) yw::peq::param (1, 0)]) == yw::peq::BandType::off);
+    CHECK (std::abs (yw::peq::responseDb (p, 48000.0, 1000.0) - 3.0) < 0.3);   // +6 from the peak −3 from the output
+    CHECK (yw::peq::responseDb (p, 48000.0, 30.0) < -40.0);                     // 48 dB/oct below 100 Hz
+    CHECK (std::abs (yw::peq::responseDb (p, 48000.0, 8000.0) + 3.0) < 0.3);
 
     // a band muted by the mask doesn't sound (FL's mask travels with the slot, REA_rodada50)
     put (0x13E, 0x7F & ~(1 << 3));
-    const auto muted = lynx::effectFromFl ("Fruity Parametric EQ 2", blob);
-    CHECK ((lynx::peqfl::fromParams (muted->params).mask & (1u << 3)) == 0);
-    CHECK (std::abs (lynx::peq::responseDb (muted->params, 48000.0, 1000.0) + 3.0) < 0.3);
+    const auto muted = yw::effectFromFl ("Fruity Parametric EQ 2", blob);
+    CHECK ((yw::peqfl::fromParams (muted->params).mask & (1u << 3)) == 0);
+    CHECK (std::abs (yw::peq::responseDb (muted->params, 48000.0, 1000.0) + 3.0) < 0.3);
 }
 
 TEST (reverb_low_cut_and_predelay)
 {
     // impulse: with 100 ms predelay the wet only starts later; with a 3 kHz low cut a
     // 100 Hz sine barely enters the reverb
-    auto run = [] (const std::function<void (lynx::EffectSlot&)>& tweak, double hz, bool impulse) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::reverb);
+    auto run = [] (const std::function<void (yw::EffectSlot&)>& tweak, double hz, bool impulse) {
+        auto fx = yw::makeEffect (yw::EffectKind::reverb);
         fx->prepare (48000.0);
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::reverb);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::reverb);
         slot.params[4] = 0.0f; // wet only
         slot.params[3] = 1.0f;
         tweak (slot);
@@ -4558,16 +4558,16 @@ TEST (reverb_low_cut_and_predelay)
 TEST (utility_effect_and_fl_stereo_tools)
 {
     // transparent by default; balance fully right silences the left
-    CHECK (std::abs (runEffectOnSine (lynx::EffectKind::utility, [] (auto&) {}, 440.0, 0.5f) - 0.5f) < 0.001f);
-    CHECK (runEffectOnSine (lynx::EffectKind::utility, [] (auto& s) { s.params[1] = 1.0f; }, 440.0, 0.5f) < 0.001f);
+    CHECK (std::abs (runEffectOnSine (yw::EffectKind::utility, [] (auto&) {}, 440.0, 0.5f) - 0.5f) < 0.001f);
+    CHECK (runEffectOnSine (yw::EffectKind::utility, [] (auto& s) { s.params[1] = 1.0f; }, 440.0, 0.5f) < 0.001f);
 
     // Stereo Shaper at half the knob range (6400): each gain = (3^0.5 − 1)/2 (FL's knob law, REA_rodada54 §2.2)
     std::vector<std::uint8_t> blob (36, 0);
     auto put = [&] (std::size_t off, std::int32_t v) { std::memcpy (blob.data() + off, &v, 4); };
     put (4, 6400); put (8, 6400); put (12, 6400); put (16, 6400);
-    const auto slot = lynx::effectFromFl ("Fruity Stereo Shaper", blob);
-    CHECK (slot && slot->kind == lynx::EffectKind::stereoShaper);
-    auto shaperFx = lynx::makeEffect (*slot);
+    const auto slot = yw::effectFromFl ("Fruity Stereo Shaper", blob);
+    CHECK (slot && slot->kind == yw::EffectKind::stereoShaper);
+    auto shaperFx = yw::makeEffect (*slot);
     shaperFx->prepare (44100.0);
     float zl = 0.0f, zr = 0.0f;
     shaperFx->process (&zl, &zr, 0, slot->params, 120.0); // takes the controls
@@ -4576,18 +4576,18 @@ TEST (utility_effect_and_fl_stereo_tools)
     shaperFx->process (&l, &r, 1, slot->params, 120.0);
     const auto half = (float) ((std::sqrt (3.0) - 1.0) / 2.0);
     CHECK (std::abs (l - half) < 1e-4f && std::abs (r - half) < 1e-4f);
-    auto fx = lynx::makeEffect (lynx::EffectKind::utility);
+    auto fx = yw::makeEffect (yw::EffectKind::utility);
 
     // Balance: volume 256 = 0 dB, pan −128 = fully left
     std::vector<std::uint8_t> bal (8, 0);
     std::int32_t pan = -128, vol = 256;
     std::memcpy (bal.data(), &pan, 4);
     std::memcpy (bal.data() + 4, &vol, 4);
-    const auto b = lynx::effectFromFl ("Fruity Balance", bal);
-    CHECK (b && b->kind == lynx::EffectKind::fruityBalance); // FL's exact law (REA_rodada58 §2): fully left sums R into L
+    const auto b = yw::effectFromFl ("Fruity Balance", bal);
+    CHECK (b && b->kind == yw::EffectKind::fruityBalance); // FL's exact law (REA_rodada58 §2): fully left sums R into L
     if (b)
     {
-        auto balance = lynx::makeEffect (*b);
+        auto balance = yw::makeEffect (*b);
         balance->prepare (44100.0);
         l = 0.5f; r = 0.5f;
         balance->process (&l, &r, 1, b->params, 120.0);
@@ -4598,25 +4598,25 @@ TEST (utility_effect_and_fl_stereo_tools)
 TEST (effects_eq_compressor_behave)
 {
     // EQ at default is transparent
-    CHECK (std::abs (runEffectOnSine (lynx::EffectKind::eq, [] (auto&) {}, 1000.0, 0.5f) - 0.5f) < 0.01f);
+    CHECK (std::abs (runEffectOnSine (yw::EffectKind::eq, [] (auto&) {}, 1000.0, 0.5f) - 0.5f) < 0.01f);
     // +18 dB on the lows: 60 Hz rises a lot, 5 kHz barely
-    CHECK (runEffectOnSine (lynx::EffectKind::eq, [] (auto& s) { s.params[0] = 1.0f; }, 60.0, 0.05f) > 0.3f);
-    CHECK (runEffectOnSine (lynx::EffectKind::eq, [] (auto& s) { s.params[0] = 1.0f; }, 5000.0, 0.05f) < 0.06f);
+    CHECK (runEffectOnSine (yw::EffectKind::eq, [] (auto& s) { s.params[0] = 1.0f; }, 60.0, 0.05f) > 0.3f);
+    CHECK (runEffectOnSine (yw::EffectKind::eq, [] (auto& s) { s.params[0] = 1.0f; }, 5000.0, 0.05f) < 0.06f);
     // compressor: threshold -20 dB, ratio 20:1 flattens a 0 dBFS signal to near the threshold
-    const auto squashed = runEffectOnSine (lynx::EffectKind::compressor, [] (auto& s) {
+    const auto squashed = runEffectOnSine (yw::EffectKind::compressor, [] (auto& s) {
         s.params[0] = 40.0f / 60.0f;
         s.params[1] = 1.0f;
     }, 200.0, 1.0f);
     CHECK (squashed < 0.2f && squashed > 0.05f);
     // a signal below the threshold passes intact
-    CHECK (std::abs (runEffectOnSine (lynx::EffectKind::compressor, [] (auto& s) { s.params[0] = 1.0f; }, 200.0, 0.3f) - 0.3f) < 0.01f);
+    CHECK (std::abs (runEffectOnSine (yw::EffectKind::compressor, [] (auto& s) { s.params[0] = 1.0f; }, 200.0, 0.3f) - 0.3f) < 0.01f);
 }
 
 TEST (effects_delay_echoes_on_tempo_and_reverb_has_tail)
 {
-    auto delay = lynx::makeEffect (lynx::EffectKind::delay);
+    auto delay = yw::makeEffect (yw::EffectKind::delay);
     delay->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::delay);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::delay);
     slot.params[0] = 3.5f / 8.0f; // index 3 = 1/4 = 0.5 s at 120 BPM
     slot.params[1] = 0.0f;        // no feedback: a single echo
     slot.params[2] = 1.0f;
@@ -4627,9 +4627,9 @@ TEST (effects_delay_echoes_on_tempo_and_reverb_has_tail)
     CHECK (std::abs (l[24000] - 1.0f) < 1e-4f);
     CHECK (std::abs (l[12000]) < 1e-6f);
 
-    auto reverb = lynx::makeEffect (lynx::EffectKind::reverb);
+    auto reverb = yw::makeEffect (yw::EffectKind::reverb);
     reverb->prepare (48000.0);
-    auto rs = lynx::makeEffectSlot (lynx::EffectKind::reverb);
+    auto rs = yw::makeEffectSlot (yw::EffectKind::reverb);
     rs.params[3] = 1.0f;
     std::fill (l.begin(), l.end(), 0.0f);
     std::fill (r.begin(), r.end(), 0.0f);
@@ -4639,95 +4639,95 @@ TEST (effects_delay_echoes_on_tempo_and_reverb_has_tail)
     for (int i = 4800; i < 9600; ++i) // between 100 and 200 ms after the impulse
         tail = std::max (tail, std::abs (l[(std::size_t) i]));
     CHECK (tail > 1e-4f && tail < 1.0f);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::delay, 0, slot.params[0], 120.0) == "1/4 (500 ms)");
+    CHECK (yw::formatEffectParam (yw::EffectKind::delay, 0, slot.params[0], 120.0) == "1/4 (500 ms)");
 }
 
 TEST (rack_runs_insert_effects_and_reuses_them)
 {
     // an insert with EQ at -inf doesn't exist; we use the EQ output at -18 dB to see the effect act
-    const auto quiet = renderMixerCase ([] (lynx::Song& s) {
-        auto eq = lynx::makeEffectSlot (lynx::EffectKind::eq);
+    const auto quiet = renderMixerCase ([] (yw::Song& s) {
+        auto eq = yw::makeEffectSlot (yw::EffectKind::eq);
         eq.params[4] = 0.0f; // output -18 dB
         s.mixer[1].effects.push_back (eq);
     });
     CHECK (quiet > 0.55f && quiet < 0.6f); // 0.5 from channel 2 + 0.5 * 0.126 from channel 1
 
-    const auto bypassed = renderMixerCase ([] (lynx::Song& s) {
-        auto eq = lynx::makeEffectSlot (lynx::EffectKind::eq);
+    const auto bypassed = renderMixerCase ([] (yw::Song& s) {
+        auto eq = yw::makeEffectSlot (yw::EffectKind::eq);
         eq.params[4] = 0.0f;
         eq.enabled = false;
         s.mixer[1].effects.push_back (eq);
     });
     CHECK (std::abs (bypassed - 1.0f) < 1e-4f);
 
-    auto s = lynx::Song::makeDefault();
-    s.mixer[2].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
-    auto a = lynx::RackState::build (s, nullptr, 48000.0);
+    auto s = yw::Song::makeDefault();
+    s.mixer[2].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
+    auto a = yw::RackState::build (s, nullptr, 48000.0);
     s.mixer[2].effects[0].params[0] = 0.9f; // turning a knob doesn't recreate the effect
-    auto b = lynx::RackState::build (s, a.get(), 48000.0);
+    auto b = yw::RackState::build (s, a.get(), 48000.0);
     CHECK (b->effects[2][0] == a->effects[2][0]);
-    s.mixer[2].effects[0] = lynx::makeEffectSlot (lynx::EffectKind::delay);
-    auto c = lynx::RackState::build (s, b.get(), 48000.0);
+    s.mixer[2].effects[0] = yw::makeEffectSlot (yw::EffectKind::delay);
+    auto c = yw::RackState::build (s, b.get(), 48000.0);
     CHECK (c->effects[2][0] != b->effects[2][0]);
 }
 
 TEST (audio_clips_trigger_cut_and_resume)
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0; // 1 beat = 0.5 s = 24000 samples at 48 kHz
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.samplePath = "ramp";
     c.volume = 1.0f;
     s.channels.push_back (c);
     s.patterns.emplace_back();
 
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::audio;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::audio;
     clip.channel = 0;
-    clip.start = lynx::ppq;      // starts at beat 2
-    clip.length = 2 * lynx::ppq; // lasts 2 beats
-    clip.offset = lynx::ppq;     // skips the first beat of the audio
+    clip.start = yw::ppq;      // starts at beat 2
+    clip.length = 2 * yw::ppq; // lasts 2 beats
+    clip.offset = yw::ppq;     // skips the first beat of the audio
     s.playlist.push_back (clip);
     // an empty pattern clip over the whole bar: the song ends at beat 4 (FL loops at the last clip's exact end)
-    s.playlist.push_back (lynx::Clip { 0, 1, 0, 4 * lynx::ppq, 0 });
-    s.mode = lynx::PlayMode::song;
+    s.playlist.push_back (yw::Clip { 0, 1, 0, 4 * yw::ppq, 0 });
+    s.mode = yw::PlayMode::song;
 
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::EventBuffer ev;
-    lynx::scheduleSong (s, 0.0, 4 * 24000, tps, ev);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::EventBuffer ev;
+    yw::scheduleSong (s, 0.0, 4 * 24000, tps, ev);
     CHECK (ev.size() == 2);
-    CHECK (ev[0].type == lynx::NoteEvent::Type::on && ev[0].sampleOffset == 24000 && std::abs (ev[0].startSeconds - 0.5) < 1e-9);
-    CHECK (ev[1].type == lynx::NoteEvent::Type::off && ev[1].sampleOffset == 3 * 24000);
+    CHECK (ev[0].type == yw::NoteEvent::Type::on && ev[0].sampleOffset == 24000 && std::abs (ev[0].startSeconds - 0.5) < 1e-9);
+    CHECK (ev[1].type == yw::NoteEvent::Type::off && ev[1].sampleOffset == 3 * 24000);
 
     // seek to the middle of the clip (beat 2.5): with resume, starts at the block's first sample
     ev.clear();
-    lynx::scheduleSong (s, 1.5 * lynx::ppq, 256, tps, ev, true);
+    yw::scheduleSong (s, 1.5 * yw::ppq, 256, tps, ev, true);
     CHECK (ev.size() == 1 && ev[0].sampleOffset == 0 && std::abs (ev[0].startSeconds - 0.75) < 1e-9);
     ev.clear();
-    lynx::scheduleSong (s, 1.5 * lynx::ppq, 256, tps, ev, false);
+    yw::scheduleSong (s, 1.5 * yw::ppq, 256, tps, ev, false);
     CHECK (ev.size() == 0);
 
     // sample whose value = position in seconds: lets us check where playback started
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         for (int i = 0; i < 48000 * 3; ++i)
             d->left.push_back ((float) i / 48000.0f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> l (256), rr (256);
 
     // first block already playing mid-clip
-    r.process (state.get(), true, 1.5 * lynx::ppq, 256, l.data(), rr.data());
-    const auto unity = 1.0f / lynx::channelGain (10000.0f / 12800.0f); // clip level at 100% channel volume (REA_rodada89 §4.2)
+    r.process (state.get(), true, 1.5 * yw::ppq, 256, l.data(), rr.data());
+    const auto unity = 1.0f / yw::channelGain (10000.0f / 12800.0f); // clip level at 100% channel volume (REA_rodada89 §4.2)
     CHECK (std::abs (l[0] - 0.75f * unity) < 0.002f);
 
     // the clip ends at beat 3: after the short fade, silence (the sample would still have audio)
-    double tick = 3.0 * lynx::ppq - 10 * tps;
+    double tick = 3.0 * yw::ppq - 10 * tps;
     r.process (state.get(), false, tick, 256, l.data(), rr.data()); // stops (fade)
     for (int i = 0; i < 4; ++i)
         r.process (state.get(), false, tick, 256, l.data(), rr.data());
@@ -4736,15 +4736,15 @@ TEST (audio_clips_trigger_cut_and_resume)
 
 TEST (remove_channel_fixes_notes_and_audio_clips)
 {
-    lynx::Song s;
+    yw::Song s;
     s.channels.resize (3);
     s.patterns.resize (1);
     s.patterns[0].notes = { { 0, 240, 0, 60, 1.0f }, { 0, 240, 1, 60, 1.0f }, { 0, 240, 2, 60, 1.0f } };
-    lynx::Clip a;
-    a.kind = lynx::ClipKind::audio;
+    yw::Clip a;
+    a.kind = yw::ClipKind::audio;
     a.channel = 1;
     a.length = 100;
-    lynx::Clip b = a;
+    yw::Clip b = a;
     b.channel = 2;
     s.playlist = { a, b };
     s.removeChannel (1);
@@ -4775,56 +4775,56 @@ TEST (flp_import_audio_clips_with_offsets)
     arr.items = { beats, ms };
     p.arrangements.push_back (arr);
 
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.roots = { "C:\\FL", "C:\\FL\\Data", "" };
     options.fileExists = [] (const std::string&) { return true; };
-    const auto s = lynx::importFlp (p, options);
+    const auto s = yw::importFlp (p, options);
 
-    CHECK (s.channels.size() == 2 && s.channels[0].instrument == lynx::InstrumentKind::audioClip);
+    CHECK (s.channels.size() == 2 && s.channels[0].instrument == yw::InstrumentKind::audioClip);
     CHECK (s.channels[0].samplePath == "C:\\FL\\Data\\v.wav");
     CHECK (s.playlist.size() == 2);
-    CHECK (s.playlist[0].kind == lynx::ClipKind::audio && s.playlist[0].start == 2 * lynx::ppq);
-    CHECK (s.playlist[0].offset == 2 * lynx::ppq);
-    CHECK (s.playlist[1].offset == lynx::ppq); // 500 ms at 120 BPM = 1 beat
-    CHECK (s.mode == lynx::PlayMode::song);
+    CHECK (s.playlist[0].kind == yw::ClipKind::audio && s.playlist[0].start == 2 * yw::ppq);
+    CHECK (s.playlist[0].offset == 2 * yw::ppq);
+    CHECK (s.playlist[1].offset == yw::ppq); // 500 ms at 120 BPM = 1 beat
+    CHECK (s.mode == yw::PlayMode::song);
 }
 
 TEST (plugin_factories_create_reuse_and_fallback)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::plugin;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::plugin;
     c.plugin.id = "VST3-Synth-123";
     c.mixerTrack = 1;
     s.channels.push_back (c);
-    lynx::ChannelDef missing = c;
+    yw::ChannelDef missing = c;
     missing.plugin.id = "VST3-Ausente-0";
     s.channels.push_back (missing);
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::plugin;
     fx.plugin.id = "VST3-Reverb-9";
     s.mixer[1].effects.push_back (fx);
     s.patterns.emplace_back();
 
     int instrumentsMade = 0, effectsMade = 0;
-    lynx::RackState::Factories f;
-    f.pluginInstruments = [&] (const lynx::PluginRef& ref, double) -> std::shared_ptr<lynx::Instrument> {
+    yw::RackState::Factories f;
+    f.pluginInstruments = [&] (const yw::PluginRef& ref, double) -> std::shared_ptr<yw::Instrument> {
         if (ref.id != "VST3-Synth-123")
             return nullptr;
         ++instrumentsMade;
-        auto synth = lynx::makeInstrument (lynx::InstrumentKind::synth);
+        auto synth = yw::makeInstrument (yw::InstrumentKind::synth);
         synth->prepare (48000.0);
         return synth;
     };
-    f.pluginEffects = [&] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> {
+    f.pluginEffects = [&] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> {
         ++effectsMade;
-        auto eq = lynx::makeEffect (lynx::EffectKind::eq);
+        auto eq = yw::makeEffect (yw::EffectKind::eq);
         eq->prepare (48000.0);
         return eq;
     };
 
-    auto a = lynx::RackState::build (s, nullptr, 48000.0, f);
+    auto a = yw::RackState::build (s, nullptr, 48000.0, f);
     CHECK (instrumentsMade == 1 && effectsMade == 1);
     CHECK (a->instruments.size() == 2 && a->instruments[1] != nullptr); // missing: muted, but it exists
 
@@ -4833,38 +4833,38 @@ TEST (plugin_factories_create_reuse_and_fallback)
     auto storedOnly = s;
     storedOnly.channels[0].plugin.state = "captured instrument without opt-in";
     storedOnly.mixer[1].effects[0].plugin.state = "captured effect without opt-in";
-    auto ordinary = lynx::RackState::build (storedOnly, a.get(), 48000.0, f);
+    auto ordinary = yw::RackState::build (storedOnly, a.get(), 48000.0, f);
     CHECK (instrumentsMade == 1 && effectsMade == 1);
     CHECK (ordinary->instruments[0] == a->instruments[0] && ordinary->effects[1][0] == a->effects[1][0]);
 
     // Serialized state changes and undo preserve running instances. Remote control
     // applies deliberate state edits in place through the engine, outside this factory.
     s.channels[0].plugin.state = "abc";
-    auto b = lynx::RackState::build (s, a.get(), 48000.0, f);
+    auto b = yw::RackState::build (s, a.get(), 48000.0, f);
     CHECK (instrumentsMade == 1 && b->instruments[0] == a->instruments[0] && b->effects[1][0] == a->effects[1][0]);
     s.mixer[1].effects[0].plugin.state = "new effect state";
-    auto changed = lynx::RackState::build (s, b.get(), 48000.0, f);
+    auto changed = yw::RackState::build (s, b.get(), 48000.0, f);
     CHECK (instrumentsMade == 1 && effectsMade == 1 && changed->effects[1][0] == b->effects[1][0]);
     s.channels[0].plugin.state.clear();
     s.mixer[1].effects[0].plugin.state.clear();
-    auto undone = lynx::RackState::build (s, changed.get(), 48000.0, f);
+    auto undone = yw::RackState::build (s, changed.get(), 48000.0, f);
     CHECK (instrumentsMade == 1 && effectsMade == 1);
     CHECK (undone->instruments[0] == changed->instruments[0] && undone->effects[1][0] == changed->effects[1][0]);
     auto capturedShape = *undone;
     capturedShape.song.channels[0].plugin.state = s.channels[0].plugin.state = "captured instrument";
     capturedShape.song.mixer[1].effects[0].plugin.state = s.mixer[1].effects[0].plugin.state = "captured effect";
-    auto captured = lynx::RackState::build (s, &capturedShape, 48000.0, f);
+    auto captured = yw::RackState::build (s, &capturedShape, 48000.0, f);
     CHECK (instrumentsMade == 1 && effectsMade == 1);
     CHECK (captured->instruments[0] == undone->instruments[0] && captured->effects[1][0] == undone->effects[1][0]);
     s.mixer[1].effects[0].plugin.id = "VST3-Outro-1";
-    auto c2 = lynx::RackState::build (s, captured.get(), 48000.0, f);
+    auto c2 = yw::RackState::build (s, captured.get(), 48000.0, f);
     CHECK (effectsMade == 2);
 
     // rendering with a missing plugin and a plugin slot breaks nothing
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.velocity = 1.0f;
     live.push (on);
@@ -4883,38 +4883,38 @@ TEST (plugin_factories_create_reuse_and_fallback)
 
 TEST (remote_reset_replaces_only_requested_instances_and_default_reuse_stays_unchanged)
 {
-    lynx::Song source;
-    source.mixer = lynx::Song::defaultMixer (2);
+    yw::Song source;
+    source.mixer = yw::Song::defaultMixer (2);
     for (const auto* id : { "Synth A", "Synth B" })
     {
-        lynx::ChannelDef channel;
-        channel.instrument = lynx::InstrumentKind::plugin;
+        yw::ChannelDef channel;
+        channel.instrument = yw::InstrumentKind::plugin;
         channel.plugin.id = id;
         channel.plugin.state = std::string ("saved ") + id;
         source.channels.push_back (std::move (channel));
     }
     for (const auto* id : { "Effect A", "Effect B" })
     {
-        lynx::EffectSlot effect;
-        effect.kind = lynx::EffectKind::plugin;
+        yw::EffectSlot effect;
+        effect.kind = yw::EffectKind::plugin;
         effect.plugin.id = id;
         effect.plugin.state = std::string ("saved ") + id;
         source.mixer[1].effects.push_back (std::move (effect));
     }
     int instrumentsMade = 0, effectsMade = 0;
     std::string lastInstrumentState, lastEffectState;
-    lynx::RackState::Factories normal;
-    normal.pluginInstruments = [&] (const lynx::PluginRef& ref, double) -> std::shared_ptr<lynx::Instrument> {
+    yw::RackState::Factories normal;
+    normal.pluginInstruments = [&] (const yw::PluginRef& ref, double) -> std::shared_ptr<yw::Instrument> {
         ++instrumentsMade;
         lastInstrumentState = ref.state;
-        return lynx::makeInstrument (lynx::InstrumentKind::synth);
+        return yw::makeInstrument (yw::InstrumentKind::synth);
     };
-    normal.pluginEffects = [&] (const lynx::PluginRef& ref, double) -> std::shared_ptr<lynx::Effect> {
+    normal.pluginEffects = [&] (const yw::PluginRef& ref, double) -> std::shared_ptr<yw::Effect> {
         ++effectsMade;
         lastEffectState = ref.state;
-        return lynx::makeEffect (lynx::EffectKind::eq);
+        return yw::makeEffect (yw::EffectKind::eq);
     };
-    const auto before = lynx::RackState::build (source, nullptr, 48000.0, normal);
+    const auto before = yw::RackState::build (source, nullptr, 48000.0, normal);
     CHECK (instrumentsMade == 2 && effectsMade == 2);
     // Round 190az (24047e7a0): an ordinary build keeps a running instance for its own channel / slot (the instance
     // tag) or for one saved with the same settings. A renewed tag with a cleared state is another device: it is
@@ -4924,7 +4924,7 @@ TEST (remote_reset_replaces_only_requested_instances_and_default_reuse_stays_unc
     reset.channels[0].plugin.state.clear();
     reset.mixer[1].effects[0].instance.renew();
     reset.mixer[1].effects[0].plugin.state.clear();
-    const auto ordinary = lynx::RackState::build (reset, before.get(), 48000.0, normal);
+    const auto ordinary = yw::RackState::build (reset, before.get(), 48000.0, normal);
     CHECK (instrumentsMade == 3 && effectsMade == 3);
     CHECK (lastInstrumentState.empty() && lastEffectState.empty()); // factories received actual default-state requests
     CHECK (ordinary->instruments[0] != before->instruments[0] && ordinary->effects[1][0] != before->effects[1][0]);
@@ -4935,19 +4935,19 @@ TEST (remote_reset_replaces_only_requested_instances_and_default_reuse_stays_unc
     auto renewed = source;
     renewed.channels[0].instance.renew();
     renewed.mixer[1].effects[0].instance.renew();
-    const auto kept = lynx::RackState::build (renewed, before.get(), 48000.0, normal);
+    const auto kept = yw::RackState::build (renewed, before.get(), 48000.0, normal);
     CHECK (instrumentsMade == 3 && effectsMade == 3);
     CHECK (kept->instruments[0] == before->instruments[0] && kept->effects[1][0] == before->effects[1][0]);
     auto requested = normal;
     requested.freshInstances = { renewed.channels[0].instance.id, renewed.mixer[1].effects[0].instance.id };
-    const auto replaced = lynx::RackState::build (renewed, before.get(), 48000.0, requested);
+    const auto replaced = yw::RackState::build (renewed, before.get(), 48000.0, requested);
     CHECK (instrumentsMade == 4 && effectsMade == 4);
     CHECK (lastInstrumentState == "saved Synth A" && lastEffectState == "saved Effect A");
     CHECK (replaced->instruments[0] != before->instruments[0] && replaced->effects[1][0] != before->effects[1][0]);
     CHECK (replaced->instruments[1] == before->instruments[1] && replaced->effects[1][1] == before->effects[1][1]);
 
     // The policy belongs to that build only: later ordinary edits reuse the newly created instances.
-    const auto later = lynx::RackState::build (renewed, replaced.get(), 48000.0, normal);
+    const auto later = yw::RackState::build (renewed, replaced.get(), 48000.0, normal);
     CHECK (instrumentsMade == 4 && effectsMade == 4);
     CHECK (later->instruments[0] == replaced->instruments[0] && later->effects[1][0] == replaced->effects[1][0]);
 }
@@ -4964,7 +4964,7 @@ TEST (remote_history_normalized_restores_preserve_lineage_without_crossing_produ
         to.push_back ({ live, true, {} });
         from.pop_back();
         live = normalized;
-        lynx::remote_history::acceptRestoredState (to.back(), from.empty() ? nullptr : &from.back(), savedTarget, live);
+        yw::remote_history::acceptRestoredState (to.back(), from.empty() ? nullptr : &from.back(), savedTarget, live);
     };
 
     restore (undo, redo, "B-normalized");
@@ -4988,78 +4988,78 @@ TEST (remote_history_normalized_restores_preserve_lineage_without_crossing_produ
 
     // An ordinary producer entry never acquires a remote fence even if its bytes happen to match the target.
     Entry ordinary { "A", false, "B" }, inverse { "C", true, {} };
-    lynx::remote_history::acceptRestoredState (inverse, &ordinary, std::string ("B"), std::string ("B-normalized"));
+    yw::remote_history::acceptRestoredState (inverse, &ordinary, std::string ("B"), std::string ("B-normalized"));
     CHECK (ordinary.deviceHash == "B" && inverse.deviceHash == "B-normalized");
 }
 
 TEST (remote_capture_mirror_preserves_projected_shape_and_updates_only_matching_hosted_bytes)
 {
-    lynx::Song captured;
-    lynx::ChannelDef hosted;
-    hosted.instrument = lynx::InstrumentKind::plugin;
+    yw::Song captured;
+    yw::ChannelDef hosted;
+    hosted.instrument = yw::InstrumentKind::plugin;
     hosted.plugin.id = "Synth";
     hosted.plugin.state = "saved";
     captured.channels = { hosted, hosted };
     captured.channels[1].instance.renew();
-    lynx::ChannelDef patcher;
-    patcher.instrument = lynx::InstrumentKind::patcher;
-    lynx::PatchNode nested;
+    yw::ChannelDef patcher;
+    patcher.instrument = yw::InstrumentKind::patcher;
+    yw::PatchNode nested;
     nested.generator = true;
     nested.channel = hosted;
     patcher.patcher.nodes.push_back (nested);
     captured.channels.push_back (patcher);
-    captured.mixer = lynx::Song::defaultMixer (2);
-    lynx::EffectSlot effect;
-    effect.kind = lynx::EffectKind::plugin;
+    captured.mixer = yw::Song::defaultMixer (2);
+    yw::EffectSlot effect;
+    effect.kind = yw::EffectKind::plugin;
     effect.plugin.id = "Effect";
     effect.plugin.state = "saved";
     captured.mixer[1].effects.push_back (effect);
     auto published = captured;
     published.channels[0].muted = true; // an insert stand-in changes routing/muting in the published projection
-    published.channels[1].instrument = lynx::InstrumentKind::sampler;
+    published.channels[1].instrument = yw::InstrumentKind::sampler;
     published.channels[1].samplePath = "stem.wav";
-    published.channels.push_back (lynx::ChannelDef()); // generated stem helper channels must survive
+    published.channels.push_back (yw::ChannelDef()); // generated stem helper channels must survive
     published.mixer[1].effects[0].enabled = false;
 
     captured.channels[0].plugin.state = "captured synth";
     captured.channels[1].plugin.state = "unavailable synth";
     captured.channels[2].patcher.nodes[0].channel.plugin.state = "captured nested synth";
     captured.mixer[1].effects[0].plugin.state = "captured effect";
-    lynx::remote_history::mirrorCapturedHostedStates (captured, published);
+    yw::remote_history::mirrorCapturedHostedStates (captured, published);
     CHECK (published.channels.size() == 4 && published.channels[0].muted);
     CHECK (published.channels[0].plugin.state == "captured synth");
-    CHECK (published.channels[1].instrument == lynx::InstrumentKind::sampler && published.channels[1].samplePath == "stem.wav");
+    CHECK (published.channels[1].instrument == yw::InstrumentKind::sampler && published.channels[1].samplePath == "stem.wav");
     CHECK (published.channels[1].plugin.state == "saved"); // a projected replacement is not the captured hosted device
     CHECK (published.channels[2].patcher.nodes[0].channel.plugin.state == "captured nested synth");
     CHECK (! published.mixer[1].effects[0].enabled && published.mixer[1].effects[0].plugin.state == "captured effect");
 
     published.channels[0].instance.renew();
     captured.channels[0].plugin.state = "different device";
-    lynx::remote_history::mirrorCapturedHostedStates (captured, published);
+    yw::remote_history::mirrorCapturedHostedStates (captured, published);
     CHECK (published.channels[0].plugin.state == "captured synth");
 }
 
 TEST (export_song_adds_silent_tail_and_never_restarts)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.playlist.clear();
     std::int64_t length = 0;
-    auto pat = lynx::makeExportSong (s, true, lynx::ppq * 8, length); // empty Playlist: uses the pattern
-    CHECK (length == lynx::ppq * 4);
-    CHECK (pat.mode == lynx::PlayMode::song && pat.playlist.size() == 2);
-    CHECK (pat.songLength() >= length + lynx::ppq * 8);
+    auto pat = yw::makeExportSong (s, true, yw::ppq * 8, length); // empty Playlist: uses the pattern
+    CHECK (length == yw::ppq * 4);
+    CHECK (pat.mode == yw::PlayMode::song && pat.playlist.size() == 2);
+    CHECK (pat.songLength() >= length + yw::ppq * 8);
 
     // no new notes after the song ends, only silence until the end of the tail
-    lynx::EventBuffer events;
-    const auto tps = lynx::ticksPerSample (pat.bpm, 48000.0);
+    yw::EventBuffer events;
+    const auto tps = yw::ticksPerSample (pat.bpm, 48000.0);
     int onsAfterEnd = 0, onsBefore = 0;
 
-    for (double tick = 0.0; tick < (double) (length + lynx::ppq * 8); tick += 512 * tps)
+    for (double tick = 0.0; tick < (double) (length + yw::ppq * 8); tick += 512 * tps)
     {
         events.clear();
-        lynx::scheduleSong (pat, tick, 512, tps, events);
+        yw::scheduleSong (pat, tick, 512, tps, events);
         for (const auto& e : events)
-            if (e.type == lynx::NoteEvent::Type::on)
+            if (e.type == yw::NoteEvent::Type::on)
                 (tick + e.sampleOffset * tps >= (double) length ? onsAfterEnd : onsBefore)++;
     }
 
@@ -5067,17 +5067,17 @@ TEST (export_song_adds_silent_tail_and_never_restarts)
     CHECK (onsAfterEnd == 0);
 
     // with Playlist: the end is the last clip's, without rounding
-    s.playlist.push_back ({ 0, 0, lynx::ppq * 2, lynx::ppq * 3, 0 });
-    auto song = lynx::makeExportSong (s, true, 0, length);
-    CHECK (length == lynx::ppq * 5 && song.playlist.size() == 1);
-    song = lynx::makeExportSong (s, false, 0, length);
-    CHECK (length == lynx::ppq * 4 && song.playlist[0].start == 0);
+    s.playlist.push_back ({ 0, 0, yw::ppq * 2, yw::ppq * 3, 0 });
+    auto song = yw::makeExportSong (s, true, 0, length);
+    CHECK (length == yw::ppq * 5 && song.playlist.size() == 1);
+    song = yw::makeExportSong (s, false, 0, length);
+    CHECK (length == yw::ppq * 4 && song.playlist[0].start == 0);
 }
 
 TEST (note_edit_selection_operations)
 {
-    namespace ne = lynx::noteedit;
-    lynx::Pattern p;
+    namespace ne = yw::noteedit;
+    yw::Pattern p;
     p.notes = { { 0, 240, 0, 60 }, { 480, 240, 0, 64 }, { 960, 480, 1, 67 } };
 
     // sorting keeps the indices in step
@@ -5094,7 +5094,7 @@ TEST (note_edit_selection_operations)
     CHECK (dt == -480 && dk == 127 - 67 && p.notes[0].start == 0 && p.notes[1].key == 127);
 
     // duplicate: right after the selection, rounded to the grid
-    lynx::Pattern q;
+    yw::Pattern q;
     q.notes = { { 0, 240, 0, 60 }, { 240, 300, 0, 62 } }; // 540-tick selection
     const auto added = ne::duplicate (q, { 0, 1 }, 960);
     CHECK (added.size() == 2 && q.notes[(std::size_t) added[0]].start == 960 && q.notes[(std::size_t) added[1]].start == 1200);
@@ -5117,11 +5117,11 @@ TEST (note_edit_selection_operations)
 
 TEST (note_edit_quick_operations)
 {
-    namespace ne = lynx::noteedit;
-    const std::int64_t step = lynx::ticksPerStep, bar = lynx::ppq * 4;
+    namespace ne = yw::noteedit;
+    const std::int64_t step = yw::ticksPerStep, bar = yw::ppq * 4;
 
     // split: only strictly inside; the tail is appended and does not slide again
-    lynx::Pattern p;
+    yw::Pattern p;
     p.notes = { { 0, 4 * step, 0, 60 } };
     p.notes[0].slide = true;
     CHECK (ne::split (p, 0, 0) == -1 && ne::split (p, 0, 4 * step) == -1);
@@ -5129,7 +5129,7 @@ TEST (note_edit_quick_operations)
            && ! p.notes[1].slide);
 
     // chop to grid: a 2.5-step note from half a step becomes 3 pieces cut on the step lines
-    lynx::Pattern c;
+    yw::Pattern c;
     c.notes = { { step / 2, step * 5 / 2, 0, 60 }, { 0, step, 1, 50 } };
     const auto pieces = ne::chop (c, { 0, 1 }, step);
     CHECK (pieces.size() == 4 && c.notes.size() == 4);
@@ -5137,14 +5137,14 @@ TEST (note_edit_quick_operations)
            && c.notes[3].length == step);
 
     // join: touching and overlapping notes of the same key and channel merge; others stay
-    lynx::Pattern j;
+    yw::Pattern j;
     j.notes = { { 0, step, 0, 60 }, { step, step, 0, 60 }, { step * 3 / 2, step * 2, 0, 60 }, { 5 * step, step, 0, 60 },
                 { step, step, 0, 62 }, { step, step, 1, 60 } };
     CHECK (ne::join (j, { 0, 1, 2, 3, 4, 5 }) == 2 && j.notes.size() == 4);
     CHECK (j.notes[0].start == 0 && j.notes[0].length == step * 7 / 2);
 
     // legato: each note reaches the next start (a chord ends together); the last keeps its length
-    lynx::Pattern l;
+    yw::Pattern l;
     l.notes = { { 0, 10, 0, 60 }, { 0, 10, 0, 64 }, { step, 10, 0, 62 }, { 3 * step, 10, 0, 65 }, { step, 10, 1, 40 } };
     ne::legato (l, { 0, 1, 2, 3, 4 });
     CHECK (l.notes[0].length == step && l.notes[1].length == step && l.notes[2].length == 2 * step && l.notes[3].length == 10
@@ -5153,13 +5153,13 @@ TEST (note_edit_quick_operations)
     // shrink to grid and full quantise (start and end)
     ne::shrinkToGrid (l, { 3 }, step / 2);
     CHECK (l.notes[3].length == step / 2);
-    lynx::Pattern q;
+    yw::Pattern q;
     q.notes = { { 10, step - 30, 0, 60 }, { step + 100, 20, 0, 60 } };
     ne::quantizeFull (q, { 0, 1 }, step);
     CHECK (q.notes[0].start == 0 && q.notes[0].length == step && q.notes[1].start == step && q.notes[1].length == step);
 
     // rotate inside the bar, wrapping
-    lynx::Pattern r;
+    yw::Pattern r;
     r.notes = { { 0, step, 0, 60 }, { bar - step, step, 0, 62 } };
     ne::rotate (r, { 0, 1 }, step, bar, 1);
     CHECK (r.notes[0].start == step && r.notes[1].start == 0);
@@ -5172,35 +5172,35 @@ TEST (note_edit_quick_operations)
 
 TEST (note_edit_grid_and_time_text)
 {
-    namespace ne = lynx::noteedit;
-    const std::int64_t step = lynx::ticksPerStep, bar = lynx::ppq * 4;
+    namespace ne = yw::noteedit;
+    const std::int64_t step = yw::ticksPerStep, bar = yw::ppq * 4;
     CHECK (ne::snapDown (250.0, step) == step && ne::snapDown (-1.0, step) == -step && ne::snapDown (17.9, 1) == 17);
     CHECK (ne::snapNearest (1000.0, { 400, 1100, 980 }, 50.0, step) == 980);
     CHECK (ne::snapNearest (1000.0, { 400 }, 50.0, step) == 960); // too far: falls back to the grid
     // screen grid: 24 px per step shows steps; zoomed out it climbs to beats, bars and bar multiples
     CHECK (ne::screenStep (24.0 / step, bar) == step);
-    CHECK (ne::screenStep (96.0 / bar, bar) == lynx::ppq);
+    CHECK (ne::screenStep (96.0 / bar, bar) == yw::ppq);
     CHECK (ne::screenStep (8.0 / bar, bar) == 2 * bar);
     CHECK (ne::screenStep (200.0 / step, bar) == step / 4);
 
-    CHECK (ne::formatTime (0, lynx::Meter (4, 4)) == "1:1:0" && ne::formatTime (bar + 5 * step + 7, lynx::Meter (4, 4)) == "2:6:7");
-    CHECK (ne::formatTime (step * 2, lynx::Meter (4, 4), true) == "0:2:0");
+    CHECK (ne::formatTime (0, yw::Meter (4, 4)) == "1:1:0" && ne::formatTime (bar + 5 * step + 7, yw::Meter (4, 4)) == "2:6:7");
+    CHECK (ne::formatTime (step * 2, yw::Meter (4, 4), true) == "0:2:0");
     std::int64_t t = 0;
-    CHECK (ne::parseTime ("2:6:7", lynx::Meter (4, 4), t) && t == bar + 5 * step + 7);
-    CHECK (ne::parseTime ("3", lynx::Meter (4, 4), t) && t == 2 * bar);
-    CHECK (ne::parseTime ("0:2:0", lynx::Meter (4, 4), t, true) && t == 2 * step);
-    CHECK (! ne::parseTime ("0:1:0", lynx::Meter (4, 4), t) && ! ne::parseTime ("1:17:0", lynx::Meter (4, 4), t) && ! ne::parseTime ("1:1:240", lynx::Meter (4, 4), t)
-           && ! ne::parseTime ("a", lynx::Meter (4, 4), t) && ! ne::parseTime ("", lynx::Meter (4, 4), t));
-    CHECK (ne::parseTime ("1:12:0", lynx::Meter (3, 4), t) && ! ne::parseTime ("1:13:0", lynx::Meter (3, 4), t)); // 3/4: 12 steps per bar
+    CHECK (ne::parseTime ("2:6:7", yw::Meter (4, 4), t) && t == bar + 5 * step + 7);
+    CHECK (ne::parseTime ("3", yw::Meter (4, 4), t) && t == 2 * bar);
+    CHECK (ne::parseTime ("0:2:0", yw::Meter (4, 4), t, true) && t == 2 * step);
+    CHECK (! ne::parseTime ("0:1:0", yw::Meter (4, 4), t) && ! ne::parseTime ("1:17:0", yw::Meter (4, 4), t) && ! ne::parseTime ("1:1:240", yw::Meter (4, 4), t)
+           && ! ne::parseTime ("a", yw::Meter (4, 4), t) && ! ne::parseTime ("", yw::Meter (4, 4), t));
+    CHECK (ne::parseTime ("1:12:0", yw::Meter (3, 4), t) && ! ne::parseTime ("1:13:0", yw::Meter (3, 4), t)); // 3/4: 12 steps per bar
 }
 
 TEST (playlist_clip_edges_and_time_selection)
 {
-    namespace ne = lynx::noteedit;
-    const std::int64_t beat = lynx::ppq;
+    namespace ne = yw::noteedit;
+    const std::int64_t beat = yw::ppq;
 
     // left-edge trim: content stays in place, cannot reveal what is before the content's start
-    lynx::Clip c { 0, 0, 4 * beat, 4 * beat, beat };
+    yw::Clip c { 0, 0, 4 * beat, 4 * beat, beat };
     ne::trimStart (c, 5 * beat, beat);
     CHECK (c.start == 5 * beat && c.offset == 2 * beat && c.length == 3 * beat);
     ne::trimStart (c, 0, beat);
@@ -5209,7 +5209,7 @@ TEST (playlist_clip_edges_and_time_selection)
     CHECK (c.length == beat && c.end() == 8 * beat);
 
     // slip moves the content, not the clip
-    lynx::Clip s { 0, 0, 0, 2 * beat, beat };
+    yw::Clip s { 0, 0, 0, 2 * beat, beat };
     ne::slip (s, beat / 2);
     CHECK (s.offset == beat / 2 && s.start == 0 && s.length == 2 * beat);
     ne::slip (s, beat);
@@ -5218,18 +5218,18 @@ TEST (playlist_clip_edges_and_time_selection)
     CHECK (s.offset == 3 * beat);
 
     // insert / delete time across all tracks, markers included
-    std::vector<lynx::Clip> clips { { 0, 0, 0, 2 * beat, 0 }, { 0, 1, 4 * beat, 2 * beat, 0 }, { 0, 2, beat, 6 * beat, 0 } };
-    std::vector<lynx::Marker> markers { { 5 * beat, "A" }, { beat / 2, "B" } };
+    std::vector<yw::Clip> clips { { 0, 0, 0, 2 * beat, 0 }, { 0, 1, 4 * beat, 2 * beat, 0 }, { 0, 2, beat, 6 * beat, 0 } };
+    std::vector<yw::Marker> markers { { 5 * beat, "A" }, { beat / 2, "B" } };
     ne::insertTime (clips, markers, 2 * beat, 4 * beat);
     CHECK (clips[0].start == 0 && clips[1].start == 8 * beat && clips[2].start == beat && markers[0].tick == 9 * beat
            && markers[1].tick == beat / 2);
 
-    std::vector<lynx::Clip> d { { 0, 0, 0, 2 * beat, 0 },             // before: kept
+    std::vector<yw::Clip> d { { 0, 0, 0, 2 * beat, 0 },             // before: kept
                                 { 0, 1, 3 * beat, beat, 0 },          // inside: deleted
                                 { 0, 2, beat, 6 * beat, 0 },          // spans the cut: head + tail
                                 { 0, 3, 3 * beat, 4 * beat, 0 },      // tail outside: trimmed and moved
                                 { 0, 4, 8 * beat, beat, 0 } };        // after: moved left
-    std::vector<lynx::Marker> dm { { 3 * beat, "in" }, { 9 * beat, "after" } };
+    std::vector<yw::Marker> dm { { 3 * beat, "in" }, { 9 * beat, "after" } };
     ne::deleteTime (d, dm, 2 * beat, 5 * beat);
     CHECK (d.size() == 5);
     CHECK (d[1].track == 2 && d[1].start == beat && d[1].length == beat);
@@ -5238,7 +5238,7 @@ TEST (playlist_clip_edges_and_time_selection)
     CHECK (d[4].start == 5 * beat && dm.size() == 1 && dm[0].tick == 6 * beat);
 
     // time selection: overlapping clips; Ctrl+B repeats what starts inside it after itself
-    std::vector<lynx::Clip> r { { 0, 0, 0, beat, 0 }, { 0, 1, beat, 2 * beat, 0 }, { 0, 0, 4 * beat, beat, 0 } };
+    std::vector<yw::Clip> r { { 0, 0, 0, beat, 0 }, { 0, 1, beat, 2 * beat, 0 }, { 0, 0, 4 * beat, beat, 0 } };
     CHECK ((ne::clipsInTime (r, beat / 2, 2 * beat) == std::vector<int> { 0, 1 }));
     const auto added = ne::repeatTime (r, 0, 4 * beat, {});
     CHECK (added.size() == 2 && r[3].start == 4 * beat && r[4].start == 5 * beat && r[4].track == 1);
@@ -5247,9 +5247,9 @@ TEST (playlist_clip_edges_and_time_selection)
 
 TEST (recorder_builds_notes_in_pattern_and_song_mode)
 {
-    auto song = lynx::Song::makeDefault();
-    const auto loop = song.patterns[0].effectiveLength (lynx::Meter (4, 4)); // 1 bar = 3840
-    lynx::NoteRecorder r;
+    auto song = yw::Song::makeDefault();
+    const auto loop = song.patterns[0].effectiveLength (yw::Meter (4, 4)); // 1 bar = 3840
+    yw::NoteRecorder r;
     r.add (song, { 100.0, 4, 60, 0.5f, true }); // no take: ignored
     CHECK (r.takeFinished().empty());
 
@@ -5264,15 +5264,15 @@ TEST (recorder_builds_notes_in_pattern_and_song_mode)
     CHECK (notes[1].key == 64 && notes[1].start == 5000 - 3840 && notes[1].length == 240);
 
     // song mode: position inside the current pattern's clip (with offset)
-    song.mode = lynx::PlayMode::song;
+    song.mode = yw::PlayMode::song;
     song.playlist = { { 0, 0, 7680, 3840, 960 } };
-    CHECK (lynx::patternPositionForTick (song, 7680.0 + 100.0, loop) == 1060);
-    CHECK (lynx::patternPositionForTick (song, 100.0, loop) == 100); // outside the clip: like loop
+    CHECK (yw::patternPositionForTick (song, 7680.0 + 100.0, loop) == 1060);
+    CHECK (yw::patternPositionForTick (song, 100.0, loop) == 100); // outside the clip: like loop
 }
 
 TEST (automation_curve_and_playback)
 {
-    lynx::Automation a;
+    yw::Automation a;
     a.points = { { 0, 0.0f }, { 960, 1.0f }, { 1920, 0.5f, 0.0f } };
     CHECK (a.valueAt (-10.0) == 0.0f && a.valueAt (480.0) == 0.5f && a.valueAt (5000.0) == 0.5f);
     CHECK (a.length() == 1920);
@@ -5281,31 +5281,31 @@ TEST (automation_curve_and_playback)
 
     // automated Master: silence in the first bar, sound in the second, and the last value
     // keeps applying after the automation clip ends
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
-    song.mode = lynx::PlayMode::song;
-    const auto bar = (std::int64_t) lynx::ppq * 4;
+    song.mode = yw::PlayMode::song;
+    const auto bar = (std::int64_t) yw::ppq * 4;
     for (int b = 0; b < 3; ++b)
         song.playlist.push_back ({ 0, 0, bar * b, bar, 0 });
-    lynx::Automation master;
-    master.target = { lynx::AutomationTargetKind::mixerVolume, 0 };
+    yw::Automation master;
+    master.target = { yw::AutomationTargetKind::mixerVolume, 0 };
     master.points = { { 0, 0.0f }, { bar - 1, 0.0f }, { bar, 0.8f } };
     song.automations.push_back (master);
-    lynx::Clip ac;
-    ac.kind = lynx::ClipKind::automation;
+    yw::Clip ac;
+    ac.kind = yw::ClipKind::automation;
     ac.automation = 0;
     ac.track = 1;
     ac.length = bar + bar / 2;
     song.playlist.push_back (ac);
 
     const double sr = 48000.0;
-    auto state = lynx::RackState::build (song, nullptr, sr);
+    auto state = yw::RackState::build (song, nullptr, sr);
     CHECK (state->hasAutomation && state->mixerVolumeAuto[0] == 0 && state->automationClips[0].size() == 1);
 
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (sr, 512);
     std::vector<float> l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (song.bpm, sr);
+    const auto tps = yw::ticksPerSample (song.bpm, sr);
     float peakBar1 = 0.0f, peakBar2 = 0.0f, peakBar3 = 0.0f;
 
     for (double tick = 0.0; tick < (double) (bar * 3); tick += 512 * tps)
@@ -5322,9 +5322,9 @@ TEST (automation_curve_and_playback)
 
     // target removed: automation disappears from the tables
     song.removeChannel (0);
-    song.automations[0].target = { lynx::AutomationTargetKind::channelVolume, 0 };
+    song.automations[0].target = { yw::AutomationTargetKind::channelVolume, 0 };
     song.removeChannel (0);
-    CHECK (song.automations[0].target.kind == lynx::AutomationTargetKind::none);
+    CHECK (song.automations[0].target.kind == yw::AutomationTargetKind::none);
     song.removeAutomation (0);
     CHECK (song.automations.empty() && song.playlist.size() == 3);
 }
@@ -5332,22 +5332,22 @@ TEST (automation_curve_and_playback)
 TEST (mixer_sends_between_inserts)
 {
     // insert 1 goes only to 3; 3 goes to the Master: same sum (0.5 + 0.5)
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); }) - 1.0f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); }) - 1.0f) < 1e-4f);
 
     // send at 50% and muted destination
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRoute (1, 3, true, 0.5f); s.setRoute (1, 0, false); }) - 0.75f) < 1e-4f);
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); s.mixer[3].muted = true; }) - 0.5f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRoute (1, 3, true, 0.5f); s.setRoute (1, 0, false); }) - 0.75f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); s.mixer[3].muted = true; }) - 0.5f) < 1e-4f);
 
     // going to the Master and to 3: the signal doubles
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRoute (1, 3, true); }) - 1.5f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRoute (1, 3, true); }) - 1.5f) < 1e-4f);
 
     // solo on 3 lets what reaches it sound (insert 1), but not 2
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); s.mixer[3].solo = true; }) - 0.5f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); s.mixer[3].solo = true; }) - 0.5f) < 1e-4f);
     // solo on 1 lets the path to the Master (3) sound
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); s.mixer[1].solo = true; }) - 0.5f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRoute (1, 3, true); s.setRoute (1, 0, false); s.mixer[1].solo = true; }) - 0.5f) < 1e-4f);
 
     // order and cycles
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.setRoute (4, 2, true);
     song.setRoute (2, 1, true);
     CHECK (! song.canRoute (1, 4) && ! song.canRoute (1, 2) && song.canRoute (1, 5));
@@ -5366,38 +5366,38 @@ TEST (mixer_sends_between_inserts)
     song.setRouteLevel (3, 0, 1.4f);
     CHECK (song.routeLevel (3, 5) == 0.5f && song.routeLevel (3, 0) == 1.4f && song.mixer[3].masterLevel == 1.4f);
     song.setRouteLevel (3, 0, 9.0f);
-    CHECK (song.routeLevel (3, 0) == lynx::maxFaderGain);
+    CHECK (song.routeLevel (3, 0) == yw::maxFaderGain);
     song.setRouteLevel (3, 6, 0.5f); // no such route: ignored
     CHECK (! song.routes (3, 6) && song.routeLevel (3, 6) == 0.0f);
     song.setRoute (3, 0, false);
     CHECK (song.routeLevel (3, 0) == 0.0f);
 
     // the route to Master's level scales what insert 1 sends there (0.5 + 0.5·0.25)
-    CHECK (std::abs (renderMixerCase ([] (lynx::Song& s) { s.setRouteLevel (1, 0, 0.25f); }) - 0.625f) < 1e-4f);
+    CHECK (std::abs (renderMixerCase ([] (yw::Song& s) { s.setRouteLevel (1, 0, 0.25f); }) - 0.625f) < 1e-4f);
 }
 
 namespace
 {
 // Test effect: delays the signal by `latency` samples and reports that latency (like a lookahead plugin).
-class LatentEffect final : public lynx::Effect
+class LatentEffect final : public yw::Effect
 {
 public:
     explicit LatentEffect (int samples) : latency (samples), line (samples) {}
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void process (float* l, float* r, int n, const lynx::EffectParams&, double) noexcept override { line.process (l, r, n); }
+    void process (float* l, float* r, int n, const yw::EffectParams&, double) noexcept override { line.process (l, r, n); }
     int latencySamples() const noexcept override { return latency; }
 
 private:
     int latency;
-    lynx::DelayLine line;
+    yw::DelayLine line;
 };
 } // namespace
 
 TEST (delay_line_mix_into_matches_process_and_drains_tail)
 {
     // mixInto = process over source*level, added to the destination; in stretches that cross the ring
-    lynx::DelayLine a (37), b (37);
+    yw::DelayLine a (37), b (37);
     std::vector<float> sl (300), sr (300), dl (300, 0.5f), dr (300, -0.5f), xl (300), xr (300);
     for (int i = 0; i < 300; ++i)
     {
@@ -5432,9 +5432,9 @@ TEST (delay_line_mix_into_matches_process_and_drains_tail)
 TEST (limiter_lookahead_holds_ceiling_on_bursts)
 {
     // short bursts over a low floor: the sliding maximum must see each peak before it leaves
-    auto fx = lynx::makeEffect (lynx::EffectKind::limiter);
+    auto fx = yw::makeEffect (yw::EffectKind::limiter);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::limiter);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::limiter);
     slot.params[2] = 0.0f; // 10 ms release
     std::vector<float> l (48000), r (48000);
     std::uint32_t seed = 1;
@@ -5460,17 +5460,17 @@ TEST (limiter_lookahead_holds_ceiling_on_bursts)
 TEST (pdc_aligns_paths_through_latent_effects)
 {
     // plan: channel 0 -> insert 1 (effect of 100) -> insert 3; channel 1 -> insert 2 -> Master
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (4);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (4);
     s.channels.resize (3);
     s.channels[0].mixerTrack = 1;
     s.channels[1].mixerTrack = 2;
     s.channels[2].mixerTrack = 3;
-    s.mixer[1].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::eq));
+    s.mixer[1].effects.push_back (yw::makeEffectSlot (yw::EffectKind::eq));
     s.setRoute (1, 3, true);
     s.setRoute (1, 0, false);
 
-    auto plan = lynx::computePdc (s, { 0, 0, 30 }, { {}, { 100 } });
+    auto plan = yw::computePdc (s, { 0, 0, 30 }, { {}, { 100 } });
     CHECK (plan.inAlign[1] == 0 && plan.outLat[1] == 100);
     CHECK (plan.inAlign[3] == 100 && plan.channelDelay[2] == 70); // instrument of 30 on insert 3
     CHECK (plan.sendDelay[1][1] == 0);                             // the slowest path isn't delayed
@@ -5478,44 +5478,44 @@ TEST (pdc_aligns_paths_through_latent_effects)
 
     // bypass zeroes the slot's latency
     s.mixer[1].effects[0].enabled = false;
-    CHECK (lynx::computePdc (s, { 0, 0, 30 }, { {}, { 100 } }).total == 30);
+    CHECK (yw::computePdc (s, { 0, 0, 30 }, { {}, { 100 } }).total == 30);
 
     // rendered: two impulses played together come out together
-    lynx::Song r;
-    r.mixer = lynx::Song::defaultMixer (2);
+    yw::Song r;
+    r.mixer = yw::Song::defaultMixer (2);
     for (int i = 0; i < 2; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.samplePath = "impulso";
         c.volume = 1.0f;
         c.mixerTrack = i + 1;
         r.channels.push_back (c);
     }
     r.patterns.emplace_back();
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::plugin;
     fx.plugin.id = "latente";
     r.mixer[1].effects.push_back (fx);
 
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     f.samples = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (64, 0.0f);
         d->left[0] = 1.0f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    f.pluginEffects = [] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { return std::make_shared<LatentEffect> (100); };
+    f.pluginEffects = [] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { return std::make_shared<LatentEffect> (100); };
 
-    auto state = lynx::RackState::build (r, nullptr, 48000.0, f);
+    auto state = yw::RackState::build (r, nullptr, 48000.0, f);
     CHECK (state->pdc.total == 100 && state->sendDelays[2][0] != nullptr && state->sendDelays[2][0]->length() == 100);
 
-    lynx::RackRenderer renderer;
+    yw::RackRenderer renderer;
     renderer.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
+    yw::LiveEventQueue live;
     for (int ch = 0; ch < 2; ++ch)
     {
-        lynx::NoteEvent on;
+        yw::NoteEvent on;
         on.channel = ch;
         on.key = 60;
         on.velocity = 1.0f;
@@ -5532,16 +5532,16 @@ TEST (pdc_aligns_paths_through_latent_effects)
 
     // editing without changing latencies reuses the lines
     r.channels[0].volume = 0.5f;
-    auto next = lynx::RackState::build (r, state.get(), 48000.0, f);
+    auto next = yw::RackState::build (r, state.get(), 48000.0, f);
     CHECK (next->sendDelays[2][0] == state->sendDelays[2][0]);
 }
 
 TEST (mixer_mute_fades_instead_of_clicking)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "dc";
     c.volume = 1.0f;
     c.mixerTrack = 1;
@@ -5549,19 +5549,19 @@ TEST (mixer_mute_fades_instead_of_clicking)
     s.patterns.emplace_back();
 
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (48000, 0.5f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
 
-    auto on = lynx::RackState::build (s, nullptr, 48000.0, provider);
+    auto on = yw::RackState::build (s, nullptr, 48000.0, provider);
     s.mixer[1].muted = true;
-    auto off = lynx::RackState::build (s, on.get(), 48000.0, provider);
+    auto off = yw::RackState::build (s, on.get(), 48000.0, provider);
 
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent note;
+    yw::LiveEventQueue live;
+    yw::NoteEvent note;
     note.velocity = 1.0f;
     live.push (note);
 
@@ -5580,7 +5580,7 @@ TEST (mixer_mute_fades_instead_of_clicking)
 
 TEST (dither_quantizes_to_lsb_grid_with_small_error)
 {
-    lynx::Dither d (16);
+    yw::Dither d (16);
     std::vector<float> x (4800);
     for (std::size_t i = 0; i < x.size(); ++i)
         x[i] = 0.25f * std::sin ((float) i * 0.05f);
@@ -5602,40 +5602,40 @@ TEST (dither_quantizes_to_lsb_grid_with_small_error)
 TEST (parallel_rendering_matches_sequential)
 {
     // 32 channels (worth parallelizing), inserts with chained sends
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (16);
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (16);
 
     for (int i = 5; i < 32; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = i % 2 ? lynx::InstrumentKind::synth : lynx::InstrumentKind::hat;
+        yw::ChannelDef c;
+        c.instrument = i % 2 ? yw::InstrumentKind::synth : yw::InstrumentKind::hat;
         c.mixerTrack = 1 + i % 12;
         c.volume = 0.3f;
         song.channels.push_back (c);
 
         for (int step = i % 4; step < 16; step += 3)
-            song.patterns[0].notes.push_back ({ (std::int64_t) step * lynx::ticksPerStep, 200, i, 48 + i, 0.7f });
+            song.patterns[0].notes.push_back ({ (std::int64_t) step * yw::ticksPerStep, 200, i, 48 + i, 0.7f });
     }
 
     song.patterns[0].sortNotes();
     song.setRoute (3, 7, true, 0.6f);
     song.setRoute (7, 9, true, 0.5f);
     song.setRoute (2, 9, true);
-    song.mixer[9].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
+    song.mixer[9].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
 
-    auto seqState = lynx::RackState::build (song, nullptr, 48000.0);
-    auto parState = lynx::RackState::build (song, nullptr, 48000.0);
+    auto seqState = yw::RackState::build (song, nullptr, 48000.0);
+    auto parState = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (parState->parallel && parState->mixerLayers.size() == 3);
     CHECK (parState->graphOk); // round 165i: the task graph runs it (channels and inserts by readiness)
 
-    lynx::WorkerPool pool (3);
-    lynx::RackRenderer seq, par;
+    yw::WorkerPool pool (3);
+    yw::RackRenderer seq, par;
     seq.prepare (48000.0, 512);
     par.prepare (48000.0, 512);
     par.setWorkerPool (&pool);
 
     std::vector<float> l1 (512), r1 (512), l2 (512), r2 (512);
-    const auto tps = lynx::ticksPerSample (song.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (song.bpm, 48000.0);
     bool same = true;
     float peak = 0.0f;
 
@@ -5661,39 +5661,39 @@ TEST (parallel_rendering_matches_sequential)
 
 TEST (rea165i_task_graph_matches_layers_with_sidechain_and_cycle)
 {
-    // the task graph against the layers (LYNX_TASKGRAPH off is the same as a pool-less render): sends, a sidechain,
+    // the task graph against the layers (YW_TASKGRAPH off is the same as a pool-less render): sends, a sidechain,
     // a chain three inserts deep, channels on the Master; a routing cycle keeps the layers
-    auto song = lynx::Song::makeDefault();
-    song.mixer = lynx::Song::defaultMixer (16);
+    auto song = yw::Song::makeDefault();
+    song.mixer = yw::Song::defaultMixer (16);
     for (int i = 5; i < 40; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = i % 3 == 0 ? lynx::InstrumentKind::hat : lynx::InstrumentKind::synth;
+        yw::ChannelDef c;
+        c.instrument = i % 3 == 0 ? yw::InstrumentKind::hat : yw::InstrumentKind::synth;
         c.mixerTrack = i % 7 == 0 ? 0 : 1 + i % 13;
         c.volume = 0.25f;
         song.channels.push_back (c);
         for (int step = i % 5; step < 16; step += 2)
-            song.patterns[0].notes.push_back ({ (std::int64_t) step * lynx::ticksPerStep, 150, i, 40 + i, 0.6f });
+            song.patterns[0].notes.push_back ({ (std::int64_t) step * yw::ticksPerStep, 150, i, 40 + i, 0.6f });
     }
     song.patterns[0].sortNotes();
     song.setRoute (3, 7, true, 0.6f);
     song.setRoute (7, 9, true, 0.5f);
     song.setRoute (9, 11, true, 0.5f);
-    song.mixer[9].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
-    auto comp = lynx::makeEffectSlot (lynx::EffectKind::compressor);
+    song.mixer[9].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
+    auto comp = yw::makeEffectSlot (yw::EffectKind::compressor);
     comp.sidechain = 4;
     song.mixer[11].effects.push_back (comp);
 
-    auto render = [] (const lynx::Song& s, bool pool, bool& graph) {
-        auto state = lynx::RackState::build (s, nullptr, 48000.0);
+    auto render = [] (const yw::Song& s, bool pool, bool& graph) {
+        auto state = yw::RackState::build (s, nullptr, 48000.0);
         graph = state->graphOk;
-        lynx::WorkerPool workers (4);
-        lynx::RackRenderer r;
+        yw::WorkerPool workers (4);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         if (pool)
             r.setWorkerPool (&workers);
         std::vector<float> out, l (384), rr (384);
-        const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+        const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
         for (int block = 0; block < 150; ++block)
         {
             r.process (state.get(), true, block * 384 * tps, 384, l.data(), rr.data());
@@ -5718,12 +5718,12 @@ TEST (rea165i_task_graph_matches_layers_with_sidechain_and_cycle)
 
 TEST (rea165i_test_profile_and_test_mode_parsing)
 {
-    using namespace lynx::testprofile;
+    using namespace yw::testprofile;
     CHECK (! profileDirFrom (nullptr));
     CHECK (! profileDirFrom (""));
     CHECK (! profileDirFrom ("relative/dir")); // only absolute folders
     CHECK (! profileDirFrom ("C:relative"));
-    CHECK (profileDirFrom ("/tmp/lynx-profile/") == std::string ("/tmp/lynx-profile"));
+    CHECK (profileDirFrom ("/tmp/yw-profile/") == std::string ("/tmp/yw-profile"));
     CHECK (profileDirFrom ("  \"C:\\Users\\me\\bench profile\\\" ") == std::string ("C:\\Users\\me\\bench profile"));
     CHECK (profileDirFrom ("D:/x") == std::string ("D:/x"));
     CHECK (profileDirFrom ("C:\\") == std::string ("C:\\")); // a drive root keeps its separator
@@ -5738,11 +5738,11 @@ TEST (rea165i_test_profile_and_test_mode_parsing)
 
 TEST (rea165i_keep_float_mode_restores_ftz_after_foreign_code)
 {
-    // a hosted plugin that turns flush-to-zero off (or changes the rounding) no longer leaks it into LYNX's DSP
-    const lynx::ScopedFlushDenormals ftz;
+    // a hosted plugin that turns flush-to-zero off (or changes the rounding) no longer leaks it into YW's DSP
+    const yw::ScopedFlushDenormals ftz;
     const auto before = _mm_getcsr();
     {
-        const lynx::KeepFloatMode keep;
+        const yw::KeepFloatMode keep;
         _mm_setcsr ((before & ~0x8040u) | 0x6000u); // what a plugin might leave: no FTZ/DAZ, round toward zero
     }
     CHECK (_mm_getcsr() == before);
@@ -5753,7 +5753,7 @@ TEST (rea165i_keep_float_mode_restores_ftz_after_foreign_code)
 
 TEST (arrangements_switch_and_keep_clip_indices)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.patterns.emplace_back().name = "B";
     s.playlist = { { 1, 0, 0, 960, 0 } };
     s.loopEnd = 960;
@@ -5779,12 +5779,12 @@ TEST (arrangements_switch_and_keep_clip_indices)
 namespace
 {
 // Test effect that inverts the signal and counts how many times it processed.
-class CountingInverter final : public lynx::Effect
+class CountingInverter final : public yw::Effect
 {
 public:
     void prepare (double) noexcept override {}
     void reset() noexcept override {}
-    void process (float* l, float* r, int n, const lynx::EffectParams&, double) noexcept override
+    void process (float* l, float* r, int n, const yw::EffectParams&, double) noexcept override
     {
         ++calls;
         for (int i = 0; i < n; ++i)
@@ -5806,10 +5806,10 @@ TEST (keyboard_controller_outputs_key_value)
     std::memcpy (blob.data() + 12 + 60 * 4, &key60, 4);
     std::memcpy (blob.data() + 548, &off, 4);
     blob[552] = 1; // auto release
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::controller;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::controller;
     c.controllerState = blob;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::controller);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::controller);
     inst->prepare (48000.0);
     inst->configure (c, 120.0);
     std::vector<float> l (64), r (64);
@@ -5823,68 +5823,68 @@ TEST (keyboard_controller_outputs_key_value)
 TEST (envelope_controller_ducks_on_each_note)
 {
     // a unipolar articulator like "Basic Sidechain": base 0.05, drops to 0 on the note and rises to 1 in 0.3 s
-    lynx::ControllerArticulator a;
+    yw::ControllerArticulator a;
     a.envOn = true;
     a.base = 0.05f;
     a.envLevel = 1.0f;
     a.count = 3;
     a.time = { 0.0f, 0.2f, 0.3f };
     a.level = { 0.0f, 0.75f, 1.0f };
-    CHECK (std::abs (lynx::controllerValue (a, 0.0, -1.0) - 0.05f) < 1e-4f);
-    CHECK (std::abs (lynx::controllerValue (a, 0.1, -1.0) - 0.425f) < 1e-3f);
-    CHECK (lynx::controllerValue (a, 1.0, -1.0) > 0.99f);  // no sustain: runs to the end and stays
+    CHECK (std::abs (yw::controllerValue (a, 0.0, -1.0) - 0.05f) < 1e-4f);
+    CHECK (std::abs (yw::controllerValue (a, 0.1, -1.0) - 0.425f) < 1e-3f);
+    CHECK (yw::controllerValue (a, 1.0, -1.0) > 0.99f);  // no sustain: runs to the end and stays
     a.sustain = 1;
-    CHECK (std::abs (lynx::controllerValue (a, 1.0, -1.0) - 0.8f) < 1e-3f);  // held at sustain
-    CHECK (lynx::controllerValue (a, 1.0, 0.5) > 0.99f);                     // released: continues to the end
+    CHECK (std::abs (yw::controllerValue (a, 1.0, -1.0) - 0.8f) < 1e-3f);  // held at sustain
+    CHECK (yw::controllerValue (a, 1.0, 0.5) > 0.99f);                     // released: continues to the end
     a.bipolar = true;
     a.base = 0.5f;
     a.sustain = -1;
-    CHECK (std::abs (lynx::controllerValue (a, 0.0, -1.0) - 0.0f) < 1e-4f); // bipolar: 0.5 + (0 − 0.5)
+    CHECK (std::abs (yw::controllerValue (a, 0.0, -1.0) - 0.0f) < 1e-4f); // bipolar: 0.5 + (0 − 0.5)
 }
 
 TEST (peak_controller_drives_live_automation)
 {
     // track 1: source (DC 0.5) with Peak Controller; track 2: DC 0.5 with volume linked to the controller
     auto render = [] (bool linked) {
-        lynx::Song s;
-        s.mixer = lynx::Song::defaultMixer (2);
+        yw::Song s;
+        s.mixer = yw::Song::defaultMixer (2);
         for (int t = 1; t <= 2; ++t)
         {
-            lynx::ChannelDef c;
-            c.instrument = lynx::InstrumentKind::sampler;
+            yw::ChannelDef c;
+            c.instrument = yw::InstrumentKind::sampler;
             c.samplePath = "dc";
             c.volume = 1.0f;
             c.mixerTrack = t;
             s.channels.push_back (c);
         }
         s.patterns.emplace_back();
-        auto peak = lynx::makeEffectSlot (lynx::EffectKind::peakController);
+        auto peak = yw::makeEffectSlot (yw::EffectKind::peakController);
         peak.params[0] = 1.0f; // base 1
         peak.params[1] = 0.0f; // amount −1: 1 − peak
         peak.params[2] = 0.5f; // no tension
         s.mixer[1].effects.push_back (peak);
         if (linked)
         {
-            lynx::Automation a;
+            yw::Automation a;
             a.name = "Peak";
-            a.target = { lynx::AutomationTargetKind::mixerVolume, 2 };
+            a.target = { yw::AutomationTargetKind::mixerVolume, 2 };
             a.source = { 1, 0, 0 };
             s.automations.push_back (a);
         }
 
-        lynx::RackState::Factories f;
+        yw::RackState::Factories f;
         f.samples = [] (const std::string&) {
-            auto d = std::make_shared<lynx::SampleData>();
+            auto d = std::make_shared<yw::SampleData>();
             d->left.assign (48000, 0.5f);
-            return std::shared_ptr<const lynx::SampleData> (d);
+            return std::shared_ptr<const yw::SampleData> (d);
         };
-        auto state = lynx::RackState::build (s, nullptr, 48000.0, f);
-        lynx::RackRenderer r;
+        auto state = yw::RackState::build (s, nullptr, 48000.0, f);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
-        lynx::LiveEventQueue live;
+        yw::LiveEventQueue live;
         for (int ch = 0; ch < 2; ++ch)
         {
-            lynx::NoteEvent on;
+            yw::NoteEvent on;
             on.channel = ch;
             on.velocity = 1.0f;
             live.push (on);
@@ -5901,35 +5901,35 @@ TEST (peak_controller_drives_live_automation)
 
 TEST (effect_slot_dry_wet_and_smart_disable)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (1);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (1);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "dc";
     c.volume = 1.0f;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::EffectSlot fx;
-    fx.kind = lynx::EffectKind::plugin;
+    yw::EffectSlot fx;
+    fx.kind = yw::EffectKind::plugin;
     fx.plugin.id = "inversor";
     fx.mix = 0.25f; // 75% dry (+0.5) and 25% wet (-0.5) = +0.25
     s.mixer[1].effects.push_back (fx);
 
     auto inverter = std::make_shared<CountingInverter>();
-    lynx::RackState::Factories f;
+    yw::RackState::Factories f;
     f.samples = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (4800, 0.5f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    f.pluginEffects = [inverter] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { return inverter; };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, f);
+    f.pluginEffects = [inverter] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { return inverter; };
+    auto state = yw::RackState::build (s, nullptr, 48000.0, f);
 
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.velocity = 1.0f;
     live.push (on);
     std::vector<float> l (480), rr (480);
@@ -5953,36 +5953,36 @@ TEST (effect_slot_dry_wet_and_smart_disable)
 
 TEST (swing_delays_offbeat_sixteenths)
 {
-    CHECK (lynx::swingDelay (0, 1.0f) == 0);
-    CHECK (lynx::swingDelay (lynx::ticksPerStep, 1.0f) == lynx::ticksPerStep / 2);
-    CHECK (lynx::swingDelay (lynx::ticksPerStep * 2, 1.0f) == 0);
-    CHECK (lynx::swingDelay (lynx::ticksPerStep + 10, 1.0f) == (lynx::ticksPerStep - 20) / 2); // off the grid: triangular weight (FL)
-    CHECK (lynx::swingDelay (lynx::ticksPerStep, 1.0f, 0.5f) == lynx::ticksPerStep / 4); // channel mix
-    CHECK (lynx::swingDelay (lynx::ticksPerStep * 3, 0.5f) == lynx::ticksPerStep / 4);
+    CHECK (yw::swingDelay (0, 1.0f) == 0);
+    CHECK (yw::swingDelay (yw::ticksPerStep, 1.0f) == yw::ticksPerStep / 2);
+    CHECK (yw::swingDelay (yw::ticksPerStep * 2, 1.0f) == 0);
+    CHECK (yw::swingDelay (yw::ticksPerStep + 10, 1.0f) == (yw::ticksPerStep - 20) / 2); // off the grid: triangular weight (FL)
+    CHECK (yw::swingDelay (yw::ticksPerStep, 1.0f, 0.5f) == yw::ticksPerStep / 4); // channel mix
+    CHECK (yw::swingDelay (yw::ticksPerStep * 3, 0.5f) == yw::ticksPerStep / 4);
 
-    lynx::Pattern p;
-    p.notes = { { 0, 100, 0, 60 }, { lynx::ticksPerStep, 100, 0, 62 } };
-    lynx::EventBuffer ev;
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 0.0, 12000, tps, ev, 1.0f);
+    yw::Pattern p;
+    p.notes = { { 0, 100, 0, 60 }, { yw::ticksPerStep, 100, 0, 62 } };
+    yw::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 0.0, 12000, tps, ev, 1.0f);
     int onOffset = -1;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on && e.key == 62)
+        if (e.type == yw::NoteEvent::Type::on && e.key == 62)
             onOffset = e.sampleOffset;
-    CHECK (onOffset == (int) std::floor ((lynx::ticksPerStep * 1.5) / tps));
+    CHECK (onOffset == (int) std::floor ((yw::ticksPerStep * 1.5) / tps));
 }
 
 TEST (sampler_settings_pitch_reverse_envelope_cut)
 {
-    auto ramp = std::make_shared<lynx::SampleData>();
+    auto ramp = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 48000; ++i)
         ramp->left.push_back ((float) i / 48000.0f); // ramp: the value tells where the read position is
     ramp->sampleRate = 48000.0;
 
-    auto play = [&] (const lynx::SamplerSettings& s, int key, int frames, bool releaseAfterHalf) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, ramp);
+    auto play = [&] (const yw::SamplerSettings& s, int key, int frames, bool releaseAfterHalf) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, ramp);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.sampler = s;
         inst->configure (c, 120.0);
         inst->noteOn (key, 1.0f);
@@ -5995,33 +5995,33 @@ TEST (sampler_settings_pitch_reverse_envelope_cut)
     };
 
     // +12 semitones: reads twice as fast
-    lynx::SamplerSettings up;
+    yw::SamplerSettings up;
     up.pitch = 12.0f;
     CHECK (std::abs (play (up, 60, 1000, false)[999] - 2.0f * 999.0f / 48000.0f) < 1e-3f);
 
     // reversed: starts from the end
-    lynx::SamplerSettings back;
+    yw::SamplerSettings back;
     back.reverse = true;
     CHECK (play (back, 60, 100, false)[10] > 0.99f);
 
     // 10 ms attack: starts silent and reaches full level
-    lynx::SamplerSettings slow;
+    yw::SamplerSettings slow;
     slow.attack = 0.01f;
     const auto a = play (slow, 60, 2000, false);
     CHECK (a[10] < 0.2f * (10.0f / 48000.0f) + 1e-6f && std::abs (a[1500] - 1500.0f / 48000.0f) < 1e-4f);
 
     // 5 ms release: gone right after release; without release it plays in full
-    lynx::SamplerSettings rel;
+    yw::SamplerSettings rel;
     rel.release = 0.005f;
     CHECK (play (rel, 60, 2000, true)[1999] == 0.0f);
-    CHECK (play (lynx::SamplerSettings {}, 60, 2000, true)[1999] > 0.0f);
+    CHECK (play (yw::SamplerSettings {}, 60, 2000, true)[1999] > 0.0f);
 
     // cut itself: the second note cuts the first (one voice remains)
-    lynx::SamplerSettings cut;
+    yw::SamplerSettings cut;
     cut.cut = true;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, ramp);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, ramp);
     inst->prepare (48000.0);
-    lynx::ChannelDef cutChannel;
+    yw::ChannelDef cutChannel;
     cutChannel.sampler = cut;
     inst->configure (cutChannel, 120.0);
     inst->noteOn (60, 1.0f);
@@ -6035,40 +6035,40 @@ TEST (sampler_settings_pitch_reverse_envelope_cut)
 
 TEST (playlist_split_and_track_mute)
 {
-    lynx::Clip c { 0, 3, 960, 3840, 480 };
-    const auto rest = lynx::splitClip (c, 2000);
+    yw::Clip c { 0, 3, 960, 3840, 480 };
+    const auto rest = yw::splitClip (c, 2000);
     CHECK (c.start == 960 && c.length == 1040 && c.offset == 480);
     CHECK (rest.start == 2000 && rest.length == 2800 && rest.offset == 480 + 1040 && rest.track == 3);
 
-    auto s = lynx::Song::makeDefault();
-    s.mode = lynx::PlayMode::song;
+    auto s = yw::Song::makeDefault();
+    s.mode = yw::PlayMode::song;
     s.playlist = { { 0, 0, 0, 3840, 0 } };
-    lynx::EventBuffer ev;
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::scheduleSong (s, 0.0, 48000, tps, ev);
+    yw::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::scheduleSong (s, 0.0, 48000, tps, ev);
     CHECK (ev.size() > 0);
     s.playlistTracks.resize (1);
     s.playlistTracks[0].muted = true;
     ev.clear();
-    lynx::scheduleSong (s, 0.0, 48000, tps, ev);
+    yw::scheduleSong (s, 0.0, 48000, tps, ev);
     CHECK (ev.size() == 0);
 }
 
 TEST (note_pan_pitch_and_mute)
 {
-    lynx::Pattern p;
-    lynx::Note a { 0, 240, 0, 60 };
+    yw::Pattern p;
+    yw::Note a { 0, 240, 0, 60 };
     a.pan = -1.0f;
     a.finePitch = 50.0f;
-    lynx::Note b { 240, 240, 0, 62 };
+    yw::Note b { 240, 240, 0, 62 };
     b.muted = true;
     p.notes = { a, b };
-    lynx::EventBuffer ev;
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 0.0, 48000, tps, ev);
+    yw::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 0.0, 48000, tps, ev);
     int ons = 0;
     for (auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on)
+        if (e.type == yw::NoteEvent::Type::on)
         {
             ++ons;
             CHECK (e.key == 60 && e.pan == -1.0f && e.cents == 50.0f);
@@ -6076,9 +6076,9 @@ TEST (note_pan_pitch_and_mute)
     CHECK (ons == 1); // the muted one doesn't play
 
     // note pan in the sampler: fully left
-    auto dc = std::make_shared<lynx::SampleData>();
+    auto dc = std::make_shared<yw::SampleData>();
     dc->left.assign (4800, 0.5f);
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, dc);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, dc);
     inst->prepare (48000.0);
     inst->setNextNoteExpression (-1.0f, 0.0f);
     inst->noteOn (60, 1.0f);
@@ -6089,18 +6089,18 @@ TEST (note_pan_pitch_and_mute)
 
 TEST (tempo_automation_changes_speed_and_duration)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
-    song.mode = lynx::PlayMode::song;
-    const auto bar = (std::int64_t) lynx::ppq * 4;
+    song.mode = yw::PlayMode::song;
+    const auto bar = (std::int64_t) yw::ppq * 4;
     song.playlist = { { 0, 0, 0, bar, 0 }, { 0, 0, bar, bar, 0 } };
-    lynx::Automation tempo;
-    tempo.target = { lynx::AutomationTargetKind::tempo, 0 };
-    const auto v120 = lynx::valueFromTempo (120.0), v240 = lynx::valueFromTempo (240.0);
+    yw::Automation tempo;
+    tempo.target = { yw::AutomationTargetKind::tempo, 0 };
+    const auto v120 = yw::valueFromTempo (120.0), v240 = yw::valueFromTempo (240.0);
     tempo.points = { { 0, v120 }, { bar - 1, v120 }, { bar, v240 } }; // step: 120 -> 240 at bar 2
     song.automations.push_back (tempo);
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::automation;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::automation;
     clip.automation = 0;
     clip.track = 1;
     clip.length = bar * 2;
@@ -6110,9 +6110,9 @@ TEST (tempo_automation_changes_speed_and_duration)
     // 1 bar at 120 (2 s) + 1 at 240 (1 s)
     CHECK (std::abs (song.secondsForTicks (bar * 2) - 3.0) < 0.01);
 
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (state->tempoAutomation == 0);
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> l (512), rr (512);
     r.process (state.get(), true, 10.0, 512, l.data(), rr.data());
@@ -6123,48 +6123,48 @@ TEST (tempo_automation_changes_speed_and_duration)
 
 TEST (bounce_insert_song_and_apply)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.setRoute (3, 7, true, 0.5f);
-    s.mixer[0].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::reverb));
+    s.mixer[0].effects.push_back (yw::makeEffectSlot (yw::EffectKind::reverb));
     s.mixer[2].solo = true;
 
-    const auto b = lynx::makeBounceSong (s, 3);
+    const auto b = yw::makeBounceSong (s, 3);
     CHECK (b.mixer[3].solo && ! b.mixer[2].solo && b.mixer[3].toMaster && b.mixer[3].sends.empty());
-    CHECK (b.mixer[0].effects.empty() && b.mode == lynx::PlayMode::song);
+    CHECK (b.mixer[0].effects.empty() && b.mode == yw::PlayMode::song);
     const auto audible = b.soloAudible();
     CHECK (audible[3] && ! audible[1] && ! audible[7]);
 
     const auto channels = s.channels.size();
     const auto inserts = s.mixer.size();
-    const auto created = lynx::applyBounce (s, 3, "C:/x.wav", 3840);
+    const auto created = yw::applyBounce (s, 3, "C:/x.wav", 3840);
     CHECK (created == (int) inserts && s.mixer.size() == inserts + 1 && s.mixer[3].muted);
     CHECK (s.mixer[(std::size_t) created].sends.size() == 1 && s.mixer[(std::size_t) created].sends[0].target == 7);
     CHECK (s.channels.size() == channels + 1 && s.channels.back().mixerTrack == created);
-    CHECK (s.playlist.back().kind == lynx::ClipKind::audio && s.playlist.back().length == 3840);
+    CHECK (s.playlist.back().kind == yw::ClipKind::audio && s.playlist.back().length == 3840);
 }
 
 TEST (mixer_stereo_separation_phase_swap)
 {
     // FL's level matrix (REA_rodada2 §2.2, REA_rodada167j §1): outL = ll·inL + rl·inR, outR = rr·inR + lr·inL
-    lynx::MixerTrack t;
+    yw::MixerTrack t;
     auto near = [] (float a, float b) { return std::abs (a - b) < 1e-5f; };
     t.stereo = 1.0f; // mono
-    auto m = lynx::mixerMatrix (t, lynx::unityFader, 0.0f, false);
+    auto m = yw::mixerMatrix (t, yw::unityFader, 0.0f, false);
     CHECK (near (m.ll, 0.5f) && near (m.rl, 0.5f) && near (m.rr, 0.5f) && near (m.lr, 0.5f));
 
     t.stereo = -1.0f; // doubled side: 1.5 L - 0.5 R
-    m = lynx::mixerMatrix (t, lynx::unityFader, 0.0f, false);
+    m = yw::mixerMatrix (t, yw::unityFader, 0.0f, false);
     CHECK (near (m.ll, 1.5f) && near (m.rl, -0.5f) && near (m.rr, 1.5f) && near (m.lr, -0.5f));
 
     t.stereo = 0.0f;
     t.swapChannels = true;
     t.invertPhase = true;
-    m = lynx::mixerMatrix (t, lynx::unityFader, 0.0f, false);
+    m = yw::mixerMatrix (t, yw::unityFader, 0.0f, false);
     CHECK (m.ll == 0.0f && m.rl == -1.0f && m.rr == 0.0f && m.lr == -1.0f); // outL = −inR, outR = −inL
 
     // unity, centre, no separation: exactly the identity (FL's fast path)
-    m = lynx::mixerMatrix (lynx::MixerTrack {}, lynx::unityFader, 0.0f, false);
-    CHECK (m == lynx::MixerMatrix {});
+    m = yw::mixerMatrix (yw::MixerTrack {}, yw::unityFader, 0.0f, false);
+    CHECK (m == yw::MixerMatrix {});
 }
 
 TEST (mixer_pan_fold_and_panning_law_match_fl_render)
@@ -6179,26 +6179,26 @@ TEST (mixer_pan_fold_and_panning_law_match_fl_render)
                         { 0.0f, 0.75f, 0.70703f, 0.292941f, 0.292965f, 0.707045f } };
     for (const auto& c : fl)
     {
-        lynx::MixerTrack t;
+        yw::MixerTrack t;
         t.stereo = c.sep;
-        const auto m = lynx::mixerMatrix (t, lynx::unityFader, c.pan, true);
+        const auto m = yw::mixerMatrix (t, yw::unityFader, c.pan, true);
         // the fit's own error is ~5e-5 (16-bit render)
         CHECK (std::abs (m.ll - c.ll) < 2e-4f && std::abs (m.rl - c.rl) < 2e-4f && std::abs (m.lr - c.lr) < 2e-4f
                && std::abs (m.rr - c.rr) < 2e-4f);
     }
 
     // circular (the default): +3 dB on the side panned to, and the folded half of the other side
-    const auto hard = lynx::mixerMatrix (lynx::MixerTrack {}, lynx::unityFader, 1.0f, false);
+    const auto hard = yw::mixerMatrix (yw::MixerTrack {}, yw::unityFader, 1.0f, false);
     CHECK (std::abs (hard.ll) < 1e-6f && std::abs (hard.rl) < 1e-6f);
     CHECK (std::abs (hard.rr - 0.70710677f) < 1e-6f && std::abs (hard.lr - 0.70710677f) < 1e-6f);
-    const auto half = lynx::mixerMatrix (lynx::MixerTrack {}, lynx::unityFader, 0.5f, false);
+    const auto half = yw::mixerMatrix (yw::MixerTrack {}, yw::unityFader, 0.5f, false);
     const auto gl = (float) std::cos (0.75 * 3.14159265358979 / 2.0) * 1.4142135f, gr = (float) std::sin (0.75 * 3.14159265358979 / 2.0) * 1.4142135f;
     CHECK (std::abs (half.ll - gl) < 1e-5f && half.rl == 0.0f);
     CHECK (std::abs (half.rr - gr * (1.0f - (1.0f - gl) * 0.5f)) < 1e-5f && std::abs (half.lr - gr * (1.0f - gl) * 0.5f) < 1e-5f);
     // the fader scales the whole matrix (−6 dB-ish position), polarity negates it
-    lynx::MixerTrack inv;
+    yw::MixerTrack inv;
     inv.invertPhase = true;
-    const auto low = lynx::mixerMatrix (inv, 0.5f, 0.0f, false);
+    const auto low = yw::mixerMatrix (inv, 0.5f, 0.0f, false);
     const auto g = (float) ((std::exp ((double) (0.625f * 2.3978953f)) - 1.0) * 0.1);
     CHECK (std::abs (low.ll + g) < 1e-5f && std::abs (low.rr + g) < 1e-5f && std::abs (low.rl) < 1e-6f);
 }
@@ -6220,9 +6220,9 @@ TEST (effects_limiter_filter_distortion_chorus)
     };
 
     // limiter: +12 dB on a 0.9 sine never exceeds the ceiling (-1 dB) and reports the latency
-    auto lim = lynx::makeEffect (lynx::EffectKind::limiter);
+    auto lim = yw::makeEffect (yw::EffectKind::limiter);
     lim->prepare (sr);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::limiter);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::limiter);
     slot.params[0] = 11.0f / 12.0f; // -1 dB
     slot.params[1] = 0.5f;          // +12 dB
     auto l = sine (100.0f, 0.9f, 48000), r = l;
@@ -6232,9 +6232,9 @@ TEST (effects_limiter_filter_distortion_chorus)
     CHECK (lim->latencySamples() == 72);
 
     // low-pass filter at 500 Hz knocks down an 8 kHz sine
-    auto lp = lynx::makeEffect (lynx::EffectKind::filter);
+    auto lp = yw::makeEffect (yw::EffectKind::filter);
     lp->prepare (sr);
-    auto fs = lynx::makeEffectSlot (lynx::EffectKind::filter);
+    auto fs = yw::makeEffectSlot (yw::EffectKind::filter);
     fs.params[1] = std::log (500.0f / 20.0f) / std::log (1000.0f);
     l = sine (8000.0f, 1.0f, 9600);
     r = l;
@@ -6242,11 +6242,11 @@ TEST (effects_limiter_filter_distortion_chorus)
     CHECK (peak (l, 4800) < 0.05f);
 
     // distortion and chorus: finite, audible output
-    for (auto kind : { lynx::EffectKind::distortion, lynx::EffectKind::chorus })
+    for (auto kind : { yw::EffectKind::distortion, yw::EffectKind::chorus })
     {
-        auto fx = lynx::makeEffect (kind);
+        auto fx = yw::makeEffect (kind);
         fx->prepare (sr);
-        auto ps = lynx::makeEffectSlot (kind);
+        auto ps = yw::makeEffectSlot (kind);
         l = sine (220.0f, 0.5f, 9600);
         r = l;
         fx->process (l.data(), r.data(), 9600, ps.params, 120.0);
@@ -6260,11 +6260,11 @@ TEST (effects_limiter_filter_distortion_chorus)
 TEST (slide_notes_glide_without_retrigger)
 {
     // sampler with a ramp: the read speed doubles after a one-octave slide
-    auto ramp = std::make_shared<lynx::SampleData>();
+    auto ramp = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 96000; ++i)
         ramp->left.push_back ((float) i / 96000.0f);
     ramp->sampleRate = 48000.0;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, ramp);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, ramp);
     inst->prepare (48000.0);
     inst->noteOn (60, 1.0f);
     std::vector<float> l (2000), r (2000);
@@ -6277,20 +6277,20 @@ TEST (slide_notes_glide_without_retrigger)
     CHECK (std::abs (stepAfter / stepBefore - 2.0f) < 0.01f);
 
     // the sequencer sends "slide" (no off) for the slide note
-    lynx::Pattern p;
-    lynx::Note base { 0, 960, 0, 48 };
-    lynx::Note glide { 480, 240, 0, 55 };
+    yw::Pattern p;
+    yw::Note base { 0, 960, 0, 48 };
+    yw::Note glide { 480, 240, 0, 55 };
     glide.slide = true;
     p.notes = { base, glide };
-    lynx::EventBuffer ev;
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 0.0, 30000, tps, ev);
+    yw::EventBuffer ev;
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 0.0, 30000, tps, ev);
     int ons = 0, offs = 0, slides = 0;
     for (auto& e : ev)
     {
-        ons += e.type == lynx::NoteEvent::Type::on;
-        offs += e.type == lynx::NoteEvent::Type::off;
-        if (e.type == lynx::NoteEvent::Type::slide)
+        ons += e.type == yw::NoteEvent::Type::on;
+        offs += e.type == yw::NoteEvent::Type::off;
+        if (e.type == yw::NoteEvent::Type::slide)
         {
             ++slides;
             CHECK (e.key == 55 && std::abs (e.slideSamples - 240.0f / (float) tps) < 1.0f);
@@ -6301,10 +6301,10 @@ TEST (slide_notes_glide_without_retrigger)
 
 TEST (synth_fm_phase_modulation)
 {
-    auto render = [] (const lynx::SynthSettings& s) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto render = [] (const yw::SynthSettings& s) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         inst->configure (c, 120.0);
         inst->noteOn (69, 1.0f); // 440 Hz
@@ -6325,9 +6325,9 @@ TEST (synth_fm_phase_modulation)
         return s1 * s1 + s2 * s2 - k * s1 * s2;
     };
 
-    lynx::SynthSettings plain;
-    plain.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
-    plain.osc[2] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings plain;
+    plain.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
+    plain.osc[2] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     plain.cutoff = 20000.0f;
 
     auto fm = plain;
@@ -6353,10 +6353,10 @@ TEST (synth_fm_phase_modulation)
 
 TEST (synth_three_oscillators_adsr_filter)
 {
-    auto render = [] (const lynx::SynthSettings& s, int frames, int releaseAt) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto render = [] (const yw::SynthSettings& s, int frames, int releaseAt) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         inst->configure (c, 120.0);
         inst->noteOn (69, 1.0f); // A4 = 440 Hz
@@ -6374,13 +6374,13 @@ TEST (synth_three_oscillators_adsr_filter)
     };
 
     // default: sounds and fades after the release
-    const lynx::SynthSettings standard;
+    const yw::SynthSettings standard;
     const auto a = render (standard, 48000, 24000);
     CHECK (peakIn (a, 1000, 20000) > 0.05f && peakIn (a, 40000, 48000) < 1e-3f);
 
     // pure sine with an open filter: zero-crossing count gives ~440 Hz
-    lynx::SynthSettings sine;
-    sine.osc[0].wave = lynx::Waveform::sine;
+    yw::SynthSettings sine;
+    sine.osc[0].wave = yw::Waveform::sine;
     sine.cutoff = 20000.0f;
     const auto b = render (sine, 48000, 47000);
     int crossings = 0;
@@ -6393,8 +6393,8 @@ TEST (synth_three_oscillators_adsr_filter)
     CHECK (sinePeak > 0.2f && sinePeak < 0.35f); // 0.3 level, approximated sine without clipping
 
     // second oscillator an octave up adds energy; sustain 0 makes the note decay on its own
-    lynx::SynthSettings two = sine;
-    two.osc[1] = { lynx::Waveform::sine, 1, 0.0f, 1.0f };
+    yw::SynthSettings two = sine;
+    two.osc[1] = { yw::Waveform::sine, 1, 0.0f, 1.0f };
     two.sustain = 0.0f;
     two.decay = 0.1f;
     const auto c = render (two, 48000, 47000);
@@ -6403,12 +6403,12 @@ TEST (synth_three_oscillators_adsr_filter)
 
 TEST (set_target_value_round_trips)
 {
-    auto s = lynx::Song::makeDefault();
-    s.mixer[2].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::delay));
-    const lynx::AutomationTarget targets[] = {
-        { lynx::AutomationTargetKind::channelVolume, 1 }, { lynx::AutomationTargetKind::channelPan, 2 },
-        { lynx::AutomationTargetKind::mixerVolume, 3 },   { lynx::AutomationTargetKind::mixerPan, 0 },
-        { lynx::AutomationTargetKind::effectParam, 2, 0, 1 }, { lynx::AutomationTargetKind::tempo, 0 },
+    auto s = yw::Song::makeDefault();
+    s.mixer[2].effects.push_back (yw::makeEffectSlot (yw::EffectKind::delay));
+    const yw::AutomationTarget targets[] = {
+        { yw::AutomationTargetKind::channelVolume, 1 }, { yw::AutomationTargetKind::channelPan, 2 },
+        { yw::AutomationTargetKind::mixerVolume, 3 },   { yw::AutomationTargetKind::mixerPan, 0 },
+        { yw::AutomationTargetKind::effectParam, 2, 0, 1 }, { yw::AutomationTargetKind::tempo, 0 },
     };
 
     for (const auto& t : targets)
@@ -6417,18 +6417,18 @@ TEST (set_target_value_round_trips)
         CHECK (std::abs (s.targetValue (t) - 0.25f) < 1e-5f);
     }
 
-    CHECK (! s.setTargetValue ({ lynx::AutomationTargetKind::channelParam, 0, 0, 3 }, 0.5f)); // lives in the plugin
+    CHECK (! s.setTargetValue ({ yw::AutomationTargetKind::channelParam, 0, 0, 3 }, 0.5f)); // lives in the plugin
 }
 
 TEST (cut_groups_stretch_and_envelope_import)
 {
     // open hat (cut by 1) is cut when the closed one (group 1) plays
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
     for (int i = 0; i < 2; ++i)
     {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.samplePath = "dc";
         c.volume = 1.0f;
         c.mixerTrack = i + 1;
@@ -6440,17 +6440,17 @@ TEST (cut_groups_stretch_and_envelope_import)
     p.notes = { { 0, 100, 0, 60 }, { 960, 100, 1, 60 } };
 
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (96000, 0.5f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
     CHECK (state->hasCutGroups && state->cutTargets[1].size() == 1 && state->cutTargets[1][0] == 0);
 
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
     float afterCut = 0.0f;
     for (double tick = 0.0; tick < 960.0 * 3; tick += 512 * tps)
     {
@@ -6461,13 +6461,13 @@ TEST (cut_groups_stretch_and_envelope_import)
     CHECK (std::abs (afterCut - 0.5f * 0.78f) < 0.01f); // only the closed one (default velocity 0.78)
 
     // resampling stretch: 1 s of sample stretched to 4 beats at 120 BPM = 2 s
-    auto ramp = std::make_shared<lynx::SampleData>();
+    auto ramp = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 48000; ++i)
         ramp->left.push_back ((float) i / 48000.0f);
     ramp->sampleRate = 48000.0;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, ramp);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, ramp);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.sampler.stretchBeats = 4.0f;
     inst->configure (c, 120.0);
     inst->noteOn (60, 1.0f);
@@ -6489,12 +6489,12 @@ TEST (cut_groups_stretch_and_envelope_import)
 
 TEST (time_stretch_keeps_pitch)
 {
-    lynx::SampleData sine;
+    yw::SampleData sine;
     sine.sampleRate = 48000.0;
     for (int i = 0; i < 48000; ++i)
         sine.left.push_back (0.5f * std::sin (2.0f * 3.14159265f * 440.0f * (float) i / 48000.0f));
 
-    auto crossingsPerSecond = [] (const lynx::SampleData& d) {
+    auto crossingsPerSecond = [] (const yw::SampleData& d) {
         int c = 0;
         const auto n = (int) d.frames();
         for (int i = 4800; i < n - 4800; ++i)
@@ -6504,7 +6504,7 @@ TEST (time_stretch_keeps_pitch)
 
     for (double ratio : { 2.0, 0.5, 1.37 })
     {
-        const auto out = lynx::timeStretch (sine, ratio);
+        const auto out = yw::timeStretch (sine, ratio);
         CHECK (std::abs ((double) out->frames() - 48000.0 * ratio) < 2.0);
         CHECK (std::abs (crossingsPerSecond (*out) - 880.0) < 15.0); // 440 Hz stays 440 Hz
 
@@ -6517,13 +6517,13 @@ TEST (time_stretch_keeps_pitch)
 
 TEST (sampler_region_start_and_end)
 {
-    auto ramp = std::make_shared<lynx::SampleData>();
+    auto ramp = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 10000; ++i)
         ramp->left.push_back ((float) i / 10000.0f);
     ramp->sampleRate = 48000.0;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, ramp);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, ramp);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.sampler.regionStart = 0.25f;
     c.sampler.regionEnd = 0.5f;
     inst->configure (c, 120.0);
@@ -6536,34 +6536,34 @@ TEST (sampler_region_start_and_end)
 
 TEST (arpeggiator_plays_held_chord_in_steps)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
     song.patterns[0].notes.clear();
     for (int key : { 60, 64, 67 })
-        song.patterns[0].notes.push_back ({ 0, lynx::ppq * 4, 4, key, 0.8f }); // chord held for 1 bar
+        song.patterns[0].notes.push_back ({ 0, yw::ppq * 4, 4, key, 0.8f }); // chord held for 1 bar
     song.channels[4].arp.direction = 1; // up
     song.channels[4].arp.stepBeats = 0.25f;
 
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (state->arpeggiators[4] != nullptr && state->arpeggiators[0] == nullptr);
 
     // the arpeggiator generates the notes; we count what it hands to the instrument
     auto& arp = *state->arpeggiators[4];
-    const auto tps = lynx::ticksPerSample (song.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (song.bpm, 48000.0);
     std::vector<int> keys;
-    lynx::EventBuffer ev;
+    yw::EventBuffer ev;
 
-    for (double tick = 0.0; tick < lynx::ppq * 2.0; tick += 512 * tps)
+    for (double tick = 0.0; tick < yw::ppq * 2.0; tick += 512 * tps)
     {
         ev.clear();
-        lynx::schedulePatternLoop (song.patterns[0], song.patterns[0].effectiveLength (lynx::Meter (4, 4)), tick, 512, tps, ev);
+        yw::schedulePatternLoop (song.patterns[0], song.patterns[0].effectiveLength (yw::Meter (4, 4)), tick, 512, tps, ev);
         int in = 0, out = 0;
         for (auto& e : ev)
             if (e.channel == 4)
                 arp.input[(std::size_t) in++] = e;
         arp.process (4, arp.input.data(), in, tick, tps, 512, song.channels[4].arp, arp.output.data(), out);
         for (int i = 0; i < out; ++i)
-            if (arp.output[(std::size_t) i].type == lynx::NoteEvent::Type::on)
+            if (arp.output[(std::size_t) i].type == yw::NoteEvent::Type::on)
                 keys.push_back (arp.output[(std::size_t) i].key);
     }
 
@@ -6574,11 +6574,11 @@ TEST (arpeggiator_plays_held_chord_in_steps)
         CHECK (keys[i] == expected[i]);
 
     // actually rendering also makes sound
-    lynx::RackRenderer r;
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> l (512), rr (512);
     float peak = 0.0f;
-    for (double tick = 0.0; tick < lynx::ppq; tick += 512 * tps)
+    for (double tick = 0.0; tick < yw::ppq; tick += 512 * tps)
     {
         r.process (state.get(), true, tick, 512, l.data(), rr.data());
         for (auto v : l)
@@ -6589,46 +6589,46 @@ TEST (arpeggiator_plays_held_chord_in_steps)
 
 TEST (audio_clip_fades_and_gain)
 {
-    lynx::Song s;
+    yw::Song s;
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
-    s.mixer = lynx::Song::defaultMixer (1);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    s.mode = yw::PlayMode::song;
+    s.mixer = yw::Song::defaultMixer (1);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.samplePath = "dc";
     c.volume = 1.0f;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::audio;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::audio;
     clip.channel = 0;
-    clip.length = lynx::ppq * 4;  // 2 s at 120 BPM
-    clip.fadeIn = lynx::ppq;      // 0.5 s
-    clip.fadeOut = lynx::ppq;
+    clip.length = yw::ppq * 4;  // 2 s at 120 BPM
+    clip.fadeIn = yw::ppq;      // 0.5 s
+    clip.fadeOut = yw::ppq;
     clip.gain = 0.5f;
     s.playlist.push_back (clip);
 
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.assign (48000 * 4, 1.0f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> all;
     std::vector<float> l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+    const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
 
-    for (double tick = 0.0; tick < lynx::ppq * 4.0; tick += 512 * tps)
+    for (double tick = 0.0; tick < yw::ppq * 4.0; tick += 512 * tps)
     {
         r.process (state.get(), true, tick, 512, l.data(), rr.data());
         all.insert (all.end(), l.begin(), l.end());
     }
 
     // FL plays a clip at unity at the default channel volume (78%): at 100% it is that much louder (REA_rodada89 §4.2)
-    const auto unity = 1.0f / lynx::channelGain (10000.0f / 12800.0f);
+    const auto unity = 1.0f / yw::channelGain (10000.0f / 12800.0f);
     CHECK (all[100] < 0.01f);                                       // fade-in start
     CHECK (std::abs (all[12000] - 0.25f * unity) < 0.02f);          // fade-in midpoint: half of 0.5
     CHECK (std::abs (all[48000] - 0.5f * unity) < 0.01f);           // body: the clip gain
@@ -6638,26 +6638,26 @@ TEST (audio_clip_fades_and_gain)
 TEST (audio_clip_unity_at_fl_default_volume)
 {
     // a Playlist audio clip at FL's default channel volume (10000/12800) and centre pan plays its sample unchanged
-    auto dc = std::make_shared<lynx::SampleData>();
+    auto dc = std::make_shared<yw::SampleData>();
     dc->left.assign (48000, 0.5f);
-    auto clip = lynx::makeInstrument (lynx::InstrumentKind::audioClip, dc);
+    auto clip = yw::makeInstrument (yw::InstrumentKind::audioClip, dc);
     clip->prepare (48000.0);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     c.volume = 10000.0f / 12800.0f;
     clip->configure (c, 120.0);
     // (a Playlist clip's own key: since round 190lq a key below audioClipKeyBase is a NOTE of the channel, which plays as a
     // Sampler note — tests/Issue204Tests.inc)
-    clip->noteOn (lynx::audioClipKey (0), 1.0f);
+    clip->noteOn (yw::audioClipKey (0), 1.0f);
     std::vector<float> l (4800, 0.0f), r (4800, 0.0f);
-    const auto g = lynx::channelGain (c.volume);
+    const auto g = yw::channelGain (c.volume);
     clip->render (l.data(), r.data(), 4800, g, g);
     CHECK (std::abs (l[2400] - 0.5f) < 1.0e-3f && std::abs (r[2400] - 0.5f) < 1.0e-3f);
 
     // a sampler channel (pattern notes) keeps the channel volume curve as it was
-    auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, dc);
+    auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, dc);
     sampler->prepare (48000.0);
-    c.instrument = lynx::InstrumentKind::sampler;
+    c.instrument = yw::InstrumentKind::sampler;
     sampler->configure (c, 120.0);
     sampler->noteOn (60, 1.0f);
     std::fill (l.begin(), l.end(), 0.0f);
@@ -6669,27 +6669,27 @@ TEST (audio_clip_unity_at_fl_default_volume)
 TEST (slicer_detects_hits_and_plays_slices_by_key)
 {
     // 4 hits (decaying noise) every 0.25 s
-    lynx::SampleData loop;
+    yw::SampleData loop;
     loop.sampleRate = 48000.0;
     loop.left.assign (48000, 0.0f);
-    lynx::Noise noise;
+    yw::Noise noise;
     for (int hit = 0; hit < 4; ++hit)
         for (int i = 0; i < 6000; ++i)
             loop.left[(std::size_t) (hit * 12000 + i)] = noise.next() * 0.8f * std::exp (-(float) i / 1500.0f);
 
-    const auto slices = lynx::detectSlices (loop, 0.5f);
+    const auto slices = yw::detectSlices (loop, 0.5f);
     CHECK (slices.size() == 4);
     for (std::size_t i = 0; i < slices.size(); ++i)
         CHECK (std::abs (slices[i] - 0.25f * (float) i) < 0.01f);
 
     // key 61 plays the second slice, which starts at 0.25 and ends before 0.5
-    auto ramp = std::make_shared<lynx::SampleData>();
+    auto ramp = std::make_shared<yw::SampleData>();
     for (int i = 0; i < 48000; ++i)
         ramp->left.push_back ((float) i / 48000.0f);
     ramp->sampleRate = 48000.0;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sampler, ramp);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sampler, ramp);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.sampler.slices = slices;
     inst->configure (c, 120.0);
     inst->noteOn (61, 1.0f);
@@ -6700,20 +6700,20 @@ TEST (slicer_detects_hits_and_plays_slices_by_key)
 
 TEST (project_templates_render_sound)
 {
-    const auto names = lynx::templateNames();
+    const auto names = yw::templateNames();
     CHECK (names.size() == 4);
 
     for (int t = 1; t < (int) names.size(); ++t)
     {
-        auto song = lynx::makeTemplate (t);
-        auto state = lynx::RackState::build (song, nullptr, 48000.0);
-        lynx::RackRenderer r;
+        auto song = yw::makeTemplate (t);
+        auto state = yw::RackState::build (song, nullptr, 48000.0);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         std::vector<float> l (512), rr (512);
-        const auto tps = lynx::ticksPerSample (song.bpm, 48000.0);
+        const auto tps = yw::ticksPerSample (song.bpm, 48000.0);
         float peak = 0.0f;
 
-        for (double tick = 0.0; tick < lynx::ppq * 4.0; tick += 512 * tps)
+        for (double tick = 0.0; tick < yw::ppq * 4.0; tick += 512 * tps)
         {
             r.process (state.get(), true, tick, 512, l.data(), rr.data());
             for (auto v : l)
@@ -6723,7 +6723,7 @@ TEST (project_templates_render_sound)
         CHECK (peak > 0.05f && peak < 4.0f);
     }
 
-    CHECK (lynx::makeTemplate (0).patterns[0].notes.empty());
+    CHECK (yw::makeTemplate (0).patterns[0].notes.empty());
 }
 
 // --- interface translations (resources/i18n) -------------------------------------------------------
@@ -6898,8 +6898,8 @@ TEST (translations_embedded_table_is_up_to_date)
             ++files;
             const auto id = entry.path().stem().string();
             const auto text = i18ntest::readFile (entry.path());
-            const lynx::i18n::data::Table* found = nullptr;
-            for (const auto& t : lynx::i18n::data::tables)
+            const yw::i18n::data::Table* found = nullptr;
+            for (const auto& t : yw::i18n::data::tables)
                 if (id == t.id)
                     found = &t;
             CHECK (found != nullptr);
@@ -6908,14 +6908,14 @@ TEST (translations_embedded_table_is_up_to_date)
                 std::printf ("  %s.txt is not embedded: run python3 tools/make_i18n.py\n", id.c_str());
                 continue;
             }
-            const auto unpacked = lynx::inflateZlib (found->zlib, found->zlibSize, false, found->textSize + 16);
+            const auto unpacked = yw::inflateZlib (found->zlib, found->zlibSize, false, found->textSize + 16);
             const bool same = unpacked && unpacked->size() == text.size() && found->textSize == text.size()
                               && std::memcmp (unpacked->data(), text.data(), text.size()) == 0;
             CHECK (same);
             if (! same)
                 std::printf ("  %s.txt changed since the last python3 tools/make_i18n.py\n", id.c_str());
         }
-    CHECK (files == (int) std::size (lynx::i18n::data::tables));
+    CHECK (files == (int) std::size (yw::i18n::data::tables));
 }
 
 TEST (translations_english_display_table)
@@ -6925,8 +6925,8 @@ TEST (translations_english_display_table)
     // the table is a key of the translation tables, keeps its placeholders, and the embedded copy is up to date
     using namespace i18ntest;
     const auto text = readFile ("resources/i18n/en/display.txt");
-    CHECK (text == std::string (lynx::i18n::data::englishDisplay));
-    if (text != std::string (lynx::i18n::data::englishDisplay))
+    CHECK (text == std::string (yw::i18n::data::englishDisplay));
+    if (text != std::string (yw::i18n::data::englishDisplay))
         std::printf ("  resources/i18n/en/display.txt changed since the last python3 tools/make_i18n.py\n");
     std::vector<std::string> duplicates, unused;
     const auto table = parseTable (text, duplicates);
@@ -7059,7 +7059,7 @@ TEST (translations_every_language_covers_the_reference_table)
 TEST (translations_os_locale_picks_the_interface_language)
 {
     const std::vector<std::string> ids { "en", "pt-BR", "de", "es", "ja", "zh-Hans", "zh-Hant", "id", "ko" };
-    using lynx::i18n::languageForLocale;
+    using yw::i18n::languageForLocale;
     CHECK (languageForLocale ("de-AT", ids) == "de");
     CHECK (languageForLocale ("de_DE.UTF-8", ids) == "de");
     CHECK (languageForLocale ("pt-BR", ids) == "pt-BR");
@@ -7083,57 +7083,57 @@ TEST (translations_os_locale_picks_the_interface_language)
 
 TEST (workflow_pattern_navigation_and_insert)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.patterns.resize (3);
     song.patterns[1].name = "B";
     song.patterns[2].name = "C";
     song.patterns[2].notes.push_back ({});
     song.currentPattern = 0;
-    CHECK (lynx::stepPattern (song, 1) == 1 && lynx::stepPattern (song, -1) == 0 && lynx::stepPattern (song, 10) == 2);
+    CHECK (yw::stepPattern (song, 1) == 1 && yw::stepPattern (song, -1) == 0 && yw::stepPattern (song, 10) == 2);
     // pattern 0 has the default notes, 1 is empty, 2 has a note
-    CHECK (! lynx::isPatternEmpty (song.patterns[0]) && lynx::isPatternEmpty (song.patterns[1]));
-    CHECK (lynx::findNextEmptyPattern (song, 0) == 1 && lynx::findNextEmptyPattern (song, 1) == -1);
-    CHECK (lynx::gotoNextEmptyPattern (song) == 1 && song.currentPattern == 1);
+    CHECK (! yw::isPatternEmpty (song.patterns[0]) && yw::isPatternEmpty (song.patterns[1]));
+    CHECK (yw::findNextEmptyPattern (song, 0) == 1 && yw::findNextEmptyPattern (song, 1) == -1);
+    CHECK (yw::gotoNextEmptyPattern (song) == 1 && song.currentPattern == 1);
     song.patterns[1].notes.push_back ({});
     const auto before = song.patterns.size();
-    CHECK (lynx::gotoNextEmptyPattern (song) == (int) before && song.patterns.size() == before + 1);
+    CHECK (yw::gotoNextEmptyPattern (song) == (int) before && song.patterns.size() == before + 1);
     CHECK (song.patterns.back().name == "Pattern 1" || song.patterns.back().name.rfind ("Pattern ", 0) == 0);
 
     // insert keeps Playlist clips on their patterns
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.pattern = 2;
     song.playlist = { clip };
     song.arrangements.push_back ({ "Other", { clip }, 0, 0, {} });
-    CHECK (lynx::insertPattern (song, 1, "New") == 1 && song.currentPattern == 1);
+    CHECK (yw::insertPattern (song, 1, "New") == 1 && song.currentPattern == 1);
     CHECK (song.patterns[1].name == "New" && song.patterns[1].notes.empty() && song.patterns[3].name == "C");
     CHECK (song.playlist[0].pattern == 3 && song.arrangements[1].clips[0].pattern == 3);
 }
 
 TEST (workflow_split_pattern_by_channel)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.patterns.resize (1);
     auto& p = song.patterns[0];
     p.name = "Beat";
     p.notes.clear();
     for (int i = 0; i < 4; ++i)
-        p.notes.push_back ({ (std::int64_t) i * lynx::ticksPerStep, lynx::ticksPerStep, i % 2 == 0 ? 0 : 2, 60 });
+        p.notes.push_back ({ (std::int64_t) i * yw::ticksPerStep, yw::ticksPerStep, i % 2 == 0 ? 0 : 2, 60 });
     song.channels[2].colour = 0xff112233;
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.pattern = 0;
     song.playlist = { clip };
-    const auto created = lynx::splitPatternByChannel (song, 0);
+    const auto created = yw::splitPatternByChannel (song, 0);
     CHECK (created == 2 && song.patterns.size() == 3);
     CHECK (song.patterns[0].notes.size() == 4); // the original is unchanged
     CHECK (song.patterns[1].name == "Beat - " + song.channels[0].name && song.patterns[1].notes.size() == 2);
     CHECK (song.patterns[2].colour == 0xff112233u && song.patterns[2].notes.size() == 2 && song.patterns[2].notes[0].channel == 2);
     CHECK (song.playlist[0].pattern == 0);
-    CHECK (lynx::splitPatternByChannel (song, 99) == 0);
+    CHECK (yw::splitPatternByChannel (song, 99) == 0);
 }
 
 TEST (workflow_channel_selection)
 {
-    lynx::ChannelSelection s;
+    yw::ChannelSelection s;
     s.selectOnly (2);
     s.toggle (5);
     s.toggle (0);
@@ -7157,7 +7157,7 @@ TEST (workflow_channel_selection)
 
 TEST (workflow_move_clone_insert_channels)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     const auto names = [&] {
         std::vector<std::string> n;
         for (const auto& c : song.channels)
@@ -7170,83 +7170,83 @@ TEST (workflow_move_clone_insert_channels)
 
     // references that must follow their channel
     song.patterns[0].notes.push_back ({ 0, 240, 1, 64 });
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::channelVolume, 1 };
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::channelVolume, 1 };
     song.automations.push_back (a);
-    song.midiLinks.push_back ({ 7, -1, { lynx::AutomationTargetKind::channelPan, 3 } });
-    lynx::Clip audio;
-    audio.kind = lynx::ClipKind::audio;
+    song.midiLinks.push_back ({ 7, -1, { yw::AutomationTargetKind::channelPan, 3 } });
+    yw::Clip audio;
+    audio.kind = yw::ClipKind::audio;
     audio.channel = 3;
     song.playlist.push_back (audio);
 
     std::vector<int> selection { 1, 3 };
-    CHECK (lynx::moveChannels (song, selection, -1));
+    CHECK (yw::moveChannels (song, selection, -1));
     CHECK ((selection == std::vector<int> { 0, 2 }));
     CHECK (song.channels[0].name == original[1] && song.channels[1].name == original[0] && song.channels[2].name == original[3]
            && song.channels[3].name == original[2]);
     CHECK (song.automations[0].target.index == 0 && song.midiLinks[0].target.index == 2 && song.playlist.back().channel == 2);
     CHECK (std::any_of (song.patterns[0].notes.begin(), song.patterns[0].notes.end(),
-                        [] (const lynx::Note& n) { return n.channel == 0 && n.key == 64; }));
-    CHECK (! lynx::moveChannels (song, selection, -1)); // the block is at the top
-    CHECK (lynx::moveChannels (song, selection, 1) && (selection == std::vector<int> { 1, 3 }) && names() == original);
+                        [] (const yw::Note& n) { return n.channel == 0 && n.key == 64; }));
+    CHECK (! yw::moveChannels (song, selection, -1)); // the block is at the top
+    CHECK (yw::moveChannels (song, selection, 1) && (selection == std::vector<int> { 1, 3 }) && names() == original);
 
     // clone: settings, not notes, right below, with a new name
     song.channels[1].volume = 0.33f;
     const auto notesBefore = song.patterns[0].notes.size();
-    const auto clone = lynx::cloneChannel (song, 1);
+    const auto clone = yw::cloneChannel (song, 1);
     CHECK (clone == 2 && (int) song.channels.size() == count + 1);
     CHECK (song.channels[2].name == original[1] + " #2" && song.channels[2].volume == 0.33f);
     CHECK (song.patterns[0].notes.size() == notesBefore);
     CHECK (song.channels[3].name == original[2] && song.automations[0].target.index == 1);
-    CHECK (lynx::cloneChannel (song, 1) == 2 && song.channels[2].name == original[1] + " #3");
+    CHECK (yw::cloneChannel (song, 1) == 2 && song.channels[2].name == original[1] + " #3");
 
     // remove several
-    CHECK (lynx::removeChannels (song, { 2, 3, 2 }) == 2 && (int) song.channels.size() == count);
+    CHECK (yw::removeChannels (song, { 2, 3, 2 }) == 2 && (int) song.channels.size() == count);
     CHECK (names() == original);
 }
 
 TEST (workflow_send_channels_to_free_inserts)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     for (auto& c : song.channels)
         c.mixerTrack = 0;
-    song.mixer[1].effects.push_back (lynx::makeEffectSlot (lynx::EffectKind::delay)); // not free: has effects
+    song.mixer[1].effects.push_back (yw::makeEffectSlot (yw::EffectKind::delay)); // not free: has effects
     song.channels[0].mixerTrack = 2;                                                   // not free: used
     song.setRoute (5, 3, true);                                                        // 3 is not free: receives a send
-    CHECK (! lynx::isInsertFree (song, 1) && ! lynx::isInsertFree (song, 2) && ! lynx::isInsertFree (song, 3) && lynx::isInsertFree (song, 4));
+    CHECK (! yw::isInsertFree (song, 1) && ! yw::isInsertFree (song, 2) && ! yw::isInsertFree (song, 3) && yw::isInsertFree (song, 4));
     song.channels[1].colour = 0xff445566;
-    const auto tracks = lynx::sendChannelsToFreeInserts (song, { 1, 2 });
+    const auto tracks = yw::sendChannelsToFreeInserts (song, { 1, 2 });
     CHECK ((tracks == std::vector<int> { 4, 5 }) || (tracks == std::vector<int> { 4, 6 }));
     CHECK (song.channels[1].mixerTrack == 4 && song.mixer[4].name == song.channels[1].name && song.mixer[4].colour == 0xff445566u);
     CHECK (song.mixer[(std::size_t) tracks[1]].name == song.channels[2].name);
 
     // with no free insert left, a new one is added at the end
-    auto full = lynx::Song::makeDefault();
-    full.mixer = lynx::Song::defaultMixer (1);
+    auto full = yw::Song::makeDefault();
+    full.mixer = yw::Song::defaultMixer (1);
     full.channels[0].mixerTrack = 1;
-    const auto added = lynx::sendChannelsToFreeInserts (full, { 1 });
+    const auto added = yw::sendChannelsToFreeInserts (full, { 1 });
     CHECK (added.size() == 1 && added[0] == 2 && full.mixer.size() == 3 && full.channels[1].mixerTrack == 2);
 }
 
 TEST (workflow_add_channel_routed)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     const auto count = (int) song.channels.size();
     const auto inserts = song.mixer.size();
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.mixerTrack = 7; // what the generator came with doesn't count
     const auto last = (int) song.mixer.size() - 1;
 
-    CHECK (lynx::addChannelRouted (song, c, last) == count && song.channels.back().mixerTrack == last);
-    CHECK (lynx::addChannelRouted (song, c, 0) == count + 1 && song.channels.back().mixerTrack == 0); // Master
+    CHECK (yw::addChannelRouted (song, c, last) == count && song.channels.back().mixerTrack == last);
+    CHECK (yw::addChannelRouted (song, c, 0) == count + 1 && song.channels.back().mixerTrack == 0); // Master
     CHECK (song.mixer.size() == inserts); // the drop's insert is used as it is, nothing is claimed
 
     // an insert that doesn't exist claims a free one, as a plain new channel does
     auto expected = song;
     const auto free = expected.claimFreeInsert();
-    CHECK (lynx::addChannelRouted (song, c, 9999) == count + 2 && song.channels.back().mixerTrack == free);
+    CHECK (yw::addChannelRouted (song, c, 9999) == count + 2 && song.channels.back().mixerTrack == free);
     auto plain = expected;
-    CHECK (lynx::addChannelRouted (plain, c) == count + 2 && plain.channels.back().mixerTrack == expected.claimFreeInsert());
+    CHECK (yw::addChannelRouted (plain, c) == count + 2 && plain.channels.back().mixerTrack == expected.claimFreeInsert());
 }
 
 TEST (pr28_generator_dropped_on_an_insert_names_it_like_fl)
@@ -7254,44 +7254,44 @@ TEST (pr28_generator_dropped_on_an_insert_names_it_like_fl)
     // FL 2026 (round 167u, shots fl3-fl10): 3x Osc dropped on Insert 3, Master and Insert 5's slot 2, then FLEX on
     // Insert 3: channels "3x Osc", "3x Osc #2", "3x Osc #3", "FLEX"; Insert 3 / Master / Insert 5 take the first
     // three names, Insert 3 keeps "3x Osc" when FLEX comes
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.clear();
     while (song.mixer.size() < 6)
         song.mixer.emplace_back().name = "Insert " + std::to_string (song.mixer.size());
     song.mixer[4].name = "Drums"; // a name the user gave
-    lynx::ChannelDef osc;
+    yw::ChannelDef osc;
     osc.name = "3x Osc";
-    lynx::ChannelDef flex;
+    yw::ChannelDef flex;
     flex.name = "FLEX";
 
-    CHECK (lynx::addChannelRouted (song, osc, 3) == 0 && song.channels[0].name == "3x Osc" && song.mixer[3].name == "3x Osc");
-    CHECK (lynx::addChannelRouted (song, osc, 0) == 1 && song.channels[1].name == "3x Osc #2" && song.channels[1].mixerTrack == 0
+    CHECK (yw::addChannelRouted (song, osc, 3) == 0 && song.channels[0].name == "3x Osc" && song.mixer[3].name == "3x Osc");
+    CHECK (yw::addChannelRouted (song, osc, 0) == 1 && song.channels[1].name == "3x Osc #2" && song.channels[1].mixerTrack == 0
            && song.mixer[0].name == "3x Osc #2");
-    CHECK (lynx::addChannelRouted (song, osc, 5) == 2 && song.channels[2].name == "3x Osc #3" && song.mixer[5].name == "3x Osc #3");
-    CHECK (lynx::addChannelRouted (song, flex, 3) == 3 && song.channels[3].name == "FLEX" && song.channels[3].mixerTrack == 3
+    CHECK (yw::addChannelRouted (song, osc, 5) == 2 && song.channels[2].name == "3x Osc #3" && song.mixer[5].name == "3x Osc #3");
+    CHECK (yw::addChannelRouted (song, flex, 3) == 3 && song.channels[3].name == "FLEX" && song.channels[3].mixerTrack == 3
            && song.mixer[3].name == "3x Osc");
-    CHECK (lynx::addChannelRouted (song, flex, 4) == 4 && song.channels[4].name == "FLEX #2" && song.mixer[4].name == "Drums");
+    CHECK (yw::addChannelRouted (song, flex, 4) == 4 && song.channels[4].name == "FLEX #2" && song.mixer[4].name == "Drums");
 
     // a plain new channel (no insert given) keeps its name and doesn't rename anything, as before
     const auto mixerBefore = song.mixer.size();
-    CHECK (lynx::addChannelRouted (song, osc) == 5 && song.channels[5].name == "3x Osc");
+    CHECK (yw::addChannelRouted (song, osc) == 5 && song.channels[5].name == "3x Osc");
     CHECK (song.mixer.size() >= mixerBefore && song.mixer[3].name == "3x Osc" && song.mixer[0].name == "3x Osc #2");
 }
 
 TEST (workflow_palette_random_colour)
 {
-    const auto& palette = lynx::lynxPalette();
+    const auto& palette = yw::ywPalette();
     for (std::uint32_t seed = 0; seed < 50; ++seed)
     {
         const auto current = palette[seed % palette.size()];
-        const auto c = lynx::randomPaletteColour (current, seed);
+        const auto c = yw::randomPaletteColour (current, seed);
         CHECK (c != current && std::find (palette.begin(), palette.end(), c) != palette.end());
     }
 }
 
 TEST (workflow_key_map)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     const auto global = Context::global, rack = Context::channelRack;
     CHECK (map.find ({ space, none }, global, true) == "transport.playStop");
@@ -7339,7 +7339,7 @@ TEST (workflow_key_map)
 
 TEST (workflow_workspace_layout)
 {
-    using namespace lynx::workspace;
+    using namespace yw::workspace;
     auto l = Layout::makeDefault (1280, 620);
     // every visible panel is inside the desktop; the default shows Browser, Playlist and Channel Rack
     for (const auto& p : l.panels)
@@ -7368,7 +7368,7 @@ TEST (workflow_workspace_layout)
         CHECK (std::abs ((*big)[Panel::playlist].bounds.x - 2 * l[Panel::playlist].bounds.x) <= 1);
         CHECK (big->order == l.order && big->focused == l.focused);
     }
-    CHECK (! Layout::parse ("garbage", 100, 100) && ! Layout::parse ("lynx-layout 1\npanel nowhere 1 0 0 0 0 1 1 0 0 0 0\n", 100, 100));
+    CHECK (! Layout::parse ("garbage", 100, 100) && ! Layout::parse ("yw-layout 1\npanel nowhere 1 0 0 0 0 1 1 0 0 0 0\n", 100, 100));
 
     // resize keeps panels inside and edges glued to the border
     l.resize (1000, 500);
@@ -7390,7 +7390,7 @@ TEST (workflow_workspace_layout)
 
 TEST (workflow_control_math)
 {
-    using namespace lynx::controls;
+    using namespace yw::controls;
     CHECK (std::abs (dragValue (0.5, 75, 0, 1, 150, false) - 1.0) < 1e-9);
     CHECK (std::abs (dragValue (0.5, 75, 0, 1, 150, true) - 0.55) < 1e-9);
     CHECK (dragValue (0.5, -1000, -1, 1, 150, false) == -1.0);
@@ -7401,7 +7401,7 @@ TEST (workflow_control_math)
     CHECK (tempoDrag (130.0, 8, false, false) == 132.0 && tempoDrag (130.0, -3, false, false) == 130.0);
     CHECK (std::abs (tempoDrag (130.0, 25, true, false) - 130.25) < 1e-9);
     CHECK (std::abs (tempoDrag (130.0, 8, false, true) - 130.2) < 1e-9);
-    CHECK (tempoDrag (520.0, 400, false, false) == lynx::maxTempo && halfTempo (15.0) == lynx::minTempo && doubleTempo (130.0) == 260.0);
+    CHECK (tempoDrag (520.0, 400, false, false) == yw::maxTempo && halfTempo (15.0) == yw::minTempo && doubleTempo (130.0) == 260.0);
 
     TapTempo tap;
     CHECK (! tap.tap (1000.0));
@@ -7450,7 +7450,7 @@ TEST (flp_fl11_mixer_slots_and_disabled_channels)
         for (const auto& c : project.channels)
             disabled += ! c.enabled;
         CHECK (disabled == 2);
-        const auto song = lynx::importFlp (project);
+        const auto song = yw::importFlp (project);
         int muted = 0;
         for (const auto& c : song.channels)
             muted += c.muted;
@@ -7481,9 +7481,9 @@ TEST (three_osc_host_hq_render_box_filters_aliasing_shapes)
     static bool hostHq = false;
     auto render = [&] (std::int32_t shape, bool hq) {
         hostHq = hq;
-        auto inst = lynx::makeThreeOscInstrument ([]() noexcept { return hostHq; });
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::threeosc;
+        auto inst = yw::makeThreeOscInstrument ([]() noexcept { return hostHq; });
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::threeosc;
         c.pluginState = state (shape);
         inst->configure (c, 140.0);
         inst->prepare (44100.0);
@@ -7499,7 +7499,7 @@ TEST (three_osc_host_hq_render_box_filters_aliasing_shapes)
             diff += std::abs (live[i] - hq[i]), energy += std::abs (live[i]);
         return std::make_pair (energy, diff);
     };
-    CHECK (lynx::threeOscStateUsable (state (3)));
+    CHECK (yw::threeOscStateUsable (state (3)));
     const auto [sawEnergy, sawDiff] = compare (3);
     CHECK (sawEnergy > 1.0 && sawDiff > 1.0e-3); // a saw renders differently in the host's HQ mode
     const auto [sineEnergy, sineDiff] = compare (0);
@@ -7512,7 +7512,7 @@ namespace
 //   [folder]           the FL Data folder (realFlpDir), as before
 //   --list             print the selected test names, one per line, and run nothing
 //   --filter a,b       run only the tests whose name contains one of these; several --filter options must all match
-//                      (the LYNX_TEST variable works as before, as one more --filter)
+//                      (the YW_TEST variable works as before, as one more --filter)
 //   --exclude a,b      skip the tests whose name contains one of these
 //   --shard i/n        run only shard i of n (1-based): the selected tests split into n disjoint sets that together
 //                      cover them all. With --weights the sets are balanced by time, otherwise test k goes to k mod n.
@@ -7565,7 +7565,7 @@ bool parseRunnerOptions (int argc, char** argv, RunnerOptions& o)
             const auto v = value();
             if (! v)
             {
-                std::fprintf (stderr, "lynx_tests: %s needs a value\n", a.c_str());
+                std::fprintf (stderr, "yw_tests: %s needs a value\n", a.c_str());
                 return false;
             }
             if (a == "--filter")
@@ -7582,7 +7582,7 @@ bool parseRunnerOptions (int argc, char** argv, RunnerOptions& o)
                 char tail = 0;
                 if (std::sscanf (v->c_str(), "%d/%d%c", &k, &n, &tail) != 2 || n < 1 || k < 1 || k > n)
                 {
-                    std::fprintf (stderr, "lynx_tests: --shard wants i/n with 1 <= i <= n, not %s\n", v->c_str());
+                    std::fprintf (stderr, "yw_tests: --shard wants i/n with 1 <= i <= n, not %s\n", v->c_str());
                     return false;
                 }
                 o.shard = k - 1;
@@ -7591,13 +7591,13 @@ bool parseRunnerOptions (int argc, char** argv, RunnerOptions& o)
         }
         else if (a.size() > 2 && a.compare (0, 2, "--") == 0)
         {
-            std::fprintf (stderr, "lynx_tests: unknown option %s\n", a.c_str());
+            std::fprintf (stderr, "yw_tests: unknown option %s\n", a.c_str());
             return false;
         }
         else
             realFlpDir = a;
     }
-    if (const char* only = std::getenv ("LYNX_TEST")) // run only the tests whose name contains this
+    if (const char* only = std::getenv ("YW_TEST")) // run only the tests whose name contains this
         o.filters.push_back ({ only });
     return true;
 }
@@ -7714,13 +7714,13 @@ TEST (synth_cutoff_keytrack)
 {
     // the cutoff follows the note from key 48 (130.81 Hz), like Harmor's "Key to filter frequency"
     auto rms = [] (float keyTrack, int key) {
-        lynx::SynthSettings s;
-        s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+        yw::SynthSettings s;
+        s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
         s.cutoff = 130.81f;
         s.keyTrack = keyTrack;
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = s;
         inst->configure (c, 120.0);
         inst->noteOn (key, 1.0f);
@@ -7738,11 +7738,11 @@ TEST (synth_cutoff_keytrack)
 
 namespace
 {
-std::vector<float> renderSynthNote (const lynx::SynthSettings& s, int key, int frames)
+std::vector<float> renderSynthNote (const yw::SynthSettings& s, int key, int frames)
 {
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.synth = s;
     inst->configure (c, 120.0);
     inst->noteOn (key, 1.0f);
@@ -7767,8 +7767,8 @@ double goertzel (const std::vector<float>& x, double f, int from, int to)
 
 TEST (synth_pitch_sweep_ring_and_bands)
 {
-    lynx::SynthSettings sine;
-    sine.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings sine;
+    sine.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     sine.cutoff = 20000.0f;
 
     // sweep: starts at f·(1 + sweep) and returns to f (time constant s = 10 ms; s⁴ falls 4× faster)
@@ -7788,7 +7788,7 @@ TEST (synth_pitch_sweep_ring_and_bands)
     // ring with |a| = 1: carrier 440 × modulator 110 -> only 330 and 550, no 440
     auto ring = sine;
     ring.am = ring.ring = true;
-    ring.osc[2] = { lynx::Waveform::sine, -2, 0.0f, 1.0f };
+    ring.osc[2] = { yw::Waveform::sine, -2, 0.0f, 1.0f };
     const auto b = renderSynthNote (ring, 69, 24000);
     CHECK (goertzel (b, 330.0, 4800, 24000) > 100.0 * goertzel (b, 440.0, 4800, 24000));
     CHECK (goertzel (b, 550.0, 4800, 24000) > 100.0 * goertzel (b, 440.0, 4800, 24000));
@@ -7808,22 +7808,22 @@ TEST (synth_pitch_sweep_ring_and_bands)
 
 TEST (love_philter_map_evaluation)
 {
-    lynx::LovePhilterMap line { { { 0.0, 0.0 }, { 1.0, 1.0 } } };
-    CHECK (std::abs (lynx::lovePhilterMapAt (line, 0.5) - 0.5) < 1e-9);
-    CHECK (std::abs (lynx::lovePhilterMapAt (line, 1.0) - 1.0) < 1e-9);
+    yw::LovePhilterMap line { { { 0.0, 0.0 }, { 1.0, 1.0 } } };
+    CHECK (std::abs (yw::lovePhilterMapAt (line, 0.5) - 0.5) < 1e-9);
+    CHECK (std::abs (yw::lovePhilterMapAt (line, 1.0) - 1.0) < 1e-9);
     // steps (Δx = 0): 1 until 0.4375, ramp to 0 at 0.5, then 0
-    lynx::LovePhilterMap steps { { { 0.0, 1.0 }, { 0.4375, 1.0 }, { 0.0625, 0.0 }, { 0.5, 0.0 } } };
-    CHECK (lynx::lovePhilterMapAt (steps, 0.27) == 1.0);
-    CHECK (lynx::lovePhilterMapAt (steps, 0.75) == 0.0);
-    CHECK (std::abs (lynx::lovePhilterMapAt (steps, 0.46875) - 0.5) < 1e-9);
-    CHECK (lynx::lovePhilterMapAt ({}, 0.3) == 1.0);
+    yw::LovePhilterMap steps { { { 0.0, 1.0 }, { 0.4375, 1.0 }, { 0.0625, 0.0 }, { 0.5, 0.0 } } };
+    CHECK (yw::lovePhilterMapAt (steps, 0.27) == 1.0);
+    CHECK (yw::lovePhilterMapAt (steps, 0.75) == 0.0);
+    CHECK (std::abs (yw::lovePhilterMapAt (steps, 0.46875) - 0.5) < 1e-9);
+    CHECK (yw::lovePhilterMapAt ({}, 0.3) == 1.0);
 }
 
 TEST (lofi_holds_and_quantizes)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::lofi);
+    auto fx = yw::makeEffect (yw::EffectKind::lofi);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::lofi);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::lofi);
     slot.params[0] = 0.5f; // 128·0.125 + 1 = 17 samples
     slot.params[1] = 1.0f; // 65536/2049 ≈ 32 levels
     std::vector<float> l (170), r (170);
@@ -7838,14 +7838,14 @@ TEST (lofi_holds_and_quantizes)
     for (auto v : l)
         CHECK (std::abs (v / step - std::round (v / step)) < 1e-3f);
     CHECK (std::abs (l[0] - original[0]) <= step);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::lofi, 1, 0.0f, 120.0) == "16.0 bits");
+    CHECK (yw::formatEffectParam (yw::EffectKind::lofi, 1, 0.0f, 120.0) == "16.0 bits");
 }
 
 namespace
 {
-lynx::EffectParams effectorParams (int type, float x, float y)
+yw::EffectParams effectorParams (int type, float x, float y)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::effector);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::effector);
     slot.params[0] = (float) type / 11.0f;
     slot.params[3] = x;
     slot.params[4] = y;
@@ -7855,13 +7855,13 @@ lynx::EffectParams effectorParams (int type, float x, float y)
 
 TEST (effector_algorithms)
 {
-    CHECK (lynx::effector::typeOf (8.0f / 11.0f) == 8);
-    CHECK (std::string (lynx::effector::typeName (11)) == "Ring");
-    CHECK (std::abs (lynx::effector::rateBeats (0.5f, 0.0f) - 0.75) < 1e-9); // trunc(8·0.5 + 0.5) = 4 -> 3/4
-    CHECK (std::abs (lynx::effector::rateBeats (1.0f, 0.5f) - 2.0) < 1e-9);   // 8 × (1 − 0.5)²
+    CHECK (yw::effector::typeOf (8.0f / 11.0f) == 8);
+    CHECK (std::string (yw::effector::typeName (11)) == "Ring");
+    CHECK (std::abs (yw::effector::rateBeats (0.5f, 0.0f) - 0.75) < 1e-9); // trunc(8·0.5 + 0.5) = 4 -> 3/4
+    CHECK (std::abs (yw::effector::rateBeats (1.0f, 0.5f) - 2.0) < 1e-9);   // 8 × (1 − 0.5)²
 
-    auto run = [] (const lynx::EffectParams& p, std::vector<float> in, double bpm = 120.0) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::effector);
+    auto run = [] (const yw::EffectParams& p, std::vector<float> in, double bpm = 120.0) {
+        auto fx = yw::makeEffect (yw::EffectKind::effector);
         fx->prepare (48000.0);
         fx->setSongPosition (0.0);
         auto r = in;
@@ -7940,9 +7940,9 @@ TEST (crossover_linkwitz_riley_sums_flat)
         for (const auto testHz : { 200.0, 1000.0, 5000.0 })
         {
             auto run = [&] (bool high) {
-                auto fx = lynx::makeEffect (lynx::EffectKind::crossover);
+                auto fx = yw::makeEffect (yw::EffectKind::crossover);
                 fx->prepare (48000.0);
-                auto slot = lynx::makeEffectSlot (lynx::EffectKind::crossover);
+                auto slot = yw::makeEffectSlot (yw::EffectKind::crossover);
                 const auto value = (float) (std::log2 (1000.0 / 30.0) / 9.0589);
                 slot.params[high ? 0 : 3] = 1.0f;
                 slot.params[high ? 1 : 4] = value;
@@ -7960,9 +7960,9 @@ TEST (crossover_linkwitz_riley_sums_flat)
             CHECK (std::abs (peak - 1.0) < 0.02);
         }
     // 96 dB/oct: two octaves above the cutoff the low-pass is already below −150 dB... in practice, very low
-    auto fx = lynx::makeEffect (lynx::EffectKind::crossover);
+    auto fx = yw::makeEffect (yw::EffectKind::crossover);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::crossover);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::crossover);
     slot.params[3] = 1.0f;
     slot.params[4] = (float) (std::log2 (500.0 / 30.0) / 9.0589);
     slot.params[5] = 1.0f;
@@ -7979,14 +7979,14 @@ TEST (crossover_linkwitz_riley_sums_flat)
 TEST (rhythm_gain_and_autopan)
 {
     // 1-beat gate: 1 → 0 at 0.5 beat (linear) → 1 at the end; at 120 BPM 1 beat = 24000 samples at 48 kHz
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::rhythmGain);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::rhythmGain);
     slot.params[0] = 1.0f / 64.0f;
     slot.params[1] = 3.0f / 12.0f;
     const float pts[3][3] = { { 0.0f, 1.0f, 0.5f }, { 0.5f, 0.0f, 0.5f }, { 1.0f, 1.0f, 0.5f } };
     for (int k = 0; k < 3; ++k)
         for (int j = 0; j < 3; ++j)
             slot.params[(std::size_t) (2 + 3 * k + j)] = pts[k][j];
-    auto fx = lynx::makeEffect (lynx::EffectKind::rhythmGain);
+    auto fx = yw::makeEffect (yw::EffectKind::rhythmGain);
     fx->prepare (48000.0);
     fx->setSongPosition (960.0 * 2.0); // beat 2: phase 0
     std::vector<float> l (24000, 1.0f), r (24000, 1.0f);
@@ -7996,13 +7996,13 @@ TEST (rhythm_gain_and_autopan)
     CHECK (l[12000] < 1e-3f);
     CHECK (std::abs (l[18000] - 0.5f) < 1e-3f);
     // positive tension: changes quickly at the start of the segment
-    CHECK (lynx::effectInfo (lynx::EffectKind::rhythmGain).params.size() == 39);
+    CHECK (yw::effectInfo (yw::EffectKind::rhythmGain).params.size() == 39);
 
     // auto-pan: 1-beat period, full depth; start phase 0.75 -> W = 0 rising (pan centered)
-    auto pan = lynx::makeEffectSlot (lynx::EffectKind::autoPan);
+    auto pan = yw::makeEffectSlot (yw::EffectKind::autoPan);
     pan.params[0] = 1.0f / 64.0f;
     pan.params[1] = 1.0f;
-    auto ap = lynx::makeEffect (lynx::EffectKind::autoPan);
+    auto ap = yw::makeEffect (yw::EffectKind::autoPan);
     ap->prepare (48000.0);
     ap->setSongPosition (0.0);
     std::vector<float> a (24000, 1.0f), b (24000, 1.0f);
@@ -8015,9 +8015,9 @@ TEST (vocoder_side_inputs_split_modulator_and_carrier)
 {
     // "Side inputs" mode (Vocodex): modulator from side input 1 (noise in the first half), carrier from side input 2
     // (saw), own input silent → the output follows the side modulator; with input 1 silent, the output is silent
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::vocoder);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::vocoder);
     slot.params[16] = 1.0f;
-    auto fx = lynx::makeEffect (lynx::EffectKind::vocoder);
+    auto fx = yw::makeEffect (yw::EffectKind::vocoder);
     fx->prepare (48000.0);
     std::vector<float> modL (48000), car (48000), l (48000, 0.0f), r (48000, 0.0f);
     std::uint32_t seed = 1;
@@ -8055,8 +8055,8 @@ TEST (vocoder_side_inputs_split_modulator_and_carrier)
 TEST (vocoder_follows_modulator)
 {
     // modulator (L) plays only in the first half; carrier (R) is a continuous saw: the wet follows the modulator
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::vocoder);
-    auto fx = lynx::makeEffect (lynx::EffectKind::vocoder);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::vocoder);
+    auto fx = yw::makeEffect (yw::EffectKind::vocoder);
     fx->prepare (48000.0);
     std::vector<float> l (48000), r (48000);
     std::uint32_t seed = 1;
@@ -8090,7 +8090,7 @@ TEST (fruity_vocoder_engine)
         inR[(std::size_t) i] = (i * 13) % 64 < 32 ? 0.5f : -0.5f;                        // carrier
     }
     auto make = [] (int bands, int order, int listen, bool swap, std::vector<float> levels, std::array<int, 12> c) {
-        lynx::fvocoder::State s;
+        yw::fvocoder::State s;
         s.bands = bands;
         s.order = order;
         s.listen = listen;
@@ -8100,9 +8100,9 @@ TEST (fruity_vocoder_engine)
         s.c = c;
         return s;
     };
-    auto run = [&] (const lynx::fvocoder::State& s, double rate, int block, int holdAt) {
+    auto run = [&] (const yw::fvocoder::State& s, double rate, int block, int holdAt) {
         std::vector<float> l = inL, r = inR;
-        lynx::fvocoder::Engine e;
+        yw::fvocoder::Engine e;
         e.setState (s);
         e.prepare (rate);
         for (int i = 0; i < 4096;)
@@ -8113,7 +8113,7 @@ TEST (fruity_vocoder_engine)
             if (i == holdAt)
             {
                 auto t = e.state();
-                t.c[lynx::fvocoder::hold] = 1;
+                t.c[yw::fvocoder::hold] = 1;
                 e.setState (t);
             }
             e.processStereo (l.data() + i, r.data() + i, len);
@@ -8142,50 +8142,50 @@ TEST (fruity_vocoder_engine)
                                        { 2500, 1.539392352104187f }, { 3000, -0.27189597487449646f }, { 3500, -0.11583124846220016f },
                                        { 4095, -0.11583124846220016f } });
 
-    // FL's state imports into the LYNX slot (controls as parameters, the levels in the state) and the slot's effect
+    // FL's state imports into the YW slot (controls as parameters, the levels in the state) and the slot's effect
     // (one 4096-frame call, split into 512-frame engine blocks) gives the same output
-    const auto bytes = lynx::fvocoder::serialise (a);
+    const auto bytes = yw::fvocoder::serialise (a);
     CHECK (bytes.size() == 17 + 16 * 4 + 12 * 4);
-    const auto slot = lynx::effectFromFl ("Fruity Vocoder", bytes);
-    CHECK (slot && slot->kind == lynx::EffectKind::vocoder && slot->state == bytes);
+    const auto slot = yw::effectFromFl ("Fruity Vocoder", bytes);
+    CHECK (slot && slot->kind == yw::EffectKind::vocoder && slot->state == bytes);
     CHECK (slot && slot->params[0] == 0.4f && slot->params[1] == 0.5f && slot->params[2] == 1.0f && slot->params[15] == 0.8f);
     if (slot)
     {
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l = inL, r = inR;
         fx->process (l.data(), r.data(), 4096, slot->params, 120.0);
         CHECK (l == outA.first && r == outA.second);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::vocoder, 5, slot->params[5], 120.0) == "16000 Hz");
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::vocoder, 10, slot->params[10], 120.0) == "20 ms");
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::vocoder, 15, slot->params[15], 120.0) == "1.00");
+        CHECK (yw::formatEffectParam (yw::EffectKind::vocoder, 5, slot->params[5], 120.0) == "16000 Hz");
+        CHECK (yw::formatEffectParam (yw::EffectKind::vocoder, 10, slot->params[10], 120.0) == "20 ms");
+        CHECK (yw::formatEffectParam (yw::EffectKind::vocoder, 15, slot->params[15], 120.0) == "1.00");
     }
-    const auto parsed = lynx::fvocoder::parse (bytes);
-    CHECK (parsed && parsed->bands == 16 && parsed->levels[5] == 2.0f && parsed->c[lynx::fvocoder::release] == 100);
-    CHECK (! lynx::fvocoder::parse ({ 2, 0, 0, 0, 12, 0, 0, 0 })); // 12 bands is not a valid count
+    const auto parsed = yw::fvocoder::parse (bytes);
+    CHECK (parsed && parsed->bands == 16 && parsed->levels[5] == 2.0f && parsed->c[yw::fvocoder::release] == 100);
+    CHECK (! yw::fvocoder::parse ({ 2, 0, 0, 0, 12, 0, 0, 0 })); // 12 bands is not a valid count
     // a raw control outside the knob range (FL keeps it, REA_rodada78 §1) survives while the knob shows it, clamped
-    CHECK (lynx::fvocoder::rawFromKnob (0.0f, lynx::fvocoder::attack, 5) == 5);
-    CHECK (lynx::fvocoder::rawFromKnob (0.5f, lynx::fvocoder::attack, 5) == 505);
-    CHECK (lynx::fvocoder::rawFromKnob (1.0f, lynx::fvocoder::wetLevel, 250) == 250);
-    CHECK (lynx::fvocoder::rawFromKnob (0.5f, lynx::fvocoder::freqScale, 64) == 64);
+    CHECK (yw::fvocoder::rawFromKnob (0.0f, yw::fvocoder::attack, 5) == 5);
+    CHECK (yw::fvocoder::rawFromKnob (0.5f, yw::fvocoder::attack, 5) == 505);
+    CHECK (yw::fvocoder::rawFromKnob (1.0f, yw::fvocoder::wetLevel, 250) == 250);
+    CHECK (yw::fvocoder::rawFromKnob (0.5f, yw::fvocoder::freqScale, 64) == 64);
 }
 
 // Delphi run-time math (REA_rodada70 §2): values the plugin's own exp / ln / SinCos return (EXEC, called in place)
 TEST (delphi_math_matches_plugin_runtime)
 {
     // arguments where the C library differs from the Delphi run-time in the last bit
-    CHECK (lynx::dmath::exp (0x1.f6e5c5a26a7f8p+3) == 0x1.98170c3deea30p+22);
-    CHECK (lynx::dmath::exp (-0x1.12fc91a51d906p+4) == 0x1.27108f934a58cp-25);
-    CHECK (lynx::dmath::exp (-0x1.2e9e4c229e93ap+4) == 0x1.a3bf2e4ee3f1ep-28);
-    CHECK (lynx::dmath::ln (0x1.76a77e2a09abep-1) == -0x1.3fd111c5297f8p-2);
-    CHECK (lynx::dmath::ln (0x1.da1feaa8547dfp+0) == 0x1.3b8abd2756774p-1);
-    CHECK (lynx::dmath::ln (0x1.a1e28772a0d78p-1) == -0x1.9ffcaa3a11e30p-3);
+    CHECK (yw::dmath::exp (0x1.f6e5c5a26a7f8p+3) == 0x1.98170c3deea30p+22);
+    CHECK (yw::dmath::exp (-0x1.12fc91a51d906p+4) == 0x1.27108f934a58cp-25);
+    CHECK (yw::dmath::exp (-0x1.2e9e4c229e93ap+4) == 0x1.a3bf2e4ee3f1ep-28);
+    CHECK (yw::dmath::ln (0x1.76a77e2a09abep-1) == -0x1.3fd111c5297f8p-2);
+    CHECK (yw::dmath::ln (0x1.da1feaa8547dfp+0) == 0x1.3b8abd2756774p-1);
+    CHECK (yw::dmath::ln (0x1.a1e28772a0d78p-1) == -0x1.9ffcaa3a11e30p-3);
     double s = 0.0, c = 0.0;
-    lynx::dmath::sinCos (0x1.91b4a19e65a9bp-1, s, c);
+    yw::dmath::sinCos (0x1.91b4a19e65a9bp-1, s, c);
     CHECK (s == 0x1.69be278761916p-1 && c == 0x1.6a559572e1ac9p-1);
-    lynx::dmath::sinCos (0x1.3284a93d70a8ap-1, s, c);
+    yw::dmath::sinCos (0x1.3284a93d70a8ap-1, s, c);
     CHECK (s == 0x1.2088b313ea643p-1 && c == 0x1.a6f4d889fd91ap-1);
-    lynx::dmath::sinCos (0x1.f9b2f53d6ce02p+0, s, c);
+    yw::dmath::sinCos (0x1.f9b2f53d6ce02p+0, s, c);
     CHECK (s == 0x1.d6a9b8f170994p-1 && c == -0x1.931701be7b5f3p-2);
 }
 
@@ -8245,23 +8245,23 @@ TEST (vocodex_state_parse_and_conversion)
     spec.block = { 1, 3, 2, 40, 0, 2, 1 };
     spec.params[17] = -1200;
     const auto raw = spec.bytes();
-    const auto s = lynx::vocodex::parseState (raw);
+    const auto s = yw::vocodex::parseState (raw);
     CHECK (s.has_value());
     if (! s)
         return;
     CHECK (s->version == 8 && s->holdMode == 1 && s->order == 3 && s->unison == 2 && s->bands == 40);
     CHECK (s->draft() && s->modIn == 2 && s->carIn == 1 && s->minTimes && s->subtractiveGate && ! s->lrEncoding);
-    CHECK (s->params[lynx::vocodex::modPitch] == -1200 && s->params[lynx::vocodex::carLp] == 65536);
+    CHECK (s->params[yw::vocodex::modPitch] == -1200 && s->params[yw::vocodex::carLp] == 65536);
     CHECK (s->maps[8].x.size() == 2 && std::abs (s->maps[8].y[1] - 0.9918) < 1e-12 && s->maps[8].x[1] == 1.0);
     CHECK (s->tone == "PWM" && s->notes.size() == 1 && s->notes[0] == 60);
 
-    const auto v = lynx::vocodexEffect (raw);
-    CHECK (v && v->slot.kind == lynx::EffectKind::vocodex && v->slot.state == raw && v->modIn == 2 && v->carIn == 1 && v->notes.empty());
+    const auto v = yw::vocodexEffect (raw);
+    CHECK (v && v->slot.kind == yw::EffectKind::vocodex && v->slot.state == raw && v->modIn == 2 && v->carIn == 1 && v->notes.empty());
     spec.block[6] = -1; // internal synth carrier: not available yet → reported
     spec.params[1] = 150; // Soundgoodizer stage
-    const auto w = lynx::vocodexEffect (spec.bytes());
+    const auto w = yw::vocodexEffect (spec.bytes());
     CHECK (w && w->carIn == -1 && w->notes.size() == 2);
-    CHECK (! lynx::vocodex::parseState ({ 1, 2, 3 }).has_value());
+    CHECK (! yw::vocodex::parseState ({ 1, 2, 3 }).has_value());
 }
 
 TEST (vocodex_vocodes_side_inputs)
@@ -8269,9 +8269,9 @@ TEST (vocodex_vocodes_side_inputs)
     // modulator on side input 1 (noise in the first half), carrier on side input 2 (saw), own input silent: the
     // output follows the modulator's envelope and fades after it stops
     VocodexSpec spec;
-    lynx::EffectSlot slot = lynx::makeEffectSlot (lynx::EffectKind::vocodex);
+    yw::EffectSlot slot = yw::makeEffectSlot (yw::EffectKind::vocodex);
     slot.state = spec.bytes();
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     CHECK (fx->latencySamples() == 0);
     const auto car = vocodexSaw (48000, 110.0, 48000.0);
@@ -8310,9 +8310,9 @@ TEST (vocodex_draft_latency_and_pass_through)
     for (const int draftField : { 1, 0 })
     {
         spec.block[4] = draftField;
-        const auto s = lynx::vocodex::parseState (spec.bytes());
+        const auto s = yw::vocodex::parseState (spec.bytes());
         CHECK (s.has_value());
-        lynx::vocodex::Engine engine;
+        yw::vocodex::Engine engine;
         engine.prepare (*s, 44100.0, 300, s->draft());
         CHECK (engine.latencySamples() == (draftField == 0 ? 16 : 0));
         engine.flush();
@@ -8341,9 +8341,9 @@ TEST (vocodex_soundgoodizer_stage_limits_the_output)
     VocodexSpec spec;
     spec.params[0] = 2000;
     spec.params[1] = 250;
-    lynx::EffectSlot slot = lynx::makeEffectSlot (lynx::EffectKind::vocodex);
+    yw::EffectSlot slot = yw::makeEffectSlot (yw::EffectKind::vocodex);
     slot.state = spec.bytes();
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (48000.0);
     CHECK (fx->latencySamples() == 72); // 1.5 ms at 48 kHz
     const auto car = vocodexSaw (48000, 110.0, 48000.0);
@@ -8367,9 +8367,9 @@ TEST (vocodex_tail_bypass_and_noise)
 {
     // both inputs silent for longer than 0.5 s + hold + release: the own input passes unchanged
     VocodexSpec spec;
-    const auto s = lynx::vocodex::parseState (spec.bytes());
+    const auto s = yw::vocodex::parseState (spec.bytes());
     CHECK (s.has_value());
-    lynx::vocodex::Engine engine;
+    yw::vocodex::Engine engine;
     engine.prepare (*s, 44100.0, 512, false);
     std::vector<float> zero (1024, 0.0f), own (1024), out (1024);
     for (std::size_t i = 0; i < own.size(); ++i)
@@ -8380,8 +8380,8 @@ TEST (vocodex_tail_bypass_and_noise)
 
     // carrier noise: the IPP-compatible generator restarts from the same seed after a Flush
     spec.params[6] = 9000;
-    const auto noisy = lynx::vocodex::parseState (spec.bytes());
-    lynx::vocodex::Engine a;
+    const auto noisy = yw::vocodex::parseState (spec.bytes());
+    yw::vocodex::Engine a;
     a.prepare (*noisy, 44100.0, 512, false);
     std::vector<float> mod (1024), first (1024), second (1024);
     for (std::size_t i = 0; i < mod.size(); ++i)
@@ -8399,13 +8399,13 @@ TEST (vocodex_tail_bypass_and_noise)
 
 TEST (synth_spectral_oscillator)
 {
-    // 1/n spectrum = saw: same harmonic proportions and same level as LYNX's saw
-    lynx::SynthSettings saw;
-    saw.osc[0] = { lynx::Waveform::saw, 0, 0.0f, 1.0f };
+    // 1/n spectrum = saw: same harmonic proportions and same level as YW's saw
+    yw::SynthSettings saw;
+    saw.osc[0] = { yw::Waveform::saw, 0, 0.0f, 1.0f };
     saw.cutoff = 20000.0f;
     auto spectral = saw;
-    spectral.osc[0].wave = lynx::Waveform::spectral;
-    for (int n = 1; n <= lynx::SynthSettings::spectrumSize; ++n)
+    spectral.osc[0].wave = yw::Waveform::spectral;
+    for (int n = 1; n <= yw::SynthSettings::spectrumSize; ++n)
         spectral.spectrum[(std::size_t) n - 1] = 1.0f / (float) n;
     const auto a = renderSynthNote (saw, 57, 24000), b = renderSynthNote (spectral, 57, 24000); // 220 Hz
     for (const auto h : { 1, 2, 3, 5 })
@@ -8415,7 +8415,7 @@ TEST (synth_spectral_oscillator)
     }
     // odd only: no 2nd harmonic
     auto odd = spectral;
-    for (int n = 2; n <= lynx::SynthSettings::spectrumSize; n += 2)
+    for (int n = 2; n <= yw::SynthSettings::spectrumSize; n += 2)
         odd.spectrum[(std::size_t) n - 1] = 0.0f;
     const auto c = renderSynthNote (odd, 57, 24000);
     CHECK (goertzel (c, 440.0, 4800, 24000) < 1e-4 * goertzel (c, 220.0, 4800, 24000));
@@ -8427,12 +8427,12 @@ TEST (synth_spectral_oscillator)
 TEST (compressor_sidechain_ducks_and_orders_mixer)
 {
     // the detector listens to the side input: quiet signal on the track, loud kick on the sidechain -> reduction
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::compressor);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::compressor);
     slot.params[0] = 0.5f; // threshold
     slot.params[1] = 1.0f; // high ratio
     slot.params[4] = 0.0f;
     auto run = [&] (bool withSidechain) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::compressor);
+        auto fx = yw::makeEffect (yw::EffectKind::compressor);
         fx->prepare (48000.0);
         std::vector<float> l (4800, 0.1f), r (4800, 0.1f), kick (4800, 1.0f);
         if (withSidechain)
@@ -8444,10 +8444,10 @@ TEST (compressor_sidechain_ducks_and_orders_mixer)
     CHECK (ducked < 0.5f * alone);
 
     // order: track 5 listens to 7 via sidechain -> 7 comes before 5
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     while (song.mixer.size() < 8)
         song.mixer.push_back ({});
-    auto comp = lynx::makeEffectSlot (lynx::EffectKind::compressor);
+    auto comp = yw::makeEffectSlot (yw::EffectKind::compressor);
     comp.sidechain = 7;
     song.mixer[5].effects.push_back (comp);
     const auto order = song.mixerOrder();
@@ -8457,8 +8457,8 @@ TEST (compressor_sidechain_ducks_and_orders_mixer)
 
 TEST (pitch_correction_pulls_to_allowed_note)
 {
-    auto run = [] (const lynx::EffectParams& p, double hz) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::pitchCorrect);
+    auto run = [] (const yw::EffectParams& p, double hz) {
+        auto fx = yw::makeEffect (yw::EffectKind::pitchCorrect);
         fx->prepare (48000.0);
         std::vector<float> l (48000 * 2), r;
         for (std::size_t i = 0; i < l.size(); ++i)
@@ -8471,7 +8471,7 @@ TEST (pitch_correction_pulls_to_allowed_note)
             crossings += (l[i - 1] < 0.0f) != (l[i] < 0.0f);
         return crossings / 2.0;
     };
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::pitchCorrect); // chromatic, instant, A 440
+    auto slot = yw::makeEffectSlot (yw::EffectKind::pitchCorrect); // chromatic, instant, A 440
     CHECK (std::abs (run (slot.params, 452.0) - 440.0) < 4.0);
     for (int k = 0; k < 12; ++k)
         slot.params[(std::size_t) (5 + k)] = k == 0 ? 1.0f : 0.0f; // only C
@@ -8490,9 +8490,9 @@ TEST (pitch_correction_bypass_is_a_pure_delay)
         in[i] = 0.5f * (float) std::sin (2.0 * 3.141592653589793 * 440.0 * (double) i / 48000.0)
               + 0.2f * (float) std::sin (2.0 * 3.141592653589793 * 1234.5 * (double) i / 48000.0);
     auto run = [&] (bool formant, float gender, int& latency) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::pitchCorrect);
+        auto fx = yw::makeEffect (yw::EffectKind::pitchCorrect);
         fx->prepare (48000.0);
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::pitchCorrect);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::pitchCorrect);
         slot.params[2] = 1.0f;
         slot.params[29] = formant ? 1.0f : 0.0f;
         slot.params[30] = gender;
@@ -8522,9 +8522,9 @@ TEST (pitch_correction_formant_path)
     // Formant on: PSOLA keeps the correction (output pitch = grain spacing) while Gender resamples the grains:
     // the spectrum of a saw moves up with Gender > 0.5 and down with Gender < 0.5
     auto run = [] (float gender) {
-        auto fx = lynx::makeEffect (lynx::EffectKind::pitchCorrect);
+        auto fx = yw::makeEffect (yw::EffectKind::pitchCorrect);
         fx->prepare (48000.0);
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::pitchCorrect); // chromatic, instant, A 440
+        auto slot = yw::makeEffectSlot (yw::EffectKind::pitchCorrect); // chromatic, instant, A 440
         slot.params[29] = 1.0f;
         slot.params[30] = gender;
         std::vector<float> l (48000 * 2), r;
@@ -8572,13 +8572,13 @@ TEST (parallel_container_inner_links_modulate)
 {
     // one branch: utility (gain) + a control-only auto-pan LFO (1 beat); the link maps the LFO 0..1 onto the
     // utility gain −24 dB..0 dB, so the level must swing; without the link it stays put
-    auto container = lynx::makeEffectSlot (lynx::EffectKind::parallel);
-    auto gain = lynx::makeEffectSlot (lynx::EffectKind::utility);
-    auto lfo = lynx::makeEffectSlot (lynx::EffectKind::autoPan);
+    auto container = yw::makeEffectSlot (yw::EffectKind::parallel);
+    auto gain = yw::makeEffectSlot (yw::EffectKind::utility);
+    auto lfo = yw::makeEffectSlot (yw::EffectKind::autoPan);
     lfo.params[0] = 1.0f / 64.0f;
     lfo.params[4] = 1.0f; // control only: audio passes unchanged
     container.branches.push_back ({ { gain, lfo }, 1.0f });
-    lynx::EffectLink link;
+    yw::EffectLink link;
     link.source = 1;
     link.param = 0;
     for (int i = 0; i <= 32; ++i)
@@ -8588,7 +8588,7 @@ TEST (parallel_container_inner_links_modulate)
         auto slot = container;
         if (linked)
             slot.links.push_back (link);
-        auto fx = lynx::makeParallelEffect (slot);
+        auto fx = yw::makeParallelEffect (slot);
         fx->prepare (48000.0);
         float lo = 1e9f, hi = 0.0f;
         for (int block = 0; block < 94; ++block) // ~1 beat at 120 BPM in 256-sample blocks
@@ -8610,8 +8610,8 @@ TEST (parallel_container_inner_links_modulate)
 TEST (synth_spectrum_decays_per_harmonic)
 {
     // harmonic 1 holds, harmonic 3 falls 60 dB in 0.2 s: early the 3rd is as loud as the 1st, later it is gone
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::spectral, 0, 0.0f, 1.0f };
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::spectral, 0, 0.0f, 1.0f };
     s.cutoff = 20000.0f;
     s.decay = 0.0f;
     s.sustain = 1.0f;
@@ -8635,7 +8635,7 @@ TEST (worker_pool_runs_each_index_once_per_round)
 {
     // rounds of alternating sizes (a stalled worker must never run an index of a later round), each index
     // exactly once, and nothing running after parallelFor returns
-    lynx::WorkerPool pool (3);
+    yw::WorkerPool pool (3);
     std::vector<std::atomic<int>> hits (64);
     std::atomic<int> round { 0 }, outside { 0 }, wrongRound { 0 };
     std::atomic<bool> open { false };
@@ -8668,12 +8668,12 @@ TEST (worker_pool_wakes_sleeping_workers)
 {
     // rounds far apart (the workers have gone to sleep on the semaphore in between): every index still runs once,
     // and the sleeping workers are woken (REA round 87: the Windows build used to poll with growing Sleep()s)
-    lynx::WorkerPool pool (3);
+    yw::WorkerPool pool (3);
     std::vector<std::atomic<int>> hits (16);
     int failures = 0;
     for (int r = 0; r < 12; ++r)
     {
-        std::this_thread::sleep_for (std::chrono::microseconds (lynx::WorkerPool::spinMicros * 4));
+        std::this_thread::sleep_for (std::chrono::microseconds (yw::WorkerPool::spinMicros * 4));
         for (auto& h : hits)
             h.store (0);
         auto fn = [&] (int i) {
@@ -8693,7 +8693,7 @@ TEST (worker_pool_park_sends_spinning_workers_to_sleep)
 {
     // round 116: after park() (end of an audio block) the workers sleep at once instead of spinning for spinMicros, so
     // the next parallelFor, well inside the spin window, has to wake them; and work right after park() still runs once
-    lynx::WorkerPool pool (3);
+    yw::WorkerPool pool (3);
     std::vector<std::atomic<int>> hits (8);
     int failures = 0;
     const auto before = pool.wakeUps();
@@ -8708,7 +8708,7 @@ TEST (worker_pool_park_sends_spinning_workers_to_sleep)
         pool.parallelFor (8, fn);
         pool.park();
         if (r % 2 == 0)
-            std::this_thread::sleep_for (std::chrono::microseconds (lynx::WorkerPool::spinMicros / 5));
+            std::this_thread::sleep_for (std::chrono::microseconds (yw::WorkerPool::spinMicros / 5));
         for (auto& h : hits)
             failures += h.load() != 1;
     }
@@ -8718,7 +8718,7 @@ TEST (worker_pool_park_sends_spinning_workers_to_sleep)
 
 TEST (realtime_stats_count_deadline_misses_and_late_calls)
 {
-    lynx::RtStats stats;
+    yw::RtStats stats;
     // 10 ms deadline: 3 ms, 9 ms (80-100 %), 12 ms (over), then a call 40 ms after the previous one (late)
     stats.record (100.0, 3.0, 10.0);
     stats.record (110.0, 9.0, 10.0);
@@ -8744,66 +8744,66 @@ TEST (realtime_stats_count_deadline_misses_and_late_calls)
 TEST (safe_default_buffer_size)
 {
     const std::vector<int> wasapi { 144, 160, 192, 224, 256, 288, 320, 384, 448, 480, 512, 576, 640, 1024, 2048 };
-    CHECK (lynx::prefs::safeBufferSize (wasapi, 480, 48000.0) == 512);   // the 10 ms default becomes 512
-    CHECK (lynx::prefs::safeBufferSize (wasapi, 1024, 48000.0) == 1024); // already larger: kept
-    CHECK (lynx::prefs::safeBufferSize (wasapi, 480, 96000.0) == 1024);  // ~10.7 ms at 96 kHz
-    CHECK (lynx::prefs::safeBufferSize ({ 64, 128, 256 }, 128, 44100.0) == 256); // nothing reaches 512: the largest
-    CHECK (lynx::prefs::safeBufferSize ({}, 0, 44100.0) == 0);
+    CHECK (yw::prefs::safeBufferSize (wasapi, 480, 48000.0) == 512);   // the 10 ms default becomes 512
+    CHECK (yw::prefs::safeBufferSize (wasapi, 1024, 48000.0) == 1024); // already larger: kept
+    CHECK (yw::prefs::safeBufferSize (wasapi, 480, 96000.0) == 1024);  // ~10.7 ms at 96 kHz
+    CHECK (yw::prefs::safeBufferSize ({ 64, 128, 256 }, 128, 44100.0) == 256); // nothing reaches 512: the largest
+    CHECK (yw::prefs::safeBufferSize ({}, 0, 44100.0) == 0);
 }
 
 TEST (linux_audio_driver_choice_and_pipewire_helpers)
 {
     // round 161: a first start on Linux opens PipeWire, then JACK, then ALSA
-    using lynx::prefs::DriverKind;
-    CHECK (lynx::prefs::driverKind ("PipeWire") == DriverKind::pipewire);
-    CHECK (lynx::prefs::preferredLinuxDriver ({ { "ALSA", true }, { "JACK", false }, { "PipeWire", true } }) == "PipeWire");
-    CHECK (lynx::prefs::preferredLinuxDriver ({ { "ALSA", true }, { "JACK", true } }) == "JACK");
-    CHECK (lynx::prefs::preferredLinuxDriver ({ { "ALSA", true }, { "JACK", false }, { "PipeWire", false } }) == "ALSA");
-    CHECK (lynx::prefs::preferredLinuxDriver ({ { "ALSA", false }, { "Bela", true } }) == "Bela");
-    CHECK (lynx::prefs::preferredLinuxDriver ({ { "ALSA", false } }).empty());
-    CHECK (lynx::prefs::pipewireLatency (256, 48000) == "256/48000");
-    CHECK (lynx::prefs::pipewireLatency (0, 0) == "1/1");
-    CHECK (lynx::prefs::pipewireChannelName ("FL", 0) == "Left");
-    CHECK (lynx::prefs::pipewireChannelName ("FR", 1) == "Right");
-    CHECK (lynx::prefs::pipewireChannelName ("MONO", 0) == "Mono");
-    CHECK (lynx::prefs::pipewireChannelName ("AUX0", 0) == "Aux 1");
-    CHECK (lynx::prefs::pipewireChannelName ("AUX15", 15) == "Aux 16");
-    CHECK (lynx::prefs::pipewireChannelName ("AUXX", 2) == "AUXX");
-    CHECK (lynx::prefs::pipewireChannelName ("", 2) == "Channel 3");
-    CHECK (lynx::prefs::pipewireDefaultName (R"({"name":"alsa_output.pci-0000_00_1f.3.analog-stereo"})") == "alsa_output.pci-0000_00_1f.3.analog-stereo");
-    CHECK (lynx::prefs::pipewireDefaultName (R"({ "name" : "a\"b" })") == "a\"b");
-    CHECK (lynx::prefs::pipewireDefaultName ("{}").empty());
-    CHECK (lynx::prefs::pipewireDefaultName (R"({"name":"unterminated)").empty());
-    CHECK ((lynx::prefs::uniqueDeviceNames ({ "USB Audio", "HDMI", "USB Audio", "USB Audio" })
+    using yw::prefs::DriverKind;
+    CHECK (yw::prefs::driverKind ("PipeWire") == DriverKind::pipewire);
+    CHECK (yw::prefs::preferredLinuxDriver ({ { "ALSA", true }, { "JACK", false }, { "PipeWire", true } }) == "PipeWire");
+    CHECK (yw::prefs::preferredLinuxDriver ({ { "ALSA", true }, { "JACK", true } }) == "JACK");
+    CHECK (yw::prefs::preferredLinuxDriver ({ { "ALSA", true }, { "JACK", false }, { "PipeWire", false } }) == "ALSA");
+    CHECK (yw::prefs::preferredLinuxDriver ({ { "ALSA", false }, { "Bela", true } }) == "Bela");
+    CHECK (yw::prefs::preferredLinuxDriver ({ { "ALSA", false } }).empty());
+    CHECK (yw::prefs::pipewireLatency (256, 48000) == "256/48000");
+    CHECK (yw::prefs::pipewireLatency (0, 0) == "1/1");
+    CHECK (yw::prefs::pipewireChannelName ("FL", 0) == "Left");
+    CHECK (yw::prefs::pipewireChannelName ("FR", 1) == "Right");
+    CHECK (yw::prefs::pipewireChannelName ("MONO", 0) == "Mono");
+    CHECK (yw::prefs::pipewireChannelName ("AUX0", 0) == "Aux 1");
+    CHECK (yw::prefs::pipewireChannelName ("AUX15", 15) == "Aux 16");
+    CHECK (yw::prefs::pipewireChannelName ("AUXX", 2) == "AUXX");
+    CHECK (yw::prefs::pipewireChannelName ("", 2) == "Channel 3");
+    CHECK (yw::prefs::pipewireDefaultName (R"({"name":"alsa_output.pci-0000_00_1f.3.analog-stereo"})") == "alsa_output.pci-0000_00_1f.3.analog-stereo");
+    CHECK (yw::prefs::pipewireDefaultName (R"({ "name" : "a\"b" })") == "a\"b");
+    CHECK (yw::prefs::pipewireDefaultName ("{}").empty());
+    CHECK (yw::prefs::pipewireDefaultName (R"({"name":"unterminated)").empty());
+    CHECK ((yw::prefs::uniqueDeviceNames ({ "USB Audio", "HDMI", "USB Audio", "USB Audio" })
             == std::vector<std::string> { "USB Audio", "HDMI", "USB Audio (2)", "USB Audio (3)" }));
 }
 
 TEST (driver_kind_and_shared_mode_buffer_sizes)
 {
     // REA round 97: classic shared WASAPI mixes in whole engine periods, so sizes below it are not offered
-    using lynx::prefs::DriverKind;
-    CHECK (lynx::prefs::driverKind ("Windows Audio") == DriverKind::wasapiShared);
-    CHECK (lynx::prefs::driverKind ("Windows Audio (Exclusive Mode)") == DriverKind::wasapiExclusive);
-    CHECK (lynx::prefs::driverKind ("Windows Audio (Low Latency Mode)") == DriverKind::wasapiLowLatency);
-    CHECK (lynx::prefs::driverKind ("ASIO") == DriverKind::asio);
-    CHECK (lynx::prefs::driverKind ("LYNX ASIO") == DriverKind::lynxAsio);
-    CHECK (lynx::prefs::driverKind ("DirectSound") == DriverKind::directSound);
-    CHECK (lynx::prefs::driverKind ("ALSA") == DriverKind::alsa);
-    CHECK (lynx::prefs::driverKind ("JACK") == DriverKind::jack);
-    CHECK (lynx::prefs::driverKind ("CoreAudio") == DriverKind::coreAudio);
-    CHECK (lynx::prefs::driverKind ("Some Other Driver") == DriverKind::other);
+    using yw::prefs::DriverKind;
+    CHECK (yw::prefs::driverKind ("Windows Audio") == DriverKind::wasapiShared);
+    CHECK (yw::prefs::driverKind ("Windows Audio (Exclusive Mode)") == DriverKind::wasapiExclusive);
+    CHECK (yw::prefs::driverKind ("Windows Audio (Low Latency Mode)") == DriverKind::wasapiLowLatency);
+    CHECK (yw::prefs::driverKind ("ASIO") == DriverKind::asio);
+    CHECK (yw::prefs::driverKind ("YW ASIO") == DriverKind::ywAsio);
+    CHECK (yw::prefs::driverKind ("DirectSound") == DriverKind::directSound);
+    CHECK (yw::prefs::driverKind ("ALSA") == DriverKind::alsa);
+    CHECK (yw::prefs::driverKind ("JACK") == DriverKind::jack);
+    CHECK (yw::prefs::driverKind ("CoreAudio") == DriverKind::coreAudio);
+    CHECK (yw::prefs::driverKind ("Some Other Driver") == DriverKind::other);
     const std::vector<int> offered { 144, 192, 256, 480, 512, 1024 };
-    CHECK ((lynx::prefs::usableBufferSizes (DriverKind::wasapiShared, offered, 480) == std::vector<int> { 480, 512, 1024 }));
-    CHECK (lynx::prefs::usableBufferSizes (DriverKind::wasapiExclusive, offered, 480) == offered);   // the device's real periods
-    CHECK (lynx::prefs::usableBufferSizes (DriverKind::wasapiLowLatency, offered, 480) == offered);  // engine periods
-    CHECK (lynx::prefs::usableBufferSizes (DriverKind::wasapiShared, { 64, 128 }, 480) == (std::vector<int> { 64, 128 })); // never empty
-    CHECK (lynx::prefs::usableBufferSizes (DriverKind::wasapiShared, offered, 0) == offered);
+    CHECK ((yw::prefs::usableBufferSizes (DriverKind::wasapiShared, offered, 480) == std::vector<int> { 480, 512, 1024 }));
+    CHECK (yw::prefs::usableBufferSizes (DriverKind::wasapiExclusive, offered, 480) == offered);   // the device's real periods
+    CHECK (yw::prefs::usableBufferSizes (DriverKind::wasapiLowLatency, offered, 480) == offered);  // engine periods
+    CHECK (yw::prefs::usableBufferSizes (DriverKind::wasapiShared, { 64, 128 }, 480) == (std::vector<int> { 64, 128 })); // never empty
+    CHECK (yw::prefs::usableBufferSizes (DriverKind::wasapiShared, offered, 0) == offered);
 }
 
 TEST (linear_phase_convolver_matches_direct_convolution)
 {
     // the block FFT convolver (cached twiddles, REA round 87) equals the direct convolution with its kernel
-    lynx::peqfl::FftConvolver c;
+    yw::peqfl::FftConvolver c;
     c.init (256);
     std::vector<float> table (129, 1.0f);
     for (int k = 40; k < 129; ++k)
@@ -8818,7 +8818,7 @@ TEST (linear_phase_convolver_matches_direct_convolution)
         ir[(std::size_t) i] = l;
     }
     // then a noise signal, compared with direct convolution by that impulse response
-    lynx::peqfl::FftConvolver d;
+    yw::peqfl::FftConvolver d;
     d.init (256);
     d.setKernel (table);
     std::vector<float> x (2000), y (2000);
@@ -8850,29 +8850,29 @@ TEST (patcher_container_is_reused_across_snapshots)
     // an unchanged Patcher keeps its built effect (its children's tails, delay lines and PDC stay put), and a
     // linear-phase Frequency Splitter reports its latency before its first block (REA round 87: it used to be
     // rebuilt on every snapshot and its latency appeared one block late, re-planning PDC in a loop)
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     if (song.mixer.size() < 2)
         song.mixer.resize (2);
-    lynx::EffectSlot splitter;
-    splitter.kind = lynx::EffectKind::frequencySplitter;
-    splitter.params = lynx::makeEffectSlot (lynx::EffectKind::frequencySplitter).params;
+    yw::EffectSlot splitter;
+    splitter.kind = yw::EffectKind::frequencySplitter;
+    splitter.params = yw::makeEffectSlot (yw::EffectKind::frequencySplitter).params;
     splitter.params[4] = 0.6f; // linear-phase mode
     splitter.params[6] = 0.0f; // quality 0
-    lynx::EffectSlot patcher;
-    patcher.kind = lynx::EffectKind::parallel;
+    yw::EffectSlot patcher;
+    patcher.kind = yw::EffectKind::parallel;
     patcher.branches.push_back ({ { splitter }, 1.0f });
     patcher.branches.push_back ({ {}, 0.5f });
     song.mixer[1].effects = { patcher };
-    const auto a = lynx::RackState::build (song, nullptr, 44100.0);
-    const auto b = lynx::RackState::build (song, a.get(), 44100.0);
+    const auto a = yw::RackState::build (song, nullptr, 44100.0);
+    const auto b = yw::RackState::build (song, a.get(), 44100.0);
     CHECK (a->effects[1][0] == b->effects[1][0]);
     CHECK (a->effects[1][0]->latencySamples() == 384); // 3/4 of the 512-point FFT, before any block
     CHECK (a->latencies == a->currentLatencies());
     song.mixer[1].effects[0].branches[0].chain[0].params[0] = 0.25f; // a child's parameter changed: rebuilt
-    const auto c = lynx::RackState::build (song, b.get(), 44100.0);
+    const auto c = yw::RackState::build (song, b.get(), 44100.0);
     CHECK (c->effects[1][0] != b->effects[1][0]);
     song.mixer[1].effects[0].branches[1].gain = 0.75f;
-    const auto d = lynx::RackState::build (song, c.get(), 44100.0);
+    const auto d = yw::RackState::build (song, c.get(), 44100.0);
     CHECK (d->effects[1][0] != c->effects[1][0]);
 }
 
@@ -8881,8 +8881,8 @@ TEST (ladder_filter_follows_toxic_law)
     // the 4-pole ladder: −24 dB/oct far above the cutoff (vs −12 for the SVF), resonance raises the corner, and
     // the input saturation keeps it bounded even at full resonance
     auto level = [] (bool ladder, float res, double hz) {
-        lynx::SynthSettings s;
-        s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+        yw::SynthSettings s;
+        s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
         s.cutoff = 500.0f;
         s.resonance = res;
         s.ladder = ladder;
@@ -8906,8 +8906,8 @@ TEST (ladder_filter_follows_toxic_law)
 TEST (synth_spectrum_settles_on_target)
 {
     // ALT DECAY-like morph: harmonic 3 starts at 1 and settles on 0.25 (−12 dB) instead of fading out
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::spectral, 0, 0.0f, 1.0f };
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::spectral, 0, 0.0f, 1.0f };
     s.cutoff = 20000.0f;
     s.decay = 0.0f;
     s.sustain = 1.0f;
@@ -8923,15 +8923,15 @@ TEST (synth_spectrum_settles_on_target)
 TEST (kepler_chorus_is_stereo_and_keeps_level)
 {
     // chorus I on a sine: L and R differ (opposite LFO phases), the level stays close to the dry one
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     s.cutoff = 20000.0f;
     auto dry = s;
     s.chorus = 1;
-    auto render = [] (const lynx::SynthSettings& set) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto render = [] (const yw::SynthSettings& set) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
         inst->prepare (48000.0);
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.synth = set;
         inst->configure (c, 120.0);
         inst->noteOn (69, 1.0f);
@@ -8958,7 +8958,7 @@ TEST (fl_pan_law_matches_love_philter_dll)
     for (const auto& row : rows)
     {
         float ll, rl, lr, rr;
-        lynx::flPanMatrix (row.pan, ll, rl, lr, rr);
+        yw::flPanMatrix (row.pan, ll, rl, lr, rr);
         CHECK (std::abs (0.8 * ll - row.ll) < 1e-6 && std::abs (0.8 * rr - row.rr) < 1e-6);
         CHECK (std::abs (0.8 * rl - row.rl) < 1e-6 && std::abs (0.8 * lr - row.lr) < 1e-6);
     }
@@ -8974,17 +8974,17 @@ TEST (effector_units_match_fl_dll_impulse_responses)
                            { 4, 0.8f, 0.3f, { -0.293783396, -0.0306414738, -0.00068128563, 1.358577e-15 } } };
     for (const auto& c : cases)
     {
-        auto fx = lynx::effector::make();
+        auto fx = yw::effector::make();
         fx->prepare (44100.0);
-        lynx::EffectParams p {};
-        p[lynx::effector::type] = c.kind / 11.0f;
-        p[lynx::effector::wetMix] = 1.0f;
-        p[lynx::effector::paramX] = c.x;
-        p[lynx::effector::paramY] = c.y;
-        p[lynx::effector::modX] = p[lynx::effector::modY] = 0.5f;
-        p[lynx::effector::modRate] = 0.5f;
-        p[lynx::effector::inputLevel] = 1.0f;
-        p[lynx::effector::outputGain] = 0.5f;
+        yw::EffectParams p {};
+        p[yw::effector::type] = c.kind / 11.0f;
+        p[yw::effector::wetMix] = 1.0f;
+        p[yw::effector::paramX] = c.x;
+        p[yw::effector::paramY] = c.y;
+        p[yw::effector::modX] = p[yw::effector::modY] = 0.5f;
+        p[yw::effector::modRate] = 0.5f;
+        p[yw::effector::inputLevel] = 1.0f;
+        p[yw::effector::outputGain] = 0.5f;
         std::vector<float> l (1024, 0.0f), r (1024, 0.0f);
         l[0] = r[0] = 1.0f;
         for (int d = 0; d < 1024; d += 256)
@@ -8998,13 +8998,13 @@ TEST (effector_units_match_fl_dll_impulse_responses)
 TEST (harmless_stereo_tremolo_and_vibrato)
 {
     // tremolo d = 1: each side swings between 0 and 1.25 at 5 Hz, L and R in anti-phase; vibrato modulates the pitch
-    lynx::SynthSettings s;
-    s.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+    yw::SynthSettings s;
+    s.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
     s.cutoff = 20000.0f;
     s.stereoTremolo = 1.0f;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::synth);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::synth);
     inst->prepare (48000.0);
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.synth = s;
     inst->configure (c, 120.0);
     inst->noteOn (69, 1.0f);
@@ -9017,8 +9017,8 @@ TEST (harmless_stereo_tremolo_and_vibrato)
 
     // vibrato 100 cents: zero crossings vary in spacing; without it they are regular
     auto crossingsSpread = [] (float cents) {
-        lynx::SynthSettings v;
-        v.osc[0] = { lynx::Waveform::sine, 0, 0.0f, 1.0f };
+        yw::SynthSettings v;
+        v.osc[0] = { yw::Waveform::sine, 0, 0.0f, 1.0f };
         v.cutoff = 20000.0f;
         v.vibratoCents = cents;
         const auto x = renderSynthNote (v, 69, 48000);
@@ -9038,11 +9038,11 @@ TEST (harmless_stereo_tremolo_and_vibrato)
 TEST (physical_models_sound_and_end)
 {
     // Sakura: a plucked string with default-ish parameters rings and fades after the release; Drumpad: a hit decays
-    for (const auto kind : { lynx::InstrumentKind::sakura, lynx::InstrumentKind::drumpad })
+    for (const auto kind : { yw::InstrumentKind::sakura, yw::InstrumentKind::drumpad })
     {
-        lynx::ChannelDef c;
+        yw::ChannelDef c;
         c.instrument = kind;
-        if (kind == lynx::InstrumentKind::sakura)
+        if (kind == yw::InstrumentKind::sakura)
         {
             c.modelParams.assign (146, 0.5f);
             c.modelParams[111] = 3.0f;  // both strings at the note
@@ -9056,7 +9056,7 @@ TEST (physical_models_sound_and_end)
             c.modelParams[0] = 1.0f;    // retrigger noise
             c.modelParams[30] = c.modelParams[31] = c.modelParams[32] = c.modelParams[33] = 0.0f; // no velocity morph
         }
-        auto inst = lynx::makeInstrument (kind);
+        auto inst = yw::makeInstrument (kind);
         inst->prepare (48000.0);
         inst->configure (c, 120.0);
         inst->noteOn (60, 0.8f);
@@ -9078,9 +9078,9 @@ TEST (physical_models_sound_and_end)
 TEST (squeeze_matches_fl_model)
 {
     // Fruity Squeeze: Steps quantises, Mix 0 passes the input dry ×Volume/127; a silent block is left untouched
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::squeeze);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::squeeze);
     slot.params[1] = 0.0f; // mix 0: dry only
-    auto fx = lynx::makeEffect (lynx::EffectKind::squeeze);
+    auto fx = yw::makeEffect (yw::EffectKind::squeeze);
     fx->prepare (44100.0);
     std::vector<float> l (512, 0.3f), r (512, -0.2f);
     fx->process (l.data(), r.data(), 512, slot.params, 120.0);
@@ -9104,8 +9104,8 @@ TEST (sakura_matrix_and_effects)
     // REA_rodada29 §1: velocity → level follows 10^(2m)·0.05 (vel 1 vs 0.5 → ×10 in amplitude); the delay leaves
     // an echo after the note has ended and keeps the instrument from going idle until its tail is silent
     auto base = [] {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sakura;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sakura;
         c.modelParams.assign (146, 0.0f);
         const std::pair<int, float> values[] { { 0, 0.375f }, { 1, 0.5f }, { 3, 0.5f }, { 4, 1.0f }, { 6, 0.95f }, { 9, 0.3f },
                                                { 11, 0.95f }, { 14, 0.3f }, { 18, 0.5f }, { 19, 0.5f }, { 27, 0.5f }, { 28, 1.0f },
@@ -9114,8 +9114,8 @@ TEST (sakura_matrix_and_effects)
             c.modelParams[(std::size_t) i] = v;
         return c;
     };
-    auto render = [] (const lynx::ChannelDef& c, float velocity, int held, int total) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sakura);
+    auto render = [] (const yw::ChannelDef& c, float velocity, int held, int total) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sakura);
         inst->prepare (48000.0);
         inst->configure (c, 120.0);
         inst->noteOn (60, velocity);
@@ -9157,9 +9157,9 @@ TEST (drumsynth_live_engine)
 {
     // REA_rodada30 §1: key → patch slot, state parsing, the engine against our reference model (no DLL: synthesised
     // sources only, noise from the fallback seed), voice modes, patch level/pan
-    CHECK (lynx::drumSynthKeyToSlot (48) == 0 && lynx::drumSynthKeyToSlot (71) == 23 && lynx::drumSynthKeyToSlot (0) == 24);
-    CHECK (lynx::drumSynthKeyToSlot (47) == 71 && lynx::drumSynthKeyToSlot (72) == 72 && lynx::drumSynthKeyToSlot (119) == 119);
-    CHECK (lynx::drumSynthKeyToSlot (120) == -1);
+    CHECK (yw::drumSynthKeyToSlot (48) == 0 && yw::drumSynthKeyToSlot (71) == 23 && yw::drumSynthKeyToSlot (0) == 24);
+    CHECK (yw::drumSynthKeyToSlot (47) == 71 && yw::drumSynthKeyToSlot (72) == 72 && yw::drumSynthKeyToSlot (119) == 119);
+    CHECK (yw::drumSynthKeyToSlot (120) == -1);
 
     // a version 3 state: 120 names, 120 × 38 ints (send track −1 becomes 0 below version 4), flags
     std::vector<std::uint8_t> blob;
@@ -9171,24 +9171,24 @@ TEST (drumsynth_live_engine)
     for (int i = 0; i < 120 * 38; ++i)
         put ((std::uint32_t) (i % 38 == 36 ? -1 : i % 38 == 4 ? 300 : 0));
     put (0);
-    const auto parsed = lynx::drumSynthLiveParams (blob);
-    CHECK (parsed && (int) parsed->size() == lynx::drumSynthParamCount);
-    CHECK (parsed && (*parsed)[36] == 0.0f && (*parsed)[38 * 7 + 4] == 300.0f && (*parsed)[(std::size_t) lynx::drumSynthEditorKeyIndex] == 66.0f);
+    const auto parsed = yw::drumSynthLiveParams (blob);
+    CHECK (parsed && (int) parsed->size() == yw::drumSynthParamCount);
+    CHECK (parsed && (*parsed)[36] == 0.0f && (*parsed)[38 * 7 + 4] == 300.0f && (*parsed)[(std::size_t) yw::drumSynthEditorKeyIndex] == 66.0f);
     blob.resize (500);
-    CHECK (! lynx::drumSynthLiveParams (blob));
+    CHECK (! yw::drumSynthLiveParams (blob));
 
     // patch on key 60 (slot 12): tone-mode Osc1 with sweep and click, noise-band Osc2, ring, 2 retriggers
     const int patch[38] { 100, 0, 10, -20, 300, 40, 50, 70, 90, 30, 600, 60, 10, 60, 80, -1, 0, 0, 2, 40, 60, 127, 0, 20, 0, 0, 0,
                           0, 0, 0, 0, 0, 0, 30, -1, 0, 0, 64 };
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::drumsynth;
-    c.modelParams.assign ((std::size_t) lynx::drumSynthParamCount, 0.0f);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::drumsynth;
+    c.modelParams.assign ((std::size_t) yw::drumSynthParamCount, 0.0f);
     for (int s = 0; s < 120; ++s)
         c.modelParams[(std::size_t) (38 * s + 15)] = c.modelParams[(std::size_t) (38 * s + 34)] = -1.0f;
     for (int i = 0; i < 38; ++i)
         c.modelParams[(std::size_t) (38 * 12 + i)] = (float) patch[i];
-    auto render = [] (const lynx::ChannelDef& def, std::vector<int> keys, int total, float gl = 1.0f, float gr = 1.0f) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::drumsynth);
+    auto render = [] (const yw::ChannelDef& def, std::vector<int> keys, int total, float gl = 1.0f, float gr = 1.0f) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::drumsynth);
         inst->configure (def, 120.0);
         inst->prepare (48000.0);
         std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
@@ -9257,17 +9257,17 @@ TEST (kepler_lfo_bpm_sync)
     k[10] = 1.0f; // vibrato on
     k[33] = 1.0f;
     std::memcpy (state.data() + 0x21, k, sizeof k);
-    lynx::SynthSettings s;
+    yw::SynthSettings s;
     float gain = 0.0f;
-    CHECK (lynx::synthFromKepler (state, s, gain));
-    CHECK (s.lfo[lynx::lfoPitch].sync && s.lfo[lynx::lfoPitch].secondsTiming);
-    CHECK (std::abs (s.lfo[lynx::lfoPitch].period - 286.0f / 192.0f) < 1e-6f);
+    CHECK (yw::synthFromKepler (state, s, gain));
+    CHECK (s.lfo[yw::lfoPitch].sync && s.lfo[yw::lfoPitch].secondsTiming);
+    CHECK (std::abs (s.lfo[yw::lfoPitch].period - 286.0f / 192.0f) < 1e-6f);
     k[5] = 0.0f; // slowest: 32 beats
     std::memcpy (state.data() + 0x21, k, sizeof k);
-    CHECK (lynx::synthFromKepler (state, s, gain) && std::abs (s.lfo[lynx::lfoPitch].period - 32.0f) < 1e-6f);
+    CHECK (yw::synthFromKepler (state, s, gain) && std::abs (s.lfo[yw::lfoPitch].period - 32.0f) < 1e-6f);
     k[6] = 0.0f; // free rate in seconds
     std::memcpy (state.data() + 0x21, k, sizeof k);
-    CHECK (lynx::synthFromKepler (state, s, gain) && ! s.lfo[lynx::lfoPitch].sync);
+    CHECK (yw::synthFromKepler (state, s, gain) && ! s.lfo[yw::lfoPitch].sync);
 }
 
 namespace
@@ -9450,26 +9450,26 @@ TEST (harmor_engine)
 {
     // REA_rodada34: state parsing, the additive engine against our reference model (hmodel.py), host levels, voice end
     const auto blob = harmorTestState();
-    if (const char* dump = std::getenv ("LYNX_DUMP_HARMOR"))
+    if (const char* dump = std::getenv ("YW_DUMP_HARMOR"))
         std::ofstream (dump, std::ios::binary).write ((const char*) blob.data(), (std::streamsize) blob.size());
-    CHECK (lynx::harmorStateUsable (blob));
-    CHECK (lynx::harmorFallbacks (blob).empty());
-    const auto at = lynx::harmorParamOffset (blob, 0, 52);
+    CHECK (yw::harmorStateUsable (blob));
+    CHECK (yw::harmorFallbacks (blob).empty());
+    const auto at = yw::harmorParamOffset (blob, 0, 52);
     std::int32_t cutoff = 0;
     CHECK (at > 0 && (std::memcpy (&cutoff, blob.data() + at, 4), cutoff == 5000));
-    CHECK (lynx::harmorParamOffset (blob, 1, 52) < 0 && lynx::harmorParamOffset (blob, -1, 12) > at);
+    CHECK (yw::harmorParamOffset (blob, 1, 52) < 0 && yw::harmorParamOffset (blob, -1, 12) > at);
     auto broken = blob;
     broken.resize (broken.size() / 2);
-    CHECK (! lynx::harmorStateUsable (broken));
+    CHECK (! yw::harmorStateUsable (broken));
     auto old = blob;
     old[0] = 15; // articulators and curves are stored from version 16
-    CHECK (! lynx::harmorStateUsable (old));
+    CHECK (! yw::harmorStateUsable (old));
 
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::harmor;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::harmor;
     c.pluginState = blob;
-    auto render = [] (const lynx::ChannelDef& def, int total, float gl, float gr, int offAt) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::harmor);
+    auto render = [] (const yw::ChannelDef& def, int total, float gl, float gr, int offAt) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::harmor);
         inst->configure (def, 120.0);
         inst->prepare (44100.0);
         std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
@@ -9484,10 +9484,10 @@ TEST (harmor_engine)
     };
     {
         // reference model (REA round 34 hmodel.py; C5 at FL velocity 100, Final.Vol 1, centre, released at 6144, the
-        // Mersenne Twister seeded like LYNX's; since flbeta165h LYNX's own values: the test state plays at precision
+        // Mersenne Twister seeded like YW's; since flbeta165h YW's own values: the test state plays at precision
         // "Average", whose IPP 11-bit Exp/Ln — REA_rodada165g-flbeta165h §3 — the model computes exactly)
         auto [l, r, inst] = render (c, 8192, 1.0f, 1.0f, 6144);
-        if (std::getenv ("LYNX_PRINT_HARMOR_ENGINE") != nullptr)
+        if (std::getenv ("YW_PRINT_HARMOR_ENGINE") != nullptr)
             for (int i : { 0, 100, 1000, 3000, 6000, 7000, 8191 })
                 std::printf ("harmor engine %d %.8g %.8g\n", i, (double) l[(std::size_t) i], (double) r[(std::size_t) i]);
         const std::tuple<int, float, float> golden[] {
@@ -9503,7 +9503,7 @@ TEST (harmor_engine)
     }
     // the reference renderer gives the same samples as the instrument
     {
-        const auto ref = lynx::harmor::renderReference (blob, { { 0, 60, 0.78125, 1.0, 0.0, 6144 } }, 44100.0, 8192);
+        const auto ref = yw::harmor::renderReference (blob, { { 0, 60, 0.78125, 1.0, 0.0, 6144 } }, 44100.0, 8192);
         const auto [l, r, inst] = render (c, 8192, 1.0f, 1.0f, 6144);
         double worst = 0.0;
         for (int i = 0; i < 8192; ++i)
@@ -9517,7 +9517,7 @@ TEST (harmor_engine)
     auto mono = c;
     mono.pluginState = harmorTestState (false); // no pan LFO ...
     const std::int32_t one = 1;
-    std::memcpy (mono.pluginState.data() + lynx::harmorParamOffset (mono.pluginState, 0, 34), &one, 4); // ... nor unison spread
+    std::memcpy (mono.pluginState.data() + yw::harmorParamOffset (mono.pluginState, 0, 34), &one, 4); // ... nor unison spread
     const auto [pl, pr, pi] = render (mono, 2048, 0.0f, 1.41421356f, -1);
     double el = 0.0, er = 0.0;
     for (int i = 0; i < 2048; ++i)
@@ -9619,24 +9619,24 @@ TEST (ogun_engine)
 {
     // REA_rodada37: state parsing, the engine against our reference model (ogmodel.py), host levels, export quality
     const auto blob = ogunTestState();
-    if (const char* dump = std::getenv ("LYNX_DUMP_OGUN"))
+    if (const char* dump = std::getenv ("YW_DUMP_OGUN"))
         std::ofstream (dump, std::ios::binary).write ((const char*) blob.data(), (std::streamsize) blob.size());
-    CHECK (lynx::ogunStateUsable (blob));
-    CHECK (lynx::ogunFallbacks (blob).empty());
-    CHECK (lynx::ogunParam (blob, 17) == 180 && lynx::ogunParam (blob, 52) == 9 && ! lynx::ogunParam (blob, lynx::ogunDelayOnIndex + 1));
+    CHECK (yw::ogunStateUsable (blob));
+    CHECK (yw::ogunFallbacks (blob).empty());
+    CHECK (yw::ogunParam (blob, 17) == 180 && yw::ogunParam (blob, 52) == 9 && ! yw::ogunParam (blob, yw::ogunDelayOnIndex + 1));
     auto broken = blob;
     broken.resize (broken.size() - 300);
-    CHECK (! lynx::ogunStateUsable (broken));
+    CHECK (! yw::ogunStateUsable (broken));
     auto old = blob;
     old[0] = 13; // a version-18 body read as version 13 (a u32 comment count; versions 10…13: Gen169lTests)
-    CHECK (! lynx::ogunStateUsable (old));
+    CHECK (! yw::ogunStateUsable (old));
 
     // reference model (REA round 37 ogmodel.Plugin(state).run: C5 velocity 0.75 released at 6144, G5 velocity 0.625 at 2048
     // released at 8192; host block 512)
-    const std::vector<lynx::ogun::RefNote> notes { { 0, 60, 0.75, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 6144 }, { 2048, 67, 0.625, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 8192 } };
-    const auto ref = lynx::ogun::renderReference (blob, notes, 44100.0, 16384);
+    const std::vector<yw::ogun::RefNote> notes { { 0, 60, 0.75, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 6144 }, { 2048, 67, 0.625, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 8192 } };
+    const auto ref = yw::ogun::renderReference (blob, notes, 44100.0, 16384);
     CHECK (ref.size() == 2 * 16384);
-    if (const char* dump = std::getenv ("LYNX_DUMP_OGUN_OUT"))
+    if (const char* dump = std::getenv ("YW_DUMP_OGUN_OUT"))
         std::ofstream (dump, std::ios::binary).write ((const char*) ref.data(), (std::streamsize) (ref.size() * 4));
     const std::tuple<int, float, float> golden[] {
         { 100, -7.763202e-05f, -8.919523e-05f }, { 1000, 0.06195267f, 0.03858230f }, { 3000, 0.01363476f, -0.00378433f },
@@ -9646,11 +9646,11 @@ TEST (ogun_engine)
         CHECK (std::abs (ref[2 * (std::size_t) i] - gl) < 2e-6f && std::abs (ref[2 * (std::size_t) i + 1] - gr) < 2e-6f);
 
     // the instrument plays like the reference renderer (Final.Vol 1, centre)
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::ogun;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::ogun;
     c.pluginState = blob;
-    auto render = [&] (const lynx::ChannelDef& def, int total, float gl, float gr, bool held = false) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::ogun);
+    auto render = [&] (const yw::ChannelDef& def, int total, float gl, float gr, bool held = false) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::ogun);
         inst->configure (def, 120.0);
         inst->prepare (44100.0);
         std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
@@ -9685,8 +9685,8 @@ TEST (ogun_engine)
     {
         auto dry = c;
         for (int i : { 19, 29, 40, 53 })
-            CHECK (lynx::ogunSetParam (dry.pluginState, i, 0)); // chorus, delay wet, EQ band and reverb off
-        CHECK (lynx::ogunStateUsable (dry.pluginState) && lynx::ogunParam (dry.pluginState, 19) == 0);
+            CHECK (yw::ogunSetParam (dry.pluginState, i, 0)); // chorus, delay wet, EQ band and reverb off
+        CHECK (yw::ogunStateUsable (dry.pluginState) && yw::ogunParam (dry.pluginState, 19) == 0);
         const auto full = std::get<0> (render (dry, 32768, 1.0f, 1.0f, true));
         const auto half = std::get<0> (render (dry, 32768, 0.5f, 0.5f, true));
         double worst = 0.0, peak = 0.0;
@@ -9694,12 +9694,12 @@ TEST (ogun_engine)
             worst = std::max (worst, (double) std::abs (half[(std::size_t) i] - 0.5f * full[(std::size_t) i])),
             peak = std::max (peak, (double) std::abs (full[(std::size_t) i]));
         CHECK (worst <= 1e-7 * peak && peak > 1e-3);
-        // FL's default channel volume (100/128): FL hands Ogun Final.Vol = (11^v − 1)/10 (REA_rodada28 §4.1); LYNX's
+        // FL's default channel volume (100/128): FL hands Ogun Final.Vol = (11^v − 1)/10 (REA_rodada28 §4.1); YW's
         // centred channel gains (√2·V·cos(π/4) each) give the reference model's level at that Final.Vol
-        const auto V = lynx::channelGain (0.78125f);
+        const auto V = yw::channelGain (0.78125f);
         const auto g = V * std::cos (0.25f * 3.14159265f) * 1.41421356f;
         const auto atDefault = std::get<0> (render (dry, 32768, g, g, true));
-        const auto refDefault = lynx::ogun::renderReference (dry.pluginState, { { 0, 60, 0.75, V, 0.0, 0.0, 0.0, 0.0, 0.5, -1 },
+        const auto refDefault = yw::ogun::renderReference (dry.pluginState, { { 0, 60, 0.75, V, 0.0, 0.0, 0.0, 0.0, 0.5, -1 },
                                                                                 { 2048, 67, 0.625, V, 0.0, 0.0, 0.0, 0.0, 0.5, -1 } }, 44100.0, 32768);
         double ei = 0.0, er0 = 0.0;
         for (int i = 30000; i < 32768; ++i)
@@ -9711,14 +9711,14 @@ TEST (ogun_engine)
             el += (double) pl[(std::size_t) i] * pl[(std::size_t) i], er += (double) pr[(std::size_t) i] * pr[(std::size_t) i];
         CHECK (el < 1e-10 * er && er > 1e-3);
     }
-    // export: FL renders Ogun at quality 4 (×2 rate, 32-point reader), LYNX too while it renders offline
+    // export: FL renders Ogun at quality 4 (×2 rate, 32-point reader), YW too while it renders offline
     {
-        lynx::setOfflineRendering (true);
+        yw::setOfflineRendering (true);
         auto [l, r, inst] = render (c, 8192, 1.0f, 1.0f);
-        lynx::setOfflineRendering (false);
-        lynx::ogun::RefOptions q4;
+        yw::setOfflineRendering (false);
+        yw::ogun::RefOptions q4;
         q4.quality = 4;
-        const auto ref4 = lynx::ogun::renderReference (blob, notes, 44100.0, 8192, q4);
+        const auto ref4 = yw::ogun::renderReference (blob, notes, 44100.0, 8192, q4);
         double worst = 0.0, diff = 0.0;
         for (int i = 0; i < 8192; ++i)
             worst = std::max (worst, (double) std::abs (ref4[2 * (std::size_t) i] - l[(std::size_t) i])),
@@ -9759,8 +9759,8 @@ TEST (ogun_engine)
         {
             auto st = blob;
             for (const auto& [i, x] : v.params)
-                CHECK (lynx::ogunSetParam (st, i, x));
-            const auto y = lynx::ogun::renderReference (st, { { 0, 60, 0.75, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6144 },
+                CHECK (yw::ogunSetParam (st, i, x));
+            const auto y = yw::ogun::renderReference (st, { { 0, 60, 0.75, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6144 },
                                                               { 2048, 67, 0.625, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1 } }, (double) v.rate, 8192);
             double el = 0.0, er = 0.0, peak = 0.0;
             for (std::size_t i = 0; i + 1 < y.size(); i += 2)
@@ -9840,20 +9840,20 @@ std::string keplerDll()
 TEST (kepler_engine)
 {
     const auto st = keplerTestState();
-    CHECK (st.size() == 178 && lynx::keplerStateUsable (st));
-    CHECK (lynx::keplerPanelOffset (st, 19) == 0x21 + 4 * 19 && lynx::keplerPanelOffset (st, 34) == -1);
+    CHECK (st.size() == 178 && yw::keplerStateUsable (st));
+    CHECK (yw::keplerPanelOffset (st, 19) == 0x21 + 4 * 19 && yw::keplerPanelOffset (st, 34) == -1);
     auto broken = st;
     broken[17] = 'X'; // not "Kepler-1"
-    CHECK (! lynx::keplerStateUsable (broken) && lynx::keplerPanelOffset (broken, 0) == -1);
+    CHECK (! yw::keplerStateUsable (broken) && yw::keplerPanelOffset (broken, 0) == -1);
     auto v3 = st;
     v3[0x19] = 3; // version 3 needs the gate / noise / oversampling bytes
-    CHECK (! lynx::keplerStateUsable (v3));
+    CHECK (! yw::keplerStateUsable (v3));
     const auto dll = keplerDll();
-    if (dll.empty() || ! lynx::keplerDllUsable (dll))
+    if (dll.empty() || ! yw::keplerDllUsable (dll))
         return; // no FL installation (the engine needs the user's own DLL tables)
     // against FL's engine DLL (EXEC, REA_rodada46 §6): three notes, 44.1 kHz, host blocks of 512 — bit-exact
-    const std::vector<lynx::kepler::RefNote> notes { { 0, 60, 1.0, 0.0, 0.0, 20000 }, { 8000, 67, 0.6, 0.0, 0.0, 26000 }, { 16000, 55, 0.95, 0.0, 0.0, 30000 } };
-    const auto y = lynx::kepler::renderReference (st, dll, notes, 44100.0, 39690);
+    const std::vector<yw::kepler::RefNote> notes { { 0, 60, 1.0, 0.0, 0.0, 20000 }, { 8000, 67, 0.6, 0.0, 0.0, 26000 }, { 16000, 55, 0.95, 0.0, 0.0, 30000 } };
+    const auto y = yw::kepler::renderReference (st, dll, notes, 44100.0, 39690);
     CHECK (y.size() == 2 * 39690);
     if (y.size() != 2 * 39690)
         return;
@@ -9868,11 +9868,11 @@ TEST (kepler_engine)
         CHECK (y[2 * (std::size_t) i] == l && y[2 * (std::size_t) i + 1] == r);
 
     // the instrument: FL's wrapper velocity, channel volume as an output gain, idle after the release
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::kepler;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::kepler;
     c.pluginState = st;
     c.samplePath = dll;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::kepler);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::kepler);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (4096), r (4096);
@@ -9974,7 +9974,7 @@ std::string tbassDll()
 }
 
 // Plucked! (REA_rodada65 §1): the C++ engine against FL's DLL (EXEC: same notes, the DLL's RandSeed set before the first
-// note, the host killing voices when the plugin asks). LYNX renders these bit-identically to the DLL.
+// note, the host killing voices when the plugin asks). YW renders these bit-identically to the DLL.
 TEST (plucked_engine)
 {
     auto stateOf = [] (std::initializer_list<std::int32_t> k) {
@@ -9982,11 +9982,11 @@ TEST (plucked_engine)
         std::memcpy (st.data(), std::data (k), 20);
         return st;
     };
-    CHECK (! lynx::pluckedStateUsable (std::vector<std::uint8_t> (19)));
-    CHECK (lynx::pluckedStateUsable (stateOf ({ 128, 64, 1, 0, 1 })));
-    CHECK (lynx::pluckedParams (stateOf ({ 7, 9, 0, 1, 0 })) == std::vector<int> ({ 7, 9, 0, 1, 0 }));
+    CHECK (! yw::pluckedStateUsable (std::vector<std::uint8_t> (19)));
+    CHECK (yw::pluckedStateUsable (stateOf ({ 128, 64, 1, 0, 1 })));
+    CHECK (yw::pluckedParams (stateOf ({ 7, 9, 0, 1, 0 })) == std::vector<int> ({ 7, 9, 0, 1, 0 }));
 
-    using N = lynx::plucked::RefNote;
+    using N = yw::plucked::RefNote;
     struct Sample { int at; float l, r; };
     struct Golden { int set; std::int32_t P[5]; double fs; int block, law, maxPoly; double el, er; Sample s[4]; };
     const std::vector<std::vector<N>> sets {
@@ -10007,7 +10007,7 @@ TEST (plucked_engine)
     {
         const auto st = stateOf ({ g.P[0], g.P[1], g.P[2], g.P[3], g.P[4] });
         const auto length = (int) g.fs * 2;
-        const auto y = lynx::plucked::renderReference (st, sets[(std::size_t) g.set], g.fs, length, g.block, 777u + (std::uint32_t) g.set,
+        const auto y = yw::plucked::renderReference (st, sets[(std::size_t) g.set], g.fs, length, g.block, 777u + (std::uint32_t) g.set,
                                                        g.law != 0, g.maxPoly);
         double el = 0.0, er = 0.0;
         for (std::size_t i = 0; i + 1 < y.size(); i += 2)
@@ -10021,10 +10021,10 @@ TEST (plucked_engine)
     }
 
     // the instrument: plays, the gate makes a note-off silence the string, a held string dies out by itself
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::plucked;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::plucked;
     c.pluginState = stateOf ({ 200, 40, 1, 1, 1 });
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::plucked);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::plucked);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (1024), r (1024);
@@ -10054,7 +10054,7 @@ TEST (plucked_engine)
 
 // BeepMap (REA_rodada65 §2): the C++ engine against FL's DLL (EXEC: same notes, the DLL's RandSeed set before the first
 // note, the host killing voices when the plugin asks): a synthetic 9×6 bitmap with every Scale mode and switch, and two
-// of the installation's presets. LYNX renders these bit-identically to the DLL.
+// of the installation's presets. YW renders these bit-identically to the DLL.
 std::vector<std::uint8_t> beepMapTestState (std::initializer_list<std::int32_t> settings)
 {
     constexpr int W = 9, H = 6;
@@ -10114,16 +10114,16 @@ std::vector<std::uint8_t> beepMapPresetState (const char* name)
 TEST (beepmap_engine)
 {
     const auto synthA = beepMapTestState ({ 3000, 200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64 });
-    CHECK (lynx::beepMapStateUsable (synthA));
-    CHECK (lynx::beepMapParams (synthA)->at (1) == 200 && lynx::beepMapParamOffset (synthA, 2) == 12);
+    CHECK (yw::beepMapStateUsable (synthA));
+    CHECK (yw::beepMapParams (synthA)->at (1) == 200 && yw::beepMapParamOffset (synthA, 2) == 12);
     auto broken = synthA;
     broken[0] = 2; // versions above 1 are refused
-    CHECK (! lynx::beepMapStateUsable (broken));
+    CHECK (! yw::beepMapStateUsable (broken));
     broken = synthA;
     broken.resize (broken.size() - 20); // truncated bitmap
-    CHECK (! lynx::beepMapStateUsable (broken));
+    CHECK (! yw::beepMapStateUsable (broken));
 
-    using N = lynx::beepmap::RefNote;
+    using N = yw::beepmap::RefNote;
     struct Sample { int at; float l, r; };
     struct Golden { int set; double fs; int block; double el, er; Sample s[4]; };
     std::vector<std::vector<std::uint8_t>> states {
@@ -10156,7 +10156,7 @@ TEST (beepmap_engine)
         if (st.empty())
             continue; // (no FL installation: the presets are skipped)
         const auto length = (int) g.fs * 2;
-        const auto y = lynx::beepmap::renderReference (st, sets[(std::size_t) g.set], g.fs, length, g.block, 4321u + (std::uint32_t) g.set);
+        const auto y = yw::beepmap::renderReference (st, sets[(std::size_t) g.set], g.fs, length, g.block, 4321u + (std::uint32_t) g.set);
         double el = 0.0, er = 0.0;
         for (std::size_t i = 0; i + 1 < y.size(); i += 2)
             el += (double) y[i] * y[i], er += (double) y[i + 1] * y[i + 1];
@@ -10169,10 +10169,10 @@ TEST (beepmap_engine)
     }
 
     // the instrument: plays the image, ends after the last column, a note-off fades the voice out
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::beepmap;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::beepmap;
     c.pluginState = states[1];
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::beepmap);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::beepmap);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (1024), r (1024);
@@ -10242,24 +10242,24 @@ TEST (sawer_engine)
     std::memcpy (synth.data() + 8, "1rwS", 4);
     const float p27 = 0.75f;
     std::memcpy (synth.data() + 12 + 4 * 27, &p27, 4);
-    CHECK (lynx::sawerStateUsable (synth));
-    CHECK (lynx::sawerParam (synth, 27) == 0.75f && lynx::sawerParamOffset (synth, 27) == 12 + 4 * 27);
-    CHECK (! lynx::sawerParam (synth, 96) && lynx::sawerParamOffset (synth, -1) < 0);
+    CHECK (yw::sawerStateUsable (synth));
+    CHECK (yw::sawerParam (synth, 27) == 0.75f && yw::sawerParamOffset (synth, 27) == 12 + 4 * 27);
+    CHECK (! yw::sawerParam (synth, 96) && yw::sawerParamOffset (synth, -1) < 0);
     auto broken = synth;
     broken[8] = 'X';
-    CHECK (! lynx::sawerStateUsable (broken));
-    CHECK (! lynx::sawerStateUsable (std::vector<std::uint8_t> (synth.begin(), synth.end() - 4)));
+    CHECK (! yw::sawerStateUsable (broken));
+    CHECK (! yw::sawerStateUsable (std::vector<std::uint8_t> (synth.begin(), synth.end() - 4)));
 
     const auto dflt = sawerPresetState ("Default.fst");
     const auto slap = sawerPresetState ("Arpeggios/FG Velocity Slapper.fst");
     const auto tablePath = realFlpDir.empty() ? std::string() : (std::filesystem::path (realFlpDir).parent_path() / "Plugins" / "Fruity" / "Generators" / "Sawer" / "data.saw").string();
-    const auto table = tablePath.empty() ? std::vector<float> {} : lynx::sawerReadTable (tablePath);
+    const auto table = tablePath.empty() ? std::vector<float> {} : yw::sawerReadTable (tablePath);
     if (dflt.empty() || slap.empty() || table.size() != 8192u)
     {
         std::printf ("  (sawer_engine: FL Studio installation not found, DLL fingerprints skipped)\n");
         return;
     }
-    CHECK (lynx::sawerStateUsable (dflt) && lynx::sawerStateUsable (slap));
+    CHECK (yw::sawerStateUsable (dflt) && yw::sawerStateUsable (slap));
 
     // DLL fingerprints (py/gold_sw.py: the EXEC harness, L = R = Final.Vol); "syn" = Default with our own settings
     // (unison 4, sub pulse at 0.6, sync, band-pass, noise, resonance, chorus)
@@ -10269,7 +10269,7 @@ TEST (sawer_engine)
                             { 26, 0.3f }, { 28, 0.7f }, { 45, 0.5f }, { 46, 0.0f } })
         syn = setP (syn, kv.first, kv.second);
     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
-    using N = lynx::sawer::RefNote;
+    using N = yw::sawer::RefNote;
     struct Sample { int at; float l, r; };
     struct Golden { const std::vector<std::uint8_t>* state; std::vector<N> notes; double fs; int block; double el, er; Sample s[4]; };
     const Golden goldens[] {
@@ -10283,7 +10283,7 @@ TEST (sawer_engine)
     };
     for (const auto& g : goldens)
     {
-        const auto y = lynx::sawer::renderReference (*g.state, table, g.notes, g.fs, 66150, g.block);
+        const auto y = yw::sawer::renderReference (*g.state, table, g.notes, g.fs, 66150, g.block);
         CHECK (y.size() == 2 * 66150u);
         if (y.size() != 2 * 66150u)
             continue;
@@ -10295,12 +10295,12 @@ TEST (sawer_engine)
             CHECK (std::abs (y[2 * (std::size_t) s.at] - s.l) < 1e-7f && std::abs (y[2 * (std::size_t) s.at + 1] - s.r) < 1e-7f);
     }
 
-    // the instrument: the same engine behind LYNX's channel gains (centre → law A), velocity → Init.Vol; it goes idle
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sawer;
+    // the instrument: the same engine behind YW's channel gains (centre → law A), velocity → Init.Vol; it goes idle
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sawer;
     c.pluginState = dflt;
     c.samplePath = tablePath;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sawer);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sawer);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (512 * 40, 0.0f), r (512 * 40, 0.0f);
@@ -10312,7 +10312,7 @@ TEST (sawer_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::sawer::renderReference (dflt, table, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0,
+    const auto ref = yw::sawer::renderReference (dflt, table, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0,
                                                    8192, 512, 120.0, 0, true);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
@@ -10331,21 +10331,21 @@ TEST (transistorbass_engine)
     if (factory.empty() || seqOff.empty())
         return; // no FL installation
     CHECK (factory.size() == 197887 && seqOff.size() == 196051);
-    CHECK (lynx::transistorBassStateUsable (factory) && lynx::transistorBassStateUsable (seqOff));
-    CHECK (lynx::transistorBassStateUsable (tbassWithEngine (factory, 2)));
+    CHECK (yw::transistorBassStateUsable (factory) && yw::transistorBassStateUsable (seqOff));
+    CHECK (yw::transistorBassStateUsable (tbassWithEngine (factory, 2)));
     auto broken = factory;
     broken[0] = 3; // the wrapper refuses versions above 2
-    CHECK (! lynx::transistorBassStateUsable (broken));
+    CHECK (! yw::transistorBassStateUsable (broken));
     auto truncated = factory;
     truncated.resize (truncated.size() - 1000);
-    CHECK (! lynx::transistorBassStateUsable (truncated));
+    CHECK (! yw::transistorBassStateUsable (truncated));
     const auto dll = tbassDll();
-    if (dll.empty() || ! lynx::transistorBassDllUsable (dll))
+    if (dll.empty() || ! yw::transistorBassDllUsable (dll))
         return;
 
     // against FL's engine DLL (EXEC, REA_rodada57 §2.11): programs of the factory bank (sequencer, accents, slides,
     // distortion, delay, reverb) on the three engines and the sequencer-off preset with legato and accent notes; host
-    // blocks of 512 at 44.1 kHz, tempo 125. LYNX differs from the DLL by −121 dB or less here (library pow rounding).
+    // blocks of 512 at 44.1 kHz, tempo 125. YW differs from the DLL by −121 dB or less here (library pow rounding).
     struct Sample { int at; float l, r; };
     struct Golden { const char* preset; int engine, key; double el, er; Sample s[4]; };
     const Golden goldens[] {
@@ -10367,7 +10367,7 @@ TEST (transistorbass_engine)
         auto st = factoryBank ? factory : seqOff;
         if (g.engine >= 0)
             st = tbassWithEngine (st, g.engine);
-        std::vector<lynx::tbass::RefNote> notes;
+        std::vector<yw::tbass::RefNote> notes;
         if (factoryBank)
             notes.push_back ({ 0, g.key, 0.5, 0.0, 0.0, 0.0, 0.0, 70560 });
         else
@@ -10376,7 +10376,7 @@ TEST (transistorbass_engine)
             notes.push_back ({ 20000, g.key + 7, 1.6, 0.0, 0.0, 0.0, 0.0, 50000 });
             notes.push_back ({ 45000, g.key - 5, 0.3, 0.0, 0.0, 0.0, 0.0, 70560 });
         }
-        const auto y = lynx::tbass::renderReference (st, dll, notes, 44100.0, length);
+        const auto y = yw::tbass::renderReference (st, dll, notes, 44100.0, length);
         double el = 0.0, er = 0.0, peak = 0.0;
         for (std::size_t i = 0; i + 1 < y.size(); i += 2)
             el += (double) y[i] * y[i], er += (double) y[i + 1] * y[i + 1], peak = std::max ({ peak, (double) std::abs (y[i]), (double) std::abs (y[i + 1]) });
@@ -10389,11 +10389,11 @@ TEST (transistorbass_engine)
     }
 
     // the instrument: FL's wrapper velocity, the channel volume as an output gain, the sequencer plays while the key is held
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::transistorbass;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::transistorbass;
     c.pluginState = factory;
     c.samplePath = dll;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::transistorbass);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::transistorbass);
     inst->configure (c, 128.0);
     inst->prepare (44100.0);
     std::vector<float> l (4096), r (4096);
@@ -10418,10 +10418,10 @@ TEST (transistorbass_engine)
 
 TEST (kepler_demo_channels)
 {
-    // every Kepler channel of FL's demo projects on LYNX's engine against FL's engine DLL (EXEC fingerprints, REA_rodada46 §6;
+    // every Kepler channel of FL's demo projects on YW's engine against FL's engine DLL (EXEC fingerprints, REA_rodada46 §6;
     // the engine differs from the DLL by −127 dB or less on these, from the DLL library's pow rounding)
     const auto dll = keplerDll();
-    if (dll.empty() || ! lynx::keplerDllUsable (dll))
+    if (dll.empty() || ! yw::keplerDllUsable (dll))
         return;
     struct Sample { int at; float l, r; };
     struct Golden { const char* file; const char* channel; std::size_t stateSize; double el, er; Sample s[4]; };
@@ -10446,8 +10446,8 @@ TEST (kepler_demo_channels)
         CHECK (ch != nullptr);
         if (ch == nullptr)
             continue;
-        CHECK (ch->pluginState.size() == g.stateSize && lynx::keplerStateUsable (ch->pluginState));
-        const auto y = lynx::kepler::renderReference (ch->pluginState, dll, { { 0, 60, 1.0, 0.0, 0.0, 20000 }, { 8000, 67, 0.6, 0.0, 0.0, 26000 },
+        CHECK (ch->pluginState.size() == g.stateSize && yw::keplerStateUsable (ch->pluginState));
+        const auto y = yw::kepler::renderReference (ch->pluginState, dll, { { 0, 60, 1.0, 0.0, 0.0, 20000 }, { 8000, 67, 0.6, 0.0, 0.0, 26000 },
                                                                               { 16000, 55, 0.95, 0.0, 0.0, 30000 } }, 44100.0, 39690);
         double el = 0.0, er = 0.0, peak = 0.0;
         for (std::size_t i = 0; i + 1 < y.size(); i += 2)
@@ -10538,9 +10538,9 @@ TEST (ogun_demo_channels)
             continue;
         const auto& st = list[(std::size_t) g.ordinal];
         CHECK (st.size() == g.stateSize);
-        lynx::ogun::RefOptions opt;
+        yw::ogun::RefOptions opt;
         opt.quality = g.export4 ? 4 : -1;
-        const auto y = lynx::ogun::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20000 },
+        const auto y = yw::ogun::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20000 },
                                                           { 8000, 67, 0.6, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 26000 },
                                                           { 16000, 55, 0.95, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30000 } }, 44100.0, 39690, opt);
         double el = 0.0, er = 0.0, peak = 0.0;
@@ -10564,8 +10564,8 @@ TEST (autogun_template_channels)
     // REA_rodada57: every distinct Autogun state of the installation's projects (templates and the render test), with its
     // effects and the Magic Dust stage (SG.dat from the installation), three notes (C5 1.0 0–20000, G5 0.6 8000–26000,
     // G4 0.95 16000–30000), 39 690 samples at 44.1 kHz, at the state's quality and at the export quality 4. The template
-    // goldens are renders of the installation's Autogun_x64.dll (LYNX is within −127 dB of them); the render-test state
-    // uses Seed 2 "Random", so its golden is LYNX's own render with the counter at 0 (a fingerprint of the engine).
+    // goldens are renders of the installation's Autogun_x64.dll (YW is within −127 dB of them); the render-test state
+    // uses Seed 2 "Random", so its golden is YW's own render with the counter at 0 (a fingerprint of the engine).
     if (realFlpDir.empty())
         return;
     const auto sgPath = std::filesystem::path (realFlpDir).parent_path() / "Plugins" / "Fruity" / "Generators" / "Autogun" / "Data" / "SG.dat";
@@ -10576,8 +10576,8 @@ TEST (autogun_template_channels)
     struct Sample { int at; float l, r; };
     struct Golden { const char* file; std::size_t stateSize; bool export4; double el, er; Sample s[4]; };
     const Golden goldens[] {
-{ "System/Render tests/Autogun.flp", 2403, false, 1898.57144, 1609.64764, { { 5000, 0.189644396f, 0.104252934f }, { 12000, 0.0354045518f, 0.002853852f }, { 25000, -0.212527201f, -0.364677101f }, { 35000, 0.00715163164f, -0.0779336989f } } }, // Autogun (LYNX engine, counter 0)
-        { "System/Render tests/Autogun.flp", 2403, true, 1883.83096, 1696.41005, { { 5000, -0.229550153f, -0.0656554326f }, { 12000, -0.243209839f, -0.191908702f }, { 25000, 0.174803019f, 0.125847161f }, { 35000, 0.0609342083f, 0.0861448273f } } }, // Autogun (LYNX engine, counter 0)
+{ "System/Render tests/Autogun.flp", 2403, false, 1898.57144, 1609.64764, { { 5000, 0.189644396f, 0.104252934f }, { 12000, 0.0354045518f, 0.002853852f }, { 25000, -0.212527201f, -0.364677101f }, { 35000, 0.00715163164f, -0.0779336989f } } }, // Autogun (YW engine, counter 0)
+        { "System/Render tests/Autogun.flp", 2403, true, 1883.83096, 1696.41005, { { 5000, -0.229550153f, -0.0656554326f }, { 12000, -0.243209839f, -0.191908702f }, { 25000, 0.174803019f, 0.125847161f }, { 35000, 0.0609342083f, 0.0861448273f } } }, // Autogun (YW engine, counter 0)
         { "Templates/Advanced/Electronic/Breakbeat.flp", 43615, false, 1156.8126, 667.1251, { { 5000, -0.122245498f, -0.00968936551f }, { 12000, 0.088016659f, 0.0382440798f }, { 25000, -0.0438547991f, -0.0149139315f }, { 35000, -0.0162006877f, 0.0219070036f } } }, // Pad (Autogun_x64.dll)
         { "Templates/Advanced/Electronic/Breakbeat.flp", 43615, true, 541.425656, 476.875716, { { 5000, 0.15942347f, 0.0947837308f }, { 12000, 0.172008425f, 0.197265282f }, { 25000, 0.0506084785f, 0.0015097193f }, { 35000, 0.0400503464f, 0.0195946041f } } }, // Pad (Autogun_x64.dll)
         { "Templates/Advanced/Electronic/Chillout.flp", 171641, false, 1463.17228, 1370.65276, { { 5000, 0.158808231f, -0.128741398f }, { 12000, 0.208011121f, -0.153484732f }, { 25000, -0.184889361f, 0.0409393087f }, { 35000, 0.0255694874f, 0.0495453961f } } }, // Pad 5 (Autogun_x64.dll)
@@ -10599,12 +10599,12 @@ TEST (autogun_template_channels)
             if (c.pluginName == "Autogun" && st.empty())
                 st = c.pluginState;
         CHECK (st.size() == g.stateSize);
-        CHECK (lynx::autogunStateUsable (st));
-        lynx::ogun::RefOptions opt;
+        CHECK (yw::autogunStateUsable (st));
+        yw::ogun::RefOptions opt;
         opt.autogun = true;
         opt.sgState = sgState;
         opt.quality = g.export4 ? 4 : -1;
-        const auto y = lynx::ogun::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20000 },
+        const auto y = yw::ogun::renderReference (st, { { 0, 60, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20000 },
                                                           { 8000, 67, 0.6, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 26000 },
                                                           { 16000, 55, 0.95, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 30000 } }, 44100.0, 39690, opt);
         double el = 0.0, er = 0.0, peak = 0.0;
@@ -10625,21 +10625,21 @@ TEST (autogun_template_channels)
     {
         std::ifstream in (std::filesystem::path (realFlpDir) / "Templates" / "Advanced" / "Electronic" / "Trap.flp", std::ios::binary);
         const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::autogun;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::autogun;
         for (const auto& ch : flp::parseProject (bytes).channels)
             if (ch.pluginName == "Autogun")
                 c.pluginState = ch.pluginState;
         c.samplePath = sgPath.string();
-        lynx::ogun::RefOptions opt;
+        yw::ogun::RefOptions opt;
         opt.autogun = true;
         opt.sgState = sgState;
         opt.tempo = 120.0; // the instrument is configured at 120 BPM
         // (round 190pi: FL's host hands a velocity-linked voice Final.Vol = Init.Vol, (11^(1.28·v) − 1)/10 — Autogun's
         // default patch scales with the velocity in FL 2026's renders, REA_rodada190pi §3; this state links it)
         const auto finalVol = (std::pow (11.0, 1.28 * 0.75) - 1.0) / 10.0;
-        const auto ref = lynx::ogun::renderReference (c.pluginState, { { 0, 60, 0.75, finalVol, 0.0, 0.0, 0.0, 0.0, 0.5, 6144 } }, 44100.0, 16384, opt);
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::autogun);
+        const auto ref = yw::ogun::renderReference (c.pluginState, { { 0, 60, 0.75, finalVol, 0.0, 0.0, 0.0, 0.0, 0.5, 6144 } }, 44100.0, 16384, opt);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::autogun);
         inst->configure (c, 120.0);
         inst->prepare (44100.0);
         std::vector<float> l (16384), r (16384);
@@ -10669,7 +10669,7 @@ TEST (autogun_template_channels)
     const std::vector<std::uint8_t> rtBytes ((std::istreambuf_iterator<char> (rt)), std::istreambuf_iterator<char>());
     for (const auto& c : flp::parseProject (rtBytes).channels)
         if (c.pluginName == "Autogun")
-            CHECK (lynx::autogunStateUsable (c.pluginState) && lynx::ogunParam (c.pluginState, 63) == 430);
+            CHECK (yw::autogunStateUsable (c.pluginState) && yw::ogunParam (c.pluginState, 63) == 430);
 }
 
 TEST (harmless_rack)
@@ -10682,8 +10682,8 @@ TEST (harmless_rack)
         inL[(std::size_t) i] = (float) (1.5 * std::sin (2.0 * 3.141592653589793 * 440.0 * i / 44100.0) * std::min (1.0, i / 400.0));
         inR[(std::size_t) i] = (float) (1.2 * std::sin (2.0 * 3.141592653589793 * 660.0 * i / 44100.0));
     }
-    auto run = [&] (const std::array<int, 100>& p, int compType, std::shared_ptr<const lynx::hlfx::MaximusPreset> comp, int total, int voicesUntil) {
-        lynx::hlfx::Rack rack;
+    auto run = [&] (const std::array<int, 100>& p, int compType, std::shared_ptr<const yw::hlfx::MaximusPreset> comp, int total, int voicesUntil) {
+        yw::hlfx::Rack rack;
         std::array<int, 7> t {};
         t[3] = compType;
         rack.prepare (p, t, 44100.0, 120.0, std::move (comp));
@@ -10707,7 +10707,7 @@ TEST (harmless_rack)
         // the delay alone: an impulse comes back after round(time·fs·0.3125/bpm) samples × (11^0.6 − 1)/10, then × feedback
         std::array<int, 100> p {};
         p[92] = 1, p[93] = 600, p[94] = 500, p[95] = 48;
-        lynx::hlfx::Rack rack;
+        yw::hlfx::Rack rack;
         rack.prepare (p, {}, 44100.0, 120.0, nullptr);
         std::vector<float> l (16384), r (16384);
         l[0] = 1.0f;
@@ -10728,7 +10728,7 @@ TEST (harmless_rack)
         // master brickwall at −0.22 dB only (bands off / compression off)
         const auto st = maximusTestState ({ 19800, 1, 48065, 1, 1115, 1000, -1 }, { band (3), band (1), band (3), band (0) },
                                           { def, def, def, def, def, def, def, def }, 0);
-        const auto preset = lynx::hlfx::makeMaximusPreset (st);
+        const auto preset = yw::hlfx::makeMaximusPreset (st);
         CHECK (preset != nullptr);
         std::array<int, 100> p {};
         p[98] = 1000;
@@ -10754,7 +10754,7 @@ TEST (harmless_rack)
                                           { band (1, 1264, 1296, 500, -500, 1200), band (0, 1340, 1000, -348, 0, 1000, 1115, 0, 1570),
                                             band (0, 1364, 1152, 0, 0, 1000, 1115, 0, 1186), band (0, 1000, 1000, 0, -196, 1000, 1115, 4464, 1538) },
                                           { def, def, knee, def, t0, def, m0, def }, 1);
-        const auto preset = lynx::hlfx::makeMaximusPreset (st);
+        const auto preset = yw::hlfx::makeMaximusPreset (st);
         CHECK (preset != nullptr);
         std::array<int, 100> p {};
         p[98] = 600;
@@ -10783,14 +10783,14 @@ TEST (harmless_rack)
         for (int k = 0; k < 4; ++k)
             fst.push_back ((std::uint8_t) (len >> (8 * k)));
         fst.insert (fst.end(), body.begin(), body.end());
-        const auto found = lynx::hlfx::maximusStateFromFst (fst);
+        const auto found = yw::hlfx::maximusStateFromFst (fst);
         CHECK (found && *found == st);
         auto rms = st;
         rms[4 + 4 * (7 + 13 * 3 + 12)] = 1; // RMS detector on the master (decoded in REA_rodada40)
-        CHECK (lynx::hlfx::makeMaximusPreset (rms) != nullptr);
+        CHECK (yw::hlfx::makeMaximusPreset (rms) != nullptr);
         auto masterMid = st;
         masterMid[0x1fc] = 1; // "Master Mid mode": not decoded
-        CHECK (lynx::hlfx::makeMaximusPreset (masterMid) == nullptr);
+        CHECK (yw::hlfx::makeMaximusPreset (masterMid) == nullptr);
     }
 }
 
@@ -10798,21 +10798,21 @@ TEST (fruity_delay_bank_engine)
 {
     // REA_rodada56: Fruity Delay Bank, two states of our own against the installation's DLL (goldens = the DLL's output
     // for the same input, EXEC; a new instance, FTZ/DAZ as the plugin's thread). Both are bit-identical.
-    lynx::ScopedFlushDenormals ftz;
+    yw::ScopedFlushDenormals ftz;
     struct Bank
     {
         std::array<int, 16> ctl;
-        lynx::fldbank::BankOptions opt;
+        yw::fldbank::BankOptions opt;
     };
     auto build = [] (std::array<int, 4> globals, std::map<int, Bank> banks, int oversampling) {
-        auto s = lynx::fldbank::defaultState();
+        auto s = yw::fldbank::defaultState();
         for (int i = 0; i < 4; ++i)
             s.p[(std::size_t) i] = globals[(std::size_t) i];
         s.p[132] = oversampling;
         for (auto& [b, k] : banks)
         {
             for (int c = 0; c < 16; ++c)
-                if (16 * b + 4 + c < lynx::fldbank::automatable)
+                if (16 * b + 4 + c < yw::fldbank::automatable)
                     s.p[(std::size_t) (16 * b + 4 + c)] = k.ctl[(std::size_t) c];
             s.bank[(std::size_t) b] = k.opt;
             s.bank[(std::size_t) b].enabled = true;
@@ -10820,7 +10820,7 @@ TEST (fruity_delay_bank_engine)
         return s;
     };
     auto opt = [] (int f1, int o1, int f2, int o2, bool after, int mode, int steps, int amount, bool tap, bool sync) {
-        lynx::fldbank::BankOptions o;
+        yw::fldbank::BankOptions o;
         o.filterType[0] = f1;
         o.filterOrder[0] = o1;
         o.filterType[1] = f2;
@@ -10833,14 +10833,14 @@ TEST (fruity_delay_bank_engine)
         o.sync = sync;
         return o;
     };
-    auto run = [] (const lynx::fldbank::State& s, double rate, int block, double bpm) {
+    auto run = [] (const yw::fldbank::State& s, double rate, int block, double bpm) {
         std::vector<float> l (4096), r (4096);
         for (int i = 0; i < 4096; ++i)
         {
             l[(std::size_t) i] = (float) (1.5 * std::sin (2.0 * 3.141592653589793 * 440.0 * i / rate) * std::min (1.0, i / 400.0));
             r[(std::size_t) i] = (float) (1.2 * std::sin (2.0 * 3.141592653589793 * 660.0 * i / rate));
         }
-        lynx::fldbank::Engine e (s, rate, bpm, block);
+        yw::fldbank::Engine e (s, rate, bpm, block);
         for (int i = 0; i < 4096; i += block)
             e.process (l.data() + i, r.data() + i, std::min (block, 4096 - i));
         return std::make_pair (l, r);
@@ -10871,18 +10871,18 @@ TEST (fruity_delay_bank_engine)
                                           { 3000, 0.412344277f, -0.101866335f }, { 4095, 0.204572573f, 0.71171385f } });
 
     // FL's state round-trips through the import (version 15 times are converted), the globals are the slot's parameters
-    auto bytes = lynx::fldbank::serialise (a);
-    const auto slot = lynx::effectFromFl ("Fruity Delay Bank", bytes);
-    CHECK (slot && slot->kind == lynx::EffectKind::fruityDelayBank && slot->state == bytes);
+    auto bytes = yw::fldbank::serialise (a);
+    const auto slot = yw::effectFromFl ("Fruity Delay Bank", bytes);
+    CHECK (slot && slot->kind == yw::EffectKind::fruityDelayBank && slot->state == bytes);
     CHECK (slot && slot->params[0] == 100.0f / 128.0f && slot->params[3] == 110.0f / 128.0f);
     bytes[0] = 15;
-    const auto v15 = lynx::fldbank::parse (bytes);
+    const auto v15 = yw::fldbank::parse (bytes);
     CHECK (v15 && v15->p[12] == 2400 && v15->p[28] == 1500);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityDelayBank, 3, 0.5f, 120.0) == "50%");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityDelayBank, 0, 1.0f, 120.0) == "0.0 dB");
-    CHECK (! lynx::fldbank::parse ({ 16, 0, 0, 0 }));
-    // the LYNX effect (settled ramps, 512-frame engine blocks) runs from the slot
-    auto fx = lynx::makeEffect (*slot);
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityDelayBank, 3, 0.5f, 120.0) == "50%");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityDelayBank, 0, 1.0f, 120.0) == "0.0 dB");
+    CHECK (! yw::fldbank::parse ({ 16, 0, 0, 0 }));
+    // the YW effect (settled ramps, 512-frame engine blocks) runs from the slot
+    auto fx = yw::makeEffect (*slot);
     fx->prepare (44100.0);
     std::vector<float> l (1024, 0.5f), r (1024, -0.25f);
     fx->process (l.data(), r.data(), 1024, slot->params, 120.0);
@@ -10917,11 +10917,11 @@ TEST (fruity_multiband_engine)
     };
     struct Out { std::vector<float> l, r; int latency = 0; };
     auto run = [&] (const std::vector<std::uint8_t>& st) {
-        const auto s = lynx::flmb::parse (st);
+        const auto s = yw::flmb::parse (st);
         CHECK (s.has_value());
-        lynx::EffectParams p {};
-        lynx::flmb::toParams (*s, p.data());
-        auto fx = lynx::flmb::make();
+        yw::EffectParams p {};
+        yw::flmb::toParams (*s, p.data());
+        auto fx = yw::flmb::make();
         fx->prepare (44100.0);
         Out o { inL, inR };
         for (int s0 = 0; s0 < 4096; s0 += 512)
@@ -10953,18 +10953,18 @@ TEST (fruity_multiband_engine)
     // effect built with FL's state still uses the exact controls
     const auto st = multiband ({ 42598, 1, 1, 0, 15604, 25782, 53524, 32768, 11, 298, 51118, 0, 14994, 5037, 24736, 55755, 26870, 221,
                                  1090, 49807, 0, 5037, 21845, 47074, 32768, 550, 1090, 40632 });
-    const auto parsed = lynx::flmb::parse (st);
+    const auto parsed = yw::flmb::parse (st);
     CHECK (parsed && parsed->c[4] == 15604);
-    lynx::EffectParams p {};
-    lynx::flmb::toParams (*parsed, p.data());
-    for (int i = 0; i < lynx::flmb::controls; ++i)
-        CHECK (lynx::flmb::raw (p[(std::size_t) i], lynx::flmb::controlMin[(std::size_t) i], lynx::flmb::controlMax[(std::size_t) i]) == parsed->c[(std::size_t) i]);
-    lynx::EffectParams rounded = p;
+    yw::EffectParams p {};
+    yw::flmb::toParams (*parsed, p.data());
+    for (int i = 0; i < yw::flmb::controls; ++i)
+        CHECK (yw::flmb::raw (p[(std::size_t) i], yw::flmb::controlMin[(std::size_t) i], yw::flmb::controlMax[(std::size_t) i]) == parsed->c[(std::size_t) i]);
+    yw::EffectParams rounded = p;
     for (auto& v : rounded)
         v = std::round (v * 10000.0f) / 10000.0f;
     std::vector<float> l1 (inL), r1 (inR), l2 (inL), r2 (inR);
-    auto exact = lynx::flmb::make();
-    auto fromState = lynx::flmb::make (st);
+    auto exact = yw::flmb::make();
+    auto fromState = yw::flmb::make (st);
     exact->prepare (44100.0);
     fromState->prepare (44100.0);
     for (int s0 = 0; s0 < 4096; s0 += 512)
@@ -10973,13 +10973,13 @@ TEST (fruity_multiband_engine)
         fromState->process (l2.data() + s0, r2.data() + s0, 512, rounded, 120.0);
     }
     CHECK (l1 == l2 && r1 == r2);
-    CHECK (lynx::flmb::paramText (4, p[4]) == "6302 Hz");
-    CHECK (lynx::flmb::paramText (3, 0.5f) == "off");
+    CHECK (yw::flmb::paramText (4, p[4]) == "6302 Hz");
+    CHECK (yw::flmb::paramText (3, 0.5f) == "off");
     // the FL import builds the exact effect with FL's state kept
-    const auto slot = lynx::effectFromFl ("Fruity Multiband Compressor", st);
-    CHECK (slot && slot->kind == lynx::EffectKind::fruityMultiband && slot->state == st && slot->params[4] == p[4]);
+    const auto slot = yw::effectFromFl ("Fruity Multiband Compressor", st);
+    CHECK (slot && slot->kind == yw::EffectKind::fruityMultiband && slot->state == st && slot->params[4] == p[4]);
     // unknown versions are rejected
-    CHECK (! lynx::flmb::parse ({ 1, 0, 0, 0 }));
+    CHECK (! yw::flmb::parse ({ 1, 0, 0, 0 }));
 }
 
 // REA_rodada54: input of the stereo-effect goldens (the installation DLLs' output for the same input, EXEC)
@@ -11003,10 +11003,10 @@ static std::vector<std::uint8_t> i32State (std::initializer_list<int> words)
     return d;
 }
 
-static void checkStereoFx (lynx::EffectSlot slot, const std::vector<std::tuple<int, float, float>>& golden)
+static void checkStereoFx (yw::EffectSlot slot, const std::vector<std::tuple<int, float, float>>& golden)
 {
     auto [l, r] = stereoFxInput();
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (44100.0);
     for (int s = 0; s < 4096; s += 512)
         fx->process (l.data() + s, r.data() + s, 512, slot.params, 120.0);
@@ -11017,30 +11017,30 @@ static void checkStereoFx (lynx::EffectSlot slot, const std::vector<std::tuple<i
 TEST (stereo_shaper_engine)
 {
     // Fruity Stereo Shaper (REA_rodada54 §2): matrix with cross terms, delay on R, all-pass on L, effects post / pre
-    auto slot = lynx::effectFromFl ("Fruity Stereo Shaper", i32State ({ 0, -3050, 12800, 9000, 2000, 1408, -2496, 0, 1 }));
-    CHECK (slot && slot->kind == lynx::EffectKind::stereoShaper);
+    auto slot = yw::effectFromFl ("Fruity Stereo Shaper", i32State ({ 0, -3050, 12800, 9000, 2000, 1408, -2496, 0, 1 }));
+    CHECK (slot && slot->kind == yw::EffectKind::stereoShaper);
     if (slot)
         checkStereoFx (*slot, { { 100, 0.0438031591f, 0.0f }, { 1000, 1.11109531f, -0.781641483f }, { 2047, -0.73191303f, 0.483852893f },
                                 { 3000, 0.950346172f, -0.769737065f }, { 4095, 0.251555145f, 0.153306276f } });
-    slot = lynx::effectFromFl ("Fruity Stereo Shaper", i32State ({ 0, 0, 12800, 12800, 0, -2656, 2184, 0, 0 }));
+    slot = yw::effectFromFl ("Fruity Stereo Shaper", i32State ({ 0, 0, 12800, 12800, 0, -2656, 2184, 0, 0 }));
     CHECK (slot.has_value());
     if (slot)
         checkStereoFx (*slot, { { 100, 0.0f, -0.104282036f }, { 1000, 0.0f, 1.08441091f }, { 2047, 0.463494211f, -0.93754214f },
                                 { 3000, -1.49942112f, 0.820726812f }, { 4095, -1.31784308f, -0.057449434f } });
     // controls round-trip through the slot parameters; the Patcher's difference bus is the same engine flagged
-    const auto st = lynx::stereofx::parseStereoShaper (i32State ({ 0, -3050, 12800, 9000, 2000, 1408, -2496, 2, 1 }));
+    const auto st = yw::stereofx::parseStereoShaper (i32State ({ 0, -3050, 12800, 9000, 2000, 1408, -2496, 2, 1 }));
     CHECK (st.has_value());
     if (st)
     {
-        lynx::EffectParams p {};
-        lynx::stereofx::stereoShaperToParams (*st, p.data());
-        const auto back = lynx::stereofx::stereoShaperFromParams (p.data());
+        yw::EffectParams p {};
+        yw::stereofx::stereoShaperToParams (*st, p.data());
+        const auto back = yw::stereofx::stereoShaperFromParams (p.data());
         CHECK (back.rightToLeft == -3050 && back.left == 12800 && back.right == 9000 && back.leftToRight == 2000 && back.delay == 1408
                && back.phase == -2496 && back.post == 1);
-        const auto head = lynx::patcherBranchHead ("Fruity Stereo Shaper", i32State ({ 0, -3050, 12800, 9000, 2000, 1408, -2496, 2, 1 }), 2);
-        CHECK (head.valid && head.slot && head.slot->kind == lynx::EffectKind::stereoShaper && head.slot->params[7] == 1.0f);
+        const auto head = yw::patcherBranchHead ("Fruity Stereo Shaper", i32State ({ 0, -3050, 12800, 9000, 2000, 1408, -2496, 2, 1 }), 2);
+        CHECK (head.valid && head.slot && head.slot->kind == yw::EffectKind::stereoShaper && head.slot->params[7] == 1.0f);
     }
-    CHECK (! lynx::stereofx::parseStereoShaper ({ 1, 2, 3 }));
+    CHECK (! yw::stereofx::parseStereoShaper ({ 1, 2, 3 }));
 }
 
 TEST (frequency_splitter_engine)
@@ -11077,12 +11077,12 @@ TEST (frequency_splitter_engine)
                 st.push_back ((std::uint8_t) ((std::uint32_t) w >> (8 * b)));
         st.push_back (0);
         st.resize (st.size() + 24, 0);
-        const auto s = lynx::fsplit::parseState (st);
+        const auto s = yw::fsplit::parseState (st);
         CHECK (s.has_value());
         if (! s)
             continue;
-        lynx::fsplit::Engine e;
-        for (int i = 0; i < lynx::fsplit::engineParams; ++i)
+        yw::fsplit::Engine e;
+        for (int i = 0; i < yw::fsplit::engineParams; ++i)
             e.setParameter (i, s->params[(std::size_t) i]);
         e.prepare (44100.0);
         e.reset (false);
@@ -11105,25 +11105,25 @@ TEST (frequency_splitter_engine)
 
         // the mixer effect: the summed output (FL's main output) of an instance that has been running, and a
         // Patcher bus = the bands sent to it
-        auto slot = lynx::effectFromFl ("Frequency Splitter", st);
-        CHECK (slot && slot->kind == lynx::EffectKind::frequencySplitter);
-        const auto head = lynx::patcherBranchHead ("Frequency Splitter", st, 3);
-        CHECK (head.valid && head.slot && head.slot->params[lynx::fsplit::outputHigh] == 1.0f
-               && head.slot->params[lynx::fsplit::outputLow] == 0.0f);
+        auto slot = yw::effectFromFl ("Frequency Splitter", st);
+        CHECK (slot && slot->kind == yw::EffectKind::frequencySplitter);
+        const auto head = yw::patcherBranchHead ("Frequency Splitter", st, 3);
+        CHECK (head.valid && head.slot && head.slot->params[yw::fsplit::outputHigh] == 1.0f
+               && head.slot->params[yw::fsplit::outputLow] == 0.0f);
         if (slot && head.slot)
         {
-            lynx::fsplit::Engine settled;
-            for (int i = 0; i < lynx::fsplit::engineParams; ++i)
+            yw::fsplit::Engine settled;
+            for (int i = 0; i < yw::fsplit::engineParams; ++i)
                 settled.setParameter (i, s->params[(std::size_t) i]);
             settled.prepare (44100.0);
             settled.reset (true);
             std::vector<float> sl (4096), sr (4096), hl (4096), hr (4096);
             float* out[8] { nullptr, nullptr, nullptr, nullptr, hl.data(), hr.data(), sl.data(), sr.data() };
             settled.process (l.data(), r.data(), out, 4096);
-            const lynx::EffectSlot* both[2] { &*slot, &*head.slot };
+            const yw::EffectSlot* both[2] { &*slot, &*head.slot };
             for (const auto* p : both)
             {
-                auto fx = lynx::makeEffect (*p);
+                auto fx = yw::makeEffect (*p);
                 fx->prepare (44100.0);
                 auto ml = l, mr = r;
                 for (int b = 0; b < 4096; b += 300)
@@ -11135,16 +11135,16 @@ TEST (frequency_splitter_engine)
             }
         }
     }
-    CHECK (! lynx::patcherBranchHead ("Frequency Splitter", std::vector<std::uint8_t> (0x58, 0), 2).valid); // no band sent to bus 2
-    CHECK (lynx::fsplit::paramText (2, 3.0f / 7.0f) == "24 dB/oct" && lynx::fsplit::paramText (11, 0.5f) == "0.0 dB");
-    CHECK (lynx::fsplit::paramText (0, 0.0f) == "30.0 Hz" && lynx::fsplit::paramText (4, 1.0f) == "FFT");
+    CHECK (! yw::patcherBranchHead ("Frequency Splitter", std::vector<std::uint8_t> (0x58, 0), 2).valid); // no band sent to bus 2
+    CHECK (yw::fsplit::paramText (2, 3.0f / 7.0f) == "24 dB/oct" && yw::fsplit::paramText (11, 0.5f) == "0.0 dB");
+    CHECK (yw::fsplit::paramText (0, 0.0f) == "30.0 Hz" && yw::fsplit::paramText (4, 1.0f) == "FFT");
 }
 
 TEST (stereo_enhancer_transient_spreader_engines)
 {
     // REA_rodada54 §3–5: own states against the installation's DLLs (goldens = the DLL's output, EXEC)
-    auto se = lynx::effectFromFl ("Fruity Stereo Enhancer", i32State ({ -18, 300, -54, -148, 1, 1 }));
-    CHECK (se && se->kind == lynx::EffectKind::stereoEnhancer);
+    auto se = yw::effectFromFl ("Fruity Stereo Enhancer", i32State ({ -18, 300, -54, -148, 1, 1 }));
+    CHECK (se && se->kind == yw::EffectKind::stereoEnhancer);
     if (se)
         checkStereoFx (*se, { { 100, 0.0f, 0.00309863733f }, { 1000, 0.0101111531f, -0.110266283f }, { 2047, -0.688752949f, -1.93998075f },
                               { 3000, -0.283846498f, -0.739818454f }, { 4095, 0.191147864f, 2.70425582f } });
@@ -11152,23 +11152,23 @@ TEST (stereo_enhancer_transient_spreader_engines)
     tpState.push_back (5);
     for (const auto w : i32State ({ 0, 50 }))
         tpState.push_back (w);
-    auto tp = lynx::effectFromFl ("Transient Processor", tpState);
-    CHECK (tp && tp->kind == lynx::EffectKind::transientProcessor);
+    auto tp = yw::effectFromFl ("Transient Processor", tpState);
+    CHECK (tp && tp->kind == yw::EffectKind::transientProcessor);
     if (tp)
         checkStereoFx (*tp, { { 100, 0.0568947345f, 0.124077775f }, { 1000, -0.326598823f, -0.193128616f }, { 2047, 0.612462878f, -0.0517415144f },
                               { 3000, -0.535302937f, -0.446303189f }, { 4095, -0.634670973f, 0.316044629f } });
     auto spState = i32State ({ 0x10003, 7861, 3215, 106000, 1, 1, 0 });
     spState.push_back (1);
     spState.push_back (1);
-    auto sp = lynx::effectFromFl ("Spreader", spState);
-    CHECK (sp && sp->kind == lynx::EffectKind::spreader);
+    auto sp = yw::effectFromFl ("Spreader", spState);
+    CHECK (sp && sp->kind == yw::EffectKind::spreader);
     if (sp)
         checkStereoFx (*sp, { { 100, 0.11841587f, -0.0958916694f }, { 1000, 1.40852344f, 0.087452054f }, { 2047, 1.07267976f, -2.02493715f },
                               { 3000, -0.781082511f, 0.811192274f }, { 4095, -1.80673707f, 0.89967829f } });
     // unknown layouts keep the earlier fallback; FL automation maps one to one
-    CHECK (! lynx::stereofx::parseSpreader (i32State ({ 0x10001, 1, 2, 3, 4, 5 })));
-    CHECK (! lynx::stereofx::parseTransientProcessor (i32State ({ 2, 1, 2, 3, 4, 5, 6, 7, 8, 9 })));
-    const auto map = lynx::effectParamFromFl ("Transient Processor", 6);
+    CHECK (! yw::stereofx::parseSpreader (i32State ({ 0x10001, 1, 2, 3, 4, 5 })));
+    CHECK (! yw::stereofx::parseTransientProcessor (i32State ({ 2, 1, 2, 3, 4, 5, 6, 7, 8, 9 })));
+    const auto map = yw::effectParamFromFl ("Transient Processor", 6);
     CHECK (map && map->param == 6 && map->convert (0.25f) == 0.25f);
 }
 
@@ -11209,8 +11209,8 @@ TEST (fruity_dynamics_engines)
         return b;
     };
     struct Out { std::vector<float> l, r; int latency = 0; };
-    auto run = [&] (const lynx::EffectSlot& slot, bool sidechain) {
-        auto fx = lynx::makeEffect (slot);
+    auto run = [&] (const yw::EffectSlot& slot, bool sidechain) {
+        auto fx = yw::makeEffect (slot);
         fx->prepare (44100.0);
         Out o { inL, inR };
         for (int s = 0; s < 4096; s += 512)
@@ -11227,8 +11227,8 @@ TEST (fruity_dynamics_engines)
             CHECK (std::abs (out.l[(std::size_t) i] - gl) < 2e-6f && std::abs (out.r[(std::size_t) i] - gr) < 2e-6f);
     };
     auto limiter = [] (const std::vector<std::uint8_t>& st) {
-        auto slot = lynx::effectFromFl ("Fruity Limiter", st);
-        CHECK (slot && slot->kind == lynx::EffectKind::fruityLimiter);
+        auto slot = yw::effectFromFl ("Fruity Limiter", st);
+        CHECK (slot && slot->kind == yw::EffectKind::fruityLimiter);
         return *slot;
     };
     // look-ahead limiter: +4 dB gain into a −2.5 dB ceiling, 2 ms attack (88 samples of latency); bit-identical
@@ -11246,8 +11246,8 @@ TEST (fruity_dynamics_engines)
              { 3000, -0.111069582f, -0.128206298f }, { 4095, -0.218446419f, 0.21791859f } });
 
     auto compressor = [] (const std::vector<std::uint8_t>& st) {
-        auto slot = lynx::effectFromFl ("Fruity Compressor", st);
-        CHECK (slot && slot->kind == lynx::EffectKind::fruityCompressor);
+        auto slot = yw::effectFromFl ("Fruity Compressor", st);
+        CHECK (slot && slot->kind == yw::EffectKind::fruityCompressor);
         return *slot;
     };
     // Vintage type, look-ahead flag, side input 1: bit-identical
@@ -11263,20 +11263,20 @@ TEST (fruity_dynamics_engines)
 
     // the slot's parameters carry FL's raw controls exactly (and survive the 4-decimal project file)
     const auto st = limiterState ({ 1261, 995, 1303, 1115, 3, 5000, 3, 2882, 264, 244, -590, 1115, 6666, 1, 650, 1000, 0, 4187 }, 1);
-    const auto parsed = lynx::fldyn::parseLimiter (st);
+    const auto parsed = yw::fldyn::parseLimiter (st);
     CHECK (parsed && parsed->sidechain == 1 && ! parsed->exactCeiling);
     const auto slot = limiter (st);
-    for (int i = 0; i < lynx::fldyn::limiterControls; ++i)
+    for (int i = 0; i < yw::fldyn::limiterControls; ++i)
     {
         const auto rounded = std::round (slot.params[(std::size_t) i] * 10000.0f) / 10000.0f;
-        CHECK (lynx::fldyn::raw (rounded, lynx::fldyn::limiterMin[(std::size_t) i], lynx::fldyn::limiterMax[(std::size_t) i]) == parsed->p[(std::size_t) i]);
+        CHECK (yw::fldyn::raw (rounded, yw::fldyn::limiterMin[(std::size_t) i], yw::fldyn::limiterMax[(std::size_t) i]) == parsed->p[(std::size_t) i]);
     }
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityLimiter, 3, slot.params[3], 120.0) == "2.0 ms");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityCompressor, 5, 2.0f / 7.0f, 120.0) == "Vintage");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityLimiter, 3, slot.params[3], 120.0) == "2.0 ms");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityCompressor, 5, 2.0f / 7.0f, 120.0) == "Vintage");
     // unreadable states keep the old approximation
-    CHECK (lynx::effectFromFl ("Fruity Limiter", { 7, 0, 0, 0 }).has_value() == false
-           || lynx::effectFromFl ("Fruity Limiter", { 7, 0, 0, 0 })->kind != lynx::EffectKind::fruityLimiter);
-    CHECK (! lynx::fldyn::parseCompressor ({ 4, 0, 0, 0 }));
+    CHECK (yw::effectFromFl ("Fruity Limiter", { 7, 0, 0, 0 }).has_value() == false
+           || yw::effectFromFl ("Fruity Limiter", { 7, 0, 0, 0 })->kind != yw::EffectKind::fruityLimiter);
+    CHECK (! yw::fldyn::parseCompressor ({ 4, 0, 0, 0 }));
 }
 
 TEST (maximus_engine)
@@ -11289,8 +11289,8 @@ TEST (maximus_engine)
         inL[(std::size_t) i] = (float) (1.5 * std::sin (2.0 * 3.141592653589793 * 440.0 * i / 44100.0) * std::min (1.0, i / 400.0));
         inR[(std::size_t) i] = (float) (1.2 * std::sin (2.0 * 3.141592653589793 * 660.0 * i / 44100.0));
     }
-    auto run = [&] (std::shared_ptr<const lynx::hlfx::MaximusPreset> preset, int mix) {
-        lynx::hlfx::MaximusProcessor m;
+    auto run = [&] (std::shared_ptr<const yw::hlfx::MaximusPreset> preset, int mix) {
+        yw::hlfx::MaximusProcessor m;
         m.prepare (std::move (preset), 44100.0, mix);
         std::vector<float> l (inL), r (inR);
         for (int s = 0; s < 4096; s += 512)
@@ -11313,7 +11313,7 @@ TEST (maximus_engine)
                                  { band (0, 1500, 1000, 0, 400, 900, 1115, 0, 2882, 1), band (0, 1340, 1000, 0, 0, 1000, 1115, 0, 1570, 1),
                                    band (1, 1000, 1200, 0, 1000, 1000), band (0, 1000, 1000, 0, 250, 1000, 1115, 4464, 2882, 1) },
                                  { def, def, knee, def, t0, def, m0, def }, 0);
-    const auto p3 = lynx::hlfx::makeMaximusPreset (st3);
+    const auto p3 = yw::hlfx::makeMaximusPreset (st3);
     CHECK (p3 != nullptr);
     check (run (p3, 1000), { { 100, 0.0f, 0.0f }, { 1000, 0.87061065f, 0.64004499f }, { 2047, -0.97266865f, 0.60940075f },
                              { 3000, 0.96658099f, 0.9250561f }, { 4095, 0.99094611f, -0.964059f } });
@@ -11321,13 +11321,13 @@ TEST (maximus_engine)
     auto solo = st3;
     solo[0x1ef] = 1;
     std::memset (solo.data() + 0x1e0, 0, 4);
-    check (run (lynx::hlfx::makeMaximusPreset (solo), 1000),
+    check (run (yw::hlfx::makeMaximusPreset (solo), 1000),
            { { 100, 3.2922967e-06f, 0.00036916698f }, { 1000, 0.15653539f, -0.047913823f }, { 2047, -0.17336531f, 0.019099623f },
              { 3000, 0.17185682f, -0.017173048f }, { 4095, 0.16714551f, 0.019473195f } });
     // the legacy linear-phase FIR band split (UI byte 0x1FD; SG_x64.dll: port within −148 dB)
     auto fir = st3;
     fir[0x1fd] = 1;
-    check (run (lynx::hlfx::makeMaximusPreset (fir), 1000),
+    check (run (yw::hlfx::makeMaximusPreset (fir), 1000),
            { { 100, 0.0f, 0.0f }, { 1000, 0.97986746f, 0.18555209f }, { 2047, -0.98930448f, -0.95970845f },
              { 3000, 0.98856646f, -0.44592777f }, { 4095, 0.99069679f, 0.94382554f } });
     // Soundgoodizer_x64.dll's own build with a v4 file (its presets' layout): a copy of the round-36 state without
@@ -11339,22 +11339,22 @@ TEST (maximus_engine)
     std::vector<std::uint8_t> v4 { 4, 0, 0, 0 };
     v4.insert (v4.end(), st2.begin() + 4, st2.begin() + 0x1f5);
     v4.insert (v4.end(), st2.begin() + 0x1fe, st2.end());
-    const auto p4 = lynx::hlfx::makeMaximusPreset (v4, lynx::hlfx::MaximusBuild::soundgoodizer);
+    const auto p4 = yw::hlfx::makeMaximusPreset (v4, yw::hlfx::MaximusBuild::soundgoodizer);
     CHECK (p4 != nullptr);
     check (run (p4, 600), { { 100, 0.0f, 0.0f }, { 1000, -0.60926896f, -0.6652832f }, { 2047, 0.40872875f, 0.36375371f },
                             { 3000, -0.41941205f, -0.61312866f }, { 4095, -0.12878418f, 0.27944946f } });
-    CHECK (lynx::hlfx::makeMaximusPreset (st2, lynx::hlfx::MaximusBuild::soundgoodizer) != nullptr); // v7: also read by that build
+    CHECK (yw::hlfx::makeMaximusPreset (st2, yw::hlfx::MaximusBuild::soundgoodizer) != nullptr); // v7: also read by that build
     // the mixer effect's container and the effect itself
-    lynx::maximusfx::Blob blob;
-    blob.build = lynx::hlfx::MaximusBuild::soundgoodizer;
+    yw::maximusfx::Blob blob;
+    blob.build = yw::hlfx::MaximusBuild::soundgoodizer;
     blob.mix = 600;
     blob.state = v4;
-    const auto packed = lynx::maximusfx::pack (blob);
-    const auto back = lynx::maximusfx::unpack (packed);
+    const auto packed = yw::maximusfx::pack (blob);
+    const auto back = yw::maximusfx::unpack (packed);
     CHECK (back && back->build == blob.build && back->mix == 600 && back->state == v4);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::maximus);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::maximus);
     slot.state = packed;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (44100.0);
     {
         std::vector<float> l (inL), r (inR);
@@ -11364,34 +11364,34 @@ TEST (maximus_engine)
         CHECK (l == ref.first && r == ref.second);
     }
     const std::vector<std::uint8_t> sgState { 3, 0, 0, 0, 2, 0, 0, 0, 0x78, 2, 0, 0 };
-    const auto sg = lynx::maximusfx::parseSoundgoodizer (sgState);
-    CHECK (sg && sg->preset == 2 && sg->amount == 632 && std::string (lynx::maximusfx::soundgoodizerPresetFile (2)) == "c.dat");
-    CHECK (lynx::soundgoodizerPresetPath (sgState) == "Plugins\\Fruity\\Effects\\Soundgoodizer\\Data\\Presets\\c.dat");
-    CHECK (lynx::soundgoodizerExact (sgState, v4).has_value() && ! lynx::soundgoodizerExact (sgState, {}).has_value());
+    const auto sg = yw::maximusfx::parseSoundgoodizer (sgState);
+    CHECK (sg && sg->preset == 2 && sg->amount == 632 && std::string (yw::maximusfx::soundgoodizerPresetFile (2)) == "c.dat");
+    CHECK (yw::soundgoodizerPresetPath (sgState) == "Plugins\\Fruity\\Effects\\Soundgoodizer\\Data\\Presets\\c.dat");
+    CHECK (yw::soundgoodizerExact (sgState, v4).has_value() && ! yw::soundgoodizerExact (sgState, {}).has_value());
     // without the preset files (no FL installation) the approximation keeps the plugin's state and its name
     {
-        const auto approx = lynx::effectFromFl ("Soundgoodizer", sgState);
-        CHECK (approx && lynx::isSoundgoodizerApprox (*approx) && lynx::projectcontents::effectSlotName (*approx) == "Soundgoodizer");
-        const auto st = approx ? lynx::maximusfx::parseSoundgoodizer (approx->state) : std::nullopt;
+        const auto approx = yw::effectFromFl ("Soundgoodizer", sgState);
+        CHECK (approx && yw::isSoundgoodizerApprox (*approx) && yw::projectcontents::effectSlotName (*approx) == "Soundgoodizer");
+        const auto st = approx ? yw::maximusfx::parseSoundgoodizer (approx->state) : std::nullopt;
         CHECK (st && st->preset == 2 && st->amount == 632 && approx->branches.size() == 1 && approx->branches[0].chain.size() == 2);
-        CHECK (! lynx::isSoundgoodizerApprox (lynx::makeEffectSlot (lynx::EffectKind::parallel))); // a Patcher container stays one
-        const auto edited = lynx::soundgoodizerApproxSlot (0, 1000);
-        CHECK (lynx::isSoundgoodizerApprox (edited) && lynx::maximusfx::parseSoundgoodizer (edited.state)->preset == 0);
+        CHECK (! yw::isSoundgoodizerApprox (yw::makeEffectSlot (yw::EffectKind::parallel))); // a Patcher container stays one
+        const auto edited = yw::soundgoodizerApproxSlot (0, 1000);
+        CHECK (yw::isSoundgoodizerApprox (edited) && yw::maximusfx::parseSoundgoodizer (edited.state)->preset == 0);
     }
     // Vocodex's appended installation data survives a round trip and leaves FL's state untouched
     const std::vector<std::uint8_t> flState { 8, 0, 0, 0, 1, 2, 3 };
-    lynx::vocodex::InstallData data;
+    yw::vocodex::InstallData data;
     data.sgDat = st2;
     data.carrierState = { 9, 9, 9 };
-    const auto joined = lynx::vocodex::appendInstallData (flState, data);
-    const auto [raw, files] = lynx::vocodex::splitInstallData (joined);
+    const auto joined = yw::vocodex::appendInstallData (flState, data);
+    const auto [raw, files] = yw::vocodex::splitInstallData (joined);
     CHECK (raw == flState && files.sgDat == st2 && files.carrierState == data.carrierState);
-    CHECK (lynx::vocodex::splitInstallData (flState).first == flState);
+    CHECK (yw::vocodex::splitInstallData (flState).first == flState);
 }
 
 // ---- Fruity Reeverb 2 (REA_rodada49) --------------------------------------------------------------------------------
 // Goldens: the installation's Fruity Reeverb 2_x64.dll (unmodified, rate set before the state, flushed, blocks of 512)
-// on our own states and input; LYNX's engine is bit-identical to it.
+// on our own states and input; YW's engine is bit-identical to it.
 TEST (reeverb2_engine)
 {
     auto hex = [] (const char* h) {
@@ -11418,11 +11418,11 @@ TEST (reeverb2_engine)
         float l, r;
     };
     auto run = [&] (const std::vector<std::uint8_t>& state, double bpm, const std::vector<Golden>& gold) {
-        const auto slot = lynx::reeverb2FromFl (state);
-        CHECK (slot.has_value() && slot->kind == lynx::EffectKind::reeverb2);
+        const auto slot = yw::reeverb2FromFl (state);
+        CHECK (slot.has_value() && slot->kind == yw::EffectKind::reeverb2);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         fx->reset();
         std::vector<float> l (inL), r (inR);
@@ -11445,27 +11445,27 @@ TEST (reeverb2_engine)
                   { 8191, 0.144686908f, 0.144686908f } });
 
     // the parameters map back to FL's integers; unsupported states fall back to the approximation
-    lynx::reeverb2::Settings s;
+    yw::reeverb2::Settings s;
     s.p = { 3000, 5, 384, 1, 0, 200, 221, 20, 2000, -64, 160, 0, 160, 2048, 1 };
     s.tempoPredelay = true;
-    lynx::EffectParams p {};
-    lynx::reeverb2::toParams (s, p);
-    CHECK (lynx::reeverb2::fromParams (p) == s);
-    CHECK (! lynx::reeverb2FromFl ({ 0x11, 0x27, 0, 0, 1, 0 }).has_value());
-    CHECK (! lynx::reeverb2FromFl ({ 0x12, 0x27, 0, 0 }).has_value());
-    const auto approx = lynx::effectFromFl ("Fruity Reeverb 2", { 0x11, 0x27, 0, 0 }, 120.0);
-    CHECK (! approx || approx->kind != lynx::EffectKind::reeverb2);
-    CHECK (lynx::reeverb2ParamText (0, 0.0f) == "off" && lynx::reeverb2ParamText (5, 1.0f) == "20.0 s");
+    yw::EffectParams p {};
+    yw::reeverb2::toParams (s, p);
+    CHECK (yw::reeverb2::fromParams (p) == s);
+    CHECK (! yw::reeverb2FromFl ({ 0x11, 0x27, 0, 0, 1, 0 }).has_value());
+    CHECK (! yw::reeverb2FromFl ({ 0x12, 0x27, 0, 0 }).has_value());
+    const auto approx = yw::effectFromFl ("Fruity Reeverb 2", { 0x11, 0x27, 0, 0 }, 120.0);
+    CHECK (! approx || approx->kind != yw::EffectKind::reeverb2);
+    CHECK (yw::reeverb2ParamText (0, 0.0f) == "off" && yw::reeverb2ParamText (5, 1.0f) == "20.0 s");
 
     // Fruity Reeverb (the first version): Fruity Reeverb_x64.dll goldens on our own states (denormals flushed, as the
-    // plugin runs and as LYNX renders)
-    lynx::ScopedFlushDenormals ftz;
+    // plugin runs and as YW renders)
+    yw::ScopedFlushDenormals ftz;
     auto run1 = [&] (const std::vector<std::uint8_t>& state, const std::vector<Golden>& gold) {
-        const auto slot = lynx::reeverb1FromFl (state);
-        CHECK (slot.has_value() && slot->kind == lynx::EffectKind::reeverb1);
+        const auto slot = yw::reeverb1FromFl (state);
+        CHECK (slot.has_value() && slot->kind == yw::EffectKind::reeverb1);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         for (int s = 0; s < N; s += 512)
@@ -11479,9 +11479,9 @@ TEST (reeverb2_engine)
     run1 (hex ("0100000000000000000001000000000000000100000001002800000000000100000001000000000000000100"),
           { { 777, -0.016678432f, -4.58686594e-31f }, { 1555, 0.0221031085f, 0.0230635051f }, { 3333, 0.0875115693f, 0.1695389f },
             { 5000, -0.111421227f, -0.295867324f }, { 8191, 0.503498077f, 0.190456569f } });
-    CHECK (lynx::reeverb1FromFl (std::vector<std::uint8_t> (44, 0)).has_value());
-    CHECK (! lynx::reeverb1FromFl (std::vector<std::uint8_t> (40, 0)).has_value());
-    CHECK (lynx::reeverb1ParamText (5, 0.0f) == "Brighter" && lynx::reeverb1ParamText (0, 0.0f) == "off");
+    CHECK (yw::reeverb1FromFl (std::vector<std::uint8_t> (44, 0)).has_value());
+    CHECK (! yw::reeverb1FromFl (std::vector<std::uint8_t> (40, 0)).has_value());
+    CHECK (yw::reeverb1ParamText (5, 0.0f) == "Brighter" && yw::reeverb1ParamText (0, 0.0f) == "off");
 }
 
 // ---- Fruity Love Philter (REA_rodada66) ---------------------------------------------------------------------------------
@@ -11489,8 +11489,8 @@ TEST (reeverb2_engine)
 TEST (love_philter_engine)
 {
     // goldens: Fruity Love Philter_x64.dll on our own synthetic states (44.1 kHz, blocks of 512, 120 BPM, live mode),
-    // bit-identical on the test machine (denormals flushed, as the plugin runs and as LYNX renders)
-    lynx::ScopedFlushDenormals ftz;
+    // bit-identical on the test machine (denormals flushed, as the plugin runs and as YW renders)
+    yw::ScopedFlushDenormals ftz;
     auto hex = [] (const char* h) {
         std::vector<std::uint8_t> v;
         for (std::size_t i = 0; h[i] != 0 && h[i + 1] != 0; i += 2)
@@ -11515,11 +11515,11 @@ TEST (love_philter_engine)
         float l, r;
     };
     auto run = [&] (const std::vector<std::uint8_t>& state, const std::vector<Golden>& gold) {
-        const auto slot = lynx::effectFromFl ("Fruity Love Philter", state, 120.0);
-        CHECK (slot.has_value() && slot->kind == lynx::EffectKind::lovePhilter);
-        if (! slot || slot->kind != lynx::EffectKind::lovePhilter)
+        const auto slot = yw::effectFromFl ("Fruity Love Philter", state, 120.0);
+        CHECK (slot.has_value() && slot->kind == yw::EffectKind::lovePhilter);
+        if (! slot || slot->kind != yw::EffectKind::lovePhilter)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         for (int s = 0; s < N; s += 512)
@@ -11591,15 +11591,15 @@ TEST (love_philter_engine)
          { { 777, 0.5369307994842529f, 0.483487993478775f }, { 1555, -0.17133042216300964f, -0.10717462003231049f }, { 2222, 0.8671267032623291f, 0.6469616889953613f }, { 3333, -0.6548674702644348f, -0.5142713189125061f }, { 3999, 1.4368892908096313f, 1.1726332902908325f }, { 4100, 1.1042776107788086f, 0.8842349648475647f } });
 
     // the slot exposes FL's controls; FL indices map both ways; unreadable states keep the old conversion
-    CHECK (lynx::philter::flIndexOf (6) == 6 && lynx::philter::flIndexOf (8) == 9 && lynx::philter::flIndexOf (8 + 5 * 7 + 4) == 8 + 44 * 7 + 9);
-    for (int i = 0; i < lynx::philter::paramCount; ++i)
-        CHECK (lynx::philter::paramOfFlIndex (lynx::philter::flIndexOf (i)) == i);
-    CHECK (lynx::philter::paramOfFlIndex (8 + 3) == 48 && lynx::philter::paramOfFlIndex (8 + 12) == -1 && lynx::philter::paramOfFlIndex (8 + 44 * 7 + 11) == -1);
-    CHECK (lynx::philter::parse ({ 3, 0, 12, 0, 1, 2, 3, 4 }) == nullptr);
-    CHECK (lynx::effectInfo (lynx::EffectKind::lovePhilter).params.size() == (std::size_t) lynx::philter::paramCount);
-    CHECK (lynx::philter::paramText (5, 0.0f) == "pattern 1" && lynx::philter::paramText (8 + 3, 0.5f) == "centred");
+    CHECK (yw::philter::flIndexOf (6) == 6 && yw::philter::flIndexOf (8) == 9 && yw::philter::flIndexOf (8 + 5 * 7 + 4) == 8 + 44 * 7 + 9);
+    for (int i = 0; i < yw::philter::paramCount; ++i)
+        CHECK (yw::philter::paramOfFlIndex (yw::philter::flIndexOf (i)) == i);
+    CHECK (yw::philter::paramOfFlIndex (8 + 3) == 48 && yw::philter::paramOfFlIndex (8 + 12) == -1 && yw::philter::paramOfFlIndex (8 + 44 * 7 + 11) == -1);
+    CHECK (yw::philter::parse ({ 3, 0, 12, 0, 1, 2, 3, 4 }) == nullptr);
+    CHECK (yw::effectInfo (yw::EffectKind::lovePhilter).params.size() == (std::size_t) yw::philter::paramCount);
+    CHECK (yw::philter::paramText (5, 0.0f) == "pattern 1" && yw::philter::paramText (8 + 3, 0.5f) == "centred");
 
-    // a control edited in LYNX is applied when the effect is built from the slot (the state keeps FL's value)
+    // a control edited in YW is applied when the effect is built from the slot (the state keeps FL's value)
     {
         const auto stateA = hex (
              "03000c00789cedda316ed44018c5f1cfd90b5050234a0e81702a1a6e4045c11d68e7005c00c40928e96810254590380225e552538471ec"
@@ -11619,12 +11619,12 @@ TEST (love_philter_engine)
              "5f54f7a861709c1d6a18dda36ec07176a81b748f6cc07176c806dd634f81e3ecb0a7d03db201c7d9211b748f6cc07176c806dd231b709c"
              "1db241f74acc6bd87a6bf9388fd31af7a7d29b1acf5ae0ecd8e1bea8ee51c3e0383bd430ba47dd80e3ec5037e81ed980e3ec900dbac79e"
              "02c7d9614fa17b64038eb34336e81ed980e3ec900dba4736e0383b6483eec54ff7970e90");
-        auto slot = lynx::philter::slotFromFl (stateA);
-        CHECK (slot.has_value() && ! lynx::philter::slotFromFl (hex ("0300000078")).has_value());
+        auto slot = yw::philter::slotFromFl (stateA);
+        CHECK (slot.has_value() && ! yw::philter::slotFromFl (hex ("0300000078")).has_value());
         if (slot)
         {
-            auto render = [&] (const lynx::EffectSlot& sl) {
-                auto fx = lynx::makeEffect (sl);
+            auto render = [&] (const yw::EffectSlot& sl) {
+                auto fx = yw::makeEffect (sl);
                 fx->prepare (44100.0);
                 std::vector<float> l (inL), r (inR);
                 for (int s = 0; s < 4096; s += 512)
@@ -11648,7 +11648,7 @@ TEST (fruity_vocoder_round66_goldens)
     // REA_rodada66 §6 goldens against the round-70 engine (core/FruityVocoder), through FL's state import and the mixer
     // effect: Fruity Vocoder_x64.dll on our own states (44.1 kHz, blocks of 512): left = modulator, right = carrier.
     // The first state's attack (5 ms) is below the knob range (10…1000): the plugin uses it as it is (REA_rodada78 §1)
-    lynx::ScopedFlushDenormals ftz;
+    yw::ScopedFlushDenormals ftz;
     auto hex = [] (const char* h) {
         std::vector<std::uint8_t> v;
         for (std::size_t i = 0; h[i] != 0 && h[i + 1] != 0; i += 2)
@@ -11673,11 +11673,11 @@ TEST (fruity_vocoder_round66_goldens)
         float v;
     };
     auto run = [&] (const std::vector<std::uint8_t>& state, const std::vector<Golden>& gold) {
-        const auto slot = lynx::effectFromFl ("Fruity Vocoder", state, 120.0);
-        CHECK (slot.has_value() && slot->kind == lynx::EffectKind::vocoder);
-        if (! slot || slot->kind != lynx::EffectKind::vocoder)
+        const auto slot = yw::effectFromFl ("Fruity Vocoder", state, 120.0);
+        CHECK (slot.has_value() && slot->kind == yw::EffectKind::vocoder);
+        if (! slot || slot->kind != yw::EffectKind::vocoder)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         for (int s = 0; s < N; s += 512)
@@ -11744,8 +11744,8 @@ TEST (fruity_waveshaper_and_soft_clipper)
         std::vector<float> l (inL), r (inR);
         for (int s = 0; s < 4096; s += 512)
         {
-            lynx::flshape::softClip (l.data() + s, 512, thr, post);
-            lynx::flshape::softClip (r.data() + s, 512, thr, post);
+            yw::flshape::softClip (l.data() + s, 512, thr, post);
+            yw::flshape::softClip (r.data() + s, 512, thr, post);
         }
         for (const auto& g : gold)
             CHECK (l[(std::size_t) g.i] == g.l && r[(std::size_t) g.i] == g.r);
@@ -11758,13 +11758,13 @@ TEST (fruity_waveshaper_and_soft_clipper)
                      { 3000, -1.21535313f, -0.849189103f }, { 4095, 0.319320858f, 0.754407823f } });
     {
         const std::vector<std::uint8_t> st { 64, 0, 0, 0, 140, 0, 0, 0 };
-        const auto slot = lynx::effectFromFl ("Fruity Soft Clipper", st, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::fruitySoftClipper);
+        const auto slot = yw::effectFromFl ("Fruity Soft Clipper", st, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::fruitySoftClipper);
         if (slot)
         {
-            const auto s = lynx::flshape::softClipperFromParams (slot->params.data());
+            const auto s = yw::flshape::softClipperFromParams (slot->params.data());
             CHECK (s.threshold == 64 && s.post == 140);
-            auto fx = lynx::makeEffect (*slot);
+            auto fx = yw::makeEffect (*slot);
             fx->prepare (44100.0);
             std::vector<float> l (inL), r (inR);
             fx->process (l.data(), r.data(), 4096, slot->params, 120.0);
@@ -11776,22 +11776,22 @@ TEST (fruity_waveshaper_and_soft_clipper)
     const auto stA = waveShaperTestState (150, 100, 120, false, true, 1, true, true);  // CENTER, ×2, HQ, smooth
     const auto stB = waveShaperTestState (100, 128, 128, true, false, 0, false, false); // unipolar
     const auto stC = waveShaperTestState (192, 90, 100, false, false, 2, false, false); // ×4
-    const auto pA = lynx::flshape::parseWaveShaper (stA);
+    const auto pA = yw::flshape::parseWaveShaper (stA);
     CHECK (pA && pA->points.size() == 5 && pA->pre == 150 && pA->center && pA->hq && pA->smooth && pA->oversampling == 1);
     if (pA)
     {
-        const auto T = lynx::flshape::shaperTable (pA->points, false);
+        const auto T = yw::flshape::shaperTable (pA->points, false);
         CHECK (T.size() == 16386 && T[1] == 3277 && T[1001] == 18824 && T[5001] == 26195 && T[9001] == 11469 && T[12001] == 24614
                && T[16384] == 32767 && T[0] == T[1]);
-        const auto U = lynx::flshape::shaperTable (pA->points, true);
+        const auto U = yw::flshape::shaperTable (pA->points, true);
         CHECK (U.size() == 32770 && U[1] == -26214 && U[1001] == -6408 && U[5001] == 17073 && U[9001] == 19551 && U[12001] == 14549);
     }
     auto shape = [&] (const std::vector<std::uint8_t>& st, bool render, std::initializer_list<Gold> gold) {
-        const auto s = lynx::flshape::parseWaveShaper (st);
+        const auto s = yw::flshape::parseWaveShaper (st);
         CHECK (s.has_value());
         if (! s)
             return;
-        lynx::flshape::WaveShaperEngine e;
+        yw::flshape::WaveShaperEngine e;
         e.setCurve (s->points);
         e.prepare (44100.0);
         e.setControls (s->pre, s->mix, s->post, s->oversampling, s->hq, s->smooth, s->center, s->unipolar, render);
@@ -11815,22 +11815,22 @@ TEST (fruity_waveshaper_and_soft_clipper)
                         { 3000, 0.0375693105f, -0.223787636f }, { 4095, 0.843308687f, 0.688474894f } });
 
     // the mixer effect from the FL import: controls as parameters, the curve in the slot's state; host blocks of any size
-    const auto slot = lynx::effectFromFl ("Fruity WaveShaper", stC, 120.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::fruityWaveShaper && slot->state == stC);
+    const auto slot = yw::effectFromFl ("Fruity WaveShaper", stC, 120.0);
+    CHECK (slot && slot->kind == yw::EffectKind::fruityWaveShaper && slot->state == stC);
     if (slot)
     {
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 1024, slot->params, 120.0);
         fx->process (l.data() + 1024, r.data() + 1024, 1024, slot->params, 120.0);
         fx->process (l.data() + 2048, r.data() + 2048, 2048, slot->params, 120.0);
         CHECK (close (l[1000], -0.445489585f) && close (r[2047], 0.942175806f) && close (l[4095], 0.200391173f));
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityWaveShaper, 3, slot->params[3], 120.0) == "x4");
+        CHECK (yw::formatEffectParam (yw::EffectKind::fruityWaveShaper, 3, slot->params[3], 120.0) == "x4");
     }
     // an unreadable state keeps the old approximation
-    CHECK (lynx::effectFromFl ("Fruity WaveShaper", { 1, 2, 3 }, 120.0)->kind == lynx::EffectKind::distortion);
-    CHECK (lynx::effectFromFl ("Fruity Soft Clipper", { 1, 2, 3 }, 120.0)->kind == lynx::EffectKind::distortion);
+    CHECK (yw::effectFromFl ("Fruity WaveShaper", { 1, 2, 3 }, 120.0)->kind == yw::EffectKind::distortion);
+    CHECK (yw::effectFromFl ("Fruity Soft Clipper", { 1, 2, 3 }, 120.0)->kind == yw::EffectKind::distortion);
 }
 
 // ---- Fruity Parametric EQ 2 / Fruity Parametric EQ (REA_rodada50) -----------------------------------------------------
@@ -11933,14 +11933,14 @@ TEST (pitch_shifter_exact)
     struct Gold { int i; float l, r; };
     // goldens: Pitch Shifter_x64.dll on the same states and signal (REA_rodada61)
     auto run = [&] (const std::vector<std::uint8_t>& st, int latency, std::initializer_list<Gold> gold) {
-        lynx::psfl::State s;
-        CHECK (st.size() == 75 && lynx::psfl::parsePitchShifter (st.data(), st.size(), s));
+        yw::psfl::State s;
+        CHECK (st.size() == 75 && yw::psfl::parsePitchShifter (st.data(), st.size(), s));
         // through the mixer effect: FL import → slot parameters → effect, odd host blocks
-        const auto slot = lynx::effectFromFl ("Pitch Shifter", st, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::flPitchShifter);
+        const auto slot = yw::effectFromFl ("Pitch Shifter", st, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::flPitchShifter);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         for (int i = 0, k = 0; i < 8192; ++k)
@@ -11961,7 +11961,7 @@ TEST (pitch_shifter_exact)
     run (pitchShifterTestState ({ -700, 0, 2, 2400, 6000, 300, 30, 20, 200, 40, 1, 65536, 0 }, 1, 0), 0,
          { { 1000, -0.0736689344f, -0.349420458f }, { 3000, 0.086801365f, 0.0471927896f }, { 5000, -0.0939825475f, 0.31712544f },
            { 7000, -0.28462702f, -0.437854528f }, { 8191, 0.138916701f, -0.0426892526f } });
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flPitchShifter, 0, 0.75f, 120.0) == "+6.00 st");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flPitchShifter, 0, 0.75f, 120.0) == "+6.00 st");
 }
 
 TEST (equo_exact)
@@ -11975,11 +11975,11 @@ TEST (equo_exact)
     struct Gold { int i; float l, r; };
     // goldens: EQUO_x64.dll run on the same states and signal (REA_rodada61 §5)
     auto run = [&] (const std::vector<std::uint8_t>& st, bool hq, bool ticks, std::initializer_list<Gold> gold) {
-        const auto s = lynx::equofx::parse (st);
+        const auto s = yw::equofx::parse (st);
         CHECK (s.has_value());
         if (! s)
             return;
-        lynx::equofx::Engine e;
+        yw::equofx::Engine e;
         e.prepare (44100.0, hq);
         e.set (*s);
         std::vector<float> l (inL), r (inR);
@@ -12011,30 +12011,30 @@ TEST (equo_exact)
     run (plain, false, true, { { 100, -0.0019897793f, -0.00981196482f }, { 1000, -1.09574401f, 0.83203429f }, { 2047, 0.839113712f, -0.691361725f } });
 
     // the mixer effect from the FL import: FL's state in the slot, the knobs in its parameters, any host block size
-    const auto slot = lynx::effectFromFl ("EQUO", plain, 140.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::equo && slot->state == plain);
+    const auto slot = yw::effectFromFl ("EQUO", plain, 140.0);
+    CHECK (slot && slot->kind == yw::EffectKind::equo && slot->state == plain);
     if (slot)
     {
-        auto back = *lynx::equofx::parse (plain);
-        lynx::equofx::applyParams (slot->params, back);
-        CHECK (back.knob == lynx::equofx::parse (plain)->knob && back.bandwidth == 150 && back.oversample == 0);
-        auto fx = lynx::makeEffect (*slot);
+        auto back = *yw::equofx::parse (plain);
+        yw::equofx::applyParams (slot->params, back);
+        CHECK (back.knob == yw::equofx::parse (plain)->knob && back.bandwidth == 150 && back.oversample == 0);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 700, slot->params, 0.0);
         fx->process (l.data() + 700, r.data() + 700, 3396, slot->params, 0.0);
         // the engine glides its bands per processing call, as FL does per host buffer: compare with the engine run on
         // the same 700 + 3396 split (sample 1000 differs from the single-call golden), and with the golden once settled
-        lynx::equofx::Engine ref;
+        yw::equofx::Engine ref;
         ref.prepare (44100.0, false);
-        ref.set (*lynx::equofx::parse (plain));
+        ref.set (*yw::equofx::parse (plain));
         std::vector<float> rl (inL), rr (inR);
         ref.process (rl.data(), rr.data(), 700);
         ref.process (rl.data() + 700, rr.data() + 700, 3396);
         CHECK (l == rl && rr == r && r[3000] == -0.0602950938f);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::equo, 4, slot->params[4], 120.0, slot->params).find ("dB") != std::string::npos);
+        CHECK (yw::formatEffectParam (yw::EffectKind::equo, 4, slot->params[4], 120.0, slot->params).find ("dB") != std::string::npos);
     }
-    CHECK (! lynx::equofx::parse (std::vector<std::uint8_t> (100, 0)).has_value());
+    CHECK (! yw::equofx::parse (std::vector<std::uint8_t> (100, 0)).has_value());
 }
 
 // Multiband Delay test state (version 7, our own LCG cells, no FL data; REA_rodada71 mbd/py/teststate.py builds the same bytes)
@@ -12071,12 +12071,12 @@ TEST (multiband_delay_exact)
     struct Gold { int i; float l, r; };
     // goldens: Multiband Delay_x64.dll (+ its engine_x64.dll) on the same states and signal, 512-frame blocks (REA_rodada71)
     auto run = [&] (const std::vector<std::uint8_t>& st, int latency, float tol, std::initializer_list<Gold> gold) {
-        CHECK (st.size() == 1795 && lynx::mbdelay::parse (st).has_value());
-        const auto slot = lynx::effectFromFl ("Multiband Delay", st, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::multibandDelay && slot->state == st);
+        CHECK (st.size() == 1795 && yw::mbdelay::parse (st).has_value());
+        const auto slot = yw::effectFromFl ("Multiband Delay", st, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::multibandDelay && slot->state == st);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         for (int i = 0, k = 0; i < 8192; ++k)
@@ -12103,17 +12103,17 @@ TEST (multiband_delay_exact)
            { 7000, 0.065563485f, -0.00765838847f }, { 8191, -0.0376662463f, -0.0434602089f } });
 
     const auto st = multibandDelayTestState ({ 2000, 0, 3000, 600, 1, 1, 3500, 64, 0, 1, 30000, 0 }, 777);
-    const auto s = *lynx::mbdelay::parse (st);
-    CHECK (lynx::mbdelay::parse (lynx::mbdelay::serialize (s))->raw == s.raw);
-    lynx::EffectParams p {};
-    lynx::mbdelay::toParams (s, p);
+    const auto s = *yw::mbdelay::parse (st);
+    CHECK (yw::mbdelay::parse (yw::mbdelay::serialize (s))->raw == s.raw);
+    yw::EffectParams p {};
+    yw::mbdelay::toParams (s, p);
     auto back = s;
-    lynx::mbdelay::applyParams (p, back);
+    yw::mbdelay::applyParams (p, back);
     CHECK (back.raw == s.raw);
-    CHECK (lynx::mbdelay::engineValue (s, 384 + 7) == (float) (192.0 / 256.0));
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::multibandDelay, 4, p[4], 120.0) == "steep");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::multibandDelay, 7, 1.0f, 120.0) == "100% wet");
-    CHECK (! lynx::mbdelay::parse (std::vector<std::uint8_t> (16, 0)).has_value());
+    CHECK (yw::mbdelay::engineValue (s, 384 + 7) == (float) (192.0 / 256.0));
+    CHECK (yw::formatEffectParam (yw::EffectKind::multibandDelay, 4, p[4], 120.0) == "steep");
+    CHECK (yw::formatEffectParam (yw::EffectKind::multibandDelay, 7, 1.0f, 120.0) == "100% wet");
+    CHECK (! yw::mbdelay::parse (std::vector<std::uint8_t> (16, 0)).has_value());
 }
 
 TEST (fruity_parametric_eq_exact)
@@ -12133,11 +12133,11 @@ TEST (fruity_parametric_eq_exact)
     const PeqTestBand bands1[7] = { { 3, 6000, 20000, 0, 0 }, { 5, 15000, 30000, 600, 0 }, { 6, 30000, 20000, -900, 0 },
                                     { 6, 35000, 25000, 0, 0 }, { 4, 40000, 10000, 0, 0 },  { 7, 50000, 30000, 450, 0 },
                                     { 1, 60000, 45000, 0, 0 } };
-    auto run = [&] (const std::optional<lynx::peqfl::Settings>& s, std::initializer_list<Gold> gold) {
+    auto run = [&] (const std::optional<yw::peqfl::Settings>& s, std::initializer_list<Gold> gold) {
         CHECK (s.has_value());
         if (! s)
             return;
-        lynx::peqfl::Engine e;
+        yw::peqfl::Engine e;
         e.set (*s);
         e.prepare (44100.0);
         std::vector<float> l (inL), r (inR);
@@ -12149,26 +12149,26 @@ TEST (fruity_parametric_eq_exact)
     const auto plain = peq2TestState (bands, 300, 0, 0x60, 0x7F);
     const auto hq = peq2TestState (bands, 300, 1, 0x60, 0x7F);
     const auto ext = peq2TestState (bands, 300, 1, 0x62, 0x7F);
-    run (lynx::peqfl::parsePeq2 (plain), { { 100, 0.1340574324131012f, -0.3040016293525696f }, { 1000, 0.28402701020240784f, -0.23813000321388245f },
+    run (yw::peqfl::parsePeq2 (plain), { { 100, 0.1340574324131012f, -0.3040016293525696f }, { 1000, 0.28402701020240784f, -0.23813000321388245f },
                                           { 2047, -0.9301530122756958f, 0.13881002366542816f }, { 3000, 0.2846762537956238f, 0.48893973231315613f },
                                           { 4095, -0.8481860756874084f, -0.2641225755214691f } });
-    run (lynx::peqfl::parsePeq2 (hq), { { 100, 0.19229719042778015f, 0.29938483238220215f }, { 1000, 0.12543821334838867f, -0.055617764592170715f },
+    run (yw::peqfl::parsePeq2 (hq), { { 100, 0.19229719042778015f, 0.29938483238220215f }, { 1000, 0.12543821334838867f, -0.055617764592170715f },
                                        { 2047, 1.0342068672180176f, 0.10901166498661041f }, { 3000, 0.12598788738250732f, -0.12920552492141724f },
                                        { 4095, 0.1619236022233963f, -0.23385579884052277f } });
-    run (lynx::peqfl::parsePeq2 (ext), { { 100, 1.2178642749786377f, -0.21160493791103363f }, { 1000, -0.8292768001556396f, -0.23916664719581604f },
+    run (yw::peqfl::parsePeq2 (ext), { { 100, 1.2178642749786377f, -0.21160493791103363f }, { 1000, -0.8292768001556396f, -0.23916664719581604f },
                                         { 2047, -0.7030635476112366f, -0.1978478729724884f }, { 3000, -0.8299900889396667f, 0.9836107492446899f },
                                         { 4095, 0.06754066050052643f, -0.34364908933639526f } });
-    run (lynx::peqfl::parsePeq2 (peq2TestState (bands, -250, 1, 0x60, 0x5B)), // bands 3 and 6 muted
+    run (yw::peqfl::parsePeq2 (peq2TestState (bands, -250, 1, 0x60, 0x5B)), // bands 3 and 6 muted
          { { 100, -0.02959616854786873f, 0.227821946144104f }, { 1000, 0.053224340081214905f, 0.06922465562820435f },
            { 2047, 0.3365536034107208f, -0.05899651721119881f }, { 3000, 0.053670305758714676f, -0.07452142238616943f },
            { 4095, -0.04406970739364624f, -0.12635089457035065f } });
-    run (lynx::peqfl::parsePeq1 (peq1TestState (bands1, 150)),
+    run (yw::peqfl::parsePeq1 (peq1TestState (bands1, 150)),
          { { 100, -0.6533108353614807f, -1.6903921365737915f }, { 1000, -4.313726902008057f, 5.973916053771973f },
            { 2047, 1.0222549438476562f, 4.427900314331055f }, { 3000, -4.310323238372803f, 7.825916767120361f },
            { 4095, 8.344571113586426f, -0.49086111783981323f } });
 
     // "alternative design" (Frequency Splitter's matched biquads), bit-exact
-    run (lynx::peqfl::parsePeq2 (peq2TestState (bands, 300, 3, 0x60, 0x7F)),
+    run (yw::peqfl::parsePeq2 (peq2TestState (bands, 300, 3, 0x60, 0x7F)),
          { { 100, -0.790181577205658f, -0.08691816031932831f }, { 1000, 0.4960691034793854f, -0.24172282218933105f },
            { 2047, -0.42601829767227173f, 0.027932533994317055f }, { 3000, 0.49674150347709656f, 1.0799059867858887f },
            { 4095, -0.35040369629859924f, -0.28149813413619995f } });
@@ -12176,7 +12176,7 @@ TEST (fruity_parametric_eq_exact)
     // is not replicated, so within 1e-6 of the DLL
     for (const bool hq : { false, true })
     {
-        const auto s = lynx::peqfl::parsePeq2 (peq2TestState (bands, hq ? -200 : 300, hq ? 1 : 0, 0x61, 0x7F));
+        const auto s = yw::peqfl::parsePeq2 (peq2TestState (bands, hq ? -200 : 300, hq ? 1 : 0, 0x61, 0x7F));
         CHECK (s && s->linearPhase);
         if (! s)
             continue;
@@ -12186,7 +12186,7 @@ TEST (fruity_parametric_eq_exact)
             l[(std::size_t) n] = (float) (((n * 37) % 200 - 100) / 60.0);
             r[(std::size_t) n] = (float) (((n * 53) % 170 - 85) / 50.0);
         }
-        lynx::peqfl::Engine e;
+        yw::peqfl::Engine e;
         e.set (*s);
         e.prepare (44100.0);
         CHECK (e.latencySamples() == 1536);
@@ -12211,15 +12211,15 @@ TEST (fruity_parametric_eq_exact)
     {
         const bool v1 = std::string (name) == "Fruity Parametric EQ";
         const auto st = v1 ? peq1TestState (bands1, 150) : ext;
-        const auto slot = lynx::effectFromFl (name, st, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::parametricEq && lynx::peq::flLaw (slot->params));
+        const auto slot = yw::effectFromFl (name, st, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::parametricEq && yw::peq::flLaw (slot->params));
         if (! slot)
             continue;
-        const auto back = lynx::peqfl::fromParams (slot->params);
-        const auto orig = v1 ? lynx::peqfl::parsePeq1 (st) : lynx::peqfl::parsePeq2 (st);
+        const auto back = yw::peqfl::fromParams (slot->params);
+        const auto orig = v1 ? yw::peqfl::parsePeq1 (st) : yw::peqfl::parsePeq2 (st);
         CHECK (back.freq == orig->freq && back.gain == orig->gain && back.width == orig->width && back.type == orig->type
                && back.order == orig->order && back.main == orig->main && back.processing == orig->processing && back.mask == orig->mask);
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         CHECK (fx->latencySamples() == (v1 ? 0 : 44));
         std::vector<float> l (inL), r (inR);
@@ -12230,20 +12230,20 @@ TEST (fruity_parametric_eq_exact)
         else
             CHECK (l[1000] == -0.8292768001556396f && r[3000] == 0.9836107492446899f && l[4095] == 0.06754066050052643f);
         // editor texts and graph
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::parametricEq, lynx::peq::slopeParam, slot->params[lynx::peq::slopeParam], 120.0, slot->params)
+        CHECK (yw::formatEffectParam (yw::EffectKind::parametricEq, yw::peq::slopeParam, slot->params[yw::peq::slopeParam], 120.0, slot->params)
                == (v1 ? "12 dB/oct" : "Steep 8"));
-        CHECK (lynx::peq::widthText (slot->params, 0).rfind ("BW ", 0) == 0);
-        const auto lowCutDb = lynx::peq::responseDb (slot->params, 44100.0, 25.0), midDb = lynx::peq::responseDb (slot->params, 44100.0, 1000.0);
+        CHECK (yw::peq::widthText (slot->params, 0).rfind ("BW ", 0) == 0);
+        const auto lowCutDb = yw::peq::responseDb (slot->params, 44100.0, 25.0), midDb = yw::peq::responseDb (slot->params, 44100.0, 1000.0);
         CHECK (lowCutDb < midDb - 5.0); // high pass below ~100 Hz (Steep 8 in the EQ 2 state, 12 dB/oct in v1)
     }
-    // a native LYNX EQ is untouched by the FL law
-    CHECK (! lynx::peq::flLaw (lynx::makeEffectSlot (lynx::EffectKind::parametricEq).params));
+    // a native YW EQ is untouched by the FL law
+    CHECK (! yw::peq::flLaw (yw::makeEffectSlot (yw::EffectKind::parametricEq).params));
 }
 
 TEST (fruity_panomatic_balance_blood_overdrive)
 {
     // REA_rodada58: goldens from the installation's DLLs (EXEC) on our own states, 44.1 kHz, blocks of 512
-    const lynx::ScopedFlushDenormals ftz;
+    const yw::ScopedFlushDenormals ftz;
     std::vector<float> inL (4096), inR (4096);
     for (int n = 0; n < 4096; ++n)
     {
@@ -12264,9 +12264,9 @@ TEST (fruity_panomatic_balance_blood_overdrive)
         return b;
     };
 
-    // PanOMatic: the engine started as LYNX starts it (one silent frame, then FL's flush), and from silence (fade-in)
-    auto pom = [&] (lynx::flbasic::PanOMaticState s, bool prime, std::initializer_list<Gold> gold) {
-        lynx::flbasic::PanOMaticEngine e;
+    // PanOMatic: the engine started as YW starts it (one silent frame, then FL's flush), and from silence (fade-in)
+    auto pom = [&] (yw::flbasic::PanOMaticState s, bool prime, std::initializer_list<Gold> gold) {
+        yw::flbasic::PanOMaticEngine e;
         e.prepare (44100);
         e.set (s);
         if (prime)
@@ -12284,8 +12284,8 @@ TEST (fruity_panomatic_balance_blood_overdrive)
                                                 { 3000, -1.59167564f, -0.591367304f }, { 4095, 0.268362761f, 0.537029684f } });
 
     // Balance: flushed and from silence
-    auto bal = [&] (lynx::flbasic::BalanceState s, bool flush, std::initializer_list<Gold> gold) {
-        lynx::flbasic::BalanceEngine e;
+    auto bal = [&] (yw::flbasic::BalanceState s, bool flush, std::initializer_list<Gold> gold) {
+        yw::flbasic::BalanceEngine e;
         e.prepare (44100);
         e.set (s);
         if (flush)
@@ -12302,7 +12302,7 @@ TEST (fruity_panomatic_balance_blood_overdrive)
 
     // Blood Overdrive: rate first, then the state (its smoothers settle for one second of samples)
     auto od = [&] (std::array<int, 6> raw, std::initializer_list<Gold> gold) {
-        lynx::flbasic::BloodOverdriveEngine e;
+        yw::flbasic::BloodOverdriveEngine e;
         e.start (44100, { raw });
         std::vector<float> l (inL), r (inR);
         for (int i = 0; i < 4096; i += 512)
@@ -12314,12 +12314,12 @@ TEST (fruity_panomatic_balance_blood_overdrive)
                                                { 4095, 0.0402069278f, 0.0499244779f } });
 
     // the mixer effects from the FL import: controls as parameters; host blocks of any size
-    auto viaImport = [&] (const char* plugin, const std::vector<std::uint8_t>& st, lynx::EffectKind kind, std::initializer_list<Gold> gold) {
-        const auto slot = lynx::effectFromFl (plugin, st, 120.0);
+    auto viaImport = [&] (const char* plugin, const std::vector<std::uint8_t>& st, yw::EffectKind kind, std::initializer_list<Gold> gold) {
+        const auto slot = yw::effectFromFl (plugin, st, 120.0);
         CHECK (slot && slot->kind == kind);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 1024, slot->params, 120.0);
@@ -12327,33 +12327,33 @@ TEST (fruity_panomatic_balance_blood_overdrive)
         fx->process (l.data() + 2048, r.data() + 2048, 2048, slot->params, 120.0);
         check (l, r, gold);
     };
-    viaImport ("Fruity PanOMatic", st32 ({ 40, 300, 2, 1, 128, 50000 }), lynx::EffectKind::fruityPanOMatic,
+    viaImport ("Fruity PanOMatic", st32 ({ 40, 300, 2, 1, 128, 50000 }), yw::EffectKind::fruityPanOMatic,
                { { 1000, -1.78870034f, 0.778897762f }, { 4095, 0.268305063f, 0.851258814f } });
-    viaImport ("Fruity Balance", st32 ({ 0, 256 }), lynx::EffectKind::fruityBalance,
+    viaImport ("Fruity Balance", st32 ({ 0, 256 }), yw::EffectKind::fruityBalance,
                { { 100, 0.0f, -1.10000002f }, { 1000, -1.66666663f, 0.899999976f }, { 4095, 0.25f, 0.600000024f } });
-    viaImport ("Fruity Blood Overdrive", st32 ({ 3, 0, 5000, 2578, 1, 0, 2911, 0, 0 }), lynx::EffectKind::fruityBloodOverdrive,
+    viaImport ("Fruity Blood Overdrive", st32 ({ 3, 0, 5000, 2578, 1, 0, 2911, 0, 0 }), yw::EffectKind::fruityBloodOverdrive,
                { { 100, -0.122698173f, 0.0206716377f }, { 2047, 0.0128381588f, -0.0274834726f }, { 4095, -0.0899387598f, -0.121109024f } });
     {
-        const auto slot = lynx::effectFromFl ("Fruity PanOMatic", st32 ({ 119, 256, 1, 2, 64, 27500 }), 120.0);
-        CHECK (slot && lynx::flbasic::panOMaticFromParams (slot->params.data()).pan == 119
-               && lynx::flbasic::panOMaticFromParams (slot->params.data()).target == 2);
+        const auto slot = yw::effectFromFl ("Fruity PanOMatic", st32 ({ 119, 256, 1, 2, 64, 27500 }), 120.0);
+        CHECK (slot && yw::flbasic::panOMaticFromParams (slot->params.data()).pan == 119
+               && yw::flbasic::panOMaticFromParams (slot->params.data()).target == 2);
         if (slot)
         {
-            CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPanOMatic, 2, slot->params[2], 120.0) == "Triangle");
-            CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPanOMatic, 1, slot->params[1], 120.0) == "+0.0 dB");
+            CHECK (yw::formatEffectParam (yw::EffectKind::fruityPanOMatic, 2, slot->params[2], 120.0) == "Triangle");
+            CHECK (yw::formatEffectParam (yw::EffectKind::fruityPanOMatic, 1, slot->params[1], 120.0) == "+0.0 dB");
         }
     }
     // unreadable states keep the old approximations
-    CHECK (lynx::effectFromFl ("Fruity PanOMatic", { 1, 2, 3 }, 120.0)->kind == lynx::EffectKind::utility);
-    CHECK (lynx::effectFromFl ("Fruity Balance", { 1, 2, 3 }, 120.0)->kind == lynx::EffectKind::utility);
-    CHECK (lynx::effectFromFl ("Fruity Blood Overdrive", { 1, 2, 3 }, 120.0)->kind == lynx::EffectKind::distortion);
+    CHECK (yw::effectFromFl ("Fruity PanOMatic", { 1, 2, 3 }, 120.0)->kind == yw::EffectKind::utility);
+    CHECK (yw::effectFromFl ("Fruity Balance", { 1, 2, 3 }, 120.0)->kind == yw::EffectKind::utility);
+    CHECK (yw::effectFromFl ("Fruity Blood Overdrive", { 1, 2, 3 }, 120.0)->kind == yw::EffectKind::distortion);
 }
 
 TEST (fruity_fast_lp_free_filter_filter)
 {
     // REA_rodada63: goldens from the installation's DLLs (EXEC) on our own states, 44.1 kHz, blocks of 512 (the wrapper
     // splits the host blocks below into calls of 512, as the DLL ran)
-    const lynx::ScopedFlushDenormals ftz;
+    const yw::ScopedFlushDenormals ftz;
     std::vector<float> inL (4096), inR (4096);
     for (int n = 0; n < 4096; ++n)
     {
@@ -12367,12 +12367,12 @@ TEST (fruity_fast_lp_free_filter_filter)
             b.push_back ((std::uint8_t) std::strtol (std::string (p, 2).c_str(), nullptr, 16));
         return b;
     };
-    auto viaImport = [&] (const char* plugin, const char* hex, lynx::EffectKind kind, std::initializer_list<Gold> gold) {
-        const auto slot = lynx::effectFromFl (plugin, state (hex), 120.0);
+    auto viaImport = [&] (const char* plugin, const char* hex, yw::EffectKind kind, std::initializer_list<Gold> gold) {
+        const auto slot = yw::effectFromFl (plugin, state (hex), 120.0);
         CHECK (slot && slot->kind == kind);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 1024, slot->params, 120.0);
@@ -12381,7 +12381,7 @@ TEST (fruity_fast_lp_free_filter_filter)
         for (const auto& g : gold)
             CHECK (l[(std::size_t) g.i] == g.l && r[(std::size_t) g.i] == g.r);
     };
-    using K = lynx::EffectKind;
+    using K = yw::EffectKind;
     viaImport ("Fruity Fast LP", "01000000e0010000bc020000", K::fruityFastLP,
                { { 100, -2.876206159591675f, 1.5413906574249268f }, { 1000, 0.12972253561019897f, 0.02936629205942154f },
                  { 2047, -0.2262123078107834f, -0.15169914066791534f }, { 3000, 0.12972258031368256f, -0.0798468142747879f },
@@ -12412,20 +12412,20 @@ TEST (fruity_fast_lp_free_filter_filter)
                  { 4095, -0.14230486750602722f, -0.22842440009117126f } });
     // an old Free Filter layout (type·10) is converted to the current scale; parameter texts
     {
-        const auto slot = lynx::effectFromFl ("Fruity Free Filter", state ("010000003c00000000020000a9000000a4020000"), 120.0);
+        const auto slot = yw::effectFromFl ("Fruity Free Filter", state ("010000003c00000000020000a9000000a4020000"), 120.0);
         CHECK (slot && slot->kind == K::fruityFreeFilter);
         if (slot)
         {
-            CHECK (lynx::flfilter::freeFilterFromParams (slot->params.data()).type == 100 + (int) std::nearbyint (5.5 / 7.0 * 600.0));
-            CHECK (lynx::formatEffectParam (K::fruityFreeFilter, 0, slot->params[0], 120.0) == "Peaking");
+            CHECK (yw::flfilter::freeFilterFromParams (slot->params.data()).type == 100 + (int) std::nearbyint (5.5 / 7.0 * 600.0));
+            CHECK (yw::formatEffectParam (K::fruityFreeFilter, 0, slot->params[0], 120.0) == "Peaking");
         }
-        CHECK (lynx::formatEffectParam (K::fruityFreeFilter, 1, 1.0f, 120.0) == "16000 Hz");
-        CHECK (lynx::formatEffectParam (K::fruityFilter, 0, 1.0f, 120.0) == "7350 Hz");
+        CHECK (yw::formatEffectParam (K::fruityFreeFilter, 1, 1.0f, 120.0) == "16000 Hz");
+        CHECK (yw::formatEffectParam (K::fruityFilter, 0, 1.0f, 120.0) == "7350 Hz");
     }
     // unreadable states keep the old approximations
-    CHECK (lynx::effectFromFl ("Fruity Fast LP", { 1, 2, 3 }, 120.0)->kind == K::filter);
-    CHECK (lynx::effectFromFl ("Fruity Free Filter", { 1, 2, 3 }, 120.0)->kind == K::filter);
-    CHECK (lynx::effectFromFl ("Fruity Filter", { 9, 0, 0, 0 }, 120.0)->kind == K::filter);
+    CHECK (yw::effectFromFl ("Fruity Fast LP", { 1, 2, 3 }, 120.0)->kind == K::filter);
+    CHECK (yw::effectFromFl ("Fruity Free Filter", { 1, 2, 3 }, 120.0)->kind == K::filter);
+    CHECK (yw::effectFromFl ("Fruity Filter", { 9, 0, 0, 0 }, 120.0)->kind == K::filter);
 }
 
 // ---- Sytrus (REA_rodada31) -------------------------------------------------------------------------------------------
@@ -12560,10 +12560,10 @@ struct SytrusTestPatch
 std::pair<std::vector<float>, std::vector<float>> sytrusRender (const std::vector<std::uint8_t>& blob, bool renderMode, int n,
                                                                 std::vector<std::array<int, 3>> notes, double fs = 44100.0)
 {
-    lynx::sytrus::Engine e;
+    yw::sytrus::Engine e;
     e.setTempo (120.0);
     e.prepare (fs, renderMode, 512);
-    e.setPatch (lynx::sytrus::parsePatch (blob));
+    e.setPatch (yw::sytrus::parsePatch (blob));
     std::vector<float> l ((std::size_t) n), r ((std::size_t) n);
     for (int n0 = 0; n0 < n; n0 += 512)
     {
@@ -12571,7 +12571,7 @@ std::pair<std::vector<float>, std::vector<float>> sytrusRender (const std::vecto
         {
             if (notes[k][1] >= n0 && notes[k][1] < n0 + 512)
             {
-                lynx::sytrus::NoteParams p;
+                yw::sytrus::NoteParams p;
                 p.key = (float) notes[k][0];
                 p.id = (std::int64_t) k + 1;
                 e.noteOn (p);
@@ -12591,11 +12591,11 @@ TEST (sytrus_engine_sine)
     SytrusTestPatch t;
     t.cell (0, 0, 8, 256);
     const auto blob = t.blob();
-    CHECK (lynx::sytrus::stateUsable (blob));
-    CHECK (lynx::sytrus::parsePatch (blob) != nullptr);
+    CHECK (yw::sytrus::stateUsable (blob));
+    CHECK (yw::sytrus::parsePatch (blob) != nullptr);
     auto broken = blob;
     broken.resize (broken.size() / 2);
-    CHECK (! lynx::sytrus::stateUsable (broken));
+    CHECK (! yw::sytrus::stateUsable (broken));
     const auto [l, r] = sytrusRender (blob, false, 8192, { { 60, 0, 4096 } });
     double worst = 0.0;
     for (int k = 0; k < 4000; ++k)
@@ -12654,13 +12654,13 @@ TEST (sytrus_engine_reference)
 
 TEST (sytrus_instrument)
 {
-    // the LYNX instrument: state in ChannelDef::pluginState, channel volume/pan recovered from the rack gains
+    // the YW instrument: state in ChannelDef::pluginState, channel volume/pan recovered from the rack gains
     SytrusTestPatch t;
     t.cell (0, 0, 8, 256);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sytrus;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sytrus;
     c.pluginState = t.blob();
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::sytrus);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::sytrus);
     inst->prepare (44100.0);
     inst->configure (c, 120.0);
     CHECK (inst->idle());
@@ -12691,7 +12691,7 @@ TEST (harmor_installation_presets)
     if (! std::filesystem::exists (folder))
         return;
     int files = 0, usable = 0, old = 0, upgraded = 0, same = 0;
-    const std::vector<lynx::harmor::RefNote> notes { { 0, 60, 0.8, 1.0, 0.0, 3000 } };
+    const std::vector<yw::harmor::RefNote> notes { { 0, 60, 0.8, 1.0, 0.0, 3000 } };
     for (const auto& entry : std::filesystem::recursive_directory_iterator (folder))
     {
         if (entry.path().extension() != ".fst")
@@ -12709,21 +12709,21 @@ TEST (harmor_installation_presets)
         {
         }
         ++files;
-        usable += lynx::harmorStateUsable (st);
+        usable += yw::harmorStateUsable (st);
         std::uint32_t v = 0;
         if (st.size() >= 4)
             std::memcpy (&v, st.data(), 4);
         if ((v > 0xffff ? v >> 16 : v) >= 16)
             continue;
         ++old;
-        const auto up = lynx::harmorUpgradeState (st);
+        const auto up = yw::harmorUpgradeState (st);
         if (! up)
             continue;
         std::uint32_t uv = 0;
         std::memcpy (&uv, up->data(), 4);
-        upgraded += uv == 0x130003u && lynx::harmorParamOffset (*up, 0, 34) > 0 && lynx::harmorStateUsable (*up);
+        upgraded += uv == 0x130003u && yw::harmorParamOffset (*up, 0, 34) > 0 && yw::harmorStateUsable (*up);
         if (old <= 6) // (a few: rendering is the slow part)
-            same += lynx::harmor::renderReference (st, notes, 44100.0, 4096) == lynx::harmor::renderReference (*up, notes, 44100.0, 4096);
+            same += yw::harmor::renderReference (st, notes, 44100.0, 4096) == yw::harmor::renderReference (*up, notes, 44100.0, 4096);
         else
             ++same;
     }
@@ -12735,11 +12735,11 @@ TEST (harmor_installation_presets)
     if (file.empty())
         return;
     auto st = flp::parseProject (file, true).channels.at (0).pluginState;
-    const auto a = lynx::harmor::renderReference (st, notes, 44100.0, 4096);
+    const auto a = yw::harmor::renderReference (st, notes, 44100.0, 4096);
     const std::int32_t zero = 0;
     for (int part = 0; part < 2; ++part)
-        std::memcpy (st.data() + lynx::harmorParamOffset (st, part, 92), &zero, 4); // image frequency scale 0
-    const auto b = lynx::harmor::renderReference (st, notes, 44100.0, 4096);
+        std::memcpy (st.data() + yw::harmorParamOffset (st, part, 92), &zero, 4); // image frequency scale 0
+    const auto b = yw::harmor::renderReference (st, notes, 44100.0, 4096);
     CHECK (a.size() == b.size() && a != b);
 }
 
@@ -12747,16 +12747,16 @@ TEST (harmor_image)
 {
     // REA_rodada75: image synthesis — a looping 6-column image (gain + frequency planes) read at a speed, cubic gain and
     // linear frequency interpolation, Hz frequency mode, formant shift — against our reference model (r75 imgm.py);
-    // since flbeta165h LYNX's own values: the test state plays at precision "Average" (global misc +28 = 0), whose
+    // since flbeta165h YW's own values: the test state plays at precision "Average" (global misc +28 = 0), whose
     // IPP 11-bit Exp/Ln (REA_rodada165g-flbeta165h §3) the model computes exactly
     const auto blob = harmorTestState (false, true);
-    if (const char* dump = std::getenv ("LYNX_DUMP_HARMOR_IMAGE"))
+    if (const char* dump = std::getenv ("YW_DUMP_HARMOR_IMAGE"))
         std::ofstream (dump, std::ios::binary).write ((const char*) blob.data(), (std::streamsize) blob.size());
-    CHECK (lynx::harmorStateUsable (blob));
-    CHECK (lynx::harmorFallbacks (blob).empty()); // (the image is modelled)
-    const auto ref = lynx::harmor::renderReference (blob, { { 0, 60, 0.78125, 1.0, 0.0, 6144 }, { 2000, 64, 0.6, 1.0, 0.0, 7000 } }, 44100.0, 8192);
+    CHECK (yw::harmorStateUsable (blob));
+    CHECK (yw::harmorFallbacks (blob).empty()); // (the image is modelled)
+    const auto ref = yw::harmor::renderReference (blob, { { 0, 60, 0.78125, 1.0, 0.0, 6144 }, { 2000, 64, 0.6, 1.0, 0.0, 7000 } }, 44100.0, 8192);
     CHECK (ref.size() == 2 * 8192);
-    if (std::getenv ("LYNX_PRINT_HARMOR_IMAGE") != nullptr)
+    if (std::getenv ("YW_PRINT_HARMOR_IMAGE") != nullptr)
         for (int i : { 100, 1000, 2500, 3000, 5000, 6500, 8191 })
             std::printf ("harmor image %d %.8g %.8g\n", i, (double) ref[2 * (std::size_t) i], (double) ref[2 * (std::size_t) i + 1]);
     const std::tuple<int, float, float> golden[] {
@@ -12768,10 +12768,10 @@ TEST (harmor_image)
     // the image changes the sound: without it (gain mix 0, frequency scale 0) the same notes render differently
     auto plain = blob;
     const std::int32_t zero = 0;
-    std::memcpy (plain.data() + lynx::harmorParamOffset (plain, 0, 89), &zero, 4);
-    std::memcpy (plain.data() + lynx::harmorParamOffset (plain, 0, 92), &zero, 4);
-    std::memcpy (plain.data() + lynx::harmorParamOffset (plain, 0, 94), &zero, 4);
-    const auto ref0 = lynx::harmor::renderReference (plain, { { 0, 60, 0.78125, 1.0, 0.0, 6144 }, { 2000, 64, 0.6, 1.0, 0.0, 7000 } }, 44100.0, 8192);
+    std::memcpy (plain.data() + yw::harmorParamOffset (plain, 0, 89), &zero, 4);
+    std::memcpy (plain.data() + yw::harmorParamOffset (plain, 0, 92), &zero, 4);
+    std::memcpy (plain.data() + yw::harmorParamOffset (plain, 0, 94), &zero, 4);
+    const auto ref0 = yw::harmor::renderReference (plain, { { 0, 60, 0.78125, 1.0, 0.0, 6144 }, { 2000, 64, 0.6, 1.0, 0.0, 7000 } }, 44100.0, 8192);
     double diff = 0.0, energy = 0.0;
     for (std::size_t i = 0; i < ref.size(); ++i)
         diff += (double) (ref[i] - ref0[i]) * (ref[i] - ref0[i]), energy += (double) ref[i] * ref[i];
@@ -12786,17 +12786,17 @@ TEST (harmor_image)
         if (it != resyn.end())
             *(it + 4) = 1;
     }
-    const auto fb = lynx::harmorFallbacks (resyn);
+    const auto fb = yw::harmorFallbacks (resyn);
     CHECK (std::any_of (fb.begin(), fb.end(), [] (const std::string& f) { return f.find ("resynthesis") != std::string::npos; }));
 }
 
 TEST (harmor_round75_features)
 {
     // REA_rodada75: arpeggio markers, noise resonance, pluck blur mode, pluck blend, harmonic randomness, phaser and
-    // harmonizer masks — LYNX's engine against our reference model (r75 hmodel.py, the Mersenne Twister seeded like LYNX's);
-    // since flbeta165h LYNX's own values: the test state plays at precision "Average", whose IPP 11-bit Exp/Ln
+    // harmonizer masks — YW's engine against our reference model (r75 hmodel.py, the Mersenne Twister seeded like YW's);
+    // since flbeta165h YW's own values: the test state plays at precision "Average", whose IPP 11-bit Exp/Ln
     // (REA_rodada165g-flbeta165h §3) the model computes exactly
-    const std::vector<lynx::harmor::RefNote> chord { { 0, 60, 0.8, 1.0, 0.0, 9000 }, { 1500, 64, 0.7, 1.0, 0.0, 9500 }, { 3000, 67, 0.9, 1.0, 0.0, 10000 } };
+    const std::vector<yw::harmor::RefNote> chord { { 0, 60, 0.8, 1.0, 0.0, 9000 }, { 1500, 64, 0.7, 1.0, 0.0, 9500 }, { 3000, 67, 0.9, 1.0, 0.0, 10000 } };
     struct Case { int features; std::array<std::tuple<int, float, float>, 4> golden; };
     const Case cases[] {
         { 1, { { { 2000, 0.0032625794f, -0.0014364491f }, { 4500, 0.10464316f, 0.026205163f }, { 7000, -0.0024230368f, 0.0036458215f }, { 11000, -0.0029985344f, -0.0030873856f } } } },
@@ -12809,12 +12809,12 @@ TEST (harmor_round75_features)
     for (const auto& c : cases)
     {
         const auto blob = harmorTestState (false, false, c.features);
-        if (const char* dump = std::getenv ("LYNX_DUMP_HARMOR_R75"))
+        if (const char* dump = std::getenv ("YW_DUMP_HARMOR_R75"))
             std::ofstream (std::string (dump) + std::to_string (c.features) + ".bin", std::ios::binary).write ((const char*) blob.data(), (std::streamsize) blob.size());
-        CHECK (lynx::harmorStateUsable (blob));
-        CHECK (lynx::harmorFallbacks (blob).empty());
-        const auto ref = lynx::harmor::renderReference (blob, chord, 44100.0, 12000);
-        if (std::getenv ("LYNX_PRINT_HARMOR_R75") != nullptr)
+        CHECK (yw::harmorStateUsable (blob));
+        CHECK (yw::harmorFallbacks (blob).empty());
+        const auto ref = yw::harmor::renderReference (blob, chord, 44100.0, 12000);
+        if (std::getenv ("YW_PRINT_HARMOR_R75") != nullptr)
             for (int i : { 2000, 4500, 7000, 11000 })
                 std::printf ("harmor r75 %d %d %.8g %.8g\n", c.features, i, (double) ref[2 * (std::size_t) i], (double) ref[2 * (std::size_t) i + 1]);
         for (const auto& [i, gl, gr] : c.golden)
@@ -12829,7 +12829,7 @@ TEST (sytrus_main_settings)
     t.cell (0, 0, 8, 256);
     t.main[173] = 3;
     const auto blob = t.blob();
-    const auto& S = lynx::sytrus::settings();
+    const auto& S = yw::sytrus::settings();
     auto find = [&] (const char* name) {
         for (int i = 0; i < (int) S.size(); ++i)
             if (std::string (S[(std::size_t) i].name) == name)
@@ -12842,18 +12842,18 @@ TEST (sytrus_main_settings)
     const int out1 = find ("Op 1 out"), fm21 = find ("FM op 2 to op 1"), rm3f2 = find ("RM op 3 to filter 2");
     CHECK (out1 >= 0 && fm21 >= 0 && rm3f2 >= 0 && find ("RM op 1 pan") < 0);
     CHECK (out1 >= 0 && S[(std::size_t) out1].index == 3 + 8 && S[(std::size_t) rm3f2].index == 3 + 81 + 9 * 7 + 2);
-    CHECK (lynx::sytrus::settingValue (blob, out1) == 256 && lynx::sytrus::settingValue (blob, fm21) == 0);
-    CHECK (lynx::sytrus::settingValue (blob, master) == 128 && lynx::sytrus::settingValue (blob, unison) == 3);
-    CHECK (lynx::sytrus::settingValue (blob, porta) == 0 && lynx::sytrus::settingValue (blob, find ("Mod X")) == 256);
-    CHECK (! lynx::sytrus::settingValue (blob, -1) && ! lynx::sytrus::settingValue (blob, (int) S.size()));
+    CHECK (yw::sytrus::settingValue (blob, out1) == 256 && yw::sytrus::settingValue (blob, fm21) == 0);
+    CHECK (yw::sytrus::settingValue (blob, master) == 128 && yw::sytrus::settingValue (blob, unison) == 3);
+    CHECK (yw::sytrus::settingValue (blob, porta) == 0 && yw::sytrus::settingValue (blob, find ("Mod X")) == 256);
+    CHECK (! yw::sytrus::settingValue (blob, -1) && ! yw::sytrus::settingValue (blob, (int) S.size()));
     auto broken = blob;
     broken.resize (broken.size() / 2);
-    CHECK (! lynx::sytrus::settingValue (broken, master) && ! lynx::sytrus::setSetting (broken, master, 64));
+    CHECK (! yw::sytrus::settingValue (broken, master) && ! yw::sytrus::setSetting (broken, master, 64));
 
     // master level 64: gain (11^(64/128) − 1)/10 instead of 1 (REA_rodada11 §1.3); the state stays readable
     auto quiet = blob;
-    CHECK (lynx::sytrus::setSetting (quiet, master, 64) && lynx::sytrus::stateUsable (quiet));
-    CHECK (lynx::sytrus::settingValue (quiet, master) == 64 && lynx::sytrus::settingValue (quiet, unison) == 3);
+    CHECK (yw::sytrus::setSetting (quiet, master, 64) && yw::sytrus::stateUsable (quiet));
+    CHECK (yw::sytrus::settingValue (quiet, master) == 64 && yw::sytrus::settingValue (quiet, unison) == 3);
     CHECK (quiet[0] == blob[0] && quiet[1] == blob[1]); // version word kept
     const auto [l1, r1] = sytrusRender (blob, false, 4096, { { 60, 0, -1 } });
     const auto [l2, r2] = sytrusRender (quiet, false, 4096, { { 60, 0, -1 } });
@@ -12866,13 +12866,13 @@ TEST (sytrus_main_settings)
 
     // clamped to the control's range; PORTA is the flag byte the engine reads
     auto edited = blob;
-    CHECK (lynx::sytrus::setSetting (edited, unison, 42) && lynx::sytrus::settingValue (edited, unison) == 9);
-    CHECK (lynx::sytrus::setSetting (edited, porta, 1) && lynx::sytrus::settingValue (edited, porta) == 1);
-    CHECK (lynx::sytrus::setSetting (edited, live, 2) && lynx::sytrus::settingValue (edited, live) == 2);
-    CHECK (lynx::sytrus::parsePatch (edited) != nullptr);
+    CHECK (yw::sytrus::setSetting (edited, unison, 42) && yw::sytrus::settingValue (edited, unison) == 9);
+    CHECK (yw::sytrus::setSetting (edited, porta, 1) && yw::sytrus::settingValue (edited, porta) == 1);
+    CHECK (yw::sytrus::setSetting (edited, live, 2) && yw::sytrus::settingValue (edited, live) == 2);
+    CHECK (yw::sytrus::parsePatch (edited) != nullptr);
     // a matrix cell: op 2 modulates op 1 (FM), clamped to ±256; the patch stays playable
-    CHECK (lynx::sytrus::setSetting (edited, fm21, 999) && lynx::sytrus::settingValue (edited, fm21) == 256);
-    CHECK (lynx::sytrus::settingValue (edited, out1) == 256 && lynx::sytrus::parsePatch (edited) != nullptr);
+    CHECK (yw::sytrus::setSetting (edited, fm21, 999) && yw::sytrus::settingValue (edited, fm21) == 256);
+    CHECK (yw::sytrus::settingValue (edited, out1) == 256 && yw::sytrus::parsePatch (edited) != nullptr);
 }
 
 TEST (harmor_effects_rack)
@@ -12881,11 +12881,11 @@ TEST (harmor_effects_rack)
     // amount at 1000 every record output bypasses a reverb placed before unit 4 (EXEC: −600 dB vs the rack off)
     auto blob = harmorTestState (false);
     auto set = [&] (std::vector<std::uint8_t>& st, int part, int index, std::int32_t v) {
-        std::memcpy (st.data() + lynx::harmorParamOffset (st, part, index), &v, 4);
+        std::memcpy (st.data() + yw::harmorParamOffset (st, part, index), &v, 4);
     };
     set (blob, 0, 10, 1000); // all to the FX send
     auto render = [] (const std::vector<std::uint8_t>& st) {
-        return lynx::harmor::renderReference (st, { { 0, 60, 0.8, 1.0, 0.0, 6000 } }, 44100.0, 12000);
+        return yw::harmor::renderReference (st, { { 0, 60, 0.8, 1.0, 0.0, 6000 } }, 44100.0, 12000);
     };
     const auto dry = render (blob);
     auto rev = blob;
@@ -12910,17 +12910,17 @@ TEST (harmor_effects_rack)
     // a distortion (type 6) and a delay on the dry path change the sound, stay finite, and the instrument ends quiet
     auto dist = harmorTestState (false);
     {
-        const auto at = lynx::harmorParamOffset (dist, -1, 0) + 0xd4 + 0x18 + 48; // global misc +48: distortion type
+        const auto at = yw::harmorParamOffset (dist, -1, 0) + 0xd4 + 0x18 + 48; // global misc +48: distortion type
         const std::int32_t six = 6;
         std::memcpy (dist.data() + at, &six, 4);
     }
     set (dist, -1, 17, 600), set (dist, -1, 19, 1000), set (dist, -1, 21, 1100);
     set (dist, -1, 39, 1), set (dist, -1, 40, 2), set (dist, -1, 41, 400), set (dist, -1, 42, 96), set (dist, -1, 44, 800);
     set (dist, -1, 47, 1050);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::harmor;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::harmor;
     c.pluginState = dist;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::harmor);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::harmor);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (44100 * 4), r (l.size());
@@ -12966,23 +12966,23 @@ TEST (harmless_engine)
         std::memcpy (&bits, &f, 4);
         put ((std::int32_t) bits);
     }
-    const auto parsed = lynx::harmlessParams (blob);
-    CHECK (parsed && (int) parsed->size() == lynx::harmlessParamCount);
-    CHECK (parsed && (*parsed)[54] == 3500.0f && (*parsed)[99] == 0.0f && (*parsed)[lynx::harmlessCustomFlagIndex] == 1.0f);
-    CHECK (parsed && (*parsed)[lynx::harmlessCustomIndex + 1] == 0.5f && (*parsed)[lynx::harmlessCustomIndex + 524] == 0.25f);
+    const auto parsed = yw::harmlessParams (blob);
+    CHECK (parsed && (int) parsed->size() == yw::harmlessParamCount);
+    CHECK (parsed && (*parsed)[54] == 3500.0f && (*parsed)[99] == 0.0f && (*parsed)[yw::harmlessCustomFlagIndex] == 1.0f);
+    CHECK (parsed && (*parsed)[yw::harmlessCustomIndex + 1] == 0.5f && (*parsed)[yw::harmlessCustomIndex + 524] == 0.25f);
     auto old = blob;
     old[0] = 3; // versions below 4 are not Harmless states we know
-    CHECK (! lynx::harmlessParams (old));
+    CHECK (! yw::harmlessParams (old));
     old = blob;
     old.resize (300);
-    CHECK (! lynx::harmlessParams (old));
+    CHECK (! yw::harmlessParams (old));
 
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::harmless;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::harmless;
     c.modelParams = *parsed;
-    c.modelParams[lynx::harmlessCustomFlagIndex] = 0.0f; // colour 0 (Saw): the custom table is not read
-    auto render = [] (const lynx::ChannelDef& def, int total, float gl, float gr, int offAt) {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::harmless);
+    c.modelParams[yw::harmlessCustomFlagIndex] = 0.0f; // colour 0 (Saw): the custom table is not read
+    auto render = [] (const yw::ChannelDef& def, int total, float gl, float gr, int offAt) {
+        auto inst = yw::makeInstrument (yw::InstrumentKind::harmless);
         inst->configure (def, 120.0);
         inst->prepare (44100.0);
         std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
@@ -13026,7 +13026,7 @@ TEST (startup_sound)
 {
     // the splash's sound: the right length, finite, at its peak level, quiet before the whoosh swells,
     // a landing "pop" at impactTime and a chime ringing after it
-    using namespace lynx::startup;
+    using namespace yw::startup;
     const auto sound = makeSound (48000.0);
     CHECK (sound.left.size() == (std::size_t) (soundLength * 48000.0) && sound.right.size() == sound.left.size());
     float peak = 0.0f;
@@ -13089,7 +13089,7 @@ std::vector<std::uint8_t> gmsTestState()
     preset.i32 (0), preset.i32 (0), preset.i32 (0);
     for (auto v : P)
         preset.f32 (v);
-    preset.raw ("LYNX test", 9);
+    preset.raw ("YW test", 9);
     preset.zeros (512 - 9);
     Bytes s;
     s.raw ("SSLF", 4);
@@ -13245,19 +13245,19 @@ TEST (dx10_engine)
     std::vector<std::uint8_t> blob (4 + 22 * 4, 0);
     blob[0] = 1;
     std::memcpy (blob.data() + 4, P, sizeof (P));
-    CHECK (lynx::dx10StateUsable (blob) && lynx::dx10ProcessorNeutral (blob));
-    CHECK (lynx::dx10Param (blob, 21) == -1 && lynx::dx10Param (blob, 3) == 30000 && ! lynx::dx10Param (blob, 22));
-    CHECK (! lynx::dx10StateUsable (std::vector<std::uint8_t> (40, 0)));
+    CHECK (yw::dx10StateUsable (blob) && yw::dx10ProcessorNeutral (blob));
+    CHECK (yw::dx10Param (blob, 21) == -1 && yw::dx10Param (blob, 3) == 30000 && ! yw::dx10Param (blob, 22));
+    CHECK (! yw::dx10StateUsable (std::vector<std::uint8_t> (40, 0)));
     {
         auto bad = blob;
         bad[0] = 3; // versions ≥ 3 are ignored by the plugin
-        CHECK (! lynx::dx10StateUsable (bad));
+        CHECK (! yw::dx10StateUsable (bad));
     }
-    using N = lynx::dx10::RefNote;
+    using N = yw::dx10::RefNote;
     const std::vector<N> notes { { 0, 60, 1.0, 0.8, 0.3, 0.0, 6144 }, { 2048, 67, 0.4, 1.0, -0.5, 25.0, 8192 }, { 3000, 40, 2.06, 0.6, 1.0, 0.0, -1 } };
-    struct Golden { std::vector<std::uint8_t> state; lynx::dx10::RefOptions opt; int rate; double el, er; std::tuple<int, float, float> at[6]; };
+    struct Golden { std::vector<std::uint8_t> state; yw::dx10::RefOptions opt; int rate; double el, er; std::tuple<int, float, float> at[6]; };
     auto check = [&] (const Golden& g) {
-        const auto y = lynx::dx10::renderReference (g.state, notes, (double) g.rate, 16384, g.opt);
+        const auto y = yw::dx10::renderReference (g.state, notes, (double) g.rate, 16384, g.opt);
         CHECK (y.size() == 2 * 16384);
         if (y.size() != 2 * 16384)
             return y;
@@ -13270,7 +13270,7 @@ TEST (dx10_engine)
                    && goldenSampleClose (y[2 * (std::size_t) i + 1], r, libmTolerance (1e-7f)));
         return y;
     };
-    lynx::dx10::RefOptions plain, odd;
+    yw::dx10::RefOptions plain, odd;
     odd.block = 333, odd.maxPoly = 1;
     check ({ blob, plain, 44100, 672.293115, 778.393071,
              { { 100, -0.0943799689f, -0.154014125f }, { 1000, -0.0814286768f, -0.132879525f }, { 2500, 0.499493301f, 0.312498778f },
@@ -13300,10 +13300,10 @@ TEST (dx10_engine)
     record (snap, 3, { { 11, 40 }, { 12, 17000 } });
     record (snap, 4, { { 1, 1 }, { 3, 5000 }, { 4, 100 }, { 5, 14000 }, { 6, 30 }, { 8, -700 } });
     settings (snap, 140, 120, 7);
-    const auto withSnap = lynx::dx10StateWithSnapshot (blob, snap);
-    CHECK (withSnap.size() == 460 && withSnap[0] == 2 && ! lynx::dx10ProcessorNeutral (withSnap));
-    CHECK (lynx::dx10StateWithSnapshot (withSnap, std::vector<std::uint8_t> (364, 0)) == withSnap); // a v2 state keeps its own
-    lynx::dx10::RefOptions ticks;
+    const auto withSnap = yw::dx10StateWithSnapshot (blob, snap);
+    CHECK (withSnap.size() == 460 && withSnap[0] == 2 && ! yw::dx10ProcessorNeutral (withSnap));
+    CHECK (yw::dx10StateWithSnapshot (withSnap, std::vector<std::uint8_t> (364, 0)) == withSnap); // a v2 state keeps its own
+    yw::dx10::RefOptions ticks;
     ticks.tick = 230, ticks.ppq = 96, ticks.tempo = 120.0;
     check ({ withSnap, ticks, 44100, 346.852062, 554.699375,
              { { 100, -0.00162654708f, -0.00265428401f }, { 1000, 0.0310285408f, 0.0506339073f }, { 2500, -0.118068494f, -0.0915558636f },
@@ -13316,7 +13316,7 @@ TEST (dx10_engine)
     settings (decay, 256, 0, 0);
     auto ticks48 = ticks;
     ticks48.block = 333;
-    const auto y = check ({ lynx::dx10StateWithSnapshot (blob, decay), ticks48, 48000, 338.361707, 350.520208,
+    const auto y = check ({ yw::dx10StateWithSnapshot (blob, decay), ticks48, 48000, 338.361707, 350.520208,
                             { { 100, 0.000514116196f, 0.000838961045f }, { 1000, 0.0412623473f, 0.0673340634f }, { 2500, -0.141532451f, -0.156581759f },
                               { 5000, 0.382550895f, 0.23462519f }, { 7000, -0.189829409f, 0.144132584f }, { 9000, -0.13638559f, 0.142912149f } } });
     bool silentTail = y.size() == 2 * 16384 && (y[2 * 14949] != 0.0f || y[2 * 14949 + 1] != 0.0f);
@@ -13324,17 +13324,17 @@ TEST (dx10_engine)
         silentTail = silentTail && y[i] == 0.0f;
     CHECK (silentTail);
 
-    // the instrument: LYNX velocity v → Init.Vol = (11^(1.28·v) − 1)/10 and Final.Vol = channel volume × Init.Vol; channel
+    // the instrument: YW velocity v → Init.Vol = (11^(1.28·v) − 1)/10 and Final.Vol = channel volume × Init.Vol; channel
     // gains √2·V·(cos, sin)((1 + p)π/4) → V, p; notes on block boundaries play like the reference renderer (neutral
     // channel settings: the instrument's sequencer ticks change nothing; vibrato off, since the plugin-wide vibrato
     // oscillator is stepped by each voice in turn, so its interleaving follows the host block layout, as in FL)
     auto noVib = blob;
-    CHECK (lynx::dx10SetParam (noVib, 10, 0));
+    CHECK (yw::dx10SetParam (noVib, 10, 0));
     auto initVol = [] (double v) { return (double) (float) ((std::pow (11.0, 1.28 * v) - 1.0) / 10.0); }; // Init.Vol is a float
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::dx10;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::dx10;
     c.pluginState = noVib;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::dx10);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::dx10);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     const float V = 0.6f, pan = 0.25f;
@@ -13359,7 +13359,7 @@ TEST (dx10_engine)
     // the channel level reaches the engine as FL's (recovered to float precision)
     const auto Vr = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
     const auto pr = std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0;
-    const auto ref = lynx::dx10::renderReference (noVib, { { 0, 60, initVol (0.78125), Vr * initVol (0.78125), pr, 0.0, 6144 },
+    const auto ref = yw::dx10::renderReference (noVib, { { 0, 60, initVol (0.78125), Vr * initVol (0.78125), pr, 0.0, 6144 },
                                                           { 2048, 67, initVol (0.5), Vr * initVol (0.5), std::clamp (-0.5 + pr, -1.0, 1.0), 25.0, 8192 } },
                                                   44100.0, 16384);
     double worst = 0.0, peak = 0.0;
@@ -13375,10 +13375,10 @@ TEST (dx10_engine)
 
     // with the channel settings above the instrument follows FL's ticks: the cutoff envelope darkens the note
     {
-        lynx::ChannelDef cs = c;
+        yw::ChannelDef cs = c;
         cs.pluginState = withSnap;
         cs.modelParams = { 96.0f };
-        auto si = lynx::makeInstrument (lynx::InstrumentKind::dx10);
+        auto si = yw::makeInstrument (yw::InstrumentKind::dx10);
         si->configure (cs, 120.0);
         si->prepare (44100.0);
         std::vector<float> sl (32768), sr (32768);
@@ -13394,8 +13394,8 @@ TEST (dx10_engine)
 
     // parameter edits (the channel settings panel) write the raw integers, clamped to the knob ranges
     auto edited = blob;
-    CHECK (lynx::dx10SetParam (edited, 21, 7) && lynx::dx10Param (edited, 21) == 3);
-    CHECK (lynx::dx10SetParam (edited, 12, 70000) && lynx::dx10Param (edited, 12) == 65536);
+    CHECK (yw::dx10SetParam (edited, 21, 7) && yw::dx10Param (edited, 21) == 3);
+    CHECK (yw::dx10SetParam (edited, 12, 70000) && yw::dx10Param (edited, 12) == 65536);
 }
 
 TEST (threeosc_engine)
@@ -13428,8 +13428,8 @@ TEST (threeosc_engine)
         record (neutral, k, k == 1 ? std::initializer_list<std::pair<int, int>> { { 0, 4 }, { 16, -101 } } : std::initializer_list<std::pair<int, int>> {});
     settings (neutral, 256, 0, 0);
     const auto blob = make (P, { 0, 0, 0 }, 0, neutral);
-    CHECK (lynx::threeOscStateUsable (blob) && lynx::threeOscNormalisedState (blob, {}) == blob);
-    CHECK (lynx::threeOscParam (blob, 9) == -12 && lynx::threeOscParam (blob, 20) == 16 && lynx::threeOscParam (blob, 24) == 0 && ! lynx::threeOscParam (blob, 26));
+    CHECK (yw::threeOscStateUsable (blob) && yw::threeOscNormalisedState (blob, {}) == blob);
+    CHECK (yw::threeOscParam (blob, 9) == -12 && yw::threeOscParam (blob, 20) == 16 && yw::threeOscParam (blob, 24) == 0 && ! yw::threeOscParam (blob, 26));
 
     // older versions are normalised like the plugin reads them: version 12 (no snapshot → the plugin's defaults),
     // version 10 (20 parameters, no invert/AM bytes)
@@ -13437,20 +13437,20 @@ TEST (threeosc_engine)
         std::vector<std::uint8_t> v12 (blob.begin(), blob.begin() + 92);
         v12[0] = 12;
         v12[0x58] = 1;
-        const auto n12 = lynx::threeOscNormalisedState (v12, {});
-        CHECK (n12.size() == 460 && n12[0] == 14 && lynx::threeOscParam (n12, 21) == 1 && lynx::threeOscParam (n12, 20) == 16
+        const auto n12 = yw::threeOscNormalisedState (v12, {});
+        CHECK (n12.size() == 460 && n12[0] == 14 && yw::threeOscParam (n12, 21) == 1 && yw::threeOscParam (n12, 20) == 16
                && std::equal (n12.begin() + 0x60, n12.end(), neutral.begin()));
         std::vector<std::uint8_t> v10 (blob.begin(), blob.begin() + 84);
         v10[0] = 10;
-        const auto n10 = lynx::threeOscNormalisedState (v10, {});
-        CHECK (lynx::threeOscParam (n10, 20) == 0 && lynx::threeOscParam (n10, 13) == 40 && lynx::threeOscParam (n10, 21) == 0);
+        const auto n10 = yw::threeOscNormalisedState (v10, {});
+        CHECK (yw::threeOscParam (n10, 20) == 0 && yw::threeOscParam (n10, 13) == 40 && yw::threeOscParam (n10, 21) == 0);
     }
 
-    using N = lynx::threeosc::RefNote;
+    using N = yw::threeosc::RefNote;
     const std::vector<N> notes { { 0, 60, 0.8, 0.3, 0.0, 6144 }, { 2048, 67, 1.0, -0.5, 25.0, 8192 }, { 3000, 40, 0.6, 1.0, 0.0, -1 } };
-    struct Golden { std::vector<std::uint8_t> state; lynx::threeosc::RefOptions opt; int rate; double el, er; std::tuple<int, float, float> at[6]; };
+    struct Golden { std::vector<std::uint8_t> state; yw::threeosc::RefOptions opt; int rate; double el, er; std::tuple<int, float, float> at[6]; };
     auto check = [&] (const Golden& g) {
-        const auto y = lynx::threeosc::renderReference (g.state, notes, (double) g.rate, 16384, g.opt);
+        const auto y = yw::threeosc::renderReference (g.state, notes, (double) g.rate, 16384, g.opt);
         CHECK (y.size() == 2 * 16384);
         if (y.size() != 2 * 16384)
             return y;
@@ -13464,7 +13464,7 @@ TEST (threeosc_engine)
         return y;
     };
     // saw / square / triangle-ish mix with pans, stereo detune and phase, random start phases (seed 12345)
-    lynx::threeosc::RefOptions plain;
+    yw::threeosc::RefOptions plain;
     plain.seed = 12345;
     check ({ blob, plain, 44100, 681.6491972612481, 1509.7245664533937,
              { { 100, 0.0674247071146965f, -0.13440212607383728f }, { 1000, 0.12890009582042694f, 0.446039617061615f },
@@ -13472,7 +13472,7 @@ TEST (threeosc_engine)
                { 9000, 1.2136793475613885e-17f, 0.3116455078125f }, { 16383, 5.7305530145831346e-18f, 0.4134995639324188f } } });
     // AM (osc 3 noise modulating osc 1 + 2), inverted oscillators, 48 kHz, odd blocks, max polyphony 1
     const std::int32_t Pam[21] = { 0, 2, 0, 0, 0, 0, 30, 0, 3, 7, 0, 0, 0, 77, 0, 5, -12, 0, 0, 0, 0 };
-    lynx::threeosc::RefOptions odd;
+    yw::threeosc::RefOptions odd;
     odd.block = 333, odd.maxPoly = 1, odd.seed = 777;
     check ({ make (Pam, { 1, 0, 1 }, 1, neutral), odd, 48000, 453.27241060751771, 1996.4548848690094,
              { { 100, -0.2589033246040344f, -0.310184121131897f }, { 1000, 0.22021546959877014f, 0.3591070771217346f },
@@ -13487,7 +13487,7 @@ TEST (threeosc_engine)
     record (snap, 3, { { 11, 40 }, { 12, 17000 } });
     record (snap, 4, { { 1, 1 }, { 3, 5000 }, { 4, 100 }, { 5, 14000 }, { 6, 30 }, { 7, 12000 }, { 8, -700 } });
     settings (snap, 140, 120, 7);
-    lynx::threeosc::RefOptions ticks;
+    yw::threeosc::RefOptions ticks;
     ticks.tick = 230, ticks.ppq = 96, ticks.tempo = 120.0, ticks.seed = 99;
     check ({ make (P, { 0, 0, 0 }, 0, snap), ticks, 44100, 977.9928196811321, 2072.965349921462,
              { { 100, -0.001351095037534833f, 0.0029758031014353037f }, { 1000, 0.002833257894963026f, 0.10575854033231735f },
@@ -13501,16 +13501,16 @@ TEST (threeosc_engine)
                { 2500, 0.13807585835456848f, 0.3554498553276062f }, { 5000, -0.08793184161186218f, -0.1596519947052002f },
                { 9000, 0.08728396147489548f, 0.540290117263794f }, { 16383, 0.039887525141239166f, 0.21270982921123505f } } });
 
-    // HQ oscillators (engine_x64.dll: band-limited tables built with an FFT; FL's single-precision FFT and LYNX's double
+    // HQ oscillators (engine_x64.dll: band-limited tables built with an FFT; FL's single-precision FFT and YW's double
     // one agree to float rounding, so the golden values hold to 1e-5)
     {
         const std::int32_t Phq[21] = { 0, 3, 0, 0, 0, 0, 64, 20, 2, -12, 0, 0, 0, 40, -20, 4, 7, 0, 0, 0, 0 };
         auto hq = make (Phq, { 0, 0, 0 }, 0, neutral);
         hq[0x5c] = 1;
-        CHECK (lynx::threeOscParam (hq, 25) == 1);
-        lynx::threeosc::RefOptions o;
+        CHECK (yw::threeOscParam (hq, 25) == 1);
+        yw::threeosc::RefOptions o;
         o.seed = 3;
-        const auto y = lynx::threeosc::renderReference (hq, notes, 44100.0, 16384, o);
+        const auto y = yw::threeosc::renderReference (hq, notes, 44100.0, 16384, o);
         CHECK (y.size() == 2 * 16384);
         if (y.size() == 2 * 16384)
         {
@@ -13529,10 +13529,10 @@ TEST (threeosc_engine)
     // the instrument: Final.Vol = channel volume × Init.Vol, channel gains → FL's volume/pan; notes on block boundaries
     // play like the reference renderer (seed 0, neutral channel settings: ticks change nothing)
     auto initVol = [] (double v) { return (double) (float) ((std::pow (11.0, 1.28 * v) - 1.0) / 10.0); };
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::threeosc;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::threeosc;
     c.pluginState = blob;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::threeosc);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::threeosc);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     const float V = 0.6f, pan = 0.25f;
@@ -13556,7 +13556,7 @@ TEST (threeosc_engine)
     }
     const auto Vr = std::sqrt (((double) gl * gl + (double) gr * gr) * 0.5);
     const auto pr = std::atan2 ((double) gr, (double) gl) * (4.0 / 3.141592653589793) - 1.0;
-    const auto ref = lynx::threeosc::renderReference (blob, { { 0, 60, Vr * initVol (0.78125), pr, 0.0, 6144 },
+    const auto ref = yw::threeosc::renderReference (blob, { { 0, 60, Vr * initVol (0.78125), pr, 0.0, 6144 },
                                                               { 2048, 67, Vr * initVol (0.5), std::clamp (-0.5 + pr, -1.0, 1.0), 25.0, 8192 } },
                                                       44100.0, 16384);
     double worst = 0.0, peak = 0.0;
@@ -13569,31 +13569,31 @@ TEST (threeosc_engine)
 
     // parameter edits write the raw integers, clamped to the knob ranges
     auto edited = blob;
-    CHECK (lynx::threeOscSetParam (edited, 9, -40) && lynx::threeOscParam (edited, 9) == -24);
-    CHECK (lynx::threeOscSetParam (edited, 13, 500) && lynx::threeOscParam (edited, 13) == 128);
-    CHECK (lynx::threeOscSetParam (edited, 24, 1) && edited[0x5b] == 1);
-    CHECK (! lynx::threeOscStateUsable (std::vector<std::uint8_t> (2, 0)));
+    CHECK (yw::threeOscSetParam (edited, 9, -40) && yw::threeOscParam (edited, 9) == -24);
+    CHECK (yw::threeOscSetParam (edited, 13, 500) && yw::threeOscParam (edited, 13) == 128);
+    CHECK (yw::threeOscSetParam (edited, 24, 1) && edited[0x5b] == 1);
+    CHECK (! yw::threeOscStateUsable (std::vector<std::uint8_t> (2, 0)));
 }
 
 TEST (gms_engine)
 {
     const auto blob = gmsTestState();
-    dumpIfAsked ("LYNX_DUMP_GMS", blob);
-    CHECK (lynx::gmsStateUsable (blob));
-    CHECK (lynx::gmsWaveNames (blob) == std::vector<std::string> ({ "NoWave A", "NoWave B", "NoWave C" }));
-    CHECK (lynx::gmsParamOffset (blob, 12) == 8 + 4 + 7 * 512 + 12 + 4 * 12 && lynx::gmsParamOffset (blob, 212) < 0);
+    dumpIfAsked ("YW_DUMP_GMS", blob);
+    CHECK (yw::gmsStateUsable (blob));
+    CHECK (yw::gmsWaveNames (blob) == std::vector<std::string> ({ "NoWave A", "NoWave B", "NoWave C" }));
+    CHECK (yw::gmsParamOffset (blob, 12) == 8 + 4 + 7 * 512 + 12 + 4 * 12 && yw::gmsParamOffset (blob, 212) < 0);
     auto broken = blob;
     broken[8] = 'X';
-    CHECK (! lynx::gmsStateUsable (broken));
-    CHECK (! lynx::gmsStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.begin() + 2000)));
+    CHECK (! yw::gmsStateUsable (broken));
+    CHECK (! yw::gmsStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.begin() + 2000)));
 
     // golden samples of our round-39 model (gmsmodel.GmsPlugin, waves missing → silent tables, tempo 140, 44.1 kHz,
     // host blocks of 512): C5 vel 100 0–30000, E5 vel 80 11025–40000, G5 vel 110 22050–52000 (Init.Vol law A)
     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
-    const std::vector<lynx::gms::RefNote> notes = { { 0, 60, (float) iv (100), 1.0, 0.0, 0.0, 30000 },
+    const std::vector<yw::gms::RefNote> notes = { { 0, 60, (float) iv (100), 1.0, 0.0, 0.0, 30000 },
                                                     { 11025, 64, (float) iv (80), 1.0, 0.0, 0.0, 40000 },
                                                     { 22050, 67, (float) iv (110), 1.0, 0.0, 0.0, 52000 } };
-    const auto y = lynx::gms::renderReference (blob, notes, 44100.0, 66150, "");
+    const auto y = yw::gms::renderReference (blob, notes, 44100.0, 66150, "");
     CHECK (y.size() == 2 * 66150u);
     static const struct { int i; float l, r; } golden[] = { { 100, 0.0298744496f, 0.0198248848f }, { 5000, 0.0669416264f, 0.0666475743f }, { 15000, -0.005992427f, 0.013085857f }, { 25000, 0.0102018276f, 0.0130400788f }, { 35000, -0.0679694712f, -0.0050432696f }, { 45000, -0.0161557719f, 0.154340729f }, { 55000, -0.00719845621f, 0.0182181317f }, { 66000, 0.0389953516f, 0.0104107196f } };
     for (const auto& g : golden)
@@ -13603,11 +13603,11 @@ TEST (gms_engine)
         e += (double) v * v;
     CHECK (std::abs (std::sqrt (e / (double) y.size()) - 0.0790270452795) < 1e-6);
 
-    // the instrument: same engine behind LYNX's channel gains (V = 1, centre → law A), velocity → Init.Vol
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::gms;
+    // the instrument: same engine behind YW's channel gains (V = 1, centre → law A), velocity → Init.Vol
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::gms;
     c.pluginState = blob;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::gms);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::gms);
     inst->configure (c, 140.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -13619,7 +13619,7 @@ TEST (gms_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::gms::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0, 8192, "");
+    const auto ref = yw::gms::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0, 8192, "");
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
     {
@@ -13633,7 +13633,7 @@ TEST (gms_engine)
 // spectra on operators 1 and 3 (wave 0) and the sine on operator 2, so no wave of the installation is needed
 std::vector<std::uint8_t> toxicTestState()
 {
-    auto s = lynx::toxicDefaultState();
+    auto s = yw::toxicDefaultState();
     static const std::pair<int, double> set[] = {
         { 0, 0.62 }, { 1, 0.3 }, { 3, 0.05 }, { 4, 0.6 }, { 5, 0.7 }, { 6, 0.4 }, { 7, 0.3 }, { 8, 0.4 }, { 9, 0.8 }, { 10, 0.2 },
         { 13, 0.45 }, { 15, 0.45 }, { 16, 0.55 }, { 17, 0.5 }, { 19, 0.1 }, { 20, 0.5 }, { 21, 0.4 }, { 22, 0.4 }, { 23, 0.8 },
@@ -13645,7 +13645,7 @@ std::vector<std::uint8_t> toxicTestState()
     for (const auto& [index, value] : set)
     {
         const auto v = (float) value;
-        std::memcpy (s.data() + lynx::toxicParamOffset (s, index), &v, 4);
+        std::memcpy (s.data() + yw::toxicParamOffset (s, index), &v, 4);
     }
     auto spectrum = [&] (int slot, int h, float amp, float phase) {
         const auto at = 12 + 0x40 + 1024 * (std::size_t) slot + 4 * (std::size_t) h;
@@ -13662,26 +13662,26 @@ std::vector<std::uint8_t> toxicTestState()
 TEST (toxic_engine)
 {
     const auto blob = toxicTestState();
-    dumpIfAsked ("LYNX_DUMP_TOXIC", blob);
-    CHECK (blob.size() == 10050u && lynx::toxicStateUsable (blob) && ! lynx::toxicNeedsDll (blob));
-    CHECK (lynx::toxicParamOffset (blob, 15) == 12 + 0x40 + 8192 + 4 * 15 && lynx::toxicParamOffset (blob, 340) < 0);
-    CHECK (! lynx::toxicDllUsable ("") && ! lynx::toxicDllUsable ("/nonexistent/Toxic Biohazard_x64.dll"));
+    dumpIfAsked ("YW_DUMP_TOXIC", blob);
+    CHECK (blob.size() == 10050u && yw::toxicStateUsable (blob) && ! yw::toxicNeedsDll (blob));
+    CHECK (yw::toxicParamOffset (blob, 15) == 12 + 0x40 + 8192 + 4 * 15 && yw::toxicParamOffset (blob, 340) < 0);
+    CHECK (! yw::toxicDllUsable ("") && ! yw::toxicDllUsable ("/nonexistent/Toxic Biohazard_x64.dll"));
     auto broken = blob;
     broken[8] = 'X';
-    CHECK (! lynx::toxicStateUsable (broken));
-    CHECK (! lynx::toxicStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.begin() + 5000)));
+    CHECK (! yw::toxicStateUsable (broken));
+    CHECK (! yw::toxicStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.begin() + 5000)));
     auto needs = blob;
     const auto w = 15.0f; // a built-in wave of the installation: without the DLL the engine refuses the state
-    std::memcpy (needs.data() + lynx::toxicParamOffset (needs, 307), &w, 4);
-    CHECK (lynx::toxicNeedsDll (needs) && lynx::toxic::renderReference (needs, { { 0, 60 } }, 44100.0, 64, "").empty());
+    std::memcpy (needs.data() + yw::toxicParamOffset (needs, 307), &w, 4);
+    CHECK (yw::toxicNeedsDll (needs) && yw::toxic::renderReference (needs, { { 0, 60 } }, 44100.0, 64, "").empty());
 
     // golden samples of our round-45 model (toxmodel.run, which equals the DLL bit for bit on this state), effects on,
     // tempo 140, 44.1 kHz, host blocks of 512: C5 vel 100 0–30000, E5 vel 80 11025–40000, G5 vel 110 22050–52000
     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
-    const std::vector<lynx::toxic::RefNote> notes = { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 },
+    const std::vector<yw::toxic::RefNote> notes = { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 },
                                                       { 11025, 64, iv (80), 1.0, 0.0, 0.0, 40000 },
                                                       { 22050, 67, iv (110), 1.0, 0.0, 0.0, 52000 } };
-    const auto y = lynx::toxic::renderReference (blob, notes, 44100.0, 66150, "", 512, 140.0);
+    const auto y = yw::toxic::renderReference (blob, notes, 44100.0, 66150, "", 512, 140.0);
     CHECK (y.size() == 2 * 66150u);
     static const struct { int i; float l, r; } golden[] = { { 100, 0.264782101f, 0.189374551f }, { 5000, -0.605827034f, 0.43244195f }, { 15000, -0.343959779f, -0.111227378f }, { 25000, 0.0127612427f, -0.354315311f }, { 35000, -0.353289753f, -0.307500422f }, { 45000, -0.260735184f, 0.202133358f }, { 55000, -0.0751226544f, -0.0776180848f }, { 66000, -0.0294751395f, 0.00692501338f } };
     for (const auto& g : golden)
@@ -13691,11 +13691,11 @@ TEST (toxic_engine)
         e += (double) v * v;
     CHECK (std::abs (std::sqrt (e / (double) y.size()) - 0.307227390984) < 1e-6);
 
-    // the instrument: same engine behind LYNX's channel gains (V = 1, centre → law A), velocity → Init.Vol
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::toxic;
+    // the instrument: same engine behind YW's channel gains (V = 1, centre → law A), velocity → Init.Vol
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::toxic;
     c.pluginState = blob;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::toxic);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::toxic);
     inst->configure (c, 140.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -13707,7 +13707,7 @@ TEST (toxic_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::toxic::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } },
+    const auto ref = yw::toxic::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } },
                                                    44100.0, 8192, "", 512, 140.0);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
@@ -13721,25 +13721,25 @@ TEST (toxic_engine)
 TEST (morphine_engine)
 {
     const auto blob = morphineTestState();
-    dumpIfAsked ("LYNX_DUMP_MORPHINE", blob);
-    CHECK (lynx::morphineStateUsable (blob));
-    CHECK (lynx::morphineNoiseName (blob).empty());
-    const auto at = lynx::morphineParamOffset (blob, 9);
+    dumpIfAsked ("YW_DUMP_MORPHINE", blob);
+    CHECK (yw::morphineStateUsable (blob));
+    CHECK (yw::morphineNoiseName (blob).empty());
+    const auto at = yw::morphineParamOffset (blob, 9);
     CHECK (at > 0);
     float a9 = 0.0f;
     std::memcpy (&a9, blob.data() + at, 4);
-    CHECK (a9 == 0.2f && lynx::morphineParamOffset (blob, 40) < 0);
+    CHECK (a9 == 0.2f && yw::morphineParamOffset (blob, 40) < 0);
     auto broken = blob;
     broken[12] = 'X'; // the MPR0 tag
-    CHECK (! lynx::morphineStateUsable (broken));
-    CHECK (! lynx::morphineStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.end() - 10)));
+    CHECK (! yw::morphineStateUsable (broken));
+    CHECK (! yw::morphineStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.end() - 10)));
 
     // golden samples of our round-39 model (mormodel.Synth, tempo 120, 44.1 kHz, host blocks of 512): keys 60/64/67,
     // Init.Vol 1.0/0.5/2.0, note-offs at 30000/50000/70000
-    const std::vector<lynx::morphine::RefNote> notes = { { 0, 60, 1.0, 1.0, 0.0, 0.0, 30000 },
+    const std::vector<yw::morphine::RefNote> notes = { { 0, 60, 1.0, 1.0, 0.0, 0.0, 30000 },
                                                          { 11025, 64, 0.5, 1.0, 0.0, 0.0, 50000 },
                                                          { 22050, 67, 2.0, 1.0, 0.0, 0.0, 70000 } };
-    const auto y = lynx::morphine::renderReference (blob, notes, 44100.0, 80000, "");
+    const auto y = yw::morphine::renderReference (blob, notes, 44100.0, 80000, "");
     CHECK (y.size() == 2 * 80000u);
     static const struct { int i; float l, r; } golden[] = { { 100, 0.00094500737f, 0.00085531926f }, { 5000, 0.0311509669f, -0.11552836f }, { 15000, 0.0843918771f, 0.0369227529f }, { 25000, 0.60864079f, 1.03062224f }, { 35000, -0.346013308f, 0.135865599f }, { 45000, -0.0373920798f, -0.13064307f }, { 60000, -0.138871655f, -0.163586512f }, { 75000, 0.0251323506f, -0.00735046482f } };
     for (const auto& g : golden)
@@ -13749,11 +13749,11 @@ TEST (morphine_engine)
         e += (double) v * v;
     CHECK (std::abs (std::sqrt (e / (double) y.size()) - 0.18467099041) < 1e-6);
 
-    // the instrument: same engine behind LYNX's channel gains
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::morphine;
+    // the instrument: same engine behind YW's channel gains
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::morphine;
     c.pluginState = blob;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::morphine);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::morphine);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -13765,7 +13765,7 @@ TEST (morphine_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::morphine::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0, 8192, "");
+    const auto ref = yw::morphine::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0, 8192, "");
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
     {
@@ -13779,7 +13779,7 @@ namespace
 // A MiniSynth state written from scratch (REA_rodada41 §1.1 layout: "SSLF" + the .flms preset)
 std::vector<std::uint8_t> miniSynthTestState (const std::array<float, 43>& P)
 {
-    const std::string name = "LYNX test";
+    const std::string name = "YW test";
     Bytes body;
     body.raw ("\x99" "FLS\r\n\x1a\n", 8);
     body.raw ("HEAD", 4);
@@ -13831,7 +13831,7 @@ std::string processTempTag()
 // a synthetic oscdata.dat (amplitudes 0.3/k, phases −π/2 + 0.001·(k − 1)): the test does not need an FL installation
 std::string miniSynthTestOscdata()
 {
-    const auto path = (std::filesystem::temp_directory_path() / ("lynx_test_oscdata_" + processTempTag() + ".dat")).string();
+    const auto path = (std::filesystem::temp_directory_path() / ("yw_test_oscdata_" + processTempTag() + ".dat")).string();
     std::vector<float> d (2048);
     for (int h = 0; h < 1024; ++h)
         d[(std::size_t) h] = (float) (0.3 / (h + 1)), d[1024 + (std::size_t) h] = (float) (-1.5707963267948966 + 0.001 * h);
@@ -13859,19 +13859,19 @@ TEST (minisynth_engine)
     for (const auto& [i, v] : b)
         B[(std::size_t) i] = v;
     const auto blobA = miniSynthTestState (A), blobB = miniSynthTestState (B);
-    dumpIfAsked ("LYNX_DUMP_MINISYNTH", blobA);
-    CHECK (lynx::miniSynthStateUsable (blobA) && lynx::miniSynthParams (blobA).size() == 43u && lynx::miniSynthParams (blobA)[26] == 0.3f);
-    CHECK (lynx::miniSynthParamOffset (blobA, 9) == 8 + 8 + 8 + 6 + 18 + 12 + 4 * 9 && lynx::miniSynthParamOffset (blobA, 43) < 0);
-    CHECK (! lynx::miniSynthStateUsable (std::vector<std::uint8_t> (blobA.begin(), blobA.begin() + 20)));
+    dumpIfAsked ("YW_DUMP_MINISYNTH", blobA);
+    CHECK (yw::miniSynthStateUsable (blobA) && yw::miniSynthParams (blobA).size() == 43u && yw::miniSynthParams (blobA)[26] == 0.3f);
+    CHECK (yw::miniSynthParamOffset (blobA, 9) == 8 + 8 + 8 + 6 + 18 + 12 + 4 * 9 && yw::miniSynthParamOffset (blobA, 43) < 0);
+    CHECK (! yw::miniSynthStateUsable (std::vector<std::uint8_t> (blobA.begin(), blobA.begin() + 20)));
     auto shortData = blobA;
     shortData.resize (shortData.size() - 4 * 40); // only 3 parameters present: the rest keeps the defaults
-    CHECK (lynx::miniSynthParams (shortData)[20] == 0.5f && lynx::miniSynthParams (shortData)[1] == 0.5f);
+    CHECK (yw::miniSynthParams (shortData)[20] == 0.5f && yw::miniSynthParams (shortData)[1] == 0.5f);
 
     // golden samples of our round-41 model (msmodel.Plugin on the same synthetic oscdata, 44.1 kHz, host blocks of 512,
     // L = R = Final.Vol): C5 vel 100 0–30000, E5 vel 80 11025–40000, G5 vel 110 22050–52000 (Init.Vol law A)
     const auto osc = miniSynthTestOscdata();
     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
-    const std::vector<lynx::minisynth::RefNote> notes = { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 },
+    const std::vector<yw::minisynth::RefNote> notes = { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 },
                                                           { 11025, 64, iv (80), 1.0, 0.0, 0.0, 40000 },
                                                           { 22050, 67, iv (110), 1.0, 0.0, 0.0, 52000 } };
     struct Golden { int i; float l, r; };
@@ -13879,7 +13879,7 @@ TEST (minisynth_engine)
     static const Golden goldenB[] = { { 100, 0.175394624f, 0.175394624f }, { 5000, 0.0503161065f, 0.0503161065f }, { 15000, 0.0470628254f, 0.0470628254f }, { 25000, 0.0486912318f, 0.0486912318f }, { 35000, 0.021853026f, 0.021853026f }, { 45000, 0.0362072662f, 0.0362072662f }, { 55000, -0.000109080342f, -0.000109080342f }, { 66000, 0.0f, 0.0f } };
     for (int which = 0; which < 2; ++which)
     {
-        const auto y = lynx::minisynth::renderReference (which == 0 ? blobA : blobB, notes, 44100.0, 66150, osc);
+        const auto y = yw::minisynth::renderReference (which == 0 ? blobA : blobB, notes, 44100.0, 66150, osc);
         CHECK (y.size() == 2 * 66150u);
         if (y.size() != 2 * 66150u)
             continue;
@@ -13891,15 +13891,15 @@ TEST (minisynth_engine)
         CHECK (std::abs (std::sqrt (e / (double) y.size()) - (which == 0 ? 0.315552434392 : 0.03926116287)) < 1e-9);
     }
     // missing oscdata.dat: silent tables, still finite
-    const auto silent = lynx::minisynth::renderReference (blobB, notes, 44100.0, 4096, "");
+    const auto silent = yw::minisynth::renderReference (blobB, notes, 44100.0, 4096, "");
     CHECK (silent.size() == 2 * 4096u && std::all_of (silent.begin(), silent.end(), [] (float v) { return std::isfinite (v) && std::abs (v) < 1.0f; }));
 
-    // the instrument: same engine behind LYNX's channel gains (V = 1, centre → law A), velocity → Init.Vol
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::minisynth;
+    // the instrument: same engine behind YW's channel gains (V = 1, centre → law A), velocity → Init.Vol
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::minisynth;
     c.pluginState = blobA;
     c.samplePath = osc;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::minisynth);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::minisynth);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -13911,7 +13911,7 @@ TEST (minisynth_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * k, r.data() + 512 * k, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::minisynth::renderReference (blobA, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } },
+    const auto ref = yw::minisynth::renderReference (blobA, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } },
                                                        44100.0, 8192, osc, 512, 120.0, 0, -1.0, true);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
@@ -13944,7 +13944,7 @@ std::vector<std::uint8_t> poizoneTestState()
     std::vector<std::uint8_t> blob { 'S', 'S', 'L', 'F', 0xb4, 0x02, 0x00, 0x00, '4', 'r', 'e', 'V' };
     blob.resize (12 + 4 * 156 + 64, 0);
     std::memcpy (blob.data() + 12, P.data(), 4 * 156);
-    std::memcpy (blob.data() + 12 + 4 * 156, "LYNX test", 9);
+    std::memcpy (blob.data() + 12 + 4 * 156, "YW test", 9);
     return blob;
 }
 } // namespace
@@ -13952,21 +13952,21 @@ std::vector<std::uint8_t> poizoneTestState()
 TEST (poizone_engine)
 {
     const auto blob = poizoneTestState();
-    CHECK (lynx::poizoneStateUsable (blob));
-    CHECK (lynx::poizoneParamOffset (blob, 18) == 12 + 4 * 18 && lynx::poizoneParamOffset (blob, 156) < 0);
-    CHECK (lynx::poizoneParam (blob, 75) == 2.0f && ! lynx::poizoneParam (blob, -1));
+    CHECK (yw::poizoneStateUsable (blob));
+    CHECK (yw::poizoneParamOffset (blob, 18) == 12 + 4 * 18 && yw::poizoneParamOffset (blob, 156) < 0);
+    CHECK (yw::poizoneParam (blob, 75) == 2.0f && ! yw::poizoneParam (blob, -1));
     auto broken = blob;
     broken[8] = 'X'; // the "Ver4" tag
-    CHECK (! lynx::poizoneStateUsable (broken));
-    CHECK (! lynx::poizoneStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.begin() + 10)));
+    CHECK (! yw::poizoneStateUsable (broken));
+    CHECK (! yw::poizoneStateUsable (std::vector<std::uint8_t> (blob.begin(), blob.begin() + 10)));
 
     // golden samples of our round-44 model (pzmodel.Plugin, tempo 120, 44.1 kHz, host blocks of 512, L = R = Final.Vol):
     // C5 vel 100 0–30000, E5 vel 80 11025–40000, G5 vel 110 22050–52000 (Init.Vol = (11^(vel/100) − 1)/10)
     auto iv = [] (double vel) { return (std::pow (11.0, vel / 100.0) - 1.0) / 10.0; };
-    const std::vector<lynx::poizone::RefNote> notes = { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 },
+    const std::vector<yw::poizone::RefNote> notes = { { 0, 60, iv (100), 1.0, 0.0, 0.0, 30000 },
                                                         { 11025, 64, iv (80), 1.0, 0.0, 0.0, 40000 },
                                                         { 22050, 67, iv (110), 1.0, 0.0, 0.0, 52000 } };
-    const auto y = lynx::poizone::renderReference (blob, notes, 44100.0, 66150);
+    const auto y = yw::poizone::renderReference (blob, notes, 44100.0, 66150);
     CHECK (y.size() == 2 * 66150u);
     static const struct { int i; float l, r; } golden[] = { { 100, 0.0058150403f, 0.00038307323f }, { 5000, 0.01855834f, 0.09409425f }, { 15000, -0.01985861f, -0.013393694f }, { 25000, 0.121419534f, -0.12814318f }, { 35000, -0.09936376f, 0.034945987f }, { 45000, -0.09803468f, 0.05587045f }, { 55000, -0.07215294f, 0.02417629f }, { 66000, -0.007312033f, -0.047375992f } };
     for (const auto& g : golden)
@@ -13976,11 +13976,11 @@ TEST (poizone_engine)
         e += (double) v * v;
     CHECK (std::abs (std::sqrt (e / (double) y.size()) - 0.10990940878400073) < 1e-7);
 
-    // the instrument: same engine behind LYNX's channel gains (V = 1, centre → law A), velocity → Init.Vol
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::poizone;
+    // the instrument: same engine behind YW's channel gains (V = 1, centre → law A), velocity → Init.Vol
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::poizone;
     c.pluginState = blob;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::poizone);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::poizone);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -13992,7 +13992,7 @@ TEST (poizone_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::poizone::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0, 8192,
+    const auto ref = yw::poizone::renderReference (blob, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, 5120 } }, 44100.0, 8192,
                                                      512, 120.0, 0, true);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
@@ -14038,7 +14038,7 @@ std::vector<std::uint8_t> fruitKickStateB()
 std::string bassDrumTestFolder()
 {
     // our own oscillator table and a pseudo-random 16-bit noise sample, laid out like FL's BassDrum folder
-    const auto dir = std::filesystem::temp_directory_path() / ("lynx_bassdrum_test_" + processTempTag());
+    const auto dir = std::filesystem::temp_directory_path() / ("yw_bassdrum_test_" + processTempTag());
     std::filesystem::create_directories (dir / "Noise Samples");
     auto wav = [] (const std::filesystem::path& path, const void* data, std::uint32_t bytes, std::uint16_t fmt, std::uint16_t bits) {
         std::ofstream o (path, std::ios::binary);
@@ -14100,23 +14100,23 @@ bool matchesGolden (const std::vector<float>& y, std::initializer_list<Golden> g
 TEST (fruitkick_engine)
 {
     const auto A = fruitKickStateA(), B = fruitKickStateB();
-    CHECK (lynx::fruitKickStateUsable (A) && lynx::fruitKickStateUsable (B));
-    CHECK (! lynx::fruitKickStateUsable (std::vector<std::uint8_t> (A.begin(), A.begin() + 20)));
-    CHECK (lynx::fruitKickParam (A, 1) == -600 && lynx::fruitKickParam (B, 0) == 624);
-    CHECK (lynx::fruitKickFallbacks (A).empty() && lynx::fruitKickFallbacks (B).empty());
+    CHECK (yw::fruitKickStateUsable (A) && yw::fruitKickStateUsable (B));
+    CHECK (! yw::fruitKickStateUsable (std::vector<std::uint8_t> (A.begin(), A.begin() + 20)));
+    CHECK (yw::fruitKickParam (A, 1) == -600 && yw::fruitKickParam (B, 0) == 624);
+    CHECK (yw::fruitKickFallbacks (A).empty() && yw::fruitKickFallbacks (B).empty());
 
     // a version-0 state takes the channel's envelope records as its snapshot (and becomes version 1)
     std::vector<std::vector<std::uint8_t>> recs;
     for (int k = 0; k < 5; ++k)
         recs.emplace_back (B.begin() + 32 + 68 * k, B.begin() + 32 + 68 * (k + 1));
-    const auto withEnv = lynx::fruitKickWithChannelEnvelope (A, recs, 256, 0, 0);
-    CHECK (withEnv.size() == 400 && lynx::fruitKickParam (withEnv, 5) == 20 && std::memcmp (withEnv.data() + 32, B.data() + 32, 364) == 0);
-    CHECK (lynx::fruitKickWithChannelEnvelope (B, recs, 256, 0, 0) == B);
+    const auto withEnv = yw::fruitKickWithChannelEnvelope (A, recs, 256, 0, 0);
+    CHECK (withEnv.size() == 400 && yw::fruitKickParam (withEnv, 5) == 20 && std::memcmp (withEnv.data() + 32, B.data() + 32, 364) == 0);
+    CHECK (yw::fruitKickWithChannelEnvelope (B, recs, 256, 0, 0) == B);
 
     // golden samples of our round-43 model (fkmodel.run, 44.1 kHz, host blocks of 512): C5 at 0 held, C6 at 3000
     // (Final.Vol 0.5, pan 0.3) released at 9000; B with the plugin's tick every 230 samples from 115
-    const std::vector<lynx::fruitkick::RefNote> notes = { { 0, 60, 1.0, 0.0, 0.0, -1 }, { 3000, 72, 0.5, 0.3, 0.0, 9000 } };
-    const auto ya = lynx::fruitkick::renderReference (A, notes, 44100.0, 20000);
+    const std::vector<yw::fruitkick::RefNote> notes = { { 0, 60, 1.0, 0.0, 0.0, -1 }, { 3000, 72, 0.5, 0.3, 0.0, 9000 } };
+    const auto ya = yw::fruitkick::renderReference (A, notes, 44100.0, 20000);
     CHECK (ya.size() == 40000u);
     // (A uses the distortion: values since REA_rodada55 with FL's x87 live host waveshaper, checked against FLEngine's own;
     // the release fade since REA_rodada74 with IPP's cosine, checked against the DLL)
@@ -14127,17 +14127,17 @@ TEST (fruitkick_engine)
     std::vector<int> ticks;
     for (int t = 115; t < 20000; t += 230)
         ticks.push_back (t);
-    const auto yb = lynx::fruitkick::renderReference (B, notes, 44100.0, 20000, 512, ticks);
+    const auto yb = yw::fruitkick::renderReference (B, notes, 44100.0, 20000, 512, ticks);
     CHECK (matchesGolden (yb, { { 10, -0.00760388654f, -0.00760388654f }, { 700, 0.386696398f, 0.442232877f }, { 2900, -0.123097703f, -0.302172035f },
                                 { 3100, 0.0523624197f, 0.0877688825f }, { 5000, 0.045177035f, 0.100505695f }, { 9100, -0.00423920294f, 0.00810315367f },
                                 { 9400, 0.00482427329f, -0.010199016f }, { 15000, -0.000171193431f, 1.01026744e-05f } },
                           0.117964927585));
 
-    // the instrument: same engine behind LYNX's channel gains (V = 1, centre), velocity → Init.Vol (link velocity on)
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::fruitkick;
+    // the instrument: same engine behind YW's channel gains (V = 1, centre), velocity → Init.Vol (link velocity on)
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::fruitkick;
     c.pluginState = A;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::fruitkick);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::fruitkick);
     inst->configure (c, 140.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -14150,7 +14150,7 @@ TEST (fruitkick_engine)
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
     const auto iv = (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0;
-    const auto ref = lynx::fruitkick::renderReference (A, { { 0, 60, iv, 0.0, 0.0, 5120 } }, 44100.0, 8192);
+    const auto ref = yw::fruitkick::renderReference (A, { { 0, 60, iv, 0.0, 0.0, 5120 } }, 44100.0, 8192);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
     {
@@ -14190,35 +14190,35 @@ TEST (bassdrum_engine)
     // FL's CRT powf as the engine computes it: a case where its last bit differs from the correctly rounded power
     const float x = 0.87011606f;
     std::uint32_t bits = 0;
-    const auto p = lynx::bassdrum::powfMsvc (x, 0.125f);
+    const auto p = yw::bassdrum::powfMsvc (x, 0.125f);
     std::memcpy (&bits, &p, 4);
     CHECK (bits == 1065063964u);
-    CHECK (lynx::bassdrum::powfMsvc (2.0f, 1.0f) == 2.0f && lynx::bassdrum::powfMsvc (10.0f, 0.0f) == 1.0f);
+    CHECK (yw::bassdrum::powfMsvc (2.0f, 1.0f) == 2.0f && yw::bassdrum::powfMsvc (10.0f, 0.0f) == 1.0f);
 
     const auto st = bassDrumTestState();
-    CHECK (lynx::bassDrumStateUsable (st) && lynx::bassDrumNoiseName (st) == "test noise.wav");
-    CHECK (lynx::bassDrumParamOffset (st, 6) == 0x50C + 24 && lynx::bassDrumParamOffset (st, 23) < 0);
+    CHECK (yw::bassDrumStateUsable (st) && yw::bassDrumNoiseName (st) == "test noise.wav");
+    CHECK (yw::bassDrumParamOffset (st, 6) == 0x50C + 24 && yw::bassDrumParamOffset (st, 23) < 0);
     auto broken = st;
     broken[8] = 'X';
-    CHECK (! lynx::bassDrumStateUsable (broken));
+    CHECK (! yw::bassDrumStateUsable (broken));
 
     // golden samples of our round-43 model (bdmodel.run with its powf port, 44.1 kHz, host blocks of 512)
     const auto dir = bassDrumTestFolder();
-    const std::vector<lynx::bassdrum::RefNote> notes = { { 0, 60, 1.0, 1.0, 0.0, 0.0, -1 }, { 6000, 64, 0.6, 0.8, 0.4, 25.0, 9000 },
+    const std::vector<yw::bassdrum::RefNote> notes = { { 0, 60, 1.0, 1.0, 0.0, 0.0, -1 }, { 6000, 64, 0.6, 0.8, 0.4, 25.0, 9000 },
                                                          { 6100, 55, 1.5, 1.0, -0.3, 0.0, -1 } };
-    const auto y = lynx::bassdrum::renderReference (st, notes, 44100.0, 30000, dir);
+    const auto y = yw::bassdrum::renderReference (st, notes, 44100.0, 30000, dir);
     CHECK (y.size() == 60000u);
     CHECK (matchesGolden (y, { { 50, 0.0122119058f, 0.0122119058f }, { 400, -0.0886279643f, -0.0886279643f }, { 3000, -0.0428197235f, -0.0428197235f },
                                { 6050, 0.0199260078f, 0.0240648985f }, { 6300, -0.257363439f, -0.185516387f }, { 9000, 0.268954486f, 0.10506025f },
                                { 15000, -0.0102827176f, -0.0380715057f }, { 25000, 0.0f, 0.0f } },
                          0.230007588169));
-    CHECK (lynx::bassdrum::renderReference (st, notes, 44100.0, 100, dir + "/nowhere").empty()); // no table: no engine
+    CHECK (yw::bassdrum::renderReference (st, notes, 44100.0, 100, dir + "/nowhere").empty()); // no table: no engine
 
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::bassdrum;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::bassdrum;
     c.pluginState = st;
     c.samplePath = dir;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::bassdrum);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::bassdrum);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -14228,7 +14228,7 @@ TEST (bassdrum_engine)
             inst->noteOn (60, 0.78125f);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::bassdrum::renderReference (st, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, -1 } }, 44100.0, 8192, dir);
+    const auto ref = yw::bassdrum::renderReference (st, { { 0, 60, (std::pow (11.0, 1.28 * 0.78125) - 1.0) / 10.0, 1.0, 0.0, 0.0, -1 } }, 44100.0, 8192, dir);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
     {
@@ -14250,10 +14250,10 @@ TEST (fruity_fast_dist_flangus_flanger)
     auto close = [] (float a, float b) { return std::abs (a - b) <= x87Tolerance() * std::max (1.0f, std::abs (b)); };
 
     // Fast Dist (+ FL's host waveshaper): live and render kernels
-    auto dist = [&] (lynx::fastdistfx::State s, bool render, std::initializer_list<Gold> gold) {
+    auto dist = [&] (yw::fastdistfx::State s, bool render, std::initializer_list<Gold> gold) {
         std::vector<float> l (inL), r (inR);
-        lynx::fastdistfx::process (l.data(), 4096, s, render);
-        lynx::fastdistfx::process (r.data(), 4096, s, render);
+        yw::fastdistfx::process (l.data(), 4096, s, render);
+        yw::fastdistfx::process (r.data(), 4096, s, render);
         for (const auto& g : gold)
             CHECK (close (l[(std::size_t) g.i], g.l) && close (r[(std::size_t) g.i], g.r));
     };
@@ -14268,13 +14268,13 @@ TEST (fruity_fast_dist_flangus_flanger)
     dist ({ 90, 7, 0, 40, 120 }, true, { { 100, 0.0f, -0.346223623f }, { 1000, -0.511893749f, 0.287246734f }, { 2047, 0.212909341f, -0.340341568f },
                                         { 3000, -0.511893749f, -0.227846757f }, { 4095, 0.0910428166f, 0.197928891f } });
     {
-        const auto* T = lynx::fastdistfx::curve (0, 10);
-        CHECK (T[0] == 0 && T[8191] == T[8192] && lynx::fastdistfx::curve (1, 1)[8191] == 32767);
+        const auto* T = yw::fastdistfx::curve (0, 10);
+        CHECK (T[0] == 0 && T[8191] == T[8192] && yw::fastdistfx::curve (1, 1)[8191] == 32767);
     }
 
     // Flangus: FL's call order (state, sample rate, block size of 512), no flush
-    auto flange = [&] (lynx::flangusfx::State s, int fs, std::initializer_list<Gold> gold) {
-        lynx::flangusfx::Engine e;
+    auto flange = [&] (yw::flangusfx::State s, int fs, std::initializer_list<Gold> gold) {
+        yw::flangusfx::Engine e;
         e.prepare (fs);
         e.load (s);
         e.setRate (fs);
@@ -14301,8 +14301,8 @@ TEST (fruity_fast_dist_flangus_flanger)
                                                              { 4095, 1.49345946f, -0.537866116f } });
 
     // Flanger: state, then the sample rate (FL's call order)
-    auto flanger = [&] (lynx::flangerfx::State s, int fs, std::initializer_list<Gold> gold) {
-        lynx::flangerfx::Engine e;
+    auto flanger = [&] (yw::flangerfx::State s, int fs, std::initializer_list<Gold> gold) {
+        yw::flangerfx::Engine e;
         e.load (s);
         e.prepare (fs);
         std::vector<float> io (8192);
@@ -14326,13 +14326,13 @@ TEST (fruity_fast_dist_flangus_flanger)
     // import: FL's states become the exact effects with the controls as parameters; short states keep the approximations
     {
         const std::vector<std::uint8_t> fd { 192, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 77, 0, 0, 0, 97, 0, 0, 0 };
-        const auto slot = lynx::effectFromFl ("Fruity Fast Dist", fd, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::fruityFastDist);
+        const auto slot = yw::effectFromFl ("Fruity Fast Dist", fd, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::fruityFastDist);
         if (slot)
         {
-            const auto s = lynx::fastdistfx::fromParams (slot->params.data());
+            const auto s = yw::fastdistfx::fromParams (slot->params.data());
             CHECK (s.pre == 192 && s.threshold == 4 && s.type == 1 && s.mix == 77 && s.post == 97);
-            auto fx = lynx::makeEffect (*slot);
+            auto fx = yw::makeEffect (*slot);
             fx->prepare (44100.0);
             std::vector<float> l (inL), r (inR);
             fx->process (l.data(), r.data(), 4096, slot->params, 120.0);
@@ -14341,14 +14341,14 @@ TEST (fruity_fast_dist_flangus_flanger)
         std::vector<std::uint8_t> fg (32);
         const int v[8] { 7, 300, 900, 40, 30, 100, -60, 128 };
         std::memcpy (fg.data(), v, 32);
-        const auto f2 = lynx::effectFromFl ("Fruity Flangus", fg, 120.0);
-        CHECK (f2 && f2->kind == lynx::EffectKind::fruityFlangus);
+        const auto f2 = yw::effectFromFl ("Fruity Flangus", fg, 120.0);
+        CHECK (f2 && f2->kind == yw::EffectKind::fruityFlangus);
         if (f2)
         {
-            const auto s = lynx::flangusfx::fromParams (f2->params.data());
+            const auto s = yw::flangusfx::fromParams (f2->params.data());
             for (int i = 0; i < 8; ++i)
                 CHECK (s[(std::size_t) i] == v[i]);
-            auto fx = lynx::makeEffect (*f2);
+            auto fx = yw::makeEffect (*f2);
             fx->prepare (48000.0);
             std::vector<float> l (inL), r (inR);
             fx->process (l.data(), r.data(), 4096, f2->params, 120.0);
@@ -14357,26 +14357,26 @@ TEST (fruity_fast_dist_flangus_flanger)
         std::vector<std::uint8_t> fl (52);
         const int w[13] { 1, 300, 4000, 4500, 90, 1000, 300, 99, 1024, 1024, 2000, 4000, 1000 };
         std::memcpy (fl.data(), w, 52);
-        const auto f3 = lynx::effectFromFl ("Fruity Flanger", fl, 120.0);
-        CHECK (f3 && f3->kind == lynx::EffectKind::fruityFlanger);
+        const auto f3 = yw::effectFromFl ("Fruity Flanger", fl, 120.0);
+        CHECK (f3 && f3->kind == yw::EffectKind::fruityFlanger);
         if (f3)
         {
-            const auto s = lynx::flangerfx::fromParams (f3->params.data());
+            const auto s = yw::flangerfx::fromParams (f3->params.data());
             for (int i = 0; i < 12; ++i)
                 CHECK (s[(std::size_t) i] == w[i + 1]);
-            auto fx = lynx::makeEffect (*f3);
+            auto fx = yw::makeEffect (*f3);
             fx->prepare (48000.0);
             std::vector<float> l (inL), r (inR);
             fx->process (l.data(), r.data(), 4096, f3->params, 120.0);
             CHECK (l[1000] == 0.24619779f && r[4095] == 0.80683732f);
         }
-        const auto shortFd = lynx::effectFromFl ("Fruity Fast Dist", std::vector<std::uint8_t> (8, 0), 120.0);
-        CHECK (! shortFd || shortFd->kind != lynx::EffectKind::fruityFastDist);
+        const auto shortFd = yw::effectFromFl ("Fruity Fast Dist", std::vector<std::uint8_t> (8, 0), 120.0);
+        CHECK (! shortFd || shortFd->kind != yw::EffectKind::fruityFastDist);
     }
 }
 
 // FL's Fruity Phaser (REA_rodada105_phaser): goldens from the installation's own DLL, rendered unmodified in 512-frame
-// calls; LYNX's engine matches it to the last bit on the 27 presets (denormals aside), the tolerance only absorbs
+// calls; YW's engine matches it to the last bit on the 27 presets (denormals aside), the tolerance only absorbs
 // compilers (gcc / clang / zig) and libm.
 TEST (fruity_phaser_engine)
 {
@@ -14392,8 +14392,8 @@ TEST (fruity_phaser_engine)
         float l, r;
     };
     auto close = [] (float a, float b) { return std::abs (a - b) <= 2.0e-5f * std::max (1.0f, std::abs (b)); };
-    auto phase = [&] (lynx::phaserfx::State s, int fs, std::initializer_list<Gold> gold) {
-        lynx::phaserfx::Engine e;
+    auto phase = [&] (yw::phaserfx::State s, int fs, std::initializer_list<Gold> gold) {
+        yw::phaserfx::Engine e;
         e.setRate (fs);
         e.load (s);
         e.reset();
@@ -14417,29 +14417,29 @@ TEST (fruity_phaser_engine)
              { 3000, -1.91779351f, 0.599423349f }, { 4095, -1.18747222f, 1.03711367f } });
 
     // controls: FL's ranges, the stage count clamp, the texts
-    CHECK (std::abs (lynx::phaserfx::sweepHz (0.5f, false) - 0.238405839f) < 1.0e-6f);
-    CHECK (std::abs (lynx::phaserfx::sweepHz (1.0f, true) - 10.0f) < 1.0e-5f);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPhaser, 5, 11.0f / 22.0f, 120.0) == "12");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPhaser, 5, 0.0f, 120.0) == "3");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPhaser, 7, 0.0f, 120.0) == "100% wet");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPhaser, 8, 0.5f, 120.0) == "+0.0 dB");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPhaser, 3, 0.0f, 120.0) == "small");
+    CHECK (std::abs (yw::phaserfx::sweepHz (0.5f, false) - 0.238405839f) < 1.0e-6f);
+    CHECK (std::abs (yw::phaserfx::sweepHz (1.0f, true) - 10.0f) < 1.0e-5f);
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityPhaser, 5, 11.0f / 22.0f, 120.0) == "12");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityPhaser, 5, 0.0f, 120.0) == "3");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityPhaser, 7, 0.0f, 120.0) == "100% wet");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityPhaser, 8, 0.5f, 120.0) == "+0.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityPhaser, 3, 0.0f, 120.0) == "small");
     {
-        lynx::EffectParams ctx {};
+        yw::EffectParams ctx {};
         ctx[3] = 1.0f;
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityPhaser, 0, 1.0f, 120.0, ctx) == "10.000 Hz");
+        CHECK (yw::formatEffectParam (yw::EffectKind::fruityPhaser, 0, 1.0f, 120.0, ctx) == "10.000 Hz");
     }
-    CHECK (lynx::effectInfo (lynx::EffectKind::fruityPhaser).params.size() == 9);
+    CHECK (yw::effectInfo (yw::EffectKind::fruityPhaser).params.size() == 9);
 
     // import: FL's state (version 1 + nine controls) becomes the exact effect; its parameters round-trip
-    const lynx::phaserfx::State ouch { 417, 995, 1000, 0, 1024, 3, 705, 0, 2943 };
-    const auto bytes = lynx::phaserfx::serialize (ouch);
-    const auto slot = lynx::effectFromFl ("Fruity Phaser", bytes, 120.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::fruityPhaser);
+    const yw::phaserfx::State ouch { 417, 995, 1000, 0, 1024, 3, 705, 0, 2943 };
+    const auto bytes = yw::phaserfx::serialize (ouch);
+    const auto slot = yw::effectFromFl ("Fruity Phaser", bytes, 120.0);
+    CHECK (slot && slot->kind == yw::EffectKind::fruityPhaser);
     if (slot)
     {
-        CHECK (lynx::phaserfx::fromParams (slot->params.data()) == ouch);
-        auto fx = lynx::makeEffect (*slot);
+        CHECK (yw::phaserfx::fromParams (slot->params.data()) == ouch);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (48000.0);
         std::vector<float> l (4096), r (4096);
         for (int n = 0; n < 4096; ++n)
@@ -14452,9 +14452,9 @@ TEST (fruity_phaser_engine)
     }
     auto v2 = bytes;
     v2[0] = 2; // FL reads only versions below 2
-    const auto later = lynx::effectFromFl ("Fruity Phaser", v2, 120.0);
-    CHECK (! later || later->kind != lynx::EffectKind::fruityPhaser);
-    CHECK (lynx::plugui::hasFlLayout (lynx::EffectKind::fruityPhaser));
+    const auto later = yw::effectFromFl ("Fruity Phaser", v2, 120.0);
+    CHECK (! later || later->kind != yw::EffectKind::fruityPhaser);
+    CHECK (yw::plugui::hasFlLayout (yw::EffectKind::fruityPhaser));
 }
 
 // Workflow P2 (docs/WORKFLOW_FL.md)
@@ -14473,12 +14473,12 @@ TEST (chorus_family_engines)
     }
     struct Gold { int i; float l, r; };
     auto close = [] (float a, float b) { return std::abs (a - b) <= x87Tolerance() * std::max (1.0f, std::abs (b)); };
-    auto run = [&] (const char* plugin, const std::vector<std::uint8_t>& st, lynx::EffectKind kind, std::initializer_list<Gold> gold) {
-        const auto slot = lynx::effectFromFl (plugin, st, 120.0);
+    auto run = [&] (const char* plugin, const std::vector<std::uint8_t>& st, yw::EffectKind kind, std::initializer_list<Gold> gold) {
+        const auto slot = yw::effectFromFl (plugin, st, 120.0);
         CHECK (slot && slot->kind == kind);
         if (! slot)
             return;
-        auto fx = lynx::makeEffect (*slot);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 1024, slot->params, 120.0);
@@ -14495,30 +14495,30 @@ TEST (chorus_family_engines)
     };
 
     // Fruity Chorus (start phases 0, which FL draws at random)
-    run ("Fruity Chorus", ints ({ 1, 512, 2250, 341, 1500, 2500, 3500, 23, 0, 0, 0, 2500, 0 }), lynx::EffectKind::fruityChorus,
+    run ("Fruity Chorus", ints ({ 1, 512, 2250, 341, 1500, 2500, 3500, 23, 0, 0, 0, 2500, 0 }), yw::EffectKind::fruityChorus,
          { { 100, 0.0f, -0.3850000202655792f }, { 1000, -0.6181581020355225f, 0.2707735002040863f }, { 2047, -0.01424609124660492f, 0.24228274822235107f },
            { 3000, -1.1650776863098145f, -0.1809898018836975f }, { 4095, -0.012790083885192871f, 0.060571759939193726f } });
-    run ("Fruity Chorus", ints ({ 1, 700, 4000, 900, 4000, 3000, 2000, 400, 700, 1000, 30, 4999, 0 }), lynx::EffectKind::fruityChorus,
+    run ("Fruity Chorus", ints ({ 1, 700, 4000, 900, 4000, 3000, 2000, 400, 700, 1000, 30, 4999, 0 }), yw::EffectKind::fruityChorus,
          { { 100, 0.0f, -0.3850000202655792f }, { 1000, -0.5833333134651184f, 0.36345374584198f }, { 2047, -0.0336097776889801f, -0.3360772430896759f },
            { 3000, -0.40196430683135986f, -0.5073210597038269f }, { 4095, -0.1176539734005928f, 0.444706529378891f } });
-    run ("Fruity Chorus", ints ({ 1, 36, 469, 1004, 2832, 293, 3500, 0, 428, 0, 0, 3887, 1024 }), lynx::EffectKind::fruityChorus,
+    run ("Fruity Chorus", ints ({ 1, 36, 469, 1004, 2832, 293, 3500, 0, 428, 0, 0, 3887, 1024 }), yw::EffectKind::fruityChorus,
          { { 100, 0.2975943684577942f, 0.3747217655181885f }, { 1000, -0.39463338255882263f, 0.18099871277809143f }, { 2047, 0.3894335627555847f, 0.35111793875694275f },
            { 3000, -0.1450725942850113f, 0.2847272455692291f }, { 4095, 0.33678582310676575f, -0.13365517556667328f } });
     {
-        const auto slot = lynx::effectFromFl ("Fruity Chorus", ints ({ 1, 36, 469, 1004, 2832, 293, 3500, 0, 428, 0, 0, 3887, 1024 }), 120.0);
-        CHECK (slot && lynx::fruitychorusfx::fromParams (slot->params.data())[2] == 1004);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityChorus, 11, 1.0f, 120.0) == "on");
-        CHECK (lynx::effectParamFromFl ("Fruity Chorus", 11).has_value() && ! lynx::effectParamFromFl ("Fruity Chorus", 12).has_value());
+        const auto slot = yw::effectFromFl ("Fruity Chorus", ints ({ 1, 36, 469, 1004, 2832, 293, 3500, 0, 428, 0, 0, 3887, 1024 }), 120.0);
+        CHECK (slot && yw::fruitychorusfx::fromParams (slot->params.data())[2] == 1004);
+        CHECK (yw::formatEffectParam (yw::EffectKind::fruityChorus, 11, 1.0f, 120.0) == "on");
+        CHECK (yw::effectParamFromFl ("Fruity Chorus", 11).has_value() && ! yw::effectParamFromFl ("Fruity Chorus", 12).has_value());
     }
     // a state FL does not read (version 2) or too short keeps the generic chorus
-    CHECK (! lynx::effectFromFl ("Fruity Chorus", ints ({ 2, 512, 2250, 341, 1500, 2500, 3500, 23, 0, 0, 0, 2500, 0 }), 120.0).has_value()
-           || lynx::effectFromFl ("Fruity Chorus", ints ({ 2, 512, 2250, 341, 1500, 2500, 3500, 23, 0, 0, 0, 2500, 0 }), 120.0)->kind != lynx::EffectKind::fruityChorus);
-    CHECK (! lynx::effectFromFl ("Fruity Chorus", { 1, 0, 0, 0 }, 120.0).has_value()
-           || lynx::effectFromFl ("Fruity Chorus", { 1, 0, 0, 0 }, 120.0)->kind != lynx::EffectKind::fruityChorus);
+    CHECK (! yw::effectFromFl ("Fruity Chorus", ints ({ 2, 512, 2250, 341, 1500, 2500, 3500, 23, 0, 0, 0, 2500, 0 }), 120.0).has_value()
+           || yw::effectFromFl ("Fruity Chorus", ints ({ 2, 512, 2250, 341, 1500, 2500, 3500, 23, 0, 0, 0, 2500, 0 }), 120.0)->kind != yw::EffectKind::fruityChorus);
+    CHECK (! yw::effectFromFl ("Fruity Chorus", { 1, 0, 0, 0 }, 120.0).has_value()
+           || yw::effectFromFl ("Fruity Chorus", { 1, 0, 0, 0 }, 120.0)->kind != yw::EffectKind::fruityChorus);
 
     // Hyper Chorus engine in FL's load sequence (defaults, then the state: the parameters glide), instance k's phases
     auto hyper = [&] (std::initializer_list<int> raws, int instance, std::initializer_list<Gold> gold) {
-        namespace hc = lynx::hyperchorusfx;
+        namespace hc = yw::hyperchorusfx;
         hc::Engine e (instance);
         const std::vector<int> r (raws);
         auto val = [] (int i, int raw) { return (float) std::clamp ((double) (raw - hc::rawMin[(std::size_t) i]) * (1.0 / (double) (hc::rawMax[(std::size_t) i] - hc::rawMin[(std::size_t) i])), 0.0, 1.0); };
@@ -14541,19 +14541,19 @@ TEST (chorus_family_engines)
     hyper ({ 1000, 555, 0, 400, 300, 300, 0, 22000, 120, 368, 750 }, 2,
            { { 100, 0.0f, -0.398922324180603f }, { 1000, -1.1528236865997314f, 0.2839684784412384f }, { 2047, 0.5115746855735779f, -0.3330395221710205f },
              { 3000, -0.6094785928726196f, 0.17040175199508667f }, { 4095, -0.11666109412908554f, 0.21931695938110352f } });
-    CHECK (lynx::hyperchorusfx::randState (1) == 1u * 214013u + 2531011u);
+    CHECK (yw::hyperchorusfx::randState (1) == 1u * 214013u + 2531011u);
     {
         // the import: controls as parameters; a song's Hyper Chorus slots are numbered in mixer order
         const auto st = ints ({ 2, 1000, 555, 0, 400, 300, 300, 0, 22000, 120, 368, 750, 0 });
-        const auto slot = lynx::effectFromFl ("Hyper Chorus", st, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::hyperChorus && lynx::hyperchorusfx::fromParams (slot->params.data())[9] == 368);
-        lynx::Song song;
+        const auto slot = yw::effectFromFl ("Hyper Chorus", st, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::hyperChorus && yw::hyperchorusfx::fromParams (slot->params.data())[9] == 368);
+        yw::Song song;
         song.mixer.resize (3);
         song.mixer[1].effects = { *slot, *slot };
         song.mixer[2].effects = { *slot };
-        lynx::numberChorusInstances (song);
-        CHECK (lynx::hyperchorusfx::instanceOf (song.mixer[2].effects[0].state) == 2);
-        auto fx = lynx::makeEffect (song.mixer[2].effects[0]);
+        yw::numberChorusInstances (song);
+        CHECK (yw::hyperchorusfx::instanceOf (song.mixer[2].effects[0].state) == 2);
+        auto fx = yw::makeEffect (song.mixer[2].effects[0]);
         fx->prepare (48000.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 4096, slot->params, 120.0);
@@ -14564,15 +14564,15 @@ TEST (chorus_family_engines)
             wet = wet || l[(std::size_t) n] != inL[(std::size_t) n];
         }
         CHECK (finite && wet);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::hyperChorus, 8, 0.0f, 120.0) == "off");
-        CHECK (! lynx::effectFromFl ("Hyper Chorus", ints ({ 3, 1000, 555, 0, 400, 300, 300, 0, 22000, 120, 368, 750, 0 }), 120.0).has_value()
-               || lynx::effectFromFl ("Hyper Chorus", ints ({ 3, 1000, 555, 0, 400, 300, 300, 0, 22000, 120, 368, 750, 0 }), 120.0)->kind != lynx::EffectKind::hyperChorus);
+        CHECK (yw::formatEffectParam (yw::EffectKind::hyperChorus, 8, 0.0f, 120.0) == "off");
+        CHECK (! yw::effectFromFl ("Hyper Chorus", ints ({ 3, 1000, 555, 0, 400, 300, 300, 0, 22000, 120, 368, 750, 0 }), 120.0).has_value()
+               || yw::effectFromFl ("Hyper Chorus", ints ({ 3, 1000, 555, 0, 400, 300, 300, 0, 22000, 120, 368, 750, 0 }), 120.0)->kind != yw::EffectKind::hyperChorus);
     }
 
     // Vintage Chorus engine as FL drives it (created, sample rate, each control), fresh instance (its smoothed values
     // start from the engine's initial ones)
     auto vintage = [&] (std::initializer_list<int> raws, std::initializer_list<Gold> gold) {
-        namespace vc = lynx::vintagechorusfx;
+        namespace vc = yw::vintagechorusfx;
         vc::Engine e;
         e.setRate (44100.0);
         int i = 0;
@@ -14600,9 +14600,9 @@ TEST (chorus_family_engines)
                { 3000, -0.471851646900177f, -0.30123069882392883f }, { 4095, 0.0959278866648674f, 0.13436323404312134f } });
     {
         const auto st = ints ({ 1, 2, 0, 211046, 1, 2411, 960, 1985, 5121, 0, 1, 4420, 6000, 273, 0, 0, 0, 0 });
-        const auto slot = lynx::effectFromFl ("Vintage Chorus", st, 120.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::vintageChorus && lynx::vintagechorusfx::fromParams (slot->params.data())[2] == 211046);
-        auto fx = lynx::makeEffect (*slot);
+        const auto slot = yw::effectFromFl ("Vintage Chorus", st, 120.0);
+        CHECK (slot && slot->kind == yw::EffectKind::vintageChorus && yw::vintagechorusfx::fromParams (slot->params.data())[2] == 211046);
+        auto fx = yw::makeEffect (*slot);
         fx->prepare (44100.0);
         std::vector<float> l (inL), r (inR);
         fx->process (l.data(), r.data(), 4096, slot->params, 120.0);
@@ -14610,9 +14610,9 @@ TEST (chorus_family_engines)
         for (int n = 0; n < 4096; ++n)
             finite = finite && std::isfinite (l[(std::size_t) n]) && std::isfinite (r[(std::size_t) n]);
         CHECK (finite && l[3000] != inL[3000]);
-        CHECK (lynx::formatEffectParam (lynx::EffectKind::vintageChorus, 0, 0.0f, 120.0) == "Chorus 1");
-        CHECK (! lynx::effectFromFl ("Vintage Chorus", ints ({ 2, 2, 0, 211046, 1, 2411, 960, 1985, 5121, 0, 1, 4420, 6000, 273, 0, 0, 0, 0 }), 120.0).has_value()
-               || lynx::effectFromFl ("Vintage Chorus", ints ({ 2, 2, 0, 211046, 1, 2411, 960, 1985, 5121, 0, 1, 4420, 6000, 273, 0, 0, 0, 0 }), 120.0)->kind != lynx::EffectKind::vintageChorus);
+        CHECK (yw::formatEffectParam (yw::EffectKind::vintageChorus, 0, 0.0f, 120.0) == "Chorus 1");
+        CHECK (! yw::effectFromFl ("Vintage Chorus", ints ({ 2, 2, 0, 211046, 1, 2411, 960, 1985, 5121, 0, 1, 4420, 6000, 273, 0, 0, 0, 0 }), 120.0).has_value()
+               || yw::effectFromFl ("Vintage Chorus", ints ({ 2, 2, 0, 211046, 1, 2411, 960, 1985, 5121, 0, 1, 4420, 6000, 273, 0, 0, 0, 0 }), 120.0)->kind != yw::EffectKind::vintageChorus);
     }
 }
 #include "UiChromeTests.inc"
@@ -14637,10 +14637,10 @@ TEST (fruity_delay_engines)
             CHECK (std::abs (l[(std::size_t) i] - gl) < 2e-6f && std::abs (r[(std::size_t) i] - gr) < 2e-6f);
     };
     auto run3 = [&] (const std::array<int, 26>& raw, double bpm) {
-        lynx::fldelay::Delay3Engine e (44100.0);
+        yw::fldelay::Delay3Engine e (44100.0);
         e.setTempo (bpm);
         for (int i = 0; i < 26; ++i)
-            e.setParameter (i, lynx::fldelay::delay3EngineValue (i, raw[(std::size_t) i]));
+            e.setParameter (i, yw::fldelay::delay3EngineValue (i, raw[(std::size_t) i]));
         e.setSampleRate (44100.0); // FL's wrapper sets the rate up again after the state
         e.setSampleRate (44100.0);
         std::vector<float> l (inL), r (inR);
@@ -14649,9 +14649,9 @@ TEST (fruity_delay_engines)
         return std::make_pair (l, r);
     };
     auto run2 = [&] (const std::array<int, 8>& raw, double bpm) {
-        lynx::fldelay::Delay2State st;
+        yw::fldelay::Delay2State st;
         st.v = raw;
-        lynx::fldelay::Delay2Engine e (st, 44100.0, bpm, 512);
+        yw::fldelay::Delay2Engine e (st, 44100.0, bpm, 512);
         std::vector<float> l (inL), r (inR);
         for (int s = 0; s < n; s += 512)
             e.process (l.data() + s, r.data() + s, 512);
@@ -14693,16 +14693,16 @@ TEST (fruity_delay_engines)
     const std::array<int, 26> def3 { 6000, 1, 1, 0, 192, 3000, 500, 6000, 3000, 0, 0, 0, 0, 1, 0, 0, 6000, 0, 0, 0, 0, 60000, 6000, 6000, 0, 6000 };
     state3[0] = 1;
     std::memcpy (state3.data() + 4, def3.data(), 26 * 4);
-    const auto slot3 = lynx::effectFromFl ("Fruity Delay 3", state3, 120.0);
-    CHECK (slot3 && slot3->kind == lynx::EffectKind::fruityDelay3);
+    const auto slot3 = yw::effectFromFl ("Fruity Delay 3", state3, 120.0);
+    CHECK (slot3 && slot3->kind == yw::EffectKind::fruityDelay3);
     auto state2 = std::vector<std::uint8_t> (32, 0);
     const std::array<int, 8> def2 { 0, 128, 128, 0, 144, 0, 0, 128 };
     std::memcpy (state2.data(), def2.data(), 32);
-    const auto slot2 = lynx::effectFromFl ("Fruity delay 2", state2, 120.0);
-    CHECK (slot2 && slot2->kind == lynx::EffectKind::fruityDelay2);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fruityDelay2, 4, slot2->params[4], 120.0) == "3:00");
-    auto echoAt = [] (const lynx::EffectSlot& slot, double bpm) {
-        auto fx = lynx::makeEffect (slot);
+    const auto slot2 = yw::effectFromFl ("Fruity delay 2", state2, 120.0);
+    CHECK (slot2 && slot2->kind == yw::EffectKind::fruityDelay2);
+    CHECK (yw::formatEffectParam (yw::EffectKind::fruityDelay2, 4, slot2->params[4], 120.0) == "3:00");
+    auto echoAt = [] (const yw::EffectSlot& slot, double bpm) {
+        auto fx = yw::makeEffect (slot);
         fx->prepare (44100.0);
         std::vector<float> l (48000, 0.0f), r (48000, 0.0f);
         l[100] = 1.0f;
@@ -14763,27 +14763,27 @@ TEST (fl_plugin_db_nfo_parsing)
                             "ps_file_magic_1=Vita\r\n"
                             "ps_file_name_2=not a plugin\r\n"
                             "garbage line without equals\r\n";
-    const auto entries = lynx::parseFlPluginNfo (nfo, "D:\\FL\\Presets\\Plugin database\\Installed\\Generators\\VST3\\Vital.nfo");
+    const auto entries = yw::parseFlPluginNfo (nfo, "D:\\FL\\Presets\\Plugin database\\Installed\\Generators\\VST3\\Vital.nfo");
     CHECK (entries.size() == 2);
     if (entries.size() == 2)
     {
         CHECK (entries[0].name == "Vital" && entries[0].vendor == "Vital Audio" && entries[0].role == 2);
-        CHECK (entries[0].format == lynx::ForeignPlugin::Format::vst3);
-        CHECK (entries[1].format == lynx::ForeignPlugin::Format::vst2 && entries[1].vst2Id == 0x56697461u);
+        CHECK (entries[0].format == yw::ForeignPlugin::Format::vst3);
+        CHECK (entries[1].format == yw::ForeignPlugin::Format::vst2 && entries[1].vst2Id == 0x56697461u);
     }
 
     // no type field: the role comes from the Effects / Generators folder; an ID in GUID form is read
-    const auto fx = lynx::parseFlPluginNfo ("ps_name=Fancy Comp\nps_file_filename_0=C:/CLAP/Fancy Comp.clap\n"
+    const auto fx = yw::parseFlPluginNfo ("ps_name=Fancy Comp\nps_file_filename_0=C:/CLAP/Fancy Comp.clap\n"
                                             "ps_file_guid_0={01234567-89AB-CDEF-0123-456789ABCDEF}\n",
                                             "C:\\x\\Installed\\Effects\\CLAP\\Fancy Comp.nfo");
-    CHECK (fx.size() == 1 && fx[0].role == 1 && fx[0].format == lynx::ForeignPlugin::Format::clap && fx[0].hasClassId
+    CHECK (fx.size() == 1 && fx[0].role == 1 && fx[0].format == yw::ForeignPlugin::Format::clap && fx[0].hasClassId
            && fx[0].classId[0] == 0x01 && fx[0].classId[15] == 0xEF);
-    CHECK (lynx::parseFlPluginNfo ("Tip=All of the plugins found in your system.").empty());
+    CHECK (yw::parseFlPluginNfo ("Tip=All of the plugins found in your system.").empty());
 
-    CHECK (lynx::pluginNameKey ("Serum_x64") == "serum");
-    CHECK (lynx::pluginNameKey ("Vital.VST3") == "vital");
-    CHECK (lynx::pluginNameKey ("Pro-Q 3") == "proq3");
-    CHECK (lynx::pluginFormatFromPath ("a\\b.CLAP") == lynx::ForeignPlugin::Format::clap);
+    CHECK (yw::pluginNameKey ("Serum_x64") == "serum");
+    CHECK (yw::pluginNameKey ("Vital.VST3") == "vital");
+    CHECK (yw::pluginNameKey ("Pro-Q 3") == "proq3");
+    CHECK (yw::pluginFormatFromPath ("a\\b.CLAP") == yw::ForeignPlugin::Format::clap);
 }
 
 TEST (fl_plugin_db_fst_parsing_and_matching)
@@ -14796,49 +14796,49 @@ TEST (fl_plugin_db_fst_parsing_and_matching)
     FlpBuilder fst;
     fst.ascii (0xC9, "Fruity Wrapper");
     fst.data (0xD5, testWrapperBlob (8, "Surge XT", "E:\\Plugins\\VST3\\Surge XT.vst3", cid));
-    lynx::FlPluginDbEntry e;
-    CHECK (lynx::parseFlPluginFst (fst.bytes, e));
-    CHECK (e.name == "Surge XT" && e.format == lynx::ForeignPlugin::Format::vst3 && e.hasClassId && e.classId[0] == 0x10);
-    lynx::FlPluginDbEntry bad;
-    CHECK (! lynx::parseFlPluginFst (std::vector<std::uint8_t> { 'F', 'L', 'h', 'd' }, bad));
+    yw::FlPluginDbEntry e;
+    CHECK (yw::parseFlPluginFst (fst.bytes, e));
+    CHECK (e.name == "Surge XT" && e.format == yw::ForeignPlugin::Format::vst3 && e.hasClassId && e.classId[0] == 0x10);
+    yw::FlPluginDbEntry bad;
+    CHECK (! yw::parseFlPluginFst (std::vector<std::uint8_t> { 'F', 'L', 'h', 'd' }, bad));
 
-    lynx::FlPluginDb db;
+    yw::FlPluginDb db;
     db.add (e);
     // the .nfo of the same plugin fills in vendor and role
-    for (const auto& n : lynx::parseFlPluginNfo ("ps_name=Surge XT\nps_file_name_0=E:/Plugins/VST3/Surge XT.vst3\n"
+    for (const auto& n : yw::parseFlPluginNfo ("ps_name=Surge XT\nps_file_name_0=E:/Plugins/VST3/Surge XT.vst3\n"
                                                  "ps_file_vendorname_0=Surge Synth Team\nps_file_type_0=2\n"))
         db.add (n);
-    db.add ({ "Clapper", "", "E:\\Plugins\\CLAP\\Clapper.clap", "", lynx::ForeignPlugin::Format::clap, 1, {}, false, "org.clapper", 0 });
-    db.add ({ "Big Verb", "", "E:\\Old VST\\BigVerb_x64.dll", "", lynx::ForeignPlugin::Format::vst2, 1, {}, false, "", 0x42566262u });
-    db.add ({ "Bundle", "", "F:\\VST3\\Bundle.vst3\\Contents\\x86_64-win\\Bundle.vst3", "", lynx::ForeignPlugin::Format::vst3, 2, {}, false, "", 0 });
+    db.add ({ "Clapper", "", "E:\\Plugins\\CLAP\\Clapper.clap", "", yw::ForeignPlugin::Format::clap, 1, {}, false, "org.clapper", 0 });
+    db.add ({ "Big Verb", "", "E:\\Old VST\\BigVerb_x64.dll", "", yw::ForeignPlugin::Format::vst2, 1, {}, false, "", 0x42566262u });
+    db.add ({ "Bundle", "", "F:\\VST3\\Bundle.vst3\\Contents\\x86_64-win\\Bundle.vst3", "", yw::ForeignPlugin::Format::vst3, 2, {}, false, "", 0 });
     CHECK (db.entries().size() == 4);
     CHECK (db.entries()[0].vendor == "Surge Synth Team" && db.entries()[0].role == 2);
 
     // by VST3 class ID even when the project saved another path and name
-    lynx::ForeignPlugin p;
-    p.format = lynx::ForeignPlugin::Format::vst3;
+    yw::ForeignPlugin p;
+    p.format = yw::ForeignPlugin::Format::vst3;
     p.hasClassId = true;
     std::copy (cid.begin(), cid.end(), p.classId.begin());
     p.name = "Renamed";
     p.path = "C:\\Other PC\\Surge.vst3";
     CHECK (db.match (p, true) == &db.entries()[0]);
     // by CLAP id, by VST2 id
-    lynx::ForeignPlugin c;
-    c.format = lynx::ForeignPlugin::Format::clap;
+    yw::ForeignPlugin c;
+    c.format = yw::ForeignPlugin::Format::clap;
     c.clapId = "org.clapper";
     CHECK (db.match (c, false) == &db.entries()[1]);
-    lynx::ForeignPlugin v;
-    v.format = lynx::ForeignPlugin::Format::vst2;
+    yw::ForeignPlugin v;
+    v.format = yw::ForeignPlugin::Format::vst2;
     v.vst2Id = 0x42566262u;
     CHECK (db.match (v, false) == &db.entries()[2]);
     // by name (architecture suffix ignored), only in the same role
-    lynx::ForeignPlugin byName;
-    byName.format = lynx::ForeignPlugin::Format::vst2;
+    yw::ForeignPlugin byName;
+    byName.format = yw::ForeignPlugin::Format::vst2;
     byName.name = "BigVerb x64";
     CHECK (db.match (byName, false) == &db.entries()[2]);
     CHECK (db.match (byName, true) == nullptr);
-    lynx::ForeignPlugin unknown;
-    unknown.format = lynx::ForeignPlugin::Format::vst3;
+    yw::ForeignPlugin unknown;
+    unknown.format = yw::ForeignPlugin::Format::vst3;
     unknown.name = "Nothing Like It";
     CHECK (db.match (unknown, true) == nullptr);
 
@@ -14849,9 +14849,9 @@ TEST (fl_plugin_db_fst_parsing_and_matching)
     CHECK (std::find (folders.begin(), folders.end(), "E:\\Plugins\\VST3") != folders.end());
 
     // targeted scan picks: same file, or same name key
-    CHECK (lynx::pluginFileMatches ("E:/Plugins/VST3/Surge XT.vst3", p, &db.entries()[0]));
-    CHECK (lynx::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\BigVerb.vst3", byName, nullptr));
-    CHECK (! lynx::pluginFileMatches ("C:\\VST3\\Other.vst3", byName, nullptr));
+    CHECK (yw::pluginFileMatches ("E:/Plugins/VST3/Surge XT.vst3", p, &db.entries()[0]));
+    CHECK (yw::pluginFileMatches ("C:\\Program Files\\Common Files\\VST3\\BigVerb.vst3", byName, nullptr));
+    CHECK (! yw::pluginFileMatches ("C:\\VST3\\Other.vst3", byName, nullptr));
 
     // the plugins an .flp uses: wrapper channels and mixer slots
     flp::Project project;
@@ -14865,7 +14865,7 @@ TEST (fl_plugin_db_fst_parsing_and_matching)
     insert.slots.push_back ({ 0, "Fruity Wrapper", testWrapperBlob (12, "Clapper", "C:\\CLAP\\Clapper.clap", {}, "org.clapper") });
     insert.slots.push_back ({ 1, "Fruity Wrapper", testWrapperBlob (3, "DX thing", "C:\\dx.dll") }); // DirectX: not hosted
     project.mixer.push_back (insert);
-    const auto uses = lynx::flpForeignPlugins (project);
+    const auto uses = yw::flpForeignPlugins (project);
     CHECK (uses.size() == 2);
     CHECK (uses.size() == 2 && uses[0].instrument && ! uses[1].instrument && uses[1].plugin.clapId == "org.clapper");
 }
@@ -14875,25 +14875,25 @@ TEST (fl_sample_relocation)
     std::set<std::string> files { "D:\\Docs\\Image-Line\\FL Studio\\Audio\\Recorded\\take.wav", "C:\\Program Files\\FL 2026\\Data\\Patches\\kick.wav",
                                   "C:\\Users\\me\\Music\\loop.wav", "E:\\Songs\\Track\\Samples\\snare.wav", "E:\\Songs\\Track\\hat.wav" };
     auto exists = [&] (const std::string& p) { return files.count (p) > 0; };
-    lynx::FlPathRoots roots;
+    yw::FlPathRoots roots;
     roots.userData = "D:\\Docs\\Image-Line\\FL Studio";
     roots.factoryData = "C:\\Program Files\\FL 2026";
     roots.home = "C:\\Users\\me";
     const std::string project = "E:\\Songs\\Track";
 
     // variable resolved, file in place
-    CHECK (lynx::locateFlSample ("%FLStudioFactoryData%\\Data\\Patches\\kick.wav", roots, project, exists) == "C:\\Program Files\\FL 2026\\Data\\Patches\\kick.wav");
+    CHECK (yw::locateFlSample ("%FLStudioFactoryData%\\Data\\Patches\\kick.wav", roots, project, exists) == "C:\\Program Files\\FL 2026\\Data\\Patches\\kick.wav");
     // another PC's FL user data / FL install / user profile
-    CHECK (lynx::locateFlSample ("C:\\Users\\bob\\Documents\\Image-Line\\FL Studio\\Audio\\Recorded\\take.wav", roots, project, exists)
+    CHECK (yw::locateFlSample ("C:\\Users\\bob\\Documents\\Image-Line\\FL Studio\\Audio\\Recorded\\take.wav", roots, project, exists)
            == "D:\\Docs\\Image-Line\\FL Studio\\Audio\\Recorded\\take.wav");
-    CHECK (lynx::locateFlSample ("C:\\Program Files (x86)\\Image-Line\\FL Studio 20\\Data\\Patches\\kick.wav", roots, project, exists)
+    CHECK (yw::locateFlSample ("C:\\Program Files (x86)\\Image-Line\\FL Studio 20\\Data\\Patches\\kick.wav", roots, project, exists)
            == "C:\\Program Files\\FL 2026\\Data\\Patches\\kick.wav");
-    CHECK (lynx::locateFlSample ("C:/Users/bob/Music/loop.wav", roots, project, exists) == "C:\\Users\\me\\Music\\loop.wav");
+    CHECK (yw::locateFlSample ("C:/Users/bob/Music/loop.wav", roots, project, exists) == "C:\\Users\\me\\Music\\loop.wav");
     // next to the project, also in a sub-folder named in the original path
-    CHECK (lynx::locateFlSample ("Z:\\Old\\Samples\\snare.wav", roots, project, exists) == "E:\\Songs\\Track\\Samples\\snare.wav");
-    CHECK (lynx::locateFlSample ("Z:\\Old\\Stuff\\hat.wav", roots, project, exists) == "E:\\Songs\\Track\\hat.wav");
-    CHECK (lynx::locateFlSample ("Z:\\nowhere.wav", roots, project, exists).empty());
-    CHECK (lynx::locateFlSample ("", roots, project, exists).empty());
+    CHECK (yw::locateFlSample ("Z:\\Old\\Samples\\snare.wav", roots, project, exists) == "E:\\Songs\\Track\\Samples\\snare.wav");
+    CHECK (yw::locateFlSample ("Z:\\Old\\Stuff\\hat.wav", roots, project, exists) == "E:\\Songs\\Track\\hat.wav");
+    CHECK (yw::locateFlSample ("Z:\\nowhere.wav", roots, project, exists).empty());
+    CHECK (yw::locateFlSample ("", roots, project, exists).empty());
 }
 
 // --- REA round 64: SimSynth (exact engine) and Wasp / Wasp XT (FL 2026's silent placeholder) ---------------------
@@ -14961,16 +14961,16 @@ TEST (simsynth_engine)
                                        0.5, 0.4, 0.0, 0.5, 0.8, 0.6, 0.85, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.3, 0.2, 0.5, 0.6, 1.0, 0.0, 0.5, 0.0, 0.0 };
     const std::array<int, 19> SB = { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0 };
     const auto blobA = simSynthTestState (A, SA), blobB = simSynthTestState (B, SB, 7);
-    dumpIfAsked ("LYNX_DUMP_SIMSYNTH", blobA);
-    CHECK (lynx::simSynthStateUsable (blobA) && ! lynx::simSynthStateUsable (std::vector<std::uint8_t> (blobA.begin(), blobA.begin() + 563)));
-    const auto hp = lynx::simSynthHostParams (blobA);
+    dumpIfAsked ("YW_DUMP_SIMSYNTH", blobA);
+    CHECK (yw::simSynthStateUsable (blobA) && ! yw::simSynthStateUsable (std::vector<std::uint8_t> (blobA.begin(), blobA.begin() + 563)));
+    const auto hp = yw::simSynthHostParams (blobA);
     // knobs go through ⌊65535·v⌋, the coarse pitches through 48 steps, the switches and wave selectors as they are
     CHECK (hp.size() == 58u && hp[0] == 52428 && hp[27] == 10080 && hp[41] == 1 && hp[54] == 0 && hp[56] == 4);
 
     // golden samples of the installation's SimSynth_x64.dll (round-64 EXEC harness: created, state restored, 44.1 kHz,
-    // host blocks of 512, old voice record) — LYNX's engine renders bit-identically: C5 0–30000, E5 Final.Vol 0.8 pan
+    // host blocks of 512, old voice record) — YW's engine renders bit-identically: C5 0–30000, E5 Final.Vol 0.8 pan
     // 16 11025–40000, G5 pan −20 +25 cents 22050–52000
-    const std::vector<lynx::simsynth::RefNote> notes = { { 0, 60, 1.0f, 0, 0, 0.0f, 0.0f, 30000 },
+    const std::vector<yw::simsynth::RefNote> notes = { { 0, 60, 1.0f, 0, 0, 0.0f, 0.0f, 30000 },
                                                          { 11025, 64, 0.8f, 16, 0, 0.0f, 0.0f, 40000 },
                                                          { 22050, 67, 1.0f, -20, 25, 0.0f, 0.0f, 52000 } };
     struct Golden { int i; float l, r; };
@@ -14979,7 +14979,7 @@ TEST (simsynth_engine)
     for (int which = 0; which < 2; ++which)
     {
         std::vector<std::int64_t> counters;
-        const auto y = lynx::simsynth::renderReference (which == 0 ? blobA : blobB, notes, 44100.0, 66150, 512, &counters);
+        const auto y = yw::simsynth::renderReference (which == 0 ? blobA : blobB, notes, 44100.0, 66150, 512, &counters);
         CHECK (y.size() == 2 * 66150u);
         if (y.size() != 2 * 66150u)
             continue;
@@ -14993,12 +14993,12 @@ TEST (simsynth_engine)
         CHECK (std::abs (std::sqrt (e / (double) y.size()) - (which == 0 ? 0.290665331870 : 0.992116840643)) < 1e-9);
     }
 
-    // the instrument: same engine behind LYNX's channel gains (V = 1, centre → Final.Vol 1, Final.Pan 0)
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::simsynth;
+    // the instrument: same engine behind YW's channel gains (V = 1, centre → Final.Vol 1, Final.Pan 0)
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::simsynth;
     c.pluginState = blobA;
     c.engineRev = 1; // (round 190om: the revision before the velocity law, every note at Final.Vol 1)
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::simsynth);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::simsynth);
     inst->prepare (44100.0);
     inst->configure (c, 120.0);
     std::vector<float> l (8192, 0.0f), r (8192, 0.0f);
@@ -15010,7 +15010,7 @@ TEST (simsynth_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * k, r.data() + 512 * k, 512, 1.0f, 1.0f);
     }
-    const auto ref = lynx::simsynth::renderReference (blobA, { { 0, 60, 1.0f, 0, 0, 0.0f, 0.0f, 5120 } }, 44100.0, 8192);
+    const auto ref = yw::simsynth::renderReference (blobA, { { 0, 60, 1.0f, 0, 0, 0.0f, 0.0f, 5120 } }, 44100.0, 8192);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 8192; ++i)
     {
@@ -15029,10 +15029,10 @@ TEST (simsynth_engine)
                 for (const auto& st : pluginStatesIn (entry.path(), "SimSynth"))
                 {
                     ++presets;
-                    if (! lynx::simSynthStateUsable (st))
+                    if (! yw::simSynthStateUsable (st))
                         continue;
                     ++usable;
-                    const auto y = lynx::simsynth::renderReference (st, { { 0, 48, 1.0f, 0, 0, 0.0f, 0.0f, 11025 } }, 44100.0, 22050);
+                    const auto y = yw::simsynth::renderReference (st, { { 0, 48, 1.0f, 0, 0, 0.0f, 0.0f, 11025 } }, 44100.0, 22050);
                     double e = 0.0;
                     bool finite = true;
                     for (auto v : y)
@@ -15047,8 +15047,8 @@ TEST (simsynth_engine)
 
 TEST (wasp_is_a_silent_placeholder)
 {
-    // FL 2026's Wasp / Wasp XT DLL keeps the state and plays nothing: so does LYNX (REA_rodada64 §5)
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::wasp);
+    // FL 2026's Wasp / Wasp XT DLL keeps the state and plays nothing: so does YW (REA_rodada64 §5)
+    auto inst = yw::makeInstrument (yw::InstrumentKind::wasp);
     inst->prepare (44100.0);
     std::vector<float> l (1024, 0.0f), r (1024, 0.0f);
     inst->noteOn (60, 1.0f);
@@ -15070,22 +15070,22 @@ TEST (wasp_is_a_silent_placeholder)
         b.utf16 (0xC9, name);
         b.data (0xD5, state);
     }
-    const auto song = lynx::importFlp (flp::parseProject (b.bytes));
+    const auto song = yw::importFlp (flp::parseProject (b.bytes));
     CHECK (song.channels.size() == 3u);
     if (song.channels.size() == 3u)
     {
-        CHECK (song.channels[0].instrument == lynx::InstrumentKind::simsynth && song.channels[0].pluginState == ss);
-        CHECK (song.channels[1].instrument == lynx::InstrumentKind::wasp && song.channels[1].pluginState == wasp);
-        CHECK (song.channels[2].instrument == lynx::InstrumentKind::wasp);
+        CHECK (song.channels[0].instrument == yw::InstrumentKind::simsynth && song.channels[0].pluginState == ss);
+        CHECK (song.channels[1].instrument == yw::InstrumentKind::wasp && song.channels[1].pluginState == wasp);
+        CHECK (song.channels[2].instrument == yw::InstrumentKind::wasp);
     }
 }
 // --- REA round 67: Fruity Granulizer (exact engine) --------------------------------------------------------------
 namespace
 {
 // our own deterministic test sample (a fading 220 Hz sine plus LCG noise per channel), as r67/py/gold67.py builds it
-lynx::SampleData granulizerTestSample (int n, int ch)
+yw::SampleData granulizerTestSample (int n, int ch)
 {
-    lynx::SampleData d;
+    yw::SampleData d;
     std::uint32_t s = 12345;
     for (int i = 0; i < n; ++i)
     {
@@ -15115,30 +15115,30 @@ TEST (granulizer_engine)
     // REA_rodada67: states written from scratch against our reference model (granmodel.py, which renders like the
     // installation's DLL within −128 dB: the DLL's rcpps and IPP sines are not replicated)
     const auto v5 = granulizerTestState ({ 204, 50, 611, 611, 0, 180, 0, 0, 0, 0, 0, 228 });
-    CHECK (lynx::granulizerStateUsable (v5));
-    const auto n5 = lynx::granulizerNormalisedState (v5, {});
-    CHECK (n5.size() == 428 && n5[0] == 7 && lynx::granulizerParam (n5, 0) == 204 && lynx::granulizerParam (n5, 11) == 228
-           && ! lynx::granulizerParam (n5, 12));
+    CHECK (yw::granulizerStateUsable (v5));
+    const auto n5 = yw::granulizerNormalisedState (v5, {});
+    CHECK (n5.size() == 428 && n5[0] == 7 && yw::granulizerParam (n5, 0) == 204 && yw::granulizerParam (n5, 11) == 228
+           && ! yw::granulizerParam (n5, 12));
     // version 1 (10 parameters): parameter 11 takes the plugin's 0xf8
     {
         std::vector<std::uint8_t> v1 (v5.begin(), v5.begin() + 44);
         v1[0] = 1;
-        const auto n1 = lynx::granulizerNormalisedState (v1, {});
-        CHECK (lynx::granulizerParam (n1, 9) == 0 && lynx::granulizerParam (n1, 11) == 0xf8 && lynx::granulizerParam (n1, 3) == 611);
+        const auto n1 = yw::granulizerNormalisedState (v1, {});
+        CHECK (yw::granulizerParam (n1, 9) == 0 && yw::granulizerParam (n1, 11) == 0xf8 && yw::granulizerParam (n1, 3) == 611);
         std::vector<std::uint8_t> bad (v5);
         bad[0] = 9;
-        CHECK (! lynx::granulizerStateUsable (bad) && lynx::granulizerNormalisedState (bad, {}).empty());
+        CHECK (! yw::granulizerStateUsable (bad) && yw::granulizerNormalisedState (bad, {}).empty());
         auto edited = n5;
-        CHECK (lynx::granulizerSetParam (edited, 3, -5000) && lynx::granulizerParam (edited, 3) == -1000);
+        CHECK (yw::granulizerSetParam (edited, 3, -5000) && yw::granulizerParam (edited, 3) == -1000);
     }
 
-    using N = lynx::granulizer::RefNote;
-    struct Golden { std::vector<std::uint8_t> state; int ch, fs, rate; lynx::granulizer::RefOptions opt; std::vector<N> notes;
+    using N = yw::granulizer::RefNote;
+    struct Golden { std::vector<std::uint8_t> state; int ch, fs, rate; yw::granulizer::RefOptions opt; std::vector<N> notes;
                     double el, er; std::tuple<int, float, float> at[6]; };
     auto check = [] (const Golden& g) {
         auto smp = granulizerTestSample (20000, g.ch);
         smp.sampleRate = g.rate;
-        const auto y = lynx::granulizer::renderReference (lynx::granulizerNormalisedState (g.state, {}), smp, g.notes, (double) g.fs, 16384, g.opt);
+        const auto y = yw::granulizer::renderReference (yw::granulizerNormalisedState (g.state, {}), smp, g.notes, (double) g.fs, 16384, g.opt);
         CHECK (y.size() == 2 * 16384);
         if (y.size() != 2 * 16384)
             return;
@@ -15150,7 +15150,7 @@ TEST (granulizer_engine)
             CHECK (goldenSampleClose (y[2 * (std::size_t) i], l, granulizerTolerance())
                    && goldenSampleClose (y[2 * (std::size_t) i + 1], r, granulizerTolerance()));
     };
-    lynx::granulizer::RefOptions o1, o2, o3;
+    yw::granulizer::RefOptions o1, o2, o3;
     o1.points = o2.points = o3.points = 12; // the plugin's own default quality (these goldens predate FL's render value)
     o2.block = 333, o2.seed = 777;
     o3.block = 64, o3.seed = 5;
@@ -15174,16 +15174,16 @@ TEST (granulizer_engine)
 
     // the instrument: silent without a sample (FL's plugin refuses the note), sounding with one
     {
-        auto silent = lynx::makeInstrument (lynx::InstrumentKind::granulizer);
+        auto silent = yw::makeInstrument (yw::InstrumentKind::granulizer);
         silent->prepare (44100.0);
         std::vector<float> l (2048, 0.0f), r (2048, 0.0f);
         silent->noteOn (60, 1.0f);
         silent->render (l.data(), r.data(), 2048, 1.0f, 1.0f);
         CHECK (silent->idle() && std::all_of (l.begin(), l.end(), [] (float v) { return v == 0.0f; }));
-        auto smp = std::make_shared<lynx::SampleData> (granulizerTestSample (20000, 2));
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::granulizer, smp);
-        lynx::ChannelDef def;
-        def.instrument = lynx::InstrumentKind::granulizer;
+        auto smp = std::make_shared<yw::SampleData> (granulizerTestSample (20000, 2));
+        auto inst = yw::makeInstrument (yw::InstrumentKind::granulizer, smp);
+        yw::ChannelDef def;
+        def.instrument = yw::InstrumentKind::granulizer;
         def.pluginState = n5;
         inst->configure (def, 140.0);
         inst->prepare (44100.0);
@@ -15199,22 +15199,22 @@ TEST (granulizer_engine)
         CHECK (inst->idle()); // the 10 ms end fade of the plugin's voice processor
     }
 
-    // tempo-synced grains follow the song position in LYNX's 960-PPQ ticks: an instance fed setSongPosition every
+    // tempo-synced grains follow the song position in YW's 960-PPQ ticks: an instance fed setSongPosition every
     // block while playing must stay in phase with one that free-runs its own tick clock from 0 (it was 10x off)
     {
-        auto smp = std::make_shared<lynx::SampleData> (granulizerTestSample (20000, 2));
-        lynx::ChannelDef def;
-        def.instrument = lynx::InstrumentKind::granulizer;
+        auto smp = std::make_shared<yw::SampleData> (granulizerTestSample (20000, 2));
+        yw::ChannelDef def;
+        def.instrument = yw::InstrumentKind::granulizer;
         def.pluginState = n5;
-        auto fed = lynx::makeInstrument (lynx::InstrumentKind::granulizer, smp);
-        auto free = lynx::makeInstrument (lynx::InstrumentKind::granulizer, smp);
+        auto fed = yw::makeInstrument (yw::InstrumentKind::granulizer, smp);
+        auto free = yw::makeInstrument (yw::InstrumentKind::granulizer, smp);
         for (auto* g : { fed.get(), free.get() })
         {
             g->configure (def, 140.0);
             g->prepare (44100.0);
             g->noteOn (60, 0.8f);
         }
-        const auto tps = 140.0 * lynx::ppq / (60.0 * 44100.0);
+        const auto tps = 140.0 * yw::ppq / (60.0 * 44100.0);
         std::vector<float> l1 (300), r1 (300), l2 (300), r2 (300);
         double diff = 0.0, energy = 0.0;
         for (int block = 0, done = 0; block < 60; ++block, done += 300)
@@ -15240,16 +15240,16 @@ TEST (granulizer_engine)
         b.utf16 (0xC9, u"Fruity Granulizer");
         b.data (0xD5, v5);
         b.utf16 (0xC4, u"%FLStudioFactoryData%\\Data\\Patches\\Packs\\Drums\\Kicks\\808 Kick.wav");
-        lynx::FlpImportOptions options;
+        yw::FlpImportOptions options;
         options.roots.factoryData = "C:\\FL";
         options.fileExists = [] (const std::string& path) { return path == "C:\\FL\\Data\\Patches\\Packs\\Drums\\Kicks\\808 Kick.wav"; };
-        lynx::FlpImportReport report;
+        yw::FlpImportReport report;
         options.report = &report;
-        const auto song = lynx::importFlp (flp::parseProject (b.bytes), options);
+        const auto song = yw::importFlp (flp::parseProject (b.bytes), options);
         CHECK (song.channels.size() == 1u);
         if (song.channels.size() == 1u)
         {
-            CHECK (song.channels[0].instrument == lynx::InstrumentKind::granulizer && song.channels[0].pluginState == n5);
+            CHECK (song.channels[0].instrument == yw::InstrumentKind::granulizer && song.channels[0].pluginState == n5);
             CHECK (song.channels[0].samplePath == "C:\\FL\\Data\\Patches\\Packs\\Drums\\Kicks\\808 Kick.wav");
         }
         CHECK (report.converted["Fruity Granulizer"] == 1);
@@ -15315,7 +15315,7 @@ std::vector<std::uint8_t> drumaxxTestState (bool eq)
     b.insert (b.end(), { 'S', 'S', 'L', 'F' });
     put32 (21636u);
     put32 (0x444d5333u); // engine stream version 3
-    const std::string name = "LYNX test kit";
+    const std::string name = "YW test kit";
     b.insert (b.end(), name.begin(), name.end());
     b.resize (b.size() + 256 - name.size(), 0);
     const auto at = b.size();
@@ -15337,22 +15337,22 @@ std::vector<std::uint8_t> drumaxxTestState (bool eq)
 TEST (drumaxx_engine)
 {
     const auto st = drumaxxTestState (true);
-    CHECK (st.size() == 21644u && lynx::drumaxxStateUsable (st) && lynx::drumaxxKitName (st) == "LYNX test kit");
-    CHECK (lynx::drumaxxParam (st, 4) == 36.0f && lynx::drumaxxParam (st, 44 * 15 + 4) == 51.0f && lynx::drumaxxParam (st, 0x2c3) == 1.0f);
+    CHECK (st.size() == 21644u && yw::drumaxxStateUsable (st) && yw::drumaxxKitName (st) == "YW test kit");
+    CHECK (yw::drumaxxParam (st, 4) == 36.0f && yw::drumaxxParam (st, 44 * 15 + 4) == 51.0f && yw::drumaxxParam (st, 0x2c3) == 1.0f);
     {
         auto edited = st;
-        lynx::drumaxxSetParam (edited, 0x2c1, 0.25f);
-        CHECK (lynx::drumaxxParam (edited, 0x2c1) == 0.25f && std::isnan (lynx::drumaxxParam (edited, 720)));
+        yw::drumaxxSetParam (edited, 0x2c1, 0.25f);
+        CHECK (yw::drumaxxParam (edited, 0x2c1) == 0.25f && std::isnan (yw::drumaxxParam (edited, 720)));
         auto bad = st;
         bad[8] = 'X';
-        CHECK (! lynx::drumaxxStateUsable (bad) && std::isnan (lynx::drumaxxParam (bad, 0)));
+        CHECK (! yw::drumaxxStateUsable (bad) && std::isnan (yw::drumaxxParam (bad, 0)));
     }
 
-    // goldens: LYNX's renders, bit-identical to Drumaxx_x64.dll + engine_x64.dll driven by the round-67 harness
-    using N = lynx::drumaxx::RefNote;
+    // goldens: YW's renders, bit-identical to Drumaxx_x64.dll + engine_x64.dll driven by the round-67 harness
+    using N = yw::drumaxx::RefNote;
     struct Golden { bool eq; int fs, block; std::vector<N> notes; double el, er; std::tuple<int, float, float> at[6]; };
     auto check = [] (const Golden& g) {
-        const auto y = lynx::drumaxx::renderReference (drumaxxTestState (g.eq), g.notes, (double) g.fs, 20000, g.block);
+        const auto y = yw::drumaxx::renderReference (drumaxxTestState (g.eq), g.notes, (double) g.fs, 20000, g.block);
         CHECK (y.size() == 2 * 20000);
         if (y.size() != 2 * 20000)
             return;
@@ -15392,9 +15392,9 @@ TEST (drumaxx_engine)
 
     // the instrument: a pad sounds on its key and dies away; keys without a pad stay silent
     {
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::drumaxx);
-        lynx::ChannelDef def;
-        def.instrument = lynx::InstrumentKind::drumaxx;
+        auto inst = yw::makeInstrument (yw::InstrumentKind::drumaxx);
+        yw::ChannelDef def;
+        def.instrument = yw::InstrumentKind::drumaxx;
         def.pluginState = st;
         inst->configure (def, 140.0);
         inst->prepare (44100.0);
@@ -15421,13 +15421,13 @@ TEST (drumaxx_engine)
         b.u8 (0x15); b.u8 (2);
         b.utf16 (0xC9, u"Drumaxx");
         b.data (0xD5, st);
-        lynx::FlpImportOptions options;
-        lynx::FlpImportReport report;
+        yw::FlpImportOptions options;
+        yw::FlpImportReport report;
         options.report = &report;
-        const auto song = lynx::importFlp (flp::parseProject (b.bytes), options);
+        const auto song = yw::importFlp (flp::parseProject (b.bytes), options);
         CHECK (song.channels.size() == 1u);
         if (song.channels.size() == 1u)
-            CHECK (song.channels[0].instrument == lynx::InstrumentKind::drumaxx && song.channels[0].pluginState == st);
+            CHECK (song.channels[0].instrument == yw::InstrumentKind::drumaxx && song.channels[0].pluginState == st);
         CHECK (report.converted["Drumaxx"] == 1);
     }
 }
@@ -15459,25 +15459,25 @@ TEST (slayer_state)
     std::memcpy (v1.data(), &one, 4);
     std::memcpy (v1.data() + 4 + 28 * 4, &wheel, 4);
     std::memcpy (v0.data() + 4 + 24 * 4, &mode, 4);
-    CHECK (lynx::slayerStateUsable (v0) && lynx::slayerStateUsable (v1));
-    CHECK (! lynx::slayerStateUsable (std::vector<std::uint8_t> (v0.begin(), v0.end() - 1)));
+    CHECK (yw::slayerStateUsable (v0) && yw::slayerStateUsable (v1));
+    CHECK (! yw::slayerStateUsable (std::vector<std::uint8_t> (v0.begin(), v0.end() - 1)));
     auto v2 = v1;
     v2[0] = 2;
-    CHECK (! lynx::slayerStateUsable (v2));
-    const auto p0 = lynx::slayerStateParams (v0), p1 = lynx::slayerStateParams (v1);
+    CHECK (! yw::slayerStateUsable (v2));
+    const auto p0 = yw::slayerStateParams (v0), p1 = yw::slayerStateParams (v1);
     CHECK (p0.size() == 29u && p0[24] == 5 && p0[28] == 0 && p1.size() == 29u && p1[28] == 77);
     // the controls' maxima (the front-end sends value / max)
-    CHECK (lynx::slayerParamMax (0) == 6 && lynx::slayerParamMax (20) == 15 && lynx::slayerParamMax (24) == 5 && lynx::slayerParamMax (28) == 127
-           && lynx::slayerParamMax (3) == 65535);
+    CHECK (yw::slayerParamMax (0) == 6 && yw::slayerParamMax (20) == 15 && yw::slayerParamMax (24) == 5 && yw::slayerParamMax (28) == 127
+           && yw::slayerParamMax (3) == 65535);
     // MIDI velocity from Init.Vol (0 → 0, which the engine takes as a note-off; FL's full velocity → 127)
-    CHECK (lynx::slayer::midiVelocity (0.0) == 0 && lynx::slayer::midiVelocity (1.0) == 99 && lynx::slayer::midiVelocity (2.0) == 126
-           && lynx::slayer::midiVelocity ((std::pow (11.0, 1.28) - 1.0) / 10.0) == 127);
+    CHECK (yw::slayer::midiVelocity (0.0) == 0 && yw::slayer::midiVelocity (1.0) == 99 && yw::slayer::midiVelocity (2.0) == 126
+           && yw::slayer::midiVelocity ((std::pow (11.0, 1.28) - 1.0) / 10.0) == 127);
 }
 
 TEST (slayer_engine)
 {
     const auto dll = slayerDll();
-    if (dll.empty() || ! lynx::slayerDllUsable (dll))
+    if (dll.empty() || ! yw::slayerDllUsable (dll))
         return; // no FL installation
     // against the installation's Slayer_Engine.dll (EXEC, REA_rodada68 §7: the DLL driven like FL's front-end drives it,
     // host blocks of 512 at 44.1 kHz, tempo 120): bit-identical output. C3 vel 90 1024–20000, G3 vel 120 8000–30000,
@@ -15498,16 +15498,16 @@ TEST (slayer_engine)
         { "POWER Rock Taps", 1306.21610814, 1164.18639692, { { 5000, 0.019661661237478256f, 0.07336095720529556f }, { 12000, -0.06010562554001808f, -0.3300100862979889f }, { 25000, 0.04404725879430771f, 0.0837465152144432f }, { 40000, -0.029322467744350433f, -0.1399042010307312f } } },
         { "FX Atari 2600 Computer", 1391.44227691, 1391.44227691, { { 5000, 0.18123838305473328f, 0.18123838305473328f }, { 12000, -0.1220453679561615f, -0.1220453679561615f }, { 25000, 0.17565210163593292f, 0.17565210163593292f }, { 40000, 0.21183894574642181f, 0.21183894574642181f } } },
     };
-    const std::vector<lynx::slayer::RefNote> notes = { { 1024, 48, 90, 20000 }, { 8000, 55, 120, 30000 }, { 16000, 64, 40, 40000 }, { 30000, 72, 127, -1 } };
+    const std::vector<yw::slayer::RefNote> notes = { { 1024, 48, 90, 20000 }, { 8000, 55, 120, 30000 }, { 16000, 64, 40, 40000 }, { 30000, 72, 127, -1 } };
     constexpr int length = 44100;
     int checked = 0;
     for (const auto& g : goldens)
     {
         const auto st = slayerPreset (g.preset);
-        CHECK (lynx::slayerStateUsable (st));
-        if (! lynx::slayerStateUsable (st))
+        CHECK (yw::slayerStateUsable (st));
+        if (! yw::slayerStateUsable (st))
             continue;
-        const auto y = lynx::slayer::renderReference (lynx::slayerStateParams (st), dll, notes, 44100.0, length);
+        const auto y = yw::slayer::renderReference (yw::slayerStateParams (st), dll, notes, 44100.0, length);
         double el = 0.0, er = 0.0;
         for (std::size_t i = 0; i + 1 < y.size(); i += 2)
             el += (double) y[i] * y[i], er += (double) y[i + 1] * y[i + 1];
@@ -15525,11 +15525,11 @@ TEST (slayer_engine)
     // MIDI pan / volume (REA_rodada79 §2: twice the channel gain through the host's integer-pan law); a note with
     // velocity 0.8 is the reference note one sample later
     const auto st = slayerPreset ("BASS Ebass 2");
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::slayer;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::slayer;
     c.pluginState = st;
     c.samplePath = dll;
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::slayer);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::slayer);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     std::vector<float> l (16384, 0.0f), r (16384, 0.0f);
@@ -15541,13 +15541,13 @@ TEST (slayer_engine)
             inst->noteOff (60);
         inst->render (l.data() + 512 * b, r.data() + 512 * b, 512, 0.5f, 0.25f);
     }
-    const int vel = lynx::slayer::midiVelocity ((std::pow (11.0, 1.28 * 0.8) - 1.0) / 10.0);
-    const auto ref = lynx::slayer::renderReference (lynx::slayerStateParams (st), dll, { { 1, 60, vel, 1 + 20 * 512 } }, 44100.0, 16385);
-    // LYNX's channel gains 0.5 / 0.25 = gain 0.395…, pan −0.4097 → MIDI pan −26
+    const int vel = yw::slayer::midiVelocity ((std::pow (11.0, 1.28 * 0.8) - 1.0) / 10.0);
+    const auto ref = yw::slayer::renderReference (yw::slayerStateParams (st), dll, { { 1, 60, vel, 1 + 20 * 512 } }, 44100.0, 16385);
+    // YW's channel gains 0.5 / 0.25 = gain 0.395…, pan −0.4097 → MIDI pan −26
     const auto chanVol = (float) std::sqrt ((0.25 + 0.0625) * 0.5);
     float hl = 0.0f, hr = 0.0f;
-    lynx::slayer::hostGains (lynx::slayer::midiPan (std::atan2 (0.25, 0.5) * (4.0 / 3.141592653589793) - 1.0), chanVol, hl, hr);
-    CHECK (lynx::slayer::midiPan (std::atan2 (0.25, 0.5) * (4.0 / 3.141592653589793) - 1.0) == -26);
+    yw::slayer::hostGains (yw::slayer::midiPan (std::atan2 (0.25, 0.5) * (4.0 / 3.141592653589793) - 1.0), chanVol, hl, hr);
+    CHECK (yw::slayer::midiPan (std::atan2 (0.25, 0.5) * (4.0 / 3.141592653589793) - 1.0) == -26);
     double diff = 0.0, energy = 0.0;
     for (int i = 0; i < 16384; ++i)
     {
@@ -15565,7 +15565,7 @@ TEST (slayer_engine)
             for (const auto& s : pluginStatesIn (entry.path(), "FL Slayer"))
             {
                 ++presets;
-                const auto y = lynx::slayer::renderReference (lynx::slayerStateParams (s), dll, { { 1024, 52, 100, 20000 } }, 44100.0, 22050);
+                const auto y = yw::slayer::renderReference (yw::slayerStateParams (s), dll, { { 1024, 52, 100, 20000 } }, 44100.0, 22050);
                 double e = 0.0;
                 bool finite = true;
                 for (auto v : y)
@@ -15581,7 +15581,7 @@ TEST (slayer_engine)
 // (ProcessEvent 2/3/4), automation and settings edits as setParameter calls on the running engine
 TEST (slayer_host_levels_and_automation)
 {
-    using namespace lynx::slayer;
+    using namespace yw::slayer;
     CHECK (pitchBend (0) == 8192 && pitchBend (100) == 8874 && pitchBend (-100) == 7510 && pitchBend (1200) == 0x3fff
            && pitchBend (-1200) == 0 && pitchBend (-1199) == 7 && pitchBend (5000) == 0x3fff);
     CHECK (midiPan (0.0) == 0 && midiPan (1.0) == 64 && midiPan (-1.0) == -64 && midiPan (-0.5) == -32
@@ -15592,17 +15592,17 @@ TEST (slayer_host_levels_and_automation)
     CHECK (l0 == 0.70710677f && r0 == 0.70710677f && std::abs (l1) < 1e-15f && r1 == 2.0f);
 
     const auto dll = slayerDll();
-    if (dll.empty() || ! lynx::slayerDllUsable (dll))
+    if (dll.empty() || ! yw::slayerDllUsable (dll))
         return;
     const auto st = slayerPreset ("DIST Dire Straits");
-    const auto params = lynx::slayerStateParams (st);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::slayer;
+    const auto params = yw::slayerStateParams (st);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::slayer;
     c.pluginState = st;
     c.samplePath = dll;
     c.sampler.pitch = 1.5f;      // channel pitch +150 cents → bend 9216; no root shift
     c.modelParams = { 0.0f };
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::slayer);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::slayer);
     inst->configure (c, 120.0);
     inst->prepare (44100.0);
     const int blocks = 40, n = 512;
@@ -15625,11 +15625,11 @@ TEST (slayer_host_levels_and_automation)
         }
         inst->render (l.data() + n * b, r.data() + n * b, n, 1.0f, 1.0f);
     }
-    lynx::slayer::RefOptions opt;
+    yw::slayer::RefOptions opt;
     opt.midi.push_back ({ 1, 0xe0, 9216 & 0x7f, 9216 >> 7 });
     opt.params = { { 1 + 10 * n, 20, 9 }, { 1 + 18 * n, 28, 64 }, { 1 + 25 * n, 13, newDrive } };
-    const int vel = lynx::slayer::midiVelocity ((std::pow (11.0, 1.28 * 0.8) - 1.0) / 10.0);
-    const auto ref = lynx::slayer::renderReference (params, dll, { { 1, 52, vel, -1 } }, 44100.0, blocks * n + 1, opt);
+    const int vel = yw::slayer::midiVelocity ((std::pow (11.0, 1.28 * 0.8) - 1.0) / 10.0);
+    const auto ref = yw::slayer::renderReference (params, dll, { { 1, 52, vel, -1 } }, 44100.0, blocks * n + 1, opt);
     float hl = 0.0f, hr = 0.0f;
     hostGains (0, 1.0f, hl, hr);
     double diff = 0.0, energy = 0.0;
@@ -15641,7 +15641,7 @@ TEST (slayer_host_levels_and_automation)
     }
     CHECK (diff == 0.0 && energy > 1.0);
     // the changes really change the sound: the same render without them differs
-    const auto plain = lynx::slayer::renderReference (params, dll, { { 1, 52, vel, -1 } }, 44100.0, blocks * n + 1);
+    const auto plain = yw::slayer::renderReference (params, dll, { { 1, 52, vel, -1 } }, 44100.0, blocks * n + 1);
     CHECK (plain != ref);
 }
 
@@ -15661,31 +15661,31 @@ TEST (slayer_and_fruity_dance_import)
         b.data (0xD5, state);
     }
     const auto project = flp::parseProject (b.bytes);
-    const auto plain = lynx::importFlp (project);
+    const auto plain = yw::importFlp (project);
     CHECK (plain.channels.size() == 2u);
     if (plain.channels.size() == 2u)
     {
-        CHECK (plain.channels[0].instrument != lynx::InstrumentKind::slayer);
-        CHECK (plain.channels[1].instrument == lynx::InstrumentKind::fruitydance && plain.channels[1].pluginState == dance);
+        CHECK (plain.channels[0].instrument != yw::InstrumentKind::slayer);
+        CHECK (plain.channels[1].instrument == yw::InstrumentKind::fruitydance && plain.channels[1].pluginState == dance);
     }
-    auto inst = lynx::makeInstrument (lynx::InstrumentKind::fruitydance);
+    auto inst = yw::makeInstrument (yw::InstrumentKind::fruitydance);
     inst->prepare (44100.0);
     std::vector<float> l (1024, 0.0f), r (1024, 0.0f);
     inst->noteOn (60, 1.0f);
     inst->render (l.data(), r.data(), 1024, 1.0f, 1.0f);
     CHECK (inst->idle() && std::all_of (l.begin(), l.end(), [] (float v) { return v == 0.0f; }));
     const auto dll = slayerDll();
-    if (dll.empty() || ! lynx::slayerDllUsable (dll))
+    if (dll.empty() || ! yw::slayerDllUsable (dll))
         return;
-    lynx::FlpImportOptions withFiles;
+    yw::FlpImportOptions withFiles;
     withFiles.roots = { std::filesystem::path (realFlpDir).parent_path().string(), realFlpDir, "" };
     withFiles.fileExists = [] (const std::string& path) {
         auto local = path;
         std::replace (local.begin(), local.end(), '\\', '/');
         return std::filesystem::exists (local);
     };
-    const auto song = lynx::importFlp (project, withFiles);
-    CHECK (song.channels.size() == 2u && song.channels[0].instrument == lynx::InstrumentKind::slayer && song.channels[0].pluginState == slayer
+    const auto song = yw::importFlp (project, withFiles);
+    CHECK (song.channels.size() == 2u && song.channels[0].instrument == yw::InstrumentKind::slayer && song.channels[0].pluginState == slayer
            && ! song.channels[0].samplePath.empty());
 }
 #include "WaveAnalysisTests.inc"
@@ -15751,7 +15751,7 @@ const char* xmlWithTrack (bool edited)
 TEST (newtone_state)
 {
     using namespace newtonetest;
-    const auto a = lynx::newtonefx::parse (state (0, 5, xmlWithTrack (true), "%FLStudioUserData%\\vox.wav"));
+    const auto a = yw::newtonefx::parse (state (0, 5, xmlWithTrack (true), "%FLStudioUserData%\\vox.wav"));
     CHECK (a.has_value());
     CHECK (a->version == 0 && a->editorWidth == 727 && a->editorHeight == 582 && a->slave());
     CHECK (a->sourcePath == "%FLStudioUserData%\\vox.wav");
@@ -15759,28 +15759,28 @@ TEST (newtone_state)
     CHECK (a->tracks[0].filePath == "C:\\tmp\\a&b.wav" && a->tracks[0].selfBpm == 120.0);
     CHECK (a->tracks[0].edited && a->edited()); // note 1 moved from 62 to 64
 
-    const auto b = lynx::newtonefx::parse (state (1, 0x41, xmlWithTrack (false), ""));
+    const auto b = yw::newtonefx::parse (state (1, 0x41, xmlWithTrack (false), ""));
     CHECK (b.has_value() && ! b->slave() && b->sourcePath.empty());
     CHECK (b->tracks.size() == 1 && b->tracks[0].timeWarp && ! b->edited());
 
     // an empty project, as the installation's presets
-    const auto c = lynx::newtonefx::parse (state (0, 1, "<NewToneProject NumOfTracks=\"0\"><Tracks/></NewToneProject>", ""));
+    const auto c = yw::newtonefx::parse (state (0, 1, "<NewToneProject NumOfTracks=\"0\"><Tracks/></NewToneProject>", ""));
     CHECK (c.has_value() && c->tracks.empty());
 
     // broken: other version, truncated record, no options record
-    CHECK (! lynx::newtonefx::parse (state (2, 1, "", "")));
+    CHECK (! yw::newtonefx::parse (state (2, 1, "", "")));
     auto cut = state (0, 1, xmlWithTrack (true), "");
     cut.resize (cut.size() - 3);
-    CHECK (! lynx::newtonefx::parse (cut));
-    CHECK (! lynx::newtonefx::parse ({ 0, 0, 0, 0 }));
+    CHECK (! yw::newtonefx::parse (cut));
+    CHECK (! yw::newtonefx::parse ({ 0, 0, 0, 0 }));
 
     // the FL import keeps the state and takes the slave switch as the editable parameter
     const auto raw = state (0, 5, xmlWithTrack (false), "");
-    const auto slot = lynx::effectFromFl ("Newtone", raw, 120.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::newtone && slot->state == raw && slot->params[0] == 1.0f);
-    const auto slot2 = lynx::effectFromFl ("Newtime", state (1, 0x41, xmlWithTrack (false), ""), 120.0);
-    CHECK (slot2 && slot2->kind == lynx::EffectKind::newtime && slot2->params[0] == 0.0f);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::newtone, 0, 1.0f, 120.0) == "on");
+    const auto slot = yw::effectFromFl ("Newtone", raw, 120.0);
+    CHECK (slot && slot->kind == yw::EffectKind::newtone && slot->state == raw && slot->params[0] == 1.0f);
+    const auto slot2 = yw::effectFromFl ("Newtime", state (1, 0x41, xmlWithTrack (false), ""), 120.0);
+    CHECK (slot2 && slot2->kind == yw::EffectKind::newtime && slot2->params[0] == 0.0f);
+    CHECK (yw::formatEffectParam (yw::EffectKind::newtone, 0, 1.0f, 120.0) == "on");
 
     // the installation's own states (plugin database and the playlist's pitch/warp correction tracks) [DATA]
     if (! realFlpDir.empty())
@@ -15795,9 +15795,9 @@ TEST (newtone_state)
             ++found;
             std::ifstream f (path, std::ios::binary);
             std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (f)), std::istreambuf_iterator<char>());
-            const auto fx = lynx::effectFromFlPreset (bytes, 120.0);
-            read += fx && (fx->kind == lynx::EffectKind::newtone || fx->kind == lynx::EffectKind::newtime) && ! fx->state.empty()
-                    && fx->params[0] == 0.0f && lynx::newtonefx::parse (fx->state)->tracks.empty();
+            const auto fx = yw::effectFromFlPreset (bytes, 120.0);
+            read += fx && (fx->kind == yw::EffectKind::newtone || fx->kind == yw::EffectKind::newtime) && ! fx->state.empty()
+                    && fx->params[0] == 0.0f && yw::newtonefx::parse (fx->state)->tracks.empty();
         }
         std::printf ("  %d Newtone/Newtime states, %d read\n", found, read);
         CHECK (read == found);
@@ -15808,20 +15808,20 @@ TEST (newtone_engine)
 {
     // REA_rodada73 §3-4 [EXEC]: the input passes unchanged unless slave mode is on and the song plays; then the source
     // sample is added from the song time on (at the source's own rate)
-    auto sample = std::make_shared<lynx::SampleData>();
+    auto sample = std::make_shared<yw::SampleData>();
     sample->sampleRate = 44100.0;
     for (int i = 0; i < 3000; ++i)
         sample->left.push_back (0.001f * (float) (i % 97) - 0.04f);
     const double sr = 44100.0, bpm = 120.0;
-    const auto tps = lynx::ticksPerSample (bpm, sr);
+    const auto tps = yw::ticksPerSample (bpm, sr);
 
-    auto fx = lynx::newtonefx::make (sample);
+    auto fx = yw::newtonefx::make (sample);
     fx->prepare (sr);
-    lynx::EffectParams on {}, off {};
+    yw::EffectParams on {}, off {};
     on[0] = 1.0f;
 
     std::vector<float> l (256), r (256), in (256);
-    auto block = [&] (double tick, bool playing, const lynx::EffectParams& p) {
+    auto block = [&] (double tick, bool playing, const yw::EffectParams& p) {
         for (int i = 0; i < 256; ++i)
             l[(std::size_t) i] = r[(std::size_t) i] = in[(std::size_t) i] = 0.25f * std::sin (0.01f * (float) (i + tick));
         fx->setSongPosition (tick);
@@ -15858,7 +15858,7 @@ TEST (newtone_engine)
     CHECK (l[0] == in[0] + sample->left[10]);
 
     // without its sample: a pass-through
-    auto none = lynx::makeEffect (lynx::EffectKind::newtime);
+    auto none = yw::makeEffect (yw::EffectKind::newtime);
     none->prepare (sr);
     for (int i = 0; i < 256; ++i)
         l[(std::size_t) i] = r[(std::size_t) i] = in[(std::size_t) i] = 0.1f * (float) i / 256.0f;
@@ -15870,35 +15870,35 @@ TEST (newtone_engine)
 TEST (newtone_rack_follows_transport)
 {
     // the mixer gives the effect the transport, and keeps it running on a silent insert (no smart disable)
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     for (auto& p : song.patterns)
         p.notes.clear();
     song.bpm = 120.0;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::newtone);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::newtone);
     slot.params[0] = 1.0f;
     slot.samplePath = "newtone-test.wav";
     song.mixer[1].effects.push_back (slot);
 
-    auto sample = std::make_shared<lynx::SampleData>();
+    auto sample = std::make_shared<yw::SampleData>();
     sample->sampleRate = 48000.0;
     sample->left.assign (48000, 0.5f);
     int loads = 0;
-    lynx::RackState::SampleProvider provider = [&] (const std::string& path) -> std::shared_ptr<const lynx::SampleData> {
+    yw::RackState::SampleProvider provider = [&] (const std::string& path) -> std::shared_ptr<const yw::SampleData> {
         ++loads;
         return path == "newtone-test.wav" ? sample : nullptr;
     };
     const double sr = 48000.0;
-    auto state = lynx::RackState::build (song, nullptr, sr, provider);
+    auto state = yw::RackState::build (song, nullptr, sr, provider);
     CHECK (loads == 1);
 
-    lynx::RackRenderer rr;
+    yw::RackRenderer rr;
     rr.prepare (sr);
     std::vector<float> l (512), r (512);
     auto peakOf = [&] (bool playing, double tick) {
         float peak = 0.0f;
         for (int b = 0; b < 8; ++b)
         {
-            rr.process (state.get(), playing, tick + b * 512 * lynx::ticksPerSample (song.bpm, sr), 512, l.data(), r.data());
+            rr.process (state.get(), playing, tick + b * 512 * yw::ticksPerSample (song.bpm, sr), 512, l.data(), r.data());
             for (auto v : l)
                 peak = std::max (peak, std::abs (v));
         }
@@ -15914,38 +15914,38 @@ TEST (newtone_rack_follows_transport)
 
 TEST (missing_files_names_and_scores)
 {
-    CHECK (lynx::pathFileName ("C:\\Samples\\Drums\\Kick 01.wav") == "Kick 01.wav");
-    CHECK (lynx::pathFileName ("/home/u/loops/beat.flac") == "beat.flac");
-    CHECK (lynx::pathFileName ("D:/mixed\\sep/x.wav/") == "x.wav");
-    CHECK (lynx::pathFileName ("plain.wav") == "plain.wav");
-    CHECK (lynx::relocationScore ("C:\\Old\\Drums\\Kicks\\kick.wav", "/new/Drums/Kicks/KICK.WAV") == 3);
-    CHECK (lynx::relocationScore ("C:\\Old\\Drums\\Kicks\\kick.wav", "/new/other/kick.wav") == 1);
-    CHECK (lynx::relocationScore ("C:\\Old\\kick.wav", "/new/kick2.wav") == 0);
+    CHECK (yw::pathFileName ("C:\\Samples\\Drums\\Kick 01.wav") == "Kick 01.wav");
+    CHECK (yw::pathFileName ("/home/u/loops/beat.flac") == "beat.flac");
+    CHECK (yw::pathFileName ("D:/mixed\\sep/x.wav/") == "x.wav");
+    CHECK (yw::pathFileName ("plain.wav") == "plain.wav");
+    CHECK (yw::relocationScore ("C:\\Old\\Drums\\Kicks\\kick.wav", "/new/Drums/Kicks/KICK.WAV") == 3);
+    CHECK (yw::relocationScore ("C:\\Old\\Drums\\Kicks\\kick.wav", "/new/other/kick.wav") == 1);
+    CHECK (yw::relocationScore ("C:\\Old\\kick.wav", "/new/kick2.wav") == 0);
 }
 
 TEST (missing_files_find_in_song)
 {
-    lynx::Song song;
-    lynx::ChannelDef a, b, c, d, e;
-    a.name = "Kick", a.instrument = lynx::InstrumentKind::sampler, a.samplePath = "C:\\gone\\kick.wav";
-    b.name = "Vox", b.instrument = lynx::InstrumentKind::audioClip, b.samplePath = "C:\\gone\\vox.wav";
-    c.name = "Here", c.instrument = lynx::InstrumentKind::sampler, c.samplePath = "C:\\here\\snare.wav";
-    d.name = "GMS", d.instrument = lynx::InstrumentKind::gms, d.samplePath = "C:\\FL\\gms waves"; // installation data: not listed
-    e.name = "Kick 2", e.instrument = lynx::InstrumentKind::sampler, e.samplePath = "c:/GONE/KICK.wav"; // same file, other spelling
-    lynx::SampleZone z;
+    yw::Song song;
+    yw::ChannelDef a, b, c, d, e;
+    a.name = "Kick", a.instrument = yw::InstrumentKind::sampler, a.samplePath = "C:\\gone\\kick.wav";
+    b.name = "Vox", b.instrument = yw::InstrumentKind::audioClip, b.samplePath = "C:\\gone\\vox.wav";
+    c.name = "Here", c.instrument = yw::InstrumentKind::sampler, c.samplePath = "C:\\here\\snare.wav";
+    d.name = "GMS", d.instrument = yw::InstrumentKind::gms, d.samplePath = "C:\\FL\\gms waves"; // installation data: not listed
+    e.name = "Kick 2", e.instrument = yw::InstrumentKind::sampler, e.samplePath = "c:/GONE/KICK.wav"; // same file, other spelling
+    yw::SampleZone z;
     z.path = "C:\\gone\\piano_c4.wav";
     a.zones.push_back (z);
     song.channels = { a, b, c, d, e };
     song.mixer.resize (3);
-    lynx::EffectSlot fx;
+    yw::EffectSlot fx;
     fx.samplePath = "C:\\gone\\tune.wav";
-    lynx::EffectSlot parallel;
+    yw::EffectSlot parallel;
     parallel.branches.push_back ({ { fx }, 1.0f });
     song.mixer[2].effects.push_back (parallel);
     song.mixer[2].name = "Lead";
 
     const auto exists = [] (const std::string& p) { return p.find ("here") != std::string::npos || p.find ("FL") != std::string::npos; };
-    auto missing = lynx::findMissingSamples (song, exists);
+    auto missing = yw::findMissingSamples (song, exists);
     CHECK (missing.size() == 4);
     CHECK (missing.size() == 4 && missing[0].path == "C:\\gone\\kick.wav" && missing[0].usedBy.size() == 2 && missing[0].usedBy[1] == "Kick 2");
     CHECK (missing.size() == 4 && missing[1].path == "C:\\gone\\piano_c4.wav" && missing[1].usedBy[0] == "Kick");
@@ -15954,56 +15954,56 @@ TEST (missing_files_find_in_song)
 
     // candidates from a search: the deeper path match wins; one stays missing
     const std::vector<std::string> hits { "/lib/other/kick.wav", "/lib/gone/kick.wav", "/lib/x/vox.wav", "/lib/y/tune.wav" };
-    CHECK (lynx::relocateByName (missing, hits) == 3);
+    CHECK (yw::relocateByName (missing, hits) == 3);
     CHECK (missing[0].found == "/lib/gone/kick.wav");
     CHECK (missing[1].found.empty());
     missing[3].skipped = true; // skipped: not applied
-    const auto map = lynx::relocationMap (missing);
+    const auto map = yw::relocationMap (missing);
     CHECK (map.size() == 2);
-    CHECK (lynx::applyRelocations (song, map) == 3); // both spellings of kick.wav + vox
+    CHECK (yw::applyRelocations (song, map) == 3); // both spellings of kick.wav + vox
     CHECK (song.channels[0].samplePath == "/lib/gone/kick.wav" && song.channels[4].samplePath == "/lib/gone/kick.wav");
     CHECK (song.channels[1].samplePath == "/lib/x/vox.wav");
     CHECK (song.channels[2].samplePath == "C:\\here\\snare.wav");
     CHECK (song.mixer[2].effects[0].branches[0].chain[0].samplePath == "C:\\gone\\tune.wav");
-    lynx::Song copy = song;
-    CHECK (lynx::applyRelocations (copy, { { "C:\\gone\\tune.wav", "/t.wav" } }) == 1 && copy.mixer[2].effects[0].branches[0].chain[0].samplePath == "/t.wav");
+    yw::Song copy = song;
+    CHECK (yw::applyRelocations (copy, { { "C:\\gone\\tune.wav", "/t.wav" } }) == 1 && copy.mixer[2].effects[0].branches[0].chain[0].samplePath == "/t.wav");
 }
 
 TEST (missing_files_inside_patcher)
 {
     // a Patcher's instruments and effects (any depth) are the song's samples too: listed, packed and relinked
-    lynx::Song song;
-    lynx::ChannelDef inner;
-    inner.name = "Pad", inner.instrument = lynx::InstrumentKind::sampler, inner.samplePath = "C:\\gone\\pad.wav";
-    lynx::ChannelDef nested;
-    nested.instrument = lynx::InstrumentKind::patcher;
+    yw::Song song;
+    yw::ChannelDef inner;
+    inner.name = "Pad", inner.instrument = yw::InstrumentKind::sampler, inner.samplePath = "C:\\gone\\pad.wav";
+    yw::ChannelDef nested;
+    nested.instrument = yw::InstrumentKind::patcher;
     nested.patcher.nodes.resize (1);
     nested.patcher.nodes[0].generator = true;
     nested.patcher.nodes[0].channel = inner;
-    lynx::ChannelDef patch;
-    patch.name = "Rack", patch.instrument = lynx::InstrumentKind::patcher;
+    yw::ChannelDef patch;
+    patch.name = "Rack", patch.instrument = yw::InstrumentKind::patcher;
     patch.patcher.nodes.resize (2);
     patch.patcher.nodes[0].generator = true;
     patch.patcher.nodes[0].channel = nested;
     patch.patcher.nodes[1].effect.samplePath = "C:\\gone\\tune.wav";
     patch.patcher.nodes[1].busHeads.push_back ({});
-    patch.patcher.nodes[1].busHeads[0].head = lynx::EffectSlot();
+    patch.patcher.nodes[1].busHeads[0].head = yw::EffectSlot();
     patch.patcher.nodes[1].busHeads[0].head->samplePath = "C:\\gone\\tune.wav"; // same file: one entry
     song.channels = { patch };
     song.mixer.resize (2);
-    lynx::EffectSlot fxPatcher;
+    yw::EffectSlot fxPatcher;
     fxPatcher.patcher.nodes.resize (1);
     fxPatcher.patcher.nodes[0].generator = true;
     fxPatcher.patcher.nodes[0].channel = inner;
     fxPatcher.patcher.nodes[0].channel.samplePath = "C:\\gone\\hit.wav";
     song.mixer[1].effects.push_back (fxPatcher);
 
-    const auto missing = lynx::findMissingSamples (song, [] (const std::string&) { return false; });
+    const auto missing = yw::findMissingSamples (song, [] (const std::string&) { return false; });
     CHECK (missing.size() == 3);
     CHECK (missing.size() == 3 && missing[0].path == "C:\\gone\\pad.wav" && missing[0].usedBy[0] == "Rack (Patcher)");
     CHECK (missing.size() == 3 && missing[1].path == "C:\\gone\\tune.wav" && missing[1].usedBy[0] == "Rack (Patcher): effect");
     CHECK (missing.size() == 3 && missing[2].path == "C:\\gone\\hit.wav" && missing[2].usedBy[0] == "Insert 1 (Patcher)");
-    CHECK (lynx::applyRelocations (song, { { "C:\\gone\\pad.wav", "/p.wav" }, { "C:\\gone\\tune.wav", "/t.wav" }, { "C:\\gone\\hit.wav", "/h.wav" } }) == 4);
+    CHECK (yw::applyRelocations (song, { { "C:\\gone\\pad.wav", "/p.wav" }, { "C:\\gone\\tune.wav", "/t.wav" }, { "C:\\gone\\hit.wav", "/h.wav" } }) == 4);
     CHECK (song.channels[0].patcher.nodes[1].busHeads[0].head->samplePath == "/t.wav");
     CHECK (song.channels[0].patcher.nodes[0].channel.patcher.nodes[0].channel.samplePath == "/p.wav");
     CHECK (song.channels[0].patcher.nodes[1].effect.samplePath == "/t.wav");
@@ -16013,14 +16013,14 @@ TEST (missing_files_inside_patcher)
 TEST (missing_files_folder_search)
 {
     namespace fs = std::filesystem;
-    const auto root = fs::temp_directory_path() / ("lynx-missing-test-" + processTempTag());
+    const auto root = fs::temp_directory_path() / ("yw-missing-test-" + processTempTag());
     fs::remove_all (root);
     fs::create_directories (root / "a" / "deep" / "Kicks");
     fs::create_directories (root / "b");
     for (const auto& f : { root / "a" / "deep" / "Kicks" / "Kick.WAV", root / "b" / "kick.wav", root / "b" / "hat.wav", root / "b" / "unrelated.wav" })
         std::ofstream (f) << "x";
 
-    std::vector<lynx::MissingFile> missing { { "C:\\Old\\Kicks\\kick.wav", { "Kick" }, {}, false }, { "C:\\Old\\hat.wav", { "Hat" }, {}, false },
+    std::vector<yw::MissingFile> missing { { "C:\\Old\\Kicks\\kick.wav", { "Kick" }, {}, false }, { "C:\\Old\\hat.wav", { "Hat" }, {}, false },
                                              { "C:\\Old\\ride.wav", { "Ride" }, {}, false } };
     int listed = 0;
     auto list = [&] (const std::string& folder, const std::function<bool (const std::string&, bool)>& onEntry) {
@@ -16031,33 +16031,33 @@ TEST (missing_files_folder_search)
                 return;
         }
     };
-    const auto hits = lynx::searchFolderForMissing (missing, root.string(), list);
+    const auto hits = yw::searchFolderForMissing (missing, root.string(), list);
     CHECK (hits.size() == 3);
-    CHECK (lynx::relocateByName (missing, hits) == 2);
+    CHECK (yw::relocateByName (missing, hits) == 2);
     CHECK (missing[0].found.find ("Kicks") != std::string::npos); // the copy in a "Kicks" folder matches better
     CHECK (missing[1].found.find ("hat.wav") != std::string::npos);
     CHECK (missing[2].found.empty());
 
     // a bounded walk stops early; a cancelled one finds nothing
-    CHECK (lynx::searchFolderForMissing (missing, root.string(), list, 2).size() <= 1);
-    CHECK (lynx::searchFolderForMissing (missing, root.string(), list, 0, [] { return true; }).empty());
+    CHECK (yw::searchFolderForMissing (missing, root.string(), list, 2).size() <= 1);
+    CHECK (yw::searchFolderForMissing (missing, root.string(), list, 0, [] { return true; }).empty());
     // nothing left to find: no walk at all
     missing[2].skipped = true;
     listed = 0;
-    CHECK (lynx::searchFolderForMissing (missing, root.string(), list).empty() && listed == 0);
+    CHECK (yw::searchFolderForMissing (missing, root.string(), list).empty() && listed == 0);
     fs::remove_all (root);
 }
 
 TEST (missing_files_folder_list)
 {
-    const auto folders = lynx::parseFolderList ("C:\\A\r\n  C:\\B  \n\nc:\\a\nD:/x\n");
+    const auto folders = yw::parseFolderList ("C:\\A\r\n  C:\\B  \n\nc:\\a\nD:/x\n");
     CHECK (folders.size() == 3 && folders[0] == "C:\\A" && folders[1] == "C:\\B" && folders[2] == "D:/x");
     auto list = folders;
-    lynx::rememberFolder (list, "D:\\x");
+    yw::rememberFolder (list, "D:\\x");
     CHECK (list.size() == 3 && list[0] == "D:\\x" && list[1] == "C:\\A");
-    lynx::rememberFolder (list, "E:\\new", 2);
+    yw::rememberFolder (list, "E:\\new", 2);
     CHECK (list.size() == 2 && list[0] == "E:\\new" && list[1] == "D:\\x");
-    CHECK (lynx::parseFolderList (lynx::folderListText (list)) == list);
+    CHECK (yw::parseFolderList (yw::folderListText (list)) == list);
 }
 
 TEST (missing_files_flp_report_and_relocation)
@@ -16071,36 +16071,36 @@ TEST (missing_files_flp_report_and_relocation)
     ch.samplePath = "C:\\Producer\\Packs\\snare 7.wav";
     project.channels.push_back (ch);
 
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.fileExists = [] (const std::string& p) { return p == "/found/snare 7.wav"; };
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     options.report = &report;
-    auto song = lynx::importFlp (project, options);
+    auto song = yw::importFlp (project, options);
     CHECK (report.missingFiles.size() == 1);
     CHECK (report.missingFiles.size() == 1 && report.missingFiles[0].path == "C:\\Producer\\Packs\\snare 7.wav" && report.missingFiles[0].usedBy[0] == "Snare");
     CHECK (song.channels.size() == 1 && song.channels[0].samplePath.empty());
 
-    lynx::FlpImportReport again;
+    yw::FlpImportReport again;
     options.report = &again;
     options.relocations = { { "C:\\Producer\\Packs\\snare 7.wav", "/found/snare 7.wav" } };
-    song = lynx::importFlp (project, options);
+    song = yw::importFlp (project, options);
     CHECK (again.missingFiles.empty());
-    CHECK (song.channels.size() == 1 && song.channels[0].samplePath == "/found/snare 7.wav" && song.channels[0].instrument == lynx::InstrumentKind::sampler);
+    CHECK (song.channels.size() == 1 && song.channels[0].samplePath == "/found/snare 7.wav" && song.channels[0].instrument == yw::InstrumentKind::sampler);
 }
 
 TEST (project_info_history_and_flp_import)
 {
-    lynx::Song a;
+    yw::Song a;
     auto b = a;
     b.info.title = "Night Drive";
-    CHECK (lynx::describeChangeText (a, b) == "Project info");
+    CHECK (yw::describeChangeText (a, b) == "Project info");
     auto c = a;
     c.beatsPerBar = 3;
-    CHECK (lynx::describeChangeText (a, c) == "Time signature");
+    CHECK (yw::describeChangeText (a, c) == "Time signature");
 
     flp::Project project;
     project.title = "Song", project.artist = "Me", project.genre = "House", project.url = "https://x", project.comments = "line 1\rline 2";
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     CHECK (song.info.title == "Song" && song.info.author == "Me" && song.info.genre == "House" && song.info.url == "https://x");
     CHECK (song.info.comments == "line 1\nline 2");
 }
@@ -16111,9 +16111,9 @@ TEST (project_info_history_and_flp_import)
 
 namespace
 {
-lynx::Note prNote (std::int64_t start, std::int64_t length, int key = 60, float velocity = 100.0f / 128.0f)
+yw::Note prNote (std::int64_t start, std::int64_t length, int key = 60, float velocity = 100.0f / 128.0f)
 {
-    lynx::Note n;
+    yw::Note n;
     n.start = start;
     n.length = length;
     n.key = key;
@@ -16121,7 +16121,7 @@ lynx::Note prNote (std::int64_t start, std::int64_t length, int key = 60, float 
     return n;
 }
 
-std::vector<int> allOf (const lynx::Pattern& p)
+std::vector<int> allOf (const yw::Pattern& p)
 {
     std::vector<int> v;
     for (int i = 0; i < (int) p.notes.size(); ++i)
@@ -16132,7 +16132,7 @@ std::vector<int> allOf (const lynx::Pattern& p)
 
 TEST (prtools_score_file)
 {
-    using namespace lynx::prtools;
+    using namespace yw::prtools;
     FlpBuilder b (96);
     b.ascii (0xC7, "20.9.0");
     b.u8 (0x41); b.u16 (0);
@@ -16172,8 +16172,8 @@ TEST (prtools_score_file)
 
 TEST (prtools_quantize)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     const auto grid = gridScore (240);
 
     Pattern p;
@@ -16217,8 +16217,8 @@ TEST (prtools_quantize)
 
 TEST (prtools_chop)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     Score pat;
     pat.notes = { ScoreNote { 0, 240, 60 }, ScoreNote { 480, 240, 67 } }; // period 720
 
@@ -16258,8 +16258,8 @@ TEST (prtools_chop)
 
 TEST (prtools_flam)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     Pattern p;
     p.notes = { prNote (960, 480, 60, 0.75f) };
     flam (p, allOf (p), flamPreset (FlamPreset::doubleStroke), 120.0); // +1 step after
@@ -16282,8 +16282,8 @@ TEST (prtools_flam)
 
 TEST (prtools_lfo)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     CHECK (lfoPeriod (20480) == 3840.0 && lfoPeriod (0) == 960.0 * 128 && lfoPeriod (40960) == 120.0);
 
     LfoOptions o; // sine, phase 1/2: starts at the bottom (value 1/2, range 1/4)
@@ -16310,8 +16310,8 @@ TEST (prtools_lfo)
 
 TEST (prtools_claw)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     ClawOptions o; // beat, trash the 4th quarter, stretch, remove short notes
     Pattern p;
     p.notes = { prNote (0, 240), prNote (960, 240), prNote (750, 100), prNote (1440, 240) };
@@ -16344,26 +16344,26 @@ TEST (prtools_claw)
 
 TEST (prtools_articulate)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     Pattern p;
     p.notes = { prNote (0, 100), prNote (480, 100), prNote (960, 100) };
-    articulate (p, allOf (p), articulatePreset (ArticulatePreset::legato), lynx::Meter (4, 4));
+    articulate (p, allOf (p), articulatePreset (ArticulatePreset::legato), yw::Meter (4, 4));
     CHECK (p.notes[0].length == 480 && p.notes[1].length == 480 && p.notes[2].length == 3840 - 960); // to the bar line
 
     p.notes = { prNote (0, 100), prNote (480, 100), prNote (960, 2880) };
-    articulate (p, allOf (p), articulatePreset (ArticulatePreset::staccato), lynx::Meter (4, 4));
+    articulate (p, allOf (p), articulatePreset (ArticulatePreset::staccato), yw::Meter (4, 4));
     CHECK (p.notes[0].length == 96 && p.notes[1].length == 96 && p.notes[2].length == 576); // ends on a bar: own length
 
     auto o = articulatePreset (ArticulatePreset::legato);
     o.gap = 20;
     p.notes = { prNote (0, 100), prNote (480, 100) };
-    articulate (p, allOf (p), o, lynx::Meter (4, 4));
+    articulate (p, allOf (p), o, yw::Meter (4, 4));
     CHECK (p.notes[0].length == 460);
 
     // chop chords: a held note is cut where the next one starts
     p.notes = { prNote (0, 960, 48), prNote (480, 480, 60) };
-    articulate (p, allOf (p), articulatePreset (ArticulatePreset::chopChordsOnly), lynx::Meter (4, 4));
+    articulate (p, allOf (p), articulatePreset (ArticulatePreset::chopChordsOnly), yw::Meter (4, 4));
     CHECK (p.notes.size() == 3 && p.notes[0].length == 480 && p.notes[1].start == 480 && p.notes[2].start == 480);
 
     // variation is seeded (MT19937): same seed, same result; lengths only get shorter
@@ -16372,14 +16372,14 @@ TEST (prtools_articulate)
     o.seed = 7;
     Pattern a, b2;
     a.notes = b2.notes = { prNote (0, 100), prNote (480, 100), prNote (960, 100) };
-    articulate (a, allOf (a), o, lynx::Meter (4, 4));
-    articulate (b2, allOf (b2), o, lynx::Meter (4, 4));
+    articulate (a, allOf (a), o, yw::Meter (4, 4));
+    articulate (b2, allOf (b2), o, yw::Meter (4, 4));
     CHECK (a.notes[0].length == b2.notes[0].length && a.notes[0].length <= 480 && a.notes[0].length >= 240);
 }
 
 TEST (prtools_chords)
 {
-    using namespace lynx::prtools;
+    using namespace yw::prtools;
     auto c = parseProgression ("I-V-vi-IV", 0, false);
     CHECK (c && c->size() == 4);
     if (c && c->size() == 4)
@@ -16419,29 +16419,29 @@ TEST (prtools_chords)
     }
     CHECK (toNumerals (*parseProgression ("I-V-vi-IV/bVII", 0, false), 0) == "I-V-vi-IV/bVII");
 
-    lynx::Pattern p;
+    yw::Pattern p;
     const auto chords = *parseProgression ("I-IV", 0, false);
     ChordWriteOptions w;
     const auto added = writeProgression (p, 2, 0, chords, w);
     CHECK (added.size() == 8 && p.notes.size() == 8 && p.notes[0].channel == 2);
     CHECK (std::any_of (p.notes.begin(), p.notes.end(), [] (auto& n) { return n.key == 48; })); // bass C3
     w.rhythm = ">-`->-`->-`->-`-";
-    lynx::Pattern r;
+    yw::Pattern r;
     writeProgression (r, 0, 0, chords, w);
     CHECK (r.notes.size() == 8 && r.notes[0].length == 1920); // '>' + '-' of 960-tick cells
 }
 
 TEST (prtools_riff_machine)
 {
-    using namespace lynx;
-    using namespace lynx::prtools;
+    using namespace yw;
+    using namespace yw::prtools;
     Pattern p;
     p.notes = { prNote (0, 100, 70) };
     p.notes[0].channel = 1;
     RiffOptions o;
     o.channel = 1;
     o.bars = 2;
-    const auto notes = riffMachine (p, { 0 }, o, lynx::Meter (4, 4));
+    const auto notes = riffMachine (p, { 0 }, o, yw::Meter (4, 4));
     CHECK (! notes.empty() && notes.size() == p.notes.size());
     CHECK (std::all_of (p.notes.begin(), p.notes.end(), [] (auto& n) {
         return n.channel == 1 && n.start >= 0 && n.start < 2 * 3840 && n.key >= 36 && n.key <= 84;
@@ -16450,13 +16450,13 @@ TEST (prtools_riff_machine)
     // only the first step: the progression shape, chopped from one note at key 48
     o.stepsUpTo = 0;
     Pattern q;
-    const auto first = riffMachine (q, {}, o, lynx::Meter (4, 4));
+    const auto first = riffMachine (q, {}, o, yw::Meter (4, 4));
     CHECK (first.size() == builtInRiffProgression (0).notes.size() * 2 && q.notes[0].key == 48);
 }
 
 TEST (event_editor_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     Pattern p;
     const AutomationTarget vol { AutomationTargetKind::channelVolume, 2 };
     auto& lane = eventedit::laneFor (p, vol);
@@ -16512,25 +16512,25 @@ TEST (event_editor_lanes)
 TEST (event_editor_playback)
 {
     // pattern events on the Master volume: silent first half of each pattern, sound in the second half
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.bpm = 120.0;
-    const auto bar = (std::int64_t) lynx::ppq * 4;
+    const auto bar = (std::int64_t) yw::ppq * 4;
     song.patterns[0].lengthTicks = bar;
     song.patterns[0].notes.clear();
     for (int s = 0; s < 16; ++s)
         song.patterns[0].notes.push_back ({ s * 240, 200, 0, 60 });
-    song.patterns[0].events.push_back ({ { lynx::AutomationTargetKind::mixerVolume, 0 }, { { 0, 0.0f }, { bar / 2, 0.8f } } });
+    song.patterns[0].events.push_back ({ { yw::AutomationTargetKind::mixerVolume, 0 }, { { 0, 0.0f }, { bar / 2, 0.8f } } });
 
-    const auto peaks = [&] (lynx::PlayMode mode) {
+    const auto peaks = [&] (yw::PlayMode mode) {
         song.mode = mode;
         song.playlist.clear();
         song.playlist.push_back ({ 0, 0, bar, bar, 0 }); // one clip, in the second bar
         const double sr = 48000.0;
-        auto state = lynx::RackState::build (song, nullptr, sr);
-        lynx::RackRenderer r;
+        auto state = yw::RackState::build (song, nullptr, sr);
+        yw::RackRenderer r;
         r.prepare (sr, 512);
         std::vector<float> l (512), rr (512);
-        const auto tps = lynx::ticksPerSample (song.bpm, sr);
+        const auto tps = yw::ticksPerSample (song.bpm, sr);
         std::array<float, 6> peak {}; // half bars
         for (double tick = 0.0; tick < (double) (bar * 3); tick += 512 * tps)
         {
@@ -16547,11 +16547,11 @@ TEST (event_editor_playback)
         return std::make_pair (state->eventLanes.size(), peak);
     };
 
-    const auto [lanesSong, song3] = peaks (lynx::PlayMode::song);
+    const auto [lanesSong, song3] = peaks (yw::PlayMode::song);
     CHECK (lanesSong == 1);
     CHECK (song3[2] < 1.0e-4f && song3[3] > 0.01f); // inside the clip: silent, then sound
 
-    const auto [lanesPattern, loop] = peaks (lynx::PlayMode::pattern);
+    const auto [lanesPattern, loop] = peaks (yw::PlayMode::pattern);
     CHECK (lanesPattern == 1);
     CHECK (loop[0] < 1.0e-4f && loop[1] > 0.01f && loop[2] < 1.0e-4f && loop[3] > 0.01f);
 }
@@ -16588,36 +16588,36 @@ TEST (flp_pattern_events_import)
             src = &p;
     CHECK (src != nullptr && src->controlEvents.size() == 6);
 
-    lynx::FlpImportReport report;
-    lynx::FlpImportOptions options;
+    yw::FlpImportReport report;
+    yw::FlpImportOptions options;
     options.report = &report;
-    const auto song = lynx::importFlp (project, options);
-    const lynx::PatternEvents* volume = nullptr;
-    const lynx::PatternEvents* pan = nullptr;
+    const auto song = yw::importFlp (project, options);
+    const yw::PatternEvents* volume = nullptr;
+    const yw::PatternEvents* pan = nullptr;
     int lanes = 0;
     for (const auto& p : song.patterns)
         for (const auto& lane : p.events)
         {
             ++lanes;
-            if (lane.target.kind == lynx::AutomationTargetKind::mixerVolume && lane.target.index == 0)
+            if (lane.target.kind == yw::AutomationTargetKind::mixerVolume && lane.target.index == 0)
                 volume = &lane;
-            if (lane.target.kind == lynx::AutomationTargetKind::channelPan)
+            if (lane.target.kind == yw::AutomationTargetKind::channelPan)
                 pan = &lane;
         }
     CHECK (lanes == 2 && volume != nullptr && pan != nullptr);
     if (volume != nullptr && volume->events.size() == 2)
     {
-        CHECK (volume->events[0].tick == 0 && volume->events[1].tick == lynx::ppq);
+        CHECK (volume->events[0].tick == 0 && volume->events[1].tick == yw::ppq);
         CHECK (volume->events[0].value > volume->events[1].value); // 4000 (not 8000) is the one kept
     }
     else
         CHECK (false);
     if (pan != nullptr && pan->events.size() == 2)
-        CHECK (pan->events[0].value < 0.01f && pan->events[1].value > 0.99f && pan->events[1].tick == lynx::ppq / 2);
+        CHECK (pan->events[0].value < 0.01f && pan->events[1].value > 0.99f && pan->events[1].tick == yw::ppq / 2);
     else
         CHECK (false);
     CHECK (report.converted["Pattern events"] == 2);
-    CHECK (song.targetValue ({ lynx::AutomationTargetKind::mixerPan, 0 }) < 0.01f);
+    CHECK (song.targetValue ({ yw::AutomationTargetKind::mixerPan, 0 }) < 0.01f);
 }
 
 #include "PrefsTests.inc"
@@ -16644,15 +16644,15 @@ TEST (flp_pattern_events_import)
 
 TEST (level_audit_demo_imports_round89)
 {
-    // REA_rodada89 §4: two demo projects whose FL renders were much louder than LYNX's
+    // REA_rodada89 §4: two demo projects whose FL renders were much louder than YW's
     if (realFlpDir.empty())
         return;
-    auto load = [] (const std::filesystem::path& path) -> std::optional<lynx::Song> {
+    auto load = [] (const std::filesystem::path& path) -> std::optional<yw::Song> {
         if (! std::filesystem::exists (path))
             return std::nullopt;
         std::ifstream in (path, std::ios::binary);
         const std::vector<std::uint8_t> file ((std::istreambuf_iterator<char> (in)), {});
-        return lynx::importFlp (flp::parseProject (file));
+        return yw::importFlp (flp::parseProject (file));
     };
     const auto demos = std::filesystem::path (realFlpDir) / "Demo projects";
 
@@ -16677,10 +16677,10 @@ TEST (level_audit_demo_imports_round89)
         int compressors = 0, withSettings = 0;
         for (const auto& t : song->mixer)
             for (const auto& fx : t.effects)
-                if (fx.kind == lynx::EffectKind::fruityCompressor)
+                if (fx.kind == yw::EffectKind::fruityCompressor)
                 {
                     ++compressors;
-                    const auto defaults = lynx::makeEffectSlot (lynx::EffectKind::fruityCompressor);
+                    const auto defaults = yw::makeEffectSlot (yw::EffectKind::fruityCompressor);
                     withSettings += fx.params != defaults.params;
                 }
         std::printf ("  RawFL: %d wrapped Fruity Compressors on the exact engine, %d with their own settings\n", compressors, withSettings);
@@ -16699,7 +16699,7 @@ TEST (level_audit_demo_imports_round89)
 
 TEST (plugin_layouts_name_real_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     // every value control edits a parameter of its effect, inside the body; FL arrangements place (or list in a menu)
     // every parameter of the effect
     for (const auto kind : plugui::flLayoutKinds())
@@ -16768,7 +16768,7 @@ TEST (plugin_layouts_name_real_parameters)
 
 TEST (maximus_editor_edits_the_slot_state)
 {
-    using namespace lynx;
+    using namespace yw;
     // the Maximus page edits the 59 parameters stored in the slot's state (REA_rodada8 §1.2)
     std::array<std::array<int, 13>, 4> bands {};
     for (auto& b : bands)
@@ -16806,7 +16806,7 @@ TEST (maximus_editor_edits_the_slot_state)
 
 TEST (plugin_layout_options_match_the_engine_values)
 {
-    using namespace lynx;
+    using namespace yw;
     // the switches show FL's captions for the engine's own values
     const auto text = [] (EffectKind kind, const char* param, int option) {
         for (const auto& item : plugui::layoutFor (kind).items)
@@ -16867,8 +16867,8 @@ TEST (plugin_layout_options_match_the_engine_values)
 #include "FabMeasureTests99.inc"
 #include "DynamicsTests108.inc"
 #include "Crest173dTests.inc"
-#include "LynxTuneTests95.inc"
-#include "LynxVerbTests100.inc"
+#include "YwTuneTests95.inc"
+#include "YwVerbTests100.inc"
 #include "FacetTests103.inc"
 #include "VocalLevel107Tests.inc"
 #include "Substitutes113Tests.inc"
@@ -16962,11 +16962,11 @@ TEST (emphasizer_matches_fl_engine)
         std::memcpy (state.data(), &version, 4);
         std::memcpy (state.data() + 4, c.raw.data(), 24);
         state[28] = 1;
-        const auto slot = lynx::effectFromFl ("Emphasizer", state);
-        CHECK (slot && slot->kind == lynx::EffectKind::emphasizer);
+        const auto slot = yw::effectFromFl ("Emphasizer", state);
+        CHECK (slot && slot->kind == yw::EffectKind::emphasizer);
         if (! slot)
             continue;
-        auto fx = lynx::makeEffect (slot->kind);
+        auto fx = yw::makeEffect (slot->kind);
         fx->prepare (44100.0);
         auto [l, r] = signal();
         for (int i = 0; i < 24000; i += 512) // the golden's 512-frame engine calls (level matching is per call)
@@ -16983,11 +16983,11 @@ TEST (emphasizer_matches_fl_engine)
     }
     // version 1 (no output control) keeps the 0 dB default; texts
     const std::vector<std::uint8_t> v1 { 1, 0, 0, 0, 0, 0, 0, 0, 0x95, 0x13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
-    const auto s1 = lynx::emphasizer::parse (v1);
+    const auto s1 = yw::emphasizer::parse (v1);
     CHECK (s1 && s1->raw[1] == 5013 && s1->raw[5] == 10000);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::emphasizer, 0, 0.5f, 120.0) == "+12.0 dB");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::emphasizer, 5, 1.0f, 120.0) == "0.0 dB");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::emphasizer, 2, 1.0f, 120.0) == "Soft");
+    CHECK (yw::formatEffectParam (yw::EffectKind::emphasizer, 0, 0.5f, 120.0) == "+12.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::emphasizer, 5, 1.0f, 120.0) == "0.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::emphasizer, 2, 1.0f, 120.0) == "Soft");
 }
 
 // ---- Wave Traveller (REA_rodada167f-wavetraveller) ----
@@ -17009,9 +17009,9 @@ inline std::vector<float> wtTestSample (int n) // planar stereo, values on the 1
     return s;
 }
 
-inline lynx::wavetrav::State wtTestState()
+inline yw::wavetrav::State wtTestState()
 {
-    using namespace lynx::wavetrav;
+    using namespace yw::wavetrav;
     auto st = defaultState();
     st.samplePath = "x.wav"; // (FL asks its host for the sample only when the state names one)
     auto pt = [] (float x, float y, int type, float tension = 0.5f, float c1x = -0.05f, float c1y = -0.2f, float c2x = 0.1f, float c2y = 0.3f) {
@@ -17053,9 +17053,9 @@ std::uint64_t floatBitsHash (const std::vector<float>& v)
     return h;
 }
 
-lynx::SampleData wtSampleData (const std::vector<float>& planar, int channels)
+yw::SampleData wtSampleData (const std::vector<float>& planar, int channels)
 {
-    lynx::SampleData d;
+    yw::SampleData d;
     const auto n = planar.size() / (std::size_t) channels;
     d.left.assign (planar.begin(), planar.begin() + (std::ptrdiff_t) n);
     if (channels > 1)
@@ -17067,7 +17067,7 @@ lynx::SampleData wtSampleData (const std::vector<float>& planar, int channels)
 
 TEST (wave_traveller_state_and_tables)
 {
-    using namespace lynx::wavetrav;
+    using namespace yw::wavetrav;
     // FL's state layout (§2): it round-trips byte for byte, and the default patch is FL's
     const auto def = writeState (defaultState());
     State s;
@@ -17086,7 +17086,7 @@ TEST (wave_traveller_state_and_tables)
         tables.insert (tables.end(), p.volTable.begin(), p.volTable.begin() + p.volN + 1);
         CHECK (std::all_of (p.waveTable.begin(), p.waveTable.end(), [] (float v) { return v >= 0.0f && v <= 1.0f; }));
     }
-    // (LYNX's own value; the tables reach the DLL goldens of wave_traveller_matches_fl_engine through the output)
+    // (YW's own value; the tables reach the DLL goldens of wave_traveller_matches_fl_engine through the output)
     CHECK (floatBitsHash (tables) == 0xd94594a6f22cb4dfull);
     if (floatBitsHash (tables) != 0xd94594a6f22cb4dfull)
         std::printf ("  wave traveller tables: %016llx\n", (unsigned long long) floatBitsHash (tables));
@@ -17129,7 +17129,7 @@ TEST (wave_traveller_state_and_tables)
             for (const auto& q : s.patches)
                 CHECK (q.waveN >= 0 && q.waveN < tableCapacity && q.volN >= 0 && q.volN < tableCapacity);
     }
-    CHECK (! parseState ({ 1, 2, 3 }, s) && ! lynx::waveTravellerStateUsable ({}));
+    CHECK (! parseState ({ 1, 2, 3 }, s) && ! yw::waveTravellerStateUsable ({}));
 
     // the installation's states (read at test time): the render test and the plugin database preset
     if (realFlpDir.empty())
@@ -17150,9 +17150,9 @@ TEST (wave_traveller_state_and_tables)
                 CHECK (parseState (c.pluginState, s) && s.samplePath.find ("808 Snare.wav") != std::string::npos);
             }
         CHECK (found == 1);
-        const auto song = lynx::importFlp (project);
-        const auto it = std::find_if (song.channels.begin(), song.channels.end(), [] (const lynx::ChannelDef& c) { return c.instrument == lynx::InstrumentKind::wavetraveller; });
-        CHECK (it != song.channels.end() && lynx::waveTravellerStateUsable (it->pluginState));
+        const auto song = yw::importFlp (project);
+        const auto it = std::find_if (song.channels.begin(), song.channels.end(), [] (const yw::ChannelDef& c) { return c.instrument == yw::InstrumentKind::wavetraveller; });
+        CHECK (it != song.channels.end() && yw::waveTravellerStateUsable (it->pluginState));
     }
     if (const auto b = read (base / "System" / "Plugin databases" / "Plugin database (alphabetical)" / "Generators" / "Wave Traveller.fst"); ! b.empty())
     {
@@ -17164,8 +17164,8 @@ TEST (wave_traveller_state_and_tables)
 TEST (wave_traveller_matches_fl_engine)
 {
     // §8: goldens of the installation's Wave Traveller_x64.dll in our harness (16-bit stereo sample handed by LoadSample,
-    // 512-frame calls, tempo by ProcessEvent): FNV-1a of the output's float bits. LYNX's engine reproduces them exactly.
-    using namespace lynx::wavetrav;
+    // 512-frame calls, tempo by ProcessEvent): FNV-1a of the output's float bits. YW's engine reproduces them exactly.
+    using namespace yw::wavetrav;
     const auto planar = wtTestSample (30000);
     const auto smp = sampleFrom (wtSampleData (planar, 2));
     CHECK (smp != nullptr && smp->length == 30000);
@@ -17200,10 +17200,10 @@ TEST (wave_traveller_matches_fl_engine)
 
     // the instrument (channel → engine) plays what the reference plays: velocity 1/1.28 = FL's Init.Vol 1, centred
     {
-        lynx::ChannelDef ch;
-        ch.instrument = lynx::InstrumentKind::wavetraveller;
+        yw::ChannelDef ch;
+        ch.instrument = yw::InstrumentKind::wavetraveller;
         ch.pluginState = writeState (state);
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::wavetraveller, std::make_shared<lynx::SampleData> (wtSampleData (planar, 2)));
+        auto inst = yw::makeInstrument (yw::InstrumentKind::wavetraveller, std::make_shared<yw::SampleData> (wtSampleData (planar, 2)));
         inst->configure (ch, 140.0);
         inst->prepare (44100.0);
         std::vector<float> l (20480, 0.0f), r (20480, 0.0f);
@@ -17220,7 +17220,7 @@ TEST (wave_traveller_matches_fl_engine)
         for (int i = 0; i < 20480; ++i)
             same = same && l[(std::size_t) i] == ref[2 * (std::size_t) i] && r[(std::size_t) i] == ref[2 * (std::size_t) i + 1];
         CHECK (same && inst->idle());
-        auto silent = lynx::makeInstrument (lynx::InstrumentKind::wavetraveller); // no sample: FL refuses the notes
+        auto silent = yw::makeInstrument (yw::InstrumentKind::wavetraveller); // no sample: FL refuses the notes
         silent->configure (ch, 140.0);
         silent->prepare (44100.0);
         silent->noteOn (60, 1.0f);
@@ -17236,8 +17236,8 @@ TEST (wave_traveller_matches_fl_engine)
     std::ifstream fin (base / "System" / "Render tests" / "Wave Traveller.flp", std::ios::binary);
     std::ifstream sin (base / "Patches" / "Packs" / "Drums" / "Snares" / "808 Snare.wav", std::ios::binary);
     const std::vector<std::uint8_t> flpBytes { std::istreambuf_iterator<char> (fin), {} }, wav { std::istreambuf_iterator<char> (sin), {} };
-    lynx::oggvorbis::Decoded dec;
-    if (flpBytes.empty() || wav.empty() || ! lynx::oggvorbis::decode (wav.data(), wav.size(), dec) || dec.channels != 1)
+    yw::oggvorbis::Decoded dec;
+    if (flpBytes.empty() || wav.empty() || ! yw::oggvorbis::decode (wav.data(), wav.size(), dec) || dec.channels != 1)
         return;
     const auto project = flp::parseProject (flpBytes);
     for (const auto& c : project.channels)
@@ -17245,7 +17245,7 @@ TEST (wave_traveller_matches_fl_engine)
         {
             State st;
             CHECK (parseState (c.pluginState, st));
-            lynx::SampleData d;
+            yw::SampleData d;
             d.left = dec.data[0];
             const auto snare = sampleFrom (d);
             CHECK (snare != nullptr && snare->length == 11002);
@@ -17295,12 +17295,12 @@ TEST (fl_legacy_fx_match_fl_engines)
         const std::int32_t version = 1;
         std::memcpy (state.data(), &version, 4);
         std::memcpy (state.data() + 4, c.raw.data(), 4 * c.raw.size());
-        const auto slot = lynx::effectFromFl (c.name, state);
-        CHECK (slot && slot->kind != lynx::EffectKind::utility && slot->kind != lynx::EffectKind::eq
-               && slot->kind != lynx::EffectKind::parametricEq);
+        const auto slot = yw::effectFromFl (c.name, state);
+        CHECK (slot && slot->kind != yw::EffectKind::utility && slot->kind != yw::EffectKind::eq
+               && slot->kind != yw::EffectKind::parametricEq);
         if (! slot)
             continue;
-        auto fx = lynx::makeEffect (slot->kind);
+        auto fx = yw::makeEffect (slot->kind);
         fx->prepare ((double) c.rate);
         std::vector<float> l (24000), r (24000);
         std::uint32_t s = 12345;
@@ -17319,7 +17319,7 @@ TEST (fl_legacy_fx_match_fl_engines)
         for (int i = 0; i < 24000; i += 512)
             fx->process (l.data() + i, r.data() + i, std::min (512, 24000 - i), slot->params, 120.0);
         {
-            auto other = lynx::makeEffect (slot->kind);
+            auto other = yw::makeEffect (slot->kind);
             other->prepare ((double) c.rate);
             auto l2 = input.first, r2 = input.second;
             for (int i = 0; i < 24000; i += 1000)
@@ -17347,21 +17347,21 @@ TEST (fl_legacy_fx_match_fl_engines)
         CHECK (h == c.hash);
 #endif
     }
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flPhaseInverter, 0, 0.3f, 120.0) == "None");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flPhaseInverter, 0, 0.5f, 120.0) == "Left");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flPhaseInverter, 0, 1.0f, 120.0) == "Right");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flBassBoost, 0, 0.5f, 120.0) == "60 Hz");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fl7BandEq, 3, 1.0f, 120.0) == "+18.0 dB");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::fl7BandEq, 3, 0.5f, 120.0) == "+0.0 dB");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flDelay1, 3, 0.0f, 120.0) == "Host");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flDelay1, 3, 1.0f, 120.0) == "280 BPM");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flDelay1, 4, 2.0f / 15.0f, 120.0) == "3/16");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flDelay1, 5, 1.0f, 120.0) == "Ping-pong");
-    CHECK (lynx::effectFromFl ("Fruity Delay", { 1, 0, 0, 0 }) == std::nullopt
-           || lynx::effectFromFl ("Fruity Delay", { 1, 0, 0, 0 })->kind != lynx::EffectKind::flDelay1);
-    // the default Phase Inverter of FL inverts the right side only (LYNX's old import inverted both)
-    CHECK (lynx::fllegacy::phaseInverterMode (1024) == 2 && lynx::fllegacy::phaseInverterMode (341) == 0
-           && lynx::fllegacy::phaseInverterMode (342) == 1 && lynx::fllegacy::phaseInverterMode (683) == 2);
+    CHECK (yw::formatEffectParam (yw::EffectKind::flPhaseInverter, 0, 0.3f, 120.0) == "None");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flPhaseInverter, 0, 0.5f, 120.0) == "Left");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flPhaseInverter, 0, 1.0f, 120.0) == "Right");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flBassBoost, 0, 0.5f, 120.0) == "60 Hz");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fl7BandEq, 3, 1.0f, 120.0) == "+18.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::fl7BandEq, 3, 0.5f, 120.0) == "+0.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flDelay1, 3, 0.0f, 120.0) == "Host");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flDelay1, 3, 1.0f, 120.0) == "280 BPM");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flDelay1, 4, 2.0f / 15.0f, 120.0) == "3/16");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flDelay1, 5, 1.0f, 120.0) == "Ping-pong");
+    CHECK (yw::effectFromFl ("Fruity Delay", { 1, 0, 0, 0 }) == std::nullopt
+           || yw::effectFromFl ("Fruity Delay", { 1, 0, 0, 0 })->kind != yw::EffectKind::flDelay1);
+    // the default Phase Inverter of FL inverts the right side only (YW's old import inverted both)
+    CHECK (yw::fllegacy::phaseInverterMode (1024) == 2 && yw::fllegacy::phaseInverterMode (341) == 0
+           && yw::fllegacy::phaseInverterMode (342) == 1 && yw::fllegacy::phaseInverterMode (683) == 2);
 }
 
 TEST (fl_frequency_shifter_matches_fl_engine)
@@ -17380,11 +17380,11 @@ TEST (fl_frequency_shifter_matches_fl_engine)
         const std::int32_t version = 4;
         std::memcpy (state.data(), &version, 4);
         std::memcpy (state.data() + 4, c.raw.data(), 40);
-        const auto slot = lynx::effectFromFl ("Frequency Shifter", state);
-        CHECK (slot && slot->kind == lynx::EffectKind::flFrequencyShifter);
+        const auto slot = yw::effectFromFl ("Frequency Shifter", state);
+        CHECK (slot && slot->kind == yw::EffectKind::flFrequencyShifter);
         if (! slot)
             continue;
-        auto fx = lynx::makeEffect (slot->kind);
+        auto fx = yw::makeEffect (slot->kind);
         fx->prepare (c.rate);
         std::vector<float> l (24000), r (24000);
         std::uint32_t s = 12345;
@@ -17410,9 +17410,9 @@ TEST (fl_frequency_shifter_matches_fl_engine)
         CHECK (h == c.hash);
     }
     // the engine's tanhf against points of the library's
-    CHECK (lynx::fsfl::tanhf_ (0.0f) == 0.0f && lynx::fsfl::tanhf_ (20.0f) == 1.0f && lynx::fsfl::tanhf_ (-20.0f) == -1.0f);
-    CHECK (std::fabs (lynx::fsfl::tanhf_ (0.5f) - 0.462117165f) < 1e-7f && std::fabs (lynx::fsfl::tanhf_ (2.0f) - 0.964027584f) < 1e-7f);
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flFrequencyShifter, 1, 1.0f, 120.0) == "Ring modulator");
+    CHECK (yw::fsfl::tanhf_ (0.0f) == 0.0f && yw::fsfl::tanhf_ (20.0f) == 1.0f && yw::fsfl::tanhf_ (-20.0f) == -1.0f);
+    CHECK (std::fabs (yw::fsfl::tanhf_ (0.5f) - 0.462117165f) < 1e-7f && std::fabs (yw::fsfl::tanhf_ (2.0f) - 0.964027584f) < 1e-7f);
+    CHECK (yw::formatEffectParam (yw::EffectKind::flFrequencyShifter, 1, 1.0f, 120.0) == "Ring modulator");
 }
 
 TEST (fl_low_lifter_matches_fl_engine)
@@ -17429,11 +17429,11 @@ TEST (fl_low_lifter_matches_fl_engine)
         const std::int32_t version = 6;
         std::memcpy (state.data(), &version, 4);
         std::memcpy (state.data() + 4, c.raw.data(), 60);
-        const auto slot = lynx::effectFromFl ("Low Lifter", state);
-        CHECK (slot && slot->kind == lynx::EffectKind::flLowLifter);
+        const auto slot = yw::effectFromFl ("Low Lifter", state);
+        CHECK (slot && slot->kind == yw::EffectKind::flLowLifter);
         if (! slot)
             continue;
-        auto fx = lynx::makeEffect (slot->kind);
+        auto fx = yw::makeEffect (slot->kind);
         fx->prepare (c.rate);
         std::vector<float> l (24000), r (24000);
         std::uint32_t s = 12345;
@@ -17458,8 +17458,8 @@ TEST (fl_low_lifter_matches_fl_engine)
             }
         CHECK (h == c.hash);
     }
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flLowLifter, 10, 0.775f, 120.0) == "80 Hz");
-    CHECK (lynx::formatEffectParam (lynx::EffectKind::flLowLifter, 3, 0.721f, 120.0) == "-6.0 dB");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flLowLifter, 10, 0.775f, 120.0) == "80 Hz");
+    CHECK (yw::formatEffectParam (yw::EffectKind::flLowLifter, 3, 0.721f, 120.0) == "-6.0 dB");
 }
 #include "Rea153Tests.inc"
 #include "Logger181bTests.inc"
@@ -17699,10 +17699,10 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "Meld190koTests.inc" // round 190ko: Meld → Braid, Spectral Time → Timeprism, Spectral Resonator → Harmonia (uses als190cf::)
 #include "AlsDevices190ekTests.inc"
 #include "Tetra190hsTests.inc" // round 190hs
-#include "LynxModel190niTests.inc" // round 190ni
-#include "LynxModel190nlTests.inc" // round 190nl
-#include "LynxModel190nmTests.inc" // round 190nm
-#include "LynxModel190nnTests.inc" // round 190nn
+#include "YwModel190niTests.inc" // round 190ni
+#include "YwModel190nlTests.inc" // round 190nl
+#include "YwModel190nmTests.inc" // round 190nm
+#include "YwModel190nnTests.inc" // round 190nn
 #include "Tetra190ixTests.inc" // round 190ix
 #include "Helix190jaTests.inc" // round 190ja
 #include "Helix190miTests.inc" // round 190mi
@@ -17924,7 +17924,7 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "Parity190lfVerbTests.inc" // round 190lf (verb): H-Delay's measured loop (Echoform hybrid law 1), TrueVerb's direct sound
 #include "Parity190lfNs1Tests.inc" // round 190lf (ns1): Quell's zero law (REA of the Waves NS1: 0 % = its bare all-pass pair), NS1 on it
 #include "Parity190lnTests.inc" // round 190ln: Eiosis AirEQ / Slate Infinity EQ translated onto Facet EQ in physical units
-#include "Parity190lnKhsTests.inc" // round 190ln: Kilohearts states (kHs snapins, Faturator, Disperser) on LYNX stand-ins
+#include "Parity190lnKhsTests.inc" // round 190ln: Kilohearts states (kHs snapins, Faturator, Disperser) on YW stand-ins
 #include "Parity190nbKhsTests.inc" // round 190nb: Kilohearts laws on Effector (Ring Mod, Reverser, Resonator, Phase Distortion, Shaper) + measured maps
 #include "Parity190nhKhsTests.inc" // round 190nh: Kilohearts part 2 (Comb Filter, Chorus, Trance Gate, Phaser, Distortion, Bitcrush, Frequency Shifter, Ensemble)
 #include "Parity190ocKhsTests.inc" // round 190oc: Kilohearts Nonlinear Filter
@@ -17933,7 +17933,7 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "Parity190mgC4Tests.inc" // round 190mg: Prism's hidden C4 law (REA of the Waves C4), C4 on it
 #include "Parity190mgRenTests.inc" // round 190mg (ren): Compressor's Renaissance law (REA of the Waves Renaissance Compressor), RComp on it
 #include "Parity190mgNs1Tests.inc" // round 190mg (ns1): Quell's NS1 law (REA of the Waves NS1: its own structure for 20 … 100 %), NS1 on it
-#include "Parity190mgVocTests.inc" // round 190mg (voc): the Waves Doubler DSP's splice law on Gemini, the Waves Tune RT law on LYNX Tune
+#include "Parity190mgVocTests.inc" // round 190mg (voc): the Waves Doubler DSP's splice law on Gemini, the Waves Tune RT law on YW Tune
 #include "Parity190mgDynTests.inc" // round 190mg (dyn): Facet's PuigTec law, L2's IDR on the Limiter (REA of the Waves PuigTec / L2 DSP)
 #include "Parity190mmTests.inc" // round 190mm: Facet's Waves design law (REQ, Q10), API-550 / 560 on Facet, SSL G-Channel on Ridge
 #include "Parity190mmSchepsTests.inc" // round 190mm (scheps): the Scheps Omni Channel on Ridge Strip's hidden omni law (five modules, order)
@@ -17968,7 +17968,7 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "Toolchain190gtTests.inc"
 #include "RenderAhead190gqTests.inc"
 #include "EvPane190fzTests.inc"
-#include "U190heLinkTests.inc" // round 190he (issue #152 item 2: linkable LYNX instruments, knobs that follow links)
+#include "U190heLinkTests.inc" // round 190he (issue #152 item 2: linkable YW instruments, knobs that follow links)
 #include "PluginDrop190hfTests.inc" // issue #152 point 6: plugins dropped on the tracks (FL and Live layouts)
 #include "PickerDrop190hmTests.inc" // issue #177: Picker panel entries dragged onto the Playlist
 #include "Community190hpTests.inc" // round 190hp: global MIDI mappings, mix snapshots, split at silence (0.1.28 pain report B9/B16/B18)
@@ -18012,7 +18012,7 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "Pr190jvTests.inc" // round 190jv: Piano roll Scale highlighting › Automatic (FL's key guess)
 #include "PrArp190jvTests.inc" // round 190jv: FL's Piano roll arpeggiator patterns (TPRArpForm law)
 #include "Flm190jvTests.inc" // round 190jv: FL Studio Mobile racks with several instruments / an effect first (BUILD-LIST 19)
-#include "FlmExport190ogTests.inc" // round 190og: Save a copy as FL Studio Mobile project (.flm), the writer, the LYNX chunk
+#include "FlmExport190ogTests.inc" // round 190og: Save a copy as FL Studio Mobile project (.flm), the writer, the YW chunk
 #include "Spin190kbTests.inc" // round 190kb: the worker pool's waiting (statistics, tuning, bounded task-graph waits, adaptive spin)
 #include "Beat190krTests.inc" // round 190kr: the worker pool wakes only the workers a chunk's work needs; the same samples
 #include "Lighter190laTests.inc" // round 190la: timed waits without the sub-millisecond spin (platform/CvWait.h)
@@ -18039,7 +18039,7 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "LoopAnalysis190kxTests.inc" // round 190kx: loop analysis (key and tempo of the user's own loops; core/LoopAnalysis.h)
 #include "Vocal190liTests.inc" // round 190li: Newtone natural engine (engine 1), modulation / drift split, sung centre, analysis octave guard
 #include "Newtone190lmTests.inc" // rollup 0.1.30 step 8: a new Newtone slot (natural engine) analysed with "Separate close notes"
-#include "Rollup190luTests.inc" // rollup 0.1.30 step 9: per-block batching vs plugins' own notes (190kz x 190ks), LYNX Tune's held notes
+#include "Rollup190luTests.inc" // rollup 0.1.30 step 9: per-block batching vs plugins' own notes (190kz x 190ks), YW Tune's held notes
 #include "Rollup190meTests.inc" // rollup 0.1.30 step 10: round 190lv's fix, a block of too many pieces still plays (190kz batching)
 #include "Codegen190kzTests.inc" // round 190kz codegen: runtime CPU dispatch (AVX2 paths render the SSE2 bits)
 #include "Dsp190kzTests.inc" // round 190kz: exact Reeverb 2 LFO sine and sinc seeds, Maximus revision 1
@@ -18097,12 +18097,12 @@ TEST (fl_low_lifter_matches_fl_engine)
 #include "PatcherXyz190ptTests.inc" // round 190pt: Patcher Control Surface / X-Y-Z links, Vocodex controls under automation
 #include "Perf190osTests.inc" // round 190os: the safe-overload guard lets go at the stop and within 1 s of the overload's end
 #include "Tracker190omTests.inc" // round 190om (0.1.31): tracker stage 2 (pattern events, pitch curves, Bxx / Vxx), SimSynth velocity
-#include "Rollup031s6Tests.inc" // rollup 0.1.31 step 6: gold sweep for 190om decisions 4-5 (LYNX_SWEEP_DIR)
+#include "Rollup031s6Tests.inc" // rollup 0.1.31 step 6: gold sweep for 190om decisions 4-5 (YW_SWEEP_DIR)
 #include "TrackStates190opTests.inc" // round 190op (0.1.31): Hide / Deactivate tracks (P4), Capture automation (P7)
 #include "SimpleDuck190otTests.inc" // round 190ot (0.1.31): Simple "Duck under..." (sidechain in one pick) and the shared Echo send (P5)
 #include "HWheel254Tests.inc" // round 190ou: issue #254, the horizontal wheel
 #include "AutoLinks190ovTests.inc" // round 190ov (0.1.31): FL automation clips linked to several controls
-#include "PluginPack190ovTests.inc" // round 190ov (0.1.31): the later LYNX-own engines in the plugin pack
+#include "PluginPack190ovTests.inc" // round 190ov (0.1.31): the later YW-own engines in the plugin pack
 #include "AutoModes190paTests.inc" // round 190pa (0.1.31): automation write modes (P21), range edits on chosen tracks (P14)
 #include "Tracks190peTests.inc" // round 190pe (0.1.31): track versions (P20) and the import of tracks from another project (P11)
 #include "Jsfx190pjTests.inc" // round 190pj (0.1.32): JSFX support stages 1-2 (issue #241)

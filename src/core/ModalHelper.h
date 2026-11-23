@@ -13,7 +13,7 @@
 // A click inserts the chord after the selection, voice-led from it (or in a chosen inversion, with an extension).
 //
 // Deterministic music theory only (no model, no data of any product): the seven church modes and the harmonic minor as
-// interval sets, the diatonic triads / sevenths / ninths built on them, LYNX's own tables of how common each borrowing is
+// interval sets, the diatonic triads / sevenths / ninths built on them, YW's own tables of how common each borrowing is
 // and what it tends to sound like (written for this round from standard harmony teaching: parallel minor borrowings in
 // major — iv, bVII, bVI, bIII, i, v, ii° —, the harmonic minor's V and vii° in minor, the Dorian IV, the Phrygian bII,
 // the Lydian II, secondary dominants from the closely related keys). Header only, no JUCE; costs nothing until called.
@@ -34,7 +34,7 @@
 #define TR_NOOP(text) text // marks the words for translation (ui/I18n.h defines the same)
 #endif
 
-namespace lynx::modalhelp
+namespace yw::modalhelp
 {
 inline int pc (int v) noexcept { return ((v % 12) + 12) % 12; }
 
@@ -617,7 +617,7 @@ struct RelatedKey
     int rank = 0; // 1 = the most common source of borrowed chords
 };
 
-// The parallel modes to borrow from, the most common first, for each home mode (LYNX's table from standard teaching:
+// The parallel modes to borrow from, the most common first, for each home mode (YW's table from standard teaching:
 // major borrows from the parallel minor first, then Mixolydian's ♭VII and Dorian; minor borrows the major's I / IV, then
 // the harmonic minor's V, Dorian's IV, Phrygian's ♭II; the bright and dark extremes last).
 inline std::vector<Mode> parallelOrder (Mode home)
@@ -767,7 +767,7 @@ struct Entry
     std::array<const char*, 3> mood;
 };
 
-// LYNX's tables: how common a borrowed chord is and what it tends to sound like, by its root above the home tonic and its
+// YW's tables: how common a borrowed chord is and what it tends to sound like, by its root above the home tonic and its
 // quality, for a major-type and a minor-type home (round 190mc; from standard harmony teaching, own words).
 inline const std::vector<Entry>& table (bool majorHome)
 {
@@ -850,7 +850,7 @@ inline std::vector<const char*> fallbackMood (Quality q)
 } // namespace detail
 
 // Panel 2: the chords of `source` that are not in the home key (the new colours it lends), the most common first. From a
-// parallel mode they are ranked and described by LYNX's table; from a related key its V (the secondary dominant) and
+// parallel mode they are ranked and described by YW's table; from a related key its V (the secondary dominant) and
 // vii° come first, then the chords with the fewest notes outside the home key. The selected chord itself is left out.
 // `ext` builds each chord as a triad or with its 7th / 9th / sus / add9 (the source scale's own notes); the ranking and
 // the words read the triad.
@@ -958,7 +958,7 @@ inline bool hasBorrowedChords (const Analysis& a, const RelatedKey& source)
 
 enum class Inversion
 {
-    voiceLed, // the inversion and octave closest to the selected chord (LYNX's choice: the least total movement)
+    voiceLed, // the inversion and octave closest to the selected chord (YW's choice: the least total movement)
     root,
     first,
     second,
@@ -1120,4 +1120,4 @@ inline std::vector<std::string> favouritesFrom (const std::string& text)
     }
     return out;
 }
-} // namespace lynx::modalhelp
+} // namespace yw::modalhelp

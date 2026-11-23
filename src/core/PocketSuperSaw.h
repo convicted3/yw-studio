@@ -1,6 +1,6 @@
 #pragma once
 
-// Pocket SuperSaw: LYNX's engine for FL Studio Mobile's "SuperSaw" module (FLM module type 23, 60 parameters, no
+// Pocket SuperSaw: YW's engine for FL Studio Mobile's "SuperSaw" module (FLM module type 23, 60 parameters, no
 // desktop FL twin and no data file), round 190by. Clean-room: the module's laws were read from the FL-hosted FL
 // Studio Mobile plugin and are restated here as formulas in our own words (docs/analise/REA_rodada190by.md); no
 // Image-Line code, preset or sample is in this repository.
@@ -13,14 +13,14 @@
 // or tempo-synced) with eight destinations; a mod-wheel router; a five-mode arpeggiator; a tanh distortion with an
 // output trim and a tempo-synced stereo delay with a one-pole low / high-pass in its loop.
 //
-// Parameters: the channel keeps FLM's own 0…1 values in ChannelDef::modelParams, LYNX parameter k = FLM parameter
+// Parameters: the channel keeps FLM's own 0…1 values in ChannelDef::modelParams, YW parameter k = FLM parameter
 // k + 1 (FLM's parameter 0, Enable, is the channel's own mute), like the Pocket effects (core/PocketFx.h). So a
 // .flm import copies the values as they are. The engine runs in single precision like FLM's.
 //
 // Differences from FLM, by design: one random generator per instance (FLM shares one between every SuperSaw of the
 // process), so start phases, table dither and the random LFO differ from any given FLM render; the channel's pitch
 // (knob, fine tune, main pitch) is added to every voice, live; the MIDI wheel bends by the module's own Pitch bend
-// range; and LYNX's channel Mono / Porta and piano roll slide notes move the voices as they do FL's generators
+// range; and YW's channel Mono / Porta and piano roll slide notes move the voices as they do FL's generators
 // (core/HostSlide.h), on top of the module's own Monophonic mode and Slide time.
 
 #include <array>
@@ -32,11 +32,11 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 namespace pocketsaw
 {
-// FLM's parameter numbers (index 0 = Enable). LYNX's parameter k is FLM's k + 1.
+// FLM's parameter numbers (index 0 = Enable). YW's parameter k is FLM's k + 1.
 constexpr int flmParamCount = 60;
 constexpr int paramCount = flmParamCount - 1;
 namespace flm
@@ -91,7 +91,7 @@ public:
     // velocity 0…1 (0 = note off), pan 0…1 (½ = centre), pitch = the note's own offset in semitones
     void note (int key, float velocity, float pan = 0.5f, float pitch = 0.0f) noexcept;
     void setPitchOffset (float semitones) noexcept; // added to every voice (the channel's pitch)
-    // a slide note of the host (LYNX's piano roll / channel Mono): the sounding voices glide to `key` + `cents` over
+    // a slide note of the host (YW's piano roll / channel Mono): the sounding voices glide to `key` + `cents` over
     // `samples`, keeping their keys; a note started inside HostSlide::pendingGlide() glides in (channel Porta)
     void slideTo (int key, float cents, float samples) noexcept;
     void setModWheel (float value) noexcept;        // 0…1
@@ -121,7 +121,7 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<float>& flmParams, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, int block = 512, double bpm = 120.0, double songPos = -1.0, std::uint32_t seed = 1);
 
-// the text of LYNX parameter `param` (0…58) at value v, as FLM shows it where FLM shows a unit
+// the text of YW parameter `param` (0…58) at value v, as FLM shows it where FLM shows a unit
 std::string paramText (int param, float v);
 } // namespace pocketsaw
 
@@ -136,4 +136,4 @@ namespace modelparams
 struct Table;
 Table pocketSuperSawModelTable();
 } // namespace modelparams
-} // namespace lynx
+} // namespace yw

@@ -1,4 +1,4 @@
-// LYNX's own SimSynth presets (round 168o): designed for LYNX on SimSynth's engine (core/SimSynth.h), clean-room — no
+// YW's own SimSynth presets (round 168o): designed for YW on SimSynth's engine (core/SimSynth.h), clean-room — no
 // FL preset was read or converted. Each preset starts from the plugin as FL creates it (simsynth::defaultState) and sets
 // FL's host parameters (core/ModelParamsSynths.cpp): knob positions 0…1, coarse pitch in semitones (0 = as played),
 // switches, waves 0 pulse, 1 half cosine, 2 triangle, 3 noise, 4 sine; LFO shapes 0 square, 1 saw, 2 triangle, 3 S&H.
@@ -9,10 +9,10 @@
 #include <initializer_list>
 #include <utility>
 
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/SimSynth.h"
 
-namespace lynx::banks
+namespace yw::banks
 {
 namespace
 {
@@ -118,4 +118,4 @@ std::vector<Preset> simSynthBank()
                          { fLfo, 0.85f }, { lfo1, 0.62f }, { att, 0.0f }, { dec, 0.5f }, { sus, 0.8f }, { rel, 0.3f }, { chorus, 1 } }));
     return b;
 }
-} // namespace lynx::banks
+} // namespace yw::banks

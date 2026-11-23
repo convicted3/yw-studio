@@ -1,7 +1,7 @@
 #pragma once
 
 // The Clip-launch layout's MPE tab, as Live 12.4's Clip View › MPE tab (round 190jd; the live check of round 190iw,
-// /mnt/e/lynx-work/livecheck190iw/ANSWERS.md Q3, shots q3-*):
+// /mnt/e/yw-work/livecheck190iw/ANSWERS.md Q3, shots q3-*):
 //   - the note editor stays on top and the pitch is edited ON THE NOTES (a click on a selected note adds a pitch
 //     breakpoint, a vertical drag bends it in semitones); there is no pitch lane;
 //   - under the notes the lanes are stacked, Slide and Pressure by default (≈40 px each), and the ▾ button's
@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace lynx::mpetab
+namespace yw::mpetab
 {
 // ---- the lanes the "Show Lane:" menu checks (in its order, which is also the stacking order, top to bottom) ---------
 enum class Lane : std::uint8_t { slide = 0, pressure = 1, velocity = 2, releaseVelocity = 3 };
@@ -132,11 +132,11 @@ inline HitResult hitTest (const std::vector<Px>& points, const std::vector<Px>& 
 
 // ---- pitch on the notes -----------------------------------------------------------------------------------------------
 // A pitch breakpoint dragged by `dy` pixels (down = positive) from `startCents`, one key row (`rowHeight` px) a
-// semitone, in whole semitones (Live's "0 st", "1 st" …); `fine` (LYNX's Shift) keeps whole cents. Clamped to ±48 st.
+// semitone, in whole semitones (Live's "0 st", "1 st" …); `fine` (YW's Shift) keeps whole cents. Clamped to ±48 st.
 inline float bendCents (float startCents, float dy, float rowHeight, bool fine) noexcept
 {
     const auto cents = startCents - dy / std::max (1.0f, rowHeight) * 100.0f;
     const auto v = fine ? std::round (cents) : std::round (cents / 100.0f) * 100.0f;
     return std::clamp (v, -4800.0f, 4800.0f);
 }
-} // namespace lynx::mpetab
+} // namespace yw::mpetab

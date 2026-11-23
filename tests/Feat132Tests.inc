@@ -3,27 +3,27 @@
 
 TEST (feat132_sampler_gain_factor)
 {
-    CHECK (lynx::samplerGain (0.0f) == 1.0f);
-    CHECK (std::abs (lynx::samplerGain (6.0206f) - 2.0f) < 1e-3f);
-    CHECK (std::abs (lynx::samplerGain (-6.0206f) - 0.5f) < 1e-3f);
-    CHECK (lynx::samplerGain (60.0f) == lynx::samplerGain (24.0f)); // clamped to +-24 dB
-    CHECK (lynx::samplerGain (-99.0f) == lynx::samplerGain (-24.0f));
-    CHECK (lynx::samplerGain (std::nanf ("")) == 1.0f);
-    CHECK (lynx::SamplerSettings {}.gainDb == 0.0f);
+    CHECK (yw::samplerGain (0.0f) == 1.0f);
+    CHECK (std::abs (yw::samplerGain (6.0206f) - 2.0f) < 1e-3f);
+    CHECK (std::abs (yw::samplerGain (-6.0206f) - 0.5f) < 1e-3f);
+    CHECK (yw::samplerGain (60.0f) == yw::samplerGain (24.0f)); // clamped to +-24 dB
+    CHECK (yw::samplerGain (-99.0f) == yw::samplerGain (-24.0f));
+    CHECK (yw::samplerGain (std::nanf ("")) == 1.0f);
+    CHECK (yw::SamplerSettings {}.gainDb == 0.0f);
 }
 
 TEST (feat132_sampler_gain_scales_the_output)
 {
-    auto data = std::make_shared<lynx::SampleData>();
+    auto data = std::make_shared<yw::SampleData>();
     data->sampleRate = 48000.0;
     for (int i = 0; i < 2000; ++i)
         data->left.push_back (std::sin (0.05f * (float) i) * 0.25f);
 
     auto render = [&data] (float gainDb, bool filtered) {
-        auto sampler = lynx::makeInstrument (lynx::InstrumentKind::sampler, data);
+        auto sampler = yw::makeInstrument (yw::InstrumentKind::sampler, data);
         sampler->prepare (48000.0);
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.sampler.gainDb = gainDb;
         if (filtered)
             c.sampler.cutoff = 3000.0f;
@@ -53,7 +53,7 @@ TEST (feat132_sampler_gain_scales_the_output)
 
 TEST (feat132_tap_tempo_states)
 {
-    using lynx::controls::TapTempo;
+    using yw::controls::TapTempo;
     TapTempo taps;
     CHECK (taps.state() == TapTempo::State::waiting && taps.lastTap() < 0.0);
     CHECK (! taps.tap (1000.0));
@@ -71,18 +71,18 @@ TEST (feat132_tap_tempo_states)
 
 TEST (feat132_tapper_sync_and_nudge)
 {
-    using namespace lynx::controls;
+    using namespace yw::controls;
     CHECK (nearestBeatTicks (0.0) == 0.0);
-    CHECK (nearestBeatTicks (lynx::ppq * 3.4) == lynx::ppq * 3.0);
-    CHECK (nearestBeatTicks (lynx::ppq * 3.6) == lynx::ppq * 4.0);
+    CHECK (nearestBeatTicks (yw::ppq * 3.4) == yw::ppq * 3.0);
+    CHECK (nearestBeatTicks (yw::ppq * 3.6) == yw::ppq * 4.0);
     CHECK (nearestBeatTicks (-50.0) == 0.0);
     CHECK (std::abs (nudgedTempo (100.0, true) - 104.0) < 1e-9 && std::abs (nudgedTempo (100.0, false) - 96.0) < 1e-9);
-    CHECK (nudgedTempo (lynx::maxTempo, true) == lynx::maxTempo);
+    CHECK (nudgedTempo (yw::maxTempo, true) == yw::maxTempo);
 }
 
 TEST (feat132_utility_volumes)
 {
-    using namespace lynx::controls;
+    using namespace yw::controls;
     CHECK (metronomeGain (1.0) == 1.0f && previewGain (1.0) == 1.0f); // 100% keeps the old levels
     CHECK (metronomeGain (0.0) == 0.0f);
     CHECK (std::abs (20.0 * std::log10 ((double) previewGain (0.5)) + 12.0412) < 1e-3); // 50% = -12 dB
@@ -93,19 +93,19 @@ TEST (feat132_utility_volumes)
 
 TEST (feat132_rack_piano_roll_view)
 {
-    lynx::Pattern p;
-    p.notes.push_back ({ 0, lynx::ticksPerStep, 0, 60 }); // a step on channel 0
+    yw::Pattern p;
+    p.notes.push_back ({ 0, yw::ticksPerStep, 0, 60 }); // a step on channel 0
     // steps stay step buttons, unless the piano-roll view is on (then every row, even an empty one, is a miniature)
-    CHECK (! lynx::showsNotePreview (p, 0) && ! lynx::showsNotePreview (p, 0, false));
-    CHECK (lynx::showsNotePreview (p, 0, true) && lynx::showsNotePreview (p, 3, true));
-    p.notes.push_back ({ 0, lynx::ticksPerStep * 4, 1, 64 }); // a long note on channel 1
-    CHECK (lynx::showsNotePreview (p, 1, false));
+    CHECK (! yw::showsNotePreview (p, 0) && ! yw::showsNotePreview (p, 0, false));
+    CHECK (yw::showsNotePreview (p, 0, true) && yw::showsNotePreview (p, 3, true));
+    p.notes.push_back ({ 0, yw::ticksPerStep * 4, 1, 64 }); // a long note on channel 1
+    CHECK (yw::showsNotePreview (p, 1, false));
 }
 
 TEST (feat132_new_actions)
 {
     for (const auto* id : { "view.audioEditor", "view.tempoTapper", "rack.pianoRollView" })
-        CHECK (lynx::keys::findAction (id) != nullptr);
-    lynx::keys::KeyMap map;
+        CHECK (yw::keys::findAction (id) != nullptr);
+    yw::keys::KeyMap map;
     CHECK (map.conflicts().empty());
 }

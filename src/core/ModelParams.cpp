@@ -11,7 +11,7 @@
 #include "core/ModelParamsSynths.h"
 #include "core/PocketSuperSaw.h"
 #include "core/FmSynth.h"
-#include "core/physmod/LynxModel.h"
+#include "core/physmod/YwModel.h"
 #include "core/WavetableSynth.h"
 #include "core/Braid.h"
 #include "core/PoiZone.h"
@@ -19,7 +19,7 @@
 #include "core/Toxic.h"
 #include "core/TransistorBass.h"
 
-namespace lynx::modelparams
+namespace yw::modelparams
 {
 namespace
 {
@@ -50,9 +50,9 @@ const std::map<InstrumentKind, Table>& tables()
 {
     static const std::map<InstrumentKind, Table> all = [] {
         std::map<InstrumentKind, Table> t;
-#define LYNX_MODEL_PARAMS(kind, function) t[InstrumentKind::kind] = function();
+#define YW_MODEL_PARAMS(kind, function) t[InstrumentKind::kind] = function();
 #include "core/ModelParamList.inc"
-#undef LYNX_MODEL_PARAMS
+#undef YW_MODEL_PARAMS
         return t;
     }();
     return all;
@@ -134,4 +134,4 @@ bool setValue01 (ChannelDef& channel, int index, float value)
     const auto* p = find (channel.instrument, index);
     return p != nullptr && std::isfinite (value) && setRawValue (channel, index, p->raw (value));
 }
-} // namespace lynx::modelparams
+} // namespace yw::modelparams

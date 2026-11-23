@@ -1,7 +1,7 @@
-// Issue #96's run-time check, no injected input (LYNX_PLUGWIN_KEYS=1 with --plugwintest): keyboard messages are posted to
+// Issue #96's run-time check, no injected input (YW_PLUGWIN_KEYS=1 with --plugwintest): keyboard messages are posted to
 // the plugin's own focused native view, whose window procedure is subclassed to count what actually reaches it. The
 // hook is a WH_GETMESSAGE one (round 187a; WH_KEYBOARD never saw posted keys), so this is the path real keys take.
-// Controls: F12 runs LYNX's shortcut (its repeat too), and with the option off the plugin gets every key.
+// Controls: F12 runs YW's shortcut (its repeat too), and with the option off the plugin gets every key.
 #include "ui/PluginKeysTest.h"
 
 #if JUCE_WINDOWS
@@ -13,7 +13,7 @@
  #endif
  #include <windows.h>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -72,8 +72,8 @@ bool pluginKeysTestTick (juce::AudioProcessorEditor& editor, const std::function
         state.down = state.up = state.plainCalls = state.leftCalls = 0;
     };
     const auto root = (HWND) editor.getTopLevelComponent()->getWindowHandle();
-    // LYNX_PLUGWIN_KEYS=real: real keys from outside; the view keeps its window procedure and every change is reported
-    if (juce::SystemStats::getEnvironmentVariable ("LYNX_PLUGWIN_KEYS", {}) == "real")
+    // YW_PLUGWIN_KEYS=real: real keys from outside; the view keeps its window procedure and every change is reported
+    if (juce::SystemStats::getEnvironmentVariable ("YW_PLUGWIN_KEYS", {}) == "real")
     {
         static int seenPlain = -1, seenLeft = -1;
         if (state.phase++ == 0)
@@ -82,7 +82,7 @@ bool pluginKeysTestTick (juce::AudioProcessorEditor& editor, const std::function
             setPluginViewPlainKeyHandler ([] (juce::Component& w) { return PluginWindows::letsHostProcessKeys (w); },
                                           [] (const juce::KeyPress&) { ++state.plainCalls; return true; },
                                           [] (const juce::KeyPress&) { ++state.leftCalls; return true; });
-            setOption (juce::SystemStats::getEnvironmentVariable ("LYNX_PLUGWIN_KEYS_OPTION", {}) == "1");
+            setOption (juce::SystemStats::getEnvironmentVariable ("YW_PLUGWIN_KEYS_OPTION", {}) == "1");
         }
         if (state.plainCalls != seenPlain || state.leftCalls != seenLeft)
         {
@@ -95,7 +95,7 @@ bool pluginKeysTestTick (juce::AudioProcessorEditor& editor, const std::function
         }
         return true;
     }
-    // a plugin in another process (issue #99's case): neither path may touch keys that reach LYNX's side of its window
+    // a plugin in another process (issue #99's case): neither path may touch keys that reach YW's side of its window
     if (auto* instance = dynamic_cast<juce::AudioPluginInstance*> (editor.getAudioProcessor()); instance != nullptr && sandboxedPluginProcessId (*instance) != 0)
     {
         switch (state.phase++)
@@ -143,7 +143,7 @@ bool pluginKeysTestTick (juce::AudioProcessorEditor& editor, const std::function
         }
         case 1:
         {
-            // LYNX's shortcut over the plugin (round 165q): the press and its repeat run it, the plugin sees none of it
+            // YW's shortcut over the plugin (round 165q): the press and its repeat run it, the plugin sees none of it
             const auto good = state.shortcutCalls == 2 && state.down == 0 && state.up == 0;
             state.ok = state.ok && good;
             step ("keys_shortcut_with_repeat shortcuts=" + juce::String (state.shortcutCalls) + " view_down=" + juce::String (state.down)
@@ -176,13 +176,13 @@ bool pluginKeysTestTick (juce::AudioProcessorEditor& editor, const std::function
             check ("native_text_field_option_on", 2, 1, 0);
             SetWindowLongPtrW (state.field, GWLP_WNDPROC, (LONG_PTR) state.proc);
             DestroyWindow (state.field);
-            // LYNX_PLUGWIN_SHOT=<png>: the Wrapper settings page with the option on (FL | LYNX review)
-            if (const auto shot = juce::SystemStats::getEnvironmentVariable ("LYNX_PLUGWIN_SHOT", {}); shot.isNotEmpty())
+            // YW_PLUGWIN_SHOT=<png>: the Wrapper settings page with the option on (FL | YW review)
+            if (const auto shot = juce::SystemStats::getEnvironmentVariable ("YW_PLUGWIN_SHOT", {}); shot.isNotEmpty())
                 step ("keys_settings_shot=" + juce::String ((int) PluginWindows::saveSettingsPageShot (*editor.getTopLevelComponent(), juce::File (shot))));
             setOption (false);
             // (round 187a: the header again with the Typing keyboard priority button on, FL's default; taken after the
             // key checks, since showing the page moves the focus)
-            if (const auto shot = juce::SystemStats::getEnvironmentVariable ("LYNX_PLUGWIN_SHOT", {}); shot.isNotEmpty())
+            if (const auto shot = juce::SystemStats::getEnvironmentVariable ("YW_PLUGWIN_SHOT", {}); shot.isNotEmpty())
                 PluginWindows::saveSettingsPageShot (*editor.getTopLevelComponent(), juce::File (shot.upToLastOccurrenceOf (".", false, false) + "-plugin-first.png"));
             setPluginViewPlainKeyHandler (nullptr, nullptr, nullptr);
             setSecondaryWindowKeyHandler (nullptr);
@@ -192,14 +192,14 @@ bool pluginKeysTestTick (juce::AudioProcessorEditor& editor, const std::function
             return false;
     }
 }
-} // namespace lynx
+} // namespace yw
 #else
-namespace lynx
+namespace yw
 {
 bool pluginKeysTestTick (juce::AudioProcessorEditor&, const std::function<void (bool)>&, const std::function<void (const juce::String&)>& step)
 {
     step ("keys_result=NOT_APPLICABLE (the keyboard hook is Windows' only)");
     return false;
 }
-} // namespace lynx
+} // namespace yw
 #endif

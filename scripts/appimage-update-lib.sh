@@ -1,10 +1,10 @@
 # Shared by scripts/deploy-site.sh and scripts/publish-appimage-update.sh: the AppImage's fixed update address.
 # The live site holds the address's target (update/.htaccess, a 302 to a release's .zsync), not this repository, so a site
 # deploy from an old checkout cannot move or remove it.
-UPDATE_ADDRESS="${LYNX_UPDATE_ADDRESS:-https://lynx-share.com/update/LYNX-x86_64.AppImage.zsync}"
+UPDATE_ADDRESS="${YW_UPDATE_ADDRESS:-https://yolo.su/update/YW-x86_64.AppImage.zsync}"
 # the arm64 AppImage's address (round 190oy, from 0.1.31): the same file holds both redirects
-UPDATE_ADDRESS_AARCH64="${LYNX_UPDATE_ADDRESS_AARCH64:-https://lynx-share.com/update/LYNX-aarch64.AppImage.zsync}"
-UPDATE_REPO="${LYNX_UPDATE_REPO:-convicted3/yw-studio}"
+UPDATE_ADDRESS_AARCH64="${YW_UPDATE_ADDRESS_AARCH64:-https://yolo.su/update/YW-aarch64.AppImage.zsync}"
+UPDATE_REPO="${YW_UPDATE_REPO:-convicted3/yw-studio}"
 # the first release whose AppImage reads the address
 UPDATE_FIRST_VERSION="v0.1.25"
 
@@ -17,7 +17,7 @@ update_target()
     code="${answer%% *}"; url="${answer#* }"; url="${url%%\?*}"   # the server echoes our ?check= query on the redirect
     case "$code" in
         404) return 0 ;;
-        302) [[ "$url" =~ ^https://github\.com/$UPDATE_REPO/releases/download/v[^/]+/LYNX-[^/]+\.AppImage\.zsync$ ]] || return 1
+        302) [[ "$url" =~ ^https://github\.com/$UPDATE_REPO/releases/download/v[^/]+/YW-[^/]+\.AppImage\.zsync$ ]] || return 1
              printf '%s\n' "$url" ;;
         *) return 1 ;;
     esac
@@ -30,8 +30,8 @@ update_target_tag() { sed -n 's#.*/releases/download/\([^/]*\)/.*#\1#p' <<<"$1";
 update_htaccess()
 {
     printf '%s\n' "# Written by scripts/publish-appimage-update.sh. The AppImage's fixed update address: the newest published release." \
-                  "Redirect 302 /update/LYNX-x86_64.AppImage.zsync $1"
-    [[ -z "${2:-}" ]] || printf '%s\n' "Redirect 302 /update/LYNX-aarch64.AppImage.zsync $2"
+                  "Redirect 302 /update/YW-x86_64.AppImage.zsync $1"
+    [[ -z "${2:-}" ]] || printf '%s\n' "Redirect 302 /update/YW-aarch64.AppImage.zsync $2"
     printf '%s\n' '<IfModule mod_headers.c>' 'Header always set Cache-Control "no-store"' '</IfModule>'
 }
 
@@ -41,7 +41,7 @@ site_upload()
     local token base=https://developers.hostinger.com answer url auth rest size
     token="$(cat ~/.config/hostinger/token)"
     answer="$(curl -sf -X POST -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
-              -d '{"username":"u258086853","domain":"lynx-share.com"}' "$base/api/hosting/v1/files/upload-urls")" || return 1
+              -d '{"username":"u258086853","domain":"yolo.su"}' "$base/api/hosting/v1/files/upload-urls")" || return 1
     url="$(python3 -c "import json,sys;print(json.load(sys.stdin)['url'])" <<<"$answer")"
     auth="$(python3 -c "import json,sys;print(json.load(sys.stdin)['auth_key'])" <<<"$answer")"
     rest="$(python3 -c "import json,sys;print(json.load(sys.stdin)['rest_auth_key'])" <<<"$answer")"

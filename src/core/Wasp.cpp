@@ -2,7 +2,7 @@
 
 #include "core/Wasp.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -19,4 +19,4 @@ public:
 } // namespace
 
 std::unique_ptr<Instrument> makeWaspInstrument() { return std::make_unique<WaspInstrument>(); }
-} // namespace lynx
+} // namespace yw

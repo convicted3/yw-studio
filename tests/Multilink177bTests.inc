@@ -2,10 +2,10 @@
 // controllers moved next, in the same order; one controller (CC and channel) per target; it ends when all are linked.
 TEST (multilink177b_links_in_the_order_moved)
 {
-    lynx::MultilinkSession m;
-    const lynx::AutomationTarget a { lynx::AutomationTargetKind::mixerVolume, 1, 0, 0 };
-    const lynx::AutomationTarget b { lynx::AutomationTargetKind::mixerPan, 2, 0, 0 };
-    const lynx::AutomationTarget c { lynx::AutomationTargetKind::tempo, 0, 0, 0 };
+    yw::MultilinkSession m;
+    const yw::AutomationTarget a { yw::AutomationTargetKind::mixerVolume, 1, 0, 0 };
+    const yw::AutomationTarget b { yw::AutomationTargetKind::mixerPan, 2, 0, 0 };
+    const yw::AutomationTarget c { yw::AutomationTargetKind::tempo, 0, 0, 0 };
     CHECK (! m.controller (10, 0).has_value()); // nothing queued: a controller links nothing
     CHECK (m.add (a) && m.add (b));
     CHECK (! m.add (a));                        // moved again: keeps its place
@@ -27,17 +27,17 @@ TEST (multilink177b_links_in_the_order_moved)
 TEST (multilink177b_switch_menu_and_toolbar)
 {
     // the switch's "Link to controller" / "Override global links": no more controls are queued, the controllers link
-    lynx::MultilinkSession m;
-    const lynx::AutomationTarget a { lynx::AutomationTargetKind::mixerVolume, 1, 0, 0 };
+    yw::MultilinkSession m;
+    const yw::AutomationTarget a { yw::AutomationTargetKind::mixerVolume, 1, 0, 0 };
     CHECK (m.add (a));
     m.collecting = false;
-    CHECK (! m.add ({ lynx::AutomationTargetKind::mixerPan, 1, 0, 0 }));
+    CHECK (! m.add ({ yw::AutomationTargetKind::mixerPan, 1, 0, 0 }));
     const auto link = m.controller (30, 2);
     CHECK (link && link->target == a && m.complete());
 
-    // FL keeps its MultiLinkBtn off the default toolbar; LYNX's Multilink group is hidden on a new install, after the
+    // FL keeps its MultiLinkBtn off the default toolbar; YW's Multilink group is hidden on a new install, after the
     // window shortcuts, and a toolbar saved by an older version gets it hidden in that place
-    using namespace lynx::toolbarlayout;
+    using namespace yw::toolbarlayout;
     const auto d = Layout::makeDefault();
     CHECK (! d.isShown (Group::multilink) && d.isShown (Group::windows));
     CHECK (d.orderToString().find ("windows,-multilink,file") != std::string::npos);

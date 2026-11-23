@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Names the LYNX.exe frames of a message-thread profile (LYNX_PROFILE_MAIN, src/platform/CrashGuard.cpp; round 190kz).
+# Names the YW.exe frames of a message-thread profile (YW_PROFILE_MAIN, src/platform/CrashGuard.cpp; round 190kz).
 #
-# The profiler writes LYNX.exe's own frames as raw addresses ("-- raw" section of each window: "S|T <rva> <weight>")
-# because loading the ~750 MB LYNX.pdb inside the measured process took longer than a measurement run. This script
+# The profiler writes YW.exe's own frames as raw addresses ("-- raw" section of each window: "S|T <rva> <weight>")
+# because loading the ~750 MB YW.pdb inside the measured process took longer than a measurement run. This script
 # names them afterwards with llvm-symbolizer and the PDB next to the exe (inlined functions included), and prints, for
 # the windows chosen, the functions by self weight and by total (self + callees) weight, as shares of all samples.
 #
-# usage: profile_symbolize.py <profile.txt> <LYNX.exe> [--from S] [--to S] [--top N] [--symbolizer PATH]
+# usage: profile_symbolize.py <profile.txt> <YW.exe> [--from S] [--to S] [--top N] [--symbolizer PATH]
 #   llvm-symbolizer: PATH, $LLVM_SYMBOLIZER, or llvm-symbolizer on the PATH (LLVM 18 reads PDBs on Linux)
 import argparse
 import os
@@ -40,7 +40,7 @@ def symbolize(symbolizer, exe, base, rvas):
     for rva, block in zip(order, blocks):
         lines = [l for l in block.split("\n") if l.strip()]
         funcs = [lines[i] for i in range(0, len(lines), 2)]
-        names[rva] = [f if f != "??" else "LYNX.exe+0x%x" % rva for f in funcs] or ["LYNX.exe+0x%x" % rva]
+        names[rva] = [f if f != "??" else "YW.exe+0x%x" % rva for f in funcs] or ["YW.exe+0x%x" % rva]
     return names
 
 
@@ -59,7 +59,7 @@ def main():
     cpu = []
     self_raw = defaultdict(int)
     total_raw = defaultdict(int)
-    other_self = defaultdict(float)   # non-LYNX self lines, in % of their window, weighted back to samples
+    other_self = defaultdict(float)   # non-YW self lines, in % of their window, weighted back to samples
     other_total = defaultdict(float)
     section = None
     take = False
@@ -95,7 +95,7 @@ def main():
             (self_raw if kind == "S" else total_raw)[int(rva, 16)] += int(w)
         elif section in ("self", "total"):
             m = re.match(r"\s*([\d.]+) %\s+(.*)", line)
-            if m and not m.group(2).startswith("LYNX.exe+0x"):
+            if m and not m.group(2).startswith("YW.exe+0x"):
                 (other_self if section == "self" else other_total)[m.group(2)] += float(m.group(1))
     if windows == 0:
         sys.exit("no window in the range")
@@ -112,13 +112,13 @@ def main():
             total_fn[f] += w
     pct = lambda w: 100.0 * w / max(1, samples)
     print("%d windows, message thread CPU %.1f %% (mean of the windows), %d weight units" % (windows, sum(cpu) / len(cpu), samples))
-    print("-- self (LYNX.exe functions, inlined callees named; shares of all samples)")
+    print("-- self (YW.exe functions, inlined callees named; shares of all samples)")
     for f, w in sorted(self_fn.items(), key=lambda kv: -kv[1])[: a.top]:
         print("%6.1f %%  %s" % (pct(w), f))
     print("-- self, other modules (mean %% of the windows' samples)")
     for f, v in sorted(other_self.items(), key=lambda kv: -kv[1])[:15]:
         print("%6.1f %%  %s" % (v / windows, f))
-    print("-- total (self + callees; LYNX.exe functions)")
+    print("-- total (self + callees; YW.exe functions)")
     for f, w in sorted(total_fn.items(), key=lambda kv: -kv[1])[: a.top + 25]:
         print("%6.1f %%  %s" % (pct(w), f))
 

@@ -6,7 +6,7 @@
     bool runDetailsShot190kn (const juce::String& prefix, const juce::String& project, const juce::String& set)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -14,12 +14,12 @@
             allOk = allOk && ok;
         };
         const auto line = [&checks] (const juce::String& what) { checks << "     " << what << "\n"; };
-        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (lynx::shot::snapshot (c), prefix + "-" + name + ".png"); };
+        const auto write = [&prefix] (juce::Component& c, const juce::String& name) { savePng (yw::shot::snapshot (c), prefix + "-" + name + ".png"); };
         const auto menuShot = [&prefix] (const juce::PopupMenu& menu, const juce::String& title, const juce::String& name) {
             saveMenus (juce::StringArray { title }, std::vector<juce::PopupMenu> { menu }, prefix + "-" + name + ".png");
         };
-        const auto size = juce::StringArray::fromTokens (juce::SystemStats::getEnvironmentVariable ("LYNX_SNAPSHOT_SIZE", "1920x1080"), "x", "");
-        using namespace lynx;
+        const auto size = juce::StringArray::fromTokens (juce::SystemStats::getEnvironmentVariable ("YW_SNAPSHOT_SIZE", "1920x1080"), "x", "");
+        using namespace yw;
         {
             // ---- Pattern layout, the FL demo: the toolbar's output and CPU panels, the hint bar, the Mixer
             AudioEngine offline (false);
@@ -64,7 +64,7 @@
             saveArea (ui, toolbar, prefix + "-tb-hint-bars.png");
             const auto cpuHint = cpu.hintAt ({ 4, 4 });
             line ("CPU hint: " + cpuHint.text);
-            check ("CPU panel hint names the double-click", cpuHint.text.contains (lynx::tr ("[Double-click] plugin performance monitor  [RMB] refresh rate")));
+            check ("CPU panel hint names the double-click", cpuHint.text.contains (yw::tr ("[Double-click] plugin performance monitor  [RMB] refresh rate")));
             menuShot (cpu.makeMenu(), "CPU", "tb-cpu-menu");
             int rows = 0;
             for (juce::PopupMenu::MenuItemIterator it (cpu.makeMenu()); it.next();)
@@ -80,7 +80,7 @@
                     first = it.getItem().text;
             check ("hint bar menu: \"" + first + "\"", first.contains ("-3.2 dB"));
             {
-                // the right-click as the hint bar builds it: FL's toolbars menu (FL 2026 opens it there), then LYNX's copy items
+                // the right-click as the hint bar builds it: FL's toolbars menu (FL 2026 opens it there), then YW's copy items
                 auto whole = ui.getToolbarMenuForSnapshot();
                 whole.addSeparator();
                 for (juce::PopupMenu::MenuItemIterator it (copy); it.next();)
@@ -110,7 +110,7 @@
             saveArea (strips, mute.withSizeKeepingCentre (120, 60), prefix + "-mixer-mute-locked.png");
             const auto muteHint = strips.hintAt (mute.getCentre());
             line ("mute hint: " + muteHint.text + " | " + muteHint.value);
-            check ("Mixer mute hint lists FL's modifiers and the lock", muteHint.text.contains ("Shift+click") && muteHint.value == lynx::tr ("State locked"));
+            check ("Mixer mute hint lists FL's modifiers and the lock", muteHint.text.contains ("Shift+click") && muteHint.value == yw::tr ("State locked"));
             const auto meter = strips.meterAreaForSnapshot (4);
             const auto meterHint = strips.hintAt ({ meter.getX() + 2, meter.getBottom() - meter.getHeight() / 2 });
             line ("meter hint: " + meterHint.text + " | " + meterHint.value);
@@ -239,8 +239,8 @@
                     bool rename = false, colour = false;
                     for (juce::PopupMenu::MenuItemIterator it (menu); it.next();)
                     {
-                        rename = rename || it.getItem().text.startsWith (lynx::tr ("Rename"));
-                        colour = colour || (it.getItem().text == lynx::tr ("Change color") && it.getItem().subMenu != nullptr);
+                        rename = rename || it.getItem().text.startsWith (yw::tr ("Rename"));
+                        colour = colour || (it.getItem().text == yw::tr ("Change color") && it.getItem().subMenu != nullptr);
                     }
                     check ("clip menu: Rename and Change color (Live's clip menu)", rename && colour);
                     menuShot (menu, "Clip", "grid-clip-menu");
@@ -257,7 +257,7 @@
                 // Live's count-in in the control bar's position field (DL-44): 2 bars of 4/4, a beat and an eighth in
                 {
                     const auto bar = (double) song.barTicks();
-                    offline.getTransport().countIn.store (2.0 * bar - 1.5 * (double) lynx::ppq);
+                    offline.getTransport().countIn.store (2.0 * bar - 1.5 * (double) yw::ppq);
                     ui.transportTickForSnapshot();
                     auto* position = ui.toolbarPartForSnapshot ("position");
                     if (position != nullptr)
@@ -280,7 +280,7 @@
                 const auto sceneMenu = clipGridSceneMenu (grid, scene);
                 bool enabled = false;
                 for (juce::PopupMenu::MenuItemIterator it (sceneMenu); it.next();)
-                    if (it.getItem().text == lynx::tr ("Cancel Scene Launch"))
+                    if (it.getItem().text == yw::tr ("Cancel Scene Launch"))
                         enabled = it.getItem().isEnabled;
                 check ("scene menu: Cancel Scene Launch enabled while the scene waits", queued && enabled);
                 menuShot (sceneMenu, "Scene", "grid-scene-menu");

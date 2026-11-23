@@ -2,7 +2,7 @@
 // export parity through the real export path (ExportJob), as --selftest "export_parity" and --exportparitytest.
 //
 // The project: three sample channels (decaying sines and a click train written here, so every render is the same),
-// inserts 1 and 2 sending to a bus (insert 3, with a delay), insert 2 with LYNX's Limiter (72 samples of look-ahead, so
+// inserts 1 and 2 sending to a bus (insert 3, with a delay), insert 2 with YW's Limiter (72 samples of look-ahead, so
 // the delay compensation works; below its ceiling it only delays), insert 4 with an EQ and an automated fader. No
 // Master effects: the parts add up to the mix. The checks:
 //  1. the export (offline, blocks of 512) against playback: the live engine on a stand-in audio device whose callbacks
@@ -27,7 +27,7 @@
 
 #include <cstdlib>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -298,7 +298,7 @@ juce::String AudioEngine::exportParitySelfTest (const std::function<void (const 
             log (line);
     };
     const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory)
-                            .getChildFile ("lynx-exportparity-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
+                            .getChildFile ("yw-exportparity-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
     folder.createDirectory();
     struct Cleanup
     {
@@ -309,11 +309,11 @@ juce::String AudioEngine::exportParitySelfTest (const std::function<void (const 
         if (! writeSample (folder.getChildFile ("parity-" + juce::String (k) + ".wav"), k))
             return "ERROR can't write the test samples in " + folder.getFullPathName();
     auto song = paritySong (folder);
-    // (diagnosis: LYNX_EXPORTPARITY_CHANNELS="0,2" plays only those channels; LYNX_EXPORTPARITY_NOAUTO=1 drops the automation)
-    if (const auto only = juce::SystemStats::getEnvironmentVariable ("LYNX_EXPORTPARITY_CHANNELS", {}); only.isNotEmpty())
+    // (diagnosis: YW_EXPORTPARITY_CHANNELS="0,2" plays only those channels; YW_EXPORTPARITY_NOAUTO=1 drops the automation)
+    if (const auto only = juce::SystemStats::getEnvironmentVariable ("YW_EXPORTPARITY_CHANNELS", {}); only.isNotEmpty())
         for (int c = 0; c < (int) song.channels.size(); ++c)
             song.channels[(std::size_t) c].muted = ! juce::StringArray::fromTokens (only, ",", {}).contains (juce::String (c));
-    if (juce::SystemStats::getEnvironmentVariable ("LYNX_EXPORTPARITY_NOAUTO", {}) == "1")
+    if (juce::SystemStats::getEnvironmentVariable ("YW_EXPORTPARITY_NOAUTO", {}) == "1")
     {
         song.automations.clear();
         song.playlist.pop_back();
@@ -376,8 +376,8 @@ juce::String AudioEngine::exportParitySelfTest (const std::function<void (const 
             return played;
         }
         live.deviceManager.addAudioCallback (&live);
-        // (diagnosis, round 190hn: LYNX_EXPORTPARITY_RENDERAHEAD=1 makes playback render ahead from its first block)
-        if (live.rackProcessor != nullptr && juce::SystemStats::getEnvironmentVariable ("LYNX_EXPORTPARITY_RENDERAHEAD", {}) == "1")
+        // (diagnosis, round 190hn: YW_EXPORTPARITY_RENDERAHEAD=1 makes playback render ahead from its first block)
+        if (live.rackProcessor != nullptr && juce::SystemStats::getEnvironmentVariable ("YW_EXPORTPARITY_RENDERAHEAD", {}) == "1")
             live.rackProcessor->setRenderAheadAlways (true);
         live.setSong (song);
         for (int i = 0; i < 20; ++i) // (the rack is built and published by the engine's timer)
@@ -439,8 +439,8 @@ juce::String AudioEngine::exportParitySelfTest (const std::function<void (const 
         played.l.resize (mix.l.size());
         played.r.resize (mix.r.size());
         say ("playback in blocks of " + juce::String (block) + (raced ? ", started inside a callback" : "") + ": " + juce::String ((int) latency) + " samples of delay compensation trimmed");
-        // LYNX_EXPORTPARITY_KEEP=<folder>: the export and the playback kept as WAV files (for a closer look)
-        if (const auto keep = juce::SystemStats::getEnvironmentVariable ("LYNX_EXPORTPARITY_KEEP", {}); juce::File::isAbsolutePath (keep))
+        // YW_EXPORTPARITY_KEEP=<folder>: the export and the playback kept as WAV files (for a closer look)
+        if (const auto keep = juce::SystemStats::getEnvironmentVariable ("YW_EXPORTPARITY_KEEP", {}); juce::File::isAbsolutePath (keep))
         {
             const juce::File dir (keep);
             dir.createDirectory();
@@ -516,16 +516,16 @@ juce::String AudioEngine::exportParitySelfTest (const std::function<void (const 
     checkPlayback (false);
     checkPlayback (true);
     // Round 190jb: render-ahead switched on, and off, in the middle of the song, as its load probe does under load (the rare
-    // mid-song miss: 1 in ~100 runs under load, "first apart at 3.56 s"). LYNX_EXPORTPARITY_ENGAGE_AT / _RELEASE_AT =
+    // mid-song miss: 1 in ~100 runs under load, "first apart at 3.56 s"). YW_EXPORTPARITY_ENGAGE_AT / _RELEASE_AT =
     // seconds (the stress script draws them) replace the self-test's fixed points.
     {
         auto at = [] (const char* name, double fallback) {
             const auto v = juce::SystemStats::getEnvironmentVariable (name, {});
             return v.isNotEmpty() ? v.getDoubleValue() : fallback;
         };
-        if (const auto engageAt = at ("LYNX_EXPORTPARITY_ENGAGE_AT", 3.5); engageAt >= 0.0)
+        if (const auto engageAt = at ("YW_EXPORTPARITY_ENGAGE_AT", 3.5); engageAt >= 0.0)
             checkPlayback (false, engageAt, true);
-        if (const auto releaseAt = at ("LYNX_EXPORTPARITY_RELEASE_AT", 2.0); releaseAt >= 0.0)
+        if (const auto releaseAt = at ("YW_EXPORTPARITY_RELEASE_AT", 2.0); releaseAt >= 0.0)
             checkPlayback (false, releaseAt, false);
     }
 
@@ -648,14 +648,14 @@ juce::String AudioEngine::exportParitySelfTest (const std::function<void (const 
 //     playback, below -90 dBFS or within what two playbacks of the plugin differ by (a plugin may not repeat itself);
 //  4. the hold given back: the engine plays again, the plugin at the device's rate in real-time mode;
 //  5. playback again: the same as the first (the export changed nothing that is heard afterwards);
-//  6. LYNX's own units with a plugin lent: insert 4's stem (sampler, EQ, automated fader) bit-identical with and without;
+//  6. YW's own units with a plugin lent: insert 4's stem (sampler, EQ, automated fader) bit-identical with and without;
 //  7. an export at 44.1 kHz with the hold: the plugin prepared at that rate and back at 48 kHz afterwards;
 //  8. (round 190jx) Render to audio of the plugin's insert with the live instance (the Mixer menu's hold): playback
 //     with the rendered audio in the insert's place = the first playback; with a new instance instead, it is not (the
 //     seeded test synth); the render undone, playback = the first (the plugin given back as it was);
 //  9. (round 190jx) Freeze of the plugin's channel with the live instance: playback of the frozen channel = the first
 //     playback, and its audio differs from a freeze made with a new instance (the seeded test synth).
-// With the LYNX Test Synth in its seeded mode (LYNX_TEST_SYNTH_SEED=1: a pitch per instance) the export without the
+// With the YW Test Synth in its seeded mode (YW_TEST_SYNTH_SEED=1: a pitch per instance) the export without the
 // hold must differ from the playback: proof that the instance, not just the plugin, is what renders.
 juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const juce::String&)>& log, const juce::StringArray& pluginFiles)
 {
@@ -664,7 +664,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
             log (line);
     };
     const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory)
-                            .getChildFile ("lynx-exportlive-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
+                            .getChildFile ("yw-exportlive-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()));
     folder.createDirectory();
     struct Cleanup
     {
@@ -888,7 +888,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
         // 5. playback again
         const auto second = playOnce ("second playback");
 
-        // 6. LYNX's own units with the plugin lent: insert 4's stem
+        // 6. YW's own units with the plugin lent: insert 4's stem
         auto stemOptions = options;
         stemOptions.stems = exportopts::Stems::mixerTracks;
         const auto stemFresh = exportSong (makeBounceSong (song, 4), stemOptions, "stem-fresh", nullptr);
@@ -994,7 +994,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
             errors.add (name + ": playback after Render to audio, undone, differs from playback before by " + db (undoneVsPlay));
         if (frozenVsPlay < 0.0f || frozenVsPlay >= playAllowed)
             errors.add (name + ": playback of the frozen channel differs from playback before by " + db (frozenVsPlay));
-        if (std::getenv ("LYNX_TEST_SYNTH_SEED") != nullptr && name.startsWith ("YW Test Synth"))
+        if (std::getenv ("YW_TEST_SYNTH_SEED") != nullptr && name.startsWith ("YW Test Synth"))
         {
             if (renderFreshVsPlay >= 0.0f && renderFreshVsPlay < 1.0e-2f)
                 errors.add (name + ": Render to audio with a new instance sounds like the live one (" + db (renderFreshVsPlay) + "): the check can't tell");
@@ -1040,7 +1040,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
             errors.add (name + ": the export at 44.1 kHz (" + juce::String (otherLent) + " lent, the plugin back at " + juce::String (rateAfter)
                         + " Hz, peak " + db (peakOf (other)) + ")");
         // the seeded test synth: a new instance plays other pitches, so the old way can't match playback
-        if (std::getenv ("LYNX_TEST_SYNTH_SEED") != nullptr && name.startsWith ("YW Test Synth") && freshVsPlay < 1.0e-2f)
+        if (std::getenv ("YW_TEST_SYNTH_SEED") != nullptr && name.startsWith ("YW Test Synth") && freshVsPlay < 1.0e-2f)
             errors.add (name + ": a new instance renders the same as the live one (" + db (freshVsPlay) + "): the seed is not per instance");
         checked.add (name + " " + db (heldVsPlay));
     }
@@ -1050,4 +1050,4 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
     return "OK (export, Render to audio and Freeze with the live instances = playback: " + checked.joinIntoString (", ") + "; restored after"
            + (notes.isEmpty() ? juce::String() : "; " + notes.joinIntoString (", ")) + ")";
 }
-} // namespace lynx
+} // namespace yw

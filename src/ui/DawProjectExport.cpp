@@ -8,7 +8,7 @@
 #include "ui/FileChoosers.h"
 #include "ui/I18n.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -47,7 +47,7 @@ bool writeDawProjectFile (const Song& song, PluginHost* host, const juce::File& 
         std::tie (seconds, sampleRate, channels) = it->second;
         return seconds > 0.0 && sampleRate > 0;
     };
-    // LYNX's own devices with every field (the project file's JSON; core/DawProject.h's default keeps less)
+    // YW's own devices with every field (the project file's JSON; core/DawProject.h's default keeps less)
     options.nativeInstrumentState = [] (const ChannelDef& channel) { return ProjectFile::channelStateBytes (channel); };
     options.nativeEffectState = [] (const EffectSlot& slot) { return ProjectFile::effectStateBytes (slot); };
     // loaded plugins: their records (ids and state) from the host, as the .als and .flp exports do
@@ -107,4 +107,4 @@ void showDawProjectExport (AudioEngine& engine, juce::Component* parent, const j
                                                                    safe.getComponent());
                        });
 }
-} // namespace lynx
+} // namespace yw

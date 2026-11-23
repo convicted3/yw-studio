@@ -1,7 +1,7 @@
 #pragma once
 
-// Warp from the Playlist (round 190gi, slice B6 of /mnt/e/lynx-work/pain190gc/REPORT.md; complaint #7: "no audio warping
-// in the Playlist"). LYNX's own: FL 2026 warps in Newtime / its audio editor only. The audio clip menu's LYNX extras
+// Warp from the Playlist (round 190gi, slice B6 of /mnt/e/yw-work/pain190gc/REPORT.md; complaint #7: "no audio warping
+// in the Playlist"). YW's own: FL 2026 warps in Newtime / its audio editor only. The audio clip menu's YW extras
 // "Auto-warp" and "Quantize audio" run the audio editor's own commands (ui/AudioEditor: autoWarp, quantizeWarp) on the
 // clicked clip; on a clip that has warp markers a double-click on its flag strip adds one, and Alt + drag near a marker's
 // line anywhere on the clip moves it (ui/PlaylistComponent; Alt + double-click stays the clip's Properties, round 153).
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::clipwarp
+namespace yw::clipwarp
 {
 inline double fileSeconds (const SampleData& sample) noexcept { return sample.sampleRate > 0.0 ? (double) sample.frames() / sample.sampleRate : 0.0; }
 
@@ -100,4 +100,4 @@ inline int addMarker (Song& song, int clip, double seconds, double fileSeconds)
     warpedit::syncLength (sampler, fileSeconds);
     return added;
 }
-} // namespace lynx::clipwarp
+} // namespace yw::clipwarp

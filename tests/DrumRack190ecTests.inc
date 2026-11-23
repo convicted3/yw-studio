@@ -1,10 +1,10 @@
 // Round 190ec (docs/analise/REA_rodada190ec.md): Live's Drum Rack as an Instrument Rack in drum mode (core/Rack.h). Pads
 // receive one key and play their Play note into their chain; choke groups cut each other; chains route into return chains
-// and send to them; .als Drum Racks come in as LYNX Drum Racks and go back out as Live's.
+// and send to them; .als Drum Racks come in as YW Drum Racks and go back out as Live's.
 
 namespace drumrack190ec
 {
-using namespace lynx;
+using namespace yw;
 using rack183c::graphOf;
 using rack183c::peak;
 using rack183c::synthNode;
@@ -69,7 +69,7 @@ TEST (drumrack190ec_a_new_drum_rack_is_an_instrument_rack_with_pads)
     CHECK (c.receive == 36 && c.play == 60 && c.choke == 0 && c.audioTo == -1 && c.nodes.size() == 1 && c.mixer >= 0);
     // the compiled zone: key 36 only, playing 60, the chain's instrument as its choke node
     CHECK (doc.zones.size() == 1 && doc.zones[0].key == (RackZone { 36, 36, 36, 36 }) && doc.zones[0].playKey == 60 && doc.zones[0].chokeNode == c.nodes[0]);
-    // what a LYNX without Drum Racks plays: the chain's key zone is the pad's note
+    // what a YW without Drum Racks plays: the chain's key zone is the pad's note
     CHECK (c.key == (RackZone { 36, 36, 36, 36 }));
     // swapping pads trades the Receive notes (also onto an empty pad)
     rack::addPad (doc, 38, "Snare", synthNode());

@@ -15,9 +15,9 @@
 namespace rollup028
 {
 // 6/8: six eighths, a bar of three quarters
-inline lynx::Song sixEight()
+inline yw::Song sixEight()
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.beatsPerBar = 6;
     s.beatUnit = 8;
     return s;
@@ -25,26 +25,26 @@ inline lynx::Song sixEight()
 
 struct LoopFlag
 {
-    explicit LoopFlag (bool on) : was (lynx::stretchedClipsLoop()) { lynx::setStretchedClipsLoop (on); }
-    ~LoopFlag() { lynx::setStretchedClipsLoop (was); }
+    explicit LoopFlag (bool on) : was (yw::stretchedClipsLoop()) { yw::setStretchedClipsLoop (on); }
+    ~LoopFlag() { yw::setStretchedClipsLoop (was); }
     bool was;
 };
 } // namespace rollup028
 
 TEST (rollup028_consolidate_loops_patterns_in_bars_of_the_song_meter)
 {
-    using lynx::ppq;
+    using yw::ppq;
     const rollup028::LoopFlag loops (true);
     auto s = rollup028::sixEight();
     CHECK (s.barTicks() == 3 * ppq);
     s.playlist.clear();
     s.playTruncatedNotes = false;
     // a pattern without its own length: two notes in its first quarter notes, so it lasts one bar of the meter
-    lynx::Pattern p;
+    yw::Pattern p;
     p.lengthTicks = 0;
     for (const auto at : { (std::int64_t) 0, (std::int64_t) ppq })
     {
-        lynx::Note n;
+        yw::Note n;
         n.start = at;
         n.length = ppq / 2;
         n.channel = 0;
@@ -57,18 +57,18 @@ TEST (rollup028_consolidate_loops_patterns_in_bars_of_the_song_meter)
     using Span = std::pair<std::int64_t, std::int64_t>;
     for (const auto& [start, length] : { Span { 0, 6 * ppq }, Span { 8 * ppq, 3 * ppq } })
     {
-        lynx::Clip c;
-        c.kind = lynx::ClipKind::pattern;
+        yw::Clip c;
+        c.kind = yw::ClipKind::pattern;
         c.pattern = pattern;
         c.track = 0;
         c.start = start;
         c.length = length;
         s.playlist.push_back (c);
     }
-    lynx::freeze::ConsolidatePlan plan;
-    CHECK (lynx::freeze::planConsolidate (s, { 0, 1 }, plan) == nullptr);
+    yw::freeze::ConsolidatePlan plan;
+    CHECK (yw::freeze::planConsolidate (s, { 0, 1 }, plan) == nullptr);
     CHECK (! plan.audio);
-    const auto merged = lynx::freeze::consolidatePatternClips (s, plan);
+    const auto merged = yw::freeze::consolidatePatternClips (s, plan);
     CHECK (merged >= 0 && merged < (int) s.patterns.size());
     if (merged < 0 || merged >= (int) s.patterns.size())
         return;
@@ -86,7 +86,7 @@ TEST (rollup028_consolidate_loops_patterns_in_bars_of_the_song_meter)
 
 TEST (rollup028_simple_sampler_track_records_into_four_bars_of_the_song_meter)
 {
-    using lynx::ppq;
+    using yw::ppq;
     // SimpleWorkflow::addPads (UI side) builds the 4-bar pattern from the song's bar, not from the numerator
     const auto ui = i18ntest::readFile ("src/ui/SimpleWorkflow.cpp");
     const auto at = ui.find ("bool SimpleWorkflow::addPads()");
@@ -99,18 +99,18 @@ TEST (rollup028_simple_sampler_track_records_into_four_bars_of_the_song_meter)
     // ... and the core places that pattern as one clip of four 6/8 bars
     auto s = rollup028::sixEight();
     s.playlist.clear();
-    lynx::simpletracks::Request q;
-    q.kind = lynx::simpletracks::Kind::pads;
-    q.kit = lynx::simplepads::emptyKit();
-    lynx::Pattern p;
+    yw::simpletracks::Request q;
+    q.kind = yw::simpletracks::Kind::pads;
+    q.kit = yw::simplepads::emptyKit();
+    yw::Pattern p;
     p.lengthTicks = 4 * s.barTicks();
     q.pattern = p;
-    const auto r = lynx::simpletracks::addTrack (s, q);
+    const auto r = yw::simpletracks::addTrack (s, q);
     CHECK (r.pattern >= 0 && r.pattern < (int) s.patterns.size());
     CHECK (s.patterns[(std::size_t) r.pattern].effectiveLength (s.meter()) == 12 * ppq);
     bool found = false;
     for (const auto& c : s.playlist)
-        if (c.kind == lynx::ClipKind::pattern && c.pattern == r.pattern)
+        if (c.kind == yw::ClipKind::pattern && c.pattern == r.pattern)
         {
             found = true;
             CHECK (c.length == 4 * s.barTicks());
@@ -120,7 +120,7 @@ TEST (rollup028_simple_sampler_track_records_into_four_bars_of_the_song_meter)
 
 TEST (rollup028_more_mixer_tracks_keep_a_track_freeze)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     CHECK (! s.channels.empty() && s.mixer.size() > 4);
     if (s.channels.empty() || s.mixer.size() <= 4)
         return;
@@ -128,21 +128,21 @@ TEST (rollup028_more_mixer_tracks_keep_a_track_freeze)
         c.mixerTrack = 0;
     auto& lead = s.channels[0];
     lead.mixerTrack = 3;
-    lynx::StandIn whole;
+    yw::StandIn whole;
     whole.path = "lead-frozen.wav";
-    whole.lengthTicks = 16 * lynx::ppq;
+    whole.lengthTicks = 16 * yw::ppq;
     lead.freeze.stems = { whole };
     lead.freeze.insert = 3;
-    CHECK (lynx::freeze::trackFreezeHolds (s, 0));
-    const auto before = lynx::mixerops::insertCount (s);
-    CHECK (lynx::mixerops::increaseInsertsTo (s, before + 5) == 5);
-    CHECK (lynx::mixerops::insertCount (s) == before + 5);
+    CHECK (yw::freeze::trackFreezeHolds (s, 0));
+    const auto before = yw::mixerops::insertCount (s);
+    CHECK (yw::mixerops::increaseInsertsTo (s, before + 5) == 5);
+    CHECK (yw::mixerops::insertCount (s) == before + 5);
     CHECK (s.channels[0].mixerTrack == 3 && s.channels[0].freeze.insert == 3);
-    CHECK (lynx::freeze::trackFreezeHolds (s, 0));
-    CHECK (lynx::freeze::frozenByInsert (s, 3) == 0);
+    CHECK (yw::freeze::trackFreezeHolds (s, 0));
+    CHECK (yw::freeze::frozenByInsert (s, 3) == 0);
     // "Plugin delay compensation > Set for all tracks" leaves the freeze alone too
-    lynx::mixerops::setPdcForAllTracks (s);
-    CHECK (lynx::freeze::trackFreezeHolds (s, 0));
+    yw::mixerops::setPdcForAllTracks (s);
+    CHECK (yw::freeze::trackFreezeHolds (s, 0));
 }
 
 // Step 2 (realive190fm): Playlist clips play through grooves of the pool, and Live's MIDI Generate tab writes bars.
@@ -151,7 +151,7 @@ TEST (rollup028_more_mixer_tracks_keep_a_track_freeze)
 // - MIDI Generate's Stacks durations are bars: of the song's meter (follow190fg), not of its numerator.
 TEST (rollup028_consolidate_writes_a_clips_groove_into_the_notes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = groove190fm::song();
     s.playlist[1].track = 0; // both clips on one track: bar 1 (with the groove) and bar 3 (straight)
     auto g = groove190fm::offbeat (60);
@@ -185,20 +185,20 @@ TEST (rollup028_consolidate_writes_a_clips_groove_into_the_notes)
 
 TEST (rollup028_midi_generate_stacks_count_bars_of_the_song_meter)
 {
-    using namespace lynx::midigen;
-    const auto& bank = lynxChordBank();
+    using namespace yw::midigen;
+    const auto& bank = ywChordBank();
     StacksOptions o; // one chord of one bar
     auto c = mg190fm::bar (2);
     c.beatsPerBar = 6;
     c.beatUnit = 8;
-    c.to = 2 * 3 * lynx::ppq; // two bars of 6/8
+    c.to = 2 * 3 * yw::ppq; // two bars of 6/8
     const auto out = stacks (o, c, bank);
     CHECK (out.size() == 6);
     if (out.size() == 6)
-        CHECK (out[0].length == 3 * lynx::ppq && out[3].start == 3 * lynx::ppq);
+        CHECK (out[0].length == 3 * yw::ppq && out[3].start == 3 * yw::ppq);
     // n/4 as before
     const auto four = stacks (o, mg190fm::bar (2), bank);
-    CHECK (four.size() == 6 && four[0].length == 4 * lynx::ppq);
+    CHECK (four.size() == 6 && four[0].length == 4 * yw::ppq);
 }
 
 // Step 2 (ember190fj): Ember's Tape runs a measured magnetic core in new instances (Law = Measured). The Live imports
@@ -206,8 +206,8 @@ TEST (rollup028_midi_generate_stacks_count_bars_of_the_song_meter)
 // Roar (Polynomial = the tape style) and drumbus190fk's round-190ek Drum Buss rack.
 TEST (rollup028_live_imports_keep_embers_classic_tape)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190fm::par;
     namespace em = mixsuite::ember;
     const auto t = als190fm::translate (als190fm::roar (1, par ("Stage1_Shaper_Type", 7) + par ("Stage2_Shaper_Type", 7) + par ("Output_DryWet", 1.0)));
@@ -237,7 +237,7 @@ TEST (rollup028_live_imports_keep_embers_classic_tape)
 // the envelopes (the render song keeps Song::clipEnvelopes and each clip's index), so the result sounds as before.
 TEST (rollup028_consolidated_audio_clips_keep_their_envelopes_in_the_render)
 {
-    using namespace lynx;
+    using namespace yw;
     auto withEnvelope = clipenv190gi::rampSong();
     auto second = withEnvelope.playlist[0];
     second.start = ppq * 6;
@@ -261,12 +261,12 @@ TEST (rollup028_consolidated_audio_clips_keep_their_envelopes_in_the_render)
 
 // Step 4 (round 190gm, issue #165, extended to macOS by the coordinator): plugin and channel windows dock inside the main
 // window by default on Windows only (the docking glue is Win32 code); on Linux and macOS they are the system's own
-// windows unless LYNX_DOCKED_PLUGINS=1.
+// windows unless YW_DOCKED_PLUGINS=1.
 #include "core/DockingPolicy.h"
 
 TEST (rollup028_plugin_windows_dock_by_default_on_windows_only)
 {
-    using lynx::dockpolicy::dockingOn;
+    using yw::dockpolicy::dockingOn;
     CHECK (dockingOn ("", true) && dockingOn ("1", true) && ! dockingOn ("0", true));
     CHECK (! dockingOn ("", false) && dockingOn ("1", false) && ! dockingOn ("0", false));
     static_assert (dockingOn ("", true) && ! dockingOn ("", false));
@@ -290,8 +290,8 @@ TEST (rollup028_plugin_windows_dock_by_default_on_windows_only)
 TEST (rollup028_stem_taps_of_inserts_with_unstored_zeros_are_zeros)
 {
     auto s = s190gj::song();
-    lynx::EffectSlot off;
-    off.kind = lynx::EffectKind::delay;
+    yw::EffectSlot off;
+    off.kind = yw::EffectKind::delay;
     off.enabled = false;
     s.mixer[2].effects.push_back (off);
     s.mixer[3].effects.push_back (off);
@@ -301,15 +301,15 @@ TEST (rollup028_stem_taps_of_inserts_with_unstored_zeros_are_zeros)
         slots[t].assign (s.mixer[t].effects.size(), 0);
     constexpr int blocks = 420;
 
-    std::vector<lynx::exportopts::StemTap> plans;
+    std::vector<yw::exportopts::StemTap> plans;
     std::vector<int> stems;
-    lynx::RackRenderer::RenderTaps taps;
+    yw::RackRenderer::RenderTaps taps;
     taps.capacity = 512;
     taps.wanted.assign (s.mixer.size(), 0);
     taps.data.assign (s.mixer.size(), std::vector<float> (1024, 0.0f));
     taps.wanted[0] = 1;
     for (int t = 1; t < (int) s.mixer.size(); ++t)
-        if (auto p = lynx::exportopts::planStemTap (s, t, channels, slots, s190gj::rate); p.ok)
+        if (auto p = yw::exportopts::planStemTap (s, t, channels, slots, s190gj::rate); p.ok)
         {
             plans.push_back (p);
             stems.push_back (t);
@@ -317,7 +317,7 @@ TEST (rollup028_stem_taps_of_inserts_with_unstored_zeros_are_zeros)
                 taps.wanted[(std::size_t) in.track] = 1;
         }
     CHECK (std::find (stems.begin(), stems.end(), 3) != stems.end());
-    std::vector<lynx::exportopts::StemMixer> mixers;
+    std::vector<yw::exportopts::StemMixer> mixers;
     for (const auto& p : plans)
         mixers.emplace_back (p);
     std::vector<std::vector<float>> made (stems.size(), std::vector<float> ((std::size_t) blocks * 1024));
@@ -336,7 +336,7 @@ TEST (rollup028_stem_taps_of_inserts_with_unstored_zeros_are_zeros)
     });
     for (std::size_t k = 0; k < stems.size(); ++k)
     {
-        const auto own = s190gj::render (lynx::makeBounceSong (s, stems[k]), blocks);
+        const auto own = s190gj::render (yw::makeBounceSong (s, stems[k]), blocks);
         std::size_t differ = 0;
         for (std::size_t i = 0; i < own.size(); ++i)
             differ += own[i] != made[k][i] ? 1 : 0;
@@ -353,7 +353,7 @@ TEST (rollup028_stem_taps_of_inserts_with_unstored_zeros_are_zeros)
 
 TEST (rollup028_render_ahead_keeps_inserts_with_shown_effect_meters_live)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (2);
     auto state = RackState::build (song, nullptr, 44100.0);
     std::vector<char> ch, tr;
@@ -377,7 +377,7 @@ TEST (rollup028_render_ahead_keeps_inserts_with_shown_effect_meters_live)
 // beside 190gq's synths.
 TEST (rollup028_render_ahead_is_bit_exact_with_clip_envelopes_beats_and_frozen_audio)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = ra190gq::makeSong (4);
     const auto firstAudio = (int) song.channels.size();
     auto audio = clipenv190gi::rampSong();

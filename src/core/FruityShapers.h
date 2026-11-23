@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Fruity WaveShaper and Fruity Soft Clipper as LYNX mixer effects, exact engines rebuilt in
+// FL Studio's Fruity WaveShaper and Fruity Soft Clipper as YW mixer effects, exact engines rebuilt in
 // docs/analise/REA_rodada51.md (clean-room: layouts, formulas and behaviour in our own words; no Image-Line code or
 // data in this repository).
 //
@@ -8,11 +8,11 @@
 //   [0] threshold 1…127, [1] post 0…160 (value = (raw − min) / (max − min)).
 //
 // WaveShaper (EffectKind::fruityWaveShaper): the curve (FL's map editor points) travels in EffectSlot::state as FL's
-// own saved state (plugin record 0xD5); the controls are slot parameters so the LYNX UI can change them:
+// own saved state (plugin record 0xD5); the controls are slot parameters so the YW UI can change them:
 //   [0] pre amp 64…192, [1] mix 0…128, [2] post gain 0…128, [3] oversampling order 0…4 (×1…×16),
 //   [4] HQ (interpolated table), [5] smooth (per-sample parameter glide), [6] CENTER (DC removal),
 //   [7] unipolar curve. The saved state's own values are copied into the parameters at import.
-// While LYNX exports (offlineRendering()), the WaveShaper behaves as FL's does when it renders: the interpolated
+// While YW exports (offlineRendering()), the WaveShaper behaves as FL's does when it renders: the interpolated
 // table and, when oversampling is on, order 4 (×16).
 
 #include <cstdint>
@@ -23,7 +23,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::flshape
+namespace yw::flshape
 {
 // ------------------------------------------------------------------------------------------------- Soft Clipper
 constexpr int softClipperParams = 2;
@@ -107,4 +107,4 @@ private:
 
 // the mixer effect; flState = FL's saved state (an empty or unreadable state gives FL's default curve)
 std::unique_ptr<Effect> makeWaveShaper (const std::vector<std::uint8_t>& flState);
-} // namespace lynx::flshape
+} // namespace yw::flshape

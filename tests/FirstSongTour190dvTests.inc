@@ -1,8 +1,8 @@
-// --- Round 190dv: the Simple workflow's first-song tour (core/FirstSongTour.h) and LYNX's demo songs (core/DemoSongs.h).
+// --- Round 190dv: the Simple workflow's first-song tour (core/FirstSongTour.h) and YW's demo songs (core/DemoSongs.h).
 // The tour's steps are read from the song (model events: a beat, a key, an instrument, notes, an audio clip, a one-knob
 // effect, a Master look), the state machine (advance on a step done, Next / Back / Skip, pause and resume, the saved
 // state), "Do it for me"'s song edits, and the two new demo songs rendered: no clipping, loudness about −14 LUFS.
-// LYNX_190DV_REPORT=1 prints the demos' measurements.
+// YW_190DV_REPORT=1 prints the demos' measurements.
 
 #include <cstdlib>
 
@@ -13,7 +13,7 @@
 
 namespace tour190dv
 {
-using namespace lynx;
+using namespace yw;
 
 inline Song empty()
 {
@@ -99,7 +99,7 @@ inline Measured render (const Song& source)
 
 TEST (tour190dv_steps_are_read_from_the_song)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace tour190dv;
     auto s = empty();
     for (int i = 0; i < tour::stepCount; ++i)
@@ -172,7 +172,7 @@ TEST (tour190dv_steps_are_read_from_the_song)
 
 TEST (tour190dv_the_tour_moves_on_when_the_song_shows_a_step_done)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace tour190dv;
     auto s = empty();
     tour::Machine m;
@@ -248,7 +248,7 @@ TEST (tour190dv_the_tour_moves_on_when_the_song_shows_a_step_done)
 
 TEST (tour190dv_skip_pause_resume_and_the_saved_state)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace tour190dv;
     // the saved state reads back as written, and odd text is ignored
     tour::State st;
@@ -328,9 +328,9 @@ TEST (tour190dv_skip_pause_resume_and_the_saved_state)
     CHECK (done.atEnd());
 }
 
-TEST (tour190dv_demo_songs_are_lynx_made_simple_tracks)
+TEST (tour190dv_demo_songs_are_yw_made_simple_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int d = 1; d < demos::count; ++d)
     {
         const auto song = demos::make (d);
@@ -342,7 +342,7 @@ TEST (tour190dv_demo_songs_are_lynx_made_simple_tracks)
         for (std::size_t p = 0; p < song.patterns.size() && p < again.patterns.size(); ++p)
             same = same && song.patterns[p].notes == again.patterns[p].notes;
         CHECK (same);
-        // only LYNX's own instruments: no samples, no plugins
+        // only YW's own instruments: no samples, no plugins
         for (const auto& c : song.channels)
         {
             CHECK (c.samplePath.empty());
@@ -359,7 +359,7 @@ TEST (tour190dv_demo_songs_are_lynx_made_simple_tracks)
         CHECK (drums == 1 && instruments == 3);
         for (int step : { tour::beat, tour::key, tour::instrument, tour::chords, tour::effect, tour::finish })
             CHECK (tour::satisfied (song, step));
-        CHECK (song.info.comments.find ("LYNX") != std::string::npos && song.info.author == "LYNX SHARE");
+        CHECK (song.info.comments.find ("YW") != std::string::npos && song.info.author == "YW Studio");
         // the bass in a bass register (keys C3 … B3 + a fifth: "Reese Bass" sounds an octave and two under the key)
         for (int t = 0; t < (int) song.playlistTracks.size(); ++t)
             if (song.playlistTracks[(std::size_t) t].name == "Bass")
@@ -377,8 +377,8 @@ TEST (tour190dv_demo_songs_are_lynx_made_simple_tracks)
 
 TEST (tour190dv_demo_songs_render_clean_at_about_minus_14_lufs)
 {
-    using namespace lynx;
-    const auto report = std::getenv ("LYNX_190DV_REPORT") != nullptr;
+    using namespace yw;
+    const auto report = std::getenv ("YW_190DV_REPORT") != nullptr;
     for (int d = 1; d < demos::count; ++d)
     {
         const auto m = tour190dv::render (demos::make (d));

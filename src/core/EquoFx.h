@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's EQUO (morphing graphic equalizer) as an exact LYNX mixer effect, rebuilt in docs/analise/REA_rodada61.md
+// FL Studio's EQUO (morphing graphic equalizer) as an exact YW mixer effect, rebuilt in docs/analise/REA_rodada61.md
 // (clean-room: layouts, formulas and behaviour in our own words; no Image-Line code or data in this repository).
 //
 // EQUO splits the signal into 31 band-pass bands (20 Hz · 2^(b/3)), gives each band a volume, a pan and a send level
@@ -21,12 +21,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::equofx
+namespace yw::equofx
 {
 constexpr int numBands = 31, numTargets = 3, numBanks = 9; // targets: volume, panning, send; bank 8 = master
 constexpr int numParams = 9;
@@ -94,4 +94,4 @@ private:
 };
 
 std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& flState);
-} // namespace lynx::equofx
+} // namespace yw::equofx

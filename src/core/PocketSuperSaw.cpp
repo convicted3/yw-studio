@@ -13,7 +13,7 @@
 
 // Pocket SuperSaw (core/PocketSuperSaw.h). The numbered notes ("§3.2") refer to docs/analise/REA_rodada190by.md.
 
-namespace lynx
+namespace yw
 {
 namespace pocketsaw
 {
@@ -168,7 +168,7 @@ struct Voice
     std::uint32_t started = 0;
     float gL = -1.0f, gR = -1.0f, targetL = 0.0f, targetR = 0.0f; // (−1: takes the target at the first tick)
     float notePitch = 0.0f;
-    // the host's slide notes and channel porta (FL's workflow in LYNX, not FLM's): cents added to the voice's pitch
+    // the host's slide notes and channel porta (FL's workflow in YW, not FLM's): cents added to the voice's pitch
     HostSlide slide;
 
     bool active() const noexcept { return velocity != 0.0f; }
@@ -187,7 +187,7 @@ struct Voice
         gL = gR = -1.0f;
         key = -1;
         slide = HostSlide();
-        lfoHold = m->rng.unit(); // (FLM draws with the dither generator here; one generator per instance in LYNX)
+        lfoHold = m->rng.unit(); // (FLM draws with the dither generator here; one generator per instance in YW)
     }
 
     void releaseNow() noexcept { amp.stage = filter.stage = sync.stage = release; }
@@ -786,7 +786,7 @@ struct Engine::Impl
         }
         voice->started = ++counter;
         voice->start (key, velocity, pan, from, retrigger, pitch);
-        // a new note: no slide of an older one; LYNX's channel porta (the rack set it around this note on) glides it in
+        // a new note: no slide of an older one; YW's channel porta (the rack set it around this note on) glides it in
         voice->slide = HostSlide();
         voice->slide.anchor (NAN);
         lastKey = key;
@@ -1438,4 +1438,4 @@ private:
 } // namespace
 
 std::unique_ptr<Instrument> makePocketSuperSawInstrument() { return std::make_unique<PocketSuperSawInstrument>(); }
-} // namespace lynx
+} // namespace yw

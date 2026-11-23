@@ -1,7 +1,7 @@
 // --- FL Studio Mobile (.flm) import, round 190dw: the seven effect modules that were approximated (Equalizer, Graphic
 // EQ, Filter, Autoduck legacy, Reverb legacy, Reverb 2, Reverb) now play on FLM's own engines (Pocket EQ / Graphic EQ /
 // Filter / Reverb Classic / Reverb 2 / Reverb, and Pocket Autoduck for the legacy Autoduck). Each check below runs
-// LYNX's import of a module against what FL Studio Mobile itself produced for the same module inside FL (the numbers in
+// YW's import of a module against what FL Studio Mobile itself produced for the same module inside FL (the numbers in
 // FlmEffects190dwData.inc: impulse responses of our own click stimulus and the gain curve on our own 1 kHz staircase,
 // rendered by FL's command line; settings mostly taken from FL's FLM sample songs). Nothing of Image-Line's is
 // committed: only the measured numbers.
@@ -41,9 +41,9 @@ constexpr double rate = 44100.0;
 constexpr float click = 0.194793701f; // the click as FL's render test plays it (our 0.5 at −8.2 dB)
 const std::array<double, 10> freqs { 50, 100, 200, 500, 1000, 2000, 4000, 8000, 12000, 16000 };
 
-inline lynx::flm::Module moduleOf (int type, const std::vector<float>& params)
+inline yw::flm::Module moduleOf (int type, const std::vector<float>& params)
 {
-    lynx::flm::Module m;
+    yw::flm::Module m;
     m.type = (std::uint32_t) type;
     m.instanceId = 2;
     m.params = params;
@@ -52,9 +52,9 @@ inline lynx::flm::Module moduleOf (int type, const std::vector<float>& params)
 
 // the import's slots on a stereo buffer as FL hosts FLM: one 512-sample block of silence first, 512-sample blocks,
 // 120 BPM, the song position from 0
-inline void run (const std::vector<lynx::EffectSlot>& slots, std::vector<float>& l, std::vector<float>& r)
+inline void run (const std::vector<yw::EffectSlot>& slots, std::vector<float>& l, std::vector<float>& r)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& slot : slots)
     {
         if (! slot.enabled)
@@ -96,7 +96,7 @@ inline int firstAbove (const std::vector<float>& h, std::size_t start)
     return -1;
 }
 
-// FL's render is a 16-bit file: LYNX's output is rounded and clipped the same way before it is compared
+// FL's render is a 16-bit file: YW's output is rounded and clipped the same way before it is compared
 inline void as16bit (std::vector<float>& x)
 {
     for (auto& v : x)
@@ -179,7 +179,7 @@ inline std::vector<std::array<double, 3>> bandWindows (const std::vector<double>
 
 TEST (flm190dw_effects_on_flm_engines)
 {
-    using namespace lynx;
+    using namespace yw;
     // every module of the seven types maps to one exact engine slot, nothing listed as approximated
     for (const int type : { 3, 7, 9, 10, 12, 32, 35 })
     {
@@ -193,13 +193,13 @@ TEST (flm190dw_effects_on_flm_engines)
     CHECK (flmfx::map (fx190dw::moduleOf (12, { 1.0f })).slots[0].kind == EffectKind::pocketReverbClassic);
     CHECK (flmfx::map (fx190dw::moduleOf (35, { 1.0f })).slots[0].kind == EffectKind::pocketReverb2);
     CHECK (flmfx::map (fx190dw::moduleOf (32, { 1.0f })).slots[0].kind == EffectKind::pocketReverb);
-    // the old LYNX slots these modules became before (saved in projects) are left alone: their engines are unchanged
+    // the old YW slots these modules became before (saved in projects) are left alone: their engines are unchanged
     CHECK (std::string (effectInfo (EffectKind::reeverb2).name) == "Reeverb 2" && std::string (effectInfo (EffectKind::rhythmGain).name) != "");
 }
 
 TEST (flm190dw_eq_filter_against_flm_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& ref : linearRefs)
     {
         const auto m = flmfx::map (fx190dw::moduleOf (ref.type, ref.params));
@@ -235,7 +235,7 @@ TEST (flm190dw_eq_filter_against_flm_renders)
 
 TEST (flm190dw_reverbs_against_flm_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& ref : reverbRefs)
     {
         const auto m = flmfx::map (fx190dw::moduleOf (ref.type, ref.params));
@@ -267,7 +267,7 @@ TEST (flm190dw_reverbs_against_flm_renders)
 
 TEST (flm190dw_autoduck_against_flm_render)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto& ref : duckRefs)
     {
         const auto m = flmfx::map (fx190dw::moduleOf (10, ref.params));
@@ -301,12 +301,12 @@ TEST (flm190dw_autoduck_against_flm_render)
     }
 }
 
-// FL's own FLM sample songs, when present (LYNX_FLM_DIR, as flm182c_real_projects): every module of the seven types
+// FL's own FLM sample songs, when present (YW_FLM_DIR, as flm182c_real_projects): every module of the seven types
 // imports onto its exact engine and none is listed as approximated
 TEST (flm190dw_sample_songs_effects)
 {
-    using namespace lynx;
-    const char* dir = std::getenv ("LYNX_FLM_DIR");
+    using namespace yw;
+    const char* dir = std::getenv ("YW_FLM_DIR");
     if (dir == nullptr)
         return;
     int modules = 0;

@@ -9,7 +9,7 @@
 #include <cstring>
 #include <vector>
 
-using namespace lynx::fldelay;
+using namespace yw::fldelay;
 
 static std::vector<std::uint8_t> readAll (const char* path)
 {

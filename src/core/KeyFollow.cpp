@@ -9,7 +9,7 @@
 #include "core/AudioEditTools.h"
 #include "core/Instruments.h"
 
-namespace lynx::keyfollow
+namespace yw::keyfollow
 {
 namespace
 {
@@ -302,4 +302,4 @@ projectkey::Key projectKeyFor (const LoopKey& key)
     const auto order = projectkey::commonFirst(); // Major (Ionian), Minor Natural (Aeolian) first
     return { ((key.root % 12) + 12) % 12, order[key.minor ? 1u : 0u] };
 }
-} // namespace lynx::keyfollow
+} // namespace yw::keyfollow

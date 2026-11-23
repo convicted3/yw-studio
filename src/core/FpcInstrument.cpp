@@ -12,7 +12,7 @@
 #include <cmath>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -673,4 +673,4 @@ std::unique_ptr<Instrument> makeFpcInstrument (const ChannelDef& channel,
 {
     return std::make_unique<FpcInstrument> (channel, samples);
 }
-} // namespace lynx
+} // namespace yw

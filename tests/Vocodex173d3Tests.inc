@@ -14,7 +14,7 @@ inline std::vector<std::uint8_t> flState()
     i32 ((8 << 16) | 3);
     for (int m = 0; m < 13; ++m)
     {
-        const auto pts = lynx::vocodex::defaultMap (m);
+        const auto pts = yw::vocodex::defaultMap (m);
         i32 (3), i32 (3), i32 ((std::int32_t) pts.size());
         double prev = 0.0;
         for (std::size_t i = 0; i < pts.size(); ++i)
@@ -44,12 +44,12 @@ inline std::vector<std::uint8_t> flState()
 // the subtractive flag (+0x190) of an FL state
 inline std::vector<std::uint8_t> withSubtractive (std::vector<std::uint8_t> d, bool on)
 {
-    const auto s = lynx::vocodex::parseState (d);
+    const auto s = yw::vocodex::parseState (d);
     d[s->paramsAt + 80 + 32] = on ? 1 : 0;
     return d;
 }
 
-using P = lynx::vocodex::MapPoint;
+using P = yw::vocodex::MapPoint;
 
 // the golden cases: (map, points), applied in order to flState(), and the subtractive flag
 struct Case
@@ -60,7 +60,7 @@ struct Case
 };
 inline std::vector<Case> cases()
 {
-    using namespace lynx::vocodex;
+    using namespace yw::vocodex;
     std::vector<P> every { { 0.0, 0.3 } };
     for (int m = 0; m < 13; ++m)
         every.push_back ({ (m + 1) / 13.0, m % 2 == 0 ? 0.8 : 0.2, m % 2 == 0 ? 0.4f : -0.6f, (std::uint8_t) m });
@@ -89,7 +89,7 @@ inline std::vector<std::uint8_t> caseState (const Case& c)
 {
     auto d = withSubtractive (flState(), c.subtractive);
     for (const auto& [m, pts] : c.maps)
-        d = lynx::vocodex::withMap (d, m, pts);
+        d = yw::vocodex::withMap (d, m, pts);
     return d;
 }
 
@@ -119,13 +119,13 @@ inline void signals (std::vector<float>& mod, std::vector<float>& car)
     }
 }
 
-// LYNX's engine on a case: interleaved stereo out
+// YW's engine on a case: interleaved stereo out
 inline std::vector<float> render (const std::vector<std::uint8_t>& state)
 {
     std::vector<float> mod, car, out ((std::size_t) (2 * frames)), zero ((std::size_t) (2 * block), 0.0f);
     signals (mod, car);
-    const auto s = lynx::vocodex::parseState (state);
-    lynx::vocodex::Engine engine;
+    const auto s = yw::vocodex::parseState (state);
+    yw::vocodex::Engine engine;
     engine.prepare (*s, 44100.0, block, false);
     for (int n0 = 0; n0 < frames; n0 += block)
     {
@@ -146,10 +146,10 @@ inline std::uint64_t fnv (const std::vector<std::uint8_t>& d)
 
 TEST (vocodex173d3_maps_read_and_write_in_fl_layout)
 {
-    using namespace lynx::vocodex;
+    using namespace yw::vocodex;
     const auto fl = vcx173d3::flState();
     CHECK (parseState (fl).has_value());
-    // a slot state carries LYNX's install-data trailer after FL's state: kept as it is
+    // a slot state carries YW's install-data trailer after FL's state: kept as it is
     InstallData data;
     data.sgDat = { 1, 2, 3, 4, 5 };
     const auto slot = appendInstallData (fl, data);
@@ -219,7 +219,7 @@ TEST (vocodex173d3_maps_read_and_write_in_fl_layout)
 
 TEST (vocodex173d3_map_reads_as_fl)
 {
-    using namespace lynx::vocodex;
+    using namespace yw::vocodex;
     // straight segments: linear interpolation; levels are FL's floats; centred maps read level − 0.5
     Map line;
     line.x = { 0.0, 1.0 }, line.y = { 0.0, 0.5 }, line.tension = { 0.0f, 0.0f }, line.mode = { 0, 0 };

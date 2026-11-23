@@ -10,7 +10,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::xy
+namespace yw::xy
 {
 int axesOf (EffectKind kind) noexcept
 {
@@ -187,7 +187,7 @@ void Mover::step (const EffectParams& params, EffectKind kind, double seconds, d
     }
 
     // FL's X-Y-Z Controller [REA_rodada164a §3, DECOMP 0x83C400 / 0x604A90]: per axis, up to three one-pole stages in
-    // series. Time T = (17^(P9/4096) − 1) · 24 ticks (LYNX's Speed s: P9 = 4096 (1 − s)); acceleration acc (LYNX's
+    // series. Time T = (17^(P9/4096) − 1) · 24 ticks (YW's Speed s: P9 = 4096 (1 − s)); acceleration acc (YW's
     // Accel a: acc = 1 + 4a) splits it: n = round (acc + 0.5) stages, the first n − 1 of T / √acc, the last of that
     // × (1 − (n − acc)); a stage's coefficient is 0.01^(1 / Ts) per tick.
     const auto p9 = 4096.0 * (1.0 - (double) params[(std::size_t) speed (kind)]);
@@ -416,4 +416,4 @@ std::string paramText (EffectKind kind, int param, float v)
     std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
     return text;
 }
-} // namespace lynx::xy
+} // namespace yw::xy

@@ -3,10 +3,10 @@
 
 namespace merge180c
 {
-lynx::Clip automationClip (int automation, int track, std::int64_t start, std::int64_t length, std::int64_t offset = 0)
+yw::Clip automationClip (int automation, int track, std::int64_t start, std::int64_t length, std::int64_t offset = 0)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::automation;
+    yw::Clip c;
+    c.kind = yw::ClipKind::automation;
     c.automation = automation;
     c.track = track;
     c.start = start;
@@ -15,28 +15,28 @@ lynx::Clip automationClip (int automation, int track, std::int64_t start, std::i
     return c;
 }
 
-int addAutomation (lynx::Song& song, const std::string& name, int targetIndex, std::vector<lynx::AutomationPoint> points)
+int addAutomation (yw::Song& song, const std::string& name, int targetIndex, std::vector<yw::AutomationPoint> points)
 {
-    lynx::Automation a;
+    yw::Automation a;
     a.name = name;
-    a.target.kind = lynx::AutomationTargetKind::channelVolume;
+    a.target.kind = yw::AutomationTargetKind::channelVolume;
     a.target.index = targetIndex;
     a.points = std::move (points);
     song.automations.push_back (a);
     return (int) song.automations.size() - 1;
 }
 
-int countClips (const lynx::Song& song, int pattern)
+int countClips (const yw::Song& song, int pattern)
 {
-    return (int) std::count_if (song.playlist.begin(), song.playlist.end(), [pattern] (const lynx::Clip& c) {
-        return c.kind == lynx::ClipKind::pattern && c.pattern == pattern;
+    return (int) std::count_if (song.playlist.begin(), song.playlist.end(), [pattern] (const yw::Clip& c) {
+        return c.kind == yw::ClipKind::pattern && c.pattern == pattern;
     });
 }
 } // namespace merge180c
 
 TEST (merge180c_similar_replaces_every_group)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (3);
     const std::int64_t bar = ppq * 4;
     Note n;
@@ -83,7 +83,7 @@ TEST (merge180c_similar_replaces_every_group)
 
 TEST (merge180c_similar_restarts_and_refuses)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (2);
     const std::int64_t bar = ppq * 4;
     // A B, A B, A B in a row on one track: the selection is the first A B
@@ -114,7 +114,7 @@ TEST (merge180c_similar_restarts_and_refuses)
 
 TEST (merge180c_pattern_merge_skips_muted_and_uses_top_track)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (2);
     const std::int64_t bar = ppq * 4;
     song.playlist.push_back (pl168f::patternClip (0, 5, 0, bar));
@@ -132,7 +132,7 @@ TEST (merge180c_pattern_merge_skips_muted_and_uses_top_track)
 
 TEST (merge180c_automation_checks)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (1);
     const std::int64_t bar = ppq * 4;
     const auto a = merge180c::addAutomation (song, "Cut", 0, { { 0, 0.0f, 0.0f }, { bar, 1.0f, 0.0f } });
@@ -164,7 +164,7 @@ TEST (merge180c_automation_checks)
 
 TEST (merge180c_automation_lossless_keeps_points_and_holds_gaps)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (1);
     const std::int64_t bar = ppq * 4;
     const auto a = merge180c::addAutomation (song, "Cut", 3, { { 0, 0.0f, 0.5f }, { bar, 1.0f, 0.0f } });
@@ -198,7 +198,7 @@ TEST (merge180c_automation_lossless_keeps_points_and_holds_gaps)
 
 TEST (merge180c_automation_lossy_cuts_overlap_and_follows_the_curve)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (1);
     const std::int64_t bar = ppq * 4;
     const auto a = merge180c::addAutomation (song, "Cut", 0, { { 0, 0.0f, 0.0f }, { bar, 1.0f, 0.0f } });
@@ -219,7 +219,7 @@ TEST (merge180c_automation_lossy_cuts_overlap_and_follows_the_curve)
 
 TEST (merge180c_automation_link_answers)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::int64_t bar = ppq * 4;
     const auto make = [] {
         auto song = pl168f::songWithPatterns (1);
@@ -238,7 +238,7 @@ TEST (merge180c_automation_link_answers)
     pltracks::mergeAutomationClips (none, { 0, 1 }, pltracks::AutomationLinks::deleteAll);
     CHECK (none.playlist.size() == 1 && none.automations.back().target.kind == AutomationTargetKind::none);
 
-    // one LYNX automation holds one target: the other target gets its own clip with the same curve
+    // one YW automation holds one target: the other target gets its own clip with the same curve
     auto all = make();
     const auto index = pltracks::mergeAutomationClips (all, { 0, 1 }, pltracks::AutomationLinks::mergeAll);
     CHECK (all.playlist.size() == 2 && all.automations.size() == 4);
@@ -251,7 +251,7 @@ TEST (merge180c_automation_link_answers)
 TEST (merge180c_ctrl_g_all_clips_with_a_muted_one)
 {
     // the FL check's project a_merge (FL: one clip at bar 1 on track 4, the muted P3 stays)
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (3);
     const std::int64_t bar = ppq * 4;
     song.playlist.push_back (pl168f::patternClip (0, 5, 0, bar));

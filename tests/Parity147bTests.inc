@@ -3,9 +3,9 @@
 namespace p147b
 {
 // one second of a 1 kHz sine through Ember (one block size), the given left / right inputs
-inline std::pair<std::vector<float>, std::vector<float>> emberRun (const lynx::EffectParams& p, float gl, float gr)
+inline std::pair<std::vector<float>, std::vector<float>> emberRun (const yw::EffectParams& p, float gl, float gr)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::ember);
+    auto fx = yw::makeEffect (yw::EffectKind::ember);
     fx->prepare (48000.0);
     std::vector<float> l (24000), r (24000);
     for (int i = 0; i < 24000; ++i)
@@ -34,7 +34,7 @@ inline double peakOf (const std::vector<float>& a)
 
 TEST (ember_saturn_channel_mode_drive_pan_band_pan_round147b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto base = makeEffectSlot (EffectKind::ember).params;
     CHECK (effectInfo (EffectKind::ember).params.size() == (std::size_t) em::count);
@@ -113,7 +113,7 @@ TEST (ember_saturn_channel_mode_drive_pan_band_pan_round147b)
 
 TEST (ember_saturn2_channel_mode_and_pans_translated_round147b)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.name = "FabFilter Saturn 2";
     // [EXEC] the trial's state: 695 = channel mode, band b drive pan at 7 + 17b + 5, band pan at + 12 (−1 … +1)
@@ -129,17 +129,17 @@ TEST (ember_saturn2_channel_mode_and_pans_translated_round147b)
     CHECK (std::abs (e::panOf (slot.params[(std::size_t) e::bandPanParam (0)]) - 0.5) < 1e-4);
 }
 
-TEST (lynx_tune_note_status_directions_and_range_round147b)
+TEST (yw_tune_note_status_directions_and_range_round147b)
 {
-    using namespace lynx;
-    namespace t = lynxtune;
-    CHECK ((int) effectInfo (EffectKind::lynxTune).params.size() == t::count);
-    auto p = makeEffectSlot (EffectKind::lynxTune).params;
+    using namespace yw;
+    namespace t = ywtune;
+    CHECK ((int) effectInfo (EffectKind::ywTune).params.size() == t::count);
+    auto p = makeEffectSlot (EffectKind::ywTune).params;
     // defaults: every direction "nearest", the range the whole keyboard (the old behaviour)
     for (int k = 0; k < 12; ++k) CHECK (t::noteDir (p[(std::size_t) (t::noteDirC + k)]) == t::NoteDir::nearest);
     CHECK (t::rangeNote (p[t::rangeLow]) == 0 && t::rangeNote (p[t::rangeHigh]) == 127);
-    CHECK (formatEffectParam (EffectKind::lynxTune, t::rangeHigh, t::rangeNoteValue (60), 120.0) == "C4");
-    CHECK (formatEffectParam (EffectKind::lynxTune, t::noteDirC + 3, 0.5f, 120.0) == "Up");
+    CHECK (formatEffectParam (EffectKind::ywTune, t::rangeHigh, t::rangeNoteValue (60), 120.0) == "C4");
+    CHECK (formatEffectParam (EffectKind::ywTune, t::noteDirC + 3, 0.5f, 120.0) == "Up");
     CHECK (t::rangePresetNotes (6) == std::make_pair (0, 127));
     for (int k = 0; k + 1 < t::rangePresets; ++k)
         CHECK (t::rangePresetNotes (k).first < t::rangePresetNotes (k).second && t::rangePresetNotes (k).second - t::rangePresetNotes (k).first >= 24);
@@ -157,7 +157,7 @@ TEST (lynx_tune_note_status_directions_and_range_round147b)
 
     // the range: a 450 Hz tone (A4 + 39 c) is pulled to 440 Hz; with the range ending at G4 it passes as sung
     auto freqOut = [] (const EffectParams& q) {
-        auto fx = makeEffect (EffectKind::lynxTune);
+        auto fx = makeEffect (EffectKind::ywTune);
         fx->prepare (48000.0);
         const int len = 96000;
         std::vector<float> l (len), r (len);
@@ -183,7 +183,7 @@ TEST (lynx_tune_note_status_directions_and_range_round147b)
 
 TEST (ridge_auto_makeup_and_analog_round147b)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     CHECK ((int) effectInfo (EffectKind::ridgeStrip).params.size() == r::count);
     auto p = makeEffectSlot (EffectKind::ridgeStrip).params;

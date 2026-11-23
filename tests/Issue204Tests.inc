@@ -1,5 +1,5 @@
 // Round 190lq (issue #204): an audio clip channel played from the Piano roll / steps, as FL 2026 plays it (FL64 /R renders of
-// the same notes: /mnt/e/lynx-work/issue204_190lq, docs in the round's HANDOFF): the whole clip whatever the note's length,
+// the same notes: /mnt/e/yw-work/issue204_190lq, docs in the round's HANDOFF): the whole clip whatever the note's length,
 // overlapping notes layer (the second note no longer ends where the first one did), and the key transposes the clip from
 // C5. Projects saved before the law (SamplerSettings::clipNoteLegacy) keep their earlier sound: each note cut at its end,
 // at the clip's own pitch — but only that note's voice.
@@ -9,9 +9,9 @@ namespace i204
 constexpr double rate = 48000.0;
 
 // a 1 s sine (0.25, 440 Hz)
-std::shared_ptr<lynx::SampleData> sine()
+std::shared_ptr<yw::SampleData> sine()
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     d->left.resize ((std::size_t) rate);
     for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -28,20 +28,20 @@ struct N
 };
 
 // Song mode, 120 BPM (a beat = 0.5 s): channel 0 = an audio clip channel on the sine playing `notes` once
-lynx::Song song (const std::vector<N>& notes, bool legacy, lynx::InstrumentKind kind = lynx::InstrumentKind::audioClip, bool flVoice = false)
+yw::Song song (const std::vector<N>& notes, bool legacy, yw::InstrumentKind kind = yw::InstrumentKind::audioClip, bool flVoice = false)
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
-    lynx::ChannelDef c;
+    s.mode = yw::PlayMode::song;
+    yw::ChannelDef c;
     c.instrument = kind;
     c.name = "Sine clip";
     c.samplePath = "sine";
-    c.volume = lynx::audioClipUnityVolume;
+    c.volume = yw::audioClipUnityVolume;
     c.sampler.clipNoteLegacy = legacy;
     if (flVoice) // FL's native voice as the .flp import stores it (the plugins' default records, Mod X / Y, PPQ 96, pan law)
     {
-        const auto defaults = lynx::flvp::defaultSnapshot();
+        const auto defaults = yw::flvp::defaultSnapshot();
         c.sampler.flChannel.assign (90, 0);
         std::memcpy (c.sampler.flChannel.data(), defaults.data(), 85 * 4);
         std::memcpy (&c.sampler.flChannel[85], defaults.data() + 0x15c, 4);
@@ -50,38 +50,38 @@ lynx::Song song (const std::vector<N>& notes, bool legacy, lynx::InstrumentKind 
         c.sampler.flChannel[88] = 96;
     }
     s.channels = { c };
-    lynx::Pattern p;
+    yw::Pattern p;
     p.name = "Notes";
     for (const auto& n : notes)
     {
-        lynx::Note note;
-        note.start = (std::int64_t) std::llround (n.beat * lynx::ppq);
-        note.length = (std::int64_t) std::llround (n.beats * lynx::ppq);
+        yw::Note note;
+        note.start = (std::int64_t) std::llround (n.beat * yw::ppq);
+        note.length = (std::int64_t) std::llround (n.beats * yw::ppq);
         note.key = n.key;
         note.velocity = n.velocity;
         p.notes.push_back (note);
     }
     p.sortNotes();
-    p.lengthTicks = 16 * lynx::ppq; // (8 s: the pattern does not loop inside the render)
+    p.lengthTicks = 16 * yw::ppq; // (8 s: the pattern does not loop inside the render)
     s.patterns = { p };
-    lynx::Clip clip;
-    clip.kind = lynx::ClipKind::pattern;
+    yw::Clip clip;
+    clip.kind = yw::ClipKind::pattern;
     clip.pattern = 0;
-    clip.length = 16 * lynx::ppq; // (longer than the render: the pattern does not loop inside it)
+    clip.length = 16 * yw::ppq; // (longer than the render: the pattern does not loop inside it)
     s.playlist = { clip };
     return s;
 }
 
-std::vector<float> render (const lynx::Song& s, double seconds)
+std::vector<float> render (const yw::Song& s, double seconds)
 {
     const auto data = sine();
-    auto state = lynx::RackState::build (s, nullptr, rate, [data] (const std::string&) -> std::shared_ptr<const lynx::SampleData> { return data; });
-    lynx::RackRenderer rr;
+    auto state = yw::RackState::build (s, nullptr, rate, [data] (const std::string&) -> std::shared_ptr<const yw::SampleData> { return data; });
+    yw::RackRenderer rr;
     rr.prepare (rate, 480);
     const auto total = (int) (seconds * rate);
     std::vector<float> l ((std::size_t) total), r ((std::size_t) total);
     double tick = 0.0;
-    const auto tps = lynx::ticksPerSample (s.bpm, rate);
+    const auto tps = yw::ticksPerSample (s.bpm, rate);
     for (int at = 0; at < total; at += 480)
     {
         const auto n = std::min (480, total - at);
@@ -188,11 +188,11 @@ TEST (issue204_clip_note_key_transposes)
 }
 
 // FL 2026's renders of the same notes on an audio clip channel and on a Sampler of the same file are bit-identical (round
-// 190lq: lengths, overlaps, keys, velocities 50 / 100 / 128). LYNX: the same, with FL's voice (.flp imports) and without
+// 190lq: lengths, overlaps, keys, velocities 50 / 100 / 128). YW: the same, with FL's voice (.flp imports) and without
 TEST (issue204_clip_notes_play_as_the_sampler)
 {
     using namespace i204;
-    using lynx::InstrumentKind;
+    using yw::InstrumentKind;
     const std::vector<N> notes { { 0.0, 0.25, 60 }, { 2.0, 1.0, 60 }, { 2.5, 2.0, 60 }, { 4.0, 1.0, 60 }, { 4.5, 2.0, 67 },
                                  { 6.0, 0.5, 69 }, { 7.0, 0.5, 48 }, { 8.0, 0.5, 60, 50.0f / 128.0f }, { 9.0, 0.5, 61, 1.0f } };
     for (const auto flVoice : { false, true })
@@ -205,7 +205,7 @@ TEST (issue204_clip_notes_play_as_the_sampler)
             diff = std::max (diff, std::abs (clip[i] - sampler[i]));
             level = std::max (level, std::abs (sampler[i]));
         }
-        std::printf ("issue204: audio clip channel vs Sampler (%s voice): max difference %.3g, peak %.3f\n", flVoice ? "FL's" : "LYNX's",
+        std::printf ("issue204: audio clip channel vs Sampler (%s voice): max difference %.3g, peak %.3f\n", flVoice ? "FL's" : "YW's",
                      (double) diff, (double) level);
         CHECK (level > 0.05f);
         CHECK (diff < 1.0e-6f);

@@ -57,7 +57,7 @@ inline std::string drumBuss (double drive, int type, const std::map<std::string,
 }
 
 // the rack's output for a sine at `hz`, `db` dBFS peak: its fundamental in dBFS (after the rack's latency, steady state)
-inline double sineThrough (const lynx::PatcherDoc& doc, double hz, double db)
+inline double sineThrough (const yw::PatcherDoc& doc, double hz, double db)
 {
     auto g = als190ed::graphOf (doc);
     const auto amp = std::pow (10.0, db / 20.0);
@@ -80,9 +80,9 @@ inline double sineThrough (const lynx::PatcherDoc& doc, double hz, double db)
     return 20.0 * std::log10 (2.0 * std::sqrt (re * re + im * im) / (n / 2));
 }
 
-inline const lynx::EffectSlot* nodeOf (const lynx::PatcherDoc& doc, lynx::EffectKind kind)
+inline const yw::EffectSlot* nodeOf (const yw::PatcherDoc& doc, yw::EffectKind kind)
 {
-    const auto* r = lynx::rack::rackOf (doc);
+    const auto* r = yw::rack::rackOf (doc);
     if (r == nullptr || r->chains.empty())
         return nullptr;
     for (const auto n : r->chains[0].nodes)
@@ -94,8 +94,8 @@ inline const lynx::EffectSlot* nodeOf (const lynx::PatcherDoc& doc, lynx::Effect
 
 TEST (als190ek_auto_filter_rates_and_depths_are_live_s)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190ek::near;
     // the new device's synced table is the older one turned round [MEASURED: index 9 = 1.5 beats]: 0 = 8 bars, 21 = 1/64
     CHECK (near (autoFilter2SyncedBeats (9), 1.5) && near (autoFilter2SyncedBeats (0), 32.0) && near (autoFilter2SyncedBeats (21), 0.0625));
@@ -153,8 +153,8 @@ TEST (als190ek_auto_filter_rates_and_depths_are_live_s)
 
 TEST (als190ek_drift_voice_modes_and_the_synths_measured_laws)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     using als190ek::par;
     // Global_VoiceMode [MEASURED, the menu]: 0 Poly, 1 Mono, 2 Stereo, 3 Unison
     const auto drift = [] (int voiceMode, int t1, int t2, int filter) {
@@ -199,7 +199,7 @@ TEST (als190ek_drift_voice_modes_and_the_synths_measured_laws)
 
 TEST (als190ek_vst3_automation_follows_the_plugin_s_own_ids)
 {
-    using namespace lynx;
+    using namespace yw;
     using als175a::v;
     // a Live 12.4 save's layout [MEASURED, round 190ei]: kHs Gain's "Gain" (ParamID 1, range 0.0316 … 31.62, plain values in
     // the envelope), "mode" (ParamID 414, 0 … 1), then unused entries with ParameterId −1
@@ -246,8 +246,8 @@ TEST (als190ek_vst3_automation_follows_the_plugin_s_own_ids)
 
 TEST (als190ek_drum_buss_rack_is_fitted_to_live)
 {
-    using namespace lynx;
-    using namespace lynx::alsdev;
+    using namespace yw;
+    using namespace yw::alsdev;
     namespace em = mixsuite::ember;
     namespace sh = mixsuite::shell;
     namespace cr = dyn::crest;
@@ -336,7 +336,7 @@ TEST (als190ek_drum_buss_rack_is_fitted_to_live)
 
 TEST (als190ek_eq_three_meets_the_renders)
 {
-    using namespace lynx;
+    using namespace yw;
     using als190ek::near;
     // [MEASURED in Live] defaults flat within 0.31 dB; GainLo −12 dB → −11.98 at 31 Hz, GainMid +6 → +6.00 at 1 kHz (Slope
     // 48); the low band off → −90 dB at 31 Hz (Slope 1), the mid band off → −78 dB at 790 Hz

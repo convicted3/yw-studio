@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-// Vocal pitch toolkit shared by LYNX Tune (the real-time pitch corrector, core/LynxTune.h) and the Newtone engine
+// Vocal pitch toolkit shared by YW Tune (the real-time pitch corrector, core/YwTune.h) and the Newtone engine
 // (core/NewtoneFx.h). Written only from published DSP (docs/analise/REA_rodada95.md §4):
 //
 // - Pitch detection: YIN (A. de Cheveigné, H. Kawahara, "YIN, a fundamental frequency estimator for speech and
@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::vocal
+namespace yw::vocal
 {
 // ---------------------------------------------------------------------------------------------------------------------
 // Scales
@@ -31,7 +31,7 @@ enum class Scale : int
 {
     chromatic, major, minor, harmonicMinor, melodicMinor, majorPentatonic, minorPentatonic, blues, dorian, mixolydian,
     phrygian, lydian, locrian, custom,
-    wholeTone, diminished // round 128 (Auto-Tune's modern list): chosen through LYNX Tune's "More scales" parameter
+    wholeTone, diminished // round 128 (Auto-Tune's modern list): chosen through YW Tune's "More scales" parameter
 };
 constexpr int scaleCount = 14;    // the scales a "Scale" parameter steps through (chromatic … custom; saved projects)
 constexpr int scaleCountAll = 16; // with the two extra scales
@@ -40,7 +40,7 @@ const char* scaleName (Scale s) noexcept;
 // `custom` returns `customMask` (bit k = pitch class k).
 std::uint16_t scaleMask (Scale s, int key, std::uint16_t customMask = 0xfff) noexcept;
 
-// Key detection (round 128, LYNX Tune's AUTO KEY): the key and mode (Scale::major / Scale::minor) whose
+// Key detection (round 128, YW Tune's AUTO KEY): the key and mode (Scale::major / Scale::minor) whose
 // Krumhansl–Kessler profile correlates best with a pitch-class histogram (bin k = time spent on pitch class k).
 // Returns {-1, major} when the histogram is empty.
 std::pair<int, Scale> detectKey (const std::array<double, 12>& histogram) noexcept;
@@ -80,7 +80,7 @@ public:
     void setThreshold (float t) noexcept { threshold = t; }
     void setGate (float rms) noexcept { gate = rms; }
     // Round 157: prefer a clearly deeper dip at 1.5 / 2 / 3 / 4 times the first one when it continues the last voiced
-    // period (harmonic errors on strong formants). Off by default (LYNX Tune turns it on).
+    // period (harmonic errors on strong formants). Off by default (YW Tune turns it on).
     void setHarmonicGuard (bool on) noexcept { harmonicGuard = on; }
 
     // Feeds one sample; returns true when a new estimate is ready (then read estimate()).
@@ -159,15 +159,15 @@ public:
     // the previous mark (round 148), the strongest peak for a phrase's first mark. Default on.
     void setPeakAlign (bool on) noexcept { peakAlign = on; }
     // Round 165j: divide the overlap-add by the summed grain windows (no level dips / bulges where grains of different
-    // lengths or spacings meet), by `amount` (0 = plain overlap-add, 1 = fully normalised). Off by default (LYNX Tune
+    // lengths or spacings meet), by `amount` (0 = plain overlap-add, 1 = fully normalised). Off by default (YW Tune
     // fades it in while it corrects a voiced sound).
     void setNormalise (float amount) noexcept { normalise = std::clamp (amount, 0.0f, 1.0f); }
     // Round 190dp: unvoiced grains follow the formant factor (the noise / breath / out-of-range path of a voice
-    // shifter: they move with the formants instead of passing through). Off by default (LYNX Tune keeps its path).
+    // shifter: they move with the formants instead of passing through). Off by default (YW Tune keeps its path).
     void setUnvoicedShift (bool on) noexcept { unvoicedShift = on; }
     // Round 190ho: while on, the unvoiced marks placed are read unshifted even with setUnvoicedShift (a voice shifter
     // turns it on from a sung onset's first rise in level until its detector has decided: the start of the note itself
-    // is then not read at the formant factor). Off by default; LYNX Tune never uses it.
+    // is then not read at the formant factor). Off by default; YW Tune never uses it.
     void setUnvoicedPlain (bool on) noexcept { unvoicedPlain = on; }
     // Marks are placed this many samples behind the newest input (the centre of the pitch detector's window, so the
     // period and shift given with setPitch / setShift describe the signal where the mark lies). Clamped so that the
@@ -207,7 +207,7 @@ private:
     float envCoef = 0.0f; // round 190li: the 900 Hz low-pass's coefficient (prepare())
 };
 // ---------------------------------------------------------------------------------------------------------------------
-// Breath noise (round 190bb, LYNX Tune's Breathiness; issue #103). Aspiration noise for a voice, written from textbook
+// Breath noise (round 190bb, YW Tune's Breathiness; issue #103). Aspiration noise for a voice, written from textbook
 // DSP only (the channel vocoder: H. Dudley, "The Vocoder", Bell Labs Record 18, 1939; U. Zölzer (ed.), DAFX, ch. 9;
 // aspiration noise in breathy voices: D. Klatt, L. Klatt, "Analysis, synthesis, and perception of voice quality
 // variations among female and male talkers", JASA 87(2), 1990):
@@ -257,4 +257,4 @@ private:
     float follow = 0.0f;
     std::uint32_t rng = 0x9E3779B9u;
 };
-} // namespace lynx::vocal
+} // namespace yw::vocal

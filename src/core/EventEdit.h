@@ -9,7 +9,7 @@
 #include "core/PianoRollTools.h"
 #include "core/Song.h"
 
-namespace lynx::eventedit
+namespace yw::eventedit
 {
 PatternEvents* findLane (Pattern& pattern, const AutomationTarget& target) noexcept;
 const PatternEvents* findLane (const Pattern& pattern, const AutomationTarget& target) noexcept;
@@ -37,4 +37,4 @@ void applyLfo (PatternEvents& lane, std::int64_t from, std::int64_t to, const pr
 // pattern start), holding each value until the next one (an event's step) and dropping the points a straight line
 // explains. sensitivity 0.4..1 like FL's form: 1 keeps every change, lower values simplify more.
 std::vector<AutomationPoint> toAutomationPoints (const PatternEvents& lane, float sensitivity);
-} // namespace lynx::eventedit
+} // namespace yw::eventedit

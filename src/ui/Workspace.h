@@ -9,7 +9,7 @@
 #include "core/Workspace.h"
 #include "ui/Icons.h"
 
-namespace lynx
+namespace yw
 {
 class PanelFrame;
 class DetachedPanelWindow;
@@ -20,8 +20,8 @@ class DetachedPanelWindow;
 // turns snapping off), resized by its edges, and double-clicking the strip maximizes it. A detached
 // panel lives in its own native window (for a second monitor) until it is docked again.
 //
-// The layout model is core/Workspace.h; it is saved in %APPDATA%\LYNX\workspace.txt, and named
-// layouts in %APPDATA%\LYNX\layouts\*.txt.
+// The layout model is core/Workspace.h; it is saved in %APPDATA%\YW\workspace.txt, and named
+// layouts in %APPDATA%\YW\layouts\*.txt.
 class Workspace final : public juce::Component
 {
 public:
@@ -143,7 +143,7 @@ public:
     // A place for a new docked frame of that size: cascading from the top-left of the desktop's free area.
     juce::Rectangle<int> placeForDockedFrame (int width, int height) const;
 
-    // Round 190jy (queue item 44; core/DockStack.h editorsAbove): a docked LYNX editor window drawn by the main window
+    // Round 190jy (queue item 44; core/DockStack.h editorsAbove): a docked YW editor window drawn by the main window
     // itself, a child component of the desktop at `bounds`, kept in the stacking order of the native panels and docked
     // windows by a hidden native anchor; the native windows below it get a hole where it is. `window` has no parent and
     // is not on the desktop. Not owned: removeEditorWindow gives it back (no parent), and a deleted window goes by itself.
@@ -183,7 +183,7 @@ private:
     bool browserAutoHide = false, browserRolled = false; // round 190mv (DF-107)
     bool browserCanRoll() const;
     void placeBrowserRoll();
-    // The layout is still LYNX's default (no panel moved or resized by hand, nothing detached or loaded):
+    // The layout is still YW's default (no panel moved or resized by hand, nothing detached or loaded):
     // when the window changes size it takes the default rects for the new size instead of scaling them,
     // so a window that opens small and is then maximised gets a sensible desktop.
     bool pristine = false;
@@ -197,4 +197,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Workspace)
 };
-} // namespace lynx
+} // namespace yw

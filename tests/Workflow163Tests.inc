@@ -8,10 +8,10 @@
 namespace w163
 {
 // Renders 4096 samples of a tonal + noisy sample through insert 1 of `song` (channel 0 must exist).
-std::vector<float> render (const lynx::Song& song)
+std::vector<float> render (const yw::Song& song)
 {
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->left.resize (48000);
         std::uint32_t seed = 1;
         for (std::size_t i = 0; i < d->left.size(); ++i)
@@ -19,13 +19,13 @@ std::vector<float> render (const lynx::Song& song)
             seed = seed * 1664525u + 1013904223u;
             d->left[i] = 0.3f * (float) std::sin ((double) i * 0.05) + 0.2f * ((float) (seed >> 8) / 16777216.0f - 0.5f);
         }
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto state = lynx::RackState::build (song, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (song, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.velocity = 1.0f;
     live.push (on);
@@ -40,12 +40,12 @@ std::vector<float> render (const lynx::Song& song)
     return out;
 }
 
-lynx::Song oneSampler()
+yw::Song oneSampler()
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (2);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (2);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "tone";
     c.volume = 1.0f;
     c.mixerTrack = 1;
@@ -76,8 +76,8 @@ TEST (workflow163_clean_mixer_bypasses_eq_bit_exact)
 
 TEST (workflow163_new_project_defaults)
 {
-    using namespace lynx;
-    // as before: 16 inserts and LYNX's limiter on the Master
+    using namespace yw;
+    // as before: 16 inserts and YW's limiter on the Master
     auto song = Song::makeDefault();
     applyNewProjectDefaults (song, {});
     CHECK (song.mixer.size() == 17 && song.mixer[0].effects.size() == 1 && song.mixer[0].effects[0].kind == EffectKind::limiter);
@@ -120,14 +120,14 @@ TEST (workflow163_new_project_defaults)
     back.readKey ("newInserts", "999");
     back.readKey ("playlistTracks", "0");
     back.readKey ("newMasterChain", "nonsense");
-    CHECK (back.inserts == maxMixerTracks - 1 && back.playlistTracks == 1 && back.master == MasterChain::lynxDefault);
+    CHECK (back.inserts == maxMixerTracks - 1 && back.playlistTracks == 1 && back.master == MasterChain::ywDefault);
     back.readKey ("newInserts", "abc");
     CHECK (back.inserts == NewProjectDefaults::defaultInserts);
 }
 
 TEST (workflow163_unused_inserts)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault(); // channels on inserts 1..5
     CHECK (song.insertInUse (0) && song.insertInUse (1) && song.insertInUse (5) && ! song.insertInUse (6));
     song.mixer[8].volume = 0.5f; // a fader moved by hand

@@ -3,7 +3,7 @@
 
 TEST (rea151_echo_and_tracking_move_mod_x_y)
 {
-    using namespace lynx;
+    using namespace yw;
     EchoSettings s;
     s.feedback = 0.5f;
     s.echoes = 3;
@@ -56,7 +56,7 @@ TEST (rea151_echo_and_tracking_move_mod_x_y)
 
 TEST (rea151_scheduled_notes_carry_release_and_mod_x)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.channels.push_back ({});
     s.patterns.emplace_back();
@@ -91,7 +91,7 @@ TEST (rea151_scheduled_notes_carry_release_and_mod_x)
 
 TEST (rea151_instrument_track_draws_its_own_pattern)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL 2026 [EXEC]: the pencil on an instrument track places a pattern named after its channel, made on the first
     // click; later clicks place the same pattern
     auto s = Song::makeDefault();
@@ -118,7 +118,7 @@ TEST (rea151_instrument_track_draws_its_own_pattern)
 
 TEST (rea151_flp_fine_tune_imported)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL 2026 saves Misc › Root note › Fine tune as the channel event 0x8E (signed cents) [DATA: +15 and +78 saved]
     std::vector<std::uint8_t> fine { 0x8E, 15, 0, 0, 0 }, negative { 0x8E, 0xF6, 0xFF, 0xFF, 0xFF }; // +15, −10
     auto withEvent = [] (const std::vector<std::uint8_t>& ev) {
@@ -140,7 +140,7 @@ TEST (rea151_flp_fine_tune_imported)
 
 TEST (rea151_fl_wrapper_midi_and_compatibility_flags)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL 2026's own wrapper record for an FL Studio VSTi with its default options [DATA]: flags 0xB4007D8C
     ForeignPlugin f;
     CHECK (parseFlWrapper (rea134WrapperBlob (12, 0xB4007D8Cu, 0), f));
@@ -173,7 +173,7 @@ TEST (rea151_fl_wrapper_midi_and_compatibility_flags)
 
 TEST (rea151_patcher_surface_controls)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's Patcher › Surface [EXEC FL 2026]: each control is an output of the Map's Surface node
     PatcherDoc d;
     PatchNode fx;

@@ -1,6 +1,6 @@
 #pragma once
 
-// Saved state (0xD5) of FL's native effects in mixer slots -> parameters of LYNX's built-in
+// Saved state (0xD5) of FL's native effects in mixer slots -> parameters of YW's built-in
 // effects. Formats and formulas in docs/analise/REA_rodada7.md (clean-room).
 
 #include <cstdint>
@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Builds the slot from the FL plugin name and the blob. Without a usable blob, returns the similar
 // built-in effect with default parameters; nullopt when there is no similar effect.
@@ -66,7 +66,7 @@ struct PatcherBranchHead
 };
 PatcherBranchHead patcherBranchHead (const std::string& pluginName, const std::vector<std::uint8_t>& state, int bus);
 
-// Fruity Love Philter -> LYNX effects (REA_rodadas 16 §2 and 17 §15): each enabled unit becomes a parametric
+// Fruity Love Philter -> YW effects (REA_rodadas 16 §2 and 17 §15): each enabled unit becomes a parametric
 // EQ (type, cutoff and Q from FL's formulas at 44.1 kHz) + gain/pan. One unit: `slots` in series
 // (and `paramMap` translates FL automation to them); several in parallel (NEXT = 0): a container.
 struct LovePhilterConversion
@@ -84,7 +84,7 @@ struct LovePhilterConversion
     };
     std::vector<LiveLink> links;
 };
-// The Fruity Limiter's compression section as a LYNX compressor (for the sidechain, which only feeds the
+// The Fruity Limiter's compression section as a YW compressor (for the sidechain, which only feeds the
 // compressor's detector; REA_rodada22 §1)
 std::optional<EffectSlot> fruityLimiterCompressor (const std::vector<std::uint8_t>& state);
 
@@ -100,7 +100,7 @@ std::optional<VocodexConversion> vocodexEffect (const std::vector<std::uint8_t>&
 // The same, with the installation's data files appended to the slot (SG.dat for the SG stage, the internal carrier's
 // Sytrus preset; REA_rodada40 §4–5)
 std::optional<VocodexConversion> vocodexEffect (const std::vector<std::uint8_t>& state, const FlDataReader& data);
-// LYNX's Soundgoodizer approximation (REA_rodada8; preset 0…3 = A…D, amount 0…1000): the compressor followed by
+// YW's Soundgoodizer approximation (REA_rodada8; preset 0…3 = A…D, amount 0…1000): the compressor followed by
 // the presets' −0.2 dB master limiter
 std::vector<EffectSlot> soundgoodizerApproximation (int preset, int amount);
 // Soundgoodizer when its preset files are not available (no FL installation): the approximation in a container that
@@ -114,4 +114,4 @@ std::optional<LovePhilterConversion> lovePhilterEffects (const std::vector<std::
 // Current value (0..1) of output `output` of a static controller (Fruity X-Y Controller, Control
 // Surface; REA_rodada15 §11): a link from it becomes a fixed value on the target. nullopt if unreadable.
 std::optional<float> controllerConstantOutput (const std::string& pluginName, const std::vector<std::uint8_t>& state, int output);
-} // namespace lynx
+} // namespace yw

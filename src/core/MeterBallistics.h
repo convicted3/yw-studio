@@ -9,7 +9,7 @@
 // Display ballistics of a peak meter (mixer strips): a fast-rising bar with a smooth falloff, a
 // peak-hold line that stays put for a while before it falls, and a clip latch that stays lit until
 // the user clicks the meter. Pure logic, ticked by the UI timer; independent of JUCE.
-namespace lynx::meters
+namespace yw::meters
 {
 struct PeakHold
 {
@@ -229,4 +229,4 @@ inline std::vector<int> scaleMarks (float heightPx, float minGapPx)
     std::sort (kept.begin(), kept.end(), [] (int a, int b) { return a > b; });
     return kept;
 }
-} // namespace lynx::meters
+} // namespace yw::meters

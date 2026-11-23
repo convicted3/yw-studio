@@ -1,5 +1,5 @@
 // Round 190lf (sub-round ns1): REA of the Waves NS1 DSP and its saved states (owner's permission of 2026-11-17;
-// /mnt/e/lynx-work/waves2_190lf/ns1/HANDOFF.md, docs/analise/REA_rodada190lf_ns1.md).
+// /mnt/e/yw-work/waves2_190lf/ns1/HANDOFF.md, docs/analise/REA_rodada190lf_ns1.md).
 // - Quell's matched engine gets a zero law (hidden [5]): at Amount 0 the reference is exactly its all-pass pair (nothing
 //   dynamic, no shelf), so the law makes Amount 0 that bare pair and fades the engine in up to 20 %. 0 for new instances
 //   and every project saved before (bit for bit: ns1/lab/gold.sh); the NS1 translator sets it.
@@ -24,18 +24,18 @@ inline void noisy (std::vector<float>& l, std::vector<float>& r, double sr)
         r[i] = (float) (0.8 * tone + n * g (rng));
     }
 }
-inline lynx::EffectSlot quell (double amount, bool zero)
+inline yw::EffectSlot quell (double amount, bool zero)
 {
-    namespace q = lynx::voicetools::quell;
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::quellDenoiser);
+    namespace q = yw::voicetools::quell;
+    auto s = yw::makeEffectSlot (yw::EffectKind::quellDenoiser);
     s.params[q::amount] = (float) amount;
     s.params[q::matched] = 1.0f;
     s.params[q::zeroLaw] = zero ? 1.0f : 0.0f;
     return s;
 }
-inline void run (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void run (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     for (std::size_t off = 0; off < l.size(); off += 256)
         fx->process (l.data() + off, r.data() + off, (int) std::min<std::size_t> (256, l.size() - off), s.params, 120.0);
@@ -73,7 +73,7 @@ inline double distanceDb (const std::vector<float>& y, const std::vector<double>
 
 TEST (parity190lf_ns1_quell_zero_law_is_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace q = voicetools::quell;
     CHECK (effectInfo (EffectKind::quellDenoiser).params.size() == 5 && q::zeroLaw == 5); // hidden: no control, no string
     auto s = makeEffectSlot (EffectKind::quellDenoiser);
@@ -84,7 +84,7 @@ TEST (parity190lf_ns1_quell_zero_law_is_hidden_and_off_for_new_and_old_instances
 
 TEST (parity190lf_ns1_is_translated_with_the_zero_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace q = voicetools::quell;
     int n = 0;
     const auto zero = parity190jh::waves ("NS1 Stereo", "NS1", parity190jh::list (253, { { 85, "60" }, { 86, "16000" } }), n);
@@ -96,7 +96,7 @@ TEST (parity190lf_ns1_is_translated_with_the_zero_law)
 
 TEST (parity190lf_ns1_zero_amount_is_the_bare_all_pass_pair)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const double sr : { 44100.0, 48000.0, 96000.0 })
     {
         std::vector<float> x ((std::size_t) sr), r ((std::size_t) sr);
@@ -114,7 +114,7 @@ TEST (parity190lf_ns1_zero_amount_is_the_bare_all_pass_pair)
 
 TEST (parity190lf_ns1_zero_law_fades_the_engine_in_and_leaves_20_percent_up_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     const double sr = 48000.0;
     std::vector<float> x (48000), r (48000);
     parity190lfns1::noisy (x, r, sr);

@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Transporter (Fruity Transporter, a transient looper) as a LYNX mixer effect: the plug-in's own engine,
+// FL Studio's Transporter (Fruity Transporter, a transient looper) as a YW mixer effect: the plug-in's own engine,
 // a Faust program in FL's shared DSP library, rebuilt in docs/analise/REA_rodada167f-transporter.md (clean-room:
 // structure, formulas and behaviour in our own words; no Image-Line code or data in this repository).
 //
@@ -33,7 +33,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::transporter
+namespace yw::transporter
 {
 constexpr int numControls = 22;
 constexpr int numParams = 25;
@@ -129,4 +129,4 @@ private:
     long long mode = 0, lenIndex = 0, trigIndex = 0;
     std::vector<float> in[5], out[4];
 };
-} // namespace lynx::transporter
+} // namespace yw::transporter

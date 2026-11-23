@@ -11,7 +11,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 // --- edit tools ------------------------------------------------------------------------
 
@@ -264,7 +264,7 @@ juce::PopupMenu quickZoomMenu (const std::string& prefix, const std::function<bo
     if (prefix == "playlist.")
         add ("zoomPerformance", tr ("Zoom on performance clips"), performanceClips);
     else
-        menu.addItem (tr ("Step sequencer mode zoom"), false, false, [] {}); // (FL's Shift+6 in the Piano roll; not in LYNX)
+        menu.addItem (tr ("Step sequencer mode zoom"), false, false, [] {}); // (FL's Shift+6 in the Piano roll; not in YW)
     return menu;
 }
 
@@ -555,7 +555,7 @@ void SnapBox::refreshMainText()
 ui::Hint SnapBox::hintAt (juce::Point<int>)
 {
     ui::Hint h;
-    h.text = getProperties().contains ("lynxHint") ? getProperties()["lynxHint"].toString() : getTooltip();
+    h.text = getProperties().contains ("ywHint") ? getProperties()["ywHint"].toString() : getTooltip();
     h.hasMenu = true;
 
     if (getSelectedId() <= 0)
@@ -819,7 +819,7 @@ void OverviewBar::paint (juce::Graphics& g)
     g.fillRect (area.withTop (area.getBottom() - 1.0f));
 
     // round 190im (R5, DC-6): the song position while playing — FL draws a 1 px line with a short glow behind it
-    // (shots/fl-overview-stopped-vs-playing.png: ≈4 px fading in); LYNX's playhead colour (decision PL1), the glow only
+    // (shots/fl-overview-stopped-vs-playing.png: ≈4 px fading in); YW's playhead colour (decision PL1), the glow only
     // with Animations on
     if (const auto px = positionXFor (position); px >= 0)
     {
@@ -937,7 +937,7 @@ public:
         repeat.slider.setTextBoxStyle (juce::Slider::TextBoxRight, true, 110, 20);
         // FL's Note properties also have the colour group (its "Color group / MIDI channel" button, 1..16; round 168g)
         addRow (colour, TR_NOOP ("Colour group"), 1.0, (double) noteColourCount, "");
-        // Live 12's note Chance and Velocity Range (round 187c, LYNX additions)
+        // Live 12's note Chance and Velocity Range (round 187c, YW additions)
         addRow (chance, TR_NOOP ("Chance"), 0.0, 100.0, "%");
         addRow (velocityRange, TR_NOOP ("Vel. range"), -100.0, 100.0, "%");
         chance.slider.setTooltip (tr ("How likely the note is to play each time it comes round (YW Studio; Live's note Chance)"));
@@ -977,7 +977,7 @@ public:
         applyButton.onClick = [this] { apply(); };
         revertButton.onClick = [this] { load(); };
         // FL's Reset (TPRNotePropForm ResetBtn): the levels back to their defaults (FL's wheel defaults VEL 100/128,
-        // PAN / REL 64, MOD 128, PITCH 120 = LYNX's note defaults)
+        // PAN / REL 64, MOD 128, PITCH 120 = YW's note defaults)
         resetButton.setButtonText (tr ("Reset"));
         resetButton.onClick = [this] { resetLevels(); };
         addAndMakeVisible (applyButton);
@@ -1199,4 +1199,4 @@ void showNoteInspector (AudioEngine& engine, std::vector<int> indices, int focus
     if (auto content = makeNoteInspector (engine, std::move (indices), focus))
         juce::CallOutBox::launchAsynchronously (std::move (content), screenArea, nullptr);
 }
-} // namespace lynx
+} // namespace yw

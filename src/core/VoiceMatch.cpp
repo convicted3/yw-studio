@@ -5,13 +5,13 @@
 #include <complex>
 #include <cmath>
 #include <cstring>
-#ifdef LYNX_LAB190IQ
+#ifdef YW_LAB190IQ
  #include <cstdio>
  #include <cstdlib>
 #endif
 #include <iterator>
 
-namespace lynx::vmatch
+namespace yw::vmatch
 {
 namespace
 {
@@ -476,7 +476,7 @@ double dialFromQ (double q) noexcept
 // on a coarser grid): each band is ONE second-order section (residual −100 … −150 dB) whose poles and zeros move with
 // the gain — the bells are peaking sections whose pole / zero Qs follow the gain (proportional Q) and whose centre
 // moves with the gain and Q; the LF shelf is (s² + βs + Wz²) / (s² + βs + Wp²) with a shared β of a few kHz (a first-
-// order slope below it), the HF shelf its mirror. LYNX keeps each probe's analog prototype (fitted, inverse bilinear at
+// order slope below it), the HF shelf its mirror. YW keeps each probe's analog prototype (fitted, inverse bilinear at
 // 48 kHz) and interpolates ln of its coefficients over frequency (log), gain and Q; other rates keep the band's own
 // frequency (rateScale). The numbers are our fits, not vendor data.
 namespace gch
@@ -1114,14 +1114,14 @@ double pole (double ms, double sr) noexcept { return ms <= 0.0 ? 0.0 : std::exp 
 // and a band sweep — at 35 settings, both modes): timing revision 1 of the Allround law. The reference's gain on the
 // body moves later and releases slower than tp172b's timing, whose gain led it by ~5 ms at the default 10 ms look-ahead;
 // fitted on the Allround renders' gain trajectories (0.25 ms steps; Nelder-Mead from tp172b's timing,
-// /mnt/e/lynx-work/parity190iq/hush/fit.py): 0.73 → 0.30 dB rms. The gain looks 1.0945 × the dial − 4.85 ms ahead (≈ 6.1 ms
+// /mnt/e/yw-work/parity190iq/hush/fit.py): 0.73 → 0.30 dB rms. The gain looks 1.0945 × the dial − 4.85 ms ahead (≈ 6.1 ms
 // at 10 ms; never below 0) and releases 3.3 times slower. Single Vocal keeps round 148's timing in both revisions (the same
 // timing cost its vocal / drum programme files a step: its own gate opens ~10 ms after the burst, a different model)
 struct Timing190iq
 {
     double detAttackMs, detReleaseMs, gainAttackMs, gainReleaseMs, aheadScale, aheadOffsetMs;
 };
-#ifdef LYNX_LAB190IQ
+#ifdef YW_LAB190IQ
  #define TIMING_190IQ_CONSTEXPR static
 #else
  #define TIMING_190IQ_CONSTEXPR constexpr
@@ -1135,7 +1135,7 @@ TIMING_190IQ_CONSTEXPR Timing190iq timingAll190iq { 0.0084, 1.4611, 2.9413, 5.81
 // signal above a split (0.567 x the band's high-pass, 4th-order) with the body below it from 200 Hz up — round 148's test
 // (the band against everything under the high-pass) counted a burst's own lower half as the body, and a kick drum's low
 // end hid the cymbals (tp172b's drums). Fitted by Nelder-Mead on the 27 Single Vocal ess renders (5 ms windows, full
-// band and above 4 kHz; /mnt/e/lynx-work/parity190js/hush/fitsv.py): 3.05 → 0.50 dB rms; the body's 200 Hz high-pass and
+// band and above 4 kHz; /mnt/e/yw-work/parity190js/hush/fitsv.py): 3.05 → 0.50 dB rms; the body's 200 Hz high-pass and
 // the law offset (9.65 → 9.0) then chosen on the parity score of tp172b's drums / vocal and refcap030's mix / stim
 // renders (hush/svscore.py). Fields: ratio ms, open / close dB, gate delay ms, gain attack / release ms, law offset dB,
 // span scale, detector release ms, split, body high-pass Hz.
@@ -1145,7 +1145,7 @@ struct Vocal190js
     double splitRatio; // the stand-out test's split: the band's high-pass x this (the signal above it against the signal below)
     double bodyLowHz;  // the body (the signal below the split) starts here (2nd-order high-pass; 0 = from DC)
 };
-#ifdef LYNX_LAB190JS
+#ifdef YW_LAB190JS
  #define VOCAL_190JS_CONSTEXPR static
 #else
  #define VOCAL_190JS_CONSTEXPR constexpr
@@ -1155,13 +1155,13 @@ VOCAL_190JS_CONSTEXPR Vocal190js vocal190js { 4.85, 8.19, 7.57, 1.57, 6.21, 20.4
 
 void DeEsser::prepare (double sampleRate) noexcept
 {
-#ifdef LYNX_LAB190IQ
-    if (const char* e = std::getenv ("LYNX_LAB_IQA"))
+#ifdef YW_LAB190IQ
+    if (const char* e = std::getenv ("YW_LAB_IQA"))
         std::sscanf (e, "%lf,%lf,%lf,%lf,%lf,%lf", &timingAll190iq.detAttackMs, &timingAll190iq.detReleaseMs, &timingAll190iq.gainAttackMs,
                      &timingAll190iq.gainReleaseMs, &timingAll190iq.aheadScale, &timingAll190iq.aheadOffsetMs);
 #endif
-#ifdef LYNX_LAB190JS
-    if (const char* e = std::getenv ("LYNX_LAB_SV"))
+#ifdef YW_LAB190JS
+    if (const char* e = std::getenv ("YW_LAB_SV"))
         std::sscanf (e, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf", &vocal190js.ratioMs, &vocal190js.openRatioDb, &vocal190js.closeRatioDb,
                      &vocal190js.gateDelayMs, &vocal190js.gainAttackMs, &vocal190js.gainReleaseMs, &vocal190js.lawOffsetDb,
                      &vocal190js.spanScale, &vocal190js.detReleaseMs, &vocal190js.splitRatio, &vocal190js.bodyLowHz);
@@ -1456,7 +1456,7 @@ struct ExposureLaw
 // round 190fx [EXEC]: the even side-chain weighting (Settings::scWeighting) — a high and a low peaking filter in place of the
 // emphasis, fitted on the 100 Hz / 1 kHz / 8 kHz stairs and the pink stairs of three optical references (docs/PARITY.md
 // "Round 190fx")
-#ifdef LYNX_LAB190FX
+#ifdef YW_LAB190FX
  #include <cstdio>
  #include <cstdlib>
  #define SC_WEIGHTING_CONSTEXPR static
@@ -1521,8 +1521,8 @@ void Leveler::process (float* l, float* r, int n, const Settings& s) noexcept
         peaking (sc, scHz, scQ, scDb);
         peaking (sc172, scHz172, scQ172, scDb172);
         peaking (scLow172, scLowHz172, scLowQ172, scLowDb172);
-#ifdef LYNX_LAB190FX
-        if (const char* e = std::getenv ("LYNX_LAB_SCW"))
+#ifdef YW_LAB190FX
+        if (const char* e = std::getenv ("YW_LAB_SCW"))
             std::sscanf (e, "%lf,%lf,%lf,%lf,%lf,%lf", &scWeighting190fx.highHz, &scWeighting190fx.highQ, &scWeighting190fx.highDb,
                          &scWeighting190fx.lowHz, &scWeighting190fx.lowQ, &scWeighting190fx.lowDb);
 #endif
@@ -1641,7 +1641,7 @@ void Leveler::process (float* l, float* r, int n, const Settings& s) noexcept
 }
 namespace
 {
-// round 190lf [EXEC] (docs/analise/REA_rodada190lf_dyn.md §1): the cell law (Settings::cellLaw = 1), LYNX's compact opto
+// round 190lf [EXEC] (docs/analise/REA_rodada190lf_dyn.md §1): the cell law (Settings::cellLaw = 1), YW's compact opto
 // behaviour model. Per sample: the side chain hears the cell's output (feedback; in Limit plus a share of the input)
 // through a low and a high peaking filter, the louder channel's level |sc| · 10^(shift / 20) (shift: the peak
 // reduction dial's and the Hi Freq dial's laws, below) held by the light's persistence (a peak hold releasing with
@@ -1890,7 +1890,7 @@ void Compressor::process (float* l, float* r, int n, const Settings& s) noexcept
 
 // ================================================================== round 190mg: the Renaissance law
 // [REA] structure of the reference's DSP and control code (docs/analise/REA_rodada190mg_ren.md §1), [EXEC] every constant
-// below fitted on LYNX's own demo-mode probes (1 kHz stairs at 11 ratios / 3 thresholds, tone bursts at Manual / ARC ×
+// below fitted on YW's own demo-mode probes (1 kHz stairs at 11 ratios / 3 thresholds, tone bursts at Manual / ARC ×
 // Electro / Opto and 5 release / 3 attack settings, 50 / 100 Hz tones at Warm / Smooth; ren/fit): the probes' sample
 // ESR is −50 … −85 dB. Per sample: a linked peak detector (Smooth: also three first-order all-passes of the input, the
 // largest magnitude), its maximum over a look-ahead window, a gain computer in linear gain g = 1 / (1 + x / T) bent by
@@ -2088,10 +2088,10 @@ void Renaissance::process (float* l, float* r, int n, const RenSettings& st) noe
     change = (float) (boostDb > redDb ? boostDb : -redDb);
 }
 } // namespace progcomp
-} // namespace lynx::vmatch
+} // namespace yw::vmatch
 
 // round tp172c: the modern console channel strip (Ridge Strip, "Modern" voicing)
-namespace lynx::vmatch
+namespace yw::vmatch
 {
 #include "core/ConsoleStrip2.inc"
-} // namespace lynx::vmatch
+} // namespace yw::vmatch

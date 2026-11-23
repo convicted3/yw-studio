@@ -1,11 +1,11 @@
 // Round 190fz (Discord #general, 2026-11-10: "make it able to pull the velocity window, it too small"): the Piano roll's
 // event editor (velocity / event lane) gets FL's divider, a TQuickSplitter between the note grid and the event editor
-// (REA of FLEngine_x64.dll; the facts in src/core/EventPaneSplit.h and /mnt/e/lynx-work/evpane190fz/HANDOFF.md).
+// (REA of FLEngine_x64.dll; the facts in src/core/EventPaneSplit.h and /mnt/e/yw-work/evpane190fz/HANDOFF.md).
 // The rules are checked here; the app route --evpaneshot drives the real mouse handlers and writes a report.
 
 TEST (evpane190fz_fl_defaults)
 {
-    using namespace lynx::evpane;
+    using namespace yw::evpane;
     CHECK (barThickness == 10);  // Splitter.Height
     CHECK (minPane == 46);       // SplitterChanging: round (46 * scale)
     CHECK (snapZone == 23);
@@ -17,7 +17,7 @@ TEST (evpane190fz_fl_defaults)
 
 TEST (evpane190fz_clamp_snaps_and_keeps_46_px)
 {
-    using namespace lynx::evpane;
+    using namespace yw::evpane;
     const int top = 70, bottom = 690; // a 700 px Piano roll: the bar runs from under the ruler to the bottom edge
     CHECK (clampBar (top, top, bottom) == top);
     CHECK (clampBar (top + 22, top, bottom) == top);          // inside the snap zone: the grid folds away
@@ -36,7 +36,7 @@ TEST (evpane190fz_clamp_snaps_and_keeps_46_px)
 
 TEST (evpane190fz_place_is_a_fraction_of_the_travel)
 {
-    using namespace lynx::evpane;
+    using namespace yw::evpane;
     const int top = 70, bottom = 690;
     CHECK (aspectOf (top, top, bottom) == 0.0f);
     CHECK (aspectOf (bottom, top, bottom) == 1.0f);
@@ -57,7 +57,7 @@ TEST (evpane190fz_place_is_a_fraction_of_the_travel)
 
 TEST (evpane190fz_alternate_size_and_default)
 {
-    using namespace lynx::evpane;
+    using namespace yw::evpane;
     State s;
     toggleAlternate (s, 0.8f);  // the first right-click: the spare place (1.0) = the event editor folded away
     CHECK (s.aspect == 1.0f && s.spare == 0.8f);
@@ -77,7 +77,7 @@ TEST (evpane190fz_alternate_size_and_default)
 
 TEST (evpane190fz_settings_text_round_trip)
 {
-    using namespace lynx::evpane;
+    using namespace yw::evpane;
     const State s { 0.4375f, 1.0f };
     CHECK (fromText (toText (s)) == s);
     for (int y = 0; y <= 620; ++y) // every place a drag gives reads back exactly (the --evpaneshot check after a release)
@@ -119,7 +119,7 @@ TEST (evpane190fz_piano_roll_wiring)
 
 TEST (evpane190fz_shift_enter_in_the_piano_roll)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     const auto* action = findAction ("pianoRoll.eventPaneAlternate");
     CHECK (action != nullptr);
     if (action == nullptr)

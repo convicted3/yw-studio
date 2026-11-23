@@ -6,7 +6,7 @@
 // 0x782750 (preparation), 0x784140 (count), 0x7858b0 (evaluation); REA_rodada23 §1.2, REA_rodada27 §3.2].
 // Clean-room: our own code from the decompiled behaviour.
 
-namespace lynx::flcurve
+namespace yw::flcurve
 {
 enum Mode : int
 {
@@ -56,4 +56,4 @@ struct SmoothSide
 Segment prepareSmooth (float tension, double dx, double y0, double y1, const SmoothSide& before, const SmoothSide& after) noexcept;
 
 const char* modeName (int mode) noexcept; // "Single curve", "Stairs"…
-} // namespace lynx::flcurve
+} // namespace yw::flcurve

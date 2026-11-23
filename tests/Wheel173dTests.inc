@@ -3,7 +3,7 @@
 // knob (REA_rodada167a §1, REA_rodada164e); a generator's own "Bend range" leaves it unchanged (FL render, Sawer /
 // PoiZone / GMS at their max range: bit-identical output); the native generators take no MIDI controller (their
 // MIDIIn is abstract or gated, REA_rodada164e), so the mod wheel (CC 1) leaves them as they are.
-// LYNX before: Instrument::pitchBend did nothing on these engines, so the wheel was lost.
+// YW before: Instrument::pitchBend did nothing on these engines, so the wheel was lost.
 
 namespace wheel173d
 {
@@ -11,9 +11,9 @@ enum class Path { none, live, automation, liveCc1 };
 
 // one held C4 on `channel` (Pattern mode, 120 BPM, 48 kHz, its pitch range `range`); the wheel to `wheel` (−1..1) at
 // `at` seconds, live (a controller) or as a recorded pitch bend event in the pattern; `noteAt` = when the note starts
-std::vector<float> render (const lynx::ChannelDef& channel, Path path, float wheel, int range, double at, double noteAt, double seconds)
+std::vector<float> render (const yw::ChannelDef& channel, Path path, float wheel, int range, double at, double noteAt, double seconds)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (2);
     s.bpm = 120.0;
@@ -85,10 +85,10 @@ const std::set<std::string>& synths()
 // back to the centre brings it back
 TEST (wheel173d_pitch_wheel_moves_fl_native_generators_by_the_channel_range)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
-    const auto print = std::getenv ("LYNX_PITCH_AUDIT") != nullptr;
+    const auto print = std::getenv ("YW_PITCH_AUDIT") != nullptr;
     const auto fl = natives142::flAccess();
     int checked = 0;
     for (const auto& e : natives::instrumentEngines())
@@ -153,7 +153,7 @@ TEST (wheel173d_pitch_wheel_moves_fl_native_generators_by_the_channel_range)
 // (their own "Mod wheel" controls are on-screen parameters, not CC 1)
 TEST (wheel173d_mod_wheel_leaves_fl_native_generators_as_fl_does)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto fl = natives142::flAccess();
@@ -177,7 +177,7 @@ TEST (wheel173d_mod_wheel_leaves_fl_native_generators_as_fl_does)
 // bend by the raw MIDI message only)
 TEST (wheel173d_native_default_keeps_the_wheel_for_the_channel_pitch)
 {
-    using namespace lynx;
+    using namespace yw;
     struct Native final : Instrument
     {
         void prepare (double) noexcept override {}

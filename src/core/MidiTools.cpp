@@ -8,7 +8,7 @@
 
 #include "core/NoteTools.h"
 
-namespace lynx::miditools
+namespace yw::miditools
 {
 namespace
 {
@@ -760,4 +760,4 @@ std::vector<int> replaceNotes (Pattern& pattern, const std::vector<int>& indices
     std::sort (selection.begin(), selection.end());
     return selection;
 }
-} // namespace lynx::miditools
+} // namespace yw::miditools

@@ -1,7 +1,7 @@
 // plugexporttest <plugin.vst3 | plugin.clap | plugin.lv2 (Linux, rounds 190ov and 190pk)> <report.txt> [editor picture prefix]
-// Loads LYNX's exported plugins the way a host does (round 180b, docs/PLUGIN_EXPORT.md) and checks, with no window on screen:
+// Loads YW's exported plugins the way a host does (round 180b, docs/PLUGIN_EXPORT.md) and checks, with no window on screen:
 // the scan, the sound against the same engine run directly in this process (null test), automation, the state (a new
-// instance sounds the same; the state opens as a .lynx project), the editor, memory per instance and CPU.
+// instance sounds the same; the state opens as a .yw project), the editor, memory per instance and CPU.
 // Exit 0 = every check passed.
 
 #include <atomic>
@@ -15,7 +15,7 @@
 #include <clap/clap.h>
 
 #include "core/Effects.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/ModelParams.h"
 #include "core/RackRenderer.h"
 #include "engine/ClapFormat.h"
@@ -27,8 +27,8 @@
  #include <psapi.h>
 #endif
 
-using namespace lynx;
-using lynx::plugexport::Entry;
+using namespace yw;
+using yw::plugexport::Entry;
 
 namespace
 {
@@ -236,7 +236,7 @@ void writeEditorPicture (const Entry& entry, const juce::String& prefix)
         p->getStateInformation (state);
         juce::String parseError;
         check (ProjectFile::fromJson (juce::String::createStringFromData (state.getData(), (int) state.getSize()), parseError).has_value(),
-               "the state opens as a .lynx project " + parseError);
+               "the state opens as a .yw project " + parseError);
     }
     const auto before = memoryMb();
     std::unique_ptr<juce::AudioProcessorEditor> editor (p->createEditorIfNeeded());
@@ -320,7 +320,7 @@ void stateLoadIsSilent (juce::AudioPluginFormat& format, const juce::PluginDescr
                                                   + " at load, " + juce::String (withEditor) + " with the editor open");
 }
 
-// The same for the CLAP, with a host of our own that sees what LYNX's CLAP host ignores: parameter events the plugin
+// The same for the CLAP, with a host of our own that sees what YW's CLAP host ignores: parameter events the plugin
 // sends out and host_state.mark_dirty ("project modified")
 struct RawClapHost
 {
@@ -338,7 +338,7 @@ struct RawClapHost
         host.clap_version = CLAP_VERSION;
         host.host_data = this;
         host.name = "plugexporttest";
-        host.vendor = "LYNX";
+        host.vendor = "YW";
         host.url = "";
         host.version = "1";
         host.get_extension = [] (const clap_host_t* h, const char* id) -> const void* {

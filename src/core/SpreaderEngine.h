@@ -7,7 +7,7 @@
 #include <cmath>
 #include <iterator>
 
-namespace lynx::stereofx
+namespace yw::stereofx
 {
 // the Spreader engine (REA_rodada54 §5): a Faust-built single-precision stereo widener with smoothed controls
 class SpreaderEngine
@@ -142,4 +142,4 @@ private:
     }
     static constexpr float sq8c = 2.8284270763397217f;
 };
-} // namespace lynx::stereofx
+} // namespace yw::stereofx

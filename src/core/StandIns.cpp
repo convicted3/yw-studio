@@ -13,7 +13,7 @@
 #include "core/Scheduler.h"
 #include "core/SessionIds.h"
 
-namespace lynx::standins
+namespace yw::standins
 {
 namespace
 {
@@ -669,9 +669,9 @@ Song project (const Song& song, const std::function<bool (const PluginRef&)>& mi
     }
     return out;
 }
-} // namespace lynx::standins
+} // namespace yw::standins
 
-namespace lynx::freeze
+namespace yw::freeze
 {
 #ifndef TR_NOOP
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
@@ -797,12 +797,12 @@ void lighten (Song& s, int channel, int keepInsert)
     s.initialValues.erase (std::remove_if (s.initialValues.begin(), s.initialValues.end(), [&] (const Song::InitialValue& v) { return gone (v.target); }),
                            s.initialValues.end());
 }
-} // namespace lynx::freeze
+} // namespace yw::freeze
 
 // --- Track freeze (round 190ff) ---------------------------------------------------------------------------------------
-namespace lynx::freeze
+namespace yw::freeze
 {
-using namespace lynx::standins; // (the projection's helpers)
+using namespace yw::standins; // (the projection's helpers)
 namespace
 {
 // an effect that listens to another insert (side-chain, a plugin input taken from elsewhere) or sends audio out of
@@ -1013,12 +1013,12 @@ bool flatten (Song& song, int channel)
         song.playlist.push_back (c);
     return true;
 }
-} // namespace lynx::freeze
+} // namespace yw::freeze
 
 // --- Bounce to New Track, Consolidate (round 190ff) -------------------------------------------------------------------
-namespace lynx::freeze
+namespace yw::freeze
 {
-using namespace lynx::standins;
+using namespace yw::standins;
 namespace
 {
 // the selected Playlist clips that play (not automation clips), all on one track; their span
@@ -1318,4 +1318,4 @@ int applyAudioConsolidation (Song& song, const ConsolidatePlan& plan, const std:
     std::stable_sort (song.playlist.begin(), song.playlist.end(), [] (const Clip& a, const Clip& b) { return a.start < b.start; });
     return channel;
 }
-} // namespace lynx::freeze
+} // namespace yw::freeze

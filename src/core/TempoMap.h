@@ -6,7 +6,7 @@
 // - pattern mode: the current pattern's Tempo events, looped with the pattern; before its first event, the project tempo;
 // - song mode: the pattern clips' Tempo events and the tempo automation clips. Inside a tempo automation clip the clip
 //   wins; elsewhere the latest write holds (a pattern clip's event, or the value a tempo clip ended with). Nothing is
-//   restored when a pattern clip ends. Before any write, the project tempo (or the first tempo clip's value, as LYNX's
+//   restored when a pattern clip ends. Before any write, the project tempo (or the first tempo clip's value, as YW's
 //   tempo automation already did).
 // JUCE-free, header-only and allocation-free: the audio thread calls it once per block when a song has tempo events.
 
@@ -16,7 +16,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::tempomap
+namespace yw::tempomap
 {
 // The pattern's Tempo lane with events, or nullptr.
 inline const PatternEvents* tempoLane (const Pattern& p) noexcept
@@ -87,7 +87,7 @@ inline void clipWrite (const Clip& c, const PatternEvents& lane, std::int64_t pa
         }
         return;
     }
-    // a stretched clip loops its pattern (LYNX's stretchedClipsLoop, issue #25): each pass plays the events before the
+    // a stretched clip loops its pattern (YW's stretchedClipsLoop, issue #25): each pass plays the events before the
     // pattern's length, the first pass from the clip's offset
     const auto length = (double) patternLength;
     const auto pos = t - (double) c.start + offset;
@@ -207,4 +207,4 @@ double tempoAtIn (const Song& song, const Clips& playlist, double tick) noexcept
         return tempoFromValue (automation.value);
     return base;
 }
-} // namespace lynx::tempomap
+} // namespace yw::tempomap

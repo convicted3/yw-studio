@@ -26,9 +26,9 @@ namespace tracks190pe
 constexpr double rate = 48000.0;
 
 // "kick.wav" a 60 Hz burst on every beat, "vox.wav" a steady 330 Hz sine, "bass.wav" 110 Hz
-inline std::shared_ptr<const lynx::SampleData> sample (const std::string& path)
+inline std::shared_ptr<const yw::SampleData> sample (const std::string& path)
 {
-    auto d = std::make_shared<lynx::SampleData>();
+    auto d = std::make_shared<yw::SampleData>();
     d->sampleRate = rate;
     d->left.resize ((std::size_t) (rate * 4.0));
     const auto hz = path == "kick.wav" ? 60.0 : path == "bass.wav" ? 110.0 : 330.0;
@@ -40,13 +40,13 @@ inline std::shared_ptr<const lynx::SampleData> sample (const std::string& path)
     return d;
 }
 
-inline std::vector<float> render (const lynx::Song& s, int frames)
+inline std::vector<float> render (const yw::Song& s, int frames)
 {
-    auto state = lynx::RackState::build (s, nullptr, rate, [] (const std::string& p) { return sample (p); });
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, rate, [] (const std::string& p) { return sample (p); });
+    yw::RackRenderer r;
     r.prepare (rate, 512);
     std::vector<float> all, l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, rate);
+    const auto tps = yw::ticksPerSample (s.bpm, rate);
     for (int done = 0; done < frames; done += 512)
     {
         r.process (state.get(), true, done * tps, 512, l.data(), rr.data());
@@ -56,9 +56,9 @@ inline std::vector<float> render (const lynx::Song& s, int frames)
     return all;
 }
 
-inline lynx::ChannelDef channel (const char* name, lynx::InstrumentKind kind, const char* sample, int insert)
+inline yw::ChannelDef channel (const char* name, yw::InstrumentKind kind, const char* sample, int insert)
 {
-    lynx::ChannelDef c;
+    yw::ChannelDef c;
     c.name = name;
     c.instrument = kind;
     c.samplePath = sample;
@@ -68,9 +68,9 @@ inline lynx::ChannelDef channel (const char* name, lynx::InstrumentKind kind, co
 
 // Track 0 "Drums": a pattern of the Kick sampler (insert 1). Track 1 "Vox": an audio clip (insert 2, an EQ on it) and a
 // volume lane. Track 2: an automation clip of the Vox insert's volume. 120 BPM.
-inline lynx::Song song()
+inline yw::Song song()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -131,13 +131,13 @@ inline lynx::Song song()
 }
 
 // the clips of a track, sorted (the order of Song::playlist is not part of the content)
-inline std::vector<lynx::Clip> clipsOf (const lynx::Song& s, int track)
+inline std::vector<yw::Clip> clipsOf (const yw::Song& s, int track)
 {
-    std::vector<lynx::Clip> out;
+    std::vector<yw::Clip> out;
     for (const auto& c : s.playlist)
         if (c.track == track)
             out.push_back (c);
-    std::sort (out.begin(), out.end(), [] (const lynx::Clip& a, const lynx::Clip& b) {
+    std::sort (out.begin(), out.end(), [] (const yw::Clip& a, const yw::Clip& b) {
         return a.start != b.start ? a.start < b.start : a.kind != b.kind ? a.kind < b.kind : a.pattern < b.pattern;
     });
     return out;
@@ -154,7 +154,7 @@ inline double peak (const std::vector<float>& x)
 
 TEST (tracks190pe_versions_switch_swaps_clips_lanes_and_chain_exactly)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace tv = trackversions;
     auto s = tracks190pe::song();
     const auto before = s;
@@ -199,7 +199,7 @@ TEST (tracks190pe_versions_switch_swaps_clips_lanes_and_chain_exactly)
 
 TEST (tracks190pe_versions_render_only_the_active_one)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace tv = trackversions;
     auto s = tracks190pe::song();
     s.automations.clear(); // (no automation: the comparison is of the clips alone)
@@ -231,7 +231,7 @@ TEST (tracks190pe_versions_render_only_the_active_one)
 
 TEST (tracks190pe_versions_follow_renumbering_and_promote)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace tv = trackversions;
     auto s = tracks190pe::song();
     tv::add (s, 0, tv::Start::duplicate, "B", "A"); // the Drums track: its pattern copied (only it plays the pattern)
@@ -257,15 +257,15 @@ TEST (tracks190pe_versions_follow_renumbering_and_promote)
     CHECK (tv::promote (p, 1, 1, 0, bar) == -1); // (the active one)
 }
 
-TEST (tracks190pe_versions_lynx_round_trip_and_older_copies)
+TEST (tracks190pe_versions_yw_round_trip_and_older_copies)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace tv = trackversions;
     auto s = tracks190pe::song();
     tv::add (s, 1, tv::Start::duplicate, "Take B", "Take A");
     s.mixer[2].effects[0].params[0] = 0.5f;
     tv::switchTo (s, 1, 0);
-    // (the save itself is in --selftest tracks190pe: ProjectFile is not in the test binary); the copy for older LYNX and the
+    // (the save itself is in --selftest tracks190pe: ProjectFile is not in the test binary); the copy for older YW and the
     // exports keep the active version, the same sound
     auto copy = s;
     CHECK (tv::keepActiveOnly (copy) == 1);
@@ -274,7 +274,7 @@ TEST (tracks190pe_versions_lynx_round_trip_and_older_copies)
     // the .flp export: only the active version, with its line
     flpexport::Report report;
     flpexport::Options o;
-    o.lynxOnly = flpexport::LynxOnly::substitute;
+    o.ywOnly = flpexport::YwOnly::substitute;
     const auto project = flpexport::toProject (s, o, report);
     CHECK (std::any_of (report.notes.begin(), report.notes.end(), [] (const std::string& n) { return n.find ("Track versions: 1 version") == 0; }));
     flpexport::Report plainReport;
@@ -291,7 +291,7 @@ TEST (tracks190pe_versions_lynx_round_trip_and_older_copies)
 
 TEST (tracks190pe_versions_with_take_lanes_and_arrangements)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace tv = trackversions;
     // a comp track (0) with two take lanes (1, 2): a version of the comp holds the comp's clips; the lanes stay
     Song s;
@@ -335,7 +335,7 @@ TEST (tracks190pe_versions_with_take_lanes_and_arrangements)
 
 TEST (tracks190pe_import_two_als_tracks_into_an_flp_project)
 {
-    using namespace lynx;
+    using namespace yw;
     // the other project: round 175a's Live set (Keys: a VST3 instrument, a looped clip, volume automation, a send to the
     // Reverb return; Vocal: a warped clip, a VST2 and an EQ Eight insert, routed to the Band group)
     const auto xmlBytes = als175a::bytesOf (als175a::richSet());
@@ -358,7 +358,7 @@ TEST (tracks190pe_import_two_als_tracks_into_an_flp_project)
     auto made = tracks190pe::song();
     flpexport::Report fr;
     flpexport::Options fo;
-    fo.lynxOnly = flpexport::LynxOnly::substitute;
+    fo.ywOnly = flpexport::YwOnly::substitute;
     auto dest = importFlp (flp::parseProject (flp::writeProject (flpexport::toProject (made, fo, fr), fo.write)));
     const auto before = dest;
 
@@ -408,7 +408,7 @@ TEST (tracks190pe_import_two_als_tracks_into_an_flp_project)
                 src = &c;
         CHECK (src != nullptr && ch.sampler.warp == src->sampler.warp && ch.samplePath == src->samplePath && ch.sampler.keepPitch);
         CHECK (std::abs (vocalClip->stretch - 1.875) < 1e-9 && std::abs (vocalClip->pitch - 2.0f) < 1e-6);
-        // its insert: the VST2 (Live's EQ Eight has no LYNX equivalent: the .als import's report), routed to the group's
+        // its insert: the VST2 (Live's EQ Eight has no YW equivalent: the .als import's report), routed to the group's
         // new insert and the Reverb return's, which came too
         const auto ins = ch.mixerTrack;
         CHECK (ins > 0 && std::find (r.inserts.begin(), r.inserts.end(), ins) != r.inserts.end());
@@ -434,7 +434,7 @@ TEST (tracks190pe_import_two_als_tracks_into_an_flp_project)
 
 TEST (tracks190pe_import_without_inserts_or_automation_and_at_a_time)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = tracks190pe::song();
     auto dest = tracks190pe::song();
     trackimport::Options o;
@@ -472,7 +472,7 @@ TEST (tracks190pe_import_without_inserts_or_automation_and_at_a_time)
 
 TEST (tracks190pe_import_brings_versions_and_take_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace tv = trackversions;
     auto source = tracks190pe::song();
     tv::add (source, 1, tv::Start::duplicate, "B", "A");

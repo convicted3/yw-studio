@@ -5,9 +5,9 @@
 namespace issues190ns
 {
 // Song::makeDefault with an audio track linked to a new mixer track (FL's Track mode › Audio track)
-inline lynx::Song songWithAudioTrack (int& track, int& mixer)
+inline yw::Song songWithAudioTrack (int& track, int& mixer)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.playlistTracks.resize (4);
     track = 2;
@@ -23,7 +23,7 @@ inline lynx::Song songWithAudioTrack (int& track, int& mixer)
 // name and colour
 TEST (issues190ns_recoloured_audio_track_recolours_its_mixer_track)
 {
-    using namespace lynx;
+    using namespace yw;
     int track = -1, mixer = -1;
     auto song = issues190ns::songWithAudioTrack (track, mixer);
     CHECK (mixer > 0);
@@ -49,7 +49,7 @@ TEST (issues190ns_recoloured_audio_track_recolours_its_mixer_track)
 // #235 (FUN_012be6f0 → FUN_012a7810): the mixer track's Rename / color reaches the Playlist track linked to it
 TEST (issues190ns_recoloured_mixer_track_recolours_its_audio_track)
 {
-    using namespace lynx;
+    using namespace yw;
     int track = -1, mixer = -1;
     auto song = issues190ns::songWithAudioTrack (track, mixer);
     const auto before = trackmodes::linkedNames (song);
@@ -76,10 +76,10 @@ TEST (issues190ns_recoloured_mixer_track_recolours_its_audio_track)
     CHECK (trackmodes::linkedNames (inst).pairs.empty());
 }
 
-// #235: LYNX's "Link Playlist tracks to mixer tracks": after switching it on every linked pair carries one colour
+// #235: YW's "Link Playlist tracks to mixer tracks": after switching it on every linked pair carries one colour
 TEST (issues190ns_switching_the_link_on_leaves_one_colour_per_pair)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     for (int c = 0; c < (int) song.channels.size(); ++c)
         song.channels[(std::size_t) c].colour = 0xff000000u | (std::uint32_t) (0x203040 * (c + 1));
@@ -110,7 +110,7 @@ TEST (issues190ns_switching_the_link_on_leaves_one_colour_per_pair)
 // reporter's purple insert under a grey header) shows one colour when opened; switch off or two own colours: untouched
 TEST (issues190ns_open_matches_linked_colours_while_the_switch_is_on)
 {
-    using namespace lynx;
+    using namespace yw;
     int track = -1, mixer = -1;
     auto song = issues190ns::songWithAudioTrack (track, mixer);
     song.playlistTracks[(std::size_t) track].colour = 0;

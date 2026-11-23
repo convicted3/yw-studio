@@ -8,14 +8,14 @@
 #include "core/GeneratorPresets.h"
 #include "engine/AudioEngine.h"
 
-// The user's own presets of LYNX's built-in generators (round 190fs, core/GeneratorPresets.h): the files, the name
+// The user's own presets of YW's built-in generators (round 190fs, core/GeneratorPresets.h): the files, the name
 // prompt (the one the hosted plugins' and the mixer effects' preset menus show) and the loads. The channel window's
-// preset box (ui/ChannelSettings.cpp), LYNX's synth page and the Browser use them.
-namespace lynx::genpresetui
+// preset box (ui/ChannelSettings.cpp), YW's synth page and the Browser use them.
+namespace yw::genpresetui
 {
 juce::File root();                         // <settings>/Presets/Plugins/Generators (inside the Browser's "Plugin presets")
 juce::File folderFor (InstrumentKind kind); // that generator's folder (not created)
-bool isPresetFile (const juce::File& file); // a .lynxpreset of a generator (its first line says so)
+bool isPresetFile (const juce::File& file); // a .ywpreset of a generator (its first line says so)
 std::optional<genpresets::Preset> read (const juce::File& file);
 // The generator's saved presets, sorted by name (files of other kinds or damaged files left out)
 juce::Array<juce::File> userPresets (InstrumentKind kind);
@@ -33,4 +33,4 @@ void askName (juce::Component& owner, const juce::String& initial, std::function
 std::unique_ptr<juce::AlertWindow> makeNameBox (const juce::String& initial, juce::Component* owner = nullptr);
 // Shows `folder` in the file manager (created first)
 void reveal (const juce::File& folder);
-} // namespace lynx::genpresetui
+} // namespace yw::genpresetui

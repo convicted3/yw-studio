@@ -7,7 +7,7 @@
 #include <memory>
 #include <set>
 
-namespace lynx::msimport::gig
+namespace yw::msimport::gig
 {
 namespace
 {
@@ -705,4 +705,4 @@ std::optional<Program> readInstrument (const std::string& path, const Access& ac
         report.error = "No zone of this instrument could be imported.";
     return program;
 }
-} // namespace lynx::msimport::gig
+} // namespace yw::msimport::gig

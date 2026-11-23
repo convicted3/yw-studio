@@ -256,7 +256,7 @@ def t_score_anchors():
     os.makedirs(f'{d}/flip', exist_ok=True)
     w = a - 0.35 * s
     tl.write_wav(f'{d}/flip/D_impulse.wav', np.concatenate([np.zeros((1, 2)), -w[:-1]]) + 0.35 * s, SR)
-    r = tl.pair(f'{d}/ref/D_impulse.wav', f'{d}/flip/D_impulse.wav', f'{d}/stim/impulse.wav', g_ref=(0.35, 0.35, 0), g_lynx=(0.35, 0.35, 0))
+    r = tl.pair(f'{d}/ref/D_impulse.wav', f'{d}/flip/D_impulse.wav', f'{d}/stim/impulse.wav', g_ref=(0.35, 0.35, 0), g_yw=(0.35, 0.35, 0))
     check('polarity + 1 sample: >= 9.8', r['score'] >= 9.8, str(r['score']) + str(r['parts']))
     for name in cases:
         for f in os.listdir(f'{d}/{name}'):

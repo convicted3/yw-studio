@@ -1,10 +1,10 @@
-// Round 166c: LYNX Tune's last auto-mode controls (docs/analise/REA_rodada166c.md): Throat length (law measured
+// Round 166c: YW Tune's last auto-mode controls (docs/analise/REA_rodada166c.md): Throat length (law measured
 // black-box in round 165hb), the created vibrato's Amplitude / Formant / Variation and Transpose in scale. Synthetic
-// vowels and the independent pitch / formant measures of LynxTuneTests95.inc (r95::).
+// vowels and the independent pitch / formant measures of YwTuneTests95.inc (r95::).
 
-TEST (lynx_tune_round166c_value_laws)
+TEST (yw_tune_round166c_value_laws)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     // throat: 50 / 100 / 180 % at the ends and the middle, both halves invertible
     CHECK (std::abs (t::throatPercent (0.0f) - 50.0) < 1e-9 && std::abs (t::throatPercent (0.5f) - 100.0) < 1e-9 && std::abs (t::throatPercent (1.0f) - 180.0) < 1e-6);
     for (const double pc : { 50.0, 60.0, 72.0, 85.0, 100.0, 118.0, 135.0, 180.0 })
@@ -20,12 +20,12 @@ TEST (lynx_tune_round166c_value_laws)
         CHECK (t::scaleTransposeSteps (t::scaleTransposeValue (s)) == s);
     CHECK (std::abs (t::vibratoAmplitudeOf (1.0f) - 30.0) < 1e-9 && std::abs (t::vibratoAmplitudeDepth (30.0) - 0.3) < 1e-9);
     // steps of the scale (C major): E4 + 2 = G4, B4 + 1 = C5, C4 − 3 = G3, A3 + 7 = A4; C#4 (out of the scale) + 1 = D#4
-    const auto major = lynx::vocal::scaleMask (lynx::vocal::Scale::major, 0, 0xfff);
+    const auto major = yw::vocal::scaleMask (yw::vocal::Scale::major, 0, 0xfff);
     CHECK (t::transposeInScaleNote (64, major, 2) == 67 && t::transposeInScaleNote (71, major, 1) == 72);
     CHECK (t::transposeInScaleNote (60, major, -3) == 55 && t::transposeInScaleNote (57, major, 7) == 69);
     CHECK (t::transposeInScaleNote (61, major, 1) == 63 && t::transposeInScaleNote (61, major, 0) == 61);
     // A minor: A3 + 2 = C4; chromatic: steps are semitones
-    const auto minor = lynx::vocal::scaleMask (lynx::vocal::Scale::minor, 9, 0xfff);
+    const auto minor = yw::vocal::scaleMask (yw::vocal::Scale::minor, 9, 0xfff);
     CHECK (t::transposeInScaleNote (57, minor, 2) == 60 && t::transposeInScaleNote (57, 0xfff, 2) == 59);
     // the new parameters are appended with neutral defaults (an old project keeps its sound)
     const auto& info = t::info();
@@ -37,9 +37,9 @@ TEST (lynx_tune_round166c_value_laws)
     CHECK (t::paramText (t::transposeInScale, 1.0f) == "In scale" && t::paramText (t::vibratoAmplitude, 1.0f / 3.0f) == "10.0");
 }
 
-TEST (lynx_tune_round166c_throat_moves_the_formants)
+TEST (yw_tune_round166c_throat_moves_the_formants)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     const double fs = 44100.0;
     const auto x = r95::vowel (fs, (int) (fs * 1.5), [] (double) { return 164.8138; }); // E3, on its note
     auto p = r95::tuneDefaults();
@@ -68,9 +68,9 @@ TEST (lynx_tune_round166c_throat_moves_the_formants)
     CHECK (std::abs (r95::cents (r95::measureHz (y, 30000 + latency, 2048, fs), 164.8138)) < 3.0);
 }
 
-TEST (lynx_tune_round166c_transpose_in_scale)
+TEST (yw_tune_round166c_transpose_in_scale)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     const double fs = 44100.0;
     // sung: A3 then E4 (on their notes), C major
     const auto x = r95::vowel (fs, (int) (fs * 1.6), [] (double s) { return s < 0.8 ? 220.0 : 329.6276; });
@@ -95,9 +95,9 @@ TEST (lynx_tune_round166c_transpose_in_scale)
     CHECK (std::abs (r95::cents (r95::measureHz (w, (int) (0.5 * fs) + latency, 2048, fs), 220.0 * std::exp2 (5.0 / 12.0))) < 3.0);
 }
 
-TEST (lynx_tune_round166c_created_vibrato_amplitude_formant_variation)
+TEST (yw_tune_round166c_created_vibrato_amplitude_formant_variation)
 {
-    namespace t = lynx::lynxtune;
+    namespace t = yw::ywtune;
     const double fs = 44100.0;
     const auto x = r95::vowel (fs, (int) (fs * 2.0), [] (double) { return 220.0; }); // A3, on its note
     auto p = r95::tuneDefaults();
@@ -173,7 +173,7 @@ TEST (lynx_tune_round166c_created_vibrato_amplitude_formant_variation)
     p[t::throatLength] = 0.2f;
     p[t::transposeInScale] = 1.0f;
     p[t::scaleTranspose] = 0.8f;
-    auto fx = lynx::makeEffect (lynx::EffectKind::lynxTune);
+    auto fx = yw::makeEffect (yw::EffectKind::ywTune);
     fx->prepare (fs);
     std::vector<float> l = x, r = x;
     rt95::allocs = 0;
@@ -185,10 +185,10 @@ TEST (lynx_tune_round166c_created_vibrato_amplitude_formant_variation)
     CHECK (std::all_of (l.begin(), l.end(), [] (float v) { return std::isfinite (v) && std::abs (v) < 4.0f; }));
 }
 
-TEST (lynx_tune_round166c_auto_tune_pro_controls_translate)
+TEST (yw_tune_round166c_auto_tune_pro_controls_translate)
 {
-    using namespace lynx;
-    namespace t = lynxtune;
+    using namespace yw;
+    namespace t = ywtune;
     // Throat 72 %, created vibrato Amplitude 20 / Formant 50 / Variation 40, Transpose In Scale with −3 steps
     int n = 0;
     const auto s = vm127::tuneSlot (vm127::autoTuneState (0, 0, { { 70, 1 }, { 71, 72 }, { 47, 20 }, { 48, 50 }, { 49, 40 }, { 179, 1 }, { 181, -3 } }), n);

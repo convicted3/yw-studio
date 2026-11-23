@@ -38,7 +38,7 @@
 #include "core/Vfx.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Issue #187 (round 190ik): warped samples follow the playing tempo (Instrument::setTempoRatio, every block). The switch
 // exists for the tests' A/B (off = the renderer before 190ik); it is always on in the app.
@@ -255,7 +255,7 @@ struct RackState
     std::vector<char> bypassWhenIdle; // [track]
     bool anyBypassWhenIdle = false;
 
-    // "Low latency while recording" (LYNX extra, round 190aq, core/LowLatency.h): the inserts whose latency-adding
+    // "Low latency while recording" (YW extra, round 190aq, core/LowLatency.h): the inserts whose latency-adding
     // slots are bypassed in this snapshot (the engine's choice; empty = none, as in every export) and, made with the PDC
     // plan, those slots: active slots of these inserts whose latency is above 0. They are skipped by the renderer and
     // count as 0 in the plan. The song itself is not changed.
@@ -317,7 +317,7 @@ struct RackState
     std::vector<std::vector<int>> slotTap; // [track][slot · maxSlotSends + output]: index into sendTaps, or −1
     // the hosted effects' Connections (round 189j): [track][slot], only for tracks with a routed one (else empty)
     std::vector<std::vector<SlotConnections>> slotConnections;
-    // Pre-fader sends (LYNX extra, round 190aq): [track] the tap holding the insert's signal before its fader (after
+    // Pre-fader sends (YW extra, round 190aq): [track] the tap holding the insert's signal before its fader (after
     // its effects and EQ, silenced by its mute), or −1 — one per insert with a pre-fader send, in sendTaps with slot −1.
     // No tap left (maxSendTaps): that insert's pre-fader sends play post-fader.
     std::vector<int> preTap;
@@ -361,7 +361,7 @@ struct RackState
     std::vector<int> midiOutChannel;            // [channel] MIDI channel 0…15 of a MIDI Out, −1 = not one
     bool hasMidiRoutes = false;
     // The same routes with the port and MIDI channel of each (round 162: Patchers take MIDI ports through their "From
-    // LYNX" MIDI port pins, and a generator Patcher sends on several ports / channels through MIDI Out nodes)
+    // YW" MIDI port pins, and a generator Patcher sends on several ports / channels through MIDI Out nodes)
     struct MidiRoute
     {
         int other = 0;        // [source] → the target channel; [target] → the source channel
@@ -546,7 +546,7 @@ struct ProcessTimes
         if (audio > 0 && spent * 2 > audio)
             (channel ? channelSpikes[key] : effectSpikes[key]).fetch_add (1, std::memory_order_relaxed);
     }
-    // Live meters of the effects that have them (the mixing suite's gain reduction, REA round 96; LYNX Tune's pitch and
+    // Live meters of the effects that have them (the mixing suite's gain reduction, REA round 96; YW Tune's pitch and
     // Facet EQ's dynamic gains, round 103; the dynamics suite's band gains and levels, round 108), always published:
     // [(track * maxEffectSlots + slot) * meterOutputs + output] = Effect::controlOutput (output) after the last block.
     static constexpr int meterOutputs = 14; // (round tp172b6: 8 ... 13 = Prism's band detector levels)
@@ -634,7 +634,7 @@ public:
         resetPluginsOnTransport = resetPlugins;
         userJumpSerial = userJumps;
     }
-    // Round 180b (LYNX's effects as VST3 / CLAP): this slot takes its parameters from `params` instead of the snapshot, so
+    // Round 180b (YW's effects as VST3 / CLAP): this slot takes its parameters from `params` instead of the snapshot, so
     // a host's automation reaches it at every block without a rebuild. nullptr = the snapshot's. Same thread as process().
     void setSlotParamsOverride (const EffectParams* params, int track, int slot) noexcept
     {
@@ -815,7 +815,7 @@ public:
     // piece too: that one runs one round anyway). Audio thread counters, read them between blocks (diagnostics).
     enum class BatchRefusal : int
     {
-        switchedOff,      // LYNX_POOL rounds=chunk
+        switchedOff,      // YW_POOL rounds=chunk
         noGraph,          // no worker pool or no task graph (render-ahead's split, FL's CPU options, extra outputs...)
         bigBlock,         // more samples than one mixer buffer holds
         liveControllers,  // a controller's output (Peak / Formula / envelope controllers...) drives the next piece's values
@@ -860,7 +860,7 @@ public:
     // The song's own tempo in the last block (its tempo, automation and tempo events), with or without an override
     // (round 190gl: the Link session proposes it to its peers)
     double songBpm() const noexcept { return ownBpm; }
-    // > 0: the tempo of an external MIDI clock LYNX follows (round 165f), over the song's tempo and its automation
+    // > 0: the tempo of an external MIDI clock YW follows (round 165f), over the song's tempo and its automation
     void setTempoOverride (double b) noexcept { tempoOverride = b; }
     // FL's tempo menu "Half speed" (round 190mp, DF-16; capture 190mp A4): 0.5 plays everything at half the tempo it has
     // (automation and an override included) while the tempo shown stays; 1 = normal. Live playback only.
@@ -1193,7 +1193,7 @@ private:
     std::atomic<int> reservedChannels { 0 }, reservedTracks { 0 }, preparedFrames { 0 };
     std::atomic<bool> reserving { false }; // reserveFor is used: the audio thread never grows them itself
     PieceArray<float, RackState::maxAutomations> automationValues; // NaN = not evaluated yet (round 190kz: per piece)
-    // the pitch bend an automation / event lane last gave each LYNX instrument (0..1; NaN = none yet; issue #12)
+    // the pitch bend an automation / event lane last gave each YW instrument (0..1; NaN = none yet; issue #12)
     std::array<float, maxChannels> automatedBend {};
     bool automatedBendReset = false;
     std::array<std::atomic<std::uint32_t>, RackState::maxAutomations / 32> overridden {}; // touched while recording
@@ -1226,7 +1226,7 @@ private:
     static constexpr double fullTurnSeconds = 0.25;
     float* tapBuffer (int tap, int side) noexcept;
     PieceArray<char, maxChannels> channelSilent;             // channel skipped in this chunk (idle, no notes)
-    std::array<NoteMask, maxChannels> heldNotes {};          // keys held on each channel (effects that follow notes: LYNX Tune)
+    std::array<NoteMask, maxChannels> heldNotes {};          // keys held on each channel (effects that follow notes: YW Tune)
     std::array<std::array<std::atomic<std::uint64_t>, 2>, maxChannels> sounding {};
     std::array<std::atomic<std::uint32_t>, maxChannels> strikes {}; // (noteStrikes; written only by publishSoundingKeys)
     std::array<NoteMask, maxChannels> struckNotes {};        // keys started in this block (a note shorter than a block still shows)
@@ -1394,4 +1394,4 @@ private:
     static constexpr float silenceLevel = 1.5849e-5f;  // -96 dBFS
     int blockCapacity = 0;
 };
-} // namespace lynx
+} // namespace yw

@@ -10,15 +10,15 @@
 #include <vector>
 
 #include "core/EffectPresets.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/NativeEngines.h"
 #include "core/PluginPresets.h"
 
-namespace lynx::genpresets
+namespace yw::genpresets
 {
 namespace
 {
-// Every generator kind with its id; the ids are the ones engine/ProjectFile.cpp writes in .lynx projects
+// Every generator kind with its id; the ids are the ones engine/ProjectFile.cpp writes in .yw projects
 constexpr std::pair<InstrumentKind, const char*> ids[] = {
     { InstrumentKind::kick, "kick" },
     { InstrumentKind::snare, "snare" },
@@ -77,7 +77,7 @@ constexpr std::pair<InstrumentKind, const char*> ids[] = {
     { InstrumentKind::tetra, "tetra" },
     { InstrumentKind::helix, "helix" },
     { InstrumentKind::braid, "braid" },
-    { InstrumentKind::lynxModel, "lynxmodel" },
+    { InstrumentKind::ywModel, "ywmodel" },
 };
 
 constexpr const char* b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -533,7 +533,7 @@ std::optional<Preset> fromText (const std::string& text)
                         return std::nullopt;
                     std::copy (v.begin(), v.end(), (c.synth.*table).begin());
                 }
-            // (other keys: written by a newer LYNX SHARE; skipped)
+            // (other keys: written by a newer YW Studio; skipped)
         }
     }
     if (! haveKind)
@@ -580,4 +580,4 @@ std::string fileNameFor (const std::string& name)
 {
     return presets::fileNameFor (name);
 }
-} // namespace lynx::genpresets
+} // namespace yw::genpresets

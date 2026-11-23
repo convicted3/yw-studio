@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::perfmon
+namespace yw::perfmon
 {
 constexpr int channelKeys = 1024;                                  // key of channel c = c
 inline int effectKey (int track, int slot) noexcept { return channelKeys + track * maxEffectSlots + slot; }
@@ -91,4 +91,4 @@ private:
     bool started = false;
     double rack = 0.0, rackMax = 0.0;
 };
-} // namespace lynx::perfmon
+} // namespace yw::perfmon

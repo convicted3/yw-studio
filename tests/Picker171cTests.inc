@@ -3,32 +3,32 @@
 #include "core/PickerView.h"
 #include "core/PluginCatalog.h"
 
-TEST (picker171c_tabs_lynx_first_az_installed_last)
+TEST (picker171c_tabs_yw_first_az_installed_last)
 {
-    using lynx::pickerview::orderTabs;
-    const auto fx = orderTabs ({ "Misc", "Installed", "Delay reverb", "LYNX SHARE", "dynamics", "Controller", "Misc" }, "LYNX SHARE", "Installed");
+    using yw::pickerview::orderTabs;
+    const auto fx = orderTabs ({ "Misc", "Installed", "Delay reverb", "YW Studio", "dynamics", "Controller", "Misc" }, "YW Studio", "Installed");
     CHECK (fx.size() == 6);
-    CHECK (fx.size() == 6 && fx[0] == "LYNX SHARE" && fx[1] == "Controller" && fx[2] == "Delay reverb" && fx[3] == "dynamics" && fx[4] == "Misc"
+    CHECK (fx.size() == 6 && fx[0] == "YW Studio" && fx[1] == "Controller" && fx[2] == "Delay reverb" && fx[3] == "dynamics" && fx[4] == "Misc"
            && fx[5] == "Installed");
-    CHECK (orderTabs ({}, "LYNX SHARE", "Installed").empty());
+    CHECK (orderTabs ({}, "YW Studio", "Installed").empty());
 }
 
 TEST (picker171c_categories_are_round_170b_folders)
 {
-    // the tabs come from FL's Plugin database folders (round 170b): FL's plugins under FL's folder, LYNX's own first
-    using namespace lynx::plugincatalog;
+    // the tabs come from FL's Plugin database folders (round 170b): FL's plugins under FL's folder, YW's own first
+    using namespace yw::plugincatalog;
     const auto folders = withDefaultCategories ({}, false,
-                                                { { "lynx:fx:Fruity Limiter", "Fruity Limiter", true, true },
-                                                  { "lynx:fx:Fruity Delay 3", "Fruity Delay 3", true, true },
-                                                  { "lynx:fx:Facet EQ", "Facet EQ", false, false } });
-    CHECK (folders.of.at ("lynx:fx:Fruity Limiter") == "Dynamics");
-    CHECK (folders.of.at ("lynx:fx:Fruity Delay 3") == "Delay reverb");
-    CHECK (folders.of.at ("lynx:fx:Facet EQ") == lynxCategory);
+                                                { { "yw:fx:Fruity Limiter", "Fruity Limiter", true, true },
+                                                  { "yw:fx:Fruity Delay 3", "Fruity Delay 3", true, true },
+                                                  { "yw:fx:Facet EQ", "Facet EQ", false, false } });
+    CHECK (folders.of.at ("yw:fx:Fruity Limiter") == "Dynamics");
+    CHECK (folders.of.at ("yw:fx:Fruity Delay 3") == "Delay reverb");
+    CHECK (folders.of.at ("yw:fx:Facet EQ") == ywCategory);
 }
 
 TEST (picker171c_search_like_fl)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     // FL (REA_rodada171c §2): the text anywhere in the name, ignoring case; the others are dimmed
     CHECK (nameMatches ("del", "Multiband Delay") && nameMatches ("DEL", "Fruity Delay 3") && ! nameMatches ("del", "Fruity Limiter"));
     CHECK (nameMatches ("", "anything"));
@@ -47,7 +47,7 @@ TEST (picker171c_search_like_fl)
 
 TEST (picker171c_up_down_wrap_and_skip_dimmed)
 {
-    using lynx::pickerview::stepWrapping;
+    using yw::pickerview::stepWrapping;
     const std::vector<char> usable { 1, 0, 1, 1 };
     CHECK (stepWrapping (usable, -1, 1) == 0);  // nothing pointed at: the first
     CHECK (stepWrapping (usable, -1, -1) == 3); // or the last

@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -20,7 +20,7 @@ using namespace settingsui;
 
 juce::File newProjectSettingsFile()
 {
-    return lynx::platform::settingsFile ("new-project.txt");
+    return yw::platform::settingsFile ("new-project.txt");
 }
 
 struct Remembered
@@ -61,7 +61,7 @@ void saveRemembered (const Remembered& r)
 struct TemplateItem
 {
     juce::String name, description;
-    int builtIn = -2; // -1 = LYNX's default song, 0.. = makeTemplate(index), -2 = a user file
+    int builtIn = -2; // -1 = YW's default song, 0.. = makeTemplate(index), -2 = a user file
     juce::File file;
 
     TemplateChoice choice() const
@@ -139,7 +139,7 @@ public:
         g.setColour (theme::colour::textPrimary);
         g.setFont (theme::font (theme::type::body, true));
         auto nameWidth = width - 20;
-        if (item.choice() == defaultChoice) // issue #123: the template LYNX opens at start-up and with File › New
+        if (item.choice() == defaultChoice) // issue #123: the template YW opens at start-up and with File › New
         {
             const auto mark = tr ("Default template");
             g.setFont (theme::font (theme::type::small, true));
@@ -207,7 +207,7 @@ public:
         infoTitle.setText (tr ("Information"));
 
         templates.items = templateItems (! persistent);
-        templates.defaultChoice = persistent ? defaultTemplate() : TemplateChoice { TemplateChoice::Kind::user, "Vocal session.lynx" };
+        templates.defaultChoice = persistent ? defaultTemplate() : TemplateChoice { TemplateChoice::Kind::user, "Vocal session.yw" };
         templates.updateContent();
         templates.selectRow (0);
         for (int i = 0; i < (int) templates.items.size(); ++i) // the default template is the one picked first (issue #123)
@@ -217,7 +217,7 @@ public:
         templates.onMenu = [this] (int row) { templateMenu (row); };
         templates.onActivate = [this] { createProject(); };
         addAndMakeVisible (templates);
-        templatesFolder.setTooltip (tr ("Templates are .lynx projects in this folder (File › Save as template... puts one there)"));
+        templatesFolder.setTooltip (tr ("Templates are .yw projects in this folder (File › Save as template... puts one there)"));
         templatesFolder.onClick = [] {
             userTemplatesFolder().createDirectory();
             userTemplatesFolder().startAsProcess();
@@ -240,7 +240,7 @@ public:
         name.onTextChange = [this] { updatePath(); };
         label (folderLabel, tr ("Folder"));
         folder = juce::File::isAbsolutePath (remembered.folder) ? juce::File (remembered.folder)
-                                                                 : lynx::platform::documentsFolder().getChildFile ("YW Projects");
+                                                                 : yw::platform::documentsFolder().getChildFile ("YW Projects");
         if (! persistent)
             folderText = remembered.folder;
         folderValue.setFont (theme::font (theme::type::body));
@@ -424,12 +424,12 @@ private:
 
     Song makeSong (const TemplateItem& item) const
     {
-        if (item.builtIn >= -1) // LYNX's own templates follow Options › Mixer (round 163); a user's template stays as saved
+        if (item.builtIn >= -1) // YW's own templates follow Options › Mixer (round 163); a user's template stays as saved
             return makeNewProject (item.builtIn);
         juce::String error;
         if (auto song = ProjectFile::load (item.file, error))
         {
-            adoptFlPluginLevels (*song); // (round 190ad: FL's plugin levels, unless it holds plugins made under LYNX's)
+            adoptFlPluginLevels (*song); // (round 190ad: FL's plugin levels, unless it holds plugins made under YW's)
             clearProjectClock (song->info); // (issue #240: a new project, dated now, working time from 0:00:00)
             return std::move (*song);
         }
@@ -463,8 +463,8 @@ private:
 
     void pickFolder()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Folder for the project"), folder);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [this] (const juce::FileChooser& fc) {
+        chooser = yw::ui::makeFileChooser (tr ("Folder for the project"), folder);
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories, [this] (const juce::FileChooser& fc) {
             if (fc.getResult() == juce::File())
                 return;
             folder = fc.getResult();
@@ -527,7 +527,7 @@ private:
 
 juce::File userTemplatesFolder()
 {
-    return lynx::platform::documentsFolder().getChildFile ("YW Studio/Templates");
+    return yw::platform::documentsFolder().getChildFile ("YW Studio/Templates");
 }
 
 bool newProjectDialogEnabled()
@@ -578,7 +578,7 @@ juce::String templateChoiceName (const TemplateChoice& choice)
     {
         case TemplateChoice::Kind::builtIn: return tr (juce::String::fromUTF8 (choice.name.c_str()));
         case TemplateChoice::Kind::user: return juce::String::fromUTF8 (templateDisplayName (choice.name).c_str());
-        case TemplateChoice::Kind::lynxDefault: break;
+        case TemplateChoice::Kind::ywDefault: break;
     }
     return tr ("Default");
 }
@@ -599,13 +599,13 @@ std::optional<Song> makeFromTemplate (const TemplateChoice& choice)
                 return std::nullopt;
             if (auto song = ProjectFile::load (file, error)) // (a user's template stays as saved)
             {
-                adoptFlPluginLevels (*song); // (round 190ad: FL's plugin levels, unless it holds plugins made under LYNX's)
+                adoptFlPluginLevels (*song); // (round 190ad: FL's plugin levels, unless it holds plugins made under YW's)
                 clearProjectClock (song->info); // (issue #240: but the new project starts now, its working time at 0:00:00)
                 return song;
             }
             return std::nullopt;
         }
-        case TemplateChoice::Kind::lynxDefault: break;
+        case TemplateChoice::Kind::ywDefault: break;
     }
     return makeNewProject();
 }
@@ -644,4 +644,4 @@ std::unique_ptr<juce::Component> makeNewProjectPanel()
 {
     return std::make_unique<NewProjectPanel> (NewProjectCallback {}, false);
 }
-} // namespace lynx
+} // namespace yw

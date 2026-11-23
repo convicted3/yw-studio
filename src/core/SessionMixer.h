@@ -3,7 +3,7 @@
 // The Session mixer under the clip grid (round 190dr, Clip-launch workflow; docs/analise/REA_rodada190dr.md §1).
 // Live's Session View has a mixer strip under each track's slots: In/Out (Audio From, Monitor, Audio To), Sends,
 // Track Options (Track Delay) and Volume (volume, pan, Track Activator, Solo, Arm, meter) [SHOT ableton/probe/p3/
-// session1.png; strings View>Mixer Controls>In/Out | Sends | Volume | Track Options]. A LYNX grid column is a Playlist
+// session1.png; strings View>Mixer Controls>In/Out | Sends | Volume | Track Options]. A YW grid column is a Playlist
 // track: its strip shows the mixer insert the track plays through (the Device View's rule, core/DetailChain.h), so the
 // Mixer, the Device View and this strip are one insert seen three ways. Header only, no JUCE.
 
@@ -18,7 +18,7 @@
 #include "core/Rack.h"
 #include "core/Song.h"
 
-namespace lynx::sessionmixer
+namespace yw::sessionmixer
 {
 // What a column's strip shows.
 struct Strip
@@ -71,7 +71,7 @@ inline std::string volumeText (float position)
     return text;
 }
 
-// The Track Activator: on = the insert plays (LYNX's insert mute, off = muted).
+// The Track Activator: on = the insert plays (YW's insert mute, off = muted).
 inline bool isActive (const Song& song, int insert) noexcept
 {
     return validInsert (song, insert) && ! song.mixer[(std::size_t) insert].muted;
@@ -169,7 +169,7 @@ inline std::string outputBoxText (int channel, OutputMode mode)
 }
 
 // --- In/Out section -----------------------------------------------------------------------------------------------
-// Live's three Monitor buttons. LYNX's "When armed" has no button of its own: it lights Auto (both follow the arm).
+// Live's three Monitor buttons. YW's "When armed" has no button of its own: it lights Auto (both follow the arm).
 enum class Monitor { in, autoMode, off };
 inline Monitor monitorOf (InputMonitor m) noexcept
 {
@@ -291,7 +291,7 @@ inline std::string returnTitle (const Song& song, int insert)
     return letter + " " + song.mixer[(std::size_t) insert].name;
 }
 // A send knob of return `from` to return `to` is off until it is switched on (Live: "the Send controls in Return tracks
-// are disabled by default"); a return's send to itself makes feedback in Live and is never on in LYNX (an insert cannot
+// are disabled by default"); a return's send to itself makes feedback in Live and is never on in YW (an insert cannot
 // route into itself). Tracks' send knobs are always on.
 inline bool sendEnabled (const Song& song, int from, int to)
 {
@@ -354,7 +354,7 @@ inline int insertReturn (Song& song, const std::string& name)
 // --- Sends section --------------------------------------------------------------------------------------------------
 // The rows: with return tracks (round 190kc, Live) one row per return, all of them whatever the sends are (Live shows a
 // knob for every return, at -inf when nothing is sent); without returns every insert one of the strips' inserts sends
-// to (any LYNX insert can take a send), ascending, at most `maxRows`.
+// to (any YW insert can take a send), ascending, at most `maxRows`.
 inline std::vector<int> sendRows (const Song& song, const std::vector<int>& inserts, int maxRows)
 {
     if (auto returns = returnsOf (song); ! returns.empty())
@@ -411,7 +411,7 @@ inline bool setSendPosition (Song& song, int from, int to, float position)
 }
 
 // --- Track Options --------------------------------------------------------------------------------------------------
-// Live's Track Delay: positive delays the track, negative plays it earlier [Live manual, Track Delay]. LYNX keeps FL's
+// Live's Track Delay: positive delays the track, negative plays it earlier [Live manual, Track Delay]. YW keeps FL's
 // manual latency, whose sign is the other way round (positive = the other paths wait, the track plays earlier).
 inline double trackDelayMs (const Song& song, int insert) noexcept
 {
@@ -449,4 +449,4 @@ inline Sections sectionHeights (const SessionMixerView& view, int sendRowCount, 
             *part = 0;
     return s;
 }
-} // namespace lynx::sessionmixer
+} // namespace yw::sessionmixer

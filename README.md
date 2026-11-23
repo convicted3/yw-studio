@@ -19,7 +19,7 @@ YW Studio is a lightweight digital audio workstation for Windows 10/11 (macOS an
 way of working — the Channel rack and step sequencer, the Piano roll, the Playlist with patterns and audio clips and the
 Mixer with ten effect slots per insert — in YW's own look.
 
-- **Your projects:** opens `.flp` (FL Studio), `.als`, `.flm` and `.dawproject`; saves its own projects and exports `.flp`.
+- **Your projects:** opens `.flp` (FL Studio), `.als`, `.flm` and `.dawproject`; saves its own `.yw` projects and exports `.flp`.
 - **Your plugins:** VST2, VST3 and CLAP instruments and effects, each in its own process so a crashing plugin never takes
   the program down; 32-bit plugins through a bridge.
 - **Low latency:** ASIO, WASAPI (shared, low-latency and exclusive) and the built-in **YW ASIO** driver.

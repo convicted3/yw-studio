@@ -22,7 +22,7 @@
  #include <fcntl.h>
 #endif
 
-namespace lynx::platform
+namespace yw::platform
 {
 namespace
 {
@@ -52,7 +52,7 @@ std::string envValue (const char* name)
 juce::File profileOverride()
 {
     static const juce::File folder = [] {
-        const auto dir = testprofile::profileDirFrom (envValue ("LYNX_PROFILE_DIR").c_str());
+        const auto dir = testprofile::profileDirFrom (envValue ("YW_PROFILE_DIR").c_str());
         if (! dir)
             return juce::File();
         juce::File f (juce::String::fromUTF8 (dir->c_str()));
@@ -64,7 +64,7 @@ juce::File profileOverride()
 
 bool testMode()
 {
-    static const bool on = testprofile::testModeFrom (envValue ("LYNX_TEST_MODE").c_str());
+    static const bool on = testprofile::testModeFrom (envValue ("YW_TEST_MODE").c_str());
     return on;
 }
 
@@ -89,7 +89,7 @@ juce::File settingsFolder()
         return folder;
     }
    #if JUCE_WINDOWS
-    // the Microsoft Store build: the real path of the package's redirected %APPDATA%\LYNX (platform/Package.h)
+    // the Microsoft Store build: the real path of the package's redirected %APPDATA%\YW (platform/Package.h)
     if (const auto packaged = packagedSettingsFolder(); packaged != juce::File())
         return packaged;
     auto folder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("YW Studio");
@@ -195,7 +195,7 @@ bool relaunchFromAsciiPath (int& exitCode)
 
     const auto isAscii = [] (const wchar_t* text) { for (; *text != 0; ++text) if (*text > 127) return false; return true; };
     // (a package's WindowsApps path is ASCII anyway; and a packaged exe started by its path loses the package identity)
-    if (runningPackaged() || isAscii (exe) || GetEnvironmentVariableW (L"LYNX_SHORT_PATH_RELAUNCH", nullptr, 0) > 0)
+    if (runningPackaged() || isAscii (exe) || GetEnvironmentVariableW (L"YW_SHORT_PATH_RELAUNCH", nullptr, 0) > 0)
         return false;
 
     wchar_t shortExe[MAX_PATH * 4] {};
@@ -215,7 +215,7 @@ bool relaunchFromAsciiPath (int& exitCode)
         for (; *rest != 0 && *rest != L' ' && *rest != L'\t'; ++rest) {}
 
     std::wstring commandLine = L"\"" + std::wstring (shortExe) + L"\"" + rest;
-    SetEnvironmentVariableW (L"LYNX_SHORT_PATH_RELAUNCH", L"1"); // inherited: the child never relaunches again
+    SetEnvironmentVariableW (L"YW_SHORT_PATH_RELAUNCH", L"1"); // inherited: the child never relaunches again
 
     STARTUPINFOW startup {};
     startup.cb = sizeof (startup);
@@ -289,7 +289,7 @@ double fileBirthSeconds (const juce::File& file)
         return 0.0;
     return (double) info.st_birthtimespec.tv_sec + (double) info.st_birthtimespec.tv_nsec / 1.0e9;
    #elif JUCE_LINUX && defined (STATX_BTIME)
-    // (glibc 2.28+; LYNX needs 2.35)
+    // (glibc 2.28+; YW needs 2.35)
     struct statx info {};
     if (statx (AT_FDCWD, file.getFullPathName().toRawUTF8(), 0, STATX_BTIME, &info) != 0
         || (info.stx_mask & STATX_BTIME) == 0 || info.stx_btime.tv_sec <= 0)
@@ -300,4 +300,4 @@ double fileBirthSeconds (const juce::File& file)
    #endif
 }
 
-} // namespace lynx::platform
+} // namespace yw::platform

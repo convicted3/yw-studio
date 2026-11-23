@@ -16,7 +16,7 @@
 #ifndef _OGG_H
 #define _OGG_H
 
-#include "../lynx_vorbis_prefix.h" /* LYNX modification: prefixed symbols */
+#include "../yw_vorbis_prefix.h" /* YW modification: prefixed symbols */
 
 #ifdef __cplusplus
 extern "C" {

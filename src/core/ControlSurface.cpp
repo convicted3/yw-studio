@@ -11,7 +11,7 @@
 #include "core/Effects.h"
 #include "core/Instruments.h"
 
-namespace lynx::surface
+namespace yw::surface
 {
 int firstOutput (const std::vector<SurfaceControl>& controls, int index) noexcept
 {
@@ -186,7 +186,7 @@ void writeDashboardMidi (std::vector<std::uint8_t>& d, const DashboardMidi& s)
         std::memcpy (&version, d.data(), 4), std::memcpy (&params, d.data() + 28, 4);
     if (version != 2 || params < 1 || d.size() < 36)
     {
-        // LYNX's short state: FL's header with one parameter and no records (no panel: LYNX's controls are its own)
+        // YW's short state: FL's header with one parameter and no records (no panel: YW's controls are its own)
         d.assign (40, 0);
         put (0, 2);
         put (8, -1);
@@ -482,7 +482,7 @@ std::optional<std::vector<SurfaceControl>> parseFlControlSurface (const std::vec
     if (fl.empty())
         return std::nullopt;
     // FL's control types seen in FL's own projects (REA_rodada164a §5): 0 knob (TVectorWheel), 2 slider, 3 button;
-    // 5 bevel and 6 label publish nothing (dropped: LYNX's panel has no decorations yet). A control with two values is
+    // 5 bevel and 6 label publish nothing (dropped: YW's panel has no decorations yet). A control with two values is
     // an XY pad; any other one with a value becomes a knob.
     std::vector<SurfaceControl> controls;
     std::map<SurfaceControl::Kind, int> count;
@@ -503,7 +503,7 @@ std::optional<std::vector<SurfaceControl>> parseFlControlSurface (const std::vec
         s.name = c.name.find_first_not_of (' ') != std::string::npos ? c.name : std::string (names[(int) s.kind]) + " " + std::to_string (number);
         s.value = c.outputs[0].second;
         s.valueY = c.outputs.size() >= 2 ? c.outputs[1].second : 0.5f;
-        // FL's place (its panel's own pixels, from the top-left control), on LYNX's 10 px grid
+        // FL's place (its panel's own pixels, from the top-left control), on YW's 10 px grid
         s.x = 20.0f + std::round ((c.x - minX) / 10.0f) * 10.0f;
         s.y = 20.0f + std::round ((c.y - minY) / 10.0f) * 10.0f;
         if (s.kind == SurfaceControl::Kind::knob && c.w > 0.0f)
@@ -515,7 +515,7 @@ std::optional<std::vector<SurfaceControl>> parseFlControlSurface (const std::vec
     return controls;
 }
 
-std::optional<int> flOutputToLynx (const std::vector<std::uint8_t>& state, int flOutput)
+std::optional<int> flOutputToYw (const std::vector<std::uint8_t>& state, int flOutput)
 {
     int k = 0;
     for (const auto& c : readFlControls (state))
@@ -727,7 +727,7 @@ std::optional<FlDashboard> parseFlDashboard (const std::vector<std::uint8_t>& st
         else
             sc.size = 0.5f;
         // a record of another type sends MIDI on the Dashboard's port when active (number ≥ 0; bit 31 = deactivated
-        // until the user moves the control in FL — LYNX leaves those silent) [DECOMP 0x7b79b0, 0x7b5f70]
+        // until the user moves the control in FL — YW leaves those silent) [DECOMP 0x7b79b0, 0x7b5f70]
         if (rec != nullptr && rec->number >= 0 && (rec->type == 0 || rec->type == 1 || rec->type == 2 || rec->type == 3 || rec->type == 5))
         {
             sc.midi = (SurfaceControl::Midi) rec->type;
@@ -741,9 +741,9 @@ std::optional<FlDashboard> parseFlDashboard (const std::vector<std::uint8_t>& st
     }
     if (out.controls.empty())
         return out;
-    // FL's places, scaled so that each LYNX control (bigger than FL's small skins) fits in its FL box scaled the same
-    // way (then no two overlap when FL's didn't), at most × 3; from the top-left control, on LYNX's 10 px grid
-    auto lynxSize = [] (const SurfaceControl& c) -> std::pair<float, float> {
+    // FL's places, scaled so that each YW control (bigger than FL's small skins) fits in its FL box scaled the same
+    // way (then no two overlap when FL's didn't), at most × 3; from the top-left control, on YW's 10 px grid
+    auto ywSize = [] (const SurfaceControl& c) -> std::pair<float, float> {
         const auto sz = std::max (0.5f, c.size);
         switch (c.kind)
         {
@@ -756,7 +756,7 @@ std::optional<FlDashboard> parseFlDashboard (const std::vector<std::uint8_t>& st
     int minX = 1 << 30, minY = 1 << 30;
     for (const auto& p : placed)
     {
-        const auto [w, h] = lynxSize (p.control);
+        const auto [w, h] = ywSize (p.control);
         scale = std::max ({ scale, w / (float) std::max (1, p.fl->w), h / (float) std::max (1, p.fl->h) });
         minX = std::min (minX, p.fl->x);
         minY = std::min (minY, p.fl->y);
@@ -770,7 +770,7 @@ std::optional<FlDashboard> parseFlDashboard (const std::vector<std::uint8_t>& st
     return out;
 }
 
-std::optional<int> flDashboardOutputToLynx (const std::vector<std::uint8_t>& state, int flOutput)
+std::optional<int> flDashboardOutputToYw (const std::vector<std::uint8_t>& state, int flOutput)
 {
     const auto d = parseFlDashboard (state);
     if (! d)
@@ -781,4 +781,4 @@ std::optional<int> flDashboardOutputToLynx (const std::vector<std::uint8_t>& sta
     return std::nullopt;
 }
 
-} // namespace lynx::surface
+} // namespace yw::surface

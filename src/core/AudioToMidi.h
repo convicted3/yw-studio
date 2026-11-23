@@ -3,10 +3,10 @@
 // "Convert to MIDI" (round a2m189b; Ableton Live's Convert Melody / Harmony / Drums to New MIDI Track, done the FL way:
 // a new pattern on new channels). The part without JUCE and without the model runtime:
 //  - melody and harmony read Spotify's Basic Pitch model (Apache-2.0; a 230 KB ONNX graph run by ui/AudioToMidi with the
-//    ONNX Runtime LYNX already ships): its note and onset posteriorgrams are stitched here from overlapping 2 s windows
+//    ONNX Runtime YW already ships): its note and onset posteriorgrams are stitched here from overlapping 2 s windows
 //    and decoded into notes with Basic Pitch's own note-creation rules (ported from basic_pitch/note_creation.py);
 //  - melody keeps one note at a time, the most salient one;
-//  - drums are LYNX's own: onsets in three filtered bands (kick, snare, hi-hat), no model;
+//  - drums are YW's own: onsets in three filtered bands (kick, snare, hi-hat), no model;
 //  - the result becomes one pattern on new channels, placed on a new Playlist track under the source clip (one undo step).
 
 #include <algorithm>
@@ -17,7 +17,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::a2m
+namespace yw::a2m
 {
 enum class Mode
 {
@@ -120,7 +120,7 @@ std::vector<Note> transcribe (const Posteriorgram& pg, Mode mode);
 
 // --- "Convert to MIDI (polyphonic)" with options (round 190lj) ---------------------------------------------------------
 // The dialog's settings. Sensitivities are NeuralNote's / Basic Pitch's two knobs turned round: note sensitivity =
-// 1 - frame threshold, split sensitivity = 1 - onset threshold (Basic Pitch's defaults 0.7 / 0.5; LYNX's harmony
+// 1 - frame threshold, split sensitivity = 1 - onset threshold (Basic Pitch's defaults 0.7 / 0.5; YW's harmony
 // settings 0.6 / 0.3, the defaults here).
 struct ConvertOptions
 {
@@ -152,7 +152,7 @@ std::vector<Note> transcribe (const Posteriorgram& pg, const ConvertOptions& opt
 // Where a key sits in the contour: Basic Pitch takes bin 3 (key - 21) (midi_pitch_to_contour_bin), but the model
 // answers a tone of exactly that key one bin higher (round 190lj: band-limited saw notes at exact pitches, plain and
 // vibrato, peak at +1 bin; its bends came out 33 cents sharp, 33.2 cents mean error against 9.2 with no bends at
-// all). `measured` (LYNX's default) centres on bin 3 (key - 21) + 1: 3.1 cents; `basicPitch` is the reference's own.
+// all). `measured` (YW's default) centres on bin 3 (key - 21) + 1: 3.1 cents; `basicPitch` is the reference's own.
 enum class BendCentre
 {
     measured,
@@ -160,7 +160,7 @@ enum class BendCentre
 };
 void addPitchBends (const Posteriorgram& pg, std::vector<Note>& notes, BendCentre centre = BendCentre::measured);
 
-// --- drums (LYNX's own) ----------------------------------------------------------------------------------------------
+// --- drums (YW's own) ----------------------------------------------------------------------------------------------
 inline constexpr int kickKey = 36, snareKey = 38, hatKey = 42; // GM / Live's Convert Drums keys (C1, D1, F#1)
 
 struct DrumOptions
@@ -199,7 +199,7 @@ struct Names
 };
 
 // A new pattern holding `notes` (seconds), on new channels: melody and harmony one Synth channel, drums Kick, Snare and
-// Hat channels (LYNX's built-in drums, one note per hit on the step grid's key, as FL's Channel Rack). `tickOf` gives a
+// Hat channels (YW's built-in drums, one note per hit on the step grid's key, as FL's Channel Rack). `tickOf` gives a
 // time's pattern tick; notes outside [0, lengthTicks) are cut or left out (lengthTicks 0: no limit). Returns the new
 // pattern's index, or -1 (song untouched) when no note is left.
 //
@@ -223,4 +223,4 @@ int addClipPattern (Song& song, int clipIndex, const std::string& sourcePath, Mo
 
 // A channel the options dialog offers to play the notes: an instrument (no audio clip channel, no automation clip).
 bool canPlayNotes (const ChannelDef& channel) noexcept;
-} // namespace lynx::a2m
+} // namespace yw::a2m

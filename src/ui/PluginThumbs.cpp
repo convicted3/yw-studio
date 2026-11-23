@@ -31,7 +31,7 @@
  #include <windows.h>
 #endif
 
-namespace lynx::pluginthumbs
+namespace yw::pluginthumbs
 {
 namespace
 {
@@ -74,7 +74,7 @@ std::unique_ptr<juce::Component> generatorEditor (AudioEngine& engine, ChannelDe
 
 // --- round 175b: the editors that are empty until they get something to show ---------------------------------------
 // (FL's own pictures show them in use: Newtone with a sung phrase, Control Surface with two knobs, Video Player with a
-// picture.) LYNX draws its own stand-ins here; nothing of FL's is used.
+// picture.) YW draws its own stand-ins here; nothing of FL's is used.
 
 // a short sung-like phrase (a voice's harmonics, vibrato, a glide into each note, gaps between them) for Newtone and
 // Newtime to analyse and draw
@@ -333,7 +333,7 @@ juce::File capturedFolder()
 juce::String fileNameFor (const std::string& key)
 {
     auto text = juce::String::fromUTF8 (key.c_str());
-    for (const auto* prefix : { "lynx:gen:", "lynx:fx:" })
+    for (const auto* prefix : { "yw:gen:", "yw:fx:" })
         if (text.startsWith (prefix))
             text = juce::String (juce::String (prefix).contains ("gen") ? "gen-" : "fx-") + text.substring ((int) std::strlen (prefix));
     auto slug = text.toLowerCase().retainCharacters ("abcdefghijklmnopqrstuvwxyz0123456789- ").replaceCharacter (' ', '-').substring (0, 48);
@@ -369,7 +369,7 @@ juce::Image shrink (const juce::Image& image, float pixelsPerUnit)
 int renderNative (const juce::File& folder, const juce::StringArray& only, const std::function<void (const juce::String&)>& progress, float fullScale)
 {
     folder.createDirectory();
-    // one drawing process at a time for this folder (two LYNX windows open the picker together)
+    // one drawing process at a time for this folder (two YW windows open the picker together)
     juce::InterProcessLock lock ("YW-plugin-thumbs-" + juce::String::toHexString (folder.getFullPathName().hashCode()));
     if (! lock.enter (0))
         return 0;
@@ -600,7 +600,7 @@ void captureEditor (const std::string& key, juce::Component& editor)
     DeleteDC (dc);
     ReleaseDC (nullptr, screen);
 
-    // the editor's part only (not the window's own LYNX bar): its area in the window, in physical pixels
+    // the editor's part only (not the window's own YW bar): its area in the window, in physical pixels
     const auto scale = (float) w / (float) juce::jmax (1, peer->getComponent().getWidth());
     if (picture.isValid())
     {
@@ -632,4 +632,4 @@ void captureEditor (const std::string& key, juce::Component& editor)
     juce::ignoreUnused (key, editor);
    #endif
 }
-} // namespace lynx::pluginthumbs
+} // namespace yw::pluginthumbs

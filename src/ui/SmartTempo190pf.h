@@ -1,6 +1,6 @@
 #pragma once
 
-// Round 190pf (research190oe P12): Smart Tempo's preview (core/SmartTempo.h). The audio clip menu's LYNX extras › "Make the
+// Round 190pf (research190oe P12): Smart Tempo's preview (core/SmartTempo.h). The audio clip menu's YW extras › "Make the
 // project tempo follow this clip..." opens it: the clip's bars as found (a column per bar, its tempo; the line is the
 // tempo after smoothing), the first downbeat's beat, the pulse taken as found / half / double, a Smooth amount and how
 // far the bar lines then end from the downbeats. "Follow" writes the tempo markers and unwarps the clip (one undo step).
@@ -20,7 +20,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 // The bars' tempos: a column per bar, the smoothed tempo as a line, the lowest and highest BPM at the left
 class SmartTempoGraph final : public juce::Component
@@ -231,4 +231,4 @@ inline std::vector<float> smartTempoAudio (AudioEngine& engine, int clipIndex, d
             mono[i] = 0.5f * (mono[i] + sample->rightData()[i]);
     return mono;
 }
-} // namespace lynx
+} // namespace yw

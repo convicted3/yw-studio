@@ -22,7 +22,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::comp
+namespace yw::comp
 {
 // A comp group: the comp track and its lanes [first, last] (the grouped tracks right under it).
 struct Group
@@ -115,4 +115,4 @@ bool canComp (const Song& song, int track);
 // the last pass (the latest recorded: highest channel, then latest position in its file). Returns the comp track (−1: see
 // canComp).
 int compTakes (Song& song, int track);
-} // namespace lynx::comp
+} // namespace yw::comp

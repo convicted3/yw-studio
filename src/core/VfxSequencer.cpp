@@ -9,7 +9,7 @@
 #include "core/Vfx.h"
 #include "core/VfxDetail.h"
 
-namespace lynx::vfx
+namespace yw::vfx
 {
 using detail::Handoff;
 using detail::put;
@@ -243,7 +243,7 @@ void shiftPattern (SequencerSettings& s, int delta)
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// LYNX's own bank (a fresh plugin without FL Studio's factory bank): a few programs written for LYNX
+// YW's own bank (a fresh plugin without FL Studio's factory bank): a few programs written for YW
 
 SequencerSettings defaultSequencer()
 {
@@ -1632,4 +1632,4 @@ std::unique_ptr<Processor> makeSequencer (const std::vector<std::uint8_t>& fl)
 {
     return std::make_unique<Sequencer> (parseSequencer (fl).value_or (defaultSequencer()));
 }
-} // namespace lynx::vfx
+} // namespace yw::vfx

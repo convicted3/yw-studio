@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# LYNX SHARE server setup — idempotent; run as root ON THE VPS from a copy of the repo's server/ folder.
-# Normally started by server/deploy.sh from a workstation (copies server/ to /opt/lynx/src and runs this).
+# YW Studio server setup — idempotent; run as root ON THE VPS from a copy of the repo's server/ folder.
+# Normally started by server/deploy.sh from a workstation (copies server/ to /opt/yw/src and runs this).
 # Safe to run again at any time: it installs/updates packages, code, Caddy config, units and timers, never touches
-# SSH settings, keeps /etc/lynx/lynx.env (secrets) and all data.
+# SSH settings, keeps /etc/yw/yw.env (secrets) and all data.
 set -euo pipefail
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 SRC=$(cd "$(dirname "$0")" && pwd)
@@ -14,38 +14,38 @@ for p in caddy python3-aiohttp curl logrotate ufw; do dpkg -s "$p" >/dev/null 2>
 if [ ${#need[@]} -gt 0 ]; then apt-get update -q; apt-get install -y -q --no-install-recommends "${need[@]}"; fi
 
 echo "== user and folders"
-id lynx >/dev/null 2>&1 || useradd --system --home-dir /var/lib/lynx --shell /usr/sbin/nologin lynx
-install -d -m 755 /opt/lynx /opt/lynx/app /opt/lynx/ops
-install -d -m 700 -o lynx -g lynx /var/lib/lynx /var/lib/lynx/shares
-install -d -m 700 /etc/lynx /var/backups/lynx
-install -d -m 750 -g adm /var/log/lynx
+id yw >/dev/null 2>&1 || useradd --system --home-dir /var/lib/yw --shell /usr/sbin/nologin yw
+install -d -m 755 /opt/yw /opt/yw/app /opt/yw/ops
+install -d -m 700 -o yw -g yw /var/lib/yw /var/lib/yw/shares
+install -d -m 700 /etc/yw /var/backups/yw
+install -d -m 750 -g adm /var/log/yw
 install -d -m 755 -o caddy -g caddy /var/log/caddy
 
-echo "== secrets (/etc/lynx/lynx.env, kept if present)"
-if [ ! -f /etc/lynx/lynx.env ]; then
+echo "== secrets (/etc/yw/yw.env, kept if present)"
+if [ ! -f /etc/yw/yw.env ]; then
   umask 077
-  sed "s/^LYNX_SALT=.*/LYNX_SALT=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')/" "$SRC/env.example" > /etc/lynx/lynx.env
+  sed "s/^YW_SALT=.*/YW_SALT=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')/" "$SRC/env.example" > /etc/yw/yw.env
 fi
-chmod 600 /etc/lynx/lynx.env; chown root:root /etc/lynx/lynx.env
+chmod 600 /etc/yw/yw.env; chown root:root /etc/yw/yw.env
 # new keys added to env.example later are appended with their defaults (existing values are never changed)
 while IFS= read -r line; do
   k=${line%%=*}; case "$line" in ''|\#*) continue;; esac
-  grep -q "^$k=" /etc/lynx/lynx.env || echo "$line" >> /etc/lynx/lynx.env
+  grep -q "^$k=" /etc/yw/yw.env || echo "$line" >> /etc/yw/yw.env
 done < "$SRC/env.example"
 
 echo "== code"
 changed=0
 for f in "$SRC"/app/*.py; do
-  cmp -s "$f" "/opt/lynx/app/$(basename "$f")" || { install -m 644 "$f" /opt/lynx/app/; changed=1; }
+  cmp -s "$f" "/opt/yw/app/$(basename "$f")" || { install -m 644 "$f" /opt/yw/app/; changed=1; }
 done
-install -m 755 "$SRC"/ops/backup.sh "$SRC"/ops/monitor.sh /opt/lynx/ops/
-install -m 644 "$SRC"/ops/logrotate-lynx /etc/logrotate.d/lynx
+install -m 755 "$SRC"/ops/backup.sh "$SRC"/ops/monitor.sh /opt/yw/ops/
+install -m 644 "$SRC"/ops/logrotate-yw /etc/logrotate.d/yw
 install -d /etc/systemd/journald.conf.d
-if ! cmp -s "$SRC/ops/journald-lynx.conf" /etc/systemd/journald.conf.d/lynx.conf; then
-  install -m 644 "$SRC/ops/journald-lynx.conf" /etc/systemd/journald.conf.d/lynx.conf
+if ! cmp -s "$SRC/ops/journald-yw.conf" /etc/systemd/journald.conf.d/yw.conf; then
+  install -m 644 "$SRC/ops/journald-yw.conf" /etc/systemd/journald.conf.d/yw.conf
   systemctl restart systemd-journald
 fi
-python3 -m py_compile /opt/lynx/app/*.py && rm -rf /opt/lynx/app/__pycache__
+python3 -m py_compile /opt/yw/app/*.py && rm -rf /opt/yw/app/__pycache__
 
 echo "== systemd units"
 units_changed=0
@@ -53,9 +53,9 @@ for f in "$SRC"/systemd/*; do
   cmp -s "$f" "/etc/systemd/system/$(basename "$f")" || { install -m 644 "$f" /etc/systemd/system/; units_changed=1; }
 done
 systemctl daemon-reload
-systemctl enable -q lynx-api lynx-relay lynx-backup.timer lynx-monitor.timer caddy
-if [ $changed = 1 ] || [ $units_changed = 1 ]; then systemctl restart lynx-api lynx-relay; else systemctl start lynx-api lynx-relay; fi
-systemctl start lynx-backup.timer lynx-monitor.timer
+systemctl enable -q yw-api yw-relay yw-backup.timer yw-monitor.timer caddy
+if [ $changed = 1 ] || [ $units_changed = 1 ]; then systemctl restart yw-api yw-relay; else systemctl start yw-api yw-relay; fi
+systemctl start yw-backup.timer yw-monitor.timer
 
 echo "== firewall (22 stays open; adds 80/443 for Caddy)"
 ufw allow 22/tcp >/dev/null

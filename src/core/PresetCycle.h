@@ -13,7 +13,7 @@
 
 #include "core/FlpImport.h"
 
-namespace lynx::presetcycle
+namespace yw::presetcycle
 {
 // FL's order of two preset paths relative to the preset folder ("Bass/Acid.fst", '/' or '\\'): true when `a` comes
 // first. The folder part is compared first (a folder's own files before its subfolders), then the name without the
@@ -49,4 +49,4 @@ std::string positionText (int index, int count);
 // The index of the preset named `name` (case-insensitive), -1 when none: the arrows of a reopened window continue
 // from the preset the channel was named after.
 int indexOfName (const std::vector<Preset>& list, const std::string& name);
-} // namespace lynx::presetcycle
+} // namespace yw::presetcycle

@@ -1,18 +1,18 @@
 #pragma once
 
-// Loop Starter, local (round 168b): pick a genre and LYNX builds a drum loop on the Channel Rack — kit channels with
+// Loop Starter, local (round 168b): pick a genre and YW builds a drum loop on the Channel Rack — kit channels with
 // one-shots from the local sample library and generated steps — that the dice re-roll (samples or steps) and "Send to
 // Playlist" places in the song. The workflow follows FL Studio 25's Loop Starter (REA_rodada168b-loopstarter.md):
 //  - FL's genre configuration (System/Tools/Chord progression/Notes/genres.lstj: genres, labels, tempo ranges, the
 //    kit slots "Kit 1".."Kit 6" with their one-shot categories, the kit weights) and the drum presets of the genres
 //    (Notes/content/<genre> presets.lstj: 16-step lanes with per-bar variants) are read from the FL installation at
-//    run time; without FL, LYNX uses a small configuration and patterns of its own.
+//    run time; without FL, YW uses a small configuration and patterns of its own.
 //  - FL-exact parts: FL's own random generator (toolbox rand_int / rand_uniform / rand_tri), the tempo pick
 //    (update_pattern_tempo), the blank kit slots (DrumKit.set_blanks), the per-channel preset pick weighted by the
 //    presets' weights, the step tokens (rhythm / repeat / shift / octave / note / velocity loops of drum_setup.py), the
 //    "Loop Starter #N" pattern name, which channels the dice touch (locked, selected) and the send to the playlist.
-//  - LYNX's own parts: FL draws its audio loops and one-shots from FL Cloud and generates the steps with a Markov
-//    sequencer that morphs the chosen preset; LYNX uses the local library (FL's installed packs + its built-in drums)
+//  - YW's own parts: FL draws its audio loops and one-shots from FL Cloud and generates the steps with a Markov
+//    sequencer that morphs the chosen preset; YW uses the local library (FL's installed packs + its built-in drums)
 //    and plays the preset's own bars (its learnt variants) without the Markov morph.
 // No JUCE here: the UI scans the folders and hands file paths in; tests drive everything below.
 
@@ -24,7 +24,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::loopstarter
+namespace yw::loopstarter
 {
 // FL's random generator (toolbox.py rand_int, a xoroshiro-like 32-bit generator): the same seed gives the same
 // numbers as FL's Python code.
@@ -81,7 +81,7 @@ struct Config
 
 // FL's genres.lstj (JSON); nullopt when it is not one.
 std::optional<Config> parseConfig (const std::string& json);
-// LYNX's own configuration (no FL installation).
+// YW's own configuration (no FL installation).
 Config builtinConfig();
 
 // One bar of a preset lane: 16 tokens per string (FL's rhythm_strs etc.); empty = not given (use the lane's main bar).
@@ -107,7 +107,7 @@ struct Preset
 
 // FL's "<genre> presets.lstj" (a JSON object of presets).
 std::vector<Preset> parsePresets (const std::string& json);
-// LYNX's own patterns for a genre (used when FL has no preset file for it, or without FL).
+// YW's own patterns for a genre (used when FL has no preset file for it, or without FL).
 std::vector<Preset> builtinPresets (const std::string& genreId);
 // The preset file name FL loads for a genre (util.all_preset_names_weights: "<genre> presets.lstj").
 std::string presetFileName (const std::string& genreId);
@@ -115,7 +115,7 @@ std::string presetFileName (const std::string& genreId);
 // --- the steps ---------------------------------------------------------------------------------------------------
 // The token tables of FL's drum loops (Notes/drum_setup.py): velocity states 72..124 step 4 (/128, default 7),
 // shift states a..x = 0..23/24 of a step, octave q/r/s = -1/0/+1, note 0..b = semitones, repeat states 1..7 = a hit
-// every {0.75, 2/3, 0.5, 0.375, 1/3, 0.25, 1/6} of a step (FL's note repeat; LYNX writes the repeated hits as notes).
+// every {0.75, 2/3, 0.5, 0.375, 1/3, 0.25, 1/6} of a step (FL's note repeat; YW writes the repeated hits as notes).
 float velocityOfToken (char token);    // 0..1
 double shiftOfToken (char token);      // fraction of a step
 int octaveOfToken (char token);
@@ -128,10 +128,10 @@ constexpr int loopBars = 4; // the pattern length of a generated loop (bars)
 std::vector<Note> laneNotes (const Lane& lane, int bars, int channel, int key);
 
 // --- the local sample library ------------------------------------------------------------------------------------
-// The one-shot category of a sample from its path (folders + name), "" = not a drum one-shot (LYNX's own rules; FL
+// The one-shot category of a sample from its path (folders + name), "" = not a drum one-shot (YW's own rules; FL
 // tags its cloud samples instead).
 std::string classifySample (const std::string& path);
-// categories a slot / channel can fall back on when the library has none of its own (LYNX's own)
+// categories a slot / channel can fall back on when the library has none of its own (YW's own)
 std::vector<std::string> fallbackCategories (const std::string& category);
 
 struct Library
@@ -142,7 +142,7 @@ struct Library
     std::size_t size() const noexcept;
 };
 
-// The built-in LYNX drum for a category (no sample library).
+// The built-in YW drum for a category (no sample library).
 InstrumentKind builtinDrumFor (const std::string& category);
 
 // --- generation --------------------------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ struct Plan
 struct Sources
 {
     const Config* config = nullptr;
-    // presets per genre id (FL's file, else LYNX's own); filled by the caller
+    // presets per genre id (FL's file, else YW's own); filled by the caller
     std::map<std::string, std::vector<Preset>> presets;
     const Library* library = nullptr;
 };
@@ -176,7 +176,7 @@ struct Sources
 double pickTempo (const Genre& genre, FlRand& rng); // update_pattern_tempo (randomise)
 // The tempo a genre suggests, as a whole number: what a starter button shows ("Lo-fi  84 BPM") and what the project
 // gets when the starter is added with "Use the suggested tempo" — the same number, not pickTempo's random one from the
-// genre's range (round 190t). The second form looks the genre up like generate() does (unknown: LYNX's own default).
+// genre's range (round 190t). The second form looks the genre up like generate() does (unknown: YW's own default).
 int suggestedTempo (const Genre& genre);
 int suggestedTempo (const Sources& sources, const std::string& genreId);
 // picks a sample of the category (or of its fallbacks), avoiding `recent`; "" = none in the library
@@ -206,4 +206,4 @@ Pattern kitPattern (const Plan& plan);
 // Send to Playlist: the pattern at `at` on the first track with no clip from there to its end; the channels leave
 // Loop Starter (FL: "unset channel Loop Starter status"). Returns the track, -1 if no track is free.
 int sendToPlaylist (Song& song, int pattern, std::int64_t at);
-} // namespace lynx::loopstarter
+} // namespace yw::loopstarter

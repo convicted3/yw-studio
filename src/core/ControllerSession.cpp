@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::controller
+namespace yw::controller
 {
 namespace
 {
@@ -338,7 +338,7 @@ bool Session::input (const std::uint8_t* bytes, std::size_t size, Surface& surfa
                 {
                     touched.set ((std::size_t) strip, pressed);
                     if (! pressed)
-                        invalidateMotor (Feedback::mixerVolume, strip); // the motor goes to LYNX's value on release
+                        invalidateMotor (Feedback::mixerVolume, strip); // the motor goes to YW's value on release
                 }
                 break;
             case Action::masterTouch:
@@ -731,4 +731,4 @@ void Hub::refresh (const Surface& surface, const DeviceSend& send)
                 send (e.input, bytes, size);
         });
 }
-} // namespace lynx::controller
+} // namespace yw::controller

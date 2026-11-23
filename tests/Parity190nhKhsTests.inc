@@ -27,7 +27,7 @@ inline std::vector<float> tone (int n, double hz, float amp)
 
 TEST (parity190nhkhs_law_codes_keep_round_190nb_values_and_map_the_new_snapins)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     namespace k = khsdsp;
     // round 190nb's five stay k / 8 (the same floats every saved slot holds)
@@ -71,7 +71,7 @@ TEST (parity190nhkhs_law_codes_keep_round_190nb_values_and_map_the_new_snapins)
 
 TEST (parity190nhkhs_comb_filter_is_the_dry_and_one_tap_a_period_later)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     // 480 Hz: a whole period of 100 samples, so the windowed sinc is one tap; mix 0.5, Minus polarity, Stereo
@@ -91,7 +91,7 @@ TEST (parity190nhkhs_comb_filter_is_the_dry_and_one_tap_a_period_later)
 
 TEST (parity190nhkhs_trance_gate_follows_the_song_and_its_steps)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     std::string steps;
     for (int i = 0; i < 16; ++i)
@@ -111,7 +111,7 @@ TEST (parity190nhkhs_trance_gate_follows_the_song_and_its_steps)
 
 TEST (parity190nhkhs_modulation_laws_and_shapers_stay_finite_and_bounded)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     using namespace parity190nhkhs;
     int n = 0;

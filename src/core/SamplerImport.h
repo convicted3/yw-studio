@@ -1,10 +1,10 @@
 #pragma once
 
-// Multisample instruments from other samplers opened as LYNX DirectWave channels (round 190ii, issue #149).
+// Multisample instruments from other samplers opened as YW DirectWave channels (round 190ii, issue #149).
 //
 // Every format ends as a DirectWave program state (docs/analise/REA_rodada9.md §2, REA_rodada190ii.md) handed to
 // dw::importChannel (core/DirectWave.h), the same entry an .flp's DirectWave channel takes, so the channel plays on
-// LYNX's DirectWave engine and opens in its editor:
+// YW's DirectWave engine and opens in its editor:
 //   .dwp  FL's DirectWave program ("DwPr" + version + chunks): the program as FL saved it, its samples found the way
 //         DirectWave finds them (REA_rodada190ii.md §1)
 //   .dwb  FL's DirectWave bank ("DwBk" + the state): the bank's first program with zones
@@ -22,7 +22,7 @@
 #include "core/FlpImport.h"
 #include "core/Song.h"
 
-namespace lynx::msimport
+namespace yw::msimport
 {
 // ------------------------------------------------------------------------------------------------ a neutral program
 struct Zone
@@ -91,7 +91,7 @@ struct Report
     std::string name;                      // the program / instrument
     int instruments = 0;                   // in the file (.gig: several)
     int instrument = 0;                    // the one imported
-    int zones = 0;                         // zones of the LYNX channel
+    int zones = 0;                         // zones of the YW channel
     int missingSamples = 0;
     std::vector<std::string> skipped;      // what could not be brought over, in words (shown by the import dialog)
     std::string error;                     // why nothing was imported
@@ -112,7 +112,7 @@ std::optional<ChannelDef> importProgram (Program program, const Access& access, 
 // nullopt when it is not one.
 std::optional<std::vector<std::uint8_t>> stateOfFile (const std::vector<std::uint8_t>& file);
 // Where DirectWave looks for a zone's sample when its saved path does not exist (REA_rodada190ii.md §1): the path
-// with FL's variables, then "<program file without extension>/<file name>", then (LYNX, for FL's own sample search)
+// with FL's variables, then "<program file without extension>/<file name>", then (YW, for FL's own sample search)
 // the program's folder and below it, then DirectWave's library (%ILSharedData%\DirectWave) searched. "" = not found.
 std::string findZoneSample (const std::string& savedPath, const std::string& programFile, const Access& access);
 
@@ -122,4 +122,4 @@ std::vector<std::uint8_t> wavFile (const std::uint8_t* data, std::size_t bytes, 
                                    std::int64_t loopStart = -1, std::int64_t loopEnd = -1, int root = -1);
 std::string extensionOf (const std::string& path);   // lower case, without the dot
 std::string fileNameOf (const std::string& path);    // after the last '\' or '/'
-} // namespace lynx::msimport
+} // namespace yw::msimport

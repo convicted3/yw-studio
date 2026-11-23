@@ -1,16 +1,16 @@
 // Round 190fm: the warp modes' own settings (Live 12.4's Beats Preserve / Transient Loop Mode / Transient Envelope, Tones
-// and Texture Grain Size; ALS_FORMAT §21), the O16 per-clip copy, the .lynx list form and the .als round trip.
+// and Texture Grain Size; ALS_FORMAT §21), the O16 per-clip copy, the .yw list form and the .als round trip.
 
 #include "core/WarpModes.h"
 
 namespace
 {
 // four 0.5 s pieces after a 0.1 s lead, each a 330 Hz tone that starts loud and decays (the 175a Beats test signal)
-lynx::SampleData warp190fmPieces()
+yw::SampleData warp190fmPieces()
 {
     constexpr double rate = 44100.0;
     constexpr long piece = 22050, lead = 4410;
-    lynx::SampleData in;
+    yw::SampleData in;
     in.sampleRate = rate;
     in.left.assign ((std::size_t) (lead + 4 * piece), 0.0f);
     for (long k = 0; k < 4; ++k)
@@ -20,7 +20,7 @@ lynx::SampleData warp190fmPieces()
     in.right = in.left;
     return in;
 }
-bool warp190fmSame (const lynx::SampleData& a, const lynx::SampleData& b)
+bool warp190fmSame (const yw::SampleData& a, const yw::SampleData& b)
 {
     return a.left == b.left && a.right == b.right;
 }
@@ -29,62 +29,62 @@ bool warp190fmSame (const lynx::SampleData& a, const lynx::SampleData& b)
 TEST (warp190fm_defaults_render_as_before)
 {
     const auto in = warp190fmPieces();
-    // Live's defaults are LYNX's render before 190fm: every method, with and without a source length in beats (round
+    // Live's defaults are YW's render before 190fm: every method, with and without a source length in beats (round
     // 190ik: on the laws of then — Beats Measured, Texture / Complex Pro Classic; the newer laws key their own renders)
-    lynx::StretchOptions then, withBeats;
-    then.modes.beatsLaw = lynx::WarpModeSettings::beatsLawMeasured;
-    then.modes.warpLaw = lynx::WarpModeSettings::warpLawClassic;
+    yw::StretchOptions then, withBeats;
+    then.modes.beatsLaw = yw::WarpModeSettings::beatsLawMeasured;
+    then.modes.warpLaw = yw::WarpModeSettings::warpLawClassic;
     withBeats = then;
     withBeats.sourceBeats = 8.0;
-    for (int m = 0; m < lynx::stretchMethodCount; ++m)
+    for (int m = 0; m < yw::stretchMethodCount; ++m)
     {
-        const auto method = (lynx::StretchMethod) m;
-        CHECK (lynx::stretchOptionsKey (then, method).empty());
-        CHECK (lynx::stretchOptionsKey (withBeats, method).empty());
-        const auto p0 = lynx::stretchdetail::presetFor (method), p1 = lynx::stretchdetail::presetFor (method, lynx::WarpModeSettings {});
+        const auto method = (yw::StretchMethod) m;
+        CHECK (yw::stretchOptionsKey (then, method).empty());
+        CHECK (yw::stretchOptionsKey (withBeats, method).empty());
+        const auto p0 = yw::stretchdetail::presetFor (method), p1 = yw::stretchdetail::presetFor (method, yw::WarpModeSettings {});
         CHECK (p0.blockSeconds == p1.blockSeconds && p0.intervalSeconds == p1.intervalSeconds);
     }
     for (auto ratio : { 1.25, 0.8 })
     {
-        const auto before = lynx::timeStretch (in, ratio, lynx::StretchMethod::beats, 0.0, then);
-        const auto after = lynx::timeStretch (in, ratio, lynx::StretchMethod::beats, 0.0, withBeats);
+        const auto before = yw::timeStretch (in, ratio, yw::StretchMethod::beats, 0.0, then);
+        const auto after = yw::timeStretch (in, ratio, yw::StretchMethod::beats, 0.0, withBeats);
         CHECK (warp190fmSame (*before, *after));
     }
-    const auto up = lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats, 3.0, then);
-    CHECK (warp190fmSame (*up, *lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats, 3.0, withBeats)));
+    const auto up = yw::timeStretch (in, 1.25, yw::StretchMethod::beats, 3.0, then);
+    CHECK (warp190fmSame (*up, *yw::timeStretch (in, 1.25, yw::StretchMethod::beats, 3.0, withBeats)));
     // a sampler that never touched its settings asks for exactly the default options (round 190ik: the PitchAware key)
-    lynx::SamplerSettings s;
-    CHECK (s.warpModes == lynx::WarpModeSettings {});
-    CHECK (lynx::stretchOptionsKey (lynx::stretchOptionsOf (s), lynx::StretchMethod::beats) == "|pa");
+    yw::SamplerSettings s;
+    CHECK (s.warpModes == yw::WarpModeSettings {});
+    CHECK (yw::stretchOptionsKey (yw::stretchOptionsOf (s), yw::StretchMethod::beats) == "|pa");
 }
 
 TEST (warp190fm_beats_preserve_grid)
 {
     // Preserve 1/4 on a source of 4 beats stretched 2x: a cut at every beat of the output, mapped back into the source
     const long n = 40000, out = 80000;
-    const auto cuts = lynx::stretchdetail::gridCuts (n, out, 4.0, lynx::stretchdetail::preserveDivisionBeats (2), [] (double y) { return y / 2.0; });
+    const auto cuts = yw::stretchdetail::gridCuts (n, out, 4.0, yw::stretchdetail::preserveDivisionBeats (2), [] (double y) { return y / 2.0; });
     CHECK (cuts.size() == 3);
     if (cuts.size() == 3)
         CHECK (cuts[0] == 10000 && cuts[1] == 20000 && cuts[2] == 30000);
-    CHECK (lynx::stretchdetail::preserveDivisionBeats (0) == 4.0);
-    CHECK (lynx::stretchdetail::preserveDivisionBeats (5) == 0.125);
-    CHECK (lynx::stretchdetail::preserveDivisionBeats (6) == 0.0); // Transients
+    CHECK (yw::stretchdetail::preserveDivisionBeats (0) == 4.0);
+    CHECK (yw::stretchdetail::preserveDivisionBeats (5) == 0.125);
+    CHECK (yw::stretchdetail::preserveDivisionBeats (6) == 0.0); // Transients
     // 1/32 on the same source: 31 cuts; the key carries the division and the source length
-    CHECK (lynx::stretchdetail::gridCuts (n, out, 4.0, 0.125, [] (double y) { return y / 2.0; }).size() == 31);
-    lynx::StretchOptions o;
+    CHECK (yw::stretchdetail::gridCuts (n, out, 4.0, 0.125, [] (double y) { return y / 2.0; }).size() == 31);
+    yw::StretchOptions o;
     o.modes.beatsPreserve = 2;
     o.sourceBeats = 4.0;
-    CHECK (lynx::stretchOptionsKey (o, lynx::StretchMethod::beats) == "|pa|bp2@4"); // (round 190ik: the PitchAware law's key first)
-    CHECK (lynx::stretchOptionsKey (o, lynx::StretchMethod::tones).empty()); // (Beats only)
+    CHECK (yw::stretchOptionsKey (o, yw::StretchMethod::beats) == "|pa|bp2@4"); // (round 190ik: the PitchAware law's key first)
+    CHECK (yw::stretchOptionsKey (o, yw::StretchMethod::tones).empty()); // (Beats only)
 
     // the pieces start on the grid: on the test signal at 1.25x with Preserve 1/2 (0.5 s pieces = 1/2 note at 120 BPM
     // when the source spans 4.4 beats), output and source agree sample for sample inside each piece
     const auto in = warp190fmPieces();
-    lynx::StretchOptions half;
+    yw::StretchOptions half;
     half.modes.beatsPreserve = 1;
     half.sourceBeats = (double) in.frames() / 44100.0 * 2.0; // 120 BPM
-    const auto slow = lynx::timeStretch (in, 1.25, lynx::StretchMethod::beats, 0.0, half);
-    const auto grid = lynx::stretchdetail::gridCuts ((long) in.frames(), (long) slow->frames(), half.sourceBeats, 2.0,
+    const auto slow = yw::timeStretch (in, 1.25, yw::StretchMethod::beats, 0.0, half);
+    const auto grid = yw::stretchdetail::gridCuts ((long) in.frames(), (long) slow->frames(), half.sourceBeats, 2.0,
                                                      [&] (double y) { return y * (double) in.frames() / (double) slow->frames(); });
     CHECK (! grid.empty());
     int exact = 0;
@@ -103,32 +103,32 @@ TEST (warp190fm_beats_preserve_grid)
 TEST (warp190fm_beats_loop_modes_and_envelope)
 {
     const auto in = warp190fmPieces();
-    const auto attacks = lynx::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), in.sampleRate);
+    const auto attacks = yw::stretchdetail::beatsCuts (in.left.data(), (long) in.frames(), in.sampleRate);
     CHECK (attacks.size() == 4);
     if (attacks.size() != 4)
         return;
     const auto fade = (long) std::lround (in.sampleRate * 0.016);
     const auto a = attacks[1], length = attacks[2] - a, o0 = (long) std::llround ((double) a * 1.5);
-    const auto gapEnergy = [&] (const lynx::SampleData& s) {
+    const auto gapEnergy = [&] (const yw::SampleData& s) {
         double e = 0.0;
         for (long i = length + fade; i < (long) std::llround ((double) attacks[2] * 1.5) - o0 - fade; ++i)
             e += (double) s.left[(std::size_t) (o0 + i)] * s.left[(std::size_t) (o0 + i)];
         return e;
     };
-    lynx::StretchOptions off, fwd, env;
+    yw::StretchOptions off, fwd, env;
     off.modes.beatsLoop = 0;
     fwd.modes.beatsLoop = 1;
     env.modes.beatsEnvelope = 0.0f;
-    const auto backForth = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats);
-    const auto silent = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, off);
-    const auto forward = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, fwd);
-    const auto faded = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 0.0, env);
+    const auto backForth = yw::timeStretch (in, 1.5, yw::StretchMethod::beats);
+    const auto silent = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, off);
+    const auto forward = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, fwd);
+    const auto faded = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 0.0, env);
     // Loop Off: nothing after the piece's end (its fade into the following audio aside)
     CHECK (gapEnergy (*backForth) > 1.0);
     CHECK (gapEnergy (*silent) < 1e-9);
     // Loop Forward: the gap plays the piece's second half again (round 190gx: Live loops from the middle of the piece up
     // to 20 ms before its end; WarpLive190gxTests)
-    const auto turn = length - (long) std::lround (in.sampleRate * lynx::stretchdetail::beatsTurnSeconds);
+    const auto turn = length - (long) std::lround (in.sampleRate * yw::stretchdetail::beatsTurnSeconds);
     const auto xf = (long) std::lround (in.sampleRate * 0.005);
     double err = 0.0;
     for (long j = xf; j < length / 4; ++j)
@@ -136,44 +136,44 @@ TEST (warp190fm_beats_loop_modes_and_envelope)
     CHECK (err < 1e-6);
     // Transient Envelope 0: each piece's fill dies away quickly (the law: WarpLive190gxTests)
     CHECK (gapEnergy (*faded) < 0.05 * gapEnergy (*backForth));
-    CHECK (lynx::stretchdetail::beatsEnvelopeGain (100.0f, 500, 44100.0) == 1.0f);
-    CHECK (lynx::stretchOptionsKey (off, lynx::StretchMethod::beats) == "|pa|bl0");
-    CHECK (lynx::stretchOptionsKey (env, lynx::StretchMethod::beats) == "|pa|be0");
+    CHECK (yw::stretchdetail::beatsEnvelopeGain (100.0f, 500, 44100.0) == 1.0f);
+    CHECK (yw::stretchOptionsKey (off, yw::StretchMethod::beats) == "|pa|bl0");
+    CHECK (yw::stretchOptionsKey (env, yw::StretchMethod::beats) == "|pa|be0");
     // transposed Beats honours them too (each piece read faster, then silence)
-    const auto upOff = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 5.0, off);
-    const auto upBack = lynx::timeStretch (in, 1.5, lynx::StretchMethod::beats, 5.0);
+    const auto upOff = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 5.0, off);
+    const auto upBack = yw::timeStretch (in, 1.5, yw::StretchMethod::beats, 5.0);
     CHECK (gapEnergy (*upOff) < 0.2 * gapEnergy (*upBack));
 }
 
 TEST (warp190fm_grain_sizes)
 {
-    lynx::WarpModeSettings w;
+    yw::WarpModeSettings w;
     w.tonesGrain = 60.0f;
-    const auto t = lynx::stretchdetail::presetFor (lynx::StretchMethod::tones, w);
+    const auto t = yw::stretchdetail::presetFor (yw::StretchMethod::tones, w);
     CHECK (std::abs (t.blockSeconds - 0.08) < 1e-12);
     CHECK (std::abs (t.intervalSeconds - 0.08 / 6.0) < 1e-12); // (the overlap stays 6)
     w.textureGrain = 2.0f;
-    CHECK (lynx::stretchdetail::presetFor (lynx::StretchMethod::texture, w).blockSeconds == 0.010); // (clamped)
+    CHECK (yw::stretchdetail::presetFor (yw::StretchMethod::texture, w).blockSeconds == 0.010); // (clamped)
     // a grain only changes its own mode
-    CHECK (lynx::stretchdetail::presetFor (lynx::StretchMethod::complex, w).blockSeconds == lynx::stretchdetail::presetFor (lynx::StretchMethod::complex).blockSeconds);
-    lynx::StretchOptions o;
+    CHECK (yw::stretchdetail::presetFor (yw::StretchMethod::complex, w).blockSeconds == yw::stretchdetail::presetFor (yw::StretchMethod::complex).blockSeconds);
+    yw::StretchOptions o;
     o.modes = w;
-    CHECK (lynx::stretchOptionsKey (o, lynx::StretchMethod::tones) == "|tg60");
-    CHECK (lynx::stretchOptionsKey (o, lynx::StretchMethod::texture) == "|gx2f25"); // (round 190ik: the granular engine)
-    o.modes.warpLaw = lynx::WarpModeSettings::warpLawClassic;
-    CHECK (lynx::stretchOptionsKey (o, lynx::StretchMethod::texture) == "|xg2");
-    o.modes.warpLaw = lynx::WarpModeSettings::warpLawMeasured;
+    CHECK (yw::stretchOptionsKey (o, yw::StretchMethod::tones) == "|tg60");
+    CHECK (yw::stretchOptionsKey (o, yw::StretchMethod::texture) == "|gx2f25"); // (round 190ik: the granular engine)
+    o.modes.warpLaw = yw::WarpModeSettings::warpLawClassic;
+    CHECK (yw::stretchOptionsKey (o, yw::StretchMethod::texture) == "|xg2");
+    o.modes.warpLaw = yw::WarpModeSettings::warpLawMeasured;
     // the render follows: another block, the same length
     const auto in = warp190fmPieces();
-    const auto a = lynx::timeStretch (in, 1.25, lynx::StretchMethod::tones);
-    const auto b = lynx::timeStretch (in, 1.25, lynx::StretchMethod::tones, 0.0, o);
+    const auto a = yw::timeStretch (in, 1.25, yw::StretchMethod::tones);
+    const auto b = yw::timeStretch (in, 1.25, yw::StretchMethod::tones, 0.0, o);
     CHECK (a->frames() == b->frames());
     CHECK (! warp190fmSame (*a, *b));
 }
 
-TEST (warp190fm_lynx_list_round_trip)
+TEST (warp190fm_yw_list_round_trip)
 {
-    lynx::WarpModeSettings w;
+    yw::WarpModeSettings w;
     w.beatsPreserve = 3;
     w.beatsLoop = 1;
     w.beatsEnvelope = 47.5f;
@@ -183,11 +183,11 @@ TEST (warp190fm_lynx_list_round_trip)
     w.proFormants = 30.0f;
     w.proEnvelope = 64.0f;
     w.complexPro = true;
-    const auto list = lynx::warpmodes::toList (w);
-    CHECK (lynx::warpmodes::fromList (list, list.size()) == w);
-    CHECK (lynx::warpmodes::fromList (list, 8) == lynx::WarpModeSettings {}); // (a short list: the defaults)
+    const auto list = yw::warpmodes::toList (w);
+    CHECK (yw::warpmodes::fromList (list, list.size()) == w);
+    CHECK (yw::warpmodes::fromList (list, 8) == yw::WarpModeSettings {}); // (a short list: the defaults)
     const std::array<double, 9> wild { 99, -4, 400, 0, 1000, -1, 101, 1, 0 };
-    const auto c = lynx::warpmodes::fromList (wild, 9);
+    const auto c = yw::warpmodes::fromList (wild, 9);
     CHECK (c.beatsPreserve == 6 && c.beatsLoop == 0 && c.beatsEnvelope == 100.0f && c.tonesGrain == 12.0f && c.textureGrain == 263.0f);
     CHECK (c.textureFlux == 0.0f && c.proFormants == 100.0f && c.proEnvelope == 8.0f && ! c.complexPro);
 }
@@ -196,12 +196,12 @@ TEST (warp190fm_clip_view_edit_copies_a_shared_channel)
 {
     // O16: two grid clips and a Playlist clip play one audio channel; an edit from the first grid clip's Clip View gives it
     // its own copy, the others keep the channel
-    lynx::Song song;
-    lynx::ChannelDef ch;
+    yw::Song song;
+    yw::ChannelDef ch;
     ch.name = "Loop";
-    ch.instrument = lynx::InstrumentKind::audioClip;
+    ch.instrument = yw::InstrumentKind::audioClip;
     ch.sampler.keepPitch = true;
-    ch.sampler.stretchMethod = lynx::StretchMethod::beats;
+    ch.sampler.stretchMethod = yw::StretchMethod::beats;
     ch.sampler.stretchBeats = 8.0f;
     song.channels.push_back (ch);
     song.clipGrid.emplace();
@@ -209,47 +209,47 @@ TEST (warp190fm_clip_view_edit_copies_a_shared_channel)
     grid.scenes.resize (2);
     for (int sc = 0; sc < 2; ++sc)
     {
-        lynx::ClipGridSlot slot;
+        yw::ClipGridSlot slot;
         slot.scene = sc;
         grid.slots.push_back (slot);
-        lynx::Clip c;
-        c.kind = lynx::ClipKind::audio;
+        yw::Clip c;
+        c.kind = yw::ClipKind::audio;
         c.channel = 0;
         c.track = 0;
-        c.length = 8 * lynx::ppq;
+        c.length = 8 * yw::ppq;
         c.gridSlot = sc;
         grid.clips.push_back (c);
     }
-    lynx::Clip pl;
-    pl.kind = lynx::ClipKind::audio;
+    yw::Clip pl;
+    pl.kind = yw::ClipKind::audio;
     pl.channel = 0;
-    pl.length = 8 * lynx::ppq;
+    pl.length = 8 * yw::ppq;
     song.playlist.push_back (pl);
-    CHECK (lynx::warpmodes::clipsOfChannel (song, 0) == 3);
+    CHECK (yw::warpmodes::clipsOfChannel (song, 0) == 3);
 
-    const auto own = lynx::warpmodes::ownChannelForGridClip (song, 0, 0);
+    const auto own = yw::warpmodes::ownChannelForGridClip (song, 0, 0);
     CHECK (own == 1);
     CHECK (song.channels.size() == 2 && song.channels[1].name == "Loop #2");
     CHECK (grid.clips[0].channel == 1 && grid.clips[1].channel == 0 && song.playlist[0].channel == 0);
-    CHECK (lynx::warpmodes::setPreserve (song, own, 4) && lynx::warpmodes::setLoopMode (song, own, 0) && lynx::warpmodes::setEnvelope (song, own, 250.0));
+    CHECK (yw::warpmodes::setPreserve (song, own, 4) && yw::warpmodes::setLoopMode (song, own, 0) && yw::warpmodes::setEnvelope (song, own, 250.0));
     CHECK (song.channels[1].sampler.warpModes.beatsPreserve == 4 && song.channels[1].sampler.warpModes.beatsLoop == 0
            && song.channels[1].sampler.warpModes.beatsEnvelope == 100.0f);
-    CHECK (song.channels[0].sampler.warpModes == lynx::WarpModeSettings {});
+    CHECK (song.channels[0].sampler.warpModes == yw::WarpModeSettings {});
     // the copy is now the clip's alone: a second edit stays on it
-    CHECK (lynx::warpmodes::ownChannelForGridClip (song, 0, 0) == 1 && song.channels.size() == 2);
+    CHECK (yw::warpmodes::ownChannelForGridClip (song, 0, 0) == 1 && song.channels.size() == 2);
     // Grain Size goes to the mode the channel plays
-    CHECK (! lynx::warpmodes::setGrain (song, 1, 40.0)); // (Beats has none)
-    CHECK (lynx::warpmodes::setMode (song, 1, (int) lynx::StretchMethod::texture) && lynx::warpmodes::setGrain (song, 1, 40.0));
+    CHECK (! yw::warpmodes::setGrain (song, 1, 40.0)); // (Beats has none)
+    CHECK (yw::warpmodes::setMode (song, 1, (int) yw::StretchMethod::texture) && yw::warpmodes::setGrain (song, 1, 40.0));
     CHECK (song.channels[1].sampler.warpModes.textureGrain == 40.0f && song.channels[1].sampler.warpModes.tonesGrain == 30.0f);
-    CHECK (lynx::warpmodes::setMode (song, 1, -1) && ! song.channels[1].sampler.keepPitch); // Re-Pitch
-    CHECK (lynx::warpmodes::ownChannelForGridClip (song, 5, 0) == -1);
+    CHECK (yw::warpmodes::setMode (song, 1, -1) && ! song.channels[1].sampler.keepPitch); // Re-Pitch
+    CHECK (yw::warpmodes::ownChannelForGridClip (song, 5, 0) == -1);
 }
 
 TEST (warp190fm_als_round_trip)
 {
     // the 175a rich set's audio clip in Beats with every warp-mode setting changed and its file length recorded (so the
     // channel stretches offline): import → the channel's warpModes → export → the same members (Complex Pro too)
-    using namespace lynx;
+    using namespace yw;
     for (const auto* mode : { "0", "6" })
     {
         auto xml = als175a::richSet();

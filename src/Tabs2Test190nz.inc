@@ -1,24 +1,24 @@
-    // --tabs2test190nz <a|b> <folder> (round 190nz, issue #232 stage 2): two LYNX processes on one display, the way two
+    // --tabs2test190nz <a|b> <folder> (round 190nz, issue #232 stage 2): two YW processes on one display, the way two
     // windows opened with File > Open in new window run. A copies, B pastes, each kind in turn, through the real
     // components and the system clipboard (X11 on Linux: A serves its selection while it waits): notes (and a copy big
     // enough for the side file), Playlist clips with what they play, Channel Rack steps, channels, a mixer track state,
     // automation points. Then the windows' registry: B lists A, brings it to the front, sees that A plays through the
     // device B wants (a stand-in: no audio device is opened by either process) and asks for it; A lets it go. The two
     // processes meet through marker files in <folder>; every wait is bounded. B writes pictures (its Window menu, the
-    // audio device bar, the menus with Copy / Paste) at the shot scale (LYNX_SHOT_SCALE=1.5 LYNX_SHOT_SUFFIX=@150 for
-    // @150). Needs LYNX_TEST_MODE=1 LYNX_SYSTEM_CLIPBOARD=1 LYNX_WINDOWS=1 and the same XDG_CONFIG_HOME for both.
+    // audio device bar, the menus with Copy / Paste) at the shot scale (YW_SHOT_SCALE=1.5 YW_SHOT_SUFFIX=@150 for
+    // @150). Needs YW_TEST_MODE=1 YW_SYSTEM_CLIPBOARD=1 YW_WINDOWS=1 and the same XDG_CONFIG_HOME for both.
     // Round 190pb (flaky under load in rollup 0.1.31 step 5): no step rests on time any more. The markers carry the
     // run's key (A's and B's process ids), so a marker left in <folder> by an earlier run never lets a wait through (the
     // step-5 runner reused its folder: B pasted before A had copied, A copied the next kind before B had pasted); the
     // clipboard is read until A's text arrives (an X11 selection transfer of a loaded process can miss JUCE's ~100 ms
     // read); the bar, the hand-over and the device are waited for as conditions; the setup both windows want is written
-    // to the settings folder the processes really use (LYNX_PROFILE_DIR moves it away from XDG_CONFIG_HOME, so the
+    // to the settings folder the processes really use (YW_PROFILE_DIR moves it away from XDG_CONFIG_HOME, so the
     // runner's audio-device.xml was never read and the device bar never came). Every wait stays bounded.
     bool runTabs2Test190nz (const juce::String& role, const juce::File& dir)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
-        using namespace lynx;
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
+        using namespace yw;
         const auto isA = role == "a";
         juce::String checks;
         bool allOk = true;
@@ -66,7 +66,7 @@
         }
         {
             // (round 190pb) the stand-in setup both windows want, in the settings folder this process reads (a test profile's
-            // when LYNX_PROFILE_DIR is set): written when it is missing, never over another device
+            // when YW_PROFILE_DIR is set): written when it is missing, never over another device
             const auto setup = platform::settingsFile ("audio-device.xml");
             const juce::String wantedSetup ("<?xml version=\"1.0\" encoding=\"UTF-8\"?><DEVICESETUP deviceType=\"ASIO\" audioOutputDeviceName=\"Test interface\" "
                                             "audioInputDeviceName=\"\" audioDeviceRate=\"48000.0\" audioDeviceBufferSize=\"256\"/>");

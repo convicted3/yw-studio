@@ -6,7 +6,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 enum class RemoteAction : std::uint8_t;
@@ -101,4 +101,4 @@ bool isClipGrid (const juce::Component* component);
 // A Playlist clip dragged out of the Playlist (index into the current playlist): its drag description, and back.
 juce::String playlistClipDragDescription (int index);
 bool playlistClipDrag (const juce::var& description, int& index);
-} // namespace lynx
+} // namespace yw

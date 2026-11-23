@@ -7,7 +7,7 @@
 #include <functional>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 inline std::string chooseUiFont (std::string saved, const std::function<bool (const std::string&)>& installed)
 {
@@ -18,4 +18,4 @@ inline std::string chooseUiFont (std::string saved, const std::function<bool (co
         saved.erase (saved.begin());
     return ! saved.empty() && installed (saved) ? saved : std::string();
 }
-} // namespace lynx
+} // namespace yw

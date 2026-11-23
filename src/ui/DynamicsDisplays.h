@@ -1,6 +1,6 @@
 #pragma once
 
-// The live graphs of LYNX's dynamics suite (REA round 108) inside the native effect editor: transfer curves with the
+// The live graphs of YW's dynamics suite (REA round 108) inside the native effect editor: transfer curves with the
 // live input level, a scrolling gain-reduction history over the input / output levels, level bars, Prism's band
 // display (crossovers, per-band gain change, the resulting response) and Ember's multiband split.
 
@@ -11,7 +11,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::dynui
+namespace yw::dynui
 {
 // Recent values of a slot's meters (pushed at the editor's 30 Hz refresh).
 struct History
@@ -40,4 +40,4 @@ int crossoverNear (const EffectSlot& fx, juce::Rectangle<float> area, float x, f
 int bandAt (const EffectSlot& fx, juce::Rectangle<float> area, float x);
 // the crossover parameter's value for the frequency at x
 float crossoverValueAt (const EffectSlot& fx, juce::Rectangle<float> area, float x);
-} // namespace lynx::dynui
+} // namespace yw::dynui

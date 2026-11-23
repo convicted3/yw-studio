@@ -1,8 +1,8 @@
 #pragma once
 
 // Round 190on (research190oe P10): stacked controller lanes under the Piano roll. FL Studio 2026 shows one event lane (its
-// "Control" chooser; users ask for more: complaint F13 of research190oe), so in the Pattern layout this is a LYNX extra, off
-// (Settings › LYNX extras); the Clip-launch layout has it on, as Live 12's clip editor shows several envelope lanes at once.
+// "Control" chooser; users ask for more: complaint F13 of research190oe), so in the Pattern layout this is a YW extra, off
+// (Settings › YW extras); the Clip-launch layout has it on, as Live 12's clip editor shows several envelope lanes at once.
 // A "+" beside the bottom lane's chooser adds a lane above it, each added lane has its own chooser (a note property or a
 // pattern event lane) and an "×"; the line between two lanes drags their heights. The set is kept in ui-options.txt.
 // No JUCE.
@@ -17,7 +17,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::stackedlanes
+namespace yw::stackedlanes
 {
 constexpr int maxAdded = 4;      // lanes above the bottom one (five in all)
 constexpr int minHeight = 24;    // a lane never gets shorter (its chooser's row)
@@ -147,4 +147,4 @@ inline std::vector<Lane> fromText (const std::string& text, float* bottomWeight 
     }
     return out;
 }
-} // namespace lynx::stackedlanes
+} // namespace yw::stackedlanes

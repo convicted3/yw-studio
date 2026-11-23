@@ -5,7 +5,7 @@
 
 #include <juce_audio_formats/juce_audio_formats.h>
 
-namespace lynx
+namespace yw
 {
 class NcwAudioFormat final : public juce::AudioFormat
 {
@@ -24,4 +24,4 @@ public:
     }
     using juce::AudioFormat::createWriterFor;
 };
-} // namespace lynx
+} // namespace yw

@@ -10,7 +10,7 @@
 #include "engine/Metronome.h"
 #include "engine/Transport.h"
 
-namespace lynx
+namespace yw
 {
 // Graph node that plays the Channel Rack: takes the latest song snapshot
 // and renders the built-in instruments with the sequencer.
@@ -103,4 +103,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChannelRackProcessor)
 };
-} // namespace lynx
+} // namespace yw

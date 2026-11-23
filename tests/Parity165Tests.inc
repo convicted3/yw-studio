@@ -3,7 +3,7 @@
 
 TEST (ridge_e_channel_infinite_ratio_round165)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     // her state with the ratio at ∞ (the trial stores it as 100), threshold 0, fast attack, EQ / filters off
     int n = 0;
@@ -40,7 +40,7 @@ TEST (ridge_e_channel_infinite_ratio_round165)
 
 TEST (ridge_e_channel_eq_to_sidechain_round165)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace r = mixsuite::ridge;
     // HF shelf +15 dB at 8 kHz, compressor 1 : 1 (off): with Dyn S.C. on the EQ leaves the audio, so the 8 kHz tone
     // passes flat; with it off it gets the boost
@@ -74,7 +74,7 @@ TEST (ridge_e_channel_eq_to_sidechain_round165)
 // reduction stops at 25.6 dB, no latency
 TEST (hush_classic_deesser_bandpass_and_floor_round165)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace h = mixsuite::hush;
     int n = 0;
     auto bp = vm123::wavesSlot ("DeEsser", "5506 2 -30 7 0.5 10 * * * * 0 3.98 32 0 1", n);
@@ -106,7 +106,7 @@ TEST (hush_classic_deesser_bandpass_and_floor_round165)
 // at 101 Hz, high +4.1 dB at 1306 Hz)
 TEST (gemini_doubler_reference_defaults_round165)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto s = makeEffectSlot (EffectKind::geminiDoubler);
     const auto& info = effectInfo (EffectKind::geminiDoubler);
     auto at = [&] (const char* name) {

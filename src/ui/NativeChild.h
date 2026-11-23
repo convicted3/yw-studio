@@ -6,7 +6,7 @@
 #include <functional>
 #include <vector>
 
-namespace lynx::nativechild
+namespace yw::nativechild
 {
 // Issue #116 (FL's docked plugin windows; design: docs/analise/REA_rodada181c.md): a third-party editor is a native child
 // window, and a native child is always drawn above the lightweight JUCE components of the same window. So a docked
@@ -15,9 +15,9 @@ namespace lynx::nativechild
 // inside `area` (the Workspace), in `area`'s coordinates.
 
 // FL's docked plugin windows are the default (slice 3: every floating panel is a native child, overlays and DPI changes
-// follow them). LYNX_DOCKED_PLUGINS=0 in the environment turns docking off: every plugin window is then FL's "Detached"
-// and the panels are plain components (LYNX's behaviour before issue #116). On Linux and macOS docking is off unless
-// LYNX_DOCKED_PLUGINS=1 (issue #165: X11 child windows lose text focus and leave stale pictures there; the docking glue
+// follow them). YW_DOCKED_PLUGINS=0 in the environment turns docking off: every plugin window is then FL's "Detached"
+// and the panels are plain components (YW's behaviour before issue #116). On Linux and macOS docking is off unless
+// YW_DOCKED_PLUGINS=1 (issue #165: X11 child windows lose text focus and leave stale pictures there; the docking glue
 // is Win32-only; core/DockingPolicy.h).
 bool dockingEnabled();
 
@@ -87,10 +87,10 @@ void keepFloatersInFront();
 // lies wholly under visible, opaque sibling windows above it, or under its parent's edges (and the same for each parent
 // child window): nothing it paints or composes reaches the screen. The Playlist behind Thief's maximised Channel rack.
 // Round 190la: also when the top-level window it is in (the main window, a detached panel, a plugin window) lies wholly
-// under one visible, opaque top-level window of any program (a maximised browser over LYNX): layered, click-through,
-// cloaked, minimised and region windows never count (LYNX_OCCLUSION=0: this part off, A/B).
+// under one visible, opaque top-level window of any program (a maximised browser over YW): layered, click-through,
+// cloaked, minimised and region windows never count (YW_OCCLUSION=0: this part off, A/B).
 // A component without a native window of its own and every platform but Windows: false.
-// Cheap (a walk of the windows above it: a few user32 calls; the top-level answer is kept 8 ms). LYNX_COVERCHECK=0:
+// Cheap (a walk of the windows above it: a few user32 calls; the top-level answer is kept 8 ms). YW_COVERCHECK=0:
 // always false (A/B).
 bool coveredBySiblingWindows (const juce::Component& c);
 // `c` shows on screen: isShowing() (or an off-screen picture route, ui/ShotShowing.h) and not covered as above. The live
@@ -98,14 +98,14 @@ bool coveredBySiblingWindows (const juce::Component& c);
 bool showsOnScreen (const juce::Component& c);
 // diagnostics (--uiperf): steps the frame tickers left out because their view was covered
 std::atomic<int>& coveredSkips();
-// diagnostics (LYNX_OVERLAY_STATS, LYNX_TICKER_LOG): how coveredBySiblingWindows decided for `c` — its window, what of
+// diagnostics (YW_OVERLAY_STATS, YW_TICKER_LOG): how coveredBySiblingWindows decided for `c` — its window, what of
 // it can show, and every visible sibling window above it (and above its parents) with its rectangle and flags
 juce::String describeCover (const juce::Component& c);
 // The attached children of a native window (the main window's handle), from the bottom of their stacking order up.
 std::vector<juce::Component*> attachedChildren (void* parentWindow);
 
-// Issue #161: a click in an attached component when its window is not the foreground window (LYNX was in another app's
-// background, or a detached panel / plugin window of LYNX was the active one) activates the main window, as a click
+// Issue #161: a click in an attached component when its window is not the foreground window (YW was in another app's
+// background, or a detached panel / plugin window of YW was the active one) activates the main window, as a click
 // anywhere in FL's window does, so its shortcuts (Space...) work at once. JUCE answers the system's "activate?" question
 // from the clicked window's own component, and the panels don't take the keyboard focus on a click (their keys reach the
 // main window), so it said no. A component that takes the focus on a click activates as before; a click blocked by a
@@ -114,7 +114,7 @@ std::vector<juce::Component*> attachedChildren (void* parentWindow);
 // that had it (else MainComponent takes it).
 bool clickActivatesWindow (const juce::Component& c, bool windowIsForeground);
 // Tests (Windows; elsewhere 0): what the attached component's native window answers the system's WM_MOUSEACTIVATE
-// (MA_ACTIVATE = 1, MA_NOACTIVATE = 3), as if LYNX were in the background when `asInactive`.
+// (MA_ACTIVATE = 1, MA_NOACTIVATE = 3), as if YW were in the background when `asInactive`.
 int mouseActivateAnswerForTest (const juce::Component& c, bool asInactive);
 
 // --selftest (issue #161): the decision above for a panel-like component (no focus on a click), a modal dialog's block and,
@@ -125,7 +125,7 @@ juce::String clickActivationSelfTest();
 // floaters and overlays), also a click that lands in a native window inside it that JUCE never hears of (a plugin's own
 // view in a docked plugin window): FL's docked windows come in front on any click. `onClick` (optional) runs after a
 // click of that kind. Windows: a message hook of the UI thread sees the button-down messages; elsewhere nothing (the
-// plugin views there are not native children of LYNX's windows in the same way).
+// plugin views there are not native children of YW's windows in the same way).
 void raiseOnAnyClick (juce::Component& c, std::function<void()> onClick = {});
 
 // Keys nothing in an attached component used: they don't travel up to the main window by themselves (it is another
@@ -151,12 +151,12 @@ void* ownerOf (void* window);
 void* windowAt (const juce::Component& c, juce::Point<int> localPoint);
 bool isLayered (void* window);
 // Tests (Windows; elsewhere nothing / nullptr), round 190ev: the innermost first child window of a native window (a
-// plugin's own view inside a docked frame), and a left click posted to a native window of LYNX's own process at a point
+// plugin's own view inside a docked frame), and a left click posted to a native window of YW's own process at a point
 // of its client area, in physical pixels (a message to that window only: nothing goes through the system's input).
 void* innermostChild (void* window);
 void postClickForTest (void* window, juce::Point<int> clientPoint);
 // Tests (Windows; elsewhere false), round 190fc: Space pressed as the system delivers it — key-down and key-up posted to the
-// window that has the system's keyboard focus (when it is one of LYNX's own; else `fallback`), then the thread's
+// window that has the system's keyboard focus (when it is one of YW's own; else `fallback`), then the thread's
 // messages pumped for a moment (TranslateMessage makes the character, as for a real key). True when it was posted.
 bool pressSpaceForTest (void* fallback);
 // Tests (Windows; elsewhere 0): the system's hit test of the component's own native window at its local point: 1
@@ -164,7 +164,7 @@ bool pressSpaceForTest (void* fallback);
 // 190cj: an attached component that is not opaque answers "transparent" wherever its hitTest says no.)
 int hitCodeAt (const juce::Component& c, juce::Point<int> localPoint);
 
-// Round 190jy (queue item 44, core/DockStack.h editorsAbove): docked LYNX editors drawn by the main window itself show
+// Round 190jy (queue item 44, core/DockStack.h editorsAbove): docked YW editors drawn by the main window itself show
 // through holes in the native siblings below them.
 // `holes`: rectangles in the attached component's own native window, physical pixels (0,0 = its top-left); empty = the
 // whole window shows (no window region). The window is only touched when its holes change. Windows only (elsewhere
@@ -191,4 +191,4 @@ void placeJustAbove (juce::Component& c, juce::Component* below);
 // its hit test there), cleared again, and placeJustAbove's order. "OK", "OK (not available ...)" elsewhere, or "ERROR ...".
 juce::String editorHolesSelfTest();
 void stopForwardingUnusedKeys (juce::Component& c);
-} // namespace lynx::nativechild
+} // namespace yw::nativechild

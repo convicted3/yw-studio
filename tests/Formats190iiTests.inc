@@ -15,9 +15,9 @@ struct Disk
     std::map<std::string, std::vector<std::uint8_t>> files;
     int saved = 0;
 
-    lynx::msimport::Access access()
+    yw::msimport::Access access()
     {
-        lynx::msimport::Access a;
+        yw::msimport::Access a;
         a.exists = [this] (const std::string& p) { return files.count (p) > 0; };
         a.read = [this] (const std::string& p, std::size_t limit) {
             const auto it = files.find (p);
@@ -107,7 +107,7 @@ std::vector<std::uint8_t> tinyWav (int frames, int channels = 1)
     std::vector<std::int16_t> pcm ((std::size_t) (frames * channels));
     for (std::size_t i = 0; i < pcm.size(); ++i)
         pcm[i] = (std::int16_t) ((int) (i * 37) % 2000 - 1000);
-    return lynx::msimport::wavFile ((const std::uint8_t*) pcm.data(), pcm.size() * 2, channels, 16, 44100.0);
+    return yw::msimport::wavFile ((const std::uint8_t*) pcm.data(), pcm.size() * 2, channels, 16, 44100.0);
 }
 
 // ------------------------------------------------------------------------------------------------ a synthetic .gig
@@ -337,7 +337,7 @@ std::uint32_t lcg (std::uint32_t& s) { s = s * 1664525u + 1013904223u; return s 
 // =================================================================================================== state builder
 TEST (formats190ii_state_round_trips)
 {
-    using namespace lynx;
+    using namespace yw;
     msimport::Program p;
     p.name = "Round trip";
     msimport::Zone a;
@@ -377,9 +377,9 @@ TEST (formats190ii_state_round_trips)
 // =================================================================================================== .dwp / .dwb
 TEST (formats190ii_dwp_v36_format_record_completed)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto file = formats190ii::legacyDwp ("%FLStudioData%\\Patches\\Packs\\Piano\\Piano 2\\a.wav", 45, 44, 46, 2, 300, 800);
-    // LYNX's reader used to skip the 36-byte record (and with it the loop); DirectWave reads it partly, bits = 32 (readZone
+    // YW's reader used to skip the 36-byte record (and with it the loop); DirectWave reads it partly, bits = 32 (readZone
     // does so since the 0.1.30 rollup; tests/Rollup030Tests.inc)
     const auto state = msimport::stateOfFile (file);
     CHECK (state.has_value());
@@ -402,7 +402,7 @@ TEST (formats190ii_dwp_v36_format_record_completed)
 
 TEST (formats190ii_dwp_samples_found_like_directwave)
 {
-    using namespace lynx;
+    using namespace yw;
     formats190ii::Disk disk;
     auto a = disk.access();
     const std::string dwp = "/fl/Data/Patches/Packs/Legacy/Instruments/Piano/Piano 2.dwp";
@@ -415,7 +415,7 @@ TEST (formats190ii_dwp_samples_found_like_directwave)
     disk.files["/fl/Data/Patches/Packs/Legacy/Instruments/Piano/Piano 2/Gz_A0ogg.wav"] = {};
     CHECK (msimport::findZoneSample ("%FLStudioData%\\Patches\\Packs\\Piano\\Piano 2\\Gz_A0ogg.wav", dwp, a)
            == "/fl/Data/Patches/Packs/Legacy/Instruments/Piano/Piano 2/Gz_A0ogg.wav");
-    // 3. (LYNX) next to the program file, then below it
+    // 3. (YW) next to the program file, then below it
     disk.files["/fl/Data/Patches/Packs/Legacy/Instruments/Piano/kick.wav"] = {};
     CHECK (msimport::findZoneSample ("D:\\old\\kick.wav", dwp, a) == "/fl/Data/Patches/Packs/Legacy/Instruments/Piano/kick.wav");
     a.findBelow = [] (const std::string& folder, const std::string& name) { return folder + "/deep/" + name; };
@@ -426,7 +426,7 @@ TEST (formats190ii_dwp_samples_found_like_directwave)
 
 TEST (formats190ii_dwp_imports_as_directwave_channel)
 {
-    using namespace lynx;
+    using namespace yw;
     formats190ii::Disk disk;
     const std::string dwp = "/packs/Piano 2.dwp";
     disk.files[dwp] = formats190ii::legacyDwp ("%FLStudioData%\\Patches\\Packs\\Piano\\Piano 2\\a.wav", 45, 44, 46, 2, 300, 800);
@@ -451,7 +451,7 @@ TEST (formats190ii_dwp_imports_as_directwave_channel)
 // =================================================================================================== .gig
 TEST (formats190ii_gig_regions_and_dimensions)
 {
-    using namespace lynx;
+    using namespace yw;
     formats190ii::Disk disk;
     disk.files["/lib/keys.gig"] = formats190ii::testGig();
     const auto a = disk.access();
@@ -505,13 +505,13 @@ TEST (formats190ii_gig_regions_and_dimensions)
 TEST (formats190ii_gig_time_codes)
 {
     // GigaStudio stores times as 1.000000008813822^code seconds
-    CHECK (std::fabs (lynx::msimport::gig::timeOf (0) - 1.0) < 1e-12);
-    CHECK (std::fabs (lynx::msimport::gig::timeOf (-262471091) - 0.0989) < 1e-3);
+    CHECK (std::fabs (yw::msimport::gig::timeOf (0) - 1.0) < 1e-12);
+    CHECK (std::fabs (yw::msimport::gig::timeOf (-262471091) - 0.0989) < 1e-3);
 }
 
 TEST (formats190ii_malformed_files_do_not_crash)
 {
-    using namespace lynx;
+    using namespace yw;
     std::uint32_t seed = 190;
     const auto gigBytes = formats190ii::testGig();
     const auto dwpBytes = formats190ii::legacyDwp ("x.wav", 60, 0, 127, 2, 1, 2);
@@ -561,7 +561,7 @@ TEST (formats190ii_malformed_files_do_not_crash)
 // =================================================================================================== NCW
 TEST (formats190ii_ncw_decodes_delta_raw_midside_float)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<std::int32_t> l (1300), r (1300), loud (700), noise (600);
     std::uint32_t s = 7;
     for (std::size_t i = 0; i < l.size(); ++i)
@@ -634,7 +634,7 @@ TEST (formats190ii_ncw_decodes_delta_raw_midside_float)
 // =================================================================================================== Kontakt
 TEST (formats190ii_kontakt_detected_never_decrypted)
 {
-    using namespace lynx;
+    using namespace yw;
     using msimport::kontakt::Kind;
     formats190ii::Bytes k1;
     k1.u32 (0x5EE56EB3u);
@@ -672,15 +672,15 @@ TEST (formats190ii_kontakt_detected_never_decrypted)
     CHECK (msimport::handles ("NKI") && msimport::handles ("gig") && msimport::handles ("dwp") && ! msimport::handles ("wav"));
 }
 
-// FL's own shipped programs (run with LYNX_FL_DIR=<FL Studio folder>; skipped otherwise): every one imports with
+// FL's own shipped programs (run with YW_FL_DIR=<FL Studio folder>; skipped otherwise): every one imports with
 // every sample found, and the loops of the version-36 programs survive
 TEST (formats190ii_fl_shipped_programs)
 {
-    const char* dir = std::getenv ("LYNX_FL_DIR");
+    const char* dir = std::getenv ("YW_FL_DIR");
     if (dir == nullptr || ! std::filesystem::is_directory (dir))
         return;
     namespace fs = std::filesystem;
-    lynx::msimport::Access a;
+    yw::msimport::Access a;
     a.exists = [] (const std::string& p) { std::error_code e; return fs::is_regular_file (fs::path (p), e); };
     a.read = [] (const std::string& p, std::size_t limit) {
         std::ifstream f (p, std::ios::binary);
@@ -712,8 +712,8 @@ TEST (formats190ii_fl_shipped_programs)
         if (it->path().extension() != ".dwp")
             continue;
         ++files;
-        lynx::msimport::Report r;
-        const auto c = lynx::msimport::importFile (it->path().string(), a, r);
+        yw::msimport::Report r;
+        const auto c = yw::msimport::importFile (it->path().string(), a, r);
         if (! c)
         {
             std::printf ("  dwp not imported: %s (%s)\n", it->path().string().c_str(), r.error.c_str());
@@ -722,8 +722,8 @@ TEST (formats190ii_fl_shipped_programs)
         ++ok;
         zones += r.zones;
         missing += r.missingSamples;
-        if (const auto st = lynx::dw::parseState (c->pluginState))
-            for (const auto& z : lynx::dw::playedProgram (*st)->zones)
+        if (const auto st = yw::dw::parseState (c->pluginState))
+            for (const auto& z : yw::dw::playedProgram (*st)->zones)
                 looped += z.loopMode == 2 && z.loopB > z.loopA ? 1 : 0;
     }
     std::printf ("  FL .dwp: %d files, %d imported, %d zones, %d samples missing, %d forward loops\n", files, ok, zones, missing, looped);

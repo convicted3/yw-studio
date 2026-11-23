@@ -4,10 +4,10 @@ namespace i173a
 {
 // a dense piano part as in the #70 video: chords strummed over a bar, each chord note held to the bar's end, a key
 // played again right where its previous note ends, and more than 20 notes in the pattern
-std::vector<lynx::Note> videoPart()
+std::vector<yw::Note> videoPart()
 {
-    using lynx::ppq;
-    std::vector<lynx::Note> notes;
+    using yw::ppq;
+    std::vector<yw::Note> notes;
     const auto add = [&] (double beat, double beats, int key) { notes.push_back (i32d::Rig::note ((std::int64_t) (beat * ppq), (std::int64_t) (beats * ppq), key)); };
     for (int bar = 0; bar < 2; ++bar)
     {
@@ -54,7 +54,7 @@ TEST (issues173a_overlapping_notes_each_end_at_their_own_end)
 {
     i32d::Rig rig;
     rig.song.patterns[0].notes = i173a::videoPart();
-    rig.song.patterns[0].lengthTicks = 8 * lynx::ppq;
+    rig.song.patterns[0].lengthTicks = 8 * yw::ppq;
     rig.rebuild();
     rig.play (16.0); // two passes
     const auto& notes = rig.song.patterns[0].notes;
@@ -66,14 +66,14 @@ TEST (issues173a_overlapping_notes_each_end_at_their_own_end)
     int endsBefore16 = 0; // (the notes that end with the second pass end at beat 16 itself)
     for (int pass = 0; pass < 2; ++pass)
         for (const auto& n : notes)
-            endsBefore16 += rig.sampleOfBeat (pass * 8.0 + (double) (n.start + n.length) / lynx::ppq) < rig.sampleOfBeat (16.0) ? 1 : 0;
+            endsBefore16 += rig.sampleOfBeat (pass * 8.0 + (double) (n.start + n.length) / yw::ppq) < rig.sampleOfBeat (16.0) ? 1 : 0;
     CHECK (offs >= endsBefore16);
     // each note: on at its start, and the key's next off at its end (never before)
     for (int pass = 0; pass < 2; ++pass)
         for (const auto& n : notes)
         {
-            const auto start = rig.sampleOfBeat (pass * 8.0 + (double) n.start / lynx::ppq);
-            const auto end = rig.sampleOfBeat (pass * 8.0 + (double) (n.start + n.length) / lynx::ppq);
+            const auto start = rig.sampleOfBeat (pass * 8.0 + (double) n.start / yw::ppq);
+            const auto end = rig.sampleOfBeat (pass * 8.0 + (double) (n.start + n.length) / yw::ppq);
             if (end >= rig.sampleOfBeat (15.9))
                 continue;
             long long onAt = -1, offAt = -1;
@@ -88,18 +88,18 @@ TEST (issues173a_overlapping_notes_each_end_at_their_own_end)
             }
             CHECK (onAt >= 0);
             if (std::llabs (offAt - end) > 2)
-                std::printf ("  #70: key %d at beat %.2f ends at sample %lld, not %lld\n", n.key, pass * 8.0 + (double) n.start / lynx::ppq, offAt, end);
+                std::printf ("  #70: key %d at beat %.2f ends at sample %lld, not %lld\n", n.key, pass * 8.0 + (double) n.start / yw::ppq, offAt, end);
             CHECK (std::llabs (offAt - end) <= 2);
         }
     CHECK (rig.spy->allOffs == 0);
 }
 
-// #73 evidence (not a check): LYNX_173A_WRITE_FLP=<folder> writes FL projects with FL's SoundFont Player (FL's own
+// #73 evidence (not a check): YW_173A_WRITE_FLP=<folder> writes FL projects with FL's SoundFont Player (FL's own
 // Default.sf2) on one long C5: no detune, the channel PITCH knob at −400 cents (range 12) and Misc › Fine tune at −40.
-// FL renders them (FL64.exe /R /Ewav), LYNX imports the same files: REA_rodada173a.md #73.
+// FL renders them (FL64.exe /R /Ewav), YW imports the same files: REA_rodada173a.md #73.
 TEST (issues173a_write_fl_detune_probes)
 {
-    const auto* dir = std::getenv ("LYNX_173A_WRITE_FLP");
+    const auto* dir = std::getenv ("YW_173A_WRITE_FLP");
     if (dir == nullptr)
         return;
     const std::string font = "C:\\Program Files\\Image-Line\\FL Studio 2026\\Plugins\\Fruity\\Generators\\Soundfont Player\\Data\\Default.sf2";
@@ -147,13 +147,13 @@ TEST (issues173a_write_fl_detune_probes)
 }
 
 // #73: "SoundFont Player detune not being imported correctly". The FL project's channel PITCH knob (−400 cents, its
-// range 12) reached LYNX's channel, but the LYNX Soundfont that plays FL's SoundFont Player ignored the channel's PITCH
+// range 12) reached YW's channel, but the YW Soundfont that plays FL's SoundFont Player ignored the channel's PITCH
 // knob (only the Misc fine tune and the main pitch reached it, through each note). It plays at FL's pitch now, and
 // follows a live knob move on a sounding note as FL's generators do.
 TEST (issues173a_soundfont_player_follows_the_channel_pitch_knob)
 {
-    using namespace lynx;
-    const auto folder = std::filesystem::temp_directory_path() / ("lynx-173a-sf-" + processTempTag()); // (per process: shards run at once)
+    using namespace yw;
+    const auto folder = std::filesystem::temp_directory_path() / ("yw-173a-sf-" + processTempTag()); // (per process: shards run at once)
     std::filesystem::create_directories (folder);
     const auto path = (folder / "font.sf2").string();
     {

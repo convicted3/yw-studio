@@ -24,10 +24,10 @@ enum class Sig { pink, drums, chord, sine, quietDrums };
 // Five test sounds, the same every time, mono, 4 s: pink noise at −20 dBFS RMS; a drum loop (kick, snare, hats, 120
 // BPM) whose peaks reach −1 dBFS; a sustained low chord (rich in harmonics) at −3 dBFS peak; a 220 Hz sine at −6 dBFS;
 // the drum loop again at −13 dBFS (dynamics and saturation depend on the level they get).
-inline std::shared_ptr<const lynx::SampleData> signal (Sig which)
+inline std::shared_ptr<const yw::SampleData> signal (Sig which)
 {
     auto make = [] (Sig s) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = rate;
         auto& x = d->left;
         x.assign ((std::size_t) (rate * 4.0), 0.0f); // (sampler files longer than the renders)
@@ -107,9 +107,9 @@ inline std::shared_ptr<const lynx::SampleData> signal (Sig which)
         // a short fade in, so the start is not a click of its own
         for (std::size_t i = 0; i < 480; ++i)
             x[i] *= (float) i / 480.0f;
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    static const std::shared_ptr<const lynx::SampleData> all[] { make (Sig::pink), make (Sig::drums), make (Sig::chord), make (Sig::sine), make (Sig::quietDrums) };
+    static const std::shared_ptr<const yw::SampleData> all[] { make (Sig::pink), make (Sig::drums), make (Sig::chord), make (Sig::sine), make (Sig::quietDrums) };
     return all[(int) which];
 }
 
@@ -127,10 +127,10 @@ struct Run
 // The sound played through insert 1 (a sampler at unity: the insert gets the file's own samples), whose chain `setup`
 // makes. `perBlock` (optional) changes the insert before each block, as the UI's edits do: a new state built from the
 // one before, so the running effects are kept (AudioEngine::publishSong).
-inline Run render (Sig which, const std::function<void (lynx::MixerTrack&)>& setup, int blocks = 0,
-                   const std::function<void (int, lynx::MixerTrack&)>& perBlock = {})
+inline Run render (Sig which, const std::function<void (yw::MixerTrack&)>& setup, int blocks = 0,
+                   const std::function<void (int, yw::MixerTrack&)>& perBlock = {})
 {
-    using namespace lynx;
+    using namespace yw;
     const auto data = signal (which);
     if (blocks <= 0)
         blocks = (int) (data->left.size() / block);
@@ -226,7 +226,7 @@ struct Point
     bool finite = true;
 };
 
-inline Point measure (Sig which, const std::function<void (lynx::MixerTrack&)>& setup, const Run& dry)
+inline Point measure (Sig which, const std::function<void (yw::MixerTrack&)>& setup, const Run& dry)
 {
     const auto wet = render (which, setup);
     Point p;
@@ -242,7 +242,7 @@ inline Point measure (Sig which, const std::function<void (lynx::MixerTrack&)>& 
 // sends), then back: how far above the steady renders' own worst slope jump the sweep's is (1 = no click at all)
 inline double sweepKink (int goal, Sig which, double seconds = 1.5)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto blocks = (int) (seconds * rate / block);
     const auto sweep = render (which, [goal] (MixerTrack& t) { t.effects.push_back (goals::make (goal, 0.0f)); }, 2 * blocks + 40,
                                [goal, blocks] (int b, MixerTrack& t) {
@@ -268,10 +268,10 @@ inline bool levelInBounds (double level) { return level <= 3.0 && level >= -6.0;
 // ... and the peaks: at most 3 dB over the input's own, or still below −6 dBFS; Punch's guard holds full scale
 inline bool peakInBounds (int goal, Sig which, double inPeakDb, double outPeakDb)
 {
-    if (goal == lynx::goals::punch)
+    if (goal == yw::goals::punch)
         return outPeakDb <= 0.01;
     // (a room on a steady pure tone beats against it: its modes, not a level the knob sets)
-    if (goal == lynx::goals::room && which == Sig::sine)
+    if (goal == yw::goals::room && which == Sig::sine)
         return outPeakDb <= 0.0;
     return outPeakDb <= inPeakDb + 3.0 || outPeakDb <= -6.0;
 }
@@ -281,9 +281,9 @@ inline bool peakInBounds (int goal, Sig which, double inPeakDb, double outPeakDb
 // and no peak jumps (the gate of round 190dg; the full 21-position table with CPU is in the round's HANDOFF.md)
 TEST (simple190dg_one_knob_gate)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simple190dg;
-    const bool print = std::getenv ("LYNX_GATE_PRINT") != nullptr;
+    const bool print = std::getenv ("YW_GATE_PRINT") != nullptr;
     const Sig sigs[] { Sig::pink, Sig::drums, Sig::chord, Sig::sine, Sig::quietDrums };
     const int blocks = (int) (2.5 * rate / block);
     for (const auto which : sigs)
@@ -320,9 +320,9 @@ TEST (simple190dg_one_knob_gate)
 // knob held still anywhere (1 = nothing added).
 TEST (simple190dg_knob_turns_without_clicks)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simple190dg;
-    const bool print = std::getenv ("LYNX_GATE_PRINT") != nullptr;
+    const bool print = std::getenv ("YW_GATE_PRINT") != nullptr;
     for (int id = 1; id <= goals::count; ++id)
         for (const auto which : { Sig::sine, Sig::chord })
         {
@@ -345,7 +345,7 @@ TEST (simple190dg_knob_turns_without_clicks)
 // chain with latency whose dry path starts empty, and the insert goes back to no stage at 100 %
 TEST (simple190dg_blend_ramps)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simple190dg;
     const int blocks = (int) (1.0 * rate / block);
     for (const char* name : { "Radio Booth", "Crunch Stack", "Growl", "Canyon", "Big Chorus" })
@@ -406,7 +406,7 @@ TEST (simple190dg_blend_ramps)
 // stacks up to four effects: its peaks may rise 3.5 dB over the input's)
 TEST (simple190dg_presets_gate)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace simple190dg;
     const int blocks = (int) (2.5 * rate / block);
     for (const auto which : { Sig::pink, Sig::drums, Sig::chord })
@@ -433,7 +433,7 @@ TEST (simple190dg_presets_gate)
 // The installed instrument plugins as sounds (round 190dg): their category, the channel a pick makes, finding them again
 TEST (simple190dg_sound_library_plugins)
 {
-    using namespace lynx;
+    using namespace yw;
     using soundlib::Category;
     CHECK (soundlib::pluginCategory ("Instrument|Synth", "Vital") == Category::synths);
     CHECK (soundlib::pluginCategory ("Instrument|Drum", "Battery") == Category::drums);

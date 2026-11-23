@@ -35,7 +35,7 @@
  #pragma warning(pop)
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -317,8 +317,8 @@ void spliceAttacks (Planar& out, const Planar& in, const std::function<double (d
     }
 }
 
-// LYNX's Beats warp mode (round 175a, N4), modelled on Ableton Live's Beats mode by measurement (Live 12.4 renders of a
-// test voice at 0.8×, 1.25× speed; /mnt/e/lynx-work/ableton175a/n4): the audio is cut at its attacks and each piece
+// YW's Beats warp mode (round 175a, N4), modelled on Ableton Live's Beats mode by measurement (Live 12.4 renders of a
+// test voice at 0.8×, 1.25× speed; /mnt/e/yw-work/ableton175a/n4): the audio is cut at its attacks and each piece
 // keeps its own speed (no stretching at all inside a piece). Slower: when a piece has played to its end before the
 // next one starts, it plays on backwards from its end, then forwards again ("back and forth"), until the next piece.
 // Faster: the piece is cut where the next one begins. The pieces meet in 16 ms linear crossfades (the length that
@@ -328,7 +328,7 @@ void spliceAttacks (Planar& out, const Planar& in, const std::function<double (d
 // next piece is filled back and forth as when slower. Rendered offline per clip pitch (round 175a, the coordinator's
 // "match Live by resampling each piece").
 // With a warp map (`toOut`, round 175a M1) each piece starts where the map puts its attack.
-// Round 190gx: the Classic Beats law (WarpModeSettings::beatsLawClassic), kept bit for bit as LYNX rendered it before
+// Round 190gx: the Classic Beats law (WarpModeSettings::beatsLawClassic), kept bit for bit as YW rendered it before
 // 190gx (rounds 175a / 190fm) so a project saved before then sounds the same: cuts 10 ms before the steepest rise, a
 // 16 ms fade-in of every piece, Loop Off reads on 16 ms past the piece, the fills turn at the piece's end, Forward
 // restarts the piece, Transient Envelope fades the whole slot ((1 − i/span)^k). The Measured law is beatsStretch below.
@@ -473,7 +473,7 @@ Planar beatsStretch (const Planar& in, long outFrames, double sampleRate, double
         const auto c1 = 0.5f * (y2 - y0), c2 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3, c3 = 0.5f * (y3 - y0) + 1.5f * (y1 - y2);
         return ((c3 * f + c2) * f + c1) * f + y1;
     };
-    // Round 190gx (Live 12.4's W1 renders, /mnt/e/lynx-work/livefacts190gx/warp/REPORT.md): what fills the gap after a
+    // Round 190gx (Live 12.4's W1 renders, /mnt/e/yw-work/livefacts190gx/warp/REPORT.md): what fills the gap after a
     // piece's own end. `own` = the output frames the piece lasts at its own speed. Loop Off: the piece fades out over its
     // last 10 ms and ends there (Live: a linear 10 ms ramp ending exactly at the next transient; nothing after).
     // Back-and-forth and Forward turn `beatsTurnSeconds` before the piece's end (Live: 21–30 ms, the reversed reading
@@ -579,7 +579,7 @@ std::vector<long> beatsCuts (const float* mono, long n, double sampleRate, bool 
 {
     auto cuts = detectAttacks (mono, n, sampleRate, 6.0);
     // each cut moves to where the attack rises fastest: the start of the 10 ms window before the steepest 10 ms rise of
-    // the RMS level, within −30…+50 ms (Live cuts a tone at its very start and a swell at its steepest point; LYNX's
+    // the RMS level, within −30…+50 ms (Live cuts a tone at its very start and a swell at its steepest point; YW's
     // attack detector marks the half-peak point, 16 ms late on a tone and 37 ms early on a swell) [measured]
     {
         std::vector<double> sum ((std::size_t) n + 1, 0.0);
@@ -599,7 +599,7 @@ std::vector<long> beatsCuts (const float* mono, long n, double sampleRate, bool 
                     steepest = rise;
                     c = measured ? k + w : k; // (round 190gx: the start of the steepest window, i.e. the attack itself —
                                               // Live cuts the drum loop's hits on their onsets; the Classic law's window
-                                              // before it put LYNX's cuts 10 ms early)
+                                              // before it put YW's cuts 10 ms early)
                 }
         }
         std::sort (cuts.begin(), cuts.end());
@@ -722,7 +722,7 @@ Preset presetFor (StretchMethod method) noexcept
     {
         case StretchMethod::transients: return { 0.06, 0.01, 6.0, 0.030 };
         case StretchMethod::mono: return { 0.06, 0.01, 9.0, 0.020 };
-        // LYNX's warp modes (round 175a, N4), fitted to Live 12's Tones / Texture / Complex renders of a voice at
+        // YW's warp modes (round 175a, N4), fitted to Live 12's Tones / Texture / Complex renders of a voice at
         // 0.8× and 1.25× (envelope correlation / mean spectral deviation): no attack splicing (it doubled Live's
         // spectral deviation), tones 40 ms blocks (0.977 / 1.06 dB), texture 60 ms (0.985 / 0.98 dB), complex 90 ms
         // (0.994 / 0.88 dB; full mixes and chords want long blocks, REA_rodada160 §2). Beats has its own engine
@@ -1029,7 +1029,7 @@ namespace
 std::atomic<bool>& plannedFlag() noexcept
 {
     static std::atomic<bool> on { [] {
-        const char* e = std::getenv ("LYNX_SHIFTER_STOCK");
+        const char* e = std::getenv ("YW_SHIFTER_STOCK");
         return e == nullptr || e[0] != '0';
     }() };
     return on;
@@ -1042,7 +1042,7 @@ void setPlanned (bool on) noexcept { plannedFlag().store (on, std::memory_order_
 bool strict() noexcept
 {
     static const bool on = [] {
-        const char* e = std::getenv ("LYNX_SHIFTER_STRICT");
+        const char* e = std::getenv ("YW_SHIFTER_STRICT");
         return e != nullptr && e[0] == '1';
     }();
     return on;
@@ -1390,4 +1390,4 @@ std::string stretchOptionsKey (const StretchOptions& o, StretchMethod method)
         key += "|pro" + num (o.modes.proFormants) + "," + num (o.modes.proEnvelope);
     return key;
 }
-} // namespace lynx
+} // namespace yw

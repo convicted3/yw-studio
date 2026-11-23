@@ -4,9 +4,9 @@
 
 namespace pl168f
 {
-lynx::Song songWithPatterns (int count)
+yw::Song songWithPatterns (int count)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.playlist.clear();
     song.playlistTracks.clear();
     song.patterns.resize ((std::size_t) count);
@@ -19,10 +19,10 @@ lynx::Song songWithPatterns (int count)
     return song;
 }
 
-lynx::Clip patternClip (int pattern, int track, std::int64_t start, std::int64_t length)
+yw::Clip patternClip (int pattern, int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = pattern;
     c.track = track;
     c.start = start;
@@ -30,19 +30,19 @@ lynx::Clip patternClip (int pattern, int track, std::int64_t start, std::int64_t
     return c;
 }
 
-int addAudioChannel (lynx::Song& song, const std::string& name)
+int addAudioChannel (yw::Song& song, const std::string& name)
 {
-    lynx::ChannelDef ch;
+    yw::ChannelDef ch;
     ch.name = name;
-    ch.instrument = lynx::InstrumentKind::audioClip;
+    ch.instrument = yw::InstrumentKind::audioClip;
     song.channels.push_back (ch);
     return (int) song.channels.size() - 1;
 }
 
-lynx::Clip audioClip (int channel, int track, std::int64_t start, std::int64_t length)
+yw::Clip audioClip (int channel, int track, std::int64_t start, std::int64_t length)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::audio;
+    yw::Clip c;
+    c.kind = yw::ClipKind::audio;
     c.channel = channel;
     c.pattern = 0;
     c.track = track;
@@ -54,7 +54,7 @@ lynx::Clip audioClip (int channel, int track, std::int64_t start, std::int64_t l
 
 TEST (pl168f_lock_to_content_paints_the_dominant_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) ppq * 4;
     auto song = pl168f::songWithPatterns (3);
     // track 2 holds pattern 1 twice (one bar) and pattern 2 once
@@ -97,7 +97,7 @@ TEST (pl168f_lock_to_content_paints_the_dominant_clip)
 
 TEST (pl168f_lock_all_and_the_resize_answer)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (2);
     song.playlist.push_back (pl168f::patternClip (1, 0, 0, ppq));
     song.playlistTracks.resize (3);
@@ -117,7 +117,7 @@ TEST (pl168f_lock_all_and_the_resize_answer)
 
 TEST (pl168f_lock_to_this_size)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (1);
     CHECK (! pltracks::isSizeLocked (song, 3));
     // FUN_01228cb0: not locked → the row's height as shown; locked → negated (kept)
@@ -138,7 +138,7 @@ TEST (pl168f_lock_to_this_size)
 
 TEST (pl168f_send_pattern_instances_here)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) ppq * 4;
     auto song = pl168f::songWithPatterns (3);
     song.playlist.push_back (pl168f::patternClip (1, 0, 0, bar));
@@ -159,7 +159,7 @@ TEST (pl168f_send_pattern_instances_here)
 
 TEST (pl168f_reset_empty_tracks_and_groups)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (1);
     song.playlist.push_back (pl168f::patternClip (0, 1, 0, ppq));
     song.playlistTracks.resize (6);
@@ -185,7 +185,7 @@ TEST (pl168f_reset_empty_tracks_and_groups)
 
 TEST (pl168f_purge_unused_audio_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = pl168f::songWithPatterns (1);
     const auto before = song.channels.size();
     const auto used = pl168f::addAudioChannel (song, "Used");
@@ -202,7 +202,7 @@ TEST (pl168f_purge_unused_audio_clips)
 
 TEST (pl168f_merge_pattern_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) ppq * 4;
     auto song = pl168f::songWithPatterns (3);
     Note n;
@@ -251,7 +251,7 @@ TEST (pl168f_merge_pattern_clips)
 
 TEST (pl168f_clone_tracks)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) ppq * 4;
     auto song = pl168f::songWithPatterns (2);
     song.playlistTracks.resize (5);
@@ -295,7 +295,7 @@ TEST (pl168f_clone_tracks)
 
 TEST (pl168f_stretch_with_and_without_variants)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) ppq * 4;
     auto song = pl168f::songWithPatterns (1);
     const auto ch = pl168f::addAudioChannel (song, "Loop");
@@ -331,7 +331,7 @@ TEST (pl168f_stretch_with_and_without_variants)
 
 TEST (pl168f_keys_and_flp_import)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's ShortcutsModule [DFM]: EEMergeAction Ctrl+G, EEClonePLTracksAction Ctrl+Shift+B, EEMakeUniqueAction
     // Ctrl+Shift+V, EEZoomOnPerformanceClipsAction Shift+6
     const std::pair<const char*, keys::Chord> expected[] = {

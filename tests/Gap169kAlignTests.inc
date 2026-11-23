@@ -3,7 +3,7 @@
 
 TEST (gap169k_align_channel_editors_key)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ f12, shift }, Context::global, false) == "view.alignChannelEditors");

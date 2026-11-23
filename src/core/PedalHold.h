@@ -13,7 +13,7 @@
 //   a key struck after it (flag 0) plays and stops as usual;
 // - pedal up: every held-back key gets its note-off.
 // The held-back note-off is what gets recorded too, so a recorded note lasts until the pedal comes up, as in FL.
-namespace lynx
+namespace yw
 {
 class PedalHold
 {
@@ -101,4 +101,4 @@ private:
         return it == channels.end() || it->second.mode <= 0 ? nullptr : &it->second;
     }
 };
-} // namespace lynx
+} // namespace yw

@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cstdint>
 
-namespace lynx::livehistory
+namespace yw::livehistory
 {
 template <int Channels, int Length>
 struct History
@@ -67,4 +67,4 @@ struct History
     // value `i` (0 = the oldest of the `count` held), channel `c`
     float at (int i, int c) const noexcept { return values[(std::size_t) ((pos - count + i + 2 * Length) % Length)][(std::size_t) c]; }
 };
-} // namespace lynx::livehistory
+} // namespace yw::livehistory

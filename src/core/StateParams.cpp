@@ -15,7 +15,7 @@
 #include "core/MultibandDelayFx.h"
 #include "core/Vocodex.h"
 
-namespace lynx::stateparams
+namespace yw::stateparams
 {
 int Table::index (const char* n) const
 {
@@ -587,7 +587,7 @@ const std::vector<VcxField>& vcxFields()
     return f;
 }
 
-// byte offset of the controls block in a slot state (FL's state + LYNX's install-data trailer); 0 = not a Vocodex state
+// byte offset of the controls block in a slot state (FL's state + YW's install-data trailer); 0 = not a Vocodex state
 std::size_t vcxBlock (const std::vector<std::uint8_t>& slotState)
 {
     const auto fl = vocodex::splitInstallData (slotState).first;
@@ -692,4 +692,4 @@ const Table* tableFor (EffectKind kind)
     }
     return &tables.emplace (kind, std::move (t)).first->second;
 }
-} // namespace lynx::stateparams
+} // namespace yw::stateparams

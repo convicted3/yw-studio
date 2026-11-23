@@ -16,7 +16,7 @@
 #include "core/DirectWave.h"
 #include "core/Sfz.h"
 
-namespace lynx::dw
+namespace yw::dw
 {
 struct Node
 {
@@ -34,7 +34,7 @@ struct Doc
 
 std::optional<Doc> readDoc (const std::vector<std::uint8_t>& state);
 std::vector<std::uint8_t> writeDoc (const Doc& doc);
-// Gives every zone record shorter than LYNX reads its full size, as DirectWave reads it (zeros; the sample format
+// Gives every zone record shorter than YW reads its full size, as DirectWave reads it (zeros; the sample format
 // record's bit depth 32; zoneRecordSize), e.g. the 36-byte sample format records of FL's version-36 programs, for a
 // release whose reader skipped such records (File › "Save a copy for an older YW Studio", rollup 0.1.30). Returns how many.
 int completeShortZoneRecords (Doc& doc);
@@ -95,9 +95,9 @@ std::optional<WavInfo> readWavInfo (const std::vector<std::uint8_t>& wav);
 std::string zoneNameOf (const std::string& path);
 
 // ---- importing (issue #157 asks for SoundFont / SFZ programs; FL converts them with its own importers, which were not
-// read: LYNX's mapping, approximate). An .sfz's regions as zones: sample (with default_path, relative to `folder`),
+// read: YW's mapping, approximate). An .sfz's regions as zones: sample (with default_path, relative to `folder`),
 // lokey / hikey / key, lovel / hivel, pitch_keycenter, pitch_keytrack, transpose, tune, volume / gain, pan, offset,
 // loop_mode, loop_start / loop_end. Each zone's format (frames, channels, rate, bits) is left for the caller to fill
 // from the file; `resolve` turns the joined path into an existing file ("" = missing: the region is skipped).
 Program programFromSfz (const sfz::Parsed& parsed, const std::string& folder, const std::function<std::string (const std::string&)>& resolve);
-} // namespace lynx::dw
+} // namespace yw::dw

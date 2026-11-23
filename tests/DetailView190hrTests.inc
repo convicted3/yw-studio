@@ -6,7 +6,7 @@
 
 namespace dv190hr
 {
-using namespace lynx;
+using namespace yw;
 using grid181a::bar;
 using grid181a::closeTo;
 
@@ -30,7 +30,7 @@ inline std::string scaledSet()
 
 TEST (dv190hr_start_marker_inside_the_loop_plays_from_it_then_loops)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace dv190hr;
     auto s = grid181a::patternSong();
     Note second;
@@ -57,7 +57,7 @@ TEST (dv190hr_start_marker_inside_the_loop_plays_from_it_then_loops)
 
 TEST (dv190hr_start_lead_is_only_for_looping_clips_and_stays_in_the_loop)
 {
-    using namespace lynx;
+    using namespace yw;
     ClipGridSlot slot;
     slot.startMarker = 3 * ppq;
     CHECK (launcher::startLead (slot, 4 * ppq) == 3.0 * ppq);
@@ -69,7 +69,7 @@ TEST (dv190hr_start_lead_is_only_for_looping_clips_and_stays_in_the_loop)
 
 TEST (dv190hr_start_marker_round_trips_through_live_session_view)
 {
-    using namespace lynx;
+    using namespace yw;
     auto set = als181c::sessionSet();
     const std::string zero = "<StartRelative Value=\"0.000000\" />";
     const auto at = set.find (zero);
@@ -90,7 +90,7 @@ TEST (dv190hr_start_marker_round_trips_through_live_session_view)
 
 TEST (dv190hr_clip_scale_round_trips_through_live_session_view)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto song = importAls (als175a::bytesOf (dv190hr::scaledSet()), als181c::options());
     CHECK (song.has_value());
     if (! song)
@@ -120,7 +120,7 @@ TEST (dv190hr_clip_scale_round_trips_through_live_session_view)
 
 TEST (dv190hr_clip_scale_mode_off_gives_the_tools_no_key)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     projectkey::set (s, projectkey::Key { 0, projectkey::commonFirst().front() });
     ClipGridSlot slot;
@@ -136,7 +136,7 @@ TEST (dv190hr_clip_scale_mode_off_gives_the_tools_no_key)
 
 TEST (dv190hr_transpose_reaches_48_semitones_in_and_out)
 {
-    using namespace lynx;
+    using namespace yw;
     auto set = als181c::sessionSet();
     const std::string mode = "<WarpMode Value=\"0\" />";
     const auto at = set.find (mode);
@@ -154,8 +154,8 @@ TEST (dv190hr_transpose_reaches_48_semitones_in_and_out)
 
 TEST (dv190hr_live_grid_steps_and_keys)
 {
-    using namespace lynx;
-    using namespace lynx::livegrid;
+    using namespace yw;
+    using namespace yw::livegrid;
     Grid g; // DefaultLiveSet: adaptive, Medium, 1/16, snap on
     CHECK (! g.fixed && g.density == mediumDensity && g.snap && ! g.triplet);
     g.fixed = true;

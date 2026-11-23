@@ -1,6 +1,6 @@
 #pragma once
 
-// "Every control changes the render" (round 170i3): for one FL-native generator channel, each control the LYNX editor
+// "Every control changes the render" (round 170i3): for one FL-native generator channel, each control the YW editor
 // shows is flipped to the far end of its range and a short note pattern is rendered through the same three paths the
 // app uses:
 //   state — a new instrument built from the edited channel (a project saved and opened again)
@@ -31,7 +31,7 @@
 #include "core/RackRenderer.h"
 #include "core/Song.h"
 
-namespace lynx::ctlaudit
+namespace yw::ctlaudit
 {
 // one editor control of a channel: how to read it and write it as the editor does (raw value, the control's range)
 // FL's installation for the controls that load files (natives::followControl), set by the caller; nullptr = none
@@ -455,4 +455,4 @@ inline std::vector<int> stillDead (const ChannelDef& c, const std::vector<Contro
     }
     return left;
 }
-} // namespace lynx::ctlaudit
+} // namespace yw::ctlaudit

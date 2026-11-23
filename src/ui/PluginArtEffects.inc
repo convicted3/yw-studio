@@ -1,7 +1,7 @@
 // The effects' themes of the "Themed" plugin style (see PluginArt.inc for the framework and the rules; the art
 // directions and the style guide are in the tracker's plugin-art-0.1.24.md). One block per theme: its drawing
 // hooks, then its Theme record; then the registry and artForEffect. Ids: PluginArtEffectIds.inc (128..255).
-// LYNX's own procedural drawings only — never a copied, traced or extracted bitmap, logo or skin.
+// YW's own procedural drawings only — never a copied, traced or extracted bitmap, logo or skin.
 
 namespace artkit
 {
@@ -462,7 +462,7 @@ inline const Theme& ridge4kTheme()
 
 // === Kiln Channel (console-emulation channel role, round tp172c7): a compact single-channel console — near-black ===
 // side columns for the main level and meters, a dark gunmetal centre module with fine brushing and corner screws, an
-// amber-lit VU, a kiln-mouth emblem (LYNX's own mark for the plugin) and amber key lamps
+// amber-lit VU, a kiln-mouth emblem (YW's own mark for the plugin) and amber key lamps
 
 inline void kilnEmblem (juce::Graphics& g, Point<float> c, float r)
 {
@@ -714,8 +714,8 @@ inline const Theme& strikeTheme()
     return t;
 }
 
-// === Anvil Bus (round 190fk, LYNX's drum-bus processor): forged gunmetal hammered by hand, a forge's ember glow
-// along the bottom edge, steel knobs with ember pointers; a small anvil beside each section title. LYNX's own drawing.
+// === Anvil Bus (round 190fk, YW's drum-bus processor): forged gunmetal hammered by hand, a forge's ember glow
+// along the bottom edge, steel knobs with ember pointers; a small anvil beside each section title. YW's own drawing.
 inline void canvasAnvil (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     valley (g, a, Colour (0xff2b2d32), Colour (0xff17181b), Colour (0xff1d1e22), 0.62f);
@@ -4006,9 +4006,9 @@ inline const Theme& pitcherTheme()
     return t;
 }
 
-// === LYNX Tune (vocal tuning role): a pitch lattice with a curve snapping to its lines, warm rose ================
+// === YW Tune (vocal tuning role): a pitch lattice with a curve snapping to its lines, warm rose ================
 
-inline void canvasLynxTune (juce::Graphics& g, Rectangle<float> a, bool display)
+inline void canvasYwTune (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
     vfill (g, a, p.bgTop, p.bgBottom);
@@ -4046,7 +4046,7 @@ inline void canvasLynxTune (juce::Graphics& g, Rectangle<float> a, bool display)
     vignette (g, a, 0.4f);
 }
 
-inline void lynxTuneEmblem (juce::Graphics& g, Point<float> c, float r) // a quantised step
+inline void ywTuneEmblem (juce::Graphics& g, Point<float> c, float r) // a quantised step
 {
     juce::Path s;
     s.startNewSubPath (c.x - r * 1.2f, c.y + r * 0.6f);
@@ -4057,7 +4057,7 @@ inline void lynxTuneEmblem (juce::Graphics& g, Point<float> c, float r) // a qua
     g.strokePath (s, stroke (1.5f));
 }
 
-inline const Theme& lynxTuneTheme()
+inline const Theme& ywTuneTheme()
 {
     static const Theme t = []
     {
@@ -4067,8 +4067,8 @@ inline const Theme& lynxTuneTheme()
         x.pal = { Colour (0xff221a20), Colour (0xff0a0709), Colour (0xffff5f87), Colour (0xffffc0d0), Colour (0x9c201820), Colour (0xb80a0709),
                   Colour (0xff8a5a6a), Colour (0xfffff0f4), Colour (0xff070506), Colour (0xff3a2c34), Colour (0xff141014), Colour (0xff2a2026),
                   Colour (0xffffffff), Colour (0xff221a20) };
-        x.canvas = canvasLynxTune;
-        x.titleEmblem = lynxTuneEmblem;
+        x.canvas = canvasYwTune;
+        x.titleEmblem = ywTuneEmblem;
         x.drawCap = capPebble;
         x.twoTone = true;
         x.arcGlow = 0.3f;
@@ -4443,7 +4443,7 @@ inline const Theme& lofiTheme()
     return t;
 }
 
-// === batch 8: LYNX's basic effects and FL's smaller tools — lighter themes, each with its own motif ================
+// === batch 8: YW's basic effects and FL's smaller tools — lighter themes, each with its own motif ================
 // The motifs below are shared; each theme picks one with its own palette and placement.
 
 inline void motifRings (juce::Graphics& g, Rectangle<float> a, Point<float> c, int n, float step, float squash, Colour col, float alpha)
@@ -4507,7 +4507,7 @@ inline float fnTilt (float u) { return 0.6f - 1.2f * u + 0.15f * std::sin (u * 9
 inline float fnBass (float u) { return 0.8f * std::exp (-std::pow (u / 0.18f, 2.0f)) - 0.1f; }
 inline float fnPresence (float u) { return 0.7f * std::exp (-std::pow ((u - 0.7f) / 0.15f, 2.0f)); }
 
-// --- LYNX's EQ: a clean bell over a fine grid (studio steel) -----------------------------------------------------------
+// --- YW's EQ: a clean bell over a fine grid (studio steel) -----------------------------------------------------------
 inline void canvasBasicEq (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
@@ -4522,7 +4522,7 @@ inline void canvasBasicEq (juce::Graphics& g, Rectangle<float> a, bool display)
     vignette (g, a, 0.4f);
 }
 
-// --- LYNX's Compressor (RComp role): a renaissance gold — an arch of a squeezed waveform ---------------------------------
+// --- YW's Compressor (RComp role): a renaissance gold — an arch of a squeezed waveform ---------------------------------
 inline void canvasBasicComp (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
@@ -4533,7 +4533,7 @@ inline void canvasBasicComp (juce::Graphics& g, Rectangle<float> a, bool display
     vignette (g, a, 0.4f);
 }
 
-// --- LYNX's Delay: echoes — a pulse and its repeats fading to the right --------------------------------------------------
+// --- YW's Delay: echoes — a pulse and its repeats fading to the right --------------------------------------------------
 inline void canvasBasicDelay (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
@@ -4549,7 +4549,7 @@ inline void canvasBasicDelay (juce::Graphics& g, Rectangle<float> a, bool displa
     vignette (g, a, 0.4f);
 }
 
-// --- LYNX's Reverb: a room's reflections — rays bouncing off walls -------------------------------------------------------
+// --- YW's Reverb: a room's reflections — rays bouncing off walls -------------------------------------------------------
 inline void canvasBasicReverb (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
@@ -4573,7 +4573,7 @@ inline void canvasBasicReverb (juce::Graphics& g, Rectangle<float> a, bool displ
     vignette (g, a, 0.4f);
 }
 
-// --- LYNX's Limiter / Distortion / Filter / Chorus ------------------------------------------------------------------------
+// --- YW's Limiter / Distortion / Filter / Chorus ------------------------------------------------------------------------
 inline void canvasBasicLimiter (juce::Graphics& g, Rectangle<float> a, bool display)
 {
     const auto& p = pal();
@@ -4853,15 +4853,15 @@ inline Theme liteTheme (const char* name, Style base, Colour bgTop, Colour bgBot
     return x;
 }
 
-#define LYNX_LITE_THEME(fn, ...) inline const Theme& fn() { static const Theme t = liteTheme (__VA_ARGS__); return t; }
-LYNX_LITE_THEME (basicEqTheme, "EQ", Style::glow, Colour (0xff1a2026), Colour (0xff080a0d), Colour (0xffff4a5a), Colour (0xff9ad0ff), canvasBasicEq, Cap::flat)
-LYNX_LITE_THEME (basicCompTheme, "Compressor", Style::hardware, Colour (0xff2a2418), Colour (0xff0d0b07), Colour (0xffe8b54a), Colour (0xfffff0c8), canvasBasicComp, Cap::flat, capBrass)
-LYNX_LITE_THEME (basicDelayTheme, "Delay", Style::glow, Colour (0xff14202c), Colour (0xff05090d), Colour (0xff4ab8ff), Colour (0xffc8ecff), canvasBasicDelay, Cap::rubber)
-LYNX_LITE_THEME (basicReverbTheme, "Reverb", Style::neon, Colour (0xff1c1630), Colour (0xff07050f), Colour (0xffa67cff), Colour (0xffe0d4ff), canvasBasicReverb, Cap::orb)
-LYNX_LITE_THEME (basicLimiterTheme, "Limiter", Style::glow, Colour (0xff221a1a), Colour (0xff0b0808), Colour (0xffff5a4a), Colour (0xffffd0c8), canvasBasicLimiter, Cap::flat)
-LYNX_LITE_THEME (basicDistortionTheme, "Distortion", Style::vivid, Colour (0xff261410), Colour (0xff0b0504), Colour (0xffff6a2a), Colour (0xffffd08a), canvasBasicDistortion, Cap::rubber)
-LYNX_LITE_THEME (basicFilterTheme, "Filter", Style::neon, Colour (0xff10222a), Colour (0xff04090c), Colour (0xff3ae0d0), Colour (0xffb8fff4), canvasBasicFilter, Cap::orb)
-LYNX_LITE_THEME (basicChorusTheme, "Chorus", Style::glow, Colour (0xff121c2a), Colour (0xff05080d), Colour (0xff5ad8ff), Colour (0xffd0a8ff), canvasBasicChorus, Cap::porcelain)
+#define YW_LITE_THEME(fn, ...) inline const Theme& fn() { static const Theme t = liteTheme (__VA_ARGS__); return t; }
+YW_LITE_THEME (basicEqTheme, "EQ", Style::glow, Colour (0xff1a2026), Colour (0xff080a0d), Colour (0xffff4a5a), Colour (0xff9ad0ff), canvasBasicEq, Cap::flat)
+YW_LITE_THEME (basicCompTheme, "Compressor", Style::hardware, Colour (0xff2a2418), Colour (0xff0d0b07), Colour (0xffe8b54a), Colour (0xfffff0c8), canvasBasicComp, Cap::flat, capBrass)
+YW_LITE_THEME (basicDelayTheme, "Delay", Style::glow, Colour (0xff14202c), Colour (0xff05090d), Colour (0xff4ab8ff), Colour (0xffc8ecff), canvasBasicDelay, Cap::rubber)
+YW_LITE_THEME (basicReverbTheme, "Reverb", Style::neon, Colour (0xff1c1630), Colour (0xff07050f), Colour (0xffa67cff), Colour (0xffe0d4ff), canvasBasicReverb, Cap::orb)
+YW_LITE_THEME (basicLimiterTheme, "Limiter", Style::glow, Colour (0xff221a1a), Colour (0xff0b0808), Colour (0xffff5a4a), Colour (0xffffd0c8), canvasBasicLimiter, Cap::flat)
+YW_LITE_THEME (basicDistortionTheme, "Distortion", Style::vivid, Colour (0xff261410), Colour (0xff0b0504), Colour (0xffff6a2a), Colour (0xffffd08a), canvasBasicDistortion, Cap::rubber)
+YW_LITE_THEME (basicFilterTheme, "Filter", Style::neon, Colour (0xff10222a), Colour (0xff04090c), Colour (0xff3ae0d0), Colour (0xffb8fff4), canvasBasicFilter, Cap::orb)
+YW_LITE_THEME (basicChorusTheme, "Chorus", Style::glow, Colour (0xff121c2a), Colour (0xff05080d), Colour (0xff5ad8ff), Colour (0xffd0a8ff), canvasBasicChorus, Cap::porcelain)
 // round tp172d: PanMan's hardware look (Auto-pan's role) — black face, walnut cheeks, white outlines, a red LED meter
 inline const Theme& autoPanTheme()
 {
@@ -4877,31 +4877,31 @@ inline const Theme& autoPanTheme()
     }();
     return t;
 }
-LYNX_LITE_THEME (panOMaticTheme, "Fruity PanOMatic", Style::vivid, Colour (0xff1e1430), Colour (0xff09060f), Colour (0xffff7ad0), Colour (0xff9ae8ff), canvasPan, Cap::rubber)
-LYNX_LITE_THEME (balanceTheme, "Fruity Balance", Style::glow, Colour (0xff1c1e22), Colour (0xff09090b), Colour (0xffd8c08a), Colour (0xfff0e8d8), canvasBalance, Cap::flat, capBrass)
-LYNX_LITE_THEME (utilityTheme, "Utility", Style::glow, Colour (0xff1e2024), Colour (0xff0a0a0c), Colour (0xffb6ff5c), Colour (0xffe0e4e8), canvasUtility, Cap::flat)
-LYNX_LITE_THEME (sendTheme, "Fruity Send", Style::glow, Colour (0xff1a1e26), Colour (0xff08090c), Colour (0xff7ab8ff), Colour (0xffe0ecff), canvasUtility, Cap::flat)
-LYNX_LITE_THEME (splitterTheme, "Frequency Splitter", Style::glow, Colour (0xff10202a), Colour (0xff04080c), Colour (0xff4fa8ff), Colour (0xff4fe08a), canvasDelta, Cap::flat)
-LYNX_LITE_THEME (crossoverTheme, "Crossover", Style::glow, Colour (0xff141e26), Colour (0xff05080b), Colour (0xff5ab4ff), Colour (0xffffc04a), canvasDelta, Cap::flat)
-LYNX_LITE_THEME (multibandDelayTheme, "Multiband Delay", Style::vivid, Colour (0xff141428), Colour (0xff05050e), Colour (0xffffc04a), Colour (0xff4fa8ff), canvasSkyline, Cap::orb)
-LYNX_LITE_THEME (equoTheme, "EQUO", Style::neon, Colour (0xff142030), Colour (0xff05080f), Colour (0xff46d8ff), Colour (0xffff7ad0), canvasGraphicEq, Cap::flat)
-LYNX_LITE_THEME (emphasizerTheme, "Emphasizer", Style::glow, Colour (0xff221c14), Colour (0xff0b0906), Colour (0xffffc86a), Colour (0xfffff0d0), canvasEmphasis, Cap::porcelain)
-LYNX_LITE_THEME (lowLifterTheme, "Low Lifter", Style::hardware, Colour (0xff1a1c26), Colour (0xff07080c), Colour (0xffff7a3a), Colour (0xffffd8b0), canvasBassBoost, Cap::bakelite)
-LYNX_LITE_THEME (fastLpTheme, "Fruity Fast LP", Style::neon, Colour (0xff10261e), Colour (0xff040b08), Colour (0xff3aff9a), Colour (0xffc8ffe0), canvasSweep, Cap::rubber)
-LYNX_LITE_THEME (fruityFilterTheme, "Fruity Filter", Style::neon, Colour (0xff1a1430), Colour (0xff07050f), Colour (0xffc070ff), Colour (0xff70e0ff), canvasSweep, Cap::orb)
-LYNX_LITE_THEME (freeFilterTheme, "Fruity Free Filter", Style::neon, Colour (0xff0e2230), Colour (0xff04090f), Colour (0xff3ac8ff), Colour (0xffff9a6a), canvasSweep, Cap::orb)
-LYNX_LITE_THEME (sevenBandTheme, "Fruity 7 Band EQ", Style::hardware, Colour (0xff22262c), Colour (0xff0a0b0d), Colour (0xff6ae06a), Colour (0xffe8ffe0), canvasGraphicEq, Cap::bakelite)
-LYNX_LITE_THEME (bassBoostTheme, "Fruity Bass Boost", Style::vivid, Colour (0xff200f1c), Colour (0xff0a0409), Colour (0xffff3a8a), Colour (0xffffc0e0), canvasBassBoost, Cap::rubber)
-LYNX_LITE_THEME (convolverTheme, "Fruity Convolver", Style::glow, Colour (0xff1c1a24), Colour (0xff08070c), Colour (0xffd8c08a), Colour (0xffb8a8ff), canvasCathedral, Cap::flat, capStone)
-LYNX_LITE_THEME (volumeGateTheme, "Volume gate", Style::vivid, Colour (0xff1a1430), Colour (0xff07050f), Colour (0xffff4fa3), Colour (0xff4fe0ff), canvasGate, Cap::rubber)
-LYNX_LITE_THEME (rhythmGainTheme, "Rhythmic envelope", Style::vivid, Colour (0xff201628), Colour (0xff0a060d), Colour (0xffff7a5a), Colour (0xffffd0a0), canvasGate, Cap::rubber)
-LYNX_LITE_THEME (freqShiftTheme, "Freq Shift", Style::neon, Colour (0xff102224), Colour (0xff04090a), Colour (0xff3ae0c0), Colour (0xffff8a6a), canvasShift, Cap::orb)
-LYNX_LITE_THEME (pitchShiftTheme, "Pitch shift", Style::neon, Colour (0xff181a36), Colour (0xff06070f), Colour (0xff6ab8ff), Colour (0xffd0a8ff), canvasShift, Cap::orb)
-LYNX_LITE_THEME (phaseInverterTheme, "Fruity Phase Inverter", Style::glow, Colour (0xff1e1e24), Colour (0xff09090c), Colour (0xff9ad0ff), Colour (0xffff9a9a), canvasSine, Cap::flat)
-LYNX_LITE_THEME (centerTheme, "Fruity Center", Style::glow, Colour (0xff1e2024), Colour (0xff09090b), Colour (0xffd0d4da), Colour (0xff9ad0ff), canvasUtility, Cap::flat)
-LYNX_LITE_THEME (delay1Theme, "Fruity Delay", Style::glow, Colour (0xff162226), Colour (0xff060a0b), Colour (0xff6ad8c0), Colour (0xffd0fff4), canvasBasicDelay, Cap::rubber)
-LYNX_LITE_THEME (mute2Theme, "Fruity Mute 2", Style::glow, Colour (0xff221a1c), Colour (0xff0b0809), Colour (0xffff5a5a), Colour (0xffe0e0e0), canvasUtility, Cap::flat)
-#undef LYNX_LITE_THEME
+YW_LITE_THEME (panOMaticTheme, "Fruity PanOMatic", Style::vivid, Colour (0xff1e1430), Colour (0xff09060f), Colour (0xffff7ad0), Colour (0xff9ae8ff), canvasPan, Cap::rubber)
+YW_LITE_THEME (balanceTheme, "Fruity Balance", Style::glow, Colour (0xff1c1e22), Colour (0xff09090b), Colour (0xffd8c08a), Colour (0xfff0e8d8), canvasBalance, Cap::flat, capBrass)
+YW_LITE_THEME (utilityTheme, "Utility", Style::glow, Colour (0xff1e2024), Colour (0xff0a0a0c), Colour (0xffb6ff5c), Colour (0xffe0e4e8), canvasUtility, Cap::flat)
+YW_LITE_THEME (sendTheme, "Fruity Send", Style::glow, Colour (0xff1a1e26), Colour (0xff08090c), Colour (0xff7ab8ff), Colour (0xffe0ecff), canvasUtility, Cap::flat)
+YW_LITE_THEME (splitterTheme, "Frequency Splitter", Style::glow, Colour (0xff10202a), Colour (0xff04080c), Colour (0xff4fa8ff), Colour (0xff4fe08a), canvasDelta, Cap::flat)
+YW_LITE_THEME (crossoverTheme, "Crossover", Style::glow, Colour (0xff141e26), Colour (0xff05080b), Colour (0xff5ab4ff), Colour (0xffffc04a), canvasDelta, Cap::flat)
+YW_LITE_THEME (multibandDelayTheme, "Multiband Delay", Style::vivid, Colour (0xff141428), Colour (0xff05050e), Colour (0xffffc04a), Colour (0xff4fa8ff), canvasSkyline, Cap::orb)
+YW_LITE_THEME (equoTheme, "EQUO", Style::neon, Colour (0xff142030), Colour (0xff05080f), Colour (0xff46d8ff), Colour (0xffff7ad0), canvasGraphicEq, Cap::flat)
+YW_LITE_THEME (emphasizerTheme, "Emphasizer", Style::glow, Colour (0xff221c14), Colour (0xff0b0906), Colour (0xffffc86a), Colour (0xfffff0d0), canvasEmphasis, Cap::porcelain)
+YW_LITE_THEME (lowLifterTheme, "Low Lifter", Style::hardware, Colour (0xff1a1c26), Colour (0xff07080c), Colour (0xffff7a3a), Colour (0xffffd8b0), canvasBassBoost, Cap::bakelite)
+YW_LITE_THEME (fastLpTheme, "Fruity Fast LP", Style::neon, Colour (0xff10261e), Colour (0xff040b08), Colour (0xff3aff9a), Colour (0xffc8ffe0), canvasSweep, Cap::rubber)
+YW_LITE_THEME (fruityFilterTheme, "Fruity Filter", Style::neon, Colour (0xff1a1430), Colour (0xff07050f), Colour (0xffc070ff), Colour (0xff70e0ff), canvasSweep, Cap::orb)
+YW_LITE_THEME (freeFilterTheme, "Fruity Free Filter", Style::neon, Colour (0xff0e2230), Colour (0xff04090f), Colour (0xff3ac8ff), Colour (0xffff9a6a), canvasSweep, Cap::orb)
+YW_LITE_THEME (sevenBandTheme, "Fruity 7 Band EQ", Style::hardware, Colour (0xff22262c), Colour (0xff0a0b0d), Colour (0xff6ae06a), Colour (0xffe8ffe0), canvasGraphicEq, Cap::bakelite)
+YW_LITE_THEME (bassBoostTheme, "Fruity Bass Boost", Style::vivid, Colour (0xff200f1c), Colour (0xff0a0409), Colour (0xffff3a8a), Colour (0xffffc0e0), canvasBassBoost, Cap::rubber)
+YW_LITE_THEME (convolverTheme, "Fruity Convolver", Style::glow, Colour (0xff1c1a24), Colour (0xff08070c), Colour (0xffd8c08a), Colour (0xffb8a8ff), canvasCathedral, Cap::flat, capStone)
+YW_LITE_THEME (volumeGateTheme, "Volume gate", Style::vivid, Colour (0xff1a1430), Colour (0xff07050f), Colour (0xffff4fa3), Colour (0xff4fe0ff), canvasGate, Cap::rubber)
+YW_LITE_THEME (rhythmGainTheme, "Rhythmic envelope", Style::vivid, Colour (0xff201628), Colour (0xff0a060d), Colour (0xffff7a5a), Colour (0xffffd0a0), canvasGate, Cap::rubber)
+YW_LITE_THEME (freqShiftTheme, "Freq Shift", Style::neon, Colour (0xff102224), Colour (0xff04090a), Colour (0xff3ae0c0), Colour (0xffff8a6a), canvasShift, Cap::orb)
+YW_LITE_THEME (pitchShiftTheme, "Pitch shift", Style::neon, Colour (0xff181a36), Colour (0xff06070f), Colour (0xff6ab8ff), Colour (0xffd0a8ff), canvasShift, Cap::orb)
+YW_LITE_THEME (phaseInverterTheme, "Fruity Phase Inverter", Style::glow, Colour (0xff1e1e24), Colour (0xff09090c), Colour (0xff9ad0ff), Colour (0xffff9a9a), canvasSine, Cap::flat)
+YW_LITE_THEME (centerTheme, "Fruity Center", Style::glow, Colour (0xff1e2024), Colour (0xff09090b), Colour (0xffd0d4da), Colour (0xff9ad0ff), canvasUtility, Cap::flat)
+YW_LITE_THEME (delay1Theme, "Fruity Delay", Style::glow, Colour (0xff162226), Colour (0xff060a0b), Colour (0xff6ad8c0), Colour (0xffd0fff4), canvasBasicDelay, Cap::rubber)
+YW_LITE_THEME (mute2Theme, "Fruity Mute 2", Style::glow, Colour (0xff221a1c), Colour (0xff0b0809), Colour (0xffff5a5a), Colour (0xffe0e0e0), canvasUtility, Cap::flat)
+#undef YW_LITE_THEME
 
 // === the registry =================================================================================================
 
@@ -4970,7 +4970,7 @@ const Theme* effectTheme (Art a)
         case Art::vocodex: return &vocodexTheme();
         case Art::vocoder: return &vocoderTheme();
         case Art::pitcher: return &pitcherTheme();
-        case Art::lynxTune: return &lynxTuneTheme();
+        case Art::ywTune: return &ywTuneTheme();
         case Art::voiceShift: return &voiceShiftTheme();
         case Art::quell: return &quellTheme();
         case Art::pitchShifter: return &pitchShifterTheme();
@@ -5079,7 +5079,7 @@ Art artForEffect (EffectKind kind)
         case EffectKind::vocodex: return Art::vocodex;
         case EffectKind::vocoder: return Art::vocoder;
         case EffectKind::pitchCorrect: return Art::pitcher;
-        case EffectKind::lynxTune: return Art::lynxTune;
+        case EffectKind::ywTune: return Art::ywTune;
         case EffectKind::voiceShift: return Art::voiceShift;
         case EffectKind::quellDenoiser: return Art::quell;
         case EffectKind::flPitchShifter: return Art::pitchShifter;

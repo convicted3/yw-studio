@@ -11,7 +11,7 @@
             report.add (juce::String (name) + "=" + (ok ? "OK" : "FAIL") + (detail.isEmpty() ? juce::String() : " " + detail));
             allOk = allOk && ok;
         };
-        using namespace lynx;
+        using namespace yw;
 
         // a .mid file as drum / instrument plugins hand one over: two tracks ("Bass" and an unnamed drum track)
         const auto midiFile = juce::File (prefix + "-groove.mid");
@@ -312,7 +312,7 @@
         }
         ui.setLayoutStyle (layoutstyle::Style::pattern, false);
 
-        // ---- 8. Settings › LYNX extras with the new switches
+        // ---- 8. Settings › YW extras with the new switches
         {
             auto page = makeSettingsPanel (engine, SettingsPage::extras);
             page->setSize (juce::jmax (page->getWidth(), 760), 1600);

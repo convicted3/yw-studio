@@ -26,7 +26,7 @@
 #include "core/MidiImport.h"
 #include "core/ScriptDialog.h"
 
-namespace lynx
+namespace yw
 {
 class ChordHelperPanel; // (round 190mc, ui/ChordHelper.h)
 
@@ -117,7 +117,7 @@ public:
     void setScaleSnap (bool on);
     bool hasScale() const { return scaleIndex() > 0; } // a scale is chosen in the toolbar
     int scaleTonic() const { return hasScale() ? scaleRoot() : -1; } // its root (pitch class), or -1
-    // "Fold to the scale" (round 166d, issue #14; LYNX's own — FL only highlights the scale): only the in-scale keys
+    // "Fold to the scale" (round 166d, issue #14; YW's own — FL only highlights the scale): only the in-scale keys
     // are shown, and the notes on the other keys are hidden and left alone by the edits.
     bool isFoldedToScale() const noexcept { return foldToScale; }
     void setFoldToScale (bool on);
@@ -145,15 +145,15 @@ public:
     // window saves both with the UI options.
     static inline bool gridHighlights = true, showChordName = false;
     // View › Scale highlighting › "Black notes" / "Default" (FL 2026, round 190mq, issue #212): with no scale chosen, the
-    // rows of the black keys are shaded (FL's Black notes, LYNX's "No scale": on) or none is (FL's Default: off). A
+    // rows of the black keys are shaded (FL's Black notes, YW's "No scale": on) or none is (FL's Default: off). A
     // chosen scale (or Automatic) shades by the scale instead, whatever this says. Saved with the UI options.
     static inline bool blackKeyRows = true;
-    // View › Keyboard style (round 190j, discussion #136; LYNX's own): flat = FL's keyboard (the default), piano = a
+    // View › Keyboard style (round 190j, discussion #136; YW's own): flat = FL's keyboard (the default), piano = a
     // traditional keyboard with a line between every two white keys (core/PianoKeys.h). Saved with the UI options.
     static inline pianokeys::Style keyStyle = pianokeys::defaultStyle; // (round 190oo O-2: FL's keys)
     void setKeyStyle (pianokeys::Style style);
     static inline bool songBarsRuler = false; // round 177d: the ruler numbers song bars (off = FL: pattern bars)
-    // Round 190on (research190oe P10, core/StackedLanes.h): stacked controller lanes. The LYNX extra's switch (Pattern and
+    // Round 190on (research190oe P10, core/StackedLanes.h): stacked controller lanes. The YW extra's switch (Pattern and
     // Simple layouts; the Clip-launch layout always offers them) and the lane set, both kept in ui-options.txt
     // (prStackedLanesExtra, prStackedLanes). The "+" beside the bottom lane's chooser adds a lane above it.
     static inline bool stackedLanesExtra = false;
@@ -170,7 +170,7 @@ public:
     // FL's General › "Monophonic painting in piano roll" (round 189o, off): on, the Paint tool paints monophonically
     // without Shift (noteedit::monophonicPaint). Saved with the UI options.
     static inline bool monophonicPainting = false;
-    // Issue #183: "Preview notes while playing" (the Piano roll's menu; LYNX's, off: FL keeps the notes you place silent
+    // Issue #183: "Preview notes while playing" (the Piano roll's menu; YW's, off: FL keeps the notes you place silent
     // while the song or pattern plays). Saved with the UI settings (prPreviewPlaying).
     static inline bool previewWhilePlaying = false;
     // the keys of the selection, on every change (the toolbar's chord panel)
@@ -280,7 +280,7 @@ public:
     {
         return splitScaleBoxes() ? scaleRootBox.getBounds().getUnion (scaleNameBox.getBounds()) : scaleBox.getBounds();
     }
-    // The scale the rows show (LYNX's scale list index, 0 = none) on `root` (round 190ds: the Simple dock's "Only notes
+    // The scale the rows show (YW's scale list index, 0 = none) on `root` (round 190ds: the Simple dock's "Only notes
     // in key" sets the project key here before folding)
     void setScale (int root, int scale) { scaleBox.setSelectedId (scale <= 0 ? 1 : scale * 100 + root + 1, juce::sendNotificationSync); }
     std::unique_ptr<juce::Component> makeNoteInspectorForSnapshot (bool singleNote = false);
@@ -288,7 +288,7 @@ public:
     std::int64_t gridForSnapshot() const { return gridTicks(); }
     juce::PopupMenu getToolsMenuForSnapshot() { return toolsMenu(); }
     juce::PopupMenu getScriptsMenuForSnapshot() { return scriptsMenu(); }
-    // runs a Piano roll script by its menu name (LYNX's own, or a file of the script folders)
+    // runs a Piano roll script by its menu name (YW's own, or a file of the script folders)
     void runScriptForSnapshot (const juce::String& name);
     juce::PopupMenu getStampMenuForSnapshot() { return stampMenu(); }
     void squeezeToolbarForSnapshot (int pixels); // the toolbar as in a window `pixels` narrower (negative: back)
@@ -371,12 +371,12 @@ public:
     bool fitKeysToNotes = false;
     // Round 190jn (design190ia CL-20b): docked in the Clip View in the Clip-launch layout's Live look, the notes take the
     // clip's colour as Live 12.4 draws them (colour × 0.86, a 1 px black edge) on Live's note-editor grey #464F53
-    // (ableton190o live-01-clipview-notes.png); transparent = LYNX's note colours. Only the dock sets it.
+    // (ableton190o live-01-clipview-notes.png); transparent = YW's note colours. Only the dock sets it.
     juce::Colour liveNoteColour { juce::Colours::transparentBlack };
     bool liveNotes() const;
     // Round gap190og (coverage live1:detail-047): Live's Velocity Controls under the lanes of the docked Clip View (Live
     // look): the Randomize button and its Randomization Amount slider (1…127; typed digits + Enter randomize too)
-    // [DOC Live 12 manual 10.5.12; SHOT /mnt/e/lynx-work/ableton187c/shots/live-01-velocity-lane.png]. The amount is a UI
+    // [DOC Live 12 manual 10.5.12; SHOT /mnt/e/yw-work/ableton187c/shots/live-01-velocity-lane.png]. The amount is a UI
     // setting of the session (100: the capture's value), not saved.
     static inline int liveRandomizeAmount = 100;
     static constexpr int liveFooterBar = 18; // Live: a 1 px #242424 line + 17 px of #363636 (the capture's y 977…994)
@@ -649,7 +649,7 @@ public:
     // the keys a click on `key` at `tick` writes with the chosen stamp (the first leads the drag): the chord shape on the
     // scale-snapped key, or the Scale degree chord in the region's key; one key without a stamp (or without a key)
     std::vector<int> stampKeys (int key, std::int64_t tick) const;
-    // key markers (FL's Time markers › Add key marker; LYNX: a key region over the time selection)
+    // key markers (FL's Time markers › Add key marker; YW: a key region over the time selection)
     void addKeyMarker (std::int64_t tick, const keyregions::State& state);
     void addKeyRegion (std::int64_t from, std::int64_t to, const keyregions::State& state);
     juce::PopupMenu getMarkersMenuForSnapshot() { return markersMenu(); }
@@ -711,7 +711,7 @@ private:
     struct ScriptRef
     {
         juce::String name;  // menu name
-        juce::String key;   // the form memory's key (the script's path, or "lynx:<name>")
+        juce::String key;   // the form memory's key (the script's path, or "yw:<name>")
         std::string source; // a built-in script's text (a file is read when it runs)
         juce::File file;
     };
@@ -959,4 +959,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PianoRollComponent)
     std::unique_ptr<ui::TimerWhileShowing> showingTimer; // the polling timer, only while on screen (round 174f)
 };
-} // namespace lynx
+} // namespace yw

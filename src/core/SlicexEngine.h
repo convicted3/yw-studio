@@ -17,7 +17,7 @@
 
 #include "core/Slicex.h"
 
-namespace lynx::slicex
+namespace yw::slicex
 {
 // A deck's audio: planar float frames (right == nullptr: mono) kept alive by `owner`, and its regions
 struct DeckAudio
@@ -101,4 +101,4 @@ private:
 // shapes, and one cycle of an articulator's LFO wave (−1…1, from its start phase)
 std::vector<float> curveLevels (const Curve& curve, bool map, int count);
 std::vector<float> lfoCycle (const Articulator& articulator, int count);
-} // namespace lynx::slicex
+} // namespace yw::slicex

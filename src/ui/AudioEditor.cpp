@@ -54,7 +54,7 @@
 #include "ui/NativeChild.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -69,8 +69,8 @@ bool& clickFreeEditing()
 }
 
 // round 190ld (DP-58, owner decision PL2): FL Edison's wheel (zoom; Shift+wheel scrolls) by default; View › "Wheel
-// scrolls (LYNX)" switches every audio editor of the session to LYNX's earlier mapping (wheel scrolls, Ctrl+wheel zooms)
-bool& wheelScrollsLynx()
+// scrolls (YW)" switches every audio editor of the session to YW's earlier mapping (wheel scrolls, Ctrl+wheel zooms)
+bool& wheelScrollsYw()
 {
     static bool on = false;
     return on;
@@ -101,7 +101,7 @@ bool readAudioFile (const juce::File& file, ae::Audio& out)
 }
 
 // the clean clip look (docs/analise/UI_STUDY_playlist_clips.md): one light filled shape in a tint of the audio colour
-// Round 190jo (design190ia FW-24): Edison's canvas. FL's navy #353C4C read a step darker so it sits with LYNX's dark
+// Round 190jo (design190ia FW-24): Edison's canvas. FL's navy #353C4C read a step darker so it sits with YW's dark
 // panels (the waveform keeps 9.2:1 on it), its grid lines, and the light waveform.
 juce::Colour waveColour() { return juce::Colour (0xffd2d9e9); }
 const juce::Colour canvasColour { 0xff2b3140 }, canvasGrid { 0xff363d4e }, canvasGridStrong { 0xff434b5e };
@@ -132,7 +132,7 @@ juce::String formatSeconds (double s)
     return juce::String (negative ? "-" : "") + juce::String (minutes) + ":" + juce::String (rest, 3).paddedLeft ('0', 6);
 }
 
-// Spectrogram colours (LYNX's own map): the canvas, a deep red, the accent, amber, then white for the loudest.
+// Spectrogram colours (YW's own map): the canvas, a deep red, the accent, amber, then white for the loudest.
 juce::Colour spectrumColour (float db)
 {
     const auto t = juce::jlimit (0.0f, 1.0f, (db + 96.0f) / 96.0f);
@@ -2159,9 +2159,9 @@ public:
             return;
         const auto delta = std::abs (w.deltaY) > std::abs (w.deltaX) ? w.deltaY : w.deltaX;
         // round 190ld (DP-58, owner decision PL2): FL's mapping by default — the wheel zooms around the mouse,
-        // Shift+wheel (or a sideways swipe) scrolls; View › "Wheel scrolls (YW Studio)" brings back LYNX's (wheel scrolls,
+        // Shift+wheel (or a sideways swipe) scrolls; View › "Wheel scrolls (YW Studio)" brings back YW's (wheel scrolls,
         // Ctrl+wheel zooms)
-        const auto zoomGesture = wheelScrollsLynx() ? (e.mods.isCtrlDown() || e.mods.isCommandDown())
+        const auto zoomGesture = wheelScrollsYw() ? (e.mods.isCtrlDown() || e.mods.isCommandDown())
                                                     : (std::abs (w.deltaY) >= std::abs (w.deltaX) && ! e.mods.isShiftDown());
         if (zoomGesture)
             zoomAround ((float) e.x, delta > 0 ? 0.8 : 1.25);
@@ -2288,14 +2288,14 @@ public:
         return files.size() == 1 && SampleLibrary::isSampleFile (juce::File (files[0]));
     }
 
-    // a sample dragged from LYNX's Browser too (issue #12); not the editor's own Drag button
+    // a sample dragged from YW's Browser too (issue #12); not the editor's own Drag button
     bool isInterestedInDragSource (const SourceDetails& details) override
     {
         return details.sourceComponent.get() != &dragButton && BrowserComponent::isBrowserDrag (details)
                && SampleLibrary::isSampleFile (BrowserComponent::draggedFile (details));
     }
 
-    // round 190ee: the selection (or the whole sample) written to LYNX/Edits with its markers and loop, then dragged
+    // round 190ee: the selection (or the whole sample) written to YW/Edits with its markers and loop, then dragged
     // as the Browser drags a file, so the Playlist and the Channel Rack take it as they take a dropped sample
     juce::File writePartFile (ae::Range range)
     {
@@ -2361,7 +2361,7 @@ public:
     }
 
     // FL's Edison: a dropped file replaces what the editor shows (issue #12); with Ctrl held it is pasted at the
-    // cursor instead (LYNX's earlier behaviour)
+    // cursor instead (YW's earlier behaviour)
     void filesDropped (const juce::StringArray& files, int, int) override
     {
         if (files.isEmpty() || recState != RecState::idle)
@@ -2472,7 +2472,7 @@ private:
     }
 
     // FL's Edison snap (round 190ee; Edison_x64.dll snap function 0x855d20, Snap menu Tags 0…4): the toolbar's Snap
-    // button switches snapping on and off, the Snap menu picks what it snaps to. LYNX's grid is the one its ruler
+    // button switches snapping on and off, the Snap menu picks what it snaps to. YW's grid is the one its ruler
     // draws at the current zoom. Round natives190kj: FL's grid-step law (0x84c890, core/EdisonView.h grid) outside the
     // beat-time view, and "Snap to pitch period" (key 5, the period of the Sample properties' pitch).
     static juce::String snapCaption (int mode)
@@ -3667,7 +3667,7 @@ private:
     struct ScriptRef
     {
         juce::String name;   // menu name
-        juce::String key;    // the form memory's key (the script's path, or "lynx:<folder>/<name>")
+        juce::String key;    // the form memory's key (the script's path, or "yw:<folder>/<name>")
         juce::String folder; // a built-in script's folder
         std::string source;  // a built-in script's text (a file is read when it runs)
         juce::File file;
@@ -3692,7 +3692,7 @@ private:
     };
 
     // where scripts come from: FL Studio's own folder (System/Config/Audio scripts, read in place), then the user's
-    // Documents/LYNX/Audio scripts
+    // Documents/YW/Audio scripts
     static std::vector<std::pair<juce::String, juce::File>> scriptFolders()
     {
         static const auto fl = [] {
@@ -3717,7 +3717,7 @@ private:
             ScriptRef r;
             r.name = juce::String::fromUTF8 (b.name);
             r.folder = juce::String::fromUTF8 (b.folder);
-            r.key = "lynx:" + r.folder + "/" + r.name;
+            r.key = "yw:" + r.folder + "/" + r.name;
             r.source = b.source;
             own[r.folder].addItem (r.name, true, false, [this, r] { runScript (r); });
         }
@@ -3843,8 +3843,8 @@ private:
             const auto key = job->ref.key.toStdString();
             if (form.controls.size() == 1 && form.controls[0].hint == "file") // Sample.LoadFromFile_Ask
             {
-                auto chooser = lynx::ui::makeSharedFileChooser (tr ("Open"), juce::File(), "*.wav;*.flac;*.aif;*.aiff;*.ogg;*.mp3");
-                lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self, job, form, chooser] (const juce::FileChooser& fc) {
+                auto chooser = yw::ui::makeSharedFileChooser (tr ("Open"), juce::File(), "*.wav;*.flac;*.aif;*.aiff;*.ogg;*.mp3");
+                yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self, job, form, chooser] (const juce::FileChooser& fc) {
                     if (self == nullptr)
                         return;
                     auto answer = form;
@@ -3916,7 +3916,7 @@ private:
         });
     }
 
-    // Edit last script: the script's file in the system's editor (a LYNX script is first saved to My scripts)
+    // Edit last script: the script's file in the system's editor (a YW script is first saved to My scripts)
     void editLastScript()
     {
         if (lastScript.key.isEmpty())
@@ -3983,7 +3983,7 @@ private:
             if (self == nullptr)
                 return -1.0;
             const auto mono = self->monoOf (range);
-            // LYNX's own detector (YIN pitch track, its median over the pitched frames): FL's analyser is not ported
+            // YW's own detector (YIN pitch track, its median over the pitched frames): FL's analyser is not ported
             const auto track = warpengine::pitchTrack (mono.data(), (long) mono.size(), self->doc.audio.sampleRate);
             std::vector<float> pitched;
             for (const auto v : track.semitones)
@@ -4002,7 +4002,7 @@ private:
             const auto& a = self->doc.audio;
             const auto* l = a.channels[0].data() + range.start;
             const auto* r = a.numChannels() > 1 ? a.channels[1].data() + range.start : nullptr;
-            // LYNX's tempo detection (core/TempoDetect) for both of FL's song methods
+            // YW's tempo detection (core/TempoDetect) for both of FL's song methods
             return tempodetect::detect (l, r, (std::size_t) range.length(), a.sampleRate).bpm;
         };
         h.accept = [self] (const sampleprops::Form& f) {
@@ -4149,7 +4149,7 @@ private:
         setStatus (tr ("{0} markers added", { juce::String (n) }), false);
     }
 
-    // Round 190lo: Tools › Analysis › "Edit notes (polyphonic)..." — LYNX's polyphonic note editor (ui/PolyEditor.h) on
+    // Round 190lo: Tools › Analysis › "Edit notes (polyphonic)..." — YW's polyphonic note editor (ui/PolyEditor.h) on
     // the selection, or the whole audio, as a buffer: the editor keeps its own undo, and its Apply writes the edited notes
     // back over the same frames as one Edison undo step
     void editNotesPolyphonic()
@@ -4176,7 +4176,7 @@ private:
     }
 
     // FL's Detect pitch regions (round natives190kj, 0x869100): one region per detected note, named after it. FL's
-    // pitch analyser is not ported: the notes are LYNX's Newtone analysis (core/NewtoneFx.h analyseNotes).
+    // pitch analyser is not ported: the notes are YW's Newtone analysis (core/NewtoneFx.h analyseNotes).
     void detectPitchRegions()
     {
         if (doc.audio.empty())
@@ -4470,7 +4470,7 @@ private:
     }
 
     // the input this editor opened for its recording: closed again (FL does not keep the microphone open; Windows
-    // showed its microphone-in-use icon until LYNX quit — round 165q)
+    // showed its microphone-in-use icon until YW quit — round 165q)
     void releaseInput()
     {
         if (! openedInput)
@@ -4553,7 +4553,7 @@ private:
         return t.isEmpty() ? juce::String ("Audio") : t;
     }
 
-    // the edited audio as a new WAV in Music\LYNX\Edits (a new name each time: the Sampler and the waveform caches
+    // the edited audio as a new WAV in Music\YW\Edits (a new name each time: the Sampler and the waveform caches
     // key on the path, so nothing stale is ever shown)
     juce::File writeEditFile()
     {
@@ -4583,9 +4583,9 @@ private:
             return;
         auto start = lastFile.existsAsFile() ? lastFile.getSiblingFile (safeTitle() + ".wav")
                                              : juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile (safeTitle() + ".wav");
-        chooser = lynx::ui::makeFileChooser (tr ("Save as WAV"), start, "*.wav");
+        chooser = yw::ui::makeFileChooser (tr ("Save as WAV"), start, "*.wav");
         juce::Component::SafePointer<AudioEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting,
                               [self, format] (const juce::FileChooser& fc) {
                                   if (self == nullptr || fc.getResult() == juce::File {})
                                       return;
@@ -4603,9 +4603,9 @@ private:
 
     void openFileDialog()
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Open audio file"), lastFile, engine.getSampleLibrary().wildcard());
+        chooser = yw::ui::makeFileChooser (tr ("Open audio file"), lastFile, engine.getSampleLibrary().wildcard());
         juce::Component::SafePointer<AudioEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self] (const juce::FileChooser& fc) {
             if (self == nullptr || ! fc.getResult().existsAsFile())
                 return;
             self->stopPlayback();
@@ -4647,9 +4647,9 @@ private:
             setStatus (tr ("No regions or markers to export"), true);
             return;
         }
-        chooser = lynx::ui::makeFileChooser (tr ("Export regions to a folder"), juce::File::getSpecialLocation (juce::File::userMusicDirectory));
+        chooser = yw::ui::makeFileChooser (tr ("Export regions to a folder"), juce::File::getSpecialLocation (juce::File::userMusicDirectory));
         juce::Component::SafePointer<AudioEditor> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
                               [self, parts, names] (const juce::FileChooser& fc) {
                                   if (self == nullptr || ! fc.getResult().isDirectory())
                                       return;
@@ -6433,7 +6433,7 @@ juce::PopupMenu AudioEditor::mainMenu()
         logFrequency = ! logFrequency;
         repaint();
     });
-    view.addItem (tr ("Wheel scrolls (YW Studio)"), true, wheelScrollsLynx(), [] { wheelScrollsLynx() = ! wheelScrollsLynx(); }); // round 190ld
+    view.addItem (tr ("Wheel scrolls (YW Studio)"), true, wheelScrollsYw(), [] { wheelScrollsYw() = ! wheelScrollsYw(); }); // round 190ld
     juce::PopupMenu time;
     const std::pair<TimeFormat, const char*> formats[] = { { TimeFormat::automatic, TR_NOOP ("Auto") },
                                                            { TimeFormat::seconds, TR_NOOP ("Minutes : seconds") },
@@ -6535,8 +6535,8 @@ AudioEditor* openWindow (AudioEngine& engine, Source source)
         window->setResizable (true, false);
         window->setResizeLimits (720, 380, 4000, 3000);
         // Edison in a mixer slot is one of the insert's plugin windows: docked in the workspace as FL's are (round 190fc,
-        // 0.1.27 RC M2; the other LYNX editors since round 190ev), so a click on the Playlist or any panel brings that panel
-        // in front of it. FL's "Detach all new plugins" or LYNX_DOCKED_PLUGINS=0 keep it a floating window.
+        // 0.1.27 RC M2; the other YW editors since round 190ev), so a click on the Playlist or any panel brings that panel
+        // in front of it. FL's "Detach all new plugins" or YW_DOCKED_PLUGINS=0 keep it a floating window.
         if (source.kind == Source::Kind::slot)
             dockOrKeepAbove (*window);
     }
@@ -6703,7 +6703,7 @@ int addEdisonSlot (AudioEngine& engine, int track, bool openAndRecord)
 
 juce::MessageBoxOptions removeAllEdisonInstancesQuestion()
 {
-    // FL's box word for word (its "?" after a space included), less FL's second line "(No undo)": LYNX's removal is
+    // FL's box word for word (its "?" after a space included), less FL's second line "(No undo)": YW's removal is
     // one undo step (removeAllEdisonInstances), so that line would be false here
     return juce::MessageBoxOptions()
         .withIconType (juce::MessageBoxIconType::QuestionIcon)
@@ -6878,4 +6878,4 @@ juce::StringArray audioEditorMenuForSnapshot (juce::Component& component)
     walk (editor->mainMenu(), {});
     return lines;
 }
-} // namespace lynx
+} // namespace yw

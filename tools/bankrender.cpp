@@ -1,4 +1,4 @@
-// Renders every preset of LYNX's own banks (Toxic Biohazard and PoiZone, round 168n; Harmless, Fruity DX10 and SimSynth,
+// Renders every preset of YW's own banks (Toxic Biohazard and PoiZone, round 168n; Harmless, Fruity DX10 and SimSynth,
 // round 168o) to WAV files and prints their
 // level and brightness, to check the banks by ear and by numbers: bankrender <out dir> [rate]
 //   peak / RMS (dBFS) over the phrase, the spectral centroid (Hz) of the held part, and the tail level after the release.
@@ -12,7 +12,7 @@
 
 #include "core/Dx10.h"
 #include "core/Harmless.h"
-#include "core/LynxBanks.h"
+#include "core/YwBanks.h"
 #include "core/SimSynth.h"
 #include "core/PoiZone.h"
 #include "core/Toxic.h"
@@ -77,11 +77,11 @@ double centroid (const std::vector<float>& interleaved, int from, int rate)
 }
 
 // an engine without a reference renderer: its Instrument, the notes held for `held` samples, interleaved stereo
-std::vector<float> renderInstrument (lynx::InstrumentKind kind, const lynx::ChannelDef& c, const std::vector<int>& keys, int rate, int held, int length)
+std::vector<float> renderInstrument (yw::InstrumentKind kind, const yw::ChannelDef& c, const std::vector<int>& keys, int rate, int held, int length)
 {
-    auto inst = kind == lynx::InstrumentKind::harmless ? lynx::makeHarmlessInstrument()
-                : kind == lynx::InstrumentKind::dx10   ? lynx::makeDx10Instrument()
-                                                       : lynx::makeSimSynthInstrument();
+    auto inst = kind == yw::InstrumentKind::harmless ? yw::makeHarmlessInstrument()
+                : kind == yw::InstrumentKind::dx10   ? yw::makeDx10Instrument()
+                                                       : yw::makeSimSynthInstrument();
     inst->configure (c, 120.0);
     inst->prepare ((double) rate);
     inst->settleNew();
@@ -102,14 +102,14 @@ std::vector<float> renderInstrument (lynx::InstrumentKind kind, const lynx::Chan
     return out;
 }
 
-const char* engineName (lynx::InstrumentKind kind)
+const char* engineName (yw::InstrumentKind kind)
 {
     switch (kind)
     {
-        case lynx::InstrumentKind::toxic: return "Toxic";
-        case lynx::InstrumentKind::poizone: return "PoiZone";
-        case lynx::InstrumentKind::harmless: return "Harmless";
-        case lynx::InstrumentKind::dx10: return "DX10";
+        case yw::InstrumentKind::toxic: return "Toxic";
+        case yw::InstrumentKind::poizone: return "PoiZone";
+        case yw::InstrumentKind::harmless: return "Harmless";
+        case yw::InstrumentKind::dx10: return "DX10";
         default: return "SimSynth";
     }
 }
@@ -128,29 +128,29 @@ int main (int argc, char** argv)
     const int rate = argc > 2 ? std::atoi (argv[2]) : 48000;
     const int held = 2 * rate, length = 3 * rate;
     std::printf ("%-8s %-18s %-6s %8s %8s %9s %9s\n", "engine", "preset", "cat", "peak dB", "rms dB", "centroid", "tail dB");
-    for (const auto kind : { lynx::InstrumentKind::toxic, lynx::InstrumentKind::poizone, lynx::InstrumentKind::harmless, lynx::InstrumentKind::dx10,
-                             lynx::InstrumentKind::simsynth })
+    for (const auto kind : { yw::InstrumentKind::toxic, yw::InstrumentKind::poizone, yw::InstrumentKind::harmless, yw::InstrumentKind::dx10,
+                             yw::InstrumentKind::simsynth })
     {
-        const auto& bank = lynx::banks::bankOf (kind);
+        const auto& bank = yw::banks::bankOf (kind);
         for (int i = 0; i < (int) bank.size(); ++i)
         {
-            lynx::ChannelDef c;
+            yw::ChannelDef c;
             c.instrument = kind;
-            const auto loaded = lynx::banks::withPreset (c, i);
+            const auto loaded = yw::banks::withPreset (c, i);
             if (! loaded)
                 continue;
             std::vector<float> out;
             const bool mono = bank[(std::size_t) i].category == "Bass" || bank[(std::size_t) i].category == "Lead";
             const int low = bank[(std::size_t) i].category == "Bass" ? 36 : 60; // a bass at C2, a lead at C4
-            if (kind == lynx::InstrumentKind::toxic)
+            if (kind == yw::InstrumentKind::toxic)
             {
-                std::vector<lynx::toxic::RefNote> notes;
+                std::vector<yw::toxic::RefNote> notes;
                 for (const auto key : { 48, 52, 55 })
                     if (! mono || key == 48)
                         notes.push_back ({ 0, mono ? low : key, 1.0, 1.0, 0.0, 0.0, held });
-                out = lynx::toxic::renderReference (loaded->pluginState, notes, rate, length, "");
+                out = yw::toxic::renderReference (loaded->pluginState, notes, rate, length, "");
             }
-            else if (kind != lynx::InstrumentKind::poizone)
+            else if (kind != yw::InstrumentKind::poizone)
             {
                 std::vector<int> keys;
                 for (const auto key : { 48, 52, 55 })
@@ -160,11 +160,11 @@ int main (int argc, char** argv)
             }
             else
             {
-                std::vector<lynx::poizone::RefNote> notes;
+                std::vector<yw::poizone::RefNote> notes;
                 for (const auto key : { 48, 52, 55 })
                     if (! mono || key == 48)
                         notes.push_back ({ 0, mono ? low : key, 1.0, 1.0, 0.0, 0.0, held });
-                out = lynx::poizone::renderReference (loaded->pluginState, notes, rate, length);
+                out = yw::poizone::renderReference (loaded->pluginState, notes, rate, length);
             }
             float peak = 0.0f;
             double sum = 0.0, tail = 0.0;

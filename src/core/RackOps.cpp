@@ -12,9 +12,9 @@
 #include <functional>
 #include <numeric>
 
-namespace lynx
+namespace yw
 {
-const std::array<std::uint32_t, 12>& lynxPalette()
+const std::array<std::uint32_t, 12>& ywPalette()
 {
     static const std::array<std::uint32_t, 12> palette { 0xffd94a4fu, 0xffe07a3fu, 0xffd9b23cu, 0xff8fbf45u, 0xff3fae6au, 0xff35a8a0u,
                                                          0xff3d8fd1u, 0xff5b6ee0u, 0xff8a5cd6u, 0xffc25bb0u, 0xffd9668cu, 0xff7d8794u };
@@ -23,7 +23,7 @@ const std::array<std::uint32_t, 12>& lynxPalette()
 
 std::uint32_t randomPaletteColour (std::uint32_t current, std::uint32_t seed)
 {
-    const auto& palette = lynxPalette();
+    const auto& palette = ywPalette();
     // xorshift so consecutive seeds don't walk the palette in order
     auto x = seed * 2654435761u + 0x9e3779b9u;
     x ^= x << 13;
@@ -943,7 +943,7 @@ std::vector<int> sendChannelsToFreeInserts (Song& song, const std::vector<int>& 
 // --- Channel settings "Misc" tab ------------------------------------------------------------------------------
 
 // FL's Misc › Polyphony exists on every generator channel (REA_rodada143 B2) and FL's channel layer applies it before
-// the generator (REA_rodada168l): every LYNX channel that plays notes into a sound has it. The channels that make no
+// the generator (REA_rodada168l): every YW channel that plays notes into a sound has it. The channels that make no
 // sound of their own (controllers, MIDI Out, Layer, VFX, Dashboard, Voltage, Fruity Dance, Wasp's placeholder, the
 // video player) and the audio clip channels have nothing to make mono.
 bool channelHasMono (const ChannelDef& c) noexcept
@@ -978,7 +978,7 @@ bool channelMono (const ChannelDef& c) noexcept
 
 void setChannelMono (ChannelDef& c, bool on) noexcept
 {
-    // (every copy: the LYNX Synth's own, and the one FL's engines that take the channel's mono read, Sytrus / Ogun /
+    // (every copy: the YW Synth's own, and the one FL's engines that take the channel's mono read, Sytrus / Ogun /
     // Fruit Kick's max polyphony)
     c.misc.mono = on;
     c.synth.mono = on;
@@ -1013,7 +1013,7 @@ bool channelCutsItself (const ChannelDef& c) noexcept
 {
     // issue #68: one state for every "Cut itself" control (rack menu, sample panel, Misc page). FL has one: its "Cut self"
     // sets Cut and By to the same group (FLEngine_x64 CutItselfBtnClick 0xF67C60 → 0xFEAAF0: [0x27C] = a group,
-    // [0x280] = [0x27C]); LYNX's sampler flag (projects saved by the sample panel before 0.1.24) counts too
+    // [0x280] = [0x27C]); YW's sampler flag (projects saved by the sample panel before 0.1.24) counts too
     // (round 190fe: an FLM cut group shares Cut and By but spares the channel that plays — not "cut itself")
     return (c.cutGroup != 0 && c.cutGroup == c.cutBy && ! c.cutOthersOnly) || c.sampler.cut;
 }
@@ -1212,7 +1212,7 @@ void prepareForMidiExport (Song& song)
     for (auto& c : song.channels)
     {
         // FL converts every channel but automation clips (seen in FL 2026, round 181b: Layer and Envelope
-        // Controller became MIDI Out, the automation clip stayed and took no MIDI channel). LYNX's automation clips
+        // Controller became MIDI Out, the automation clip stayed and took no MIDI channel). YW's automation clips
         // aren't channels, so every channel converts.
         midictl::MidiOutSettings settings;
         if (c.plugin.name == "FPC" || c.instrument == InstrumentKind::fpc)
@@ -1232,4 +1232,4 @@ void prepareForMidiExport (Song& song)
         midictl::writeMidiOut (c.pluginState, settings);
     }
 }
-} // namespace lynx
+} // namespace yw

@@ -1,5 +1,5 @@
     // Round 190pw (PR #259 by FKHR26: the channel window and a hosted plugin's window size to the tab they show, as FL's
-    // channel and wrapper windows do; FL 2026 captures in pr259_190pw/shots/fl). LYNX --pertabshot259 <prefix>
+    // channel and wrapper windows do; FL 2026 captures in pr259_190pw/shots/fl). YW --pertabshot259 <prefix>
     // [--plugin <file>]... [--shot-scale 1.5 --shot-suffix @150]:
     // (1) every native instrument's channel window (offscreen, docked look) on each tab: the window is the tab's page,
     //     the header and the title; the header's tabs and the channel's controls do not overlap; a tab and back gives the
@@ -9,7 +9,7 @@
     // (3) each --plugin (an instrument on a channel, an effect on insert 1) in a real window: the editor page, the
     //     Wrapper settings page (the window follows each), back, then closed on the settings page and opened again (a
     //     fixed-size editor: the editor's size again).
-    // <prefix>-checks.txt (result=OK), <prefix>-sizes.txt. With LYNX_PT259_GRAB=1 each real window waits at (40, 40)
+    // <prefix>-checks.txt (result=OK), <prefix>-sizes.txt. With YW_PT259_GRAB=1 each real window waits at (40, 40)
     // for an outside screen grab: <prefix>-state.txt names the picture, <prefix>-ack.txt (the same name) answers.
     // With --shot-scale the real windows use that desktop scale (the logical sizes checked are the same).
     // Included in the app class of Main.cpp (savePng).
@@ -26,7 +26,7 @@
 
     void runPerTabShot259 (const juce::String& prefix, const juce::StringArray& pluginFiles)
     {
-        using namespace lynx;
+        using namespace yw;
         struct State
         {
             juce::String prefix;
@@ -44,7 +44,7 @@
             }
             static juce::String text (juce::Rectangle<int> r) { return juce::String (r.getWidth()) + "x" + juce::String (r.getHeight()); }
             void pause (int ms) { wakeAt = juce::Time::getMillisecondCounter() + (juce::uint32) ms; }
-            // an outside screen grab of what shows now (LYNX_PT259_GRAB=1), else a short pause for the window to paint
+            // an outside screen grab of what shows now (YW_PT259_GRAB=1), else a short pause for the window to paint
             void grabAs (const juce::String& name)
             {
                 if (! grab)
@@ -61,7 +61,7 @@
         };
         auto st = std::make_shared<State>();
         st->prefix = prefix;
-        st->grab = juce::SystemStats::getEnvironmentVariable ("LYNX_PT259_GRAB", {}) == "1";
+        st->grab = juce::SystemStats::getEnvironmentVariable ("YW_PT259_GRAB", {}) == "1";
         st->engine = std::make_shared<AudioEngine> (false);
         windowplaces::fromVar ({});
         const auto header = channelFrameHeaderHeight();
@@ -71,7 +71,7 @@
             auto& engine = *st->engine;
             auto song = Song::makeDefault();
             std::vector<std::pair<int, InstrumentKind>> channels;
-            for (int k = 0; k <= (int) InstrumentKind::lynxModel; ++k)
+            for (int k = 0; k <= (int) InstrumentKind::ywModel; ++k)
             {
                 const auto kind = (InstrumentKind) k;
                 if (kind == InstrumentKind::plugin || kind == InstrumentKind::patcher || ! hasChannelSettings (kind))
@@ -150,7 +150,7 @@
             st->sizes.add ("pages narrower than the strip's tabs + controls: " + juce::String (narrow));
             st->check ("no channel window narrower than its strip's tabs + the channel's controls", overlapping == 0);
 
-            // the docked look (LYNX's title bar) on a Synth channel: per tab, back, and with the header hidden by the gear
+            // the docked look (YW's title bar) on a Synth channel: per tab, back, and with the header hidden by the gear
             int synth = -1;
             for (const auto& [channel, kind] : channels)
                 if (kind == InstrumentKind::synth)

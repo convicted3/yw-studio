@@ -5,9 +5,9 @@
 // saved before keeps round 190js's law (0). After Parity190jh / 190js: their helpers.
 namespace parity190lgq4
 {
-inline lynx::EffectSlot autoBand (double rangeDb, float rev)
+inline yw::EffectSlot autoBand (double rangeDb, float rev)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = parity190jh::facetBand (0, facet::shapeValue (facet::Shape::bell), facet::gainValue (6.0), facet::rangeValue (rangeDb),
                                      facet::thresholdValue (-80.0), 0.5f, 0.5f, 0.0f);
     s.params[(std::size_t) facet::autoThresholdParam0] = 1.0f;
@@ -31,7 +31,7 @@ inline double gainAt (double rangeDb, float rev, double loud, double a, double b
 
 TEST (parity190lg_facet_auto_revision_is_hidden_set_by_the_translator_only)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (facet::autoRevisionParam == facet::autoThresholdParam0 + facet::bands && facet::dispersionCountParam == facet::autoRevisionParam + 1); // (rollup step 9: round 190ln's dispersion [126 … 128] follows)
     auto s = makeEffectSlot (EffectKind::facetEq);
     CHECK (s.params[(std::size_t) facet::autoRevisionParam] == 0.0f && savedEffectParamCount (s) <= (std::size_t) facet::paramCount);

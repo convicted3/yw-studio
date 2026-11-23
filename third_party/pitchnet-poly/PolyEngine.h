@@ -116,16 +116,16 @@ struct Params
     // Opt-in research detector; without evidence it uses the original DSP-only path.
     DetectionMode detectionMode = DetectionMode::Harmonic;
 
-    // LYNX modification (round 190lk): analyze() leaves the masks out (Analysis::masks stays empty per note); the
+    // YW modification (round 190lk): analyze() leaves the masks out (Analysis::masks stays empty per note); the
     // blocks an edit needs are built later by ensureMasks(). Memory then follows the edited spans, not the length
     // of the recording (the masks were ~0.6 MB per second of dense chords).
     bool deferMasks = false;
 
-    // LYNX modification (round 190lo): also split notes at slow re-attacks (a pad or strings playing the same pitch in
+    // YW modification (round 190lo): also split notes at slow re-attacks (a pad or strings playing the same pitch in
     // the next chord after a dip; splitReattacks()). Off = PitchNet's behaviour.
     bool slowReattacks = false;
 
-    // LYNX modification (round 190lo): overlap-aware moves in render() (a moved note's copy joined with what stays by
+    // YW modification (round 190lo): overlap-aware moves in render() (a moved note's copy joined with what stays by
     // the phase of their complex sum and the level of their power sum; see PolyRenderer.cpp). Off = PitchNet's sum.
     bool overlapAwareMoves = false;
 
@@ -195,7 +195,7 @@ struct Analysis
     std::vector<Note> notes;           // active notes followed by inactive candidates
     std::vector<NoteMasks> masks;      // one entry per note in `notes` (inactive: empty)
     std::vector<CandidateFeatures> candidateFeatures; // only with Params::exportFeatures
-    // LYNX modification (round 190lk): which NMF blocks' masks are built (Params::deferMasks / ensureMasks); empty
+    // YW modification (round 190lk): which NMF blocks' masks are built (Params::deferMasks / ensureMasks); empty
     // after a full analyze() (all built)
     std::vector<unsigned char> maskBlocksBuilt;
 
@@ -337,7 +337,7 @@ AudioSpan renderNotes(const Analysis& analysis,
 /** One note's separated signal (no edits), for auditioning/solo. */
 std::vector<float> extractNote(const Analysis& analysis, const std::vector<float>& channel, int noteIndex);
 
-// ---- LYNX modification (round 190lk): masks on demand (PolyLazy.cpp) ----
+// ---- YW modification (round 190lk): masks on demand (PolyLazy.cpp) ----
 
 /**
  * The frames whose masks render() / renderNotes() read for these edits: each edited note's span with its

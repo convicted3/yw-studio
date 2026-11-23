@@ -1,7 +1,7 @@
 """vm.py: run Waves plugins (official trials, black-box) in fxmeasure; helpers for round 123."""
 import sys, os, subprocess, numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import sig
-W='/mnt/c/Users/kauan/lynx-test/vm123'; S=r'C:\Program Files\Common Files\VST3\WaveShell1-VST3 17.1_x64.vst3'; sr=48000
+W='/mnt/c/Users/kauan/yw-test/vm123'; S=r'C:\Program Files\Common Files\VST3\WaveShell1-VST3 17.1_x64.vst3'; sr=48000
 PL={'ssl':'SSLChannel Stereo','rc':'RCompressor Stereo','de':'DeEsser Stereo','cla':'CLA-2A Stereo'}
 def wsig(d,k,x): os.makedirs(d,exist_ok=True); sig.write_wav(d+'/in_%s.wav'%k,x,sr)
 def run(plugin, state, variants, signames, d, settle=None, quiet=True, timeout=14400):

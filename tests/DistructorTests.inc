@@ -6,7 +6,7 @@
 // goldens below were printed with 9–17 significant digits, hence the small tolerances.
 TEST (distructor_engine)
 {
-    using namespace lynx::distructor;
+    using namespace yw::distructor;
     constexpr int n = 6000;
     std::vector<float> inL (n), inR (n);
     std::uint32_t s = 12345;

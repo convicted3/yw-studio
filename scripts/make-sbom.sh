@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Writes an SPDX 2.3 JSON software bill of materials of LYNX SHARE's third-party components (round 190nr, 0.1.31).
+# Writes an SPDX 2.3 JSON software bill of materials of YW Studio's third-party components (round 190nr, 0.1.31).
 #
 #   scripts/make-sbom.sh <version label, e.g. 0.1.31-alpha> <output .spdx.json> [licenses folder]
 #
@@ -28,7 +28,7 @@ import datetime, json, os, re, sys, uuid
 label, out, lic_dir, commit = sys.argv[1:5]
 
 # key (first link text of the THIRD_PARTY.md row, or the row's plain text start) ->
-#   version (None: the one in the key), SPDX licence LYNX uses it under (concluded), declared licence,
+#   version (None: the one in the key), SPDX licence YW uses it under (concluded), declared licence,
 #   third_party/ folders whose licence files belong to it, shipped (False: reference only, not in the SBOM).
 NOA = "NOASSERTION"
 COMPONENTS = {
@@ -82,9 +82,9 @@ COMPONENTS = {
 EXTRA_ROWS = {}
 LICENSE_REFS = {
     "LicenseRef-JUCE-Commercial": ("JUCE commercial licence",
-        "JUCE 8 is also offered under a commercial licence by Raw Material Software; LYNX uses JUCE under the AGPL-3.0."),
+        "JUCE 8 is also offered under a commercial licence by Raw Material Software; YW uses JUCE under the AGPL-3.0."),
     "LicenseRef-Steinberg-Proprietary": ("Steinberg proprietary SDK licence",
-        "Steinberg offers the VST 3 and ASIO SDKs under a proprietary licence or the GPLv3; LYNX takes the GPLv3 option."),
+        "Steinberg offers the VST 3 and ASIO SDKs under a proprietary licence or the GPLv3; YW takes the GPLv3 option."),
 }
 
 rows = []
@@ -170,12 +170,12 @@ if len(ids) != len(set(ids)):
     sys.exit("make-sbom: duplicate SPDX ids: " + ", ".join(sorted({i for i in ids if ids.count(i) > 1})))
 
 root = {
-    "name": "LYNX SHARE", "SPDXID": "SPDXRef-LYNX-SHARE", "versionInfo": label,
+    "name": "YW Studio", "SPDXID": "SPDXRef-yw-studio", "versionInfo": label,
     "downloadLocation": f"git+https://github.com/convicted3/yw-studio@{commit}" if commit != "unknown"
                         else "https://github.com/convicted3/yw-studio",
-    "homepage": "https://lynx-share.com", "filesAnalyzed": False,
+    "homepage": "https://yolo.su", "filesAnalyzed": False,
     "licenseConcluded": "AGPL-3.0-only", "licenseDeclared": "AGPL-3.0-only",
-    "copyrightText": NOA, "supplier": "Person: Ka1-S",
+    "copyrightText": NOA, "supplier": "Person: YW",
     "primaryPackagePurpose": "APPLICATION",
 }
 used_refs = sorted({r for p in packages for r in re.findall(r"LicenseRef-[A-Za-z0-9.-]+", p["licenseDeclared"])})
@@ -183,18 +183,18 @@ doc = {
     "spdxVersion": "SPDX-2.3",
     "dataLicense": "CC0-1.0",
     "SPDXID": "SPDXRef-DOCUMENT",
-    "name": f"LYNX-SHARE-{label}",
+    "name": f"yw-studio-{label}",
     "documentNamespace": f"https://github.com/convicted3/yw-studio/releases/v{label}/sbom-{uuid.uuid4()}",
     "creationInfo": {
         "created": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "creators": ["Tool: LYNX-SHARE scripts/make-sbom.sh", "Organization: LYNX SHARE"],
-        "comment": "Third-party components of LYNX SHARE, from THIRD_PARTY.md and the packages' licenses folder.",
+        "creators": ["Tool: yw-studio scripts/make-sbom.sh", "Organization: YW Studio"],
+        "comment": "Third-party components of YW Studio, from THIRD_PARTY.md and the packages' licenses folder.",
     },
-    "documentDescribes": ["SPDXRef-LYNX-SHARE"],
+    "documentDescribes": ["SPDXRef-yw-studio"],
     "packages": [root] + packages,
     "relationships": [{"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES",
-                       "relatedSpdxElement": "SPDXRef-LYNX-SHARE"}] +
-                     [{"spdxElementId": "SPDXRef-LYNX-SHARE", "relationshipType": "CONTAINS",
+                       "relatedSpdxElement": "SPDXRef-yw-studio"}] +
+                     [{"spdxElementId": "SPDXRef-yw-studio", "relationshipType": "CONTAINS",
                        "relatedSpdxElement": p["SPDXID"]} for p in packages],
 }
 if used_refs:

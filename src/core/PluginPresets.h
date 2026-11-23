@@ -1,10 +1,10 @@
 #pragma once
 
 // Presets of hosted (third-party) plugins (round 162d, issue #8): FL's wrapper has a presets menu with the plugin's own
-// programs, ◀ ▶ and Save / Load preset. LYNX keeps:
+// programs, ◀ ▶ and Save / Load preset. YW keeps:
 //   - its own preset file for any plugin format (VST2, VST3, CLAP, LV2, sandboxed or not): the plugin's whole saved
-//     state with the plugin's name and id, as a small text file (`toText` / `fromText`, extension .lynxpreset like the
-//     presets of LYNX's own engines, with another first line), in <settings>/Presets/Plugins/<plugin name>/;
+//     state with the plugin's name and id, as a small text file (`toText` / `fromText`, extension .ywpreset like the
+//     presets of YW's own engines, with another first line), in <settings>/Presets/Plugins/<plugin name>/;
 //   - VST2's standard .fxp (one program) / .fxb (bank) files, read and written here (`parseFx` / `writeFx*`, the
 //     publicly documented big-endian layout: "CcnK", then FxCk / FPCh / FxBk / FBCh);
 //   - VST3's .vstpreset through the VST3 host itself (ui/PluginWindow.cpp).
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::pluginpresets
+namespace yw::pluginpresets
 {
 struct Preset
 {
@@ -26,11 +26,11 @@ struct Preset
     std::vector<std::uint8_t> state; // what the plugin returned when it was saved (getStateInformation)
 };
 
-constexpr const char* extension = ".lynxpreset";
+constexpr const char* extension = ".ywpreset";
 constexpr const char* header = "YW Studio plugin preset 1";
 
 std::string toText (const Preset& preset);
-// nullopt when the text is not a plugin preset (e.g. a preset of one of LYNX's own engines) or has no state.
+// nullopt when the text is not a plugin preset (e.g. a preset of one of YW's own engines) or has no state.
 std::optional<Preset> fromText (const std::string& text);
 
 // The folder name for a plugin's presets (a plugin name made safe: no path separators or reserved characters,
@@ -72,7 +72,7 @@ std::vector<std::uint8_t> writeFx (const FxFile& file);
 // A 4-character id ('Syn1') as an int and back (VST2 unique ids are often printable).
 std::int32_t fourCC (const char* text) noexcept;
 
-// Round 190ao (pain point 13; LYNX's own, off by default): "Play a note when a preset loads". After a preset is loaded
+// Round 190ao (pain point 13; YW's own, off by default): "Play a note when a preset loads". After a preset is loaded
 // into a hosted instrument while the song is stopped, a short C5 plays so the sound is heard at once. Never while the
 // song plays or records (the song is the audition then), never for an effect.
 constexpr int auditionKey = 60;                      // C5 in FL's octave numbering
@@ -83,4 +83,4 @@ constexpr bool auditionPlays (bool option, bool instrument, bool playing, bool r
 {
     return option && instrument && ! playing && ! recording;
 }
-} // namespace lynx::pluginpresets
+} // namespace yw::pluginpresets

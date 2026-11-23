@@ -3,14 +3,14 @@
     //  - the track dock's Effects tab before (Duck under: None, Echo 0) and after (the pad ducks under the drums, Echo and
     //    Reverb sends), the window, the picker's menu before / after;
     //  - the same project in the Pattern layout's Mixer (an ordinary Fruity Limiter with FL's level-0 sidechain route);
-    //  - .lynx round trip, the copies for 0.1.30 and 0.1.28 (nothing lost: ordinary slot, route and sends), the .flp export
+    //  - .yw round trip, the copies for 0.1.30 and 0.1.28 (nothing lost: ordinary slot, route and sends), the .flp export
     //    (written to <folder>/duck-export.flp for the FL check) and the dock's paint cost.
     // <folder>/checks.txt lists what was checked. Included in the app class of Main.cpp.
     bool runSimpleDuckShot190ot (const juce::String& folderPath)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
-        lynx::ui::motion::enabled() = false;
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
+        yw::ui::motion::enabled() = false;
         const juce::File folder (folderPath);
         folder.createDirectory();
         juce::String checks;
@@ -20,7 +20,7 @@
             allOk = allOk && ok;
         };
         const auto note = [&checks] (const juce::String& text) { checks << "     " << text << "\n"; };
-        using namespace lynx;
+        using namespace yw;
         namespace st = simpletracks;
         const auto save = [&folder] (juce::Component& c, juce::Rectangle<int> area, const juce::String& name) {
             for (const auto scale : { 1.0f, 1.5f })
@@ -232,19 +232,19 @@
             }
             return true;
         };
-        // .lynx round trip
+        // .yw round trip
         const auto json = ProjectFile::toJson (offline.getSong());
         {
             juce::String why;
             const auto back = ProjectFile::fromJson (json, why);
-            check (".lynx keeps the duck (its goal and Amount), its route and the sends",
+            check (".yw keeps the duck (its goal and Amount), its route and the sends",
                    back && samePlay (back->mixer, offline.getSong().mixer) && st::duckTrigger (*back, pad) == drums
                        && std::abs (back->mixer[(std::size_t) pad].effects[(std::size_t) slot].goalAmount - st::duckAmount (st::DuckStyle::pumping)) < 1.0e-4f);
         }
         // copies for older releases: an ordinary Fruity Limiter with its side input, the same route and sends
         for (const auto* release : { "0.1.30", "0.1.28" })
         {
-            const auto copy = olderlynx::forRelease (offline.getSong(), release);
+            const auto copy = olderyw::forRelease (offline.getSong(), release);
             juce::String why;
             const auto back = copy.ok ? ProjectFile::fromJson (copy.json, why) : std::optional<Song> {};
             // (the Echo's Echoform: its kind and the parameters the bus set; a copy for 0.1.28 cuts Echoform's hidden
@@ -265,7 +265,7 @@
             for (const auto& l : copy.lost)
                 lines.add (tr (l.text, { l.detail }) + (l.sound ? " (sound)" : ""));
             note (juce::String ("copy for ") + release + ": " + lines.joinIntoString (" / "));
-            const auto duckLines = std::count_if (copy.lost.begin(), copy.lost.end(), [] (const olderlynx::Loss& l) { return juce::String (l.text).contains ("Duck under"); });
+            const auto duckLines = std::count_if (copy.lost.begin(), copy.lost.end(), [] (const olderyw::Loss& l) { return juce::String (l.text).contains ("Duck under"); });
             check (juce::String ("Save a copy for ") + release + ": the slot, its side input, the route and the sends unchanged; one view line for the duck",
                    copy.ok && same && duckLines == 1);
         }
@@ -304,11 +304,11 @@
         // the FL check's projects (rendered by FL itself, FL64 /R /Ewav): two Simple audio tracks playing real files (a 60 Hz
         // kick burst at -6 dBFS on every beat, a 330 Hz pad at -12 dBFS; tests/SimpleDuck190otTests.inc's signals), the kick
         // only keying the pad (not on the Master): duck-off.flp and duck-on.flp (Duck under the kick at 50 %). The files are
-        // named by LYNX_190OT_WINDIR (FL's own path to <folder>/fl), else by their path here
+        // named by YW_190OT_WINDIR (FL's own path to <folder>/fl), else by their path here
         {
             const auto dir = folder.getChildFile ("fl");
             dir.createDirectory();
-            const auto winDir = juce::SystemStats::getEnvironmentVariable ("LYNX_190OT_WINDIR", dir.getFullPathName());
+            const auto winDir = juce::SystemStats::getEnvironmentVariable ("YW_190OT_WINDIR", dir.getFullPathName());
             const auto sep = winDir.containsChar ('\\') ? juce::String ("\\") : juce::String ("/");
             for (const auto* name : { "kick", "pad" })
             {

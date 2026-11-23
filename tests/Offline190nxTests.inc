@@ -1,21 +1,21 @@
-// --- Round 190nx: offline mode (core/Offline.h): LYNX_OFFLINE=1 or --offline. The end-to-end proof (zero connect() calls under
-// `unshare -rn` + strace) is tests/offline-network-test.sh with `LYNX --offlinetest`.
+// --- Round 190nx: offline mode (core/Offline.h): YW_OFFLINE=1 or --offline. The end-to-end proof (zero connect() calls under
+// `unshare -rn` + strace) is tests/offline-network-test.sh with `YW --offlinetest`.
 
 #include "core/Offline.h"
 
 TEST (offline190nx_the_environment_variable_and_the_flag_turn_the_mode_on)
 {
-    namespace off = lynx::offline;
-    const char* before = std::getenv ("LYNX_OFFLINE");
+    namespace off = yw::offline;
+    const char* before = std::getenv ("YW_OFFLINE");
     const std::string saved = before != nullptr ? before : "";
     auto setEnv = [] (const char* v) {
        #if defined(_WIN32)
-        _putenv_s ("LYNX_OFFLINE", v);
+        _putenv_s ("YW_OFFLINE", v);
        #else
         if (v[0] == '\0')
-            unsetenv ("LYNX_OFFLINE");
+            unsetenv ("YW_OFFLINE");
         else
-            setenv ("LYNX_OFFLINE", v, 1);
+            setenv ("YW_OFFLINE", v, 1);
        #endif
     };
     off::set (false);

@@ -1,14 +1,14 @@
 #pragma once
-// What LYNX tells the OS around long jobs (rollup 0.1.28, REA round 190hb actions 3 and 4, FL Studio's own rules):
+// What YW tells the OS around long jobs (rollup 0.1.28, REA round 190hb actions 3 and 4, FL Studio's own rules):
 // - an export or a recording keeps the PC awake (Windows: SetThreadExecutionState (ES_CONTINUOUS | ES_SYSTEM_REQUIRED),
 //   released afterwards; the state is the calling thread's, so a KeepAwake ends on the thread that made it);
 // - an offline render runs below normal priority (FL's export threads: BELOW_NORMAL), so the desktop stays usable;
-// - at start, the desktop compositor gets MMCSS scheduling (DwmEnableMMCSS (TRUE), FL's "Init DWM"; LYNX_DWM_MMCSS=0
+// - at start, the desktop compositor gets MMCSS scheduling (DwmEnableMMCSS (TRUE), FL's "Init DWM"; YW_DWM_MMCSS=0
 //   leaves it off).
 // Implemented in AudioEngine.cpp; everything does nothing outside Windows.
 #include <cstdint>
 
-namespace lynx::powerhints
+namespace yw::powerhints
 {
 std::uint32_t keepAwakeBegin() noexcept;              // returns the thread's previous state
 void keepAwakeEnd (std::uint32_t previous) noexcept;
@@ -34,4 +34,4 @@ struct BelowNormalPriority
     BelowNormalPriority& operator= (const BelowNormalPriority&) = delete;
     int previous;
 };
-} // namespace lynx::powerhints
+} // namespace yw::powerhints

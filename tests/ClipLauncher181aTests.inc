@@ -5,7 +5,7 @@
 
 namespace grid181a
 {
-using namespace lynx;
+using namespace yw;
 
 constexpr int bar = 4 * ppq;
 
@@ -106,7 +106,7 @@ inline bool closeTo (double a, double b, double tolerance = 2.0) { return std::a
 
 TEST (grid181a_song_has_no_grid_until_it_is_used)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s = Song::makeDefault();
     CHECK (! s.clipGrid.has_value());
     int lists = 0;
@@ -132,7 +132,7 @@ TEST (grid181a_song_has_no_grid_until_it_is_used)
 
 TEST (grid181a_model_slots_and_scenes)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = grid181a::patternSong();
     CHECK (launcher::setClip (s, 1, 2, grid181a::patternClip (1)) >= 0);
     CHECK (s.clipGrid->scenes.size() == 3); // scenes appear as far as the clip's row
@@ -174,7 +174,7 @@ TEST (grid181a_model_slots_and_scenes)
 
 TEST (grid181a_references_follow_edits_like_playlist_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 2, 0, grid181a::patternClip (3));
     Clip audio;
@@ -199,7 +199,7 @@ TEST (grid181a_references_follow_edits_like_playlist_clips)
 
 TEST (grid181a_launch_waits_for_the_quantisation)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (0));
@@ -219,16 +219,16 @@ TEST (grid181a_launch_waits_for_the_quantisation)
     CHECK (r.runtime.anyPlaying.load());
 
     // the table: each value's ticks
-    CHECK (launcher::quantTicks (LaunchQuant::none, lynx::Meter (4, 4)) == 0.0);
-    CHECK (launcher::quantTicks (LaunchQuant::bars8, lynx::Meter (4, 4)) == 32.0 * ppq);
-    CHECK (launcher::quantTicks (LaunchQuant::bar, lynx::Meter (3, 4)) == 3.0 * ppq); // a bar is the song's own
-    CHECK (closeTo (launcher::quantTicks (LaunchQuant::eighthTriplet, lynx::Meter (4, 4)) * 3.0, ppq, 1.0e-9));
-    CHECK (launcher::quantTicks (LaunchQuant::thirtySecond, lynx::Meter (4, 4)) == ppq / 8.0);
+    CHECK (launcher::quantTicks (LaunchQuant::none, yw::Meter (4, 4)) == 0.0);
+    CHECK (launcher::quantTicks (LaunchQuant::bars8, yw::Meter (4, 4)) == 32.0 * ppq);
+    CHECK (launcher::quantTicks (LaunchQuant::bar, yw::Meter (3, 4)) == 3.0 * ppq); // a bar is the song's own
+    CHECK (closeTo (launcher::quantTicks (LaunchQuant::eighthTriplet, yw::Meter (4, 4)) * 3.0, ppq, 1.0e-9));
+    CHECK (launcher::quantTicks (LaunchQuant::thirtySecond, yw::Meter (4, 4)) == ppq / 8.0);
 }
 
 TEST (grid181a_no_quantisation_and_exact_grid_point)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (0));
@@ -251,7 +251,7 @@ TEST (grid181a_no_quantisation_and_exact_grid_point)
 
 TEST (grid181a_a_track_plays_one_clip_and_repeated_keys_survive)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong (2 * bar); // notes longer than the clip's bar: only a cut ends them
@@ -288,7 +288,7 @@ TEST (grid181a_a_track_plays_one_clip_and_repeated_keys_survive)
 
 TEST (grid181a_legato_keeps_the_position)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
@@ -316,7 +316,7 @@ TEST (grid181a_legato_keeps_the_position)
 
 TEST (grid181a_one_pass_clip_and_stops)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     {
@@ -356,7 +356,7 @@ TEST (grid181a_one_pass_clip_and_stops)
 
 TEST (grid181a_scene_launches_its_row_and_stops_the_rest)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
@@ -376,7 +376,7 @@ TEST (grid181a_scene_launches_its_row_and_stops_the_rest)
 
 TEST (grid181a_a_clip_takes_its_track_from_the_playlist)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong (3 * bar);
@@ -422,7 +422,7 @@ TEST (grid181a_a_clip_takes_its_track_from_the_playlist)
 
 TEST (grid181a_transport_stop_ends_clips_and_keeps_tracks_taken)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (0));
     grid181a::Run r (std::move (s));
@@ -451,7 +451,7 @@ TEST (grid181a_transport_stop_ends_clips_and_keeps_tracks_taken)
 
 TEST (grid181a_audio_slots_have_their_own_voices)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
@@ -485,7 +485,7 @@ TEST (grid181a_audio_slots_have_their_own_voices)
 
 TEST (grid181a_renderer_plays_the_grid_only_through_the_runtime)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr auto bar = grid181a::bar;
     // the same song, with and without a grid (a grid nobody launches): identical output
     auto s = grid181a::patternSong();
@@ -528,7 +528,7 @@ TEST (grid181a_renderer_plays_the_grid_only_through_the_runtime)
 
 TEST (grid181a_launch_modes)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     using T = launcher::Command::Type;
@@ -589,7 +589,7 @@ TEST (grid181a_launch_modes)
 
 TEST (grid181a_follow_actions)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     auto threeInAColumn = [] {
@@ -687,7 +687,7 @@ TEST (grid181a_follow_actions)
 
 TEST (grid181a_stop_buttons_decide_what_a_scene_leaves_alone)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (0));
@@ -721,7 +721,7 @@ TEST (grid181a_stop_buttons_decide_what_a_scene_leaves_alone)
 
 TEST (grid181a_recording_writes_passes_for_the_playlist)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 1, 0, grid181a::patternClip (2));
@@ -753,7 +753,7 @@ TEST (grid181a_recording_writes_passes_for_the_playlist)
 // pattern at the moment of a takeover or a stop. It must end there: a hanging note is the first thing one would hear.
 TEST (grid181a_a_note_longer_than_its_pattern_does_not_hang)
 {
-    using namespace lynx;
+    using namespace yw;
     using grid181a::closeTo;
     constexpr auto bar = grid181a::bar;
     const auto endsAt = [] (const grid181a::Run& r, int key, double at) {
@@ -818,7 +818,7 @@ TEST (grid181a_a_note_longer_than_its_pattern_does_not_hang)
 
 TEST (grid181a_a_stop_shows_until_its_grid_point)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr auto bar = grid181a::bar;
     auto s = grid181a::patternSong();
     launcher::setClip (s, 0, 0, grid181a::patternClip (0, 4 * bar));

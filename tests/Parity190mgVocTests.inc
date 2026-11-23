@@ -1,33 +1,33 @@
 // Round 190mg (sub-round voc): REA of the Waves Doubler DSP and black-box of Waves Tune Real-Time (owner's permission of
-// 2026-11-17; /mnt/e/lynx-work/waves3_190mg/voc/HANDOFF.md, docs/analise/REA_rodada190mg_voc.md).
+// 2026-11-17; /mnt/e/yw-work/waves3_190mg/voc/HANDOFF.md, docs/analise/REA_rodada190mg_voc.md).
 // - Gemini Doubler gets the splice law (hidden gemini::spliceLaw): one head per voice inside the delay ± 256 samples that
 //   jumps by the best of 20 candidate lags (running autocorrelation of its source) at a quiet moment or a zero crossing,
 //   forced 32 samples further, the old head fading out over 256 samples. Off for new instances and every project saved
 //   before (bit for bit: voc/lab/gold.sh); the Waves Doubler translator sets it.
-// - LYNX Tune gets the Waves Tune Real-Time law (hidden lynxtune::wavesLaw): the lows under a 150 Hz split come from the
+// - YW Tune gets the Waves Tune Real-Time law (hidden ywtune::wavesLaw): the lows under a 150 Hz split come from the
 //   dry signal and the make-up shelf is off. Off for new instances and old projects; the Waves Tune translator sets it.
 #include <cmath>
 #include <random>
 
 #include "core/Effects.h"
-#include "core/LynxTune.h"
+#include "core/YwTune.h"
 #include "core/PluginSubstitutes.h"
 #include "core/VoiceTools.h"
 
 namespace parity190mgvoc
 {
-inline void run (const lynx::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
+inline void run (const yw::EffectSlot& s, double sr, std::vector<float>& l, std::vector<float>& r)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     for (std::size_t off = 0; off < l.size(); off += 256)
         fx->process (l.data() + off, r.data() + off, (int) std::min<std::size_t> (256, l.size() - off), s.params, 120.0);
 }
 // Gemini with voice 1 only (left, +6 cents, 9.4 ms), no direct signal, no shelves
-inline lynx::EffectSlot oneVoice (bool splice)
+inline yw::EffectSlot oneVoice (bool splice)
 {
-    namespace g = lynx::voicetools::gemini;
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::geminiDoubler);
+    namespace g = yw::voicetools::gemini;
+    auto s = yw::makeEffectSlot (yw::EffectKind::geminiDoubler);
     s.params[g::directOn] = 0.0f;
     s.params[g::lowOn] = s.params[g::highOn] = 0.0f;
     s.params[(std::size_t) g::voiceParam (1, g::vOn)] = 0.0f;
@@ -67,7 +67,7 @@ inline int bestLag (const std::vector<float>& in, const std::vector<float>& out,
 
 TEST (parity190mg_voc_gemini_splice_law_is_hidden_and_off_for_new_and_old_instances)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = voicetools::gemini;
     CHECK ((int) effectInfo (EffectKind::geminiDoubler).params.size() == g::paramCount && g::spliceLaw == g::paramCount);
     auto s = makeEffectSlot (EffectKind::geminiDoubler);
@@ -94,7 +94,7 @@ TEST (parity190mg_voc_gemini_splice_law_is_hidden_and_off_for_new_and_old_instan
 
 TEST (parity190mg_voc_gemini_splice_law_keeps_the_head_in_its_band_and_jumps_by_a_candidate_span)
 {
-    using namespace lynx;
+    using namespace yw;
     const double sr = 48000.0;
     std::mt19937 rng (190);
     std::normal_distribution<double> gauss (0.0, 0.1);
@@ -147,12 +147,12 @@ TEST (parity190mg_voc_gemini_splice_law_keeps_the_head_in_its_band_and_jumps_by_
     }
 }
 
-TEST (parity190mg_voc_lynx_tune_waves_law_is_hidden_and_keeps_the_lows_dry)
+TEST (parity190mg_voc_yw_tune_waves_law_is_hidden_and_keeps_the_lows_dry)
 {
-    using namespace lynx;
-    namespace t = lynxtune;
-    CHECK ((int) effectInfo (EffectKind::lynxTune).params.size() == t::count && t::wavesLaw == t::count);
-    auto s = makeEffectSlot (EffectKind::lynxTune);
+    using namespace yw;
+    namespace t = ywtune;
+    CHECK ((int) effectInfo (EffectKind::ywTune).params.size() == t::count && t::wavesLaw == t::count);
+    auto s = makeEffectSlot (EffectKind::ywTune);
     CHECK (s.params[t::wavesLaw] == 0.0f && savedEffectParamCount (s) == (std::size_t) t::count);
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;
@@ -165,7 +165,7 @@ TEST (parity190mg_voc_lynx_tune_waves_law_is_hidden_and_keeps_the_lows_dry)
     {
         int n = 0;
         const auto w = makeSubstituteSlot (*entry, &id, &n);
-        CHECK (w.kind == EffectKind::lynxTune && w.params[t::wavesLaw] == 1.0f);
+        CHECK (w.kind == EffectKind::ywTune && w.params[t::wavesLaw] == 1.0f);
     }
     // an in-tune voice (A3, harmonics, chromatic, retune 0): with the law it comes out as the delayed input itself once
     // the crossfade has settled (the overlap-add re-synthesised it before); a voice 30 cents sharp is still corrected
@@ -180,7 +180,7 @@ TEST (parity190mg_voc_lynx_tune_waves_law_is_hidden_and_keeps_the_lows_dry)
                 v += 0.2 / k * std::sin (2.0 * M_PI * k * f * (double) i / sr);
             l[i] = (float) v;
         }
-        auto slot = makeEffectSlot (EffectKind::lynxTune);
+        auto slot = makeEffectSlot (EffectKind::ywTune);
         slot.params[t::scale] = 0.0f; // chromatic
         slot.params[t::retune] = 0.0f;
         slot.params[t::wavesLaw] = law ? 1.0f : 0.0f;

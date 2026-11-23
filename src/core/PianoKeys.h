@@ -3,7 +3,7 @@
 // The Piano roll's keyboard styles (round 190j, discussion #136).
 //
 // "Flat": every key is one row of the note grid, the black keys are shorter and the rest of a black key's row is empty
-// (LYNX's default until round 190oo). "Piano" draws a traditional keyboard on the same rows: the white keys are wider
+// (YW's default until round 190oo). "Piano" draws a traditional keyboard on the same rows: the white keys are wider
 // than their rows and meet behind the black keys, with a dark line between every two white keys, so each key is one
 // clearly bordered shape. "FL" (round 190oo, design review O-2, the default since): FL Studio 2026's own keyboard — the
 // white keys meet behind the black keys as in "Piano", but FL draws a faint line only where two white keys touch
@@ -11,7 +11,7 @@
 // tip (fl-pianoroll.png, 11-15). The rows of the note grid stay where they are in every style.
 // No JUCE here (tests/PianoKeys190jTests.inc).
 
-namespace lynx::pianokeys
+namespace yw::pianokeys
 {
 enum class Style : int { flat = 0, piano = 1, fl = 2 };
 
@@ -52,4 +52,4 @@ constexpr int keyAt (Style style, int rowKey, int yInRow, int rowHeight, int x, 
     const auto key = yInRow < upperPart (rowHeight) ? rowKey + 1 : rowKey - 1;
     return key < 0 ? 0 : key > 127 ? 127 : key;
 }
-} // namespace lynx::pianokeys
+} // namespace yw::pianokeys

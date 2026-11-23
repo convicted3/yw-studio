@@ -1,9 +1,9 @@
-// Round 190ao (pain point 11, LYNX's own): "Pin on top" of a plugin window. core/PinOnTop.h decides which windows to
+// Round 190ao (pain point 11, YW's own): "Pin on top" of a plugin window. core/PinOnTop.h decides which windows to
 // bring forward; PluginRef::pinned is saved with the plugin (off by default).
 
 TEST (pin190ao_nothing_moves_without_a_pinned_window_or_when_it_is_in_front)
 {
-    using lynx::pinontop::toRaise;
+    using yw::pinontop::toRaise;
     CHECK (toRaise ({}).empty());
     CHECK (toRaise ({ false, false, false }).empty());
     CHECK (toRaise ({ true }).empty());
@@ -14,7 +14,7 @@ TEST (pin190ao_nothing_moves_without_a_pinned_window_or_when_it_is_in_front)
 
 TEST (pin190ao_a_covered_pinned_window_comes_back_in_front)
 {
-    using lynx::pinontop::toRaise;
+    using yw::pinontop::toRaise;
     // back to front: the pinned plugin window, then a window that was just clicked
     CHECK (toRaise ({ true, false }) == std::vector<int> ({ 0 }));
     CHECK (toRaise ({ false, true, false }) == std::vector<int> ({ 1 }));
@@ -30,7 +30,7 @@ TEST (pin190ao_a_covered_pinned_window_comes_back_in_front)
 
 TEST (pin190ao_the_pin_is_off_by_default_and_part_of_the_plugin)
 {
-    lynx::PluginRef a, b;
+    yw::PluginRef a, b;
     CHECK (! a.pinned);
     CHECK (a == b);
     b.pinned = true;

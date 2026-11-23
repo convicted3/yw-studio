@@ -20,7 +20,7 @@ struct Signal
 };
 
 // `speed(t)`: the record's speed at time t (1 = normal, negative = backwards), from `start` seconds on the record
-inline Signal make (const lynx::dvs::Format& f, double start, const std::function<double (double)>& speed, int frames,
+inline Signal make (const yw::dvs::Format& f, double start, const std::function<double (double)>& speed, int frames,
                     double rate, float amp = 0.5f, float quiet = 0.7f)
 {
     // the cycles the signal can reach, and their bits (the register's newest bit at each cycle)
@@ -43,7 +43,7 @@ inline Signal make (const lynx::dvs::Format& f, double start, const std::functio
     {
         if (i >= first)
             bits[(std::size_t) (i - first)] = (std::uint8_t) (s & 1u);
-        s = lynx::dvs::nextState (s, f);
+        s = yw::dvs::nextState (s, f);
     }
 
     Signal out;

@@ -15,9 +15,9 @@ constexpr double rate = 44100.0;
 double hz (double midi) { return 440.0 * std::pow (2.0, (midi - 69.0) / 12.0); }
 
 // a chord of harmonic tones (8 partials, 1/k), `seconds` long, 10 ms fades; the notes start `stagger` apart
-std::shared_ptr<lynx::SampleData> chord (std::initializer_list<double> keys, double seconds = 1.6, double stagger = 0.0, bool stereo = true)
+std::shared_ptr<yw::SampleData> chord (std::initializer_list<double> keys, double seconds = 1.6, double stagger = 0.0, bool stereo = true)
 {
-    auto s = std::make_shared<lynx::SampleData>();
+    auto s = std::make_shared<yw::SampleData>();
     s->sampleRate = rate;
     const auto n = (std::size_t) (seconds * rate);
     s->left.assign (n, 0.0f);
@@ -54,7 +54,7 @@ double level (const std::vector<float>& x, double f, double from, double to)
     return std::sqrt (re * re + im * im) / (double) (b - a);
 }
 
-int noteNear (const lynx::polyedit::Model& m, double key)
+int noteNear (const yw::polyedit::Model& m, double key)
 {
     for (int k = 0; k < (int) m.notes.size(); ++k)
         if (m.notes[(std::size_t) k].active && std::abs (m.notes[(std::size_t) k].medianMidi() - key) < 0.4) // (190lo: not a candidate)
@@ -62,11 +62,11 @@ int noteNear (const lynx::polyedit::Model& m, double key)
     return -1;
 }
 
-const lynx::polyedit::Model& cMajor()
+const yw::polyedit::Model& cMajor()
 {
     static const auto model = [] {
-        lynx::polyedit::Model m;
-        lynx::polyedit::analyse (*chord ({ 60.0, 64.0, 67.0 }), nullptr, m);
+        yw::polyedit::Model m;
+        yw::polyedit::analyse (*chord ({ 60.0, 64.0, 67.0 }), nullptr, m);
         return m;
     }();
     return model;
@@ -75,7 +75,7 @@ const lynx::polyedit::Model& cMajor()
 
 TEST (polyedit190lk_saved_model_round_trip)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     Model m;
     m.sampleRate = 48000.0;
     m.frames = 123456;
@@ -115,7 +115,7 @@ TEST (polyedit190lk_saved_model_round_trip)
 
 TEST (polyedit190lk_analysis_finds_the_chord)
 {
-    using namespace lynx::polyedit;
+    using namespace yw::polyedit;
     const auto& m = pe190lk::cMajor();
     CHECK (m.sampleRate == pe190lk::rate && m.frames == (std::int64_t) (1.6 * pe190lk::rate) && m.hop == 512 && m.fftSize == 4096);
     CHECK (pe190lk::noteNear (m, 60.0) >= 0 && pe190lk::noteNear (m, 64.0) >= 0 && pe190lk::noteNear (m, 67.0) >= 0);
@@ -127,7 +127,7 @@ TEST (polyedit190lk_analysis_finds_the_chord)
 
 TEST (polyedit190lk_unedited_plays_the_source_itself)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = pe190lk::chord ({ 60.0, 64.0, 67.0 });
     auto m = pe190lk::cMajor();
     CHECK (polyedit::render (*source, m) == nullptr);
@@ -142,7 +142,7 @@ TEST (polyedit190lk_unedited_plays_the_source_itself)
 
 TEST (polyedit190lk_a_note_moves_inside_the_chord)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = pe190lk::chord ({ 60.0, 64.0, 67.0 });
     auto m = pe190lk::cMajor();
     const auto e = pe190lk::noteNear (m, 64.0);
@@ -166,9 +166,9 @@ TEST (polyedit190lk_a_note_moves_inside_the_chord)
 
 TEST (polyedit190lk_masks_on_demand_render_as_the_full_analysis)
 {
-    // third_party/pitchnet-poly/PolyLazy.cpp (LYNX): the masks of the blocks an edit reaches, built when rendering,
+    // third_party/pitchnet-poly/PolyLazy.cpp (YW): the masks of the blocks an edit reaches, built when rendering,
     // give PitchNet's render with every mask built at analysis time, sample for sample (pitch, level, move, mute)
-    using namespace lynx;
+    using namespace yw;
     const auto source = pe190lk::chord ({ 48.0, 60.0, 64.0, 67.0 }, 9.5, 0.05);
     std::vector<float> mono (source->left.size());
     for (std::size_t i = 0; i < mono.size(); ++i)
@@ -216,7 +216,7 @@ TEST (polyedit190lk_masks_on_demand_render_as_the_full_analysis)
 
 TEST (polyedit190lk_renders_are_cached)
 {
-    using namespace lynx;
+    using namespace yw;
     polyedit::clearCache();
     const std::shared_ptr<const SampleData> source = pe190lk::chord ({ 60.0, 64.0, 67.0 });
     auto m = pe190lk::cMajor();
@@ -236,7 +236,7 @@ TEST (polyedit190lk_renders_are_cached)
 
 TEST (polyedit190lk_the_clip_channel_plays_the_edited_render)
 {
-    using namespace lynx;
+    using namespace yw;
     polyedit::clearCache();
     const std::shared_ptr<const SampleData> source = pe190lk::chord ({ 60.0, 64.0, 67.0 });
     Song s;
@@ -268,8 +268,8 @@ TEST (polyedit190lk_the_clip_channel_plays_the_edited_render)
     auto other = s.channels[0];
     other.polyEdit.clear();
     CHECK (! (other == s.channels[0]));
-    // the clip menu's LYNX extras list the editor (FL has none: not one of FL's items)
-    const auto extras = flclipmenu::lynxExtras();
+    // the clip menu's YW extras list the editor (FL has none: not one of FL's items)
+    const auto extras = flclipmenu::ywExtras();
     CHECK (std::find (extras.begin(), extras.end(), std::string ("Edit notes (polyphonic)...")) != extras.end());
     for (const auto& item : flclipmenu::fl())
         CHECK (item.text != "Edit notes (polyphonic)...");

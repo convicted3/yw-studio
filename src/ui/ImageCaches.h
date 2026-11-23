@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::ui
+namespace yw::ui
 {
 // Static caches of juce::Image register how to empty themselves (message thread only). On Windows a JUCE image is
 // backed by Direct2D, and the last image holds JUCE's DirectX device. Inside a plugin (round 180b) the statics would
@@ -28,4 +28,4 @@ inline void clearImageCaches()
     for (auto& clear : imageCacheClears())
         clear();
 }
-} // namespace lynx::ui
+} // namespace yw::ui

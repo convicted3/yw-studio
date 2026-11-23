@@ -3,33 +3,33 @@
 // ended last; before the first clip, the control's own value. Not only one automation of a target plays.
 namespace issue97
 {
-const auto bar = (std::int64_t) lynx::ppq * 4;
+const auto bar = (std::int64_t) yw::ppq * 4;
 
-lynx::Song song()
+yw::Song song()
 {
-    auto s = lynx::Song::makeDefault();
+    auto s = yw::Song::makeDefault();
     s.bpm = 120.0;
-    s.mode = lynx::PlayMode::song;
-    // (FL's clip rule, from FL renders without latency on the Master: LYNX's fader compensation of round 190hq would take
+    s.mode = yw::PlayMode::song;
+    // (FL's clip rule, from FL renders without latency on the Master: YW's fader compensation of round 190hq would take
     // the Master fader's automation as late as the default Master's limiter look-ahead)
     s.compensateMixerLevels = false;
     return s;
 }
 
 // a flat automation of the Master's fader
-int addFlat (lynx::Song& s, float value)
+int addFlat (yw::Song& s, float value)
 {
-    lynx::Automation a;
-    a.target = { lynx::AutomationTargetKind::mixerVolume, 0 };
+    yw::Automation a;
+    a.target = { yw::AutomationTargetKind::mixerVolume, 0 };
     a.points = { { 0, value }, { bar * 32, value } };
     s.automations.push_back (a);
     return (int) s.automations.size() - 1;
 }
 
-void addClip (lynx::Song& s, int automation, int startBar, int bars, int track)
+void addClip (yw::Song& s, int automation, int startBar, int bars, int track)
 {
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::automation;
+    yw::Clip c;
+    c.kind = yw::ClipKind::automation;
     c.automation = automation;
     c.track = track;
     c.start = bar * startBar;
@@ -38,14 +38,14 @@ void addClip (lynx::Song& s, int automation, int startBar, int bars, int track)
 }
 
 // the Master's peak over a bar
-float levelAt (const lynx::Song& s, int atBar)
+float levelAt (const yw::Song& s, int atBar)
 {
     const double sr = 48000.0;
-    auto state = lynx::RackState::build (s, nullptr, sr);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (s, nullptr, sr);
+    yw::RackRenderer r;
     r.prepare (sr, 512);
     std::vector<float> l (512), rr (512);
-    const auto tps = lynx::ticksPerSample (s.bpm, sr);
+    const auto tps = yw::ticksPerSample (s.bpm, sr);
     float peak = 0.0f;
     for (double tick = (double) bar * atBar; tick < (double) bar * (atBar + 1); tick += 512.0 * tps)
     {
@@ -57,7 +57,7 @@ float levelAt (const lynx::Song& s, int atBar)
 }
 
 // the pattern in every bar, so every bar has signal
-lynx::Song withSound()
+yw::Song withSound()
 {
     auto s = song();
     for (int b = 0; b < 32; ++b)
@@ -72,14 +72,14 @@ TEST (issue97_one_target_shares_a_slot)
     const auto a = issue97::addFlat (s, 0.2f), b = issue97::addFlat (s, 0.5f), c = issue97::addFlat (s, 0.8f);
     issue97::addClip (s, a, 4, 2, 1);
     issue97::addClip (s, b, 8, 2, 2);
-    auto state = lynx::RackState::build (s, nullptr, 48000.0);
+    auto state = yw::RackState::build (s, nullptr, 48000.0);
     CHECK (state->mixerVolumeAuto[0] == b); // (the third has no clip: it plays nothing)
     CHECK (state->automationGroups[(std::size_t) b].size() == 2 && state->automationFollowers[(std::size_t) a] == 1);
     CHECK (state->automationFollowers[(std::size_t) c] == 0 && state->automationGroups[(std::size_t) c].empty());
 
     // the second automation's clip goes: the first plays alone again
     s.playlist.pop_back();
-    state = lynx::RackState::build (s, nullptr, 48000.0);
+    state = yw::RackState::build (s, nullptr, 48000.0);
     CHECK (state->mixerVolumeAuto[0] == a && state->automationFollowers[(std::size_t) a] == 0 && state->automationGroups[(std::size_t) a].empty());
 }
 
@@ -87,17 +87,17 @@ TEST (issue97_plugin_parameter_binds_once)
 {
     // a CC / plugin parameter binding was made per automation: both wrote every block and the last one stayed
     auto s = issue97::song();
-    s.channels[0].instrument = lynx::InstrumentKind::midiOut;
+    s.channels[0].instrument = yw::InstrumentKind::midiOut;
     for (const auto value : { 0.2f, 0.5f })
     {
-        lynx::Automation a;
-        a.target = { lynx::AutomationTargetKind::channelParam, 0, 0, lynx::midictl::ccBase + 1 };
+        yw::Automation a;
+        a.target = { yw::AutomationTargetKind::channelParam, 0, 0, yw::midictl::ccBase + 1 };
         a.points = { { 0, value }, { issue97::bar * 8, value } };
         s.automations.push_back (a);
     }
     issue97::addClip (s, 0, 0, 2, 1);
     issue97::addClip (s, 1, 2, 2, 2);
-    const auto state = lynx::RackState::build (s, nullptr, 48000.0);
+    const auto state = yw::RackState::build (s, nullptr, 48000.0);
     CHECK (state->pluginParams.size() == 1 && state->pluginParams[0].automation == 1);
 }
 
@@ -144,14 +144,14 @@ TEST (issue97_overlap_the_later_start_wins)
 
     // the same automation twice: the later clip restarts its curve (FL's rj)
     auto same = issue97::song();
-    lynx::Automation ramp;
-    ramp.target = { lynx::AutomationTargetKind::mixerVolume, 0 };
+    yw::Automation ramp;
+    ramp.target = { yw::AutomationTargetKind::mixerVolume, 0 };
     ramp.points = { { 0, 0.0f }, { issue97::bar * 4, 1.0f } };
     same.automations.push_back (ramp);
     issue97::addClip (same, 0, 0, 4, 1);
     issue97::addClip (same, 0, 2, 4, 2);
     CHECK (std::abs (same.targetValueAt (ramp.target, (double) issue97::bar * 2) - 0.0f) < 1e-5f);
-    CHECK (std::isnan (same.targetValueAt ({ lynx::AutomationTargetKind::mixerPan, 0 }, 0.0)));
+    CHECK (std::isnan (same.targetValueAt ({ yw::AutomationTargetKind::mixerPan, 0 }, 0.0)));
 }
 
 TEST (issue97_two_tempo_clips)
@@ -159,15 +159,15 @@ TEST (issue97_two_tempo_clips)
     auto s = issue97::song();
     for (const auto value : { 0.2f, 0.6f })
     {
-        lynx::Automation a;
-        a.target.kind = lynx::AutomationTargetKind::tempo;
+        yw::Automation a;
+        a.target.kind = yw::AutomationTargetKind::tempo;
         a.points = { { 0, value }, { issue97::bar * 8, value } };
         s.automations.push_back (a);
     }
     issue97::addClip (s, 0, 2, 2, 1);
     issue97::addClip (s, 1, 6, 2, 2);
     // before the first clip: the first clip's value (178a's rule for the tempo, unverified against FL)
-    CHECK (std::abs (s.tempoAt ((double) issue97::bar) - lynx::tempoFromValue (0.2f)) < 1.0e-3);
+    CHECK (std::abs (s.tempoAt ((double) issue97::bar) - yw::tempoFromValue (0.2f)) < 1.0e-3);
     const auto first = s.tempoAt ((double) issue97::bar * 3), second = s.tempoAt ((double) issue97::bar * 7);
     CHECK (first < second);
     CHECK (s.tempoAt ((double) issue97::bar * 5) == first);

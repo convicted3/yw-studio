@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 class HeldNotes
 {
@@ -211,4 +211,4 @@ private:
     };
     std::array<Entry, 128> notes {};
 };
-} // namespace lynx
+} // namespace yw

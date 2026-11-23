@@ -3,7 +3,7 @@
 namespace misc164m
 {
 // records the live controllers it receives
-struct Spy final : lynx::Instrument
+struct Spy final : yw::Instrument
 {
     int messages = 0, lastStatus = 0, lastData1 = -1, controls = 0, lastCc = -1;
     float bend = 0.0f, lastValue = -1.0f;
@@ -33,17 +33,17 @@ TEST (misc164m_patcher_passes_live_controllers_to_its_instruments)
     // FL's Patcher takes MIDI input (its TFruityPlug MIDIIn is implemented, unlike FL's native generators) and passes
     // it to the plugins cabled to "From FL Studio": the mod wheel / CCs / pressure / bend reach a plugin inside it
     using namespace patcher162;
-    lynx::ChannelDef channel;
-    channel.instrument = lynx::InstrumentKind::patcher;
-    channel.patcher.nodes = { generatorNode (lynx::InstrumentKind::synth), generatorNode (lynx::InstrumentKind::synth) };
-    channel.patcher.wires = { midi (lynx::patchFromHost, 0, 0, 0), patcher141::audio (0, lynx::patchToHost), patcher141::audio (1, lynx::patchToHost) };
+    yw::ChannelDef channel;
+    channel.instrument = yw::InstrumentKind::patcher;
+    channel.patcher.nodes = { generatorNode (yw::InstrumentKind::synth), generatorNode (yw::InstrumentKind::synth) };
+    channel.patcher.wires = { midi (yw::patchFromHost, 0, 0, 0), patcher141::audio (0, yw::patchToHost), patcher141::audio (1, yw::patchToHost) };
     std::vector<std::shared_ptr<misc164m::Spy>> spies;
-    auto f = lynx::patcher::builtInFactories (48000.0);
-    f.instrument = [&spies] (const lynx::ChannelDef&) {
+    auto f = yw::patcher::builtInFactories (48000.0);
+    f.instrument = [&spies] (const yw::ChannelDef&) {
         spies.push_back (std::make_shared<misc164m::Spy>());
-        return std::shared_ptr<lynx::Instrument> (spies.back());
+        return std::shared_ptr<yw::Instrument> (spies.back());
     };
-    auto i = lynx::patcher::makeInstrument (channel, 48000.0, f);
+    auto i = yw::patcher::makeInstrument (channel, 48000.0, f);
     CHECK (spies.size() == 2u);
     if (spies.size() != 2u)
         return;
@@ -68,8 +68,8 @@ TEST (misc164m_native_engines_keep_ignoring_the_mod_wheel_like_fl)
     // by its VST host): routed to the level (10^(2·m)·0.05) it stays at 0 in FL, so the note plays at 0.05 with or
     // without the wheel (a wheel at 127 would make it 100 times louder).
     auto channel = [] {
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sakura;
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sakura;
         c.modelParams.assign (146, 0.0f);
         const std::pair<int, float> values[] { { 0, 0.375f }, { 1, 0.5f }, { 3, 0.5f }, { 4, 1.0f }, { 6, 0.95f }, { 9, 0.3f },
                                                { 11, 0.95f }, { 14, 0.3f }, { 18, 0.5f }, { 19, 0.5f }, { 27, 0.5f }, { 28, 1.0f },
@@ -82,7 +82,7 @@ TEST (misc164m_native_engines_keep_ignoring_the_mod_wheel_like_fl)
         auto c = channel();
         if (routed)
             c.modelParams[79] = 3.0f, c.modelParams[80] = 1.0f, c.modelParams[82] = 1.0f; // slot 1: mod wheel → level
-        auto inst = lynx::makeInstrument (lynx::InstrumentKind::sakura);
+        auto inst = yw::makeInstrument (yw::InstrumentKind::sakura);
         inst->prepare (48000.0);
         inst->configure (c, 120.0);
         if (wheel)

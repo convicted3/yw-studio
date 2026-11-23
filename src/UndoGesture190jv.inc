@@ -6,7 +6,7 @@
     // the app class of Main.cpp.
     bool runUndoGesture190jv (const juce::File& reportFile)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         juce::StringArray report;
         bool allOk = true;

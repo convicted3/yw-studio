@@ -13,7 +13,7 @@
 #include "ui/PluginSkin.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -142,16 +142,16 @@ void closeAll()
 
 namespace peqview
 {
-juce::Colour bandColour (int band) { return lynx::bandColour (band); }
-float xForHz (juce::Rectangle<float> area, double hz) { return lynx::xForHz (area, hz); }
-double hzForX (juce::Rectangle<float> area, float x) { return lynx::hzForX (area, x); }
-float yForDb (juce::Rectangle<float> area, double db, double rangeDb) { return lynx::yForDb (area, db, rangeDb); }
-double dbForY (juce::Rectangle<float> area, float y, double rangeDb) { return lynx::dbForY (area, y, rangeDb); }
-juce::String bandTypeName (int type) { return lynx::bandTypeName ((peq::BandType) type); }
+juce::Colour bandColour (int band) { return yw::bandColour (band); }
+float xForHz (juce::Rectangle<float> area, double hz) { return yw::xForHz (area, hz); }
+double hzForX (juce::Rectangle<float> area, float x) { return yw::hzForX (area, x); }
+float yForDb (juce::Rectangle<float> area, double db, double rangeDb) { return yw::yForDb (area, db, rangeDb); }
+double dbForY (juce::Rectangle<float> area, float y, double rangeDb) { return yw::dbForY (area, y, rangeDb); }
+juce::String bandTypeName (int type) { return yw::bandTypeName ((peq::BandType) type); }
 
 bool hasGain (const EffectParams& params, int band)
 {
-    return lynx::hasGain (peq::type (params[(std::size_t) peq::param (band, 0)]));
+    return yw::hasGain (peq::type (params[(std::size_t) peq::param (band, 0)]));
 }
 
 juce::Point<float> handlePosition (juce::Rectangle<float> area, const EffectParams& params, int band, double rangeDb)
@@ -182,7 +182,7 @@ void showBandMenu (juce::Component& target, const EffectParams& params, int band
     const auto currentType = peq::type (params[(std::size_t) peq::param (band, 0)]);
 
     for (int t = 0; t < peq::bandTypes; ++t)
-        menu.addItem (lynx::bandTypeName ((peq::BandType) t), true, (int) currentType == t, [set, band, t] {
+        menu.addItem (yw::bandTypeName ((peq::BandType) t), true, (int) currentType == t, [set, band, t] {
             set ({ { peq::param (band, 0), peq::typeValue ((peq::BandType) t) } });
         });
 
@@ -243,9 +243,9 @@ juce::String bandText (const EffectParams& p, int band)
 {
     const auto t = peq::type (p[(std::size_t) peq::param (band, 0)]);
     juce::String text;
-    text << tr ("Band {0}: {1}", { juce::String (band + 1), lynx::bandTypeName (t) }) << "   "
+    text << tr ("Band {0}: {1}", { juce::String (band + 1), yw::bandTypeName (t) }) << "   "
          << juce::String::fromUTF8 (formatEffectParam (EffectKind::parametricEq, peq::param (band, 1), p[(std::size_t) peq::param (band, 1)], 120.0).c_str());
-    if (lynx::hasGain (t))
+    if (yw::hasGain (t))
         text << "   " << juce::String::fromUTF8 (formatEffectParam (EffectKind::parametricEq, peq::param (band, 2), p[(std::size_t) peq::param (band, 2)], 120.0).c_str());
     // FL's modes (imported Parametric EQ 2): bandwidth and FL's order for every band type
     if (peq::flLaw (p))
@@ -450,4 +450,4 @@ void Analyser::paintSpectrum (juce::Graphics& g, juce::Rectangle<float> graph) c
     g.restoreState();
 }
 } // namespace peqview
-} // namespace lynx
+} // namespace yw

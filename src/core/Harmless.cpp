@@ -22,7 +22,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -988,7 +988,7 @@ struct Note
 {
     bool used = false, ghost = false, released = false, stamped = false;
     int key = 0;
-    std::uint32_t lynxNote = 0; // the LYNX note id that started it (round 190ej)
+    std::uint32_t ywNote = 0; // the YW note id that started it (round 190ej)
     double vel = 0, fvol = 0, fpan = 0, finalPitch = 0, volFactor = 1, notePan = 0;
     long long start = 0, stamp = 0;
     std::array<int, 9> records {};
@@ -997,7 +997,7 @@ struct Note
 };
 
 // pseudo-random draws for the per-record seeds and the LFO "voice random" (FL seeds its generator from the clock, so
-// its draws can't be reproduced; LYNX uses a fixed-seed PCG-style generator, so every render is deterministic)
+// its draws can't be reproduced; YW uses a fixed-seed PCG-style generator, so every render is deterministic)
 struct Random
 {
     std::uint32_t state = 0x6A09E667u;
@@ -1213,11 +1213,11 @@ public:
     }
 
     // first note of `key` still held by the host (ghosts included), or −1
-    // the oldest held note of a key; `note` ≠ 0: the one that LYNX note started (round 190ej)
+    // the oldest held note of a key; `note` ≠ 0: the one that YW note started (round 190ej)
     int findHeld (int key, std::uint32_t note = 0) const noexcept
     {
         for (auto i : order)
-            if (const auto& nt = notes[(std::size_t) i]; nt.key == key && ! nt.released && (note == 0 || nt.lynxNote == note))
+            if (const auto& nt = notes[(std::size_t) i]; nt.key == key && ! nt.released && (note == 0 || nt.ywNote == note))
                 return i;
         return -1;
     }
@@ -1243,11 +1243,11 @@ public:
         }
     }
 
-    // the LYNX note id a note was started with (round 190ej)
-    void setLynxNote (int index, std::uint32_t note) noexcept
+    // the YW note id a note was started with (round 190ej)
+    void setYwNote (int index, std::uint32_t note) noexcept
     {
         if (index >= 0 && (std::size_t) index < notes.size())
-            notes[(std::size_t) index].lynxNote = note;
+            notes[(std::size_t) index].ywNote = note;
     }
 
     // FL's PITCH knob and main pitch, live (round 167a): a note's pitch at its note on, and the channel's pitch now
@@ -1461,7 +1461,7 @@ private:
         freeList[(std::size_t) freeCount++] = r;
     }
 
-    // capacity fallback (LYNX's own, outside FL's behaviour): stop the oldest records at once
+    // capacity fallback (YW's own, outside FL's behaviour): stop the oldest records at once
     void ensureFreeRecords (int needed) noexcept
     {
         while (freeCount < needed)
@@ -1616,7 +1616,7 @@ private:
         v.pluckDecay.fill (1.0f), v.pluckInit = 0, v.pluckDirty = true;
         v.trem = P.tremM;
         v.lrInit = false;
-        v.finalFcut = 0.0, v.finalFres = 0.0; // LYNX notes carry no Mod X / Mod Y
+        v.finalFcut = 0.0, v.finalFres = 0.0; // YW notes carry no Mod X / Mod Y
         v.nacc = 0.0;
         v.seed = seed, v.nseed = seed, v.rnd = rnd;
         v.lf0 = v.f0 = v.pos = v.ph70 = v.phPh = 0.0;
@@ -2344,18 +2344,18 @@ Settings defaultSettings() noexcept
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// LYNX front-end
+// YW front-end
 //
 // Levels (§1.16, REA_rodada28 §4.1). FL hands Harmless Final.Vol = chan.Vol (× Init.Vol when VEL → volume is on,
 // Init.Vol = (11^(vel/100) − 1)/10, inference), Final.Pan = note pan + chan.Pan and Final.Pitch = 100·(key − 60) +
 // channel pitch; each record asks the host for L = vol·cos((1 + pan)π/4), R = vol·sin(…) with
-// vol = 0.75·(3^x36 − 1)/2·(Final.Vol + offset)·unison gain. LYNX's channel gains are gl = √2·V·cos((1 + p)π/4),
+// vol = 0.75·(3^x36 − 1)/2·(Final.Vol + offset)·unison gain. YW's channel gains are gl = √2·V·cos((1 + p)π/4),
 // gr = √2·V·sin(…), so V = √((gl² + gr²)/2) and p are recovered exactly and FL's law is applied once (the channel
-// volume and pan are not applied a second time). Velocity = LYNX velocity (FL velocity / 128). Mod X/Y
-// (Final.FCut/FRes) are 0: LYNX notes have none. Host events 4/5 (release velocity, release-time factor) are
+// volume and pan are not applied a second time). Velocity = YW velocity (FL velocity / 128). Mod X/Y
+// (Final.FCut/FRes) are 0: YW notes have none. Host events 4/5 (release velocity, release-time factor) are
 // answered with 0 and 1, as in the reference.
 //
-// Quality: the editor's "quality" combo (state integer, 0 or 1) is used for both playback and export — LYNX's engine
+// Quality: the editor's "quality" combo (state integer, 0 or 1) is used for both playback and export — YW's engine
 // does not tell an instrument when it renders offline, so FL's quality 2 for rendering (§1.2) is not used.
 // Random sources: deterministic per instrument (see Random); FL's are clock-seeded, so spectral-random phases, Noise
 // resonance and the LFO "voice random" differ from any given FL render by design.
@@ -2460,7 +2460,7 @@ public:
         const auto index = engine.noteOn (key, vel, volFactor, channelVol, (double) nextPan, channelPan,
                                           (double) settings.pitchCents + (double) nextCents);
         engine.anchorNote (index, live.ref (settings.pitchCents));
-        engine.setLynxNote (index, startingNoteId());
+        engine.setYwNote (index, startingNoteId());
         nextPan = 0.0f;
         nextCents = 0.0f;
     }
@@ -2656,4 +2656,4 @@ std::vector<float> harmlessDefaultModelParams()
     const auto s = defaultSettings();
     return std::vector<float> (s.raw.begin(), s.raw.end());
 }
-} // namespace lynx
+} // namespace yw

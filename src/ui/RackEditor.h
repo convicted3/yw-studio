@@ -1,6 +1,6 @@
 #pragma once
 
-// The Rack device (round 183c, docs/analise/REA_rodada183c.md §8–9): Live's rack layout drawn by LYNX: a view column, the
+// The Rack device (round 183c, docs/analise/REA_rodada183c.md §8–9): Live's rack layout drawn by YW: a view column, the
 // macro variations, up to 16 macro knobs, the chain list with its zone editor, and the selected chain's devices (a Drum
 // Rack, round 190ec: its pad view, I-O / send columns and return chains too). One
 // component, used in three places: the body of the rack's card in the Detail View's Device View, a mixer slot's window
@@ -13,7 +13,7 @@
 #include "engine/AudioEngine.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 // Where a rack's document lives in the song (a mixer slot, a channel, or a rack nested in another rack's chain)
 using RackLocator = std::function<PatcherDoc* (Song&)>;
@@ -135,4 +135,4 @@ private:
     void timerCallback() override;
     friend struct Impl;
 };
-} // namespace lynx
+} // namespace yw

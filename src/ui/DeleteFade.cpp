@@ -6,7 +6,7 @@
 #include "ui/Motion.h"
 #include "ui/PluginSkin.h"
 
-namespace lynx::ui
+namespace yw::ui
 {
 namespace
 {
@@ -136,4 +136,4 @@ void DeleteFade::freezeForSnapshot (double ms)
     frozen = ms;
     stopTimer();
 }
-} // namespace lynx::ui
+} // namespace yw::ui

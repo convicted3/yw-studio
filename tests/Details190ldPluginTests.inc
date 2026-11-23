@@ -5,9 +5,9 @@
 // them (setMetersShown); a signal lights some columns; HOLD freezes them
 TEST (details190ld_vocoder_publishes_band_levels_while_shown)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::vocoder);
+    auto fx = yw::makeEffect (yw::EffectKind::vocoder);
     fx->prepare (48000.0);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::vocoder);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::vocoder);
     std::vector<float> l (512), r (512);
     auto run = [&] (int blocks) {
         for (int b = 0; b < blocks; ++b)
@@ -49,7 +49,7 @@ TEST (details190ld_vocoder_publishes_band_levels_while_shown)
 // and the whole graph's time; the audio is the same either way
 TEST (details190ld_patcher_graph_measures_only_while_watched)
 {
-    using namespace lynx;
+    using namespace yw;
     PatcherDoc d;
     PatchNode n;
     n.effect = makeEffectSlot (EffectKind::fruityFilter);

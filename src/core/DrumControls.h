@@ -14,7 +14,7 @@
 #include "core/ModelParams.h"
 #include "core/Song.h"
 
-namespace lynx::drumcontrols
+namespace yw::drumcontrols
 {
 struct Control
 {
@@ -32,7 +32,7 @@ const Control* find (InstrumentKind kind, const std::string& name);
 // The part a per-part control edits: Drumaxx's pad (0…15), DrumSynth Live's key (its patch slot is chosen through
 // drumSynthKeyToSlot). Ignored for the other engines.
 // Value of a control in a channel (stored units), nullopt when the channel's state can't hold it (e.g. an FL state
-// LYNX can't read).
+// YW can't read).
 std::optional<float> value (const ChannelDef& def, const Control& c, int part = 0);
 // Sets it (clamped to the range, rounded for integer controls); false when the state can't hold it.
 bool setValue (ChannelDef& def, const Control& c, float v, int part = 0);
@@ -50,9 +50,9 @@ const std::vector<EngineParam>& params (InstrumentKind kind);
 // DrumSynth Live: the key selected in the editor (stored after the 120 patches), Drumaxx: no stored selection (the
 // panel remembers it); default part of a channel
 int defaultPart (const ChannelDef& def);
-} // namespace lynx::drumcontrols
+} // namespace yw::drumcontrols
 
-namespace lynx::modelparams
+namespace yw::modelparams
 {
 Table fruitKickModelTable();
 Table pluckedModelTable();
@@ -62,4 +62,4 @@ Table bassDrumModelTable();
 Table drumSynthModelTable();
 Table sakuraModelTable();
 Table slayerModelTable();
-} // namespace lynx::modelparams
+} // namespace yw::modelparams

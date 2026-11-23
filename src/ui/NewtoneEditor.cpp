@@ -20,7 +20,7 @@
 #include "ui/Theme.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -31,7 +31,7 @@ bool isNewtoneKind (EffectKind k)
 
 const char* const noteNames[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
-// FL's naming, as LYNX's piano roll (round 149: the editor said D4 where the piano roll says D5): key 60 = C5
+// FL's naming, as YW's piano roll (round 149: the editor said D4 where the piano roll says D5): key 60 = C5
 juce::String noteName (double midi)
 {
     const auto k = (int) std::lround (midi);
@@ -39,7 +39,7 @@ juce::String noteName (double midi)
 }
 
 // Round 190kj: FL's Newtone window (FL 2026, measured on a 100 % capture): its header, piano-roll grid and note look.
-// Colours read off the capture; every shape is LYNX's own vector drawing.
+// Colours read off the capture; every shape is YW's own vector drawing.
 namespace flnt
 {
 // header: FL's form data (TSynthEditorForm in Newtone_x64.dll: control rectangles, TColor values, hints); note view: the
@@ -532,7 +532,7 @@ public:
         }
         if (e.mods.isPopupMenu())
         {
-            // FL: right-click snaps the note to its nearest semitone (Shift+right-click: LYNX's note menu)
+            // FL: right-click snaps the note to its nearest semitone (Shift+right-click: YW's note menu)
             if (flLook() && ! e.mods.isShiftDown())
             {
                 for (const auto q : selection())
@@ -954,7 +954,7 @@ private:
         }
         if (warpMode())
         {
-            warp = newtonefx::warpOf (fx->state).value_or (newtonefx::WarpMap {}); // (LYNX's own, or FL's Newtime markers)
+            warp = newtonefx::warpOf (fx->state).value_or (newtonefx::WarpMap {}); // (YW's own, or FL's Newtime markers)
             warp.frames = frames();
         }
         else if (auto t = newtonefx::trackOf (fx->state); t && sample != nullptr)
@@ -969,7 +969,7 @@ private:
         else
         {
             // a sample without notes yet (a fresh slot, or a sample chosen from the slot menu): analyse it now. Round
-            // 190li: a new slot renders with LYNX's natural engine; owner 2026-11-18: with "Separate close notes" on
+            // 190li: a new slot renders with YW's natural engine; owner 2026-11-18: with "Separate close notes" on
             notes = newtonefx::analyseNewSlot (*sample);
             fineAnalysis = notes.fineSplit;
             juce::MessageManager::callAsync ([safe = juce::Component::SafePointer<NewtoneEditor> (this)] {
@@ -1065,8 +1065,8 @@ private:
     void chooseSample()
     {
         const juce::File current (juce::String::fromUTF8 (samplePath.c_str()));
-        chooser = lynx::ui::makeFileChooser (tr ("Source sample"), current.existsAsFile() ? current : juce::File(), engine.getSampleLibrary().wildcard());
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        chooser = yw::ui::makeFileChooser (tr ("Source sample"), current.existsAsFile() ? current : juce::File(), engine.getSampleLibrary().wildcard());
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [safe = juce::Component::SafePointer<NewtoneEditor> (this)] (const juce::FileChooser& fc) {
                                   if (safe != nullptr && fc.getResult().existsAsFile())
                                       safe->useSample (fc.getResult());
@@ -1225,8 +1225,8 @@ private:
         if (sample == nullptr)
             return;
         const juce::File src (juce::String::fromUTF8 (samplePath.c_str()));
-        chooser = lynx::ui::makeFileChooser (tr ("Save the edited audio"), src.getSiblingFile (src.getFileNameWithoutExtension() + " (edited).wav"), "*.wav");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        chooser = yw::ui::makeFileChooser (tr ("Save the edited audio"), src.getSiblingFile (src.getFileNameWithoutExtension() + " (edited).wav"), "*.wav");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe = juce::Component::SafePointer<NewtoneEditor> (this)] (const juce::FileChooser& fc) {
                                   if (safe == nullptr || fc.getResult() == juce::File())
                                       return;
@@ -1285,8 +1285,8 @@ private:
     void saveMidi()
     {
         const juce::File src (juce::String::fromUTF8 (samplePath.c_str()));
-        chooser = lynx::ui::makeFileChooser (tr ("Save the notes as MIDI"), src.getSiblingFile (src.getFileNameWithoutExtension() + ".mid"), "*.mid");
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
+        chooser = yw::ui::makeFileChooser (tr ("Save the notes as MIDI"), src.getSiblingFile (src.getFileNameWithoutExtension() + ".mid"), "*.mid");
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                               [safe = juce::Component::SafePointer<NewtoneEditor> (this)] (const juce::FileChooser& fc) {
                                   if (safe == nullptr || fc.getResult() == juce::File())
                                       return;
@@ -1692,7 +1692,7 @@ private:
         cut, advanced, knobCentre, knobVariation, knobTrans
     };
     bool flLook() const noexcept { return ! warpMode() && ! oldLook; }
-    bool oldLook = false; // (--newtoneshot "lynxlook": the round-165g layout, for the paint before / after only)
+    bool oldLook = false; // (--newtoneshot "ywlook": the round-165g layout, for the paint before / after only)
 public:
     juce::PopupMenu editMenuForSnapshot() { return editMenu(); } // (round 190li: --newtoneshot190li)
     void shotState (const juce::String& state)
@@ -1732,7 +1732,7 @@ public:
             if (k >= 0 && k < (int) notes.pitches.size())
                 notes.pitches[(std::size_t) k].shift = arg.fromFirstOccurrenceOf (",", false, false).getDoubleValue();
         }
-        else if (state == "lynxlook")
+        else if (state == "ywlook")
         {
             oldLook = true;
             for (auto* b : { &load, &analyse, &cutMode, &snapAll, &reset, &preview, &save, &scoreButton, &snapButton, &toPlaylist })
@@ -1753,7 +1753,7 @@ public:
     }
 private:
     bool looping = false, autoScroll = true, advancedEdit = false, snapScale = false; // (FL: Auto-scroll on at start)
-    // Edit › Advanced edit vibrato: LYNX shows its note panel (the selected notes' vibrato, tremolo, formant... as
+    // Edit › Advanced edit vibrato: YW shows its note panel (the selected notes' vibrato, tremolo, formant... as
     // numbers) beside the roll; FL draws its vibrato handles on the note (not reproduced)
     bool vibratoEdit = false;
     std::int64_t cursorAt = 0;  // FL's play cursor (a click on the roll puts it there; playback starts from it)
@@ -1955,7 +1955,7 @@ private:
         pad (Hit::cut, Icon::knife, cutMode.getToggleState(), flnt::cutOn);
         pad (Hit::advanced, Icon::envelope, advancedEdit, flnt::advancedOn);
 
-        // the plugin's name where FL draws its logo (LYNX writes the name; FL's artwork is not used)
+        // the plugin's name where FL draws its logo (YW writes the name; FL's artwork is not used)
         g.setColour (juce::Colour (0xff8796a0));
         g.setFont (juce::FontOptions (21.0f, juce::Font::bold));
         g.drawText ("Newtone", juce::Rectangle<float> (107.0f, 12.0f, 150.0f, 30.0f), juce::Justification::centredLeft, false);
@@ -2202,7 +2202,7 @@ private:
             blob.closeSubPath();
             g.setColour (flnt::blob.withAlpha (alpha));
             g.fillPath (blob);
-            // FL shades the nearest semitone of a note sung off it (seen: 24 c shaded, 12 c not; LYNX: beyond 20 c)
+            // FL shades the nearest semitone of a note sung off it (seen: 24 c shaded, 12 c not; YW: beyond 20 c)
             const auto semi = std::round (target);
             if (std::abs (target - semi) > 0.2)
             {
@@ -2304,7 +2304,7 @@ private:
     }
 
     // FL's WAVOptionsMenu (TSynthEditorForm): File, Edit, Select and Zoom; the header buttons open their own part, a
-    // right-click on the empty note view the whole menu. Items FL has that LYNX does not do yet are left out (no stubs):
+    // right-click on the empty note view the whole menu. Items FL has that YW does not do yet are left out (no stubs):
     // New, the slave options, Use project tempo on load, Edit properties, About, Cut / Copy / Paste.
     juce::PopupMenu fileMenu()
     {
@@ -2333,13 +2333,13 @@ private:
         });
         m.addSeparator();
         m.addItem (tr ("Quantize time") + "\tCtrl+Q", sample != nullptr, false, [this] { quantize(); });
-        // round 190kx (LYNX extra; off = FL's analysis): notes a fraction of a semitone apart, or a new attack on one
+        // round 190kx (YW extra; off = FL's analysis): notes a fraction of a semitone apart, or a new attack on one
         // pitch, become notes of their own (as Melodyne's Melodic detection), and the sample is analysed again
         m.addItem (tr ("Separate close notes (analyse again)"), sample != nullptr && ! warpMode(), fineAnalysis, [this] {
             fineAnalysis = ! fineAnalysis;
             reanalyse();
         });
-        // round 190li (LYNX extras): the natural engine (a new slot has it; older projects keep the engine they were made
+        // round 190li (YW extras): the natural engine (a new slot has it; older projects keep the engine they were made
         // with until it is ticked), and Melodyne-style pitch modulation (vibrato) / pitch drift amounts for the selected
         // notes (all when none is selected), which the natural engine renders
         {
@@ -3335,4 +3335,4 @@ std::unique_ptr<juce::Component> makeNewtoneEditor (AudioEngine& engine, int tra
 {
     return std::make_unique<NewtoneEditor> (engine, track, slot);
 }
-} // namespace lynx
+} // namespace yw

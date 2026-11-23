@@ -7,7 +7,7 @@
 
 namespace bundle184a
 {
-using namespace lynx;
+using namespace yw;
 
 inline int flScaleNamed (const char* name)
 {
@@ -121,7 +121,7 @@ TEST (bundle184a_audio_only_song_has_no_midi)
     s.playlist.erase (std::remove_if (s.playlist.begin(), s.playlist.end(), [] (const Clip& c) { return c.kind == ClipKind::pattern; }),
                       s.playlist.end());
     const auto p = exportbundle::plan (s, "");
-    CHECK (p.name == "LYNX SHARE");
+    CHECK (p.name == "YW Studio");
     CHECK ((int) p.stems.size() == 1);
     CHECK (p.midi.empty());
     CHECK (p.allMidi.empty());

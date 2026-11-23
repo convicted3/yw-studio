@@ -1,8 +1,8 @@
 // Round 190kv: the Soundtoys factory presets. Every factory preset of the installed Soundtoys plug-ins was loaded into
-// the official plug-in in its own hidden host process (public VST3 API only) and read back; LYNX recognises them by a
+// the official plug-in in its own hidden host process (public VST3 API only) and read back; YW recognises them by a
 // fingerprint of the encoded payload (FNV-1a 64 over its length and every character but the volatile fields: the last 24
 // and characters 300 … 369, which change with every save) and plays their own settings mapped onto Echoform / Ember /
-// LYNX Tune (core/SoundtoysFactory190kv.inc, generated; docs/analise/REA_rodada190kv.md). Any other state keeps the
+// YW Tune (core/SoundtoysFactory190kv.inc, generated; docs/analise/REA_rodada190kv.md). Any other state keeps the
 // round-136 hashes and the substitute's preset bit for bit. These tests use synthetic payloads (no vendor data).
 #include <cstdint>
 #include <string>
@@ -31,21 +31,21 @@ inline std::string payload (std::size_t n, unsigned seed)
     }
     return p;
 }
-inline lynx::EffectSlot substitute (const char* name, const std::vector<std::uint8_t>* st, int* translated)
+inline yw::EffectSlot substitute (const char* name, const std::vector<std::uint8_t>* st, int* translated)
 {
-    lynx::PluginIdentity id;
-    id.format = lynx::ForeignPlugin::Format::vst3;
+    yw::PluginIdentity id;
+    id.format = yw::ForeignPlugin::Format::vst3;
     id.name = name;
     if (st != nullptr)
         id.state = *st;
-    const auto* e = lynx::findPluginSubstitute (id, false);
-    return e != nullptr ? lynx::makeSubstituteSlot (*e, st != nullptr ? &id : nullptr, translated) : lynx::EffectSlot {};
+    const auto* e = yw::findPluginSubstitute (id, false);
+    return e != nullptr ? yw::makeSubstituteSlot (*e, st != nullptr ? &id : nullptr, translated) : yw::EffectSlot {};
 }
 } // namespace stoys190kv
 
 TEST (stoys190kv_fingerprint_ignores_only_the_volatile_fields)
 {
-    using namespace lynx;
+    using namespace yw;
     using stoys190kv::state;
     const auto p = stoys190kv::payload (900, 7u);
     const auto fp = soundtoysFactoryFingerprint (state ("EchoBoy", p));
@@ -70,7 +70,7 @@ TEST (stoys190kv_fingerprint_ignores_only_the_volatile_fields)
 
 TEST (stoys190kv_factory_tables_cover_the_installed_presets)
 {
-    using namespace lynx;
+    using namespace yw;
     // fingerprints per plug-in (the re-saved state's and the preset file's; ambiguous ones dropped): sorted, unique
     const std::pair<const char*, std::size_t> least[] { { "EchoBoy", 300 }, { "EchoBoy Jr", 50 }, { "PrimalTap", 50 },
                                                         { "Little PrimalTap", 25 }, { "Decapitator", 40 }, { "Little AlterBoy", 10 } };
@@ -87,7 +87,7 @@ TEST (stoys190kv_factory_tables_cover_the_installed_presets)
 
 TEST (stoys190kv_a_factory_preset_plays_its_own_settings)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ef = echosuite::echoform;
     namespace em = mixsuite::ember;
     for (const char* widget : { "EchoBoy", "EchoBoy Jr", "PrimalTap", "Little PrimalTap" })
@@ -128,7 +128,7 @@ TEST (stoys190kv_a_factory_preset_plays_its_own_settings)
 
 TEST (stoys190kv_any_other_state_keeps_the_previous_translation_bit_for_bit)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const char* name : { "EchoBoy", "EchoBoy Jr", "PrimalTap", "Little PrimalTap", "Decapitator", "Little AlterBoy", "PanMan" })
         for (unsigned seed = 1; seed <= 4; ++seed)
         {

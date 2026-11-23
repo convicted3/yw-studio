@@ -8,7 +8,7 @@
 #include "core/MarkerPlan.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Transport state shared between the UI and the audio thread.
 // Atomics only: the audio thread never blocks waiting for the UI.
@@ -23,7 +23,7 @@ struct Transport
     // the metronome's sound in FL's Metronome sound menu order (core/MetronomeVoice.h, REA round 165z-a2): 0 Hi-hat,
     // 1 Tick (FL's default), 2 Beep, 3 Cowbell, 4 Pulse
     std::atomic<int> metronomeSound { 1 };
-    // LYNX's metronome volume trim (0..1.25; 1 = FL's level). FL has none: its click is set by the mixer track it
+    // YW's metronome volume trim (0..1.25; 1 = FL's level). FL has none: its click is set by the mixer track it
     // plays through. Kept so a volume set before 0.1.20 still applies.
     std::atomic<float> metronomeVolume { 1.0f };
     // FL's Settings › Audio › Mixer › "Metronome track": 0 = "---" (the Master), n = insert n
@@ -37,10 +37,10 @@ struct Transport
     std::atomic<unsigned> userJumps { 0 };
     std::atomic<bool> recording { false };
     std::atomic<double> bpm { 130.0 };
-    // External clock sync (round 165f): > 0 = the tempo LYNX follows from an incoming MIDI clock, over the song's
+    // External clock sync (round 165f): > 0 = the tempo YW follows from an incoming MIDI clock, over the song's
     // (written by the audio thread only)
     std::atomic<double> externalBpm { 0.0 };
-    // Ableton Link (round 190gl, engine/AbletonLink.h): > 0 = the tempo LYNX plays at in a Link session (the session's,
+    // Ableton Link (round 190gl, engine/AbletonLink.h): > 0 = the tempo YW plays at in a Link session (the session's,
     // nudged onto its phase), over the song's; an external clock still wins (written by the audio thread only)
     std::atomic<double> linkBpm { 0.0 };
     // Play was pressed in a Link session with other peers: playback waits for the session's phase (core/LinkSync.h); the
@@ -167,4 +167,4 @@ struct Transport
         return positionTicks.load (std::memory_order_relaxed) / ppq;
     }
 };
-} // namespace lynx
+} // namespace yw

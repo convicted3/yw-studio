@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::pocket::tape
+namespace yw::pocket::tape
 {
 struct Point
 {
@@ -95,4 +95,4 @@ struct Tape
         v += (target - v) * 0.001;
     }
 };
-} // namespace lynx::pocket::tape
+} // namespace yw::pocket::tape

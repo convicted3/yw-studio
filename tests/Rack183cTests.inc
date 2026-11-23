@@ -3,7 +3,7 @@
 
 namespace rack183c
 {
-using namespace lynx;
+using namespace yw;
 
 bool approx (float a, float b, float tol = 1.0e-3f) { return std::abs (a - b) <= tol; }
 
@@ -280,7 +280,7 @@ TEST (rack183c_variations_randomize_and_the_morph)
     std::uint32_t seed = 0x183cu;
     CHECK (rack::randomize (doc, seed) == 2);
     CHECK (doc.rack[0].macros[1].value == before1 && doc.rack[0].macros[5].value == before5);
-    // the morph (LYNX's own, off by default): halfway between A and B for the macros both hold and not excluded
+    // the morph (YW's own, off by default): halfway between A and B for the macros both hold and not excluded
     CHECK (! doc.rack[0].morphOn);
     doc.rack[0].morphOn = true, doc.rack[0].morphA = 0, doc.rack[0].morphB = 1;
     rack::compile (doc);
@@ -606,7 +606,7 @@ TEST (rack183c_als_racks_export_and_round_trip)
 
 TEST (rack183c_midi_effect_rack_plays_its_children_only)
 {
-    using namespace lynx;
+    using namespace yw;
     // channel 0: a MIDI Effect Rack (one chain: VFX Key Mapper at its identity map); channels 1 and 2 its children,
     // channel 3 not (decision R1: like a Layer's children)
     Song song;

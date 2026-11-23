@@ -5,7 +5,7 @@
     // the checks (result=OK / FAIL). Included in the app class of Main.cpp.
     bool runDesign190ooShot (const juce::String& prefix, const juce::String& projectPath)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         const juce::ScopedValueSetter<bool> shown (ui::showingForShots(), true);
         juce::StringArray made, checks;
@@ -101,7 +101,7 @@
         // --- O-1: fades in the Pattern layout with and without Shade faded audio; Clip-launch for comparison --------------
         {
             const auto bar = (std::int64_t) 4 * ppq;
-            const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190oo-fade.wav");
+            const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190oo-fade.wav");
             {
                 wav.deleteFile();
                 juce::WavAudioFormat format;

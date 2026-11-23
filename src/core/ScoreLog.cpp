@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lynx::scorelog
+namespace yw::scorelog
 {
 Log::Log (std::size_t capacity) : ring (std::max<std::size_t> (1, capacity)) {}
 
@@ -85,4 +85,4 @@ std::vector<Note> dump (const std::vector<Entry>& log, const DumpOptions& option
     }
     return notes;
 }
-} // namespace lynx::scorelog
+} // namespace yw::scorelog

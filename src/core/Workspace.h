@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::workspace
+namespace yw::workspace
 {
 enum class Panel : int { playlist, channelRack, pianoRoll, mixer, browser };
 constexpr int panelCount = 5;
@@ -81,7 +81,7 @@ struct Layout
     PanelState& operator[] (Panel p) noexcept { return panels[(std::size_t) p]; }
     const PanelState& operator[] (Panel p) const noexcept { return panels[(std::size_t) p]; }
 
-    // LYNX's default arrangement for a desktop of this size (FL's fresh-install desktop): Browser on the left,
+    // YW's default arrangement for a desktop of this size (FL's fresh-install desktop): Browser on the left,
     // the Playlist filling the rest (at the back of the stacking order), the Channel Rack floating over the Playlist; Piano Roll
     // and Mixer hidden with sensible rects for when they are first shown (Mixer at the bottom, Piano Roll above).
     static Layout makeDefault (int width, int height);
@@ -145,4 +145,4 @@ struct Layout
 // otherwise the whole rect moves.
 enum Edge : int { left = 1, top = 2, right = 4, bottom = 8 };
 Rect snap (Rect moving, const std::vector<Rect>& others, int desktopWidth, int desktopHeight, int threshold = 8, int edges = 0);
-} // namespace lynx::workspace
+} // namespace yw::workspace

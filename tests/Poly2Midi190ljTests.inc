@@ -9,9 +9,9 @@ namespace poly190lj
 {
 // (rollup 0.1.30 step 8: g++ 13 hit an internal compiler error, gimplify_var_or_parm_decl, on braced a2m::Note lists with
 // an empty `bends` inside a function that takes them by reference; the notes are made here instead)
-lynx::a2m::Note note (double start, double end, int key, float velocity)
+yw::a2m::Note note (double start, double end, int key, float velocity)
 {
-    lynx::a2m::Note n;
+    yw::a2m::Note n;
     n.start = start;
     n.end = end;
     n.key = key;
@@ -21,7 +21,7 @@ lynx::a2m::Note note (double start, double end, int key, float velocity)
 // a fake model: note = the window's input at the frame, onset = the bin, contour = the frame's index in its window
 bool fake (const float* in, int count, float* note, float* onset, float* contour)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     for (int w = 0; w < count; ++w)
         for (int f = 0; f < 172; ++f)
         {
@@ -37,20 +37,20 @@ bool fake (const float* in, int count, float* note, float* onset, float* contour
     return true;
 }
 
-lynx::a2m::Posteriorgram flatPg (int frames)
+yw::a2m::Posteriorgram flatPg (int frames)
 {
-    lynx::a2m::Posteriorgram pg;
+    yw::a2m::Posteriorgram pg;
     pg.frames = frames;
-    pg.note.assign ((std::size_t) frames * lynx::a2m::keys, 0.0f);
+    pg.note.assign ((std::size_t) frames * yw::a2m::keys, 0.0f);
     pg.onset = pg.note;
-    pg.contour.assign ((std::size_t) frames * lynx::a2m::contourBins, 0.01f);
+    pg.contour.assign ((std::size_t) frames * yw::a2m::contourBins, 0.01f);
     return pg;
 }
 } // namespace poly190lj
 
 TEST (poly190lj_batched_windows_give_the_same_posteriorgram)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     std::vector<float> audio ((std::size_t) windowStride * 7 + 1234);
     for (std::size_t i = 0; i < audio.size(); ++i)
         audio[i] = (float) std::sin ((double) i * 0.001) + (float) i * 1.0e-6f;
@@ -76,7 +76,7 @@ TEST (poly190lj_batched_windows_give_the_same_posteriorgram)
 
 TEST (poly190lj_polyphase_resampler_matches_the_sinc_resampler)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const double rate : { 44100.0, 48000.0, 96000.0 })
     {
         // a length that divides (the per-sample resampler then steps the exact ratio too)
@@ -109,7 +109,7 @@ TEST (poly190lj_polyphase_resampler_matches_the_sinc_resampler)
 
 TEST (poly190lj_dialog_settings)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     // the defaults are the Harmony item's settings; the sensitivities turn round into Basic Pitch's thresholds
     const ConvertOptions defaults;
     const auto n = noteOptionsOf (defaults);
@@ -163,7 +163,7 @@ TEST (poly190lj_dialog_settings)
 
 TEST (poly190lj_pitch_bends_follow_the_contour)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     auto pg = poly190lj::flatPg (100);
     const auto frame = hop / modelRate;
     // a C5 (60) note over frames 10..50: on its own bin for 20 frames, then 3 bins (a semitone) up (the model's own
@@ -223,7 +223,7 @@ TEST (poly190lj_pitch_bends_follow_the_contour)
 
 TEST (poly190lj_chosen_channel_quantize_and_bend_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef synth;
     synth.name = "Lead";
@@ -272,8 +272,8 @@ TEST (poly190lj_chosen_channel_quantize_and_bend_curves)
 
 TEST (poly190lj_clip_menu_lists_the_polyphonic_item)
 {
-    using namespace lynx;
-    const auto extras = flclipmenu::lynxExtras();
+    using namespace yw;
+    const auto extras = flclipmenu::ywExtras();
     const auto at = std::find (extras.begin(), extras.end(), std::string ("Convert to MIDI (polyphonic)..."));
     CHECK (at != extras.end() && at != extras.begin() && *(at - 1) == "Convert to MIDI");
     for (const auto& e : flclipmenu::fl())

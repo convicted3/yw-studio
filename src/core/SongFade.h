@@ -6,7 +6,7 @@
 // last region and at that end, and they stay editable as the master track's volume automation; the iPad switch fades the
 // last ten seconds to silence and follows the song's end.
 //
-// LYNX: one automation clip on the Master's volume (AutomationTargetKind::mixerVolume, index 0), named kFadeName, on a
+// YW: one automation clip on the Master's volume (AutomationTargetKind::mixerVolume, index 0), named kFadeName, on a
 // Playlist track of its own named "Master" under the last used track, over the last `seconds` of the song. It is an
 // ordinary automation clip: the Pattern layout edits it as FL edits any clip, the Simple layout shows it on its row, the
 // engine plays it and every export renders it. Its first point is the Master's level, so the song plays as before up to
@@ -20,7 +20,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::songfade
+namespace yw::songfade
 {
 inline constexpr const char* kFadeName = "Song fade-out"; // the automation's name (it identifies the fade)
 inline constexpr const char* kTrackName = "Master";        // the Playlist track it sits on (GarageBand's master track)
@@ -195,4 +195,4 @@ inline bool remove (Song& song)
         song.playlistTracks[(std::size_t) track].name.clear();
     return true;
 }
-} // namespace lynx::songfade
+} // namespace yw::songfade

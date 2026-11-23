@@ -1,13 +1,13 @@
 #pragma once
 
-// FL Studio engines that LYNX reproduces, as instruments and effects a user adds to a native LYNX project (round 142,
+// FL Studio engines that YW reproduces, as instruments and effects a user adds to a native YW project (round 142,
 // issue #5) instead of only meeting them inside an imported .flp. docs/analise/REA_rodada142.md.
 //
 // Most of these engines run on the plugin's own saved state (ChannelDef::pluginState / EffectSlot::state), and many
 // also read data files of the user's FL installation at run time (wave tables, multisamples, impulses). A new instance
 // therefore starts from the plugin's "Default" preset of the user's own FL installation (Data\Patches\Plugin presets),
-// imported exactly like an .flp channel or mixer slot: nothing of FL is stored in LYNX. Engines that need no FL data
-// start from LYNX's own defaults; the others say "requires FL Studio" in the menus when FL is not installed.
+// imported exactly like an .flp channel or mixer slot: nothing of FL is stored in YW. Engines that need no FL data
+// start from YW's own defaults; the others say "requires FL Studio" in the menus when FL is not installed.
 
 #include <functional>
 #include <optional>
@@ -18,11 +18,11 @@
 #include "core/FlpImport.h"
 #include "core/Song.h"
 
-namespace lynx::natives
+namespace yw::natives
 {
 enum class Needs
 {
-    nothing,   // LYNX's own default state: always available
+    nothing,   // YW's own default state: always available
     flStudio   // the Default preset (and data files) of the user's FL installation
 };
 
@@ -65,13 +65,13 @@ struct FlAccess
 FlDataReader flDataReader (const FlAccess& fl);
 
 // The presets a new instance may start from, in order: Default.fst in <Data>\Patches\Plugin presets\<Generators|Effects>\<folder>,
-// then the folder's other presets (the first one LYNX's engine reads exactly is used: some engines don't
+// then the folder's other presets (the first one YW's engine reads exactly is used: some engines don't
 // read every version of their plugin's state); empty = FL not installed, or no preset for this plugin
 std::vector<std::string> presetCandidates (const std::string& presetFolder, bool generator, const FlAccess& fl);
 std::string defaultPresetPath (const std::string& presetFolder, bool generator, const FlAccess& fl);
 
 // A channel of engine `kind` from one of its plugin's preset files (.fst, or Toxic's .tbio, GMS' .gmsynth, Morphine's
-// .mrp), named after the engine; nullopt when the file is not for this engine or LYNX can't read it (the preset arrows
+// .mrp), named after the engine; nullopt when the file is not for this engine or YW can't read it (the preset arrows
 // of a channel window, round 167o).
 std::optional<ChannelDef> channelFromPresetFile (InstrumentKind kind, const std::string& path, const FlAccess& fl);
 
@@ -110,4 +110,4 @@ std::optional<EffectSlot> newEffect (EffectKind kind, const FlAccess& fl, double
 // The effect's name in the menus, with " (beta)" for partly reproduced engines
 std::string effectMenuName (EffectKind kind);
 std::string instrumentMenuName (const InstrumentEngine& e);
-} // namespace lynx::natives
+} // namespace yw::natives

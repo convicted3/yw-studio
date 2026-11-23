@@ -16,7 +16,7 @@
 #include "core/ProjectKey.h"
 #include "core/Song.h"
 
-namespace lynx::keyguess
+namespace yw::keyguess
 {
 struct Candidate
 {
@@ -107,4 +107,4 @@ inline std::vector<Candidate> guess (const Histogram& h, int count = 3)
 }
 
 inline std::vector<Candidate> guess (const Song& song, int count = 3) { return guess (histogram (song), count); }
-} // namespace lynx::keyguess
+} // namespace yw::keyguess

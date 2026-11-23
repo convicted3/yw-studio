@@ -13,7 +13,7 @@
 #include "ui/Theme.h"
 #include "ui/ToolWindow.h"
 
-namespace lynx::audiotools
+namespace yw::audiotools
 {
 namespace ae = audioedit;
 
@@ -964,7 +964,7 @@ private:
             case Tool::deverb:
             {
                 // FL's Deverb form (REA_rodada167c.md §3): Profile, Block size, then the Mix wheel between the original
-                // and the processed sound. (FL's own is a downloaded neural module; LYNX's DSP is its own.)
+                // and the processed sound. (FL's own is a downloaded neural module; YW's DSP is its own.)
                 header (tr ("Options"));
                 const auto profile = choice (tr ("Profile"), { tr ("General"), tr ("Voice") }, 0, 1);
                 const auto block = choice (tr ("Block size"), { "1", "2", "3", "4", "5" }, 0, 1);
@@ -1587,9 +1587,9 @@ private:
 
     void loadImpulse (CurveEditor& c)
     {
-        chooser = lynx::ui::makeFileChooser (tr ("Load an impulse response"), juce::File(), "*.wav;*.aif;*.aiff;*.flac");
+        chooser = yw::ui::makeFileChooser (tr ("Load an impulse response"), juce::File(), "*.wav;*.aif;*.aiff;*.flac");
         juce::Component::SafePointer<ToolPanel> self (this);
-        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self, &c] (const juce::FileChooser& fc) {
+        yw::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [self, &c] (const juce::FileChooser& fc) {
             if (self == nullptr || fc.getResults().isEmpty())
                 return;
             juce::AudioFormatManager formats;
@@ -1647,4 +1647,4 @@ void showTool (Host& host, Tool tool)
 {
     openToolWindow (makeToolPanel (host, tool), tr (toolTitle (tool)), "audioeditor-tool");
 }
-} // namespace lynx::audiotools
+} // namespace yw::audiotools

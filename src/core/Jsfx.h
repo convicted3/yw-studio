@@ -1,9 +1,9 @@
 #pragma once
 
-// JSFX support (issue #241, round 190pj; docs/design/JSFX.md): what LYNX keeps about a JSFX script apart from the
+// JSFX support (issue #241, round 190pj; docs/design/JSFX.md): what YW keeps about a JSFX script apart from the
 // runtime (ysfx, engine/JsfxFormat.h). No JUCE here (tests/Jsfx190pjTests.inc).
 //
-// - Identity. A script is found in one of the JSFX roots (the user's Documents/LYNX/JSFX, the bundled pack, the REAPER
+// - Identity. A script is found in one of the JSFX roots (the user's Documents/YW/JSFX, the bundled pack, the REAPER
 //   Effects folder when REAPER is installed, the folders added in Settings › File). Its id is its path relative to that
 //   root ("Utility/volume_trim.jsfx"), so a project made on another computer finds the same script in any root there.
 //   The plugin list keeps the absolute path; the unique id is a hash of the relative path (plus the role: a script
@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::jsfx
+namespace yw::jsfx
 {
 inline constexpr const char* formatName = "JSFX";
 
@@ -65,11 +65,11 @@ struct SavedState
     std::string serialized;          // the @serialize data
 };
 std::string encodeState (const SavedState& state);
-// false: not a LYNX JSFX state (or a damaged one); `state` is then left as it was
+// false: not a YW JSFX state (or a damaged one); `state` is then left as it was
 bool decodeState (const void* data, std::size_t size, SavedState& state);
 
-// The default folder of the bundled pack inside LYNX's settings folder, relative to it
+// The default folder of the bundled pack inside YW's settings folder, relative to it
 inline constexpr const char* packFolderName = "JSFX pack";
-// The user's own folder, relative to Documents/LYNX
+// The user's own folder, relative to Documents/YW
 inline constexpr const char* userFolderName = "JSFX";
-} // namespace lynx::jsfx
+} // namespace yw::jsfx

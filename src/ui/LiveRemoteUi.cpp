@@ -13,7 +13,7 @@
 #include "ui/ValueControl.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx::liveui
+namespace yw::liveui
 {
 using namespace theme;
 
@@ -721,7 +721,7 @@ bool showHostedEditor (const remoteplug::Place& place)
         return live.hostedState (place);
     };
     m.menu = [&engine, place] (juce::Slider& slider, int param) {
-        // the same parameter menu as every LYNX control: Create automation clip, Type value...
+        // the same parameter menu as every YW control: Create automation clip, Type value...
         AutomationTarget target;
         const auto& song = engine.getSong();
         if (place.slot < 0)
@@ -826,4 +826,4 @@ void saveRemoteShots (const juce::String& prefix)
         save (panel, name);
     }
 }
-} // namespace lynx::liveui
+} // namespace yw::liveui

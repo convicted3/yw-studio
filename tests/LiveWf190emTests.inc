@@ -1,5 +1,5 @@
 // --- Round 190em: the clip-grid scene work, Capture MIDI and the map modes made to match Live 12.4.16 as the live
-// check 190ei saw it (/mnt/e/lynx-work/live190ei/ANSWERS.md section C): Capture and Insert Scene (playing and stopped),
+// check 190ei saw it (/mnt/e/yw-work/live190ei/ANSWERS.md section C): Capture and Insert Scene (playing and stopped),
 // the scene fields' drag rates, "n / d" signatures and Return to Default, Capture MIDI's tempo / into a playing clip,
 // a key on a continuous control (tests/LiveWf190efMapTests.inc), the scene denominator through .als.
 
@@ -10,7 +10,7 @@
 
 namespace live190em
 {
-using namespace lynx;
+using namespace yw;
 
 inline Clip patternClip (int pattern, std::int64_t length = 4 * ppq)
 {
@@ -50,7 +50,7 @@ inline scorelog::Entry played (double ms, int key, double lengthMs, double tick 
 
 TEST (live190em_capture_scene_hands_playback_to_the_new_row)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190em::song();
     const auto drumsSlot = launcher::clipAt (*s.clipGrid, 0, 1)->gridSlot;
     const auto keysSlot = launcher::clipAt (*s.clipGrid, 2, 0)->gridSlot;
@@ -77,7 +77,7 @@ TEST (live190em_capture_scene_hands_playback_to_the_new_row)
 
 TEST (live190em_capture_scene_stopped_copies_name_tempo_and_signature)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190em::song();
     s.clipGrid->scenes[1].colour = 0xFF3B8BE0u;
     s.clipGrid->scenes[1].beatUnit = 8;
@@ -95,7 +95,7 @@ TEST (live190em_capture_scene_stopped_copies_name_tempo_and_signature)
 
 TEST (live190em_scene_signature_with_a_denominator)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = live190em::song();
     CHECK (session::setSceneSignature (s, 0, 6, 8) && s.clipGrid->scenes[0].beatsPerBar == 6 && s.clipGrid->scenes[0].beatUnit == 8);
     CHECK (session::setSceneSignature (s, 0, 7, 9) && s.clipGrid->scenes[0].beatUnit == 8); // the nearest of 1, 2, 4, 8, 16
@@ -110,14 +110,14 @@ TEST (live190em_scene_signature_with_a_denominator)
     CHECK (session::sceneBeatUnit (3) == 2 || session::sceneBeatUnit (3) == 4);
     CHECK (session::sceneBeatUnitStep (4, 1) == 8 && session::sceneBeatUnitStep (4, -2) == 1 && session::sceneBeatUnitStep (16, 3) == 16
            && session::sceneBeatUnitStep (1, -1) == 1);
-    // a launch gives LYNX's n/4 meter the same bar length in quarter notes
+    // a launch gives YW's n/4 meter the same bar length in quarter notes
     CHECK (session::sceneBarBeats (3, 4) == 3 && session::sceneBarBeats (6, 8) == 3 && session::sceneBarBeats (12, 8) == 6
            && session::sceneBarBeats (2, 2) == 4 && session::sceneBarBeats (1, 16) == 1 && session::sceneBarBeats (99, 1) == session::sceneBeatsMax);
 }
 
 TEST (live190em_scene_field_drag_rates_are_lives)
 {
-    using namespace lynx;
+    using namespace yw;
     // live check 190ei: from 120.00 a drag of 5 px gives +14, 10 px +29, 20 px +58, 40 px +112 (whole BPM)
     const std::pair<double, double> seen[] { { 5.0, 14.0 }, { 10.0, 29.0 }, { 20.0, 58.0 }, { 40.0, 112.0 } };
     for (const auto& [px, plus] : seen)
@@ -128,7 +128,7 @@ TEST (live190em_scene_field_drag_rates_are_lives)
     }
     CHECK (session::sceneTempoDragged (120.0, -200.0) == minTempo && session::sceneTempoDragged (120.0, 1000.0) == maxTempo);
     CHECK (session::sceneTempoDragged (120.0, 0.0) == 120.0);
-    // the numerator: 4 → 50 in 10 px (LYNX caps at 32 beats)
+    // the numerator: 4 → 50 in 10 px (YW caps at 32 beats)
     CHECK (session::sceneBeatsDragged (4, 1.0) == 9 && session::sceneBeatsDragged (4, 10.0) == session::sceneBeatsMax);
     CHECK (session::sceneBeatsDragged (4, -10.0) == session::sceneBeatsMin);
     // the denominator: its own drag target, one step per 10 px
@@ -138,7 +138,7 @@ TEST (live190em_scene_field_drag_rates_are_lives)
 
 TEST (live190em_scene_denominator_through_als)
 {
-    using namespace lynx;
+    using namespace yw;
     // (a song .als export takes: a channel and a MIDI clip with notes, as tests/Als181cTests.inc builds it)
     Song s;
     s.bpm = 120.0;
@@ -174,7 +174,7 @@ TEST (live190em_scene_denominator_through_als)
 
 TEST (live190em_capture_midi_tempo_from_a_phrase_played_stopped)
 {
-    using namespace lynx;
+    using namespace yw;
     using live190em::played;
     // a s d f a s d f played evenly at 148 BPM (live check 190ei: Live set the song to 148.00)
     std::vector<scorelog::Entry> phrase;
@@ -200,13 +200,13 @@ TEST (live190em_capture_midi_tempo_from_a_phrase_played_stopped)
     CHECK (session::phraseTempo ({}, 133.0) == 133.0);
     // the notes at that tempo: one beat apart, two bars (as Live's 2-bar clip)
     std::int64_t length = 0;
-    const auto notes = session::phraseNotes (phrase, 10000.0, session::phraseTempo (phrase, 120.0), lynx::Meter (4, 4), length);
+    const auto notes = session::phraseNotes (phrase, 10000.0, session::phraseTempo (phrase, 120.0), yw::Meter (4, 4), length);
     CHECK (notes.size() == 8 && length == 8 * ppq && notes[0].start == 0 && std::abs ((double) notes[4].start - 4.0 * ppq) < ppq / 8.0);
 }
 
 TEST (live190em_capture_midi_into_the_playing_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     using live190em::played;
     // a 1-bar clip on track 0 (row 0), its pattern: a note on beat 1 and one on beat 3
     Song s;

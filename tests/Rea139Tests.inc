@@ -2,7 +2,7 @@
 
 TEST (rea139_last_exported_formats_like_fl)
 {
-    using namespace lynx::exportopts;
+    using namespace yw::exportopts;
     // FL's mask (FLEngine FUN_011dd840 / the render window's close): bit 3 WAV, 4 MP3, 5 OGG, 6 FLAC, 7 MIDI, 9 M4A
     CHECK (flFormatBit (Format::wav) == 0x8 && flFormatBit (Format::mp3) == 0x10 && flFormatBit (Format::ogg) == 0x20
            && flFormatBit (Format::flac) == 0x40);
@@ -13,7 +13,7 @@ TEST (rea139_last_exported_formats_like_fl)
     const auto f = formatsOf (both);
     CHECK (f.size() == 3 && f[0] == Format::wav && f[1] == Format::mp3 && f[2] == Format::flac);
     // invalid masks fall back to WAV (FL: < 8 or > 0x3FF); MIDI only: WAV for the audio window; M4A (owner decision D5,
-    // round als190ka-export): LYNX writes it now
+    // round als190ka-export): YW writes it now
     CHECK (withFlLastExported (o, 3).format == Format::wav && withFlLastExported (o, 0x800).moreFormats == 0);
     CHECK (withFlLastExported (o, 0x80).format == Format::wav && withFlLastExported (o, 0x80 | 0x200).format == Format::aac);
     CHECK (withFlLastExported (o, 0x20).format == Format::ogg && withFlLastExported (o, 0x20).moreFormats == 0);
@@ -34,30 +34,30 @@ TEST (rea139_last_exported_formats_like_fl)
 
 TEST (rea139_max_polyphony_releases_the_oldest_and_export_lifts_it)
 {
-    lynx::VoiceOrder order;
+    yw::VoiceOrder order;
     CHECK (order.noteOn (60, 2) == -1 && order.noteOn (64, 2) == -1);
     CHECK (order.noteOn (67, 2) == 60 && order.sounding() == 2 && order.oldest() == 64); // the oldest goes
     order.noteOff (64);
     CHECK (order.noteOn (70, 2) == -1 && order.oldest() == 67);
     CHECK (order.noteOn (67, 2) == -1 && order.oldest() == 70); // played again: the newest
     // (round 168l: FL's limiter does not run on a Mono channel at all, FLEngine 0xd293d0)
-    CHECK (lynx::voiceLimitFor (0, false) == 0 && lynx::voiceLimitFor (1, true) == 0 && lynx::voiceLimitFor (1, false) == 1
-           && lynx::voiceLimitFor (4, true) == 0);
+    CHECK (yw::voiceLimitFor (0, false) == 0 && yw::voiceLimitFor (1, true) == 0 && yw::voiceLimitFor (1, false) == 1
+           && yw::voiceLimitFor (4, true) == 0);
 
     // in the renderer: a chord of 4 on a channel limited to 2 keeps 2 voices
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.resize (1);
-    song.channels[0].instrument = lynx::InstrumentKind::synth;
+    song.channels[0].instrument = yw::InstrumentKind::synth;
     song.channels[0].maxPolyphony = 2;
     song.patterns[0].notes.clear();
     for (int k = 0; k < 4; ++k)
         song.patterns[0].notes.push_back ({ (std::int64_t) k * 24, 960, 0, 60 + k * 3, 0.8f });
-    auto render = [] (const lynx::Song& s) {
-        auto state = lynx::RackState::build (s, nullptr, 48000.0);
-        lynx::RackRenderer r;
+    auto render = [] (const yw::Song& s) {
+        auto state = yw::RackState::build (s, nullptr, 48000.0);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         std::vector<float> l (512), rr (512);
-        const auto tps = lynx::ticksPerSample (s.bpm, 48000.0);
+        const auto tps = yw::ticksPerSample (s.bpm, 48000.0);
         double energy = 0.0;
         for (int b = 0; b < 40; ++b)
         {
@@ -75,17 +75,17 @@ TEST (rea139_max_polyphony_releases_the_oldest_and_export_lifts_it)
     CHECK (limited > 0.0 && unlimited > limited * 1.3); // 2 voices sound instead of 4
 
     // FL's "Disable maximum polyphony" (on by default) lifts every limit in the exported song
-    lynx::exportopts::Options o;
-    o.range = lynx::exportopts::Range::pattern;
+    yw::exportopts::Options o;
+    o.range = yw::exportopts::Range::pattern;
     std::int64_t music = 0, loop = 0;
-    CHECK (lynx::exportopts::makeRenderSong (song, o, 0, music, loop).channels[0].maxPolyphony == 0);
+    CHECK (yw::exportopts::makeRenderSong (song, o, 0, music, loop).channels[0].maxPolyphony == 0);
     o.disableMaxPolyphony = false;
-    CHECK (lynx::exportopts::makeRenderSong (song, o, 0, music, loop).channels[0].maxPolyphony == 2);
+    CHECK (yw::exportopts::makeRenderSong (song, o, 0, music, loop).channels[0].maxPolyphony == 2);
 }
 
 TEST (rea139_record_quantize_like_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto g = ticksPerStep;
     auto n = [] (std::int64_t start, std::int64_t length) { return Note { start, length, 0, 60, 0.8f }; };
     // played: start 3/4 step late, end 1/3 step before a grid line
@@ -97,7 +97,7 @@ TEST (rea139_record_quantize_like_fl)
     };
     TakeQuantize q;
     q.grid = g;
-    // "Note start time" + "Leave note duration" (LYNX's default): start to the grid, the played length
+    // "Note start time" + "Leave note duration" (YW's default): start to the grid, the played length
     auto a = run (q);
     CHECK (a.start == 2 * g && a.length == end - start);
     // + "Note end time": the end to the nearest grid line too
@@ -126,7 +126,7 @@ TEST (rea139_record_quantize_like_fl)
 
 TEST (rea139_recording_markers_punch_in_out)
 {
-    using namespace lynx;
+    using namespace yw;
     auto m = [] (std::int64_t tick, int action) {
         Marker k;
         k.tick = tick;
@@ -158,30 +158,30 @@ TEST (rea139_smart_disable_per_slot_and_allow_smart_disable)
     // FL's per-plugin "Smart disable" and the wrapper's "Allow smart disable": with either off the slot keeps being
     // processed in silence
     auto run = [] (bool slotSmart, bool allow) {
-        lynx::Song s;
-        s.mixer = lynx::Song::defaultMixer (1);
-        lynx::ChannelDef c;
-        c.instrument = lynx::InstrumentKind::sampler;
+        yw::Song s;
+        s.mixer = yw::Song::defaultMixer (1);
+        yw::ChannelDef c;
+        c.instrument = yw::InstrumentKind::sampler;
         c.samplePath = "dc";
         c.mixerTrack = 1;
         s.channels.push_back (c);
         s.patterns.emplace_back();
-        lynx::EffectSlot fx;
-        fx.kind = lynx::EffectKind::plugin;
+        yw::EffectSlot fx;
+        fx.kind = yw::EffectKind::plugin;
         fx.plugin.id = "inversor";
         fx.smartDisable = slotSmart;
         fx.plugin.allowSmartDisable = allow;
         s.mixer[1].effects.push_back (fx);
         auto inverter = std::make_shared<CountingInverter>();
-        lynx::RackState::Factories f;
+        yw::RackState::Factories f;
         f.samples = [] (const std::string&) {
-            auto d = std::make_shared<lynx::SampleData>();
+            auto d = std::make_shared<yw::SampleData>();
             d->left.assign (4800, 0.5f);
-            return std::shared_ptr<const lynx::SampleData> (d);
+            return std::shared_ptr<const yw::SampleData> (d);
         };
-        f.pluginEffects = [inverter] (const lynx::PluginRef&, double) -> std::shared_ptr<lynx::Effect> { return inverter; };
-        auto state = lynx::RackState::build (s, nullptr, 48000.0, f);
-        lynx::RackRenderer r;
+        f.pluginEffects = [inverter] (const yw::PluginRef&, double) -> std::shared_ptr<yw::Effect> { return inverter; };
+        auto state = yw::RackState::build (s, nullptr, 48000.0, f);
+        yw::RackRenderer r;
         r.prepare (48000.0, 512);
         std::vector<float> l (480), rr (480);
         for (int i = 0; i < 100 * 6; ++i) // 6 s of silence
@@ -193,17 +193,17 @@ TEST (rea139_smart_disable_per_slot_and_allow_smart_disable)
     CHECK (run (true, false) == 100 * 6);
 
     // the wrapper flag (version >= 10) and "Use maximum buffer size from host" (fixed-buffer options bit 1)
-    lynx::ForeignPlugin w;
+    yw::ForeignPlugin w;
     w.hasWrapperOptions = true;
     w.wrapperVersion = 12;
     w.wrapperFlags = 0xA4007D8Cu & ~0x20000000u;
-    lynx::PluginRef ref;
-    lynx::applyFlWrapperOptions (w, ref);
+    yw::PluginRef ref;
+    yw::applyFlWrapperOptions (w, ref);
     CHECK (! ref.allowSmartDisable && ! ref.hostMaxBuffer);
     w.wrapperFlags = 0xA4007D8Cu | 0x2u;
     w.fixedOptions = 0x2u;
-    lynx::PluginRef ref2;
-    lynx::applyFlWrapperOptions (w, ref2);
+    yw::PluginRef ref2;
+    yw::applyFlWrapperOptions (w, ref2);
     CHECK (ref2.allowSmartDisable && ref2.fixedBuffers && ref2.hostMaxBuffer && ! ref2.maxSizeBuffers);
 }
 
@@ -237,39 +237,39 @@ TEST (rea139_flp_wrapper_flags_and_saved_version)
 
 TEST (rea139_midi_export_notes_follow_the_playlist)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.patterns.resize (2);
     song.patterns[0].notes = { { 0, 96, 0, 60, 0.8f }, { 384, 96, 0, 62, 0.8f }, { 768, 96, 0, 64, 0.8f } };
     song.patterns[1].notes = { { 0, 2000, 0, 48, 0.8f } };
-    song.mode = lynx::PlayMode::song;
+    song.mode = yw::PlayMode::song;
     song.playlist.clear();
-    lynx::Clip a;
+    yw::Clip a;
     a.pattern = 0;
     a.start = 1536;
     a.length = 768;   // the first two notes
     song.playlist.push_back (a);
-    lynx::Clip b = a;
+    yw::Clip b = a;
     b.start = 4000;
     b.offset = 384;   // from the second note
     b.length = 384;
     song.playlist.push_back (b);
-    lynx::Clip c = a;
+    yw::Clip c = a;
     c.pattern = 1;
     c.start = 0;
     c.length = 500;   // cut at the clip's end
     song.playlist.push_back (c);
-    lynx::Clip d = a;
+    yw::Clip d = a;
     d.start = 9000;
     d.muted = true;
     song.playlist.push_back (d);
-    const auto notes = lynx::exportopts::midiExportNotes (song);
+    const auto notes = yw::exportopts::midiExportNotes (song);
     CHECK (notes.size() == 4);
     if (notes.size() == 4)
     {
         CHECK (notes[0].start == 0 && notes[0].key == 48 && notes[0].length == 500);
         CHECK (notes[1].start == 1536 && notes[2].start == 1920 && notes[3].start == 4000 && notes[3].key == 62);
     }
-    song.mode = lynx::PlayMode::pattern;
+    song.mode = yw::PlayMode::pattern;
     song.currentPattern = 0;
-    CHECK (lynx::exportopts::midiExportNotes (song).size() == 3);
+    CHECK (yw::exportopts::midiExportNotes (song).size() == 3);
 }

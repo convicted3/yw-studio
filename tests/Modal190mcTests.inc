@@ -5,8 +5,8 @@
 
 namespace modal190mc
 {
-using namespace lynx::modalhelp;
-inline std::string name (const Borrowed& b) { return spelledName (b.root, lynx::notenames::Style::english) + chordSuffix (b.chord.intervals); }
+using namespace yw::modalhelp;
+inline std::string name (const Borrowed& b) { return spelledName (b.root, yw::notenames::Style::english) + chordSuffix (b.chord.intervals); }
 inline const RelatedKey* find (const std::vector<RelatedKey>& keys, int tonic, Mode mode)
 {
     for (const auto& k : keys)
@@ -19,7 +19,7 @@ inline const RelatedKey* find (const std::vector<RelatedKey>& keys, int tonic, M
 TEST (modal190mc_scales_spelling_signatures)
 {
     using namespace modal190mc;
-    using lynx::notenames::Style;
+    using yw::notenames::Style;
     // C Aeolian is spelled with flats, letters in order
     const Scale cMinor { 0, Mode::aeolian };
     std::string spelled;
@@ -91,13 +91,13 @@ TEST (modal190mc_key_from_chord_and_context)
 TEST (modal190mc_context_chords_from_notes)
 {
     using namespace modal190mc;
-    std::vector<lynx::Note> notes;
+    std::vector<yw::Note> notes;
     const auto add = [&notes] (int key, std::int64_t start, std::int64_t length, int channel = 0) {
-        lynx::Note n;
+        yw::Note n;
         n.key = key, n.start = start, n.length = length, n.channel = channel;
         notes.push_back (n);
     };
-    const auto bar = 4 * (std::int64_t) lynx::ppq;
+    const auto bar = 4 * (std::int64_t) yw::ppq;
     for (const auto k : { 57, 60, 64 }) add (k, 0, bar);        // Am
     for (const auto k : { 53, 57, 60 }) add (k, bar, bar);      // F
     add (79, bar + bar / 2, bar / 4);                           // a single melody note: not a chord
@@ -176,7 +176,7 @@ TEST (modal190mc_related_keys_and_borrowed_chords)
 TEST (modal190mc_voicing)
 {
     using namespace modal190mc;
-    lynx::prtools::Chord fm;
+    yw::prtools::Chord fm;
     fm.root = 5, fm.intervals = { 0, 3, 7 };
     // C E G → F minor voice-led: C stays, E → F, G → A♭ (C4 F4 A♭4)
     CHECK ((voice (fm, { 60, 64, 67 }, Inversion::voiceLed) == std::vector<int> { 60, 65, 68 }));
@@ -186,12 +186,12 @@ TEST (modal190mc_voicing)
     CHECK ((voice (fm, { 60, 64, 67 }, Inversion::second) == std::vector<int> { 60, 65, 68 }));
     // no previous chord: root position from C4; a 7th chord's third inversion has the 7th in the bass
     CHECK ((voice (fm, {}, Inversion::voiceLed) == std::vector<int> { 65, 68, 72 }));
-    lynx::prtools::Chord g7;
+    yw::prtools::Chord g7;
     g7.root = 7, g7.intervals = { 0, 4, 7, 10 };
     const auto third = voice (g7, { 60, 64, 67 }, Inversion::third);
     CHECK (third.size() == 4 && third.front() % 12 == 5);
     // A minor → E major voice-led: G♯3 B3 E4
-    lynx::prtools::Chord e;
+    yw::prtools::Chord e;
     e.root = 4, e.intervals = { 0, 4, 7 };
     CHECK ((voice (e, { 57, 60, 64 }, Inversion::voiceLed) == std::vector<int> { 56, 59, 64 }));
     // never outside the MIDI range
@@ -206,12 +206,12 @@ TEST (modal190mc_voicing)
 
 namespace modal190mc
 {
-inline std::optional<lynx::ChannelDef> tbChannel (const char* preset)
+inline std::optional<yw::ChannelDef> tbChannel (const char* preset)
 {
     if (realFlpDir.empty())
         return std::nullopt;
     const auto path = (std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Generators" / "Transistor Bass" / preset).string();
-    return lynx::natives::channelFromPresetFile (lynx::InstrumentKind::transistorbass, path, natives142::flAccess());
+    return yw::natives::channelFromPresetFile (yw::InstrumentKind::transistorbass, path, natives142::flAccess());
 }
 } // namespace modal190mc
 
@@ -219,7 +219,7 @@ inline std::optional<lynx::ChannelDef> tbChannel (const char* preset)
 // and "shared" indicators, READ / WRITE, renaming
 TEST (modal190mc_tb_program_row)
 {
-    using namespace lynx;
+    using namespace yw;
     auto c = modal190mc::tbChannel ("Factory programs.fst");
     if (! c)
         return;
@@ -280,7 +280,7 @@ TEST (modal190mc_tb_program_row)
 // timer read the old engine's program until the audio thread took the new one, and wrote it back into the state)
 TEST (modal190mc_tb_program_change_reaches_the_engine)
 {
-    using namespace lynx;
+    using namespace yw;
     auto c = modal190mc::tbChannel ("Sequencer off.fst");
     if (! c)
         return;

@@ -11,7 +11,7 @@
  #include <shellapi.h>
 #endif
 
-namespace lynx::platform
+namespace yw::platform
 {
 namespace
 {
@@ -48,7 +48,7 @@ const Identity& identity()
        #endif
         if (result.family.isEmpty())
         {
-            const auto simulated = juce::SystemStats::getEnvironmentVariable ("LYNX_SIMULATE_PACKAGE_FAMILY", {}).trim();
+            const auto simulated = juce::SystemStats::getEnvironmentVariable ("YW_SIMULATE_PACKAGE_FAMILY", {}).trim();
             if (simulated.isNotEmpty() && ! simulated.containsAnyOf ("\\/:*?\"<>|"))
             {
                 result.family = simulated;
@@ -66,7 +66,7 @@ void migrateFromUnpackaged (const juce::File& target)
     const auto marker = target.getChildFile (store::migrationMarker);
     if (marker.exists())
         return;
-    // a packaged process reading %APPDATA%\LYNX sees the real folder merged with its redirected one; the redirected
+    // a packaged process reading %APPDATA%\YW sees the real folder merged with its redirected one; the redirected
     // one is `target` itself, so whatever is found there that `target` lacks is the real, unpackaged folder's
     const auto old = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("YW Studio");
     juce::StringArray copied;
@@ -80,7 +80,7 @@ void migrateFromUnpackaged (const juce::File& target)
                 continue;
             const auto destination = target.getChildFile (name);
             if (destination.exists())
-                continue; // never overwrite what the packaged LYNX already has
+                continue; // never overwrite what the packaged YW already has
             if (entry.isDirectory() ? file.copyDirectoryTo (destination) : file.copyFileTo (destination))
                 copied.add (name);
         }
@@ -148,11 +148,11 @@ juce::String packageReport()
     if (runningPackaged())
     {
         // the settings folder must be the package's real folder, so Explorer and other programs find its files
-        // (LYNX_PROFILE_DIR, a test profile, wins over the package folder on purpose)
+        // (YW_PROFILE_DIR, a test profile, wins over the package folder on purpose)
         const auto expected = packagedSettingsFolder();
         const bool profile = profileOverride() != juce::File();
         const bool inPackageData = expected != juce::File() && settings == expected;
-        lines.add ("settingsIsPackageFolder=" + juce::String (inPackageData ? "yes" : profile ? "no (LYNX_PROFILE_DIR)" : "NO"));
+        lines.add ("settingsIsPackageFolder=" + juce::String (inPackageData ? "yes" : profile ? "no (YW_PROFILE_DIR)" : "NO"));
         ok = ok && (inPackageData || profile);
         lines.add ("migration=" + settings.getChildFile (store::migrationMarker).loadFileAsString().replace ("\n", " | ").trim());
     }
@@ -168,4 +168,4 @@ juce::String packageReport()
     lines.add (juce::String ("result=") + (ok ? "OK" : "FAILED"));
     return lines.joinIntoString ("\n") + "\n";
 }
-} // namespace lynx::platform
+} // namespace yw::platform

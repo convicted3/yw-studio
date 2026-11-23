@@ -16,7 +16,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::layer
+namespace yw::layer
 {
 // A child a note plays and the note's level factor for it.
 struct Pick
@@ -61,4 +61,4 @@ void setRootNote (ChannelDef& channel, int key);
 
 // The Layers whose children include `channel`.
 std::vector<int> parentsOf (const Song& song, int channel);
-} // namespace lynx::layer
+} // namespace yw::layer

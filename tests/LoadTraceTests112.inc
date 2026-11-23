@@ -5,7 +5,7 @@
 
 TEST (load112_progress_moves_forward_through_stages)
 {
-    namespace lt = lynx::loadtrace;
+    namespace lt = yw::loadtrace;
     lt::begin ("song.flp");
     CHECK (lt::active());
     CHECK (lt::progress() == 0.0);
@@ -47,7 +47,7 @@ TEST (load112_progress_moves_forward_through_stages)
 
 TEST (load112_phases_accumulate_and_report)
 {
-    namespace lt = lynx::loadtrace;
+    namespace lt = yw::loadtrace;
     lt::begin ("vocal.flp");
     lt::add ("parse", 12.0);
     lt::add ("sample_decode", 100.0);
@@ -84,7 +84,7 @@ TEST (load112_phases_accumulate_and_report)
 
 TEST (load112_path_roots)
 {
-    using lynx::loadtrace::pathRoot;
+    using yw::loadtrace::pathRoot;
     CHECK (pathRoot ("K:\\LIWN-EP-ANTIGOS\\vocal\\take 1.wav") == "K:\\");
     CHECK (pathRoot ("k:/LIWN/take.wav") == "K:\\");
     CHECK (pathRoot ("K:") == "K:\\");
@@ -103,7 +103,7 @@ TEST (load112_missing_drive_is_probed_once_per_root)
     // the user's vocal projects keep their takes on an external drive (K:\) that is not plugged in: every sample
     // path tried several candidate locations, each a file query on the missing drive
     int rootQueries = 0;
-    lynx::loadtrace::RootProbe probe ([&rootQueries] (const std::string& root) {
+    yw::loadtrace::RootProbe probe ([&rootQueries] (const std::string& root) {
         ++rootQueries;
         return root == "C:\\";
     });
@@ -125,24 +125,24 @@ TEST (load112_missing_drive_is_probed_once_per_root)
     for (int i = 0; i < 12; ++i)
         p.channels.push_back ({ i, flp::ChannelType::sampler, "Vox " + std::to_string (i), "", "K:\\LIWN-EP-ANTIGOS\\voz\\take " + std::to_string (i) + ".wav", 1 });
     p.channels.push_back ({ 12, flp::ChannelType::sampler, "Kick", "", "%FLStudioData%\\k.wav", 1 });
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.roots = { "C:\\FL", "C:\\FL\\Data", "C:\\User" };
     options.projectFolder = "C:\\Projects\\kwe";
     int fileQueries = 0, kQueries = 0;
-    auto roots = std::make_shared<lynx::loadtrace::RootProbe> ([] (const std::string& root) { return root == "C:\\"; });
+    auto roots = std::make_shared<yw::loadtrace::RootProbe> ([] (const std::string& root) { return root == "C:\\"; });
     options.fileExists = [&, roots] (const std::string& path) {
         if (! roots->rootAvailable (path))
             return false;
         ++fileQueries;
-        kQueries += lynx::loadtrace::pathRoot (path) == "K:\\" ? 1 : 0;
+        kQueries += yw::loadtrace::pathRoot (path) == "K:\\" ? 1 : 0;
         return path == "C:\\FL\\Data\\k.wav";
     };
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     options.report = &report;
-    const auto s = lynx::importFlp (p, options);
+    const auto s = yw::importFlp (p, options);
     CHECK (kQueries == 0);
     CHECK (s.channels.size() == 13);
-    CHECK (s.channels[12].instrument == lynx::InstrumentKind::sampler);
+    CHECK (s.channels[12].instrument == yw::InstrumentKind::sampler);
     CHECK (report.missingFiles.size() == 12); // still reported as missing, for the "Find missing files" dialog
     CHECK (fileQueries > 0);
 }

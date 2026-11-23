@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <vector>
 
-namespace lynx::facet
+namespace yw::facet
 {
 namespace
 {
@@ -691,12 +691,12 @@ private:
 };
 
 // ---- round 190mg: the PuigTec law's output stage (FacetEq.h puigLawParam; docs/analise/REA_rodada190mg_dyn.md §1) ----
-// LYNX's own model of what REA showed in the Waves PuigTec EQP1A's DSP (an output stage after the EQ: the mains hum and
+// YW's own model of what REA showed in the Waves PuigTec EQP1A's DSP (an output stage after the EQ: the mains hum and
 // a noise floor added, then a waveshaper, then the oversampler's resampling filter), every constant fitted on our own
 // demo-mode renders (waves3_190mg/dyn/lab: tubefit.py, humfit2.py, noisefit.py; the flat impulse response's delay).
 namespace puig
 {
-// the resampler's linear phase: the reference is 148.774 samples late at 48 kHz, LYNX's curve (minimum phase) 0 — the
+// the resampler's linear phase: the reference is 148.774 samples late at 48 kHz, YW's curve (minimum phase) 0 — the
 // integer part is latency the host compensates, the fraction (0.226 samples at 48 kHz = 4.7 us) is what an aligned
 // comparison hears (−30 dB of error at 1 kHz): a 3rd-order Thiran all-pass of delay puigLatency − fraction
 constexpr double leadSeconds = 0.226 / 48000.0;
@@ -708,7 +708,7 @@ constexpr Hum hums[2] {
 };
 // the noise floor: white (sigma, linear) through a broad low bell and a high shelf (RBJ): 0.34 dB rms over 1/6 octaves
 constexpr double noiseSigma = 7.829e-6, noiseBellHz = 18.98, noiseBellDb = 18.27, noiseBellQ = 0.0500, noiseShelfHz = 12168.0, noiseShelfDb = -3.167;
-// the waveshaper (LYNX's rational form, fitted on the complex H2 … H5 of 1 kHz / 100 Hz / 4.8 kHz stairs and the
+// the waveshaper (YW's rational form, fitted on the complex H2 … H5 of 1 kHz / 100 Hz / 4.8 kHz stairs and the
 // Output ±12 dB renders: within 0.1 dB and the phases): v = s·y, z = [v + g·c·v / (g|v| + c) · (1 + k·g·v)] / ((1 + g)·s)
 constexpr double shapeS = 3.32662, shapeG = 0.0411740, shapeC = 0.214359, shapeK = 2.44709;
 
@@ -781,7 +781,7 @@ public:
         phase = 0.0;
         humLp.clear(); humHp.clear();
         for (int c = 0; c < 2; ++c) { bell[c].clear(); shelf[c].clear(); }
-        seed[0] = 0x2545F491u; seed[1] = 0x9E3779B9u; // LYNX renders stay deterministic (the reference's are not)
+        seed[0] = 0x2545F491u; seed[1] = 0x9E3779B9u; // YW renders stay deterministic (the reference's are not)
     }
     void process (float* l, float* r, int n) noexcept
     {
@@ -1739,7 +1739,7 @@ int dispersionSections (float v) noexcept
 // Every structure below was identified black-box on our own demo-mode impulse responses of the references (each band
 // alone, a grid of frequencies / gains / Qs, two takes against the demo mutes): a Prony fit of the exact IR gives each
 // section's coefficients, and the analog prototype + digitisation that reproduce them to −100 dB and better were found by
-// fitting (eq/lab in the round folder). The constants are LYNX's own fits; the bell's digitisation is the published
+// fitting (eq/lab in the round folder). The constants are YW's own fits; the bell's digitisation is the published
 // prescribed-Nyquist-gain design (Orfanidis, JAES 1997), the others bilinear transforms.
 namespace
 {
@@ -2203,13 +2203,13 @@ int matchEq (const EffectParams& params, const double* f, const double* cur, con
 
 namespace
 {
-#ifdef LYNX_LAB190JS
+#ifdef YW_LAB190JS
 AutoLaw autoLaw190js { autoFloorDb, autoDecayDbPerSecond, autoKneeDb, 0.0, 0.0, 0.0, 0.0, 0.0 };
 struct AutoLawLab
 {
     AutoLawLab()
     {
-        if (const char* e = std::getenv ("LYNX_LAB_FA"))
+        if (const char* e = std::getenv ("YW_LAB_FA"))
             std::sscanf (e, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf", &autoLaw190js.floorDb, &autoLaw190js.decayDbPerSecond, &autoLaw190js.kneeDb,
                          &autoLaw190js.topOffsetDb, &autoLaw190js.topRiseMs, &autoLaw190js.attackMs, &autoLaw190js.releaseMs,
                          &autoLaw190js.kneePerRange);
@@ -2226,18 +2226,18 @@ constexpr AutoLaw autoLaw190js { autoFloorDb, autoDecayDbPerSecond, autoKneeDb, 
 
 const AutoLaw& autoLaw() noexcept { return autoLaw190js; }
 
-// round 190lg: revision 1 (AutoLaw1). The threshold and knee buses of the reference's auto mode were not traced: LYNX keeps
+// round 190lg: revision 1 (AutoLaw1). The threshold and knee buses of the reference's auto mode were not traced: YW keeps
 // round 190js's fitted mapping (the band moves from |range| under its peak level, over a knee of 1.53 |range|), now on the
 // reference's own detector: the per-sample level against the peak follower
 namespace
 {
 AutoLaw1 autoLaw1Value;
-#ifdef LYNX_Q4LAB
+#ifdef YW_Q4LAB
 struct AutoLaw1Lab
 {
     AutoLaw1Lab()
     {
-        if (const char* e = std::getenv ("LYNX_Q4LAB"))
+        if (const char* e = std::getenv ("YW_Q4LAB"))
             std::sscanf (e, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf", &autoLaw1Value.thrK, &autoLaw1Value.thrOff, &autoLaw1Value.kneeK,
                          &autoLaw1Value.envSec, &autoLaw1Value.floor, &autoLaw1Value.t0, &autoLaw1Value.t1, &autoLaw1Value.t2a,
                          &autoLaw1Value.t2r, &autoLaw1Value.relCurve);
@@ -2344,4 +2344,4 @@ double autoGainDb (const EffectParams& params, double sampleRate) noexcept
 }
 
 std::unique_ptr<Effect> make (const EffectParams* initial) { return std::make_unique<FacetEqEffect> (initial); }
-} // namespace lynx::facet
+} // namespace yw::facet

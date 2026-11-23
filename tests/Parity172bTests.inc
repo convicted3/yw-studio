@@ -1,5 +1,5 @@
 // --- round tp172b: sound parity of the FabFilter-role effects, measured black-box against the trials
-// (/mnt/e/lynx-work/tp172b/report.md): Apex's two-stage release, Crest's auto gain, LuxeVerb's Space engine and the
+// (/mnt/e/yw-work/tp172b/report.md): Apex's two-stage release, Crest's auto gain, LuxeVerb's Space engine and the
 // Pro-L 2 / Pro-R 2 state translators.
 
 #include "core/ApexLimiter.h"
@@ -29,7 +29,7 @@ inline std::vector<std::uint8_t> ffbs (const std::vector<float>& values)
     return b;
 }
 
-inline void run (lynx::Effect& fx, std::vector<float>& l, std::vector<float>& r, const lynx::EffectParams& p)
+inline void run (yw::Effect& fx, std::vector<float>& l, std::vector<float>& r, const yw::EffectParams& p)
 {
     const int n = (int) l.size();
     for (int i = 0; i < n; i += 256)
@@ -57,8 +57,8 @@ TEST (parity172b_apex_fast_transient_recovery)
 {
     // a 1.6 ms burst 9.6 dB over the ceiling barely touches the quiet sine after it (the reference's Transparent:
     // −0.1 dB 5 ms later); a 200 ms burst leaves the slow stage pulling the sine down for a while
-    using namespace lynx::apex;
-    lynx::EffectParams p {};
+    using namespace yw::apex;
+    yw::EffectParams p {};
     for (std::size_t i = 0; i < info().params.size(); ++i) p[i] = info().params[i].defaultValue;
     float lo = 0.0f, hi = 1.0f; // the Gain value that gives +10 dB
     for (int i = 0; i < 40; ++i) (gainDb (0.5f * (lo + hi)) < 10.0 ? lo : hi) = 0.5f * (lo + hi);
@@ -91,12 +91,12 @@ TEST (parity172b_apex_fast_transient_recovery)
 TEST (parity172b_crest_auto_gain_follows_attack)
 {
     // the reference's auto gain makes up less for a slow attack (+5.1 dB at 0.005 ms … +0.9 dB at 50 ms, defaults)
-    using namespace lynx::dyn::crest;
+    using namespace yw::dyn::crest;
     const auto makeupDb = [] (float attackValue) {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::crestCompressor);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::crestCompressor);
         slot.params[attack] = attackValue;
         slot.params[autoGain] = 1.0f;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (p172b::sr);
         std::vector<float> l (24000), r;
         for (int i = 0; i < 24000; ++i) l[(std::size_t) i] = (float) (0.001 * std::sin (2.0 * M_PI * 1000.0 * i / p172b::sr)); // −60 dB: no reduction
@@ -117,13 +117,13 @@ TEST (parity172b_crest_no_lift_after_silence)
     // round tp172b2 (control audit 173d): after digital silence (or a −100 dBFS floor) a loud burst never comes out
     // above its own peak for any style or voicing (auto gain off, range 60 dB, the lowest threshold, the highest
     // ratio, the fastest and the slowest attack); the original's Upward lift stops at 30 dB, Crest's at the same
-    using namespace lynx::dyn::crest;
+    using namespace yw::dyn::crest;
     double worst = -100.0;
     for (int st = 0; st < allStyles; ++st)
         for (const float att : { 0.0f, 1.0f })
             for (const double floorAmp : { 0.0, 1e-5 })
             {
-                auto slot = lynx::makeEffectSlot (lynx::EffectKind::crestCompressor);
+                auto slot = yw::makeEffectSlot (yw::EffectKind::crestCompressor);
                 slot.params[style] = styleValue ((Style) st);
                 slot.params[voicing] = voicingValue ((Style) st);
                 slot.params[threshold] = 0.0f;
@@ -131,7 +131,7 @@ TEST (parity172b_crest_no_lift_after_silence)
                 slot.params[range] = 1.0f;
                 slot.params[attack] = att;
                 slot.params[autoGain] = 0.0f;
-                auto fx = lynx::makeEffect (slot);
+                auto fx = yw::makeEffect (slot);
                 fx->prepare (p172b::sr);
                 std::vector<float> l (120000), r;
                 std::uint32_t rng = 12345u;
@@ -156,7 +156,7 @@ TEST (parity172b_crest_no_lift_after_silence)
 
 TEST (parity172b_luxeverb_space_engine)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& info = effectInfo (EffectKind::luxeVerb);
     CHECK (info.params.size() == (std::size_t) luxeVerbAllParamCount);
     CHECK (std::string (info.params[(std::size_t) luxeVerbSpaceFirst].name) == "Space engine" && info.params[(std::size_t) luxeVerbSpaceFirst].defaultValue == 0.0f);
@@ -196,7 +196,7 @@ TEST (parity172b_luxeverb_space_engine)
 
 TEST (parity172b_pro_r2_and_pro_l2_translators)
 {
-    using namespace lynx;
+    using namespace yw;
     // Pro-R 2: Plate, space 0.7 (4 s), mix 50 %, pre-delay 0.3333 (20 ms)
     std::vector<float> v (136, 0.0f);
     v[0] = 0.7f; v[2] = 0.5f; v[3] = 0.5f; v[4] = 2.0f; v[5] = 0.3f; v[7] = 0.7f; v[9] = 50.0f; v[16] = 0.3333f;
@@ -218,16 +218,16 @@ TEST (parity172b_crest_release_follows_attack)
 {
     // the reference (Clean, threshold −30, ratio 4, 1 kHz at −6 dBFS): −17.1 dB at attack 10 / release 200 but only
     // −12.6 dB at attack = release = 100 ms — the release shortens with a slow attack, so a steady sine sags
-    using namespace lynx::dyn::crest;
+    using namespace yw::dyn::crest;
     const auto grDb = [] (double attMs, double relMs) {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::crestCompressor);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::crestCompressor);
         slot.params[style] = styleValue (Style::clean);
         slot.params[threshold] = 0.5f; // −30 dB
         slot.params[ratio] = ratioValue (4.0);
         slot.params[attack] = attackValue (attMs);
         slot.params[release] = releaseValue (relMs);
         slot.params[autoGain] = 0.0f;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (p172b::sr);
         std::vector<float> l (48000), r;
         for (int i = 0; i < 48000; ++i) l[(std::size_t) i] = (float) (0.5012 * std::sin (2.0 * M_PI * 1000.0 * i / p172b::sr));
@@ -250,9 +250,9 @@ TEST (parity172b_hush_pro_ds_allround_level_law)
     const float v[] { 0.574031174f, 0.333333343f, 0.333333343f, 1, 0, 0, 1, 0.56f, 0.5f, 0, 1, 0.845098317f, 0.666666687f,
                       1, 0, 0, 0.5f, 1, 0, 0, 0.5f, 0.5f, 1, 0, 0 };
     const auto grDb = [&v] (double dbfs) {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::hushDeEsser);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::hushDeEsser);
         for (std::size_t i = 0; i < std::size (v); ++i) slot.params[i] = v[i];
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (p172b::sr);
         const double a = std::pow (10.0, dbfs / 20.0);
         std::vector<float> l (48000), r;

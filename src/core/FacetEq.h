@@ -1,6 +1,6 @@
 #pragma once
 
-// Facet EQ — LYNX's precision parametric equalizer (8 bands, zero latency).
+// Facet EQ — YW's precision parametric equalizer (8 bands, zero latency).
 //
 // Each band is an analog prototype (bell, shelves, cuts up to 96 dB/oct, notch, band pass, tilt shelf) turned into
 // digital sections with a magnitude-matched design (poles by impulse invariance, zeros fitted so the digital
@@ -40,7 +40,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::facet
+namespace yw::facet
 {
 constexpr int bands = 8;
 constexpr int fieldsPerBand = 5;
@@ -70,7 +70,7 @@ constexpr int resolutionParam = 89; // round 144: the linear-phase resolution (L
 constexpr int spectralParam0 = 90;  // + band
 constexpr int densityParam0 = 98;   // + band (default 50 %)
 constexpr int spectralTiltParam0 = 106; // + band
-// round 166f (issue #16, LYNX's own comparative EQ): [114] listen (the EQ's output / the source = this track without
+// round 166f (issue #16, YW's own comparative EQ): [114] listen (the EQ's output / the source = this track without
 // the EQ / the target = the slot's sidechain track, both delayed by the EQ's latency), [115] target level match
 constexpr int listenParam = 114;
 constexpr int targetLevelParam = 115;
@@ -102,7 +102,7 @@ constexpr int maxDispersionSections = 64;
 int dispersionSections (float v) noexcept; // 0 … 64
 // round 190mg (REA of the Waves PuigTec EQP1A + our demo-mode probes, docs/analise/REA_rodada190mg_dyn.md §1), hidden like
 // the above (saved while non-zero; 0 = every older project, bit for bit): [129] the PuigTec law (rollup 0.1.30 step 11: after round 190lg's [125] and round 190ln's [126 … 128]) — after the output stage,
-// the passive-EQ model's output stage as LYNX measured it: a static tube-style waveshaper (level-dependent H2 / H3 …,
+// the passive-EQ model's output stage as YW measured it: a static tube-style waveshaper (level-dependent H2 / H3 …,
 // −50 dB at −4 dBFS), the resampler's fractional delay (a 3rd-order all-pass; 3 samples of latency) and, with the Mains
 // switch, a hum generator (a triangle at the mains frequency with an even term through a low and a high pass) plus a
 // coloured noise floor. k / 16: 1 = the stage, 2 = + mains 60 Hz, 3 = + mains 50 Hz (set by the PuigTec translator).
@@ -248,7 +248,7 @@ const AutoLaw& autoLaw() noexcept;
 // round 190lg: revision 1 of the automatic threshold (Pro-Q 4's BandCompander structure; autoRevisionParam): the band's
 // per-sample magnitude against a peak follower of it (instant rise, envSec fall to 10 %, never under `floor`), in dB,
 // through the gain law below; the reduction then runs through three followers whose times come from the band's region
-// and the attack / release knobs (FacetEq.cpp: autoTimes1). relCurve: LYNX's own smooth fit of the reference's release
+// and the attack / release knobs (FacetEq.cpp: autoTimes1). relCurve: YW's own smooth fit of the reference's release
 // knob curve ((e^(k x) − 1) / (e^k − 1)); t0 / t1 / t2a / t2r: scales on the reference's times, fitted on refcap030
 // grid2's gain trajectories (50 ms frames, ranges −30 / −15 / +15 / +30, tc + stairs: mean error 0.33 dB for round 190js's
 // law, 0.16 dB here): the knob-percent link from Facet's ms controls is the uncertain part (the reference's own times
@@ -291,7 +291,7 @@ int spectralLatency (double sampleRate) noexcept;
 // at hz (one per STFT bin); writes the gain of each
 void spectralGainsDb (const EffectParams& params, int band, double sampleRate, const double* hz, const double* levelDb, int n, double* outDb) noexcept;
 
-// Round 152: EQ match [model] — LYNX's own: the difference between a reference spectrum and the current one (dB at
+// Round 152: EQ match [model] — YW's own: the difference between a reference spectrum and the current one (dB at
 // log-spaced `hz`), its mean level removed, smoothed by `smoothingOct` and scaled by `amount`, fitted greedily with up to
 // `maxBands` bells (shelves at the ends) in the EQ's unused bands; writes the parameter changes (index, value) and
 // returns the bands placed. The editor captures both spectra from the analyser (Pro-Q 4's match is not reachable
@@ -312,7 +312,7 @@ GraphHit pickGraphTarget (const float* nodeX, const float* nodeY, const bool* on
 const EffectInfo& info();
 std::string paramText (int param, float v);
 
-// Round 166f (issue #16): comparative EQ — LYNX's own (no FL equivalent). The slot's sidechain track is the *target*
+// Round 166f (issue #16): comparative EQ — YW's own (no FL equivalent). The slot's sidechain track is the *target*
 // (a reference mix, the other take); "listen" switches what the slot outputs between the EQ's output, the *source* (this
 // track before the EQ) and the target, crossfaded over 10 ms and delayed by the EQ's latency so a switch never jumps in
 // time. With target level match on, the target is scaled to the source's loudness (slow RMS, 3 s; ±24 dB at most) so
@@ -345,4 +345,4 @@ double bandResponseDb (const EffectParams& params, int band, double sampleRate, 
 // The effect; with the slot's parameters its latency is known from the start (PDC plans it before the first block).
 std::unique_ptr<Effect> make (const EffectParams* initial = nullptr);
 // controlOutput (b), b = 0 … 7: band b's live dynamic gain in dB / 60 (signed: 0 = no movement, also when cleared)
-} // namespace lynx::facet
+} // namespace yw::facet

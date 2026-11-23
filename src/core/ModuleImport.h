@@ -1,7 +1,7 @@
 #pragma once
 
 // Tracker module import (round 190nw, 0.1.31 queue item 2, stage 1 "M2"; design: study190nd/tracker/DESIGN-tracker.md
-// §4 / §6). A ProTracker .mod, FastTracker 2 .xm, Scream Tracker 3 .s3m or Impulse Tracker .it becomes a LYNX project
+// §4 / §6). A ProTracker .mod, FastTracker 2 .xm, Scream Tracker 3 .s3m or Impulse Tracker .it becomes a YW project
 // the way an .flp or a .flm does (same pipeline: samples, report, Missing files window):
 //  - the module is read by libxmp-lite 4.7.4 (MIT, third_party/libxmp-lite): its loaders give the patterns, the
 //    instruments and the decoded samples (delta / IT-compressed / 8- and 16-bit), its player walks the song once so
@@ -10,7 +10,7 @@
 //    sample's loop (a ping-pong loop unrolled), its tuning (c5spd / relative note / finetune) as the zone's root and tune;
 //    the samples are written as WAV files by `saveSample`;
 //  - every module pattern becomes a pattern (rows of ppq / rowsPerBeat ticks; rowsPerBeat 4 unless the module's tempo
-//    needs more or fewer to stay in LYNX's 10…522 BPM), each run of rows the song plays becomes a pattern clip in the
+//    needs more or fewer to stay in YW's 10…522 BPM), each run of rows the song plays becomes a pattern clip in the
 //    Playlist (a break or a loop starts a new clip with an offset), and each row's real duration (speed, tempo, row
 //    delay) becomes the tempo of the tempo markers (a tempo automation clip) — the rows stay on the grid;
 //  - a note lasts until its channel's next note, note off or cut (at most to its clip's end), with the volume and pan
@@ -19,7 +19,7 @@
 //  - round 190ob (stage 2 start): the volume of a sounding note as libxmp plays it on every frame (volume slides and
 //    sets, the volume column, global / channel volume, tremolo, tremor, the volume envelope while the note is held)
 //    becomes the automation of its channel's Volume multiplier (Levels adjustment, FL's channel parameter 0x11) on
-//    the .lynx file's value steps (a set on a row's first frame as a jump, a slide's ticks as straight lines); an instrument sounding
+//    the .yw file's value steps (a set on a row's first frame as a jump, a slide's ticks as straight lines); an instrument sounding
 //    in several module channels at once, each with its own changes, gets a channel per module channel; libxmp's linear
 //    pan law: a channel whose notes share one pan level (MOD / S3M) gets that level as its gain and the notes libxmp's
 //    left / right balance;
@@ -36,7 +36,7 @@
 #include "core/FlpImport.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 struct ModuleImportSummary
 {
@@ -45,7 +45,7 @@ struct ModuleImportSummary
     int rowsPerBeat = 4;
     std::int64_t playedRows = 0;
     int clips = 0, tempoChanges = 0, notes = 0;
-    int heldOverClipEnd = 0;     // notes the module holds past a pattern clip's end (LYNX ends them there)
+    int heldOverClipEnd = 0;     // notes the module holds past a pattern clip's end (YW ends them there)
     double seconds = 0.0;        // the song's length as libxmp plays it (once, without its loop)
     std::int64_t loopTick = -1;  // where the module loops back to (the song loop marker), -1 = it ends
     // round 190ob: the volume changes of sounding notes as the channels' Volume multiplier automation
@@ -73,12 +73,12 @@ struct ModuleImportOptions
     bool volumeAsPatternEvents = true;
 };
 
-// Whether `name` ends with one of the formats LYNX imports (.mod .xm .s3m .it, any case).
+// Whether `name` ends with one of the formats YW imports (.mod .xm .s3m .it, any case).
 bool isModuleFileName (const std::string& name);
 // The extensions as a JUCE-style wildcard list ("*.mod;*.xm;*.s3m;*.it") and as "mod;xm;s3m;it".
 const char* moduleWildcards() noexcept;
 const char* moduleExtensions() noexcept;
 
-// The module as a LYNX song, or nullopt with `error` (not a module libxmp-lite reads, damaged).
+// The module as a YW song, or nullopt with `error` (not a module libxmp-lite reads, damaged).
 std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const ModuleImportOptions& options = {}, std::string* error = nullptr);
-} // namespace lynx
+} // namespace yw

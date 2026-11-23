@@ -1,4 +1,4 @@
-// Renders a MiniSynth state with LYNX's engine exactly like our round-41 reference model drives it (verification
+// Renders a MiniSynth state with YW's engine exactly like our round-41 reference model drives it (verification
 // harness, REA_rodada41 §8): minisynthrender <state.bin> <out.f32> <length> <rate> <oscdata.dat> [blk=N] [bpm=X]
 //   [maxpoly=N] [songpos=X] [panlaw] [note=start,key,initVol,finalVol,finalPan,pitchCents,release ...].
 // Writes interleaved stereo float32.
@@ -26,7 +26,7 @@ int main (int argc, char** argv)
     int blk = 512, maxPoly = 0;
     double bpm = 120.0, songPos = -1.0;
     bool panLaw = false;
-    std::vector<lynx::minisynth::RefNote> notes;
+    std::vector<yw::minisynth::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -42,14 +42,14 @@ int main (int argc, char** argv)
             panLaw = true;
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::minisynth::RefNote n;
+            yw::minisynth::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%lf,%d", &n.start, &n.key, &n.initVol, &n.finalVol, &n.finalPan, &n.pitchCents,
                              &n.release)
                 >= 6)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::minisynth::renderReference (state, notes, rate, length, oscdata, blk, bpm, maxPoly, songPos, panLaw);
+    const auto out = yw::minisynth::renderReference (state, notes, rate, length, oscdata, blk, bpm, maxPoly, songPos, panLaw);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

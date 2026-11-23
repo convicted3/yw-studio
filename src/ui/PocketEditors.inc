@@ -1,7 +1,7 @@
-// The Pocket effects' editors (round 188i): FL Studio Mobile's own module panels for LYNX's Pocket engines
+// The Pocket effects' editors (round 188i): FL Studio Mobile's own module panels for YW's Pocket engines
 // (core/PocketFx.h), in that app's layout and mood: one flat slate card, orange ring knobs with the value inside, slim
 // sliders with a round handle, option lists and step tabs, the selected entry in white. Every pixel is drawn here by
-// LYNX code; no bitmap, font or logo of the original is used. Positions are given in the reference panel's units
+// YW code; no bitmap, font or logo of the original is used. Positions are given in the reference panel's units
 // (a 482-unit-wide card) and drawn at `kScale`.
 
 #ifndef TR_NOOP

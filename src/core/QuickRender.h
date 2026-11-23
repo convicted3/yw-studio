@@ -12,7 +12,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::quickrender
+namespace yw::quickrender
 {
 // --- patterns ---------------------------------------------------------------------------------------------------------
 
@@ -97,7 +97,7 @@ int applyConsolidation (Song& song, const Plan& plan, const std::string& sampleP
 // --- exports per playlist track (FUN_012fd7a0) ------------------------------------------------------------------------
 
 // The tracks File › Export › "All playlist tracks" goes over (1..the last track with a clip, FL's 1-based tracks are
-// LYNX's 0-based ones); with `groups` the members of a group are left out (their header renders them).
+// YW's 0-based ones); with `groups` the members of a group are left out (their header renders them).
 std::vector<int> exportTracks (const Song& song, bool groups);
 
 // The file name of a track's export: "<project> - <track name>" (FL: the project's file name without extension, " - ",
@@ -107,8 +107,8 @@ std::string trackExportName (const Song& song, const std::string& projectName, i
 // --- File › Export › "Project bones..." (FUN_011edb50 / FUN_011ecca0) ------------------------------------------------
 
 // FL writes into a sub-folder of the chosen folder: Channels\<filter group>\<channel>.fst, Effects\<plugin>.fst,
-// Mixer\<insert>.fst, Scores\<pattern> - <channel>.fsc, Automation\<pattern> - <parameter>.fsc. LYNX writes what it has
-// a file format for: Mixer\<insert>.lynxtrack (the insert's state), Effects\<effect>.lynxpreset (every effect of every
+// Mixer\<insert>.fst, Scores\<pattern> - <channel>.fsc, Automation\<pattern> - <parameter>.fsc. YW writes what it has
+// a file format for: Mixer\<insert>.ywtrack (the insert's state), Effects\<effect>.ywpreset (every effect of every
 // insert) and Scores\<pattern> - <channel>.mid (each channel's notes in each pattern).
 struct Bone
 {
@@ -130,4 +130,4 @@ std::string safeFileName (const std::string& name, const std::string& fallback);
 
 // The length in ticks of `seconds` of audio placed at `startTick` (the song's tempo map).
 std::int64_t ticksForSeconds (const Song& song, std::int64_t startTick, double seconds);
-} // namespace lynx::quickrender
+} // namespace yw::quickrender

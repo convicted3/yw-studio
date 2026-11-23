@@ -1,7 +1,7 @@
 #pragma once
 
-// The Lyrics / Notes panel (round 190ch, LYNX's own; the text and its rules are core/Lyrics.h). It edits the project's
-// Comments (Settings › Info shows the same text), so the notes travel in .lynx and to and from .flp.
+// The Lyrics / Notes panel (round 190ch, YW's own; the text and its rules are core/Lyrics.h). It edits the project's
+// Comments (Settings › Info shows the same text), so the notes travel in .yw and to and from .flp.
 //
 //   left margin   a line with a position shows it ("9.3"); a click moves the playhead there. A heading whose name is a
 //                 Playlist marker's shows a jump mark. The line the song is at is lit while it plays.
@@ -23,7 +23,7 @@
 #include "core/Lyrics.h"
 #include "ui/TimerWhileShowing.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -94,4 +94,4 @@ private:
     double editedAtMs = 0.0, snapshotTicks = -1.0;
     bool dirty = false, updating = false, floating = false;
 };
-} // namespace lynx
+} // namespace yw

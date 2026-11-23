@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Fruity Vocoder as an exact LYNX mixer effect (docs/analise/REA_rodada70.md, completing REA_rodada20 §4.1;
+// FL Studio's Fruity Vocoder as an exact YW mixer effect (docs/analise/REA_rodada70.md, completing REA_rodada20 §4.1;
 // clean-room: rebuilt from the observed behaviour of the plugin, no Image-Line code).
 //
 // The left input is the modulator and the right input the carrier (swapped by the "swap" option). The modulator goes
@@ -9,8 +9,8 @@
 // Invert); the output is the sum of the filtered carrier bands times their envelopes, plus the modulator and carrier
 // levels of the MIX section. It is mono: the same signal leaves on both sides.
 //
-// The LYNX slot (EffectKind::vocoder) keeps the controls as its parameters (see Effects.cpp: 0 bands, 1 order,
-// 2 listen, 3 swap, 4…15 FL's twelve automatable controls, 16 LYNX's side-input mode) and the per-band levels of the
+// The YW slot (EffectKind::vocoder) keeps the controls as its parameters (see Effects.cpp: 0 bands, 1 order,
+// 2 listen, 3 swap, 4…15 FL's twelve automatable controls, 16 YW's side-input mode) and the per-band levels of the
 // analysis bank in EffectSlot::state as FL's own saved state (0xD5 record).
 
 #include <array>
@@ -18,7 +18,7 @@
 #include <optional>
 #include <vector>
 
-namespace lynx::fvocoder
+namespace yw::fvocoder
 {
 constexpr int maxBands = 128;
 constexpr int maxOrder = 3;
@@ -44,7 +44,7 @@ enum Control
 int controlMin (int c) noexcept;
 int controlMax (int c) noexcept;
 int controlDefault (int c) noexcept;
-// The raw control a 0…1 knob (the LYNX slot parameter, (raw − min)/(max − min) within the knob range) stands for.
+// The raw control a 0…1 knob (the YW slot parameter, (raw − min)/(max − min) within the knob range) stands for.
 // FL's state may hold raw values outside the knob range, and the plugin uses them as they are (REA_rodada78 §1): while
 // the knob still shows the saved value (clamped to its range), the saved raw value is kept.
 int rawFromKnob (float knob, int control, int savedRaw) noexcept;
@@ -120,4 +120,4 @@ private:
     std::array<float, blockFrames + 1> work {}, carWork {}, acc {};
     std::array<float, blockFrames> modBuf {}, carBuf {};
 };
-} // namespace lynx::fvocoder
+} // namespace yw::fvocoder

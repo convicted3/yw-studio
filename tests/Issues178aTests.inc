@@ -7,7 +7,7 @@
 // region in milliseconds and resizes it with the tempo; a clip whose channel follows the tempo keeps its beats.
 TEST (issues178a_audio_clips_follow_a_tempo_change)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.bpm = 130.0;
     song.playlist.clear();
@@ -98,7 +98,7 @@ TEST (issues178a_audio_clips_follow_a_tempo_change)
 // held notes' keys and velocities. Each arpeggiated note now takes the expression of the held note it plays.
 TEST (issues178a_arpeggiator_keeps_the_note_pan)
 {
-    using namespace lynx;
+    using namespace yw;
     ArpSettings s;
     s.direction = 1; // up
     s.stepBeats = 0.25f;
@@ -168,7 +168,7 @@ TEST (issues178a_arpeggiator_keeps_the_note_pan)
 // 228 sounds exactly like a centred note on a channel at filter X 100; a centred note is unchanged.
 TEST (issues178a_note_mod_x_moves_the_fl_voice_filter)
 {
-    using namespace lynx;
+    using namespace yw;
     auto noise = std::make_shared<SampleData>();
     noise->sampleRate = 44100.0;
     std::uint32_t seed = 7;
@@ -216,12 +216,12 @@ TEST (issues178a_note_mod_x_moves_the_fl_voice_filter)
 
 namespace issues178a
 {
-lynx::PatternEvents tempoLane (std::initializer_list<std::pair<std::int64_t, double>> events)
+yw::PatternEvents tempoLane (std::initializer_list<std::pair<std::int64_t, double>> events)
 {
-    lynx::PatternEvents lane;
-    lane.target = { lynx::AutomationTargetKind::tempo, 0 };
+    yw::PatternEvents lane;
+    lane.target = { yw::AutomationTargetKind::tempo, 0 };
     for (const auto& [tick, bpm] : events)
-        lane.events.push_back ({ tick, lynx::valueFromTempo (bpm) });
+        lane.events.push_back ({ tick, yw::valueFromTempo (bpm) });
     return lane;
 }
 bool near (double a, double b, double tolerance = 0.01) { return std::abs (a - b) <= tolerance; }
@@ -230,7 +230,7 @@ bool near (double a, double b, double tolerance = 0.01) { return std::abs (a - b
 // #86, pattern mode: the current pattern's Tempo events, looped with it; before the first one, the project tempo.
 TEST (issues178a_tempo_events_in_pattern_mode)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.bpm = 130.0;
     song.mode = PlayMode::pattern;
@@ -268,7 +268,7 @@ TEST (issues178a_tempo_events_in_pattern_mode)
 // holds until a later event.
 TEST (issues178a_tempo_events_in_song_mode)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.bpm = 120.0;
     song.mode = PlayMode::song;
@@ -329,10 +329,10 @@ TEST (issues178a_tempo_events_in_song_mode)
 }
 
 // #86: FL's .flp keeps the Tempo events as BPM × 1000 (0x40000005 events) and the initialized tempo in 0xD8; both go
-// through LYNX's export and import unchanged.
+// through YW's export and import unchanged.
 TEST (issues178a_tempo_events_survive_flp)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.bpm = 128.0;
     song.patterns.resize (1);
@@ -372,11 +372,11 @@ TEST (issues178a_tempo_events_survive_flp)
 }
 
 // #86: FL's MIDI import writes every Set Tempo as a Tempo event of the new pattern, a whole BPM rounded half to even
-// (10..522); the realign moves them with the notes. LYNX used to keep only the first tempo, and a file starting at
+// (10..522); the realign moves them with the notes. YW used to keep only the first tempo, and a file starting at
 // exactly 120 BPM took its second one.
 TEST (issues178a_midi_tempos_become_tempo_events)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (midiimport::midiTempoBpm (60.0 / 120.0) == 120.0);
     CHECK (midiimport::midiTempoBpm (60.0 / 120.5) == 120.0);   // half to even
     CHECK (midiimport::midiTempoBpm (60.0 / 121.5) == 122.0);
@@ -413,7 +413,7 @@ TEST (issues178a_midi_tempos_become_tempo_events)
 // #86: FL's event score (.fsc of format 0x18): the Event editor's Save automation as / Open automation.
 TEST (issues178a_event_score_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::vector<PatternEvent> events = { { 0, valueFromTempo (140.0) }, { ppq / 2, 0.25f }, { 7 * ppq, 1.0f } };
     const auto bytes = prtools::writeEventScore (events);
     CHECK (bytes.size() > 22 && bytes[0] == 'F' && bytes[8] == 0x18);
@@ -433,7 +433,7 @@ TEST (issues178a_event_score_round_trip)
 // #86: the head and last record of a real "Save automation as" from FL 2026.1.7 (a Tempo lane, records' control = 5)
 TEST (issues178a_event_score_from_real_fl_file)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::vector<std::uint8_t> file = {
         0x46, 0x4c, 0x68, 0x64, 0x06, 0x00, 0x00, 0x00, 0x18, 0x00, 0x21, 0x00, 0x60, 0x00, 0x46, 0x4c, 0x64, 0x74, 0x81, 0x00,
         0x00, 0x00, 0xc7, 0x0c, 0x32, 0x36, 0x2e, 0x31, 0x2e, 0x37, 0x2e, 0x35, 0x36, 0x35, 0x34, 0x00, 0x9f, 0x16, 0x16, 0x00,
@@ -461,7 +461,7 @@ TEST (issues178a_event_score_from_real_fl_file)
 
 TEST (issues178a_event_lane_takes_the_chosen_controller)
 {
-    using namespace lynx;
+    using namespace yw;
     // the file FL imported in the Event editor (REA_rodada178a §11): C notes with CC 1 at 5, 21, ... each beat
     midiimport::ParsedMidi midi;
     midi.trackNames = { "", "other" };
@@ -504,7 +504,7 @@ TEST (issues178a_event_lane_takes_the_chosen_controller)
 // folder (its other copies merged in turn), a file in both takes the first folder's, case doesn't matter.
 TEST (issues178a_merged_roots_list_the_union_of_their_folders)
 {
-    using namespace lynx;
+    using namespace yw;
     browserview::Listing user, data;
     user.folders = { "Automation" };
     user.files = { "Mine.fsc", "Randomness.fsc" };
@@ -531,7 +531,7 @@ TEST (issues178a_merged_roots_list_the_union_of_their_folders)
 // root's first) still doesn't see the root.
 TEST (issues178a_merged_roots_keep_a_hidden_old_root_hidden)
 {
-    using namespace lynx;
+    using namespace yw;
     const std::string user = "C:/Users/u/Documents/Image-Line/FL Studio/Presets/Mixer presets";
     const std::string data = "C:/Program Files/Image-Line/FL Studio 2026/Data/Patches/Mixer presets";
 

@@ -7,10 +7,10 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 void showDawProjectExport (AudioEngine& engine, juce::Component* parent, const juce::File& suggestedFolder, const juce::String& projectName);
 
 // Writes `target` (a .dawproject); false with `error`. `notes` gets what was left out. (Also --export-dawproject.)
 bool writeDawProjectFile (const Song& song, PluginHost* host, const juce::File& target, juce::StringArray& notes, juce::String& error);
-} // namespace lynx
+} // namespace yw

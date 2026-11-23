@@ -9,7 +9,7 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 // Reads the wrapper's 0xD5 blob (versions 5 to 12: u32 version + records {u32 id, u64 size, data}).
 // False if the format is not a known one.
@@ -19,7 +19,7 @@ bool parseFlWrapper (const std::vector<std::uint8_t>& blob, ForeignPlugin& out);
 // the plugin's name, ids and state (round 190fs). False for FL's own plugins' presets and for other files.
 bool foreignFromFlPreset (const std::vector<std::uint8_t>& fileBytes, ForeignPlugin& out);
 
-// FL's wrapper processing options (record 0x02 flags, REA round 134) onto LYNX's plugin options: "Use fixed size
+// FL's wrapper processing options (record 0x02 flags, REA round 134) onto YW's plugin options: "Use fixed size
 // buffers" (flag 0x2), "Process maximum size buffers" (fixed options bit 0), "Allow threaded processing" (0x1000,
 // wrapper version 7+), "Make bridged" (0x40000, version 8+). Flag 0x400000 = the defaults. Nothing changes without
 // the record.
@@ -73,7 +73,7 @@ constexpr int withFlDetached (int recordFlags, bool detached) noexcept
 
 // FL's plugin wrapper settings page (the wrapper's gear tab; REA round 146a: option names and hints from FLEngine's
 // string pool, e.g. "Use fixed size buffers", "|Allow plugin to be multi-threaded by FL Studio",
-// "|Load plugin in separate process (bridged)", "|MIDI input port number"): the options LYNX applies, in FL's
+// "|Load plugin in separate process (bridged)", "|MIDI input port number"): the options YW applies, in FL's
 // sections. `recreates`: changing it re-creates the plugin (its state kept); `needsFixed`: only with fixed buffers.
 struct WrapperOption
 {
@@ -96,4 +96,4 @@ void trimOutputRoutes (std::vector<PluginOutputRoute>& routes);
 // The insert an output plays on: the channel's insert + its offset; −1 when inactive (`pluginDefault`: whether the
 // plugin declares the output active)
 int outputTargetTrack (int channelTrack, const PluginOutputRoute& route, bool pluginDefault = true) noexcept;
-} // namespace lynx
+} // namespace yw

@@ -10,13 +10,13 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace lynx::contentshare
+namespace yw::contentshare
 {
-// on unless the environment says LYNX_CONTENT_SHARE=0 (the before / after measurement of --sharetest; read once)
+// on unless the environment says YW_CONTENT_SHARE=0 (the before / after measurement of --sharetest; read once)
 inline bool enabled() noexcept
 {
     static const bool on = [] {
-        const char* e = std::getenv ("LYNX_CONTENT_SHARE");
+        const char* e = std::getenv ("YW_CONTENT_SHARE");
         return e == nullptr || e[0] != '0';
     }();
     return on;
@@ -44,4 +44,4 @@ inline std::uint64_t hashBytes (const void* data, std::size_t size, std::uint64_
         std::memcpy (&tail, p + i, size - i);
     return mix (h ^ tail, 0x8EBC6AF09C88C6E3ull) ^ size;
 }
-} // namespace lynx::contentshare
+} // namespace yw::contentshare

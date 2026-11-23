@@ -2,7 +2,7 @@
 // plugin it is inspired by — its palette, its materials and an illustration — instead of one of the four shared
 // styles. Art directions and the style guide: the tracker's plugin-art-0.1.24.md.
 //
-// Everything here is LYNX's own procedural vector drawing (juce::Path, gradients, seeded random): no bitmap, logo,
+// Everything here is YW's own procedural vector drawing (juce::Path, gradients, seeded random): no bitmap, logo,
 // skin or artwork of the original plugins is copied, traced or extracted. Layouts and gestures are the editors'
 // own and never change; only the drawing does. Static parts are drawn into the kit's cached layers (canvas, knobs);
 // the moving parts live in skin::ArtLayer (below), which repaints only small areas at 20 Hz while it is shown.
@@ -274,7 +274,7 @@ inline bool trefoilInside (float u, float v)
 inline const juce::Image& trefoilMask (int px)
 {
     static std::map<int, juce::Image> cache;
-    static const bool registered = lynx::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
+    static const bool registered = yw::ui::registerImageCache ([] { cache.clear(); }); (void) registered;
     if (cache.size() > 24) cache.clear();
     auto& img = cache[px];
     if (img.isNull())
@@ -1174,10 +1174,10 @@ struct BaseScope
 const std::vector<Art>& allArts()
 {
     static const std::vector<Art> all {
-       #define LYNX_ART(id, value) Art::id,
+       #define YW_ART(id, value) Art::id,
        #include "ui/PluginArtGeneratorIds.inc"
        #include "ui/PluginArtEffectIds.inc"
-       #undef LYNX_ART
+       #undef YW_ART
     };
     return all;
 }
@@ -1226,7 +1226,7 @@ bool osReducedMotion()
 {
    #if JUCE_WINDOWS
     int animate = 1; // "Show animations in Windows" (Settings › Accessibility › Visual effects)
-    if (lynxSystemParametersInfoW (0x1042 /* SPI_GETCLIENTAREAANIMATION */, 0, &animate, 0) != 0)
+    if (ywSystemParametersInfoW (0x1042 /* SPI_GETCLIENTAREAANIMATION */, 0, &animate, 0) != 0)
         return animate == 0;
    #endif
     return false;
@@ -1451,7 +1451,7 @@ juce::String artSelfTest()
                           EffectKind::fruityFlanger, EffectKind::fruityFlangus, EffectKind::fruityPhaser, EffectKind::vintagePhaser,
                           EffectKind::flFrequencyShifter, EffectKind::parametricEq, EffectKind::fruityLimiter, EffectKind::fruityCompressor,
                           EffectKind::fruityMultiband, EffectKind::maximus, EffectKind::transientProcessor, EffectKind::stereoShaper,
-                          EffectKind::stereoEnhancer, EffectKind::spreader, EffectKind::grossBeat, EffectKind::vocodex, EffectKind::vocoder, EffectKind::pitchCorrect, EffectKind::lynxTune, EffectKind::voiceShift, EffectKind::quellDenoiser, EffectKind::flPitchShifter, EffectKind::lovePhilter, EffectKind::effector, EffectKind::squeeze, EffectKind::lofi, EffectKind::eq, EffectKind::compressor, EffectKind::delay, EffectKind::reverb, EffectKind::limiter, EffectKind::distortion, EffectKind::filter, EffectKind::chorus, EffectKind::autoPan, EffectKind::fruityPanOMatic, EffectKind::fruityBalance, EffectKind::utility, EffectKind::fruitySend, EffectKind::frequencySplitter, EffectKind::crossover, EffectKind::multibandDelay, EffectKind::equo, EffectKind::emphasizer, EffectKind::flLowLifter, EffectKind::fruityFastLP, EffectKind::fruityFilter, EffectKind::fruityFreeFilter, EffectKind::fl7BandEq, EffectKind::flBassBoost, EffectKind::convolver, EffectKind::volumeGate, EffectKind::rhythmGain, EffectKind::freqShift, EffectKind::pitchShift, EffectKind::flPhaseInverter, EffectKind::flCenter, EffectKind::flDelay1, EffectKind::fruityMute2 }) // round 170k: the effects' themes
+                          EffectKind::stereoEnhancer, EffectKind::spreader, EffectKind::grossBeat, EffectKind::vocodex, EffectKind::vocoder, EffectKind::pitchCorrect, EffectKind::ywTune, EffectKind::voiceShift, EffectKind::quellDenoiser, EffectKind::flPitchShifter, EffectKind::lovePhilter, EffectKind::effector, EffectKind::squeeze, EffectKind::lofi, EffectKind::eq, EffectKind::compressor, EffectKind::delay, EffectKind::reverb, EffectKind::limiter, EffectKind::distortion, EffectKind::filter, EffectKind::chorus, EffectKind::autoPan, EffectKind::fruityPanOMatic, EffectKind::fruityBalance, EffectKind::utility, EffectKind::fruitySend, EffectKind::frequencySplitter, EffectKind::crossover, EffectKind::multibandDelay, EffectKind::equo, EffectKind::emphasizer, EffectKind::flLowLifter, EffectKind::fruityFastLP, EffectKind::fruityFilter, EffectKind::fruityFreeFilter, EffectKind::fl7BandEq, EffectKind::flBassBoost, EffectKind::convolver, EffectKind::volumeGate, EffectKind::rhythmGain, EffectKind::freqShift, EffectKind::pitchShift, EffectKind::flPhaseInverter, EffectKind::flCenter, EffectKind::flDelay1, EffectKind::fruityMute2 }) // round 170k: the effects' themes
         expect (artForEffect (k) != Art::none && styleFor (k) == Style::themed, "effect themes (170k)");
     for (int a = 128; a < 256; ++a) // round 170k: a theme that names its moving corner keeps it small and inside the stage
         if (const auto* th = artkit::effectTheme ((Art) a); th != nullptr && th->motionArea != nullptr)

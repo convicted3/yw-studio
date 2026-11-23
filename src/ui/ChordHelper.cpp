@@ -9,7 +9,7 @@
 #include "ui/SimpleLook.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 using namespace modalhelp;
 
@@ -81,7 +81,7 @@ ChordHelperPanel::Palette ChordHelperPanel::palette() const
             p.body = theme::type::body + 1.0f, p.small = theme::type::small + 1.0f, p.caption = theme::type::caption + 1.0f;
             p.rowH = ui::simplelook::px (42, 50), p.headH = 26, p.gap = 10;
             break;
-        case Look::fl: // the Pattern layout: LYNX's FL-style tool window (the Chord progression tool's tokens)
+        case Look::fl: // the Pattern layout: YW's FL-style tool window (the Chord progression tool's tokens)
             p.back = theme::colour::bg2;
             p.panel = theme::colour::bg0;
             p.headFill = theme::colour::bg3;
@@ -1066,4 +1066,4 @@ void ChordHelperPanel::showModeMenu()
         });
     menu.showMenuAsync (juce::PopupMenu::Options().withTargetScreenArea (localAreaToGlobal (modeChip())));
 }
-} // namespace lynx
+} // namespace yw

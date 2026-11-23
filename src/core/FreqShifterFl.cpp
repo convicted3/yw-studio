@@ -14,7 +14,7 @@
 
 #pragma clang fp contract(off)
 
-namespace lynx::fsfl
+namespace yw::fsfl
 {
 namespace
 {
@@ -442,7 +442,7 @@ void Engine::process (float& left, float& right, double tempo, double hostPos, d
     float wetL, wetR, dryL = inL, dryR = inR;
     if (shifter == 0)
     {
-        // ring modulator (the side chain input is not routed in LYNX: the oscillator path)
+        // ring modulator (the side chain input is not routed in YW: the oscillator path)
         const float ph = (float) phase;
         wetL = (float) (std::cos ((double) (ph * twoPiF)) * (double) pL);
         float t = ph + lrOffset;
@@ -559,7 +559,7 @@ public:
         ready = false;
     }
     void reset() noexcept override {}
-    void setSongPosition (double ticks) noexcept override { songBeats = ticks / (double) lynx::ppq; }
+    void setSongPosition (double ticks) noexcept override { songBeats = ticks / (double) yw::ppq; }
     void setPlaying (bool on) noexcept override { transport = on; }
     void process (float* left, float* right, int n, const EffectParams& params, double bpm) noexcept override
     {
@@ -611,4 +611,4 @@ private:
 } // namespace
 
 std::unique_ptr<Effect> make() { return std::make_unique<FreqShifterEffect>(); }
-} // namespace lynx::fsfl
+} // namespace yw::fsfl

@@ -1,8 +1,8 @@
 // Round 190fy: Spiral Echo's measured loop, revision 1 (the loop's read position and its all-pass refitted on the tp172d
-// reference renders, black-box; /mnt/e/lynx-work/parityfx190fy/HANDOFF.md). The revision is a hidden parameter: a new
+// reference renders, black-box; /mnt/e/yw-work/parityfx190fy/HANDOFF.md). The revision is a hidden parameter: a new
 // instance runs revision 1, a project or preset saved by 0.1.27 (Law, no revision) keeps round 190do's loop bit for bit,
 // one saved before 0.1.27 keeps the classic loop. Checked: the parameter and its load rules, revision 0 against the
-// base commit's renders (fingerprints from its objects, /mnt/e/lynx-work/parityfx190fy/gold), revision 1's own timing,
+// base commit's renders (fingerprints from its objects, /mnt/e/yw-work/parityfx190fy/gold), revision 1's own timing,
 // and its stability.
 #include <cmath>
 #include <cstdint>
@@ -14,14 +14,14 @@
 namespace parity190fy
 {
 // the first sample (from 0) whose magnitude exceeds `floor` in channel 0 of an impulse answer, with the dry part removed
-inline int firstWet (const lynx::EffectParams& p, double sr, int length = 64)
+inline int firstWet (const yw::EffectParams& p, double sr, int length = 64)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::spiralEcho);
+    auto fx = yw::makeEffect (yw::EffectKind::spiralEcho);
     fx->prepare (sr);
     std::vector<float> l ((std::size_t) length, 0.0f), r ((std::size_t) length, 0.0f);
     l[0] = r[0] = 0.5f;
     fx->process (l.data(), r.data(), length, p, 120.0);
-    const auto dry = 1.0f - std::clamp (p[(std::size_t) lynx::echosuite::spiral::mix], 0.0f, 1.0f);
+    const auto dry = 1.0f - std::clamp (p[(std::size_t) yw::echosuite::spiral::mix], 0.0f, 1.0f);
     l[0] -= dry * 0.5f;
     for (int i = 0; i < length; ++i)
         if (std::abs (l[(std::size_t) i]) > 1e-4f)
@@ -32,7 +32,7 @@ inline int firstWet (const lynx::EffectParams& p, double sr, int length = 64)
 
 TEST (parity190fy_spiral_revision_is_hidden_new_instances_run_it_old_projects_do_not)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     const auto& info = effectInfo (EffectKind::spiralEcho);
     CHECK (info.params.size() == (std::size_t) sp::paramCount); // hidden: not in the info, so no new control or string
@@ -58,7 +58,7 @@ TEST (parity190fy_spiral_revision_is_hidden_new_instances_run_it_old_projects_do
 
 TEST (parity190fy_spiral_revision0_renders_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     struct Case
     {
@@ -71,7 +71,7 @@ TEST (parity190fy_spiral_revision0_renders_as_the_base_commit_did)
         double energy, a, b;
     };
     // Law = Measured, an impulse (0.5 / −0.25) and a noise burst, 1.5 s in blocks of 256: FNV-1a of the float bits, the
-    // energy, two samples. From the base commit's objects (/mnt/e/lynx-work/parityfx190fy/gold: gold_base = g0.txt; the
+    // energy, two samples. From the base commit's objects (/mnt/e/yw-work/parityfx190fy/gold: gold_base = g0.txt; the
     // round's objects with the revision forced to 0 print the same lines, g1.txt)
     const Case cases[] = {
         { -1, 0.0f, -1, 0.0f, 48000.0, 0x0947f3ef58f653e9ull, 40.1863497, 3.8063019e-05, -0.000101014259 },
@@ -128,17 +128,17 @@ TEST (parity190fy_spiral_revision0_renders_as_the_base_commit_did)
     }
     std::printf ("  Spiral revision 0: %d of 4 renders hash-identical to the base commit\n", sameBits);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == 4);
    #endif
 }
 
 TEST (parity190fy_spiral_revision1_reads_the_loop_sooner)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     auto p = makeEffectSlot (EffectKind::spiralEcho).params; // feedback 50 %, mix 50 %
-    p[(std::size_t) sp::delay] = 0.0f;                         // the reference's default, 0.01 ms (LYNX's is 100 ms)
+    p[(std::size_t) sp::delay] = 0.0f;                         // the reference's default, 0.01 ms (YW's is 100 ms)
     // [EXEC] the reference answers its 0.01 ms floor one sample after the input (tp172d D, refcap0124 default); revision 1
     // two (its one-sample read + the shifter's own sample), revision 0 three
     CHECK (parity190fy::firstWet (p, 48000.0) == 2);
@@ -161,7 +161,7 @@ TEST (parity190fy_spiral_revision1_reads_the_loop_sooner)
 
 TEST (parity190fy_spiral_revision1_stays_finite_and_bounded)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace sp = echosuite::spiral;
     for (const double sr : { 22050.0, 44100.0, 48000.0, 96000.0, 192000.0 })
         for (const float time : { 0.0f, 0.0005f, 0.25f, 1.0f })

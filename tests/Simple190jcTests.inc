@@ -7,7 +7,7 @@
 
 namespace simple190jc
 {
-using namespace lynx;
+using namespace yw;
 
 inline Song empty()
 {
@@ -19,7 +19,7 @@ inline Song empty()
 
 TEST (simple190jc_rows_shown_are_the_real_tracks_and_the_drop_lane)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = simple190jc::empty();
     CHECK (simpletracks::rowsShown (s, 16) == 1); // an empty song: the drop lane alone
 
@@ -41,7 +41,7 @@ TEST (simple190jc_rows_shown_are_the_real_tracks_and_the_drop_lane)
 
 TEST (simple190jc_every_kind_has_a_type_icon)
 {
-    using namespace lynx;
+    using namespace yw;
     using K = simpletracks::Kind;
     for (auto k : { K::voice, K::instrument, K::drums, K::sampler, K::guitar, K::bass, K::audio, K::pads })
         CHECK (simpletracks::iconOf (k) != trackicons::Icon::none);
@@ -57,7 +57,7 @@ TEST (simple190jc_every_kind_has_a_type_icon)
 
 TEST (simple190jc_tour_card_goes_beside_its_ring)
 {
-    using namespace lynx::tour;
+    using namespace yw::tour;
     const Box window { 12, 12, 1896, 1056 };
     // "+ Add track" at the top left (design190ia SG-18: the card sat at (1527, 115), ~1 330 px away): below it, 14 px off
     const Box addTrack { 71, 69, 122, 42 };
@@ -83,7 +83,7 @@ TEST (simple190jc_tour_card_goes_beside_its_ring)
 
 TEST (simple190jc_step_five_rings_the_drop_lane)
 {
-    using namespace lynx::tour;
+    using namespace yw::tour;
     const auto t = targets (loop);
     CHECK (t.size() == 3 && t[1] == "simple.dropLane"); // (the voice tile while the chooser is up, else the lane)
 }

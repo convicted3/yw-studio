@@ -1,4 +1,4 @@
-    // --demo190pgcheck <prefix> <project.lynx> (round 190pg): the --demo view operations the tutorial videos added
+    // --demo190pgcheck <prefix> <project.yw> (round 190pg): the --demo view operations the tutorial videos added
     // (docs/DEMO_MODE.md), run against a real main window on the desktop: the editors' cells (a Channel rack step toggles,
     // a Piano roll click draws a note, a Playlist click places the pattern, a Mixer track and the clip grid's slots and
     // scene buttons are found), menu items by their English text in any language (View › Layout style › Simple through
@@ -6,7 +6,7 @@
     // too. Included in the app class of Main.cpp.
     bool runDemoCheck190pg (const juce::String& prefix, const juce::File& project)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         juce::String checks;
         bool allOk = true;
@@ -176,7 +176,7 @@
         check ("ui.action runs view.typingPiano", ok (r));
         op ("ui.action", json (R"({"id":"view.typingPiano"})")); // (back as it was)
         settle();
-        check ("ui.open refuses a missing file", ! ok (op ("ui.open", json (R"({"file":"/no/such/file.lynx"})"))));
+        check ("ui.open refuses a missing file", ! ok (op ("ui.open", json (R"({"file":"/no/such/file.yw"})"))));
         if (project.existsAsFile())
         {
             const auto idBefore = offline.getSong().projectId;

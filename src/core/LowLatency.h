@@ -1,6 +1,6 @@
 #pragma once
 
-// "Low latency while recording" (LYNX extra, round 190aq; TOP-20 item 7 of round 190ak, the first step toward what
+// "Low latency while recording" (YW extra, round 190aq; TOP-20 item 7 of round 190ak, the first step toward what
 // Cubase's "Constrain Delay Compensation" and Studio One's low-latency monitoring do). Off by default.
 //
 // While an insert carries a live input — it has an audio input source and is armed, or its monitoring is "On" — the
@@ -26,7 +26,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::lowlatency
+namespace yw::lowlatency
 {
 // The inserts audio leaving `from` passes through (`from` itself not included unless a cycle leads back; 0 = Master).
 inline std::vector<char> reachOf (const Song& song, int from)
@@ -115,4 +115,4 @@ inline bool bypassed (const std::vector<SlotMask>& masks, int track, int slot) n
 {
     return track >= 0 && (std::size_t) track < masks.size() && slot >= 0 && slot < 16 && ((masks[(std::size_t) track] >> slot) & 1u) != 0;
 }
-} // namespace lynx::lowlatency
+} // namespace yw::lowlatency

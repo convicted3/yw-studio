@@ -138,7 +138,7 @@ inline Bytes exs (const std::string& sample)
 
 TEST (band190jm_reads_ios23_regions_and_plugins)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto p = band::parseSong (band190jm::song());
     CHECK (p.has_value() && p->tracks.size() == 3);
     if (! p || p->tracks.size() != 3)
@@ -172,7 +172,7 @@ TEST (band190jm_reads_ios23_regions_and_plugins)
 
 TEST (band190jm_imports_the_users_sampler)
 {
-    using namespace lynx;
+    using namespace yw;
     std::map<std::string, band190ic::Bytes> files;
     files["/songs/Jingle.band/projectData"] = band190ic::keyedArchive (band190jm::song());
     files["/songs/Jingle.band/Media/Sampler/Sampler Instruments/Voice.exs"] = band190jm::exs ("Voice.wav");

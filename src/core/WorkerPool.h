@@ -24,7 +24,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 // An OS semaphore (a Win32 semaphore on Windows, a libdispatch one on macOS, a futex-backed POSIX one on Linux): the
 // workers sleep on one, so does the render-ahead thread (round 190gq, core/RenderAhead.h). release() never blocks.
@@ -91,7 +91,7 @@ public:
     static constexpr int spinMicros = 60;
 
     // Round 190kb: the waiting policy, switchable while running (A/B steps inside one process: --uiperf
-    // LYNX_UIPERF_SPINAB; perfbench / the app at start: LYNX_POOL="spin=60,dry=4,adaptive=1,wait=1,waitspin=30").
+    // YW_UIPERF_SPINAB; perfbench / the app at start: YW_POOL="spin=60,dry=4,adaptive=1,wait=1,waitspin=30").
     // Read once per spin or wait, shared by every pool of the process.
     struct Tuning
     {
@@ -112,16 +112,16 @@ public:
         // second and their spins. Who computes what changes no sample (the task graph is exact on any thread count).
         // Measured on Windows (Thief at 480 samples, --uiperf exact cycles, 2 runs x 3 cycles, ~1,150 callbacks per
         // cell): 0 = 89-90 % of a core for the process, 25 = 76-81 %, 35 = 78-80 %, 50 = 76-79 %; callbacks over the
-        // deadline 0 / 0 / 5 / 15. Default 25; LYNX_POOL="help=0" = every needed sleeper woken (before round 190kr).
+        // deadline 0 / 0 / 5 / 15. Default 25; YW_POOL="help=0" = every needed sleeper woken (before round 190kr).
         std::atomic<int> helpPercent { 25 };
         // Round 190kz (sched): the rounds of a device block cut in pieces (RackRenderer: the automation's 128-sample grid,
         // pattern events). 1 = one task-graph round for the whole block where that renders the same samples (each unit
-        // runs its pieces one after another inside it); 0 = one round per piece (before round 190kz). LYNX_POOL accepts
+        // runs its pieces one after another inside it); 0 = one round per piece (before round 190kz). YW_POOL accepts
         // "rounds=block" / "rounds=chunk" too.
         std::atomic<int> blockRounds { 1 };
         // Round 190lv (sched2): with blockRounds on, the blocks of a project with live controllers (Peak / Formula /
         // envelope controllers) batched too, in two rounds where that renders the same samples. 0 = those blocks piece
-        // by piece (before round 190lv). LYNX_POOL "live=0" / "live=1".
+        // by piece (before round 190lv). YW_POOL "live=0" / "live=1".
         std::atomic<int> liveRounds { 1 };
         void apply (const char* spec) noexcept; // "spin=60,dry=4,adaptive=1,wait=1,waitspin=30,help=0,rounds=block,live=1" (missing keys: unchanged)
     };
@@ -237,4 +237,4 @@ private:
     alignas (64) std::atomic<int> waitSleepers { 0 };
     std::atomic<std::uint64_t> roundsRun { 0 };
 };
-} // namespace lynx
+} // namespace yw

@@ -5,7 +5,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 
@@ -17,4 +17,4 @@ void showPluginManager (AudioEngine& engine, std::function<void()> onFolders);
 
 // The content, for --snapshot mode (`persistent` false: sample plugins, nothing saved).
 std::unique_ptr<juce::Component> makePluginManagerPanel (AudioEngine& engine, bool persistent, std::function<void()> onFolders = {});
-} // namespace lynx
+} // namespace yw

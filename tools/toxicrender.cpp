@@ -1,4 +1,4 @@
-// Renders a Toxic Biohazard state with LYNX's engine exactly like our round-45 reference model drives it (verification
+// Renders a Toxic Biohazard state with YW's engine exactly like our round-45 reference model drives it (verification
 // harness, REA_rodada45 §5): toxicrender <state.bin> <out.f32> <length> <rate> <dllPath> [blk=N] [bpm=X] [maxpoly=N]
 //   [nofx] [note=start,key,initVol,finalVol,finalPan,pitchCents,release ...]. Writes interleaved stereo float32.
 #include <cstdio>
@@ -25,7 +25,7 @@ int main (int argc, char** argv)
     int blk = 512, maxPoly = 0;
     double bpm = 125.0;
     bool fx = true;
-    std::vector<lynx::toxic::RefNote> notes;
+    std::vector<yw::toxic::RefNote> notes;
     for (int i = 6; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -39,14 +39,14 @@ int main (int argc, char** argv)
             fx = false;
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::toxic::RefNote n;
+            yw::toxic::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%lf,%d", &n.start, &n.key, &n.initVol, &n.finalVol, &n.finalPan, &n.pitchCents,
                              &n.release)
                 >= 6)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::toxic::renderReference (state, notes, rate, length, dll, blk, bpm, maxPoly, fx);
+    const auto out = yw::toxic::renderReference (state, notes, rate, length, dll, blk, bpm, maxPoly, fx);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable (or its waves need the DLL)\n");

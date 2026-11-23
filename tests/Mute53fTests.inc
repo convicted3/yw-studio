@@ -3,7 +3,7 @@
 
 TEST (mute53f_alt_m_mutes_and_shift_alt_m_unmutes_clips)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto bar = (std::int64_t) ppq * 4;
     auto song = pl168f::songWithPatterns (2);
     for (int i = 0; i < 4; ++i)

@@ -1,5 +1,5 @@
 #include "core/Patcher.h"
-#include "core/LynxVerbs.h"
+#include "core/YwVerbs.h"
 #include "core/Rack.h"
 #include "core/ControlSurface.h"
 #include "core/VfxScript.h"
@@ -21,7 +21,7 @@
 #include "core/MidiControls.h"
 #include "core/Pdc.h"
 
-namespace lynx::patcher
+namespace yw::patcher
 {
 namespace
 {
@@ -115,7 +115,7 @@ std::optional<PatchNode::BusHead> busHeadOf (const PatchNode& node, int bus)
     for (const auto& h : node.busHeads)
         if (h.bus == bus)
             return h;
-    if (node.effect.kind == EffectKind::frequencySplitter && bus <= 3) // LYNX's own: band sends 1 low, 2 mid, 3 high
+    if (node.effect.kind == EffectKind::frequencySplitter && bus <= 3) // YW's own: band sends 1 low, 2 mid, 3 high
     {
         PatchNode::BusHead head;
         head.bus = bus;
@@ -2000,7 +2000,7 @@ Factories builtInFactories (double sampleRate, double bpm)
             return nullptr;
         if (slot.kind == EffectKind::patcher)
             return makeEffect (slot, sampleRate, builtInFactories (sampleRate));
-        std::shared_ptr<Effect> e = lynx::makeEffect (slot);
+        std::shared_ptr<Effect> e = yw::makeEffect (slot);
         e->prepare (sampleRate);
         return e;
     };
@@ -2009,7 +2009,7 @@ Factories builtInFactories (double sampleRate, double bpm)
             return nullptr;
         if (channel.instrument == InstrumentKind::patcher)
             return makeInstrument (channel, sampleRate, builtInFactories (sampleRate, bpm));
-        std::shared_ptr<Instrument> i = lynx::makeInstrument (channel.instrument);
+        std::shared_ptr<Instrument> i = yw::makeInstrument (channel.instrument);
         i->prepare (sampleRate);
         i->configure (channel, bpm);
         return i;
@@ -2331,4 +2331,4 @@ void deactivateUnusedMidiPins (PatcherDoc& doc, bool fromNode)
     else
         std::erase_if (doc.toMidiPorts, [&] (int p) { return ! used (p); });
 }
-} // namespace lynx::patcher
+} // namespace yw::patcher

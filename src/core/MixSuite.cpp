@@ -46,7 +46,7 @@
 //    Digital Techniques for Modeling Vacuum-Tube Guitar Amplifiers", CMJ 33(2), 2009 (asymmetric curves → even
 //    harmonics).
 
-namespace lynx::mixsuite
+namespace yw::mixsuite
 {
 namespace
 {
@@ -257,7 +257,7 @@ void halfBandBlock (const float* coef, int L, const float* lin, int count, float
 {
     const int P = L - 1;
     int k = 0;
-#if defined(LYNX_X86)
+#if defined(YW_X86)
     for (; k + 8 <= count; k += 8)
     {
         auto a0 = _mm_setzero_ps(), a1 = _mm_setzero_ps();
@@ -475,7 +475,7 @@ double autoMakeupDb (const EffectParams& p) noexcept
 
 // ---- round 190le: the 32C voicing's scales. The dial positions are the original's host parameters (refcap0124's
 // table: its own texts at ninths of the travel); the band laws were measured on tp172c's H32_eq impulse grid
-// (BLACKBOX_rodada190lb.md §4, lab fits in /mnt/e/lynx-work/harrison190le/lab)
+// (BLACKBOX_rodada190lb.md §4, lab fits in /mnt/e/yw-work/harrison190le/lab)
 bool h32Voicing (const EffectParams& p) noexcept
 {
     return on (p[h32]) && ! modernVoicing (p) && ! k4Voicing (p) && ! eVoicing (p) && ! vocalVoicing (p);
@@ -680,7 +680,7 @@ struct EqDesign
     static double propQ (double q, double gainDb) { return std::max (0.2, q * (0.5 + std::abs (gainDb) / 12.0)); }
 
     // ---- round 190le: the 32C voicing (Harrison 32Classic, measured on tp172c's H32_eq impulse grid at 48 kHz; every
-    // law below reproduced the 148 renders within 0.05 dB rms, lab /mnt/e/lynx-work/harrison190le/lab):
+    // law below reproduced the 148 renders within 0.05 dB rms, lab /mnt/e/yw-work/harrison190le/lab):
     //  - filters: second-order Butterworth high- / low-pass at the dial, magnitude-matched (no bilinear cramping: the
     //    20 kHz low-pass is -2.4 dB at 18 kHz, as the original's always-in default);
     //  - Lo: a first-order shelf (analog (s + wc sqrtG) / (s + wc / sqrtG)), bilinear, prewarped at its centre;
@@ -1677,7 +1677,7 @@ std::vector<std::pair<int, float>> linkedEdit (const EffectParams& p, int param,
     const double pr = 100.0 * std::clamp ((double) p[peakReduction], 0.0, 1.0);
     if (on (value)) // switched on: the dial as it is now is the reference
         edits.push_back ({ makeupRef, p[peakReduction] });
-    else // switched off: the trial keeps the make-up (its Gain knob moved); LYNX moves the Gain dial by as much
+    else // switched off: the trial keeps the make-up (its Gain knob moved); YW moves the Gain dial by as much
     {
         const double ref = 100.0 * std::clamp ((double) p[makeupRef], 0.0, 1.0);
         const double db = vmatch::opto::makeupDb (100.0 * p[gain]) + vmatch::opto::autoMakeupDb (pr) - vmatch::opto::autoMakeupDb (ref);
@@ -2173,8 +2173,8 @@ private:
             v.listen = on (p[listen]);
             v.timing = on (p[timing]) ? 1 : 0; // round 190iq
             v.vocalRevision = on (p[vocalRevision]) ? 1 : 0; // round 190js
-#ifdef LYNX_LAB190JS
-            if (const char* e = std::getenv ("LYNX_LAB_SVON"))
+#ifdef YW_LAB190JS
+            if (const char* e = std::getenv ("YW_LAB_SVON"))
                 v.vocalRevision = std::atoi (e);
 #endif
             vocalEngine.process (l, r, n, v);
@@ -3292,13 +3292,13 @@ namespace
 {
 // RBJ cookbook sections at the reference's Q (shelves with the Q form), a cut of slope index n as Butterworth sections
 // (an odd order's first-order section first) with the last pair's Q scaled by q (round 190lg: q = 1 is Butterworth, as the reference)
-int saturnSections (lynx::Biquad* out, int room, const SaturnFilter& f, double sr) noexcept
+int saturnSections (yw::Biquad* out, int room, const SaturnFilter& f, double sr) noexcept
 {
     constexpr double pi = 3.141592653589793;
     const auto hz = std::min ((double) f.hz, 0.48 * sr);
     const auto w = 2.0 * pi * hz / sr, cw = std::cos (w), sw = std::sin (w);
     int n = 0;
-    auto add = [&] () -> lynx::Biquad* { return n < room ? &out[n++] : nullptr; };
+    auto add = [&] () -> yw::Biquad* { return n < room ? &out[n++] : nullptr; };
     if (f.type == 7 || f.type == 2 || f.type == 5)
     {
         auto* b = add();
@@ -3620,7 +3620,7 @@ struct BandExtras
 
 // round 152: the measured "breakdown" effect's pitch drop (Collapse with the measured law): a two-tap delay-line pitch
 // shifter (taps half a window apart, sin² cross-fade) whose delay grows at 1 − ratio per sample [EXEC: the output
-// frequency is the input's × 2^(−2 · drive) at every level and input frequency; the window length is LYNX's]
+// frequency is the input's × 2^(−2 · drive) at every level and input frequency; the window length is YW's]
 struct PitchDown
 {
     std::vector<float> buf[2];
@@ -3697,7 +3697,7 @@ struct LongDelay
 };
 
 // round 190fj: the measured tape core's constants per tape speed (30, 15, 7½, 3¾, 1⅞ ips), fitted black-box with
-// /mnt/e/lynx-work/ember190fj/fit/tapefit on the reference tape saturator's recorded renders: the loop, record EQ and
+// /mnt/e/yw-work/ember190fj/fit/tapefit on the reference tape saturator's recorded renders: the loop, record EQ and
 // drive law at 15 ips on round tp172c's stairs, sweeps, drums and music at its default and Drive +10; 1⅞ ips on its
 // Drive +15 takes and round 182's programme; 30 ips and 7½ ips on round 182's programme (7½ ips: a take with "Average"
 // tape and flutter on — its level law, not its flutter); 3¾ ips interpolated between 7½ and 1⅞ (log speed). The
@@ -4625,7 +4625,7 @@ private:
     std::array<CharacterStage, maxBands> chars; // round 150
     std::array<Delay2<256>, maxBands> rawDelay;  // round 190kw: the law's base-rate path (lawRate)
     // round 152: linear phase, the modulation, the pitch drop
-    std::array<lynx::peqfl::FftConvolver, maxBands - 1> linConv;
+    std::array<yw::peqfl::FftConvolver, maxBands - 1> linConv;
     std::vector<float> linTable;
     LongDelay linDry, linTop;
     int linSize = 0, linLatency = 0, linBands = 0;
@@ -5305,4 +5305,4 @@ std::string paramText (EffectKind kind, int param, float v)
     }
     return fmt ("%.2f", v);
 }
-} // namespace lynx::mixsuite
+} // namespace yw::mixsuite

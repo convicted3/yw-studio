@@ -6,10 +6,10 @@ namespace i32c
 {
 // A hosted generator stand-in: keeps the keys it was sent like PluginInstrument (HostedKeys) and, for every block it
 // is asked to render, the position its play head would report (HostBlockClock + HostTimeline::tickAt).
-struct HostedSpy final : lynx::Instrument
+struct HostedSpy final : yw::Instrument
 {
-    lynx::HostedKeys keys;
-    lynx::HostBlockClock clock;
+    yw::HostedKeys keys;
+    yw::HostBlockClock clock;
     std::vector<int> offs;                          // keys released by allNotesOff (the note offs sent)
     std::vector<std::pair<double, int>> blocks;     // (play head tick, samples) per block
     void prepare (double) noexcept override {}
@@ -21,7 +21,7 @@ struct HostedSpy final : lynx::Instrument
     }
     void render (float*, float*, int n, float, float) noexcept override
     {
-        const auto& t = lynx::hostTimeline();
+        const auto& t = yw::hostTimeline();
         const auto at = clock.start (t.chunk.load());
         clock.advance (n);
         if (t.playing.load())
@@ -33,7 +33,7 @@ struct HostedSpy final : lynx::Instrument
 TEST (issue32c_hosted_keys_release_each_held_key_once)
 {
     // a VST3 synth only stops a note on its own note off (no CC 123): every held key on every MIDI channel gets one
-    lynx::HostedKeys keys;
+    yw::HostedKeys keys;
     keys.set (0, 60, true);
     keys.set (0, 64, true);
     keys.set (3, 127, true);
@@ -57,23 +57,23 @@ TEST (issue32c_a_jump_while_playing_sends_the_sounding_notes_their_note_offs)
     // #1 "when moving inside the sequencer while the playback is on, some synths double their sound": a long note of a
     // hosted generator is sounding, the user clicks the ruler; the old note must get its note off (the chased copy of
     // it starts again at the new position, as FL's "Play truncated notes")
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.playlist.clear();
-    song.mode = lynx::PlayMode::pattern;
+    song.mode = yw::PlayMode::pattern;
     I32C_REQUIRE (song.channels.size() > 1 && ! song.patterns.empty());
     song.patterns[0].notes.clear();
-    lynx::Note n;
+    yw::Note n;
     n.start = 0;
-    n.length = 16 * lynx::ppq;
+    n.length = 16 * yw::ppq;
     n.key = 55;
     n.channel = 1;
     song.patterns[0].notes.push_back (n);
     song.currentPattern = 0;
-    const double rate = 48000.0, tps = lynx::ticksPerSample (song.bpm, rate);
-    auto state = lynx::RackState::build (song, nullptr, rate);
+    const double rate = 48000.0, tps = yw::ticksPerSample (song.bpm, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
     auto spy = std::make_shared<i32c::HostedSpy>();
-    const_cast<lynx::RackState&> (*state).instruments[1] = spy;
-    lynx::RackRenderer renderer;
+    const_cast<yw::RackState&> (*state).instruments[1] = spy;
+    yw::RackRenderer renderer;
     renderer.prepare (rate, 512);
     unsigned jumps = 0;
     renderer.setTransportOptions (true, false, jumps);
@@ -83,7 +83,7 @@ TEST (issue32c_a_jump_while_playing_sends_the_sounding_notes_their_note_offs)
         renderer.process (state.get(), true, tick, 512, l.data(), r.data());
     CHECK (spy->keys.held (0, 55));
     renderer.setTransportOptions (true, false, ++jumps);
-    renderer.process (state.get(), true, 4.0 * lynx::ppq, 512, l.data(), r.data());
+    renderer.process (state.get(), true, 4.0 * yw::ppq, 512, l.data(), r.data());
     I32C_REQUIRE (spy->offs.size() == 1);
     CHECK (spy->offs[0] == 55);       // the old note was stopped...
     CHECK (spy->keys.held (0, 55));   // ...and the chased one plays (held once, not twice)
@@ -94,26 +94,26 @@ TEST (issue32c_each_block_of_a_generator_reports_where_it_starts)
     // #1 "...or go out of tempo" / #3: a generator's chunk is split at its notes, and each piece is one plugin block.
     // Every block reported the chunk's start, so a synced sequencer saw the song stand still and jump. Now the play
     // head moves on with each block: the positions are continuous across notes, chunks and blocks.
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.playlist.clear();
-    song.mode = lynx::PlayMode::pattern;
+    song.mode = yw::PlayMode::pattern;
     I32C_REQUIRE (song.channels.size() > 1 && ! song.patterns.empty());
     song.patterns[0].notes.clear();
     for (int i = 0; i < 16; ++i) // sixteenth notes: several notes inside each block
     {
-        lynx::Note n;
-        n.start = i * lynx::ppq / 4;
-        n.length = lynx::ppq / 8;
+        yw::Note n;
+        n.start = i * yw::ppq / 4;
+        n.length = yw::ppq / 8;
         n.key = 48 + i;
         n.channel = 1;
         song.patterns[0].notes.push_back (n);
     }
     song.currentPattern = 0;
-    const double rate = 44100.0, tps = lynx::ticksPerSample (song.bpm, rate);
-    auto state = lynx::RackState::build (song, nullptr, rate);
+    const double rate = 44100.0, tps = yw::ticksPerSample (song.bpm, rate);
+    auto state = yw::RackState::build (song, nullptr, rate);
     auto spy = std::make_shared<i32c::HostedSpy>();
-    const_cast<lynx::RackState&> (*state).instruments[1] = spy;
-    lynx::RackRenderer renderer;
+    const_cast<yw::RackState&> (*state).instruments[1] = spy;
+    yw::RackRenderer renderer;
     renderer.prepare (rate, 1024);
     std::vector<float> l (1024), r (1024);
     double tick = 0.0;
@@ -126,7 +126,7 @@ TEST (issue32c_each_block_of_a_generator_reports_where_it_starts)
     {
         const auto expected = spy->blocks[i - 1].first + spy->blocks[i - 1].second * tps;
         const auto at = spy->blocks[i].first;
-        if (at < 4.0 * lynx::ppq - 1.0 && expected < 4.0 * lynx::ppq - 1.0) // (the pattern's wrap is a jump)
+        if (at < 4.0 * yw::ppq - 1.0 && expected < 4.0 * yw::ppq - 1.0) // (the pattern's wrap is a jump)
             worst = std::max (worst, std::abs (at - expected));
         if (spy->blocks[i].first != spy->blocks[i - 1].first && spy->blocks[i - 1].second < 1024)
             ++splitInsideChunk;
@@ -135,14 +135,14 @@ TEST (issue32c_each_block_of_a_generator_reports_where_it_starts)
     CHECK (splitInsideChunk > 0);
     // stopped: no tempo, the play head stays where it is
     renderer.process (state.get(), false, tick, 1024, l.data(), r.data());
-    CHECK (lynx::hostTimeline().ticksPerSample.load() == 0.0);
+    CHECK (yw::hostTimeline().ticksPerSample.load() == 0.0);
 }
 
 TEST (issue32c_a_wheel_scrolling_the_mixer_keeps_scrolling_over_its_controls)
 {
     // #5 "all the faders on the mixer can react accidentally on the mouse wheel": the spin that scrolls the strips goes
     // on scrolling while the wheel keeps turning; after a pause the wheel over a fader moves it again (FL)
-    lynx::controls::WheelScrollLatch latch;
+    yw::controls::WheelScrollLatch latch;
     CHECK (! latch.scrolling (1000.0)); // nothing scrolled yet: the wheel over a fader changes it
     latch.scrolled (1000.0);
     CHECK (latch.scrolling (1000.0));

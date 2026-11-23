@@ -5,9 +5,9 @@
 
 TEST (qafix190bj_aspect_on_content)
 {
-    using lynx::windowfit::aspectContent;
-    using lynx::windowfit::Box;
-    const lynx::windowfit::Frame frame { 8, 31, 8, 8 };
+    using yw::windowfit::aspectContent;
+    using yw::windowfit::Box;
+    const yw::windowfit::Frame frame { 8, 31, 8, 8 };
     auto content = [&frame] (const Box& b) { return Box { 0, 0, b.w - frame.left - frame.right, b.h - frame.top - frame.bottom }; };
 
     // the default size: the window's content is the editor, 950 x 618 (JUCE's ratio on the whole 966 x 657 window gave
@@ -63,13 +63,13 @@ TEST (qafix190bj_channel_freeze_has_its_own_translation)
     CHECK (grid.find ("menu.addItem (tr (\"Freeze\")") == std::string::npos);
 }
 
-// Piano roll scripts live in Documents/LYNX/Piano roll scripts, as the docs say; the first folder (Documents/Piano roll
+// Piano roll scripts live in Documents/YW/Piano roll scripts, as the docs say; the first folder (Documents/Piano roll
 // scripts) is still read (coordinator, round 190bj)
 TEST (qafix190bj_piano_roll_scripts_folder)
 {
     using namespace i18ntest;
     const auto code = readFile ("src/ui/PianoRollScripts.cpp");
-    CHECK (code.find ("documentsFolder().getChildFile (\"LYNX\").getChildFile (\"Piano roll scripts\")") != std::string::npos);
+    CHECK (code.find ("documentsFolder().getChildFile (\"YW\").getChildFile (\"Piano roll scripts\")") != std::string::npos);
     CHECK (code.find ("oldScriptsFolder()") != std::string::npos);
-    CHECK (readFile ("docs/PARITY.md").find ("Documents/LYNX/Piano roll scripts") != std::string::npos);
+    CHECK (readFile ("docs/PARITY.md").find ("Documents/YW/Piano roll scripts") != std::string::npos);
 }

@@ -10,7 +10,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::visualfx
+namespace yw::visualfx
 {
 namespace
 {
@@ -1472,7 +1472,7 @@ std::optional<Scene> fromZge (const std::vector<std::uint8_t>& state, std::vecto
         }
         s.layers.push_back (l);
     }
-    // nothing that draws (only effects without a counterpart): LYNX's default scene, so the slot still shows the music
+    // nothing that draws (only effects without a counterpart): YW's default scene, so the slot still shows the music
     const auto draws = std::any_of (s.layers.begin(), s.layers.end(), [] (const Layer& l) {
         return l.type != LayerType::background && ! readsBelow (l.type); // (bloom alone over a colour shows no music)
     });
@@ -1483,7 +1483,7 @@ std::optional<Scene> fromZge (const std::vector<std::uint8_t>& state, std::vecto
         fallback.height = s.height;
         fallback.fps = s.fps;
         fallback.name = s.name;
-        // (the project's feedback / post-process layers stay, over LYNX's scene)
+        // (the project's feedback / post-process layers stay, over YW's scene)
         for (const auto& l : s.layers)
             if (readsBelow (l.type))
                 fallback.layers.push_back (l);
@@ -1659,4 +1659,4 @@ void ParticleField::step (const Frame& f, const scene::Layer& layer, float aspec
         list.push_back (p);
     }
 }
-} // namespace lynx::visualfx
+} // namespace yw::visualfx

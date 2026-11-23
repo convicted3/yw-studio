@@ -15,9 +15,9 @@ scripts/perf-gate.sh runs the measurements into a results folder; this script re
 Files in the results folder (written by perf-gate.sh):
   calib-<n>.txt              perfbench calibrate (GATE scenario=calibrate calib_ms=...)
   bench-<cell>-<n>.txt       perfbench <scenario> --gate (one GATE line); <cell> = <scenario>@<block>
-  paint-<project>-<n>.txt    LYNX --paintbench report (open line, "<view>, whole frame: median X ms ...")
-  open-<project>-<n>.txt     LYNX --opentime report (key=value lines)
-  perfgen.txt                LYNX --perfgen report (save_ms / load_ms per project)
+  paint-<project>-<n>.txt    YW --paintbench report (open line, "<view>, whole frame: median X ms ...")
+  open-<project>-<n>.txt     YW --opentime report (key=value lines)
+  perfgen.txt                YW --perfgen report (save_ms / load_ms per project)
 
 Metrics are "lower is better". With several runs of a cell the best (lowest) value counts: noise on a shared machine
 only ever adds time. Times are divided by the run's calibration (a fixed piece of work, perfbench calibrate), so a
@@ -168,7 +168,7 @@ def collect(d, pick=min):
                     g = kv(pm.group(2))
                     add("project/" + pm.group(1) + "/save_norm", float(g["save_ms"]) / calib)
                     add("project/" + pm.group(1) + "/load_norm", float(g["load_ms"]) / calib)
-                    info["lynx_hash/" + pm.group(1)] = g.get("text_hash", "")
+                    info["yw_hash/" + pm.group(1)] = g.get("text_hash", "")
     metrics = {k: pick(v) for k, v in runs.items()}
     return {"calib_ms": calib, "calib_runs": calibs, "metrics": metrics, "runs": dict(runs), "info": info,
             "machine": open(os.path.join(d, "machine.txt")).read().strip() if os.path.exists(os.path.join(d, "machine.txt")) else ""}

@@ -4,9 +4,9 @@
 
 namespace parity128b
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
-namespace dyn = lynx::dyn;
+using yw::EffectKind;
+using yw::EffectParams;
+namespace dyn = yw::dyn;
 
 inline std::vector<float> tone (double db, double hz, std::size_t n, double phase = 0.0)
 {
@@ -19,9 +19,9 @@ inline std::vector<float> tone (double db, double hz, std::size_t n, double phas
 // runs a stereo signal through a fresh effect; returns (left, right)
 inline std::pair<std::vector<float>, std::vector<float>> runStereo (EffectKind kind, const EffectParams& p, std::vector<float> l, std::vector<float> r)
 {
-    auto slot = lynx::makeEffectSlot (kind);
+    auto slot = yw::makeEffectSlot (kind);
     slot.params = p;
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (dyn108::sr);
     fx->reset();
     for (std::size_t off = 0; off < l.size(); off += 512)
@@ -37,13 +37,13 @@ inline std::pair<std::vector<float>, std::vector<float>> runStereo (EffectKind k
 TEST (parity128b_new_parameters_are_appended_with_neutral_defaults)
 {
     using namespace parity128b;
-    CHECK ((int) lynx::effectInfo (EffectKind::crestCompressor).params.size() == dyn::crest::count);
-    CHECK ((int) lynx::effectInfo (EffectKind::sentryGate).params.size() == dyn::sentry::count);
-    CHECK ((int) lynx::effectInfo (EffectKind::prismMultiband).params.size() == dyn::prism::count);
+    CHECK ((int) yw::effectInfo (EffectKind::crestCompressor).params.size() == dyn::crest::count);
+    CHECK ((int) yw::effectInfo (EffectKind::sentryGate).params.size() == dyn::sentry::count);
+    CHECK ((int) yw::effectInfo (EffectKind::prismMultiband).params.size() == dyn::prism::count);
     CHECK (dyn::crest::dryGain == 38 && dyn::sentry::channelMode == 18 && dyn::prism::bandLookahead0 == 48); // old counts
     // (bit-identical defaults: the round-108 goldens in DynamicsTests108.inc run on the extended engines unchanged)
     // the texts
-    const auto& c = lynx::effectInfo (EffectKind::crestCompressor);
+    const auto& c = yw::effectInfo (EffectKind::crestCompressor);
     CHECK (c.params[(std::size_t) dyn::crest::dryGain].name == std::string ("Dry"));
     CHECK (dyn::paramText (EffectKind::crestCompressor, dyn::crest::dryGain, 0.0f) == "-inf dB");
     CHECK (dyn::paramText (EffectKind::crestCompressor, dyn::crest::meterScale, 0.75f) == "72 dB");
@@ -204,7 +204,7 @@ TEST (parity128b_prism_band_lookahead_leads_by_its_own_time)
 TEST (parity128b_translators_read_the_new_controls)
 {
     using namespace parity128b;
-    namespace fab = lynx::fabfilter;
+    namespace fab = yw::fabfilter;
     // Pro-C 3 (FFBS, 100 values): dry gain 0 dB (17 = 0.0 on the level law), wet 0 dB, link 100 % mid-only (26 = 1.0),
     // mode S → M (27 = 3), auto threshold on, meter scale 18 dB (97 = 1), input meter off
     fab::State c3;
@@ -218,7 +218,7 @@ TEST (parity128b_translators_read_the_new_controls)
     c3.values[2] = 1.0f;
     c3.values[97] = 1.0f;
     c3.values[99] = 0.0f;
-    auto slot = lynx::makeEffectSlot (EffectKind::crestCompressor);
+    auto slot = yw::makeEffectSlot (EffectKind::crestCompressor);
     CHECK (fab::fromProC3 (c3, slot) >= 25);
     namespace c = dyn::crest;
     CHECK (std::abs (c::dryDb (slot.params[c::dryGain])) < 0.01);
@@ -238,11 +238,11 @@ TEST (parity128b_translators_read_the_new_controls)
     g.values[28] = 3.0f / 36.0f; // the level law: 36 dB per unit above −0.6
     namespace s = dyn::sentry;
     // round trial187b [EXEC trial]: the wet / dry levels and pans only act in Expert mode (26)
-    slot = lynx::makeEffectSlot (EffectKind::sentryGate);
+    slot = yw::makeEffectSlot (EffectKind::sentryGate);
     CHECK (fab::fromProG (g, slot) > 20);
     CHECK (std::abs (s::panOf (slot.params[s::wetPan])) < 1e-4 && slot.params[s::dry] == 0.0f);
     g.values[26] = 1.0f;
-    slot = lynx::makeEffectSlot (EffectKind::sentryGate);
+    slot = yw::makeEffectSlot (EffectKind::sentryGate);
     CHECK (fab::fromProG (g, slot) > 20);
     CHECK (std::abs (s::scGainDb (slot.params[s::scGainL]) + 12.0) < 0.01 && std::abs (s::scGainDb (slot.params[s::scGainR]) - 6.0) < 0.01);
     CHECK (std::abs (s::mixOf (slot.params[s::scMixL]) - 0.5) < 1e-4 && std::abs (s::panOf (slot.params[s::wetPan]) + 0.5) < 1e-4);

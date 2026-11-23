@@ -8,7 +8,7 @@
 
 TEST (load121_only_waves_shells_start_ahead)
 {
-    namespace mw = lynx::modulewarm;
+    namespace mw = yw::modulewarm;
     CHECK (mw::worthStartingAhead ("VST3", "C:\\Program Files\\Common Files\\VST3\\WaveShell1-VST3 17.1_x64.vst3"));
     CHECK (mw::worthStartingAhead ("VST3", "C:/Program Files/Common Files/VST3/WaveShell1-VST3-ARA 17.1_x64.vst3"));
     CHECK (mw::worthStartingAhead ("VST3", "/Library/Audio/Plug-Ins/VST3/WaveShell1-VST3 16.0.vst3/")); // a bundle folder
@@ -23,7 +23,7 @@ TEST (load121_only_waves_shells_start_ahead)
 
 TEST (load121_registry_starts_each_module_once_and_reports_the_wait)
 {
-    namespace mw = lynx::modulewarm;
+    namespace mw = yw::modulewarm;
     double now = 100.0;
     int loads = 0;
     bool result = true;
@@ -46,7 +46,7 @@ TEST (load121_registry_starts_each_module_once_and_reports_the_wait)
 
 TEST (load121_waiting_module_can_be_skipped_and_comes_back_next_open)
 {
-    namespace mw = lynx::modulewarm;
+    namespace mw = yw::modulewarm;
     std::mutex m;
     std::condition_variable cv;
     bool release = false;
@@ -92,7 +92,7 @@ TEST (load121_waiting_module_can_be_skipped_and_comes_back_next_open)
 
 TEST (load121_registry_outlives_nothing_a_thread_still_loading)
 {
-    namespace mw = lynx::modulewarm;
+    namespace mw = yw::modulewarm;
     std::atomic<bool> go { false }, finished { false };
     {
         mw::Registry reg ([&] (const std::string&) {

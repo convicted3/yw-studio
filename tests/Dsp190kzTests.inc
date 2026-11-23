@@ -1,7 +1,7 @@
 // Round 190kz (dsp, owner decision 4: CPU items that could change the sound): what landed exactly — Reeverb 2's LFO sine
 // and the FL sinc kernel's seeds from a guarded polynomial (the same floats as the library sine) — and Maximus's double
 // gain smoothers as EffectSlot revision 1 (the same samples on every demo state). Evidence and numbers:
-// /mnt/e/lynx-work/beatfl2_190kz/agents/dsp.
+// /mnt/e/yw-work/beatfl2_190kz/agents/dsp.
 
 TEST (dsp190kz_maximus_double_smoothers_are_a_revision_with_the_same_samples)
 {
@@ -18,7 +18,7 @@ TEST (dsp190kz_maximus_double_smoothers_are_a_revision_with_the_same_samples)
                                       { band (0, 1500, 1000, 0, 400, 900, 1115, 0, 2882, 1), band (0, 1340, 1000, 0, 0, 1000, 1115, 0, 1570, 1),
                                         band (1, 1000, 1200, 0, 1000, 1000), band (0, 1000, 1000, 0, 250, 1000, 1115, 4464, 2882, 0) },
                                       { def, def, knee, def, t0, def, def, def }, 0);
-    const auto preset = lynx::hlfx::makeMaximusPreset (st);
+    const auto preset = yw::hlfx::makeMaximusPreset (st);
     CHECK (preset != nullptr);
     std::vector<float> inL (44100), inR (44100);
     std::uint32_t r = 7;
@@ -33,7 +33,7 @@ TEST (dsp190kz_maximus_double_smoothers_are_a_revision_with_the_same_samples)
     for (const int block : { 37, 128, 480, 512 })
     {
         std::vector<float> l0 (inL), r0 (inR), l1 (inL), r1 (inR);
-        lynx::hlfx::MaximusProcessor x87, dbl;
+        yw::hlfx::MaximusProcessor x87, dbl;
         x87.prepare (preset, 44100.0, 1000, 0);
         dbl.prepare (preset, 44100.0, 1000, 1);
         for (int s = 0; s < 44100; s += block)
@@ -46,15 +46,15 @@ TEST (dsp190kz_maximus_double_smoothers_are_a_revision_with_the_same_samples)
     }
     // the slot's revision reaches the engine: a new slot is the current revision (2 since round 190ok), a loaded old one
     // 0, and both play
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::maximus);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::maximus);
     CHECK (slot.engineRev == 2);
-    lynx::maximusfx::Blob blob;
+    yw::maximusfx::Blob blob;
     blob.state = st;
-    slot.state = lynx::maximusfx::pack (blob);
+    slot.state = yw::maximusfx::pack (blob);
     for (const int rev : { 0, 1 })
     {
         slot.engineRev = rev;
-        auto fx = lynx::makeEffect (slot);
+        auto fx = yw::makeEffect (slot);
         CHECK (fx != nullptr);
         fx->prepare (44100.0);
         std::vector<float> l (inL.begin(), inL.begin() + 4096), rr (inR.begin(), inR.begin() + 4096);
@@ -68,13 +68,13 @@ TEST (dsp190kz_maximus_double_smoothers_are_a_revision_with_the_same_samples)
 
 TEST (dsp190kz_new_channels_and_slots_take_the_current_revisions)
 {
-    // (.lynx: src/engine/ProjectFile.cpp writes "engineRev" when it is not 0 and reads a missing one as 0, for channels as
+    // (.yw: src/engine/ProjectFile.cpp writes "engineRev" when it is not 0 and reads a missing one as 0, for channels as
     // since natives190kj and now for effect slots: a project saved before plays the old revisions)
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::audioClip;
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::audioClip;
     CHECK (c.engineRev == 3); // (round 190om: revision 2, SimSynth's velocity law; round 190pr: 3, Harmor's automation)
-    CHECK (lynx::makeEffectSlot (lynx::EffectKind::maximus).engineRev == 2); // (round 190ok: revision 2, FastMath)
-    lynx::EffectSlot a = lynx::makeEffectSlot (lynx::EffectKind::maximus), b = a;
+    CHECK (yw::makeEffectSlot (yw::EffectKind::maximus).engineRev == 2); // (round 190ok: revision 2, FastMath)
+    yw::EffectSlot a = yw::makeEffectSlot (yw::EffectKind::maximus), b = a;
     b.engineRev = 0;
     CHECK (! (a == b)); // (undo and the rebuild see a revision change)
 }
@@ -86,7 +86,7 @@ TEST (dsp190kz_reeverb2_lfo_sine_is_the_plain_sine_bit_for_bit)
     // agents/dsp/f/lfosin.txt); here a stride through them, the quadrant edges and phases outside [0, 1)
     std::uint64_t checked = 0, differing = 0;
     auto check = [&] (float ph) {
-        const auto want = (float) std::sin ((double) ph * 6.283185307179586), got = lynx::reeverb2::lfoSine (ph);
+        const auto want = (float) std::sin ((double) ph * 6.283185307179586), got = yw::reeverb2::lfoSine (ph);
         differing += std::memcmp (&want, &got, 4) != 0;
         ++checked;
     };
@@ -113,7 +113,7 @@ TEST (dsp190kz_sampler_sinc_seeds_are_the_library_sines_bit_for_bit)
     for (const int quality : { 1, 2, 3, 4, 5, 6, 7, 8, 9 })
         for (const double speed : { 0.25, 0.5, 0.75, 0.9183673469387755, 1.0, 1.0884353741496599, 1.5, 2.0, 3.7 })
         {
-            lynx::flrs::Kernel k;
+            yw::flrs::Kernel k;
             k.setQuality (quality);
             k.setSpeed (speed);
             for (int i = 0; i < 20000; ++i)
@@ -121,8 +121,8 @@ TEST (dsp190kz_sampler_sinc_seeds_are_the_library_sines_bit_for_bit)
                 const double x = std::max (1e-25, next());
                 const auto na = -(long double) k.step, w = (long double) k.cutoff, e0 = (long double) x * na + 1.5707963267948966L, e2 = (long double) x * w;
                 float a[8], b[8];
-                lynx::flrs::sincSeeds (k, (double) e0, (double) (e0 + na), (double) e2, (double) (e2 + w), a, false);
-                lynx::flrs::sincSeeds (k, (double) e0, (double) (e0 + na), (double) e2, (double) (e2 + w), b, true);
+                yw::flrs::sincSeeds (k, (double) e0, (double) (e0 + na), (double) e2, (double) (e2 + w), a, false);
+                yw::flrs::sincSeeds (k, (double) e0, (double) (e0 + na), (double) e2, (double) (e2 + w), b, true);
                 differing += std::memcmp (a, b, sizeof a) != 0;
                 ++frames;
             }

@@ -13,7 +13,7 @@
 //  - the poll also covers a window that gets no vertical blank (no peer yet, a platform without them).
 // The step returns true while something moved. It repaints only what changed (each view does its own dirty rects).
 //
-// LYNX_FRAME_HZ=<n> (diagnostics): no vertical blank, a plain n Hz timer (30 = the behaviour before this round), for
+// YW_FRAME_HZ=<n> (diagnostics): no vertical blank, a plain n Hz timer (30 = the behaviour before this round), for
 // A/B measurements with one build.
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -31,7 +31,7 @@
 #include <typeinfo>
 #include <vector>
 
-namespace lynx::ui
+namespace yw::ui
 {
 class FrameTicker final
 {
@@ -66,8 +66,8 @@ public:
         return n;
     }
     // FL's FPS readout ("Show FL Studio user interface screen refresh rate", 143 on a 144 Hz display in FL 2026): the rate
-    // LYNX's moving views are drawn at — the display's refresh measured from its vertical blanks, under Settings › General ›
-    // Animation rate (LYNX_FRAME_HZ when set); 0 before the first vertical blank
+    // YW's moving views are drawn at — the display's refresh measured from its vertical blanks, under Settings › General ›
+    // Animation rate (YW_FRAME_HZ when set); 0 before the first vertical blank
     static int uiFrameRate()
     {
         if (fixedHz() > 0)
@@ -89,11 +89,11 @@ public:
         return hz;
     }
 
-    // LYNX_FRAME_HZ: a fixed rate instead of the display's (0: the display's)
+    // YW_FRAME_HZ: a fixed rate instead of the display's (0: the display's)
     static int fixedHz()
     {
         static const int hz = [] {
-            const auto* v = std::getenv ("LYNX_FRAME_HZ");
+            const auto* v = std::getenv ("YW_FRAME_HZ");
             return v != nullptr ? juce::jlimit (0, 1000, std::atoi (v)) : 0;
         }();
         return hz;
@@ -133,10 +133,10 @@ private:
     }
 
 public:
-    // diagnostics (round 190kr, LYNX_UIPERF_TICKERS=1): per view type, the steps run and the steps that moved (message thread)
+    // diagnostics (round 190kr, YW_UIPERF_TICKERS=1): per view type, the steps run and the steps that moved (message thread)
     static bool perOwnerWanted()
     {
-        static const bool on = std::getenv ("LYNX_UIPERF_TICKERS") != nullptr || std::getenv ("LYNX_TICKER_LOG") != nullptr;
+        static const bool on = std::getenv ("YW_UIPERF_TICKERS") != nullptr || std::getenv ("YW_TICKER_LOG") != nullptr;
         return on;
     }
     static std::map<std::string, std::pair<long long, long long>>& perOwner()
@@ -253,12 +253,12 @@ private:
                 delete this;
         }
 
-        // round 190kr: LYNX_TICKER_LOG=<file>, every 2 s: each view type's frame steps per second (run / moved), the
+        // round 190kr: YW_TICKER_LOG=<file>, every 2 s: each view type's frame steps per second (run / moved), the
         // steps left out because the view was covered, and for every ticker whose view is showing how the cover check
         // sees its window (ui/NativeChild.h describeCover)
         void writeLog()
         {
-            static const auto path = juce::SystemStats::getEnvironmentVariable ("LYNX_TICKER_LOG", {});
+            static const auto path = juce::SystemStats::getEnvironmentVariable ("YW_TICKER_LOG", {});
             if (path.isEmpty())
                 return;
             const auto now = juce::Time::getMillisecondCounterHiRes();
@@ -336,7 +336,7 @@ private:
 };
 
 // A step at every vertical blank, attached only while it is asked for (round 190gv). A window whose VBlankAttachments
-// are all gone gets no vertical blank at all while it has nothing to paint (cmake/LynxPatchJuce.cmake, fix 32), so a
+// are all gone gets no vertical blank at all while it has nothing to paint (cmake/YwPatchJuce.cmake, fix 32), so a
 // view keeps none for an animation that is not running. start(): from the next vertical blank, until `step` returns
 // false (then it detaches after that callback, never from inside it).
 class OnDemandVBlank final : private juce::AsyncUpdater
@@ -371,4 +371,4 @@ inline float fallFor (float perTick, double elapsedMs)
 {
     return (float) std::pow ((double) perTick, juce::jlimit (0.0, 30.0, elapsedMs / (1000.0 / 30.0)));
 }
-} // namespace lynx::ui
+} // namespace yw::ui

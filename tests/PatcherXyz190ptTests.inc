@@ -46,9 +46,9 @@ std::vector<std::uint8_t> xyzState (const std::array<int, 3>& levels, const std:
 
 const std::vector<std::array<double, 3>> straight { { 0, 0, 0 }, { 1, 1, 0 } };
 
-float xyzOutput (const lynx::EffectSlot& slot, int axis, int blocks = 4)
+float xyzOutput (const yw::EffectSlot& slot, int axis, int blocks = 4)
 {
-    auto fx = lynx::makeEffect (slot);
+    auto fx = yw::makeEffect (slot);
     fx->prepare (44100.0);
     std::vector<float> l (256, 0.0f), r (256, 0.0f);
     for (int b = 0; b < blocks; ++b)
@@ -68,14 +68,14 @@ std::filesystem::path demos()
     return std::filesystem::exists (d) ? d : std::filesystem::path (realFlpDir) / "Demo projects";
 }
 
-lynx::EffectSlot savedAndReloaded (const lynx::EffectSlot& slot)
+yw::EffectSlot savedAndReloaded (const yw::EffectSlot& slot)
 {
-    auto loaded = lynx::makeEffectSlot (slot.kind);
+    auto loaded = yw::makeEffectSlot (slot.kind);
     loaded.state = slot.state;
-    const auto count = lynx::savedEffectParamCount (slot);
+    const auto count = yw::savedEffectParamCount (slot);
     for (std::size_t i = 0; i < count; ++i)
-        loaded.params[i] = std::clamp ((float) lynx::savedEffectParamValue (slot.params[i]), 0.0f, 1.0f);
-    lynx::upgradeLoadedEffectParams (loaded, count);
+        loaded.params[i] = std::clamp ((float) yw::savedEffectParamValue (slot.params[i]), 0.0f, 1.0f);
+    yw::upgradeLoadedEffectParams (loaded, count);
     return loaded;
 }
 } // namespace patcherxyz190pt
@@ -84,7 +84,7 @@ lynx::EffectSlot savedAndReloaded (const lynx::EffectSlot& slot)
 // other bytes there); the input curves are FL's envelope walk, a segment of no length passed at once
 TEST (patcherxyz190pt_xyz_state_and_input_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     using patcherxyz190pt::straight;
     // Stroll Up's "mapper1" shape: X falls 1 → 0.5 over the first half and holds; Y holds 0.5 and jumps to 1 at 0.5;
     // the output curves are 2-point with ends 0.1 … 0.9 on Y (to see that they are read where they really are)
@@ -139,7 +139,7 @@ TEST (patcherxyz190pt_xyz_state_and_input_curves)
 // parameters map; the Multiband line had lost its return in a merge, which dropped all four
 TEST (patcherxyz190pt_fl_parameter_maps)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int k = 0; k < 3; ++k)
     {
         const auto map = effectParamFromFl ("Fruity X-Y-Z Controller", k);
@@ -172,27 +172,27 @@ TEST (patcherxyz190pt_stroll_up_patcher_links)
     const auto path = patcherxyz190pt::demos() / "Demo songs" / "Purps On The Beat Feat Luclover - Stroll Up.flp";
     if (! std::filesystem::exists (path))
         return;
-    lynx::FlpImportOptions options;
+    yw::FlpImportOptions options;
     options.roots = { realFlpDir, realFlpDir + "/Data", "" };
-    lynx::FlpImportReport report;
+    yw::FlpImportReport report;
     options.report = &report;
-    const auto song = lynx::importFlp (flp::parseProject (patcherxyz190pt::readFile (path)), options);
+    const auto song = yw::importFlp (flp::parseProject (patcherxyz190pt::readFile (path)), options);
     for (const auto& [what, n] : report.partialEffects)
         CHECK (what.find ("not mapped") == std::string::npos && what.find ("not reproduced") == std::string::npos);
     int patchers = 0, xyzWithCurves = 0, links = 0, intoXyz = 0, intoFlangers = 0;
     for (const auto& fx : song.mixer[0].effects)
-        if (fx.kind == lynx::EffectKind::patcher)
+        if (fx.kind == yw::EffectKind::patcher)
         {
             ++patchers;
             for (const auto& n : fx.patcher.nodes)
-                xyzWithCurves += n.effect.kind == lynx::EffectKind::xyzController && n.effect.params[(std::size_t) lynx::xy::flInputCurves] == 1.0f;
+                xyzWithCurves += n.effect.kind == yw::EffectKind::xyzController && n.effect.params[(std::size_t) yw::xy::flInputCurves] == 1.0f;
             for (const auto& w : fx.patcher.wires)
-                if (w.kind == lynx::PatchWire::Kind::control)
+                if (w.kind == yw::PatchWire::Kind::control)
                 {
                     ++links;
                     const auto kind = fx.patcher.nodes[(std::size_t) w.to].effect.kind;
-                    intoXyz += kind == lynx::EffectKind::xyzController;
-                    intoFlangers += kind == lynx::EffectKind::fruityFlanger || kind == lynx::EffectKind::fruityFlangus;
+                    intoXyz += kind == yw::EffectKind::xyzController;
+                    intoFlangers += kind == yw::EffectKind::fruityFlanger || kind == yw::EffectKind::fruityFlangus;
                 }
         }
     CHECK (patchers == 2);
@@ -203,7 +203,7 @@ TEST (patcherxyz190pt_stroll_up_patcher_links)
 // signal; a slot without liveControls (projects saved before) keeps the state alone
 TEST (patcherxyz190pt_vocodex_follows_its_controls)
 {
-    using namespace lynx;
+    using namespace yw;
     if (realFlpDir.empty())
         return;
     const auto path = patcherxyz190pt::demos() / "Product demos" / "Vocodex demo.flp";

@@ -17,8 +17,8 @@
 //
 // Differences from FL by design / not confirmed (REA_rodada65 §1.7): the random seed is per instrument and starts at
 // Delphi's default (FL seeds its process-global generator from the clock, so every FL render differs); FL's host gain
-// ramp on level changes is not decoded (LYNX ramps linearly over the block); FL never hands Plucked! a channel sample
-// in LYNX (the plugin can excite the string with one — not modelled).
+// ramp on level changes is not decoded (YW ramps linearly over the block); FL never hands Plucked! a channel sample
+// in YW (the plugin can excite the string with one — not modelled).
 
 #include <cstdint>
 #include <memory>
@@ -27,7 +27,7 @@
 
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true when the exact engine can read this Plucked! state (20 bytes or more)
 bool pluckedStateUsable (const std::vector<std::uint8_t>& state);
@@ -53,4 +53,4 @@ struct RefNote
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::vector<RefNote>& notes, double sampleRate,
                                     int length, int block = 512, std::uint32_t seed = 0, bool panLawA = true, int maxPoly = 0);
 } // namespace plucked
-} // namespace lynx
+} // namespace yw

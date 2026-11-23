@@ -4,8 +4,8 @@
 
 TEST (rec177d_preview_shows_held_notes_without_changing_the_take)
 {
-    auto song = rec170d::emptySong (lynx::PlayMode::pattern);
-    lynx::NoteRecorder r;
+    auto song = rec170d::emptySong (yw::PlayMode::pattern);
+    yw::NoteRecorder r;
     r.begin (song.patterns[0].effectiveLength (song.meter()));
     CHECK (r.preview (song, 0.0).notes.empty());
     r.add (song, { 240.0, 0, 60, 0.8f, true });
@@ -35,8 +35,8 @@ TEST (rec177d_preview_shows_held_notes_without_changing_the_take)
 
 TEST (rec177d_preview_song_mode_origin_and_reach_before_the_first_release)
 {
-    auto song = rec170d::emptySong (lynx::PlayMode::song);
-    lynx::NoteRecorder r;
+    auto song = rec170d::emptySong (yw::PlayMode::song);
+    yw::NoteRecorder r;
     r.begin (song.patterns[0].effectiveLength (song.meter()));
     r.setLinear (true);
     // the first note held in bar 3: the take's origin is that bar, no clip yet
@@ -49,22 +49,22 @@ TEST (rec177d_preview_song_mode_origin_and_reach_before_the_first_release)
     // the take itself still has no origin (only the commit sets it, as before)
     CHECK (r.songOrigin() == (std::int64_t) (2.0 * rec170d::bar)); // (set by add's note-on, round 168k)
     // the clip would go to the first free track at that bar
-    CHECK (lynx::patternClipTrack (song, p.origin) == 0);
+    CHECK (yw::patternClipTrack (song, p.origin) == 0);
 }
 
 TEST (rec177d_place_pattern_clip_uses_the_shared_track_rule)
 {
-    auto song = rec170d::emptySong (lynx::PlayMode::song);
-    lynx::Clip c;
-    c.kind = lynx::ClipKind::pattern;
+    auto song = rec170d::emptySong (yw::PlayMode::song);
+    yw::Clip c;
+    c.kind = yw::ClipKind::pattern;
     c.pattern = 0;
     c.track = 0;
     c.start = 0;
     c.length = (std::int64_t) rec170d::bar;
     song.playlist.push_back (c);
     // a clip ending right at bar 2 keeps Track 1 busy from there (round 168k fl2): the take goes to Track 2
-    CHECK (lynx::patternClipTrack (song, (std::int64_t) rec170d::bar) == 1);
-    CHECK (lynx::placePatternClipAt (song, 0, (std::int64_t) rec170d::bar));
+    CHECK (yw::patternClipTrack (song, (std::int64_t) rec170d::bar) == 1);
+    CHECK (yw::placePatternClipAt (song, 0, (std::int64_t) rec170d::bar));
     CHECK (song.playlist.back().track == 1 && song.playlist.back().start == (std::int64_t) rec170d::bar);
 }
 
@@ -72,33 +72,33 @@ TEST (rec177d_audio_span_maps_frames_as_the_placement_does)
 {
     // linear: the first frame sounds one latency before the transport position it arrived at
     const double tps = 0.04; // ticks a sample
-    auto s = lynx::liverec::audioSpan (1000.0, 48000, tps, 480, -1, 0);
+    auto s = yw::liverec::audioSpan (1000.0, 48000, tps, 480, -1, 0);
     CHECK (s.valid());
     CHECK (std::abs (s.start - (1000.0 - 480 * tps)) < 1e-9);
     CHECK (std::abs (s.length - 48000 * tps) < 1e-9);
     CHECK (s.firstFrame == 0.0);
     // it matches takes::place's exact start
-    const auto placed = lynx::takes::place (1000.0, 48000 * tps, tps, 480);
+    const auto placed = yw::takes::place (1000.0, 48000 * tps, tps, 480);
     CHECK (std::abs (placed.exactStart - s.start) < 1e-6);
 
     // a loop pass: from the loop start, from the wrap frame plus the latency
-    s = lynx::liverec::audioSpan (1000.0, 48000, tps, 480, 30000, 3840);
+    s = yw::liverec::audioSpan (1000.0, 48000, tps, 480, 30000, 3840);
     CHECK (s.start == 3840.0 && s.firstFrame == 30480.0);
     CHECK (std::abs (s.length - (48000 - 30480) * tps) < 1e-9);
 
     // before the song start: cut at 0
-    s = lynx::liverec::audioSpan (5.0, 48000, tps, 480, -1, 0);
+    s = yw::liverec::audioSpan (5.0, 48000, tps, 480, -1, 0);
     CHECK (s.start == 0.0 && std::abs (s.firstFrame - 480.0 + 5.0 / tps) < 1e-6);
 
     // nothing recorded yet: nothing shown
-    CHECK (! lynx::liverec::audioSpan (-1.0, 100, tps, 0, -1, 0).valid());
-    CHECK (! lynx::liverec::audioSpan (10.0, 0, tps, 0, -1, 0).valid());
+    CHECK (! yw::liverec::audioSpan (-1.0, 100, tps, 0, -1, 0).valid());
+    CHECK (! yw::liverec::audioSpan (10.0, 0, tps, 0, -1, 0).valid());
 }
 
 TEST (rec177d_live_peaks_follow_the_take)
 {
-    lynx::liverec::LivePeaks p;
-    constexpr int per = lynx::liverec::LivePeaks::framesPerPeak;
+    yw::liverec::LivePeaks p;
+    constexpr int per = yw::liverec::LivePeaks::framesPerPeak;
     std::vector<float> l ((std::size_t) per * 4, 0.0f), r ((std::size_t) per * 4, 0.0f);
     l[(std::size_t) per + 3] = -0.5f;   // peak 1, left
     r[(std::size_t) per * 3 + 7] = 0.9f; // peak 3, right

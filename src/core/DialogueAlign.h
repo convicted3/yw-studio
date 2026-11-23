@@ -1,6 +1,6 @@
 #pragma once
 
-// Dialogue alignment (round 174d, ADR): time-aligns a recorded take to the guide (the original line), offline — LYNX's
+// Dialogue alignment (round 174d, ADR): time-aligns a recorded take to the guide (the original line), offline — YW's
 // own algorithm, in the spirit of the alignment tools post-production uses. Both signals become frames of log band
 // energies (25 ms Hann windows every 10 ms, 24 bands 80 Hz…8 kHz, each band normalised over the utterance); dynamic
 // time warping inside a band around the diagonal finds the cheapest path; the path, smoothed and kept monotonic with
@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace lynx::align
+namespace yw::align
 {
 struct Options
 {
@@ -37,4 +37,4 @@ std::vector<float> warp (const std::vector<float>& take, double sampleRate, cons
 // (exposed for the tests) the frame features: frames × 24 values
 std::vector<std::vector<float>> features (const std::vector<float>& signal, double sampleRate);
 constexpr double hopSeconds = 0.010;
-} // namespace lynx::align
+} // namespace yw::align

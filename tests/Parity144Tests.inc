@@ -3,9 +3,9 @@
 namespace p144
 {
 // a rhythm echo with Free / Grid taps at fractions of a 2-beat pattern (1000 ms at 120 BPM)
-inline lynx::EffectParams freeRhythm (std::vector<float> at, float edit = 0.5f)
+inline yw::EffectParams freeRhythm (std::vector<float> at, float edit = 0.5f)
 {
-    namespace e = lynx::echosuite::echoform;
+    namespace e = yw::echosuite::echoform;
     auto p = p137::rhythmEcho (2, 3, 0.0, 0.0f);
     p[e::rhythmEdit] = edit;
     p[e::rhythmRepeats] = (float) at.size() / 15.0f;
@@ -17,7 +17,7 @@ inline lynx::EffectParams freeRhythm (std::vector<float> at, float edit = 0.5f)
 
 TEST (echoform_rhythm_editor_defaults_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     CHECK ((int) effectInfo (EffectKind::echoform).params.size() == e::paramCount);
     CHECK (e::rhythmEdit == e::tapeVoicing + 1); // appended after round 136's tape voicing
@@ -42,7 +42,7 @@ TEST (echoform_rhythm_editor_defaults_round144)
 
 TEST (echoform_rhythm_free_and_grid_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     // Free: each tap at its own time, levels equal-power over the slots as in Even (4 slots: 1/2 each)
     auto p = p144::freeRhythm ({ 0.1f, 0.3f, 0.7f });
@@ -83,7 +83,7 @@ TEST (echoform_rhythm_free_and_grid_round144)
 
 TEST (echoform_rhythm_shapes_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     using S = e::RhythmShape;
     CHECK (e::rhythmShapeDb (S::decay, 20.0, 1.0) == -20.0 && e::rhythmShapeDb (S::decay, 20.0, 0.0) == 0.0);
@@ -116,7 +116,7 @@ TEST (echoform_rhythm_shapes_round144)
 
 TEST (echoform_rhythm_patterns_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     CHECK (e::rhythmPresetCount() >= 10);
     CHECK (std::string (e::rhythmPresetName (e::rhythmPresetCount())).empty());
@@ -145,7 +145,7 @@ TEST (echoform_rhythm_patterns_round144)
 
 TEST (echoform_rhythm_free_impulse_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     // Free taps at 100 / 300 / 700 ms: the impulse comes back there (−6 dB each), nothing at the even spacing (250 ms)
     std::vector<float> l, r;
     p135w::echoImpulse (p144::freeRhythm ({ 0.1f, 0.3f, 0.7f }), l, r, 1);
@@ -156,7 +156,7 @@ TEST (echoform_rhythm_free_impulse_round144)
 
 TEST (echoform_rhythm_editor_layout_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto kind = EffectKind::echoform;
     const auto& l = plugui::layoutFor (kind);
@@ -200,7 +200,7 @@ TEST (echoform_rhythm_editor_layout_round144)
 
 TEST (echoform_style_edit_round144)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace e = echosuite::echoform;
     const auto d = makeEffectSlot (EffectKind::echoform).params;
     CHECK (e::inputLevel == e::rhythmTimeLast + 1 && e::loopTreble + 1 == e::voicing);

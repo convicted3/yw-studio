@@ -1,14 +1,14 @@
 #pragma once
 
-// File › Export › "Master..." (Ctrl+Alt+M), LYNX's own version (round 168e). In FL Studio 2026 this item renders the
+// File › Export › "Master..." (Ctrl+Alt+M), YW's own version (round 168e). In FL Studio 2026 this item renders the
 // project and sends it to FL Cloud's online mastering (a separate download, "FL Cloud mastering v2"; REA round 168e:
-// FileExportMasterActionExecute → FUN_00edf6a0 / FUN_00edf490, the file named "<project> (mastered)"). LYNX has no
+// FileExportMasterActionExecute → FUN_00edf6a0 / FUN_00edf490, the file named "<project> (mastered)"). YW has no
 // online service: it masters the render on the computer instead — the integrated loudness (ITU-R BS.1770, core/
-// Loudness.h) brought to a target and the peaks held under a true-peak ceiling by LYNX's Apex Limiter.
+// Loudness.h) brought to a target and the peaks held under a true-peak ceiling by YW's Apex Limiter.
 
 #include <vector>
 
-namespace lynx::mastering
+namespace yw::mastering
 {
 struct Settings
 {
@@ -31,4 +31,4 @@ Result process (std::vector<float>& left, std::vector<float>& right, double samp
 
 // The integrated loudness and true peak (dBTP) of a stereo buffer.
 void measure (const std::vector<float>& left, const std::vector<float>& right, double sampleRate, double& lufs, double& truePeakDb);
-} // namespace lynx::mastering
+} // namespace yw::mastering

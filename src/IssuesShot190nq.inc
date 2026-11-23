@@ -1,12 +1,12 @@
     // --issuesshot190nq <prefix> (round 190nq, issues #193, #225, #226, #227, #228, #229, #230), offscreen through the real
     // components: a narrow Channel rack's title bar, the Mixer's Left / Right, the action search ("?"), FL's "Show fade
-    // previews", the ruler click with every tool (LYNX extra), an automation clip whose insert was deleted, and (with
-    // LYNX_193_ALS=<set.als>) issue #193's Live set as LYNX opens it. <prefix>-checks.txt lists the checks; pictures @100
+    // previews", the ruler click with every tool (YW extra), an automation clip whose insert was deleted, and (with
+    // YW_193_ALS=<set.als>) issue #193's Live set as YW opens it. <prefix>-checks.txt lists the checks; pictures @100
     // and @150. Included in the app class of Main.cpp.
     bool runIssuesShot190nq (const juce::String& prefix)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::String checks;
         bool allOk = true;
         const auto check = [&checks, &allOk] (const juce::String& what, bool ok) {
@@ -21,14 +21,14 @@
             savePng (c.createComponentSnapshot (area, true, 1.0f), prefix + "-" + name + ".png");
             savePng (c.createComponentSnapshot (area, true, 1.5f), prefix + "-" + name + "@150.png");
         };
-        using namespace lynx;
+        using namespace yw;
         using workspace::Panel;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
         const auto bar = (std::int64_t) 4 * ppq;
 
         // a test sound: 4 s of a decaying 220 Hz tone, pulsed every half second (a waveform with shape)
-        const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx190nq-fade.wav");
+        const auto wav = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw190nq-fade.wav");
         {
             wav.deleteFile();
             juce::WavAudioFormat format;
@@ -377,7 +377,7 @@
         for (const auto fromFl : { true, false })
         {
             MissingFilesInfo info;
-            info.projectName = fromFl ? "Imported.flp" : "try_lynx_its_cool";
+            info.projectName = fromFl ? "Imported.flp" : "try_yw_its_cool";
             info.fromFlStudio = fromFl;
             info.plugins = { MissingPlugin { "TR5 Saturator X", { "Master" }, "Nothing: the slot keeps the plugin's settings until it is installed", {} } };
             auto panel = makeMissingFilesPanel (info, 1);
@@ -393,13 +393,13 @@
             const auto says = text.contains ("as in FL Studio");
             check (fromFl ? "Missing files, an FL project: \"will not sound as in FL Studio\" (as before)" : "Missing files, a YW Studio project: no \"as in FL Studio\"",
                    fromFl ? says : ! says && text.contains ("when the project was saved"));
-            write (*panel, panel->getLocalBounds().withHeight (140), fromFl ? "d1120-missing-flp" : "d1120-missing-lynx");
+            write (*panel, panel->getLocalBounds().withHeight (140), fromFl ? "d1120-missing-flp" : "d1120-missing-yw");
         }
 
         // ================= #193: the reporter's Live set =================
-        // (and with LYNX_PROJECT_190NQ=<file>: any other project the same way, Discord 11-18's .lynx, tag "d1120")
-        for (const auto& [als, tag] : { std::pair { juce::File (juce::SystemStats::getEnvironmentVariable ("LYNX_193_ALS", {})), juce::String ("193") },
-                                        std::pair { juce::File (juce::SystemStats::getEnvironmentVariable ("LYNX_PROJECT_190NQ", {})), juce::String ("d1120") } })
+        // (and with YW_PROJECT_190NQ=<file>: any other project the same way, Discord 11-18's .yw, tag "d1120")
+        for (const auto& [als, tag] : { std::pair { juce::File (juce::SystemStats::getEnvironmentVariable ("YW_193_ALS", {})), juce::String ("193") },
+                                        std::pair { juce::File (juce::SystemStats::getEnvironmentVariable ("YW_PROJECT_190NQ", {})), juce::String ("d1120") } })
         {
             if (! als.existsAsFile())
                 continue;

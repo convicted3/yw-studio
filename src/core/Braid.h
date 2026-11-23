@@ -1,6 +1,6 @@
 #pragma once
 
-// Braid: LYNX's own two-engine macro synthesizer (round 190ko). LYNX's own engine, name, code and sounds; Ableton
+// Braid: YW's own two-engine macro synthesizer (round 190ko). YW's own engine, name, code and sounds; Ableton
 // Live's Meld imports onto it (core/AlsDevicesMeld.cpp) with its own values, so the parameters below keep Meld's units
 // and ranges as a Live set stores them (times in seconds, volumes in dB, filter frequency in Hz, macros 0…1, the
 // modulation matrix's amounts −1…1). The laws that make those values sound like Live were measured black-box on Live
@@ -25,7 +25,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 struct ChannelDef;
 
@@ -152,4 +152,4 @@ namespace modelparams
 struct Table;
 Table braidModelTable();
 } // namespace modelparams
-} // namespace lynx
+} // namespace yw

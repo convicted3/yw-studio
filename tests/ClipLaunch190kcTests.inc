@@ -56,7 +56,7 @@ inline std::string returnsSet()
     return s;
 }
 
-inline int insertNamed (const lynx::Song& s, const std::string& name)
+inline int insertNamed (const yw::Song& s, const std::string& name)
 {
     for (int i = 0; i < (int) s.mixer.size(); ++i)
         if (s.mixer[(std::size_t) i].name == name)
@@ -67,7 +67,7 @@ inline int insertNamed (const lynx::Song& s, const std::string& name)
 
 TEST (cliplaunch190kc_als_returns_sends_and_crossfader_import)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     const auto song = importAls (als175a::bytesOf (kc190::returnsSet()), als181c::options (&report));
     CHECK (song.has_value());
@@ -114,7 +114,7 @@ TEST (cliplaunch190kc_als_returns_sends_and_crossfader_import)
 
 TEST (cliplaunch190kc_als_returns_and_crossfader_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = importAls (als175a::bytesOf (kc190::returnsSet()), als181c::options (nullptr));
     CHECK (song.has_value());
     if (! song)
@@ -129,7 +129,7 @@ TEST (cliplaunch190kc_als_returns_and_crossfader_round_trip)
         return;
     const auto keys = kc190::insertNamed (*back, "Keys"), vocal = kc190::insertNamed (*back, "Vocal");
     const auto reverb = kc190::insertNamed (*back, "Reverb"), delay = kc190::insertNamed (*back, "Delay");
-    // (Vocal, an audio track with no clip and no channel, is not written: LYNX exports tracks that carry something)
+    // (Vocal, an audio track with no clip and no channel, is not written: YW exports tracks that carry something)
     CHECK (keys > 0 && reverb > 0 && delay > 0);
     if (keys <= 0 || reverb <= 0 || delay <= 0)
         return;
@@ -147,7 +147,7 @@ TEST (cliplaunch190kc_als_returns_and_crossfader_round_trip)
 
 TEST (cliplaunch190kc_return_sends_pre_post_and_enable)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.mixer = Song::defaultMixer (3);
     const auto a = sessionmixer::insertReturn (song, "Reverb"), b = sessionmixer::insertReturn (song, "Delay");
@@ -166,7 +166,7 @@ TEST (cliplaunch190kc_return_sends_pre_post_and_enable)
     CHECK (song.mixer[(std::size_t) a].sends.size() == 1);
     CHECK (sessionmixer::setSendEnabled (song, a, b, false) && song.mixer[(std::size_t) a].sends.empty());
     CHECK (! sessionmixer::setSendEnabled (song, a, a, true)); // (never into itself)
-    // a project without returns keeps LYNX's rows: every insert sent to
+    // a project without returns keeps YW's rows: every insert sent to
     auto plain = Song::makeDefault();
     plain.mixer = Song::defaultMixer (4);
     sessionmixer::setSendPosition (plain, 1, 3, 0.5f);
@@ -175,7 +175,7 @@ TEST (cliplaunch190kc_return_sends_pre_post_and_enable)
 
 TEST (cliplaunch190kc_crossfader_curves)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int k = 0; k < crossfader::curveCount; ++k)
     {
         // a track on its own side is unattenuated; on the far side muted; never louder on the way
@@ -208,7 +208,7 @@ TEST (cliplaunch190kc_crossfader_curves)
 
 TEST (cliplaunch190kc_crossfader_in_the_render)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     song.channels.clear();
     song.playlist.clear();
@@ -252,7 +252,7 @@ TEST (cliplaunch190kc_crossfader_in_the_render)
 
 TEST (cliplaunch190kc_relative_session_and_crossfader_mappings)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     // the crossfader's three positions and the relative strip are mappable to keys and MIDI, kept for every project
     for (const auto action : { RemoteAction::crossfaderLeft, RemoteAction::crossfaderCentre, RemoteAction::crossfaderRight, RemoteAction::sceneUp,
@@ -281,14 +281,14 @@ TEST (cliplaunch190kc_relative_session_and_crossfader_mappings)
 
 TEST (cliplaunch190kc_cancel_launch_drops_waiting_launches)
 {
-    using namespace lynx;
+    using namespace yw;
     // the command exists after every older one (saved nowhere, but the enum's order stays)
     CHECK ((int) launcher::Command::Type::cancelLaunch > (int) launcher::Command::Type::recordEnd);
 }
 
 TEST (cliplaunch190kc_session_ring_model)
 {
-    using namespace lynx::sessionring;
+    using namespace yw::sessionring;
     Ring r; // 8 x 5 at the top left
     CHECK (contains (r, 0, 0) && contains (r, 7, 4) && ! contains (r, 8, 0) && ! contains (r, 0, 5));
     // kept inside a 15-track, 13-scene grid (the Patience set)

@@ -1,12 +1,12 @@
 #pragma once
-// A size budget for LYNX's disk caches (round 167e): past the limit the least recently used entries go, oldest first,
+// A size budget for YW's disk caches (round 167e): past the limit the least recently used entries go, oldest first,
 // down to 3/4 of the limit (the stretched copies since round 165i, the decoded PCM copies since 167e).
 #include <algorithm>
 #include <cstdint>
 #include <numeric>
 #include <vector>
 
-namespace lynx::cachebudget
+namespace yw::cachebudget
 {
 struct Entry
 {
@@ -35,4 +35,4 @@ inline std::vector<std::size_t> toPrune (const std::vector<Entry>& entries, std:
     }
     return out;
 }
-} // namespace lynx::cachebudget
+} // namespace yw::cachebudget

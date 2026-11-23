@@ -14,7 +14,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::drawmode
+namespace yw::drawmode
 {
 // --- the switch (a preference of the session, not of a project) --------------------------------------------------------
 bool isOn() noexcept;
@@ -51,7 +51,7 @@ std::vector<Step> stepsAlong (std::int64_t t0, float v0, std::int64_t t1, float 
 // The curve over [from, to] becomes a straight piece from vFrom to vTo; before `from` and from `to` on it stays as it
 // was (an edge where the old curve has another value becomes a jump: two points on that tick). The points stay sorted;
 // points that only repeat a flat run inside [from, to] are merged. Values are clamped to 0..1. Exact outside [from, to]
-// where the old segments that cross an edge are straight (LYNX's default); a bent segment that crosses an edge is cut
+// where the old segments that cross an edge are straight (YW's default); a bent segment that crosses an edge is cut
 // there, so its part outside keeps its ends but not its exact bend. from >= to: nothing changes.
 void drawPiece (std::vector<AutomationPoint>& points, std::int64_t from, std::int64_t to, float vFrom, float vTo);
 // A step: [from, to) flat at `value`.
@@ -61,4 +61,4 @@ inline void drawStep (std::vector<AutomationPoint>& points, std::int64_t from, s
 }
 // Freehand: the mouse went from (t0, v0) to (t1, v1) (either way round).
 void drawLine (std::vector<AutomationPoint>& points, std::int64_t t0, float v0, std::int64_t t1, float v1);
-} // namespace lynx::drawmode
+} // namespace yw::drawmode

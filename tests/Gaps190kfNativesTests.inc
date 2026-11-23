@@ -6,12 +6,12 @@
 #include "core/AudioEdit.h"
 #include "core/SampleProps.h"
 
-namespace gkf_ae = lynx::audioedit;
-namespace gkf_sp = lynx::sampleprops;
+namespace gkf_ae = yw::audioedit;
+namespace gkf_sp = yw::sampleprops;
 
 namespace gaps190kfnatives
 {
-namespace ae = lynx::audioedit;
+namespace ae = yw::audioedit;
 
 inline ae::Document sine (double seconds, double rate, double hz, int channels = 1)
 {

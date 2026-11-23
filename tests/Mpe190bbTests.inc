@@ -3,13 +3,13 @@
 
 namespace mpe190bb
 {
-using lynx::mpe::InEvent;
+using yw::mpe::InEvent;
 struct Fed
 {
     int count = 0;
-    InEvent e[lynx::mpe::Input::maxEvents];
+    InEvent e[yw::mpe::Input::maxEvents];
 };
-inline Fed feed (lynx::mpe::Input& in, std::initializer_list<int> bytes)
+inline Fed feed (yw::mpe::Input& in, std::initializer_list<int> bytes)
 {
     std::uint8_t b[3] = { 0, 0, 0 };
     auto n = 0;
@@ -24,7 +24,7 @@ inline bool near (float a, float b, float tolerance = 0.01f) { return std::abs (
 
 TEST (mpe190bb_laws_bend_timbre_pressure)
 {
-    using namespace lynx::mpe;
+    using namespace yw::mpe;
     CHECK (bendCents (8192, 48.0f) == 0.0f);
     CHECK (mpe190bb::near (bendCents (16383, 48.0f), 4800.0f) && mpe190bb::near (bendCents (0, 48.0f), -4800.0f));
     CHECK (mpe190bb::near (bendCents (16383, 2.0f), 200.0f));
@@ -44,7 +44,7 @@ TEST (mpe190bb_laws_bend_timbre_pressure)
 
 TEST (mpe190bb_input_decodes_a_member_channels_notes)
 {
-    using namespace lynx::mpe;
+    using namespace yw::mpe;
     using mpe190bb::feed;
     Input in;
     // off: every message is an ordinary one
@@ -101,7 +101,7 @@ TEST (mpe190bb_input_decodes_a_member_channels_notes)
 
 TEST (mpe190bb_input_follows_the_zone_configuration)
 {
-    using namespace lynx::mpe;
+    using namespace yw::mpe;
     using mpe190bb::feed;
     Input in;
     in.setZone ({ true, 15, 48.0f });
@@ -131,7 +131,7 @@ TEST (mpe190bb_input_follows_the_zone_configuration)
 
 TEST (mpe190bb_allocator_gives_each_note_its_channel)
 {
-    using namespace lynx::mpe;
+    using namespace yw::mpe;
     Allocator a;
     std::set<int> used;
     for (int k = 0; k < 15; ++k)
@@ -155,7 +155,7 @@ TEST (mpe190bb_allocator_gives_each_note_its_channel)
 
 TEST (mpe190bb_member_channel_messages_as_note_expressions)
 {
-    using namespace lynx::mpe;
+    using namespace yw::mpe;
     NoteExpression x;
     const std::uint8_t bend[3] = { 0xe2, 0x7f, 0x7f }, timbre[3] = { 0xb3, 74, 127 }, pressure[2] = { 0xd4, 64 };
     CHECK (toNoteExpression (bend, 3, 48.0f, x) && x.expr == Expr::pitch && x.channel == 2 && std::abs (x.value - 48.0) < 1.0e-3);
@@ -181,9 +181,9 @@ TEST (mpe190bb_member_channel_messages_as_note_expressions)
 
 TEST (mpe190bb_recorded_notes_keep_their_expression)
 {
-    auto song = lynx::Song::makeDefault();
-    const auto loop = song.patterns[0].effectiveLength (lynx::Meter (4, 4));
-    lynx::NoteRecorder r;
+    auto song = yw::Song::makeDefault();
+    const auto loop = song.patterns[0].effectiveLength (yw::Meter (4, 4));
+    yw::NoteRecorder r;
     r.begin (loop);
     // an MPE note: the "on" brings its bend and timbre, the "off" its peak pressure
     r.add (song, { 100.0, 0, 60, 0.5f, true, true, 35.0f, 0.9f, 0.5f });
@@ -196,7 +196,7 @@ TEST (mpe190bb_recorded_notes_keep_their_expression)
     r.end (song, 1000.0);
     const auto notes = r.takeFinished();
     CHECK (notes.size() == 3);
-    const lynx::Note plain;
+    const yw::Note plain;
     for (const auto& n : notes)
     {
         if (n.key == 60)
@@ -211,7 +211,7 @@ TEST (mpe190bb_recorded_notes_keep_their_expression)
 
 TEST (mpe190bb_device_setting_round_trip)
 {
-    using namespace lynx::prefs;
+    using namespace yw::prefs;
     MidiPrefs p;
     const auto before = p.toText();
     CHECK (! p.input ("Seaboard").mpe && p.input ("Seaboard").mpeMembers == 15 && p.input ("Seaboard").mpeBendRange == 48);
@@ -233,7 +233,7 @@ TEST (mpe190bb_device_setting_round_trip)
     const auto alone = MidiPrefs::fromText ("inputmpe=99|0|Pad\ninputmpe=junk\n");
     CHECK (alone.input ("Pad").mpe && alone.input ("Pad").enabled && alone.input ("Pad").mpeMembers == 15 && alone.input ("Pad").mpeBendRange == 1);
     // the wrapper's switch: off by default, saved with the plugin
-    lynx::PluginRef ref, other;
+    yw::PluginRef ref, other;
     CHECK (! ref.mpe);
     other.mpe = true;
     CHECK (! (ref == other));

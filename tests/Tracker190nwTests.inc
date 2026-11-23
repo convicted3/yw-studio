@@ -1,7 +1,7 @@
-// Round 190nw (LYNX 0.1.31): the built-in tracker, stage 1 — the editor model (core/TrackerGrid.h: a view of the
+// Round 190nw (YW 0.1.31): the built-in tracker, stage 1 — the editor model (core/TrackerGrid.h: a view of the
 // patterns' own notes, lossless both ways with the Piano roll) and the module import (core/ModuleImport.h: .mod, .xm,
 // .s3m and .it through libxmp-lite). The modules are written byte by byte here (no third-party song in the repo). The
-// .lynx round trip and the copy for 0.1.30 / 0.1.28 are in the app's --selftest ("tracker190nw").
+// .yw round trip and the copy for 0.1.30 / 0.1.28 are in the app's --selftest ("tracker190nw").
 
 #include "core/FlpExport.h"
 #include "core/KeyMap.h"
@@ -12,7 +12,7 @@
 
 namespace tracker190nw
 {
-using namespace lynx;
+using namespace yw;
 
 inline Note note (int channel, int key, std::int64_t start, std::int64_t length)
 {
@@ -106,7 +106,7 @@ inline std::vector<std::int8_t> wave (int frames)
 inline std::vector<std::uint8_t> modFile()
 {
     std::vector<std::uint8_t> b;
-    putText (b, "lynx mod", 20);
+    putText (b, "yw mod", 20);
     for (int s = 0; s < 31; ++s)
     {
         putText (b, s == 0 ? "sine" : "", 22);
@@ -151,9 +151,9 @@ inline std::vector<std::uint8_t> xmFile()
 {
     std::vector<std::uint8_t> b;
     putText (b, "Extended Module: ", 17);
-    putText (b, "lynx xm", 20);
+    putText (b, "yw xm", 20);
     b.push_back (0x1A);
-    putText (b, "LYNX test", 20);
+    putText (b, "YW test", 20);
     put16le (b, 0x0104);
     put32le (b, 276);
     put16le (b, 1);   // song length
@@ -226,7 +226,7 @@ inline std::vector<std::uint8_t> xmFile()
 inline std::vector<std::uint8_t> s3mFile()
 {
     std::vector<std::uint8_t> b;
-    putText (b, "lynx s3m", 28);
+    putText (b, "yw s3m", 28);
     b.push_back (0x1A);
     b.push_back (16);
     b.push_back (0), b.push_back (0);
@@ -288,7 +288,7 @@ inline std::vector<std::uint8_t> itFile()
 {
     std::vector<std::uint8_t> b;
     putText (b, "IMPM", 4);
-    putText (b, "lynx it", 26);
+    putText (b, "yw it", 26);
     put16le (b, 0x0410);
     put16le (b, 2); // orders
     put16le (b, 0); // instruments
@@ -364,7 +364,7 @@ inline Imported importOf (const std::vector<std::uint8_t>& bytes, bool volumeAsP
     o.summary = &out.summary;
     o.saveSample = [&out] (const std::vector<std::uint8_t>& wav, const std::string& name) {
         out.samples.emplace_back (name, wav);
-        return "/tmp/lynx-190nw/" + name;
+        return "/tmp/yw-190nw/" + name;
     };
     out.song = importModule (bytes, o, &out.error);
     return out;
@@ -624,7 +624,7 @@ TEST (tracker190nw_text_clipboard_round_trip)
     tracker::Cursor from, to;
     to.row = 15;
     const auto text = tracker::clipboardText (s, l, tracker::Selection::of (from, to), true);
-    CHECK (text.rfind ("LYNX tracker 1", 0) == 0);
+    CHECK (text.rfind ("YW tracker 1", 0) == 0);
     CHECK (text.find ("C#5 001 64 40 0A Y40") != std::string::npos);
     const auto clip = tracker::parseClipboardText (text, l.rowTicks);
     CHECK (clip.has_value());
@@ -763,7 +763,7 @@ TEST (tracker190nw_import_xm)
     CHECK (s.channels.size() == 1 && s.channels[0].zones.size() >= 2 && in.samples.size() == 2);
     if (s.channels.size() != 1 || s.channels[0].zones.size() < 2)
         return;
-    // the zones cover every key without gaps; FT2's C-4 is LYNX's key 60 (libxmp's note numbers): the map's first 48 keys
+    // the zones cover every key without gaps; FT2's C-4 is YW's key 60 (libxmp's note numbers): the map's first 48 keys
     // (C-0..B-3) play the first sample, the rest the second
     const auto& z = s.channels[0].zones;
     for (std::size_t i = 1; i < z.size(); ++i)

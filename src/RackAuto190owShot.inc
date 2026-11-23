@@ -6,7 +6,7 @@
     // <prefix>-checks.txt lists the checks (result=OK / FAIL). Included in the app class of Main.cpp.
     bool runRackAuto190owShot (const juce::String& prefix, const juce::String& projectPath, const juce::String& probePath)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         const juce::ScopedValueSetter<bool> shown (ui::showingForShots(), true);
         juce::StringArray checks;
@@ -135,7 +135,7 @@
             }
         }
 
-        if (probePath.isNotEmpty()) // the probe project of FL's picture, as LYNX opens it
+        if (probePath.isNotEmpty()) // the probe project of FL's picture, as YW opens it
         {
             offline.setSong (makeNewProject());
             settle();

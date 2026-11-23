@@ -3,7 +3,7 @@
 #include <functional>
 #include <juce_core/juce_core.h>
 
-namespace lynx::remoteui
+namespace yw::remoteui
 {
 // Message-thread settings and status for the application-owned local API.
 bool enabled();

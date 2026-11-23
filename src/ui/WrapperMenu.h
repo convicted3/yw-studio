@@ -13,7 +13,7 @@
 // track Ctrl+L.
 //
 // Every one of FL's items is listed in FL's order; an item this window can't do is shown greyed (FL greys its own items
-// the same way, e.g. "Flip with spare state" with nothing stored), never left out. LYNX's own items (Pin on top...) go
+// the same way, e.g. "Flip with spare state" with nothing stored), never left out. YW's own items (Pin on top...) go
 // after FL's, under a line.
 
 #include <functional>
@@ -24,7 +24,7 @@
 #include "ui/I18n.h"
 #include "ui/Theme.h"
 
-namespace lynx::wrappermenu
+namespace yw::wrappermenu
 {
 using Action = std::function<void()>;
 using Fill = std::function<void (juce::PopupMenu&)>;
@@ -58,7 +58,7 @@ struct Spec
     Action toggleThreaded, toggleSmartDisable;
     // the window
     Action thumbnail, rename;
-    Fill changeColour; // the colours (FL's "Change color..." opens a picker; LYNX: its colour menu)
+    Fill changeColour; // the colours (FL's "Change color..." opens a picker; YW: its colour menu)
     Action randomColour, changeIcon;
     Fill scaling;
     std::optional<bool> detached;
@@ -69,7 +69,7 @@ struct Spec
     bool channel = false;
     Action saveChannelState, browseChannelStates, routeToFreeMixerTrack;
     Fill sample; // (round 190oa, DF-118, capture 190oa B4: a sample channel's Sample ▸, the waveform's menu)
-    // LYNX's own items after FL's (Pin on top...)
+    // YW's own items after FL's (Pin on top...)
     Fill extra;
 };
 
@@ -157,7 +157,7 @@ inline juce::PopupMenu build (const Spec& s)
     return m;
 }
 
-// The ▸ that opens the menu: FL's small triangle, drawn as LYNX's native editor headers draw theirs.
+// The ▸ that opens the menu: FL's small triangle, drawn as YW's native editor headers draw theirs.
 class MenuArrow final : public juce::Button
 {
 public:
@@ -178,4 +178,4 @@ public:
         g.fillPath (p);
     }
 };
-} // namespace lynx::wrappermenu
+} // namespace yw::wrappermenu

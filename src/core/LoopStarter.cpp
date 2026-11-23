@@ -6,7 +6,7 @@
 #include <memory>
 #include <set>
 
-namespace lynx::loopstarter
+namespace yw::loopstarter
 {
 // ---------------------------------------------------------------------------------------------------------------------
 // FL's generator (System/Tools/Chord progression/toolbox/toolbox.py rand_int): state = {seed, (75 seed + 74) mod 65537};
@@ -468,7 +468,7 @@ std::optional<Config> parseConfig (const std::string& text)
 
 Config builtinConfig()
 {
-    // LYNX's own small set (used without an FL installation): typical tempos and a five-piece kit
+    // YW's own small set (used without an FL installation): typical tempos and a five-piece kit
     struct Row { const char* id; const char* label; double tempo, lo, hi; };
     static const Row rows[] = {
         { "boom bap", "Boom bap", 90, 84, 96 }, { "drill", "Drill", 142, 138, 146 }, { "edm", "EDM", 126, 122, 128 },
@@ -570,7 +570,7 @@ std::vector<Preset> parsePresets (const std::string& text)
 
 std::vector<Preset> builtinPresets (const std::string& genreId)
 {
-    // LYNX's own one-bar grooves ('>' hit, '`' rest), a few per style; velocity lanes give the accents
+    // YW's own one-bar grooves ('>' hit, '`' rest), a few per style; velocity lanes give the accents
     struct Row { const char* style; const char* kick; const char* snare; const char* clap; const char* hat; const char* open; const char* perc; const char* hatVel; };
     static const Row rows[] = {
         { "four", ">```>```>```>```", "````````````````", "````>```````>```", ">`>`>`>`>`>`>`>`", "``>```>```>```>`", "``````>```````>`", "9393939393939393" },
@@ -1258,4 +1258,4 @@ int sendToPlaylist (Song& song, int pattern, std::int64_t at)
     song.patterns[(std::size_t) pattern].loopStarterGenre.clear();
     return track;
 }
-} // namespace lynx::loopstarter
+} // namespace yw::loopstarter

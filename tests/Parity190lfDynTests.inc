@@ -1,6 +1,6 @@
 // Round 190lf, sub-round "dyn": REA of the Waves CLA-2A (owner's permission of 2026-11-17; docs/analise/
-// REA_rodada190lf_dyn.md, /mnt/e/lynx-work/waves2_190lf/dyn/HANDOFF.md).
-// - Glow Leveler's Opto classic voicing gets a cell law (hidden cellLaw): LYNX's compact opto behaviour model (feedback
+// REA_rodada190lf_dyn.md, /mnt/e/yw-work/waves2_190lf/dyn/HANDOFF.md).
+// - Glow Leveler's Opto classic voicing gets a cell law (hidden cellLaw): YW's compact opto behaviour model (feedback
 //   side chain through a low and a high peaking filter, a fast and a slow conductance sharing the light, the high band
 //   reduced less), fitted on our demo-mode probes. Off for new instances and every project saved before (bit for bit:
 //   lab/gold.sh). The CLA-2A translator sets it.
@@ -11,10 +11,10 @@
 
 namespace parity190lf
 {
-namespace g = lynx::mixsuite::glow;
-inline lynx::EffectSlot glow (double pr, double gain, bool limit, double hf, bool cell)
+namespace g = yw::mixsuite::glow;
+inline yw::EffectSlot glow (double pr, double gain, bool limit, double hf, bool cell)
 {
-    auto s = lynx::makeEffectSlot (lynx::EffectKind::glowLeveler);
+    auto s = yw::makeEffectSlot (yw::EffectKind::glowLeveler);
     s.params[(std::size_t) g::voicing] = 1.0f;
     s.params[(std::size_t) g::optoLaw] = 1.0f;
     s.params[(std::size_t) g::releaseLaw] = 1.0f;
@@ -26,7 +26,7 @@ inline lynx::EffectSlot glow (double pr, double gain, bool limit, double hf, boo
     return s;
 }
 // the gain (dB) of the last 100 ms of a 1 kHz tone at `db` dBFS held `sec` s
-inline double steadyDb (const lynx::EffectSlot& s, double db, double sec = 2.0)
+inline double steadyDb (const yw::EffectSlot& s, double db, double sec = 2.0)
 {
     const double sr = 48000.0;
     const auto n = (std::size_t) (sec * sr);
@@ -34,7 +34,7 @@ inline double steadyDb (const lynx::EffectSlot& s, double db, double sec = 2.0)
     for (std::size_t i = 0; i < n; ++i)
         l[i] = r[i] = (float) (std::pow (10.0, db / 20.0) * std::sin (2.0 * M_PI * 1000.0 * (double) i / sr));
     const auto x = l;
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (sr);
     for (std::size_t off = 0; off < n; off += 256)
         fx->process (l.data() + off, r.data() + off, (int) std::min<std::size_t> (256, n - off), s.params, 120.0);
@@ -47,7 +47,7 @@ inline double steadyDb (const lynx::EffectSlot& s, double db, double sec = 2.0)
 
 TEST (parity190lf_glow_cell_law_is_hidden_and_off_for_new_and_old_glows)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     const auto& info = effectInfo (EffectKind::glowLeveler);
     CHECK (info.params.size() == (std::size_t) g::count && g::cellLaw == g::count); // hidden: no control, no string
@@ -77,7 +77,7 @@ TEST (parity190lf_glow_cell_law_levels_like_the_measured_reference)
 
 TEST (parity190lf_waves_cla2a_translates_onto_the_cell_law)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace g = mixsuite::glow;
     std::string values;
     for (int i = 0; i < 208; ++i)

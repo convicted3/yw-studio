@@ -2,10 +2,10 @@
 // history on Ctrl+Alt+H; the default new project has empty steps
 
 // FL: Tools › Macros › Stop sound = Ctrl+H (DFM MacroStopSoundAction ShortCut 16456); Ctrl+Alt+H is free in FL
-// (FLEngine DFM shortcut list) and in LYNX
+// (FLEngine DFM shortcut list) and in YW
 TEST (wfqa170h2_ctrl_h_stops_sound_ctrl_alt_h_history)
 {
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ 'H', ctrl }, Context::global, false) == "tools.stopSound");
@@ -21,23 +21,23 @@ namespace
 // (always) and FL's Stop sound (when `stop`); returns the energy of what comes out 0.5 s … 2 s later
 double wfqa170h2TailAfter (bool stop)
 {
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.patterns[0].notes.clear();
     song.mixer[0].effects.clear();
-    auto delay = lynx::makeEffectSlot (lynx::EffectKind::delay);
+    auto delay = yw::makeEffectSlot (yw::EffectKind::delay);
     delay.params[1] = 0.85f; // feedback: echoes for seconds
     delay.params[2] = 0.6f;
     song.mixer[5].effects = { delay };
     const double rate = 48000.0;
-    auto state = lynx::RackState::build (song, nullptr, rate);
-    lynx::RackRenderer renderer;
+    auto state = yw::RackState::build (song, nullptr, rate);
+    yw::RackRenderer renderer;
     renderer.prepare (rate, 512);
-    lynx::LiveEventQueue live;
+    yw::LiveEventQueue live;
     std::vector<float> l (512), r (512);
     auto block = [&] { renderer.process (state.get(), false, 0.0, 512, l.data(), r.data(), &live); };
 
-    lynx::NoteEvent on;
-    on.type = lynx::NoteEvent::Type::on;
+    yw::NoteEvent on;
+    on.type = yw::NoteEvent::Type::on;
     on.channel = 4;
     on.key = 60;
     on.velocity = 0.9f;
@@ -45,18 +45,18 @@ double wfqa170h2TailAfter (bool stop)
     for (int i = 0; i < 20; ++i)
         block();
     auto off = on;
-    off.type = lynx::NoteEvent::Type::off;
+    off.type = yw::NoteEvent::Type::off;
     live.push (off);
     block();
 
-    lynx::NoteEvent panic;
-    panic.type = lynx::NoteEvent::Type::choke;
+    yw::NoteEvent panic;
+    panic.type = yw::NoteEvent::Type::choke;
     panic.channel = -1;
     live.push (panic);
     if (stop)
     {
         auto reset = panic;
-        reset.channel = lynx::RackRenderer::stopSoundChannel;
+        reset.channel = yw::RackRenderer::stopSoundChannel;
         live.push (reset);
     }
     for (int i = 0; i < 47; ++i) // ~0.5 s: the synth's own release is over
@@ -82,17 +82,17 @@ TEST (wfqa170h2_stop_sound_clears_effect_tails)
     CHECK (stopped < panicOnly * 1e-4);
 }
 
-// FL's default template has the channels with EMPTY steps (driven FL, fl-02); LYNX's default new project now too —
+// FL's default template has the channels with EMPTY steps (driven FL, fl-02); YW's default new project now too —
 // same channels, inserts and Master limiter as before; the beat stays in the "Basic beat" template
 TEST (wfqa170h2_default_new_project_has_empty_steps)
 {
-    const auto song = lynx::makeNewProject();
-    const auto reference = lynx::Song::makeDefault();
+    const auto song = yw::makeNewProject();
+    const auto reference = yw::Song::makeDefault();
     CHECK (song.channels.size() == reference.channels.size());
     for (std::size_t c = 0; c < song.channels.size() && c < reference.channels.size(); ++c)
         CHECK (song.channels[c].name == reference.channels[c].name && song.channels[c].instrument == reference.channels[c].instrument);
     CHECK (! song.patterns.empty() && song.patterns[0].notes.empty());
     CHECK (! song.mixer.empty() && ! song.mixer[0].effects.empty()); // the Master limiter
-    const auto beat = lynx::makeNewProject (1); // "Basic beat"
+    const auto beat = yw::makeNewProject (1); // "Basic beat"
     CHECK (! beat.patterns[0].notes.empty());
 }

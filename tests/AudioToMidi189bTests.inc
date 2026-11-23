@@ -6,7 +6,7 @@
 
 TEST (a2m189b_windows_are_stitched_on_an_exact_time_grid)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     // a fake model that answers each frame with the input sample at that frame: the stitched output must be the ramp
     // at k * hop (within half a frame: the 141.27-frame stride is not whole)
     for (const std::int64_t samples : { (std::int64_t) 1000, (std::int64_t) windowSamples, (std::int64_t) windowStride * 3 + 517 })
@@ -49,7 +49,7 @@ TEST (a2m189b_windows_are_stitched_on_an_exact_time_grid)
 
 TEST (a2m189b_model_stop_ends_the_run)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     std::vector<float> audio ((std::size_t) windowStride * 5, 0.1f);
     int calls = 0;
     Posteriorgram pg;
@@ -59,28 +59,28 @@ TEST (a2m189b_model_stop_ends_the_run)
 
 namespace
 {
-lynx::a2m::Posteriorgram emptyPg (int frames)
+yw::a2m::Posteriorgram emptyPg (int frames)
 {
-    lynx::a2m::Posteriorgram pg;
+    yw::a2m::Posteriorgram pg;
     pg.frames = frames;
-    pg.note.assign ((std::size_t) frames * lynx::a2m::keys, 0.0f);
+    pg.note.assign ((std::size_t) frames * yw::a2m::keys, 0.0f);
     pg.onset = pg.note;
     return pg;
 }
 
-void paint (lynx::a2m::Posteriorgram& pg, int key, int from, int to, float level, float onset)
+void paint (yw::a2m::Posteriorgram& pg, int key, int from, int to, float level, float onset)
 {
-    const auto b = key - lynx::a2m::lowestKey;
+    const auto b = key - yw::a2m::lowestKey;
     for (int t = from; t < to; ++t)
-        pg.note[(std::size_t) t * lynx::a2m::keys + (std::size_t) b] = level;
+        pg.note[(std::size_t) t * yw::a2m::keys + (std::size_t) b] = level;
     if (onset > 0.0f)
-        pg.onset[(std::size_t) from * lynx::a2m::keys + (std::size_t) b] = onset;
+        pg.onset[(std::size_t) from * yw::a2m::keys + (std::size_t) b] = onset;
 }
 } // namespace
 
 TEST (a2m189b_basic_pitch_note_creation)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     const auto frameSeconds = hop / modelRate;
     auto pg = emptyPg (400);
     paint (pg, 60, 20, 80, 0.8f, 0.9f);   // a clear note with an onset
@@ -108,7 +108,7 @@ TEST (a2m189b_basic_pitch_note_creation)
 
 TEST (a2m189b_melody_keeps_one_note_at_a_time)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     // a fundamental with a weaker octave above it, then a legato step to the next note while the first still sounds
     std::vector<Note> notes { { 0.00, 0.60, 40, 0.8f }, { 0.01, 0.55, 52, 0.4f }, { 0.50, 1.00, 43, 0.7f },
                               { 0.70, 0.80, 55, 0.3f } };
@@ -122,7 +122,7 @@ TEST (a2m189b_melody_keeps_one_note_at_a_time)
 
 TEST (a2m189b_drum_hits_are_found_and_told_apart)
 {
-    using namespace lynx::a2m;
+    using namespace yw::a2m;
     constexpr double rate = 44100.0;
     std::vector<float> audio ((std::size_t) (rate * 8.0), 0.0f);
     std::mt19937 rng (189);
@@ -178,7 +178,7 @@ TEST (a2m189b_drum_hits_are_found_and_told_apart)
 
 TEST (a2m189b_the_pattern_lands_under_the_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     ChannelDef audioChannel;
     audioChannel.name = "loop";

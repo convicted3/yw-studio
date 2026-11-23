@@ -11,9 +11,9 @@
 #include "ui/Theme.h"
 #include "ui/ValueControl.h"
 
-namespace lynx::ctlui
+namespace yw::ctlui
 {
-// A small rotary control with LYNX's control contract (drag, Ctrl = fine, wheel, Alt / middle-click reset, right-click
+// A small rotary control with YW's control contract (drag, Ctrl = fine, wheel, Alt / middle-click reset, right-click
 // menu with automation and controller links when `spec.target` is set).
 class Knob final : public juce::Component, public modring::TargetSource
 {
@@ -127,7 +127,7 @@ public:
 
     juce::String shortName;
     bool compact = false; // only the dial (no value / name rows): FL's small knobs, e.g. the Video Player's volume
-    bool liveRing = false; // (round 190jn) Live's open ring instead of LYNX's dial (a compact knob in the Clip-launch layout's Live look)
+    bool liveRing = false; // (round 190jn) Live's open ring instead of YW's dial (a compact knob in the Clip-launch layout's Live look)
 
 private:
     AudioEngine* engine;
@@ -149,4 +149,4 @@ inline ui::ValueSpec unitSpec (const juce::String& name, double def, std::option
     return s;
 }
 
-} // namespace lynx::ctlui
+} // namespace yw::ctlui

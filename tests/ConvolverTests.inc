@@ -2,7 +2,7 @@
 
 // Fruity Convolver, exact (REA_rodada60): goldens of "Fruity Convolver_x64.dll" (the installation's plugin, run
 // unmodified) on states of our own — impulse responses generated here as embedded WAVs — and this test's input, rendered
-// with the rate set before the state, blocks of 512. The plugin convolves with float FFTs and LYNX with its own
+// with the rate set before the state, blocks of 512. The plugin convolves with float FFTs and YW with its own
 // partitioned convolution, so the outputs agree to about −120 dB rather than bit for bit (tolerance below).
 TEST (convolver_engine)
 {
@@ -73,7 +73,7 @@ TEST (convolver_engine)
             putI (b, -1);
     };
     // the EQ curve's map with points of our own: Δx, level, tension, mode (the sign byte as FL writes it)
-    using EqPts = std::vector<lynx::convolver::EnvPoint>;
+    using EqPts = std::vector<yw::convolver::EnvPoint>;
     auto eqMap = [&] (std::vector<std::uint8_t>& b, const EqPts& pts) {
         putI (b, 3);
         putI (b, 3);
@@ -134,11 +134,11 @@ TEST (convolver_engine)
         float l, r;
     };
     auto run = [&] (const std::vector<std::uint8_t>& st, double rate, const std::vector<Golden>& gold) {
-        const auto slot = lynx::convolverFromFl (st);
-        CHECK (slot.has_value() && slot->kind == lynx::EffectKind::convolver);
+        const auto slot = yw::convolverFromFl (st);
+        CHECK (slot.has_value() && slot->kind == yw::EffectKind::convolver);
         if (! slot)
             return;
-        auto fx = lynx::makeConvolver (slot->state);
+        auto fx = yw::makeConvolver (slot->state);
         fx->prepare (rate);
         fx->reset();
         std::vector<float> l (inL), r (inR);
@@ -187,35 +187,35 @@ TEST (convolver_engine)
            { 8999, -1.6380682f, -0.8190341f }, { 9500, 0.876178622f, 0.438089311f }, { 11999, 0.063020736f, 0.031510368f } });
     // with the EQ amount at 0 a shaped curve does nothing (not even the flat curve's gain)
     {
-        const auto plain = lynx::convolver::parseState (stC);
+        const auto plain = yw::convolver::parseState (stC);
         auto off = *plain;
         off.knobs[4] = 0;
-        const auto ir = lynx::convolver::decodeAudio (irC);
-        const auto k0 = lynx::convolver::buildKernel (off, *ir, 44100);
+        const auto ir = yw::convolver::decodeAudio (irC);
+        const auto k0 = yw::convolver::buildKernel (off, *ir, 44100);
         CHECK (k0.has_value() && k0->l.size() == 2500 && k0->l[100] == ir->l[100] && k0->r[2000] == ir->r[2000]);
     }
 
     // the editor's API: the curve read from and written back into a slot blob, its levels, the frequency axis and the
     // level law
     {
-        const auto slot = lynx::convolverFromFl (stC);
+        const auto slot = yw::convolverFromFl (stC);
         CHECK (slot.has_value());
         auto blob = slot->state;
-        const auto got = lynx::convolver::readEqCurve (blob);
+        const auto got = yw::convolver::readEqCurve (blob);
         CHECK (got.has_value() && got->size() == curveC.size() && (*got)[4].mode == 10 && (*got)[2].tension == -0.3f && (*got)[1].y == 0.7);
-        CHECK (lynx::convolver::writeEqCurve (blob, curveD));
+        CHECK (yw::convolver::writeEqCurve (blob, curveD));
         std::vector<std::uint8_t> fl, file;
-        CHECK (lynx::convolver::unpackBlob (blob, fl, file));
+        CHECK (yw::convolver::unpackBlob (blob, fl, file));
         // the same bytes as a state written with that curve, and the rest of the state unchanged
         CHECK (fl == state (irC, 2500, 44100, { 500, 1000, 0, 0 }, { 0, 0, 0, 0, 600 }, false, 0.5, 0.5, curveD));
-        const auto back = lynx::convolver::readEqCurve (blob);
+        const auto back = yw::convolver::readEqCurve (blob);
         CHECK (back.has_value() && back->size() == curveD.size() && (*back)[2].y == 0.95);
-        const auto lv = lynx::convolver::eqCurveLevels (curveC, 11);
+        const auto lv = yw::convolver::eqCurveLevels (curveC, 11);
         CHECK (lv.size() == 11 && std::abs (lv[0] - 0.3f) < 1e-6f && std::abs (lv[10] - 0.4f) < 1e-6f && std::abs (lv[1] - 0.7f) < 1e-6f);
-        CHECK (std::abs (lynx::convolver::eqFrequencyToX (22050.0) - 1.0) < 1e-12 && lynx::convolver::eqFrequencyToX (0.0) == 0.0);
-        CHECK (std::abs (lynx::convolver::eqXToFrequency (lynx::convolver::eqFrequencyToX (1000.0)) - 1000.0) < 1e-9);
-        CHECK (std::abs (lynx::convolver::eqXToFrequency (lynx::convolver::eqFrequencyToX (60.0)) - 60.0) < 1e-9);
-        CHECK (lynx::convolver::eqLevelGain (0.5) == 1.0f && lynx::convolver::eqLevelGain (1.0) == 4.0f && lynx::convolver::eqLevelGain (0.0) == 0.0f);
+        CHECK (std::abs (yw::convolver::eqFrequencyToX (22050.0) - 1.0) < 1e-12 && yw::convolver::eqFrequencyToX (0.0) == 0.0);
+        CHECK (std::abs (yw::convolver::eqXToFrequency (yw::convolver::eqFrequencyToX (1000.0)) - 1000.0) < 1e-9);
+        CHECK (std::abs (yw::convolver::eqXToFrequency (yw::convolver::eqFrequencyToX (60.0)) - 60.0) < 1e-9);
+        CHECK (yw::convolver::eqLevelGain (0.5) == 1.0f && yw::convolver::eqLevelGain (1.0) == 4.0f && yw::convolver::eqLevelGain (0.0) == 0.0f);
     }
 
     // what is not decoded falls back to the approximation: an installation file without a reader, a truncated or
@@ -231,33 +231,33 @@ TEST (convolver_engine)
         f.insert (f.end(), path.begin(), path.end());
         const auto rest = std::vector<std::uint8_t> (stA.begin() + (std::ptrdiff_t) (4 + 16 + 2 + 4 + irA.size()), stA.end());
         f.insert (f.end(), rest.begin(), rest.end());
-        CHECK (lynx::convolver::parseState (f).has_value() && lynx::convolver::parseState (f)->fromFile);
-        CHECK (! lynx::convolverFromFl (f).has_value());
+        CHECK (yw::convolver::parseState (f).has_value() && yw::convolver::parseState (f)->fromFile);
+        CHECK (! yw::convolverFromFl (f).has_value());
         std::string asked;
-        const auto withFile = lynx::convolverFromFl (f, [&asked, &irA] (const std::string& rel) { asked = rel; return irA; });
+        const auto withFile = yw::convolverFromFl (f, [&asked, &irA] (const std::string& rel) { asked = rel; return irA; });
         CHECK (withFile.has_value() && asked == "Data\\Patches\\Impulses\\Default.wav");
     }
-    CHECK (! lynx::convolverFromFl (std::vector<std::uint8_t> (stA.begin(), stA.begin() + 100)).has_value());
-    CHECK (! lynx::convolver::parseState ({ 9, 0, 0, 0 }).has_value());
+    CHECK (! yw::convolverFromFl (std::vector<std::uint8_t> (stA.begin(), stA.begin() + 100)).has_value());
+    CHECK (! yw::convolver::parseState ({ 9, 0, 0, 0 }).has_value());
 
     // parameters map back to FL's integers; texts in FL's units
-    lynx::EffectParams p {};
-    lynx::convolver::toParams ({ 321, 999, -384, 1000 }, p);
-    CHECK ((lynx::convolver::fromParams (p) == std::array<int, 4> { 321, 999, -384, 1000 }));
-    CHECK (lynx::convolverParamText (0, 0.5f) == "-12.7dB" && lynx::convolverParamText (1, 0.25f) == "-46.7dB");
-    CHECK (lynx::convolverParamText (0, 1.0f) == "0.0dB" && lynx::convolverParamText (0, 0.0f) == "-INFdB");
-    CHECK (lynx::convolverParamText (2, 0.5f) == "Original" && lynx::convolverParamText (2, 0.308f) == "38% separated");
-    CHECK (lynx::convolverParamText (3, 1.0f) == "100% merged");
+    yw::EffectParams p {};
+    yw::convolver::toParams ({ 321, 999, -384, 1000 }, p);
+    CHECK ((yw::convolver::fromParams (p) == std::array<int, 4> { 321, 999, -384, 1000 }));
+    CHECK (yw::convolverParamText (0, 0.5f) == "-12.7dB" && yw::convolverParamText (1, 0.25f) == "-46.7dB");
+    CHECK (yw::convolverParamText (0, 1.0f) == "0.0dB" && yw::convolverParamText (0, 0.0f) == "-INFdB");
+    CHECK (yw::convolverParamText (2, 0.5f) == "Original" && yw::convolverParamText (2, 0.308f) == "38% separated");
+    CHECK (yw::convolverParamText (3, 1.0f) == "100% merged");
     // the slot blob keeps the FL state and the file
     std::vector<std::uint8_t> a, b;
-    CHECK (lynx::convolver::unpackBlob (lynx::convolver::packBlob ({ 1, 2, 3 }, { 4, 5 }), a, b) && a.size() == 3 && b.size() == 2);
+    CHECK (yw::convolver::unpackBlob (yw::convolver::packBlob ({ 1, 2, 3 }, { 4, 5 }), a, b) && a.size() == 3 && b.size() == 2);
 }
 
 TEST (convolver_long_kernel_matches_direct_convolution)
 {
     // a sparse 100k-tap kernel reaches every partition level (128, 1024, 8192, 16384); the larger levels compute a
     // block's output during the previous block (REA round 87), which must not change the convolution
-    lynx::convolver::Kernel k;
+    yw::convolver::Kernel k;
     k.l.assign (100001, 0.0f);
     k.r.assign (100001, 0.0f);
     const std::vector<std::pair<int, float>> taps { { 0, 0.5f }, { 77, -0.25f }, { 300, 0.2f }, { 1500, -0.15f }, { 2100, 0.1f }, { 9000, 0.3f },
@@ -265,7 +265,7 @@ TEST (convolver_long_kernel_matches_direct_convolution)
     for (const auto& [i, v] : taps)
         k.l[(std::size_t) i] = v, k.r[(std::size_t) i] = -v;
     k.tail = 200000;
-    lynx::convolver::Engine e;
+    yw::convolver::Engine e;
     e.setRate (44100);
     e.setKernel (k);
     e.setParams ({ 0, 1000, 0, 0 }); // no dry, full wet, no separation

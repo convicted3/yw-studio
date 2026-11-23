@@ -1,14 +1,14 @@
-    // LYNX --tracker190nwshot <prefix> [module] (round 190nw, 0.1.31: the built-in tracker, stage 1) off-screen through the
+    // YW --tracker190nwshot <prefix> [module] (round 190nw, 0.1.31: the built-in tracker, stage 1) off-screen through the
     // real components: the tracker tool window's editor on the wireframe's pattern (study190nd/tracker/wireframe-tracker),
     // Edit on with a block, playing, decimal values, the Pan column; keys typed through its own keyPressed (notes, OFF,
     // values, Insert / Backspace, copy / paste, transpose) and checked against the pattern; the View, Pattern and Clip-launch
     // clip menus with their new items; the Simple dock's Tracker tab; with [module], that module imported and shown, its
     // report listed. The paint bench: a 64-track x 512-row pattern at 1920x1080 (full frame, and the rows a playhead step
-    // repaints). <prefix>-checks.txt lists the checks. @150: LYNX_SHOT_SCALE=1.5 LYNX_SHOT_SUFFIX=@150.
+    // repaints). <prefix>-checks.txt lists the checks. @150: YW_SHOT_SCALE=1.5 YW_SHOT_SUFFIX=@150.
     bool runTrackerShot190nw (const juce::String& prefix, const juce::String& modulePath)
     {
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
-        const juce::ScopedValueSetter<bool> shown (lynx::ui::showingForShots(), true);
+        const juce::ScopedValueSetter<bool> shown (yw::ui::showingForShots(), true);
         juce::StringArray report;
         bool allOk = true;
         const auto check = [&report, &allOk] (const char* name, bool ok, const juce::String& detail = {}) {
@@ -20,7 +20,7 @@
             juce::File (prefix + "-checks.txt").replaceWithText (report.joinIntoString ("\n") + "\nresult=" + (allOk ? "OK" : "FAIL") + "\n");
             return allOk;
         };
-        using namespace lynx;
+        using namespace yw;
         ui::motion::enabled() = false;
         layoutstyle::setCurrent (layoutstyle::Style::pattern);
         const auto rt = (std::int64_t) ticksPerStep;

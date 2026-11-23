@@ -6,7 +6,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-namespace lynx::pickerlook
+namespace yw::pickerlook
 {
 // What the screen showed under a picker when it opened (`physical` pixels). Windows: the screen's pixels; elsewhere:
 // nothing (the veil alone).
@@ -18,4 +18,4 @@ void paintVeil (juce::Graphics& g, const juce::Component& owner, const juce::Ima
 // FL's highlight box behind the tile (or tab) `b` in a row of `rowHeight`, and its painting (`pressed`: the warm colour).
 juce::Rectangle<float> highlight (juce::Rectangle<int> b, int rowHeight, bool isTab);
 void paintHighlight (juce::Graphics& g, juce::Rectangle<float> box, bool pressed);
-} // namespace lynx::pickerlook
+} // namespace yw::pickerlook

@@ -11,7 +11,7 @@
 #include "ui/NewProjectDialog.h"
 #include "ui/Theme.h"
 
-namespace lynx
+namespace yw
 {
 namespace startfrom
 {
@@ -45,7 +45,7 @@ std::vector<Entry> entries()
         Entry demo;
         demo.kind = Entry::Kind::demo;
         demo.demo = d;
-        // round 190dv: two more short demos in other genres, made with LYNX's own instruments and starter kit
+        // round 190dv: two more short demos in other genres, made with YW's own instruments and starter kit
         demo.name = d == 0 ? tr ("YW Studio demo song") : tr ("YW Studio demo: {0} ({1})", { juce::String (demos::name (d)), tr (demos::genre (d)) });
         describe (demo, demos::make (d));
         out.push_back (demo);
@@ -53,7 +53,7 @@ std::vector<Entry> entries()
     for (const auto& choice : availableTemplates())
     {
         Entry e;
-        e.kind = choice.kind == TemplateChoice::Kind::lynxDefault ? Entry::Kind::lynxDefault
+        e.kind = choice.kind == TemplateChoice::Kind::ywDefault ? Entry::Kind::ywDefault
                  : choice.kind == TemplateChoice::Kind::builtIn ? Entry::Kind::builtIn : Entry::Kind::user;
         e.choice = choice;
         e.name = templateChoiceName (choice);
@@ -170,7 +170,7 @@ private:
 StartFromPanel::StartFromPanel (AudioEngine& e, Hooks h) : engine (e), hooks (std::move (h)), shared (std::make_shared<Shared>())
 {
     setWantsKeyboardFocus (true);
-    getProperties().set ("lynxKeepsKeys", true); // (round 190fc: its list keys while it is up; MainComponent::simpleClickEnded)
+    getProperties().set ("ywKeepsKeys", true); // (round 190fc: its list keys while it is up; MainComponent::simpleClickEnded)
     setTitle (tr ("Start from"));
     title.setText (tr ("Start from"), juce::dontSendNotification);
     ui::dialog::styleTitle (title); // (round 190jp: the one dialog title, design190ia SG-20)
@@ -201,7 +201,7 @@ StartFromPanel::StartFromPanel (AudioEngine& e, Hooks h) : engine (e), hooks (st
     viewport.setViewedComponent (&rowHolder, false);
     viewport.setScrollBarsShown (true, false);
     addAndMakeVisible (viewport);
-    previewFile = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("lynx-startfrom-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt()) + ".wav");
+    previewFile = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("yw-startfrom-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt()) + ".wav");
     updateRows();
 }
 
@@ -397,4 +397,4 @@ void StartFromPanel::mouseUp (const juce::MouseEvent& e)
     if (e.mouseWasClicked() && ! card().contains (e.getPosition()))
         closeButton.triggerClick();
 }
-} // namespace lynx
+} // namespace yw

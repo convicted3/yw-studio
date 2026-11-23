@@ -7,7 +7,7 @@
 
 TEST (issues190ft_header_selection_follows_fl)
 {
-    using namespace lynx::trackhdr;
+    using namespace yw::trackhdr;
     // FUN_012e83e0's modes
     std::vector<int> sel { 2, 5 };
     applySelection (sel, 3, SelMode::only);
@@ -25,10 +25,10 @@ TEST (issues190ft_header_selection_follows_fl)
     CHECK ((sel == std::vector<int> { 1, 7 }));
 
     // what a press does: click = alone; Ctrl = alone with its clips and a drag adds; Ctrl+Shift = add / remove (the drag
-    // follows the result); Alt or Ctrl+Alt = alone; Shift = LYNX's range
+    // follows the result); Alt or Ctrl+Alt = alone; Shift = YW's range
     const auto plain = planPress (false, false, false);
-    CHECK (plain.mode == SelMode::only && plain.clips == ClipPick::none && dragAfter (plain, true) == RangeDrag::none && ! plain.lynxShiftRange);
-    // Ctrl alone: FL's press (alone + clips, range) once a drag leaves the track; a click toggles (LYNX extra, #163)
+    CHECK (plain.mode == SelMode::only && plain.clips == ClipPick::none && dragAfter (plain, true) == RangeDrag::none && ! plain.ywShiftRange);
+    // Ctrl alone: FL's press (alone + clips, range) once a drag leaves the track; a click toggles (YW extra, #163)
     const auto c = planPress (true, false, false);
     CHECK (c.mode == SelMode::only && c.clips == ClipPick::replace && dragAfter (c, true) == RangeDrag::select && c.ctrlClickToggles);
     CHECK (! planPress (true, true, false).ctrlClickToggles && ! planPress (false, false, false).ctrlClickToggles
@@ -46,7 +46,7 @@ TEST (issues190ft_header_selection_follows_fl)
     CHECK (cs.mode == SelMode::toggle && cs.clips == ClipPick::add);
     CHECK (dragAfter (cs, true) == RangeDrag::select && dragAfter (cs, false) == RangeDrag::deselect);
     CHECK (planPress (false, false, true).mode == SelMode::only && planPress (true, false, true).clips == ClipPick::none);
-    CHECK (planPress (false, true, false).lynxShiftRange);
+    CHECK (planPress (false, true, false).ywShiftRange);
 
     // the drag across the headers (FUN_012e8740 on every move): the range only grows
     std::vector<int> r { 0 };
@@ -60,7 +60,7 @@ TEST (issues190ft_header_selection_follows_fl)
 
 TEST (issues190ft_resize_band_and_presses)
 {
-    using namespace lynx::trackhdr;
+    using namespace yw::trackhdr;
     // a quarter of the row, 4 … 14 px, at its bottom; none on rows of 6 px or less
     CHECK (resizeBand (38) == 9 && resizeBand (8) == 4 && resizeBand (200) == 14);
     CHECK (inResizeBand (38, 37) && inResizeBand (38, 29) && ! inResizeBand (38, 28) && ! inResizeBand (38, 38));
@@ -76,8 +76,8 @@ TEST (issues190ft_resize_band_and_presses)
 
 TEST (issues190ft_resize_heights)
 {
-    using namespace lynx;
-    using namespace lynx::trackhdr;
+    using namespace yw;
+    using namespace yw::trackhdr;
     // FL's row limits (FUN_00ea0b30): 16 … 528 px, even
     CHECK (polish::minTrackHeight == 16 && polish::maxTrackHeight == 528);
     CHECK (draggedHeight (38, 40) == 78 && draggedHeight (38, 41) == 78 && draggedHeight (38, -100) == 16 && draggedHeight (38, 5000) == 528);
@@ -94,8 +94,8 @@ TEST (issues190ft_resize_heights)
 
 TEST (issues190ft_fl_size_factor_law_and_flp)
 {
-    using namespace lynx;
-    // a row = 16 px + size × (default − 16): FL's Size menu on LYNX's 38 px default
+    using namespace yw;
+    // a row = 16 px + size × (default − 16): FL's Size menu on YW's 38 px default
     CHECK (polish::heightForFlSize (1.0) == 38 && polish::heightForFlSize (0.0) == 16 && polish::heightForFlSize (2.0) == 60);
     CHECK (polish::heightForFlSize (1.5) == 48 && polish::heightForFlSize (0.5) == 26 && polish::heightForFlSize (1.0 / 3.0) == 22);
     CHECK (polish::heightForFlSize (100.0) == 528 && polish::heightForFlSize (-1.0) == 38);

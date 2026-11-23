@@ -9,7 +9,7 @@
 
 #include <algorithm>
 
-namespace lynx::textfit
+namespace yw::textfit
 {
 // The squeeze (<= 1) that fits menu titles of `textWidth` px (their padding `padding` and one px a title for the rounding
 // on top, + 8 px of air after the bar) into `room - panels` px; never below `minScale`, 1 when they fit as they are.
@@ -35,4 +35,4 @@ inline CaptionFit captionFit (float normalWidth, float box, bool hasSpace, bool 
         return CaptionFit::normal;
     return hasSpace && twoLinesAllowed ? CaptionFit::twoLines : CaptionFit::smallFace;
 }
-} // namespace lynx::textfit
+} // namespace yw::textfit

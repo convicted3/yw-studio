@@ -1,5 +1,5 @@
-// Round 190hp: three community-complaint slices of the 0.1.28 pain report (/mnt/e/lynx-work/pain190gc/REPORT.md §4).
-//   B9  global MIDI links: the MIDI Map Mode's mappings "In every project (LYNX)" (core/RemoteMap.h, core/Preferences.h);
+// Round 190hp: three community-complaint slices of the 0.1.28 pain report (/mnt/e/yw-work/pain190gc/REPORT.md §4).
+//   B9  global MIDI links: the MIDI Map Mode's mappings "In every project (YW)" (core/RemoteMap.h, core/Preferences.h);
 //   B16 mix snapshots (core/MixSnapshots.h);
 //   B18 split at silence (core/StripSilence.h).
 #include "core/MixSnapshots.h"
@@ -10,9 +10,9 @@
 
 namespace c190hp
 {
-lynx::Song gridSong (int scenes)
+yw::Song gridSong (int scenes)
 {
-    lynx::Song s;
+    yw::Song s;
     s.mixer.resize (4);
     s.clipGrid.emplace();
     s.clipGrid->scenes.resize ((std::size_t) scenes);
@@ -24,81 +24,81 @@ lynx::Song gridSong (int scenes)
 
 TEST (c190hp_transport_mapping_moves_to_every_project_and_back)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     auto song = c190hp::gridSong (2);
-    lynx::prefs::MidiPrefs prefs;
-    CHECK (assignMidi (song, Target::of (lynx::RemoteAction::play), { 0, 118, -1 }) == Refusal::none);
-    CHECK (assignMidi (song, Target::sceneLaunch (1), { 0, lynx::linkNoteBase + 44, 2 }) == Refusal::none);
-    CHECK (assignMidi (song, Target::slot (0, 0), { 0, lynx::linkNoteBase + 36, -1 }) == Refusal::none);
+    yw::prefs::MidiPrefs prefs;
+    CHECK (assignMidi (song, Target::of (yw::RemoteAction::play), { 0, 118, -1 }) == Refusal::none);
+    CHECK (assignMidi (song, Target::sceneLaunch (1), { 0, yw::linkNoteBase + 44, 2 }) == Refusal::none);
+    CHECK (assignMidi (song, Target::slot (0, 0), { 0, yw::linkNoteBase + 36, -1 }) == Refusal::none);
     const auto all = rows (song, Mode::midi);
     CHECK (all.size() == 3);
     // clip slots and track stop buttons belong to one project
     CHECK (! canBeGlobal (Target::slot (0, 0)) && ! canBeGlobal (Target::trackStop (0)));
-    CHECK (canBeGlobal (Target::of (lynx::RemoteAction::metronome)) && canBeGlobal (Target::sceneLaunch (0)));
+    CHECK (canBeGlobal (Target::of (yw::RemoteAction::metronome)) && canBeGlobal (Target::sceneLaunch (0)));
     CHECK (! canMove (song, prefs, all[2], true));
     CHECK (! moveToEveryProject (song, prefs, all[2]) && song.remoteMappings.size() == 3);
     // Play and the scene into the settings (from the last row, so the first keeps its index)
     CHECK (moveToEveryProject (song, prefs, all[1]));
     CHECK (moveToEveryProject (song, prefs, all[0]));
     CHECK (song.remoteMappings.size() == 1 && prefs.globalMappings.size() == 2);
-    CHECK (prefs.globalMappings[0].action == (int) lynx::RemoteAction::sceneLaunch && prefs.globalMappings[0].scene == 1 && prefs.globalMappings[0].port == 2);
-    // the settings file keeps them; an older LYNX skips the new lines
+    CHECK (prefs.globalMappings[0].action == (int) yw::RemoteAction::sceneLaunch && prefs.globalMappings[0].scene == 1 && prefs.globalMappings[0].port == 2);
+    // the settings file keeps them; an older YW skips the new lines
     const auto text = prefs.toText();
     CHECK (text.find ("globalmap=2|0|300|2|1") != std::string::npos && text.find ("globalmap=5|0|118|-1|-1") != std::string::npos);
-    CHECK (lynx::prefs::MidiPrefs::fromText (text).globalMappings == prefs.globalMappings);
-    CHECK (lynx::prefs::MidiPrefs::fromText ("globalmap=1|0|36|-1|0\nglobalmap=3|0|36|-1|-1\nglobalmap=5|0|999|-1|-1\nglobalmap=2|0|10|-1|-1\n").globalMappings.empty());
+    CHECK (yw::prefs::MidiPrefs::fromText (text).globalMappings == prefs.globalMappings);
+    CHECK (yw::prefs::MidiPrefs::fromText ("globalmap=1|0|36|-1|0\nglobalmap=3|0|36|-1|-1\nglobalmap=5|0|999|-1|-1\nglobalmap=2|0|10|-1|-1\n").globalMappings.empty());
     // a new project: the global rows are there, the mappings act (a CC above 64 presses Play)
-    lynx::Song fresh = c190hp::gridSong (3);
+    yw::Song fresh = c190hp::gridSong (3);
     const auto g = globalRows (fresh, prefs);
-    CHECK (g.size() == 2 && g[0].global && ! g[0].overridden && g[1].target == Target::of (lynx::RemoteAction::play));
+    CHECK (g.size() == 2 && g[0].global && ! g[0].overridden && g[1].target == Target::of (yw::RemoteAction::play));
     const auto active = activeGlobalMappings (fresh, prefs);
     CHECK (active.size() == 2);
     const auto fires = midiFires (fresh, active, 0, 118, 127, -1, -1);
-    CHECK (fires.size() == 1 && fires[0].target == Target::of (lynx::RemoteAction::play) && fires[0].edge == Edge::press);
-    CHECK (midiOf (fresh, prefs, Target::of (lynx::RemoteAction::play)).number == 118);
+    CHECK (fires.size() == 1 && fires[0].target == Target::of (yw::RemoteAction::play) && fires[0].edge == Edge::press);
+    CHECK (midiOf (fresh, prefs, Target::of (yw::RemoteAction::play)).number == 118);
     std::uint64_t ccs[2] {}, notes[2] {};
     usedNumbers (active, ccs, notes);
     CHECK ((ccs[1] & (std::uint64_t { 1 } << (118 - 64))) != 0 && (notes[0] & (std::uint64_t { 1 } << 44)) != 0);
     // a project without scene 2 ignores that mapping; the port must match
-    lynx::Song small = c190hp::gridSong (1);
+    yw::Song small = c190hp::gridSong (1);
     CHECK (activeGlobalMappings (small, prefs).size() == 1);
-    CHECK (midiFires (fresh, active, 0, lynx::linkNoteBase + 44, 100, -1, -1).empty());
-    CHECK (midiFires (fresh, active, 0, lynx::linkNoteBase + 44, 100, -1, 2).size() == 1);
+    CHECK (midiFires (fresh, active, 0, yw::linkNoteBase + 44, 100, -1, -1).empty());
+    CHECK (midiFires (fresh, active, 0, yw::linkNoteBase + 44, 100, -1, 2).size() == 1);
     // the project's own mapping of the same control wins (and so does its own mapping of the same target)
-    CHECK (assignMidi (fresh, Target::of (lynx::RemoteAction::stop), { 0, 118, -1 }) == Refusal::none);
+    CHECK (assignMidi (fresh, Target::of (yw::RemoteAction::stop), { 0, 118, -1 }) == Refusal::none);
     CHECK (activeGlobalMappings (fresh, prefs).size() == 1 && globalRows (fresh, prefs)[1].overridden);
     const auto own = midiFires (fresh, activeGlobalMappings (fresh, prefs), 0, 118, 127, -1, -1);
-    CHECK (own.size() == 1 && own[0].target == Target::of (lynx::RemoteAction::stop));
+    CHECK (own.size() == 1 && own[0].target == Target::of (yw::RemoteAction::stop));
     // back into this project only
     auto small2 = c190hp::gridSong (1);
     const auto rowsNow = globalRows (small2, prefs);
     CHECK (! canMove (small2, prefs, rowsNow[0], false)); // (that scene is not in this project)
     CHECK (moveToThisProject (small2, prefs, rowsNow[1]) && prefs.globalMappings.size() == 1 && small2.remoteMappings.size() == 1
-           && small2.remoteMappings[0].action == lynx::RemoteAction::play);
+           && small2.remoteMappings[0].action == yw::RemoteAction::play);
     CHECK (removeGlobalRow (prefs, globalRows (small2, prefs)[0]) && prefs.globalMappings.empty());
 }
 
 TEST (c190hp_parameter_mapping_becomes_an_fl_global_link)
 {
-    using namespace lynx::remotemap;
+    using namespace yw::remotemap;
     auto song = c190hp::gridSong (1);
-    lynx::prefs::MidiPrefs prefs;
-    const lynx::AutomationTarget master { lynx::AutomationTargetKind::mixerVolume, 0, 0, 0 };
+    yw::prefs::MidiPrefs prefs;
+    const yw::AutomationTarget master { yw::AutomationTargetKind::mixerVolume, 0, 0, 0 };
     CHECK (assignMidi (song, Target::parameter (master), { 0, 7, -1 }) == Refusal::none);
     CHECK (setRange (song, rows (song, Mode::midi)[0], 0.1f, 0.8f));
     CHECK (moveToEveryProject (song, prefs, rows (song, Mode::midi)[0]));
     CHECK (song.midiLinks.empty() && prefs.globalLinks.size() == 1);
     const auto& l = prefs.globalLinks[0];
-    CHECK (l.cc == 7 && l.channel == 0 && l.kind == (int) lynx::AutomationTargetKind::mixerVolume && l.min == 0.1f && l.max == 0.8f);
+    CHECK (l.cc == 7 && l.channel == 0 && l.kind == (int) yw::AutomationTargetKind::mixerVolume && l.min == 0.1f && l.max == 0.8f);
     // FL's global links: the same list, its range kept by the settings file
-    const auto back = lynx::prefs::MidiPrefs::fromText (prefs.toText());
+    const auto back = yw::prefs::MidiPrefs::fromText (prefs.toText());
     CHECK (back.globalLinks.size() == 1 && std::abs (back.globalLinks[0].min - 0.1f) < 1.0e-6f && std::abs (back.globalLinks[0].max - 0.8f) < 1.0e-6f);
     const auto g = globalRows (song, prefs);
     CHECK (g.size() == 1 && g[0].link && g[0].hasRange && g[0].target == Target::parameter (master));
     CHECK (setGlobalRange (prefs, g[0], 0.8f, 0.1f) && prefs.globalLinks[0].min == 0.8f);
     CHECK (midiOf (song, prefs, Target::parameter (master)).number == 7);
     // a project link on the same controller overrides it
-    CHECK (assignMidi (song, Target::parameter ({ lynx::AutomationTargetKind::tempo, 0, 0, 0 }), { 0, 7, -1 }) == Refusal::none);
+    CHECK (assignMidi (song, Target::parameter ({ yw::AutomationTargetKind::tempo, 0, 0, 0 }), { 0, 7, -1 }) == Refusal::none);
     CHECK (globalRows (song, prefs)[0].overridden && ! midiOf (song, prefs, Target::parameter (master)).found);
     CHECK (moveToThisProject (song, prefs, globalRows (song, prefs)[0]) && prefs.globalLinks.empty() && song.midiLinks.size() == 2
            && song.midiLinks[1].min == 0.8f);
@@ -108,18 +108,18 @@ TEST (c190hp_global_links_of_sends_vcas_and_levels_survive_the_settings_file)
 {
     // before round 190hp the reader kept only target kinds 1..8: a global link of a send, a VCA or a channel's Levels
     // adjustment went at the next start
-    lynx::prefs::MidiPrefs prefs;
-    for (const auto kind : { lynx::AutomationTargetKind::mixerSend, lynx::AutomationTargetKind::vcaLevel, lynx::AutomationTargetKind::channelAdjust })
+    yw::prefs::MidiPrefs prefs;
+    for (const auto kind : { yw::AutomationTargetKind::mixerSend, yw::AutomationTargetKind::vcaLevel, yw::AutomationTargetKind::channelAdjust })
         prefs.globalLinks.push_back ({ 20 + (int) kind, -1, (int) kind, 1, 0, 1 });
-    CHECK (lynx::prefs::MidiPrefs::fromText (prefs.toText()).globalLinks == prefs.globalLinks);
-    CHECK (lynx::prefs::MidiPrefs::fromText ("link=20|-1|12|1|0|0\n").globalLinks.empty()); // (an unknown kind still goes)
+    CHECK (yw::prefs::MidiPrefs::fromText (prefs.toText()).globalLinks == prefs.globalLinks);
+    CHECK (yw::prefs::MidiPrefs::fromText ("link=20|-1|12|1|0|0\n").globalLinks.empty()); // (an unknown kind still goes)
 }
 
 // --- B16 -----------------------------------------------------------------------------------------------------------------
 
 TEST (c190hp_mix_snapshots_take_recall_and_compare)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (5);
     song.mixer[1].volume = 0.5f;
@@ -156,7 +156,7 @@ TEST (c190hp_mix_snapshots_take_recall_and_compare)
 
 TEST (c190hp_mix_snapshots_follow_the_mixer_reordering)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (5);
     song.mixer[1].volume = 0.3f;
@@ -178,7 +178,7 @@ TEST (c190hp_mix_snapshots_follow_the_mixer_reordering)
 
 TEST (c190hp_split_at_silence_finds_the_sound)
 {
-    using namespace lynx::stripsilence;
+    using namespace yw::stripsilence;
     const double rate = 48000.0;
     // 0.5 s silence, 1 s tone, 0.1 s pause (below the minimum silence), 0.5 s tone, 1 s silence, 0.25 s tone, 0.4 s silence
     std::vector<float> a;
@@ -220,7 +220,7 @@ TEST (c190hp_split_at_silence_finds_the_sound)
 
 TEST (c190hp_split_at_silence_cuts_the_clip)
 {
-    using namespace lynx;
+    using namespace yw;
     std::vector<Clip> clips (2);
     auto& c = clips[1];
     c.kind = ClipKind::audio;

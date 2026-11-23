@@ -1,5 +1,5 @@
 // FL Studio's Gross Beat (REA_rodada53): state reader, envelope player, time-travel buffer reader and volume stage.
-// Behaviour rebuilt from the plugin DLL of the user's installation; written from scratch in LYNX's own words. The order of
+// Behaviour rebuilt from the plugin DLL of the user's installation; written from scratch in YW's own words. The order of
 // the floating-point operations follows the plugin wherever it changes the result (float vs double vs x87 extended,
 // IPP-style vector steps), which is what makes the output sample-identical.
 
@@ -16,10 +16,10 @@
 
 #if defined(__SSE__) || defined(_M_X64) || defined(__x86_64__) // x86 only: rcpps cannot be reproduced through NEON; ARM64 takes the plain path
     #include "core/Simd.h"
-    #define LYNX_GB_SSE 1
+    #define YW_GB_SSE 1
 #endif
 
-namespace lynx::grossbeat
+namespace yw::grossbeat
 {
 namespace
 {
@@ -466,17 +466,17 @@ struct Follower
 
 // The x87 part of the plugin's sinc reader (phases of the window cosines and band-limited sines, their recurrence seeds
 // and the tap distances). The plugin runs this part with the x87 unit at 64-bit precision rounding toward −∞; on
-// x86 with an 80-bit long double LYNX does the same, elsewhere it rounds to nearest (a last-bit difference).
+// x86 with an 80-bit long double YW does the same, elsewhere it rounds to nearest (a last-bit difference).
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__)) && __LDBL_MANT_DIG__ == 64
-    #define LYNX_GB_X87 1
+    #define YW_GB_X87 1
 #endif
 
-#if LYNX_GB_X87
+#if YW_GB_X87
 __attribute__ ((noinline))
 #endif
 void readerSetup (double fr, double c80, double cutoff, double cw, double cc, float* A, float* B, float* X) noexcept
 {
-#if LYNX_GB_X87
+#if YW_GB_X87
     unsigned short saved = 0, down = 0;
     __asm__ volatile ("fnstcw %0" : "=m"(saved));
     down = (unsigned short) ((saved & 0xf0ffu) | 0x0700u);
@@ -491,7 +491,7 @@ void readerSetup (double fr, double c80, double cutoff, double cw, double cc, fl
     const ext e2 = (ext) fr * (ext) cutoff;
     const ext e3 = e2 + (ext) cutoff;
     volatile double d0 = (double) e0, d1 = (double) e1, d2 = (double) e2, d3 = (double) e3;
-    // FL takes these four sines from IPP's 50-bit vector sine; LYNX uses the C library's, which agrees after the float
+    // FL takes these four sines from IPP's 50-bit vector sine; YW uses the C library's, which agrees after the float
     // rounding below except at whole-sample positions, where IPP gives 1 − 2⁻⁵³ for the first one (EXEC)
     const double s0 = d0 == 1.5707963267948963 ? 0.99999999999999989 : std::sin (d0);
     const double s1 = std::sin (d1), s2 = std::sin (d2), s3 = std::sin (d3);
@@ -506,7 +506,7 @@ void readerSetup (double fr, double c80, double cutoff, double cw, double cc, fl
     A[0] = (float) w, A[1] = (float) t2, A[2] = (float) v, A[3] = (float) t0;
     B[0] = (float) w2, B[1] = (float) t3, B[2] = (float) v2, B[3] = (float) t1;
     X[0] = (float) xm, X[1] = (float) x, X[2] = (float) (xm - pie), X[3] = (float) (x + pie);
-#if LYNX_GB_X87
+#if YW_GB_X87
     __asm__ volatile ("fldcw %0" : : "m"(saved) : "memory");
 #endif
 }
@@ -760,7 +760,7 @@ State emptyState()
 
 namespace
 {
-// a slot drawn as LYNX's own steps and lines (x in beats): `step` jumps to y at x (FL's hold segment), `line` reaches y
+// a slot drawn as YW's own steps and lines (x in beats): `step` jumps to y at x (FL's hold segment), `line` reaches y
 // at x in a straight (or bent) segment
 struct Shape
 {
@@ -1017,7 +1017,7 @@ State factoryState()
     }
     fill (volume (29), "Mute last beat", Shape (1.0f).step (3.0, 0.0f).step (4.0, 1.0f));
     fill (volume (30), "Stutter gate 1/16", gate (0.0625, 0.03125));
-    // round 190ee: LYNX's bank stands in for FL's Default preset, which a new FL instance loads (a version-4 state:
+    // round 190ee: YW's bank stands in for FL's Default preset, which a new FL instance loads (a version-4 state:
     // "Trigger slots from MIDI notes" on); kept as the version-8 bytes it always had
     s.version = 8;
     s.midiTrigger = true;
@@ -1713,7 +1713,7 @@ struct Engine::Impl
         float A[4], B[4], X[4];
         readerSetup (fr, R.c80, R.cutoff, R.cw, R.cc, A, B, X);
         const float C[4] { (float) R.cc, (float) R.cc, (float) R.cw, (float) R.cw };
-#if LYNX_GB_SSE
+#if YW_GB_SSE
         __m128 a = _mm_loadu_ps (A), b = _mm_loadu_ps (B), xx = _mm_loadu_ps (X), c = _mm_loadu_ps (C);
         const __m128 w1 = _mm_setr_ps (0.36f, 0.36f, 0.0f, 0.0f), wq = _mm_setr_ps (0.64f, 0.64f, 1.0f, 1.0f);
         const __m128 s = _mm_setr_ps (-twoPiF, twoPiF, -twoPiF, twoPiF);
@@ -2171,7 +2171,7 @@ void Engine::jump (double ticks)
 void Engine::process (float* left, float* right, int n, double ticks) noexcept { impl->process (left, right, n, ticks); }
 
 // ---------------------------------------------------------------------------------------------------------------
-// LYNX effect wrapper
+// YW effect wrapper
 
 std::optional<EffectSlot> slotFromFl (const std::vector<std::uint8_t>& flState, int ppq)
 {
@@ -2193,7 +2193,7 @@ std::vector<std::string> slotNames (const std::vector<std::uint8_t>& container, 
     std::vector<std::string> names;
     if (! container.empty() && (! unpack (container, fl, ppq) || ! parseState (fl.data(), fl.size())))
         return names;
-    const auto s = editableState (container); // round 168m: an empty container shows LYNX's factory slots
+    const auto s = editableState (container); // round 168m: an empty container shows YW's factory slots
     for (int i = 0; i < slotsPerKind; ++i)
         names.push_back (s.slots[(std::size_t) ((volume ? slotsPerKind : 0) + i)].name);
     return names;
@@ -2206,7 +2206,7 @@ class GrossBeatEffect final : public Effect
 public:
     explicit GrossBeatEffect (const std::vector<std::uint8_t>& container)
     {
-        // round 168m: an empty (new) or unreadable container plays LYNX's factory bank instead of passing the signal
+        // round 168m: an empty (new) or unreadable container plays YW's factory bank instead of passing the signal
         int ppq = 96;
         state = editableState (container, &ppq);
         flPpq = ppq;
@@ -2329,7 +2329,7 @@ public:
         queued = 0;
         engine.setTempo ((float) bpm);
         const auto flTicks = songTicks / (double) ppq * (double) flPpq;
-        // LYNX's transport: a moving song position is FL's "playing"; a position that does not follow the previous
+        // YW's transport: a moving song position is FL's "playing"; a position that does not follow the previous
         // block is a jump (FL re-syncs the slots)
         const auto moving = lastTicks < 0.0 || songTicks != lastTicks;
         if (! moving)
@@ -2715,4 +2715,4 @@ std::vector<EditPoint> envelopeFromLevels (const std::vector<float>& peaks, int 
     out.back().x = barLength;
     return out;
 }
-} // namespace lynx::grossbeat
+} // namespace yw::grossbeat

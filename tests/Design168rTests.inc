@@ -1,14 +1,14 @@
 #include "core/EffectPresets.h"
 #include "core/EffectResponse.h"
 
-// Round 168r: designed editors and LYNX preset banks for group E (FL effects that had a generated page, LYNX's simple
+// Round 168r: designed editors and YW preset banks for group E (FL effects that had a generated page, YW's simple
 // built-ins) and the Peak Controller's LFO (REA_rodada168r).
 
 namespace design168r
 {
-inline const std::vector<lynx::EffectKind>& kinds()
+inline const std::vector<yw::EffectKind>& kinds()
 {
-    using K = lynx::EffectKind;
+    using K = yw::EffectKind;
     static const std::vector<K> list { K::pitchCorrect, K::peakController, K::spreader, K::fruityFastLP, K::flFrequencyShifter,
                                        K::flLowLifter, K::flBassBoost, K::flDelay1, K::fl7BandEq, K::flCenter, K::flPhaseInverter,
                                        K::eq, K::delay, K::reverb, K::limiter, K::filter, K::distortion, K::chorus, K::utility,
@@ -41,8 +41,8 @@ inline void testSignal (std::vector<float>& l, std::vector<float>& r, double sr)
 
 TEST (design168r_layouts_place_every_parameter)
 {
-    using namespace lynx;
-    // every engine of the round has its own page (FL's arrangement for the FL effects, LYNX's for its own), every
+    using namespace yw;
+    // every engine of the round has its own page (FL's arrangement for the FL effects, YW's for its own), every
     // parameter has a control, and no item leaves the body
     for (const auto kind : design168r::kinds())
     {
@@ -83,10 +83,10 @@ TEST (design168r_layouts_place_every_parameter)
     }
 }
 
-TEST (design168r_every_engine_has_a_lynx_bank_that_renders)
+TEST (design168r_every_engine_has_a_yw_bank_that_renders)
 {
-    using namespace lynx;
-    // LYNX's own banks (clean-room settings): every preset resolves, and a test mix through it is neither silent nor
+    using namespace yw;
+    // YW's own banks (clean-room settings): every preset resolves, and a test mix through it is neither silent nor
     // clipping nor broken (NaN)
     std::vector<float> inL, inR;
     constexpr double sr = 48000.0;
@@ -141,7 +141,7 @@ TEST (design168r_every_engine_has_a_lynx_bank_that_renders)
 
 TEST (design168r_peak_controller_lfo_ramp_mute)
 {
-    using namespace lynx;
+    using namespace yw;
     constexpr double sr = 48000.0;
     auto slot = makeEffectSlot (EffectKind::peakController);
     CHECK (plugui::paramCount (EffectKind::peakController) == 12);
@@ -213,7 +213,7 @@ TEST (design168r_peak_controller_lfo_ramp_mute)
 
 TEST (design168r_peak_controller_imports_fl_lfo_and_flags)
 {
-    using namespace lynx;
+    using namespace yw;
     // FL's state: ten int32 controls then Mute and Ramp bytes (REA_rodada168r §4)
     std::vector<std::uint8_t> d (42, 0);
     auto put = [&] (int at, std::int32_t v) { std::memcpy (d.data() + at, &v, 4); };
@@ -242,7 +242,7 @@ TEST (design168r_peak_controller_imports_fl_lfo_and_flags)
 
 TEST (design168r_response_and_transfer_pictures)
 {
-    using namespace lynx;
+    using namespace yw;
     // the measured pictures of the editors: Bass Boost lifts the lows, the Fast LP cuts the highs, a flat 7-band EQ
     // is flat, distortion bends the sine
     auto boost = makeEffectSlot (EffectKind::flBassBoost);
@@ -272,7 +272,7 @@ TEST (design168r_response_and_transfer_pictures)
 
 TEST (design168r_value_knobs_keep_their_size_inside_their_section)
 {
-    using namespace lynx;
+    using namespace yw;
     // release 0.1.23 re-shot: the Reverb's High cut knob was squeezed to 15 px (its caption row too close under it) and
     // its value ran past the TONE section. A knob that writes its caption and value keeps at least 70 % of its size,
     // and that text stays inside the section it sits in.

@@ -1,12 +1,12 @@
 // Issue #254 (round 190ou): the horizontal wheel (a tilt wheel, a mouse's second wheel). core/EditorGestures.h:
 // horizontalWheelNotch tells its notches from a trackpad's swipe and from macOS's Shift+wheel; FL 2026's step is 1.5 beats.
-// The views themselves (Playlist, Piano roll, Mixer, Browser) are checked by LYNX --hwheel254test (src/HWheel254Test.inc).
+// The views themselves (Playlist, Piano roll, Mixer, Browser) are checked by YW --hwheel254test (src/HWheel254Test.inc).
 
 #include "core/EditorGestures.h"
 
 TEST (hwheel254_notches_of_the_horizontal_wheel_only)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     constexpr double notch = 60.0 / 256.0; // (JUCE on Windows: WM_MOUSEHWHEEL's 120, halved, over 256)
     // Windows: a tilt to the right is a negative deltaX (JUCE turns the sign, as for a trackpad): the view goes later
     CHECK (horizontalWheelNotch (-notch, 0.0, false, false) == 1);

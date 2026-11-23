@@ -5,7 +5,7 @@
 // the plugin list, the Browser, mixer slots, Channel rack generators, the plugin window, saved state, automation and
 // delay compensation go through the same paths as the other formats.
 //
-// - Roots (core/Jsfx.h): Documents/LYNX/JSFX, the bundled pack (written to the settings folder from the executable),
+// - Roots (core/Jsfx.h): Documents/YW/JSFX, the bundled pack (written to the settings folder from the executable),
 //   REAPER's Effects folder when REAPER is installed, and the folders of Settings › File › JSFX folders.
 // - Scan: in this process (a header is only read, nothing is compiled or run); `*.jsfx` files, and extensionless files
 //   with a "desc:" line inside the roots (REAPER's own effects).
@@ -14,7 +14,7 @@
 // - Sliders are the plugin's parameters (one per slider the script has, in slider order); the slider panel
 //   (ui/JsfxPanel.h) is the plugin window's editor. @gfx is not drawn yet (stage 3): those scripts show the panel.
 // - Delay compensation: the script's pdc_delay (whole-plugin latency; pdc_bot_ch / pdc_top_ch are not split per channel).
-// - MIDI: notes and controls in (with their sample offsets), the script's MIDI out back to LYNX (a generator's MIDI Out
+// - MIDI: notes and controls in (with their sample offsets), the script's MIDI out back to YW (a generator's MIDI Out
 //   port; FL's wrapper Output port).
 
 #include <atomic>
@@ -23,7 +23,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-namespace lynx
+namespace yw
 {
 class JsfxPluginFormat final : public juce::AudioPluginFormat
 {
@@ -51,7 +51,7 @@ private:
 
 namespace jsfx
 {
-// The JSFX roots, in priority order (a script id found in two roots loads from the first): Documents/LYNX/JSFX, the
+// The JSFX roots, in priority order (a script id found in two roots loads from the first): Documents/YW/JSFX, the
 // bundled pack, REAPER's Effects folder (when it is there), then the user's folders (Settings › File). Folders that do
 // not exist are left out, except the first two (made on first use).
 juce::FileSearchPath roots();
@@ -60,7 +60,7 @@ juce::StringArray userFolders();
 void setUserFolders (const juce::StringArray& folders);
 // REAPER's Effects folder of this OS (it may not exist)
 juce::File reaperEffectsFolder();
-juce::File userFolder();  // Documents/LYNX/JSFX
+juce::File userFolder();  // Documents/YW/JSFX
 juce::File packFolder();  // <settings>/JSFX pack
 // Writes the bundled pack to packFolder() when it is missing or older than this build's (a hash file inside says which
 // pack it is). Cheap when it is current. Any thread; returns the number of files written.
@@ -109,4 +109,4 @@ juce::String selfTest (const juce::File& reportFolder);
 // to a plain copy loop
 juce::String bench (const juce::File& output);
 } // namespace jsfx
-} // namespace lynx
+} // namespace yw

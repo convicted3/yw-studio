@@ -5,7 +5,7 @@
 
 TEST (look162_lasttweak_value_text)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (2);
     song.bpm = 140.0;
@@ -25,7 +25,7 @@ TEST (look162_lasttweak_value_text)
 
 TEST (look162_plugin_change_filter)
 {
-    lynx::lasttweak::ChangeFilter f;
+    yw::lasttweak::ChangeFilter f;
     CHECK (f.tick (true) == -1);  // nothing moved
     f.changed (7);
     f.changed (7);

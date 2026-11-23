@@ -25,7 +25,7 @@
  #undef far
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -393,17 +393,17 @@ void drawSplashFrame (juce::Graphics& g, const SplashFrame& frame)
 // (drawSplashFrame) runs on a thread of its own with the CPU (JUCE's software renderer, JUCE patch 30: no Direct2D
 // image on this thread) into a layered window of its own (UpdateLayeredWindow, as JUCE's own transparent windows do
 // without Direct2D): the card shows within a few tens of milliseconds and its 60 frames a second no longer depend on
-// what the message thread does. Same size, place, drop, timing and fade as the JUCE card. LYNX_SPLASH_THREAD=0: the
+// what the message thread does. Same size, place, drop, timing and fade as the JUCE card. YW_SPLASH_THREAD=0: the
 // JUCE card.
 #if JUCE_WINDOWS
-} // namespace lynx
+} // namespace yw
 
 namespace juce
 {
-void lynxSoftwareImagesOnThisThread (bool on); // cmake/LynxPatchJuce.cmake fix 30
+void ywSoftwareImagesOnThisThread (bool on); // cmake/YwPatchJuce.cmake fix 30
 }
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -513,7 +513,7 @@ private:
 
     void run()
     {
-        juce::lynxSoftwareImagesOnThisThread (true);
+        juce::ywSoftwareImagesOnThisThread (true);
         SetThreadPriority (GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
         // its window in physical pixels, like JUCE's (per-monitor DPI awareness)
         using SetContext = HANDLE (WINAPI*) (HANDLE);
@@ -545,7 +545,7 @@ private:
         windowClass.lpfnWndProc = DefWindowProcW;
         windowClass.hInstance = instance;
         windowClass.hCursor = LoadCursorW (nullptr, MAKEINTRESOURCEW (32512)); // (IDC_ARROW)
-        windowClass.lpszClassName = L"LYNXSplashCard";
+        windowClass.lpszClassName = L"YWSplashCard";
         RegisterClassExW (&windowClass);
         // no title (nothing looks for it), no taskbar entry, never activated
         const auto window = CreateWindowExW (WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, windowClass.lpszClassName, L"",
@@ -770,11 +770,11 @@ juce::Array<juce::File> writeSplashShots (const juce::File& folder)
     const auto fonts = makeSplashFonts();
     const auto gpuLogo = decodeLogoImage();
 #if JUCE_WINDOWS
-    juce::lynxSoftwareImagesOnThisThread (true);
+    juce::ywSoftwareImagesOnThisThread (true);
 #endif
     const auto cpuLogo = decodeLogoImage();
 #if JUCE_WINDOWS
-    juce::lynxSoftwareImagesOnThisThread (false);
+    juce::ywSoftwareImagesOnThisThread (false);
 #endif
     for (const auto scale : { 1.0f, 1.5f })
         for (const auto t : { 0.0, 0.29, 0.58, 1.0, 1.6 })
@@ -808,9 +808,9 @@ juce::Array<juce::File> writeSplashShots (const juce::File& folder)
 std::unique_ptr<StartupSplash> makeStartupSplash()
 {
 #if JUCE_WINDOWS
-    if (juce::SystemStats::getEnvironmentVariable ("LYNX_SPLASH_THREAD", {}) != "0")
+    if (juce::SystemStats::getEnvironmentVariable ("YW_SPLASH_THREAD", {}) != "0")
         return std::make_unique<ThreadedSplash>();
 #endif
     return std::make_unique<SplashScreen>();
 }
-} // namespace lynx
+} // namespace yw

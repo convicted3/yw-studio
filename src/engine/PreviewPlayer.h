@@ -8,7 +8,7 @@
 #include "core/HardwareOutput.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 struct Transport;
 
@@ -104,4 +104,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PreviewPlayer)
 };
-} // namespace lynx
+} // namespace yw

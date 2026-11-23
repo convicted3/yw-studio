@@ -50,14 +50,14 @@ user or the person installing or operating it.
   is tried again at the next start; switch it off to stop that). Only the four things above need a connection.
   **Third-party plugins** are other programs and may connect by themselves (licence checks, preset stores), also while
   they are scanned: see below.
-- **Offline mode, for sandboxes and packagers.** Set the environment variable `LYNX_OFFLINE=1` (also `true`, `yes`,
+- **Offline mode, for sandboxes and packagers.** Set the environment variable `YW_OFFLINE=1` (also `true`, `yes`,
   `on`; `0`, `false`, `no`, `off` and an empty value leave it off), or start YW Studio with `--offline`, and the
   program guarantees that it opens **no network connection of its own**, whatever the settings say:
   - the update check does not run (not at start-up, not from *Help › Check for updates*), and an update download or
     *Go back to ...* says that the program is offline instead;
   - *File › Online session › Start live session...* and *Join live session...* are greyed out with a note ("Live
     sessions are off: offline mode"), a resumed or scripted start ends with the same explanation, and the relay is never
-    contacted. *Send project...* and *Merge a part...* still work: they only write and read `.lynxpack` files you send
+    contacted. *Send project...* and *Merge a part...* still work: they only write and read `.ywpack` files you send
     yourself;
   - a crash report is never uploaded: it stays in `crash-reports/pending` next to the settings and is sent at a later
     start, once the mode is off and you agree;
@@ -68,7 +68,7 @@ user or the person installing or operating it.
   plugins are other programs (see below); run YW Studio in a network namespace or with `firejail --net=none` as well if
   you must also contain those. Proof: `tests/offline-network-test.sh` runs `YW Studio --offlinetest` (the update check, a
   crash-report upload, starting and joining a live session, the relay's HTTP) under `unshare -rn` with `strace` and counts
-  the `connect()` calls to internet addresses: none with `LYNX_OFFLINE=1`, none with `--offline`, and some in the control
+  the `connect()` calls to internet addresses: none with `YW_OFFLINE=1`, none with `--offline`, and some in the control
   run without the mode (so the count can see them). The mode's one switch is `src/core/Offline.h`.
 - **No personal data is collected.** The update check sends nothing about you or your computer; a crash report
   leaves your computer only when you choose to send it.
@@ -77,7 +77,7 @@ user or the person installing or operating it.
   Extracted stems go to the project's `Audio/Recorded/Stems` folder. The stem model (166 MB) is kept in
   `%LOCALAPPDATA%\YW Studio\models` (macOS: `~/Library/Application Support/YW Studio/models`, Linux: `~/.local/share/YW Studio/models`);
   delete it to free the space, it is downloaded again (after asking) the next time you extract stems.
-  It also registers the `.lynx` file type for the current user (`HKEY_CURRENT_USER\Software\Classes`) so project
+  It also registers the `.yw` file type for the current user (`HKEY_CURRENT_USER\Software\Classes`) so project
   files open in YW Studio.
   The Microsoft Store version keeps that folder in its own app-data folder instead
   (`%LOCALAPPDATA%\Packages\<YW Studio package>\LocalCache\Roaming\YW Studio`, removed when the app is uninstalled) and

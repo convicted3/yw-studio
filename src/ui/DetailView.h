@@ -17,7 +17,7 @@
 #include "core/HotSwap.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class MidiToolsPanel;
@@ -62,7 +62,7 @@ public:
     {
         std::function<float (int insert, int side)> levelOf;            // the insert's output now, 0..1 (the out meter)
         std::function<void (int channel)> toggleChannelWindow;          // the instrument card's window button
-        std::function<void (int insert)> selectInMixer;                 // LYNX extra: a selected card selects its insert
+        std::function<void (int insert)> selectInMixer;                 // YW extra: a selected card selects its insert
         std::function<void (int insert, ChannelDef)> instrumentDropped; // a generator dropped on the chain
         std::function<void (int track, int scene)> openClip;            // the Clip page's button: the clip in its editor
         std::function<void()> layoutChanged;                            // height, visibility or a setting changed
@@ -103,8 +103,8 @@ public:
     static inline int preferredHeight = 228;       // the reference DAW's Clip View at 100 % measures ~224 px + its frame
     static inline bool shownSetting = true;        // Ctrl+Alt+L
     static inline bool devicesPage = true;         // false: the Clip page
-    static inline bool extraWindowKey = false;     // LYNX extra (off by default): W shows the selected card's window
-    static inline bool extraSelectInMixer = false; // LYNX extra (off by default): selecting a card selects its insert
+    static inline bool extraWindowKey = false;     // YW extra (off by default): W shows the selected card's window
+    static inline bool extraSelectInMixer = false; // YW extra (off by default): selecting a card selects its insert
     static inline bool envelopesTab = false;       // the Clip page shows Envelopes instead of Notes (not saved)
     // round 190hy (issue #108): the Clip page's MPE tab, Live 11+'s note expression editor — the docked Piano roll with
     // its three MPE lanes stacked under the notes (not saved; envelopesTab wins when both are set)
@@ -170,7 +170,7 @@ private:
     std::unique_ptr<ClipPage> clipPage;
     juce::TextButton clipTab, devicesTab, optionsButton;
     std::unique_ptr<ui::InfoView> info;
-    // the Live look's status strip parts (empty in LYNX's look)
+    // the Live look's status strip parts (empty in YW's look)
     juce::Rectangle<int> infoButtonArea() const;
     juce::Rectangle<int> pageGlyphArea (bool devices) const;
     void paintLiveStrip (juce::Graphics& g);
@@ -185,4 +185,4 @@ private:
 // there, Ctrl to copy it). The description a drop target reads; true and the device's insert and slot when it is one.
 juce::String deviceDragDescription (int insert, int slot);
 bool detailDeviceDrag (const juce::var& description, int& insert, int& slot);
-} // namespace lynx
+} // namespace yw

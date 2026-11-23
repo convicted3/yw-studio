@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Hardcore (guitar multi-effect: five pedal boxes, a cabinet impulse and an 8-band EQ) as an exact LYNX
+// FL Studio's Hardcore (guitar multi-effect: five pedal boxes, a cabinet impulse and an 8-band EQ) as an exact YW
 // mixer effect, rebuilt in docs/analise/REA_rodada71.md (clean-room: layouts, formulas and behaviour in our own words;
 // no Image-Line code or data in this repository; the cabinet impulses are read from the user's installation).
 //
@@ -9,7 +9,7 @@
 //
 // The effect slot (EffectKind::hardcore) keeps FL's 50 parameters in its params (all 0…1 except the cabinet, stored
 // as index / 20, and the five box types, stored as type / 11); EffectSlot::state holds the cabinet impulse's WAV file
-// (read from the installation at import time) so a saved LYNX project keeps working without FL.
+// (read from the installation at import time) so a saved YW project keeps working without FL.
 
 #include <array>
 #include <cstdint>
@@ -21,13 +21,13 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 struct EffectInfo;
 }
 
-namespace lynx::hardcore
+namespace yw::hardcore
 {
 constexpr int numParams = 50;
 constexpr int numBoxes = 5, paramsPerBox = 5, numCabinets = 20, numPedalTypes = 11;
@@ -99,4 +99,4 @@ std::vector<std::uint8_t> packCabinets (const std::vector<std::pair<int, std::ve
 bool hasCabinet (const EffectSlot& slot, int cabinet);
 
 std::unique_ptr<Effect> make (const EffectSlot& slot);
-} // namespace lynx::hardcore
+} // namespace yw::hardcore

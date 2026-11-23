@@ -1,9 +1,9 @@
 #pragma once
 
-// FL Studio's Fruity Delay 2 and Fruity Delay 3 as exact LYNX mixer effects (docs/analise/REA_rodada52.md; clean-room:
+// FL Studio's Fruity Delay 2 and Fruity Delay 3 as exact YW mixer effects (docs/analise/REA_rodada52.md; clean-room:
 // rebuilt from the observed behaviour of the plugins, no Image-Line code). Both effects keep FL's raw controls as
 // their parameters (value over the control's range, like the FL import reads them from the saved state), so the
-// LYNX editor can still change them.
+// YW editor can still change them.
 //
 // Delay 2: tempo-synced stereo delay (time in 1/192 of a beat), input pan/volume, dry level, feedback with a
 // one-pole low-pass in the loop, normal / swapped / ping-pong routing and a stereo time offset.
@@ -19,7 +19,7 @@
 
 #include "core/Effects.h"
 
-namespace lynx::fldelay
+namespace yw::fldelay
 {
 // --- Fruity Delay 2 ---------------------------------------------------------------------------------------------------
 constexpr int delay2Controls = 8;
@@ -86,7 +86,7 @@ public:
     void setParameter (int index, float value) noexcept;
     // The host's sample-rate set-up (clears the lines; the delay times jump to their current targets)
     void setSampleRate (double sampleRate) noexcept;
-    // LYNX start-up: lets every glide (parameter smoothing, time smoothing, modulation depth) reach its target, as
+    // YW start-up: lets every glide (parameter smoothing, time smoothing, modulation depth) reach its target, as
     // after FL has been running for a while
     void settle() noexcept;
     void process (float* left, float* right, int n) noexcept; // in place
@@ -104,11 +104,11 @@ private:
     void hostSet (int index, float value) noexcept;
 };
 
-// The LYNX effects (parameters = FL's raw controls over their ranges)
+// The YW effects (parameters = FL's raw controls over their ranges)
 std::unique_ptr<Effect> makeDelay2();
 std::unique_ptr<Effect> makeDelay3();
 void delay2ToParams (const Delay2State& s, float* params) noexcept;
 void delay3ToParams (const Delay3State& s, float* params) noexcept;
 std::string delay2ParamText (int i, float v);
 std::string delay3ParamText (int i, float v, double bpm);
-} // namespace lynx::fldelay
+} // namespace yw::fldelay

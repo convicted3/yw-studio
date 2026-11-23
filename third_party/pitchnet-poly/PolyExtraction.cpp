@@ -762,7 +762,7 @@ namespace
 // their energy rising again, all of them together, by much more than the note's own amplitude
 // modulation (beating, vibrato, bow pressure) moves it, and staying up. Another note entering on
 // one shared partial lifts only some of the partials.
-// LYNX modification (round 190lo): slow re-attacks (see splitReattacks)
+// YW modification (round 190lo): slow re-attacks (see splitReattacks)
 constexpr double kSlowDip = 0.3;    // the dip: at most 30 % of the level the note had reached (-10.5 dB)
 constexpr double kSlowRise = 3.0;   // then back up by 3x (+9.5 dB) within 0.5 s
 constexpr double kSlowBack = 0.35;  // to at least 35 % of the earlier level
@@ -887,7 +887,7 @@ std::vector<Candidate> splitReattacks(const Context& ctx, const std::vector<Cand
     return out;
 }
 
-// LYNX modification (round 190lo): slow re-attacks. A note played again with a slow attack (a pad, strings, a swell)
+// YW modification (round 190lo): slow re-attacks. A note played again with a slow attack (a pad, strings, a swell)
 // never rises by 2x within splitReattacks()'s 4-frame window, so two chords that hold the same pitch became one note.
 // Here: the level dips well below what it had been, then comes back within ~0.5 s with most of the note's partials
 // rising together (where the dip is not very deep, other notes must begin or end there too: a chord change); the cut

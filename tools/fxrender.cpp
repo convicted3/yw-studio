@@ -1,14 +1,14 @@
-// fxrender: renders WAV files through one of LYNX's built-in effects, offline (round tp172b).
+// fxrender: renders WAV files through one of YW's built-in effects, offline (round tp172b).
 //
-// The LYNX side of the black-box parity harness (tools/fxmeasure renders the originals): the same stimulus through
-// a LYNX effect at matched settings, so scripts/fxparity.py can score the pair like FL's own render tests.
+// The YW side of the black-box parity harness (tools/fxmeasure renders the originals): the same stimulus through
+// a YW effect at matched settings, so scripts/fxparity.py can score the pair like FL's own render tests.
 //
 //   fxrender <effect name | kind index> [options] <in.wav> <out.wav> [<in.wav> <out.wav> ...]
 //     --rate <hz>              sample rate the effect is prepared at (default: the input file's)
 //     --block <n>              block size (default 512)
-//     --ff <translator> <file> a FabFilter state (raw component or JUCE host state) translated as LYNX loads one
+//     --ff <translator> <file> a FabFilter state (raw component or JUCE host state) translated as YW loads one
 //                              (core/FabFilterStates.h: pro-c3, pro-mb, pro-g, saturn2, pro-q4, pro-ds, pro-l2)
-//     --sub <name> <file>      the substitute LYNX opens for the plugin named <name> (core/PluginSubstitutes.h), built
+//     --sub <name> <file>      the substitute YW opens for the plugin named <name> (core/PluginSubstitutes.h), built
 //                              from that plugin's saved component state <file>; the <effect> argument is then
 //                              ignored (any name, e.g. "-") and replaced by the substitute's effect
 //     --set <i>=<v>            parameter i to the normalized value v
@@ -22,7 +22,7 @@
 //     --slotmix                apply the slot's dry / wet (a substitute's or translator's slot mix) as the mixer does
 //                              (round 190jh: dry + (wet - dry) * mix below 0.999; off by default so older banks reproduce)
 //     --list                   print the parameters (index, name, value, text) and exit
-//     --dump <file>            write the parameters ("index value" lines; LYNX --parityshot reads them)
+//     --dump <file>            write the parameters ("index value" lines; YW --parityshot reads them)
 // Every input is processed from a reset; the output is a 32-bit float stereo WAV, not latency-compensated (the
 // latency is printed). Inputs: 32-bit float or 16 / 24-bit PCM WAV, mono or stereo.
 // Build (with the core, like the other tools): see scripts/build-local.sh, or
@@ -44,7 +44,7 @@
 #include "core/FabFilterStates.h"
 #include "core/PluginSubstitutes.h"
 
-using namespace lynx;
+using namespace yw;
 
 namespace
 {

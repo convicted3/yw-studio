@@ -5,11 +5,11 @@
 
 #include <juce_audio_formats/juce_audio_formats.h>
 
-namespace lynx::mediapack
+namespace yw::mediapack
 {
 namespace
 {
-constexpr char magic[8] = { 'L', 'Y', 'N', 'X', 'F', 'L', 'C', '1' };
+constexpr char magic[8] = { 'Y', 'W', 'S', 'T', 'F', 'L', 'C', '1' };
 constexpr juce::int64 maxSize = (juce::int64) 4 << 30;
 
 std::uint32_t le32 (const std::uint8_t* p) { return (std::uint32_t) p[0] | (std::uint32_t) p[1] << 8 | (std::uint32_t) p[2] << 16 | (std::uint32_t) p[3] << 24; }
@@ -209,4 +209,4 @@ bool isPack (const juce::File& file)
     char m[8];
     return in.openedOk() && in.read (m, 8) == 8 && std::memcmp (m, magic, 8) == 0;
 }
-} // namespace lynx::mediapack
+} // namespace yw::mediapack

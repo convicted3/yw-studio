@@ -1,7 +1,7 @@
 #pragma once
 
-// LYNX's own demo project (Demo.lynx in the installers, the README / website screenshots and the website's demo.mp3):
-// `LYNX.exe --showcase output.lynx [pattern]` saves this song. In the core so the tests can render it.
+// YW's own demo project (Demo.yw in the installers, the README / website screenshots and the website's demo.mp3):
+// `YW.exe --showcase output.yw [pattern]` saves this song. In the core so the tests can render it.
 
 #include <algorithm>
 #include <cstdint>
@@ -12,7 +12,7 @@
 #include "core/Song.h"
 #include "core/SynthPresets.h"
 
-namespace lynx
+namespace yw
 {
 // The bass line's keys over the chord roots (A2 F2 C3 G2). "Reese Bass" plays its two saws an octave under the key and
 // its sub two under: +12 puts the saws on A2 F2 C3 G2 (87–131 Hz) and the sub on A1 F1 C2 G1 (44–65 Hz). It was -12 up
@@ -215,4 +215,4 @@ inline Song makeShowcaseSong (int currentPattern = 0)
     song.currentPattern = std::clamp (currentPattern, 0, (int) song.patterns.size() - 1);
     return song;
 }
-} // namespace lynx
+} // namespace yw

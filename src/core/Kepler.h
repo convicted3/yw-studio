@@ -16,11 +16,11 @@
 // Host interface as FL's wrapper: note number = key, MIDI velocity from Init.Vol (41.714·ln(10·Init.Vol + 1), 0…127),
 // per-note pan / pitch expressions from FinalLevels (pan law √(1 − p), √p with p = (pan + 1)/2), the X/Y (FCut/FRes)
 // modulation routes, the channel volume / pan as FL's MIDI events (REA_rodada165g-flbeta165k §3); cut groups do not
-// cut it. FL's renders of all 277 factory presets null against LYNX's engine at the 16-bit floor once FL's export
+// cut it. FL's renders of all 277 factory presets null against YW's engine at the 16-bit floor once FL's export
 // warm-up (1536…2304 samples, varies between FL runs) is given. Kepler Exo's "Kepler-2" states run on the same port
 // with Exo's setters, matrix, DCO2, LFO2, saturation, chorus noise / gate, EQ, hyper chorus, delay and reverb
 // (REA_rodada167d). Not modelled: the oversampling ×4 flag and Exo's alternative oscillator byte (0 in all data; such
-// states are refused). The free-running oscillators/LFO pause while LYNX skips an idle channel (only
+// states are refused). The free-running oscillators/LFO pause while YW skips an idle channel (only
 // their phase at the next note differs, as between two FL runs).
 
 #include <cstdint>
@@ -31,7 +31,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 // true for a "Kepler-1" state the engine can play (layout parsed, version 2…4)
 bool keplerStateUsable (const std::vector<std::uint8_t>& state);
@@ -86,4 +86,4 @@ struct RefOptions
 std::vector<float> renderReference (const std::vector<std::uint8_t>& state, const std::string& dll, const std::vector<RefNote>& notes,
                                     double sampleRate, int length, const RefOptions& options = {});
 } // namespace kepler
-} // namespace lynx
+} // namespace yw

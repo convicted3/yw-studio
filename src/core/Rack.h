@@ -27,14 +27,14 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::rack
+namespace yw::rack
 {
-// The Surface of a compiled rack: outputs 0…15 are the macros, 16 the chain selector, 17 the morph (LYNX's own).
+// The Surface of a compiled rack: outputs 0…15 are the macros, 16 the chain selector, 17 the morph (YW's own).
 // The published parameters (automation) have the same indices.
 constexpr int selectorOutput = rackMacroCount;
 constexpr int morphOutput = rackMacroCount + 1;
@@ -124,7 +124,7 @@ std::vector<EffectSlot> ungroup (const EffectSlot& rackSlot);
 // Live's Ungroup (Ctrl+Shift+G) on insert `track`'s slot `slot`: a one-chain Audio Effect Rack's devices take its place,
 // in order. Each native parameter a macro moves keeps the value the macro gives it now (a plugin keeps its own state).
 // Automation of a macro with one full-range mapping onto a device parameter moves onto that parameter, so ungrouping
-// what Group made gives the old slots back (LYNX: Live drops the macro automation); other macro, selector and morph
+// what Group made gives the old slots back (YW: Live drops the macro automation); other macro, selector and morph
 // automation is dropped, as the macros go. Later slots' targets shift. Returns the first device's slot (the rack's slot
 // for an empty rack, which just goes), or −1 with the song untouched.
 int ungroupSlot (Song& song, int track, int slot);
@@ -172,7 +172,7 @@ int moreMacros (int shown) noexcept;
 int fewerMacros (int shown) noexcept;
 
 // ---------------------------------------------------------------------------------------------------------------
-// Variations (Live's Macro Variations) and LYNX's morph (decision D6, off by default)
+// Variations (Live's Macro Variations) and YW's morph (decision D6, off by default)
 
 int storeVariation (PatcherDoc& doc);                // New: "Variation N"
 bool overwriteVariation (PatcherDoc& doc, int index);
@@ -250,7 +250,7 @@ int addReturn (PatcherDoc& doc, const std::string& name = {});
 bool removeReturn (PatcherDoc& doc, int returnChain);
 
 // Slice to Drum Rack / Slice to New MIDI Track (Live's Simpler › Slice to Drum Rack and the audio clip's Slice to New
-// MIDI Track; LYNX's own slicing templates, after the facts of Live's Slicing defaults [DATA]): one pad per slice from C1
+// MIDI Track; YW's own slicing templates, after the facts of Live's Slicing defaults [DATA]): one pad per slice from C1
 // up (at most 92: C1…G8), each a Sampler on that slice of the sample.
 enum class SliceTemplate : std::uint8_t
 {
@@ -275,7 +275,7 @@ std::vector<float> gridSlices (double fileSeconds, float from, float to, double 
 // The notes that replay the slices where they were: slice i on pad C1 + i (the first maxSlicePads only), from `tickOf`
 // its start to the next slice's start (the last one to `end`), on channel `channel`. Notes before tick 0 are left out.
 std::vector<Note> sliceNotes (const std::vector<float>& starts, float end, const std::function<double (float fraction)>& tickOf, int channel);
-// Slice to New MIDI Track as LYNX lays it out: `drumRack` becomes a new channel with its own mixer insert, `notes` (their
+// Slice to New MIDI Track as YW lays it out: `drumRack` becomes a new channel with its own mixer insert, `notes` (their
 // channel set to it) a new pattern named `patternName`, played by a pattern clip on a new Playlist track right under the
 // audio clip `clipIndex`, at its start and as long (as the audio clip's Convert to MIDI does). The new track is named
 // `patternName` too (Live names the new MIDI track, its clip and its rack after the audio clip, 190ei B6b). Run inside
@@ -289,4 +289,4 @@ constexpr int slicePerCount = 8;
 const char* slicePerName (SlicePer per) noexcept; // (English, translated by the UI: "Warp Marker", "Bar", "1/2 Note"…)
 // The beats one slice spans for a bar / note division (a whole note = 4 beats); 0 for warp markers and transients
 double slicePerBeats (SlicePer per, Meter meter) noexcept; // (in quarter notes)
-} // namespace lynx::rack
+} // namespace yw::rack

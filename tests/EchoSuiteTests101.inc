@@ -1,4 +1,4 @@
-// REA_rodada101: LYNX's delay / modulation suite (core/EchoSuite.h) against the black-box measurements of the
+// REA_rodada101: YW's delay / modulation suite (core/EchoSuite.h) against the black-box measurements of the
 // reference plugins (docs/analise/REA_rodada101.md): value laws, echo times, sync, feedback laws, mix laws, character
 // filtering, modulation, frequency / pitch shift, multitap layout, and the substitutes' parameter translation.
 // Tolerances are wide enough for any IEEE compiler (gcc / clang / zig, x86-64 / arm64).
@@ -7,8 +7,8 @@
 
 namespace es101
 {
-using lynx::EffectKind;
-namespace es = lynx::echosuite;
+using yw::EffectKind;
+namespace es = yw::echosuite;
 constexpr double sr = 48000.0;
 constexpr double pi = 3.141592653589793;
 
@@ -17,7 +17,7 @@ struct Stereo
     std::vector<float> l, r;
 };
 
-inline lynx::EffectParams defaults (EffectKind kind) { return lynx::makeEffectSlot (kind).params; }
+inline yw::EffectParams defaults (EffectKind kind) { return yw::makeEffectSlot (kind).params; }
 
 inline std::vector<float> sine (double hz, double amp, int n, int silenceAfter = 0)
 {
@@ -34,9 +34,9 @@ inline std::vector<float> impulse (int n, float amp = 0.25f)
     return s;
 }
 
-inline Stereo run (EffectKind kind, const lynx::EffectParams& p, const std::vector<float>& in, double rate = sr, int block = 480, double bpm = 120.0)
+inline Stereo run (EffectKind kind, const yw::EffectParams& p, const std::vector<float>& in, double rate = sr, int block = 480, double bpm = 120.0)
 {
-    auto fx = lynx::makeEffect (kind);
+    auto fx = yw::makeEffect (kind);
     fx->prepare (rate);
     Stereo s { in, in };
     for (std::size_t off = 0; off < in.size(); off += (std::size_t) block)
@@ -103,7 +103,7 @@ inline float peak (const Stereo& s)
 }
 
 // Echoform set up for a clean measurement: wet only, no feedback / modulation / age
-inline lynx::EffectParams echoform (es::echoform::Mode mode, double ms)
+inline yw::EffectParams echoform (es::echoform::Mode mode, double ms)
 {
     namespace ef = es::echoform;
     auto p = defaults (EffectKind::echoform);
@@ -122,7 +122,7 @@ inline lynx::EffectParams echoform (es::echoform::Mode mode, double ms)
 
 TEST (echosuite101_value_laws_follow_the_measurements)
 {
-    namespace es = lynx::echosuite;
+    namespace es = yw::echosuite;
     namespace ef = es::echoform;
     CHECK (std::abs (ef::timeMs (0.5f) - 500.0) < 1e-6 && std::abs (ef::timeMs (0.76f) - 1000.0) < 0.01);
     CHECK (std::abs (ef::timeMs (0.55f) - 596.15) < 0.1 && std::abs (ef::timeMs (0.9f) - 4000.0) < 0.1 && ef::timeMs (1.0f) == 20000.0);
@@ -475,15 +475,15 @@ TEST (echosuite101_lattice_taps_feedback_and_layout)
     // the four panels: every parameter has a control inside the body
     for (const auto kind : { EffectKind::echoform, EffectKind::spiralEcho, EffectKind::orbit, EffectKind::latticeMod })
     {
-        const auto& l = lynx::plugui::layoutFor (kind);
-        std::vector<bool> placed (lynx::effectInfo (kind).params.size(), false);
+        const auto& l = yw::plugui::layoutFor (kind);
+        std::vector<bool> placed (yw::effectInfo (kind).params.size(), false);
         bool inside = true;
         for (const auto& item : l.items)
         {
             inside = inside && item.x >= 0 && item.y >= 0 && item.x + item.w <= (float) l.width + 0.5f && item.y + item.h <= (float) l.height + 0.5f;
-            if (lynx::plugui::isValueControl (item.type) && item.param != nullptr) // (page tabs have none)
+            if (yw::plugui::isValueControl (item.type) && item.param != nullptr) // (page tabs have none)
             {
-                const auto p = lynx::plugui::paramIndex (kind, item.param);
+                const auto p = yw::plugui::paramIndex (kind, item.param);
                 CHECK (p >= 0);
                 if (p >= 0 && p < (int) placed.size())
                     placed[(std::size_t) p] = true;
@@ -493,16 +493,16 @@ TEST (echosuite101_lattice_taps_feedback_and_layout)
         // display (the rhythm editor) edits both each tap's level and its time
         if (kind == EffectKind::echoform)
             for (const auto& item : l.items)
-                if (item.type == lynx::plugui::Item::display && item.display != nullptr && std::strcmp (item.display, "rhythmedit") == 0)
+                if (item.type == yw::plugui::Item::display && item.display != nullptr && std::strcmp (item.display, "rhythmedit") == 0)
                 {
-                    for (int t = lynx::echosuite::echoform::rhythmTap1; t <= lynx::echosuite::echoform::rhythmTapLast; ++t)
+                    for (int t = yw::echosuite::echoform::rhythmTap1; t <= yw::echosuite::echoform::rhythmTapLast; ++t)
                         placed[(std::size_t) t] = true;
-                    for (int t = lynx::echosuite::echoform::rhythmTime1; t <= lynx::echosuite::echoform::rhythmTimeLast; ++t)
+                    for (int t = yw::echosuite::echoform::rhythmTime1; t <= yw::echosuite::echoform::rhythmTimeLast; ++t)
                         placed[(std::size_t) t] = true;
                 }
         CHECK (inside && std::all_of (placed.begin(), placed.end(), [] (bool b) { return b; }));
         // controls that swap in place (style / mode dependent) never overlap while both are shown
-        auto params = lynx::makeEffectSlot (kind).params;
+        auto params = yw::makeEffectSlot (kind).params;
         for (int a = 0; a < 12; ++a)
             for (int b = 0; b < 5; ++b)
                 for (int c = 0; c < 2; ++c)
@@ -515,9 +515,9 @@ TEST (echosuite101_lattice_taps_feedback_and_layout)
                     }
                     for (int page = 0; page < std::max (1, (int) l.pages.size()); ++page)
                     {
-                        std::vector<const lynx::plugui::LayoutItem*> shown;
+                        std::vector<const yw::plugui::LayoutItem*> shown;
                         for (const auto& item : l.items)
-                            if (lynx::plugui::isValueControl (item.type) && lynx::plugui::isShown (kind, item, page, params))
+                            if (yw::plugui::isValueControl (item.type) && yw::plugui::isShown (kind, item, page, params))
                                 shown.push_back (&item);
                         for (std::size_t i = 0; i < shown.size(); ++i)
                             for (std::size_t j = i + 1; j < shown.size(); ++j)
@@ -526,41 +526,41 @@ TEST (echosuite101_lattice_taps_feedback_and_layout)
                                 const auto& q = *shown[j];
                                 const auto overlap = p.x + 0.5f < q.x + q.w && q.x + 0.5f < p.x + p.w && p.y + 0.5f < q.y + q.h && q.y + 0.5f < p.y + p.h;
                                 if (overlap)
-                                    std::printf ("  %s: '%s' overlaps '%s'\n", lynx::effectInfo (kind).name, p.param ? p.param : "-", q.param ? q.param : "-");
+                                    std::printf ("  %s: '%s' overlaps '%s'\n", yw::effectInfo (kind).name, p.param ? p.param : "-", q.param ? q.param : "-");
                                 CHECK (! overlap);
                             }
                     }
                 }
-        CHECK (std::find (lynx::plugui::ownLayoutKinds().begin(), lynx::plugui::ownLayoutKinds().end(), kind) != lynx::plugui::ownLayoutKinds().end());
+        CHECK (std::find (yw::plugui::ownLayoutKinds().begin(), yw::plugui::ownLayoutKinds().end(), kind) != yw::plugui::ownLayoutKinds().end());
     }
-    CHECK (lynx::formatEffectParam (EffectKind::echoform, es::echoform::timeL, 0.3f, 120.0) == "300.0 ms");
-    CHECK (lynx::formatEffectParam (EffectKind::echoform, es::echoform::mode, es::echoform::modeValue (es::echoform::Mode::bucket), 120.0) == "Bucket brigade");
-    CHECK (lynx::formatEffectParam (EffectKind::spiralEcho, es::spiral::sync, 13.5f / 23.0f, 120.0) == "1/4.");
-    CHECK (lynx::formatEffectParam (EffectKind::spiralEcho, es::spiral::sync, 20.5f / 23.0f, 120.0) == "1/4T");
-    CHECK (lynx::formatEffectParam (EffectKind::orbit, es::orbit::mode, 3.0f / 11.0f, 120.0) == "Through-zero +");
+    CHECK (yw::formatEffectParam (EffectKind::echoform, es::echoform::timeL, 0.3f, 120.0) == "300.0 ms");
+    CHECK (yw::formatEffectParam (EffectKind::echoform, es::echoform::mode, es::echoform::modeValue (es::echoform::Mode::bucket), 120.0) == "Bucket brigade");
+    CHECK (yw::formatEffectParam (EffectKind::spiralEcho, es::spiral::sync, 13.5f / 23.0f, 120.0) == "1/4.");
+    CHECK (yw::formatEffectParam (EffectKind::spiralEcho, es::spiral::sync, 20.5f / 23.0f, 120.0) == "1/4T");
+    CHECK (yw::formatEffectParam (EffectKind::orbit, es::orbit::mode, 3.0f / 11.0f, 120.0) == "Through-zero +");
 }
 
 TEST (echosuite101_substitutes_translate_valhalla_states)
 {
     using namespace substtest;
-    namespace ef = lynx::echosuite::echoform;
-    const auto slotFor = [] (const char* name, const char* classHex, const std::string& xml, const std::string& key, lynx::EffectKind kind) {
-        lynx::ForeignPlugin f;
-        f.format = lynx::ForeignPlugin::Format::vst3;
+    namespace ef = yw::echosuite::echoform;
+    const auto slotFor = [] (const char* name, const char* classHex, const std::string& xml, const std::string& key, yw::EffectKind kind) {
+        yw::ForeignPlugin f;
+        f.format = yw::ForeignPlugin::Format::vst3;
         f.classId = classIdOf (classHex);
         f.hasClassId = true;
         f.name = name;
         f.path = std::string ("C:\\Program Files\\Common Files\\VST3\\") + name + ".vst3";
         f.state = flVst3State (juceXmlComponent (xml));
-        const auto id = lynx::pluginIdentity (f);
-        const auto* entry = lynx::findPluginSubstitute (id, false);
+        const auto id = yw::pluginIdentity (f);
+        const auto* entry = yw::findPluginSubstitute (id, false);
         CHECK (entry != nullptr && entry->key == key && entry->effect == kind);
-        lynx::EffectSlot slot;
-        slot.kind = lynx::EffectKind::plugin;
+        yw::EffectSlot slot;
+        slot.kind = yw::EffectKind::plugin;
         slot.plugin.name = f.name;
         slot.plugin.foreign = f;
         const auto before = slot.plugin;
-        CHECK (lynx::substituteEffectSlot (slot, id));
+        CHECK (yw::substituteEffectSlot (slot, id));
         CHECK (slot.kind == kind && slot.isSubstitute() && slot.mix == 1.0f);
         CHECK (slot.substituteFor == before && slot.substituteFor.foreign.state == f.state); // the original, byte for byte
         return slot;
@@ -571,7 +571,7 @@ TEST (echosuite101_substitutes_translate_valhalla_states)
                             "<ValhallaDelay pluginVersion=\"3.0.5\" presetName=\"Default\" Mix=\"0.42\" DelayStyle=\"0.2\" DelayLSync=\"0.75\" "
                             "DelayLNote=\"0.3\" DelayL_Ms=\"0.3\" DelayRSync=\"0.25\" DelayRNote=\"0.2\" DelayR_Ms=\"0.1\" Feedback=\"0.35\" "
                             "Age=\"0.25\" HighCut=\"0.5\" ModRate=\"0.2738341093063354\" Mode=\"0.1875\" Era=\"0.3333\" Ducking=\"0.1\" mixLock=\"0\"/>",
-                            "valhalla-delay", lynx::EffectKind::echoform);
+                            "valhalla-delay", yw::EffectKind::echoform);
     CHECK (std::abs (d.params[ef::mix] - 0.42f) < 1e-6f && ef::styleOf (d.params[ef::style]) == ef::Style::dual);
     CHECK (ef::modeOf (d.params[ef::mode]) == ef::Mode::digital && std::abs (d.params[ef::feedback] - 0.35f) < 1e-6f);
     CHECK (std::abs (ef::sideMs (d.params, false, 120.0) - 375.0) < 1e-6 && std::abs (ef::sideMs (d.params, true, 120.0) - 100.0) < 1e-3);
@@ -581,55 +581,55 @@ TEST (echosuite101_substitutes_translate_valhalla_states)
                                        { "0.5625", ef::Mode::clean }, { "0.7291667", ef::Mode::analog }, { "0.0416666679084301", ef::Mode::tape } })
     {
         const auto s = slotFor ("ValhallaDelay", "64545356614c7679616c68616c6c6164", std::string ("<ValhallaDelay Mode=\"") + value + "\"/>",
-                                "valhalla-delay", lynx::EffectKind::echoform);
+                                "valhalla-delay", yw::EffectKind::echoform);
         CHECK (ef::modeOf (s.params[ef::mode]) == mode);
     }
 
-    namespace sp = lynx::echosuite::spiral;
+    namespace sp = yw::echosuite::spiral;
     const auto f = slotFor ("ValhallaFreqEcho", "4654535645717668616c68616c6c6166",
                             "<MYPLUGINSETTINGS pluginVersion=\"1\" wetDryMix=\"0.3\" shift=\"0.8155\" delay=\"0.5\" sync=\"0.0\" feedback=\"0.6\" "
                             "lowCut=\"0.06040268391370773\" highCut=\"0.3311036825180054\" stereo=\"0.0\"/>",
-                            "valhalla-freqecho", lynx::EffectKind::spiralEcho);
+                            "valhalla-freqecho", yw::EffectKind::spiralEcho);
     CHECK (std::abs (f.params[sp::mix] - 0.3f) < 1e-6f && std::abs (sp::shiftHz (f.params[sp::shift]) - 100.0) < 0.5);
     CHECK (std::abs (sp::delayMs (f.params[sp::delay]) - 100.0) < 0.2 && f.params[sp::stereo] == 0.0f && std::abs (f.params[sp::feedback] - 0.6f) < 1e-6f);
 
-    namespace ob = lynx::echosuite::orbit;
+    namespace ob = yw::echosuite::orbit;
     const auto o = slotFor ("ValhallaSpaceModulator", "535453564d707664616c68616c6c6173",
                             "<ValhallaSpaceModulator wetDry=\"0.7\" rate=\"0.626\" depth=\"0.5\" feedback=\"0.25\" manual=\"0.5\" Mode=\"0.4545454680919647\"/>",
-                            "valhalla-spacemodulator", lynx::EffectKind::orbit);
+                            "valhalla-spacemodulator", yw::EffectKind::orbit);
     CHECK (ob::modeOf (o.params[ob::mode]) == ob::Mode::tri && std::abs (o.params[ob::mix] - 0.7f) < 1e-6f && ob::feedbackGain (o.params[ob::feedback]) < 0.0);
 
-    namespace lt = lynx::echosuite::lattice;
+    namespace lt = yw::echosuite::lattice;
     const auto u = slotFor ("ValhallaUberMod", "7554535665627672616c68616c6c6175",
                             "<ValhallaUberMod Mix=\"0.6\" Depth=\"0.4\" Delay=\"0.25\" Feedback=\"0.3\" type=\"0.25\" DiffEnable=\"1.0\" "
                             "ColorMode=\"1.0\" DelaySync=\"0.5\" InputPan=\"0.5\"/>",
-                            "valhalla-ubermod", lynx::EffectKind::latticeMod);
+                            "valhalla-ubermod", yw::EffectKind::latticeMod);
     CHECK (lt::tapCount (u.params[lt::taps]) == 4 && std::abs (lt::delayMs (u.params[lt::delay]) - 250.0) < 1e-3);
     CHECK (u.params[lt::diffOn] == 1.0f && u.params[lt::colour] == 1.0f && u.params[lt::sync] == 0.0f);
     // round 144: DelaySync onto its own law (0.5 = index 8 = 1/16 dotted)
     CHECK (std::abs (u.params[lt::delaySync] - 0.5f) < 1e-6f && lt::delaySyncIndex (u.params[lt::delaySync]) == 8);
 
     // by name (no class ID), and the map laws of the table: steps / curve
-    lynx::ForeignPlugin byName;
-    byName.format = lynx::ForeignPlugin::Format::vst2;
+    yw::ForeignPlugin byName;
+    byName.format = yw::ForeignPlugin::Format::vst2;
     byName.name = "ValhallaUberMod";
-    const auto* e = lynx::findPluginSubstitute (lynx::pluginIdentity (byName), false);
-    CHECK (e != nullptr && e->effect == lynx::EffectKind::latticeMod);
+    const auto* e = yw::findPluginSubstitute (yw::pluginIdentity (byName), false);
+    CHECK (e != nullptr && e->effect == yw::EffectKind::latticeMod);
     int errors = -1;
-    const auto t = lynx::parseSubstituteTable ("[x]\nlynx = Echoform\nnames = X\nmap = xml:A -> Mode | steps 0:0.1 0.33:0.2 0.66:0.3\n"
+    const auto t = yw::parseSubstituteTable ("[x]\nyw = Echoform\nnames = X\nmap = xml:A -> Mode | steps 0:0.1 0.33:0.2 0.66:0.3\n"
                                                "map = xml:B -> Feedback | curve 0:0 0.5:0.1 1:1\nmap = xml:C -> Mix | curve 1:0 0.5:1\n"
                                                "map = xml:D -> Mix | steps\n",
                                                &errors);
     CHECK (errors == 2 && t.size() == 1 && t[0].params.size() == 2);
     if (t.size() == 1 && t[0].params.size() == 2)
     {
-        lynx::ForeignPlugin x;
-        x.format = lynx::ForeignPlugin::Format::vst3;
+        yw::ForeignPlugin x;
+        x.format = yw::ForeignPlugin::Format::vst3;
         x.name = "X";
         x.state = flVst3State (juceXmlComponent ("<X A=\"0.5\" B=\"0.75\"/>"));
-        const auto id = lynx::pluginIdentity (x);
+        const auto id = yw::pluginIdentity (x);
         int translated = 0;
-        const auto s = lynx::makeSubstituteSlot (t[0], &id, &translated);
+        const auto s = yw::makeSubstituteSlot (t[0], &id, &translated);
         CHECK (translated == 2 && std::abs (s.params[ef::mode] - 0.2f) < 1e-6f && std::abs (s.params[ef::feedback] - 0.55f) < 1e-6f);
     }
 }

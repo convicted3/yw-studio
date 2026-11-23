@@ -2,7 +2,7 @@
 
 // The Loop Browser's keywords and filters (round gaps190kf, coverage rows gb-loops_media-001/002/003/008 and Live's
 // browser-0043/0044; GarageBand for Mac User Guide "Find loops", "Customize the Loop Browser", "Set your favorite
-// Apple Loops", "Change Loops settings"; evidence /mnt/e/lynx-work/gaps190kf/loops/NOTES.md).
+// Apple Loops", "Change Loops settings"; evidence /mnt/e/yw-work/gaps190kf/loops/NOTES.md).
 //
 // GarageBand's Loop Browser (guide picture gb-loop-browser.png): three keyword categories (Instrument, Genre,
 // Descriptors) as tabs over a grid of keyword buttons (4 columns); "Clicking multiple buttons narrows the results to
@@ -12,11 +12,11 @@
 // with the loop's type, name, tempo, key and a Favorites check box; Loops settings "Filter for more relevant results"
 // (keys within two semitones of the project key).
 //
-// Apple Loops carry their keywords, scale and tempo in the file; the files LYNX browses (the user's sample folders, FL's
-// packs) mostly don't. So LYNX gives a loop its keywords from (1) the words of its name and of its folders (a "Kicks"
+// Apple Loops carry their keywords, scale and tempo in the file; the files YW browses (the user's sample folders, FL's
+// packs) mostly don't. So YW gives a loop its keywords from (1) the words of its name and of its folders (a "Kicks"
 // folder, "Dark Pad 90 Am.wav"), (2) the user's Browser tags (round 190iz) that name a keyword, and (3) factory
-// keywords handed in by the caller (round 190ke's tags of LYNX's own content). Its key comes from the name
-// (keyfollow::keyInName, round 190ds), its tempo from the name (previewtempo, round 190fk). LYNX's own words and
+// keywords handed in by the caller (round 190ke's tags of YW's own content). Its key comes from the name
+// (keyfollow::keyInName, round 190ds), its tempo from the name (previewtempo, round 190fk). YW's own words and
 // lists, clean-room; the keyword ids are lower-case English. No JUCE: tests/LoopBrowser190kfTests.inc.
 
 #include <algorithm>
@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::loopkeys
+namespace yw::loopkeys
 {
 enum class Category
 {
@@ -54,7 +54,7 @@ const std::vector<Keyword>& vocabulary();
 const Keyword* find (const std::string& id);
 std::vector<const Keyword*> ofCategory (Category c);
 
-// Loop types (GarageBand's Loop Types: audio, MIDI, Drummer; LYNX's third type is a pattern: an FL score or a
+// Loop types (GarageBand's Loop Types: audio, MIDI, Drummer; YW's third type is a pattern: an FL score or a
 // pattern file the Channel Rack plays)
 enum LoopType : int
 {
@@ -73,7 +73,7 @@ enum class Scale
     minor,
     major,
     neither, // no tonal scale: drums, percussion, effects
-    both     // "Good for Both": a loop that has no third (LYNX: a tonal loop whose name gives a root without major / minor)
+    both     // "Good for Both": a loop that has no third (YW: a tonal loop whose name gives a root without major / minor)
 };
 
 // What the Loop Browser knows of one file.
@@ -97,11 +97,11 @@ std::set<std::string> keywordsOfWords (const std::vector<std::string>& w);
 // Everything the browser shows and filters for `path`: the words of `wordsOf` (the path below the place it was found
 // in, so the user's own folder names above it don't count; "" = the whole path), plus `tags` (the user's tags of the
 // file: a tag that names a keyword — by id or label, any case — gives it) and `factory` (keyword ids handed in for
-// LYNX's own content).
+// YW's own content).
 LoopInfo describe (const std::string& path, const std::string& wordsOf = {}, const std::vector<std::string>& tags = {},
                    const std::vector<std::string>& factory = {});
 
-// Factory keywords: LYNX's own content tagged by keyword (round 190ke's factory tags register a source here; none by
+// Factory keywords: YW's own content tagged by keyword (round 190ke's factory tags register a source here; none by
 // default). The source is called from the Browser's search worker thread, so it must be thread-safe (a lookup in a
 // table it built before).
 using FactorySource = std::function<std::vector<std::string> (const std::string& path)>;
@@ -153,7 +153,7 @@ std::map<std::string, int> keywordCounts (const std::vector<LoopInfo>& loops, co
     return counts;
 }
 
-// The tempo choices of the Tempo menu: Any, then ranges (LYNX's; Live's / Splice's tempo filter idea), and "Near the
+// The tempo choices of the Tempo menu: Any, then ranges (YW's; Live's / Splice's tempo filter idea), and "Near the
 // project tempo" (±6 %, the stretch Live's warping keeps transparent for most loops)
 struct TempoRange
 {
@@ -193,4 +193,4 @@ struct Layout
     static Layout fromText (const std::string& text); // unknown ids dropped, missing ones appended (defaults on error)
     bool operator== (const Layout&) const = default;
 };
-} // namespace lynx::loopkeys
+} // namespace yw::loopkeys

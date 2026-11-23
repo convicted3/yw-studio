@@ -1,11 +1,11 @@
-// Round 190oo (design review 2): LYNX's one dialog system without JUCE (core/DialogRules.h). WG-6: the button order of
+// Round 190oo (design review 2): YW's one dialog system without JUCE (core/DialogRules.h). WG-6: the button order of
 // every dialog on ui::dialog::Alert; WG-22: the accent strip and the divider on whole physical pixels.
 
 #include "core/DialogRules.h"
 
 TEST (dialog190oo_ok_cancel_put_the_primary_at_the_far_right)
 {
-    using lynx::dialogrules::buttonOrder;
+    using yw::dialogrules::buttonOrder;
     // JUCE's OK / Cancel box: OK (0, Return) and Cancel (1, Escape) -> Cancel | OK
     CHECK ((buttonOrder (2, 0, 1, false) == std::vector<int> { 1, 0 }));
     // the sample Pitch window: OK (Return), Reset, Cancel (Escape) -> Reset | Cancel | OK
@@ -24,7 +24,7 @@ TEST (dialog190oo_ok_cancel_put_the_primary_at_the_far_right)
 
 TEST (dialog190oo_one_accent_button_the_return_default)
 {
-    using lynx::dialogrules::primaryButton;
+    using yw::dialogrules::primaryButton;
     CHECK (primaryButton (2, 0, 1) == 0);   // OK / Cancel: OK (Return)
     CHECK (primaryButton (3, 0, 2) == 0);   // Pitch: OK (Return), Reset, Cancel
     CHECK (primaryButton (1, 0, -1) == 0);  // a notice's OK (Return and Escape)
@@ -36,7 +36,7 @@ TEST (dialog190oo_one_accent_button_the_return_default)
 
 TEST (dialog190oo_fl_messages_keep_their_order)
 {
-    using lynx::dialogrules::buttonOrder;
+    using yw::dialogrules::buttonOrder;
     // FL's Yes | No (Yes = Return, No = Escape) stays as FL shows it
     CHECK ((buttonOrder (2, 0, 1, true) == std::vector<int> { 0, 1 }));
     CHECK ((buttonOrder (3, 0, 2, true) == std::vector<int> { 0, 1, 2 }));
@@ -44,7 +44,7 @@ TEST (dialog190oo_fl_messages_keep_their_order)
 
 TEST (dialog190oo_bands_land_on_whole_device_rows)
 {
-    using lynx::dialogrules::bandRows;
+    using yw::dialogrules::bandRows;
     CHECK (bandRows (3.0f, 1.5f) == 5.0f); // the strip @150 (was 4.5 rows: 4 full, one at 50 %)
     CHECK (bandRows (1.0f, 1.5f) == 1.0f); // the divider @150 (was 1.5 rows)
     CHECK (bandRows (3.0f, 1.25f) == 4.0f);

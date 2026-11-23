@@ -6,7 +6,7 @@
 
 TEST (tempomarkers190hq_edit_the_tempo_map)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.bpm = 120.0;
     s.mode = PlayMode::song;
@@ -76,7 +76,7 @@ TEST (tempomarkers190hq_edit_the_tempo_map)
 
 TEST (tempomarkers190hq_resampled_audio_stays_on_the_beat)
 {
-    using namespace lynx;
+    using namespace yw;
     // an audio clip of eight clicks, one per beat at 120 BPM (4 s at 48 kHz), stretched to its 8 beats in Resample mode;
     // tempo markers: 120, then 150 from beat 2, then 100 from beat 5. Each click must sound when the song reaches its beat.
     const double rate = 48000.0;
@@ -158,7 +158,7 @@ TEST (tempomarkers190hq_resampled_audio_stays_on_the_beat)
 
 TEST (tempomarkers190hq_a_launched_scene_tempo_holds_the_markers)
 {
-    using namespace lynx;
+    using namespace yw;
     // Live 12.4: a scene with its own tempo, launched, overrides the Arrangement's tempo automation until "Back to
     // Arrangement" — the song plays at its tempo (`bpm`) while sceneTempoHold is set
     Song s;

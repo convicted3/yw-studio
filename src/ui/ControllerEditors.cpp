@@ -18,7 +18,7 @@
 #include "ui/ValueControl.h"
 #include "ui/ControllerKnob.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -1775,4 +1775,4 @@ std::unique_ptr<juce::Component> makeKeyboardControllerEditor (AudioEngine& engi
         });
 }
 
-} // namespace lynx
+} // namespace yw

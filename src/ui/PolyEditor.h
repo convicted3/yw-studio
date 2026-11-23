@@ -1,9 +1,9 @@
 #pragma once
 
-// Round 190lk: "Edit notes (polyphonic)" — LYNX's polyphonic note editor for an audio clip channel (core/PolyEdit.h, on
-// PitchNet's engine in third_party/pitchnet-poly). A LYNX extra: opened from the audio clip menu's LYNX extras column.
+// Round 190lk: "Edit notes (polyphonic)" — YW's polyphonic note editor for an audio clip channel (core/PolyEdit.h, on
+// PitchNet's engine in third_party/pitchnet-poly). A YW extra: opened from the audio clip menu's YW extras column.
 //  - The clip's sample is analysed once on a low-priority worker (progress and Cancel; Basic Pitch's posteriorgram from
-//    LYNX's ONNX Runtime session as the note filter's evidence when it can run, else the DSP-only filter). The notes are
+//    YW's ONNX Runtime session as the note filter's evidence when it can run, else the DSP-only filter). The notes are
 //    saved with the project: opening the editor again, or the project, does not analyse again.
 //  - The notes are drawn as blobs along their pitch tracks, chords stacked, in Newtone's note view (its keyboard, rows,
 //    grid and blob colours): drag a note up / down for its pitch (whole semitones; Alt = cents), left / right to move it
@@ -29,7 +29,7 @@
 
 #include "engine/AudioEngine.h"
 
-namespace lynx
+namespace yw
 {
 namespace PolyEditorWindows
 {
@@ -41,7 +41,7 @@ juce::Rectangle<int> boundsOf (int channel);
 // hands the edited render (same length) to `apply`, then the window closes
 void openBuffer (AudioEngine& engine, std::shared_ptr<const SampleData> buffer, const juce::String& title,
                  std::function<void (std::shared_ptr<const SampleData>)> apply);
-// Round 190lo, a LYNX extra (off by default; Settings › LYNX extras and the editor's... ui-options.txt "polyPrepareOnOpen"):
+// Round 190lo, a YW extra (off by default; Settings › YW extras and the editor's... ui-options.txt "polyPrepareOnOpen"):
 // when a project opens, the clips whose notes were already edited get their analysis object and masks built on a
 // background thread, so the editor opens ready to play a dragged note. Returns the number of clips queued.
 extern bool prepareOnOpen;
@@ -65,4 +65,4 @@ juce::String setPolyEditorShotState (juce::Component& editor, const juce::String
 // the editor's notes as text ("k midi start-end [edit]" per line) and the average time of `paints` full paints in ms
 juce::String polyEditorNotes (juce::Component& editor);
 double polyEditorPaintMs (juce::Component& editor, int paints);
-} // namespace lynx
+} // namespace yw

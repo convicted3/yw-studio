@@ -8,9 +8,9 @@
 
 namespace s190hd
 {
-lynx::search::FileSystem diskOf (std::map<std::string, lynx::search::FolderListing>& disk, std::mutex& m)
+yw::search::FileSystem diskOf (std::map<std::string, yw::search::FolderListing>& disk, std::mutex& m)
 {
-    lynx::search::FileSystem f;
+    yw::search::FileSystem f;
     f.folderTime = [&disk, &m] (const std::string& p) {
         const std::lock_guard<std::mutex> g (m);
         const auto i = disk.find (p);
@@ -19,14 +19,14 @@ lynx::search::FileSystem diskOf (std::map<std::string, lynx::search::FolderListi
     f.list = [&disk, &m] (const std::string& p) {
         const std::lock_guard<std::mutex> g (m);
         const auto i = disk.find (p);
-        return i == disk.end() ? lynx::search::FolderListing {} : i->second;
+        return i == disk.end() ? yw::search::FolderListing {} : i->second;
     };
     return f;
 }
 
-lynx::search::FolderListing folder (std::int64_t time, std::vector<std::string> files, std::vector<std::string> subs = {})
+yw::search::FolderListing folder (std::int64_t time, std::vector<std::string> files, std::vector<std::string> subs = {})
 {
-    lynx::search::FolderListing l;
+    yw::search::FolderListing l;
     l.exists = true;
     l.time = time;
     l.files = std::move (files);
@@ -34,7 +34,7 @@ lynx::search::FolderListing folder (std::int64_t time, std::vector<std::string> 
     return l;
 }
 
-std::vector<std::string> findAll (const lynx::search::Index& index, const std::string& query, const std::vector<std::string>& roots)
+std::vector<std::string> findAll (const yw::search::Index& index, const std::string& query, const std::vector<std::string>& roots)
 {
     bool truncated = false;
     return index.find (query, roots, 1000, truncated);
@@ -44,14 +44,14 @@ std::vector<std::string> findAll (const lynx::search::Index& index, const std::s
 TEST (startup190hd_adopt_takes_the_indexer_trees_and_keeps_the_app_own_ones)
 {
     std::mutex m;
-    std::map<std::string, lynx::search::FolderListing> disk;
+    std::map<std::string, yw::search::FolderListing> disk;
     disk["/lib"] = s190hd::folder (1, { "kick.wav" }, { "old", "drums" });
     disk["/lib/old"] = s190hd::folder (1, { "old kick.wav" });
     disk["/lib/drums"] = s190hd::folder (1, { "snare.wav" });
     disk["/mine"] = s190hd::folder (1, { "my kick.wav" });
     const auto fs = s190hd::diskOf (disk, m);
 
-    lynx::search::Index app; // the app's index: /lib and /mine walked to the end
+    yw::search::Index app; // the app's index: /lib and /mine walked to the end
     app.refresh ("/lib", fs);
     app.markComplete ("/lib");
     app.refresh ("/mine", fs);
@@ -65,7 +65,7 @@ TEST (startup190hd_adopt_takes_the_indexer_trees_and_keeps_the_app_own_ones)
         disk["/lib/drums"] = s190hd::folder (2, { "snare.wav", "new kick.wav" });
         disk["/mine"] = s190hd::folder (2, {}); // (the indexer does not walk /mine: the app's tree stays)
     }
-    lynx::search::Index indexer;
+    yw::search::Index indexer;
     indexer.refresh ("/lib", fs);
     indexer.markComplete ("/lib");
     indexer.refresh ("/other", fs); // (not complete: an interrupted walk)
@@ -80,30 +80,30 @@ TEST (startup190hd_adopt_takes_the_indexer_trees_and_keeps_the_app_own_ones)
     CHECK (std::find (kicks.begin(), kicks.end(), "/lib/drums/new kick.wav") != kicks.end());
     CHECK (s190hd::findAll (app, "kick", { "/mine" }).size() == 1); // (the app's own tree, unchanged)
     // the round trip of the result is the same index
-    lynx::search::Index again;
+    yw::search::Index again;
     CHECK (again.fromText (app.toText()) && again.toText() == app.toText());
 }
 
 TEST (startup190hd_service_with_an_external_indexer_saves_nothing_and_reloads_what_it_wrote)
 {
     std::mutex m, fileLock;
-    std::map<std::string, lynx::search::FolderListing> disk;
+    std::map<std::string, yw::search::FolderListing> disk;
     disk["/lib"] = s190hd::folder (1, { "kick.wav", "snare.wav" });
     std::string file; // the index file both processes share
     int appSaves = 0;
     std::atomic<int> changed { 0 };
 
-    lynx::search::Service::Callbacks appCb;
+    yw::search::Service::Callbacks appCb;
     appCb.load = [&] { const std::lock_guard<std::mutex> g (fileLock); return file; };
     appCb.save = [&] (const std::string&) { ++appSaves; };
     appCb.indexChanged = [&] { ++changed; };
-    lynx::search::Service app (s190hd::diskOf (disk, m), appCb);
+    yw::search::Service app (s190hd::diskOf (disk, m), appCb);
     app.setExternalIndexer (true);
     CHECK (app.hasExternalIndexer());
 
     std::vector<std::string> found;
     std::mutex foundLock;
-    const auto sink = [&] (const lynx::search::SearchResult& r) {
+    const auto sink = [&] (const yw::search::SearchResult& r) {
         if (! r.partial)
         {
             const std::lock_guard<std::mutex> g (foundLock);
@@ -124,11 +124,11 @@ TEST (startup190hd_service_with_an_external_indexer_saves_nothing_and_reloads_wh
         const std::lock_guard<std::mutex> g (m);
         disk["/lib"] = s190hd::folder (2, { "kick.wav", "snare.wav", "kick 2.wav" });
     }
-    lynx::search::Service::Callbacks indexerCb;
+    yw::search::Service::Callbacks indexerCb;
     indexerCb.load = appCb.load;
     indexerCb.save = [&] (const std::string& text) { const std::lock_guard<std::mutex> g (fileLock); file = text; };
     {
-        lynx::search::Service indexer (s190hd::diskOf (disk, m), indexerCb);
+        yw::search::Service indexer (s190hd::diskOf (disk, m), indexerCb);
         indexer.refresh ({ "/lib" });
         CHECK (indexer.waitIdle (10000));
     }

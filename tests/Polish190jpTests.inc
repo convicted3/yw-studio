@@ -5,7 +5,7 @@
 
 TEST (polish190jp_adjustments_none_keep_the_palette_bit_identical)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     CHECK (withAdjustments (defaultPalette(), Spec {}) == defaultPalette());
     CHECK (adjustedPalette (Spec {}) == defaultPalette());
     for (const auto& t : builtInThemes())
@@ -15,7 +15,7 @@ TEST (polish190jp_adjustments_none_keep_the_palette_bit_identical)
 
 TEST (polish190jp_adjustments_move_the_surfaces_and_text_not_the_accent)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto base = defaultPalette();
     auto spec = Spec {};
     spec.brightness = 1.0f;
@@ -47,12 +47,12 @@ TEST (polish190jp_adjustments_move_the_surfaces_and_text_not_the_accent)
     CHECK (tinted.bg2 != base.bg2 && tinted.accent == base.accent);
     const auto r = (int) ((tinted.bg3 >> 16) & 0xff), b = (int) (tinted.bg3 & 0xff);
     const auto r0 = (int) ((base.bg3 >> 16) & 0xff), b0 = (int) (base.bg3 & 0xff);
-    CHECK (b - r != b0 - r0); // LYNX's bluish grey turned (180°: towards the warm side)
+    CHECK (b - r != b0 - r0); // YW's bluish grey turned (180°: towards the warm side)
 }
 
 TEST (polish190jp_colour_dots_set_their_tokens)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     auto spec = Spec {};
     spec.dots[(std::size_t) Dot::highlight] = 0xff30a5ff;
     spec.dots[(std::size_t) Dot::selection] = 0xff00ff00;
@@ -70,7 +70,7 @@ TEST (polish190jp_colour_dots_set_their_tokens)
 
 TEST (polish190jp_bold_text_per_role)
 {
-    using namespace lynx::textsize;
+    using namespace yw::textsize;
     // off: nothing; labels: the small and body roles (labels, buttons, menus, lists); all: every role
     for (const auto role : { Role::caption, Role::small, Role::body, Role::title, Role::display })
     {
@@ -94,7 +94,7 @@ TEST (polish190jp_bold_text_per_role)
 
 TEST (polish190jp_tour_card_stays_off_the_dock_its_ring_is_in)
 {
-    using namespace lynx::tour;
+    using namespace yw::tour;
     // step 4 (190jc follow-up): the Chord pad button in the bottom dock; below it the card covered the keys
     const Box window { 0, 0, 1920, 1080 };
     const Box dock { 0, 760, 1920, 320 };

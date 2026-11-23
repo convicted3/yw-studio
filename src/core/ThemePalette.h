@@ -9,8 +9,8 @@
 // User themes (round 162d, issues #8 / #9): the accent colour, the background and the workspace backdrop are the
 // user's choice. This is the pure part (no JUCE): it derives every colour token of ui/Theme.h from the two colours the
 // user picks, so the whole UI keeps its relations (elevation steps, hover/pressed shades, tinted selections) and the
-// text stays readable. With LYNX's default accent and background it gives exactly the built-in palette.
-namespace lynx::themes
+// text stays readable. With YW's default accent and background it gives exactly the built-in palette.
+namespace yw::themes
 {
 constexpr std::uint32_t defaultAccent = 0xffe5484d;     // YW red
 constexpr std::uint32_t defaultBackground = 0xff1b2124; // YW graphite (token bg1)
@@ -75,13 +75,13 @@ constexpr double gridIntensityMin = 0.6, gridIntensityMax = 1.6;
 Palette withGridIntensity (Palette palette, double intensity);
 
 // --- Settings › Theme › Menu style (round 190je, design190ia FW-16) ----------------------------------------------------
-// LYNX's dark menus (the default), or FL Studio's classic light grey ones (measured in FL Studio 2026, ref/fl-menu-file.png).
+// YW's dark menus (the default), or FL Studio's classic light grey ones (measured in FL Studio 2026, ref/fl-menu-file.png).
 enum class MenuStyle
 {
-    lynxDark,
+    ywDark,
     flClassic
 };
-const char* menuStyleId (MenuStyle style); // "lynx", "flClassic"
+const char* menuStyleId (MenuStyle style); // "yw", "flClassic"
 MenuStyle menuStyleFromId (const std::string& id);
 struct MenuColours
 {
@@ -91,7 +91,7 @@ MenuColours menuColours (const Palette& palette, MenuStyle style);
 
 // --- long menus in columns (round 190je, design190ia FW-13) ------------------------------------------------------------
 // FL splits its long context menus into columns (the Channel rack menu: 2 columns, 305 px). A menu without column
-// breaks that is taller than `maxHeight` (LYNX: 70 % of the screen) breaks once, where the two columns come out most
+// breaks that is taller than `maxHeight` (YW: 70 % of the screen) breaks once, where the two columns come out most
 // even: before a section header, else after a separator, else nowhere (-1; JUCE's own split takes over when even two
 // columns don't fit). Returns the row after which the second column starts.
 struct MenuRow
@@ -101,7 +101,7 @@ struct MenuRow
 };
 int tallMenuBreak (const std::vector<MenuRow>& rows, int maxHeight);
 
-// FL's number wheels ("digiwheels": channel RANGE / TRACK, the channel rack's insert box) in the LYNX skin (round
+// FL's number wheels ("digiwheels": channel RANGE / TRACK, the channel rack's insert box) in the YW skin (round
 // 168s): a dark inset display with light text, red (the accent) only while hovered or dragged. C = a colour type.
 template <typename C>
 struct DigitDisplayColours
@@ -120,7 +120,7 @@ DigitDisplayColours<C> digitDisplayColours (C bg0, C border, C accent, C accentH
 constexpr double stepGroupLift = 0.10;
 constexpr double stepGroupTint = 0.09;
 
-// A lit Channel Rack step in its channel's colour (LYNX, round 170a2; FL keeps its steps white / pink): the colour
+// A lit Channel Rack step in its channel's colour (YW, round 170a2; FL keeps its steps white / pink): the colour
 // lifted (towards white on a dark theme, black on a light one) until it stands clear of both empty-step greys
 // (WCAG contrast >= minLitStepContrast against stepOff and stepOffAlt). 0 (no colour) = the palette's lit step, the accent.
 constexpr double minLitStepContrast = 2.6;
@@ -128,7 +128,7 @@ std::uint32_t litStepColour (std::uint32_t channelColour, const Palette& palette
 
 // The palette for an accent and a background (alpha is ignored: both are opaque).
 Palette derivePalette (std::uint32_t accent, std::uint32_t background);
-// LYNX's built-in palette (= derivePalette (defaultAccent, defaultBackground)).
+// YW's built-in palette (= derivePalette (defaultAccent, defaultBackground)).
 const Palette& defaultPalette();
 
 // How the workspace image is laid out.
@@ -146,15 +146,15 @@ ImageFit imageFitFromId (const std::string& id);
 
 // FL's colour dots on its Theme page (round 190jp, design190ia FW-20): the colours of the selection, the highlight, muted
 // things, options, lit steps, meters, waveforms and the text, each the theme's own unless set (0). Issue #238 (round 190od,
-// LYNX's own dot; FL's theme files carry the same role as their channel / pattern / Playlist track default colours,
+// YW's own dot; FL's theme files carry the same role as their channel / pattern / Playlist track default colours,
 // "channels.colors." / "pattern.defaultcolor" / "forms.eventeditform.playlist.track.background"): Tracks = the colour
 // drawn for Playlist tracks, mixer tracks and channels that have no colour of their own (FL's grey #485156 unless set).
 // The project keeps "no colour" (0): a theme changes the look, never the project's data.
 enum class Dot : int { selection = 0, highlight, mute, option, steps, meters, waves, text, tracks };
 constexpr int dotCount = 9;
-const char* dotId (Dot dot); // "selection", "highlight", ... (the .lynxtheme keys)
+const char* dotId (Dot dot); // "selection", "highlight", ... (the .ywtheme keys)
 
-// A theme: what a .lynxtheme file holds and what Options › Theme edits.
+// A theme: what a .ywtheme file holds and what Options › Theme edits.
 struct Spec
 {
     std::string name = "YW Studio";
@@ -166,13 +166,13 @@ struct Spec
     std::uint32_t background = defaultBackground;
     std::uint32_t workspace = 0;     // the workspace backdrop's colour; 0 = automatic (the theme's deepest surface)
     std::string image;               // workspace image file (empty = none); a relative path is inside the Backgrounds
-                                     // folder next to LYNX.exe (themeui::backgroundsFolder, issue #12)
+                                     // folder next to YW.exe (themeui::backgroundsFolder, issue #12)
     ImageFit fit = ImageFit::fill;
     float imageOpacity = 1.0f;       // 0..1
     float dim = 0.0f;                // 0..1: darkens the image towards the backdrop colour
-    std::string startupSound;        // audio file played at start instead of LYNX's own sound (empty = LYNX's; issue #12)
+    std::string startupSound;        // audio file played at start instead of YW's own sound (empty = YW's; issue #12)
     float gridIntensity = 1.0f;      // Grid line intensity (round 190je): gridIntensityMin..Max, 1 = the theme's lines
-    MenuStyle menuStyle = MenuStyle::lynxDark; // Menu style (round 190je)
+    MenuStyle menuStyle = MenuStyle::ywDark; // Menu style (round 190je)
     // FL's Theme › Options › "Audio and automation clips use note colors" (round 190od, issue #239; FL's ClipsOverrideBox,
     // .flstheme OverrideClips, hint "Use the note color list to find random colors for new clips"): a new audio clip
     // channel or automation clip takes a random colour of the 16 note colours instead of the default grey
@@ -216,4 +216,4 @@ std::uint32_t readableTextOn (std::uint32_t background);    // white or near-bla
 std::uint32_t mix (std::uint32_t a, std::uint32_t b, double amount); // a → b by amount (0..1), opaque
 std::string toHex (std::uint32_t argb);                     // "#RRGGBB"
 bool parseHex (const std::string& text, std::uint32_t& argb); // "#RGB", "RRGGBB", "#RRGGBB", "0xRRGGBB" (opaque)
-} // namespace lynx::themes
+} // namespace yw::themes

@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace lynx::jsfxpack
+namespace yw::jsfxpack
 {
 struct File
 {
@@ -7167,4 +7167,4 @@ inline constexpr File files[] = {
     { "chokehold/Utility/volume_trim.jsfx", f31, 630, 1222 },
 };
 inline constexpr const char* hash = "a7b6744238b9c3b6a15df27cd6f2689f";
-} // namespace lynx::jsfxpack
+} // namespace yw::jsfxpack

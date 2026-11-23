@@ -1,7 +1,7 @@
 #pragma once
 
 // Kepler Exo's "hyper chorus" (REA_rodada167d, FX task B), written from the decompile/asm of FL's own engine_x64.dll
-// (clean-room) and checked bit for bit against the DLL's functions called directly (harness /mnt/e/lynx-work/exo167/fxb/).
+// (clean-room) and checked bit for bit against the DLL's functions called directly (harness /mnt/e/yw-work/exo167/fxb/).
 //
 // Structure (wrapper at synth+0x1cc78, ctor FUN_18000ea10, process FUN_18000ebf0):
 //  - two banks (FUN_18000f3a0 objects, 0x2000d0 bytes each, pointers at synth+0x1cd48 / +0x1cd50, table rows 0–3 and
@@ -38,7 +38,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace kepler_exo
 {
@@ -390,4 +390,4 @@ struct HyperChorusT
 
 using HyperChorus = HyperChorusT<>;
 } // namespace kepler_exo
-} // namespace lynx
+} // namespace yw

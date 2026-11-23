@@ -9,18 +9,18 @@
 namespace tb169g2
 {
 // a TB channel from one of FL's presets (the plugin list's way), or nullopt without FL
-std::optional<lynx::ChannelDef> channel (const char* preset)
+std::optional<yw::ChannelDef> channel (const char* preset)
 {
     if (realFlpDir.empty())
         return std::nullopt;
     const auto path = (std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Generators" / "Transistor Bass" / preset).string();
-    return lynx::natives::channelFromPresetFile (lynx::InstrumentKind::transistorbass, path, natives142::flAccess());
+    return yw::natives::channelFromPresetFile (yw::InstrumentKind::transistorbass, path, natives142::flAccess());
 }
 
 struct Player
 {
-    std::unique_ptr<lynx::Instrument> inst = lynx::makeTransistorBassInstrument();
-    explicit Player (const lynx::ChannelDef& c)
+    std::unique_ptr<yw::Instrument> inst = yw::makeTransistorBassInstrument();
+    explicit Player (const yw::ChannelDef& c)
     {
         inst->prepare (44100.0);
         inst->configure (c, 140.0);
@@ -41,7 +41,7 @@ struct Player
 
 // a held note through a new instrument, at full velocity (sequencer off: an accent) then at 0.6 (none), 1.5 s each
 // (the delay's feedback needs a few echoes): interleaved samples
-std::vector<float> render (const lynx::ChannelDef& c, int key)
+std::vector<float> render (const yw::ChannelDef& c, int key)
 {
     std::vector<float> out;
     for (const auto velocity : { 1.0f, 0.6f })
@@ -56,21 +56,21 @@ std::vector<float> render (const lynx::ChannelDef& c, int key)
 // every control in play: the effect sections on, a delay send (pulse width, its LFO and the 303 pulse act on it),
 // the LFO on the pulse width, and accents on every other step of the edit program's sequence (the accent knob acts on
 // accented steps, decay on the others)
-void sectionsOn (lynx::ChannelDef& c)
+void sectionsOn (yw::ChannelDef& c)
 {
     for (const auto i : { 14, 27, 32 })
-        lynx::modelparams::setRawValue (c, i, 1.0f);
-    lynx::modelparams::setRawValue (c, 1, 0.0f);
-    lynx::modelparams::setRawValue (c, 13, 0.5f);
-    lynx::modelparams::setRawValue (c, 34, 0.5f); // (some factory programs send nothing to the delay)
-    for (int i = 0; i < lynx::tbseq::steps; ++i)
-        lynx::modelparams::setRawValue (c, lynx::tbseq::firstStep + 5 * i + 4, i % 2 == 0 ? 1.0f : 0.0f);
+        yw::modelparams::setRawValue (c, i, 1.0f);
+    yw::modelparams::setRawValue (c, 1, 0.0f);
+    yw::modelparams::setRawValue (c, 13, 0.5f);
+    yw::modelparams::setRawValue (c, 34, 0.5f); // (some factory programs send nothing to the delay)
+    for (int i = 0; i < yw::tbseq::steps; ++i)
+        yw::modelparams::setRawValue (c, yw::tbseq::firstStep + 5 * i + 4, i % 2 == 0 ? 1.0f : 0.0f);
 }
 
 // the parameters of the patch whose change does not move this note: the names, for the message
-std::string unmoved (const lynx::ChannelDef& c, int key)
+std::string unmoved (const yw::ChannelDef& c, int key)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto base = render (c, key);
     std::string out;
     for (const auto& p : transistorBassParams())
@@ -88,10 +88,10 @@ std::string unmoved (const lynx::ChannelDef& c, int key)
 } // namespace tb169g2
 
 // FL adds a new Transistor Bass from its Plugin database (Generators\Synth classic\Transistor Bass.fst = "Factory
-// programs"): LYNX's new channel has those values, not zeros
+// programs"): YW's new channel has those values, not zeros
 TEST (tb169g2_new_channel_has_fl_values)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto factory = tb169g2::channel ("Factory programs.fst");
     if (! factory)
         return;
@@ -133,7 +133,7 @@ TEST (tb169g2_every_knob_moves_the_sound_sequencer_off)
 // program), every knob changes what that note plays
 TEST (tb169g2_every_knob_moves_the_sound_sequencer_on)
 {
-    using namespace lynx;
+    using namespace yw;
     for (const auto* preset : { "Factory programs.fst", "Empty.fst" })
     {
         auto c = tb169g2::channel (preset);
@@ -158,7 +158,7 @@ TEST (tb169g2_every_knob_moves_the_sound_sequencer_on)
 // then changes the sound at once
 TEST (tb169g2_live_knob_after_note_program)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto c = tb169g2::channel ("Factory programs.fst");
     if (! c)
         return;
@@ -189,11 +189,11 @@ TEST (tb169g2_live_knob_after_note_program)
 }
 
 // FL's channel volume reaches Transistor Bass only as MIDI CC 7 (FUN_18000d780: output × cc/127; Final.Vol unread): at
-// FL's default volume (10000 of 12800 → CC 100) the output is 100/127 of full volume — LYNX used its channel gain curve
+// FL's default volume (10000 of 12800 → CC 100) the output is 100/127 of full volume — YW used its channel gain curve
 // (0.552 at 78 %), 3 dB below FL's render of the Plugin database state (REA_rodada169l §5)
 TEST (tb169g2_channel_volume_as_midi_volume)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto c = tb169g2::channel ("Sequencer off.fst");
     if (! c)
         return;

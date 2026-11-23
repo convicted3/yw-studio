@@ -1,8 +1,8 @@
 #pragma once
 
 // Round 190bi: the drawing side of core/ShotScale.h — one pixel scale for every headless picture route.
-//   LYNX.exe --snapshot out\s Demo.lynx --shot-scale 2      (or LYNX_SHOT_SCALE=2; LYNX_PARITYSHOT_SCALE=2 too)
-//   --shot-suffix @2x / LYNX_SHOT_SUFFIX=@2x: "s-mixer.png" is written as "s-mixer@2x.png" (default: names unchanged)
+//   YW.exe --snapshot out\s Demo.yw --shot-scale 2      (or YW_SHOT_SCALE=2; YW_PARITYSHOT_SCALE=2 too)
+//   --shot-suffix @2x / YW_SHOT_SUFFIX=@2x: "s-mixer.png" is written as "s-mixer@2x.png" (default: names unchanged)
 // Without any of them every route draws exactly what it drew before (scale 1, same calls, same pixels).
 
 #include <optional>
@@ -11,7 +11,7 @@
 
 #include "core/ShotScale.h"
 
-namespace lynx::shot
+namespace yw::shot
 {
 namespace detail
 {
@@ -25,7 +25,7 @@ inline juce::String& argumentSuffix()
     static juce::String text;
     static bool read = false;
     if (! read)
-        read = true, text = juce::SystemStats::getEnvironmentVariable ("LYNX_SHOT_SUFFIX", {});
+        read = true, text = juce::SystemStats::getEnvironmentVariable ("YW_SHOT_SUFFIX", {});
     return text;
 }
 inline shotscale::Choice& choice()
@@ -35,8 +35,8 @@ inline shotscale::Choice& choice()
     if (! read)
     {
         read = true;
-        c = shotscale::choose (argumentScale().toStdString(), juce::SystemStats::getEnvironmentVariable ("LYNX_SHOT_SCALE", {}).toStdString(),
-                               juce::SystemStats::getEnvironmentVariable ("LYNX_PARITYSHOT_SCALE", {}).toStdString());
+        c = shotscale::choose (argumentScale().toStdString(), juce::SystemStats::getEnvironmentVariable ("YW_SHOT_SCALE", {}).toStdString(),
+                               juce::SystemStats::getEnvironmentVariable ("YW_PARITYSHOT_SCALE", {}).toStdString());
     }
     return c;
 }
@@ -124,4 +124,4 @@ inline juce::Graphics& logical (juce::Graphics& g)
         g.addTransform (juce::AffineTransform::scale (scale()));
     return g;
 }
-} // namespace lynx::shot
+} // namespace yw::shot

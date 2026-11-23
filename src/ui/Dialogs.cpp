@@ -17,7 +17,7 @@
 #include "ui/TrackIcons.h"
 #include "ui/WindowOwner.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -32,7 +32,7 @@ public:
 
     void paint (juce::Graphics& g) override
     {
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
 
         for (int i = 0; i <= (int) palette.size(); ++i)
         {
@@ -62,7 +62,7 @@ public:
 
     void mouseDown (const juce::MouseEvent& e) override
     {
-        const auto& palette = lynxPalette();
+        const auto& palette = ywPalette();
 
         for (int i = 0; i <= (int) palette.size(); ++i)
             if (cell (i).expanded (1).contains (e.getPosition()))
@@ -92,7 +92,7 @@ class NameAndColourWindow final : public ui::dialog::Alert
 {
 public:
     // `icon` (FL's index, 0 = none; -1 = no icon section): issue #220 (round 190ng), FL's "Rename, color and icon" sets the
-    // icon in the same window (FL: its Icon button, F5); LYNX shows its icon picker with the search box under the colours
+    // icon in the same window (FL: its Icon button, F5); YW shows its icon picker with the search box under the colours
     NameAndColourWindow (const juce::String& title, const juce::String& name, std::uint32_t colour, int icon = -1)
         : ui::dialog::Alert (title, {}, juce::MessageBoxIconType::NoIcon, nullptr, 400), swatches (colour)
     {
@@ -270,7 +270,7 @@ std::unique_ptr<juce::AlertWindow> makeRecordChoiceDialog()
 
 namespace
 {
-// FL's "Import MIDI data" window (REA rounds 143 / 146b, TMIDIImportForm): its options as LYNX can apply them
+// FL's "Import MIDI data" window (REA rounds 143 / 146b, TMIDIImportForm): its options as YW can apply them
 class MidiChannelFilter final : public juce::Component,
                                 public juce::SettableTooltipClient
 {
@@ -370,13 +370,13 @@ public:
         // Which channels to import?
         channels.mask = o.channels;
 
-        // Channel type (FL: FLEX / MIDI Out…; LYNX: its synth or a MIDI Out on the note's MIDI channel)
+        // Channel type (FL: FLEX / MIDI Out…; YW: its synth or a MIDI Out on the note's MIDI channel)
         channelType.addItem (tr ("YW Studio synth"), 1);
         channelType.addItem (tr ("MIDI Out"), 2);
         channelType.setSelectedId (o.midiOut ? 2 : 1, juce::dontSendNotification);
         channelType.setTooltip (tr ("MIDI Out channels play the plugins and the MIDI output devices on their port (Settings › MIDI › Output devices › Port), on their MIDI channel"));
 
-        // Which controller to import? (the ones LYNX applies: 7 / 11 volume, 10 pan, when the file has them)
+        // Which controller to import? (the ones YW applies: 7 / 11 volume, 10 pan, when the file has them)
         controller.addItem (eventLane ? juce::String ("---") : tr ("None"), 1); // (FL's "---" in the Event editor: every controller)
         controllerIds.push_back (-1);
         std::set<int> present;
@@ -571,7 +571,7 @@ void showNameColourIconDialog (const juce::String& title, const juce::String& na
                                std::function<void (const juce::String&, std::uint32_t, int)> onDone, bool focusIcons)
 {
     // Issue #179: one rename window at a time, as in FL (F4 pressed again, or held, opened one more on every press and
-    // spamming it crashed LYNX). A second request while one is open brings that one to the front.
+    // spamming it crashed YW). A second request while one is open brings that one to the front.
     static juce::Component::SafePointer<NameAndColourWindow> open;
     if (auto* existing = open.getComponent(); existing != nullptr && existing->isShowing())
     {
@@ -599,7 +599,7 @@ namespace
 {
 // FL's "Gradient editor" (Gradient color..., REA_rodada177a §5 [SHOT pairs/fl-gradient-editor.png]): a First and a Last
 // swatch with the blend between them, buttons to copy First into Last, swap them and copy Last into First, and a colour
-// picker for the swatch being edited. LYNX's picker replaces FL's colour selector.
+// picker for the swatch being edited. YW's picker replaces FL's colour selector.
 class GradientPanel final : public juce::Component
 {
 public:
@@ -838,9 +838,9 @@ void showSamplePitchDialog (AudioEngine& engine, int channel)
                              true);
     keepAboveMainWindow (*window);
 }
-} // namespace lynx
+} // namespace yw
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -874,7 +874,7 @@ public:
             // (round 190kd, FL 2026 shot f09: FL draws each choice once, as a radio dot; an AlertWindow labels a named
             // custom component above it, so the name goes)
             b->setName ({});
-            b->getProperties().set ("lynxRadio", true);
+            b->getProperties().set ("ywRadio", true);
             b->setSize (rowWidth (m), 26);
             b->setRadioGroupId (190);
             b->setClickingTogglesState (true);
@@ -967,7 +967,7 @@ namespace messages
 {
 const std::vector<Entry>& all()
 {
-    // FL's entries LYNX shows (the rest of FL's list belongs to features with their own setting in LYNX)
+    // FL's entries YW shows (the rest of FL's list belongs to features with their own setting in YW)
     // (round 190ey: FL's "RecAutoSwitchExternalInput", the External input question of issue #152; its heading "Audio" is
     // inferred from FL's table order, not decoded)
     // (round 190jv: FL's next record, 0x33, "TrimUnusedMixerTracks" in File/Data — the Trim unused tracks question)
@@ -1028,4 +1028,4 @@ juce::PopupMenu manageMenu()
     return menu;
 }
 } // namespace messages
-} // namespace lynx
+} // namespace yw

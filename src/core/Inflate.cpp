@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -262,4 +262,4 @@ std::vector<std::uint8_t> zlibStored (const std::vector<std::uint8_t>& data)
     return out;
 }
 
-} // namespace lynx
+} // namespace yw

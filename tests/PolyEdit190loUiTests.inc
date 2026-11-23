@@ -1,9 +1,9 @@
 // --- Round 190lo (UI half): the polyphonic note editor's analyses prepared ahead of time ("Prepare edited clips when a
-// project opens", a LYNX extra) and the note-assignment comparison the editor follows undo with --------------------------
+// project opens", a YW extra) and the note-assignment comparison the editor follows undo with --------------------------
 
 TEST (polyedit190lo_prepared_analysis_store)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto source = pe190lk::chord ({ 60.0, 64.0, 67.0 });
     auto m = pe190lk::cMajor();
     const auto e4 = pe190lk::noteNear (m, 64.0);
@@ -45,7 +45,7 @@ TEST (polyedit190lo_prepared_analysis_store)
 
 TEST (polyedit190lo_same_notes_ignores_assignment)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto& m = pe190lk::cMajor();
     auto other = m;
     CHECK (polyedit::sameNotes (m, other));

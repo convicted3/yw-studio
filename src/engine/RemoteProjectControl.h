@@ -5,7 +5,7 @@
 #include <deque>
 #include <functional>
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 namespace remote_document
@@ -35,4 +35,4 @@ private:
     AudioEngine& engine;
     std::deque<Snapshot> snapshots;
 };
-} // namespace lynx
+} // namespace yw

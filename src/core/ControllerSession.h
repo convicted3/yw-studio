@@ -6,7 +6,7 @@
 //   device bytes ─► Hub::input ─► Session ─► Surface (transport, mixer bank, Channel Rack, plugin page, pads)
 //   device bytes ◄─ Hub::refresh ◄─ Session ◄─ Surface (LEDs, motor faders, display text; only what changed)
 //
-// The Surface is LYNX seen from a controller; the app implements it (ui/ControllerBridge), tests use a fake one. The
+// The Surface is YW seen from a controller; the app implements it (ui/ControllerBridge), tests use a fake one. The
 // later phases (the local control API of issue #75, FL-style device scripts) sit on the same Surface.
 //
 // Links made by hand come first: a controller the user linked with "Link to MIDI controller" is not taken by the
@@ -24,12 +24,12 @@
 #include "core/ControllerProfile.h"
 #include "core/Preferences.h"
 
-namespace lynx::controller
+namespace yw::controller
 {
 enum class Param : std::uint8_t { volume, pan };
 enum class Switch : std::uint8_t { mute, solo, arm };
 
-// LYNX as a controller sees it. Values are 0…1 as automation and MIDI links use them (a pan's centre is 0.5).
+// YW as a controller sees it. Values are 0…1 as automation and MIDI links use them (a pan's centre is 0.5).
 // Mixer track 0 is the Master, 1… are the inserts. Message thread only.
 class Surface
 {
@@ -190,4 +190,4 @@ std::string volumeText (float value01);    // "80%"
 std::string panText (float value01);       // "C", "L50", "R100"
 // A text cut and padded to `width` plain ASCII characters (accented Latin letters lose their accent, others become '?').
 std::string displayAscii (const std::string& utf8, int width);
-} // namespace lynx::controller
+} // namespace yw::controller

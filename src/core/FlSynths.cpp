@@ -5,7 +5,7 @@
 #include <cstring>
 #include <string>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -49,7 +49,7 @@ bool synthFromHarmless (const std::vector<std::uint8_t>& d, double bpm, SynthSet
 
     // --- oscillators (REA_rodada21 §1.1–1.4): the color gives the amplitude and phase of each harmonic, the mask multiplies
     // harmonic n by g_((n−1) mod 12)·m + (1 − m) and the "detune" p39 spaces the partials at f·(1 + (k − 1)·D);
-    // everything becomes the spectrum of LYNX's "spectral" oscillator. Sub 1 is a sine one octave below ---
+    // everything becomes the spectrum of YW's "spectral" oscillator. Sub 1 is a sine one octave below ---
     const auto mask = std::clamp (x (23), 0.0, 1.0);
     auto colorAmplitude = [color] (double n) {
         const auto even = std::fmod (n, 2.0) == 0.0, mod4 = std::fmod (n, 4.0) == 0.0;
@@ -213,7 +213,7 @@ bool synthFromHarmless (const std::vector<std::uint8_t>& d, double bpm, SynthSet
     const auto hi = std::log2 (17000.0) + std::max (0.0, margin * eR - 1.0);
     auto position = lo + std::clamp (p (54), 0, 8192) / 8192.0 * (hi - lo);
     const auto keyTrack = std::clamp (p (57), -2000, 2000) / 1000.0;
-    position += keyTrack * std::log2 (130.81 / 128.0); // LYNX measures keytracking from key 48
+    position += keyTrack * std::log2 (130.81 / 128.0); // YW measures keytracking from key 48
     s.keyTrack = (float) keyTrack;
     s.resonance = (float) std::clamp (0.9 * x (59) + (p (62) > 0 ? 0.1 : 0.0), 0.0, 1.0); // approximation (peak width not decoded)
 
@@ -503,4 +503,4 @@ bool synthFromDX10 (const std::vector<std::uint8_t>& d, SynthSettings& synth)
     synth = s;
     return true;
 }
-} // namespace lynx
+} // namespace yw

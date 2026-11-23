@@ -1,4 +1,4 @@
-// Round 165j: LYNX Tune against Auto-Tune Pro / Waves Tune Real-Time on her takes and synthetic voices
+// Round 165j: YW Tune against Auto-Tune Pro / Waves Tune Real-Time on her takes and synthetic voices
 // (docs/analise/REA_rodada165j.md §4): the corrected voice kept its highs, and the grain overlap-add is normalised.
 
 namespace tune165
@@ -35,7 +35,7 @@ TEST (tune_keeps_the_highs_of_a_corrected_vowel_round165j)
         const double hz = (cents > 0 ? 220.0 : 293.66) * std::exp2 (cents / 1200.0);
         const auto x = r95::vowel (fs, (int) (fs * 1.2), [hz] (double) { return hz; });
         auto p = r95::tuneDefaults();
-        p[lynx::lynxtune::scale] = 0.0f;
+        p[yw::ywtune::scale] = 0.0f;
         int latency = 0;
         const auto y = r95::runTune (x, fs, p, latency);
         const int a = (int) (0.4 * fs), b = (int) (1.1 * fs);
@@ -55,7 +55,7 @@ TEST (psola_normalised_overlap_add_round165j)
         double e[2] = { 0.0, 0.0 }, ex = 0.0;
         for (int k = 0; k < 2; ++k)
         {
-            lynx::vocal::Psola s;
+            yw::vocal::Psola s;
             s.prepare (fs, fs / 80.0, 1200);
             s.setNormalise (k == 1);
             for (int i = 0; i < (int) x.size(); ++i)

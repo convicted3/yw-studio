@@ -1,6 +1,6 @@
 #pragma once
 
-// Capture automation (round 190op, research190oe P7; LYNX extra, named after Live 13's announced "Capture Automation" so
+// Capture automation (round 190op, research190oe P7; YW extra, named after Live 13's announced "Capture Automation" so
 // it can become Live-exact once Live 13 can be studied, P16). The automation sibling of Capture MIDI (core/Recorder.h,
 // round 170d): knob, fader and button moves made while the transport plays but nothing records are kept in a buffer of
 // the last minutes; "Capture automation" turns the last continuous gesture of each moved control into automation, in
@@ -17,7 +17,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::captureauto
+namespace yw::captureauto
 {
 struct Entry
 {
@@ -146,4 +146,4 @@ inline std::vector<Gesture> lastGestures (const std::deque<Entry>& entries, doub
     }
     return out;
 }
-} // namespace lynx::captureauto
+} // namespace yw::captureauto

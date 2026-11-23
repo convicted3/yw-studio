@@ -18,16 +18,16 @@ extern "C"
 #include "pocketpy.h"
 }
 
-namespace lynx::vfx::script
+namespace yw::vfx::script
 {
 namespace
 {
 // ---------------------------------------------------------------------------------------------------------------
-// The flvfx module (Python side). Written from FL's published API reference; LYNX's own code. The host part
-// (_lynxvfx) is native: it turns triggers / releases / property changes into LYNX voice events at the current sample
+// The flvfx module (Python side). Written from FL's published API reference; YW's own code. The host part
+// (_ywvfx) is native: it turns triggers / releases / property changes into YW voice events at the current sample
 // and reads / writes the controls and the output controllers.
 constexpr const char* flvfxSource = R"PY(
-import _lynxvfx as _host
+import _ywvfx as _host
 
 class _Context:
     def __init__(self):
@@ -184,7 +184,7 @@ def setOutputController(name, value):
 AddOutputController = addOutputController
 SetOutputController = setOutputController
 
-# --- LYNX's glue (called by the host) ---------------------------------------------------------------------------
+# --- YW's glue (called by the host) ---------------------------------------------------------------------------
 _incoming = {}
 
 def _in_on(i, note, fine, vel, rel, pan, fcut, fres, color):
@@ -538,7 +538,7 @@ public:
         }
     }
 
-    // _lynxvfx's natives reach the instance through the VM's context
+    // _ywvfx's natives reach the instance through the VM's context
     static Runtime* current() { return static_cast<Runtime*> (py_getvmctx()); }
 
     Event* emit()
@@ -757,7 +757,7 @@ private:
     bool warmedUp = false; // (FL has run onTick while stopped before any note: one call before the first block)
 };
 
-// --- _lynxvfx (native) ---------------------------------------------------------------------------------------------
+// --- _ywvfx (native) ---------------------------------------------------------------------------------------------
 
 bool nOn (int argc, py_StackRef argv)
 {
@@ -862,10 +862,10 @@ bool nSetExtra (int argc, py_StackRef argv)
     return true;
 }
 
-// Makes the current VM ready for a script: _lynxvfx + flvfx. False (error text) if flvfx failed (never expected).
+// Makes the current VM ready for a script: _ywvfx + flvfx. False (error text) if flvfx failed (never expected).
 bool installFlvfx (std::string& error)
 {
-    py_GlobalRef host = py_newmodule ("_lynxvfx");
+    py_GlobalRef host = py_newmodule ("_ywvfx");
     py_bindfunc (host, "on", nOn);
     py_bindfunc (host, "off", nOff);
     py_bindfunc (host, "prop", nProp);
@@ -1566,7 +1566,7 @@ void holdScriptThread (bool hold) noexcept
 
 const char* apiReference() noexcept
 {
-    return R"(VFX Script runs a Python script on the notes (voices) that reach it. LYNX runs it with its built-in Python
+    return R"(VFX Script runs a Python script on the notes (voices) that reach it. YW runs it with its built-in Python
 (pocketpy): the language and the modules math, random, re, time, sys; scripts cannot open files.
 
 import flvfx as vfx
@@ -1617,4 +1617,4 @@ Callbacks (all optional):
 
 print() writes to the Log tab.)";
 }
-} // namespace lynx::vfx::script
+} // namespace yw::vfx::script

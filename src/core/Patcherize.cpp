@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <map>
 
-namespace lynx::patcherize
+namespace yw::patcherize
 {
 namespace
 {
@@ -124,7 +124,7 @@ std::vector<int> slotsForAll (const Song& song, int track)
             continue;
         const auto sc = song.mixer[(std::size_t) track].effects[(std::size_t) s].sidechain;
         if (sc >= 0 && sidechain >= 0 && sc != sidechain)
-            continue; // one side-chain source per Patcher (its From LYNX side-chain pin)
+            continue; // one side-chain source per Patcher (its From YW side-chain pin)
         if (sc >= 0)
             sidechain = sc;
         out.push_back (s);
@@ -147,7 +147,7 @@ int patcherizeSlots (Song& song, int track, int slot, bool all)
     {
         PatchNode node;
         node.effect = fx[(std::size_t) moved[k]];
-        node.x = 300.0f + 200.0f * (float) k; // (clear of From LYNX on the left)
+        node.x = 300.0f + 200.0f * (float) k; // (clear of From YW on the left)
         node.y = 150.0f;
         if (node.effect.sidechain >= 0)
         {
@@ -226,4 +226,4 @@ int patcherizeSlots (Song& song, int track, int slot, bool all)
     song.removeDeadMidiLinks();
     return patchIndex;
 }
-} // namespace lynx::patcherize
+} // namespace yw::patcherize

@@ -1,6 +1,6 @@
 #pragma once
 
-// FL Studio's Multiband Delay as an exact LYNX mixer effect, rebuilt in docs/analise/REA_rodada71.md (clean-room:
+// FL Studio's Multiband Delay as an exact YW mixer effect, rebuilt in docs/analise/REA_rodada71.md (clean-room:
 // layouts, formulas and behaviour in our own words; no Image-Line code or data in this repository).
 //
 // The plugin splits the signal into 16 bands (crossover "gentle" / "steep" IIR or linear phase), sends each band
@@ -24,12 +24,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::mbdelay
+namespace yw::mbdelay
 {
 constexpr int numBands = 16, numBanks = 8;
 constexpr int numEngineParams = 396; // 8 banks × (16 delays, 16 volumes, 16 pans) + 12 global controls
@@ -81,4 +81,4 @@ private:
 
 // `params` (may be null): the slot's parameters, so the mode's latency is known before the first block (issue #113)
 std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& flState, const EffectParams* params = nullptr);
-} // namespace lynx::mbdelay
+} // namespace yw::mbdelay

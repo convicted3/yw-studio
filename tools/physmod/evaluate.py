@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""evaluate.py - LYNX Model's quality report (round 190ni): every recorded note against the engine's render of it.
+"""evaluate.py - YW Model's quality report (round 190ni): every recorded note against the engine's render of it.
 
   evaluate.py <physmodrender> <notes-root> <fit-dir> <out-dir> [--instruments a,b] [--sets held_out,extra,in_sample]
               [--tables DIR] [--keep-wavs]
@@ -222,7 +222,7 @@ def main():
         print('%s: held-out %s | sampler %s | extra %s | in-sample %s | ctl_key %s | ctl_inst %s' % (
             inst, med('held_out'), med('sampler'), med('extra'), med('in_sample'), med('ctl_key'), med('ctl_inst')), flush=True)
     json.dump(report, open(os.path.join(out, 'evaluation.json'), 'w'), indent=1)
-    lines = ['# LYNX Model: timbre scores against the CC0 recordings', '',
+    lines = ['# YW Model: timbre scores against the CC0 recordings', '',
              'Timbre score 0-10 (tools/physmod/timbre_score.py; phase-blind, per note), median (mean) per set; the wave score '
              '(scripts/fxparity.py, waveform null) beside it. held-out = keys the table never saw (holdout table); sampler = '
              'the nearest recorded key transposed (the bar to beat); ctl_key / ctl_inst = controls (wrong key / wrong '

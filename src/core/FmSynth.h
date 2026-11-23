@@ -1,6 +1,6 @@
 #pragma once
 
-// Tetra: LYNX's own 4-operator FM synthesizer (round 190hs, owner decision O15). LYNX's own engine, name, look and
+// Tetra: YW's own 4-operator FM synthesizer (round 190hs, owner decision O15). YW's own engine, name, look and
 // code; Ableton Live's Operator sets import onto it (core/AlsDevicesFm.cpp) with Operator's own parameter values, so
 // the parameters below use Operator's units and ranges as they are stored in a Live set (times in ms, levels linear,
 // tuning as coarse ratio + fine per mille, filter in Hz). The laws that make those values sound like Operator were
@@ -23,7 +23,7 @@
 #include "core/EngineParams.h"
 #include "core/Instruments.h"
 
-namespace lynx
+namespace yw
 {
 struct ChannelDef;
 
@@ -168,4 +168,4 @@ namespace modelparams
 struct Table;
 Table tetraModelTable();
 } // namespace modelparams
-} // namespace lynx
+} // namespace yw

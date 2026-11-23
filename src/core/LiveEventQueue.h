@@ -9,7 +9,7 @@
 
 #include "core/Scheduler.h"
 
-namespace lynx
+namespace yw
 {
 template <typename T, std::size_t Capacity>
 class SpscQueue
@@ -52,4 +52,4 @@ private:
 };
 
 using LiveEventQueue = SpscQueue<NoteEvent, 256>;
-} // namespace lynx
+} // namespace yw

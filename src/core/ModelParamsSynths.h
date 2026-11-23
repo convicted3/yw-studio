@@ -12,7 +12,7 @@
 
 #include "core/ModelParams.h"
 
-namespace lynx::modelparams
+namespace yw::modelparams
 {
 Table harmlessModelTable();
 Table dx10ModelTable();
@@ -22,9 +22,9 @@ Table autogunModelTable();
 Table miniSynthModelTable();
 Table gmsModelTable();
 Table morphineModelTable();
-} // namespace lynx::modelparams
+} // namespace yw::modelparams
 
-namespace lynx
+namespace yw
 {
 const std::vector<EngineParam>& harmlessEngineParams();
 const std::vector<EngineParam>& dx10EngineParams();
@@ -34,4 +34,4 @@ const std::vector<EngineParam>& autogunEngineParams();
 const std::vector<EngineParam>& miniSynthEngineParams();
 const std::vector<EngineParam>& gmsEngineParams();
 const std::vector<EngineParam>& morphineEngineParams();
-} // namespace lynx
+} // namespace yw

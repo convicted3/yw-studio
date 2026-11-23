@@ -1,6 +1,6 @@
-// --- FL Studio Mobile (.flm) import, round 188f: slice F5 (effects → LYNX slots, their automation lanes). FLM's own
+// --- FL Studio Mobile (.flm) import, round 188f: slice F5 (effects → YW slots, their automation lanes). FLM's own
 // filter designs are rebuilt here from the formulas of REA_rodada182c "F5, round 188f" (cookbook biquads with FLM's
-// amplitude and bandwidth laws) and compared with the response of the LYNX slot the import makes.
+// amplitude and bandwidth laws) and compared with the response of the YW slot the import makes.
 
 #include <array>
 #include <complex>
@@ -14,7 +14,7 @@
 namespace flm188f
 {
 // the flm182c helpers by name (a using-directive would make Bytes ambiguous with tests.cpp's own)
-namespace flm = lynx::flm;
+namespace flm = yw::flm;
 using flm182c::Bytes;
 using flm182c::put;
 using flm182c::u8;
@@ -83,9 +83,9 @@ inline Bq flmFilter (int type, double hz, double q, double rate)
     return { g * k, (type == 0 ? 2.0 : -2.0) * g * k, g * k, k, -2 * c, 1 - s / q };
 }
 
-inline lynx::flm::Module moduleOf (std::uint32_t type, std::vector<float> params)
+inline yw::flm::Module moduleOf (std::uint32_t type, std::vector<float> params)
 {
-    lynx::flm::Module m;
+    yw::flm::Module m;
     m.type = type;
     m.instanceId = 2;
     m.params = std::move (params);
@@ -95,7 +95,7 @@ inline lynx::flm::Module moduleOf (std::uint32_t type, std::vector<float> params
 
 TEST (flm188f_effect_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     // FLM's knobs: the EQ presets "Low Cut 50Hz" / "Low Cut 200Hz" put 0.07 / 0.2863 on the frequency
     CHECK (std::abs (flmfx::equalizerHz (0.07f) - 50.1) < 0.1 && std::abs (flmfx::equalizerHz (0.2863f) - 200.6) < 0.2);
     CHECK (std::abs (flmfx::filterHz (0.0f) - 16.0) < 1e-9 && std::abs (flmfx::filterHz (1.0f) - std::pow (2.0, 14.3)) < 1e-6);
@@ -107,7 +107,7 @@ TEST (flm188f_effect_laws)
 
 TEST (flm188f_eq_responses)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 190dw: the Graphic EQ and the Equalizer are FLM's own engines (Pocket Graphic EQ / Pocket EQ, measured against
     // FLM inside FL in tests/PocketEq190dwTests.inc); the import copies the module's values (parameter k + 1 → k)
     {
@@ -149,7 +149,7 @@ TEST (flm188f_eq_responses)
 
 TEST (flm188f_filter_responses)
 {
-    using namespace lynx;
+    using namespace yw;
     // round 190dw: Pocket Filter (FLM's engine, tests/PocketEq190dwTests.inc) with the module's four values, every slope
     // in one slot
     for (const auto& p : std::vector<std::vector<float>> { { 1.0f, 0.8075f, 0.2562f, 0.0f, 0.0f }, { 1.0f, 0.68f, 0.5037f, 0.5f, 0.5f },
@@ -164,7 +164,7 @@ TEST (flm188f_filter_responses)
                 CHECK (mapped.slots[0].params[(std::size_t) k] == p[(std::size_t) k + 1]);
         }
     }
-    // the frequency knob is one LYNX parameter; the slope is automatable too now (the slot layout no longer changes)
+    // the frequency knob is one YW parameter; the slope is automatable too now (the slot layout no longer changes)
     const auto targets = flmfx::automate (flm188f::moduleOf (9, { 1.0f, 1.0f, 0.0f, 0.0f, 0.0f }), 1, { 0.2f, 0.5f, 1.0f });
     CHECK (targets.size() == 1 && targets[0].param == 0 && targets[0].values == std::vector<float> ({ 0.2f, 0.5f, 1.0f }));
     const auto slope = flmfx::automate (flm188f::moduleOf (9, { 1.0f, 1.0f, 0.0f, 0.0f, 0.0f }), 4, { 0.0f, 1.0f });
@@ -173,7 +173,7 @@ TEST (flm188f_filter_responses)
 
 TEST (flm188f_autoduck_and_reverbs)
 {
-    using namespace lynx;
+    using namespace yw;
     // Autoduck (legacy) "Pump": since round 190dw Pocket Autoduck (module 29's engine) with the legacy curve: depth
     // Ducking² = √(Ducking⁴), rise over 0.5·Attack + 0.001, fall to the next beat, power (Curve + 1)/2
     {
@@ -221,7 +221,7 @@ TEST (flm188f_autoduck_and_reverbs)
             const auto def = makeEffectSlot (EffectKind::pocketReverbClassic).params;
             CHECK (mapped.slots[0].params[18] == def[18] && mapped.slots[0].params[19] == def[19]);
         }
-        // its MIX lane: one LYNX parameter
+        // its MIX lane: one YW parameter
         const auto t = flmfx::automate (flm188f::moduleOf (12, p), 3, { 0.0f, 0.4f, 0.6f });
         CHECK (t.size() == 1 && t[0].slot == 0 && t[0].param == 2);
     }
@@ -265,7 +265,7 @@ inline Bytes fxProject()
 
 TEST (flm188f_imports_effects_and_their_lanes)
 {
-    using namespace lynx;
+    using namespace yw;
     FlpImportReport report;
     std::string error;
     const auto song = importFlm (flm188f::fxProject(), flm182c::options (&report), &error);

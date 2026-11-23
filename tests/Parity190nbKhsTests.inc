@@ -1,4 +1,4 @@
-// Round 190nb: Kilohearts parity on the licensed kHs Essentials — the five snapins without a LYNX effect of their own
+// Round 190nb: Kilohearts parity on the licensed kHs Essentials — the five snapins without a YW effect of their own
 // (Ring Mod, Reverser, Resonator, Phase Distortion, Shaper) as hidden laws of Effector (core/KiloheartsDsp.h), and the
 // measured maps of the earlier stand-ins (core/KiloheartsStates.inc, docs/analise/REA_rodada190nb.md).
 // Uses parity190lnkhs::state / load / text / named (tests/Parity190lnKhsTests.inc).
@@ -6,9 +6,9 @@
 
 namespace parity190nbkhs
 {
-inline std::vector<float> run (const lynx::EffectSlot& s, std::vector<float> l, std::vector<float>* rOut = nullptr, double songBeats = -1.0)
+inline std::vector<float> run (const yw::EffectSlot& s, std::vector<float> l, std::vector<float>* rOut = nullptr, double songBeats = -1.0)
 {
-    auto fx = lynx::makeEffect (s);
+    auto fx = yw::makeEffect (s);
     fx->prepare (48000.0);
     fx->reset();
     std::vector<float> r = l;
@@ -27,7 +27,7 @@ inline std::vector<float> run (const lynx::EffectSlot& s, std::vector<float> l, 
 
 TEST (parity190nbkhs_five_snapins_open_on_effector_laws_and_effector_stays_fl)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     namespace k = khsdsp;
     int n = 0;
@@ -64,7 +64,7 @@ TEST (parity190nbkhs_five_snapins_open_on_effector_laws_and_effector_stays_fl)
 
 TEST (parity190nbkhs_resonator_is_a_comb_of_one_period_and_its_allpass_blend)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     // 480 Hz (a whole period of 100 samples: the interpolation is exact), intensity 0 = an all-pass (energy kept)
@@ -92,7 +92,7 @@ TEST (parity190nbkhs_resonator_is_a_comb_of_one_period_and_its_allpass_blend)
 
 TEST (parity190nbkhs_ring_mod_reverser_shaper_and_phase_distortion_laws)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     // Ring Mod at 100 Hz, rectify +100 %: a constant input becomes 0.5 · |sin|, never negative, peak 0.5
@@ -130,7 +130,7 @@ TEST (parity190nbkhs_ring_mod_reverser_shaper_and_phase_distortion_laws)
 
 TEST (parity190nbkhs_measured_maps_of_the_earlier_stand_ins)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace parity190lnkhs;
     int n = 0;
     // kHs Delay: a linear mix (dry 1 − m, wet m) on Echoform's equal-power Mix + Output (the echoes only); one sample late

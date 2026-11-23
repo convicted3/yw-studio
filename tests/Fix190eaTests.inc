@@ -7,7 +7,7 @@
 //     the engine and the three layouts.
 // (2) The Master looks ended in Fruity Limiter, which holds sample peaks only: bright mixes left +0.8 … +3.3 dBTP.
 //     Every look now ends in Apex Limiter with True peak on at −1 dBTP (core/MasterLooks.h). Measured here on the
-//     16× reference meter of round 190co (apexfix190co::reference16x). LYNX_190EA_REPORT=1 prints the numbers.
+//     16× reference meter of round 190co (apexfix190co::reference16x). YW_190EA_REPORT=1 prints the numbers.
 
 #include <chrono>
 #include <cstdlib>
@@ -27,7 +27,7 @@
 
 namespace fix190ea
 {
-using namespace lynx;
+using namespace yw;
 
 inline bool onePattern (const Song& s)
 {
@@ -123,7 +123,7 @@ struct Measured
     double truePeak = -200.0, lufs = -200.0, samplePeak = -200.0;
 };
 
-// true peak on the 16× reference (`reference`) or on LYNX's own meter (fixed in round 190co; faster)
+// true peak on the 16× reference (`reference`) or on YW's own meter (fixed in round 190co; faster)
 inline Measured measure (const std::vector<float>& l, const std::vector<float>& r, bool reference)
 {
     Measured m;
@@ -170,7 +170,7 @@ inline Song legacyLookSong (const MasterLookSettings& s)
 
 TEST (fix190ea_song_keeps_one_pattern)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fix190ea;
     Song bare; // what only code builds by hand (Song{}): no pattern
     CHECK (bare.patterns.empty());
@@ -199,7 +199,7 @@ TEST (fix190ea_song_keeps_one_pattern)
 
 TEST (fix190ea_deleting_the_last_pattern_leaves_pattern_1)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fix190ea;
     auto s = Song::makeDefault();
     s.patterns.resize (3);
@@ -231,7 +231,7 @@ TEST (fix190ea_deleting_the_last_pattern_leaves_pattern_1)
 
 TEST (fix190ea_new_projects_and_imports_have_a_pattern)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fix190ea;
     // File › New: every built-in template (Empty, Basic beat, Trap with 808, House) and the default song
     const auto names = templateNames();
@@ -316,7 +316,7 @@ TEST (fix190ea_engine_and_editors_keep_and_guard_the_pattern)
 
 TEST (fix190ea_looks_end_in_a_true_peak_stage)
 {
-    using namespace lynx;
+    using namespace yw;
     for (int id = 1; id <= looks::count; ++id)
     {
         const auto c = looks::chain (MasterLookSettings { id, 0.5f, { 0, 0, 0 }, 0 });
@@ -331,7 +331,7 @@ TEST (fix190ea_looks_end_in_a_true_peak_stage)
         CHECK (apex::oversamplingFactor (tp.params[(std::size_t) apex::pOversampling]) == 1 && apex::ditherBits (tp.params[(std::size_t) apex::pDither]) == 0);
     }
     CHECK (looks::trueCeilingDb == -1.0f);
-    // the showcase song (Demo.lynx, the website's demo.mp3) ends with the same stage, after its own Limiter
+    // the showcase song (Demo.yw, the website's demo.mp3) ends with the same stage, after its own Limiter
     const auto showcase = makeShowcaseSong();
     const auto& master = showcase.mixer[0].effects;
     CHECK (master.size() >= 2 && master.back().kind == EffectKind::apexLimiter && master.back().look == 0
@@ -341,7 +341,7 @@ TEST (fix190ea_looks_end_in_a_true_peak_stage)
 // Below its ceiling the stage changes nothing but the time (its constant latency): the looks keep their sound
 TEST (fix190ea_true_peak_stage_is_transparent_below_the_ceiling)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fix190ea;
     const auto slot = looks::chain (MasterLookSettings { looks::balanced, 0.5f, { 0, 0, 0 }, 0 }).back();
     auto l = apexfix190co::mix ((int) rate, rate, 5), r = l;
@@ -367,9 +367,9 @@ TEST (fix190ea_true_peak_stage_is_transparent_below_the_ceiling)
 
 TEST (fix190ea_every_look_holds_minus_1_dbtp)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fix190ea;
-    const bool report = std::getenv ("LYNX_190EA_REPORT") != nullptr;
+    const bool report = std::getenv ("YW_190EA_REPORT") != nullptr;
     std::vector<float> drumsL, drumsR, mixL, mixR;
     hotDrums (drumsL, drumsR, 2.0);
     brightMix (mixL, mixR, 1.5);
@@ -412,7 +412,7 @@ TEST (fix190ea_every_look_holds_minus_1_dbtp)
 // the project's own effects). Applying a look again gives the five-slot chain, in place where the next row is free.
 TEST (fix190ea_older_four_slot_looks)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace fix190ea;
     const MasterLookSettings normal { looks::warmTape, 0.5f, { 1, 0, -1 }, -2 };
     auto song = legacyLookSong (normal);
@@ -479,7 +479,7 @@ TEST (fix190ea_older_four_slot_looks)
 
 TEST (fix190ea_fl_export_of_a_look)
 {
-    using namespace lynx;
+    using namespace yw;
     auto song = Song::makeDefault();
     CHECK (looks::apply (song, MasterLookSettings { looks::balanced, 0.5f, { 0, 0, 0 }, 0 }));
     flpexport::Report report;

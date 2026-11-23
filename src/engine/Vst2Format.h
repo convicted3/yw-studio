@@ -6,7 +6,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-namespace lynx
+namespace yw
 {
 // VST2 plugin hosting. JUCE 8 only hosts VST2 with Steinberg's (no longer distributed) SDK, so this is a
 // host of our own, written from the publicly documented VST 2.4 binary interface (the AEffect structure, the
@@ -52,4 +52,4 @@ std::optional<Info> info (juce::AudioPluginInstance& plugin);
 bool getChunk (juce::AudioPluginInstance& plugin, std::vector<std::uint8_t>& out, bool program);
 bool setChunk (juce::AudioPluginInstance& plugin, const std::vector<std::uint8_t>& data, bool program);
 } // namespace vst2
-} // namespace lynx
+} // namespace yw

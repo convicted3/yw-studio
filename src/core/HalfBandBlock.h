@@ -14,14 +14,14 @@
 
 #include "core/Simd.h"
 
-namespace lynx::halfband
+namespace yw::halfband
 {
 // acc[k] = Σ coef[j] · lin[L − 1 + k − j] over j = 0 … L − 1, summed in that order from 0, for k in [0, count)
 inline void sums (const float* coef, int L, const float* lin, int count, float* acc) noexcept
 {
     const int P = L - 1;
     int k = 0;
-#if LYNX_X86
+#if YW_X86
     for (; k + 8 <= count; k += 8)
     {
         auto a0 = _mm_setzero_ps(), a1 = _mm_setzero_ps();
@@ -107,4 +107,4 @@ void downBlock (Stage& s, const float* in, int m, float* out) noexcept
         s.oddHist[(std::size_t) q] = s.oddHist[(std::size_t) (q + L)] = oddLin[(std::size_t) (P + m - 1 - j)];
     }
 }
-} // namespace lynx::halfband
+} // namespace yw::halfband

@@ -2,7 +2,7 @@
 
 // FL's FPC (pad drum sampler): its plugin state (the 0xD5 record of an .flp channel or an .fst kit), read and
 // written. Format in docs/analise/REA_rodada9.md §1 (clean-room). A state that is read and written back without
-// an edit is the same bytes: every chunk is kept, the ones LYNX does not know as raw bytes in their place.
+// an edit is the same bytes: every chunk is kept, the ones YW does not know as raw bytes in their place.
 
 #include <array>
 #include <cstdint>
@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-namespace lynx::fpc
+namespace yw::fpc
 {
-// A chunk LYNX does not interpret. `position` is its index in the chunk list of its container, so the writer puts
+// A chunk YW does not interpret. `position` is its index in the chunk list of its container, so the writer puts
 // it back where it was.
 struct RawChunk
 {
@@ -116,7 +116,7 @@ struct Kit
 constexpr std::uint32_t oldestVersion = 0xF424B;   // 1,000,011: the first version with chunks (FL Mobile's kits; text of one byte per character)
 constexpr std::uint32_t newestVersion = 0x1E84E403; // what FL 2026 writes
 
-// The state as a kit; nothing when it is not an FPC state LYNX can read (too short, or a version outside
+// The state as a kit; nothing when it is not an FPC state YW can read (too short, or a version outside
 // oldestVersion…newestVersion). A chunk that runs past the end ends its list there (a cut-off state keeps the
 // pads before the cut).
 std::optional<Kit> read (const std::vector<std::uint8_t>& state);
@@ -130,4 +130,4 @@ Kit emptyKit();
 
 std::string toUtf8 (const std::u16string& text);
 std::u16string fromUtf8 (const std::string& text);
-} // namespace lynx::fpc
+} // namespace yw::fpc

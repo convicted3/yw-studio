@@ -1,6 +1,6 @@
 #pragma once
 
-// Issue #215 (round 190ng): wildcards in the export file name (LYNX's own; FL names the file after the project). The
+// Issue #215 (round 190ng): wildcards in the export file name (YW's own; FL names the file after the project). The
 // names follow REAPER's render wildcards, which the issue points to: "$project_$year-$month-$day" -> "MySong_2026-11-19".
 // The Export window keeps the template with its other choices (and in its presets), shows the name it gives, and offers
 // the wildcards in a list to click. Every resolved name is made safe for Windows, macOS and Linux file systems.
@@ -19,7 +19,7 @@
  #define TR_NOOP(text) text // marks a literal for translation (tools/i18n_keys.py scans core too)
 #endif
 
-namespace lynx::exportnaming
+namespace yw::exportnaming
 {
 inline constexpr const char* defaultTemplate = "$project";
 
@@ -288,4 +288,4 @@ inline std::string resolve (std::string_view templ, const Context& c, bool stems
     }
     return name;
 }
-} // namespace lynx::exportnaming
+} // namespace yw::exportnaming

@@ -22,7 +22,7 @@
  #include <unistd.h>
 #endif
 
-namespace lynx::similarity
+namespace yw::similarity
 {
 namespace
 {
@@ -136,7 +136,7 @@ void lowerThreadPriority() noexcept
    #endif
 }
 
-constexpr char magic[] = "LYNXSIM1";
+constexpr char magic[] = "YWSTSIM1";
 } // namespace
 
 bool analyse (const float* mono, std::size_t frames, double sampleRate, Features& out)
@@ -826,7 +826,7 @@ bool Service::runPass (std::vector<std::string>& folders)
                     break;
                 }
             }
-            // LYNX is playing, recording or rendering: the pass waits
+            // YW is playing, recording or rendering: the pass waits
             while (callbacks.shouldPause && callbacks.shouldPause())
             {
                 setStatus ([] (Status& s) { s.paused = true; }, false);
@@ -961,4 +961,4 @@ void Service::run()
         idleWake.notify_all();
     }
 }
-} // namespace lynx::similarity
+} // namespace yw::similarity

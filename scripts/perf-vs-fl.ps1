@@ -1,4 +1,4 @@
-# perf-vs-fl.ps1: one measured run of a DAW on Windows (LYNX, FL Studio, Ableton Live), printed as one JSON line.
+# perf-vs-fl.ps1: one measured run of a DAW on Windows (YW, FL Studio, Ableton Live), printed as one JSON line.
 # Round 190gd, built on round 116 / 165i / 174c's bench.ps1. Process metrics only: no injected input, no focus change
 # requested (Start-Process shows the window the normal way; the caller holds the GUI lock and the user-idle gate).
 #
@@ -10,7 +10,7 @@
 #
 # Measures:
 #   window_s       launch -> biggest visible top-level window >= 900x500 whose title contains -title and that answers
-#                  WM_NULL within 250 ms (LYNX loads a project on the message thread, so it cannot answer before)
+#                  WM_NULL within 250 ms (YW loads a project on the message thread, so it cannot answer before)
 #   settled_s      after the window: first moment the process stays under -quietPct % of one core for 1.5 s
 #   idle_*_pct     CPU over -idleS s after settling, % of ONE logical core (100 = one core); main process and tree
 #   gpu_pct        3D engine utilisation of the process over the idle window (GPU Engine counters), %

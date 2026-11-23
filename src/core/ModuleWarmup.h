@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx::modulewarm
+namespace yw::modulewarm
 {
 // Modules worth starting ahead: VST3 Waves shells ("WaveShell1-VST3 17.1_x64.vst3", any version, also inside a
 // bundle folder). Other plugins load in well under a second, and starting them on another thread is not something
@@ -86,4 +86,4 @@ private:
 std::string waitTemplate (const Waiting& w);
 // "WaveShell1-VST3 17.1_x64.vst3" -> "WaveShell1-VST3 17.1" (path, extension and the _x64 suffix dropped)
 std::string displayName (const std::string& file);
-} // namespace lynx::modulewarm
+} // namespace yw::modulewarm

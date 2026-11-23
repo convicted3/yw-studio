@@ -1,7 +1,7 @@
 // --- Round 190ke: GarageBand / BandLab ideas in the Simple layout (owner decisions D2 / D4 / D5 of coverage190jw):
 // the song fade-out (core/SongFade.h), the Controls tab's eight knobs (core/SmartControls.h), the tuner's display rules
-// and its detector on guitar / bass / voice pitches (core/SimpleTuner.h, core/FlExtraFx.h), and the tags of LYNX's own
-// factory content (core/FactoryContent.h). LYNX_190KE_REPORT=1 prints the fade's measured levels.
+// and its detector on guitar / bass / voice pitches (core/SimpleTuner.h, core/FlExtraFx.h), and the tags of YW's own
+// factory content (core/FactoryContent.h). YW_190KE_REPORT=1 prints the fade's measured levels.
 
 #include <cmath>
 #include <cstdlib>
@@ -20,7 +20,7 @@
 
 namespace gb190ke
 {
-using namespace lynx;
+using namespace yw;
 constexpr double pi = 3.14159265358979323846;
 
 inline Song empty()
@@ -93,7 +93,7 @@ inline std::vector<double> renderWindows (const Song& source, double windowSecon
 
 TEST (gb190ke_fade_out_places_garageband_points_on_the_master)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gb190ke;
     auto s = empty();
     // nothing placed: nothing to fade
@@ -156,7 +156,7 @@ TEST (gb190ke_fade_out_places_garageband_points_on_the_master)
 
 TEST (gb190ke_fade_out_renders_in_the_export)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gb190ke;
     auto s = empty();
     s.bpm = 120.0;
@@ -167,7 +167,7 @@ TEST (gb190ke_fade_out_renders_in_the_export)
     CHECK (before.size() >= 8 && after.size() == before.size());
     if (before.size() < 8 || after.size() != before.size())
         return;
-    if (std::getenv ("LYNX_190KE_REPORT") != nullptr)
+    if (std::getenv ("YW_190KE_REPORT") != nullptr)
         for (std::size_t i = 0; i < before.size(); ++i)
             std::printf ("  window %d: %.2f dB -> %.2f dB\n", (int) i, before[i], after[i]);
     // before the fade the mix is untouched (the first point is the Master's own level)
@@ -180,7 +180,7 @@ TEST (gb190ke_fade_out_renders_in_the_export)
 
 TEST (gb190ke_smart_controls_default_mapping)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gb190ke;
     namespace sc = smartcontrols;
     auto s = empty();
@@ -210,7 +210,7 @@ TEST (gb190ke_smart_controls_default_mapping)
 
 TEST (gb190ke_smart_controls_turn_the_tracks_own_controls)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gb190ke;
     namespace sc = smartcontrols;
     auto s = empty();
@@ -235,7 +235,7 @@ TEST (gb190ke_smart_controls_turn_the_tracks_own_controls)
 
 TEST (gb190ke_smart_controls_remap_is_kept_on_the_insert)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gb190ke;
     namespace sc = smartcontrols;
     auto s = empty();
@@ -276,7 +276,7 @@ TEST (gb190ke_smart_controls_remap_is_kept_on_the_insert)
 
 TEST (gb190ke_tuner_display_rules)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace st = simpletuner;
     CHECK (st::clampReference (440.04) == 440.0 && st::clampReference (500.0) == 470.0 && st::clampReference (300.0) == 410.0);
     CHECK (st::referenceText (442.0) == "442.0 Hz");
@@ -297,7 +297,7 @@ TEST (gb190ke_tuner_display_rules)
 
 TEST (gb190ke_tuner_detects_guitar_bass_and_voice)
 {
-    using namespace lynx;
+    using namespace yw;
     // guitar strings E2…E4, a bass's E1 (with the Bass range), a sung A3 and C5; 30 cents off; another reference
     struct Case
     {
@@ -338,7 +338,7 @@ TEST (gb190ke_tuner_detects_guitar_bass_and_voice)
 
 TEST (gb190ke_factory_content_tags)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace fc = factorycontent;
     const auto& items = fc::items();
     int sounds = 0, beats = 0, chains = 0;
@@ -351,7 +351,7 @@ TEST (gb190ke_factory_content_tags)
         chains += it.kind == fc::Kind::chain;
     }
     CHECK (sounds == (int) soundlib::builtIn().size() && sounds > 0);
-    CHECK (beats >= 8 && chains == (int) lynx::chains::factory().size());
+    CHECK (beats >= 8 && chains == (int) yw::chains::factory().size());
     // GarageBand's keyword families: instrument, genre, mood
     const auto t808 = fc::soundTags ("808 Bass", "Bass");
     CHECK (std::find (t808.begin(), t808.end(), "Bass") != t808.end() && std::find (t808.begin(), t808.end(), "Trap") != t808.end());
@@ -381,7 +381,7 @@ TEST (gb190ke_factory_content_tags)
 
 TEST (gb190ke_factory_beat_and_chain_actions)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace gb190ke;
     namespace fc = factorycontent;
     auto s = empty();

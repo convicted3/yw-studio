@@ -1,6 +1,6 @@
 // Round 190fj: Ember Saturator's measured Tape (core/EmberTape.h: a Jiles–Atherton loop between a record and a playback
 // EQ, the level law and the speed losses fitted black-box on the reference tape saturator's recorded renders,
-// /mnt/e/lynx-work/ember190fj/HANDOFF.md) behind the Law switch: Measured for new instances, Classic — the tape curve of
+// /mnt/e/yw-work/ember190fj/HANDOFF.md) behind the Law switch: Measured for new instances, Classic — the tape curve of
 // rounds 108 … 190, bit for bit — for projects saved before.
 
 #include "Ember190fjRender.h"
@@ -20,7 +20,7 @@ struct Case
 
 inline Render renderCase (const Case& c)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::ember);
     slot.engineRev = 1; // (rollup 0.1.31 step 5: the goldens are the C library's maths; round 190ok's revision 2 (FastMath,
                         // the default of a new slot) is gated by its own quality check, not by these hashes)
@@ -38,7 +38,7 @@ inline Render renderCase (const Case& c)
 // dB and the fundamental's phase in degrees (both against the input, the oversampler's latency removed)
 inline std::pair<double, double> toneResponse (double driveDb, double levelDb, float speed = 0.25f, bool measured = true)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     auto slot = makeEffectSlot (EffectKind::ember);
     slot.params[(std::size_t) em::style] = 1.0f / 3.0f;
@@ -70,7 +70,7 @@ inline std::pair<double, double> toneResponse (double driveDb, double levelDb, f
 
 TEST (ember190fj_law_and_tape_speed_are_appended_and_old_projects_keep_the_classic_tape)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace em = mixsuite::ember;
     const auto& ps = effectInfo (EffectKind::ember).params;
     CHECK (ps.size() == (std::size_t) em::count && em::law == em::classicHot + 1 && em::tapeSpeed == em::law + 1);
@@ -120,9 +120,9 @@ TEST (ember190fj_law_and_tape_speed_are_appended_and_old_projects_keep_the_class
 
 TEST (ember190fj_classic_tape_and_the_other_paths_render_as_the_base_commit_did)
 {
-    using namespace lynx;
+    using namespace yw;
     // FNV-1a of the float bits, the energy and two samples, from the base commit b0cb90aec's objects
-    // (/mnt/e/lynx-work/ember190fj/golden, golden.cpp -DBASE): Tape with the Classic law, an old project (upgraded to
+    // (/mnt/e/yw-work/ember190fj/golden, golden.cpp -DBASE): Tape with the Classic law, an old project (upgraded to
     // Classic), and with the Measured law every path the measured core does not take (bands, other styles, the Classic
     // voicing, a voice)
     namespace em = mixsuite::ember;
@@ -153,7 +153,7 @@ TEST (ember190fj_classic_tape_and_the_other_paths_render_as_the_base_commit_did)
     // other libm versions may round some transcendental calls differently (see Reverb190bzTests.inc)
     std::printf ("  ember classic paths: %d of %d renders hash-identical to the base commit\n", sameBits, n);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == n);
    #else
     (void) sameBits;
@@ -162,7 +162,7 @@ TEST (ember190fj_classic_tape_and_the_other_paths_render_as_the_base_commit_did)
 
 TEST (ember190fj_measured_tape_renders_as_fitted)
 {
-    using namespace lynx;
+    using namespace yw;
     // regression goldens of the measured core (the branch's own renders, same hash / tolerance rules as above)
     namespace em = mixsuite::ember;
     const ember190fj::Case cases[] = {
@@ -182,7 +182,7 @@ TEST (ember190fj_measured_tape_renders_as_fitted)
     }
     std::printf ("  ember measured tape: %d of %d renders hash-identical to the goldens\n", sameBits, n);
    #if defined (__linux__) && defined (__x86_64__) && defined (__GLIBC__) && (__GLIBC__ > 2 || __GLIBC_MINOR__ >= 43) \
-       && ! defined (LYNX_VERB_HASH_OFF)
+       && ! defined (YW_VERB_HASH_OFF)
     CHECK (sameBits == n);
    #else
     (void) sameBits;
@@ -191,7 +191,7 @@ TEST (ember190fj_measured_tape_renders_as_fitted)
 
 TEST (ember190fj_measured_tape_follows_the_reference_level_law)
 {
-    using namespace lynx;
+    using namespace yw;
     // [black-box, the reference's 1 kHz staircase (tp172c)] quiet levels pass at 0 dB at every drive (its compensated
     // drive); the 0 dBFS step comes out 1.2 dB down at its default (Ember 18 dB) and 8.8 dB down at its Drive +10 dB
     // (Ember 28 dB); at Drive +15 dB and 1⅞ ips the output holds a ceiling (−10.6 / −16.6 dB at −6 / 0 dBFS)

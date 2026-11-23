@@ -3,15 +3,15 @@
 
 TEST (zoom167t_key_height_range_reaches_fl)
 {
-    using namespace lynx::gesture;
-    // FL: 16 + 2 px per zoom level, levels 1..50 -> 18..116 px; LYNX keeps its shorter keys too
+    using namespace yw::gesture;
+    // FL: 16 + 2 px per zoom level, levels 1..50 -> 18..116 px; YW keeps its shorter keys too
     CHECK (maxKeyHeight == 16 + 2 * 50);
     CHECK (minKeyHeight <= 16 + 2 * 1);
 }
 
 TEST (zoom167t_vertical_drag_follows_fl_knob)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     HeightZoomDrag z;
     z.begin (300);
     CHECK (z.height (14) == 14);
@@ -37,7 +37,7 @@ TEST (zoom167t_vertical_drag_follows_fl_knob)
 
 TEST (zoom167t_vertical_drag_clamps_height_not_travel)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     HeightZoomDrag z;
     z.begin (1000);
     z.move (0, false); // 1000 px up = 250 levels
@@ -56,7 +56,7 @@ TEST (zoom167t_vertical_drag_clamps_height_not_travel)
 
 TEST (zoom167t_time_zoom_drag)
 {
-    using namespace lynx::gesture;
+    using namespace yw::gesture;
     SpanZoomDrag z;
     z.begin (1000.0, 500.0, 0, 0);
     // 100 px up in small moves = twice the zoom (half the span), around the centre

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Points the AppImage's fixed update address (update/.htaccess on lynx-share.com) at a published release, after checking
+# Points the AppImage's fixed update address (update/.htaccess on yolo.su) at a published release, after checking
 # that release's files. It changes that one file on the site, no deploy. Run it from the release checklist.
 # usage: scripts/publish-appimage-update.sh v0.1.25-alpha [--check-only]
-# A release with an arm64 AppImage (LYNX-<label>-aarch64.AppImage, from 0.1.31) also gets its own address,
-# update/LYNX-aarch64.AppImage.zsync, checked the same way (round 190oy).
+# A release with an arm64 AppImage (YW-<label>-aarch64.AppImage, from 0.1.31) also gets its own address,
+# update/YW-aarch64.AppImage.zsync, checked the same way (round 190oy).
 # Anything wrong: exit 1 with the address left as it was.
 set -euo pipefail
 TAG="${1:?usage: publish-appimage-update.sh <tag> [--check-only]}"
@@ -11,7 +11,7 @@ CHECK_ONLY=0; [[ "${2:-}" == "--check-only" ]] && CHECK_ONLY=1
 # shellcheck source=scripts/appimage-update-lib.sh
 . "$(dirname "$0")/appimage-update-lib.sh"
 LABEL="${TAG#v}"
-APPIMAGE="LYNX-$LABEL-x86_64.AppImage"
+APPIMAGE="YW-$LABEL-x86_64.AppImage"
 BASE="https://github.com/$UPDATE_REPO/releases/download/$TAG"
 fail() { echo "publish-appimage-update: $*" >&2; exit 1; }
 
@@ -36,7 +36,7 @@ check_appimage() {
 }
 check_appimage "$APPIMAGE" "$WORK/x86" "$UPDATE_ADDRESS"
 # the arm64 AppImage, when the release has one
-ARM_APPIMAGE="LYNX-$LABEL-aarch64.AppImage" ARM_ZSYNC=
+ARM_APPIMAGE="YW-$LABEL-aarch64.AppImage" ARM_ZSYNC=
 if gh api "repos/$UPDATE_REPO/releases/tags/$TAG" --jq '.assets[].name' | grep -qxF "$ARM_APPIMAGE.zsync"; then
     check_appimage "$ARM_APPIMAGE" "$WORK/arm" "$UPDATE_ADDRESS_AARCH64"
     ARM_ZSYNC="$BASE/$ARM_APPIMAGE.zsync"

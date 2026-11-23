@@ -14,7 +14,7 @@
 #include <string_view>
 #include <vector>
 
-namespace lynx::zip
+namespace yw::zip
 {
 struct EntryInfo
 {
@@ -57,4 +57,4 @@ struct NewEntry
 
 // The archive of `entries` (stored, in order). Empty with `error` when it would need ZIP64 or a name is empty or too long.
 std::vector<std::uint8_t> write (const std::vector<NewEntry>& entries, std::string* error = nullptr);
-} // namespace lynx::zip
+} // namespace yw::zip

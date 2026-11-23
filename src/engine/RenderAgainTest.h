@@ -6,8 +6,8 @@
 
 #include <juce_core/juce_core.h>
 
-namespace lynx::renderagain
+namespace yw::renderagain
 {
 // Synchronous, on the message thread. "OK (...)" or "ERROR ..."; `log` (optional) gets a line per check.
 juce::String check (std::function<void (const juce::String&)> log = {});
-} // namespace lynx::renderagain
+} // namespace yw::renderagain

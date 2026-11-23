@@ -62,16 +62,16 @@ std::uint32_t bits (float x)
     return u;
 }
 // the effect path: FL's state → effectFromFl → the mixer effect, 512-frame blocks at 44.1 kHz, 60 BPM
-std::uint64_t runSlot (const std::optional<lynx::EffectSlot>& slot);
+std::uint64_t runSlot (const std::optional<yw::EffectSlot>& slot);
 std::uint64_t runEffect (const std::vector<std::uint8_t>& st)
 {
-    return runSlot (lynx::effectFromFl ("Transporter", st, 60.0));
+    return runSlot (yw::effectFromFl ("Transporter", st, 60.0));
 }
-std::uint64_t runSlot (const std::optional<lynx::EffectSlot>& slot)
+std::uint64_t runSlot (const std::optional<yw::EffectSlot>& slot)
 {
-    if (! slot || slot->kind != lynx::EffectKind::flTransporter)
+    if (! slot || slot->kind != yw::EffectKind::flTransporter)
         return 0;
-    auto fx = lynx::makeEffect (*slot);
+    auto fx = yw::makeEffect (*slot);
     fx->prepare (44100.0);
     const auto in = signal();
     std::vector<float> l (48000), r (48000), out;
@@ -99,7 +99,7 @@ struct Set
 // a beat ramp of 22050-sample blocks at 120 BPM; 512-frame blocks, split at the timed settings
 std::uint64_t runEngine (float rate, bool sideChain, bool beatRamp, std::initializer_list<Set> sets)
 {
-    lynx::transporter::Engine e;
+    yw::transporter::Engine e;
     e.prepare (rate);
     for (const auto& s : sets)
         if (s.at < 0)
@@ -141,7 +141,7 @@ std::uint64_t runEngine (float rate, bool sideChain, bool beatRamp, std::initial
 
 TEST (tp167f_state_parsing_and_params)
 {
-    using namespace lynx::transporter;
+    using namespace yw::transporter;
     // version 8 (a demo song's): 22 controls, the flags, source, stereo, send and input tracks
     const auto v8 = parse (tp167f::state (8, { 11000, 5362, 5675, 4969, 0, 0, 499, 2000, 12, 1024, 512, 0, 0, 1, 0, 0, 0, 0, 0, 1, 21, 0 }, true));
     CHECK (v8 && v8->raw[0] == 11000 && v8->raw[7] == 2000 && v8->raw[13] == 1 && v8->raw[20] == 21 && v8->source == 2 && v8->stereo == 1);
@@ -154,21 +154,21 @@ TEST (tp167f_state_parsing_and_params)
     CHECK (! parse ({}) && ! parse (tp167f::state (9, { 0 }, false)));
 
     // parameters: raw over the range, and back
-    lynx::EffectParams p {};
+    yw::EffectParams p {};
     toParams (*v8, p.data());
     for (int k = 0; k < numControls; ++k)
         CHECK (rawOf (k, p[(std::size_t) k]) == v8->raw[(std::size_t) k]);
     CHECK (rawOf (sourceParam, p[sourceParam]) == 2 && rawOf (stereoParam, p[stereoParam]) == 1);
-    const auto slot = lynx::effectFromFl ("Transporter", tp167f::state (8, { 11000, 5362, 5675, 4969, 0, 0, 499, 2000, 12, 1024, 512, 0, 0, 1, 0, 0, 0, 0, 0, 1, 21, 0 }, true), 120.0);
-    CHECK (slot && slot->kind == lynx::EffectKind::flTransporter && slot->params[7] == 1.0f && slot->params[sendParam] == 0.0f);
-    CHECK (lynx::effectForFlPlugin ("Transporter").has_value()); // the fallback when the state is unreadable
-    const auto m = lynx::effectParamFromFl ("Transporter", 13);
+    const auto slot = yw::effectFromFl ("Transporter", tp167f::state (8, { 11000, 5362, 5675, 4969, 0, 0, 499, 2000, 12, 1024, 512, 0, 0, 1, 0, 0, 0, 0, 0, 1, 21, 0 }, true), 120.0);
+    CHECK (slot && slot->kind == yw::EffectKind::flTransporter && slot->params[7] == 1.0f && slot->params[sendParam] == 0.0f);
+    CHECK (yw::effectForFlPlugin ("Transporter").has_value()); // the fallback when the state is unreadable
+    const auto m = yw::effectParamFromFl ("Transporter", 13);
     CHECK (m && m->param == 13 && m->convert (0.4f) == 1.0f / 3.0f);
 }
 
 TEST (tp167f_control_values_match_fl)
 {
-    using namespace lynx::transporter;
+    using namespace yw::transporter;
     using tp167f::bits;
     // the values FL's front end sends its engine (logged from the plug-in, float bits)
     CHECK (bits (engineValue (0, 11000)) == 0xc05233eau && bits (engineValue (1, 5362)) == 0xc173c87fu);
@@ -217,13 +217,13 @@ TEST (tp167f_engine_matches_fl_library)
 
 TEST (tp167f_reset_latency_and_project_round_trip)
 {
-    auto fx = lynx::makeEffect (lynx::EffectKind::flTransporter);
+    auto fx = yw::makeEffect (yw::EffectKind::flTransporter);
     fx->prepare (44100.0);
     CHECK (fx->latencySamples() == 220);
     fx->prepare (48000.0);
     CHECK (fx->latencySamples() == 240);
     // silence in → silence out, also after a reset (FL's flush)
-    const auto slot = lynx::makeEffectSlot (lynx::EffectKind::flTransporter);
+    const auto slot = yw::makeEffectSlot (yw::EffectKind::flTransporter);
     std::vector<float> l (2048, 0.0f), r (2048, 0.0f);
     fx->process (l.data(), r.data(), 2048, slot.params, 120.0);
     fx->reset();
@@ -232,13 +232,13 @@ TEST (tp167f_reset_latency_and_project_round_trip)
     for (int i = 0; i < 2048; ++i)
         silent = silent && l[(std::size_t) i] == 0.0f && r[(std::size_t) i] == 0.0f;
     CHECK (silent);
-    CHECK (lynx::effectInfo (lynx::EffectKind::flTransporter).name == std::string ("Transporter"));
+    CHECK (yw::effectInfo (yw::EffectKind::flTransporter).name == std::string ("Transporter"));
 }
 
 TEST (tp167n_fl_factory_presets_match_fl_plugin)
 {
     // FL's six factory presets (Data/Patches/Plugin presets/Effects/Transporter/*.fst, read from the installation) through
-    // LYNX's preset loader and effect: FNV-1a of FL's own plug-in output on the same input (round 167n)
+    // YW's preset loader and effect: FNV-1a of FL's own plug-in output on the same input (round 167n)
     const auto dir = std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / "Transporter";
     if (realFlpDir.empty() || ! std::filesystem::is_directory (dir))
         return;
@@ -253,8 +253,8 @@ TEST (tp167n_fl_factory_presets_match_fl_plugin)
             continue;
         ++found;
         const auto bytes = i18ntest::readFile (file);
-        const auto slot = lynx::effectFromFlPreset ({ bytes.begin(), bytes.end() }, 60.0);
-        CHECK (slot && slot->kind == lynx::EffectKind::flTransporter);
+        const auto slot = yw::effectFromFlPreset ({ bytes.begin(), bytes.end() }, 60.0);
+        CHECK (slot && slot->kind == yw::EffectKind::flTransporter);
         CHECK (tp167f::runSlot (slot) == hash);
     }
     CHECK (found == 6);
@@ -264,7 +264,7 @@ TEST (tp167n_flp_import_send_and_input_tracks)
 {
     // insert 1 holds a Transporter whose detector is its first input (insert 2 routes into it) and whose loops go to send
     // track 4: FL's send index is the mixer insert number (the host's send-buffer call, as Fruity Send's), round 167n
-    using namespace lynx::transporter;
+    using namespace yw::transporter;
     flp::Project project;
     project.tempo = 120.0;
     flp::MixerInsert one, two, four;
@@ -281,28 +281,28 @@ TEST (tp167n_flp_import_send_and_input_tracks)
     s.state = tp167f::state (8, { 11000, 5362, 5675, 4969, 0, 0, 499, 2000, 12, 1024, 512, 0, 0, 1, 0, 0, 0, 0, 0, 1, 21, 0 }, true, 2, 1, 2, 0);
     four.slots.push_back (s);
     project.mixer = { one, two, four };
-    lynx::FlpImportReport report;
-    lynx::FlpImportOptions options;
+    yw::FlpImportReport report;
+    yw::FlpImportOptions options;
     options.report = &report;
-    const auto song = lynx::importFlp (project, options);
+    const auto song = yw::importFlp (project, options);
     CHECK (song.mixer.size() > 4 && song.mixer[1].effects.size() == 1 && song.mixer[4].effects.size() == 1);
     if (song.mixer.size() < 5 || song.mixer[1].effects.empty() || song.mixer[4].effects.empty())
         return;
     const auto& fx = song.mixer[1].effects[0];
-    CHECK (fx.kind == lynx::EffectKind::flTransporter && fx.sidechain == 2 && lynx::fruitySendTarget (fx) == 4);
+    CHECK (fx.kind == yw::EffectKind::flTransporter && fx.sidechain == 2 && yw::fruitySendTarget (fx) == 4);
     CHECK (rawOf (0, fx.params[0]) == 11000);
     const auto& other = song.mixer[4].effects[0];
-    CHECK (other.kind == lynx::EffectKind::flTransporter && other.sidechain < 0 && lynx::fruitySendTarget (other) == 2);
+    CHECK (other.kind == yw::EffectKind::flTransporter && other.sidechain < 0 && yw::fruitySendTarget (other) == 2);
     CHECK (report.partialEffects.empty());
 }
 
 TEST (tp167n_update_buttons_are_momentary)
 {
-    // LYNX's push buttons flip their value at each click; the effect hands every flip to FL's engine as a press (1 for a
+    // YW's push buttons flip their value at each click; the effect hands every flip to FL's engine as a press (1 for a
     // block, then 0), so a second click (1 → 0) restarts the loops again (round 167n)
     const auto run = [] (std::initializer_list<int> flips, int param) {
-        auto slot = lynx::makeEffectSlot (lynx::EffectKind::flTransporter);
-        auto fx = lynx::makeEffect (slot);
+        auto slot = yw::makeEffectSlot (yw::EffectKind::flTransporter);
+        auto fx = yw::makeEffect (slot);
         fx->prepare (44100.0);
         const auto in = tp167f::signal();
         std::vector<float> l (48000), r (48000), out;

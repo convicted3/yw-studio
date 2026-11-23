@@ -5,7 +5,7 @@
 
 TEST (rollup030_step10_a_block_of_too_many_pieces_still_plays)
 {
-    using namespace lynx;
+    using namespace yw;
     const sched190kz::Guard guard;
     auto s = sched190kz::song (false);
     // pattern events every 2 ticks for a beat (about ten per 480-sample block): more than maxPieces pieces

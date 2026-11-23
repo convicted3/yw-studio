@@ -1,23 +1,23 @@
 // Round 175b: the Plugin picker packs its tiles like FL (core/PickerView.h, docs/analise/REA_rodada175b.md). The
-// expected positions are measured on FL Studio 2026's own picker (shots in E:\lynx-work\picker175b\fl): FL's bitmaps
+// expected positions are measured on FL Studio 2026's own picker (shots in E:\yw-work\picker175b\fl): FL's bitmaps
 // (Plugin database, 192 dpi) shown at half size + a 3 px shadow around them.
 
 #include "core/PickerView.h"
 
 namespace
 {
-std::vector<lynx::pickerview::PackTile> flTiles (const std::vector<std::pair<int, int>>& pngs, bool generators)
+std::vector<yw::pickerview::PackTile> flTiles (const std::vector<std::pair<int, int>>& pngs, bool generators)
 {
-    std::vector<lynx::pickerview::PackTile> out;
+    std::vector<yw::pickerview::PackTile> out;
     for (const auto& [w, h] : pngs)
-        out.push_back ({ lynx::pickerview::roundFl (w / 2.0) + 6, lynx::pickerview::roundFl (h / 2.0) + 6, true, generators });
+        out.push_back ({ yw::pickerview::roundFl (w / 2.0) + 6, yw::pickerview::roundFl (h / 2.0) + 6, true, generators });
     return out;
 }
 } // namespace
 
 TEST (picker175b_one_row_centred_with_32px_gaps_like_fl)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     // FL's Dynamics tab at 1920 × 1032 (work area): one row, gaps capped at 32, centred; the pictures' left edges as FL
     const auto tiles = flTiles ({ { 257, 127 }, { 256, 59 }, { 257, 54 }, { 209, 100 }, { 258, 50 }, { 133, 64 }, { 208, 128 }, { 70, 98 }, { 182, 106 } }, false);
     const auto r = packRows (tiles, { 32, 56, 1888, 1032 - 96 });
@@ -30,7 +30,7 @@ TEST (picker175b_one_row_centred_with_32px_gaps_like_fl)
 
 TEST (picker175b_rows_spread_over_the_width_like_fl)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     // FL's Synth classic tab at 1280 × 672: two rows, both spread over the width (the second one too)
     const auto tiles = flTiles ({ { 184, 128 }, { 230, 128 }, { 178, 113 }, { 255, 103 }, { 191, 128 }, { 241, 128 }, { 204, 44 }, { 194, 128 },
                                   { 210, 128 }, { 185, 128 }, { 187, 125 }, { 242, 128 }, { 196, 128 }, { 149, 128 } }, true);
@@ -47,7 +47,7 @@ TEST (picker175b_rows_spread_over_the_width_like_fl)
 
 TEST (picker175b_single_tile_rows_and_overflow)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     // a lone tile: centred when it is the only row
     auto one = packRows ({ { 100, 50, true, false } }, { 0, 0, 1000, 600 });
     CHECK (one.tiles[0].x == 449 && one.tiles[0].y == 274);
@@ -71,7 +71,7 @@ TEST (picker175b_single_tile_rows_and_overflow)
 
 TEST (picker175b_tabs_and_picture_budget)
 {
-    using namespace lynx::pickerview;
+    using namespace yw::pickerview;
     // the labels' font: 19 when they fit, smaller down to 12 (FL at 1280 × 720: 13 for its 9 generator tabs, 12 for its 11 effect tabs)
     auto widthAt = [] (int total19) { return [total19] (int size) { return total19 * size / 19; }; };
     CHECK (tabFontSize (widthAt (514), 9, 960) == 19);

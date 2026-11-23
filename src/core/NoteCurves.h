@@ -3,7 +3,7 @@
 // MPE stage 2 (issue #108, round 190hy; docs/analise/REA_rodada190hy-mpe.md): a note's own expression curves, as Ableton
 // Live 11+ keeps them for each note (.als `Notes/PerNoteEventStore/EventLists/PerNoteEventList{@NoteId, @CC}`: pitch
 // bend CC −2, slide CC 74, pressure CC −1; times from the note's start). FL Studio 2026 has none (its per-note values
-// are one number each), so this is a LYNX addition on top of FL's note properties:
+// are one number each), so this is a YW addition on top of FL's note properties:
 //
 //   pitch      cents added to the note's fine pitch while it sounds (Live's per-note pitch bend, ±48 semitones)
 //   timbre     0..1 in the Mod X law of core/Mpe.h (0.5 = CC 74 at 64): the note's Mod X / MPE slide while it sounds
@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 struct NoteCurvePoint
 {
@@ -330,4 +330,4 @@ inline void clearLane (NoteCurvesRef& curves, NoteCurveLane lane)
     curves.tidy();
 }
 } // namespace notecurves
-} // namespace lynx
+} // namespace yw

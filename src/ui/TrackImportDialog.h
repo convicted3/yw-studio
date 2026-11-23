@@ -1,6 +1,6 @@
 #pragma once
 
-// File › Import › "Tracks from another project..." (round 190pe, P11 of research190oe; a LYNX extra: FL Studio's File ›
+// File › Import › "Tracks from another project..." (round 190pe, P11 of research190oe; a YW extra: FL Studio's File ›
 // Import holds MIDI file only). The other project's Playlist tracks as a checklist (with what each holds), its Channel
 // Rack channels that no clip plays, "With mixer inserts and effects", "With automation" and where the tracks go; the
 // merge itself is core/TrackImport.h.
@@ -11,7 +11,7 @@
 
 #include "core/TrackImport.h"
 
-namespace lynx
+namespace yw
 {
 struct TrackImportChoice
 {
@@ -31,4 +31,4 @@ void showTrackImportDialog (const juce::String& fileName, const Song& source, st
 
 // The report after the import: what came in, then the notes
 juce::String trackImportReport (const trackimport::Result& result, const juce::String& fileName, const juce::StringArray& missingPlugins);
-} // namespace lynx
+} // namespace yw

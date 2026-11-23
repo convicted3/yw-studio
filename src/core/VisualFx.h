@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX's visual plugins (docs/analise/REA_rodada164c.md): Wave Candy (FL's analyser: oscilloscope, spectrum,
+// YW's visual plugins (docs/analise/REA_rodada164c.md): Wave Candy (FL's analyser: oscilloscope, spectrum,
 // spectrogram, peak / VU meter, vectorscope) and the Visualizer (FL's ZGameEditor Visualizer role: an audio-reactive
 // scene of layers, full screen and a video export of the song). Neither changes the sound. The audio thread only
 // copies the slot's signal into a lock-free ring (Tap) — no allocation, no lock, a few hundred nanoseconds a block;
@@ -18,12 +18,12 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 }
 
-namespace lynx::visualfx
+namespace yw::visualfx
 {
 // ---------------------------------------------------------------------------------------------------------------
 // The tap: the slot's stereo signal for the editor
@@ -276,10 +276,10 @@ std::optional<Scene> fromState (const std::vector<std::uint8_t>& state);
 Scene defaultScene();
 // a shader layer with the settings that suit its effect (the editor's Add menu, the built-in scenes, the ZGE import)
 Layer shaderLayer (LayerType type, int effect);
-// LYNX's built-in scenes (name, scene)
+// YW's built-in scenes (name, scene)
 const std::vector<Scene>& presets();
 
-// FL's ZGameEditor Visualizer state (an INI text, round 164c): its layers' effects mapped to the closest LYNX layers
+// FL's ZGameEditor Visualizer state (an INI text, round 164c): its layers' effects mapped to the closest YW layers
 // (Peak Effects → bars / circle / waveform, Background → background, Image → image, Text → text, Particles → particles…);
 // the effects with no counterpart are listed in `unmapped`. nullopt = not a ZGameEditor state.
 std::optional<Scene> fromZge (const std::vector<std::uint8_t>& state, std::vector<std::string>* unmapped = nullptr);
@@ -342,4 +342,4 @@ private:
     std::uint32_t seed = 0x1234567u;
     float next();
 };
-} // namespace lynx::visualfx
+} // namespace yw::visualfx

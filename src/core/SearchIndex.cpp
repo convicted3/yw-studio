@@ -8,7 +8,7 @@
  #include <dirent.h>
 #endif
 
-namespace lynx::search
+namespace yw::search
 {
 bool isWellFormedUtf8 (const char* text, std::size_t size) noexcept
 {
@@ -362,4 +362,4 @@ bool Index::fromText (const std::string& text)
     }
     return true;
 }
-} // namespace lynx::search
+} // namespace yw::search

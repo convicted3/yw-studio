@@ -5,7 +5,7 @@
 #include "core/Song.h"
 #include "ui/ValueControl.h"
 
-namespace lynx
+namespace yw
 {
 class AudioEngine;
 class PlaylistComponent;
@@ -91,4 +91,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PatternBlocksView)
 };
-} // namespace lynx
+} // namespace yw

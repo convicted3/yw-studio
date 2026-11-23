@@ -6,15 +6,15 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace lynx::browsersend
+namespace yw::browsersend
 {
 // What a Browser item is to the send.
 enum class Item
 {
     sample,          // an audio file
     soundFont,       // .sf2 / .sf3 / .sfz
-    pluginPreset,    // a hosted plugin's preset (.lynxpreset of a plugin, .fxp, .fxb, .vstpreset, FL's .fst of one)
-    generatorPreset, // a preset of one of LYNX's generators, or an FL synth preset LYNX converts (.fst of 3x Osc...)
+    pluginPreset,    // a hosted plugin's preset (.ywpreset of a plugin, .fxp, .fxb, .vstpreset, FL's .fst of one)
+    generatorPreset, // a preset of one of YW's generators, or an FL synth preset YW converts (.fst of 3x Osc...)
     generator,       // a Plugin database generator
     effect,          // a Plugin database effect
     other            // projects, MIDI files, mixer presets: not something a channel takes
@@ -25,7 +25,7 @@ enum class Channel
 {
     none,
     playsSample, // a Sampler (or the drum generators that become one, the Granulizer, Wave Traveller)
-    soundFont,   // a LYNX Soundfont channel
+    soundFont,   // a YW Soundfont channel
     plugin,      // a hosted plugin
     other        // any other generator
 };
@@ -38,7 +38,7 @@ enum class Action
     fontIntoSelected,       // the SoundFont replaces the selected Soundfont channel's
     fontNewChannel,
     presetToFocusedPlugin,  // the focused plugin window's plugin (else the selected channel's plugin) loads the preset
-    generatorPresetChannel, // LYNX's generator presets open as they do on a double-click (a channel with that sound)
+    generatorPresetChannel, // YW's generator presets open as they do on a double-click (a channel with that sound)
     replaceSelected,        // a Plugin database generator replaces the selected channel's generator (FL's Enter)
     newChannel,             // ... or becomes a new channel when no channel is selected
     effectToInsert          // a Plugin database effect: into the selected mixer insert
@@ -61,9 +61,9 @@ constexpr Action decide (Item item, Channel selected, bool focusedPlugin) noexce
     }
     return Action::none;
 }
-} // namespace lynx::browsersend
+} // namespace yw::browsersend
 
-namespace lynx::browserpreview
+namespace yw::browserpreview
 {
 // FL's preview length (manual browser.htm › Browser Menu: "By default audio files clicked in the Browser will play for
 // 5 seconds" unless "Full sample preview" is on; › Preview Player: Alt+Click plays to the end, Shift+Click "starts
@@ -103,4 +103,4 @@ inline Range range (std::int64_t frames, double sampleRate, double startFraction
 // The fade-out at a capped end, in device samples (10 ms), and the gain of a sample `left` samples before the end.
 inline int fadeSamples (double deviceRate) noexcept { return std::max (1, (int) (deviceRate * 0.01)); }
 inline float fadeGain (double left, int fade) noexcept { return left >= (double) fade ? 1.0f : (float) std::max (0.0, left / (double) fade); }
-} // namespace lynx::browserpreview
+} // namespace yw::browserpreview

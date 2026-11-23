@@ -8,16 +8,16 @@ struct History
     int size = 0, undone = 0;
     bool canUndo() const { return undone < size; }
     bool canRedo() const { return undone > 0; }
-    void apply (lynx::undokeys::Step s)
+    void apply (yw::undokeys::Step s)
     {
-        if (s == lynx::undokeys::Step::undo && canUndo())
+        if (s == yw::undokeys::Step::undo && canUndo())
             ++undone;
-        else if (s == lynx::undokeys::Step::redo && canRedo())
+        else if (s == yw::undokeys::Step::redo && canRedo())
             --undone;
     }
-    void ctrlZ (bool alternate) { apply (lynx::undokeys::undoKey (alternate, canUndo(), canRedo())); }
-    void ctrlAltZ (bool alternate) { apply (lynx::undokeys::backwardsKey (alternate, canUndo(), canRedo())); }
-    void redo() { apply (canRedo() ? lynx::undokeys::Step::redo : lynx::undokeys::Step::none); }
+    void ctrlZ (bool alternate) { apply (yw::undokeys::undoKey (alternate, canUndo(), canRedo())); }
+    void ctrlAltZ (bool alternate) { apply (yw::undokeys::backwardsKey (alternate, canUndo(), canRedo())); }
+    void redo() { apply (canRedo() ? yw::undokeys::Step::redo : yw::undokeys::Step::none); }
 };
 } // namespace u190b
 
@@ -84,7 +84,7 @@ TEST (u190b_alternate_mode_ctrl_z_walks_the_history)
 TEST (u190b_undo_and_redo_shortcuts)
 {
     // Ctrl+Z, Ctrl+Alt+Z (FL), and redo on Ctrl+Y and Ctrl+Shift+Z (asked for in issue #140), with no key clash
-    using namespace lynx::keys;
+    using namespace yw::keys;
     KeyMap map;
     CHECK (map.conflicts().empty());
     CHECK (map.find ({ 'Z', ctrl }, Context::global, false) == "edit.undo");

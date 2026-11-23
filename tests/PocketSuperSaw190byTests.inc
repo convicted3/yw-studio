@@ -1,11 +1,11 @@
-// Round 190by: Pocket SuperSaw (core/PocketSuperSaw.h), LYNX's engine for FL Studio Mobile's SuperSaw module (type 23).
+// Round 190by: Pocket SuperSaw (core/PocketSuperSaw.h), YW's engine for FL Studio Mobile's SuperSaw module (type 23).
 // Uses the .flm builders of FlmImport182cTests.inc. No data file is needed: every test runs everywhere.
 
 #include "core/PocketSuperSaw.h"
 
 namespace saw190by
 {
-namespace ps = lynx::pocketsaw;
+namespace ps = yw::pocketsaw;
 
 inline std::vector<float> defaultsVector()
 {
@@ -120,15 +120,15 @@ inline flm182c::Bytes sawProject (const flm182c::Bytes& module)
     t::fixed (m, "", 2048);
     t::fixed (m, "2026-11-11 15:00:00", 256);
     const t::Bytes tdiv { 4, 4 };
-    return t::cat ({ f, t::head ("SuperSaw", 120.0), t::chunk ("META", m), t::chunk ("TDIV", tdiv), t::rack (lynx::flm::kindMaster, {}),
-                     t::rack (lynx::flm::kindNormal, { module }), t::channel (lynx::flm::kindMaster, "MASTER", 0, {}),
-                     t::channel (lynx::flm::kindNormal, "Lead", 1, { t::lane (0, "Lead", { t::clip (0, 4, 4, 0, 1, { { 0, 2, 60 } }) }) }) });
+    return t::cat ({ f, t::head ("SuperSaw", 120.0), t::chunk ("META", m), t::chunk ("TDIV", tdiv), t::rack (yw::flm::kindMaster, {}),
+                     t::rack (yw::flm::kindNormal, { module }), t::channel (yw::flm::kindMaster, "MASTER", 0, {}),
+                     t::channel (yw::flm::kindNormal, "Lead", 1, { t::lane (0, "Lead", { t::clip (0, 4, 4, 0, 1, { { 0, 2, 60 } }) }) }) });
 }
 } // namespace saw190by
 
 TEST (pocket190by_supersaw_laws)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     // the envelope time law T(v) = 2^(5·h⁷(v)) − 1
     CHECK (ps::envelopeSeconds (0.0f) == 0.0f);
     CHECK (std::fabs (ps::envelopeSeconds (0.01f) - 0.00270f) < 0.00005f);
@@ -203,7 +203,7 @@ TEST (pocket190by_supersaw_laws)
 
 TEST (pocket190by_supersaw_tuning_and_sample_rates)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     const auto p = patch ({ { ps::flm::retrigPhases, 1.0f } });
     double level[3] {}, attackAt[3] {};
@@ -250,7 +250,7 @@ TEST (pocket190by_supersaw_tuning_and_sample_rates)
 
 TEST (pocket190by_supersaw_silence_and_idle)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     for (const auto fs : { 44100.0, 96000.0 })
     {
@@ -306,7 +306,7 @@ TEST (pocket190by_supersaw_silence_and_idle)
 
 TEST (pocket190by_supersaw_unison_detune_and_stereo)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     const double fs = 48000.0;
     // two oscillators at Detune 1: one semitone below and above the note (beating at their difference)
@@ -383,7 +383,7 @@ TEST (pocket190by_supersaw_unison_detune_and_stereo)
 
 TEST (pocket190by_supersaw_is_band_limited)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     // a high note: nothing folds back below the fundamental except the table read's dither noise. Key 100 = 2637 Hz:
     // a naive saw at 44.1 kHz would put its 9th…16th harmonics back between 0 and 2.6 kHz at −20…−30 dB.
@@ -406,7 +406,7 @@ TEST (pocket190by_supersaw_is_band_limited)
 
 TEST (pocket190by_supersaw_filter_and_envelopes)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     const double fs = 48000.0;
     const auto open = mono (render (patch ({ { ps::flm::retrigPhases, 1.0f } }), { { 0, 45, 1.0f, 0.5f, -1 } }, fs, 0.6)); // 110 Hz
@@ -471,7 +471,7 @@ TEST (pocket190by_supersaw_filter_and_envelopes)
 
 TEST (pocket190by_supersaw_supersync_lfo_and_effects)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     const double fs = 48000.0;
     // SuperSync: Sync 0 = one pulse per period of half the cycle at width 1 (a square: odd harmonics); Sync 1 = six
@@ -553,7 +553,7 @@ TEST (pocket190by_supersaw_supersync_lfo_and_effects)
 
 TEST (pocket190by_supersaw_voices_glide_and_arpeggiator)
 {
-    namespace ps = lynx::pocketsaw;
+    namespace ps = yw::pocketsaw;
     using namespace saw190by;
     const double fs = 48000.0;
     std::vector<float> l (480), r (480);
@@ -625,7 +625,7 @@ TEST (pocket190by_supersaw_voices_glide_and_arpeggiator)
 
 TEST (pocket190by_supersaw_channel_parameters_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ps = pocketsaw;
     // FLM's 60 values → the channel's 59 (FLM k + 1 at k), clamped; fewer than 60 = not a SuperSaw state
     std::vector<float> flm (60);
@@ -689,14 +689,14 @@ TEST (pocket190by_supersaw_channel_parameters_round_trip)
     e.setParam (3, std::numeric_limits<float>::quiet_NaN());
     CHECK (e.param (3) == 0.013f * 3.0f);
 
-    // in LYNX's plugin list under its LYNX name
+    // in YW's plugin list under its YW name
     const auto* engine = natives::instrumentEngine (InstrumentKind::pocketSuperSaw);
     CHECK (engine != nullptr && std::string (engine->name) == "Pocket SuperSaw");
 }
 
 TEST (pocket190by_supersaw_instrument_plays_the_channel)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ps = pocketsaw;
     using namespace saw190by;
     for (const auto fs : { 44100.0, 96000.0 })
@@ -734,7 +734,7 @@ TEST (pocket190by_supersaw_instrument_plays_the_channel)
         std::fill (l.begin(), l.end(), 0.0f);
         inst->render (l.data(), r.data(), n, 1.0f, 1.0f);
         CHECK (std::fabs (1200.0 * std::log2 (pitchNear (l, n / 4, n, 440.0, fs) / 440.0)) < 1.0);
-        // automation: Level (LYNX parameter 31) to 0.5 → −12 dB, without restarting the voice
+        // automation: Level (YW parameter 31) to 0.5 → −12 dB, without restarting the voice
         const auto before = rms (l, n / 2, n);
         inst->setParameter (ps::flm::level - 1, 0.5f);
         std::fill (l.begin(), l.end(), 0.0f);
@@ -770,7 +770,7 @@ TEST (pocket190by_supersaw_instrument_plays_the_channel)
 
 TEST (pocket190by_supersaw_flm_import)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ps = pocketsaw;
     using namespace saw190by;
     // a SuperSaw module with its own values on every parameter → a Pocket SuperSaw channel holding them as they are
@@ -797,7 +797,7 @@ TEST (pocket190by_supersaw_flm_import)
         CHECK (it->pluginState.empty() && it->samplePath.empty());
         CHECK (report.converted.count ("FL Studio Mobile: SuperSaw") == 1);
         CHECK (report.unsupported.count ("FL Studio Mobile: SuperSaw") == 0);
-        // FLM's own knob reaches the same LYNX parameter: Filter Cutoff is FLM 19 = LYNX 18
+        // FLM's own knob reaches the same YW parameter: Filter Cutoff is FLM 19 = YW 18
         CHECK (modelparams::rawValue (*it, ps::flm::cutoff - 1) == std::optional<float> (values[19]));
         // the imported channel plays through the instrument
         auto inst = makeInstrument (it->instrument);
@@ -835,7 +835,7 @@ TEST (pocket190by_supersaw_flm_import)
 
 TEST (pocket190by_supersaw_new_channel_from_the_plugin_list)
 {
-    using namespace lynx;
+    using namespace yw;
     using namespace saw190by;
     // needs nothing of FL: a new channel is made without an FL installation and plays from FLM's defaults
     natives::FlAccess none;

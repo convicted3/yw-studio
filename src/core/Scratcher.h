@@ -12,10 +12,10 @@
 // The sample is held as FL's host hands it to the plugin: 16-bit stereo at 44.1 kHz. The engine works per sample, like
 // FL's: at another project rate the platter turns that much faster (FL does not compensate either).
 //
-// LYNX's parameters (0…1 each) and FL's controls (their raw integer ranges, what FL's pattern events hold):
+// YW's parameters (0…1 each) and FL's controls (their raw integer ranges, what FL's pattern events hold):
 //  [0] Wave position 0…30000 · [1] Mute 0/1 (1 = muted) · [2] Speed 0…100 · [3] Acceleration 0…100 · [4] Pan −128…128 ·
 //  [5] Volume 0…255 (linear gain) · [6] Hold 0/1 · [7] Sensitivity 0…100 (the editor's drag speed) ·
-//  [8] Transport −1/0/+1 (LYNX 0 / 0.5 / 1) · [9…12] Smooth 1…4 0…1000 · [13] Rotations 0…18 (9 = none).
+//  [8] Transport −1/0/+1 (YW 0 / 0.5 / 1) · [9…12] Smooth 1…4 0…1000 · [13] Rotations 0…18 (9 = none).
 // Every value is quantized to its control's steps, as FL's controls are.
 //
 // No JUCE here (tests/FlScratch165Tests.inc).
@@ -31,13 +31,13 @@
 #include "core/Dvs.h"
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
 class Effect;
 struct SampleData;
-} // namespace lynx
+} // namespace yw
 
-namespace lynx::scratcher
+namespace yw::scratcher
 {
 enum Param
 {
@@ -56,7 +56,7 @@ enum Param
     smooth4 = 12,
     rotations = 13,
     count = 14, // FL's 14 controls (pattern events, automation)
-    // LYNX parameters for FL's two DVS settings (stored in FL's state, not controls): Timecode type (FL's list entry
+    // YW parameters for FL's two DVS settings (stored in FL's state, not controls): Timecode type (FL's list entry
     // / 8: 0 = Off … 1 = Timecode CD, core/Dvs.h) and RIAA preamp (0/1)
     timecodeType = 14,
     riaaPreamp = 15,
@@ -72,7 +72,7 @@ struct Range
     int lo = 0, hi = 1;
 };
 Range controlRange (int param) noexcept;
-// LYNX's value (0…1) for FL's raw control integer, and back (rounded to the nearest step)
+// YW's value (0…1) for FL's raw control integer, and back (rounded to the nearest step)
 float valueOfRaw (int param, int raw) noexcept;
 int rawOfValue (int param, float value) noexcept;
 // FL's control step of a value (round to the control's integer, then back)
@@ -95,7 +95,7 @@ std::array<float, count> defaults() noexcept;
 struct State
 {
     std::uint32_t version = 0;
-    std::array<float, count> values {}; // LYNX's parameters, quantized like FL's controls after a load
+    std::array<float, count> values {}; // YW's parameters, quantized like FL's controls after a load
     std::string samplePath;             // as stored (macros not expanded)
     int timecode = -1;                  // FL's DVS type: the state's timecode index (−1 = off, core/Dvs.h)
     bool riaa = false;                  // FL's RIAA preamp switch
@@ -130,7 +130,7 @@ public:
     // the sample (nullptr = none: the input passes). Like FL, a new sample takes over at the end of the next block,
     // with the volume aimed at 0 for one block.
     void setSample (std::shared_ptr<const Turntable> sample) noexcept;
-    void setParam (int param, float value) noexcept; // LYNX's value; quantized here
+    void setParam (int param, float value) noexcept; // YW's value; quantized here
     void reset() noexcept;                           // FL's reset: platter at 0, the defaults' gains
     void process (float* left, float* right, int n) noexcept;
     // the project's rate (the RIAA preamp, the DVS decoder and the record → sample mapping use it)
@@ -179,10 +179,10 @@ private:
     double dvsLast = 0.0;
 };
 
-// Whether a file dropped on the editor (an OS file drop or a drag from LYNX's Browser) is loaded onto the platter:
-// LYNX's sample files (core/SampleFiles.h, the list SampleLibrary::isSampleFile and the Browser use), by extension
+// Whether a file dropped on the editor (an OS file drop or a drag from YW's Browser) is loaded onto the platter:
+// YW's sample files (core/SampleFiles.h, the list SampleLibrary::isSampleFile and the Browser use), by extension
 bool loadsDroppedFile (std::string_view path) noexcept;
 
 // The slot's effect: `sample` may be null (no sample / not found → the input passes)
 std::unique_ptr<Effect> make (std::shared_ptr<const SampleData> sample);
-} // namespace lynx::scratcher
+} // namespace yw::scratcher

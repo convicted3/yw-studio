@@ -13,7 +13,7 @@
 #include "core/FacetEq.h"
 #include "core/MixSuite.h"
 
-namespace lynx::fabfilter
+namespace yw::fabfilter
 {
 namespace
 {
@@ -465,7 +465,7 @@ int fromSaturn2 (const State& s, EffectSlot& slot)
         // round 128 (Ember's per-band controls): feedback amount (%) and frequency (Hz) at 0 / 1, dynamics at 2, tone
         // bass / mid / treble / presence (dB) at 6 … 9, state (normal, solo, mute, solo-mute) at 14. Offsets 0, 1 and
         // 14 follow the order of the plug-in's own VST3 parameter list (17 per band) [model]; Ember's tone stages are
-        // LYNX's own curves, not measured against Saturn's.
+        // YW's own curves, not measured against Saturn's.
         set (bandExtra (b, 6), clamp01 (s.at (base + 0) / 100.0));
         set (bandExtra (b, 7), (float) std::clamp (std::log (std::clamp ((double) s.at (base + 1), 10.0, 1000.0) / 10.0) / std::log (100.0), 0.0, 1.0));
         set (bandExtra (b, 8), linValue (std::clamp ((double) s.at (base + 2), -1.0, 1.0), -1.0, 1.0));
@@ -1016,4 +1016,4 @@ Translator translatorNamed (std::string_view name)
         return fromTimeless3;
     return nullptr;
 }
-} // namespace lynx::fabfilter
+} // namespace yw::fabfilter

@@ -7,7 +7,7 @@
 
 TEST (simple189k_peq2_writer_round_trip)
 {
-    using namespace lynx;
+    using namespace yw;
     const auto base = flpexport::parametricEq2DefaultState();
     CHECK (base.size() == 354);
     // a fresh FL instance read and written again gives FL's bytes back
@@ -50,7 +50,7 @@ TEST (simple189k_peq2_writer_round_trip)
 
 TEST (simple189k_looks_apply_remove_bypass)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (3);
     song.mixer[0].effects.push_back (makeEffectSlot (EffectKind::eq));
@@ -104,7 +104,7 @@ TEST (simple189k_looks_apply_remove_bypass)
 
 TEST (simple189k_look_exports_fl_plugins)
 {
-    using namespace lynx;
+    using namespace yw;
     Song song;
     song.mixer.resize (3);
     for (int id : { (int) looks::balanced, (int) looks::wide })
@@ -145,7 +145,7 @@ TEST (simple189k_look_exports_fl_plugins)
 
 TEST (simple189k_limiter_default_gate_threshold)
 {
-    using namespace lynx;
+    using namespace yw;
     // a new Fruity Limiter has FL's gate threshold (0); a saved project keeps its own value (every control is saved), and
     // with the gate's gain at 0 dB (the default) the old value 100 sounds the same, sample for sample
     auto fresh = makeEffectSlot (EffectKind::fruityLimiter);

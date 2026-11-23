@@ -1,4 +1,4 @@
-// Renders a 3x Osc state with LYNX's engine exactly like our round-47 reference model drives it (verification harness,
+// Renders a 3x Osc state with YW's engine exactly like our round-47 reference model drives it (verification harness,
 // REA_rodada47): threeoscrender <state.bin> <out.f32> <length> <rate> [blk=N] [maxpoly=N] [tick=N] [ppq=N] [tempo=X]
 //   [seed=N] [custom=wave.f32 | wav=file.wav] [note=start,key,finalVol,finalPan,pitchOffset,release ...]. The state is
 //   normalised first (version 14, its own snapshot). Writes interleaved stereo float32.
@@ -21,11 +21,11 @@ int main (int argc, char** argv)
     }
     std::ifstream in (argv[1], std::ios::binary);
     const std::vector<std::uint8_t> raw ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-    const auto state = lynx::threeOscNormalisedState (raw, {});
+    const auto state = yw::threeOscNormalisedState (raw, {});
     const int length = std::atoi (argv[3]);
     const double rate = std::atof (argv[4]);
-    lynx::threeosc::RefOptions opt;
-    std::vector<lynx::threeosc::RefNote> notes;
+    yw::threeosc::RefOptions opt;
+    std::vector<yw::threeosc::RefNote> notes;
     std::vector<float> custom;
     for (int i = 5; i < argc; ++i)
     {
@@ -49,15 +49,15 @@ int main (int argc, char** argv)
             w.read (reinterpret_cast<char*> (custom.data()), 16384 * 4);
         }
         else if (a.rfind ("wav=", 0) == 0)
-            custom = lynx::threeOscCustomWave (a.substr (4));
+            custom = yw::threeOscCustomWave (a.substr (4));
         else if (a.rfind ("note=", 0) == 0)
         {
-            lynx::threeosc::RefNote n;
+            yw::threeosc::RefNote n;
             if (std::sscanf (a.c_str() + 5, "%d,%d,%lf,%lf,%lf,%d", &n.start, &n.key, &n.finalVol, &n.finalPan, &n.pitchOffset, &n.release) >= 5)
                 notes.push_back (n);
         }
     }
-    const auto out = lynx::threeosc::renderReference (state, notes, rate, length, opt, custom);
+    const auto out = yw::threeosc::renderReference (state, notes, rate, length, opt, custom);
     if (out.empty())
     {
         std::fprintf (stderr, "state not usable\n");

@@ -5,10 +5,10 @@
 // it the editor offered no preset and its pictures showed the empty slot (no curve, FL's unit type and mode never read)
 TEST (audit173d3_love_philter_lists_fl_presets)
 {
-    CHECK (lynx::flPluginsForEffect (lynx::EffectKind::lovePhilter) == std::vector<std::string> { "Fruity Love Philter" });
+    CHECK (yw::flPluginsForEffect (yw::EffectKind::lovePhilter) == std::vector<std::string> { "Fruity Love Philter" });
     // the type box reads FL's labels (FL's shot: type 1, "Lime low pass", reads LP)
-    CHECK (std::string (lynx::philter::typeShortName (0)) == "SVF" && std::string (lynx::philter::typeShortName (1)) == "LP"
-           && std::string (lynx::philter::typeShortName (3)) == "LP2" && std::string (lynx::philter::typeShortName (11)) == "LP3");
+    CHECK (std::string (yw::philter::typeShortName (0)) == "SVF" && std::string (yw::philter::typeShortName (1)) == "LP"
+           && std::string (yw::philter::typeShortName (3)) == "LP2" && std::string (yw::philter::typeShortName (11)) == "LP3");
 }
 
 // With FL installed (tests' argument = FL's Data folder): FL's presets come back as the exact engines the editors need.
@@ -22,20 +22,20 @@ TEST (audit173d3_fl_presets_reach_the_editors)
     const auto load = [&fl] (const char* relative) {
         std::ifstream in (std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / relative, std::ios::binary);
         const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-        return lynx::effectFromFlPreset (bytes, 130.0, lynx::natives::flDataReader (fl));
+        return yw::effectFromFlPreset (bytes, 130.0, yw::natives::flDataReader (fl));
     };
     const auto convolver = load ("Fruity Convolver/Default.fst");
-    CHECK (convolver && convolver->kind == lynx::EffectKind::convolver);
+    CHECK (convolver && convolver->kind == yw::EffectKind::convolver);
     if (convolver)
     {
-        const auto curve = lynx::convolver::readEqCurve (convolver->state);
+        const auto curve = yw::convolver::readEqCurve (convolver->state);
         CHECK (curve && curve->size() >= 2);
     }
     const auto philter = load ("Fruity Love Philter/Sequence/PC lowpass.fst");
-    CHECK (philter && philter->kind == lynx::EffectKind::lovePhilter);
+    CHECK (philter && philter->kind == yw::EffectKind::lovePhilter);
     if (philter)
     {
-        const auto doc = lynx::philter::readDoc (philter->state);
+        const auto doc = yw::philter::readDoc (philter->state);
         CHECK (doc && doc->u[0].type == 1 && doc->u[0].mode == 3 && doc->u[0].art[2].pat[0].pts.size() == 7);
     }
 }
@@ -52,13 +52,13 @@ TEST (audit173d3_equo_send_goes_to_the_insert)
         for (const int ovs : { 0, 1 })
         {
             auto state = equoTestState (ovs, 150, add);
-            CHECK (lynx::equofx::sendInsert (state) == 0);
+            CHECK (yw::equofx::sendInsert (state) == 0);
             auto routed = state;
-            CHECK (lynx::equofx::setSendInsert (routed, 3) && lynx::equofx::sendInsert (routed) == 3 && lynx::equofx::parse (routed)->sendTrack == 2);
+            CHECK (yw::equofx::setSendInsert (routed, 3) && yw::equofx::sendInsert (routed) == 3 && yw::equofx::parse (routed)->sendTrack == 2);
             auto run = [&] (const std::vector<std::uint8_t>& st, bool sending, std::vector<float>* send) {
-                lynx::equofx::Engine e;
+                yw::equofx::Engine e;
                 e.prepare (44100.0, false);
-                e.set (*lynx::equofx::parse (st));
+                e.set (*yw::equofx::parse (st));
                 std::vector<float> l (inL), r (inR), sl (4096, 0.0f), sr (4096, 0.0f);
                 for (int i = 0; i < 4096; i += 512)
                     e.process (l.data() + i, r.data() + i, 512, sending ? sl.data() + i : nullptr, sending ? sr.data() + i : nullptr);
@@ -77,10 +77,10 @@ TEST (audit173d3_equo_send_goes_to_the_insert)
             run (routed, false, &sendAgain); // computed but not routed: nothing reaches a buffer
             CHECK (std::all_of (sendAgain.begin(), sendAgain.end(), [] (float v) { return v == 0.0f; }));
             // a band's send level (the master bank, which plays without a morph; the band at 1 kHz) changes what is sent
-            auto edited = *lynx::equofx::parse (routed);
+            auto edited = *yw::equofx::parse (routed);
             edited.cell (8, 17, 2) = edited.cell (8, 17, 2) > 1.0f ? 0.1f : 1.9f;
             edited.target[17][2].mode = 0;
-            lynx::equofx::Engine e;
+            yw::equofx::Engine e;
             e.prepare (44100.0, false);
             e.set (edited);
             std::vector<float> l (inL), r (inR), sl (4096, 0.0f), sr (4096, 0.0f);
@@ -89,16 +89,16 @@ TEST (audit173d3_equo_send_goes_to_the_insert)
         }
 
     // the slot: the send's insert is EffectSlot::sendTracks[0], a route of the mixer graph
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::equo);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::equo);
     slot.state = equoTestState (0, 150, false);
     slot.sendTracks[0] = 2;
-    CHECK (lynx::slotSendTarget (slot, 0) == 2 && lynx::slotSendTarget (slot, 1) == -1);
+    CHECK (yw::slotSendTarget (slot, 0) == 2 && yw::slotSendTarget (slot, 1) == -1);
 }
 
 TEST (audit173d3_love_philter_doc_round_trip_and_edits)
 {
-    using namespace lynx;
-    // a version-12 state of our own making: FL's default as LYNX writes it is not in the repository, so build one by
+    using namespace yw;
+    // a version-12 state of our own making: FL's default as YW writes it is not in the repository, so build one by
     // editing the round-66 test state (tests.cpp, love_philter_*) through the document itself
     const auto stateA = vfx164::hex (
         "03000c00789cedda316ed44018c5f1cfd90b5050234a0e81702a1a6e4045c11d68e7005c00c40928e96810254590380225e552538471ec"
@@ -194,7 +194,7 @@ TEST (audit173d3_love_philter_doc_round_trip_and_edits)
 
 TEST (audit173d3_love_philter_unit_parameters)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (philter::paramCount == 103 && effectInfo (EffectKind::lovePhilter).params.size() == 103u);
     for (int i = 0; i < philter::paramCount; ++i)
         CHECK (philter::paramOfFlIndex (philter::flIndexOf (i)) == i);
@@ -213,18 +213,18 @@ TEST (audit173d3_love_philter_unit_parameters)
 // bar ignored. Squeeze, Vintage Phaser and Peak Controller had no preset folder in the list.
 TEST (audit173d3b_old_preset_spellings_reach_the_exact_engines)
 {
-    CHECK (lynx::canonicalFlEffectName ("Fruity fast dist") == "Fruity Fast Dist");
-    CHECK (lynx::canonicalFlEffectName ("Fruity soft clipper") == "Fruity Soft Clipper");
-    CHECK (lynx::canonicalFlEffectName ("Some VST") == "Some VST");
-    CHECK (lynx::flPluginsForEffect (lynx::EffectKind::squeeze) == std::vector<std::string> { "Fruity Squeeze" });
-    CHECK (lynx::flPluginsForEffect (lynx::EffectKind::vintagePhaser) == std::vector<std::string> { "Vintage Phaser" });
-    CHECK (lynx::flPluginsForEffect (lynx::EffectKind::peakController) == std::vector<std::string> { "Fruity Peak Controller" });
+    CHECK (yw::canonicalFlEffectName ("Fruity fast dist") == "Fruity Fast Dist");
+    CHECK (yw::canonicalFlEffectName ("Fruity soft clipper") == "Fruity Soft Clipper");
+    CHECK (yw::canonicalFlEffectName ("Some VST") == "Some VST");
+    CHECK (yw::flPluginsForEffect (yw::EffectKind::squeeze) == std::vector<std::string> { "Fruity Squeeze" });
+    CHECK (yw::flPluginsForEffect (yw::EffectKind::vintagePhaser) == std::vector<std::string> { "Vintage Phaser" });
+    CHECK (yw::flPluginsForEffect (yw::EffectKind::peakController) == std::vector<std::string> { "Fruity Peak Controller" });
     if (realFlpDir.empty())
         return;
     std::ifstream in (std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / "Fruity Fast Dist" / "The Heat.fst", std::ios::binary);
     const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-    const auto fx = lynx::effectFromFlPreset (bytes, 130.0);
-    CHECK (fx && fx->kind == lynx::EffectKind::fruityFastDist);
+    const auto fx = yw::effectFromFlPreset (bytes, 130.0);
+    CHECK (fx && fx->kind == yw::EffectKind::fruityFastDist);
 }
 
 // Round 173d3b: Fruity WaveShaper states of version 1 with an older map (map version 0: f32 Δt / level / tension,
@@ -254,14 +254,14 @@ TEST (audit173d3b_waveshaper_old_maps)
         }
         for (const std::int32_t h : { 0, 1, -1, -1, -1 })
             i32 (h);
-        const auto s = lynx::flshape::parseWaveShaper (d);
+        const auto s = yw::flshape::parseWaveShaper (d);
         CHECK (s.has_value());
         if (! s)
             continue;
         CHECK (s->pre == 128 && s->mix == 100 && s->post == 90 && s->center && s->oversampling == 2);
         CHECK (s->points.size() == 3 && std::abs (s->points[1].y - 0.75f) < 1e-6f && std::abs (s->points[2].tension + 0.5f) < 1e-6f);
         CHECK (s->points[1].mode == (mapVersion >= 1 ? 1 : 0));
-        const auto back = lynx::flshape::parseWaveShaper (lynx::flshape::writeWaveShaper (*s, d));
+        const auto back = yw::flshape::parseWaveShaper (yw::flshape::writeWaveShaper (*s, d));
         CHECK (back && back->points.size() == 3 && std::abs (back->points[1].y - 0.75f) < 1e-6f && back->oversampling == 2);
     }
 }
@@ -274,17 +274,17 @@ TEST (audit173d3b_maximus_pre_v3_states)
     v2[0] = 2;
     for (std::size_t i = 4; i < v2.size(); ++i)
         v2[i] = (std::uint8_t) (i * 7);
-    const auto v3 = lynx::hlfx::maximusStateAsV3 (v2);
+    const auto v3 = yw::hlfx::maximusStateAsV3 (v2);
     CHECK (v3.size() == v2.size() + 8 && v3[0] == 3);
     CHECK (std::equal (v2.begin() + 4, v2.begin() + 4 + 0x18, v3.begin() + 4));
     CHECK (v3[4 + 0x18] == 0 && v3[4 + 0x19] == 0x80 && v3[4 + 0x104] == 0 && v3[4 + 0x105] == 0x80);
     CHECK (std::equal (v2.begin() + 4 + 0x18, v2.begin() + 4 + 0x100, v3.begin() + 4 + 0x1c));
     CHECK (std::equal (v2.begin() + 4 + 0x100, v2.end(), v3.begin() + 4 + 0x108));
-    CHECK (lynx::hlfx::maximusStateAsV3 (v3) == v3);
+    CHECK (yw::hlfx::maximusStateAsV3 (v3) == v3);
     if (realFlpDir.empty())
         return;
     std::ifstream in (std::filesystem::path (realFlpDir) / "Patches" / "Plugin presets" / "Effects" / "Maximus" / "Insert" / "NY compression.fst", std::ios::binary);
     const std::vector<std::uint8_t> bytes ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-    const auto fx = lynx::effectFromFlPreset (bytes, 130.0);
-    CHECK (fx && fx->kind == lynx::EffectKind::maximus);
+    const auto fx = yw::effectFromFlPreset (bytes, 130.0);
+    CHECK (fx && fx->kind == yw::EffectKind::maximus);
 }

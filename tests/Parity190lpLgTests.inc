@@ -1,18 +1,18 @@
 // Round 190lp (sub-round lg): Apex Limiter's and Sentry Gate's revision 1 (hidden apex::pRevision / dyn::sentry::revision),
 // refitted black-box on the reference limiter's and gate's renders (docs/PARITY.md "Round 190lp (Pro-L 2 → Apex, Pro-G →
 // Sentry)"). A new instance and a translated Pro-L 2 / Pro-G state get 1; a project or preset saved before, the Live maps,
-// the substitutes and LYNX's own chains (mastering looks, reference match, demo songs, Clean Voice) keep 0. After
+// the substitutes and YW's own chains (mastering looks, reference match, demo songs, Clean Voice) keep 0. After
 // DynamicsTests108 (its helpers).
 #include "core/ApexLimiter.h"
 #include "core/FabFilterStates.h"
 
 namespace parity190lplg
 {
-using lynx::EffectKind;
-using lynx::EffectParams;
+using yw::EffectKind;
+using yw::EffectParams;
 using namespace dyn108;
-namespace ap = lynx::apex;
-namespace sg = lynx::dyn::sentry;
+namespace ap = yw::apex;
+namespace sg = yw::dyn::sentry;
 
 // a tone at `hz`: −40 dBFS for 0.2 s, `loud` dBFS for `burst` s, −40 dBFS for `tail` s
 inline std::vector<float> burst (double loud, double burstS, double tail, double hz = 1000.0, double quiet = -40.0)
@@ -52,7 +52,7 @@ inline EffectParams apex (ap::Style style, double gainDb, double ceilingDb, floa
 
 TEST (parity190lp_lg_revisions_are_hidden_new_and_translated_get_one)
 {
-    using namespace lynx;
+    using namespace yw;
     namespace ap = apex;
     namespace sg = dyn::sentry;
     CHECK (ap::info().params.size() == (std::size_t) ap::paramCount && ap::pRevision == ap::paramCount); // no new control
@@ -182,7 +182,7 @@ TEST (parity190lp_lg_sentry_revision1_closes_in_db_after_its_wait)
 
 TEST (parity190lp_lg_substitutes_and_maps_keep_revision0)
 {
-    using namespace lynx;
+    using namespace yw;
     PluginIdentity id;
     id.format = ForeignPlugin::Format::vst3;
     id.name = "SSL X-Limit";

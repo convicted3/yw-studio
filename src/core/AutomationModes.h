@@ -1,7 +1,7 @@
 #pragma once
 
 // Automation write modes (round 190pa, research190oe P21; Pro Tools', Logic's and Cubase's Touch / Latch / Write). A
-// LYNX extra for recording automation from the controls: FL's Record automation (the recording filter's Automation,
+// YW extra for recording automation from the controls: FL's Record automation (the recording filter's Automation,
 // core/Recorder.h) stays the default and is the mode called Read here, bit for bit.
 //
 //  - Read (default): FL's way. A moved control writes while it is held or keeps moving (350 ms), then the curve that was
@@ -13,7 +13,7 @@
 //  - Write: as Latch, and the moved parameter is overwritten from where recording started: before the first move the
 //    curve holds the first value written.
 //
-// One mode per project (Song::automationWriteMode, saved in .lynx as "automationWriteMode" only when it is not Read);
+// One mode per project (Song::automationWriteMode, saved in .yw as "automationWriteMode" only when it is not Read);
 // it applies to a recording take with the Automation filter on, and to Capture automation (round 190op,
 // core/CaptureAutomation.h: Latch holds a gesture's last value to where that play pass stopped, Write also from where
 // it started). JUCE-free; tested in tests/AutoModes190paTests.inc.
@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <string>
 
-namespace lynx::automodes
+namespace yw::automodes
 {
 enum class Mode
 {
@@ -82,4 +82,4 @@ inline std::int64_t returnTicks (double bpm, std::int64_t ppq, double ms = touch
     const auto t = (std::int64_t) (ms / 60000.0 * (bpm > 0.0 ? bpm : 120.0) * (double) ppq + 0.5);
     return t < 1 ? 1 : t;
 }
-} // namespace lynx::automodes
+} // namespace yw::automodes

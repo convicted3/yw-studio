@@ -10,7 +10,7 @@
 #include "core/ActionSearch.h"
 #include "core/KeyMap.h"
 
-namespace lynx
+namespace yw
 {
 // One row of the command palette: what it shows (core/ActionSearch.h) and what Enter does (false: it can't run now; the
 // box says so and stays).
@@ -20,8 +20,8 @@ struct PaletteItem
     std::function<bool()> run;
 };
 
-// #228 (round 190nq), a LYNX extra: the action search ("?"). Round 190on (research190oe P2): the command palette — the same
-// box over the main window, with the key map's actions, the main menus' items, the LYNX extras' switches, the Settings
+// #228 (round 190nq), a YW extra: the action search ("?"). Round 190on (research190oe P2): the command palette — the same
+// box over the main window, with the key map's actions, the main menus' items, the YW extras' switches, the Settings
 // pages and the recent projects, each with its place and its keys. Up / Down pick, Enter or a double click runs it, Esc
 // or a click beside the box closes it.
 class ActionSearchOverlay final : public juce::Component
@@ -59,4 +59,4 @@ std::vector<actionsearch::Entry> actionSearchEntries (const keys::KeyMap& map);
 // separators are left out; so are the items under a section heading named `skipSection` (the File menu's recent
 // projects: the palette lists them itself).
 void addMenuItems (std::vector<PaletteItem>& out, const juce::PopupMenu& menu, const juce::String& path, const juce::String& skipSection = {});
-} // namespace lynx
+} // namespace yw

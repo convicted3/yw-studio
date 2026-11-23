@@ -21,8 +21,8 @@
 #include "core/FlPluginDb.h"
 #include "core/FlWrapper.h"
 #include "core/LimiterLaw.h"
-#include "core/LynxVerbs.h"
-#include "core/LynxTune.h"
+#include "core/YwVerbs.h"
+#include "core/YwTune.h"
 #include "core/MixSuite.h"
 #include "core/LowLifterFl.h"
 #include "core/VocalPitch.h"
@@ -34,26 +34,26 @@
 #include "core/DynamicsSuite.h"
 #include "core/ZipLite.h"
 
-namespace lynx
+namespace yw
 {
 namespace
 {
 // The built-in table (format: docs/PLUGIN_FALLBACK.md). Seeded with the third-party plugins of tmp/gf/PLUGIN_QUEUE.md
-// and common mixing staples, mapped to EXISTING LYNX effects. Identifiers marked [DATA] were read from real projects'
+// and common mixing staples, mapped to EXISTING YW effects. Identifiers marked [DATA] were read from real projects'
 // FL wrapper records; the others match by name. Parameter maps only where the saved state shows the layout and a
 // public manual gives the meaning (each one says so). Modules added later (pitch corrector, vocal tools...) append
 // their own entries here or through registerPluginSubstitutes.
 constexpr std::string_view builtInTable = R"TABLE(
-# ---------------------------------------------------------------- reverbs -> LYNX's reverbs (round 100)
+# ---------------------------------------------------------------- reverbs -> YW's reverbs (round 100)
 # Valhalla DSP: the saved state is a JUCE XML block whose attributes are the plugin's normalised (0..1) VST3 values
 # [DATA, round 98]. Round 100 measured each parameter's value -> unit law and enumeration breakpoints on the official
-# demos (black-box, REA_rodada100 §0-§6) [EXEC]; LYNX's own reverbs use the same laws, so most maps are identities;
-# enumerations use "steps", and Atrium's decay (LYNX's own law) a "curve". The Mix controls are equal-power
+# demos (black-box, REA_rodada100 §0-§6) [EXEC]; YW's own reverbs use the same laws, so most maps are identities;
+# enumerations use "steps", and Atrium's decay (YW's own law) a "curve". The Mix controls are equal-power
 # dry / wet inside the effect (measured), so the slot mix stays at 100 %.
 [valhalla-vintageverb]
 product = ValhallaVintageVerb
 vendor = Valhalla DSP
-lynx = Epoch Verb
+yw = Epoch Verb
 # [DATA] class ID from FL wrapper records of real projects
 vst3 = 7654535665657633616c68616c6c6176
 names = ValhallaVintageVerb
@@ -81,7 +81,7 @@ map = xml:ReverbMode -> Mode | steps 0:0 0.0828:0.0476 0.1245:0.0952 0.1662:0.14
 [valhalla-room]
 product = ValhallaRoom
 vendor = Valhalla DSP
-lynx = Atrium
+yw = Atrium
 names = ValhallaRoom
 # round 190ly: a translated ValhallaRoom runs Atrium's dense 32-line late tank (hidden reaLaw, #24; round 190ls). The owner's
 # perf rule: new Atriums keep the light 8-line tank (+48 % CPU for +0.18 of score is only worth it in the ValhallaRoom role)
@@ -112,7 +112,7 @@ map = xml:type -> Type | steps 0:0 0.1662:0.0909 0.2495:0.1818 0.3328:0.2727 0.4
 [valhalla-plate]
 product = ValhallaPlate
 vendor = Valhalla DSP
-lynx = Foil Plate
+yw = Foil Plate
 names = ValhallaPlate
 map = xml:Mix -> Mix
 map = xml:PreDelay -> Predelay
@@ -130,7 +130,7 @@ map = xml:Type -> Type | steps 0:0 0.0828:0.0909 0.1245:0.1818 0.1662:0.2727 0.2
 [valhalla-supermassive]
 product = Valhalla Supermassive
 vendor = Valhalla DSP
-lynx = Nebula
+yw = Nebula
 names = ValhallaSupermassive
 # round 190mb: the classic networks' per-mode tone and level (Nebula's hidden toneLaw, #15). Only a translated
 # Supermassive runs it
@@ -152,7 +152,7 @@ map = xml:Mode -> Mode | steps 0:0 0.0828:0.0476 0.1245:0.0952 0.1662:0.1429 0.2
 [valhalla-shimmer]
 product = ValhallaShimmer
 vendor = Valhalla DSP
-lynx = Halo
+yw = Halo
 names = ValhallaShimmer
 # the reference saves bare parameterN attributes (0..1); the order is its VST3 parameter list [EXEC]
 map = xml:parameter0 -> Mix
@@ -173,7 +173,7 @@ map = xml:parameter11 -> Color | steps 0:0 0.5:1
 [valhalla-futureverb]
 product = ValhallaFutureVerb
 vendor = Valhalla DSP
-lynx = Horizon
+yw = Horizon
 names = ValhallaFutureVerb
 map = xml:Mix -> Mix
 map = xml:Width -> Width
@@ -206,7 +206,7 @@ map = xml:Color -> Color | steps 0:0 0.1662:0.3333 0.2495:0.6667 0.3328:1
 [fabfilter-pro-r]
 product = FabFilter Pro-R
 vendor = FabFilter
-lynx = LuxeVerb
+yw = LuxeVerb
 names = FabFilter Pro-R; FabFilter Pro-R 2; Pro-R; Pro-R 2
 mix = 1
 # round tp172b: a Pro-R 2 state opens LuxeVerb's Space engine at its settings (core/SpaceVerb.h)
@@ -215,9 +215,9 @@ translate = pro-r2
 [soundtoys-littleplate]
 product = Little Plate
 vendor = Soundtoys
-lynx = Foil Plate
+yw = Foil Plate
 names = LittlePlate; Little Plate
-# round 129 (docs/PARITY.md): LYNX's plate reverb plays a plate's role (was Reeverb 2); its state is encoded: a
+# round 129 (docs/PARITY.md): YW's plate reverb plays a plate's role (was Reeverb 2); its state is encoded: a
 # 2 s plate, 100 % wet, at the slot's dry / wet 25 % as before. Round 150: in the measured plate voicing (the
 # trial's onset and decay per band, REA_rodada150a §7). Round 152: the editor opens in the one-knob Plate view
 preset = Decay=0.3; Mix=1; Voicing=1; View=1
@@ -226,7 +226,7 @@ mix = 0.25
 [waves-reverbs]
 product = Waves reverb (RVerb / H-Reverb / TrueVerb)
 vendor = Waves
-lynx = Reeverb 2
+yw = Reeverb 2
 waves = RVerb; H-Reverb; TrueVerb
 # round 190js: their states are translated (decay, pre-delay, the wet level by the decay, each reverb's measured tone,
 # H-Reverb's ducking, TrueVerb's direct path and levels; docs/PARITY.md "Round 190js"), the slot at 100 %. Without a
@@ -239,8 +239,8 @@ mix = 0.25
 [waves-h-delay]
 product = H-Delay
 vendor = Waves
-lynx = Echoform
-# [DATA] class ID (stereo component) and <PluginName> from real projects. Round 119: LYNX's echo (was Fruity Delay 3
+yw = Echoform
+# [DATA] class ID (stereo component) and <PluginName> from real projects. Round 119: YW's echo (was Fruity Delay 3
 # at FL's default); the RealWorld list is translated (sync host / BPM / ms, note, time, feedback, ping-pong or
 # stereo, mix, output, filters), measured on the official trial (docs/analise/REA_rodada119.md §2). Without a
 # readable state: a clean quarter-note ping-pong at 30 % feedback
@@ -252,11 +252,11 @@ preset = Mix=1; Style=0.9; Sync L=0.625; Note L=0.45; Sync R=0.625; Note R=0.45;
 [waves-supertap]
 product = SuperTap
 vendor = Waves
-# round 190jh: LYNX's multi-mode echo (was Fruity Delay 3 at FL's default, which added echoes to a SuperTap whose taps are
+# round 190jh: YW's multi-mode echo (was Fruity Delay 3 at FL's default, which added echoes to a SuperTap whose taps are
 # off): the state's taps, feedback, tap filter and direct level are translated onto Echoform's clean two-line echo,
 # measured on refcap182's SuperTap programme captures (docs/PARITY.md "Round 190jh"). Without a readable state: the
 # dry signal (SuperTap's default: the direct path on, every tap off)
-lynx = Echoform
+yw = Echoform
 waves = SuperTap
 translate = waves-supertap
 preset = Mix=0
@@ -264,11 +264,11 @@ preset = Mix=0
 [soundtoys-echoboy]
 product = EchoBoy
 vendor = Soundtoys
-# round 129 (docs/PARITY.md): LYNX's multi-mode echo plays EchoBoy's role. Round 136: her states play Echoform's Tape
+# round 129 (docs/PARITY.md): YW's multi-mode echo plays EchoBoy's role. Round 136: her states play Echoform's Tape
 # voicing (the loop structures measured on the official trial, REA_rodada136 §4), recognised by the hash of the encoded
 # preset (not decoded here); any other state: round 129's tape echo, 1/4 note at the project tempo, 25 % feedback, 25 % mix
 # (round 147: in the Studio reel voicing — EchoBoy's default style, measured black-box, REA_rodada147a)
-lynx = Echoform
+yw = Echoform
 preset = Mode=0.0415; Sync L=0.6248; Note L=0.4498; Feedback=0.125; Mix=0.25; Echo voicing=0.064516
 # [DATA] VST2 unique ID from real projects
 vst2 = StEB
@@ -282,7 +282,7 @@ vendor = Soundtoys
 # lag is EchoBoy's (8 samples at 48 kHz), EchoBoy Jr's ~3, and on its steady tones the lag moved the echo's phase against
 # the dry (refcap030: 5 mode / sr96 files a step lower). Its own measured default (Studio Tape, Wide, 100 ms, feedback
 # 0.30, mix 40 %) was tried as the fallback and kept out: its blocks (mostly mix 25 … 30 %) scored lower
-lynx = Echoform
+yw = Echoform
 preset = Mode=0.0415; Sync L=0.6248; Note L=0.4498; Feedback=0.125; Mix=0.25; Echo voicing=0.064516; #108=0
 names = EchoBoyJr; EchoBoy Jr
 translate = soundtoys-echoboy
@@ -294,7 +294,7 @@ vendor = Soundtoys
 # stays encoded (not decoded: a change of one control rewrites the payload from that point to its end). PrimalTap's own
 # measured default (two taps at 0.5 beat, no feedback, mix 50 %, band-limited) was tried as the fallback and kept out:
 # refcap030's mode / pairs blocks (95 / 120 ms, mix 30 %) scored lower with it (3.67 -> 3.04, 3.37 -> 3.00)
-lynx = Echoform
+yw = Echoform
 preset = Mode=0.125; Sync L=0.6248; Note L=0.4498; Feedback=0.125; Mix=0.25
 names = PrimalTap
 # round 190kv: its factory presets (recognised by the payload's fingerprint) play their own settings on Echoform
@@ -306,14 +306,14 @@ vendor = Soundtoys
 # round 190is: its own entry (it shared PrimalTap's). Any state plays Little PrimalTap's default as measured on refcap030:
 # 113 ms (the echo 6 samples later), no feedback, mix 50 % on a linear law (dry and echo −6 dB: Echoform's equal-power Mix
 # at 2/3 with the Output at −4.8 dB), a steep low-pass at 12.3 kHz (Age) and its droop (High cut), no LFO
-lynx = Echoform
+yw = Echoform
 preset = Mix=0.666667; Output=0.367466; Time L=0.113125; Mode=0.541667; Mod depth=0; Age=0.221; High cut=0.45; Feedback=0
 names = Little PrimalTap; LittlePrimalTap
 # round 190kv: its factory presets (recognised by the payload's fingerprint) play their own settings
 translate = soundtoys-factory
 
-# Valhalla delay / modulation plugins -> LYNX's delay / modulation suite (round 101). Their saved state is a JUCE
-# XML block holding every parameter as its normalised value [DATA, EXEC]; the LYNX effects use the same value laws,
+# Valhalla delay / modulation plugins -> YW's delay / modulation suite (round 101). Their saved state is a JUCE
+# XML block holding every parameter as its normalised value [DATA, EXEC]; the YW effects use the same value laws,
 # measured black-box on the official demos (docs/analise/REA_rodada101.md §2-§6), so most settings map one to one.
 # [derived] VST3 class IDs: Steinberg's VST2-compatible UID ("VST" + the VST2 ID found in the state's FBCh header +
 # the first 9 letters of the lower-case name), in FL's byte order; the same rule reproduces ValhallaVintageVerb's ID
@@ -321,7 +321,7 @@ translate = soundtoys-factory
 [valhalla-delay]
 product = ValhallaDelay
 vendor = Valhalla DSP
-lynx = Echoform
+yw = Echoform
 vst3 = 64545356614c7679616c68616c6c6164
 names = ValhallaDelay
 mix = 1
@@ -377,7 +377,7 @@ map = xml:Mode -> Mode | steps 0:0.041667 0.0828:0.208333 0.1245:0.291667 0.1662
 [valhalla-freqecho]
 product = ValhallaFreqEcho
 vendor = Valhalla DSP
-lynx = Spiral Echo
+yw = Spiral Echo
 vst3 = 4654535645717668616c68616c6c6166
 names = ValhallaFreqEcho
 mix = 1
@@ -393,7 +393,7 @@ map = xml:stereo -> Stereo
 [valhalla-spacemodulator]
 product = ValhallaSpaceModulator
 vendor = Valhalla DSP
-lynx = Orbit
+yw = Orbit
 vst3 = 535453564d707664616c68616c6c6173
 names = ValhallaSpaceModulator
 mix = 1
@@ -411,7 +411,7 @@ map = xml:Mode -> Mode
 [valhalla-ubermod]
 product = ValhallaUberMod
 vendor = Valhalla DSP
-lynx = Lattice Mod
+yw = Lattice Mod
 vst3 = 7554535665627672616c68616c6c6175
 names = ValhallaUberMod
 mix = 1
@@ -456,13 +456,13 @@ map = xml:DelaySync -> Delay sync
 [fabfilter-timeless]
 product = FabFilter Timeless
 vendor = FabFilter
-# round 190kw: LYNX's multi-mode echo (was Fruity Delay 3 at FL's default, 2.37 / 10 on refcap030's Timeless 3 bank): a
+# round 190kw: YW's multi-mode echo (was Fruity Delay 3 at FL's default, 2.37 / 10 on refcap030's Timeless 3 bank): a
 # Timeless 3 state (component state "FFBS", 1007 values) is translated onto Echoform's Clean mode with the line law
 # measured on the reference (hidden #109: its dry / wet law, read filter and wide limit): delay time / sync / time pan,
 # feedback (ping pong, pan, cross mix), mix, stereo width, wet level / pan, the filters in use, drive, diffuse, freeze
 # (docs/PARITY.md "Round 190kw"). Without a readable state (Timeless 2): the reference's default, a single 350 ms echo
 # without feedback at Mix 50 % (the dry at unity)
-lynx = Echoform
+yw = Echoform
 names = FabFilter Timeless 2; FabFilter Timeless 3; Timeless 2; Timeless 3
 translate = timeless3
 preset = Mode=0.541667; Style=0.1; Sync L=0; Sync R=0; Time L=0.35; Time R=0.35; Feedback=0; Mix=0.5; Width=1; Low cut=0.002764; High cut=1; Age=0; Mod depth=0; Wow=0; Flutter=0; Drive=0; #109=1
@@ -471,7 +471,7 @@ preset = Mode=0.541667; Style=0.1; Sync L=0; Sync R=0; Time L=0.35; Time R=0.35;
 [waves-l-series]
 product = Waves L1 / L2 / L3
 vendor = Waves
-lynx = Limiter
+yw = Limiter
 waves = L1; L2; L3; L3-16; L3-LL Multi; L4
 # round 190jh: an L2 state's RealWorld list is translated (threshold = the input gain, out ceiling, release; ARC = the
 # Limiter's shortest release), measured on refcap182's L2 programme captures (docs/PARITY.md "Round 190jh")
@@ -480,7 +480,7 @@ translate = waves-l2
 [fabfilter-pro-l]
 product = FabFilter Pro-L
 vendor = FabFilter
-lynx = Apex Limiter
+yw = Apex Limiter
 names = FabFilter Pro-L; FabFilter Pro-L 2; Pro-L; Pro-L 2
 # round tp172b: a Pro-L 2 state (component "FabF", 32 values, measured black-box) is translated: gain, style, look-ahead,
 # attack, release, channel links, oversampling, true peak, dither, noise shaping, DC filter, side chain, output level
@@ -490,7 +490,7 @@ translate = pro-l2
 [waves-rcomp]
 product = Renaissance Compressor
 vendor = Waves
-lynx = Compressor
+yw = Compressor
 # [DATA] class ID (stereo component) and <PluginName> from real projects
 vst3 = 5554535643527253636f6d7072657373
 waves = RComp
@@ -502,11 +502,11 @@ preset = Threshold=0.75; Ratio=0.0526; Auto gain=1
 [waves-cla-2a]
 product = CLA-2A
 vendor = Waves
-lynx = Glow Leveler
+yw = Glow Leveler
 # [DATA] class ID (stereo component) and <PluginName> from real projects
 vst3 = 4c545356324163536c612d3261207374
 waves = CLA-2A
-# LYNX's optical leveler (round 96). Round 113: gain, peak reduction and comp / limit are translated from the
+# YW's optical leveler (round 96). Round 113: gain, peak reduction and comp / limit are translated from the
 # RealWorld list (measured on the official trial, REA_rodada113 §3c); without a readable state light leveling
 preset = Peak reduction=0.30; Gain=0.067
 translate = waves-cla-2a
@@ -514,23 +514,23 @@ translate = waves-cla-2a
 [waves-cla-76]
 product = CLA-76
 vendor = Waves
-lynx = Crest Compressor
+yw = Crest Compressor
 waves = CLA-76
-# round 190ky: Crest's FET law (a feedback limiter, LYNX's own model of the structure REA showed in the reference's DSP,
+# round 190ky: Crest's FET law (a feedback limiter, YW's own model of the structure REA showed in the reference's DSP,
 # fitted on our demo-mode probes: docs/PARITY.md "Round 190ky", docs/analise/REA_rodada190ky.md); the RealWorld list is
 # translated (Input / Output by their measured gains, attack, release, ratio, revision, comp off, mix, trim). Was the Bus
 # style fitted around one factory state (rounds 127 / 148 / 190jh). Without a readable state: a light 4:1 at Waves' defaults
 translate = waves-cla-76
 preset = Style=0.9; Threshold=0.6; Ratio=0.546; Knee=0.13; Range=0.53; Auto gain=1
 
-# round 190kt: the console bus compressor on Crest's Bus style with its console law (a feedback compressor, LYNX's own
+# round 190kt: the console bus compressor on Crest's Bus style with its console law (a feedback compressor, YW's own
 # model of the structure REA showed in the reference's DSP, fitted on our demo-mode probes: docs/PARITY.md "Round 190kt",
 # docs/analise/REA_rodada190kt.md). Was Compressor's classic voicing (round 190jh). Without a readable state: Crest's
 # Bus style at its top threshold (the reference's default, +15, reduces nothing on programme)
 [waves-sslcomp]
 product = SSLComp
 vendor = Waves
-lynx = Crest Compressor
+yw = Crest Compressor
 waves = SSLComp
 translate = waves-sslcomp-bus
 preset = Style=0.9; Threshold=1
@@ -538,7 +538,7 @@ preset = Style=0.9; Threshold=1
 [waves-compressors]
 product = Waves compressor (CLA-3A / C1)
 vendor = Waves
-lynx = Compressor
+yw = Compressor
 waves = CLA-3A; C1 comp; C1comp
 preset = Threshold=0.75; Ratio=0.0526; Auto gain=1
 # round 190jh: an SSLComp state's RealWorld list is translated (threshold, ratio, attack, release, make-up, mix),
@@ -548,9 +548,9 @@ translate = waves-sslcomp
 [fabfilter-pro-c]
 product = FabFilter Pro-C
 vendor = FabFilter
-lynx = Crest Compressor
+yw = Crest Compressor
 names = FabFilter Pro-C 2; FabFilter Pro-C 3; Pro-C 2; Pro-C 3
-# LYNX's style compressor (round 108), fitted to our black-box measurements (MEASURE_fabfilter §2); a Pro-C 3 state
+# YW's style compressor (round 108), fitted to our black-box measurements (MEASURE_fabfilter §2); a Pro-C 3 state
 # (component state "FFBS", 100 values) is translated: style, threshold, ratio, knee, range, attack, release, hold,
 # look-ahead, character, side-chain EQ (3 bands), levels, mix, oversampling. Pro-C 2 states keep the defaults.
 translate = pro-c3
@@ -560,9 +560,9 @@ preset = Auto gain=1
 [fabfilter-pro-mb]
 product = FabFilter Pro-MB
 vendor = FabFilter
-lynx = Prism Multiband
+yw = Prism Multiband
 names = FabFilter Pro-MB; Pro-MB
-# LYNX's 4-band dynamics (round 108, MEASURE_fabfilter §6 / §12.4): the enabled bands are laid out low → high on
+# YW's 4-band dynamics (round 108, MEASURE_fabfilter §6 / §12.4): the enabled bands are laid out low → high on
 # Prism's four bands (gaps become bypassed bands), with threshold, ratio, range, mode, knee, attack / release %,
 # level, solo, look-ahead, mix and levels. Without a readable state the bands start at a gentle -12 dB range.
 translate = pro-mb
@@ -570,9 +570,9 @@ translate = pro-mb
 [fabfilter-pro-g]
 product = FabFilter Pro-G
 vendor = FabFilter
-lynx = Sentry Gate
+yw = Sentry Gate
 names = FabFilter Pro-G; Pro-G
-# LYNX's gate / expander (round 108, MEASURE_fabfilter §7): every setting of the state is translated (style,
+# YW's gate / expander (round 108, MEASURE_fabfilter §7): every setting of the state is translated (style,
 # thresholds, ratios, range, attack, release, hold, knee, look-ahead, side-chain filters, wet / dry, output)
 translate = pro-g
 
@@ -580,7 +580,7 @@ translate = pro-g
 [waves-ssl-channel]
 product = SSL E-Channel
 vendor = Waves
-lynx = Ridge Strip
+yw = Ridge Strip
 # [DATA] class ID (stereo component) and <PluginName> from real projects. Round 123: Ridge Strip's "E" voicing is the
 # console measured black-box on the official trial (every EQ band / filter from impulse responses, the feedback
 # compressor from stairs, bursts and her takes), so the RealWorld list maps one to one (REA_rodada123.md)
@@ -594,14 +594,14 @@ translate = waves-ssl-channel
 [waves-ssl-g-channel]
 product = SSL G-Channel
 vendor = Waves
-lynx = Ridge Strip
+yw = Ridge Strip
 waves = SSLGChannel
 translate = waves-ssl-g-channel
 
 [ssl-native-channel]
 product = SSL Native Channel Strip / 4K E
 vendor = Solid State Logic
-lynx = Ridge Strip
+yw = Ridge Strip
 names = SSL Native Channel Strip 2; SSL Native Channel Strip; SSL 4K E; SSL 4K B; SSL 4K G; Vocalstrip 2; SSL Native Vocalstrip 2
 # round tp172c: a Channel Strip 2 state (the same XML form) to Ridge's Modern voicing, measured black-box on its trial
 # (E / G EQ, filters, compressor, gate); 4K G (Black) and 4K B (Brown; its stepped compressor, slice 4) to the 4K voicing
@@ -612,39 +612,39 @@ names = SSL Native Channel Strip 2; SSL Native Channel Strip; SSL 4K E; SSL 4K B
 translate = ssl-vocalstrip-2
 
 # round 145: the rest of Complete Access (Slate Digital, Solid State Logic, LiquidSonics, sonible, Harrison; official
-# trials on this PC) by role only — their states are not read (not in her corpus, not measured): LYNX's effect for
+# trials on this PC) by role only — their states are not read (not in her corpus, not measured): YW's effect for
 # the same job at its defaults, so a project that used them still plays a sensible chain
 [complete-access-strips]
 product = channel strips (Slate Virtual Mix Rack)
 vendor = Complete Access (role)
-lynx = Ridge Strip
+yw = Ridge Strip
 names = Virtual Mix Rack; VBC Rack
 
-# round tp172c6: SSL Native Drumstrip -> Ridge's gate and trims; tp172c8: onto Shell Channel, LYNX's drum channel strip
+# round tp172c6: SSL Native Drumstrip -> Ridge's gate and trims; tp172c8: onto Shell Channel, YW's drum channel strip
 # (gate, transient shaper, low / high enhancers, listen-mic compressor, process order, dry / wet)
 [ssl-drumstrip]
 product = Drumstrip (drum channel strip)
 vendor = Solid State Logic (Complete Access)
-lynx = Shell Channel
+yw = Shell Channel
 names = SSL Native Drumstrip v6; SSL Native Drumstrip; Drumstrip
 translate = ssl-drumstrip
 
 # round tp172c6: SSL Guitarstrip -> Ridge's own engine (EQ, filters, compressor) with the DRIVE section on the Guitar amp /
-# Bass amp models, measured black-box on its trial; tp172c8: onto Fret Channel, LYNX's guitar / bass channel strip (phase
+# Bass amp models, measured black-box on its trial; tp172c8: onto Fret Channel, YW's guitar / bass channel strip (phase
 # correction, EQ, compressor, amp with its voicings, output mix)
 [ssl-guitarstrip]
 product = Guitarstrip (guitar / bass channel strip)
 vendor = Solid State Logic (Complete Access)
-lynx = Fret Channel
+yw = Fret Channel
 names = SSL Guitarstrip; Guitarstrip
 translate = ssl-guitarstrip
 
 # round tp172c6: Slate VCC Channel -> the console's measured model (the drive and the trims read from its state);
-# tp172c7: onto Kiln Channel, LYNX's console channel (console, drive, trims, noise, group, group bypass, main gains)
+# tp172c7: onto Kiln Channel, YW's console channel (console, drive, trims, noise, group, group bypass, main gains)
 [vcc-channel]
 product = VCC Channel (console emulation)
 vendor = Slate Digital (Complete Access)
-lynx = Kiln Channel
+yw = Kiln Channel
 names = VM VCC Channel; VCC Channel
 translate = vcc-channel
 
@@ -655,14 +655,14 @@ translate = vcc-channel
 [harrison-strips]
 product = Harrison 32Classic / MPC channel strips
 vendor = Harrison
-lynx = Ridge Strip
+yw = Ridge Strip
 names = Harrison 32C; Harrison_32ClassicChannelStrip; Harrison 32Classic; Harrison 32Classic Channel Strip; Harrison_MPCChannelStrip; Harrison MPC Channel Strip
 translate = harrison-strip
 
 [complete-access-bus-comps]
 product = bus / smart compressors (SSL Bus Compressor 2, G3, VBC, sonible smart:comp, pure:comp)
 vendor = Complete Access (role)
-lynx = Crest Compressor
+yw = Crest Compressor
 # round 190ar: the references with a fitted setting map load at the mapped settings (core/FittedMaps.inc)
 translate = fitted-map
 names = SSL Native Bus Compressor 2; SSL 360 Link Bus Compressor; SSL Native X-Comp v6; SSL Fusion HF Compressor; VBC FG-Grey; VBC FG-MU; VBC FG-Red; smartcomp3; smartcomp2; purecomp; learncomp; Harrison_LookaheadCompressor; Harrison_MPCCompressor; VM FG-Stress; VM FG-Bomber
@@ -670,27 +670,27 @@ names = SSL Native Bus Compressor 2; SSL 360 Link Bus Compressor; SSL Native X-C
 [complete-access-vintage-comps]
 product = vintage compressor models (Slate FG-116 / FG-76 / FG-401 / FG-A / FG-Dynamics, SSL X-ValveComp)
 vendor = Complete Access (role)
-lynx = Compressor
+yw = Compressor
 translate = fitted-map
 names = VM FG-116; VM FG-116 Modern; VM FG-116 Vintage; VM FG-76; VM FG-401; VM FG-A; VM FG-Dynamics; VM The Monster; SSL Native X-ValveComp v6; MO-TT
 
 [complete-access-optos]
 product = optical levelers (Slate FG-2A, SD-3A, Custom Opto)
 vendor = Complete Access (role)
-lynx = Glow Leveler
+yw = Glow Leveler
 names = VM FG-2A; VM SD-3A; VM Custom Opto
 
 [complete-access-limiters]
 product = limiters (Slate FG-X 2, SSL X-Limit, sonible smart:limit, pure:limit)
 vendor = Complete Access (role)
-lynx = Apex Limiter
+yw = Apex Limiter
 translate = fitted-map
 names = FG-X 2; FG-X; SSL X-Limit; smartlimit; purelimit; learnlimit; Bus Clipper
 
 [eiosis-aireq]
 product = AirEQ (Eiosis AirEQ, Slate VM AirEQ Air / Earth)
 vendor = Eiosis (Slate Digital)
-lynx = Facet EQ
+yw = Facet EQ
 # round 190ln: the state is translated in physical units (cuts, Earth / Air shelves, five bells / shelves, strength, mid /
 # side placement, trims); laws and shapes measured on the references' renders, structure read statically
 # (docs/analise/REA_rodada190ln.md §3). Without a readable state: Facet flat, as before
@@ -700,7 +700,7 @@ names = Eiosis AirEQ; Eiosis AirEQ 5.1; AirEQ; VM AirEQ Air; VM AirEQ Earth
 [slate-infinity-eq]
 product = Infinity EQ
 vendor = Slate Digital
-lynx = Facet EQ
+yw = Facet EQ
 # round 190ln: the state is translated in physical units (the first eight enabled bands of 24: cuts, shelves, bells by
 # width, notch, tilt, dynamics, channel placement, output); laws and shapes measured on the reference's renders
 # (docs/analise/REA_rodada190ln.md §4). Without a readable state: Facet flat, as before
@@ -710,30 +710,30 @@ names = Inf EQ; Infinity EQ
 [complete-access-eqs]
 product = EQs (Slate FG-73 / FG-N / FG-S / SD-PE1 / CS-EQ, SSL X-EQ 2, sonible smart:EQ)
 vendor = Complete Access (role)
-lynx = Facet EQ
+yw = Facet EQ
 names = VM FG-73; VM FG-N; VM FG-S; VM SD-PE1; VM CS-EQ; VM CS-Lift; SSL Native X-EQ 2; SSL Fusion Violet EQ; smartEQ4; smartEQ3; pureeq; learneq; Harrison_LegacyEQ; Harrison_MasteringEQ
 
 [complete-access-deessers]
 product = de-essers (SSL DeEss, Slate FG-DS 902, Eiosis E2Deesser, sonible smart:deess)
 vendor = Complete Access (role)
-lynx = Hush De-esser
+yw = Hush De-esser
 names = SSL DeEss; VM FG-DS 902; Eiosis E2Deesser; smartdeess; puredeess; Harrison_De-Esser
 
 [complete-access-gates]
 product = gates (SSL X-Gate, Slate Gate Classic / Drums, Harrison Spectral Gate)
 vendor = Complete Access (role)
-lynx = Sentry Gate
+yw = Sentry Gate
 translate = fitted-map
 names = SSL X-Gate; VM Gate Classic; Harrison_SpectralGate
 
 # round 190dm: the three-band bus compressor stands in on Prism Multiband (three bands on its crossovers, set alike), at its
-# setting map's default (fitted black-box on its probes, /mnt/e/lynx-work/dyn190dm/fit): every bank setting played
+# setting map's default (fitted black-box on its probes, /mnt/e/yw-work/dyn190dm/fit): every bank setting played
 # through this preset scores 4.25 / 2.76 (tp172c / programme) against Crest's defaults 2.50 / 2.36. (MO-TT stays on the
 # Compressor: on Prism its map wins at matched settings, but its default as a stand-in scores 2.92 / 2.48 against 3.08 / 2.56.)
 [three-band-bus-compressor]
 product = three-band bus compressor (SSL G3 MultiBusComp)
 vendor = Complete Access (role)
-lynx = Prism Multiband
+yw = Prism Multiband
 names = SSL G3 MultiBusComp
 preset = Bands=0.4; Band layout=0; Crossover 1=0.216712; Crossover 2=0.828259; Slope=0.5; Mix=1; Processing=1; B1 threshold=0.97449; B1 ratio=0.47828; B1 range=0.0; B1 knee=0.5; B1 attack=0.33953; B1 release=0.53006; B1 level=0.48994; B2 threshold=0.97449; B2 ratio=0.47828; B2 range=0.0; B2 knee=0.5; B2 attack=0.33953; B2 release=0.53006; B2 level=0.48994; B3 threshold=0.97449; B3 ratio=0.47828; B3 range=0.0; B3 knee=0.5; B3 attack=0.33953; B3 release=0.53006; B3 level=0.48994
 
@@ -743,14 +743,14 @@ preset = Bands=0.4; Band layout=0; Crossover 1=0.216712; Crossover 2=0.828259; S
 [drum-gate]
 product = drum gate (Slate Gate Drums)
 vendor = Complete Access (role)
-lynx = Sentry Gate
+yw = Sentry Gate
 names = VM Gate Drums
 preset = Trigger=1; Threshold=0; Range=1; Attack=0.1316; Release=0.46416; Hold=0.43243; Knee=0; Release shape=0.5; Sensitivity=0.44444
 
 [complete-access-reverbs]
 product = reverbs (LiquidSonics Lustrous Plates / Seventh Heaven / Cinematic Rooms, Slate VerbSuite Classics, SSL FlexVerb / PlateVerb / SpringVerb, sonible smart:reverb)
 vendor = Complete Access (role)
-lynx = Foil Plate
+yw = Foil Plate
 names = Lustrous Plates; Seventh Heaven; Seventh Heaven Professional; Cinematic Rooms; Cinematic Rooms Professional; Illusion; VerbSuite Classics; SSL Native FlexVerb; SSL PlateVerb; SSL SpringVerb; SSL GateVerb; smartreverb2; smartreverb; pureverb; learnreverb; Vocal Reverb
 preset = Decay=0.3; Mix=1; Law=0
 mix = 0.25
@@ -772,7 +772,7 @@ default = VerbSuite Classics | Mix=1.0000; Predelay=0.1351; Decay=0.2780; Size=1
 [complete-access-delays]
 product = delays (SSL X-Echo / X-Delay, Slate Stellar Echo SD-201, Harrison 3D Delay)
 vendor = Complete Access (role)
-lynx = Echoform
+yw = Echoform
 # round 190dl: these devices keep the Classic law (the measured tape stage is ValhallaDelay's; on the bank it lowered
 # the multi-head tape row's tail score 2.72 -> 2.28)
 preset = Mode=0.0415; Sync L=0.6248; Note L=0.4498; Feedback=0.125; Mix=0.25; Law=0
@@ -785,27 +785,27 @@ names = SSL Native X-Echo; SSL X-Delay; Stellar Echo SD-201; Harrison_3DDelay
 [d16-repeater]
 product = Repeater
 vendor = D16 Group
-lynx = Echoform
+yw = Echoform
 preset = Mode=0.0415; Sync L=0.6248; Note L=0.4498; Feedback=0.125; Mix=0.25; Law=0
 names = Repeater
 
 [complete-access-saturators]
 product = saturators (Slate Heatwave / Revival, SSL Fusion Vintage Drive / X-Saturator, Harrison Tape Saturator)
 vendor = Complete Access (role)
-lynx = Ember Saturator
+yw = Ember Saturator
 translate = fitted-map
 names = Heatwave; VM Revival; SSL Fusion Vintage Drive; SSL Native X-Saturator v6; SSL Fusion Transformer; Harrison Tape Saturator
 
 [complete-access-tuners]
 product = pitch correction (Slate MetaTune)
 vendor = Complete Access (role)
-lynx = LYNX Tune
+yw = YW Tune
 names = MetaTune
 
 [waves-s1-imager]
 product = S1 Imager
 vendor = Waves
-lynx = Stereo Shaper
+yw = Stereo Shaper
 # round 124: the width / rotation / gain matrix measured on the official trial is set exactly on the Stereo Shaper's
 # matrix (docs/analise/REA_rodada124_extras.md §4); without a readable state the slot stays neutral
 waves = S1 Imager; S1 Imager Stereo
@@ -814,7 +814,7 @@ translate = waves-s1-imager
 [waves-c4]
 product = C4 Multiband Parametric Processor
 vendor = Waves
-lynx = Prism Multiband
+yw = Prism Multiband
 waves = C4
 # round 190mg: the four-band dynamics role (no entry before: such projects lost the plug-in). Its RealWorld list is
 # translated onto Prism's four bands, and Prism's hidden C4 law runs the C4's own structure (in-phase crossovers with its
@@ -824,22 +824,22 @@ translate = waves-c4
 
 # round 190mm (scheps): the multi-module channel strip role (no entry before: such projects lost the plug-in). Its five
 # modules (Pre, Gate, DS2, EQ, Comp), their on / off and the module order are read from the state and run by Ridge
-# Strip's hidden omni law: LYNX's own model of each module, fitted on our Waves-demo probes (EQ shapes, filters, thump,
+# Strip's hidden omni law: YW's own model of each module, fitted on our Waves-demo probes (EQ shapes, filters, thump,
 # saturation, the compressor types with their automatic make-up; docs/analise/REA_rodada190mm_scheps.md)
 [waves-scheps-omni]
 product = Scheps Omni Channel
 vendor = Waves
-lynx = Ridge Strip
+yw = Ridge Strip
 waves = Scheps Omni Channel; Scheps Omni Channel 2
 translate = waves-scheps-omni
 
 # ---------------------------------------------------------------- round 190mm (sub-round dyn): Waves without a stand-in
-# before (such projects lost the plug-in). Each law is LYNX's own model of the structure REA read in the reference's DSP,
+# before (such projects lost the plug-in). Each law is YW's own model of the structure REA read in the reference's DSP,
 # every constant fitted on our demo-mode probes (docs/analise/REA_rodada190mm_dyn.md)
 [waves-rvox]
 product = Renaissance Vox
 vendor = Waves
-lynx = Compressor
+yw = Compressor
 waves = Renaissance Vox; RVox
 # the one-knob vocal compressor on Compressor's hidden Vox law: the threshold with its automatic make-up, the gate and
 # the output gain. Without a readable state: Compressor at a 0 dBFS threshold (the reference's default compresses nothing)
@@ -849,7 +849,7 @@ preset = Threshold=1
 [waves-rdeesser]
 product = Renaissance DeEsser
 vendor = Waves
-lynx = Hush De-esser
+yw = Hush De-esser
 waves = RDeEsser; Renaissance DeEsser
 # the split / wide-band de-esser on Hush's hidden Renaissance de-esser law (its crossover, the threshold that rises with
 # the level below the band, the Renaissance smoother): threshold, range, frequency, high-pass / band-pass, split /
@@ -859,7 +859,7 @@ translate = waves-rdeesser
 [waves-c6]
 product = C6 Multiband Compressor
 vendor = Waves
-lynx = Prism Multiband
+yw = Prism Multiband
 waves = C6; C6-SideChain
 # the C4's four crossover bands on Prism's C4 law (round 190mg) and the C6's two floating dynamic bands on the law's hidden
 # floating bands (a band-pass of the crossovers' sum through the same gain law and smoother)
@@ -868,7 +868,7 @@ translate = waves-c6
 [waves-api-2500]
 product = API-2500
 vendor = Waves
-lynx = Compressor
+yw = Compressor
 waves = API-2500
 # the VCA bus compressor on Compressor's hidden bus law: threshold, ratio, attack, release (incl. variable), knee,
 # thrust, type (feed-forward / feedback), make-up (auto / manual), mix, trim. Was the generic Waves compressor entry
@@ -879,7 +879,7 @@ preset = Threshold=0.75; Ratio=0.0526; Auto gain=1
 [waves-rbass]
 product = Renaissance Bass
 vendor = Waves
-lynx = Low Lifter
+yw = Low Lifter
 waves = Renaissance Bass; RBass
 # the psycho-acoustic bass enhancer on Low Lifter's hidden bass law: its crossover at Frequency, the harmonics of the band
 # below it at Intensity, the original bass in / out, the output gain. Without a readable state: Low Lifter's default
@@ -888,7 +888,7 @@ translate = waves-rbass
 [waves-maxxbass]
 product = MaxxBass
 vendor = Waves
-lynx = Low Lifter
+yw = Low Lifter
 waves = MaxxBass
 # the same bass law in the MaxxBass role: input gain, frequency, original bass gain, harmonics gain
 translate = waves-maxxbass
@@ -896,7 +896,7 @@ translate = waves-maxxbass
 [waves-vitamin]
 product = Vitamin
 vendor = Waves
-lynx = Aether
+yw = Aether
 waves = Vitamin
 # the five-band harmonic enhancer on Aether's hidden Vitamin law: the four crossovers, each band's gain, the direct gain
 translate = waves-vitamin
@@ -904,7 +904,7 @@ translate = waves-vitamin
 [waves-ar-plates]
 product = Abbey Road Reverb Plates
 vendor = Waves
-lynx = Foil Plate
+yw = Foil Plate
 waves = Abbey Road Reverb Plates; Abbey Road Plates
 # round 190mg: the plate role (no entry before: such projects lost the plug-in); its decay (the plate and Damper as the
 # reference combines them), pre-delay, treble and bass cut on Foil Plate's measured plate voicing, 100 % wet
@@ -914,7 +914,7 @@ preset = Mix=1; Voicing=1
 [waves-atlas]
 product = Atlas Reverb
 vendor = Waves
-lynx = Atrium
+yw = Atrium
 waves = Atlas Reverb
 # round 190mg: the room / hall role (no entry before); its decay and pre-delay on Atrium, 100 % wet
 translate = waves-atlas
@@ -923,7 +923,7 @@ preset = Mix=1
 [waves-puigtec]
 product = PuigTec EQP1A
 vendor = Waves
-lynx = Facet EQ
+yw = Facet EQ
 waves = PuigTec EQP1A; PuigTec EQP-1A; EQP1A
 # round 190lf: the Pultec-style program EQ role (no entry before: such projects lost the plug-in). Its RealWorld list
 # is translated onto eight Facet bands (low boost / atten shelves, the high boost bell, the high atten shelf and the
@@ -933,7 +933,7 @@ translate = waves-puigtec
 [waves-eqs]
 product = Waves EQ (SSL EQ)
 vendor = Waves
-lynx = Parametric EQ
+yw = Parametric EQ
 # round 190mm: Renaissance EQ and Q10 have their own entries below
 waves = SSLEQ
 
@@ -944,7 +944,7 @@ waves = SSLEQ
 [waves-req]
 product = Renaissance Equalizer (REQ)
 vendor = Waves
-lynx = Facet EQ
+yw = Facet EQ
 waves = REQ; REQ 2; REQ 4; REQ 6
 translate = waves-req
 
@@ -954,7 +954,7 @@ translate = waves-req
 [waves-api-550]
 product = API 550A / 550B
 vendor = Waves
-lynx = Facet EQ
+yw = Facet EQ
 waves = API-550; API-550A; API-550B
 translate = waves-api-550
 
@@ -964,39 +964,39 @@ translate = waves-api-550
 [waves-rchannel]
 product = Renaissance Channel (RChannel)
 vendor = Waves
-lynx = Compressor
+yw = Compressor
 waves = RChannel
 translate = waves-rchannel
 
 [waves-api-560]
 product = API 560
 vendor = Waves
-lynx = Facet EQ
+yw = Facet EQ
 waves = API-560
 translate = waves-api-560
 
 [waves-q10]
 product = Q10 Equalizer
 vendor = Waves
-lynx = Facet EQ
+yw = Facet EQ
 waves = Q10
 translate = waves-q10
 
 [fabfilter-pro-q]
 product = FabFilter Pro-Q
 vendor = FabFilter
-lynx = Facet EQ
+yw = Facet EQ
 names = FabFilter Pro-Q 2; FabFilter Pro-Q 3; FabFilter Pro-Q 4; Pro-Q 2; Pro-Q 3; Pro-Q 4
 # round 124: a Pro-Q 4 state (component state "FFBS", 600 values) is translated band by band (shape, frequency, gain,
 # Q, slope; processing mode, gain scale, output) — Facet's shapes are fitted to the official trial, so her curves
 # null against the reference (docs/analise/REA_rodada124_extras.md §2). Other versions keep a flat curve.
 translate = pro-q4
 
-# ---------------------------------------------------------------- vocal tools -> LYNX's mixing suite (round 96)
+# ---------------------------------------------------------------- vocal tools -> YW's mixing suite (round 96)
 [waves-deesser]
 product = DeEsser
 vendor = Waves
-lynx = Hush De-esser
+yw = Hush De-esser
 waves = DeEsser; DeEsser Stereo
 # round 113: frequency, threshold, split / wideband, side-chain filter and monitor are translated from the RealWorld
 # list (measured on the official trial, REA_rodada113 §3c); without a readable state a gentle default (5.5 kHz,
@@ -1008,7 +1008,7 @@ preset = Frequency=0.4393; Threshold=0.667; Range=0.167
 [fabfilter-pro-ds]
 product = FabFilter Pro-DS
 vendor = FabFilter
-lynx = Hush De-esser
+yw = Hush De-esser
 names = FabFilter Pro-DS; Pro-DS
 # round 148: her two states (Single Vocal, wide band) -> Hush's measured vocal voicing (REA_rodada148 §3)
 translate = pro-ds
@@ -1016,7 +1016,7 @@ translate = pro-ds
 [harrison-deesser]
 product = Harrison De-Esser
 vendor = Harrison
-lynx = Hush De-esser
+yw = Hush De-esser
 names = Harrison De-Esser; Harrison DeEsser
 
 # round trans189d (issue #94): the two-knob transient designer role -> Strike Shaper (level-independent attack / sustain,
@@ -1024,13 +1024,13 @@ names = Harrison De-Esser; Harrison DeEsser
 [spl-transient-designer]
 product = Transient Designer
 vendor = SPL
-lynx = Strike Shaper
+yw = Strike Shaper
 names = SPL Transient Designer; SPL Transient Designer Plus; Transient Designer Plus; SPL TD Plus; UAD SPL Transient Designer; SPL Transient Designer (UAD)
 
 [slate-fresh-air]
 product = Fresh Air
 vendor = Slate Digital
-lynx = Aether
+yw = Aether
 names = Fresh Air; FreshAir
 # round 113: its two air amounts are read from the state (freshAirAmounts); round 124: they drive Aether's dynamic
 # air model, measured black-box on the official trial to match it sample for sample (REA_rodada124 §3)
@@ -1048,268 +1048,268 @@ translate = fresh-air
 [kilohearts-disperser]
 product = Disperser
 vendor = Kilohearts
-lynx = Facet EQ
+yw = Facet EQ
 names = Disperser
 translate = kilohearts
 
 [khs-gain]
 product = kHs Gain
 vendor = Kilohearts
-lynx = Utility
+yw = Utility
 names = kHs Gain
 translate = kilohearts
 
 [khs-channel-mixer]
 product = kHs Channel Mixer
 vendor = Kilohearts
-lynx = Utility
+yw = Utility
 names = kHs Channel Mixer
 translate = kilohearts
 
 [khs-stereo]
 product = kHs Stereo
 vendor = Kilohearts
-lynx = Utility
+yw = Utility
 names = kHs Stereo
 translate = kilohearts
 
 [khs-haas]
 product = kHs Haas
 vendor = Kilohearts
-lynx = Stereo Shaper
+yw = Stereo Shaper
 names = kHs Haas
 translate = kilohearts
 
 [khs-filter]
 product = kHs Filter
 vendor = Kilohearts
-lynx = Facet EQ
+yw = Facet EQ
 names = kHs Filter
 translate = kilohearts
 
 [khs-3-band-eq]
 product = kHs 3-Band EQ
 vendor = Kilohearts
-lynx = Facet EQ
+yw = Facet EQ
 names = kHs 3-Band EQ
 translate = kilohearts
 
 [khs-formant-filter]
 product = kHs Formant Filter
 vendor = Kilohearts
-lynx = Facet EQ
+yw = Facet EQ
 names = kHs Formant Filter
 translate = kilohearts
 
 [khs-ladder-filter]
 product = kHs Ladder Filter
 vendor = Kilohearts
-lynx = Filter
+yw = Filter
 names = kHs Ladder Filter
 translate = kilohearts
 
 [khs-nonlinear-filter]
 product = kHs Nonlinear Filter
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Nonlinear Filter
 translate = kilohearts
 
 [khs-compressor]
 product = kHs Compressor
 vendor = Kilohearts
-lynx = Compressor
+yw = Compressor
 names = kHs Compressor
 translate = kilohearts
 
 [khs-compactor]
 product = kHs Compactor
 vendor = Kilohearts
-lynx = Compressor
+yw = Compressor
 names = kHs Compactor
 translate = kilohearts
 
 [khs-dynamics]
 product = kHs Dynamics
 vendor = Kilohearts
-lynx = Compressor
+yw = Compressor
 names = kHs Dynamics
 translate = kilohearts
 
 [khs-limiter]
 product = kHs Limiter
 vendor = Kilohearts
-lynx = Limiter
+yw = Limiter
 names = kHs Limiter
 translate = kilohearts
 
 [khs-clipper]
 product = kHs Clipper
 vendor = Kilohearts
-lynx = Fruity Soft Clipper
+yw = Fruity Soft Clipper
 names = kHs Clipper
 translate = kilohearts
 
 [khs-gate]
 product = kHs Gate
 vendor = Kilohearts
-lynx = Sentry Gate
+yw = Sentry Gate
 names = kHs Gate
 translate = kilohearts
 
 [khs-transient-shaper]
 product = kHs Transient Shaper
 vendor = Kilohearts
-lynx = Strike Shaper
+yw = Strike Shaper
 names = kHs Transient Shaper
 translate = kilohearts
 
 [khs-distortion]
 product = kHs Distortion
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Distortion
 translate = kilohearts
 
 [kilohearts-faturator]
 product = Faturator
 vendor = Kilohearts
-lynx = Distortion
+yw = Distortion
 names = Faturator
 translate = kilohearts
 
 [khs-bitcrush]
 product = kHs Bitcrush
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Bitcrush
 translate = kilohearts
 
 [khs-frequency-shifter]
 product = kHs Frequency Shifter
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Frequency Shifter
 translate = kilohearts
 
 [khs-pitch-shifter]
 product = kHs Pitch Shifter
 vendor = Kilohearts
-lynx = Pitch shift
+yw = Pitch shift
 names = kHs Pitch Shifter
 translate = kilohearts
 
 [khs-chorus]
 product = kHs Chorus
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Chorus
 translate = kilohearts
 
 [khs-ensemble]
 product = kHs Ensemble
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Ensemble
 translate = kilohearts
 
 [khs-phaser]
 product = kHs Phaser
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Phaser
 translate = kilohearts
 
 [khs-flanger]
 product = kHs Flanger
 vendor = Kilohearts
-lynx = Fruity Flanger
+yw = Fruity Flanger
 names = kHs Flanger
 translate = kilohearts
 
 [khs-reverb]
 product = kHs Reverb
 vendor = Kilohearts
-lynx = Reeverb 2
+yw = Reeverb 2
 names = kHs Reverb
 translate = kilohearts
 
 [khs-delay]
 product = kHs Delay
 vendor = Kilohearts
-lynx = Echoform
+yw = Echoform
 names = kHs Delay
 translate = kilohearts
 
 [khs-dual-delay]
 product = kHs Dual Delay
 vendor = Kilohearts
-lynx = Echoform
+yw = Echoform
 names = kHs Dual Delay
 translate = kilohearts
 
 [khs-tape-stop]
 product = kHs Tape Stop
 vendor = Kilohearts
-lynx = Pocket Tape Stop
+yw = Pocket Tape Stop
 names = kHs Tape Stop
 translate = kilohearts
 
 [khs-comb-filter]
 product = kHs Comb Filter
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Comb Filter
 translate = kilohearts
 
 [khs-trance-gate]
 product = kHs Trance Gate
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Trance Gate
 translate = kilohearts
 
-# round 190nb: the five snapins without a LYNX effect of their own play Kilohearts laws hidden in FL's Effector
+# round 190nb: the five snapins without a YW effect of their own play Kilohearts laws hidden in FL's Effector
 # (core/KiloheartsDsp.h), read statically in HeartCore 2.4 and measured on the licensed kHs Essentials.
 [khs-ring-mod]
 product = kHs Ring Mod
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Ring Mod
 translate = kilohearts
 
 [khs-reverser]
 product = kHs Reverser
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Reverser
 translate = kilohearts
 
 [khs-resonator]
 product = kHs Resonator
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Resonator
 translate = kilohearts
 
 [khs-phase-distortion]
 product = kHs Phase Distortion
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Phase Distortion
 translate = kilohearts
 
 [khs-shaper]
 product = kHs Shaper
 vendor = Kilohearts
-lynx = Effector
+yw = Effector
 names = kHs Shaper
 translate = kilohearts
 
 [soundtoys-decapitator]
 product = Decapitator
 vendor = Soundtoys
-lynx = Ember Saturator
+yw = Ember Saturator
 # [DATA] VST2 unique ID from real projects
 vst2 = StDc
 names = Decapitator
@@ -1322,7 +1322,7 @@ translate = soundtoys-decapitator
 [fabfilter-saturn]
 product = FabFilter Saturn
 vendor = FabFilter
-lynx = Ember Saturator
+yw = Ember Saturator
 names = FabFilter Saturn; FabFilter Saturn 2; Saturn 2
 preset = Drive=0.15
 # a Saturn 2 state ("FFBS", 951 values) sets Ember's multiband mode (round 108): up to four bands with their
@@ -1333,7 +1333,7 @@ translate = saturn2
 [soundtoys-panman]
 product = PanMan
 vendor = Soundtoys
-lynx = Auto-pan
+yw = Auto-pan
 # [DATA] VST2 unique ID from real projects
 vst2 = StPn
 names = PanMan
@@ -1349,23 +1349,23 @@ translate = soundtoys-panman
 [soundtoys-littlealterboy]
 product = Little AlterBoy
 vendor = Soundtoys
-lynx = LYNX Tune
+yw = YW Tune
 # [DATA] VST2 unique ID from real projects
 vst2 = StLa
 names = Little AlterBoy; LittleAlterBoy; AlterBoy
-# round 136 (REA_rodada136 §3): LYNX Tune as the voice shifter — Quantize = chromatic snapping at the fastest retune,
+# round 136 (REA_rodada136 §3): YW Tune as the voice shifter — Quantize = chromatic snapping at the fastest retune,
 # Transpose = every note bypassed (pitch shift only), the formant shift, the measured Drive stage and the mix. Its
 # state is encoded (not decoded here); her 52 saved states are known by the hash of the encoded preset; any other
 # state: her most used one (Quantize, formant +1.2 st, drive 4.6). (Round 135's Voice Shift engine — the same role as
-# its own effect — stays in LYNX's effect list; the substitute keeps round 136's measured model.)
+# its own effect — stays in YW's effect list; the substitute keeps round 136's measured model.)
 preset = Scale=0; Retune=0; Humanize=0; Formant preserve=1; Formant shift=0.585714; Transpose=0.5; Mix=1; Drive stage=1; Drive=0.46; Output=0.5
 translate = soundtoys-littlealterboy
 
-# ---------------------------------------------------------------- vocal pitch correction -> LYNX Tune (round 95)
+# ---------------------------------------------------------------- vocal pitch correction -> YW Tune (round 95)
 [antares-auto-tune]
 product = Auto-Tune Pro
 vendor = Antares
-lynx = LYNX Tune
+yw = YW Tune
 # [DATA] VST3 class ID from FL wrapper records of real projects (round 98). Round 113: the state's key and scale are
 # read (autoTuneProKey); round 120: its retune speed, humanize and flex-tune too (measured on the official trial);
 # without a key the project's key (another readable pitch corrector) or, failing that, a gentle chromatic correction
@@ -1380,8 +1380,8 @@ mix = 1
 [waves-ns1]
 product = NS1
 vendor = Waves
-lynx = Quell Denoiser
-# LYNX's one-knob noise suppressor, fitted to the official trial (docs/analise/REA_rodada119.md §3); the amount is
+yw = Quell Denoiser
+# YW's one-knob noise suppressor, fitted to the official trial (docs/analise/REA_rodada119.md §3); the amount is
 # read from the RealWorld list (value 229, %)
 waves = NS1
 translate = waves-ns1
@@ -1390,8 +1390,8 @@ preset = Amount=0.25
 [waves-doubler]
 product = Doubler
 vendor = Waves
-lynx = Gemini Doubler
-# LYNX's two-voice doubler, laws measured on the official trial (REA_rodada119 §4); every control of the two-voice
+yw = Gemini Doubler
+# YW's two-voice doubler, laws measured on the official trial (REA_rodada119 §4); every control of the two-voice
 # Doubler is translated from the RealWorld list (voices 3 and 4 of the four-voice one are left out)
 waves = Doubler; Doubler2; Doubler4
 translate = waves-doubler
@@ -1399,10 +1399,10 @@ translate = waves-doubler
 [waves-tune]
 product = Waves Tune Real-Time
 vendor = Waves
-lynx = LYNX Tune
+yw = YW Tune
 waves = WavesTune Real-Time; Waves Tune Real-Time; WavesTune
 names = WavesTune Real-Time; Waves Tune Real-Time
-# round 120: its saved scale (root + note statuses) and its Note Transition time (= LYNX Tune's retune, measured)
+# round 120: its saved scale (root + note statuses) and its Note Transition time (= YW Tune's retune, measured)
 translate = waves-tune
 preset = Scale=0; Retune=0.3536; Humanize=0.5
 mix = 1
@@ -1534,7 +1534,7 @@ bool parseVst2Id (const std::string& s, std::uint32_t& out)
 }
 
 // "<source> -> <target> [| inLo inHi outLo outHi]"; source = vst2:<n> | xml:<attribute> | waves:<n>; target =
-// "mix" or a parameter name of the LYNX effect
+// "mix" or a parameter name of the YW effect
 bool parseMap (const std::string& text, EffectKind kind, SubstituteParamMap& out)
 {
     const auto arrow = text.find ("->");
@@ -1573,7 +1573,7 @@ bool parseMap (const std::string& text, EffectKind kind, SubstituteParamMap& out
     else
         return false;
 
-    if (target == "mix") // lower case: the slot's dry/wet ("Mix" is an effect parameter, e.g. of LYNX's reverbs)
+    if (target == "mix") // lower case: the slot's dry/wet ("Mix" is an effect parameter, e.g. of YW's reverbs)
         out.toSlotMix = true;
     else if ((out.target = paramNamed (kind, target)) < 0)
         return false;
@@ -1778,14 +1778,14 @@ using RawTranslator = int (*) (const std::vector<std::uint8_t>& state, EffectSlo
 // Auto-Tune Pro: key and scale (autoTuneProKey) and the Auto-mode controls of its ParamsData (autoTuneProParams;
 // [EXEC] REA round 120 §5: the X<n> entries are the plugin's parameter n in real units — 4 Retune Speed (ms),
 // 61 Humanize, 90 Flex-Tune (0…100)). Measured black-box on the official trial: a held note is pulled to its target
-// along a first-order curve whose time constant is 1.36 × the retune speed − 3 ms (LYNX Tune's retune is that time
-// constant); Humanize and Flex-Tune map 1:1 onto LYNX Tune's (fitted to the same measurements, LynxTune.cpp).
+// along a first-order curve whose time constant is 1.36 × the retune speed − 3 ms (YW Tune's retune is that time
+// constant); Humanize and Flex-Tune map 1:1 onto YW Tune's (fitted to the same measurements, YwTune.cpp).
 // Round 127 (docs/specs/auto-tune-pro.md §3, §7.5): the remaining cheap controls, units from the trial's own
-// parameter texts — X3 Detune (cents, A4 = 440·2^(c/1200); LYNX Tune's reference reaches ±39 c), X74 Transpose
+// parameter texts — X3 Detune (cents, A4 = 440·2^(c/1200); YW Tune's reference reaches ±39 c), X74 Transpose
 // (semitones), X92 Wet-Dry Mix (%), X10 Input Type (Soprano, Alto-Tenor, Low Male, Instrument, Bass Instrument →
-// LYNX Tune's ranges, the two instrument types on Instrument), X70 Formant Correction off → formants move with the
-// pitch, X71 Throat Length (%: LYNX Tune's Throat length, measured in round 165hb),
-// X11 Classic mode ("Auto-Tune 5": no formant correction, no Flex-Tune — the manual) and X9 Tracking (50 = LYNX
+// YW Tune's ranges, the two instrument types on Instrument), X70 Formant Correction off → formants move with the
+// pitch, X71 Throat Length (%: YW Tune's Throat length, measured in round 165hb),
+// X11 Classic mode ("Auto-Tune 5": no formant correction, no Flex-Tune — the manual) and X9 Tracking (50 = YW
 // Tune's default strictness; the rest of the law [model]). All 143 states of her main projects use Detune 0,
 // Transpose 0, Mix 100 %, Alto-Tenor, Throat 100 %, Tracking 50 (round 120 §5), so these only matter elsewhere.
 // Without a readable key the slot keeps the entry's gentle preset.
@@ -1794,21 +1794,21 @@ std::string attributeIn (const std::string& text, std::size_t from, const std::s
 
 int translateAutoTunePro (const std::vector<std::uint8_t>& state, EffectSlot& slot)
 {
-    if (slot.kind != EffectKind::lynxTune)
+    if (slot.kind != EffectKind::ywTune)
         return 0;
     if (const auto efx = translateAutoTuneEfx (state, slot); efx > 0)
         return efx;
     const auto key = autoTuneProKey (state);
     if (! key)
         return 0;
-    slot.params[lynxtune::key] = (float) key->first / 11.0f;
+    slot.params[ywtune::key] = (float) key->first / 11.0f;
     if (key->second >= vocal::scaleCount) // whole tone / diminished (round 138: modern scale lists): "More scales"
     {
-        slot.params[lynxtune::scale] = 0.0f;
-        slot.params[lynxtune::moreScales] = key->second == (int) vocal::Scale::wholeTone ? 0.5f : 1.0f;
+        slot.params[ywtune::scale] = 0.0f;
+        slot.params[ywtune::moreScales] = key->second == (int) vocal::Scale::wholeTone ? 0.5f : 1.0f;
     }
     else
-        slot.params[lynxtune::scale] = (float) key->second / (float) (vocal::scaleCount - 1);
+        slot.params[ywtune::scale] = (float) key->second / (float) (vocal::scaleCount - 1);
     const auto x = autoTuneProParams (state);
     auto has = [&x] (int n) {
         const auto it = x.find (n);
@@ -1821,50 +1821,50 @@ int translateAutoTunePro (const std::vector<std::uint8_t>& state, EffectSlot& sl
         ++n;
     };
     const auto retune = std::clamp (at (4, 20.0), 0.0, 400.0);
-    set (lynxtune::retune, std::sqrt (std::clamp (1.36 * retune - 3.0, 0.0, 400.0) / 400.0));
-    set (lynxtune::humanize, at (61, 0.0) / 100.0);
+    set (ywtune::retune, std::sqrt (std::clamp (1.36 * retune - 3.0, 0.0, 400.0) / 400.0));
+    set (ywtune::humanize, at (61, 0.0) / 100.0);
     const auto classic = at (11, 0.0) >= 0.5;
-    set (lynxtune::flexTune, classic ? 0.0 : at (90, 0.0) / 100.0);
+    set (ywtune::flexTune, classic ? 0.0 : at (90, 0.0) / 100.0);
     if (has (3))
-        set (lynxtune::reference, (440.0 * std::exp2 (std::clamp (at (3, 0.0), -100.0, 100.0) / 1200.0) - 430.0) / 20.0);
+        set (ywtune::reference, (440.0 * std::exp2 (std::clamp (at (3, 0.0), -100.0, 100.0) / 1200.0) - 430.0) / 20.0);
     if (has (74) && ! classic)
-        set (lynxtune::transpose, (std::clamp (std::round (at (74, 0.0)), -12.0, 12.0) + 12.0) / 24.0);
+        set (ywtune::transpose, (std::clamp (std::round (at (74, 0.0)), -12.0, 12.0) + 12.0) / 24.0);
     if (has (92))
-        set (lynxtune::mix, at (92, 100.0) / 100.0);
+        set (ywtune::mix, at (92, 100.0) / 100.0);
     if (has (10))
     {
         static constexpr int rangeOf[5] { 0, 1, 2, 3, 3 };
-        set (lynxtune::range, rangeOf[std::clamp ((int) std::lround (at (10, 1.0)), 0, 4)] / (double) (lynxtune::rangeCount - 1));
+        set (ywtune::range, rangeOf[std::clamp ((int) std::lround (at (10, 1.0)), 0, 4)] / (double) (ywtune::rangeCount - 1));
     }
     if (has (70) || classic)
-        set (lynxtune::formantPreserve, ! classic && at (70, 1.0) >= 0.5 ? 1.0 : 0.0);
-    // round 166c: X71 Throat Length → LYNX Tune's own Throat length (the law measured in REA_rodada165hb §2 lives in
+        set (ywtune::formantPreserve, ! classic && at (70, 1.0) >= 0.5 ? 1.0 : 0.0);
+    // round 166c: X71 Throat Length → YW Tune's own Throat length (the law measured in REA_rodada165hb §2 lives in
     // the engine; round 138's half-size law on Formant shift, fitted on a synthetic vowel, is superseded)
     if (has (71) && ! classic)
-        set (lynxtune::throatLength, lynxtune::throatValue (at (71, 100.0)));
+        set (ywtune::throatLength, ywtune::throatValue (at (71, 100.0)));
     if (has (9))
-        set (lynxtune::tracking, std::clamp (at (9, 50.0), 1.0, 100.0) * 0.4 / 50.0);
+        set (ywtune::tracking, std::clamp (at (9, 50.0), 1.0, 100.0) * 0.4 / 50.0);
     // round 128: natural vibrato (X62, dB), ignore vibrato (X44), Create Vibrato (X5 shape, X7 rate, X6 cents, X46 / X50
     // onset delay / rate, ms) and the active scale's per-note Bypass / Remove edits (autoTuneProNoteEdits)
-    if (has (62)) set (lynxtune::naturalVibrato, at (62, 0.0) / 24.0 + 0.5);
-    if (has (44)) set (lynxtune::ignoreVibrato, at (44, 0.0) >= 0.5 ? 1.0 : 0.0);
-    if (has (5)) set (lynxtune::vibratoShape, std::clamp (std::round (at (5, 0.0)), 0.0, 3.0) / 3.0);
-    if (has (7)) set (lynxtune::vibratoRate, (at (7, 5.5) - 0.1) / 9.9);
-    if (has (6)) set (lynxtune::vibratoDepth, at (6, 18.0) / 100.0);
-    if (has (46)) set (lynxtune::vibratoDelay, at (46, 500.0) / 1500.0);
-    if (has (50)) set (lynxtune::vibratoOnset, at (50, 500.0) / 1500.0);
+    if (has (62)) set (ywtune::naturalVibrato, at (62, 0.0) / 24.0 + 0.5);
+    if (has (44)) set (ywtune::ignoreVibrato, at (44, 0.0) >= 0.5 ? 1.0 : 0.0);
+    if (has (5)) set (ywtune::vibratoShape, std::clamp (std::round (at (5, 0.0)), 0.0, 3.0) / 3.0);
+    if (has (7)) set (ywtune::vibratoRate, (at (7, 5.5) - 0.1) / 9.9);
+    if (has (6)) set (ywtune::vibratoDepth, at (6, 18.0) / 100.0);
+    if (has (46)) set (ywtune::vibratoDelay, at (46, 500.0) / 1500.0);
+    if (has (50)) set (ywtune::vibratoOnset, at (50, 500.0) / 1500.0);
     // round 166c: the created vibrato's Amplitude (X47, 0 … 30), Formant (X48, 0 … 100) and Variation (X49, 0 … 100),
     // and Transpose In Scale (X179 on / off) with Scale Transpose (X181, −7 … +7 steps)
-    if (has (47)) set (lynxtune::vibratoAmplitude, at (47, 10.0) / 30.0);
-    if (has (48)) set (lynxtune::vibratoFormant, at (48, 70.0) / 100.0);
-    if (has (49)) set (lynxtune::vibratoVariation, at (49, 20.0) / 100.0);
-    if (has (179) && ! classic) set (lynxtune::transposeInScale, at (179, 0.0) >= 0.5 ? 1.0 : 0.0);
-    if (has (181)) set (lynxtune::scaleTranspose, lynxtune::scaleTransposeValue ((int) std::lround (std::clamp (at (181, 0.0), -7.0, 7.0))));
+    if (has (47)) set (ywtune::vibratoAmplitude, at (47, 10.0) / 30.0);
+    if (has (48)) set (ywtune::vibratoFormant, at (48, 70.0) / 100.0);
+    if (has (49)) set (ywtune::vibratoVariation, at (49, 20.0) / 100.0);
+    if (has (179) && ! classic) set (ywtune::transposeInScale, at (179, 0.0) >= 0.5 ? 1.0 : 0.0);
+    if (has (181)) set (ywtune::scaleTranspose, ywtune::scaleTransposeValue ((int) std::lround (std::clamp (at (181, 0.0), -7.0, 7.0))));
     if (const auto edits = autoTuneProNoteEdits (state, key->first, key->second))
         for (int k = 0; k < 12; ++k)
         {
-            set (lynxtune::noteC + k, ((edits->second >> k) & 1u) != 0 ? 0.0 : 1.0);
-            set (lynxtune::bypassC + k, ((edits->first >> k) & 1u) != 0 ? 1.0 : 0.0);
+            set (ywtune::noteC + k, ((edits->second >> k) & 1u) != 0 ? 0.0 : 1.0);
+            set (ywtune::bypassC + k, ((edits->first >> k) & 1u) != 0 ? 1.0 : 0.0);
         }
     return n;
 }
@@ -1875,11 +1875,11 @@ int translateAutoTunePro (const std::vector<std::uint8_t>& state, EffectSlot& sl
 // notes that are targets (absolute pitch classes; one state adds F to B minor), pRetuneSpeed (ms, read with Auto-Tune
 // Pro's law [model: not measured on EFX+]), pHumanize, pPitchShift (semitones), pFormant, pThroatLength (%),
 // pInputType, pDryWetMix (%). Its multi-effect chain (Duet, Tube, Mutate, Vocode, filters) and Auto-Motion patterns
-// have no LYNX Tune equivalent and are left out.
+// have no YW Tune equivalent and are left out.
 int translateAutoTuneEfx (const std::vector<std::uint8_t>& state, EffectSlot& slot)
 {
     const auto root = findBytes (state, "<AUTOTUNEEFXPLUS");
-    if (root == std::string::npos || slot.kind != EffectKind::lynxTune)
+    if (root == std::string::npos || slot.kind != EffectKind::ywTune)
         return 0;
     const std::string text (state.begin() + (std::ptrdiff_t) root, state.end());
     std::map<std::string, double> v;
@@ -1910,66 +1910,66 @@ int translateAutoTuneEfx (const std::vector<std::uint8_t>& state, EffectSlot& sl
     if (vocal::scaleMask (scale, key) != mask)
         scale = vocal::Scale::custom; // the note switches carry the exact targets
     auto& p = slot.params;
-    p[lynxtune::key] = (float) key / 11.0f;
-    p[lynxtune::scale] = (float) (int) scale / (float) (vocal::scaleCount - 1);
+    p[ywtune::key] = (float) key / 11.0f;
+    p[ywtune::scale] = (float) (int) scale / (float) (vocal::scaleCount - 1);
     for (int k = 0; k < 12; ++k)
-        p[(std::size_t) (lynxtune::noteC + k)] = ((mask >> k) & 1u) != 0 ? 1.0f : 0.0f;
+        p[(std::size_t) (ywtune::noteC + k)] = ((mask >> k) & 1u) != 0 ? 1.0f : 0.0f;
     const auto retune = std::clamp (at ("pRetuneSpeed", 20.0), 0.0, 400.0);
-    p[lynxtune::retune] = (float) std::sqrt (std::clamp (1.36 * retune - 3.0, 0.0, 400.0) / 400.0);
-    p[lynxtune::humanize] = (float) std::clamp (at ("pHumanize", 0.0) / 100.0, 0.0, 1.0);
-    p[lynxtune::flexTune] = 0.0f;
-    p[lynxtune::transpose] = (float) ((std::clamp (std::round (at ("pPitchShift", 0.0)), -12.0, 12.0) + 12.0) / 24.0);
+    p[ywtune::retune] = (float) std::sqrt (std::clamp (1.36 * retune - 3.0, 0.0, 400.0) / 400.0);
+    p[ywtune::humanize] = (float) std::clamp (at ("pHumanize", 0.0) / 100.0, 0.0, 1.0);
+    p[ywtune::flexTune] = 0.0f;
+    p[ywtune::transpose] = (float) ((std::clamp (std::round (at ("pPitchShift", 0.0)), -12.0, 12.0) + 12.0) / 24.0);
     const auto formant = at ("pFormant", 1.0) >= 0.5;
-    p[lynxtune::formantPreserve] = formant ? 1.0f : 0.0f;
-    p[lynxtune::formantShift] = 0.5f;
-    p[lynxtune::throatLength] = lynxtune::throatValue (at ("pThroatLength", 100.0)); // round 166c: the engine's throat
+    p[ywtune::formantPreserve] = formant ? 1.0f : 0.0f;
+    p[ywtune::formantShift] = 0.5f;
+    p[ywtune::throatLength] = ywtune::throatValue (at ("pThroatLength", 100.0)); // round 166c: the engine's throat
     static constexpr int rangeOf[5] { 0, 1, 2, 3, 3 };
-    p[lynxtune::range] = (float) rangeOf[std::clamp ((int) std::lround (at ("pInputType", 1.0)), 0, 4)] / (float) (lynxtune::rangeCount - 1);
-    p[lynxtune::mix] = (float) std::clamp (at ("pDryWetMix", 100.0) / 100.0, 0.0, 1.0);
+    p[ywtune::range] = (float) rangeOf[std::clamp ((int) std::lround (at ("pInputType", 1.0)), 0, 4)] / (float) (ywtune::rangeCount - 1);
+    p[ywtune::mix] = (float) std::clamp (at ("pDryWetMix", 100.0) / 100.0, 0.0, 1.0);
     return 24;
 }
 
 // Waves Tune Real-Time: the key and scale saved in its state (wavesTuneScale; [DATA] every one of the 11 distinct
 // states of her corpus names its scale — "Natural Minor" / "Major" — with the root and the twelve note statuses);
-// a scale LYNX Tune has no name for becomes its custom scale with the same notes. RealWorld 20 = Speed, 21 = Note
+// a scale YW Tune has no name for becomes its custom scale with the same notes. RealWorld 20 = Speed, 21 = Note
 // Transition (ms). [EXEC] Black-box (official trial, REA round 120 §2): a held mistuned note is pulled to the target
 // along a first-order curve whose time constant is the Note Transition time (50 % / 90 % at 12 ms + 0.69 / 2.3 x NT for
-// NT = 21 … 250 ms), which is LYNX Tune's retune law at retune = NT; Speed barely changes anything on sung notes (only
+// NT = 21 … 250 ms), which is YW Tune's retune law at retune = NT; Speed barely changes anything on sung notes (only
 // below ~5 ms, slightly less vibrato), so it is not translated; no humanize.
 std::optional<double> wavesValue (const std::vector<double>& rw, std::size_t i);
 
 int translateWavesTune (const std::vector<std::uint8_t>& state, EffectSlot& slot)
 {
-    if (slot.kind != EffectKind::lynxTune)
+    if (slot.kind != EffectKind::ywTune)
         return 0;
     int n = 0;
     if (const auto sc = wavesTuneScale (state))
     {
-        slot.params[lynxtune::key] = (float) sc->key / 11.0f;
-        slot.params[lynxtune::scale] = (float) sc->scale / (float) (vocal::scaleCount - 1);
+        slot.params[ywtune::key] = (float) sc->key / 11.0f;
+        slot.params[ywtune::scale] = (float) sc->scale / (float) (vocal::scaleCount - 1);
         for (int k = 0; k < 12; ++k)
-            slot.params[(std::size_t) (lynxtune::noteC + k)] = sc->scale != (int) vocal::Scale::custom || ((sc->mask >> k) & 1u) != 0 ? 1.0f : 0.0f;
+            slot.params[(std::size_t) (ywtune::noteC + k)] = sc->scale != (int) vocal::Scale::custom || ((sc->mask >> k) & 1u) != 0 ? 1.0f : 0.0f;
         n += 2;
     }
     const auto rw = wavesRealWorldParams (state);
     if (const auto transition = wavesValue (rw, 21); transition && *transition >= 0.0)
     {
-        slot.params[lynxtune::retune] = (float) std::sqrt (std::clamp (*transition, 0.0, 400.0) / 400.0);
-        slot.params[lynxtune::humanize] = 0.0f;
+        slot.params[ywtune::retune] = (float) std::sqrt (std::clamp (*transition, 0.0, 400.0) / 400.0);
+        slot.params[ywtune::humanize] = 0.0f;
         n += 2;
     }
     // round 135w: Speed is shown as saved; it only acts (Link off) where the trial showed an effect (below ~5 ms)
     if (const auto speed = wavesValue (rw, 20); speed && *speed > 0.0)
     {
-        slot.params[lynxtune::speed] = lynxtune::speedValue (*speed);
-        slot.params[lynxtune::speedLink] = *speed < 5.0 ? 0.0f : 1.0f;
+        slot.params[ywtune::speed] = ywtune::speedValue (*speed);
+        slot.params[ywtune::speedLink] = *speed < 5.0 ? 0.0f : 1.0f;
         ++n;
     }
     // round 190mg: what the reference does not correct passes as the input itself (REA_rodada190mg_voc.md; hidden)
-    slot.params[lynxtune::wavesLaw] = 1.0f;
+    slot.params[ywtune::wavesLaw] = 1.0f;
     // RealWorld 22 = 100 in every state of her corpus, Correction % by its default [model]
     if (const auto amount = wavesValue (rw, 22); amount && *amount >= 1.0 && *amount <= 100.0)
-        slot.params[lynxtune::correction] = (float) (*amount / 100.0);
+        slot.params[ywtune::correction] = (float) (*amount / 100.0);
     return n;
 }
 
@@ -1999,7 +1999,7 @@ int translateFreshAir (const std::vector<std::uint8_t>& state, EffectSlot& slot)
 
 // --- Waves RealWorld lists (round 113). [EXEC] Black-box measurement of the official trials (WaveShell 17.1, tools/
 // fxmeasure, headless): each control was moved alone and the value of the list that followed it (and its text) was
-// recorded; then the plugin at her projects' states and LYNX's substitute were run on the same sine stairs (1 and
+// recorded; then the plugin at her projects' states and YW's substitute were run on the same sine stairs (1 and
 // 6 kHz, -60 .. 0 dBFS) and vocal takes and the substitute fitted (docs/analise/REA_rodada113.md §3c).
 // The value at `i`, or nothing when the list is shorter / holds "*"
 std::optional<double> wavesValue (const std::vector<double>& rw, std::size_t i)
@@ -2045,7 +2045,7 @@ int translateWavesRComp (const std::vector<std::uint8_t>& state, EffectSlot& slo
     slot.params[15] = linNorm (wavesValue (rw, 2).value_or (0.0), -30.0, 30.0);
     slot.params[16] = logNorm (wavesValue (rw, 8).value_or (16.0), 0.5, 500.0);
     slot.params[17] = logNorm (wavesValue (rw, 0).value_or (160.0), 5.0, 5000.0);
-    // round 190mg: the vintage voicing's Renaissance law — LYNX's model of the reference's structure, every constant
+    // round 190mg: the vintage voicing's Renaissance law — YW's model of the reference's structure, every constant
     // fitted on our probes (core/VoiceMatch.h progcomp::Renaissance, docs/analise/REA_rodada190mg_ren.md); hidden, saved
     // while set (0 = the round-123 / 152 engine, every other Compressor)
     if (slot.params.size() > (std::size_t) compressorRenLaw)
@@ -2081,7 +2081,7 @@ int translateWavesSslComp (const std::vector<std::uint8_t>& state, EffectSlot& s
 
 // SSLComp → Crest's Bus style with the console law (round 190kt [EXEC]; the state's RealWorld list as above, plus 8 IN
 // (compression on), 20 trim dB). The console law takes the detector's threshold, loop gain, knee and RC time constants;
-// the reference's knobs reach them through LYNX's fits on our demo-mode probes (rea190kt/lab: fitstatic2.py on 1 kHz
+// the reference's knobs reach them through YW's fits on our demo-mode probes (rea190kt/lab: fitstatic2.py on 1 kHz
 // stairs at 3 ratios × 4 thresholds, 0.02 … 0.2 dB rms; fitdyn.py / fitauto.py on level steps and drum bursts):
 // per ratio step, threshold = knob + a cubic in the knob, loop gain and knee linear in the knob.
 struct SslBusFit { double off, q1, q2, q3, loop, loopT, knee, kneeT; };
@@ -2191,7 +2191,7 @@ int translateWavesL2 (const std::vector<std::uint8_t>& state, EffectSlot& slot)
 // 60, 100 Hz), 12 low boost, 14 high atten (the knobs 0 … 11), 15 in (1) / out, 16 mains (round 190mg: modelled). The
 // reference is an oversampled passive-EQ model (REA of the DSP: a block convolution / resampling frame, a hum generator,
 // per-instance component tolerances): its curves are minimum phase plus a linear-phase resampler (149 samples at 48 kHz,
-// a −0.46 dB roll-off at 20 kHz, a +1.1 dB insertion gain). LYNX plays them on Facet EQ's zero-latency bands: the low
+// a −0.46 dB roll-off at 20 kHz, a +1.1 dB insertion gain). YW plays them on Facet EQ's zero-latency bands: the low
 // section on two shelves whose values are smooth (cubic) polynomials of both knobs (they interact: the boost / dip of
 // the "Pultec trick"), the high boost on a bell and the atten on a 12 dB/oct high shelf interpolated over our probe
 // grid (knob steps of 1.375, five bandwidths).
@@ -2786,7 +2786,7 @@ int translateWavesSuperTap (const std::vector<std::uint8_t>& state, EffectSlot& 
 }
 
 // ======================================================================= round 190mm (sub-round dyn): Renaissance Vox,
-// RDeEsser, RBass / MaxxBass, API-2500, C6, Vitamin (docs/analise/REA_rodada190mm_dyn.md). Every law below is LYNX's own
+// RDeEsser, RBass / MaxxBass, API-2500, C6, Vitamin (docs/analise/REA_rodada190mm_dyn.md). Every law below is YW's own
 // model of the structure REA read in the reference's DSP, with every constant fitted on our demo-mode probes.
 
 // Renaissance Vox (RealWorld [EXEC] the bank's states vs the settings read back: 0 compression dB (−36 … 0), 1 gate dB
@@ -3115,7 +3115,7 @@ int translateWavesCla2a (const std::vector<std::uint8_t>& state, EffectSlot& slo
     // round 165x [EXEC]: 17 = VU DISPLAY (0 In, 1 GR, 2 Out; read back through the trial's own parameter)
     const auto vu = std::lround (wavesValue (rw, 17).value_or (1.0));
     slot.params[g::vuDisplay] = vu == 0 ? 0.5f : vu == 2 ? 1.0f : 0.0f;
-    // round 190lf [EXEC] (REA_rodada190lf_dyn §1): the cell law — LYNX's compact opto behaviour model, fitted on our
+    // round 190lf [EXEC] (REA_rodada190lf_dyn §1): the cell law — YW's compact opto behaviour model, fitted on our
     // demo-mode probes of the reference (stairs at eight peak reduction dials, Compress and Limit; bursts of 50 ms … 8 s;
     // 60 Hz / 200 Hz / 1 kHz / 5 kHz stairs at Hi Freq 0 / 20 / 50 / 100; a multitone under reduction for the tilt)
     slot.params[g::cellLaw] = 1.0f;
@@ -3127,7 +3127,7 @@ int translateWavesCla2a (const std::vector<std::uint8_t>& state, EffectSlot& slo
 // 103 Mix %, 104 Trim dB. [EXEC] Read back through the trial's own parameter API (REA_rodada127 §3); 4 / 56 / 104 by
 // the bundle's parameter list (REA_rodada190ky §2).
 // Rounds 127 / 148 / 190jh fitted Crest's Bus style around the reference's one factory state; round 190ky replaces that
-// with Crest's FET law (DynamicsSuite.h fetLaw: LYNX's own model of the structure REA showed in the reference's DSP,
+// with Crest's FET law (DynamicsSuite.h fetLaw: YW's own model of the structure REA showed in the reference's DSP,
 // every constant fitted on our demo-mode probes, waves190ky/lab: fit76s.py on 1 kHz stairs at 5 ratio settings × 3 input
 // levels and the Input sweep, fit76t.py on level steps and release probes per knob, fit76io.py on the Input / Output
 // sweeps). The voicing carries the second term and the followers; the knobs here carry the rest:
@@ -3516,7 +3516,7 @@ int translateHarrisonStrip (const std::vector<std::uint8_t>& state, EffectSlot& 
 }
 
 // round tp172c6: Slate VCC Channel (its state: a <package> archive, a Common section and Slot0 / Slot1 sections of
-// normalised entries; the "Current slot" plays). Round tp172c7: onto Kiln Channel, LYNX's console channel (it was
+// normalised entries; the "Current slot" plays). Round tp172c7: onto Kiln Channel, YW's console channel (it was
 // Ridge's DRIVE section): the console selector (Brit 4k E / Brit 4k G / US A / Brit N / Y / RC-Tube -> Kiln's six
 // steps, the same order), the drive 0 .. 18 dB, Input and Output (-18 .. +18 dB), Noise Reduction and Group Bypass (its
 // switches store 0.25 = off, 0.75 = on), the Group in Common (None, 1 .. 8 over nine equal bins) and the main gains
@@ -4208,7 +4208,7 @@ int translateWavesDoubler (const std::vector<std::uint8_t>& state, EffectSlot& s
 // (±45), 5 asymmetry deg (±90), 13 swap, 14 / 15 invert left / right, 16 M/S input. [EXEC] Black-box on the official
 // trial (REA_rodada124_extras §4): a frequency-flat 2 × 2 matrix, gain · rotation · width · input. Width w below 1
 // scales the side signal (mid 1, side w); above 1 the side / mid ratio is w with mid = √(0.625 + 0.375 / w²) (exact on
-// 41 measured points); rotation φ is the plain rotation [cos −sin; sin cos]. Fruity Stereo Shaper (LYNX's exact engine)
+// 41 measured points); rotation φ is the plain rotation [cos −sin; sin cos]. Fruity Stereo Shaper (YW's exact engine)
 // holds any 2 × 2 matrix, so the translation nulls the reference. Asymmetry, swap / invert and M/S input are not
 // measured beyond their neutral settings (all neutral in her states): a state that uses them is not translated.
 int translateWavesS1Imager (const std::vector<std::uint8_t>& state, EffectSlot& slot)
@@ -4250,7 +4250,7 @@ int translateWavesS1Imager (const std::vector<std::uint8_t>& state, EffectSlot& 
 // --- Soundtoys (round 135): her states, read black-box in the official trials -------------------------------------
 // A Soundtoys state is text ("WIDGET = …; PRESET =<encoded>;"); the payload is NOT decoded. Each state found in her
 // projects was loaded into the official trial through the host API and every parameter read back
-// (docs/analise/REA_rodada135s.md §1); the table maps the payload's FNV-1a hash to those settings in LYNX's units.
+// (docs/analise/REA_rodada135s.md §1); the table maps the payload's FNV-1a hash to those settings in YW's units.
 struct KnownState
 {
     std::uint64_t hash;
@@ -4336,10 +4336,10 @@ std::uint64_t presetHash (const std::vector<std::uint8_t>& state)
 // ---- Soundtoys (round 190kv): the factory presets, recognised by a fingerprint of the encoded payload ---------------
 // docs/analise/REA_rodada190kv.md. Every factory preset of the installed plug-ins was loaded into the official plug-in
 // in its own hidden host process (public VST3 API: the preset's archive as the component state, every parameter read
-// back as normalised values, the state re-saved) and its values mapped onto LYNX's own engine (round 190is's value maps).
+// back as normalised values, the state re-saved) and its values mapped onto YW's own engine (round 190is's value maps).
 // The payload is still not decoded. Two saves of one setting differ only in a few volatile fields (the last 24
 // characters and characters 300 … 369: they change with every save and with what the instance loaded before), so the
-// fingerprint is FNV-1a 64 over the payload's length and every other character. Hashes and LYNX values only.
+// fingerprint is FNV-1a 64 over the payload's length and every other character. Hashes and YW values only.
 std::uint64_t soundtoysFingerprint (const std::vector<std::uint8_t>& state)
 {
     const auto at = findBytes (state, "PRESET =");
@@ -4387,7 +4387,7 @@ struct FactoryTable
 #include "core/SoundtoysFactory190kv.inc"
 } // namespace st190kv
 
-// a factory preset of the state's plug-in: the LYNX effect's new-instance values (makeEffectSlot: the current revisions)
+// a factory preset of the state's plug-in: the YW effect's new-instance values (makeEffectSlot: the current revisions)
 // with the preset's mapped values on top; 0 = not a factory preset (the substitute's preset stays, bit for bit as before)
 int applyFactoryPreset (std::string_view widget, std::uint64_t fp, EffectSlot& slot)
 {
@@ -4472,10 +4472,10 @@ int translateSoundtoysPanMan (const std::vector<std::uint8_t>& state, EffectSlot
     return 0;
 }
 
-// Little AlterBoy's normalised pitch, formant, drive, mix, shift mode and formant link on LYNX Tune (round 136)
+// Little AlterBoy's normalised pitch, formant, drive, mix, shift mode and formant link on YW Tune (round 136)
 int applyAlterBoy (const float* v, EffectSlot& slot)
 {
-    namespace t = lynxtune;
+    namespace t = ywtune;
     const double pitch = -12.0 + 24.0 * v[0], formant = -12.0 + 24.0 * v[1];
     const int mode = std::clamp ((int) std::lround (v[4] * 2.0), 0, 2); // transpose, quantize, robot
     auto& p = slot.params;
@@ -4503,8 +4503,8 @@ int applyAlterBoy (const float* v, EffectSlot& slot)
 
 int translateSoundtoysAlterBoy (const std::vector<std::uint8_t>& state, EffectSlot& slot)
 {
-    namespace t = lynxtune;
-    if (slot.kind != EffectKind::lynxTune || slot.params.size() < (std::size_t) t::count)
+    namespace t = ywtune;
+    if (slot.kind != EffectKind::ywTune || slot.params.size() < (std::size_t) t::count)
         return 0;
     const auto h = presetHash (state);
     for (const auto& st : alterBoyStates)
@@ -4542,11 +4542,11 @@ int translateSoundtoysEchoBoy (const std::vector<std::uint8_t>& state, EffectSlo
     return translateSoundtoysFactory (state, slot); // EchoBoy's and EchoBoy Jr's factory presets
 }
 
-// round 190ar: fitted setting maps as state translators. A map (reference parameter -> LYNX parameter, a transfer fitted
+// round 190ar: fitted setting maps as state translators. A map (reference parameter -> YW parameter, a transfer fitted
 // black-box on the reference's probe renders) is stored against the entry of the component state that carries that
 // parameter — found on states saved through the public parameter API at known settings (the one entry that moves along a
-// one-control sweep) — as knots  state value -> LYNX value  (linear between them, or the nearest one for a switch; an
-// "add" link is an offset on a value another link set). `fixed` = LYNX parameters the map holds constant.
+// one-control sweep) — as knots  state value -> YW value  (linear between them, or the nearest one for a switch; an
+// "add" link is an offset on a value another link set). `fixed` = YW parameters the map holds constant.
 // The table is generated (core/FittedMaps.inc); nothing of the reference is read but its saved parameter values.
 struct FittedLink
 {
@@ -4558,7 +4558,7 @@ struct FittedLink
 struct FittedMap
 {
     const char* marker; // text that names the reference inside its state
-    const char* effect; // the LYNX effect the map was fitted on
+    const char* effect; // the YW effect the map was fitted on
     std::vector<std::pair<int, float>> fixed;
     std::vector<FittedLink> links;
 };
@@ -4830,7 +4830,7 @@ int applyFactoryPresetOf (std::string_view widget, std::uint64_t fp, EffectSlot&
 {
     if (widget == "Little AlterBoy")
     {
-        if (slot.kind != EffectKind::lynxTune || slot.params.size() < (std::size_t) lynxtune::count)
+        if (slot.kind != EffectKind::ywTune || slot.params.size() < (std::size_t) ywtune::count)
             return 0;
         for (const auto& st : st190kv::alterBoyFactory)
             if (st.fingerprint == fp)
@@ -4846,7 +4846,7 @@ int applyFactoryPresetOf (std::string_view widget, std::uint64_t fp, EffectSlot&
 // (seen statically, REA_rodada190ln §3); their points are not copied — the laws below run through the plug-in's own value
 // texts at k/8 read through its public parameter API (refcap0124/par). Filter shapes fitted black-box on the references'
 // renders (refcap0124 one-control sweeps, refcap182 / trial190k settings) with Facet's own prototypes; every number here
-// is LYNX's fit (docs/analise/REA_rodada190ln.md §3).
+// is YW's fit (docs/analise/REA_rodada190ln.md §3).
 namespace aireq
 {
 double knots9 (const double* y, double v) // piecewise linear through the 9 public samples at v = k/8
@@ -5199,7 +5199,7 @@ int translateWavesSchepsOmni (const std::vector<std::uint8_t>& state, EffectSlot
     };
     for (int k = rg::omniLaw; k < rg::omniEnd; ++k) p[(std::size_t) k] = 0.0f;
     set (rg::omniLaw, 1.0f);
-    // the order: the slot numbers, first to last (the insert slot, 6, holds no LYNX module)
+    // the order: the slot numbers, first to last (the insert slot, 6, holds no YW module)
     int order[5] = {}, n = 0;
     const auto code = (long) std::llround (val (outer, 57, 153426.0));
     const auto digits = std::to_string (code);
@@ -5444,7 +5444,7 @@ std::optional<std::pair<int, int>> autoTuneProKey (const std::vector<std::uint8_
     // 5 Dorian, 6 Phrygian, 7 Lydian, 8 Mixolydian, 9 Locrian, 10 Major Pentatonic, 11 Minor Pentatonic, 12 Blues,
     // 13 Whole Tone, 14 Diminished): [EXEC] her 42 states with "2" load into the official trial as Minor, the one with
     // "1" as Major (the old reading took them for Chromatic / Minor)
-    vocal::Scale lynxScale;
+    vocal::Scale ywScale;
     if (findBytes (state, "<ModernScales") != std::string::npos)
     {
         using S = vocal::Scale;
@@ -5453,20 +5453,20 @@ std::optional<std::pair<int, int>> autoTuneProKey (const std::vector<std::uint8_
                                         S::wholeTone, S::diminished };
         if (scale < 0.0f || scale > 14.0f || scale != std::floor (scale))
             return std::nullopt;
-        lynxScale = modern[(int) scale];
+        ywScale = modern[(int) scale];
     }
     else if (scale == 0.0f)
-        lynxScale = vocal::Scale::major;
+        ywScale = vocal::Scale::major;
     else if (scale == 1.0f)
-        lynxScale = vocal::Scale::minor;
+        ywScale = vocal::Scale::minor;
     else if (scale == 2.0f)
-        lynxScale = vocal::Scale::chromatic;
+        ywScale = vocal::Scale::chromatic;
     else
         return std::nullopt; // the other scales: not confirmed
-    return std::pair<int, int> { (int) key, (int) lynxScale };
+    return std::pair<int, int> { (int) key, (int) ywScale };
 }
 
-std::optional<std::pair<std::uint16_t, std::uint16_t>> autoTuneProNoteEdits (const std::vector<std::uint8_t>& state, int key, int lynxScale)
+std::optional<std::pair<std::uint16_t, std::uint16_t>> autoTuneProNoteEdits (const std::vector<std::uint8_t>& state, int key, int ywScale)
 {
     // [DATA] <Scales><Scale ScaleIndex="n" Length="7|12"><Bypass Values="0100000"/><Remove Values="…"/>: one digit per
     // scale degree (major / minor: 7 degrees above the root; chromatic: 12 semitones above the root)
@@ -5480,7 +5480,7 @@ std::optional<std::pair<std::uint16_t, std::uint16_t>> autoTuneProNoteEdits (con
                                         S::wholeTone, S::diminished };
         int mi = -1;
         for (int k = 0; k < 15; ++k)
-            if ((int) modern[k] == lynxScale)
+            if ((int) modern[k] == ywScale)
                 mi = k;
         const auto at = mi < 0 ? std::string::npos : findBytes (state, "<Scale ScaleIndex=\"" + std::to_string (mi) + "\"", ms);
         if (at == std::string::npos)
@@ -5504,7 +5504,7 @@ std::optional<std::pair<std::uint16_t, std::uint16_t>> autoTuneProNoteEdits (con
             return std::nullopt;
         return std::pair<std::uint16_t, std::uint16_t> { *bypass, *remove };
     }
-    const int index = lynxScale == (int) vocal::Scale::major ? 0 : lynxScale == (int) vocal::Scale::minor ? 1 : lynxScale == (int) vocal::Scale::chromatic ? 2 : -1;
+    const int index = ywScale == (int) vocal::Scale::major ? 0 : ywScale == (int) vocal::Scale::minor ? 1 : ywScale == (int) vocal::Scale::chromatic ? 2 : -1;
     if (index < 0)
         return std::nullopt;
     const auto at = findBytes (state, "<Scale ScaleIndex=\"" + std::to_string (index) + "\"");
@@ -5651,14 +5651,14 @@ std::optional<PitchCorrectorScale> pitchCorrectorScale (const std::vector<std::u
         return PitchCorrectorScale { k->first, k->second, vocal::scaleMask ((vocal::Scale) k->second, k->first) };
     if (findBytes (state, "<AUTOTUNEEFXPLUS") != std::string::npos) // Auto-Tune EFX+ (round 127)
     {
-        EffectSlot tune = makeEffectSlot (EffectKind::lynxTune);
+        EffectSlot tune = makeEffectSlot (EffectKind::ywTune);
         if (translateAutoTuneEfx (state, tune) == 0)
             return std::nullopt;
         std::uint16_t mask = 0;
         for (int k = 0; k < 12; ++k)
-            if (tune.params[(std::size_t) (lynxtune::noteC + k)] >= 0.5f)
+            if (tune.params[(std::size_t) (ywtune::noteC + k)] >= 0.5f)
                 mask = (std::uint16_t) (mask | (1u << k));
-        return PitchCorrectorScale { lynxtune::keyIndex (tune.params[lynxtune::key]), lynxtune::scaleIndex (tune.params[lynxtune::scale]), mask };
+        return PitchCorrectorScale { ywtune::keyIndex (tune.params[ywtune::key]), ywtune::scaleIndex (tune.params[ywtune::scale]), mask };
     }
     return wavesTuneScale (state);
 }
@@ -5743,14 +5743,14 @@ std::vector<SubstituteEntry> parseSubstituteTable (std::string_view text, int* e
     std::vector<SubstituteEntry> entries;
     int bad = 0;
     std::optional<SubstituteEntry> current;
-    std::string lynxName;
+    std::string ywName;
     std::vector<std::string> presetItems, replacedItems, mapItems, defaultItems;
     bool entryBad = false;
 
     auto finish = [&] {
         if (! current)
             return;
-        const auto kind = effectKindNamed (lynxName);
+        const auto kind = effectKindNamed (ywName);
         if (! kind || entryBad || current->key.empty())
         {
             ++bad;
@@ -5846,7 +5846,7 @@ std::vector<SubstituteEntry> parseSubstituteTable (std::string_view text, int* e
             finish();
             current = SubstituteEntry {};
             current->key = trim (std::string_view (line).substr (1, line.size() - 2));
-            lynxName.clear();
+            ywName.clear();
             presetItems.clear();
             replacedItems.clear();
             mapItems.clear();
@@ -5874,8 +5874,8 @@ std::vector<SubstituteEntry> parseSubstituteTable (std::string_view text, int* e
             else if (lowerAscii (value) != "effect")
                 entryBad = true;
         }
-        else if (key == "lynx")
-            lynxName = value;
+        else if (key == "yw")
+            ywName = value;
         else if (key == "vst2")
         {
             for (const auto& item : splitList (value, ';'))
@@ -6154,7 +6154,7 @@ EffectSlot makeSubstituteSlot (const SubstituteEntry& entry, const PluginIdentit
         if (const auto translate = fabfilter::translatorNamed (entry.translator))
             if (const auto state = fabfilter::parseState (original->state))
                 count += translate (*state, slot);
-    // round 135: the header shows the original's preset name (LYNX engines only: an FL effect's preset box lists FL's
+    // round 135: the header shows the original's preset name (YW engines only: an FL effect's preset box lists FL's
     // own presets)
     if (original != nullptr && ! original->state.empty() && flPluginsForEffect (slot.kind).empty())
         slot.presetName = originalPresetName (original->state);
@@ -6198,10 +6198,10 @@ bool substituteEffectSlot (EffectSlot& slot, const PluginIdentity& identity, con
     auto replacement = makeSubstituteSlot (*entry, &identity, &translated);
     // a pitch corrector whose own key is unknown: the project's key (its other pitch correctors), with the entry's
     // gentle retune; no key anywhere: the entry's chromatic preset
-    if (replacement.kind == EffectKind::lynxTune && context.knowsKey() && ! pitchCorrectorScale (identity.state))
+    if (replacement.kind == EffectKind::ywTune && context.knowsKey() && ! pitchCorrectorScale (identity.state))
     {
-        replacement.params[lynxtune::key] = (float) context.key / 11.0f;
-        replacement.params[lynxtune::scale] = (float) context.scale / (float) (vocal::scaleCount - 1);
+        replacement.params[ywtune::key] = (float) context.key / 11.0f;
+        replacement.params[ywtune::scale] = (float) context.scale / (float) (vocal::scaleCount - 1);
     }
     replacement.enabled = slot.enabled;
     replacement.mix = std::clamp (slot.mix * replacement.mix, 0.0f, 1.0f); // nested dry/wet crossfades multiply
@@ -6482,4 +6482,4 @@ bool base64Decode (const std::string& text, std::vector<std::uint8_t>& out)
 }
 std::uint64_t soundtoysPresetHash (const std::vector<std::uint8_t>& state) { return presetHash (state); }
 
-} // namespace lynx
+} // namespace yw

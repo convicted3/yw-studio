@@ -1,6 +1,6 @@
-// Round 190op (research190oe P4 / P7, LYNX extras): Hide tracks, Deactivate tracks (core/TrackStates.h) and Capture
+// Round 190op (research190oe P4 / P7, YW extras): Hide tracks, Deactivate tracks (core/TrackStates.h) and Capture
 // automation (core/CaptureAutomation.h). The renders (a hidden track plays the same, deactivated units are silent,
-// Reactivate nulls), the .lynx round trip, the copies for 0.1.30 / 0.1.28, the .flp report and the engine's capture in
+// Reactivate nulls), the .yw round trip, the copies for 0.1.30 / 0.1.28, the .flp report and the engine's capture in
 // one undo step are checked in the app's --selftest ("trackstates190op"): they need the engine and ProjectFile.
 
 #include "core/AlsExport.h"
@@ -11,20 +11,20 @@
 
 namespace trackstates190op
 {
-inline lynx::Clip clipOn (int track, std::int64_t start)
+inline yw::Clip clipOn (int track, std::int64_t start)
 {
-    lynx::Clip c;
+    yw::Clip c;
     c.pattern = 0;
     c.track = track;
     c.start = start;
-    c.length = 4 * lynx::ppq;
+    c.length = 4 * yw::ppq;
     return c;
 }
 
 // Lead on insert 1, Bass on insert 2, Pad on insert 3; insert 4 sends only into insert 3 (no route to the Master)
-inline lynx::Song mixSong()
+inline yw::Song mixSong()
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (6);
     const char* names[] = { "Lead", "Bass", "Pad" };
@@ -46,7 +46,7 @@ inline lynx::Song mixSong()
 // never a group's tracks or a track with lanes, never the empty rows below
 TEST (trackstates190op_hide_and_hide_unused)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.patterns.resize (1);
     CHECK (trackstates::hiddenCount (s) == 0 && ! trackstates::isHidden (s, 3) && ! trackstates::isHidden (s, -1));
@@ -82,7 +82,7 @@ TEST (trackstates190op_hide_and_hide_unused)
 // Deactivate: by hand, and what plays only into a deactivated insert (channels on it, inserts that route only into it)
 TEST (trackstates190op_effective_units)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackstates190op::mixSong();
     CHECK (! deactivate::anyMarked (s) && ! deactivate::effective (s).any);
     CHECK (deactivate::setChannels (s, { 1 }, true) == 1);
@@ -104,7 +104,7 @@ TEST (trackstates190op_effective_units)
 // automation of their parameters detached, everything else untouched; the song itself keeps every setting
 TEST (trackstates190op_projection)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackstates190op::mixSong();
     s.channels[0].instrument = InstrumentKind::plugin;
     s.channels[0].plugin.id = "vst3:Some Synth";
@@ -143,7 +143,7 @@ TEST (trackstates190op_projection)
 // A track's units for "Deactivate track": its channels and its own insert (not one other channels play into)
 TEST (trackstates190op_track_units)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackstates190op::mixSong();
     s.patterns[0].notes.push_back ({});
     s.patterns[0].notes.back().channel = 1;
@@ -167,7 +167,7 @@ TEST (trackstates190op_track_units)
 // .als export: a deactivated track is written with its Track Activator off; DAWproject: "loaded" false, both ways
 TEST (trackstates190op_als_and_dawproject)
 {
-    using namespace lynx;
+    using namespace yw;
     auto s = trackstates190op::mixSong();
     for (int c = 0; c < 2; ++c)
     {
@@ -206,7 +206,7 @@ TEST (trackstates190op_als_and_dawproject)
 // per control (a pause of more than two bars, a jump back or a new play ends one)
 TEST (trackstates190op_capture_buffer)
 {
-    using namespace lynx;
+    using namespace yw;
     captureauto::Buffer b;
     const AutomationTarget vol { AutomationTargetKind::mixerVolume, 1, 0, 0 }, pan { AutomationTargetKind::mixerPan, 2, 0, 0 };
     auto entry = [] (const AutomationTarget& t, double ms, double tick, float v) {

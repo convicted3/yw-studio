@@ -1,12 +1,12 @@
     // --simplegb190keshot <folder> (round 190ke, owner decisions D2 / D4 / D5 of coverage190jw): the Simple layout's
-    // GarageBand / BandLab ideas offscreen for the reference | LYNX pairs — the top bar with the tuner's button (closed and
+    // GarageBand / BandLab ideas offscreen for the reference | YW pairs — the top bar with the tuner's button (closed and
     // open), the tuner panel (sharp, flat, in tune, waiting), the Finish dock's "Fade out the end" and the fade's clip on
     // the Master track, the dock's Controls tab (a synth, a voice and a drum track; Edit mapping; the remap menu) and the
     // Browser's "YW Studio content" with the tags filtering it. <folder>/checks.txt lists what was checked (ok / FAIL).
     // Pictures at the --shot-scale asked for (100 %, @2x). Included in the app class of Main.cpp.
     bool runSimpleGbShot190ke (const juce::File& folder)
     {
-        using namespace lynx;
+        using namespace yw;
         juce::LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
         folder.createDirectory();
         juce::StringArray report;
@@ -29,7 +29,7 @@
         MainComponent ui (offline, false);
         ui.setSize (1600, 900);
 
-        // ---- the song: a beat from LYNX content (8 bars), a synth with an echo, a voice track on input 1
+        // ---- the song: a beat from YW content (8 bars), a synth with an echo, a voice track on input 1
         {
             Song s;
             s.mixer = Song::defaultMixer();
@@ -183,13 +183,13 @@
         else
             check ("the dock opens", false);
 
-        // ---- 5. LYNX content in the Browser, with its tags (GarageBand's Loop Browser keywords)
+        // ---- 5. YW content in the Browser, with its tags (GarageBand's Loop Browser keywords)
         {
             auto& browser = ui.getBrowserForSnapshot();
             BrowserComponent::tagStore() = {};
             browser.setSize (300, 860);
             browser.setTab (0);
-            browser.showFactoryContentForSnapshot ({ "lynx-content", "lynx-content/Beats", "lynx-content/Beats/Trap", "lynx-content/Sounds" });
+            browser.showFactoryContentForSnapshot ({ "yw-content", "yw-content/Beats", "yw-content/Beats/Trap", "yw-content/Sounds" });
             const auto rows = browser.rowLabelsForCheck();
             check ("the Simple layout's Browser lists YW Studio content", rows.contains (tr ("YW Studio content")) && rows.contains (tr ("Beats")));
             writeImage (shot::paint (browser, theme::colour::bg2), "browser-content");

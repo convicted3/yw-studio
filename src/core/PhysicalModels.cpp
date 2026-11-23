@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -213,7 +213,7 @@ struct SakuraVoice
     // FL's Final.Pitch beyond the key (issue #14): the channel's PITCH knob + fine / main pitch at note on (cents) and
     // a slide note's glide (round 28 §4: T_note = Final.Pitch/100 − note + 60 shifts the string)
     float noteCents = 0.0f;
-    lynx::HostSlide slide;
+    yw::HostSlide slide;
 };
 
 // ---- effects (REA_rodada29 §1.4–1.8): all at the host rate, float arithmetic where the engine rounds ----
@@ -511,7 +511,7 @@ struct SakuraResonators
 
 // Chorus (§1.6): three unfed tape delays (20 ms × 1.1 / 0.854 / 1) on L + R; L += b + a, R += b + c.
 // Wet polarity: FL stores −Wet and re-applies it at every rebuild, so the sign flips with each later sample-rate
-// change; LYNX uses +Wet (state applied after the sample rate is set), as recommended in REA_rodada29 §5.1.
+// change; YW uses +Wet (state applied after the sample rate is set), as recommended in REA_rodada29 §5.1.
 struct SakuraChorus
 {
     TapeDelay a, b, c;
@@ -893,7 +893,7 @@ class SakuraInstrument final : public Instrument
 public:
     static constexpr double fs = 48000.0;
     static constexpr int maxVoices = 12;
-    static constexpr int maxLength = 9600; // FL allows 48 000 (notes down to 1 Hz); LYNX keeps ≥ 20 Hz × 4 in memory
+    static constexpr int maxLength = 9600; // FL allows 48 000 (notes down to 1 Hz); YW keeps ≥ 20 Hz × 4 in memory
     static constexpr int internalCapacity = 8192; // 48 kHz samples rendered per pass
 
     SakuraInstrument()
@@ -1234,7 +1234,7 @@ private:
         if (fxOn[3])
             delay.process (hostL.data(), hostR.data(), n);
 
-        // × 1/√2: FL's per-voice levels are Vol·cos/sin((1 + pan)π/4) and LYNX's channel gains √2·cos/sin (§4)
+        // × 1/√2: FL's per-voice levels are Vol·cos/sin((1 + pan)π/4) and YW's channel gains √2·cos/sin (§4)
         const auto master = std::pow (10.0, 4.8 * p (0) - 1.8) * 0.70710678;
         double peak = 0.0;
         for (int i = 0; i < n; ++i)
@@ -1578,7 +1578,7 @@ public:
                 return { x, x };
             }
         } source { *this };
-        // × 1/√2: FL's per-voice levels are Vol·cos/sin((1 + pan)π/4), LYNX's channel gains √2·cos/sin (REA_rodada28 §4)
+        // × 1/√2: FL's per-voice levels are Vol·cos/sin((1 + pan)π/4), YW's channel gains √2·cos/sin (REA_rodada28 §4)
         auto rate = fs * pitch;
         if (slide.moving())
             slide.advanceFirst ((float) n); // (round 190jv: moved before it renders; FL's steps, core/HostSlide.h)
@@ -1594,7 +1594,7 @@ private:
     std::atomic<float> pitchCents { 0.0f }; // the channel's PITCH knob (configure)
     float nextCents = 0.0f, noteCents = 0.0f; // the next / current note's pitch beyond the key (cents)
     int noteKey = -1;
-    lynx::HostSlide slide;
+    yw::HostSlide slide;
     double g (int k, double velocity) const noexcept
     {
         const auto value = (double) raw[(std::size_t) k];
@@ -1979,7 +1979,7 @@ public:
         if (tables == nullptr)
             return;
         // FL's final pitch = 100·(key − 60) cents (round 28 §4); p = trunc(pitch + 2400) cents above 16.35 Hz.
-        // Keys below 36 (p < 0) read outside FL's table: LYNX clamps p at 0 (its own choice)
+        // Keys below 36 (p < 0) read outside FL's table: YW clamps p at 0 (its own choice)
         currentKey = key;
         currentNote = startingNoteId();
         // + the channel's PITCH knob, fine tune and main pitch: FL's Final.Pitch (issue #14)
@@ -2037,7 +2037,7 @@ public:
         take();
         if (! active || tables == nullptr)
             return;
-        // FL's per-voice level Vol·cos/sin((1 + pan)π/4) vs LYNX's √2·cos/sin channel gains (REA_rodada28 §4)
+        // FL's per-voice level Vol·cos/sin((1 + pan)π/4) vs YW's √2·cos/sin channel gains (REA_rodada28 §4)
         gl *= 0.70710678f;
         gr *= 0.70710678f;
         for (int done = 0; done < n && active; done += 256)
@@ -2221,7 +2221,7 @@ private:
     std::atomic<float> pitchCents { 0.0f }; // the channel's PITCH knob (configure)
     LiveChannelPitch live; // (audio thread, round 167a)
     float nextCents = 0.0f, finalPitch = 0.0f;
-    lynx::HostSlide slide;
+    yw::HostSlide slide;
     std::array<int, 5> counts {};
     std::array<float, 5> targets {}, slopes {};
     float slope = 0.0f, value = 0.0f, increment = 0.0f, rate = 0.0f, attackPos = 0.0f, phase = 0.0f, slew = 0.0f;
@@ -2234,4 +2234,4 @@ std::unique_ptr<Instrument> makeSakuraInstrument() { return std::make_unique<Sak
 std::unique_ptr<Instrument> makeDrumpadInstrument() { return std::make_unique<DrumpadInstrument>(); }
 std::unique_ptr<Instrument> makeBooBassInstrument() { return std::make_unique<BooBassInstrument>(); }
 bool booBassDllUsable (const std::string& path) { return loadBooBassTables (path) != nullptr; }
-} // namespace lynx
+} // namespace yw

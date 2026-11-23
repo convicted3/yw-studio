@@ -1,7 +1,7 @@
 // Round 190ez: what the live FL session 190ew found different (part B): Edison's region trigger notes in FL's "tlst"
 // chunk, Gross Beat's Options menu items (option bytes 4…8), Pitcher's MIDI port line, the Piano roll randomizer's
-// half-lane law. Evidence: /mnt/e/lynx-work/live190ew/ANSWERS.md (EDI-2, GB-2, PIT-1, PR-1) and
-// /mnt/e/lynx-work/flfix190ez/s/rea-gb.md (REA of Gross Beat_x64.dll).
+// half-lane law. Evidence: /mnt/e/yw-work/live190ew/ANSWERS.md (EDI-2, GB-2, PIT-1, PR-1) and
+// /mnt/e/yw-work/flfix190ez/s/rea-gb.md (REA of Gross Beat_x64.dll).
 
 namespace flfix190ez
 {
@@ -80,13 +80,13 @@ inline std::vector<std::uint8_t> wavWith (const char* id, const std::vector<std:
 }
 
 // a Gross Beat slot playing a factory time slot that jumps (so the click reduction is heard)
-inline lynx::EffectSlot gbSlot (std::uint8_t clickReduction)
+inline yw::EffectSlot gbSlot (std::uint8_t clickReduction)
 {
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::grossBeat);
-    auto st = lynx::grossbeat::editableState (slot.state);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::grossBeat);
+    auto st = yw::grossbeat::editableState (slot.state);
     st.options[8] = clickReduction;
-    slot.state = lynx::grossbeat::withState (slot.state, st);
-    const auto names = lynx::grossbeat::slotNames (slot.state, false);
+    slot.state = yw::grossbeat::withState (slot.state, st);
+    const auto names = yw::grossbeat::slotNames (slot.state, false);
     int stutter = 1;
     for (int i = 0; i < (int) names.size(); ++i)
         if (names[(std::size_t) i].find ("Stutter") != std::string::npos || names[(std::size_t) i].find ("stutter") != std::string::npos)
@@ -94,7 +94,7 @@ inline lynx::EffectSlot gbSlot (std::uint8_t clickReduction)
             stutter = i;
             break;
         }
-    slot.params[0] = lynx::grossbeat::paramFromRaw (0, stutter);
+    slot.params[0] = yw::grossbeat::paramFromRaw (0, stutter);
     return slot;
 }
 } // namespace flfix190ez
@@ -102,7 +102,7 @@ inline lynx::EffectSlot gbSlot (std::uint8_t clickReduction)
 // ---- Edison: FL's "tlst" chunk ------------------------------------------------------------------------------------
 TEST (edison190ez_trigger_notes_are_written_as_fls_tlst)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     Document doc;
     doc.audio.sampleRate = 44100.0;
     doc.audio.channels = { std::vector<float> (4000, 0.1f) };
@@ -119,7 +119,7 @@ TEST (edison190ez_trigger_notes_are_written_as_fls_tlst)
 
 TEST (edison190ez_reads_fls_tlst_and_027s_lxkn)
 {
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     {
         const auto wav = flfix190ez::wavWith ("tlst", flfix190ez::flTlst());
         Document doc;
@@ -129,7 +129,7 @@ TEST (edison190ez_reads_fls_tlst_and_027s_lxkn)
             CHECK (doc.markers[0].keyNum == 38 && doc.markers[0].name == "rega" && doc.markers[0].start == 0 && doc.markers[0].end == 100);
     }
     {
-        // a file saved by a 0.1.27 build: LYNX's own chunk (cue id, key)
+        // a file saved by a 0.1.27 build: YW's own chunk (cue id, key)
         std::vector<std::uint8_t> lxkn;
         flfix190ez::put32 (lxkn, 1);
         flfix190ez::put32 (lxkn, 36);
@@ -150,15 +150,15 @@ TEST (edison190ez_reads_fls_tlst_and_027s_lxkn)
     }
 }
 
-// FL's own WAV (not in the repo: it holds FL's sample). LYNX_EDISON_FL_WAV=<path to lynx190ewtlst.wav>
+// FL's own WAV (not in the repo: it holds FL's sample). YW_EDISON_FL_WAV=<path to yw190ewtlst.wav>
 TEST (edison190ez_fl_wav_round_trip)
 {
-    const char* path = std::getenv ("LYNX_EDISON_FL_WAV");
+    const char* path = std::getenv ("YW_EDISON_FL_WAV");
     if (path == nullptr)
         return;
     std::ifstream in (path, std::ios::binary);
     const std::vector<std::uint8_t> fl ((std::istreambuf_iterator<char> (in)), std::istreambuf_iterator<char>());
-    using namespace lynx::audioedit;
+    using namespace yw::audioedit;
     Document doc;
     CHECK (decodeWav (fl.data(), fl.size(), doc));
     CHECK (doc.markers.size() == 1);
@@ -179,13 +179,13 @@ TEST (gb190ez_new_instance_options_are_fls)
 {
     // FL 2026's new instance (constructor 0x83fcf0; live shot GB-2): Click reduction Low, attack compensation and DC
     // off, HQ resampling and the scratching clock on
-    const auto st = lynx::grossbeat::emptyState();
+    const auto st = yw::grossbeat::emptyState();
     CHECK (st.options[8] == 1 && st.options[5] == 0 && st.options[4] == 0 && st.options[6] == 1 && st.options[7] == 1);
     // the bytes travel in the state
     auto edited = st;
     edited.options = { 0, 0, 0, 0, 1, 1, 0, 0, 2 };
-    const auto container = lynx::grossbeat::withState (lynx::makeEffectSlot (lynx::EffectKind::grossBeat).state, edited);
-    CHECK (lynx::grossbeat::editableState (container).options == edited.options);
+    const auto container = yw::grossbeat::withState (yw::makeEffectSlot (yw::EffectKind::grossBeat).state, edited);
+    CHECK (yw::grossbeat::editableState (container).options == edited.options);
 }
 
 TEST (gb190ez_click_reduction_change_while_running_equals_a_fresh_load)
@@ -195,11 +195,11 @@ TEST (gb190ez_click_reduction_change_while_running_equals_a_fresh_load)
     const auto low = flfix190ez::gbSlot (1), high = flfix190ez::gbSlot (2);
     const auto plainLow = fled190ee::render (low, {});
     const auto plainHigh = fled190ee::render (high, {});
-    const auto lowThenHigh = fled190ee::render (low, [&high] (lynx::Effect& fx, int block) {
+    const auto lowThenHigh = fled190ee::render (low, [&high] (yw::Effect& fx, int block) {
         if (block == 0)
             fx.acceptState (high.state);
     });
-    const auto lowAgain = fled190ee::render (low, [&low] (lynx::Effect& fx, int block) {
+    const auto lowAgain = fled190ee::render (low, [&low] (yw::Effect& fx, int block) {
         if (block == 3)
             fx.acceptState (low.state);
     });
@@ -211,22 +211,22 @@ TEST (gb190ez_click_reduction_change_while_running_equals_a_fresh_load)
 // ---- Pitcher: FL's "MIDI Input Port Number" line at the bottom of its panel ---------------------------------------
 TEST (pitcher190ez_port_line_in_the_panel)
 {
-    const auto& l = lynx::plugui::layoutFor (lynx::EffectKind::pitchCorrect);
+    const auto& l = yw::plugui::layoutFor (yw::EffectKind::pitchCorrect);
     bool found = false;
     for (const auto& item : l.items)
-        if (item.type == lynx::plugui::Item::display && item.display != nullptr && std::strcmp (item.display, "pitchport") == 0)
+        if (item.type == yw::plugui::Item::display && item.display != nullptr && std::strcmp (item.display, "pitchport") == 0)
             found = item.y + item.h <= l.height && item.y >= 330.0f;
-    CHECK (found && lynx::plugui::displayTakesMouse ("pitchport"));
+    CHECK (found && yw::plugui::displayTakesMouse ("pitchport"));
 }
 
 // ---- Piano roll randomizer: at 100 % a level moves at most half its lane (live FL check 190ew PR-1, 190cq) ------
 TEST (prr190ez_randomizer_moves_half_the_lane)
 {
-    using namespace lynx::notetools;
-    lynx::Pattern p;
+    using namespace yw::notetools;
+    yw::Pattern p;
     for (int i = 0; i < 64; ++i)
     {
-        lynx::Note n;
+        yw::Note n;
         n.key = 60;
         n.length = 24;
         n.start = i * 24;
@@ -263,7 +263,7 @@ TEST (prr190ez_randomizer_moves_half_the_lane)
     CHECK (lowVel >= 0.78f - 0.5f - 1e-6f && lowVel < 0.5f); // FL: from 78 % the lowest seen was ~30 %
     CHECK (maxRel <= 0.5f + 1e-6f && maxRel > 0.3f);          // Release from 0: 0…0.5
     CHECK (maxX <= 1.0f && minX >= 0.0f && maxX > 0.85f && minX < 0.15f); // from the centre towards both ends
-    CHECK (maxPan > 0.85f && panEnds == 0 && xEnds == 0);    // no pile-up at the ends (LYNX's old law clamped there)
+    CHECK (maxPan > 0.85f && panEnds == 0 && xEnds == 0);    // no pile-up at the ends (YW's old law clamped there)
     // Bipolar off: only up (unchanged)
     o.bipolar = false;
     auto up = p;

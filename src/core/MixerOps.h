@@ -11,7 +11,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::mixerops
+namespace yw::mixerops
 {
 // Every reference to an insert in `song` (channels, Playlist tracks, sends, side-chains, slot sends, automation, links,
 // mix snapshots) through `map` (old insert -> new number; -1 = gone: sends removed, channels to the Master, automation
@@ -56,7 +56,7 @@ enum class LinkedPlaylistTracks
     unlink,
     deleteToo
 };
-// `keepLostLinks` (LYNX's option, pain point 1; off = FL): every send into a deleted insert also stays as a
+// `keepLostLinks` (YW's option, pain point 1; off = FL): every send into a deleted insert also stays as a
 // MixerTrack::lostSends entry, drawn greyed, until reconnectLostSend or removeLostSends.
 int deleteTracks (Song& song, std::vector<int> tracks, LinkedPlaylistTracks linked = LinkedPlaylistTracks::unlink, bool keepLostLinks = false);
 // Turns lost send `index` of `track` into a send to insert `to` at its level. False when that route isn't possible
@@ -89,9 +89,9 @@ enum class TrimUnused
 // FL's "linked" test of insert `t` (FUN_0127bcc0): a channel plays into it, a Playlist audio track is linked to it, or a
 // route goes from another insert into it or from it to another insert (a level-0 sidechain route too; the route to the
 // Master does not count). FL ignores a fader, pan, mute, colour, audio input or automation (a track in that state is
-// trimmed). LYNX adds the plugins' own references to an insert (a side-chain source, Fruity Send / Patcher / Transmitter /
+// trimmed). YW adds the plugins' own references to an insert (a side-chain source, Fruity Send / Patcher / Transmitter /
 // EQUO / Transporter sends, a hosted plugin's routed outputs, Soundfont reverb / chorus, Voltage Controller outputs):
-// FL refuses the whole trim while any plugin has such "side routing" (it cannot renumber them), LYNX renumbers them, so
+// FL refuses the whole trim while any plugin has such "side routing" (it cannot renumber them), YW renumbers them, so
 // such an insert just counts as linked. The Master is always linked.
 bool insertLinked (const Song& song, int t);
 // FL's "non-empty" insert (FUN_0127c030 / record +0x0C): an effect in a slot, or a name of its own.
@@ -183,10 +183,10 @@ int sidechainIndexSource (const Song& song, int track, int k);
 // The index of `source` in `track`'s inputs list, or 0 when it is not there
 int sidechainIndexOf (const Song& song, int track, int source);
 
-// The effects a sidechain link feeds (round 170h): LYNX's Compressor, FL's Fruity Limiter / Fruity Compressor
+// The effects a sidechain link feeds (round 170h): YW's Compressor, FL's Fruity Limiter / Fruity Compressor
 // (FL users sidechain with these) and the vocoder.
 bool listensToSidechain (EffectKind kind) noexcept;
-// Round 177d (the user's decision on an FL wishlist item): LYNX's own dynamics whose live meter 0 is their gain
+// Round 177d (the user's decision on an FL wishlist item): YW's own dynamics whose live meter 0 is their gain
 // reduction, 0..1 over 0..30 dB (Effect::controlOutput; published for every slot in ProcessTimes::effectMeters): the
 // Compressor, Apex Limiter, Crest Compressor, Sentry Gate, Quell Denoiser, Ridge Strip, Glow Leveler and Hush De-esser.
 // The mixer strip shows a gain-reduction meter only when it holds one of them.
@@ -239,7 +239,7 @@ int moveEffectBy (Song& song, int track, int index, int delta);
 int insertEffectAtRow (Song& song, int track, EffectSlot fx, int row);
 // The audio clip menu's "Pitch-correct sample" / "Time-warp sample" and the Sampler waveform menu's "Edit in pitch
 // corrector" / "Edit in time warper" (round 190gw; live check 190gu B3: FL opens Newtone / Newtime on the Master, its
-// window "Newtone (Master)", with the clip's sample loaded): LYNX's Newtone / Newtime (`kind`) on the Master, the first
+// window "Newtone (Master)", with the clip's sample loaded): YW's Newtone / Newtime (`kind`) on the Master, the first
 // one there or a new one in the first empty slot, with `path` loaded (its earlier edits go, as with any new sample).
 // Returns the slot's index on the Master, -1 when the Master has no empty slot left or `kind` is neither.
 int openSampleInMasterEditor (Song& song, EffectKind kind, const std::string& path);
@@ -323,7 +323,7 @@ int unassignAudioTracks (Song& song, std::vector<int> inserts);
 void setSeparator (Song& song, const std::vector<int>& tracks, bool on);
 void dockTracks (Song& song, const std::vector<int>& tracks, MixerDock dock);
 
-// --- Folded mixer groups (round 177a, LYNX's addition to FL's groups; REA_rodada177a §2) ---------------------------------
+// --- Folded mixer groups (round 177a, YW's addition to FL's groups; REA_rodada177a §2) ---------------------------------
 // A group can fold when it is set off by a separator (on its first strip or after its last) and holds 2+ inserts.
 bool canFold (const Song& song, int track);
 // The insert a group sums into: a member every other member sends only to (no Master route, no other send), the way
@@ -339,7 +339,7 @@ bool isFolded (const Song& song, int track);
 // Folds (or unfolds) every group that can fold. Returns how many changed.
 int foldAll (Song& song, bool fold);
 
-// --- Mixer groups that follow the Playlist (round 186c, pain point 4; LYNX's addition, FL has no link) -------------------
+// --- Mixer groups that follow the Playlist (round 186c, pain point 4; YW's addition, FL has no link) -------------------
 // The inserts of each Playlist track group (a header and its grouped tracks), in Playlist order: an audio track's mixer
 // track, an instrument track's channel's mixer track (each insert once, in the first group that names it).
 struct PlaylistGroupInserts
@@ -361,7 +361,7 @@ bool followsPlaylistGroups (const Song& song); // nothing for followPlaylistGrou
 // followPlaylistGroups. Returns how many inserts changed place.
 int arrangeLikePlaylist (Song& song);
 
-// --- VCA faders (round 177a slice 3, LYNX's addition; REA_rodada177a §3) ---------------------------------------------
+// --- VCA faders (round 177a slice 3, YW's addition; REA_rodada177a §3) ---------------------------------------------
 // The VCAs that act on `track`: those it is a member of and their parents, each once (indices into Song::vcas).
 std::vector<int> vcasOf (const Song& song, int track);
 // The VCAs' linear gain on `track` (1 when it is in none), from their fader positions.
@@ -411,7 +411,7 @@ bool hasDefaultName (const Song& song, int track);
 int resetManualLatency (Song& song);
 // "Plugin delay compensation › Set for all tracks" (SetupPDCMenuClick 0x12a3830 → FUN_012a3880(1, 1), round 190fl): the
 // same reset of every track's manual latency, without FL's warning box, then the compensation is worked out again
-// from the plugins (LYNX does that on every change). Returns how many tracks had a manual latency.
+// from the plugins (YW does that on every change). Returns how many tracks had a manual latency.
 int setPdcForAllTracks (Song& song);
 
 // --- FL's "Select › Channels and playlist tracks routed to this track" (SelectLinkedMenuClick 0x129d110, round 190fl) --
@@ -440,4 +440,4 @@ int firstTrackAfterUsed (const Song& song) noexcept;
 // FL's "Record <insert> to" default name (REA_rodada167a §7 [SHOT s20–s27]): "<project>_<yyyy-mm-dd hh-mm-ss>_<insert>"
 // (as a take's name, safety::recordingName), the insert's own name or "Insert N".
 std::string insertDisplayName (const Song& song, int track);
-} // namespace lynx::mixerops
+} // namespace yw::mixerops

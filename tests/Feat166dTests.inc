@@ -1,5 +1,5 @@
 // Round 166d (issue #14 feature requests): 500 mixer inserts (FL 2026's dynamic mixer), "Fold to the scale" in the
-// Piano Roll (LYNX's own) and FL's ghost channels (docs/analise/REA_rodada166d.md).
+// Piano Roll (YW's own) and FL's ghost channels (docs/analise/REA_rodada166d.md).
 
 #include "core/FruityBasicFx.h"
 #include "core/MixerOps.h"
@@ -10,26 +10,26 @@ namespace feat166d
 // one sampler channel on insert 1 playing a held DC, `inserts` inserts; returns the audio thread's time per block (µs)
 double idleInsertCost (int inserts, int blocks, std::vector<float>* firstBlock = nullptr)
 {
-    lynx::Song s;
-    s.mixer = lynx::Song::defaultMixer (inserts);
-    lynx::ChannelDef c;
-    c.instrument = lynx::InstrumentKind::sampler;
+    yw::Song s;
+    s.mixer = yw::Song::defaultMixer (inserts);
+    yw::ChannelDef c;
+    c.instrument = yw::InstrumentKind::sampler;
     c.samplePath = "dc";
     c.volume = 1.0f;
     c.mixerTrack = 1;
     s.channels.push_back (c);
     s.patterns.emplace_back();
     auto provider = [] (const std::string&) {
-        auto d = std::make_shared<lynx::SampleData>();
+        auto d = std::make_shared<yw::SampleData>();
         d->sampleRate = 48000.0;
         d->left.assign (48000 * 20, 0.25f);
-        return std::shared_ptr<const lynx::SampleData> (d);
+        return std::shared_ptr<const yw::SampleData> (d);
     };
-    auto st = lynx::RackState::build (s, nullptr, 48000.0, provider);
-    lynx::RackRenderer r;
+    auto st = yw::RackState::build (s, nullptr, 48000.0, provider);
+    yw::RackRenderer r;
     r.prepare (48000.0, 256);
-    lynx::LiveEventQueue live;
-    lynx::NoteEvent on;
+    yw::LiveEventQueue live;
+    yw::NoteEvent on;
     on.channel = 0;
     on.key = 60;
     on.velocity = 1.0f;
@@ -56,7 +56,7 @@ double idleInsertCost (int inserts, int blocks, std::vector<float>* firstBlock =
 
 TEST (s166d_the_mixer_takes_500_inserts_like_fl_2026)
 {
-    using namespace lynx;
+    using namespace yw;
     CHECK (maxMixerTracks == 501); // Master + 500 inserts (FL 2026: "You can add a maximum of 375 tracks" with 125 used)
     Song s;
     s.mixer = Song::defaultMixer (125);
@@ -76,7 +76,7 @@ TEST (s166d_the_mixer_takes_500_inserts_like_fl_2026)
 
 TEST (s166d_insert_multiple_shifts_every_reference_at_once)
 {
-    using namespace lynx;
+    using namespace yw;
     Song s;
     s.mixer = Song::defaultMixer (6);
     s.mixer[4].name = "Bass bus";
@@ -137,7 +137,7 @@ TEST (s166d_insert_multiple_shifts_every_reference_at_once)
 
 TEST (s166d_fruity_send_targets_any_of_the_500_inserts_and_old_files_keep_theirs)
 {
-    using namespace lynx;
+    using namespace yw;
     auto slot = makeEffectSlot (EffectKind::fruitySend);
     flbasic::sendToParams ({ 0, 256, 256, 437 }, slot.params.data());
     CHECK (fruitySendTarget (slot) == 437);
@@ -168,7 +168,7 @@ TEST (s166d_idle_inserts_cost_almost_nothing)
 
 TEST (s166d_fold_to_scale_rows)
 {
-    using namespace lynx::notetools;
+    using namespace yw::notetools;
     int major = -1;
     for (int i = 0; i < (int) scales().size(); ++i)
         if (std::string (scales()[(std::size_t) i].name) == "Major")

@@ -1,5 +1,5 @@
 // Round 190hl (hotfix of 0.1.28): Help › "Go back to <version>..." (round 190gh) in the released 0.1.28
-// (/mnt/e/lynx-work/upd0128: shots s01–s15, update.log):
+// (/mnt/e/yw-work/upd0128: shots s01–s15, update.log):
 // (a) the running "0.1.28" (CMake, no suffix) compared newer than its own tag "v0.1.28-alpha", so going back picked
 //     0.1.28 itself: a version without a prerelease now equals every prerelease of the same numbers;
 // (b) 0.1.27 read the new 3-line installing.txt as version "0.0.0" ("updated to 0.0.0"): "version=" is written last;
@@ -18,7 +18,7 @@ const char* releasesJson = R"json([
   {"tag_name":"v0.1.27-alpha","draft":false,"prerelease":true,"assets":[]}
 ])json";
 
-// LYNX SHARE 0.1.27's reader of installing.txt (src/ui/Updater.cpp at v0.1.27-alpha, afterStart): everything after
+// YW Studio 0.1.27's reader of installing.txt (src/ui/Updater.cpp at v0.1.27-alpha, afterStart): everything after
 // the first "version=", trimmed
 std::string versionAsRead0127 (const std::string& installing)
 {
@@ -30,10 +30,10 @@ std::string versionAsRead0127 (const std::string& installing)
     return a == std::string::npos ? std::string() : rest.substr (a, b - a + 1);
 }
 
-// LYNX SHARE 0.1.28's reader (round 190gh): line by line, "version=" / "from=" / "rollback=" at the line start
-lynx::update::InstallingNote asRead0128 (const std::string& installing)
+// YW Studio 0.1.28's reader (round 190gh): line by line, "version=" / "from=" / "rollback=" at the line start
+yw::update::InstallingNote asRead0128 (const std::string& installing)
 {
-    lynx::update::InstallingNote note;
+    yw::update::InstallingNote note;
     std::size_t start = 0;
     while (start <= installing.size())
     {
@@ -53,7 +53,7 @@ lynx::update::InstallingNote asRead0128 (const std::string& installing)
 
 TEST (goback190hl_a_the_running_build_equals_its_release_tag)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     auto cmp = [] (const char* a, const char* b) { return compare (parseVersion (a), parseVersion (b)); };
     // the build of 0.1.28 (CMake "0.1.28") is the release v0.1.28-alpha
     CHECK (cmp ("0.1.28", "0.1.28-alpha") == 0 && cmp ("0.1.28-alpha", "0.1.28") == 0);
@@ -115,7 +115,7 @@ TEST (goback190hl_a_the_running_build_equals_its_release_tag)
 
 TEST (goback190hl_b_installing_txt_reads_right_in_0127_0128_and_now)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     InstallingNote note;
     note.version = "0.1.27-alpha";
     note.from = "0.1.29";
@@ -146,7 +146,7 @@ TEST (goback190hl_b_installing_txt_reads_right_in_0127_0128_and_now)
 
 TEST (goback190hl_c_the_skip_is_in_the_settings_older_versions_read)
 {
-    using namespace lynx::update;
+    using namespace yw::update;
     Settings s;
     s.previous = "0.1.28";
     s.lastCheckMs = 1763200000000LL;

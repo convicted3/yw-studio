@@ -2,16 +2,16 @@
 
 namespace patcher141
 {
-lynx::PatchNode effectNode (lynx::EffectKind kind)
+yw::PatchNode effectNode (yw::EffectKind kind)
 {
-    lynx::PatchNode n;
-    n.effect = lynx::makeEffectSlot (kind);
+    yw::PatchNode n;
+    n.effect = yw::makeEffectSlot (kind);
     return n;
 }
 
-lynx::PatchWire audio (int from, int to, float gain = 1.0f, int fromPort = 0, int toPort = 0)
+yw::PatchWire audio (int from, int to, float gain = 1.0f, int fromPort = 0, int toPort = 0)
 {
-    lynx::PatchWire w;
+    yw::PatchWire w;
     w.from = from;
     w.to = to;
     w.gain = gain;
@@ -21,9 +21,9 @@ lynx::PatchWire audio (int from, int to, float gain = 1.0f, int fromPort = 0, in
 }
 
 // one block of a constant through an effect Patcher
-std::pair<float, float> run (const lynx::EffectSlot& slot, float in, int n = 512, int blocks = 1)
+std::pair<float, float> run (const yw::EffectSlot& slot, float in, int n = 512, int blocks = 1)
 {
-    auto fx = lynx::patcher::makeEffect (slot, 48000.0, lynx::patcher::builtInFactories (48000.0));
+    auto fx = yw::patcher::makeEffect (slot, 48000.0, yw::patcher::builtInFactories (48000.0));
     fx->prepare (48000.0);
     std::vector<float> l, r;
     for (int b = 0; b < blocks; ++b)
@@ -140,10 +140,10 @@ TEST (patcher_graph_sums_cables_with_their_gains)
 {
     using namespace patcher141;
     // FL's IPP sum (REA_rodada20 §3.1): IN → Utility ×0.5 → OUT plus IN → OUT ×0.25 = 0.75 of the input
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::patcher);
+    auto slot = yw::makeEffectSlot (yw::EffectKind::patcher);
     slot.patcher.wires.clear();
-    slot.patcher.nodes.push_back (effectNode (lynx::EffectKind::utility));
-    slot.patcher.wires = { audio (lynx::patchFromHost, 0), audio (0, lynx::patchToHost, 0.5f), audio (lynx::patchFromHost, lynx::patchToHost, 0.25f) };
+    slot.patcher.nodes.push_back (effectNode (yw::EffectKind::utility));
+    slot.patcher.wires = { audio (yw::patchFromHost, 0), audio (0, yw::patchToHost, 0.5f), audio (yw::patchFromHost, yw::patchToHost, 0.25f) };
     auto out = run (slot, 1.0f);
     CHECK (std::abs (out.first - 0.75f) < 1e-6f && std::abs (out.second - 0.75f) < 1e-6f);
 
@@ -156,11 +156,11 @@ TEST (patcher_graph_sums_cables_with_their_gains)
     CHECK (out.first == 0.0f && out.second == 0.0f);
 
     // a new Patcher passes its input through, as FL's
-    out = run (lynx::makeEffectSlot (lynx::EffectKind::patcher), 0.3f);
+    out = run (yw::makeEffectSlot (yw::EffectKind::patcher), 0.3f);
     CHECK (std::abs (out.first - 0.3f) < 1e-6f);
 
     // a node switched off passes its input; its dry/wet mixes like a mixer slot
-    slot.patcher.wires = { audio (lynx::patchFromHost, 0), audio (0, lynx::patchToHost) };
+    slot.patcher.wires = { audio (yw::patchFromHost, 0), audio (0, yw::patchToHost) };
     slot.patcher.nodes[0].effect.params[0] = 0.0f; // mute
     CHECK (run (slot, 1.0f).first == 0.0f);
     slot.patcher.nodes[0].effect.mix = 0.25f;
@@ -174,15 +174,15 @@ TEST (patcher_graph_compensates_branch_latency)
     using namespace patcher141;
     // a linear-phase Frequency Splitter (384 samples) in parallel with the dry signal: FL delays the dry cable so the
     // two branches stay aligned, and the Patcher reports the longest path
-    auto splitter = lynx::makeEffectSlot (lynx::EffectKind::frequencySplitter);
+    auto splitter = yw::makeEffectSlot (yw::EffectKind::frequencySplitter);
     splitter.params[4] = 0.6f;
     splitter.params[6] = 0.0f;
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::patcher);
-    lynx::PatchNode node;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::patcher);
+    yw::PatchNode node;
     node.effect = splitter;
     slot.patcher.nodes = { node };
-    slot.patcher.wires = { audio (lynx::patchFromHost, 0), audio (0, lynx::patchToHost), audio (lynx::patchFromHost, lynx::patchToHost) };
-    auto fx = lynx::patcher::makeEffect (slot, 44100.0, lynx::patcher::builtInFactories (44100.0));
+    slot.patcher.wires = { audio (yw::patchFromHost, 0), audio (0, yw::patchToHost), audio (yw::patchFromHost, yw::patchToHost) };
+    auto fx = yw::patcher::makeEffect (slot, 44100.0, yw::patcher::builtInFactories (44100.0));
     fx->prepare (44100.0);
     CHECK (fx->latencySamples() == 384);
     std::vector<float> l (4096, 0.0f), r (4096, 0.0f);
@@ -198,19 +198,19 @@ TEST (patcher_graph_compensates_branch_latency)
 TEST (patcher_generator_plays_the_instruments_cabled_to_notes)
 {
     using namespace patcher141;
-    lynx::ChannelDef channel;
-    channel.instrument = lynx::InstrumentKind::patcher;
-    lynx::PatchNode synth;
+    yw::ChannelDef channel;
+    channel.instrument = yw::InstrumentKind::patcher;
+    yw::PatchNode synth;
     synth.generator = true;
-    synth.channel.instrument = lynx::InstrumentKind::synth;
-    channel.patcher.nodes = { synth, effectNode (lynx::EffectKind::utility) };
-    lynx::PatchWire notes;
-    notes.kind = lynx::PatchWire::Kind::midi;
-    notes.from = lynx::patchFromHost;
+    synth.channel.instrument = yw::InstrumentKind::synth;
+    channel.patcher.nodes = { synth, effectNode (yw::EffectKind::utility) };
+    yw::PatchWire notes;
+    notes.kind = yw::PatchWire::Kind::midi;
+    notes.from = yw::patchFromHost;
     notes.to = 0;
-    channel.patcher.wires = { notes, audio (0, 1), audio (1, lynx::patchToHost) };
-    auto render = [] (const lynx::ChannelDef& c) {
-        auto i = lynx::patcher::makeInstrument (c, 48000.0, lynx::patcher::builtInFactories (48000.0));
+    channel.patcher.wires = { notes, audio (0, 1), audio (1, yw::patchToHost) };
+    auto render = [] (const yw::ChannelDef& c) {
+        auto i = yw::patcher::makeInstrument (c, 48000.0, yw::patcher::builtInFactories (48000.0));
         i->noteOn (60, 0.8f);
         std::vector<float> l (2048, 0.0f), r (2048, 0.0f);
         i->beginChunk (2048);
@@ -225,11 +225,11 @@ TEST (patcher_generator_plays_the_instruments_cabled_to_notes)
     unplugged.patcher.wires.erase (unplugged.patcher.wires.begin()); // no notes cable: nothing plays
     CHECK (render (unplugged) == 0.0);
 
-    // an extra "To LYNX" output: its own audio, to the insert after the channel's by default (or the one chosen)
+    // an extra "To YW" output: its own audio, to the insert after the channel's by default (or the one chosen)
     auto multi = channel;
     multi.mixerTrack = 3;
-    multi.patcher.wires.push_back (audio (0, lynx::patchToHost, 1.0f, 0, 1));
-    auto i = lynx::patcher::makeInstrument (multi, 48000.0, lynx::patcher::builtInFactories (48000.0));
+    multi.patcher.wires.push_back (audio (0, yw::patchToHost, 1.0f, 0, 1));
+    auto i = yw::patcher::makeInstrument (multi, 48000.0, yw::patcher::builtInFactories (48000.0));
     CHECK (i->auxOutputCount() == 1 && i->auxOutputTrack (0) == 4);
     i->noteOn (64, 1.0f);
     std::vector<float> l (1024, 0.0f), r (1024, 0.0f);
@@ -249,22 +249,22 @@ TEST (patcher_control_cables_move_parameters)
 {
     using namespace patcher141;
     // a Peak Controller's output drives the Utility's gain through the cable's map (here: always 0 = mute)
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::patcher);
-    slot.patcher.nodes = { effectNode (lynx::EffectKind::peakController), effectNode (lynx::EffectKind::utility) };
-    lynx::PatchWire control;
-    control.kind = lynx::PatchWire::Kind::control;
+    auto slot = yw::makeEffectSlot (yw::EffectKind::patcher);
+    slot.patcher.nodes = { effectNode (yw::EffectKind::peakController), effectNode (yw::EffectKind::utility) };
+    yw::PatchWire control;
+    control.kind = yw::PatchWire::Kind::control;
     control.from = 0;
     control.to = 1;
     control.toPort = 0;
     control.curve = { 0.0f, 0.0f };
-    slot.patcher.wires = { audio (lynx::patchFromHost, 0), audio (lynx::patchFromHost, 1), audio (1, lynx::patchToHost), control };
+    slot.patcher.wires = { audio (yw::patchFromHost, 0), audio (yw::patchFromHost, 1), audio (1, yw::patchToHost), control };
     CHECK (run (slot, 1.0f).first == 0.0f);
     slot.patcher.wires.pop_back();
     CHECK (std::abs (run (slot, 1.0f).first - 1.0f) < 1e-6f);
 
     // a published parameter (FL's record 1100): automating the Patcher's parameter 0 moves the Utility's gain
     slot.patcher.published = { { 1, 0, { 0.0f, 0.0f }, "Gain" } };
-    auto fx = lynx::patcher::makeEffect (slot, 48000.0, lynx::patcher::builtInFactories (48000.0));
+    auto fx = yw::patcher::makeEffect (slot, 48000.0, yw::patcher::builtInFactories (48000.0));
     std::vector<float> l (256, 1.0f), r (256, 1.0f);
     fx->setParameter (0, 0.7f);
     fx->process (l.data(), r.data(), 256, {}, 120.0);
@@ -275,66 +275,66 @@ TEST (patcher_control_cables_move_parameters)
 TEST (patcher_keeps_running_nodes_across_snapshots)
 {
     using namespace patcher141;
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     if (song.mixer.size() < 2)
         song.mixer.resize (2);
-    auto slot = lynx::makeEffectSlot (lynx::EffectKind::patcher);
-    slot.patcher.nodes = { effectNode (lynx::EffectKind::reverb), effectNode (lynx::EffectKind::utility) };
-    slot.patcher.wires = { audio (lynx::patchFromHost, 0), audio (0, 1), audio (1, lynx::patchToHost) };
+    auto slot = yw::makeEffectSlot (yw::EffectKind::patcher);
+    slot.patcher.nodes = { effectNode (yw::EffectKind::reverb), effectNode (yw::EffectKind::utility) };
+    slot.patcher.wires = { audio (yw::patchFromHost, 0), audio (0, 1), audio (1, yw::patchToHost) };
     song.mixer[1].effects = { slot };
-    const auto a = lynx::RackState::build (song, nullptr, 44100.0);
+    const auto a = yw::RackState::build (song, nullptr, 44100.0);
     // a parameter, a cable gain: the same running graph takes the values
     song.mixer[1].effects[0].patcher.nodes[1].effect.params[0] = 0.25f;
     song.mixer[1].effects[0].patcher.wires[1].gain = 0.5f;
-    const auto b = lynx::RackState::build (song, a.get(), 44100.0);
+    const auto b = yw::RackState::build (song, a.get(), 44100.0);
     CHECK (a->effects[1][0] == b->effects[1][0]);
     // a new cable: a new graph, but the reverb keeps its instance (and its tail)
-    song.mixer[1].effects[0].patcher.wires.push_back (audio (lynx::patchFromHost, lynx::patchToHost));
-    const auto c = lynx::RackState::build (song, b.get(), 44100.0);
+    song.mixer[1].effects[0].patcher.wires.push_back (audio (yw::patchFromHost, yw::patchToHost));
+    const auto c = yw::RackState::build (song, b.get(), 44100.0);
     CHECK (c->effects[1][0] != b->effects[1][0]);
-    auto* before = lynx::patcher::graphOf (b->effects[1][0].get());
-    auto* after = lynx::patcher::graphOf (c->effects[1][0].get());
+    auto* before = yw::patcher::graphOf (b->effects[1][0].get());
+    auto* after = yw::patcher::graphOf (c->effects[1][0].get());
     CHECK (before != nullptr && after != nullptr && before->effectAt (0) == after->effectAt (0));
 
     // editing helpers: removing a node takes its cables and renumbers the rest
     auto doc = song.mixer[1].effects[0].patcher;
-    lynx::patcher::removeNode (doc, 0);
-    CHECK (doc.nodes.size() == 1 && doc.wires.size() == 2 && doc.wires[0].from == 0 && doc.wires[0].to == lynx::patchToHost);
-    CHECK (! lynx::patcher::connect (doc, doc.wires[0]));        // the same cable twice
-    CHECK (lynx::patcher::connect (doc, audio (lynx::patchFromHost, 0)));
+    yw::patcher::removeNode (doc, 0);
+    CHECK (doc.nodes.size() == 1 && doc.wires.size() == 2 && doc.wires[0].from == 0 && doc.wires[0].to == yw::patchToHost);
+    CHECK (! yw::patcher::connect (doc, doc.wires[0]));        // the same cable twice
+    CHECK (yw::patcher::connect (doc, audio (yw::patchFromHost, 0)));
 }
 
 TEST (patcher_generator_runs_inside_the_rack_with_extra_outputs)
 {
     using namespace patcher141;
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.mixer.resize (6);
     song.channels.resize (1);
     auto& channel = song.channels[0];
     channel = {};
-    channel.instrument = lynx::InstrumentKind::patcher;
+    channel.instrument = yw::InstrumentKind::patcher;
     channel.mixerTrack = 2;
-    lynx::PatchNode synth;
+    yw::PatchNode synth;
     synth.generator = true;
-    synth.channel.instrument = lynx::InstrumentKind::synth;
+    synth.channel.instrument = yw::InstrumentKind::synth;
     channel.patcher.nodes = { synth };
-    lynx::PatchWire notes;
-    notes.kind = lynx::PatchWire::Kind::midi;
+    yw::PatchWire notes;
+    notes.kind = yw::PatchWire::Kind::midi;
     notes.to = 0;
-    channel.patcher.wires = { notes, audio (0, lynx::patchToHost, 1.0f, 0, 1) }; // only the extra output: insert 3
-    lynx::Pattern p;
-    p.notes.push_back ({ 0, lynx::ppq, 0, 60, 0.8f });
+    channel.patcher.wires = { notes, audio (0, yw::patchToHost, 1.0f, 0, 1) }; // only the extra output: insert 3
+    yw::Pattern p;
+    p.notes.push_back ({ 0, yw::ppq, 0, 60, 0.8f });
     song.patterns = { p };
-    lynx::Clip clip;
+    yw::Clip clip;
     clip.pattern = 0;
-    clip.length = lynx::ppq * 4;
+    clip.length = yw::ppq * 4;
     song.playlist = { clip };
-    auto state = lynx::RackState::build (song, nullptr, 48000.0);
-    lynx::RackRenderer r;
+    auto state = yw::RackState::build (song, nullptr, 48000.0);
+    yw::RackRenderer r;
     r.prepare (48000.0, 512);
     std::vector<float> l (512), rr (512);
     double e = 0.0, tick = 0.0;
-    for (int b = 0; b < 8; ++b, tick += 512.0 * song.bpm * lynx::ppq / 60.0 / 48000.0)
+    for (int b = 0; b < 8; ++b, tick += 512.0 * song.bpm * yw::ppq / 60.0 / 48000.0)
     {
         r.process (state.get(), true, tick, 512, l.data(), rr.data(), nullptr);
         for (const auto v : l)
@@ -373,7 +373,7 @@ TEST (patcher_state_from_fl_becomes_the_graph)
         FlBlob::chunk (blob.bytes, 1100, exposed);
     }
     const auto state = blob.finish();
-    const auto graph = lynx::parsePatcher (state);
+    const auto graph = yw::parsePatcher (state);
     CHECK (graph.has_value());
     if (! graph)
         return;
@@ -390,31 +390,31 @@ TEST (patcher_state_from_fl_becomes_the_graph)
     s.state = state;
     insert.slots.push_back (s);
     project.mixer.push_back (insert);
-    const auto song = lynx::importFlp (project);
+    const auto song = yw::importFlp (project);
     CHECK (song.mixer.size() > 1 && song.mixer[1].effects.size() == 1);
     if (song.mixer.size() < 2 || song.mixer[1].effects.empty())
         return;
     const auto& fx = song.mixer[1].effects[0];
-    CHECK (fx.kind == lynx::EffectKind::patcher);
+    CHECK (fx.kind == yw::EffectKind::patcher);
     const auto& doc = fx.patcher;
-    CHECK (doc.nodes.size() == 2 && doc.nodes[0].label == "Left" && doc.nodes[0].effect.kind == lynx::EffectKind::fruityBalance);
-    const auto audioWires = std::count_if (doc.wires.begin(), doc.wires.end(), [] (const lynx::PatchWire& w) { return w.kind == lynx::PatchWire::Kind::audio; });
+    CHECK (doc.nodes.size() == 2 && doc.nodes[0].label == "Left" && doc.nodes[0].effect.kind == yw::EffectKind::fruityBalance);
+    const auto audioWires = std::count_if (doc.wires.begin(), doc.wires.end(), [] (const yw::PatchWire& w) { return w.kind == yw::PatchWire::Kind::audio; });
     CHECK (audioWires == 5);
-    CHECK (std::any_of (doc.wires.begin(), doc.wires.end(), [] (const lynx::PatchWire& w) {
-        return w.kind == lynx::PatchWire::Kind::audio && w.from == 0 && w.to == lynx::patchToHost && w.toPort == 0 && w.gain == 0.5f;
+    CHECK (std::any_of (doc.wires.begin(), doc.wires.end(), [] (const yw::PatchWire& w) {
+        return w.kind == yw::PatchWire::Kind::audio && w.from == 0 && w.to == yw::patchToHost && w.toPort == 0 && w.gain == 0.5f;
     }));
-    CHECK (std::any_of (doc.wires.begin(), doc.wires.end(), [] (const lynx::PatchWire& w) {
-        return w.kind == lynx::PatchWire::Kind::control && w.from == 1 && w.to == 0 && w.fromPort == 0; // FL's 0 "Peak+LFO" = LYNX's 0
+    CHECK (std::any_of (doc.wires.begin(), doc.wires.end(), [] (const yw::PatchWire& w) {
+        return w.kind == yw::PatchWire::Kind::control && w.from == 1 && w.to == 0 && w.fromPort == 0; // FL's 0 "Peak+LFO" = YW's 0
     }));
     CHECK (doc.outputTracks.size() == 1 && doc.outputTracks[0] == 5);
     CHECK (doc.published.size() == 1 && doc.published[0].node == 0);
-    CHECK (lynx::fruitySendTarget (fx) == 5);
+    CHECK (yw::fruitySendTarget (fx) == 5);
     CHECK (std::isfinite (run (fx, 0.5f).first));
 }
 
 TEST (patcher_demo_graphs_import_and_run)
 {
-    // every Patcher of FL's demo projects becomes a LYNX graph (mixer slots and generator channels) that runs
+    // every Patcher of FL's demo projects becomes a YW graph (mixer slots and generator channels) that runs
     if (realFlpDir.empty())
         return;
     int flSlots = 0, slots = 0, flChannels = 0, channels = 0, sounding = 0, nodes = 0, controls = 0, notes = 0, finite = 0;
@@ -436,16 +436,16 @@ TEST (patcher_demo_graphs_import_and_run)
             if (here == 0 && std::none_of (project.channels.begin(), project.channels.end(), [] (const flp::Channel& c) { return c.pluginName == "Patcher"; }))
                 continue;
             flSlots += here;
-            const auto song = lynx::importFlp (project);
+            const auto song = yw::importFlp (project);
             for (const auto& track : song.mixer)
                 for (const auto& fx : track.effects)
-                    if (fx.kind == lynx::EffectKind::patcher)
+                    if (fx.kind == yw::EffectKind::patcher)
                     {
                         ++slots;
                         nodes += (int) fx.patcher.nodes.size();
                         for (const auto& w : fx.patcher.wires)
-                            controls += w.kind == lynx::PatchWire::Kind::control;
-                        auto effect = lynx::patcher::makeEffect (fx, 44100.0, lynx::patcher::builtInFactories (44100.0));
+                            controls += w.kind == yw::PatchWire::Kind::control;
+                        auto effect = yw::patcher::makeEffect (fx, 44100.0, yw::patcher::builtInFactories (44100.0));
                         effect->prepare (44100.0);
                         std::vector<float> l (4096), r (4096);
                         std::uint32_t seed = 1;
@@ -471,11 +471,11 @@ TEST (patcher_demo_graphs_import_and_run)
                             std::printf ("  (silent with noise in: %s, %d nodes)\n", entry.path().filename().string().c_str(), (int) fx.patcher.nodes.size());
                     }
             for (const auto& c : song.channels)
-                if (c.instrument == lynx::InstrumentKind::patcher)
+                if (c.instrument == yw::InstrumentKind::patcher)
                 {
                     ++channels;
                     for (const auto& w : c.patcher.wires)
-                        notes += w.kind == lynx::PatchWire::Kind::midi;
+                        notes += w.kind == yw::PatchWire::Kind::midi;
                 }
         }
         catch (const flp::Error&) {}
@@ -489,23 +489,23 @@ TEST (patcher_demo_graphs_import_and_run)
 TEST (patcher_midi_port_output_reaches_plugins_on_that_port)
 {
     // a generator Patcher's "MIDI port 3" output: its notes go to the plugin channels whose MIDI input port is 3
-    auto song = lynx::Song::makeDefault();
+    auto song = yw::Song::makeDefault();
     song.channels.resize (3);
     song.channels[0] = {};
-    song.channels[0].instrument = lynx::InstrumentKind::patcher;
-    lynx::PatchWire out;
-    out.kind = lynx::PatchWire::Kind::midi;
-    out.from = lynx::patchFromHost;
-    out.to = lynx::patchToHost;
+    song.channels[0].instrument = yw::InstrumentKind::patcher;
+    yw::PatchWire out;
+    out.kind = yw::PatchWire::Kind::midi;
+    out.from = yw::patchFromHost;
+    out.to = yw::patchToHost;
     out.toPort = 3;
     song.channels[0].patcher.wires = { out };
     for (int c : { 1, 2 })
     {
         song.channels[(std::size_t) c] = {};
-        song.channels[(std::size_t) c].instrument = lynx::InstrumentKind::plugin;
+        song.channels[(std::size_t) c].instrument = yw::InstrumentKind::plugin;
         song.channels[(std::size_t) c].plugin.id = "test";
         song.channels[(std::size_t) c].plugin.midiInPort = c == 1 ? 3 : 4;
     }
-    const auto state = lynx::RackState::build (song, nullptr, 48000.0);
+    const auto state = yw::RackState::build (song, nullptr, 48000.0);
     CHECK (state->hasMidiRoutes && state->midiTargets[0] == std::vector<int> { 1 } && state->midiOutChannel[0] == 0);
 }

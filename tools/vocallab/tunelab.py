@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# LYNX vocal lab (round 190li): LYNX Tune (the real-time corrector) at moderate retune speeds, scored for naturalness.
+# YW vocal lab (round 190li): YW Tune (the real-time corrector) at moderate retune speeds, scored for naturalness.
 #
-# Each phrase of vocalsynth.py runs through tools/lynxtunelab (chromatic scale) at a few retune times and is scored
+# Each phrase of vocalsynth.py runs through tools/ywtunelab (chromatic scale) at a few retune times and is scored
 # (vocallab.score) against two ideals:
 #   centre   the parent's centre100 ideal: every note's detune removed, drift / vibrato / scoops / glides kept (what a
 #            transparent, slow corrector converges to)
@@ -16,7 +16,7 @@
 #            render − source (dB, > 0 = a click; click_mean = the mean over the switches)
 #   cpu      instructions (or ns) per sample of the offline run
 #
-# usage: tunelab.py <material dir> <out dir> --lab <lynxtunelab> [--retunes 0,20,50,100] [--extra "rev=1 ..."]
+# usage: tunelab.py <material dir> <out dir> --lab <ywtunelab> [--retunes 0,20,50,100] [--extra "rev=1 ..."]
 #                   [--tag name] [--phrases f-phrase,...]
 import inspect, json, math, pathlib, subprocess, sys
 import numpy as np
@@ -36,7 +36,7 @@ exec(compile(_src, 'render_hooked', 'exec'), vs.__dict__)
 
 def model_curve(cents, retune_ms, hyst=0.03, hop=139):
     """The corrector's law on a true pitch curve (cents per sample): the correction re-decided every `hop` samples
-    (LYNX's detector hop at 48 kHz), followed by a one-pole of the retune time."""
+    (YW's detector hop at 48 kHz), followed by a one-pole of the retune time."""
     out = cents.copy()
     n = len(cents)
     tau = retune_ms * 0.001

@@ -3,7 +3,7 @@
 // Controls that live in an effect slot's saved state (EffectSlot::state) instead of its parameters.
 //
 // Several FL effects keep far more settings than an effect slot has parameters (Fruity Delay Bank's eight banks,
-// Multiband Delay's and EQUO's band tables, Fruity Convolver's knobs, Maximus' bands): LYNX keeps FL's own state bytes
+// Multiband Delay's and EQUO's band tables, Fruity Convolver's knobs, Maximus' bands): YW keeps FL's own state bytes
 // and builds the exact engine from them. The native editors (core/PluginLayout.h) edit those settings through the
 // tables below: each control has a name, FL's raw range and default, and reads / writes its raw value in the state.
 // They are not automatable (FL's own automation of them is not imported either).
@@ -16,7 +16,7 @@
 
 #include "core/Song.h"
 
-namespace lynx::stateparams
+namespace yw::stateparams
 {
 struct Param
 {
@@ -43,4 +43,4 @@ const Table* tableFor (EffectKind kind);
 
 // Fruity Delay Bank: names of bank b's (0…7) controls, e.g. bankControl (0, "Time") = "B1 Time"
 std::string bankControl (int bank, const char* control);
-} // namespace lynx::stateparams
+} // namespace yw::stateparams

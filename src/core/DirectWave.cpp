@@ -24,7 +24,7 @@
 #pragma GCC optimize("fp-contract=off")
 #endif
 
-namespace lynx
+namespace yw
 {
 namespace dw
 {
@@ -69,7 +69,7 @@ float rf (const std::uint8_t* p) { float f; std::memcpy (&f, p, 4); return f; }
 std::int32_t ri (const std::uint8_t* p) { std::int32_t v; std::memcpy (&v, p, 4); return v; }
 std::uint16_t ru16 (const std::uint8_t* p) { std::uint16_t v; std::memcpy (&v, p, 2); return v; }
 
-// The bytes LYNX reads of a zone record (0 = a record it reads whole, or none it knows).
+// The bytes YW reads of a zone record (0 = a record it reads whole, or none it knows).
 std::size_t zoneRecordSizeOf (std::uint32_t id) noexcept
 {
     switch (id)
@@ -1079,7 +1079,7 @@ struct Voice
 // The program's delay, chorus and reverb keep sounding after the last voice has ended (in FL the plugin runs them in
 // every block). The channel may rest only once their output has stayed under the floor for kTailFrames, longer than
 // the delay line (65 536 frames) plus the chorus lines, so the gap between two echoes never ends it (round 190aj: FL's
-// renders of the Stage Grand, Strings and Choir programs, whose reverb LYNX cut with the last voice).
+// renders of the Stage Grand, Strings and Choir programs, whose reverb YW cut with the last voice).
 // The floor is -200 dB plus what the delay and the chorus make of their own dither for ever (up to 3.3e-10 per
 // sample into a loop with feedback f: at most 3.3e-10 / (1 - f)); a feedback of 1 never rests, as in FL.
 constexpr std::int64_t kTailFrames = 131072;
@@ -2057,7 +2057,7 @@ void Engine::render (float* out, int n)
 }
 
 
-// ================================================================================================= LYNX channel
+// ================================================================================================= YW channel
 Program parseProgram (const std::uint8_t* body, std::size_t size)
 {
     Program p;
@@ -2494,4 +2494,4 @@ std::vector<float> renderReference (const Program& program, const std::vector<st
     return out;
 }
 } // namespace dw
-} // namespace lynx
+} // namespace yw

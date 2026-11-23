@@ -5,7 +5,7 @@
 
 TEST (g1menus190je_built_in_palette_meets_the_contrast_floors)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto& p = defaultPalette();
     CHECK (p.textDisabled == 0xff767b85 && p.outline == 0xff747983);
     for (const auto surface : { p.bg1, p.bg2, p.bg3 })
@@ -22,7 +22,7 @@ TEST (g1menus190je_built_in_palette_meets_the_contrast_floors)
 
 TEST (g1menus190je_derived_palettes_keep_the_floors)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     std::vector<std::pair<std::uint32_t, std::uint32_t>> looks;
     for (const auto& t : builtInThemes())
         looks.emplace_back (t.accent, t.background);
@@ -39,21 +39,21 @@ TEST (g1menus190je_derived_palettes_keep_the_floors)
 
 TEST (g1menus190je_with_contrast_moves_only_as_far_as_needed)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     CHECK (withContrast (0xffeceef2, 0xff23262c, 4.5) == 0xffeceef2); // already reads
     const auto lifted = withContrast (0xff60656f, 0xff23262c, 3.0);
     CHECK (contrastRatio (lifted, 0xff23262c) >= 3.0 && contrastRatio (lifted, 0xff23262c) < 3.2);
     CHECK (relativeLuminance (lifted) > relativeLuminance (0xff60656f)); // lighter on a dark background
     const auto darker = withContrast (0xffa0a0a0, 0xffe8e8ec, 4.5);
     CHECK (contrastRatio (darker, 0xffe8e8ec) >= 4.5 && relativeLuminance (darker) < relativeLuminance (0xffa0a0a0));
-    // white text on LYNX red is 4.2:1: the red a hair deeper reaches 4.5
+    // white text on YW red is 4.2:1: the red a hair deeper reaches 4.5
     CHECK (contrastRatio (0xffffffff, 0xffe5383b) < 4.5);
     CHECK (contrastRatio (0xffffffff, withContrast (0xffe5383b, 0xffffffff, 4.5)) >= 4.5);
 }
 
 TEST (g1menus190je_one_state_rule_for_every_button_kind)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto& p = defaultPalette();
     const auto alpha = [] (std::uint32_t c) { return (int) (c >> 24); };
     // a secondary button: bg4 + the 3:1 outline at rest, bg5 under the mouse, bg0 pressed
@@ -87,7 +87,7 @@ TEST (g1menus190je_one_state_rule_for_every_button_kind)
 
 TEST (g1menus190je_grid_line_intensity)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto& p = defaultPalette();
     CHECK (withGridIntensity (p, 1.0) == p);
     CHECK (paletteFor (Spec {}) == p);
@@ -104,9 +104,9 @@ TEST (g1menus190je_grid_line_intensity)
 
 TEST (g1menus190je_menu_colours_read)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto& p = defaultPalette();
-    const auto m = menuColours (p, MenuStyle::lynxDark);
+    const auto m = menuColours (p, MenuStyle::ywDark);
     CHECK (m.background == p.bg3 && m.band == 0xff2d3139);
     CHECK (contrastRatio (m.text, m.background) >= textContrastFloor);
     CHECK (contrastRatio (m.shortcut, m.background) >= textContrastFloor);
@@ -117,10 +117,10 @@ TEST (g1menus190je_menu_colours_read)
 
 TEST (g1menus190je_fl_classic_menu_style)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto& p = defaultPalette();
     CHECK (menuStyleFromId (menuStyleId (MenuStyle::flClassic)) == MenuStyle::flClassic);
-    CHECK (menuStyleFromId ("lynx") == MenuStyle::lynxDark && menuStyleFromId ("bogus") == MenuStyle::lynxDark);
+    CHECK (menuStyleFromId ("yw") == MenuStyle::ywDark && menuStyleFromId ("bogus") == MenuStyle::ywDark);
     const auto fl = menuColours (p, MenuStyle::flClassic);
     CHECK (fl.background == 0xffbbc4c9 && fl.text == 0xff0f1f29 && fl.band == 0xff919ca4 && fl.hover == 0xff5e6c75); // FL 2026's
     CHECK (contrastRatio (fl.text, fl.background) >= textContrastFloor);
@@ -129,12 +129,12 @@ TEST (g1menus190je_fl_classic_menu_style)
     CHECK (contrastRatio (fl.hoverText, fl.hover) >= textContrastFloor);
     CHECK (contrastRatio (fl.bandText, fl.band) >= textContrastFloor);
     Spec spec;
-    CHECK (spec.menuStyle == MenuStyle::lynxDark); // dark menus stay the default
+    CHECK (spec.menuStyle == MenuStyle::ywDark); // dark menus stay the default
 }
 
 TEST (g1menus190je_tall_menus_break_at_a_group)
 {
-    using namespace lynx::themes;
+    using namespace yw::themes;
     const auto item = [] { return MenuRow { 21, false, false }; };
     const auto sep = [] { return MenuRow { 5, true, false }; };
     const auto head = [] { return MenuRow { 17, false, true }; };
@@ -142,7 +142,7 @@ TEST (g1menus190je_tall_menus_break_at_a_group)
     for (int i = 0; i < 10; ++i)
         rows.push_back (item());
     CHECK (tallMenuBreak (rows, 756) == -1); // fits: one column
-    // FL's mixer track menu shape: groups under section headers, 1370 px in LYNX
+    // FL's mixer track menu shape: groups under section headers, 1370 px in YW
     rows.clear();
     for (int group = 0; group < 6; ++group)
     {

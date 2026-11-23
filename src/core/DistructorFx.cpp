@@ -24,7 +24,7 @@
 #pragma GCC optimize ("fp-contract=off")
 #endif
 
-namespace lynx::distructor
+namespace yw::distructor
 {
 namespace
 {
@@ -1746,7 +1746,7 @@ struct Filter
             y[2 * i] = l, y[2 * i + 1] = r;
         }
     }
-    // FUN_0071cf80; returns false for the types LYNX does not run (the signal passes unchanged)
+    // FUN_0071cf80; returns false for the types YW does not run (the signal passes unchanged)
     bool process (const float* x, float* y, int n) noexcept
     {
         std::memcpy (y, x, sizeof (float) * 2 * (std::size_t) n);
@@ -1783,9 +1783,9 @@ struct Filter
 // ------------------------------------------------------------------------------------------------ amp / cabinet
 // The amp/cabinet module (FUN_00734260): input stereo-separation matrix → stereo convolution with the chosen
 // impulse response → output matrix (gain = 44100/rate) → the impulse's level. FL convolves with IPP's float FFT
-// (a direct 128-tap head and partitioned tails); LYNX uses the same structure in double precision, so the result
+// (a direct 128-tap head and partitioned tails); YW uses the same structure in double precision, so the result
 // matches FL to float rounding (not bit for bit). The FFT and the zero-latency partitioned convolver below are the
-// ones LYNX wrote for Fruity Convolver (core/ConvolverFx.cpp).
+// ones YW wrote for Fruity Convolver (core/ConvolverFx.cpp).
 using cd = std::complex<double>;
 constexpr double pi = 3.14159265358979323846;
 // ---------------------------------------------------------------------------------------------- radix-2 FFT
@@ -2747,4 +2747,4 @@ private:
 
 std::unique_ptr<Effect> make (const std::vector<std::uint8_t>& blob) { return std::make_unique<DistructorEffect> (blob); }
 void setImpulseFolder (const std::string& folder) { impulseFolder() = folder; }
-} // namespace lynx::distructor
+} // namespace yw::distructor

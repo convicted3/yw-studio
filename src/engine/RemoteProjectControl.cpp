@@ -4,7 +4,7 @@
 #include "engine/RemoteError.h"
 #include <juce_events/juce_events.h>
 
-namespace lynx
+namespace yw
 {
 namespace
 {
@@ -129,4 +129,4 @@ juce::var RemoteProjectControl::dispatch (const juce::String& operation, const j
     return object ({ { "changed", changed }, { "operationCount", args["patch"].size() },
         { "documentHash", juce::String (afterHash) } });
 }
-} // namespace lynx
+} // namespace yw

@@ -11,16 +11,16 @@
 
 #include "core/Song.h"
 
-namespace lynx
+namespace yw
 {
-// LYNX's colour palette for patterns, channels and inserts (0xFFRRGGBB). Original values.
-const std::array<std::uint32_t, 12>& lynxPalette();
+// YW's colour palette for patterns, channels and inserts (0xFFRRGGBB). Original values.
+const std::array<std::uint32_t, 12>& ywPalette();
 
 // A palette colour different from `current`, chosen from `seed` (any integer, e.g. a counter or time).
 std::uint32_t randomPaletteColour (std::uint32_t current, std::uint32_t seed);
 
 // FL's Channel rack "Restretch all" (round 190mp, DE-38; REA FUN_00fe7510 stretches every channel stretched offline
-// again): the channels LYNX plays a copy stretched ahead of time for (a sampler / audio clip with pitch kept and a length
+// again): the channels YW plays a copy stretched ahead of time for (a sampler / audio clip with pitch kept and a length
 // in beats). Their count: 0 = the menu item is greyed.
 inline int restretchableChannels (const Song& song) noexcept
 {
@@ -77,7 +77,7 @@ struct Wheel
 } // namespace patterndrag
 
 // The pattern selector's step (drag / wheel): FL's selector goes on past the last pattern and creates the one it lands
-// on ([SHOT] round 170a: a drag up from "Pattern 1" made "Pattern 769"). LYNX creates at most one: stepping forward
+// on ([SHOT] round 170a: a drag up from "Pattern 1" made "Pattern 769"). YW creates at most one: stepping forward
 // from the last pattern appends a new empty one unless the last one is already empty. Returns the index to select.
 int stepPatternCreating (Song& song, int delta);
 // Whether stepPatternCreating would append a new pattern (round 190ne: counted over the patterns the selector lists).
@@ -115,7 +115,7 @@ int clonePattern (Song& song, int index);
 bool movePattern (Song& song, int index, int delta);
 
 // --- pattern hygiene (round 177d; FL's Playlist picker "Select unused › Patterns" and "Sort patterns by name / color",
-// EEPickerSelectUnusedPatternsMenu / EEPickerSortPatternsBy*Menu in FLEngine; LYNX's own: merge identical patterns) ----
+// EEPickerSelectUnusedPatternsMenu / EEPickerSortPatternsBy*Menu in FLEngine; YW's own: merge identical patterns) ----
 // Patterns that no clip plays in any arrangement, no pattern block uses and no Loop Starter channel belongs to (ascending).
 std::vector<int> unusedPatterns (const Song& song);
 // Deletes the given patterns (clips follow, as Song::removePattern). Returns how many went.
@@ -140,7 +140,7 @@ int patternSteps (const Song& song, const Pattern& pattern) noexcept;
 // True when the channel's notes in the pattern cannot be shown as step buttons: a note starts off the step
 // grid, lasts longer than a step, sits on another key than the step key (60) or slides/glides. The Channel
 // Rack then draws a miniature of the notes instead of the steps (as FL does once a channel has piano-roll
-// notes) and a click opens the Piano Roll. LYNX's own rule (FL's exact test is not confirmed).
+// notes) and a click opens the Piano Roll. YW's own rule (FL's exact test is not confirmed).
 bool showsNotePreview (const Pattern& pattern, int channel) noexcept;
 // The Channel Rack's piano-roll view (FL's "step sequencer / piano roll overview" switch): every channel row shows
 // its notes as a miniature, step patterns included; otherwise only the rows with piano-roll notes do.
@@ -260,7 +260,7 @@ std::vector<int> sendChannelsToFreeInserts (Song& song, const std::vector<int>& 
 
 // --- Channel settings "Misc" tab (REA round 143b; FL's channel window: Levels, Polyphony, Time, Group, Arpeggiator) --
 // Which of the per-channel functions a channel's instrument has: Mono (one voice, the new note takes over) and
-// Portamento (glide from the previous note) exist for LYNX's synth and sampler; Max polyphony, swing mix, cut groups
+// Portamento (glide from the previous note) exist for YW's synth and sampler; Max polyphony, swing mix, cut groups
 // and the arpeggiator exist for every channel.
 bool channelHasMono (const ChannelDef& c) noexcept;
 bool channelHasPortamento (const ChannelDef& c) noexcept;
@@ -269,7 +269,7 @@ void setChannelMono (ChannelDef& c, bool on) noexcept;
 bool channelPortamento (const ChannelDef& c) noexcept;
 float channelPortamentoBeats (const ChannelDef& c) noexcept;
 void setChannelPortamento (ChannelDef& c, bool on, float beats) noexcept;
-// FL's "Cut self" (the channel's cut group and "cut by" are its own): LYNX gives it the group 1000 + channel.
+// FL's "Cut self" (the channel's cut group and "cut by" are its own): YW gives it the group 1000 + channel.
 bool channelCutsItself (const ChannelDef& c) noexcept;
 void setChannelCutsItself (ChannelDef& c, int channel, bool on) noexcept;
 // The cut-group number as the Misc tab shows it: "--" for none, "self" for the channel's own group, else the number.
@@ -315,4 +315,4 @@ int setStretchOfAudioClips (Song& song, const std::vector<int>& channels, bool k
 // FL's Tools › Macros › "Prepare for MIDI export" (FUN_0122d440, REA round 181b): every channel becomes a MIDI Out and
 // keeps its name; an FPC plays on MIDI channel 10, the others take 1...16 in turn without 10.
 void prepareForMidiExport (Song& song);
-} // namespace lynx
+} // namespace yw

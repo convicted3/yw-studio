@@ -16,7 +16,7 @@ TEST (flp_import_step_notes_on_generators_are_held)
         notes.insert (notes.end(), r.begin(), r.end());
     b.data (0xE0, notes);
 
-    const auto song = lynx::importFlp (flp::parseProject (b.bytes));
+    const auto song = yw::importFlp (flp::parseProject (b.bytes));
     CHECK (! song.patterns.empty());
     if (song.patterns.empty())
         return;
@@ -36,47 +36,47 @@ TEST (flp_import_step_notes_on_generators_are_held)
 
 TEST (scheduler_held_step_note_has_no_off)
 {
-    lynx::Pattern p;
-    lynx::Note held, plain;
+    yw::Pattern p;
+    yw::Note held, plain;
     held.start = 0, held.channel = 0, held.held = true;
     plain.start = 0, plain.channel = 1;
     p.notes = { held, plain };
-    const auto tps = lynx::ticksPerSample (120.0, 48000.0);
-    lynx::EventBuffer ev;
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 0.0, 24000, tps, ev);
+    const auto tps = yw::ticksPerSample (120.0, 48000.0);
+    yw::EventBuffer ev;
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 0.0, 24000, tps, ev);
     int on0 = 0, off0 = 0, on1 = 0, off1 = 0;
     for (const auto& e : ev)
     {
-        if (e.type == lynx::NoteEvent::Type::on)
+        if (e.type == yw::NoteEvent::Type::on)
             (e.channel == 0 ? on0 : on1) += 1;
-        if (e.type == lynx::NoteEvent::Type::off)
+        if (e.type == yw::NoteEvent::Type::off)
             (e.channel == 0 ? off0 : off1) += 1;
     }
     CHECK (on0 == 1 && off0 == 0);
     CHECK (on1 == 1 && off1 == 1);
 
     // the safety net that ends notes whose "off" did not come leaves the held one alone
-    lynx::ScheduledNotes sounding;
+    yw::ScheduledNotes sounding;
     sounding.process (ev, 24000, tps);
     CHECK (sounding.heldSteps() == 1);
-    lynx::EventBuffer later;
+    yw::EventBuffer later;
     sounding.process (later, 48000 * 4, tps);
     int offs = 0;
     for (const auto& e : later)
-        offs += e.type == lynx::NoteEvent::Type::off && e.channel == 0;
+        offs += e.type == yw::NoteEvent::Type::off && e.channel == 0;
     CHECK (offs == 0);
 
     // the channel's next note (any key) ends it: its "off" on that note's sample, before the "on", with the held note's id
     std::uint32_t heldId = 0;
     for (const auto& e : ev)
-        if (e.type == lynx::NoteEvent::Type::on && e.channel == 0)
+        if (e.type == yw::NoteEvent::Type::on && e.channel == 0)
             heldId = e.noteId;
-    lynx::EventBuffer next;
-    lynx::NoteEvent on;
-    on.type = lynx::NoteEvent::Type::on;
+    yw::EventBuffer next;
+    yw::NoteEvent on;
+    on.type = yw::NoteEvent::Type::on;
     on.channel = 0, on.key = 67, on.velocity = 0.8f, on.sampleOffset = 100;
     next.add (on);
-    lynx::NoteEvent other = on; // another channel's note leaves it alone
+    yw::NoteEvent other = on; // another channel's note leaves it alone
     other.channel = 1, other.sampleOffset = 50;
     next.add (other);
     next.sortByOffset();
@@ -84,20 +84,20 @@ TEST (scheduler_held_step_note_has_no_off)
     int heldOff = -1, nextOn = -1;
     for (int i = 0; i < next.size(); ++i)
     {
-        if (next[i].type == lynx::NoteEvent::Type::off && next[i].channel == 0 && next[i].key == 60 && next[i].noteId == heldId && heldId != 0)
+        if (next[i].type == yw::NoteEvent::Type::off && next[i].channel == 0 && next[i].key == 60 && next[i].noteId == heldId && heldId != 0)
             heldOff = i;
-        if (next[i].type == lynx::NoteEvent::Type::on && next[i].channel == 0)
+        if (next[i].type == yw::NoteEvent::Type::on && next[i].channel == 0)
             nextOn = i;
     }
     CHECK (heldOff >= 0 && nextOn > heldOff && next[heldOff].sampleOffset == 100);
     CHECK (sounding.heldSteps() == 0);
 
     // once its length is edited it is an ordinary note again
-    p.notes[0].length = lynx::ticksPerStep * 2;
-    lynx::EventBuffer ev2;
-    lynx::schedulePatternLoop (p, p.effectiveLength (lynx::Meter (4, 4)), 0.0, 24000, tps, ev2);
+    p.notes[0].length = yw::ticksPerStep * 2;
+    yw::EventBuffer ev2;
+    yw::schedulePatternLoop (p, p.effectiveLength (yw::Meter (4, 4)), 0.0, 24000, tps, ev2);
     int offAfter = 0;
     for (const auto& e : ev2)
-        offAfter += e.type == lynx::NoteEvent::Type::off && e.channel == 0;
+        offAfter += e.type == yw::NoteEvent::Type::off && e.channel == 0;
     CHECK (offAfter == 1);
 }

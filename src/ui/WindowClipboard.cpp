@@ -6,9 +6,9 @@
 #include "engine/PluginHost.h"
 #include "platform/Paths.h"
 #include "ui/I18n.h"
-#include "ui/LynxWindows.h"
+#include "ui/YwWindows.h"
 
-namespace lynx::windowclip
+namespace yw::windowclip
 {
 namespace
 {
@@ -48,7 +48,7 @@ std::optional<crossclipboard::Envelope> waiting (crossclipboard::Kind kind)
 
 bool enabled()
 {
-    static const bool on = ! platform::testMode() || juce::SystemStats::getEnvironmentVariable ("LYNX_SYSTEM_CLIPBOARD", {}) == "1";
+    static const bool on = ! platform::testMode() || juce::SystemStats::getEnvironmentVariable ("YW_SYSTEM_CLIPBOARD", {}) == "1";
     return on;
 }
 
@@ -112,4 +112,4 @@ juce::String pastedFrom (const crossclipboard::Payload& payload)
 {
     return tr ("Pasted from {0}", { payload.from.isNotEmpty() ? payload.from : tr ("another YW Studio window") });
 }
-} // namespace lynx::windowclip
+} // namespace yw::windowclip
