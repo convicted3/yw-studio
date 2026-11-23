@@ -86,7 +86,7 @@ jobs:
     needs: build
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write  # the UI screenshots go to the ci-shots branch
       actions: write   # to remove the temporary "bin" artifact at the end
     env:
       LABEL: ${{ needs.build.outputs.label }}
@@ -106,6 +106,24 @@ jobs:
           $p = Start-Process "bin\YW Studio.exe" -ArgumentList '--selftest', "$PWD\selftest.txt", "$PWD\selftest-demo.yw" -Wait -PassThru
           if (Test-Path selftest.txt) { Get-Content selftest.txt -Tail 30 }
           if ($p.ExitCode -ne 0 -or -not (Select-String -Path selftest.txt -Pattern '^result=OK' -Quiet)) { throw "self-test failed (exit $($p.ExitCode))" }
+
+      # UI screenshots (the window drawn off-screen with a demo song) on the ci-shots branch, to compare with FL Studio
+      - name: UI screenshots
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force shots | Out-Null
+          $env:YW_SNAPSHOT_SIZE = '1920x1080'
+          $demo = (Get-ChildItem resources\demos\*.yw | Select-Object -First 1).FullName
+          $p = Start-Process "bin\YW Studio.exe" -ArgumentList '--snapshot', "$PWD\shots\ui", "`"$demo`"" -Wait -PassThru
+          "snapshot exit $($p.ExitCode)"
+          Get-ChildItem shots | Format-Table Name, Length
+          git config user.name "YW CI"; git config user.email "ci@yolo.su"
+          git checkout --orphan ci-shots
+          git rm -rfq --cached .
+          git add -f shots
+          git commit -qm "UI screenshots $env:GITHUB_SHA"
+          git push -f origin ci-shots
 
       - name: Portable zip and installer
         shell: pwsh
