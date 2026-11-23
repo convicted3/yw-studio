@@ -118,7 +118,7 @@ void applyDrawingDots (const themes::Spec& spec)
     colour::info = dot (themes::Dot::option, info);
     colour::meterLow = dot (themes::Dot::meters, meterLow);
     colour::audioClip = dot (themes::Dot::waves, audioClip);
-    colour::stepOn = theme::stepOn = dot (themes::Dot::steps, colour::accent);
+    colour::stepOn = theme::stepOn = dot (themes::Dot::steps, juce::Colour (themes::litStepColour (0, themes::paletteFor (spec))));
     colour::selection = dot (themes::Dot::selection, colour::accent);
     colour::defaultTrack = dot (themes::Dot::tracks, juce::Colour (0xff485156)); // (issue #238: FL's grey unless set)
     // FL's "Audio and automation clips use note colors" (round 190od): the engine's new clips pick from the note colours

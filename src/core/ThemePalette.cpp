@@ -20,14 +20,15 @@ std::uint32_t rgb (int r, int g, int b)
 
 // The built-in palette (the values ui/Theme.h shipped with before themes existed).
 constexpr Palette builtIn {
-    0xff0e0f12, 0xff15161a, 0xff1b1d22, 0xff23262c, 0xff2c2f37, 0xff363a43, 0xff434852, // bg0..bg6
-    0xff2a2d34, 0xff3b3f48,                                                             // border, borderStrong
-    0xffeceef2, 0xffa1a6b0, 0xff767b85,                                                 // text (disabled: round 190je, 3.6:1 on bg3)
-    0xffe5383b, 0xfff2545a, 0xffc12a30, 0xff5c1f24, 0xffffffff, 0x2ee5383b,             // accent family
-    0xffc5c9d1, 0xff444955, 0xff2a2d34, 0xff4c3f46, 0xffe8a3a6,                         // knobs, steps (alt: stepOffAlt below)
-    0xff3a3e47, 0xff262930, 0xff1d1f24, 0xff17181c, 0xff1c1e23, 0xff16171b,             // grids, keys, rows
-    0xffb3545a, 0xffff6b6e, 0xff4a4e57, 0xff3a3e47,                                     // notes, LED
-    0xff747983                                                                          // outline (round 190je: 3.1:1 on bg4, 3.5:1 on bg3)
+    // YW Studio in FL Studio's default colours: blue-grey panels, light grey text, orange highlight, white lit steps
+    0xff1e2428, 0xff2a3237, 0xff323b41, 0xff39434a, 0xff434e55, 0xff4e5a62, 0xff5b6870, // bg0..bg6
+    0xff20272b, 0xff56626a,                                                             // border, borderStrong
+    0xffe4e9ec, 0xffaab5bb, 0xff808b91,                                                 // text
+    0xfff4a13b, 0xfff7b562, 0xffd0842a, 0xff715a3a, 0xff1a1d20, 0x2ef4a13b,             // accent family (FL orange)
+    0xffcfd6da, 0xff4a555c, 0xff4b555c, 0xff5c4d52, 0xff9aa4aa,                         // knobs, steps (alt: FL's reddish grey)
+    0xff4a565e, 0xff384249, 0xff2f383e, 0xff22292d, 0xff2c353a, 0xff283035,             // grids, keys, rows
+    0xff5f8f54, 0xff8fdc78, 0xff4f5a60, 0xff3c464c,                                     // notes (FL green), LED
+    0xff7a868d                                                                          // outline
 };
 
 // A surface token for another background: the built-in step from bg1 to that token, applied to the new background
@@ -115,7 +116,7 @@ Palette derivePalette (std::uint32_t accentIn, std::uint32_t backgroundIn)
     }
     // the Channel Rack's every-other beat group: clearly apart at a glance (Busy Works Beats' video, round 170a: "too
     // close of a color") yet a dull reddish grey like FL's, far from a lit step (round 170a2)
-    p.stepOffAlt = mix (mix (p.stepOff, p.textPrimary, stepGroupLift), p.accent, stepGroupTint);
+    p.stepOffAlt = mix (mix (p.stepOff, p.textPrimary, stepGroupLift), 0xffc04848u, stepGroupTint); // (FL: always a reddish grey)
 
     // the contrast floors (round 190je): secondary text, disabled text and control outlines stay readable on every
     // background (the built-in look meets them as it is)
@@ -290,6 +291,9 @@ int tallMenuBreak (const std::vector<MenuRow>& rows, int maxHeight)
 
 std::uint32_t litStepColour (std::uint32_t channelColour, const Palette& palette)
 {
+    // FL Studio: a lit step is light grey whatever the channel's colour (a dark theme; a light one keeps the old rule)
+    if (relativeLuminance (palette.stepOff) <= 0.4)
+        return mix (palette.textPrimary, palette.stepOff, 0.08);
     if ((channelColour & 0x00ffffffu) == 0)
         return palette.accent;
     const auto colour = channelColour | 0xff000000u;

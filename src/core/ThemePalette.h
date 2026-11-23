@@ -12,8 +12,8 @@
 // text stays readable. With YW's default accent and background it gives exactly the built-in palette.
 namespace yw::themes
 {
-constexpr std::uint32_t defaultAccent = 0xffe5484d;     // YW red
-constexpr std::uint32_t defaultBackground = 0xff1b2124; // YW graphite (token bg1)
+constexpr std::uint32_t defaultAccent = 0xfff4a13b;     // FL Studio orange
+constexpr std::uint32_t defaultBackground = 0xff2a3237; // FL Studio blue-grey (token bg1)
 
 // Every themeable token of ui/Theme.h (ARGB).
 struct Palette
@@ -172,7 +172,7 @@ struct Spec
     float dim = 0.0f;                // 0..1: darkens the image towards the backdrop colour
     std::string startupSound;        // audio file played at start instead of YW's own sound (empty = YW's; issue #12)
     float gridIntensity = 1.0f;      // Grid line intensity (round 190je): gridIntensityMin..Max, 1 = the theme's lines
-    MenuStyle menuStyle = MenuStyle::ywDark; // Menu style (round 190je)
+    MenuStyle menuStyle = MenuStyle::flClassic; // Menu style: FL light grey menus by default
     // FL's Theme › Options › "Audio and automation clips use note colors" (round 190od, issue #239; FL's ClipsOverrideBox,
     // .flstheme OverrideClips, hint "Use the note color list to find random colors for new clips"): a new audio clip
     // channel or automation clip takes a random colour of the 16 note colours instead of the default grey

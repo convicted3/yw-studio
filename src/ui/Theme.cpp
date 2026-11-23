@@ -1204,7 +1204,7 @@ void setPalette (const themes::Palette& p)
     textPrimary = c (p.textPrimary); textSecondary = c (p.textSecondary); textDisabled = c (p.textDisabled);
     accent = c (p.accent); accentHover = c (p.accentHover); accentPressed = c (p.accentPressed); accentMuted = c (p.accentMuted);
     onAccent = c (p.onAccent); selectionFill = c (p.selectionFill);
-    colour::selection = accent; colour::playhead = accent; colour::stepOn = accent;
+    colour::selection = accent; colour::playhead = accent; colour::stepOn = c (themes::litStepColour (0, p)); // (FL: light steps)
     knobArc = c (p.knobArc); knobTrack = c (p.knobTrack); colour::stepOff = c (p.stepOff); stepOffAlt = c (p.stepOffAlt); stepNote = c (p.stepNote);
     gridBar = c (p.gridBar); gridBeat = c (p.gridBeat); gridStep = c (p.gridStep); keyBlack = c (p.keyBlack);
     rowWhite = c (p.rowWhite); rowBlack = c (p.rowBlack);
@@ -1213,7 +1213,7 @@ void setPalette (const themes::Palette& p)
 
     // the legacy names
     theme::window = bg1; theme::panel = bg2; theme::toolbar = bg3; theme::channelButton = bg4; theme::channelButtonSelected = bg6;
-    theme::knobBackground = bg0; theme::stepOn = accent; theme::stepOnOffGrid = stepNote; theme::accentOrange = accent;
+    theme::knobBackground = bg0; theme::stepOn = colour::stepOn; theme::stepOnOffGrid = stepNote; theme::accentOrange = accent;
     theme::playhead = accent; theme::text = textPrimary;
 }
 
