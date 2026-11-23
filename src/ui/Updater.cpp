@@ -19,6 +19,7 @@
   #define NOMINMAX
  #endif
  #include <windows.h>
+ #include <shellapi.h> // ShellExecuteExW (the installer asks for administrator rights)
 #else
  #include <unistd.h>
 #endif
@@ -1085,22 +1086,26 @@ bool runApplyHelper (const juce::StringArray& args)
         }
         Sleep (200);
     }
-    // NSIS: /S silent, /D=<folder> last and unquoted (it may contain spaces)
-    auto command = "\"" + setup.getFullPathName() + "\" /S /D=" + folder.getFullPathName();
-    STARTUPINFOW si {};
-    si.cb = sizeof (si);
-    PROCESS_INFORMATION pi {};
-    std::wstring line (command.toWideCharPointer());
-    if (! CreateProcessW (nullptr, line.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi))
+    // NSIS: /S silent, /D=<folder> last and unquoted (it may contain spaces). The installer asks for administrator
+    // rights (any install folder, C:\Program Files by default): ShellExecuteEx shows the UAC prompt, CreateProcess can't
+    const std::wstring file (setup.getFullPathName().toWideCharPointer());
+    const std::wstring params ((juce::String ("/S /D=") + folder.getFullPathName()).toWideCharPointer());
+    SHELLEXECUTEINFOW sei {};
+    sei.cbSize = sizeof (sei);
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
+    sei.lpVerb = L"open";
+    sei.lpFile = file.c_str();
+    sei.lpParameters = params.c_str();
+    sei.nShow = SW_SHOWNORMAL;
+    if (! ShellExecuteExW (&sei) || sei.hProcess == nullptr)
     {
         finish (false, "can't start the installer (error " + juce::String ((int) GetLastError()) + ")");
         return true;
     }
-    const auto waited = WaitForSingleObject (pi.hProcess, 600000);
+    const auto waited = WaitForSingleObject (sei.hProcess, 600000);
     DWORD code = 1;
-    GetExitCodeProcess (pi.hProcess, &code);
-    CloseHandle (pi.hThread);
-    CloseHandle (pi.hProcess);
+    GetExitCodeProcess (sei.hProcess, &code);
+    CloseHandle (sei.hProcess);
     if (waited == WAIT_TIMEOUT)
         finish (false, "the installer did not finish");
     else

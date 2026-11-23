@@ -1,5 +1,5 @@
-; YW Studio per-user Windows installer (NSIS 3). Built by scripts/make-installer.sh; no admin rights needed.
-; Installs to %LOCALAPPDATA%\Programs\YW Studio, adds Start-menu (and optional desktop) shortcuts, registers .yw
+; YW Studio Windows installer (NSIS 3). Asks for administrator rights (like FL Studio's) so the user can install
+; into any folder; the folder is chosen on the Destination page (default C:\Program Files\YW Studio). Adds Start-menu (and optional desktop) shortcuts, registers .yw
 ; projects and offers YW Studio in Explorer's "Open with" for .flp without taking over FL Studio's default.
 ; The uninstaller removes only what this installer added (settings in %APPDATA%\YW Studio stay).
 ;
@@ -8,7 +8,7 @@
 
 Unicode true
 SetCompressor /SOLID lzma
-RequestExecutionLevel user
+RequestExecutionLevel admin
 ManifestDPIAware true
 
 !include "MUI2.nsh"
@@ -23,7 +23,7 @@ ManifestDPIAware true
 
 Name "${APP} ${VERSION}"
 OutFile "${OUTFILE}"
-InstallDir "$LOCALAPPDATA\Programs\YW Studio"
+InstallDir "$PROGRAMFILES64\YW Studio"
 InstallDirRegKey HKCU "Software\YW Studio" "InstallDir"
 BrandingText "YW Studio ${VERSION}"
 VIProductVersion "${VERSION}.0"
@@ -49,26 +49,26 @@ VIAddVersionKey "LegalCopyright" "AGPL-3.0"
 !insertmacro MUI_UNPAGE_INSTFILES
 
 !insertmacro MUI_LANGUAGE "English"
-!insertmacro MUI_LANGUAGE "PortugueseBR"
+!insertmacro MUI_LANGUAGE "Russian"
 
 LangString RunYw ${LANG_ENGLISH} "Start YW Studio"
-LangString RunYw ${LANG_PORTUGUESEBR} "Abrir o YW Studio"
+LangString RunYw ${LANG_RUSSIAN} "Запустить YW Studio"
 LangString SecApp ${LANG_ENGLISH} "YW Studio (required)"
-LangString SecApp ${LANG_PORTUGUESEBR} "YW Studio (obrigatório)"
+LangString SecApp ${LANG_RUSSIAN} "YW Studio (обязательно)"
 LangString SecDesktop ${LANG_ENGLISH} "Desktop shortcut"
-LangString SecDesktop ${LANG_PORTUGUESEBR} "Atalho na área de trabalho"
+LangString SecDesktop ${LANG_RUSSIAN} "Ярлык на рабочем столе"
 LangString SecFlp ${LANG_ENGLISH} "Offer YW Studio in $\"Open with$\" for FL Studio projects (.flp)"
-LangString SecFlp ${LANG_PORTUGUESEBR} "Oferecer o YW Studio em $\"Abrir com$\" para projetos do FL Studio (.flp)"
+LangString SecFlp ${LANG_RUSSIAN} "Показывать YW Studio в $\"Открыть с помощью$\" для проектов FL Studio (.flp)"
 LangString FlpType ${LANG_ENGLISH} "FL Studio project (YW Studio)"
-LangString FlpType ${LANG_PORTUGUESEBR} "Projeto do FL Studio (YW Studio)"
+LangString FlpType ${LANG_RUSSIAN} "Проект FL Studio (YW Studio)"
 LangString StillRunning ${LANG_ENGLISH} "YW Studio is running. Close it and click Retry."
-LangString StillRunning ${LANG_PORTUGUESEBR} "O YW Studio está aberto. Feche-o e clique em Repetir."
+LangString StillRunning ${LANG_RUSSIAN} "YW Studio запущен. Закройте его и нажмите «Повтор»."
 
 Function .onInit
     ; the installer's language follows Windows
     System::Call 'kernel32::GetUserDefaultUILanguage() i .r0'
-    ${If} $0 == 1046
-        StrCpy $LANGUAGE ${LANG_PORTUGUESEBR}
+    ${If} $0 == 1049
+        StrCpy $LANGUAGE ${LANG_RUSSIAN}
     ${EndIf}
     Call SilentKeepsChoices
 FunctionEnd
