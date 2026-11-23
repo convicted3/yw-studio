@@ -1,0 +1,319 @@
+#pragma once
+
+// Audio editor core (round 86; the feature set follows FL's Edison, docs/analise/REA_rodada86.md, the code is LYNX's
+// own). A Document is audio + markers/regions + a loop; every edit works on a frame range and keeps the markers
+// and the loop in place relative to the audio. History keeps whole states (one per edit) for undo/redo and the
+// undo history list. Also: a spectrogram, zero-crossing snap, onset detection (auto-slice) and WAV encoding and
+// decoding with the markers (cue/labl/ltxt) and the loop (smpl). JUCE-free; tests in tests/AudioEditTests.inc.
+
+#include <array>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <functional>
+#include <vector>
+
+namespace lynx::audioedit
+{
+struct Audio
+{
+    std::vector<std::vector<float>> channels; // 1 (mono) or 2 (stereo), all the same length
+    double sampleRate = 44100.0;
+
+    std::int64_t frames() const noexcept { return channels.empty() ? 0 : (std::int64_t) channels[0].size(); }
+    int numChannels() const noexcept { return (int) channels.size(); }
+    bool empty() const noexcept { return frames() == 0; }
+    double seconds() const noexcept { return sampleRate > 0.0 ? (double) frames() / sampleRate : 0.0; }
+};
+
+// A marker (end == start) or a region (end > start), in frames.
+struct Marker
+{
+    std::int64_t start = 0, end = 0;
+    std::string name;
+    // what Edison keeps with a region besides its name (an audio script's Region.Info / Time / KeyNum; round 167c)
+    std::string info;
+    double time = 0.0; // beat position
+    int keyNum = -1;   // linked MIDI note (−1 = none)
+    bool isRegion() const noexcept { return end > start; }
+};
+
+// --- point envelopes (round 165l: the curves drawn in the tool forms and the amp envelopes over the audio) ---------
+// x 0..1 (time or frequency, depending on the tool), y 0..1; `tension` bends the segment that ends at the point
+// (-1..1, 0 = straight; positive = slow start). Points are kept sorted by x.
+struct EnvPoint
+{
+    double x = 0.0, y = 0.0;
+    float tension = 0.0f;
+};
+
+struct Envelope
+{
+    std::vector<EnvPoint> points;
+
+    bool empty() const noexcept { return points.empty(); }
+    // The value at x (the first / last point's value outside them; 0 when there are no points).
+    double at (double x) const noexcept;
+    void sort();
+    // Index of the point inserted at (x, y).
+    int insert (double x, double y, float tension = 0.0f);
+
+    static Envelope flat (double y); // two points (0, y) and (1, y)
+};
+
+// FL Edison's sample properties (Format › Edit properties..., F2; round gaps190kf, REA of Edison_x64.dll: the form
+// TMEWAVPropForm and its accept handler 0x878c90, the WAV writer 0x613e00 and readers 0x6191d0 / 0x619290 / 0x619320 /
+// 0x619d30). They travel in the WAV's own chunks as FL writes them: LIST INFO INAM / ICMT (name, comments), smpl (middle
+// note and fine tune), inst (the mapping range), acid (tempo, tempo-sync). The defaults are FL's for a new sample.
+struct SampleProps
+{
+    std::string name, comments;   // FL's Title (INAM) and Comments (ICMT)
+    double tempo = 0.0;           // BPM; 0 = none (FL keeps 0…960)
+    bool tempoSync = false;       // "Tempo-sync": rhythmic content (acid without the one-shot flag)
+    int middleNote = 60, lowNote = 0, highNote = 127;
+    double fineTune = 0.0;        // cents
+    int lowVelocity = 0, highVelocity = 127;
+    bool int16 = false;           // FL's Precision "16Bit int" (else 32Bit float)
+
+    bool hasPitchInfo() const noexcept { return middleNote != 60 || fineTune != 0.0 || lowNote != 0 || highNote != 127 || lowVelocity != 0 || highVelocity != 127; }
+    bool hasTempoInfo() const noexcept { return tempo != 0.0 || tempoSync; }
+};
+
+struct Document
+{
+    Audio audio;
+    SampleProps props; // round gaps190kf (default: nothing written, files stay as before)
+    std::vector<Marker> markers; // sorted by start
+    std::int64_t loopStart = -1, loopEnd = -1; // frames [loopStart, loopEnd), -1 = no loop
+    std::string title;
+    // Edison's amp envelopes drawn over the audio (round 165l; x 0..1 over the whole audio; empty = none), applied
+    // by "Mixdown amp envelopes" (core/AudioEditTools.h).
+    Envelope volumeEnvelope, panEnvelope, separationEnvelope;
+    // the mix envelope of "Paste mix (envelope)" (not heard: it says how much of the clipboard is mixed in)
+    Envelope mixEnvelope;
+    // the position envelope of "Scratch (envelope)" (not heard until applied)
+    Envelope scratchEnvelope;
+
+    bool hasLoop() const noexcept { return loopStart >= 0 && loopEnd > loopStart; }
+};
+
+// Frames [start, end).
+struct Range
+{
+    std::int64_t start = 0, end = 0;
+    std::int64_t length() const noexcept { return end > start ? end - start : 0; }
+    bool empty() const noexcept { return end <= start; }
+};
+
+// The range clamped to the audio (start <= end).
+Range clamp (const Document& doc, Range r) noexcept;
+// An empty range means the whole audio (what Edison's tools do without a selection). The level, polarity, fade,
+// reverse, clear and time tools below treat an empty range that way; erase/cut/trim do nothing with it.
+Range orAll (const Document& doc, Range r) noexcept;
+
+// Silent audio with the document's format.
+Audio silence (int channels, double sampleRate, std::int64_t frames);
+// `clip` in `channels` channels at `sampleRate` (mono↔stereo, resampling).
+Audio conform (const Audio& clip, int channels, double sampleRate);
+
+// --- clipboard edits ------------------------------------------------------------------------------------------
+Audio copy (const Audio& audio, Range r);
+void erase (Document& doc, Range r);                              // Delete: the rest closes the gap
+Audio cut (Document& doc, Range r);                               // copy + erase
+void insert (Document& doc, std::int64_t at, const Audio& clip);  // Paste insert (converted to the document's format)
+void pasteReplace (Document& doc, Range r, const Audio& clip);    // the range becomes the clip
+void pasteMix (Document& doc, std::int64_t at, const Audio& clip); // summed onto the audio (extends it if needed)
+void trim (Document& doc, Range r);                               // keeps only the range
+void clear (Document& doc, Range r);                              // silence in place (same length)
+void insertSilence (Document& doc, std::int64_t at, std::int64_t frames);
+void deleteAfterLoop (Document& doc);
+
+// --- level -------------------------------------------------------------------------------------------------------
+enum class Curve : std::uint8_t
+{
+    linear,
+    smooth,      // S-curve (half cosine)
+    exponential, // slow start (fast end) for fade ins: x^2-like in amplitude, natural for fades in dB
+    logarithmic  // fast start
+};
+// Gain of a fade in at position x (0..1). A fade out uses curveGain (c, 1 - x).
+float curveGain (Curve c, float x) noexcept;
+void fadeIn (Document& doc, Range r, Curve c = Curve::smooth);
+void fadeOut (Document& doc, Range r, Curve c = Curve::smooth);
+constexpr double declickSeconds = 0.004; // declick in/out: a smooth fade this long at the range's edge
+void declickIn (Document& doc, Range r);
+void declickOut (Document& doc, Range r);
+
+float peak (const Audio& audio, Range r) noexcept;
+float rms (const Audio& audio, Range r) noexcept;
+// Volume (linear) and pan (-1..1: the far side keeps unity, the near side is turned down linearly).
+void amp (Document& doc, Range r, float gain, float pan = 0.0f);
+// Scales the range so its peak is targetDb (dBFS). Returns the gain applied (1 when silent).
+float normalize (Document& doc, Range r, float targetDb = 0.0f);
+void reverse (Document& doc, Range r);
+void invert (Document& doc, Range r);   // reverse polarity
+void removeDc (Document& doc, Range r); // Edison's "Center": subtracts each channel's mean
+
+// --- channels ----------------------------------------------------------------------------------------------------
+enum class MonoSource : std::uint8_t
+{
+    merged,
+    left,
+    right
+};
+void toMono (Document& doc, MonoSource source = MonoSource::merged);
+void toStereo (Document& doc);
+void swapChannels (Document& doc);
+
+// --- time --------------------------------------------------------------------------------------------------------
+// Windowed-sinc resampling of one channel to `outFrames` frames (band-limited when shortening).
+std::vector<float> resampleChannel (const std::vector<float>& in, std::int64_t outFrames);
+// The same, asking `stop` every 65 536 output frames: an empty vector when it returned true (a long file, Cancel).
+std::vector<float> resampleChannel (const std::vector<float>& in, std::int64_t outFrames, const std::function<bool()>& stop);
+// New sample rate, same pitch and duration (the number of frames changes; markers follow).
+void resample (Document& doc, double newRate);
+// Time stretch of the range without changing pitch (ratio = new length / old length; WSOLA, core/TimeStretch).
+void timeStretch (Document& doc, Range r, double ratio);
+// Pitch shift of the range (semitones) keeping its length.
+void pitchShift (Document& doc, Range r, double semitones);
+// Speed change (resample) of the range: pitch and length change together (ratio = new length / old length).
+void changeSpeed (Document& doc, Range r, double ratio);
+
+// --- markers, regions, loop ------------------------------------------------------------------------------------
+void addMarker (Document& doc, std::int64_t at, std::string name = {});
+void addRegion (Document& doc, Range r, std::string name = {});
+// Removes the markers at positions within the range and the regions that overlap it (an empty range: those at
+// exactly r.start). Returns how many were removed.
+int removeMarkers (Document& doc, Range r);
+void setLoop (Document& doc, Range r); // an empty range removes the loop
+void sortMarkers (Document& doc);
+
+// The zero crossing (sign change of the channels' sum) nearest to `frame` within `radius` frames (or `frame`).
+std::int64_t nearestZeroCrossing (const Audio& audio, std::int64_t frame, std::int64_t radius);
+// Onsets (attacks) for auto-slicing: sensitivity 0 (dull, only big hits) .. 1 (sharp, many). Frames, sorted.
+std::vector<std::int64_t> detectOnsets (const Audio& audio, float sensitivity = 0.5f);
+
+// --- history -----------------------------------------------------------------------------------------------------
+// A list of states, the first being the opened audio. Each edit commits the new state with a label; undo/redo
+// move through the list. Oldest states are dropped beyond `maxBytes` (at least the current one and one before it
+// are kept).
+class History
+{
+public:
+    explicit History (std::size_t maxBytes = std::size_t (768) << 20);
+
+    void reset (const Document& doc, std::string label);
+    void commit (const Document& doc, std::string label);
+
+    bool canUndo() const noexcept { return position > 0; }
+    bool canRedo() const noexcept { return position + 1 < (int) states.size(); }
+    const Document& undo();
+    const Document& redo();
+    const Document& jumpTo (int index);
+    const Document& current() const { return *states[(std::size_t) position].doc; }
+
+    int size() const noexcept { return (int) states.size(); }
+    int getPosition() const noexcept { return position; }
+    const std::string& label (int index) const { return states[(std::size_t) index].label; }
+    std::size_t bytes() const noexcept;
+
+private:
+    struct State
+    {
+        std::shared_ptr<const Document> doc;
+        std::string label;
+    };
+    std::vector<State> states;
+    int position = -1;
+    std::size_t maxBytes;
+};
+
+// --- spectrogram ------------------------------------------------------------------------------------------------
+struct Spectrogram
+{
+    int columns = 0, bins = 0; // bins = fftSize / 2
+    double sampleRate = 44100.0;
+    std::vector<float> db;     // [column * bins + bin], dBFS (floor -120)
+    float at (int column, int bin) const noexcept { return db[(std::size_t) column * (std::size_t) bins + (std::size_t) bin]; }
+};
+// `columns` analysis windows evenly over frames [r.start, r.end) (channels mixed), Hann window of fftSize (power of 2).
+Spectrogram spectrogram (const Audio& audio, Range r, int columns, int fftSize = 2048);
+
+// --- WAV ---------------------------------------------------------------------------------------------------------
+enum class WavFormat : std::uint8_t
+{
+    int16,
+    int24,
+    float32
+};
+// RIFF/WAVE with the audio, the markers and regions (cue + LIST/adtl labl, ltxt) and the loop (smpl).
+std::vector<std::uint8_t> encodeWav (const Document& doc, WavFormat format = WavFormat::int24);
+// PCM 8/16/24/32-bit int or 32/64-bit float, with the markers/regions/loop above. False if not a WAV it can read.
+bool decodeWav (const std::uint8_t* data, std::size_t size, Document& out);
+// Only the markers/regions/loop of a WAV (the audio is read elsewhere). False if none.
+bool decodeWavMarkers (const std::uint8_t* data, std::size_t size, Document& out);
+
+// FL Edison's Regions › Assign all to (round 190ee; Edison_x64.dll 0x86e370): every marker in order gets a trigger note
+// (Marker::keyNum). Layouts: 0 whole keyboard, 1 white notes, 2 black notes (from C5, or lower when there are more
+// than 65 markers, one key up each, at most 124), 3 default / none, 4 C5 for all. (FL's pad layouts are not here.)
+enum class NoteLayout { wholeKeyboard, whiteNotes, blackNotes, none, c5 };
+void assignTriggerNotes (Document& doc, NoteLayout layout);
+
+// --- click-free (smooth) editing (round gaps190kf; FL Edison's Edit › "Click-free (smooth) editing", key C, on by
+// default: the editor's 0x84b300 around its edits, from the edit handler 0x8702c0) ------------------------------------
+// Before an edit the audio around the range [first, last] is taken (24 ms on each side, `capture`); after it each seam
+// is overlapped with the audio that followed it before (`blend`): a raised-cosine fade (FL's fade type 4) out of the old
+// audio over a fade in of the new. Flags as FL's: check the file's ends (0x40: no left seam at frame 0, no right seam at
+// the end), fade at the file's ends (0x80), fade the document's own audio too (0x100), left seam (0x200), right seam
+// (0x400), and at most the range's length (0x800).
+namespace clickfree
+{
+constexpr unsigned checkEnds = 0x40, fadeFileEnds = 0x80, fadeOwn = 0x100, left = 0x200, right = 0x400, withinRange = 0x800;
+constexpr double milliseconds = 24.0;
+struct Take
+{
+    std::vector<std::vector<float>> audio; // 2 × the overlap: the range's first frames, then its last ones
+    std::int64_t half() const noexcept { return audio.empty() ? 0 : (std::int64_t) audio[0].size() / 2; }
+};
+Take capture (Document& doc, std::int64_t first, std::int64_t last, unsigned flags);
+void blend (Document& doc, const Take& take, std::int64_t first, std::int64_t last, unsigned flags);
+// FL's fade type 4 on [first, last] of every channel: gain from → to along (1 − cos (π x)) / 2, x = (i − first + 1) / (n + 1)
+void raisedCosineFade (std::vector<std::vector<float>>& channels, std::int64_t first, std::int64_t last, float from, float to);
+// The edits FL makes click-free, as its edit handler does them
+void eraseClickFree (Document& doc, Range r);                                 // Delete / Cut
+void clearClickFree (Document& doc, Range r);                                 // Clear (silence)
+void insertClickFree (Document& doc, std::int64_t at, const Audio& clip);     // Paste (insert)
+void pasteReplaceClickFree (Document& doc, Range r, const Audio& clip);       // Paste replacing the selection
+void insertSilenceClickFree (Document& doc, std::int64_t at, std::int64_t frames);
+void trimClickFree (Document& doc, Range r);                                  // Trim: the kept part's ends fade
+} // namespace clickfree
+
+// --- sample properties in the WAV (round gaps190kf; FL Edison's writer 0x613e00 and readers, see SampleProps) ----------
+// smpl's unity note and pitch fraction for a middle note and fine tune (cents): the whole semitones of the fine tune
+// (floored) come off the middle note, the rest is the fraction (2^32 = one semitone)
+struct SmplPitch
+{
+    int unityNote = 60;
+    std::uint32_t fraction = 0;
+};
+SmplPitch smplPitchOf (int middleNote, double fineTune) noexcept;
+// inst's 7 bytes: unshifted note, fine tune (−50…50 cents), gain 0, low / high note, low / high velocity
+std::array<std::uint8_t, 7> instOf (const SampleProps& props) noexcept;
+// acid's 24 bytes for `frames` frames at `sampleRate`: flags (1 one-shot = not tempo-sync, 4 = the length is not whole
+// beats), root 60, beats, 4/4, the tempo (0 when the sample has none)
+std::array<std::uint8_t, 24> acidOf (const SampleProps& props, std::int64_t frames, double sampleRate) noexcept;
+// Reads the properties FL reads (smpl, inst, acid, LIST INFO INAM / ICMT) into out.props (`out.audio` gives the frames
+// and the rate). False when the WAV has none of them.
+bool decodeWavProps (const std::uint8_t* data, std::size_t size, Document& out);
+
+// What FL hands a plugin about a WAV besides its audio: the starts of its cue points and regions (ascending, clamped to
+// `frames` − 1) and the ACID chunk's beat count (0 = none). `data` may hold only the RIFF header and the non-audio
+// chunks (the "data" chunk skipped).
+struct WavExtras
+{
+    std::vector<std::int64_t> markerStarts;
+    float acidBeats = 0.0f;
+    int sliceMarkers = 0; // round 190ey: the entries of FL's "strc" slice list after its first (0 = no list)
+};
+WavExtras decodeWavExtras (const std::uint8_t* data, std::size_t size, std::int64_t frames);
+} // namespace lynx::audioedit

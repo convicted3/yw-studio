@@ -1,0 +1,202 @@
+// --- REA round 146a: FL's mixer groups, separators and docks; Playlist track modes; Consolidate track -------------
+
+#include "core/MixerOps.h"
+#include "core/PlaylistOps.h"
+
+TEST (rea146a_mixer_separators_groups_and_docks)
+{
+    using namespace lynx;
+    auto song = Song::makeDefault();
+    song.mixer.resize (9);
+
+    // Create group on 3..5: a separator on 3 and on 6 (the track after the run); uncoloured tracks take the current's
+    song.mixer[4].colour = 0xFF112233u;
+    mixerops::createGroup (song, { 3, 4, 5 }, 4);
+    CHECK (song.mixer[3].separator && song.mixer[6].separator && ! song.mixer[4].separator && ! song.mixer[5].separator);
+    CHECK (song.mixer[3].colour == 0xFF112233u && song.mixer[5].colour == 0xFF112233u && song.mixer[2].colour == 0);
+    CHECK ((mixerops::groupOf (song, 4) == std::vector<int> { 3, 4, 5 }));
+    CHECK ((mixerops::groupOf (song, 7) == std::vector<int> { 6, 7, 8 }));          // from the separator on 6 to the end
+    CHECK ((mixerops::groupOf (song, 1) == std::vector<int> { 1, 2 }) && mixerops::groupOf (song, 0).empty());
+
+    // Auto color group: the group takes the clicked track's colour
+    song.mixer[5].colour = 0xFF445566u;
+    CHECK (mixerops::autoColorGroup (song, 5) == 2 && song.mixer[3].colour == 0xFF445566u && song.mixer[6].colour == 0);
+
+    // Separator toggles on the selected tracks (never on the Master)
+    mixerops::setSeparator (song, { 0, 2 }, true);
+    CHECK (song.mixer[2].separator && ! song.mixer[0].separator);
+    CHECK ((mixerops::groupOf (song, 1) == std::vector<int> { 1 }));
+
+    // Dock to: the display order is left block, middle, right; a group stays inside its block
+    mixerops::dockTracks (song, { 8 }, MixerDock::left);
+    mixerops::dockTracks (song, { 1 }, MixerDock::right);
+    const auto order = mixerops::displayOrder (song);
+    CHECK (order.front() == 8 && order[1] == 0 && order.back() == 1 && order.size() == song.mixer.size());
+    CHECK ((mixerops::groupOf (song, 7) == std::vector<int> { 6, 7 }));
+
+    // moving inserts keeps a track's separator and dock with it; a playlist track's link follows
+    song.playlistTracks.resize (2);
+    song.playlistTracks[1].mode = PlaylistTrackMode::audio;
+    song.playlistTracks[1].mixerTrack = 3;
+    mixerops::swapTracks (song, 3, 2);
+    CHECK (song.mixer[2].separator && song.playlistTracks[1].mixerTrack == 2);
+    mixerops::deleteTrack (song, 2);
+    CHECK (song.playlistTracks[1].mode == PlaylistTrackMode::unassigned && song.playlistTracks[1].mixerTrack == -1);
+}
+
+TEST (rea146a_flp_insert_flags_dock_and_separator)
+{
+    // FL's insert writer (FUN_00f3d620): flags = (dock & 3) << 6 | 0x400 separator | 0x08 enabled ...
+    FlpBuilder b;
+    b.ascii (0xC7, "25.1.0.4000");
+    auto insert = [&b] (std::uint32_t flags) {
+        std::vector<std::uint8_t> params (12, 0);
+        std::memcpy (&params[4], &flags, 4);
+        b.data (0xEC, params);
+    };
+    insert (0x0C);         // Master: dock 0 = left
+    insert (0x4C);         // 1: middle
+    insert (0x44C);        // 2: middle, separator
+    insert (0x8C);         // 3: right
+    insert (0x0C);         // 4: left
+    for (int i = 0; i < 14; ++i)
+        insert (0x4C);
+    insert (0x0C);         // the last one is FL's "Current" track: stays in the middle
+    const auto song = lynx::importFlp (flp::parseProject (b.bytes));
+    CHECK (song.mixer.size() >= 5);
+    if (song.mixer.size() >= 5)
+    {
+        CHECK (song.mixer[0].dock == lynx::MixerDock::left && song.mixer[1].dock == lynx::MixerDock::middle);
+        CHECK (song.mixer[2].separator && ! song.mixer[1].separator && song.mixer[3].dock == lynx::MixerDock::right);
+        CHECK (song.mixer[4].dock == lynx::MixerDock::left);
+    }
+    if (song.mixer.size() > 19)
+        CHECK (song.mixer[19].dock == lynx::MixerDock::middle);
+}
+
+TEST (rea146a_playlist_track_modes)
+{
+    using namespace lynx;
+    auto song = Song::makeDefault(); // channels 0..4 on inserts 1..5
+    song.channels.push_back ({});
+    song.channels.back().name = "Vox";
+    song.channels.back().instrument = InstrumentKind::audioClip;
+    const auto vox = (int) song.channels.size() - 1;
+    song.channels[(std::size_t) vox].mixerTrack = 0;
+
+    // an audio track takes the first free mixer track (nothing routed, no effects) and names it
+    song.playlistTracks.resize (3);
+    song.playlistTracks[2].name = "Vocals";
+    CHECK (trackmodes::makeAudioTrack (song, 2));
+    const auto mixer = song.playlistTracks[2].mixerTrack;
+    CHECK (mixer == 6 && song.playlistTracks[2].mode == PlaylistTrackMode::audio && song.mixer[(std::size_t) mixer].name == "Vocals");
+    CHECK (trackmodes::describe (song, 2) == "(Audio track, linked to mixer track 6)" && trackmodes::describe (song, 0).empty());
+
+    // audio clips placed on it play through its mixer track (issue #15: only the placed ones); a channel also used on
+    // an unassigned track simply follows (FL), one used on another audio track needs "Make clip unique?"
+    Clip a;
+    a.kind = ClipKind::audio;
+    a.channel = vox;
+    a.track = 2;
+    a.length = 384;
+    song.playlist = { a };
+    CHECK (trackmodes::followAudioTracks (song, {}) == 0 && song.channels[(std::size_t) vox].mixerTrack == 0);
+    CHECK (trackmodes::followAudioTracks (song, { 0 }) == 1 && song.channels[(std::size_t) vox].mixerTrack == mixer);
+    Clip b = a;
+    b.track = 0;
+    b.start = 1000;
+    song.playlist.push_back (b);
+    song.channels[(std::size_t) vox].mixerTrack = 0; // routed by hand: stays until the clip is placed again
+    CHECK (trackmodes::followAudioTracks (song, { 1 }) == 0 && song.channels[(std::size_t) vox].mixerTrack == 0);
+    const auto channels = song.channels.size();
+    CHECK (trackmodes::audioTrackConflicts (song, { 0 }).empty());
+    CHECK (trackmodes::followAudioTracks (song, { 0 }) == 1 && song.channels.size() == channels && song.channels[(std::size_t) vox].mixerTrack == mixer);
+    CHECK (trackmodes::followAudioTracks (song, { 0 }) == 0);
+
+    // an instrument track: a generator (not an audio clip channel) and its mixer track
+    CHECK (! trackmodes::makeInstrumentTrack (song, 1, vox));
+    CHECK (trackmodes::makeInstrumentTrack (song, 1, 4));
+    CHECK (song.playlistTracks[1].mode == PlaylistTrackMode::instrument && song.playlistTracks[1].channel == 4 && song.playlistTracks[1].mixerTrack == 5);
+    CHECK (song.playlistTracks[1].name == "Synth" && trackmodes::describe (song, 1) == "(Instrument track)");
+    // the same channel on another track moves there
+    CHECK (trackmodes::makeInstrumentTrack (song, 0, 4) && song.playlistTracks[1].mode == PlaylistTrackMode::unassigned);
+    // removing the channel unassigns its instrument track; a later channel's index follows
+    CHECK (trackmodes::makeInstrumentTrack (song, 1, 3));
+    song.removeChannel (4);
+    CHECK (song.playlistTracks[0].mode == PlaylistTrackMode::unassigned && song.playlistTracks[1].channel == 3);
+    trackmodes::unassign (song, 1);
+    CHECK (song.playlistTracks[1].mode == PlaylistTrackMode::unassigned && song.playlistTracks[1].mixerTrack == -1);
+}
+
+TEST (rea146a_flp_playlist_track_modes)
+{
+    // record 0xEE (70 bytes): u32 mode at 49 (1 audio, 3 instrument), i32 mixer track at 53, i32 FL channel at 57
+    FlpBuilder b;
+    b.ascii (0xC7, "25.1.0.4000");
+    b.u8 (0x40); b.u16 (0);
+    b.u8 (0x15); b.u8 (0);
+    b.u8 (0x40); b.u16 (7);
+    b.u8 (0x15); b.u8 (0);
+    for (int i = 0; i < 6; ++i)
+    {
+        std::vector<std::uint8_t> params (12, 0);
+        params[4] = 0x4C;
+        b.data (0xEC, params);
+    }
+    b.u8 (0x63); b.u16 (0);
+    auto track = [&b] (std::uint32_t index, std::uint32_t mode, std::int32_t mixer, std::int32_t channel) {
+        std::vector<std::uint8_t> r (70, 0);
+        std::memcpy (&r[0], &index, 4);
+        const std::uint32_t grey = 0x565148;
+        std::memcpy (&r[4], &grey, 4);
+        r[12] = 1;
+        const float size = 1.0f;
+        std::memcpy (&r[13], &size, 4);
+        std::memcpy (&r[49], &mode, 4);
+        std::memcpy (&r[53], &mixer, 4);
+        std::memcpy (&r[57], &channel, 4);
+        r[61] = 1;
+        b.data (0xEE, r);
+    };
+    track (1, 1, 3, -1);
+    track (2, 3, -1, 7);
+    track (3, 0, -1, -1);
+    const auto song = lynx::importFlp (flp::parseProject (b.bytes));
+    CHECK (song.playlistTracks.size() >= 2);
+    if (song.playlistTracks.size() >= 2)
+    {
+        CHECK (song.playlistTracks[0].mode == lynx::PlaylistTrackMode::audio && song.playlistTracks[0].mixerTrack == 3);
+        CHECK (song.playlistTracks[1].mode == lynx::PlaylistTrackMode::instrument && song.playlistTracks[1].channel == 1);
+    }
+}
+
+// rea146a_consolidate_track: replaced by the FL-exact rea168e_consolidate_track (tests/Rea168eTests.inc)
+
+#include "core/FlWrapper.h"
+
+TEST (rea146a_wrapper_settings_page_options)
+{
+    // FL's wrapper settings (round 149: in its form's order): Processing options, then Compatibility; the buffer
+    // sub-options need fixed buffers
+    const auto& o = lynx::wrapperOptions();
+    // round 151 added the MIDI ones and two Compatibility ones; round 188d "Process inactive inputs and outputs" (index 4);
+    // round 190bb (issue #108) "MPE" (index 8, a LYNX addition after the other per-note MIDI options); round 190ks
+    // (GitHub #198) "Record notes from the plugin window" (index 10, a LYNX addition, on by default)
+    CHECK (o.size() >= 16); // (round 190oh appended FL's Settings › GUI pair: Host190ohTests.inc)
+    if (o.size() >= 16)
+    {
+        CHECK (std::string (o[0].label) == "Notify about rendering mode" && o[0].member == &lynx::PluginRef::notifyRender && ! o[0].recreates);
+        CHECK (std::string (o[4].label) == "Process inactive inputs and outputs" && o[4].member == &lynx::PluginRef::processInactive && ! o[4].recreates);
+        CHECK (std::string (o[13].label) == "Use fixed size buffers" && o[13].member == &lynx::PluginRef::fixedBuffers && o[13].recreates);
+        CHECK (o[14].needsFixed && o[15].needsFixed && ! o[13].needsFixed && ! o[1].needsFixed);
+        CHECK (std::string (o[8].label) == "MPE" && o[8].member == &lynx::PluginRef::mpe && o[8].recreates && std::string (o[8].section) == "MIDI");
+        CHECK (std::string (o[10].label) == "Record notes from the plugin window" && o[10].member == &lynx::PluginRef::recordOwnNotes
+               && ! o[10].recreates && std::string (o[10].section) == "MIDI");
+        CHECK (! o[1].recreates && ! o[3].recreates && o[2].recreates && std::string (o[2].section) == "Processing"
+               && std::string (o[4].section) == "Processing" && std::string (o[13].section) == "Compatibility" && std::string (o[5].section) == "MIDI");
+        lynx::PluginRef ref;
+        // FL's defaults (MPE off); LYNX's recording of the window's notes on
+        CHECK (ref.*(o[0].member) && ref.*(o[1].member) && ref.*(o[3].member) && ! (ref.*(o[13].member)) && ! (ref.*(o[8].member))
+               && ref.*(o[10].member));
+    }
+}

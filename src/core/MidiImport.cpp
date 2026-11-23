@@ -1,0 +1,428 @@
+#include "core/MidiImport.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <set>
+#include <tuple>
+
+#include "core/MidiControls.h"
+#include "core/KeyRegions.h"
+#include "core/MidiOut.h"
+
+namespace lynx::midiimport
+{
+namespace
+{
+bool selectedTrack (const Options& o, int track) noexcept { return o.track < 0 || o.track == track; }
+bool selectedChannel (const Options& o, int midiChannel) noexcept { return (o.channels >> (midiChannel & 15) & 1) != 0; }
+
+struct ParsedNote
+{
+    int track = 0, midiChannel = 0;
+    Note note;
+};
+
+// The notes of the selected tracks / channels: note on ... note off (or note on with velocity 0) pairs, the oldest
+// open note of a key first; with zeroVelocityNotes a note on with velocity 0 opens a note (velocity 0) that the next
+// event of its key ends.
+std::vector<ParsedNote> notesOf (const ParsedMidi& midi, const Options& o)
+{
+    std::vector<ParsedNote> out;
+    std::map<std::tuple<int, int, int>, std::vector<std::size_t>> open; // (track, channel, key) → indices in out
+    auto close = [&] (std::vector<std::size_t>& list, std::int64_t tick) {
+        if (list.empty())
+            return false;
+        auto& n = out[list.front()].note;
+        n.length = std::max<std::int64_t> (1, tick - n.start);
+        list.erase (list.begin());
+        return true;
+    };
+    for (const auto& e : midi.events)
+    {
+        const auto type = e.status & 0xF0;
+        const auto ch = e.status & 0x0F;
+        if ((type != 0x80 && type != 0x90) || ! selectedTrack (o, e.track) || ! selectedChannel (o, ch))
+            continue;
+        auto& list = open[{ e.track, ch, e.data1 }];
+        const auto isOn = type == 0x90 && (e.data2 > 0 || o.zeroVelocityNotes);
+        if (! isOn)
+        {
+            close (list, e.tick);
+            continue;
+        }
+        // with zero-velocity notes, a note on ends the open notes of its key
+        if (o.zeroVelocityNotes)
+            while (close (list, e.tick))
+            {
+            }
+        ParsedNote p;
+        p.track = e.track;
+        p.midiChannel = ch;
+        p.note.start = e.tick;
+        p.note.length = ticksPerStep; // until its note off
+        p.note.key = e.data1 & 0x7F;
+        p.note.velocity = e.data2 / 127.0f;
+        list.push_back (out.size());
+        out.push_back (p);
+    }
+    std::stable_sort (out.begin(), out.end(), [] (const ParsedNote& a, const ParsedNote& b) { return a.note.start < b.note.start; });
+    return out;
+}
+} // namespace
+
+std::vector<PatternEvent> controllerEvents (const ParsedMidi& midi, const Options& o)
+{
+    std::vector<PatternEvent> out;
+    auto selected = [&o] (const RawEvent& e) { return (o.track < 0 || e.track == o.track) && (o.channels >> (e.status & 0x0F) & 1) != 0; };
+    auto shift = std::numeric_limits<std::int64_t>::max();
+    for (const auto& e : midi.events)
+        if (selected (e) && (e.status & 0xF0) == 0x90 && (e.data2 > 0 || o.zeroVelocityNotes))
+            shift = std::min (shift, e.tick);
+    for (const auto& e : midi.events)
+        if (selected (e) && (e.status & 0xF0) == 0xB0 && (o.controller < 0 || e.data1 == o.controller))
+        {
+            PatternEvent ev;
+            ev.tick = e.tick;
+            ev.value = e.data2 / 127.0f;
+            out.push_back (ev);
+        }
+    if (out.empty())
+        return out;
+    std::stable_sort (out.begin(), out.end(), [] (const PatternEvent& a, const PatternEvent& b) { return a.tick < b.tick; });
+    if (o.realign)
+    {
+        shift = std::min (shift, out.front().tick);
+        for (auto& ev : out)
+            ev.tick -= shift;
+    }
+    return out;
+}
+
+AutomationTarget controllerTarget (int cc, int channel) noexcept
+{
+    if (cc == 7 || cc == 11)
+        return { AutomationTargetKind::channelVolume, channel };
+    if (cc == 10)
+        return { AutomationTargetKind::channelPan, channel };
+    return {};
+}
+
+std::vector<int> tracksWithContent (const ParsedMidi& midi)
+{
+    std::set<int> tracks;
+    for (const auto& e : midi.events)
+        if ((e.status & 0xF0) == 0x90 || (e.status & 0xF0) == 0xB0)
+            tracks.insert (e.track);
+    return { tracks.begin(), tracks.end() };
+}
+
+std::vector<Group> groups (const ParsedMidi& midi, const Options& o)
+{
+    const auto notes = notesOf (midi, o);
+    std::vector<Group> out;
+    std::map<int, std::size_t> byKey; // track or MIDI channel → group
+    auto groupFor = [&] (int track, int midiChannel) -> Group& {
+        const auto key = o.perTrack ? track : midiChannel;
+        if (const auto it = byKey.find (key); it != byKey.end())
+            return out[it->second];
+        Group g;
+        g.midiChannel = midiChannel;
+        g.track = o.perTrack ? track : -1;
+        if (o.perTrack)
+        {
+            const auto& name = track < (int) midi.trackNames.size() ? midi.trackNames[(std::size_t) track] : std::string();
+            g.name = name.empty() ? "MIDI " + std::to_string (track + 1) : name;
+        }
+        else
+            g.name = "MIDI channel " + std::to_string (midiChannel + 1);
+        byKey[key] = out.size();
+        out.push_back (std::move (g));
+        return out.back();
+    };
+    for (const auto& p : notes)
+        groupFor (p.track, p.midiChannel).notes.push_back (p.note);
+
+    if (o.controller >= 0)
+        for (const auto& e : midi.events)
+            if ((e.status & 0xF0) == 0xB0 && e.data1 == o.controller && selectedTrack (o, e.track) && selectedChannel (o, e.status & 0x0F))
+            {
+                // only into groups that have notes (a controller alone makes no channel)
+                const auto key = o.perTrack ? e.track : (e.status & 0x0F);
+                if (const auto it = byKey.find (key); it != byKey.end())
+                {
+                    auto& events = out[it->second].controller;
+                    const auto value = e.data2 / 127.0f;
+                    if (! events.empty() && events.back().tick == e.tick)
+                        events.back().value = value; // one event per tick
+                    else
+                        events.push_back ({ e.tick, value });
+                }
+            }
+    // FL's import with MIDI Out channels (REA_rodada167i §1.6, FLEngine FUN_00e1d090): the controllers it knows go to
+    // the channel's volume / pan (CC 7 / 10: value × 100 of FL's 12800), to the MIDI Out's knobs (raw 0…127 on the
+    // knob's 0…127 range), program changes to its patch, the pitch bend to the bend; the other CCs are dropped
+    if (o.midiOut)
+        for (const auto& e : midi.events)
+        {
+            const auto type = e.status & 0xF0;
+            if ((type != 0xB0 && type != 0xC0 && type != 0xE0) || ! selectedTrack (o, e.track) || ! selectedChannel (o, e.status & 0x0F))
+                continue;
+            const auto key = o.perTrack ? e.track : (e.status & 0x0F);
+            const auto it = byKey.find (key);
+            if (it == byKey.end())
+                continue;
+            AutomationTarget target { AutomationTargetKind::channelParam, -1 };
+            float value = 0.0f;
+            if (type == 0xB0 && (e.data1 == 7 || e.data1 == 10))
+            {
+                target.kind = e.data1 == 7 ? AutomationTargetKind::channelVolume : AutomationTargetKind::channelPan;
+                value = std::clamp (e.data2 * 100.0f / 12800.0f, 0.0f, 1.0f);
+            }
+            else if (type == 0xB0)
+            {
+                target.param = midiout::importParamForCc (e.data1);
+                if (target.param < 0)
+                    continue;
+                value = (e.data2 & 127) / 127.0f;
+            }
+            else if (type == 0xC0)
+            {
+                target.param = midiout::programParam;
+                value = midiout::normalFromProgram ((e.data1 & 127) + 1);
+            }
+            else
+            {
+                target.param = midictl::pitchBendBase + (e.status & 0x0F);
+                value = (float) ((e.data1 & 127) | (e.data2 & 127) << 7) / 16383.0f;
+            }
+            auto& lanes = out[it->second].midiOutLanes;
+            auto lane = std::find_if (lanes.begin(), lanes.end(), [&] (const PatternEvents& l) { return l.target == target; });
+            if (lane == lanes.end())
+            {
+                lanes.push_back ({ target, {} });
+                lane = lanes.end() - 1;
+            }
+            if (! lane->events.empty() && lane->events.back().tick == e.tick)
+                lane->events.back().value = value; // one event per tick
+            else
+                lane->events.push_back ({ e.tick, value });
+        }
+
+    // MIDI channel groups in channel order (FL), track groups in file order
+    std::stable_sort (out.begin(), out.end(), [&] (const Group& a, const Group& b) {
+        return o.perTrack ? a.track < b.track : a.midiChannel < b.midiChannel;
+    });
+    return out;
+}
+
+namespace
+{
+std::int64_t realignShift (const std::vector<Group>& gs, bool realign)
+{
+    if (! realign)
+        return 0;
+    auto shift = std::numeric_limits<std::int64_t>::max();
+    for (const auto& g : gs)
+        for (const auto& n : g.notes)
+            shift = std::min (shift, n.start);
+    return shift == std::numeric_limits<std::int64_t>::max() ? 0 : shift;
+}
+
+void addControllerLane (Pattern& pattern, const AutomationTarget& target, const std::vector<PatternEvent>& events, std::int64_t shift)
+{
+    if (target.kind == AutomationTargetKind::none || events.empty())
+        return;
+    auto it = std::find_if (pattern.events.begin(), pattern.events.end(), [&] (const PatternEvents& e) { return e.target == target; });
+    if (it == pattern.events.end())
+    {
+        pattern.events.push_back ({ target, {} });
+        it = pattern.events.end() - 1;
+    }
+    for (auto e : events)
+    {
+        e.tick = std::max<std::int64_t> (0, e.tick - shift);
+        if (target.kind == AutomationTargetKind::channelVolume)
+            e.value = std::clamp (e.value, 0.0f, 1.0f);
+        auto pos = std::lower_bound (it->events.begin(), it->events.end(), e.tick, [] (const PatternEvent& a, std::int64_t t) { return a.tick < t; });
+        if (pos != it->events.end() && pos->tick == e.tick)
+            pos->value = e.value;
+        else
+            it->events.insert (pos, e);
+    }
+}
+} // namespace
+
+double midiTempoBpm (double secondsPerQuarter) noexcept
+{
+    if (! (secondsPerQuarter > 0.0))
+        return 120.0;
+    return std::clamp (std::nearbyint (60.0 / secondsPerQuarter), 10.0, 522.0); // (the default rounding: half to even)
+}
+
+void setTempoEvents (Pattern& pattern, const std::vector<PatternEvent>& tempos, std::int64_t shift)
+{
+    pattern.events.erase (std::remove_if (pattern.events.begin(), pattern.events.end(),
+                                          [] (const PatternEvents& l) { return l.target.kind == AutomationTargetKind::tempo; }),
+                          pattern.events.end());
+    if (tempos.empty())
+        return;
+    PatternEvents lane;
+    lane.target = { AutomationTargetKind::tempo, 0 };
+    for (const auto& t : tempos)
+    {
+        const auto tick = std::max<std::int64_t> (0, t.tick - shift);
+        if (! lane.events.empty() && lane.events.back().tick >= tick)
+            lane.events.back().value = t.value; // one event per tick: the last one wins
+        else
+            lane.events.push_back ({ tick, t.value });
+    }
+    pattern.events.push_back (std::move (lane));
+}
+
+// Round 190nu (core/KeyRegions.h; LYNX extra): the file's key signatures as the new pattern's key markers. A key at the
+// start becomes the project key when the import starts a new project (else a key marker there, unless it is the project
+// key already); the later ones key markers. (FL's MIDI import keeps no key.)
+static void setKeyMarkers (Song& song, Pattern& pattern, const std::vector<ParsedMidi::KeyChange>& keys, std::int64_t shift, bool newProject)
+{
+    std::optional<projectkey::Key> atStart; // (the last of the keys at or before the start)
+    for (const auto& k : keys)
+    {
+        const projectkey::Key key { k.root, k.flScale };
+        if (! projectkey::validFlScale (key.flScale))
+            continue;
+        if (k.tick - shift <= 0)
+            atStart = key;
+        else
+            keyregions::addKeyMarker (pattern, k.tick - shift, { keyregions::State::key, key });
+    }
+    if (! atStart)
+        return;
+    if (newProject)
+        projectkey::set (song, *atStart);
+    else if (const auto project = projectkey::get (song); ! project || ! (*project == *atStart))
+        keyregions::addKeyMarker (pattern, 0, { keyregions::State::key, *atStart });
+}
+
+bool importInto (Song& song, const ParsedMidi& midi, const Options& o, const std::string& patternName, std::string& error)
+{
+    const auto gs = groups (midi, o);
+    if (gs.empty())
+    {
+        error = "the selection has no notes";
+        return false;
+    }
+    if (o.newProject)
+    {
+        song = Song();
+        song.bpm = midi.bpm;
+        song.mixer = Song::defaultMixer();
+        song.patterns.clear();
+        // (round 190fg: any denominator the song meter has; before, only n/4 was taken)
+        if (o.timeSignatures && midi.numerator > 0 && meterUnit (midi.denominator) == midi.denominator)
+        {
+            song.beatsPerBar = std::clamp (midi.numerator, 1, 16);
+            song.beatUnit = midi.denominator;
+        }
+    }
+    const auto shift = realignShift (gs, o.realign);
+
+    Pattern pattern;
+    pattern.name = patternName;
+    for (const auto& g : gs)
+    {
+        ChannelDef c;
+        c.name = g.name;
+        if (o.midiOut)
+        {
+            // FL's Data\System\MIDITrack.fst layout: the knobs its import fills (REA_rodada167i §1.6)
+            c.instrument = InstrumentKind::midiOut;
+            auto state = midiout::importTrackState();
+            state.channel = g.midiChannel & 15;
+            c.pluginState = midiout::write (state);
+        }
+        else
+        {
+            c.instrument = InstrumentKind::synth;
+            c.volume = 0.6f;
+        }
+        c.mixerTrack = o.mixerTracks ? song.claimFreeInsert() : 0;
+        song.channels.push_back (c);
+        const auto channel = (int) song.channels.size() - 1;
+        for (auto n : g.notes)
+        {
+            n.channel = channel;
+            n.start = std::max<std::int64_t> (0, n.start - shift);
+            pattern.notes.push_back (n);
+        }
+        if (o.midiOut)
+            for (auto lane : g.midiOutLanes)
+            {
+                lane.target.index = channel;
+                addControllerLane (pattern, lane.target, lane.events, shift);
+            }
+        else
+            addControllerLane (pattern, controllerTarget (o.controller, channel), g.controller, shift);
+    }
+    // every Set Tempo of the file as the pattern's Tempo events (issue #86; FL's whole-file import, REA_rodada178a §5)
+    setTempoEvents (pattern, midi.tempos, shift);
+    setKeyMarkers (song, pattern, midi.keys, shift, o.newProject);
+    pattern.sortNotes();
+    song.patterns.push_back (std::move (pattern));
+    song.currentPattern = (int) song.patterns.size() - 1;
+    return true;
+}
+
+std::vector<int> importIntoChannel (Song& song, int channel, const ParsedMidi& midi, const Options& o, std::string& error)
+{
+    if (song.patterns.empty() || channel < 0 || channel >= (int) song.channels.size())
+    {
+        error = "no channel";
+        return {};
+    }
+    auto merged = o;
+    merged.perTrack = true;
+    const auto gs = groups (midi, merged);
+    if (gs.empty())
+    {
+        error = "the selection has no notes";
+        return {};
+    }
+    const auto shift = realignShift (gs, o.realign);
+    auto& pattern = song.patterns[(std::size_t) std::clamp (song.currentPattern, 0, (int) song.patterns.size() - 1)];
+    if (! o.blend)
+        pattern.notes.erase (std::remove_if (pattern.notes.begin(), pattern.notes.end(), [channel] (const Note& n) { return n.channel == channel; }),
+                             pattern.notes.end());
+    std::vector<Note> added;
+    std::vector<PatternEvent> controller;
+    for (const auto& g : gs)
+    {
+        for (auto n : g.notes)
+        {
+            n.channel = channel;
+            n.start = std::max<std::int64_t> (0, n.start - shift);
+            added.push_back (n);
+        }
+        controller.insert (controller.end(), g.controller.begin(), g.controller.end());
+    }
+    std::stable_sort (controller.begin(), controller.end(), [] (const PatternEvent& a, const PatternEvent& b) { return a.tick < b.tick; });
+    addControllerLane (pattern, controllerTarget (o.controller, channel), controller, shift);
+    pattern.notes.insert (pattern.notes.end(), added.begin(), added.end());
+    pattern.sortNotes();
+    // the imported notes' indices after sorting
+    std::vector<int> indices;
+    for (int i = 0; i < (int) pattern.notes.size(); ++i)
+    {
+        const auto& n = pattern.notes[(std::size_t) i];
+        for (auto it = added.begin(); it != added.end(); ++it)
+            if (it->start == n.start && it->key == n.key && it->length == n.length && n.channel == channel)
+            {
+                indices.push_back (i);
+                added.erase (it);
+                break;
+            }
+    }
+    return indices;
+}
+} // namespace lynx::midiimport

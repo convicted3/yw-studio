@@ -1,0 +1,115 @@
+#pragma once
+
+// Transmitter (EffectKind::transmitter), FL Studio 2026's transient / sustain splitter, rebuilt clean-room from the
+// behaviour decoded from FL's Transmitter_x64.dll front end and the engine in Shared/ildsp_x64.dll
+// (docs/analise/REA_rodada165g-fltrans165.md). No Image-Line code here: an own implementation of the behaviour,
+// measured against FL's engine (EXEC goldens).
+//
+// Signal flow: the detection signal (the input or the sidechain, mono (L + R) / 2) drives an 8-band onset detector whose envelope
+// e ∈ [0, 1] splits the input, delayed by the lookahead, into transient = x·e and sustain = x·(1 − e). Each part goes
+// through a tilt filter and one section effect (Saturation, Bounce, Diffusion, Blur, Delay or Off), then
+// output = transient · level · on + sustain · level · on.
+//
+// LYNX's parameters (0…1 each) are FL's 42 controls over their ranges: [0…32] raw / 10000, [33…41] the switches and
+// selectors (raw / their maximum). See controlRange().
+//
+// No JUCE here (tests/FlTrans165Tests.inc).
+
+#include <array>
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "core/Song.h"
+
+namespace lynx
+{
+class Effect;
+} // namespace lynx
+
+namespace lynx::transmitter
+{
+constexpr int count = 42;
+
+enum Param : int
+{
+    sensitivity = 0, hold, release, transientLevel, sustainLevel, transientTilt, sustainTilt,
+    tDiffMix, tDiffFeedback, tDiffDelay, sDiffMix, sDiffFeedback, sDiffDelay,
+    tSatMix, tSatDrive, tSatWarmth, sSatMix, sSatDrive, sSatWarmth,
+    tBounceMix, tBounceAmpCurve, tBounceDelayCurve, sBounceMix, sBounceAmpCurve, sBounceDelayCurve,
+    tDelayMix, tDelayTime, tDelaySynced, tDelayFeedback, sDelayMix, sDelayTime, sDelaySynced, sDelayFeedback,
+    lookahead, stereoLink, mode, transientOn, sustainOn, transientEffect, sustainEffect, tDelaySync, sDelaySync
+};
+
+// the section effects (FL's selector order)
+enum Section : int { saturation = 0, bounce, diffusion, blur, delay, off };
+
+struct Range { int lo, hi; };
+Range controlRange (int k);               // FL's raw control range
+int rawFromParam (int k, float v);        // LYNX 0…1 → FL raw (rounded)
+float paramFromRaw (int k, int raw);      // FL raw → LYNX 0…1
+float engineValue (int k, int raw);       // FL's front-end mapping: raw control → the engine's value (ms, dB, …)
+std::array<float, count> defaults();      // FL's Default preset
+std::string paramText (int k, float v);   // FL's value texts
+std::string syncedText (int raw);         // the tempo-synced delay time as FL shows it: steps:ticks (16 steps, 48 ticks each)
+// FL's envelope view: samples per column at a display speed (FL's Default preset: 90)
+constexpr int defaultSpeed = 90;
+int columnSamples (double sampleRate, int speed);
+
+// FL's state (0xD5): version 3, 42 raw controls, send / sidechain tracks, editor bytes
+struct State
+{
+    std::array<int, count> raw {};
+    int transientSend = 0, sustainSend = 0, sidechain = 0;
+    int speed = defaultSpeed; // the envelope view's speed (FL's editor)
+};
+std::optional<State> parse (const std::vector<std::uint8_t>& data);
+
+// the engine, per sample rate (stereo; float, like FL's)
+class Engine
+{
+public:
+    Engine();
+    ~Engine();
+    void prepare (double sampleRate);
+    void reset();                          // back to silence (no allocation)
+    void setTempo (double bpm);
+    void setRaw (int k, int raw);          // one FL control (raw value)
+    void setValue (int k, float value);    // one engine value (FL's engine units: ms, dB, …)
+    void setParams (const float* params);  // LYNX 0…1 parameters (all 42)
+    // in-place capable; detection = the input, or with `sidechain` the side input (scL / scR, nullptr = silent)
+    void process (const float* inL, const float* inR, float* outL, float* outR, int n, bool sidechain = false,
+                  const float* scL = nullptr, const float* scR = nullptr);
+    int latency() const;
+    // after process(): the transient (0) / sustain (1) part of the last block, after its tilt and section effect and
+    // before its level and on switch (what FL sends to other mixer tracks); and the detector's envelope e per sample
+    const float* part (int which, int channel) const;
+    const float* envelope() const;
+    struct Impl;
+
+private:
+    std::unique_ptr<Impl> impl;
+};
+
+// FL's envelope view (REA_rodada167b §3): a running effect keeps its last columns; the editor reads them (lock-free,
+// one writer: the audio thread)
+struct EnvelopeColumn
+{
+    float output = 0, transient = 0, sustain = 0; // peaks over the column: |output|, e, 1 − e
+};
+struct EnvelopeView
+{
+    static constexpr std::uint32_t size = 1024;
+    std::array<EnvelopeColumn, size> columns {};
+    std::atomic<std::uint32_t> written { 0 };        // columns written so far (column k at k % size)
+    std::atomic<int> columnLength { 127 };           // samples per column
+    std::atomic<int> speed { defaultSpeed };
+};
+const EnvelopeView* envelopeOf (const Effect* effect); // nullptr: not a running Transmitter
+
+// `params` (may be null): the slot's parameters, so the look-ahead latency is known before the first block (#113)
+std::unique_ptr<Effect> make (const EffectParams* params = nullptr);
+} // namespace lynx::transmitter

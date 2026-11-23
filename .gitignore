@@ -3,4 +3,20 @@ out/
 .vs/
 .vscode/
 *.user
-CMakeUserPresets.json
+build-local/
+build-win/
+build-asan/
+build-linux/
+build-mac/
+dist/
+__pycache__/
+
+# object files (never commit build output)
+*.o
+*.obj
+build-ctl/
+build-plug/
+
+# tutorial videos: kept on the media branch, put in place by scripts/site-media.sh (round 190nt)
+website/assets/media/learn/*.mp4
+test-output.log

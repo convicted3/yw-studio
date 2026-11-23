@@ -1,0 +1,839 @@
+#include "ui/MissingFilesDialog.h"
+
+#include <algorithm>
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <utility>
+
+#include "core/SearchIndex.h"
+
+#include "engine/PluginHost.h"
+#include "ui/DialogFrame.h"
+#include "ui/FileChoosers.h"
+#include "ui/I18n.h"
+#include "ui/Theme.h"
+#include "ui/WindowOwner.h"
+
+namespace lynx
+{
+namespace
+{
+juce::String u8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
+
+// "Used by" names come from core/MissingFiles in English ("Audio clip: Hook", "Insert 3: effect", "Master: effect")
+juce::String userName (const std::string& user)
+{
+    auto u = u8 (user);
+    juce::String suffix;
+    if (u.endsWith (": effect"))
+    {
+        u = u.dropLastCharacters (8);
+        suffix = ": " + tr ("effect");
+    }
+    if (u.startsWith ("Audio clip: "))
+        u = tr ("Audio clip") + ": " + u.substring (12);
+    else if (u == "Master")
+        u = tr ("Master");
+    else if (u.startsWith ("Insert ") && u.substring (7).containsOnly ("0123456789"))
+        u = tr ("Insert {0}", { u.substring (7) });
+    return u + suffix;
+}
+
+juce::File searchFoldersFile() { return PluginHost::settingsFolder().getChildFile ("search-folders.txt"); }
+
+// Recursive search of folders for the missing files' names, on a thread of its own. Issue #159: the window waited up to
+// 4 s for the search thread when it closed or applied mid-search (and JUCE then killed the thread, which on Windows can
+// leave a lock held inside a directory call on a slow drive). Now nothing ever waits for it: the window only sets
+// `cancel` and lets go; the thread owns the job with it and ends on its own at the next entry. The matches are handed
+// over as they are found (`take`), so the window shows them, and Apply works, while a big HDD is still being walked.
+struct SearchJob
+{
+    std::atomic<bool> cancel { false }, finished { false };
+    std::atomic<int> scanned { 0 };
+
+    std::vector<std::string> take()
+    {
+        const std::scoped_lock l (lock);
+        return std::exchange (fresh, {});
+    }
+    void add (const std::string& path)
+    {
+        const std::scoped_lock l (lock);
+        fresh.push_back (path);
+    }
+
+private:
+    std::mutex lock;
+    std::vector<std::string> fresh;
+};
+
+void runSearch (SearchJob& job, const std::vector<MissingFile>& missing, const juce::StringArray& folders)
+{
+    auto list = [&job] (const std::string& folder, const std::function<bool (const std::string&, bool)>& onEntry) {
+       #if JUCE_MAC
+        // not JUCE's iterator on macOS: one name NSString rejects would end the app (issue #42)
+        const juce::File dir (u8 (folder));
+        for (const auto& name : search::listFolderNames (folder))
+        {
+            const auto f = dir.getChildFile (juce::String::fromUTF8 (name.data(), (int) name.size()).convertToPrecomposedUnicode());
+            if (f.isHidden() || name[0] == '.')
+                continue;
+            ++job.scanned;
+            if (! onEntry (f.getFullPathName().toStdString(), f.isDirectory()))
+                return;
+        }
+       #else
+        for (const auto& entry : juce::RangedDirectoryIterator (juce::File (u8 (folder)), false, "*",
+                                                                juce::File::findFilesAndDirectories | juce::File::ignoreHiddenFiles))
+        {
+            ++job.scanned;
+            if (! onEntry (entry.getFile().getFullPathName().toStdString(), entry.isDirectory()))
+                return;
+        }
+       #endif
+    };
+    for (const auto& folder : folders)
+    {
+        if (job.cancel)
+            break;
+        try // (a folder the system refuses, or a name it can't convert, ends that folder's walk, never the app)
+        {
+            searchFolderForMissing (missing, folder.toStdString(), list, 2000000, [&job] { return job.cancel.load(); },
+                                    [&job] (const std::string& hit) { job.add (hit); });
+        }
+        catch (...)
+        {
+        }
+    }
+}
+
+std::shared_ptr<SearchJob> startSearchJob (std::vector<MissingFile> missing, juce::StringArray folders)
+{
+    auto job = std::make_shared<SearchJob>();
+    try
+    {
+        std::thread ([job, missing = std::move (missing), folders = std::move (folders)] {
+            juce::Thread::setCurrentThreadName ("LYNX missing-files search");
+            runSearch (*job, missing, folders);
+            job->finished = true;
+        }).detach();
+    }
+    catch (...)
+    {
+        job->finished = true;
+    }
+    return job;
+}
+
+class MissingFilesPanel final : public juce::Component,
+                                private juce::ListBoxModel,
+                                private juce::Timer
+{
+public:
+    enum class Page { samples, plugins, found };
+
+    MissingFilesPanel (MissingFilesInfo i, bool live) : info (std::move (i)), persistent (live)
+    {
+        title.setText (tr ("Missing files"), juce::dontSendNotification);
+        ui::dialog::styleTitle (title); // (round 190oo, WG-6: the one dialog title row, centred, 44 px)
+        addAndMakeVisible (title);
+        summary.setFont (theme::font (theme::type::body));
+        summary.setColour (juce::Label::textColourId, theme::colour::textSecondary);
+        summary.setJustificationType (juce::Justification::topLeft);
+        addAndMakeVisible (summary);
+
+        for (auto* b : { &samplesTab, &pluginsTab, &foundTab })
+        {
+            b->setClickingTogglesState (true);
+            b->setRadioGroupId (81);
+            b->setColour (juce::TextButton::buttonOnColourId, theme::colour::accentMuted);
+            b->setColour (juce::TextButton::textColourOnId, theme::colour::textPrimary);
+            addAndMakeVisible (b);
+        }
+        samplesTab.onClick = [this] { showPage (Page::samples); };
+        pluginsTab.onClick = [this] { showPage (Page::plugins); };
+        foundTab.onClick = [this] { showPage (Page::found); };
+
+        list.setModel (this);
+        list.setRowHeight (46);
+        list.setColour (juce::ListBox::backgroundColourId, theme::colour::bg0);
+        list.setColour (juce::ListBox::outlineColourId, theme::colour::border);
+        list.setOutlineThickness (1);
+        list.setMultipleSelectionEnabled (true);
+        addAndMakeVisible (list);
+
+        searchButton.onClick = [this] { chooseSearchFolder(); };
+        locateButton.onClick = [this] { locateSelected(); };
+        skipButton.onClick = [this] { toggleSkipSelected(); };
+        stopButton.onClick = [this] { stopSearch(); };
+        for (auto* b : { &searchButton, &locateButton, &skipButton, &stopButton })
+            addAndMakeVisible (b);
+        stopButton.setVisible (false);
+
+        status.setFont (theme::font (theme::type::small));
+        status.setColour (juce::Label::textColourId, theme::colour::textSecondary);
+        addAndMakeVisible (status);
+
+        rememberToggle.setButtonText (tr ("Remember the folders I search"));
+        rememberToggle.setToggleState (true, juce::dontSendNotification);
+        addAndMakeVisible (rememberToggle);
+
+        ui::dialog::styleButton (applyButton, true);
+        applyButton.onClick = [this] { apply(); };
+        closeButton.onClick = [this] { close(); };
+        addAndMakeVisible (applyButton);
+        addAndMakeVisible (closeButton);
+
+        if (persistent)
+            folders = loadSearchFolders();
+
+        showPage (! info.files.empty() ? Page::samples : ! info.plugins.empty() ? Page::plugins : Page::found);
+        refresh();
+        setSize (760, 560);
+    }
+
+    ~MissingFilesPanel() override
+    {
+        stopTimer();
+        stopSearch(); // (the search ends on its own thread: nothing waits for it here, issue #159)
+        search.reset();
+    }
+
+    std::function<void (const std::map<std::string, std::string>&)> onApply;
+    std::function<void()> onCloseRequest; // the window's; none in snapshots
+
+    void showPageForSnapshot (int p, int row)
+    {
+        showPage (p == 1 ? Page::plugins : p == 2 ? Page::found : Page::samples);
+        if (row >= 0)
+            list.selectRow (row);
+        refresh();
+        if (p == 0)
+            status.setText (tr ("{0} still missing, {1} found", { "2", "2" }), juce::dontSendNotification);
+    }
+
+    // (shots, round 190eo) a search of `where` started as the Search button starts one, and what the window shows
+    void startSearchForSnapshot (const juce::StringArray& where) { startSearch (where, false); }
+    bool searchStateForSnapshot (juce::String& text, bool& stopShown, bool& applyEnabled) const
+    {
+        text = status.getText();
+        stopShown = stopButton.isVisible();
+        applyEnabled = applyButton.isEnabled();
+        return search != nullptr;
+    }
+    void stopSearchForSnapshot() { stopSearch(); }
+
+    // (self-test, issue #165) paints list row `row` of the current page as the ListBox would; the number of rows shown
+    int paintRowForTest (int row, juce::Graphics& g, int width)
+    {
+        paintListBoxItem (row, g, width, list.getRowHeight(), false);
+        return getNumRows();
+    }
+
+    // the remembered search folders and the Browser's folders, searched without asking
+    void searchRememberedFolders()
+    {
+        juce::StringArray all (info.searchFolders);
+        for (const auto& f : folders)
+            all.addIfNotAlreadyThere (u8 (f));
+        all.addArray (browserSearchFolders());
+        all.removeDuplicates (true);
+        for (int i = all.size(); --i >= 0;)
+            if (! juce::File (all[i]).isDirectory())
+                all.remove (i);
+        if (! all.isEmpty() && stillMissing() > 0)
+            startSearch (all, false);
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        // (round 190oo, WG-6: the one dialog frame: the strip and the title row; the summary band under it, inside the
+        // frame's border, without the old accent side bar)
+        ui::dialog::paintFrame (g, getLocalBounds().toFloat(), ui::dialog::Kind::window);
+        g.setColour (theme::colour::bg3);
+        g.fillRect (header.reduced (1, 0));
+        g.setColour (theme::colour::border);
+        g.drawHorizontalLine (header.getBottom(), 0.0f, (float) getWidth());
+        g.drawHorizontalLine (footer.getY() - 1, 0.0f, (float) getWidth());
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds();
+        title.setBounds (ui::dialog::titleRow (area));
+        area.removeFromTop (ui::dialog::titleRowHeight + 1);
+        header = area.removeFromTop (28 + 18 * juce::jmax (1, summaryLines));
+        summary.setBounds (header.reduced (20, 12));
+        footer = area.removeFromBottom (54);
+        {
+            // (WG-6: LYNX's one order: Close, then Apply in the accent at the far right)
+            auto f = footer.reduced (16, 12);
+            applyButton.setBounds (f.removeFromRight (150));
+            f.removeFromRight (8);
+            closeButton.setBounds (f.removeFromRight (150));
+            rememberToggle.setBounds (f.removeFromLeft (280));
+        }
+        area.reduce (16, 12);
+        {
+            auto tabs = area.removeFromTop (28);
+            for (auto* b : { &samplesTab, &pluginsTab, &foundTab })
+            {
+                b->setBounds (tabs.removeFromLeft (juce::jmax (120, juce::GlyphArrangement::getStringWidthInt (juce::Font (theme::font (theme::type::body)), b->getButtonText()) + 28)));
+                tabs.removeFromLeft (6);
+            }
+        }
+        area.removeFromTop (10);
+        auto actions = area.removeFromBottom (30);
+        area.removeFromBottom (10);
+        list.setBounds (area);
+        if (page == Page::samples)
+        {
+            searchButton.setBounds (actions.removeFromLeft (150));
+            actions.removeFromLeft (8);
+            locateButton.setBounds (actions.removeFromLeft (110));
+            actions.removeFromLeft (8);
+            skipButton.setBounds (actions.removeFromLeft (110));
+            actions.removeFromLeft (12);
+        }
+        stopButton.setBounds (actions.removeFromRight (80));
+        status.setBounds (actions);
+    }
+
+private:
+    int stillMissing() const
+    {
+        return (int) std::count_if (info.files.begin(), info.files.end(), [] (const MissingFile& m) { return m.found.empty() && ! m.skipped; });
+    }
+    int foundCount() const
+    {
+        return (int) std::count_if (info.files.begin(), info.files.end(), [] (const MissingFile& m) { return ! m.found.empty() && ! m.skipped; });
+    }
+
+    void refresh()
+    {
+        const auto missing = stillMissing(), found = foundCount();
+        juce::StringArray lines;
+        if (! info.files.empty())
+            lines.add (tr ("{0} sample(s) used by {1} could not be found on this PC.",
+                           { juce::String ((int) info.files.size()), info.projectName.isNotEmpty() ? info.projectName : tr ("this project") }));
+        if (! info.plugins.empty())
+            lines.add (info.fromFlStudio
+                           ? tr ("{0} plugin(s) will not sound as in FL Studio (not installed, not loaded, or without their settings): see what LYNX SHARE did with each.",
+                                 { juce::String ((int) info.plugins.size()) })
+                           // (round 190nq: a LYNX project, a Live set... said "as in FL Studio" too)
+                           : tr ("{0} plugin(s) will not sound as they did when the project was saved (not installed, not loaded, or without their settings): see what LYNX SHARE did with each.",
+                                 { juce::String ((int) info.plugins.size()) }));
+        if (! info.autoRelocated.empty())
+            lines.add (tr ("{0} file(s) were found automatically in another folder.", { juce::String ((int) info.autoRelocated.size()) }));
+        if (lines.isEmpty())
+            lines.add (tr ("Nothing is missing: every sample and plugin this project uses was found."));
+        summaryLines = lines.size();
+        summary.setText (lines.joinIntoString ("\n"), juce::dontSendNotification);
+
+        samplesTab.setButtonText (tr ("Samples ({0})", { juce::String ((int) info.files.size()) }));
+        pluginsTab.setButtonText (tr ("Plugins ({0})", { juce::String ((int) info.plugins.size()) }));
+        foundTab.setButtonText (tr ("Found automatically ({0})", { juce::String ((int) info.autoRelocated.size()) }));
+
+        const auto searching = search != nullptr;
+        if (! searching && page == Page::samples)
+            status.setText (info.files.empty() ? juce::String()
+                            : missing == 0         ? tr ("Every sample has a place. Apply to use them.")
+                                                   : tr ("{0} still missing, {1} found", { juce::String (missing), juce::String (found) }),
+                            juce::dontSendNotification);
+        const auto samplesPage = page == Page::samples;
+        for (auto* b : { &searchButton, &locateButton, &skipButton })
+            b->setVisible (samplesPage);
+        searchButton.setEnabled (! searching && missing > 0);
+        locateButton.setEnabled (! searching && list.getNumSelectedRows() > 0);
+        skipButton.setEnabled (list.getNumSelectedRows() > 0);
+        stopButton.setVisible (searching && samplesPage);
+        if (page == Page::plugins)
+            status.setText (info.plugins.empty() ? juce::String() : tr ("Install them, scan for plugins (Options menu), then open the project again."), juce::dontSendNotification);
+        else if (page == Page::found)
+            status.setText (info.autoRelocated.empty() ? juce::String() : tr ("Already in use: nothing to do. Save the project to keep the new places."), juce::dontSendNotification);
+
+        applyButton.setButtonText (found > 0 ? tr ("Apply ({0})", { juce::String (found) }) : tr ("Apply"));
+        applyButton.setEnabled (found > 0); // (also while a search runs: Apply stops it and uses what it found so far)
+        closeButton.setButtonText (found > 0 ? tr ("Close without changes") : tr ("Close"));
+        rememberToggle.setVisible (! info.files.empty());
+        list.updateContent();
+        list.repaint();
+        resized();
+    }
+
+    void showPage (Page p)
+    {
+        page = p;
+        (p == Page::samples ? samplesTab : p == Page::plugins ? pluginsTab : foundTab).setToggleState (true, juce::dontSendNotification);
+        list.deselectAllRows();
+        list.setMultipleSelectionEnabled (p == Page::samples);
+        refresh();
+    }
+
+    // --- list ---------------------------------------------------------------------------------
+    int getNumRows() override
+    {
+        return page == Page::samples ? (int) info.files.size() : page == Page::plugins ? (int) info.plugins.size() : (int) info.autoRelocated.size();
+    }
+
+    void paintListBoxItem (int row, juce::Graphics& g, int width, int height, bool selected) override
+    {
+        // (rows past the end are asked for too: issue #165 crashed here at a larger interface size)
+        const auto* file = page == Page::samples ? listRowEntry (info.files, row) : nullptr;
+        const auto* plugin = page == Page::plugins ? listRowEntry (info.plugins, row) : nullptr;
+        const auto* moved = page == Page::found ? listRowEntry (info.autoRelocated, row) : nullptr;
+        if (file == nullptr && plugin == nullptr && moved == nullptr)
+            return;
+
+        if (selected)
+        {
+            g.setColour (theme::colour::accentMuted);
+            g.fillRect (0, 0, width, height);
+            g.setColour (theme::colour::accent);
+            g.fillRect (0, 3, 3, height - 6);
+        }
+        else if (row % 2 == 1)
+        {
+            g.setColour (theme::colour::bg1);
+            g.fillRect (0, 0, width, height);
+        }
+
+        juce::Colour dot;
+        juce::String name, right, detail;
+        juce::Colour detailColour = theme::colour::textDisabled;
+
+        if (file != nullptr)
+        {
+            const auto& m = *file;
+            name = u8 (pathFileName (m.path));
+            juce::StringArray users;
+            for (const auto& u : m.usedBy)
+                users.add (userName (u));
+            right = users.joinIntoString (", ");
+            if (m.skipped)
+            {
+                dot = theme::colour::textDisabled;
+                detail = tr ("Skipped: stays silent") + "   " + u8 (m.path);
+            }
+            else if (! m.found.empty())
+            {
+                dot = theme::colour::ledOn;
+                detail = juce::String::fromUTF8 ("\xe2\x86\x92 ") + u8 (m.found);
+                detailColour = theme::colour::ledOn.withAlpha (0.85f);
+            }
+            else
+            {
+                dot = theme::colour::warning;
+                detail = u8 (m.path);
+            }
+        }
+        else if (plugin != nullptr)
+        {
+            const auto& p = *plugin;
+            dot = theme::colour::warning;
+            name = u8 (p.name);
+            juce::StringArray users;
+            for (const auto& u : p.usedBy)
+                users.add (userName (u));
+            right = users.joinIntoString (", ");
+            detail = tr ("Replaced by: {0}", { p.replacementArg.empty() ? tr (u8 (p.replacement)) : tr (p.replacement.c_str(), { u8 (p.replacementArg) }) });
+            if (! p.replacementArg.empty())
+                dot = theme::colour::info; // something plays in its place
+            detailColour = theme::colour::textSecondary;
+        }
+        else
+        {
+            const auto& [from, to] = *moved;
+            dot = theme::colour::info;
+            name = u8 (pathFileName (to));
+            detail = u8 (from) + juce::String::fromUTF8 ("  \xe2\x86\x92  ") + u8 (to);
+        }
+
+        g.setColour (dot);
+        g.fillEllipse (14.0f, 12.0f, 8.0f, 8.0f);
+
+        const auto rightWidth = juce::jmin (width / 3, juce::GlyphArrangement::getStringWidthInt (juce::Font (theme::font (theme::type::small)), right) + 8);
+        g.setFont (theme::font (theme::type::body, true));
+        g.setColour (theme::colour::textPrimary);
+        g.drawText (name, 32, 5, width - 44 - rightWidth, 18, juce::Justification::centredLeft, true);
+        g.setFont (theme::font (theme::type::small));
+        g.setColour (theme::colour::textSecondary);
+        g.drawText (right, width - 12 - rightWidth, 5, rightWidth, 18, juce::Justification::centredRight, true);
+        // (round 190oj WG-7: the grey path read 2.84:1 on the selected row's red; there it takes the secondary text)
+        g.setColour (selected && detailColour == theme::colour::textDisabled ? theme::colour::textSecondary : detailColour);
+        g.drawText (detail, 32, 24, width - 44, 16, juce::Justification::centredLeft, true);
+    }
+
+    void selectedRowsChanged (int) override { refresh(); }
+
+    void listBoxItemDoubleClicked (int row, const juce::MouseEvent&) override
+    {
+        if (page == Page::samples && search == nullptr)
+        {
+            list.selectRow (row);
+            locateSelected();
+        }
+    }
+
+    juce::String getTooltipForRow (int row) override
+    {
+        if (const auto* m = page == Page::samples ? listRowEntry (info.files, row) : nullptr)
+            return u8 (m->path);
+        return {};
+    }
+
+    // --- actions ------------------------------------------------------------------------------
+    void chooseSearchFolder()
+    {
+        chooser = lynx::ui::makeFileChooser (tr ("Search a folder (and its sub-folders) for the missing samples"),
+                                                       folders.empty() ? juce::File::getSpecialLocation (juce::File::userHomeDirectory) : juce::File (u8 (folders.front())));
+        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                              [safe = juce::Component::SafePointer<MissingFilesPanel> (this)] (const juce::FileChooser& c) {
+                                  if (safe == nullptr || ! c.getResult().isDirectory())
+                                      return;
+                                  safe->remember (c.getResult());
+                                  safe->startSearch ({ c.getResult().getFullPathName() }, true);
+                              });
+    }
+
+    void locateSelected()
+    {
+        const auto row = list.getSelectedRow();
+        if (page != Page::samples || row < 0 || row >= (int) info.files.size())
+            return;
+        const auto wanted = u8 (pathFileName (info.files[(std::size_t) row].path));
+        const auto start = folders.empty() ? juce::File::getSpecialLocation (juce::File::userHomeDirectory) : juce::File (u8 (folders.front()));
+        chooser = lynx::ui::makeFileChooser (tr ("Where is {0}?", { wanted }), start.getChildFile (wanted),
+                                                       "*" + juce::File (wanted).getFileExtension());
+        lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                              [safe = juce::Component::SafePointer<MissingFilesPanel> (this), row] (const juce::FileChooser& c) {
+                                  if (safe == nullptr || ! c.getResult().existsAsFile())
+                                      return;
+                                  safe->located (row, c.getResult());
+                              });
+    }
+
+    // a file picked by hand: used for that row, and its folder is looked at for the others (as FL does)
+    void located (int row, const juce::File& file)
+    {
+        if (listRowEntry (info.files, row) == nullptr)
+            return;
+        auto& m = info.files[(std::size_t) row];
+        m.found = file.getFullPathName().toStdString();
+        m.skipped = false;
+        std::vector<std::string> siblings;
+        for (const auto& entry : juce::RangedDirectoryIterator (file.getParentDirectory(), false, "*", juce::File::findFiles))
+            siblings.push_back (entry.getFile().getFullPathName().toStdString());
+        const auto more = relocateByName (info.files, siblings);
+        remember (file.getParentDirectory());
+        refresh();
+        if (more > 0)
+            status.setText (tr ("{0} more found in the same folder", { juce::String (more) }), juce::dontSendNotification);
+    }
+
+    void toggleSkipSelected()
+    {
+        const auto rows = list.getSelectedRows();
+        auto allSkipped = true;
+        for (int i = 0; i < rows.size(); ++i)
+            allSkipped = allSkipped && info.files[(std::size_t) rows[i]].skipped;
+        for (int i = 0; i < rows.size(); ++i)
+        {
+            auto& m = info.files[(std::size_t) rows[i]];
+            m.skipped = ! allSkipped;
+            if (m.skipped)
+                m.found.clear();
+        }
+        refresh();
+    }
+
+    void remember (const juce::File& folder)
+    {
+        if (! persistent || ! rememberToggle.getToggleState())
+            return;
+        rememberFolder (folders, folder.getFullPathName().toStdString());
+        saveSearchFolders (folders);
+    }
+
+    void startSearch (const juce::StringArray& where, bool userPicked)
+    {
+        if (search != nullptr)
+            return;
+        searchedBy = userPicked;
+        placedBySearch.assign (info.files.size(), false);
+        for (std::size_t i = 0; i < info.files.size(); ++i)
+            placedBySearch[i] = info.files[i].found.empty() && ! info.files[i].skipped;
+        candidates.clear();
+        search = startSearchJob (info.files, where);
+        searchedFolders = where;
+        startTimerHz (8);
+        refresh();
+        timerCallback();
+    }
+
+    void stopSearch()
+    {
+        if (search != nullptr)
+            search->cancel = true;
+    }
+
+    // what the search found since the last look: the files placed again from every match so far
+    bool takeMatches()
+    {
+        auto fresh = search->take();
+        if (fresh.empty())
+            return false;
+        candidates.insert (candidates.end(), fresh.begin(), fresh.end());
+        relocateFromSearch (info.files, placedBySearch, candidates);
+        return true;
+    }
+
+    void timerCallback() override
+    {
+        if (search == nullptr)
+            return;
+        const auto finished = search->finished.load(); // (read before the last take: nothing comes after it)
+        const auto changed = takeMatches();
+        if (finished)
+        {
+            searchFinished (search->cancel.load());
+            return;
+        }
+        if (changed)
+            refresh();
+        const auto found = foundBySearch();
+        status.setText (tr ("Searching {0}... {1} files looked at",
+                            { searchedFolders.size() == 1 ? searchedFolders[0] : tr ("your search folders"), juce::String (search->scanned.load()) })
+                            + (found > 0 ? "  " + tr ("{0} found, {1} still missing", { juce::String (found), juce::String (stillMissing()) }) : juce::String()),
+                        juce::dontSendNotification);
+    }
+
+    int foundBySearch() const
+    {
+        int found = 0;
+        for (std::size_t i = 0; i < info.files.size() && i < placedBySearch.size(); ++i)
+            found += placedBySearch[i] && ! info.files[i].found.empty() ? 1 : 0;
+        return found;
+    }
+
+    void searchFinished (bool cancelled)
+    {
+        stopTimer();
+        search.reset();
+        const auto found = foundBySearch();
+        refresh();
+        status.setText ((cancelled ? tr ("Search stopped.") + " " : juce::String())
+                            + tr ("{0} found, {1} still missing", { juce::String (found), juce::String (stillMissing()) }),
+                        juce::dontSendNotification);
+    }
+
+    void apply()
+    {
+        if (search != nullptr) // Apply during a search: what it found so far
+        {
+            stopSearch();
+            takeMatches();
+        }
+        const auto map = relocationMap (info.files);
+        if (onApply && ! map.empty())
+            onApply (map);
+        close();
+    }
+
+    void close()
+    {
+        stopSearch();
+        if (onCloseRequest)
+            onCloseRequest();
+    }
+
+    MissingFilesInfo info;
+    bool persistent = false, searchedBy = false;
+    Page page = Page::samples;
+    std::vector<std::string> folders;
+    juce::StringArray searchedFolders;
+    std::shared_ptr<SearchJob> search;
+    std::vector<bool> placedBySearch;   // [file] the running search may place it (no place, not skipped when it began)
+    std::vector<std::string> candidates; // every match the running search found
+    std::unique_ptr<juce::FileChooser> chooser;
+    juce::Rectangle<int> header, footer;
+    int summaryLines = 1;
+
+    juce::Label title, summary, status;
+    juce::TextButton samplesTab, pluginsTab, foundTab;
+    juce::ListBox list;
+    juce::TextButton searchButton { tr ("Search folder...") }, locateButton { tr ("Locate...") }, skipButton { tr ("Skip") },
+        stopButton { tr ("Stop") };
+    juce::ToggleButton rememberToggle;
+    juce::TextButton applyButton, closeButton;
+};
+
+// closes like the panel's buttons and reports when it goes away
+class MissingFilesWindow final : public juce::DocumentWindow
+{
+public:
+    MissingFilesWindow (std::unique_ptr<MissingFilesPanel> panel, std::function<void()> closed)
+        : juce::DocumentWindow (tr ("Missing files"), theme::colour::bg2, juce::DocumentWindow::closeButton, true), onClosed (std::move (closed))
+    {
+        panel->onCloseRequest = [this] { closeWindow(); };
+        setUsingNativeTitleBar (true);
+        setContentOwned (panel.release(), true);
+        setResizable (true, false);
+        setResizeLimits (620, 420, 1600, 1200);
+        centreWithSize (getWidth(), getHeight());
+    }
+
+    void closeButtonPressed() override { closeWindow(); }
+
+    bool keyPressed (const juce::KeyPress& key) override
+    {
+        if (key == juce::KeyPress::escapeKey)
+        {
+            closeWindow();
+            return true;
+        }
+        return juce::DocumentWindow::keyPressed (key);
+    }
+
+    void closeWindow()
+    {
+        if (! isVisible())
+            return;
+        setVisible (false);
+        if (onClosed)
+            onClosed();
+        juce::MessageManager::callAsync ([safe = juce::Component::SafePointer<juce::Component> (this)] { delete safe.getComponent(); });
+    }
+
+private:
+    std::function<void()> onClosed;
+};
+} // namespace
+
+std::vector<std::string> loadSearchFolders()
+{
+    return parseFolderList (searchFoldersFile().loadFileAsString().toStdString());
+}
+
+void saveSearchFolders (const std::vector<std::string>& folders)
+{
+    searchFoldersFile().replaceWithText (u8 (folderListText (folders)));
+}
+
+juce::StringArray browserSearchFolders()
+{
+    juce::StringArray list;
+    list.addLines (PluginHost::settingsFolder().getChildFile ("browser-folders.txt").loadFileAsString());
+    list.trim();
+    list.removeEmptyStrings();
+    return list;
+}
+
+void showMissingFilesDialog (MissingFilesInfo info, std::function<void (const std::map<std::string, std::string>&)> onApply,
+                             std::function<void()> onClosed)
+{
+    auto panel = std::make_unique<MissingFilesPanel> (std::move (info), true);
+    panel->onApply = std::move (onApply);
+    auto* raw = panel.get();
+    auto* window = new MissingFilesWindow (std::move (panel), std::move (onClosed));
+    window->setVisible (true);
+    keepAboveMainWindow (*window);
+    raw->searchRememberedFolders();
+}
+
+std::unique_ptr<juce::Component> makeMissingFilesPanel (MissingFilesInfo info, int page, int selectedRow)
+{
+    auto panel = std::make_unique<MissingFilesPanel> (std::move (info), false);
+    panel->showPageForSnapshot (page, selectedRow);
+    return panel;
+}
+
+std::unique_ptr<juce::Component> makeMissingFilesPanelSearching (MissingFilesInfo info, const juce::StringArray& folders)
+{
+    auto panel = std::make_unique<MissingFilesPanel> (std::move (info), false);
+    panel->showPageForSnapshot (0, -1);
+    panel->startSearchForSnapshot (folders);
+    return panel;
+}
+
+bool missingFilesSearchState (juce::Component& panel, juce::String& status, bool& stopShown, bool& applyEnabled)
+{
+    auto* p = dynamic_cast<MissingFilesPanel*> (&panel);
+    return p != nullptr && p->searchStateForSnapshot (status, stopShown, applyEnabled);
+}
+
+void stopMissingFilesSearch (juce::Component& panel)
+{
+    if (auto* p = dynamic_cast<MissingFilesPanel*> (&panel))
+        p->stopSearchForSnapshot();
+}
+
+juce::String missingFilesSelfTest()
+{
+    // issue #165: JUCE's ListBox asks for rows past the end too (more of them at a larger interface size); the window
+    // read past its lists there and crashed on opening a project. Rows past the end now draw nothing; the rows that
+    // exist still draw, on every page, and the whole window paints at 150 %.
+    auto info = missingFilesSnapshotInfo();
+    info.files.resize (1);
+    info.plugins.resize (1);
+    info.autoRelocated.resize (1);
+    for (int page = 0; page < 3; ++page)
+    {
+        MissingFilesPanel panel (info, false);
+        panel.showPageForSnapshot (page, -1);
+        auto drawn = [&panel] (int row) {
+            juce::Image image (juce::Image::ARGB, 400, 60, true);
+            {
+                juce::Graphics g (image);
+                g.addTransform (juce::AffineTransform::scale (1.5f));
+                panel.paintRowForTest (row, g, 260);
+            }
+            for (int y = 0; y < image.getHeight(); ++y)
+                for (int x = 0; x < image.getWidth(); ++x)
+                    if (image.getPixelAt (x, y).getAlpha() != 0)
+                        return true;
+            return false;
+        };
+        juce::Image scratch (juce::Image::ARGB, 4, 4, true);
+        juce::Graphics sg (scratch);
+        const auto rows = panel.paintRowForTest (0, sg, 4);
+        if (rows != 1)
+            return "ERROR page " + juce::String (page) + ": " + juce::String (rows) + " rows";
+        if (! drawn (0))
+            return "ERROR page " + juce::String (page) + ": its row drew nothing";
+        for (const auto past : { -1, 1, 2, 7 })
+            if (drawn (past))
+                return "ERROR page " + juce::String (page) + ": row " + juce::String (past) + " past the end drew";
+        juce::Image whole (juce::Image::ARGB, 1140, 840, true);
+        juce::Graphics g (whole);
+        g.addTransform (juce::AffineTransform::scale (1.5f));
+        panel.paintEntireComponent (g, true);
+    }
+    return "OK";
+}
+
+MissingFilesInfo missingFilesSnapshotInfo()
+{
+    MissingFilesInfo info;
+    info.projectName = "Night Drive";
+    info.fromFlStudio = true; // (the sample is an FL project: the text as before)
+    info.files = {
+        { "C:\\Users\\Producer\\Samples\\Drums\\Kicks\\Kick Punchy 04.wav", { "Kick" }, "D:\\Library\\Drums\\Kicks\\Kick Punchy 04.wav", false },
+        { "C:\\Users\\Producer\\Samples\\Drums\\Snares\\Snare Tight 12.wav", { "Snare", "Snare 2" }, {}, false },
+        { "C:\\Users\\Producer\\Samples\\Vocals\\Hook take 3.wav", { "Audio clip: Hook take 3" }, {}, false },
+        { "C:\\Users\\Producer\\Samples\\FX\\Riser long.wav", { "Riser" }, {}, true },
+        { "E:\\Old drive\\Loops\\Pad texture 90bpm.wav", { "Pad", "Insert 4: Newtone" }, "D:\\Library\\Loops\\Pad texture 90bpm.wav", false },
+    };
+    info.plugins = {
+        { "Serum", { "Lead", "Pluck" }, "Built-in synth (a preset chosen by the channel name)" },
+        { "ValhallaRoom", { "Insert 3" }, "Nothing: the slot was left out of the mixer" },
+    };
+    info.autoRelocated = {
+        { "C:\\Users\\Studio PC\\Documents\\Image-Line\\FL Studio\\Audio\\Sliced audio\\Break 2.wav",
+          "C:\\Users\\me\\Documents\\Image-Line\\FL Studio\\Audio\\Sliced audio\\Break 2.wav" },
+        { "C:\\Projects\\Night Drive\\Samples\\Chord stab.wav", "D:\\Music\\Night Drive\\Samples\\Chord stab.wav" },
+    };
+    return info;
+}
+} // namespace lynx

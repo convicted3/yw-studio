@@ -1,0 +1,5700 @@
+#include "core/Patcher.h"
+#include "core/Effects.h"
+#include "core/Rack.h"
+#include "core/FormulaController.h"
+#include "core/RhythmPan.h"
+#include "core/MixSuite.h"
+#include "core/VoiceMatch.h"
+#include "core/RenDynamics.h"
+#include "core/BusComp2500.h"
+#include "core/EchoSuite.h"
+#include "core/LynxTune.h"
+#include "core/PeakShapes.h"
+#include "core/LynxVerbs.h"
+#include "core/LimiterLaw.h"
+
+#include "core/Effector.h"
+#include "core/KiloheartsDsp.h"
+#include "core/PitcherDsp.h"
+#include "core/Reeverb2.h"
+#include "core/LuxeVerb.h"
+#include "core/ConvolverFx.h"
+#include "core/VintagePhaser.h"
+#include "core/EmphasisFx.h"
+#include "core/EmphasizerFx.h"
+#include "core/FlLegacyFx.h"
+#include "core/PocketFx.h"
+#include "core/FreqShifterFl.h"
+#include "core/LowLifterFl.h"
+#include "core/Vocodex.h"
+#include "core/FruityVocoder.h"
+#include "core/MaximusFx.h"
+#include "core/ParametricEqFl.h"
+#include "core/EquoFx.h"
+#include "core/DistructorFx.h"
+#include "core/MultibandDelayFx.h"
+#include "core/PitchShifterFl.h"
+#include "core/FruityDynamics.h"
+#include "core/FruityShapers.h"
+#include "core/FruityBasicFx.h"
+#include "core/FruityFilters.h"
+#include "core/NewtoneFx.h"
+#include "core/EdisonFx.h"
+#include "core/FruityDelay.h"
+#include "core/FrequencySplitter.h"
+#include "core/HardcoreFx.h"
+#include "core/StereoFx.h"
+#include "core/ChorusFx.h"
+#include "core/GrossBeat.h"
+#include "core/LovePhilter.h"
+#include "core/FruityDelayBank.h"
+#include "core/FruityMultiband.h"
+#include "core/FlangusFastDist.h"
+#include "core/FruityPhaser.h"
+
+#include "core/Biquad.h"
+#include "core/FacetEq.h"
+#include "core/ApexLimiter.h"
+#include "core/DynamicsSuite.h"
+#include "core/VoiceTools.h"
+#include "core/VoiceShift.h"
+#include "core/VisualFx.h"
+#include "core/FlExtraFx.h"
+#include "core/Scratcher.h"
+#include "core/Transmitter.h"
+#include "core/TransporterFl.h"
+#include "core/XyController.h"
+#include "core/ControlSurface.h"
+
+#include "core/HardwareInsert.h"
+
+#include <algorithm>
+#include <atomic>
+#include <limits>
+#include <cmath>
+#include <complex>
+#include <cstdio>
+#include <cstdint>
+#include <type_traits>
+#include <cstring>
+
+namespace lynx
+{
+namespace
+{
+constexpr double pi = 3.141592653589793;
+constexpr double maxSampleRate = 192000.0;
+
+float dbToGain (float db) noexcept { return std::pow (10.0f, db / 20.0f); }
+
+// approximate tanh (Padé), saturating at ±1: much cheaper than std::tanh per sample
+inline float fastTanh (float x) noexcept
+{
+    if (x > 3.0f)
+        return 1.0f;
+    if (x < -3.0f)
+        return -1.0f;
+
+    const auto x2 = x * x;
+    return x * (27.0f + x2) / (27.0f + 9.0f * x2);
+}
+// sine of a phase in turns (0..1) via refined parabola (error < 0.1%), for LFOs
+inline float sinTurns (double phase) noexcept
+{
+    const auto x = (float) (phase < 0.5 ? phase : phase - 1.0) * 2.0f;
+    const auto y = 4.0f * x * (1.0f - std::abs (x));
+    return 0.225f * (y * std::abs (y) - y) + y;
+}
+
+float gainToDb (float g) noexcept { return 20.0f * std::log10 (std::max (g, 1e-9f)); }
+
+// 0..1 -> logarithmic range [lo, hi]
+float logRange (float v, float lo, float hi) noexcept { return lo * std::pow (hi / lo, std::clamp (v, 0.0f, 1.0f)); }
+
+// ---------------------------------------------------------------------------
+// Parameter mapping (shared by the DSP and the UI text)
+
+float eqGainDb (float v) { return (v - 0.5f) * 36.0f; } // -18..+18 dB
+float eqMidHz (float v) { return logRange (v, 200.0f, 5000.0f); }
+float compThresholdDb (float v) { return -60.0f + v * 60.0f; }
+float compRatio (float v) { return 1.0f + v * 19.0f; }
+float compAttackMs (float v) { return logRange (v, 0.1f, 100.0f); }
+float compReleaseMs (float v) { return logRange (v, 10.0f, 1000.0f); }
+float compMakeupDb (float v) { return v * 24.0f; }
+// round 150 (REA_rodada150 §6): the Renaissance Compressor's own ranges, read black-box from the trial's parameter
+// texts — ratio 50 … 1 … 0.5 (log-linear: 50 at 0, 1.00 at 0.625, 0.5 at 1; below 1 = expansion), gain −30 … +30 dB,
+// attack 0.5 … 500 ms and release 5 … 5000 ms (0.5 · 1000^v, 5 · 1000^v)
+float rcRatio (float v)
+{
+    const auto x = (double) std::clamp (v, 0.0f, 1.0f);
+    return (float) (x <= 0.625 ? std::exp (std::log (50.0) * (1.0 - x / 0.625)) : std::exp (std::log (0.5) * (x - 0.625) / 0.375));
+}
+float rcRatioValue (double ratio)
+{
+    const auto r = std::clamp (ratio, 0.5, 50.0);
+    return (float) (r >= 1.0 ? 0.625 * (1.0 - std::log (r) / std::log (50.0)) : 0.625 + 0.375 * std::log (r) / std::log (0.5));
+}
+float rcAttackMs (float v) { return logRange (v, 0.5f, 500.0f); }
+float rcReleaseMs (float v) { return logRange (v, 5.0f, 5000.0f); }
+float rcGainDb (float v) { return -30.0f + 60.0f * std::clamp (v, 0.0f, 1.0f); }
+
+// BPM-synced Delay divisions, in beats (quarter notes).
+constexpr std::array<double, 8> delayDivisions { 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0 };
+constexpr std::array<const char*, 8> delayNames { "1/16", "1/8", "1/8 dot.", "1/4", "1/4 dot.", "1/2", "1/2 dot.", "1 bar" };
+
+int delayIndex (float v) { return std::clamp ((int) (v * (float) delayDivisions.size()), 0, (int) delayDivisions.size() - 1); }
+
+float reverbLowCutHz (float v) { return logRange (v, 20.0f, 3000.0f); }    // 0 = off
+float reverbHighCutHz (float v) { return logRange (v, 500.0f, 22000.0f); } // 1 = off
+
+float limiterCeilingDb (float v) { return -12.0f + v * 12.0f; }
+float limiterGainDb (float v) { return v * 24.0f; }
+float limiterReleaseMs (float v) { return logRange (v, 10.0f, 1000.0f); }
+int filterType (float v) { return std::clamp ((int) (v * 3.0f), 0, 2); } // low-pass, high-pass, band-pass
+constexpr std::array<const char*, 3> filterNames { "Low-pass", "High-pass", "Band-pass" };
+float filterHz (float v) { return logRange (v, 20.0f, 20000.0f); }
+float filterQ (float v) { return logRange (v, 0.5f, 12.0f); }
+bool filterSteep (float v) { return v >= 0.5f; } // round 190da: the appended Slope (0 = 12 dB/oct, the old filter; 1 = 24)
+float distortionDriveDb (float v) { return v * 36.0f; }
+float distortionToneHz (float v) { return logRange (v, 800.0f, 20000.0f); }
+float chorusRateHz (float v) { return logRange (v, 0.05f, 5.0f); }
+float chorusDepthMs (float v) { return v * 8.0f; }
+
+// ---------------------------------------------------------------------------
+
+// Round 190gp: how far a declared tail lets a built-in's state fall (from far above full scale to far below −120 dBFS)
+constexpr double tailDecayDb = 180.0;
+int tailOf (double samples) noexcept { return samples < 1.0e9 ? (int) std::ceil (samples) : std::numeric_limits<int>::max() / 2; }
+double tailOf (const Biquad& b) noexcept { return biquadTailSamples (b.a1, b.a2, tailDecayDb); }
+
+class Eq final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        lastParams.fill (-1.0f); // force recalculation
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        for (auto& b : bands)
+            b.reset();
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        if (params != lastParams)
+        {
+            lastParams = params;
+            bands[0].shelf (sampleRate, 120.0, eqGainDb (params[0]), false);
+            bands[1].peaking (sampleRate, eqMidHz (params[2]), 0.8, eqGainDb (params[1]));
+            bands[2].shelf (sampleRate, 8000.0, eqGainDb (params[3]), true);
+            output = dbToGain (eqGainDb (params[4]));
+            tail = tailOf (tailOf (bands[0]) + tailOf (bands[1]) + tailOf (bands[2])); // (round 190gp: three IIR sections in a row)
+        }
+
+        for (int i = 0; i < n; ++i)
+        {
+            auto a = l[i], b = r[i];
+
+            for (auto& band : bands)
+            {
+                a = band.process (a, 0);
+                b = band.process (b, 1);
+            }
+
+            l[i] = a * output;
+            r[i] = b * output;
+        }
+    }
+
+    int tailSamples() const noexcept override { return tail; }
+
+private:
+    double sampleRate = 44100.0;
+    std::array<Biquad, 3> bands;
+    std::array<float, maxEffectParams> lastParams {};
+    float output = 1.0f;
+    int tail = -1;
+};
+
+// ---------------------------------------------------------------------------
+
+class Compressor final : public Effect
+{
+public:
+    // `initial` (may be null): the slot's parameters, so the voicing's latency is known after prepare(), before the
+    // first block (issue #113: a Patcher plans its delay compensation right after building its nodes)
+    explicit Compressor (const EffectParams* initial = nullptr)
+        : vintageAtStart (initial != nullptr && (*initial)[8] >= 0.5f),
+          renAtStart (initial != nullptr && (*initial)[8] >= 0.5f && (*initial)[(std::size_t) compressorRenLaw] >= 0.5f),
+          voxAtStart (initial != nullptr && (*initial)[8] >= 0.5f && (*initial)[(std::size_t) compressorVoxLaw] >= 0.5f),
+          apiAtStart (initial != nullptr && (*initial)[(std::size_t) compressorApiLaw] >= 0.5f) {}
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        vintage.prepare (sr);
+        ren.prepare (sr);
+        vox.prepare (sr);
+        apiOn = false;
+        reset();
+        if (vintageAtStart && ! apiAtStart) // (rollup step 12: the API-2500 bus law, first in process(), has no latency)
+            latency.store (voxAtStart ? vox.latency() : renAtStart ? ren.latency() : vintage.latency(), std::memory_order_relaxed);
+    }
+    void reset() noexcept override
+    {
+        envelopeDb = 0.0f;
+        inPower = outPower = 0.0f;
+        autoGain = 1.0f;
+        vintage.reset();
+        ren.reset();
+        for (auto& z : channelState) z = {}; // round 190mm
+        rchGate.reset(); // round 190mt
+        vox.reset();
+    }
+
+    // round 123: voicing 1 = the measured program-dependent compressor (core/VoiceMatch.h); it delays the audio
+    int latencySamples() const noexcept override { return latency.load (std::memory_order_relaxed); }
+
+    // round 129: the editor's meters (Effect::controlOutput): 0 = gain reduction (0..1 over 0..30 dB), 2 / 3 = input /
+    // output peak — the level meters the compressors it stands in for show (Renaissance Compressor's three meters)
+    float controlOutput (int k) const noexcept override
+    {
+        return k == 0 ? meterGr.load (std::memory_order_relaxed) : k == 2 ? meterIn.load (std::memory_order_relaxed)
+             : k == 3 ? meterOut.load (std::memory_order_relaxed) : k == 4 ? meterLimit.load (std::memory_order_relaxed)
+             : k == 5 ? meterChange.load (std::memory_order_relaxed) : 0.0f; // round 152: 5 = the signed gain change in dB
+    }
+
+    // round 135w: the reference's built-in 0 dBFS output limiter — the gain drops at once to keep every sample at or
+    // under 0 dBFS and recovers over 50 ms; meter 4 = its reduction this block (0..1 over 0..12 dB), the activity pill
+    void outputLimit (float* l, float* r, int n) noexcept
+    {
+        const auto rel = (float) (1.0 - std::exp (-1.0 / (0.05 * sampleRate)));
+        float most = 1.0f;
+        for (int i = 0; i < n; ++i)
+        {
+            const auto peak = std::max (std::abs (l[i]), std::abs (r[i]));
+            limitGain += rel * (1.0f - limitGain);
+            if (peak * limitGain > 1.0f)
+                limitGain = 1.0f / peak;
+            l[i] *= limitGain;
+            r[i] *= limitGain;
+            most = std::min (most, limitGain);
+        }
+        meterLimit.store (std::clamp (-20.0f * std::log10 (std::max (most, 1e-6f)) / 12.0f, 0.0f, 1.0f), std::memory_order_relaxed);
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        if (params[(std::size_t) compressorApiLaw] >= 0.5f)
+        {
+            // round 190mm (dyn): the VCA bus compressor law (core/BusComp2500.h; set only by the API-2500 translator)
+            static constexpr double ratios[7] { 1.5, 2.0, 3.0, 4.0, 6.0, 10.0, 1.0e6 }, attacks[7] { 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0 };
+            static constexpr double releases[6] { 0.05, 0.1, 0.2, 0.5, 1.0, 2.0 };
+            const auto step = [&] (int k, int top) { return std::clamp ((int) std::lround (params[(std::size_t) k] * (float) top), 0, top); };
+            tail = -1;
+            latency.store (0, std::memory_order_relaxed);
+            float peakIn = 0.0f, peakOut = 0.0f;
+            for (int i = 0; i < n; ++i)
+                peakIn = std::max (peakIn, std::max (std::abs (l[i]), std::abs (r[i])));
+            buscomp::Settings v;
+            v.thresholdDb = 10.0 - 30.0 * std::clamp ((double) params[(std::size_t) compressorApiThreshold], 0.0, 1.0);
+            v.ratio = ratios[step (compressorApiRatio, 6)];
+            v.attackMs = attacks[step (compressorApiAttack, 6)];
+            const int rel = step (compressorApiRelease, 6);
+            v.releaseS = rel < 6 ? releases[rel] : 0.05 + 2.95 * std::clamp ((double) params[(std::size_t) compressorApiVar], 0.0, 1.0);
+            v.knee = 2 - step (compressorApiKnee, 2);
+            v.thrust = step (compressorApiThrust, 2);
+            v.feedback = params[(std::size_t) compressorApiFeedback] >= 0.5f;
+            v.autoMakeup = params[(std::size_t) compressorApiManual] < 0.5f;
+            v.makeupDb = params[(std::size_t) compressorApiMakeup] > 0.0f ? 48.0 * (double) params[(std::size_t) compressorApiMakeup] - 24.0 : 0.0;
+            v.mix = 1.0 - std::clamp ((double) params[(std::size_t) compressorApiDry], 0.0, 1.0);
+            v.trimDb = params[(std::size_t) compressorApiTrim] > 0.0f ? 36.0 * (double) params[(std::size_t) compressorApiTrim] - 18.0 : 0.0;
+            if (! apiOn)
+            {
+                api.prepare (sampleRate);
+                apiOn = true;
+            }
+            api.process (l, r, n, v);
+            for (int i = 0; i < n; ++i)
+                peakOut = std::max (peakOut, std::max (std::abs (l[i]), std::abs (r[i])));
+            useSidechain = false;
+            meterLimit.store (0.0f, std::memory_order_relaxed);
+            meterGr.store (std::clamp (api.reductionDb() / 30.0f, 0.0f, 1.0f), std::memory_order_relaxed);
+            meterChange.store (-api.reductionDb(), std::memory_order_relaxed);
+            meterIn.store (std::min (peakIn, 1.0f), std::memory_order_relaxed);
+            meterOut.store (std::min (peakOut, 1.0f), std::memory_order_relaxed);
+            return;
+        }
+        apiOn = false;
+        if (params[8] >= 0.5f && params[(std::size_t) compressorVoxLaw] >= 0.5f)
+        {
+            // round 190mm: the one-knob vocal compressor (core/RenDynamics.h rendyn::Vox; set only by the
+            // Renaissance Vox translator): the threshold knob, the gate and the output gain in hidden parameters
+            tail = -1;
+            latency.store (vox.latency(), std::memory_order_relaxed);
+            float peakIn = 0.0f, peakOut = 0.0f;
+            for (int i = 0; i < n; ++i)
+                peakIn = std::max (peakIn, std::max (std::abs (l[i]), std::abs (r[i])));
+            rendyn::VoxSettings v;
+            v.compressionDb = std::min (0.0, (double) compThresholdDb (params[0]));
+            const float gate = params[(std::size_t) compressorVoxGate];
+            v.gateDb = gate > 0.0f ? -80.0 + 80.0 * std::clamp ((double) gate, 0.0, 1.0) : -80.0;
+            v.gateReleaseMs = 10.0 + 240.0 * std::clamp ((double) params[(std::size_t) compressorVoxGateRelease], 0.0, 1.0);
+            v.gainDb = -36.0 * std::clamp ((double) params[(std::size_t) compressorVoxGain], 0.0, 1.0);
+            vox.process (l, r, n, v);
+            meterLimit.store (0.0f, std::memory_order_relaxed);
+            for (int i = 0; i < n; ++i)
+                peakOut = std::max (peakOut, std::max (std::abs (l[i]), std::abs (r[i])));
+            useSidechain = false;
+            meterGr.store (std::clamp (vox.reductionDb() / 30.0f, 0.0f, 1.0f), std::memory_order_relaxed);
+            meterChange.store (-vox.reductionDb(), std::memory_order_relaxed);
+            meterIn.store (std::min (peakIn, 1.0f), std::memory_order_relaxed);
+            meterOut.store (std::min (peakOut, 1.0f), std::memory_order_relaxed);
+            return;
+        }
+        if (params[8] >= 0.5f && params[(std::size_t) compressorRenLaw] >= 0.5f)
+        {
+            // round 190mg: the vintage voicing's Renaissance law (core/VoiceMatch.h progcomp::Renaissance; set only by the
+            // Renaissance Compressor translator)
+            tail = -1;
+            latency.store (ren.latency(), std::memory_order_relaxed);
+            float peakIn = 0.0f, peakOut = 0.0f;
+            for (int i = 0; i < n; ++i)
+                peakIn = std::max (peakIn, std::max (std::abs (l[i]), std::abs (r[i])));
+            vmatch::progcomp::RenSettings v;
+            const bool rc = params[13] >= 0.5f;
+            v.thresholdDb = compThresholdDb (params[0]);
+            v.ratio = rc ? rcRatio (params[14]) : compRatio (params[1]);
+            v.attackMs = rc ? rcAttackMs (params[16]) : compAttackMs (params[2]);
+            v.releaseMs = rc ? rcReleaseMs (params[17]) : compReleaseMs (params[3]);
+            v.gainDb = rc ? rcGainDb (params[15]) : compMakeupDb (params[4]);
+            v.mix = std::clamp ((double) params[6], 0.0, 1.0);
+            v.trimDb = -18.0 + 36.0 * std::clamp ((double) params[7], 0.0, 1.0);
+            v.manual = params[9] >= 0.5f;
+            v.opto = params[10] >= 0.5f;
+            v.smooth = params[11] >= 0.5f;
+            v.limiter = params[12] >= 0.5f; // the reference's limiter sits inside its gain path
+            v.voxCurve = params[(std::size_t) compressorRVoxType] >= 0.5f; // round 190mt: RChannel's RVox type
+            // round 190mm: the Renaissance Channel's EQ (hidden; set only by the RChannel translator)
+            const bool channel = params[(std::size_t) compressorChannelLaw] >= 0.5f;
+            const bool eqAfter = params[(std::size_t) compressorChannelRouting] >= 0.5f;
+            if (channel) channelDesign (params);
+            if (channel && ! eqAfter) channelEq (l, r, n);
+            if (params[(std::size_t) compressorRchGate] >= 0.5f) // round 190mt: the RChannel's gate (hidden)
+                rchGate.process (l, r, n, params, sampleRate);
+            ren.process (l, r, n, v);
+            if (channel && eqAfter) channelEq (l, r, n);
+            meterLimit.store (0.0f, std::memory_order_relaxed);
+            for (int i = 0; i < n; ++i)
+                peakOut = std::max (peakOut, std::max (std::abs (l[i]), std::abs (r[i])));
+            useSidechain = false;
+            meterGr.store (std::clamp (ren.reductionDb() / 30.0f, 0.0f, 1.0f), std::memory_order_relaxed);
+            meterChange.store (ren.changeDb(), std::memory_order_relaxed);
+            meterIn.store (std::min (peakIn, 1.0f), std::memory_order_relaxed);
+            meterOut.store (std::min (peakOut, 1.0f), std::memory_order_relaxed);
+            return;
+        }
+        if (params[8] >= 0.5f)
+        {
+            tail = -1; // (round 190gp: the measured voicing keeps the fixed hold)
+            latency.store (vintage.latency(), std::memory_order_relaxed);
+            float peakIn = 0.0f, peakOut = 0.0f;
+            for (int i = 0; i < n; ++i)
+                peakIn = std::max (peakIn, std::max (std::abs (l[i]), std::abs (r[i])));
+            vmatch::progcomp::Settings v;
+            const bool rc = params[13] >= 0.5f; // round 150: the RComp ranges
+            v.thresholdDb = compThresholdDb (params[0]);
+            v.ratio = rc ? rcRatio (params[14]) : compRatio (params[1]);
+            v.attackMs = rc ? rcAttackMs (params[16]) : compAttackMs (params[2]);
+            v.releaseMs = rc ? rcReleaseMs (params[17]) : compReleaseMs (params[3]);
+            v.gainDb = rc ? rcGainDb (params[15]) : compMakeupDb (params[4]);
+            v.mix = std::clamp ((double) params[6], 0.0, 1.0);
+            v.trimDb = -18.0 + 36.0 * std::clamp ((double) params[7], 0.0, 1.0);
+            v.manual = params[9] >= 0.5f;
+            v.opto = params[10] >= 0.5f;
+            v.smooth = params[11] >= 0.5f;
+            v.measuredStatic = params[18] >= 0.5f; // round 152
+            vintage.process (l, r, n, v);
+            if (params[12] >= 0.5f)
+                outputLimit (l, r, n);
+            else
+                meterLimit.store (0.0f, std::memory_order_relaxed);
+            for (int i = 0; i < n; ++i)
+                peakOut = std::max (peakOut, std::max (std::abs (l[i]), std::abs (r[i])));
+            useSidechain = false;
+            meterGr.store (std::clamp (vintage.reductionDb() / 30.0f, 0.0f, 1.0f), std::memory_order_relaxed);
+            meterChange.store (vintage.changeDb(), std::memory_order_relaxed);
+            meterIn.store (std::min (peakIn, 1.0f), std::memory_order_relaxed);
+            meterOut.store (std::min (peakOut, 1.0f), std::memory_order_relaxed);
+            return;
+        }
+        latency.store (0, std::memory_order_relaxed);
+        // round 190gp: its declared tail — the output is the input times a gain (silence in, silence out); what settles
+        // is the envelope, which falls with the release until it snaps to 0 (under 1e-4 dB of a reduction under 200 dB:
+        // 15 time constants), and the output limiter's gain (50 ms). Auto gain follows its powers for seconds: the
+        // fixed hold then.
+        {
+            const auto releaseSamples = (params[13] >= 0.5f ? rcReleaseMs (params[17]) : compReleaseMs (params[3])) * 0.001 * sampleRate;
+            const auto limitSamples = params[12] >= 0.5f ? 0.05 * sampleRate : 0.0;
+            tail = params[5] >= 0.5f ? -1 : tailOf (16.0 * std::max (releaseSamples, limitSamples) + 64.0);
+        }
+        // "Auto gain" (round 107): the long-term level stays where it was (slow in/out power match, ±12 dB), so the
+        // compressor shapes the dynamics without making the track quieter. Used where its settings are a guess (a
+        // substitute for a missing plugin, whose own makeup gain is unknown).
+        const auto levelMatch = params[5] >= 0.5f;
+        const auto powerCoeff = (float) std::exp (-1.0 / (1.5 * sampleRate));
+        const auto gainCoeff = (float) std::exp (-1.0 / (0.05 * sampleRate));
+        const bool rc = params[13] >= 0.5f; // round 150: the RComp ranges (ratio below 1 = upward expansion)
+        const auto threshold = compThresholdDb (params[0]);
+        const auto ratio = rc ? rcRatio (params[14]) : compRatio (params[1]);
+        const auto attack = (float) std::exp (-1.0 / ((rc ? rcAttackMs (params[16]) : compAttackMs (params[2])) * 0.001 * sampleRate));
+        const auto release = (float) std::exp (-1.0 / ((rc ? rcReleaseMs (params[17]) : compReleaseMs (params[3])) * 0.001 * sampleRate));
+        const auto makeup = dbToGain (rc ? rcGainDb (params[15]) : compMakeupDb (params[4]));
+        const bool expand = ratio < 1.0f;
+        const auto slope = expand ? 1.0f / ratio - 1.0f : 1.0f - 1.0f / ratio; // dB of change per dB over the threshold
+        const auto thresholdGain = dbToGain (threshold);
+        // round 190ar: the classic voicing's FET law (off by default: nothing changes for existing projects). Measured
+        // black-box on FET-style compressors' tone-burst probes: a 5 dB knee, and a recovery that is not one time
+        // constant — deep reduction comes back fast, the last decibels slowly. Per second the reduction G (dB) falls by
+        // G / tail + G² / (10 dB · release), tail = the release time (at most 2.7 s): the classic exponential for
+        // small reductions, 2 × as fast at 10 dB, 3 × at 20 dB.
+        const bool fet = params[19] >= 0.5f && ! expand;
+        const auto fetReleaseS = (rc ? rcReleaseMs (params[17]) : compReleaseMs (params[3])) * 0.001;
+        const auto fetTail = (float) (1.0 / (std::min (fetReleaseS, 2.7) * sampleRate));
+        const auto fetDeep = (float) (1.0 / (10.0 * fetReleaseS * sampleRate));
+        constexpr float fetKnee = 5.0f;
+        const auto fetKneeGain = dbToGain (threshold - 0.5f * fetKnee);
+        const auto sidechain = useSidechain;
+        useSidechain = false;
+        float peakIn = 0.0f, peakOut = 0.0f, maxGr = 0.0f;
+        // round 129: parallel mix (dry with the compressed signal) and a trim after it (±18 dB); older projects load
+        // 100 % / 0 dB
+        const auto wetMix = std::clamp (params[6], 0.0f, 1.0f);
+        const auto trim = dbToGain (-18.0f + 36.0f * std::clamp (params[7], 0.0f, 1.0f));
+
+        for (int i = 0; i < n; ++i)
+        {
+            peakIn = std::max (peakIn, std::max (std::abs (l[i]), std::abs (r[i])));
+            // linked stereo peak detector, "hard knee" curve; below the threshold the log is not needed.
+            // With sidechain, the detector listens to the other track (kick ducking)
+            const auto peak = sidechain ? (sideL != nullptr ? std::max (std::abs (sideL[i]), std::abs (sideR[i])) : 0.0f)
+                                        : std::max (std::abs (l[i]), std::abs (r[i]));
+            float reductionDb;
+            if (fet)
+            {
+                reductionDb = 0.0f;
+                if (peak > fetKneeGain)
+                {
+                    const auto over = gainToDb (peak) - threshold;
+                    reductionDb = slope * (over >= 0.5f * fetKnee ? over : (over + 0.5f * fetKnee) * (over + 0.5f * fetKnee) / (2.0f * fetKnee));
+                }
+                if (reductionDb > envelopeDb)
+                    envelopeDb = reductionDb + attack * (envelopeDb - reductionDb);
+                else
+                    envelopeDb = std::max (reductionDb, envelopeDb - envelopeDb * (fetTail + envelopeDb * fetDeep));
+            }
+            else
+            {
+                reductionDb = peak > thresholdGain ? (gainToDb (peak) - threshold) * slope : 0.0f; // the change (≥ 0)
+
+                // the envelope rises with the attack and falls with the release
+                const auto coeff = reductionDb > envelopeDb ? attack : release;
+                envelopeDb = reductionDb + coeff * (envelopeDb - reductionDb);
+            }
+
+            if (envelopeDb < 1.0e-4f)
+                envelopeDb = 0.0f; // no audible reduction: skip the pow
+
+            auto gain = envelopeDb > 0.0f ? dbToGain (expand ? envelopeDb : -envelopeDb) * makeup : makeup;
+
+            if (levelMatch)
+            {
+                const auto in = 0.5f * (l[i] * l[i] + r[i] * r[i]);
+                inPower = in + powerCoeff * (inPower - in);
+                const auto out = in * gain * gain;
+                outPower = out + powerCoeff * (outPower - out);
+                // follow only while there is signal (silence keeps the last match)
+                const auto target = inPower > 1.0e-8f && outPower > 1.0e-12f ? std::clamp (std::sqrt (inPower / outPower), 0.25f, 4.0f) : autoGain;
+                autoGain = target + gainCoeff * (autoGain - target);
+                gain *= autoGain;
+            }
+
+            l[i] = (l[i] * gain * wetMix + l[i] * (1.0f - wetMix)) * trim;
+            r[i] = (r[i] * gain * wetMix + r[i] * (1.0f - wetMix)) * trim;
+            maxGr = std::max (maxGr, envelopeDb);
+        }
+        if (params[12] >= 0.5f)
+            outputLimit (l, r, n);
+        else
+            meterLimit.store (0.0f, std::memory_order_relaxed);
+        for (int i = 0; i < n; ++i)
+            peakOut = std::max (peakOut, std::max (std::abs (l[i]), std::abs (r[i])));
+        meterGr.store (std::clamp ((expand ? 0.0f : maxGr) / 30.0f, 0.0f, 1.0f), std::memory_order_relaxed);
+        meterChange.store (expand ? maxGr : -maxGr, std::memory_order_relaxed); // round 152: signed (the expansion's boost > 0)
+        meterIn.store (std::min (peakIn, 1.0f), std::memory_order_relaxed);
+        meterOut.store (std::min (peakOut, 1.0f), std::memory_order_relaxed);
+    }
+
+    void setSidechain (const float* left, const float* right) noexcept override
+    {
+        sideL = left;
+        sideR = right;
+        useSidechain = true;
+    }
+
+    int tailSamples() const noexcept override { return tail; }
+
+private:
+    // round 190mm: the Renaissance Channel's EQ — up to four bands of sections from Facet's Waves design law, redesigned
+    // when their parameters change; transposed direct form II per channel
+    void channelDesign (const EffectParams& params) noexcept
+    {
+        bool same = channelDesigned && channelRate == sampleRate;
+        for (int i = 0; i < 16 && same; ++i)
+            same = channelKey[(std::size_t) i] == params[(std::size_t) (compressorChannelBand0 + i)];
+        if (same) return;
+        EffectParams fp {};
+        fp[(std::size_t) facet::wavesLawParam] = 1.0f;
+        fp[(std::size_t) facet::scaleParam] = 0.5f; // 100 %
+        channelCount = 0;
+        for (int k = 0; k < 4; ++k)
+        {
+            const auto at = [&] (int f) { return params[(std::size_t) (compressorChannelBand0 + 4 * k + f)]; };
+            if (at (0) <= 0.0f) continue;
+            fp[(std::size_t) (facet::wavesBandParam0 + k)] = at (0);
+            fp[(std::size_t) facet::param (k, 0)] = facet::shapeValue (facet::Shape::bell);
+            fp[(std::size_t) facet::param (k, 1)] = at (1);
+            fp[(std::size_t) facet::param (k, 2)] = at (2);
+            fp[(std::size_t) facet::param (k, 3)] = at (3);
+            std::array<facet::Section, facet::maxSections> sec {};
+            const int c = facet::design (fp, k, sampleRate, sec, 0.0);
+            for (int j = 0; j < c && channelCount < (int) channelSec.size(); ++j)
+                channelSec[(std::size_t) channelCount++] = sec[(std::size_t) j];
+        }
+        for (int i = 0; i < 16; ++i)
+            channelKey[(std::size_t) i] = params[(std::size_t) (compressorChannelBand0 + i)];
+        if (! channelDesigned || channelRate != sampleRate)
+            for (auto& z : channelState) z = {};
+        channelDesigned = true;
+        channelRate = sampleRate;
+    }
+    void channelEq (float* l, float* r, int n) noexcept
+    {
+        for (int k = 0; k < channelCount; ++k)
+        {
+            const auto& c = channelSec[(std::size_t) k];
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                float* x = ch == 0 ? l : r;
+                auto& z = channelState[(std::size_t) (2 * k + ch)];
+                for (int i = 0; i < n; ++i)
+                {
+                    const double in = x[i], out = c.b0 * in + z[0];
+                    z[0] = c.b1 * in - c.a1 * out + z[1];
+                    z[1] = c.b2 * in - c.a2 * out;
+                    x[i] = (float) out;
+                }
+            }
+        }
+    }
+    std::array<facet::Section, 8> channelSec {};
+    std::array<std::array<double, 2>, 16> channelState {};
+    std::array<float, 16> channelKey {};
+    int channelCount = 0;
+    bool channelDesigned = false;
+    double channelRate = 0.0;
+
+    int tail = -1;
+    std::atomic<float> meterGr { 0.0f }, meterIn { 0.0f }, meterOut { 0.0f }, meterLimit { 0.0f }, meterChange { 0.0f };
+    float limitGain = 1.0f;
+    std::atomic<int> latency { 0 };
+    vmatch::progcomp::Compressor vintage;
+    vmatch::progcomp::Renaissance ren; // round 190mg
+    rendyn::Vox vox; // round 190mm (dyn)
+    // round 190mt: the Renaissance Channel's gate (Effects.h CompressorRchGate)
+    struct RchGate
+    {
+        double env = 0.0, g = 1.0;
+        void reset() noexcept { env = 0.0; g = 1.0; }
+        void process (float* l, float* r, int n, const EffectParams& p, double sr) noexcept
+        {
+            const double thrDb = 108.0 * std::clamp ((double) p[(std::size_t) compressorRchGateThreshold], 0.0, 1.0) - 90.0;
+            const double floorDb = 90.0 * std::clamp ((double) p[(std::size_t) compressorRchGateFloor], 0.0, 1.0) - 90.0;
+            const double relMs = 10.0 * std::pow (500.0, std::clamp ((double) p[(std::size_t) compressorRchGateRelease], 0.0, 1.0));
+            const bool gate = p[(std::size_t) compressorRchGateMode] >= 0.5f;
+            const double thr = std::pow (10.0, thrDb / 20.0), fl = std::pow (10.0, floorDb / 20.0);
+            const double dC = std::exp (-1.0 / (std::max (0.14, relMs * 0.001) * sr)), rC = std::exp (-1.0 / (relMs * 0.001 * sr));
+            const double aC = std::exp (-1.0 / (0.001 * sr));
+            for (int i = 0; i < n; ++i)
+            {
+                const double x = std::max (std::abs ((double) l[i]), std::abs ((double) r[i]));
+                env = x > env ? x : env * dC;
+                const double target = env >= thr ? 1.0 : (gate ? fl : std::max (fl, env / thr));
+                g = target + (g - target) * (target > g ? aC : rC);
+                l[i] = (float) (l[i] * g);
+                r[i] = (float) (r[i] * g);
+            }
+        }
+    } rchGate;
+    buscomp::Engine api; // round 190mm (dyn)
+    bool apiOn = false;
+    bool vintageAtStart = false, renAtStart = false, voxAtStart = false, apiAtStart = false;
+    double sampleRate = 44100.0;
+    float envelopeDb = 0.0f;
+    float inPower = 0.0f, outPower = 0.0f, autoGain = 1.0f;
+    const float* sideL = nullptr;
+    const float* sideR = nullptr;
+    bool useSidechain = false;
+};
+
+// ---------------------------------------------------------------------------
+
+// Round 190kg (perf): the basic Delay's glide over one chunk whose reads all lie before its writes — the same
+// operations per sample as Delay::process's own glide (the length steps toward the target and snaps within 0.001
+// sample; the line read between samples; the feedback low-pass), the two sides in one loop. Returns the samples it
+// glided (fewer than m when the glide lands). GCC's straight-line vectoriser paired the two sides into half-filled
+// vectors with more shuffles than work here, so it is off for this function (no effect on the results: the same
+// IEEE operations either way)
+#if defined(__GNUC__) && ! defined(__clang__)
+__attribute__ ((optimize ("no-tree-slp-vectorize")))
+#endif
+int delayGlideChunk (double& cur, double target, double glideK, const float* bufL, const float* bufR, std::size_t size,
+                     std::size_t at, int m, float dampCoeff, float& dampL, float& dampR, float* eL, float* eR) noexcept
+{
+    auto c = cur;
+    auto lpL = dampL, lpR = dampR;
+    int k = 0;
+    // flat: no position of the chunk wraps — its writes end before the line's end, and every read (≥ 1 sample after
+    // the line's start: the lengths are ≤ the larger of `c` and `target`) lies after the start; the read positions are
+    // then plain differences, the same ones the wrapping arithmetic gives
+    const auto longest = (std::size_t) (std::int64_t) std::max (c, target);
+    if (at + (std::size_t) m <= size && at >= longest + 1)
+    {
+        for (; k < m && c != target; ++k, ++at)
+        {
+            const auto diff = target - c;
+            c = std::abs (diff) < 0.001 ? target : c + diff * glideK;
+            const auto wholeSigned = (std::int64_t) c;
+            const auto frac = (float) (c - (double) wholeSigned);
+            const auto from = at - (std::size_t) wholeSigned;
+            const auto xL = bufL[from], xR = bufR[from];
+            lpL += dampCoeff * ((xL + (bufL[from - 1] - xL) * frac) - lpL);
+            lpR += dampCoeff * ((xR + (bufR[from - 1] - xR) * frac) - lpR);
+            eL[k] = lpL;
+            eR[k] = lpR;
+        }
+    }
+    else
+        for (; k < m && c != target; ++k)
+        {
+            const auto diff = target - c;
+            c = std::abs (diff) < 0.001 ? target : c + diff * glideK;
+            const auto wholeSigned = (std::int64_t) c; // (≥ 1 and < size)
+            const auto whole = (std::size_t) wholeSigned;
+            const auto frac = (float) (c - (double) wholeSigned);
+            const auto from = at >= whole ? at - whole : at + size - whole, before = from == 0 ? size - 1 : from - 1;
+            const auto xL = bufL[from], xR = bufR[from];
+            lpL += dampCoeff * ((xL + (bufL[before] - xL) * frac) - lpL);
+            lpR += dampCoeff * ((xR + (bufR[before] - xR) * frac) - lpR);
+            eL[k] = lpL;
+            eR[k] = lpR;
+            if (++at == size)
+                at = 0;
+        }
+    cur = c;
+    dampL = lpL;
+    dampR = lpR;
+    return k;
+}
+
+class Delay final : public Effect
+{
+public:
+    static constexpr double maxSeconds = 3.0;
+    // Round 190ie (issue #185): a tempo change glides the delay to its new length in this time, as FL's Fruity Delay 3
+    // does at its default Time smoothing (REA_rodada52 §3.2, REA_rodada190ie): d ← d + (target − d)·k per sample with
+    // k = 1 − 0.01^(1 / (T·rate)), snapped onto the target within 0.001 sample, read between samples (linear)
+    static constexpr double glideSeconds = 0.5;
+
+    Delay()
+    {
+        const auto size = (std::size_t) (maxSeconds * maxSampleRate) + 4;
+        buffer[0].assign (size, 0.0f);
+        buffer[1].assign (size, 0.0f);
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        glideK = 1.0 - std::pow (0.01, 1.0 / (glideSeconds * sr));
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        std::fill (buffer[0].begin(), buffer[0].end(), 0.0f);
+        std::fill (buffer[1].begin(), buffer[1].end(), 0.0f);
+        damp[0] = damp[1] = 0.0f;
+        write = 0;
+        settled = false;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double bpm) noexcept override
+    {
+        const auto index = delayIndex (params[0]);
+        const auto beats = delayDivisions[(std::size_t) index];
+        const auto seconds = std::min (maxSeconds - 0.01, beats * 60.0 / std::max (bpm, 20.0));
+        const auto delaySamples = std::max<std::size_t> (1, (std::size_t) (seconds * sampleRate));
+        const auto feedback = params[1] * 0.95f;
+        const auto mix = params[2];
+        const auto pingPong = params[3] > 0.5f;
+        const auto dampCoeff = 1.0f - params[4] * 0.9f; // 1 = no filter in the feedback path
+        const auto size = buffer[0].size();
+
+        // the first block and a move of the Time knob take the new length at once (as before round 190ie); only a
+        // tempo change glides (the renderer steps the tempo at every block of a tempo clip: each step was a jump of
+        // the read position, a click at the block rate that the feedback kept)
+        const auto target = (double) delaySamples;
+        if (! settled || index != lastIndex)
+            current = target;
+        settled = true;
+        lastIndex = index;
+
+        // round 190kg (perf, bit for bit): the same arithmetic in the same order per sample, arranged for fewer
+        // instructions. The state lives in locals (the buffers' floats could alias the float members: every sample
+        // stored and reloaded them); positions wrap by a compare instead of a division; the glide's conversions are
+        // signed (the length is ≥ 1 and < 2^53: the same values, without the unsigned conversions' slow paths). And
+        // when the line is longer than a chunk, no sample of the chunk can read what the chunk writes, so the chunk
+        // runs in two passes: the echoes as the line holds them through the feedback low-pass (serial), then the line's
+        // writes and the outputs (independent per sample: vectorisable, still one IEEE operation each, in the same order)
+        float* const bufL = buffer[0].data();
+        float* const bufR = buffer[1].data();
+        auto w = write;
+        auto dampL = damp[0], dampR = damp[1];
+        auto cur = current;
+        const auto steadyPos = [&] (std::size_t at) noexcept { return (at + size - delaySamples) % size; };
+        // one glide step, then the echo read between samples at write position `at`
+        const auto glideRead = [&] (std::size_t at0, float& echoL, float& echoR) noexcept {
+            const auto diff = target - cur;
+            cur = std::abs (diff) < 0.001 ? target : cur + diff * glideK;
+            const auto wholeSigned = (std::int64_t) cur; // (≥ 1 and < size)
+            const auto whole = (std::size_t) wholeSigned;
+            const auto frac = (float) (cur - (double) wholeSigned);
+            const auto at = at0 >= whole ? at0 - whole : at0 + size - whole, before = at == 0 ? size - 1 : at - 1;
+            echoL = bufL[at] + (bufL[before] - bufL[at]) * frac;
+            echoR = bufR[at] + (bufR[before] - bufR[at]) * frac;
+        };
+        const auto run = [&] (auto pingPongOn) noexcept {
+            constexpr bool pp = decltype (pingPongOn)::value;
+            // one sample as before round 190kg's passes (the chunks a short line could read back)
+            const auto sample = [&] (int i, float echoL, float echoR) noexcept {
+                // 1-pole low-pass in the feedback path: repeats get darker
+                dampL += dampCoeff * (echoL - dampL);
+                dampR += dampCoeff * (echoR - dampR);
+                echoL = dampL;
+                echoR = dampR;
+
+                const auto inL = l[i], inR = r[i];
+
+                if constexpr (pp) // mono input on the left side, repeats alternate
+                {
+                    bufL[w] = 0.5f * (inL + inR) + echoR * feedback;
+                    bufR[w] = echoL * feedback;
+                }
+                else
+                {
+                    bufL[w] = inL + echoL * feedback;
+                    bufR[w] = inR + echoR * feedback;
+                }
+
+                l[i] = inL + mix * echoL;
+                r[i] = inR + mix * echoR;
+                if (++w == size)
+                    w = 0;
+            };
+            constexpr int chunk = 64;
+            float eL[chunk], eR[chunk];
+            for (int i = 0; i < n;)
+            {
+                const int m = std::min (chunk, n - i);
+                // (the glide moves monotonically between `cur` and `target`: every length read in the chunk is ≥ the
+                // smaller one's whole part)
+                if (std::min (cur, target) <= (double) (m + 1))
+                {
+                    for (const int end = i + m; i < end; ++i)
+                    {
+                        float echoL, echoR;
+                        if (cur != target) // gliding toward the new tempo's length
+                            glideRead (w, echoL, echoR);
+                        else // the steady length: whole samples, bit for bit as before
+                        {
+                            const auto readPos = steadyPos (w);
+                            echoL = bufL[readPos];
+                            echoR = bufR[readPos];
+                        }
+                        sample (i, echoL, echoR);
+                    }
+                    continue;
+                }
+                // 1. the echoes through the feedback path's low-pass: read between samples while the glide moves
+                // (nothing the chunk writes is read: every length is > m), then whole samples at the steady length
+                const int g = cur != target ? delayGlideChunk (cur, target, glideK, bufL, bufR, size, w, m, dampCoeff, dampL, dampR, eL, eR) : 0;
+                if (g < m) // (one loop per side: no shuffles between them)
+                {
+                    auto at = w + (std::size_t) g;
+                    if (at >= size)
+                        at -= size;
+                    const auto from = steadyPos (at);
+                    const auto steady = [&] (const float* line, float& lp, float* e) noexcept {
+                        auto readPos = from;
+                        for (int k = g; k < m; ++k)
+                        {
+                            lp += dampCoeff * (line[readPos] - lp);
+                            e[k] = lp;
+                            if (++readPos == size)
+                                readPos = 0;
+                        }
+                    };
+                    steady (bufL, dampL, eL);
+                    steady (bufR, dampR, eR);
+                }
+                // 2. the line's writes and the outputs, in runs up to the line's end
+                for (int done = 0; done < m;)
+                {
+                    const int seg = (int) std::min<std::size_t> ((std::size_t) (m - done), size - w);
+                    float* const outL = l + i + done;
+                    float* const outR = r + i + done;
+                    float* const lineL = bufL + w;
+                    float* const lineR = bufR + w;
+                    const float* const echoL = eL + done;
+                    const float* const echoR = eR + done;
+                    for (int k = 0; k < seg; ++k)
+                    {
+                        const auto inL = outL[k], inR = outR[k];
+                        if constexpr (pp)
+                        {
+                            lineL[k] = 0.5f * (inL + inR) + echoR[k] * feedback;
+                            lineR[k] = echoL[k] * feedback;
+                        }
+                        else
+                        {
+                            lineL[k] = inL + echoL[k] * feedback;
+                            lineR[k] = inR + echoR[k] * feedback;
+                        }
+                        outL[k] = inL + mix * echoL[k];
+                        outR[k] = inR + mix * echoR[k];
+                    }
+                    done += seg;
+                    w += (std::size_t) seg;
+                    if (w == size)
+                        w = 0;
+                }
+                i += m;
+            }
+        };
+        if (pingPong)
+            run (std::true_type {});
+        else
+            run (std::false_type {});
+        current = cur;
+        write = w;
+        damp[0] = dampL;
+        damp[1] = dampR;
+    }
+
+private:
+    double sampleRate = 44100.0;
+    double glideK = 1.0;
+    double current = 0.0; // the length read now (samples), gliding toward the tempo's
+    int lastIndex = -1;
+    bool settled = false;
+    std::array<std::vector<float>, 2> buffer;
+    std::size_t write = 0;
+    float damp[2] {};
+};
+
+// ---------------------------------------------------------------------------
+// Schroeder/Moorer-style reverb (the "Freeverb" structure, public domain):
+// 8 comb filters with low-pass in the feedback + 4 all-passes per side.
+
+class Reverb final : public Effect
+{
+public:
+    Reverb()
+    {
+        const auto scale = maxSampleRate / 44100.0;
+
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            for (std::size_t i = 0; i < combTunings.size(); ++i)
+                combs[ch][i].buffer.assign ((std::size_t) ((combTunings[i] + stereoSpread) * scale) + 2, 0.0f);
+
+            for (std::size_t i = 0; i < allpassTunings.size(); ++i)
+                allpasses[ch][i].buffer.assign ((std::size_t) ((allpassTunings[i] + stereoSpread) * scale) + 2, 0.0f);
+        }
+
+        predelayBuffer.assign ((std::size_t) (maxPredelaySeconds * maxSampleRate) + 4, 0.0f);
+    }
+
+    static constexpr double maxPredelaySeconds = 1.0;
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        lastLowCut = lastHighCut = -1.0f;
+        const auto scale = sr / 44100.0;
+
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            const auto spread = ch == 1 ? stereoSpread : 0;
+
+            for (std::size_t i = 0; i < combTunings.size(); ++i)
+                combs[ch][i].length = std::min (combs[ch][i].buffer.size(), (std::size_t) ((combTunings[i] + spread) * scale));
+
+            for (std::size_t i = 0; i < allpassTunings.size(); ++i)
+                allpasses[ch][i].length = std::min (allpasses[ch][i].buffer.size(), (std::size_t) ((allpassTunings[i] + spread) * scale));
+        }
+
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        for (auto& side : combs)
+            for (auto& c : side)
+            {
+                std::fill (c.buffer.begin(), c.buffer.end(), 0.0f);
+                c.index = 0;
+                c.store = 0.0f;
+            }
+
+        for (auto& side : allpasses)
+            for (auto& a : side)
+            {
+                std::fill (a.buffer.begin(), a.buffer.end(), 0.0f);
+                a.index = 0;
+            }
+
+        std::fill (predelayBuffer.begin(), predelayBuffer.end(), 0.0f);
+        predelayWrite = 0;
+        lowCut.reset();
+        highCut.reset();
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        const auto feedback = 0.7f + params[0] * 0.28f; // room size
+        const auto damping = params[1] * 0.4f;
+        const auto width = params[2];
+        const auto mix = params[3];
+        const auto dry = params[4]; // 0 = reverb only (reverb on a send)
+        const auto wet1 = width / 2.0f + 0.5f;
+        const auto wet2 = (1.0f - width) / 2.0f;
+        constexpr float inputGain = 0.015f;
+
+        // at the wet input: low/high cut (at the extremes = off) and predelay
+        const auto lowCutHz = params[5], highCutHz = params[6];
+        const auto useLowCut = lowCutHz > 0.001f, useHighCut = highCutHz < 0.999f;
+
+        if (lowCutHz != lastLowCut || highCutHz != lastHighCut)
+        {
+            lastLowCut = lowCutHz;
+            lastHighCut = highCutHz;
+            lowCut.filter (sampleRate, 1, reverbLowCutHz (lowCutHz), 0.7071);
+            highCut.filter (sampleRate, 0, reverbHighCutHz (highCutHz), 0.7071);
+        }
+
+        const auto predelay = std::min ((int) (params[7] * maxPredelaySeconds * sampleRate), (int) predelayBuffer.size() - 1);
+        const auto predelayLength = (int) predelayBuffer.size();
+
+        // filter by filter over a chunk (each comb/allpass fully in cache), with the same summing
+        // order as sample-by-sample processing
+        constexpr int span = 256;
+        float input[span], out[2][span];
+
+        for (int start = 0; start < n; start += span)
+        {
+            const auto m = std::min (span, n - start);
+            auto* bl = l + start;
+            auto* br = r + start;
+
+            for (int i = 0; i < m; ++i)
+            {
+                auto x = (bl[i] + br[i]) * inputGain;
+
+                if (useLowCut)
+                    x = lowCut.process (x, 0);
+                if (useHighCut)
+                    x = highCut.process (x, 0);
+
+                if (predelay > 0)
+                {
+                    predelayBuffer[(std::size_t) predelayWrite] = x;
+                    auto read = predelayWrite - predelay;
+                    if (read < 0)
+                        read += predelayLength;
+                    x = predelayBuffer[(std::size_t) read];
+
+                    if (++predelayWrite == predelayLength)
+                        predelayWrite = 0;
+                }
+
+                input[i] = x;
+            }
+
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                std::fill (out[ch], out[ch] + m, 0.0f);
+
+                // 4 combs per loop: the feedback chains are independent and the CPU interleaves
+                // them (a single comb is bound by the damping filter's latency)
+                for (std::size_t c = 0; c + 4 <= combs[ch].size(); c += 4)
+                    Comb::process4 (&combs[ch][c], input, out[ch], m, feedback, damping);
+
+                for (auto& a : allpasses[ch])
+                    a.process (out[ch], m);
+            }
+
+            for (int i = 0; i < m; ++i)
+            {
+                bl[i] = bl[i] * dry + mix * (out[0][i] * wet1 + out[1][i] * wet2);
+                br[i] = br[i] * dry + mix * (out[1][i] * wet1 + out[0][i] * wet2);
+            }
+        }
+    }
+
+private:
+    struct Comb
+    {
+        std::vector<float> buffer;
+        std::size_t length = 1, index = 0;
+        float store = 0.0f;
+
+        // four combs at once; sums into `out` in the same order as one by one
+        static void process4 (Comb* c, const float* input, float* out, int n, float feedback, float damping) noexcept
+        {
+            float* buf[4] = { c[0].buffer.data(), c[1].buffer.data(), c[2].buffer.data(), c[3].buffer.data() };
+            std::size_t idx[4] = { c[0].index, c[1].index, c[2].index, c[3].index };
+            const std::size_t len[4] = { c[0].length, c[1].length, c[2].length, c[3].length };
+            float st[4] = { c[0].store, c[1].store, c[2].store, c[3].store };
+            const auto keep = 1.0f - damping;
+
+            for (int i = 0; i < n; ++i)
+            {
+                float o[4];
+
+                for (int k = 0; k < 4; ++k)
+                {
+                    o[k] = buf[k][idx[k]];
+                    st[k] = o[k] * keep + st[k] * damping;
+                    buf[k][idx[k]] = input[i] + st[k] * feedback;
+
+                    if (++idx[k] == len[k])
+                        idx[k] = 0;
+                }
+
+                out[i] = out[i] + o[0] + o[1] + o[2] + o[3];
+            }
+
+            for (int k = 0; k < 4; ++k)
+            {
+                c[k].index = idx[k];
+                c[k].store = st[k];
+            }
+        }
+
+    };
+
+    struct Allpass
+    {
+        std::vector<float> buffer;
+        std::size_t length = 1, index = 0;
+
+        void process (float* io, int n) noexcept
+        {
+            auto* buf = buffer.data();
+            auto idx = index;
+            const auto len = length;
+
+            for (int i = 0; i < n; ++i)
+            {
+                const auto input = io[i];
+                const auto delayed = buf[idx];
+                io[i] = delayed - input;
+                buf[idx] = input + delayed * 0.5f;
+
+                if (++idx == len)
+                    idx = 0;
+            }
+
+            index = idx;
+        }
+    };
+
+    static constexpr std::array<int, 8> combTunings { 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617 };
+    static constexpr std::array<int, 4> allpassTunings { 556, 441, 341, 225 };
+    static constexpr int stereoSpread = 23;
+
+    std::array<std::array<Comb, 8>, 2> combs;
+    std::array<std::array<Allpass, 4>, 2> allpasses;
+    double sampleRate = 44100.0;
+    Biquad lowCut, highCut;
+    float lastLowCut = -1.0f, lastHighCut = -1.0f;
+    std::vector<float> predelayBuffer;
+    int predelayWrite = 0;
+};
+// ---------------------------------------------------------------------------
+// Lookahead limiter: gain starts dropping before the peak arrives (1.5 ms delay,
+// reported as latency so PDC aligns it with the other tracks).
+
+class Limiter final : public Effect
+{
+public:
+    static constexpr double lookaheadSeconds = 0.0015;
+
+    // (rollup step 9: `l2` = the slot's settings run round 190lf's L2 law, so the latency PDC reads before the first block
+    // is the law's window, as after it: issue #113's rule, tests/Pdc188eTests.inc)
+    explicit Limiter (bool l2 = false) : l2Active (l2)
+    {
+        const auto size = (std::size_t) (lookaheadSeconds * maxSampleRate) + 4;
+        delay[0].assign (size, 0.0f);
+        delay[1].assign (size, 0.0f);
+        maxValues.assign (size, 0.0f);
+        maxTimes.assign (size, 0);
+        // round 190lf: the L2 law's buffers, sized for 192 kHz (no allocation in prepare / process)
+        const auto l2Size = (std::size_t) std::ceil (limiterlaw::windowAt48k * maxSampleRate / 48000.0) + 2;
+        l2Delay[0].assign (l2Size, 0.0);
+        l2Delay[1].assign (l2Size, 0.0);
+        l2MinValues.assign (l2Size + 1, 1.0);
+        l2MinTimes.assign (l2Size + 1, 0);
+        l2BoxA.assign (l2Size, 1.0);
+        l2BoxB.assign (l2Size, 1.0);
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        // (never past the delay line: it holds 1.5 ms at 192 kHz, and a device above that rate wrote past its end —
+        // issue #134: the default project has this limiter on its Master)
+        lookahead = std::clamp ((int) std::lround (lookaheadSeconds * sr), 1, (int) delay[0].size());
+        attack = (float) (1.0 - std::exp (-1.0 / (lookahead * 0.3)));
+        // round 190lf: the L2 law's window and smoothing, scaled from 48 kHz (window = boxA + boxB - 1)
+        const auto scale = sr / 48000.0;
+        l2BoxALength = std::clamp ((int) std::lround (limiterlaw::boxAAt48k * scale), 1, (int) l2BoxA.size());
+        l2BoxBLength = std::clamp ((int) std::lround (limiterlaw::boxBAt48k * scale), 1, (int) l2BoxB.size());
+        l2Window = std::clamp (l2BoxALength + l2BoxBLength - 1, 1, (int) l2Delay[0].size());
+        l2Attack = 1.0 - std::exp (-1.0 / (limiterlaw::arcFollowAttackS * sr));
+        l2Release = 1.0 - std::exp (-1.0 / (limiterlaw::arcFollowReleaseS * sr));
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        std::fill (delay[0].begin(), delay[0].end(), 0.0f);
+        std::fill (delay[1].begin(), delay[1].end(), 0.0f);
+        position = 0;
+        gain = 1.0f;
+        clock = 0;
+        // the window starts full of zeros: a single 0 candidate covers all of them
+        head = 0;
+        count = 1;
+        maxValues[0] = 0.0f;
+        maxTimes[0] = -1;
+        resetL2();
+    }
+
+    int latencySamples() const noexcept override { return l2Active.load (std::memory_order_relaxed) ? l2Window : lookahead; }
+    int tailSamples() const noexcept override { return tail; }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        if (limiterlaw::isL2 (params[(std::size_t) limiterlaw::lawParam]))
+        {
+            processL2 (l, r, n, params);
+            return;
+        }
+
+        if (l2Active.load (std::memory_order_relaxed))
+            l2Active.store (false, std::memory_order_relaxed);
+
+        const auto ceiling = dbToGain (limiterCeilingDb (params[0]));
+        const auto input = dbToGain (limiterGainDb (params[1]));
+        const auto release = (float) (1.0 - std::exp (-1.0 / (limiterReleaseMs (params[2]) * 0.001 * sampleRate)));
+        // round 190gp: its declared tail — the look-ahead line empties, then the gain climbs back to where it stops
+        // moving (16 release time constants)
+        tail = tailOf (lookahead + 16.0 * limiterReleaseMs (params[2]) * 0.001 * sampleRate + 64.0);
+
+        for (int i = 0; i < n; ++i)
+        {
+            const auto a = l[i] * input, b = r[i] * input;
+            const auto peak = std::max (std::abs (a), std::abs (b));
+
+            // largest peak among the last `lookahead` samples (sliding maximum with a monotonic queue)
+            const auto capacity = (int) maxValues.size();
+
+            while (count > 0 && maxValues[(std::size_t) ((head + count - 1) % capacity)] <= peak)
+                --count;
+
+            const auto slot = (std::size_t) ((head + count) % capacity);
+            maxValues[slot] = peak;
+            maxTimes[slot] = clock;
+            ++count;
+
+            if (maxTimes[(std::size_t) head] <= clock - lookahead)
+            {
+                head = (head + 1) % capacity;
+                --count;
+            }
+
+            ++clock;
+            const auto ahead = maxValues[(std::size_t) head];
+
+            const auto target = ahead > ceiling ? ceiling / ahead : 1.0f;
+            gain += (target - gain) * (target < gain ? attack : release);
+
+            const auto outL = delay[0][(std::size_t) position] * gain;
+            const auto outR = delay[1][(std::size_t) position] * gain;
+            delay[0][(std::size_t) position] = a;
+            delay[1][(std::size_t) position] = b;
+
+            if (++position == lookahead)
+                position = 0;
+
+            // safety: never exceed the ceiling
+            l[i] = std::clamp (outL, -ceiling, ceiling);
+            r[i] = std::clamp (outR, -ceiling, ceiling);
+        }
+    }
+
+private:
+    // round 190lf: the L2 law (core/LimiterLaw.h, docs/analise/REA_rodada190lf.md §2). The Gain knob is the make-up
+    // (an L2 threshold t and ceiling c: gain = c − t), the input limited at ceiling / gain: the gain each sample needs, its
+    // minimum over the window, ARC's follower of that minimum and its release (or the Release knob's), two moving
+    // averages; the audio delayed by the window. Every constant is LYNX's own fit on our Waves-demo probes.
+    void processL2 (float* l, float* r, int n, const EffectParams& params) noexcept
+    {
+        namespace ll = limiterlaw;
+        if (! l2Active.load (std::memory_order_relaxed))
+        {
+            resetL2();
+            l2Active.store (true, std::memory_order_relaxed);
+        }
+
+        const double ceiling = std::pow (10.0, limiterCeilingDb (params[0]) / 20.0);
+        const double gainDb = (double) limiterGainDb (params[1]) - 24.0 * (double) params[(std::size_t) ll::trimParam];
+        const double threshold = ceiling / std::pow (10.0, gainDb / 20.0);
+        const double makeup = std::min (ceiling, ll::ceilingMax) / threshold;
+        const bool arc = params[(std::size_t) ll::arcParam] >= 0.5f;
+        const double releaseS = limiterReleaseMs (params[2]) * 0.001 * ll::manualTimeScale;
+        const double manual = std::exp (-1.0 / (releaseS * sampleRate));
+        tail = tailOf (l2Window + 16.0 * (arc ? ll::arcFollowReleaseS : releaseS) * sampleRate + 64.0);
+        const int capacity = (int) l2MinValues.size();
+        // round 190mg: the requantizer's settings (0 bits = off: the law's output as before)
+        ditherBits = params[(std::size_t) ll::ditherBitsParam] > 0.0f ? std::clamp ((int) std::lround (params[(std::size_t) ll::ditherBitsParam] * 32.0f), 8, 24) : 0;
+        ditherTpdf = std::lround (params[(std::size_t) ll::ditherTypeParam] * 4.0f) == 2;
+        ditherShape = std::clamp ((int) std::lround (params[(std::size_t) ll::ditherShapeParam] * 8.0f) - 1, 0, 3);
+
+        for (int i = 0; i < n; ++i)
+        {
+            const double a = l[i], b = r[i];
+            const double peak = std::max (std::abs (a), std::abs (b));
+            const double need = peak > threshold ? threshold / peak : 1.0;
+
+            // the smallest need over the last l2Window samples (sliding minimum with a monotonic queue)
+            while (l2Count > 0 && l2MinValues[(std::size_t) ((l2Head + l2Count - 1) % capacity)] >= need)
+                --l2Count;
+            const auto slot = (std::size_t) ((l2Head + l2Count) % capacity);
+            l2MinValues[slot] = need;
+            l2MinTimes[slot] = l2Clock;
+            ++l2Count;
+            if (l2MinTimes[(std::size_t) l2Head] <= l2Clock - l2Window)
+            {
+                l2Head = (l2Head + 1) % capacity;
+                --l2Count;
+            }
+            ++l2Clock;
+            const double least = l2MinValues[(std::size_t) l2Head];
+
+            double g = least;
+            if (arc)
+            {
+                l2Follow += (least - l2Follow) * (least < l2Follow ? l2Attack : l2Release);
+                g = std::min (least, l2Follow);
+            }
+
+            if (g <= l2Gain)
+                l2Gain = g;
+            else
+            {
+                auto keep = manual;
+                if (arc)
+                {
+                    const double u = std::max (std::log (std::max (l2Gain, 1.0e-12)), ll::arcDepthFloor);
+                    const double v = std::clamp ((l2Follow - l2Gain) / std::max (l2Follow, 1.0e-9), 0.0, 1.0);
+                    const auto& q = ll::arcLaw;
+                    const double rate = std::exp (std::min (q[0] + q[1] * u + q[2] * v + q[3] * u * v + q[4] * u * u + q[5] * v * v, 12.0));
+                    keep = std::exp (-rate / sampleRate);
+                }
+                l2Gain = g + (l2Gain - g) * keep;
+            }
+
+            // two moving averages (their running sums recomputed at every wrap: no drift)
+            l2SumA += l2Gain - l2BoxA[(std::size_t) l2IndexA];
+            l2BoxA[(std::size_t) l2IndexA] = l2Gain;
+            if (++l2IndexA == l2BoxALength)
+            {
+                l2IndexA = 0;
+                l2SumA = 0.0;
+                for (int k = 0; k < l2BoxALength; ++k)
+                    l2SumA += l2BoxA[(std::size_t) k];
+            }
+            const double first = l2SumA / l2BoxALength;
+            l2SumB += first - l2BoxB[(std::size_t) l2IndexB];
+            l2BoxB[(std::size_t) l2IndexB] = first;
+            if (++l2IndexB == l2BoxBLength)
+            {
+                l2IndexB = 0;
+                l2SumB = 0.0;
+                for (int k = 0; k < l2BoxBLength; ++k)
+                    l2SumB += l2BoxB[(std::size_t) k];
+            }
+            const double smooth = l2SumB / l2BoxBLength * makeup;
+
+            const auto p = (std::size_t) l2Position;
+            const double outL = l2Delay[0][p] * smooth, outR = l2Delay[1][p] * smooth;
+            l2Delay[0][p] = a;
+            l2Delay[1][p] = b;
+            if (++l2Position >= l2Window)
+                l2Position = 0;
+            if (ditherBits > 0) // round 190mg: IDR (LimiterLaw.h)
+            {
+                l[i] = (float) requantize (outL, 0);
+                r[i] = (float) requantize (outR, 1);
+                continue;
+            }
+            l[i] = (float) outL;
+            r[i] = (float) outR;
+        }
+    }
+
+    // round 190mg: IDR — rounding to ditherBits through the error-feedback shaper, TPDF dither at Type 1
+    double requantize (double x, int c) noexcept
+    {
+        namespace ll = limiterlaw;
+        const double scale = std::ldexp (1.0, ditherBits - 1);
+        if (ditherShape == 0 && x == 0.0) // no shaping: digital silence stays silent (measured)
+            return 0.0;
+        double v = std::clamp (x, -1.0, 1.0) * scale;
+        auto& hist = ditherHist[c];
+        if (ditherShape > 0)
+        {
+            const auto& h = ll::ditherShaping[ditherShape - 1];
+            for (int k = 0; k < ll::ditherTaps; ++k)
+                v += h[k] * hist[(std::size_t) ((ditherPos[c] + k) % ll::ditherTaps)];
+        }
+        double d = 0.0;
+        if (ditherTpdf)
+        {
+            auto next = [this, c]() noexcept { auto& s = ditherSeed[c]; s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (double) s * (1.0 / 4294967296.0); };
+            d = next() - next(); // TPDF, ±1 LSB
+        }
+        const double y = std::clamp (std::floor (v + d + 0.5), -scale, scale - 1.0);
+        if (ditherShape > 0) // the newest error first (index ditherPos), clamped so an overload cannot run away
+        {
+            ditherPos[c] = (ditherPos[c] + ll::ditherTaps - 1) % ll::ditherTaps;
+            hist[(std::size_t) ditherPos[c]] = std::clamp (y - v, -8.0, 8.0);
+        }
+        return y / scale;
+    }
+
+    void resetL2() noexcept
+    {
+        std::fill (l2Delay[0].begin(), l2Delay[0].end(), 0.0);
+        std::fill (l2Delay[1].begin(), l2Delay[1].end(), 0.0);
+        std::fill (l2BoxA.begin(), l2BoxA.end(), 1.0);
+        std::fill (l2BoxB.begin(), l2BoxB.end(), 1.0);
+        l2SumA = (double) l2BoxALength;
+        l2SumB = (double) l2BoxBLength;
+        l2IndexA = l2IndexB = l2Position = 0;
+        l2Follow = l2Gain = 1.0;
+        l2Clock = 0;
+        l2Head = 0;
+        l2Count = 1;
+        l2MinValues[0] = 1.0;
+        l2MinTimes[0] = -1;
+        for (auto& h : ditherHist) h.fill (0.0); // round 190mg: the requantizer (LYNX's renders stay deterministic)
+        ditherPos[0] = ditherPos[1] = 0;
+        ditherSeed[0] = 0x6C078965u;
+        ditherSeed[1] = 0x5DEECE66u;
+    }
+
+    double sampleRate = 44100.0;
+    int lookahead = 64, position = 0;
+    float attack = 0.1f, gain = 1.0f;
+    std::array<std::vector<float>, 2> delay;
+    std::vector<float> maxValues;      // monotonic (decreasing) queue for the sliding maximum
+    std::vector<std::int64_t> maxTimes;
+    int head = 0, count = 0;
+    std::int64_t clock = 0;
+    int tail = -1;
+
+    int ditherBits = 0, ditherShape = 0, ditherPos[2] {};
+    bool ditherTpdf = false;
+    std::array<std::array<double, 48>, 2> ditherHist {};
+    std::uint32_t ditherSeed[2] { 0x6C078965u, 0x5DEECE66u };
+    std::atomic<bool> l2Active { false };
+    int l2Window = 64, l2BoxALength = 27, l2BoxBLength = 38, l2Position = 0, l2IndexA = 0, l2IndexB = 0;
+    double l2Attack = 0.0, l2Release = 0.0, l2Follow = 1.0, l2Gain = 1.0, l2SumA = 27.0, l2SumB = 38.0;
+    std::array<std::vector<double>, 2> l2Delay;
+    std::vector<double> l2MinValues, l2BoxA, l2BoxB;   // monotonic (increasing) queue for the sliding minimum; the averages
+    std::vector<std::int64_t> l2MinTimes;
+    int l2Head = 0, l2Count = 0;
+    std::int64_t l2Clock = 0;
+};
+
+// ---------------------------------------------------------------------------
+
+class Filter final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        last.fill (-1.0f);
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        biquad.reset();
+        second.reset();
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        if (params[0] != last[0] || params[1] != last[1] || params[2] != last[2] || params[4] != last[4])
+        {
+            const auto wasSteep = filterSteep (last[4]);
+            last = params;
+            const auto q = filterQ (params[2]);
+            biquad.filter (sampleRate, filterType (params[0]), filterHz (params[1]), q);
+            steep = filterSteep (params[4]);
+            if (steep)
+            {
+                second.filter (sampleRate, filterType (params[0]), filterHz (params[1]), filterSecondStageQ (q));
+                if (! wasSteep)
+                    second.reset();
+            }
+            tail = tailOf (tailOf (biquad) + (steep ? tailOf (second) : 0.0)); // (round 190gp)
+        }
+
+        const auto mix = params[3];
+
+        if (steep)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                l[i] += (second.process (biquad.process (l[i], 0), 0) - l[i]) * mix;
+                r[i] += (second.process (biquad.process (r[i], 1), 1) - r[i]) * mix;
+            }
+            return;
+        }
+
+        for (int i = 0; i < n; ++i)
+        {
+            l[i] += (biquad.process (l[i], 0) - l[i]) * mix;
+            r[i] += (biquad.process (r[i], 1) - r[i]) * mix;
+        }
+    }
+
+    int tailSamples() const noexcept override { return tail; }
+
+private:
+    double sampleRate = 44100.0;
+    Biquad biquad, second;
+    bool steep = false;
+    EffectParams last {};
+    int tail = -1;
+};
+
+// ---------------------------------------------------------------------------
+
+class Distortion final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        lastTone = -1.0f;
+        reset();
+    }
+
+    void reset() noexcept override { tone.reset(); }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        if (params[1] != lastTone)
+        {
+            lastTone = params[1];
+            tone.filter (sampleRate, 0, distortionToneHz (params[1]), 0.707);
+            tail = tailOf (tailOf (tone)); // (round 190gp: the shaper has no memory; the tone filter rings out)
+        }
+
+        const auto drive = dbToGain (distortionDriveDb (params[0]));
+        const auto mix = params[2];
+        const auto output = dbToGain ((params[3] - 0.5f) * 24.0f);
+        // compensate the drive gain so the volume doesn't blow up
+        const auto compensate = 1.0f / fastTanh (std::max (drive, 1.0f));
+
+        for (int i = 0; i < n; ++i)
+        {
+            const auto wl = tone.process (fastTanh (l[i] * drive) * compensate, 0);
+            const auto wr = tone.process (fastTanh (r[i] * drive) * compensate, 1);
+            l[i] = (l[i] + (wl - l[i]) * mix) * output;
+            r[i] = (r[i] + (wr - r[i]) * mix) * output;
+        }
+    }
+
+    int tailSamples() const noexcept override { return tail; }
+
+private:
+    double sampleRate = 44100.0;
+    Biquad tone;
+    float lastTone = -1.0f;
+    int tail = -1;
+};
+
+// ---------------------------------------------------------------------------
+// Chorus: an LFO-modulated delay line, with opposite phases on L and R.
+
+class Chorus final : public Effect
+{
+public:
+    static constexpr double maxSeconds = 0.05;
+
+    Chorus()
+    {
+        const auto size = (std::size_t) (maxSeconds * maxSampleRate) + 4;
+        buffer[0].assign (size, 0.0f);
+        buffer[1].assign (size, 0.0f);
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        length = (int) std::min<std::size_t> (buffer[0].size(), (std::size_t) (maxSeconds * sr) + 4);
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        std::fill (buffer[0].begin(), buffer[0].end(), 0.0f);
+        std::fill (buffer[1].begin(), buffer[1].end(), 0.0f);
+        write = 0;
+        phase = 0.0;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        const auto rate = chorusRateHz (params[0]);
+        const auto depth = chorusDepthMs (params[1]) * 0.001 * sampleRate;
+        const auto mix = params[2];
+        const auto feedback = params[3] * 0.7f;
+        const auto base = 0.012 * sampleRate; // 12 ms
+        const auto step = rate / sampleRate;
+
+        for (int i = 0; i < n; ++i)
+        {
+            float* io[2] = { l + i, r + i };
+            const auto s = sinTurns (phase); // L and R in opposite phases: the same sine with flipped sign
+
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                const auto lfo = ch == 0 ? s : -s;
+                const auto delaySamples = base + depth * 0.5 * (1.0 + lfo);
+                auto readPos = (double) write - delaySamples;
+                while (readPos < 0.0)
+                    readPos += length;
+
+                const auto i0 = (int) readPos;
+                const auto frac = (float) (readPos - i0);
+                const auto& buf = buffer[(std::size_t) ch];
+                const auto next = i0 + 1 == length ? 0 : i0 + 1;
+                const auto delayed = buf[(std::size_t) i0] + frac * (buf[(std::size_t) next] - buf[(std::size_t) i0]);
+                buffer[(std::size_t) ch][(std::size_t) write] = *io[ch] + delayed * feedback;
+                *io[ch] += (delayed - *io[ch]) * mix * 0.5f;
+            }
+
+            if (++write == length)
+                write = 0;
+
+            phase += step;
+            if (phase >= 1.0)
+                phase -= 1.0;
+        }
+    }
+
+private:
+    double sampleRate = 44100.0;
+    std::array<std::vector<float>, 2> buffer;
+    int length = 1, write = 0;
+    double phase = 0.0;
+};
+
+// ---------------------------------------------------------------------------
+// 7-band parametric EQ: each band is a cookbook biquad (or up to 4 in series for the cuts,
+// with the Qs of a Butterworth of the requested order).
+
+constexpr std::array<std::array<double, 4>, 4> butterworthQ { { { 0.70710678, 0, 0, 0 },
+                                                                { 0.54119610, 1.30656296, 0, 0 },
+                                                                { 0.51763809, 0.70710678, 1.93185165, 0 },
+                                                                { 0.50979558, 0.60134489, 0.89997622, 2.56291545 } } };
+
+// Stage coefficients of a band; returns the number of stages (0 = band off/transparent).
+int bandStages (const EffectParams& p, int band, double sr, std::array<Biquad, 4>& out) noexcept
+{
+    const auto t = peq::type (p[(std::size_t) peq::param (band, 0)]);
+    const auto hz = std::min (peq::hz (p[(std::size_t) peq::param (band, 1)]), sr * 0.45);
+    const auto db = peq::gainDb (p[(std::size_t) peq::param (band, 2)]);
+    const auto q = peq::q (p[(std::size_t) peq::param (band, 3)]);
+
+    switch (t)
+    {
+        case peq::BandType::off: return 0;
+        case peq::BandType::peak:
+            if (std::abs (db) < 0.01)
+                return 0;
+            out[0].peaking (sr, hz, q, db);
+            return 1;
+        case peq::BandType::lowShelf:
+        case peq::BandType::highShelf:
+            if (std::abs (db) < 0.01)
+                return 0;
+            out[0].shelf (sr, hz, db, t == peq::BandType::highShelf, std::clamp (q, 0.1, 4.0)); // Q = shelf slope S
+            return 1;
+        case peq::BandType::lowCut:
+        case peq::BandType::highCut:
+        {
+            // cascaded: the Qs of a Butterworth of that order, scaled by the band Q (0.707 = Butterworth)
+            const auto stages = peq::slopeStages (p[(std::size_t) (peq::slopeParam + band)]);
+            const auto& qs = butterworthQ[(std::size_t) (stages - 1)];
+            for (int s = 0; s < stages; ++s)
+                out[(std::size_t) s].filter (sr, t == peq::BandType::lowCut ? 1 : 0, hz, stages == 1 ? q : qs[(std::size_t) s] * q / 0.70710678);
+            return stages;
+        }
+        case peq::BandType::bandPass:
+            out[0].filter (sr, 2, hz, q);
+            return 1;
+        case peq::BandType::notch:
+        {
+            const auto w = 2.0 * pi * hz / sr;
+            const auto alpha = std::sin (w) / (2.0 * q);
+            out[0].set (1, -2 * std::cos (w), 1, 1 + alpha, -2 * std::cos (w), 1 - alpha);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+class ParametricEq final : public Effect
+{
+public:
+    ParametricEq() = default;
+    // a slot imported from FL: its engine is set up at once, so the latency is known before the first block
+    explicit ParametricEq (const EffectParams& params)
+    {
+        if (peq::flLaw (params))
+        {
+            lastParams = params;
+            flMode = true;
+            fl.set (peqfl::fromParams (params));
+        }
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        if (! flMode)
+            lastParams.fill (-1.0f);
+        fl.prepare (sr);
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        for (auto& band : stages)
+            for (auto& s : band)
+                s.reset();
+        fl.reset();
+    }
+
+    int latencySamples() const noexcept override { return flMode ? fl.latencySamples() : 0; }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        if (peq::flLaw (params))
+        {
+            // FL's Parametric EQ 2 / Parametric EQ, exact (core/ParametricEqFl.h)
+            if (params != lastParams || ! flMode)
+            {
+                lastParams = params;
+                flMode = true;
+                fl.set (peqfl::fromParams (params));
+            }
+            fl.process (l, r, n);
+            tail = -1;
+            listen (l, r, n, params);
+            return;
+        }
+        flMode = false;
+
+        if (params != lastParams)
+        {
+            lastParams = params;
+            active = 0;
+
+            for (int b = 0; b < peq::bands; ++b)
+            {
+                std::array<Biquad, 4> fresh;
+                const auto count = bandStages (params, b, sampleRate, fresh);
+
+                // keep the state of filters that remain (no click when turning a knob)
+                for (int s = 0; s < count; ++s)
+                {
+                    auto& stage = stages[(std::size_t) b][(std::size_t) s];
+                    stage.b0 = fresh[(std::size_t) s].b0; stage.b1 = fresh[(std::size_t) s].b1; stage.b2 = fresh[(std::size_t) s].b2;
+                    stage.a1 = fresh[(std::size_t) s].a1; stage.a2 = fresh[(std::size_t) s].a2;
+                }
+
+                for (int s = count; s < 4; ++s)
+                    stages[(std::size_t) b][(std::size_t) s].reset();
+
+                for (int s = 0; s < count; ++s)
+                    order[(std::size_t) active++] = &stages[(std::size_t) b][(std::size_t) s];
+            }
+
+            output = (float) std::pow (10.0, peq::gainDb (params[peq::outputParam]) / 20.0);
+            double samples = 0.0; // (round 190gp: its sections in a row; FL's engines keep the fixed hold)
+            for (int k = 0; k < active; ++k)
+                samples += tailOf (*order[(std::size_t) k]);
+            tail = tailOf (samples);
+        }
+
+        for (int k = 0; k < active; ++k)
+            order[(std::size_t) k]->processBlock (l, r, n);
+
+        if (output != 1.0f)
+            for (int i = 0; i < n; ++i)
+            {
+                l[i] *= output;
+                r[i] *= output;
+            }
+        listen (l, r, n, params);
+    }
+
+    // round 190ih: the momentary band solo (peq::setSoloBand)
+    std::atomic<int> solo { -1 };
+
+private:
+    // after the EQ (its latency and sound kept), only the soloed band's region passes
+    void listen (float* l, float* r, int n, const EffectParams& params) noexcept
+    {
+        const auto band = solo.load (std::memory_order_relaxed);
+        if (band < 0 || band >= peq::bands)
+        {
+            soloShown = -1;
+            return;
+        }
+        const auto hz = params[(std::size_t) peq::param (band, 1)];
+        const auto width = params[(std::size_t) peq::param (band, 3)];
+        if (band != soloShown || hz != soloHz || width != soloWidth)
+        {
+            if (band != soloShown)
+                soloFilter.reset();
+            soloShown = band;
+            soloHz = hz;
+            soloWidth = width;
+            EffectParams bp {};
+            bp[(std::size_t) peq::param (0, 0)] = peq::typeValue (peq::BandType::bandPass);
+            bp[(std::size_t) peq::param (0, 1)] = hz;
+            bp[(std::size_t) peq::param (0, 3)] = peq::qValue (peq::soloQ (params, band));
+            std::array<Biquad, 4> fresh;
+            if (bandStages (bp, 0, sampleRate, fresh) > 0)
+            {
+                soloFilter.b0 = fresh[0].b0; soloFilter.b1 = fresh[0].b1; soloFilter.b2 = fresh[0].b2;
+                soloFilter.a1 = fresh[0].a1; soloFilter.a2 = fresh[0].a2;
+            }
+        }
+        soloFilter.processBlock (l, r, n);
+    }
+
+    Biquad soloFilter;
+    int soloShown = -1;
+    float soloHz = -1.0f, soloWidth = -1.0f;
+    double sampleRate = 44100.0;
+    std::array<std::array<Biquad, 4>, peq::bands> stages;
+    std::array<Biquad*, peq::bands * 4> order {};
+    int active = 0;
+    float output = 1.0f;
+    EffectParams lastParams {};
+    peqfl::Engine fl;
+    bool flMode = false;
+    int tail = -1;
+
+public:
+    int tailSamples() const noexcept override { return tail; }
+};
+
+// ---------------------------------------------------------------------------
+// Utility: stereo matrix (L->L, R->L, L->R, R->R), balance and gain.
+
+float utilityGainDb (float v) { return (v - 0.5f) * 48.0f; }   // ±24 dB
+float utilityMatrix (float v) { return v * 4.0f - 2.0f; }      // −2..2 (0.75 = 1.0)
+
+// Volume gate: 32 steps per 4-beat bar (Gross Beat's "volume"). Per-step gain,
+// mix with the original signal and attack/release smoothing.
+namespace gate
+{
+constexpr int steps = 32;
+constexpr int mixParam = 32, attackParam = 33, releaseParam = 34;
+inline double attackMs (float v) { return std::pow (501.0, (double) v) - 1.0; }
+inline double releaseMs (float v) { return 2.0 * (std::pow (501.0, (double) v) - 1.0); }
+} // namespace gate
+
+class VolumeGate final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override { sampleRate = sr; }
+    void reset() noexcept override { gain = 1.0f; }
+    void setSongPosition (double ticks) noexcept override { tick = ticks; }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double bpm) noexcept override
+    {
+        const auto mix = std::clamp (p[gate::mixParam], 0.0f, 1.0f);
+        const auto up = (float) (1.0 - std::exp (-1.0 / (std::max (0.05, gate::attackMs (p[gate::attackParam])) * 0.001 * sampleRate)));
+        const auto down = (float) (1.0 - std::exp (-1.0 / (std::max (0.05, gate::releaseMs (p[gate::releaseParam])) * 0.001 * sampleRate)));
+        const auto ticksPerSample = std::max (1.0, bpm) / 60.0 * ppq / sampleRate;
+        const auto bar = 4.0 * ppq;
+        auto position = std::fmod (std::max (0.0, tick), bar);
+
+        for (int i = 0; i < n; ++i)
+        {
+            const auto step = std::clamp ((int) (position / bar * gate::steps), 0, gate::steps - 1);
+            const auto target = 1.0f - mix + mix * std::clamp (p[(std::size_t) step], 0.0f, 1.0f);
+            gain += (target - gain) * (target > gain ? up : down);
+            l[i] *= gain;
+            r[i] *= gain;
+            position += ticksPerSample;
+            if (position >= bar)
+                position -= bar;
+        }
+        tick += ticksPerSample * n;
+    }
+
+private:
+    double sampleRate = 44100.0, tick = 0.0;
+    float gain = 1.0f;
+};
+
+// Real-time pitch shift: two read heads on a delay line whose delay varies as a sawtooth
+// (the "rotating tape"); when one head wraps around, the other is mid-window and the
+// sine/cosine crossfade hides the jump. Parameters: semitones (±24), cents (±100), mix, window.
+namespace pitch
+{
+inline double semitones (float v) { return std::round ((std::clamp ((double) v, 0.0, 1.0) - 0.5) * 48.0); }
+inline double cents (float v) { return (std::clamp ((double) v, 0.0, 1.0) - 0.5) * 200.0; }
+inline double windowMs (float v) { return 20.0 + 100.0 * std::clamp ((double) v, 0.0, 1.0); }
+} // namespace pitch
+
+class PitchShift final : public Effect
+{
+public:
+    static constexpr double maxSeconds = 0.13;
+
+    PitchShift()
+    {
+        const auto size = (std::size_t) (maxSeconds * maxSampleRate) + 8;
+        buffer[0].assign (size, 0.0f);
+        buffer[1].assign (size, 0.0f);
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        length = (int) std::min<std::size_t> (buffer[0].size(), (std::size_t) (maxSeconds * sr) + 8);
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        std::fill (buffer[0].begin(), buffer[0].end(), 0.0f);
+        std::fill (buffer[1].begin(), buffer[1].end(), 0.0f);
+        write = 0;
+        phase = 0.0;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        const auto ratio = std::pow (2.0, (pitch::semitones (p[0]) + pitch::cents (p[1]) / 100.0) / 12.0);
+        const auto mix = std::clamp (p[2], 0.0f, 1.0f);
+        const auto window = std::min (pitch::windowMs (p[3]) * 0.001 * sampleRate, (double) length - 4.0);
+        const auto step = (1.0 - ratio) / window; // the delay grows (pitch down) or shrinks (pitch up)
+
+        for (int i = 0; i < n; ++i)
+        {
+            float* io[2] = { l + i, r + i };
+            buffer[0][(std::size_t) write] = *io[0];
+            buffer[1][(std::size_t) write] = *io[1];
+
+            const auto phaseB = phase + 0.5 >= 1.0 ? phase - 0.5 : phase + 0.5;
+            const auto gainA = (float) std::sin (3.141592653589793 * phase);
+            const auto gainB = (float) std::sin (3.141592653589793 * phaseB);
+
+            for (int c = 0; c < 2; ++c)
+            {
+                const auto shifted = gainA * read (c, 1.0 + phase * window) + gainB * read (c, 1.0 + phaseB * window);
+                *io[c] += (shifted - *io[c]) * mix;
+            }
+
+            phase += step;
+            phase -= std::floor (phase);
+            if (++write >= length)
+                write = 0;
+        }
+    }
+
+private:
+    float read (int c, double delay) const noexcept
+    {
+        auto position = (double) write - delay;
+        while (position < 0.0)
+            position += length;
+        const auto i0 = (int) position;
+        const auto frac = (float) (position - i0);
+        const auto i1 = i0 + 1 >= length ? 0 : i0 + 1;
+        const auto& b = buffer[(std::size_t) c];
+        return b[(std::size_t) i0] + (b[(std::size_t) i1] - b[(std::size_t) i0]) * frac;
+    }
+
+    std::array<std::vector<float>, 2> buffer;
+    double sampleRate = 44100.0, phase = 0.0;
+    int length = 1, write = 0;
+};
+
+// Frequency shifter: the analytic signal (quadrature pair from two chains of 2nd-order allpasses
+// in z², a ~90° "Hilbert transformer" over the useful range) multiplied by a complex oscillator.
+// Parameters: shift (±2 kHz, quadratic curve around the center), mix, stereo spread
+// (the right side shifts the opposite way).
+namespace fshift
+{
+inline double hz (float v)
+{
+    const auto x = (std::clamp ((double) v, 0.0, 1.0) - 0.5) * 2.0;
+    return 2000.0 * x * std::abs (x);
+}
+} // namespace fshift
+
+// Lo-fi: holds each sample for 128·t³ + 1 samples and quantizes to 65536/(2048·b² + 1) levels
+// (the laws of FL Effector's Lo-fi, REA_rodada18 §3.2); linear dry/wet mix.
+namespace lofi
+{
+int holdSamples (float v) { return (int) (128.0f * v * v * v) + 1; }
+double levels (float v) { return 65536.0 / (2048.0 * v * v + 1.0); }
+} // namespace lofi
+
+// Crossover (a band of FL's Frequency Splitter, REA_rodada17 §1.2): high-pass and/or low-pass with the
+// structure of each slope — 6 dB: 1st order; 12: 1 biquad Q 0.5 (inverted HP); 18: Butterworth 3
+// (in FL it is an undocumented all-pass structure: approximation); 24: 2× Q 0.707; 36: Q 0.5412/1.3066/
+// 0.7070 (inverted HP); 48: Butterworth 4 squared; 72: Butterworth 6 squared; 96: Butterworth 8
+// squared. Parameters: 0 HP on, 1 HP cutoff, 2 HP slope, 3 LP on, 4 LP cutoff, 5 LP slope.
+namespace xover
+{
+double hz (float v) { return 30.0 * std::pow (2.0, 9.0589 * std::clamp (v, 0.0f, 1.0f)); }
+int combo (float v) { return std::clamp ((int) std::lround (v * 7.0f), 0, 7); }
+constexpr int dbPerOctave[8] { 6, 12, 18, 24, 36, 48, 72, 96 };
+
+struct Design
+{
+    std::vector<double> qs; // 2nd-order biquads
+    bool firstOrder = false;
+    bool invertHighPass = false;
+};
+
+Design design (int c)
+{
+    switch (c)
+    {
+        case 0: return { {}, true, false };
+        case 1: return { { 0.5 }, false, true };
+        case 2: return { { 1.0 }, true, false };
+        case 3: return { { 0.7071, 0.7071 }, false, false };
+        case 4: return { { 0.5412, 1.3066, 0.7070 }, false, true };
+        case 5: return { { 0.5412, 1.3066, 0.5412, 1.3066 }, false, false };
+        case 6: return { { 0.5176, 0.7071, 1.9319, 0.5176, 0.7071, 1.9319 }, false, false };
+        default: return { { 0.5098, 0.6013, 0.9000, 2.5629, 0.5098, 0.6013, 0.9000, 2.5629 }, false, false };
+    }
+}
+} // namespace xover
+
+class Crossover final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        last.fill (-1.0f);
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        for (auto& side : sides)
+        {
+            for (auto& b : side.biquads)
+                b.reset();
+            side.firstState[0] = side.firstState[1] = 0.0;
+            side.firstIn[0] = side.firstIn[1] = 0.0;
+        }
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        if (p[0] != last[0] || p[1] != last[1] || p[2] != last[2] || p[3] != last[3] || p[4] != last[4] || p[5] != last[5])
+        {
+            for (int i = 0; i < 6; ++i)
+                last[(std::size_t) i] = p[(std::size_t) i];
+            configure (sides[0], p[0] > 0.5f, true, xover::hz (p[1]), xover::combo (p[2]));
+            configure (sides[1], p[3] > 0.5f, false, xover::hz (p[4]), xover::combo (p[5]));
+        }
+
+        for (auto& side : sides)
+            if (side.active)
+                for (int i = 0; i < n; ++i)
+                {
+                    l[i] = (float) side.process (l[i], 0);
+                    r[i] = (float) side.process (r[i], 1);
+                }
+    }
+
+private:
+    struct Side
+    {
+        bool active = false, highPass = false, firstOrder = false;
+        double sign = 1.0;
+        std::array<Biquad, 8> biquads;
+        int count = 0;
+        double a = 0.0; // 1st order (bilinear transform)
+        double firstState[2] {}, firstIn[2] {};
+
+        double process (double x, int ch) noexcept
+        {
+            if (firstOrder)
+            {
+                // 1st-order low-pass: y = a·(x + x[n−1]) + (1 − 2a)·y[n−1]; the high-pass is the complement
+                const auto lp = a * (x + firstIn[ch]) + (1.0 - 2.0 * a) * firstState[ch];
+                firstIn[ch] = x;
+                firstState[ch] = lp;
+                x = highPass ? x - lp : lp;
+            }
+            for (int i = 0; i < count; ++i)
+                x = biquads[(std::size_t) i].process (x, ch);
+            return sign * x;
+        }
+    };
+
+    void configure (Side& side, bool on, bool highPass, double hz, int combo)
+    {
+        side.active = on;
+        if (! on)
+            return;
+        const auto d = xover::design (combo);
+        side.highPass = highPass;
+        side.firstOrder = d.firstOrder;
+        side.sign = highPass && d.invertHighPass ? -1.0 : 1.0;
+        side.count = (int) d.qs.size();
+        const auto f = std::clamp (hz, 10.0, 0.49 * sampleRate);
+        const auto k = std::tan (3.141592653589793 * f / sampleRate);
+        side.a = k / (1.0 + k);
+        for (int i = 0; i < side.count; ++i)
+            side.biquads[(std::size_t) i].filter (sampleRate, highPass ? 1 : 0, f, d.qs[(std::size_t) i]);
+    }
+
+    double sampleRate = 44100.0;
+    std::array<Side, 2> sides {};
+    std::array<float, 6> last {};
+};
+
+// Rhythmic envelope (REA_rodada20 §1.2/§1.3): period in beats, up to 12 points (position 0..1 in the period, level,
+// tension); the value between two points follows the curve of the destination point. Parameters: 0 period/64 beats,
+// 1 point count/12, then 3 per point (position, level, (tension + 1)/2).
+namespace rhythm
+{
+constexpr int maxPoints = 12;
+double curve (double x, double t) noexcept
+{
+    if (std::abs (t) < 1e-6)
+        return x;
+    const auto q = std::pow (1000001.0, std::abs (t)) - 1.0;
+    return t > 0.0 ? 1.0 - (std::pow (1.0 + q, 1.0 - x) - 1.0) / q : (std::pow (1.0 + q, x) - 1.0) / q;
+}
+
+double valueAt (const EffectParams& p, double u) noexcept
+{
+    const auto count = std::clamp ((int) std::lround (p[1] * maxPoints), 0, maxPoints);
+    if (count == 0)
+        return 1.0;
+    auto prevX = 0.0, prevY = (double) p[3];
+    for (int k = 0; k < count; ++k)
+    {
+        const auto x = (double) p[(std::size_t) (2 + 3 * k)], y = (double) p[(std::size_t) (3 + 3 * k)];
+        if (u < x)
+        {
+            const auto f = x > prevX ? (u - prevX) / (x - prevX) : 1.0;
+            return prevY + (y - prevY) * curve (f, 2.0 * p[(std::size_t) (4 + 3 * k)] - 1.0);
+        }
+        prevX = x;
+        prevY = y;
+    }
+    return prevY;
+}
+} // namespace rhythm
+
+class RhythmGain final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override { sampleRate = sr; }
+    void reset() noexcept override {}
+    void setSongPosition (double ticks) noexcept override { beats = ticks / 960.0; }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double bpm) noexcept override
+    {
+        const auto period = std::max (1e-3, (double) p[0] * 64.0);
+        const auto step = std::max (bpm, 1.0) / 60.0 / sampleRate;
+        if (p[38] > 0.5f) // control only: the value becomes a live automation source, audio passes through untouched
+        {
+            const auto t = beats + step * n;
+            current = (float) rhythm::valueAt (p, (t - std::floor (t / period) * period) / period);
+            return;
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            const auto t = beats + step * i;
+            const auto g = (float) rhythm::valueAt (p, (t - std::floor (t / period) * period) / period);
+            l[i] *= g;
+            r[i] *= g;
+            current = g;
+        }
+    }
+
+    float controlOutput (int) const noexcept override { return current; }
+
+private:
+    double sampleRate = 44100.0, beats = 0.0;
+    float current = 1.0f;
+};
+
+// Auto-pan (REA_rodada20 §1.5): triangle (+1 at φ = 0, −1 at 0.5) with phase 0.75 + offset + beats/period.
+// Parameters: 0 period/64 beats, 1 depth ((a + 1)/2, a = maximum pan excursion), 2 phase
+// offset (cycles), 3 fixed pan ((p + 1)/2). Pan law: the utility's balance (FL's has not been decoded).
+} // namespace
+
+namespace peq
+{
+void setSoloBand (Effect* effect, int band) noexcept
+{
+    if (auto* eq = dynamic_cast<ParametricEq*> (effect))
+        eq->solo.store (band >= 0 && band < bands ? band : -1, std::memory_order_relaxed);
+}
+
+int soloBand (const Effect* effect) noexcept
+{
+    const auto* eq = dynamic_cast<const ParametricEq*> (effect);
+    return eq != nullptr ? eq->solo.load (std::memory_order_relaxed) : -1;
+}
+
+double soloQ (const EffectParams& params, int band) noexcept
+{
+    const auto v = params[(std::size_t) param (std::clamp (band, 0, bands - 1), 3)];
+    return std::clamp (q (flLaw (params) ? 1.0f - v : v), 0.5, 18.0); // (FL's bandwidth grows with the value; LYNX's Q shrinks)
+}
+} // namespace peq
+
+// FL's mode-0 pan law (REA_rodada27 §3.1): G_L = √2·cos((1 + pan)π/4), G_R = √2·sin((1 + pan)π/4) (unit volume),
+// the near side keeps 1 − f/2 of its input and gets f/2 of the other, f = 1 − (far gain); no clamp of pan
+void flPanMatrix (double pan, float& ll, float& rl, float& lr, float& rr) noexcept
+{
+    const auto angle = (1.0 + pan) * 3.141592653589793 / 4.0;
+    const auto gl = std::sqrt (2.0) * std::cos (angle), gr = std::sqrt (2.0) * std::sin (angle);
+    ll = (float) gl, rr = (float) gr, rl = lr = 0.0f;
+    if (pan < 0.0)
+    {
+        const auto f = 1.0 - gr;
+        ll = (float) (gl * (1.0 - f / 2.0));
+        rl = (float) (gl * f / 2.0);
+    }
+    else if (pan > 0.0)
+    {
+        const auto f = 1.0 - gl;
+        rr = (float) (gr * (1.0 - f / 2.0));
+        lr = (float) (gr * f / 2.0);
+    }
+}
+
+namespace
+{
+// Fruity Squeeze (REA_rodada29 §2), float32 like FL: silence bypass per block → (filter, pre) → quantiser
+// Lq = 32768^(1 − Steps/32768) → periodic gate Impact/Preserve (samples at 44.1 kHz × fs/44100) → (filter, post)
+// → (dry·(128 − Mix) + wet·Mix)/128 × Volume/127. The SVF (2 passes per sample, LP/HP/BP/notch/peak) is always
+// designed for 44.1 kHz, whatever the rate (as FL does). Parameters are FL's raw values divided by their maximum.
+} // namespace
+const std::array<float, 12> squeezeMax { 160, 128, 32768, 1, 4, 65536, 65536, 1, 3, 44100, 44100, 65536 };
+namespace
+{
+class Squeeze final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override
+    {
+        rate = (float) (sr / 44100.0);
+        reset();
+    }
+    void reset() noexcept override
+    {
+        for (auto& f : filters)
+            f.low = f.band = 0.0f;
+        counterA = counterB = 0.0f;
+        gateOn = false;
+        last.fill (-1.0f);
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        bool changed = false;
+        for (std::size_t i = 0; i < 12; ++i)
+            if (p[i] != last[i])
+                last[i] = p[i], changed = true;
+        if (changed)
+            configure (p);
+        bool silent = true;
+        for (int i = 0; i < n && silent; ++i)
+            silent = std::abs (l[i]) <= 1e-6f && std::abs (r[i]) <= 1e-6f;
+        if (silent)
+            return; // FL leaves (near-)silent blocks untouched
+        for (int i = 0; i < n; ++i)
+        {
+            const float dryL = l[i], dryR = r[i];
+            float x[2] { l[i], r[i] };
+            if (! post && filterOn)
+                for (int c = 0; c < 2; ++c)
+                    x[c] = filters[(std::size_t) c].tick (x[c], type, coefF, coefQ);
+            if (steps < 32768.0f)
+                for (auto& v : x)
+                    v = (float) std::nearbyint (v * steps) / steps; // round half to even, like the DLL
+            if (impact > 0.0f)
+            {
+                float w0, w1;
+                if (! gateOn)
+                {
+                    if (counterA <= preserve)
+                        counterA += 1.0f, w1 = 0.0f, w0 = 1.0f;
+                    else
+                    {
+                        gateOn = true;
+                        const auto fr = counterA - preserve;
+                        w1 = fr, w0 = 1.0f - fr, counterB = fr, counterA = 0.0f;
+                    }
+                }
+                else if (counterB <= impact)
+                    counterB += 1.0f, w1 = 1.0f, w0 = 0.0f;
+                else
+                {
+                    gateOn = false;
+                    const auto fr = counterB - impact;
+                    w1 = 1.0f - fr, w0 = fr, counterB = 0.0f, counterA = fr;
+                }
+                const auto g = (float) (amountRaw * 1.52587890625e-05 * w1);
+                for (auto& v : x)
+                    v = g * v + w0 * v;
+            }
+            if (post && filterOn)
+                for (int c = 0; c < 2; ++c)
+                    x[c] = filters[(std::size_t) c].tick (x[c], type, coefF, coefQ);
+            l[i] = (dryL * dry + x[0] * wet) * gain;
+            r[i] = (dryR * dry + x[1] * wet) * gain;
+        }
+    }
+
+private:
+    struct Svf
+    {
+        float low = 0.0f, band = 0.0f;
+        float tick (float in, int mode, float f, float q) noexcept
+        {
+            constexpr float tiny = 1.1754943508222875e-38f;
+            if (std::abs (in) < tiny)
+                in = 0.0f;
+            float acc[5] {};
+            for (int k = 0; k < 2; ++k)
+            {
+                auto t = in - q * band;
+                if (std::abs (t) < tiny)
+                    t = 0.0f;
+                low = low + f * band;
+                const auto high = t - low;
+                band = f * high + band;
+                const float values[5] { low, band, high, t, low - high };
+                for (int i = 0; i < 5; ++i)
+                    acc[i] += values[i] * 0.5f;
+            }
+            static constexpr int pick[5] { 0, 2, 1, 3, 4 }; // FL's types: LP, HP, BP, notch, peak
+            return acc[pick[std::clamp (mode, 0, 4)]];
+        }
+    };
+
+    int raw (const EffectParams& p, int k) const noexcept { return (int) std::lround (std::clamp (p[(std::size_t) k], 0.0f, 1.0f) * squeezeMax[(std::size_t) k]); }
+
+    void configure (const EffectParams& p) noexcept
+    {
+        gain = (float) raw (p, 0) * (1.0f / 127.0f);
+        const auto mix = (float) raw (p, 1);
+        dry = (128.0f - mix) / 128.0f;
+        wet = mix / 128.0f;
+        steps = std::pow (32768.0f, 1.0f - (float) raw (p, 2) / 32768.0f);
+        filterOn = raw (p, 3) != 0;
+        type = raw (p, 4);
+        post = raw (p, 7) == 1;
+        amountRaw = raw (p, 11);
+        auto gateLength = [this] (int v) { return (std::pow (44101.0f, (float) v / 44100.0f) - 1.0f) * rate; };
+        const auto preserveRaw = raw (p, 10);
+        auto impactRaw = raw (p, 9);
+        switch (raw (p, 8)) // Relation: Impact follows Preserve
+        {
+            case 1: impactRaw = preserveRaw; break;
+            case 2: impactRaw = preserveRaw * 2; break;
+            case 3: impactRaw = preserveRaw >> 1; break;
+            default: break;
+        }
+        impact = gateLength (impactRaw);
+        preserve = gateLength (preserveRaw);
+        // SVF at 44.1 kHz: cutoff exp-mapped between 50 Hz and 0.75·44100, q = min(2, 2/f − f/2, 2(1 − res^0.25))
+        const float fs = 44100.0f, lo = 50.0f, hi = fs * 0.75f;
+        const auto x = (float) raw (p, 6) / 65536.0f, res = (float) raw (p, 5) / 65536.0f;
+        auto hz = std::exp (x * (std::log (hi) - std::log (lo)) + std::log (lo));
+        hz = std::clamp (hz, lo, hi);
+        const auto ratio = std::min (hz / (fs * 2.0f), 0.25f);
+        coefF = (float) (std::sin (ratio * 3.141592653589793) * 2.0);
+        const auto a = (1.0f - std::pow (res, 0.25f)) * 2.0f;
+        coefQ = std::min (std::min (2.0f / coefF - coefF * 0.5f, 2.0f), a);
+    }
+
+    float rate = 1.0f, gain = 1.0f, dry = 0.5f, wet = 0.5f, steps = 32768.0f, impact = 0.0f, preserve = 0.0f;
+    float coefF = 0.5f, coefQ = 1.0f, counterA = 0.0f, counterB = 0.0f;
+    int type = 0, amountRaw = 0;
+    bool filterOn = false, post = false, gateOn = false;
+    std::array<Svf, 2> filters {};
+    std::array<float, 12> last {};
+};
+
+class AutoPan final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override { sampleRate = sr; rhythm.prepare (sr); dcA = (float) std::exp (-2.0 * 3.14159265358979323846 * 8.0 / sr); }
+    void reset() noexcept override { rhythm.reset(); lfo = 0.0; smooth = 0.0; dcX[0] = dcX[1] = dcY[0] = dcY[1] = 0.0f; }
+    void setSongPosition (double ticks) noexcept override { beats = ticks / 960.0; }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double bpm) noexcept override
+    {
+        constexpr int rb = autopan::count; // round 136's Rhythm voicing params follow round 135's panner params
+        if (p.size() > rb + 11 && p[rb] > 0.5f) // round 136: the Rhythm voicing (core/RhythmPan.h)
+        {
+            rhythmpan::Settings s;
+            s.rateHz = rhythmpan::rateHz (p[rb + 1]);
+            s.sync = p[rb + 2] > 0.5f;
+            s.beats = rhythmpan::beats (p[rb + 3]);
+            s.width = 210.0 * std::clamp ((double) p[rb + 4], 0.0, 1.0);
+            s.offset = -105.0 + 210.0 * std::clamp ((double) p[rb + 5], 0.0, 1.0);
+            s.smoothing = std::clamp ((double) p[rb + 6], 0.0, 1.0);
+            s.pattern = p[rb + 7] < 0.25f ? 0 : p[rb + 7] < 0.625f ? 2 : p[rb + 7] < 0.875f ? 3 : 1; // left / right, ramp ◀ / ▶ (round tp172d), 8 steps
+            s.amount = std::clamp ((double) p[rb + 8], 0.0, 1.0);
+            s.phase = std::clamp ((double) p[rb + 9], 0.0, 1.0);
+            s.analog = p[rb + 10] < 0.25f ? 0 : (p[rb + 10] < 0.75f ? 1 : 2); // off / analog / hot
+            s.outputDb = -24.0 + 48.0 * std::clamp ((double) p[rb + 11], 0.0, 1.0);
+            // round 150: the Tweak page (envelope → rate / offset / width), Feel / Groove, past the speakers (appended)
+            s.rateMod = -3.0 + 6.0 * std::clamp ((double) p[rb + 12], 0.0, 1.0);
+            s.offsetMod = -180.0 + 360.0 * std::clamp ((double) p[rb + 13], 0.0, 1.0);
+            s.widthMod = -180.0 + 360.0 * std::clamp ((double) p[rb + 14], 0.0, 1.0);
+            s.envThresholdDb = -60.0 + 60.0 * std::clamp ((double) p[rb + 15], 0.0, 1.0);
+            s.envRangeDb = 1.0 + 39.0 * std::clamp ((double) p[rb + 16], 0.0, 1.0);
+            s.feel = -0.25 + 0.5 * std::clamp ((double) p[rb + 17], 0.0, 1.0);
+            s.groove = -0.25 + 0.5 * std::clamp ((double) p[rb + 18], 0.0, 1.0);
+            s.beyond = p[rb + 19] >= 0.5f;
+            if (p.size() > rb + 26) // round 152: the trigger sources and the Random source (appended)
+            {
+                s.trigger = p[rb + 20] < 0.25f ? 0 : (p[rb + 20] < 0.75f ? 1 : 2);
+                s.trigAudio = p[rb + 21] < 0.999f; // fully up = no audio trigger (the manual one still works)
+                s.trigThresholdDb = -60.0 + 60.0 * std::clamp ((double) p[rb + 21], 0.0, 1.0);
+                s.divider = 1 + (int) std::lround (11.0 * std::clamp ((double) p[rb + 22], 0.0, 1.0));
+                s.trigFilter = p[rb + 23] < 0.25f ? 0 : (p[rb + 23] < 0.75f ? 1 : 2);
+                s.trigFreqHz = 20.0 * std::pow (1000.0, std::clamp ((double) p[rb + 24], 0.0, 1.0));
+                s.manual = p[rb + 25];
+                s.randomSteps = p[rb + 26] >= 0.5f;
+            }
+            if (! (s == rhythmSet))
+            {
+                rhythm.set (s);
+                rhythmSet = s;
+            }
+            // round tp172d (look slice): PanMan's INPUT (-24 … +24 dB, 0 dB at the default) ahead of the panner and its analog stage
+            if (const auto gIn = (float) std::pow (10.0, autopan::inputDb (p[autopan::inputGain]) / 20.0); std::abs (gIn - 1.0f) > 1.0e-6f)
+                for (int i = 0; i < n; ++i)
+                {
+                    l[i] *= gIn;
+                    r[i] *= gIn;
+                }
+            rhythm.process (l, r, n, beats, bpm);
+            current = rhythm.currentPan();
+            position.store (current, std::memory_order_relaxed);
+            beats += n * std::max (bpm, 1.0) / 60.0 / sampleRate;
+            return;
+        }
+        if (autopan::sourceOf (p[autopan::source]) != autopan::Source::fl)
+        {
+            processPanner (l, r, n, p, bpm);
+            return;
+        }
+        const auto period = std::max (1e-3, (double) p[0] * 64.0);
+        const auto depth = 2.0 * p[1] - 1.0, fixed = 2.0 * p[3] - 1.0;
+        const auto step = std::max (bpm, 1.0) / 60.0 / sampleRate / period;
+        auto phase = 0.75 + p[2] + beats / period;
+        {
+            const auto f = phase + step * n - std::floor (phase + step * n);
+            current = (float) ((f < 0.5 ? 1.0 - 4.0 * f : -3.0 + 4.0 * f) + 1.0) * 0.5f; // wave in 0..1
+        }
+        position.store (0.5f * (float) (std::clamp (fixed + depth * (2.0 * current - 1.0), -1.0, 1.0) + 1.0), std::memory_order_relaxed);
+        if (p[4] > 0.5f) // control only (live automation source)
+            return;
+        // LFO tension (Love Philter, REA_rodada27 §3.3): applied to |w| with the sign kept, T = 256·(p6 − 0.5)
+        const auto tension = 256.0 * (p[6] - 0.5);
+        const auto q = tension == 0.0 ? 0.0 : (tension > 0.0 ? 1.0 : -1.0) * (std::pow (1e18, 0.05 * (std::pow (21.0, std::abs (tension) / 128.0) - 1.0)) - 1.0);
+        const auto flLaw = p[5] > 0.5f;
+        for (int i = 0; i < n; ++i, phase += step)
+        {
+            const auto f = phase - std::floor (phase);
+            auto w = f < 0.5 ? 1.0 - 4.0 * f : -3.0 + 4.0 * f;
+            if (q != 0.0)
+            {
+                const auto y = std::abs (w);
+                const auto shaped = q > 0.0 ? 1.0 - (std::pow (1.0 + q, 1.0 - y) - 1.0) / q : (std::pow (1.0 - q, y) - 1.0) / -q;
+                w = w < 0.0 ? -shaped : shaped;
+            }
+            if (flLaw) // FL's mode-0 pan law with the far side folded into the near one (REA_rodada27 §3.1)
+            {
+                float ll, rl, lr, rr;
+                flPanMatrix (fixed + depth * w, ll, rl, lr, rr);
+                const auto a = l[i], b = r[i];
+                l[i] = ll * a + rl * b;
+                r[i] = lr * a + rr * b;
+                continue;
+            }
+            const auto pan = std::clamp (fixed + depth * w, -1.0, 1.0);
+            l[i] *= (float) (pan > 0.0 ? 1.0 - pan : 1.0);
+            r[i] *= (float) (pan < 0.0 ? 1.0 + pan : 1.0);
+        }
+    }
+
+    // 0: the wave (0..1), 1: the pan position (0 = left, 0.5 = centre, 1 = right; round 135's display)
+    float controlOutput (int o) const noexcept override
+    {
+        switch (o)
+        {
+            case 1: return position.load (std::memory_order_relaxed);
+            case 2: return peakIn.load (std::memory_order_relaxed);
+            case 3: return peakOut.load (std::memory_order_relaxed);
+            default: return current;
+        }
+    }
+
+private:
+    // round 135: the rhythmic panner's sources (the PanMan role), measured black-box on the official trial
+    // (docs/analise/REA_rodada135s.md §3): an equal-power balance (centre −3 dB per side, the far side silent at the
+    // extremes), a free LFO in Hz or steps on the beat grid swept back and forth or one way, Smoothing from a hard
+    // square / jump to a soft sine / glide, input and output gains and an "analog" stage (asymmetric soft saturation:
+    // H2 −36 dBc and H3 −54 dBc at −18 dBFS, H2 −25 / H3 −30 at −6 dBFS)
+    void processPanner (float* l, float* r, int n, const EffectParams& p, double bpm) noexcept
+    {
+        using namespace autopan;
+        const auto src = sourceOf (p[source]);
+        const auto dir = directionOf (p[direction]);
+        const auto soft = std::clamp ((double) p[smoothing], 0.0, 1.0);
+        const auto depth = 2.0 * p[1] - 1.0, fixed = 2.0 * p[3] - 1.0;
+        const auto gIn = (float) std::pow (10.0, inputDb (p[inputGain]) / 20.0);
+        const auto gOut = (float) std::pow (10.0, inputDb (p[outputGain]) / 20.0);
+        const auto analog = p[analogStage] >= 0.5f;
+        const auto k = 0.05 + 12.0 * (1.0 - soft) * (1.0 - soft); // the sine's hardness (soft = a sine, hard ≈ a square)
+        const auto tk = std::tanh (k);
+        const auto steps = stepCount (p[stepsParam]);
+        // the period of one cycle: the free rate (Hz), or the steps on the beat grid
+        double inc;
+        if (src == Source::lfo)
+            inc = rateHz (p[rate]) / sampleRate;
+        else
+            inc = std::max (bpm, 1.0) / 60.0 / sampleRate / (stepBeats (p[stepNote]) * (dir == Direction::both ? 2.0 * (steps - 1) : steps));
+        // rhythm steps follow the song position (like the FL source); the LFO runs freely
+        if (src == Source::steps && beats != syncedBeats) // a new song position: back on the grid
+        {
+            lfo = beats / (stepBeats (p[stepNote]) * (dir == Direction::both ? 2.0 * (steps - 1) : steps));
+            syncedBeats = beats;
+        }
+        // steps glide over up to a third of a step (Smoothing 100 %), or jump (0 %)
+        const auto stepSec = stepBeats (p[stepNote]) * 60.0 / std::max (bpm, 1.0);
+        const auto glide = 1.0 - std::exp (-1.0 / (sampleRate * (0.0005 + 0.35 * soft * stepSec)));
+        float pos = 0.0f, pin = 0.0f, pout = 0.0f;
+        for (int i = 0; i < n; ++i, lfo += inc)
+        {
+            const auto f = lfo - std::floor (lfo);
+            double w; // −1 … +1
+            if (src == Source::lfo)
+            {
+                if (dir == Direction::both)
+                    w = std::tanh (k * std::sin (2.0 * 3.14159265358979323846 * f)) / tk;
+                else
+                    w = dir == Direction::right ? 2.0 * f - 1.0 : 1.0 - 2.0 * f;
+                smooth = w;
+            }
+            else
+            {
+                int s;
+                if (dir == Direction::both)
+                {
+                    const auto span = 2 * (steps - 1);
+                    const auto at = (int) std::floor (f * span);
+                    s = at < steps ? at : span - at;
+                }
+                else
+                {
+                    s = std::min (steps - 1, (int) std::floor (f * steps));
+                    if (dir == Direction::left) s = steps - 1 - s;
+                }
+                const auto target = steps > 1 ? -1.0 + 2.0 * s / (steps - 1) : 0.0;
+                smooth += glide * (target - smooth);
+                w = smooth;
+            }
+            const auto pan = std::clamp (fixed + depth * w, -1.0, 1.0);
+            const auto th = (pan + 1.0) * 0.25 * 3.14159265358979323846;
+            pin = std::max (pin, std::max (std::abs (l[i]), std::abs (r[i])));
+            float a = l[i] * gIn, b = r[i] * gIn;
+            if (analog)
+            {
+                a = analogCurve (a, 0);
+                b = analogCurve (b, 1);
+            }
+            l[i] = (float) (a * std::cos (th)) * gOut;
+            r[i] = (float) (b * std::sin (th)) * gOut;
+            pout = std::max (pout, std::max (std::abs (l[i]), std::abs (r[i])));
+            pos = (float) pan;
+        }
+        lfo -= std::floor (lfo);
+        current = (float) (0.5 * (smooth + 1.0));
+        position.store (0.5f * (pos + 1.0f), std::memory_order_relaxed);
+        peakIn.store (pin, std::memory_order_relaxed);
+        peakOut.store (pout, std::memory_order_relaxed);
+    }
+
+    float analogCurve (float x, int c) noexcept
+    {
+        const auto u = std::clamp (x, -1.2f, 1.2f);
+        const auto y = u + 0.25f * u * u - 0.45f * u * u * u; // fitted on the trial's harmonics; DC removed after it
+        dcY[c] = y - dcX[c] + dcA * dcY[c];
+        dcX[c] = y;
+        return dcY[c];
+    }
+
+    double sampleRate = 44100.0, beats = 0.0, lfo = 0.0, smooth = 0.0, syncedBeats = -1.0;
+    float current = 0.5f, dcA = 0.999f, dcX[2] {}, dcY[2] {};
+    std::atomic<float> position { 0.5f }, peakIn { 0.0f }, peakOut { 0.0f };
+    rhythmpan::Engine rhythm; // round 136
+    rhythmpan::Settings rhythmSet;
+};
+
+// Vocoder = FL's Fruity Vocoder, exact engine (core/FruityVocoder.h, REA_rodada70; laws first read in REA_rodada20
+// §4.1). Parameters (0..1): 0 bands (4 << round(5v)), 1 order (1 + round(2v)), 2 listen (0 modulator, 1 carrier,
+// 2 mix), 3 swap L/R, then FL's twelve controls as (raw − min) / (max − min): 4/5 FreqMin/Max (0…65536), 6 FreqScale
+// (0…128), 7 invert, 8 Formant (−1200…1200 cents), 9 band width (5…200 %), 10/11 attack/release (10…1000 ms),
+// 12 hold, 13/14/15 modulator/carrier/wet levels (0…160); 16 LYNX's side-input mode. The per-band levels of the
+// analysis bank travel in EffectSlot::state (FL's saved state); they apply while the band count matches.
+namespace vocoder
+{
+int bands (float v) { return 4 << std::clamp ((int) std::lround (v * 5.0f), 0, 5); }
+int order (float v) { return 1 + std::clamp ((int) std::lround (v * 2.0f), 0, 2); }
+int raw (const EffectParams& p, int control)
+{
+    const auto lo = fvocoder::controlMin (control), hi = fvocoder::controlMax (control);
+    return lo + (int) std::lround (std::clamp (p[(std::size_t) (4 + control)], 0.0f, 1.0f) * (float) (hi - lo));
+}
+int raw (float v, int control)
+{
+    const auto lo = fvocoder::controlMin (control), hi = fvocoder::controlMax (control);
+    return lo + (int) std::lround (std::clamp (v, 0.0f, 1.0f) * (float) (hi - lo));
+}
+} // namespace vocoder
+
+class Vocoder final : public Effect
+{
+public:
+    explicit Vocoder (const std::vector<std::uint8_t>& state)
+    {
+        if (auto s = fvocoder::parse (state))
+            saved = *s;
+        last.fill (-1.0f);
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        engine.prepare (sr);
+        reset();
+    }
+
+    void reset() noexcept override { engine.reset(); }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        bool changed = false;
+        for (std::size_t i = 0; i < 16; ++i)
+            if (p[i] != last[i])
+            {
+                last[i] = p[i];
+                changed = true;
+            }
+        if (changed)
+        {
+            auto s = engine.state();
+            s.bands = vocoder::bands (p[0]);
+            s.order = vocoder::order (p[1]);
+            s.listen = std::clamp ((int) std::lround (p[2] * 2.0f), 0, 2);
+            s.swap = p[3] > 0.5f;
+            for (int c = 0; c < fvocoder::controls; ++c)
+                s.c[(std::size_t) c] = fvocoder::rawFromKnob (p[(std::size_t) (4 + c)], c, saved.c[(std::size_t) c]);
+            if (s.bands == saved.bands)
+                s.levels = saved.levels;
+            else
+                s.levels.fill (1.0f);
+            engine.setState (s);
+        }
+
+        // "Side inputs" (Vocodex-style): modulator = side input 1 or the own input, carrier = side input 2 or the own
+        // input, each in mono (L + R)/2; a configured side input that is silent gives silence
+        const auto separate = p[16] > 0.5f;
+        const bool modSide = useSide[0], carSide = useSide[1];
+        useSide = { false, false };
+        if (! separate)
+        {
+            engine.processStereo (l, r, n);
+            return;
+        }
+        for (int done = 0; done < n;)
+        {
+            const auto len = std::min (n - done, fvocoder::blockFrames);
+            for (int i = 0; i < len; ++i)
+            {
+                const auto k = (std::size_t) i, j = (std::size_t) (done + i);
+                const auto own = 0.5f * (l[j] + r[j]);
+                mod[k] = modSide ? (side[0][0] != nullptr ? 0.5f * (side[0][0][j] + side[0][1][j]) : 0.0f) : own;
+                car[k] = carSide ? (side[1][0] != nullptr ? 0.5f * (side[1][0][j] + side[1][1][j]) : 0.0f) : own;
+            }
+            engine.process (mod.data(), car.data(), l + done, len);
+            std::copy (l + done, l + done + len, r + done);
+            done += len;
+        }
+    }
+
+    void setSidechain (const float* left, const float* right) noexcept override
+    {
+        side[0] = { left, right };
+        useSide[0] = true;
+    }
+
+    void setSidechain2 (const float* left, const float* right) noexcept override
+    {
+        side[1] = { left, right };
+        useSide[1] = true;
+    }
+
+    // round 190ld (DP-32): the band display's live levels — FL's bands display animates each analysis band's level.
+    // Up to 32 columns (more bands: the loudest of each group), 6 bits each (−60…0 dB in 63 steps), four columns per
+    // output 0…7 packed as an exact integer in the float (vocoder::bandColumn decodes). Nothing while no editor shows them.
+    float controlOutput (int output) const noexcept override
+    {
+        if (! metersShown || output < 0 || output >= 8)
+            return 0.0f;
+        const auto bands = engine.state().bands;
+        const auto columns = std::min (bands, 32), per = std::max (1, bands / std::max (1, columns));
+        std::uint32_t packed = 0;
+        for (int c = 0; c < 4; ++c)
+        {
+            const auto column = output * 4 + c;
+            if (column >= columns)
+                break;
+            float peak = 0.0f;
+            for (int b = column * per; b < (column + 1) * per; ++b)
+                peak = std::max (peak, engine.bandMeter (b));
+            const auto q = peak > 0.001f ? std::clamp ((int) std::lround ((20.0f * std::log10 (peak) + 60.0f) * (63.0f / 60.0f)), 0, 63) : 0;
+            packed |= (std::uint32_t) q << (6 * c);
+        }
+        return (float) packed;
+    }
+
+    void setMetersShown (bool shown) noexcept override { metersShown = shown; }
+
+private:
+    bool metersShown = false; // (an editor counts itself in ProcessTimes::metersWanted)
+    fvocoder::Engine engine;
+    fvocoder::State saved;
+    std::array<float, 16> last {};
+    std::array<std::array<const float*, 2>, 2> side {};
+    std::array<bool, 2> useSide { false, false };
+    std::array<float, fvocoder::blockFrames> mod {}, car {};
+};
+
+// Pitch correction (FL's Pitcher; laws in REA_rodada15 §1, rodada19 §6 and rodada30 §2). Parameters: 0 Correction
+// Speed, 1 Fine Tune, 2 Bypass All, 3 Note A Freq, 4 range (index/5: min f 220/170/110/80/55/25 Hz), 5…16 note
+// mask C…B (1 = allowed), 17…28 Key Bypass C…B, 29 Formant, 30 Gender, 31 Pitch Reference (0 left, 0.5
+// independent, 1 right), 32 Stereo, 33 Harmonize, 34 MIDI, 35 Octaves, 36 Replace/Mix, 37 Vel, 38…41 Voice 1…4 pan.
+// The DSP is FL's (core/PitcherDsp.h). Round 190ee: 42 MIDI port (FL's raw parameter 33: port = int(256 v) − 1, −1 =
+// none; REA_rodada16 §1, REA_rodada30 §2.8), 43 Port routing — on (every new and FL-imported Pitcher) the notes come
+// from the MIDI Out channels on that port, as in FL; off (projects saved before round 190ee, through
+// upgradeLoadedEffectParams) the notes held on any Channel Rack channel, as round 173d made it.
+namespace pcorr
+{
+constexpr int midiPortParam = 42, portRoutingParam = 43;
+int midiPort (float v) noexcept { return v > 0.0f ? std::min (255, (int) (v * 256.0f) - 1) : -1; }
+float midiPortValue (int port) noexcept { return port < 0 ? 0.0f : std::min (1.0f, ((float) port + 1.5f) / 256.0f); }
+constexpr double minHz[6] { 220.0, 170.0, 110.0, 80.0, 55.0, 25.0 };
+int range (float v) { return std::clamp ((int) std::lround (v * 5.0f), 0, 5); }
+double noteA (float v) { return 55.0 * std::pow (2.0, (2.0 * v - 1.0) / 12.0); } // ×8 = A 440 at v = 0.5
+} // namespace pcorr
+
+class PitchCorrect final : public Effect
+{
+public:
+    // `initial` (may be null): the slot's parameters, so the formant path's latency is known before the first block
+    explicit PitchCorrect (const EffectParams* initial = nullptr)
+    {
+        dsp.reserve (maxSampleRate);
+        if (initial != nullptr)
+            latency.store ((*initial)[29] > 0.5f ? 257 : 9, std::memory_order_relaxed); // (pitcher::Pitcher::latency())
+    }
+
+    void prepare (double sr) noexcept override { dsp.prepare (sr); }
+    void reset() noexcept override
+    {
+        dsp.reset();
+        dsp.allNotesOff();
+        sounding = {};
+    }
+    // round 190oa (DP-81): the editor's input / output pitch strips, 1 + the pitch class (1 … 13 from C; 0 = none, as an
+    // unpublished meter reads)
+    float controlOutput (int output) const noexcept override { return 1.0f + (output == 0 ? dsp.inputClass() : output == 1 ? dsp.outputClass() : -1.0f); }
+    // round 173d: the notes held on the Channel Rack reach the MIDI / Harmonize modes (before, nothing ever called
+    // the DSP's noteOn: MIDI, Octaves, Vel and the four voice pans did nothing)
+    void setHeldNotes (const NoteMask* channels, int count) noexcept override
+    {
+        held = channels;
+        heldCount = count;
+    }
+    bool followsHeldNotes() const noexcept override { return true; } // (round 190kz)
+    bool followsHeldNotesWith (const EffectParams& p) const noexcept override // (process(): unless the MIDI port routes its notes)
+    {
+        return ! (p[(std::size_t) pcorr::portRoutingParam] > 0.5f);
+    }
+
+    // round 190ee: a note from the MIDI Out channels on the Pitcher's port (FL: note in 0x180007a40, velocity / 127)
+    void midiNote (int key, int velocity, int) noexcept override
+    {
+        if (portRouting)
+            dsp.noteOn (key, velocity);
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        const auto routed = p[(std::size_t) pcorr::portRoutingParam] > 0.5f;
+        if (routed != portRouting)
+        {
+            dsp.allNotesOff();
+            sounding = {};
+            portRouting = routed;
+        }
+        NoteMask now {};
+        for (int c = 0; ! portRouting && held != nullptr && c < heldCount; ++c)
+            now[0] |= held[c][0], now[1] |= held[c][1];
+        if (! portRouting && now != sounding)
+        {
+            for (int k = 0; k < 128; ++k)
+            {
+                const auto bit = 1ull << (k & 63);
+                const bool was = (sounding[(std::size_t) (k >> 6)] & bit) != 0, is = (now[(std::size_t) (k >> 6)] & bit) != 0;
+                if (is && ! was)
+                    dsp.noteOn (k, 100); // (the Channel Rack's held notes carry no velocity: FL's default 100)
+                else if (was && ! is)
+                    dsp.noteOff (k);
+            }
+            sounding = now;
+        }
+        auto on = [&p] (int i) { return p[(std::size_t) i] > 0.5f; };
+        pitcher::Params q;
+        q.speed = std::clamp (p[0], 0.0f, 1.0f);
+        q.fine = p[1];
+        q.bypassAll = on (2);
+        q.aRef = p[3];
+        q.range = pcorr::range (p[4]);
+        for (int k = 0; k < 12; ++k)
+        {
+            q.scale[(std::size_t) k] = on (5 + k);
+            q.keyBypass[(std::size_t) k] = on (17 + k);
+        }
+        q.formant = on (29);
+        q.gender = p[30];
+        q.pitchRef = p[31];
+        q.stereo = p[32];
+        q.harmonize = on (33);
+        q.midi = on (34);
+        q.octaves = on (35);
+        q.mix = on (36);
+        q.vel = on (37);
+        for (int j = 0; j < 4; ++j)
+            q.voicePan[(std::size_t) j] = p[(std::size_t) (38 + j)];
+        dsp.process (l, r, n, q);
+        latency.store (dsp.latency(), std::memory_order_relaxed);
+    }
+
+    // The DSP's own delay: 9 samples on the plain path, 257 on the formant path (its pass-through delay; voiced
+    // PSOLA grains are placed about one period + 70 samples back). FL's reported PDC latency is not confirmed.
+    int latencySamples() const noexcept override { return latency.load (std::memory_order_relaxed); }
+
+private:
+    pitcher::Pitcher dsp;
+    std::atomic<int> latency { 9 };
+    const NoteMask* held = nullptr;
+    int heldCount = 0;
+    NoteMask sounding {};
+    bool portRouting = true;
+};
+
+class LoFi final : public Effect
+{
+public:
+    void prepare (double) noexcept override { reset(); }
+    void reset() noexcept override
+    {
+        held[0] = held[1] = 0.0f;
+        countdown = 0;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& params, double) noexcept override
+    {
+        const auto hold = lofi::holdSamples (params[0]);
+        const auto step = (float) (2.0 / lofi::levels (params[1]));
+        const auto mix = params[2];
+        auto quantize = [step] (float x) { return step * std::floor (x / step + 0.5f); };
+
+        for (int i = 0; i < n; ++i)
+        {
+            if (--countdown <= 0)
+            {
+                countdown = hold;
+                held[0] = quantize (l[i]);
+                held[1] = quantize (r[i]);
+            }
+            l[i] += mix * (held[0] - l[i]);
+            r[i] += mix * (held[1] - r[i]);
+        }
+    }
+
+private:
+    float held[2] {};
+    int countdown = 0;
+};
+
+class FreqShift final : public Effect
+{
+public:
+    void prepare (double sr) noexcept override
+    {
+        sampleRate = sr;
+        reset();
+    }
+
+    void reset() noexcept override
+    {
+        for (auto& c : chains)
+            c = {};
+        phase = 0.0;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        const auto shift = fshift::hz (p[0]);
+        const auto mix = std::clamp (p[1], 0.0f, 1.0f);
+        const auto spread = std::clamp (p[2], 0.0f, 1.0f);
+        const auto step = shift / sampleRate;
+
+        for (int i = 0; i < n; ++i)
+        {
+            const auto angle = 2.0 * 3.141592653589793 * phase;
+            const auto cosA = (float) std::cos (angle), sinA = (float) std::sin (angle);
+            float* io[2] = { l + i, r + i };
+
+            for (int c = 0; c < 2; ++c)
+            {
+                float re = 0.0f, im = 0.0f;
+                chains[(std::size_t) c].analytic (*io[c], re, im);
+                // right side: between the same direction (0) and the opposite (1)
+                const auto sign = c == 0 ? 1.0f : 1.0f - 2.0f * spread;
+                const auto shifted = re * cosA + sign * im * sinA;
+                *io[c] += (shifted - *io[c]) * mix;
+            }
+
+            phase += step;
+            phase -= std::floor (phase);
+        }
+    }
+
+private:
+    // 4 2nd-order allpasses in z² per branch; the real branch has 1 extra sample of delay
+    struct Chain
+    {
+        static constexpr float a[4] = { 0.6923878f, 0.9360654322959f, 0.9882295226860f, 0.9987488452737f };
+        static constexpr float b[4] = { 0.4021921162426f, 0.8561710882420f, 0.9722909545651f, 0.9952884791278f };
+        std::array<float, 4> ax1 {}, ax2 {}, ay1 {}, ay2 {}, bx1 {}, bx2 {}, by1 {}, by2 {};
+        float delayed = 0.0f;
+
+        static float stage (float k, float x, float& x1, float& x2, float& y1, float& y2) noexcept
+        {
+            const auto y = k * k * (x + y2) - x2;
+            x2 = x1;
+            x1 = x;
+            y2 = y1;
+            y1 = y;
+            return y;
+        }
+
+        void analytic (float x, float& re, float& im) noexcept
+        {
+            auto u = x, v = x;
+            for (std::size_t k = 0; k < 4; ++k)
+            {
+                u = stage (a[k], u, ax1[k], ax2[k], ay1[k], ay2[k]);
+                v = stage (b[k], v, bx1[k], bx2[k], by1[k], by2[k]);
+            }
+            re = delayed;
+            im = v;
+            delayed = u;
+        }
+    };
+
+    std::array<Chain, 2> chains {};
+    double sampleRate = 44100.0, phase = 0.0;
+};
+
+// Parallel-branch container (FL's Patcher): each branch processes a copy of the input through its
+// chain of built-in effects and the output is the gain-weighted sum of the branches.
+class ParallelEffect final : public Effect
+{
+public:
+    static constexpr int capacity = 4096; // samples per chunk (larger blocks are split)
+
+    explicit ParallelEffect (const EffectSlot& slot)
+    {
+        for (const auto& b : slot.branches)
+        {
+            Branch branch;
+            branch.gain = b.gain;
+            for (const auto& child : b.chain)
+                if (child.kind != EffectKind::plugin) // nested containers too (Patcher series-parallel graphs)
+                    branch.chain.push_back ({ makeEffect (child), child });
+            branches.push_back (std::move (branch));
+        }
+        for (const auto& link : slot.links)
+            if (link.branch >= 0 && link.branch < (int) branches.size() && link.curve.size() >= 2)
+            {
+                const auto& chain = branches[(std::size_t) link.branch].chain;
+                if (link.source >= 0 && link.source < (int) chain.size() && link.target >= 0 && link.target < (int) chain.size()
+                    && link.param >= 0 && link.param < maxEffectParams)
+                    links.push_back (link);
+            }
+        for (auto& buffer : scratch)
+            buffer.assign ((std::size_t) capacity, 0.0f);
+    }
+
+    void prepare (double sr) noexcept override
+    {
+        for (auto& b : branches)
+            for (auto& c : b.chain)
+                c.effect->prepare (sr);
+    }
+
+    void reset() noexcept override
+    {
+        for (auto& b : branches)
+            for (auto& c : b.chain)
+                c.effect->reset();
+    }
+
+    void setSongPosition (double ticks) noexcept override
+    {
+        for (auto& b : branches)
+            for (auto& c : b.chain)
+                c.effect->setSongPosition (ticks);
+    }
+
+    void setPlaying (bool playing) noexcept override
+    {
+        for (auto& b : branches)
+            for (auto& c : b.chain)
+                c.effect->setPlaying (playing);
+    }
+
+    void setHeldNotes (const NoteMask* channels, int count) noexcept override
+    {
+        for (auto& b : branches)
+            for (auto& c : b.chain)
+                c.effect->setHeldNotes (channels, count);
+    }
+    bool followsHeldNotes() const noexcept override // (round 190kz)
+    {
+        for (const auto& b : branches)
+            for (const auto& c : b.chain)
+                if (c.effect != nullptr && c.effect->followsHeldNotes())
+                    return true;
+        return false;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams&, double bpm) noexcept override
+    {
+        for (int done = 0; done < n; done += capacity)
+            processPiece (l + done, r + done, std::min (capacity, n - done), bpm);
+    }
+
+    // the longest branch's latency (the branches themselves are not aligned; FL's Patcher PDC is not confirmed)
+    int latencySamples() const noexcept override
+    {
+        int longest = 0;
+        for (const auto& b : branches)
+        {
+            int sum = 0;
+            for (const auto& c : b.chain)
+                if (c.slot.enabled && c.slot.mix > 0.0f)
+                    sum += c.effect->latencySamples();
+            longest = std::max (longest, sum);
+        }
+        return longest;
+    }
+
+private:
+    struct Child
+    {
+        std::unique_ptr<Effect> effect;
+        EffectSlot slot;
+    };
+    struct Branch
+    {
+        std::vector<Child> chain;
+        float gain = 1.0f;
+    };
+
+    void processPiece (float* l, float* r, int n, double bpm) noexcept
+    {
+        auto* inL = scratch[0].data();
+        auto* inR = scratch[1].data();
+        auto* sumL = scratch[2].data();
+        auto* sumR = scratch[3].data();
+        auto* wL = scratch[4].data();
+        auto* wR = scratch[5].data();
+        auto* dryL = scratch[6].data();
+        auto* dryR = scratch[7].data();
+        std::copy (l, l + n, inL);
+        std::copy (r, r + n, inR);
+        std::fill (sumL, sumL + n, 0.0f);
+        std::fill (sumR, sumR + n, 0.0f);
+
+        // inner links: the control child's latest output sets the target's parameter (one block of lag)
+        for (const auto& link : links)
+        {
+            auto& chain = branches[(std::size_t) link.branch].chain;
+            const auto x = std::clamp (chain[(std::size_t) link.source].effect->controlOutput (0), 0.0f, 1.0f) * (float) (link.curve.size() - 1);
+            const auto i = std::min ((std::size_t) x, link.curve.size() - 2);
+            const auto f = x - (float) i;
+            chain[(std::size_t) link.target].slot.params[(std::size_t) link.param] = link.curve[i] + (link.curve[i + 1] - link.curve[i]) * f;
+        }
+
+        for (auto& b : branches)
+        {
+            std::copy (inL, inL + n, wL);
+            std::copy (inR, inR + n, wR);
+            for (auto& c : b.chain)
+            {
+                if (! c.slot.enabled || c.slot.mix <= 0.0f)
+                    continue;
+                const auto partial = c.slot.mix < 0.999f;
+                if (partial)
+                {
+                    std::copy (wL, wL + n, dryL);
+                    std::copy (wR, wR + n, dryR);
+                }
+                c.effect->process (wL, wR, n, c.slot.params, bpm);
+                if (partial)
+                    for (int i = 0; i < n; ++i)
+                    {
+                        wL[i] = dryL[i] + (wL[i] - dryL[i]) * c.slot.mix;
+                        wR[i] = dryR[i] + (wR[i] - dryR[i]) * c.slot.mix;
+                    }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                sumL[i] += wL[i] * b.gain;
+                sumR[i] += wR[i] * b.gain;
+            }
+        }
+
+        std::copy (sumL, sumL + n, l);
+        std::copy (sumR, sumR + n, r);
+    }
+
+    std::vector<Branch> branches;
+    std::vector<EffectLink> links;
+    std::array<std::vector<float>, 8> scratch;
+};
+
+// Peak Controller (REA_rodada17 §5): audio passes straight through. Detector with instant attack (block peak)
+// and LINEAR decay in musical time: (10001^(D/128) − 1)·0.0192 per quarter note. Peak output =
+// base + a·shape(p) with a = ±0.4·(6^(|A|/256) − 1) and FL's tension; output 0 = Peak + LFO, 1 = Peak,
+// 2 = LFO (its LFO is not generated yet: the LFO base is used). Parameters = FL raw values, normalized.
+class PeakController final : public Effect
+{
+    // FL's Fruity Peak Controller (REA_rodada17 §5, REA_rodada168r §4): the peak detector (instantaneous attack, linear
+    // decay per quarter note), its base / amount / tension, and the LFO (base, amount, tension, speed in quarter notes,
+    // shape, phase) running on FL's host ticks (96 per quarter note): locked to the song position while it plays, free
+    // otherwise. Ramp limits each output's change to 1/8 of the range per tick; Mute silences the audio it passes.
+public:
+    void prepare (double sr) noexcept override { sampleRate = sr; }
+    void reset() noexcept override
+    {
+        detector = 0.0;
+        freePhase = 0.0;
+        for (auto& o : out)
+            o = -1.0f;
+    }
+    void setSongPosition (double ticks) noexcept override { songBeats = ticks / (double) ppq; }
+    void setPlaying (bool on) noexcept override { playing = on; }
+
+    // shaped value of x (0…1) with FL's tension t (raw −128…128): the X-Y curve, divided back by k
+    static double tension (double x, double t) noexcept
+    {
+        if (std::abs (t) < 1e-9)
+            return x;
+        const auto k = (std::pow (1001.0, std::abs (t) / 128.0) - 1.0) * 0.1;
+        const auto y = t > 0.0 ? k - (std::pow (k + 1.0, 1.0 - x) - 1.0) : std::pow (k + 1.0, x) - 1.0;
+        return y / k;
+    }
+    // FL's LFO period in quarter notes from the speed control (raw 200…65536)
+    static double periodBeats (double speedRaw) noexcept { return std::max (3.0 / 96.0, (std::pow (1001.0, speedRaw / 65536.0) - 1.0) * 0.128); }
+    // the LFO's wave at phase φ (0…1) as 0…1. FL reads the host's LFO tables (sine, triangle, square, saw; LFOShape.bmp
+    // shows their shapes); Random steps to a new value every period
+    static double wave (int shape, double phase, std::uint32_t period) noexcept
+    {
+        constexpr auto twoPi = 6.283185307179586;
+        double w = 0.0;
+        switch (shape)
+        {
+            case 1: w = 1.0 - 2.0 * std::abs (2.0 * phase - 1.0); w = -w; break; // triangle: low, up to the top at ½, low
+            case 2: w = phase < 0.5 ? 1.0 : -1.0; break;
+            case 3: w = 2.0 * phase - 1.0; break;
+            case 4:
+            {
+                auto h = period * 2654435761u;
+                h ^= h >> 15;
+                h *= 2246822519u;
+                h ^= h >> 13;
+                w = (double) (h & 0xffffff) / (double) 0x800000 - 1.0;
+                break;
+            }
+            default: w = std::sin (twoPi * phase); break;
+        }
+        return (w + 1.0) * 0.5;
+    }
+
+    void process (float* l, float* r, int n, const EffectParams& p, double bpm) noexcept override
+    {
+        const auto amountRaw = (std::clamp ((double) p[1], 0.0, 1.0) * 2.0 - 1.0) * 256.0;
+        const auto tensionRaw = (std::clamp ((double) p[2], 0.0, 1.0) * 2.0 - 1.0) * 128.0;
+        const auto decayRaw = 5.0 + 123.0 * std::clamp ((double) p[3], 0.0, 1.0);
+        const auto perBeat = (std::pow (10001.0, decayRaw / 128.0) - 1.0) * 0.0192;
+        const auto beats = std::max (1.0, bpm) / 60.0 * n / sampleRate;
+
+        float blockPeak = 0.0f;
+        for (int i = 0; i < n; ++i)
+            blockPeak = std::max ({ blockPeak, std::abs (l[i]), std::abs (r[i]) });
+        detector = std::max (0.0, detector - perBeat * beats);
+        detector = std::max (detector, (double) blockPeak);
+
+        const auto amount = (amountRaw < 0.0 ? -1.0 : 1.0) * (std::pow (6.0, std::abs (amountRaw) / 256.0) - 1.0) * 0.4;
+        const auto peak = std::clamp (p[0] + amount * tension (detector, tensionRaw), 0.0, 1.0);
+
+        // the LFO
+        const auto lfoAmountRaw = (std::clamp ((double) p[5], 0.0, 1.0) * 2.0 - 1.0) * 256.0;
+        const auto lfoTension = (std::clamp ((double) p[6], 0.0, 1.0) * 2.0 - 1.0) * 128.0;
+        const auto period = periodBeats (200.0 + std::clamp ((double) p[7], 0.0, 1.0) * 65336.0);
+        const auto shape = std::clamp ((int) std::lround (p[8] * 4.0f), 0, 4);
+        const auto phaseOffset = std::clamp ((double) p[9], 0.0, 1.0);
+        double cycles = 0.0;
+        if (playing)
+            cycles = songBeats / period;
+        else
+        {
+            freePhase += beats / period;
+            cycles = freePhase;
+        }
+        cycles += phaseOffset;
+        if (playing)
+            songBeats += beats;
+        const auto whole = std::floor (cycles);
+        const auto lfoAmount = (lfoAmountRaw < 0.0 ? -1.0 : 1.0) * (std::pow (6.0, std::abs (lfoAmountRaw) / 256.0) - 1.0) * 0.2;
+        // round 190kl (issue #197): LYNX's extra shapes (core/PeakShapes.h) when one is picked; none = FL's shape, as before
+        const auto extra = peakshapes::idOf (p[peakshapes::extraShapeParam]);
+        const auto shaped = extra != 0 ? peakshapes::wave (extra, cycles - whole, (std::uint32_t) (std::int64_t) whole)
+                                       : wave (shape, cycles - whole, (std::uint32_t) (std::int64_t) whole);
+        const auto lfo = std::clamp (p[4] + lfoAmount * tension (shaped, lfoTension), 0.0, 1.0);
+
+        // outputs 0 = peak + LFO, 1 = peak, 2 = LFO; Ramp: at most 1/8 of the range per host tick (96 per quarter note)
+        const double targets[3] { std::min (1.0, peak + lfo), peak, lfo };
+        const auto ramp = p[11] >= 0.5f;
+        const auto step = (float) (beats * 96.0 * 0.125);
+        for (int o = 0; o < 3; ++o)
+        {
+            const auto t = (float) targets[o];
+            out[o] = ! ramp || out[o] < 0.0f ? t : std::clamp (t, out[o] - step, out[o] + step);
+        }
+        if (p[10] >= 0.5f) // Mute
+        {
+            std::fill (l, l + n, 0.0f);
+            std::fill (r, r + n, 0.0f);
+        }
+    }
+
+    float controlOutput (int output) const noexcept override { return std::max (0.0f, out[(std::size_t) std::clamp (output, 0, 2)]); }
+
+private:
+    double sampleRate = 44100.0, detector = 0.0, songBeats = 0.0, freePhase = 0.0;
+    bool playing = false;
+    float out[3] { -1.0f, -1.0f, -1.0f };
+};
+
+class Utility final : public Effect
+{
+public:
+    void prepare (double) noexcept override {}
+    void reset() noexcept override {}
+
+    void process (float* l, float* r, int n, const EffectParams& p, double) noexcept override
+    {
+        if (p[0] != lastGainParam) // pow only when the parameter changes (Patchers have dozens of utilities)
+        {
+            lastGainParam = p[0];
+            cachedGain = p[0] <= 0.0f ? 0.0f : std::pow (10.0f, utilityGainDb (p[0]) / 20.0f); // at the bottom = mute
+        }
+        const auto gain = cachedGain;
+        const auto pan = std::clamp (p[1] * 2.0f - 1.0f, -1.0f, 1.0f);
+        const auto gl = gain * (pan > 0.0f ? 1.0f - pan : 1.0f); // balance: lowers the opposite side
+        const auto gr = gain * (pan < 0.0f ? 1.0f + pan : 1.0f);
+        const auto ll = utilityMatrix (p[2]), rl = utilityMatrix (p[3]), lr = utilityMatrix (p[4]), rr = utilityMatrix (p[5]);
+
+        // shortcuts: identity (common in Patchers' PanOMatic/Stereo Shaper) and mute
+        if (gl == 0.0f && gr == 0.0f)
+        {
+            std::fill (l, l + n, 0.0f);
+            std::fill (r, r + n, 0.0f);
+            return;
+        }
+        if (rl == 0.0f && lr == 0.0f)
+        {
+            const auto fl = ll * gl, fr = rr * gr;
+            if (fl == 1.0f && fr == 1.0f)
+                return;
+            for (int i = 0; i < n; ++i)
+            {
+                l[i] *= fl;
+                r[i] *= fr;
+            }
+            return;
+        }
+
+        for (int i = 0; i < n; ++i)
+        {
+            const auto a = l[i], b = r[i];
+            l[i] = (ll * a + rl * b) * gl;
+            r[i] = (lr * a + rr * b) * gr;
+        }
+    }
+
+    int tailSamples() const noexcept override { return 0; } // (round 190gp: no memory)
+
+private:
+    float lastGainParam = -1.0f, cachedGain = 1.0f;
+};
+} // namespace
+
+namespace peq
+{
+BandType type (float v) noexcept { return (BandType) std::clamp ((int) std::lround (v * (bandTypes - 1)), 0, bandTypes - 1); }
+float typeValue (BandType t) noexcept { return (float) (int) t / (float) (bandTypes - 1); }
+double hz (float v) noexcept { return 20.0 * std::pow (1000.0, std::clamp ((double) v, 0.0, 1.0)); }
+float hzValue (double f) noexcept { return (float) std::clamp (std::log (std::max (f, 1.0) / 20.0) / std::log (1000.0), 0.0, 1.0); }
+double gainDb (float v) noexcept { return (std::clamp ((double) v, 0.0, 1.0) - 0.5) * 36.0; }
+float gainValue (double db) noexcept { return (float) std::clamp (db / 36.0 + 0.5, 0.0, 1.0); }
+double q (float v) noexcept { return 0.1 * std::pow (180.0, std::clamp ((double) v, 0.0, 1.0)); }
+float qValue (double value) noexcept { return (float) std::clamp (std::log (std::max (value, 0.01) / 0.1) / std::log (180.0), 0.0, 1.0); }
+int slopeStages (float v) noexcept { return 1 + (int) std::lround (std::clamp (v, 0.0f, 1.0f) * 3.0f); }
+float slopeValue (int stages) noexcept { return (float) (std::clamp (stages, 1, 4) - 1) / 3.0f; }
+
+const char* typeName (BandType t) noexcept
+{
+    static constexpr const char* names[] = { "Off", "Peak", "Low shelf", "High shelf", "Low cut",
+                                             "High cut", "Band-pass", "Notch" };
+    return names[(int) t];
+}
+
+double responseDb (const EffectParams& params, double sr, double f)
+{
+    if (flLaw (params))
+        return peqfl::responseDb (peqfl::fromParams (params), sr, f);
+
+    // |H(e^jw)| of each stage, summed in dB
+    const auto w = 2.0 * pi * std::clamp (f, 1.0, sr * 0.499) / sr;
+    const std::complex<double> z1 = std::polar (1.0, -w), z2 = std::polar (1.0, -2.0 * w);
+    auto total = gainDb (params[outputParam]);
+
+    for (int b = 0; b < bands; ++b)
+    {
+        std::array<Biquad, 4> st;
+        const auto count = bandStages (params, b, sr, st);
+
+        for (int s = 0; s < count; ++s)
+        {
+            const auto& c = st[(std::size_t) s];
+            const auto h = (c.b0 + c.b1 * z1 + c.b2 * z2) / (1.0 + c.a1 * z1 + c.a2 * z2);
+            const auto magnitude = std::abs (h);
+            if (std::isfinite (magnitude)) // (the editor draws this: never NaN)
+                total += 20.0 * std::log10 (std::max (magnitude, 1.0e-9));
+        }
+    }
+
+    return total;
+}
+bool flLaw (const EffectParams& params) noexcept { return peqfl::lawOf (params) != peqfl::Law::lynx; }
+
+std::string orderText (const EffectParams& params, int band)
+{
+    const auto v = params[(std::size_t) (slopeParam + band)];
+    if (! flLaw (params))
+        return std::to_string (12 * slopeStages (v)) + " dB/oct";
+    if (peqfl::lawOf (params) == peqfl::Law::peq1)
+        return "12 dB/oct";
+    // FL's order texts, −3…+3 (REA_rodada7 §1.4)
+    static constexpr const char* names[7] = { "Steep 8", "Steep 6", "Steep 4", "2", "Gentle 4", "Gentle 6", "Gentle 8" };
+    return names[std::clamp ((int) std::lround (v * 6.0f), 0, 6)];
+}
+
+std::string widthText (const EffectParams& params, int band)
+{
+    const auto v = params[(std::size_t) param (band, 3)];
+    char text[32];
+    if (flLaw (params))
+        std::snprintf (text, sizeof (text), "BW %.0f%%", (double) v * 100.0);
+    else
+        std::snprintf (text, sizeof (text), "Q %.2f", q (v));
+    return text;
+}
+} // namespace peq
+
+namespace autopan
+{
+Source sourceOf (float v) noexcept { return (Source) std::clamp ((int) std::lround (std::clamp (v, 0.0f, 1.0f) * 2.0f), 0, 2); }
+Direction directionOf (float v) noexcept { return (Direction) std::clamp ((int) std::lround (std::clamp (v, 0.0f, 1.0f) * 2.0f), 0, 2); }
+double rateHz (float v) noexcept { return 0.01 * std::pow (1000.0, (double) std::clamp (v, 0.0f, 1.0f)); }
+float rateValue (double hz) noexcept { return (float) std::clamp (std::log (std::max (hz, 1e-6) / 0.01) / std::log (1000.0), 0.0, 1.0); }
+int stepCount (float v) noexcept { return 2 + std::clamp ((int) std::lround (std::clamp (v, 0.0f, 1.0f) * 6.0f), 0, 6); }
+double stepBeats (float v) noexcept { return 4.0 / (double) (1 << std::clamp ((int) std::lround (std::clamp (v, 0.0f, 1.0f) * 5.0f), 0, 5)); }
+double inputDb (float v) noexcept { return -24.0 + 48.0 * (double) std::clamp (v, 0.0f, 1.0f); }
+std::string paramText (int param, float v)
+{
+    char t[32];
+    switch (param)
+    {
+        case source: { static const char* const n[3] { "FL LFO", "LFO", "Rhythm steps" }; return n[(int) sourceOf (v)]; }
+        case rate:
+        {
+            const auto hz = rateHz (v);
+            if (hz < 1.0) std::snprintf (t, sizeof t, "%.1f s", 1.0 / hz);
+            else std::snprintf (t, sizeof t, "%.2f Hz", hz);
+            return t;
+        }
+        case direction: { static const char* const n[3] { "Back and forth", "Left to right", "Right to left" }; return n[(int) directionOf (v)]; }
+        case smoothing: std::snprintf (t, sizeof t, "%.0f%%", 100.0 * std::clamp (v, 0.0f, 1.0f)); return t;
+        case stepsParam: return std::to_string (stepCount (v));
+        case stepNote: { static const char* const n[6] { "1/1", "1/2", "1/4", "1/8", "1/16", "1/32" }; return n[std::clamp ((int) std::lround (std::clamp (v, 0.0f, 1.0f) * 5.0f), 0, 5)]; }
+        case inputGain:
+        case outputGain: std::snprintf (t, sizeof t, "%+.1f dB", inputDb (v)); return t;
+        case analogStage: return v >= 0.5f ? "Analog" : "Digital";
+        default: std::snprintf (t, sizeof t, "%.2f", (double) v); return t;
+    }
+}
+} // namespace autopan
+
+namespace
+{
+const EffectInfo& effectInfoOf (EffectKind kind);
+}
+
+// Round 190ge: one table lookup. effectInfoOf below passes the guard of each of its ~120 local statics before its switch
+// on every call, and the renderer asks for a slot's info every block (0.8 % of a big project's render on its own).
+const EffectInfo& effectInfo (EffectKind kind)
+{
+    static const auto table = [] {
+        std::array<const EffectInfo*, 256> t {};
+        for (std::size_t k = 0; k < t.size(); ++k)
+            t[k] = &effectInfoOf ((EffectKind) k); // (a value past the last kind: EQ's, as effectInfoOf answers)
+        return t;
+    }();
+    static_assert (sizeof (EffectKind) == 1);
+    return *table[(std::size_t) kind];
+}
+
+namespace
+{
+const EffectInfo& effectInfoOf (EffectKind kind)
+{
+    static const EffectInfo eq { "EQ", { { "Low", 0.5f }, { "Mid", 0.5f }, { "Mid freq.", 0.5f }, { "High", 0.5f }, { "Output", 0.5f } } };
+    static const EffectInfo comp { "Compressor", { { "Threshold", 0.7f }, { "Ratio", 3.0f / 19.0f }, { "Attack", 0.67f }, { "Release", 0.54f }, { "Makeup", 0.0f }, { "Auto gain", 0.0f },
+                                                  { "Mix", 1.0f }, { "Trim", 0.5f }, { "Voicing", 0.0f },
+                                                  // round 135w: the RComp role's switches (the vintage voicing's ARC / Electro / Warm
+                                                  // by default, as fitted) and its 0 dBFS output limiter (off: older projects unchanged)
+                                                  { "Release mode", 0.0f }, { "Release curve", 0.0f }, { "Character", 0.0f }, { "Limiter", 0.0f },
+                                                  // round 150: the RComp role's own ranges (off: LYNX's, older projects unchanged) —
+                                                  // ratio 1.00 : 1, gain 0 dB, attack 16 ms, release 160 ms (the reference's defaults)
+                                                  { "Ranges", 0.0f }, { "RC ratio", 0.625f }, { "RC gain", 0.5f }, { "RC attack", 0.5f }, { "RC release", 0.5f },
+                                                  // round 152: the vintage voicing's static curve measured at every ratio (on for new
+                                                  // instances; projects saved before keep the round-150 curve: upgradeLoadedEffectParams)
+                                                  { "Vintage curve", 1.0f },
+                                                  // round 190ar: the classic voicing's law — clean (as before) or FET
+                                                  // (5 dB knee, program-dependent release); off: every project unchanged
+                                                  { "Classic law", 0.0f } } };
+    static const EffectInfo delay { "Delay", { { "Time", 0.3f }, { "Feedback", 0.42f }, { "Mix", 0.3f }, { "Ping-pong", 0.0f }, { "Damping", 0.3f } } };
+    static const EffectInfo reverb { "Reverb", { { "Room", 0.6f }, { "Damping", 0.5f }, { "Width", 1.0f }, { "Mix", 0.25f }, { "Dry", 1.0f },
+                                                 { "Low cut", 0.0f }, { "High cut", 1.0f }, { "Predelay", 0.0f } } };
+    static const EffectInfo plugin { "Plugin", {} };
+    static const EffectInfo limiter { "Limiter", { { "Ceiling", 0.975f }, { "Gain", 0.0f }, { "Release", 0.5f } } };
+    // round 190da: Slope appended (0 = 12 dB/oct, the filter every older project has)
+    static const EffectInfo filter { "Filter", { { "Type", 0.0f }, { "Cutoff", 0.75f }, { "Reso.", 0.2f }, { "Mix", 1.0f }, { "Slope", 0.0f } } };
+    static const EffectInfo distortion { "Distortion", { { "Drive", 0.4f }, { "Tone", 0.7f }, { "Mix", 1.0f }, { "Output", 0.5f } } };
+    static const EffectInfo chorus { "Chorus", { { "Rate", 0.45f }, { "Depth", 0.4f }, { "Mix", 0.5f }, { "Feedback", 0.0f } } };
+    static const EffectInfo utility { "Utility", { { "Gain", 0.5f }, { "Balance", 0.5f }, { "L -> L", 0.75f }, { "R -> L", 0.5f },
+                                                      { "L -> R", 0.5f }, { "R -> R", 0.75f } } };
+    static const EffectInfo volumeGate = [] {
+        static const char* names[] = { "Step 1", "Step 2", "Step 3", "Step 4", "Step 5", "Step 6", "Step 7", "Step 8",
+                                       "Step 9", "Step 10", "Step 11", "Step 12", "Step 13", "Step 14", "Step 15", "Step 16",
+                                       "Step 17", "Step 18", "Step 19", "Step 20", "Step 21", "Step 22", "Step 23", "Step 24",
+                                       "Step 25", "Step 26", "Step 27", "Step 28", "Step 29", "Step 30", "Step 31", "Step 32" };
+        EffectInfo info { "Volume gate", {} };
+        for (int i = 0; i < gate::steps; ++i)
+            info.params.push_back ({ names[i], (i % 8) < 4 ? 1.0f : 0.0f }); // default: half a beat on, half off
+        info.params.push_back ({ "Mix", 1.0f });
+        info.params.push_back ({ "Attack", 0.1765f });  // ~2 ms
+        info.params.push_back ({ "Release", 0.5f });    // ~43 ms
+        return info;
+    }();
+    static const EffectInfo pitchShift { "Pitch shift", { { "Semitones", 0.5f }, { "Cents", 0.5f }, { "Mix", 1.0f }, { "Window", 0.4f } } };
+    static const EffectInfo freqShift { "Frequency shifter", { { "Shift", 0.5f }, { "Mix", 1.0f }, { "Stereo", 0.0f } } };
+    static const EffectInfo parallelInfo { "Patcher (parallel)", {} };
+    static const EffectInfo patcherInfo { "Patcher", {} };
+    static const EffectInfo crossoverInfo { "Crossover", { { "High-pass", 0.0f }, { "HP cutoff", 0.3f }, { "HP slope", 3.0f / 7.0f },
+                                                           { "Low-pass", 0.0f }, { "LP cutoff", 0.7f }, { "LP slope", 3.0f / 7.0f } } };
+    static const EffectInfo rhythmInfo = [] {
+        EffectInfo info { "Rhythmic envelope", { { "Period", 1.0f / 64.0f }, { "Points", 0.0f } } };
+        static const char* names[] = { "P1 pos", "P1 level", "P1 tension", "P2 pos", "P2 level", "P2 tension", "P3 pos", "P3 level", "P3 tension",
+                                       "P4 pos", "P4 level", "P4 tension", "P5 pos", "P5 level", "P5 tension", "P6 pos", "P6 level", "P6 tension",
+                                       "P7 pos", "P7 level", "P7 tension", "P8 pos", "P8 level", "P8 tension", "P9 pos", "P9 level", "P9 tension",
+                                       "P10 pos", "P10 level", "P10 tension", "P11 pos", "P11 level", "P11 tension", "P12 pos", "P12 level", "P12 tension" };
+        for (int i = 0; i < 36; ++i)
+            info.params.push_back ({ names[i], i % 3 == 2 ? 0.5f : 1.0f });
+        info.params.push_back ({ "Control only", 0.0f });
+        return info;
+    }();
+    static const EffectInfo autoPanInfo { "Auto-pan", { { "Period", 1.0f / 64.0f }, { "Depth", 0.75f }, { "Phase", 0.0f }, { "Pan", 0.5f }, { "Control only", 0.0f },
+                                                        { "FL pan law", 0.0f }, { "Tension", 0.5f },
+                                                        // round 135 (the PanMan role; the FL source stays the default)
+                                                        { "Source", 0.0f }, { "Rate", 0.46598f }, { "Direction", 0.0f }, { "Smoothing", 1.0f },
+                                                        { "Steps", 1.0f / 6.0f }, { "Step note", 0.4f }, { "Input", 0.5f }, { "Output", 0.5f },
+                                                        { "Analog", 0.0f },
+                                                        // round 136: the Rhythm voicing (core/RhythmPan.h, measured), off = the engines above
+                                                        { "Voicing", 0.0f }, { "Rhythm rate", 0.4659f /* 0.25 Hz */ }, { "Sync", 0.0f },
+                                                        { "Beats", 0.4f /* 1 beat */ }, { "Width", 180.0f / 210.0f }, { "Offset", 0.5f },
+                                                        { "Rhythm smoothing", 1.0f }, { "Pattern", 0.0f }, { "Amount", 1.0f }, { "Start phase", 0.0f },
+                                                        { "Rhythm analog", 0.5f }, { "Rhythm output", 0.5f },
+                                                        // round 150: the Tweak page, Feel / Groove, past the speakers (appended;
+                                                        // a project saved before round 150 keeps the clipped angle)
+                                                        { "Rate mod", 0.5f }, { "Offset mod", 0.5f }, { "Width mod", 0.5f },
+                                                        { "Env threshold", 40.0f / 60.0f }, { "Env range", 10.0f / 39.0f },
+                                                        { "Feel", 0.5f }, { "Groove", 0.5f }, { "Beyond speakers", 1.0f },
+                                                        // round 152: the trigger sources (Ping-pong / Random step), their
+                                                        // threshold, divider, filter and manual trigger; the Random source
+                                                        { "Trigger", 0.0f }, { "Trig threshold", 40.0f / 60.0f }, { "Divider", 0.0f },
+                                                        { "Trig filter", 0.0f }, { "Trig freq", 0.5f }, { "Manual trigger", 0.0f },
+                                                        { "Random steps", 0.0f } } };
+    static const EffectInfo vocoderInfo { "Vocoder", { { "Bands", 0.4f }, { "Order", 0.5f }, { "Listen", 1.0f }, { "Swap L/R", 0.0f },
+                                                       { "Min freq.", 0.0f }, { "Max freq.", 1.0f }, { "Scale", 0.5f }, { "Invert", 0.0f },
+                                                       { "Formant", 0.5f }, { "Width", 45.0f / 195.0f }, { "Attack", 10.0f / 990.0f },
+                                                       { "Release", 90.0f / 990.0f }, { "Hold", 0.0f }, { "Modulator", 0.0f },
+                                                       { "Carrier", 0.0f }, { "Wet", 0.8f }, { "Side inputs", 0.0f } } };
+    static const EffectInfo vocodexInfo { "Vocodex", {} }; // everything comes from FL's raw state (EffectSlot::state)
+    static const EffectInfo maximusInfo { "Maximus", {} }; // the engine's state travels in EffectSlot::state (core/MaximusFx.h)
+    // Distructor: each module's input volume, mix and output volume (FL's 0…10000 / 10000), the final clipper; the
+    // modules themselves come from FL's state (core/DistructorFx.h)
+    static const EffectInfo distructorInfo { "Distructor", { { "M1 In", 0.5f }, { "M1 Mix", 1.0f }, { "M1 Out", 0.5f },
+                                                             { "M2 In", 0.5f }, { "M2 Mix", 1.0f }, { "M2 Out", 0.5f },
+                                                             { "M3 In", 0.5f }, { "M3 Mix", 1.0f }, { "M3 Out", 0.5f },
+                                                             { "M4 In", 0.5f }, { "M4 Mix", 1.0f }, { "M4 Out", 0.5f },
+                                                             { "Clipper", 1.0f } } };
+    // Multiband Delay: FL's twelve global controls (raw − min) / range; the banks come from FL's state (core/MultibandDelayFx.h)
+    static const EffectInfo multibandDelayInfo = [] {
+        EffectParams p {};
+        mbdelay::toParams (mbdelay::State {}, p);
+        EffectInfo info { "Multiband Delay", {} };
+        const char* const names[mbdelay::numGlobals] = { "Delay scale", "Delay x0.1", "Feedback", "Smoothing", "Filter mode", "Keep pitch",
+                                                         "Morph", "Mix", "Harmonic scale", "Weighting", "High pass", "Saturation" };
+        for (int i = 0; i < mbdelay::numGlobals; ++i)
+            info.params.push_back ({ names[i], p[(std::size_t) i] });
+        return info;
+    }();
+    // EQUO: FL's knobs (raw − min) / range and options; the bands come from FL's state (core/EquoFx.h)
+    static const EffectInfo equoInfo { "EQUO", { { "Band shift", 0.5f }, { "Band mix", 1.0f }, { "Morph", 0.0f },
+                                                 { "Smoothness", 170.0f / 1024.0f }, { "Volume", 0.5f },
+                                                 { "Bandwidth", 70.0f / 420.0f }, { "Oversample", 0.0f }, { "Add mode", 0.0f },
+                                                 { "Send only", 0.0f } } };
+    // FL's Pitch Shifter: its 13 knobs (raw − min) / range, then engine, detector, tempo sync; defaults = a new FL instance
+    static const EffectInfo flPitchShifterInfo = [] {
+        EffectParams p {};
+        psfl::toParams (psfl::State {}, p);
+        EffectInfo info { "Pitch Shifter", {} };
+        const char* const names[psfl::numParams] = { "Pitch", "Formant", "Channel", "Mix", "Duration", "Density", "Jitter",
+                                                     "Random", "Delay", "Feedback", "Delay mode", "Formant correction",
+                                                     "Pitch mode", "Granular", "Accurate detector", "Tempo sync" };
+        for (int i = 0; i < psfl::numParams; ++i)
+            info.params.push_back ({ names[i], p[(std::size_t) i] });
+        return info;
+    }();
+    // FL's raw controls normalised over their ranges (core/FruityDynamics.h); defaults = a new FL instance
+    static const EffectInfo fruityLimiterInfo = [] {
+        EffectInfo info { "Fruity Limiter", {} };
+        for (int i = 0; i < fldyn::limiterControls; ++i)
+            info.params.push_back ({ fldyn::limiterParamName (i), fldyn::normalised (fldyn::limiterDefault[(std::size_t) i], fldyn::limiterMin[(std::size_t) i], fldyn::limiterMax[(std::size_t) i]) });
+        info.params.push_back ({ fldyn::limiterParamName (fldyn::limiterControls), 0.0f });
+        return info;
+    }();
+    static const EffectInfo fruityCompressorInfo = [] {
+        EffectInfo info { "Fruity Compressor", {} };
+        for (int i = 0; i < fldyn::compressorControls; ++i)
+            info.params.push_back ({ fldyn::compressorParamName (i), fldyn::normalised (fldyn::compressorDefault[(std::size_t) i], fldyn::compressorMin[(std::size_t) i], fldyn::compressorMax[(std::size_t) i]) });
+        info.params.push_back ({ fldyn::compressorParamName (fldyn::compressorControls), 1.0f });
+        return info;
+    }();
+    // FL's controls over their ranges (core/FruityShapers.h); defaults = a new FL instance; the curve is in EffectSlot::state
+    static const EffectInfo waveShaperInfo { "Fruity WaveShaper", { { "Pre amp", 0.5f }, { "Mix", 1.0f }, { "Post gain", 1.0f },
+                                                                    { "Oversampling", 0.0f }, { "HQ", 0.0f }, { "Smooth", 0.0f },
+                                                                    { "Center", 0.0f }, { "Unipolar", 0.0f } } };
+    static const EffectInfo softClipperInfo { "Fruity Soft Clipper", { { "Threshold", 99.0f / 126.0f }, { "Post", 128.0f / 160.0f } } };
+    // FL's controls over their ranges (core/FruityBasicFx.h); defaults = a new FL instance
+    static const EffectInfo panOMaticInfo { "Fruity PanOMatic", { { "Pan", 0.5f }, { "Volume", 0.8f }, { "LFO shape", 0.0f },
+                                                                  { "LFO target", 0.0f }, { "LFO amount", 0.5f }, { "LFO speed", 0.5f } } };
+    static const EffectInfo balanceInfo { "Fruity Balance", { { "Balance", 0.5f }, { "Volume", 0.8f } } };
+    static const EffectInfo bloodOverdriveInfo { "Fruity Blood Overdrive", { { "Pre band", 0.0f }, { "Color", 0.5f }, { "Pre amp", 0.0f },
+                                                                              { "x100", 0.0f }, { "Post filter", 0.0f }, { "Post gain", 1.0f } } };
+    // FL's controls as (raw − min) / range (core/Reeverb2.h); defaults = FL's
+    static const EffectInfo reeverb2Info = [] {
+        EffectInfo info { "Reeverb 2", { { "Low cut", 0 }, { "High cut", 0 }, { "Predelay", 0 }, { "Room size", 0 }, { "Diffusion", 0 },
+                                         { "Decay", 0 }, { "High damping", 0 }, { "Bass mult.", 0 }, { "Crossover", 0 }, { "Stereo sep.", 0 },
+                                         { "Dry", 0 }, { "Early ref.", 0 }, { "Wet", 0 }, { "Mod speed", 0 }, { "Mod depth", 0 },
+                                         { "Tempo predelay", 0 }, { "Mid/side input", 0 } } };
+        EffectParams p {};
+        reeverb2::toParams (reeverb2::Settings {}, p);
+        for (std::size_t i = 0; i < info.params.size(); ++i)
+            info.params[i].defaultValue = p[i];
+        return info;
+    }();
+    // FL's 49 controls as (raw − min) / range + the 4 sync switches (core/LuxeVerb.h); defaults = a new FL instance
+    static const EffectInfo luxeVerbInfo = [] {
+        EffectInfo info { "LuxeVerb", {} };
+        EffectParams p {};
+        luxeverb::toParams (luxeverb::Settings {}, p);
+        for (std::size_t i = 0; i < (std::size_t) luxeVerbParamCount; ++i)
+            info.params.push_back ({ luxeverb::names[i], p[i] });
+        for (std::size_t i = 0; i < (std::size_t) luxeVerbSpaceCount; ++i) // round tp172b: the Space engine (off)
+            info.params.push_back ({ luxeverb::sp::names[i], luxeverb::sp::defaults[i] });
+        return info;
+    }();
+    // FL's 4 automatable controls as (raw − min) / range (core/ConvolverFx.h); the impulse response is in the slot's state
+    static const EffectInfo convolverInfo { "Fruity Convolver", { { "Dry", 1.0f }, { "Wet", 1.0f }, { "Input separation", 0.5f },
+                                                                  { "Wet separation", 0.5f } } };
+    // FL's controls as raw / max (core/Reeverb2.h); defaults = the plugin's own (1250, 10800, 0, 26000, 65536, 20, 4700,
+    // 10800, 65536, 13120)
+    static const EffectInfo reeverb1Info { "Reeverb", { { "Low cut", 1250.0f / 65536 }, { "High cut", 10800.0f / 65536 }, { "Predelay", 0.0f },
+                                                        { "Room size", 26000.0f / 65536 }, { "Diffusion", 1.0f }, { "Color", 0.5f },
+                                                        { "Decay", 4700.0f / 65536 }, { "High damping", 10800.0f / 65536 }, { "Dry", 1.0f },
+                                                        { "Wet", 13120.0f / 65536 } } };
+    // FL's raw controls normalised over their ranges (core/FruityDelay.h); defaults = FL's "Default" presets
+    static const EffectInfo fruityDelay2Info = [] {
+        EffectInfo info { "Fruity Delay 2", {} };
+        for (int i = 0; i < fldelay::delay2Controls; ++i)
+            info.params.push_back ({ fldelay::delay2ParamName (i), (float) (fldelay::delay2Default[(std::size_t) i] - fldelay::delay2Min[(std::size_t) i])
+                                                                      / (float) (fldelay::delay2Max[(std::size_t) i] - fldelay::delay2Min[(std::size_t) i]) });
+        return info;
+    }();
+    static const EffectInfo fruityDelay3Info = [] {
+        EffectInfo info { "Fruity Delay 3", {} };
+        for (int i = 0; i < fldelay::delay3Controls; ++i)
+            info.params.push_back ({ fldelay::delay3ParamName (i), (float) (fldelay::delay3Default[(std::size_t) i] - fldelay::delay3Min[(std::size_t) i])
+                                                                      / (float) (fldelay::delay3Max[(std::size_t) i] - fldelay::delay3Min[(std::size_t) i]) });
+        return info;
+    }();
+    // FL's controls over their ranges (core/StereoFx.h); defaults = a new FL instance
+    static const EffectInfo stereoShaperInfo { "Stereo Shaper", { { "R > L", 0.5f }, { "Left", 0.75f }, { "Right", 0.75f }, { "L > R", 0.5f },
+                                                                 { "Delay", 0.5f }, { "Phase", 0.5f }, { "Effects post", 0.0f },
+                                                                 { "Difference", 0.0f } } };
+    static const EffectInfo stereoEnhancerInfo { "Stereo Enhancer", { { "Pan", 0.5f }, { "Volume", 0.8f }, { "Separation", 0.5f },
+                                                                     { "Phase offset", 0.5f }, { "Effects post", 1.0f }, { "Invert", 0.0f } } };
+    static const EffectInfo transientProcessorInfo { "Transient Processor", { { "Attack", 0.5f }, { "Drive", 0.0f }, { "Release", 0.5f },
+                                                                             { "Gain", 0.5f }, { "Attack shape", 0.5f }, { "Release shape", 0.5f },
+                                                                             { "Split freq.", 0.5f }, { "Split balance", 0.5f }, { "On", 1.0f } } };
+    static const EffectInfo spreaderInfo { "Spreader", { { "Width", 0.5f }, { "Separation", 0.5f }, { "Low bypass", 9990.0f / 999000.0f },
+                                                         { "Mono bass", 0.0f }, { "Enable", 1.0f } } };
+    // FL's controls over their ranges (core/FruityFilters.h); defaults = a new FL instance
+    static const EffectInfo fastLPInfo { "Fruity Fast LP", { { "Cutoff", 1.0f }, { "Resonance", 0.0f } } };
+    static const EffectInfo freeFilterInfo { "Fruity Free Filter", { { "Type", 0.0f }, { "Frequency", 0.5f }, { "Q", 169.0f / 1024.0f },
+                                                                    { "Gain", 676.0f / 1024.0f }, { "Center", 0.0f } } };
+    // FL's Newtone / Newtime: the sample and its edits travel in EffectSlot::state / samplePath (core/NewtoneFx.h)
+    static const EffectInfo newtoneInfo { "Newtone", { { "Slave to host playback", 0.0f } } };
+    static const EffectInfo newtimeInfo { "Newtime", { { "Slave to host playback", 0.0f } } };
+    static const EffectInfo fruityFilterInfo { "Fruity Filter", { { "Cutoff", 1.0f }, { "Resonance", 205.0f / 1024.0f }, { "Low pass", 1.0f },
+                                                                 { "Band pass", 0.0f }, { "High pass", 0.5f }, { "x2", 0.0f }, { "Center", 0.0f } } };
+    // FL's nine Gross Beat parameters (core/GrossBeat.h; round 190oa: the scratch dial's offset, the 9th); the slots' envelopes travel in EffectSlot::state
+    static const EffectInfo grossBeatInfo { "Gross Beat", { { "Time slot", 0.0f }, { "Volume slot", 0.0f }, { "Time mix", 1.0f },
+                                                            { "Volume mix", 1.0f }, { "Attack", 0.1765f }, { "Release", 0.5f },
+                                                            { "Tension", 0.5f }, { "Hold", 0.0f },
+                                                            { "Time offset (scratching)", 0.0f } } }; // (round 190oa: 0 = no offset)
+    // FL's state travels in EffectSlot::state; the four global controls are the editable parameters (raw / 128)
+    static const EffectInfo fruityDelayBankInfo { "Fruity Delay Bank", { { "Dry", 1.0f }, { "Output", 1.0f }, { "Input", 1.0f }, { "Feedback", 1.0f } } };
+    // FL's raw controls normalised over their ranges (core/FruityMultiband.h); defaults = a new FL instance
+    static const EffectInfo fruityMultibandInfo = [] {
+        EffectInfo info { "Fruity Multiband Compressor", {} };
+        for (int i = 0; i < flmb::controls; ++i)
+            info.params.push_back ({ flmb::paramName (i), flmb::normalised (flmb::controlDefault[(std::size_t) i], flmb::controlMin[(std::size_t) i], flmb::controlMax[(std::size_t) i]) });
+        return info;
+    }();
+    // FL's controls over their ranges (core/FlangusFastDist.h); defaults = a new FL instance
+    static const EffectInfo fastDistInfo { "Fruity Fast Dist", { { "Pre amp", 0.5f }, { "Threshold", 1.0f }, { "Type", 0.0f },
+                                                                 { "Mix", 1.0f }, { "Post gain", 1.0f } } };
+    static const EffectInfo flangusInfo { "Fruity Flangus", { { "Order", 3.0f / 8.0f }, { "Depth", 0.5f }, { "Speed", 0.75f },
+                                                              { "Delay", 8.0f / 128.0f }, { "Spread", 1.0f }, { "Cross", 96.0f / 256.0f },
+                                                              { "Dry", 224.0f / 256.0f }, { "Wet", 224.0f / 256.0f } } };
+    static const EffectInfo flangerInfo { "Fruity Flanger", { { "Delay", 0.0f }, { "Depth", 0.4f }, { "Rate", 0.4f }, { "Phase", 118.0f / 360.0f },
+                                                              { "Damp", 0.0f }, { "Shape", 0.0f }, { "Feed", 0.23f }, { "Invert feed", 0.0f },
+                                                              { "Invert wet", 1.0f }, { "Dry", 0.7f }, { "Wet", 0.6f }, { "Cross", 0.5f } } };
+    // raw FL values / max (the names are FL's controls, REA_rodada29 §2.1)
+    static const EffectInfo squeezeInfo { "Squeeze", { { "Volume", 127.0f / 160.0f }, { "Mix", 0.5f }, { "Steps", 1.0f / 32768.0f },
+                                                       { "Filter", 0.0f }, { "Filter type", 0.0f }, { "Resonance", 0.5f },
+                                                       { "Cutoff", 0.5f }, { "Filter post", 0.0f }, { "Relation", 0.0f },
+                                                       { "Impact", 0.0f }, { "Preserve", 7500.0f / 44100.0f }, { "Amount", 0.0f } } };
+    // the engine's normalised values in core order (VST 22/23 swapped); defaults = the front-end's new instance
+    static const EffectInfo vintagePhaserInfo { "Vintage Phaser", {
+        { "Min freq.", 0.4375f }, { "Max freq.", 0.7758789f }, { "Feedback", 0.5f }, { "Manual", 0.0f }, { "Manual freq.", 0.0f },
+        { "HQ", 0.0f }, { "LFO speed", 0.0f }, { "Tempo sync", 0.0f }, { "Sine", 0.0f }, { "Tension", 0.0f }, { "Start phase", 0.0f },
+        { "L/R phase", 0.0f }, { "Delay", 0.0f }, { "Keep pitch", 0.0f }, { "Delay mix", 0.0f }, { "Delay stereo", 0.5f },
+        { "Delay time", 0.0f }, { "Delay sync", 0.0f }, { "Delay fdbk", 0.0f }, { "Delay LP", 0.0f }, { "Delay HP", 0.0f },
+        { "Mix", 0.5f }, { "Noise", 0.0f }, { "Mono input", 0.0f }, { "Gate", 0.0f }, { "Colour gain", 0.0f }, { "Colour freq.", 0.0f },
+        { "Input HP", 0.0f }, { "Fdbk HP", 0.0f }, { "Rate 1", 0.0f }, { "Rate 2", 1.0f }, { "Depth scale", 1.0f },
+        { "Pull-down", 0.0f }, { "Engine V2", 1.0f }, { "Drive", 0.0f }, { "Invert fdbk", 0.0f } } };
+    static const EffectInfo pitchCorrectInfo = [] {
+        EffectInfo info { "Pitch correction", { { "Speed", 1.0f }, { "Fine", 0.5f }, { "Bypass all", 0.0f }, { "A freq.", 0.5f },
+                                                     { "Range", 0.4f } } };
+        static const char* names[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        for (const auto* name : names)
+            info.params.push_back ({ name, 1.0f });
+        static const char* bypass[] = { "C off", "C# off", "D off", "D# off", "E off", "F off", "F# off", "G off", "G# off", "A off", "A# off", "B off" };
+        for (const auto* name : bypass)
+            info.params.push_back ({ name, 0.0f });
+        // added later (REA round 30); the defaults keep older projects as they were: plain shifter, no harmony
+        info.params.insert (info.params.end(), { { "Formant", 0.0f }, { "Gender", 0.5f }, { "Pitch ref.", 0.0f }, { "Stereo", 1.0f },
+                                                 { "Harmonize", 0.0f }, { "MIDI", 0.0f }, { "Octaves", 0.0f }, { "Mix", 0.0f },
+                                                 { "Vel", 0.0f }, { "Voice 1 pan", 0.5f }, { "Voice 2 pan", 0.5f },
+                                                 { "Voice 3 pan", 0.5f }, { "Voice 4 pan", 0.5f } });
+        // round 190ee: FL's MIDI port (none by default) and how notes arrive (older projects: Port routing off)
+        info.params.insert (info.params.end(), { { "MIDI port", 0.0f }, { "Port routing", 1.0f } });
+        return info;
+    }();
+    static const EffectInfo lofiInfo { "Lo-fi", { { "Rate", 0.0f }, { "Bits", 0.0f }, { "Mix", 1.0f } } };
+    // FL's Fruity Phaser: its nine raw controls / max (core/FruityPhaser.h); defaults = a new FL instance
+    static const EffectInfo fruityPhaserInfo = [] {
+        EffectInfo info { "Fruity Phaser", {} };
+        float p[phaserfx::params] {};
+        phaserfx::toParams (phaserfx::defaults, p);
+        for (int i = 0; i < phaserfx::params; ++i)
+            info.params.push_back ({ phaserfx::paramName (i), p[i] });
+        return info;
+    }();
+    // FL's Fruity Send: pan, volume, dry over their ranges and the insert it sends to (core/FruityBasicFx.h)
+    static const EffectInfo fruitySendInfo { "Fruity Send", { { "Pan", 0.5f }, { "Volume", 0.8f }, { "Dry", 1.0f }, { "Send to", 0.0f } } };
+    static const EffectInfo effectorInfo { "Effector", { { "Type", 0.0f }, { "Bypass", 0.0f }, { "Wet", 1.0f }, { "X", 0.5f }, { "Y", 0.5f },
+                                                         { "Mod rate", 0.5f }, { "Tempo red.", 0.0f }, { "Mod X", 0.5f }, { "Mod Y", 0.5f },
+                                                         { "LFO shape", 0.0f }, { "Input", 1.0f }, { "Output", 0.5f } } };
+    static const EffectInfo formulaControllerInfo { "Formula Controller", { { "a", 0.0f }, { "b", 0.0f }, { "c", 0.0f } } };
+    // round 168r: FL's LFO controls, Mute and Ramp after the round-17 five (FL's own order: the state's 10 ints + 2 flags)
+    static const EffectInfo peakController { "Peak Controller", { { "Base", 0.0f }, { "Amount", 0.8496f }, { "Tension", 0.5f },
+                                                                  { "Decay", 0.4959f }, { "LFO base", 0.0f }, { "LFO amount", 0.5f },
+                                                                  { "LFO tension", 0.5f }, { "LFO speed", 32750.0f / 65336.0f },
+                                                                  { "LFO shape", 0.0f }, { "LFO phase", 0.0f }, { "Mute", 0.0f },
+                                                                  { "Ramp", 0.0f } } };
+    static const EffectInfo parametric = [] {
+        // bands as in a mixing EQ: low shelf, 5 peaks and high shelf, all at 0 dB
+        constexpr peq::BandType types[] = { peq::BandType::lowShelf, peq::BandType::peak, peq::BandType::peak, peq::BandType::peak,
+                                            peq::BandType::peak, peq::BandType::peak, peq::BandType::highShelf };
+        constexpr double freqs[] = { 80.0, 200.0, 500.0, 1200.0, 3000.0, 6000.0, 12000.0 };
+        static const char* names[peq::bands][4] = {
+            { "B1 type", "B1 freq.", "B1 gain", "B1 Q" }, { "B2 type", "B2 freq.", "B2 gain", "B2 Q" },
+            { "B3 type", "B3 freq.", "B3 gain", "B3 Q" }, { "B4 type", "B4 freq.", "B4 gain", "B4 Q" },
+            { "B5 type", "B5 freq.", "B5 gain", "B5 Q" }, { "B6 type", "B6 freq.", "B6 gain", "B6 Q" },
+            { "B7 type", "B7 freq.", "B7 gain", "B7 Q" } };
+        static const char* slopes[peq::bands] = { "B1 slope", "B2 slope", "B3 slope", "B4 slope", "B5 slope", "B6 slope", "B7 slope" };
+        EffectInfo info { "Parametric EQ", {} };
+
+        for (int b = 0; b < peq::bands; ++b)
+        {
+            info.params.push_back ({ names[b][0], peq::typeValue (types[b]) });
+            info.params.push_back ({ names[b][1], peq::hzValue (freqs[b]) });
+            info.params.push_back ({ names[b][2], 0.5f });
+            // Q 1.0 on shelves = shelf slope S 1; on cuts, 0.707 = Butterworth
+            info.params.push_back ({ names[b][3], peq::qValue (types[b] == peq::BandType::lowCut || types[b] == peq::BandType::highCut ? 0.70710678 : 1.0) });
+        }
+
+        info.params.push_back ({ "Output", 0.5f });
+
+        for (int b = 0; b < peq::bands; ++b)
+            info.params.push_back ({ slopes[b], 0.0f });
+
+        return info;
+    }();
+
+    switch (kind)
+    {
+        case EffectKind::eq: return eq;
+        case EffectKind::compressor: return comp;
+        case EffectKind::delay: return delay;
+        case EffectKind::reverb: return reverb;
+        case EffectKind::plugin: return plugin;
+        case EffectKind::limiter: return limiter;
+        case EffectKind::filter: return filter;
+        case EffectKind::distortion: return distortion;
+        case EffectKind::chorus: return chorus;
+        case EffectKind::parametricEq: return parametric;
+        case EffectKind::utility: return utility;
+        case EffectKind::volumeGate: return volumeGate;
+        case EffectKind::peakController: return peakController;
+        case EffectKind::pitchShift: return pitchShift;
+        case EffectKind::freqShift: return freqShift;
+        case EffectKind::parallel: return parallelInfo;
+        case EffectKind::patcher: return patcherInfo;
+        case EffectKind::lofi: return lofiInfo;
+        case EffectKind::effector: return effectorInfo;
+        case EffectKind::crossover: return crossoverInfo;
+        case EffectKind::rhythmGain: return rhythmInfo;
+        case EffectKind::autoPan: return autoPanInfo;
+        case EffectKind::vocoder: return vocoderInfo;
+        case EffectKind::pitchCorrect: return pitchCorrectInfo;
+        case EffectKind::squeeze: return squeezeInfo;
+        case EffectKind::vintagePhaser: return vintagePhaserInfo;
+        case EffectKind::vocodex: return vocodexInfo;
+        case EffectKind::maximus: return maximusInfo;
+        case EffectKind::fruityLimiter: return fruityLimiterInfo;
+        case EffectKind::fruityCompressor: return fruityCompressorInfo;
+        case EffectKind::fruityWaveShaper: return waveShaperInfo;
+        case EffectKind::fruitySoftClipper: return softClipperInfo;
+        case EffectKind::fruityPanOMatic: return panOMaticInfo;
+        case EffectKind::fruityBalance: return balanceInfo;
+        case EffectKind::fruityBloodOverdrive: return bloodOverdriveInfo;
+        case EffectKind::reeverb2: return reeverb2Info;
+        case EffectKind::reeverb1: return reeverb1Info;
+        case EffectKind::fruityDelay2: return fruityDelay2Info;
+        case EffectKind::fruityDelay3: return fruityDelay3Info;
+        case EffectKind::stereoShaper: return stereoShaperInfo;
+        case EffectKind::stereoEnhancer: return stereoEnhancerInfo;
+        case EffectKind::transientProcessor: return transientProcessorInfo;
+        case EffectKind::spreader: return spreaderInfo;
+        case EffectKind::fruityChorus: return fruitychorusfx::info();
+        case EffectKind::hyperChorus: return hyperchorusfx::info();
+        case EffectKind::vintageChorus: return vintagechorusfx::info();
+        case EffectKind::grossBeat: return grossBeatInfo;
+        case EffectKind::lovePhilter: return philter::info();
+        case EffectKind::luxeVerb: return luxeVerbInfo;
+        case EffectKind::convolver: return convolverInfo;
+        case EffectKind::fruityDelayBank: return fruityDelayBankInfo;
+        case EffectKind::fruityMultiband: return fruityMultibandInfo;
+        case EffectKind::fruityFastDist: return fastDistInfo;
+        case EffectKind::fruityFlangus: return flangusInfo;
+        case EffectKind::fruityFlanger: return flangerInfo;
+        case EffectKind::equo: return equoInfo;
+        case EffectKind::flPitchShifter: return flPitchShifterInfo;
+        case EffectKind::multibandDelay: return multibandDelayInfo;
+        case EffectKind::frequencySplitter: return fsplit::info();
+        case EffectKind::fruityFastLP: return fastLPInfo;
+        case EffectKind::fruityFreeFilter: return freeFilterInfo;
+        case EffectKind::fruityFilter: return fruityFilterInfo;
+        case EffectKind::hardcore: return hardcore::info();
+        case EffectKind::distructor: return distructorInfo;
+        case EffectKind::newtone: return newtoneInfo;
+        case EffectKind::newtime: return newtimeInfo;
+        case EffectKind::facetEq: return facet::info();
+        case EffectKind::apexLimiter: return apex::info();
+        case EffectKind::ridgeStrip: return mixsuite::ridgeInfo();
+        case EffectKind::glowLeveler: return mixsuite::glowInfo();
+        case EffectKind::hushDeEsser: return mixsuite::hushInfo();
+        case EffectKind::aether: return mixsuite::aetherInfo();
+        case EffectKind::ember: return mixsuite::emberInfo();
+        case EffectKind::kilnChannel: return mixsuite::kilnInfo();
+        case EffectKind::fretChannel: return mixsuite::fretInfo();
+        case EffectKind::shellChannel: return mixsuite::shellInfo();
+        case EffectKind::pocketDistortion:
+        {
+            // FL Studio Mobile's own values and defaults (round 188h)
+            static const EffectInfo info { "Pocket Distortion", { { "Drive", 0.25f }, { "BitCrush", 0.0f }, { "Gain", 1.0f },
+                                                                  { "Stereo", 0.5f }, { "Kind", 0.0f }, { "Bias", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketLimiterClassic:
+        {
+            static const EffectInfo info { "Pocket Limiter Classic", { { "Threshold", 1.0f }, { "Release", 0.7f },
+                                                                       { "Output gain", 2.0f / 3.0f } } };
+            return info;
+        }
+        case EffectKind::pocketLimiter:
+        {
+            static const EffectInfo info { "Pocket Limiter", { { "In gain", 0.5f }, { "Out gain", 0.5f }, { "Release", 0.2f },
+                                                               { "Threshold", 1.0f } } };
+            return info;
+        }
+        case EffectKind::pocketLeveller:
+        {
+            static const EffectInfo info { "Pocket Leveller", { { "Gain", 0.7379573f }, { "Pan", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketGate:
+        {
+            static const EffectInfo info { "Pocket Gate", { { "Threshold", 0.0f }, { "Asymmetry", 0.0f }, { "Attack", 0.01f },
+                                                            { "Attack curve", 0.0f }, { "Release", 0.25f }, { "Release curve", 1.0f },
+                                                            { "Mix", 1.0f }, { "Hold", 0.25f } } };
+            return info;
+        }
+        case EffectKind::pocketTranceDelay:
+        {
+            static const EffectInfo info { "Pocket Trance Delay", { { "Time", 0.775f }, { "Feedback", 0.4f }, { "Mix", 1.0f },
+                                                                    { "Filter", 0.5f }, { "Mode", 0.0f }, { "Input pan", 0.5f },
+                                                                    { "Dry pan", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketTapeDelay:
+        {
+            static const EffectInfo info { "Pocket Tape Delay", { { "Time", 0.6f }, { "Feedback", 0.6f }, { "Async", 0.5f },
+                                                                  { "Mix", 0.4f } } };
+            return info;
+        }
+        case EffectKind::pocketMultiFx:
+        {
+            static const EffectInfo info { "Pocket MultiFX", { { "FX kind", 0.0f }, { "X", 0.5f }, { "Y", 0.5f }, { "LFO rate", 0.61f },
+                                                               { "LFO amount", 0.0f }, { "LFO shape", 0.0f } } };
+            return info;
+        }
+        case EffectKind::strikeShaper: return mixsuite::strikeInfo();
+        case EffectKind::anvilBus: return mixsuite::anvilInfo();
+        case EffectKind::corrode: return mixsuite::corrodeInfo();
+        case EffectKind::soundboard: return mixsuite::soundboardInfo();
+        case EffectKind::platter: return mixsuite::platterInfo();
+        case EffectKind::timeprism: return mixsuite::timeprismInfo();
+        case EffectKind::harmonia: return mixsuite::harmoniaInfo();
+        case EffectKind::pocketAutoduck:
+        {
+            static const EffectInfo info { "Pocket Autoduck", { { "Ducking", 0.501f }, { "Attack", 0.1f }, { "Curve", 0.501f }, { "Time", 1.0f },
+                                                                { "Shift", 0.5f }, { "Hold", 0.0f }, { "Shape", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketChorus:
+        {
+            static const EffectInfo info { "Pocket Chorus", { { "Rate", 0.4f }, { "Depth", 0.6f }, { "Stereo", 1.0f }, { "Mix", 0.6f } } };
+            return info;
+        }
+        case EffectKind::pocketSpacer:
+        {
+            static const EffectInfo info { "Pocket Spacer", { { "L/R delay", 0.5f }, { "Pan", 0.5f }, { "Separation", 0.5f },
+                                                              { "L/R inversion", 0.0f }, { "M/S delay", 0.5f }, { "M/S inversion", 0.0f },
+                                                              { "Stereo mode", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketStereoizer:
+        {
+            static const EffectInfo info { "Pocket Stereoizer", { { "Strength", 0.7f }, { "Timbre", 0.52f }, { "Focus", 0.75f },
+                                                                  { "L/R delay", 0.5f }, { "Pan", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketWowFlutter:
+        {
+            // FL Studio Mobile's own values and defaults (round 189h); FLM names each rate knob and its sync menu alike
+            static const EffectInfo info { "Pocket Wow & Flutter", { { "Wow rate", 0.184564f }, { "Wow sync", 0.2f }, { "Wow amount", 0.25f },
+                                                                     { "Flutter rate", 0.066818f }, { "Flutter sync", 0.1f },
+                                                                     { "Flutter amount", 0.25f }, { "Sync", 0.0f }, { "Random rate", 0.08952f },
+                                                                     { "Random sync", 0.8f }, { "Random amount", 0.25f } } };
+            return info;
+        }
+        case EffectKind::pocketPhaser:
+        {
+            static const EffectInfo info { "Pocket Phaser", { { "LFO rate", 0.112222f }, { "LFO amount", 0.25f }, { "Feedback", 0.1f },
+                                                              { "Frequency", 0.25f }, { "Mix", 1.0f }, { "Sync", 1.0f }, { "LFO speed", 0.0f },
+                                                              { "LFO shape", 0.0f }, { "Stereo", 1.0f } } };
+            return info;
+        }
+        case EffectKind::pocketFlanger:
+        {
+            static const EffectInfo info { "Pocket Flanger", { { "LFO rate", 0.4f }, { "Sync", 0.0f }, { "LFO speed", 0.55f }, { "LFO shape", 0.0f },
+                                                               { "LFO amount", 1.0f }, { "Delay", 0.25f }, { "Feedback", 0.75f },
+                                                               { "Invert feedback", 1.0f }, { "Stereo", 0.0f }, { "Mix", 1.0f }, { "Invert mix", 1.0f } } };
+            return info;
+        }
+        case EffectKind::pocketTremolo:
+        {
+            static const EffectInfo info { "Pocket Tremolo", { { "Rate", 0.045467f }, { "Rate sync", 0.0f }, { "Amount max", 1.0f },
+                                                               { "Amount min", 0.0f }, { "Phase offset", 0.0f }, { "Stereo offset", 0.0f },
+                                                               { "Sync", 0.0f }, { "Shape", 0.5f }, { "Smooth", 1.0f }, { "Skew", 0.5f }, { "Width", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketWaveshaper:
+        {
+            // FL Studio Mobile's own values and defaults (round 189h)
+            static const EffectInfo info { "Pocket Waveshaper", { { "Shape", 0.0f }, { "Auto-gain", 0.0f }, { "X", 0.5f }, { "Y", 0.5f },
+                                                                  { "Drive", 0.0f }, { "Post gain", 0.5f }, { "Stereo spread", 0.0f },
+                                                                  { "Mix", 1.0f }, { "High cut", 1.0f }, { "Low cut", 0.0f }, { "Bass", 0.5f },
+                                                                  { "Mid freq", 0.5f }, { "Mid gain", 0.5f }, { "Treble", 0.5f },
+                                                                  { "LFO shape", 0.0f }, { "LFO sync", 0.0f }, { "LFO rate", 0.5f },
+                                                                  { "LFO rate free", 0.0f }, { "LFO to X", 0.0f }, { "LFO to Y", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketCompressor:
+        {
+            static const EffectInfo info { "Pocket Compressor", { { "Thresh", 0.499f }, { "Ratio", 0.0f }, { "Attack", 0.6f }, { "Release", 0.6f },
+                                                                  { "Level", 0.5001f }, { "Hold", 0.0f }, { "Auto gain", 1.0f },
+                                                                  { "Input gain", 0.5f }, { "RMS", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketSpreader:
+        {
+            static const EffectInfo info { "Pocket Spreader", { { "Width", 0.0f }, { "Low bypass", 0.0f }, { "Mono bass", 0.0f },
+                                                                { "Separation", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketComb: // round 190by
+        {
+            static const EffectInfo info { "Pocket Comb Filter", { { "Mode", 0.0f }, { "Pitch", 0.33f }, { "Feedback", 0.8f }, { "Mix", 0.75f },
+                                                                   { "Offset", 0.5f }, { "Smoothing", 0.25f }, { "Snap", 1.0f },
+                                                                   { "Polarity", 0.0f }, { "Asymmetry", 0.5f }, { "Pitch oct", 0.5f },
+                                                                   { "Pitch note", 0.4f } } };
+            return info;
+        }
+        case EffectKind::pocketMultiband: // round 190by
+        {
+            static const EffectInfo info { "Pocket Multiband Compressor",
+                                           { { "Master gain", 0.5f }, { "Low crossover", 0.3f }, { "High crossover", 0.7f }, { "Solo", 0.0f },
+                                             { "Dry mix", 0.0f },
+                                             { "Low input gain", 0.5f }, { "Low threshold", 1.0f }, { "Low ratio", 0.0f }, { "Low attack", 0.3f },
+                                             { "Low release", 0.3f }, { "Low gain", 0.5f }, { "Low state", 0.0f },
+                                             { "Mid input gain", 0.5f }, { "Mid threshold", 1.0f }, { "Mid ratio", 0.0f }, { "Mid attack", 0.3f },
+                                             { "Mid release", 0.3f }, { "Mid gain", 0.5f }, { "Mid state", 0.0f },
+                                             { "High input gain", 0.5f }, { "High threshold", 1.0f }, { "High ratio", 0.0f }, { "High attack", 0.3f },
+                                             { "High release", 0.3f }, { "High gain", 0.5f }, { "High state", 0.0f },
+                                             { "Low width", 0.5f }, { "Mid width", 0.5f }, { "High width", 0.5f }, { "Width mode", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketTapeStop: // round 190by
+        {
+            static const EffectInfo info { "Pocket Tape Stop", { { "Stop time", 0.2f }, { "Start time", 0.2f }, { "Stop time synced", 1.0f / 3.0f },
+                                                                 { "Start time synced", 1.0f / 3.0f }, { "Play", 1.0f }, { "Warp", 0.5f },
+                                                                 { "Sync", 0.0f } } };
+            return info;
+        }
+        // --- round 190dw: FLM's own defaults (each module's default-value function, REA_rodada182c / FLM_FORMAT §7.1)
+        case EffectKind::pocketEq:
+        {
+            static const EffectInfo info { "Pocket EQ", { { "Gain 1", 0.5f }, { "Frequency 1", 0.2f }, { "Bandwidth 1", 0.5f }, { "Kind 1", 0.51f },
+                                                          { "Gain 2", 0.5f }, { "Frequency 2", 0.4f }, { "Bandwidth 2", 0.5f }, { "Kind 2", 0.51f },
+                                                          { "Gain 3", 0.5f }, { "Frequency 3", 0.6f }, { "Bandwidth 3", 0.5f }, { "Kind 3", 0.51f },
+                                                          { "Gain 4", 0.5f }, { "Frequency 4", 0.8f }, { "Bandwidth 4", 0.5f }, { "Kind 4", 0.51f },
+                                                          { "Channel 1", 0.0f }, { "Channel 2", 0.0f }, { "Channel 3", 0.0f }, { "Channel 4", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketGraphicEq:
+        {
+            static const EffectInfo info { "Pocket Graphic EQ", { { "80 Hz", 0.5f }, { "160 Hz", 0.5f }, { "375 Hz", 0.5f }, { "750 Hz", 0.5f },
+                                                                  { "1.5 kHz", 0.5f }, { "3 kHz", 0.5f }, { "6 kHz", 0.5f }, { "12 kHz", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketFilter:
+        {
+            static const EffectInfo info { "Pocket Filter", { { "Frequency", 0.7f }, { "Q", 0.0f }, { "Type", 0.0f }, { "Slope", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketReverbClassic:
+        {
+            static const EffectInfo info { "Pocket Reverb Classic",
+                                           { { "Decay", 0.4f }, { "High damping", 0.8f }, { "Mix", 0.4f }, { "Predelay", 0.0f }, { "Room size", 1.0f },
+                                             { "Diffusion", 1.0f }, { "Width", 1.0f }, { "Low cut", 0.0f }, { "High cut", 1.0f }, { "Input", 1.0f },
+                                             { "ER", 0.25f }, { "Dry level", 0.0f }, { "Input off", 0.0f }, { "Dry off", 0.0f },
+                                             { "ER off", 0.0f }, { "Wet off", 0.0f }, { "Bass mult", 0.0f }, { "Crossover", 0.0f },
+                                             { "Mod rate", 0.499f }, { "Mod depth", 0.0f } } };
+            return info;
+        }
+        case EffectKind::pocketReverb2:
+        {
+            static const EffectInfo info { "Pocket Reverb 2",
+                                           { { "High cut", 0.16f }, { "Low cut", 0.0187f }, { "Size", 0.5f }, { "Decay", 0.068f }, { "Diffusion", 1.0f },
+                                             { "Damping", 0.16f }, { "Dry", 0.8f }, { "ER", 0.8f }, { "Wet", 0.56f }, { "Side input", 0.0f },
+                                             { "Delay", 0.0f }, { "Tempo", 0.0f }, { "Mod", 0.0f }, { "Bass", 0.28f }, { "Separation", 0.5f },
+                                             { "Speed", 0.33f }, { "Crossover", 0.2405f }, { "Pan", 0.5f } } };
+            return info;
+        }
+        case EffectKind::pocketReverb:
+        {
+            static const EffectInfo info { "Pocket Reverb",
+                                           { { "Decay", 0.4f }, { "High damping", 0.8f }, { "Mix", 0.4f }, { "Pan", 0.5f }, { "ER", 0.25f },
+                                             { "Predelay", 0.0f }, { "Room size", 1.0f }, { "Diffusion", 1.0f }, { "Width", 1.0f }, { "Low cut", 0.0f },
+                                             { "High cut", 1.0f }, { "Mod rate", 0.499f }, { "Mod depth", 0.0f }, { "Wet gain", 1.0f },
+                                             { "Dry level", 1.0f } } };
+            return info;
+        }
+        // --- end of round 190dw
+        case EffectKind::rackMixer:
+        {
+            static const EffectInfo rackMixerInfo { "Chain mixer", { { "Volume", rack::unityVolume }, { "Pan", 0.5f }, { "Chain select", 1.0f } } };
+            return rackMixerInfo;
+        }
+        case EffectKind::edison: return edisonfx::info();
+        case EffectKind::lynxTune: return lynxtune::info();
+        case EffectKind::fruityPhaser: return fruityPhaserInfo;
+        case EffectKind::epochVerb:
+        case EffectKind::atrium:
+        case EffectKind::foilPlate:
+        case EffectKind::nebula:
+        case EffectKind::halo:
+        case EffectKind::horizon: return verbs::info (kind);
+        case EffectKind::echoform: return echosuite::echoformInfo();
+        case EffectKind::spiralEcho: return echosuite::spiralInfo();
+        case EffectKind::orbit: return echosuite::orbitInfo();
+        case EffectKind::latticeMod: return echosuite::latticeInfo();
+        case EffectKind::fruitySend: return fruitySendInfo;
+        case EffectKind::crestCompressor: return dyn::crestInfo();
+        case EffectKind::prismMultiband: return dyn::prismInfo();
+        case EffectKind::sentryGate: return dyn::sentryInfo();
+        case EffectKind::quellDenoiser: return voicetools::quellInfo();
+        case EffectKind::geminiDoubler: return voicetools::geminiInfo();
+        case EffectKind::formulaController: return formulaControllerInfo;
+        case EffectKind::voiceShift: return voiceshift::info();
+        case EffectKind::emphasizer:
+        {
+            static const EffectInfo info { "Emphasizer", { { "Input gain", 0.0f }, { "Emphasis", 0.5013f }, { "Soft clipping", 0.0f },
+                                                           { "Level matching", 0.0f }, { "Bypass", 0.0f }, { "Output", 1.0f } } };
+            return info;
+        }
+        case EffectKind::flEmphasis:
+        {
+            // FL's controls and a new instance's values (the "Default" preset)
+            static const EffectInfo info { "Emphasis", { { "Bypass", 0.0f }, { "Delta", 0.0f }, { "Envelope order", 0.0f },
+                                                         { "True peak", 0.0f }, { "Channel mode", 0.0f }, { "Mode", 0.0f },
+                                                         { "Input gain", 0.0f }, { "Linking", 1.0f }, { "Emphasis", 1.0f },
+                                                         { "Ceiling", 0.9912f }, { "Level matching", 0.0f }, { "Oversampling", 0.5f },
+                                                         { "Hardness", 7.0f / 9.0f }, { "Loudness compensation", 0.0f },
+                                                         { "Instant recovery", 1.0f }, { "DC block", 1.0f } } };
+            return info;
+        }
+        case EffectKind::flFrequencyShifter:
+        {
+            // FL's controls and defaults (a new instance: Mix 100 %, Frequency shifter, +200 Hz in the 200 Hz range)
+            static const EffectInfo info { "Frequency Shifter", { { "Mix", 1.0f }, { "Type", 0.5f }, { "Frequency", 1.0f },
+                                                                  { "L/R phase offset", 0.0f }, { "L shape", 1.0f }, { "R shape", 1.0f },
+                                                                  { "Feedback", 0.5f }, { "Mono/stereo", 1.0f }, { "Range", 0.5f },
+                                                                  { "Left phase offset", 0.5f } } };
+            return info;
+        }
+        case EffectKind::flPhaseInverter:
+        {
+            static const EffectInfo info { "Fruity Phase Inverter", { { "Invert", 1.0f } } };
+            return info;
+        }
+        case EffectKind::flCenter:
+        {
+            static const EffectInfo info { "Fruity Center", { { "On", 1.0f } } };
+            return info;
+        }
+        case EffectKind::flBassBoost:
+        {
+            static const EffectInfo info { "Fruity Bass Boost", { { "Frequency", 0.5f }, { "Amount", 0.75f } } };
+            return info;
+        }
+        case EffectKind::fl7BandEq:
+        {
+            static const EffectInfo info { "Fruity 7 Band EQ", { { "63 Hz", 0.5f }, { "250 Hz", 0.5f }, { "500 Hz", 0.5f },
+                                                                 { "1.5 kHz", 0.5f }, { "3 kHz", 0.5f }, { "5 kHz", 0.5f },
+                                                                 { "8 kHz", 0.5f } } };
+            return info;
+        }
+        case EffectKind::flDelay1:
+        {
+            // FL's defaults: input 338, feedback 512, cutoff 1024, host tempo, 3 sixteenths, normal
+            static const EffectInfo info { "Fruity Delay", { { "Input", 338.0f / 1024.0f }, { "Feedback", 0.5f }, { "Cutoff", 1.0f },
+                                                             { "Tempo", 0.0f }, { "Time", 2.0f / 15.0f }, { "Mode", 0.0f } } };
+            return info;
+        }
+        case EffectKind::flLowLifter:
+        {
+            // FL's controls; defaults = the plug-in's Default preset (as a new instance in FL)
+            static const EffectInfo info { "Low Lifter", { { "On", 1.0f }, { "Dry/Wet", 1.0f }, { "Low band gain", 0.4999f },
+                                                           { "Slope", 0.6993f }, { "Look-ahead", 1.0f }, { "Invert polarity", 0.0f },
+                                                           { "Pre gain", 0.4998f }, { "Diffuser mix", 0.0f }, { "Diffuser depth", 0.5f },
+                                                           { "High band gain", 1.0f }, { "Crossover", 0.892f }, { "Low cut", 0.0f },
+                                                           { "Multiband", 0.0f }, { "High band", 1.0f }, { "Low band", 1.0f } } };
+            return info;
+        }
+        case EffectKind::hardwareInsert:
+        {
+            // round 164d: no channels chosen at first (nothing reaches a device output before the user picks one)
+            static const EffectInfo info { "Hardware Insert", { { "Send", 0.5f }, { "Return", 0.5f }, { "Dry/wet", 1.0f }, { "Invert", 0.0f },
+                                                                { "Output", 0.0f }, { "Output mono", 0.0f }, { "Input", 0.0f },
+                                                                { "Input stereo", 1.0f }, { "Round trip", 0.0f }, { "Ping", 0.0f } } };
+            return info;
+        }
+        case EffectKind::fruityMute2:
+        {
+            // round 165g: a new Fruity Mute 2 lets the sound through (Mute = On means sound on, FL's labels), both sides selected
+            static const EffectInfo info { "Fruity Mute 2", { { "Mute", 1.0f }, { "Channel", 1.0f / 3.0f } } };
+            return info;
+        }
+        case EffectKind::bigClock:
+        {
+            static const EffectInfo info { "Fruity Big Clock", { { "Display", 0.0f } } };
+            return info;
+        }
+        case EffectKind::tuner:
+        {
+            // FL's Default preset: 440 Hz, fast, bass off, Dial
+            static const EffectInfo info { "Tuner", { { "Reference", 0.5f }, { "Reactivity", 1.0f }, { "Bass", 0.0f }, { "Visual", 1.0f } } };
+            return info;
+        }
+        case EffectKind::htmlNotebook:
+        {
+            static const EffectInfo info { "Fruity HTML NoteBook", {} };
+            return info;
+        }
+        case EffectKind::scratcher:
+        {
+            // FL's defaults (its editor's DFM): platter at 690 / 30000, 1x, stopped, Hold off, Volume 199 / 255
+            static const EffectInfo info = [] {
+                const auto d = scratcher::defaults();
+                return EffectInfo { "Fruity Scratcher",
+                                    { { "Wave position", d[0] }, { "Mute", d[1] }, { "Speed", d[2] }, { "Acceleration", d[3] },
+                                      { "Pan", d[4] }, { "Volume", d[5] }, { "Hold", d[6] }, { "Sensitivity", d[7] },
+                                      { "Transport", d[8] }, { "Smooth 1", d[9] }, { "Smooth 2", d[10] }, { "Smooth 3", d[11] },
+                                      { "Smooth 4", d[12] }, { "Rotations", d[13] }, { "Timecode type", 0.0f },
+                                      { "RIAA preamp", 0.0f } } };
+            }();
+            return info;
+        }
+        case EffectKind::flTransporter:
+        {
+            // FL's controls over their ranges, then the state's source / stereo / send; defaults = FL's Default preset
+            static const EffectInfo info = [] {
+                float d[transporter::numParams] {};
+                transporter::toParams (transporter::State {}, d);
+                static const char* const names[transporter::numParams] {
+                    "Dry level", "Loop A level", "Loop B level", "Reverse probability", "Octave shift probability", "Octave down/up probability",
+                    "Spread / auto-pan", "Minimum length A", "A/B ratio", "Transient sensitivity", "Bouncing rate", "Freeze", "Flush",
+                    "Loop mode", "Bypass", "Update loop A", "Update loop B", "Update loops A/B", "Deterministic", "Tempo length",
+                    "Tempo trigger", "Ignore probability", "Source", "Stereo", "Send to" };
+                EffectInfo e { "Transporter", {} };
+                for (int k = 0; k < transporter::numParams; ++k)
+                    e.params.push_back ({ names[k], d[k] });
+                return e;
+            }();
+            return info;
+        }
+        case EffectKind::transmitter:
+        {
+            // FL's Default preset (core/Transmitter.h: the 42 controls in FL's order, each over its range)
+            static const EffectInfo info = [] {
+                const auto d = transmitter::defaults();
+                return EffectInfo { "Transmitter",
+                                    {
+                                      { "Sensitivity", d[0] },
+                                      { "Hold", d[1] },
+                                      { "Release", d[2] },
+                                      { "Transient level", d[3] },
+                                      { "Sustain level", d[4] },
+                                      { "Transient tilt", d[5] },
+                                      { "Sustain tilt", d[6] },
+                                      { "Transient diffusion mix", d[7] },
+                                      { "Transient diffusion depth", d[8] },
+                                      { "Transient diffusion delay", d[9] },
+                                      { "Sustain diffusion mix", d[10] },
+                                      { "Sustain diffusion depth", d[11] },
+                                      { "Sustain diffusion delay", d[12] },
+                                      { "Transient saturation mix", d[13] },
+                                      { "Transient saturation drive", d[14] },
+                                      { "Transient saturation warmth", d[15] },
+                                      { "Sustain saturation mix", d[16] },
+                                      { "Sustain saturation drive", d[17] },
+                                      { "Sustain saturation warmth", d[18] },
+                                      { "Transient bounce mix", d[19] },
+                                      { "Transient bounce amplitude curve", d[20] },
+                                      { "Transient bounce delay curve", d[21] },
+                                      { "Sustain bounce mix", d[22] },
+                                      { "Sustain bounce amplitude curve", d[23] },
+                                      { "Sustain bounce delay curve", d[24] },
+                                      { "Transient delay mix", d[25] },
+                                      { "Transient delay time", d[26] },
+                                      { "Transient delay synced time", d[27] },
+                                      { "Transient delay feedback", d[28] },
+                                      { "Sustain delay mix", d[29] },
+                                      { "Sustain delay time", d[30] },
+                                      { "Sustain delay synced time", d[31] },
+                                      { "Sustain delay feedback", d[32] },
+                                      { "Lookahead", d[33] },
+                                      { "Stereo link", d[34] },
+                                      { "Mode", d[35] },
+                                      { "Transient on", d[36] },
+                                      { "Sustain on", d[37] },
+                                      { "Transient effect", d[38] },
+                                      { "Sustain effect", d[39] },
+                                      { "Transient delay tempo sync", d[40] },
+                                      { "Sustain delay tempo sync", d[41] } } };
+            }();
+            return info;
+        }
+        case EffectKind::waveCandy:
+        {
+            // round 164c (core/VisualFx.h wavecandy::Param): a new one shows the spectrum, like FL's Default preset's analyser
+            static const EffectInfo info { "Wave Candy", { { "Mode", visualfx::wavecandy::modeValue (visualfx::wavecandy::Mode::spectrum) },
+                                                           { "Gain", 0.5f }, { "Hold", 0.0f }, { "Scope window", 0.5f }, { "Separation", 0.0f },
+                                                           { "Sync", 1.0f }, { "Speed", 0.35f }, { "Range", 0.5f }, { "Scale", 1.0f },
+                                                           { "Weighting", 1.0f }, { "Resolution", 0.5f }, { "Meter mode", 0.0f },
+                                                           { "Peak hold", 0.3f }, { "Decay", 0.5f }, { "Meter scale", 0.5f },
+                                                           { "Persistence", 0.5f }, { "Thickness", 0.3f }, { "Colour", 0.97f } } };
+            return info;
+        }
+        case EffectKind::visualizer:
+        {
+            static const EffectInfo info { "Visualizer", { { "Sensitivity", 0.5f }, { "Beat threshold", 0.4f }, { "Hue shift", 0.0f },
+                                                           { "Brightness", 1.0f }, { "Zoom", 0.5f }, { "Speed", 0.5f } } };
+            return info;
+        }
+        case EffectKind::xyController:
+        case EffectKind::xyzController:
+        {
+            // round 164: per axis level / min / max / tension, then speed and acceleration (core/XyController.h)
+            static const auto make = [] (EffectKind k) {
+                EffectInfo info { k == EffectKind::xyController ? "X-Y Controller" : "X-Y-Z Controller", {} };
+                static const char* names[3][4] = { { "X level", "X min", "X max", "X tension" },
+                                                   { "Y level", "Y min", "Y max", "Y tension" },
+                                                   { "Z level", "Z min", "Z max", "Z tension" } };
+                const auto d = xy::defaults (k);
+                for (int a = 0; a < xy::axesOf (k); ++a)
+                    for (int i = 0; i < 4; ++i)
+                        info.params.push_back ({ names[a][i], d[(std::size_t) (4 * a + i)] });
+                info.params.push_back ({ "Speed", d[(std::size_t) xy::speed (k)] });
+                info.params.push_back ({ "Acceleration", d[(std::size_t) xy::acceleration (k)] });
+                if (k == EffectKind::xyzController) // round 165: each axis' output curve mode (FL's point modes)
+                    for (const auto* n : { "X curve", "Y curve", "Z curve" })
+                        info.params.push_back ({ n, 0.0f });
+                return info;
+            };
+            static const EffectInfo xyInfo = make (EffectKind::xyController), xyzInfo = make (EffectKind::xyzController);
+            return kind == EffectKind::xyController ? xyInfo : xyzInfo;
+        }
+        case EffectKind::controlSurface:
+        {
+            // round 164: one parameter per control output (the panel's controls name them, core/ControlSurface.h)
+            static const EffectInfo info = [] {
+                EffectInfo i { "Control Surface", {} };
+                static std::vector<std::string> names;
+                for (int k = 0; k < surface::maxSurfaceOutputs; ++k)
+                    names.push_back ("Control " + std::to_string (k + 1));
+                for (const auto& n : names)
+                    i.params.push_back ({ n.c_str(), 0.0f });
+                return i;
+            }();
+            return info;
+        }
+    }
+    return eq;
+}
+} // namespace
+
+std::string formatEffectParam (EffectKind kind, int param, float v, double bpm, const EffectParams& context)
+{
+    if (kind == EffectKind::pocketCompressor && param == 4) // round 189h: FLM's Level reads 20 dB less with Auto gain on
+        return pocket::compressorLevelText (v, context[6] >= 0.5f);
+    if (kind == EffectKind::ridgeStrip && param == mixsuite::ridge::driveAmount) // round tp172c6: the model's own dial
+    {
+        const auto model = mixsuite::ridge::driveModelIndex (context[(std::size_t) mixsuite::ridge::driveModel]);
+        const auto u = mixsuite::ridge::driveAmountUnits (model, v);
+        char text[32];
+        if (model >= mixsuite::ridge::driveGuitarAmp)
+            std::snprintf (text, sizeof text, "%.2f", u);
+        else
+            std::snprintf (text, sizeof text, model == mixsuite::ridge::driveSaturate ? "%+.1f dB" : "%.1f dB", u);
+        return text;
+    }
+    if (kind == EffectKind::ridgeStrip && mixsuite::ridge::modernVoicing (context)) // round tp172c: the Modern voicing's
+        return mixsuite::ridge::modernParamText (param, v);
+    if (kind == EffectKind::ridgeStrip && mixsuite::ridge::k4Voicing (context)) // round 148: the 4K console's scales
+        return mixsuite::ridge::k4ParamText (param, v);
+    if (kind == EffectKind::ridgeStrip && mixsuite::ridge::eVoicing (context)) // round 123: the console's own scales
+        return mixsuite::ridge::eParamText (param, v);
+    if (kind == EffectKind::ridgeStrip && mixsuite::ridge::h32Voicing (context)) // round 190le: the 32C's own dials
+        return mixsuite::ridge::h32ParamText (param, v, context);
+    if (kind == EffectKind::ridgeStrip && (param == mixsuite::ridge::lfGain || param == mixsuite::ridge::lmfGain
+                                           || param == mixsuite::ridge::hmfGain || param == mixsuite::ridge::hfGain))
+    {
+        // round 165: Ridge's own engine shows the gain of the curve in use (it showed both: "+6.0 dB / +7.2")
+        char text[32];
+        std::snprintf (text, sizeof text, "%+.1f dB", mixsuite::ridge::bandGainDb (v, context[(std::size_t) mixsuite::ridge::curve] > 0.5f));
+        return text;
+    }
+    if (kind == EffectKind::geminiDoubler && (param == voicetools::gemini::lowGain || param == voicetools::gemini::highGain)
+        && ! voicetools::gemini::measuredEq (context)) // round 165w: round 124's shelves read −30 … +12 dB
+    {
+        char text[32];
+        std::snprintf (text, sizeof text, "%+.1f dB", voicetools::gemini::shelfDb (v, false));
+        return text;
+    }
+    if (kind == EffectKind::glowLeveler && mixsuite::glow::classic (context))
+        return mixsuite::glow::classicParamText (param, v);
+    if (kind == EffectKind::hushDeEsser && mixsuite::hush::classic (context))
+        return mixsuite::hush::classicParamText (param, v);
+    if (kind == EffectKind::hushDeEsser && ! mixsuite::hush::extended (context)) // round 165x: the old ranges
+        return mixsuite::hush::oldLawText (param, v);
+    if (kind == EffectKind::pocketAutoduck && param == 5) // Hold is a share of Time
+        return pocket::autoduckHoldText (v, context[3]);
+    if (kind == EffectKind::fruityPhaser && param == 0) // the sweep rate follows the frequency range switch
+        return phaserfx::sweepText (v, context[3] > 0.5f);
+    if (kind == EffectKind::parametricEq && peq::flLaw (context) && param >= 0 && param < peq::slopeParam + peq::bands)
+    {
+        auto p = context;
+        p[(std::size_t) param] = v;
+        if (param > peq::outputParam)
+            return peq::orderText (p, param - peq::slopeParam);
+        if (param < peq::outputParam && param % 4 == 3)
+            return peq::widthText (p, param / 4);
+    }
+    return formatEffectParam (kind, param, v, bpm);
+}
+
+std::string formatEffectParam (EffectKind kind, int param, float v, double bpm)
+{
+    char text[48];
+
+    switch (kind)
+    {
+        case EffectKind::eq:
+            if (param == 2)
+                std::snprintf (text, sizeof (text), "%.0f Hz", eqMidHz (v));
+            else
+                std::snprintf (text, sizeof (text), "%+.1f dB", eqGainDb (v));
+            return text;
+
+        case EffectKind::compressor:
+            switch (param)
+            {
+                case 0: std::snprintf (text, sizeof (text), "%.1f dB", std::abs (compThresholdDb (v)) < 0.05f ? 0.0f : compThresholdDb (v)); break;
+                case 1: std::snprintf (text, sizeof (text), "%.1f:1", compRatio (v)); break;
+                case 2: std::snprintf (text, sizeof (text), "%.1f ms", compAttackMs (v)); break;
+                case 3: std::snprintf (text, sizeof (text), "%.0f ms", compReleaseMs (v)); break;
+                case 5: return v >= 0.5f ? "on" : "off";
+                case 6: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+                case 7: std::snprintf (text, sizeof (text), "%+.1f dB", -18.0f + 36.0f * v); break;
+                case 8: return v >= 0.5f ? "vintage program" : "classic";
+                case 9: return v >= 0.5f ? "manual" : "ARC";
+                case 10: return v >= 0.5f ? "opto" : "electro";
+                case 11: return v >= 0.5f ? "smooth" : "warm";
+                case 12: return v >= 0.5f ? "on" : "off";
+                case 13: return v >= 0.5f ? "RComp" : "LYNX";
+                case 14: std::snprintf (text, sizeof (text), "%.2f:1", rcRatio (v)); break;
+                case 15: std::snprintf (text, sizeof (text), "%+.1f dB", rcGainDb (v)); break;
+                case 16: std::snprintf (text, sizeof (text), rcAttackMs (v) < 10.0f ? "%.2f ms" : "%.1f ms", rcAttackMs (v)); break;
+                case 17: std::snprintf (text, sizeof (text), rcReleaseMs (v) < 100.0f ? "%.1f ms" : "%.0f ms", rcReleaseMs (v)); break;
+                case 18: return v >= 0.5f ? "measured" : "round 150";
+                case 19: return v >= 0.5f ? "FET" : "clean";
+                default: std::snprintf (text, sizeof (text), "+%.1f dB", compMakeupDb (v)); break;
+            }
+            return text;
+
+        case EffectKind::delay:
+            if (param == 0)
+            {
+                const auto index = delayIndex (v);
+                std::snprintf (text, sizeof (text), "%s (%.0f ms)", delayNames[(std::size_t) index],
+                               delayDivisions[(std::size_t) index] * 60000.0 / std::max (bpm, 20.0));
+                return text;
+            }
+            if (param == 3)
+                return v > 0.5f ? "on" : "off";
+            std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::reverb:
+            if (param == 5)
+                return v <= 0.001f ? std::string ("off") : (std::snprintf (text, sizeof (text), "%.0f Hz", reverbLowCutHz (v)), std::string (text));
+            if (param == 6)
+                return v >= 0.999f ? std::string ("off") : (std::snprintf (text, sizeof (text), "%.1f kHz", reverbHighCutHz (v) / 1000.0f), std::string (text));
+            if (param == 7)
+                std::snprintf (text, sizeof (text), "%.0f ms", v * 1000.0f);
+            else
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::limiter:
+            switch (param)
+            {
+                case 0: std::snprintf (text, sizeof (text), "%.1f dB", limiterCeilingDb (v)); break;
+                case 1: std::snprintf (text, sizeof (text), "+%.1f dB", limiterGainDb (v)); break;
+                default: std::snprintf (text, sizeof (text), "%.0f ms", limiterReleaseMs (v)); break;
+            }
+            return text;
+
+        case EffectKind::filter:
+            switch (param)
+            {
+                case 0: return filterNames[(std::size_t) filterType (v)];
+                case 1: std::snprintf (text, sizeof (text), "%.0f Hz", filterHz (v)); break;
+                case 2: std::snprintf (text, sizeof (text), "Q %.2f", filterQ (v)); break;
+                case 4: return filterSteep (v) ? "24 dB/oct" : "12 dB/oct";
+                default: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+            }
+            return text;
+
+        case EffectKind::distortion:
+            switch (param)
+            {
+                case 0: std::snprintf (text, sizeof (text), "+%.1f dB", distortionDriveDb (v)); break;
+                case 1: std::snprintf (text, sizeof (text), "%.0f Hz", distortionToneHz (v)); break;
+                case 2: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+                default: std::snprintf (text, sizeof (text), "%+.1f dB", (v - 0.5f) * 24.0f); break;
+            }
+            return text;
+
+        case EffectKind::chorus:
+            switch (param)
+            {
+                case 0: std::snprintf (text, sizeof (text), "%.2f Hz", chorusRateHz (v)); break;
+                case 1: std::snprintf (text, sizeof (text), "%.1f ms", chorusDepthMs (v)); break;
+                default: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+            }
+            return text;
+
+        case EffectKind::parametricEq:
+        {
+            if (param == peq::outputParam)
+                std::snprintf (text, sizeof (text), "%+.1f dB", peq::gainDb (v));
+            else if (param > peq::outputParam)
+                std::snprintf (text, sizeof (text), "%d dB/oct", 12 * peq::slopeStages (v));
+            else
+                switch (param % 4)
+                {
+                    case 0: return peq::typeName (peq::type (v));
+                    case 1:
+                    {
+                        const auto f = peq::hz (v);
+                        if (f >= 1000.0)
+                            std::snprintf (text, sizeof (text), "%.2f kHz", f / 1000.0);
+                        else
+                            std::snprintf (text, sizeof (text), "%.0f Hz", f);
+                        break;
+                    }
+                    case 2: std::snprintf (text, sizeof (text), "%+.1f dB", peq::gainDb (v)); break;
+                    default: std::snprintf (text, sizeof (text), "Q %.2f", peq::q (v)); break;
+                }
+            return text;
+        }
+
+        case EffectKind::edison:
+            return edisonfx::paramText (param, v);
+
+        case EffectKind::rackMixer: // (round 183c: Live's chain units)
+            if (param == rack::mixerVolume)
+            {
+                const auto g = rack::volumeGain (v);
+                if (g <= 0.0f)
+                    return "-inf dB";
+                std::snprintf (text, sizeof (text), "%.1f dB", 20.0f * std::log10 (g));
+            }
+            else if (param == rack::mixerPan)
+            {
+                const auto pan = (int) std::lround ((v * 2.0f - 1.0f) * 50.0f);
+                if (pan == 0)
+                    return "C";
+                std::snprintf (text, sizeof (text), "%d%s", std::abs (pan), pan < 0 ? "L" : "R");
+            }
+            else
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+        case EffectKind::utility:
+            if (param == 0)
+            {
+                if (v <= 0.0f)
+                    return "mute";
+                std::snprintf (text, sizeof (text), "%+.1f dB", utilityGainDb (v));
+            }
+            else if (param == 1)
+            {
+                const auto pan = v * 2.0f - 1.0f;
+                if (std::abs (pan) < 0.005f)
+                    return "center";
+                std::snprintf (text, sizeof (text), "%.0f%% %s", std::abs (pan) * 100.0f, pan < 0.0f ? "L" : "R");
+            }
+            else
+                std::snprintf (text, sizeof (text), "%.2f", utilityMatrix (v));
+            return text;
+
+        case EffectKind::volumeGate:
+            if (param < gate::steps || param == gate::mixParam)
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            else
+                std::snprintf (text, sizeof (text), "%.1f ms", param == gate::attackParam ? gate::attackMs (v) : gate::releaseMs (v));
+            return text;
+
+        case EffectKind::pitchShift:
+            switch (param)
+            {
+                case 0: std::snprintf (text, sizeof (text), "%+.0f st", pitch::semitones (v)); break;
+                case 1: std::snprintf (text, sizeof (text), "%+.0f ct", pitch::cents (v)); break;
+                case 3: std::snprintf (text, sizeof (text), "%.0f ms", pitch::windowMs (v)); break;
+                default: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+            }
+            return text;
+
+        case EffectKind::freqShift:
+            if (param == 0)
+                std::snprintf (text, sizeof (text), "%+.1f Hz", fshift::hz (v));
+            else
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::peakController:
+            if (param == 1)
+            {
+                const auto raw = (v * 2.0 - 1.0) * 256.0;
+                std::snprintf (text, sizeof (text), "%+.0f%%", (raw < 0.0 ? -1.0 : 1.0) * (std::pow (6.0, std::abs (raw) / 256.0) - 1.0) * 40.0);
+            }
+            else if (param == 3)
+                std::snprintf (text, sizeof (text), "%.2f / beat", (std::pow (10001.0, (5.0 + 123.0 * v) / 128.0) - 1.0) * 0.0192);
+            else if (param == 2 || param == 6)
+                std::snprintf (text, sizeof (text), "%+.0f", (v * 2.0f - 1.0f) * 128.0f);
+            else if (param == 5)
+            {
+                const auto raw = (v * 2.0 - 1.0) * 256.0;
+                std::snprintf (text, sizeof (text), "%+.0f%%", (raw < 0.0 ? -1.0 : 1.0) * (std::pow (6.0, std::abs (raw) / 256.0) - 1.0) * 20.0);
+            }
+            else if (param == 7)
+            {
+                const auto beats = std::max (3.0 / 96.0, (std::pow (1001.0, (200.0 + v * 65336.0) / 65536.0) - 1.0) * 0.128);
+                if (beats >= 4.0)
+                    std::snprintf (text, sizeof (text), "%.1f bars", beats / 4.0);
+                else
+                    std::snprintf (text, sizeof (text), "%.2f beats", beats);
+            }
+            else if (param == 8)
+            {
+                static const char* const shapes[5] = { "Sine", "Triangle", "Square", "Saw", "Random" };
+                return shapes[std::clamp ((int) std::lround (v * 4.0f), 0, 4)];
+            }
+            else if (param == 9)
+                std::snprintf (text, sizeof (text), "%.0f\xc2\xb0", v * 360.0f);
+            else if (param >= 10)
+                return v >= 0.5f ? "on" : "off";
+            else
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::lofi:
+            if (param == 0)
+                std::snprintf (text, sizeof (text), "%.0f Hz", 44100.0 / lofi::holdSamples (v));
+            else if (param == 1)
+                std::snprintf (text, sizeof (text), "%.1f bits", std::log2 (lofi::levels (v)));
+            else
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::effector:
+            return effector::formatParam (param, v, bpm);
+
+        case EffectKind::pitchCorrect:
+            switch (param)
+            {
+                case 0:
+                {
+                    const auto u = 1.0 - v;
+                    if (u < 0.01)
+                        return "instant";
+                    std::snprintf (text, sizeof (text), "%.1f ms", (3.0 * u * u * u + 0.001) / 8.82 * 1000.0);
+                    break;
+                }
+                case 1: std::snprintf (text, sizeof (text), "%+.0f ct", (2.0f * v - 1.0f) * 100.0f); break;
+                case 3: std::snprintf (text, sizeof (text), "%.1f Hz", pcorr::noteA (v) * 8.0); break;
+                case 4: std::snprintf (text, sizeof (text), "%.0f Hz min.", pcorr::minHz[pcorr::range (v)]); break;
+                case 30: std::snprintf (text, sizeof (text), "x%.2f", std::pow (2.0, 2.0 * v - 1.0)); break;
+                case 31: return (int) (v + v) == 0 ? "left" : ((int) (v + v) == 1 ? "independent" : "right");
+                case 32: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+                case 36: return v > 0.5f ? "mix" : "replace";
+                case 38: case 39: case 40: case 41:
+                    std::snprintf (text, sizeof (text), "%+.0f%%", (2.0f * v - 1.0f) * 100.0f);
+                    break;
+                default:
+                    if (param >= 29)
+                        return v > 0.5f ? "on" : "off";
+                    return v > 0.5f ? (param >= 17 ? "bypassed" : "yes") : (param >= 17 ? "-" : "no");
+            }
+            return text;
+
+        case EffectKind::squeeze:
+            std::snprintf (text, sizeof (text), "%d", (int) std::lround (v * squeezeMax[(std::size_t) std::clamp (param, 0, 11)]));
+            return text;
+
+        case EffectKind::reeverb2: return reeverb2ParamText (param, v);
+        case EffectKind::luxeVerb: return luxeVerbParamText (param, v);
+        case EffectKind::convolver: return convolverParamText (param, v);
+        case EffectKind::reeverb1: return reeverb1ParamText (param, v);
+        case EffectKind::fruityChorus: return fruitychorusfx::paramText (param, v);
+        case EffectKind::hyperChorus: return hyperchorusfx::paramText (param, v);
+        case EffectKind::vintageChorus: return vintagechorusfx::paramText (param, v);
+
+        case EffectKind::vintagePhaser:
+            switch (param)
+            {
+                case 0: case 1: case 4: std::snprintf (text, sizeof (text), "%.0f Hz", 1.25 * std::pow (2.0, 14.0 * v)); break;
+                case 3: case 5: case 7: case 12: case 13: case 17: case 23: case 24: case 33: case 35: return v >= 0.5f ? "on" : "off";
+                case 8: return v >= 0.5f ? "sine" : "triangle";
+                case 25: std::snprintf (text, sizeof (text), "%.1f dB", 30.0f * v); break;
+                case 26: std::snprintf (text, sizeof (text), "%.0f Hz", 50.0f + 600.0f * v); break;
+                case 27: case 28: std::snprintf (text, sizeof (text), "%.0f Hz", 195.0f * v * v * v + 5.0f); break;
+                case 34: std::snprintf (text, sizeof (text), "%+.1f dB", 30.0f * v - 15.0f); break;
+                default: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+            }
+            return text;
+
+        case EffectKind::vocoder:
+            switch (param)
+            {
+                case 0: std::snprintf (text, sizeof (text), "%d", vocoder::bands (v)); break;
+                case 1: std::snprintf (text, sizeof (text), "%d", vocoder::order (v)); break;
+                case 2: return std::array<const char*, 3> { "modulator", "carrier", "mix" }[(std::size_t) std::clamp ((int) std::lround (v * 2.0f), 0, 2)];
+                case 3: case 7: case 12: case 16: return v > 0.5f ? "on" : "off";
+                case 4: case 5: std::snprintf (text, sizeof (text), "%.0f Hz", (double) fvocoder::edgeHz (vocoder::raw (v, param - 4))); break;
+                case 8: std::snprintf (text, sizeof (text), "%+.0f ct", v * 2400.0f - 1200.0f); break;
+                case 9: std::snprintf (text, sizeof (text), "%.0f%%", 5.0f + 195.0f * v); break;
+                case 10: case 11: std::snprintf (text, sizeof (text), "%d ms", vocoder::raw (v, param - 4)); break;
+                case 13: case 14: case 15: std::snprintf (text, sizeof (text), "%.2f", (double) fvocoder::mixLevel (vocoder::raw (v, param - 4))); break;
+                default: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+            }
+            return text;
+
+        case EffectKind::autoPan:
+            if (param >= autopan::source && param < autopan::count)
+                return autopan::paramText (param, v);
+            [[fallthrough]];
+        case EffectKind::rhythmGain:
+            if (param == 0)
+                std::snprintf (text, sizeof (text), "%.3g beats", v * 64.0f);
+            else if (kind == EffectKind::rhythmGain && param == 1)
+                std::snprintf (text, sizeof (text), "%d", (int) std::lround (v * rhythm::maxPoints));
+            else if (kind == EffectKind::autoPan && (param == 1 || param == 3))
+                std::snprintf (text, sizeof (text), "%+.0f%%", (2.0f * v - 1.0f) * 100.0f);
+            else if (kind == EffectKind::autoPan && param >= autopan::count) // round 136: the Rhythm voicing (after round 135's panner)
+            {
+                switch (param - autopan::count + 7)
+                {
+                    case 7: return v > 0.5f ? "Rhythm" : "Classic";
+                    case 8: std::snprintf (text, sizeof (text), "%.2f Hz", rhythmpan::rateHz (v)); break;
+                    case 9: return v > 0.5f ? "beats" : "Hz";
+                    case 10: std::snprintf (text, sizeof (text), "%.3g beats", rhythmpan::beats (v)); break;
+                    case 11: std::snprintf (text, sizeof (text), "%.1f deg", 210.0f * v); break;
+                    case 12: std::snprintf (text, sizeof (text), "%+.1f deg", -105.0f + 210.0f * v); break;
+                    case 14: return v < 0.25f ? "left / right" : v < 0.625f ? "ramp" : v < 0.875f ? "ramp right" : "8 steps";
+                    case 17: return v < 0.25f ? "digital" : (v < 0.75f ? "analog" : "analog (hot)");
+                    case 18: std::snprintf (text, sizeof (text), "%+.1f dB", -24.0f + 48.0f * v); break;
+                    case 19: std::snprintf (text, sizeof (text), "%+.2f oct", -3.0f + 6.0f * v); break;
+                    case 20: case 21: std::snprintf (text, sizeof (text), "%+.0f deg", -180.0f + 360.0f * v); break;
+                    case 22: std::snprintf (text, sizeof (text), "%.1f dB", -60.0f + 60.0f * v); break;
+                    case 23: std::snprintf (text, sizeof (text), "%.1f dB", 1.0f + 39.0f * v); break;
+                    case 24: case 25: std::snprintf (text, sizeof (text), "%+.3f", -0.25f + 0.5f * v); break;
+                    case 26: return v >= 0.5f ? "fold" : "clip";
+                    case 27: return v < 0.25f ? "off (clock)" : (v < 0.75f ? "ping-pong" : "random step");
+                    case 28: if (v >= 0.999f) return "off (manual only)";
+                             std::snprintf (text, sizeof (text), "%.1f dB", -60.0f + 60.0f * v); break;
+                    case 29: std::snprintf (text, sizeof (text), "%d", 1 + (int) std::lround (11.0f * v)); break;
+                    case 30: return v < 0.25f ? "off" : (v < 0.75f ? "high pass" : "low pass");
+                    case 31: std::snprintf (text, sizeof (text), "%.0f Hz", 20.0 * std::pow (1000.0, (double) v)); break;
+                    case 32: return "Trigger";
+                    case 33: return v >= 0.5f ? "on" : "off";
+                    default: std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f); break;
+                }
+            }
+            else
+                std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::fruityFastDist:
+            return fastdistfx::paramText (param, v);
+
+        case EffectKind::fruityFlangus:
+            return flangusfx::paramText (param, v);
+
+        case EffectKind::fruityFlanger:
+            return flangerfx::paramText (param, v);
+
+        case EffectKind::crossover:
+            if (param == 0 || param == 3)
+                return v > 0.5f ? "on" : "off";
+            if (param == 1 || param == 4)
+                std::snprintf (text, sizeof (text), "%.0f Hz", xover::hz (v));
+            else
+                std::snprintf (text, sizeof (text), "%d dB/oct", xover::dbPerOctave[xover::combo (v)]);
+            return text;
+
+        case EffectKind::fruityLimiter:
+            return fldyn::limiterParamText (param, v);
+
+        case EffectKind::fruityCompressor:
+            return fldyn::compressorParamText (param, v);
+        case EffectKind::fruityWaveShaper:
+            return flshape::waveShaperParamText (param, v);
+
+        case EffectKind::fruitySoftClipper:
+            return flshape::softClipperParamText (param, v);
+        case EffectKind::stereoShaper:
+            return stereofx::stereoShaperParamText (param, v);
+
+        case EffectKind::stereoEnhancer:
+            return stereofx::stereoEnhancerParamText (param, v);
+
+        case EffectKind::transientProcessor:
+            return stereofx::transientProcessorParamText (param, v);
+
+        case EffectKind::spreader:
+            return stereofx::spreaderParamText (param, v);
+        case EffectKind::fruityDelayBank:
+            return fldbank::globalText (param, v);
+
+        case EffectKind::fruityMultiband:
+            return flmb::paramText (param, v);
+
+        case EffectKind::frequencySplitter:
+            return fsplit::paramText (param, v);
+
+        case EffectKind::hardcore:
+            return hardcore::paramText (param, v);
+
+        case EffectKind::fruityPanOMatic:
+            return flbasic::panOMaticParamText (param, v);
+
+        case EffectKind::fruityBalance:
+            return flbasic::balanceParamText (param, v);
+
+        case EffectKind::fruitySend:
+            return flbasic::sendParamText (param, v);
+
+        case EffectKind::fruityBloodOverdrive:
+            return flbasic::bloodOverdriveParamText (param, v);
+        case EffectKind::equo:
+            return equofx::paramText (param, v);
+
+        case EffectKind::distructor:
+            return distructor::paramText (param, v);
+
+        case EffectKind::flPitchShifter:
+            return psfl::paramText (param, v);
+
+        case EffectKind::fruityFastLP:
+            return flfilter::fastLPParamText (param, v);
+
+        case EffectKind::fruityFreeFilter:
+            return flfilter::freeFilterParamText (param, v);
+
+        case EffectKind::fruityFilter:
+            return flfilter::filterParamText (param, v);
+        case EffectKind::multibandDelay:
+            return mbdelay::paramText (param, v);
+
+        case EffectKind::newtone:
+        case EffectKind::newtime:
+            return newtonefx::paramText (param, v);
+
+        case EffectKind::facetEq:
+            return facet::paramText (param, v);
+
+        case EffectKind::apexLimiter:
+            return apex::paramText (param, v);
+        case EffectKind::ridgeStrip:
+        case EffectKind::glowLeveler:
+        case EffectKind::hushDeEsser:
+        case EffectKind::aether:
+        case EffectKind::ember:
+        case EffectKind::kilnChannel:
+        case EffectKind::fretChannel:
+        case EffectKind::shellChannel:
+        case EffectKind::strikeShaper:
+        case EffectKind::anvilBus:
+        case EffectKind::corrode:
+        case EffectKind::soundboard:
+        case EffectKind::platter:
+        case EffectKind::timeprism:
+        case EffectKind::harmonia:
+            return mixsuite::paramText (kind, param, v);
+        case EffectKind::lynxTune:
+            return lynxtune::paramText (param, v);
+        case EffectKind::fruityPhaser:
+            return phaserfx::paramText (param, v);
+        case EffectKind::epochVerb:
+        case EffectKind::atrium:
+        case EffectKind::foilPlate:
+        case EffectKind::nebula:
+        case EffectKind::halo:
+        case EffectKind::horizon:
+            return verbs::paramText (kind, param, v, bpm);
+        case EffectKind::echoform:
+        case EffectKind::spiralEcho:
+        case EffectKind::orbit:
+        case EffectKind::latticeMod:
+            return echosuite::paramText (kind, param, v);
+        case EffectKind::crestCompressor:
+        case EffectKind::prismMultiband:
+        case EffectKind::sentryGate:
+            return dyn::paramText (kind, param, v);
+        case EffectKind::quellDenoiser:
+        case EffectKind::geminiDoubler:
+            return voicetools::paramText (kind, param, v);
+        case EffectKind::voiceShift:
+            return voiceshift::paramText (param, v);
+        case EffectKind::emphasizer:
+            return emphasizer::paramText (param, v);
+        case EffectKind::flEmphasis:
+            return emphasis::paramText (param, v);
+        case EffectKind::flFrequencyShifter:
+            return fsfl::paramText (param, v);
+        case EffectKind::flLowLifter:
+            return lowlifter::paramText (param, v);
+        case EffectKind::flPhaseInverter:
+            return fllegacy::phaseInverterParamText (param, v);
+        case EffectKind::flCenter:
+            return fllegacy::centerParamText (param, v);
+        case EffectKind::flBassBoost:
+            return fllegacy::bassBoostParamText (param, v);
+        case EffectKind::fl7BandEq:
+            return fllegacy::eq7ParamText (param, v);
+        case EffectKind::flDelay1:
+            return fllegacy::delay1ParamText (param, v);
+        case EffectKind::pocketDistortion:
+            return pocket::distortionParamText (param, v);
+        case EffectKind::pocketLimiterClassic:
+            return pocket::limiterClassicParamText (param, v);
+        case EffectKind::pocketLimiter:
+            return pocket::limiterParamText (param, v);
+        case EffectKind::pocketLeveller:
+            return pocket::levellerParamText (param, v);
+        case EffectKind::pocketGate:
+            return pocket::gateParamText (param, v);
+        case EffectKind::pocketTranceDelay:
+            return pocket::tranceDelayParamText (param, v);
+        case EffectKind::pocketTapeDelay:
+            return pocket::tapeDelayParamText (param, v);
+        case EffectKind::pocketMultiFx:
+            return pocket::multiFxParamText (param, v);
+        case EffectKind::pocketAutoduck:
+            return pocket::autoduckParamText (param, v, bpm);
+        case EffectKind::pocketChorus:
+            return pocket::chorusParamText (param, v);
+        case EffectKind::pocketSpacer:
+            return pocket::spacerParamText (param, v);
+        case EffectKind::pocketStereoizer:
+            return pocket::stereoizerParamText (param, v);
+        case EffectKind::pocketWowFlutter:
+            return pocket::wowFlutterParamText (param, v);
+        case EffectKind::pocketPhaser:
+            return pocket::phaserParamText (param, v);
+        case EffectKind::pocketFlanger:
+            return pocket::flangerParamText (param, v);
+        case EffectKind::pocketTremolo:
+            return pocket::tremoloParamText (param, v);
+        case EffectKind::pocketWaveshaper:
+            return pocket::waveshaperParamText (param, v);
+        case EffectKind::pocketCompressor:
+            return pocket::compressorParamText (param, v);
+        case EffectKind::pocketSpreader:
+            return pocket::spreaderParamText (param, v);
+        case EffectKind::pocketComb:
+            return pocket::combParamText (param, v);
+        case EffectKind::pocketMultiband:
+            return pocket::multibandParamText (param, v);
+        case EffectKind::pocketTapeStop:
+            return pocket::tapeStopParamText (param, v);
+        case EffectKind::pocketEq: return pocket::eqParamText (param, v);                 // round 190dw
+        case EffectKind::pocketGraphicEq: return pocket::graphicEqParamText (param, v);
+        case EffectKind::pocketFilter: return pocket::filterParamText (param, v);
+        case EffectKind::pocketReverbClassic: return pocket::reverbClassicParamText (param, v);
+        case EffectKind::pocketReverb2: return pocket::reverb2ParamText (param, v);
+        case EffectKind::pocketReverb: return pocket::reverbParamText (param, v);
+        case EffectKind::hardwareInsert:
+            return hwinsert::paramText (param, v);
+        case EffectKind::fruityMute2:
+            return flextra::mute2::paramText (param, v);
+        case EffectKind::bigClock:
+            return flextra::bigclock::paramText (param, v);
+        case EffectKind::tuner:
+            return flextra::tuner::paramText (param, v);
+        case EffectKind::htmlNotebook:
+            return {};
+        case EffectKind::scratcher:
+            return scratcher::paramText (param, v);
+        case EffectKind::transmitter:
+            return transmitter::paramText (param, v);
+        case EffectKind::flTransporter:
+            return transporter::paramText (param, v);
+        case EffectKind::waveCandy:
+            return visualfx::wavecandy::paramText (param, v);
+        case EffectKind::visualizer:
+            return visualfx::visualizer::paramText (param, v);
+        case EffectKind::xyController:
+        case EffectKind::xyzController:
+            return xy::paramText (kind, param, v);
+        case EffectKind::controlSurface:
+            std::snprintf (text, sizeof (text), "%.0f%%", v * 100.0f);
+            return text;
+
+        case EffectKind::fruityDelay2:
+            return fldelay::delay2ParamText (param, v);
+
+        case EffectKind::fruityDelay3:
+            return fldelay::delay3ParamText (param, v, bpm);
+
+        case EffectKind::lovePhilter:
+            return philter::paramText (param, v);
+
+        case EffectKind::grossBeat:
+        {
+            const auto raw = grossbeat::rawFromParam (param, v);
+            if (param < 2)
+                std::snprintf (text, sizeof (text), "slot %d", raw + 1);
+            else if (param == 2 || param == 3)
+                std::snprintf (text, sizeof (text), "%.0f%%", raw / 2.56);
+            else if (param == 4 || param == 5) // 0…500 ms attack, 0…1000 ms release (REA_rodada14 §2.2)
+                std::snprintf (text, sizeof (text), "%.1f ms", (std::pow (501.0, raw / 10000.0) - 1.0) * (param == 5 ? 2.0 : 1.0));
+            else if (param == 6)
+                std::snprintf (text, sizeof (text), "%.0f%%", raw / 2.56);
+            else
+                return raw != 0 ? "on" : "off";
+            return text;
+        }
+
+        case EffectKind::formulaController: // the knobs a, b, c as the formula sees them
+            std::snprintf (text, sizeof (text), "%.3f", v);
+            return text;
+
+        case EffectKind::plugin:
+        case EffectKind::parallel:
+        case EffectKind::patcher:
+        case EffectKind::vocodex:
+        case EffectKind::maximus:
+            break;
+    }
+
+    return {};
+}
+
+double filterSecondStageQ (double q) noexcept
+{
+    const auto x = std::clamp ((q - 0.5) / (q + 1.5), 0.0, 0.999);
+    return 0.5 + x / (1.0 + x);
+}
+
+namespace
+{
+std::atomic<bool> declaredTailsFlag { true };
+}
+void setDeclaredTails (bool on) noexcept { declaredTailsFlag.store (on, std::memory_order_relaxed); }
+bool declaredTails() noexcept { return declaredTailsFlag.load (std::memory_order_relaxed); }
+
+double biquadTailSamples (double a1, double a2, double db) noexcept
+{
+    const auto disc = a1 * a1 - 4.0 * a2;
+    double radius = 0.0;
+    if (disc < 0.0)
+        radius = std::sqrt (std::max (0.0, a2)); // complex poles: |p|² = a2
+    else
+    {
+        const auto s = std::sqrt (disc);
+        radius = 0.5 * std::max (std::abs (-a1 + s), std::abs (-a1 - s));
+    }
+    if (! (radius < 1.0))
+        return std::numeric_limits<double>::infinity();
+    if (radius < 1.0e-9)
+        return 4.0;
+    const auto tau = -1.0 / std::log (radius); // samples per neper of decay
+    return db / 8.685889638065035 * tau + 8.0 * tau + 4.0;
+}
+
+EffectSlot makeEffectSlot (EffectKind kind)
+{
+    EffectSlot slot;
+    slot.kind = kind;
+    const auto& info = effectInfo (kind);
+
+    for (std::size_t i = 0; i < info.params.size() && i < slot.params.size(); ++i)
+        slot.params[i] = info.params[i].defaultValue;
+    if (kind == EffectKind::patcher) // a new Patcher passes its input through, as FL's
+        slot.patcher.wires.push_back ({});
+    if (kind == EffectKind::visualizer) // round 164c: LYNX's default scene
+        slot.state = visualfx::scene::toState (visualfx::scene::defaultScene());
+    if (kind == EffectKind::grossBeat) // round 168m: a new Gross Beat starts with LYNX's factory slots (FL loads its default bank)
+        slot.state = grossbeat::factoryContainer();
+    if (kind == EffectKind::spiralEcho) // round 190fy: a new Spiral Echo runs the measured loop's revision 1 (hidden parameter)
+        slot.params[(std::size_t) echosuite::spiral::revision] = 1.0f;
+    if (kind == EffectKind::spiralEcho) // round 190ly: … and its shifted loop's phase independent of the sample rate (hidden)
+        slot.params[(std::size_t) echosuite::spiral::rateLaw] = 1.0f;
+    if (kind == EffectKind::voiceShift) // round 190ho: a new Voice Shift runs the Measured law's revision 1 (hidden parameter)
+        slot.params[(std::size_t) voiceshift::revision] = 1.0f;
+    if (kind == EffectKind::hushDeEsser) // round 190iq: a new Hush runs the measured Allround timing (hidden)
+        slot.params[(std::size_t) mixsuite::hush::timing] = 1.0f;
+    if (kind == EffectKind::hushDeEsser) // round 190js: … and Single Vocal's "stands out" revision (hidden)
+        slot.params[(std::size_t) mixsuite::hush::vocalRevision] = 1.0f;
+    if (kind == EffectKind::echoform) // round 190is: a new Echoform runs the echo voicings' revision 1 (hidden parameter)
+        slot.params[(std::size_t) echosuite::echoform::revision] = 1.0f;
+    if (kind == EffectKind::crestCompressor) // round 190kw: a new Crest runs the V1 styles' revision 1 (hidden parameter)
+        slot.params[(std::size_t) dyn::crest::revision] = 1.0f;
+    if (kind == EffectKind::apexLimiter) // round 190lp: a new Apex runs the styles' refit, revision 1 (hidden parameter)
+        slot.params[(std::size_t) apex::pRevision] = 1.0f;
+    if (kind == EffectKind::sentryGate) // round 190lp: … and a new Sentry the level gate's refit (hidden parameter)
+        slot.params[(std::size_t) dyn::sentry::revision] = 1.0f;
+    if (kind == EffectKind::ember) // round 190kw: a new Ember runs the Saturn styles' own laws (hidden parameter)
+        slot.params[(std::size_t) mixsuite::ember::revision] = 1.0f;
+    // round 190it: a new Epoch Verb / Atrium / Foil Plate / Halo runs the 0.1.30 revision of the Measured law (hidden)
+    if (kind == EffectKind::epochVerb) slot.params[(std::size_t) verbs::epoch::revision] = 1.0f;
+    // round 190ly: … and Epoch Verb Concert Hall's short-decay trim (hidden). Off in new Epochs at the 0.1.30 rollup step 10 (it
+    // was fitted without round 190kw's loop law); round 190mb refitted it on top of the loop law, so it is on again since step
+    // 11 — ValhallaVintageVerb's refcap030 bank against step 10: mode 2.74 → 3.02 (27 up / 0 down), pairs 3.89 → 3.78 and
+    // sr48 = (3 files one step down), sr96 3.70 → 3.75
+    if (kind == EffectKind::epochVerb)
+        slot.params[(std::size_t) verbs::epoch::shortTrim] = 1.0f;
+    if (kind == EffectKind::epochVerb) // round 190kw: … and Epoch's level the reference's loop law (hidden)
+        slot.params[(std::size_t) verbs::epoch::loopLaw] = 1.0f;
+    if (kind == EffectKind::atrium) slot.params[(std::size_t) verbs::atrium::revision] = 1.0f;
+    if (kind == EffectKind::foilPlate) slot.params[(std::size_t) verbs::foil::revision] = 1.0f;
+    if (kind == EffectKind::foilPlate) // round 190ln: … and Foil Plate the reference's EQ / bass-decay laws (hidden)
+        slot.params[(std::size_t) verbs::foil::reaLaw] = 1.0f;
+    // (round 190ly: Atrium's dense late tank, verbs::atrium::reaLaw, is set only by the ValhallaRoom translator — the owner's
+    // perf rule; a new Atrium keeps the light 8-line tank)
+    if (kind == EffectKind::halo) slot.params[(std::size_t) verbs::halo::revision] = 1.0f;
+    if (kind == EffectKind::horizon) // round 190mb: a new Horizon runs the 0.1.30 revision (ValhallaFutureVerb's per-mode tone)
+        slot.params[(std::size_t) verbs::horizon::revision] = 1.0f;
+    if (kind == EffectKind::horizon) // round 190mj: … and its echo modes' and Room / Chamber's laws (hidden)
+        slot.params[(std::size_t) verbs::horizon::reaLaw] = 1.0f;
+    if (kind == EffectKind::latticeMod) // round 190it: … and a new Lattice Mod its tap network's revision 1 (hidden)
+        slot.params[(std::size_t) echosuite::lattice::revision] = 1.0f;
+    if (kind == EffectKind::luxeVerb) // round 190kw: a new LuxeVerb's Space engine runs the Pro-R 2 laws' revision 1 (hidden)
+        slot.params[(std::size_t) luxeVerbSpaceRevision] = 1.0f;
+
+    return slot;
+}
+
+std::size_t savedEffectParamCount (const EffectSlot& slot) noexcept
+{
+    if (slot.kind == EffectKind::plugin)
+        return 0;
+    auto count = std::min (effectInfo (slot.kind).params.size(), slot.params.size());
+    for (auto i = slot.params.size(); i > count; --i)
+        if (slot.params[i - 1] != 0.0f)
+            return i;
+    return count;
+}
+
+namespace
+{
+struct HiddenParam
+{
+    EffectKind kind;
+    int index;
+    const char* name;
+};
+const HiddenParam kHiddenWithControl[] {
+    { EffectKind::ridgeStrip, (int) mixsuite::ridge::h32, "32C voicing" }, // round 190le
+};
+} // namespace
+
+int hiddenEffectParamIndex (EffectKind kind, const char* name) noexcept
+{
+    if (name != nullptr)
+        for (const auto& h : kHiddenWithControl)
+            if (h.kind == kind && std::strcmp (h.name, name) == 0)
+                return h.index;
+    return -1;
+}
+
+const char* hiddenEffectParamName (EffectKind kind, int index) noexcept
+{
+    for (const auto& h : kHiddenWithControl)
+        if (h.kind == kind && h.index == index)
+            return h.name;
+    return nullptr;
+}
+
+double savedEffectParamValue (float v) noexcept
+{
+    const auto rounded = std::round ((double) v * 10000.0) / 10000.0;
+    if ((float) rounded == v)
+        return rounded;
+    for (int digits = 6; digits <= 9; ++digits)
+    {
+        char text[40];
+        std::snprintf (text, sizeof (text), "%.*g", digits, (double) v);
+        const auto d = std::strtod (text, nullptr);
+        if ((float) d == v)
+            return d;
+    }
+    return (double) v;
+}
+
+bool effectHasMidiPort (EffectKind kind) noexcept { return kind == EffectKind::grossBeat || kind == EffectKind::pitchCorrect; }
+
+int effectMidiInPort (const EffectSlot& slot) noexcept
+{
+    if (slot.kind == EffectKind::grossBeat)
+        return std::clamp (slot.plugin.midiInPort, -1, 255);
+    if (slot.kind == EffectKind::pitchCorrect && slot.params[(std::size_t) pcorr::portRoutingParam] > 0.5f)
+        return pcorr::midiPort (slot.params[(std::size_t) pcorr::midiPortParam]);
+    return -1;
+}
+
+void setEffectMidiInPort (EffectSlot& slot, int port) noexcept
+{
+    port = std::clamp (port, -1, 255);
+    if (slot.kind == EffectKind::grossBeat)
+        slot.plugin.midiInPort = port;
+    else if (slot.kind == EffectKind::pitchCorrect)
+    {
+        slot.params[(std::size_t) pcorr::midiPortParam] = pcorr::midiPortValue (port);
+        slot.params[(std::size_t) pcorr::portRoutingParam] = 1.0f; // (an older project's Pitcher moves to FL's routing)
+    }
+}
+
+void upgradeLoadedEffectParams (EffectSlot& slot, std::size_t savedCount) noexcept
+{
+    // round 190ee: a Pitcher saved before its MIDI port keeps taking the notes held on the Channel Rack (round 173d)
+    if (slot.kind == EffectKind::pitchCorrect && savedCount <= (std::size_t) pcorr::portRoutingParam)
+        slot.params[(std::size_t) pcorr::portRoutingParam] = 0.0f;
+    // round 173d3: a Love Philter saved before its units' L / B / H / shaper / IN / NEXT became parameters takes them from its state
+    if (slot.kind == EffectKind::lovePhilter)
+        philter::upgradeParams (slot, savedCount);
+    // round 147: Prism Multiband saved before its measured Dynamic phase engine keeps the round-108 construction
+    if (slot.kind == EffectKind::prismMultiband && savedCount <= (std::size_t) dyn::prism::dynamicEngine)
+        slot.params[(std::size_t) dyn::prism::dynamicEngine] = 0.0f;
+    // round 150: … and before its measured detector keeps the round-108 detector
+    if (slot.kind == EffectKind::prismMultiband && savedCount <= (std::size_t) dyn::prism::detectorLaw)
+        slot.params[(std::size_t) dyn::prism::detectorLaw] = 0.0f;
+    // round 152: … and before the gain-stage attack keeps round 150's level-follower attack
+    if (slot.kind == EffectKind::prismMultiband && savedCount <= (std::size_t) dyn::prism::rev152)
+        slot.params[(std::size_t) dyn::prism::rev152] = 0.0f;
+    // round 190lg: … and before revision 1 (Pro-MB's own band compander graph) keeps the measured detector (bit for bit)
+    if (slot.kind == EffectKind::prismMultiband && savedCount <= (std::size_t) dyn::prism::revision)
+        slot.params[(std::size_t) dyn::prism::revision] = slot.params[(std::size_t) dyn::prism::lookaheadSwitch] = 0.0f;
+    // round 190v: Crest saved before its two-way / vari-mu refit keeps round 108's laws, Sentry saved before its Vocal
+    // noise reduction has none
+    if (slot.kind == EffectKind::crestCompressor && savedCount <= (std::size_t) dyn::crest::law)
+        slot.params[(std::size_t) dyn::crest::law] = 0.0f;
+    // round 190kw: … and one saved before the V1 styles' revision keeps the fitted Clean / Classic / Opto (bit for bit)
+    if (slot.kind == EffectKind::crestCompressor && savedCount <= (std::size_t) dyn::crest::revision)
+        slot.params[(std::size_t) dyn::crest::revision] = 0.0f;
+    // round 190lp: an Apex saved before the styles' refit keeps the fitted laws of rounds tp172b … 190co (bit for bit)
+    if (slot.kind == EffectKind::apexLimiter && savedCount <= (std::size_t) apex::pRevision)
+        slot.params[(std::size_t) apex::pRevision] = 0.0f;
+    // round 190lp: … and a Sentry saved before the level gate's refit keeps the measured gate of rounds tp172b … 190dm
+    if (slot.kind == EffectKind::sentryGate && savedCount <= (std::size_t) dyn::sentry::revision)
+        slot.params[(std::size_t) dyn::sentry::revision] = 0.0f;
+    // round 190lg: a Facet saved before keeps round 190jh / 190js's automatic-threshold law (bit for bit)
+    if (slot.kind == EffectKind::facetEq && savedCount <= (std::size_t) facet::autoRevisionParam)
+        slot.params[(std::size_t) facet::autoRevisionParam] = 0.0f;
+    if (slot.kind == EffectKind::sentryGate && savedCount <= (std::size_t) dyn::sentry::law)
+        slot.params[(std::size_t) dyn::sentry::law] = 0.0f;
+    // round 150: Auto-pan saved before the Tweak block keeps the Rhythm voicing's clipped angle
+    if (slot.kind == EffectKind::autoPan && savedCount <= (std::size_t) autopan::count + 19)
+        slot.params[(std::size_t) autopan::count + 19] = 0.0f;
+    // round 150: Echoform saved before the voicings' measured stereo behaviour keeps the round-147 voicings
+    // round 152: Ember saved before the effect characters' measured law keeps the static stand-ins
+    if (slot.kind == EffectKind::ember && savedCount <= (std::size_t) mixsuite::ember::effectLaw)
+        slot.params[(std::size_t) mixsuite::ember::effectLaw] = 0.0f;
+    // round 165: … and before Punish's measured law keeps round 136's Classic Punish
+    if (slot.kind == EffectKind::ember && savedCount <= (std::size_t) mixsuite::ember::classicLaw)
+        slot.params[(std::size_t) mixsuite::ember::classicLaw] = 0.0f;
+    // round 190ar: … and before the Classic voicing's high-drive coupling keeps round trial187b's high-drive tables
+    if (slot.kind == EffectKind::ember && savedCount <= (std::size_t) mixsuite::ember::classicHot)
+        slot.params[(std::size_t) mixsuite::ember::classicHot] = 0.0f;
+    // round 190fj: … and before the measured tape core keeps the Classic tape curve
+    if (slot.kind == EffectKind::ember && savedCount <= (std::size_t) mixsuite::ember::law)
+        slot.params[(std::size_t) mixsuite::ember::law] = 0.0f;
+    if (slot.kind == EffectKind::echoform && savedCount <= (std::size_t) echosuite::echoform::voicingStereo
+        && slot.params.size() > (std::size_t) echosuite::echoform::voicingStereo)
+        slot.params[(std::size_t) echosuite::echoform::voicingStereo] = 0.0f;
+    // round 190dl: … and before the measured tape stage keeps the classic tape characters, bit for bit
+    if (slot.kind == EffectKind::echoform && savedCount <= (std::size_t) echosuite::echoform::engineLaw
+        && slot.params.size() > (std::size_t) echosuite::echoform::engineLaw)
+        slot.params[(std::size_t) echosuite::echoform::engineLaw] = 0.0f;
+    // round 152: a Glow Leveler saved before the measured opto law keeps the round-123 Limit and no classic auto make-up
+    if (slot.kind == EffectKind::glowLeveler && savedCount <= (std::size_t) mixsuite::glow::optoLaw)
+        slot.params[(std::size_t) mixsuite::glow::optoLaw] = 0.0f;
+    // round 190dp: a Quell saved before the matched engine's noise-floor tracker keeps round 124's fixed thresholds
+    if (slot.kind == EffectKind::quellDenoiser && savedCount <= (std::size_t) voicetools::quell::law)
+        slot.params[(std::size_t) voicetools::quell::law] = 0.0f;
+    // round 190dp: a Voice Shift saved before the measured unvoiced path keeps the classic one (unvoiced passes through)
+    if (slot.kind == EffectKind::voiceShift && savedCount <= (std::size_t) voiceshift::law)
+        slot.params[(std::size_t) voiceshift::law] = 0.0f;
+    // round 190ho: … and one saved before the law's revision (0.1.27 … 0.1.29: Law, no hidden revision) keeps round 190dp's grains
+    if (slot.kind == EffectKind::voiceShift && savedCount <= (std::size_t) voiceshift::revision)
+        slot.params[(std::size_t) voiceshift::revision] = 0.0f;
+    // round 165w: a Gemini Doubler saved before the measured shelves keeps round 124's (−30 … +12 dB, first order)
+    if (slot.kind == EffectKind::geminiDoubler && savedCount <= (std::size_t) voicetools::gemini::eqLaw)
+        slot.params[(std::size_t) voicetools::gemini::eqLaw] = 0.0f;
+    // round 165w: … and before the measured release keeps round 123's
+    if (slot.kind == EffectKind::glowLeveler && savedCount <= (std::size_t) mixsuite::glow::releaseLaw)
+        slot.params[(std::size_t) mixsuite::glow::releaseLaw] = 0.0f;
+    // round 165x: a Hush De-esser saved before the extended law keeps ±12 dB levels, the 2 … 16 kHz high-pass, its own link
+    if (slot.kind == EffectKind::hushDeEsser && savedCount <= (std::size_t) mixsuite::hush::rangeLaw)
+        slot.params[(std::size_t) mixsuite::hush::rangeLaw] = 0.0f;
+    // issue #77 (round tp172c): the dynamic air model became Aether's default; an Aether saved before it existed
+    // (round 124) keeps the shelf + exciter it was set up with
+    if (slot.kind == EffectKind::aether && savedCount <= (std::size_t) mixsuite::aether::dynamic)
+        slot.params[(std::size_t) mixsuite::aether::dynamic] = 0.0f;
+    // round 190bz: a LYNX reverb saved before the 0.1.27 engine law (per-band decay, tone corrector, onset network)
+    // keeps the classic engine, bit for bit
+    {
+        int law = -1;
+        switch (slot.kind)
+        {
+            case EffectKind::epochVerb: law = verbs::epoch::engineLaw; break;
+            case EffectKind::atrium: law = verbs::atrium::engineLaw; break;
+            case EffectKind::foilPlate: law = verbs::foil::engineLaw; break;
+            case EffectKind::halo: law = verbs::halo::engineLaw; break;
+            case EffectKind::horizon: law = verbs::horizon::engineLaw; break;
+            default: break;
+        }
+        if (law >= 0 && savedCount <= (std::size_t) law)
+            slot.params[(std::size_t) law] = 0.0f;
+        // round 190it: one saved before the 0.1.30 revision keeps the 0.1.27 Measured law, bit for bit
+        int rev = -1;
+        switch (slot.kind)
+        {
+            case EffectKind::epochVerb: rev = verbs::epoch::revision; break;
+            case EffectKind::atrium: rev = verbs::atrium::revision; break;
+            case EffectKind::foilPlate: rev = verbs::foil::revision; break;
+            case EffectKind::halo: rev = verbs::halo::revision; break;
+            case EffectKind::horizon: rev = verbs::horizon::revision; break; // round 190mb
+            default: break;
+        }
+        if (rev >= 0 && savedCount <= (std::size_t) rev)
+            slot.params[(std::size_t) rev] = 0.0f;
+        // round 190kw: an Epoch Verb saved before the loop law keeps revision 1 as it was (or revision 0), bit for bit
+        if (slot.kind == EffectKind::epochVerb && savedCount <= (std::size_t) verbs::epoch::loopLaw)
+            slot.params[(std::size_t) verbs::epoch::loopLaw] = 0.0f;
+        // round 190ln: a Foil Plate saved before the reference's EQ / bass-decay laws keeps revision 1 as it was, bit for bit
+        if (slot.kind == EffectKind::foilPlate && savedCount <= (std::size_t) verbs::foil::reaLaw)
+            slot.params[(std::size_t) verbs::foil::reaLaw] = 0.0f;
+        // round 190mj: a Horizon saved before its echo-mode / Room / Chamber laws keeps revision 1 as it was, bit for bit
+        if (slot.kind == EffectKind::horizon && savedCount <= (std::size_t) verbs::horizon::reaLaw)
+            slot.params[(std::size_t) verbs::horizon::reaLaw] = 0.0f;
+        // round 190ly: an Epoch Verb saved before Concert Hall's short-decay trim keeps revision 1 as it was, bit for bit
+        if (slot.kind == EffectKind::epochVerb && savedCount <= (std::size_t) verbs::epoch::shortTrim)
+            slot.params[(std::size_t) verbs::epoch::shortTrim] = 0.0f;
+        // round 190mb: Epoch's rate law is only ever saved with a translated ValhallaVintageVerb
+        if (slot.kind == EffectKind::epochVerb && savedCount <= (std::size_t) verbs::epoch::rateLaw)
+            slot.params[(std::size_t) verbs::epoch::rateLaw] = 0.0f;
+        // round 190ls: an Atrium saved before the dense tank keeps revision 1 as it was, bit for bit
+        if (slot.kind == EffectKind::atrium && savedCount <= (std::size_t) verbs::atrium::reaLaw)
+            slot.params[(std::size_t) verbs::atrium::reaLaw] = 0.0f;
+    }
+    // round 152: a Compressor saved before the measured vintage curve keeps the round-150 curve
+    if (slot.kind == EffectKind::compressor && savedCount <= 18 && slot.params.size() > 18)
+        slot.params[18] = 0.0f;
+    // round 190mg: … and one saved before the Renaissance law keeps the vintage voicing's round-123 / 152 engine
+    if (slot.kind == EffectKind::compressor && savedCount <= (std::size_t) compressorRenLaw && slot.params.size() > (std::size_t) compressorRenLaw)
+        slot.params[(std::size_t) compressorRenLaw] = 0.0f;
+    // round 190mm: … and the Vox law's own hidden values (only a law-2 slot reads them)
+    if (slot.kind == EffectKind::compressor)
+        for (const int k : { compressorVoxLaw, compressorVoxGate, compressorVoxGateRelease, compressorVoxGain })
+            if (savedCount <= (std::size_t) k && slot.params.size() > (std::size_t) k)
+                slot.params[(std::size_t) k] = 0.0f;
+    if (slot.kind == EffectKind::compressor)
+        for (int k = compressorApiLaw; k < compressorApiEnd; ++k)
+            if (savedCount <= (std::size_t) k && slot.params.size() > (std::size_t) k)
+                slot.params[(std::size_t) k] = 0.0f;
+    // … a Low Lifter / Aether saved before keeps its own engine (the round's hidden laws off)
+    if (slot.kind == EffectKind::flLowLifter)
+        for (int k = lowlifter::bassLaw; k < lowlifter::bassEnd; ++k)
+            if (savedCount <= (std::size_t) k && slot.params.size() > (std::size_t) k)
+                slot.params[(std::size_t) k] = 0.0f;
+    if (slot.kind == EffectKind::aether)
+        for (int k = mixsuite::aether::vitLaw; k < mixsuite::aether::vitEnd; ++k)
+            if (savedCount <= (std::size_t) k && slot.params.size() > (std::size_t) k)
+                slot.params[(std::size_t) k] = 0.0f;
+    // round 190do: a Gemini Doubler saved before the measured read head keeps the two crossfaded taps
+    if (slot.kind == EffectKind::geminiDoubler && savedCount <= (std::size_t) voicetools::gemini::headLaw)
+        slot.params[(std::size_t) voicetools::gemini::headLaw] = 0.0f;
+    // round 190mj: the SpaceModulator role's voices likewise (a translated SpaceModulator only)
+    if (slot.kind == EffectKind::orbit && savedCount <= (std::size_t) echosuite::orbit::voiceLaw)
+        slot.params[(std::size_t) echosuite::orbit::voiceLaw] = 0.0f;
+    // round 190mb: the SpaceModulator role's level law is only ever saved with it (a translated SpaceModulator)
+    if (slot.kind == EffectKind::orbit && savedCount <= (std::size_t) echosuite::orbit::smLaw)
+        slot.params[(std::size_t) echosuite::orbit::smLaw] = 0.0f;
+    // round 190do: an Orbit saved before the measured sweep keeps the classic voices
+    if (slot.kind == EffectKind::orbit && savedCount <= (std::size_t) echosuite::orbit::law)
+        slot.params[(std::size_t) echosuite::orbit::law] = 0.0f;
+    // round 190do: a Lattice Mod saved before the measured detune depth keeps the classic one
+    if (slot.kind == EffectKind::latticeMod && savedCount <= (std::size_t) echosuite::lattice::law)
+        slot.params[(std::size_t) echosuite::lattice::law] = 0.0f;
+    // round 190it: … and one saved before the tap network's revision keeps the summed loop
+    if (slot.kind == EffectKind::latticeMod && savedCount <= (std::size_t) echosuite::lattice::revision)
+        slot.params[(std::size_t) echosuite::lattice::revision] = 0.0f;
+    // round 190do: a Spiral Echo saved before the measured loop keeps the classic one
+    if (slot.kind == EffectKind::spiralEcho && savedCount <= (std::size_t) echosuite::spiral::law)
+        slot.params[(std::size_t) echosuite::spiral::law] = 0.0f;
+    // round 190fy: … and one saved before the loop timing's revision (0.1.27: Law, no hidden revision) keeps round 190do's loop
+    if (slot.kind == EffectKind::spiralEcho && savedCount <= (std::size_t) echosuite::spiral::revision)
+        slot.params[(std::size_t) echosuite::spiral::revision] = 0.0f;
+    // round 190ly: a Spiral Echo saved before the rate-independent loop phase keeps its loop as it was, bit for bit
+    if (slot.kind == EffectKind::spiralEcho && savedCount <= (std::size_t) echosuite::spiral::rateLaw)
+        slot.params[(std::size_t) echosuite::spiral::rateLaw] = 0.0f;
+    // round 190iq: a Hush saved before the measured Allround timing keeps tp172b's (bit for bit)
+    if (slot.kind == EffectKind::hushDeEsser && savedCount <= (std::size_t) mixsuite::hush::timing)
+        slot.params[(std::size_t) mixsuite::hush::timing] = 0.0f;
+    // round 190js: … and one saved before Single Vocal's revision keeps round 148's Single Vocal (bit for bit)
+    if (slot.kind == EffectKind::hushDeEsser && savedCount <= (std::size_t) mixsuite::hush::vocalRevision)
+        slot.params[(std::size_t) mixsuite::hush::vocalRevision] = 0.0f;
+    // round 190kw: an Ember saved before the Saturn styles' laws keeps round 150's measured characters (bit for bit)
+    if (slot.kind == EffectKind::ember && savedCount <= (std::size_t) mixsuite::ember::revision)
+        slot.params[(std::size_t) mixsuite::ember::revision] = 0.0f;
+    // round 190mm (dyn): a Hush saved before the Renaissance de-esser law keeps Hush's engines (and its law values 0)
+    if (slot.kind == EffectKind::hushDeEsser)
+        for (int k = mixsuite::hush::essLaw; k <= mixsuite::hush::essWideBand; ++k)
+            if (savedCount <= (std::size_t) k && slot.params.size() > (std::size_t) k)
+                slot.params[(std::size_t) k] = 0.0f;
+    // round 190is: an Echoform saved before the voicings' revision keeps rounds 147 / 150's voicings
+    if (slot.kind == EffectKind::echoform && savedCount <= (std::size_t) echosuite::echoform::revision)
+        slot.params[(std::size_t) echosuite::echoform::revision] = 0.0f;
+    // round 190kw: … and one saved before the line law (hidden, set only by a translated Timeless 3 state) keeps the engine
+    if (slot.kind == EffectKind::echoform && savedCount <= (std::size_t) echosuite::echoform::lineLaw)
+        slot.params[(std::size_t) echosuite::echoform::lineLaw] = 0.0f;
+    // round 190kw: a LuxeVerb saved before the Space engine's revision keeps tp172b / 190it's Space engine (bit for bit)
+    if (slot.kind == EffectKind::luxeVerb && savedCount <= (std::size_t) luxeVerbSpaceRevision)
+        slot.params[(std::size_t) luxeVerbSpaceRevision] = 0.0f;
+    // round 190ly: the ValhallaDelay role's loop laws are only ever saved with it (a translated ValhallaDelay)
+    if (slot.kind == EffectKind::echoform && savedCount <= (std::size_t) echosuite::echoform::valhallaLaw)
+        slot.params[(std::size_t) echosuite::echoform::valhallaLaw] = 0.0f;
+    // round 190ca: a Nebula saved before the cloud law keeps the classic engine in every mode
+    if (slot.kind == EffectKind::nebula && savedCount <= (std::size_t) verbs::nebula::law)
+        slot.params[(std::size_t) verbs::nebula::law] = 0.0f;
+    // round 190mb: the Supermassive role's tone law is only ever saved with it (a translated ValhallaSupermassive)
+    if (slot.kind == EffectKind::nebula && savedCount <= (std::size_t) verbs::nebula::toneLaw)
+        slot.params[(std::size_t) verbs::nebula::toneLaw] = 0.0f;
+}
+
+std::unique_ptr<Effect> makeParallelEffect (const EffectSlot& slot)
+{
+    return std::make_unique<ParallelEffect> (slot);
+}
+
+namespace
+{
+std::unique_ptr<Effect> makeEffectOfSlot (const EffectSlot& slot);
+}
+
+std::unique_ptr<Effect> makeEffect (const EffectSlot& slot)
+{
+    auto effect = makeEffectOfSlot (slot);
+    if (effect != nullptr)
+        effect->setEngineRev (slot.engineRev); // (round 190ok, D3)
+    return effect;
+}
+
+namespace
+{
+std::unique_ptr<Effect> makeEffectOfSlot (const EffectSlot& slot)
+{
+    if (slot.kind == EffectKind::parallel)
+        return makeParallelEffect (slot);
+    if (slot.kind == EffectKind::patcher) // built-in nodes only; the rack builds it with its plugins (core/Patcher.h)
+    {
+        return patcher::makeEffect (slot, 44100.0, patcher::builtInFactories (44100.0));
+    }
+    if (slot.kind == EffectKind::formulaController)
+        return formula::makeEffect (slot.state);
+    if (slot.kind == EffectKind::atrium) // round 190nr: the dense late tank only where it runs
+        return verbs::makeAtrium (verbs::atriumDense (slot.params));
+    if (slot.kind == EffectKind::vocodex)
+        return vocodex::make (slot.state, slot.params); // (round 190pt: liveControls)
+    if (slot.kind == EffectKind::xyzController && slot.params[(std::size_t) xy::flInputCurves] >= 0.5f)
+        return xy::makeEffectWithCurves (slot); // (round 190pt: FL's input curves from the state)
+    if (slot.kind == EffectKind::maximus)
+        return maximusfx::make (slot.state, slot.engineRev);
+    if (slot.kind == EffectKind::multibandDelay)
+        return mbdelay::make (slot.state, &slot.params); // (#113: the mode's latency known at once)
+    if (slot.kind == EffectKind::vocoder)
+        return std::make_unique<Vocoder> (slot.state);
+    if (slot.kind == EffectKind::equo)
+        return equofx::make (slot.state);
+    if (slot.kind == EffectKind::hardcore)
+        return hardcore::make (slot);
+    if (slot.kind == EffectKind::distructor)
+        return distructor::make (slot.state);
+    if (slot.kind == EffectKind::effector && khsdsp::lawOf (slot.params[(std::size_t) khsdsp::lawParam]) != khsdsp::Law::none)
+        return effector::make (true, khsdsp::lawLatency (khsdsp::lawOf (slot.params[(std::size_t) khsdsp::lawParam]))); // round 190nb: a Kilohearts snapin law (core/KiloheartsDsp.h)
+    if (slot.kind == EffectKind::fruityWaveShaper)
+        return flshape::makeWaveShaper (slot.state);
+    if (slot.kind == EffectKind::parametricEq && peq::flLaw (slot.params))
+        return std::make_unique<ParametricEq> (slot.params);
+    if (slot.kind == EffectKind::frequencySplitter)
+        return fsplit::make (slot.params);
+    if (slot.kind == EffectKind::limiter) // (rollup step 9: the L2 law's latency known at once)
+        return std::make_unique<Limiter> (limiterlaw::isL2 (slot.params[(std::size_t) limiterlaw::lawParam]));
+    if (slot.kind == EffectKind::hardwareInsert) // its round trip (latency) known before the first block (round 164d)
+        return std::make_unique<hwinsert::HardwareInsertFx> (&slot.params);
+    if (slot.kind == EffectKind::flEmphasis) // its look-ahead / oversampling latency known before the first block (round 167f)
+        return emphasis::make (&slot.params);
+    if (slot.kind == EffectKind::flLowLifter) // its look-ahead (latency) known before the first block (round 154)
+        return lowlifter::make (slot.params[4] >= 0.5f);
+    if (slot.kind == EffectKind::hushDeEsser) // its look-ahead (latency) known before the first block (round 128)
+        return mixsuite::makeHush (&slot.params);
+    if (slot.kind == EffectKind::facetEq) // its phase mode (latency) known before the first block
+        return facet::make (&slot.params);
+    if (slot.kind == EffectKind::ember) // round 152: its processing mode (linear phase: latency) known before the first block
+        return mixsuite::makeEmber (&slot.params);
+    if (dyn::isDynKind (slot.kind)) // their look-ahead / oversampling latency known before the first block
+        return dyn::make (slot.kind, &slot.params);
+    if (slot.kind == EffectKind::apexLimiter) // round 135: the oversampling latency known before the first block
+        return apex::make (&slot.params);
+    if (slot.kind == EffectKind::ridgeStrip) // issue #113: its Vocal voicing / DRIVE latency known before the first block
+        return mixsuite::makeRidge (&slot.params);
+    if (slot.kind == EffectKind::aether) // issue #113: its model (the exciter's oversampling latency) known before the first block
+        return mixsuite::makeAether (&slot.params);
+    if (slot.kind == EffectKind::lynxTune) // issue #113: its range / low-latency path known before the first block
+        return lynxtune::make (&slot.params);
+    if (slot.kind == EffectKind::transmitter) // issue #113: its look-ahead (latency) known before the first block
+        return transmitter::make (&slot.params);
+    if (slot.kind == EffectKind::flPitchShifter) // issue #113: its engine (latency) known before the first block
+        return psfl::make (&slot.params);
+    if (slot.kind == EffectKind::compressor) // issue #113: its voicing's latency known before the first block
+        return std::make_unique<Compressor> (&slot.params);
+    if (slot.kind == EffectKind::pitchCorrect) // issue #113: its formant path's latency known before the first block
+        return std::make_unique<PitchCorrect> (&slot.params);
+    if (slot.kind == EffectKind::fruityLimiter) // issue #113: its look-ahead (latency) known before the first block
+        return fldyn::makeLimiter (&slot.params);
+    if (slot.kind == EffectKind::fruityCompressor) // its reported look-ahead known before the first block
+        return fldyn::makeCompressor (&slot.params);
+    if (slot.kind == EffectKind::hyperChorus)
+        return hyperchorusfx::make (hyperchorusfx::instanceOf (slot.state));
+    if (slot.kind == EffectKind::vintageChorus)
+        return vintagechorusfx::make (hyperchorusfx::instanceOf (slot.state));
+    if (slot.kind == EffectKind::grossBeat)
+        return grossbeat::make (slot.state);
+    if (slot.kind == EffectKind::lovePhilter)
+        return philter::make (slot);
+    if (slot.kind == EffectKind::convolver)
+        return makeConvolver (slot.state);
+    if (slot.kind == EffectKind::fruityDelayBank)
+        return fldbank::make (slot.state);
+    if (slot.kind == EffectKind::fruityMultiband)
+        return slot.state.empty() ? flmb::make (&slot.params) : flmb::make (slot.state, &slot.params); // (#113: latency known at once)
+    return makeEffect (slot.kind);
+}
+} // namespace
+
+std::unique_ptr<Effect> makeEffect (EffectKind kind)
+{
+    switch (kind)
+    {
+        case EffectKind::eq: return std::make_unique<Eq>();
+        case EffectKind::compressor: return std::make_unique<Compressor>();
+        case EffectKind::delay: return std::make_unique<Delay>();
+        case EffectKind::reverb: return std::make_unique<Reverb>();
+        case EffectKind::limiter: return std::make_unique<Limiter>();
+        case EffectKind::filter: return std::make_unique<Filter>();
+        case EffectKind::distortion: return std::make_unique<Distortion>();
+        case EffectKind::chorus: return std::make_unique<Chorus>();
+        case EffectKind::parametricEq: return std::make_unique<ParametricEq>();
+        case EffectKind::utility: return std::make_unique<Utility>();
+        case EffectKind::volumeGate: return std::make_unique<VolumeGate>();
+        case EffectKind::peakController: return std::make_unique<PeakController>();
+        case EffectKind::pitchShift: return std::make_unique<PitchShift>();
+        case EffectKind::freqShift: return std::make_unique<FreqShift>();
+        case EffectKind::parallel: return std::make_unique<ParallelEffect> (EffectSlot {}); // empty: use makeParallelEffect
+        case EffectKind::patcher: return makeEffect (makeEffectSlot (EffectKind::patcher)); // empty graph: silence
+        case EffectKind::lofi: return std::make_unique<LoFi>();
+        case EffectKind::effector: return effector::make();
+        case EffectKind::crossover: return std::make_unique<Crossover>();
+        case EffectKind::rhythmGain: return std::make_unique<RhythmGain>();
+        case EffectKind::autoPan: return std::make_unique<AutoPan>();
+        case EffectKind::vocoder: return std::make_unique<Vocoder> (std::vector<std::uint8_t> {}); // use makeEffect (slot) for the band levels
+        case EffectKind::squeeze: return std::make_unique<Squeeze>();
+        case EffectKind::vintagePhaser: return makeVintagePhaser();
+        case EffectKind::vocodex: return vocodex::make ({}); // without a state: passes the signal; use makeEffect (slot)
+        case EffectKind::maximus: return maximusfx::make ({}); // without a state: passes the signal; use makeEffect (slot)
+        case EffectKind::fruityLimiter: return fldyn::makeLimiter();
+        case EffectKind::fruityCompressor: return fldyn::makeCompressor();
+        case EffectKind::fruityWaveShaper: return flshape::makeWaveShaper ({}); // FL's default curve; use makeEffect (slot)
+        case EffectKind::fruitySoftClipper: return flshape::makeSoftClipper();
+        case EffectKind::fruityPanOMatic: return flbasic::makePanOMatic();
+        case EffectKind::fruityBalance: return flbasic::makeBalance();
+        case EffectKind::fruitySend: return flbasic::makeSend(); // FL's Fruity Send (REA_rodada105_send)
+        case EffectKind::fruityBloodOverdrive: return flbasic::makeBloodOverdrive();
+        case EffectKind::fruityFastLP: return flfilter::makeFastLP();
+        case EffectKind::fruityFreeFilter: return flfilter::makeFreeFilter();
+        case EffectKind::fruityFilter: return flfilter::makeFilter();
+        case EffectKind::reeverb2: return makeReeverb2();
+        case EffectKind::luxeVerb: return makeLuxeVerb();
+        case EffectKind::convolver: return makeConvolver(); // no impulse response: dry only; use makeEffect (slot)
+        case EffectKind::reeverb1: return makeReeverb1();
+        case EffectKind::fruityDelay2: return fldelay::makeDelay2();
+        case EffectKind::fruityDelay3: return fldelay::makeDelay3();
+        case EffectKind::stereoShaper: return stereofx::makeStereoShaper();
+        case EffectKind::stereoEnhancer: return stereofx::makeStereoEnhancer();
+        case EffectKind::transientProcessor: return stereofx::makeTransientProcessor();
+        case EffectKind::spreader: return stereofx::makeSpreader();
+        case EffectKind::fruityChorus: return fruitychorusfx::make();
+        case EffectKind::hyperChorus: return hyperchorusfx::make();
+        case EffectKind::vintageChorus: return vintagechorusfx::make();
+        case EffectKind::grossBeat: return grossbeat::make ({}); // without a state: LYNX's factory bank (round 168m); use makeEffect (slot)
+        case EffectKind::lovePhilter: return philter::make (EffectSlot {}); // without a state: passes the signal
+        case EffectKind::fruityDelayBank: return fldbank::make ({}); // a new FL instance; use makeEffect (slot) for a state
+        case EffectKind::fruityMultiband: return flmb::make();
+        case EffectKind::equo: return equofx::make ({}); // FL's default EQUO; use makeEffect (slot)
+        case EffectKind::flPitchShifter: return psfl::make();
+        case EffectKind::frequencySplitter: return fsplit::make();
+        case EffectKind::hardcore: return hardcore::make (makeEffectSlot (EffectKind::hardcore)); // no cabinet impulses; use makeEffect (slot)
+        case EffectKind::distructor: return distructor::make ({}); // without a state: passes the signal; use makeEffect (slot)
+        case EffectKind::multibandDelay: return mbdelay::make ({}); // FL's default Multiband Delay; use makeEffect (slot)
+        case EffectKind::pitchCorrect: return std::make_unique<PitchCorrect>();
+        case EffectKind::fruityFastDist: return fastdistfx::make();
+        case EffectKind::fruityFlangus: return flangusfx::make();
+        case EffectKind::fruityFlanger: return flangerfx::make();
+        case EffectKind::newtone:
+        case EffectKind::newtime: return newtonefx::make (nullptr); // without its sample: a pass-through
+        case EffectKind::facetEq: return facet::make();
+        case EffectKind::apexLimiter: return apex::make();
+        case EffectKind::ridgeStrip:
+        case EffectKind::glowLeveler:
+        case EffectKind::hushDeEsser:
+        case EffectKind::aether:
+        case EffectKind::ember:
+        case EffectKind::kilnChannel:
+        case EffectKind::fretChannel:
+        case EffectKind::shellChannel:
+        case EffectKind::strikeShaper:
+        case EffectKind::anvilBus:
+        case EffectKind::corrode:
+        case EffectKind::soundboard:
+        case EffectKind::platter:
+        case EffectKind::timeprism:
+        case EffectKind::harmonia: return mixsuite::make (kind); // LYNX's own mixing suite (REA_rodada96)
+        case EffectKind::rackMixer: return rack::makeChainMixer(); // a rack chain's mixer (round 183c)
+        case EffectKind::edison: return std::make_unique<edisonfx::Processor>(); // without its slot: nothing to play (round 190cd)
+        case EffectKind::lynxTune: return lynxtune::make(); // LYNX's own pitch corrector (REA_rodada95)
+        case EffectKind::fruityPhaser: return phaserfx::make(); // FL's Fruity Phaser, exact (REA_rodada105_phaser)
+        case EffectKind::epochVerb:
+        case EffectKind::atrium:
+        case EffectKind::foilPlate:
+        case EffectKind::nebula:
+        case EffectKind::halo:
+        case EffectKind::horizon: return verbs::make (kind); // LYNX's own reverbs (REA_rodada100)
+        case EffectKind::echoform:
+        case EffectKind::spiralEcho:
+        case EffectKind::orbit:
+        case EffectKind::latticeMod: return echosuite::make (kind); // LYNX's delay / modulation suite (REA_rodada101)
+        case EffectKind::crestCompressor:
+        case EffectKind::prismMultiband:
+        case EffectKind::sentryGate: return dyn::make (kind); // LYNX's dynamics suite (REA_rodada108)
+        case EffectKind::quellDenoiser:
+        case EffectKind::geminiDoubler: return voicetools::make (kind); // LYNX's voice tools (REA_rodada119)
+        case EffectKind::formulaController: return formula::makeEffect ({});
+        case EffectKind::voiceShift: return voiceshift::make(); // round 135
+        case EffectKind::emphasizer: return emphasizer::make(); // round 154
+        case EffectKind::flEmphasis: return emphasis::make(); // round 167f
+        case EffectKind::flFrequencyShifter: return fsfl::make(); // round 154
+        case EffectKind::flLowLifter: return lowlifter::make(); // round 154
+        case EffectKind::flPhaseInverter: return fllegacy::makePhaseInverter(); // round 165k
+        case EffectKind::flCenter: return fllegacy::makeCenter();
+        case EffectKind::flBassBoost: return fllegacy::makeBassBoost();
+        case EffectKind::fl7BandEq: return fllegacy::makeEq7();
+        case EffectKind::flDelay1: return fllegacy::makeDelay1();
+        case EffectKind::pocketDistortion: return pocket::makeDistortion(); // round 188h (FL Studio Mobile)
+        case EffectKind::pocketLimiterClassic: return pocket::makeLimiterClassic();
+        case EffectKind::pocketLimiter: return pocket::makeLimiter();
+        case EffectKind::pocketLeveller: return pocket::makeLeveller();
+        case EffectKind::pocketGate: return pocket::makeGate();
+        case EffectKind::pocketTranceDelay: return pocket::makeTranceDelay();
+        case EffectKind::pocketTapeDelay: return pocket::makeTapeDelay();
+        case EffectKind::pocketMultiFx: return pocket::makeMultiFx();
+        case EffectKind::pocketAutoduck: return pocket::makeAutoduck(); // round 189h (FL Studio Mobile)
+        case EffectKind::pocketChorus: return pocket::makeChorus();
+        case EffectKind::pocketSpacer: return pocket::makeSpacer();
+        case EffectKind::pocketStereoizer: return pocket::makeStereoizer();
+        case EffectKind::pocketWowFlutter: return pocket::makeWowFlutter(); // round 189h (FL Studio Mobile)
+        case EffectKind::pocketPhaser: return pocket::makePhaser();
+        case EffectKind::pocketFlanger: return pocket::makeFlanger();
+        case EffectKind::pocketTremolo: return pocket::makeTremolo();
+        case EffectKind::pocketWaveshaper: return pocket::makeWaveshaper(); // round 189h
+        case EffectKind::pocketCompressor: return pocket::makeCompressor();
+        case EffectKind::pocketSpreader: return pocket::makeSpreader();
+        case EffectKind::pocketComb: return pocket::makeComb(); // round 190by
+        case EffectKind::pocketMultiband: return pocket::makeMultiband();
+        case EffectKind::pocketTapeStop: return pocket::makeTapeStop();
+        case EffectKind::pocketEq: return pocket::makeEq(); // round 190dw
+        case EffectKind::pocketGraphicEq: return pocket::makeGraphicEq();
+        case EffectKind::pocketFilter: return pocket::makeFilter();
+        case EffectKind::pocketReverbClassic: return pocket::makeReverbClassic();
+        case EffectKind::pocketReverb2: return pocket::makeReverb2();
+        case EffectKind::pocketReverb: return pocket::makeReverb();
+        case EffectKind::hardwareInsert: return std::make_unique<hwinsert::HardwareInsertFx>(); // round 164d
+        case EffectKind::fruityMute2: return flextra::mute2::make(); // round 165g
+        case EffectKind::bigClock:
+        case EffectKind::tuner:
+        case EffectKind::htmlNotebook: return visualfx::make(); // round 165g: pass the sound, feed the editor's tap
+        case EffectKind::scratcher: return scratcher::make (nullptr); // (with its sample: RackRenderer's buildEffect)
+        case EffectKind::transmitter: return transmitter::make();
+        case EffectKind::flTransporter: return transporter::make(); // round 167f
+        case EffectKind::waveCandy:
+        case EffectKind::visualizer: return visualfx::make(); // round 164c: passes the sound, feeds the editor's display
+        case EffectKind::xyController:
+        case EffectKind::xyzController: return xy::makeEffect (kind); // round 164
+        case EffectKind::controlSurface: return surface::makeEffect(); // round 164
+        case EffectKind::plugin: break; // created by the app (RackState::Factories)
+    }
+    return std::make_unique<Eq>();
+}
+} // namespace lynx

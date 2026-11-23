@@ -1,0 +1,581 @@
+#pragma once
+
+// The mouse grammar of the Piano Roll and the Playlist, without JUCE (unit-tested in
+// tests/EditorGestureTests.inc). The editors ask these functions what a press would do at the
+// point under the mouse, so the cursor, the hover highlight and the hint bar always tell the
+// same story as the click itself. Behaviour interpreted from the FL Studio manual's Piano Roll
+// and Playlist pages (docs/WORKFLOW_FL.md R1-R25, P1-P17), clean-room.
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+
+namespace lynx
+{
+// The editors' tools (the strip in their toolbar).
+enum class EditTool
+{
+    pencil, // add, move and resize (the default gestures)
+    brush,  // drag lays a run of notes / clips (Shift: one note at a time in the Piano Roll)
+    drumPaint, // Piano Roll only: drag lays one short note per grid cell, following the mouse across keys
+    eraser, // click or drag deletes
+    mute,   // click or drag mutes / unmutes
+    knife,  // drag a line to cut through notes / clips; a click cuts at the cursor
+    lasso,  // click selects, drag draws a selection box (Shift adds)
+    zoom,   // drag a range to zoom into it; a click zooms back out
+    listen, // click or drag to hear notes (Piano Roll) or play from there (Playlist)
+    slip    // Playlist only: drag inside a clip to move its content under it
+};
+
+namespace gesture
+{
+// --- hit testing -------------------------------------------------------------------------------
+
+// Where on an item (note or clip) spanning [x0, x1) pixels the mouse is.
+enum class Zone
+{
+    outside,
+    body,
+    leftEdge,
+    rightEdge
+};
+
+struct EdgeRules
+{
+    double grab = 6.0;             // widest edge zone, in pixels
+    double minimumHit = 4.0;       // very short items are still this wide to the mouse
+    double minimumForLeft = 16.0;  // narrower items only offer the right edge (the body must stay grabbable)
+    bool allowLeft = true;         // the left edge resizes / trims
+};
+
+// The edge zone shrinks with the item (a quarter of its width, at most `grab`), so a short note is
+// still mostly "body" and can be moved; the right edge always wins over the left one.
+inline Zone zoneAt (double x, double x0, double x1, const EdgeRules& rules = {})
+{
+    const auto right = std::max (x1, x0 + rules.minimumHit);
+
+    if (x < x0 || x >= right)
+        return Zone::outside;
+
+    const auto width = right - x0;
+    const auto edge = std::clamp (width / 4.0, 2.0, rules.grab);
+
+    if (x >= right - edge)
+        return Zone::rightEdge;
+    if (rules.allowLeft && width >= rules.minimumForLeft && x < x0 + edge)
+        return Zone::leftEdge;
+    return Zone::body;
+}
+
+// --- what a left press does ----------------------------------------------------------------------
+
+struct Mods
+{
+    bool shift = false, ctrl = false, alt = false;
+};
+
+// What is under the mouse in an editor's grid.
+enum class Target
+{
+    empty,       // background
+    item,        // body of a note / clip
+    leftEdge,    // left edge of a note / clip
+    rightEdge,   // right edge of a note / clip
+    fadeHandle,  // Playlist: fade handle of an audio clip
+    fadeTension, // Playlist: the tension handle (circle) on an audio clip's fade (FL 2026, round 190jz)
+    gainHandle,  // Playlist: an audio clip's gain handle (bottom centre, FL 2026; round 166e)
+    autoPoint,   // Playlist: a point of an inline automation curve
+    autoCurve,   // Playlist: on an automation curve (a click adds a point)
+    autoTension, // Playlist: the tension handle between two automation points (drag up / down bends)
+    clipMenu     // Playlist: the menu button in a clip's title strip
+};
+
+inline Target targetFor (Zone zone)
+{
+    switch (zone)
+    {
+        case Zone::body: return Target::item;
+        case Zone::leftEdge: return Target::leftEdge;
+        case Zone::rightEdge: return Target::rightEdge;
+        case Zone::outside: break;
+    }
+    return Target::empty;
+}
+
+enum class Action
+{
+    none,
+    create,       // draws a new note / places a clip and drags it
+    paint,        // brush: lays a run while dragging
+    move,         // drags the item (and the selection it belongs to)
+    copyMove,     // Shift: drags a copy
+    resizeRight,  // drags the end
+    resizeLeft,   // drags the start (Playlist: trims, keeping the content in place)
+    slipContent,  // moves a clip's content under it
+    toggleSelect, // Ctrl+click: adds / removes from the selection
+    boxSelect,    // draws a selection box
+    erase,
+    toggleMute,
+    slice,
+    zoomRange,
+    listen,
+    fade,         // drags an audio fade
+    fadeTension,  // drags an audio fade's tension up / down (round 190jz)
+    clipGain,     // drags an audio clip's gain up / down
+    movePoint,    // drags an automation point
+    addPoint,     // adds an automation point on the curve
+    bendSegment,  // drags an automation segment's tension handle
+    openMenu      // opens the clip menu
+};
+
+// The action of a left press with `tool` on `target`. `playlist` selects the Playlist's extras
+// (slip, fades, inline automation, clip menu). Mirrors the editors' mouseDown.
+inline Action leftAction (EditTool tool, Target target, Mods mods, bool playlist)
+{
+    const auto onItem = target != Target::empty;
+
+    if (target == Target::clipMenu)
+        return Action::openMenu;
+
+    // every tool: Ctrl+click toggles an item in the selection; Ctrl+drag on empty space selects
+    if (mods.ctrl)
+        return onItem ? Action::toggleSelect : Action::boxSelect;
+
+    const auto painter = tool == EditTool::brush || tool == EditTool::drumPaint;
+
+    if (tool == EditTool::lasso || (! onItem && mods.shift && ! painter))
+        return Action::boxSelect;
+
+    switch (tool)
+    {
+        case EditTool::eraser: return Action::erase;
+        case EditTool::mute: return Action::toggleMute;
+        case EditTool::knife: return Action::slice;
+        case EditTool::zoom: return Action::zoomRange;
+        case EditTool::listen: return Action::listen;
+        case EditTool::slip: return playlist && onItem ? Action::slipContent : Action::none;
+        case EditTool::pencil:
+        case EditTool::brush:
+        case EditTool::drumPaint:
+        case EditTool::lasso: break;
+    }
+
+    if (playlist)
+    {
+        if (target == Target::autoPoint && ! mods.shift)
+            return Action::movePoint;
+        if (target == Target::autoTension && ! mods.shift)
+            return Action::bendSegment;
+        if (target == Target::autoCurve && ! mods.shift)
+            return Action::addPoint;
+        if (target == Target::fadeHandle)
+            return Action::fade;
+        if (target == Target::fadeTension)
+            return Action::fadeTension;
+        if (target == Target::gainHandle)
+            return Action::clipGain;
+        if (mods.alt && mods.shift && target == Target::item)
+            return Action::slipContent;
+    }
+
+    switch (target)
+    {
+        case Target::item:
+        case Target::autoPoint:
+        case Target::autoCurve:
+        case Target::autoTension:
+        case Target::fadeHandle:
+        case Target::fadeTension:
+        case Target::gainHandle: return mods.shift ? Action::copyMove : Action::move;
+        case Target::rightEdge: return Action::resizeRight;
+        case Target::leftEdge: return Action::resizeLeft;
+        case Target::empty: return painter ? Action::paint : Action::create;
+        case Target::clipMenu: break;
+    }
+
+    return Action::none;
+}
+
+// --- cursors ---------------------------------------------------------------------------------------
+
+enum class Cursor
+{
+    normal,
+    draw,      // pencil
+    paint,     // brush
+    move,      // four-way: moving an item
+    copy,      // moving a copy
+    resizeH,   // left-right: an edge
+    resizeV,   // up-down: a gain handle
+    erase,
+    mute,
+    slice,
+    select,    // crosshair: box selection
+    zoom,
+    listen,
+    slip,
+    point,     // pointing hand: a handle or a button
+    pan        // grabbing hand: middle-drag
+};
+
+inline Cursor cursorFor (Action action, EditTool tool)
+{
+    switch (action)
+    {
+        case Action::create: return Cursor::draw;
+        case Action::paint: return Cursor::paint;
+        case Action::move: return Cursor::move;
+        case Action::copyMove: return Cursor::copy;
+        case Action::resizeRight:
+        case Action::resizeLeft:
+        case Action::fade: return Cursor::resizeH;
+        case Action::clipGain:
+        case Action::fadeTension: return Cursor::resizeV;
+        case Action::slipContent: return Cursor::slip;
+        case Action::toggleSelect:
+        case Action::boxSelect: return Cursor::select;
+        case Action::erase: return Cursor::erase;
+        case Action::toggleMute: return Cursor::mute;
+        case Action::slice: return Cursor::slice;
+        case Action::zoomRange: return Cursor::zoom;
+        case Action::listen: return Cursor::listen;
+        case Action::movePoint:
+        case Action::addPoint:
+        case Action::bendSegment:
+        case Action::openMenu: return Cursor::point;
+        case Action::none: break;
+    }
+
+    return tool == EditTool::slip ? Cursor::slip : Cursor::normal;
+}
+
+// --- view maths ------------------------------------------------------------------------------------
+
+// New scroll position (in ticks) after changing the zoom from `oldPixelsPerTick` to `newPixelsPerTick`,
+// keeping the tick under the mouse (`anchorPixels` from the left of the grid) where it is.
+inline double zoomAnchored (double scrollTicks, double oldPixelsPerTick, double newPixelsPerTick, double anchorPixels)
+{
+    const auto anchorTick = scrollTicks + anchorPixels / oldPixelsPerTick;
+    return std::max (0.0, anchorTick - anchorPixels / newPixelsPerTick);
+}
+
+// Zoom factor of one wheel event. Notched wheels step by 1.2 per notch whatever the driver's delta
+// size; smooth (trackpad / high-resolution) wheels zoom in proportion to the delta.
+inline double wheelZoomFactor (double deltaY, bool smooth)
+{
+    if (deltaY == 0.0)
+        return 1.0;
+    if (! smooth)
+        return deltaY > 0.0 ? 1.2 : 1.0 / 1.2;
+    return std::pow (1.2, std::clamp (deltaY, -1.0, 1.0) * 7.0);
+}
+
+// Scroll distance in pixels of one wheel event (notched: ~3 rows per notch; smooth: proportional).
+inline double wheelScrollPixels (double delta, bool smooth, double pixelsPerNotch)
+{
+    if (delta == 0.0)
+        return 0.0;
+    if (! smooth)
+        return (delta > 0.0 ? -1.0 : 1.0) * pixelsPerNotch;
+    return -delta * pixelsPerNotch * 7.0;
+}
+
+// --- trackpads (round 170e, Busy Works review #17: no quick zoom with a trackpad on macOS) ----------------------
+// Windows: precision touchpads (two-finger scrolling, and the pinch, which Windows sends as Ctrl+wheel) and
+// high-resolution wheels send WM_MOUSEWHEEL in pieces of a notch, and JUCE reports every piece as a notched event
+// (isSmooth false, one notch = 0.5 x 120 / 256 in its units): each piece then scrolled or zoomed a whole notch.
+// A delta under 3/4 of a notch is such a piece: it becomes a smooth delta of the same size (one notch = 1/7 in the
+// smooth formulas above), so a pinch zooms as far as the fingers move. Notched wheels are unchanged.
+constexpr double windowsWheelNotch = 60.0 / 256.0;
+
+struct WheelDelta
+{
+    double x = 0.0, y = 0.0;
+    bool smooth = false;
+};
+
+inline WheelDelta normaliseWheel (double deltaX, double deltaY, bool smooth, bool windows)
+{
+    const auto piece = [] (double d) { return d != 0.0 && std::abs (d) < 0.75 * windowsWheelNotch; };
+    if (smooth || ! windows || ! (piece (deltaX) || piece (deltaY)))
+        return { deltaX, deltaY, smooth };
+    return { deltaX / windowsWheelNotch / 7.0, deltaY / windowsWheelNotch / 7.0, true };
+}
+
+// --- the horizontal wheel (issue #254, round 190ou) ---------------------------------------------------------------
+// One notch of a tilt wheel or of a mouse's second (horizontal) wheel: Windows' WM_MOUSEHWHEEL, X11's buttons 6 / 7
+// (JUCE patch fix 49), a mouse's horizontal wheel on macOS. It comes as deltaX alone and not smooth. A trackpad's
+// sideways swipe is smooth and keeps its own path, and macOS turns Shift+wheel into deltaX with Shift held: that stays
+// Shift+wheel. +1 = a notch to the right (the view goes later), -1 to the left, 0 = not a horizontal wheel's notch.
+inline int horizontalWheelNotch (double deltaX, double deltaY, bool smooth, bool shift) noexcept
+{
+    if (smooth || shift || deltaY != 0.0 || deltaX == 0.0)
+        return 0;
+    return deltaX < 0.0 ? 1 : -1; // (JUCE: a tilt to the right is a negative deltaX, as on a trackpad)
+}
+
+// FL 2026 (round 190ou, Thief: the Playlist at 15.5 px a bar and the Piano roll at 384 px a bar): a notch of the
+// horizontal wheel moves the view 1.5 beats, whatever the zoom
+constexpr double horizontalWheelBeats = 1.5;
+
+// The zoom factor of one trackpad pinch event (macOS magnifyWithEvent, Windows GID_ZOOM: JUCE's mouseMagnify `scale`,
+// 1 = no change), limited so that one event never jumps more than x2.
+inline double pinchZoomFactor (double scale)
+{
+    if (! (scale > 0.0) || ! std::isfinite (scale))
+        return 1.0;
+    return std::clamp (scale, 0.5, 2.0);
+}
+
+// --- middle-drag zooms (round 167t, issue #26; FL 2026 evidence in docs/analise/REA_rodada167t.md) ---------------
+// Key height range of the Piano roll. FL's is 18..116 px (16 + 2 px per zoom level 1..50); LYNX also goes
+// shorter, down to 6 px.
+constexpr int minKeyHeight = 6, maxKeyHeight = 116;
+
+// The Piano roll's zoom wheel (round 190j; FL's VZoomSelect, REA round 167t: levels 1..50 = keys of 18..116 px, two
+// pixels a level). LYNX's keys go down to 6 px, so its levels start there: level 1 = 6 px ... 56 = 116 px.
+constexpr int zoomLevel (int keyHeight) noexcept
+{
+    const auto h = keyHeight < minKeyHeight ? minKeyHeight : keyHeight > maxKeyHeight ? maxKeyHeight : keyHeight;
+    return (h - minKeyHeight) / 2 + 1;
+}
+
+// The key the zoom wheel zooms around: the middle of the notes in view (their lowest and highest key), or the middle of
+// the view (`top` and `bottom`: the first and last key shown) when it shows no notes.
+template <typename Keys>
+int zoomWheelAnchor (const Keys& keysInView, int top, int bottom) noexcept
+{
+    auto lo = 128, hi = -1;
+    for (const auto key : keysInView)
+    {
+        lo = key < lo ? key : lo;
+        hi = key > hi ? key : hi;
+    }
+    return hi < 0 ? (top + bottom) / 2 : (lo + hi) / 2;
+}
+
+// The vertical zoom drag: Ctrl+middle-drag on the Piano roll's notes (or the Playlist's clips) and middle-drag on
+// the Piano roll keyboard. Like FL's zoom knob it only follows the vertical travel: up = taller, one zoom level
+// (2 px) per 4 px of travel, per 16 px while Ctrl is held (fine). The travel is not clamped at the limits.
+struct HeightZoomDrag
+{
+    double travel = 0.0; // knob units (4 per pixel, 1 per pixel fine)
+    int lastY = 0;
+
+    void begin (int y) noexcept { travel = 0.0; lastY = y; }
+
+    void move (int y, bool fine) noexcept
+    {
+        travel += (double) (lastY - y) * (fine ? 1.0 : 4.0);
+        lastY = y;
+    }
+
+    // whole zoom levels gained since the press
+    int levels() const noexcept { return (int) std::lround (travel / 16.0); }
+
+    int height (int startHeight, int lo = minKeyHeight, int hi = maxKeyHeight) const noexcept
+    {
+        return std::clamp (startHeight + 2 * levels(), lo, hi);
+    }
+};
+
+// The horizontal zoom drag of FL's time scroll bar: middle-drag on the ruler, Alt+middle-drag in the grid.
+// Each move's vertical travel (at most 32 px a move) accumulates and the visible span becomes the span at the
+// press times 2^(-up / 100) (100 px up = twice the zoom) around the view's centre; the horizontal travel moves the
+// centre by half a view per 100 px (rightwards = later), except while Ctrl is held (zoom only).
+struct SpanZoomDrag
+{
+    double startSpan = 1.0, span = 1.0, centre = 0.0, up = 0.0;
+    int lastX = 0, lastY = 0;
+
+    void begin (double visibleSpan, double viewCentre, int x, int y) noexcept
+    {
+        startSpan = span = std::max (1.0e-9, visibleSpan);
+        centre = viewCentre;
+        up = 0.0;
+        lastX = x;
+        lastY = y;
+    }
+
+    void move (int x, int y, bool ctrl) noexcept
+    {
+        up += std::clamp ((double) (lastY - y), -32.0, 32.0);
+        span = startSpan * std::pow (2.0, -up * 0.01);
+        if (! ctrl)
+            centre += (double) (x - lastX) * span * 0.5 * 0.01;
+        centre = std::max (0.0, centre);
+        lastX = x;
+        lastY = y;
+    }
+};
+
+// A value that glides towards its target (smooth wheel scrolling). `step` advances it by one frame.
+struct Glide
+{
+    double current = 0.0, target = 0.0;
+
+    void jumpTo (double v) noexcept { current = target = v; }
+    bool isMoving() const noexcept { return current != target; }
+
+    // 60 Hz frames: covers ~45% of the remaining distance per frame, snaps the last half pixel
+    double step (double fraction = 0.45, double settle = 0.5) noexcept
+    {
+        current += (target - current) * fraction;
+        if (std::abs (target - current) < settle)
+            current = target;
+        return current;
+    }
+};
+
+// Value on the straight line from (x0, v0) to (x1, v1) at x (the event lane's right-drag line), 0..1.
+inline double lineValue (double x0, double v0, double x1, double v1, double x)
+{
+    if (x1 == x0)
+        return std::clamp (v1, 0.0, 1.0);
+    const auto t = (x - x0) / (x1 - x0);
+    return std::clamp (v0 + (v1 - v0) * t, 0.0, 1.0);
+}
+
+// FL's Piano roll keyboard: where a key is clicked sets the note's velocity, soft at the
+// key's base and full at its tip (`along` pixels from the base of a key `length` pixels long), 1/127 at least.
+inline float keyClickVelocity (double along, double length)
+{
+    if (length <= 0.0)
+        return 0.8f;
+    return (float) std::clamp ((along + 1.0) / length, 1.0 / 127.0, 1.0);
+}
+
+// Issue #183: whether the Piano roll sounds a note the mouse places, drags, resizes or edits. While the song or pattern
+// plays it doesn't (FL leaves the notes you draw to the playback; the Channel rack's step clicks are silent either way),
+// unless the Piano roll's "Preview notes while playing" is on (LYNX's, off by default). Clicks on the Piano roll's own
+// keyboard always sound: they play the instrument, they don't edit a note.
+constexpr bool previewsEditedNote (bool playing, bool previewWhilePlaying) noexcept
+{
+    return ! playing || previewWhilePlaying;
+}
+
+// Round 190jd (FL 2026, live check 190iw Q1): pressing the mouse on an existing note sounds it only for a grab of a note
+// that was not selected (a move); a press on a note edge (resize, left or right) and a grab of an already-selected note
+// are silent. Placing a new note and the key changes of a drag still sound (previewsEditedNote decides the transport part).
+constexpr bool previewsGrabbedNote (bool resizeEdge, bool wasSelected) noexcept
+{
+    return ! resizeEdge && ! wasSelected;
+}
+
+// Alt+wheel over a note: the property moves by 4/127 per notch (Ctrl+Alt: 1/127), clamped to 0..1.
+inline double wheelStepValue (double value, double deltaY, bool fine)
+{
+    if (deltaY == 0.0)
+        return value;
+    const auto step = (fine ? 1.0 : 4.0) / 127.0;
+    return std::clamp (value + (deltaY > 0.0 ? step : -step), 0.0, 1.0);
+}
+
+// Font height for the keyboard and note labels: follows the row height, readable at every zoom.
+inline float labelHeight (int rowHeight)
+{
+    return std::clamp ((float) rowHeight * 0.72f, 9.0f, 13.0f);
+}
+
+// Whether a note label fits: the row must be tall enough to read and the note wide enough for "C#5".
+inline bool noteLabelFits (double widthPixels, int rowHeight)
+{
+    return rowHeight >= 9 && widthPixels >= 3.0 * labelHeight (rowHeight);
+}
+
+// --- overview strip (round 90) ------------------------------------------------------------------
+// The strip above the Piano Roll's and the Playlist's ruler shows the whole content in miniature with
+// the visible window outlined (FL Studio's preview scroll bar, interpreted). Positions are in content
+// units (ticks); `width` is the strip's width in pixels.
+enum class OverviewGrab { none, move, left, right };
+
+struct OverviewWindow
+{
+    double start = 0.0, length = 1.0;
+};
+
+// What a press at `x` grabs: an edge of the window (zooms), the window (scrolls) or nothing (jumps).
+inline OverviewGrab overviewGrabAt (double x, double width, double total, OverviewWindow w, double edgePixels = 5.0)
+{
+    if (total <= 0.0 || width <= 0.0)
+        return OverviewGrab::none;
+
+    const auto x0 = w.start / total * width, x1 = (w.start + w.length) / total * width;
+    // a narrow window keeps a middle zone to move it
+    const auto edge = std::min (edgePixels, std::max (1.0, (x1 - x0) / 3.0));
+
+    if (std::abs (x - x0) <= edge)
+        return OverviewGrab::left;
+    if (std::abs (x - x1) <= edge)
+        return OverviewGrab::right;
+    if (x > x0 && x < x1)
+        return OverviewGrab::move;
+    return OverviewGrab::none;
+}
+
+// The window after dragging `grab` by `dx` pixels from `from`; `minLength` keeps the zoom in range.
+// A press outside the window (none) centres it on the press first, then drags like `move`.
+inline OverviewWindow overviewDrag (OverviewGrab grab, OverviewWindow from, double dx, double width, double total,
+                                    double minLength)
+{
+    if (width <= 0.0 || total <= 0.0)
+        return from;
+
+    const auto d = dx / width * total;
+    auto w = from;
+
+    switch (grab)
+    {
+        case OverviewGrab::none:
+        case OverviewGrab::move:
+            w.start = std::clamp (from.start + d, 0.0, std::max (0.0, total - from.length));
+            break;
+        case OverviewGrab::left:
+        {
+            const auto end = from.start + from.length;
+            w.start = std::clamp (from.start + d, 0.0, std::max (0.0, end - minLength));
+            w.length = end - w.start;
+            break;
+        }
+        case OverviewGrab::right:
+            w.length = std::clamp (from.length + d, minLength, std::max (minLength, total - from.start));
+            break;
+    }
+
+    return w;
+}
+
+// The window centred on content position `at` (a click outside the window jumps there).
+inline OverviewWindow overviewCentredOn (double at, OverviewWindow w, double total)
+{
+    w.start = std::clamp (at - w.length / 2.0, 0.0, std::max (0.0, total - w.length));
+    return w;
+}
+
+// FL 2026 [SHOT, round 165z-b]: a double right-click held down is the Mute tool. The first right-click already deleted
+// the clip under it and FL does not bring it back; while sweeping, the first clip crossed decides one state (unmuted
+// -> mute every clip crossed, muted -> unmute every clip crossed) and each clip is touched once.
+inline bool isDoubleClick (std::uint32_t lastMs, std::uint32_t nowMs, double distancePixels,
+                           std::uint32_t windowMs = 500, double maxPixels = 6.0)
+{
+    return lastMs != 0 && nowMs - lastMs < windowMs && distancePixels < maxPixels;
+}
+
+struct MuteSweep
+{
+    bool decided = false;
+    bool target = true;
+
+    // the state a clip crossed by the sweep gets; the first one decides
+    bool touch (bool clipMuted)
+    {
+        if (! decided)
+        {
+            target = ! clipMuted;
+            decided = true;
+        }
+        return target;
+    }
+};
+} // namespace gesture
+} // namespace lynx

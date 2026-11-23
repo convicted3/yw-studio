@@ -1,0 +1,4653 @@
+#include "engine/PluginHost.h"
+#include "core/FlSettings.h"
+#include "platform/PrefaultMemory.h"
+#include "platform/Paths.h"
+
+#include <algorithm>
+#include <bit>
+#include <chrono>
+#include <cmath>
+#include <map>
+#include <cstdlib>
+#include <cstring>
+#include <thread>
+#include <type_traits>
+
+#include "core/Preferences.h"
+#include "core/PluginScanPolicy.h"
+
+#include "core/FlWrapper.h"
+#include "core/FlpExport.h"
+#include "core/LoadTrace.h"
+
+#include "engine/ClapFormat.h"
+#include "engine/Vst2Format.h"
+#include "engine/JsfxFormat.h"
+#include "engine/Vst3NoteTuning.h"
+#include "engine/PluginSandbox.h"
+#include "engine/TimedParameters.h"
+#include "engine/FlStudio.h"
+#include "platform/CrashGuard.h"
+#include "core/Denormals.h"
+#include "core/HostSlide.h"
+#include "ui/I18n.h"
+
+#if JUCE_WINDOWS
+ #include <windows.h>
+ #include <psapi.h>
+#else
+ #include <sys/resource.h>
+#endif
+
+namespace lynx
+{
+namespace
+{
+modulewarm::Registry& warmup(); // (slow modules started ahead, round 121: below)
+} // namespace
+
+void preparePlugin (juce::AudioPluginInstance& plugin, double sampleRate, int blockSize, bool sideInput)
+{
+    // Try stereo output; plugins that don't accept it keep whatever layout they have.
+    plugin.enableAllBuses();
+    auto layout = plugin.getBusesLayout();
+
+    if (! layout.outputBuses.isEmpty())
+    {
+        layout.outputBuses.getReference (0) = juce::AudioChannelSet::stereo();
+        if (! layout.inputBuses.isEmpty())
+            layout.inputBuses.getReference (0) = juce::AudioChannelSet::stereo();
+    }
+    // Issue #109: the second input bus (a sidechain input) only while something feeds it. A plugin whose detector
+    // follows an enabled side bus (Waves' dynamics) otherwise listens to silence and never acts. The other extra inputs
+    // stay off too: nothing feeds them.
+    auto withoutSide = layout;
+    for (int i = sideInput ? 2 : 1; i < withoutSide.inputBuses.size(); ++i)
+        withoutSide.inputBuses.getReference (i) = juce::AudioChannelSet::disabled();
+    if (plugin.checkBusesLayoutSupported (withoutSide))
+        plugin.setBusesLayout (withoutSide);
+    else if (! layout.outputBuses.isEmpty() && plugin.checkBusesLayoutSupported (layout))
+        plugin.setBusesLayout (layout); // (a plugin that refuses it keeps its buses on, as before)
+
+    plugin.setRateAndBufferSizeDetails (sampleRate, blockSize);
+    plugin.prepareToPlay (sampleRate, blockSize);
+}
+
+std::vector<PluginOutputInfo> pluginOutputs (const juce::AudioPluginInstance& plugin)
+{
+    std::vector<PluginOutputInfo> list;
+    const auto buses = plugin.getBusCount (false);
+    int channel = 0;
+    if (buses > 1)
+    {
+        for (int b = 0; b < buses; ++b)
+            if (const auto* bus = plugin.getBus (false, b); bus != nullptr && bus->isEnabled())
+            {
+                const auto n = bus->getNumberOfChannels();
+                if (n > 0)
+                    list.push_back ({ bus->getName(), channel, n, b == 0 || bus->isEnabledByDefault() });
+                channel += n;
+            }
+        return list;
+    }
+    const auto total = plugin.getTotalNumOutputChannels();
+    if (total <= 2)
+    {
+        if (total > 0)
+            list.push_back ({ buses == 1 ? plugin.getBus (false, 0)->getName() : juce::String(), 0, total });
+        return list;
+    }
+    for (int ch = 0; ch < total; ch += 2)
+        list.push_back ({ "Output " + juce::String (ch / 2 + 1), ch, juce::jmin (2, total - ch) });
+    return list;
+}
+
+std::vector<PluginOutputInfo> pluginInputs (const juce::AudioPluginInstance& plugin)
+{
+    std::vector<PluginOutputInfo> list;
+    int channel = 0;
+    for (int b = 0; b < plugin.getBusCount (true); ++b)
+        if (const auto* bus = plugin.getBus (true, b))
+        {
+            const auto n = bus->getLastEnabledLayout().size();
+            list.push_back ({ bus->getName(), channel, juce::jmax (1, n), b == 0 || bus->isEnabledByDefault() });
+            channel += bus->isEnabled() ? bus->getNumberOfChannels() : 0;
+        }
+    return list;
+}
+
+void setPluginRenderMode (juce::AudioPluginInstance& plugin, bool offline, int blockSize)
+{
+    if (plugin.isNonRealtime() == offline)
+        return;
+    plugin.setNonRealtime (offline);
+    if (plugin.getSampleRate() > 0.0)
+    {
+        // VST3 reads the process mode in its setup (setupProcessing). JUCE's VST3 host skips prepareToPlay when the
+        // plugin is active at the same rate and block size, so the plugin was never told: an export ran it in
+        // real-time mode (round 169c, issue #32 [LOG] the LYNX Test Synth saw kRealtime through a whole export). It is
+        // set up again from scratch.
+        plugin.releaseResources();
+        plugin.prepareToPlay (plugin.getSampleRate(), blockSize);
+    }
+}
+
+namespace
+{
+void setPluginParameter (juce::AudioPluginInstance& plugin, int index, float value) noexcept
+{
+    const auto& params = plugin.getParameters();
+
+    if (index >= 0 && index < params.size())
+        if (auto* p = params[index]; p->getValue() != value)
+            p->setValue (value);
+}
+
+// The song's transport as hosted plugins see it (tempo, position, play state, the loop when `reportLoop`: FL's wrapper
+// "Send loop position", on by default), from the renderer's timeline.
+class TimelinePlayHead final : public juce::AudioPlayHead
+{
+public:
+    explicit TimelinePlayHead (bool loop) : reportLoop (loop) {}
+    const bool reportLoop;
+
+    juce::Optional<PositionInfo> getPosition() const override
+    {
+        const auto& t = hostTimeline();
+        const auto bpm = t.bpm.load (std::memory_order_relaxed);
+        const auto rate = t.sampleRate.load (std::memory_order_relaxed);
+        // (the block's own start: a generator's chunk is split at its notes, round 169c)
+        // (round 190ll: a fixed block that began before the song's start says so: a position just below 0, as a
+        // count-in's, so its blocks still follow each other)
+        const auto quarters = t.tickAt (hostBlockOffset()) / (double) ppq;
+        const auto beatsPerBar = juce::jmax (1, t.beatsPerBar.load (std::memory_order_relaxed));
+        const auto beatUnit = meterUnit (t.beatUnit.load (std::memory_order_relaxed));
+        const auto barQuarters = (double) Meter (beatsPerBar, beatUnit).bar() / ppq; // (round 190fg: 6/8 = 3 quarters)
+        PositionInfo info;
+        info.setBpm (bpm);
+        info.setTimeSignature (TimeSignature { beatsPerBar, beatUnit });
+        info.setPpqPosition (quarters);
+        info.setPpqPositionOfLastBarStart (std::floor (quarters / barQuarters) * barQuarters);
+        info.setTimeInSeconds (quarters * 60.0 / juce::jmax (1.0, bpm));
+        info.setTimeInSamples ((juce::int64) std::llround (quarters * 60.0 / juce::jmax (1.0, bpm) * rate));
+        info.setIsPlaying (t.playing.load (std::memory_order_relaxed));
+        if (reportLoop && t.looping.load (std::memory_order_relaxed))
+        {
+            info.setIsLooping (true);
+            info.setLoopPoints (LoopPoints { t.loopStart.load (std::memory_order_relaxed) / (double) ppq, t.loopEnd.load (std::memory_order_relaxed) / (double) ppq });
+        }
+        return info;
+    }
+};
+
+juce::AudioPlayHead& timelinePlayHead (bool reportLoop = true)
+{
+    static TimelinePlayHead withLoop (true), withoutLoop (false);
+    return reportLoop ? withLoop : withoutLoop;
+}
+
+int bufferChannels (const juce::AudioPluginInstance& plugin)
+{
+    return juce::jmax (2, plugin.getTotalNumInputChannels(), plugin.getTotalNumOutputChannels());
+}
+} // namespace
+
+namespace
+{
+std::atomic<int> fixedBlockSamples { 512 };
+std::atomic<double> fixedBlockRate { 44100.0 };
+}
+
+int fixedPluginBlock (bool maximumSize) noexcept
+{
+    return juce::jlimit (16, PluginHost::maxBlockSize,
+                         flFixedBlockSize (fixedBlockRate.load (std::memory_order_relaxed), fixedBlockSamples.load (std::memory_order_relaxed), maximumSize));
+}
+
+void setFixedPluginBlock (int deviceBlock, double sampleRate) noexcept
+{
+    fixedBlockSamples.store (juce::jlimit (16, PluginHost::maxBlockSize, deviceBlock), std::memory_order_relaxed);
+    if (sampleRate > 0.0)
+        fixedBlockRate.store (sampleRate, std::memory_order_relaxed);
+}
+
+// ---------------------------------------------------------------------------
+
+// Crashes of hosted plugins this session. The audio thread only writes a fixed slot (no allocation, no lock): a bounded
+// copy of the instance's name, taken when the instance was created.
+namespace
+{
+constexpr int crashSlots = 16;
+struct CrashSlot
+{
+    char name[128] {};
+    std::uint32_t code = 0;
+    bool onLoad = false;
+};
+CrashSlot crashLog[crashSlots];
+std::atomic<int> crashCount { 0 };
+
+void recordCrash (const std::string& name, std::uint32_t code, bool onLoad = false) noexcept
+{
+    const auto index = crashCount.load (std::memory_order_relaxed);
+    auto& slot = crashLog[index % crashSlots];
+    std::size_t i = 0;
+    for (; i + 1 < sizeof (slot.name) && i < name.size(); ++i)
+        slot.name[i] = name[i];
+    slot.name[i] = 0;
+    slot.code = code;
+    slot.onLoad = onLoad;
+    crashCount.store (index + 1, std::memory_order_release); // (two plugins crashing in the same instant may share a slot)
+}
+
+void recordCrashOnce (std::atomic<bool>& crashed, const std::string& name, std::uint32_t code) noexcept
+{
+    if (! crashed.exchange (true, std::memory_order_acq_rel))
+        recordCrash (name, code);
+}
+
+// A waiting caller takes its normal silence/bypass branch, without recording the earlier fault again.
+constexpr std::uint32_t alreadyCrashed = 1;
+
+// The calls of one audio block, as a guarded unit
+struct BlockCall
+{
+    juce::AudioPluginInstance* plugin;
+    juce::AudioBuffer<float>* view;
+    juce::MidiBuffer* midi;
+    void operator()() const { plugin->processBlock (*view, *midi); }
+};
+
+// a block call under the crash guard, with this thread's floating-point mode put back after it (core/Denormals.h)
+std::uint32_t runBlock (BlockCall call, std::atomic<bool>& crashed, const std::string& name) noexcept
+{
+    const KeepFloatMode keep;
+    // The adapter holds the instance's callback try-lock for its whole render.
+    // Keep the lock outside the crash guard so a guarded vendor fault unwinds it.
+    if (crashed.load (std::memory_order_relaxed)) return alreadyCrashed;
+    const auto code = crashguard::run (call);
+    if (code != 0) recordCrashOnce (crashed, name, code);
+    return code;
+}
+
+std::uint32_t runReset (juce::AudioPluginInstance& plugin, std::atomic<bool>& crashed, const std::string& name) noexcept
+{
+    // Called with the instance's callback lock already held (try-lock on the audio thread).
+    if (crashed.load (std::memory_order_relaxed)) return alreadyCrashed;
+    const auto code = crashguard::run ([&] { plugin.reset(); });
+    if (code != 0) recordCrashOnce (crashed, name, code);
+    return code;
+}
+} // namespace
+
+// Round 190gg (B4): the adapters by the plugin they hold, for crashes in calls the UI makes (callPluginFromUi) and on the
+// plugin's own threads. Adapters register as they are made and leave as they go (never on the audio thread).
+namespace
+{
+struct AdapterEntry
+{
+    std::atomic<bool>* crashed = nullptr;
+    std::string name, file;
+};
+std::mutex adaptersLock;
+std::map<const juce::AudioProcessor*, AdapterEntry>& adapters()
+{
+    static std::map<const juce::AudioProcessor*, AdapterEntry> map;
+    return map;
+}
+std::set<const juce::AudioProcessor*>& bareCrashed() // plugins without an adapter whose UI call crashed
+{
+    static std::set<const juce::AudioProcessor*> set;
+    return set;
+}
+
+std::string moduleFileOf (const juce::AudioPluginInstance& plugin)
+{
+    auto file = plugin.getPluginDescription().fileOrIdentifier.toStdString();
+    while (file.size() > 1 && (file.back() == '/' || file.back() == '\\'))
+        file.pop_back();
+    return file;
+}
+
+void registerAdapter (juce::AudioPluginInstance& plugin, std::atomic<bool>& crashed, const std::string& name)
+{
+    const auto file = moduleFileOf (plugin);
+    const std::lock_guard<std::mutex> lock (adaptersLock);
+    adapters()[&plugin] = { &crashed, name, file };
+}
+
+void forgetAdapter (const juce::AudioPluginInstance* plugin)
+{
+    const std::lock_guard<std::mutex> lock (adaptersLock);
+    adapters().erase (plugin);
+}
+} // namespace
+
+bool pluginInstanceDown (const juce::AudioPluginInstance& plugin)
+{
+    if (isSandboxedPluginDead (plugin))
+        return true;
+    const std::lock_guard<std::mutex> lock (adaptersLock);
+    if (bareCrashed().count (&plugin) > 0)
+        return true;
+    const auto it = adapters().find (&plugin);
+    return it != adapters().end() && it->second.crashed->load();
+}
+
+bool callPluginFromUi (juce::AudioPluginInstance& plugin, const char* what, const std::function<void()>& call)
+{
+    if (pluginInstanceDown (plugin))
+        return false;
+    const auto code = crashguard::run ([&call] { call(); });
+    if (code == 0)
+        return true;
+    std::string name;
+    {
+        const std::lock_guard<std::mutex> lock (adaptersLock);
+        if (const auto it = adapters().find (&plugin); it != adapters().end())
+        {
+            it->second.crashed->store (true);
+            name = it->second.name;
+        }
+        else
+            bareCrashed().insert (&plugin);
+    }
+    if (name.empty())
+        name = plugin.getPluginDescription().name.toStdString(); // (JUCE's copy of the scan's description)
+    recordCrash (name, code);
+    crashguard::note ("plugin " + name + " crashed while " + what + " (" + crashguard::describe (code) + "): switched off");
+    return false;
+}
+
+namespace
+{
+// The adapter's file and the watched module are the same plugin: equal, or one inside the other (JUCE may describe a
+// VST3 by its bundle folder or by the module file inside it)
+bool sameModule (const std::string& a, const std::string& b)
+{
+    const auto inside = [] (const std::string& outer, const std::string& inner) {
+        return inner.size() > outer.size() && inner.compare (0, outer.size(), outer) == 0 && (inner[outer.size()] == '/' || inner[outer.size()] == '\\');
+    };
+    return ! a.empty() && ! b.empty() && (a == b || inside (a, b) || inside (b, a));
+}
+} // namespace
+
+int switchOffPluginsOfThreadFaults()
+{
+    static int seen = 0;
+    const auto total = crashguard::pluginThreadFaultCount();
+    if (total == seen)
+        return 0;
+    const auto faults = crashguard::pluginThreadFaults();
+    const auto fresh = std::min<int> (total - seen, (int) faults.size());
+    seen = total;
+    int switched = 0;
+    for (auto f = faults.end() - fresh; f != faults.end(); ++f)
+    {
+        std::vector<std::string> names;
+        {
+            const std::lock_guard<std::mutex> lock (adaptersLock);
+            for (auto& [plugin, entry] : adapters())
+                if (sameModule (entry.file, f->module) && ! entry.crashed->exchange (true))
+                {
+                    names.push_back (entry.name);
+                    ++switched;
+                }
+        }
+        crashguard::note ("a thread of " + f->module + " crashed (" + crashguard::describe (f->code) + " at " + f->where + "): "
+                          + std::to_string (names.size()) + " instance(s) switched off");
+        for (const auto& n : names)
+            recordCrash (n, f->code);
+        if (names.empty()) // (no instance left: still said, under the module's name)
+            recordCrash (juce::File (juce::String::fromUTF8 (f->module.c_str())).getFileNameWithoutExtension().toStdString(), f->code);
+    }
+    return switched;
+}
+
+int pluginCrashCount() noexcept
+{
+    return crashCount.load (std::memory_order_acquire);
+}
+
+std::vector<PluginCrash> pluginCrashes()
+{
+    std::vector<PluginCrash> list;
+    const auto count = pluginCrashCount();
+    for (int i = std::max (0, count - crashSlots); i < count; ++i)
+        list.push_back ({ crashLog[i % crashSlots].name, crashLog[i % crashSlots].code, crashLog[i % crashSlots].onLoad });
+    return list;
+}
+
+HostedParameterChanges::HostedParameterChanges (int n)
+    : count (std::max (0, n)), values (std::make_unique<Value[]> ((std::size_t) count))
+{
+    static_assert (std::atomic<float>::is_always_lock_free && std::atomic<std::uint64_t>::is_always_lock_free);
+}
+
+void HostedParameterChanges::defer (int index, float value) noexcept
+{
+    if (! contains (index)) return;
+    const auto epoch = restoreEpoch.load (std::memory_order_acquire);
+    values[index].deferred.store (((std::uint64_t) epoch << 32) | std::bit_cast<std::uint32_t> (value), std::memory_order_release);
+    pending.store (true, std::memory_order_release);
+}
+
+void HostedParameterChanges::clear (int index) noexcept
+{
+    if (contains (index)) values[index].deferred.exchange (0, std::memory_order_acq_rel);
+}
+
+float HostedParameterChanges::latest (int index) const noexcept
+{
+    if (! contains (index)) return -1.0f;
+    const auto deferred = values[index].deferred.load (std::memory_order_acquire);
+    return deferred != 0 && (std::uint32_t) (deferred >> 32) == restoreEpoch.load (std::memory_order_acquire)
+               ? std::bit_cast<float> ((std::uint32_t) deferred) : values[index].cached.load (std::memory_order_relaxed);
+}
+
+void HostedParameterChanges::observed (int index, float value) noexcept
+{
+    if (contains (index)) values[index].cached.store (value, std::memory_order_relaxed);
+}
+
+bool HostedParameterChanges::take (int index, float& value) noexcept
+{
+    if (! contains (index)) return false;
+    const auto deferred = values[index].deferred.exchange (0, std::memory_order_acq_rel);
+    if (deferred == 0 || (std::uint32_t) (deferred >> 32) != restoreEpoch.load (std::memory_order_acquire)) return false;
+    value = std::bit_cast<float> ((std::uint32_t) deferred);
+    return true;
+}
+
+namespace
+{
+// The instance's callback lock serializes processing with what must not run beside it: a state restore and the
+// offline export reset. The audio side only tries it (on contention the block is skipped, its automation and reset
+// deferred), and the UI side may wait for a block already in flight. Capturing state and the UI's own parameter
+// changes take no lock (round 190ha): JUCE's hosts run getStateInformation beside processBlock too, and holding the
+// lock there made a plugin go silent (or dry) during every save, backup or structural edit while playing.
+void applyParameter (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes, int index, float value)
+{
+    setPluginParameter (plugin, index, value);
+    const auto& params = plugin.getParameters();
+    if (index >= 0 && index < params.size()) changes.observed (index, params[index]->getValue());
+}
+
+std::uint32_t flushParameters (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes,
+                               std::atomic<bool>& crashed, const std::string& name) noexcept
+{
+    if (! changes.takePending()) return 0;
+    const auto code = crashguard::run ([&] {
+        for (int index = 0; index < changes.size(); ++index)
+        {
+            float value;
+            if (changes.take (index, value)) applyParameter (plugin, changes, index, value);
+        }
+    });
+    if (code != 0) recordCrashOnce (crashed, name, code);
+    return code;
+}
+
+void audioParameter (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes,
+                     std::atomic<bool>& crashed, const std::string& name, int index, float value) noexcept
+{
+    if (! changes.contains (index) || changes.held()) return; // (round 190ox: a capture at the base values runs)
+    const juce::CriticalSection::ScopedTryLockType lock (plugin.getCallbackLock());
+    if (! lock.isLocked())
+    {
+        changes.defer (index, value);
+        return;
+    }
+    if (crashed.load (std::memory_order_relaxed)) return;
+    changes.clear (index); // a later successful automation value supersedes the queued one
+    if (const auto code = crashguard::run ([&] { applyParameter (plugin, changes, index, value); }); code != 0)
+        recordCrashOnce (crashed, name, code);
+}
+
+std::optional<std::string> guardedState (juce::AudioPluginInstance& plugin, std::atomic<bool>& crashed, const std::string& name);
+
+// round 190ox: the state with these parameters at the given values (a modulated parameter's base)
+std::optional<std::string> stateAtBases (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes, std::atomic<bool>& crashed,
+                                         const std::string& name, const std::vector<std::pair<int, float>>& bases)
+{
+    if (bases.empty() || crashed.load())
+        return guardedState (plugin, crashed, name);
+    changes.hold (true);
+    if (const auto code = crashguard::run ([&] {
+            for (const auto& [index, value] : bases)
+                if (changes.contains (index))
+                    setPluginParameter (plugin, index, value);
+        }); code != 0)
+    {
+        changes.hold (false);
+        recordCrashOnce (crashed, name, code);
+        return std::nullopt;
+    }
+    auto state = guardedState (plugin, crashed, name);
+    changes.hold (false);
+    return state;
+}
+
+std::optional<std::string> guardedState (juce::AudioPluginInstance& plugin, std::atomic<bool>& crashed, const std::string& name)
+{
+    if (crashed.load())
+        return std::nullopt;
+    juce::MemoryBlock state;
+    if (const auto code = crashguard::run ([&] { plugin.getStateInformation (state); }); code != 0)
+    {
+        recordCrashOnce (crashed, name, code);
+        return std::nullopt;
+    }
+    return state.toBase64Encoding().toStdString();
+}
+
+bool guardedRestore (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes, std::atomic<bool>& crashed, const std::string& name,
+                     const std::string& encoded)
+{
+    if (crashed.load()) return false;
+    juce::MemoryBlock state;
+    if (encoded.empty() || ! state.fromBase64Encoding (juce::String::fromUTF8 (encoded.c_str()))) return false;
+    const juce::ScopedLock lock (plugin.getCallbackLock());
+    if (crashed.load (std::memory_order_relaxed)) return false;
+    // This acquisition is the restore boundary. Requests made before it cannot overwrite the restored state;
+    // requests arriving while the vendor restores see the new epoch and remain pending for the next block.
+    changes.beginRestore();
+    if (const auto code = crashguard::run ([&] {
+            plugin.setStateInformation (state.getData(), (int) state.getSize());
+            const auto& params = plugin.getParameters();
+            for (int i = 0; i < params.size(); ++i) changes.observed (i, params[i]->getValue());
+        }); code != 0)
+    {
+        recordCrashOnce (crashed, name, code);
+        return false;
+    }
+    return true;
+}
+
+void guardedUiParameter (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes,
+                         std::atomic<bool>& crashed, const std::string& name, int index, float value)
+{
+    if (crashed.load())
+        return;
+    if (const auto code = crashguard::run ([&] {
+            const auto& params = plugin.getParameters();
+            if (index >= 0 && index < params.size())
+            {
+                changes.clear (index);
+                params[index]->setValueNotifyingHost (value);
+                changes.observed (index, params[index]->getValue());
+            }
+        });
+        code != 0)
+    {
+        recordCrashOnce (crashed, name, code);
+    }
+}
+} // namespace
+
+PluginInstrument::PluginInstrument (std::unique_ptr<juce::AudioPluginInstance> instance, int maxBlockSize, int fixedBlock, HostedOptions o)
+    : options (o),
+      plugin (std::move (instance)),
+      parameterChanges (plugin->getParameters().size()),
+      blockSize (maxBlockSize),
+      name (plugin->getName().toStdString())
+{
+    timedOk = TimedParameterQueue::supports (*plugin);
+    buffer.setSize (bufferChannels (*plugin), blockSize);
+    midi.ensureSize (32768); // 8 KiB normal queue, with room for all 16x128 recovery note-offs without allocation
+    if (options.mpe)
+    {
+        // issue #108: the MPE zone (15 member channels, per-note bend range 48) goes out with the first block, before
+        // any note; a CLAP plugin that takes CLAP notes gets the member channels' data as note expressions
+        mpe::zoneSetup (mpe::maxMembers, (int) mpe::defaultBendRange, [this] (int status, int d1, int d2) {
+            const std::uint8_t bytes[3] = { (std::uint8_t) status, (std::uint8_t) d1, (std::uint8_t) d2 };
+            midi.addEvent (bytes, 3, 0);
+        });
+        setClapNoteExpressions (*plugin, mpe::defaultBendRange);
+    }
+    outs = pluginOutputs (*plugin);
+    routeOffset = std::make_unique<std::atomic<int>[]> (outs.size() + 1);
+    routeActive = std::make_unique<std::atomic<bool>[]> (outs.size() + 1);
+    for (std::size_t k = 0; k <= outs.size(); ++k)
+    {
+        routeOffset[k].store (0);
+        routeActive[k].store (k >= outs.size() || outs[k].activeByDefault);
+    }
+    // (the outputs' own buffers, 128 KiB per output, are made by configure() once an output plays on another insert:
+    // round 190of — a 16-output plugin held 2 MiB for them whether or not anything was routed)
+    if (fixedBlock > 0)
+    {
+        // (every output channel goes through the fixed blocks: the other outputs keep their place too)
+        const auto channels = juce::jlimit (2, 64, plugin->getTotalNumOutputChannels()); // (64: render()'s pointer array)
+        fixed = std::make_unique<FixedBlock> (juce::jmin (fixedBlock, blockSize), channels);
+        pending.ensureSize (32768);
+        scratch.assign ((std::size_t) blockSize * (std::size_t) channels, 0.0f);
+    }
+    plugin->setPlayHead (&timelinePlayHead (options.sendLoopPosition));
+    registerAdapter (*plugin, crashed, name); // (round 190gg: crashes in UI calls and on the plugin's own threads)
+    producesMidi = plugin->producesMidi(); // only then is what the buffer holds after processing the plugin's output
+    // issue #63: a VST3's note ons carry the note's tuning (FL's wrapper); the patched JUCE host asks for it
+    const auto format = plugin->getPluginDescription().pluginFormatName;
+    noteFormat = format == "VST3" ? hostpitch::Format::vst3 : format == ClapPluginFormat::formatName ? hostpitch::Format::clap : hostpitch::Format::midi;
+    takesTuning = noteFormat == hostpitch::Format::vst3;
+    if (takesTuning)
+    {
+        juce::lynxNoteTuningHook = [] (void* context, int channel, int key) noexcept {
+            return channel == 0 ? static_cast<hostpitch::SentKeys*> (context)->takeTuning (key) : 0.0f;
+        };
+        // round 190fg: and which LYNX note each note on / off belongs to, so a note off carries its own note's id
+        juce::lynxNoteTagHook = [] (void* context, bool noteOn, int channel, int key) noexcept -> unsigned int {
+            return channel == 0 ? static_cast<hostpitch::SentKeys*> (context)->takeTag (noteOn, key) : 0u;
+        };
+    }
+}
+
+void PluginInstrument::releaseHeldKeys() noexcept
+{
+    heldKeys.releaseAll ([this] (int ch, int key) {
+        if (queueMidi (juce::MidiMessage::noteOff (ch + 1, key)))
+            tagSent (false, ch, key, 0); // (round 190fg: no note of its own)
+    });
+    mpeNotes.reset(); // (issue #108: their member channels are free again)
+    sentKeys.played = {}; // (their note offs went out with these)
+}
+
+// Round 190fg: a note on / off just written on MIDI channel 1 of a VST3 queues the LYNX note it belongs to (0 = none),
+// for the patched host to pair the note off with its own note on's id (core/HostNotePitch.h SentKeys::tag)
+void PluginInstrument::tagSent (bool noteOn, int channel, int key, std::uint32_t note) noexcept
+{
+    if (takesTuning && channel == 0)
+        sentKeys.tag (noteOn, key, note);
+}
+
+void PluginInstrument::transportStopped() noexcept
+{
+    // FL's "Send All Notes Off when playback stops" (on by default); off: each note still held gets its note off
+    if (options.allNotesOffOnStop)
+    {
+        allNotesOff();
+        return;
+    }
+    releaseHeldKeys();
+}
+
+void PluginInstrument::panic() noexcept
+{
+    allNotesOff();
+    if (options.resetOnFlush) // FL's "Reset plugin when FL Studio resets": cleared before the next block
+        resetPending.store (true, std::memory_order_relaxed);
+}
+
+void PluginInstrument::setRenderMode (bool offline)
+{
+    if (! hasCrashed())
+        setPluginRenderMode (*plugin, offline, plugin->getBlockSize() > 0 ? plugin->getBlockSize() : blockSize);
+}
+
+bool PluginInstrument::changeRate (double rate)
+{
+    if (hasCrashed() || rate <= 0.0)
+        return false;
+    if (plugin->getSampleRate() == rate)
+        return true;
+    // (round 190jb: an export at another rate with the running instance; nothing processes it now)
+    const juce::ScopedLock lock (plugin->getCallbackLock());
+    const auto block = plugin->getBlockSize() > 0 ? plugin->getBlockSize() : blockSize;
+    if (const auto code = crashguard::run ([this, rate, block] {
+            plugin->releaseResources();
+            preparePlugin (*plugin, rate, block, false);
+        });
+        code != 0)
+    {
+        failed (code);
+        return false;
+    }
+    return plugin->getSampleRate() == rate;
+}
+
+void PluginInstrument::resetForExport()
+{
+    // FL's "Reset plugin when FL Studio resets" (on by default): an export starts without what the plugin still holds
+    // (tails, notes)
+    const juce::ScopedLock lock (plugin->getCallbackLock()); // offline/UI path, never the live audio callback
+    if (! hasCrashed() && options.resetOnFlush)
+        if (const auto code = runReset (*plugin, crashed, name); code != 0)
+            failed (code);
+}
+
+void PluginInstrument::collectMidiOutput (const juce::MidiBuffer& buffer) noexcept
+{
+    if (! producesMidi)
+        return;
+    for (const auto event : buffer)
+    {
+        const auto m = event.getMessage();
+        if ((m.isNoteOn() || m.isNoteOff()) && midiOutCount < (int) midiOut.size())
+            midiOut[(std::size_t) midiOutCount++] = { m.getNoteNumber(), m.isNoteOn() ? m.getFloatVelocity() : 0.0f };
+        // GitHub #198 (round 190ks): its own notes for a take; a note on of a key it was sent within 50 ms is the echo of
+        // that note (a "MIDI thru" plugin), and so is the note off of a key whose note on was not its own
+        if (recordOwn && (m.isNoteOn() || m.isNoteOff()))
+        {
+            const auto key = juce::jlimit (0, 127, m.getNoteNumber());
+            const auto window = (std::int64_t) (ownnotes::echoSeconds * juce::jmax (1.0, plugin->getSampleRate()));
+            const auto own = echoGuard.noteOut (key, m.isNoteOn(), samplesSeen, window);
+            if (own && ownNoteCount < (int) ownNotes.size())
+            {
+                auto& o = ownNotes[(std::size_t) ownNoteCount++];
+                o.sample = hardwareBlockAt + (hardwarePositions ? juce::jmax (0, event.samplePosition) : 0);
+                o.key = (std::uint8_t) key;
+                o.midiChannel = (std::uint8_t) juce::jlimit (0, 15, m.getChannel() - 1);
+                o.velocity = m.isNoteOn() ? m.getFloatVelocity() : 0.0f;
+            }
+        }
+        // round 190jl: the channel messages to the hardware outputs on the wrapper's output port
+        if (hardwareOut && event.numBytes >= 2 && event.numBytes <= 3 && event.data[0] >= 0x80 && event.data[0] < 0xF0
+            && hardwareMidiCount < (int) hardwareMidi.size())
+        {
+            auto& h = hardwareMidi[(std::size_t) hardwareMidiCount++];
+            h.sample = hardwareBlockAt + (hardwarePositions ? juce::jmax (0, event.samplePosition) : 0);
+            h.size = (std::uint8_t) event.numBytes;
+            h.source = 0;
+            h.bytes = { event.data[0], event.data[1], event.numBytes > 2 ? event.data[2] : (std::uint8_t) 0 };
+        }
+    }
+}
+
+int PluginInstrument::takeHardwareMidi (HardwareMidi* out, int max) noexcept
+{
+    const auto count = juce::jmin (max, hardwareMidiCount);
+    std::copy (hardwareMidi.begin(), hardwareMidi.begin() + count, out);
+    hardwareMidiCount = 0;
+    return count;
+}
+
+int PluginInstrument::takeOwnNotes (OwnNote* out, int max) noexcept
+{
+    const auto count = juce::jmin (max, ownNoteCount);
+    std::copy (ownNotes.begin(), ownNotes.begin() + count, out);
+    ownNoteCount = 0;
+    return count;
+}
+
+int PluginInstrument::takeMidiOutput (MidiOutNote* out, int max) noexcept
+{
+    const auto count = juce::jmin (max, midiOutCount);
+    std::copy (midiOut.begin(), midiOut.begin() + count, out);
+    midiOutCount = 0;
+    return count;
+}
+
+PluginInstrument::~PluginInstrument()
+{
+    forgetAdapter (plugin.get());
+    // a plugin that crashed is not called again, not even to release it (its memory is left as it is)
+    if (crashed.load())
+        (void) plugin.release();
+    else
+        crashguard::run ([this] { plugin->releaseResources(); });
+}
+
+void PluginInstrument::failed (std::uint32_t code) noexcept
+{
+    recordCrashOnce (crashed, name, code);
+}
+
+std::optional<std::string> PluginInstrument::captureState()
+{
+    return guardedState (*plugin, crashed, name);
+}
+
+std::optional<std::string> PluginInstrument::captureState (const std::vector<std::pair<int, float>>& bases)
+{
+    return stateAtBases (*plugin, parameterChanges, crashed, name, bases);
+}
+
+bool PluginInstrument::restoreState (const std::string& state)
+{
+    return guardedRestore (*plugin, parameterChanges, crashed, name, state);
+}
+
+void PluginInstrument::setParameterFromUi (int index, float value)
+{
+    if (midiControls.set (index, value)) // a MIDI CC / aftertouch / bend "parameter": sent with the next block
+        return;
+    guardedUiParameter (*plugin, parameterChanges, crashed, name, index, value);
+}
+
+// The MIDI velocity of a note on: LYNX's own law is JUCE's (127 v, rounded); a project with FL's levels sends it as
+// Fruity Wrapper does (core/HostNotePitch.h, round 190ad)
+juce::uint8 PluginInstrument::midiVelocity (float velocity) const noexcept
+{
+    if (flVelocity.load (std::memory_order_relaxed))
+        return (juce::uint8) hostpitch::flWrapperVelocity (velocity);
+    return juce::MidiMessage::floatValueToMidiByte (juce::jlimit (0.0f, 1.0f, velocity));
+}
+
+void PluginInstrument::noteOnMidi (int key, float velocity, int midiChannel) noexcept
+{
+    const auto byte = midiVelocity (velocity);
+    if (queueMidi (juce::MidiMessage::noteOn (juce::jlimit (0, 15, midiChannel) + 1, juce::jlimit (0, 127, key), byte)))
+        tagSent (byte > 0, juce::jlimit (0, 15, midiChannel), juce::jlimit (0, 127, key), 0);
+    hold (juce::jlimit (0, 15, midiChannel), key, true);
+}
+
+void PluginInstrument::noteOffMidi (int key, int midiChannel) noexcept
+{
+    if (queueMidi (juce::MidiMessage::noteOff (juce::jlimit (0, 15, midiChannel) + 1, juce::jlimit (0, 127, key))))
+        tagSent (false, juce::jlimit (0, 15, midiChannel), juce::jlimit (0, 127, key), 0);
+    hold (juce::jlimit (0, 15, midiChannel), key, false);
+}
+
+void PluginInstrument::flushMidiControls() noexcept
+{
+    midiControls.flush (0, [this] (const std::uint8_t* bytes, int size) { queueMidi (bytes, size); });
+}
+
+void PluginInstrument::addBend (int offset) noexcept
+{
+    const auto range = (float) juce::jlimit (1, 48, options.bendRange);
+    const auto semitones = livePitch / 100.0f + slideNow;
+    const auto value = juce::jlimit (0, 16383, 8192 + juce::roundToInt (juce::jlimit (-1.0f, 1.0f, semitones / range) * 8191.0f));
+    if (value == sentBend)
+        return;
+    sentBend = value;
+    if (bendInto == nullptr || bendInto == &midi)
+        queueMidi (juce::MidiMessage::pitchWheel (1, value), offset);
+    else
+        bendInto->addEvent (juce::MidiMessage::pitchWheel (1, value), offset);
+}
+
+void PluginInstrument::bendBlock (juce::MidiBuffer& into, int base, int count) noexcept
+{
+    bendInto = &into;
+    if (slideLeft <= 0.0f)
+        addBend (base);
+    else
+        for (int o = 0; o < count; o += 64) // a slide moves in steps of 64 samples (~1.5 ms)
+        {
+            const auto step = (float) juce::jmin (64, count - o);
+            if (slideLeft > 0.0f)
+            {
+                const auto t = juce::jmin (1.0f, step / slideLeft);
+                slideNow += (slideTarget - slideNow) * t;
+                slideLeft = juce::jmax (0.0f, slideLeft - step);
+            }
+            addBend (base + o);
+        }
+    bendInto = nullptr;
+}
+
+void PluginInstrument::slideTo (int key, float, float samples) noexcept
+{
+    if (lastKey < 0)
+        return; // nothing sounds that could slide
+    slideTarget = (float) (key - lastKey);
+    slideLeft = juce::jmax (1.0f, samples);
+}
+
+// Issue #108: the per-note messages of an MPE member channel (pitch bend over 48 semitones, CC 74, channel pressure)
+void PluginInstrument::sendExpression (int channel, mpe::Expr expr, float value) noexcept
+{
+    const auto ch = juce::jlimit (1, 15, channel) + 1;
+    if (expr == mpe::Expr::pitch)
+        queueMidi (juce::MidiMessage::pitchWheel (ch, mpe::bendValue (value, mpe::defaultBendRange)));
+    else if (expr == mpe::Expr::timbre)
+        queueMidi (juce::MidiMessage::controllerEvent (ch, 74, mpe::timbreOfModX (value)));
+    else
+        queueMidi (juce::MidiMessage::channelPressureChange (ch, juce::jlimit (0, 127, juce::roundToInt (juce::jlimit (0.0f, 1.0f, value) * 127.0f))));
+}
+
+void PluginInstrument::noteExpression (int key, int prop, float value, float) noexcept
+{
+    // (without MPE a plugin has no per-note pitch or timbre to take: FL sends none either)
+    if (! options.mpe || ! std::isfinite (value))
+        return;
+    const auto played = juce::jlimit (0, 127, key);
+    const auto k = sentKeys.sentFor (played);
+    const auto ch = mpeNotes.channelOf (k);
+    if (ch < 0)
+        return;
+    if (prop == (int) vfx::Prop::pitch) // (the note's own cents, from the key it went out on)
+        sendExpression (ch, mpe::Expr::pitch, value - (float) (k - played) * 100.0f);
+    else if (prop == (int) vfx::Prop::modX)
+        sendExpression (ch, mpe::Expr::timbre, value);
+    else if (prop == (int) vfx::Prop::modY)
+        sendExpression (ch, mpe::Expr::pressure, mpe::pressureOfModY (value));
+}
+
+void PluginInstrument::noteOn (int key, float velocity) noexcept
+{
+    if (options.mpe)
+    {
+        // issue #108: the note on its own member channel. Its key as the MIDI formats get it (the nearest key); the
+        // rest of its fine pitch is that channel's pitch bend, its Mod X the channel's CC 74, its Mod Y the pressure —
+        // all three before the note on, as the MPE specification asks. The channel's own pitch (knob, slides, porta)
+        // stays on the master channel, which bends every note.
+        const auto played = juce::jlimit (0, 127, key);
+        const auto fine = std::exchange (nextFine, 0.0f);
+        const auto sent = hostpitch::of (played, fine, hostpitch::Format::midi);
+        sentKeys.on (played, sent);
+        sentKeys.clearTunings(); // (no VST3 tuning in this mode: the bend carries it)
+        const auto k = sent.key;
+        lastKey = k;
+        slideNow = slideTarget = slideLeft = 0.0f;
+        if (auto& glide = HostSlide::pendingGlide(); glide.samples > 0.0f)
+        {
+            slideNow = glide.fromCents / 100.0f;
+            slideLeft = glide.samples;
+            glide.taken = true;
+        }
+        addBend (0);
+        const auto ch = mpeNotes.noteOn (k);
+        sendExpression (ch, mpe::Expr::pitch, (std::isfinite (fine) ? fine : 0.0f) - (float) (k - played) * 100.0f);
+        sendExpression (ch, mpe::Expr::timbre, nextModX);
+        sendExpression (ch, mpe::Expr::pressure, mpe::pressureOfModY (nextModY));
+        if (queueMidi (juce::MidiMessage::noteOn (ch + 1, k, juce::jlimit (0.0f, 1.0f, velocity))))
+            tagSent (true, ch, k, startingNoteId()); // (member channels are not 1: nothing is queued)
+        hold (ch, k, true);
+        nextModX = nextModY = 0.5f;
+        return;
+    }
+    // issue #63: key + the note's fine pitch, rounded to the key it goes out on (FL's wrapper); a VST3 also gets the
+    // rest as its note on's tuning (picked up by the patched JUCE VST3 host, engine/Vst3NoteTuning.h)
+    const auto sent = hostpitch::of (juce::jlimit (0, 127, key), std::exchange (nextFine, 0.0f), noteFormat);
+    sentKeys.on (juce::jlimit (0, 127, key), sent);
+    const auto k = sent.key;
+    // a new note starts at its own key: a slide's bend is undone before it
+    lastKey = k;
+    slideNow = slideTarget = slideLeft = 0.0f;
+    // FL's channel porta (round 168l): the note starts bent to the previous note's pitch and bends back to its own
+    if (auto& glide = HostSlide::pendingGlide(); glide.samples > 0.0f)
+    {
+        slideNow = glide.fromCents / 100.0f;
+        slideLeft = glide.samples;
+        glide.taken = true;
+    }
+    addBend (0);
+    const auto byte = midiVelocity (velocity);
+    // (round 190fg: the note this note on starts; a velocity of 0 goes out as a note off, so it queues as one)
+    if (queueMidi (juce::MidiMessage::noteOn (1, k, byte)))
+        tagSent (byte > 0, 0, k, byte > 0 ? startingNoteId() : 0);
+    hold (0, k, true);
+    // FL's "Send MOD X as polyphonic aftertouch": the note's Mod X right after its note on
+    if (options.modXAftertouch)
+        queueMidi (juce::MidiMessage::aftertouchChange (1, k, juce::jlimit (0, 127, juce::roundToInt (nextModX * 127.0f))));
+    nextModX = nextModY = 0.5f;
+}
+
+void PluginInstrument::noteOff (int key) noexcept
+{
+    const auto k = sentKeys.off (juce::jlimit (0, 127, key)); // (the key its note on went out on, issue #63)
+    // (issue #108: on the member channel its note on took)
+    const auto ch = options.mpe ? juce::jmax (0, mpeNotes.noteOff (k)) : 0;
+    // FL's "Send note release velocity" (on by default): the note's release velocity, else 0
+    bool queued = true;
+    if (options.releaseVelocity)
+        queued = queueMidi (juce::MidiMessage::noteOff (ch + 1, k, juce::jlimit (0.0f, 1.0f, nextRelease)));
+    else
+        queued = queueMidi (juce::MidiMessage::noteOff (ch + 1, k));
+    if (queued)
+        tagSent (false, ch, k, endingNoteId()); // (round 190fg: the note this note off ends)
+    nextRelease = 0.5f;
+    hold (ch, k, false);
+}
+
+void PluginInstrument::allNotesOff() noexcept
+{
+    // each held key's own note off first (round 169c, issue #32): a VST3 plugin never sees CC 123 / CC 120 (JUCE's VST3
+    // host passes a controller only as the parameter the plugin maps it to, and drops it otherwise), so a jump while
+    // playing left SynthMaster's notes sounding under the chased ones: doubled notes, a sequence out of time
+    releaseHeldKeys();
+    queueMidi (juce::MidiMessage::allNotesOff (1));
+    queueMidi (juce::MidiMessage::allSoundOff (1));
+}
+
+bool PluginInstrument::queueMidi (const void* bytes, int size, int offset) noexcept
+{
+    // Bound retained work even if a vendor's state call lasts indefinitely. JUCE's event header is smaller than
+    // this conservative allowance; an accepted event therefore fits the constructor's preallocated storage.
+    const auto budget = recoveryMidi ? 32768 : 8192;
+    constexpr int headerAllowance = 16;
+    if (midiOverflow || size <= 0) return false;
+    if (size > budget - headerAllowance || midi.data.size() > budget - size - headerAllowance)
+    {
+        if (recoveryMidi) return false; // mandatory recovery note-offs take priority over optional controls in this block
+        midiOverflow = true;
+        midi.clear();
+        sentKeys.clearTags(); // (round 190fg's note tags belonged to the events just dropped)
+        return false;
+    }
+    midi.addEvent (bytes, size, offset);
+    return true;
+}
+
+void PluginInstrument::rememberMidi (const juce::MidiBuffer& messages) noexcept
+{
+    for (const auto event : messages)
+    {
+        if (event.numBytes < 3) continue;
+        const auto status = event.data[0] & 0xf0, channel = event.data[0] & 0x0f;
+        if (status == 0x90 || status == 0x80)
+            deliveredKeys.set (channel, event.data[1], status == 0x90 && event.data[2] != 0);
+        if (status == 0x90 && event.data[2] != 0) // (round 190ks: the echo guard of takeOwnNotes)
+            echoGuard.noteIn (event.data[1] & 0x7f, samplesSeen);
+    }
+}
+
+void PluginInstrument::recoverMidi() noexcept
+{
+    if (! midiOverflow) return;
+    // Missed note-ons are not replayed as a burst. Release only notes actually delivered before the gap. Even the
+    // worst case (all 16x128 keys) fits the separate 32 KiB preallocation, without trusting CC123 in VST3 hosts.
+    midi.clear();
+    pending.clear();
+    if (fixed != nullptr) fixed->clear();
+    sentKeys.clearTags(); // the recovery note-offs below carry no note of their own (round 190fg)
+    // Keep the delivered mask until the offs reach the vendor. A partial fixed block may overflow again before
+    // it processes, in which case its replacement recovery still has to release the same sounding keys.
+    for (int ch = 0; ch < 16; ++ch)
+        for (int key = 0; key < 128; ++key)
+            if (deliveredKeys.held (ch, key)) midi.addEvent (juce::MidiMessage::noteOff (ch + 1, key), 0);
+    midiOverflow = false;
+    recoveryMidi = true;
+    sentBend = -1; // dropped controls are resent from the current pitch rather than treated as delivered
+    bendRangeSent = false;
+    midiControls.resend();
+    flushMidiControls();
+}
+
+// Patcher control cables also run on the audio thread: during state access use the queued/last observed value.
+static float hostedParameterValue (juce::AudioPluginInstance& plugin, HostedParameterChanges& changes,
+                                  const std::atomic<bool>& crashed, int index) noexcept
+{
+    if (crashed.load (std::memory_order_relaxed) || index < 0)
+        return -1.0f;
+    const juce::CriticalSection::ScopedTryLockType lock (plugin.getCallbackLock());
+    if (! lock.isLocked()) return changes.latest (index);
+    if (crashed.load (std::memory_order_relaxed)) return -1.0f;
+    float value = -1.0f;
+    crashguard::run ([&] {
+        const auto& params = plugin.getParameters();
+        if (index < params.size())
+            value = params[index]->getValue();
+    });
+    changes.observed (index, value);
+    return value;
+}
+
+float PluginInstrument::parameterValue (int index) const noexcept
+{
+    return hostedParameterValue (*plugin, parameterChanges, crashed, index);
+}
+
+void PluginInstrument::setParameter (int index, float value) noexcept
+{
+    if (crashed.load (std::memory_order_relaxed) || midiControls.set (index, value))
+        return;
+    audioParameter (*plugin, parameterChanges, crashed, name, index, value);
+}
+
+int PluginEffect::tailSamples() const noexcept
+{
+    if (! declaresTail || crashed.load (std::memory_order_relaxed))
+        return -1;
+    const auto seconds = plugin->getTailLengthSeconds();
+    if (! std::isfinite (seconds) || seconds < 0.0 || seconds > 3600.0)
+        return -1;
+    return (int) std::ceil (seconds * tailRate) + latencySamples();
+}
+
+// --- round 190jg: sample-accurate automation (engine/TimedParameters.h) ---------------------------------------------
+bool TimedParameterQueue::supports (const juce::AudioPluginInstance& plugin)
+{
+    // (a plugin in a separate process gets them with its block: engine/SandboxShared.h; not the 32-bit bridge, whose
+    // VST2 / VST3 hosts take a block's values at its start)
+    if (isBridged32 (plugin))
+        return false;
+    const auto format = plugin.getPluginDescription().pluginFormatName;
+    return format == "CLAP" || format == "VST3";
+}
+
+void TimedParameterQueue::add (int index, float value, int offset) noexcept
+{
+    const auto now = hostTimeline().chunk.load (std::memory_order_relaxed);
+    if (now != chunk)
+    {
+        chunk = now;
+        count = 0;
+    }
+    if (count < capacity && index >= 0 && offset >= 0)
+    {
+        indices[(std::size_t) count] = index;
+        offsets[(std::size_t) count] = offset;
+        values[(std::size_t) count] = value;
+        ++count;
+    }
+}
+
+TimedParameterQueue::Scope::Scope (TimedParameterQueue& q, int from, int length) noexcept
+    : previousCount (juce::lynxTimedParamCount), previousIndices (juce::lynxTimedParamIndices),
+      previousOffsets (juce::lynxTimedParamOffsets), previousValues (juce::lynxTimedParamValues)
+{
+    auto n = 0;
+    if (q.count > 0 && q.chunk == hostTimeline().chunk.load (std::memory_order_relaxed))
+        for (int i = 0; i < q.count; ++i)
+            if (const auto at = q.offsets[(std::size_t) i] - from; at >= 0 && at < length)
+            {
+                q.blockIndices[(std::size_t) n] = q.indices[(std::size_t) i];
+                q.blockOffsets[(std::size_t) n] = at;
+                q.blockValues[(std::size_t) n] = q.values[(std::size_t) i];
+                ++n;
+            }
+    juce::lynxTimedParamCount = n;
+    juce::lynxTimedParamIndices = q.blockIndices.data();
+    juce::lynxTimedParamOffsets = q.blockOffsets.data();
+    juce::lynxTimedParamValues = q.blockValues.data();
+}
+
+TimedParameterQueue::Scope::~Scope()
+{
+    juce::lynxTimedParamCount = previousCount;
+    juce::lynxTimedParamIndices = previousIndices;
+    juce::lynxTimedParamOffsets = previousOffsets;
+    juce::lynxTimedParamValues = previousValues;
+}
+
+void PluginInstrument::render (float* left, float* right, int n, float gl, float gr) noexcept
+{
+    // (the extra outputs' buffers hold the whole chunk: this render's part starts where the last one ended)
+    chunkBase = auxCursor;
+    auxCursor += n;
+    if (crashed.load (std::memory_order_relaxed))
+    {
+        midi.clear();
+        return; // silent
+    }
+    const juce::CriticalSection::ScopedTryLockType lock (plugin->getCallbackLock());
+    if (! lock.isLocked())
+    {
+        if (fixed != nullptr) fixed->clear(); // elapsed time must not replay a buffered pre-gap block on resumption
+        blockClock.start (hostTimeline().chunk.load (std::memory_order_relaxed));
+        blockClock.advance (n);
+        return; // state access owns this instance: silence, with MIDI, reset and parameter changes still pending
+    }
+    if (crashed.load (std::memory_order_relaxed)) { midi.clear(); return; }
+    recoverMidi();
+    if (resetPending.exchange (false, std::memory_order_relaxed))
+    {
+        if (const auto code = runReset (*plugin, crashed, name); code != 0)
+        {
+            failed (code);
+            midi.clear();
+            return;
+        }
+        else
+            deliveredKeys.bits = {};
+    }
+    if (flushParameters (*plugin, parameterChanges, crashed, name) != 0) { midi.clear(); return; }
+    // FL's "Send pitch bend range": the pitch-bend-sensitivity RPN (0, 0) once, before the first notes
+    if (options.sendBendRange && ! bendRangeSent)
+    {
+        bendRangeSent = true;
+        const auto range = juce::jlimit (1, 48, options.bendRange);
+        for (const auto& m : { juce::MidiMessage::controllerEvent (1, 101, 0), juce::MidiMessage::controllerEvent (1, 100, 0),
+                               juce::MidiMessage::controllerEvent (1, 6, range), juce::MidiMessage::controllerEvent (1, 38, 0),
+                               juce::MidiMessage::controllerEvent (1, 101, 127), juce::MidiMessage::controllerEvent (1, 100, 127) })
+            queueMidi (m); // (the first render comes before any note: the plugin is new)
+    }
+    flushMidiControls();
+    // issue #63: the VST3 host picks up each note on's tuning while this thread runs the plugin's blocks
+    const auto tuningBefore = juce::lynxNoteTuningContext;
+    juce::lynxNoteTuningContext = takesTuning ? &sentKeys : nullptr;
+    const juce::ScopeGuard tuningBack { [tuningBefore] { juce::lynxNoteTuningContext = tuningBefore; } };
+    // the play head reports where each block starts in the chunk (round 169c); put back to 0 for the effects after it
+    const auto chunkOffset = blockClock.start (hostTimeline().chunk.load (std::memory_order_relaxed));
+    blockClock.advance (n);
+    const juce::ScopeGuard offsetBack { [] { setHostBlockOffset (0); } };
+
+    if (fixed != nullptr)
+    {
+        bendBlock (midi, 0, n);
+        if (pending.data.size() > 32768 - midi.data.size())
+        {
+            midiOverflow = true;
+            recoverMidi(); // a series of tiny renders cannot grow the fixed block's pending MIDI either
+        }
+        // events of this chunk start where the block being collected stands now
+        const auto at = fixed->position();
+        for (const auto event : midi)
+            pending.addEvent (event.data, event.numBytes, at);
+        midi.clear();
+        recoveryMidi = false;
+
+        // round 190ll (issue #199): each fixed block's play head is where that block began (it may have begun in an
+        // earlier stretch or chunk), not the stretch it completes in: the blocks follow each other by exactly their length
+        int stretchAt = 0;
+        auto process = [this, &stretchAt] (float* const* ch, int count, int end) {
+            setHostBlockOffset (stretchAt + end - count);
+            juce::AudioBuffer<float> view (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), count);
+            view.clear();
+            if (! crashed.load (std::memory_order_relaxed))
+            {
+                rememberMidi (pending);
+                const auto hadEvents = ! pending.isEmpty(); // (round 190ok: generator smart disable)
+                if (const auto code = runBlock (BlockCall { plugin.get(), &view, &pending }, crashed, name); code != 0)
+                {
+                    failed (code);
+                    view.clear(); // silent from here on
+                }
+                else
+                {
+                    noteSmartBlock (count, hadEvents, view.getArrayOfReadPointers(), view.getNumChannels());
+                    collectMidiOutput (pending);
+                }
+            }
+            pending.clear();
+            const auto channels = (int) (scratch.size() / (std::size_t) blockSize);
+            for (int c = 0; c < channels; ++c)
+                std::memcpy (ch[c], view.getReadPointer (c < view.getNumChannels() ? c : (view.getNumChannels() > 1 ? 1 : 0)),
+                             sizeof (float) * (size_t) count);
+        };
+
+        const auto channels = (int) (scratch.size() / (std::size_t) blockSize);
+        std::array<float*, 64> io {};
+        for (int c = 0; c < juce::jmin (channels, (int) io.size()); ++c)
+            io[(std::size_t) c] = scratch.data() + (std::size_t) c * (std::size_t) blockSize;
+        for (int done = 0; done < n;)
+        {
+            const auto count = juce::jmin (blockSize, n - done);
+            setHostBlockOffset (chunkOffset + done);
+            stretchAt = chunkOffset + done;
+            hardwareBlockAt = chunkOffset + done; // (round 190jl)
+            hardwarePositions = false;
+            fixed->run (io.data(), count, false, process);
+            mixOutputs (io.data(), juce::jmin (channels, (int) io.size()), done, count, gl, gr, left, right);
+            done += count;
+            samplesSeen += count; // (round 190ks)
+        }
+        return;
+    }
+
+    for (int done = 0; done < n;)
+    {
+        const auto count = juce::jmin (blockSize, n - done);
+        juce::AudioBuffer<float> view (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), count);
+        view.clear();
+        bendBlock (midi, 0, count);
+        setHostBlockOffset (chunkOffset + done);
+        hardwareBlockAt = chunkOffset + done; // (round 190jl)
+        hardwarePositions = true;
+        rememberMidi (midi);
+        const auto hadEvents = ! midi.isEmpty(); // (round 190ok: generator smart disable)
+        const TimedParameterQueue::Scope timedChanges (timed, chunkOffset + done, count); // (round 190jg)
+        if (const auto code = runBlock (BlockCall { plugin.get(), &view, &midi }, crashed, name); code != 0)
+        {
+            midi.clear();
+            failed (code);
+            return;
+        }
+        noteSmartBlock (count, hadEvents, view.getArrayOfReadPointers(), view.getNumChannels());
+        collectMidiOutput (midi);
+        midi.clear();
+        recoveryMidi = false;
+
+        mixOutputs (view.getArrayOfReadPointers(), view.getNumChannels(), done, count, gl, gr, left, right);
+        done += count;
+        samplesSeen += count; // (round 190ks)
+    }
+}
+
+void PluginInstrument::mixOutputs (const float* const* ch, int numChannels, int at, int count, float gl, float gr, float* left,
+                                   float* right) noexcept
+{
+    if (numChannels <= 0)
+        return;
+    // no output list (a plugin without outputs): the first channels, as before
+    if (outs.empty())
+    {
+        const auto* l = ch[0];
+        const auto* r = numChannels > 1 ? ch[1] : l;
+        for (int i = 0; i < count; ++i)
+        {
+            left[at + i] += l[i] * gl;
+            right[at + i] += r[i] * gr;
+        }
+        return;
+    }
+    const auto viaAux = anyAux.load (std::memory_order_acquire) && ! aux.empty();
+    for (std::size_t k = 0; k < outs.size(); ++k)
+    {
+        const auto& o = outs[k];
+        if (o.channel >= numChannels || ! routeActive[k].load (std::memory_order_relaxed))
+            continue; // FL: an inactive output is silent
+        const auto* l = ch[o.channel];
+        const auto* r = o.channels > 1 && o.channel + 1 < numChannels ? ch[o.channel + 1] : l;
+        if (routeOffset[k].load (std::memory_order_relaxed) == 0 || ! viaAux)
+        {
+            if (routeOffset[k].load (std::memory_order_relaxed) != 0)
+                continue; // (routed elsewhere while the aux buffers are not in use yet: dropped for this chunk)
+            for (int i = 0; i < count; ++i)
+            {
+                left[at + i] += l[i] * gl;
+                right[at + i] += r[i] * gr;
+            }
+            continue;
+        }
+        auto& a = aux[k];
+        const auto from = chunkBase + at;
+        for (int i = 0; i < count && from + i < auxCapacity; ++i)
+        {
+            a[0][(std::size_t) (from + i)] += l[i] * gl;
+            a[1][(std::size_t) (from + i)] += r[i] * gr;
+        }
+    }
+}
+
+void PluginInstrument::configure (const ChannelDef& channel, double) noexcept
+{
+    channelTrack.store (channel.mixerTrack, std::memory_order_relaxed);
+    // round 190ok (D2): FL's generator smart disable, with the wrapper's "Allow smart disable"
+    smartHold.store (gensmart::holdSamples (plugin->getSampleRate()), std::memory_order_relaxed);
+    smartOn.store (channel.smartDisable && channel.plugin.allowSmartDisable, std::memory_order_relaxed);
+    bool elsewhere = false;
+    for (std::size_t k = 0; k < outs.size(); ++k)
+    {
+        const auto route = channel.plugin.outputRoute ((int) k);
+        routeOffset[k].store (route.offset, std::memory_order_relaxed);
+        // ("Process inactive inputs and outputs": an inactive output plays too, FL [EXEC fl188d k33])
+        const auto on = route.isActive (outs[k].activeByDefault) || channel.plugin.processInactive;
+        routeActive[k].store (on, std::memory_order_relaxed);
+        elsewhere = elsewhere || (on && route.offset != 0);
+    }
+    // round 190of: the outputs' buffers on first use. Never on the audio thread (the rack's build); the audio thread
+    // reads `aux` only after it sees anyAux, which is stored after them (and they are never made smaller)
+    if (elsewhere && aux.empty() && ! outs.empty())
+    {
+        std::vector<std::array<std::vector<float>, 2>> made (outs.size());
+        for (auto& a : made)
+            for (auto& side : a)
+                side.assign ((std::size_t) auxCapacity, 0.0f);
+        aux = std::move (made);
+    }
+    anyAux.store (elsewhere && ! aux.empty(), std::memory_order_release);
+}
+
+bool PluginInstrument::idle() const noexcept
+{
+    // (round 190ok, D2) asleep: 4 s of silent output with nothing sent to it; anything queued for it (a note, a MIDI
+    // message, a reset) wakes it, and so does switching smart disable off here or globally
+    return smartOn.load (std::memory_order_relaxed) && flsettings::options().smartDisable.load (std::memory_order_relaxed)
+           && smart.asleep (smartHold.load (std::memory_order_relaxed)) && midi.isEmpty() && pending.isEmpty()
+           && ! resetPending.load (std::memory_order_relaxed) && ! crashed.load (std::memory_order_relaxed);
+}
+
+void PluginInstrument::noteSmartBlock (int n, bool events, const float* const* channels, int numChannels) noexcept
+{
+    if (! smartOn.load (std::memory_order_relaxed))
+    {
+        smart.wake();
+        return;
+    }
+    smart.rendered (n, events, ! events && gensmart::silent (channels, numChannels, n));
+}
+
+void PluginInstrument::beginChunk (int n) noexcept
+{
+    auxCursor = 0;
+    if (! anyAux.load (std::memory_order_acquire))
+        return;
+    for (auto& a : aux)
+        for (auto& side : a)
+            std::fill (side.begin(), side.begin() + juce::jlimit (0, auxCapacity, n), 0.0f);
+}
+
+int PluginInstrument::auxOutputTrack (int k) const noexcept
+{
+    if (k < 0 || k >= (int) outs.size() || ! routeActive[(std::size_t) k].load (std::memory_order_relaxed))
+        return -1;
+    const auto offset = routeOffset[(std::size_t) k].load (std::memory_order_relaxed);
+    return offset == 0 ? -1 : outputTargetTrack (channelTrack.load (std::memory_order_relaxed), { offset, true });
+}
+
+const float* PluginInstrument::auxOutputData (int k, int side) const noexcept
+{
+    return k >= 0 && k < (int) aux.size() ? aux[(std::size_t) k][(std::size_t) (side & 1)].data() : nullptr;
+}
+
+// ---------------------------------------------------------------------------
+
+PluginEffect::PluginEffect (std::unique_ptr<juce::AudioPluginInstance> instance, int maxBlockSize, int fixedBlock, HostedOptions o)
+    : plugin (std::move (instance)),
+      parameterChanges (plugin->getParameters().size()),
+      blockSize (maxBlockSize),
+      name (plugin->getName().toStdString())
+{
+    timedOk = TimedParameterQueue::supports (*plugin);
+    declaresTail = clapDeclaresTail (*plugin);
+    tailRate = plugin->getSampleRate() > 0.0 ? plugin->getSampleRate() : 44100.0;
+    buffer.setSize (bufferChannels (*plugin), blockSize);
+    midi.ensureSize (2048); // MIDI CC "parameters" (core/MidiControls.h)
+    sideBus = hasSideBus (*plugin);
+    findSideChannel();
+    outs = pluginOutputs (*plugin);
+    for (auto& m : outputMode)
+        m.store (-1, std::memory_order_relaxed);
+    if (fixedBlock > 0)
+    {
+        // (with a side bus the fixed blocks always carry it, so turning it on later changes nothing here; a second
+        // output pair rides on the same channels back, for its Connections, round 189j)
+        const auto four = sideBus || sideChannel >= 0 || outs.size() > 1;
+        fixed = std::make_unique<FixedBlock> (juce::jmin (fixedBlock, blockSize), four ? 4 : 2);
+        if (four)
+            sideScratch.assign ((std::size_t) blockSize * 2, 0.0f);
+    }
+    options = o;
+    plugin->setPlayHead (&timelinePlayHead (options.sendLoopPosition));
+    registerAdapter (*plugin, crashed, name); // (round 190gg: crashes in UI calls and on the plugin's own threads)
+}
+
+void PluginEffect::setRenderMode (bool offline)
+{
+    if (! hasCrashed())
+        setPluginRenderMode (*plugin, offline, plugin->getBlockSize() > 0 ? plugin->getBlockSize() : blockSize);
+}
+
+bool PluginEffect::changeRate (double rate)
+{
+    if (hasCrashed() || rate <= 0.0)
+        return false;
+    if (plugin->getSampleRate() == rate)
+        return true;
+    // (round 190jb: an export at another rate with the running instance; nothing processes it now)
+    const std::lock_guard<std::mutex> layout (layoutLock);
+    const juce::ScopedLock lock (plugin->getCallbackLock());
+    const auto block = plugin->getBlockSize() > 0 ? plugin->getBlockSize() : blockSize;
+    const auto side = sideChannel >= 0;
+    if (const auto code = crashguard::run ([this, rate, block, side] {
+            plugin->releaseResources();
+            preparePlugin (*plugin, rate, block, side);
+        });
+        code != 0)
+    {
+        failed (code);
+        return false;
+    }
+    buffer.setSize (bufferChannels (*plugin), blockSize);
+    findSideChannel();
+    return plugin->getSampleRate() == rate;
+}
+
+void PluginEffect::resetForExport()
+{
+    // FL's "Reset plugin when FL Studio resets" (on by default): an export starts without what the plugin still holds
+    // (tails, notes)
+    const juce::ScopedLock lock (plugin->getCallbackLock()); // offline/UI path, never the live audio callback
+    if (! hasCrashed() && options.resetOnFlush)
+        if (const auto code = runReset (*plugin, crashed, name); code != 0)
+            failed (code);
+}
+
+PluginEffect::~PluginEffect()
+{
+    forgetAdapter (plugin.get());
+    if (crashed.load())
+        (void) plugin.release();
+    else
+        crashguard::run ([this] { plugin->releaseResources(); });
+}
+
+void PluginEffect::failed (std::uint32_t code) noexcept
+{
+    recordCrashOnce (crashed, name, code);
+}
+
+std::optional<std::string> PluginEffect::captureState()
+{
+    return guardedState (*plugin, crashed, name);
+}
+
+std::optional<std::string> PluginEffect::captureState (const std::vector<std::pair<int, float>>& bases)
+{
+    return stateAtBases (*plugin, parameterChanges, crashed, name, bases);
+}
+
+bool PluginEffect::restoreState (const std::string& state)
+{
+    return guardedRestore (*plugin, parameterChanges, crashed, name, state);
+}
+
+void PluginEffect::flushMidiControls() noexcept
+{
+    midiControls.flush (0, [this] (const std::uint8_t* bytes, int size) { midi.addEvent (bytes, size, 0); });
+}
+
+void PluginEffect::setParameterFromUi (int index, float value)
+{
+    if (midiControls.set (index, value))
+        return;
+    guardedUiParameter (*plugin, parameterChanges, crashed, name, index, value);
+}
+
+float PluginEffect::parameterValue (int index) const noexcept
+{
+    return hostedParameterValue (*plugin, parameterChanges, crashed, index);
+}
+
+void PluginEffect::setParameter (int index, float value) noexcept
+{
+    if (crashed.load (std::memory_order_relaxed) || midiControls.set (index, value))
+        return;
+    audioParameter (*plugin, parameterChanges, crashed, name, index, value);
+}
+
+void PluginEffect::findSideChannel() noexcept
+{
+    sideChannel = -1;
+    sideCount = 0;
+    if (const auto side = sideInputChannels (*plugin); side > 0)
+    {
+        const auto first = plugin->getChannelIndexInProcessBlockBuffer (true, 1, 0);
+        if (first >= 2 && first + side <= buffer.getNumChannels())
+        {
+            sideChannel = first;
+            sideCount = juce::jmin (2, side);
+        }
+    }
+}
+
+void PluginEffect::setSideInputActive (bool on)
+{
+    if (! sideBus || on == (sideChannel >= 0) || crashed.load (std::memory_order_relaxed))
+        return;
+    const std::lock_guard<std::mutex> lock (layoutLock); // waits for the block in progress
+    if (const auto code = crashguard::run ([this, on] {
+            plugin->releaseResources();
+            preparePlugin (*plugin, plugin->getSampleRate(), plugin->getBlockSize(), on);
+        });
+        code != 0)
+    {
+        failed (code);
+        return;
+    }
+    buffer.setSize (bufferChannels (*plugin), blockSize);
+    findSideChannel();
+}
+
+bool hasSideBus (const juce::AudioPluginInstance& plugin)
+{
+    return plugin.getBusCount (true) >= 2;
+}
+
+int sideInputChannels (const juce::AudioPluginInstance& plugin)
+{
+    if (plugin.getBusCount (true) < 2)
+        return 0;
+    const auto* bus = plugin.getBus (true, 1);
+    return bus != nullptr && bus->isEnabled() ? bus->getNumberOfChannels() : 0;
+}
+
+namespace
+{
+// a plugin that plays its side input (bus 1) and drops its main input: what reaches the bus is what comes out
+class SideEchoPlugin final : public juce::AudioPluginInstance
+{
+public:
+    SideEchoPlugin()
+        : AudioPluginInstance (BusesProperties()
+                                   .withInput ("Input", juce::AudioChannelSet::stereo(), true)
+                                   .withInput ("Sidechain", juce::AudioChannelSet::stereo(), true)
+                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+    {
+    }
+    void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = "LYNX side echo"; d.pluginFormatName = "Internal"; }
+    const juce::String getName() const override { return "LYNX side echo"; }
+    void prepareToPlay (double, int) override {}
+    void releaseResources() override {}
+    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
+    void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
+    {
+        auto side = getBusBuffer (buffer, true, 1);
+        for (int c = 0; c < 2; ++c)
+            buffer.copyFrom (c, 0, side, c, 0, buffer.getNumSamples());
+    }
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return false; }
+    bool producesMidi() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override {}
+    const juce::String getProgramName (int) override { return {}; }
+    void changeProgramName (int, const juce::String&) override {}
+    void getStateInformation (juce::MemoryBlock&) override {}
+    void setStateInformation (const void*, int) override {}
+};
+
+// issue #109: a compressor as Waves' RCompressor behaves: its detector follows the side bus when that bus is on, its own
+// input otherwise; a level over 0.5 turns the output down to a quarter
+class SideDetectCompressor final : public juce::AudioPluginInstance
+{
+public:
+    SideDetectCompressor()
+        : AudioPluginInstance (BusesProperties()
+                                   .withInput ("Input", juce::AudioChannelSet::stereo(), true)
+                                   .withInput ("Sidechain", juce::AudioChannelSet::stereo(), false)
+                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+    {
+    }
+    void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = "LYNX side compressor"; d.pluginFormatName = "Internal"; }
+    const juce::String getName() const override { return "LYNX side compressor"; }
+    void prepareToPlay (double, int) override {}
+    void releaseResources() override {}
+    bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
+    void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
+    {
+        const auto* side = getBusCount (true) > 1 ? getBus (true, 1) : nullptr;
+        auto detector = side != nullptr && side->isEnabled() ? getBusBuffer (buffer, true, 1) : getBusBuffer (buffer, true, 0);
+        const auto level = detector.getMagnitude (0, buffer.getNumSamples());
+        if (level > 0.5f)
+            for (int c = 0; c < 2; ++c)
+                buffer.applyGain (c, 0, buffer.getNumSamples(), 0.25f);
+    }
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return false; }
+    bool producesMidi() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override {}
+    const juce::String getProgramName (int) override { return {}; }
+    void changeProgramName (int, const juce::String&) override {}
+    void getStateInformation (juce::MemoryBlock&) override {}
+    void setStateInformation (const void*, int) override {}
+};
+} // namespace
+
+juce::String pluginSidechainSelfTest()
+{
+    constexpr int block = 256;
+    for (const auto fixedBlock : { 0, 64 })
+    {
+        auto instance = std::make_unique<SideEchoPlugin>();
+        preparePlugin (*instance, 48000.0, block);
+        // issue #109: the side bus stays off until the slot has a source
+        if (sideInputChannels (*instance) != 0 || ! hasSideBus (*instance))
+            return "ERROR side bus on without a source";
+        PluginEffect fx (std::move (instance), block, fixedBlock);
+        if (! fx.canTakeSideInput() || fx.hasSideInput())
+            return "ERROR side bus not found, or on without a source";
+        fx.setSideInputActive (true);
+        if (! fx.hasSideInput() || sideInputChannels (fx.getInstance()) != 2)
+            return "ERROR side bus not turned on";
+        std::vector<float> l (block, 0.25f), r (block, 0.25f), sl (block), sr (block);
+        for (int i = 0; i < block; ++i)
+        {
+            sl[(std::size_t) i] = 0.5f;
+            sr[(std::size_t) i] = -0.5f;
+        }
+        EffectParams params {};
+        // fixed blocks delay by one block: two passes, the second one carries the first's side input
+        for (int pass = 0; pass < (fixedBlock > 0 ? 2 : 1); ++pass)
+        {
+            std::fill (l.begin(), l.end(), 0.25f);
+            std::fill (r.begin(), r.end(), 0.25f);
+            fx.setSidechain (sl.data(), sr.data());
+            fx.process (l.data(), r.data(), block, params, 120.0);
+        }
+        if (std::abs (l[block - 1] - 0.5f) > 1.0e-6f || std::abs (r[block - 1] + 0.5f) > 1.0e-6f)
+            return "ERROR side input not heard (fixed " + juce::String (fixedBlock) + ")";
+        // the slot's sidechain removed: silence on the bus (two more passes for the fixed blocks' delay)
+        for (int pass = 0; pass < (fixedBlock > 0 ? 2 : 1); ++pass)
+            fx.process (l.data(), r.data(), block, params, 120.0);
+        if (std::abs (l[block - 1]) > 1.0e-6f || std::abs (r[block - 1]) > 1.0e-6f)
+            return "ERROR stale side input (fixed " + juce::String (fixedBlock) + ")";
+        // the source removed: the bus goes off again
+        fx.setSideInputActive (false);
+        if (fx.hasSideInput() || sideInputChannels (fx.getInstance()) != 0)
+            return "ERROR side bus still on (fixed " + juce::String (fixedBlock) + ")";
+    }
+
+    // issue #109 (Waves RCompressor): a compressor whose detector follows its side bus when that bus is on. With no
+    // source picked it must hear its own input and act; with a source it follows the source.
+    for (const auto fixedBlock : { 0, 64 })
+    {
+        auto instance = std::make_unique<SideDetectCompressor>();
+        preparePlugin (*instance, 48000.0, block);
+        PluginEffect fx (std::move (instance), block, fixedBlock);
+        EffectParams params {};
+        std::vector<float> l (block), r (block), quiet (block, 0.0f);
+        auto run = [&] (const float* side) {
+            for (int pass = 0; pass < (fixedBlock > 0 ? 2 : 1); ++pass)
+            {
+                std::fill (l.begin(), l.end(), 0.8f);
+                std::fill (r.begin(), r.end(), 0.8f);
+                if (side != nullptr)
+                    fx.setSidechain (side, side);
+                fx.process (l.data(), r.data(), block, params, 120.0);
+            }
+            return l[block - 1];
+        };
+        if (std::abs (run (nullptr) - 0.2f) > 1.0e-6f)
+            return "ERROR compressor without a source doesn't act (fixed " + juce::String (fixedBlock) + ")";
+        fx.setSideInputActive (true);
+        if (std::abs (run (quiet.data()) - 0.8f) > 1.0e-6f)
+            return "ERROR compressor doesn't follow its source (fixed " + juce::String (fixedBlock) + ")";
+        fx.setSideInputActive (false);
+        if (std::abs (run (nullptr) - 0.2f) > 1.0e-6f)
+            return "ERROR compressor deaf after the source is removed (fixed " + juce::String (fixedBlock) + ")";
+    }
+    return "OK";
+}
+
+juce::String pluginStateContentionSelfTest()
+{
+    struct Probe final : juce::AudioPluginInstance
+    {
+        struct Parameter final : juce::HostedAudioProcessorParameter
+        {
+            explicit Parameter (Probe& p) : owner (p) {}
+            float getValue() const override { owner.checkAccess(); return value.load(); }
+            void setValue (float v) override
+            {
+                owner.checkAccess();
+                value.store (v);
+                ++owner.writes;
+                if (auto* during = owner.duringWrite.exchange (nullptr)) (*during)();
+            }
+            float getDefaultValue() const override { return 0.0f; }
+            juce::String getName (int) const override { return "Value"; }
+            juce::String getLabel() const override { return {}; }
+            juce::String getParameterID() const override { return "value"; }
+            float getValueForText (const juce::String& text) const override { return text.getFloatValue(); }
+            Probe& owner;
+            std::atomic<float> value { 0.0f };
+        };
+        Probe() : AudioPluginInstance (BusesProperties().withInput ("Input", juce::AudioChannelSet::stereo(), true)
+                                                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+        {
+            for (int i = 0; i < 2; ++i) addHostedParameter (std::make_unique<Parameter> (*this));
+        }
+        const juce::String getName() const override { return "State contention probe"; }
+        void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = getName(); }
+        void prepareToPlay (double, int) override {}
+        void releaseResources() override {}
+        void processBlock (juce::AudioBuffer<float>& audio, juce::MidiBuffer& messages) override
+        {
+            checkAccess();
+            ++blocks;
+            for (const auto event : messages)
+            {
+                if (event.numBytes < 3) continue;
+                const auto status = event.data[0] & 0xf0, ch = event.data[0] & 0x0f;
+                if (status == 0x90 && event.data[2] != 0)
+                {
+                    ++noteOns;
+                    if (event.data[1] >= 64 && event.data[1] < 96) ++missedNoteOns;
+                    sounding.set (ch, event.data[1], true);
+                }
+                else if (status == 0x80 || status == 0x90) { ++noteOffs; sounding.set (ch, event.data[1], false); }
+                else if (status == 0xb0 && event.data[1] == 64) sustain.store (event.data[2]);
+            }
+            for (int ch = 0; ch < audio.getNumChannels(); ++ch)
+                std::fill_n (audio.getWritePointer (ch), audio.getNumSamples(), output.load());
+        }
+        void reset() override
+        {
+            checkAccess();
+            ++resets;
+            for (auto* p : getParameters()) static_cast<Parameter*> (p)->value.store (0.0f);
+            sounding.bits = {};
+        }
+        double getTailLengthSeconds() const override { return 0.0; }
+        bool acceptsMidi() const override { return true; }
+        bool producesMidi() const override { return false; }
+        bool hasEditor() const override { return false; }
+        juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+        int getNumPrograms() override { return 1; }
+        int getCurrentProgram() override { return 0; }
+        void setCurrentProgram (int) override {}
+        const juce::String getProgramName (int) override { return {}; }
+        void changeProgramName (int, const juce::String&) override {}
+        void getStateInformation (juce::MemoryBlock& state) override { stateAccess (3); state.replaceAll ("state", 5); }
+        void setStateInformation (const void*, int) override
+        {
+            stateAccess (2);
+            static_cast<Parameter*> (getParameters()[0])->value.store (0.35f);
+            static_cast<Parameter*> (getParameters()[1])->value.store (0.45f);
+        }
+        void checkAccess() const { if (stateActive.load()) overlap.store (true); }
+        // mode 1: the instance lock held as a restore or the export reset holds it; 2: inside a restore; 3: inside a
+        // capture, which runs beside processing (round 190ha), so audio inside it is no overlap
+        void stateAccess (int mode)
+        {
+            if (holdMode.load() != mode) return;
+            const auto exclusive = mode != 3;
+            if (exclusive) stateActive.store (true);
+            entered.signal();
+            if (! release.wait (5000)) timedOut.store (true);
+            if (exclusive) stateActive.store (false);
+        }
+        std::atomic<std::function<void()>*> duringWrite { nullptr }; // run once inside the next parameter write
+        std::atomic<int> blocks { 0 }, resets { 0 }, writes { 0 }, holdMode { 0 };
+        std::atomic<int> noteOns { 0 }, noteOffs { 0 }, missedNoteOns { 0 };
+        std::atomic<int> sustain { 0 };
+        HostedKeys sounding;
+        std::atomic<float> output { 0.5f };
+        std::atomic<bool> stateActive { false }, timedOut { false };
+        mutable std::atomic<bool> overlap { false };
+        juce::WaitableEvent entered { true }, release { true };
+    };
+    int checks = 0;
+    const auto require = [&] (bool condition, const char* message) {
+        ++checks;
+        if (! condition) throw std::runtime_error (message);
+    };
+    const auto exercise = [&] (auto& adapter, Probe& probe, const auto& render, const auto& reset,
+                              const auto& outputUnchanged, const auto& outputResumed, const auto& noOldOutput) {
+        adapter.setParameterFromUi (0, 0.2f);
+        adapter.setParameterFromUi (1, 0.3f);
+        const auto saved = adapter.captureState();
+        require (saved.has_value(), "could not capture contention fixture");
+        const auto whileHeld = [&] (int mode, const auto& audioCall) {
+            probe.entered.reset();
+            probe.release.reset();
+            probe.holdMode.store (mode);
+            bool stateOk = false;
+            std::thread state ([&] {
+                if (mode == 1)
+                {
+                    const juce::ScopedLock held (adapter.plugin->getCallbackLock());
+                    probe.stateAccess (1);
+                    stateOk = true;
+                }
+                else
+                    stateOk = mode == 3 ? adapter.captureState().has_value() : adapter.restoreState (*saved);
+            });
+            const juce::ScopeGuard joinState { [&] { probe.release.signal(); if (state.joinable()) state.join(); probe.holdMode.store (0); } };
+            require (probe.entered.wait (2000), "state fixture did not acquire the instance lock");
+            juce::WaitableEvent finished { true };
+            std::thread audio ([&] { audioCall(); finished.signal(); });
+            const juce::ScopeGuard joinAudio { [&] { probe.release.signal(); if (audio.joinable()) audio.join(); } };
+            // The state gate stays closed until after this observation. A blocking callback cannot pass, regardless
+            // of scheduling; the timeout only bounds a failed test, not a timing/performance assertion.
+            const auto completedWhileHeld = finished.wait (1000);
+            probe.release.signal();
+            audio.join();
+            state.join();
+            probe.holdMode.store (0);
+            require (completedWhileHeld, "audio waited for hosted state access");
+            require (stateOk && ! probe.timedOut.load(), "state fixture failed or its gate timed out");
+            require (! probe.overlap.load(), "audio entered the plugin during hosted state access");
+        };
+
+        float read = -1.0f;
+        whileHeld (1, [&] { read = adapter.parameterValue (0); render(); });
+        require (read == 0.2f, "contended parameter read lost the last observed value");
+        require (probe.blocks.load() == 0 && outputUnchanged(), "contended render changed the dry/silent output");
+        // Round 190ha: a capture (save, backup, structural edit) takes no lock. Processing and automation inside it
+        // reach the plugin at once instead of going silent / dry ...
+        const auto blocksBeforeCapture = probe.blocks.load(), writesBeforeCapture = probe.writes.load();
+        whileHeld (3, [&] { adapter.setParameter (1, 0.31f); render(); });
+        require (probe.blocks.load() > blocksBeforeCapture && probe.writes.load() == writesBeforeCapture + 1,
+                 "a state capture made processing or automation wait");
+        // ... and neither does a knob moved in LYNX's UI: a block runs while the plugin is inside that write
+        const auto blocksBeforeUi = probe.blocks.load();
+        std::function<void()> renderBeside = [&] { std::thread audio ([&] { render(); }); audio.join(); };
+        probe.duringWrite.store (&renderBeside);
+        adapter.setParameterFromUi (1, 0.3f);
+        require (probe.duringWrite.load() == nullptr && probe.blocks.load() > blocksBeforeUi,
+                 "a UI parameter change held the instance lock against processing");
+        const auto writesBefore = probe.writes.load();
+        whileHeld (2, [&] {
+            adapter.setParameter (0, 0.4f);
+            adapter.setParameter (0, 0.8f);
+            adapter.setParameter (1, 0.6f);
+            read = adapter.parameterValue (0);
+            reset();
+            render();
+        });
+        require (read == 0.8f && probe.writes.load() == writesBefore && probe.resets.load() == 0,
+                 "contended automation/reset entered the vendor or lost the latest request");
+        render();
+        render(); // fixed buffers have one block of latency
+        require (adapter.parameterValue (0) == 0.8f && adapter.parameterValue (1) == 0.6f,
+                 "deferred parameter values were not applied after the pending reset");
+        require (probe.resets.load() == 1 && probe.writes.load() == writesBefore + 2,
+                 "deferred reset or coalesced automation was lost or applied twice");
+        require (probe.blocks.load() > 0 && outputResumed(), "processing failed to resume after state access");
+        whileHeld (1, [&] { adapter.setParameter (0, 0.1f); });
+        adapter.setParameterFromUi (0, 0.9f);
+        render();
+        require (adapter.parameterValue (0) == 0.9f, "queued automation overwrote a later UI change");
+        whileHeld (1, [&] { adapter.setParameter (0, 0.2f); });
+        adapter.setParameter (0, 0.7f);
+        render();
+        require (adapter.parameterValue (0) == 0.7f, "queued automation overwrote a later audio change");
+        whileHeld (1, [&] { adapter.setParameter (0, 0.1f); });
+        require (adapter.restoreState (*saved), "restore ordering fixture failed");
+        render();
+        require (adapter.parameterValue (0) == 0.35f, "automation queued before restore overwrote restored state");
+        whileHeld (1, [&] { read = adapter.parameterValue (0); });
+        require (read == 0.35f, "restored parameter cache was not refreshed");
+        if constexpr (std::is_same_v<std::remove_cvref_t<decltype (adapter)>, PluginInstrument>)
+        {
+            adapter.noteOnMidi (60, 0.7f, 0);
+            render(); render();
+            whileHeld (1, [&] { adapter.noteOffMidi (60, 0); render(); });
+            render(); render();
+            require (! probe.sounding.any(), "a short contention gap lost a note-off");
+            adapter.noteOnMidi (60, 0.7f, 0);
+            render(); render();
+            const auto onsBefore = probe.noteOns.load(), offsBefore = probe.noteOffs.load();
+            const auto* storage = adapter.midi.data.begin();
+            whileHeld (1, [&] {
+                for (int block = 0; block < 1024; ++block)
+                {
+                    for (int key = 0; key < 32; ++key)
+                    {
+                        adapter.noteOnMidi (key + 64, 0.7f, 0);
+                        adapter.noteOffMidi (key + 64, 0);
+                    }
+                    render();
+                }
+            });
+            require (adapter.midiOverflow && adapter.midi.data.size() <= 8192 && adapter.midi.data.begin() == storage,
+                     "sustained state contention grew or reallocated the MIDI queue");
+            if (adapter.fixed != nullptr)
+            {
+                const auto* pendingStorage = adapter.pending.data.begin();
+                float oneLeft = 0.0f, oneRight = 0.0f;
+                // Queue recovery into a partial fixed block, then overflow it twice before any vendor call.
+                adapter.render (&oneLeft, &oneRight, 1, 1.0f, 1.0f);
+                for (int piece = 0; piece < 64; ++piece)
+                {
+                    for (int pair = 0; pair < 64; ++pair)
+                    {
+                        adapter.noteOnMidi (pair % 32, 0.7f, 0);
+                        adapter.noteOffMidi (pair % 32, 0);
+                    }
+                    adapter.render (&oneLeft, &oneRight, 1, 1.0f, 1.0f);
+                }
+                require (adapter.pending.data.size() <= 32768 && adapter.pending.data.begin() == pendingStorage,
+                         "tiny fixed renders reallocated their pending MIDI queue");
+                render(); render(); // overflow restarted the fixed clock; now deliver the retained recovery offs
+            }
+            else
+            {
+                render(); render();
+                require (probe.noteOns.load() == onsBefore, "overflow replayed missed note-ons");
+            }
+            require (probe.missedNoteOns.load() == 0 && probe.noteOffs.load() > offsBefore && ! probe.sounding.any(),
+                     "overflow replayed missed note-ons or left a delivered key sounding");
+            adapter.setParameter (midictl::ccBase + 64, 1.0f);
+            render(); render();
+            require (probe.sustain.load() == 127, "pedal recovery fixture did not enable sustain");
+            const std::uint8_t filler[] { 0xb0, 99, 0 };
+            for (int i = 0; i < 909; ++i) adapter.midiMessage (filler, 3);
+            require (! adapter.midiOverflow, "pedal recovery fixture overflowed before the control flush");
+            adapter.setParameter (midictl::ccBase + 64, 0.0f);
+            render(); render();
+            require (probe.sustain.load() == 0, "queue overflow permanently lost a sustain-off control");
+        }
+        probe.output.store (0.0f);
+        whileHeld (1, [&] { render(); });
+        render();
+        require (noOldOutput(), "a pre-gap fixed audio block replayed after contention");
+        require (! adapter.hasCrashed(), "lock contention was reported as a plugin crash");
+    };
+    try
+    {
+        for (const auto fixed : { 0, 64 })
+        {
+            std::array<float, 128> left {}, right {};
+            const auto unchanged = [&] { return left.back() == 0.25f && right.back() == 0.25f; };
+            auto instrument = std::make_unique<Probe>();
+            auto* voiceProbe = instrument.get();
+            PluginInstrument voice (std::move (instrument), 128, fixed);
+            exercise (voice, *voiceProbe, [&] {
+                left.fill (0.25f); right.fill (0.25f);
+                voice.render (left.data(), right.data(), (int) left.size(), 1.0f, 1.0f);
+            }, [&] { voice.panic(); }, unchanged, [&] { return left.back() == 0.75f && right.back() == 0.75f; },
+            [&] { return left.front() == 0.25f && right.front() == 0.25f; });
+            auto effect = std::make_unique<Probe>();
+            auto* effectProbe = effect.get();
+            PluginEffect fx (std::move (effect), 128, fixed);
+            exercise (fx, *effectProbe, [&] {
+                left.fill (0.25f); right.fill (0.25f);
+                fx.process (left.data(), right.data(), (int) left.size(), {}, 120.0);
+            }, [&] { fx.transportReset(); }, unchanged, [&] { return left.back() == 0.5f && right.back() == 0.5f; },
+            [&] { return left.front() == 0.0f && right.front() == 0.0f; });
+        }
+        return "OK (" + juce::String (checks) + " checks)";
+    }
+    catch (const std::exception& e) { return "ERROR " + juce::String::fromUTF8 (e.what()); }
+}
+
+// Round 190ok (owner decision D2): FL's generator smart disable through PluginInstrument, with an in-process probe synth
+// (a held note plays a constant level; it counts its blocks). The rack skips a channel while idle() says so (and no note
+// comes): here the same loop.
+juce::String generatorSmartDisableSelfTest()
+{
+    struct Synth final : juce::AudioPluginInstance
+    {
+        Synth() : AudioPluginInstance (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)) {}
+        const juce::String getName() const override { return "Smart disable probe"; }
+        void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = getName(); d.isInstrument = true; }
+        void prepareToPlay (double, int) override {}
+        void releaseResources() override {}
+        void processBlock (juce::AudioBuffer<float>& audio, juce::MidiBuffer& messages) override
+        {
+            ++blocks;
+            for (const auto event : messages)
+                if (event.numBytes >= 3 && (event.data[0] & 0xf0) == 0x90 && event.data[2] != 0)
+                    held = true;
+                else if (event.numBytes >= 3 && ((event.data[0] & 0xf0) == 0x80 || (event.data[0] & 0xf0) == 0x90))
+                    held = false;
+            for (int ch = 0; ch < audio.getNumChannels(); ++ch)
+                std::fill_n (audio.getWritePointer (ch), audio.getNumSamples(), held ? 0.25f : 0.0f);
+        }
+        double getTailLengthSeconds() const override { return 0.0; }
+        bool acceptsMidi() const override { return true; }
+        bool producesMidi() const override { return false; }
+        bool hasEditor() const override { return false; }
+        juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+        int getNumPrograms() override { return 1; }
+        int getCurrentProgram() override { return 0; }
+        void setCurrentProgram (int) override {}
+        const juce::String getProgramName (int) override { return {}; }
+        void changeProgramName (int, const juce::String&) override {}
+        void getStateInformation (juce::MemoryBlock&) override {}
+        void setStateInformation (const void*, int) override {}
+        std::atomic<int> blocks { 0 };
+        bool held = false;
+    };
+    try
+    {
+        constexpr int block = 256;
+        constexpr double rate = 48000.0;
+        auto made = std::make_unique<Synth>();
+        auto* probe = made.get();
+        preparePlugin (*made, rate, block);
+        PluginInstrument inst (std::move (made), block);
+        ChannelDef channel;
+        channel.instrument = InstrumentKind::plugin;
+        auto& global = flsettings::options().smartDisable;
+        const auto globalBefore = global.load();
+        const juce::ScopeGuard restore { [&global, globalBefore] { global.store (globalBefore); } };
+        global.store (true);
+        std::vector<float> l (block), r (block);
+        // the rack's loop: a channel that is idle and gets no note is not called
+        const auto run = [&] (double seconds) {
+            for (int i = 0; i < (int) (seconds * rate / block); ++i)
+                if (! inst.idle())
+                {
+                    std::fill (l.begin(), l.end(), 0.0f);
+                    std::fill (r.begin(), r.end(), 0.0f);
+                    inst.render (l.data(), r.data(), block, 1.0f, 1.0f);
+                }
+        };
+        // off (FL's default, every old project): called all the time
+        inst.configure (channel, 120.0);
+        run (6.0);
+        const auto offBlocks = probe->blocks.load();
+        if (inst.idle() || offBlocks < (int) (5.9 * rate / block))
+            return "ERROR off: the plugin was not called all the time";
+        // on: asleep after 4 s of silence, not called any more
+        channel.setSmartDisable (true);
+        inst.configure (channel, 120.0);
+        probe->blocks = 0;
+        run (3.9);
+        if (inst.idle())
+            return "ERROR asleep before 4 s";
+        run (0.2);
+        if (! inst.idle())
+            return "ERROR not asleep after 4 s of silence";
+        const auto asleepAt = probe->blocks.load();
+        run (5.0);
+        if (probe->blocks.load() != asleepAt)
+            return "ERROR called while asleep";
+        // a note wakes it at once, and it plays; a held note keeps it awake (its output is audible)
+        inst.noteOn (60, 0.8f);
+        if (inst.idle())
+            return "ERROR a note did not wake it";
+        run (6.0);
+        if (inst.idle() || probe->blocks.load() < asleepAt + (int) (5.9 * rate / block) || l[0] < 0.2f)
+            return "ERROR a held note did not keep it awake";
+        // released: asleep again 4 s later
+        inst.noteOff (60);
+        run (4.2);
+        if (! inst.idle())
+            return "ERROR not asleep again after the release";
+        // the global switch (Settings › Audio › CPU › Smart disable) and the wrapper's "Allow smart disable" wake it
+        global.store (false);
+        if (inst.idle())
+            return "ERROR the global switch did not wake it";
+        global.store (true);
+        channel.plugin.allowSmartDisable = false;
+        inst.configure (channel, 120.0);
+        if (inst.idle())
+            return "ERROR Allow smart disable off did not wake it";
+        return "OK (" + juce::String (offBlocks) + " blocks off, asleep after " + juce::String (asleepAt) + ")";
+    }
+    catch (const std::exception& e)
+    {
+        return "ERROR " + juce::String (e.what());
+    }
+}
+
+void PluginEffect::setConnections (const SlotConnections& c)
+{
+    for (int o = 0; o < maxPluginConnections; ++o)
+        outputMode[(std::size_t) o].store (c.routed ? c.outputs[(std::size_t) o] : -1, std::memory_order_relaxed);
+    routed.store (c.routed, std::memory_order_relaxed);
+}
+
+void PluginEffect::routeOutputs (const float* const* ch, int numChannels, int at, int count, float* left, float* right, bool taps) noexcept
+{
+    // FL [EXEC fxconn189j]: the output pairs at index 0 summed into the insert (none: silence), the others to their
+    // track (the renderer's tap; `taps` false: not from here), an inactive one nowhere
+    std::fill (left + at, left + at + count, 0.0f);
+    std::fill (right + at, right + at + count, 0.0f);
+    for (std::size_t k = 0; k < outs.size(); ++k)
+    {
+        const auto& o = outs[k];
+        if (o.channel >= numChannels)
+            continue;
+        const auto mode = k < outputMode.size() ? outputMode[k].load (std::memory_order_relaxed) : -1;
+        float* dl = left;
+        float* dr = right;
+        if (mode >= 0)
+        {
+            dl = taps && k < extraL.size() ? extraL[k] : nullptr;
+            dr = taps && k < extraR.size() ? extraR[k] : nullptr;
+        }
+        if (mode == -2 || dl == nullptr || dr == nullptr)
+            continue;
+        const auto* l = ch[o.channel];
+        const auto* r = o.channels > 1 && o.channel + 1 < numChannels ? ch[o.channel + 1] : l;
+        for (int i = 0; i < count; ++i)
+        {
+            dl[at + i] += l[i];
+            dr[at + i] += r[i];
+        }
+    }
+}
+
+void PluginEffect::process (float* left, float* right, int n, const EffectParams&, double) noexcept
+{
+    // this block's sidechain (null = silence); cleared so a slot whose side input is removed hears silence again
+    const auto* scL = sideL;
+    const auto* scR = sideR != nullptr ? sideR : sideL;
+    sideL = sideR = nullptr;
+    // input 1 from another insert (Connections, round 189j): null = silence; cleared like the sidechain
+    const auto replaceMain = mainSet;
+    const auto* inL = mainL;
+    const auto* inR = mainR != nullptr ? mainR : mainL;
+    mainSet = false;
+    mainL = mainR = nullptr;
+    const auto isRouted = routed.load (std::memory_order_relaxed);
+    // copies the sidechain into the side bus channels of `view` from sample `from` of the block (silence without one)
+    auto feedSide = [this, scL, scR] (juce::AudioBuffer<float>& view, int from, int count) noexcept {
+        if (sideChannel < 0 || scL == nullptr)
+            return; // (the view was cleared)
+        view.copyFrom (sideChannel, 0, scL + from, count);
+        if (sideCount > 1)
+            view.copyFrom (sideChannel + 1, 0, scR + from, count);
+    };
+    if (crashed.load (std::memory_order_relaxed))
+        return; // bypassed: the input plays through
+    // the buses being laid out again (a sidechain source picked or removed, issue #109): this block plays dry
+    const std::unique_lock<std::mutex> layout (layoutLock, std::try_to_lock);
+    if (! layout.owns_lock())
+        return;
+    const juce::CriticalSection::ScopedTryLockType lock (plugin->getCallbackLock());
+    if (! lock.isLocked())
+    {
+        if (fixed != nullptr) fixed->clear();
+        return; // state access owns this instance: dry bypass; keep reset and parameter changes for the next block
+    }
+    if (crashed.load (std::memory_order_relaxed)) return;
+    if (resetPending.exchange (false, std::memory_order_relaxed))
+        if (const auto code = runReset (*plugin, crashed, name); code != 0)
+        {
+            failed (code);
+            return;
+        }
+    if (flushParameters (*plugin, parameterChanges, crashed, name) != 0) return;
+    flushMidiControls();
+
+    if (fixed != nullptr)
+    {
+        // the sidechain rides along as channels 2 and 3 of the fixed blocks (copies: FixedBlock writes them back)
+        const auto sideRun = sideChannel >= 0 && n <= blockSize;
+        float* io[4] = { left, right, sideScratch.data(), sideScratch.data() + blockSize };
+        if (sideChannel >= 0)
+        {
+            const auto m = juce::jmin (n, blockSize);
+            for (int c = 0; c < 2; ++c)
+            {
+                const auto* src = c == 0 ? scL : scR;
+                if (src != nullptr && sideRun)
+                    std::memcpy (io[2 + c], src, sizeof (float) * (size_t) m);
+                else
+                    std::fill (io[2 + c], io[2 + c] + m, 0.0f);
+            }
+        }
+        // (input 1 from another insert: after the side input took the slot's own one)
+        if (replaceMain)
+        {
+            for (int c = 0; c < 2; ++c)
+            {
+                const auto* src = c == 0 ? inL : inR;
+                if (src != nullptr)
+                    std::memcpy (io[c], src, sizeof (float) * (size_t) n);
+                else
+                    std::fill (io[c], io[c] + n, 0.0f);
+            }
+        }
+        // routed: output pair 1 / 2 come back on channels 0-1 / 2-3 (pairs past the second are not carried here)
+        // round 190ll (issue #199): each fixed block's play head is where the block began (see PluginInstrument::render)
+        const auto runAt = hostBlockOffset();
+        const juce::ScopeGuard offsetBack { [runAt] { setHostBlockOffset (runAt); } };
+        fixed->run (io, n, true, [this, isRouted, runAt] (float* const* ch, int count, int end) {
+            if (crashed.load (std::memory_order_relaxed))
+                return; // (crashed in an earlier block of this call: the input passes through)
+            setHostBlockOffset (runAt + end - count);
+            juce::AudioBuffer<float> view (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), count);
+            view.clear();
+            view.copyFrom (0, 0, ch[0], count);
+            view.copyFrom (1, 0, ch[1], count);
+            if (sideChannel >= 0)
+            {
+                view.copyFrom (sideChannel, 0, ch[2], count);
+                if (sideCount > 1)
+                    view.copyFrom (sideChannel + 1, 0, ch[3], count);
+            }
+            if (const auto code = runBlock (BlockCall { plugin.get(), &view, &midi }, crashed, name); code != 0)
+            {
+                midi.clear();
+                failed (code); // this block keeps its dry input
+                return;
+            }
+            midi.clear();
+            if (isRouted)
+            {
+                // into the insert: the pairs at index 0; pair 2 sent elsewhere rides back on channels 2-3
+                routeOutputs (view.getArrayOfReadPointers(), view.getNumChannels(), 0, count, ch[0], ch[1], false);
+                if (sideScratch.empty())
+                    return;
+                const auto pair2 = outs.size() > 1 && outputMode[1].load (std::memory_order_relaxed) >= 0;
+                if (pair2 && outs[1].channel < view.getNumChannels())
+                {
+                    const auto& o = outs[1];
+                    std::memcpy (ch[2], view.getReadPointer (o.channel), sizeof (float) * (size_t) count);
+                    std::memcpy (ch[3], view.getReadPointer (o.channels > 1 && o.channel + 1 < view.getNumChannels() ? o.channel + 1 : o.channel),
+                                 sizeof (float) * (size_t) count);
+                }
+                else
+                {
+                    std::fill (ch[2], ch[2] + count, 0.0f);
+                    std::fill (ch[3], ch[3] + count, 0.0f);
+                }
+                return;
+            }
+            std::memcpy (ch[0], view.getReadPointer (0), sizeof (float) * (size_t) count);
+            std::memcpy (ch[1], view.getReadPointer (view.getNumChannels() > 1 ? 1 : 0), sizeof (float) * (size_t) count);
+        });
+        if (isRouted && outs.size() > 1 && outputMode[1].load (std::memory_order_relaxed) >= 0 && extraL[1] != nullptr && extraR[1] != nullptr
+            && sideScratch.size() >= (std::size_t) blockSize * 2 && n <= blockSize)
+            for (int i = 0; i < n; ++i)
+            {
+                extraL[1][i] += io[2][i];
+                extraR[1][i] += io[3][i];
+            }
+        return;
+    }
+
+    for (int done = 0; done < n;)
+    {
+        const auto count = juce::jmin (blockSize, n - done);
+        juce::AudioBuffer<float> view (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), count);
+        view.clear();
+        if (! replaceMain)
+        {
+            view.copyFrom (0, 0, left + done, count);
+            view.copyFrom (1, 0, right + done, count);
+        }
+        else if (inL != nullptr)
+        {
+            view.copyFrom (0, 0, inL + done, count);
+            view.copyFrom (1, 0, inR + done, count);
+        }
+        feedSide (view, done, count);
+        const TimedParameterQueue::Scope timedChanges (timed, done, count); // (round 190jg)
+        if (const auto code = runBlock (BlockCall { plugin.get(), &view, &midi }, crashed, name); code != 0)
+        {
+            midi.clear();
+            failed (code); // this block keeps its dry input
+            return;
+        }
+        midi.clear();
+
+        if (isRouted)
+            routeOutputs (view.getArrayOfReadPointers(), view.getNumChannels(), done, count, left, right, true);
+        else
+        {
+            std::memcpy (left + done, view.getReadPointer (0), sizeof (float) * (size_t) count);
+            std::memcpy (right + done, view.getReadPointer (view.getNumChannels() > 1 ? 1 : 0), sizeof (float) * (size_t) count);
+        }
+        done += count;
+    }
+}
+
+// ---------------------------------------------------------------------------
+
+namespace
+{
+// LV2 lists plugins by URI from whole folders: lilv reads every entry of a folder it is given as a bundle, so it gets
+// only the folders that hold .lv2 bundles (not the VST2/VST3/CLAP ones, which only filled the log with errors)
+juce::FileSearchPath lv2Folders (const juce::FileSearchPath& paths)
+{
+    juce::FileSearchPath lv2;
+    for (int i = 0; i < paths.getNumPaths(); ++i)
+        if (paths[i].isDirectory() && ! paths[i].findChildFiles (juce::File::findDirectories, false, "*.lv2").isEmpty())
+            lv2.addIfNotAlreadyThere (paths[i]);
+    return lv2;
+}
+
+// The standard folders and the user's scan folders (Plugin manager), without the FL Studio lookup of suggestedFolders
+juce::FileSearchPath lv2SearchFolders()
+{
+    auto folders = platform::standardPluginFolders();
+    juce::StringArray lines;
+    lines.addLines (platform::settingsFile ("plugin-folders.txt").loadFileAsString());
+    for (const auto& line : lines)
+        if (juce::File::isAbsolutePath (line.trim()))
+            folders.addIfNotAlreadyThere (juce::File (line.trim()));
+    return folders;
+}
+
+// The plugin files (VST2/VST3/CLAP) and LV2 URIs found in these folders, by every format that scans.
+juce::StringArray listPluginFiles (juce::AudioPluginFormatManager& formats, const juce::FileSearchPath& paths, bool withLv2 = true)
+{
+    juce::StringArray files;
+    for (auto* format : formats.getFormats())
+        if (format->canScanForPlugins() && (withLv2 || format->getName() != "LV2"))
+            // (JSFX scripts: in the JSFX roots only, Settings › File › JSFX folders; round 190pj)
+            files.addArray (format->searchPathsForPlugins (format->getName() == "LV2"                       ? lv2Folders (paths)
+                                                           : format->getName() == JsfxPluginFormat::formatName ? jsfx::roots()
+                                                                                                               : paths,
+                                                           true, false));
+    return files;
+}
+
+// `--scan-one LV2 <this><folders>`: one child describes every LV2 plugin of these folders
+const juce::String lv2BatchPrefix ("lv2-folders:");
+
+juce::String lv2Stamp (const juce::FileSearchPath& folders)
+{
+    std::vector<std::pair<std::string, long long>> bundles;
+    for (int i = 0; i < folders.getNumPaths(); ++i)
+        for (const auto& bundle : folders[i].findChildFiles (juce::File::findDirectories, false, "*.lv2"))
+        {
+            auto newest = 0LL; // (a plugin's own .ttl can change while manifest.ttl does not)
+            for (const auto& ttl : bundle.findChildFiles (juce::File::findFiles, false, "*.ttl"))
+                newest = juce::jmax (newest, (long long) ttl.getLastModificationTime().toMilliseconds());
+            bundles.emplace_back (bundle.getFullPathName().toStdString(), newest);
+        }
+    return juce::String::fromUTF8 (scanpolicy::lv2Stamp (std::move (bundles)).c_str());
+}
+} // namespace
+
+// Background scan: a thread that runs PluginHost::scan and publishes its progress in PluginHost::state.
+class PluginHost::BackgroundScan final : public juce::Thread
+{
+public:
+    BackgroundScan (PluginHost& h, juce::FileSearchPath p, juce::StringArray f = {})
+        : juce::Thread ("LYNX plugin scan"),
+          host (h),
+          paths (std::move (p)),
+          files (std::move (f))
+    {
+    }
+
+    ~BackgroundScan() override
+    {
+        host.stopScan = true;
+        stopThread (15000); // (listing a large folder can take a moment; a running child is killed at once)
+    }
+
+    void run() override
+    {
+        const auto progress = [this] (float done, const juce::String& file) {
+            const std::scoped_lock lock (host.stateLock);
+            host.state.progress = done;
+            host.state.file = juce::File::createFileWithoutCheckingPath (file).getFileName();
+            return ! threadShouldExit();
+        };
+        const auto found = files.isEmpty() ? host.scan (paths, progress) : host.scanFiles (files, progress);
+        const std::scoped_lock lock (host.stateLock);
+        host.state.running = false;
+        host.state.found = found;
+        host.state.progress = 1.0f;
+        host.state.file = {};
+        ++host.state.finished;
+    }
+
+private:
+    PluginHost& host;
+    juce::FileSearchPath paths;
+    juce::StringArray files; // a targeted scan of these files instead of the folders
+};
+
+PluginHost::PluginHost (bool keep)
+    : persistent (keep)
+{
+    addPluginFormats (formats);
+    // JUCE's LV2 host only knows ~/.lv2 and one of /usr/lib/lv2 or /usr/lib64/lv2: the plugins found elsewhere by a
+    // scan must load in a later session too, before (or without) the next scan
+    if (persistent)
+        for (auto* format : formats.getFormats())
+            if (format->getName() == "LV2")
+                format->searchPathsForPlugins (lv2Folders (lv2SearchFolders()), true, false);
+    if (persistent)
+    {
+        if (auto xml = juce::XmlDocument::parse (settingsFolder().getChildFile ("plugins.xml")))
+            known.recreateFromXml (*xml);
+        favouriteIds = prefs::parseFavourites (settingsFolder().getChildFile ("plugin-favourites.txt").loadFileAsString().toStdString());
+        userNames = prefs::parsePluginNames (settingsFolder().getChildFile ("plugin-names.txt").loadFileAsString().toStdString());
+        // (plugin-database.txt since round 190ba; before, the folders shared plugin-folders.txt with the scan folders)
+        const auto databaseFile = settingsFolder().getChildFile ("plugin-database.txt");
+        userFolders = plugincatalog::parseFolders ((databaseFile.existsAsFile() ? databaseFile : settingsFolder().getChildFile ("plugin-folders.txt")).loadFileAsString().toStdString());
+        // once: files marked as failed by scans before the class-count timeout (REA_rodada107 §2) get another try,
+        // since a large bundle (Waves shell) was marked "hung" only for taking longer than 30 s
+        const auto retried = settingsFolder().getChildFile ("scan-retry.txt");
+        // round 113: once more, as the scan now keeps a description whose plugin only hung while closing (or, round
+        // 111, crashed in its teardown at exit after writing it); round 190fw: and once more, as a child that is still
+        // working when the old 30 s pass is no longer killed (FL Studio's own VST plugins were blacklisted that way)
+        if (retried.loadFileAsString().getIntValue() < 3)
+        {
+            if (! known.getBlacklistedFiles().isEmpty())
+            {
+                known.clearBlacklistedFiles();
+                save();
+            }
+            retried.replaceWithText ("3\n");
+        }
+    }
+    if (persistent)
+        flDbWarmup = std::thread ([this] {
+            for (int i = 0; i < 60 && ! warmupQuit; ++i) // after the start-up's own disk work
+                std::this_thread::sleep_for (std::chrono::milliseconds (50));
+            if (! warmupQuit)
+                flPluginDatabase();
+            if (! warmupQuit)
+                scanJsfx(); // (round 190pj: the bundled pack and the JSFX folders are listed without a full scan)
+        });
+}
+
+PluginHost::~PluginHost()
+{
+    warmupQuit = true;
+    if (flDbWarmup.joinable())
+        flDbWarmup.join();
+    background = nullptr; // stops the scan (the child being examined is killed)
+}
+
+juce::File PluginHost::settingsFolder()
+{
+    return platform::settingsFolder();
+}
+
+juce::FileSearchPath PluginHost::defaultSearchPath()
+{
+    return platform::standardPluginFolders();
+}
+
+juce::FileSearchPath PluginHost::suggestedFolders()
+{
+    juce::FileSearchPath paths;
+    auto add = [&paths] (const juce::File& folder) {
+        if (folder.isDirectory())
+            paths.addIfNotAlreadyThere (folder);
+    };
+    // the standard folders even before they exist (plugins installed later land there)
+    for (int i = 0; i < defaultSearchPath().getNumPaths(); ++i)
+        paths.addIfNotAlreadyThere (defaultSearchPath()[i]);
+    const auto fl = findFlStudio();
+    for (const auto& folder : fl.vstFolders)
+        add (juce::File (folder));
+    for (const auto& folder : flPluginDatabase().pluginFolders())
+    {
+        const auto path = juce::String::fromUTF8 (folder.c_str());
+        if (juce::File::isAbsolutePath (path))
+            add (juce::File (path));
+    }
+    return paths;
+}
+
+juce::FileSearchPath PluginHost::pluginFolders() const
+{
+    const auto file = settingsFolder().getChildFile ("plugin-folders.txt");
+    if (persistent && file.existsAsFile())
+    {
+        juce::FileSearchPath paths;
+        juce::StringArray lines;
+        lines.addLines (file.loadFileAsString());
+        for (const auto& line : lines)
+            if (line.trim().isNotEmpty() && juce::File::isAbsolutePath (line.trim()))
+                paths.add (juce::File (line.trim()));
+        // (a file holding only the Plugin database's folders, written there until 0.1.25, is not a list of scan folders)
+        if (paths.getNumPaths() > 0 || ! file.loadFileAsString().containsChar ('\t'))
+            return paths;
+    }
+    return const_cast<PluginHost*> (this)->suggestedFolders();
+}
+
+void PluginHost::setPluginFolders (const juce::FileSearchPath& folders)
+{
+    if (! persistent)
+        return;
+    juce::StringArray lines;
+    for (int i = 0; i < folders.getNumPaths(); ++i)
+        lines.add (folders[i].getFullPathName());
+    settingsFolder().getChildFile ("plugin-folders.txt").replaceWithText (lines.joinIntoString ("\n") + "\n");
+}
+
+const FlPluginDb& PluginHost::flPluginDatabase()
+{
+    const std::scoped_lock lock (flDbLock);
+    if (! flDbLoaded)
+    {
+        flDb = readFlPluginDatabase (findFlStudio(), &flDbFiles);
+        flDbLoaded = true;
+    }
+    return flDb;
+}
+
+void PluginHost::save()
+{
+    if (! persistent)
+        return;
+    const std::scoped_lock lock (saveLock);
+    if (auto xml = known.createXml())
+        xml->writeTo (settingsFolder().getChildFile ("plugins.xml"));
+}
+
+namespace
+{
+// Child side of the scan: how many classes a VST3 module's factory declares (0 = unknown). The module stays loaded
+// (and initialised) for the description that follows, which loads the same module again. Windows only for now.
+int countVst3Classes (const juce::String& path)
+{
+   #if JUCE_WINDOWS
+    juce::File binary (path);
+    if (binary.isDirectory()) // bundle: Contents/x86_64-win/<name>.vst3
+        binary = binary.getChildFile ("Contents").getChildFile ("x86_64-win").getChildFile (binary.getFileName());
+    if (! binary.existsAsFile())
+        return 0;
+    // the leading part of IPluginFactory's vtable (FUnknown, then getFactoryInfo, countClasses)
+    struct Factory
+    {
+        virtual int queryInterface (const char*, void**) = 0;
+        virtual unsigned addRef() = 0;
+        virtual unsigned release() = 0;
+        virtual int getFactoryInfo (void*) = 0;
+        virtual int countClasses() = 0;
+    };
+    static juce::DynamicLibrary module; // kept open until the child exits
+    if (! module.open (binary.getFullPathName()))
+        return 0;
+    if (auto* init = (bool (*)()) module.getFunction ("InitDll"))
+        if (! init())
+            return 0;
+    auto* get = (Factory* (*)()) module.getFunction ("GetPluginFactory");
+    auto* factory = get != nullptr ? get() : nullptr;
+    if (factory == nullptr)
+        return 0;
+    const auto classes = factory->countClasses();
+    factory->release();
+    return juce::jmax (0, classes);
+   #else
+    juce::ignoreUnused (path);
+    return 0;
+   #endif
+}
+
+juce::File classCountFile (const juce::File& result)
+{
+    return result.withFileExtension ("classes");
+}
+
+// round 190fw: what the scan child is doing (core/PluginScanPolicy.h), written by the child, read by the parent
+juce::File activityFile (const juce::File& result)
+{
+    return result.withFileExtension ("alive");
+}
+
+scanpolicy::ChildActivity ownActivity()
+{
+    scanpolicy::ChildActivity a;
+   #if JUCE_WINDOWS
+    FILETIME created, ended, kernel, user;
+    if (GetProcessTimes (GetCurrentProcess(), &created, &ended, &kernel, &user))
+    {
+        const auto ticks = [] (const FILETIME& t) { return ((long long) t.dwHighDateTime << 32) | t.dwLowDateTime; };
+        a.cpuMs = (ticks (kernel) + ticks (user)) / 10000;
+    }
+    IO_COUNTERS io {};
+    if (GetProcessIoCounters (GetCurrentProcess(), &io))
+        a.readBytes = (long long) io.ReadTransferCount;
+    PROCESS_MEMORY_COUNTERS memory {};
+    if (K32GetProcessMemoryInfo (GetCurrentProcess(), &memory, sizeof (memory)))
+        a.faults = (long long) memory.PageFaultCount;
+    struct Count
+    {
+        DWORD pid;
+        int visible = 0;
+    } count { GetCurrentProcessId() };
+    EnumWindows ([] (HWND window, LPARAM data) -> BOOL {
+        auto& c = *reinterpret_cast<Count*> (data);
+        DWORD pid = 0;
+        GetWindowThreadProcessId (window, &pid);
+        if (pid == c.pid && IsWindowVisible (window))
+            ++c.visible;
+        return TRUE;
+    }, (LPARAM) &count);
+    a.windows = count.visible;
+   #else
+    rusage usage {};
+    if (getrusage (RUSAGE_SELF, &usage) == 0)
+    {
+        a.cpuMs = (long long) (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) * 1000 + (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / 1000;
+        a.readBytes = (long long) usage.ru_inblock * 512;
+        a.faults = (long long) (usage.ru_minflt + usage.ru_majflt);
+    }
+   #endif
+    return a;
+}
+
+scanpolicy::ChildActivity readActivity (const juce::File& file)
+{
+    juce::StringArray parts;
+    parts.addTokens (file.loadFileAsString(), " ", {});
+    scanpolicy::ChildActivity a;
+    if (parts.size() >= 4)
+    {
+        a.cpuMs = parts[0].getLargeIntValue();
+        a.readBytes = parts[1].getLargeIntValue();
+        a.faults = parts[2].getLargeIntValue();
+        a.windows = parts[3].getIntValue();
+    }
+    return a;
+}
+
+// the child's side: a thread that writes ownActivity() twice a second while the plugin is being described
+class ActivityReporter
+{
+public:
+    explicit ActivityReporter (juce::File target)
+        : file (std::move (target)),
+          thread ([this] {
+              while (! done)
+              {
+                  const auto a = ownActivity();
+                  file.replaceWithText (juce::String (a.cpuMs) + " " + juce::String (a.readBytes) + " " + juce::String (a.faults) + " "
+                                        + juce::String (a.windows));
+                  for (int i = 0; i < 5 && ! done; ++i)
+                      std::this_thread::sleep_for (std::chrono::milliseconds (100));
+              }
+          })
+    {
+    }
+
+    ~ActivityReporter()
+    {
+        done = true;
+        thread.join();
+    }
+
+private:
+    juce::File file;
+    std::atomic<bool> done { false };
+    std::thread thread;
+};
+
+// LYNX_TEST_SCAN_MS=<base>,<stall>,<cap> (--lv2scantest): shorter limits, so the test's children need seconds, not minutes
+scanpolicy::ChildWatch makeChildWatch()
+{
+    juce::StringArray limits;
+    limits.addTokens (juce::SystemStats::getEnvironmentVariable ("LYNX_TEST_SCAN_MS", {}), ",", {});
+    if (limits.size() == 3)
+        return scanpolicy::ChildWatch (limits[0].getIntValue(), limits[1].getIntValue(), limits[2].getIntValue());
+    return scanpolicy::ChildWatch();
+}
+
+// the child wrote its whole answer (the file closes with the root element): a hang after it is the plugin's shutdown
+bool scanResultComplete (const juce::File& result)
+{
+    if (! result.existsAsFile())
+        return false;
+    const auto xml = juce::XmlDocument::parse (result);
+    return xml != nullptr && xml->hasTagName ("PLUGINS") && xml->getNumChildElements() > 0;
+}
+
+// why a plugin file was not described (%APPDATA%\LYNX\scan-failures.log), so a "missing" plugin can be explained
+void logScanFailure (const juce::String& file, const juce::String& why, juce::uint32 elapsedMs)
+{
+    const auto log = lynx::platform::settingsFile ("scan-failures.log");
+    if (log.getSize() > 256 * 1024)
+        log.deleteFile();
+    log.appendText (juce::Time::getCurrentTime().toISO8601 (true) + " | " + file + " | " + why + " | " + juce::String (elapsedMs / 1000.0, 1) + " s\n");
+}
+
+} // namespace
+
+bool PluginHost::scanOne (juce::AudioPluginFormat& format, const juce::String& file, const std::function<bool()>& keepGoing)
+{
+    // a result file of our own: several LYNX processes (and scans) may run at once
+    const auto result = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                            .getChildFile ("lynx-scan-" + juce::String::toHexString (juce::Random::getSystemRandom().nextInt64()) + ".xml");
+    // a 32-bit module (round 176a) is described by the 32-bit bridge, which can load it; without the bridge it is skipped
+    const auto bits32 = isModule32Bit (file);
+    const auto exe = bits32 ? bridge32Executable() : juce::File::getSpecialLocation (juce::File::currentExecutableFile);
+    if (bits32 && ! exe.existsAsFile())
+        return false;
+    ++scanChildren;
+    juce::ChildProcess child;
+    auto ok = child.start (juce::StringArray { exe.getFullPathName(), "--scan-one", format.getName(), file, result.getFullPathName() }, 0);
+    const auto started = juce::Time::getMillisecondCounter();
+    auto cleanUp = [&result] {
+        result.deleteFile();
+        classCountFile (result).deleteFile();
+        activityFile (result).deleteFile();
+    };
+    if (ok)
+    {
+        // wait in short steps so a cancelled scan (or LYNX closing) doesn't wait for a slow plugin; a file holding
+        // many plugins (Waves shell) gets more time once the child has said how many, and a child that is still
+        // working (FL Studio's own plugin boots the FL engine) or shows a window gets more time (core/PluginScanPolicy.h)
+        auto watch = makeChildWatch();
+        auto classesKnown = false;
+        auto lastReport = 0u;
+        const auto elapsed = [started] { return (int) (juce::Time::getMillisecondCounter() - started); };
+        while (child.isRunning() && ! stopScan && ! watch.expired (elapsed()))
+        {
+            child.waitForProcessToFinish (100);
+            if (keepGoing && ! keepGoing())
+                stopScan = true;
+            if (! classesKnown && classCountFile (result).existsAsFile())
+            {
+                classesKnown = true;
+                watch.setClasses (classCountFile (result).loadFileAsString().getIntValue());
+            }
+            if ((juce::uint32) elapsed() - lastReport >= 500 && activityFile (result).existsAsFile())
+            {
+                lastReport = (juce::uint32) elapsed();
+                watch.report (elapsed(), readActivity (activityFile (result)));
+            }
+        }
+        if (child.isRunning())
+        {
+            child.kill();
+            if (stopScan) // not the plugin's fault: try it again next time
+            {
+                cleanUp();
+                return false;
+            }
+            // the description may be complete and only the plugin's shutdown hung (round 113): keep it then
+            ok = scanResultComplete (result);
+            logScanFailure (file, ok ? juce::String ("result kept, child killed after it")
+                                     : juce::String (classesKnown ? "timeout while describing" : "timeout before the class count") + " ("
+                                           + watch.why (elapsed()) + ")",
+                            juce::Time::getMillisecondCounter() - started);
+        }
+        else if (child.getExitCode() != 0)
+            logScanFailure (file, "exit code " + juce::String ((int) child.getExitCode()), juce::Time::getMillisecondCounter() - started);
+    }
+    ok = ok && (child.isRunning() || child.getExitCode() == 0 || scanResultComplete (result));
+    const auto xml = ok ? juce::XmlDocument::parse (result) : nullptr;
+    if (xml != nullptr)
+    {
+        auto added = 0;
+        for (auto* e : xml->getChildIterator())
+        {
+            juce::PluginDescription d;
+            if (d.loadFromXml (*e))
+                added += known.addType (d) ? 1 : 0;
+        }
+        if (xml->getNumChildElements() == 0 && added == 0)
+            rememberEmptyScan (file); // nothing in it: not described again on every open until it changes
+    }
+    else
+    {
+        if (ok) // on Linux and macOS, JUCE reports exit code 0 for a child killed by a signal: no answer is the only sign
+            logScanFailure (file, "ended without an answer", juce::Time::getMillisecondCounter() - started);
+        known.addToBlacklist (file);
+    }
+    cleanUp();
+    return xml != nullptr; // a child can also end "well" without an answer
+}
+
+int PluginHost::scan (const juce::FileSearchPath& paths, const std::function<bool (float, const juce::String&)>& progress)
+{
+    const auto before = known.getNumTypes();
+    if (persistent)
+        jsfx::installPack(); // (the bundled JSFX scripts, written once per pack version)
+    auto lv2Done = false;
+    {
+        const std::scoped_lock lock (scanLock);
+        stopScan = false;
+        lv2Done = describeLv2 (paths, progress);
+    }
+    if (! stopScan)
+        scanFiles (listPluginFiles (formats, paths, ! lv2Done), progress);
+    if (! stopScan)
+        forgetMisses(); // everything was looked at again: the projects' missing plugins may be findable now
+    return known.getNumTypes() - before;
+}
+
+// LV2 plugins are described from their data files, and JUCE reads all the folders in every process that starts, so a
+// child per plugin repeats the same seconds of work hundreds of times. One child does them all, and only when the
+// folders changed. False if it failed or was cancelled: the scan then asks plugin by plugin, as a bad bundle needs.
+bool PluginHost::describeLv2 (const juce::FileSearchPath& paths, const std::function<bool (float, const juce::String&)>& progress)
+{
+    for (auto* format : formats.getFormats())
+    {
+        if (format->getName() != "LV2")
+            continue;
+        const auto folders = lv2Folders (paths);
+        auto searched = folders;
+        searched.addPath (format->getDefaultLocationsToSearch());
+        const auto stamp = lv2Stamp (searched);
+        // (with how many are listed: a plugin list that was lost is not "nothing changed")
+        const auto listed = [this] {
+            const auto types = known.getTypes();
+            return juce::String ((int) std::count_if (types.begin(), types.end(), [] (const auto& d) { return d.pluginFormatName == "LV2"; }));
+        };
+        const auto saved = settingsFolder().getChildFile ("scan-lv2.txt");
+        if (persistent && saved.loadFileAsString() == stamp + listed())
+            return true;
+        const auto batch = lv2BatchPrefix + folders.toString();
+        if (! scanOne (*format, batch, [&progress] { return ! progress || progress (0.0f, "LV2"); }))
+        {
+            known.removeFromBlacklist (batch);
+            return false;
+        }
+        format->searchPathsForPlugins (folders, true, false); // this process's own list learns the new bundles
+        save(); // before the stamp: the stamp says these plugins are in the list on disk
+        if (persistent)
+            saved.replaceWithText (stamp + listed(), false, false, "\n");
+        return true;
+    }
+    return false;
+}
+
+namespace
+{
+// A file of the plugin folders is a module or a bundle folder (VST3 / CLAP / LV2); some plugins in a VST3 bundle
+// are listed by the module inside it (Contents\x86_64-win\<name>.vst3 — Antares, sonible…). Round 165i: those
+// listings never matched the bundle folder, so every start-up's background scan described all of them again (a
+// child process loading each plugin, ~4 s and 100–400 MB apiece, with their licence helpers).
+bool listedInside (const juce::KnownPluginList& known, juce::AudioPluginFormat& format, const juce::String& file)
+{
+    const juce::File bundle (file);
+    if (! juce::File::isAbsolutePath (file) || ! bundle.isDirectory())
+        return false;
+    auto any = false;
+    for (const auto& d : known.getTypes())
+    {
+        if (d.pluginFormatName != format.getName() || ! juce::File::isAbsolutePath (d.fileOrIdentifier)
+            || ! juce::File (d.fileOrIdentifier).isAChildOf (bundle))
+            continue;
+        if (format.pluginNeedsRescanning (d))
+            return false;
+        any = true;
+    }
+    return any;
+}
+} // namespace
+
+bool PluginHost::sameModule (const juce::PluginDescription& d, const juce::String& file)
+{
+    return d.fileOrIdentifier == file
+        || (juce::File::isAbsolutePath (file) && juce::File::isAbsolutePath (d.fileOrIdentifier) && juce::File (file).isDirectory()
+            && juce::File (d.fileOrIdentifier).isAChildOf (juce::File (file)));
+}
+
+int PluginHost::scanJsfx()
+{
+    if (persistent)
+        jsfx::installPack();
+    for (auto* format : formats.getFormats())
+        if (format->getName() == JsfxPluginFormat::formatName)
+        {
+            const auto files = format->searchPathsForPlugins (jsfx::roots(), true, false);
+            auto removed = false;
+            // scripts that are gone from the roots leave the list (a moved or deleted script)
+            for (const auto& d : known.getTypes())
+                if (d.pluginFormatName == JsfxPluginFormat::formatName && ! files.contains (d.fileOrIdentifier))
+                {
+                    known.removeType (d);
+                    removed = true;
+                }
+            const auto found = scanFiles (files, {});
+            if (removed && found == 0)
+                save();
+            return found;
+        }
+    return 0;
+}
+
+int PluginHost::scanFiles (const juce::StringArray& files, const std::function<bool (float, const juce::String&)>& progress)
+{
+    const std::scoped_lock lock (scanLock);
+    stopScan = false;
+    const auto before = known.getNumTypes();
+    // what was found so far is saved as the scan goes (at most every few seconds): LYNX closed in the middle of a
+    // background scan used to lose it all, and the next start described the same files again
+    auto lastSave = juce::Time::getMillisecondCounter();
+    auto unsaved = false;
+    for (int i = 0; i < files.size() && ! stopScan; ++i)
+    {
+        const auto& file = files[i];
+        if (progress && ! progress ((float) i / (float) juce::jmax (1, files.size()), file))
+            break;
+        if (known.getBlacklistedFiles().contains (file))
+            continue;
+        for (auto* format : formats.getFormats())
+        {
+            if (! format->canScanForPlugins() || ! format->fileMightContainThisPluginType (file))
+                continue;
+            if (! known.isListingUpToDate (file, *format) && ! listedInside (known, *format, file) && ! emptyScanIsCurrent (file))
+            {
+                // JSFX (round 190pj): only a text header is read, nothing is loaded or run: in this process. By name, not
+                // isTrivialToScan(): JUCE's LV2 format says it is trivial too, and LV2's plugin-by-plugin scan after a failed
+                // batch must stay in children (a bad bundle can crash; rollup 0.1.31 step 7, --lv2scantest)
+                if (format->getName() == JsfxPluginFormat::formatName)
+                {
+                    juce::OwnedArray<juce::PluginDescription> found;
+                    known.scanAndAddFile (file, false, found, *format);
+                    if (found.isEmpty())
+                        rememberEmptyScan (file);
+                }
+                else
+                    scanOne (*format, file);
+                unsaved = true;
+            }
+            break;
+        }
+        if (unsaved && juce::Time::getMillisecondCounter() - lastSave > 5000)
+        {
+            save();
+            lastSave = juce::Time::getMillisecondCounter();
+            unsaved = false;
+        }
+    }
+    save();
+    return known.getNumTypes() - before;
+}
+
+void PluginHost::startBackgroundScanOfFiles (const juce::StringArray& files)
+{
+    if (backgroundScan().running || files.isEmpty())
+        return;
+    background = nullptr;
+    {
+        const std::scoped_lock lock (stateLock);
+        state.running = true;
+        state.progress = 0.0f;
+        state.found = 0;
+        state.file = {};
+    }
+    background = std::make_unique<BackgroundScan> (*this, juce::FileSearchPath(), files);
+    background->startThread (juce::Thread::Priority::low);
+}
+
+namespace
+{
+// the file of a scan-empty.txt line ("<date>|<file>", "|bridge32" after it for a 32-bit module the bridge described)
+juce::String emptyScanFile (const juce::String& line)
+{
+    auto file = line.fromFirstOccurrenceOf ("|", false, false);
+    return file.endsWith ("|bridge32") ? file.dropLastCharacters (9) : file;
+}
+} // namespace
+
+void PluginHost::forgetFile (const juce::String& file)
+{
+    for (const auto& t : known.getTypes())
+        if (sameModule (t, file))
+            known.removeType (t);
+    known.removeFromBlacklist (file);
+    {
+        juce::StringArray lines;
+        const auto list = settingsFolder().getChildFile ("scan-empty.txt");
+        lines.addLines (list.loadFileAsString());
+        for (int i = lines.size(); --i >= 0;)
+            if (emptyScanFile (lines[i]) == file)
+                lines.remove (i);
+        if (persistent)
+            list.replaceWithText (lines.joinIntoString ("\n"));
+    }
+    if (persistent && ! juce::File::isAbsolutePath (file)) // an LV2 URI: the next scan describes the LV2 folders again
+        settingsFolder().getChildFile ("scan-lv2.txt").deleteFile();
+    save();
+}
+
+void PluginHost::forgetAll()
+{
+    known.clear();
+    known.clearBlacklistedFiles();
+    if (persistent)
+    {
+        settingsFolder().getChildFile ("scan-empty.txt").deleteFile();
+        settingsFolder().getChildFile ("scan-lv2.txt").deleteFile();
+    }
+    forgetMisses();
+    save();
+}
+
+bool PluginHost::emptyScanIsCurrent (const juce::String& file)
+{
+    if (! persistent || ! juce::File::isAbsolutePath (file)) // (an LV2 URI has no file date to compare)
+        return false;
+    const auto stamp = juce::String (juce::File (file).getLastModificationTime().toMilliseconds());
+    juce::StringArray lines;
+    lines.addLines (settingsFolder().getChildFile ("scan-empty.txt").loadFileAsString());
+    // round 176a: a 32-bit module counts as empty only when the 32-bit bridge described it ("|bridge32"); the 64-bit
+    // scans before the bridge could not load it at all, so those are looked at again
+    return lines.contains (stamp + "|" + file + (isModule32Bit (file) ? "|bridge32" : ""));
+}
+
+void PluginHost::rememberEmptyScan (const juce::String& file)
+{
+    if (! persistent || ! juce::File::isAbsolutePath (file))
+        return;
+    const auto list = settingsFolder().getChildFile ("scan-empty.txt");
+    juce::StringArray lines;
+    lines.addLines (list.loadFileAsString());
+    for (int i = lines.size(); --i >= 0;)
+        if (lines[i].trim().isEmpty() || emptyScanFile (lines[i]) == file)
+            lines.remove (i);
+    lines.add (juce::String (juce::File (file).getLastModificationTime().toMilliseconds()) + "|" + file + (isModule32Bit (file) ? "|bridge32" : ""));
+    list.replaceWithText (lines.joinIntoString ("\n"));
+}
+
+namespace
+{
+juce::String missKey (const FlpPluginUse& use)
+{
+    const auto& p = use.plugin;
+    juce::String key = juce::String ((int) p.format) + ":" + (use.instrument ? "i" : "e") + ":" + juce::String::fromUTF8 (p.name.c_str()) + ":"
+                       + juce::String::fromUTF8 (p.path.c_str()) + ":" + juce::String ((juce::int64) p.vst2Id);
+    if (p.hasClassId)
+        key << ":" << juce::String::toHexString (p.classId.data(), (int) p.classId.size(), 0);
+    if (! p.clapId.empty())
+        key << ":" << juce::String::fromUTF8 (p.clapId.c_str());
+    // a Waves shell: the sub-plugin's name says which one
+    key << ":" << juce::String::fromUTF8 (wavesPluginName (pluginIdentity (p).state).c_str());
+    return key.replaceCharacters ("\r\n", "  ");
+}
+
+constexpr juce::int64 missMemoryMs = 7LL * 24 * 3600 * 1000;
+} // namespace
+
+bool PluginHost::recentlyMissed (const FlpPluginUse& use) const
+{
+    if (! persistent)
+        return false;
+    juce::StringArray lines;
+    lines.addLines (settingsFolder().getChildFile ("scan-misses.txt").loadFileAsString());
+    const auto key = missKey (use);
+    const auto now = juce::Time::currentTimeMillis();
+    for (const auto& line : lines)
+        if (line.fromFirstOccurrenceOf ("|", false, false) == key)
+        {
+            const auto when = line.upToFirstOccurrenceOf ("|", false, false).getLargeIntValue();
+            return now >= when && now - when < missMemoryMs;
+        }
+    return false;
+}
+
+void PluginHost::rememberMisses (const std::vector<FlpPluginUse>& uses)
+{
+    if (! persistent || uses.empty())
+        return;
+    const auto list = settingsFolder().getChildFile ("scan-misses.txt");
+    juce::StringArray lines;
+    lines.addLines (list.loadFileAsString());
+    const auto now = juce::String (juce::Time::currentTimeMillis());
+    for (const auto& use : uses)
+    {
+        const auto key = missKey (use);
+        for (int i = lines.size(); --i >= 0;)
+            if (lines[i].trim().isEmpty() || lines[i].fromFirstOccurrenceOf ("|", false, false) == key)
+                lines.remove (i);
+        lines.add (now + "|" + key);
+    }
+    list.replaceWithText (lines.joinIntoString ("\n"));
+}
+
+void PluginHost::forgetMisses()
+{
+    if (persistent)
+        settingsFolder().getChildFile ("scan-misses.txt").deleteFile();
+}
+
+void PluginHost::setFavourite (const std::string& id, bool favourite)
+{
+    if (favourite)
+        favouriteIds.insert (id);
+    else
+        favouriteIds.erase (id);
+    if (persistent)
+        settingsFolder().getChildFile ("plugin-favourites.txt").replaceWithText (juce::String (prefs::formatFavourites (favouriteIds)));
+}
+
+void PluginHost::setPluginName (const std::string& key, const std::string& name)
+{
+    auto clean = juce::String::fromUTF8 (name.c_str()).replaceCharacters ("\t\r\n", "   ").trim().toStdString();
+    if (clean.empty())
+        userNames.erase (key);
+    else
+        userNames[key] = clean;
+    if (persistent)
+        settingsFolder().getChildFile ("plugin-names.txt").replaceWithText (juce::String::fromUTF8 (prefs::formatPluginNames (userNames).c_str()));
+    if (onDatabaseEdited)
+        onDatabaseEdited();
+}
+
+void PluginHost::setDatabaseFolders (const plugincatalog::Folders& folders)
+{
+    const auto viewOnly = folders.of == userFolders.of && folders.effects == userFolders.effects && folders.generators == userFolders.generators
+                          && folders.hidden == userFolders.hidden && folders.top == userFolders.top;
+    userFolders = folders;
+    if (persistent)
+        settingsFolder().getChildFile ("plugin-database.txt").replaceWithText (juce::String::fromUTF8 (plugincatalog::formatFolders (userFolders).c_str()));
+    if (onDatabaseEdited && ! viewOnly)
+        onDatabaseEdited();
+}
+
+void PluginHost::adoptDatabase (const plugincatalog::Folders& folders, const std::map<std::string, std::string>& names)
+{
+    const auto view = userFolders.view;
+    const auto foldersChanged = folders.of != userFolders.of || folders.effects != userFolders.effects || folders.generators != userFolders.generators;
+    const auto namesChanged = names != userNames;
+    userFolders = folders;
+    userFolders.view = view;
+    userNames = names;
+    if (! persistent)
+        return;
+    const auto databaseFile = settingsFolder().getChildFile ("plugin-database.txt");
+    if (foldersChanged || ! databaseFile.existsAsFile())
+        databaseFile.replaceWithText (juce::String::fromUTF8 (plugincatalog::formatFolders (userFolders).c_str()));
+    if (namesChanged)
+        settingsFolder().getChildFile ("plugin-names.txt").replaceWithText (juce::String::fromUTF8 (prefs::formatPluginNames (userNames).c_str()));
+}
+
+void PluginHost::startBackgroundScan (const juce::FileSearchPath& paths)
+{
+    if (backgroundScan().running)
+        return;
+    background = nullptr; // the previous, finished thread
+    {
+        const std::scoped_lock lock (stateLock);
+        state.running = true;
+        state.progress = 0.0f;
+        state.found = 0;
+        state.file = {};
+    }
+    background = std::make_unique<BackgroundScan> (*this, paths);
+    background->startThread (juce::Thread::Priority::low);
+}
+
+PluginHost::ScanState PluginHost::backgroundScan() const
+{
+    const std::scoped_lock lock (stateLock);
+    return state;
+}
+
+void PluginHost::cancelBackgroundScan()
+{
+    if (background != nullptr)
+    {
+        stopScan = true;
+        background->signalThreadShouldExit();
+    }
+}
+
+
+int PluginHost::scanOneFile (const juce::String& formatName, const juce::String& file, const juce::File& output)
+{
+    // what this child is doing, for the parent's limit (round 190fw): a plugin that boots slowly is not a hung one
+    const ActivityReporter activity (activityFile (output));
+    // first tell the parent how many plugins this file holds, so it waits long enough for a large bundle
+    if (formatName == "VST3")
+        if (const auto classes = countVst3Classes (file); classes > 1)
+            classCountFile (output).replaceWithText (juce::String (classes));
+
+    juce::AudioPluginFormatManager manager;
+    addPluginFormats (manager);
+    juce::OwnedArray<juce::PluginDescription> found;
+    for (auto* format : manager.getFormats())
+        if (format->getName() == formatName && formatName == "LV2" && file.startsWith (lv2BatchPrefix))
+        {
+            // (--lv2scantest: a child that dies, and one that a cancel has to stop)
+            const auto fault = juce::SystemStats::getEnvironmentVariable ("LYNX_TEST_CRASH", {});
+            if (fault == "lv2-batch")
+                std::abort();
+            if (fault == "lv2-batch-hang")
+                juce::Thread::sleep (60000);
+            if (fault.startsWith ("lv2-batch-busy")) // (round 190fw: works this long, in ms, before it answers)
+                for (const auto until = juce::Time::getMillisecondCounter() + (juce::uint32) fault.fromLastOccurrenceOf (":", false, false).getIntValue();
+                     juce::Time::getMillisecondCounter() < until;)
+                {
+                    volatile double x = 0.0;
+                    for (int k = 0; k < 100000; ++k)
+                        x = x + std::sqrt ((double) k);
+                }
+            auto ids = format->searchPathsForPlugins (juce::FileSearchPath (file.fromFirstOccurrenceOf (lv2BatchPrefix, false, false)), true, false);
+            ids.removeDuplicates (false); // newer JUCE lists a bundle once per plugin, and describes all of them each time
+            classCountFile (output).replaceWithText (juce::String (ids.size())); // (a large collection gets the time it needs)
+            for (const auto& id : ids)
+                format->findAllTypesForFile (found, id);
+        }
+        else if (format->getName() == formatName)
+        {
+            // an LV2 URI is looked up in the folders the scan listed it from: JUCE alone knows only ~/.lv2 and one
+            // of /usr/lib/lv2 or /usr/lib64/lv2
+            if (formatName == "LV2" && ! juce::File::isAbsolutePath (file))
+            {
+                format->searchPathsForPlugins (lv2Folders (lv2SearchFolders()), true, false);
+            }
+            format->findAllTypesForFile (found, file);
+        }
+    juce::XmlElement xml ("PLUGINS");
+    for (auto* d : found)
+        xml.addChildElement (d->createXml().release());
+    xml.writeTo (output);
+   #if JUCE_WINDOWS
+    // the answer is written: the child ends here, without unloading the plugin modules, whose shutdown can hang (a
+    // Waves shell in a desktop session) and get the whole file marked as hung (round 113)
+    if (! found.isEmpty())
+        TerminateProcess (GetCurrentProcess(), 0);
+   #endif
+    return found.size();
+}
+
+namespace
+{
+std::atomic<bool> loadedAny { false };
+}
+
+bool PluginHost::pluginsWereLoaded() noexcept
+{
+    return loadedAny.load();
+}
+
+int PluginHost::addPluginFile (const juce::File& file)
+{
+    loadedAny.store (true);
+    const auto before = known.getNumTypes();
+    juce::OwnedArray<juce::PluginDescription> found;
+
+    if (file.isDirectory() && file.hasFileExtension ("lv2"))
+    {
+        // LV2 plugins are known by URI: the bundle's folder is searched, and the URIs its manifest names are added
+        const auto manifest = file.getChildFile ("manifest.ttl").loadFileAsString();
+        for (auto* format : formats.getFormats())
+            if (format->getName() == "LV2")
+            {
+                format->searchPathsForPlugins (lv2Folders (lv2SearchFolders()), true, false);
+                for (const auto& uri : format->searchPathsForPlugins (juce::FileSearchPath (file.getParentDirectory().getFullPathName()), false, false))
+                    if (manifest.contains ("<" + uri + ">"))
+                        known.scanAndAddFile (uri, true, found, *format);
+            }
+    }
+    else if (isModule32Bit (file.getFullPathName()))
+    {
+        // a 32-bit module (round 176a): described by the 32-bit bridge, as a scan does
+        for (auto* format : formats.getFormats())
+            if (format->fileMightContainThisPluginType (file.getFullPathName()))
+            {
+                scanOne (*format, file.getFullPathName());
+                break;
+            }
+    }
+    else
+        for (auto* format : formats.getFormats())
+            known.scanAndAddFile (file.getFullPathName(), true, found, *format);
+
+    save();
+    return known.getNumTypes() - before;
+}
+
+void PluginHost::findLv2Plugins()
+{
+    for (auto* format : formats.getFormats())
+        if (format->getName() == "LV2")
+            format->searchPathsForPlugins (lv2Folders (lv2SearchFolders()), true, false);
+}
+
+std::unique_ptr<juce::PluginDescription> PluginHost::find (const juce::String& id) const
+{
+    if (auto d = known.getTypeForIdentifierString (id))
+        return d;
+    // a JSFX script saved on another computer (or moved to another JSFX root): found by its relative path (round 190pj)
+    return jsfx::findPortable (known, id);
+}
+
+std::string PluginHost::bitnessKey (const juce::PluginDescription& d)
+{
+    return (d.pluginFormatName + "|" + juce::String::toHexString (d.uniqueId) + "|" + d.name).toStdString();
+}
+
+std::unique_ptr<juce::PluginDescription> PluginHost::otherBuild (const juce::PluginDescription& description) const
+{
+    if (! bridge32Supported())
+        return nullptr;
+    const auto key = bitnessKey (description);
+    const auto is32 = isPlugin32Bit (description);
+    for (const auto& t : known.getTypes())
+        if (t.fileOrIdentifier != description.fileOrIdentifier && bitnessKey (t) == key && isPlugin32Bit (t) != is32)
+            return std::make_unique<juce::PluginDescription> (t);
+    return nullptr;
+}
+
+std::unique_ptr<juce::PluginDescription> PluginHost::buildFor (const PluginRef& ref) const
+{
+    auto description = find (juce::String::fromUTF8 (ref.id.c_str()));
+    if (description == nullptr)
+        return nullptr;
+    // FL's wrapper "Bit size" [UI fl33c/fl36c]: Native loads the 64-bit build of a "32+64" plugin, "32 bit" the other
+    const auto want32 = ref.bitSize == 32;
+    if (isPlugin32Bit (*description) != want32)
+        if (auto other = otherBuild (*description))
+            return other;
+    return description;
+}
+
+namespace
+{
+// The deprecatedUid JUCE assigns to a VST3 class: hash-31 over the TUID's 16 bytes as `char`
+// (signed, like the SDK's TUID). FL stores the TUID in the same memory order.
+int vst3Hash (const std::array<std::uint8_t, 16>& tuid)
+{
+    juce::uint32 value = 0;
+
+    for (auto b : tuid)
+        value = value * 31 + (juce::uint32) (int) (signed char) b;
+
+    return (int) value;
+}
+
+// JUCE's "normalised" uniqueId: the same hash over the FUID's 4 integers (COM layout on Windows).
+int vst3NormalisedHash (const std::array<std::uint8_t, 16>& d)
+{
+    auto make = [] (juce::uint32 a, juce::uint32 b, juce::uint32 c, juce::uint32 e) { return (a << 24) | (b << 16) | (c << 8) | e; };
+    const juce::uint32 longs[] = { make (d[3], d[2], d[1], d[0]), make (d[5], d[4], d[7], d[6]),
+                                   make (d[8], d[9], d[10], d[11]), make (d[12], d[13], d[14], d[15]) };
+    juce::uint32 value = 0;
+
+    for (auto l : longs)
+        value = value * 31 + l;
+
+    return (int) value;
+}
+
+juce::String plainName (const juce::String& s)
+{
+    return s.toLowerCase().retainCharacters ("abcdefghijklmnopqrstuvwxyz0123456789");
+}
+} // namespace
+
+std::optional<juce::PluginDescription> PluginHost::findForeign (const ForeignPlugin& plugin, bool instrument, juce::String* how)
+{
+    auto types = known.getTypes(); // a copy: a background scan may add types meanwhile
+    // entries whose file is gone (a plugin moved to another folder by its installer keeps a stale entry until the next
+    // full scan) go last: the same class ID found at the old path would load nothing ("no compatible plug-in format")
+    std::stable_partition (types.begin(), types.end(), [this] (const juce::PluginDescription& d) { return fileStillThere (d.fileOrIdentifier); });
+    // a module the user chose not to wait for (round 121): its plugins are missing for this open (substitutes play)
+    types.removeIf ([] (const juce::PluginDescription& d) { return warmup().skipped (d.fileOrIdentifier.toStdString()); });
+    auto found = [how] (const juce::PluginDescription& d, const char* reason) {
+        if (how != nullptr)
+            *how = reason;
+        return std::optional<juce::PluginDescription> (d);
+    };
+    auto fileName = plainName (juce::File::createFileWithoutCheckingPath (
+        juce::String::fromUTF8 (plugin.path.c_str()).replaceCharacter ('\\', '/')).getFileNameWithoutExtension());
+    auto name = plainName (juce::String::fromUTF8 (plugin.name.c_str()));
+    // a Waves shell holds many plugins: its file name says nothing; the sub-plugin's name is in its state
+    const auto shell = name.startsWith ("waveshell") || fileName.startsWith ("waveshell");
+    if (shell)
+    {
+        fileName = {};
+        name = plainName (juce::String::fromUTF8 (wavesPluginName (pluginIdentity (plugin).state).c_str()));
+    }
+    // a list entry whose file is gone (an uninstalled older version next to the current one, round 113) never matches:
+    // loading it fails and the slot would play nothing
+    // (cached per open: a Waves shell is ~600 entries with the same file, asked for every slot — 0.6 s of file checks)
+    auto present = [this] (const juce::PluginDescription& d) { return fileStillThere (d.fileOrIdentifier); };
+    // 1) the same plugin, by its format identifier
+    for (const auto& d : types)
+    {
+        if (! present (d))
+            continue;
+        if (plugin.format == ForeignPlugin::Format::vst3 && plugin.hasClassId && d.pluginFormatName == "VST3"
+            && (d.deprecatedUid == vst3Hash (plugin.classId) || d.uniqueId == vst3NormalisedHash (plugin.classId)))
+            return found (d, TR_NOOP ("same VST3 class ID"));
+        if (plugin.format == ForeignPlugin::Format::vst2 && plugin.vst2Id != 0 && d.pluginFormatName == Vst2PluginFormat::formatName
+            && (juce::uint32) d.uniqueId == plugin.vst2Id)
+            return found (d, TR_NOOP ("same VST2 ID"));
+        if (plugin.format == ForeignPlugin::Format::clap && ! plugin.clapId.empty() && d.pluginFormatName == ClapPluginFormat::formatName
+            && d.uniqueId == juce::String::fromUTF8 (plugin.clapId.c_str()).hashCode())
+            return found (d, TR_NOOP ("same CLAP id"));
+    }
+    // 2) the file FL Studio uses for it on this PC (its plugin database), or the very file the project saved
+    auto sameFile = [&] (const std::string& path) -> const juce::PluginDescription* {
+       #if JUCE_WINDOWS
+        const auto p = juce::String::fromUTF8 (path.c_str()).replaceCharacter ('/', '\\');
+       #else
+        const auto p = juce::String::fromUTF8 (path.c_str());
+       #endif
+        if (p.isEmpty() || ! juce::File::isAbsolutePath (p))
+            return nullptr;
+        const juce::File file (p);
+        for (const auto& d : types)
+            if (d.isInstrument == instrument && juce::File::isAbsolutePath (d.fileOrIdentifier) && juce::File (d.fileOrIdentifier) == file && present (d))
+                return &d;
+        return nullptr;
+    };
+    // (not for a Waves shell: its file holds many plugins, the first one of the file would be the wrong one)
+    if (! shell)
+    {
+        if (const auto* entry = flPluginDatabase().match (plugin, instrument))
+            if (const auto* d = sameFile (entry->path))
+                return found (*d, TR_NOOP ("FL Studio's plugin database"));
+        if (const auto* d = sameFile (plugin.path))
+            return found (*d, TR_NOOP ("same file as in the project"));
+    }
+    // 3) fallback, since FL swaps VST2 <-> VST3: same name (plugin or file), same role
+    if (name.isEmpty() && fileName.isEmpty())
+        return std::nullopt;
+    // a plugin installed in several formats: prefer the one FL used (VST3 → VST3, CLAP → CLAP), whose state carries over
+    const auto sameFormat = plugin.format == ForeignPlugin::Format::vst3   ? juce::String ("VST3")
+                            : plugin.format == ForeignPlugin::Format::clap ? juce::String (ClapPluginFormat::formatName)
+                            : plugin.format == ForeignPlugin::Format::vst2 ? juce::String (Vst2PluginFormat::formatName)
+                                                                           : juce::String();
+    std::optional<juce::PluginDescription> byName;
+    for (const auto& d : types)
+    {
+        if (d.isInstrument != instrument || ! present (d))
+            continue;
+        const auto candidate = plainName (d.name);
+        const auto candidateFile = plainName (juce::File::createFileWithoutCheckingPath (d.fileOrIdentifier).getFileNameWithoutExtension());
+        if (shell)
+        {
+            // "RComp" -> "RComp Stereo" / "RComp Mono"; the project's channel layout isn't known: stereo first
+            if (name.isNotEmpty() && (candidate == name + "stereo" || candidate == name))
+                return found (d, TR_NOOP ("same Waves plugin"));
+            if (name.isNotEmpty() && candidate == name + "mono" && ! byName)
+                byName = d;
+            continue;
+        }
+        if ((name.isNotEmpty() && (candidate == name || candidateFile == name))
+            || (fileName.isNotEmpty() && (candidate == fileName || candidateFile == fileName)))
+        {
+            if (d.pluginFormatName == sameFormat)
+                return found (d, TR_NOOP ("same name"));
+            if (! byName)
+                byName = d;
+        }
+    }
+    if (byName && how != nullptr)
+        *how = TR_NOOP ("same name, other format");
+    return byName;
+}
+
+bool PluginHost::isInstalled (const PluginRef& ref)
+{
+    if (ref.id.empty() || playedElsewhere (ref)) // (another participant of the live session plays it: P5-A1)
+        return false;
+    const auto d = find (juce::String::fromUTF8 (ref.id.c_str()));
+    return d != nullptr && fileStillThere (d->fileOrIdentifier);
+}
+
+// --- Online Sessions P5-A1: plugins the host shares (core/RemotePlugins.h) ------------------------------------------
+
+namespace
+{
+bool sharedParameter (const juce::AudioProcessorParameter& p)
+{
+    // (a JUCE-built plugin lists 16 x 128 "MIDI CC" parameters: not something to show a guest)
+    return p.isAutomatable() && ! p.getName (32).startsWith ("MIDI CC ");
+}
+} // namespace
+
+std::optional<remoteplug::Shared> PluginHost::describeForSharing (const std::string& id, juce::String* error)
+{
+    const auto description = find (juce::String::fromUTF8 (id.c_str()));
+    if (description == nullptr || ! fileStillThere (description->fileOrIdentifier))
+    {
+        if (error != nullptr)
+            *error = "plugin not installed or not scanned";
+        return std::nullopt;
+    }
+    PluginRef ref;
+    ref.id = id;
+    ref.name = description->name.toStdString();
+    juce::String why;
+    auto instance = createInstance (ref, 44100.0, &why);
+    if (instance == nullptr)
+    {
+        if (error != nullptr)
+            *error = why;
+        return std::nullopt;
+    }
+    remoteplug::Shared shared;
+    shared.id = id;
+    shared.name = description->name.toStdString();
+    shared.vendor = description->manufacturerName.toStdString();
+    shared.format = description->pluginFormatName.toStdString();
+    shared.instrument = description->isInstrument;
+    const auto& params = instance->getParameters();
+    for (int i = 0; i < params.size() && shared.params.size() < remoteplug::maxParams; ++i)
+    {
+        auto* p = params.getUnchecked (i);
+        if (p == nullptr || ! sharedParameter (*p))
+            continue;
+        remoteplug::Param out;
+        out.index = i;
+        out.name = p->getName (48).toStdString();
+        out.unit = p->getLabel().substring (0, 12).toStdString();
+        // (what a fresh instance has — the sound is "a fresh instance plus the values" —, which is not always the
+        // default the plugin declares)
+        out.def = juce::jlimit (0.0f, 1.0f, p->getValue());
+        out.low = p->getText (0.0f, 24).toStdString();
+        out.high = p->getText (1.0f, 24).toStdString();
+        const auto steps = p->getNumSteps();
+        if (p->isDiscrete() && steps >= 2 && steps <= 1 << 16)
+        {
+            out.steps = steps;
+            if (steps <= remoteplug::maxSteps)
+                for (int k = 0; k < steps; ++k)
+                    out.stepNames.push_back (p->getText ((float) k / (float) (steps - 1), 24).toStdString());
+        }
+        shared.params.push_back (std::move (out));
+    }
+    instance->releaseResources();
+    instance.reset();
+    remoteplug::clean (shared);
+    return shared;
+}
+
+void PluginHost::applyValues (juce::AudioPluginInstance& plugin, const std::vector<std::pair<int, float>>& values)
+{
+    const auto& params = plugin.getParameters();
+    for (const auto& [index, value] : values)
+        if (index >= 0 && index < params.size())
+            if (auto* p = params.getUnchecked (index); p != nullptr && sharedParameter (*p))
+                p->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, value));
+}
+
+std::vector<std::pair<int, float>> PluginHost::readValues (juce::AudioPluginInstance& plugin, const remoteplug::Shared* fresh)
+{
+    std::vector<std::pair<int, float>> out;
+    std::map<int, float> base;
+    if (fresh != nullptr)
+        for (const auto& param : fresh->params)
+            base[param.index] = param.def;
+    const auto& params = plugin.getParameters();
+    for (int i = 0; i < params.size() && out.size() < remoteplug::maxParams; ++i)
+        if (auto* p = params.getUnchecked (i); p != nullptr && sharedParameter (*p))
+        {
+            const auto v = juce::jlimit (0.0f, 1.0f, p->getValue());
+            const auto it = base.find (i);
+            if (std::abs (v - (it != base.end() ? it->second : juce::jlimit (0.0f, 1.0f, p->getDefaultValue()))) > 1.0e-4f)
+                out.push_back ({ i, v });
+        }
+    return out;
+}
+
+std::optional<PluginHost::Identity> PluginHost::portableIdentity (const PluginRef& ref) const
+{
+    const auto d = find (juce::String::fromUTF8 (ref.id.c_str()));
+    if (d == nullptr)
+        return std::nullopt;
+    Identity id;
+    id.ref = juce::String::fromUTF8 (ref.id.c_str());
+    id.name = d->name;
+    id.format = d->pluginFormatName;
+    id.manufacturer = d->manufacturerName;
+    id.version = d->version;
+    id.file = juce::File::createFileWithoutCheckingPath (d->fileOrIdentifier).getFileName();
+    id.uniqueId = d->uniqueId;
+    id.deprecatedUid = d->deprecatedUid;
+    id.instrument = d->isInstrument;
+    return id;
+}
+
+std::optional<juce::PluginDescription> PluginHost::findByIdentity (const Identity& identity, bool* sameFormat)
+{
+    const auto types = known.getTypes();
+    for (const auto& d : types)
+        if (d.pluginFormatName == identity.format && fileStillThere (d.fileOrIdentifier)
+            && ((identity.uniqueId != 0 && d.uniqueId == identity.uniqueId) || (identity.deprecatedUid != 0 && d.deprecatedUid == identity.deprecatedUid))
+            && (identity.name.isEmpty() || plainName (d.name) == plainName (identity.name)))
+        {
+            if (sameFormat != nullptr)
+                *sameFormat = true;
+            return d;
+        }
+    for (const auto& d : types)
+        if (d.isInstrument == identity.instrument && fileStillThere (d.fileOrIdentifier) && plainName (d.name) == plainName (identity.name)
+            && (identity.manufacturer.isEmpty() || plainName (d.manufacturerName) == plainName (identity.manufacturer)))
+        {
+            if (sameFormat != nullptr)
+                *sameFormat = d.pluginFormatName == identity.format;
+            return d;
+        }
+    return std::nullopt;
+}
+
+bool PluginHost::fileStillThere (const juce::String& file)
+{
+    if (! juce::File::isAbsolutePath (file))
+        return true;
+    const std::scoped_lock lock (existsLock);
+    if (const auto it = existsCache.find (file); it != existsCache.end())
+        return it->second;
+    return existsCache[file] = juce::File (file).exists();
+}
+
+juce::StringArray PluginHost::filesToScanFor (const std::vector<FlpPluginUse>& uses)
+{
+    juce::StringArray files;
+    std::vector<std::pair<const FlpPluginUse*, const FlPluginDbEntry*>> needed;
+    for (const auto& use : uses)
+        if (! findForeign (use.plugin, use.instrument))
+            needed.push_back ({ &use, flPluginDatabase().match (use.plugin, use.instrument) });
+    if (needed.empty())
+        return files;
+
+    auto hosted = [] (const juce::String& path) {
+        return path.endsWithIgnoreCase (".vst3") || path.endsWithIgnoreCase (".clap") || path.endsWithIgnoreCase (".dll")
+            || path.endsWithIgnoreCase (".component") || path.endsWithIgnoreCase (".lv2");
+    };
+    auto addExisting = [&] (const std::string& path) {
+       #if JUCE_WINDOWS
+        const auto p = juce::String::fromUTF8 (path.c_str()).replaceCharacter ('/', '\\');
+       #else
+        const auto p = juce::String::fromUTF8 (path.c_str());
+       #endif
+        if (p.isNotEmpty() && juce::File::isAbsolutePath (p) && hosted (p) && juce::File (p).exists())
+            files.addIfNotAlreadyThere (juce::File (p).getFullPathName(), true);
+    };
+    for (const auto& [use, entry] : needed)
+    {
+        addExisting (use->plugin.path);
+        if (entry != nullptr)
+            addExisting (entry->path);
+    }
+    // same-named plugin files in the scan folders (listing only: nothing is loaded here)
+    const auto folders = pluginFolders();
+    for (const auto& file : listPluginFiles (formats, folders))
+        for (const auto& [use, entry] : needed)
+            if (pluginFileMatches (file.toStdString(), use->plugin, entry))
+                files.addIfNotAlreadyThere (file, true);
+    // known to crash or hang: nothing to learn
+    juce::StringArray worth;
+    for (const auto& file : files)
+        if (! known.getBlacklistedFiles().contains (file))
+            worth.add (file);
+    worth.removeRange (32, worth.size()); // a project rarely needs more; the rest waits for the background scan
+    return worth;
+}
+
+std::string PluginHost::stateFromFlWrapper (const ForeignPlugin& f, const juce::PluginDescription& d)
+{
+    // CLAP: u32 0 + the clap_plugin_state.save bytes (REA_rodada22 §2); LYNX's CLAP host stores the same
+    if (f.format == ForeignPlugin::Format::clap && d.pluginFormatName == "CLAP")
+        return f.state.size() > 4 ? juce::MemoryBlock (f.state.data() + 4, f.state.size() - 4).toBase64Encoding().toStdString() : std::string {};
+
+    // VST2: LYNX's VST2 host keeps FL's own state layout (REA_rodada89 §2)
+    if (f.format == ForeignPlugin::Format::vst2 && d.pluginFormatName == Vst2PluginFormat::formatName)
+    {
+        FlVst2State check;
+        return parseFlVst2State (f.state, check) ? juce::MemoryBlock (f.state.data(), f.state.size()).toBase64Encoding().toStdString()
+                                                 : std::string {};
+    }
+
+    if (f.format != ForeignPlugin::Format::vst3 || d.pluginFormatName != "VST3")
+        return {}; // VST2 <-> VST3: different state formats; plugin at defaults
+
+    std::vector<std::uint8_t> component, controller;
+
+    if (! splitFlVst3State (f.state, component, controller))
+        return {};
+
+    juce::XmlElement xml ("VST3PluginState");
+
+    if (! component.empty())
+        xml.createNewChildElement ("IComponent")->addTextElement (juce::MemoryBlock (component.data(), component.size()).toBase64Encoding());
+    if (! controller.empty())
+        xml.createNewChildElement ("IEditController")->addTextElement (juce::MemoryBlock (controller.data(), controller.size()).toBase64Encoding());
+
+    juce::MemoryBlock binary;
+    juce::AudioProcessor::copyXmlToBinary (xml, binary);
+    return binary.toBase64Encoding().toStdString();
+}
+
+int PluginHost::adoptFlPlugins (Song& song, juce::StringArray* missing, juce::StringArray* matched, juce::StringArray* withoutState,
+                                juce::StringArray* substituted)
+{
+    int found = 0;
+
+    auto convertState = [] (const ForeignPlugin& f, const juce::PluginDescription& d) { return stateFromFlWrapper (f, d); };
+
+    auto adopt = [&] (PluginRef& ref, bool instrument) {
+        juce::String how;
+        const auto d = findForeign (ref.foreign, instrument, &how);
+
+        if (! d)
+        {
+            if (missing != nullptr)
+                missing->addIfNotAlreadyThere (juce::String::fromUTF8 (ref.foreign.name.c_str()));
+            ref.foreign = {};
+            return false;
+        }
+
+        if (matched != nullptr)
+            matched->addIfNotAlreadyThere (juce::String::fromUTF8 (ref.foreign.name.c_str()) + " -> " + d->fileOrIdentifier + " (" + tr (how) + ")");
+        ref.id = d->createIdentifierString().toStdString();
+        ref.name = d->name.toStdString();
+        ref.state = convertState (ref.foreign, *d);
+        // found, but the project's settings could not be carried over: it plays its default sound
+        if (ref.state.empty() && ! ref.foreign.state.empty() && withoutState != nullptr)
+            withoutState->addIfNotAlreadyThere (juce::String::fromUTF8 (ref.foreign.name.c_str()) + " (" + d->pluginFormatName + ")");
+        ref.foreign = {};
+        ++found;
+        return true;
+    };
+
+    // FL automates a VST3 by "slot" (record 4: slot → ParamID); LYNX by position in JUCE's list, which is
+    // getParameterInfo order (REA_rodada22 §2.3). Needs the plugin's current list: only when something is
+    // automated, in-process (skipped with the sandbox on, where k stays the position — FL's default for a new instance).
+    // (the instance it asks for stays ready for the rack: the same plugin is not created twice on open)
+    auto remapVst3Slots = [&] (const ForeignPlugin& f, const juce::PluginDescription& d, const PluginRef& ref, auto&& isThisPlugin) {
+        if (f.format != ForeignPlugin::Format::vst3 || d.pluginFormatName != "VST3" || pluginSandboxEnabled())
+            return;
+        const auto saved = flVst3ParamSlots (f.state);
+        auto automated = false;
+        song.forEachTarget ([&] (AutomationTarget& t) { automated = automated || isThisPlugin (t); });
+        if (saved.empty() || ! automated)
+            return;
+
+        const loadtrace::Scope timing ("plugin_vst3_remap");
+        juce::String error;
+        auto instance = createInstance (ref, preloadRate, &error);
+        if (instance == nullptr)
+        {
+            const std::scoped_lock lock (preloadLock);
+            preloaded[preloadKey (ref, preloadRate)].push_back ({ nullptr, error });
+            return;
+        }
+        struct Keep
+        {
+            PluginHost& host;
+            const PluginRef& ref;
+            std::unique_ptr<juce::AudioPluginInstance>& instance;
+            ~Keep()
+            {
+                const std::scoped_lock lock (host.preloadLock);
+                host.preloaded[preloadKey (ref, host.preloadRate)].push_back ({ std::move (instance), {} });
+            }
+        } keep { *this, ref, instance };
+        std::vector<std::uint32_t> ids;
+        for (auto* p : instance->getParameters())
+        {
+            const auto* hosted = dynamic_cast<const juce::HostedAudioProcessorParameter*> (p);
+            ids.push_back (hosted != nullptr ? (std::uint32_t) hosted->getParameterID().getLargeIntValue() : 0xffffffffu);
+        }
+        const auto positions = flVst3SlotPositions (saved, ids);
+        song.forEachTarget ([&] (AutomationTarget& t) {
+            if (isThisPlugin (t) && ! midictl::isMidiParam (t.param)) // (MIDI CC indices are not slots)
+                t.param = t.param >= 0 && t.param < (int) positions.size() ? positions[(std::size_t) t.param] : -1;
+        });
+    };
+
+    for (int c = 0; c < (int) song.channels.size(); ++c)
+    {
+        auto& channel = song.channels[(std::size_t) c];
+        if (channel.plugin.foreign.format == ForeignPlugin::Format::none)
+            continue;
+        const auto foreign = channel.plugin.foreign;
+        if (adopt (channel.plugin, true))
+        {
+            channel.instrument = InstrumentKind::plugin;
+            if (const auto d = findForeign (foreign, true))
+                remapVst3Slots (foreign, *d, channel.plugin, [c] (const AutomationTarget& t) { return t.kind == AutomationTargetKind::channelParam && t.index == c; });
+        }
+    }
+
+    // the song's key etc., for substitutes whose own original doesn't say (round 113)
+    const auto context = substituteContextOf (song);
+    // backwards: removing an unmatched slot shifts only the slots after it (their automations follow)
+    for (int track = 0; track < (int) song.mixer.size(); ++track)
+        for (int slot = (int) song.mixer[(std::size_t) track].effects.size() - 1; slot >= 0; --slot)
+        {
+            auto& fx = song.mixer[(std::size_t) track].effects[(std::size_t) slot];
+            if (fx.kind != EffectKind::plugin || fx.plugin.foreign.format == ForeignPlugin::Format::none)
+                continue;
+            const auto foreign = fx.plugin.foreign;
+            // not installed: a LYNX substitute plays in its place and keeps the original record for later
+            if (pluginSubstitutesEnabled() && ! findForeign (foreign, false) && substituteEffectSlot (fx, pluginIdentity (foreign), context))
+            {
+                if (substituted != nullptr)
+                    substituted->addIfNotAlreadyThere (juce::String::fromUTF8 (substituteOriginalName (fx).c_str()) + " -> "
+                                                       + juce::String::fromUTF8 (effectInfo (fx.kind).name));
+                continue;
+            }
+            if (! adopt (fx.plugin, false))
+                song.removeEffectSlot (track, slot);
+            else if (const auto d = findForeign (foreign, false))
+                remapVst3Slots (foreign, *d, fx.plugin, [track, slot] (const AutomationTarget& t) {
+                    return t.kind == AutomationTargetKind::effectParam && t.index == track && t.slot == slot;
+                });
+        }
+
+    // the plugins inside Patchers (REA_rodada141), nested ones too: found, a substitute, or a silent / pass-through node
+    std::function<void (PatcherDoc&)> adoptGraph = [&] (PatcherDoc& doc) {
+        for (auto& node : doc.nodes)
+            if (node.generator)
+            {
+                if (node.channel.plugin.foreign.format != ForeignPlugin::Format::none && adopt (node.channel.plugin, true))
+                    node.channel.instrument = InstrumentKind::plugin;
+                if (node.channel.instrument == InstrumentKind::patcher)
+                    adoptGraph (node.channel.patcher);
+            }
+            else
+            {
+                auto& fx = node.effect;
+                if (fx.kind == EffectKind::plugin && fx.plugin.foreign.format != ForeignPlugin::Format::none)
+                {
+                    const auto foreign = fx.plugin.foreign;
+                    if (pluginSubstitutesEnabled() && ! findForeign (foreign, false) && substituteEffectSlot (fx, pluginIdentity (foreign), context))
+                    {
+                        if (substituted != nullptr)
+                            substituted->addIfNotAlreadyThere (juce::String::fromUTF8 (substituteOriginalName (fx).c_str()) + " -> "
+                                                               + juce::String::fromUTF8 (effectInfo (fx.kind).name));
+                    }
+                    else
+                        adopt (fx.plugin, false);
+                }
+                if (fx.kind == EffectKind::patcher)
+                    adoptGraph (fx.patcher);
+            }
+    };
+    for (auto& channel : song.channels)
+        if (channel.instrument == InstrumentKind::patcher)
+            adoptGraph (channel.patcher);
+    for (auto& track : song.mixer)
+        for (auto& fx : track.effects)
+            if (fx.kind == EffectKind::patcher)
+                adoptGraph (fx.patcher);
+
+    return found;
+}
+
+PluginIdentity PluginHost::identityOf (const PluginRef& ref)
+{
+    if (ref.foreign.format != ForeignPlugin::Format::none)
+        return pluginIdentity (ref.foreign);
+
+    PluginIdentity id;
+    id.name = ref.name;
+    // JUCE's identifier: "<format>-<name>-<file hash>-<unique id>" (hex)
+    const auto text = juce::String::fromUTF8 (ref.id.c_str());
+    const auto format = text.upToFirstOccurrenceOf ("-", false, false);
+    id.format = format == "VST3"                           ? ForeignPlugin::Format::vst3
+                : format == Vst2PluginFormat::formatName   ? ForeignPlugin::Format::vst2
+                : format == ClapPluginFormat::formatName   ? ForeignPlugin::Format::clap
+                                                           : ForeignPlugin::Format::other;
+    if (id.format == ForeignPlugin::Format::vst2)
+        id.vst2Id = (std::uint32_t) text.fromLastOccurrenceOf ("-", false, false).getHexValue64();
+
+    juce::MemoryBlock state;
+    if (ref.state.empty() || ! state.fromBase64Encoding (juce::String::fromUTF8 (ref.state.c_str())))
+        return id;
+    const auto* bytes = static_cast<const std::uint8_t*> (state.getData());
+    if (id.format == ForeignPlugin::Format::vst3)
+    {
+        // JUCE's VST3 state: XML "VST3PluginState" whose IComponent element holds the component state in base64
+        if (const auto xml = juce::AudioProcessor::getXmlFromBinary (state.getData(), (int) state.getSize()))
+            if (const auto* component = xml->getChildByName ("IComponent"))
+            {
+                juce::MemoryBlock raw;
+                if (raw.fromBase64Encoding (component->getAllSubText().trim()))
+                    id.state.assign (static_cast<const std::uint8_t*> (raw.getData()), static_cast<const std::uint8_t*> (raw.getData()) + raw.getSize());
+            }
+    }
+    else
+        id.state.assign (bytes, bytes + state.getSize()); // VST2: FL's layout (LYNX's VST2 host); CLAP: the plugin's own
+    return id;
+}
+
+int PluginHost::applySubstitutes (Song& song, int* restored, int* substituted)
+{
+    if (restored != nullptr)
+        *restored = 0;
+    if (substituted != nullptr)
+        *substituted = 0;
+    // round 190ap: opened without third-party plugins, the slots stay exactly as the project has them: no substitute
+    // takes a plugin's place and no substitute goes back to its original (that converts settings through the plugin)
+    if (pluginsHeld())
+        return 0;
+    int back = 0, replaced = 0;
+    bool foreignBack = false;
+    const auto substitute = pluginSubstitutesEnabled();
+    const auto context = substituteContextOf (song);
+    for (auto& track : song.mixer)
+        for (auto& fx : track.effects)
+        {
+            if (fx.isSubstitute())
+            {
+                const auto& original = fx.substituteFor;
+                const auto installed = original.foreign.format != ForeignPlugin::Format::none
+                                           ? findForeign (original.foreign, false).has_value()
+                                           : find (juce::String::fromUTF8 (original.id.c_str())) != nullptr;
+                if (installed)
+                {
+                    foreignBack = foreignBack || original.foreign.format != ForeignPlugin::Format::none;
+                    restoreOriginalPlugin (fx);
+                    ++back;
+                }
+            }
+            // (an insert with a stand-in render plays that in place of its chain: no substitute; round 168a)
+            else if (substitute && track.standIns.empty() && fx.kind == EffectKind::plugin && fx.plugin.foreign.format == ForeignPlugin::Format::none
+                     && ! fx.plugin.id.empty() && find (juce::String::fromUTF8 (fx.plugin.id.c_str())) == nullptr)
+            {
+                if (substituteEffectSlot (fx, identityOf (fx.plugin), context))
+                    ++replaced;
+            }
+        }
+    // originals that came from an .flp: their FL record still needs converting to the installed plugin's state
+    if (foreignBack)
+        adoptFlPlugins (song);
+    if (restored != nullptr)
+        *restored = back;
+    if (substituted != nullptr)
+        *substituted = replaced;
+    return back + replaced;
+}
+
+bool pluginSubstitutesEnabled()
+{
+    return PluginHost::settingsFolder().getChildFile ("substitutes.txt").loadFileAsString().trim() != "0";
+}
+
+void setPluginSubstitutesEnabled (bool enabled)
+{
+    PluginHost::settingsFolder().getChildFile ("substitutes.txt").replaceWithText (enabled ? "1" : "0");
+}
+
+std::string PluginHost::preloadKey (const PluginRef& ref, double sampleRate)
+{
+    return ref.id + "|" + std::to_string (std::hash<std::string> {} (ref.state)) + "|" + std::to_string (ref.state.size()) + "|"
+           + std::to_string ((long long) std::llround (sampleRate)) + (ref.separateProcess ? "|own process" : "")
+           + (ref.bitSize != 0 ? "|bits" + std::to_string (ref.bitSize) : "");
+}
+
+void PluginHost::preload (const PluginRef& ref, int wanted)
+{
+    if (ref.id.empty() || pluginHeld (ref.id)) // (switched off: nothing to make ready, round 190ap)
+        return;
+    {
+        const std::scoped_lock lock (preloadLock);
+        if (const auto it = preloaded.find (preloadKey (ref, preloadRate)); it != preloaded.end() && (int) it->second.size() >= wanted)
+            return;
+    }
+    Preloaded p;
+    p.instance = createInstance (ref, preloadRate, &p.error);
+    const std::scoped_lock lock (preloadLock);
+    preloaded[preloadKey (ref, preloadRate)].push_back (std::move (p));
+}
+
+bool PluginHost::preloadChecked (const PluginRef& ref, double sampleRate, juce::String& error,
+                                const std::function<bool (juce::AudioPluginInstance&, juce::String&)>& validate)
+{
+    if (ref.id.empty() || ! std::isfinite (sampleRate) || sampleRate <= 0)
+    {
+        error = "Invalid plugin identity or sample rate";
+        return false;
+    }
+    Preloaded ready;
+    ready.instance = createInstance (ref, sampleRate, &error);
+    if (ready.instance == nullptr)
+        return false;
+    if (validate && ! validate (*ready.instance, error))
+        return false;
+    const std::scoped_lock lock (preloadLock);
+    preloaded[preloadKey (ref, sampleRate)].push_back (std::move (ready));
+    return true;
+}
+
+void PluginHost::discardPreloaded (const PluginRef& ref, double sampleRate)
+{
+    std::vector<Preloaded> discarded;
+    {
+        const std::scoped_lock lock (preloadLock);
+        if (auto found = preloaded.find (preloadKey (ref, sampleRate)); found != preloaded.end())
+        {
+            discarded = std::move (found->second);
+            preloaded.erase (found);
+        }
+    }
+    // Plugin teardown stays outside the cache mutex, just as clearPreloaded().
+}
+
+void PluginHost::clearPreloaded()
+{
+    {
+        const std::scoped_lock lock (existsLock);
+        existsCache.clear(); // (asked again on the next open)
+    }
+    std::map<std::string, std::vector<Preloaded>> old;
+    {
+        const std::scoped_lock lock (preloadLock);
+        old.swap (preloaded);
+    }
+    // (the unused instances are released here, outside the lock)
+}
+
+int PluginHost::preloadedCount() const
+{
+    const std::scoped_lock lock (preloadLock);
+    int n = 0;
+    for (const auto& [key, list] : preloaded)
+        n += (int) list.size();
+    return n;
+}
+
+namespace
+{
+std::mutex& holdLock()
+{
+    static std::mutex m;
+    return m;
+}
+pluginhold::State& holdState()
+{
+    static pluginhold::State s;
+    return s;
+}
+juce::String heldMessage (const PluginRef& ref)
+{
+    return juce::String::fromUTF8 (ref.name.c_str()) + ": " + tr ("switched off (the project was opened without third-party plugins)");
+}
+} // namespace
+
+bool pluginsHeld()
+{
+    const std::scoped_lock lock (holdLock());
+    return holdState().active;
+}
+
+bool pluginHeld (const std::string& id)
+{
+    const std::scoped_lock lock (holdLock());
+    return holdState().holds (id);
+}
+
+pluginhold::State pluginHoldState()
+{
+    const std::scoped_lock lock (holdLock());
+    return holdState();
+}
+
+void holdPlugins()
+{
+    const std::scoped_lock lock (holdLock());
+    holdState().start();
+}
+
+void releasePlugin (const std::string& id)
+{
+    const std::scoped_lock lock (holdLock());
+    holdState().release (id);
+}
+
+void endPluginHold()
+{
+    const std::scoped_lock lock (holdLock());
+    holdState().end();
+}
+
+std::unique_ptr<juce::AudioPluginInstance> PluginHost::instantiate (const PluginRef& ref, double sampleRate, juce::String* error)
+{
+    // round 190ap: a plugin that is switched off is not created, and no instance made earlier is handed out for it
+    if (pluginHeld (ref.id))
+    {
+        if (error != nullptr)
+            *error = heldMessage (ref);
+        return nullptr;
+    }
+    if (playedElsewhere (ref)) // Online Sessions P5-A1: the session's host plays it; here its stand-ins play
+    {
+        if (error != nullptr)
+            *error = juce::String::fromUTF8 (ref.name.c_str()) + ": played by another computer in the live session";
+        return nullptr;
+    }
+    auto instance = instantiateOnce (ref, sampleRate, error);
+    // a hosted plugin's sound is its (default) state plus the parameter values the session keeps for it
+    if (instance != nullptr && ! ref.values.empty())
+        applyValues (*instance, ref.values);
+    return instance;
+}
+
+std::unique_ptr<juce::AudioPluginInstance> PluginHost::instantiateOnce (const PluginRef& ref, double sampleRate, juce::String* error)
+{
+    {
+        const std::scoped_lock lock (preloadLock);
+        if (auto it = preloaded.find (preloadKey (ref, sampleRate)); it != preloaded.end() && ! it->second.empty())
+        {
+            auto p = std::move (it->second.back());
+            it->second.pop_back();
+            if (it->second.empty())
+                preloaded.erase (it);
+            if (p.instance == nullptr && error != nullptr)
+                *error = p.error;
+            return std::move (p.instance);
+        }
+    }
+    return createInstance (ref, sampleRate, error);
+}
+
+std::unique_ptr<juce::AudioPluginInstance> createRightInstance (juce::AudioPluginFormatManager& formats, const juce::PluginDescription& description,
+                                                                double sampleRate, int blockSize, juce::String& error)
+{
+    auto instance = formats.createPluginInstance (description, sampleRate, blockSize, error);
+    // A shell that hands out another plugin than the one asked for: a Waves shell's FIRST instance in a process comes
+    // up as another of its plugins (round 119 saw Q10; round 121 §3: "SSLChannel Stereo" came up as "JJP-Guitars
+    // Mono/Stereo") — its class list is reordered (587 -> 1174 entries) when it gets a host context, which JUCE sets
+    // between its class lookup (by index) and the creation. Created again, it is the right one.
+    if (instance == nullptr || instance->getName() == description.name)
+        return instance;
+    loadtrace::add ("plugin_mismatch " + description.name.toStdString() + " -> " + instance->getName().toStdString(), 0.0);
+    if (description.pluginFormatName != "VST3")
+        return instance;
+    // the wrong ones stay alive until the right one exists (released first, the shell went back to its first list)
+    std::vector<std::unique_ptr<juce::AudioPluginInstance>> wrong;
+    for (int attempt = 0; attempt < 3 && instance != nullptr && instance->getName() != description.name; ++attempt)
+    {
+        wrong.push_back (std::move (instance));
+        instance = formats.createPluginInstance (description, sampleRate, blockSize, error);
+        if (instance != nullptr && instance->getName() != description.name)
+            loadtrace::add ("plugin_mismatch_again " + description.name.toStdString() + " -> " + instance->getName().toStdString(), 0.0);
+    }
+    if (instance != nullptr && instance->getName() != description.name)
+    {
+        // another plugin playing in its place would sound wrong without a word: a load failure is said
+        error = description.name + ": " + tr ("the plugin file handed out another plugin ({0})", { instance->getName() });
+        return nullptr;
+    }
+    return instance;
+}
+
+std::unique_ptr<juce::AudioPluginInstance> PluginHost::createInstance (const PluginRef& ref, double sampleRate, juce::String* error)
+{
+    // round 190ap: switched off ("Open without third-party plugins"): before anything of the plugin is looked up,
+    // waited for or loaded (every creation of a project's plugin comes through here)
+    if (pluginHeld (ref.id))
+    {
+        if (error != nullptr)
+            *error = heldMessage (ref);
+        return nullptr;
+    }
+    if (onInstantiate)
+        onInstantiate (juce::String::fromUTF8 (ref.name.c_str()));
+    const loadtrace::Scope timing ("plugin_instantiate");
+    const loadtrace::Scope each ("plugin " + ref.name); // per plugin in load.log: which one is slow
+    const auto description = buildFor (ref); // (the 32-bit or the 64-bit build: "Bit size", round 176a)
+
+    if (description == nullptr)
+    {
+        if (error != nullptr)
+            *error = juce::String::fromUTF8 (ref.name.c_str()) + juce::String::fromUTF8 (": plugin not installed or not scanned");
+        return nullptr;
+    }
+
+    // a module still starting ahead on its own thread (round 121): wait for it here rather than enter it from two
+    // threads at once (the open's panel waits without blocking before it gets here; this is for anything else)
+    for (const auto until = std::chrono::steady_clock::now() + std::chrono::minutes (3);
+         warmup().state (description->fileOrIdentifier.toStdString()) == modulewarm::State::warming && std::chrono::steady_clock::now() < until;)
+        std::this_thread::sleep_for (std::chrono::milliseconds (5));
+
+    loadedAny.store (true); // (even a failed load may leave the module mapped)
+    juce::String message;
+    // the block size the plugin is told (FL's wrapper, REA rounds 134/139): with fixed size buffers it is only ever
+    // called with that block, so it is prepared for it — unless "Use maximum buffer size from host" is on
+    const auto preparedBlock = ref.fixedBuffers && ! ref.hostMaxBuffer ? fixedPluginBlock (ref.maxSizeBuffers) : maxBlockSize;
+    const auto bits32 = isPlugin32Bit (*description);
+    // the session's plugin list (round 159: an opt-in crash report names the third-party plugins that were loaded)
+    crashguard::notePlugin ((description->name + "|" + description->manufacturerName + "|" + description->pluginFormatName + "|" + description->version
+                             + (bits32 ? "|32-bit bridge" : (pluginSandboxEnabled() || ref.separateProcess || pluginAlwaysSeparate (description->name) ? "|separate process" : "")))
+                                .toStdString());
+    // a 32-bit plugin always runs in the 32-bit bridge (round 176a; FL bridges them the same way, whatever "Make bridged" says)
+    if (bits32 || pluginSandboxEnabled() || ref.separateProcess || pluginAlwaysSeparate (description->name))
+    {
+        // separate process (for every plugin, or this one only — FL's "Make bridged"): the child prepares the plugin and applies the state.
+        // Round 190jg: with the option's per-vendor / all-together modes the plugin joins its group's process; one the user
+        // separated by itself ("Make bridged", "Always run in a separate process") keeps a process of its own.
+        const auto own = ref.separateProcess || pluginAlwaysSeparate (description->name);
+        const auto group = own ? juce::String() : sandboxGroupFor (*description, pluginSandboxMode());
+        if (auto remote = createSandboxedPlugin (*description, sampleRate, preparedBlock, ref.state, message, group))
+        {
+            setSandboxedEditorScaling (*remote, ref.dpiAware, ref.scaleEditorDimensions); // (round 190oh, P3)
+            return remote;
+        }
+        if (error != nullptr)
+            *error = juce::String::fromUTF8 (ref.name.c_str()) + ": " + message;
+        return nullptr;
+    }
+
+    crashguard::note (("loading plugin " + description->name + " (" + description->pluginFormatName + ", "
+                       + juce::File (description->fileOrIdentifier).getFileName() + ")").toStdString());
+    // FL's wrapper "DPI aware" off (round 190oh, P3; Windows): the plugin is made in a DPI-unaware context (some query
+    // the scale or make hidden windows while loading), as its editor later is (ui/PluginWindow.cpp)
+    std::optional<juce::ScopedDPIAwarenessDisabler> dpiUnaware;
+    if (! ref.dpiAware)
+        dpiUnaware.emplace();
+    // round 190ok: the memory the plugin maps while it loads, prepares and takes its settings is faulted in here, off the
+    // audio thread (platform/PrefaultMemory.h; Linux; LYNX_PREFAULT=0 leaves it out)
+    static const bool prefaultOn = juce::SystemStats::getEnvironmentVariable ("LYNX_PREFAULT", "1") != "0";
+    const auto mapsBefore = prefaultOn ? prefault::mappings() : std::vector<prefault::Region> {};
+    auto instance = createRightInstance (formats, *description, sampleRate, maxBlockSize, message);
+    dpiUnaware.reset();
+    crashguard::note (("loaded plugin " + description->name + (instance == nullptr ? juce::String (" (failed)") : juce::String())).toStdString());
+
+    if (instance == nullptr)
+    {
+        if (error != nullptr)
+            *error = message;
+        return nullptr;
+    }
+    // round 190gg (B4): a fault on one of this plugin's own threads switches it off instead of ending LYNX (Linux / macOS)
+    crashguard::watchPluginModule (description->fileOrIdentifier.toStdString());
+
+    preparePlugin (*instance, sampleRate, preparedBlock);
+
+    if (! ref.state.empty())
+    {
+        juce::MemoryBlock state;
+
+        if (state.fromBase64Encoding (juce::String::fromUTF8 (ref.state.c_str())))
+        {
+            // round 190dt: guarded like the audio calls (a plugin that crashes on its own saved settings took LYNX down
+            // while the project opened). It is left out: the slot keeps those settings, so the project saves them.
+            auto* raw = instance.get();
+            if (const auto code = crashguard::run ([raw, &state] { raw->setStateInformation (state.getData(), (int) state.getSize()); }); code != 0)
+            {
+                (void) instance.release(); // never called again, not even to delete it (as after a crash in process)
+                recordCrash (description->name.toStdString(), code, true);
+                crashguard::note (("plugin " + description->name + " crashed while loading its saved settings (" + crashguard::describe (code)
+                                   + "): left out").toStdString());
+                if (error != nullptr)
+                    *error = tr ("{0} crashed and was switched off.", { juce::String::fromUTF8 (ref.name.c_str()) }) + " ("
+                             + crashguard::describe (code) + ")";
+                return nullptr;
+            }
+        }
+    }
+    if (prefaultOn)
+        (void) prefault::populateNew (mapsBefore);
+
+    return instance;
+}
+
+// --- slow modules started ahead (round 121) -------------------------------------------------------------------------
+namespace
+{
+#if JUCE_WINDOWS
+// The two calls needed from a VST3 factory, declared by their place in the interface (the VST3 ABI: FUnknown's three,
+// then getFactoryInfo, countClasses). No SDK header here: JUCE keeps its copy private to its own module.
+struct FactoryCalls
+{
+    virtual long __stdcall queryInterface (const char*, void**) = 0;
+    virtual unsigned long __stdcall addRef() = 0;
+    virtual unsigned long __stdcall release() = 0;
+    virtual long __stdcall getFactoryInfo (void*) = 0;
+    virtual int __stdcall countClasses() = 0;
+};
+
+
+struct StartedModule
+{
+    HMODULE module = nullptr;
+    FactoryCalls* factory = nullptr;
+};
+
+std::mutex startedLock;
+std::vector<StartedModule>& startedModules()
+{
+    static auto* list = new std::vector<StartedModule>(); // kept for the session (never torn down: round 111)
+    return *list;
+}
+
+// What JUCE's VST3 host does first, on this thread: load the module, its entry point, its factory, the class count.
+// The factory is kept: JUCE's later GetPluginFactory gets the same, already listed one.
+bool loadModuleAhead (const std::string& path)
+{
+    juce::File file (juce::String::fromUTF8 (path.c_str()));
+    if (file.isDirectory()) // a bundle folder
+        file = file.getChildFile ("Contents").getChildFile ("x86_64-win").getChildFile (file.getFileName());
+    const auto module = LoadLibraryW (file.getFullPathName().toWideCharPointer());
+    if (module == nullptr)
+        return false;
+    if (auto* entry = (bool (*)()) (void*) GetProcAddress (module, "InitDll"); entry != nullptr && ! entry())
+    {
+        FreeLibrary (module);
+        return false;
+    }
+    auto* getFactory = (FactoryCalls* (*)()) (void*) GetProcAddress (module, "GetPluginFactory");
+    auto* factory = getFactory != nullptr ? getFactory() : nullptr;
+    if (factory == nullptr)
+    {
+        if (auto* exit = (bool (*)()) (void*) GetProcAddress (module, "ExitDll"))
+            exit();
+        FreeLibrary (module);
+        return false;
+    }
+    factory->countClasses(); // the slow part (a Waves shell: its service, its plugin list)
+    const std::scoped_lock l (startedLock);
+    startedModules().push_back ({ module, factory });
+    return true;
+}
+#endif
+
+modulewarm::Registry& warmup()
+{
+   #if JUCE_WINDOWS
+    static modulewarm::Registry registry (loadModuleAhead);
+   #else
+    static modulewarm::Registry registry ([] (const std::string&) { return true; }, {}, false); // (nothing slow known)
+   #endif
+    return registry;
+}
+
+void startModuleOf (const juce::PluginDescription& d)
+{
+    if (pluginSandboxEnabled() || std::getenv ("LYNX_NO_MODULE_WARMUP") != nullptr) // (the env var: A/B measurements)
+        return;
+    if (isPlugin32Bit (d)) // (it loads in the 32-bit bridge, never in LYNX's own process)
+        return;
+    if (modulewarm::worthStartingAhead (d.pluginFormatName.toStdString(), d.fileOrIdentifier.toStdString()))
+        warmup().start (d.fileOrIdentifier.toStdString());
+}
+} // namespace
+
+void PluginHost::startModulesFor (const std::vector<FlpPluginUse>& uses)
+{
+    if (pluginsHeld()) // (opened without third-party plugins: no module is started ahead, round 190ap)
+        return;
+    for (const auto& u : uses)
+        if (const auto d = findForeign (u.plugin, u.instrument))
+            startModuleOf (*d);
+}
+
+void PluginHost::startModulesFor (const std::vector<PluginRef>& refs)
+{
+    for (const auto& ref : refs)
+        if (! ref.separateProcess && ! ref.id.empty() && ! pluginHeld (ref.id))
+            if (const auto d = buildFor (ref))
+                startModuleOf (*d);
+}
+
+modulewarm::Waiting PluginHost::modulesStarting()
+{
+    return warmup().waiting();
+}
+
+void PluginHost::skipStartingModules()
+{
+    warmup().skipWaiting();
+}
+
+void PluginHost::newOpen()
+{
+    warmup().newOpen();
+}
+
+namespace
+{
+juce::String failureLine (const PluginRef& ref, const juce::String& why)
+{
+    const auto name = juce::String::fromUTF8 (ref.name.c_str());
+    if (why.isEmpty())
+        return name + ": " + tr ("the plugin could not start");
+    return why.startsWith (name) ? why : name + ": " + why;
+}
+} // namespace
+
+juce::StringArray PluginHost::getLoadFailures() const
+{
+    const std::scoped_lock lock (failuresLock);
+    return loadFailures;
+}
+
+void PluginHost::clearLoadFailures()
+{
+    const std::scoped_lock lock (failuresLock);
+    loadFailures.clear();
+}
+
+std::shared_ptr<Instrument> PluginHost::makeInstrument (const PluginRef& ref, double sampleRate, juce::String* error)
+{
+    if (playedElsewhere (ref)) // (P5-A1: not a load failure — the host of the live session plays it)
+        return nullptr;
+    juce::String why;
+    if (auto instance = instantiate (ref, sampleRate, &why))
+        return std::make_shared<PluginInstrument> (std::move (instance), maxBlockSize, ref.fixedBuffers ? fixedPluginBlock (ref.maxSizeBuffers) : 0,
+                                                   HostedOptions::of (ref));
+
+    if (! pluginHeld (ref.id)) // (switched off on purpose is not a load failure, round 190ap)
+    {
+        const std::scoped_lock lock (failuresLock);
+        loadFailures.addIfNotAlreadyThere (failureLine (ref, why));
+    }
+    if (error != nullptr)
+        *error = why;
+    return nullptr;
+}
+
+std::shared_ptr<Effect> PluginHost::makeEffect (const PluginRef& ref, double sampleRate, juce::String* error)
+{
+    if (playedElsewhere (ref)) // (P5-A1: not a load failure — the host of the live session plays it)
+        return nullptr;
+    juce::String why;
+    if (auto instance = instantiate (ref, sampleRate, &why))
+        return std::make_shared<PluginEffect> (std::move (instance), maxBlockSize, ref.fixedBuffers ? fixedPluginBlock (ref.maxSizeBuffers) : 0,
+                                               HostedOptions::of (ref));
+
+    if (! pluginHeld (ref.id)) // (switched off on purpose is not a load failure, round 190ap)
+    {
+        const std::scoped_lock lock (failuresLock);
+        loadFailures.addIfNotAlreadyThere (failureLine (ref, why));
+    }
+    if (error != nullptr)
+        *error = why;
+    return nullptr;
+}
+
+// Round 190kx (engine/AraHost.cpp): what an ARA playback renderer needs of the hosted plugins' machinery
+juce::AudioPlayHead& songPlayHead() { return timelinePlayHead (false); }
+
+std::uint32_t processGuarded (juce::AudioPluginInstance& plugin, juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi,
+                              std::atomic<bool>& crashed, const std::string& name) noexcept
+{
+    return runBlock (BlockCall { &plugin, &buffer, &midi }, crashed, name);
+}
+
+std::string capturePluginState (juce::AudioPluginInstance& plugin)
+{
+    juce::MemoryBlock state;
+    plugin.getStateInformation (state);
+    return state.toBase64Encoding().toStdString();
+}
+
+// ---- Export to FL Studio (round 171e) ----
+namespace
+{
+std::vector<std::uint8_t> blockBytes (const juce::MemoryBlock& m)
+{
+    const auto* b = static_cast<const std::uint8_t*> (m.getData());
+    return std::vector<std::uint8_t> (b, b + m.getSize());
+}
+
+std::vector<std::uint8_t> juceStateBytes (const std::string& base64)
+{
+    juce::MemoryBlock m;
+    if (base64.empty() || ! m.fromBase64Encoding (juce::String::fromUTF8 (base64.c_str())))
+        return {};
+    return blockBytes (m);
+}
+
+#if JUCE_WINDOWS
+// IPluginFactory's leading calls by their vtable place (FUnknown's three, getFactoryInfo, countClasses, getClassInfo)
+struct FactoryClasses
+{
+    virtual long __stdcall queryInterface (const char*, void**) = 0;
+    virtual unsigned long __stdcall addRef() = 0;
+    virtual unsigned long __stdcall release() = 0;
+    virtual long __stdcall getFactoryInfo (void*) = 0;
+    virtual int __stdcall countClasses() = 0;
+    virtual long __stdcall getClassInfo (int index, void* info) = 0;
+};
+struct ClassInfo // PClassInfo
+{
+    char cid[16];
+    int cardinality;
+    char category[32];
+    char name[64];
+};
+#endif
+
+// The VST3 class TUID of a scanned VST3 (JUCE keeps only its hash): FL's plugin database for the same file, else the
+// module's own class list (the class whose TUID hashes to the description's deprecatedUid)
+std::optional<std::array<std::uint8_t, 16>> vst3ClassIdOf (const juce::PluginDescription& d, const FlPluginDb& db)
+{
+    auto matches = [&d] (const std::array<std::uint8_t, 16>& id) { return vst3Hash (id) == d.deprecatedUid || vst3NormalisedHash (id) == d.uniqueId; };
+    ForeignPlugin probe;
+    probe.format = ForeignPlugin::Format::vst3;
+    probe.name = d.name.toStdString();
+    probe.path = d.fileOrIdentifier.toStdString();
+    if (const auto* entry = db.match (probe, d.isInstrument); entry != nullptr && entry->hasClassId && matches (entry->classId))
+        return entry->classId;
+   #if JUCE_WINDOWS
+    juce::File file (d.fileOrIdentifier);
+    if (file.isDirectory())
+        file = file.getChildFile ("Contents").getChildFile ("x86_64-win").getChildFile (file.getFileName());
+    const auto module = LoadLibraryW (file.getFullPathName().toWideCharPointer());
+    if (module == nullptr)
+        return std::nullopt;
+    std::optional<std::array<std::uint8_t, 16>> found;
+    auto* init = (bool (*)()) (void*) GetProcAddress (module, "InitDll");
+    const auto started = init == nullptr || init();
+    if (started)
+        if (auto* get = (FactoryClasses* (*)()) (void*) GetProcAddress (module, "GetPluginFactory"))
+            if (auto* factory = get())
+            {
+                for (int i = 0, n = factory->countClasses(); i < n && ! found; ++i)
+                {
+                    ClassInfo info {};
+                    if (factory->getClassInfo (i, &info) != 0)
+                        continue;
+                    std::array<std::uint8_t, 16> id {};
+                    std::memcpy (id.data(), info.cid, 16);
+                    if (std::strncmp (info.category, "Audio Module Class", 32) == 0 && matches (id))
+                        found = id;
+                }
+                factory->release();
+            }
+    if (started && init != nullptr)
+        if (auto* exit = (bool (*)()) (void*) GetProcAddress (module, "ExitDll"))
+            exit();
+    FreeLibrary (module); // (the module stays loaded while JUCE's own instance holds it)
+    return found;
+   #else
+    return std::nullopt;
+   #endif
+}
+} // namespace
+
+std::optional<ForeignPlugin> PluginHost::flWrapperRecord (const PluginRef& ref, bool instrument)
+{
+    const auto d = find (juce::String::fromUTF8 (ref.id.c_str()));
+    if (d == nullptr)
+        return std::nullopt;
+    ForeignPlugin p;
+    p.name = d->name.toStdString();
+    p.path = d->fileOrIdentifier.toStdString();
+    p.midiInPort = ref.midiInPort;
+    p.midiOutPort = ref.midiOutPort;
+    p.bendRange = ref.bendRange;
+    const auto state = juceStateBytes (ref.state);
+    if (d->pluginFormatName == "VST3")
+    {
+        p.format = ForeignPlugin::Format::vst3;
+        const auto id = vst3ClassIdOf (*d, flPluginDatabase());
+        if (! id)
+            return std::nullopt;
+        p.classId = *id;
+        p.hasClassId = true;
+        // FL names a VST3 after its file (REA_rodada5 §2.2)
+        p.name = juce::File (d->fileOrIdentifier).getFileNameWithoutExtension().toStdString();
+        std::vector<std::uint8_t> component, controller;
+        if (const auto xml = juce::AudioProcessor::getXmlFromBinary (state.data(), (int) state.size()); xml != nullptr && xml->hasTagName ("VST3PluginState"))
+        {
+            juce::MemoryBlock m;
+            if (const auto* c = xml->getChildByName ("IComponent"); c != nullptr && m.fromBase64Encoding (c->getAllSubText().trim()))
+                component = blockBytes (m);
+            m.reset();
+            if (const auto* c = xml->getChildByName ("IEditController"); c != nullptr && m.fromBase64Encoding (c->getAllSubText().trim()))
+                controller = blockBytes (m);
+        }
+        p.state = flpexport::flVst3State (component, controller);
+    }
+    else if (d->pluginFormatName == Vst2PluginFormat::formatName)
+    {
+        p.format = ForeignPlugin::Format::vst2;
+        p.vst2Id = (std::uint32_t) d->uniqueId;
+        FlVst2State check;
+        if (parseFlVst2State (state, check))
+            p.state = state; // LYNX's VST2 host keeps FL's own layout (REA_rodada89 §2)
+        else if (! state.empty())
+        {
+            FlVst2State chunk;
+            chunk.flags = 8;
+            chunk.chunk = state;
+            p.state = writeFlVst2State (chunk);
+        }
+    }
+    else if (d->pluginFormatName == ClapPluginFormat::formatName)
+    {
+        p.format = ForeignPlugin::Format::clap;
+        p.clapId = clapPluginId (*d);
+        if (p.clapId.empty())
+            return std::nullopt;
+        if (! state.empty())
+        {
+            p.state = { 0, 0, 0, 0 };
+            p.state.insert (p.state.end(), state.begin(), state.end());
+        }
+    }
+    else
+        return std::nullopt;
+    juce::ignoreUnused (instrument);
+    return p;
+}
+
+} // namespace lynx

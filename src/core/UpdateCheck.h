@@ -1,0 +1,226 @@
+#pragma once
+
+// In-app update check (round 166b), the logic without JUCE (tested in isolation; the app side is ui/Updater.h):
+// - the GitHub releases list of Ka1-S/LYNX-SHARE (JSON) parsed into releases, drafts skipped, prereleases included;
+// - semantic-version comparison of a release tag ("v0.1.21-alpha") with the running version (CMake's "0.1.20");
+// - the build flavour LYNX runs as (installer, portable zip, Store, macOS, AppImage, tar.gz), the update method and
+//   the release asset that flavour uses;
+// - the release's SHA256SUMS.txt line for a file;
+// - the release notes (Markdown) as readable lines;
+// - the settings file (automatic check on/off, the skipped version, the time of the last check, the version an update
+//   replaced);
+// - going back to the previous version (round 190gh, B2): which release Help › "Go back to <version>..." installs.
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace lynx::update
+{
+// --- versions ---------------------------------------------------------------------------------------------------
+struct Version
+{
+    int major = 0, minor = 0, patch = 0;
+    int revision = 0;             // round 190hl: a fourth number ("0.1.28.1", a hotfix of 0.1.28); 0 when absent
+    std::vector<std::string> pre; // "alpha", "1" for "-alpha.1"; empty for a release
+    bool valid = false;
+    std::string text() const;     // "0.1.21-alpha"; "0.1.28.1-alpha" (the fourth number only when it is not 0)
+};
+
+// "v0.1.21-alpha", "0.1.21", "0.1" (patch 0), "0.1.28.1" (round 190hl), "V1.2.3-rc.1+build.5" (build metadata
+// ignored); invalid otherwise. (LYNX SHARE 0.1.28 and older read only two or three numbers: they drop a release whose
+// tag has four, so they never offer it.)
+Version parseVersion (const std::string& text);
+
+// <0, 0, >0 like strcmp: the numbers first (major, minor, patch, revision), then the prerelease identifiers compared
+// one by one by semver 2.0 precedence (numeric ones as numbers, below alphanumeric ones; a shorter list sorts first
+// when equal so far: "1.0.0-alpha" < "1.0.0-alpha.1" < "1.0.0-beta").
+// Round 190hl: a version WITHOUT a prerelease equals every prerelease of the same numbers ("0.1.28" == "0.1.28-alpha").
+// LYNX SHARE builds carry CMake's bare "0.1.28" while their release tag is "v0.1.28-alpha": the running build IS that
+// release, so it is neither an update for it nor a version to go back to (under strict semver "0.1.28-alpha" <
+// "0.1.28" and Help › "Go back to..." in 0.1.28 reinstalled 0.1.28 itself). Two prereleases still order by semver.
+int compare (const Version& a, const Version& b);
+
+// --- releases ---------------------------------------------------------------------------------------------------
+struct Asset
+{
+    std::string name, url; // url = browser_download_url
+    std::int64_t size = 0;
+};
+
+struct Release
+{
+    std::string tag, name, body, page; // page = html_url
+    bool draft = false, prerelease = false;
+    std::vector<Asset> assets;
+    Version version; // from the tag
+};
+
+// The GitHub API's answer for /repos/<o>/<r>/releases (an array) or /releases/<id> (one object). Releases whose tag
+// is not a version are dropped. `error` (optional) gets the reason when the text is not that JSON.
+std::vector<Release> parseReleases (const std::string& json, std::string* error = nullptr);
+
+// The newest non-draft release newer than `running`, or -1.
+int newestIndex (const std::vector<Release>& releases, const Version& running);
+
+// --- build flavours ---------------------------------------------------------------------------------------------
+enum class Flavour
+{
+    windowsInstaller, // %LOCALAPPDATA%\Programs\LYNX with the NSIS installer's Uninstall.exe beside LYNX.exe
+    windowsPortable,  // the zip (or the bare LYNX.exe)
+    store,            // the Microsoft Store (MSIX) package: the Store updates it; LYNX never checks
+    macos,
+    linuxAppImage,
+    linuxTarball,
+    unknown
+};
+
+struct Facts
+{
+    std::string os;              // "windows", "macos", "linux"
+    bool packaged = false;       // Windows: a package identity (MSIX)
+    bool uninstallerBesideExe = false;
+    std::string appImagePath;    // Linux: $APPIMAGE when it names an existing file
+    std::string forced;          // LYNX_UPDATE_FLAVOUR (tests): a flavourId() name wins over the facts
+};
+
+Flavour detectFlavour (const Facts& facts);
+const char* flavourId (Flavour); // "installer", "portable", "store", "macos", "appimage", "tarball", "unknown"
+Flavour flavourFromId (const std::string& id); // unknown for anything else
+
+// Whether that build looks for updates at all (the Store build never does).
+bool checksForUpdates (Flavour);
+
+enum class Method
+{
+    runInstaller,       // download setup.exe, verify, save the project, run it silently over the install, relaunch
+    downloadAndReveal,  // download the zip / dmg to Downloads, verify, show it in the file manager
+    openPage,           // open the release page in the browser
+    appImageUpdate,     // appimageupdatetool (zsync) in place, else download the new AppImage beside the old one
+    none
+};
+Method methodFor (Flavour);
+
+// The Linux packages' architecture in their file names: "aarch64" in an arm64 build, else "x86_64" (round 190oy)
+constexpr const char* buildLinuxArch() noexcept
+{
+#if defined(__aarch64__)
+    return "aarch64";
+#else
+    return "x86_64";
+#endif
+}
+
+// The asset a flavour uses (index into `assets`), or -1: the installer "*-setup-x64.exe", the portable
+// "*-windows-x64.zip", macOS "*.dmg", the AppImage "*-<arch>.AppImage", the tarball "*-linux-<arch>.tar.gz" (arch =
+// linuxArch: "x86_64" or "aarch64"; an arm64 build never takes the x86_64 packages, nor the other way round).
+int assetFor (Flavour, const std::vector<Asset>& assets, const char* linuxArch = buildLinuxArch());
+int checksumsAsset (const std::vector<Asset>& assets); // "SHA256SUMS.txt", or -1
+
+// --- checksums --------------------------------------------------------------------------------------------------
+// The lower-case SHA-256 hex of `fileName` in a `sha256sum` listing ("<hex>  <name>" or "<hex> *<name>"), else "".
+std::string checksumFor (const std::string& sumsText, const std::string& fileName);
+// SHA-256 over a file read in chunks (a 60 MB AppImage is not held in memory twice); same result as sha256Hex.
+class Sha256Stream
+{
+public:
+    Sha256Stream();
+    void add (const void* data, std::size_t size);
+    std::string finish(); // lower-case hex; the object is spent afterwards
+private:
+    void block (const std::uint8_t* p);
+    std::uint32_t h[8];
+    std::uint8_t pending[64];
+    std::size_t pendingSize = 0;
+    std::uint64_t total = 0;
+};
+
+// `actual` (any case) equals `expected` and both are 64 hex digits.
+bool checksumMatches (const std::string& expected, const std::string& actual);
+
+// --- release notes ----------------------------------------------------------------------------------------------
+struct NoteLine
+{
+    enum class Kind { heading, bullet, text, blank } kind = Kind::text;
+    int level = 0;    // heading: 1..6; bullet: the nesting depth (0 = top)
+    std::string text; // without the Markdown marks: links keep their text, images, HTML tags and ** ` go
+};
+// Markdown as readable lines (headings, bullets, paragraphs; at most one blank line in a row; code fences kept as
+// plain text).
+std::vector<NoteLine> releaseNotes (const std::string& markdown);
+std::string releaseNotesText (const std::vector<NoteLine>&); // the same as plain text ("• " bullets)
+
+// --- settings (updates.txt in the settings folder) --------------------------------------------------------------
+struct Settings
+{
+    bool automatic = true;      // Settings › General › "Check for updates automatically"
+    std::string skipped;        // the version the user skipped (✕ on the bar): that one and older stay quiet
+    std::int64_t lastCheckMs = 0; // when the release list was last fetched (the cache's age)
+    // Round 190gh (B2): the version LYNX SHARE ran before its last update (written by the updater when it applies
+    // or saves an update); Help › "Go back to <version>..." offers it. Empty: none recorded (an update made by a
+    // version without this field, or none yet).
+    std::string previous;
+};
+Settings parseSettings (const std::string& text);
+std::string formatSettings (const Settings&);
+// (Every version since 0.1.21 reads updates.txt line by line and ignores keys it does not know; "skipped" is read by
+// all of them, so a version left by going back is skipped in the older version too.)
+
+// Whether the bar shows `release`: a manual check always, an automatic one unless that version (or a newer one)
+// was skipped.
+bool shouldShow (const Release& release, const Settings& settings, bool manual);
+
+// --- going back (round 190gh, B2) --------------------------------------------------------------------------------
+// The release Help › "Go back to <version>..." installs, or -1: the recorded previous version when the list has it and
+// it is older than `running`; otherwise the newest non-draft release older than `running` (the version a user most
+// likely came from). Releases newer than or equal to `running` are never chosen.
+int rollbackIndex (const std::vector<Release>& releases, const Version& running, const std::string& previous);
+// The settings after an update from `from` was applied (or its file saved for the user to install): `from` becomes the
+// previous version. Nothing changes when `from` is not a version.
+Settings afterUpdate (Settings settings, const Version& from);
+// The settings after going back from `left`: `left` is skipped, so the automatic check does not offer it again at once
+// (Help › Check for updates still does), and the recorded previous version is used up.
+Settings afterRollback (Settings settings, const Version& left);
+// Round 190hl: only the skip of afterRollback (an already skipped newer version stays). Written BEFORE the Windows
+// installer of the older version runs: 0.1.27 and older don't know about going back and never record the skip after
+// their restart, so without this their automatic check offered the version just left again at once.
+Settings skipLeft (Settings settings, const Version& left);
+
+// --- installing.txt (round 190hl) -------------------------------------------------------------------------------
+// The note the Windows installer path leaves in the update folder for the version it installs (read after the
+// restart): the version installed, the one it replaced, whether it went back. LYNX SHARE 0.1.27 and older read
+// everything after the first "version=" as the version, so "version=" is written LAST (round 190gh wrote it first
+// and 0.1.27 said "updated to 0.0.0"); 0.1.28 and newer read the lines in any order.
+struct InstallingNote
+{
+    std::string version, from;
+    bool rollback = false;
+};
+std::string formatInstalling (const InstallingNote&);
+InstallingNote parseInstalling (const std::string& text);
+
+// --- leftovers of a newer version (round 190nr) --------------------------------------------------------------------
+// Going back runs the OLDER version's installer over the folder, and its uninstall list doesn't know what newer
+// versions added (0.1.29 left 0.1.30's licenses\ behind, round 190nk). The helper of the version being left (a copy
+// of the NEWER LYNX.exe, --apply-update) removes, after the older installer succeeded, every install-folder entry that
+// arrived after the version installed. Add an entry here whenever the installer (resources/installer/LYNX.nsi) gets a
+// new top-level file or folder. Names are top-level entries of the install folder.
+struct InstallEntry
+{
+    const char* name;
+    const char* since; // the first version whose installer writes it
+};
+const std::vector<InstallEntry>& installEntries();
+// The entries a version older than them doesn't install (empty when `installed` is not valid).
+std::vector<std::string> entriesNewerThan (const Version& installed);
+
+// An automatic check reuses the cached release list for this long (GitHub allows 60 unauthenticated calls an hour
+// per address; LYNX started many times a day asks once every few hours).
+constexpr std::int64_t cacheLifetimeMs = 3LL * 60 * 60 * 1000;
+bool cacheFresh (std::int64_t lastCheckMs, std::int64_t nowMs);
+
+// The GitHub API address of the release list (prereleases included; drafts are only listed for the repository's
+// own token, and dropped anyway).
+constexpr const char* releasesUrl = "https://api.github.com/repos/Ka1-S/LYNX-SHARE/releases?per_page=10";
+constexpr const char* releasesPage = "https://github.com/Ka1-S/LYNX-SHARE/releases";
+} // namespace lynx::update

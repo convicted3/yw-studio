@@ -1,0 +1,305 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, 'wip/**']
+  pull_request:
+
+# A newer push to the same branch cancels the older run (work branches are pushed often); main keeps every run.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  JUCE_VERSION: 8.0.4
+  JUCE_SHA256: 0effe9823a6fd8a4f98e5c08be7d308350e417b2d15dcf34011e778fefbbf005
+
+jobs:
+  server:
+    name: Server limits
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      # (the runners' package mirror sometimes fails to resolve for a minute: try again instead of failing the job)
+      # (python3-numpy: LYNX Model's timbre-score tests, tools/physmod; Ubuntu's system Python takes packages from apt, not pip)
+      - run: for i in 1 2 3 4 5 6; do sudo apt-get update -q && sudo apt-get install -y -q python3-aiohttp python3-numpy && break; [ $i = 6 ] && exit 1; sleep 30; done
+      - run: /usr/bin/python3 -m unittest discover -s server/tests -p 'test_*.py' -v
+      - run: /usr/bin/python3 -m unittest discover -s tools/physmod -p 'test_*.py' -v
+
+  # Round speed185a: a Core job took 76-130 min, ~90 % of it compiling the core again for every tool (now once, in
+  # parallel: scripts/cxx-once.sh) and the rest running the tests one by one (now in parallel shards, then the
+  # timing-sensitive ones alone: scripts/run-tests.sh). ccache keeps the objects between runs: main saves the cache,
+  # every other branch starts from main's. Every test still runs in every job.
+  core:
+    name: Core (${{ matrix.os }}, ${{ matrix.compiler }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, compiler: g++ }
+          - { os: ubuntu-24.04, compiler: clang++ }
+          - { os: macos-15, compiler: clang++ }
+          # Linux arm64 (round 190oy; free arm runner for public repositories). clang++: Ubuntu 24.04's g++ 13.3 fails
+          # 5 checks on arm64 that GCC 13.4 (the release's compiler, linux-arm64.yml) and clang pass
+          - { os: ubuntu-24.04-arm, compiler: clang++ }
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 1500M
+      CCACHE_COMPILERCHECK: content
+    steps:
+      - uses: actions/checkout@v5
+      - name: ccache
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Linux ]]; then sudo apt-get install -y -q ccache > /dev/null || for i in 1 2 3 4 5 6; do sudo apt-get update -q && sudo apt-get install -y -q ccache && break; [ $i = 6 ] && exit 1; sleep 30; done
+          else brew list ccache > /dev/null 2>&1 || brew install ccache; fi
+      - uses: actions/cache/restore@v4
+        with:
+          path: .ccache
+          key: ccache-core-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
+          restore-keys: ccache-core-${{ matrix.os }}-${{ matrix.compiler }}-
+      - name: Build and test the core (no JUCE)
+        env:
+          CXX: ccache ${{ matrix.compiler }}
+          LYNX_TEST_JOBS: auto
+        run: |
+          ccache --zero-stats > /dev/null # (after the restore: the statistics live in the cache folder)
+          ./scripts/build-local.sh
+      - name: ccache statistics
+        if: always()
+        run: ccache --show-stats || true
+      - uses: actions/cache/save@v4
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          path: .ccache
+          key: ccache-core-${{ matrix.os }}-${{ matrix.compiler }}-${{ github.sha }}
+      - name: Upload the test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-test-logs-${{ matrix.os }}-${{ matrix.compiler }}
+          path: build-local/lynx_tests.shards
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # The whole app (JUCE) on Linux and macOS: it must build and pass its self-test. Windows is built by release.yml.
+  app:
+    name: App (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 1500M
+      CCACHE_COMPILERCHECK: content
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          for i in 1 2 3 4 5 6; do
+            sudo apt-get update -q && sudo apt-get install -y -q ccache ninja-build pkg-config xvfb libasound2-dev libjack-jackd2-dev libx11-dev libxrandr-dev \
+              libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libfreetype-dev libfontconfig1-dev libgl-dev && break
+            [ $i = 6 ] && exit 1; sleep 30
+          done
+
+      - name: macOS build dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew list ninja > /dev/null 2>&1 || brew install ninja
+          brew list ccache > /dev/null 2>&1 || brew install ccache
+
+      # (round speed185a) ccache between runs: main saves it, other branches start from main's
+      - uses: actions/cache/restore@v4
+        with:
+          path: .ccache
+          key: ccache-app-${{ matrix.os }}-${{ github.sha }}
+          restore-keys: ccache-app-${{ matrix.os }}-
+
+      - name: JUCE (checksum verified)
+        shell: bash
+        run: |
+          curl -fsSL -o juce.tar.gz "https://github.com/juce-framework/JUCE/archive/refs/tags/$JUCE_VERSION.tar.gz"
+          echo "$JUCE_SHA256  juce.tar.gz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/juce" && tar xzf juce.tar.gz -C "$RUNNER_TEMP/juce" --strip-components 1 && rm juce.tar.gz
+
+      - name: Build
+        shell: bash
+        run: |
+          ccache --zero-stats > /dev/null
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFETCHCONTENT_SOURCE_DIR_JUCE="$RUNNER_TEMP/juce" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_OBJCXX_COMPILER_LAUNCHER=ccache \
+            -DLYNX_LTO=OFF
+          cmake --build build --target LYNX lynx_remote_project_tests perfbench -- -k 0
+          ccache --show-stats || true
+
+      - name: Remote project document regressions
+        run: ctest --test-dir build --output-on-failure -R '^lynx_remote_project_tests$'
+
+      - uses: actions/cache/save@v4
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          path: .ccache
+          key: ccache-app-${{ matrix.os }}-${{ github.sha }}
+
+      - name: Self-test
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            bin=build/LYNX_artefacts/Release/LYNX; run=(xvfb-run -a)
+          else
+            bin=build/LYNX_artefacts/Release/LYNX.app/Contents/MacOS/LYNX; run=()
+          fi
+          "${run[@]}" "$bin" --selftest "$PWD/selftest.txt" "$PWD/selftest-demo.lynx" || true
+          cat selftest.txt
+          grep -q '^result=OK' selftest.txt
+
+      # Round perfgate190id (community slice B12): the big-project performance gate on the synthetic projects
+      # (core/PerfProjects.h): audio CPU per block size, load / rebuild time, memory, .lynx save / load, open time and
+      # paint per frame of every view, against tests/perf/baseline-ci-ubuntu.json (scripts/perf-gate.sh; times are
+      # divided by a fixed calibration run, failing cells are measured again before the gate fails).
+      - name: Performance gate (big projects)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          python3 -m unittest discover -s tests/perf -p 'test_*.py'
+          sudo sysctl -w kernel.perf_event_paranoid=1 > /dev/null 2>&1 || true # (the CPU's instruction counter, where the VM has one)
+          PROFILE=ci-ubuntu PERFBENCH=build/perfbench LYNX_APP=build/LYNX_artefacts/Release/LYNX \
+            scripts/perf-gate.sh compare "$PWD/perfgate"
+
+      - name: Upload the performance gate results
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: perfgate-results
+          path: |
+            perfgate/*.txt
+            perfgate/*.json
+            perfgate/*.md
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # Issue #85: no LV2 child while nothing changed, one when something did; a child that fails changes nothing
+      - name: LV2 scan
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          LYNX_PROFILE_DIR="$PWD/lv2-profile" xvfb-run -a build/LYNX_artefacts/Release/LYNX --lv2scantest "$PWD/lv2scan.txt" || true
+          cat lv2scan.txt
+          grep -q '^result=OK' lv2scan.txt
+
+      # Round 170c (issue #11): the plugin editors as this platform draws them (macOS = CoreGraphics), one PNG each,
+      # and the renderer probe (gradient text / empty paths must stay inside their shapes). Kept as an artifact.
+      - name: Editor pictures
+        if: always()
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            bin=build/LYNX_artefacts/Release/LYNX; run=(xvfb-run -a)
+          else
+            bin=build/LYNX_artefacts/Release/LYNX.app/Contents/MacOS/LYNX; run=()
+          fi
+          mkdir -p editor-pictures
+          "${run[@]}" "$bin" --gfxprobe "$PWD/editor-pictures/gfxprobe.txt" || true
+          cat editor-pictures/gfxprobe.txt || true
+          perl -e 'alarm shift; exec @ARGV' 600 "${run[@]}" "$bin" --steppertest "$PWD/editor-pictures/steppertest.txt" || true
+          tail -3 editor-pictures/steppertest.txt || true
+          perl -e 'alarm shift; exec @ARGV' 1200 "${run[@]}" "$bin" --plugui "$PWD/editor-pictures" || true
+          ls editor-pictures | wc -l
+
+      - name: Upload the editor pictures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-pictures-${{ runner.os }}
+          path: editor-pictures
+          retention-days: 14
+
+      # A plugin that kills the scan's child process is blacklisted, not described again at every start
+      - name: Crashing plugin
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          mkdir crash-plugin
+          echo 'void __attribute__ ((constructor)) crash (void) { __builtin_trap(); }' | cc -shared -fPIC -x c - -o crash-plugin/crash.clap
+          LYNX_PROFILE_DIR="$PWD/crash-profile" xvfb-run -a build/LYNX_artefacts/Release/LYNX --scantest "$PWD/crash-plugin" "$PWD/crash.txt" || true
+          cat crash.txt
+          grep -q 'blacklisted: .*crash.clap' crash.txt
+
+      # Issue #155: a VST3 that ignores bus activation (as every nih-plug plugin does) reads its sidechain bus while LYNX
+      # keeps that bus off; JUCE passed null sample pointers there (nih-plug: memcpy from null, LYNX crashed). The test
+      # plugin goes silent on a null pointer, so this fails (peak=0) unless the off bus holds silence (cmake fix 24).
+      - name: Inactive sidechain bus (VST3)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          V="$RUNNER_TEMP/juce/modules/juce_audio_processors/format_types/VST3_SDK"
+          B="sc-plugin/LYNX Test Sidechain.vst3/Contents/x86_64-linux"
+          mkdir -p "$B"
+          c++ -shared -fPIC -O2 -std=c++17 -I"$V" tools/testplugin/lynx_test_sidechain_vst3.cpp "$V/pluginterfaces/base/funknown.cpp" -o "$B/LYNX Test Sidechain.so"
+          LYNX_PROFILE_DIR="$PWD/sc-profile" xvfb-run -a build/LYNX_artefacts/Release/LYNX --plugintest "$PWD/sc-plugin/LYNX Test Sidechain.vst3" "$PWD/sc.txt" || true
+          cat sc.txt
+          grep -q '^result=OK' sc.txt && grep -q '^plugin_crashes=0' sc.txt
+
+      # Issue #138 (round 190hn): a hosted synth that drops notes while it boots (1.5 s of audio, as a hardware emulator
+      # booting its firmware) must still play a short note at tick 0 of an export (the plugin warm-up)
+      - name: Short export of a booting synth (VST3)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          V="$RUNNER_TEMP/juce/modules/juce_audio_processors/format_types/VST3_SDK"
+          B="boot-plugin/LYNX Test Synth.vst3/Contents/x86_64-linux"
+          mkdir -p "$B"
+          c++ -shared -fPIC -O2 -std=c++17 -I"$V" tools/testplugin/lynx_test_synth_vst3.cpp "$V/pluginterfaces/base/funknown.cpp" -o "$B/LYNX Test Synth.so"
+          LYNX_TEST_SYNTH_BOOT_MS=1500 LYNX_PROFILE_DIR="$PWD/boot-profile" xvfb-run -a build/LYNX_artefacts/Release/LYNX --shortexporttest "$PWD/boot.txt" 1 --quick --plugin "$PWD/boot-plugin/LYNX Test Synth.vst3" || true
+          grep -E 'hosted|^short_export=|^result=' boot.txt
+          grep -q '^result=OK' boot.txt
+
+      # Round 190jb (FL renders with the plugin instances that play): an export made with the Export window's hold renders
+      # with the live engine's instance. The test synth's seeded mode gives every instance its own pitches: the export
+      # must equal playback (a new instance can't), playback after it must equal playback before it, the plugin back at
+      # its rate in real-time mode (the synth built by the step above)
+      - name: Export with the live plugin instances (VST3)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          LYNX_TEST_SYNTH_SEED=1 LYNX_PROFILE_DIR="$PWD/live-profile" xvfb-run -a build/LYNX_artefacts/Release/LYNX --exportlivetest "$PWD/live.txt" --plugin "$PWD/boot-plugin/LYNX Test Synth.vst3" || true
+          cat live.txt
+          grep -q '^result=OK' live.txt
+
+      # Round 190dt: a hosted plugin that crashes in its audio processing (a null write, and a memcpy from null as in
+      # issue #155) is switched off and LYNX keeps playing, saves and reloads it; a plugin that crashes on its saved state
+      # is left out as the project opens; LYNX's own faults inside a plugin call still end in the crash handler.
+      # Linux: CLAP + VST3; macOS: CLAP.
+      - name: Crashing plugin guard
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            bin=build/LYNX_artefacts/Release/LYNX; run=(xvfb-run -a)
+          else
+            bin=build/LYNX_artefacts/Release/LYNX.app/Contents/MacOS/LYNX; run=()
+          fi
+          mkdir -p cg-plugins
+          cc -shared -fPIC -O2 -Ithird_party/clap/include tools/testplugin/lynx_test_crash.c -o "cg-plugins/LYNX Test Crash.clap"
+          plugins=("LYNX Test Crash.clap" "LYNX Test Crash.clap")
+          modes=(process memcpy)
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            V="$RUNNER_TEMP/juce/modules/juce_audio_processors/format_types/VST3_SDK"
+            B="cg-plugins/LYNX Test Crash.vst3/Contents/x86_64-linux"
+            mkdir -p "$B"
+            c++ -shared -fPIC -O2 -std=c++17 -I"$V" tools/testplugin/lynx_test_crash_vst3.cpp "$V/pluginterfaces/base/funknown.cpp" -o "$B/LYNX Test Crash.so"
+            plugins+=("LYNX Test Crash.vst3" "LYNX Test Crash.vst3")
+            modes+=(process memcpy)
+          fi
+          status=0
+          for i in "${!plugins[@]}"; do
+            report="$PWD/crashguard-$i.txt"
+            LYNX_PROFILE_DIR="$PWD/cg-profile-$i" perl -e 'alarm shift; exec @ARGV' 600 "${run[@]}" "$bin" --crashguardtest "$PWD/cg-plugins/${plugins[$i]}" "$report" "${modes[$i]}" || true
+            echo "--- ${plugins[$i]} (${modes[$i]})"; cat "$report" || true
+            grep -q '^result=OK' "$report" || status=1
+          done
+          exit $status

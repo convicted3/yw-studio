@@ -1,0 +1,99 @@
+#pragma once
+
+// FL's Fruity X-Y Controller and X-Y-Z Controller (docs/analise/REA_rodada164a.md §3; REA_rodada15 §11.1, REA_rodada17
+// §4): mixer "controller" effects that make no change to the sound. A target follows the goal the user drags on a pad
+// (speed and acceleration smooth its movement); each axis is published as a control output — X-Y: 0 = X, 1 = Y;
+// X-Y-Z: 0 = X, 1 = Y, 2 = Z — that any parameter can be linked to ("Link to internal controller", Patcher cables).
+// Clean-room: our own code from FL's documented and decompiled behaviour.
+//
+// Parameters (EffectSlot::params, 0..1), per axis a (X 0, Y 1, Z 2): 4a + 0 level (the goal), + 1 min, + 2 max,
+// + 3 tension (0.5 = straight; FL's −128…128); then speed and acceleration (X-Y: 8, 9; X-Y-Z: 12, 13).
+
+#include <array>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "core/Song.h"
+
+namespace lynx
+{
+class Effect;
+}
+
+namespace lynx::xy
+{
+int axesOf (EffectKind kind) noexcept; // 2 or 3 (0: not an X-Y controller)
+inline bool isXyController (EffectKind kind) noexcept { return axesOf (kind) > 0; }
+constexpr int level (int axis) noexcept { return 4 * axis; }
+constexpr int minimum (int axis) noexcept { return 4 * axis + 1; }
+constexpr int maximum (int axis) noexcept { return 4 * axis + 2; }
+constexpr int tension (int axis) noexcept { return 4 * axis + 3; }
+inline int speed (EffectKind kind) noexcept { return 4 * axesOf (kind); }
+inline int acceleration (EffectKind kind) noexcept { return 4 * axesOf (kind) + 1; }
+// X-Y-Z only (round 165): each axis' output curve mode (FL's point mode, core/FlCurve.h; value = mode / 12), after
+// speed and acceleration: 14, 15, 16
+constexpr int curveMode (int axis) noexcept { return 14 + axis; }
+constexpr float curveModeValue (int mode) noexcept { return (float) mode / 12.0f; }
+int curveModeOf (float value) noexcept;
+int paramCount (EffectKind kind) noexcept;
+// X-Y-Z only (round 190pt): a hidden parameter after the named ones (not saved while 0). 1 = the slot's FL state holds
+// the axes' INPUT curves and the level of each axis goes through its input curve before the smoother, as FL's
+// [DECOMP Fruity X-Y-Z Controller_x64.dll 0x83C0A0: ProcessParam 0…2 stores inCurve (level) as the target; 0x83CBF0:
+// output = outCurve (smoothed target)]. 0 (projects saved before, new slots): the level is the target, as before.
+constexpr int flInputCurves = 17;
+// One point of an FL curve (the X-Y-Z's input / output curves): the segment that ends at it has its mode and tension.
+struct CurvePoint
+{
+    double x = 0.0, y = 0.0;
+    float tension = 0.0f;
+    int mode = 0;
+};
+// FL's X-Y-Z curves from its state (version 3), read in order: 11 × i32, flags, combo, then per axis 8 bytes and two
+// curves (input, output), each i32 3, i32 3, i32 points, 24 bytes per point (f64 x, f64 y, f32 tension, u8 mode, 2 bytes,
+// i8 sign) and a 20-byte tail [DATA: every X-Y-Z state of FL's demos ends exactly there; 3-point curves in Stroll Up].
+// [axis][0 input, 1 output]; empty when the state does not parse.
+std::vector<std::array<std::vector<CurvePoint>, 2>> flCurves (const std::vector<std::uint8_t>& state);
+// An FL curve's value at x (the shared envelope evaluator's walk [DECOMP 0x7858B0]: before the first point its value,
+// segment by segment with its end point's mode / tension, a segment of no length is passed at once, after the last
+// point its value). Empty: x.
+double evaluate (const std::vector<CurvePoint>& curve, double x) noexcept;
+// Whether a curve is FL's straight (0, 0) → (1, 1).
+bool isIdentity (const std::vector<CurvePoint>& curve) noexcept;
+
+// The default parameters (goal centred, full range, straight, FL's default speed / acceleration).
+EffectParams defaults (EffectKind kind) noexcept;
+
+// The X-Y Controller's tension curve (REA_rodada17 §4): t = (tension − 0.5) × 256 in −128…128, k = 0.1 (1001^(|t|/128) − 1);
+// t > 0: 1 − ((k + 1)^(1 − p) − 1)/k (concave), t < 0: ((k + 1)^p − 1)/k (convex), t = 0: p.
+double shape (double position, float tension01) noexcept;
+// An axis' output for a position 0..1: min + shape (position) × (max − min), clipped to 0..1. The X-Y-Z Controller's
+// shape is its output curve's (round 165): FL's envelope point law (core/FlCurve.h) with the axis' curve mode and
+// tension (param 0..1 = FL's −1…1).
+float output (EffectKind kind, const EffectParams& params, int axis, double position) noexcept;
+
+// The target's movement towards the goal (per axis), one step per block of `seconds`.
+// The laws are FL's, per tick of a 96 PPQ song at `bpm` (REA_rodada164a §3, §3b).
+struct Mover
+{
+    std::array<double, 3> position { 0.5, 0.5, 0.5 }, velocity {};
+    std::array<double, 3> stage1 { 0.5, 0.5, 0.5 }, stage2 { 0.5, 0.5, 0.5 }; // (X-Y-Z: the smoother's first stages)
+    double ticks = 0.0; // (the fraction of a tick left from the last block)
+    bool started = false;
+    void step (const EffectParams& params, EffectKind kind, double seconds, double bpm) noexcept;
+};
+
+std::unique_ptr<Effect> makeEffect (EffectKind kind);
+// round 190pt: an X-Y-Z slot with flInputCurves set takes its input curves from the slot's FL state
+std::unique_ptr<Effect> makeEffectWithCurves (const EffectSlot& slot);
+
+// FL's saved state (0xD5) → LYNX's slot (nullopt when it doesn't parse). X-Y: i32 version + 10 × i32 parameters
+// (levels / min / max 0…65536, tension −128…128, speed, acceleration); X-Y-Z: version 3 (levels, speed, acceleration,
+// each axis' output curve: its ends as Min / Max, its point's mode and tension (round 165); round 190pt: the curves read
+// in order (a 3-point curve moves the ones after it), flInputCurves set when an input curve is not straight).
+std::optional<EffectSlot> fromFl (const std::string& pluginName, const std::vector<std::uint8_t>& state);
+
+// The text a parameter shows ("X level 50%", "Tension +32").
+std::string paramText (EffectKind kind, int param, float value);
+} // namespace lynx::xy

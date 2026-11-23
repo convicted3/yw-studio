@@ -1,0 +1,1226 @@
+#include "core/NoteTools.h"
+#include "core/NoteRepeat.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <iterator>
+#include <map>
+#include <tuple>
+#include <string_view>
+
+namespace lynx::notetools
+{
+namespace
+{
+bool valid (const Pattern& p, int i)
+{
+    return i >= 0 && i < (int) p.notes.size();
+}
+
+std::vector<int> validSorted (const Pattern& p, std::vector<int> indices)
+{
+    indices.erase (std::remove_if (indices.begin(), indices.end(), [&p] (int i) { return ! valid (p, i); }), indices.end());
+    std::sort (indices.begin(), indices.end());
+    indices.erase (std::unique (indices.begin(), indices.end()), indices.end());
+    return indices;
+}
+
+// small deterministic generator (the same seed gives the same result on every compiler)
+struct Random
+{
+    std::uint32_t state;
+    explicit Random (std::uint32_t seed) : state (seed * 2654435761u + 0x6d2b79f5u) {}
+
+    float next() noexcept // 0..1
+    {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        return (float) (state >> 8) / (float) (1u << 24);
+    }
+
+    float bipolar (bool both) noexcept { return both ? next() * 2.0f - 1.0f : -next(); }
+};
+} // namespace
+
+// --- levels -----------------------------------------------------------------------------------
+
+const char* levelName (Level level)
+{
+    switch (level)
+    {
+        case Level::velocity: return TR_NOOP ("Velocity");
+        case Level::pan: return TR_NOOP ("Pan");
+        case Level::release: return TR_NOOP ("Release");
+        case Level::finePitch: return TR_NOOP ("Fine pitch");
+        case Level::modX: return TR_NOOP ("Mod X");
+        case Level::modY: return TR_NOOP ("Mod Y");
+        case Level::notePitch: return TR_NOOP ("Note pitch");
+        case Level::shift: return TR_NOOP ("Shift");
+        case Level::repeat: return TR_NOOP ("Repeat");
+    }
+    return "";
+}
+
+Level stepLevel (int tab) noexcept
+{
+    static constexpr Level order[stepLevelCount] { Level::notePitch, Level::velocity, Level::release, Level::finePitch, Level::pan,
+                                                   Level::modX, Level::modY, Level::shift, Level::repeat };
+    return order[std::clamp (tab, 0, stepLevelCount - 1)];
+}
+
+const char* stepLevelName (int tab, int size)
+{
+    // FL's three label sets (FLEngine FUN_0130ff30: the full names, the short ones, and the middle set it builds from them)
+    static const char* const full[stepLevelCount] { TR_NOOP ("Note pitch"), TR_NOOP ("Velocity"), TR_NOOP ("Release velocity"), TR_NOOP ("Fine pitch"),
+                                                    TR_NOOP ("Panning"), TR_NOOP ("Mod X"), TR_NOOP ("Mod Y"), TR_NOOP ("Shift"), TR_NOOP ("Repeat") };
+    static const char* const medium[stepLevelCount] { TR_NOOP ("Note pitch"), TR_NOOP ("Velocity"), TR_NOOP ("Release"), TR_NOOP ("Fine pitch"),
+                                                      TR_NOOP ("Pan"), TR_NOOP ("Mod X"), TR_NOOP ("Mod Y"), TR_NOOP ("Shift"), TR_NOOP ("Repeats") };
+    static const char* const brief[stepLevelCount] { TR_NOOP ("Note"), TR_NOOP ("Vel"), TR_NOOP ("Rel"), TR_NOOP ("Fine"), TR_NOOP ("Pan"),
+                                                     "X", "Y", TR_NOOP ("Shift"), TR_NOOP ("Rep") };
+    tab = std::clamp (tab, 0, stepLevelCount - 1);
+    return (size >= 2 ? full : size == 1 ? medium : brief)[tab];
+}
+
+const char* graphLaneName (int lane)
+{
+    for (int tab = 0; tab < stepLevelCount; ++tab)
+        if ((int) stepLevel (tab) == lane)
+            return stepLevelName (tab);
+    return "";
+}
+
+float graphValue (const Note& n, int lane, std::int64_t stepTicks) noexcept
+{
+    if (lane == graphShift && stepTicks != ticksPerStep && stepTicks > 0)
+        return std::clamp ((float) ((double) (((n.start % stepTicks) + stepTicks) % stepTicks) / (0.99 * (double) stepTicks)), 0.0f, 1.0f);
+    return levelValue (n, (Level) std::clamp (lane, 0, graphRepeat));
+}
+
+void setGraphValue (Note& n, int lane, float v, std::int64_t stepTicks) noexcept
+{
+    if (lane == graphShift && stepTicks != ticksPerStep && stepTicks > 0)
+    {
+        const auto base = n.start - (((n.start % stepTicks) + stepTicks) % stepTicks);
+        n.start = base + (std::int64_t) std::llround ((double) std::clamp (v, 0.0f, 1.0f) * 0.99 * (double) stepTicks);
+        return;
+    }
+    setLevelValue (n, (Level) std::clamp (lane, 0, graphRepeat), v);
+}
+
+float graphDefault (int lane) noexcept { return levelDefault ((Level) std::clamp (lane, 0, graphRepeat)); }
+
+bool graphIsBipolar (int lane) noexcept { return levelIsBipolar ((Level) std::clamp (lane, 0, graphRepeat)); }
+
+std::string levelText (Level level, float v)
+{
+    v = std::clamp (v, 0.0f, 1.0f);
+    switch (level)
+    {
+        case Level::notePitch:
+        {
+            // FL's names: C5 = key 60
+            static const char* const names[12] { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+            const auto key = (int) std::lround (v * 127.0f);
+            return std::string (names[key % 12]) + std::to_string (key / 12);
+        }
+        case Level::shift: // FL's "0.00": the part of the step
+        {
+            char text[16];
+            std::snprintf (text, sizeof (text), "%.2f", (double) v);
+            return text;
+        }
+        case Level::repeat: return noterepeat::rateName ((int) std::lround (v * noterepeat::rateCount));
+        default: return {}; // (the other lanes: the caller's percent)
+    }
+}
+
+float levelValue (const Note& n, Level level) noexcept
+{
+    switch (level)
+    {
+        case Level::velocity: return n.velocity;
+        case Level::pan: return (n.pan + 1.0f) * 0.5f;
+        case Level::release: return n.release;
+        case Level::finePitch: return (n.finePitch + 120.0f) / 240.0f;
+        case Level::modX: return n.modX;
+        case Level::modY: return n.modY;
+        case Level::notePitch: return (float) std::clamp (n.key, 0, 127) / 127.0f;
+        case Level::shift: // (FL's manual: "100% shift equals 99% of the note position equal to one 16th note")
+            return std::clamp ((float) ((double) (((n.start % ticksPerStep) + ticksPerStep) % ticksPerStep) / (0.99 * ticksPerStep)), 0.0f, 1.0f);
+        case Level::repeat: return (float) std::clamp (n.repeat, 0, noterepeat::rateCount) / (float) noterepeat::rateCount;
+    }
+    return 0.0f;
+}
+
+void setLevelValue (Note& n, Level level, float v) noexcept
+{
+    v = std::clamp (v, 0.0f, 1.0f);
+
+    switch (level)
+    {
+        case Level::velocity: n.velocity = v; break;
+        case Level::pan: n.pan = v * 2.0f - 1.0f; break;
+        case Level::release: n.release = v; break;
+        case Level::finePitch: n.finePitch = v * 240.0f - 120.0f; break;
+        case Level::modX: n.modX = v; break;
+        case Level::modY: n.modY = v; break;
+        case Level::notePitch: n.key = (int) std::lround (v * 127.0f); break;
+        case Level::shift:
+        {
+            // the note stays in its step: FL's 100 % is the step's last tick (it never reaches the next step)
+            const auto step = n.start - (((n.start % ticksPerStep) + ticksPerStep) % ticksPerStep);
+            n.start = step + std::min<std::int64_t> (ticksPerStep - 1, std::llround ((double) v * 0.99 * ticksPerStep));
+            break;
+        }
+        case Level::repeat: n.repeat = (int) std::lround (v * noterepeat::rateCount); break;
+    }
+}
+
+float levelDefault (Level level) noexcept
+{
+    return levelValue (Note {}, level);
+}
+
+bool levelIsBipolar (Level level) noexcept
+{
+    return level == Level::pan || level == Level::finePitch;
+}
+
+// --- scales -----------------------------------------------------------------------------------
+
+const std::vector<ScaleInfo>& scales()
+{
+    static const std::vector<ScaleInfo> list {
+        { TR_NOOP ("No scale"), {} },
+        { TR_NOOP ("Major"), { 0, 2, 4, 5, 7, 9, 11 } },
+        { TR_NOOP ("Natural minor"), { 0, 2, 3, 5, 7, 8, 10 } },
+        { TR_NOOP ("Harmonic minor"), { 0, 2, 3, 5, 7, 8, 11 } },
+        { TR_NOOP ("Major pentatonic"), { 0, 2, 4, 7, 9 } },
+        { TR_NOOP ("Minor pentatonic"), { 0, 3, 5, 7, 10 } },
+        { "Blues", { 0, 3, 5, 6, 7, 10 } },
+        { TR_NOOP ("Dorian"), { 0, 2, 3, 5, 7, 9, 10 } },
+        { TR_NOOP ("Phrygian"), { 0, 1, 3, 5, 7, 8, 10 } },
+    };
+    return list;
+}
+
+const std::vector<FlReferenceScale>& flReferenceScales()
+{
+    static const std::vector<FlReferenceScale> list {
+        { "Major (Ionian)", { 0, 2, 4, 5, 7, 9, 11 } },
+        { "Major Bebop", { 0, 2, 4, 5, 7, 8, 9, 11 } },
+        { "Major Bulgarian", { 0, 2, 5, 6, 8, 9, 11 } },
+        { "Major Hexatonic", { 0, 2, 4, 5, 7, 9 } },
+        { "Major Pentatonic", { 0, 2, 4, 7, 9 } },
+        { "Major Persian", { 0, 1, 4, 5, 6, 8, 11 } },
+        { "Major Polymode", { 0, 2, 3, 5, 6, 8, 10, 11 } },
+        { "Minor Harmonic", { 0, 2, 3, 5, 7, 8, 11 } },
+        { "Minor Hungarian", { 0, 2, 3, 6, 7, 8, 11 } },
+        { "Minor Melodic", { 0, 2, 3, 5, 7, 9, 11 } },
+        { "Minor Natural (Aeolian)", { 0, 2, 3, 5, 7, 8, 10 } },
+        { "Minor Neapolitan", { 0, 1, 3, 5, 7, 8, 11 } },
+        { "Minor Pentatonic", { 0, 3, 5, 7, 10 } },
+        { "Minor Polymode", { 0, 1, 2, 4, 5, 7, 8, 10 } },
+        { "Minor Romanian", { 0, 2, 3, 6, 7, 9, 10 } },
+        { "Other Arabic", { 0, 1, 4, 5, 7, 8, 11 } },
+        { "Other Bebop Dominant", { 0, 2, 4, 5, 7, 9, 10, 11 } },
+        { "Other Blues Nonatonic", { 0, 2, 3, 4, 5, 6, 7, 9, 10 } },
+        { "Other Blues", { 0, 3, 5, 6, 7, 10 } },
+        { "Other Diminished", { 0, 2, 3, 5, 6, 8, 9, 11 } },
+        { "Other Dorian", { 0, 2, 3, 5, 7, 9, 10 } },
+        { "Other Eastern", { 0, 2, 3, 5, 7, 8, 10, 11 } },
+        { "Other Egyptian", { 0, 2, 5, 7, 10 } },
+        { "Other Enigmatic", { 0, 1, 4, 6, 8, 10, 11 } },
+        { "Other Hirajoshi", { 0, 2, 3, 7, 8 } },
+        { "Other Iwato", { 0, 1, 5, 6, 10 } },
+        { "Other Japanese Insen", { 0, 1, 5, 7, 10 } },
+        { "Other Locrian Super", { 0, 1, 3, 4, 6, 8, 10 } },
+        { "Other Locrian", { 0, 1, 3, 5, 6, 8, 10 } },
+        { "Other Lydian", { 0, 2, 4, 6, 7, 9, 11 } },
+        { "Other Mixolydian", { 0, 2, 4, 5, 7, 9, 10 } },
+        { "Other Neapolitan", { 0, 1, 3, 5, 7, 9, 11 } },
+        { "Other Phrygian Dominant", { 0, 1, 4, 5, 7, 8, 10 } },
+        { "Other Phrygian", { 0, 1, 3, 5, 7, 8, 10 } },
+        { "Other Piongio", { 0, 2, 5, 7, 9, 10 } },
+        { "Other Prometheus", { 0, 2, 4, 6, 9, 10 } },
+        { "Other Whole Tone", { 0, 2, 4, 6, 8, 10 } },
+    };
+    return list;
+}
+
+int scaleForFlReference (int flIndex) noexcept
+{
+    if (flIndex < 0 || flIndex >= (int) flReferenceScales().size())
+        return 0;
+    const auto& intervals = flReferenceScales()[(std::size_t) flIndex].intervals;
+    for (std::size_t s = 1; s < scales().size(); ++s)
+        if (scales()[s].intervals == intervals)
+            return (int) s;
+    return 0;
+}
+
+bool inScale (int key, int root, int scale) noexcept
+{
+    if (scale <= 0 || scale >= (int) scales().size())
+        return true;
+
+    const auto& intervals = scales()[(std::size_t) scale].intervals;
+    const auto degree = ((key - root) % 12 + 12) % 12;
+    return std::find (intervals.begin(), intervals.end(), degree) != intervals.end();
+}
+
+KeyRows keyRows (int root, int scale, bool fold) noexcept
+{
+    KeyRows rows;
+    rows.count = 0;
+    for (int key = 127; key >= 0; --key)
+    {
+        const auto shown = ! fold || scale <= 0 || inScale (key, root, scale);
+        rows.rowOfKey[(std::size_t) key] = shown ? rows.count : -1;
+        if (shown)
+            rows.keyOfRow[(std::size_t) rows.count++] = key;
+    }
+    return rows;
+}
+
+KeyRows keyRowsOf (const std::vector<int>& keys) noexcept
+{
+    if (keys.empty())
+        return keyRows (0, 0, false);
+    std::array<bool, 128> shown {};
+    for (const auto k : keys)
+        if (k >= 0 && k < 128)
+            shown[(std::size_t) k] = true;
+    KeyRows rows;
+    rows.count = 0;
+    for (int key = 127; key >= 0; --key)
+    {
+        rows.rowOfKey[(std::size_t) key] = shown[(std::size_t) key] ? rows.count : -1;
+        if (shown[(std::size_t) key])
+            rows.keyOfRow[(std::size_t) rows.count++] = key;
+    }
+    return rows;
+}
+
+int KeyRows::step (int key, int rows) const noexcept
+{
+    key = std::clamp (key, 0, 127);
+    if (count <= 0)
+        return key;
+    auto row = rowOfKey[(std::size_t) key];
+    if (row < 0) // a folded key sits between two rows: one step reaches the shown key above or below it
+    {
+        int above = key;
+        while (above < 127 && rowOfKey[(std::size_t) above] < 0)
+            ++above;
+        row = rowOfKey[(std::size_t) above] >= 0 ? rowOfKey[(std::size_t) above] : -1; // −1: above the top row
+        if (rows > 0)
+            --rows;
+        else if (rows == 0)
+            row = std::max (row, 0);
+    }
+    return keyOfRow[(std::size_t) std::clamp (row - rows, 0, count - 1)];
+}
+
+int snapToScale (int key, int root, int scale) noexcept
+{
+    key = std::clamp (key, 0, 127);
+
+    if (scale <= 0 || scale >= (int) scales().size())
+        return key;
+
+    for (int d = 0; d < 12; ++d)
+    {
+        if (key - d >= 0 && inScale (key - d, root, scale))
+            return key - d;
+        if (key + d <= 127 && inScale (key + d, root, scale))
+            return key + d;
+    }
+
+    return key;
+}
+
+void snapNotesToScale (Pattern& pattern, const std::vector<int>& indices, int root, int scale)
+{
+    for (auto i : validSorted (pattern, indices))
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        n.key = snapToScale (n.key, root, scale);
+    }
+}
+
+void moveKeysOnScale (Pattern& pattern, const std::vector<int>& indices, const std::vector<Note>& originals, int deltaKeys, int root, int scale)
+{
+    if (deltaKeys == 0)
+        return;
+    for (std::size_t j = 0; j < indices.size() && j < originals.size(); ++j)
+    {
+        const auto i = indices[j];
+        if (i < 0 || i >= (int) pattern.notes.size())
+            continue;
+        pattern.notes[(std::size_t) i].key = snapToScale (std::clamp (originals[j].key + deltaKeys, 0, 127), root, scale);
+    }
+}
+
+int stepOnScale (int key, int direction, int root, int scale) noexcept
+{
+    if (direction == 0)
+        return key;
+    const auto step = direction > 0 ? 1 : -1;
+    for (auto k = key + step; k >= 0 && k <= 127; k += step)
+        if (scale <= 0 || inScale (k, root, scale))
+            return k;
+    return key;
+}
+
+// --- chords -----------------------------------------------------------------------------------
+
+std::vector<std::vector<int>> chordsOf (const Pattern& pattern, const std::vector<int>& indices)
+{
+    std::map<std::tuple<std::int64_t, int>, std::vector<int>> groups; // (start, channel)
+
+    for (auto i : validSorted (pattern, indices))
+    {
+        const auto& n = pattern.notes[(std::size_t) i];
+        groups[{ n.start, n.channel }].push_back (i);
+    }
+
+    std::vector<std::vector<int>> out;
+
+    for (auto& [key, group] : groups)
+    {
+        std::stable_sort (group.begin(), group.end(), [&pattern] (int a, int b) {
+            return pattern.notes[(std::size_t) a].key < pattern.notes[(std::size_t) b].key;
+        });
+        out.push_back (std::move (group));
+    }
+
+    return out;
+}
+
+// --- strum ------------------------------------------------------------------------------------
+
+void strum (Pattern& pattern, const std::vector<int>& indices, const StrumOptions& o)
+{
+    const auto chords = chordsOf (pattern, indices);
+    int chordNumber = 0;
+    const auto exponent = std::pow (2.0, (double) std::clamp (o.curve, -1.0f, 1.0f) * 2.0);
+
+    for (const auto& chord : chords)
+    {
+        if (chord.size() < 2)
+            continue;
+
+        auto downward = o.downward;
+        if (o.alternate && (chordNumber % 2) == 1)
+            downward = ! downward;
+        ++chordNumber;
+
+        const auto count = (int) chord.size();
+        const auto total = (double) o.spread * (count - 1);
+
+        for (int k = 0; k < count; ++k)
+        {
+            auto& n = pattern.notes[(std::size_t) chord[(std::size_t) (downward ? count - 1 - k : k)]];
+            const auto x = (double) k / (double) (count - 1);
+            const auto offset = std::max<std::int64_t> (0, (std::int64_t) std::llround (total * std::pow (x, exponent)));
+            const auto end = n.start + n.length;
+            n.start += offset;
+
+            if (o.keepEnds)
+                n.length = std::max<std::int64_t> (std::min<std::int64_t> (n.length, 10), end - n.start);
+
+            n.velocity = std::clamp (n.velocity + o.velocityStep * (float) k, 0.0f, 1.0f);
+        }
+    }
+}
+
+// --- arpeggiate -------------------------------------------------------------------------------
+
+std::vector<int> arpeggiate (Pattern& pattern, const std::vector<int>& indices, const ArpeggiateOptions& o)
+{
+    const auto step = std::max<std::int64_t> (1, o.step);
+    const auto octaves = std::clamp (o.octaves, 1, 4);
+    const auto noteLength = std::max<std::int64_t> (1, (std::int64_t) std::llround ((double) step * std::clamp (o.gate, 0.05f, 1.0f)));
+    std::vector<int> doomed;
+    std::vector<Note> created;
+
+    for (const auto& chord : chordsOf (pattern, indices))
+    {
+        if (chord.size() < 2 && octaves == 1)
+            continue;
+
+        std::vector<Note> base;
+        std::int64_t span = 0;
+
+        for (auto i : chord)
+        {
+            base.push_back (pattern.notes[(std::size_t) i]);
+            span = std::max (span, pattern.notes[(std::size_t) i].length);
+            doomed.push_back (i);
+        }
+
+        // the ascending run over the octaves
+        std::vector<Note> run;
+        for (int oct = 0; oct < octaves; ++oct)
+            for (auto n : base)
+                if (n.key + 12 * oct <= 127)
+                {
+                    n.key += 12 * oct;
+                    run.push_back (n);
+                }
+
+        std::vector<Note> sequence;
+        auto down = run;
+        std::reverse (down.begin(), down.end());
+
+        switch (o.direction)
+        {
+            case ArpeggiateOptions::down: sequence = down; break;
+            case ArpeggiateOptions::upDown:
+                sequence = run;
+                if (down.size() > 2)
+                    sequence.insert (sequence.end(), down.begin() + 1, down.end() - 1);
+                break;
+            case ArpeggiateOptions::downUp:
+                sequence = down;
+                if (run.size() > 2)
+                    sequence.insert (sequence.end(), run.begin() + 1, run.end() - 1);
+                break;
+            default: sequence = run; break;
+        }
+
+        if (sequence.empty())
+            continue;
+
+        const auto start = base.front().start;
+
+        for (std::int64_t t = 0, k = 0; t < span; t += step, ++k)
+        {
+            auto n = sequence[(std::size_t) (k % (std::int64_t) sequence.size())];
+            n.start = start + t;
+            n.length = std::min (noteLength, span - t);
+            created.push_back (n);
+        }
+    }
+
+    std::sort (doomed.begin(), doomed.end());
+    for (auto it = doomed.rbegin(); it != doomed.rend(); ++it)
+        pattern.notes.erase (pattern.notes.begin() + *it);
+
+    std::vector<int> added;
+    for (const auto& n : created)
+    {
+        added.push_back ((int) pattern.notes.size());
+        pattern.notes.push_back (n);
+    }
+
+    return added;
+}
+
+// --- flip -------------------------------------------------------------------------------------
+
+void flip (Pattern& pattern, const std::vector<int>& indices, bool horizontal, bool vertical, bool preserveStarts)
+{
+    const auto targets = validSorted (pattern, indices);
+
+    if (targets.empty())
+        return;
+
+    std::int64_t from = INT64_MAX, to = INT64_MIN, lastStart = INT64_MIN;
+    int low = 127, high = 0;
+
+    for (auto i : targets)
+    {
+        const auto& n = pattern.notes[(std::size_t) i];
+        from = std::min (from, n.start);
+        to = std::max (to, n.start + n.length);
+        lastStart = std::max (lastStart, n.start);
+        low = std::min (low, n.key);
+        high = std::max (high, n.key);
+    }
+
+    for (auto i : targets)
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+
+        if (horizontal)
+            n.start = std::max<std::int64_t> (0, preserveStarts ? lastStart - (n.start - from)
+                                                                : from + (to - (n.start + n.length)));
+        if (vertical)
+            n.key = std::clamp (low + high - n.key, 0, 127);
+    }
+}
+
+// --- randomise --------------------------------------------------------------------------------
+
+void randomise (Pattern& pattern, const std::vector<int>& indices, const RandomiseOptions& o)
+{
+    Random random (o.seed);
+
+    for (auto i : validSorted (pattern, indices))
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        // every note draws the same number of values, so changing one amount doesn't reshuffle the others
+        const auto rv = random.bipolar (o.bipolar), rp = random.bipolar (true), rf = random.bipolar (true);
+        const auto rx = random.bipolar (true), ry = random.bipolar (true), rt = random.bipolar (o.bipolar);
+        const auto rl = random.bipolar (true);
+        const auto rr = random.bipolar (true); // drawn last: the older amounts keep their values for a seed
+        // FL's Bipolar box covers every level; off, the levels only go up (live FL check 190cq: pan and velocity at
+        // 100 % moved only towards the right / 100 %). The draws stay the same, so Bipolar on is unchanged.
+        const auto way = [&o] (float r) { return o.bipolar ? r : std::abs (r); };
+
+        // FL's law (live FL checks 190cq and 190ew PR-1): at 100 % a level moves at most HALF its lane, ±0.5 of the
+        // 0…1 range (velocity from 78 % reached ~30 %, pan from the centre reached both ends, Mod X / Mod Y / Release
+        // from the centre or 0 piled at the cap); amount × 0.5 × r (round 190ez; LYNX moved twice as far before)
+        n.velocity = std::clamp (n.velocity + 0.5f * o.velocity * way (rv), 0.0f, 1.0f);
+        n.pan = std::clamp (n.pan + o.pan * way (rp), -1.0f, 1.0f); // (pan's lane is −1…1: half of it = ±1)
+        n.finePitch = std::clamp (n.finePitch + 120.0f * o.finePitch * way (rf), -120.0f, 120.0f);
+        n.modX = std::clamp (n.modX + 0.5f * o.modX * way (rx), 0.0f, 1.0f);
+        n.modY = std::clamp (n.modY + 0.5f * o.modY * way (ry), 0.0f, 1.0f);
+        if (o.release != 0.0f)
+            setLevelValue (n, Level::release, levelValue (n, Level::release) + 0.5f * o.release * way (rr));
+
+        if (o.timing > 0) // off: only later
+            n.start = std::max<std::int64_t> (0, n.start + (std::int64_t) std::llround ((double) o.timing * way (rt)));
+
+        if (o.length > 0.0f)
+            n.length = std::max<std::int64_t> (1, (std::int64_t) std::llround ((double) n.length * (1.0 + (double) o.length * rl)));
+    }
+}
+
+// --- scale levels -----------------------------------------------------------------------------
+
+void scaleLevels (Pattern& pattern, const std::vector<int>& indices, Level level, float scaleStart, float scaleEnd, float offset)
+{
+    const auto targets = validSorted (pattern, indices);
+
+    if (targets.empty())
+        return;
+
+    std::int64_t first = INT64_MAX, last = INT64_MIN;
+    for (auto i : targets)
+    {
+        first = std::min (first, pattern.notes[(std::size_t) i].start);
+        last = std::max (last, pattern.notes[(std::size_t) i].start);
+    }
+
+    const auto centre = levelIsBipolar (level) ? 0.5f : 0.0f;
+
+    for (auto i : targets)
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        const auto t = last > first ? (float) (n.start - first) / (float) (last - first) : 0.0f;
+        const auto scale = scaleStart + (scaleEnd - scaleStart) * t;
+        setLevelValue (n, level, centre + (levelValue (n, level) - centre) * scale + offset);
+    }
+}
+
+double flLevelScale (double x, double center, double multiply, double offset, double tension) noexcept
+{
+    center = std::clamp (center, 0.0, 1.0);
+    const auto reach = std::max (center, 1.0 - center);
+    const auto delta = (float) (x - center); // FL takes the side from the single-precision difference
+    const auto side = delta > 0.0f ? 1.0 : delta < 0.0f ? -1.0 : 0.0;
+    auto f = std::abs (x - center) / reach;
+
+    // the bend: single-precision parameters, as FL keeps them
+    const auto amount = std::abs (std::clamp (tension, -1.0, 1.0));
+    const auto p = (float) (std::exp (amount * std::log (1001.0)) - 1.0);
+    if (p != 0.0f)
+    {
+        const auto inverse = (double) (float) (1.0 / (double) p);
+        const auto log = (double) (float) std::log ((double) p + 1.0);
+        f = tension > 0.0 ? 1.0 - (std::exp ((1.0 - f) * log) - 1.0) * inverse : (std::exp (f * log) - 1.0) * inverse;
+    }
+
+    return std::clamp (side * f * (multiply * reach) + (offset + center), 0.0, 1.0);
+}
+
+void scaleLevels (Pattern& pattern, const std::vector<int>& indices, Level level, float scaleStart, float scaleEnd, float offset,
+                  float center, float tension)
+{
+    const auto targets = validSorted (pattern, indices);
+
+    if (targets.empty())
+        return;
+
+    std::int64_t first = INT64_MAX, last = INT64_MIN;
+    for (auto i : targets)
+    {
+        first = std::min (first, pattern.notes[(std::size_t) i].start);
+        last = std::max (last, pattern.notes[(std::size_t) i].start);
+    }
+
+    for (auto i : targets)
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        const auto t = last > first ? (float) (n.start - first) / (float) (last - first) : 0.0f;
+        const auto scale = scaleStart + (scaleEnd - scaleStart) * t;
+        setLevelValue (n, level, (float) flLevelScale ((double) levelValue (n, level), (double) center, (double) scale, (double) offset,
+                                                       (double) tension));
+    }
+}
+
+// --- limit ------------------------------------------------------------------------------------
+
+void limit (Pattern& pattern, const std::vector<int>& indices, const LimitOptions& o)
+{
+    const auto low = std::clamp (std::min (o.lowKey, o.highKey), 0, 127);
+    const auto high = std::clamp (std::max (o.lowKey, o.highKey), 0, 127);
+    const auto minV = std::clamp (std::min (o.minVelocity, o.maxVelocity), 0.0f, 1.0f);
+    const auto maxV = std::clamp (std::max (o.minVelocity, o.maxVelocity), 0.0f, 1.0f);
+    const auto restricted = o.scale > 0 && o.scale < (int) limitRestrictions().size();
+    const auto allowed = limitAllowedKeys (o.root, restricted ? o.scale : 0);
+    const auto inside = [&allowed] (int key) { return key >= 0 && key < (int) allowed.size() && allowed[(std::size_t) key]; };
+    unsigned ties = 0;
+
+    for (auto i : validSorted (pattern, indices))
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        auto key = std::clamp (n.key, 0, 127);
+
+        if (restricted && ! inside (key))
+        {
+            // the nearest allowed key; FL's search stops at the ends of the keyboard, whatever key is there
+            auto down = key, up = key;
+            do { --down; } while (down >= 1 && ! inside (down));
+            do { ++up; } while (up <= 126 && ! inside (up));
+            down = std::max (down, 0);
+            up = std::min (up, 127);
+
+            const auto below = key - down, over = up - key;
+            if (over < below)
+                key = up;
+            else if (over > below)
+                key = down;
+            else if (o.snap == LimitOptions::under)
+                key = down;
+            else if (o.snap == LimitOptions::alternate)
+                key = (ties++ & 1u) != 0 ? down : up;
+            else
+                key = up;
+        }
+
+        if (key > high)
+            key -= ((o.wrap ? key - low : key - high + 11) / 12) * 12;
+        else if (key < low)
+            key += ((o.wrap ? high - key : low - key + 11) / 12) * 12;
+
+        key = std::clamp (key, low, high) + o.transpose;
+        while (key < 0)
+            key += 12;
+        while (key > 127)
+            key -= 12;
+
+        n.key = key;
+        n.velocity = std::clamp (n.velocity, minV, maxV);
+    }
+}
+
+const std::vector<LimitRestriction>& limitRestrictions()
+{
+    // FL's System/Config/Chords.map, in its order (the steps between the notes, in semitones)
+    static const std::vector<LimitRestriction> list {
+        { TR_NOOP ("(none)"), LimitRestriction::none, false, {} },
+{ "Major", LimitRestriction::chord, true, { 4, 3 } },
+        { "sus2", LimitRestriction::chord, false, { 2, 5 } },
+        { "sus4", LimitRestriction::chord, false, { 5, 2 } },
+        { "Majb5", LimitRestriction::chord, false, { 4, 2 } },
+        { "minor", LimitRestriction::chord, false, { 3, 4 } },
+        { "mb5", LimitRestriction::chord, false, { 3, 3 } },
+        { "aug", LimitRestriction::chord, false, { 4, 4 } },
+        { "augsus4", LimitRestriction::chord, false, { 5, 3 } },
+        { "tri", LimitRestriction::chord, false, { 3, 3, 3 } },
+        { "6", LimitRestriction::chord, true, { 4, 3, 2 } },
+        { "6sus4", LimitRestriction::chord, false, { 5, 2, 2 } },
+        { "6add9", LimitRestriction::chord, false, { 4, 3, 2, 5 } },
+        { "m6", LimitRestriction::chord, false, { 3, 4, 2 } },
+        { "m6add9", LimitRestriction::chord, false, { 3, 4, 2, 5 } },
+        { "7", LimitRestriction::chord, true, { 4, 3, 3 } },
+        { "7sus4", LimitRestriction::chord, false, { 5, 2, 3 } },
+        { "7#5", LimitRestriction::chord, false, { 4, 4, 2 } },
+        { "7b5", LimitRestriction::chord, false, { 4, 2, 4 } },
+        { "7#9", LimitRestriction::chord, false, { 4, 3, 3, 5 } },
+        { "7b9", LimitRestriction::chord, false, { 4, 3, 3, 3 } },
+        { "7#5#9", LimitRestriction::chord, false, { 4, 4, 2, 5 } },
+        { "7#5b9", LimitRestriction::chord, false, { 4, 4, 2, 3 } },
+        { "7b5b9", LimitRestriction::chord, false, { 4, 2, 4, 3 } },
+        { "7add11", LimitRestriction::chord, false, { 4, 3, 3, 7 } },
+        { "7add13", LimitRestriction::chord, false, { 4, 3, 3, 11 } },
+        { "7#11", LimitRestriction::chord, false, { 4, 3, 3, 8 } },
+        { "Maj7", LimitRestriction::chord, false, { 4, 3, 4 } },
+        { "Maj7b5", LimitRestriction::chord, false, { 4, 2, 5 } },
+        { "Maj7#5", LimitRestriction::chord, false, { 4, 4, 3 } },
+        { "Maj7#11", LimitRestriction::chord, false, { 4, 3, 4, 7 } },
+        { "Maj7add13", LimitRestriction::chord, false, { 4, 3, 4, 10 } },
+        { "m7", LimitRestriction::chord, false, { 3, 4, 3 } },
+        { "m7b5", LimitRestriction::chord, false, { 3, 3, 4 } },
+        { "m7b9", LimitRestriction::chord, false, { 3, 4, 3, 3 } },
+        { "m7add11", LimitRestriction::chord, false, { 3, 4, 3, 7 } },
+        { "m7add13", LimitRestriction::chord, false, { 3, 4, 3, 11 } },
+        { "m-Maj7", LimitRestriction::chord, false, { 3, 4, 4 } },
+        { "m-Maj7add11", LimitRestriction::chord, false, { 3, 4, 4, 6 } },
+        { "m-Maj7add13", LimitRestriction::chord, false, { 3, 4, 4, 10 } },
+        { "9", LimitRestriction::chord, true, { 4, 3, 3, 4 } },
+        { "9sus4", LimitRestriction::chord, false, { 5, 2, 3, 4 } },
+        { "add9", LimitRestriction::chord, false, { 4, 3, 7 } },
+        { "9#5", LimitRestriction::chord, false, { 4, 4, 2, 4 } },
+        { "9b5", LimitRestriction::chord, false, { 4, 2, 4, 4 } },
+        { "9#11", LimitRestriction::chord, false, { 4, 3, 3, 4, 4 } },
+        { "9b13", LimitRestriction::chord, false, { 4, 3, 3, 4, 6 } },
+        { "Maj9", LimitRestriction::chord, false, { 4, 3, 4, 3 } },
+        { "Maj9sus4", LimitRestriction::chord, false, { 5, 2, 4, 3 } },
+        { "Maj9#5", LimitRestriction::chord, false, { 4, 4, 3, 3 } },
+        { "Maj9#11", LimitRestriction::chord, false, { 4, 3, 4, 3, 4 } },
+        { "m9", LimitRestriction::chord, false, { 3, 4, 3, 4 } },
+        { "madd9", LimitRestriction::chord, false, { 3, 4, 7 } },
+        { "m9b5", LimitRestriction::chord, false, { 3, 3, 4, 4 } },
+        { "m9-Maj7", LimitRestriction::chord, false, { 3, 4, 4, 3 } },
+        { "11", LimitRestriction::chord, true, { 4, 3, 3, 4, 3 } },
+        { "11b9", LimitRestriction::chord, false, { 4, 3, 3, 3, 4 } },
+        { "Maj11", LimitRestriction::chord, false, { 4, 3, 4, 3, 3 } },
+        { "m11", LimitRestriction::chord, false, { 3, 4, 3, 4, 3 } },
+        { "m-Maj11", LimitRestriction::chord, false, { 3, 4, 4, 3, 3 } },
+        { "13", LimitRestriction::chord, true, { 4, 3, 3, 4, 7 } },
+        { "13#9", LimitRestriction::chord, false, { 4, 3, 3, 5, 6 } },
+        { "13b9", LimitRestriction::chord, false, { 4, 3, 3, 3, 8 } },
+        { "13b5b9", LimitRestriction::chord, false, { 4, 2, 4, 3, 8 } },
+        { "Maj13", LimitRestriction::chord, false, { 4, 3, 4, 3, 7 } },
+        { "m13", LimitRestriction::chord, false, { 3, 4, 3, 4, 7 } },
+        { "m-Maj13", LimitRestriction::chord, false, { 3, 4, 4, 3, 7 } },
+        { TR_NOOP ("Major"), LimitRestriction::scale, true, { 2, 2, 1, 2, 2, 2 } },
+        { TR_NOOP ("Major pentatonic"), LimitRestriction::scale, false, { 2, 2, 3, 2 } },
+        { TR_NOOP ("Major bebop"), LimitRestriction::scale, false, { 2, 2, 1, 2, 1, 1, 2 } },
+        { TR_NOOP ("Minor Harmonic"), LimitRestriction::scale, false, { 2, 1, 2, 2, 1, 3 } },
+        { TR_NOOP ("Minor Melodic"), LimitRestriction::scale, false, { 2, 1, 2, 2, 2, 2 } },
+        { TR_NOOP ("Minor pentatonic"), LimitRestriction::scale, false, { 3, 2, 2, 3 } },
+        { TR_NOOP ("Minor Natural (Aeolian)"), LimitRestriction::scale, false, { 2, 1, 2, 2, 1, 2 } },
+        { TR_NOOP ("Minor Neapolitan"), LimitRestriction::scale, false, { 1, 2, 2, 2, 1, 3 } },
+        { TR_NOOP ("Minor Hungarian"), LimitRestriction::scale, false, { 2, 1, 3, 1, 1, 3 } },
+        { TR_NOOP ("Whole tone"), LimitRestriction::scale, false, { 2, 2, 2, 2, 2 } },
+        { TR_NOOP ("Diminished"), LimitRestriction::scale, false, { 2, 1, 2, 1, 2, 1, 2 } },
+        { TR_NOOP ("Dominant bebop"), LimitRestriction::scale, false, { 2, 2, 1, 2, 2, 1, 1 } },
+        { TR_NOOP ("Jap in sen"), LimitRestriction::scale, false, { 1, 4, 2, 3 } },
+        { TR_NOOP ("Blues"), LimitRestriction::scale, false, { 3, 2, 1, 1, 3 } },
+        { TR_NOOP ("Arabic"), LimitRestriction::scale, false, { 1, 3, 1, 2, 1, 3 } },
+        { TR_NOOP ("Enigmatic"), LimitRestriction::scale, false, { 1, 3, 2, 2, 2, 1 } },
+        { TR_NOOP ("Neapolitan"), LimitRestriction::scale, false, { 1, 2, 2, 2, 2, 2 } },
+        { TR_NOOP ("Dorian"), LimitRestriction::scale, false, { 2, 1, 2, 2, 2, 1 } },
+        { TR_NOOP ("Phrygian"), LimitRestriction::scale, false, { 1, 2, 2, 2, 1, 2 } },
+        { TR_NOOP ("Lydian"), LimitRestriction::scale, false, { 2, 2, 2, 1, 2, 2 } },
+        { TR_NOOP ("Mixolydian"), LimitRestriction::scale, false, { 2, 2, 1, 2, 2, 1 } },
+        { TR_NOOP ("Locrian"), LimitRestriction::scale, false, { 1, 2, 2, 1, 2, 2 } },
+    };
+    return list;
+}
+
+int limitRestrictionIndex (const char* name, LimitRestriction::Kind kind) noexcept
+{
+    const auto& list = limitRestrictions();
+    for (std::size_t i = 1; i < list.size(); ++i)
+        if (list[i].kind == kind && std::string_view (list[i].name) == name)
+            return (int) i;
+    return 0;
+}
+
+std::array<bool, 132> limitAllowedKeys (int root, int restriction)
+{
+    std::array<bool, 132> allowed {};
+    const auto& list = limitRestrictions();
+    if (restriction <= 0 || restriction >= (int) list.size())
+    {
+        allowed.fill (true);
+        return allowed;
+    }
+    const auto mark = [&allowed] (int key) {
+        if (key >= 0 && key < (int) allowed.size())
+            allowed[(std::size_t) key] = true;
+    };
+    for (int octave = -1; octave <= 10; ++octave)
+    {
+        auto key = octave * 12 + ((root % 12) + 12) % 12;
+        mark (key);
+        for (const auto step : list[(std::size_t) restriction].steps)
+            mark (key += step);
+    }
+    return allowed;
+}
+
+// --- LYNX's script-like tools (REA round 143) --------------------------------------------------------
+
+bool euclideanHit (int steps, int pulses, int rotation, int step) noexcept
+{
+    if (steps <= 0 || pulses <= 0)
+        return false;
+    pulses = std::min (pulses, steps);
+    const auto s = (((step + rotation) % steps) + steps) % steps;
+    // Bresenham form of the Euclidean (Bjorklund) rhythm: a hit where the running multiple wraps
+    return (s * pulses) % steps < pulses;
+}
+
+std::vector<int> euclidean (Pattern& pattern, const std::vector<int>& replace, const EuclideanOptions& o)
+{
+    auto doomed = validSorted (pattern, replace);
+    for (auto it = doomed.rbegin(); it != doomed.rend(); ++it)
+        pattern.notes.erase (pattern.notes.begin() + *it);
+
+    const auto stepTicks = std::max<std::int64_t> (1, o.stepTicks);
+    const auto count = (int) (std::max<std::int64_t> (0, o.length) / stepTicks);
+    std::vector<Note> added;
+    bool first = true;
+    for (int step = 0; step < count; ++step)
+    {
+        if (step % std::max (1, o.steps) == 0)
+            first = true;
+        if (! euclideanHit (o.steps, o.pulses, o.rotation, step))
+            continue;
+        Note n;
+        n.start = o.start + step * stepTicks;
+        n.length = std::max<std::int64_t> (1, (std::int64_t) std::llround ((double) stepTicks * std::clamp (o.gate, 0.05f, 1.0f)));
+        n.channel = o.channel;
+        n.key = std::clamp (o.key, 0, 127);
+        n.velocity = std::clamp (o.velocity + (first ? o.accent : 0.0f), 0.0f, 1.0f);
+        first = false;
+        added.push_back (n);
+    }
+
+    const auto base = (int) pattern.notes.size();
+    pattern.notes.insert (pattern.notes.end(), added.begin(), added.end());
+    std::vector<int> out;
+    for (int k = 0; k < (int) added.size(); ++k)
+        out.push_back (base + k);
+    return out;
+}
+
+void humanize (Pattern& pattern, const std::vector<int>& indices, const HumanizeOptions& o)
+{
+    Random random (o.seed);
+    std::map<std::int64_t, std::int64_t> chordShift; // notes starting together move together
+    for (auto i : validSorted (pattern, indices))
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        // a softer, triangular spread (two draws) instead of a flat one: most notes move a little
+        const auto rt = (random.bipolar (true) + random.bipolar (true)) * 0.5f;
+        const auto rv = (random.bipolar (true) + random.bipolar (true)) * 0.5f;
+        const auto rl = random.bipolar (true);
+        if (o.timing > 0)
+        {
+            auto found = chordShift.find (n.start);
+            const auto shift = found != chordShift.end() ? found->second : (std::int64_t) std::llround ((double) o.timing * rt);
+            chordShift.emplace (n.start, shift);
+            n.start = std::max<std::int64_t> (0, n.start + shift);
+        }
+        auto v = n.velocity + o.velocity * rv;
+        if (o.softerOffbeats && (n.start % ppq) != 0)
+            v -= o.velocity * 0.5f;
+        n.velocity = std::clamp (v, 0.0f, 1.0f);
+        if (o.length > 0.0f)
+            n.length = std::max<std::int64_t> (1, (std::int64_t) std::llround ((double) n.length * (1.0 + (double) o.length * rl)));
+    }
+}
+
+std::vector<int> repeatNotes (Pattern& pattern, const std::vector<int>& indices, const RepeatOptions& o)
+{
+    const auto rate = std::max<std::int64_t> (1, o.rate);
+    const auto targets = validSorted (pattern, indices);
+    std::vector<Note> added;
+    for (auto i : targets)
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        const auto end = n.start + n.length;
+        const auto gate = std::max<std::int64_t> (1, (std::int64_t) std::llround ((double) rate * std::clamp (o.gate, 0.05f, 1.0f)));
+        auto velocity = n.velocity;
+        int k = 1;
+        for (auto t = n.start + rate; t < end; t += rate, ++k)
+        {
+            velocity *= std::clamp (o.decay, 0.0f, 1.5f);
+            auto copy = n;
+            copy.start = t;
+            copy.length = std::min (gate, end - t);
+            copy.velocity = std::clamp (velocity, 0.0f, 1.0f);
+            copy.key = std::clamp (n.key + k * o.pitchStep, 0, 127);
+            added.push_back (copy);
+        }
+        n.length = std::min (gate, n.length);
+    }
+    std::vector<int> out = targets;
+    const auto base = (int) pattern.notes.size();
+    pattern.notes.insert (pattern.notes.end(), added.begin(), added.end());
+    for (int k = 0; k < (int) added.size(); ++k)
+        out.push_back (base + k);
+    return out;
+}
+
+std::vector<int> selectByVelocity (const Pattern& pattern, const std::vector<int>& indices, float low, float high)
+{
+    std::vector<int> out;
+    for (auto i : validSorted (pattern, indices))
+        if (pattern.notes[(std::size_t) i].velocity >= low - 1.0e-6f && pattern.notes[(std::size_t) i].velocity <= high + 1.0e-6f)
+            out.push_back (i);
+    return out;
+}
+
+std::vector<int> selectLoudest (const Pattern& pattern, const std::vector<int>& indices, float fraction, bool loudest)
+{
+    auto list = validSorted (pattern, indices);
+    if (list.empty())
+        return list;
+    std::stable_sort (list.begin(), list.end(), [&pattern, loudest] (int a, int b) {
+        const auto va = pattern.notes[(std::size_t) a].velocity, vb = pattern.notes[(std::size_t) b].velocity;
+        return loudest ? va > vb : va < vb;
+    });
+    const auto keep = std::max<std::size_t> (1, (std::size_t) std::llround ((double) list.size() * std::clamp (fraction, 0.0f, 1.0f)));
+    list.resize (std::min (keep, list.size()));
+    std::sort (list.begin(), list.end());
+    return list;
+}
+
+// --- selection helpers ------------------------------------------------------------------------
+
+std::vector<int> invertSelection (const std::vector<int>& all, const std::vector<int>& selected)
+{
+    auto a = all, b = selected;
+    std::sort (a.begin(), a.end());
+    a.erase (std::unique (a.begin(), a.end()), a.end());
+    std::sort (b.begin(), b.end());
+    std::vector<int> out;
+    std::set_difference (a.begin(), a.end(), b.begin(), b.end(), std::back_inserter (out));
+    return out;
+}
+
+std::vector<int> selectByColour (const Pattern& pattern, const std::vector<int>& indices, int colour)
+{
+    std::vector<int> out;
+    for (auto i : validSorted (pattern, indices))
+        if (pattern.notes[(std::size_t) i].colour == colour)
+            out.push_back (i);
+    return out;
+}
+
+namespace
+{
+std::vector<int> inTimeOrder (const Pattern& pattern, const std::vector<int>& indices)
+{
+    auto list = validSorted (pattern, indices);
+    std::stable_sort (list.begin(), list.end(), [&pattern] (int a, int b) {
+        const auto& na = pattern.notes[(std::size_t) a];
+        const auto& nb = pattern.notes[(std::size_t) b];
+        return std::tie (na.start, na.key) < std::tie (nb.start, nb.key);
+    });
+    return list;
+}
+} // namespace
+
+std::vector<int> selectOdd (const Pattern& pattern, const std::vector<int>& indices)
+{
+    const auto list = inTimeOrder (pattern, indices);
+    std::vector<int> out;
+    for (std::size_t k = 0; k < list.size(); k += 2)
+        out.push_back (list[k]);
+    std::sort (out.begin(), out.end());
+    return out;
+}
+
+std::vector<int> selectRandom (const Pattern& pattern, const std::vector<int>& indices, float fraction, std::uint32_t seed)
+{
+    Random random (seed);
+    const auto f = std::clamp (fraction, 0.0f, 1.0f);
+    std::vector<int> out;
+    for (auto i : validSorted (pattern, indices))
+        if (random.next() < f)
+            out.push_back (i);
+    return out;
+}
+
+std::vector<int> selectMuted (const Pattern& pattern, const std::vector<int>& indices)
+{
+    std::vector<int> out;
+    for (auto i : validSorted (pattern, indices))
+        if (pattern.notes[(std::size_t) i].muted)
+            out.push_back (i);
+    return out;
+}
+
+std::vector<int> selectOverlapping (const Pattern& pattern, const std::vector<int>& indices)
+{
+    // per key, in time order: a note starting before the furthest end so far overlaps an earlier one
+    const auto list = inTimeOrder (pattern, indices);
+    std::map<int, std::int64_t> reach; // key -> furthest end of the notes seen
+    std::vector<int> out;
+    for (auto i : list)
+    {
+        const auto& n = pattern.notes[(std::size_t) i];
+        const auto it = reach.find (n.key);
+        if (it != reach.end() && n.start < it->second)
+        {
+            out.push_back (i);
+            it->second = std::max (it->second, (n.start + n.length));
+        }
+        else
+            reach[n.key] = (n.start + n.length);
+    }
+    std::sort (out.begin(), out.end());
+    return out;
+}
+
+std::vector<int> selectStacked (const Pattern& pattern, const std::vector<int>& indices)
+{
+    const auto list = inTimeOrder (pattern, indices);
+    std::vector<int> out;
+    for (std::size_t a = 0; a < list.size(); ++a)
+    {
+        const auto& n = pattern.notes[(std::size_t) list[a]];
+        for (std::size_t b = 0; b < list.size(); ++b)
+        {
+            if (a == b)
+                continue;
+            const auto& o = pattern.notes[(std::size_t) list[b]];
+            if (o.key != n.key || o.start > n.start || (o.start + o.length) < (n.start + n.length))
+                continue;
+            // inside `o`; exact duplicates: only the later ones (in time order) count as stacked
+            const auto same = o.start == n.start && (o.start + o.length) == (n.start + n.length);
+            if (! same || b < a)
+            {
+                out.push_back (list[a]);
+                break;
+            }
+        }
+    }
+    std::sort (out.begin(), out.end());
+    return out;
+}
+
+namespace
+{
+int nextGroup (const Pattern& pattern)
+{
+    auto top = 0;
+    for (const auto& n : pattern.notes)
+        top = std::max (top, n.group);
+    return top + 1;
+}
+} // namespace
+
+void groupNotes (Pattern& pattern, const std::vector<int>& indices)
+{
+    const auto list = validSorted (pattern, indices);
+    if (list.size() < 2)
+        return;
+    const auto id = nextGroup (pattern);
+    for (auto i : list)
+        pattern.notes[(std::size_t) i].group = id;
+}
+
+void ungroupNotes (Pattern& pattern, const std::vector<int>& indices)
+{
+    for (auto i : validSorted (pattern, indices))
+        pattern.notes[(std::size_t) i].group = 0;
+}
+
+void groupChance (Pattern& pattern, const std::vector<int>& indices, bool playOne)
+{
+    const auto list = validSorted (pattern, indices);
+    if (list.size() < 2)
+        return;
+    auto id = 1;
+    for (const auto& n : pattern.notes)
+        id = std::max (id, n.chanceGroup + 1);
+    for (auto i : list)
+    {
+        auto& n = pattern.notes[(std::size_t) i];
+        n.chanceGroup = id;
+        n.chanceOne = playOne;
+        n.chance = 1.0f; // a new group plays at 100 % [LIVE 12.4: grouping notes at 25-90 % showed "Probability: 100 %"]
+    }
+}
+
+void ungroupChance (Pattern& pattern, const std::vector<int>& indices)
+{
+    for (auto i : validSorted (pattern, indices))
+    {
+        pattern.notes[(std::size_t) i].chanceGroup = 0;
+        pattern.notes[(std::size_t) i].chanceOne = false;
+    }
+}
+
+std::vector<int> groupOf (const Pattern& pattern, int index)
+{
+    if (! valid (pattern, index))
+        return {};
+    const auto& n = pattern.notes[(std::size_t) index];
+    if (n.group == 0)
+        return { index };
+    std::vector<int> out;
+    for (int i = 0; i < (int) pattern.notes.size(); ++i)
+        if (pattern.notes[(std::size_t) i].group == n.group && pattern.notes[(std::size_t) i].channel == n.channel)
+            out.push_back (i);
+    return out;
+}
+
+void regroup (Pattern& pattern, const std::vector<int>& indices)
+{
+    std::map<int, int> renamed;
+    auto next = nextGroup (pattern);
+    for (auto i : validSorted (pattern, indices))
+    {
+        auto& g = pattern.notes[(std::size_t) i].group;
+        if (g == 0)
+            continue;
+        const auto old = g;
+        if (renamed.find (old) == renamed.end())
+            renamed[old] = next++;
+        g = renamed[old];
+    }
+    // the copies' probability groups too (round 187c)
+    std::map<int, int> renamedChance;
+    auto nextChance = 1;
+    for (const auto& n : pattern.notes)
+        nextChance = std::max (nextChance, n.chanceGroup + 1);
+    for (auto i : validSorted (pattern, indices))
+    {
+        auto& g = pattern.notes[(std::size_t) i].chanceGroup;
+        if (g == 0)
+            continue;
+        if (renamedChance.find (g) == renamedChance.end())
+            renamedChance[g] = nextChance++;
+        g = renamedChance[g];
+    }
+}
+
+void spreadGroupChance (Pattern& pattern, const std::vector<int>& edited)
+{
+    for (auto i : validSorted (pattern, edited))
+    {
+        const auto& from = pattern.notes[(std::size_t) i];
+        if (from.chanceGroup == 0)
+            continue;
+        for (auto& n : pattern.notes)
+            if (n.chanceGroup == from.chanceGroup)
+                n.chance = from.chance;
+    }
+}
+
+const char* generalMidiDrumName (int key) noexcept
+{
+    // the General MIDI 1 percussion key map (a public standard)
+    static const char* names[] = { "Acoustic Bass Drum", "Bass Drum 1", "Side Stick", "Acoustic Snare", "Hand Clap", "Electric Snare",
+                                   "Low Floor Tom", "Closed Hi-Hat", "High Floor Tom", "Pedal Hi-Hat", "Low Tom", "Open Hi-Hat",
+                                   "Low-Mid Tom", "Hi-Mid Tom", "Crash Cymbal 1", "High Tom", "Ride Cymbal 1", "Chinese Cymbal",
+                                   "Ride Bell", "Tambourine", "Splash Cymbal", "Cowbell", "Crash Cymbal 2", "Vibraslap",
+                                   "Ride Cymbal 2", "Hi Bongo", "Low Bongo", "Mute Hi Conga", "Open Hi Conga", "Low Conga",
+                                   "High Timbale", "Low Timbale", "High Agogo", "Low Agogo", "Cabasa", "Maracas",
+                                   "Short Whistle", "Long Whistle", "Short Guiro", "Long Guiro", "Claves", "Hi Wood Block",
+                                   "Low Wood Block", "Mute Cuica", "Open Cuica", "Mute Triangle", "Open Triangle" };
+    return key >= 35 && key <= 81 ? names[key - 35] : nullptr;
+}
+
+void setColour (Pattern& pattern, const std::vector<int>& indices, int colour)
+{
+    const auto c = std::clamp (colour, 0, noteColourCount - 1);
+    for (auto i : validSorted (pattern, indices))
+        pattern.notes[(std::size_t) i].colour = c;
+}
+} // namespace lynx::notetools

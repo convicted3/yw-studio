@@ -1,0 +1,152 @@
+#pragma once
+
+// The small rotary control of the controller editors (round 133; shared with the round 164 editors: Layer, X-Y / X-Y-Z
+// Controller, Control Surface, Voltage Controller).
+
+#include "engine/AudioEngine.h"
+#include "ui/AutomationUi.h"
+#include "ui/I18n.h"
+#include "ui/LiveLook.h"
+#include "ui/ModRing.h"
+#include "ui/Theme.h"
+#include "ui/ValueControl.h"
+
+namespace lynx::ctlui
+{
+// A small rotary control with LYNX's control contract (drag, Ctrl = fine, wheel, Alt / middle-click reset, right-click
+// menu with automation and controller links when `spec.target` is set).
+class Knob final : public juce::Component, public modring::TargetSource
+{
+public:
+    std::optional<AutomationTarget> modTargetAt (juce::Point<int>) override { return spec.target; } // (round 190ox: drag-to-assign)
+    Knob (AudioEngine* e, ui::ValueSpec s, std::function<double()> get, std::function<void (double)> set)
+        : engine (e), spec (std::move (s)), getter (std::move (get)), setter (std::move (set))
+    {
+        setRepaintsOnMouseActivity (true);
+        ui::setHint (*this, spec.name, true, spec.target.has_value());
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        const auto v = juce::jlimit (0.0, 1.0, (getter() - spec.minimum) / juce::jmax (1e-9, spec.maximum - spec.minimum));
+        auto area = getLocalBounds().toFloat();
+        const auto label = compact ? juce::Rectangle<float>() : area.removeFromBottom (14.0f);
+        const auto valueArea = compact ? juce::Rectangle<float>() : area.removeFromBottom (13.0f);
+        const auto size = juce::jmin (area.getWidth(), area.getHeight()) - 4.0f;
+        const auto box = juce::Rectangle<float> (size, size).withCentre (area.getCentre());
+        constexpr float sweep = juce::MathConstants<float>::pi * 1.5f;
+        if (liveRing && compact) // (round 190jn: a rack macro in Live's look, theme::livelook::drawKnob at up to 27 px)
+        {
+            theme::livelook::drawKnob (g, juce::Rectangle<float> (juce::jmin (size + 4.0f, 27.0f), juce::jmin (size + 4.0f, 27.0f)).withCentre (area.getCentre()),
+                                       (float) v, spec.minimum < 0.0);
+            return;
+        }
+
+        g.setColour (theme::colour::bg4);
+        g.fillEllipse (box.reduced (4.0f));
+        juce::Path track, arc;
+        const auto radius = size * 0.5f - 1.5f;
+        track.addCentredArc (box.getCentreX(), box.getCentreY(), radius, radius, 0.0f, -sweep * 0.5f, sweep * 0.5f, true);
+        g.setColour (theme::colour::bg6);
+        g.strokePath (track, juce::PathStrokeType (3.0f));
+        arc.addCentredArc (box.getCentreX(), box.getCentreY(), radius, radius, 0.0f, -sweep * 0.5f, -sweep * 0.5f + sweep * (float) v, true);
+        g.setColour (isMouseOverOrDragging() ? theme::colour::accent : theme::colour::knobArc);
+        g.strokePath (arc, juce::PathStrokeType (3.0f));
+        if (spec.target) // round 190ox: the modulation rings (inside the value arc)
+            modring::drawFor (g, box, (float) v, *spec.target);
+
+        if (compact)
+            return; // (just the dial: the value is in the hint)
+        g.setColour (theme::colour::textPrimary);
+        g.setFont (theme::font (theme::type::caption));
+        g.drawText (spec.text (getter()), valueArea, juce::Justification::centred);
+        g.setColour (theme::colour::textSecondary);
+        g.drawText (shortName.isNotEmpty() ? shortName : spec.name, label, juce::Justification::centred);
+    }
+
+    void mouseDown (const juce::MouseEvent& e) override
+    {
+        if (e.mods.isPopupMenu())
+        {
+            ui::showValueMenu (*this, engine, spec, getter(), setter);
+            return;
+        }
+        if (ui::isResetClick (e))
+        {
+            setter (spec.defaultValue);
+            repaint();
+            return;
+        }
+        // round 190ox: a modulator armed in the Modulators panel: the drag sets its depth here
+        if (spec.target && modring::armed() >= 0 && modring::beginDepthDrag (*spec.target))
+        {
+            depthAnchor = e.position.y;
+            return;
+        }
+        drag.begin (e, getter());
+    }
+
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        if (modring::depthDragging())
+        {
+            modring::dragDepth (depthAnchor - e.position.y, e.mods.isCtrlDown() || e.mods.isShiftDown());
+            repaint();
+            return;
+        }
+        if (! drag.isActive())
+            return;
+        setter (drag.update (e, spec));
+        ui::showValueTip (*this, getLocalBounds(), spec.text (getter()));
+        repaint();
+    }
+
+    void mouseUp (const juce::MouseEvent&) override
+    {
+        if (modring::depthDragging())
+            modring::endDepthDrag();
+        drag.end();
+        ui::hideValueTip();
+    }
+
+    void mouseDoubleClick (const juce::MouseEvent&) override
+    {
+        setter (spec.defaultValue);
+        repaint();
+    }
+
+    void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override
+    {
+        if (const auto v = ui::wheelValue (getter(), e, wheel, spec))
+        {
+            setter (*v);
+            ui::flashValueTip (*this, getLocalBounds(), spec.text (getter()));
+            repaint();
+        }
+    }
+
+    juce::String shortName;
+    bool compact = false; // only the dial (no value / name rows): FL's small knobs, e.g. the Video Player's volume
+    bool liveRing = false; // (round 190jn) Live's open ring instead of LYNX's dial (a compact knob in the Clip-launch layout's Live look)
+
+private:
+    AudioEngine* engine;
+    ui::ValueSpec spec;
+    std::function<double()> getter;
+    std::function<void (double)> setter;
+    ui::ValueDrag drag;
+    float depthAnchor = 0.0f;
+};
+
+inline ui::ValueSpec unitSpec (const juce::String& name, double def, std::optional<AutomationTarget> target)
+{
+    ui::ValueSpec s;
+    s.name = name;
+    s.defaultValue = def;
+    s.toText = [] (double v) { return juce::String (v, 3); };
+    s.fromText = [] (const juce::String& t) -> std::optional<double> { return juce::jlimit (0.0, 1.0, t.getDoubleValue()); };
+    s.target = target;
+    return s;
+}
+
+} // namespace lynx::ctlui

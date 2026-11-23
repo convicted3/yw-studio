@@ -1,0 +1,176 @@
+# LYNX SHARE on the Microsoft Store (MSIX)
+
+Windows users who install LYNX SHARE from the Microsoft Store get no SmartScreen or antivirus warning: the Store signs the
+package with Microsoft's certificate after it passes certification, and keeps LYNX SHARE up to date. An individual developer
+account in Partner Center is free. The maintainer creates the account and does the submission clicks; everything else
+is in the repository:
+
+| What | Where |
+|---|---|
+| Package manifest (template) | [`resources/msix/AppxManifest.xml.in`](../resources/msix/AppxManifest.xml.in) |
+| Logos and tiles (all scales, from `resources/lynx_badge.png`, the logo by w3teal; `tools/make_logo.py` writes it from `resources/brand/lynx-share-logo.svg`) | `resources/msix/Assets/`, made by [`scripts/make-msix-assets.py`](../scripts/make-msix-assets.py) |
+| Package layout (exe + assets + filled manifest) | [`scripts/make-msix-layout.py`](../scripts/make-msix-layout.py) |
+| Build, install test, release asset | job `package` in [`.github/workflows/release.yml`](../.github/workflows/release.yml) → `LYNX-<version>-store.msix` |
+| Runtime differences when packaged | [`src/platform/Package.h`](../src/platform/Package.h), [`src/core/StorePackage.h`](../src/core/StorePackage.h) |
+| Store listing texts in 15 languages, screenshots, logos | [`store/listings/`](../store/listings) (one file per language + `common.md`), `store/screenshots/`, `store/logo-300.png`, `store/box-art-1080.png` |
+| Listing import (Partner Center CSV) | [`scripts/store-listing-csv.py`](../scripts/store-listing-csv.py): fills Partner Center's exported listing CSV with every language |
+| Step-by-step for the maintainer (pt-BR) | [`store/CHECKLIST.pt-BR.md`](../store/CHECKLIST.pt-BR.md) |
+| winget manifest draft (installer exe) | [`store/winget/`](../store/winget) |
+
+## The package
+
+- **Full-trust desktop app** (`Windows.FullTrustApplication`, capability `runFullTrust`): the same `LYNX.exe` as the
+  installer and the zip, plus `lynx-asio.dll`, `Demo.lynx`, `LICENSE`, `THIRD_PARTY.md`, `PRIVACY.md`.
+- **Windows 10 1809 (build 17763) or newer, x64.**
+- **File types:** `.lynx` (LYNX SHARE project, with the project-file icon), `.flp` and `.mid`/`.midi` (offered in *Open
+  with*; Windows never changes an existing default program for an MSIX app). Single audio files are not associated:
+  LYNX SHARE opens projects and MIDI files from Explorer, not a lone `.wav`.
+- **Microphone** device capability: Windows asks once before LYNX SHARE records from a microphone / audio interface.
+- **Execution alias** `lynx.exe` (`%LOCALAPPDATA%\Microsoft\WindowsApps\lynx.exe`): command-line options such as
+  `lynx --selftest r.txt` run inside the package.
+- **Names:** the Store name is the one reserved in Partner Center, **LYNX SHARE** ("LYNX" was taken):
+  `Package/Properties/DisplayName` and the listing title. Since v0.1.20 the product itself is named LYNX SHARE, so
+  Start menu, taskbar, Explorer's *Open with* and the app say **LYNX SHARE** too (`VisualElements DisplayName` /
+  `ShortName`); the Application Id, `LYNX.exe` and the settings folders keep "LYNX".
+- **Version:** `project(LYNX VERSION x.y.z)` → `x.y.(z·10 + b).0`. The Store requires the fourth part to be 0 and
+  never accepts a different package under a version it has seen, so `b` (0..9, the `store_build` input of a manual
+  Release run) numbers repackaged builds of one release: 0.1.20 → 0.1.200.0, a resubmission → 0.1.201.0, 0.1.21 →
+  0.1.210.0. (0.1.20 was first uploaded as 0.1.20.0, below all of these.)
+- **Identity:** Partner Center › the app › *Product management › Product identity* shows `Package/Identity/Name`,
+  `Package/Identity/Publisher` and `Package/Properties/PublisherDisplayName`. Copy them into the repository variables
+  (GitHub › Settings › Secrets and variables › Actions › *Variables*):
+
+  | Variable | Partner Center field | LYNX SHARE's value (set 2026-10-27) |
+  |---|---|---|
+  | `MSIX_IDENTITY_NAME` | Package/Identity/Name | `KA1WARE.LYNXSHARE` |
+  | `MSIX_PUBLISHER` | Package/Identity/Publisher | `CN=BACBB786-A595-4AC3-9807-A70EAA268E4C` |
+  | `MSIX_PUBLISHER_DISPLAY` | Package/Properties/PublisherDisplayName | `KA1WARE` |
+  | `MSIX_DISPLAY_NAME` | the reserved app name | `LYNX SHARE` |
+
+  Package family name **`KA1WARE.LYNXSHARE_sj8hjwabzpdr8`**, Store ID **`9NQRFBFDCX6N`** (once live:
+  <https://apps.microsoft.com/detail/9NQRFBFDCX6N>, `ms-windows-store://pdp/?ProductId=9NQRFBFDCX6N`).
+  `make-msix-layout.py` uses the same values as defaults, so a local package is the release workflow's package.
+  A package with another identity is rejected by Partner Center ("identity does not match").
+
+## What the workflow does
+
+In the `package` job (Windows), after the self-test, the editor windows test and the installer:
+
+1. `make-msix-layout.py` builds the layout; `makepri` indexes the scale / target-size assets into `resources.pri`
+   (the 15 interface languages); `makeappx pack` writes **`LYNX-<label>-store.msix`** (unsigned — the Store signs it).
+   It goes into the release assets and `SHA256SUMS.txt` like every other file.
+2. **Install test:** the same layout and identity name (`KA1WARE.LYNXSHARE`), except that the publisher gets Windows'
+   "unsigned package" OID `2.25.311729368913984317654407730594956997722` appended (`--test-identity`): that is what
+   lets an unsigned package install at all, and it gives the test package its own family name, so it can never clash
+   with the Store-signed one. Everything else (files, manifest, assets, resources.pri) is the Store package's. It is
+   installed with `Add-AppxPackage -AllowUnsigned`, then LYNX SHARE runs **inside the package** through its execution alias: `--packageinfo` must report the package identity and a settings folder on the real disk (checked
+   from outside the package, like Explorer would), and `--selftest` must pass. The package is removed afterwards.
+
+## LYNX SHARE inside a package
+
+Windows virtualizes a packaged app's writes: new files under `%APPDATA%` / `%LOCALAPPDATA%` and every `HKCU` write go to
+a private per-package copy that only the package's own processes see ([Microsoft: how packaged desktop apps
+run](https://learn.microsoft.com/windows/msix/desktop/desktop-to-uwp-behind-the-scenes)). LYNX SHARE detects the package
+(`GetCurrentPackageFamilyName`) and changes only what that breaks:
+
+| Area | Store build | Why |
+|---|---|---|
+| Settings folder (preferences, autosave, crash reports, plugin list, wave cache, presets) | `%LOCALAPPDATA%\Packages\<family>\LocalCache\Roaming\LYNX` | The real path of the redirected `%APPDATA%\LYNX`: *Open the folder with the report*, *Open autosave folder* etc. open a folder Explorer can see; anything still written to `%APPDATA%\LYNX` lands there too. Removed with the app. |
+| First start | copies preferences, plugin list, favourites, presets, themes, layouts and the `Plugins` folder from an existing `%APPDATA%\LYNX` (installer build) | The user keeps their setup. Caches, autosaves, crash reports, logs and session markers are not copied (`migrated-from-appdata.txt` lists what was). |
+| `.lynx` registration in `HKCU\Software\Classes` | skipped | The manifest declares the file types; HKCU writes would only reach the package's private registry. |
+| Relaunch through the 8.3 short path (folders with accents) | skipped | `WindowsApps` paths are ASCII; a packaged exe started by its path would lose the package identity. |
+| Restart after a language change | `shell:AppsFolder\<family>!LYNX` | Starts the app through the package. |
+| LYNX ASIO for other programs | not offered (the hint says to use the installer build) | The package folder changes with every update, so a registered driver path would break. LYNX SHARE itself uses LYNX ASIO as usual. |
+| Updates | the Store | The Store build never checks for updates and has no *Update* button (ui/Updater.h, round 166b: the update check is off for a packaged LYNX); the other Windows builds have one. Nothing to disable. |
+
+Unchanged: plugin scanning (VST3 / CLAP / VST2 in Common Files, user folders; the `--scan-one` child process and the
+plugin sandbox run inside the package too), WASAPI / ASIO / DirectSound, FL Studio detection (reads only), drag & drop,
+opening files from Explorer, the opt-in crash report. A plugin that writes its own licence or presets under
+`%APPDATA%` while running inside LYNX SHARE may have them stored in the package's private copy (Windows' rule for packaged
+hosts); files that already exist there are read and updated in place.
+
+For a test on a PC without the package, `LYNX_SIMULATE_PACKAGE_FAMILY=<family name>` makes LYNX SHARE behave as if packaged
+(`LYNX.exe --packageinfo out.txt` writes what it sees).
+
+### Testing an installed package locally
+
+Installing an unsigned package needs an elevated PowerShell, and registering a loose folder needs Developer Mode
+(*Settings › System › For developers*). With Developer Mode on:
+
+```powershell
+python scripts\make-msix-layout.py --version 0.1.20 --bin build-win --out msix-test --test-identity --loose --extra LICENSE
+Add-AppxPackage -Register msix-test\AppxManifest.xml   # (loose files: no makepri/makeappx needed)
+lynx --packageinfo $PWD\packageinfo.txt; Get-Content packageinfo.txt
+Get-AppxPackage KA1WARE.LYNXSHARE | Remove-AppxPackage
+```
+
+## Store listings in several languages
+
+`store/listings/<locale>.md` holds the listing per language: `en-us`, `pt-br`, `es-es` (also usable for `es-mx`),
+`fr-fr`, `de-de`, `it-it`, `nl-nl`, `pl-pl`, `ru-ru`, `tr-tr`, `id-id`, `ja-jp`, `ko-kr`, `zh-cn` (Simplified) and
+`zh-tw` (Traditional). Since 0.1.20 LYNX SHARE's interface has these 15 languages (resources/i18n/, Settings › Language),
+and every listing says so.
+
+The package declares the same 15 languages (`<Resources>` in resources/msix/AppxManifest.xml.in, and makepri's `/dq`
+list in the release workflow): `en-us`, `pt-br`, `es-es`, `fr-fr`, `de-de`, `it-it`, `nl-nl`, `pl-pl`, `ru-ru`,
+`tr-tr`, `id-id`, `ja-jp`, `ko-kr`, `zh-cn`, `zh-tw`. Partner Center also accepts listings in languages the package
+does not declare (`es-mx` here; *Store listings › Manage additional languages*,
+[Microsoft: create Store listings](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msix/create-app-store-listing));
+such a listing needs a Title (the reserved name, **LYNX SHARE**), a Description and a screenshot. Add a language to
+the manifest only when the app really has it.
+
+Fastest way in: Partner Center › app overview › *Store listings* › **Export listing** (a CSV with Partner Center's
+field IDs) → `python scripts/store-listing-csv.py <exported.csv> lynx-listings` → **Import listings › Import folder** →
+`lynx-listings` (the CSV plus the screenshots and logos). The script lists anything it could not place and any text
+over Partner Center's limits.
+
+## Store policy check
+
+- **Open source (AGPL-3.0)** is allowed; the listing links the source and licence (*Additional license terms*).
+- **Third-party plugin hosting** is allowed: LYNX SHARE loads VST3 / CLAP / VST2 the user installed themself; it downloads
+  no code (Store policy 10.2.2: no dynamic code from the network).
+- **No surprises:** no telemetry, ads, accounts or purchases; the Store build's only network use is the crash report,
+  **opt-in** (asked after a crash; *Settings › General › Crash reports*). Say so in the privacy questions. (The other
+  builds also have an update check, a version query to GitHub; a packaged LYNX never runs it, so the Store privacy
+  answers stay as they are.)
+- **`runFullTrust`** is a restricted capability; the submission asks why. Answer: *"LYNX SHARE is a desktop digital audio
+  workstation (Win32/JUCE). It needs full trust to host the user's VST3/CLAP audio plugins, open ASIO/WASAPI audio
+  drivers with low latency and read and write the user's project and sample files anywhere on disk."*
+- **Names of other products** (FL Studio, plugin vendors) appear only as compatibility facts with the trademark notice;
+  they are **not** used as search keywords (Store policy 10.1).
+
+## Updating the Store version
+
+The Release workflow no longer submits to the Store (see the next section); its **Microsoft Store submission** job only
+prints a reminder. Submit with the local full-submission script (next section), or by hand:
+
+1. Release as usual (`docs/RELEASE.md`); the workflow attaches `LYNX-<version>-store.msix`.
+2. Partner Center › LYNX SHARE › *Start update* → *Packages*: upload the new `.msix` (and remove the old one) → *What's new*
+   from the release notes → *Submit to the Store*. Certification usually takes 1–3 working days.
+
+## Store submission: CI disabled, local script (round 190ij)
+
+The `store` job of `.github/workflows/release.yml` used to run `msstore publish`, which clones the last published
+submission and replaces only its package. That reused the old 0.1.22 listings and the old red-pepper icon, and
+certification failed (10.1.1.11, 10.1.1.3). **The job is now a notice only**: it creates no submission and reads no Store
+secret. A submission is made with the maintainer's local pipeline (Partner Center submission API), which sends a *full*
+submission: the 15 listings from `store/listings/`, the screenshots, logo and box art from `store/`, the package and a
+certification note. It refuses to run while another submission is pending (Partner Center-made drafts can only be deleted
+in Partner Center) and never reuses old listings. The client secret lives in `~/.config/lynx/msstore-secret` (mode 600),
+never in the repository or in a log. The old CI recipe is kept below for reference; the `MSSTORE_*` secrets are no longer used.
+
+Reference, the old CI setup:
+
+One-time setup (Partner Center, then GitHub):
+
+1. Partner Center › ⚙ **Account settings › Organization profile › Tenants**: if no Microsoft Entra tenant is listed,
+   *Associate* your account's tenant or *Create* a new one (free).
+2. **Account settings › User management › Microsoft Entra applications** › *Create Microsoft Entra application* (or
+   *Add Microsoft Entra application* for an existing one), for example "LYNX SHARE release". Role: **Manager**. Save.
+3. Open the application: copy the **Tenant ID** and the **Client ID**, then *Add new key* and copy the **client
+   secret** at once (it is shown only once; note its expiry date: a new key is needed before it runs out).
+4. **Account settings › Legal info › Developer** tab (or *Account settings › Developer account*): copy the **Seller ID**.
+5. GitHub › the repository › *Settings › Secrets and variables › Actions › New repository secret*, four times:
+   `MSSTORE_TENANT_ID`, `MSSTORE_CLIENT_ID`, `MSSTORE_CLIENT_SECRET`, `MSSTORE_SELLER_ID`.
+
+(Not needed any more: the CI job no longer submits.)

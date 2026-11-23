@@ -1,0 +1,811 @@
+#include "ui/PluginPresetMenu.h"
+
+#include "core/FlWrapper.h"
+#include "core/PresetCycle.h"
+#include "ui/FileChoosers.h"
+#include "ui/HintBar.h"
+
+#include "engine/ClapFormat.h"
+#include "engine/PluginHost.h"
+#include "engine/Vst2Format.h"
+#include "platform/Paths.h"
+#include "ui/I18n.h"
+#include "ui/PluginWindow.h"
+#include "ui/Theme.h"
+
+namespace lynx::pluginpresetui
+{
+namespace
+{
+namespace pp = pluginpresets;
+
+juce::String pluginIdOf (juce::AudioPluginInstance& plugin)
+{
+    return plugin.getPluginDescription().createIdentifierString();
+}
+
+std::vector<std::uint8_t> bytesOf (const juce::MemoryBlock& m)
+{
+    const auto* b = static_cast<const std::uint8_t*> (m.getData());
+    return { b, b + m.getSize() };
+}
+
+// VST3's .vstpreset through JUCE's VST3 host (in-process VST3 only)
+struct Vst3Access final : juce::ExtensionsVisitor
+{
+    std::function<void (const VST3Client&)> fn;
+    void visitVST3Client (const VST3Client& c) override
+    {
+        if (fn)
+            fn (c);
+    }
+};
+
+bool isVst3 (juce::AudioPluginInstance& plugin)
+{
+    bool found = false;
+    Vst3Access v;
+    v.fn = [&found] (const auto&) { found = true; };
+    plugin.getExtensions (v);
+    return found;
+}
+
+void setParams (juce::AudioPluginInstance& plugin, const std::vector<float>& values)
+{
+    const auto& params = plugin.getParameters();
+    for (int i = 0; i < juce::jmin (params.size(), (int) values.size()); ++i)
+        params[i]->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, values[(std::size_t) i]));
+}
+
+std::vector<float> paramValues (juce::AudioPluginInstance& plugin)
+{
+    std::vector<float> out;
+    for (auto* p : plugin.getParameters())
+        out.push_back (p->getValue());
+    return out;
+}
+
+bool loadFx (juce::AudioPluginInstance& plugin, const std::vector<std::uint8_t>& bytes, juce::String& error)
+{
+    const auto fx = pp::parseFx (bytes);
+    if (! fx)
+    {
+        error = tr ("This file is not a VST2 preset (.fxp / .fxb) LYNX SHARE can read.");
+        return false;
+    }
+    const auto info = vst2::info (plugin);
+    if (info && fx->pluginId != 0 && fx->pluginId != info->uniqueId)
+    {
+        error = tr ("This preset was saved by another plugin.");
+        return false;
+    }
+    using K = pp::FxFile::Kind;
+    if (fx->isChunk())
+    {
+        if (! info || ! vst2::setChunk (plugin, fx->chunk, fx->kind == K::chunkProgram))
+        {
+            error = tr ("Only a VST2 plugin running inside LYNX SHARE can read this preset (it holds the plugin's own data). "
+                        "Turn off \"Make bridged\" / the separate process for it, or save a LYNX SHARE preset instead.");
+            return false;
+        }
+        if (fx->kind == K::chunkBank && fx->currentProgram > 0 && fx->currentProgram < plugin.getNumPrograms())
+            plugin.setCurrentProgram (fx->currentProgram);
+        return true;
+    }
+    const auto expected = plugin.getParameters().size();
+    if (fx->programs.empty() || (int) fx->programs.front().params.size() != expected)
+    {
+        error = tr ("This preset has {0} parameters, the plugin {1}.", { juce::String (fx->programs.empty() ? 0 : (int) fx->programs.front().params.size()), juce::String (expected) });
+        return false;
+    }
+    if (fx->kind == K::paramBank && plugin.getNumPrograms() > 1)
+    {
+        for (int p = 0; p < juce::jmin (plugin.getNumPrograms(), (int) fx->programs.size()); ++p)
+        {
+            plugin.setCurrentProgram (p);
+            setParams (plugin, fx->programs[(std::size_t) p].params);
+        }
+        plugin.setCurrentProgram (juce::jlimit (0, plugin.getNumPrograms() - 1, fx->currentProgram));
+    }
+    else
+        setParams (plugin, fx->programs.front().params);
+    return true;
+}
+
+bool saveFx (juce::AudioPluginInstance& plugin, bool bank, const juce::String& name, std::vector<std::uint8_t>& out, juce::String& error)
+{
+    const auto info = vst2::info (plugin);
+    if (! info)
+    {
+        error = tr ("Only VST2 plugins running inside LYNX SHARE save .fxp / .fxb files.");
+        return false;
+    }
+    pp::FxFile fx;
+    fx.pluginId = info->uniqueId;
+    fx.pluginVersion = info->version;
+    fx.currentProgram = juce::jmax (0, plugin.getCurrentProgram());
+    if (info->chunks)
+    {
+        fx.kind = bank ? pp::FxFile::Kind::chunkBank : pp::FxFile::Kind::chunkProgram;
+        fx.programName = name.toStdString();
+        fx.bankPrograms = info->numPrograms;
+        if (! vst2::getChunk (plugin, fx.chunk, ! bank))
+        {
+            error = tr ("The plugin returned no data.");
+            return false;
+        }
+    }
+    else if (! bank)
+    {
+        fx.kind = pp::FxFile::Kind::paramProgram;
+        fx.programs.push_back ({ name.toStdString(), paramValues (plugin) });
+    }
+    else
+    {
+        fx.kind = pp::FxFile::Kind::paramBank;
+        const auto was = plugin.getCurrentProgram();
+        for (int p = 0; p < juce::jmax (1, plugin.getNumPrograms()); ++p)
+        {
+            if (plugin.getNumPrograms() > 1)
+                plugin.setCurrentProgram (p);
+            fx.programs.push_back ({ plugin.getProgramName (p).toStdString(), paramValues (plugin) });
+        }
+        if (plugin.getNumPrograms() > 1)
+            plugin.setCurrentProgram (was);
+    }
+    out = pp::writeFx (fx);
+    return true;
+}
+// Whether FL's wrapper record `f` (an .fst preset) is for this plugin: the same name, or the same VST2 id
+bool sameFlPlugin (const ForeignPlugin& f, const juce::PluginDescription& d)
+{
+    if (d.name.equalsIgnoreCase (juce::String::fromUTF8 (f.name.c_str())))
+        return true;
+    return f.format == ForeignPlugin::Format::vst2 && f.vst2Id != 0 && d.pluginFormatName == Vst2PluginFormat::formatName
+           && (juce::uint32) d.uniqueId == f.vst2Id;
+}
+
+std::optional<ForeignPlugin> flWrapperOf (const juce::File& file)
+{
+    juce::MemoryBlock data;
+    if (! file.hasFileExtension ("fst") || file.getSize() > 256 * 1024 * 1024 || ! file.loadFileAsData (data))
+        return std::nullopt;
+    ForeignPlugin f;
+    if (! foreignFromFlPreset (bytesOf (data), f))
+        return std::nullopt;
+    return f;
+}
+} // namespace
+
+juce::File presetsRoot()
+{
+    return platform::settingsFile ("Presets").getChildFile ("Plugins");
+}
+
+juce::File folderFor (const juce::String& pluginName)
+{
+    return presetsRoot().getChildFile (juce::String::fromUTF8 (pp::folderNameFor (pluginName.toStdString()).c_str()));
+}
+
+bool isPresetFile (const juce::File& file)
+{
+    return file.hasFileExtension ("lynxpreset;fxp;fxb;vstpreset");
+}
+
+juce::Array<juce::File> userPresets (const juce::String& pluginName)
+{
+    auto files = folderFor (pluginName).findChildFiles (juce::File::findFiles, false, "*.lynxpreset;*.fxp;*.fxb;*.vstpreset");
+    std::sort (files.begin(), files.end(), [] (const juce::File& a, const juce::File& b) {
+        return a.getFileName().compareNatural (b.getFileName()) < 0;
+    });
+    return files;
+}
+
+std::optional<pp::Preset> readLynxPreset (const juce::File& file)
+{
+    if (! file.hasFileExtension ("lynxpreset") || file.getSize() > 64 * 1024 * 1024)
+        return std::nullopt;
+    return pp::fromText (file.loadFileAsString().toStdString());
+}
+
+namespace
+{
+bool loadUnguarded (juce::AudioPluginInstance& plugin, const juce::File& file, juce::String& error)
+{
+    if (file.hasFileExtension ("lynxpreset"))
+    {
+        const auto preset = readLynxPreset (file);
+        if (! preset)
+        {
+            error = tr ("This file is not a plugin preset.");
+            return false;
+        }
+        const auto id = pluginIdOf (plugin).toStdString();
+        if (! preset->pluginId.empty() && preset->pluginId != id && preset->pluginName != plugin.getName().toStdString())
+        {
+            error = tr ("This preset belongs to {0}.", { juce::String::fromUTF8 (preset->pluginName.c_str()) });
+            return false;
+        }
+        const ScopedClapStateContext forPreset (ClapStateContext::preset); // (round 190jg: a CLAP plugin's preset state)
+        plugin.setStateInformation (preset->state.data(), (int) preset->state.size());
+        return true;
+    }
+
+    // FL's preset of a third-party plugin (round 190fs): the plugin's state from FL's wrapper record, as an .flp's
+    if (file.hasFileExtension ("fst"))
+    {
+        const auto f = flWrapperOf (file);
+        if (! f)
+        {
+            error = tr ("This file is not a plugin preset.");
+            return false;
+        }
+        if (! sameFlPlugin (*f, plugin.getPluginDescription()))
+        {
+            error = tr ("This preset belongs to {0}.", { juce::String::fromUTF8 (f->name.c_str()) });
+            return false;
+        }
+        juce::MemoryBlock state;
+        const auto converted = PluginHost::stateFromFlWrapper (*f, plugin.getPluginDescription());
+        if (converted.empty() || ! state.fromBase64Encoding (juce::String::fromUTF8 (converted.c_str())))
+        {
+            error = tr ("The settings of this preset can't be carried over to this version of the plugin (VST2 / VST3).");
+            return false;
+        }
+        plugin.setStateInformation (state.getData(), (int) state.getSize());
+        return true;
+    }
+
+    juce::MemoryBlock data;
+    if (! file.loadFileAsData (data) || data.getSize() == 0)
+    {
+        error = tr ("The file could not be read.");
+        return false;
+    }
+    if (file.hasFileExtension ("fxp;fxb"))
+        return loadFx (plugin, bytesOf (data), error);
+    if (file.hasFileExtension ("vstpreset"))
+    {
+        bool ok = false, vst3 = false;
+        Vst3Access v;
+        v.fn = [&] (const juce::ExtensionsVisitor::VST3Client& c) {
+            vst3 = true;
+            ok = c.setPreset (data);
+        };
+        plugin.getExtensions (v);
+        if (! ok)
+            error = vst3 ? tr ("The plugin did not accept this preset (saved by another plugin?).")
+                         : tr ("Only VST3 plugins running inside LYNX SHARE read .vstpreset files.");
+        return ok;
+    }
+    error = tr ("Unknown preset format.");
+    return false;
+}
+} // namespace
+
+bool load (juce::AudioPluginInstance& plugin, const juce::File& file, juce::String& error)
+{
+    // round 190gg (B4): a plugin that crashes on a preset is switched off (as when it crashes while playing), not LYNX
+    auto ok = false;
+    if (callPluginFromUi (plugin, "loading a preset", [&] { ok = loadUnguarded (plugin, file, error); }))
+        return ok;
+    error = tr ("{0} crashed and was switched off.", { plugin.getName() });
+    return false;
+}
+
+bool save (juce::AudioPluginInstance& plugin, const juce::File& file, const juce::String& presetName, juce::String& error)
+{
+    std::vector<std::uint8_t> bytes;
+    if (file.hasFileExtension ("fxp;fxb"))
+    {
+        if (! saveFx (plugin, file.hasFileExtension ("fxb"), presetName, bytes, error))
+            return false;
+    }
+    else if (file.hasFileExtension ("vstpreset"))
+    {
+        bool vst3 = false;
+        juce::MemoryBlock data;
+        Vst3Access v;
+        v.fn = [&] (const juce::ExtensionsVisitor::VST3Client& c) {
+            vst3 = true;
+            data = c.getPreset();
+        };
+        plugin.getExtensions (v);
+        if (! vst3 || data.getSize() == 0)
+        {
+            error = tr ("Only VST3 plugins running inside LYNX SHARE save .vstpreset files.");
+            return false;
+        }
+        bytes = bytesOf (data);
+    }
+    else
+    {
+        juce::MemoryBlock state;
+        {
+            const ScopedClapStateContext forPreset (ClapStateContext::preset); // (round 190jg: clap.state-context)
+            plugin.getStateInformation (state);
+        }
+        pp::Preset p;
+        p.name = presetName.toStdString();
+        p.pluginName = plugin.getName().toStdString();
+        p.pluginId = pluginIdOf (plugin).toStdString();
+        p.format = plugin.getPluginDescription().pluginFormatName.toStdString();
+        p.state = bytesOf (state);
+        const auto text = pp::toText (p);
+        bytes.assign (text.begin(), text.end());
+    }
+    file.getParentDirectory().createDirectory();
+    if (! file.replaceWithData (bytes.data(), bytes.size()))
+    {
+        error = tr ("The file could not be written.");
+        return false;
+    }
+    return true;
+}
+
+juce::String saveWildcard (juce::AudioPluginInstance& plugin)
+{
+    juce::String w = "*.lynxpreset";
+    if (vst2::info (plugin))
+        w << ";*.fxp;*.fxb";
+    if (isVst3 (plugin))
+        w << ";*.vstpreset";
+    return w;
+}
+
+bool applyFromBrowser (AudioEngine& engine, const juce::File& file, juce::String& message)
+{
+    const auto preset = readLynxPreset (file);
+    // the plugin this file is for: from a .lynxpreset, or the folder it is in (<Plugins>/<plugin name>/)
+    const auto folderName = file.getParentDirectory().getFileName();
+    auto matches = [&] (juce::AudioPluginInstance& p) {
+        if (preset)
+            return preset->pluginId == pluginIdOf (p).toStdString() || preset->pluginName == p.getName().toStdString();
+        return folderName == juce::String::fromUTF8 (pp::folderNameFor (p.getName().toStdString()).c_str());
+    };
+    std::vector<juce::AudioPluginInstance*> candidates = PluginWindows::openPlugins();
+    if (auto* p = dynamic_cast<PluginInstrument*> (engine.getChannelInstrument (engine.getSelectedChannel()).get()))
+        candidates.push_back (&p->getInstance());
+    for (auto* p : candidates)
+        if (p != nullptr && matches (*p))
+        {
+            juce::String error;
+            if (load (*p, file, error))
+            {
+                engine.markModified();
+                if (auditionOnLoad())
+                    engine.auditionPreset (*p); // (round 190ao; nothing for an effect or while the song plays)
+                return true;
+            }
+            message = error;
+            return false;
+        }
+    // a .vstpreset / .fxp from somewhere else: the last plugin window used, whatever it is
+    if (! preset && ! candidates.empty() && candidates.front() != nullptr && ! file.isAChildOf (presetsRoot()))
+    {
+        juce::String error;
+        if (load (*candidates.front(), file, error))
+        {
+            engine.markModified();
+            if (auditionOnLoad())
+                engine.auditionPreset (*candidates.front());
+            return true;
+        }
+        message = error;
+        return false;
+    }
+    if (preset)
+        if (const auto d = engine.getPluginHost().find (juce::String::fromUTF8 (preset->pluginId.c_str())); d != nullptr && d->isInstrument)
+        {
+            PluginRef ref;
+            ref.id = preset->pluginId;
+            ref.name = preset->pluginName;
+            ref.state = juce::MemoryBlock (preset->state.data(), preset->state.size()).toBase64Encoding().toStdString();
+            engine.editSong ([&] (Song& s) {
+                ChannelDef c;
+                c.name = preset->name.empty() ? preset->pluginName : preset->name;
+                c.instrument = InstrumentKind::plugin;
+                c.plugin = ref;
+                c.mixerTrack = s.nextFreeInsert();
+                s.channels.push_back (c);
+            });
+            engine.setSelectedChannel ((int) engine.getSong().channels.size() - 1);
+            return true;
+        }
+    message = preset ? tr ("Open {0} first (its plugin window), then double-click the preset.", { juce::String::fromUTF8 (preset->pluginName.c_str()) })
+                     : tr ("Open the plugin first (its plugin window), then double-click the preset.");
+    return false;
+}
+
+bool isFlPresetOfPlugin (const juce::File& file)
+{
+    return flWrapperOf (file).has_value();
+}
+
+bool applyFlPresetFromBrowser (AudioEngine& engine, const juce::File& file, juce::String& message)
+{
+    const auto f = flWrapperOf (file);
+    if (! f)
+        return false;
+    const auto name = juce::String::fromUTF8 (f->name.c_str());
+    // an open window of that plugin first (the last one used first), then the selected channel's plugin
+    std::vector<juce::AudioPluginInstance*> candidates = PluginWindows::openPlugins();
+    if (auto* p = dynamic_cast<PluginInstrument*> (engine.getChannelInstrument (engine.getSelectedChannel()).get()))
+        candidates.push_back (&p->getInstance());
+    for (auto* p : candidates)
+        if (p != nullptr && sameFlPlugin (*f, p->getPluginDescription()))
+        {
+            juce::String error;
+            if (! load (*p, file, error))
+            {
+                message = error;
+                return false;
+            }
+            engine.markModified();
+            if (auditionOnLoad())
+                engine.auditionPreset (*p);
+            return true;
+        }
+    // nobody has it open: an instrument LYNX SHARE found becomes a new channel with the preset (as FL's Browser does)
+    if (const auto d = engine.getPluginHost().findForeign (*f, true); d.has_value() && d->isInstrument)
+    {
+        PluginRef ref;
+        ref.id = d->createIdentifierString().toStdString();
+        ref.name = d->name.toStdString();
+        ref.state = PluginHost::stateFromFlWrapper (*f, *d);
+        engine.editSong ([&] (Song& s) {
+            ChannelDef c;
+            c.name = file.getFileNameWithoutExtension().toStdString();
+            c.instrument = InstrumentKind::plugin;
+            c.plugin = ref;
+            c.mixerTrack = s.claimFreeInsert();
+            s.channels.push_back (c);
+        });
+        engine.setSelectedChannel ((int) engine.getSong().channels.size() - 1);
+        return true;
+    }
+    message = tr ("This preset is for {0}. Add {0} to a channel or a mixer track first (scan for plugins if it is not in the list), "
+                  "open its window and load the preset from its Presets menu.", { name });
+    return false;
+}
+
+// --- audition on load (round 190ao) --------------------------------------------------------------------------------
+namespace
+{
+int& auditionCache()
+{
+    static int value = -1; // -1: not read yet
+    return value;
+}
+} // namespace
+
+bool auditionOnLoad()
+{
+    if (auditionCache() < 0)
+        auditionCache() = PluginHost::settingsFolder().getChildFile ("preset-audition.txt").loadFileAsString().trim() == "1" ? 1 : 0;
+    return auditionCache() == 1;
+}
+
+void setAuditionOnLoad (bool on)
+{
+    auditionCache() = on ? 1 : 0;
+    PluginHost::settingsFolder().getChildFile ("preset-audition.txt").replaceWithText (on ? "1" : "0");
+}
+
+// --- the bar ---------------------------------------------------------------------------------------------------------
+
+PresetBar::PresetBar (juce::AudioPluginInstance& p, std::function<void()> changed) : plugin (p), onChanged (std::move (changed))
+{
+    prev.setTooltip (tr ("Previous preset"));
+    next.setTooltip (tr ("Next preset"));
+    prev.onClick = [this] { step (-1); };
+    next.onClick = [this] { step (1); };
+    addAndMakeVisible (prev);
+    addAndMakeVisible (next);
+    setRepaintsOnMouseActivity (true);
+    setTooltip (tr ("Presets: the plugin's programs and your presets; save, load and export preset files"));
+    if (plugin.getNumPrograms() > 1)
+    {
+        currentProgram = plugin.getCurrentProgram();
+        current = plugin.getProgramName (currentProgram);
+    }
+}
+
+void PresetBar::setTitleLook (bool shouldBe)
+{
+    titleLook = shouldBe;
+    prev.setVisible (! titleLook);
+    next.setVisible (! titleLook);
+    resized();
+    repaint();
+}
+
+void PresetBar::resized()
+{
+    auto r = getLocalBounds();
+    if (titleLook)
+        return; // (painted and hit-tested by areas: the name, then ◀ ▶ at the right)
+    prev.setBounds (r.removeFromLeft (24));
+    r.removeFromLeft (2);
+    next.setBounds (r.removeFromLeft (24));
+}
+
+void PresetBar::paint (juce::Graphics& g)
+{
+    using namespace theme;
+    if (titleLook)
+    {
+        auto r = getLocalBounds();
+        const auto nextArea = r.removeFromRight (16), prevArea = r.removeFromRight (16);
+        const auto mouse = getMouseXYRelative();
+        const auto over = isMouseOver();
+        g.setColour (over && r.contains (mouse) ? colour::textPrimary : colour::textSecondary);
+        g.setFont (font (type::small));
+        g.drawText (current.isEmpty() ? tr ("Presets") : current, r.withTrimmedRight (4), juce::Justification::centredRight, true);
+        for (const auto left : { true, false })
+        {
+            const auto a = (left ? prevArea : nextArea).toFloat();
+            juce::Path p;
+            p.addTriangle (left ? 3.0f : -3.0f, -4.5f, left ? 3.0f : -3.0f, 4.5f, left ? -3.0f : 3.0f, 0.0f);
+            p.applyTransform (juce::AffineTransform::translation (a.getCentreX(), a.getCentreY()));
+            g.setColour (over && a.contains (mouse.toFloat()) ? colour::accent : colour::textPrimary);
+            g.fillPath (p);
+        }
+        return;
+    }
+    auto r = getLocalBounds().withTrimmedLeft (54).toFloat();
+    g.setColour (isMouseOver() ? colour::bg5 : colour::bg4);
+    g.fillRoundedRectangle (r, radius::md);
+    g.setColour (current.isEmpty() ? colour::textSecondary : colour::textPrimary);
+    g.setFont (font (type::body));
+    g.drawFittedText (current.isEmpty() ? tr ("Presets") : current, r.reduced (8, 0).withTrimmedRight (12).toNearestInt(),
+                      juce::Justification::centredLeft, 1);
+    g.setColour (colour::textSecondary);
+    const auto c = juce::Point<float> (r.getRight() - 10, r.getCentreY());
+    juce::Path arrow;
+    arrow.addTriangle (c.x - 4, c.y - 2, c.x + 4, c.y - 2, c.x, c.y + 3);
+    g.fillPath (arrow);
+}
+
+void PresetBar::mouseUp (const juce::MouseEvent& e)
+{
+    if (e.mouseWasDraggedSinceMouseDown())
+        return;
+    if (titleLook)
+    {
+        if (e.x >= getWidth() - 16)
+            step (1);
+        else if (e.x >= getWidth() - 32)
+            step (-1);
+        else
+            showMenu();
+        return;
+    }
+    if (e.x >= 54)
+        showMenu();
+}
+
+std::vector<PresetBar::Entry> PresetBar::entries() const
+{
+    std::vector<Entry> out;
+    auto& p = const_cast<juce::AudioPluginInstance&> (plugin);
+    if (p.getNumPrograms() > 1)
+        for (int i = 0; i < p.getNumPrograms(); ++i)
+        {
+            auto name = p.getProgramName (i);
+            out.push_back ({ i, {}, name.isEmpty() ? tr ("Program {0}", { juce::String (i + 1) }) : name });
+        }
+    for (const auto& f : userPresets (plugin.getName()))
+        out.push_back ({ -1, f, f.getFileNameWithoutExtension() });
+    return out;
+}
+
+void PresetBar::step (int delta)
+{
+    const auto list = entries();
+    if (list.empty())
+        return;
+    int at = -1;
+    for (int i = 0; i < (int) list.size(); ++i)
+        if ((currentProgram >= 0 && list[(std::size_t) i].program == currentProgram && currentFile == juce::File())
+            || (currentFile != juce::File() && list[(std::size_t) i].file == currentFile))
+            at = i;
+    const auto n = (int) list.size();
+    at = presetcycle::step (at, delta, n); // FL's wrapper: no preset yet → first / last, then wraps (round 167o)
+    apply (list[(std::size_t) at]);
+    ui::postHint ({ current, juce::String (presetcycle::positionText (at, n)) }, 2500); // FL's "n / N"
+}
+
+void PresetBar::apply (const Entry& entry)
+{
+    // round 190in (R8): FL's Hybridize — the parameters as they were, half of them put back after the preset loads
+    std::vector<float> before;
+    if (hybridize())
+        callPluginFromUi (plugin, "reading its parameters", [this, &before] {
+            for (auto* p : plugin.getParameters())
+                before.push_back (p->getValue());
+        });
+    const juce::ScopeGuard mix { [this, &before] {
+        if (before.empty())
+            return;
+        auto& random = juce::Random::getSystemRandom();
+        callPluginFromUi (plugin, "mixing a preset (Hybridize)", [this, &before, &random] {
+            const auto& params = plugin.getParameters();
+            for (int i = 0; i < params.size() && i < (int) before.size(); ++i)
+                if (params[i]->isAutomatable() && random.nextBool())
+                    params[i]->setValueNotifyingHost (before[(std::size_t) i]);
+        });
+    } };
+    if (entry.program >= 0)
+    {
+        if (! callPluginFromUi (plugin, "loading a program", [this, &entry] { plugin.setCurrentProgram (entry.program); }))
+            return; // (round 190gg: it crashed and was switched off; the "Plugin crashed" prompt says so)
+        currentProgram = entry.program;
+        currentFile = juce::File();
+        setName (entry.name);
+        if (onLoaded)
+            onLoaded();
+        return;
+    }
+    juce::String error;
+    if (! load (plugin, entry.file, error))
+    {
+        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load preset"), error, {}, this);
+        return;
+    }
+    currentFile = entry.file;
+    currentProgram = -1;
+    setName (entry.name);
+    if (onLoaded)
+        onLoaded();
+}
+
+void PresetBar::setName (const juce::String& name)
+{
+    current = name;
+    repaint();
+    if (onChanged)
+        onChanged();
+}
+
+void PresetBar::randomize()
+{
+    // FL's Presets › Randomize: random values to the published (automatable) parameters (round 190in, R8)
+    auto& random = juce::Random::getSystemRandom();
+    callPluginFromUi (plugin, "randomizing its parameters", [this, &random] {
+        for (auto* p : plugin.getParameters())
+            if (p->isAutomatable())
+                p->setValueNotifyingHost (random.nextFloat());
+    });
+    currentFile = juce::File();
+    currentProgram = -1;
+    setName ({});
+}
+
+juce::PopupMenu PresetBar::presetsMenu()
+{
+    juce::PopupMenu menu;
+    const auto list = entries();
+    juce::PopupMenu programs;
+    int factory = 0;
+    for (const auto& e : list)
+        if (e.program >= 0)
+        {
+            ++factory;
+            programs.addItem (e.name, true, currentFile == juce::File() && e.program == currentProgram, [this, e] { apply (e); });
+        }
+    if (factory > 0)
+    {
+        if (factory <= 32)
+        {
+            menu.addSectionHeader (tr ("Plugin presets"));
+            for (juce::PopupMenu::MenuItemIterator it (programs); it.next();)
+                menu.addItem (it.getItem());
+        }
+        else
+            menu.addSubMenu (tr ("Plugin presets ({0})", { juce::String (factory) }), programs);
+    }
+    bool users = false;
+    for (const auto& e : list)
+        if (e.program < 0)
+        {
+            if (! users)
+                menu.addSectionHeader (tr ("Your presets"));
+            users = true;
+            menu.addItem (e.name, true, e.file == currentFile, [this, e] { apply (e); });
+        }
+    menu.addSeparator();
+    menu.addItem (tr ("Save preset..."), [this] { saveAs(); });
+    menu.addItem (tr ("Load preset file..."), [this] { loadFile(); });
+    menu.addItem (tr ("Export preset file..."), [this] { exportFile(); });
+    if (currentFile.existsAsFile() && currentFile.isAChildOf (presetsRoot())) // (never a file loaded from elsewhere, e.g. FL's own .fst)
+        menu.addItem (tr ("Delete preset \"{0}\"", { currentFile.getFileNameWithoutExtension() }), [this] {
+            currentFile.deleteFile();
+            currentFile = juce::File();
+            setName ({});
+        });
+    menu.addItem (tr ("Show the presets folder"), [this] {
+        const auto folder = folderFor (plugin.getName());
+        folder.createDirectory();
+        folder.revealToUser();
+    });
+    // round 190ao (LYNX's own, off by default): hear a preset at once
+    if (onLoaded && plugin.getPluginDescription().isInstrument)
+    {
+        menu.addSeparator();
+        menu.addItem (tr ("Play a note when a preset loads"), true, auditionOnLoad(), [] { setAuditionOnLoad (! auditionOnLoad()); });
+    }
+    // FL's Presets › Randomize / Hybridize (round 190in, R8: FL manual, Plugin wrapper › Presets)
+    menu.addSeparator();
+    menu.addItem (tr ("Randomize"), [safe = juce::Component::SafePointer<PresetBar> (this)] {
+        if (safe != nullptr)
+            safe->randomize();
+    });
+    menu.addItem (tr ("Hybridize"), true, hybridize(), [] { hybridize() = ! hybridize(); });
+    return menu;
+}
+
+void PresetBar::showMenu()
+{
+    auto menu = presetsMenu();
+    if (extendMenu)
+    {
+        menu.addSeparator();
+        extendMenu (menu);
+    }
+    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this));
+}
+
+void PresetBar::saveAs()
+{
+    auto* window = new juce::AlertWindow (tr ("Save preset"), tr ("Name of the preset:"), juce::MessageBoxIconType::NoIcon, this);
+    window->addTextEditor ("name", current.isEmpty() ? tr ("My preset") : current);
+    window->addButton (tr ("Save"), 1, juce::KeyPress (juce::KeyPress::returnKey));
+    window->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    juce::Component::SafePointer<PresetBar> safe (this);
+    window->enterModalState (true, juce::ModalCallbackFunction::create ([safe, window] (int result) {
+        const auto name = window->getTextEditorContents ("name").trim();
+        if (result != 1 || name.isEmpty() || safe == nullptr)
+            return;
+        const auto file = folderFor (safe->plugin.getName()).getChildFile (juce::File::createLegalFileName (name) + pp::extension);
+        juce::String error;
+        if (! save (safe->plugin, file, name, error))
+        {
+            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Save preset"), error);
+            return;
+        }
+        safe->currentFile = file;
+        safe->currentProgram = -1;
+        safe->setName (name);
+    }), true);
+}
+
+void PresetBar::loadFile()
+{
+    chooser = lynx::ui::makeFileChooser (tr ("Load preset"), folderFor (plugin.getName()), "*.lynxpreset;*.fxp;*.fxb;*.vstpreset;*.fst");
+    juce::Component::SafePointer<PresetBar> safe (this);
+    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [safe] (const juce::FileChooser& fc) {
+        if (safe != nullptr && fc.getResult().existsAsFile())
+            safe->apply ({ -1, fc.getResult(), fc.getResult().getFileNameWithoutExtension() });
+    });
+}
+
+void PresetBar::exportFile()
+{
+    const auto start = folderFor (plugin.getName()).getChildFile (juce::File::createLegalFileName (current.isEmpty() ? plugin.getName() : current) + pp::extension);
+    chooser = lynx::ui::makeFileChooser (tr ("Export preset"), start, saveWildcard (plugin));
+    juce::Component::SafePointer<PresetBar> safe (this);
+    lynx::ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles
+                              | juce::FileBrowserComponent::warnAboutOverwriting,
+                          [safe] (const juce::FileChooser& fc) {
+                              auto file = fc.getResult();
+                              if (safe == nullptr || file == juce::File())
+                                  return;
+                              if (! isPresetFile (file))
+                                  file = file.withFileExtension ("lynxpreset");
+                              juce::String error;
+                              if (! save (safe->plugin, file, file.getFileNameWithoutExtension(), error))
+                                  juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Export preset"), error);
+                          });
+}
+} // namespace lynx::pluginpresetui

@@ -1,0 +1,411 @@
+#include "engine/MidiFileIo.h"
+
+#include "core/NoteChance.h"
+
+#include <algorithm>
+#include <cmath>
+#include <functional>
+#include <limits>
+#include <map>
+
+#include "core/ExportOptions.h"
+#include "core/KeyRegions.h"
+#include "core/MidiControls.h"
+#include "engine/Text.h"
+
+namespace lynx::MidiFileIo
+{
+namespace
+{
+struct Parsed
+{
+    std::vector<std::vector<Note>> tracks; // notes per track (channel = track index)
+    std::vector<std::string> names;
+    std::vector<std::vector<int>> midiChannels; // per track, per note: its MIDI channel 0..15
+    double bpm = 120.0;
+    int numerator = 0, denominator = 4; // the first time signature (0 = none)
+    std::vector<PatternEvent> tempos; // every Set Tempo (issue #86)
+    std::vector<midiimport::ParsedMidi::KeyChange> keys; // round 190nu
+};
+
+// Round 190nu (core/KeyRegions.h): the file's key signatures in time order; LYNX's "Key: <name>" marker meta event at the
+// same tick gives the exact scale (a signature holds only major / minor and the accidentals)
+template <typename Out>
+void collectKeys (const juce::MidiFile& midi, Out& out, const std::function<std::int64_t (double)>& toTicks)
+{
+    std::vector<std::pair<std::int64_t, projectkey::Key>> signatures, texts;
+    for (int t = 0; t < midi.getNumTracks(); ++t)
+    {
+        const auto& track = *midi.getTrack (t);
+        for (int i = 0; i < track.getNumEvents(); ++i)
+        {
+            const auto& m = track.getEventPointer (i)->message;
+            if (m.isKeySignatureMetaEvent())
+                signatures.emplace_back (toTicks (m.getTimeStamp()),
+                                         keyregions::keyFromMidiSignature (m.getKeySignatureNumberOfSharpsOrFlats(), m.isKeySignatureMajorKey() ? 0 : 1));
+            else if (m.isMetaEvent() && m.getMetaEventType() == 6)
+                if (const auto key = keyregions::keyFromMidiText (m.getTextFromTextMetaEvent().toStdString()))
+                    texts.emplace_back (toTicks (m.getTimeStamp()), *key);
+        }
+    }
+    for (const auto& [tick, key] : texts) // (the exact scale wins over the signature at its tick)
+    {
+        signatures.erase (std::remove_if (signatures.begin(), signatures.end(), [tick] (const auto& s) { return s.first == tick; }), signatures.end());
+        signatures.emplace_back (tick, key);
+    }
+    std::stable_sort (signatures.begin(), signatures.end(), [] (const auto& a, const auto& b) { return a.first < b.first; });
+    for (const auto& [tick, key] : signatures)
+        out.keys.push_back ({ tick, key.root, key.flScale });
+}
+
+// The key signatures (and LYNX's exact-scale markers) of `pattern`'s key regions on the tempo track; `base` = the project
+// key (what applies before the first key marker)
+void addKeySignatures (juce::MidiMessageSequence& tempo, const Pattern& pattern, std::optional<projectkey::Key> base, std::int64_t end)
+{
+    for (const auto& [tick, key] : keyregions::keyChanges (pattern, base, end))
+    {
+        const auto [sharps, minor] = keyregions::midiSignature (key);
+        tempo.addEvent (juce::MidiMessage::keySignatureMetaEvent (sharps, minor != 0), (double) tick);
+        tempo.addEvent (juce::MidiMessage::textMetaEvent (6, juce::String::fromUTF8 (keyregions::midiKeyText (key).c_str())), (double) tick);
+    }
+}
+
+// The file's Set Tempo events in time order (FL's whole BPM) and the first one as the song's tempo (issue #86: it was
+// the first one found while the tempo was still 120, so a file starting at exactly 120 took its second tempo)
+template <typename Out>
+void collectTempos (const juce::MidiFile& midi, Out& out, const std::function<std::int64_t (double)>& toTicks)
+{
+    for (int t = 0; t < midi.getNumTracks(); ++t)
+    {
+        const auto& track = *midi.getTrack (t);
+        for (int i = 0; i < track.getNumEvents(); ++i)
+            if (const auto& m = track.getEventPointer (i)->message; m.isTempoMetaEvent() && m.getTempoSecondsPerQuarterNote() > 0.0)
+                out.tempos.push_back ({ toTicks (m.getTimeStamp()), valueFromTempo (midiimport::midiTempoBpm (m.getTempoSecondsPerQuarterNote())) });
+    }
+    std::stable_sort (out.tempos.begin(), out.tempos.end(), [] (const PatternEvent& a, const PatternEvent& b) { return a.tick < b.tick; });
+}
+
+std::optional<Parsed> parse (const juce::File& file, juce::String& error)
+{
+    juce::FileInputStream in (file);
+    juce::MidiFile midi;
+
+    if (! in.openedOk() || ! midi.readFrom (in))
+    {
+        error = utf8 ("not a valid MIDI file");
+        return std::nullopt;
+    }
+
+    const auto format = midi.getTimeFormat();
+
+    if (format <= 0)
+    {
+        // SMPTE: convert to seconds, then to ticks at the default tempo
+        midi.convertTimestampTicksToSeconds();
+    }
+
+    Parsed out;
+    const auto filePpq = format > 0 ? (double) format : 0.0;
+    auto toTicks = [&] (double t) {
+        return filePpq > 0.0 ? (std::int64_t) std::llround (t * ppq / filePpq) : (std::int64_t) std::llround (t * out.bpm / 60.0 * ppq);
+    };
+
+    for (int t = 0; t < midi.getNumTracks(); ++t)
+    {
+        auto track = *midi.getTrack (t);
+        track.updateMatchedPairs();
+        std::vector<Note> notes;
+        std::vector<int> channels;
+        std::string name;
+
+        for (int i = 0; i < track.getNumEvents(); ++i)
+        {
+            const auto* e = track.getEventPointer (i);
+            const auto& m = e->message;
+
+            if (m.isTempoMetaEvent())
+                continue; // (collectTempos)
+            if (m.isTimeSignatureMetaEvent() && out.numerator == 0)
+            {
+                int num = 0, den = 0;
+                m.getTimeSignatureInfo (num, den);
+                if (num > 0 && den > 0)
+                {
+                    out.numerator = num;
+                    out.denominator = den;
+                }
+            }
+            else if (m.isTrackNameEvent() && name.empty())
+                name = m.getTextFromTextMetaEvent().toStdString();
+            else if (m.isNoteOn())
+            {
+                Note n;
+                n.start = toTicks (m.getTimeStamp());
+                const auto end = e->noteOffObject != nullptr ? toTicks (e->noteOffObject->message.getTimeStamp()) : n.start + ticksPerStep;
+                n.length = std::max<std::int64_t> (1, end - n.start);
+                n.key = m.getNoteNumber();
+                n.velocity = m.getFloatVelocity();
+                n.colour = juce::jlimit (0, noteColourCount - 1, m.getChannel() - 1); // FL: MIDI channel = note colour
+                notes.push_back (n);
+                channels.push_back (juce::jlimit (0, 15, m.getChannel() - 1));
+            }
+        }
+
+        if (! notes.empty())
+        {
+            out.tracks.push_back (std::move (notes));
+            out.names.push_back (name);
+            out.midiChannels.push_back (std::move (channels));
+        }
+    }
+
+    collectTempos (midi, out, toTicks);
+    collectKeys (midi, out, toTicks);
+    if (! out.tempos.empty())
+        out.bpm = std::nearbyint (tempoFromValue (out.tempos.front().value)); // (FL's whole BPM, exact)
+
+    if (out.tracks.empty())
+    {
+        error = utf8 ("the file has no notes");
+        return std::nullopt;
+    }
+
+    return out;
+}
+} // namespace
+
+std::optional<Song> loadSong (const juce::File& file, juce::String& error)
+{
+    auto parsed = parse (file, error);
+
+    if (! parsed)
+        return std::nullopt;
+
+    Song song;
+    song.bpm = parsed->bpm;
+    song.mixer = Song::defaultMixer();
+    auto& pattern = song.patterns.emplace_back();
+    pattern.name = file.getFileNameWithoutExtension().toStdString();
+
+    for (std::size_t t = 0; t < parsed->tracks.size(); ++t)
+    {
+        ChannelDef c;
+        c.name = parsed->names[t].empty() ? "MIDI " + std::to_string (t + 1) : parsed->names[t];
+        c.instrument = InstrumentKind::synth;
+        c.mixerTrack = song.claimFreeInsert();
+        c.volume = 0.6f;
+        song.channels.push_back (c);
+
+        for (auto n : parsed->tracks[t])
+        {
+            n.channel = (int) t;
+            pattern.notes.push_back (n);
+        }
+    }
+
+    midiimport::setTempoEvents (pattern, parsed->tempos, 0); // every Set Tempo as the pattern's Tempo events (issue #86)
+    // round 190nu: the key at the start is the project key, the later ones the pattern's key markers
+    for (const auto& k : parsed->keys)
+        if (projectkey::validFlScale (k.flScale))
+        {
+            if (k.tick <= 0)
+                projectkey::set (song, projectkey::Key { k.root, k.flScale });
+            else
+                keyregions::addKeyMarker (pattern, k.tick, { keyregions::State::key, { k.root, k.flScale } });
+        }
+    pattern.sortNotes();
+    return song;
+}
+
+static std::optional<midiimport::ParsedMidi> parseStream (juce::InputStream& in, bool opened, juce::String& error)
+{
+    juce::MidiFile midi;
+    if (! opened || ! midi.readFrom (in))
+    {
+        error = utf8 ("not a valid MIDI file");
+        return std::nullopt;
+    }
+    const auto format = midi.getTimeFormat();
+    if (format <= 0)
+        midi.convertTimestampTicksToSeconds();
+    midiimport::ParsedMidi out;
+    const auto filePpq = format > 0 ? (double) format : 0.0;
+    auto toTicks = [&] (double t) {
+        return filePpq > 0.0 ? (std::int64_t) std::llround (t * ppq / filePpq) : (std::int64_t) std::llround (t * out.bpm / 60.0 * ppq);
+    };
+    for (int t = 0; t < midi.getNumTracks(); ++t)
+    {
+        const auto& track = *midi.getTrack (t);
+        std::string name;
+        for (int i = 0; i < track.getNumEvents(); ++i)
+        {
+            const auto& m = track.getEventPointer (i)->message;
+            if (m.isTempoMetaEvent())
+                continue; // (collectTempos)
+            if (m.isTimeSignatureMetaEvent() && out.numerator == 0)
+            {
+                int num = 0, den = 0;
+                m.getTimeSignatureInfo (num, den);
+                if (num > 0 && den > 0)
+                {
+                    out.numerator = num;
+                    out.denominator = den;
+                }
+            }
+            else if (m.isTrackNameEvent() && name.empty())
+                name = m.getTextFromTextMetaEvent().toStdString();
+            else if (m.isNoteOnOrOff() || m.isController() || m.isPitchWheel() || m.isProgramChange()) // (bend / program: MIDI Out import)
+            {
+                const auto* raw = m.getRawData();
+                // a running-status note off may come as a note on with velocity 0: kept as it is (the import decides)
+                out.events.push_back ({ t, toTicks (m.getTimeStamp()), raw[0], raw[1], m.getRawDataSize() > 2 ? raw[2] : (std::uint8_t) 0 });
+            }
+        }
+        out.trackNames.push_back (name);
+    }
+    collectTempos (midi, out, toTicks);
+    collectKeys (midi, out, toTicks);
+    if (! out.tempos.empty())
+        out.bpm = std::nearbyint (tempoFromValue (out.tempos.front().value)); // (FL's whole BPM, exact)
+    return out;
+}
+
+std::optional<midiimport::ParsedMidi> parseFile (const juce::File& file, juce::String& error)
+{
+    juce::FileInputStream in (file);
+    return parseStream (in, in.openedOk(), error);
+}
+
+std::optional<midiimport::ParsedMidi> parseBytes (const void* data, std::size_t size, juce::String& error)
+{
+    juce::MemoryInputStream in (data, size, false);
+    return parseStream (in, size > 0, error);
+}
+
+juce::MemoryBlock writeNotes (const Song& song, const std::vector<Note>& notes, const std::string& trackName)
+{
+    juce::MidiMessageSequence seq;
+    // notes with Chance or a Velocity Range: as they play (round 187c, core/NoteChance.h)
+    for (const auto& n : chance::realised (notes, song.chanceSeed))
+    {
+        if (n.muted)
+            continue;
+        const auto velocity = (juce::uint8) juce::jlimit (1, 127, juce::roundToInt (n.velocity * 127.0f));
+        const auto midiChannel = juce::jlimit (1, 16, n.colour + 1); // FL: the note colour is the MIDI channel
+        seq.addEvent (juce::MidiMessage::noteOn (midiChannel, n.key, velocity), (double) n.start);
+        seq.addEvent (juce::MidiMessage::noteOff (midiChannel, n.key), (double) (n.start + std::max<std::int64_t> (1, n.length)));
+    }
+    juce::MidiFile midi;
+    midi.setTicksPerQuarterNote (ppq);
+    juce::MidiMessageSequence tempo;
+    tempo.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60'000'000.0 / juce::jmax (1.0, song.bpm))), 0.0);
+    tempo.addEvent (juce::MidiMessage::timeSignatureMetaEvent (juce::jmax (1, song.beatsPerBar), meterUnit (song.beatUnit)), 0.0);
+    midi.addTrack (tempo);
+    seq.addEvent (juce::MidiMessage::textMetaEvent (3, juce::String::fromUTF8 (trackName.c_str())), 0.0);
+    seq.sort();
+    seq.updateMatchedPairs();
+    midi.addTrack (seq);
+    juce::MemoryOutputStream out;
+    midi.writeTo (out);
+    return out.getMemoryBlock();
+}
+
+bool importInto (Song& song, const juce::File& file, const ImportOptions& o, juce::String& error)
+{
+    auto parsed = parseFile (file, error);
+    if (! parsed)
+        return false;
+    std::string err;
+    if (! midiimport::importInto (song, *parsed, o, file.getFileNameWithoutExtension().toStdString(), err))
+    {
+        error = utf8 (err.c_str());
+        return false;
+    }
+    return true;
+}
+
+std::optional<std::vector<Note>> loadNotes (const juce::File& file, int channel, juce::String& error)
+{
+    auto parsed = parse (file, error);
+
+    if (! parsed)
+        return std::nullopt;
+
+    std::vector<Note> notes;
+
+    for (const auto& track : parsed->tracks)
+        for (auto n : track)
+        {
+            n.channel = channel;
+            notes.push_back (n);
+        }
+
+    std::stable_sort (notes.begin(), notes.end(), [] (const Note& a, const Note& b) { return a.start < b.start; });
+    return notes;
+}
+
+bool savePattern (const Song& song, int patternIndex, const juce::File& file, juce::String& error)
+{
+    if (patternIndex < 0 || patternIndex >= (int) song.patterns.size())
+    {
+        error = "pattern does not exist";
+        return false;
+    }
+
+    const auto& pattern = song.patterns[(std::size_t) patternIndex];
+    std::map<int, juce::MidiMessageSequence> byChannel;
+
+    for (const auto& n : chance::realised (pattern.notes, song.chanceSeed))
+    {
+        auto& seq = byChannel[n.channel];
+        const auto velocity = (juce::uint8) juce::jlimit (1, 127, juce::roundToInt (n.velocity * 127.0f));
+        const auto midiChannel = juce::jlimit (1, 16, n.colour + 1); // FL: the note colour is the MIDI channel
+        seq.addEvent (juce::MidiMessage::noteOn (midiChannel, n.key, velocity), (double) n.start);
+        seq.addEvent (juce::MidiMessage::noteOff (midiChannel, n.key), (double) (n.start + std::max<std::int64_t> (1, n.length)));
+    }
+
+    juce::MidiFile midi;
+    midi.setTicksPerQuarterNote (ppq);
+
+    juce::MidiMessageSequence tempo;
+    tempo.addEvent (juce::MidiMessage::tempoMetaEvent (juce::roundToInt (60'000'000.0 / song.bpm)), 0.0);
+    tempo.addEvent (juce::MidiMessage::timeSignatureMetaEvent (song.beatsPerBar, meterUnit (song.beatUnit)), 0.0);
+    addKeySignatures (tempo, pattern, projectkey::get (song), pattern.effectiveLength (song.meter())); // (round 190nu)
+    midi.addTrack (tempo);
+
+    for (auto& [channel, seq] : byChannel)
+    {
+        const auto name = channel >= 0 && channel < (int) song.channels.size() ? song.channels[(std::size_t) channel].name : std::string ("Channel");
+        seq.addEvent (juce::MidiMessage::textMetaEvent (3, juce::String::fromUTF8 (name.c_str())), 0.0);
+        seq.sort();
+        seq.updateMatchedPairs();
+        midi.addTrack (seq);
+    }
+
+    file.deleteFile();
+    juce::FileOutputStream out (file);
+
+    if (out.failedToOpen() || ! midi.writeTo (out))
+    {
+        error = utf8 ("could not write ") + file.getFullPathName();
+        return false;
+    }
+
+    return true;
+}
+
+bool saveSong (const Song& song, const juce::File& file, juce::String& error)
+{
+    // the arrangement flattened into one pattern, written like a pattern (one track per channel)
+    Song flat;
+    flat.bpm = song.bpm;
+    flat.beatsPerBar = song.beatsPerBar;
+    flat.beatUnit = song.beatUnit;
+    flat.channels = song.channels;
+    flat.patterns.resize (1);
+    flat.patterns[0].notes = exportopts::midiExportNotes (song);
+    flat.scaleHighlight = song.scaleHighlight; // round 190nu: the project key, and the key markers where they play
+    flat.patterns[0].markers = keyregions::songKeyMarkers (song);
+    return savePattern (flat, 0, file, error);
+}
+} // namespace lynx::MidiFileIo
