@@ -25,7 +25,7 @@ bool writeDawProjectFile (const Song& song, PluginHost* host, const juce::File& 
     std::map<std::string, std::tuple<double, int, int>> seen;
 
     DawProjectExportOptions options;
-    options.application = "LYNX SHARE";
+    options.application = "YW Studio";
     options.version = JUCE_APPLICATION_VERSION_STRING;
     options.readFile = [] (const std::string& path) {
         const juce::File file (fromUtf8 (path));
@@ -72,7 +72,7 @@ bool writeDawProjectFile (const Song& song, PluginHost* host, const juce::File& 
 
 void showDawProjectExport (AudioEngine& engine, juce::Component* parent, const juce::File& suggestedFolder, const juce::String& projectName)
 {
-    const auto stem = juce::File::createLegalFileName (projectName.isNotEmpty() ? projectName : juce::String ("LYNX SHARE"));
+    const auto stem = juce::File::createLegalFileName (projectName.isNotEmpty() ? projectName : juce::String ("YW Studio"));
     auto chooser = std::shared_ptr<juce::FileChooser> (
         ui::makeFileChooser (tr ("Export DAWproject"), suggestedFolder.getChildFile (stem + ".dawproject"), "*.dawproject").release());
     ui::launchChooser (chooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,

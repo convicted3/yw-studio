@@ -33,7 +33,7 @@ struct Sound
     std::string fontPath;               // soundFont: the file and its preset
     int bank = 0, program = 0;
     std::string pluginId;               // plugin: the plugin host's identifier (JUCE's createIdentifierString)
-    std::string origin;                 // what it is made with, for the list's second column ("LYNX synth", the font's name)
+    std::string origin;                 // what it is made with, for the list's second column ("YW Studio synth", the font's name)
     bool operator== (const Sound& o) const
     {
         return source == o.source && kind == o.kind && index == o.index && fontPath == o.fontPath && bank == o.bank && program == o.program

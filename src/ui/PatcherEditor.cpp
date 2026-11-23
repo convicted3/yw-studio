@@ -106,7 +106,7 @@ struct Pin
     int port = 0;
     juce::Point<float> at; // world position
     juce::String label;
-    bool adds = false;     // "To LYNX SHARE": the pin that makes a new extra output
+    bool adds = false;     // "To YW Studio": the pin that makes a new extra output
 };
 
 juce::Colour wireColour (PatchWire::Kind kind)
@@ -740,7 +740,7 @@ private:
     // timer polls the nodes' output peaks (Activity) and process times (Performance, refreshed twice a second). The
     // arrows move at 30 Hz only while a cable carries audio, Activity is on and motion is allowed; else 10 Hz.
     std::vector<char> nodeActive;         // [node] its output carried audio in the last tick
-    bool hostActive = false;              // "From LYNX SHARE"
+    bool hostActive = false;              // "From YW Studio"
     float activityPhase = 0.0f;           // px along the cables
     std::vector<float> nodeCpu;           // [node] % of real time
     std::vector<int> nodeLatencyTotal;    // [node] its output's latency (samples) along the longest path
@@ -1428,7 +1428,7 @@ private:
     void drawHost (juce::Graphics& g, const PatcherDoc& d, bool input) const
     {
         const auto n = input ? patchFromHost : patchToHost;
-        drawBox (g, nodeBounds (d, n), input ? tr ("From LYNX SHARE") : tr ("To LYNX SHARE"), selectedNode == n, true, false);
+        drawBox (g, nodeBounds (d, n), input ? tr ("From YW Studio") : tr ("To YW Studio"), selectedNode == n, true, false);
     }
 
     void drawNode (juce::Graphics& g, const PatcherDoc& d, int n) const
@@ -1797,7 +1797,7 @@ public:
             builtIn ("Drum", kind, juce::String (effectNameOf (kind)));
         builtIn ("MIDI", InstrumentKind::midiOut, "MIDI Out", [] (ChannelDef& c) { midictl::writeMidiOut (c.pluginState, midictl::MidiOutSettings {}); });
         builtIn ("Misc", InstrumentKind::layer, tr ("Layer")); // round 165c: plays the generators on its Children pin
-        builtIn ("Misc", InstrumentKind::soundfont, "LYNX Soundfont", [] (ChannelDef& c) { c = sf::makeChannel(); });
+        builtIn ("Misc", InstrumentKind::soundfont, "YW Soundfont", [] (ChannelDef& c) { c = sf::makeChannel(); });
         builtIn ("Visual", InstrumentKind::videoplayer, "Fruity Video Player", [] (ChannelDef& c) { c.pluginState = video::write (video::Settings {}); });
         builtIn ("Patcher", InstrumentKind::patcher, "Patcher");
         builtIn ("Synth classic", InstrumentKind::synth, tr ("Synth"));
@@ -2291,7 +2291,7 @@ public:
         const auto host = input ? patchFromHost : patchToHost;
         auto touches = [host] (const PatchWire& w) { return w.from == host || w.to == host; };
         juce::PopupMenu menu;
-        menu.addSectionHeader (input ? tr ("From LYNX SHARE") : tr ("To LYNX SHARE"));
+        menu.addSectionHeader (input ? tr ("From YW Studio") : tr ("To YW Studio"));
         menu.addItem (tr ("Disconnect all"), std::any_of (d->wires.begin(), d->wires.end(), touches), false, [this, touches] {
             edit ([touches] (PatcherDoc& doc) { std::erase_if (doc.wires, touches); });
         });
@@ -2368,7 +2368,7 @@ public:
             *eventsOut = events;
         menu.addSubMenu (tr ("Events"), events);
 
-        // Audio: the I/O node's audio pins ("To LYNX SHARE": the main output and the extra outputs to other inserts)
+        // Audio: the I/O node's audio pins ("To YW Studio": the main output and the extra outputs to other inserts)
         juce::PopupMenu audio;
         if (input)
         {

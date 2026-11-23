@@ -698,7 +698,7 @@ void exportOneTrack (AudioEngine& engine, int track, bool asMidi, const juce::Fi
     const auto trackName = song.playlistTracks[(std::size_t) track].name.empty() ? tr ("Track {0}", { juce::String (track + 1) })
                                                                                   : fromUtf8 (song.playlistTracks[(std::size_t) track].name);
     // the original's names: "<song> - <track>.wav", "<track>.mid"
-    const auto name = juce::File::createLegalFileName (asMidi ? trackName + ".mid" : (projectName.isNotEmpty() ? projectName : juce::String ("LYNX SHARE")) + " - " + trackName + ".wav");
+    const auto name = juce::File::createLegalFileName (asMidi ? trackName + ".mid" : (projectName.isNotEmpty() ? projectName : juce::String ("YW Studio")) + " - " + trackName + ".wav");
     static std::unique_ptr<juce::FileChooser> chooser;
     chooser = lynx::ui::makeFileChooser (asMidi ? tr ("Export the track as MIDI") : tr ("Export the track as audio"), suggestedFolder.getChildFile (name),
                                          asMidi ? "*.mid" : "*.wav");
@@ -732,7 +732,7 @@ void showOtherAppsExportDialog (AudioEngine& engine, const juce::File& suggested
 {
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = tr ("Export for other apps");
-    options.content.setOwned (fitContentToScreen (std::make_unique<OtherAppsPanel> (engine, suggestedFolder, projectName.isNotEmpty() ? projectName : "LYNX SHARE", true)).release());
+    options.content.setOwned (fitContentToScreen (std::make_unique<OtherAppsPanel> (engine, suggestedFolder, projectName.isNotEmpty() ? projectName : "YW Studio", true)).release());
     options.dialogBackgroundColour = theme::colour::bg2;
     options.useNativeTitleBar = true;
     options.resizable = false;
@@ -742,7 +742,7 @@ void showOtherAppsExportDialog (AudioEngine& engine, const juce::File& suggested
 
 std::unique_ptr<juce::Component> makeOtherAppsExportPanel (AudioEngine& engine, const juce::String& projectName)
 {
-    return std::make_unique<OtherAppsPanel> (engine, juce::File(), projectName.isNotEmpty() ? projectName : "LYNX SHARE", false);
+    return std::make_unique<OtherAppsPanel> (engine, juce::File(), projectName.isNotEmpty() ? projectName : "YW Studio", false);
 }
 
 std::unique_ptr<juce::Component> makeOtherAppsReportPanel (const juce::File& folder, const juce::StringArray& written, const juce::StringArray& failed)

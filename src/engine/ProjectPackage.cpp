@@ -258,6 +258,6 @@ juce::File garageBandPackage (const juce::File& file)
 
 juce::File defaultExtractRoot()
 {
-    return lynx::platform::documentsFolder().getChildFile ("LYNX/Projects/Unpacked");
+    return lynx::platform::documentsFolder().getChildFile ("YW Studio/Projects/Unpacked");
 }
 } // namespace lynx::ProjectPackage

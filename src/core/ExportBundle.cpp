@@ -47,7 +47,7 @@ Song prepared (const Song& song)
 Plan plan (const Song& song, const std::string& projectName, const Options& options)
 {
     Plan p;
-    p.name = quickrender::safeFileName (projectName, "LYNX SHARE");
+    p.name = quickrender::safeFileName (projectName, "YW Studio");
     p.folder = p.name + " (for other apps)";
     p.zip = options.zip;
     p.endTick = song.songLength();
@@ -146,7 +146,7 @@ std::string readme (const Song& song, const Plan& plan, double seconds, const st
 {
     std::string r;
     const auto line = [&r] (const std::string& s = {}) { r += s + "\r\n"; };
-    line (plan.name + " - exported for other apps by LYNX SHARE");
+    line (plan.name + " - exported for other apps by YW Studio");
     line();
     line ("Tempo:          " + tempoText (song));
     line ("Time signature: " + std::to_string (std::max (1, song.beatsPerBar)) + "/" + std::to_string (meterUnit (song.beatUnit)));
@@ -174,7 +174,7 @@ std::string readme (const Song& song, const Plan& plan, double seconds, const st
     if (! plan.als.empty())
         line ("- Ableton Live 12: open \"" + plan.als + "\" (its samples are in that folder).");
     if (! plan.flp.empty())
-        line ("- FL Studio: open \"" + plan.flp + "\". Sounds only LYNX SHARE has are in it as audio.");
+        line ("- FL Studio: open \"" + plan.flp + "\". Sounds only YW Studio has are in it as audio.");
     line ("- Online studios and other apps: import the stems as audio tracks and the .mid files as MIDI tracks.");
     return r;
 }

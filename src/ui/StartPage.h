@@ -6,7 +6,7 @@
 // from": the demo songs, LYNX's default, the built-in and the user's templates), each a title in the accent and a line —
 // and "Recent projects" — "Other projects..." (Open...), then each recent project: its name, "<size>  <date time>
 // (<ago>)" and its folder; missing files dimmed. LYNX adds a search box over the list (the caret in it: typing filters
-// at once); Up / Down / Enter / a double click open one. Bottom: "Show the start page when LYNX starts" and the keys. Esc
+// at once); Up / Down / Enter / a double click open one. Bottom: "Show the start page when YW Studio starts" and the keys. Esc
 // or × keep the project that is open behind it. Static paints, no timer.
 
 #include <functional>

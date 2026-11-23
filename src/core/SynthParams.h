@@ -1,6 +1,6 @@
 #pragma once
 
-// LYNX Synth's knobs as automation targets (issue #152, round 190he: "LYNX SHARE's own plugins can't be linked"). FL
+// LYNX Synth's knobs as automation targets (issue #152, round 190he: "YW Studio's own plugins can't be linked"). FL
 // makes every parameter of its plugins linkable (Link to controller, automation clips, Init song value); LYNX Synth's
 // page had plain knobs with no parameter menu. A synth channel's AutomationTarget { channelParam, channel, 0, base + k }
 // with k one of these. The numbers start at `base` so that an FL project's dead automation on a 3x Osc that LYNX

@@ -39,13 +39,13 @@
 
 #include "InputDrift.h"
 
-// {E987C593-898E-4557-BFE3-4288B0228718} — LYNX ASIO's own class id (hosts also use it as the interface id)
-DEFINE_GUID (CLSID_LynxAsio, 0xe987c593, 0x898e, 0x4557, 0xbf, 0xe3, 0x42, 0x88, 0xb0, 0x22, 0x87, 0x18);
+// {5957A510-2026-4E57-9A1C-796F6C6F7375} — LYNX ASIO's own class id (hosts also use it as the interface id)
+DEFINE_GUID (CLSID_LynxAsio, 0x5957a510, 0x2026, 0x4e57, 0x9a, 0x1c, 0x79, 0x6f, 0x6c, 0x6f, 0x73, 0x75);
 
 namespace
 {
-constexpr const char* driverName = "LYNX ASIO";
-constexpr const wchar_t* driverNameW = L"LYNX ASIO";
+constexpr const char* driverName = "YW ASIO";
+constexpr const wchar_t* driverNameW = L"YW ASIO";
 constexpr long driverVersion = 1;
 
 HINSTANCE moduleHandle = nullptr;
@@ -137,7 +137,7 @@ struct Settings
             return buf;
         if (GetEnvironmentVariableW (L"APPDATA", buf, MAX_PATH * 2) == 0)
             return {};
-        std::wstring dir = std::wstring (buf) + L"\\LYNX";
+        std::wstring dir = std::wstring (buf) + L"\\YW Studio";
         CreateDirectoryW (dir.c_str(), nullptr);
         return dir + L"\\lynx-asio.ini";
     }
@@ -149,13 +149,13 @@ struct Settings
         if (file.empty())
             return s;
         const auto* f = file.c_str();
-        s.mode = GetPrivateProfileIntW (L"LYNX ASIO", L"mode", 0, f) == 1 ? Mode::exclusive : Mode::shared;
-        s.bufferSize = std::clamp ((int) GetPrivateProfileIntW (L"LYNX ASIO", L"bufferSize", 0, f), 0, 8192);
-        s.safety = std::clamp ((int) GetPrivateProfileIntW (L"LYNX ASIO", L"safety", 2, f), 0, 2);
+        s.mode = GetPrivateProfileIntW (L"YW ASIO", L"mode", 0, f) == 1 ? Mode::exclusive : Mode::shared;
+        s.bufferSize = std::clamp ((int) GetPrivateProfileIntW (L"YW ASIO", L"bufferSize", 0, f), 0, 8192);
+        s.safety = std::clamp ((int) GetPrivateProfileIntW (L"YW ASIO", L"safety", 2, f), 0, 2);
         wchar_t buf[512] {};
-        GetPrivateProfileStringW (L"LYNX ASIO", L"output", L"", buf, 512, f);
+        GetPrivateProfileStringW (L"YW ASIO", L"output", L"", buf, 512, f);
         s.output = buf;
-        GetPrivateProfileStringW (L"LYNX ASIO", L"input", L"", buf, 512, f);
+        GetPrivateProfileStringW (L"YW ASIO", L"input", L"", buf, 512, f);
         s.input = buf;
         return s;
     }
@@ -166,11 +166,11 @@ struct Settings
         if (file.empty())
             return;
         const auto* f = file.c_str();
-        WritePrivateProfileStringW (L"LYNX ASIO", L"mode", mode == Mode::exclusive ? L"1" : L"0", f);
-        WritePrivateProfileStringW (L"LYNX ASIO", L"bufferSize", std::to_wstring (bufferSize).c_str(), f);
-        WritePrivateProfileStringW (L"LYNX ASIO", L"safety", std::to_wstring (safety).c_str(), f);
-        WritePrivateProfileStringW (L"LYNX ASIO", L"output", output.c_str(), f);
-        WritePrivateProfileStringW (L"LYNX ASIO", L"input", input.c_str(), f);
+        WritePrivateProfileStringW (L"YW ASIO", L"mode", mode == Mode::exclusive ? L"1" : L"0", f);
+        WritePrivateProfileStringW (L"YW ASIO", L"bufferSize", std::to_wstring (bufferSize).c_str(), f);
+        WritePrivateProfileStringW (L"YW ASIO", L"safety", std::to_wstring (safety).c_str(), f);
+        WritePrivateProfileStringW (L"YW ASIO", L"output", output.c_str(), f);
+        WritePrivateProfileStringW (L"YW ASIO", L"input", input.c_str(), f);
     }
 
     bool operator== (const Settings& o) const
@@ -1580,8 +1580,8 @@ struct Panel
         else if (edit.mode == Mode::exclusive)
         {
             if (r.exclusiveMinPeriod > 0)
-                swprintf (text, 600, tr (L"Exclusive: LYNX ASIO uses \"%ls\" alone (other programs go silent; the input device too, when it accepts exclusive mode). Shortest period on this device: %d samples (%.1f ms).",
-                                         L"Exclusivo: o LYNX ASIO usa \"%ls\" sozinho (os outros programas ficam mudos; o dispositivo de entrada também, quando aceita o modo exclusivo). Menor período neste dispositivo: %d amostras (%.1f ms)."),
+                swprintf (text, 600, tr (L"Exclusive: YW ASIO uses \"%ls\" alone (other programs go silent; the input device too, when it accepts exclusive mode). Shortest period on this device: %d samples (%.1f ms).",
+                                         L"Exclusivo: o YW ASIO usa \"%ls\" sozinho (os outros programas ficam mudos; o dispositivo de entrada também, quando aceita o modo exclusivo). Menor período neste dispositivo: %d amostras (%.1f ms)."),
                           r.name.c_str(), r.exclusiveMinPeriod, 1000.0 * r.exclusiveMinPeriod / rate);
             else
                 swprintf (text, 600, L"%ls", tr (L"This device does not accept exclusive mode; the shared mode will be used.",
@@ -1662,7 +1662,7 @@ struct Panel
 
         RECT rc { 0, 0, px (460), px (368) };
         AdjustWindowRectEx (&rc, WS_CAPTION | WS_SYSMENU, FALSE, WS_EX_DLGMODALFRAME);
-        window = CreateWindowExW (WS_EX_DLGMODALFRAME, L"LynxAsioPanel", L"LYNX ASIO", WS_CAPTION | WS_SYSMENU | WS_POPUP,
+        window = CreateWindowExW (WS_EX_DLGMODALFRAME, L"LynxAsioPanel", L"YW ASIO", WS_CAPTION | WS_SYSMENU | WS_POPUP,
                                   CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, owner, nullptr, moduleHandle, this);
         auto make = [&] (const wchar_t* cls, const wchar_t* text, DWORD style, int x, int y, int w, int h, int id)
         {
@@ -1689,7 +1689,7 @@ struct Panel
         make (L"BUTTON", tr (L"Cancel", L"Cancelar"), BS_PUSHBUTTON | WS_TABSTOP, 362, 328, 84, 28, idCancel);
 
         addString (item (idMode), tr (L"Shared (other programs keep their sound)", L"Compartilhado (os outros programas continuam com som)"));
-        addString (item (idMode), tr (L"Exclusive (lowest latency, device used alone)", L"Exclusivo (menor latência, dispositivo só do LYNX ASIO)"));
+        addString (item (idMode), tr (L"Exclusive (lowest latency, device used alone)", L"Exclusivo (menor latência, dispositivo só do YW ASIO)"));
         SendMessageW (item (idMode), CB_SETCURSEL, edit.mode == Mode::exclusive ? 1 : 0, 0);
 
         auto lists = [this]

@@ -951,7 +951,7 @@ public:
 
         if (args.contains ("--bridge32test"))
         {
-            // LYNX.exe --bridge32test "LYNX Test Synth 32.dll" report.txt [--compare "LYNX Test Synth.dll"] (round 176a):
+            // LYNX.exe --bridge32test "YW Test Synth 32.dll" report.txt [--compare "YW Test Synth.dll"] (round 176a):
             // the 32-bit plugin bridge (engine/Bridge32Test.cpp)
             const auto i = args.indexOf ("--bridge32test");
             const auto compare = args.contains ("--compare") ? args[args.indexOf ("--compare") + 1].unquoted() : juce::String();
@@ -1066,7 +1066,7 @@ public:
 
         if (args.contains ("--padrectest"))
         {
-            // LYNX --padrectest "<LYNX Test Pads.vst3>" report.txt (round 190ks, GitHub #198): a take records the notes a
+            // LYNX --padrectest "<YW Test Pads.vst3>" report.txt (round 190ks, GitHub #198): a take records the notes a
             // hosted plugin plays from its own window (the live engine on a stand-in device). No window.
             const auto i = args.indexOf ("--padrectest");
             const auto result = lynx::AudioEngine::padRecordSelfTest (args[i + 1].unquoted());
@@ -1350,19 +1350,19 @@ public:
             {
                 std::string why;
                 check (! lynx::livelink::Connection::available (&why) && why.find ("offline") != std::string::npos, "live link unavailable: " + juce::String (why));
-                check (lynx::livelink::http ("GET", "https://relay.lynx-share.com/v1/health", {}, {}, "LYNX-test", 2).status == 0, "relay HTTP gives no answer, no connection tried");
+                check (lynx::livelink::http ("GET", "https://relay.yolo.su/v1/health", {}, {}, "YW-test", 2).status == 0, "relay HTTP gives no answer, no connection tried");
             }
             {
                 lynx::AudioEngine offlineEngine (false);
                 lynx::LiveSessionManager live (offlineEngine);
                 lynx::LiveSessionManager::Options o;
-                o.relay = "https://relay.lynx-share.com";
+                o.relay = "https://relay.yolo.su";
                 o.name = "Offline test";
                 o.inlineWork = true;
                 live.start (o);
                 check (live.getState() == lynx::LiveSessionManager::State::ended && ! live.isActive(), "Start live session refused: " + live.getStatus());
                 lynx::LiveSessionManager joiner (offlineEngine);
-                joiner.join ("LYNX-AAAA-AAAA-AAAA-AAAA-AAAA", o);
+                joiner.join ("YW-AAAA-AAAA-AAAA-AAAA-AAAA", o);
                 check (joiner.getState() == lynx::LiveSessionManager::State::ended && ! joiner.isActive(), "Join live session refused: " + joiner.getStatus());
             }
             {
@@ -1900,7 +1900,7 @@ public:
 
         if (args.contains ("--hostplaytest190ll"))
         {
-            // LYNX --hostplaytest190ll report.txt "<LYNX Test Synth.vst3>" [--buffer N] (round 190ll, issue #199): src/HostPlay190ll.inc
+            // LYNX --hostplaytest190ll report.txt "<YW Test Synth.vst3>" [--buffer N] (round 190ll, issue #199): src/HostPlay190ll.inc
             const auto i = args.indexOf ("--hostplaytest190ll");
             const auto buffer = args.contains ("--buffer") ? args[args.indexOf ("--buffer") + 1].getIntValue() : 1024;
             runHostPlayTest190ll (juce::File (args[i + 1].unquoted()), juce::File (args[i + 2].unquoted()), juce::jlimit (16, 4096, buffer));
@@ -1938,7 +1938,7 @@ public:
 
         if (args.contains ("--crashguardtest"))
         {
-            // LYNX --crashguardtest "LYNX Test Crash.vst3|.clap" report.txt [process|memcpy] (round 190dt,
+            // LYNX --crashguardtest "YW Test Crash.vst3|.clap" report.txt [process|memcpy] (round 190dt,
             // tools/testplugin/lynx_test_crash*.{c,cpp}): the plugin crashes in its 40th block on insert 1; LYNX must
             // catch it, mark the slot, keep playing the other inserts, save the project, reload the plugin; then the
             // saved project opens with the plugin crashing on its state; and LYNX's own faults are still crashes
@@ -1950,7 +1950,7 @@ public:
 
         if (args.contains ("--claprestarttest"))
         {
-            // LYNX.exe --claprestarttest "LYNX Test Restart.clap" report.txt (tools/testplugin/lynx_test_restart.c)
+            // LYNX.exe --claprestarttest "YW Test Restart.clap" report.txt (tools/testplugin/lynx_test_restart.c)
             const auto i = args.indexOf ("--claprestarttest");
             runClapRestartTest (args[i + 1].unquoted(), args[i + 2].unquoted());
             return;
@@ -2036,7 +2036,7 @@ public:
 
         if (args.contains ("--clapteardowntest"))
         {
-            // LYNX.exe --clapteardowntest "LYNX Test Restart.clap" report.txt (round 190az, engine/ClapTeardownTest.cpp)
+            // LYNX.exe --clapteardowntest "YW Test Restart.clap" report.txt (round 190az, engine/ClapTeardownTest.cpp)
             const auto i = args.indexOf ("--clapteardowntest");
             lynx::runClapTeardownTest (args[i + 1].unquoted(), args[i + 2].unquoted(), [this] (int code) {
                 setApplicationReturnValue (code);
@@ -2047,7 +2047,7 @@ public:
 
         if (args.contains ("--mpetest"))
         {
-            // LYNX.exe --mpetest "LYNX Test MPE.clap" report.txt (tools/testplugin/lynx_test_mpe.c, issue #108)
+            // LYNX.exe --mpetest "YW Test MPE.clap" report.txt (tools/testplugin/lynx_test_mpe.c, issue #108)
             const auto i = args.indexOf ("--mpetest");
             runMpeTest (args[i + 1].unquoted(), args[i + 2].unquoted());
             return;
@@ -2075,7 +2075,7 @@ public:
 
         if (args.contains ("--editorcrashtest"))
         {
-            // LYNX.exe --editorcrashtest "LYNX Test Crash.clap" report.txt (issue #32, round 174a; Windows): the test
+            // LYNX.exe --editorcrashtest "YW Test Crash.clap" report.txt (issue #32, round 174a; Windows): the test
             // plugin's editor faults in its own window procedure (LYNX_TEST_CRASH=editor). LYNX must catch it, close
             // that editor, record the trace and keep running its message loop.
             const auto i = args.indexOf ("--editorcrashtest");
@@ -2617,8 +2617,8 @@ public:
             const auto i = args.indexOf ("--menu-entry");
             const auto on = args[i + 1].unquoted() != "off";
             const auto ok = lynx::runningAsAppImage() && lynx::setAppImageMenuEntry (on);
-            std::fprintf (ok ? stdout : stderr, "%s\n", ok ? (on ? "LYNX SHARE added to the applications menu" : "LYNX SHARE removed from the applications menu")
-                                                         : "only the LYNX SHARE AppImage on Linux can do this");
+            std::fprintf (ok ? stdout : stderr, "%s\n", ok ? (on ? "YW Studio added to the applications menu" : "YW Studio removed from the applications menu")
+                                                         : "only the YW Studio AppImage on Linux can do this");
             setApplicationReturnValue (ok ? 0 : 1);
             quit();
             return;
@@ -2634,8 +2634,8 @@ public:
                 root.deleteRecursively();
                 root.getChildFile ("install/licenses").createDirectory();
                 root.getChildFile ("install/licenses/onnxruntime-LICENSE.txt").replaceWithText ("x");
-                root.getChildFile ("install/LYNX.exe").replaceWithText ("x");
-                root.getChildFile ("install/installed-files.txt").replaceWithText ("LYNX.exe\r\nlicenses\r\n");
+                root.getChildFile ("install/YW Studio.exe").replaceWithText ("x");
+                root.getChildFile ("install/installed-files.txt").replaceWithText ("YW Studio.exe\r\nlicenses\r\n");
                 root.getChildFile ("install/My notes.txt").replaceWithText ("x");
                 root.getChildFile ("update/installing.txt").create();
                 if (version.isNotEmpty())
@@ -2644,7 +2644,7 @@ public:
                 const auto in = root.getChildFile ("install");
                 if (in.getChildFile ("licenses").exists() == licensesGone) fails.add (version + ": licenses");
                 if (in.getChildFile ("installed-files.txt").exists() == listGone) fails.add (version + ": installed-files.txt");
-                if (! in.getChildFile ("LYNX.exe").existsAsFile() || ! in.getChildFile ("My notes.txt").existsAsFile()) fails.add (version + ": removed too much");
+                if (! in.getChildFile ("YW Studio.exe").existsAsFile() || ! in.getChildFile ("My notes.txt").existsAsFile()) fails.add (version + ": removed too much");
                 std::printf ("%s -> removed [%s]\n", version.toRawUTF8(), removed.joinIntoString (", ").toRawUTF8());
             };
             run ("0.1.29-alpha", true, true);   // going back to 0.1.29: both newer entries go
@@ -2676,7 +2676,7 @@ public:
                 if (! files.isEmpty())
                     (juce::String (pattern).startsWith ("crash") ? session.crashFile : session.hangFile) = files[0];
             }
-            session.steps = { "00:00:01 test report (LYNX.exe --send-test-report)", "00:00:02 opening project " + out.getFileName() };
+            session.steps = { "00:00:01 test report (YW Studio.exe --send-test-report)", "00:00:02 opening project " + out.getFileName() };
             auto input = lynx::crashreporter::makeInput (session, session.crashFile.existsAsFile() ? "crash" : "manual", nullptr);
             input.test = true;
             const auto json = lynx::crashreporter::buildJson (input, false);
@@ -2692,7 +2692,7 @@ public:
         if (args.contains ("--symbolize"))
         {
             // LYNX.exe --symbolize "crash … .txt" out.txt: names the LYNX.exe+offset frames of a user's crash / hang file
-            // (needs this build's LYNX.pdb next to LYNX.exe — the release's "LYNX-symbols" CI artifact; round 157a)
+            // (needs this build's LYNX.pdb next to LYNX.exe — the release's "YW-symbols" CI artifact; round 157a)
             const auto i = args.indexOf ("--symbolize");
             const auto text = juce::File (args[i + 1].unquoted()).loadFileAsString();
             juce::File (args[i + 2].unquoted()).replaceWithText (juce::String::fromUTF8 (lynx::crashguard::symbolizeOwnFrames (text.toStdString()).c_str()));
@@ -4399,7 +4399,7 @@ public:
         if (args.contains ("--tempomarkershot"))
         {
             // LYNX --tempomarkershot <prefix> <project.lynx> (round 190hq): the Playlist of the project with its tempo
-            // markers on the ruler (-playlist.png) and the "Save a copy for an older LYNX" window for each release
+            // markers on the ruler (-playlist.png) and the "Save a copy for an older YW Studio" window for each release
             // (-savecopy-<release>.png); no window, nothing saved
             const auto i = args.indexOf ("--tempomarkershot");
             const auto prefix = args[i + 1].unquoted();
@@ -4470,7 +4470,7 @@ public:
         sessionsFolder().createDirectory();
         lynx::crashguard::beginSession (
             sessionsFolder().getChildFile ("session-" + juce::String (lynx::crashguard::processId()) + ".txt").getFullPathName().toStdString(),
-            ("LYNX session\nversion=" + getApplicationVersion() + "\npid=" + juce::String (lynx::crashguard::processId())
+            ("YW Studio session\nversion=" + getApplicationVersion() + "\npid=" + juce::String (lynx::crashguard::processId())
              + "\nstart=" + juce::String ((juce::int64) lynx::crashguard::processStartTime())
              + "\nstarted=" + juce::Time::getCurrentTime().toISO8601 (true) + "\n").toStdString());
         startHangWatch();
@@ -4849,7 +4849,7 @@ public:
 
     void createMainWindow()
     {
-        mainWindow = std::make_unique<MainWindow> ("LYNX SHARE", *engine); // the brand; getApplicationName() stays "LYNX" (an id: instance lock, X11 WM_CLASS, ALSA client)
+        mainWindow = std::make_unique<MainWindow> ("YW Studio", *engine); // the brand; getApplicationName() stays "YW Studio" (an id: instance lock, X11 WM_CLASS, ALSA client)
         lynx::setMainWindowForOwnership (mainWindow.get());
         lynx::applyRenderingChoice (*mainWindow); // (GPU rendering off: GDI; round 157a)
         lynx::startRenderingWatch();
@@ -4892,7 +4892,7 @@ public:
             return;
         }
         auto message = lynx::tr ("The last session ended without closing normally. Last step: {0}. Backup copies of your project are in "
-                                 "LYNX SHARE's autosave folder; details in crash-history.log.",
+                                 "YW Studio's autosave folder; details in crash-history.log.",
                                  { uncleanLastStep });
         uncleanLastStep.clear();
         const auto cause = uncleanCause();
@@ -4906,7 +4906,7 @@ public:
         {
             lynx::setGpuRenderingEnabled (false);
             message << "\n\n"
-                    << lynx::tr ("The crash was in the graphics driver ({0}). LYNX SHARE now draws its windows without the GPU; you can turn GPU "
+                    << lynx::tr ("The crash was in the graphics driver ({0}). YW Studio now draws its windows without the GPU; you can turn GPU "
                                  "rendering back on in Options > General settings (after a driver update, for example).",
                                  { cause.driverModule });
         }
@@ -4953,10 +4953,10 @@ public:
         if (separatePlugin.isNotEmpty())
         {
             juce::AlertWindow::showOkCancelBox (
-                juce::MessageBoxIconType::WarningIcon, lynx::tr ("LYNX SHARE closed unexpectedly"),
+                juce::MessageBoxIconType::WarningIcon, lynx::tr ("YW Studio closed unexpectedly"),
                 message + "\n\n"
                     + lynx::tr ("It happened while the window of {0} was opening{1}. Run {0} in a separate process from now on? If it "
-                                "crashes again, only the plugin stops and LYNX SHARE keeps running (Plugin wrapper menu: \"Always run in a "
+                                "crashes again, only the plugin stops and YW Studio keeps running (Plugin wrapper menu: \"Always run in a "
                                 "separate process\").",
                                 { separatePlugin, cause.gpuDriver ? lynx::tr (" (in the graphics driver, {0})", { cause.driverModule }) : juce::String() }),
                 lynx::tr ("Run separately"), lynx::tr ("No"), nullptr,
@@ -4966,7 +4966,7 @@ public:
                 }));
             return;
         }
-        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, lynx::tr ("LYNX SHARE closed unexpectedly"), message);
+        juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, lynx::tr ("YW Studio closed unexpectedly"), message);
     }
 
     // --opentime: after the start-up file was handed to the window
@@ -5439,7 +5439,7 @@ private:
             const auto found = text.contains ("segmentation fault") || text.contains ("bus error");
            #endif
             if (folder.getChildFile ("swallowed.txt").existsAsFile())
-                problems.add (juce::String (kind) + ": LYNX's own fault was caught as a plugin's ("
+                problems.add (juce::String (kind) + ": YW Studio's own fault was caught as a plugin's ("
                               + folder.getChildFile ("swallowed.txt").loadFileAsString() + ")");
             else if (! found)
                 problems.add (juce::String (kind) + ": " + (text.isEmpty() ? "no crash file" : "a crash file without the fault")
@@ -8116,7 +8116,7 @@ private:
                      ! said ("Newtone's detected key") || lynx::newtonefx::nativeVersionOf (nts) != 2 || ! lynx::newtonefx::parseNative (nts)
                      || lynx::newtonefx::parseNative (nts)->pitches.size() != 1 || lynx::newtonefx::parseNative (nts)->pitches[0].curEnd != 24000)
                 rollup030Result = "ERROR step-6 Newtone state";
-            else if (! said ("The Peak Controller's LYNX LFO shapes") || ! said ("Crest Compressor's console law") || ! said ("Mixer lock states")
+            else if (! said ("The Peak Controller's YW LFO shapes") || ! said ("Crest Compressor's console law") || ! said ("Mixer lock states")
                      || ! said ("{0} imported take lane(s)")
                      || parsed["mixer"][15]["effects"][0]["params"].size() > lynx::peakshapes::extraShapeParam
                      || parsed["mixer"][16]["effects"][0]["params"].size() > lynx::dyn::crest::busLaw
@@ -8149,7 +8149,7 @@ private:
             else if (const auto& m16 = parsed["mixer"][16]["effects"];
                      ! said ("Horizon plays its earlier") || ! said ("Nebula's classic modes") || ! said ("Orbit plays its own voices")
                      || ! said ("Prism Multiband's C4 law") || ! said ("Compressor's Renaissance law") || ! said ("Quell's NS1 law")
-                     || ! said ("Gemini Doubler's splice law") || ! said ("LYNX Tune's Waves Tune") || ! said ("Facet EQ's PuigTec law")
+                     || ! said ("Gemini Doubler's splice law") || ! said ("YW Tune's Waves Tune") || ! said ("Facet EQ's PuigTec law")
                      || ! said ("{0} note(s) play once instead of repeating")
                      || m16[18]["params"].size() > lynx::verbs::horizon::revision || m16[19]["params"].size() > lynx::verbs::nebula::toneLaw
                      || m16[20]["params"].size() > (int) lynx::echosuite::orbit::smLaw || m16[21]["params"].size() > (int) lynx::dyn::prism::revision
@@ -8202,7 +8202,7 @@ private:
                                 || t.contains ("L2 law") || t.startsWith ("Glow") || t.startsWith ("Reeverb 2") || t.startsWith ("Quell")
                                 || t.contains ("audio clip channels") || t.startsWith ("Apex") || t.startsWith ("Sentry") || t.startsWith ("Spiral")
                                 || t.contains ("scene follow") || t.startsWith ("Horizon") || t.startsWith ("Nebula") || t.startsWith ("Orbit")
-                                || t.startsWith ("Compressor's") || t.startsWith ("Gemini") || t.startsWith ("LYNX Tune") || t.contains ("Repeat")
+                                || t.startsWith ("Compressor's") || t.startsWith ("Gemini") || t.startsWith ("YW Tune") || t.contains ("Repeat")
                                 || t.startsWith ("Low Lifter") || t.startsWith ("Aether") || t.startsWith ("Ridge Strip's omni") || t.startsWith ("Hush De-esser's Renaissance")
                                 || t.startsWith ("Fruity Multiband") || t.contains ("zipped") || t.contains ("Current mixer track") || t.contains ("window layout")
                                 || t.startsWith ("Effector's Kilohearts") || t.startsWith ("Launched pattern clips");
@@ -8210,7 +8210,7 @@ private:
                 rollup030Result = "ERROR a plain project reports a loss it does not have";
         }
 
-        // rollup 0.1.31 step 1 (round 190no): File › "Save a copy for an older LYNX" for 0.1.30 drops or converts what the
+        // rollup 0.1.31 step 1 (round 190no): File › "Save a copy for an older YW Studio" for 0.1.30 drops or converts what the
         // 0.1.31 rounds save (190ni LYNX Model, 190nh Kilohearts part-2 laws, 190ne track clips, 190nc Solo / Cue); round
         // 190nb's laws (0.1.30 has them) stay; the copy for 0.1.28 runs this step first; a plain project loses nothing
         juce::String rollup031Result = "OK";
@@ -8252,14 +8252,14 @@ private:
                 for (const auto& c : *channels)
                     if (c["name"].toString() == "Bars")
                         bars = c["instrument"].toString() + (c.hasProperty ("modelParams") ? "+params" : "");
-            const char* lines[] = { "LYNX Model is not in this release", "Effector's newer Kilohearts laws", "{0} track clip(s) show as ordinary patterns",
+            const char* lines[] = { "YW Model is not in this release", "Effector's newer Kilohearts laws", "{0} track clip(s) show as ordinary patterns",
                                     "Live's Solo/Cue settings" };
             if (! copy.ok || ! back)
                 rollup031Result = "ERROR copy " + copy.error + why;
             else if (! parsed["savedBy"].toString().equalsIgnoreCase ("0.1.30") || lynx::olderlynx::releases()[0] != "0.1.30")
                 rollup031Result = "ERROR release list / stamp";
             else if (bars != "sampler")
-                rollup031Result = "ERROR LYNX Model channel: " + bars;
+                rollup031Result = "ERROR YW Model channel: " + bars;
             else if (fx[0]["params"].size() > lynx::khsdsp::lawParam || fx[1]["params"].size() <= lynx::khsdsp::lawParam
                      || lynx::khsdsp::lawOf ((float) (double) fx[1]["params"][lynx::khsdsp::lawParam]) != lynx::khsdsp::Law::resonator)
                 rollup031Result = "ERROR Kilohearts laws (comb params " + juce::String (fx[0]["params"].size()) + ")";
@@ -11029,7 +11029,7 @@ private:
                         const auto text = hang.loadFileAsString();
                         const auto frames = juce::StringArray::fromLines (text).size() - 2;
                        #if JUCE_WINDOWS
-                        const auto hangOk = lynx::crashguard::lastHangFile() != before && hang.existsAsFile() && text.contains ("LYNX.exe+0x") && frames >= 3;
+                        const auto hangOk = lynx::crashguard::lastHangFile() != before && hang.existsAsFile() && text.contains ("YW Studio.exe+0x") && frames >= 3;
                        #else
                         const auto hangOk = lynx::crashguard::lastHangFile() != before && hang.existsAsFile() && frames >= 3;
                        #endif
@@ -11318,7 +11318,7 @@ private:
                     expect ("pin_set", lynx::PluginWindows::isPinnedOnTop (*instance) && refNow().pinned);
                     expect ("pin_no_undo_step_project_modified", engine->getHistoryPosition() == history && engine->isModified());
                     // another secondary window brought in front of it
-                    other = std::make_unique<juce::DocumentWindow> ("Another LYNX window", juce::Colours::darkslategrey, juce::DocumentWindow::closeButton);
+                    other = std::make_unique<juce::DocumentWindow> ("Another YW Studio window", juce::Colours::darkslategrey, juce::DocumentWindow::closeButton);
                     other->setUsingNativeTitleBar (true);
                     other->setBounds (mainWindow->getX() + 60, mainWindow->getY() + 60, 420, 300);
                     other->setVisible (true);
@@ -11451,7 +11451,7 @@ private:
             });
         };
         test->engine = std::make_unique<lynx::AudioEngine> (false);
-        test->mainWindow = std::make_unique<juce::DocumentWindow> ("LYNX test main window", juce::Colours::darkgrey, 0);
+        test->mainWindow = std::make_unique<juce::DocumentWindow> ("YW Studio test main window", juce::Colours::darkgrey, 0);
         test->mainWindow->setBounds (20, 20, 300, 200);
         test->mainWindow->setVisible (true);
         lynx::setMainWindowForOwnership (test->mainWindow.get());
@@ -11795,7 +11795,7 @@ private:
         test->engine = std::make_unique<lynx::AudioEngine> (false);
         if (shotsPath.isNotEmpty())
         {
-            test->mainWindow = std::make_unique<juce::DocumentWindow> ("LYNX test main window", juce::Colours::darkgrey, 0);
+            test->mainWindow = std::make_unique<juce::DocumentWindow> ("YW Studio test main window", juce::Colours::darkgrey, 0);
             test->mainWindow->setBounds (20, 20, 300, 200);
             test->mainWindow->setVisible (true);
             lynx::setMainWindowForOwnership (test->mainWindow.get());
@@ -11879,7 +11879,7 @@ private:
                 {
                     lynx::externaldrag::install();
                     auto content = lynx::BrowserComponent::makeSampleBrowserContent (*engine, [this] (lynx::BrowserComponent& b) { dropBrowser = &b; });
-                    dropWindow = std::make_unique<juce::DocumentWindow> ("LYNX test sample browser", juce::Colours::darkgrey, 0);
+                    dropWindow = std::make_unique<juce::DocumentWindow> ("YW Studio test sample browser", juce::Colours::darkgrey, 0);
                     dropWindow->setContentOwned (content.release(), false);
                     dropWindow->setBounds (20, 240, 340, 520);
                     dropWindow->setVisible (true);
@@ -12459,7 +12459,7 @@ private:
             });
         };
         test->engine = std::make_unique<lynx::AudioEngine> (false);
-        test->mainWindow = std::make_unique<juce::DocumentWindow> ("LYNX test main window", juce::Colours::darkgrey, 0);
+        test->mainWindow = std::make_unique<juce::DocumentWindow> ("YW Studio test main window", juce::Colours::darkgrey, 0);
         test->mainWindow->setBounds (20, 20, 300, 200);
         if (juce::SystemStats::getEnvironmentVariable ("LYNX_PLUGWIN_DOCK", {}) == "1" && lynx::nativechild::dockingEnabled())
         {
@@ -12558,7 +12558,7 @@ private:
                     if (crashes > 0)
                     {
                         const auto last = lynx::PluginWindows::editorCrashes().back();
-                        traced = last.traceFile.existsAsFile() && last.traceFile.loadFileAsString().contains ("LYNX Test Crash");
+                        traced = last.traceFile.existsAsFile() && last.traceFile.loadFileAsString().contains ("YW Test Crash");
                         step ("plugin=" + last.plugin + " detail=" + last.detail + " trace=" + last.traceFile.getFileName() + " traced="
                               + juce::String ((int) traced));
                         last.traceFile.deleteFile();
@@ -12728,7 +12728,7 @@ private:
                 report << "scale=" << percent << "%\n";
                 juce::Desktop::getInstance().setGlobalScaleFactor ((float) percent / 100.0f);
                 // a tool window taller than the screen, centred (its title bar would be above the screen)
-                tall = std::make_unique<juce::DocumentWindow> ("LYNX fit test - tall", lynx::theme::colour::bg2, juce::DocumentWindow::closeButton);
+                tall = std::make_unique<juce::DocumentWindow> ("YW Studio fit test - tall", lynx::theme::colour::bg2, juce::DocumentWindow::closeButton);
                 tall->setUsingNativeTitleBar (true);
                 auto* content = new juce::Component();
                 const auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
@@ -12752,7 +12752,7 @@ private:
                     auto content = std::make_unique<juce::Component>();
                     const auto screen = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
                     content->setSize (520, screen.getHeight() + 300);
-                    lynx::openToolWindow (std::move (content), "LYNX fit test - fixed size", "fittest-fixed");
+                    lynx::openToolWindow (std::move (content), "YW Studio fit test - fixed size", "fittest-fixed");
                     return;
                 }
                 if (step == 2)
@@ -12773,7 +12773,7 @@ private:
                     lynx::closeAllToolWindows();
                     // a resizable window that fits at 100%, then the zoom goes up (the main window's case)
                     juce::Desktop::getInstance().setGlobalScaleFactor (1.0f);
-                    big = std::make_unique<juce::DocumentWindow> ("LYNX fit test - zoom", lynx::theme::colour::bg2, juce::DocumentWindow::allButtons);
+                    big = std::make_unique<juce::DocumentWindow> ("YW Studio fit test - zoom", lynx::theme::colour::bg2, juce::DocumentWindow::allButtons);
                     big->setUsingNativeTitleBar (true);
                     big->setResizable (true, false);
                     big->setResizeLimits (400, 300, 10000, 10000);
@@ -12880,7 +12880,7 @@ private:
                 line (name + ": native child window=" + juce::String ((int) lynx::nativechild::isAttached (frame)));
                 check (name + ": the main window has the keys before", ui->hasKeyboardFocus (true));
                 peer->handleFocusLoss(); // (another app is in front: the main window lost the system focus)
-                check (name + ": nothing in LYNX has the keys while it is in the background", ! focusInMain());
+                check (name + ": nothing in YW Studio has the keys while it is in the background", ! focusInMain());
                 // the cause: JUCE answers the system's "activate?" from the panel's own component, which takes no focus on a click
                 line (name + ": JUCE's answer alone would activate the window=" + juce::String ((int) frame.getMouseClickGrabsKeyboardFocus()));
                 const auto activates = lynx::nativechild::clickActivatesWindow (frame, false);
@@ -13271,7 +13271,7 @@ private:
     {
         auto* test = &t;
         test->engine = std::make_unique<lynx::AudioEngine> (false);
-        test->main = std::make_unique<juce::DocumentWindow> ("LYNX focus test", lynx::theme::window, juce::DocumentWindow::allButtons);
+        test->main = std::make_unique<juce::DocumentWindow> ("YW Studio focus test", lynx::theme::window, juce::DocumentWindow::allButtons);
         test->main->setUsingNativeTitleBar (true);
         test->ui = new lynx::MainComponent (*test->engine, false);
         test->main->setContentOwned (test->ui, true);
@@ -13415,7 +13415,7 @@ private:
         auto* test = new WindowTest();
         test->reportPath = reportPath;
         test->engine = std::make_unique<lynx::AudioEngine> (false);
-        test->main = std::make_unique<juce::DocumentWindow> ("LYNX window test", lynx::theme::window, juce::DocumentWindow::allButtons);
+        test->main = std::make_unique<juce::DocumentWindow> ("YW Studio window test", lynx::theme::window, juce::DocumentWindow::allButtons);
         test->main->setUsingNativeTitleBar (true);
         test->ui = new lynx::MainComponent (*test->engine, false);
         test->main->setContentOwned (test->ui, true);
@@ -13557,7 +13557,7 @@ private:
 
         auto* test = new MinimizeTest();
         test->reportPath = reportPath;
-        test->main = std::make_unique<juce::DocumentWindow> ("LYNX minimise test", lynx::theme::window, juce::DocumentWindow::allButtons);
+        test->main = std::make_unique<juce::DocumentWindow> ("YW Studio minimise test", lynx::theme::window, juce::DocumentWindow::allButtons);
         test->main->setUsingNativeTitleBar (true);
         test->pad = new ClickPad();
         test->pad->setSize (1200, 760);
@@ -14210,7 +14210,7 @@ private:
         quit();
     }
 
-    // LYNX.exe --mpetest "LYNX Test MPE.clap" report.txt (tools/testplugin/lynx_test_mpe.c, issue #108): a hosted CLAP
+    // LYNX.exe --mpetest "YW Test MPE.clap" report.txt (tools/testplugin/lynx_test_mpe.c, issue #108): a hosted CLAP
     // instrument with the wrapper's MPE switch on gets each note on its own member channel, its fine pitch / Mod X /
     // Mod Y as tuning / brightness / pressure note expressions before the note on, and a sounding note's expression
     // on that note's channel alone. The plugin writes down what it received; no window, no audio device.
@@ -14427,7 +14427,7 @@ private:
         quit();
     }
 
-    // LYNX.exe --claprestarttest "LYNX Test Restart.clap" report.txt (tools/testplugin/lynx_test_restart.c, PR #29): a
+    // LYNX.exe --claprestarttest "YW Test Restart.clap" report.txt (tools/testplugin/lynx_test_restart.c, PR #29): a
     // CLAP effect on the Master that asks for a restart every 8 blocks while an export renders on a thread of its own
     // (the message thread is free to run the restarts, as with the Export window). The plugin aborts the process when
     // start / stop_processing run off the audio thread or activate / deactivate off the main thread (issue #46, as u-he
@@ -14576,7 +14576,7 @@ private:
         juce::Timer::callAfterDelay (50, *finish);
     }
 
-    // LYNX.exe --vst2test "LYNX Test Synth.dll" report.txt (tools/testplugin/lynx_test_vst2.c): LYNX's own VST2 host.
+    // LYNX.exe --vst2test "YW Test Synth.dll" report.txt (tools/testplugin/lynx_test_vst2.c): LYNX's own VST2 host.
     // Scans the DLL, imports it the way an .flp holds it (Fruity Wrapper VST2 state with a chunk, REA_rodada89 §2),
     // renders with two saved gains (the level must follow the restored state) and checks the plugin saw the song tempo.
     void runVst2Test (const juce::String& pluginPath, const juce::String& reportPath)
@@ -14644,7 +14644,7 @@ private:
         quit();
     }
 
-    // LYNX --vst3noteidtest "LYNX Test Synth.vst3" report.txt (round 190fg, cmake/LynxPatchJuce.cmake fix 26): the VST3
+    // LYNX --vst3noteidtest "YW Test Synth.vst3" report.txt (round 190fg, cmake/LynxPatchJuce.cmake fix 26): the VST3
     // test synth (tools/testplugin/lynx_test_synth_vst3.cpp: voices kept by noteId, its log the ids it got) plays two
     // overlapping pairs of one key on one channel: FIFO (A 0-4, B 2-6 beats, key 60) and LIFO (C 8-14, D 10-12, key 64).
     // Each note off must carry its own note on's id (FL: each note ends its own voice, round 190ej): the inner note D's
@@ -14914,7 +14914,7 @@ private:
         quit();
     }
 
-    // LYNX.exe --wrappershot "LYNX Test Drums.dll" <folder> (round 188d): the wrapper's Processing tab drawn offscreen
+    // LYNX.exe --wrappershot "YW Test Drums.dll" <folder> (round 188d): the wrapper's Processing tab drawn offscreen
     // (no window, no focus) for the FL | LYNX review: wrap-default.png (a fresh plugin), wrap-automap.png (Auto map
     // outputs, output 3 off: FL's shot b23), wrap-settings.png. Scale 1.5 (FL's shots are at 150 %).
     // (round 190oh, --wrappershot190oh: the steps run from a timer, so the editors' windows get their messages)
@@ -15152,7 +15152,7 @@ private:
         quit();
     }
 
-    // LYNX.exe --multiouttest "LYNX Test Drums.dll" report.txt (round 188d, issue #114): a multi-output VST2
+    // LYNX.exe --multiouttest "YW Test Drums.dll" report.txt (round 188d, issue #114): a multi-output VST2
     // (tools/testplugin/lynx_test_drums_vst2.c: key 36 = output 1 at 110 Hz, key 37 = output 2 at 220 Hz) on a
     // channel routed to insert 1; the wrapper's Processing › Connections as FL plays them [EXEC fl188d]: every output
     // on the channel's insert by default, an offset to another insert, an inactive output silent, the channel's
@@ -15254,8 +15254,8 @@ private:
                         ok = ok && instrument->outputs().size() == 8 && instrument->outputs()[1].name == "Snare";
                     }
             }
-        // round 189j: "LYNX Test SC.dll" next to it (tools/testplugin/lynx_test_sc_vst2.c) as an effect on insert 1
-        const auto sc = juce::File (pluginPath).getSiblingFile ("LYNX Test SC.dll");
+        // round 189j: "YW Test SC.dll" next to it (tools/testplugin/lynx_test_sc_vst2.c) as an effect on insert 1
+        const auto sc = juce::File (pluginPath).getSiblingFile ("YW Test SC.dll");
         if (sc.existsAsFile())
             ok = runEffectConnectionsTest (sc, report) && ok;
         report << "result=" << (ok ? "OK" : "FAILED") << "\n";
@@ -15266,7 +15266,7 @@ private:
 
     // Round 189j: a hosted effect's Processing › Connections against FL 2026's own renders of the same projects
     // [EXEC fxconn189j: FL /R renders of LYNX's .flp exports, docs/analise/REA_rodada189j.md]. Insert 1: a 440 Hz
-    // sampler and "LYNX Test SC" (output 1 = input 1, output 2 = input 2); inserts 2 (1000 Hz) and 3 (1500 Hz) routed
+    // sampler and "YW Test SC" (output 1 = input 1, output 2 = input 2); inserts 2 (1000 Hz) and 3 (1500 Hz) routed
     // to insert 1 at level 0 only; insert 4 a 2500 Hz reference on the Master; insert 1 routed to the Master and at
     // level 0 to inserts 5 (panned left) and 6 (right). Each tone's level per side, in dB from the reference's, must be
     // FL's within 0.5 dB (absent: 50 dB under it).
@@ -16140,7 +16140,7 @@ private:
 
             UiPerf (LynxApplication& a, juce::File r) : app (a), report (std::move (r))
             {
-                lynx::WorkerPool::nameCurrentThread ("LYNX message thread"); // (round 190kb: the threads' lines)
+                lynx::WorkerPool::nameCurrentThread ("YW Studio message thread"); // (round 190kb: the threads' lines)
             }
 
             juce::ComponentPeer* peer() const { return app.mainWindow != nullptr ? app.mainWindow->getPeer() : nullptr; }
@@ -16390,7 +16390,7 @@ private:
             drag->framePainted (now, area);
         });
         run->text << "project: " << project.getFullPathName() << "\n"
-                   << "LYNX " << getApplicationVersion() << ", " << juce::SystemStats::getOperatingSystemName() << ", "
+                   << "YW Studio " << getApplicationVersion() << ", " << juce::SystemStats::getOperatingSystemName() << ", "
                    << juce::SystemStats::getCpuModel() << ", window " << mainWindow->getWidth() << "x" << mainWindow->getHeight()
                    << ", scale " << juce::String (juce::Desktop::getInstance().getDisplays().getPrimaryDisplay() != nullptr
                                                      ? juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->scale : 1.0, 2)
@@ -17176,7 +17176,7 @@ private:
                 const auto s = engine->getRtStats().snapshot();
                 juce::String text;
                 text << "project: " << project.getFullPathName() << "\n"
-                     << "LYNX " << getApplicationVersion() << ", " << juce::SystemStats::getOperatingSystemName() << ", "
+                     << "YW Studio " << getApplicationVersion() << ", " << juce::SystemStats::getOperatingSystemName() << ", "
                      << juce::SystemStats::getNumCpus() << " logical CPUs (" << juce::SystemStats::getNumPhysicalCpus() << " cores), "
                      << juce::SystemStats::getCpuModel() << "\n"
                      << "load " << juce::String (loadMs / 1000.0, 1) << " s, played " << juce::String (seconds, 0) << " s\n"
@@ -21939,12 +21939,12 @@ private:
                               : e.kind == lynx::flclipmenu::Entry::Kind::header  ? "[" + lynx::tr (e.text.c_str()) + "]"
                                                                                  : lynx::tr (e.text.c_str()));
             // (rollup step 8: the separators round 190kx's key items bring into the LYNX extras column go with them)
-            for (int k = got.indexOf ("[" + lynx::tr ("LYNX extras") + "]") + 1; k > 0 && k < got.size();)
+            for (int k = got.indexOf ("[" + lynx::tr ("YW Studio extras") + "]") + 1; k > 0 && k < got.size();)
                 if (got[k] == "-")
                     got.remove (k);
                 else
                     ++k;
-            want.add ("[" + lynx::tr ("LYNX extras") + "]"); // (round 190gi; round 190jv: in a third column)
+            want.add ("[" + lynx::tr ("YW Studio extras") + "]"); // (round 190gi; round 190jv: in a third column)
             for (const auto& x : lynx::flclipmenu::lynxExtras())
                 want.add (lynx::tr (x.c_str()));
             check ("clip_menu_fl_order", got == want, got.joinIntoString ("|"));
@@ -23350,7 +23350,7 @@ private:
                 // --flp-ppq N: the file's PPQ (tests; default: 96 when the notes and clips fit it)
                 if (const auto args = juce::JUCEApplication::getCommandLineParameterArray(); args.contains ("--flp-ppq"))
                     options.ppq = juce::jlimit (0, 960, args[args.indexOf ("--flp-ppq") + 1].getIntValue());
-                const auto renderDir = zip ? juce::File::getSpecialLocation (juce::File::tempDirectory).getNonexistentChildFile ("LYNX FL export", {}, false)
+                const auto renderDir = zip ? juce::File::getSpecialLocation (juce::File::tempDirectory).getNonexistentChildFile ("YW FL export", {}, false)
                                            : output.getSiblingFile (output.getFileNameWithoutExtension() + " audio");
                 ok = lynx::flstudio::exportProject (loader.getSong(), options, output, zip, renderDir, 44100.0,
                                                     [] (const lynx::Song& s, const lynx::ExportSettings& settings, const juce::File& wav,
@@ -23595,7 +23595,7 @@ private:
             lynx::setNativeEditorDemo (c.demo);
             auto editor = c.type == 1 ? lynx::makeProEditor (*engine, 1, 0, c.demo) : c.type == 2 ? lynx::makeFacetEqEditor (*engine, 1, 0, c.demo)
                                                                                                    : lynx::makeNativeEffectEditor (*engine, 1, 0, 1.0f, 0);
-            window = std::make_unique<juce::DocumentWindow> (juce::String ("LYNX editor CPU - ") + c.name, lynx::theme::colour::bg1, 0);
+            window = std::make_unique<juce::DocumentWindow> (juce::String ("YW Studio editor CPU - ") + c.name, lynx::theme::colour::bg1, 0);
             window->setUsingNativeTitleBar (true);
             window->setContentOwned (editor.release(), true);
             const auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
@@ -23630,7 +23630,7 @@ private:
             for (const auto& c : std::vector<EditorCpuRun::Case> { { K::facetEq, "Facet EQ", 2, demo }, { K::crestCompressor, "Crest Compressor", 1, demo },
                                                                   { K::apexLimiter, "Apex Limiter", 1, demo }, { K::prismMultiband, "Prism Multiband", 1, demo },
                                                                   { K::epochVerb, "Epoch Verb", 0, demo }, { K::glowLeveler, "Glow Leveler", 0, demo },
-                                                                  { K::fruityLimiter, "Fruity Limiter", 0, demo }, { K::lynxTune, "LYNX Tune", 0, demo } })
+                                                                  { K::fruityLimiter, "Fruity Limiter", 0, demo }, { K::lynxTune, "YW Tune", 0, demo } })
                 editorCpu->cases.push_back (c);
         editorCpu->done = [this] { juce::MessageManager::callAsync ([this] { editorCpu.reset(); quit(); }); };
         editorCpu->start();
@@ -23753,7 +23753,7 @@ private:
         {
             struct ShowWindow final : juce::DocumentWindow
             {
-                ShowWindow() : juce::DocumentWindow ("LYNX parity check", juce::Colours::black, juce::DocumentWindow::closeButton) {}
+                ShowWindow() : juce::DocumentWindow ("YW Studio parity check", juce::Colours::black, juce::DocumentWindow::closeButton) {}
                 void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
             };
             parityShow = std::make_shared<ParityShow>();
@@ -24357,7 +24357,7 @@ private:
             artPilotStyle (p, mode);
             auto editor = makeArtPilot (*engine, p);
             if (editor == nullptr) { ++at; open(); return; }
-            window = std::make_unique<juce::DocumentWindow> (juce::String ("LYNX art - ") + juce::String (p.file), lynx::theme::colour::bg1, 0);
+            window = std::make_unique<juce::DocumentWindow> (juce::String ("YW Studio art - ") + juce::String (p.file), lynx::theme::colour::bg1, 0);
             window->setUsingNativeTitleBar (true);
             window->setContentOwned (editor.release(), true);
             const auto area = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay()->userArea;
@@ -24869,7 +24869,7 @@ private:
                         png.writeImageToStream (image, *stream);
                 };
                 own (eq, "Facet EQ.png", true);
-                own (lynx::makeEffectSlot (lynx::EffectKind::lynxTune), "LYNX Tune.png", false);
+                own (lynx::makeEffectSlot (lynx::EffectKind::lynxTune), "YW Tune.png", false);
                 {
                     // round 128: the ADVANCED page, with E bypassed and A removed on the keyboard and a created vibrato
                     auto tune = lynx::makeEffectSlot (lynx::EffectKind::lynxTune);
@@ -24883,9 +24883,9 @@ private:
                     tune.params[lynx::lynxtune::throatLength] = lynx::lynxtune::throatValue (80.0);
                     tune.params[lynx::lynxtune::transposeInScale] = 1.0f;
                     tune.params[lynx::lynxtune::scaleTranspose] = lynx::lynxtune::scaleTransposeValue (2);
-                    own (tune, "LYNX Tune-p2.png", false, 1);
+                    own (tune, "YW Tune-p2.png", false, 1);
                 }
-                own (lynx::makeEffectSlot (lynx::EffectKind::lynxTune), "LYNX Tune-p3.png", false, 2); // round 135w: Real-time
+                own (lynx::makeEffectSlot (lynx::EffectKind::lynxTune), "YW Tune-p3.png", false, 2); // round 135w: Real-time
                 lynx::setNativeEditorDemo (false);
             }
 
@@ -26103,11 +26103,11 @@ private:
             auto afterExtras = false, found = false;
             for (juce::PopupMenu::MenuItemIterator it (menu); it.next();)
             {
-                afterExtras = afterExtras || (it.getItem().isSectionHeader && it.getItem().text == lynx::tr ("LYNX extras"));
+                afterExtras = afterExtras || (it.getItem().isSectionHeader && it.getItem().text == lynx::tr ("YW Studio extras"));
                 found = found || (it.getItem().text == wanted && it.getItem().isEnabled && (afterExtras || simple));
             }
             savePng (columnMenuImage (menu), prefix + (simple ? "-clip-menu-simple.png" : "-clip-menu.png"));
-            check (found, juce::String (simple ? "Simple" : "Pattern") + " layout: the clip menu has \"" + wanted + "\" (LYNX extras)");
+            check (found, juce::String (simple ? "Simple" : "Pattern") + " layout: the clip menu has \"" + wanted + "\" (YW Studio extras)");
         }
         ui.setLayoutStyle (lynx::layoutstyle::Style::pattern);
         engine.dispatchPendingMessages();
@@ -26475,7 +26475,7 @@ private:
             auto afterExtras = false;
             for (juce::PopupMenu::MenuItemIterator it (menu); it.next();)
             {
-                if (it.getItem().isSectionHeader && it.getItem().text == lynx::tr ("LYNX extras"))
+                if (it.getItem().isSectionHeader && it.getItem().text == lynx::tr ("YW Studio extras"))
                     afterExtras = true;
                 if (it.getItem().text == wanted)
                     return afterExtras && it.getItem().isEnabled;
@@ -26485,14 +26485,14 @@ private:
         {
             const auto menu = playlist.getClipMenuForSnapshot (clipIndex);
             savePng (columnMenuImage (menu), prefix + "-clip-menu.png");
-            check (hasItem (menu), "Pattern layout: the clip menu's LYNX extras column has \"" + wanted + "\"");
+            check (hasItem (menu), "Pattern layout: the clip menu's YW Studio extras column has \"" + wanted + "\"");
         }
         ui.setLayoutStyle (lynx::layoutstyle::Style::simple);
         engine.dispatchPendingMessages();
         {
             const auto menu = ui.getPlaylistForSnapshot().getClipMenuForSnapshot (clipIndex);
             savePng (columnMenuImage (menu), prefix + "-clip-menu-simple.png");
-            check (hasItem (menu), "Simple layout: the clip menu has \"" + wanted + "\" (LYNX extras)");
+            check (hasItem (menu), "Simple layout: the clip menu has \"" + wanted + "\" (YW Studio extras)");
         }
         ui.setLayoutStyle (lynx::layoutstyle::Style::pattern);
         engine.dispatchPendingMessages();
@@ -26925,7 +26925,7 @@ private:
         {
             auto withProps = d;
             withProps.props.name = "Drum loop";
-            withProps.props.comments = "LYNX SHARE test loop";
+            withProps.props.comments = "YW Studio test loop";
             withProps.props.tempo = 120.0;
             withProps.props.tempoSync = true;
             withProps.props.fineTune = 12.0;
@@ -27351,8 +27351,8 @@ private:
         {
             lynx::AudioEngine offline (false);
             offline.editSong ([] (lynx::Song& s) {
-                s.info = { "Night Drive", "LYNX SHARE demo", "Synthwave", "https://lynx-share.com",
-                           "Made with LYNX SHARE.\nDrums and bass from the Channel Rack, pads from the Browser.", false };
+                s.info = { "Night Drive", "YW Studio demo", "Synthwave", "https://yolo.su",
+                           "Made with YW Studio.\nDrums and bass from the Channel Rack, pads from the Browser.", false };
             }, false);
             auto shoot = [&] (lynx::SettingsPage page, const juce::String& name, int width, int height) {
                 auto panel = lynx::makeSettingsPanel (offline, page);
@@ -27542,7 +27542,7 @@ private:
                 saveMenus (names, menus, prefix + "-" + name + ".png");
                 const auto same = menus.size() == 3 && lynxList == fl;
                 all = all && same;
-                report << name << ": " << (same ? "SAME AS FL" : "DIFFERENT") << "\n  LYNX: " << lynxList.joinIntoString (" / ")
+                report << name << ": " << (same ? "SAME AS FL" : "DIFFERENT") << "\n  YW Studio: " << lynxList.joinIntoString (" / ")
                        << "\n  FL:   " << fl.joinIntoString (" / ") << "\n";
             };
             const auto flList = [] (int inserts, std::map<int, juce::String> named, std::set<int> greyed) {
@@ -29773,9 +29773,9 @@ private:
                 for (juce::PopupMenu::MenuItemIterator it (help); it.next();)
                     if (! it.getItem().isSeparator)
                         items.add (it.getItem().text);
-                const auto support = items.indexOf (lynx::tr ("Support LYNX SHARE..."));
-                const auto about = items.indexOf (lynx::tr ("About LYNX SHARE"));
-                check (juce::String ("Help has Support LYNX SHARE... right above About LYNX SHARE (") + name + " layout)",
+                const auto support = items.indexOf (lynx::tr ("Support YW Studio..."));
+                const auto about = items.indexOf (lynx::tr ("About YW Studio"));
+                check (juce::String ("Help has Support YW Studio... right above About YW Studio (") + name + " layout)",
                        support >= 0 && about == support + 1);
                 saveMenus ({ lynx::tr ("Help") }, { help }, prefix + "-menu-help-" + name + ".png");
             }
@@ -29790,14 +29790,14 @@ private:
                 check ("Support window: Donate on Ko-fi points at the constant",
                        dynamic_cast<lynx::ui::dialog::Dialog*> (w.get()) != nullptr
                            && static_cast<lynx::ui::dialog::Dialog*> (w.get())->dialogButton (0)->getTooltip() == juce::String (lynx::links::donate));
-                check ("Support window title", w->getName() == lynx::tr ("Support LYNX SHARE"));
+                check ("Support window title", w->getName() == lynx::tr ("Support YW Studio"));
                 saveAlert (*w, "support");
             }
             // --- the About window ---------------------------------------------------------------------------------------
             {
                 auto w = lynx::MainComponent::makeAboutWindow();
                 const auto texts = buttonTexts (*w);
-                check ("About window: Support LYNX SHARE (result 2) and OK", texts == juce::StringArray { lynx::tr ("Support LYNX SHARE"), lynx::tr ("OK") });
+                check ("About window: Support YW Studio (result 2) and OK", texts == juce::StringArray { lynx::tr ("Support YW Studio"), lynx::tr ("OK") });
                 saveAlert (*w, "about");
             }
             // --- Settings › General › Show the support note -------------------------------------------------------------
@@ -30573,7 +30573,7 @@ private:
         }(), prefix + "-menu-pad.png");
 
         // kits: saved, the pads cleared, opened again
-        const auto kitFile = lynx::platform::documentsFolder().getChildFile ("LYNX/Sampler kits/Test kit 190fo.lynxkit");
+        const auto kitFile = lynx::platform::documentsFolder().getChildFile ("YW Studio/Sampler kits/Test kit 190fo.lynxkit");
         kitFile.deleteFile();
         check ("the pads saved as a kit", dock->saveKitForCheck ("Test kit 190fo") && kitFile.existsAsFile());
         saveMenus ({ "Kit", "My kits" }, [&] {
@@ -32564,7 +32564,7 @@ private:
         // a swap through the Browser itself (the row of LYNX's Reverb, then Enter): the slot keeps its place, its off
         // state and its Mix; the link moves to the new device
         {
-            browser.showPluginDatabase ("LYNX SHARE", 0); // (the folder of LYNX's own effects, opened as a click would)
+            browser.showPluginDatabase ("YW Studio", 0); // (the folder of LYNX's own effects, opened as a click would)
             browser.selectRowForSnapshot (lynx::tr (lynx::effectInfo (lynx::EffectKind::reverb).name));
             write ("03a-hotswap-row"); // the candidate's row selected
             check ("swap: Enter on the Reverb row is taken by hot-swap", browser.hotSwapLoadSelected());
@@ -32797,7 +32797,7 @@ private:
     }
 
     // LYNX --communityshot190hp <prefix> (round 190hp): the three community slices off-screen, with checks in
-    // prefix-checks.txt — B9 the MIDI Map Mode's "In every project (LYNX)" (the row menu, the Mapping Browser with the
+    // prefix-checks.txt — B9 the MIDI Map Mode's "In every project (YW Studio)" (the row menu, the Mapping Browser with the
     // global rows, a new project still playing on the mapped CC, Settings' list), B16 the Mixer menu's Mix snapshots
     // (take, recall, Compare A/B, the .lynx round trip), B18 the audio clip menu's "Split at silence..." (the dialog and
     // the Playlist before / after).
@@ -32862,7 +32862,7 @@ private:
                     return r;
             return -1;
         };
-        const auto everyProject = lynx::tr ("In every project (LYNX)");
+        const auto everyProject = lynx::tr ("In every project (YW Studio)");
         {
             const auto slotMenu = list->rowMenu (rowOf (Target::slot (0, 0)));
             const auto* item = find (slotMenu, everyProject);
@@ -32935,8 +32935,8 @@ private:
         });
         juce::PopupMenu mixerMenu;
         lynx::mixeroptions::addItems (mixerMenu, offline, false);
-        const auto* snaps = find (mixerMenu, lynx::tr ("Mix snapshots (LYNX)"));
-        check ("Mixer menu: Mix snapshots (LYNX)", snaps != nullptr && snaps->subMenu != nullptr);
+        const auto* snaps = find (mixerMenu, lynx::tr ("Mix snapshots (YW Studio)"));
+        check ("Mixer menu: Mix snapshots (YW Studio)", snaps != nullptr && snaps->subMenu != nullptr);
         check ("Take snapshot", click (lynx::mixeroptions::snapshotsMenu (offline), lynx::tr ("Take snapshot")) && offline.getSong().mixSnapshots.size() == 1);
         offline.editSong ([] (lynx::Song& s) {
             s.mixer[1].volume = 0.4f;
@@ -32951,7 +32951,7 @@ private:
             check ("snapshot 1 listed as B", first != nullptr && first->subMenu != nullptr && ! first->isTicked);
             const auto* second = find (menu, juce::String ("Snapshot 2  (A)"));
             check ("snapshot 2 ticked: the mix is it", second != nullptr && second->isTicked);
-            saveMenus (juce::StringArray { "Mixer", "Mix snapshots (LYNX)", "Snapshot 1" },
+            saveMenus (juce::StringArray { "Mixer", "Mix snapshots (YW Studio)", "Snapshot 1" },
                        std::vector<juce::PopupMenu> { mixerMenu, menu, first != nullptr ? *first->subMenu : juce::PopupMenu() }, prefix + "-b16-01-menus.png");
             check ("Recall snapshot 1", first != nullptr && click (*first->subMenu, lynx::tr ("Recall")));
         }
@@ -33016,7 +33016,7 @@ private:
             const auto menu = playlist.getClipMenuForSnapshot (index);
             const auto* item = find (menu, lynx::tr ("Split at silence..."));
             const auto* splitHere = find (menu, lynx::tr ("Split here"));
-            check ("clip menu: Split at silence... in LYNX extras, enabled", item != nullptr && item->isEnabled && splitHere != nullptr);
+            check ("clip menu: Split at silence... in YW Studio extras, enabled", item != nullptr && item->isEnabled && splitHere != nullptr);
             savePng (columnMenuImage (menu), prefix + "-b18-01-clip-menu.png");
             {
                 auto dialog = playlist.makeSplitSilenceDialogForSnapshot (index);
@@ -35329,7 +35329,7 @@ private:
         line ("done");
     }
 
-    // LYNX --capfix190jjshot prefix project.flp set.als: round 190jj off screen (capture190ji's "Change in LYNX" lines) —
+    // LYNX --capfix190jjshot prefix project.flp set.als: round 190jj off screen (capture190ji's "Change in YW Studio" lines) —
     // the Simple capsule idle / playing / count-in / recording with the master meter, the pads at rest and pressed, the
     // keys held in the track's colour, the drop lane's ghosts; Live's control bar idle / playing / recording / punch;
     // FL's C-11 picker drop ghost with the drag image, the drop, and the picker's playing mark; prefix-checks.txt
@@ -37510,7 +37510,7 @@ private:
                 synth.x = 220.0f;
                 chorus.effect = lynx::makeEffectSlot (lynx::EffectKind::chorus);
                 chorus.x = 420.0f;
-                // round 162: a MIDI Out node between the "MIDI port 5" pin and "To LYNX" MIDI port 3, an Envelope Controller
+                // round 162: a MIDI Out node between the "MIDI port 5" pin and "To YW Studio" MIDI port 3, an Envelope Controller
                 // on the notes moving the chorus
                 lynx::PatchNode midiOut, envelope;
                 midiOut.generator = envelope.generator = true;
@@ -37707,7 +37707,7 @@ private:
             auto item = [this] (juce::PopupMenu& m, int id, const char* text, bool enabled = true) {
                 m.addItem (text, enabled, false, [this, id] { picked = id; });
             };
-            menu.addSectionHeader ("LYNX SHARE");
+            menu.addSectionHeader ("YW Studio");
             item (menu, 1, "Echoform");
             item (menu, 2, "EQ");
             item (menu, 3, "Halo");
@@ -37720,7 +37720,7 @@ private:
             menu.addSubMenu ("Tree", sub);
             // the menu belongs to a window in the foreground, as when the user right-clicks a mixer slot (JUCE closes a
             // menu of a background process at once)
-            owner = std::make_unique<juce::DocumentWindow> ("LYNX type-ahead test", juce::Colours::black, 0);
+            owner = std::make_unique<juce::DocumentWindow> ("YW Studio type-ahead test", juce::Colours::black, 0);
             owner->setBounds (200, 200, 300, 200);
             owner->setVisible (true);
             lynx::forceForegroundForTest (*owner);
@@ -38937,8 +38937,8 @@ private:
             {
                 // the Settings pages, with credits like a project imported from FL would carry
                 offline.editSong ([] (lynx::Song& s) {
-                    s.info = { "Night Drive", "LYNX SHARE demo", "Synthwave", "https://lynx-share.com",
-                               "Made with LYNX SHARE.\nDrums and bass from the Channel Rack, pads from the Browser.", false };
+                    s.info = { "Night Drive", "YW Studio demo", "Synthwave", "https://yolo.su",
+                               "Made with YW Studio.\nDrums and bass from the Channel Rack, pads from the Browser.", false };
                 }, false);
                 saveWindow (lynx::makeSettingsPanel (offline, lynx::SettingsPage::project), "-settings-project.png");
                 saveWindow (lynx::makeSettingsPanel (offline, lynx::SettingsPage::info), "-settings-info.png");
@@ -40158,7 +40158,7 @@ private:
         const juce::String heads[] = { "idle", "hover", "pressed", "on", "disabled" };
         enum Kind { text, iconFilled, iconOnce, iconSwitch, iconSwitchOwn, tick, radio, combo, tab, menuDark, menuFl, kinds };
         const char* names[] = { "Text button", "Icon button (filled)", "Toolbar icon (acts once)", "Toolbar switch", "Toolbar switch (own colours)",
-                                "Tick box", "Radio choice", "Combo box", "Tab", "Menu item (LYNX dark)", "Menu item (FL classic)" };
+                                "Tick box", "Radio choice", "Combo box", "Tab", "Menu item (YW Studio dark)", "Menu item (FL classic)" };
         const auto w = labelWidth + columns * cellW + 16, h = 30 + kinds * cellH + 16;
         juce::Image image (juce::Image::ARGB, juce::roundToInt ((float) w * scale), juce::roundToInt ((float) h * scale), true);
         {

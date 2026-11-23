@@ -1158,7 +1158,7 @@ private:
         if (part)
             out = newtonefx::cropped (*out, timeSelA, timeSelB);
         const juce::File src (juce::String::fromUTF8 (samplePath.c_str()));
-        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Edits");
+        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
         const auto title = src.getFileNameWithoutExtension().isNotEmpty() ? src.getFileNameWithoutExtension() : juce::String ("Dragged sample");
         const auto file = folder.getNonexistentChildFile (juce::File::createLegalFileName (title), ".wav");
@@ -2344,7 +2344,7 @@ private:
         // notes (all when none is selected), which the natural engine renders
         {
             const auto noteMode = sample != nullptr && ! warpMode();
-            m.addItem (tr ("Natural pitch engine (LYNX)"), noteMode, notes.engine >= 1, [this] {
+            m.addItem (tr ("Natural pitch engine (YW Studio)"), noteMode, notes.engine >= 1, [this] {
                 notes.engine = notes.engine >= 1 ? 0 : newtonefx::latestEngine;
                 commit();
             });
@@ -2614,7 +2614,7 @@ private:
         if (hasTimeSelection())
             out = newtonefx::cropped (*out, timeSelA, timeSelB);
         const juce::File src (juce::String::fromUTF8 (samplePath.c_str()));
-        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("LYNX")
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("YW Studio")
                               .getChildFile (juce::File::createLegalFileName (src.getFileNameWithoutExtension() + " (Newtone).wav"));
         file.getParentDirectory().createDirectory();
         if (writeWav (*out, file))

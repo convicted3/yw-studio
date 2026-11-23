@@ -1238,7 +1238,7 @@ bool interpolateVolume (Pattern& pattern, const Layout& layout, const Selection&
 // ---------------------------------------------------------------------------------------------------- text clipboard
 namespace
 {
-const char* const textHeader = "LYNX tracker 1";
+const char* const textHeader = "YW Studio tracker 1";
 
 const char* const englishNames[12] = { "C-", "C#", "D-", "D#", "E-", "F-", "F#", "G-", "G#", "A-", "A#", "B-" };
 

@@ -326,7 +326,7 @@ std::vector<Preset> helixBank()
         p.filter (0, flt::freq, 5000).x (ext::chorusOn, 1).x (ext::chorusMix, 0.3);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Vowel (made in Helix)";
+        d.sampleName = "YW Vowel (made in Helix)";
         d.sample = vowelSample();
         return d;
     }));
@@ -337,7 +337,7 @@ std::vector<Preset> helixBank()
         p.env (0, 0.0, 0.45, 0.0, 0.3).set (volume, 0.35).x (ext::reverbOn, 1).x (ext::reverbMix, 0.2);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Hit (made in Helix)";
+        d.sampleName = "YW Hit (made in Helix)";
         d.sample = hitSample();
         return d;
     }));
@@ -381,7 +381,7 @@ std::vector<Preset> helixBank()
         p.x (ext::chorusOn, 1).x (ext::chorusMix, 0.35).x (ext::reverbOn, 1).x (ext::reverbSize, 0.8).x (ext::reverbMix, 0.35);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Vowel (made in Helix)";
+        d.sampleName = "YW Vowel (made in Helix)";
         d.sample = vowelSample();
         return d;
     }));
@@ -393,7 +393,7 @@ std::vector<Preset> helixBank()
         p.x (ext::delayOn, 1).x (ext::delayMix, 0.18).x (ext::reverbOn, 1).x (ext::reverbMix, 0.25);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Glass (made in Helix)";
+        d.sampleName = "YW Glass (made in Helix)";
         d.sample = glassSample();
         d.spectral = w::analyseSpectrum (d.sample);
         return d;
@@ -407,7 +407,7 @@ std::vector<Preset> helixBank()
         p.env (0, 1.2, 1.0, 1.0, 3.0).set (volume, 0.3).x (ext::reverbOn, 1).x (ext::reverbSize, 0.9).x (ext::reverbMix, 0.4);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Vowel (made in Helix)";
+        d.sampleName = "YW Vowel (made in Helix)";
         d.sample = vowelSample();
         d.spectral = w::analyseSpectrum (d.sample);
         return d;
@@ -423,7 +423,7 @@ std::vector<Preset> helixBank()
         p.x (ext::reverbOn, 1).x (ext::reverbSize, 0.7).x (ext::reverbMix, 0.3);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Vowel (made in Helix)";
+        d.sampleName = "YW Vowel (made in Helix)";
         d.sample = vowelSample();
         return d;
     }));
@@ -436,7 +436,7 @@ std::vector<Preset> helixBank()
         p.env (0, 0.4, 1.0, 1.0, 1.8).set (volume, 0.3).x (ext::chorusOn, 1).x (ext::chorusMix, 0.25).x (ext::reverbOn, 1).x (ext::reverbMix, 0.3);
     }, [] {
         w::HelixUserData d;
-        d.sampleName = "LYNX Glass (made in Helix)";
+        d.sampleName = "YW Glass (made in Helix)";
         d.sample = glassSample();
         d.spectral = w::analyseSpectrum (d.sample);
         return d;

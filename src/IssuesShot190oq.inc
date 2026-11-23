@@ -54,7 +54,7 @@
             AudioEngine engine (false);
             engine.setSong (Song::makeDefault());
             // a main window to come back to (the tool windows stay above it)
-            juce::DocumentWindow host ("LYNX 190oq", theme::colour::bg1, 0);
+            juce::DocumentWindow host ("YW 190oq", theme::colour::bg1, 0);
             host.setUsingNativeTitleBar (true);
             host.setBounds (40, 40, 900, 600);
             host.setVisible (true);
@@ -124,7 +124,7 @@
             check ("#247 'buffer' finds the Audio page's buffer setting", st.matches >= 1 && st.page == (int) SettingsPage::audio);
             st = settingsFindForSnapshot (*panel, "track-only");
             line ("#247 'track-only': " + juce::String (st.matches) + " matches, '" + st.text + "' on page " + juce::String (st.page));
-            check ("#247 a LYNX extra by its caption (Settings › LYNX extras)", st.matches >= 1 && st.page == (int) SettingsPage::extras);
+            check ("#247 a YW Studio extra by its caption (Settings › YW Studio extras)", st.matches >= 1 && st.page == (int) SettingsPage::extras);
             write (*panel, panel->getLocalBounds(), "247-settings-find-extras");
             st = settingsFindForSnapshot (*panel, "zzqx nothing");
             check ("#247 no match: \"No match\", no outline", st.matches == 0 && st.ring == nullptr);
@@ -237,8 +237,8 @@
             const std::int64_t day = 24LL * 3600 * 1000;
             host.nowMs = juce::Time (2026, 10, 21, 18, 0, 0).toMilliseconds();
             const char* names[] = { "Night Drive", "Trap Idea 2", "Vocal Chops", "Lo-fi Sunday", "Remix (Old)", "House Groove 124", "Beat Tape 07" };
-            const char* folders[] = { "/home/me/Music/LYNX/Night Drive", "/home/me/Music/LYNX/Beats", "/home/me/Music/LYNX/Vocals",
-                                      "/home/me/Music/LYNX/Beats", "/media/usb/Old projects", "/home/me/Music/LYNX/House", "/home/me/Music/LYNX/Beats" };
+            const char* folders[] = { "/home/me/Music/YW Studio/Night Drive", "/home/me/Music/YW Studio/Beats", "/home/me/Music/YW Studio/Vocals",
+                                      "/home/me/Music/YW Studio/Beats", "/media/usb/Old projects", "/home/me/Music/YW Studio/House", "/home/me/Music/YW Studio/Beats" };
             const int ages[] = { 0, 1, 2, 5, 40, 12, 90 };
             for (int i = 0; i < 7; ++i)
                 host.recent.push_back ({ std::string (folders[i]) + "/" + names[i] + ".lynx", names[i], folders[i], host.nowMs - ages[i] * day - (i + 1) * 3700000LL, i != 4,

@@ -43,7 +43,7 @@ struct Payload
 
 constexpr int formatVersion = 1;
 // The first line of the clipboard text.
-constexpr const char* magic = "LYNX SHARE clipboard";
+constexpr const char* magic = "YW Studio clipboard";
 
 // The payload as one JSON document, and back (nullopt: not a LYNX clipboard document, a newer format, or damaged).
 juce::String toJson (const Payload& payload);

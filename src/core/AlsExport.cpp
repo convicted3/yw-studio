@@ -614,7 +614,7 @@ struct Exporter
                         made = rackDevice (node.effect.patcher, node.effect.enabled, node.label, d, 1);
                     if (! made)
                     {
-                        note ("Rack device not exported (LYNX built-in or not VST2 / VST3): " + patcher::nodeName (node) + " in " + ret.name);
+                        note ("Rack device not exported (YW Studio built-in or not VST2 / VST3): " + patcher::nodeName (node) + " in " + ret.name);
                         continue;
                     }
                     d.set ("Id", num ((int) devices->kids.size()));
@@ -669,7 +669,7 @@ struct Exporter
             out.value ("SpriteName" + std::to_string (k + 1), wt::liveTableFor (t));
             tables += (k ? " | " : "") + std::string (wt::tableName (t));
         }
-        out.value ("Annotation", "LYNX Helix tables: " + tables);
+        out.value ("Annotation", "YW Helix tables: " + tables);
         out.value ("UserName", "");
         return true;
     }
@@ -845,7 +845,7 @@ struct Exporter
                         made = rackDevice (node.effect.patcher, node.effect.enabled, node.label, d, depth + 1);
                     if (! made)
                     {
-                        note ("Rack device not exported (LYNX built-in or not VST2 / VST3): " + patcher::nodeName (node) + " in " + chain.name);
+                        note ("Rack device not exported (YW Studio built-in or not VST2 / VST3): " + patcher::nodeName (node) + " in " + chain.name);
                         continue;
                     }
                     d.set ("Id", num ((int) devices->kids.size()));
@@ -1100,7 +1100,7 @@ struct Exporter
                     continue;
                 }
             }
-            note ((fx.kind == EffectKind::plugin ? "Plugin not exported (not VST2 or VST3, or not found): " : "Effect not exported (LYNX built-in): ")
+            note ((fx.kind == EffectKind::plugin ? "Plugin not exported (not VST2 or VST3, or not found): " : "Effect not exported (YW Studio built-in): ")
                   + (fx.plugin.name.empty() ? std::string (effectInfo (fx.kind).name) : fx.plugin.name) + " on " + song.mixer[(std::size_t) insert].name);
         }
     }
@@ -1192,7 +1192,7 @@ struct Exporter
         }
         pool->value ("DefaultGrooveId", "-1"); // (Live 12 only; LYNX has no default groove for new clips)
         if (! song.grooves.grooves.empty())
-            note ("Grooves: Live plays them by its own groove law, which may sound slightly different from LYNX's");
+            note ("Grooves: Live plays them by its own groove law, which may sound slightly different from YW Studio's");
     }
 
     // ---- clips
@@ -1825,7 +1825,7 @@ struct Exporter
             t.pan = adjustedPan (ch.pan, ch.misc.levels.pan); // (with the Misc tab's Levels adjustment, round 190dz)
             tracks.push_back (t);
             if (! plugin && ! native && ch.instrument != InstrumentKind::plugin)
-                note ("Instrument not exported (LYNX built-in, notes kept): " + ch.name);
+                note ("Instrument not exported (YW Studio built-in, notes kept): " + ch.name);
         }
         std::map<int, std::vector<const Clip*>> rows;
         for (const auto* c : audioClips)
@@ -2046,7 +2046,7 @@ struct Exporter
                             used = (float) st[(std::size_t) i] != (float) wt::defaults()[(std::size_t) i] // (the channel keeps floats)
                                    && i != wt::ext3Base + wt::ext3::sampleClean; // (190mt: new channels read their sample band-limited: no feature)
                         if (used)
-                            note ("Helix+ settings (second warps, noise, unison stack, extra filters, macros, drawn LFOs, effects) are LYNX-only "
+                            note ("Helix+ settings (second warps, noise, unison stack, extra filters, macros, drawn LFOs, effects) are YW Studio-only "
                                   "and not in the Live set: "
                                   + ch.name);
                     }

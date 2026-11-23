@@ -153,7 +153,7 @@ void Link::evaluate()
         keepSavedSetup();
     const auto show = holderPid != 0;
     if (show)
-        bar.setText (tr ("{0} plays in another LYNX SHARE window ({1}): only one program can use this audio device at a time.",
+        bar.setText (tr ("{0} plays in another YW Studio window ({1}): only one program can use this audio device at a time.",
                          { shown (want), holderProject.isNotEmpty() ? holderProject : tr ("Untitled") }));
     if (bar.isVisible() != show)
     {
@@ -266,7 +266,7 @@ void Link::showForSnapshot (int pid, const Device& wantedDevice, bool gaveItAway
 {
     holderPid = pid;
     gave = gaveItAway;
-    bar.setText (tr ("{0} plays in another LYNX SHARE window ({1}): only one program can use this audio device at a time.",
+    bar.setText (tr ("{0} plays in another YW Studio window ({1}): only one program can use this audio device at a time.",
                      { shown (wantedDevice), "Album - track 2" }));
     bar.setVisible (pid != 0);
     if (relayout != nullptr)

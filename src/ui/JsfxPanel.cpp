@@ -202,7 +202,7 @@ private:
         if (jsfx::scriptChanged (instance))
             return tr ("The script changed since this project was saved: its settings may not fit.");
         if (jsfx::hasGfx (instance))
-            return tr ("This script draws its own display; LYNX SHARE shows its sliders.");
+            return tr ("This script draws its own display; YW Studio shows its sliders.");
         return {};
     }
     int top() const { return headerHeight + (noteText().isNotEmpty() ? noteHeight : 0) + 4; }

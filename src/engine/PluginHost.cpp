@@ -1599,8 +1599,8 @@ public:
                                    .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
     {
     }
-    void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = "LYNX side echo"; d.pluginFormatName = "Internal"; }
-    const juce::String getName() const override { return "LYNX side echo"; }
+    void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = "YW Studio side echo"; d.pluginFormatName = "Internal"; }
+    const juce::String getName() const override { return "YW Studio side echo"; }
     void prepareToPlay (double, int) override {}
     void releaseResources() override {}
     bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
@@ -1636,8 +1636,8 @@ public:
                                    .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
     {
     }
-    void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = "LYNX side compressor"; d.pluginFormatName = "Internal"; }
-    const juce::String getName() const override { return "LYNX side compressor"; }
+    void fillInPluginDescription (juce::PluginDescription& d) const override { d.name = "YW Studio side compressor"; d.pluginFormatName = "Internal"; }
+    const juce::String getName() const override { return "YW Studio side compressor"; }
     void prepareToPlay (double, int) override {}
     void releaseResources() override {}
     bool isBusesLayoutSupported (const BusesLayout&) const override { return true; }
@@ -2406,7 +2406,7 @@ class PluginHost::BackgroundScan final : public juce::Thread
 {
 public:
     BackgroundScan (PluginHost& h, juce::FileSearchPath p, juce::StringArray f = {})
-        : juce::Thread ("LYNX plugin scan"),
+        : juce::Thread ("YW Studio plugin scan"),
           host (h),
           paths (std::move (p)),
           files (std::move (f))

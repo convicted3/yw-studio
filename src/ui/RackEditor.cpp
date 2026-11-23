@@ -2601,7 +2601,7 @@ struct RackView::Impl
         }
         // LYNX's own (decision D6): morph between two variations, off by default
         menu.addSeparator();
-        menu.addItem (tr ("Variation morph (LYNX)"), true, r->morphOn, [this] {
+        menu.addItem (tr ("Variation morph (YW Studio)"), true, r->morphOn, [this] {
             edit ([] (PatcherDoc& d) {
                 auto* x = rack::rackOf (d);
                 x->morphOn = ! x->morphOn;
@@ -2615,7 +2615,7 @@ struct RackView::Impl
             glideMenu.addItem (ms == 0 ? tr ("Off") : juce::String (ms) + " ms", true, std::abs (r->glideMs - (float) ms) < 0.5f, [this, ms] {
                 edit ([ms] (PatcherDoc& d) { rack::rackOf (d)->glideMs = (float) ms; });
             });
-        menu.addSubMenu (tr ("Launch glide (LYNX)"), glideMenu);
+        menu.addSubMenu (tr ("Launch glide (YW Studio)"), glideMenu);
         if (v >= 0 && r->morphOn)
         {
             menu.addItem (tr ("Morph from this variation (A)"), [this, v] { edit ([v] (PatcherDoc& d) { rack::rackOf (d)->morphA = v; rack::compile (d); }); });
@@ -2861,7 +2861,7 @@ struct RackView::Impl
     {
         if (auto n = nodeFromFile (file))
             return dropNode (std::move (*n), p);
-        ui::postHint ({ tr ("LYNX SHARE can't build a device from this preset."), {} }, 3000);
+        ui::postHint ({ tr ("YW Studio can't build a device from this preset."), {} }, 3000);
         return false;
     }
     int dropMarkerX = -1; // a drop over the devices pane: where it lands (paintDevices draws the marker)
@@ -3956,7 +3956,7 @@ std::optional<ChannelDef> instrumentFromLivePreset (const juce::File& file, juce
             p->channel.name = file.getFileNameWithoutExtension().toStdString();
         return std::move (p->channel);
     }
-    error = tr ("LYNX SHARE can't build an instrument from this preset.");
+    error = tr ("YW Studio can't build an instrument from this preset.");
     return std::nullopt;
 }
 
@@ -3980,7 +3980,7 @@ void saveLivePreset (AudioEngine& engine, RackLocator locate, const juce::String
         if (doc == nullptr)
             return;
         AlsExportOptions options;
-        options.creator = "LYNX SHARE";
+        options.creator = "YW Studio";
         auto& host = engine.getPluginHost();
         options.pluginRecord = [&host] (const PluginRef& ref, bool instrument) { return host.flWrapperRecord (ref, instrument); };
         const auto result = exportLiveRackPreset (*doc, name.toStdString(), options);

@@ -375,7 +375,7 @@ private:
         g.setColour (juce::Colours::white.withAlpha (0.12f));
         g.drawRoundedRectangle (plate.reduced (0.5f), 6.0f, 1.0f);
         skin::brandMark (g, juce::Rectangle<float> (40.0f, 40.0f).withCentre ({ plate.getX() + 30.0f, plate.getCentreY() })); // LYNX's logo
-        text (g, { plate.getX() + 54.0f, plate.getY() + 8.0f, 72.0f, 22.0f }, "LYNX", 19.0f, true, kInk, juce::Justification::centredLeft, 0.12f);
+        text (g, { plate.getX() + 54.0f, plate.getY() + 8.0f, 72.0f, 22.0f }, "YW Studio", 19.0f, true, kInk, juce::Justification::centredLeft, 0.12f);
         text (g, { plate.getX() + 55.0f, plate.getY() + 32.0f, 72.0f, 14.0f }, "AUDIO", 8.5f, false, kDim, juce::Justification::centredLeft, 0.4f);
         text (g, { 330.0f, y0 + 154.0f, 202.0f, 26.0f }, "Strike", 24.0f, true, kInk);
         text (g, { 330.0f, y0 + 180.0f, 202.0f, 16.0f }, "SHAPER", 11.0f, true, kDim, juce::Justification::centred, 0.5f);

@@ -4062,7 +4062,7 @@ inline const Theme& lynxTuneTheme()
     static const Theme t = []
     {
         Theme x;
-        x.name = "LYNX Tune";
+        x.name = "YW Tune";
         x.base = Style::vivid;
         x.pal = { Colour (0xff221a20), Colour (0xff0a0709), Colour (0xffff5f87), Colour (0xffffc0d0), Colour (0x9c201820), Colour (0xb80a0709),
                   Colour (0xff8a5a6a), Colour (0xfffff0f4), Colour (0xff070506), Colour (0xff3a2c34), Colour (0xff141014), Colour (0xff2a2026),

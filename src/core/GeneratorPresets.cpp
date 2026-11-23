@@ -372,7 +372,7 @@ std::string engineName (InstrumentKind kind)
         case InstrumentKind::midiOut: return "MIDI Out";
         case InstrumentKind::autogun: return "Autogun";
         case InstrumentKind::directwave: return "DirectWave";
-        case InstrumentKind::soundfont: return "LYNX Soundfont";
+        case InstrumentKind::soundfont: return "YW Soundfont";
         default: break;
     }
     return kindId (kind);

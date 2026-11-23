@@ -131,7 +131,7 @@ juce::String channelLabel (AudioEngine& engine, const SfTarget& target)
 {
     if (const auto* c = channelOf (engine, target); c != nullptr && ! c->name.empty())
         return u8 (c->name);
-    return "LYNX Soundfont";
+    return "YW Soundfont";
 }
 
 // --- controls ----------------------------------------------------------------------------------------------------------
@@ -636,7 +636,7 @@ public:
         top.removeFromTop (headerHeight);
         g.setColour (theme::colour::textSecondary);
         g.setFont (theme::font (11.0f));
-        g.drawFittedText (tr ("LYNX Soundfont: plays SoundFont 2 / 3 banks and SFZ instruments. Search presets across all your SoundFonts, click to preview, double-click to load."),
+        g.drawFittedText (tr ("YW Soundfont: plays SoundFont 2 / 3 banks and SFZ instruments. Search presets across all your SoundFonts, click to preview, double-click to load."),
                           top.toNearestInt(), juce::Justification::centredLeft, 1, 0.75f);
         // the font's name next to the load button
         g.setColour (theme::colour::textPrimary);
@@ -778,7 +778,7 @@ private:
                                   if (! firstSoundFontPreset (path, bank, program))
                                   {
                                       juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load SoundFont"),
-                                                                              tr ("This file is not a SoundFont LYNX SHARE can read."));
+                                                                              tr ("This file is not a SoundFont YW Studio can read."));
                                       return;
                                   }
                                   loadInto (safe->engine, safe->channel, path, bank, program);

@@ -538,12 +538,12 @@ const clap_plugin_descriptor_t* descriptorOf (std::size_t index)
             d.clap_version = CLAP_VERSION_INIT;
             d.id = e.clapId;
             d.name = e.name;
-            d.vendor = "Ka1-S";
-            d.url = "https://lynx-share.com";
+            d.vendor = "YW";
+            d.url = "https://yolo.su";
             d.manual_url = "";
             d.support_url = "";
             d.version = LYNX_EXPORT_VERSION;
-            d.description = "LYNX SHARE plugin";
+            d.description = "YW Studio plugin";
             d.features = featuresOf (e);
             list.push_back (d);
         }

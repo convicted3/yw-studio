@@ -201,9 +201,9 @@ juce::String rowHint (const juce::File& f, bool folder, bool expanded)
     if (f.hasFileExtension ("lynxpreset;fxp;fxb;vstpreset"))
         return tr ("Plugin preset: [2xLMB] load it into its plugin (an open plugin window, or the selected channel's plugin)");
     if (f.hasFileExtension ("sfz"))
-        return tr ("SFZ instrument: [LMB] preview  [2xLMB] new LYNX Soundfont channel (or into the selected one)  drag to the Channel Rack");
+        return tr ("SFZ instrument: [LMB] preview  [2xLMB] new YW Soundfont channel (or into the selected one)  drag to the Channel Rack");
     if (f.hasFileExtension ("sf2;sf3;sfz"))
-        return tr ("SoundFont: [LMB] preview its first preset  [2xLMB] new LYNX Soundfont channel (or into the selected one)  drag to the Channel Rack");
+        return tr ("SoundFont: [LMB] preview its first preset  [2xLMB] new YW Soundfont channel (or into the selected one)  drag to the Channel Rack");
     if (isSamplerInstrumentFile (f))
         return tr ("Sampler instrument (DirectWave, GigaStudio): [2xLMB] new DirectWave channel  [Enter] into the selected DirectWave channel  "
                    "drag to the Channel Rack");
@@ -338,7 +338,7 @@ void saveIndexText (const std::string& text)
 }
 
 #if JUCE_WINDOWS
-juce::String indexerSignalName (juce::int64 parentPid) { return "Local\\LYNX-browser-index-" + juce::String (parentPid); }
+juce::String indexerSignalName (juce::int64 parentPid) { return "Local\\YW-browser-index-" + juce::String (parentPid); }
 #endif
 
 juce::int64 thisProcessId()
@@ -736,7 +736,7 @@ public:
         plugins,  // the Plugin database and its folders (round 142): built-in, FL engines, installed plugins
         plugin,   // one of its plugins (double-click adds it)
         collection, // a collection's heading in the STARRED tab (round 190ce): its items are its children
-        factory     // round 190ke: "LYNX content" and its folders (the Simple layout): LYNX's own sounds, beats, chains
+        factory     // round 190ke: "YW Studio content" and its folders (the Simple layout): LYNX's own sounds, beats, chains
     };
 
     struct Node
@@ -769,7 +769,7 @@ public:
         int folderKind = -1;
         std::string userFolder;
         // round 190bj (issue B4): LYNX's own groups under Effects / Generators — the format folder of their Installed
-        // entries ("LYNX", "FL engines", "VFX"; "" = Installed itself), core/PluginDbFolder.h groupFolder()
+        // entries ("YW Studio", "FL engines", "VFX"; "" = Installed itself), core/PluginDbFolder.h groupFolder()
         std::string group;
         bool isGroup = false;
         int collection = -1; // kind == collection: which one (0 = Starred)
@@ -988,7 +988,7 @@ public:
         }
         return n;
     }
-    // "LYNX content" with its three folders, each by category / genre (built open or closed as `open` remembers)
+    // "YW Studio content" with its three folders, each by category / genre (built open or closed as `open` remembers)
     static std::unique_ptr<Node> makeFactoryRoot (BrowserComponent& browser, const std::set<juce::String>& open)
     {
         auto folder = [&open] (Node* parent, const juce::String& label, const juce::String& path) {
@@ -1003,7 +1003,7 @@ public:
             n->expanded = open.count (path) > 0;
             return n;
         };
-        auto root = folder (nullptr, tr ("LYNX content"), "lynx-content");
+        auto root = folder (nullptr, tr ("YW Studio content"), "lynx-content");
         root->colour = theme::colour::accent;
         const std::tuple<factorycontent::Kind, const char*, juce::String> kinds[] { { factorycontent::Kind::sound, "Sounds", tr ("Sounds") },
                                                                                     { factorycontent::Kind::beat, "Beats", tr ("Beats") },
@@ -1189,7 +1189,7 @@ public:
         // Generators
         {
             auto gens = folder (root.get(), tr ("Generators"), Icon::keyboard);
-            auto lynxGens = folder (gens.get(), "LYNX SHARE", Icon::folder);
+            auto lynxGens = folder (gens.get(), "YW Studio", Icon::folder);
             auto flGens = folder (gens.get(), tr ("FL engines"), Icon::folder);
             // FL's VFX note processors (round 164b): channels with no sound, they play other channels / Patcher nodes
             auto vfxGens = folder (gens.get(), tr ("VFX (note effects)"), Icon::folder);
@@ -1198,7 +1198,7 @@ public:
             auto jsfxGens = folder (gens.get(), "JSFX", Icon::folder);
             Node* folders[] = { lynxGens.get(), flGens.get(), vfxGens.get(), installed.get() };
             gens->folderKind = 1;
-            for (auto [node, group] : { std::pair { folders[0], "LYNX" }, std::pair { folders[1], "FL engines" }, std::pair { folders[2], "VFX" },
+            for (auto [node, group] : { std::pair { folders[0], "YW Studio" }, std::pair { folders[1], "FL engines" }, std::pair { folders[2], "VFX" },
                                         std::pair { folders[3], "" } })
             {
                 node->group = group;
@@ -1225,13 +1225,13 @@ public:
         // Effects
         {
             auto fxs = folder (root.get(), tr ("Effects"), Icon::mixer);
-            auto lynxFx = folder (fxs.get(), "LYNX SHARE", Icon::folder);
+            auto lynxFx = folder (fxs.get(), "YW Studio", Icon::folder);
             auto flFx = folder (fxs.get(), tr ("FL engines"), Icon::folder);
             auto installed = folder (fxs.get(), tr ("Installed"), Icon::folder);
             auto jsfxFx = folder (fxs.get(), "JSFX", Icon::folder); // (round 190pj)
             Node* folders[] = { lynxFx.get(), flFx.get(), installed.get(), installed.get() };
             fxs->folderKind = 0;
-            for (auto [node, group] : { std::pair { folders[0], "LYNX" }, std::pair { folders[1], "FL engines" }, std::pair { folders[2], "" } })
+            for (auto [node, group] : { std::pair { folders[0], "YW Studio" }, std::pair { folders[1], "FL engines" }, std::pair { folders[2], "" } })
             {
                 node->group = group;
                 node->isGroup = true;
@@ -2203,7 +2203,7 @@ public:
                 }
                 return itemHint (n);
             case Kind::plugins:
-                h.text = tr ("Plugin database: LYNX SHARE's built-in generators and effects, FL's engines and the installed plugins") + "  "
+                h.text = tr ("Plugin database: YW Studio's built-in generators and effects, FL's engines and the installed plugins") + "  "
                          + (n.expanded ? tr ("[LMB] close") : tr ("[LMB] open"));
                 h.value = n.detail;
                 return h;
@@ -2220,7 +2220,7 @@ public:
                 h.hasMenu = true;
                 return h;
             case Kind::factory:
-                h.text = tr ("LYNX content: LYNX's own sounds, beats and effect chains, with tags (the TAGS button filters them)") + "  "
+                h.text = tr ("YW Studio content: YW Studio's own sounds, beats and effect chains, with tags (the TAGS button filters them)") + "  "
                          + (n.expanded ? tr ("[LMB] close") : tr ("[LMB] open"));
                 h.value = n.detail;
                 return h;
@@ -4862,7 +4862,7 @@ std::vector<BrowserComponent::FolderEntry> BrowserComponent::folderEntries() con
     std::vector<FolderEntry> out;
     out.push_back ({ browserview::projectRootId, tr ("Current project"), tr ("the project's patterns, channels, samples and history"),
                      view.shows (browserview::projectRootId), false, false });
-    out.push_back ({ browserview::pluginsRootId, tr ("Plugin database"), tr ("LYNX SHARE's, FL's and your installed plugins"),
+    out.push_back ({ browserview::pluginsRootId, tr ("Plugin database"), tr ("YW Studio's, FL's and your installed plugins"),
                      view.shows (browserview::pluginsRootId), false, false });
     for (int i = 0; i < allRoots.size(); ++i)
     {
@@ -5238,7 +5238,7 @@ std::vector<std::unique_ptr<BrowserComponent::FileTree::Node>> BrowserComponent:
     if (wanted != 0)
         for (auto& e : quickpick::generatorEntries (engine))
         {
-            const char* groups[] = { "LYNX", "FL engines", "VFX", "" };
+            const char* groups[] = { "YW Studio", "FL engines", "VFX", "" };
             if (! browserplaces::keepsPlugin (category, true, groups[juce::jlimit (0, 3, e.folder)], e.label.toStdString()))
                 continue;
             auto n = std::make_unique<FileTree::Node>();
@@ -5258,7 +5258,7 @@ std::vector<std::unique_ptr<BrowserComponent::FileTree::Node>> BrowserComponent:
     if (wanted != 1)
         for (auto& e : quickpick::effectEntries (engine))
         {
-            const char* groups[] = { "LYNX", "FL engines", "", "" };
+            const char* groups[] = { "YW Studio", "FL engines", "", "" };
             if (! browserplaces::keepsPlugin (category, false, groups[juce::jlimit (0, 3, e.folder)], e.label.toStdString()))
                 continue;
             auto n = std::make_unique<FileTree::Node>();
@@ -6816,7 +6816,7 @@ void BrowserComponent::loadSelected()
     {
         // Enter: into the selected LYNX Soundfont channel, else a new one
         if (! openSoundFontFile (engine, file, engine.getSelectedChannel()))
-            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load SoundFont"), tr ("This file is not a SoundFont LYNX SHARE can read."));
+            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load SoundFont"), tr ("This file is not a SoundFont YW Studio can read."));
         return;
     }
     if (! onLoadIntoChannel || ! onLoadIntoChannel (file))
@@ -6926,7 +6926,7 @@ void BrowserComponent::openFile (const juce::File& file)
     if (file.hasFileExtension ("sf2;sf3;sfz"))
     {
         if (! openSoundFontFile (engine, file))
-            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load SoundFont"), tr ("This file is not a SoundFont LYNX SHARE can read."));
+            juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Load SoundFont"), tr ("This file is not a SoundFont YW Studio can read."));
         return;
     }
     if (isSamplerInstrumentFile (file))
@@ -6989,7 +6989,7 @@ void BrowserComponent::openFile (const juce::File& file)
         }
         else
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, tr ("Preset"),
-                                                    tr ("LYNX SHARE reads presets from 3x Osc, Sytrus, Harmor, GMS, Harmless, MiniSynth, DX10, Fruit Kick, Ogun and Sakura."));
+                                                    tr ("YW Studio reads presets from 3x Osc, Sytrus, Harmor, GMS, Harmless, MiniSynth, DX10, Fruit Kick, Ogun and Sakura."));
         return;
     }
 

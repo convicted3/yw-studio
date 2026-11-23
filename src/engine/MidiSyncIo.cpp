@@ -36,7 +36,7 @@ void atomicAdd (std::atomic<double>& a, double v) noexcept
 }
 } // namespace
 
-MidiSyncIo::MidiSyncIo() : juce::Thread ("LYNX MIDI sync") {}
+MidiSyncIo::MidiSyncIo() : juce::Thread ("YW MIDI sync") {}
 
 MidiSyncIo::~MidiSyncIo()
 {

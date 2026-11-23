@@ -665,7 +665,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
     FlmExportResult result;
     Ctx ctx { song, options, {}, {}, {}, {}, {}, {}, -1 };
     auto& p = ctx.project;
-    const auto title = ! options.title.empty() ? options.title : ! song.info.title.empty() ? song.info.title : std::string ("LYNX SHARE");
+    const auto title = ! options.title.empty() ? options.title : ! song.info.title.empty() ? song.info.title : std::string ("YW Studio");
     ctx.samplesFolder = ! options.samplesFolder.empty() ? options.samplesFolder : title + " Samples";
 
     // the song (FLM_FORMAT §2)
@@ -1425,7 +1425,7 @@ FlmExportResult exportFlm (const Song& song, const FlmExportOptions& options)
     result.bytes = flm::write (p);
     // the LYNX chunk (FlmExport.h): which FLM content was which LYNX pattern, names and colours, and a checksum
     {
-        std::string text = "LYNX SHARE flm extras 1\n";
+        std::string text = "YW Studio flm extras 1\n";
         text += "check " + flmexport::checksum (result.bytes) + "\n";
         std::set<int> used;
         for (const auto& [key, id] : contentOf)
@@ -1468,7 +1468,7 @@ std::string checksum (const std::vector<std::uint8_t>& bytes)
 
 std::optional<Extras> readExtras (const std::vector<std::uint8_t>& bytes)
 {
-    // the top-level chunks after "10LF": the last one must be "LYNX"
+    // the top-level chunks after "10LF": the last one must be "YW Studio"
     std::size_t at = 4, lynxAt = 0, lynxSize = 0;
     while (at + 8 <= bytes.size())
     {
@@ -1486,7 +1486,7 @@ std::optional<Extras> readExtras (const std::vector<std::uint8_t>& bytes)
     if (lynxAt == 0 || lynxAt + 8 + lynxSize != bytes.size())
         return std::nullopt;
     const std::string text ((const char*) bytes.data() + lynxAt + 8, lynxSize);
-    if (text.rfind ("LYNX SHARE flm extras 1\n", 0) != 0)
+    if (text.rfind ("YW Studio flm extras 1\n", 0) != 0)
         return std::nullopt;
     const std::vector<std::uint8_t> before (bytes.begin(), bytes.begin() + (std::ptrdiff_t) lynxAt);
     Extras e;

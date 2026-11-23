@@ -216,7 +216,7 @@ public:
         startTimerHz (2);
 
         styleLabel (languageLabel, tr ("Language"));
-        styleNote (languageNote, tr ("A new language is applied when LYNX SHARE restarts."));
+        styleNote (languageNote, tr ("A new language is applied when YW Studio restarts."));
         int id = 1;
         for (const auto& l : i18n::languages())
         {
@@ -302,16 +302,16 @@ public:
         styleNote (animationNote, tr ("How often the playhead, meters and scopes move. Display follows your screen's refresh rate "
                                       "(smoothest); Balanced halves it on fast screens (72 Hz on a 144 Hz screen); 60 Hz or 30 Hz "
                                       "use the least CPU (laptops, slower computers)."));
-        toggle (gpuRendering, tr ("Draw with the GPU (Direct2D). Turn off if LYNX SHARE crashes in the graphics driver or the screen flickers"),
+        toggle (gpuRendering, tr ("Draw with the GPU (Direct2D). Turn off if YW Studio crashes in the graphics driver or the screen flickers"),
                 options.gpuRendering, [this] (bool on) { options.gpuRendering = on; });
        #if ! JUCE_WINDOWS
         gpuRendering.setVisible (false);
        #endif
         // round 190jy (queue item 44, LYNX's own): a docked LYNX editor drawn by the main window, so its live display
         // costs only its paint; hosted plugins and detached windows keep windows of their own
-        toggle (editorsInMain, tr ("Draw docked LYNX editors in the main window (lighter live displays)"), options.editorsInMainWindow,
+        toggle (editorsInMain, tr ("Draw docked YW Studio editors in the main window (lighter live displays)"), options.editorsInMainWindow,
                 [this] (bool on) { options.editorsInMainWindow = on; });
-        editorsInMain.setTooltip (tr ("On: a docked LYNX editor (Gross Beat, Fruity Limiter, Maximus...) is drawn by the main window: "
+        editorsInMain.setTooltip (tr ("On: a docked YW Studio editor (Gross Beat, Fruity Limiter, Maximus...) is drawn by the main window: "
                                       "its moving displays use less CPU. Hosted plugins and detached windows keep windows of their own"));
        #if ! JUCE_WINDOWS
         editorsInMain.setVisible (false);
@@ -324,7 +324,7 @@ public:
         {
             if (i == 1 || (templateChoices[(std::size_t) i].kind == TemplateChoice::Kind::user && templateChoices[(std::size_t) i - 1].kind != TemplateChoice::Kind::user))
                 templateBox.addSeparator();
-            templateBox.addItem (i == 0 ? tr ("Default (LYNX SHARE)") : templateChoiceName (templateChoices[(std::size_t) i]), i + 1);
+            templateBox.addItem (i == 0 ? tr ("Default (YW Studio)") : templateChoiceName (templateChoices[(std::size_t) i]), i + 1);
         }
         {
             const auto current = TemplateChoice::parse (options.defaultTemplate.toStdString());
@@ -358,10 +358,10 @@ public:
                 [this] (bool on) { options.scanAtStart = on; });
         // round 190fq (LYNX's own): the start-up note about supporting LYNX SHARE on Ko-fi (ui/SupportLynx.h)
         toggle (supportNoteBox, tr ("Show the support note"), options.supportNote, [this] (bool on) { options.supportNote = on; });
-        supportNoteBox.setTooltip (tr ("Now and then at start-up, a small note in a corner about supporting LYNX SHARE on Ko-fi. "
+        supportNoteBox.setTooltip (tr ("Now and then at start-up, a small note in a corner about supporting YW Studio on Ko-fi. "
                                        "Donating is optional and never unlocks anything."));
         // the AppImage on Linux (round 161): its menu entry and the .lynx file type, in the user's ~/.local/share
-        toggle (menuEntry, tr ("Show LYNX SHARE in the applications menu and open .lynx files with it"), options.menuEntry,
+        toggle (menuEntry, tr ("Show YW Studio in the applications menu and open .lynx files with it"), options.menuEntry,
                 [this] (bool on) { options.menuEntry = on; });
         menuEntry.setVisible (runningAsAppImage());
 
@@ -386,12 +386,12 @@ public:
         autoSelectLinked.setTooltip (tr ("Focusing plugin windows selects mixer tracks"));
         toggle (rememberSeek, tr ("Remember seek time: Stop goes back to the position clicked on the Playlist ruler"), options.rememberSeek,
                 [this] (bool on) { options.rememberSeek = on; });
-        toggle (hoverValues, tr ("Show a control's value next to the mouse when hovering over it (LYNX)"), options.hoverValues,
+        toggle (hoverValues, tr ("Show a control's value next to the mouse when hovering over it (YW Studio)"), options.hoverValues,
                 [this] (bool on) { options.hoverValues = on; });
         // issue #217 (round 190ng): FL 2026 closes the focused window on Esc (core/EscClose.h); the LYNX extras page has it too
         toggle (escCloses, tr ("Esc closes the focused window"), escclose::enabled(), [] (bool on) { workflowextras::setExtra ("general.escCloses", on); });
         // LYNX extra (issue #25): FL plays a stretched pattern clip once; off = FL's behaviour
-        toggle (clipsLoop, tr ("Stretched pattern clips loop their pattern (LYNX)"), options.stretchedClipsLoop,
+        toggle (clipsLoop, tr ("Stretched pattern clips loop their pattern (YW Studio)"), options.stretchedClipsLoop,
                 [this] (bool on) { options.stretchedClipsLoop = on; });
         clipsLoop.setTooltip (tr ("On: a pattern clip stretched past its pattern repeats the pattern. Off: it plays the pattern once, as in FL Studio"));
         // FL's Options › General › Miscellaneous (round 177b): where "Create automation clip" puts the clip
@@ -490,16 +490,16 @@ public:
         // round 190jg: Bitwig's plugin hosting modes (was the toggle "Run plugins in a separate process")
         styleLabel (sandboxLabel, tr ("Plugin processes"));
         // (ordered from the most isolated; the id is the mode + 1, engine/PluginSandbox.h SandboxMode)
-        sandboxBox.addItem (tr ("In LYNX SHARE's process (fastest)"), 1);
+        sandboxBox.addItem (tr ("In YW Studio's process (fastest)"), 1);
         sandboxBox.addItem (tr ("Each plugin instance in its own process"), 2);
         sandboxBox.addItem (tr ("One process per plugin (all its instances)"), 5);
         sandboxBox.addItem (tr ("One process per plugin vendor"), 3);
         sandboxBox.addItem (tr ("All plugins in one process"), 4);
         sandboxBox.setSelectedId (juce::jlimit (0, 4, options.pluginSandbox) + 1, juce::dontSendNotification);
         sandboxBox.onChange = [this] { change ([&] { options.pluginSandbox = sandboxBox.getSelectedId() - 1; }); };
-        styleNote (sandboxNote, tr ("A plugin that crashes takes down only its own process, never LYNX SHARE.") + " "
+        styleNote (sandboxNote, tr ("A plugin that crashes takes down only its own process, never YW Studio.") + " "
                                     + tr ("Applies to plugins opened from now on; reopen the project to move the others."));
-        toggle (substitutes, tr ("Substitute missing plugins with LYNX SHARE equivalents"), options.pluginSubstitutes,
+        toggle (substitutes, tr ("Substitute missing plugins with YW Studio equivalents"), options.pluginSubstitutes,
                 [this] (bool on) { options.pluginSubstitutes = on; });
         styleNote (substitutesNote, tr ("A project keeps the original plugin and uses it again once it is installed."));
         toggle (sampleAccurate, tr ("Sample-accurate automation for CLAP and VST3 plugins"), options.sampleAccurateAutomation,
@@ -577,17 +577,17 @@ public:
         crashBox.addItem (tr ("Never send"), 3);
         crashBox.setSelectedId (juce::jlimit (0, 2, options.crashReports) + 1, juce::dontSendNotification);
         crashBox.onChange = [this] { change ([&] { options.crashReports = crashBox.getSelectedId() - 1; }); };
-        styleNote (crashNote, tr ("A report holds LYNX SHARE's version, your system and audio device, the crash or freeze file and the last steps, without "
-                                  "your name, file names or projects. It goes to lynx-share.com only with your consent (Help > Report a problem... "
+        styleNote (crashNote, tr ("A report holds YW Studio's version, your system and audio device, the crash or freeze file and the last steps, without "
+                                  "your name, file names or projects. It goes to yolo.su only with your consent (Help > Report a problem... "
                                   "sends one by hand)."));
 
         // round 166b: the update check (ui/Updater.h); the Store build has none (the Store updates it)
         toggle (checkUpdates, tr ("Check for updates automatically"), options.checkUpdates, [this] (bool on) { options.checkUpdates = on; });
         checkNow.onClick = [] { updater::checkNow(); };
-        styleNote (updatesNote, tr ("At start-up LYNX SHARE asks GitHub for the newest version number (nothing about you is sent) and shows a bar "
+        styleNote (updatesNote, tr ("At start-up YW Studio asks GitHub for the newest version number (nothing about you is sent) and shows a bar "
                                     "when a new version is out. Help > Check for updates... asks at any time.")
                                     // round 190ns (issue #233)
-                                    + " " + tr ("Off, LYNX SHARE never goes online by itself: plugin scans and everything else stay on this computer."));
+                                    + " " + tr ("Off, YW Studio never goes online by itself: plugin scans and everything else stay on this computer."));
         // round 190gh (B2): the version before the last update, and the way back to it (Help › Go back to... too)
         {
             const auto previous = persistent ? updater::previousVersion() : juce::String ("0.1.27");
@@ -801,9 +801,9 @@ private:
         // round 190je (design190ia FM-5): FL's condensed face for the FL-landmark labels, off by default; at the next start
         toggle (condensedLabels, tr ("Condensed labels (FL style)"), options.condensedLabels, [this] (bool on) { options.condensedLabels = on; });
         condensedLabels.setTooltip (tr ("Menus, the menu bar, the Browser, Playlist track names and Mixer strip names in a condensed face, "
-                                        "a step larger, as FL Studio draws them (Open Sans Condensed). Applied when LYNX SHARE restarts."));
+                                        "a step larger, as FL Studio draws them (Open Sans Condensed). Applied when YW Studio restarts."));
         styleLabel (fontLabel, tr ("Interface font"));
-        styleNote (fontNote, tr ("A new interface font, text size or bold text is applied when LYNX SHARE restarts."));
+        styleNote (fontNote, tr ("A new interface font, text size or bold text is applied when YW Studio restarts."));
         // issue #189: the text roles' size next to the font (core/TextSize.h), applied at the next start as the font is
         styleLabel (textSizeLabel, tr ("Text size"));
         for (const auto percent : textsize::choices)
@@ -818,7 +818,7 @@ private:
         boldBox.addItem (tr ("Labels, buttons and menus"), 2);
         boldBox.addItem (tr ("All text"), 3);
         boldBox.setSelectedId (juce::jlimit (0, 2, options.boldText) + 1, juce::dontSendNotification);
-        boldBox.setTooltip (tr ("Draws the interface's text in the bold face: the labels, buttons and menus, or every text. Applied when LYNX SHARE restarts."));
+        boldBox.setTooltip (tr ("Draws the interface's text in the bold face: the labels, buttons and menus, or every text. Applied when YW Studio restarts."));
         boldBox.onChange = [this] { change ([&] { options.boldText = boldBox.getSelectedId() - 1; }); };
         const auto fallback = theme::defaultUiFont();
         fontBox.addItem (fallback.isNotEmpty() ? tr ("Default ({0})", { fallback }) : tr ("Default"), 1);
@@ -835,7 +835,7 @@ private:
             updateFontPreview();
         };
         fontReset.onClick = [this] { fontBox.setSelectedId (1, juce::sendNotificationSync); };
-        fontPreview.setText ("LYNX SHARE  AaBbCc  0123456789", juce::dontSendNotification);
+        fontPreview.setText ("YW Studio  AaBbCc  0123456789", juce::dontSendNotification);
         fontPreview.setColour (juce::Label::textColourId, theme::colour::textPrimary);
         updateFontPreview();
     }
@@ -857,13 +857,13 @@ private:
         // Linux without Noto CJK & co.: the language would show empty boxes
         const auto noFont = theme::needsOwnFont (id) && theme::uiFontForLanguage (id).isEmpty();
         languageNote.setText (noFont ? tr ("This language needs a Chinese / Japanese / Korean font: install the Noto Sans CJK fonts "
-                                           "(fonts-noto-cjk or google-noto-sans-cjk-fonts), then restart LYNX SHARE.")
-                                     : tr ("A new language is applied when LYNX SHARE restarts."),
+                                           "(fonts-noto-cjk or google-noto-sans-cjk-fonts), then restart YW Studio.")
+                                     : tr ("A new language is applied when YW Studio restarts."),
                               juce::dontSendNotification);
         languageNote.setColour (juce::Label::textColourId, noFont ? theme::colour::accent : theme::colour::textDisabled);
         translationLink.setButtonText (tr ("New translation — suggestions welcome"));
         translationLink.setTooltip (tr ("Opens a GitHub issue to suggest a better translation"));
-        translationLink.setURL (juce::URL ("https://github.com/Ka1-S/LYNX-SHARE/issues/new")
+        translationLink.setURL (juce::URL ("https://github.com/convicted3/yw-studio/issues/new")
                                     .withParameter ("title", "Translation (" + id + "): ")
                                     .withParameter ("labels", "translation"));
     }
@@ -1115,7 +1115,7 @@ private:
             };
         };
         flag (autoClose, tr ("Auto close"),
-              tr ("Free the audio device for other applications while LYNX SHARE is in the background and nothing plays or records"), o.autoCloseDevice);
+              tr ("Free the audio device for other applications while YW Studio is in the background and nothing plays or records"), o.autoCloseDevice);
         // FL's "Safe overloads" (round 190ok, FL's hint; core/OverloadGuard.h): on by default, as in FL
         flag (safeOverloads, tr ("Safe overloads"), tr ("No risk of GUI freezing when overloads occur"), o.safeOverloads);
         flag (threadGenerators, tr ("Multithreaded generator processing"), tr ("May increase CPU performance"), o.multithreadGenerators);
@@ -1309,7 +1309,7 @@ private:
         else if (denied)
             realtime.setText (tr ("Audio thread: normal priority, so the sound breaks up more easily under load. To allow real-time priority, "
                                   "install rtkit (most desktops have it) or add yourself to the \"audio\" group with an rtprio limit "
-                                  "(/etc/security/limits.d), then log in again. LYNX SHARE never needs root."),
+                                  "(/etc/security/limits.d), then log in again. YW Studio never needs root."),
                               juce::dontSendNotification);
         else
             realtime.setText (tr ("Audio thread: real-time priority ({0})", { lynx::rt::describe() }), juce::dontSendNotification);
@@ -1408,7 +1408,7 @@ private:
             refreshRecording();
         };
         styleNote (pingNote, tr ("Connect the ping output to the ping input with a cable (or a loopback in your interface's mixer) and turn your speakers "
-                                 "down: LYNX SHARE plays 8 clicks and times their way back. The result is kept for this driver, device, sample rate and buffer size."));
+                                 "down: YW Studio plays 8 clicks and times their way back. The result is kept for this driver, device, sample rate and buffer size."));
         styleToggle (useMeasured, tr ("Use the measured round trip instead of the driver's figures"));
         useMeasured.onClick = [this] {
             auto s = engine.getRecordingSettings();
@@ -1482,7 +1482,7 @@ private:
             case prefs::DriverKind::wasapiExclusive:  return tr ("Windows Audio (exclusive, lowest latency)");
             case prefs::DriverKind::directSound:      return tr ("DirectSound (legacy)");
             case prefs::DriverKind::asio:             return "ASIO";
-            case prefs::DriverKind::lynxAsio:         return tr ("LYNX ASIO (built in)");
+            case prefs::DriverKind::lynxAsio:         return tr ("YW ASIO (built in)");
             case prefs::DriverKind::coreAudio:        return "Core Audio";
             case prefs::DriverKind::alsa:             return "ALSA";
             case prefs::DriverKind::jack:             return tr ("JACK / PipeWire");
@@ -1509,26 +1509,26 @@ private:
                                  { juce::String (prefs::bufferLatencyMs (period, rate), 1) })
                            : tr ("Shared like the normal mode, but asks Windows for a shorter mixing period. Only some drivers support it.");
             case prefs::DriverKind::wasapiExclusive:
-                return tr ("LYNX SHARE uses the device alone: the lowest latency without ASIO, but other programs go silent while LYNX SHARE plays.");
+                return tr ("YW Studio uses the device alone: the lowest latency without ASIO, but other programs go silent while YW Studio plays.");
             case prefs::DriverKind::directSound:
                 return tr ("Old Windows audio path with high latency. Use it only when the others fail.");
             case prefs::DriverKind::asio:
-                return tr ("Low-latency drivers. LYNX ASIO, FL Studio ASIO and ASIO4ALL work with any device; a manufacturer's ASIO driver works with its own device.");
+                return tr ("Low-latency drivers. YW ASIO, FL Studio ASIO and ASIO4ALL work with any device; a manufacturer's ASIO driver works with its own device.");
             case prefs::DriverKind::lynxAsio:
                 if (platform::runningPackaged()) // the Store build: the package folder moves with every update
-                    return tr ("LYNX SHARE's own ASIO driver, with any device: playback and recording (microphone) at low latency. \"Driver settings...\" chooses shared or exclusive mode, the output and input devices and shows the latency. "
-                               "To use it in other programs, install LYNX SHARE from lynx-share.com (the installer registers it).");
-                return tr ("LYNX SHARE's own ASIO driver, with any device: playback and recording (microphone) at low latency. \"Driver settings...\" chooses shared or exclusive mode, the output and input devices and shows the latency. "
-                           "For other programs, run \"Register LYNX ASIO\" in LYNX SHARE's folder once.");
+                    return tr ("YW Studio's own ASIO driver, with any device: playback and recording (microphone) at low latency. \"Driver settings...\" chooses shared or exclusive mode, the output and input devices and shows the latency. "
+                               "To use it in other programs, install YW Studio from yolo.su (the installer registers it).");
+                return tr ("YW Studio's own ASIO driver, with any device: playback and recording (microphone) at low latency. \"Driver settings...\" chooses shared or exclusive mode, the output and input devices and shows the latency. "
+                           "For other programs, run \"Register YW ASIO\" in YW Studio's folder once.");
             case prefs::DriverKind::coreAudio:
                 return tr ("macOS's own audio system: low latency with any device, shared with other programs.");
             case prefs::DriverKind::alsa:
-                return tr ("Talks to the sound card directly. Choose \"default\" or \"pipewire\" to share the device with other programs; a \"hw:\" device gives the lowest latency but takes the card for LYNX SHARE alone.");
+                return tr ("Talks to the sound card directly. Choose \"default\" or \"pipewire\" to share the device with other programs; a \"hw:\" device gives the lowest latency but takes the card for YW Studio alone.");
             case prefs::DriverKind::jack:
                 return tr ("Low latency, shared with other programs and routable. On current distributions PipeWire answers as JACK (package pipewire-jack); otherwise start a JACK server first.");
             case prefs::DriverKind::pipewire:
-                return tr ("LYNX SHARE talks to PipeWire directly: low latency, shared with other programs. \"System default\" follows the output chosen in "
-                           "the system's sound settings (also when a device is plugged in or removed); LYNX SHARE appears as \"LYNX\" in pw-link, qpwgraph or Helvum.");
+                return tr ("YW Studio talks to PipeWire directly: low latency, shared with other programs. \"System default\" follows the output chosen in "
+                           "the system's sound settings (also when a device is plugged in or removed); YW Studio appears as \"YW Studio\" in pw-link, qpwgraph or Helvum.");
             case prefs::DriverKind::other:
                 break;
         }
@@ -1922,10 +1922,10 @@ public:
             add (*c);
         styleNote (outputsNote, tr ("Give a device a port number and the MIDI Out channels on that port play it: their notes, controllers, "
                                     "program and bank changes and pitch bend. Send master sync drives drum machines, synths and other "
-                                    "software from LYNX SHARE's transport: MIDI clock with Song Position Pointer, or MIDI Time Code."));
+                                    "software from YW Studio's transport: MIDI clock with Song Position Pointer, or MIDI Time Code."));
         styleLabel (noOutputs, tr ("No MIDI output devices found."));
         styleLabel (clockLabel, tr ("External clock sync"));
-        clockBox.setTooltip (tr ("LYNX SHARE follows the MIDI clock of this input: its tempo, Start / Continue / Stop and Song Position Pointer"));
+        clockBox.setTooltip (tr ("YW Studio follows the MIDI clock of this input: its tempo, Start / Continue / Stop and Song Position Pointer"));
         clockBox.onChange = [this] {
             if (loading)
                 return;
@@ -1950,7 +1950,7 @@ public:
         clockOffset.setTextBoxStyle (juce::Slider::TextBoxLeft, false, 56, 24);
         clockOffset.setRange (-1000.0, 1000.0, 1.0);
         clockOffset.setDoubleClickReturnValue (true, 0.0);
-        clockOffset.setTooltip (tr ("Positive plays LYNX SHARE later than the clock, negative earlier"));
+        clockOffset.setTooltip (tr ("Positive plays YW Studio later than the clock, negative earlier"));
         clockOffset.onValueChange = [this] {
             if (loading)
                 return;
@@ -2476,7 +2476,7 @@ class ExtrasPage final : public ScrollingPage
 public:
     ExtrasPage (AudioEngine& e, SettingsHooks h, bool keep) : engine (e), hooks (std::move (h)), persistent (keep)
     {
-        styleNote (intro, tr ("LYNX's own improvements. All of them are off by default, so LYNX SHARE looks and behaves like FL Studio "
+        styleNote (intro, tr ("YW Studio's own improvements. All of them are off by default, so YW Studio looks and behaves like FL Studio "
                               "until you switch one on. Each switch is the same setting as in the place its line names."));
         intro.setColour (juce::Label::textColourId, theme::colour::textSecondary);
         add (intro);

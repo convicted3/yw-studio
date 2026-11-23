@@ -178,7 +178,7 @@ float denormalise (int index, float value01) noexcept;
 // the shown value ("2.0 s", "Preset", "64 voices"…)
 std::string displayValue (int index, float value);
 
-// A new LYNX Soundfont channel (default name "LYNX Soundfont"; `fontPath` may be empty: a silent channel until a
+// A new LYNX Soundfont channel (default name "YW Soundfont"; `fontPath` may be empty: a silent channel until a
 // font is loaded)
 ChannelDef makeChannel (const std::string& fontPath = {}, int bank = 0, int program = 0);
 

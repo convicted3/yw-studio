@@ -64,7 +64,7 @@ public:
     void requestThreadRefresh() noexcept { refreshGeneration.fetch_add (1, std::memory_order_acq_rel); }
 
     // round 190kb: names the calling thread (Windows 10+: its description; Linux: 15 characters) for per-thread CPU
-    // lists and profilers. The workers are "LYNX worker 1…n".
+    // lists and profilers. The workers are "YW Studio worker 1…n".
     static void nameCurrentThread (const char* name) noexcept;
     // a spin-wait pause (x86 PAUSE / ARM YIELD), for callers waiting on each other inside a parallelFor
     static void relax() noexcept;

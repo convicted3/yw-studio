@@ -70,7 +70,7 @@
                 rack.setButtonWidth (0);
                 line ("button width, size to fit: " + juce::String (ChannelRackComponent::nameWidth) + " px");
                 rack.setButtonWidth (100);
-                check ("Channel button width 100 %: LYNX's 150 px", ChannelRackComponent::nameWidth == 150);
+                check ("Channel button width 100 %: YW Studio's 150 px", ChannelRackComponent::nameWidth == 150);
 
                 // the piano roll preview's mute button (DE-33): a muted channel with a preview keeps the crossed icon
                 int previewRow = -1;

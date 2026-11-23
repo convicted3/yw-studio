@@ -383,7 +383,7 @@ struct RackState
     // VFX channels (round 164b): their notes go through their processor; output k goes out on MIDI port vfxPort + k
     std::vector<int> vfxChannels;
     std::vector<int> vfxPort; // [channel] (−1 = not a VFX channel)
-    // generator Patchers whose VFX nodes send to "To LYNX" MIDI ports (round 165c): taken at each chunk's start
+    // generator Patchers whose VFX nodes send to "To YW Studio" MIDI ports (round 165c): taken at each chunk's start
     std::vector<int> portEventChannels;
     // Dashboard and MIDI Out channels (rounds 165, 167i): what their controls send in MIDI goes to the plugins on their
     // port (midiTargets)

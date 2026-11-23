@@ -2473,7 +2473,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
                     ++options.report->converted["FL Studio Mobile Rack"];
             }
             else if (options.report != nullptr)
-                ++options.report->unsupported[why + "; played with a LYNX SHARE synth preset"];
+                ++options.report->unsupported[why + "; played with a YW Studio synth preset"];
         }
 
         // report: what happened to this channel's generator/sample
@@ -2696,7 +2696,7 @@ Song importFlp (const flp::Project& input, const FlpImportOptions& options)
         if (plugin == "Gross Beat")
             ++options.report->partialEffects["Gross Beat (state not read: volume gate only)"];
         if (plugin == "ZGameEditor Visualizer") // round 164c: its effects are approximated by LYNX Visualizer layers
-            ++options.report->partialEffects["ZGameEditor Visualizer (scene approximated with LYNX Visualizer layers)"];
+            ++options.report->partialEffects["ZGameEditor Visualizer (scene approximated with YW Visualizer layers)"];
         if (plugin == "Maximus")
             ++options.report->partialEffects["Maximus (option not decoded: approximated)"];
         else if (plugin == "Soundgoodizer")

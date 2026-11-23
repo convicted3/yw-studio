@@ -188,14 +188,14 @@ std::vector<Action> makeActions()
         { "help.shortcuts", TR_NOOP ("Shortcut sheet (press again to close)"), Context::global, { chord (f1) } },
         // #228 (round 190nq, LYNX extra): the action search. "?" opens it wherever the Clip-launch Info View (Live's "?")
         // doesn't use the key (MainComponent::keyPressed); no other key until the user gives it one
-        { "help.searchActions", TR_NOOP ("Search every LYNX action and run it"), Context::global, {} },
+        { "help.searchActions", TR_NOOP ("Search every YW Studio action and run it"), Context::global, {} },
         // round 190on (research190oe P2, owner decision O-2): the command palette — the same box with the menus, the LYNX
         // extras, the Settings pages and the recent projects. O-2's keys are all taken: Ctrl+Shift+P is FL's "Open in
         // project browser" (its Patterns menu; live check 190on), Ctrl+Shift+Space starts FL's playback (live check) and
         // is Live 12's "Move Insert Marker to Playhead Position", Ctrl+Alt+P Live's "Hide/Show Open Plug-In Windows". The
         // first free one: Ctrl+Shift+Y — in no list of Live 12's (its manual's chapter 42), nothing in FL 2026 with the
         // Playlist, Channel rack, Piano roll, Mixer or Browser focused (live check 190on), free in LYNX
-        { "view.commandPalette", TR_NOOP ("Command palette: find and run any command, menu item, LYNX extra or setting"), Context::global, { chord ('Y', ctrl | shift) } },
+        { "view.commandPalette", TR_NOOP ("Command palette: find and run any command, menu item, YW Studio extra or setting"), Context::global, { chord ('Y', ctrl | shift) } },
         { "browser.search", TR_NOOP ("Search the Browser"), Context::global, { chord ('F', ctrl) } },
 
         // Channel Rack (focused)
@@ -292,7 +292,7 @@ std::vector<Action> makeActions()
         { "pianoRoll.backgroundWave", TR_NOOP ("Background waveform on/off"), Context::pianoRoll, { chord ('N', alt) } },
         { "pianoRoll.showChordName", TR_NOOP ("Show chord name for selection on/off"), Context::pianoRoll, {} },
         { "pianoRoll.songBarsRuler", TR_NOOP ("Piano roll ruler: song bars on/off"), Context::pianoRoll, {} },
-        { "pianoRoll.stackedLanes", TR_NOOP ("Piano roll: stacked controller lanes on/off (LYNX)"), Context::pianoRoll, {} }, // round 190on (P10)
+        { "pianoRoll.stackedLanes", TR_NOOP ("Piano roll: stacked controller lanes on/off (YW Studio)"), Context::pianoRoll, {} }, // round 190on (P10)
         { "pianoRoll.selectRandomOne", TR_NOOP ("Select one at random"), Context::pianoRoll, { chord ('R', shift) }, true },
         { "pianoRoll.selectRandomMore", TR_NOOP ("Select more at random"), Context::pianoRoll, { chord ('M', shift) }, true },
         { "pianoRoll.selectOddSteps", TR_NOOP ("Select odd (swung) notes"), Context::pianoRoll, { chord ('O', shift) }, true },

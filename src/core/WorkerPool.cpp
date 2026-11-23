@@ -364,7 +364,7 @@ void WorkerPool::workerLoop (int index, std::function<void()> onStart)
     const ScopedFlushDenormals noDenormals;
     {
         char name[32];
-        std::snprintf (name, sizeof (name), "LYNX worker %d", index + 1);
+        std::snprintf (name, sizeof (name), "YW Studio worker %d", index + 1);
         nameCurrentThread (name);
     }
     lanePool = this;

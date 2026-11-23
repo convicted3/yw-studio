@@ -539,20 +539,20 @@ if(LYNX_BUILD_APP)
     endif()
 
     juce_add_gui_app(LYNX
-        PRODUCT_NAME "LYNX"
-        COMPANY_NAME "Ka1-S"
-        COMPANY_COPYRIGHT "Copyright (C) 2026 Ka1-S. Licensed under the GNU AGPL-3.0."
-        DESCRIPTION "LYNX SHARE digital audio workstation"
+        PRODUCT_NAME "YW Studio"
+        COMPANY_NAME "YW"
+        COMPANY_COPYRIGHT "YW Studio (yolo.su). Based on LYNX SHARE (C) 2026 Ka1-S. Licensed under the GNU AGPL-3.0."
+        DESCRIPTION "YW Studio digital audio workstation"
         # macOS bundle (Info.plist, .icns made from the 1024 and 256 px icons on Apple's icon grid, written by
         # tools/make_logo.py); ignored elsewhere
-        BUNDLE_ID "com.ka1-s.lynx"
+        BUNDLE_ID "su.yolo.ywstudio"
         ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/resources/macos/lynx-icon-1024.png"
         ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/resources/macos/lynx-icon-256.png"
         MICROPHONE_PERMISSION_ENABLED TRUE
-        MICROPHONE_PERMISSION_TEXT "LYNX SHARE records audio from your microphone or audio interface when you arm a track and press Record."
+        MICROPHONE_PERMISSION_TEXT "YW Studio records audio from your microphone or audio interface when you arm a track and press Record."
         DOCUMENT_EXTENSIONS lynx flp mid
         HARDENED_RUNTIME_ENABLED FALSE
-        PLIST_TO_MERGE "<plist><dict><key>CFBundleName</key><string>LYNX SHARE</string><key>CFBundleDisplayName</key><string>LYNX SHARE</string><key>LSMinimumSystemVersion</key><string>11.0</string><key>NSHighResolutionCapable</key><true/></dict></plist>")
+        PLIST_TO_MERGE "<plist><dict><key>CFBundleName</key><string>YW Studio</string><key>CFBundleDisplayName</key><string>YW Studio</string><key>LSMinimumSystemVersion</key><string>11.0</string><key>NSHighResolutionCapable</key><true/></dict></plist>")
 
     # (a list: the plugin build, cmake/LynxPlugins.cmake, compiles the same sources without Main.cpp)
     set(LYNX_APP_SOURCES

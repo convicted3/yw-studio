@@ -69,7 +69,7 @@ inline bool hasPage (const std::string& id)
     return ! id.empty() && ids.find (" " + id + " ") != std::string::npos;
 }
 
-constexpr const char* wikiRoot = "https://lynx-share.com/wiki/";
+constexpr const char* wikiRoot = "https://yolo.su/wiki/";
 
 // the built-in plugin's page (its index when it has none of its own)
 inline std::string pageFor (const std::string& name, bool generator)

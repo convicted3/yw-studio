@@ -183,7 +183,7 @@ std::vector<std::uint8_t> toState (const Settings& s)
     std::ostringstream o;
     char colour[16];
     std::snprintf (colour, sizeof (colour), "%08x", s.colour);
-    o << "LYNX dance 1\nmove=";
+    o << "YW Studio dance 1\nmove=";
     if (s.sheet.empty() && s.move >= 0 && s.move < moveCount)
         o << moveIds[s.move];
     else
@@ -219,7 +219,7 @@ std::vector<std::uint8_t> toState (const Settings& s)
 std::optional<Settings> fromState (const std::vector<std::uint8_t>& state)
 {
     const std::string text (state.begin(), state.end());
-    if (text.rfind ("LYNX dance", 0) != 0)
+    if (text.rfind ("YW Studio dance", 0) != 0)
         return std::nullopt;
     Settings s;
     std::istringstream in (text);

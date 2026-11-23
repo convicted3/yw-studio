@@ -1,0 +1,130 @@
+# YW Studio — Windows build.
+#   build    (ubuntu)   cross-compiles the app with Zig 0.14.1 + JUCE 8.0.4 (scripts/build-windows-zig.sh)
+#   package  (windows)  renames to "YW Studio.exe", runs the self-test, makes the portable zip and the installer
+# Download the result from the run's "YW-Studio-windows" artifact.
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ZIG_VERSION: 0.14.1
+  ZIG_SHA256: 24aeeec8af16c381934a6cd7d95c807a8cb2cf7df9fa40d359aa884195c4716c
+  JUCE_VERSION: 8.0.4
+  JUCE_SHA256: 0effe9823a6fd8a4f98e5c08be7d308350e417b2d15dcf34011e778fefbbf005
+
+jobs:
+  build:
+    name: Build (Zig cross compile)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      label: ${{ steps.version.outputs.label }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^project(LYNX VERSION \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "label=$version-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache toolchain
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/opt
+          key: toolchain-zig${{ env.ZIG_VERSION }}-juce${{ env.JUCE_VERSION }}-${{ env.ZIG_SHA256 }}-${{ env.JUCE_SHA256 }}
+
+      - name: Download Zig and JUCE
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p ~/opt && cd ~/opt
+          curl -fsSL -o zig.tar.xz "https://ziglang.org/download/$ZIG_VERSION/zig-x86_64-linux-$ZIG_VERSION.tar.xz"
+          echo "$ZIG_SHA256  zig.tar.xz" | sha256sum -c -
+          tar xf zig.tar.xz && rm zig.tar.xz
+          curl -fsSL -o juce.tar.gz "https://github.com/juce-framework/JUCE/archive/refs/tags/$JUCE_VERSION.tar.gz"
+          echo "$JUCE_SHA256  juce.tar.gz" | sha256sum -c -
+          tar xzf juce.tar.gz && mv "JUCE-$JUCE_VERSION" "juce-$JUCE_VERSION" && rm juce.tar.gz
+
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          ZIG="$HOME/opt/zig-x86_64-linux-$ZIG_VERSION/zig" JUCE_DIR="$HOME/opt/juce-$JUCE_VERSION" OUT=build-win JOBS=2 \
+            ./scripts/build-windows-zig.sh 2>&1 | grep -v '^1 warning generated\.$'
+          ./scripts/fetch-onnxruntime.sh windows build-win || echo "::warning::onnxruntime not fetched (stem split / audio-to-MIDI off)"
+          mkdir -p out
+          cp build-win/LYNX.exe "out/YW Studio.exe"
+          for f in lynx-asio.dll lynx-asio32.dll onnxruntime.dll; do [[ -f "build-win/$f" ]] && cp "build-win/$f" out/ || true; done
+          [[ -f build-win/LYNX-bridge32.exe ]] && cp build-win/LYNX-bridge32.exe out/YW-bridge32.exe || true
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin
+          path: out/
+          if-no-files-found: error
+          retention-days: 3
+
+  package:
+    name: Self-test and package
+    needs: build
+    runs-on: windows-latest
+    env:
+      LABEL: ${{ needs.build.outputs.label }}
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: bin
+          path: bin
+
+      - name: Self-test
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $p = Start-Process "bin\YW Studio.exe" -ArgumentList '--selftest', "$PWD\selftest.txt", "$PWD\selftest-demo.lynx" -Wait -PassThru
+          if (Test-Path selftest.txt) { Get-Content selftest.txt -Tail 30 }
+          if ($p.ExitCode -ne 0 -or -not (Select-String -Path selftest.txt -Pattern '^result=OK' -Quiet)) { throw "self-test failed (exit $($p.ExitCode))" }
+
+      - name: Portable zip and installer
+        shell: pwsh
+        run: |
+          $name = "YW-Studio-$env:LABEL-windows-x64"
+          New-Item -ItemType Directory -Force "pkg\$name" | Out-Null
+          Copy-Item bin\* "pkg\$name\"
+          Copy-Item LICENSE, THIRD_PARTY.md, PRIVACY.md "pkg\$name\"
+          if (Test-Path "pkg\$name\lynx-asio.dll") { Copy-Item "asio\Register YW ASIO.bat", "asio\Unregister YW ASIO.bat" "pkg\$name\" }
+          & "$env:ProgramFiles\Git\bin\bash.exe" scripts/collect-licenses.sh "pkg/$name/licenses"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path "pkg\$name" -DestinationPath "dist\$name.zip"
+          $nsis = (Get-Command makensis -ErrorAction SilentlyContinue).Source
+          if (-not $nsis) { $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe" }
+          if (-not (Test-Path $nsis)) { choco install nsis -y --no-progress; $nsis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe" }
+          & $nsis -V2 -INPUTCHARSET UTF8 "-DVERSION=$env:VERSION" "-DSTAGE=$PWD\pkg\$name" "-DOUTFILE=$PWD\dist\YW-Studio-$env:LABEL-setup-x64.exe" `
+            "-DICON=$PWD\resources\LYNX.ico" resources\installer\LYNX.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed ($LASTEXITCODE)" }
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YW-Studio-windows
+          path: dist/
+          if-no-files-found: error

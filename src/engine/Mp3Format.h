@@ -13,7 +13,7 @@ class Mp3AudioFormat final : public juce::AudioFormat
 public:
     Mp3AudioFormat();
 
-    static constexpr const char* formatName = "MP3 file (LYNX)";
+    static constexpr const char* formatName = "MP3 file (YW Studio)";
 
     juce::Array<int> getPossibleSampleRates() override { return { 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000 }; }
     juce::Array<int> getPossibleBitDepths() override { return {}; }

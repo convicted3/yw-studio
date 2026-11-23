@@ -62,7 +62,7 @@ struct Plan
 // their own (blocks play on no Playlist track, so they would give no stem).
 Song prepared (const Song& song);
 
-// The bundle for `song` (prepared) under `projectName` (empty: "LYNX SHARE").
+// The bundle for `song` (prepared) under `projectName` (empty: "YW Studio").
 Plan plan (const Song& song, const std::string& projectName, const Options& options = {});
 
 // The notes a track's MIDI file holds: its pattern clips as they play (FL's MIDI export of only those clips); empty when

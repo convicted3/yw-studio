@@ -371,7 +371,7 @@ public:
         channels.mask = o.channels;
 
         // Channel type (FL: FLEX / MIDI Out…; LYNX: its synth or a MIDI Out on the note's MIDI channel)
-        channelType.addItem (tr ("LYNX SHARE synth"), 1);
+        channelType.addItem (tr ("YW Studio synth"), 1);
         channelType.addItem (tr ("MIDI Out"), 2);
         channelType.setSelectedId (o.midiOut ? 2 : 1, juce::dontSendNotification);
         channelType.setTooltip (tr ("MIDI Out channels play the plugins and the MIDI output devices on their port (Settings › MIDI › Output devices › Port), on their MIDI channel"));

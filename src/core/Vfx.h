@@ -1,7 +1,7 @@
 #pragma once
 
 // FL Studio's VFX plugins (round 164b, docs/analise/REA_rodada164b.md): note-level processors that sit between the
-// notes of a Patcher ("From LYNX" events) or of a channel and the instruments they play. Each one takes voices
+// notes of a Patcher ("From YW Studio" events) or of a channel and the instruments they play. Each one takes voices
 // (note on / off with FL's voice properties: velocity, pan, fine pitch, Mod X / Y, release, note colour) and sends
 // voices out on one or more outputs, possibly changing them over time (VFX Envelope) or making new ones on the
 // beat (VFX Sequencer).

@@ -258,7 +258,7 @@ Song importBand (const band::Project& project, const BandImportOptions& options)
                 c.name = kind == InstrumentKind::kick ? "Kick" : kind == InstrumentKind::snare ? "Snare" : kind == InstrumentKind::clap ? "Clap" : "Hat";
                 q.kit.push_back (std::move (c));
             }
-            note (report, &FlpImportReport::approximated, "GarageBand drum kit \"" + track.name + "\" (LYNX's built-in kick, snare, clap and hat)");
+            note (report, &FlpImportReport::approximated, "GarageBand drum kit \"" + track.name + "\" (YW Studio's built-in kick, snare, clap and hat)");
         }
         else
         {
@@ -270,12 +270,12 @@ Song importBand (const band::Project& project, const BandImportOptions& options)
                 if (n == preset)
                     synth.synth = s;
             q.channel = std::move (synth);
-            note (report, &FlpImportReport::approximated, "GarageBand instrument \"" + track.name + "\" (LYNX's built-in synth, " + preset + " preset)");
+            note (report, &FlpImportReport::approximated, "GarageBand instrument \"" + track.name + "\" (YW Studio's built-in synth, " + preset + " preset)");
         }
         const auto made = simpletracks::addTrack (song, q);
         if (! made.ok())
         {
-            note (report, &FlpImportReport::notReproduced, "GarageBand: tracks past LYNX's track or insert count");
+            note (report, &FlpImportReport::notReproduced, "GarageBand: tracks past YW Studio's track or insert count");
             continue;
         }
         const auto colour = simpletracks::defaultColour (q.kind);

@@ -203,7 +203,7 @@ struct ZOrderTest final : juce::Timer
             juce::Desktop::getInstance().setGlobalScaleFactor (scale);
         if (lookAndFeel != nullptr)
             juce::LookAndFeel::setDefaultLookAndFeel (lookAndFeel);
-        window = std::make_unique<juce::DocumentWindow> ("LYNX zorder191 test", juce::Colours::darkgrey, 0);
+        window = std::make_unique<juce::DocumentWindow> ("YW Studio zorder191 test", juce::Colours::darkgrey, 0);
         ui = new MainComponent (*engine, false);
         window->setUsingNativeTitleBar (true);
         window->setContentOwned (ui, false);

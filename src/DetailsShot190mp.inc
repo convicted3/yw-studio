@@ -271,7 +271,7 @@
                 bool inOrder = got.size() >= fl.size();
                 for (int i = 0; i < fl.size() && inOrder; ++i)
                     inOrder = got[i] == fl[i];
-                check ("FX slot menu: FL's 28 items in FL's order first, LYNX's own after", inOrder);
+                check ("FX slot menu: FL's 28 items in FL's order first, YW Studio's own after", inOrder);
                 saveMenus (juce::StringArray { "FX slot " + juce::String (slot + 1) }, { menu }, prefix + "-menu-mixer-slot.png");
             }
         }

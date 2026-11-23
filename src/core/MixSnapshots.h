@@ -2,7 +2,7 @@
 
 // Mix snapshots (round 190hp, slice B16 of the 0.1.28 pain report, complaint #30: "Mixer: hide unused tracks, snapshots").
 // LYNX's own: FL keeps one insert's settings in a file (the track menu's Mixer states, .fst; LYNX has them too) and the
-// reference DAW has no mixer snapshots. The Mixer menu's "Mix snapshots (LYNX)" submenu:
+// reference DAW has no mixer snapshots. The Mixer menu's "Mix snapshots (YW Studio)" submenu:
 //   - Take snapshot: the whole mix as it is now — every insert's fader, pan, separation, mute, its route to the Master
 //     (on / level) and its sends (target, level, pre / post) — named "Snapshot n"; at most maxMixSnapshots per project;
 //   - a snapshot's own submenu: Recall, Update (to the mix as it is now), Rename..., Delete;

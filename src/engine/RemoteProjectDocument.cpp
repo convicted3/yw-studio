@@ -465,7 +465,7 @@ void ioPolicy (const Song& before, const Song& after)
     // Exact spelling is intentional: no normalization can turn a new UNC / device path into an old local asset.
     const auto known = ioReferences (before), requested = ioReferences (after);
     for (const auto& path : requested.assets)
-        if (! known.assets.contains (path)) remote_json::invalid ("Project edits cannot introduce asset paths; import assets in LYNX first");
+        if (! known.assets.contains (path)) remote_json::invalid ("Project edits cannot introduce asset paths; import assets in YW Studio first");
     for (const auto& id : requested.plugins)
         if (! known.plugins.contains (id)) remote_json::invalid ("Project edits cannot introduce plugin loader IDs; use a catalog instrument/effect operation");
     for (const auto& locator : requested.foreign)

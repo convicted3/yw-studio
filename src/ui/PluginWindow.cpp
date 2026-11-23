@@ -1198,7 +1198,7 @@ public:
         onPin = std::move (set);
         pin.setVisible (onPin != nullptr);
         pin.setEnabled (available);
-        pin.setTooltip (available ? tr ("Pin on top: keep this window above LYNX SHARE's other windows")
+        pin.setTooltip (available ? tr ("Pin on top: keep this window above YW Studio's other windows")
                                   : tr ("Pin on top is not available for a plugin in a separate process"));
         resized();
     }
@@ -2455,7 +2455,7 @@ void onEditorFault (const crashguard::WindowFault& fault)
     const auto folder = platform::settingsFile ("autosave");
     folder.createDirectory();
     const auto traceFile = folder.getChildFile ("editor-crash " + stamp + ".txt");
-    traceFile.replaceWithText ("LYNX: the editor of " + name + " crashed in its own window; LYNX closed the editor and went on\n"
+    traceFile.replaceWithText ("YW Studio: the editor of " + name + " crashed in its own window; YW Studio closed the editor and went on\n"
                                + juce::String::fromUTF8 (fault.trace.c_str()));
     crashguard::note ((juce::String (crashreport::editorCrashStepPrefix) + name + " (" + crashguard::describe (fault.code) + " at "
                        + juce::String::fromUTF8 (fault.where.c_str()) + "), trace in autosave\\" + traceFile.getFileName())
@@ -2837,7 +2837,7 @@ bool canAlwaysRunSeparately (const juce::String& plugin)
 
 juce::String alwaysSeparateHint()
 {
-    return tr ("In a separate process a crash of the plugin cannot take LYNX SHARE down. Its window then opens on its own "
+    return tr ("In a separate process a crash of the plugin cannot take YW Studio down. Its window then opens on its own "
                "(it cannot be docked).");
 }
 
@@ -2848,7 +2848,7 @@ CrashPrompt crashPrompt (const juce::String& plugin, bool onLoad)
     p.reload = ! onLoad;
     p.separate = canAlwaysRunSeparately (plugin);
     p.message = tr ("{0} crashed and was switched off.", { plugin }) + "\n\n"
-                + tr ("LYNX SHARE and your project kept running (an effect is bypassed, an instrument stays silent). Save your project.");
+                + tr ("YW Studio and your project kept running (an effect is bypassed, an instrument stays silent). Save your project.");
     if (p.reload)
     {
         p.message << " " << tr ("Reload starts it again with the settings from the last save or backup.");

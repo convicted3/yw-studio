@@ -722,8 +722,8 @@ struct SampleZone
 // FL's Patcher (REA_rodada141): a user-editable graph of plugins, in a mixer slot (EffectKind::patcher) or as a
 // Channel Rack generator (InstrumentKind::patcher). Nodes are effects or instruments; wires carry audio (summed with
 // a linear gain, FL's IPP multiply-add), notes (MIDI) or control values (a controller's output moving a parameter).
-// The two host nodes are "From LYNX" (patchFromHost: the slot's audio input, its side-chain, the channel's notes)
-// and "To LYNX" (patchToHost: the main audio output and the extra outputs to other mixer inserts).
+// The two host nodes are "From YW Studio" (patchFromHost: the slot's audio input, its side-chain, the channel's notes)
+// and "To YW Studio" (patchToHost: the main audio output and the extra outputs to other mixer inserts).
 struct PatchNode; // defined after EffectSlot
 struct RackDoc;   // defined after PatchNode (round 183c)
 constexpr int patchFromHost = -1, patchToHost = -2;
@@ -798,13 +798,13 @@ struct PatchWire
     int zone = -1;
     float pan = 0.0f;
     int gainSource = -1;
-    // MIDI (round 162): "From LYNX" output pins: fromPort 0 = Notes (the channel's notes), patchMidiPortPin (N) = what
+    // MIDI (round 162): "From YW Studio" output pins: fromPort 0 = Notes (the channel's notes), patchMidiPortPin (N) = what
     // reaches the Patcher on MIDI port N; a node's MIDI output (MIDI Out) = fromPort 0; a node's notes input = toPort 0;
-    // "To LYNX": toPort N = MIDI port N.
+    // "To YW Studio": toPort N = MIDI port N.
 
     bool operator== (const PatchWire&) const = default;
 };
-// The "From LYNX" pin of MIDI port N (0…255), and back (−1 = the Notes pin)
+// The "From YW Studio" pin of MIDI port N (0…255), and back (−1 = the Notes pin)
 constexpr int patchMidiPortPin (int port) noexcept { return 1 + port; }
 constexpr int patchPinMidiPort (int pin) noexcept { return pin - 1; }
 constexpr int patchMidiPorts = 256;
@@ -833,11 +833,11 @@ struct PatcherDoc
     std::vector<PatchWire> wires;
     std::vector<PatchParam> published; // [Patcher parameter]
     float inputX = 30.0f, inputY = 150.0f, outputX = 560.0f, outputY = 150.0f; // the host nodes in the editor
-    // "To LYNX" extra audio outputs (bus 1…): the mixer insert each one feeds (−1 = the k-th insert after the
+    // "To YW Studio" extra audio outputs (bus 1…): the mixer insert each one feeds (−1 = the k-th insert after the
     // channel's own); generator Patcher only
     std::vector<int> outputTracks;
     // The I/O nodes' MIDI pins the user activated (FL's node menu › Events: Notes, MIDI port 0…255; round 162). A pin
-    // with a cable is always shown. fromNotesHidden: "Deactivate" on the Notes pin of "From LYNX".
+    // with a cable is always shown. fromNotesHidden: "Deactivate" on the Notes pin of "From YW Studio".
     std::vector<int> fromMidiPorts, toMidiPorts; // sorted port numbers
     bool fromNotesHidden = false;
     // the Surface tab's controls and the Surface node's place on the Map (round 151)
@@ -1693,7 +1693,7 @@ struct MixerTrack
     std::string recordTo;
     // FL's "Record" position (round 168x, issue #41): where the take is tapped. Saved.
     RecordSource recordSource = RecordSource::postEq;
-    // LYNX extra (issue #41, "(LYNX)" in the menu): with a position after the slots, also record the dry device input as
+    // LYNX extra (issue #41, "(YW Studio)" in the menu): with a position after the slots, also record the dry device input as
     // a second take at the same time (DI + processed, for re-amping). Saved.
     bool recordDryToo = false;
     // an FL project's input (.flp 0x9A, REA round 157c): the index in FL's list of its own device's inputs, which only

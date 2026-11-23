@@ -121,7 +121,7 @@ public:
         entries.reserve (items.size());
         for (const auto& i : items)
             entries.push_back (i.entry);
-        field.setTextToShowWhenEmpty (tr ("Search commands, menus, LYNX extras, settings and recent projects"), theme::colour::textDisabled);
+        field.setTextToShowWhenEmpty (tr ("Search commands, menus, YW Studio extras, settings and recent projects"), theme::colour::textDisabled);
         field.setFont (theme::font (theme::type::body));
         field.onTextChange = [this] { refilter(); };
         field.onReturnKey = [this] { owner.runSelected(); };
@@ -230,7 +230,7 @@ private:
         {
             case actionsearch::Kind::action: return juce::String::fromUTF8 (e.where.c_str());
             case actionsearch::Kind::menu: return juce::String::fromUTF8 (e.where.c_str());
-            case actionsearch::Kind::extra: return tr ("LYNX extras") + " > " + juce::String::fromUTF8 (e.where.c_str());
+            case actionsearch::Kind::extra: return tr ("YW Studio extras") + " > " + juce::String::fromUTF8 (e.where.c_str());
             case actionsearch::Kind::setting: return tr ("Settings");
             case actionsearch::Kind::recent: return tr ("Recent projects");
         }

@@ -27,7 +27,7 @@ MODULES=(juce_core juce_data_structures juce_events juce_graphics juce_gui_basic
     echo '#define JUCE_USE_CURL 0'
     echo '#define JUCE_WEB_BROWSER 0'
     echo '#define JUCE_PLUGINHOST_VST3 1'
-    echo '#define JUCE_APPLICATION_NAME_STRING "LYNX-bridge32"'
+    echo '#define JUCE_APPLICATION_NAME_STRING "YW-bridge32"'
     echo "#define JUCE_APPLICATION_VERSION_STRING \"$VERSION\""
     for m in "${MODULES[@]}"; do echo "#define JUCE_MODULE_AVAILABLE_$m 1"; done
 } > "$B/JuceConfig.h.new"

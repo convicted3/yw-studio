@@ -168,7 +168,7 @@ inline void flushParts (const char* owner, double paintMs)
 class Monitor : private juce::Thread
 {
 public:
-    Monitor() : juce::Thread ("LYNX ui trace") {}
+    Monitor() : juce::Thread ("YW Studio ui trace") {}
     ~Monitor() override { stopThread (2000); }
 
     void start (std::function<juce::String()> summary)
@@ -181,7 +181,7 @@ public:
         for (const auto& d : juce::Desktop::getInstance().getDisplays().displays)
             displays << "display " << d.totalArea.toString() << " user " << d.userArea.toString() << " scale " << d.scale
                      << (d.isMain ? " main" : "") << "\n";
-        platform::settingsFile ("ui.log").replaceWithText ("LYNX UI trace: stalls > 16 ms, scopes > 8 ms, a summary per second\n" + displays);
+        platform::settingsFile ("ui.log").replaceWithText ("YW UI trace: stalls > 16 ms, scopes > 8 ms, a summary per second\n" + displays);
         startThread();
     }
 

@@ -96,7 +96,7 @@ bool meldToBraid (const Element& device, ChannelDef& channel, Notes& notes)
         const auto osc = (int) std::lround (state[(std::size_t) (braid::engineBase (k) + braid::eng::oscType)]);
         const auto flt = (int) std::lround (state[(std::size_t) (braid::engineBase (k) + braid::eng::filterType)]);
         notes.approximated.push_back ("engine " + e + ": the " + braid::oscTypeName (osc) + " oscillator and the " + braid::filterTypeName (flt)
-                                      + " filter as LYNX's own algorithms (fitted to Live's renders)");
+                                      + " filter as YW Studio's own algorithms (fitted to Live's renders)");
     }
     channel.instrument = InstrumentKind::braid;
     channel.modelParams = std::move (state);
@@ -171,11 +171,11 @@ bool spectralTimeToTimeprism (const Element& device, Translated& out)
     if (device.boolean ("ZeroLatencyDry/Value", false))
         out.notes.dropped.push_back ("Zero Dry Signal Latency (the dry signal is delayed with the wet one)");
     if (t::on (p[t::freezerOn]) && ! t::on (p[t::freezeMode]) && t::on (p[t::freeze]))
-        out.notes.approximated.push_back ("a manual freeze saved as on: LYNX freezes at the first sound it hears");
+        out.notes.approximated.push_back ("a manual freeze saved as on: YW Studio freezes at the first sound it hears");
     if (t::on (p[t::freezerOn]) && t::on (p[t::freezeMode]) && ! t::on (p[t::retrigger]))
-        out.notes.approximated.push_back ("Onsets: LYNX's own onset detector (Sensitivity fitted)");
+        out.notes.approximated.push_back ("Onsets: YW Studio's own onset detector (Sensitivity fitted)");
     if (t::on (p[t::delayOn]) && (std::abs (value (device, "Delay_Spray", 0.0)) > 1.0e-4))
-        out.notes.approximated.push_back ("Spray: LYNX's own random spread of the delay times (Live's pattern differs)");
+        out.notes.approximated.push_back ("Spray: YW Studio's own random spread of the delay times (Live's pattern differs)");
     return true;
 }
 
@@ -238,7 +238,7 @@ bool spectralResonatorToHarmonia (const Element& device, Translated& out)
     if (device.boolean ("Global_UseScale/Manual", false) || device.boolean ("PartialFrequencies_QuantizeToScaleOrTuning/Manual", false))
         out.notes.dropped.push_back ("Use Current Scale / Quantize (the partials stay where Freq and Stretch put them)");
     if (value (device, "Modulation_ModMode", 0.0) >= 0.5)
-        out.notes.approximated.push_back ("the partials' modulation (chorus / wander / granular): LYNX's own random patterns");
+        out.notes.approximated.push_back ("the partials' modulation (chorus / wander / granular): YW Studio's own random patterns");
     return true;
 }
 } // namespace lynx::alsdev

@@ -940,8 +940,8 @@ public:
         // Live 12's note Chance and Velocity Range (round 187c, LYNX additions)
         addRow (chance, TR_NOOP ("Chance"), 0.0, 100.0, "%");
         addRow (velocityRange, TR_NOOP ("Vel. range"), -100.0, 100.0, "%");
-        chance.slider.setTooltip (tr ("How likely the note is to play each time it comes round (LYNX; Live's note Chance)"));
-        velocityRange.slider.setTooltip (tr ("Each time it plays, the velocity is drawn between the note's velocity and velocity + this range (LYNX)"));
+        chance.slider.setTooltip (tr ("How likely the note is to play each time it comes round (YW Studio; Live's note Chance)"));
+        velocityRange.slider.setTooltip (tr ("Each time it plays, the velocity is drawn between the note's velocity and velocity + this range (YW Studio)"));
         release.slider.setTooltip (tr ("Release velocity: sent with the note's end to the instruments that use it (plugins, Patcher)"));
         modX.slider.setTooltip (tr ("Free modulation value (kept with the note; not routed yet)"));
         modY.slider.setTooltip (modX.slider.getTooltip());

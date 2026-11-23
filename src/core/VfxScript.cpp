@@ -1072,7 +1072,7 @@ void Runtime::compileOnPythonThread (const ScriptSettings& settings, bool keepVa
     if (vm < 0)
     {
         vm = 0;
-        info->error = "Too many VFX Scripts are running (LYNX SHARE runs 15 at most).";
+        info->error = "Too many VFX Scripts are running (YW Studio runs 15 at most).";
         setStatus (info->error);
         appendLog (info->error + "\n");
     }
@@ -1431,7 +1431,7 @@ std::shared_ptr<const Info> describe (const std::string& source)
         const auto vm = python::acquireVm(); // (a scratch VM, given back)
         if (vm < 0)
         {
-            info->error = "Too many VFX Scripts are running (LYNX SHARE runs 15 at most).";
+            info->error = "Too many VFX Scripts are running (YW Studio runs 15 at most).";
             return;
         }
         py_setvmctx (nullptr);

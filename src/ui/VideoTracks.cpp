@@ -43,7 +43,7 @@ std::map<juce::String, std::shared_ptr<ThumbStrip>> strips;
 
 juce::ThreadPool& thumbPool()
 {
-    static juce::ThreadPool pool (juce::ThreadPoolOptions {}.withThreadName ("LYNX video thumbnails").withNumberOfThreads (1)
+    static juce::ThreadPool pool (juce::ThreadPoolOptions {}.withThreadName ("YW Studio video thumbnails").withNumberOfThreads (1)
                                                             .withDesiredThreadPriority (juce::Thread::Priority::background));
     return pool;
 }

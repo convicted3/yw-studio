@@ -29,9 +29,9 @@ bool has (const std::string& text, const char* word) { return text.find (word) !
 std::string engineName (InstrumentKind kind)
 {
     if (kind == InstrumentKind::synth)
-        return "LYNX synth";
+        return "YW Studio synth";
     const auto* engine = natives::instrumentEngine (kind);
-    return engine != nullptr ? engine->name : kind == InstrumentKind::drumsynth ? "Fruity DrumSynth Live" : "LYNX";
+    return engine != nullptr ? engine->name : kind == InstrumentKind::drumsynth ? "Fruity DrumSynth Live" : "YW Studio";
 }
 
 bool drumKind (InstrumentKind kind) noexcept

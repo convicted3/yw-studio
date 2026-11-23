@@ -245,7 +245,7 @@ juce::String selfTest (const Song* rich)
                 for (int i = 0; i < frames; ++i)
                     b.setSample (c, i, 0.5f * std::sin ((110.0f + 55.0f * (float) c) * (float) i / 48000.0f * 6.2831853f) * (1.0f - (float) i / (float) frames));
             juce::StringPairArray meta;
-            meta.set ("bwav description", "LYNX pack test"); // (a bext chunk before the samples)
+            meta.set ("bwav description", "YW Studio pack test"); // (a bext chunk before the samples)
             std::unique_ptr<juce::OutputStream> out (f.createOutputStream().release());
             if (auto* w = wav.createWriterFor (out.get(), 48000.0, (unsigned) channels, floating ? 32 : bits, meta, 0))
             {
@@ -334,7 +334,7 @@ int run (const juce::StringArray& args)
 {
     const auto i = args.indexOf ("--livetest");
     const juce::File report (args[i + 1].unquoted());
-    juce::String relay = "https://relay.lynx-share.com";
+    juce::String relay = "https://relay.yolo.su";
     if (const auto r = args.indexOf ("--relay"); r >= 0)
         relay = args[r + 1].unquoted();
     // round 169j: --plugin <a .vst3>: Ana plays that instrument, Rui does not have it (live stand-ins)
@@ -1207,7 +1207,7 @@ int run (const juce::StringArray& args)
         const bool back = resumed && pumpUntil ([&] { return converged ({ &ana, &rui }) && anaOnline() && patternIndex (host.engine->getSong(), "Ana unconfirmed") >= 0; }, 40000);
         check (back && ana.live->myTag() == anaTag && ana.live->getStats().rejoined == 1 && host.engine->getSong().session.participants.size() == peopleBefore
                    && host.live->getPeople().size() == 3 && ana.live->myPermissions().settings && patternIndex (ana.engine->getSong(), "Ana before her restart") >= 0,
-               "Ana's LYNX SHARE restarted: back as herself (tag " + juce::String ((int) ana.live->myTag()) + ", " + juce::String ((int) host.live->getPeople().size())
+               "Ana's YW Studio restarted: back as herself (tag " + juce::String ((int) ana.live->myTag()) + ", " + juce::String ((int) host.live->getPeople().size())
                    + " people, her permission kept) in " + juce::String ((int) (juce::Time::getMillisecondCounterHiRes() - t)) + " ms; her unconfirmed pattern reached everyone ("
                    + ana.live->getStatus() + ")");
         explain ({ &ana, &rui });
@@ -1229,7 +1229,7 @@ int run (const juce::StringArray& args)
         ana.live.reset();
         const auto closed = LiveSessionManager::readGuestJournal (journal);
         pumpUntil ([&] { return ! anaOnline(); }, 10000);
-        check (closed.has_value() && ! anaOnline() && host.live->getPeople().size() == 3, "Ana closed LYNX SHARE: her journal stays and the host keeps her place (offline)");
+        check (closed.has_value() && ! anaOnline() && host.live->getPeople().size() == 3, "Ana closed YW Studio: her journal stays and the host keeps her place (offline)");
         ana.engine = std::make_unique<AudioEngine> (false);
         ana.live = std::make_unique<LiveSessionManager> (*ana.engine);
         ana.live->onHint = [raw = &ana] (const juce::String& h) { raw->hints.add (h); };
@@ -1344,7 +1344,7 @@ int runPeer (const juce::StringArray& args)
     const auto role = args[i + 1];
     const juce::File dir (args[i + 2].unquoted());
     dir.createDirectory();
-    juce::String relay = "https://relay.lynx-share.com";
+    juce::String relay = "https://relay.yolo.su";
     if (const auto r = args.indexOf ("--relay"); r >= 0)
         relay = args[r + 1].unquoted();
     juce::String code;
@@ -1445,7 +1445,7 @@ int runPeer (const juce::StringArray& args)
         // the guest "crashes": its place stays; meanwhile the host edits on
         {
             const bool good = pumpUntil ([&] { return live.getPeople().size() == 2 && ! live.getPeople().back().online; }, 120000); // (the wait first, then the text: the order of arguments is the compiler's)
-            check (good, "the guest's LYNX SHARE went away: its place is kept (offline) after " + ms());
+            check (good, "the guest's YW Studio went away: its place is kept (offline) after " + ms());
         }
         engine.editSong ([] (Song& s) { s.bpm = 123.0; s.patterns.emplace_back().name = "Host while the guest restarts"; });
         // it comes back as itself

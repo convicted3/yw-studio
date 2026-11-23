@@ -399,15 +399,15 @@ std::string instrumentName (InstrumentKind k)
 {
     switch (k)
     {
-        case InstrumentKind::kick: return "LYNX Kick";
-        case InstrumentKind::snare: return "LYNX Snare";
-        case InstrumentKind::hat: return "LYNX Hat";
-        case InstrumentKind::clap: return "LYNX Clap";
-        case InstrumentKind::synth: return "LYNX Synth";
+        case InstrumentKind::kick: return "YW Kick";
+        case InstrumentKind::snare: return "YW Snare";
+        case InstrumentKind::hat: return "YW Hat";
+        case InstrumentKind::clap: return "YW Clap";
+        case InstrumentKind::synth: return "YW Synth";
         case InstrumentKind::sampler: return "Sampler (multi-sample / slices)";
         case InstrumentKind::controller: return "Envelope Controller";
         case InstrumentKind::patcher: return "Patcher";
-        case InstrumentKind::soundfont: return "LYNX Soundfont";
+        case InstrumentKind::soundfont: return "YW Soundfont";
         case InstrumentKind::vfx: return "VFX note processor";
         default: return "instrument";
     }
@@ -1514,7 +1514,7 @@ struct Converter
             if (const auto id = controlFor (v.target))
                 out.initControls.push_back ({ 0, *id, rawValue (v.target, v.value) });
         if (! song.midiLinks.empty())
-            report.notes.push_back ("MIDI controller links stay in LYNX (FL keeps them per machine)");
+            report.notes.push_back ("MIDI controller links stay in YW Studio (FL keeps them per machine)");
         // round 190om: a note's own pitch / timbre / pressure curves (MPE, an imported module's slides, vibrato and
         // arpeggios) have no FL equivalent (FL's notes hold one value each): the notes play their key
         {
@@ -1877,7 +1877,7 @@ struct Converter
                 {
                     slot.plugin = "Fruity Wrapper";
                     slot.state = writeWrapper (fx.substituteFor.foreign, false);
-                    what = fx.substituteFor.foreign.name + " (the original plugin, LYNX's substitute left out)";
+                    what = fx.substituteFor.foreign.name + " (the original plugin, YW Studio's substitute left out)";
                 }
                 else if (fx.kind == EffectKind::plugin)
                 {
@@ -1930,7 +1930,7 @@ struct Converter
                 if (slot.plugin.empty())
                 {
                     if (song.slotActive (fx))
-                        report.dropped.push_back (label + effectInfo (fx.kind).name + " (LYNX only)");
+                        report.dropped.push_back (label + effectInfo (fx.kind).name + " (YW Studio only)");
                     continue;
                 }
                 if (! what.empty())

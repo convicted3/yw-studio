@@ -72,7 +72,7 @@ private:
     std::atomic<bool> cancel { false };
     juce::AudioFormatManager formats;
     juce::Image scratch;
-    juce::ThreadPool pool { juce::ThreadPoolOptions {}.withThreadName ("LYNX waveforms").withNumberOfThreads (2) };
+    juce::ThreadPool pool { juce::ThreadPoolOptions {}.withThreadName ("YW Studio waveforms").withNumberOfThreads (2) };
 };
 
 struct WaveStyle

@@ -117,7 +117,7 @@ bool writeWavForLive (const juce::File& source, const juce::File& target)
 juce::File writeAlsProject (const Song& song, PluginHost* host, AlsVersion version, bool collect, const juce::File& folder, const juce::String& name,
                             juce::StringArray& notes, juce::String& error)
 {
-    const auto stem = juce::File::createLegalFileName (name.isNotEmpty() ? name : juce::String ("LYNX SHARE"));
+    const auto stem = juce::File::createLegalFileName (name.isNotEmpty() ? name : juce::String ("YW Studio"));
     // Live keeps (and saves) a set only inside a "<name> Project" folder (ALS_FORMAT §9)
     const auto project = folder.getFileName().endsWithIgnoreCase (" Project") ? folder : folder.getChildFile (stem + " Project");
     if (! project.createDirectory())
@@ -134,7 +134,7 @@ juce::File writeAlsProject (const Song& song, PluginHost* host, AlsVersion versi
 
     AlsExportOptions options;
     options.version = version;
-    options.creator = "LYNX SHARE";
+    options.creator = "YW Studio";
     options.sampleSeconds = [&] (const std::string& path) {
         if (auto it = lengths.find (path); it != lengths.end())
             return it->second;
@@ -335,7 +335,7 @@ void showAlsExportDialog (AudioEngine& engine, const juce::File& suggestedFolder
 {
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = tr ("Export Live set");
-    options.content.setOwned (fitContentToScreen (std::make_unique<AlsExportPanel> (engine, suggestedFolder, projectName.isNotEmpty() ? projectName : "LYNX SHARE", true)).release());
+    options.content.setOwned (fitContentToScreen (std::make_unique<AlsExportPanel> (engine, suggestedFolder, projectName.isNotEmpty() ? projectName : "YW Studio", true)).release());
     options.dialogBackgroundColour = theme::colour::bg2;
     options.useNativeTitleBar = true;
     options.resizable = false;
@@ -345,6 +345,6 @@ void showAlsExportDialog (AudioEngine& engine, const juce::File& suggestedFolder
 
 std::unique_ptr<juce::Component> makeAlsExportPanel (AudioEngine& engine)
 {
-    return std::make_unique<AlsExportPanel> (engine, juce::File(), "LYNX SHARE", false);
+    return std::make_unique<AlsExportPanel> (engine, juce::File(), "YW Studio", false);
 }
 } // namespace lynx

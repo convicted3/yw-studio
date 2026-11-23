@@ -1,7 +1,7 @@
     // --demo190plcheck <prefix> (round 190pl): the --demo operations tutorial batch 2 added (docs/DEMO_MODE.md), run against
     // a real main window on the desktop (a private X server): ui.export (the Export window by its IDs, its Export... button
     // writing the script's file without a file dialog), file.export, file.save (Save as, Save, Save new version) and the
-    // Versions window's rows, midi.input through the virtual "LYNX demo keyboard" and its MIDI settings (listed in Options ›
+    // Versions window's rows, midi.input through the virtual "YW Studio demo keyboard" and its MIDI settings (listed in Options ›
     // MIDI; off = ignored), plugin.scan and the Plugin manager's IDs, ui.drag (a Playlist clip dragged through the window to
     // another track), ui.click "peer", ui.controlmenu on an insert effect's knob (its own menu: Create automation clip),
     // mixer.route (a sidechain, a send level) and the Mixer's route-arrow cells. <prefix>-checks.txt lists the checks; run it
@@ -158,7 +158,7 @@
         const auto activity = offline.getMidiActivity();
         r = op ("midi.input", json (R"({"events":[{"type":"note","note":60,"velocity":100,"at":0,"length":0.05},{"type":"cc","cc":1,"value":64,"at":0.02}]})"));
         settleFor (200);
-        check ("midi.input plays the LYNX demo keyboard (" + juce::String ((int) r["messages"]) + " messages, activity " + juce::String ((int) activity) + " -> "
+        check ("midi.input plays the YW Studio demo keyboard (" + juce::String ((int) r["messages"]) + " messages, activity " + juce::String ((int) activity) + " -> "
                    + juce::String ((int) offline.getMidiActivity()) + ")" + why (r),
                ok (r) && (int) r["messages"] == 3 && offline.getMidiActivity() >= activity + 3);
         {
@@ -185,7 +185,7 @@
                 const auto row = op ("ui.find", json ("{\"target\":\"midi.input." + juce::String (k) + ".enabled\"}"));
                 listed = (bool) row["found"] && row["control"]["text"].toString() == demo::virtualKeyboardName() && (bool) row["control"]["on"];
             }
-            check ("Options › MIDI lists the LYNX demo keyboard, on (midi.input.<n>.enabled)" + why (r), ok (r) && listed);
+            check ("Options › MIDI lists the YW Studio demo keyboard, on (midi.input.<n>.enabled)" + why (r), ok (r) && listed);
         }
         closeAllToolWindows();
         for (int i = juce::Desktop::getInstance().getNumComponents(); --i >= 0;) // (the settings window, if it is not a tool window)

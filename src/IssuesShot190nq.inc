@@ -273,7 +273,7 @@
                     find (*child);
             };
             find (*page);
-            check ("Settings › LYNX extras lists it, off", found != nullptr && ! dynamic_cast<juce::ToggleButton*> (found)->getToggleState());
+            check ("Settings › YW Studio extras lists it, off", found != nullptr && ! dynamic_cast<juce::ToggleButton*> (found)->getToggleState());
             if (found != nullptr)
             {
                 const auto r = page->getLocalArea (found, found->getLocalBounds());
@@ -391,7 +391,7 @@
             };
             walk (*panel);
             const auto says = text.contains ("as in FL Studio");
-            check (fromFl ? "Missing files, an FL project: \"will not sound as in FL Studio\" (as before)" : "Missing files, a LYNX project: no \"as in FL Studio\"",
+            check (fromFl ? "Missing files, an FL project: \"will not sound as in FL Studio\" (as before)" : "Missing files, a YW Studio project: no \"as in FL Studio\"",
                    fromFl ? says : ! says && text.contains ("when the project was saved"));
             write (*panel, panel->getLocalBounds().withHeight (140), fromFl ? "d1120-missing-flp" : "d1120-missing-lynx");
         }

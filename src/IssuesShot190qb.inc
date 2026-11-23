@@ -157,11 +157,11 @@
             engine.setSong (song);
             juce::String preview, resolved;
             const auto when = juce::Time (2026, 10, 20, 17, 20, 0, 0, true); // (20 November 2026, the issue's comment)
-            auto panel = makeExportPanelWithName (engine, "LYNX SHARE", "/BOUNCE/$project_D$day-M$month-Y$year_$bpm-BPM_$samplerateHz-$bitdepth", when,
+            auto panel = makeExportPanelWithName (engine, "YW Studio", "/BOUNCE/$project_D$day-M$month-Y$year_$bpm-BPM_$samplerateHz-$bitdepth", when,
                                                   preview, resolved);
             report.add ("preview: " + preview);
-            check ("215_folder_in_the_name", resolved.startsWith ("BOUNCE/LYNX SHARE_D20-M11-Y2026_130-BPM_") && resolved.endsWith ("Hz-24bit"), resolved);
-            check ("215_preview_shows_the_folder", preview.contains ("BOUNCE/LYNX SHARE_D20-M11-Y2026_130-BPM_"), preview);
+            check ("215_folder_in_the_name", resolved.startsWith ("BOUNCE/YW Studio_D20-M11-Y2026_130-BPM_") && resolved.endsWith ("Hz-24bit"), resolved);
+            check ("215_preview_shows_the_folder", preview.contains ("BOUNCE/YW Studio_D20-M11-Y2026_130-BPM_"), preview);
             savePng (panel->createComponentSnapshot (panel->getLocalBounds(), true, 1.0f), prefix + "-215-folder-name.png");
             savePng (panel->createComponentSnapshot (panel->getLocalBounds(), true, 1.5f), prefix + "-215-folder-name@150.png");
             auto nested = makeExportPanelWithName (engine, "AC/DC", "Bounces/$year/$project", when, preview, resolved);

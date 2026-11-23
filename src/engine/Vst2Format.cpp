@@ -694,7 +694,7 @@ std::intptr_t hostCallback (abi::Effect* effect, std::int32_t opcode, std::int32
         case abi::hostGetVendorString:
         case abi::hostGetProductString:
             if (ptr != nullptr)
-                std::strcpy ((char*) ptr, "LYNX");
+                std::strcpy ((char*) ptr, "YW Studio");
             return 1;
         case abi::hostGetVendorVersion: return 1;
         case abi::getLanguage: return 1; // English

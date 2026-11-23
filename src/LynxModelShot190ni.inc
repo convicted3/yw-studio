@@ -35,7 +35,7 @@
             c.instrument = InstrumentKind::lynxModel;
             c.mixerTrack = s.channels[0].mixerTrack;
             c.modelParams = lynxModelDefaults();
-            c.name = "LYNX Model";
+            c.name = "YW Model";
             s.channels[0] = c;
         }, false);
         offline.dispatchPendingMessages();
@@ -106,18 +106,18 @@
             const auto copy = olderlynx::forRelease (song, "0.1.28");
             bool reported = false;
             for (const auto& l : copy.lost)
-                reported = reported || juce::String (l.text).startsWith ("LYNX Model is not in this release");
-            check ("copy for 0.1.28 reports LYNX Model", copy.ok && reported && ! copy.json.contains ("\"lynxmodel\""));
+                reported = reported || juce::String (l.text).startsWith ("YW Model is not in this release");
+            check ("copy for 0.1.28 reports YW Model", copy.ok && reported && ! copy.json.contains ("\"lynxmodel\""));
         }
         // the generator list (the Channel rack's +, the Browser's plugin database, the quick-add palette)
         {
             bool listed = false;
             for (const auto& e : generators::entries (offline))
-                if (e.kind == InstrumentKind::lynxModel && e.label == "LYNX Model" && e.make)
+                if (e.kind == InstrumentKind::lynxModel && e.label == "YW Model" && e.make)
                     if (const auto c = e.make())
                         listed = c->instrument == InstrumentKind::lynxModel && (int) c->modelParams.size() == lm::stateSize;
             check ("generator list entry", listed);
-            check ("plugin database folder", plugincatalog::flCategory ("LYNX Model", true) == "Synth special");
+            check ("plugin database folder", plugincatalog::flCategory ("YW Model", true) == "Synth special");
         }
         // the Browser's plugin database at Generators › Synth special
         {
@@ -127,7 +127,7 @@
             browser.showPluginDatabase ("FL engines", 1); // (LYNX's own engines sit there, as Tetra, Helix and Braid)
             offline.dispatchPendingMessages();
             const auto labels = browser.rowLabelsForCheck();
-            check ("browser row", labels.contains ("LYNX Model"), labels.joinIntoString (", ").substring (0, 300));
+            check ("browser row", labels.contains ("YW Model"), labels.joinIntoString (", ").substring (0, 300));
             const auto image = shot::paint (browser, theme::colour::bg2);
             const auto f = shot::file (juce::File (prefix + "-10-browser.png"));
             f.deleteFile();

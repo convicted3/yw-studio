@@ -1123,7 +1123,7 @@ bool soundFontState (Ctx& ctx, const flm::Module& m, ChannelDef& c)
         const auto n = std::clamp ((int) std::lround (127.0 * (double) v (3, 1.0f)), 1, 127);
         c.modelParams[sf::pSustain] = (float) std::max (1.0e-4, std::pow (10.0, -5.0 + 5.0 * std::pow (n / 127.0, 0.2)));
     }
-    ctx.note (&FlpImportReport::converted, "FL Studio Mobile: SoundFont Player (LYNX Soundfont)");
+    ctx.note (&FlpImportReport::converted, "FL Studio Mobile: SoundFont Player (YW Soundfont)");
     ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: SoundFont Player (level and envelope shape approximated)");
     if (! presetFound)
         ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: SoundFont Player preset not found in the font (first preset used)");
@@ -1192,7 +1192,7 @@ bool dwStandIn (Ctx& ctx, const flm::Module& m, ChannelDef& c, const std::string
     c.keyLow = keyLow, c.keyHigh = keyHigh;
     const auto v = [&m] (std::size_t k, float fallback) { return k < m.params.size() && std::isfinite (m.params[k]) ? m.params[k] : fallback; };
     c.sampler.pitch = std::clamp ((float) flmdw::pitchSemitones (v (3, 0.5f)) + 2.0f * v (4, 0.5f) - 1.0f, -24.0f, 24.0f);
-    ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: DW Sampler \"" + (shown.empty() ? c.name : shown) + "\": every sample missing, plays LYNX's \""
+    ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: DW Sampler \"" + (shown.empty() ? c.name : shown) + "\": every sample missing, plays YW Studio's \""
                                                     + best->name + "\" as a stand-in until they are found (re-import then)");
     return true;
 }
@@ -1673,7 +1673,7 @@ void addAudioClip (Ctx& ctx, const flm::Clip& clip, int row, int insert, const s
     if (stretched)
     {
         c.stretch = s.stretch;
-        ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: audio clip time-stretch (LYNX's stretcher, approximated)");
+        ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: audio clip time-stretch (YW Studio's stretcher, approximated)");
     }
     const auto start = (double) clip.startTick / flm::ticksPerBeat;
     const auto passes = passesOf (clip);
@@ -1797,7 +1797,7 @@ void applyPad (Ctx& ctx, const flm::SampleRef& s, ChannelDef& c, bool soloElsewh
             c.sampler.stretchBeats = (float) ((stretched ? s.stretch : 1.0) * seconds * std::exp2 (-speed / 12.0) * bpm / 60.0);
             c.sampler.pitch = (float) std::clamp (speed + shift, -24.0, 24.0);
             ctx.note (&FlpImportReport::converted, "FL Studio Mobile: drum pad time-stretch or pitch shift");
-            ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: drum pad time-stretch (LYNX's stretcher; a note's own pitch shifts it instead of resampling)");
+            ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: drum pad time-stretch (YW Studio's stretcher; a note's own pitch shifts it instead of resampling)");
         }
         else
             ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: drum pad time-stretch or pitch shift (played as recorded)");
@@ -1835,7 +1835,7 @@ std::string skippedLaneLabel (const flm::Lane& lane)
         return "FL Studio Mobile: automation of module parameters (not imported yet)";
     const auto p = lane.targetParam;
     if (p == rp::mute || p == rp::solo)
-        return "FL Studio Mobile: Mute/Solo automation (LYNX automates neither)";
+        return "FL Studio Mobile: Mute/Solo automation (YW Studio automates neither)";
     if (p == rp::pitchBend || p == rp::aftertouch)
         return "FL Studio Mobile: Pitch Bend/Aftertouch automation (not imported)";
     if (p == rp::firstMidiCc + 64) // round 190dw item 4 (the rack releases sustained notes when it falls from above ½)
@@ -2156,7 +2156,7 @@ std::optional<EffectSlot> flmRackFxSlot (const std::vector<std::uint8_t>& state,
         }
         if (chain.size() + mapped.slots.size() > (std::size_t) maxEffectSlots)
         {
-            note (&FlpImportReport::droppedEffects, "FL Studio Mobile: " + moduleLabel (m.type) + " (the rack holds more than LYNX's slots)");
+            note (&FlpImportReport::droppedEffects, "FL Studio Mobile: " + moduleLabel (m.type) + " (the rack holds more than YW Studio's slots)");
             continue;
         }
         for (auto& slot : mapped.slots)
@@ -2463,7 +2463,7 @@ std::optional<Song> importFlmProject (const flm::Project& project, const FlmImpo
             insert = (int) song.mixer.size() - 1;
         }
         else if (ch.kind != flm::kindMaster) // round 190fn (mixer-0013): said, not silent
-            ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: channels past LYNX's insert count (on the Master, without their own level and effects)");
+            ctx.note (&FlpImportReport::partialEffects, "FL Studio Mobile: channels past YW Studio's insert count (on the Master, without their own level and effects)");
         // the rack's level and pan on it (F2: RPRM [0] volume with FLM's fader law, [1] pan 0…1 → −1…1)
         if (rack.params.size() >= 2)
         {

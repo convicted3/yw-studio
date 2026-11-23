@@ -36,7 +36,7 @@ void setEditorsDetached (bool detached);
 // Call where keepAboveMainWindow was called (after the window is visible): docks the window, or keeps it above the main
 // window when it can't be docked. True when it is docked.
 bool dockOrKeepAbove (juce::DocumentWindow& window);
-// Round 190jy (queue item 44; Settings › General › "Draw docked LYNX editors in the main window", off by default;
+// Round 190jy (queue item 44; Settings › General › "Draw docked YW Studio editors in the main window", off by default;
 // LYNX_EDITORS_IN_MAIN=1 / 0 overrides it): a docked LYNX editor window (not a hosted plugin's, nor one that holds a
 // native view of its own) is drawn by the main window as one of its components instead of a native child window, so a
 // live display (Gross Beat, Fruity Limiter, Maximus...) costs its paint and no second window presenting frames. It keeps

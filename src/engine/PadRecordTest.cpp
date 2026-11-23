@@ -1,5 +1,5 @@
 // Round 190ks (GitHub #198: "the pads I click in my drum plugin's window are not recorded"). AudioEngine::padRecordSelfTest
-// is `LYNX --padrectest "<LYNX Test Pads.vst3>" report.txt`: the live engine on a stand-in audio device (real-time blocks
+// is `LYNX --padrectest "<YW Test Pads.vst3>" report.txt`: the live engine on a stand-in audio device (real-time blocks
 // of 256 at 48 kHz) records a take while a hosted drum plugin with a MIDI output (tools/testplugin/lynx_test_pads_vst3.cpp)
 // "is clicked" (its scripted hits, LYNX_TEST_PADS_AUTO) and passes the notes it is sent on (LYNX_TEST_PADS_ECHO):
 //  1. channel 0, its window open: the two hits are recorded on its channel, at their velocity, where they were heard;

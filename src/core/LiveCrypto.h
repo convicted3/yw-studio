@@ -25,7 +25,7 @@ struct Invite
     std::string secret; // 16 characters a-z 2-7 (80 bits)
 };
 std::string newSecret();
-std::string formatCode (const Invite& invite);                // "LYNX-ABCDE-FGHIJ-KLMN-OPQR-STUV-WXYZ"
+std::string formatCode (const Invite& invite);                // "YW-ABCDE-FGHIJ-KLMN-OPQR-STUV-WXYZ"
 std::optional<Invite> parseCode (const std::string& text);   // spaces, dashes, case, a pasted link: forgiven
 
 struct Keys

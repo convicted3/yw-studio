@@ -848,7 +848,7 @@ public:
             }
             if (! fx)
             {
-                ui::postHint ({ tr ("LYNX SHARE can't build an effect from this preset."), {} }, 3000);
+                ui::postHint ({ tr ("YW Studio can't build an effect from this preset."), {} }, 3000);
                 return;
             }
         }
@@ -2425,7 +2425,7 @@ public:
         addAndMakeVisible (commitGroove);
         signature.setFont (font (type::small));
         signature.setColour (juce::Label::textColourId, colour::textPrimary);
-        signature.setTooltip (tr ("The project's time signature (clips have no signature of their own in LYNX SHARE)"));
+        signature.setTooltip (tr ("The project's time signature (clips have no signature of their own in YW Studio)"));
         addAndMakeVisible (signature);
         loop.setButtonText (tr ("Loop"));
         loop.onClick = [this] { editSlot ([on = loop.getToggleState()] (ClipGridSlot& slot) { slot.loop = on; }); };
@@ -3207,7 +3207,7 @@ private:
             // (round 190kc: audio clips take a groove too, for Commit: LYNX plays grooves live on MIDI clips only)
             groove.setEnabled (c->kind == ClipKind::pattern || c->kind == ClipKind::audio);
             groove.setTooltip (c->kind == ClipKind::pattern ? tr ("The groove this clip plays through (the Groove Pool)")
-                                                            : tr ("The groove for this audio clip: Commit writes it as warp markers (LYNX SHARE plays grooves live on MIDI clips only)"));
+                                                            : tr ("The groove for this audio clip: Commit writes it as warp markers (YW Studio plays grooves live on MIDI clips only)"));
             commitGroove.setEnabled (slot != nullptr && slot->groove != 0 && (c->kind == ClipKind::pattern || c->kind == ClipKind::audio));
         }
         if (slot != nullptr)
@@ -4053,7 +4053,7 @@ int DetailView::heightFor (int available) const noexcept
 void DetailView::showOptionsMenu()
 {
     juce::PopupMenu menu;
-    menu.addSectionHeader (tr ("LYNX extras"));
+    menu.addSectionHeader (tr ("YW Studio extras"));
     menu.addItem (tr ("W shows or hides the selected device's window"), true, extraWindowKey, [this] {
         extraWindowKey = ! extraWindowKey;
         if (hooks.layoutChanged != nullptr)

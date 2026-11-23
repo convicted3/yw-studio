@@ -39,7 +39,7 @@ MODULES=(juce_core juce_data_structures juce_events juce_graphics juce_gui_basic
     echo '#define JUCE_PLUGINHOST_ARA 1' # ARA 2 hosting (round 190kx; Celemony's ARA SDK headers in third_party/ara)
     echo '#define JUCE_ASIO 1'
     echo '#define JUCE_USE_MP3AUDIOFORMAT 0' # MP3: src/engine/Mp3Format (minimp3), round 157b
-    echo '#define JUCE_APPLICATION_NAME_STRING "LYNX"'
+    echo '#define JUCE_APPLICATION_NAME_STRING "YW Studio"'
     echo "#define JUCE_APPLICATION_VERSION_STRING \"$VERSION\""
     for m in "${MODULES[@]}"; do echo "#define JUCE_MODULE_AVAILABLE_$m 1"; done
 } > "$OUT/JuceConfig.h.new"

@@ -177,7 +177,7 @@ void MainComponent::showStartPage()
     {
         host.templates.push_back (e.name);
         using Kind = startfrom::Entry::Kind;
-        host.templateDetails.push_back (e.kind == Kind::demo ? tr ("Demo song") : e.kind == Kind::lynxDefault ? tr ("LYNX SHARE's default project")
+        host.templateDetails.push_back (e.kind == Kind::demo ? tr ("Demo song") : e.kind == Kind::lynxDefault ? tr ("YW Studio's default project")
                                         : e.kind == Kind::builtIn ? tr ("Template") : tr ("Your template"));
     }
     const auto closeThen = [safe] (std::function<void (MainComponent&)> then) {
@@ -318,7 +318,7 @@ void MainComponent::showGettingStarted()
                     safe->hideGettingStarted();
             });
         };
-        next3Card->tutorials = [] { juce::URL ("https://lynx-share.com/wiki/getting-started/").launchInDefaultBrowser(); };
+        next3Card->tutorials = [] { juce::URL ("https://yolo.su").launchInDefaultBrowser(); };
     }
     if (persistent)
         onboardCtx.plugins = engine.getPluginHost().getKnownPlugins().getNumTypes();

@@ -496,7 +496,7 @@ public:
         const auto& e = entries[(std::size_t) i];
         if (! e.available)
             h.text = e.category == browserplaces::Category::grooves ? tr ("Grooves: the Groove Pool under the clip grid holds them")
-                                                                    : tr ("{0}: LYNX SHARE has none", { labelOf (e) });
+                                                                    : tr ("{0}: YW Studio has none", { labelOf (e) });
         else if (e.category == browserplaces::Category::addFolder)
             h.text = tr ("Add a folder to the Browser's places");
         else if (e.category == browserplaces::Category::folder)

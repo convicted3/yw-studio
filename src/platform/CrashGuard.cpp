@@ -1701,7 +1701,7 @@ void watchLoop()
 #if defined(_WIN32) || defined(LYNX_EXECINFO)
         text = formatFrames (sampleThread (w.uiThread));
 #endif
-        const auto header = "LYNX UI thread not responding for " + std::to_string (stalled) + " ms (sample " + std::to_string (samples) + ")\n";
+        const auto header = "YW UI thread not responding for " + std::to_string (stalled) + " ms (sample " + std::to_string (samples) + ")\n";
         if (auto* f = openUtf8 (file, first ? "wb" : "ab"))
         {
             const auto all = header + (text.empty() ? std::string ("(no stack on this system)\n") : text) + "\n";
@@ -1736,8 +1736,8 @@ void onEndSignal (int sig)
 
 std::string endSignalStep (int sig)
 {
-    return sig == SIGTERM ? "ended by SIGTERM (the system or another program asked LYNX to close)"
-         : sig == SIGHUP  ? "ended by SIGHUP (the terminal or session that started LYNX closed)"
+    return sig == SIGTERM ? "ended by SIGTERM (the system or another program asked YW Studio to close)"
+         : sig == SIGHUP  ? "ended by SIGHUP (the terminal or session that started YW Studio closed)"
                           : "ended by signal " + std::to_string (sig);
 }
 } // namespace
@@ -1885,7 +1885,7 @@ std::string symbolizeOwnFrames (const std::string& text)
         if (end == std::string::npos)
             end = text.size();
         auto line = text.substr (start, end - start);
-        if (const auto at = line.find ("LYNX.exe+0x"); at != std::string::npos && line.find ("  (") == std::string::npos)
+        if (const auto at = line.find ("YW Studio.exe+0x"); at != std::string::npos && line.find ("  (") == std::string::npos)
         {
             const auto offset = std::strtoull (line.c_str() + at + 11, nullptr, 16);
             if (const auto symbol = symbolOf ((DWORD64) (base + offset)); ! symbol.empty())
@@ -1926,7 +1926,7 @@ MainProfiler& mainProfiler()
 #if defined(LYNX_UNWIND)
 // LYNX_PROFILE_SYMBOLS=1: LYNX.exe's own frames named in the process (its PDB). Off by default (round 190kz): dbghelp
 // loads the whole ~750 MB LYNX.pdb on the first such frame, which took longer than a measurement run, so no window was
-// ever written (rounds 190gr-190kr). The frames are written as "LYNX.exe+0x<rva>" and in a raw section per window that
+// ever written (rounds 190gr-190kr). The frames are written as "YW Studio.exe+0x<rva>" and in a raw section per window that
 // scripts/profile_symbolize.py names afterwards (llvm-symbolizer with the build's PDB). Other modules keep their exports.
 bool symbolizeOwnFrames()
 {
@@ -2006,7 +2006,7 @@ void writeProfileWindow (const std::string& file, double fromS, double toS, long
     {
         // (round 190kz) every own-module address with its weight, for scripts/profile_symbolize.py: "S|T <rva> <weight>"
         const auto base = (std::uintptr_t) GetModuleHandleW (nullptr);
-        std::fprintf (out, "-- raw (LYNX.exe rva, weight; S = self, T = total; of %ld)\n", samples);
+        std::fprintf (out, "-- raw (YW Studio.exe rva, weight; S = self, T = total; of %ld)\n", samples);
         for (const auto* m : { &self, &total })
             for (const auto& [a, n] : *m)
                 if (inOwnModule (a))
@@ -2177,7 +2177,7 @@ void startMainProfiler (const std::string& fileUtf8, int intervalUs, int windowS
         p.stackBase = (std::uintptr_t) reinterpret_cast<NT_TIB*> (NtCurrentTeb())->StackBase;
         if (auto* out = std::fopen (p.file.c_str(), "wb"))
         {
-            std::fprintf (out, "LYNX message-thread profile: a sample every %d us while the thread runs, windows of %d s\n", p.intervalUs, p.windowS);
+            std::fprintf (out, "YW Studio message-thread profile: a sample every %d us while the thread runs, windows of %d s\n", p.intervalUs, p.windowS);
             std::fclose (out);
         }
         p.thread = std::thread (profileLoop);
@@ -2388,7 +2388,7 @@ void startStallSampler (const std::vector<std::string>& stackNames, int interval
             }
             threadFacts (t.handle, t.stackBase, t.start);
             t.priority = GetThreadPriority (t.handle);
-            t.audio = t.name.find ("LYNX worker") != std::string::npos || t.name.find ("LYNX audio") != std::string::npos
+            t.audio = t.name.find ("YW Studio worker") != std::string::npos || t.name.find ("YW Studio audio") != std::string::npos
                       || t.name.find ("render-ahead") != std::string::npos || t.priority >= THREAD_PRIORITY_TIME_CRITICAL;
             t.stacks = t.id == self;
             for (const auto& n : stackNames)
@@ -2470,7 +2470,7 @@ void stopStallSampler (const std::string& fileUtf8) noexcept
             for (const auto& [a, unused] : addresses)
             {
                 if (inOwnModule (a))
-                    std::fprintf (out, "A %llx LYNX.exe+0x%llx\n", (unsigned long long) a, (unsigned long long) (a - base));
+                    std::fprintf (out, "A %llx YW Studio.exe+0x%llx\n", (unsigned long long) a, (unsigned long long) (a - base));
                 else
                     std::fprintf (out, "A %llx %s\n", (unsigned long long) a, functionOf (a).c_str());
             }
@@ -2852,7 +2852,7 @@ void writeHeapCrashFile (void* exceptionPointers) noexcept
     char text[256];
     const auto* ep = static_cast<const EXCEPTION_POINTERS*> (exceptionPointers);
     const auto code = ep != nullptr && ep->ExceptionRecord != nullptr ? (unsigned long) ep->ExceptionRecord->ExceptionCode : 0ul;
-    const auto n = wsprintfA (text, "LYNX crashed: heap corruption (exception 0x%08lx). The emergency save was skipped: the heap is broken.\r\n", code);
+    const auto n = wsprintfA (text, "YW Studio crashed: heap corruption (exception 0x%08lx). The emergency save was skipped: the heap is broken.\r\n", code);
     DWORD written = 0;
     WriteFile (file, text, (DWORD) n, &written, nullptr);
     CloseHandle (file);
@@ -2873,7 +2873,7 @@ void writeHeapCrashFile (void* exceptionPointers) noexcept
         return;
     char head[96];
     char* h = head;
-    const char* what = "LYNX crashed: the C library's heap-corruption abort (signal ";
+    const char* what = "YW Studio crashed: the C library's heap-corruption abort (signal ";
     writeAll (fd, what);
     h = putNumber (h, (unsigned long long) reinterpret_cast<std::uintptr_t> (exceptionPointers));
     *h = 0;

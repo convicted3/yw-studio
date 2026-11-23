@@ -942,7 +942,7 @@ Song importBlx (const blx::Project& project, const BlxImportOptions& options)
                 c.name = kind == InstrumentKind::kick ? "Kick" : kind == InstrumentKind::snare ? "Snare" : kind == InstrumentKind::clap ? "Clap" : "Hat";
                 q.kit.push_back (std::move (c));
             }
-            note (report, &FlpImportReport::approximated, "BandLab drum track \"" + label + "\" (LYNX's built-in kick, snare, clap and hat)");
+            note (report, &FlpImportReport::approximated, "BandLab drum track \"" + label + "\" (YW Studio's built-in kick, snare, clap and hat)");
         }
         else
         {
@@ -955,12 +955,12 @@ Song importBlx (const blx::Project& project, const BlxImportOptions& options)
                     synth.synth = s;
             q.channel = std::move (synth);
             note (report, &FlpImportReport::approximated, std::string (sampler ? "BandLab sampler" : "BandLab instrument") + " \"" + label
-                                                              + "\" (LYNX's built-in synth, " + preset + " preset)");
+                                                              + "\" (YW Studio's built-in synth, " + preset + " preset)");
         }
         const auto made = simpletracks::addTrack (song, q);
         if (! made.ok())
         {
-            note (report, &FlpImportReport::notReproduced, "BandLab: tracks past LYNX's track or insert count");
+            note (report, &FlpImportReport::notReproduced, "BandLab: tracks past YW Studio's track or insert count");
             continue;
         }
         if (drums) // (a Drums track starts with an empty one-bar pattern clip: the regions take its place)

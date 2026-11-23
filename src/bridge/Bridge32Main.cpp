@@ -105,7 +105,7 @@ int scanOneFile (const juce::String& formatName, const juce::String& file, const
 class Bridge32Application final : public juce::JUCEApplicationBase
 {
 public:
-    const juce::String getApplicationName() override { return "LYNX bridge (32-bit)"; }
+    const juce::String getApplicationName() override { return "YW Studio bridge (32-bit)"; }
     const juce::String getApplicationVersion() override { return JUCE_APPLICATION_VERSION_STRING; }
     bool moreThanOneInstanceAllowed() override { return true; }
     void anotherInstanceStarted (const juce::String&) override {}

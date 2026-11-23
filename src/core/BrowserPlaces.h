@@ -275,7 +275,7 @@ inline int wantsPlugins (Category c) noexcept
     }
 }
 
-// Which Plugin database entries an entry keeps (`group`: the entry's format group, core/PluginDbFolder.h: "LYNX",
+// Which Plugin database entries an entry keeps (`group`: the entry's format group, core/PluginDbFolder.h: "YW Studio",
 // "FL engines", "VFX", "" = installed; `name`: its name).
 inline bool keepsPlugin (Category c, bool generator, const std::string& group, const std::string& name) noexcept
 {

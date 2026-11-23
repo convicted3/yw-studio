@@ -623,7 +623,7 @@ public:
     // `matched` gets one "name → file (how)" line per plugin found.
     // `withoutState` gets the plugins found whose saved settings couldn't be carried over (VST2 <-> VST3 swap).
     // Effect slots whose plugin is missing become their LYNX substitute (core/PluginSubstitutes.h) when
-    // pluginSubstitutesEnabled(); `substituted` gets one "name -> LYNX effect" line each (they are not in `missing`).
+    // pluginSubstitutesEnabled(); `substituted` gets one "name -> YW Studio effect" line each (they are not in `missing`).
     int adoptFlPlugins (Song& song, juce::StringArray* missing = nullptr, juce::StringArray* matched = nullptr,
                         juce::StringArray* withoutState = nullptr, juce::StringArray* substituted = nullptr);
     // The state in JUCE's format that `plugin` (FL's wrapper record of a project or an .fst preset) gives the plugin
@@ -762,7 +762,7 @@ void holdPlugins();                              // all off
 void releasePlugin (const std::string& id);      // this one back on (the caller rebuilds its slots)
 void endPluginHold();                            // the mode off: everything loads again
 
-// Settings → "Substitute missing plugins with LYNX equivalents" (default on; %APPDATA%\LYNX\substitutes.txt).
+// Settings → "Substitute missing plugins with YW Studio equivalents" (default on; %APPDATA%\LYNX\substitutes.txt).
 bool pluginSubstitutesEnabled();
 void setPluginSubstitutesEnabled (bool enabled);
 

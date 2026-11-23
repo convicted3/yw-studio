@@ -71,7 +71,7 @@ class MainComponent final : public juce::Component,
                             private juce::ChangeListener
 {
 public:
-    // round 190hq (B20): the "Save a copy for an older LYNX" window for project text `json` (its list goes into `list`,
+    // round 190hq (B20): the "Save a copy for an older YW Studio" window for project text `json` (its list goes into `list`,
     // which must outlive the window); --tempomarkershot paints it
     static juce::AlertWindow* buildSaveCopyWindow (const juce::String& json, std::shared_ptr<juce::TextEditor> list);
     void backupNowForTest() { autosave(); } // --rtstress --backuptest (round 177d)
@@ -327,7 +327,7 @@ public:
     // `onManageShortcuts` (issue #234, round 190ns): the sheet's "Manage shortcuts..." link (none when empty)
     static std::unique_ptr<juce::Component> makeHelpContent (const keys::KeyMap* keyMap = nullptr, // nullptr: the defaults
                                                              std::function<void()> onManageShortcuts = {});
-    static std::unique_ptr<juce::AlertWindow> makeAboutWindow(); // result 1 = OK, 2 = "Support LYNX SHARE"
+    static std::unique_ptr<juce::AlertWindow> makeAboutWindow(); // result 1 = OK, 2 = "Support YW Studio"
     // round 190fq: the start-up support note (ui/SupportLynx.h), once per normal start; `quietRun` = test mode / CI
     void startSupportNote (bool quietRun);
     support::StartupNote& supportNoteForSnapshot();
@@ -573,7 +573,7 @@ private:
     void startNewProject (Song song, const juce::File& file);
     static Song withClipLaunchStrips (Song song); // round 190oo (CS O-2)
     void saveAsTemplate();
-    void saveCopyForOlder(); // round 190hq (B20): File › "Save a copy for an older LYNX..."
+    void saveCopyForOlder(); // round 190hq (B20): File › "Save a copy for an older YW Studio..."
     void chooseFileToOpen();
     void chooseFileToOpenNow();
     // `afterSaved`: runs once the project is on disk, also when a "Save as" dialog had to ask first (never after a
@@ -743,7 +743,7 @@ private:
     void dumpScoreLog (int minutes); // Tools › Score logger (REA round 165f)
     // View > Audio editor: the selected channel's sample when it is a Sampler with one, else an empty editor
     void openAudioEditorForSelection();
-    void addFactoryItem (const std::string& pluginKey); // round 190ke: a "LYNX content" item of the Browser (core/FactoryContent.h)
+    void addFactoryItem (const std::string& pluginKey); // round 190ke: a "YW Studio content" item of the Browser (core/FactoryContent.h)
     void connectBrowser (BrowserComponent& b); // the main Browser and the Sample browser window (round 163)
     void toggleSampleBrowser();
     void openSampleBrowser();
@@ -1136,9 +1136,9 @@ private:
     BrowserComponent browser;
     StartupStep stepBrowser { "  window: browser" };
     Workspace workspace; // after the panels' contents: it is destroyed first
-    updater::UpdateBar updateBar; // "LYNX SHARE x.y.z is available" under the toolbar (round 166b)
+    updater::UpdateBar updateBar; // "YW Studio x.y.z is available" under the toolbar (round 166b)
     juce::Label remoteControlBar;
-    // issue #232 stage 2 (round 190nz): "<device> plays in another LYNX SHARE window" under the toolbar, with "Make this
+    // issue #232 stage 2 (round 190nz): "<device> plays in another YW Studio window" under the toolbar, with "Make this
     // window the one that plays" (ui/WindowAudio.h); the Window menu while other LYNX SHARE windows are open
     windowaudio::Bar windowAudioBar;
     std::unique_ptr<windowaudio::Link> windowAudio;

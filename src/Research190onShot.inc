@@ -187,7 +187,7 @@
                 p->setQuery ("song bars");
                 const auto id = p->selectedId();
                 line ("\"song bars\": first " + juce::String (id));
-                check ("a LYNX extra's switch is listed (\"song bars\")", juce::String (id).contains ("songBarsRuler"));
+                check ("a YW Studio extra's switch is listed (\"song bars\")", juce::String (id).contains ("songBarsRuler"));
                 p->setQuery ("export mp3");
                 line ("\"export mp3\": first " + juce::String (p->selectedId()) + ", " + juce::String (p->matchCount()) + " items");
                 check ("a menu item is found by its words (\"export mp3\")", p->matchCount() >= 1);

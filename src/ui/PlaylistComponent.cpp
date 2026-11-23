@@ -1293,7 +1293,7 @@ PlaylistComponent::PlaylistComponent (AudioEngine& e)
     pointerButton.setFlat (true);
     pointerButton.setClickingTogglesState (false);
     pointerButton.setToggleState (pointerclick::on, juce::dontSendNotification);
-    pointerButton.setTooltip (tr ("Pointer click: a click on an empty spot selects and moves the song position; a double click places the clip (LYNX)"));
+    pointerButton.setTooltip (tr ("Pointer click: a click on an empty spot selects and moves the song position; a double click places the clip (YW Studio)"));
     ui::setQuickTip (pointerButton, tr ("Click on an empty spot selects and moves the song position (pointer click)"));
     pointerButton.onClick = [] { workflowextras::runAction ("playlist.pointerClick"); };
     pointerButton.setWantsKeyboardFocus (false);
@@ -9155,7 +9155,7 @@ juce::PopupMenu PlaylistComponent::editMenu()
     m.addItem (tr ("Mute") + key ("playlist.muteClips"), [this] { runAction ("playlist.muteClips"); });
     m.addItem (tr ("Unmute") + key ("playlist.unmuteClips"), [this] { runAction ("playlist.unmuteClips"); });
     // issue #249 (round 190oq, LYNX extra): Alt+M switches both ways (FL's only mutes)
-    m.addItem (tr ("Alt+M toggles: pressed again, it unmutes (LYNX)"), true, mutekeys::toggles(),
+    m.addItem (tr ("Alt+M toggles: pressed again, it unmutes (YW Studio)"), true, mutekeys::toggles(),
                [] { workflowextras::setExtra ("editing.muteKeyToggles", ! mutekeys::toggles()); });
     m.addSeparator();
     m.addItem (tr ("Insert space") + "\tCtrl+Ins", time, false, [this] { insertTimeSelection(); });
@@ -11066,7 +11066,7 @@ juce::PopupMenu PlaylistComponent::rulerMenu (int x)
     // round 190hq (B11, LYNX extra): tempo markers on the ruler, written into the tempo markers' automation clip
     {
         const auto marks = tempomarkers::list (song);
-        menu.addItem (tr ("Add tempo change here...") + " (LYNX)", [this, tick] { editTempoMarker (tick, -1); });
+        menu.addItem (tr ("Add tempo change here...") + " (YW Studio)", [this, tick] { editTempoMarker (tick, -1); });
         menu.addItem (tr ("Delete all tempo changes"), ! marks.empty(), false, [this] {
             engine.editSong ([] (Song& s) {
                 while (! tempomarkers::list (s).empty())
@@ -11167,7 +11167,7 @@ juce::PopupMenu PlaylistComponent::rulerMenu (int x)
         });
         timeMarkers.addItem (tr ("Add time signature change...") + "\tShift+Alt+T", [this] { runAction ("playlist.markerSignature"); });
         // round 190hq (B11, LYNX extra; FL has no tempo marker): at the time selection's start, else the song position
-        timeMarkers.addItem (tr ("Add tempo change...") + " (LYNX)", [this] {
+        timeMarkers.addItem (tr ("Add tempo change...") + " (YW Studio)", [this] {
             const auto& sg = engine.getSong();
             editTempoMarker (sg.hasLoop() ? sg.loopStart : snap ((double) songPositionTick(), true), -1);
         });
@@ -12257,7 +12257,7 @@ juce::PopupMenu PlaylistComponent::buildAudioClipMenu (int index, int mouseX)
     // (round 190jv: a third column, so FL's two stay as FL draws them; JUCE breaks columns only where asked, and round
     // 190je's tall-menu split (JUCE fix 40, lynxTallMenuBreakHook) leaves a menu with breaks alone)
     menu.addColumnBreak();
-    menu.addSectionHeader (tr ("LYNX extras")); // (round 190gi: as the Clip View's menu, DetailView; FL's sections stay FL's)
+    menu.addSectionHeader (tr ("YW Studio extras")); // (round 190gi: as the Clip View's menu, DetailView; FL's sections stay FL's)
     // round 190ds (LYNX's own): the clip follows the project key, and its loop's key; round 190kx: in every layout (this
     // column is LYNX's own), with "Detect from the audio" in Loop key and a one-click fit to the project's tempo
     addKeyFollowItems (menu, index, targets);

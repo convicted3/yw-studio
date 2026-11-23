@@ -49,7 +49,7 @@ namespace lynx
 namespace
 {
 constexpr int footerHeight = 30;
-// round 190ig: the Live look of the clip grid (View › "Classic LYNX look for the clip grid" turns it off: round 181a's look)
+// round 190ig: the Live look of the clip grid (View › "Classic YW Studio look for the clip grid" turns it off: round 181a's look)
 bool classicLook = false;
 bool liveLook() noexcept { return ! classicLook && layoutstyle::current() == layoutstyle::Style::clipLaunch; }
 // A size of the grid in round 181a's look and in Live's (round 190ig, CL-3: measured in live-session.png by rounds 190ia

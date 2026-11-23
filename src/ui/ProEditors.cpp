@@ -3620,7 +3620,7 @@ private:
         for (const auto p : { k::noiseReduction, k::groupBypass })
             out.push_back (custom (keyRect (p).withHeight (40.0f), idParam + p, -1, hintFor (p)));
         out.push_back (custom (juce::Rectangle<float> (16.0f, 16.0f).withCentre (at (266.0f, 601.0f)), idInfo, -1,
-                               tr ("Kiln Channel: LYNX's console channel. Drag a knob, Alt+click resets it, right-click for automation")));
+                               tr ("Kiln Channel: YW Studio's console channel. Drag a knob, Alt+click resets it, right-click for automation")));
     }
 
     juce::String hintFor (int p) const

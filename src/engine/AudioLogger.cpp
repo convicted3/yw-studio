@@ -3,7 +3,7 @@
 
 namespace lynx
 {
-AudioLogger::AudioLogger (AudioCapture& t) : juce::Thread ("LYNX audio logger"), tap (t) {}
+AudioLogger::AudioLogger (AudioCapture& t) : juce::Thread ("YW Studio audio logger"), tap (t) {}
 
 AudioLogger::~AudioLogger()
 {
@@ -12,7 +12,7 @@ AudioLogger::~AudioLogger()
 
 juce::File AudioLogger::defaultFolder()
 {
-    return lynx::platform::documentsFolder().getChildFile ("LYNX").getChildFile ("Audio logger");
+    return lynx::platform::documentsFolder().getChildFile ("YW Studio").getChildFile ("Audio logger");
 }
 
 bool AudioLogger::start (const juce::File& folder, double sampleRate)
@@ -21,7 +21,7 @@ bool AudioLogger::start (const juce::File& folder, double sampleRate)
     if (sampleRate <= 0.0 || ! folder.createDirectory())
         return false;
 
-    const auto name = "LYNX log " + juce::Time::getCurrentTime().formatted ("%Y-%m-%d %H-%M-%S") + ".wav";
+    const auto name = "YW Studio log " + juce::Time::getCurrentTime().formatted ("%Y-%m-%d %H-%M-%S") + ".wav";
     auto target = folder.getChildFile (name);
     if (target.exists())
         target = target.getNonexistentSibling();

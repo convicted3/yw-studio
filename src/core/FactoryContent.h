@@ -9,7 +9,7 @@
 // synth's presets and LYNX's preset banks), the beats of Loop Starter's own genres (core/LoopStarter.h builtinPresets,
 // one-bar drum grooves on the built-in kit) and the factory effect chains (core/ChainPresets.h). Each item gets tags of
 // three kinds: what it is (the instrument), a genre and a mood, from its category and words in its name (and a bank
-// preset's own search words). The Browser lists them under "LYNX content" in the Simple layout and its TAGS panel / the
+// preset's own search words). The Browser lists them under "YW Studio content" in the Simple layout and its TAGS panel / the
 // "#tag" search filter them with the user's own tags (core/BrowserTags.h); these tags are built in, never saved.
 // No JUCE (tests/SimpleGb190keTests.inc).
 
@@ -29,7 +29,7 @@ struct Item
     std::string key;    // the Browser's plugin key: "lynx-content/<kind>/<id>" (the tag store's item is "plugin:" + key)
     std::string name;   // shown as it is (preset names are not translated)
     std::string folder; // the folder under its kind: a sound's category, a beat's genre, a chain's category (English)
-    std::string detail; // the second column: what makes it ("LYNX synth", "Trap", the chain's description)
+    std::string detail; // the second column: what makes it ("YW Studio synth", "Trap", the chain's description)
     std::vector<std::string> tags;
     int index = -1;     // sound: into soundlib::builtIn(); chain: into chains::factory()
     std::string genre;  // beat: Loop Starter's genre id ("trap")

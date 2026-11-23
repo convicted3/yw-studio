@@ -68,7 +68,7 @@ void migrateFromUnpackaged (const juce::File& target)
         return;
     // a packaged process reading %APPDATA%\LYNX sees the real folder merged with its redirected one; the redirected
     // one is `target` itself, so whatever is found there that `target` lacks is the real, unpackaged folder's
-    const auto old = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("LYNX");
+    const auto old = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("YW Studio");
     juce::StringArray copied;
     if (old.isDirectory() && old != target)
     {
@@ -85,7 +85,7 @@ void migrateFromUnpackaged (const juce::File& target)
                 copied.add (name);
         }
     }
-    marker.replaceWithText ("Copied from " + old.getFullPathName() + " on first start of the packaged LYNX SHARE:\n"
+    marker.replaceWithText ("Copied from " + old.getFullPathName() + " on first start of the packaged YW Studio:\n"
                             + copied.joinIntoString ("\n") + "\n");
 }
 } // namespace

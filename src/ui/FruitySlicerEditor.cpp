@@ -684,7 +684,7 @@ private:
                         container = dynamic_cast<juce::DragAndDropContainer*> (c);
         if (container == nullptr)
             return;
-        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Edits");
+        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
         const auto base = samplePath.empty() ? juce::String ("Slice") : fileName (samplePath).upToLastOccurrenceOf (".", false, false);
         const auto file = folder.getNonexistentChildFile (base + " (slice " + juce::String (selected + 1) + ")", ".wav");

@@ -244,7 +244,7 @@ public:
     // the live MIDI input of the noteOn / noteOff / midiMessage calls that follow, until it is set again (NoteEvent::source,
     // 0 = none; the rack sets it around a live event and puts it back to 0)
     virtual void setNoteSource (int /*source*/) noexcept {}
-    // Extra outputs to other mixer inserts (a generator Patcher's extra "To LYNX" outputs, REA_rodada141): the rack
+    // Extra outputs to other mixer inserts (a generator Patcher's extra "To YW Studio" outputs, REA_rodada141): the rack
     // calls beginChunk (n) before a chunk's render() calls, which then also add each extra output's audio (gains
     // applied) into auxOutputData (k, side) from the chunk's start; auxOutputTrack (k) = the insert it feeds.
     virtual void beginChunk (int /*n*/) noexcept {}
@@ -273,7 +273,7 @@ public:
     // The same for a voice that arrived on MIDI port `port` (a Channel Rack VFX's output, round 165c): a Patcher passes
     // it to what that port reaches; hosted plugins cannot take it (MIDI has no per-voice properties).
     virtual void voicePropertyPort (int /*port*/, int /*key*/, int /*prop*/, float /*value*/, int /*midiChannel*/) noexcept {}
-    // What a generator Patcher's VFX nodes send to its "To LYNX" MIDI ports (round 165c): note ons / offs and voice
+    // What a generator Patcher's VFX nodes send to its "To YW Studio" MIDI ports (round 165c): note ons / offs and voice
     // properties, played on those ports at the next chunk's start. Audio thread.
     struct PortEvent
     {

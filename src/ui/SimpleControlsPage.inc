@@ -181,7 +181,7 @@ public:
         };
         addAndMakeVisible (editButton);
         resetButton.setButtonText (tr ("Reset to default"));
-        resetButton.setTooltip (tr ("Every knob back to LYNX's choice for this instrument and its effects"));
+        resetButton.setTooltip (tr ("Every knob back to YW Studio's choice for this instrument and its effects"));
         resetButton.onClick = [this] {
             const auto o = owner;
             engine.editSong ([o] (Song& s) { smartcontrols::reset (s, o); });

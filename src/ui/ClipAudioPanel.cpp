@@ -515,7 +515,7 @@ public:
         beatsLaw.addItem (tr ("Classic"), 1);
         beatsLaw.addItem (tr ("Measured"), 2);
         beatsLaw.addItem (tr ("Pitch-aware"), 3);
-        beatsLaw.setTooltip (tr ("Beats law: Classic plays as LYNX did before 0.1.28, Measured as 0.1.28 and 0.1.29 did (this project was saved then); Pitch-aware also cuts where the pitch of a held note steps"));
+        beatsLaw.setTooltip (tr ("Beats law: Classic plays as YW Studio did before 0.1.28, Measured as 0.1.28 and 0.1.29 did (this project was saved then); Pitch-aware also cuts where the pitch of a held note steps"));
         beatsLaw.onChange = [this] {
             if (! refreshing)
                 editMode ([v = beatsLaw.getSelectedId() - 1] (Song& s, int c) { warpmodes::setBeatsLaw (s, c, v); });
@@ -523,7 +523,7 @@ public:
         // round 190ik: the Texture / Complex Pro law, shown only for a channel of a project saved before 190ik
         warpLaw.addItem (tr ("Classic"), 1);
         warpLaw.addItem (tr ("Measured"), 2);
-        warpLaw.setTooltip (tr ("Texture and Complex Pro law: Classic plays as LYNX did before 0.1.30 (this project was saved then); Measured follows Live 12.4's renders (grains and Flux, formants kept)"));
+        warpLaw.setTooltip (tr ("Texture and Complex Pro law: Classic plays as YW Studio did before 0.1.30 (this project was saved then); Measured follows Live 12.4's renders (grains and Flux, formants kept)"));
         warpLaw.onChange = [this] {
             if (! refreshing)
                 editMode ([v = warpLaw.getSelectedId() - 1] (Song& s, int c) { warpmodes::setWarpLaw (s, c, v); });

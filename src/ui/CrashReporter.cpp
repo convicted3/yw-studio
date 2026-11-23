@@ -310,7 +310,7 @@ juce::String githubUrl (const cr::ReportInput& in)
     f.title = cr::githubTitle (in.kind, last);
     if (! in.steps.empty())
     {
-        std::string steps = "LYNX SHARE's last steps before it closed:\n";
+        std::string steps = "YW Studio's last steps before it closed:\n";
         for (auto i = in.steps.size() > 15 ? in.steps.size() - 15 : 0; i < in.steps.size(); ++i)
             steps += a (in.steps[i]) + "\n";
         f.steps = steps;
@@ -321,7 +321,7 @@ juce::String githubUrl (const cr::ReportInput& in)
     for (const auto& [file, text] : { std::pair (in.crashFile, in.crashText), std::pair (in.hangFile, in.hangText) })
         if (! text.empty())
         {
-            logs += "Please attach " + a (file) + " (LYNX SHARE: \"Open the folder with the report\"). Its first lines:\n```\n";
+            logs += "Please attach " + a (file) + " (YW Studio: \"Open the folder with the report\"). Its first lines:\n```\n";
             std::string head;
             int lines = 0;
             for (std::size_t at = 0; at < text.size() && lines < 40; ++lines)
@@ -344,7 +344,7 @@ juce::String githubUrl (const cr::ReportInput& in)
 juce::String endpoint()
 {
     const auto custom = juce::SystemStats::getEnvironmentVariable ("LYNX_CRASH_ENDPOINT", {});
-    return custom.isNotEmpty() ? custom : juce::String ("https://lynx-share.com/api/crash.php");
+    return custom.isNotEmpty() ? custom : juce::String ("https://yolo.su/api/crash.php");
 }
 
 namespace
@@ -424,7 +424,7 @@ void logSent (const juce::String& id, const juce::String& what)
 class Uploader final : private juce::Thread
 {
 public:
-    Uploader() : juce::Thread ("LYNX crash report upload") {}
+    Uploader() : juce::Thread ("YW Studio crash report upload") {}
     ~Uploader() override { stopThread (1000); }
 
     void wake (std::function<void (bool, const juce::String&)> done, const juce::String& id)
@@ -585,14 +585,14 @@ public:
     {
         input = makeInput (session, manual ? juce::String ("manual") : session.kind(), devices);
         // round 190oo (WG-6): the one dialog title row, centred, 44 px (the window's own title)
-        titleLabel.setText (manual ? tr ("Report a problem") : tr ("LYNX SHARE closed unexpectedly"), juce::dontSendNotification);
+        titleLabel.setText (manual ? tr ("Report a problem") : tr ("YW Studio closed unexpectedly"), juce::dontSendNotification);
         ui::dialog::styleTitle (titleLabel);
         addAndMakeVisible (titleLabel);
 
-        settingsui::styleLabel (message, manual ? tr ("Describe what happened. LYNX SHARE adds its version, your system (operating system, CPU, graphics "
+        settingsui::styleLabel (message, manual ? tr ("Describe what happened. YW Studio adds its version, your system (operating system, CPU, graphics "
                                                      "card, audio device) and, if you want, the newest crash / freeze files and this session's last "
                                                      "steps. Nothing is sent before you click Send.")
-                                                : tr ("LYNX SHARE closed unexpectedly last time. Send the report to help fix it?") + "\n\n" + notice,
+                                                : tr ("YW Studio closed unexpectedly last time. Send the report to help fix it?") + "\n\n" + notice,
                                 false);
         message.setJustificationType (juce::Justification::topLeft);
         message.setMinimumHorizontalScale (1.0f);
@@ -796,7 +796,7 @@ private:
             const auto id = fromUtf8 (input.id);
             send (json, id, [] (bool ok, const juce::String& what) {
                 ui::postHint ({ ok ? tr ("Crash report sent, thank you (id {0})", { what })
-                                   : tr ("The report could not be sent ({0}); LYNX SHARE tries again at the next start", { what }),
+                                   : tr ("The report could not be sent ({0}); YW Studio tries again at the next start", { what }),
                                 {}, false, false },
                               8000);
             });
@@ -840,7 +840,7 @@ void launch (std::unique_ptr<ReportPanel> panel, const juce::String& title)
 void showStartupDialog (const Session& session, const juce::String& notice, const juce::String& separatePlugin, std::function<void()> onSeparate,
                         juce::AudioDeviceManager* devices)
 {
-    launch (std::make_unique<ReportPanel> (session, notice, separatePlugin, std::move (onSeparate), devices, false), tr ("LYNX SHARE closed unexpectedly"));
+    launch (std::make_unique<ReportPanel> (session, notice, separatePlugin, std::move (onSeparate), devices, false), tr ("YW Studio closed unexpectedly"));
 }
 
 void showManualReport (juce::AudioDeviceManager* devices)
@@ -856,7 +856,7 @@ std::unique_ptr<juce::Component> makeDialogForSnapshot (bool manual)
     if (manual)
         return std::make_unique<ReportPanel> (s, juce::String(), juce::String(), nullptr, nullptr, true);
     return std::make_unique<ReportPanel> (s, tr ("The last session ended without closing normally. Last step: {0}. Backup copies of your project are in "
-                                                 "LYNX SHARE's autosave folder; details in crash-history.log.",
+                                                 "YW Studio's autosave folder; details in crash-history.log.",
                                                  { "opening the editor of Example" }),
                                           "Example", nullptr, nullptr, false);
 }

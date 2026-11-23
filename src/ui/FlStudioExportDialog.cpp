@@ -100,7 +100,7 @@ public:
     {
         // option A's renders: next to the .flp (FL opens them from there); for the package a temporary folder (they go
         // into the .zip)
-        renderDir = zip ? juce::File::getSpecialLocation (juce::File::tempDirectory).getNonexistentChildFile ("LYNX FL export", {}, false)
+        renderDir = zip ? juce::File::getSpecialLocation (juce::File::tempDirectory).getNonexistentChildFile ("YW FL export", {}, false)
                         : target.getSiblingFile (target.getFileNameWithoutExtension() + " audio");
     }
 
@@ -224,7 +224,7 @@ private:
                                    : tr ("{0} channel(s) and {1} mixer insert(s) will be rendered to audio first.",
                                          { juce::String ((int) renders.channels.size()), juce::String ((int) renders.inserts.size()) });
         else
-            text = tr ("LYNX-only effects become the nearest FL plugin where there is one; LYNX-only instruments are left out.");
+            text = tr ("YW Studio-only effects become the nearest FL plugin where there is one; YW Studio-only instruments are left out.");
         text << "\n" << tr ("A report lists what went over exactly, what was rendered, replaced or left out.");
         plan.setText (text, juce::dontSendNotification);
     }
@@ -278,7 +278,7 @@ void showFlStudioExportDialog (AudioEngine& engine, const juce::File& suggestedF
 {
     juce::DialogWindow::LaunchOptions options;
     options.dialogTitle = tr ("Export to FL Studio");
-    options.content.setOwned (fitContentToScreen (std::make_unique<FlExportPanel> (engine, suggestedFolder, projectName.isNotEmpty() ? projectName : "LYNX SHARE", true)).release());
+    options.content.setOwned (fitContentToScreen (std::make_unique<FlExportPanel> (engine, suggestedFolder, projectName.isNotEmpty() ? projectName : "YW Studio", true)).release());
     options.dialogBackgroundColour = theme::colour::bg2;
     options.useNativeTitleBar = true;
     options.resizable = false;
@@ -288,6 +288,6 @@ void showFlStudioExportDialog (AudioEngine& engine, const juce::File& suggestedF
 
 std::unique_ptr<juce::Component> makeFlStudioExportPanel (AudioEngine& engine)
 {
-    return std::make_unique<FlExportPanel> (engine, juce::File(), "LYNX SHARE", false);
+    return std::make_unique<FlExportPanel> (engine, juce::File(), "YW Studio", false);
 }
 } // namespace lynx

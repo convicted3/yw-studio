@@ -266,7 +266,7 @@ std::string displayValue (int index, float v)
 ChannelDef makeChannel (const std::string& fontPath, int bank, int program)
 {
     ChannelDef c;
-    c.name = "LYNX Soundfont";
+    c.name = "YW Soundfont";
     c.instrument = InstrumentKind::soundfont;
     c.samplePath = fontPath;
     c.modelParams = defaultParams();

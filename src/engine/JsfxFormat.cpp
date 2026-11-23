@@ -235,7 +235,7 @@ juce::File reaperEffectsFolder()
    #endif
 }
 
-juce::File userFolder() { return platform::documentsFolder().getChildFile ("LYNX").getChildFile (userFolderName); }
+juce::File userFolder() { return platform::documentsFolder().getChildFile ("YW Studio").getChildFile (userFolderName); }
 juce::File packFolder() { return platform::settingsFolder().getChildFile (packFolderName); }
 
 juce::StringArray userFolders()
@@ -1255,7 +1255,7 @@ juce::String selfTest (const juce::File& reportFolder)
         // a script that does not compile fails with the compiler's message
         {
             const auto broken = temp.getChildFile ("lynx_test_broken.jsfx");
-            broken.replaceWithText ("desc:LYNX test - broken\n@sample\nspl0 = (;\n");
+            broken.replaceWithText ("desc:YW Studio test - broken\n@sample\nspl0 = (;\n");
             auto none = make (describe (broken, false), 48000.0, 512, error);
             require (none == nullptr && error.startsWith ("JSFX"), "a broken script: " + error);
         }

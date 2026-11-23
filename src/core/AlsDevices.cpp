@@ -1019,7 +1019,7 @@ SimplerResult applySimpler (const Element& device, ChannelDef& channel, double b
     if (manual (device, "VolumeAndPan/PanoramaRnd", 0.0) != 0.0)
         notes.dropped.push_back ("random pan");
     // (velocity > volume is LYNX's own fixed law: listed once per device)
-    notes.approximated.push_back ("velocity sensitivity (LYNX's own velocity law)");
+    notes.approximated.push_back ("velocity sensitivity (YW Studio's own velocity law)");
 
     // The part's region, as fractions of the file (a single sample only: zones play whole files)
     const auto partStart = part.number ("SampleStart", 0), partEnd = part.number ("SampleEnd", frames);

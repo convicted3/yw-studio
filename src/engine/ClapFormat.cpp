@@ -1109,8 +1109,8 @@ private:
         clap_host_t h {};
         h.clap_version = CLAP_VERSION;
         h.host_data = life.get();
-        h.name = "LYNX";
-        h.vendor = "LYNX";
+        h.name = "YW Studio";
+        h.vendor = "YW Studio";
         h.url = "";
         h.version = JUCE_APPLICATION_VERSION_STRING;
         // (the tables belong to no instance: a plugin keeps the pointers it got for as long as it lives)
@@ -1465,8 +1465,8 @@ std::vector<FoundPreset> discoverPresets (const ClapModule& module)
         Crawl crawl;
         clap_preset_discovery_indexer_t indexer {};
         indexer.clap_version = CLAP_VERSION;
-        indexer.name = "LYNX SHARE";
-        indexer.vendor = "LYNX";
+        indexer.name = "YW Studio";
+        indexer.vendor = "YW Studio";
         indexer.url = "";
         indexer.version = JUCE_APPLICATION_VERSION_STRING;
         indexer.indexer_data = &crawl;
@@ -1607,7 +1607,7 @@ const std::vector<ClapInstance::Preset>& ClapInstance::presets()
                 found = it->second;
             else if (d.running.insert (key).second && ! discoveryStop.load())
                 d.threads.emplace_back ([key, module = life->module] {
-                    juce::Thread::setCurrentThreadName ("LYNX CLAP presets");
+                    juce::Thread::setCurrentThreadName ("YW CLAP presets");
                     auto list = std::make_shared<const std::vector<FoundPreset>> (discoverPresets (*module));
                     auto& dd = discoveries();
                     const std::lock_guard<std::mutex> ll (dd.lock);

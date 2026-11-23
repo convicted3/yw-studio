@@ -2300,7 +2300,7 @@ public:
             // the audio next to the images, and how to join them
             wav.copyFileTo (framesFolder.getChildFile ("audio.wav"));
             framesFolder.getChildFile ("how to make the video.txt")
-                .replaceWithText ("LYNX SHARE did not find ffmpeg, so it wrote the video's frames as PNG images and its sound as audio.wav.\n"
+                .replaceWithText ("YW Studio did not find ffmpeg, so it wrote the video's frames as PNG images and its sound as audio.wav.\n"
                                   "Install ffmpeg (https://ffmpeg.org) and run this in this folder:\n\n" "ffmpeg -framerate "
                                   + juce::String (settings.fps) + " -i frame_%06d.png -i audio.wav -c:v libx264 -pix_fmt yuv420p -crf "
                                   + juce::String (settings.crf) + " -c:a aac -b:a 320k -shortest video.mp4\n");
@@ -2475,7 +2475,7 @@ private:
     void updateStatus()
     {
         status.setText (ffmpeg.existsAsFile() ? tr ("ffmpeg: {0}\nThe video is saved as an MP4 file (H.264 + AAC) with the song's sound.", { ffmpeg.getFullPathName() })
-                                              : tr ("ffmpeg was not found. LYNX SHARE will save the frames as PNG images and the sound as a WAV file "
+                                              : tr ("ffmpeg was not found. YW Studio will save the frames as PNG images and the sound as a WAV file "
                                                     "(with the command that joins them). Install ffmpeg or locate it to get an MP4 directly."),
                         juce::dontSendNotification);
         status.setColour (juce::Label::textColourId, ffmpeg.existsAsFile() ? theme::colour::textPrimary : theme::colour::warning);
@@ -2502,7 +2502,7 @@ private:
     void chooseOutput()
     {
         const auto& song = target.engine->getSong();
-        const auto title = song.info.title.empty() ? juce::String ("LYNX SHARE video") : juce::String::fromUTF8 (song.info.title.c_str());
+        const auto title = song.info.title.empty() ? juce::String ("YW Studio video") : juce::String::fromUTF8 (song.info.title.c_str());
         const auto start = juce::File::getSpecialLocation (juce::File::userMoviesDirectory).getChildFile (juce::File::createLegalFileName (title)
                                                                                                          + (ffmpeg.existsAsFile() ? ".mp4" : ""));
         chooser = lynx::ui::makeFileChooser (tr ("Export video"), start, ffmpeg.existsAsFile() ? "*.mp4" : "*");
@@ -2664,7 +2664,7 @@ public:
             change ([i] (scene::Scene& s) { if (i < s.layers.size()) s.layers.insert (s.layers.begin() + (long) i + 1, s.layers[i]); });
             select (selected + 1);
         });
-        button (presets, tr ("Scenes"), tr ("LYNX SHARE's scenes and FL ZGameEditor presets"), [this] { showPresetMenu(); });
+        button (presets, tr ("Scenes"), tr ("YW Studio's scenes and FL ZGameEditor presets"), [this] { showPresetMenu(); });
         button (gpu, "GPU", tr ("Draw the scene with the GPU (OpenGL): needed by the shader layers (Canvas, Terrain, 3D, Feedback, "
                                "Post-process) and blend modes. Off: the 2D renderer"),
                 [this] {
@@ -3049,7 +3049,7 @@ private:
                 scene::Layer l;
                 l.type = (scene::LayerType) t;
                 if (l.type == scene::LayerType::text)
-                    l.text = "LYNX SHARE";
+                    l.text = "YW Studio";
                 if (l.type == scene::LayerType::flash)
                 {
                     l.band = scene::Band::beat;
@@ -3421,7 +3421,7 @@ juce::String drawingCost (const juce::File& folder)
         scene::Scene sc;
         scene::Layer layer;
         layer.type = (scene::LayerType) t;
-        layer.text = "LYNX SHARE";
+        layer.text = "YW Studio";
         layer.additive = true;
         layer.count = 64;
         sc.layers.push_back (layer);
@@ -3527,7 +3527,7 @@ private:
         song.mixer[1].effects.push_back (fx);
         engine->setSong (std::move (song));
         engine->dispatchPendingMessages();
-        window = std::make_unique<juce::DocumentWindow> ("LYNX visual test - " + c.name, theme::colour::bg1, 0);
+        window = std::make_unique<juce::DocumentWindow> ("YW Studio visual test - " + c.name, theme::colour::bg1, 0);
         window->setUsingNativeTitleBar (true);
         window->setContentOwned (makeVisualEditor (*engine, 1, 0, c.demo).release(), true);
         window->getContentComponent()->setSize (c.w, c.h);
@@ -3773,7 +3773,7 @@ private:
                 // the GPU exporter in a small window of its own (as in the export's progress window)
                 if (gpuWindow == nullptr)
                 {
-                    gpuWindow = std::make_unique<juce::DocumentWindow> ("LYNX visual test - GPU export", juce::Colours::black, 0);
+                    gpuWindow = std::make_unique<juce::DocumentWindow> ("YW Studio visual test - GPU export", juce::Colours::black, 0);
                     gpuWindow->setUsingNativeTitleBar (true);
                     gpuExporter = new GlFrameExporter();
                     gpuExporter->setSize (320, 180);

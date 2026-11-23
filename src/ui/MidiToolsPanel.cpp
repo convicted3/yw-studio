@@ -1280,11 +1280,11 @@ struct MidiToolsPanel::Body final : public juce::Component
              [this] { return (double) chord().duration; }, [this] (double v) { chord().duration = (float) v; });
         box (tr ("Offset (sixteenths)"), { 3 * quarter, 82, w - 3 * quarter, 16 }, wholeSpec (-16, 16, 0), [this] { return (double) chord().offset; },
              [this] (double v) { chord().offset = (float) v; });
-        auto& bank = add (std::make_unique<juce::TextButton> (s.bankFile.empty() ? tr ("Chord bank: LYNX")
+        auto& bank = add (std::make_unique<juce::TextButton> (s.bankFile.empty() ? tr ("Chord bank: YW Studio")
                                                                                  : tr ("Chord bank: {0}").replace ("{0}", juce::File (juce::String::fromUTF8 (s.bankFile.c_str())).getFileNameWithoutExtension())),
                           { 0, 102, w, 16 });
         bank.setConnectedEdges (0);
-        bank.setTooltip (tr ("The chord shapes: LYNX's own bank, or a .stacks chord bank file of yours"));
+        bank.setTooltip (tr ("The chord shapes: YW Studio's own bank, or a .stacks chord bank file of yours"));
         bank.onClick = [this] { panel.chooseChordBank(); };
     }
     void buildEuclid()
@@ -1510,7 +1510,7 @@ const midigen::ChordBank& MidiToolsPanel::chordBank()
 void MidiToolsPanel::chooseChordBank()
 {
     juce::PopupMenu menu;
-    menu.addItem (1, tr ("LYNX chord bank"), true, gen.stacksOptions.bankFile.empty());
+    menu.addItem (1, tr ("YW Studio chord bank"), true, gen.stacksOptions.bankFile.empty());
     menu.addItem (2, tr ("Open a .stacks chord bank..."));
     if (! gen.stacksOptions.bankFile.empty())
         menu.addItem (3, juce::File (juce::String::fromUTF8 (gen.stacksOptions.bankFile.c_str())).getFileName(), false, true);
@@ -1535,7 +1535,7 @@ void MidiToolsPanel::chooseChordBank()
                 if (! midigen::readChordBank (file.loadFileAsString().toStdString(), error))
                 {
                     juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Chord bank"),
-                                                            tr ("This file has no chord rules LYNX can read."));
+                                                            tr ("This file has no chord rules YW Studio can read."));
                     return;
                 }
                 safe->gen.stacksOptions.bankFile = file.getFullPathName().toStdString();

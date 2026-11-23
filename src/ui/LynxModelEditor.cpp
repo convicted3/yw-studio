@@ -107,7 +107,7 @@ struct Page
     juce::String name() const
     {
         const auto* c = def();
-        return c != nullptr && ! c->name.empty() ? u8 (c->name) : juce::String ("LYNX Model");
+        return c != nullptr && ! c->name.empty() ? u8 (c->name) : juce::String ("YW Model");
     }
 };
 
@@ -441,7 +441,7 @@ public:
         g.fillRect (top);
         g.setColour (theme::colour::textPrimary);
         g.setFont (theme::font (24.0f, true));
-        g.drawText ("LYNX MODEL", juce::Rectangle<float> (14.0f, 8.0f, 200.0f, 28.0f), juce::Justification::centredLeft, false);
+        g.drawText ("YW MODEL", juce::Rectangle<float> (14.0f, 8.0f, 200.0f, 28.0f), juce::Justification::centredLeft, false);
         g.setColour (theme::colour::accent);
         g.fillRect (juce::Rectangle<float> (14.0f, 38.0f, 26.0f, 2.0f));
         g.setColour (theme::colour::textSecondary);

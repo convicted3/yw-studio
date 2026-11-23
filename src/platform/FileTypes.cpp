@@ -69,7 +69,7 @@ bool writeEntry (const juce::File& appImage)
 {
     auto text = appDir().getChildFile (entryName).loadFileAsString();
     if (text.isEmpty())
-        text = "[Desktop Entry]\nType=Application\nName=LYNX SHARE\nIcon=lynx\nTerminal=false\nCategories=AudioVideo;Audio;Midi;Music;Sequencer;\n"
+        text = "[Desktop Entry]\nType=Application\nName=YW Studio\nIcon=lynx\nTerminal=false\nCategories=AudioVideo;Audio;Midi;Music;Sequencer;\n"
                "MimeType=application/x-lynx-project;\n";
     juce::StringArray lines;
     lines.addLines (text);
@@ -149,7 +149,7 @@ void registerFileTypes()
     using juce::WindowsRegistry;
     const auto exe = juce::File::getSpecialLocation (juce::File::currentExecutableFile).getFullPathName();
     const juce::String classes = "HKEY_CURRENT_USER\\Software\\Classes\\";
-    const juce::String progId = "LYNX.Project";
+    const juce::String progId = "YW Studio.Project";
     const auto command = "\"" + exe + "\" \"%1\"";
     const auto icon = "\"" + exe + "\",-2"; // resource id 2 in resources/LYNX.rc: the project-file icon
 
@@ -163,7 +163,7 @@ void registerFileTypes()
     // Online Sessions' packages (round 168a): a project a friend sent, or a part sent back
     WindowsRegistry::setValue (classes + ".lynxpack\\", progId);
     WindowsRegistry::setValue (classes + ".lynxpack\\Content Type", juce::String ("application/x-lynx-package"));
-    WindowsRegistry::setValue (classes + progId + "\\", juce::String ("LYNX SHARE Project"));
+    WindowsRegistry::setValue (classes + progId + "\\", juce::String ("YW Studio Project"));
     WindowsRegistry::setValue (classes + progId + "\\DefaultIcon\\", icon);
     WindowsRegistry::setValue (classes + progId + "\\shell\\open\\command\\", command);
     // Explorer caches icons per type: tell it the association changed

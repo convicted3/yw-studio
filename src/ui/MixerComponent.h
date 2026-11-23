@@ -28,7 +28,7 @@ const std::vector<EffectKind>& addableEffects();
 // added here, its menu name ("(beta)", "(requires FL Studio)") and a new slot (nullopt = not available here)
 bool addableEffectAvailable (EffectKind kind);
 // One of FL Studio's own effects (by its FL name, even when LYNX made it): the plugin menus file it under FL's category
-// (round 170b); LYNX's own effects go under "LYNX SHARE".
+// (round 170b); LYNX's own effects go under "YW Studio".
 bool isFlEffect (EffectKind kind);
 juce::String addableEffectName (EffectKind kind);
 std::optional<EffectSlot> newAddableEffect (EffectKind kind, double bpm = 120.0);
@@ -106,7 +106,7 @@ extern std::function<void (std::vector<int>)> selectPlaylistTracks;
 // The items: this project's clean mixer, show only used inserts, remove unused inserts at the end and — with
 // `newProjects` — the new-project choices (inserts, Master chain, clean mixer, Playlist tracks).
 void addItems (juce::PopupMenu& menu, AudioEngine& engine, bool newProjects);
-// The "Mix snapshots (LYNX)" submenu (round 190hp, core/MixSnapshots.h): Take snapshot, Compare A/B, then each snapshot
+// The "Mix snapshots (YW Studio)" submenu (round 190hp, core/MixSnapshots.h): Take snapshot, Compare A/B, then each snapshot
 // (Recall, Update to the current mix, Rename..., Delete; ticked while the mix is that snapshot).
 juce::PopupMenu snapshotsMenu (AudioEngine& engine);
 } // namespace mixeroptions
@@ -198,12 +198,12 @@ public:
     // 70 px a second as FL; capture fl-mixer-meterwave.png), the left channel left of the middle, the right one right
     static inline bool meterWaveforms = false;
     void setMeterWaveforms (bool on);
-    // Mixer menu › "Loudness meter beside the Master (LYNX)" (round 190am; ui-options.txt "mixerLoudness"; off = FL's
+    // Mixer menu › "Loudness meter beside the Master (YW Studio)" (round 190am; ui-options.txt "mixerLoudness"; off = FL's
     // mixer, and nothing is measured): a narrow panel right of the Master with the short-term and integrated loudness
     // (LUFS) and the true peak (dBTP) of the Master's output, and a Reset button (core/MasterLoudness.h).
     static inline bool showLoudness = false;
     void setShowLoudness (bool on);
-    // Mixer menu › "Insert effects on the strips (LYNX)" (issue #154 part 2, round 190io; ui-options.txt
+    // Mixer menu › "Insert effects on the strips (YW Studio)" (issue #154 part 2, round 190io; ui-options.txt
     // "mixerStripInserts"; off by default = FL's Mixer): each strip lists its insert's effects under its header band, the
     // linked track headers' list (core/StripInserts.h, core/TrackInserts.h) with the same edits.
     static inline bool showStripInserts = false;
@@ -217,10 +217,10 @@ public:
     void resetLoudness();
     void refreshLoudnessForSnapshot() { loudnessShown = engine.getMeters().loudness.read(); repaint(); } // (--snapshot: no frames run)
     juce::Rectangle<int> loudnessArea() const noexcept; // the panel's plate; empty while it is off
-    // Mixer menu › "Keep links to deleted inserts, greyed (LYNX)" (round 186c, pain point 1; ui-options.txt
+    // Mixer menu › "Keep links to deleted inserts, greyed (YW Studio)" (round 186c, pain point 1; ui-options.txt
     // "mixerKeepLostLinks"; off = FL): Delete keeps each send into a deleted insert as a greyed MixerTrack::lostSends link.
     static inline bool keepLostLinks = false;
-    // Mixer menu › "Mixer groups follow the Playlist (LYNX)" (round 186c, pain point 4; ui-options.txt
+    // Mixer menu › "Mixer groups follow the Playlist (YW Studio)" (round 186c, pain point 4; ui-options.txt
     // "mixerFollowPlaylist"; off by default): mixerops::followPlaylistGroups runs after every edit that changes them.
     static inline bool followPlaylist = false;
     bool isHidden (int track) const noexcept { return track > 0 && track < (int) hidden.size() && hidden[(std::size_t) track]; }

@@ -30,7 +30,7 @@ void rememberName (const juce::String& name)
 
 juce::String offlineText()
 {
-    return tr ("LYNX SHARE is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection, so live sessions are off. "
+    return tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection, so live sessions are off. "
                "Send project... and Merge a part... still work: they use files you send yourself.");
 }
 
@@ -99,7 +99,7 @@ void start (Context c)
         return warn (tr ("Start live session"), offlineText());
     auto* w = new juce::AlertWindow (tr ("Start live session"),
                                      tr ("Up to {0} people join you and edit this project together over the internet, each on their own computer. "
-                                         "Everything is end-to-end encrypted with the invite code: the LYNX SHARE relay only passes it on.",
+                                         "Everything is end-to-end encrypted with the invite code: the YW Studio relay only passes it on.",
                                          { juce::String (3) }),
                                      juce::MessageBoxIconType::NoIcon);
     w->addTextEditor ("me", myName(), tr ("Your name"));
@@ -136,7 +136,7 @@ void join (Context c)
                                          "anyone makes reaches everyone."),
                                      juce::MessageBoxIconType::NoIcon);
     w->addTextEditor ("me", myName(), tr ("Your name"));
-    w->addTextEditor ("code", juce::SystemClipboard::getTextFromClipboard().trim().startsWithIgnoreCase ("LYNX-") ? juce::SystemClipboard::getTextFromClipboard().trim() : juce::String(),
+    w->addTextEditor ("code", juce::SystemClipboard::getTextFromClipboard().trim().startsWithIgnoreCase ("YW-") ? juce::SystemClipboard::getTextFromClipboard().trim() : juce::String(),
                       tr ("Invite code"));
     w->addButton (tr ("Join"), 1, juce::KeyPress (juce::KeyPress::returnKey));
     w->addButton (tr ("Cancel"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
@@ -210,8 +210,8 @@ std::unique_ptr<juce::AlertWindow> makeRejoinDialog (const juce::String& hostNam
 {
     auto w = std::make_unique<ui::dialog::Alert> (
         tr ("Go back into the live session"),
-        (hostName.isNotEmpty() ? tr ("LYNX SHARE closed while you were in {0}'s live session ({1}).", { hostName, when })
-                               : tr ("LYNX SHARE closed while you were in a live session ({0}).", { when }))
+        (hostName.isNotEmpty() ? tr ("YW Studio closed while you were in {0}'s live session ({1}).", { hostName, when })
+                               : tr ("YW Studio closed while you were in a live session ({0}).", { when }))
             + " " + tr ("Go back in? You come back as yourself, with your part and everything you had changed."),
         juce::MessageBoxIconType::QuestionIcon);
     w->addButton (tr ("Go back in"), 1, juce::KeyPress (juce::KeyPress::returnKey));
@@ -268,7 +268,7 @@ void offerResume (Context c)
     const auto when = info->saved.toString (true, true, false, true);
     juce::AlertWindow::showOkCancelBox (
         juce::MessageBoxIconType::QuestionIcon, tr ("Resume live session"),
-        tr ("LYNX SHARE closed during your live session ({0}, {1} people invited). Resume it? The people in it reconnect by themselves.",
+        tr ("YW Studio closed during your live session ({0}, {1} people invited). Resume it? The people in it reconnect by themselves.",
             { when, juce::String (info->guests) }),
         tr ("Resume"), tr ("End it"), nullptr, juce::ModalCallbackFunction::create ([c, journal] (int r) {
             auto o = optionsFor (c, myName());

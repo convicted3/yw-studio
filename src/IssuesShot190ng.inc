@@ -87,7 +87,7 @@
                         walk (*child);
                 };
                 walk (*page);
-                check (juce::String (general ? "Settings › General" : "Settings › LYNX extras") + " has \"Esc closes the focused window\", ticked",
+                check (juce::String (general ? "Settings › General" : "Settings › YW Studio extras") + " has \"Esc closes the focused window\", ticked",
                        found != nullptr && dynamic_cast<juce::ToggleButton*> (found)->getToggleState());
                 if (found != nullptr)
                 {

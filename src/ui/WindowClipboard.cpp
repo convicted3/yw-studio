@@ -110,6 +110,6 @@ void captureMixerTrack (AudioEngine& engine, int track, MixerTrack& into)
 
 juce::String pastedFrom (const crossclipboard::Payload& payload)
 {
-    return tr ("Pasted from {0}", { payload.from.isNotEmpty() ? payload.from : tr ("another LYNX SHARE window") });
+    return tr ("Pasted from {0}", { payload.from.isNotEmpty() ? payload.from : tr ("another YW Studio window") });
 }
 } // namespace lynx::windowclip

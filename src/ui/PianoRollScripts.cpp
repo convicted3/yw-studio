@@ -24,7 +24,7 @@ const char* const scriptWindowKey = "pianoroll-script";
 // database), as the docs say (round 190bj: the first builds of round 190as used Documents/Piano roll scripts)
 juce::File myScriptsFolder()
 {
-    return platform::documentsFolder().getChildFile ("LYNX").getChildFile ("Piano roll scripts");
+    return platform::documentsFolder().getChildFile ("YW Studio").getChildFile ("Piano roll scripts");
 }
 
 // that first folder, still read (listed when it holds scripts) so no one's scripts go missing
@@ -111,7 +111,7 @@ void PianoRollComponent::addScriptItems (juce::PopupMenu& menu)
             dir.startAsProcess();
     });
     menu.addSeparator();
-    menu.addSectionHeader ("LYNX SHARE");
+    menu.addSectionHeader ("YW Studio");
     for (const auto& b : prscript::builtins())
     {
         ScriptRef r;

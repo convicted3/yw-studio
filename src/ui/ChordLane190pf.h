@@ -607,7 +607,7 @@ public:
             engine.editSong ([from, to] (Song& s) { chordlane::clearRange (s.chords(), from, std::max (to, from + 1)); });
             select (-1);
         });
-        menu.addItem (tr ("Chord lane") + " (LYNX)", true, true, [] { workflowextras::setExtra ("playlist.chordLane", false); });
+        menu.addItem (tr ("Chord lane") + " (YW Studio)", true, true, [] { workflowextras::setExtra ("playlist.chordLane", false); });
         return menu;
     }
 

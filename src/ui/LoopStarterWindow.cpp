@@ -287,7 +287,7 @@ public:
         {
             g.setFont (theme::font (theme::type::small));
             g.drawFittedText (tr ("Pick a genre and click New loop. The kit's samples come from the sample packs installed on this "
-                                  "computer (FL Studio's packs when FL is installed, else LYNX's built-in drums); FL Studio's "
+                                  "computer (FL Studio's packs when FL is installed, else YW Studio's built-in drums); FL Studio's "
                                   "audio loops from FL Cloud are not used."),
                               getLocalBounds().reduced (12).withTop (100).withHeight (60), juce::Justification::topLeft, 4);
         }
@@ -444,7 +444,7 @@ private:
             auto row = std::make_unique<Row>();
             row->channel = ch;
             row->name.setText (juce::String::fromUTF8 (c.loopStarterSlot.c_str()) + "  " + juce::String::fromUTF8 (c.name.c_str()), juce::dontSendNotification);
-            row->name.setTooltip (c.samplePath.empty() ? tr ("LYNX's built-in drum") : juce::String::fromUTF8 (c.samplePath.c_str()));
+            row->name.setTooltip (c.samplePath.empty() ? tr ("YW Studio's built-in drum") : juce::String::fromUTF8 (c.samplePath.c_str()));
             row->categories = categoriesFor (genre);
             for (std::size_t i = 0; i < row->categories.size(); ++i)
                 row->category.addItem (categoryLabel (row->categories[i]), (int) i + 1);

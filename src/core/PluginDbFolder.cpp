@@ -191,7 +191,7 @@ std::set<std::string> loadIndex (const std::string& root, bool& exists)
 
 void saveIndex (const std::string& root, const std::set<std::string>& seen)
 {
-    std::string text = "LYNX plugin database 1\n";
+    std::string text = "YW Studio plugin database 1\n";
     for (const auto& key : seen)
         if (key.find_first_of ("\r\n") == std::string::npos)
             text += "seen\t" + key + "\n";
@@ -391,7 +391,7 @@ void writeInstalled (const std::string& root, const std::vector<Plugin>& plugins
     // written again when the plugin list next changes)
     const auto indexPath = u8path (root) / "installed.index";
     const auto hash = signatureHash (signature);
-    if (stale.empty() && present.size() == wanted.size() && fs::is_regular_file (indexPath, ec) && readFile (indexPath) == "LYNX installed 1\n" + hash + "\n")
+    if (stale.empty() && present.size() == wanted.size() && fs::is_regular_file (indexPath, ec) && readFile (indexPath) == "YW Studio installed 1\n" + hash + "\n")
     {
         installedSignature()[root] = signature;
         return;
@@ -404,7 +404,7 @@ void writeInstalled (const std::string& root, const std::vector<Plugin>& plugins
     std::sort (dirs.begin(), dirs.end(), [] (const fs::path& a, const fs::path& b) { return a.native().size() > b.native().size(); });
     for (const auto& d : dirs)
         fs::remove (d, ec); // (only when empty)
-    writeFile (indexPath, "LYNX installed 1\n" + hash + "\n");
+    writeFile (indexPath, "YW Studio installed 1\n" + hash + "\n");
     installedSignature()[root] = signature;
 }
 
@@ -415,7 +415,7 @@ void writeReadMe (const std::string& root)
     if (fs::exists (file, ec))
         return;
     writeFile (file,
-               "LYNX SHARE: Plugin database\r\n"
+               "YW Studio: Plugin database\r\n"
                "\r\n"
                "Effects and Generators hold one small file per plugin (.lynxplugin). The folders here are the folders\r\n"
                "of the Browser's Plugin database, the Plugin picker and the plugin menus of the Mixer, the Channel Rack\r\n"
@@ -426,11 +426,11 @@ void writeReadMe (const std::string& root)
                "- rename a file to rename the plugin in the menus;\r\n"
                "- delete a file to take the plugin out of the menus (it is not uninstalled).\r\n"
                "\r\n"
-               "Installed holds an entry for every plugin LYNX has; LYNX writes that folder again by itself. To bring a\r\n"
+               "Installed holds an entry for every plugin YW Studio has; YW Studio writes that folder again by itself. To bring a\r\n"
                "plugin back, or to add a scanned VST / CLAP plugin to a folder, copy its file from Installed into a\r\n"
                "folder under Effects or Generators.\r\n"
                "\r\n"
-               "LYNX reads the folders again when a plugin menu or the Browser opens.\r\n");
+               "YW Studio reads the folders again when a plugin menu or the Browser opens.\r\n");
 }
 
 // Model → disk for the plugins and folders of `state` (see apply()); `first`: the tree is being made, nothing is removed
@@ -677,7 +677,7 @@ std::string formatEntry (const Entry& entry)
                 c = ' ';
         return value + "\n";
     };
-    std::string out = "LYNX plugin 1\n";
+    std::string out = "YW Studio plugin 1\n";
     out += "key=" + line (entry.key);
     out += "name=" + line (entry.name);
     out += "format=" + line (entry.format);
@@ -693,7 +693,7 @@ bool parseEntry (const std::string& text, Entry& entry)
     entry = {};
     std::istringstream in (text.rfind ("\xef\xbb\xbf", 0) == 0 ? text.substr (3) : text);
     std::string line;
-    if (! std::getline (in, line) || line.rfind ("LYNX plugin", 0) != 0)
+    if (! std::getline (in, line) || line.rfind ("YW Studio plugin", 0) != 0)
         return false;
     while (std::getline (in, line))
     {
@@ -785,7 +785,7 @@ std::string groupFolder (const std::string& root, bool instruments, const std::s
     const std::lock_guard<std::mutex> lock (installedMutex());
     std::error_code ec;
     const auto installed = u8path (root) / "Installed" / (instruments ? "Generators" : "Effects");
-    if (group == "LYNX")
+    if (group == "YW Studio")
         if (const auto own = u8path (folderOnDisk (root, instruments, plugincatalog::lynxCategory)); fs::is_directory (own, ec))
             return utf8 (own);
     if (! group.empty())

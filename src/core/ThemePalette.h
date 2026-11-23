@@ -12,8 +12,8 @@
 // text stays readable. With LYNX's default accent and background it gives exactly the built-in palette.
 namespace lynx::themes
 {
-constexpr std::uint32_t defaultAccent = 0xffe5383b;     // LYNX red
-constexpr std::uint32_t defaultBackground = 0xff15161a; // the app background (token bg1)
+constexpr std::uint32_t defaultAccent = 0xffe5484d;     // YW red
+constexpr std::uint32_t defaultBackground = 0xff1b2124; // YW graphite (token bg1)
 
 // Every themeable token of ui/Theme.h (ARGB).
 struct Palette
@@ -157,7 +157,7 @@ const char* dotId (Dot dot); // "selection", "highlight", ... (the .lynxtheme ke
 // A theme: what a .lynxtheme file holds and what Options › Theme edits.
 struct Spec
 {
-    std::string name = "LYNX";
+    std::string name = "YW Studio";
     // FL's Adjustments (round 190jp, design190ia FW-20; Live: Brightness / Color Intensity / Color Hue): shifts of the
     // whole palette's surfaces and text, 0 = none. hue in degrees (-180..180), the others -1..1.
     float hue = 0.0f, saturation = 0.0f, brightness = 0.0f, contrast = 0.0f, text = 0.0f;
@@ -191,7 +191,7 @@ struct Spec
 // The palette a theme draws with: derivePalette, then its grid line intensity.
 Palette paletteFor (const Spec& spec);
 
-// The built-in themes ("LYNX" first = the default look).
+// The built-in themes ("YW Studio" first = the default look).
 const std::vector<Spec>& builtInThemes();
 
 // The workspace backdrop colour of a theme (its own, or the palette's bg0).

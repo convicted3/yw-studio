@@ -1473,7 +1473,7 @@ juce::String fontSelfTest()
         { "bold", font (type::body, true) },
         { "monospaced", monoFont (type::body) },
         { "serif", juce::Font (juce::FontOptions (juce::Font::getDefaultSerifFontName(), type::body, juce::Font::plain)) },
-        { "unknown family", juce::Font (juce::FontOptions ("LYNX no such family 142", type::body, juce::Font::bold)) },
+        { "unknown family", juce::Font (juce::FontOptions ("YW Studio no such family 142", type::body, juce::Font::bold)) },
     };
     for (const auto& [name, options] : fonts)
     {
@@ -1488,7 +1488,7 @@ juce::String fontSelfTest()
    #if JUCE_LINUX || JUCE_BSD
     {
         const juce::ScopedValueSetter<bool> off (typefaceFallbackOff, true);
-        const juce::Font none (juce::FontOptions ("LYNX no such family 142 b", type::body, juce::Font::plain));
+        const juce::Font none (juce::FontOptions ("YW Studio no such family 142 b", type::body, juce::Font::plain));
         juce::GlyphArrangement line, fitted;
         line.addLineOfText (none, text, 0.0f, 0.0f);
         fitted.addFittedText (none, text, 0.0f, 0.0f, 60.0f, 40.0f, juce::Justification::centredLeft, 3, 0.7f);

@@ -665,7 +665,7 @@ public:
         // Round 190fn (decision O1, LYNX's own): FL Studio Mobile's factory content for .flm projects, from the user's own
         // copy of the app's "Resources" folder (FL's copy, when FL is installed, is searched after these)
         flmResources = std::make_unique<FolderList> (
-            tr ("FL Studio Mobile resources"), tr ("Factory sounds for .flm projects: the app's own Resources folder. LYNX SHARE ships none."),
+            tr ("FL Studio Mobile resources"), tr ("Factory sounds for .flm projects: the app's own Resources folder. YW Studio ships none."),
             [persistent, sample] {
                 juce::StringArray list;
                 if (persistent)
@@ -681,7 +681,7 @@ public:
         // Round 190pj (issue #241): JSFX scripts. Documents/LYNX/JSFX, the bundled pack and REAPER's Effects folder are
         // always searched; these are the user's other folders
         jsfxFolders = std::make_unique<FolderList> (
-            tr ("JSFX folders"), tr ("JSFX scripts are also found in Documents/LYNX/JSFX, the bundled pack and REAPER's Effects folder."),
+            tr ("JSFX folders"), tr ("JSFX scripts are also found in Documents/YW Studio/JSFX, the bundled pack and REAPER's Effects folder."),
             [persistent, sample] { return sample (persistent ? jsfx::userFolders() : juce::StringArray(), { "D:\\JSFX\\Saike" }); },
             [persistent, &host] (const juce::StringArray& list) {
                 if (! persistent)
@@ -1067,7 +1067,7 @@ public:
                                                                 { SettingsPage::general, tr ("General") }, { SettingsPage::files, tr ("Files") },
                                                                 { SettingsPage::theme, tr ("Theme") },     { SettingsPage::project, tr ("Project") },
                                                                 { SettingsPage::info, tr ("Info") },       { SettingsPage::link, tr ("Ableton Link") },
-                                                                { SettingsPage::extras, tr ("LYNX extras") } };
+                                                                { SettingsPage::extras, tr ("YW Studio extras") } };
         tabs.firstOwnTab = 7;
         for (const auto& [p, name] : order)
         {

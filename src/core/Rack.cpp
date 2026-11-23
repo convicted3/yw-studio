@@ -442,7 +442,7 @@ void compile (PatcherDoc& doc)
                 doc.zones[(std::size_t) zone].chokeNode = instrument;
             if (r->kind == RackDoc::Kind::midiEffect)
             {
-                if (noteFrom != patchFromHost) // the last MIDI effect plays on "To LYNX" port 0 (the rack's children)
+                if (noteFrom != patchFromHost) // the last MIDI effect plays on "To YW Studio" port 0 (the rack's children)
                 {
                     PatchWire w;
                     w.kind = PatchWire::Kind::midi;

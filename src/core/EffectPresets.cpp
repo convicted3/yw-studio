@@ -375,7 +375,7 @@ std::optional<std::vector<std::uint8_t>> fromHex (const std::string& text)
 std::string toText (EffectKind kind, const std::string& name, const EffectParams& params, const std::vector<std::uint8_t>* state)
 {
     std::ostringstream out;
-    out << "LYNX preset 1\n";
+    out << "YW Studio preset 1\n";
     out << "engine = " << effectInfo (kind).name << "\n";
     out << "name = " << name << "\n";
     const auto& info = effectInfo (kind).params;
@@ -410,7 +410,7 @@ std::optional<Loaded> fromText (EffectKind kind, const std::string& text)
 {
     std::istringstream in (text);
     std::string line;
-    if (! std::getline (in, line) || trim (line).rfind ("LYNX preset", 0) != 0)
+    if (! std::getline (in, line) || trim (line).rfind ("YW Studio preset", 0) != 0)
         return std::nullopt;
     Loaded loaded;
     loaded.params = makeEffectSlot (kind).params;

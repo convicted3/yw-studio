@@ -1,7 +1,7 @@
 #pragma once
 
 // Supporting LYNX SHARE (round 190fq, LYNX's own; FL has nothing like it): an optional, low-key way to donate.
-// - Help › "Support LYNX SHARE..." and the About window's "Support LYNX SHARE" button open the Support window: why
+// - Help › "Support YW Studio..." and the About window's "Support YW Studio" button open the Support window: why
 //   donations help, "Donate on Ko-fi" (the page of core/Links.h in the browser) and "Close".
 // - The start-up note (core/SupportNote.h): after the 10th start, once, a small card in the main window's bottom-right
 //   corner, never over a dialog and never while playing or recording; Settings › General › "Show the support note".

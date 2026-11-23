@@ -625,7 +625,7 @@ struct AraHost::Impl : private juce::Timer
         doc->controller = std::make_shared<Controller>();
         doc->controller->keeper = std::move (first);
         doc->controller->playbackAlive = alive;
-        doc->controller->dc = juce::ARAHostDocumentController::create (std::move (factory), "LYNX", std::make_unique<AudioAccess>(),
+        doc->controller->dc = juce::ARAHostDocumentController::create (std::move (factory), "YW Studio", std::make_unique<AudioAccess>(),
                                                                          std::make_unique<Archiving>(),
                                                                          std::make_unique<ContentAccess> (doc->timeline), std::move (updates),
                                                                          std::move (playback));
@@ -636,7 +636,7 @@ struct AraHost::Impl : private juce::Timer
         }
         {
             auto props = HM::MusicalContext::getEmptyProperties();
-            props.name = "LYNX";
+            props.name = "YW Studio";
             props.orderIndex = 0;
             props.color = nullptr;
             doc->context = std::make_unique<HM::MusicalContext> (reinterpret_cast<ARA::ARAMusicalContextHostRef> (doc.get()), doc->controller->get(), props);

@@ -253,12 +253,12 @@ std::optional<Manifest> manifestFromJson (const juce::String& json, juce::String
     juce::var root;
     if (juce::JSON::parse (json, root).failed() || root["format"].toString() != "lynxpack")
     {
-        error = "not a LYNX SHARE package";
+        error = "not a YW Studio package";
         return std::nullopt;
     }
     if ((int) root["version"] > formatVersion)
     {
-        error = "the package was made by a newer LYNX SHARE";
+        error = "the package was made by a newer YW Studio";
         return std::nullopt;
     }
     Manifest m;
@@ -974,7 +974,7 @@ std::optional<Manifest> readManifest (const juce::File& file, juce::String& erro
     const auto index = zip.getIndexOfFileName ("manifest.json");
     if (index < 0)
     {
-        error = "not a LYNX SHARE package (no manifest)";
+        error = "not a YW Studio package (no manifest)";
         return std::nullopt;
     }
     std::unique_ptr<juce::InputStream> in (zip.createStreamForEntry (index));
@@ -1108,14 +1108,14 @@ PluginReport resolvePlugins (Song& song, const Manifest& manifest, PluginHost& h
 
 juce::File receivedRoot()
 {
-    return platform::documentsFolder().getChildFile ("LYNX/Projects/Received");
+    return platform::documentsFolder().getChildFile ("YW Studio/Projects/Received");
 }
 
 juce::File standInFolder (const juce::File& projectFile, const Song& song)
 {
     if (projectFile != juce::File())
         return projectFile.getParentDirectory().getChildFile ("Stand-ins");
-    return platform::documentsFolder().getChildFile ("LYNX/Stand-ins").getChildFile (str (song.projectId.empty() ? std::string ("project") : song.projectId));
+    return platform::documentsFolder().getChildFile ("YW Studio/Stand-ins").getChildFile (str (song.projectId.empty() ? std::string ("project") : song.projectId));
 }
 
 juce::File sessionMediaFolder (const juce::File& projectFile, const Song& song, const juce::String& guest)
@@ -1123,7 +1123,7 @@ juce::File sessionMediaFolder (const juce::File& projectFile, const Song& song, 
     const auto name = juce::File::createLegalFileName (guest.isNotEmpty() ? guest : juce::String ("Guest"));
     if (projectFile != juce::File())
         return projectFile.getParentDirectory().getChildFile ("Session media").getChildFile (name);
-    return platform::documentsFolder().getChildFile ("LYNX/Session media").getChildFile (str (song.projectId)).getChildFile (name);
+    return platform::documentsFolder().getChildFile ("YW Studio/Session media").getChildFile (str (song.projectId)).getChildFile (name);
 }
 
 bool adoptMedia (Song& song, const juce::File& folder, juce::String& error)

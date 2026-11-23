@@ -33,7 +33,7 @@
         lynx::ChannelDef synth;
         synth.name = "Synth";
         synth.instrument = lynx::InstrumentKind::synth;
-        out.push_back ({ "LYNX Synth cutoff", synth, 60, lynx::synthparam::target (lynx::synthparam::cutoff) });
+        out.push_back ({ "YW Synth cutoff", synth, 60, lynx::synthparam::target (lynx::synthparam::cutoff) });
         return out;
     }
 

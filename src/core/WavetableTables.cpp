@@ -847,7 +847,7 @@ TableMatch matchLiveTable (const std::string& liveName)
     // (names not in the list fall back on keywords)
     for (const auto& p : pairs)
         if (liveName == p.live)
-            return { indexOf (p.lynx), std::string ("Live's \"") + p.live + "\" -> LYNX table \"" + p.lynx + "\" (LYNX's own table; its frames differ)" };
+            return { indexOf (p.lynx), std::string ("Live's \"") + p.live + "\" -> YW Studio table \"" + p.lynx + "\" (YW Studio's own table; its frames differ)" };
     auto has = [&] (const char* k) { return liveName.find (k) != std::string::npos; };
     const char* pick = "Shapes";
     if (has ("Noise") || has ("Rain") || has ("Vinyl") || has ("Junk"))
@@ -872,6 +872,6 @@ TableMatch matchLiveTable (const std::string& liveName)
         pick = "Lowpass Saw";
     if (liveName.empty())
         return { indexOf ("Shapes"), {} };
-    return { indexOf (pick), std::string ("Live's \"") + liveName + "\" -> LYNX table \"" + pick + "\" (by name; LYNX's own table, it sounds different)" };
+    return { indexOf (pick), std::string ("Live's \"") + liveName + "\" -> YW Studio table \"" + pick + "\" (by name; YW Studio's own table, it sounds different)" };
 }
 } // namespace lynx::wt

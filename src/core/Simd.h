@@ -42,5 +42,5 @@ inline void lynxSetCsr (unsigned csr) noexcept
  #define _mm_getcsr lynxGetCsr
  #define _mm_setcsr lynxSetCsr
 #else
- #error "LYNX needs x86-64 or ARM64"
+ #error "YW Studio needs x86-64 or ARM64"
 #endif

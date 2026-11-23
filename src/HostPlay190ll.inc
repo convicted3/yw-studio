@@ -1,4 +1,4 @@
-    // --hostplaytest190ll report.txt "<LYNX Test Synth.vst3>" [--buffer N] (round 190ll, issue #199: Vital crackled when
+    // --hostplaytest190ll report.txt "<YW Test Synth.vst3>" [--buffer N] (round 190ll, issue #199: Vital crackled when
     // its own preset played from the Piano roll, not when played in its own window). The engine's own device callback
     // (a stand-in device at 48 kHz, driven block by block as --renderaheadtest) plays a pattern of 16th-note chords on
     // the VST3 test synth (tools/testplugin/lynx_test_synth_vst3.cpp, its LYNX_TEST_SYNTH_LOG) in the ways a user

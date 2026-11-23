@@ -59,6 +59,6 @@ std::optional<ChannelDef> defaultChannel (InstrumentKind kind, const std::string
 // The pseudo path of a bank preset in the arrows' list ("lynxbank:<index>") and back (−1 = not a bank path)
 std::string pathOf (int index);
 int indexOfPath (const std::string& path);
-// The relative path shown in the menus: "LYNX/<category>/<name>"
+// The relative path shown in the menus: "YW Studio/<category>/<name>"
 std::string relativeOf (const Preset& preset);
 } // namespace lynx::banks

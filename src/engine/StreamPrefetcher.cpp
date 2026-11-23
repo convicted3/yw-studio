@@ -5,7 +5,7 @@
 namespace lynx
 {
 StreamPrefetcher::StreamPrefetcher (const Transport& t)
-    : juce::Thread ("LYNX prefetch"),
+    : juce::Thread ("YW Studio prefetch"),
       transport (t)
 {
     startThread (juce::Thread::Priority::high);

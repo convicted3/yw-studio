@@ -2401,7 +2401,7 @@ void AudioEngine::startAudioTake()
     {
         int track, first, channels;
         RecordSource point = RecordSource::externalInput;
-        bool dry = false; // the second, dry take of "also record the dry input (LYNX)"
+        bool dry = false; // the second, dry take of "also record the dry input (YW Studio)"
     };
     std::vector<Wanted> wanted;
     std::vector<int> withoutInput;
@@ -2499,7 +2499,7 @@ void AudioEngine::startAudioTake()
             insert = song.mixer[(std::size_t) w.track].name.empty() ? "Insert " + juce::String (w.track)
                                                                     : juce::String::fromUTF8 (song.mixer[(std::size_t) w.track].name.c_str());
         if (w.dry)
-            insert += " DI"; // the dry take of "also record the dry input (LYNX)"
+            insert += " DI"; // the dry take of "also record the dry input (YW Studio)"
         juce::File file;
         auto recordTo = w.track > 0 ? juce::String::fromUTF8 (song.mixer[(std::size_t) w.track].recordTo.c_str()) : juce::String();
         if (w.dry && recordTo.isNotEmpty())
@@ -2848,7 +2848,7 @@ void AudioEngine::forgetInterruptedTakes (const std::vector<takes::Journal>& rec
 
 juce::File AudioEngine::defaultRecordingFolder()
 {
-    return juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Recordings");
+    return juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Recordings");
 }
 
 void AudioEngine::setRecordingTarget (const juce::File& folder, const juce::String& projectStem)
@@ -5205,7 +5205,7 @@ bool AudioEngine::finishFlpImport (PreparedFlp&& prepared, bool asEdit)
                                         [&] (const MissingPlugin& m) { return m.name == name && ! m.replacementArg.empty(); });
                 if (it == missingPluginDetails.end())
                     it = missingPluginDetails.insert (missingPluginDetails.end(),
-                                                      MissingPlugin { name, {}, TR_NOOP ("LYNX SHARE substitute: {0} (the original plugin is used again once it is installed). FL Studio plays a missing plugin's slot unprocessed: a substitute slot's menu › Bypass all LYNX SHARE substitutes of this project does the same"),
+                                                      MissingPlugin { name, {}, TR_NOOP ("YW Studio substitute: {0} (the original plugin is used again once it is installed). FL Studio plays a missing plugin's slot unprocessed: a substitute slot's menu › Bypass all YW Studio substitutes of this project does the same"),
                                                                       effectInfo (fx.kind).name });
                 const auto user = userOf (imported, t);
                 if (std::find (it->usedBy.begin(), it->usedBy.end(), user) == it->usedBy.end())
@@ -7919,7 +7919,7 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* inputCha
     if (const auto id = (unsigned long) GetCurrentThreadId(); id != deviceThreadId.load (std::memory_order_relaxed))
     {
         deviceThreadId.store (id, std::memory_order_relaxed);
-        WorkerPool::nameCurrentThread ("LYNX audio device"); // (round 190kb: per-thread CPU lists)
+        WorkerPool::nameCurrentThread ("YW Studio audio device"); // (round 190kb: per-thread CPU lists)
         const auto before = GetThreadPriority (GetCurrentThread());
         deviceThreadPriorityBefore.store (before, std::memory_order_relaxed);
         if (boostDeviceThread && before < THREAD_PRIORITY_TIME_CRITICAL)

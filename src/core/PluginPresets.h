@@ -27,7 +27,7 @@ struct Preset
 };
 
 constexpr const char* extension = ".lynxpreset";
-constexpr const char* header = "LYNX plugin preset 1";
+constexpr const char* header = "YW Studio plugin preset 1";
 
 std::string toText (const Preset& preset);
 // nullopt when the text is not a plugin preset (e.g. a preset of one of LYNX's own engines) or has no state.

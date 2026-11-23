@@ -206,7 +206,7 @@ public:
     // `index`) with the entry open on its parameters, selected and in view
     bool revealProjectParameters (bool effect, int index, int slot);
     bool historyShownForCheck() const;
-    // round 190ke (--simplegb190keshot): "LYNX content" with these folders open ("lynx-content", "lynx-content/Beats"...),
+    // round 190ke (--simplegb190keshot): "YW Studio content" with these folders open ("lynx-content", "lynx-content/Beats"...),
     // and the rows listed now (tree / tag-filter results)
     void showFactoryContentForSnapshot (const juce::StringArray& openFolders);
     juce::StringArray rowLabelsForCheck() const;
@@ -347,7 +347,7 @@ public:
     // Round 190ke (owner decision D2): what the TAGS panel, the tag filter and the row menus' ticks see — the user's store,
     // plus the built-in tags of LYNX's own factory content (core/FactoryContent.h) in the Simple layout
     static browsertags::Store shownTags();
-    // Round 190ke: the "LYNX content" items' actions the main window carries out (a beat becomes a Drums track at the
+    // Round 190ke: the "YW Studio content" items' actions the main window carries out (a beat becomes a Drums track at the
     // playhead; an effect chain goes onto the selected track's insert). Sounds go through onAddInstrument.
     std::function<void (const std::string& pluginKey)> onFactoryItem;
     // FL's "Tags" section of a row's menu: Tags ▸ (each tag ticked on / off), Add tag..., Edit tags...
@@ -580,9 +580,9 @@ private:
     bool searchPending = false, projectDirty = false;
     juce::File projectFile;
     std::set<juce::String> openPluginFolders; // the Plugin database folders the user opened (round 142)
-    std::set<juce::String> openFactoryFolders; // round 190ke: the "LYNX content" folders the user opened
+    std::set<juce::String> openFactoryFolders; // round 190ke: the "YW Studio content" folders the user opened
 public:
-    // round 190ke: the layout style changed (the Simple layout lists "LYNX content" and its tags): every Browser follows
+    // round 190ke: the layout style changed (the Simple layout lists "YW Studio content" and its tags): every Browser follows
     static void layoutStyleChanged();
 private:
     std::vector<juce::File> locations; // (round 190lr: the location history)

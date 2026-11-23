@@ -24,7 +24,7 @@
 namespace lynx::genpresets
 {
 constexpr const char* extension = ".lynxpreset";
-constexpr const char* header = "LYNX generator preset 1";
+constexpr const char* header = "YW Studio generator preset 1";
 // The folder under the plugin presets folder that holds every generator's own folder
 constexpr const char* generatorsFolder = "Generators";
 

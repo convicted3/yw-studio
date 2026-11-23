@@ -2660,7 +2660,7 @@ inline const Theme& soundFontTheme()
     static const Theme t = []
     {
         Theme x;
-        x.name = "LYNX Soundfont";
+        x.name = "YW Soundfont";
         x.base = Style::glow;
         x.pal = { Colour (0xff10192c), Colour (0xff050912), Colour (0xff3fa9ff), Colour (0xff5ff2c6), Colour (0xc8121c30), Colour (0xe0080e1a),
                   Colour (0xff4a6f9a), Colour (0xffe8f3ff), Colour (0xff04070e), Colour (0xffd2e6fb), Colour (0xff5a7a9c), Colour (0xff1c2a40),
@@ -2723,7 +2723,7 @@ inline const Theme& lynxSynthTheme()
     static const Theme t = []
     {
         Theme x;
-        x.name = "LYNX Synth";
+        x.name = "YW Synth";
         x.base = Style::glow;
         x.pal = { Colour (0xff1e1f25), Colour (0xff0a0a0d), Colour (0xffe5383b), Colour (0xffff9f80), Colour (0xd0202128), Colour (0xe40e0e12),
                   Colour (0xff6a5a60), Colour (0xfff3eeee), Colour (0xff070709), Colour (0xff3a3b42), Colour (0xff17181c), Colour (0xff2e2f36),

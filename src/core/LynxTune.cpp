@@ -150,7 +150,7 @@ int latencyFor (double sampleRate, int range, bool lowLatency) noexcept
 const EffectInfo& info()
 {
     static const EffectInfo i = [] {
-        EffectInfo e { "LYNX Tune", {} };
+        EffectInfo e { "YW Tune", {} };
         e.params = { { "Key", 0.0f },
                      { "Scale", 1.0f / (float) (vocal::scaleCount - 1) }, // Major
                      { "Retune", 0.2236068f },                           // 20 ms

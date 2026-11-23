@@ -34,7 +34,7 @@ TEXT = {
     ],
     "pills": ["Windows", "macOS", "Linux"],
     "site": "lynx-share.com",
-    "url": "github.com/Ka1-S/LYNX-SHARE",
+    "url": "github.com/convicted3/yw-studio",
 }
 
 # --- the layout (1280 x 640) -------------------------------------------------------------------------------------------

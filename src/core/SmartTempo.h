@@ -3,7 +3,7 @@
 // Smart Tempo (round 190pf, research190oe P12): the project's tempo follows a free recording. A LYNX extra in the
 // manner of Logic Pro's Smart Tempo "Adapt" (Apple's guide: the project tempo adapts to a recording made without the
 // metronome; the recording keeps its timing and the bar and beat grid bends to it). FL users ask for "a real tempo lane
-// that recalibrates the grid" (research190oe F6). The audio clip menu's LYNX extras › "Make the project tempo follow this
+// that recalibrates the grid" (research190oe F6). The audio clip menu's YW Studio extras › "Make the project tempo follow this
 // clip..." tracks the clip's beats, shows the bars and their tempo in a preview with a Smooth amount, then writes tempo
 // markers (core/TempoMarkers.h: a tempo automation clip, so .flp exports, older LYNX and FL play the same tempo map), one
 // per bar, glide off, and leaves the clip unwarped so its audio plays exactly as recorded. MIDI recorded afterwards lands

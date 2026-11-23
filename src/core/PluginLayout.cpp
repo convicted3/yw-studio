@@ -2023,7 +2023,7 @@ Layout compressorLayout()
     v.push_back (when (dial (60, 252, 34, "RC attack", TR_NOOP ("Attack")), "Ranges", 0.5f, 1.0f));
     v.push_back (when (dial (140, 252, 34, "RC release", TR_NOOP ("Release")), "Ranges", 0.5f, 1.0f));
     v.push_back (when (dial (217, 252, 34, "RC ratio", TR_NOOP ("Ratio")), "Ranges", 0.5f, 1.0f));
-    v.push_back (tabs (318, 7, 90, 16, "Ranges", TR_NOOP ("LYNX|RComp")));
+    v.push_back (tabs (318, 7, 90, 16, "Ranges", TR_NOOP ("YW Studio|RComp")));
     // round 152: the vintage voicing's static curve — measured at every ratio (new instances) or round 150's (older projects)
     v.push_back (when (tabs (12, 7, 104, 16, "Vintage curve", TR_NOOP ("Old|Measured")), "Voicing", 0.5f, 1.0f));
     v.push_back (dial (300, 252, 30, "Mix", TR_NOOP ("Mix")));

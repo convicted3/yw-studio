@@ -1114,7 +1114,7 @@ public:
         search.onTextChange = [this] { refilter(); };
         search.setTitle (tr ("Search sounds"));
         addAndMakeVisible (search);
-        ownButton.setButtonText (tr ("LYNX sounds"));
+        ownButton.setButtonText (tr ("YW Studio sounds"));
         fontsButton.setButtonText (tr ("My SoundFonts"));
         fontsButton.setTooltip (tr ("The sounds of your own .sf2 and .sf3 files"));
         pluginsButton.setButtonText (tr ("My plugins"));
@@ -2565,7 +2565,7 @@ private:
     }
 
     // kits: the pads' sounds and settings in a file of the user's (Documents/LYNX/Sampler kits/<name>.lynxkit)
-    static juce::File kitFolder() { return platform::documentsFolder().getChildFile ("LYNX/Sampler kits"); }
+    static juce::File kitFolder() { return platform::documentsFolder().getChildFile ("YW Studio/Sampler kits"); }
 
     juce::PopupMenu kitMenu()
     {
@@ -3724,7 +3724,7 @@ void SimpleDock::mouseUp (const juce::MouseEvent&)
 }
 
 // --- the user's own chain presets ------------------------------------------------------------------------------------
-juce::File SimpleDock::userPresetFolder() { return platform::documentsFolder().getChildFile ("LYNX/Chain presets"); }
+juce::File SimpleDock::userPresetFolder() { return platform::documentsFolder().getChildFile ("YW Studio/Chain presets"); }
 
 // round 190dg: the favourite chain presets, one name a line, in the order they were starred
 juce::File SimpleDock::favouritesFile() { return userPresetFolder().getChildFile ("Favourites.txt"); }

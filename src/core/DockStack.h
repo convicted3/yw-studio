@@ -101,7 +101,7 @@ inline bool keepsSize (int nativeW, int nativeH, int w, int h, double scale) noe
     return std::abs ((double) nativeW - w * scale) < 1.0 && std::abs ((double) nativeH - h * scale) < 1.0;
 }
 
-// Round 190jy (queue item 44, Settings › General › "Draw docked LYNX editors in the main window"): a docked LYNX editor
+// Round 190jy (queue item 44, Settings › General › "Draw docked YW Studio editors in the main window"): a docked LYNX editor
 // can be drawn by the main window itself (its own components, its own frames) instead of a native child window of its
 // own: a live display then costs its paint and no second window presenting frames (Gross Beat: +8 points of process CPU
 // while playing). The main window's drawing is under all its native child windows (the panels, docked plugin windows),

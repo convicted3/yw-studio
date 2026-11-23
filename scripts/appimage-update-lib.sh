@@ -4,7 +4,7 @@
 UPDATE_ADDRESS="${LYNX_UPDATE_ADDRESS:-https://lynx-share.com/update/LYNX-x86_64.AppImage.zsync}"
 # the arm64 AppImage's address (round 190oy, from 0.1.31): the same file holds both redirects
 UPDATE_ADDRESS_AARCH64="${LYNX_UPDATE_ADDRESS_AARCH64:-https://lynx-share.com/update/LYNX-aarch64.AppImage.zsync}"
-UPDATE_REPO="${LYNX_UPDATE_REPO:-Ka1-S/LYNX-SHARE}"
+UPDATE_REPO="${LYNX_UPDATE_REPO:-convicted3/yw-studio}"
 # the first release whose AppImage reads the address
 UPDATE_FIRST_VERSION="v0.1.25"
 

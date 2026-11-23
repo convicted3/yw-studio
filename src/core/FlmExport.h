@@ -17,7 +17,7 @@
 //  - automation clips of an insert's level / pan, of Pocket effects and of the DW Sampler's / GMSynth's own values;
 //  - the notes: every pattern clip of the Playlist as a clip of its channels' lanes (one FLM content per pattern and
 //    channel, so a pattern placed twice stays one linked content); audio clips with their level, pan, pitch, reverse;
-//  - what FLM cannot hold is listed (FlmExportLoss, the wording of the "Save a copy for an older LYNX" list).
+//  - what FLM cannot hold is listed (FlmExportLoss, the wording of the "Save a copy for an older YW Studio" list).
 // Clean-room: written from FLM_FORMAT.md; no Image-Line code or data.
 
 #include <cstdint>
@@ -33,7 +33,7 @@ namespace lynx
 {
 struct FlmExportOptions
 {
-    std::string title;          // the song's name ("" = Song::info.title, else "LYNX SHARE")
+    std::string title;          // the song's name ("" = Song::info.title, else "YW Studio")
     std::string samplesFolder;  // the folder beside the .flm the samples are copied to ("" = "<title> Samples")
     std::string targetFolder;   // the .flm's folder (PRST keeps the copied samples' absolute paths there; "" = none)
     double nowSeconds = 0.0;    // the save time, seconds since 1970 UTC (META's last-saved date; 0 = left empty)

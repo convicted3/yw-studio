@@ -319,7 +319,7 @@ juce::String araSelfTest (const juce::File& pluginFile, const juce::File& audio,
                 errors.add ("show: no ARA instance");
             else if (auto* editor = instance->createEditorIfNeeded())
             {
-                juce::DocumentWindow window ("LYNX 190oq ARA insert - " + plugin.name, juce::Colours::black, juce::DocumentWindow::closeButton);
+                juce::DocumentWindow window ("YW 190oq ARA insert - " + plugin.name, juce::Colours::black, juce::DocumentWindow::closeButton);
                 window.setUsingNativeTitleBar (true);
                 window.setContentNonOwned (editor, true);
                 window.setTopLeftPosition (60, 60);

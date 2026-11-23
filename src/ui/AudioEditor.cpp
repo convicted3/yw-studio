@@ -2159,7 +2159,7 @@ public:
             return;
         const auto delta = std::abs (w.deltaY) > std::abs (w.deltaX) ? w.deltaY : w.deltaX;
         // round 190ld (DP-58, owner decision PL2): FL's mapping by default — the wheel zooms around the mouse,
-        // Shift+wheel (or a sideways swipe) scrolls; View › "Wheel scrolls (LYNX)" brings back LYNX's (wheel scrolls,
+        // Shift+wheel (or a sideways swipe) scrolls; View › "Wheel scrolls (YW Studio)" brings back LYNX's (wheel scrolls,
         // Ctrl+wheel zooms)
         const auto zoomGesture = wheelScrollsLynx() ? (e.mods.isCtrlDown() || e.mods.isCommandDown())
                                                     : (std::abs (w.deltaY) >= std::abs (w.deltaX) && ! e.mods.isShiftDown());
@@ -2312,7 +2312,7 @@ public:
             }
         if (doc.hasLoop() && doc.loopStart >= range.start && doc.loopEnd <= range.end)
             ae::setLoop (part, { doc.loopStart - range.start, doc.loopEnd - range.start });
-        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Edits");
+        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
         const auto whole = range.start == 0 && range.end == doc.audio.frames();
         const auto file = folder.getNonexistentChildFile (safeTitle() + (whole ? " (edit)" : " (part)"), ".wav");
@@ -3710,7 +3710,7 @@ private:
     juce::PopupMenu scriptMenu()
     {
         juce::PopupMenu menu;
-        menu.addSectionHeader ("LYNX SHARE");
+        menu.addSectionHeader ("YW Studio");
         std::map<juce::String, juce::PopupMenu> own;
         for (const auto& b : ae::script::builtins())
         {
@@ -4557,7 +4557,7 @@ private:
     // key on the path, so nothing stale is ever shown)
     juce::File writeEditFile()
     {
-        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Edits");
+        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
         const auto file = folder.getNonexistentChildFile (safeTitle() + " (edit)", ".wav");
         if (! writeWav (file, bits))
@@ -4722,7 +4722,7 @@ private:
         part.title = doc.title;
         if (doc.hasLoop() && doc.loopStart >= range.start && doc.loopEnd <= range.end)
             ae::setLoop (part, { doc.loopStart - range.start, doc.loopEnd - range.start });
-        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Edits");
+        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
         const auto file = folder.getNonexistentChildFile (safeTitle() + " (part)", ".wav");
         const auto bytes = ae::encodeWav (part, bits);
@@ -6433,7 +6433,7 @@ juce::PopupMenu AudioEditor::mainMenu()
         logFrequency = ! logFrequency;
         repaint();
     });
-    view.addItem (tr ("Wheel scrolls (LYNX)"), true, wheelScrollsLynx(), [] { wheelScrollsLynx() = ! wheelScrollsLynx(); }); // round 190ld
+    view.addItem (tr ("Wheel scrolls (YW Studio)"), true, wheelScrollsLynx(), [] { wheelScrollsLynx() = ! wheelScrollsLynx(); }); // round 190ld
     juce::PopupMenu time;
     const std::pair<TimeFormat, const char*> formats[] = { { TimeFormat::automatic, TR_NOOP ("Auto") },
                                                            { TimeFormat::seconds, TR_NOOP ("Minutes : seconds") },

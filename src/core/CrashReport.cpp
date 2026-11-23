@@ -787,9 +787,9 @@ std::string githubTitle (std::string_view kind, const std::string& lastStep)
 std::string githubKindOption (std::string_view kind)
 {
     if (kind == "crash" || kind == "unclean")
-        return "LYNX SHARE closed (crash)";
+        return "YW Studio closed (crash)";
     if (kind == "hang")
-        return "LYNX SHARE froze (not responding)";
+        return "YW Studio froze (not responding)";
     return "Other";
 }
 

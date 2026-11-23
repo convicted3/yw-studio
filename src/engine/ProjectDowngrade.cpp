@@ -763,7 +763,7 @@ void toRelease0128FromRollup030 (juce::var& root, Losses& lost)
                         if (auto* plugin = objectOf (e["plugin"]))
                             drop (*plugin, "recordOwnNotes");
         if (! shapes.isEmpty())
-            lost.push_back ({ TR_NOOP ("The Peak Controller's LYNX LFO shapes play its FL Shape: {0}"), listOf (shapes), true });
+            lost.push_back ({ TR_NOOP ("The Peak Controller's YW LFO shapes play its FL Shape: {0}"), listOf (shapes), true });
         if (! console.isEmpty())
             lost.push_back ({ TR_NOOP ("Crest Compressor's console law (the Waves SSLComp stand-in) plays as its Bus style: {0}"), listOf (console), true });
         if (! fet.isEmpty())
@@ -1030,7 +1030,7 @@ void toRelease0128FromRollup030 (juce::var& root, Losses& lost)
         if (! splice.isEmpty())
             lost.push_back ({ TR_NOOP ("Gemini Doubler's splice law (the Waves Doubler stand-in) plays its measured read head: {0}"), listOf (splice), true });
         if (! wavesTune.isEmpty())
-            lost.push_back ({ TR_NOOP ("LYNX Tune's Waves Tune Real-Time law is left out (the uncorrected sound is re-synthesised): {0}"), listOf (wavesTune), true });
+            lost.push_back ({ TR_NOOP ("YW Tune's Waves Tune Real-Time law is left out (the uncorrected sound is re-synthesised): {0}"), listOf (wavesTune), true });
         if (! voxLaw.isEmpty())
             lost.push_back ({ TR_NOOP ("Compressor's Vox law (the Waves Renaissance Vox stand-in) plays as the plain Compressor: {0}"), listOf (voxLaw), true });
         if (! apiLaw.isEmpty())
@@ -1491,7 +1491,7 @@ void toRelease0130 (juce::var& root, Losses& lost)
             drop (c, "samplePath");
         });
         if (! lynxModel.isEmpty())
-            lost.push_back ({ TR_NOOP ("LYNX Model is not in this release: its channels become empty Samplers and play nothing: {0}"), listOf (lynxModel), true });
+            lost.push_back ({ TR_NOOP ("YW Model is not in this release: its channels become empty Samplers and play nothing: {0}"), listOf (lynxModel), true });
     }
 
     // round 190ov: FL automation clips linked to several controls (target links on an FL import). 0.1.30 plays target links
@@ -2073,7 +2073,7 @@ void toRelease0130 (juce::var& root, Losses& lost)
             lost.push_back ({ TR_NOOP ("These modulators are not in this release (it has LFO modulators only): their targets keep their own values: {0}"),
                               listOf (kinds), true });
         if (! hosted.isEmpty())
-            lost.push_back ({ TR_NOOP ("Modulation of hosted plugins' parameters is not in this release: these modulators move LYNX's own controls only: {0}"),
+            lost.push_back ({ TR_NOOP ("Modulation of hosted plugins' parameters is not in this release: these modulators move YW Studio's own controls only: {0}"),
                               listOf (hosted), true });
         if (macroClips > 0)
             lost.push_back ({ TR_NOOP ("{0} automation clip(s) of a Macro modulator's knob stay as unlinked clips"), juce::String (macroClips), true });
@@ -2319,6 +2319,6 @@ Copy forRelease (const Song& song, const juce::String& release)
 
 juce::String copyName (const juce::String& projectName, const juce::String& release)
 {
-    return (projectName.isNotEmpty() ? projectName : juce::String ("Untitled")) + " (for LYNX " + release + ")";
+    return (projectName.isNotEmpty() ? projectName : juce::String ("Untitled")) + " (for YW Studio " + release + ")";
 }
 } // namespace lynx::olderlynx

@@ -6,7 +6,7 @@
 # OUT defaults to build-win. Install for other programs: copy the DLLs somewhere permanent and run, as administrator,
 #   %SystemRoot%\System32\regsvr32.exe "C:\path\to\lynx-asio.dll"      (64-bit hosts)
 #   %SystemRoot%\SysWOW64\regsvr32.exe "C:\path\to\lynx-asio32.dll"    (32-bit hosts)
-# (regsvr32 /u ... removes them; "Register LYNX ASIO.bat" does both.)
+# (regsvr32 /u ... removes them; "Register YW ASIO.bat" does both.)
 # On 32-bit x86 the IASIO methods are __thiscall, like MSVC's: clang uses thiscall for member functions on
 # *-windows-gnu targets (checked in REA_rodada106.md), and the COM entry points are exported undecorated (.def).
 set -euo pipefail

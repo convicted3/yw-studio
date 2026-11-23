@@ -235,7 +235,7 @@ namespace
 {
 // Every reference to an insert through `map` (old insert -> its new number, or -1 when the insert was deleted), so a
 // move, an insert or a delete never re-wires anything (round 177a): channels, Playlist tracks, sends, side-chains,
-// slot sends (Transmitter, Fruity Send, Transporter, a Patcher's "To LYNX" outputs, also inside containers and
+// slot sends (Transmitter, Fruity Send, Transporter, a Patcher's "To YW Studio" outputs, also inside containers and
 // Patchers), plugins' own "send to insert" settings (Soundfont reverb / chorus, Voltage Controller outputs),
 // automation, links, initial values, pattern events and controller sources. FL keeps the mixer's own routes,
 // channels, Playlist tracks and automation / links (FUN_012a4030, FUN_012cb6c0) but leaves the plugin-side numbers
@@ -565,7 +565,7 @@ bool sideRoutedTo (const Song& song, int t)
             if (const auto vs = voltage::parse (c.pluginState))
                 if (std::find (vs->tracks.begin(), vs->tracks.end(), t) != vs->tracks.end())
                     return true;
-        if (c.instrument == InstrumentKind::patcher) // its "To LYNX" outputs: an insert, or -1 = the k-th after its own
+        if (c.instrument == InstrumentKind::patcher) // its "To YW Studio" outputs: an insert, or -1 = the k-th after its own
         {
             const auto& doc = c.patcher;
             int outputs = (int) doc.outputTracks.size();

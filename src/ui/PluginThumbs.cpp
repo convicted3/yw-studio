@@ -370,7 +370,7 @@ int renderNative (const juce::File& folder, const juce::StringArray& only, const
 {
     folder.createDirectory();
     // one drawing process at a time for this folder (two LYNX windows open the picker together)
-    juce::InterProcessLock lock ("LYNX-plugin-thumbs-" + juce::String::toHexString (folder.getFullPathName().hashCode()));
+    juce::InterProcessLock lock ("YW-plugin-thumbs-" + juce::String::toHexString (folder.getFullPathName().hashCode()));
     if (! lock.enter (0))
         return 0;
 

@@ -13,7 +13,7 @@ namespace lynx::standin
 struct Device final : juce::AudioIODevice, private juce::Thread
 {
     Device (double sampleRate, int blockSize, int pauseMs)
-        : juce::AudioIODevice ("Stand-in device", "LYNX self-test"), juce::Thread ("stand-in device"), rate (sampleRate), block (blockSize), pause (pauseMs)
+        : juce::AudioIODevice ("Stand-in device", "YW Studio self-test"), juce::Thread ("stand-in device"), rate (sampleRate), block (blockSize), pause (pauseMs)
     {
     }
     ~Device() override { close(); }
@@ -95,7 +95,7 @@ private:
 struct Type final : juce::AudioIODeviceType
 {
     Type (double sampleRate, int blockSize, int pauseMs = 2)
-        : juce::AudioIODeviceType ("LYNX self-test"), rate (sampleRate), block (blockSize), pause (pauseMs)
+        : juce::AudioIODeviceType ("YW Studio self-test"), rate (sampleRate), block (blockSize), pause (pauseMs)
     {
     }
     void scanForDevices() override {}

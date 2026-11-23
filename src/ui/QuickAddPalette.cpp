@@ -191,7 +191,7 @@ public:
                                              std::string ("lynx:gen:") + e.name });
 
         // LYNX Soundfont (round 158): the empty player, and every indexed SoundFont preset ("piano", "808"...)
-        instruments.all.push_back ({ "LYNX Soundfont", tr ("built-in"), [this] { targets.addInstrument (sf::makeChannel()); } });
+        instruments.all.push_back ({ "YW Soundfont", tr ("built-in"), [this] { targets.addInstrument (sf::makeChannel()); } });
         ensureSoundFontIndex();
         for (const auto& hit : sf::PresetIndex::shared().search ({}, 5000))
             instruments.all.push_back ({ juce::String::fromUTF8 (hit.presetName.c_str()),
@@ -213,7 +213,7 @@ public:
         // LYNX equivalents of well-known third-party effects (the substitutes table): findable by the product's name
         for (const auto& entry : pluginSubstitutes())
             if (! entry.instrument)
-                effects.all.push_back ({ tr ("{0} (LYNX SHARE equivalent of {1})", { juce::String::fromUTF8 (effectInfo (entry.effect).name), juce::String::fromUTF8 (entry.product.c_str()) }),
+                effects.all.push_back ({ tr ("{0} (YW Studio equivalent of {1})", { juce::String::fromUTF8 (effectInfo (entry.effect).name), juce::String::fromUTF8 (entry.product.c_str()) }),
                                          tr ("built-in") + " " + juce::String::fromUTF8 (entry.vendor.c_str()),
                                          [this, entry] { targets.addEffect (makeSubstituteSlot (entry)); } });
 

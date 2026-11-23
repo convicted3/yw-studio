@@ -2,7 +2,7 @@
     // GarageBand / BandLab ideas offscreen for the reference | LYNX pairs — the top bar with the tuner's button (closed and
     // open), the tuner panel (sharp, flat, in tune, waiting), the Finish dock's "Fade out the end" and the fade's clip on
     // the Master track, the dock's Controls tab (a synth, a voice and a drum track; Edit mapping; the remap menu) and the
-    // Browser's "LYNX content" with the tags filtering it. <folder>/checks.txt lists what was checked (ok / FAIL).
+    // Browser's "YW Studio content" with the tags filtering it. <folder>/checks.txt lists what was checked (ok / FAIL).
     // Pictures at the --shot-scale asked for (100 %, @2x). Included in the app class of Main.cpp.
     bool runSimpleGbShot190ke (const juce::File& folder)
     {
@@ -191,13 +191,13 @@
             browser.setTab (0);
             browser.showFactoryContentForSnapshot ({ "lynx-content", "lynx-content/Beats", "lynx-content/Beats/Trap", "lynx-content/Sounds" });
             const auto rows = browser.rowLabelsForCheck();
-            check ("the Simple layout's Browser lists LYNX content", rows.contains (tr ("LYNX content")) && rows.contains (tr ("Beats")));
+            check ("the Simple layout's Browser lists YW Studio content", rows.contains (tr ("YW Studio content")) && rows.contains (tr ("Beats")));
             writeImage (shot::paint (browser, theme::colour::bg2), "browser-content");
             browser.setTagsPanelShown (true);
             browser.setPickedTags ({ "Trap" });
             writeImage (shot::paint (browser, theme::colour::bg2), "browser-tags-trap");
             const auto results = browser.resultLabelsForCheck();
-            check ("the tag Trap lists LYNX's trap beats and sounds", results.size() > 0 && results.joinIntoString ("|").contains ("Trap beat"),
+            check ("the tag Trap lists YW Studio's trap beats and sounds", results.size() > 0 && results.joinIntoString ("|").contains ("Trap beat"),
                    juce::String (results.size()) + " rows");
             browser.setTagMatch (browsertags::Match::all);
             browser.setPickedTags ({ "Dark", "Pad" });
@@ -207,7 +207,7 @@
             // the Pattern (FL) layout keeps its Browser as it was
             ui.setLayoutStyle (layoutstyle::Style::pattern);
             offline.dispatchPendingMessages();
-            check ("the Pattern layout's Browser has no LYNX content", ! browser.rowLabelsForCheck().contains (tr ("LYNX content")));
+            check ("the Pattern layout's Browser has no YW Studio content", ! browser.rowLabelsForCheck().contains (tr ("YW Studio content")));
             check ("the tuner's button is not in the Pattern layout's toolbar", tunerButton == nullptr || ! tunerButton->isShowing());
         }
 

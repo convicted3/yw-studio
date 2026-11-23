@@ -382,7 +382,7 @@ std::optional<ChannelDef> importFile (const std::string& path, const Access& acc
         const auto state = stateOfFile (bytes);
         if (! state)
         {
-            report.error = bytes.empty() ? "The file could not be read." : "This is not a DirectWave file LYNX SHARE can read.";
+            report.error = bytes.empty() ? "The file could not be read." : "This is not a DirectWave file YW Studio can read.";
             return std::nullopt;
         }
         return fromState (*state, path, base, access, report);
@@ -403,7 +403,7 @@ std::optional<ChannelDef> importFile (const std::string& path, const Access& acc
             return std::nullopt;
         return importProgram (std::move (*program), access, report);
     }
-    report.error = "This file type is not a sampler instrument LYNX SHARE imports.";
+    report.error = "This file type is not a sampler instrument YW Studio imports.";
     return std::nullopt;
 }
 
@@ -432,7 +432,7 @@ std::optional<ChannelDef> importProgram (Program program, const Access& access, 
     if (program.zones.empty())
     {
         if (report.error.empty())
-            report.error = "The instrument has no zone LYNX SHARE can play.";
+            report.error = "The instrument has no zone YW Studio can play.";
         return std::nullopt;
     }
     const auto state = buildState (program);

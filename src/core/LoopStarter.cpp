@@ -597,7 +597,7 @@ std::vector<Preset> builtinPresets (const std::string& genreId)
         if (style != r.style && ! (style == "half" && std::string (r.style) == "trap"))
             continue;
         Preset p;
-        p.name = "LYNX " + style + " " + std::to_string (++n);
+        p.name = "YW Studio " + style + " " + std::to_string (++n);
         p.genre = genreId;
         auto lane = [&] (std::initializer_list<const char*> kit, const char* rhythm, const char* vel) {
             Lane l;

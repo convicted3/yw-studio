@@ -46,7 +46,7 @@ std::vector<Entry> entries()
         demo.kind = Entry::Kind::demo;
         demo.demo = d;
         // round 190dv: two more short demos in other genres, made with LYNX's own instruments and starter kit
-        demo.name = d == 0 ? tr ("LYNX demo song") : tr ("LYNX demo: {0} ({1})", { juce::String (demos::name (d)), tr (demos::genre (d)) });
+        demo.name = d == 0 ? tr ("YW Studio demo song") : tr ("YW Studio demo: {0} ({1})", { juce::String (demos::name (d)), tr (demos::genre (d)) });
         describe (demo, demos::make (d));
         out.push_back (demo);
     }

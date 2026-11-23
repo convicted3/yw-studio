@@ -96,7 +96,7 @@ void deliver (const juce::String& line);
 class Inbox final : private juce::Thread
 {
 public:
-    explicit Inbox (juce::String where) : juce::Thread ("LYNX windows inbox"), path (std::move (where)) {}
+    explicit Inbox (juce::String where) : juce::Thread ("YW Studio windows inbox"), path (std::move (where)) {}
 
     ~Inbox() override
     {

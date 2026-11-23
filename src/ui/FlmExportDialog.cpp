@@ -115,7 +115,7 @@ bool writeFlmCopy (const Song& song, const juce::File& target, FlmExportResult& 
 void showFlmExportDialog (AudioEngine& engine, juce::Component* parent, const juce::File& suggestedFolder, const juce::String& projectName)
 {
     engine.capturePluginStates();
-    const auto stem = juce::File::createLegalFileName (projectName.isNotEmpty() ? projectName : juce::String ("LYNX SHARE"));
+    const auto stem = juce::File::createLegalFileName (projectName.isNotEmpty() ? projectName : juce::String ("YW Studio"));
     // what the copy loses, worked out before anything is saved (the names of the copy's samples don't change it)
     const auto dryRun = exportFlm (engine.getSong(), optionsFor (suggestedFolder.getChildFile (stem + ".flm"), audioFormats()));
     auto list = std::make_shared<juce::TextEditor>();

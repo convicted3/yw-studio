@@ -44,7 +44,7 @@ juce::File& exportTarget()
 bool active() noexcept { return on.load(); }
 void setActive (bool value) noexcept { on.store (value); }
 
-juce::String virtualKeyboardName() { return "LYNX demo keyboard"; }
+juce::String virtualKeyboardName() { return "YW Studio demo keyboard"; }
 void setExportTarget (const juce::File& file) { exportTarget() = file; }
 juce::File takeExportTarget() { return std::exchange (exportTarget(), juce::File()); }
 
@@ -967,7 +967,7 @@ juce::var MainComponent::handleDemoOp (const juce::String& op, const juce::var& 
             save (false);
         return object ({ { "file", currentFile.getFullPathName() }, { "name", projectName }, { "modified", engine.isModified() } });
     }
-    // Notes and controllers from the virtual input "LYNX demo keyboard" (listed in Options › MIDI while --demo is on), at
+    // Notes and controllers from the virtual input "YW Studio demo keyboard" (listed in Options › MIDI while --demo is on), at
     // their times from now: { events: [ { type: note, note, velocity (1-127), at (seconds), length (seconds), channel (1-16) },
     // { type: cc, cc, value, at, channel } ] }. They go through the MIDI settings, recording and Map Mode as a keyboard's.
     if (op == "midi.input")

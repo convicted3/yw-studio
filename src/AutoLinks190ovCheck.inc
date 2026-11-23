@@ -55,6 +55,6 @@
         own.playlist.pop_back();
         for (const auto& l : lynx::olderlynx::forRelease (lynx::ProjectFile::toJson (own), "0.1.30").lost)
             if (juce::String (l.text).startsWith ("Automation clips linked to several controls"))
-                return "ERROR a line for LYNX's own links";
+                return "ERROR a line for YW Studio's own links";
         return "OK";
     }

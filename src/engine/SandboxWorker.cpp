@@ -183,7 +183,7 @@ class SandboxSlot final : private juce::Thread,
                           private juce::AudioPlayHead
 {
 public:
-    SandboxSlot (SandboxWorker& w, int i) : Thread ("LYNX sandbox audio"), worker (w), slot (i) {}
+    SandboxSlot (SandboxWorker& w, int i) : Thread ("YW Studio sandbox audio"), worker (w), slot (i) {}
 
     ~SandboxSlot() override
     {

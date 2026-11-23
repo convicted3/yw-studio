@@ -230,7 +230,7 @@ struct Graph::Node
     vfx::Processor* vfx = nullptr;                    // a VFX node's processor (owned by its instrument)
     std::vector<MidiTarget> midiOutTargets;           // a plugin node: what its MIDI output pin reaches
     std::vector<std::vector<MidiTarget>> vfxTargets;  // [voice output] what it reaches
-    std::vector<std::vector<int>> vfxHostPorts;       // [voice output] the "To LYNX SHARE" MIDI ports it is cabled to
+    std::vector<std::vector<int>> vfxHostPorts;       // [voice output] the "To YW Studio" MIDI ports it is cabled to
 
     struct Head
     {
@@ -475,7 +475,7 @@ Graph::Graph (const PatcherDoc& doc, double sampleRate, const Factories& factori
     }
     highestAux = std::max (highestAux, (int) doc.outputTracks.size());
 
-    // MIDI (round 162): what each "From LYNX SHARE" pin reaches, through MIDI Out nodes (they set the MIDI channel); VFX
+    // MIDI (round 162): what each "From YW Studio" pin reaches, through MIDI Out nodes (they set the MIDI channel); VFX
     // nodes (round 164b) take the voices into their processors and send theirs on from their voice outputs
     zoneStates.resize (doc.zones.size());
     for (std::size_t z = 0; z < doc.zones.size(); ++z)
@@ -1493,7 +1493,7 @@ void Graph::routeVfxOutput (int node, const vfx::Event& e) noexcept
     const auto& targets = nodes[(std::size_t) node]->vfxTargets;
     if (e.output < 0 || e.output >= (int) targets.size())
         return;
-    // cabled to "To LYNX SHARE" MIDI ports (round 165c): the rack plays it on those ports at the next chunk
+    // cabled to "To YW Studio" MIDI ports (round 165c): the rack plays it on those ports at the next chunk
     if (e.type != vfx::Event::Type::program)
         for (const auto port : nodes[(std::size_t) node]->vfxHostPorts[(std::size_t) e.output])
             if (hostEventCount < hostEventCapacity)
@@ -1692,7 +1692,7 @@ void Graph::renderNodes (const float* inL, const float* inR, const float* scL, c
             measured (node, oL, oR);
     }
 
-    // "To LYNX SHARE": the main output and the extra ones
+    // "To YW Studio": the main output and the extra ones
     gather (outputs[0], inBufL, inBufR);
     std::copy (inBufL, inBufL + n, outL);
     std::copy (inBufR, inBufR + n, outR);

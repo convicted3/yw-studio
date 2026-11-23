@@ -39,11 +39,11 @@ juce::File updateFolder()
 {
     const auto profile = platform::profileOverride();
     const auto base = profile != juce::File() ? profile.getChildFile ("Temp") : juce::File::getSpecialLocation (juce::File::tempDirectory);
-    return base.getChildFile ("LYNX-update");
+    return base.getChildFile ("YW-update");
 }
 
 // round 190nx: LYNX_OFFLINE=1 / --offline: no update check, download or going back (PRIVACY.md)
-juce::String offlineText() { return tr ("LYNX SHARE is in offline mode (LYNX_OFFLINE or --offline), so it does not connect to the internet: no update check and no update download."); }
+juce::String offlineText() { return tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline), so it does not connect to the internet: no update check and no update download."); }
 
 juce::File downloadsFolder()
 {
@@ -82,7 +82,7 @@ update::Version runningVersion()
 
 juce::String overrideUrl() { return env ("LYNX_UPDATE_URL"); }
 
-juce::String userAgent() { return "LYNX-SHARE/" + juce::String (JUCE_APPLICATION_VERSION_STRING) + " (update check)"; }
+juce::String userAgent() { return "YW-Studio/" + juce::String (JUCE_APPLICATION_VERSION_STRING) + " (update check)"; }
 
 #if JUCE_LINUX || JUCE_BSD
 juce::File findInPath (const juce::String& program)
@@ -126,7 +126,7 @@ class Controller final : public juce::ChangeBroadcaster,
                          private juce::Thread
 {
 public:
-    Controller() : juce::Thread ("LYNX update check") {}
+    Controller() : juce::Thread ("YW Studio update check") {}
     ~Controller() override { stop(); }
 
     // --- state (message thread) ---
@@ -446,7 +446,7 @@ void check (bool manual)
             {
                 if (manual)
                     message (juce::MessageBoxIconType::InfoIcon, tr ("Check for updates"),
-                             tr ("You're up to date: LYNX SHARE {0} is the newest version.", { fromUtf8 (running.text()) }));
+                             tr ("You're up to date: YW Studio {0} is the newest version.", { fromUtf8 (running.text()) }));
                 c.sendChangeMessage();
                 return;
             }
@@ -587,7 +587,7 @@ void installAndRestart (const juce::File& setup)
     c.host.confirmDiscard ([setup] {
         auto& c = controller();
         const auto exe = juce::File::getSpecialLocation (juce::File::currentExecutableFile);
-        const auto helper = updateFolder().getChildFile ("LYNX-updater.exe");
+        const auto helper = updateFolder().getChildFile ("YW-updater.exe");
         helper.deleteFile();
         if (! exe.copyFileTo (helper))
         {
@@ -917,7 +917,7 @@ void goBack()
             if (index < 0)
             {
                 message (juce::MessageBoxIconType::InfoIcon, title,
-                         tr ("No version older than LYNX SHARE {0} is available to go back to.", { fromUtf8 (running.text()) }));
+                         tr ("No version older than YW Studio {0} is available to go back to.", { fromUtf8 (running.text()) }));
                 return;
             }
             const auto older = versionText (target), now = fromUtf8 (running.text());
@@ -931,8 +931,8 @@ void goBack()
                                  ? tr ("Its download page opens in your browser.")
                                  : tr ("It is downloaded from GitHub and checked like an update; your project is saved first and opened again.");
             juce::AlertWindow::showOkCancelBox (
-                juce::MessageBoxIconType::QuestionIcon, tr ("Go back to LYNX SHARE {0}?", { older }),
-                tr ("LYNX SHARE {0} will be replaced by the earlier {1}. {2}\n\nProjects saved with {0} still open in {1}; LYNX SHARE says when a "
+                juce::MessageBoxIconType::QuestionIcon, tr ("Go back to YW Studio {0}?", { older }),
+                tr ("YW Studio {0} will be replaced by the earlier {1}. {2}\n\nProjects saved with {0} still open in {1}; YW Studio says when a "
                     "project comes from a newer version. The automatic check won't offer {0} again; Help > Check for updates... still does.",
                     { now, older, how }),
                 tr ("Go back"), tr ("Cancel"), nullptr, juce::ModalCallbackFunction::create ([target] (int result) {
@@ -1001,7 +1001,7 @@ void afterStart()
         }
         else
             message (juce::MessageBoxIconType::WarningIcon, tr ("Update"),
-                     tr ("The update could not be installed ({0}). This version of LYNX SHARE is still installed; details in {1}.",
+                     tr ("The update could not be installed ({0}). This version of YW Studio is still installed; details in {1}.",
                          { detail, folder.getChildFile ("update.log").getFullPathName() }));
     }
     folder.getChildFile ("installing.txt").deleteFile();
@@ -1015,7 +1015,7 @@ void afterStart()
         const auto phase = controller().phase;
         if (phase == Phase::idle || phase == Phase::checking || phase == Phase::available || phase == Phase::updated
             || phase == Phase::failed || phase == Phase::saved)
-            folder.getChildFile ("LYNX-updater.exe").deleteFile();
+            folder.getChildFile ("YW-updater.exe").deleteFile();
     });
 }
 
@@ -1052,7 +1052,7 @@ bool runApplyHelper (const juce::StringArray& args)
         log (juce::String ("helper: ") + (ok ? "installed" : "FAILED") + (detail.isNotEmpty() ? " (" + detail + ")" : juce::String()));
         resultFile.replaceWithText ("result=" + juce::String (ok ? "ok" : "failed") + "\ndetail=" + detail + "\n");
         // LYNX SHARE starts again (the old one when the installation failed: it shows why)
-        const auto exe = folder.getChildFile ("LYNX.exe");
+        const auto exe = folder.getChildFile ("YW Studio.exe");
         if (exe.existsAsFile())
             exe.startAsProcess (juce::File::isAbsolutePath (project) ? project.quoted() : juce::String());
     };
@@ -1069,12 +1069,12 @@ bool runApplyHelper (const juce::StringArray& args)
             CloseHandle (process);
             if (waited == WAIT_TIMEOUT)
             {
-                finish (false, "LYNX SHARE did not close");
+                finish (false, "YW Studio did not close");
                 return true;
             }
         }
     // plugin sandbox / scan child processes of LYNX.exe end a moment later: wait until the exe can be replaced
-    const auto exe = folder.getChildFile ("LYNX.exe");
+    const auto exe = folder.getChildFile ("YW Studio.exe");
     for (int i = 0; i < 150 && exe.existsAsFile(); ++i)
     {
         auto h = CreateFileW (exe.getFullPathName().toWideCharPointer(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -1205,7 +1205,7 @@ void UpdateBar::refresh()
     switch (c.phase)
     {
         case Phase::available:
-            text = tr ("LYNX SHARE {0} is available", { v });
+            text = tr ("YW Studio {0} is available", { v });
             notesButton.setButtonText (tr ("What's new"));
             notesButton.setVisible (true);
             updateButton.setButtonText (update::methodFor (flavour()) == update::Method::openPage ? tr ("Download...") : tr ("Update"));
@@ -1215,33 +1215,33 @@ void UpdateBar::refresh()
         case Phase::downloading:
             progress = c.progress.load();
             if (c.rollingBack) // (round 190gh)
-                text = progress >= 0.0f ? tr ("Going back to LYNX SHARE {0}: downloading... {1}%", { v, juce::String (juce::roundToInt (progress * 100.0f)) })
-                                        : tr ("Going back to LYNX SHARE {0}: downloading...", { v });
+                text = progress >= 0.0f ? tr ("Going back to YW Studio {0}: downloading... {1}%", { v, juce::String (juce::roundToInt (progress * 100.0f)) })
+                                        : tr ("Going back to YW Studio {0}: downloading...", { v });
             else
-                text = progress >= 0.0f ? tr ("Downloading LYNX SHARE {0}... {1}%", { v, juce::String (juce::roundToInt (progress * 100.0f)) })
-                                        : tr ("Downloading LYNX SHARE {0}...", { v });
+                text = progress >= 0.0f ? tr ("Downloading YW Studio {0}... {1}%", { v, juce::String (juce::roundToInt (progress * 100.0f)) })
+                                        : tr ("Downloading YW Studio {0}...", { v });
             otherButton.setButtonText (tr ("Cancel"));
             otherButton.setVisible (true);
             closeButton.setVisible (false);
             break;
         case Phase::working:
-            text = tr ("Updating the AppImage to LYNX SHARE {0}...", { v });
+            text = tr ("Updating the AppImage to YW Studio {0}...", { v });
             otherButton.setButtonText (tr ("Cancel"));
             otherButton.setVisible (true);
             closeButton.setVisible (false);
             break;
         case Phase::ready:
             if (c.rollingBack) // (round 190gh)
-                text = installer ? tr ("The earlier LYNX SHARE {0} is downloaded and ready to install", { v }) : tr ("The earlier LYNX SHARE {0} is ready", { v });
+                text = installer ? tr ("The earlier YW Studio {0} is downloaded and ready to install", { v }) : tr ("The earlier YW Studio {0} is ready", { v });
             else
-                text = installer ? tr ("LYNX SHARE {0} is downloaded and ready to install", { v }) : tr ("LYNX SHARE {0} is ready", { v });
+                text = installer ? tr ("YW Studio {0} is downloaded and ready to install", { v }) : tr ("YW Studio {0} is ready", { v });
             notesButton.setButtonText (tr ("What's new"));
             notesButton.setVisible (! c.rollingBack);
             updateButton.setButtonText (installer ? tr ("Install and restart") : tr ("Restart now"));
             updateButton.setVisible (true);
             break;
         case Phase::saved:
-            text = tr ("LYNX SHARE {0} was saved to {1}", { v, c.result.getParentDirectory().getFullPathName() });
+            text = tr ("YW Studio {0} was saved to {1}", { v, c.result.getParentDirectory().getFullPathName() });
             otherButton.setButtonText (tr ("Show in folder"));
             otherButton.setVisible (true);
             break;
@@ -1253,8 +1253,8 @@ void UpdateBar::refresh()
             otherButton.setVisible (true);
             break;
         case Phase::updated:
-            text = c.rollingBack ? tr ("LYNX SHARE went back to {0}. Help > Check for updates... offers the newer version again.", { v })
-                                 : tr ("LYNX SHARE was updated to {0}", { v });
+            text = c.rollingBack ? tr ("YW Studio went back to {0}. Help > Check for updates... offers the newer version again.", { v })
+                                 : tr ("YW Studio was updated to {0}", { v });
             notesButton.setButtonText (tr ("What's new"));
             notesButton.setVisible (! c.release.body.empty() && ! c.rollingBack);
             break;
@@ -1278,7 +1278,7 @@ void UpdateBar::showForSnapshot (int state)
     c.release = {};
     c.release.version = update::parseVersion ("0.1.22-alpha");
     c.release.body = "## New\n- The Update button";
-    c.result = downloadsFolder().getChildFile ("LYNX-0.1.22-alpha-windows-x64.zip");
+    c.result = downloadsFolder().getChildFile ("YW-0.1.22-alpha-windows-x64.zip");
     c.error = tr ("the download is damaged (its checksum does not match)");
     c.progress = 0.42f;
     c.rollingBack = state >= 4; // (round 190gh: going back, downloading; went back)
@@ -1382,7 +1382,7 @@ class NotesPanel final : public juce::Component
 public:
     explicit NotesPanel (const update::Release& r) : notes (update::releaseNotes (r.body))
     {
-        title.setText (r.name.empty() ? "LYNX SHARE " + versionText (r) : fromUtf8 (r.name), juce::dontSendNotification);
+        title.setText (r.name.empty() ? "YW Studio " + versionText (r) : fromUtf8 (r.name), juce::dontSendNotification);
         ui::dialog::styleTitle (title); // (round 190oo, WG-6: the one dialog title row, centred, 44 px)
         addAndMakeVisible (title);
 
@@ -1455,7 +1455,7 @@ void showReleaseNotes()
     const auto& release = controller().release;
     juce::DialogWindow::LaunchOptions options;
     options.content.setOwned (fitContentToScreen (std::make_unique<NotesPanel> (release)).release());
-    options.dialogTitle = tr ("What's new in LYNX SHARE {0}", { versionText (release) });
+    options.dialogTitle = tr ("What's new in YW Studio {0}", { versionText (release) });
     options.dialogBackgroundColour = theme::colour::bg2;
     options.useNativeTitleBar = true;
     options.resizable = true;
@@ -1470,11 +1470,11 @@ void showReleaseNotes()
 std::unique_ptr<juce::Component> makeReleaseNotesForSnapshot()
 {
     update::Release r;
-    r.name = "LYNX SHARE 0.1.22-alpha";
+    r.name = "YW Studio 0.1.22-alpha";
     r.version = update::parseVersion ("0.1.22-alpha");
     r.body = "## New\n- **In-app updates**: a bar shows when a new version is out; *Update* installs it.\n"
              "  - Windows installer: downloads, checks and installs it, then restarts.\n- Help › Check for updates...\n\n"
-             "## Fixes\n- The [Mixer](https://lynx-share.com) keeps its layout.\n\nThanks to everyone who reported a bug!";
+             "## Fixes\n- The [Mixer](https://yolo.su) keeps its layout.\n\nThanks to everyone who reported a bug!";
     controller().release = r;
     controller().phase = Phase::available;
     return std::make_unique<NotesPanel> (r);

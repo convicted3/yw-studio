@@ -135,7 +135,7 @@ void start (AudioEngine& engine, int channel, const autosample::Options& options
         return;
 
     const auto name = juce::String::fromUTF8 (song.channels[(std::size_t) channel].name.c_str());
-    const auto root = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Samples");
+    const auto root = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Samples");
     root.createDirectory();
     const auto folder = root.getNonexistentChildFile (juce::File::createLegalFileName (name + " (sampled)"), {});
     folder.createDirectory();

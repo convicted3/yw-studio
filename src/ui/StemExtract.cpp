@@ -34,13 +34,13 @@ juce::File modelFolder()
     if (platform::profileOverride() != juce::File())
         return platform::settingsFile ("models"); // (a test profile keeps everything inside it)
    #if JUCE_WINDOWS
-    return juce::File::getSpecialLocation (juce::File::windowsLocalAppData).getChildFile ("LYNX").getChildFile ("models");
+    return juce::File::getSpecialLocation (juce::File::windowsLocalAppData).getChildFile ("YW Studio").getChildFile ("models");
    #elif JUCE_MAC
     return platform::settingsFile ("models"); // ~/Library/Application Support/LYNX (Caches may be purged)
    #else
     const auto xdg = juce::SystemStats::getEnvironmentVariable ("XDG_DATA_HOME", {});
     const auto data = xdg.startsWithChar ('/') ? juce::File (xdg) : juce::File::getSpecialLocation (juce::File::userHomeDirectory).getChildFile (".local/share");
-    return data.getChildFile ("LYNX").getChildFile ("models");
+    return data.getChildFile ("YW Studio").getChildFile ("models");
    #endif
 }
 
@@ -70,7 +70,7 @@ struct Runtime : onnx::Runtime
 {
     bool load (juce::String& error)
     {
-        return onnx::Runtime::load (error, tr ("Stem extraction needs ONNX Runtime ({0}), which comes with LYNX SHARE's installer and zip, but it is missing next to the program. Install LYNX SHARE with the installer, or unpack the whole zip."),
+        return onnx::Runtime::load (error, tr ("Stem extraction needs ONNX Runtime ({0}), which comes with YW Studio's installer and zip, but it is missing next to the program. Install YW Studio with the installer, or unpack the whole zip."),
                                     runtimeLoadError());
     }
 };
@@ -98,7 +98,7 @@ public:
         api = runtime.api;
 
         OrtSessionOptions* options = nullptr;
-        auto ok = check (api->CreateEnv (ORT_LOGGING_LEVEL_ERROR, "LYNX", &env), error)
+        auto ok = check (api->CreateEnv (ORT_LOGGING_LEVEL_ERROR, "YW Studio", &env), error)
                && check (api->CreateCpuMemoryInfo (OrtArenaAllocator, OrtMemTypeDefault, &memory), error)
                && check (api->CreateRunOptions (&runOptions), error)
                && check (api->CreateSessionOptions (&options), error)
@@ -278,7 +278,7 @@ class StemJob final : private juce::Thread,
 public:
     StemJob (AudioEngine& e, int clip, std::string path, std::string sampleName, juce::File targetFolder, std::shared_ptr<const SampleData> data,
              stemsplit::Options chosen, std::function<void()> done)
-        : juce::Thread ("LYNX stem extraction"),
+        : juce::Thread ("YW Studio stem extraction"),
           engine (e), clipIndex (clip), sourcePath (std::move (path)), name (std::move (sampleName)), folder (std::move (targetFolder)), sample (std::move (data)),
           onDone (std::move (done)), options (chosen)
     {
@@ -463,7 +463,7 @@ private:
     {
         if (offline::enabled()) // (the dialog says so before any job starts: this is the last line)
         {
-            error = tr ("LYNX SHARE is in offline mode (LYNX_OFFLINE or --offline), so the stem model is not downloaded.");
+            error = tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline), so the stem model is not downloaded.");
             return false;
         }
         const auto modelBytes = model.bytes;
@@ -788,12 +788,12 @@ void extractStemsFromClip (AudioEngine& engine, int clipIndex, std::function<voi
         if (offline::enabled()) // LYNX_OFFLINE=1 / --offline: a model that is not installed is not downloaded
         {
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, tr ("Extract stems from sample"),
-                                                    tr ("LYNX SHARE is in offline mode (LYNX_OFFLINE or --offline), so the stem model is not downloaded. Extracting stems needs it once: start LYNX SHARE without offline mode, or copy the model file into {0}.", { modelFolder().getFullPathName() }));
+                                                    tr ("YW Studio is in offline mode (LYNX_OFFLINE or --offline), so the stem model is not downloaded. Extracting stems needs it once: start YW Studio without offline mode, or copy the model file into {0}.", { modelFolder().getFullPathName() }));
             return;
         }
         // a model not downloaded yet: the source and the licence, before anything is downloaded
         const auto page = o.model == stemsplit::Model::sixStems ? modelPage6 : o.model == stemsplit::Model::fineTuned ? modelPageFine : modelPage;
-        const auto text = tr ("Extracting stems needs the HT-Demucs model. It isn't part of LYNX SHARE: it is downloaded once ({0} MB) and kept in {1}.", { juce::String ((int) (missing / 1000000)), modelFolder().getFullPathName() })
+        const auto text = tr ("Extracting stems needs the HT-Demucs model. It isn't part of YW Studio: it is downloaded once ({0} MB) and kept in {1}.", { juce::String ((int) (missing / 1000000)), modelFolder().getFullPathName() })
                         + "\n\n" + tr ("Source: {0} (ONNX export of Demucs v4 by Meta AI Research)", { juce::String (page) })
                         + "\n\n" + tr ("Licence: the Demucs code is MIT. The licence of the trained weights is not clear, as the authors say: the training data includes MUSDB18-HQ, parts of which were for research use only. Decide for yourself whether that fits your use, commercial use above all.");
         juce::AlertWindow::showOkCancelBox (juce::MessageBoxIconType::QuestionIcon, tr ("Extract stems from sample"), text, tr ("Download"), tr ("Cancel"), nullptr,

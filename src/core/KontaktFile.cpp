@@ -104,20 +104,20 @@ std::optional<Program> readInstrument (const std::string& path, const Access& ac
     {
         case Kind::container:
             report.error = protectedContainer (head.data(), head.size())
-                               ? "This Kontakt instrument belongs to a protected (encrypted) library. LYNX SHARE does not open protected "
+                               ? "This Kontakt instrument belongs to a protected (encrypted) library. YW Studio does not open protected "
                                  "libraries; load Kontakt as a plugin to play it."
                                : "Kontakt 4.2 – 8 instruments are not imported yet. Load Kontakt as a plugin to play it; its NCW samples "
-                                 "open in LYNX SHARE as audio files.";
+                                 "open in YW Studio as audio files.";
             break;
         case Kind::monolith:
             report.error = "Kontakt monoliths (instrument and samples in one file) are not imported. Load Kontakt as a plugin to play it.";
             break;
         case Kind::kontakt1: case Kind::kontakt2: case Kind::kontakt42:
             report.error = "Kontakt 1 – 4.1 instruments are not imported yet. Load Kontakt as a plugin to play it; its NCW samples open "
-                           "in LYNX SHARE as audio files.";
+                           "in YW Studio as audio files.";
             break;
         default:
-            report.error = "This is not a Kontakt instrument LYNX SHARE recognises.";
+            report.error = "This is not a Kontakt instrument YW Studio recognises.";
             break;
     }
     return std::nullopt;

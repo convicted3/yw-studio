@@ -153,7 +153,7 @@ void tunedEq (const flm::Module& m, bool live, Mapped& out)
             if (! outOfRange && (raw < (kind == 1 ? 0.1 : 0.1) || raw > (kind == 1 ? 18.0 : 4.0) || ! std::isfinite (raw)))
             {
                 outOfRange = true;
-                out.partial.push_back ("FL Studio Mobile: Tuned EQ bandwidth beyond LYNX's EQ range (nearest shape)");
+                out.partial.push_back ("FL Studio Mobile: Tuned EQ bandwidth beyond YW Studio's EQ range (nearest shape)");
             }
         }
         if (band.type == peq::BandType::off && live)
@@ -210,7 +210,7 @@ float retuneValue (double ms) noexcept { return (float) std::sqrt (std::clamp (m
 void pitcher (const flm::Module& m, Mapped& out)
 {
     namespace lt = lynxtune;
-    out.label = "FL Studio Mobile: Pitcher (LYNX Tune)";
+    out.label = "FL Studio Mobile: Pitcher (YW Tune)";
     const auto v = [&m] (int i, float fallback) { return param (m, i, fallback); };
     // CSTM: 12 bytes (pitch class C … B allowed when not 0), then the Key and Scale menus (the mask is what plays)
     std::uint16_t allowed = 0;
@@ -231,7 +231,7 @@ void pitcher (const flm::Module& m, Mapped& out)
     {
         slot.params[lt::wideFormant] = 1.0f;
         slot.params[lt::formantShift] = v (5, 0.5f);
-        out.partial.push_back ("FL Studio Mobile: Pitcher formant shift (LYNX Tune's formant shift)");
+        out.partial.push_back ("FL Studio Mobile: Pitcher formant shift (YW Tune's formant shift)");
     }
     // Base Freq A4 = 440·2^((2v − 1)/12), the fine tune folded into it (LYNX Tune's reference: 430…450 Hz)
     const auto a4 = 440.0 * std::exp2 ((2.0 * (double) v (7, 0.5f) - 1.0) / 12.0) * std::exp2 ((double) cents / 1200.0);
@@ -248,14 +248,14 @@ void pitcher (const flm::Module& m, Mapped& out)
     slot.params[lt::range] = 1.0f; // (FLM's detector: 55…1500 Hz; LYNX Tune's widest range)
     if (v (8, 0.0f) > 1e-4f)
         out.partial.push_back ("FL Studio Mobile: Pitcher Stability (not reproduced)");
-    out.partial.push_back ("FL Studio Mobile: Pitcher (LYNX Tune's detector and shifter)");
+    out.partial.push_back ("FL Studio Mobile: Pitcher (YW Tune's detector and shifter)");
     out.slots.push_back (slot);
 }
 
 void pitcher2 (const flm::Module& m, Mapped& out)
 {
     namespace lt = lynxtune;
-    out.label = "FL Studio Mobile: Pitcher 2 (LYNX Tune)";
+    out.label = "FL Studio Mobile: Pitcher 2 (YW Tune)";
     const auto v = [&m] (int i, float fallback) { return param (m, i, fallback); };
     static constexpr std::uint16_t cMinor = 0x05AD; // C, D, Eb, F, G, Ab, Bb: the module's defaults
     std::uint16_t allowed = 0;
@@ -294,7 +294,7 @@ void pitcher2 (const flm::Module& m, Mapped& out)
     // structural −3.01 dB as LYNX Tune's output trim (−24 … +24 dB)
     slot.params[lt::outputTrim] = (float) ((24.0 - 20.0 * std::log10 (std::sqrt (2.0))) / 48.0);
     slot.params[lt::range] = 1.0f;
-    out.partial.push_back ("FL Studio Mobile: Pitcher 2 (LYNX Tune's detector, shifter and retune curve)");
+    out.partial.push_back ("FL Studio Mobile: Pitcher 2 (YW Tune's detector, shifter and retune curve)");
     if (v (20, 0.0f) > 1e-4f)
         out.partial.push_back ("FL Studio Mobile: Pitcher 2 Humanization (not reproduced)");
     if (v (24, 0.0f) > 1e-4f)
@@ -389,7 +389,7 @@ Mapped map (const flm::Module& m, bool live, bool postGainLive)
             auto& g = out.slots.back().params[0];
             const auto db = ((double) g - 0.5) * 48.0 + postDb;
             if (std::abs (db) > 24.0)
-                out.partial.push_back ("FL Studio Mobile: effect Post Gain beyond LYNX's range (capped)");
+                out.partial.push_back ("FL Studio Mobile: effect Post Gain beyond YW Studio's range (capped)");
             g = (float) std::clamp (db / 48.0 + 0.5, 0.0, 1.0);
         }
         else
@@ -402,7 +402,7 @@ Mapped map (const flm::Module& m, bool live, bool postGainLive)
         if (out.slots.size() == 1)
             out.slots[0].mix *= mix;
         else
-            out.partial.push_back ("FL Studio Mobile: Mix of an automated effect that takes two LYNX slots (played fully wet)");
+            out.partial.push_back ("FL Studio Mobile: Mix of an automated effect that takes two YW Studio slots (played fully wet)");
     }
     if (std::abs (reserved (m, 2, 0.5f) - 0.5f) > 1e-4f)
         out.partial.push_back ("FL Studio Mobile: effect Wet Pan (not reproduced)");

@@ -6,7 +6,7 @@
 
 namespace lynx
 {
-// LYNX.exe --clapteardowntest "LYNX Test Restart.clap" report.txt (round 190az, tools/testplugin/lynx_test_restart.c):
+// LYNX.exe --clapteardowntest "YW Test Restart.clap" report.txt (round 190az, tools/testplugin/lynx_test_restart.c):
 // the last reference to a running CLAP plugin is dropped on a worker thread while the message thread is blocked on
 // that very thread (what an export's thread and the thread that joins it do), and while it is free. The plugin aborts
 // the process when deactivate or destroy reach it off the main thread, or stop_processing off an audio thread, so the

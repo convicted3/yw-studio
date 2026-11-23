@@ -200,7 +200,7 @@ struct Connection
             return false;
 
         api.threadLoopLock (loop);
-        core = api.contextConnect (context, api.propertiesNew (PW_KEY_APP_NAME, "LYNX", nullptr), 0);
+        core = api.contextConnect (context, api.propertiesNew (PW_KEY_APP_NAME, "YW Studio", nullptr), 0);
         if (core == nullptr)
         {
             api.threadLoopUnlock (loop);
@@ -695,9 +695,9 @@ private:
         auto* props = api.propertiesNew (PW_KEY_MEDIA_TYPE, "Audio",
                                          PW_KEY_MEDIA_CATEGORY, isPlayback ? "Playback" : "Capture",
                                          PW_KEY_MEDIA_ROLE, "Production",
-                                         PW_KEY_APP_NAME, "LYNX",
-                                         PW_KEY_NODE_NAME, "LYNX",
-                                         PW_KEY_NODE_DESCRIPTION, isPlayback ? "LYNX" : "LYNX (input)",
+                                         PW_KEY_APP_NAME, "YW Studio",
+                                         PW_KEY_NODE_NAME, "YW Studio",
+                                         PW_KEY_NODE_DESCRIPTION, isPlayback ? "YW Studio" : "YW Studio (input)",
                                          nullptr);
         api.propertiesSet (props, PW_KEY_NODE_LATENCY, prefs::pipewireLatency (block, rate).c_str());
         api.propertiesSet (props, "node.rate", ("1/" + std::to_string (rate)).c_str());
@@ -706,7 +706,7 @@ private:
         if (! endpoint.node.empty())
             api.propertiesSet (props, "target.object", endpoint.node.c_str());
 
-        s.stream = api.streamNew (connection->core, isPlayback ? "LYNX output" : "LYNX input", props);
+        s.stream = api.streamNew (connection->core, isPlayback ? "YW Studio output" : "YW Studio input", props);
         if (s.stream == nullptr)
         {
             s.state = PW_STREAM_STATE_ERROR;

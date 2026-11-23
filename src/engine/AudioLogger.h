@@ -17,7 +17,7 @@ public:
     explicit AudioLogger (AudioCapture& tap);
     ~AudioLogger() override;
 
-    // Starts a new file in `folder` ("LYNX log <date> <time>.wav", 24-bit stereo at `sampleRate`). False if the file
+    // Starts a new file in `folder` ("YW Studio log <date> <time>.wav", 24-bit stereo at `sampleRate`). False if the file
     // cannot be created.
     bool start (const juce::File& folder, double sampleRate);
     void stop();

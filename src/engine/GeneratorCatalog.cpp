@@ -71,7 +71,7 @@ std::vector<Entry> entries (AudioEngine& engine, bool withUnavailable)
     builtIn ("Drum Rack", juce::String ("Drum Rack"), 2, InstrumentKind::patcher, [] (ChannelDef& c) { c.patcher = rack::makeDrumRack(); });
     builtIn ("MIDI Effect Rack", juce::String ("MIDI Effect Rack"), 2, InstrumentKind::patcher,
              [] (ChannelDef& c) { c.patcher = rack::makeRack (RackDoc::Kind::midiEffect); });
-    add ("LYNX Soundfont", "LYNX Soundfont", juce::String ("built-in"), 0, 2, InstrumentKind::soundfont, [] { return std::optional<ChannelDef> (sf::makeChannel()); });
+    add ("YW Soundfont", "YW Soundfont", juce::String ("built-in"), 0, 2, InstrumentKind::soundfont, [] { return std::optional<ChannelDef> (sf::makeChannel()); });
 
     // FL's own instrument engines (round 142)
     const auto& fl = flStudioAccess();

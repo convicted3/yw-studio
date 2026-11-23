@@ -1381,7 +1381,7 @@ public:
         if (dragging)
         {
             const auto over = modring::targetUnder (e.getScreenPosition());
-            ui::postHint ({ over ? describeAutomationTarget (engine, *over) : tr ("Drop it on a LYNX knob to modulate it"), {} }, 600);
+            ui::postHint ({ over ? describeAutomationTarget (engine, *over) : tr ("Drop it on a YW Studio knob to modulate it"), {} }, 600);
         }
     }
     void mouseUp (const juce::MouseEvent& e) override
@@ -1429,7 +1429,7 @@ public:
         addAndMakeVisible (host);
         assign.setButtonText (tr ("Assign"));
         assign.setComponentID ("modulators.assign." + juce::String (index)); // (round 190pg: --demo)
-        assign.setTooltip (tr ("Assign mode: drag any LYNX knob to set this modulator's depth on it (click again to stop)"));
+        assign.setTooltip (tr ("Assign mode: drag any YW Studio knob to set this modulator's depth on it (click again to stop)"));
         assign.setColour (juce::TextButton::buttonOnColourId, modring::colour().withAlpha (0.55f));
         assign.onClick = [this] {
             modring::setArmed (modring::armed() == index ? -1 : index);

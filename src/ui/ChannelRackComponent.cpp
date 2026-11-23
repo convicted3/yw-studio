@@ -124,7 +124,7 @@ juce::String instrumentName (InstrumentKind k)
         case InstrumentKind::directwave: return "DirectWave";
         case InstrumentKind::midiOut: return "MIDI Out";
         case InstrumentKind::patcher: return "Patcher";
-        case InstrumentKind::soundfont: return "LYNX Soundfont";
+        case InstrumentKind::soundfont: return "YW Soundfont";
         case InstrumentKind::layer: return "Layer";
         case InstrumentKind::dashboard: return "Dashboard";
         case InstrumentKind::voltage: return "Voltage Controller";
@@ -138,7 +138,7 @@ juce::String instrumentName (InstrumentKind k)
         case InstrumentKind::tetra: return "Tetra";
         case InstrumentKind::helix: return "Helix";
         case InstrumentKind::braid: return "Braid";
-        case InstrumentKind::lynxModel: return "LYNX Model";
+        case InstrumentKind::lynxModel: return "YW Model";
     }
     return "?";
 }
@@ -4362,7 +4362,7 @@ void ChannelRackComponent::showAddChannelMenu (int insertAt)
 
 juce::File ChannelRackComponent::channelStateFolder()
 {
-    return platform::documentsFolder().getChildFile ("LYNX/Channel states");
+    return platform::documentsFolder().getChildFile ("YW Studio/Channel states");
 }
 
 void ChannelRackComponent::saveChannelState (int channel)
@@ -4400,7 +4400,7 @@ void ChannelRackComponent::openChannelState (int channel)
                                  if (! loaded)
                                  {
                                      juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Browse channel states"),
-                                                                             tr ("This file is not a channel state LYNX SHARE can read."));
+                                                                             tr ("This file is not a channel state YW Studio can read."));
                                      return;
                                  }
                                  closeEditor (channel);

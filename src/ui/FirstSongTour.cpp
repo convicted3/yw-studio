@@ -426,13 +426,13 @@ public:
     Welcome (FirstSongTour& t)
         : owner (t),
           tourOption (tr ("Make my first song"), tr ("A short guided tour, about five minutes: a beat, chords, a voice or a loop, an effect, done."), true),
-          demoOption (tr ("Open a demo song"), tr ("Three short songs made with LYNX's own instruments: open one and take it apart."), false),
+          demoOption (tr ("Open a demo song"), tr ("Three short songs made with YW Studio's own instruments: open one and take it apart."), false),
           emptyOption (tr ("Start empty"), tr ("Go straight to the tracks."), false)
     {
         setComponentID ("tour.welcome");
         setWantsKeyboardFocus (true);
         getProperties().set ("lynxKeepsKeys", true); // (round 190fc: Esc and its options' keys while it is up)
-        title.setText (tr ("Welcome to LYNX"), juce::dontSendNotification);
+        title.setText (tr ("Welcome to YW Studio"), juce::dontSendNotification);
         ui::dialog::styleTitle (title); // (round 190jp: the one dialog title, design190ia SG-20)
         // round 190hw: what this workflow is, then the question (two lines: wrapped, never squeezed)
         subtitle.setText (tr ("The Simple workflow: tracks and a timeline, loops, pads and quick recording, all in one window. What would you like to do?"), juce::dontSendNotification);

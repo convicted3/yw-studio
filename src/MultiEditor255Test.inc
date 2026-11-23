@@ -452,7 +452,7 @@
             });
         };
         test->engine = std::make_unique<lynx::AudioEngine> (true, -1, false, true); // (the app's engine; its device stays closed)
-        test->mainWindow = std::make_unique<juce::DocumentWindow> ("LYNX test main window", juce::Colours::darkgrey, 0);
+        test->mainWindow = std::make_unique<juce::DocumentWindow> ("YW Studio test main window", juce::Colours::darkgrey, 0);
         test->mainWindow->setBounds (20, 20, 300, 200);
         test->mainWindow->setVisible (true);
         lynx::setMainWindowForOwnership (test->mainWindow.get());

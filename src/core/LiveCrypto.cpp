@@ -15,7 +15,7 @@ namespace
 {
 constexpr const char* alphabet = "abcdefghijklmnopqrstuvwxyz234567";
 constexpr std::uint8_t magic = 0x4C, version = 1;
-const std::string ad = "LYNX SHARE live session v1";
+const std::string ad = "YW Studio live session v1";
 
 void put64 (std::uint8_t* p, std::uint64_t v)
 {
@@ -65,7 +65,7 @@ std::string formatCode (const Invite& invite)
     const auto r = up (invite.room), k = up (invite.secret);
     if (r.size() != 10 || k.size() != 16)
         return {};
-    return "LYNX-" + r.substr (0, 5) + "-" + r.substr (5) + "-" + k.substr (0, 4) + "-" + k.substr (4, 4) + "-" + k.substr (8, 4) + "-" + k.substr (12);
+    return "YW-" + r.substr (0, 5) + "-" + r.substr (5) + "-" + k.substr (0, 4) + "-" + k.substr (4, 4) + "-" + k.substr (8, 4) + "-" + k.substr (12);
 }
 
 std::optional<Invite> parseCode (const std::string& text)
@@ -103,7 +103,7 @@ Keys derive (const Invite& invite)
     Keys keys;
     // The salt is fixed and the secret alone goes into Argon2, so the host knows the relay token before the relay has
     // chosen the room (it creates the room with it); the room id goes into the session key's domain.
-    const std::string salt = "LYNX SHARE live session salt v1";
+    const std::string salt = "YW Studio live session salt v1";
     const auto pass = invite.secret;
     crypto_argon2_config config { CRYPTO_ARGON2_ID, 8192, 3, 1 }; // 8 MiB, 3 passes: ~50 ms once per join
     crypto_argon2_inputs inputs { (const std::uint8_t*) pass.data(), (const std::uint8_t*) salt.data(), (std::uint32_t) pass.size(), (std::uint32_t) salt.size() };
@@ -204,7 +204,7 @@ namespace
 {
 std::vector<std::uint8_t> hostMessage (const std::string& room, const std::string& nonce)
 {
-    const std::string text = "LYNX SHARE live host v1|" + room + "|" + nonce;
+    const std::string text = "YW Studio live host v1|" + room + "|" + nonce;
     return { text.begin(), text.end() };
 }
 } // namespace

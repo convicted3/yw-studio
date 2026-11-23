@@ -197,7 +197,7 @@ public:
         : onCreate (std::move (callback)),
           persistent (persistentState)
     {
-        const auto remembered = persistent ? loadRemembered() : Remembered { true, "C:/Users/me/Music/LYNX Projects", "Me", true };
+        const auto remembered = persistent ? loadRemembered() : Remembered { true, "C:/Users/me/Music/YW Projects", "Me", true };
 
         for (auto* t : { &templateTitle, &nameTitle, &timeTitle, &infoTitle })
             addAndMakeVisible (t);
@@ -240,7 +240,7 @@ public:
         name.onTextChange = [this] { updatePath(); };
         label (folderLabel, tr ("Folder"));
         folder = juce::File::isAbsolutePath (remembered.folder) ? juce::File (remembered.folder)
-                                                                 : lynx::platform::documentsFolder().getChildFile ("LYNX Projects");
+                                                                 : lynx::platform::documentsFolder().getChildFile ("YW Projects");
         if (! persistent)
             folderText = remembered.folder;
         folderValue.setFont (theme::font (theme::type::body));
@@ -527,7 +527,7 @@ private:
 
 juce::File userTemplatesFolder()
 {
-    return lynx::platform::documentsFolder().getChildFile ("LYNX/Templates");
+    return lynx::platform::documentsFolder().getChildFile ("YW Studio/Templates");
 }
 
 bool newProjectDialogEnabled()

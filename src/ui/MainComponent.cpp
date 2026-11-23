@@ -403,7 +403,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
     redoButton.onClick = [this] { undoRedo (true); };
     redoButton.onRightClick = [this] { showHistory(); };
     // round 190on (research190oe P2, owner decision O-2): the command palette's magnifier beside the menus
-    paletteButton.setTooltip (tr ("Command palette: find and run any command, menu item, LYNX extra or setting"));
+    paletteButton.setTooltip (tr ("Command palette: find and run any command, menu item, YW Studio extra or setting"));
     paletteButton.onClick = [this] { showActionSearch(); };
     paletteButton.setFlat (true);
     paletteButton.setWantsKeyboardFocus (false);
@@ -961,7 +961,7 @@ MainComponent::MainComponent (AudioEngine& e, bool restoreUserSettings)
         if (auto* e = vst3MenuEngine())
             if (const auto t = e->targetOfPlugin (plugin, param))
             {
-                menu.addSectionHeader ("LYNX SHARE - " + describeAutomationTarget (*e, *t));
+                menu.addSectionHeader ("YW Studio - " + describeAutomationTarget (*e, *t));
                 addAutomationItem (menu, *e, *t, true);
             }
     };
@@ -1219,7 +1219,7 @@ MainComponent::~MainComponent()
     setSecondaryWindowKeyHandler (nullptr);
     setLinkedWindowFocusHandler (nullptr);
     cancelProjectLoad(); // an open in progress uses the engine from its thread
-    if (sessionLock != nullptr) // a clean exit: no "LYNX did not close properly" next time
+    if (sessionLock != nullptr) // a clean exit: no "YW Studio did not close properly" next time
         sessionMarker.deleteFile();
     mixerinput::openAudioSettings = nullptr;
     openMixerInsertHandler() = nullptr;
@@ -2551,7 +2551,7 @@ std::vector<PaletteItem> MainComponent::commandPaletteItems()
                                                            { SettingsPage::general, TR_NOOP ("General") }, { SettingsPage::files, TR_NOOP ("Files") },
                                                            { SettingsPage::theme, TR_NOOP ("Theme") },     { SettingsPage::project, TR_NOOP ("Project") },
                                                            { SettingsPage::info, TR_NOOP ("Info") },       { SettingsPage::link, TR_NOOP ("Ableton Link") },
-                                                           { SettingsPage::extras, TR_NOOP ("LYNX extras") } };
+                                                           { SettingsPage::extras, TR_NOOP ("YW Studio extras") } };
     for (const auto& [page, name] : pages)
     {
         PaletteItem p;
@@ -3369,7 +3369,7 @@ void MainComponent::addFactoryItem (const std::string& key)
             const auto insert = track >= 0 ? detailchain::forTrack (song, track).insert : -1;
             if (insert <= 0)
             {
-                juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, tr ("LYNX content"), tr ("Select a track first: the chain goes on its effects."));
+                juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, tr ("YW Studio content"), tr ("Select a track first: the chain goes on its effects."));
                 return;
             }
             engine.editSongStructural ([item, insert] (Song& s) { factorycontent::applyChain (s, *item, insert); });
@@ -3389,7 +3389,7 @@ void MainComponent::connectBrowser (BrowserComponent& b)
             return false;
         if (! mixer.loadPresetOnSelection (file))
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("Open mixer track state"),
-                                                    tr ("This file is not a mixer track state LYNX SHARE can read."));
+                                                    tr ("This file is not a mixer track state YW Studio can read."));
         return true;
     };
     // the Browser's "Current project" items (REA_rodada115)
@@ -3430,7 +3430,7 @@ void MainComponent::connectBrowser (BrowserComponent& b)
         else
             showPanel (Panel::mixer);
     };
-    // round 190ke (owner decision D2): "LYNX content" in the Simple layout: a sound becomes an instrument track, a beat a
+    // round 190ke (owner decision D2): "YW Studio content" in the Simple layout: a sound becomes an instrument track, a beat a
     // Drums track at the playhead, an effect chain goes on the selected track
     b.onFactoryItem = [this] (const std::string& key) { addFactoryItem (key); };
     b.onPreviewVolumeChanged = [this] { saveUiSettings(); };
@@ -4829,7 +4829,7 @@ void MainComponent::setLayoutStyle (layoutstyle::Style style, bool swapLayout)
     layoutstyle::setCurrent (style); // (round 190cm: the clip grid's and the audio editor's Ableton-style keys follow it)
     if (meterLawChanged) // (round 190mf: FL's meter law in Pattern, the straight axis in the other layouts)
         mixer.repaint();
-    BrowserComponent::layoutStyleChanged(); // (round 190ke: "LYNX content" and its tags in the Simple layout)
+    BrowserComponent::layoutStyleChanged(); // (round 190ke: "YW Studio content" and its tags in the Simple layout)
     if (! clipLaunch && getMapMode() != remotemap::Mode::off) // (round 190ef: the map modes belong to the Clip-launch layout)
         setMapMode (remotemap::Mode::off);
     browser.setLiveItemMenus (clipLaunch); // (round 190cy: Live's flat collection labels in the rows' menus)
@@ -4935,7 +4935,7 @@ void MainComponent::addLayoutStyleItems (juce::PopupMenu& menu)
     // round 190ig: the clip grid in Live's look (the default) or round 181a's (an option, add-never-remove); round 190jn:
     // the same switch takes the Session mixer, the Arrangement, the Clip / Device View and the status strip with it
     if (isClipLaunchWorkflow() && clipGridView != nullptr)
-        menu.addItem (tr ("Classic LYNX look in the Clip-launch layout"), true, clipGridClassicLook(), [this] {
+        menu.addItem (tr ("Classic YW Studio look in the Clip-launch layout"), true, clipGridClassicLook(), [this] {
             clipGridClassicLook() = ! clipGridClassicLook();
             refreshClipGrid (*clipGridView);
             playlist.liveLanesChanged();
@@ -5501,13 +5501,13 @@ void MainComponent::addPanelMenuItems (Panel panel, juce::PopupMenu& menu)
                 // round 190ol (research190oe P1, owner decision O-1): LYNX's Sections lane, off by default in this layout (the
                 // Simple layout has its title bar button, the Clip-launch layout none)
                 view.addSeparator();
-                view.addItem (tr ("Sections lane") + " (LYNX)", layoutStyle == layoutstyle::Style::pattern, sections::patternLaneOn(),
+                view.addItem (tr ("Sections lane") + " (YW Studio)", layoutStyle == layoutstyle::Style::pattern, sections::patternLaneOn(),
                               [] { workflowextras::setExtra ("playlist.sectionsLane", ! sections::patternLaneOn()); });
                 // round 190pf (research190oe P13): LYNX's Chord lane, off by default, in every layout
-                view.addItem (tr ("Chord lane") + " (LYNX)", true, chordlane::laneOn(),
+                view.addItem (tr ("Chord lane") + " (YW Studio)", true, chordlane::laneOn(),
                               [] { workflowextras::setExtra ("playlist.chordLane", ! chordlane::laneOn()); });
                 // round 190oo (design review O-1, a LYNX extra): shade the faded part as the Clip-launch layout does
-                view.addItem (tr ("Shade faded audio (LYNX)"), true, PlaylistComponent::shadeFadedAudio, [this] {
+                view.addItem (tr ("Shade faded audio (YW Studio)"), true, PlaylistComponent::shadeFadedAudio, [this] {
                     PlaylistComponent::shadeFadedAudio = ! PlaylistComponent::shadeFadedAudio;
                     playlist.headerOptionsChanged();
                     saveUiSettings();
@@ -6127,7 +6127,7 @@ void MainComponent::setAutomationWriteMode (int mode)
         engine.editSong ([mode] (Song& s) { s.automationWriteMode = mode; }, false);
     refreshAutomationModeBadge();
     if (mode != 0)
-        ui::postHint ({ tr ("Automation write mode: {0} (LYNX). Arm the recording filter's Automation and record to write with it",
+        ui::postHint ({ tr ("Automation write mode: {0} (YW Studio). Arm the recording filter's Automation and record to write with it",
                             { automodes::fromInt (mode) == automodes::Mode::touch   ? trc ("@automation write mode: Touch")
                               : automodes::fromInt (mode) == automodes::Mode::latch ? trc ("@automation write mode: Latch")
                                                                                     : trc ("@automation write mode: Write") }),
@@ -6154,7 +6154,7 @@ void MainComponent::refreshAutomationModeBadge()
     automationArmButton.setBadge (live ? badge : juce::String(), colour);
     if (badge.isNotEmpty())
     {
-        const auto line = tr ("Automation write mode: {0} (LYNX; right-click Record or Automation Arm to change it)", { name });
+        const auto line = tr ("Automation write mode: {0} (YW Studio; right-click Record or Automation Arm to change it)", { name });
         auto& b = live ? (IconButton&) automationArmButton : (IconButton&) recordButton;
         if (! b.getTooltip().contains (line))
             b.setTooltip (b.getTooltip() + "\n" + line);
@@ -6202,7 +6202,7 @@ void MainComponent::addRecordOptions (juce::PopupMenu& menu)
     menu.addItem (tr ("Capture automation: the moves just made without recording become automation") + shortcutText ("record.captureAutomation"),
                   [this] { runAction ("record.captureAutomation"); });
     // round 190pa (P21, LYNX extra): Touch / Latch / Write; Read (FL's) stays the default
-    menu.addSubMenu (tr ("Automation write mode (LYNX)"), makeAutomationModeMenu());
+    menu.addSubMenu (tr ("Automation write mode (YW Studio)"), makeAutomationModeMenu());
     // round 163: punch in/out on the loop region, pre-roll and post-roll (bars)
     {
         auto bars = [&set] (juce::PopupMenu& m, int now, std::function<void (AudioEngine::RecordOptions&, int)> apply) {
@@ -8028,7 +8028,7 @@ juce::PopupMenu MainComponent::makeKeyMenu()
     if (layoutStyle == layoutstyle::Style::clipLaunch) // round 190oo (O-5, LYNX extra; also in Settings › LYNX extras)
     {
         menu.addSeparator();
-        menu.addItem (tr ("Live's scale control: switch, root and mode (LYNX)"), true, livescale::shown, [this] { setLiveScaleControl (! livescale::shown); });
+        menu.addItem (tr ("Live's scale control: switch, root and mode (YW Studio)"), true, livescale::shown, [this] { setLiveScaleControl (! livescale::shown); });
     }
     return menu;
 }
@@ -8446,10 +8446,10 @@ void MainComponent::timerCallback()
             if (lynx::rt::shouldShowHint (PluginHost::settingsFolder().getChildFile ("realtime-hint-shown")))
                 juce::AlertWindow::showMessageBoxAsync (
                     juce::MessageBoxIconType::InfoIcon, tr ("Real-time priority"),
-                    tr ("The sound broke up, and Linux runs LYNX SHARE's audio thread at normal priority. Real-time priority makes dropouts much rarer:\n\n"
+                    tr ("The sound broke up, and Linux runs YW Studio's audio thread at normal priority. Real-time priority makes dropouts much rarer:\n\n"
                         "- install rtkit (package \"rtkit\"; most desktops already have it), or\n"
                         "- add yourself to the \"audio\" group with an rtprio limit in /etc/security/limits.d (as for JACK),\n\n"
-                        "then log out and in again. LYNX SHARE never needs root. Options > Audio settings shows the current state."));
+                        "then log out and in again. YW Studio never needs root. Options > Audio settings shows the current state."));
         }
     }
 
@@ -8512,7 +8512,7 @@ void MainComponent::updateTitle()
         // round 190ap: opened without third-party plugins, while some are still off
         const auto pluginsOff = engine.pluginsOff() ? " " + tr ("(third-party plugins off)") : juce::String();
         window->setName ((engine.isModified() ? "* " : "")
-                         + (projectName.isNotEmpty() ? "LYNX SHARE - " + projectName : juce::String ("LYNX SHARE")) + importedSuffix + pluginsOff + liveState);
+                         + (projectName.isNotEmpty() ? "YW Studio - " + projectName : juce::String ("YW Studio")) + importedSuffix + pluginsOff + liveState);
     }
 }
 
@@ -9187,7 +9187,7 @@ void MainComponent::saveToNewProjectFolder()
     // recordings go to <name>/Audio/Recorded). This session's takes still in the global recordings folder move along
     // (copied there, the project uses the copies; the originals are then offered for deletion as unused).
     const auto start = currentFile != juce::File() ? currentFile.getParentDirectory()
-                                                   : lynx::platform::documentsFolder().getChildFile ("LYNX/Projects");
+                                                   : lynx::platform::documentsFolder().getChildFile ("YW Studio/Projects");
     start.createDirectory();
     fileChooser = lynx::ui::makeFileChooser (tr ("Save to new project folder"),
                                                        start.getChildFile (projectName.isNotEmpty() ? juce::File::createLegalFileName (projectName) : juce::String ("untitled")),
@@ -9245,7 +9245,7 @@ void MainComponent::startSession()
 {
     // Like FL's backup on crash: a marker exists while LYNX runs; finding one at start means the last session
     // ended without closing (crash, power loss), so the newest backup written during it is offered.
-    sessionLock = std::make_unique<juce::InterProcessLock> ("LYNX-ui-session");
+    sessionLock = std::make_unique<juce::InterProcessLock> ("YW-ui-session");
     if (! sessionLock->enter (0))
     {
         sessionLock.reset(); // another LYNX window is running: it owns the marker
@@ -9288,7 +9288,7 @@ void MainComponent::checkInterruptedTakes()
         names.add (juce::File (juce::String::fromUTF8 (j.wav.c_str())).getFileName());
     const auto folder = juce::File (juce::String::fromUTF8 (takes.front().wav.c_str())).getParentDirectory();
     auto* w = new juce::AlertWindow (tr ("Recordings recovered"),
-                                     tr ("LYNX SHARE was recording when it stopped. These takes were saved and repaired:\n{0}\n\nPut them on the Playlist "
+                                     tr ("YW Studio was recording when it stopped. These takes were saved and repaired:\n{0}\n\nPut them on the Playlist "
                                          "where they were recorded?", { names.joinIntoString ("\n") }),
                                      juce::MessageBoxIconType::InfoIcon);
     w->addButton (tr ("Put them on the Playlist"), 1, juce::KeyPress (juce::KeyPress::returnKey));
@@ -9328,7 +9328,7 @@ void MainComponent::checkPreviousSession (juce::Time sessionStart)
         return; // nothing was saved in that session
     const auto backup = folder.getChildFile (juce::String::fromUTF8 (name.c_str()) + ProjectFile::extension);
 
-    auto* w = new juce::AlertWindow (tr ("LYNX SHARE did not close properly"),
+    auto* w = new juce::AlertWindow (tr ("YW Studio did not close properly"),
                                      tr ("The last session ended unexpectedly. Open the newest backup it saved?\n{0}  ({1})",
                                          { backup.getFileName(), backup.getLastModificationTime().formatted ("%Y-%m-%d %H:%M") }),
                                      juce::MessageBoxIconType::WarningIcon);
@@ -9359,7 +9359,7 @@ void MainComponent::newProject (bool askAlways)
             auto song = makeDefaultTemplateProject (&missing);
             startNewProject (std::move (song), {});
             if (missing)
-                ui::postHint ({ tr ("The default template was not found; LYNX SHARE's default project opened instead") }, 6000);
+                ui::postHint ({ tr ("The default template was not found; YW Studio's default project opened instead") }, 6000);
             return;
         }
         showNewProjectDialog ([safe = juce::Component::SafePointer<MainComponent> (this)] (Song song, juce::File file) {
@@ -9400,7 +9400,7 @@ void MainComponent::openStartupProject()
     auto song = makeDefaultTemplateProject (&missing);
     if (missing)
     {
-        ui::postHint ({ tr ("The default template was not found; LYNX SHARE's default project opened instead") }, 6000);
+        ui::postHint ({ tr ("The default template was not found; YW Studio's default project opened instead") }, 6000);
         return;
     }
     startNewProject (std::move (song), {});
@@ -9456,7 +9456,7 @@ void MainComponent::announceEditorCrash (const juce::String& plugin)
                        .withIconType (juce::MessageBoxIconType::WarningIcon)
                        .withTitle (tr ("Plugin crashed"))
                        .withMessage (tr ("{0} crashed. Save your project now (as a new file is safest).", { plugin }) + "\n\n"
-                                     + tr ("Its window was closed so that LYNX SHARE could keep running. The plugin may not work "
+                                     + tr ("Its window was closed so that YW Studio could keep running. The plugin may not work "
                                            "properly until the project is opened again."))
                        .withButton (tr ("Save as..."));
     if (offerSeparate)
@@ -9496,7 +9496,7 @@ void MainComponent::announceSeparateProcessCrash (const juce::String& plugin, bo
                        .withIconType (juce::MessageBoxIconType::WarningIcon)
                        .withTitle (tr ("Plugin crashed"))
                        .withMessage ((crashed ? where : tr ("{0} stopped responding (separate process).", { name })) + group + "\n\n"
-                                     + tr ("Only its process was affected: LYNX SHARE and your project kept running, and the plugin "
+                                     + tr ("Only its process was affected: YW Studio and your project kept running, and the plugin "
                                            "was muted. Save your project.")
                                      + " " + tr ("Reload starts it again with the settings from the last save or backup."))
                        .withButton (tr ("Reload")) // (round 190ao: without reopening the project; only on request)
@@ -9538,11 +9538,11 @@ juce::AlertWindow* MainComponent::buildSaveCopyWindow (const juce::String& json,
 {
     // round 190hq (B20): the release, and what the copy loses there (worked out again for each release)
     const auto releases = olderlynx::releases();
-    auto* w = new juce::AlertWindow (tr ("Save a copy for an older LYNX"),
+    auto* w = new juce::AlertWindow (tr ("Save a copy for an older YW Studio"),
                                      tr ("The copy opens in the release you pick. The open project stays as it is."), juce::MessageBoxIconType::NoIcon);
     juce::StringArray names;
     for (const auto& r : releases)
-        names.add ("LYNX SHARE " + r);
+        names.add ("YW Studio " + r);
     w->addComboBox ("release", names, tr ("For"));
     list->setMultiLine (true);
     list->setReadOnly (true);
@@ -9589,7 +9589,7 @@ void MainComponent::saveCopyForOlder()
         const auto start = (safe->currentFile != juce::File() ? safe->currentFile.getParentDirectory()
                                                               : juce::File::getSpecialLocation (juce::File::userDocumentsDirectory))
                                .getChildFile (olderlynx::copyName (projectStem (safe->projectName), release) + ProjectFile::extension);
-        safe->fileChooser = lynx::ui::makeFileChooser (tr ("Save a copy for LYNX SHARE {0}", { release }), start, juce::String ("*") + ProjectFile::extension);
+        safe->fileChooser = lynx::ui::makeFileChooser (tr ("Save a copy for YW Studio {0}", { release }), start, juce::String ("*") + ProjectFile::extension);
         lynx::ui::launchChooser (safe->fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
                                   [json, release] (const juce::FileChooser& chooser) {
                                       auto file = chooser.getResult();
@@ -9605,7 +9605,7 @@ void MainComponent::saveCopyForOlder()
                                                                                   copy.ok ? file.getFullPathName() : copy.error);
                                           return;
                                       }
-                                      ui::postHint ({ tr ("Saved a copy for LYNX SHARE {0}", { release }), file.getFileName() }, 6000);
+                                      ui::postHint ({ tr ("Saved a copy for YW Studio {0}", { release }), file.getFileName() }, 6000);
                                   });
     }), true);
 }
@@ -9913,7 +9913,7 @@ void MainComponent::openLynxProject (const juce::File& file, bool withoutPlugins
         platform::testModeLog ("project saved by newer version " + savedBy);
         if (! platform::testMode())
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::InfoIcon, tr ("Saved by a newer version"),
-                                                    tr ("This project was saved by LYNX SHARE {0}, and this is {1}. What the newer version added may be "
+                                                    tr ("This project was saved by YW Studio {0}, and this is {1}. What the newer version added may be "
                                                         "lost if you save it here: use File › Save as... to keep the original.",
                                                         { savedBy, JUCE_APPLICATION_VERSION_STRING }));
     }
@@ -10228,7 +10228,7 @@ void MainComponent::showMissingFiles (bool afterOpening)
                     auto it = std::find_if (info.plugins.begin(), info.plugins.end(), [&] (const MissingPlugin& p) { return p.name == name; });
                     if (it == info.plugins.end())
                         it = info.plugins.insert (info.plugins.end(),
-                                                  MissingPlugin { name, {}, TR_NOOP ("LYNX SHARE substitute: {0} (the original plugin is used again once it is installed). FL Studio plays a missing plugin's slot unprocessed: a substitute slot's menu › Bypass all LYNX SHARE substitutes of this project does the same"),
+                                                  MissingPlugin { name, {}, TR_NOOP ("YW Studio substitute: {0} (the original plugin is used again once it is installed). FL Studio plays a missing plugin's slot unprocessed: a substitute slot's menu › Bypass all YW Studio substitutes of this project does the same"),
                                                                   effectInfo (fx.kind).name });
                     const auto user = song.mixer[t].name.empty() ? (t == 0 ? std::string ("Master") : "Insert " + std::to_string (t)) : song.mixer[t].name;
                     if (std::find (it->usedBy.begin(), it->usedBy.end(), user) == it->usedBy.end())
@@ -10626,7 +10626,7 @@ void MainComponent::exportMidiFile()
 {
     // FL's File › Export › "MIDI file...": the arrangement's notes (or the current pattern's) as a Standard MIDI File
     const auto folder = currentFile.existsAsFile() ? currentFile.getParentDirectory() : juce::File::getSpecialLocation (juce::File::userMusicDirectory);
-    const auto name = projectName.isNotEmpty() ? projectName : juce::String ("LYNX SHARE");
+    const auto name = projectName.isNotEmpty() ? projectName : juce::String ("YW Studio");
     fileChooser = lynx::ui::makeFileChooser (tr ("Export MIDI file"), folder.getChildFile (name + ".mid"), "*.mid");
     juce::Component::SafePointer<MainComponent> safe (this);
     lynx::ui::launchChooser (fileChooser, juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::warnAboutOverwriting,
@@ -10716,7 +10716,7 @@ void MainComponent::save (bool askForFile, std::function<void()> afterSaved)
                                   }
                                   // FL warns the same way: the backup folder is cleaned up as new backups arrive
                                   auto* w = new juce::AlertWindow (tr ("Save in the backup folder?"),
-                                                                   tr ("This folder keeps LYNX SHARE's automatic backups and old ones are deleted as new "
+                                                                   tr ("This folder keeps YW Studio's automatic backups and old ones are deleted as new "
                                                                        "ones arrive, so a project saved here can be lost. If you opened a backup, save it "
                                                                        "somewhere else."),
                                                                    juce::MessageBoxIconType::WarningIcon);
@@ -10942,7 +10942,7 @@ juce::StringArray MainComponent::getMenuBarNames()
 juce::PopupMenu MainComponent::windowMenu()
 {
     juce::PopupMenu menu;
-    menu.addSectionHeader (tr ("LYNX SHARE windows"));
+    menu.addSectionHeader (tr ("YW Studio windows"));
     const auto untitled = tr ("Untitled");
     const auto playing = [] (const juce::String& type, const juce::String& name) {
         return name.isEmpty() && type.isEmpty() ? juce::String() : "   (" + tr ("plays through {0}", { name.isNotEmpty() ? name : type }) + ")";
@@ -11218,7 +11218,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         // issue #251 (round 190oq, LYNX extra): Live's Collect All and Save
         menu.addItem (tr ("Collect all and save"), [this] { collectAllAndSave(); });
         menu.addItem (tr ("Save as template..."), [this] { saveAsTemplate(); });
-        menu.addItem (tr ("Save a copy for an older LYNX..."), [this] { saveCopyForOlder(); }); // (round 190hq, LYNX extra)
+        menu.addItem (tr ("Save a copy for an older YW Studio..."), [this] { saveCopyForOlder(); }); // (round 190hq, LYNX extra)
         // round 190og (FLM coverage app-0003, LYNX extra: FL Studio writes no .flm): the song for FL Studio Mobile, with
         // what the copy loses listed first (ui/FlmExportDialog.h)
         menu.addItem (tr ("Save a copy as FL Studio Mobile project (.flm)..."), [this] {
@@ -11472,7 +11472,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
         menu.addItem (tr ("General settings...") + shortcutText ("view.settings"), [this] { openSettings ((int) SettingsPage::general); });
         menu.addItem (tr ("Theme (colors, background)..."), [this] { openSettings ((int) SettingsPage::theme); });
         menu.addItem (tr ("File settings (search folders)..."), [this] { openSettings ((int) SettingsPage::files); });
-        menu.addItem (tr ("LYNX extras..."), [this] { openSettings ((int) SettingsPage::extras); }); // round 190am
+        menu.addItem (tr ("YW Studio extras..."), [this] { openSettings ((int) SettingsPage::extras); }); // round 190am
         menu.addItem (tr ("Project settings (tempo, time signature)..."), [this] { openSettings ((int) SettingsPage::project); });
         menu.addItem (tr ("Project info...") + shortcutText ("view.projectInfo"), [this] { openSettings ((int) SettingsPage::info); });
         {
@@ -11605,7 +11605,7 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
                 showImportReport();
         });
         menu.addItem (tr ("Built-in plugins (online list)..."), [] {
-            juce::URL ("https://github.com/Ka1-S/LYNX-SHARE/blob/main/docs/PLUGINS.md").launchInDefaultBrowser();
+            juce::URL ("https://github.com/convicted3/yw-studio/blob/main/docs/PLUGINS.md").launchInDefaultBrowser();
         });
         menu.addItem (tr ("Test audio output..."), [this] { showAudioCheck (engine); }); // (round 190gh, B23)
         menu.addItem (tr ("Report a problem..."), [this] { crashreporter::showManualReport (&engine.getDeviceManager()); });
@@ -11618,11 +11618,11 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
                           [] { updater::goBack(); });
         }
         // round 190fq (LYNX's own): an optional way to donate, next to About in every layout; it never unlocks anything
-        menu.addItem (tr ("Support LYNX SHARE..."), [] { support::showSupportWindow(); });
-        menu.addItem (tr ("About LYNX SHARE"), [] {
+        menu.addItem (tr ("Support YW Studio..."), [] { support::showSupportWindow(); });
+        menu.addItem (tr ("About YW Studio"), [] {
             auto* window = makeAboutWindow().release();
             window->enterModalState (true, juce::ModalCallbackFunction::create ([] (int result) {
-                                         if (result == 2) // "Support LYNX SHARE"
+                                         if (result == 2) // "Support YW Studio"
                                              support::showSupportWindow();
                                      }),
                                      true);
@@ -11681,12 +11681,14 @@ std::unique_ptr<juce::AlertWindow> MainComponent::makeAboutWindow()
                      + "\n" + tr ("Opens .flp, .als, .flm, .dawproject, .band and .blx projects; exports .flp, .als, .flm and .dawproject."),
                  theme::font (theme::type::body), theme::colour::textPrimary);
             add (credits,
-                 tr ("Logo by {0}", { "w3teal" }) // the community member who made it
+                 juce::String::fromUTF8 ("yolo.su  |  #YW") // YW Studio's home
+                     // AGPL-3.0 attribution (the only place the upstream project is named)
+                     + "\n" + juce::String ("Based on LYNX SHARE by Ka1-S, AGPL-3.0")
                      // round 190gl: Ableton Link's credit (GPL-2.0-or-later; THIRD_PARTY.md lists every component)
                      + "\n" + tr ("Ableton Link by Ableton AG (GPL 2.0 or later). Every open-source component and its licence: THIRD_PARTY.md"),
                  theme::font (theme::type::small), quiet);
             // round 190fq: one short line under the logo, and a button to the Support window (Help › Support LYNX SHARE...)
-            add (support, tr ("LYNX SHARE is free and open source. Donations are optional and help it keep going."), theme::font (theme::type::body), quiet);
+            add (support, tr ("YW Studio is free and open source. Donations are optional and help it keep going."), theme::font (theme::type::body), quiet);
             setSize (width, top (version) + 14 + logoSize + 14 + height (about) + 10 + height (credits) + 14 + height (support));
         }
         // (each paragraph in lines of balanced length: no lone word on a line of its own)
@@ -11733,7 +11735,7 @@ std::unique_ptr<juce::AlertWindow> MainComponent::makeAboutWindow()
     };
     struct About final : ui::dialog::Dialog
     {
-        About() : ui::dialog::Dialog ("LYNX SHARE", width + 2 * ui::dialog::padding)
+        About() : ui::dialog::Dialog ("YW Studio", width + 2 * ui::dialog::padding)
         {
             setComponentID ("about.window");
             addContent (body);
@@ -11742,7 +11744,7 @@ std::unique_ptr<juce::AlertWindow> MainComponent::makeAboutWindow()
         Body body;
     };
     auto window = std::make_unique<About>();
-    window->addDialogButton (tr ("Support LYNX SHARE"), 2).setComponentID ("about.support");
+    window->addDialogButton (tr ("Support YW Studio"), 2).setComponentID ("about.support");
     window->addDialogButton (tr ("OK"), 1, true);
     return std::unique_ptr<juce::AlertWindow> (window.release());
 }
@@ -11765,7 +11767,7 @@ void MainComponent::showLanguageChoice (const juce::String& id)
     const juce::LocalisedStrings strings (table, false);
     auto say = [&] (const char* text) { return table.isEmpty() ? juce::String::fromUTF8 (text) : strings.translate (juce::String::fromUTF8 (text)); };
 
-    auto* window = new juce::AlertWindow (say (TR_NOOP ("Language")), say (TR_NOOP ("The new language is applied when LYNX SHARE restarts.")),
+    auto* window = new juce::AlertWindow (say (TR_NOOP ("Language")), say (TR_NOOP ("The new language is applied when YW Studio restarts.")),
                                           juce::MessageBoxIconType::InfoIcon);
     window->addButton (say (TR_NOOP ("Restart now")), 1, juce::KeyPress (juce::KeyPress::returnKey));
     window->addButton (say (TR_NOOP ("Later")), 0, juce::KeyPress (juce::KeyPress::escapeKey));
@@ -12052,7 +12054,7 @@ void MainComponent::showHelp()
                                   safe->closeHelp();
                                   safe->showShortcutManager();
                               }).release());
-    options.dialogTitle = tr ("LYNX SHARE shortcuts");
+    options.dialogTitle = tr ("YW Studio shortcuts");
     options.dialogBackgroundColour = theme::colour::bg2;
     options.useNativeTitleBar = true;
     options.resizable = true;
@@ -12152,7 +12154,7 @@ void MainComponent::showImportReport()
     if (const auto& matched = engine.getMatchedPlugins(); ! matched.isEmpty())
         text << tr ("Plugins found on this PC:") << "\n  " << matched.joinIntoString ("\n  ") << "\n\n";
     if (! missing.isEmpty())
-        text << tr ("Plugins not installed on this PC (or in a folder LYNX SHARE doesn't scan; Options > Setup wizard):") << "\n  "
+        text << tr ("Plugins not installed on this PC (or in a folder YW Studio doesn't scan; Options > Setup wizard):") << "\n  "
              << missing.joinIntoString ("\n  ") << "\n\n";
     if (const auto& lost = engine.getPluginsWithoutState(); ! lost.isEmpty())
         text << tr ("Plugins found but playing their default settings (the project saved them for the other format, VST2/VST3):") << "\n  "

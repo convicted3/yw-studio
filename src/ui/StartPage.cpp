@@ -92,7 +92,7 @@ public:
         templateList.setRowHeight (templateRowHeight);
         templateList.setComponentID ("startpage.templates");
 
-        atStart.setButtonText (tr ("Show the start page when LYNX starts"));
+        atStart.setButtonText (tr ("Show the start page when YW Studio starts"));
         atStart.setToggleState (host.showAtStart, juce::dontSendNotification);
         atStart.setComponentID ("startpage.atStart");
         atStart.onClick = [this] { if (host.setShowAtStart) host.setShowAtStart (atStart.getToggleState()); };

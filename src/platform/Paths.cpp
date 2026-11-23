@@ -84,7 +84,7 @@ juce::File settingsFolder()
 {
     if (const auto profile = profileOverride(); profile != juce::File())
     {
-        auto folder = profile.getChildFile ("LYNX");
+        auto folder = profile.getChildFile ("YW Studio");
         folder.createDirectory();
         return folder;
     }
@@ -92,11 +92,11 @@ juce::File settingsFolder()
     // the Microsoft Store build: the real path of the package's redirected %APPDATA%\LYNX (platform/Package.h)
     if (const auto packaged = packagedSettingsFolder(); packaged != juce::File())
         return packaged;
-    auto folder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("LYNX");
+    auto folder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory).getChildFile ("YW Studio");
    #elif JUCE_MAC
-    auto folder = home().getChildFile ("Library/Application Support/LYNX");
+    auto folder = home().getChildFile ("Library/Application Support/YW Studio");
    #else
-    auto folder = xdgFolder ("XDG_CONFIG_HOME", ".config").getChildFile ("LYNX");
+    auto folder = xdgFolder ("XDG_CONFIG_HOME", ".config").getChildFile ("YW Studio");
    #endif
     folder.createDirectory();
     return folder;
@@ -114,9 +114,9 @@ juce::File cacheFolder (const juce::String& name)
    #if JUCE_WINDOWS
     return settingsFolder().getChildFile (name);
    #elif JUCE_MAC
-    return home().getChildFile ("Library/Caches/LYNX").getChildFile (name);
+    return home().getChildFile ("Library/Caches/YW Studio").getChildFile (name);
    #else
-    return xdgFolder ("XDG_CACHE_HOME", ".cache").getChildFile ("LYNX").getChildFile (name);
+    return xdgFolder ("XDG_CACHE_HOME", ".cache").getChildFile ("YW Studio").getChildFile (name);
    #endif
 }
 

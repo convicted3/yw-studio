@@ -158,7 +158,7 @@ private:
     static juce::String what()
     {
         return tr ("Guests can put the plugins you tick on their own channels and inserts. The plugin stays on this computer and runs "
-                   "under your licence: guests send notes and knob values, and hear the result as audio for this song. LYNX SHARE never "
+                   "under your licence: guests send notes and knob values, and hear the result as audio for this song. YW Studio never "
                    "sends the plugin, its files, its presets or its licence.");
     }
     static juce::String licence()

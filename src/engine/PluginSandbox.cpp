@@ -194,7 +194,7 @@ juce::File bridge32Executable()
     // LYNX_BRIDGE32 (tests): another bridge executable
     if (const auto custom = juce::SystemStats::getEnvironmentVariable ("LYNX_BRIDGE32", {}); custom.isNotEmpty())
         return juce::File (custom);
-    return juce::File::getSpecialLocation (juce::File::currentExecutableFile).getSiblingFile ("LYNX-bridge32.exe");
+    return juce::File::getSpecialLocation (juce::File::currentExecutableFile).getSiblingFile ("YW-bridge32.exe");
 }
 
 namespace
@@ -635,7 +635,7 @@ public:
        #else
         const auto pid = (int) ::getpid();
        #endif
-        baseName = "LYNX-sandbox-" + juce::String (pid) + "-" + juce::String (++counter);
+        baseName = "YW-sandbox-" + juce::String (pid) + "-" + juce::String (++counter);
         created = channel.create (baseName);
         process->add (this);
     }
@@ -769,7 +769,7 @@ void retireSession (std::unique_ptr<SandboxSession> session)
     try
     {
         std::thread ([raw = session.get(), finished] {
-            juce::Thread::setCurrentThreadName ("LYNX sandbox teardown");
+            juce::Thread::setCurrentThreadName ("YW Studio sandbox teardown");
             delete raw;
             finished();
         }).detach();
@@ -1089,7 +1089,7 @@ std::unique_ptr<juce::AudioPluginInstance> createSandboxedPlugin (const juce::Pl
     const auto executable = bridged32 ? bridge32Executable() : juce::File::getSpecialLocation (juce::File::currentExecutableFile);
     if (bridged32 && ! executable.existsAsFile())
     {
-        error = juce::String::fromUTF8 ("a 32-bit plugin, and the 32-bit bridge (LYNX-bridge32.exe) is missing");
+        error = juce::String::fromUTF8 ("a 32-bit plugin, and the 32-bit bridge (YW-bridge32.exe) is missing");
         return nullptr;
     }
 
@@ -1108,7 +1108,7 @@ std::unique_ptr<juce::AudioPluginInstance> createSandboxedPlugin (const juce::Pl
             trace ("parent: starting child " + executable.getFileName());
             if (! process->start (executable))
             {
-                error = juce::String::fromUTF8 (bridged32 ? "could not start the 32-bit bridge (LYNX-bridge32.exe)" : "could not start the plugin process");
+                error = juce::String::fromUTF8 (bridged32 ? "could not start the 32-bit bridge (YW-bridge32.exe)" : "could not start the plugin process");
                 return nullptr;
             }
             fresh = true;

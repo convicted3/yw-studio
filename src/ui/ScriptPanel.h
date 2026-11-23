@@ -117,7 +117,7 @@ public:
                 }
                 case T::surface:
                 {
-                    auto l = std::make_unique<juce::Label> (juce::String {}, tr ("(Control Surface presets are not available in LYNX SHARE)"));
+                    auto l = std::make_unique<juce::Label> (juce::String {}, tr ("(Control Surface presets are not available in YW Studio)"));
                     l->setFont (theme::font (theme::type::caption));
                     l->setColour (juce::Label::textColourId, theme::colour::textDisabled);
                     editor = std::move (l);

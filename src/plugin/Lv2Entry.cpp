@@ -19,11 +19,11 @@
 #define JucePlugin_Build_Unity 0
 #define JucePlugin_Build_LV2 1
 #define JucePlugin_Enable_ARA 0
-#define JucePlugin_Manufacturer "Ka1-S"
-#define JucePlugin_ManufacturerWebsite "https://lynx-share.com"
+#define JucePlugin_Manufacturer "YW"
+#define JucePlugin_ManufacturerWebsite "https://yolo.su"
 #define JucePlugin_ManufacturerEmail ""
-#define JucePlugin_ManufacturerCode 0x4b613153 // 'Ka1S'
-#define JucePlugin_Desc "LYNX SHARE plugin"
+#define JucePlugin_ManufacturerCode 0x59577374 // 'YWst'
+#define JucePlugin_Desc "YW Studio plugin"
 #define JucePlugin_EditorRequiresKeyboardFocus 0
 #define JucePlugin_ProducesMidiOutput 0
 #define JucePlugin_IsMidiEffect 0

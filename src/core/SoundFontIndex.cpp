@@ -172,7 +172,7 @@ std::string PresetIndex::toText (const std::vector<IndexedFont>& fonts)
                 c = ' ';
         return s;
     };
-    std::string out = "LYNX-SF-INDEX\t1\n";
+    std::string out = "YW-SF-INDEX\t1\n";
     for (const auto& f : fonts)
     {
         out += "F\t" + std::to_string (f.size) + "\t" + std::to_string (f.time) + "\t" + clean (f.path) + "\t" + clean (f.name) + "\n";
@@ -187,7 +187,7 @@ std::vector<IndexedFont> PresetIndex::fromText (const std::string& text)
     std::vector<IndexedFont> out;
     std::istringstream in (text);
     std::string line;
-    if (! std::getline (in, line) || line.rfind ("LYNX-SF-INDEX\t", 0) != 0)
+    if (! std::getline (in, line) || line.rfind ("YW-SF-INDEX\t", 0) != 0)
         return out;
     while (std::getline (in, line))
     {

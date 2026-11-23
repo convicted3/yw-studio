@@ -2928,7 +2928,7 @@ class HelixPlusWell final : public juce::Component, public juce::SettableTooltip
 public:
     std::function<bool()> isOn;
     std::function<void()> onClick;
-    HelixPlusWell() { setTooltip (tr ("Helix+: LYNX's extra controls beside the device")); }
+    HelixPlusWell() { setTooltip (tr ("Helix+: YW Studio's extra controls beside the device")); }
     void paint (juce::Graphics& g) override
     {
         const auto r = getLocalBounds().toFloat().withSizeKeepingCentre (13.0f, 13.0f);
@@ -2959,8 +2959,8 @@ public:
         // (rollup 0.1.31 step 8: as a plugin in another host, LYNX Wavecoil, the well names the plugin, not the engine)
         if (plugui::hostedElsewhere)
             if (const auto* c = locator (channel) (const_cast<Song&> (e.getSong())); c != nullptr && ! c->name.empty())
-                well.setTooltip (tr ("{0}+: LYNX's extra controls beside the device")
-                                     .replace ("{0}", u8 (c->name).fromFirstOccurrenceOf ("LYNX ", false, false)));
+                well.setTooltip (tr ("{0}+: YW Studio's extra controls beside the device")
+                                     .replace ("{0}", u8 (c->name).fromFirstOccurrenceOf ("YW Studio ", false, false)));
     }
     void setPlus (bool shown)
     {

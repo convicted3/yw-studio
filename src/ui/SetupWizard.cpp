@@ -77,7 +77,7 @@ public:
     {
         auto& host = engine.getPluginHost();
 
-        title.setText (tr ("Welcome to LYNX SHARE"), juce::dontSendNotification);
+        title.setText (tr ("Welcome to YW Studio"), juce::dontSendNotification);
         title.setFont (theme::font (theme::type::display, true));
         title.setColour (juce::Label::textColourId, theme::colour::textPrimary);
         intro.setText (tr ("A few things to get started. Everything here can be changed later (Options > Setup wizard)."),
@@ -517,12 +517,12 @@ private:
     double progress = 0.0;
     juce::ProgressBar progressBar { progress };
     juce::ToggleButton scanAtStart { tr ("Look for new plugins in the background at every start") };
-    juce::ToggleButton menuEntry { tr ("Show LYNX SHARE in the applications menu and open .lynx files with it") };
+    juce::ToggleButton menuEntry { tr ("Show YW Studio in the applications menu and open .lynx files with it") };
     // round 190ns (issue #233): the automatic update check, the only connection LYNX SHARE makes by itself
     SectionLabel updatesLabel { tr ("Updates") };
     juce::ToggleButton checkUpdates { tr ("Check for updates automatically") };
-    juce::Label updatesNote { {}, tr ("A few seconds after start-up LYNX SHARE asks GitHub for the newest version number; nothing about you is sent. "
-                                      "It is the only connection LYNX SHARE makes by itself: plugin scans and everything else stay on this computer.") };
+    juce::Label updatesNote { {}, tr ("A few seconds after start-up YW Studio asks GitHub for the newest version number; nothing about you is sent. "
+                                      "It is the only connection YW Studio makes by itself: plugin scans and everything else stay on this computer.") };
     std::unique_ptr<juce::FileChooser> chooser;
     bool scanStarted = false;
 };

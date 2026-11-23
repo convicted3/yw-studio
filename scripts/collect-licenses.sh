@@ -28,7 +28,7 @@ cat > "$OUT/README.txt" <<'TXT'
 Licence texts of the third-party components in LYNX SHARE.
 
 THIRD_PARTY.md (next to the program) lists every component, what it is used for, its licence and any change LYNX made.
-Each file here is named after the component's folder in LYNX SHARE's source (https://github.com/Ka1-S/LYNX-SHARE,
+Each file here is named after the component's folder in LYNX SHARE's source (https://github.com/convicted3/yw-studio,
 folder third_party/), for example ara-ARA_API-LICENSE.txt is the ARA SDK's Apache License 2.0 and ara-NOTICE.txt its
 NOTICE; onnxruntime-ThirdPartyNotices.txt is Microsoft's notice file for ONNX Runtime 1.23.2. GPL-3.0.txt is the
 licence of the GPLv3 option under which LYNX uses Steinberg's VST 3 and ASIO SDKs. LYNX SHARE itself, and JUCE as LYNX

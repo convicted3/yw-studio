@@ -1047,7 +1047,7 @@ public:
         front.onClick = [this] { change ([this] (dance::Settings& s) { s.keepInFront = front.getToggleState(); }); };
         desktop.setButtonText (tr ("On desktop"));
         desktop.setTooltip (tr ("Don't minimize window along with application") + "\n"
-                            + tr ("LYNX's dancers stay inside the main window: this setting is kept for FL Studio projects."));
+                            + tr ("YW Studio's dancers stay inside the main window: this setting is kept for FL Studio projects."));
         desktop.onClick = [this] { change ([this] (dance::Settings& s) { s.onDesktop = desktop.getToggleState(); }); };
         // FL's "Reflect" (0 … 256, default 64): the faded mirror image under the dancer
         reflect.setRange (0.0, 1.0, 1.0 / 256.0);
@@ -1108,8 +1108,8 @@ public:
                                              safe->useSheet (fc.getResult());
                                      });
         };
-        ownDancer.setButtonText (tr ("LYNX's dancer"));
-        ownDancer.setTooltip (tr ("Back to LYNX SHARE's own dancer"));
+        ownDancer.setButtonText (tr ("YW Studio's dancer"));
+        ownDancer.setTooltip (tr ("Back to YW Studio's own dancer"));
         ownDancer.onClick = [this] {
             change ([] (dance::Settings& s) {
                 s.sheet.clear();
@@ -1156,10 +1156,10 @@ public:
         }
         g.setColour (theme::colour::textPrimary);
         g.setFont (theme::font (theme::type::title));
-        g.drawText (tr ("LYNX Dance"), header, juce::Justification::centredLeft);
+        g.drawText (tr ("YW Dance"), header, juce::Justification::centredLeft);
         g.setFont (theme::font (theme::type::small));
         g.setColour (theme::colour::textSecondary);
-        g.drawFittedText (tr ("Fruity Dance's role with LYNX SHARE's own dancer: it makes no sound. Its notes pick the move; drag the dancer to "
+        g.drawFittedText (tr ("Fruity Dance's role with YW Studio's own dancer: it makes no sound. Its notes pick the move; drag the dancer to "
                               "place it, right-click it for its moves."),
                           header.translated (0, 22).withHeight (30), juce::Justification::topLeft, 2);
         for (const auto& [area, text] : { std::pair { moveLabel, tr ("Move") }, std::pair { sizeLabel, tr ("Size") }, std::pair { speedLabel, tr ("Speed") },
@@ -1409,7 +1409,7 @@ juce::String danceWindowSelfTest (juce::String* detail)
         int channel = -1;
         engine.editSongStructural ([&channel] (Song& song) {
             ChannelDef c;
-            c.name = "LYNX Dance";
+            c.name = "YW Dance";
             c.instrument = InstrumentKind::fruitydance;
             c.pluginState = dance::toState (dance::Settings()); // (a new channel: FL's default place, a moving dancer)
             channel = (int) song.channels.size();

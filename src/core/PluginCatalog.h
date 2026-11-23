@@ -133,7 +133,7 @@ int importFlFolders (Folders& folders, bool instruments, const std::vector<std::
 // `fruityPrefix`: "Limiter" may also be "Fruity Limiter" (only for plugins known to be FL's own).
 std::string flCategory (const std::string& name, bool instruments, bool fruityPrefix = true);
 // The heading of LYNX's own plugins in those menus; it comes first.
-inline const char* const lynxCategory = "LYNX SHARE";
+inline const char* const lynxCategory = "YW Studio";
 // `user` plus a folder for every built-in plugin (`keyAndName`: its key and English name) the user did not file:
 // FL's category (by the exact name; with `flPlugin`, an FL plugin of LYNX, also without "Fruity " and "Misc" when FL
 // has no folder for it), else lynxCategory.

@@ -116,6 +116,6 @@ int indexOfPath (const std::string& path)
 
 std::string relativeOf (const Preset& preset)
 {
-    return "LYNX/" + (preset.category.empty() ? std::string() : preset.category + "/") + preset.name;
+    return "YW Studio/" + (preset.category.empty() ? std::string() : preset.category + "/") + preset.name;
 }
 } // namespace lynx::banks

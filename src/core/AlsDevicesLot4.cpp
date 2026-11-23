@@ -416,7 +416,7 @@ bool hybridToRack (const Element& device, const Context& context, Translated& ou
     auto predelay = hybridPredelayMs (synced, manual (device, "PreDelay_Time", 0.01), manual (device, "PreDelay_Sixteenth", 2.0), context.bpm);
     if (predelay > 500.0)
     {
-        notes.approximated.push_back (text ("pre-delay %.0f ms held at 500 ms (the most LYNX's reverbs take)", predelay));
+        notes.approximated.push_back (text ("pre-delay %.0f ms held at 500 ms (the most YW Studio's reverbs take)", predelay));
         predelay = 500.0;
     }
     else if (synced)
@@ -866,7 +866,7 @@ int roarStage (RackBuilder& b, int chain, const Element& device, int k, double i
                 notes.dropped.push_back ("the bit crusher stage's input / trim gain");
         }
         else
-            notes.dropped.push_back (std::string ("stage ") + std::to_string (k) + " shaper " + roarShaperName (type) + " (no LYNX counterpart)");
+            notes.dropped.push_back (std::string ("stage ") + std::to_string (k) + " shaper " + roarShaperName (type) + " (no YW Studio counterpart)");
         if (std::abs (manual (device, stem + "Shaper_Bias", 0.0)) > 1.0e-3)
             notes.dropped.push_back ("stage " + std::to_string (k) + " bias");
     }
@@ -1190,7 +1190,7 @@ void autoFilterDrive (const Element& device, Translated& out)
     if (driveDb < 0.05)
     {
         if (circuit != 0)
-            out.notes.dropped.push_back (text ("filter circuit %.0f (its own character; LYNX's filter is clean)", circuit));
+            out.notes.dropped.push_back (text ("filter circuit %.0f (its own character; YW Studio's filter is clean)", circuit));
         return;
     }
     // [ASSUMED] the drive as a gain into a soft clipper (Ember's transistor curve) in front of a clean filter

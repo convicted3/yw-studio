@@ -393,7 +393,7 @@ public:
     {
         std::memset (info, 0, sizeof (*info));
         std::strcpy (info->vendor, "LYNX");
-        std::strcpy (info->url, "https://github.com/Ka1-S/LYNX-SHARE");
+        std::strcpy (info->url, "https://github.com/convicted3/yw-studio");
         info->flags = PFactoryInfo::kUnicode;
         return kResultOk;
     }

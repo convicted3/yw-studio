@@ -536,7 +536,7 @@ void pluginAutos (Ctx& ctx, const Element& device, const std::string& plugin,
         }
         if (inRack || vst3Slots == nullptr || mySlot < 0)
         {
-            ctx.note (&FlpImportReport::notReproduced, "Automation of a VST3 plugin's parameter inside a rack (" + plugin + ": LYNX maps a VST3's own parameter ids on inserts and channels)");
+            ctx.note (&FlpImportReport::notReproduced, "Automation of a VST3 plugin's parameter inside a rack (" + plugin + ": YW Studio maps a VST3's own parameter ids on inserts and channels)");
             ctx.explained.insert (id);
             continue;
         }
@@ -711,7 +711,7 @@ bool nativeEffectFrom (Ctx& ctx, const Element& d, EffectSlot& slot, std::vector
     }
     const auto pair = t->from + " -> " + t->to;
     if (t->approximate)
-        ctx.note (&FlpImportReport::partialEffects, pair + " (settings fitted to LYNX's engine)");
+        ctx.note (&FlpImportReport::partialEffects, pair + " (settings fitted to YW Studio's engine)");
     else
         ctx.note (&FlpImportReport::converted, pair);
     for (const auto& n : t->notes.approximated)
@@ -1018,7 +1018,7 @@ bool rackFrom (Ctx& ctx, const Element& device, PatcherDoc& doc, int depth)
                         unmapped = true;
                     }
                 if (native && unmapped)
-                    ctx.note (&FlpImportReport::partialEffects, "Macro mapping onto a setting of a converted Live device that has no LYNX control (not applied)");
+                    ctx.note (&FlpImportReport::partialEffects, "Macro mapping onto a setting of a converted Live device that has no YW Studio control (not applied)");
             }
         // macros on the chain's volume / pan (Live's linear gain and −1..1 → LYNX's 0..1 controls)
         if (const auto m = mappingOf (branch.path ("MixerDevice/Volume")))
@@ -1337,7 +1337,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
         if (alsdev::operatorToTetra (device, fm, notes))
         {
             channel = std::move (fm);
-            ctx.note (&FlpImportReport::converted, "Operator -> Tetra (LYNX's FM synth)");
+            ctx.note (&FlpImportReport::converted, "Operator -> Tetra (YW Studio's FM synth)");
             for (const auto& n : notes.approximated)
                 ctx.note (&FlpImportReport::partialEffects, "Operator: " + n);
             for (const auto& n : notes.dropped)
@@ -1354,7 +1354,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
         if (alsdev::wavetableToHelix (device, wt, notes))
         {
             channel = std::move (wt);
-            ctx.note (&FlpImportReport::converted, "Wavetable -> Helix (LYNX's wavetable synth)");
+            ctx.note (&FlpImportReport::converted, "Wavetable -> Helix (YW Studio's wavetable synth)");
             for (const auto& n : notes.approximated)
                 ctx.note (&FlpImportReport::partialEffects, "Wavetable: " + n);
             for (const auto& n : notes.dropped)
@@ -1371,7 +1371,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
         if (alsdev::meldToBraid (device, meld, notes))
         {
             channel = std::move (meld);
-            ctx.note (&FlpImportReport::converted, "Meld -> Braid (LYNX's two-engine synth)");
+            ctx.note (&FlpImportReport::converted, "Meld -> Braid (YW Studio's two-engine synth)");
             for (const auto& n : notes.approximated)
                 ctx.note (&FlpImportReport::partialEffects, "Meld: " + n);
             for (const auto& n : notes.dropped)
@@ -1399,7 +1399,7 @@ bool instrumentFrom (Ctx& ctx, const Element& device, ChannelDef& channel, std::
         if (alsdev::driftToSynth (device, synth, ctx.song.bpm, notes))
         {
             channel = std::move (synth);
-            ctx.note (&FlpImportReport::partialEffects, tag + " -> built-in synth (settings fitted to LYNX's engine)");
+            ctx.note (&FlpImportReport::partialEffects, tag + " -> built-in synth (settings fitted to YW Studio's engine)");
             for (const auto& n : notes.approximated)
                 ctx.note (&FlpImportReport::partialEffects, tag + ": " + n);
             for (const auto& n : notes.dropped)
@@ -1459,7 +1459,7 @@ bool midiRackFrom (Ctx& ctx, const Element& d, ChannelDef& channel, std::vector<
         {
             channel.arp = arpBefore;
             effects.resize (effectsBefore);
-            ctx.note (&FlpImportReport::notReproduced, "MIDI Effect Rack: " + stopped + " inside (no LYNX counterpart)");
+            ctx.note (&FlpImportReport::notReproduced, "MIDI Effect Rack: " + stopped + " inside (no YW Studio counterpart)");
             return false;
         }
         ctx.note (&FlpImportReport::converted, "MIDI Effect Rack (one chain) -> its devices in front of the instrument");
@@ -2098,7 +2098,7 @@ int clipEnvelopeOf (Ctx& ctx, const Element& clip, const ToTicks& contentTicks)
             points.push_back (p);
         }
         if (curves)
-            ctx.note (&FlpImportReport::approximated, "Curved clip envelope segments (straight in LYNX)");
+            ctx.note (&FlpImportReport::approximated, "Curved clip envelope segments (straight in YW Studio)");
         clipenv::laneOf (e, lane) = std::move (points);
     }
     if (! clipenv::active (e))
@@ -2114,7 +2114,7 @@ void addAudioClip (Ctx& ctx, const Element& clip, int row, int mixerTrack, doubl
     if (path.empty() || length <= 0)
         return;
     if (intOf (clip.value ("GrooveSettings/GrooveId", "-1"), -1) >= 0) // (round 190fm)
-        ctx.note (&FlpImportReport::notReproduced, "Groove on an audio clip (LYNX's grooves play on MIDI clips; the clip plays straight)");
+        ctx.note (&FlpImportReport::notReproduced, "Groove on an audio clip (YW Studio's grooves play on MIDI clips; the clip plays straight)");
     const auto warped = clip.boolean ("IsWarped", true);
     const auto mode = (int) clip.number ("WarpMode", 0);
     const auto bpm = ctx.song.bpm;
@@ -2276,7 +2276,7 @@ void readGroovePool (Ctx& ctx, const Element& set, const Element& mainMixer)
         }
         ctx.grooveIds[intOf (node.attr ("Id"), -1)] = groove::add (ctx.song.grooves, std::move (g));
         // Live's groove law is not measured: LYNX's own (docs/analise/REA_rodada190bv.md U2) plays the same template
-        ctx.note (&FlpImportReport::approximated, "Grooves (LYNX's groove timing and accents; Live's exact law needs a live check)");
+        ctx.note (&FlpImportReport::approximated, "Grooves (YW Studio's groove timing and accents; Live's exact law needs a live check)");
         if (! node.value ("Annotation").empty())
             ctx.note (&FlpImportReport::notReproduced, "Groove info text (Annotation)");
     }
@@ -2289,7 +2289,7 @@ void readGroovePool (Ctx& ctx, const Element& set, const Element& mainMixer)
     }
     // the pool's default groove for new clips: LYNX has none (groove-023)
     if (const auto def = intOf (pool.value ("DefaultGrooveId", "-1"), -1); def >= 0 && ctx.grooveIds.count (def) != 0)
-        ctx.note (&FlpImportReport::notReproduced, "Default groove for new clips (LYNX's new clips start without a groove)");
+        ctx.note (&FlpImportReport::notReproduced, "Default groove for new clips (YW Studio's new clips start without a groove)");
 }
 
 // A clip's GrooveSettings/GrooveId → LYNX's id (0: none, −1 in the set, or not in the pool)
@@ -2581,7 +2581,7 @@ void registerMixerTargets (Ctx& ctx, const Element& mixer, int insert, const std
     // (issue #193) the track's on / off switch: LYNX's mixer mute has no automation, so it is named on its own
     if (const auto id = targetId (mixer.child ("Speaker")); ! id.empty() && ctx.automated.count (id) != 0)
     {
-        ctx.note (&FlpImportReport::notReproduced, "Track on / off automation (" + name + ": LYNX's mute is not automated; the track stays as saved)");
+        ctx.note (&FlpImportReport::notReproduced, "Track on / off automation (" + name + ": YW Studio's mute is not automated; the track stays as saved)");
         ctx.explained.insert (id);
     }
 }
@@ -2605,7 +2605,7 @@ void sessionToGrid (Ctx& ctx, const Element& set, const std::vector<Element>& tr
         {
             if ((int) s >= launcher::maxScenes)
             {
-                ctx.note (&FlpImportReport::notReproduced, "Session scenes past LYNX's grid limit");
+                ctx.note (&FlpImportReport::notReproduced, "Session scenes past YW Studio's grid limit");
                 break;
             }
             bool placed = false;
@@ -2647,7 +2647,7 @@ void sessionToGrid (Ctx& ctx, const Element& set, const std::vector<Element>& tr
                 const auto id = launcher::setClip (song, rowOf[i], (int) s, made.front());
                 if (id < 0)
                 {
-                    ctx.note (&FlpImportReport::notReproduced, "Session clips past LYNX's grid limits");
+                    ctx.note (&FlpImportReport::notReproduced, "Session clips past YW Studio's grid limits");
                     continue;
                 }
                 auto& slot = song.clipGrid->slots[(std::size_t) id];
@@ -3108,7 +3108,7 @@ std::optional<LiveInstrumentPreset> importLiveInstrumentPreset (const std::vecto
         return fail (why.empty() ? "the preset could not be read" : why);
     const auto tag = std::string (d.name());
     if (tag == "MidiEffectGroupDevice" || isMidiEffect (tag))
-        return fail ("a MIDI effect preset (LYNX has no live counterpart for Live's MIDI effects yet)");
+        return fail ("a MIDI effect preset (YW Studio has no live counterpart for Live's MIDI effects yet)");
     if (! isInstrumentDevice (tag) && tag != "InstrumentGroupDevice" && tag != "DrumGroupDevice"
         && ! (tag == "PluginDevice" && (int) d.number ("PluginDesc/Vst3PluginInfo/DeviceType", 0) == 1)
         && ! (tag == "PluginDevice" && (int) d.number ("PluginDesc/VstPluginInfo/Category", 0) == 2))
@@ -3120,7 +3120,7 @@ std::optional<LiveInstrumentPreset> importLiveInstrumentPreset (const std::vecto
         out.name = deviceName (d);
     out.channel.name = out.name;
     if (! instrumentFrom (ctx, d, out.channel, nullptr, 1)) // (depth 1: no track-level automation to collect)
-        return fail ("Live's " + deviceName (d) + " has no LYNX counterpart yet");
+        return fail ("Live's " + deviceName (d) + " has no YW Studio counterpart yet");
     out.rack = rack::isRack (out.channel);
     return out;
 }
@@ -3172,7 +3172,7 @@ std::optional<LiveDevicePreset> importLiveDevicePreset (const std::vector<std::u
     if (! nativeEffectFrom (ctx, d, out.slot))
     {
         ctx.note (&FlpImportReport::droppedEffects, deviceName (d));
-        return fail ("Live's " + deviceName (d) + " has no LYNX counterpart yet");
+        return fail ("Live's " + deviceName (d) + " has no YW Studio counterpart yet");
     }
     if (out.name.empty())
         out.name = deviceName (d);

@@ -120,12 +120,12 @@ bool wavetableToHelix (const Element& device, ChannelDef& channel, Notes& notes)
         if (! on)
             continue;
         if (userTable)
-            notes.dropped.push_back ("oscillator " + std::to_string (k + 1) + "'s user wave table (LYNX table \"" + wt::tableName (m.table) + "\" plays)");
+            notes.dropped.push_back ("oscillator " + std::to_string (k + 1) + "'s user wave table (YW Studio table \"" + wt::tableName (m.table) + "\" plays)");
         else if (! m.note.empty())
             notes.approximated.push_back ("oscillator " + std::to_string (k + 1) + ": " + m.note);
     }
     // a set LYNX exported names its LYNX tables in the device's info text: they come back exactly (round 190ja)
-    if (const auto info = device.value ("Annotation"); info.rfind ("LYNX Helix tables: ", 0) == 0)
+    if (const auto info = device.value ("Annotation"); info.rfind ("YW Helix tables: ", 0) == 0)
     {
         const auto list = info.substr (19);
         const auto bar = list.find (" | ");

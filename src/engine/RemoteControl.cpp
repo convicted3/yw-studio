@@ -293,7 +293,7 @@ struct RemoteControl::Impl final : juce::Thread
                 || args["expectedProjectId"].toString() != text (s.projectId))
                 throw RemoteError ("changed", "Project changed or expectedProjectId is missing; inspect the session again");
             if (! args["expectedEpoch"].isString() || args["expectedEpoch"].toString() != controlEpoch)
-                throw RemoteError ("changed", "LYNX control restarted or expectedEpoch is missing; inspect the session again");
+                throw RemoteError ("changed", "YW Studio control restarted or expectedEpoch is missing; inspect the session again");
             const auto& revision = args["expectedRevision"];
             if (! (revision.isInt() || revision.isInt64()) || (juce::int64) revision < 0
                 || (std::uint64_t) (juce::int64) revision != engine.getSongStamp())
@@ -408,7 +408,7 @@ struct RemoteControl::Impl final : juce::Thread
     };
 
     Impl (AudioEngine& engine, std::function<juce::String()> name, std::function<juce::String()> path, juce::File file)
-        : juce::Thread ("LYNX Remote Control"), state (std::make_shared<State> (engine, std::move (name), std::move (path))),
+        : juce::Thread ("YW Remote Control"), state (std::make_shared<State> (engine, std::move (name), std::move (path))),
           discovery (std::move (file)), token (randomToken())
     {
         if (! listener.createListener (0, "127.0.0.1"))
@@ -494,7 +494,7 @@ struct RemoteControl::Impl final : juce::Thread
             catch (...) { work->response = failure ("Control operation failed"); }
             work->finished.signal();
         }))
-            return failure ("The LYNX message loop is unavailable");
+            return failure ("The YW Studio message loop is unavailable");
         const auto longOperation = work->op == "plugin.parameters_set" || work->op == "effect.load"
                                 || work->op == "history.undo" || work->op == "history.redo"
                                 || work->op == "channel.create" || work->op == "instrument.replace"
@@ -509,8 +509,8 @@ struct RemoteControl::Impl final : juce::Thread
         const auto readOnly = work->op == "status" || work->op == "changes" || work->op == "api.describe" || work->op == "device.state"
             || work->op == "session.inspect" || work->op == "project.read" || work->op == "pattern.notes"
             || work->op == "plugin.inspect" || work->op == "effect.catalog" || work->op == "instrument.catalog" || work->op == "playlist.inspect";
-        return failure (readOnly ? "LYNX read timed out; retry after checking the application"
-                                : "LYNX did not answer in time; the change may have run. Inspect the session before retrying",
+        return failure (readOnly ? "YW Studio read timed out; retry after checking the application"
+                                : "YW Studio did not answer in time; the change may have run. Inspect the session before retrying",
                         readOnly ? "failed" : "uncertain", ! readOnly);
     }
 
@@ -658,7 +658,7 @@ std::unique_ptr<RemoteControl> RemoteControl::create (AudioEngine& engine, bool 
     }
     catch (const std::exception& e)
     {
-        juce::Logger::writeToLog ("LYNX Remote Control did not start: " + juce::String (e.what()));
+        juce::Logger::writeToLog ("YW Remote Control did not start: " + juce::String (e.what()));
         return {};
     }
 }

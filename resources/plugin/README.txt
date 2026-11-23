@@ -1,18 +1,18 @@
-LYNX plugins @LABEL@ (@OS@)
+YW Studio plugins @LABEL@ (@OS@)
 ==========================
 
-LYNX SHARE's own effects and instruments as plugins for other hosts: FL Studio and any other CLAP or VST3 host, and on
-Linux any LV2 host. This is an optional download: LYNX SHARE itself doesn't need it.
+YW Studio's own effects and instruments as plugins for other hosts: FL Studio and any other CLAP or VST3 host, and on
+Linux any LV2 host. This is an optional download: YW Studio itself doesn't need it.
 
 What's inside
 -------------
-  CLAP/LYNX Plugins.clap   every plugin in PLUGINS.txt, in one file
+  CLAP/YW Plugins.clap   every plugin in PLUGINS.txt, in one file
   VST3/*.vst3              the plugins marked "VST3" in PLUGINS.txt, one bundle each
   LV2/*.lv2                (Linux only) the same plugins as LV2 bundles
   PLUGINS.txt              the list
-  LICENSE, THIRD_PARTY.md  licences (AGPL-3.0; the source is at https://github.com/Ka1-S/LYNX-SHARE)
+  LICENSE, THIRD_PARTY.md  licences (AGPL-3.0; the source is at https://github.com/convicted3/yw-studio)
 
-Use the CLAP if your host loads CLAP plugins: it holds every plugin. Each VST3 carries the whole LYNX engine, so only a
+Use the CLAP if your host loads CLAP plugins: it holds every plugin. Each VST3 carries the whole YW Studio engine, so only a
 short list comes as VST3.
 
 Install
@@ -31,9 +31,9 @@ VST3 only in the system folder above). Uninstall: run the same script with --uni
 
 Check the download
 ------------------
-Compare the archive's SHA-256 with the line in LYNX-Plugins-@LABEL@-SHA256SUMS.txt from the same release:
+Compare the archive's SHA-256 with the line in YW Studio-Plugins-@LABEL@-SHA256SUMS.txt from the same release:
   Windows (PowerShell)  Get-FileHash <file> -Algorithm SHA256
   macOS                 shasum -a 256 <file>
   Linux                 sha256sum <file>
 
-More: https://github.com/Ka1-S/LYNX-SHARE/blob/main/docs/PLUGIN_EXPORT.md
+More: https://github.com/convicted3/yw-studio/blob/main/docs/PLUGIN_EXPORT.md

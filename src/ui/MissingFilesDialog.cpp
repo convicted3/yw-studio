@@ -114,7 +114,7 @@ std::shared_ptr<SearchJob> startSearchJob (std::vector<MissingFile> missing, juc
     try
     {
         std::thread ([job, missing = std::move (missing), folders = std::move (folders)] {
-            juce::Thread::setCurrentThreadName ("LYNX missing-files search");
+            juce::Thread::setCurrentThreadName ("YW Studio missing-files search");
             runSearch (*job, missing, folders);
             job->finished = true;
         }).detach();
@@ -319,10 +319,10 @@ private:
                            { juce::String ((int) info.files.size()), info.projectName.isNotEmpty() ? info.projectName : tr ("this project") }));
         if (! info.plugins.empty())
             lines.add (info.fromFlStudio
-                           ? tr ("{0} plugin(s) will not sound as in FL Studio (not installed, not loaded, or without their settings): see what LYNX SHARE did with each.",
+                           ? tr ("{0} plugin(s) will not sound as in FL Studio (not installed, not loaded, or without their settings): see what YW Studio did with each.",
                                  { juce::String ((int) info.plugins.size()) })
                            // (round 190nq: a LYNX project, a Live set... said "as in FL Studio" too)
-                           : tr ("{0} plugin(s) will not sound as they did when the project was saved (not installed, not loaded, or without their settings): see what LYNX SHARE did with each.",
+                           : tr ("{0} plugin(s) will not sound as they did when the project was saved (not installed, not loaded, or without their settings): see what YW Studio did with each.",
                                  { juce::String ((int) info.plugins.size()) }));
         if (! info.autoRelocated.empty())
             lines.add (tr ("{0} file(s) were found automatically in another folder.", { juce::String ((int) info.autoRelocated.size()) }));

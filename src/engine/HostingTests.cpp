@@ -188,7 +188,7 @@ int runSandboxGroupTest (const juce::String& pluginPath, const juce::String& rep
         auto local = createRightInstance (host.getFormats(), *type, rate, block, error);
         if (local != nullptr)
             preparePlugin (*local, rate, block);
-        check (a && b && c && own && local, "five instances: two in group A, one in group B, one alone, one in LYNX's process");
+        check (a && b && c && own && local, "five instances: two in group A, one in group B, one alone, one in YW Studio's process");
         if (! (a && b && c && own && local))
         {
             juce::File (reportPath).replaceWithText (report + "result=FAILED\n");
@@ -223,8 +223,8 @@ int runSandboxGroupTest (const juce::String& pluginPath, const juce::String& rep
                 return text.trim();
             };
             const auto inProcess = midiAfter (*local), separate = midiAfter (*a);
-            report << "midi after a block: in LYNX's process [" << inProcess << "], separate [" << separate << "]\n";
-            check (inProcess == separate, "a separate process gives back the plugin's MIDI output as LYNX's process does");
+            report << "midi after a block: in YW Studio's process [" << inProcess << "], separate [" << separate << "]\n";
+            check (inProcess == separate, "a separate process gives back the plugin's MIDI output as YW Studio's process does");
         }
         check (peakA > 1.0e-4f && peakB > 1.0e-4f && peakC > 1.0e-4f && peakO > 1.0e-4f && peakL > 1.0e-4f, "all five play");
 
@@ -295,7 +295,7 @@ int runSandboxGroupTest (const juce::String& pluginPath, const juce::String& rep
                     check (isSandboxedPluginDead (*crasher) && isSandboxedPluginDead (*companion), "the real crash took its group down");
                     const auto otherAfter = runBlocks (*other, f3, 40, block, rate);
                     report << "real crash: other group peak before=" << otherPeak << " after=" << otherAfter << "\n";
-                    check (otherAfter > 1.0e-4f && ! isSandboxedPluginDead (*other), "the other group keeps playing; LYNX is alive");
+                    check (otherAfter > 1.0e-4f && ! isSandboxedPluginDead (*other), "the other group keeps playing; YW Studio is alive");
                 }
             }
             setEnv ("LYNX_TEST_CRASH", {});
@@ -456,7 +456,7 @@ int runSandboxBench (const juce::String& pluginPath, const juce::String& reportP
                    << r.misses << " | " << juce::String (ipc, 1) << " | " << juce::String (r.cpu, 2) << " (+" << juce::String (r.cpu - base.cpu, 2)
                    << ") | " << r.processes << (r.ok ? "" : " (a plugin died)") << "\n";
         }
-    report << "(block deadline " << juce::String (block / rate * 1.0e6, 0) << " us; CPU = LYNX + its plugin processes during the run, "
+    report << "(block deadline " << juce::String (block / rate * 1.0e6, 0) << " us; CPU = YW Studio + its plugin processes during the run, "
            << "the bench's own pacing included; +x = more than in-process)\n";
     report << "result=" << (results.size() == 4 ? "OK" : "PARTIAL") << "\n";
     juce::File (reportPath).replaceWithText (report);
@@ -507,7 +507,7 @@ int runClapExtTest (const juce::String& pluginPath, const juce::String& reportPa
             const auto pool = clapThreadPoolUse (*p);
             report << "peak=" << peak << " thread_pool_requests=" << pool.first << " tasks=" << pool.second << "\n";
 
-            if (type.name != "LYNX Test Ext")
+            if (type.name != "YW Test Ext")
                 continue;
             ours = true;
             const auto text = describeClapPlugin (*p);
@@ -522,7 +522,7 @@ int runClapExtTest (const juce::String& pluginPath, const juce::String& reportPa
             check (p->getNumPrograms() == 3 && p->getProgramName (2) == "High", "three presets found (Low, Mid, High)");
             p->setCurrentProgram (2);
             check (std::abs (p->getParameters()[0]->getValue() - 0.75f) < 1.0e-4f && p->getCurrentProgram() == 2, "preset High loaded: Level 0.75");
-            check (pool.first >= 1 && pool.second >= 8, "the plugin's thread pool request ran on LYNX's workers");
+            check (pool.first >= 1 && pool.second >= 8, "the plugin's thread pool request ran on YW Studio's workers");
             {
                 juce::MemoryBlock state;
                 {
@@ -898,7 +898,7 @@ int runPluginBench (const juce::String& listOrPlugin, const juce::String& report
     const auto filters = juce::StringArray::fromTokens (nameFilter, ",", "");
 
     juce::String out;
-    out << "# LYNX --pluginbench: block " << block << ", " << rate << " Hz, " << seconds << " s per phase; work = " << WorkCounter::unit()
+    out << "# YW Studio --pluginbench: block " << block << ", " << rate << " Hz, " << seconds << " s per phase; work = " << WorkCounter::unit()
         << " per block on the bench thread\n";
     out << "# load average at the start: " << juce::File ("/proc/loadavg").loadFileAsString().upToFirstOccurrenceOf (" ", false, false) << "\n";
     out << "file\tplugin\tformat\tkind\tscan_ms\tload_ms\tprepare_ms\tram_load_mb\tram_prepare_mb\tlatency\ttail_s\t"

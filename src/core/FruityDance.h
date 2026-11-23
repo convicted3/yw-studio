@@ -57,7 +57,7 @@ struct Settings
     bool operator== (const Settings&) const = default;
 };
 
-// LYNX's own state ("LYNX dance 1", key=value lines)
+// LYNX's own state ("YW Studio dance 1", key=value lines)
 std::vector<std::uint8_t> toState (const Settings& s);
 std::optional<Settings> fromState (const std::vector<std::uint8_t>& state);
 // FL's Fruity Dance state (40 bytes or more); nullopt = not one. `flFactoryData`: FL's install folder (what FL's

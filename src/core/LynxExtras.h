@@ -1,6 +1,6 @@
 #pragma once
 
-// Settings › "LYNX extras" (round 190am, decision D7): the list of LYNX's own improvements that are landed but off by
+// Settings › "YW Studio extras" (round 190am, decision D7): the list of LYNX's own improvements that are landed but off by
 // default, so FL Studio's look and behaviour stay untouched until someone asks for them. The page shows each one with
 // a switch and one line of explanation.
 //
@@ -28,19 +28,19 @@ struct Item
 };
 
 inline constexpr Item items[] = {
-    { "mixer.loudness", TR_NOOP ("Mixer"), TR_NOOP ("Loudness meter beside the Master (LYNX)"),
+    { "mixer.loudness", TR_NOOP ("Mixer"), TR_NOOP ("Loudness meter beside the Master (YW Studio)"),
       TR_NOOP ("Short-term and integrated loudness (LUFS) and the true peak of the Master's output, with a Reset button. Also in the Mixer menu."),
       "ui-options.txt:mixerLoudness" },
-    { "mixer.stripInserts", TR_NOOP ("Mixer"), TR_NOOP ("Insert effects on the strips (LYNX)"),
+    { "mixer.stripInserts", TR_NOOP ("Mixer"), TR_NOOP ("Insert effects on the strips (YW Studio)"),
       TR_NOOP ("Each Mixer strip lists its insert's effects under its header: click one to open it, its dot to bypass it, drag to reorder or onto another strip (Ctrl: a copy), right-click for the slot menu. Also in the Mixer menu."),
       "ui-options.txt:mixerStripInserts" },
     { "mixer.usedOnly", TR_NOOP ("Mixer"), TR_NOOP ("Show only used inserts"),
       TR_NOOP ("Hides the inserts nothing uses. The Master, the selected insert and any insert that receives audio always stay. Also in the Mixer menu."),
       "ui-options.txt:mixerUsedOnly" },
-    { "mixer.keepLostLinks", TR_NOOP ("Mixer"), TR_NOOP ("Keep links to deleted inserts, greyed (LYNX)"),
+    { "mixer.keepLostLinks", TR_NOOP ("Mixer"), TR_NOOP ("Keep links to deleted inserts, greyed (YW Studio)"),
       TR_NOOP ("Deleting an insert keeps the links that went into it, greyed, so they can be connected again. Also in the Mixer menu."),
       "ui-options.txt:mixerKeepLostLinks" },
-    { "mixer.followPlaylist", TR_NOOP ("Mixer"), TR_NOOP ("Mixer groups follow the Playlist (LYNX)"),
+    { "mixer.followPlaylist", TR_NOOP ("Mixer"), TR_NOOP ("Mixer groups follow the Playlist (YW Studio)"),
       TR_NOOP ("The mixer's groups mirror the Playlist's track groups after every change. Also in the Mixer menu."),
       "ui-options.txt:mixerFollowPlaylist" },
     { "playlist.automationLanes", TR_NOOP ("Playlist"), TR_NOOP ("Automation lanes"),
@@ -82,22 +82,22 @@ inline constexpr Item items[] = {
     { "layout.trackOnly", TR_NOOP ("Playlist"), TR_NOOP ("Track-only mode (1 track = 1 instrument, the Channel rack hidden)"),
       TR_NOOP ("In the Pattern layout every instrument you add gets its own instrument track, whose pencil places that instrument's own pattern. The Channel rack is hidden when the mode comes on; F6 still opens it, listing the same instruments, each playing through its track's mixer track. Also in View › Layout style."),
       "ui-options.txt:trackOnly" },
-    { "pianoRoll.songBarsRuler", TR_NOOP ("Piano Roll"), TR_NOOP ("Ruler: song bars (LYNX)"),
+    { "pianoRoll.songBarsRuler", TR_NOOP ("Piano Roll"), TR_NOOP ("Ruler: song bars (YW Studio)"),
       TR_NOOP ("The Piano roll's ruler shows the bar numbers of the place in the song where the pattern plays. Also in the Piano roll's View menu."),
       "ui-options.txt:prSongBars" },
     // round 190on (research190oe P10): FL's event editor shows one lane; Live 12's clip editor several
-    { "pianoRoll.stackedLanes", TR_NOOP ("Piano Roll"), TR_NOOP ("Stacked controller lanes (LYNX)"),
+    { "pianoRoll.stackedLanes", TR_NOOP ("Piano Roll"), TR_NOOP ("Stacked controller lanes (YW Studio)"),
       TR_NOOP ("A \"+\" beside the event lane's chooser adds lanes above it (up to five in all: velocity, pan, mod X, any pattern event lane...), each with its own chooser and \"×\"; drag the line between two lanes to share their height. Always offered in the Clip-launch layout. Also in the Piano roll's View menu."),
       "ui-options.txt:prStackedLanesExtra" },
     // round 190iu (issue #191.1): FL's tool keys only select a tool
     { "editing.tempTools", TR_NOOP ("Editing"), TR_NOOP ("Hold a tool key for a temporary tool"),
       TR_NOOP ("In the Playlist and the Piano roll, holding a tool's key (C for the Knife, D for the Eraser...) uses that tool until the key is let go; a quick tap still picks the tool. Also in the Playlist menu."),
       "ui-options.txt:tempTools" },
-    { "general.hoverValues", TR_NOOP ("Editing"), TR_NOOP ("Show a control's value next to the mouse when hovering over it (LYNX)"),
+    { "general.hoverValues", TR_NOOP ("Editing"), TR_NOOP ("Show a control's value next to the mouse when hovering over it (YW Studio)"),
       TR_NOOP ("The value of the knob or fader under the mouse shows beside the cursor, not only in the hint bar. Also on the General page."),
       "ui-options.txt:hoverValues" },
     // round 190lo: the polyphonic note editor's clips with edits get their notes' masks built on a background thread at open
-    { "polyEdit.prepareOnOpen", TR_NOOP ("Editing"), TR_NOOP ("Prepare edited clips when a project opens (LYNX)"),
+    { "polyEdit.prepareOnOpen", TR_NOOP ("Editing"), TR_NOOP ("Prepare edited clips when a project opens (YW Studio)"),
       TR_NOOP ("When a project opens, the audio clips whose notes were edited in Edit notes (polyphonic) are prepared in the background, so the editor opens ready to play a dragged note. Also in that editor's Options menu."),
       "ui-options.txt:polyPrepareOnOpen" },
     // round 190jz (issue #195): REAPER's key for FL's Home; FL leaves plain W free in its main windows
@@ -138,11 +138,11 @@ inline constexpr Item items[] = {
     { "playlist.chordLane", TR_NOOP ("Playlist"), TR_NOOP ("Chord lane"),
       TR_NOOP ("A lane under the Playlist's ruler with the song's chords: draw them, pick them from the key's degree chords or detect them from the notes or an audio clip; channels can follow them while the song plays, and the Chord pad can play them. FL Studio has no chord track; an .flp export writes a marker at each chord's start. Also in the Playlist menu › View."),
       "ui-options.txt:chordLane" },
-    { "pianoRoll.chordHighlight", TR_NOOP ("Piano Roll"), TR_NOOP ("Highlight the Chord lane's chord (LYNX)"),
+    { "pianoRoll.chordHighlight", TR_NOOP ("Piano Roll"), TR_NOOP ("Highlight the Chord lane's chord (YW Studio)"),
       TR_NOOP ("The Piano roll's rows light the notes of the Chord lane's chord at the song position instead of the scale, and switch as the song plays. Also in the Piano roll's View menu."),
       "ui-options.txt:prChordHighlight" },
     // round 190oo (design review O-1, issue #230): FL 2026 draws only the fade curve; Live (and #230's picture) shade
-    { "playlist.shadeFadedAudio", TR_NOOP ("Playlist"), TR_NOOP ("Shade faded audio (LYNX)"),
+    { "playlist.shadeFadedAudio", TR_NOOP ("Playlist"), TR_NOOP ("Shade faded audio (YW Studio)"),
       TR_NOOP ("The Pattern layout also darkens the part of an audio clip that a fade takes away, as the Clip-launch layout and Live do; FL Studio draws only the fade curve. Also in Playlist › View."),
       "ui-options.txt:shadeFadedAudio" },
     // round 190oo (CS O-3): Live folds a track's automation lanes; LYNX's Clip-launch arrangement shows them open
@@ -150,7 +150,7 @@ inline constexpr Item items[] = {
       TR_NOOP ("As in Live, a project opened or imported shows its tracks' automation lanes folded the first time the Clip-launch arrangement shows it; each track's lane arrow unfolds them. Also in the Playlist menu of the Clip-launch layout."),
       "ui-options.txt:clipLanesFoldedLive" },
     // round 190oo (O-5): Live 12's scale switch, root and mode instead of the one key box
-    { "controlBar.liveScale", TR_NOOP ("Clip-launch workflow"), TR_NOOP ("Live's scale control: switch, root and mode (LYNX)"),
+    { "controlBar.liveScale", TR_NOOP ("Clip-launch workflow"), TR_NOOP ("Live's scale control: switch, root and mode (YW Studio)"),
       TR_NOOP ("The Clip-launch control bar shows Live's three scale controls instead of the one key box: the scale switch turns the project key on or off, the root and the mode choose it, and both stay dimmed while the switch is off. A right-click still opens the Key menu. Also in the Key menu of the Clip-launch layout."),
       "ui-options.txt:liveScaleControl" },
     // round 190op (research190oe P4): Cubase / Studio Pro hide and disable tracks; FL has neither
@@ -162,11 +162,11 @@ inline constexpr Item items[] = {
       TR_NOOP ("The Playlist track menu gets Track versions: named alternate versions of a track's clips, automation lanes and own insert's effects, switched from the menu or the version tag on the header; Promote copies the time selection of another version into the one that plays. Also always on in the Clip-launch layout, and for a track that has versions."),
       "ui-options.txt:trackVersions" },
     // round 190oq (issue #249): FL's Alt+M only mutes; this makes it switch both ways
-    { "editing.muteKeyToggles", TR_NOOP ("Editing"), TR_NOOP ("Alt+M toggles: pressed again, it unmutes (LYNX)"),
+    { "editing.muteKeyToggles", TR_NOOP ("Editing"), TR_NOOP ("Alt+M toggles: pressed again, it unmutes (YW Studio)"),
       TR_NOOP ("In FL Studio Alt+M only mutes the selected clips or notes and Shift+Alt+M unmutes them. On: Alt+M on clips or notes that are all muted already unmutes them, in the Playlist and the Piano roll; Shift+Alt+M still unmutes. Also in the Playlist's Edit menu."),
       "ui-options.txt:muteKeyToggles" },
     // round 190oq (issue #252): a start page with the recent projects and templates (Bitwig's Dashboard, Studio One's Start page)
-    { "general.startPage", TR_NOOP ("Windows"), TR_NOOP ("Show the start page when LYNX starts (recent projects and templates)"),
+    { "general.startPage", TR_NOOP ("Windows"), TR_NOOP ("Show the start page when YW Studio starts (recent projects and templates)"),
       TR_NOOP ("At start-up a page lists the recent projects (with a search box) and the templates over the start-up project, which stays open behind it (Esc keeps it). Not on the first start, which shows the welcome card, nor when a project is opened from a file. Also in File › Start page..."),
       "ui-options.txt:startPage" },
     // round 190pa (research190oe P14): REAPER's razor edits; FL's Playlist has no range on some tracks only

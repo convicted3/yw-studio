@@ -150,13 +150,13 @@ std::string suggestedAsioDriver (const std::string& currentTypeName, const std::
     const auto isWrapper = [&] (const std::string& name) {
         const auto n = lower (name);
         return n.find ("asio4all") != std::string::npos || n.find ("fl studio asio") != std::string::npos
-               || n.find ("generic low latency") != std::string::npos || n.find ("lynx") != std::string::npos;
+               || n.find ("generic low latency") != std::string::npos || n.find ("yw asio") != std::string::npos || n.find ("lynx") != std::string::npos;
     };
     for (const auto& d : asioDevices)
         if (! isWrapper (d))
             return d;
     for (const auto& d : asioDevices)
-        if (lower (d).find ("lynx") != std::string::npos)
+        if (lower (d).find ("yw asio") != std::string::npos)
             return d;
     return asioDevices.front();
 }
@@ -173,7 +173,7 @@ DriverKind driverKind (const std::string& typeName)
         return DriverKind::directSound;
     if (typeName == "ASIO")
         return DriverKind::asio;
-    if (typeName == "LYNX ASIO")
+    if (typeName == "YW ASIO")
         return DriverKind::lynxAsio;
     if (typeName == "CoreAudio")
         return DriverKind::coreAudio;

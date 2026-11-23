@@ -12,7 +12,7 @@
  #include <windows.h>
 #endif
 
-// LYNX.exe --bridge32test "LYNX Test Synth 32.dll" report.txt (round 176a): the 32-bit plugin bridge end to end, with
+// LYNX.exe --bridge32test "YW Test Synth 32.dll" report.txt (round 176a): the 32-bit plugin bridge end to end, with
 // LYNX's own 32-bit test VST2 (tools/testplugin/lynx_test_vst2.c, built for x86). Each step writes key=value lines.
 
 namespace lynx
@@ -167,7 +167,7 @@ int runBridge32Test (const juce::String& pluginArg, const juce::String& reportPa
     report << "module_32bit=" << (isModule32Bit (pluginPath) ? 1 : 0) << " bridge=" << bridge32Executable().getFullPathName()
            << " exists=" << (bridge32Executable().existsAsFile() ? 1 : 0) << "\n";
     if (! isModule32Bit (pluginPath) || ! bridge32Executable().existsAsFile())
-        fail ("not a 32-bit module, or LYNX-bridge32.exe missing");
+        fail ("not a 32-bit module, or YW-bridge32.exe missing");
     PluginHost host (false);
     auto t0 = juce::Time::getMillisecondCounterHiRes();
     host.addPluginFile (juce::File (pluginPath));

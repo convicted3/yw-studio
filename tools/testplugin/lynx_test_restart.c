@@ -24,7 +24,7 @@
 static const char* const features[] = { CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_UTILITY, NULL };
 
 static const clap_plugin_descriptor_t descriptor = {
-    CLAP_VERSION_INIT, "org.lynx.test-restart", "LYNX Test Restart", "LYNX", "https://github.com/Ka1-S/LYNX-SHARE", "", "",
+    CLAP_VERSION_INIT, "org.lynx.test-restart", "LYNX Test Restart", "LYNX", "https://github.com/convicted3/yw-studio", "", "",
     "1.0.0", "Requests a restart every 8 blocks (host restart handshake test)", features
 };
 

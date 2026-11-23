@@ -2418,8 +2418,8 @@ public: // (the class stays public from here, as before)
                 if (b == tbBypass) return tr ("Bypass mode: a key switches its note between corrected and passed as sung");
                 if (b == tbRemove) return tr ("Remove mode: a key cycles its note: legal, illegal (to the nearest note), illegal pitch up, illegal pitch down");
                 if (b == tbReset) return tr ("Reset scale: every note of the scale legal again, nothing bypassed");
-                if (b == tbSend) return tr ("Send: copy this key, scale and keyboard to every other LYNX Tune whose Receive is on");
-                if (b == tbReceive) return tr ("Receive: take the scale another LYNX Tune sends (switching it on takes the last one sent)");
+                if (b == tbSend) return tr ("Send: copy this key, scale and keyboard to every other YW Tune whose Receive is on");
+                if (b == tbReceive) return tr ("Receive: take the scale another YW Tune sends (switching it on takes the last one sent)");
                 if (b == tbGroup) return tr ("Group octaves: on = a key edits its note in every octave; off = each key keeps its own status");
                 if (b >= tbRange0 && b < tbZoomOut) return tr ("Range preset: notes sung outside the range pass uncorrected (Generic: the whole keyboard)");
                 if (b == tbZoomOut || b == tbZoomIn) return tr ("Keyboard view: show more / fewer octaves");
@@ -5228,7 +5228,7 @@ public: // (the class stays public from here, as before)
                     entry.setAction ([this, param, v = plugui::optionValue (item, o)] { setParams ({ { param, v }, { peakshapes::extraShapeParam, 0.0f } }); });
                     menu.addItem (std::move (entry));
                 }
-                menu.addSectionHeader (tr ("LYNX shapes"));
+                menu.addSectionHeader (tr ("YW Studio shapes"));
                 for (int id = 1; id <= peakshapes::count; ++id)
                 {
                     juce::PopupMenu::Item entry (tr (peakshapes::name (id)));
@@ -5988,7 +5988,7 @@ private:
             return { tr ("Speed of the peak display: [LMB] drag  (far left: off, only the crossover graph)"),
                      mbSpeed() <= 0.0f ? tr ("Off") : juce::String (juce::roundToInt (mbSpeed() * 100.0f)) + "%", false, false };
         if (limiterViewItem (item) && limiterViewPartAt (item, p) >= 0) // round 190jd
-            return { tr ("Display: FL's scrolling graph or LYNX's transfer curve  [LMB] switch (kept for this effect)"),
+            return { tr ("Display: FL's scrolling graph or YW Studio's transfer curve  [LMB] switch (kept for this effect)"),
                      limiterViewPartAt (item, p) == 0 ? tr ("GRAPH") : tr ("CURVE"), false, false };
         if (tpTraceItem (item)) // round 190lx (DP-31)
             return { tr ("Transient Processor: input peaks (green), output peaks (purple), the transient processing (red; above the middle line a boost, below a cut)  [LMB] pause / resume"),
@@ -6035,7 +6035,7 @@ private:
         if (isRhythmEdit (item)) // round 144
             return { tr ("Rhythm taps: drag up / down = level, sideways = time; double-click = add or remove a tap; right-click = patterns"), {}, false, false };
         if (isRhythmPatterns (item))
-            return { tr ("Load a tap pattern (LYNX SHARE's own), or go back to even spacing"), {}, false, false };
+            return { tr ("Load a tap pattern (YW Studio's own), or go back to even spacing"), {}, false, false };
         if (isWaveShaperGraph (item)) // round 165
             return { wsHint (item, p), {}, false, true };
         if (isMaximusCurve (item)) // round 168x

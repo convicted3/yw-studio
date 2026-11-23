@@ -44,7 +44,7 @@ public:
     juce::ChangeBroadcaster changed; // (sendChangeMessage: delivered on the message thread, coalesced)
 
 private:
-    LoopLengths() : juce::Thread ("LYNX loop lengths") { formats.registerBasicFormats(); }
+    LoopLengths() : juce::Thread ("YW Studio loop lengths") { formats.registerBasicFormats(); }
     ~LoopLengths() override
     {
         stopThread (4000);

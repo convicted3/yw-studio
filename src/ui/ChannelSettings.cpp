@@ -226,7 +226,7 @@ private:
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
-        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the LYNX lab"), or the forced plugin style
+        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the YW Studio lab"), or the forced plugin style
         s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
         s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
         s.setRange (lo, hi, step);
@@ -366,7 +366,7 @@ private:
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
-        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the LYNX lab"), or the forced plugin style
+        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the YW Studio lab"), or the forced plugin style
         s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
         s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
         s.setRange (lo, hi, step);
@@ -2376,7 +2376,7 @@ public:
                : drumaxx ? tr ("Drumaxx — FL's physical drum engine (pads on their keys; patterns not played)")
                : slayer ? tr ("FL Slayer — FL's engine with its effects, amp and cabinet (picks read from your FL installation; new settings restart the voices)")
                : sytrus ? tr ("Sytrus — FL's engine, main settings (operators, filters and effects keep the saved patch)")
-               : pocketSuperSaw ? tr ("Pocket SuperSaw — LYNX's engine for FL Studio Mobile's SuperSaw")
+               : pocketSuperSaw ? tr ("Pocket SuperSaw — YW Studio's engine for FL Studio Mobile's SuperSaw")
                : fruityDance ? tr ("Fruity Dance — a visual plugin: it makes no sound, the channel keeps its settings")
                : boobass ? tr ("BooBass — FL's engine, its sound read from your FL installation (knobs: 3-band EQ)")
                : sakura ? tr ("Sakura — physical strings (FL's engine; new parameters apply to the next note)")
@@ -3395,7 +3395,7 @@ private:
 };
 
 // The Sampler page (round 190dh: FL's Sampler page, form TPluginForm.SmpSheet, 561 x 399, and the FL 2026 shot
-// dock188a): File row, Content, Playback | Time stretching, Precomputed effects; the waveform; then "LYNX extras", the
+// dock188a): File row, Content, Playback | Time stretching, Precomputed effects; the waveform; then "YW Studio extras", the
 // sampler controls FL's page has no place for (Gain, the envelope, the filter, Cut itself, Porta, Modulation).
 class SettingsPanel final : public juce::Component,
                             public juce::DragAndDropTarget,
@@ -3446,9 +3446,9 @@ public:
         // ---- Content (form WavePanel) ----
         toggle (keepOnDisk, TR_NOOP ("Keep on disk"), TR_NOOP ("Stream sample from hard disk when possible"));
         keepOnDisk.setTooltip (tr ("Stream sample from hard disk when possible") + " - "
-                               + tr ("FL's option, kept for FL projects: LYNX streams samples longer than 30 s from its disk cache by itself"));
+                               + tr ("FL's option, kept for FL projects: YW Studio streams samples longer than 30 s from its disk cache by itself"));
         toggle (resampleBox, TR_NOOP ("Resample"), TR_NOOP ("Upsample to mixing frequency"));
-        resampleBox.setTooltip (tr ("Upsample to mixing frequency") + " - " + tr ("FL's option, kept for FL projects: LYNX resamples in real time"));
+        resampleBox.setTooltip (tr ("Upsample to mixing frequency") + " - " + tr ("FL's option, kept for FL projects: YW Studio resamples in real time"));
         toggle (loadRegionsBox, TR_NOOP ("Load regions"), nullptr);
         loadRegionsBox.setTooltip (tr ("Load sample regions and REX / ZGR beat markers") + " - " + tr ("FL's option, kept for FL projects"));
         toggle (loadMarkersBox, TR_NOOP ("Load slice markers"), nullptr);
@@ -3617,7 +3617,7 @@ public:
         modulationButton.setButtonText (tr ("Modulation (envelopes and LFOs)..."));
         modulationButton.onClick = [this] { showModulationFor (*this, engine, ref.index); };
         addAndMakeVisible (modulationButton);
-        extrasLabel.setText (tr ("LYNX extras"), juce::dontSendNotification);
+        extrasLabel.setText (tr ("YW Studio extras"), juce::dontSendNotification);
 
         // the knobs an automation clip can drive (samplerparam, issue #12): right-click = FL's parameter menu; a move
         // is a tweak (Last tweaked, automation recording)
@@ -5038,7 +5038,7 @@ private:
             ref.edit (engine, [s = *synth] (ChannelDef& channelDef) { channelDef.synth = s; });
         else
             juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, tr ("FL presets"),
-                                                    tr ("This preset is not for a synth LYNX SHARE converts, or it could not be read."));
+                                                    tr ("This preset is not for a synth YW Studio converts, or it could not be read."));
     }
     MenuSlider porta;
     juce::ComboBox filterTypeBox;
@@ -5103,7 +5103,7 @@ private:
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 64, 16);
-        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the LYNX lab"), or the forced plugin style
+        // round 170j: the plugin kit's knobs in LYNX Synth's own art ("the YW Studio lab"), or the forced plugin style
         s.getProperties().set (skin::sliderProperty, (juce::int64) skin::artAccent (skin::Art::lynxSynth).getARGB());
         s.getProperties().set (skin::styleProperty, skin::packStyle (skin::Style::themed, skin::Art::lynxSynth));
         s.setRange (lo, hi, step);

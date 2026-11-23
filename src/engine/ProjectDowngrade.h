@@ -1,6 +1,6 @@
 #pragma once
 
-// File › "Save a copy for an older LYNX..." (round 190hq, slice B20; community complaint #35 "a project from a newer
+// File › "Save a copy for an older YW Studio..." (round 190hq, slice B20; community complaint #35 "a project from a newer
 // version won't open in an older one", FL's KB 515). LYNX extra: FL Studio and Live 12 save only for themselves.
 //
 // A .lynx keeps format version 1, so every release reads every newer file and skips what it does not know. That is not
@@ -46,6 +46,6 @@ Copy forRelease (const Song& song, const juce::String& release);
 // The same from a project's text (what this build would save), e.g. a file on disk.
 Copy forRelease (const juce::String& projectJson, const juce::String& release);
 
-// "<name> (for LYNX 0.1.27)": the copy's suggested file name, without extension.
+// "<name> (for YW 0.1.27)": the copy's suggested file name, without extension.
 juce::String copyName (const juce::String& projectName, const juce::String& release);
 } // namespace lynx::olderlynx

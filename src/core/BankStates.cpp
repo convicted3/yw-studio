@@ -182,7 +182,7 @@ std::optional<ChannelDef> channelFor (const std::string& kind, const std::vector
             pads.push_back (pad);
         }
         def.instrument = InstrumentKind::drumaxx;
-        def.pluginState = drumaxxState (name.empty() ? std::string ("LYNX") : name, pads);
+        def.pluginState = drumaxxState (name.empty() ? std::string ("YW Studio") : name, pads);
     }
     else if (kind == "drumsynth" && ! v.empty() && v.size() % 39 == 0)
     {

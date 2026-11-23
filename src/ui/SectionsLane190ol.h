@@ -673,7 +673,7 @@ public:
         if (simpleLook())
             menu.addItem (tr ("Hide the Sections lane"), [this] { playlist.toggleSimpleSections(); });
         else
-            menu.addItem (tr ("Sections lane") + " (LYNX)", true, true, [] { workflowextras::setExtra ("playlist.sectionsLane", false); });
+            menu.addItem (tr ("Sections lane") + " (YW Studio)", true, true, [] { workflowextras::setExtra ("playlist.sectionsLane", false); });
         return menu;
     }
 

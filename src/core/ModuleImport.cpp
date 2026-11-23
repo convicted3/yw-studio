@@ -1081,10 +1081,10 @@ std::optional<Song> importModule (const std::vector<std::uint8_t>& bytes, const 
         return std::nullopt;
     };
     if (bytes.size() < 64)
-        return fail ("not a module LYNX can read (.mod, .xm, .s3m, .it)");
+        return fail ("not a module YW Studio can read (.mod, .xm, .s3m, .it)");
     Context ctx;
     if (xmp_load_module_from_memory (ctx.c, bytes.data(), (long) bytes.size()) != 0)
-        return fail ("not a module LYNX can read (.mod, .xm, .s3m, .it), or a damaged one");
+        return fail ("not a module YW Studio can read (.mod, .xm, .s3m, .it), or a damaged one");
     ctx.loaded = true;
     xmp_module_info info {};
     xmp_get_module_info (ctx.c, &info);

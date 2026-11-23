@@ -339,7 +339,7 @@ void scaleBgra (const std::uint8_t* src, int srcW, int srcH, int srcStride, std:
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-FrameDecoder::FrameDecoder() : juce::Thread ("LYNX video frames") {}
+FrameDecoder::FrameDecoder() : juce::Thread ("YW Studio video frames") {}
 
 FrameDecoder::~FrameDecoder()
 {

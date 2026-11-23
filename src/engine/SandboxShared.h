@@ -59,7 +59,7 @@ inline void trace (const juce::String& what)
 // processes in place and signals `response`.
 struct SharedBlock
 {
-    static constexpr std::uint32_t magicValue = 0x4C594E58; // "LYNX"
+    static constexpr std::uint32_t magicValue = 0x4C594E58; // "YW Studio"
     // (32 channels: a bridged multi-output instrument keeps 16 stereo outputs for the wrapper's Connections, issue #114)
     static constexpr int maxChannels = 32, maxFrames = 4096 /* PluginHost::maxBlockSize */, maxMidi = 1024, maxParams = 512, maxTimed = 512;
 
@@ -283,7 +283,7 @@ private:
         SharedBlock block;
     };
 
-    juce::String shmPath() const { return "/" + name; } // (macOS: at most 31 characters; "/LYNX-sandbox-<pid>-<n>" fits)
+    juce::String shmPath() const { return "/" + name; } // (macOS: at most 31 characters; "/YW-sandbox-<pid>-<n>" fits)
 
    #if JUCE_MAC
     juce::String fifoPath (const char* suffix) const

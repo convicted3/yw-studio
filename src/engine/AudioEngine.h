@@ -627,7 +627,7 @@ public:
     juce::String getRecordingStem() const { return recordingStem; }
     // A MIDI message as if a controller had sent it (the --bendrectest of round 167a). Message thread.
     void injectMidiInput (const juce::MidiMessage& message) { handleMidiInput (nullptr, {}, message); }
-    // Round 190pl (--demo midi.input): the same as from an input device with this name ("LYNX demo keyboard"), so the
+    // Round 190pl (--demo midi.input): the same as from an input device with this name ("YW Studio demo keyboard"), so the
     // device's MIDI settings (on / off, MIDI channel, what it plays) apply as to hardware. Message thread.
     void injectMidiInput (const juce::MidiMessage& message, const juce::String& deviceName) { handleMidiInput (nullptr, deviceName.toStdString(), message); }
     static juce::File defaultRecordingFolder();
@@ -824,7 +824,7 @@ public:
     // A MIDI mapping of a clip slot, a scene, a track's stop button, Stop all clips or a transport switch fired (its
     // press or release); the main window acts on it. Message thread (from applyControllers).
     std::function<void (const remotemap::Fire&)> onRemoteFire;
-    // Round 190hp (slice B9): the Mapping Browser's "In every project (LYNX)" — a MIDI mapping moves from the project
+    // Round 190hp (slice B9): the Mapping Browser's "In every project (YW Studio)" — a MIDI mapping moves from the project
     // (one undo step) into the settings, or back (core/RemoteMap.h). The app's engine saves the settings. False = nothing
     // moved. The global rows' Delete and Min / Max edit the settings (not undoable, as FL's global links).
     bool moveMappingScope (const remotemap::Row& row, bool toEveryProject);
@@ -919,7 +919,7 @@ public:
     // Round 190jl (engine/MidiOutPortTest.cpp): MIDI Out channels to the hardware outputs on their port, end to end
     static juce::String midiOutPortSelfTest();
     // Round 190ks (GitHub #198): a take records what a hosted plugin plays from its window (src/engine/PadRecordTest.cpp,
-    // `LYNX --padrectest "<LYNX Test Pads.vst3>" report.txt`)
+    // `LYNX --padrectest "<YW Test Pads.vst3>" report.txt`)
     static juce::String padRecordSelfTest (const juce::String& pluginPath);
     // Round 190ks: what 8 identical SoundFont / Sampler channels cost in memory (src/engine/ShareMemoryTest.cpp,
     // `LYNX --sharetest <folder> sf2-same|sf2-copies|wav-same|wav-copies report.txt`)
@@ -1774,7 +1774,7 @@ private:
     juce::File recordingFolder = defaultRecordingFolder();
     juce::String recordingStem;
     std::vector<juce::File> sessionRecordings;
-    juce::TimeSliceThread recordThread { "LYNX recording" };
+    juce::TimeSliceThread recordThread { "YW Studio recording" };
     RecordingNotice recordingNotice;
     void notify (InputIssue issue, int track = 0, const juce::String& detail = {});
     // One take being recorded (round 163): the audio thread pushes into `stream`, the recording thread drains it

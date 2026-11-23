@@ -83,7 +83,7 @@ class Worker final : private juce::Thread
 {
 public:
     using Job = std::function<void (const std::atomic<bool>& cancel)>;
-    Worker() : juce::Thread ("LYNX polyphonic notes") { startThread (juce::Thread::Priority::low); }
+    Worker() : juce::Thread ("YW Studio polyphonic notes") { startThread (juce::Thread::Priority::low); }
     ~Worker() override
     {
         cancel = true;
@@ -777,7 +777,7 @@ private:
     void showOptions()
     {
         juce::PopupMenu menu;
-        menu.addItem (tr ("Prepare edited clips when a project opens (LYNX)"), true, PolyEditorWindows::prepareOnOpen, [] {
+        menu.addItem (tr ("Prepare edited clips when a project opens (YW Studio)"), true, PolyEditorWindows::prepareOnOpen, [] {
             PolyEditorWindows::prepareOnOpen = ! PolyEditorWindows::prepareOnOpen;
             if (mixeroptions::changed)
                 mixeroptions::changed(); // (the main window writes ui-options.txt)

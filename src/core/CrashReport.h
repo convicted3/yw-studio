@@ -137,7 +137,7 @@ struct IssueFields
 {
     std::string title, version, os, osDetails, audio, kind, steps, expected, plugins, logs;
 };
-constexpr const char* issueFormBase = "https://github.com/Ka1-S/LYNX-SHARE/issues/new";
+constexpr const char* issueFormBase = "https://github.com/convicted3/yw-studio/issues/new";
 constexpr std::size_t defaultMaxUrl = 8000;
 
 // The new-issue URL with the form prefilled; at most `maxLength` bytes: the longest fields (logs, steps, plugins)
@@ -146,7 +146,7 @@ std::string githubIssueUrl (const IssueFields& fields, std::size_t maxLength = d
 std::string percentEncode (std::string_view utf8); // RFC 3986 unreserved characters stay
 // The form's dropdown option for an OS name ("Windows 11", "macOS (Apple silicon)", "Linux (AppImage)"...; "" when unknown)
 std::string githubOsOption (std::string_view osName, std::string_view arch = {}, bool appImage = false);
-// "crash" -> "LYNX closed (crash)", "hang" -> "LYNX froze (not responding)", else "Other"
+// "crash" -> "YW Studio closed (crash)", "hang" -> "YW Studio froze (not responding)", else "Other"
 std::string githubKindOption (std::string_view kind);
 // The report's title from its kind and the last step (issue #115): "Crash: " only with a crash file; a session that
 // ended without one says so instead of naming its last step a crash.

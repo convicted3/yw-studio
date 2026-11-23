@@ -2379,7 +2379,7 @@ public:
             return false;
         // the joined sample becomes the deck's file (LYNX/Edits, as Edison's edits), its regions in its cue points; the
         // regions kept their settings, the added ones get the defaults
-        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("LYNX/Edits");
+        const auto folder = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("YW Studio/Edits");
         folder.createDirectory();
         const auto base = juce::File (juce::String::fromUTF8 (paths[(std::size_t) deck].c_str())).getFileNameWithoutExtension();
         const auto file = folder.getNonexistentChildFile ((base.isNotEmpty() ? base : juce::String ("Slicex")) + " (appended)", ".wav");

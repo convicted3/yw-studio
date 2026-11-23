@@ -681,7 +681,7 @@ std::vector<std::uint8_t> makeTestFont (const std::vector<TestPreset>& presets, 
         Writer v;
         v.w16 (2), v.w16 (1);
         info.chunk ("ifil", v.b);
-        const std::string n = "LYNX test font";
+        const std::string n = "YW Studio test font";
         std::vector<std::uint8_t> z (n.begin(), n.end());
         z.push_back (0);
         info.chunk ("INAM", z);

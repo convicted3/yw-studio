@@ -1,5 +1,5 @@
-; Included by LYNX.nsi (and by the test installer of round 190nr). Needs LogicLib.nsh and TextFunc.nsh.
-;; Round 190nr: what this installer owns in $INSTDIR (top-level names). Every name a File command in LYNX.nsi writes must be
+; Included by YW Studio.nsi (and by the test installer of round 190nr). Needs LogicLib.nsh and TextFunc.nsh.
+;; Round 190nr: what this installer owns in $INSTDIR (top-level names). Every name a File command in YW Studio.nsi writes must be
 ;; here, and core/UpdateCheck.cpp installEntries() needs every name that is new in this version. The list is written
 ;; to installed-files.txt; an install over a NEWER version reads that version's list first and removes the names this
 ;; version doesn't own, so going back leaves nothing of the newer version behind (0.1.29's installer left 0.1.30's
@@ -8,19 +8,19 @@
 ;; up from the newer side (its script is fixed and the newer version doesn't run); what it leaves is harmless and goes
 ;; with the next 0.1.31+ install or uninstall.
 !macro ForEachOwned M
-    !insertmacro ${M} "LYNX.exe"
-    !insertmacro ${M} "LYNX.pdb"
+    !insertmacro ${M} "YW Studio.exe"
+    !insertmacro ${M} "YW Studio.pdb"
     !insertmacro ${M} "onnxruntime.dll"
     !insertmacro ${M} "LICENSE"
     !insertmacro ${M} "THIRD_PARTY.md"
     !insertmacro ${M} "PRIVACY.md"
     !insertmacro ${M} "licenses"
     !insertmacro ${M} "Demo.lynx"
-    !insertmacro ${M} "LYNX-bridge32.exe"
+    !insertmacro ${M} "YW-bridge32.exe"
     !insertmacro ${M} "lynx-asio.dll"
     !insertmacro ${M} "lynx-asio32.dll"
-    !insertmacro ${M} "Register LYNX ASIO.bat"
-    !insertmacro ${M} "Unregister LYNX ASIO.bat"
+    !insertmacro ${M} "Register YW ASIO.bat"
+    !insertmacro ${M} "Unregister YW ASIO.bat"
     !insertmacro ${M} "Uninstall.exe"
     !insertmacro ${M} "installed-files.txt"
 !macroend

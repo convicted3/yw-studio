@@ -15,8 +15,8 @@
 
 namespace lynx::store
 {
-// The application id in AppxManifest.xml (<Application Id="LYNX">): "shell:AppsFolder\<family>!LYNX" starts it.
-inline constexpr const char* applicationId = "LYNX";
+// The application id in AppxManifest.xml (<Application Id="YW Studio">): "shell:AppsFolder\<family>!LYNX" starts it.
+inline constexpr const char* applicationId = "YW Studio";
 
 // The settings folder of a packaged LYNX: <LocalAppData>\Packages\<family>\LocalCache\Roaming\LYNX — where Windows
 // redirects %APPDATA%\LYNX for this package. Empty when either part is missing.
@@ -29,7 +29,7 @@ inline std::string packagedSettingsFolder (std::string_view localAppData, std::s
         path += '\\';
     path += "Packages\\";
     path += familyName;
-    path += "\\LocalCache\\Roaming\\LYNX";
+    path += "\\LocalCache\\Roaming\\YW Studio";
     return path;
 }
 

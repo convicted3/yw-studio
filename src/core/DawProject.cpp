@@ -296,7 +296,7 @@ bool flVst2StateFromFx (const std::vector<std::uint8_t>& bytes, std::vector<std:
 
 std::string effectStateText (const EffectSlot& s)
 {
-    std::string out = "LYNX effect state 1\n";
+    std::string out = "YW Studio effect state 1\n";
     out += "kind=" + std::to_string ((int) s.kind) + "\n";
     out += "name=" + lineEscape (natives::effectMenuName (s.kind)) + "\n"; // (informative)
     out += std::string ("enabled=") + (s.enabled ? "1" : "0") + "\n";
@@ -320,7 +320,7 @@ std::string effectStateText (const EffectSlot& s)
 
 std::optional<EffectSlot> effectFromStateText (const std::string& text)
 {
-    if (text.rfind ("LYNX effect state 1\n", 0) != 0)
+    if (text.rfind ("YW Studio effect state 1\n", 0) != 0)
         return std::nullopt;
     std::map<std::string, std::string> v;
     std::size_t pos = text.find ('\n') + 1;
@@ -763,7 +763,7 @@ struct Imp
     {
         if ((int) song.mixer.size() >= maxMixerTracks)
         {
-            note (&FlpImportReport::notReproduced, "Mixer channels past LYNX's insert limit (played through the Master)");
+            note (&FlpImportReport::notReproduced, "Mixer channels past YW Studio's insert limit (played through the Master)");
             return 0;
         }
         MixerTrack m;
@@ -786,7 +786,7 @@ struct Imp
         {
             const auto gain = gainOfVolume (num (v, "value", 1.0), v.attr ("unit"), num (v, "max", 2.0));
             if (gain > maxFaderGain * 1.0001)
-                note (&FlpImportReport::approximated, "Channel volume above +5.6 dB (LYNX's fader top)");
+                note (&FlpImportReport::approximated, "Channel volume above +5.6 dB (YW Studio's fader top)");
             m.volume = faderPosition ((float) std::clamp (gain, 0.0, (double) maxFaderGain));
             if (v.hasAttr ("id"))
                 targets[v.attr ("id")] = { { AutomationTargetKind::mixerVolume, insert, 0, 0 }, Law::fader, 0.0, num (v, "max", 2.0), v.attr ("unit"), "Volume", track };
@@ -801,7 +801,7 @@ struct Imp
         {
             m.muted = flag (mute, "value", false);
             if (mute.hasAttr ("id"))
-                explained[mute.attr ("id")] = "Mute automation (LYNX automates no mute switch)";
+                explained[mute.attr ("id")] = "Mute automation (YW Studio automates no mute switch)";
         }
         m.solo = flag (ch, "solo", false);
         if (ch.attr ("role") == "vca")
@@ -1077,7 +1077,7 @@ struct Imp
 
     bool lynxDevice (const Element& d, std::string_view kind) const
     {
-        return d.attr ("deviceVendor") == "LYNX" && d.attr ("deviceID").rfind (std::string ("lynx.") + std::string (kind) + ".", 0) == 0;
+        return d.attr ("deviceVendor") == "YW Studio" && d.attr ("deviceID").rfind (std::string ("lynx.") + std::string (kind) + ".", 0) == 0;
     }
 
     // The devices of a Channel: the first instrument into `instrument` (when given), audio effects onto the insert
@@ -1119,10 +1119,10 @@ struct Imp
                         instrument->colour = keepColour;
                         instrument->mixerTrack = keepInsert;
                         instrument->volume = keepVolume; // (the track's level is its insert's)
-                        note (&FlpImportReport::converted, "LYNX instrument: " + name);
+                        note (&FlpImportReport::converted, "YW Studio instrument: " + name);
                     }
                     else
-                        note (&FlpImportReport::unsupported, "LYNX instrument whose state could not be read: " + name);
+                        note (&FlpImportReport::unsupported, "YW Studio instrument whose state could not be read: " + name);
                 }
                 else if (auto p = pluginOf (d))
                 {
@@ -1134,9 +1134,9 @@ struct Imp
                                       instrument->plugin.foreign.format == ForeignPlugin::Format::vst3 ? &instrument->plugin.foreign : nullptr, track);
                 }
                 else
-                    note (&FlpImportReport::unsupported, "Instrument: " + name + " (LYNX's synth plays the notes)");
+                    note (&FlpImportReport::unsupported, "Instrument: " + name + " (YW Studio's synth plays the notes)");
                 if (! enabled)
-                    note (&FlpImportReport::notReproduced, "Instrument switched off (it plays in LYNX)");
+                    note (&FlpImportReport::notReproduced, "Instrument switched off (it plays in YW Studio)");
                 continue;
             }
             if (role == "noteFX")
@@ -1172,7 +1172,7 @@ struct Imp
                 {
                     slot = std::move (*s);
                     made = true;
-                    note (&FlpImportReport::converted, "LYNX effect: " + name);
+                    note (&FlpImportReport::converted, "YW Studio effect: " + name);
                 }
             }
             else if (auto p = pluginOf (d))
@@ -1259,7 +1259,7 @@ struct Imp
             c.mixerTrack = std::max (0, insert);
             const auto index = (int) song.channels.size();
             if (! readDevices (ch, insert, &c, index, id))
-                note (&FlpImportReport::unsupported, "Notes track without an instrument (LYNX's synth plays it)");
+                note (&FlpImportReport::unsupported, "Notes track without an instrument (YW Studio's synth plays it)");
             song.channels.push_back (std::move (c));
             channelOfTrack[id] = index;
             r.mode = PlaylistTrackMode::instrument;
@@ -1328,7 +1328,7 @@ struct Imp
                     continue;
                 }
                 if (const auto pan = send.child ("Pan"); pan && std::abs (panOfValue (num (pan, "value", 0.5), pan.attr ("unit"), num (pan, "min", 0.0), num (pan, "max", 1.0))) > 1e-4)
-                    note (&FlpImportReport::approximated, "Send pan (LYNX's sends have none)");
+                    note (&FlpImportReport::approximated, "Send pan (YW Studio's sends have none)");
                 const auto level = gainOfVolume (num (vol, "value", 1.0), vol.attr ("unit"), num (vol, "max", 2.0));
                 if (j == 0)
                 {
@@ -1816,7 +1816,7 @@ struct Imp
         if (it == targets.end())
         {
             const auto why = explained.find (param);
-            note (&FlpImportReport::notReproduced, why != explained.end() ? why->second : std::string ("Automation of a parameter LYNX has no counterpart for"));
+            note (&FlpImportReport::notReproduced, why != explained.end() ? why->second : std::string ("Automation of a parameter YW Studio has no counterpart for"));
             return;
         }
         if (raw.empty())
@@ -1927,7 +1927,7 @@ struct Imp
                 const auto id = launcher::setClip (song, row, scene, first);
                 if (id < 0)
                 {
-                    note (&FlpImportReport::notReproduced, "Clip slots past LYNX's grid limits");
+                    note (&FlpImportReport::notReproduced, "Clip slots past YW Studio's grid limits");
                     continue;
                 }
                 auto& slot = song.clipGrid->slots[(std::size_t) id];
@@ -1942,7 +1942,7 @@ struct Imp
         {
             if ((int) k >= launcher::maxScenes)
             {
-                note (&FlpImportReport::notReproduced, "Scenes past LYNX's grid limit");
+                note (&FlpImportReport::notReproduced, "Scenes past YW Studio's grid limit");
                 break;
             }
             walk (scenes[k], {}, (int) k);
@@ -2025,7 +2025,7 @@ struct Imp
             clip->track = tempoRow;
         }
         if (clamped)
-            note (&FlpImportReport::approximated, "Tempo outside LYNX's 10 … 522 BPM (clamped)");
+            note (&FlpImportReport::approximated, "Tempo outside YW Studio's 10 … 522 BPM (clamped)");
     }
 
     void finishSignatures()
@@ -2460,8 +2460,8 @@ struct Exp
     {
         const auto kindId = genpresets::kindId (c.instrument);
         auto& d = devices.add ("Device");
-        d.set ("id", newId()).set ("name", c.name).set ("deviceName", "LYNX " + genpresets::engineName (c.instrument)).set ("deviceRole", "instrument");
-        d.set ("deviceVendor", "LYNX").set ("deviceID", "lynx.instrument." + kindId).set ("loaded", "true");
+        d.set ("id", newId()).set ("name", c.name).set ("deviceName", "YW Studio " + genpresets::engineName (c.instrument)).set ("deviceRole", "instrument");
+        d.set ("deviceVendor", "YW Studio").set ("deviceID", "lynx.instrument." + kindId).set ("loaded", "true");
         std::vector<int> automated;
         for (const auto& [ch, p] : automatedCh)
             if (ch == channelIndex)
@@ -2485,7 +2485,7 @@ struct Exp
             const auto text = genpresets::toText (c.name, c);
             state.assign (text.begin(), text.end());
             if (c.instrument == InstrumentKind::sampler || c.instrument == InstrumentKind::patcher || c.instrument == InstrumentKind::layer)
-                note ("LYNX instrument settings beyond its sound (sampler page, Patcher graph, Layer children) not in the core state: " + c.name);
+                note ("YW Studio instrument settings beyond its sound (sampler page, Patcher graph, Layer children) not in the core state: " + c.name);
         }
         stateFile (d, (c.name.empty() ? kindId : c.name) + ".lynxpreset", std::move (state));
     }
@@ -2537,8 +2537,8 @@ struct Exp
             {
                 auto& d = devices.add ("Device");
                 const auto name = natives::effectMenuName (slot.kind);
-                d.set ("id", newId()).set ("name", name).set ("deviceName", "LYNX " + name).set ("deviceRole", "audioFX");
-                d.set ("deviceVendor", "LYNX").set ("deviceID", "lynx.effect." + std::to_string ((int) slot.kind)).set ("loaded", "true");
+                d.set ("id", newId()).set ("name", name).set ("deviceName", "YW Studio " + name).set ("deviceRole", "audioFX");
+                d.set ("deviceVendor", "YW Studio").set ("deviceID", "lynx.effect." + std::to_string ((int) slot.kind)).set ("loaded", "true");
                 if (! automated.empty())
                 {
                     auto& params = d.add ("Parameters");
@@ -2559,9 +2559,9 @@ struct Exp
                     const auto text = effectStateText (slot);
                     state.assign (text.begin(), text.end());
                     if (! slot.branches.empty() || ! slot.patcher.nodes.empty())
-                        note ("LYNX effects' Patcher graphs and parallel branches not in the core state: " + name);
+                        note ("YW Studio effects' Patcher graphs and parallel branches not in the core state: " + name);
                     if (slot.sidechain >= 0 || slot.sidechain2 >= 0)
-                        note ("Side-chain inputs of LYNX effects (not written)");
+                        note ("Side-chain inputs of YW Studio effects (not written)");
                 }
                 stateFile (d, name + ".lynxfx", std::move (state));
             }

@@ -27,11 +27,11 @@ public:
 
     SupportText()
     {
-        paragraphs = { tr ("LYNX SHARE is free and open source, made by an independent developer."),
+        paragraphs = { tr ("YW Studio is free and open source, made by an independent developer."),
                        tr ("Donations keep the project going. They pay for the server (VPS) behind sharing, the relay and the tests; the AI tools "
                            "and tokens used in development; the website; the Apple developer account for signed Mac builds; and the reference "
                            "plugins used to check the sound quality."),
-                       tr ("Donating is optional and never unlocks anything. Everything in LYNX SHARE stays free for everyone.") };
+                       tr ("Donating is optional and never unlocks anything. Everything in YW Studio stays free for everyone.") };
         int h = 6;
         for (int i = 0; i < paragraphs.size(); ++i)
             h += (int) std::ceil (layout (i).getHeight()) + gap;
@@ -77,7 +77,7 @@ private:
 class SupportWindow final : public ui::dialog::Dialog
 {
 public:
-    SupportWindow() : ui::dialog::Dialog (tr ("Support LYNX SHARE"), SupportText::textWidth + 2 * ui::dialog::padding)
+    SupportWindow() : ui::dialog::Dialog (tr ("Support YW Studio"), SupportText::textWidth + 2 * ui::dialog::padding)
     {
         setComponentID ("support.window");
         addContent (text);
@@ -193,7 +193,7 @@ void NoteCard::paint (juce::Graphics& g)
     auto area = getLocalBounds().reduced (22, 12).withTrimmedLeft (2);
     g.setColour (theme::colour::textPrimary);
     g.setFont (theme::font (theme::type::body));
-    g.drawFittedText (tr ("LYNX SHARE is free and open source. If it helps your music, you can support it on Ko-fi."),
+    g.drawFittedText (tr ("YW Studio is free and open source. If it helps your music, you can support it on Ko-fi."),
                       area.removeFromTop (50), juce::Justification::centredLeft, 3, 0.9f);
 }
 

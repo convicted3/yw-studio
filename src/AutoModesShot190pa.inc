@@ -1,7 +1,7 @@
     // LYNX --automodes190pashot <prefix> (round 190pa, 0.1.32: research190oe P21 automation write modes, P14 range edits on
     // chosen tracks) off-screen through the real components, in the three layouts: the Pattern Playlist with the range
     // extra off and on, a range over two tracks (Ctrl+Alt+drag's result), its menu, Delete / Duplicate on it, a range on
-    // one automation lane; the record menu's "Automation write mode (LYNX)" submenu and the armed mode's badge on Record
+    // one automation lane; the record menu's "Automation write mode (YW Studio)" submenu and the armed mode's badge on Record
     // (Pattern, Simple) and on Automation Arm (Clip-launch); the Clip-launch Arrangement with a range (a plain drag on
     // empty space there, Live's time selection: rollup 0.1.31 step 7). <prefix>-checks.txt
     // lists the checks. Included in the app class of Main.cpp (savePng / saveMenus). @150: LYNX_SHOT_SCALE=1.5
@@ -183,10 +183,10 @@
 
         // ---- automation write modes: the submenu, then the badge per mode on Record
         const auto recordMenu = ui.getFullRecordMenuForSnapshot();
-        check ("record_menu_write_mode", has (recordMenu, tr ("Automation write mode (LYNX)")));
+        check ("record_menu_write_mode", has (recordMenu, tr ("Automation write mode (YW Studio)")));
         const auto modes = ui.automationModeMenuForSnapshot();
         check ("mode_menu_read_default", engine.getSong().automationWriteMode == 0 && has (modes, tr ("Read: FL Studio's Record automation (a moved control writes while you hold or move it)")));
-        saveMenus (juce::StringArray { "Recording", "Automation write mode (LYNX)" }, std::vector<juce::PopupMenu> { recordMenu, modes },
+        saveMenus (juce::StringArray { "Recording", "Automation write mode (YW Studio)" }, std::vector<juce::PopupMenu> { recordMenu, modes },
                    prefix + "-07-record-menu-write-mode.png");
         auto* record = find (ui, "toolbar.record");
         check ("record_button", record != nullptr);

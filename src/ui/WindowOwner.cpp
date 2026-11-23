@@ -1352,7 +1352,7 @@ namespace
 Workspace* editorDock = nullptr;
 bool editorsDetached = false;
 
-// Round 190jy: Settings › General › "Draw docked LYNX editors in the main window" (off by default); the environment's
+// Round 190jy: Settings › General › "Draw docked YW Studio editors in the main window" (off by default); the environment's
 // LYNX_EDITORS_IN_MAIN=1 / 0 wins (measurements, tests)
 bool& editorsInMainSetting()
 {

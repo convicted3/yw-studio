@@ -60,7 +60,7 @@ public:
 
     struct Options
     {
-        juce::String relay = "https://relay.lynx-share.com"; // (tests: a local relay, http://127.0.0.1:port)
+        juce::String relay = "https://relay.yolo.su"; // (tests: a local relay, http://127.0.0.1:port)
         juce::String name;                    // this person's display name
         bool guestsEditEverything = false;    // host: every guest may edit everything (else his own area)
         bool autoAccept = false;              // host: people with the code join without a question (scripted runs)

@@ -195,7 +195,7 @@ struct GlobalLink
 
 // A MIDI mapping of the Clip-launch layout's MIDI Map Mode kept in the settings, for every project (round 190hp, slice
 // B9 of the 0.1.28 pain report; LYNX's own: the reference DAW keeps its mappings with each set, which users complain
-// about). Made with the Mapping Browser's "In every project (LYNX)". Only targets that exist in any project: the
+// about). Made with the Mapping Browser's "In every project (YW Studio)". Only targets that exist in any project: the
 // transport switches, Stop all clips and a scene's launch button (it acts while the project has that scene). A
 // project's own mapping of the same MIDI control wins. Parameter mappings become FL's global links (GlobalLink).
 struct GlobalMapping

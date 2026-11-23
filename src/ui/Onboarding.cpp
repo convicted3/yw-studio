@@ -61,7 +61,7 @@ void drawWrapped (juce::Graphics& g, const juce::String& text, const juce::Font&
 juce::String trademarkLine()
 {
     // the names stay as they are in every language (only the sentence around them is translated)
-    return tr ("{0} are trademarks of their owners; LYNX SHARE is not affiliated with them.",
+    return tr ("{0} are trademarks of their owners; YW Studio is not affiliated with them.",
                { "BandLab, FL Studio, GarageBand, Ableton Live, Bitwig, Logic, Cubase, Reaper, Pro Tools, Studio One" });
 }
 
@@ -272,8 +272,8 @@ public:
         updatesToggle.setButtonText (tr ("Check for updates automatically"));
         updatesToggle.setComponentID ("welcome.updates");
         updatesToggle.setToggleState (host.updatesOn, juce::dontSendNotification);
-        updatesToggle.setTooltip (tr ("A few seconds after start-up LYNX SHARE asks GitHub for the newest version number; nothing about you is sent. "
-                                      "It is the only connection LYNX SHARE makes by itself: plugin scans and everything else stay on this computer."));
+        updatesToggle.setTooltip (tr ("A few seconds after start-up YW Studio asks GitHub for the newest version number; nothing about you is sent. "
+                                      "It is the only connection YW Studio makes by itself: plugin scans and everything else stay on this computer."));
         updatesToggle.setColour (juce::ToggleButton::textColourId, cardText());
         updatesNote.setText (tr ("Only the newest version number is asked for; nothing about you is sent."), juce::dontSendNotification);
         updatesNote.setFont (theme::font (theme::type::caption));
@@ -326,7 +326,7 @@ public:
     {
         const auto card = getLocalBounds().toFloat();
         ui::dialog::paintFrame (g, card, ui::dialog::Kind::overlay, true);
-        ui::dialog::paintTitle (g, getLocalBounds(), tr ("Welcome to LYNX SHARE"));
+        ui::dialog::paintTitle (g, getLocalBounds(), tr ("Welcome to YW Studio"));
         auto body = getLocalBounds().withTrimmedTop (titleRow + 1).reduced (pad, 0);
         body.removeFromTop (14);
         g.setColour (cardText());
@@ -415,7 +415,7 @@ private:
 
     juce::String subtitle() const
     {
-        return tr ("LYNX SHARE sets itself up to feel familiar. One click and you're in; change it any time in View > Layout style.");
+        return tr ("YW Studio sets itself up to feel familiar. One click and you're in; change it any time in View > Layout style.");
     }
 
     int subtitleHeight (int width) const

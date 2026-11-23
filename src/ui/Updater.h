@@ -6,7 +6,7 @@
 //   up to date). One version query to the GitHub API, nothing about the user (PRIVACY.md). The list is cached for a
 //   few hours. The Microsoft Store build never checks (the Store updates it), and neither do LYNX_TEST_MODE runs,
 //   unless LYNX_UPDATE_URL points them at a test fixture; command-line modes (--selftest, --scantest...) never start one;
-// - a slim bar under the toolbar: "LYNX SHARE x.y.z is available · What's new · Update · ✕" (✕ skips that version);
+// - a slim bar under the toolbar: "YW Studio x.y.z is available · What's new · Update · ✕" (✕ skips that version);
 // - Update, by build: the Windows installer build downloads the new setup.exe, checks it against the release's
 //   SHA256SUMS.txt, asks to save the project (as on quit), closes, installs it silently over itself (a copy of
 //   LYNX.exe runs `--apply-update` and waits for this process to end) and starts again; the portable zip and macOS

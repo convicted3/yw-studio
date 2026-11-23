@@ -15,7 +15,7 @@ bool active() noexcept;
 void setActive (bool on) noexcept;
 // The operations --demo adds to the Remote Control API (also listed by api.describe while it is on)
 juce::StringArray operations();
-// Round 190pl: the name of the virtual MIDI input --demo adds ("LYNX demo keyboard"): it is listed in Options › MIDI
+// Round 190pl: the name of the virtual MIDI input --demo adds ("YW Studio demo keyboard"): it is listed in Options › MIDI
 // like a device that is plugged in, and midi.input plays it (engine/AudioEngine.h injectMidiInput with its name), so its
 // notes go through the MIDI settings (on / off, MIDI channel, what it plays), recording and Map Mode as a keyboard's do.
 juce::String virtualKeyboardName();

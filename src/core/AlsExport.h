@@ -33,7 +33,7 @@ enum class AlsVersion
 struct AlsExportOptions
 {
     AlsVersion version = AlsVersion::live12;
-    std::string creator = "LYNX";
+    std::string creator = "YW Studio";
     // How a sample's path is written: the path the set refers to (absolute, or relative to the set's folder when
     // `relative` is set: then FileRef's RelativePath is used). Default: the path as LYNX has it, absolute.
     std::function<std::string (const std::string& path, bool& relative)> samplePath;

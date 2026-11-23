@@ -27,7 +27,7 @@
 //
 // The tree is what counts: refresh() reads it into the model the rest of LYNX uses (plugincatalog::Folders and the
 // renamed names), apply() writes a change made in LYNX back to it.
-//   - A built-in plugin gets an entry in its default folder (FL's category, or "LYNX SHARE") the first time LYNX sees it.
+//   - A built-in plugin gets an entry in its default folder (FL's category, or "YW Studio") the first time LYNX sees it.
 //   - A scanned plugin gets one only where the user files it (as before: unfiled ones are listed under Plugin ›).
 //   - Deleting an entry takes the plugin out of the menus' folders and the picker (FL does the same; it stays in
 //     Installed, in the Browser's lists and in the Plugin manager). Copying its Installed entry back restores it.
@@ -51,10 +51,10 @@ struct Plugin
 {
     std::string key;           // what it is stored under (ui/QuickPick.h)
     std::string name;          // its own name (stable: English for the built-in ones)
-    std::string format;        // "LYNX", "FL engines", "VFX", "VST3", "CLAP"... (the Installed sub-folder)
+    std::string format;        // "YW Studio", "FL engines", "VFX", "VST3", "CLAP"... (the Installed sub-folder)
     bool instrument = false;
     bool builtin = false;      // one of LYNX's own (it has a default folder)
-    std::string defaultFolder; // built-in: its folder until the user moves it ("Dynamics", "LYNX SHARE")
+    std::string defaultFolder; // built-in: its folder until the user moves it ("Dynamics", "YW Studio")
 };
 
 // What the rest of LYNX reads: the user's folders (plus `hidden`: built-in plugins whose entry the user deleted) and
@@ -112,7 +112,7 @@ Report apply (const std::string& root, const std::vector<Plugin>& plugins, const
 // entry, FL's System items): its place under Effects / Generators (the first A-Z), else its Installed entry; "" = none.
 std::string entryFile (const std::string& root, const std::string& key, bool instrument);
 
-// The folder on disk of one of the Browser's own groups under Effects / Generators (round 190bj, issue B4): "LYNX" =
+// The folder on disk of one of the Browser's own groups under Effects / Generators (round 190bj, issue B4): "YW Studio" =
 // LYNX SHARE (its built-in plugins' default folder, root/<kind>/LYNX SHARE, when it is there; else their Installed
 // entries), "FL engines" / "VFX" = their Installed format folder, "" = Installed/<kind>. A folder that is not there
 // gives the nearest one that is (Installed/<kind>, else the root).

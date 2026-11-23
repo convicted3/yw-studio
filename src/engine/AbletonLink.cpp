@@ -426,7 +426,7 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         if (! lynxLink.isEnabled() && now >= 1.0) // LYNX joins the session the other peer runs (its tempo wins)
         {
             lynxLink.setEnabled (true, 120.0);
-            out << std::setprecision (3) << "t=" << now << " Link switched on in LYNX\n";
+            out << std::setprecision (3) << "t=" << now << " Link switched on in YW Studio\n";
         }
         if (! pressedPlay && now >= 3.0) // the user presses Play after the session has formed
         {
@@ -449,7 +449,7 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
             t.songTempoNow.store (110.0);
             t.bpm.store (110.0);
             ownTempoSet = true;
-            out << "t=" << now << " LYNX's project tempo set to 110 BPM\n";
+            out << "t=" << now << " YW Studio's project tempo set to 110 BPM\n";
         }
 
         // the UI's part of Start Stop Sync: a peer's start / stop presses Play / Stop
@@ -457,12 +457,12 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
         {
             t.playing.store (false);
             t.linkWaiting.store (false);
-            out << std::setprecision (3) << "t=" << now << " a peer stopped the session: LYNX's Stop pressed\n";
+            out << std::setprecision (3) << "t=" << now << " a peer stopped the session: YW Studio's Stop pressed\n";
         }
         if (! ownPeer && lynxLink.takeRemoteStart())
         {
             t.playing.store (true);
-            out << std::setprecision (3) << "t=" << now << " a peer started the session: LYNX's Play pressed\n";
+            out << std::setprecision (3) << "t=" << now << " a peer started the session: YW Studio's Play pressed\n";
         }
         const auto callStart = std::chrono::steady_clock::now();
         const auto start = lynxLink.beginBlock (t, frames, 0.0);
@@ -550,7 +550,7 @@ std::string AbletonLink::selfTest (double seconds, bool ownPeer)
             lynxLink.beginBlock (t, frames, 0.0);
             asked = lynxLink.takeRemoteStop();
         }
-        out << "start stop sync: the peer's stop " << (asked ? "reached LYNX (Stop pressed)" : "did NOT reach LYNX") << "\n";
+        out << "start stop sync: the peer's stop " << (asked ? "reached YW Studio (Stop pressed)" : "did NOT reach YW Studio") << "\n";
         peer->enable (false);
     }
     lynxLink.setEnabled (false, 120.0);

@@ -233,8 +233,8 @@ void startHangWatch (const std::string& folderUtf8, int stallMs = 2000) noexcept
 void hardenSignals() noexcept;
 void heartbeat() noexcept;
 void stopHangWatch() noexcept;
-// --symbolize: the "LYNX.exe+0x…" frames of a crash / hang file named with this very build's symbols (LYNX.pdb of
-// the same build next to LYNX.exe; CI keeps it as the "LYNX-symbols" artifact). Other lines unchanged.
+// --symbolize: the "YW Studio.exe+0x…" frames of a crash / hang file named with this very build's symbols (LYNX.pdb of
+// the same build next to LYNX.exe; CI keeps it as the "YW-symbols" artifact). Other lines unchanged.
 std::string symbolizeOwnFrames (const std::string& text);
 // Test: the last hang file written by this process ("" when none)
 std::string lastHangFile();

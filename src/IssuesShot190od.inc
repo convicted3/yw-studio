@@ -150,7 +150,7 @@
                 }
                 line ("#237 preset grid " + juce::String (image.getWidth()) + " px: accent frame pixels in its left column " + juce::String (left)
                       + ", frame pixels in its last six columns " + juce::String (right));
-                check ("#237 the chosen preset's frame is whole on the left (LYNX, first column)", left > 40);
+                check ("#237 the chosen preset's frame is whole on the left (YW Studio, first column)", left > 40);
                 check ("#237 the last column's frame is inside too", right > 40);
                 write (*panel, grid->getBoundsInParent().getUnion (meters != nullptr ? meters->getBoundsInParent() : juce::Rectangle<int>()).withX (0).withWidth (1180)
                                    .expanded (0, 12),
@@ -272,12 +272,12 @@
             if (auto* on = findId (*panel, "autoLook.on"))
             {
                 auto* editor = on->getParentComponent();
-                check ("#239 Settings > LYNX extras: the rules editor shows the three rules",
+                check ("#239 Settings > YW Studio extras: the rules editor shows the three rules",
                        dynamic_cast<AutoLookEditor*> (editor) != nullptr && dynamic_cast<AutoLookEditor*> (editor)->rowCount() == 3);
                 write (*editor->getParentComponent(), editor->getBoundsInParent().expanded (0, 40), "239-extras-rules");
             }
             else
-                check ("#239 Settings > LYNX extras: the rules editor", false);
+                check ("#239 Settings > YW Studio extras: the rules editor", false);
             autolook::current() = saved;
         }
 

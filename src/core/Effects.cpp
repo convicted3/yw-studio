@@ -4440,7 +4440,7 @@ std::string formatEffectParam (EffectKind kind, int param, float v, double bpm)
                 case 10: return v >= 0.5f ? "opto" : "electro";
                 case 11: return v >= 0.5f ? "smooth" : "warm";
                 case 12: return v >= 0.5f ? "on" : "off";
-                case 13: return v >= 0.5f ? "RComp" : "LYNX";
+                case 13: return v >= 0.5f ? "RComp" : "YW Studio";
                 case 14: std::snprintf (text, sizeof (text), "%.2f:1", rcRatio (v)); break;
                 case 15: std::snprintf (text, sizeof (text), "%+.1f dB", rcGainDb (v)); break;
                 case 16: std::snprintf (text, sizeof (text), rcAttackMs (v) < 10.0f ? "%.2f ms" : "%.1f ms", rcAttackMs (v)); break;

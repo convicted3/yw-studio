@@ -311,7 +311,7 @@ std::size_t Index::fileCount() const noexcept
 
 std::string Index::toText() const
 {
-    std::string out = "LYNX browser index 1\n";
+    std::string out = "YW Studio browser index 1\n";
     for (const auto& r : complete)
         out += "R\t" + r + "\n";
     for (const auto& [path, folder] : folders)
@@ -331,7 +331,7 @@ bool Index::fromText (const std::string& text)
     ++gen;
     std::istringstream in (text);
     std::string line;
-    if (! std::getline (in, line) || line != "LYNX browser index 1")
+    if (! std::getline (in, line) || line != "YW Studio browser index 1")
         return false;
     Folder* current = nullptr;
     while (std::getline (in, line))

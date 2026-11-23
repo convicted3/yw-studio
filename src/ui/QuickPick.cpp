@@ -94,7 +94,7 @@ plugincatalog::BuiltinPlugin builtinOf (const EffectEntry& e)
 template <typename Entry>
 void addDatabasePlugins (std::vector<plugindb::Plugin>& out, const std::vector<Entry>& entries, bool instruments)
 {
-    static const char* const formats[] { "LYNX", "FL engines", "VFX" };
+    static const char* const formats[] { "YW Studio", "FL engines", "VFX" };
     for (const auto& e : entries)
     {
         plugindb::Plugin p;
@@ -228,7 +228,7 @@ void addGeneratorMenu (juce::PopupMenu& menu, AudioEngine& engine, std::function
 
 juce::File pluginDatabaseFolder()
 {
-    return platform::documentsFolder().getChildFile ("LYNX").getChildFile ("Plugin database");
+    return platform::documentsFolder().getChildFile ("YW Studio").getChildFile ("Plugin database");
 }
 
 juce::File pluginDatabaseFolder (bool instruments, const std::string& userFolder)

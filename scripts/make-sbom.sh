@@ -171,8 +171,8 @@ if len(ids) != len(set(ids)):
 
 root = {
     "name": "LYNX SHARE", "SPDXID": "SPDXRef-LYNX-SHARE", "versionInfo": label,
-    "downloadLocation": f"git+https://github.com/Ka1-S/LYNX-SHARE@{commit}" if commit != "unknown"
-                        else "https://github.com/Ka1-S/LYNX-SHARE",
+    "downloadLocation": f"git+https://github.com/convicted3/yw-studio@{commit}" if commit != "unknown"
+                        else "https://github.com/convicted3/yw-studio",
     "homepage": "https://lynx-share.com", "filesAnalyzed": False,
     "licenseConcluded": "AGPL-3.0-only", "licenseDeclared": "AGPL-3.0-only",
     "copyrightText": NOA, "supplier": "Person: Ka1-S",
@@ -184,7 +184,7 @@ doc = {
     "dataLicense": "CC0-1.0",
     "SPDXID": "SPDXRef-DOCUMENT",
     "name": f"LYNX-SHARE-{label}",
-    "documentNamespace": f"https://github.com/Ka1-S/LYNX-SHARE/releases/v{label}/sbom-{uuid.uuid4()}",
+    "documentNamespace": f"https://github.com/convicted3/yw-studio/releases/v{label}/sbom-{uuid.uuid4()}",
     "creationInfo": {
         "created": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "creators": ["Tool: LYNX-SHARE scripts/make-sbom.sh", "Organization: LYNX SHARE"],

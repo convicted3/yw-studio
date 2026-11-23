@@ -547,7 +547,7 @@ PianoRollComponent::PianoRollComponent (AudioEngine& e)
     liveRandomAmount->onEnter = [this] { liveRandomizeVelocity(); };
     addChildComponent (*liveRandomAmount);
     // round 190on (P10): "+" adds a lane above (only while stacked lanes are offered; core/StackedLanes.h)
-    addLaneButton.setTooltip (tr ("Add a lane above (stacked lanes, LYNX)"));
+    addLaneButton.setTooltip (tr ("Add a lane above (stacked lanes, YW Studio)"));
     addLaneButton.setWantsKeyboardFocus (false);
     addLaneButton.setMouseClickGrabsKeyboardFocus (false);
     addLaneButton.onClick = [this] { addStackedLane(); };
@@ -740,7 +740,7 @@ void PianoRollComponent::rebuildStackedBoxes()
         box.addItem (tr ("Mod X"), laneModX);
         box.addItem (tr ("Mod Y"), laneModY);
         box.addItem (tr ("Chance"), laneChance);
-        box.addItem (tr ("Velocity range (LYNX)"), laneVelocityRange);
+        box.addItem (tr ("Velocity range (YW Studio)"), laneVelocityRange);
         if (! eventTargets.empty())
             box.addSectionHeading (tr ("Pattern events"));
         for (int k = 0; k < (int) eventTargets.size(); ++k)
@@ -2663,7 +2663,7 @@ void PianoRollComponent::visibilityChanged()
 
 // The note properties the bottom lane edits: FL's (velocity, pan, fine pitch, release, Mod X / Y: its "Control" list,
 // FLEngine strings "Note release", "Note modulation X / Y"), then Live 12's Chance and Velocity Range (round 187c, LYNX
-// additions marked "(LYNX)")
+// additions marked "(YW Studio)")
 void PianoRollComponent::addNoteLanes()
 {
     laneBox.addItem (tr ("Velocity"), laneVelocity);
@@ -2673,7 +2673,7 @@ void PianoRollComponent::addNoteLanes()
     laneBox.addItem (tr ("Mod X"), laneModX);
     laneBox.addItem (tr ("Mod Y"), laneModY);
     laneBox.addItem (tr ("Chance"), laneChance);
-    laneBox.addItem (tr ("Velocity range (LYNX)"), laneVelocityRange);
+    laneBox.addItem (tr ("Velocity range (YW Studio)"), laneVelocityRange);
     // MPE stage 2 (round 190hy, issue #108): each note's own pitch bend / slide (CC 74) / pressure curve, as Live 11+'s
     // note expression lanes (LYNX additions: FL 2026 has no per-note curves)
     laneBox.addItem (tr ("MPE pitch bend"), laneMpePitch);
@@ -5026,7 +5026,7 @@ juce::PopupMenu PianoRollComponent::toolsMenu()
         chance.addItem (tr ("Show the chance lane"), true, laneIsChance(), [this] {
             laneBox.setSelectedId (laneChance);
         });
-        menu.addSubMenu (tr ("Chance (LYNX)"), chance);
+        menu.addSubMenu (tr ("Chance (YW Studio)"), chance);
     }
     menu.addSeparator();
     menu.addItem (tr ("Edit events..."), [this] {
@@ -7082,14 +7082,14 @@ juce::PopupMenu PianoRollComponent::viewMenu()
                   [this] { runAction ("pianoRoll.showChordName"); });
     menu.addItem (tr ("Background waveform") + keyText ("pianoRoll.backgroundWave"), true, isBackgroundWaveShown(),
                   [this] { runAction ("pianoRoll.backgroundWave"); });
-    menu.addItem (tr ("Ruler: song bars (LYNX)") + keyText ("pianoRoll.songBarsRuler"), true, songBarsRuler, [this] { runAction ("pianoRoll.songBarsRuler"); });
+    menu.addItem (tr ("Ruler: song bars (YW Studio)") + keyText ("pianoRoll.songBarsRuler"), true, songBarsRuler, [this] { runAction ("pianoRoll.songBarsRuler"); });
     // round 190pf (research190oe P13): the rows light the Chord lane's chord at the song position
-    menu.addItem (tr ("Highlight the Chord lane's chord (LYNX)"), true, chordlane::pianoRollHighlight(), [this] {
+    menu.addItem (tr ("Highlight the Chord lane's chord (YW Studio)"), true, chordlane::pianoRollHighlight(), [this] {
         workflowextras::setExtra ("pianoRoll.chordHighlight", ! chordlane::pianoRollHighlight());
         repaint();
     });
     if (layoutstyle::current() != layoutstyle::Style::clipLaunch) // (round 190on: the Clip-launch layout always offers them)
-        menu.addItem (tr ("Stacked controller lanes (LYNX)") + keyText ("pianoRoll.stackedLanes"), true, stackedLanesExtra,
+        menu.addItem (tr ("Stacked controller lanes (YW Studio)") + keyText ("pianoRoll.stackedLanes"), true, stackedLanesExtra,
                       [this] { runAction ("pianoRoll.stackedLanes"); });
     {
         // round 190j (discussion #136): flat = LYNX's keyboard until round 190oo; "Piano keys" = FL 2026's own keyboard

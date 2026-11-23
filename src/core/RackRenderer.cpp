@@ -1893,7 +1893,7 @@ void RackState::buildMidiRoutes()
     effectMidiRoutes.assign (count, {});
     hasEffectMidiRoutes = false;
 
-    // the Patchers that take MIDI ports through their "From LYNX" pins (round 162)
+    // the Patchers that take MIDI ports through their "From YW Studio" pins (round 162)
     std::vector<std::vector<int>> channelPorts (count);
     for (std::size_t t = 0; t < count; ++t)
         if (song.channels[t].instrument == InstrumentKind::patcher)
@@ -1916,7 +1916,7 @@ void RackState::buildMidiRoutes()
 
     // source c sends on `port` with MIDI channel `midiChannel`: the plugins whose input port it is, the Patchers that
     // take that port
-    // (a Patcher that takes the port may pass it on to "To LYNX" MIDI ports: those are sent on too, a few levels deep)
+    // (a Patcher that takes the port may pass it on to "To YW Studio" MIDI ports: those are sent on too, a few levels deep)
     bool portOnly = false; // (the routes sent next carry only what goes out on the port: a Patcher's VFX outputs)
     std::function<void (std::size_t, int, int, int)> send = [&] (std::size_t c, int port, int midiChannel, int depth) {
         auto passOn = [&] (const PatcherDoc& doc) {
@@ -1977,7 +1977,7 @@ void RackState::buildMidiRoutes()
             }
             for (const auto& r : patcher::midiOutputsOf (song.channels[c].patcher, 0))
                 send (c, r.port, std::max (0, r.midiChannel), 0);
-            // its VFX nodes' outputs cabled to "To LYNX" MIDI ports (round 165c): what they play goes out there
+            // its VFX nodes' outputs cabled to "To YW Studio" MIDI ports (round 165c): what they play goes out there
             if (const auto ports = patcher::vfxHostPorts (song.channels[c].patcher); ! ports.empty())
             {
                 portEventChannels.push_back ((int) c);
@@ -6254,7 +6254,7 @@ void RackRenderer::chunkPrelude (const RackState& state, bool playing, double st
         events.sortByOffset();
     }
 
-    // generator Patchers' VFX nodes cabled to "To LYNX" MIDI ports (round 165c): what they played in the previous
+    // generator Patchers' VFX nodes cabled to "To YW Studio" MIDI ports (round 165c): what they played in the previous
     // chunk goes out on those ports at this chunk's start (as a VFX channel's outputs do)
     if (! state.portEventChannels.empty())
     {

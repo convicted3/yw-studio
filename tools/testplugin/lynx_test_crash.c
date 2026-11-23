@@ -33,7 +33,7 @@
 static const char* const features[] = { CLAP_PLUGIN_FEATURE_AUDIO_EFFECT, CLAP_PLUGIN_FEATURE_UTILITY, NULL };
 
 static const clap_plugin_descriptor_t descriptor = {
-    CLAP_VERSION_INIT, "org.lynx.test-crash", "LYNX Test Crash", "LYNX", "https://github.com/Ka1-S/LYNX-SHARE", "", "", "1.0.0",
+    CLAP_VERSION_INIT, "org.lynx.test-crash", "LYNX Test Crash", "LYNX", "https://github.com/convicted3/yw-studio", "", "", "1.0.0",
     "Crashes on purpose (crash protection tests)", features
 };
 

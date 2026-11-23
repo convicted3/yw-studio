@@ -36,7 +36,7 @@ juce::String runtimeLoadError()
 
 bool loadRuntime (onnx::Runtime& runtime, juce::String& error)
 {
-    return runtime.load (error, tr ("Converting to MIDI needs ONNX Runtime ({0}), which comes with LYNX SHARE's installer and zip, but it is missing next to the program. Install LYNX SHARE with the installer, or unpack the whole zip."),
+    return runtime.load (error, tr ("Converting to MIDI needs ONNX Runtime ({0}), which comes with YW Studio's installer and zip, but it is missing next to the program. Install YW Studio with the installer, or unpack the whole zip."),
                          runtimeLoadError());
 }
 
@@ -61,7 +61,7 @@ public:
             return false;
         api = runtime.api;
         OrtSessionOptions* options = nullptr;
-        const auto ok = check (api->CreateEnv (ORT_LOGGING_LEVEL_ERROR, "LYNX", &env), error)
+        const auto ok = check (api->CreateEnv (ORT_LOGGING_LEVEL_ERROR, "YW Studio", &env), error)
                      && check (api->CreateCpuMemoryInfo (OrtArenaAllocator, OrtMemTypeDefault, &memory), error)
                      && check (api->CreateRunOptions (&runOptions), error)
                      && check (api->CreateSessionOptions (&options), error)
@@ -234,7 +234,7 @@ public:
     using Result = std::function<void (std::vector<a2m::Note>)>;
 
     ConvertJob (std::vector<float> audio, double sampleRate, Request r, Result done)
-        : juce::Thread ("LYNX audio to MIDI"), mono (std::move (audio)), rate (sampleRate), request (std::move (r)), onResult (std::move (done))
+        : juce::Thread ("YW Studio audio to MIDI"), mono (std::move (audio)), rate (sampleRate), request (std::move (r)), onResult (std::move (done))
     {
         active() = this;
         window = std::make_unique<juce::AlertWindow> (tr ("Convert to MIDI"), tr ("Converting to MIDI..."), juce::MessageBoxIconType::NoIcon);

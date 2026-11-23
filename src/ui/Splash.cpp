@@ -222,156 +222,168 @@ void SplashScreen::paint (juce::Graphics& g)
 
 std::array<juce::Font, 4> makeSplashFonts()
 {
-    std::array<juce::Font, 4> fonts { juce::Font (juce::FontOptions (78.0f, juce::Font::bold)), juce::Font (juce::FontOptions (30.0f, juce::Font::bold)),
+    std::array<juce::Font, 4> fonts { juce::Font (juce::FontOptions (78.0f, juce::Font::bold)), juce::Font (juce::FontOptions (34.0f, juce::Font::plain)),
                                       juce::Font (theme::font (theme::type::title)), juce::Font (theme::font (theme::type::small)) };
     for (auto& f : fonts)
         f.getTypefacePtr(); // (looked up here, once)
     return fonts;
 }
 
+namespace
+{
+// The YW mark (a 304 x 192 box), split into its Y and W halves at x = 111 for the drop.
+juce::Path ywLogoPath()
+{
+    static const float pts[][2] = { { 261.0f, 183.4f }, { 220.5f, 165.0f }, { 198.0f, 75.9f }, { 174.0f, 154.9f }, { 135.4f, 154.0f },
+                                    { 111.0f, 77.9f },  { 89.2f, 119.0f },  { 89.5f, 164.0f }, { 53.0f, 179.3f },  { 52.5f, 126.0f },
+                                    { 7.0f, 3.5f },     { 41.6f, 15.0f },   { 71.0f, 94.6f },  { 97.6f, 30.0f },   { 134.0f, 34.2f },
+                                    { 155.0f, 122.2f }, { 179.5f, 34.0f },  { 216.0f, 27.0f }, { 240.0f, 135.7f }, { 262.6f, 14.0f },
+                                    { 296.8f, 3.0f } };
+    juce::Path p;
+    p.startNewSubPath (pts[0][0], pts[0][1]);
+    for (size_t i = 1; i < std::size (pts); ++i)
+        p.lineTo (pts[i][0], pts[i][1]);
+    p.closeSubPath();
+    return p;
+}
+
+constexpr float logoW = 304.0f, logoH = 192.0f, splitX = 111.0f, travel = 300.0f;
+constexpr double fallTime = 0.165;
+constexpr double wDelay = startup::impactTime - fallTime; // the W lands with the start-up sound's hit
+constexpr double yDelay = wDelay - 0.055;
+
+// where a piece is (0 = resting) and how it is squashed, t seconds into the splash
+struct Piece { float offset = travel; float squash = 1.0f; float speed = 0.0f; bool landed = false; double since = 0.0; };
+
+Piece pieceAt (double t, double delay)
+{
+    Piece p;
+    const auto u = (t - delay) / fallTime;
+    if (u < 0.0)
+        return p;
+    if (u < 1.0)
+    {
+        p.offset = travel * (float) (1.0 - std::pow (u, 2.6));
+        p.speed = travel * (float) (2.6 * std::pow (u, 1.6) / fallTime);
+        return p;
+    }
+    const auto tau = t - delay - fallTime;
+    const auto wave = 2.0 * juce::MathConstants<double>::pi * 7.5 * tau;
+    p.offset = -travel * 0.075f * (float) (std::exp (-15.0 * tau) * std::sin (wave));
+    p.squash = 1.0f - 0.16f * (float) (std::exp (-22.0 * tau) * std::cos (wave));
+    p.landed = true;
+    p.since = tau;
+    return p;
+}
+} // namespace
+
 void drawSplashFrame (juce::Graphics& g, const SplashFrame& frame)
 {
-    using namespace theme;
+    // YW: no card, no words, nothing but the mark on a transparent window. The Y drops in from the top and the W
+    // from the bottom, they hit, bounce and lock together, then "yolo.su" fades in under them.
     const auto t = frame.t;
     std::optional<std::array<juce::Font, 4>> made;
     if (frame.fonts == nullptr)
         made = makeSplashFonts();
     const auto* fonts = frame.fonts != nullptr ? frame.fonts : made->data();
-    const juce::Image noLogo; // (an empty image: nothing to free)
-    const auto& logoMark = frame.logo != nullptr ? *frame.logo : noLogo;
-    const auto card = juce::Rectangle<float> (0.0f, 0.0f, (float) SplashScreen::width, (float) SplashScreen::height).reduced (0.5f);
-    juce::Path cardShape;
-    cardShape.addRoundedRectangle (card, 14.0f);
 
-    // card: dark, a touch lighter at the top
-    g.setGradientFill (juce::ColourGradient (colour::bg3, 0.0f, 0.0f, colour::bg0, 0.0f, card.getBottom(), false));
-    g.fillPath (cardShape);
+    static const juce::Path logo = ywLogoPath();
+    const auto W = (float) SplashScreen::width, H = (float) SplashScreen::height;
+    const auto ox = (W - logoW) / 2.0f, oy = 34.0f;
 
-    juce::Graphics::ScopedSaveState clip (g);
-    g.reduceClipRegion (cardShape);
+    const auto y = pieceAt (t, yDelay), w = pieceAt (t, wDelay);
 
-    // the logo's resting place, and its drop
-    const auto markHeight = 184.0f;
-    const auto markWidth = markHeight * (float) logoMark.getWidth() / (float) juce::jmax (1, logoMark.getHeight());
-    const auto restX = 168.0f, restBottom = 270.0f;
-    const auto fall = 300.0f;
-    const auto lift = (float) (1.0 - easeOutBounce (t / dropTime)) * fall;
-    const auto impact = (float) impactAt (t);
-    const auto settled = (float) easeOutCubic ((t - touches[0]) / 0.5);
+    // a short camera shake from the hits
+    auto shake = 0.0f;
+    for (const auto* p : { &y, &w })
+        if (p->landed)
+            shake += 4.0f * (float) (std::exp (-18.0 * p->since) * std::sin (p->since * 2.0 * juce::MathConstants<double>::pi * 23.0));
 
-    // warm glow behind it: wakes up with the first touch and stays
+    juce::Graphics::ScopedSaveState whole (g);
+    g.addTransform (juce::AffineTransform::translation (ox + shake * 0.4f, oy + shake));
+
+    // impact glow behind the mark
     {
-        const auto glow = juce::jlimit (0.0f, 0.5f, (t < touches[0] ? 0.05f * (float) clamp01 (t / touches[0]) : 0.05f + 0.13f * settled) + 0.2f * impact);
-        juce::ColourGradient grad (colour::accent.withAlpha (glow), restX, restBottom - 90.0f, colour::accent.withAlpha (0.0f), restX + 210.0f,
-                                   restBottom - 90.0f, true);
-        g.setGradientFill (grad);
-        g.fillRect (card);
-    }
-
-    // a ripple on the floor at the first touch
-    if (t > touches[0] && t < touches[0] + 0.7)
-    {
-        const auto s = (float) ((t - touches[0]) / 0.7);
-        const auto r = 24.0f + 150.0f * (float) easeOutCubic (s);
-        g.setColour (colour::accent.withAlpha (0.4f * (1.0f - s)));
-        g.drawEllipse (restX - r, restBottom - r * 0.16f, 2.0f * r, r * 0.32f, 1.5f);
-    }
-
-    // shadow: grows and darkens as the logo comes down
-    {
-        const auto near = 1.0f - juce::jlimit (0.0f, 1.0f, lift / fall);
-        const auto w = 0.62f * markWidth * (0.35f + 0.65f * near) * (1.0f + 0.15f * impact);
-        g.setColour (juce::Colours::black.withAlpha (0.55f * near * (float) clamp01 (t / 0.15)));
-        g.fillEllipse (restX - w / 2.0f, restBottom - 7.0f, w, 12.0f);
-    }
-
-    // the logo: fades in, falls tilted, squashes a little on each touch and settles upright
-    if (logoMark.isValid() && t > 0.0)
-    {
-        const auto angle = juce::degreesToRadians ((float) (-26.0 * (1.0 - easeOutBack (t / 0.95))));
-        const auto squashY = 1.0f - 0.10f * impact, squashX = 1.0f + 0.06f * impact;
-        const auto transform = juce::AffineTransform::scale (markWidth / (float) logoMark.getWidth() * squashX,
-                                                             markHeight / (float) logoMark.getHeight() * squashY)
-                                   .translated (-markWidth * squashX / 2.0f, -markHeight * squashY)
-                                   .rotated (angle)
-                                   .translated (restX, restBottom - lift);
-        g.setOpacity ((float) clamp01 (t / 0.18));
-        g.drawImageTransformed (logoMark, transform, false);
-        g.setOpacity (1.0f);
-    }
-
-    // "LYNX SHARE" (v0.1.20 rename): "LYNX" big, "SHARE" under it in the accent colour, spaced out to the same
-    // width; the letters slide in one after another
-    {
-        const juce::String word ("LYNX"), word2 ("SHARE");
-        const auto& big = fonts[0];
-        const auto& small = fonts[1];
-        const auto left = 300.0f;
-        const auto baseline = 150.0f, baseline2 = 188.0f;
-
-        auto lynxWidth = 0.0f;
-        for (int i = 0; i < word.length(); ++i)
-            lynxWidth += juce::GlyphArrangement::getStringWidth (big, word.substring (i, i + 1)) + 3.0f;
-        lynxWidth -= 3.0f;
-        auto shareWidth = 0.0f;
-        for (int i = 0; i < word2.length(); ++i)
-            shareWidth += juce::GlyphArrangement::getStringWidth (small, word2.substring (i, i + 1));
-        const auto tracking = juce::jmax (2.0f, (lynxWidth - shareWidth) / (float) juce::jmax (1, word2.length() - 1));
-
-        const auto drawWord = [&] (const juce::String& w, const juce::Font& f, float y, float gap, double start, juce::Colour c)
+        auto glow = 0.0f;
+        for (const auto* p : { &y, &w })
+            if (p->landed)
+                glow += 0.45f * (float) std::exp (-6.0 * p->since);
+        const auto settle = (float) clamp01 ((t - wDelay - fallTime) / 0.6);
+        glow += 0.10f * settle;
+        if (glow > 0.003f)
         {
-            g.setFont (f);
-            auto x = left;
-            for (int i = 0; i < w.length(); ++i)
-            {
-                const auto letter = w.substring (i, i + 1);
-                const auto p = (float) easeOutCubic ((t - start - 0.075 * i) / 0.30);
-                if (p > 0.0f)
-                {
-                    g.setColour (c.withMultipliedAlpha (p));
-                    g.drawSingleLineText (letter, juce::roundToInt (x + (1.0f - p) * 26.0f), juce::roundToInt (y));
-                }
-                x += juce::GlyphArrangement::getStringWidth (f, letter) + gap;
-            }
+            juce::ColourGradient grad (juce::Colours::white.withAlpha (juce::jmin (0.6f, glow)), logoW / 2.0f, logoH / 2.0f,
+                                       juce::Colours::white.withAlpha (0.0f), logoW / 2.0f + 190.0f, logoH / 2.0f, true);
+            g.setGradientFill (grad);
+            g.fillEllipse (logoW / 2.0f - 190.0f, logoH / 2.0f - 150.0f, 380.0f, 300.0f);
+        }
+    }
+
+    // once both halves have stopped, the mark is drawn whole (no seam)
+    const auto merged = y.landed && w.landed && w.since > 0.35;
+
+    const auto drawPiece = [&] (const Piece& p, bool isY, float alpha)
+    {
+        const auto dir = isY ? -1.0f : 1.0f; // Y comes from above, W from below
+        const auto clipRect = isY ? juce::Rectangle<float> (-20.0f, -20.0f, splitX + 0.8f + 20.0f, logoH + 40.0f)
+                                  : juce::Rectangle<float> (splitX, -20.0f, logoW - splitX + 20.0f, logoH + 40.0f);
+        const auto pivotY = isY ? logoH : 0.0f; // squash against the side it lands on
+
+        const auto drawAt = [&] (float offset, float a)
+        {
+            juce::Graphics::ScopedSaveState s (g);
+            g.addTransform (juce::AffineTransform::scale (1.0f + (1.0f - p.squash) * 0.5f, p.squash, logoW / 2.0f, pivotY)
+                                .translated (0.0f, dir * offset));
+            g.reduceClipRegion (clipRect.toNearestInt());
+            g.setColour (juce::Colours::white.withAlpha (a));
+            g.fillPath (logo);
         };
-        drawWord (word, big, baseline, 3.0f, 0.50, colour::textPrimary);
-        drawWord (word2, small, baseline2, tracking, 0.68, colour::accent);
 
-        // an accent underline that grows after the words
-        const auto line = (float) easeOutCubic ((t - 0.95) / 0.35);
-        if (line > 0.0f)
-        {
-            g.setColour (colour::accent);
-            g.fillRoundedRectangle (302.0f, baseline2 + 12.0f, 54.0f * line, 4.0f, 2.0f);
-        }
+        // motion trail while falling
+        if (! p.landed && p.offset < travel)
+            for (int k = 3; k >= 1; --k)
+                drawAt (p.offset + (float) k * 0.012f * p.speed, alpha * 0.12f * (float) (4 - k) / 3.0f);
 
-        const auto info = (float) easeOutCubic ((t - 1.05) / 0.35);
-        if (info > 0.0f)
-        {
-            g.setColour (colour::textSecondary.withAlpha (info));
-            g.setFont (fonts[2]);
-            g.drawText (frame.subtitle, 302, (int) baseline2 + 24, 240, 22, juce::Justification::centredLeft);
-            g.setColour (colour::textSecondary.withAlpha (info)); // (round 190je: 7:1; textDisabled read 3.0:1 on the card)
-            g.setFont (fonts[3]);
-            g.drawText (frame.version, 302, (int) baseline2 + 48, 240, 18, juce::Justification::centredLeft);
-        }
-    }
+        if (p.offset < travel)
+            drawAt (p.offset, alpha);
+    };
 
-    // status and progress along the bottom
+    if (merged)
     {
-        const auto bar = juce::Rectangle<float> (24.0f, card.getBottom() - 20.0f, card.getWidth() - 48.0f, 3.0f);
-        g.setColour (colour::bg4);
-        g.fillRoundedRectangle (bar, 1.5f);
-        g.setColour (colour::accent);
-        g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * (float) easeOutCubic (juce::jmin (1.0, t / juce::jmax (0.1, frame.barDuration)))), 1.5f);
-        g.setColour (colour::textSecondary); // (round 190je, design190ia SG-23: was textDisabled, 3.1:1)
-        g.setFont (fonts[3]);
-        g.drawText (frame.status, juce::Rectangle<float> (24.0f, bar.getY() - 24.0f, card.getWidth() - 48.0f, 18.0f), juce::Justification::centredLeft);
+        g.setColour (juce::Colours::white);
+        g.fillPath (logo);
+    }
+    else
+    {
+        drawPiece (y, true, 1.0f);
+        drawPiece (w, false, 1.0f);
     }
 
-    // hairline border on top of everything
-    g.setColour (colour::borderStrong);
-    g.strokePath (cardShape, juce::PathStrokeType (1.0f));
+    // "yolo.su": fades in under the mark while its letters close up
+    {
+        const auto p = (float) easeOutCubic ((t - 0.50) / 0.46);
+        if (p > 0.0f)
+        {
+            const juce::String text ("yolo.su");
+            const auto& f = fonts[1];
+            const auto tracking = 26.0f + (5.0f - 26.0f) * p;
+            auto total = 0.0f;
+            for (int i = 0; i < text.length(); ++i)
+                total += juce::GlyphArrangement::getStringWidth (f, text.substring (i, i + 1));
+            total += tracking * (float) (text.length() - 1);
+            auto x = (logoW - total) / 2.0f;
+            const auto baseline = logoH + 64.0f;
+            g.setFont (f);
+            g.setColour (juce::Colours::white.withAlpha (0.92f * p));
+            for (int i = 0; i < text.length(); ++i)
+            {
+                const auto letter = text.substring (i, i + 1);
+                g.drawSingleLineText (letter, juce::roundToInt (x), juce::roundToInt (baseline));
+                x += juce::GlyphArrangement::getStringWidth (f, letter) + tracking;
+            }
+        }
+    }
+    juce::ignoreUnused (H);
 }
 // --- the card on a thread of its own (Windows, round 190hd) --------------------------------------
 //

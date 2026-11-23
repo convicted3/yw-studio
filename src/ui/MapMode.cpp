@@ -723,7 +723,7 @@ juce::PopupMenu MappingBrowser::rowMenu (int r)
         const auto global = has && list[(std::size_t) r].global;
         const auto movable = has && remotemap::canMove (engine.getSong(), engine.getMidiPrefs(), list[(std::size_t) r], ! global);
         menu.addSeparator();
-        menu.addItem (tr ("In every project (LYNX)"), movable, global, [this, r, global] {
+        menu.addItem (tr ("In every project (YW Studio)"), movable, global, [this, r, global] {
             if (r >= (int) list.size())
                 return;
             engine.moveMappingScope (list[(std::size_t) r], ! global);

@@ -2,7 +2,7 @@
 
 // File › "Save a copy as FL Studio Mobile project (.flm)..." (round 190og, FLM coverage app-0003): the song as an FL Studio
 // Mobile project (core/FlmExport.h) with its samples in "<name> Samples" beside it. The window lists what the copy
-// loses before it is saved, the way "Save a copy for an older LYNX" does; the open project and its file are untouched.
+// loses before it is saved, the way "Save a copy for an older YW Studio" does; the open project and its file are untouched.
 
 #include "core/FlmExport.h"
 #include "engine/AudioEngine.h"

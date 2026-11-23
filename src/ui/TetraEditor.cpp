@@ -569,12 +569,12 @@ public:
         g.fillRect (top);
         g.setColour (theme::colour::textPrimary);
         g.setFont (theme::font (24.0f, true));
-        // (round 190pq: as a plugin in another host the title is the plugin's name, "LYNX Fourfold" -> FOURFOLD: Tetra is
+        // (round 190pq: as a plugin in another host the title is the plugin's name, "YW Fourfold" -> FOURFOLD: Tetra is
         // another maker's product name)
         auto title = juce::String ("TETRA");
         if (plugui::hostedElsewhere)
             if (const auto* c = page.def(); c != nullptr && ! c->name.empty())
-                title = u8 (c->name).fromFirstOccurrenceOf ("LYNX ", false, false).toUpperCase();
+                title = u8 (c->name).fromFirstOccurrenceOf ("YW Studio ", false, false).toUpperCase();
         g.drawFittedText (title, juce::Rectangle<float> (14.0f, 8.0f, 150.0f, 28.0f).toNearestInt(), juce::Justification::centredLeft, 1, 0.8f);
         g.setColour (theme::colour::accent);
         g.fillRect (juce::Rectangle<float> (14.0f, 38.0f, 26.0f, 2.0f));

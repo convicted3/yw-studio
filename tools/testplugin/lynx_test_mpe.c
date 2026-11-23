@@ -21,7 +21,7 @@
 static const char* const features[] = { CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SYNTHESIZER, NULL };
 
 static const clap_plugin_descriptor_t descriptor = {
-    CLAP_VERSION_INIT, "org.lynx.test-mpe", "LYNX Test MPE", "LYNX", "https://github.com/Ka1-S/LYNX-SHARE", "", "",
+    CLAP_VERSION_INIT, "org.lynx.test-mpe", "LYNX Test MPE", "LYNX", "https://github.com/convicted3/yw-studio", "", "",
     "1.0.0", "Logs the notes, note expressions and MIDI it receives (MPE host test)", features
 };
 

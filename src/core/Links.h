@@ -6,5 +6,5 @@ namespace lynx::links
 {
 // The donation page (round 190fq): Help › Support LYNX SHARE..., the About window and the start-up note open it.
 // Donating is optional and never unlocks anything. (Also in .github/FUNDING.yml, README.md and website/_src/build.py.)
-inline constexpr const char* donate = "https://ko-fi.com/lynxshare";
+inline constexpr const char* donate = "https://yolo.su";
 } // namespace lynx::links

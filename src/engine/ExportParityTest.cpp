@@ -994,7 +994,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
             errors.add (name + ": playback after Render to audio, undone, differs from playback before by " + db (undoneVsPlay));
         if (frozenVsPlay < 0.0f || frozenVsPlay >= playAllowed)
             errors.add (name + ": playback of the frozen channel differs from playback before by " + db (frozenVsPlay));
-        if (std::getenv ("LYNX_TEST_SYNTH_SEED") != nullptr && name.startsWith ("LYNX Test Synth"))
+        if (std::getenv ("LYNX_TEST_SYNTH_SEED") != nullptr && name.startsWith ("YW Test Synth"))
         {
             if (renderFreshVsPlay >= 0.0f && renderFreshVsPlay < 1.0e-2f)
                 errors.add (name + ": Render to audio with a new instance sounds like the live one (" + db (renderFreshVsPlay) + "): the check can't tell");
@@ -1032,7 +1032,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
         if (playVsPlay >= 3.16e-5f && heldVsPlay >= 3.16e-5f)
             notes.add (name + " does not repeat itself (two playbacks differ by " + db (playVsPlay) + ")");
         if (stemHeld.l.size() != stemFresh.l.size() || stemSame > 0.0f)
-            errors.add (name + ": LYNX's own units render differently with a plugin lent (" + db (stemSame) + ", "
+            errors.add (name + ": YW Studio's own units render differently with a plugin lent (" + db (stemSame) + ", "
                         + juce::String ((int) stemHeld.l.size()) + " / " + juce::String ((int) stemFresh.l.size()) + " frames)");
         if (stemLent < 1)
             errors.add (name + ": the stem's export did not take the live plugin");
@@ -1040,7 +1040,7 @@ juce::String AudioEngine::exportLiveSelfTest (const std::function<void (const ju
             errors.add (name + ": the export at 44.1 kHz (" + juce::String (otherLent) + " lent, the plugin back at " + juce::String (rateAfter)
                         + " Hz, peak " + db (peakOf (other)) + ")");
         // the seeded test synth: a new instance plays other pitches, so the old way can't match playback
-        if (std::getenv ("LYNX_TEST_SYNTH_SEED") != nullptr && name.startsWith ("LYNX Test Synth") && freshVsPlay < 1.0e-2f)
+        if (std::getenv ("LYNX_TEST_SYNTH_SEED") != nullptr && name.startsWith ("YW Test Synth") && freshVsPlay < 1.0e-2f)
             errors.add (name + ": a new instance renders the same as the live one (" + db (freshVsPlay) + "): the seed is not per instance");
         checked.add (name + " " + db (heldVsPlay));
     }

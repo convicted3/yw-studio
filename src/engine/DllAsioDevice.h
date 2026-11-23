@@ -11,8 +11,8 @@ namespace lynx
 inline constexpr const char* dllAsioTypeName = "ASIO driver file";
 
 // The built-in type (round 106): LYNX ASIO loaded from lynx-asio.dll next to LYNX.exe when it is not registered
-// (registered, it is listed under JUCE's "ASIO" type like any driver). One device, also named "LYNX ASIO".
-inline constexpr const char* lynxAsioTypeName = "LYNX ASIO";
+// (registered, it is listed under JUCE's "ASIO" type like any driver). One device, also named "YW ASIO".
+inline constexpr const char* lynxAsioTypeName = "YW ASIO";
 
 // nullptr when not on Windows. `spec` = "C:\\path\\driver.dll" or "C:\\path\\driver.dll|{CLSID}"; without a CLSID
 // LYNX ASIO's own class id is used. `typeName` / `deviceName`: empty = "ASIO driver file" / the DLL's file name.

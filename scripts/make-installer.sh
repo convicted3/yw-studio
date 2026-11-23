@@ -32,7 +32,7 @@ cp LICENSE THIRD_PARTY.md "$STAGE/"
 ./scripts/collect-licenses.sh "$STAGE/licenses" > /dev/null   # third-party licence texts (round 190nk)
 # LYNX ASIO driver (built next to LYNX.exe by build-windows-zig.sh) and its registration helpers
 if [[ -f "$(dirname "$EXE")/lynx-asio.dll" ]]; then
-    cp "$(dirname "$EXE")/lynx-asio.dll" "asio/Register LYNX ASIO.bat" "asio/Unregister LYNX ASIO.bat" "$STAGE/"
+    cp "$(dirname "$EXE")/lynx-asio.dll" "asio/Register YW ASIO.bat" "asio/Unregister YW ASIO.bat" "$STAGE/"
     [[ -f "$(dirname "$EXE")/lynx-asio32.dll" ]] && cp "$(dirname "$EXE")/lynx-asio32.dll" "$STAGE/"
 fi
 # the 32-bit plugin bridge (round 176a)

@@ -462,7 +462,7 @@ std::optional<Program> readInstrument (const std::string& path, const Access& ac
     Gig g (access, path);
     if (! g.ok)
     {
-        report.error = "This is not a GigaStudio / DLS file LYNX SHARE can read.";
+        report.error = "This is not a GigaStudio / DLS file YW Studio can read.";
         return std::nullopt;
     }
     report.instruments = (int) g.instruments.size();

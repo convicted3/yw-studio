@@ -126,7 +126,7 @@ juce::String wsUrlFor (juce::String relay, const juce::String& room)
     return relay + "/v1/rooms/" + room + "/ws";
 }
 
-std::string userAgent() { return utf8 ("LYNX-SHARE/" + juce::String (JUCE_APPLICATION_VERSION_STRING)); }
+std::string userAgent() { return utf8 ("YW-Studio/" + juce::String (JUCE_APPLICATION_VERSION_STRING)); }
 
 // One request to the relay's HTTP API. Linux: the system libcurl (engine/LiveLink.h — this build's JUCE has no TLS
 // there); Windows and macOS: the system's own HTTP through juce::URL.
@@ -422,7 +422,7 @@ void LiveSessionManager::start (const Options& o)
     renderer = std::make_unique<Worker> (options.inlineWork, true);
     std::string why;
     if (offline::enabled())
-        return setState (State::ended, tr ("Live sessions are off: LYNX SHARE is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection."));
+        return setState (State::ended, tr ("Live sessions are off: YW Studio is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection."));
     if (! livelink::Connection::available (&why))
         return setState (State::ended, tr ("Live sessions need a newer libcurl on this computer ({0})", { str (why) }));
 
@@ -486,9 +486,9 @@ void LiveSessionManager::start (const Options& o)
         else if (status == 429)
             error = tr ("Too many sessions were opened from this connection. Try again in a while.");
         else if (status == 503)
-            error = tr ("The LYNX SHARE relay is full. Try again in a few minutes.");
+            error = tr ("The YW Studio relay is full. Try again in a few minutes.");
         else
-            error = tr ("Could not reach the LYNX SHARE relay ({0}).", { status == 0 ? tr ("no connection") : juce::String (status) });
+            error = tr ("Could not reach the YW Studio relay ({0}).", { status == 0 ? tr ("no connection") : juce::String (status) });
         const std::lock_guard<std::mutex> g (roomLock);
         roomAnswer = { true, room, hostTok, error };
     });
@@ -536,12 +536,12 @@ void LiveSessionManager::join (const juce::String& code, const Options& o)
     renderer = std::make_unique<Worker> (options.inlineWork, true);
     std::string why;
     if (offline::enabled())
-        return setState (State::ended, tr ("Live sessions are off: LYNX SHARE is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection."));
+        return setState (State::ended, tr ("Live sessions are off: YW Studio is in offline mode (LYNX_OFFLINE or --offline) and opens no network connection."));
     if (! livelink::Connection::available (&why))
         return setState (State::ended, tr ("Live sessions need a newer libcurl on this computer ({0})", { str (why) }));
     const auto parsed = livecrypto::parseCode (utf8 (code));
     if (! parsed)
-        return setState (State::ended, tr ("That is not a LYNX SHARE invite code."));
+        return setState (State::ended, tr ("That is not a YW Studio invite code."));
     invite = *parsed;
     keys = livecrypto::derive (invite);
     roomId = str (invite.room);
@@ -962,7 +962,7 @@ void LiveSessionManager::handleEvent (const livelink::Event& e)
         else if (e.code == 4000)
             why = host ? tr ("The relay closed the session.") : tr ("The host ended the live session.");
         else if (e.code == 4001)
-            why = tr ("The LYNX SHARE relay closed this live session: it reached the relay's traffic limit or stayed open too long.");
+            why = tr ("The YW Studio relay closed this live session: it reached the relay's traffic limit or stayed open too long.");
         else if (e.code == 404 && running)
             why = tr ("The live session is over: the relay no longer has it.");
         else
@@ -1137,7 +1137,7 @@ void LiveSessionManager::handleMessage (int from, const juce::var& m)
     if (t == "deny")
     {
         const auto reason = m["reason"].toString();
-        juce::String why = reason == "version" ? tr ("The host uses another version of LYNX SHARE ({0}). Update both to the same version.", { m["version"].toString() })
+        juce::String why = reason == "version" ? tr ("The host uses another version of YW Studio ({0}). Update both to the same version.", { m["version"].toString() })
                          : reason == "full"    ? tr ("The session is full.")
                                                : tr ("The host did not let you in.");
         return end (why, replica != nullptr && ! keepFull);

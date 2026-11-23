@@ -53,9 +53,9 @@ inline const char* genre (int demo) noexcept
     }
 }
 // the file name in resources/demos/
-inline std::string fileName (int demo) { return std::string ("LYNX Demo - ") + name (demo) + ".lynx"; }
+inline std::string fileName (int demo) { return std::string ("YW Demo - ") + name (demo) + ".lynx"; }
 
-constexpr const char* credit = "Made by the LYNX SHARE project with LYNX's own instruments and Loop Starter kit. Free to use, change and share.";
+constexpr const char* credit = "Made by the YW Studio project with YW Studio's own instruments and Loop Starter kit. Free to use, change and share.";
 
 namespace detail
 {
@@ -174,7 +174,7 @@ inline Song base (double bpm, projectkey::Key key, int demo)
     song.mixer = Song::defaultMixer();
     projectkey::set (song, key);
     song.info.title = name (demo);
-    song.info.author = "LYNX SHARE";
+    song.info.author = "YW Studio";
     song.info.genre = genre (demo);
     song.info.comments = credit;
     return song;
