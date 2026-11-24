@@ -11463,25 +11463,27 @@ juce::PopupMenu MainComponent::getMenuForIndex (int barIndex, const juce::String
     }
     else if (index == 4)
     {
-        // the Settings window's pages (Settings › General gathers the app options that were menu items here)
-        menu.addItem (tr ("Audio settings..."), [this] { openSettings ((int) SettingsPage::audio); });
-        menu.addItem (tr ("MIDI settings...") + shortcutText ("view.midiSettings"), [this] { openSettings ((int) SettingsPage::midi); });
-        // round 190gl: Ableton Link (YW's own in FL's menu: FL has no Link), the switch and its settings page
+        // FL Studio 24's OPTIONS order: the System settings (MIDI, Audio, General, File, Theme, Manage plugins), then the
+        // Project ones; YW's own pages and switches after them
+        menu.addItem (tr ("MIDI settings") + shortcutText ("view.midiSettings"), [this] { openSettings ((int) SettingsPage::midi); });
+        menu.addItem (tr ("Audio settings"), [this] { openSettings ((int) SettingsPage::audio); });
+        menu.addItem (tr ("General settings") + shortcutText ("view.settings"), [this] { openSettings ((int) SettingsPage::general); });
+        menu.addItem (tr ("File settings"), [this] { openSettings ((int) SettingsPage::files); });
+        menu.addItem (tr ("Theme settings"), [this] { openSettings ((int) SettingsPage::theme); });
+        menu.addItem (tr ("Manage plugins"), [this] { showPluginManager(); });
+        menu.addSeparator();
+        menu.addItem (tr ("Project info") + shortcutText ("view.projectInfo"), [this] { openSettings ((int) SettingsPage::info); });
+        menu.addItem (tr ("Project general settings"), [this] { openSettings ((int) SettingsPage::project); });
+        menu.addSeparator();
+        // YW's own (FL has no Link)
         menu.addItem (tr ("Ableton Link"), true, engine.getLink().isEnabled(), [this] { engine.setLinkEnabled (! engine.getLink().isEnabled()); });
         menu.addItem (tr ("Ableton Link settings..."), [this] { openSettings ((int) SettingsPage::link); });
-        menu.addItem (tr ("General settings...") + shortcutText ("view.settings"), [this] { openSettings ((int) SettingsPage::general); });
-        menu.addItem (tr ("Theme (colors, background)..."), [this] { openSettings ((int) SettingsPage::theme); });
-        menu.addItem (tr ("File settings (search folders)..."), [this] { openSettings ((int) SettingsPage::files); });
         menu.addItem (tr ("YW Studio extras..."), [this] { openSettings ((int) SettingsPage::extras); }); // round 190am
-        menu.addItem (tr ("Project settings (tempo, time signature)..."), [this] { openSettings ((int) SettingsPage::project); });
-        menu.addItem (tr ("Project info...") + shortcutText ("view.projectInfo"), [this] { openSettings ((int) SettingsPage::info); });
         {
             juce::PopupMenu mixerMenu; // round 163: clean mixer, inserts and Master chain of new projects
             mixeroptions::addItems (mixerMenu, engine, true);
             menu.addSubMenu (tr ("Mixer"), mixerMenu);
         }
-        menu.addSeparator();
-        menu.addItem (tr ("Plugin manager..."), [this] { showPluginManager(); });
         const auto scanning = engine.getPluginHost().backgroundScan().running;
         menu.addItem (scanning ? tr ("Stop the plugin scan") : tr ("Scan for plugins ({0})", { platform::pluginFormatNames() }), [this, scanning] {
             if (scanning)

@@ -1064,7 +1064,7 @@ public:
         // FL's order (round 190jp, design190ia FW-19: MIDI, Audio, General, File, Theme, Project, Info), then YW's own
         // pages after a gap (Ableton Link, named in full as Ableton's Link integration guidelines ask of other apps)
         const std::pair<SettingsPage, juce::String> order[] = { { SettingsPage::midi, tr ("MIDI") },       { SettingsPage::audio, tr ("Audio") },
-                                                                { SettingsPage::general, tr ("General") }, { SettingsPage::files, tr ("Files") },
+                                                                { SettingsPage::general, tr ("General") }, { SettingsPage::files, tr ("File") },
                                                                 { SettingsPage::theme, tr ("Theme") },     { SettingsPage::project, tr ("Project") },
                                                                 { SettingsPage::info, tr ("Info") },       { SettingsPage::link, tr ("Ableton Link") },
                                                                 { SettingsPage::extras, tr ("YW Studio extras") } };

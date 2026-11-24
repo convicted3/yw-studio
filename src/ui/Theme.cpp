@@ -2244,8 +2244,15 @@ float menuBarScale (juce::MenuBarComponent& bar)
 }
 } // namespace
 
-int LookAndFeel::getMenuBarItemWidth (juce::MenuBarComponent& bar, int itemIndex, const juce::String& itemText)
+// FL's menu bar titles are capitals (FILE EDIT ADD PATTERNS VIEW OPTIONS TOOLS HELP)
+static juce::String menuBarTitle (juce::MenuBarComponent& bar, const juce::String& text)
 {
+    return (bool) bar.getProperties().getWithDefault ("ywFlMenuBar", false) ? text.toUpperCase() : text;
+}
+
+int LookAndFeel::getMenuBarItemWidth (juce::MenuBarComponent& bar, int itemIndex, const juce::String& title)
+{
+    const auto itemText = menuBarTitle (bar, title);
     // a long (translated) menu bar takes tighter item padding so the toolbar keeps its panels (round 165o)
     // (round 190jo: the Pattern toolbar's larger menu text with FL's closer items, 12 px: the bar keeps its ~292 px, as FL's
     // eight menus take, so no toolbar panel drops out)
@@ -2256,10 +2263,11 @@ int LookAndFeel::getMenuBarItemWidth (juce::MenuBarComponent& bar, int itemIndex
     return juce::roundToInt (text) + padding;
 }
 
-void LookAndFeel::drawMenuBarItem (juce::Graphics& g, int width, int height, int itemIndex, const juce::String& itemText, bool isMouseOverItem,
+void LookAndFeel::drawMenuBarItem (juce::Graphics& g, int width, int height, int itemIndex, const juce::String& title, bool isMouseOverItem,
                                    bool isMenuOpen, bool isMouseOverBar, juce::MenuBarComponent& bar)
 {
     juce::ignoreUnused (isMouseOverBar);
+    const auto itemText = menuBarTitle (bar, title);
     const auto active = isMenuOpen || isMouseOverItem;
 
     if (active)
