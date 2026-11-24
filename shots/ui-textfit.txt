@@ -1,0 +1,5 @@
+settings-midi-small | 46x26 | Feedback to Mackie Control
+eventeditor-tempo-small | 20x18 | 10%
+eventeditor-tempo-small | 26x26 | Apply
+eventeditor-tempo-narrowest | 20x18 | 10%
+eventeditor-tempo-narrowest | 10x26 | Apply

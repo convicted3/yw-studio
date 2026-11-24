@@ -1,0 +1,185 @@
+File > New (empty)
+File > Open audio file...
+File > Save as WAV > 16-bit
+File > Save as WAV > 24-bit
+File > Save as WAV > 32-bit float
+File > Export regions as files...
+File > Send to the Playlist as an audio clip
+File > Send to a new Sampler channel
+Format > Edit properties...
+Format > 16Bit int
+Format > 32Bit float
+Format > Mono
+Format > Stereo
+Edit > Undo  (disabled)
+Edit > Redo  (disabled)
+Edit > Undo history > Open
+Edit > Cut
+Edit > Copy
+Edit > Paste insert  (disabled)
+Edit > Paste replace  (disabled)
+Edit > Paste mix  (disabled)
+Edit > Paste mix (envelope)  (disabled)
+Edit > Paste mix (spectral)...  (disabled)
+Edit > Paste stretch  (disabled)
+Edit > Paste replace (drum)  (disabled)
+Edit > Delete
+Edit > Clear (silence)
+Edit > Trim (keep the selection)
+Edit > Send the selection to a new Sampler channel
+Edit > Insert silence...
+Edit > Delete the part after the loop
+Edit > Click-free (smooth) editing
+Edit > Select all
+Edit > Deselect
+Select > Select before current selection
+Select > Select after current selection
+Select > Select zoomed part
+Select > Select previous region
+Select > Select next region
+Tools > Edit > Edit: Wave
+Tools > Edit > Edit: Volume
+Tools > Edit > Edit: Panning
+Tools > Edit > Edit: Stereo sep
+Tools > Cancel all envelopes  (disabled)
+Tools > Add points at selection
+Tools > Add points at regions
+Tools > Flip vertically  (disabled)
+Tools > Scale levels...
+Tools > Normalize levels  (disabled)
+Tools > Decimate points...
+Tools > Filter...
+Tools > Smooth up...
+Tools > Turn all points smooth  (disabled)
+Tools > Create sequence...
+Tools > Mixdown amp envelopes  (disabled)
+Tools > Amp...
+Tools > Reverse polarity
+Tools > Normalize
+Tools > Normalize to...
+Tools > Lossy normalize
+Tools > Fade in
+Tools > Fade out
+Tools > Fade curve > Smooth (S-curve)
+Tools > Fade curve > Linear
+Tools > Fade curve > Slow start
+Tools > Fade curve > Fast start
+Tools > Declick in
+Tools > Declick out
+Tools > Remove DC offset (center)
+Tools > Reverse
+Tools > Time stretch / pitch shift...
+Tools > Drum(loop) stretch...
+Tools > Claw machine...
+Tools > Scratch (envelope)
+Tools > Resample...
+Tools > Swap channels
+Tools > Convert to mono (mix)
+Tools > Convert the left channel to mono
+Tools > Convert the right channel to mono
+Tools > Convert a mono signal to mono format
+Tools > Convert to stereo  (disabled)
+Tools > Generate noise
+Tools > Run script > Amp > Gain
+Tools > Run script > FX > Bit crusher
+Tools > Run script > FX > Ring modulator
+Tools > Run script > Generation > Sine tone
+Tools > Run script > Generation > Noise
+Tools > Run script > Regions > Markers to regions
+Tools > Run script > (no scripts)  (disabled)
+Tools > Run script > Open my scripts folder
+Tools > Edit last script  (disabled)
+Tools > Acquire noise threshold
+Tools > Gate noise
+Tools > Trim side noise
+Tools > Trim all noise && slice up
+Tools > Convolution reverb...
+Tools > Blur...
+Tools > Equalize...
+Tools > Acquire noise profile
+Tools > Clean up (denoise)...
+Tools > Match spectrum...
+Tools > Vocal denoise/isolator...
+Tools > Deverb...
+Tools > Normalize all regions
+Tools > Declick in all regions
+Tools > Declick out all regions
+Tools > Perfect all regions
+Tools > Tune loop...
+Tools > Convert to score and dump to piano roll
+Tools > Convert to MIDI > Melody to new pattern
+Tools > Convert to MIDI > Harmony to new pattern
+Tools > Convert to MIDI > Drums to new pattern
+Tools > Convert to MIDI (polyphonic)...
+Tools > Edit notes (polyphonic)...
+Regions > Add marker
+Regions > Add region
+Regions > Set loop
+Regions > Remove loop
+Regions > Rename all...
+Regions > Assign trigger notes to all...
+Regions > Assign all to > Whole keyboard
+Regions > Assign all to > White notes
+Regions > Assign all to > Black notes
+Regions > Assign all to > Default / none
+Regions > Assign all to > C5
+Regions > Delete markers in the selection
+Regions > Auto-slice > Dull auto-slicing
+Regions > Auto-slice > Medium auto-slicing
+Regions > Auto-slice > Sharp auto-slicing
+Regions > Auto-slice > Small grid-slicing
+Regions > Auto-slice > Medium grid-slicing
+Regions > Auto-slice > Large grid-slicing
+Regions > Auto-slice > Every beat (project tempo)
+Regions > Auto-slice > Every 1/2 beat
+Regions > Auto-slice > Every 1/4 beat
+Regions > Detect pitch regions
+View > Waveform
+View > Spectrogram
+View > Dual view
+View > Spectrum precision > 256 bands
+View > Spectrum precision > 512 bands
+View > Spectrum precision > 1024 bands
+View > Spectrum precision > 2048 bands
+View > Spectrum precision > 4096 bands
+View > Logarithmic frequency scale
+View > Wheel scrolls (YW Studio)
+View > Time format > Auto
+View > Time format > Minutes : seconds
+View > Time format > Samples
+View > Time format > Bar : beat : tick
+View > Zoom in
+View > Zoom out
+View > Zoom out full
+View > Zoom on the selection
+View > Zoom on left of selection
+View > Zoom on right of selection
+View > Regions
+View > Loop
+View > Noise threshold mark
+Snap > Snap to grid
+Snap > Snap to regions
+Snap > Snap to samples
+Snap > Snap to zero-crossing
+Snap > Snap to pitch period
+Record > Audio input
+Record > Master output
+Record > Mixer insert > insert 1 (Drums)
+Record > Mixer insert > insert 2 (Keys)
+Record > Mixer insert > insert 3 (Bass)
+Record > Mixer insert > insert 4 (Bell)
+Record > Mixer insert > insert 5 (Insert 5)
+Record > Mixer insert > insert 6 (Insert 6)
+Record > Mixer insert > insert 7 (Insert 7)
+Record > Mixer insert > insert 8 (Insert 8)
+Record > Mixer insert > insert 9 (Insert 9)
+Record > Mixer insert > insert 10 (Insert 10)
+Record > Mixer insert > insert 11 (Insert 11)
+Record > Mixer insert > insert 12 (Insert 12)
+Record > Mixer insert > insert 13 (Insert 13)
+Record > Mixer insert > insert 14 (Insert 14)
+Record > Mixer insert > insert 15 (Insert 15)
+Record > Mixer insert > insert 16 (Insert 16)
+Record > Immediately
+Record > When the input is heard
+Record > When the song plays (stops with it)
