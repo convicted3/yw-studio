@@ -38181,6 +38181,8 @@ private:
         if (const auto themeFile = juce::SystemStats::getEnvironmentVariable ("YW_SNAPSHOT_THEME", {}); themeFile.isNotEmpty())
             if (const auto spec = yw::themeui::loadFile (juce::File (themeFile)))
                 yw::themeui::apply (*spec, false);
+        if (juce::SystemStats::getEnvironmentVariable ("YW_SNAPSHOT_THEME", {}).isEmpty())
+            yw::themeui::apply (yw::themes::Spec {}, false); // the default look, as a first run shows it
         {
             yw::AudioEngine offline (false);
             yw::MainComponent ui (offline, false); // default layout and keys, nothing saved
